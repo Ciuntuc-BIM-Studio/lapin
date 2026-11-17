@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "Set fra start mod slut. Toppen er én linje fra væggens start til dens slut; et trin er to punkter over hinanden.", "Finish with a flat top: the profile taken away": "Afslut med flad top: profilen fjernes", "Draw the top with Draft, from the start to the end": "Tegn toppen med Tegning, fra start til slut", "Draw the outside and its chambers as closed shapes": "Tegn ydersiden og dens kamre som lukkede former", "Draw the section first.": "Tegn først profilen.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "Buer", "Sketch edits": "Skitseredigering", "Geometric": "Geometriske", "Arrays": "Rækker", "Move, rotate, mirror": "Flyt, drej, spejl", "Carriers and fans": "Kabelbakker og ventilatorer",
   // Convert to…: stair, floor opening, parcel (audit S12)
@@ -4116,6 +4117,8 @@ export const DA: Record<string, string> = {
   "Draw the outline of your own on a board of the type (an odd pane, a shape the list has not); one fixed light in a frame following it": "Tegn dit eget omrids på en tavle af typen (en usædvanlig rude, en form som listen ikke har); ét fast felt i en ramme, der følger det",
   "Save the type first, then draw its outline": "Gem først typen, og tegn derefter dens omrids",
   "Draw one closed outline (seen from outside, its bottom on the sill line), then Finish sketch.": "Tegn ét lukket omrids (set udefra, med bunden på vindueskarmens linje), og afslut derefter skitsen.",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Tilføj lag', 'Remove layer': 'Fjern lag', 'Toggle visibility': 'Vis eller skjul', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacitet (0–100, {attr.key} eller {= formel})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Synlighed (sand/falsk, 0–100, {attr.key} eller {= formel})',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

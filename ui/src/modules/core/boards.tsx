@@ -11,10 +11,10 @@ import { Copy, FlipHorizontal2, FlipVertical2, Image as ImageIcon, Plus, RotateC
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { hasModule } from '../../platform/brand';
-import { ANNOTATE_TOOLS, registerBoard, SKETCH_TOOLS, type Board } from '../../viewport/sketch/board';
+import { ANNOTATE_TOOLS, registerBoard, rememberReturn, SKETCH_TOOLS, takeReturn, type Board } from '../../viewport/sketch/board';
 import { pensToSvg } from './documents/docModel';
 import { previewSymbol, symbolFields, type SymFields } from './symbols/symbols';
-import { keepSymbol, previewImage, updateLibrarySymbol, type SymAttr, type SymDef, type SymPreview } from './symbols/symbolModel';
+import { keepSymbol, previewImage, updateLibrarySymbol, type SymAttr, type SymDef, type SymLayer, type SymPreview } from './symbols/symbolModel';
 import { titleBlockFields, type TbFields } from './titleBlocks/titleBlocks';
 import { ANCHORS, type TbTemplate } from './titleBlocks/titleBlockModel';
 
@@ -23,21 +23,20 @@ const BOARD_TOOLS = [...SKETCH_TOOLS, ...ANNOTATE_TOOLS];
 /** Whether the boards can be used in this edition: drafting draws on them, Studio's bar finishes them. */
 export const boardsAvailable = (): boolean => hasModule('drafting') && hasModule('studio');
 
-/** Where the user was before the board, to go back to; and which library symbol a board is of (this computer's, kept by the interface). */
-const back = new Map<string, { view: ReturnType<typeof useUi.getState>['view']; drawingViewId: string | null; dialog: string | null }>();
+/** Which library symbol a board is of (this computer's, kept by the interface). */
 const libraryOf = new Map<string, string>();
 
 function open(viewId: string, dialog: string) {
   const s = useUi.getState();
-  if (!back.has(viewId)) back.set(viewId, { view: s.view, drawingViewId: s.drawingViewId, dialog });
+  rememberReturn(viewId, { view: s.view, planViewId: s.planViewId, drawingViewId: s.drawingViewId, dialog });
   useUi.setState({ dialog: null, view: 'drawing', drawingViewId: viewId, tool: null, selected: [], selection: null });
 }
 
+/** Back where the board was opened from, its dialog open again (a project reopened with the board open: the plan). */
 function leave(viewId: string) {
-  const b = back.get(viewId);
-  back.delete(viewId);
   libraryOf.delete(viewId);
-  useUi.setState({ view: b && b.view !== 'drawing' ? b.view : b?.drawingViewId ? 'drawing' : 'plan', drawingViewId: b?.drawingViewId ?? null, dialog: b?.dialog ?? null, selected: [], selection: null });
+  const back = takeReturn(viewId) ?? { view: 'plan', drawingViewId: null };
+  useUi.setState({ ...back, selected: [], selection: null } as Partial<ReturnType<typeof useUi.getState>>);
 }
 
 /** A command whose refusal the user reads; the board stays when it refuses. */
@@ -135,14 +134,29 @@ function SymbolPanel({ board }: { board: Board }) {
       <label className="field"><span>Category</span>
         <input value={def.category} data-field="sb-category" data-no-i18n onChange={(e) => set({ category: e.target.value })} />
       </label>
-      {def.layers && def.layers.length > 0 && (
-        <label className="field"><span>New items on layer</span>
-          <select value={of.layer ?? ''} data-field="sb-layer" onChange={(e) => set({ layer: e.target.value })}>
-            <option value="">(none)</option>
-            {def.layers.map((l) => <option key={l.id} value={l.id} data-no-i18n>{l.name}</option>)}
-          </select>
-        </label>
-      )}
+      {/* The symbol's own layers (forum #120): what is drawn new goes on the active one; each layer's visibility and opacity
+          take a number, true or false, an attribute or a formula, worked out for every placed copy. */}
+      <div className="row between"><h4 className="eyebrow">Layers</h4>
+        <button type="button" className="btn small" data-field="sb-layer-add" onClick={() => { const n = (def.layers?.length ?? 0) + 1; let id = `layer${n}`; let k = n; while (def.layers?.some((l) => l.id === id)) id = `layer${++k}`; set({ layers: [...(def.layers ?? []), { id, name: `Layer ${k}`, visible: true, opacity: 100 }] }); }}><Plus size={12} />Add layer</button>
+      </div>
+      <ul className="part-list" data-field="sb-layers">
+        <li className={!of.layer ? 'on' : ''}><button type="button" className="link" onClick={() => set({ layer: '' })}>Default</button></li>
+        {(def.layers ?? []).map((l) => {
+          const setLayer = (p: Partial<SymLayer>) => set({ layers: (def.layers ?? []).map((x) => (x.id === l.id ? { ...x, ...p } : x)) });
+          return (
+            <li key={l.id} className={of.layer === l.id ? 'on' : ''}>
+              <div className="row between">
+                <button type="button" className="link" onClick={() => set({ layer: l.id })} data-no-i18n>{l.name}</button>
+                <button type="button" className="icon mini" title="Remove layer" onClick={() => set({ layers: (def.layers ?? []).filter((x) => x.id !== l.id), ...(of.layer === l.id ? { layer: '' } : {}) })}><Trash2 size={12} /></button>
+              </div>
+              <div className="row">
+                <input className="input small" defaultValue={String(l.opacity ?? 100)} title="Opacity (0–100, {attr.key} or {= formula})" placeholder="100" onBlur={(e) => { if (e.target.value !== String(l.opacity ?? 100)) setLayer({ opacity: e.target.value }); }} />
+                <input className="input small" defaultValue={l.visible === undefined ? 'true' : String(l.visible)} title="Visibility (true/false, 0–100, {attr.key} or {= formula})" placeholder="true" onBlur={(e) => { if (e.target.value !== String(l.visible ?? 'true')) setLayer({ visible: e.target.value }); }} />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
       <h4 className="eyebrow">Preview</h4>
       <div className="row">
         <button type="button" className={`icon${turn.flipX ? ' on' : ''}`} title="Flip left ↔ right" onClick={() => setTurn({ ...turn, flipX: !turn.flipX })}><FlipHorizontal2 size={14} /></button>

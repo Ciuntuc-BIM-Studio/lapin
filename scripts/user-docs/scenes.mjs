@@ -1059,9 +1059,11 @@ export const scenes = [
     },
   },
   {
-    // A wall by its profile (a tester's wish, #100, decision 372): the house's west wall made a gable in the profile editor,
-    // the window kept, then seen in 3D.
+    // A wall by its profile (a tester's wish, #100, decision 372) on the shared sketch canvas (audit S11 stage 2): Profile… opens the
+    // west wall's own board (a plane along its axis, seen from its start), the side form's Gable drawn up to 5.2 m, the ridge typed
+    // 5.4 m in the table; Finish sketch shapes the wall, the window kept, seen in 3D.
     id: 'wall-profile',
+    touches: ['architecture', 'studio'],
     async run(t) {
       await t.fresh();
       const { walls } = await house(t, { roof: false });
@@ -1069,15 +1071,27 @@ export const scenes = [
       await t.ui({ view: 'plan', keyPlan: false, selection: walls[3], selected: [walls[3]] });
       await t.wait(800);
       await t.page.locator('[data-action=wall-profile]').first().click();
-      await t.page.waitForSelector('[data-testid=wall-profile]', { timeout: 10000 });
-      await t.page.locator('[data-field=profile-peak]').fill('5200');
-      await t.page.locator('[data-action=profile-gable]').click();
+      const bar = t.page.locator('[data-testid=wall-profile-sketch-bar]');
+      await bar.waitFor({ timeout: 10000 });
+      const board = (await t.nodes()).find((n) => n.props.wallProfileOf?.id === walls[3]);
+      t.expect(board?.props.kind === 'plane', 'the profile opens on a plane of its own along the wall');
+      t.expect((await bar.locator('[data-sketch-tool=ARC]').count()) === 1 && (await bar.locator('[data-sketch-constraint=dimension]').count()) === 1, 'the bar has Draft\'s tools and the constraint tools');
+      const panel = t.page.locator('[data-testid=wall-profile-panel]');
+      await panel.locator('[data-field=profile-peak]').fill('5200');
+      await panel.locator('[data-action=profile-gable]').click();
+      await t.until(async () => (await panel.locator('tbody tr').count()) === 3, 'the gable\'s three points are in the side form\'s table');
+      const ridge = panel.locator('tbody tr').nth(1).locator('td').nth(2).locator('input');
+      await ridge.fill('5400');
+      await ridge.press('Enter');
+      await t.until(async () => (await panel.locator('tbody tr').nth(1).locator('td').nth(2).locator('input').inputValue()) === '5400', 'a height typed in the table moves the point');
+      await t.page.mouse.move(10, 300);
       await t.wait(600);
-      await t.shot('wall-profile-editor', { of: '.dialog', pad: 0 });
-      await t.page.locator('[data-action=profile-apply]').click();
-      await t.wait(1200);
+      await t.shot('wall-profile-editor');
+      await bar.locator('[data-action=finish-wall-profile]').click();
+      await t.until(async () => (await bar.count()) === 0, 'Finish sketch leaves the board');
       const wall = (await t.nodes()).find((n) => n.id === walls[3]);
-      t.expect(Array.isArray(wall.props.topProfile) && wall.props.topProfile.length === 3, 'the wall keeps its gable');
+      t.expect(Array.isArray(wall.props.topProfile) && wall.props.topProfile.length === 3 && Math.abs(wall.props.topProfile[1][1] - 5.4) < 1e-6, 'the wall keeps its gable');
+      t.expect(!(await t.nodes()).some((n) => n.id === board.id), 'the board\'s plane is gone');
       await open3d(t);
       await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.3, pitch: -0.25, distance: 22, target: { x: 4, y: 4, z: 2 } }, false));
       await t.wait(1500);
@@ -10797,9 +10811,10 @@ export const scenes = [
     },
   },
   {
-    // A curtain wall by its boundary (report #127): a gable drawn in the profile dialog, the grid, the panels and the members
-    // following it, in 3D.
+    // A curtain wall by its boundary (report #127) on the shared sketch canvas (audit S11 stage 2): a gable drawn on its board, the
+    // grid, the panels and the members following it, in 3D.
     id: 'curtain-boundary',
+    touches: ['architecture', 'studio'],
     async run(t) {
       await t.fresh();
       const { storey } = await house(t, { roof: false });
@@ -10807,13 +10822,18 @@ export const scenes = [
       await t.ui({ view: 'plan', keyPlan: false, selection: cw, selected: [cw] });
       await t.wait(800);
       await t.page.locator('[data-action=curtain-profile]').first().click();
-      await t.page.waitForSelector('[data-testid=wall-profile]', { timeout: 10000 });
-      await t.page.locator('[data-field=profile-peak]').fill('4800');
-      await t.page.locator('[data-action=profile-gable]').click();
+      const bar = t.page.locator('[data-testid=wall-profile-sketch-bar]');
+      await bar.waitFor({ timeout: 10000 });
+      const panel = t.page.locator('[data-testid=wall-profile-panel]');
+      await panel.locator('[data-field=profile-peak]').fill('4800');
+      await panel.locator('[data-action=profile-gable]').click();
+      await t.until(async () => (await panel.locator('tbody tr').count()) === 3, 'the gable is drawn on the board');
+      await t.page.mouse.move(10, 300);
       await t.wait(600);
-      await t.shot('curtain-boundary-editor', { of: '.dialog', pad: 0 });
-      await t.page.locator('[data-action=profile-apply]').click();
-      await t.wait(1400);
+      await t.shot('curtain-boundary-editor');
+      await bar.locator('[data-action=finish-wall-profile]').click();
+      await t.until(async () => (await bar.count()) === 0, 'Finish sketch leaves the board');
+      await t.wait(800);
       const wall = (await t.nodes()).find((n) => n.id === cw);
       t.expect(Array.isArray(wall.props.topProfile) && wall.props.topProfile.length === 3, 'the curtain wall keeps its gable');
       t.expect(Math.abs(Number(wall.props.height) - 4.8) < 1e-6, 'its height is its highest point');
@@ -10939,23 +10959,39 @@ export const scenes = [
     },
   },
   {
-    // The section editor (report #128): Manage → Profile libraries → Draw a profile…, a hollow box with a chamber added.
+    // The section editor (report #128) on the shared sketch canvas (audit S11 stage 2): Manage → Profile libraries → Draw a profile…
+    // opens a sheet of its own; a T, then a rectangle with a chamber added in the middle from the side form; Finish sketch makes the
+    // profile and goes back to the libraries to keep it.
     id: 'profile-editor',
+    touches: ['core', 'studio'],
     async run(t) {
       await t.fresh();
       await house(t, { roof: false });
       await t.ui({ dialog: 'profileLibraries' });
       await t.page.waitForSelector('[data-dialog=profile-libraries]', { timeout: 10000 });
       await t.page.locator('[data-testid=profile-draw-new]').click();
-      await t.page.waitForSelector('[data-testid=profile-editor]', { timeout: 10000 });
-      await t.page.locator('[data-action=editor-T]').click();
-      await t.page.locator('[data-action=editor-box]').click();
-      await t.wait(500);
-      t.expect(await t.page.locator('[data-editor-point]').count() === 8, 'a hollow box has its two rings\' eight points');
-      await t.shot('profile-editor', { of: '.dialog', pad: 0 });
-      await t.page.locator('[data-testid=profile-editor-make]').click();
+      const bar = t.page.locator('[data-testid=profile-sketch-bar]');
+      await bar.waitFor({ timeout: 10000 });
+      const board = (await t.nodes()).find((n) => n.props.profileOf);
+      t.expect(board?.props.kind === 'plane', 'the section opens on a sheet of its own');
+      const rings = async () => (await t.call('doc.query', { name: 'studio.profileBoard', args: { viewId: board.id } })).rings?.length ?? 0;
+      await t.until(async () => (await rings()) === 2, 'the hollow box it starts from is drawn: its outside and its chamber');
+      const panel = t.page.locator('[data-testid=profile-board-panel]');
+      await panel.locator('[data-action=editor-T]').click();
+      await t.until(async () => (await rings()) === 1, 'a T replaces it');
+      await panel.locator('[data-action=editor-rectangle]').click();
+      await t.until(async () => (await rings()) === 1, 'a rectangle replaces it');
+      await panel.locator('[data-action=editor-add-hole]').click();
+      await t.until(async () => (await rings()) === 2, 'a chamber added in the middle');
+      await t.until(async () => (await panel.locator('[data-testid=profile-board-size]').count()) === 1, 'the side form shows its size and area');
+      await panel.locator('[data-testid=profile-editor-name]').fill('Aluminium 50x100 chamber');
+      await t.page.mouse.move(10, 300);
+      await t.wait(600);
+      await t.shot('profile-editor');
+      await bar.locator('[data-action=finish-profile]').click();
       await t.page.waitForSelector('[data-testid=profile-outline]', { timeout: 10000 });
       t.expect(await t.page.locator('[data-testid=profile-outline-keep]').count() === 1, 'the profile made goes on to be kept in a library');
+      t.expect(!(await t.nodes()).some((n) => n.id === board.id), 'the sheet is gone');
     },
   },
   {

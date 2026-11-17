@@ -8,6 +8,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { arcLength, arcOf } from '../../viewport/arc';
 import { lengthText } from '../../engine/unitsStore';
 import { sameKind } from '../../shell/params';
+import { openWallProfile } from './wallProfileBoard';
 
 export function CurtainWallSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -28,7 +29,7 @@ export function CurtainWallSection({ node }: { node: NodeDto }) {
       </label>
       {node.editable && (
         <span className="row" style={{ gap: 6 }}>
-          <button type="button" className="btn" data-action="curtain-profile" title="Its boundary drawn in elevation: a gable, a slope, steps; the grid, panels and mullions follow" onClick={() => useUi.setState({ dialog: 'wallProfile', selection: node.id })}>
+          <button type="button" className="btn" data-action="curtain-profile" title="Its boundary drawn in elevation: a gable, a slope, steps; the grid, panels and mullions follow" onClick={() => void openWallProfile(node.id)}>
             <Mountain size={14} />Profile…
           </button>
           <button type="button" className="btn" data-action="curtain-members" title="Chosen mullions and transoms with a profile of their own, turned, aligned or offset" onClick={() => useUi.setState({ dialog: 'curtainMembers', selection: node.id })}>

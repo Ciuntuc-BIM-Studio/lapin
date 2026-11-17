@@ -57,19 +57,19 @@ Radius er væggenes akses, midten af deres kerne. Skriv **I** (Inside) eller **O
 
 ### En væg efter sin profil
 
-**Profil…** i en vægs egenskaber tegner dens top i opstalt, set fra dens start til dens slutning: en gavl, en skråning, trin, en væg der følger en trappe. Træk punkterne (**Shift** beholder et punkts højde), klik på toplinjen for at tilføje et, højreklik på et punkt for at fjerne det, eller skriv dem i tabellen i millimeter. **Start fra** giver et **Gavl**, en **Hældning** eller **Trin** op til den højde, du skriver. Et trin er to punkter over hinanden. **Anvend** former væggen; **Plan top** gør den plan igen.
+**Profil…** i en vægs egenskaber åbner dens top på skitselærredet: en egen visning, stillet på vægens akse, set fra dens start til dens slutning, med væggen skjult dér og dens fod og ender tegnet som konstruktionslinjer. Toppen er én linje fra start til slutning: en gavl, en skråning, trin, en væg der følger en trappe. Tegn den med **Tegn**-værktøjerne på bjælken (**Linje**, **Polylinje**, **Bue**, **Trim**, **Forlæng**, **Afrunding**…), flyt dens punkter i deres håndtag, fang til niveauerne og de andre vægge i visningen, og hold den fast med bindinger og mål som enhver skitse. Sideformularen ved siden af starter fra en **Gavl**, en **Hældning** eller **Trin** op til den højde, du skriver, lister toppens punkter i millimeter, så du kan skrive over dem, og har **Plan top**. Et trin er to punkter over hinanden; en bue lægges i korte rette stykker. **Afslut skitse** former væggen i ét fortrydelsestrin; en top, der vender tilbage, er i stykker eller løber forbi vægens ender, afvises med begrundelsen, og skitsen forbliver åben. **Annuller** lader væggen være, som den var.
 
 Væggen forbliver en væg: dens tykkelse, dens lag, dens samlinger og dens døre og vinduer er som før, og den eksporteres til IFC med sin form.
 
-![En gavl tegnet i profileditoren](shots/wall-profile-editor.webp)
+![En gavl tegnet på vægens skitse, dens kip skrevet i sideformularen](shots/wall-profile-editor.webp)
 
 ![Husets vestvæg som gavl, med vinduet bevaret](shots/wall-profile-3d.webp)
 
 ### En facadeglasvægs kant og stænger
 
-**Profil…** i en facadeglasvægs egenskaber tegner dens kant i opstalt, som for en væg: en gavl, en hældning, trin eller et vilkårligt omrids, med punkter, der kan trækkes, tilføjes eller fjernes, og en tabel i millimeter. Væggen går op til sit højeste punkt. Dens raster får en linje, hvor kanten knækker (et knæk inden for halvanden sprosse fra en rasterlinje flyttes ind på den); hvert felt beholder de tværposte, der er plads til under dets laveste punkt; panelet over den sidste fylder op til kanten, og en kantstang følger den, skrå; sprosserne skæres til den. Typens indstillinger bliver, og **Profil…** åbner kanten igen, så du kan ændre den, uden genopbygning; **Plan top** giver rektanglet tilbage. Den ses i 3D, opstalter og snit, lister måler paneler og stænger, som de er tegnet, og IFC bærer dem som dele.
+**Profil…** i en facadeglasvægs egenskaber tegner dens kant på samme måde, på en skitse for sig: en gavl, en hældning, trin eller et vilkårligt omrids, med samme sideformular (en buet facadeglasvæg beholder profildialogen med punkter, der kan trækkes, og en tabel i millimeter). Væggen går op til sit højeste punkt. Dens raster får en linje, hvor kanten knækker (et knæk inden for halvanden sprosse fra en rasterlinje flyttes ind på den); hvert felt beholder de tværposte, der er plads til under dets laveste punkt; panelet over den sidste fylder op til kanten, og en kantstang følger den, skrå; sprosserne skæres til den. Typens indstillinger bliver, og **Profil…** åbner kanten igen, så du kan ændre den, uden genopbygning; **Plan top** giver rektanglet tilbage. Den ses i 3D, opstalter og snit, lister måler paneler og stænger, som de er tegnet, og IFC bærer dem som dele.
 
-![En gavl tegnet som kant på en facadeglasvæg](shots/curtain-boundary-editor.webp)
+![En gavl tegnet som kant på en facadeglasvæg, på dens skitse](shots/curtain-boundary-editor.webp)
 
 ![Facadeglasvæggen under sin gavl, i 3D](shots/curtain-boundary-3d.webp)
 

@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "Visto do início para o fim. O topo é uma única linha do início da parede ao seu fim; um degrau são dois pontos um sobre o outro.", "Finish with a flat top: the profile taken away": "Terminar com topo plano: o perfil é retirado", "Draw the top with Draft, from the start to the end": "Desenhe o topo com Desenho, do início ao fim", "Draw the outside and its chambers as closed shapes": "Desenhe o exterior e as suas câmaras como formas fechadas", "Draw the section first.": "Desenhe primeiro a secção.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "Arcos", "Sketch edits": "Edições do esboço", "Geometric": "Geométricas", "Arrays": "Matrizes", "Move, rotate, mirror": "Mover, rodar, espelhar", "Carriers and fans": "Caminhos de cabos e ventiladores",
   // Convert to…: stair, floor opening, parcel (audit S12)
@@ -4119,6 +4120,8 @@ export const PT: Record<string, string> = {
   "Draw the outline of your own on a board of the type (an odd pane, a shape the list has not); one fixed light in a frame following it": "Desenhe o seu próprio contorno em uma prancha do tipo (um vidro irregular, uma forma que a lista não tem); uma luz fixa em um caixilho que o acompanha",
   "Save the type first, then draw its outline": "Salve primeiro o tipo e depois desenhe o seu contorno",
   "Draw one closed outline (seen from outside, its bottom on the sill line), then Finish sketch.": "Desenhe um contorno fechado (visto de fora, com a base na linha do peitoril) e depois Terminar esboço.",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Adicionar camada', 'Remove layer': 'Remover camada', 'Toggle visibility': 'Mostrar ou ocultar', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacidade (0–100, {attr.key} ou {= fórmula})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Visibilidade (verdadeiro/falso, 0–100, {attr.key} ou {= fórmula})',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

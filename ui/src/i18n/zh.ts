@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "从起点看向终点。顶部是从墙起点到终点的一条线；台阶是上下重叠的两个点。", "Finish with a flat top: the profile taken away": "以平顶完成：轮廓被移除", "Draw the top with Draft, from the start to the end": "用绘图绘制顶部，从起点到终点", "Draw the outside and its chambers as closed shapes": "将外轮廓及其腔室绘制为闭合形状", "Draw the section first.": "请先绘制截面。",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "圆弧", "Sketch edits": "草图编辑", "Geometric": "几何约束", "Arrays": "阵列", "Move, rotate, mirror": "移动、旋转、镜像", "Carriers and fans": "桥架和风机",
   // Convert to…: stair, floor opening, parcel (audit S12)
@@ -4113,6 +4114,8 @@ export const ZH: Record<string, string> = {
   "Draw the outline of your own on a board of the type (an odd pane, a shape the list has not); one fixed light in a frame following it": "在该类型的画板上绘制您自己的轮廓(异形窗格，列表中没有的形状)；一个固定的采光口，框架随之变化",
   "Save the type first, then draw its outline": "请先保存类型，再绘制其轮廓",
   "Draw one closed outline (seen from outside, its bottom on the sill line), then Finish sketch.": "绘制一个闭合轮廓(从外侧看，底边在窗台线上)，然后完成草图。",
+  // The symbol editor's layers (forum #120).
+  'Add layer': '添加图层', 'Remove layer': '删除图层', 'Toggle visibility': '显示或隐藏', 'Opacity (0–100, {attr.key} or {= formula})': '不透明度（0–100、{attr.key} 或 {= 公式}）', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': '可见性（true/false、0–100、{attr.key} 或 {= 公式}）',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

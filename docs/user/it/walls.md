@@ -57,19 +57,19 @@ Il raggio è quello dell'asse dei muri, il centro del loro nucleo. Scrivi **I** 
 
 ### Un muro secondo il suo profilo
 
-**Profilo…** nelle proprietà di un muro ne disegna la sommità in prospetto, vista dall’inizio alla fine: un timpano, una pendenza, gradini, un muro che segue una scala. Trascina i punti (**Shift** mantiene l’altezza di un punto), fai clic sulla linea in alto per aggiungerne uno, clic destro su un punto per toglierlo, oppure scrivili nella tabella in millimetri. **Parti da** dà un **Timpano**, una **Pendenza** o dei **Gradoni** fino all’altezza che scrivi. Un gradino è fatto di due punti uno sopra l’altro. **Applica** dà la forma al muro; **Sommità piana** lo rende di nuovo piano.
+**Profilo…** nelle proprietà di un muro apre la sua sommità sulla tela di schizzo: una vista a sé, posta sull’asse del muro, vista dall’inizio alla fine, con il muro nascosto lì e la sua base e le sue estremità disegnate come linee di costruzione. La sommità è un’unica linea dall’inizio alla fine: un timpano, una pendenza, gradini, un muro che segue una scala. Disegnala con gli strumenti di **Disegno** sulla barra (**Linea**, **Polilinea**, **Arco**, **Taglia**, **Estendi**, **Raccordo**…), sposta i suoi punti con le maniglie, aggancia i livelli e gli altri muri della vista e tienila ferma con vincoli e quote come qualsiasi schizzo. Il modulo laterale accanto parte da un **Timpano**, una **Pendenza** o dei **Gradoni** fino all’altezza che scrivi, elenca i punti della sommità in millimetri da riscrivere e ha **Sommità piana**. Un gradino è fatto di due punti uno sopra l’altro; un arco è posato in brevi tratti dritti. **Termina schizzo** dà la forma al muro in un solo passo di annullamento; una sommità che torna indietro, è in pezzi o supera le estremità del muro viene rifiutata con il motivo, e lo schizzo resta aperto. **Annulla** lascia il muro com’era.
 
 Il muro resta un muro: spessore, strati, giunzioni, porte e finestre restano com’erano, ed è esportato in IFC con la sua forma.
 
-![Un timpano disegnato nell’editor del profilo](shots/wall-profile-editor.webp)
+![Un timpano disegnato sullo schizzo del muro, il suo colmo scritto nel modulo laterale](shots/wall-profile-editor.webp)
 
 ![Il muro ovest della casa a timpano, con la finestra conservata](shots/wall-profile-3d.webp)
 
 ### Il contorno e le aste di una facciata continua
 
-**Profilo…** nelle proprietà di una facciata continua ne disegna il contorno in prospetto, come per un muro: un timpano, una pendenza, gradini o un contorno qualsiasi, con punti da trascinare, aggiungere o togliere e una tabella in millimetri. La facciata sale fino al suo punto più alto. La sua griglia guadagna una linea dove il contorno si spezza (una spezzata a meno di un montante e mezzo da una linea della griglia viene portata su di essa); ogni campo conserva i traversi che stanno sotto il suo punto più basso; il pannello sopra l'ultimo riempie fino al contorno e un'asta di bordo lo segue, inclinata; i montanti sono tagliati a esso. Le impostazioni del tipo restano, e **Profilo…** riapre il contorno per cambiarlo, senza ricostruire; **Sommità piana** restituisce il rettangolo. Si vede in 3D, prospetti e sezioni, i computi misurano pannelli e aste come disegnati, e l'IFC li porta come parti.
+**Profilo…** nelle proprietà di una facciata continua ne disegna il contorno allo stesso modo, su uno schizzo a sé: un timpano, una pendenza, gradini o un contorno qualsiasi, con lo stesso modulo laterale (una facciata continua curva mantiene la finestra di dialogo del profilo, con punti da trascinare e una tabella in millimetri). La facciata sale fino al suo punto più alto. La sua griglia guadagna una linea dove il contorno si spezza (una spezzata a meno di un montante e mezzo da una linea della griglia viene portata su di essa); ogni campo conserva i traversi che stanno sotto il suo punto più basso; il pannello sopra l'ultimo riempie fino al contorno e un'asta di bordo lo segue, inclinata; i montanti sono tagliati a esso. Le impostazioni del tipo restano, e **Profilo…** riapre il contorno per cambiarlo, senza ricostruire; **Sommità piana** restituisce il rettangolo. Si vede in 3D, prospetti e sezioni, i computi misurano pannelli e aste come disegnati, e l'IFC li porta come parti.
 
-![Un timpano disegnato come contorno di una facciata continua](shots/curtain-boundary-editor.webp)
+![Un timpano disegnato come contorno di una facciata continua, sul suo schizzo](shots/curtain-boundary-editor.webp)
 
 ![La facciata continua sotto il suo timpano, in 3D](shots/curtain-boundary-3d.webp)
 

@@ -55,14 +55,16 @@ public static class SvgWriter
                     var q = (e - a).Length < 1e-9 ? e + new Vec2(0.01, 0) : e;
                     d.Append('M').Append(P(a)).Append('L').Append(P(q));
                 }
-                o.Append("<path fill=\"none\" stroke=\"").Append(Color(pen.Stroke)).Append("\" stroke-width=\"").Append(F(Math.Max(pen.Width, 0.05)))
+                // A stroke with an opacity (#rrggbbaa, a symbol layer's, forum #120): its colour at that opacity.
+                o.Append("<path fill=\"none\" stroke=\"").Append(Color(HexColor.Opaque(pen.Stroke))).Append('"').Append(HexColor.Alpha(pen.Stroke) is var sa && sa < 0.999 ? $" stroke-opacity=\"{F(sa)}\"" : "").Append(" stroke-width=\"").Append(F(Math.Max(pen.Width, 0.05)))
                  .Append("\" stroke-linecap=\"").Append(cap).Append("\" stroke-linejoin=\"").Append(join).Append('"');
                 if (pen.Dash is { Length: > 0 } dash) o.Append(" stroke-dasharray=\"").Append(string.Join(' ', dash.Select(F))).Append('"');
                 o.Append(" d=\"").Append(d).Append("\"/>");
             }
             if (pen.Texts.Count > 0)
             {
-                o.Append("<g fill=\"").Append(Color(pen.Stroke ?? "#000000")).Append("\">");
+                var tc = pen.Stroke ?? "#000000";
+                o.Append("<g fill=\"").Append(Color(HexColor.Opaque(tc))).Append('"').Append(HexColor.Alpha(tc) is var ta && ta < 0.999 ? $" fill-opacity=\"{F(ta)}\"" : "").Append('>');
                 foreach (var t in pen.Texts) Text(o, t);
                 o.Append("</g>");
             }

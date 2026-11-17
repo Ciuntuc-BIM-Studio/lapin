@@ -102,18 +102,18 @@ Each becomes a board by the same contract: a view of its own on its frame (made 
 copied in as drafts, its own Finish command writing the payload back in one step, Cancel dropping the view. The editors' dialogs
 keep their non-drawing fields (names, materials, attributes) beside the board.
 
-1. **Wall profile** (`WallProfileDialog`): a section view along the wall, start to end (a drawing view of its own, `wallProfileOf`);
+1. **Wall profile** (`WallProfileDialog`), **done** (decision 646; §6): a section view along the wall, start to end (a drawing view of its own, `wallProfileOf`);
    the top drawn as one polyline (and arcs, which the dialog cannot do today); Finish → `architecture.updateWall {profile}`. The
    smallest step and the clearest gain (Draft's snaps to levels and to the other walls in the section).
-2. **Profiles** (`ProfileEditor`): a drafting view in section mm (`profileOf`), the outside and each chamber a closed shape, the
+2. **Profiles** (`ProfileEditor`), **done** (decision 646; §6): a drafting view in section mm (`profileOf`), the outside and each chamber a closed shape, the
    starters as drafted shapes; constraints on (a profile's sizes as dimensions, later as parameters); Finish → the engine's profile
    maker (refusing crossing rings, centring), then the libraries as today.
-3. **Symbols** (`SymbolEditor`): a drafting view in the symbol's mm round its insertion point (`symbolOf`; paper or model scale), the
+3. **Symbols** (`SymbolEditor`), **done** (decision 647; §7): a drafting view in the symbol's mm round its insertion point (`symbolOf`; paper or model scale), the
    texts as Draft's texts with their live tokens; Finish → the symbol definition (`SymbolInstances` save, one step). Its preview
    (turned, flipped) stays the engine's beside it. The title block designer's canvas then has one user less.
-4. **Title blocks** (`TitleBlockDesigner`): a sheet-like paper view of the block's box (`titleBlockOf`), fills, hatches, texts, the
+4. **Title blocks** (`TitleBlockDesigner`), **done** (decision 647; §7): a sheet-like paper view of the block's box (`titleBlockOf`), fills, hatches, texts, the
    image and the revision table as drafts and annotations a sheet already has; Finish → the template. The fields panel stays beside.
-5. **Joinery** (`JoineryDialog`): its grid is a form, not drawing; what joins the canvas is a **custom frame or panel outline**
+5. **Joinery** (`JoineryDialog`), **done** for a window's frame outline (decision 647; §7): its grid is a form, not drawing; what joins the canvas is a **custom frame or panel outline**
    (an elevation view of the type, `joineryOf`) for shapes the grid cannot make (arched heads, odd panes); Finish → the type's
    outline. The grid stays the default way (extend, never break).
 
@@ -128,3 +128,79 @@ today each step stays, as Draft's do.
 - Two boards on one part's sketch at once are one (opened again, the same view is answered); a part edited by other commands while
   its board is open is overwritten by Finish with the board's sketch.
 - Fillet and chamfer in a constrained sketch still drop the corner's coincident (plan-outline-sketch.md, Left 1).
+
+## 6. Stage 2, items 1 and 2, as built (decision 646)
+
+- **Wall profile** (`studio.editWallProfile {id}`, `Lapin.Studio/ProfileBoards.cs`; UI `architecture/wallProfileBoard.tsx`): not a
+  section view but a reference plane standing on the wall's axis (x along the wall from its start, y up from its base), so the
+  profile's [u, v] are the drafts' coordinates, copied. Marked `wallProfileOf`, the wall hidden there; the top one polyline, the base
+  and ends construction lines. Finish (`finishWallProfile`) chains the drafts into one line from start to end (arcs and elliptical
+  arcs in chords by `Chords`: the payload holds points only) and writes it through `architecture.setWallProfile` or
+  `setCurtainWallProfile` in one step; refused, the board kept, when it branches, closes, is in pieces, turns back, runs past the ends
+  or goes under 50 mm. `flat: true` is Flat top. A curved curtain wall keeps the dialog.
+- **Profiles** (`studio.editProfile {profile?, rings?, name, material, library}`; UI `core/profileLibraries/profileBoard.tsx`): a level
+  plane far under the model, 1 mm deep (a blank sheet in the section's metres, 1:1), marked `profileOf`; each ring a closed polyline,
+  the axes construction lines. Finish (`finishProfile`) takes every closed shape as a ring, checks and centres it as
+  `profiles.fromRings` does and answers the profile; the libraries dialog then names and keeps it as before.
+- **Side forms**: `Board.panel`, beside the canvas, keeps the dialogs' other fields (starters, typed points, Flat top; name, material,
+  library, sizes, chamber, size and area). `studio.setBoardShapes` replaces a board's shapes in one step (a starter, a typed point);
+  `studio.profileBoard` reads what the drafts make now. `frameBoard` frames the shapes when the board opens.
+- **Storage**: nothing changes. Opened and finished unchanged is the same JSON (a stored wall profile; a flat wall stays flat; a
+  profile of any kind, an IPE staying an I). Constraints drawn on these boards are working aids, dropped at Finish (the payloads have
+  no place for them). Without Studio, both editors stay in their dialogs.
+
+## 7. Stage 2, items 3 to 5, as built (decision 647)
+
+- **The board's sheet**: a paper view of its own (`kind: paper`, no sheet; `PaperViews.IsBoard`), the paper view of decision 620
+  without a sheet: nothing of the model, its guides (`boardUnderlay`: runs of points, the screen's only) drawn under what is drawn
+  and counted in what the screen fits. Symbols and title blocks at 1:1, their metres the items' mm / 1000 (a typed length in mm is
+  the items' mm, a text's height its height in them); a window's outline at 1:20 in real metres.
+- **Items on a board** (`Lapin.Drafting/Cad/ItemBoards.cs`): each item one drafted thing, remembering its index (`boardItem`) and a
+  digest of what it was laid as (`boardSum`): lines, arcs, circles, polylines (a rectangle a closed one), a filled or hatched shape a
+  hatch of its outline, a text a drafted text with its tokens as typed (no sheet fills them), a title block's logo a picture of the
+  project's image, a revision table (or a picture without its image) its box; an item of an unknown kind is kept, unseen. Read back
+  (`Collect`): untouched items verbatim (byte for byte), changed ones keep their look (widths, colours, fonts, layer) with their new
+  place and shape (a text's anchor taken back along it; a rectangle stays one while its corners stay square), deleted ones gone,
+  new drafting converted as Save as symbol converts it (`SymbolInstances.ItemsOf`, which now keeps an ellipse as its points);
+  construction lines are helpers only; a dimension, a tag or a placed symbol on the board is refused at Finish, named.
+- **Symbols** (`drafting.editSymbol {symbolId}` | `{name, def, target: new | library}`, `finishSymbol`, `cancelSymbol`,
+  `setSymbolBoard`, query `symbolBoard`; UI `core/boards.tsx`): the insertion point a red cross with an arrow along +x; the side
+  form keeps name, scale, category, the turned and flipped preview (the engine's, from what Finish would write), the layers (forum
+  #120: add, remove, visibility and opacity, the active one taking what is drawn new), the attributes and the fields to copy (a
+  new text's `{attr.key}` becomes an attribute at Finish). Finish writes the definition in one step (instances follow); unchanged, the
+  symbol stays as it was. A new symbol is made at Finish; a library one (this computer's) is given back to the interface, which keeps
+  it. Lapin's own stay as they are. The symbol's layers are now kept with the definition (`SymbolDef.Layers`; they were dropped).
+- **Title blocks** (`drafting.editTitleBlock {id}`, `finishTitleBlock` through `titleBlock.update`, `cancelTitleBlock`,
+  `setTitleBlockBoard`, query `titleBlockBoard`): the block's box dashed; the side form keeps name, width and height, the corner, the
+  frame, where the revision table goes, Logo or image… (Import image) and the fields to copy. A title block takes no circles or arcs:
+  one drawn is its points by the one rule.
+- **Joinery** (`architecture.editJoineryOutline {typeId}`, `finishJoineryOutline`, `cancelJoineryOutline`; UI
+  `architecture/joineryBoard.ts`, Draw outline… under Shape in the configurator for a saved window type): the type's elevation seen
+  from outside, the outline one closed polyline, the frame's inner line and the sill dashed. Finish takes one closed outline (a closed
+  polyline, a circle, an ellipse, or lines, arcs and polylines meeting end to end) and writes the type in one step: its width and
+  height the outline's bounds, `shape {kind: outline, profile}` with the loop in the unit box (the bare opening's payload of
+  decision 627, now serialised as [[x, y], …]); a rectangle drawn back gives the rectangle again. A type of its own outline is
+  `JoineryShapes.Ringed` as a round window is: a frame following the outline all round, one fixed light, the surround and the
+  elevation's lines following it. A door is refused (its heads stay the form's).
+- **Entry points**: Manage → Symbols… (Edit…, New, Duplicate of a built-in), Manage → Title blocks… (Edit…, New) open the boards;
+  without drafting or Studio (the bar) the old editors stay. Finish and Cancel go back to the dialog they came from
+  (`rememberReturn`/`takeReturn`).
+- **Storage**: no project upgrade; GlobalIds kept (the symbol, the title block and the type are updated in place; the boards' views
+  and drafts are working copies, removed at Finish).
+
+Tests: `ItemBoardTests` (4: a symbol of every item kind opened on its board and finished unchanged byte for byte, its layers kept;
+edits keeping each item's look, new drawing converted with its field made an attribute, one undo; cancel, a new and a library
+symbol, an ellipse, the refusals; a title block unchanged, then moved, drawn and resized in one step), `JoineryOutlineBoardTests`
+(2: a gable drawn becomes the type's frame and light, undo, a rectangle back; lines and an arc chained, open and double outlines
+and a door refused); scenes symbols, title-blocks and the new window-outline.
+
+## 8. Left after stage 2
+
+- A symbol board does not show its layers' visibility or opacity while drawing, and an item cannot be moved to another symbol layer
+  on the board (new items take the active one).
+- Item widths are not drawn on the board (drafts take their layer's pen); fonts and text styles of an item show as Draft's text style
+  until Finish (the item keeps its own).
+- A title block's revision table shows as its box only; a picture placed with Import image keeps its opacity on the board only.
+- A panel outline inside the grid (a custom pane in one cell) is not drawn yet: only the whole window's outline; a door keeps its heads.
+- The board's undo as one group in the history (§4, last paragraph).
+

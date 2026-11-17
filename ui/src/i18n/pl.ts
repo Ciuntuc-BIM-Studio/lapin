@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "Widok od początku do końca. Góra to jedna linia od początku ściany do jej końca; stopień to dwa punkty jeden nad drugim.", "Finish with a flat top: the profile taken away": "Zakończ z płaską górą: profil zostaje usunięty", "Draw the top with Draft, from the start to the end": "Narysuj górę narzędziami Rysunek, od początku do końca", "Draw the outside and its chambers as closed shapes": "Narysuj obrys zewnętrzny i komory jako kształty zamknięte", "Draw the section first.": "Najpierw narysuj przekrój.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "Łuki", "Sketch edits": "Edycja szkicu", "Geometric": "Geometryczne", "Arrays": "Szyki", "Move, rotate, mirror": "Przesuń, obróć, odbij", "Carriers and fans": "Koryta i wentylatory",
   // Convert to…: stair, floor opening, parcel (audit S12)
@@ -4122,6 +4123,8 @@ export const PL: Record<string, string> = {
   "Draw the outline of your own on a board of the type (an odd pane, a shape the list has not); one fixed light in a frame following it": "Narysuj własny kontur na planszy typu (nietypowa szyba, kształt, którego nie ma na liście); jedno stałe pole w ramie, która go śledzi",
   "Save the type first, then draw its outline": "Najpierw zapisz typ, potem narysuj jego kontur",
   "Draw one closed outline (seen from outside, its bottom on the sill line), then Finish sketch.": "Narysuj jeden zamknięty kontur (widziany z zewnątrz, jego spód na linii parapetu), a potem Zakończ szkic.",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Dodaj warstwę', 'Remove layer': 'Usuń warstwę', 'Toggle visibility': 'Pokaż lub ukryj', 'Opacity (0–100, {attr.key} or {= formula})': 'Krycie (0–100, {attr.key} lub {= formuła})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Widoczność (prawda/fałsz, 0–100, {attr.key} lub {= formuła})',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

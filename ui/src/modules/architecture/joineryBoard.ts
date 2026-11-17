@@ -9,9 +9,7 @@ import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { hasModule } from '../../platform/brand';
-import { registerBoard, SKETCH_TOOLS, type Board } from '../../viewport/sketch/board';
-
-const back = new Map<string, { view: ReturnType<typeof useUi.getState>['view']; drawingViewId: string | null }>();
+import { registerBoard, rememberReturn, SKETCH_TOOLS, takeReturn, type Board } from '../../viewport/sketch/board';
 
 /** Whether a type's outline can be drawn on a board in this edition (drafting draws on it, Studio's bar finishes it). */
 export const outlineBoardAvailable = (): boolean => hasModule('drafting') && hasModule('studio');
@@ -28,15 +26,14 @@ export async function editJoineryOutline(typeId: string): Promise<void> {
   const r = await run<{ viewId?: string }>('architecture.editJoineryOutline', { typeId });
   if (!r?.viewId) return;
   const s = useUi.getState();
-  if (!back.has(r.viewId)) back.set(r.viewId, { view: s.view, drawingViewId: s.drawingViewId });
+  rememberReturn(r.viewId, { view: s.view, planViewId: s.planViewId, drawingViewId: s.drawingViewId, dialog: 'joinery' });
   useUi.setState({ dialog: null, view: 'drawing', drawingViewId: r.viewId, tool: null, selected: [], selection: null });
   notify('Draw one closed outline (seen from outside, its bottom on the sill line), then Finish sketch.');
 }
 
 function leave(viewId: string) {
-  const b = back.get(viewId);
-  back.delete(viewId);
-  useUi.setState({ view: b && b.view !== 'drawing' ? b.view : b?.drawingViewId ? 'drawing' : 'plan', drawingViewId: b?.drawingViewId ?? null, dialog: 'joinery', selected: [], selection: null });
+  const back = takeReturn(viewId) ?? { view: 'plan', drawingViewId: null, dialog: 'joinery' };
+  useUi.setState({ ...back, selected: [], selection: null } as Partial<ReturnType<typeof useUi.getState>>);
 }
 
 function joineryBoard(viewId: string, nodes: ReadonlyMap<string, NodeDto>): Board | null {

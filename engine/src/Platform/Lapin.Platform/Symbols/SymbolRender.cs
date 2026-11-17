@@ -8,13 +8,14 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>A symbol's outline: its points (mm of the symbol, y up), closed or not, its pen (paper mm) and colour (null: the instance's).</summary>
-public sealed record SymStroke(IReadOnlyList<Vec2> Pts, bool Closed, double Width, string? Color, double[]? Dash);
+/// <remarks>Each part carries the opacity of its layer (<c>Alpha</c>, 0–1; forum #120), laid on its colour when it is drawn.</remarks>
+public sealed record SymStroke(IReadOnlyList<Vec2> Pts, bool Closed, double Width, string? Color, double[]? Dash, double Alpha = 1);
 /// <summary>A filled area (even-odd loops) and its colour (null: the instance's).</summary>
-public sealed record SymFill(IReadOnlyList<IReadOnlyList<Vec2>> Loops, string? Color);
+public sealed record SymFill(IReadOnlyList<IReadOnlyList<Vec2>> Loops, string? Color, double Alpha = 1);
 /// <summary>A hatched area: its loops, the pattern, its scale and angle as a drafted hatch has them (on paper), its colour.</summary>
-public sealed record SymHatch(IReadOnlyList<IReadOnlyList<Vec2>> Loops, string Pattern, double Scale, double Angle, string? Color);
+public sealed record SymHatch(IReadOnlyList<IReadOnlyList<Vec2>> Loops, string Pattern, double Scale, double Angle, string? Color, double Alpha = 1);
 /// <summary>A text of a symbol, its live text filled: where (mm), its height (mm), angle (°) and how it hangs on its point.</summary>
-public sealed record SymText(Vec2 At, string Text, double Height, double Angle, string Anchor, string Baseline, bool Bold, string Font, bool Italic, string? Color);
+public sealed record SymText(Vec2 At, string Text, double Height, double Angle, string Anchor, string Baseline, bool Bold, string Font, bool Italic, string? Color, double Alpha = 1);
 
 /// <summary>A symbol drawn in its own mm, its texts filled: what an instance lays where it stands.</summary>
 public sealed record SymbolDrawing(List<SymStroke> Strokes, List<SymFill> Fills, List<SymHatch> Hatches, List<SymText> Texts)
@@ -60,6 +61,9 @@ public sealed record SymbolXf(Vec2 At, double Angle, double Unit, double TextUni
 
 public static class SymbolRender
 {
+    /// <summary>A colour seen through its layer's opacity: its own opacity (a fill's <c>#rrggbbaa</c>) times the layer's.</summary>
+    public static string Seen(string color, double alpha) => alpha >= 0.999 ? color : HexColor.WithAlpha(color, HexColor.Alpha(color) * alpha);
+
     /// <summary>
     /// The symbol's items as strokes, fills, hatches and texts in its own mm, its live text filled by <paramref name="resolve"/>;
     /// circles and arcs in chords for a symbol mm of <paramref name="metresPerMm"/> where it lands (the one rule for every curve);
@@ -76,22 +80,31 @@ public static class SymbolRender
             var n = Chords.Count(r * Math.Max(metresPerMm, 1e-9), sweep, 3);
             return [.. Enumerable.Range(0, n + 1).Select(i => { var a = start + sweep * i / n; return c + new Vec2(Math.Cos(a), Math.Sin(a)) * r; })];
         }
+        // The layers as this instance's attributes make them: those hidden leave their items out, the others lend their opacity.
+        var layers = SymbolLayers.Of(d, resolve);
+        var alpha = 1.0;
         void Area(JsonObject item, List<Vec2> loop, bool closed)
         {
-            if (closed && (string?)item["fill"] is { Length: > 0 } fill && fill != "none") o.Fills.Add(new SymFill([loop], fill == "byInstance" ? null : fill));
+            if (closed && (string?)item["fill"] is { Length: > 0 } fill && fill != "none") o.Fills.Add(new SymFill([loop], fill == "byInstance" ? null : fill, alpha));
             if (closed && item["hatch"] is JsonObject h && (string?)h["pattern"] is { Length: > 0 } pattern)
-                o.Hatches.Add(new SymHatch([loop], pattern, Json.Number(h["scale"]) ?? 1, Json.Number(h["angle"]) ?? 0, (string?)h["color"]));
+                o.Hatches.Add(new SymHatch([loop], pattern, Json.Number(h["scale"]) ?? 1, Json.Number(h["angle"]) ?? 0, (string?)h["color"], alpha));
             var w = Json.Number(item["stroke"]) ?? Json.Number(item["w"]) ?? 0.25;
-            if (w > 0) o.Strokes.Add(new SymStroke(loop, closed, w, (string?)item["color"], Dash(item["dash"])));
+            if (w > 0) o.Strokes.Add(new SymStroke(loop, closed, w, (string?)item["color"], Dash(item["dash"]), alpha));
         }
         foreach (var item in d.Items.OfType<JsonObject>())
         {
+            alpha = 1;
+            if ((string?)item["layer"] is { Length: > 0 } lid && layers.TryGetValue(lid, out var seen))
+            {
+                if (!seen.Visible) continue;
+                alpha = seen.Alpha;
+            }
             switch ((string?)item["type"])
             {
                 case "line":
                 {
                     var w = Json.Number(item["w"]) ?? 0.25;
-                    if (w > 0) o.Strokes.Add(new SymStroke([P(item["a"]), P(item["b"])], false, w, (string?)item["color"], Dash(item["dash"])));
+                    if (w > 0) o.Strokes.Add(new SymStroke([P(item["a"]), P(item["b"])], false, w, (string?)item["color"], Dash(item["dash"]), alpha));
                     break;
                 }
                 case "rect":
@@ -124,7 +137,7 @@ public static class SymbolRender
                     sweep %= 2 * Math.PI;
                     if (sweep <= 1e-12) sweep += 2 * Math.PI;
                     var w = Json.Number(item["w"]) ?? Json.Number(item["stroke"]) ?? 0.25;
-                    if (w > 0) o.Strokes.Add(new SymStroke(Round(P(item["c"]), r, start, sweep), false, w, (string?)item["color"], Dash(item["dash"])));
+                    if (w > 0) o.Strokes.Add(new SymStroke(Round(P(item["c"]), r, start, sweep), false, w, (string?)item["color"], Dash(item["dash"]), alpha));
                     break;
                 }
                 case "text":
@@ -145,7 +158,7 @@ public static class SymbolRender
                     var down = new Vec2(Math.Sin(a), -Math.Cos(a));
                     for (var r = 0; r < rows.Length; r++)
                         if (rows[r].Length > 0)
-                            o.Texts.Add(new SymText(P(item["at"]) + down * (r * height * 1.4), rows[r], height, angle, anchor, baseline, bold, font, italic, (string?)item["color"] ?? style?.Color));
+                            o.Texts.Add(new SymText(P(item["at"]) + down * (r * height * 1.4), rows[r], height, angle, anchor, baseline, bold, font, italic, (string?)item["color"] ?? style?.Color, alpha));
                     break;
                 }
             }
@@ -188,27 +201,27 @@ public static class SymbolRender
         foreach (var s in sd.Strokes)
         {
             var pts = s.Pts.Select(x.Point).ToList();
-            mk.Polyline(pts, s.Closed, layer, s.Width, s.Color ?? color, s.Dash);
+            mk.Polyline(pts, s.Closed, layer, s.Width, Seen(s.Color ?? color, s.Alpha), s.Dash);
         }
         foreach (var f in sd.Fills)
         {
             var loops = f.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(x.Point).ToList()).ToList();
-            mk.Fills.Add((loops, f.Color ?? color));
+            mk.Fills.Add((loops, Seen(f.Color ?? color, f.Alpha)));
             foreach (var l in loops) for (var i = 0; i < l.Count; i++) mk.Edges.Add((l[i], l[(i + 1) % l.Count]));
         }
         foreach (var h in sd.Hatches)
         {
             var loops = h.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(x.Point).ToList()).ToList();
             var pattern = HatchLibrary.Find(h.Pattern, patterns);
-            if (pattern == null || pattern.Solid) { mk.Fills.Add((loops, h.Color ?? color)); continue; }
+            if (pattern == null || pattern.Solid) { mk.Fills.Add((loops, Seen(h.Color ?? color, h.Alpha))); continue; }
             var turn = x.Angle * 180 / Math.PI;
             var (segs, _) = HatchFill.Segments(loops, pattern, new HatchOptions(h.Scale * paperMm, h.Angle + turn, x.At, 20_000));
-            foreach (var s in segs) mk.Line(s.A, s.B, layer, Pens.Default.Hatch, h.Color ?? color);
+            foreach (var s in segs) mk.Line(s.A, s.B, layer, Pens.Default.Hatch, Seen(h.Color ?? color, h.Alpha));
         }
         foreach (var t in sd.Texts)
         {
             var (at, angle, anchor, height) = LayText(t, x);
-            mk.Text(new PenText(at, t.Text, height, angle, anchor, t.Baseline, t.Bold, t.Font, t.Italic), t.Color ?? color);
+            mk.Text(new PenText(at, t.Text, height, angle, anchor, t.Baseline, t.Bold, t.Font, t.Italic), Seen(t.Color ?? color, t.Alpha));
             // What a click on the text hits: its box (never drawn).
             var w = Math.Max(1, t.Text.Length) * height * 0.6 * paperMm;
             var hh = height * paperMm;
@@ -243,13 +256,13 @@ public static class SymbolRender
         foreach (var s in sd.Strokes)
         {
             var pts = s.Pts.Select(p => Down(x.Point(p))).ToList();
-            var pen = Line(s.Width, s.Color ?? color, s.Dash);
+            var pen = Line(s.Width, Seen(s.Color ?? color, s.Alpha), s.Dash);
             for (var i = 0; i + 1 < pts.Count; i++) pen.Segments.Add((pts[i], pts[i + 1]));
             if (s.Closed && pts.Count > 2) pen.Segments.Add((pts[^1], pts[0]));
         }
         foreach (var f in sd.Fills)
         {
-            var pen = new Pen(layer + "-FILL", null, 0, f.Color ?? color, null);
+            var pen = new Pen(layer + "-FILL", null, 0, Seen(f.Color ?? color, f.Alpha), null);
             foreach (var l in f.Loops) pen.Loops.Add(l.Select(p => Down(x.Point(p))).ToList());
             fills.Add(pen);
         }
@@ -257,18 +270,75 @@ public static class SymbolRender
         {
             var loops = h.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(p => Down(x.Point(p))).ToList()).ToList();
             var pattern = HatchLibrary.Find(h.Pattern, patterns);
-            if (pattern == null || pattern.Solid) { var pen = new Pen(layer + "-FILL", null, 0, h.Color ?? color, null); pen.Loops.AddRange(loops); fills.Add(pen); continue; }
+            if (pattern == null || pattern.Solid) { var pen = new Pen(layer + "-FILL", null, 0, Seen(h.Color ?? color, h.Alpha), null); pen.Loops.AddRange(loops); fills.Add(pen); continue; }
             var (segs, _) = HatchFill.Segments(loops, pattern, new HatchOptions(h.Scale, h.Angle - angle * 180 / Math.PI, Down(x.At), 20_000));
-            var hp = Line(Pens.Default.Hatch, h.Color ?? color, null);
+            var hp = Line(Pens.Default.Hatch, Seen(h.Color ?? color, h.Alpha), null);
             foreach (var s in segs) hp.Segments.Add((s.A, s.B));
         }
         foreach (var t in sd.Texts)
         {
             var (p, a, anchor, height) = LayText(t, x);
-            var c = t.Color ?? color;
+            var c = Seen(t.Color ?? color, t.Alpha);
             if (!texts.TryGetValue(c, out var pen)) texts[c] = pen = new Pen("TEXT", c, 0, null, null);
             pen.Texts.Add(new PenText(Down(p), t.Text, height, a, anchor, t.Baseline, t.Bold, t.Font, t.Italic));
         }
         return [.. fills, .. lines.Values, .. texts.Values];
+    }
+}
+
+/// <summary>
+/// A symbol's layers as an instance makes them (forum #120): each one shown or not and its opacity (0–1), from what the user wrote —
+/// a number 0–100 (a visibility above 0 shows), true/false (yes/no, on/off), an attribute (<c>{attr.key}</c>, <c>{key}</c>,
+/// <c>attr.key</c>) whose value is read the same way, or a formula (<c>{= …}</c>, <c>= …</c>) over the instance's live text.
+/// What reads as none of these (an attribute left empty, a formula that fails) keeps the default: shown, fully opaque.
+/// The symbol editor reads them by the same rules (<c>symbolModel.ts</c>, <c>evalLayerExpr</c>).
+/// </summary>
+public static class SymbolLayers
+{
+    public static Dictionary<string, (bool Visible, double Alpha)> Of(SymbolDef d, Func<string, (bool Known, string? Value)> resolve)
+    {
+        var o = new Dictionary<string, (bool, double)>(StringComparer.Ordinal);
+        foreach (var l in (d.Layers ?? []).OfType<JsonObject>())
+            if ((string?)l["id"] is { Length: > 0 } id)
+                o[id] = (Value(l["visible"], resolve, 100) > 0, Math.Clamp(Value(l["opacity"], resolve, 100), 0, 100) / 100);
+        return o;
+    }
+
+    /// <summary>A layer's setting as a number (100 for true, 0 for false), or <paramref name="fallback"/> when it reads as none.</summary>
+    public static double Value(JsonNode? raw, Func<string, (bool Known, string? Value)> resolve, double fallback)
+    {
+        if (raw is not JsonValue v) return fallback;
+        if (v.TryGetValue<bool>(out var b)) return b ? 100 : 0;
+        if (!v.TryGetValue<string>(out var text)) return Json.Number(v) is { } n && double.IsFinite(n) ? n : fallback;
+        var s = text.Trim();
+        if (s.Length == 0) return fallback;
+        if (Plain(s) is { } p) return p;
+        var attr = System.Text.RegularExpressions.Regex.Match(s, @"^(?:\{(?:attr\.)?([A-Za-z_]\w*)\}|attr\.([A-Za-z_]\w*))$");
+        if (attr.Success)
+        {
+            var key = attr.Groups[1].Success ? attr.Groups[1].Value : attr.Groups[2].Value;
+            return resolve("attr." + key) is { Known: true, Value: { } val } && Plain(val.Trim()) is { } q ? q : fallback;
+        }
+        var formula = System.Text.RegularExpressions.Regex.Match(s, @"^\{=\s*(.+?)\s*\}$") is { Success: true } m ? m.Groups[1].Value : s.StartsWith('=') ? s[1..].Trim() : null;
+        if (formula == null) return fallback;
+        // Names as live text has them; a bare attribute key (width, not attr.width) reads as the attribute, as the editor takes it.
+        XValue? Name(string n)
+        {
+            if (resolve(n) is { Known: true } r) return XValue.Read(r.Value ?? "");
+            if (!n.Contains('.') && resolve("attr." + n) is { Known: true } a) return XValue.Read(a.Value ?? "");
+            return null;
+        }
+        var (value, error) = Expr.TryEvalValue(formula, Name);
+        if (error != null || value is not { } x) return fallback;
+        if (x.Number is { } num && double.IsFinite(num)) return num;
+        return x.Text is { } t2 && Plain(t2.Trim()) is { } tq ? tq : fallback;
+    }
+
+    /// <summary>A plain setting: a number, or a yes/no word.</summary>
+    static double? Plain(string s)
+    {
+        if (s.Equals("true", StringComparison.OrdinalIgnoreCase) || s.Equals("yes", StringComparison.OrdinalIgnoreCase) || s.Equals("on", StringComparison.OrdinalIgnoreCase)) return 100;
+        if (s.Equals("false", StringComparison.OrdinalIgnoreCase) || s.Equals("no", StringComparison.OrdinalIgnoreCase) || s.Equals("off", StringComparison.OrdinalIgnoreCase)) return 0;
+        return double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var n) && double.IsFinite(n) ? n : null;
     }
 }

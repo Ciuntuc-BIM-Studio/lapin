@@ -217,6 +217,8 @@ Un clic dreapta pe tab oferă același lucru: **Deschide într-o fereastră nou�
 
 ## Ce ia un clic
 
+**Ctrl+A** (**Selectează tot**) selectează tot ce arată vederea din față și ar putea lua un clic: într-un plan, o secțiune, o fațadă sau o vedere desenată, tot ce ar lua o fereastră de selecție peste toată vederea; în 3D, elementele arătate (nu cele ascunse de vedere sau puse deoparte cu Ascunde / Izolează). Într-un câmp de text selectează, ca de obicei, textul câmpului.
+
 Un clic, o fereastră de selecție sau un lasou iau doar ce arată vederea, în planuri, secțiuni, fațade, vederile de pe planșe și 3D. Un element pe care Vizibilitate / Grafică al vederii îl ascunde (categoria lui, o subcategorie, un filtru), unul pus deoparte cu Ascunde / Izolează sau de faza vederii, unul în afara domeniului sau a decupării vederii, pe un nivel, o legătură sau un grup care nu se arată, ori tăiat de o cutie de secțiune, e sărit: clicul ia ce e desenat sub el, iar elementul care se luminează sub cursor e unul pe care îl vezi. Cu **Selecție pe niveluri de ansamblu** pornit, un clic într-un întreg intră în continuare în părțile lui. Cu liniile de modelare arătate în locul desenului (butonul cu peniță din capul planului), tot ce e pe ecran se poate lua. Navigatorul proiectului, un tabel, o legătură din panoul de proprietăți și dependențele selectează în continuare un element după nume, ascuns sau nu; panoul de proprietăți spune atunci *Nu se vede în această vedere*.
 
 ## Clic dreapta pe o selecție

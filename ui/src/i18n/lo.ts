@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "ເບິ່ງຈາກຈຸດເລີ່ມຫາຈຸດສິ້ນສຸດ. ສ່ວນເທິງແມ່ນເສັ້ນດຽວຈາກຈຸດເລີ່ມຂອງຝາຫາຈຸດສິ້ນສຸດ; ຂັ້ນໄດແມ່ນສອງຈຸດຊ້ອນກັນ.", "Finish with a flat top: the profile taken away": "ສຳເລັດດ້ວຍສ່ວນເທິງຮາບ: ເອົາໂປຣໄຟລ໌ອອກ", "Draw the top with Draft, from the start to the end": "ແຕ້ມສ່ວນເທິງດ້ວຍ ແບບຮ່າງ, ຈາກຈຸດເລີ່ມຫາຈຸດສິ້ນສຸດ", "Draw the outside and its chambers as closed shapes": "ແຕ້ມດ້ານນອກ ແລະ ຊ່ອງຂອງມັນເປັນຮູບປິດ", "Draw the section first.": "ແຕ້ມໜ້າຕັດກ່ອນ.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "ເສັ້ນໂຄ້ງ", "Sketch edits": "ແກ້ໄຂແບບຮ່າງ", "Geometric": "ເລຂາຄະນິດ", "Arrays": "ການຈັດລຽນ", "Move, rotate, mirror": "ຍ້າຍ, ໝູນ, ສະທ້ອນ", "Carriers and fans": "ຮາງສາຍ ແລະ ພັດລົມ",
   // Convert to…: stair, floor opening, parcel (audit S12)
@@ -4175,6 +4176,8 @@ export const LO: Record<string, string> = {
   "Draw the outline of your own on a board of the type (an odd pane, a shape the list has not); one fixed light in a frame following it": "ແຕ້ມຂອບຂອງທ່ານເອງເທິງກະດານຂອງປະເພດນີ້ (ແຜ່ນແກ້ວແປກໆ, ຮູບຮ່າງທີ່ລາຍການບໍ່ມີ); ຊ່ອງແສງຄົງທີ່ໜຶ່ງຊ່ອງໃນກອບທີ່ຕາມມັນ",
   "Save the type first, then draw its outline": "ບັນທຶກປະເພດກ່ອນ, ແລ້ວແຕ້ມຂອບຂອງມັນ",
   "Draw one closed outline (seen from outside, its bottom on the sill line), then Finish sketch.": "ແຕ້ມຂອບປິດໜຶ່ງອັນ (ເບິ່ງຈາກດ້ານນອກ, ຖານຢູ່ເສັ້ນທ້ອງປ່ອງຢ້ຽມ), ແລ້ວ ສຳເລັດແບບຮ່າງ.",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'ເພີ່ມຊັ້ນ', 'Remove layer': 'ລຶບຊັ້ນ', 'Toggle visibility': 'ສະແດງ ຫຼື ເຊື່ອງ', 'Opacity (0–100, {attr.key} or {= formula})': 'ຄວາມທຶບ (0–100, {attr.key} ຫຼື {= ສູດ})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'ການເບິ່ງເຫັນ (true/false, 0–100, {attr.key} ຫຼື {= ສູດ})',
 };
 
 /** Phrases with a number or a name in them. */

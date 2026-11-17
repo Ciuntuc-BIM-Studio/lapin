@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "Visto dall'inizio alla fine. La sommità è una sola linea dall'inizio del muro alla sua fine; un gradino sono due punti uno sopra l'altro.", "Finish with a flat top: the profile taken away": "Termina con la sommità piana: il profilo viene tolto", "Draw the top with Draft, from the start to the end": "Disegna la sommità con Disegno, dall'inizio alla fine", "Draw the outside and its chambers as closed shapes": "Disegna l'esterno e le sue camere come forme chiuse", "Draw the section first.": "Disegna prima la sezione.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "Archi", "Sketch edits": "Modifiche dello schizzo", "Geometric": "Geometrici", "Arrays": "Serie", "Move, rotate, mirror": "Sposta, ruota, specchia", "Carriers and fans": "Passerelle e ventilatori",
   // Convert to…: stair, floor opening, parcel (audit S12)
@@ -4082,6 +4083,8 @@ export const IT: Record<string, string> = {
   "Draw the outline of your own on a board of the type (an odd pane, a shape the list has not); one fixed light in a frame following it": "Disegna un tuo contorno su una tavola del tipo (un vetro irregolare, una forma che l’elenco non ha); una luce fissa in un telaio che lo segue",
   "Save the type first, then draw its outline": "Salva prima il tipo, poi disegna il suo contorno",
   "Draw one closed outline (seen from outside, its bottom on the sill line), then Finish sketch.": "Disegna un contorno chiuso (visto dall’esterno, con la base sulla linea del davanzale), poi Termina schizzo.",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Aggiungi layer', 'Remove layer': 'Rimuovi layer', 'Toggle visibility': 'Mostra o nascondi', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacità (0–100, {attr.key} o {= formula})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Visibilità (vero/falso, 0–100, {attr.key} o {= formula})',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

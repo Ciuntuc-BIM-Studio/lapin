@@ -90,19 +90,19 @@ Un perete recunoscut dintr-un IFC importat al cărui capăt e tăiat oblic în f
 
 ### Un perete după profilul lui
 
-**Profil…** din proprietățile unui perete îi desenează vârful în fațadă, văzut de la început spre sfârșit: un fronton, o pantă, trepte, un perete care urmează o scară. Trage punctele (**Shift** păstrează înălțimea unui punct), fă clic pe linia de sus ca să adaugi unul, clic dreapta pe un punct ca să-l scoți, sau scrie-le în tabel, în milimetri. **Pornește de la** dă un **Fronton**, o **Pantă** sau **Trepte** până la înălțimea pe care o scrii. O treaptă înseamnă două puncte unul deasupra celuilalt. **Aplică** dă peretelui forma; **Vârf drept** îl face din nou drept sus.
+**Profil…** din proprietățile unui perete deschide vârful lui pe pânza de schiță: o vedere proprie, așezată pe axa peretelui, văzută de la început spre sfârșit, cu peretele ascuns acolo și cu baza și capetele lui desenate ca linii de construcție. Vârful e o singură linie de la început la sfârșit: un fronton, o pantă, trepte, un perete care urmează o scară. Desenează-l cu uneltele din **Desen** de pe bară (**Linie**, **Polilinie**, **Arc**, **Taie**, **Prelungește**, **Racordare**…), mută-i punctele de mânere, agață-te de nivelurile și de ceilalți pereți din vedere și ține-l cu constrângeri și cote ca orice schiță. Formularul lateral de lângă ea pornește de la un **Fronton**, o **Pantă** sau **Trepte** până la înălțimea pe care o scrii, listează punctele vârfului în milimetri ca să le rescrii și are **Vârf drept**. O treaptă înseamnă două puncte unul deasupra celuilalt; un arc e așezat din bucăți drepte scurte. **Termină schița** dă peretelui forma, într-un singur pas de anulare; un vârf care se întoarce, e în bucăți sau trece de capetele peretelui e refuzat cu motivul, iar schița rămâne deschisă. **Renunță** lasă peretele cum era.
 
 Peretele rămâne perete: grosimea, straturile, îmbinările, ușile și ferestrele lui sunt cum erau, iar în IFC se exportă cu forma lui.
 
-![Un fronton desenat în editorul de profil](shots/wall-profile-editor.webp)
+![Un fronton desenat pe schița peretelui, culmea lui scrisă în formularul lateral](shots/wall-profile-editor.webp)
 
 ![Peretele de vest al casei ca fronton, cu fereastra păstrată](shots/wall-profile-3d.webp)
 
 ### Conturul și barele unui perete cortină
 
-**Profil…** din proprietățile unui perete cortină îi desenează conturul în elevație, ca la un perete: un fronton, o pantă, trepte sau orice contur, cu puncte de tras, adăugat sau scos și un tabel în milimetri. Peretele urcă până la cel mai înalt punct. Grila lui primește o linie unde se frânge conturul (o frângere la mai puțin de un montant și jumătate de o linie a grilei e mutată pe ea); fiecare travee păstrează traversele care încap sub punctul ei cel mai de jos; panoul de deasupra ultimei umple până la contur, iar o bară de margine îi urmează linia, înclinată; montanții sunt tăiați după el. Setările tipului rămân, iar **Profil…** deschide din nou conturul ca să-l schimbi, fără reconstruire; **Vârf drept** dă dreptunghiul înapoi. Se vede în 3D, fațade și secțiuni, extrasele măsoară panourile și barele așa cum sunt desenate, iar IFC-ul le poartă ca piese.
+**Profil…** din proprietățile unui perete cortină îi desenează conturul în același fel, pe o schiță proprie: un fronton, o pantă, trepte sau orice contur, cu același formular lateral (un perete cortină curb păstrează dialogul de profil, cu puncte de tras și un tabel în milimetri). Peretele urcă până la cel mai înalt punct. Grila lui primește o linie unde se frânge conturul (o frângere la mai puțin de un montant și jumătate de o linie a grilei e mutată pe ea); fiecare travee păstrează traversele care încap sub punctul ei cel mai de jos; panoul de deasupra ultimei umple până la contur, iar o bară de margine îi urmează linia, înclinată; montanții sunt tăiați după el. Setările tipului rămân, iar **Profil…** deschide din nou conturul ca să-l schimbi, fără reconstruire; **Vârf drept** dă dreptunghiul înapoi. Se vede în 3D, fațade și secțiuni, extrasele măsoară panourile și barele așa cum sunt desenate, iar IFC-ul le poartă ca piese.
 
-![Un fronton desenat ca contur al unui perete cortină](shots/curtain-boundary-editor.webp)
+![Un fronton desenat ca contur al unui perete cortină, pe schița lui](shots/curtain-boundary-editor.webp)
 
 ![Peretele cortină sub fronton, în 3D](shots/curtain-boundary-3d.webp)
 

@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "Vu de son début vers sa fin. Le sommet est une seule ligne du début du mur à sa fin ; une marche, ce sont deux points l'un au-dessus de l'autre.", "Finish with a flat top: the profile taken away": "Terminer avec un sommet plat : le profil est retiré", "Draw the top with Draft, from the start to the end": "Dessinez le sommet avec Dessin, du début à la fin", "Draw the outside and its chambers as closed shapes": "Dessinez l'extérieur et ses chambres en formes fermées", "Draw the section first.": "Dessinez d'abord la section.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "Arcs", "Sketch edits": "Modifications d’esquisse", "Geometric": "Géométriques", "Arrays": "Réseaux", "Move, rotate, mirror": "Déplacer, pivoter, symétrie", "Carriers and fans": "Chemins de câbles et ventilateurs",
   // Convert to…: stair, floor opening, parcel (audit S12)
@@ -4083,6 +4084,8 @@ export const FR: Record<string, string> = {
   "Draw the outline of your own on a board of the type (an odd pane, a shape the list has not); one fixed light in a frame following it": "Dessinez votre propre contour sur une planche du type (un vitrage particulier, une forme absente de la liste) ; un seul jour fixe dans un cadre qui le suit",
   "Save the type first, then draw its outline": "Enregistrez d’abord le type, puis dessinez son contour",
   "Draw one closed outline (seen from outside, its bottom on the sill line), then Finish sketch.": "Dessinez un contour fermé (vu de l’extérieur, sa base sur la ligne d’appui), puis Terminer l’esquisse.",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Ajouter un calque', 'Remove layer': 'Supprimer le calque', 'Toggle visibility': 'Afficher ou masquer', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacité (0–100, {attr.key} ou {= formule})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Visibilité (vrai/faux, 0–100, {attr.key} ou {= formule})',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

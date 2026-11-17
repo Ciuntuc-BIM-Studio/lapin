@@ -1,6 +1,7 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "Văzut de la început spre capăt. Partea de sus e o singură linie de la începutul peretelui la capătul lui; o treaptă înseamnă două puncte unul deasupra celuilalt.", "Finish with a flat top: the profile taken away": "Termină cu partea de sus dreaptă: profilul se elimină", "Draw the top with Draft, from the start to the end": "Desenează partea de sus cu Desen, de la început la capăt", "Draw the outside and its chambers as closed shapes": "Desenează exteriorul și camerele lui ca forme închise", "Draw the section first.": "Desenează întâi secțiunea.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "Arce", "Sketch edits": "Editări de schiță", "Geometric": "Geometrice", "Arrays": "Multiplicări", "Move, rotate, mirror": "Mută, rotește, oglindește", "Carriers and fans": "Suporturi de cabluri și ventilatoare",
   // Convert to…: stair, floor opening, parcel (audit S12)
@@ -4075,6 +4076,8 @@ export const RO: Record<string, string> = {
   "Draw the outline of your own on a board of the type (an odd pane, a shape the list has not); one fixed light in a frame following it": "Desenează conturul tău pe o planșă a tipului (un geam neobișnuit, o formă pe care lista nu o are); un singur ochi fix într-un cadru care îl urmează",
   "Save the type first, then draw its outline": "Salvează întâi tipul, apoi desenează-i conturul",
   "Draw one closed outline (seen from outside, its bottom on the sill line), then Finish sketch.": "Desenează un contur închis (văzut din exterior, cu baza pe linia pervazului), apoi Termină schița.",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Adaugă layer', 'Remove layer': 'Șterge layerul', 'Toggle visibility': 'Arată sau ascunde', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacitate (0–100, {attr.key} sau {= formulă})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Vizibilitate (adevărat/fals, 0–100, {attr.key} sau {= formulă})',
 };
 
 /** Phrases with a number or a name in them. */

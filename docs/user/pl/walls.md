@@ -57,19 +57,19 @@ Promień jest promieniem osi ścian, środka ich rdzenia. Wpisz **I** (Inside) l
 
 ### Ściana według profilu
 
-**Profil…** we właściwościach ściany rysuje jej górę w widoku elewacji, widzianą od początku do końca: szczyt, spadek, uskoki, ścianę idącą za schodami. Przeciągaj punkty (**Shift** zachowuje wysokość punktu), kliknij górną linię, aby dodać punkt, kliknij punkt prawym przyciskiem, aby go usunąć, albo wpisz je w tabeli w milimetrach. **Zacznij od** daje **Szczyt**, **Nachylenie** lub **Schodki** do wysokości, którą wpiszesz. Uskok to dwa punkty jeden nad drugim. **Zastosuj** nadaje ścianie kształt; **Płaska góra** znów czyni ją płaską.
+**Profil…** we właściwościach ściany otwiera jej górę na płótnie szkicu: osobny widok, ustawiony na osi ściany, widziany od początku do końca, z ukrytą tam ścianą i jej podstawą oraz końcami narysowanymi jako linie konstrukcyjne. Góra to jedna linia od początku do końca: szczyt, spadek, uskoki, ściana idąca za schodami. Rysuj ją narzędziami **Rysunku** na pasku (**Linia**, **Polilinia**, **Łuk**, **Utnij**, **Wydłuż**, **Zaokrąglij**…), przesuwaj jej punkty za uchwyty, przyciągaj do poziomów i innych ścian w widoku i trzymaj ją więzami i wymiarami jak każdy szkic. Formularz boczny obok zaczyna od **Szczytu**, **Nachylenia** lub **Schodków** do wysokości, którą wpiszesz, wypisuje punkty góry w milimetrach do nadpisania i ma **Płaska góra**. Uskok to dwa punkty jeden nad drugim; łuk jest układany z krótkich prostych odcinków. **Zakończ szkic** nadaje ścianie kształt jednym krokiem cofania; góra, która zawraca, jest w kawałkach lub wychodzi poza końce ściany, zostaje odrzucona z podaniem powodu, a szkic pozostaje otwarty. **Anuluj** zostawia ścianę taką, jaka była.
 
 Ściana pozostaje ścianą: jej grubość, warstwy, połączenia oraz drzwi i okna są jak były, a do IFC eksportuje się z kształtem.
 
-![Szczyt narysowany w edytorze profilu](shots/wall-profile-editor.webp)
+![Szczyt narysowany na szkicu ściany, jego kalenica wpisana w formularzu bocznym](shots/wall-profile-editor.webp)
 
 ![Zachodnia ściana domu jako szczyt, z zachowanym oknem](shots/wall-profile-3d.webp)
 
 ### Obrys i pręty ściany osłonowej
 
-**Profil…** we właściwościach ściany osłonowej rysuje jej obrys na elewacji, jak dla ściany: szczyt, spadek, stopnie lub dowolny kontur, z punktami do przeciągania, dodawania lub usuwania i tabelą w milimetrach. Ściana sięga swojego najwyższego punktu. Jej siatka zyskuje linię tam, gdzie obrys się załamuje (załamanie bliżej niż półtora słupka od linii siatki jest przenoszone na nią); każde pole zachowuje rygle, które mieszczą się pod jego najniższym punktem; panel nad ostatnim wypełnia aż do obrysu, a pręt brzegowy podąża za nim, skośny; słupki są do niego przycinane. Ustawienia typu pozostają, a **Profil…** otwiera obrys ponownie, by go zmienić, bez przebudowy; **Płaska góra** zwraca prostokąt. Widać go w 3D, na elewacjach i przekrojach, zestawienia mierzą panele i pręty tak, jak narysowane, a IFC niesie je jako części.
+**Profil…** we właściwościach ściany osłonowej rysuje jej obrys w ten sam sposób, na osobnym szkicu: szczyt, spadek, stopnie lub dowolny kontur, z tym samym formularzem bocznym (zakrzywiona ściana osłonowa zachowuje okno profilu, z punktami do przeciągania i tabelą w milimetrach). Ściana sięga swojego najwyższego punktu. Jej siatka zyskuje linię tam, gdzie obrys się załamuje (załamanie bliżej niż półtora słupka od linii siatki jest przenoszone na nią); każde pole zachowuje rygle, które mieszczą się pod jego najniższym punktem; panel nad ostatnim wypełnia aż do obrysu, a pręt brzegowy podąża za nim, skośny; słupki są do niego przycinane. Ustawienia typu pozostają, a **Profil…** otwiera obrys ponownie, by go zmienić, bez przebudowy; **Płaska góra** zwraca prostokąt. Widać go w 3D, na elewacjach i przekrojach, zestawienia mierzą panele i pręty tak, jak narysowane, a IFC niesie je jako części.
 
-![Szczyt narysowany jako obrys ściany osłonowej](shots/curtain-boundary-editor.webp)
+![Szczyt narysowany jako obrys ściany osłonowej, na jej szkicu](shots/curtain-boundary-editor.webp)
 
 ![Ściana osłonowa pod swoim szczytem, w 3D](shots/curtain-boundary-3d.webp)
 

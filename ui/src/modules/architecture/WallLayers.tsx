@@ -13,6 +13,7 @@ import { lengthText } from '../../engine/unitsStore';
 import { sameKind } from '../../shell/params';
 import { LengthField } from '../../shell/cells';
 import { WallTopFields } from './WallTop';
+import { openWallProfile } from './wallProfileBoard';
 
 const THICKNESS_TIP = 'The wall\'s thickness comes from its type\'s layers. Type a new one and the selected walls take the type with the same build-up and that thickness (the core resized, the finishes kept): the project\'s, or a new one named after their type, e.g. Partition wall 150mm.';
 
@@ -88,7 +89,7 @@ export function WallLayers({ node }: { node: NodeDto }) {
           <button type="button" className="btn" title="Swap the wall's faces (its ends stay)" onClick={() => void execute('architecture.flipWall', { ids: sameKind(node) })}>
             <FlipHorizontal2 size={14} />Flip
           </button>
-          {!node.props.arc && <button type="button" className="btn" data-action="wall-profile" title="Its top drawn in elevation: a gable, a slope, steps (decision 372)" onClick={() => useUi.setState({ dialog: 'wallProfile', selection: node.id })}>
+          {!node.props.arc && <button type="button" className="btn" data-action="wall-profile" title="Its top drawn in elevation: a gable, a slope, steps (decision 372)" onClick={() => void openWallProfile(node.id)}>
             <Mountain size={14} />Profile…
           </button>}
         </span>

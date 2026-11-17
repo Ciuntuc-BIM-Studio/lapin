@@ -57,19 +57,19 @@ El radio es el del eje de los muros, el centro de su núcleo. Escribe **I** (Ins
 
 ### Un muro por su perfil
 
-**Perfil…** en las propiedades de un muro dibuja su coronación en alzado, vista de su inicio a su final: un hastial, una pendiente, escalones, un muro que sigue una escalera. Arrastra los puntos (**Mayús** mantiene la altura de un punto), haz clic en la línea superior para añadir uno, clic derecho en un punto para quitarlo, o escríbelos en la tabla en milímetros. **Empezar desde** da un **Hastial**, una **Pendiente** o **Escalones** hasta la altura que escribas. Un escalón son dos puntos uno sobre otro. **Aplicar** da la forma al muro; **Coronación plana** lo vuelve plano.
+**Perfil…** en las propiedades de un muro abre su coronación en el lienzo de boceto: una vista propia, puesta sobre el eje del muro, vista de su inicio a su final, con el muro oculto allí y su base y sus extremos dibujados como líneas de construcción. La coronación es una sola línea del inicio al final: un hastial, una pendiente, escalones, un muro que sigue una escalera. Dibújala con las herramientas de **Dibujo** de la barra (**Línea**, **Polilínea**, **Arco**, **Recortar**, **Alargar**, **Empalme**…), mueve sus puntos por sus tiradores, engancha a los niveles y a los otros muros de la vista y sujétala con restricciones y cotas como cualquier boceto. El formulario lateral que tiene al lado parte de un **Hastial**, una **Pendiente** o **Escalones** hasta la altura que escribas, enumera los puntos de la coronación en milímetros para escribir encima y tiene **Coronación plana**. Un escalón son dos puntos uno sobre otro; un arco se coloca en tramos rectos cortos. **Terminar boceto** da la forma al muro en un solo paso de deshacer; una coronación que vuelve hacia atrás, está en trozos o sobrepasa los extremos del muro se rechaza con el motivo, y el boceto sigue abierto. **Cancelar** deja el muro como estaba.
 
 El muro sigue siendo un muro: su espesor, sus capas, sus uniones y sus puertas y ventanas quedan como estaban, y se exporta a IFC con su forma.
 
-![Un hastial dibujado en el editor de perfil](shots/wall-profile-editor.webp)
+![Un hastial dibujado en el boceto del muro, su cumbrera escrita en el formulario lateral](shots/wall-profile-editor.webp)
 
 ![El muro oeste de la casa como hastial, con su ventana conservada](shots/wall-profile-3d.webp)
 
 ### El contorno y las barras de un muro cortina
 
-**Perfil…** en las propiedades de un muro cortina dibuja su contorno en alzado, como en un muro: un hastial, una pendiente, escalones o cualquier contorno, con puntos que arrastrar, añadir o quitar y una tabla en milímetros. El muro sube hasta su punto más alto. Su retícula gana una línea donde el contorno se quiebra (un quiebro a menos de un montante y medio de una línea de la retícula se lleva a ella); cada vano conserva los travesaños que caben bajo su punto más bajo; el panel sobre el último llena hasta el contorno y una barra de borde lo sigue, inclinada; los montantes se cortan a él. Los ajustes del tipo se mantienen, y **Perfil…** abre de nuevo el contorno para cambiarlo, sin reconstruir; **Coronación plana** devuelve el rectángulo. Se ve en 3D, alzados y secciones, las tablas miden los paneles y las barras tal como están dibujados, y el IFC los lleva como piezas.
+**Perfil…** en las propiedades de un muro cortina dibuja su contorno del mismo modo, en un boceto propio: un hastial, una pendiente, escalones o cualquier contorno, con el mismo formulario lateral (un muro cortina curvo conserva el diálogo de perfil, con puntos que arrastrar y una tabla en milímetros). El muro sube hasta su punto más alto. Su retícula gana una línea donde el contorno se quiebra (un quiebro a menos de un montante y medio de una línea de la retícula se lleva a ella); cada vano conserva los travesaños que caben bajo su punto más bajo; el panel sobre el último llena hasta el contorno y una barra de borde lo sigue, inclinada; los montantes se cortan a él. Los ajustes del tipo se mantienen, y **Perfil…** abre de nuevo el contorno para cambiarlo, sin reconstruir; **Coronación plana** devuelve el rectángulo. Se ve en 3D, alzados y secciones, las tablas miden los paneles y las barras tal como están dibujados, y el IFC los lleva como piezas.
 
-![Un hastial dibujado como contorno de un muro cortina](shots/curtain-boundary-editor.webp)
+![Un hastial dibujado como contorno de un muro cortina, en su boceto](shots/curtain-boundary-editor.webp)
 
 ![El muro cortina bajo su hastial, en 3D](shots/curtain-boundary-3d.webp)
 

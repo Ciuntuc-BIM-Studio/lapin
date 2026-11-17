@@ -12,6 +12,7 @@
 
 import type { ComponentType } from 'react';
 import type { NodeDto } from '../../engine/protocol';
+import { zoomHost } from '../zoom';
 
 /** A tool on the bar: a command-line command (LINE, TRIM…) or a constraint command (CNCOINCIDENT…). */
 export interface BoardTool { command: string; label: string; group: 'draw' | 'edit' | 'constrain' | 'dimension' }
@@ -37,10 +38,23 @@ export interface Board {
   /** Esc with nothing in progress (no command, no selection) in 3D: leaves the board keeping its work; none in 2D. */
   leave?(): void;
   /**
-   * The fields the board's payload keeps beside its drawing (a symbol's name, attributes and preview; a title block's box and
-   * fields): a panel shown beside the flat board (audit S11 stage 2: the editors' dialogs keep their non-drawing fields).
+   * The board's side form beside the canvas (audit S11 stage 2): what its editor had besides drawing (a profile's name, material
+   * and library, the shapes to start from, a table of its points). Shown flat, over the view's right side.
    */
   panel?: ComponentType<{ board: Board }>;
+}
+
+/** Where to go back to when a board is left (the view it was opened from), per board view. */
+const returns = new Map<string, Record<string, unknown>>();
+
+/** Remembers the interface's place before a board opened (its view, the plan or drawing it showed, a dialog to reopen). */
+export function rememberReturn(viewId: string, state: Record<string, unknown>): void { if (!returns.has(viewId)) returns.set(viewId, state); }
+
+/** The place a board was opened from, taken (null when unknown: a project reopened with the board open). */
+export function takeReturn(viewId: string): Record<string, unknown> | null {
+  const r = returns.get(viewId) ?? null;
+  returns.delete(viewId);
+  return r;
 }
 
 /** The Draft commands a board drawing texts and hatches too offers (a symbol's, a title block's). */
@@ -79,4 +93,26 @@ export function boardKey(key: string, o: { in3d: boolean; selected: boolean; boa
   if (key === 'Escape') return o.selected ? 'deselect' : o.in3d && o.board.leave ? 'leave' : null;
   if (key === 'Enter') return o.in3d ? 'finish' : null;
   return null;
+}
+
+/**
+ * Frames a board's shapes once its view is shown (the view's own fit frames the model it draws, which a board's sketch may lie
+ * outside of, or which may be empty): the box from (x0, y0) to (x1, y1) in the view's coordinates, with room left over it for the bar
+ * and on its right for the side form. Waits for the view's zoom to replace the one shown when the board was opened.
+ */
+export function frameBoard(boxOf: () => [number, number, number, number] | null, opts: { panel?: boolean } = {}): void {
+  const before = zoomHost();
+  let tries = 0;
+  const tick = () => {
+    const host = zoomHost();
+    const box = boxOf();
+    if (host && host !== before && box) {
+      const [x0, y0, x1, y1] = box;
+      const w = Math.max(x1 - x0, 1e-3), h = Math.max(y1 - y0, 1e-3);
+      host.zoomWindow({ x: x0 - w * 0.12, y: y0 - h * 0.15 }, { x: x1 + w * (opts.panel ? 0.95 : 0.12), y: y1 + h * 0.9 });
+      return;
+    }
+    if (++tries < 30) setTimeout(tick, 100);
+  };
+  setTimeout(tick, 100);
 }
