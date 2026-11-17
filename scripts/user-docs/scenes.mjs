@@ -9099,6 +9099,41 @@ export const scenes = [
     },
   },
   {
+    // File → Import types from a project… (issue #74, decision 669): an office project with two wall types saved as Office.lapin;
+    // a new project with its own „WT1 Exterior” (other layers) reads it (library.projectTypes, the file only read): both types
+    // listed with their materials, the one of the same name to choose for (kept beside by default). Imported in one step: the
+    // other type keeps its GlobalId, the clash comes in as „WT1 Exterior (2)”.
+    id: 'project-types',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const dir = mkdtempSync(join(tmpdir(), 'lapin-guide-project-types-'));
+      const path = join(dir, 'Office.lapin');
+      const exterior = [{ material: 'Render', thickness: 0.02 }, { material: 'EPS insulation', thickness: 0.1 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 }];
+      await t.cmd('architecture.createWallType', { name: 'WT1 Exterior', mark: 'WT1', layers: exterior });
+      const { id: partition } = await t.cmd('architecture.createWallType', { name: 'WT2 Partition', mark: 'WT2', layers: [{ material: 'Plaster', thickness: 0.015 }, { material: 'Brick', thickness: 0.115, core: true }, { material: 'Plaster', thickness: 0.015 }] });
+      await t.call('project.save', { path });
+
+      // A new project with a wall type of the same name, made otherwise.
+      await t.fresh();
+      await t.cmd('architecture.createWallType', { name: 'WT1 Exterior', mark: 'WT1', layers: [{ material: 'Concrete', thickness: 0.3, core: true }] });
+      await t.page.evaluate(async (p) => { (await import('/src/modules/core/projectTypes.ts')).projectTypesFile.current = { name: 'Office.lapin', path: p }; }, path);
+      await t.ui({ dialog: 'projectTypes' });
+      const dialog = t.page.locator('[data-dialog=project-types]');
+      await dialog.locator('[data-testid=project-types-list]').waitFor({ timeout: 15_000 });
+      t.expect(await dialog.locator('[data-testid=project-types-list] tbody tr').count() === 2, 'both wall types of the office project are listed');
+      t.expect(await dialog.locator('[data-testid=project-types-list] tr[data-status=name]').count() === 1, 'the type of the same name is marked to choose for');
+      t.expect(await dialog.locator('[data-testid=library-choices]').count() === 1, 'what differs is listed with a choice');
+      await t.wait(300);
+      await t.shot('project-types', { of: '[data-dialog=project-types] .dialog', pad: 0 });
+      await dialog.locator('[data-action=project-types-import]').click();
+      await dialog.waitFor({ state: 'detached', timeout: 10_000 });
+      const types = (await t.call('doc.query', { name: 'types.list', args: {} })).types;
+      t.expect(types.some((x) => x.name === 'WT1 Exterior (2)'), 'the office\'s WT1 came in beside the project\'s, as „WT1 Exterior (2)”');
+      t.expect(types.some((x) => x.name === 'WT2 Partition' && x.id === partition), 'the partition came in under its own GlobalId');
+    },
+  },
+  {
     // Decision 489, stage 2: Python in Lapin. Preferences → Developer extras switched on; View → Script opens the panel; the
     // editor's script (four walls round a room), named and saved in Mine, runs as one undo step named after it; the console
     // reads the model; one Undo takes the four walls away. Python is this computer's own (3.11 or newer): with none, the

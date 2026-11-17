@@ -22,6 +22,8 @@ Un fișier `.lapin` ține tot proiectul: modelul, vederile, planșele, materiale
 
 Un șablon e configurarea unui proiect fără modelul lui, ca tipurile și setările pe care le faci o dată să pornească orice proiect nou. **Fișier → Salvează ca șablon…** păstrează proiectul deschis sub un nume: tipurile de pereți, planșee, uși, ferestre, scări, tavane și structură, materialele și profilele, unitățile și standardele de desen (stiluri de text, de cote și de etichete, straturi), stilurile de vedere, etajele, vederile, planșele și cartușele, iar din informațiile proiectului ce ține de birou (proiectantul, cine semnează). Nu păstrează niciun element (niciun perete, niciun desen, nicio încăpere), nicio problemă sau observație, niciun deviz sau grafic și nici informațiile proprii lucrării (numărul, beneficiarul, amplasamentul și autorizația).
 
+Pentru un proiect deja început, **Fișier → Importă tipuri dintr-un proiect…** aduce doar tipurile pe care le alegi din alt `.lapin`, cu materialele lor, și lasă acel fișier cum era: vezi [Tipuri din alt proiect](extensions.md#tipuri-din-alt-proiect).
+
 **Fișier → Nou din șablon…** (și pe ecranul de start) arată șabloanele, primul fiind **Implicit Lapin**. **Proiect nou** pe un rând pornește un proiect din el: nu are încă fișier și are GlobalId-uri proprii. Alege un șablon în stânga rândului său sau în **Fișier → Preferințe… → General → Proiecte noi**, iar **Fișier → Proiect nou** pornește de fiecare dată din el; **Implicit Lapin** revine la pornirea proprie a lui Lapin.
 
 ![Șabloane de proiect: implicitul Lapin și ale tale](shots/project-templates.webp)

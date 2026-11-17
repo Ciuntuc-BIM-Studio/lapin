@@ -61,6 +61,14 @@ Tipurile tale intră într-un pachet din **Gestionare → Pachete de tipuri…**
 
 ![Gestionare → Pachete de tipuri…: un tip de perete ales pentru export](shots/type-packs-export.webp)
 
+### Tipuri din alt proiect
+
+**Fișier → Importă tipuri dintr-un proiect…** ia tipuri direct din alt proiect Lapin, fără să mai exporți întâi un pachet. Alegi fișierul lui `.lapin`: dialogul arată toate tipurile pe care le are (pereți, planșee, acoperișuri, uși, ferestre, stâlpi, grinzi, scări și celelalte), cu felul lor, materialele de care au nevoie, câte elemente le folosesc acolo și ce sunt față de proiectul deschis acum (**Nou**, **La fel**, **Același nume**, **Același element, schimbat**). Bifezi tipurile de adus (**Toate** și **Niciunul** ajută) și apeși **Adaugă în proiect**: tipurile alese vin cu straturile, materialele, profilele și parametrii lor, într-un singur pas de anulat. Celălalt proiect este doar citit, niciodată schimbat sau salvat, chiar dacă a fost făcut de un Lapin mai vechi (e adus la zi în memorie, ca la deschidere).
+
+Regulile sunt cele ale unui pachet de tipuri. Un material este al proiectului când acesta are unul cu același nume; un tip cu același nume care diferă este adăugat alături ca *Nume (2)*. Un tip își păstrează GlobalId-ul, așa că un tip pe care proiectul îl are deja cu același GlobalId (ambele proiecte pornite din același șablon, sau tipul adus mai devreme) este chiar acel tip: lăsat cum e când nu s-a schimbat nimic, înlocuit pe loc când s-a schimbat (elementele lui urmează), dacă nu alegi **Păstrează-le pe amândouă** sau **Sari peste**. Ce diferă se arată sub tipuri, cu aceleași alegeri ca mai sus. Într-o sesiune partajată doar gazda importă dintr-un proiect; un invitat poate aduce în schimb un `.lapintypes`.
+
+![Fișier → Importă tipuri dintr-un proiect…: cele două tipuri de pereți ale biroului, unul cu același nume de ales](shots/project-types.webp)
+
 ## Scripturi
 
 Catalogul are și **scripturi Python**. În aplicația desktop poți instala unul de acum; rulează când Lapin va avea consola Python, și doar când îl rulezi tu. Înainte să-l instalezi, detaliile lui spun ce cere (să citească sau să schimbe proiectul deschis, să ajungă la fișiere sau la internet). Un script poate face pe calculatorul tău ce poți face tu, așa că instalează scripturi de la autori în care ai încredere. În browser se instalează doar pachete de conținut.
