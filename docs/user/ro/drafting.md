@@ -284,6 +284,7 @@ Ca orice etichetă, eticheta de stratificație își urmează elementul, iar pla
 
 - **Celulele** țin text, pe mai multe rânduri (Shift+Enter în celulă). Scrie într-o celulă sau dă dublu clic pe ea; Enter păstrează textul și coboară, Tab merge la dreapta, Esc o lasă cum era. Celulele copiate dintr-un tabelar se lipesc așa cum sunt.
 - **Formulele** se scriu ca într-un cartuș, `{= …}`, și citesc celulele tabelului după adresa lor: `{= B2 * C2}`, `{= sum(D2:D9)}`, `{= average(B2:B5) | 0.0}` (un format după bară), `{= count(A2:A20)}`. O celulă de text care începe cu un număr contează ca acel număr. Adaugi sau scoți un rând ori o coloană, și formulele urmează, ca într-un tabelar; o formulă care își citește propria celulă, sau o celulă scoasă, arată `<…>`, iar editorul spune de ce. Pe o planșă, o celulă citește și câmpurile planșei: `{sheet.number}`, `{project.name}`.
+- **Alte tabele.** Dă unui tabel un nume dintr-un cuvânt în editorul lui (**Areas**, sus), și orice tabel îi citește celulele după acest nume: `{= table.Areas.B4 * 2}`, `{= sum(table.Areas.B2:B9)}`, sau `{table.Areas.A1}` ca să arate o celulă așa cum se citește. **Alt tabel**, sub grilă, arată celelalte tabele: clic pe o celulă (Shift+clic pentru un interval), iar **Inserează referința** o pune în celula selectată unde era cursorul în bară, într-o formulă așa cum e, în rest ca un câmp sau ca un total. Un nume se caută întâi pe aceeași planșă, deci o planșă duplicată cu tabelele ei le citește pe ale sale. Redenumești un tabel și ce îl citește urmează; îl ștergi și ce îl citea arată `REF`; rândurile și coloanele adăugate sau scoase din el mută referințele altor tabele la el, ca într-un tabelar. O formulă care se întoarce la propria celulă printr-un alt tabel arată `<…>`, iar ambele tabele spun de ce.
 - **Unește** celulele selectate (rămâne textul primei) sau **desparte-le** din nou; adaugă rânduri deasupra sau dedesubt și coloane la stânga sau la dreapta, ori șterge-le pe cele selectate.
 - **Lățimile și înălțimile** sunt în milimetri de hârtie, așa că un tabel se citește la fel la orice scară. Un rând se potrivește implicit textului, niciodată mai scund decât înălțimea lui; bifează **potrivit textului** pentru coloane cât cel mai lat text al lor (textul împărțit pe rânduri rămâne într-o coloană cu lățimea ei proprie).
 - **Aldin**, **cursiv**, alinierea, înălțimea textului, **culoarea textului**, **fundalul** și **opacitatea** lui se aplică celulelor selectate; **Borduri** desenează toate liniile, conturul, interiorul, o latură sau niciuna, cu o grosime și o culoare.
@@ -293,6 +294,8 @@ Fiecare modificare e un pas de anulare. Motorul desenează tabelul, deci vederea
 ![Un tabel pe o planșă: un rând de antet, celule unite și un total calculat de o formulă](shots/drafting-table.webp)
 
 ![Editorul de tabel: un total calculat de o formulă, două celule unite, antetul colorat](shots/drafting-table-editor.webp)
+
+![Un tabel care citește altul: alegătorul de sub grilă arată celulele celuilalt tabel, iar rezumatul citește totalul lui și numele unei camere](shots/drafting-table-refs.webp)
 
 ### Axe
 

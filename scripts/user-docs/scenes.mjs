@@ -7929,6 +7929,42 @@ export const scenes = [
     },
   },
   {
+    // Drafting tables, stage 2 (docs/plan-drafting-tables.md §3): a table reads another by its name; the editor's picker shows
+    // the other table's cells and puts a reference into the selected cell.
+    id: 'drafting-table-refs',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const sheet = await t.cmd('sheet.create', { name: 'Rooms', number: 'A-103', paper: 'A4' });
+      const paper = `paper:${sheet.id}`;
+      await t.cmd('drafting.addTable', { viewId: paper, at: [0.03, 0.27], rows: 4, cols: 2, preset: 'header', name: 'Areas',
+        cells: [['Room', 'Area (m²)'], ['Living', '24.50'], ['Kitchen', '12.25'], ['Bedroom', '15.80']] });
+      const summary = await t.cmd('drafting.addTable', { viewId: paper, at: [0.11, 0.27], rows: 3, cols: 2, preset: 'header', name: 'Summary',
+        cells: [['What', 'Value'], ['Total area', '{= sum(table.Areas.B2:B4) | 0.00} m²'], ['Largest room', '']] });
+      await t.ui({ view: 'sheet', sheetId: sheet.id });
+      await t.page.waitForSelector('[data-testid=sheet-annotate]', { timeout: 10_000 });
+      await t.page.locator('[data-testid=sheet-annotate]').click();
+      await t.page.waitForSelector('[data-testid=paper-back]', { timeout: 10_000 });
+      await t.wait(800);
+      await t.page.evaluate(async (id) => (await import('/src/modules/drafting/table/tableStore.ts')).openTableEditor(id), summary.id);
+      await t.page.waitForSelector('[data-table-editor]', { timeout: 10_000 });
+      // B3 selected; the picker shows Areas, its B2 cell picked and put in as a field.
+      await t.page.locator('[data-table-editor] td[data-cell=B3]').click();
+      const areas = (await t.nodes()).find((n) => n.name === 'Areas' && n.props?.predefinedType === 'TABLE');
+      await t.page.locator('[data-testid=table-ref-table]').selectOption(areas.id);
+      await t.page.waitForSelector('[data-ref-cell=B2]', { timeout: 10_000 });
+      await t.page.locator('[data-ref-cell=A2]').click();
+      await t.page.locator('[data-testid=table-ref-insert]').click();
+      await t.until(async () => (await t.page.locator('[data-table-editor] td[data-cell=B3]').textContent()) === 'Living', 'the picked cell reads in the summary');
+      await t.page.locator('[data-ref-cell=B2]').click();
+      await t.page.locator('[data-ref-cell=B4]').click({ modifiers: ['Shift'] });
+      await t.until(async () => (await t.page.locator('[data-table-editor] td[data-cell=B2]').textContent()) === '52.55 m²', 'the total reads the other table');
+      await t.shot('drafting-table-refs', { of: '[data-table-editor]', pad: 0 });
+      const info = await t.call('doc.query', { name: 'drafting.table', args: { id: summary.id } });
+      t.expect(info.cells[2][1].t === '{table.Areas.A2}', 'the picker puts a field naming the other table');
+    },
+  },
+  {
     id: 'title-blocks',
     async run(t) {
       // A title block of one's own (decision 340, report #76): the project's data and a parameter of its own, a Finnish-style

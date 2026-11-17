@@ -31,7 +31,8 @@ public static class TableCommands
             if (a["cells"] is JsonArray cells) table = TableEdits.Apply(table, new JsonArray(new JsonObject { ["op"] = "set", ["cell"] = "A1", ["values"] = cells.DeepClone() }));
             var attrs = new JsonObject { ["viewId"] = viewId, ["at"] = J(P(a["at"])), ["angle"] = Json.Number(a["angle"]) ?? 0, ["table"] = table };
             if ((string?)a["textStyle"] is { } ts) attrs["textStyle"] = ts;
-            var e = new Entity(ctx.NewId(), IfcClass.Annotation, (string?)a["name"] is { Length: > 0 } name ? name : "Table", attrs, DraftingTables.Predefined);
+            var name = (string?)a["name"] is { Length: > 0 } given ? CheckName(ctx.Model, given, null) : "Table";
+            var e = new Entity(ctx.NewId(), IfcClass.Annotation, name, attrs, DraftingTables.Predefined);
             ctx.Add(e);
             return new JsonObject { ["id"] = e.Id };
         });
@@ -41,13 +42,29 @@ public static class TableCommands
         {
             var e = Require(ctx.Model, (string?)a["id"]);
             var ops = a["ops"] as JsonArray ?? (a["op"] != null ? [a.DeepClone()] : throw new CommandException("Which edits? ops: [{op, …}]."));
-            var table = TableEdits.Apply(e.Attrs["table"] as JsonObject, ops);
+            var (table, shifts) = TableEdits.ApplyTracked(e.Attrs["table"] as JsonObject, ops);
             var attrs = e.CloneAttrs();
             attrs["table"] = table;
             ctx.Replace(e.With(attrs: attrs));
+            // Other tables' references to its cells follow its rows and columns put in or taken out (its own followed already).
+            foreach (var sh in shifts)
+                Rewrite(ctx, e, (r, from) => from.Id != e.Id || r.Table != null ? TableEdits.Shift(r, sh.Rows, sh.At, sh.Count, sh.Insert) : null);
             var g = DraftingTables.Read(table);
             return new JsonObject { ["rows"] = g.R, ["cols"] = g.C };
         });
+
+        // {id, name}: a table renamed (a word: letters, digits, _), unique among the project's tables; the references to it in every
+        // table's cells follow (table.<old>.B4 → table.<new>.B4). One undo step.
+        r.Command("renameTable", "Rename table", (ctx, a) =>
+        {
+            var e = Require(ctx.Model, (string?)a["id"]);
+            return new JsonObject { ["name"] = Rename(ctx, e, (string?)a["name"] ?? "") };
+        });
+        // Renamed in its properties (element.rename) the same way.
+        r.Service<IDrivenElements>(new TableNames());
+
+        // A table deleted: what read its cells reads REF, so a table later given its name does not take its place.
+        r.Service<IDeletionFollowers>(new TableDeletions());
 
         // {id} → the table as it reads now: its cells' texts as typed and as shown, spans, its columns' and rows' sizes as laid (mm), what does not read.
         r.Query("drafting.table", (q, a) =>
@@ -72,6 +89,7 @@ public static class TableCommands
             }
             return new JsonObject
             {
+                ["name"] = e.Name, ["referable"] = TableScope.IsName(e.Name),
                 ["rows"] = g.R, ["cols"] = g.C, ["cells"] = cells,
                 ["colW"] = new JsonArray([.. l.ColW.Select(x => (JsonNode)Math.Round(x, 3))]),
                 ["rowH"] = new JsonArray([.. l.RowH.Select(x => (JsonNode)Math.Round(x, 3))]),
@@ -89,25 +107,104 @@ public static class TableCommands
         return (s.Font, s.Bold, s.Italic, s.Color ?? "#000000");
     }
 
-    /// <summary>A table read, its cells worked out (with its sheet's tokens when it is on a sheet's paper) and laid out.</summary>
-    public static (DraftingTables.Grid Grid, DraftingTables.Values Values, DraftingTables.Layout Layout) Evaluate(IQueryContext? q, Entity e, Entity? view)
+    /// <summary>What a table's tokens and names read besides its cells: its sheet's on a sheet's paper.</summary>
+    public static Func<string, (bool Known, string? Value)>? OuterOf(IQueryContext? q, Entity table)
     {
-        var g = DraftingTables.Read(e);
-        var outer = q != null && view != null && PaperViews.Is(view) ? PaperViews.Tokens(q, view) : null;
-        var v = new DraftingTables.Values(g, outer);
+        if (q == null) return null;
+        var view = Views.Find(q.Model, table.Str("viewId") ?? "");
+        return view != null && PaperViews.Is(view) ? PaperViews.Tokens(q, view) : null;
+    }
+
+    /// <summary>The project's tables as formulas read them, each with its own sheet's tokens, worked out once each.</summary>
+    public static TableScope Scope(IQueryContext? q, IModelView m) => new(m, t => OuterOf(q, t));
+
+    /// <summary>A table read, its cells worked out (its sheet's tokens, other tables' cells) and laid out.</summary>
+    public static (DraftingTables.Grid Grid, DraftingTables.Values Values, DraftingTables.Layout Layout) Evaluate(IQueryContext? q, Entity e, Entity? view, TableScope? scope = null)
+    {
+        scope ??= Scope(q, q?.Model ?? throw new CommandException("A table is worked out in a model."));
+        var v = scope.Of(e);
         var book = q != null ? DraftingResources.Book(q.Model) : null;
         var text = book != null ? TextOf(book, e) : ("sans", false, false, "#000000");
-        return (g, v, DraftingTables.Lay(g, v, text));
+        return (v.Grid, v, DraftingTables.Lay(v.Grid, v, text));
+    }
+
+    /// <summary>A table's name as given, checked: a word (letters, digits, _) no other table of the project has.</summary>
+    static string CheckName(IModelView m, string name, string? self)
+    {
+        name = name.Trim();
+        if (!TableScope.IsName(name)) throw new CommandException("A table's name is one word of letters, digits and _ (not starting with a digit), so a formula can name it: table.<name>.B4.");
+        if (TableScope.Tables(m).Any(t => t.Id != self && string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase)))
+            throw new CommandException($"There is a table „{name}” already.");
+        return name;
+    }
+
+    /// <summary>
+    /// Every table's references to <paramref name="target"/> (as each table finds that name, from where it stands) rewritten by
+    /// <paramref name="map"/> (given the reference and the table it is in; null: kept). Each table changed once, in this step.
+    /// </summary>
+    internal static void Rewrite(ICommandContext ctx, Entity target, Func<TableEdits.Ref, Entity, string?> map)
+    {
+        var m = ctx.Model;
+        foreach (var t in TableScope.Tables(m).ToList())
+        {
+            if (t.Attrs["table"] is not JsonObject json) continue;
+            var copy = (JsonObject)json.DeepClone();
+            var found = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            bool Reads(string name) => found.TryGetValue(name, out var b) ? b : found[name] = TableScope.Find(m, name, t, out _)?.Id == target.Id;
+            if (!TableEdits.MapCells(copy, text => TableEdits.MapRefs(text, r => r.Table != null && Reads(r.Table) ? map(r, t) : null))) continue;
+            var attrs = t.CloneAttrs();
+            attrs["table"] = copy;
+            ctx.Replace(t.With(attrs: attrs));
+        }
+    }
+
+    /// <summary>A table renamed, the references to it following (one undo step with the command): its new name.</summary>
+    static string Rename(ICommandContext ctx, Entity e, string given)
+    {
+        var name = CheckName(ctx.Model, given, e.Id);
+        if (name == e.Name) return name;
+        // Which references read this table is decided before it changes its name.
+        Rewrite(ctx, e, (r, _) => TableEdits.Write(name, r.A, r.B));
+        ctx.Replace(ctx.Model.Get(e.Id)!.With(name: name));
+        return name;
+    }
+
+    /// <summary>element.rename on a table: its name checked and the references to it following, as drafting.renameTable does.</summary>
+    sealed class TableNames : IDrivenElements
+    {
+        public bool Drives(IModelView m, Entity e) => e.Class == IfcClass.Annotation && e.PredefinedType == DraftingTables.Predefined;
+
+        public void Before(ICommandContext ctx, DrivenEdit edit, DrivenOutcome outcome)
+        {
+            if (edit.Command != "element.rename") return;
+            foreach (var id in edit.Ids)
+                if (ctx.Model.Get(id) is { } e)
+                {
+                    Rename(ctx, e, (string?)edit.Args["name"] ?? "");
+                    outcome.Handled.Add(id);
+                }
+        }
+    }
+
+    /// <summary>Tables deleted: the references other tables make to them read REF (one undo step with the deletion).</summary>
+    sealed class TableDeletions : IDeletionFollowers
+    {
+        public void Deleting(ICommandContext ctx, IReadOnlySet<string> deleting)
+        {
+            foreach (var id in deleting)
+                if (ctx.Model.Get(id) is { PredefinedType: DraftingTables.Predefined } t && t.Class == IfcClass.Annotation)
+                    Rewrite(ctx, t, (_, from) => deleting.Contains(from.Id) ? null : TableEdits.Gone);
+        }
     }
 
     /// <summary>The tables on a view, as drawn: their fills, then their lines, then their texts, in paper mm at the view's scale.</summary>
     public static IEnumerable<ViewMark> Marks(ViewContext c)
     {
+        var scope = Scope(c.Query, c.Model);
         foreach (var e in c.Model.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == DraftingTables.Predefined && x.Str("viewId") == c.View.Id))
         {
-            var g = DraftingTables.Read(e);
-            var outer = c.Query != null && PaperViews.Is(c.View) ? PaperViews.Tokens(c.Query, c.View) : null;
-            var v = new DraftingTables.Values(g, outer);
+            var v = scope.Of(e);
+            var g = v.Grid;
             var text = TextOf(c.Book, e);
             var l = DraftingTables.Lay(g, v, text);
             var at = P(e.Attrs["at"]);

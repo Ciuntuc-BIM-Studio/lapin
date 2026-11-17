@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { address, colName, colsOp, grow, inSel, opacityOf, parseAddress, pasteBlock, rangeOf, rowsOp, withOpacity, type TableInfo } from './tableModel';
+import { address, colName, colsOp, grow, inSel, insertAt, isTableName, opacityOf, parseAddress, pasteBlock, rangeOf, refInsert, rowsOp, tableRef, withOpacity, type TableInfo } from './tableModel';
 
 describe('drafting table addresses', () => {
   it('names columns and cells as a spreadsheet does', () => {
@@ -57,5 +57,28 @@ describe('drafting table colours and paste', () => {
   it('reads a spreadsheet\'s cells pasted as rows of texts', () => {
     expect(pasteBlock('a\tb\r\nc\td\n')).toEqual([['a', 'b'], ['c', 'd']]);
     expect(pasteBlock('one')).toEqual([['one']]);
+  });
+});
+
+describe('drafting table references to other tables', () => {
+  it('names a table by one word a formula can read', () => {
+    expect(isTableName('Areas')).toBe(true);
+    expect(isTableName('room_areas2')).toBe(true);
+    expect(isTableName('Table 1')).toBe(false);
+    expect(isTableName('2nd')).toBe(false);
+    expect(isTableName('')).toBe(false);
+  });
+
+  it('writes a cell or a range of another table as a formula reads it', () => {
+    expect(tableRef('Areas', { r0: 3, c0: 1, r1: 3, c1: 1 })).toBe('table.Areas.B4');
+    expect(tableRef('Areas', { r0: 8, c0: 1, r1: 1, c1: 1 })).toBe('table.Areas.B2:B9');
+  });
+
+  it('puts the reference in a formula as it is, elsewhere as a token or a total', () => {
+    expect(refInsert('{= 2 * ', 7, 'table.A.B4')).toBe('table.A.B4');
+    expect(refInsert('Total: ', 7, 'table.A.B4')).toBe('{table.A.B4}');
+    expect(refInsert('{= 1} and ', 10, 'table.A.B2:B9')).toBe('{= sum(table.A.B2:B9)}');
+    expect(insertAt('ab', 1, 1, 'X')).toEqual({ text: 'aXb', caret: 2 });
+    expect(insertAt('abcd', 1, 3, 'X')).toEqual({ text: 'aXd', caret: 2 });
   });
 });

@@ -4202,6 +4202,14 @@ export const PL: Record<string, string> = {
   "middle": "środek",
   "Grid lines": "Siatka",
   "fit to text": "dopasuj do tekstu",
+  // Drafting tables, stage 2: other tables' cells.
+  "Another table": "Inna tabela",
+  "A cell or a range of another table, put into the selected cell's text": "Komórka lub zakres innej tabeli, wstawiony do tekstu zaznaczonej komórki",
+  "Insert reference": "Wstaw odwołanie",
+  "Give that table a name of one word (letters, digits, _) to read it.": "Nadaj tej tabeli nazwę z jednego słowa (litery, cyfry, _), aby ją odczytać.",
+  "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "Inną tabelę odczytuje się po nazwie: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
+  "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "Nazwa tabeli: jedno słowo, aby formuły innych tabel mogły ją odczytać (table.Areas.B4)",
+  "Other tables read it once its name is one word.": "Inne tabele odczytają ją, gdy jej nazwa będzie jednym słowem.",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

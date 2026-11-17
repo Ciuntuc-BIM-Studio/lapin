@@ -5,7 +5,7 @@ for cells, rows, columns and headers; multiline text with rotation; formulas; re
 cells; merge and split; widths and heights with min, max and fit-to-text; borders, text and background colours with opacity;
 placeable on sheets, on views and in symbols (a room tag that grows with its text).
 
-Stage 1 is built (decision TBD). This page holds the design for all of it and what is left.
+Stage 1 is built (decision 653). This page holds the design for all of it and what is left.
 
 ## 1. What a table is, and what it is not
 
@@ -77,15 +77,29 @@ cell's text, a format after a bar (`{= B2 * C2 | 0.00}`), texts with `&`, `if`, 
 - **Tokens**: on a sheet's paper a cell reads the sheet's tokens as a text there does (`{sheet.number}`, `{project.name}`,
   and as formula names, `{= sheet.count + 1}`), through `PaperViews.Tokens`. Elsewhere tokens print as typed.
 
-### Later: other tables' cells (stage 2)
+### Other tables' cells (stage 2, done)
 
-A table gets a **name** (its `Name`, unique per project once referenced). A reference to another table is a dotted name,
-which `Expr` already reads as one word: `table.Areas.B4`, ranges `table.Areas.B2:table.Areas.B9` (or the shorthand
-`table.Areas.B2:B9`, the second end taking the first's table). The outer resolver that `DraftingTables.Values` already takes
-(`outer`) is where they come in: a project-wide resolver that builds the referenced table's `Values` on demand, with the
-cycle guard extended across tables (a set of `(table, cell)` busy). Renaming a table rewrites the references to it (the
-same rewriter as rows); deleting it leaves `REF`. A table never reads the model in stage 2; reading model values
-(`{= attr.…}` of a linked element, a schedule's total) is stage 4.
+A table's **name** is its `Name`; a formula reads a table whose name is one word (letters, digits, `_`, not starting with a
+digit: `TableScope.IsName`). A reference is a dotted name, which `Expr` reads as one word: `table.Areas.B4` (case aside), a
+token `{table.Areas.B4}` showing the cell as it reads, ranges `table.Areas.B2:B9` or `table.Areas.B2:table.Areas.B9` among a
+function's values. `TableScope` (Platform) holds the project's tables for one drawing: each worked out once (`Of`), with its
+own sheet's tokens (`outerFor`), and the set of cells being worked out kept across tables, so a circle through two tables does
+not read and both say so.
+
+- **Finding a name**: the table of that name on the same view (a sheet's paper) first, else the only one in the project; two
+  or more elsewhere is an error naming how many ("rename one"). So a sheet duplicated with its tables reads its own, and an
+  ambiguous name never reads the wrong one silently. Names are checked unique when given (`drafting.addTable name`,
+  `drafting.renameTable`, `element.rename`, which goes through the same rename by `IDrivenElements`); copies keep the name.
+- **Rename** rewrites every reference that reads the renamed table (as each table finds that name, before the change), in
+  formulas and tokens, in one undo step (`TableCommands.Rewrite`, `TableEdits.MapRefs`).
+- **Delete** (`IDeletionFollowers`): what read a deleted table reads `REF`, so a table later given its name does not take its
+  place; undo brings both back. A table deleted with its sheet (not through `element.delete`) leaves its readers unknown
+  (`<table.X.A1>`), the same printed result.
+- **Rows and columns** put into a table or taken out move the references other tables make to it, as a spreadsheet does
+  (`TableEdits.ApplyTracked` reports the shifts; `TableEdits.Shift` is the one rule for local and qualified references).
+- **Picker**: under the editor's grid, *Another table* shows another table's cells; a click (shift-click: a range) and
+  *Insert reference* put it into the selected cell where the bar's caret was: as it is inside a formula, else as a token
+  `{table.Areas.B4}` or, for a range, its total `{= sum(…)}` (`tableModel.refInsert`).
 
 ## 4. Commands (one undo step each)
 
@@ -93,7 +107,8 @@ same rewriter as rows); deleting it leaves `REF`. A table never reads the model 
 |---|---|---|
 | `drafting.addTable` | `viewId, at, rows, cols, preset?, colWidth?, rowHeight?, angle?, textStyle?, cells?, name?` | places a table; `cells` fills it from A1 (Python, MCP) |
 | `drafting.editTable` | `id, ops: [{op, …}]` | applies the ops in order; one that does not read refuses them all |
-| `drafting.table` (query) | `id` | the cells as typed and as shown, spans, the laid sizes, the errors |
+| `drafting.renameTable` | `id, name` | renames a table, the references to it following |
+| `drafting.table` (query) | `id` | the name, the cells as typed and as shown, spans, the laid sizes, the errors |
 
 Ops (`TableEdits.Ops`): `set` (`cell, text` or `values` from that cell: a pasted block), `style` (`range, style`), `borders`
 (`range, edges: all|outer|inner|top|bottom|left|right|none|default, w, c`), `merge`, `split`, `insertRows`/`insertCols`
@@ -127,8 +142,9 @@ settings, header styling and optionally its cells as a template), offered in the
    ranges (`sum`, `average`, `count`), reference rewriting on insert/delete, merge/split, widths, heights, fit with min/max,
    borders, text and background colours with opacity, presets, the engine's drawing (views, sheets, PDF, DXF), the editor,
    undo per edit, saving (plain attributes: no project upgrade). Tests: `DraftingTableTests` (16), `tableModel.test.ts` (6).
-2. **Other tables' cells**: table names, `table.<name>.A1` references and ranges across tables, rename and delete rewriting,
-   cross-table cycle guard; the editor's reference picker (click a cell of another open table).
+2. **Done.** Other tables' cells: table names, `table.<name>.A1` references and ranges across tables, rename and delete
+   rewriting, rows and columns moving other tables' references, the cross-table cycle guard; the editor's name field and
+   reference picker. Tests: `DraftingTableTests` (6 more), `tableModel.test.ts` (3 more).
 3. **User presets and cell rotation**: table styles in the Drafting standards and libraries; cell text turned 90°/270°
    (`rot`), which lays the text along the row's height and fits the row to its length; per-cell padding.
 4. **Tables in symbols and from the model**: a table inside a symbol definition (the room tag that grows with its text), its

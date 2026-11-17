@@ -4193,6 +4193,14 @@ export const ZH: Record<string, string> = {
   "middle": "居中",
   "Grid lines": "网格",
   "fit to text": "适应文字",
+  // Drafting tables, stage 2: other tables' cells.
+  "Another table": "其他表格",
+  "A cell or a range of another table, put into the selected cell's text": "其他表格的单元格或区域，插入所选单元格的文字中",
+  "Insert reference": "插入引用",
+  "Give that table a name of one word (letters, digits, _) to read it.": "给该表格起一个单词名称（字母、数字、_）即可读取它。",
+  "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "其他表格按名称读取：{= table.Areas.B4 * 2}、{= sum(table.Areas.B2:B9)}、{table.Areas.A1}。",
+  "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "表格名称：一个单词，以便其他表格的公式读取（table.Areas.B4）",
+  "Other tables read it once its name is one word.": "名称为一个单词后，其他表格即可读取它。",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

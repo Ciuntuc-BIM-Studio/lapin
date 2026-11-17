@@ -14,10 +14,12 @@ import { useUi } from '../../../app/store';
 import { execute, query, useSession } from '../../../engine/session';
 import { NumberField } from '../../../shell/cells';
 import { ColourField } from '../../../shell/ColourField';
-import { BORDERS, PRESETS, address, colsOp, grow, inSel, norm, opacityOf, ownStyle, pasteBlock, rangeOf, rowsOp, withOpacity, type Sel, type TableInfo, type TableJson, type TableOp } from './tableModel';
+import { BORDERS, PRESETS, address, colsOp, grow, inSel, insertAt, isTableName, norm, opacityOf, ownStyle, pasteBlock, rangeOf, refInsert, rowsOp, withOpacity, type Sel, type TableInfo, type TableJson, type TableOp } from './tableModel';
+import { TableRefPicker } from './TableRefPicker';
 import { useTableEditor } from './tableStore';
 
 const HELP = "Type in a cell, or double-click it. Formulas read the table's cells: {= B2 * C2}, {= sum(D2:D9)}, {= average(B2:B5) | 0.0}; on a sheet, its fields too: {sheet.number}.";
+const HELP_TABLES = 'Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.';
 
 /** A number field in the editor's bars: a short one, beside its label. */
 const NUM = { width: 64 } as const;
@@ -33,8 +35,11 @@ export function TableEditor() {
   const [editing, setEditing] = useState<{ r: number; c: number; text: string } | null>(null);
   const [bar, setBar] = useState('');
   const [border, setBorder] = useState<{ edges: string; w: number; c: string }>({ edges: 'all', w: 0.25, c: '#000000' });
+  const [name, setName] = useState('');
   const grid = useRef<HTMLDivElement>(null);
+  const barCaret = useRef<{ from: number; to: number } | null>(null);
   const close = () => useUi.setState({ dialog: null });
+  useEffect(() => setName(node?.name ?? ''), [node?.name]);
 
   // What the table reads now, again after every change of it (an undo too).
   useEffect(() => {
@@ -94,6 +99,20 @@ export function TableEditor() {
     void edit({ op: 'set', cell: address(n.r0, n.c0), values: pasteBlock(text) });
   };
   const style = (s: Record<string, unknown>) => void edit({ op: 'style', range, style: s });
+  /** Another table's cell or range put into the selected cell's text where the bar's caret was, as one edit. */
+  const insertRef = (ref: string) => {
+    if (!first || first.covered) return;
+    const text = bar;
+    const at = barCaret.current ?? { from: text.length, to: text.length };
+    const next = insertAt(text, at.from, at.to, refInsert(text, at.from, ref));
+    setBar(next.text);
+    barCaret.current = { from: next.caret, to: next.caret };
+    void edit({ op: 'set', cell: address(n.r0, n.c0), text: next.text });
+  };
+  const rename = () => {
+    const v = name.trim();
+    if (v && v !== node.name) void execute('drafting.renameTable', { id: node.id, name: v }).then((r) => { if (!r) setName(node.name); });
+  };
   const own = (k: string) => ownStyle(table, n.r0, n.c0, k);
   const fill = typeof own('fill') === 'string' ? own('fill') as string : null;
   const colour = typeof own('color') === 'string' ? own('color') as string : '#000000';
@@ -105,7 +124,9 @@ export function TableEditor() {
       <div className="dialog" data-table-editor style={{ maxWidth: '96vw', width: 980 }}>
         <header className="dialog-head">
           <span className="panel-title">Table</span>
-          {node.name !== 'Table' && <span className="muted" data-no-i18n>{node.name}</span>}
+          <input data-testid="table-name" data-no-i18n title="The table's name: one word, so other tables' formulas can read it (table.Areas.B4)" value={name} style={{ width: 160, marginLeft: 8 }}
+            onChange={(e) => setName(e.target.value)} onBlur={rename} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+          {!isTableName(name) && <span className="muted" style={{ marginLeft: 6 }}>Other tables read it once its name is one word.</span>}
           <button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body">
@@ -164,6 +185,7 @@ export function TableEditor() {
             <textarea data-testid="table-bar" rows={2} style={{ flex: 1, fontFamily: 'monospace' }} value={bar}
               placeholder="Text; {= A1 + B1} for a formula, {= sum(A1:A4) | 0.00} with a format"
               onChange={(e) => setBar(e.target.value)}
+              onSelect={(e) => { const t = e.target as HTMLTextAreaElement; barCaret.current = { from: t.selectionStart, to: t.selectionEnd }; }}
               onBlur={() => { if (first && !first.covered && bar !== first.t) void edit({ op: 'set', cell: address(n.r0, n.c0), text: bar }); }}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); } }} />
           </div>
@@ -219,7 +241,9 @@ export function TableEditor() {
               {info.errors.map((e) => <li key={e} data-no-i18n>{e}</li>)}
             </ul>
           )}
+          <TableRefPicker self={node.id} onInsert={insertRef} />
           <p className="muted" style={{ marginTop: 6 }}>{HELP}</p>
+          <p className="muted">{HELP_TABLES}</p>
         </div>
       </div>
     </div>

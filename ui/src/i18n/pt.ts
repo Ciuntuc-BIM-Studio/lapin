@@ -4199,6 +4199,14 @@ export const PT: Record<string, string> = {
   "middle": "meio",
   "Grid lines": "Grade",
   "fit to text": "ajustar ao texto",
+  // Drafting tables, stage 2: other tables' cells.
+  "Another table": "Outra tabela",
+  "A cell or a range of another table, put into the selected cell's text": "Uma célula ou um intervalo de outra tabela, posto no texto da célula selecionada",
+  "Insert reference": "Inserir referência",
+  "Give that table a name of one word (letters, digits, _) to read it.": "Dê a essa tabela um nome de uma palavra (letras, dígitos, _) para a ler.",
+  "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "Outra tabela lê-se pelo nome: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
+  "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "O nome da tabela: uma palavra, para que as fórmulas de outras tabelas a possam ler (table.Areas.B4)",
+  "Other tables read it once its name is one word.": "Outras tabelas leem-na quando o seu nome for uma só palavra.",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

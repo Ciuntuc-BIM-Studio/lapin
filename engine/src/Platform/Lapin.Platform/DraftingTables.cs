@@ -4,9 +4,8 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Lapin.Geometry;
 using Lapin.Model;
-using Lapin.Platform;
 
-namespace Lapin.Drafting;
+namespace Lapin.Platform;
 
 /// <summary>
 /// A drafting table (issue #71, docs/plan-drafting-tables.md): an IfcAnnotation TABLE on a view or on a sheet's paper
@@ -156,30 +155,38 @@ public static partial class DraftingTables
 
     /// <summary>
     /// A table's cells as they read: each one's text with its formulas worked out (<c>{= A1 * 2}</c>, <c>{= sum(B2:B9) | 0.00}</c>)
-    /// and its tokens filled by <paramref name="outer"/> (a sheet's, on its paper; a key with a dot), once each, in any order. A
-    /// formula reading the cell it is in, through others or not, does not read (<c>&lt;A1 + 1&gt;</c>) and says so in <see cref="Errors"/>.
-    /// An empty cell reads as nothing in a range (<c>sum</c>, <c>count</c> leave it out) and as 0 alone; a covered one as empty.
-    /// Cross-table references (<c>table.&lt;name&gt;.A1</c>) are a later stage: <paramref name="outer"/> is where they will come in.
+    /// and its tokens filled by <paramref name="outer"/> (a sheet's on its paper, a symbol's in a symbol, the model's), once each,
+    /// in any order. A formula reading the cell it is in, through others or not, does not read (<c>&lt;A1 + 1&gt;</c>) and says
+    /// so in <see cref="Errors"/>. An empty cell reads as nothing in a range (<c>sum</c>, <c>count</c> leave it out) and as 0
+    /// alone; a covered one as empty. With a <paramref name="scope"/> (stage 2), a cell reads other tables' cells by their
+    /// names (<c>table.Areas.B4</c>, <c>sum(table.Areas.B2:B9)</c>, <c>{table.Areas.B4}</c>), the guard against cycles kept
+    /// across them. <paramref name="fields"/>, when given, fills a cell's own fields first (a tag symbol's <c>{number}</c>).
     /// </summary>
-    public sealed class Values(Grid g, Func<string, (bool Known, string? Value)>? outer = null)
+    public sealed class Values(Grid g, Func<string, (bool Known, string? Value)>? outer = null, TableScope? scope = null, Entity? self = null, Func<string, string>? fields = null)
     {
         readonly Dictionary<(int, int), (string Shown, XValue Value)> done = [];
-        readonly HashSet<(int, int)> busy = [];
+        readonly HashSet<(string, int, int)> busy = scope?.Busy ?? [];
+        readonly string key = self?.Id ?? "";
         public List<string> Errors { get; } = [];
+        public Grid Grid => g;
 
         public string Shown(int r, int c) => Get(r, c).Shown;
         public XValue Value(int r, int c) => Get(r, c).Value;
+
+        /// <summary>Whether the cell is being worked out now (a formula reaching it again goes round in a circle).</summary>
+        internal bool Busy(int r, int c) => busy.Contains((key, r, c));
 
         (string Shown, XValue Value) Get(int r, int c)
         {
             if (done.TryGetValue((r, c), out var v)) return v;
             var cell = g.Cells[r, c];
             if (cell.Covered || cell.Text.Length == 0) return done[(r, c)] = ("", new XValue(null, ""));
-            busy.Add((r, c));
+            busy.Add((key, r, c));
             try
             {
                 var unknown = new List<string>();
                 var text = cell.Text;
+                if (fields != null && text.Contains('{')) text = fields(text);
                 XValue? whole = null;
                 if (text.Contains("{=", StringComparison.Ordinal))
                 {
@@ -192,38 +199,54 @@ public static partial class DraftingTables
                     }
                     text = LiveText.Formulas(text, Name, unknown, Range);
                 }
-                if (outer != null && text.Contains('{')) text = TitleBlocks.Fill(text, outer, unknown);
+                if ((outer != null || scope != null) && text.Contains('{')) text = TitleBlocks.Fill(text, Token, unknown);
                 foreach (var u in unknown) Errors.Add($"{Address(r, c)}: {u}");
                 return done[(r, c)] = (text, whole ?? XValue.Read(text));
             }
-            finally { busy.Remove((r, c)); }
+            finally { busy.Remove((key, r, c)); }
+        }
+
+        (bool Known, string? Value) Token(string name)
+        {
+            if (scope != null && TableScope.IsRef(name) && scope.Cell(self, name, Errors) is { } x) return (true, x.Shown);
+            return outer?.Invoke(name) ?? (false, null);
+        }
+
+        /// <summary>One of this table's cells by its row and column, as a formula reads it (an empty one 0); null past its edge or in a circle.</summary>
+        internal XValue? Local(int r, int c, string? from = null)
+        {
+            if (r >= g.R || c >= g.C) return null;
+            if (Busy(r, c)) { Errors.Add($"{from ?? Address(r, c)} reads itself."); return null; }
+            var v = Value(r, c);
+            // Alone, an empty cell is 0 (as a spreadsheet reads it).
+            return v.Text is "" && v.Number == null ? new XValue(0, "") : v;
         }
 
         XValue? Name(string name)
         {
-            if (Parse(name) is { } at)
-            {
-                if (at.R >= g.R || at.C >= g.C) return null;
-                if (busy.Contains(at)) { Errors.Add($"{Address(at.R, at.C)} reads itself."); return null; }
-                var v = Value(at.R, at.C);
-                // Alone, an empty cell is 0 (as a spreadsheet reads it).
-                return v.Text is "" && v.Number == null ? new XValue(0, "") : v;
-            }
-            return outer != null && name.Contains('.') && outer(name) is { Known: true } k ? XValue.Read(k.Value ?? "") : null;
+            if (Parse(name) is { } at) return Local(at.R, at.C);
+            if (scope != null && TableScope.IsRef(name)) return scope.Cell(self, name, Errors)?.Value;
+            return outer?.Invoke(name) is { Known: true } k ? XValue.Read(k.Value ?? "") : null;
         }
 
-        IReadOnlyList<XValue>? Range(string from, string to)
+        /// <summary>A range's values, row by row, empty cells left out; null when a cell in it is being worked out (a circle).</summary>
+        internal IReadOnlyList<XValue>? Cells((int R0, int C0, int R1, int C1) b, string? table = null)
         {
-            if (ParseRange(from + ":" + to) is not { } b) return null;
             var o = new List<XValue>();
             for (var r = b.R0; r <= Math.Min(b.R1, g.R - 1); r++)
                 for (var c = b.C0; c <= Math.Min(b.C1, g.C - 1); c++)
                 {
-                    if (busy.Contains((r, c))) { Errors.Add($"{Address(r, c)} reads itself."); return null; }
+                    if (Busy(r, c)) { Errors.Add($"{table}{Address(r, c)} reads itself."); return null; }
                     var v = Value(r, c);
                     if (!(v.Number == null && string.IsNullOrWhiteSpace(v.Text))) o.Add(v);
                 }
             return o;
+        }
+
+        IReadOnlyList<XValue>? Range(string from, string to)
+        {
+            if (scope != null && TableScope.IsRef(from)) return scope.Range(self, from, to, Errors);
+            return ParseRange(from + ":" + to) is { } b ? Cells(b) : null;
         }
     }
 
@@ -247,7 +270,7 @@ public static partial class DraftingTables
     {
         var size = cell.Num("size") is double s && s > 0 ? s : g.Size;
         var maxW = width is { } w ? Math.Max(size * CharWidth, w - 2 * g.Pad) : (double?)null;
-        var lines = shown.Length == 0 ? [] : Texts.WrapLines(shown, size * CharWidth, maxW);
+        var lines = shown.Length == 0 ? [] : TextWrap.Lines(shown, size * CharWidth, maxW);
         return new CellText(lines, size, cell.Bool("bold") ?? bold, cell.Bool("italic") ?? italic, cell.Str("color") ?? (string?)g.Style["color"] ?? color,
             Pick(cell.Str("align") ?? (string?)g.Style["align"], Aligns, "left"), Pick(cell.Str("valign") ?? (string?)g.Style["valign"], VAligns, "middle"));
     }

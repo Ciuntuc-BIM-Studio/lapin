@@ -4155,6 +4155,14 @@ export const RO: Record<string, string> = {
   "middle": "mijloc",
   "Grid lines": "Grilă",
   "fit to text": "potrivit textului",
+  // Drafting tables, stage 2: other tables' cells.
+  "Another table": "Alt tabel",
+  "A cell or a range of another table, put into the selected cell's text": "O celulă sau un interval din alt tabel, pus în textul celulei selectate",
+  "Insert reference": "Inserează referința",
+  "Give that table a name of one word (letters, digits, _) to read it.": "Dă tabelului un nume dintr-un cuvânt (litere, cifre, _) ca să-l poți citi.",
+  "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "Alt tabel se citește după nume: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
+  "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "Numele tabelului: un cuvânt, ca formulele altor tabele să-l poată citi (table.Areas.B4)",
+  "Other tables read it once its name is one word.": "Alte tabele îl pot citi când numele lui e un singur cuvânt.",
 };
 
 /** Phrases with a number or a name in them. */

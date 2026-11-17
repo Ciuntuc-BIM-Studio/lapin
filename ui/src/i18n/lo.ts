@@ -4255,6 +4255,14 @@ export const LO: Record<string, string> = {
   "middle": "ກາງ",
   "Grid lines": "ຕາໜ່າງ",
   "fit to text": "ພໍດີກັບຂໍ້ຄວາມ",
+  // Drafting tables, stage 2: other tables' cells.
+  "Another table": "ຕາຕະລາງອື່ນ",
+  "A cell or a range of another table, put into the selected cell's text": "ຕາລາງ ຫຼື ຂອບເຂດຂອງຕາຕະລາງອື່ນ, ໃສ່ໃນຂໍ້ຄວາມຂອງຕາລາງທີ່ເລືອກ",
+  "Insert reference": "ໃສ່ການອ້າງອີງ",
+  "Give that table a name of one word (letters, digits, _) to read it.": "ໃຫ້ຕາຕະລາງນັ້ນມີຊື່ເປັນຄຳດຽວ (ຕົວອັກສອນ, ຕົວເລກ, _) ເພື່ອອ່ານມັນ.",
+  "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "ຕາຕະລາງອື່ນອ່ານດ້ວຍຊື່ຂອງມັນ: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
+  "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "ຊື່ຂອງຕາຕະລາງ: ຄຳດຽວ, ເພື່ອໃຫ້ສູດຂອງຕາຕະລາງອື່ນອ່ານໄດ້ (table.Areas.B4)",
+  "Other tables read it once its name is one word.": "ຕາຕະລາງອື່ນຈະອ່ານມັນໄດ້ເມື່ອຊື່ຂອງມັນເປັນຄຳດຽວ.",
 };
 
 /** Phrases with a number or a name in them. */

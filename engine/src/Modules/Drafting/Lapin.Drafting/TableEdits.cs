@@ -101,7 +101,9 @@ public static class TableEdits
     }
 
     /// <summary>The ops applied in order to a table's JSON (a copy, returned): any that does not read refuses them all.</summary>
-    public static JsonObject Apply(JsonObject? table, JsonArray ops)
+    public static JsonObject Apply(JsonObject? table, JsonArray ops) => Apply(table, ops, null);
+
+    static JsonObject Apply(JsonObject? table, JsonArray ops, List<Shifted>? shifts)
     {
         var t = Normal(table);
         foreach (var n in ops)
@@ -149,6 +151,7 @@ public static class TableEdits
                     var at = Whole(op["at"], "Where");
                     var count = op["count"] is null ? 1 : Whole(op["count"], "How many");
                     Insert(t, g, rows, at, count);
+                    shifts?.Add(new Shifted(rows, at, count, true));
                     break;
                 }
                 case "deleteRows" or "deleteCols":
@@ -157,6 +160,7 @@ public static class TableEdits
                     var at = Whole(op["at"], "Which");
                     var count = op["count"] is null ? 1 : Whole(op["count"], "How many");
                     Delete(t, g, rows, at, count);
+                    shifts?.Add(new Shifted(rows, at, count, false));
                     break;
                 }
                 case "colWidth" or "rowHeight":
@@ -395,56 +399,87 @@ public static class TableEdits
         ShiftAll(t, rows, at, count, insert: false);
     }
 
-    static void ShiftAll(JsonObject t, bool rows, int at, int count, bool insert)
+    static void ShiftAll(JsonObject t, bool rows, int at, int count, bool insert) =>
+        MapCells(t, text => ShiftRefs(text, rows, at, count, insert));
+
+    /// <summary>Every cell's text mapped by <paramref name="f"/> where it holds a formula or a token; whether any changed.</summary>
+    public static bool MapCells(JsonObject t, Func<string, string> f)
     {
-        foreach (var rn in Rows(t))
-            foreach (var cn in (JsonArray)((JsonObject)rn!)["cells"]!)
-                if (cn is JsonObject o && (string?)o["t"] is { } text && text.Contains("{=", StringComparison.Ordinal))
-                    o["t"] = ShiftRefs(text, rows, at, count, insert);
+        var changed = false;
+        foreach (var rn in t["rows"] as JsonArray ?? [])
+            foreach (var cn in (rn as JsonObject)?["cells"] as JsonArray ?? [])
+                if (cn is JsonObject o && (string?)o["t"] is { } text && text.Contains('{'))
+                {
+                    var now = f(text);
+                    if (now != text) { o["t"] = now; changed = true; }
+                }
+        return changed;
     }
 
     /// <summary>The cell a reference names after rows (columns) went in or out at <paramref name="at"/>; null when it went out.</summary>
     static int? Moved(int i, int at, int count, bool insert) =>
         insert ? (i >= at ? i + count : i) : i < at ? i : i >= at + count ? i - count : null;
 
-    /// <summary>What a reference to a cell taken out reads as: it has no value, so the formula says so.</summary>
+    /// <summary>What a reference to a cell taken out (or to a table deleted) reads as: it has no value, so the formula says so.</summary>
     public const string Gone = "REF";
 
     /// <summary>
-    /// A text's formulas with their cell references following rows (or columns) put in or taken out at <paramref name="at"/>:
-    /// <c>{= A3 * 2}</c> reads <c>A4</c> after a row went in above it, a range narrows when some of its rows go, a reference to
-    /// a cell taken out reads <see cref="Gone"/>. Texts in quotes, functions and names with a dot (<c>sheet.number</c>) stay.
+    /// A reference to a cell or a range in a cell's text: of its own table (<see cref="Table"/> null: <c>A3</c>, <c>A1:B4</c>) or
+    /// of another by its name (<c>table.Areas.B4</c>, <c>table.Areas.B2:B9</c>); <see cref="B"/> the range's other end.
     /// </summary>
-    public static string ShiftRefs(string text, bool rows, int at, int count, bool insert)
+    public sealed record Ref(string? Table, (int R, int C) A, (int R, int C)? B);
+
+    /// <summary>A reference written back: its cell or its range (first to last), qualified by its table's name when it has one.</summary>
+    public static string Write(string? table, (int R, int C) a, (int R, int C)? b)
+    {
+        var q = table != null ? TableScope.Prefix + table + "." : "";
+        if (b is not { } z) return q + DraftingTables.Address(a.R, a.C);
+        var (r0, c0, r1, c1) = (Math.Min(a.R, z.R), Math.Min(a.C, z.C), Math.Max(a.R, z.R), Math.Max(a.C, z.C));
+        return q + DraftingTables.Address(r0, c0) + ":" + DraftingTables.Address(r1, c1);
+    }
+
+    /// <summary>
+    /// A text's cell references rewritten by <paramref name="map"/> (null: kept as written): in its <c>{= …}</c> formulas (texts in
+    /// quotes, functions and other dotted names left alone) and its tokens naming another table's cell (<c>{table.Areas.B4}</c>).
+    /// </summary>
+    public static string MapRefs(string text, Func<Ref, string?> map)
     {
         var sb = new StringBuilder();
         var i = 0;
         while (i < text.Length)
         {
-            var open = text.IndexOf("{=", i, StringComparison.Ordinal);
+            var open = text.IndexOf('{', i);
             if (open < 0) { sb.Append(text, i, text.Length - i); break; }
-            var close = LiveText.CloseOf(text, open + 2);
-            if (close < 0) { sb.Append(text, i, text.Length - i); break; }
-            sb.Append(text, i, open + 2 - i);
-            sb.Append(ShiftBody(text[(open + 2)..close], rows, at, count, insert));
+            if (open + 1 < text.Length && text[open + 1] == '=')
+            {
+                var close = LiveText.CloseOf(text, open + 2);
+                if (close < 0) { sb.Append(text, i, text.Length - i); break; }
+                sb.Append(text, i, open + 2 - i);
+                sb.Append(MapBody(text[(open + 2)..close], map));
+                sb.Append('}');
+                i = close + 1;
+                continue;
+            }
+            var end = text.IndexOf('}', open + 1);
+            var inner = end < 0 ? -1 : text.IndexOf('{', open + 1, end - open - 1);
+            if (end < 0 || inner >= 0) { sb.Append(text, i, open + 1 - i); i = open + 1; continue; }
+            var key = text[(open + 1)..end];
+            sb.Append(text, i, open + 1 - i);
+            var k = key.Trim();
+            sb.Append(TableScope.Split(k) is { } s && DraftingTables.Parse(s.Cell) is { } a && map(new Ref(s.Table, a, null)) is { } repl ? repl : key);
             sb.Append('}');
-            i = close + 1;
+            i = end + 1;
         }
         return sb.ToString();
     }
 
-    static string ShiftBody(string s, bool rows, int at, int count, bool insert)
+    static string MapBody(string s, Func<Ref, string?> map)
     {
         var sb = new StringBuilder();
         var i = 0;
         static bool WordChar(char ch) => char.IsLetterOrDigit(ch) || ch is '_' or '.';
         int WordEnd(int k) { while (k < s.Length && WordChar(s[k])) k++; return k; }
         int Space(int k) { while (k < s.Length && char.IsWhiteSpace(s[k])) k++; return k; }
-        (int R, int C)? Map((int R, int C) p)
-        {
-            var v = Moved(rows ? p.R : p.C, at, count, insert);
-            return v is { } x ? rows ? (x, p.C) : (p.R, x) : null;
-        }
         while (i < s.Length)
         {
             var ch = s[i];
@@ -461,30 +496,67 @@ public static class TableEdits
             var end = WordEnd(i);
             var word = s[i..end];
             var after = Space(end);
-            if (DraftingTables.Parse(word) is not { } a || word.Contains('.') || after < s.Length && s[after] == '(') { sb.Append(word); i = end; continue; }
-            // A range: its ends follow, its rows (columns) taken out narrow it.
-            if (after < s.Length && s[after] == ':' && Space(after + 1) is var b0 && b0 < s.Length && WordEnd(b0) is var b1 && DraftingTables.Parse(s[b0..b1]) is { } z && !s[b0..b1].Contains('.'))
+            // A cell of its own table (no dot), or of another by its name (table.<name>.<cell>); a function's name is neither.
+            string? table = null;
+            (int R, int C)? first = null;
+            if (!(after < s.Length && s[after] == '('))
             {
-                var (lo, hi) = rows ? (Math.Min(a.R, z.R), Math.Max(a.R, z.R)) : (Math.Min(a.C, z.C), Math.Max(a.C, z.C));
-                int from, to;
-                if (insert) (from, to) = (Moved(lo, at, count, true)!.Value, Moved(hi, at, count, true)!.Value);
-                else
-                {
-                    from = lo < at ? lo : lo >= at + count ? lo - count : at;
-                    to = hi < at ? hi : hi >= at + count ? hi - count : at - 1;
-                }
-                if (to < from) sb.Append(Gone);
-                else
-                {
-                    var (o0, o1) = rows ? ((from, Math.Min(a.C, z.C)), (to, Math.Max(a.C, z.C))) : ((Math.Min(a.R, z.R), from), (Math.Max(a.R, z.R), to));
-                    sb.Append(DraftingTables.Address(o0.Item1, o0.Item2)).Append(':').Append(DraftingTables.Address(o1.Item1, o1.Item2));
-                }
-                i = b1;
-                continue;
+                if (TableScope.Split(word) is { } q && DraftingTables.Parse(q.Cell) is { } qa) (table, first) = (q.Table, qa);
+                else if (!word.Contains('.') && DraftingTables.Parse(word) is { } la) first = la;
             }
-            sb.Append(Map(a) is { } m ? DraftingTables.Address(m.R, m.C) : Gone);
-            i = end;
+            if (first is not { } a) { sb.Append(word); i = end; continue; }
+            // A range: its other end a cell of the same table (written bare, or with the same table's name).
+            (int R, int C)? other = null;
+            var stop = end;
+            if (after < s.Length && s[after] == ':' && Space(after + 1) is var b0 && b0 < s.Length && WordEnd(b0) is var b1 && b1 > b0)
+            {
+                var w2 = s[b0..b1];
+                if (!w2.Contains('.') && DraftingTables.Parse(w2) is { } z) (other, stop) = (z, b1);
+                else if (table != null && TableScope.Split(w2) is { } q2 && string.Equals(q2.Table, table, StringComparison.OrdinalIgnoreCase) && DraftingTables.Parse(q2.Cell) is { } z2) (other, stop) = (z2, b1);
+            }
+            sb.Append(map(new Ref(table, a, other)) ?? s[i..stop]);
+            i = stop;
         }
         return sb.ToString();
+    }
+
+    /// <summary>A reference after rows (columns) went in or out at <paramref name="at"/>: moved, a range narrowed, <see cref="Gone"/> when all of it went.</summary>
+    public static string Shift(Ref r, bool rows, int at, int count, bool insert)
+    {
+        if (r.B is not { } z)
+        {
+            var v = Moved(rows ? r.A.R : r.A.C, at, count, insert);
+            return v is { } x ? Write(r.Table, rows ? (x, r.A.C) : (r.A.R, x), null) : Gone;
+        }
+        var a = r.A;
+        var (lo, hi) = rows ? (Math.Min(a.R, z.R), Math.Max(a.R, z.R)) : (Math.Min(a.C, z.C), Math.Max(a.C, z.C));
+        int from, to;
+        if (insert) (from, to) = (Moved(lo, at, count, true)!.Value, Moved(hi, at, count, true)!.Value);
+        else
+        {
+            from = lo < at ? lo : lo >= at + count ? lo - count : at;
+            to = hi < at ? hi : hi >= at + count ? hi - count : at - 1;
+        }
+        if (to < from) return Gone;
+        return rows ? Write(r.Table, (from, Math.Min(a.C, z.C)), (to, Math.Max(a.C, z.C))) : Write(r.Table, (Math.Min(a.R, z.R), from), (Math.Max(a.R, z.R), to));
+    }
+
+    /// <summary>
+    /// A text's formulas with their cell references following rows (or columns) put in or taken out at <paramref name="at"/>:
+    /// <c>{= A3 * 2}</c> reads <c>A4</c> after a row went in above it, a range narrows when some of its rows go, a reference to
+    /// a cell taken out reads <see cref="Gone"/>. Texts in quotes, functions and names with a dot (<c>sheet.number</c>) stay.
+    /// </summary>
+    public static string ShiftRefs(string text, bool rows, int at, int count, bool insert) =>
+        MapRefs(text, r => r.Table == null ? Shift(r, rows, at, count, insert) : null);
+
+    /// <summary>A row or column change of a table, kept to carry other tables' references to it along (stage 2).</summary>
+    public sealed record Shifted(bool Rows, int At, int Count, bool Insert);
+
+    /// <summary>The ops applied in order (as <see cref="Apply(JsonObject?, JsonArray)"/>), and the rows and columns they put in or took out, in order.</summary>
+    public static (JsonObject Table, List<Shifted> Shifts) ApplyTracked(JsonObject? table, JsonArray ops)
+    {
+        var shifts = new List<Shifted>();
+        var t = Apply(table, ops, shifts);
+        return (t, shifts);
     }
 }

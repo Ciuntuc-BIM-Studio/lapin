@@ -284,6 +284,7 @@ Like any tag, a build-up tag follows its element, and sheets and PDFs print it a
 
 - **Cells** hold text, on several lines (Shift+Enter in a cell). Type in a cell, or double-click it; Enter keeps the text and goes down, Tab goes right, Esc leaves it as it was. Cells copied from a spreadsheet paste as they are.
 - **Formulas** are written as in a title block, `{= …}`, and read the table's cells by their address: `{= B2 * C2}`, `{= sum(D2:D9)}`, `{= average(B2:B5) | 0.0}` (a format after the bar), `{= count(A2:A20)}`. A text cell that starts with a number counts as that number. Put a row or a column in, or take one out, and the formulas follow, as a spreadsheet's do; a formula that reads its own cell, or a cell taken out, shows `<…>` and the editor says why. On a sheet a cell reads the sheet's fields too: `{sheet.number}`, `{project.name}`.
+- **Other tables.** Give a table a name of one word in its editor (**Areas**, at the top), and any table reads its cells by that name: `{= table.Areas.B4 * 2}`, `{= sum(table.Areas.B2:B9)}`, or `{table.Areas.A1}` to show a cell as it reads. **Another table**, under the grid, shows the other tables: click a cell (shift-click for a range) and **Insert reference** puts it into the selected cell where the cursor was in the bar, inside a formula as it is, elsewhere as a field or as a total. A name is looked for on the same sheet first, so a sheet duplicated with its tables reads its own. Rename a table and what reads it follows; delete it and what read it shows `REF`; rows and columns put into it or taken out move the references other tables make to it, as in a spreadsheet. A formula that comes back to its own cell through another table shows `<…>`, and both tables say why.
 - **Merge** the selected cells (the first one's text stays), or **split** them again; insert rows above or below and columns left or right, or delete the selected ones.
 - **Widths and heights** are in paper millimetres, so a table reads the same at any scale. A row fits its text by default, never shorter than its height; tick **fit to text** for columns as wide as their widest text (wrapped text stays in a column of its own width).
 - **Bold**, **italic**, alignment, text height, **text colour**, **background** and its **opacity** apply to the selected cells; **Borders** draws all lines, the outside, the inside, one side or none, at a width and in a colour.
@@ -293,6 +294,8 @@ Each change is one undo step. The engine draws the table, so the view, the sheet
 ![A table on a sheet: a header row, merged cells and a total worked out by a formula](shots/drafting-table.webp)
 
 ![The table editor: a formula's total, two cells merged, the header shaded](shots/drafting-table-editor.webp)
+
+![A table reading another: the picker under the grid shows the other table's cells, and the summary reads its total and a room's name](shots/drafting-table-refs.webp)
 
 ### Grid axes
 

@@ -4196,6 +4196,14 @@ export const DA: Record<string, string> = {
   "middle": "midt",
   "Grid lines": "Gitter",
   "fit to text": "tilpas til tekst",
+  // Drafting tables, stage 2: other tables' cells.
+  "Another table": "Anden tabel",
+  "A cell or a range of another table, put into the selected cell's text": "En celle eller et område fra en anden tabel, sat ind i den valgte celles tekst",
+  "Insert reference": "Indsæt reference",
+  "Give that table a name of one word (letters, digits, _) to read it.": "Giv tabellen et navn på ét ord (bogstaver, cifre, _) for at læse den.",
+  "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "En anden tabel læses ved sit navn: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
+  "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "Tabellens navn: ét ord, så andre tabellers formler kan læse den (table.Areas.B4)",
+  "Other tables read it once its name is one word.": "Andre tabeller læser den, når dens navn er ét ord.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

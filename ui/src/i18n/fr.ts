@@ -4163,6 +4163,14 @@ export const FR: Record<string, string> = {
   "middle": "milieu",
   "Grid lines": "Quadrillage",
   "fit to text": "ajuster au texte",
+  // Drafting tables, stage 2: other tables' cells.
+  "Another table": "Autre tableau",
+  "A cell or a range of another table, put into the selected cell's text": "Une cellule ou une plage d'un autre tableau, insérée dans le texte de la cellule sélectionnée",
+  "Insert reference": "Insérer la référence",
+  "Give that table a name of one word (letters, digits, _) to read it.": "Donnez à ce tableau un nom d'un seul mot (lettres, chiffres, _) pour le lire.",
+  "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "Un autre tableau se lit par son nom : {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
+  "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "Le nom du tableau : un seul mot, pour que les formules d'autres tableaux puissent le lire (table.Areas.B4)",
+  "Other tables read it once its name is one word.": "Les autres tableaux le lisent dès que son nom est un seul mot.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

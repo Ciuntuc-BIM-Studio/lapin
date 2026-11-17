@@ -132,3 +132,29 @@ export interface TableJson {
 export function ownStyle(table: TableJson | undefined, r: number, c: number, key: string): unknown {
   return table?.rows?.[r]?.cells?.[c]?.[key] ?? undefined;
 }
+
+/** Whether a table's name can be read by a formula (`table.<name>.B4`): one word of letters, digits and _, not starting with a digit. */
+export const isTableName = (name: string): boolean => /^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(name.trim());
+
+/** A reference to another table's cell or range, as a formula writes it: `table.Areas.B4`, `table.Areas.B2:B9`. */
+export function tableRef(name: string, s: Sel): string {
+  return `table.${name}.${rangeOf(s)}`;
+}
+
+/** A text with `insert` put in at the caret (or in place of the selection `from`–`to`), and where the caret goes after it. */
+export function insertAt(text: string, from: number, to: number, insert: string): { text: string; caret: number } {
+  const a = Math.max(0, Math.min(from, text.length)), b = Math.max(a, Math.min(to, text.length));
+  return { text: text.slice(0, a) + insert + text.slice(b), caret: a + insert.length };
+}
+
+/**
+ * What the picker puts in: inside a formula (the caret between `{=` and its `}`) the reference alone; elsewhere a token that
+ * shows the cell (`{table.Areas.B4}`), or the range's total as a formula (`{= sum(table.Areas.B2:B9)}`).
+ */
+export function refInsert(text: string, caret: number, ref: string): string {
+  const before = text.slice(0, caret);
+  const open = before.lastIndexOf('{=');
+  const inFormula = open >= 0 && before.indexOf('}', open) < 0;
+  if (inFormula) return ref;
+  return ref.includes(':') ? `{= sum(${ref})}` : `{${ref}}`;
+}
