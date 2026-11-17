@@ -4052,6 +4052,8 @@ export const RO: Record<string, string> = {
   "Select the elements to put into the part together with the part itself.": "Selectează elementele de pus în piesă, împreună cu piesa însăși.",
   "The elements are part of the part now: edit them in its edit mode (Tab).": "Elementele fac acum parte din piesă: editează-le în modul ei de editare (Tab).",
   "Parts (old .lapinfamily)": "Piese (vechiul .lapinfamily)",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Adaugă layer', 'Remove layer': 'Șterge layerul', 'Toggle visibility': 'Arată sau ascunde', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacitate (0–100, {attr.key} sau {= formulă})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Vizibilitate (adevărat/fals, 0–100, {attr.key} sau {= formulă})',
 };
 
 /** Phrases with a number or a name in them. */

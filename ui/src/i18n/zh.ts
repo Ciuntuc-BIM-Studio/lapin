@@ -4090,6 +4090,8 @@ export const ZH: Record<string, string> = {
   "Select the elements to put into the part together with the part itself.": "请连同零件本身一起选中要放入零件的构件。",
   "The elements are part of the part now: edit them in its edit mode (Tab).": "这些构件现已成为零件的一部分：请在其编辑模式（Tab）中编辑。",
   "Parts (old .lapinfamily)": "零件（旧版 .lapinfamily）",
+  // The symbol editor's layers (forum #120).
+  'Add layer': '添加图层', 'Remove layer': '删除图层', 'Toggle visibility': '显示或隐藏', 'Opacity (0–100, {attr.key} or {= formula})': '不透明度（0–100、{attr.key} 或 {= 公式}）', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': '可见性（true/false、0–100、{attr.key} 或 {= 公式}）',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

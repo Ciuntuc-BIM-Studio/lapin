@@ -4093,6 +4093,8 @@ export const DA: Record<string, string> = {
   "Select the elements to put into the part together with the part itself.": "Markér de elementer, der skal ind i delen, sammen med selve delen.",
   "The elements are part of the part now: edit them in its edit mode (Tab).": "Elementerne er nu en del af delen: rediger dem i dens redigeringstilstand (Tab).",
   "Parts (old .lapinfamily)": "Dele (gammel .lapinfamily)",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Tilføj lag', 'Remove layer': 'Fjern lag', 'Toggle visibility': 'Vis eller skjul', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacitet (0–100, {attr.key} eller {= formel})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Synlighed (sand/falsk, 0–100, {attr.key} eller {= formel})',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

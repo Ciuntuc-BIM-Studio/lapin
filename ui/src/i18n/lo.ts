@@ -4152,6 +4152,8 @@ export const LO: Record<string, string> = {
   "Select the elements to put into the part together with the part itself.": "ເລືອກອົງປະກອບທີ່ຈະໃສ່ໃນຊິ້ນສ່ວນ ພ້ອມກັບຊິ້ນສ່ວນເອງ.",
   "The elements are part of the part now: edit them in its edit mode (Tab).": "ອົງປະກອບເປັນສ່ວນໜຶ່ງຂອງຊິ້ນສ່ວນແລ້ວ: ແກ້ໄຂໃນໂໝດແກ້ໄຂຂອງມັນ (Tab).",
   "Parts (old .lapinfamily)": "ຊິ້ນສ່ວນ (.lapinfamily ເກົ່າ)",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'ເພີ່ມຊັ້ນ', 'Remove layer': 'ລຶບຊັ້ນ', 'Toggle visibility': 'ສະແດງ ຫຼື ເຊື່ອງ', 'Opacity (0–100, {attr.key} or {= formula})': 'ຄວາມທຶບ (0–100, {attr.key} ຫຼື {= ສູດ})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'ການເບິ່ງເຫັນ (true/false, 0–100, {attr.key} ຫຼື {= ສູດ})',
 };
 
 /** Phrases with a number or a name in them. */

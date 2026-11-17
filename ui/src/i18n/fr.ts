@@ -4060,6 +4060,8 @@ export const FR: Record<string, string> = {
   "Select the elements to put into the part together with the part itself.": "Sélectionnez les éléments à mettre dans la pièce, avec la pièce elle-même.",
   "The elements are part of the part now: edit them in its edit mode (Tab).": "Les éléments font maintenant partie de la pièce : modifiez-les dans son mode d'édition (Tab).",
   "Parts (old .lapinfamily)": "Pièces (ancien .lapinfamily)",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Ajouter un calque', 'Remove layer': 'Supprimer le calque', 'Toggle visibility': 'Afficher ou masquer', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacité (0–100, {attr.key} ou {= formule})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Visibilité (vrai/faux, 0–100, {attr.key} ou {= formule})',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

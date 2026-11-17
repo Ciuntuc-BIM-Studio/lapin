@@ -4096,6 +4096,8 @@ export const PT: Record<string, string> = {
   "Select the elements to put into the part together with the part itself.": "Selecione os elementos a pôr na peça, juntamente com a própria peça.",
   "The elements are part of the part now: edit them in its edit mode (Tab).": "Os elementos fazem agora parte da peça: edite-os no seu modo de edição (Tab).",
   "Parts (old .lapinfamily)": "Peças (antigo .lapinfamily)",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Adicionar camada', 'Remove layer': 'Remover camada', 'Toggle visibility': 'Mostrar ou ocultar', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacidade (0–100, {attr.key} ou {= fórmula})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Visibilidade (verdadeiro/falso, 0–100, {attr.key} ou {= fórmula})',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

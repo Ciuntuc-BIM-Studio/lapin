@@ -9,8 +9,10 @@ namespace Lapin.Platform;
 /// texts carry live text (<c>{attr.number}</c>, <c>{view.scale}</c>, <c>{project.name}</c>) and formulas (<c>{= attr.width * 2}</c>).
 /// <see cref="Scale"/>: <c>annotation</c>, its mm are paper mm (a north arrow reads the same at any scale), or <c>model</c>, its mm are
 /// the building's (a bathtub drawn at its size). Attributes: the fields an instance fills (<c>{attr.key}</c>), with their defaults.
+/// <see cref="Layers"/>: the symbol's own layers (forum #120, the editor's: id, name, visibility, opacity), kept as given; an item
+/// names its layer by <c>layer</c>.
 /// </summary>
-public sealed record SymbolDef(string Scale, string Category, JsonArray Items, IReadOnlyList<SymbolAttribute> Attributes, string? Description = null)
+public sealed record SymbolDef(string Scale, string Category, JsonArray Items, IReadOnlyList<SymbolAttribute> Attributes, string? Description = null, JsonArray? Layers = null)
 {
     public static readonly string[] Scales = ["annotation", "model"];
     public static readonly string[] ItemTypes = ["line", "rect", "polyline", "circle", "arc", "text"];
@@ -28,6 +30,7 @@ public sealed record SymbolDef(string Scale, string Category, JsonArray Items, I
             ["scale"] = Scale, ["category"] = Category, ["items"] = Items.DeepClone(),
             ["attributes"] = new JsonArray(Attributes.Select(a => (JsonNode)a.ToJson()).ToArray()),
         };
+        if (Layers is { Count: > 0 }) o["layers"] = Layers.DeepClone();
         if (Description is { Length: > 0 }) o["description"] = Description;
         return o;
     }
@@ -39,7 +42,8 @@ public sealed record SymbolDef(string Scale, string Category, JsonArray Items, I
         var scale = (string?)o["scale"] is "model" ? "model" : "annotation";
         var category = (string?)o["category"] is { Length: > 0 } c ? c : "other";
         var attrs = (o["attributes"] as JsonArray ?? []).Select(SymbolAttribute.From).OfType<SymbolAttribute>().ToList();
-        return new(scale, category, o["items"] is JsonArray items ? (JsonArray)items.DeepClone() : [], attrs, (string?)o["description"]);
+        return new(scale, category, o["items"] is JsonArray items ? (JsonArray)items.DeepClone() : [], attrs, (string?)o["description"],
+            o["layers"] is JsonArray { Count: > 0 } layers ? (JsonArray)layers.DeepClone() : null);
     }
 
     /// <summary>A definition as a command gives it, checked item by item; what is not a symbol's is refused with why.</summary>

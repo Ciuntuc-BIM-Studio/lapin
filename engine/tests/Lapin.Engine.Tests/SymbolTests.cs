@@ -2,6 +2,9 @@ using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
 using Lapin.Drafting.Cad;
+using Lapin.Drawing;
+using Lapin.Drawing.Export;
+using Lapin.Drawing.Views;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
@@ -333,5 +336,89 @@ public sealed class SymbolTests
         var onSheet = (string)f.Run("drafting.placeSymbol", new JsonObject { ["sheetId"] = sheet, ["symbolId"] = BuiltinSymbols.Prefix + "north-arrow", ["at"] = J(30, 30) })!["id"]!;
         f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray(onSheet) });
         Assert.Null(f.Model.Get(onSheet));
+    }
+
+    // ------------------------------------------------------------ layers (forum #120, issue #70)
+
+    static JsonObject OnLayer(JsonObject item, string layer) { item["layer"] = layer; return item; }
+
+    [Fact]
+    public void A_symbol_s_layers_are_kept_when_it_is_saved_and_read_back()
+    {
+        var f = F();
+        var def = Def("annotation", OnLayer(LineItem(0, 0, 10, 0), "L1"), OnLayer(LineItem(0, 5, 10, 5), "L2"));
+        def["layers"] = new JsonArray(
+            new JsonObject { ["id"] = "L1", ["name"] = "Outline", ["visible"] = true, ["opacity"] = 100 },
+            new JsonObject { ["id"] = "L2", ["name"] = "Note", ["visible"] = "{attr.show}", ["opacity"] = "{= attr.o * 10}" });
+        def["attributes"] = new JsonArray(new JsonObject { ["key"] = "show", ["default"] = "yes" }, new JsonObject { ["key"] = "o", ["default"] = "5" });
+        var s = Create(f, def);
+        var kept = SymbolDef.From(f.Model.Get(s)!.Attrs["def"])!;
+        Assert.Equal(2, kept.Layers!.Count);
+        Assert.Equal("{= attr.o * 10}", (string?)kept.Layers[1]!["opacity"]);
+        // An update keeps them too, and the editor gets them back.
+        f.Run("symbols.update", new JsonObject { ["id"] = s, ["def"] = def.DeepClone() });
+        var got = f.Session.Query("symbols.get", new JsonObject { ["id"] = s })!;
+        Assert.Equal("Note", (string?)got["def"]!["layers"]![1]!["name"]);
+    }
+
+    [Fact]
+    public void A_placed_symbol_leaves_out_its_hidden_layers_and_draws_the_others_at_their_opacity()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var def = Def("annotation", OnLayer(LineItem(0, 0, 10, 0), "L1"), OnLayer(LineItem(0, 5, 10, 5), "L2"), OnLayer(TextItem(0, 8, "N"), "L2"), LineItem(0, 9, 10, 9));
+        def["layers"] = new JsonArray(
+            new JsonObject { ["id"] = "L1", ["name"] = "Outline" },
+            new JsonObject { ["id"] = "L2", ["name"] = "Note", ["visible"] = "{attr.show}", ["opacity"] = "{= attr.o * 10}" });
+        def["attributes"] = new JsonArray(new JsonObject { ["key"] = "show", ["default"] = "yes" }, new JsonObject { ["key"] = "o", ["default"] = "5" });
+        var i = Place(f, plan, Create(f, def), 0, 0);
+        var mk = Mark(f, plan, i);
+        var lines = mk.Lines.Where(l => l.Layer != "PICK").ToList();
+        Assert.Equal(3, lines.Count);
+        // L2 at 50 %: its colour carries the opacity; L1 and the item on no layer stay opaque.
+        Assert.Single(lines, l => HexColor.Alpha(l.Color) is > 0.49 and < 0.51);
+        Assert.Equal(2, lines.Count(l => HexColor.Alpha(l.Color) == 1));
+        Assert.Equal(0.5, HexColor.Alpha(mk.Texts.Single().Color), 2);
+        // The instance's field hides the layer: its line and its text are gone.
+        f.Run("drafting.setSymbol", new JsonObject { ["id"] = i, ["values"] = new JsonObject { ["show"] = "no" } });
+        mk = Mark(f, plan, i);
+        Assert.Equal(2, mk.Lines.Count(l => l.Layer != "PICK"));
+        Assert.Empty(mk.Texts);
+    }
+
+    [Fact]
+    public void A_layer_s_setting_reads_as_the_editor_reads_it()
+    {
+        (bool, string?) R(string k) => k switch { "attr.w" => (true, "4"), "attr.on" => (true, "off"), "attr.empty" => (true, ""), _ => (false, null) };
+        double V(JsonNode? n) => SymbolLayers.Value(n, R, 100);
+        Assert.Equal(100, V(null));
+        Assert.Equal(0, V(false));
+        Assert.Equal(40, V(40));
+        Assert.Equal(25, V("25"));
+        Assert.Equal(100, V("yes"));
+        Assert.Equal(0, V("{attr.on}"));
+        Assert.Equal(0, V("attr.on"));
+        Assert.Equal(4, V("{w}"));
+        Assert.Equal(100, V("{attr.empty}"));
+        Assert.Equal(40, V("{= attr.w * 10}"));
+        Assert.Equal(20, V("= w * 5"));
+        Assert.Equal(0, V("{= if(attr.w > 5, 100, 0)}"));
+        Assert.Equal(100, V("{= nonsense +}"));
+    }
+
+    [Fact]
+    public void Strokes_and_texts_with_an_opacity_print_at_it_in_PDF_and_SVG()
+    {
+        var pen = new Pen("SYMBOL", "#ff000080", 0.25, null, null);
+        pen.Segments.Add((new Vec2(10, 10), new Vec2(50, 10)));
+        var text = new Pen("TEXT", "#0000ff40", 0, null, null);
+        text.Texts.Add(new PenText(new Vec2(10, 20), "N", 2.5, 0, "start", "bottom", false, "sans", false));
+        var page = new PaperPage(100, 100, [pen, text]);
+        var pdf = System.Text.Encoding.Latin1.GetString(PdfWriter.Write([page]));
+        Assert.Contains("/CA 0.502", pdf);
+        Assert.Contains("/CA 0.251", pdf);
+        var svg = SvgWriter.Write(page);
+        Assert.Contains("stroke=\"#ff0000\" stroke-opacity=\"0.5\"", svg);
+        Assert.Contains("fill=\"#0000ff\" fill-opacity=\"0.25\"", svg);
     }
 }
