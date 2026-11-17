@@ -1125,6 +1125,9 @@ export const FR: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Chaque clic d’un outil pinceau est un coup, annulé par Ctrl Z ; les coups d’un terrain peuvent être effacés dans l’inspecteur.',
   // Site tools, stage 2
   'Spot level': 'Cote de niveau', 'Spot levels': 'Cotes de niveau', 'Parcel': 'Parcelle', 'Export LandXML': 'Exporter LandXML', 'Analysis': 'Analyse', 'slopes': 'pentes',
+  'Subregion': 'Sous-région', 'Subregions': 'Sous-régions', 'edit in 3D': 'modifier en 3D', 'done editing 3D': 'terminer la modification 3D', 'Cut slope': 'Talus de déblai', 'Fill slope': 'Talus de remblai', 'Survey point height': 'Altitude du point relevé', 'Drag a point\'s grip up or down in the 3D view.': 'Faites glisser la poignée d’un point vers le haut ou le bas dans la vue 3D.', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': 'Poignées sur les 400 points les plus proches du centre de la vue 3D : déplacez la vue pour atteindre les autres.',
+  'Split terrain': 'Diviser le terrain', 'Merge terrains': 'Fusionner les terrains', 'Select two terrains or more to merge them.': 'Sélectionnez deux terrains ou plus pour les fusionner.',
+  'Terrain boundary': 'Limite du terrain', 'Slope tag': 'Étiquette de pente', 'Slope tags': 'Étiquettes de pente', 'Boundary': 'Limite', 'clipped': 'découpée', 'convex hull': 'enveloppe convexe', 'from parcel': 'depuis la parcelle', 'Cut/fill grid': 'Grille déblai/remblai', 'Graded region': 'Zone nivelée', 'reset to survey': 'revenir au relevé', 'snapshot existing': 'figer l’existant',
   'cut and fill': 'déblais et remblais', 'elevations': 'altitudes', 'drawn': 'dessinée', 'remove': 'supprimer', 'Planting schedule': 'Nomenclature des plantations',
   // The engine in the browser.
   'In the browser': 'Dans le navigateur',

@@ -1109,6 +1109,9 @@ export const LO: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'ການກົດແປງແຕ່ລະຄັ້ງຄືໜຶ່ງຮອຍເສັ້ນ, ຍົກເລີກການກະທຳໄດ້ດ້ວຍ Ctrl Z; ສາມາດລ້າງຮອຍແປງຂອງພື້ນດິນອອກໄດ້ໃນແຜງກວດກາ.',
   // Site tools, stage 2
   'Spot level': 'ຈຸດລະດັບຄວາມສູງ', 'Spot levels': 'ຈຸດລະດັບຄວາມສູງ', 'Parcel': 'ຕອນດິນ', 'Export LandXML': 'ສົ່ງອອກ LandXML', 'Analysis': 'ການວິເຄາະ', 'slopes': 'ຄວາມຄ້ອຍ',
+  'Subregion': 'ເຂດຍ່ອຍ', 'Subregions': 'ເຂດຍ່ອຍທັງໝົດ', 'edit in 3D': 'ແກ້ໄຂໃນ 3D', 'done editing 3D': 'ແກ້ໄຂ 3D ແລ້ວ', 'Cut slope': 'ຄວາມຄ້ອຍຂຸດ', 'Fill slope': 'ຄວາມຄ້ອຍຖົມ', 'Survey point height': 'ລະດັບຄວາມສູງຂອງຈຸດສຳຫຼວດ', 'Drag a point\'s grip up or down in the 3D view.': 'ລາກຈຸດຈັບຂອງຈຸດຂຶ້ນ ຫຼື ລົງໃນມຸມມອງ 3D.', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': 'ຈຸດຈັບຢູ່ 400 ຈຸດທີ່ໃກ້ກາງມຸມມອງ 3D ທີ່ສຸດ: ເລື່ອນມຸມມອງເພື່ອໄປຫາຈຸດອື່ນ.',
+  'Split terrain': 'ແບ່ງດິນ', 'Merge terrains': 'ລວມດິນ', 'Select two terrains or more to merge them.': 'ເລືອກດິນສອງຕອນ ຫຼື ຫຼາຍກວ່ານັ້ນເພື່ອລວມ.',
+  'Terrain boundary': 'ຂອບເຂດດິນ', 'Slope tag': 'ປ້າຍຄວາມຄ້ອຍ', 'Slope tags': 'ປ້າຍຄວາມຄ້ອຍທັງໝົດ', 'Boundary': 'ຂອບເຂດ', 'clipped': 'ຕັດແລ້ວ', 'convex hull': 'ເປືອກນູນ', 'from parcel': 'ຈາກດິນຕອນ', 'Cut/fill grid': 'ຕາໜ່າງຂຸດ/ຖົມ', 'Graded region': 'ເຂດປັບລະດັບ', 'reset to survey': 'ກັບໄປຂໍ້ມູນສຳຫຼວດ', 'snapshot existing': 'ບັນທຶກດິນເດີມ',
   'cut and fill': 'ຂຸດ ແລະ ຖົມ', 'elevations': 'ລະດັບຄວາມສູງ', 'drawn': 'ແຕ້ມແລ້ວ', 'remove': 'ລຶບອອກ', 'Planting schedule': 'ຕາຕະລາງລາຍການຕົ້ນໄມ້',
   // The engine in the browser.
   'In the browser': 'ໃນບຣາວເຊີ',

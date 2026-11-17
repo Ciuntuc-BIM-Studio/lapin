@@ -1125,6 +1125,9 @@ export const IT: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Ogni clic di uno strumento pennello è un tratto, che si annulla con Ctrl Z; i tratti di un terreno si possono cancellare nell’ispettore.',
   // Site tools, stage 2
   'Spot level': 'Quota puntuale', 'Spot levels': 'Quote puntuali', 'Parcel': 'Lotto', 'Export LandXML': 'Esporta LandXML', 'Analysis': 'Analisi', 'slopes': 'pendenze',
+  'Subregion': 'Sottoregione', 'Subregions': 'Sottoregioni', 'edit in 3D': 'modifica in 3D', 'done editing 3D': 'fine modifica 3D', 'Cut slope': 'Scarpata di sterro', 'Fill slope': 'Scarpata di riporto', 'Survey point height': 'Quota del punto rilevato', 'Drag a point\'s grip up or down in the 3D view.': 'Trascina la maniglia di un punto in su o in giù nella vista 3D.', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': 'Maniglie sui 400 punti più vicini al centro della vista 3D: sposta la vista per raggiungere gli altri.',
+  'Split terrain': 'Dividi terreno', 'Merge terrains': 'Unisci terreni', 'Select two terrains or more to merge them.': 'Seleziona due o più terreni per unirli.',
+  'Terrain boundary': 'Confine del terreno', 'Slope tag': 'Etichetta di pendenza', 'Slope tags': 'Etichette di pendenza', 'Boundary': 'Confine', 'clipped': 'ritagliato', 'convex hull': 'inviluppo convesso', 'from parcel': 'dal lotto', 'Cut/fill grid': 'Griglia sterro/riporto', 'Graded region': 'Area livellata', 'reset to survey': 'ripristina il rilievo', 'snapshot existing': 'fissa l’esistente',
   'cut and fill': 'sterro e riporto', 'elevations': 'quote', 'drawn': 'disegnato', 'remove': 'rimuovi', 'Planting schedule': 'Abaco delle piantumazioni',
   // The engine in the browser.
   'In the browser': 'Nel browser',

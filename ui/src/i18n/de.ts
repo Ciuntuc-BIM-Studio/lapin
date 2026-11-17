@@ -1125,6 +1125,9 @@ export const DE: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Jeder Klick eines Pinselwerkzeugs ist ein Strich, rückgängig mit Strg Z; die Striche eines Geländes lassen sich im Inspektor leeren.',
   // Site tools, stage 2
   'Spot level': 'Höhenkote', 'Spot levels': 'Höhenkoten', 'Parcel': 'Grundstück', 'Export LandXML': 'LandXML exportieren', 'Analysis': 'Analyse', 'slopes': 'Neigungen',
+  'Subregion': 'Teilbereich', 'Subregions': 'Teilbereiche', 'edit in 3D': 'in 3D bearbeiten', 'done editing 3D': '3D-Bearbeitung beenden', 'Cut slope': 'Abtragsböschung', 'Fill slope': 'Auftragsböschung', 'Survey point height': 'Höhe des Vermessungspunkts', 'Drag a point\'s grip up or down in the 3D view.': 'Ziehen Sie den Griff eines Punkts in der 3D-Ansicht nach oben oder unten.', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': 'Griffe an den 400 Punkten nächst der Mitte der 3D-Ansicht: verschieben Sie die Ansicht, um die anderen zu erreichen.',
+  'Split terrain': 'Gelände teilen', 'Merge terrains': 'Gelände vereinen', 'Select two terrains or more to merge them.': 'Wählen Sie zwei oder mehr Gelände, um sie zu vereinen.',
+  'Terrain boundary': 'Geländegrenze', 'Slope tag': 'Neigungsangabe', 'Slope tags': 'Neigungsangaben', 'Boundary': 'Grenze', 'clipped': 'beschnitten', 'convex hull': 'konvexe Hülle', 'from parcel': 'vom Grundstück', 'Cut/fill grid': 'Abtrag/Auftrag-Raster', 'Graded region': 'Modellierter Bereich', 'reset to survey': 'auf Vermessung zurücksetzen', 'snapshot existing': 'Bestand festhalten',
   'cut and fill': 'Abtrag und Auftrag', 'elevations': 'Höhen', 'drawn': 'gezeichnet', 'remove': 'entfernen', 'Planting schedule': 'Pflanzliste',
   // The engine in the browser.
   'In the browser': 'Im Browser',
