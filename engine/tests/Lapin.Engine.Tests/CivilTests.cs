@@ -448,6 +448,7 @@ public class CivilTests
         // The part is a closed skin, in the geometry with its area.
         var geom = f.Session.Geometry(t)!;
         Assert.Contains(geom.Parts, x => x.Name == "Gravel bed");
+        Assert.Contains(geom.Plan!, x => x.Kind == "symbol" && x.Closed && x.Points.Count == 6);
         Assert.Equal(675, f.Session.Quantities(t).Single(x => x.Name == "Lapin_SubregionQuantities").Quantities.Single(x => x.Name == "PlanArea").Value, 3);
     }
 }

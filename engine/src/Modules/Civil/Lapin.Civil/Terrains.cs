@@ -381,7 +381,8 @@ public static class Terrains
         foreach (var (a, b) in t.Boundary())
             items.Add(new PlanItem("terrainEdge", false, [new Vec2(t.Tin.Points[a].X, t.Tin.Points[a].Y), new Vec2(t.Tin.Points[b].X, t.Tin.Points[b].Y)]));
         foreach (var (outline, _, holes) in pads) { items.Add(new PlanItem("heavy", true, outline)); items.AddRange(holes.Select(h => new PlanItem("heavy", true, h))); }
-        foreach (var sr in SubregionsOf(e)) items.Add(new PlanItem("thin", true, ArcOutline.Points(sr.Contour, sr.Arcs)));
+        // A subregion's outline, a seen line (a kind the drawing has no role for would not be drawn).
+        foreach (var sr in SubregionsOf(e)) items.Add(new PlanItem("symbol", true, ArcOutline.Points(sr.Contour, sr.Arcs)));
         foreach (var d in ditches) items.AddRange(Ditches.Plan(d));
         return items;
     }
