@@ -102,6 +102,9 @@ public static class PdfWriter
             {
                 var (r, g, b) = Rgb(pen.Stroke);
                 var dash = pen.Dash is { Length: > 0 } d ? string.Join(' ', d.Select(v => F(v * Pt))) : "";
+                // A stroke with an opacity (#rrggbbaa, a symbol layer's, forum #120): through a graphics state of that alpha.
+                var seeStroke = HexColor.Alpha(pen.Stroke);
+                if (seeStroke < 0.999) c.Append("q /GS").Append(alpha(seeStroke)).Append(" gs\n");
                 c.Append(F(Math.Max(pen.Width, 0.05) * Pt)).Append(" w ").Append(F(r)).Append(' ').Append(F(g)).Append(' ').Append(F(b)).Append(" RG [").Append(dash).Append("] 0 d\n");
                 foreach (var (a, e) in pen.Segments)
                 {
@@ -109,12 +112,16 @@ public static class PdfWriter
                     var q = (e - a).Length < 1e-9 ? e + new Vec2(0.01, 0) : e;
                     c.Append(X(a.X)).Append(' ').Append(Y(a.Y)).Append(" m ").Append(X(q.X)).Append(' ').Append(Y(q.Y)).Append(" l S\n");
                 }
+                if (seeStroke < 0.999) c.Append("Q\n");
             }
             if (pen.Texts.Count > 0)
             {
                 var (r, g, b) = Rgb(pen.Stroke);
+                var seeText = HexColor.Alpha(pen.Stroke);
+                if (seeText < 0.999) c.Append("q /GS").Append(alpha(seeText)).Append(" gs\n");
                 c.Append("[] 0 d ").Append(F(r)).Append(' ').Append(F(g)).Append(' ').Append(F(b)).Append(" rg\n");
                 foreach (var t in pen.Texts) Text(c, t, X, Y);
+                if (seeText < 0.999) c.Append("Q\n");
             }
         }
         return c.ToString();

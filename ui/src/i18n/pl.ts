@@ -4100,6 +4100,8 @@ export const PL: Record<string, string> = {
   "Select the elements to put into the part together with the part itself.": "Zaznacz elementy do włożenia w część razem z samą częścią.",
   "The elements are part of the part now: edit them in its edit mode (Tab).": "Elementy są teraz częścią tej części: edytuj je w jej trybie edycji (Tab).",
   "Parts (old .lapinfamily)": "Części (stary .lapinfamily)",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Dodaj warstwę', 'Remove layer': 'Usuń warstwę', 'Toggle visibility': 'Pokaż lub ukryj', 'Opacity (0–100, {attr.key} or {= formula})': 'Krycie (0–100, {attr.key} lub {= formuła})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Widoczność (prawda/fałsz, 0–100, {attr.key} lub {= formuła})',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

@@ -4057,6 +4057,8 @@ export const DE: Record<string, string> = {
   "Select the elements to put into the part together with the part itself.": "Wählen Sie die Elemente, die ins Bauteil sollen, zusammen mit dem Bauteil selbst.",
   "The elements are part of the part now: edit them in its edit mode (Tab).": "Die Elemente gehören nun zum Bauteil: Bearbeiten Sie sie in seinem Bearbeitungsmodus (Tab).",
   "Parts (old .lapinfamily)": "Bauteile (altes .lapinfamily)",
+  // The symbol editor's layers (forum #120).
+  'Add layer': 'Layer hinzufügen', 'Remove layer': 'Layer entfernen', 'Toggle visibility': 'Ein- oder ausblenden', 'Opacity (0–100, {attr.key} or {= formula})': 'Deckkraft (0–100, {attr.key} oder {= Formel})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Sichtbarkeit (wahr/falsch, 0–100, {attr.key} oder {= Formel})',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
