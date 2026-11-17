@@ -84,6 +84,12 @@ Your own catalogue comes in from a spreadsheet: **Import catalogue…** reads a 
 
 ![A floor with a curved edge split along a line: the part on the right selected](shots/floor-split.webp)
 
+A floor's own holes go to the part they lie in; a layer that reaches past a curved edge keeps doing so on both parts; a false ceiling's grid stays where it was, each light or diffuser in the part its cell lies in. A floor with an elliptical edge is not cut by a line.
+
+A **roof** is split and trimmed the same way. Each part keeps the rules of its edges (eave or gable, pitch, overhang), and the cut is a gable with no overhang; the cut is allowed only where it leaves the roof as it was, each part's slopes standing where the roof's stood, as across a gable roof's ridge or along it. Elsewhere it is refused (*would change its slopes*): a part's slopes would rise to new ridges. Roof windows, dormers and downpipes go to their part. A barrel roof is not cut.
+
+![A gable roof split across its ridge: two roofs, the same slopes](shots/roof-split.webp)
+
 ## Roofs
 
 Choose **Architecture → Roof** (<kbd>RF</kbd>) and click the outline of the walls under it. Lapin builds the roof over that outline, at the top of its level.

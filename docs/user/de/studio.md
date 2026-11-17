@@ -10,6 +10,8 @@ Die Registerkarte **Studio** erzeugt Körper, die keine andere Registerkarte bau
 
 ![Die Registerkarte Studio](shots/ribbon-studio.webp)
 
+Die Werkzeuge stehen in sechs Gruppen: **Skizze** (Linien, Rechtecke, Kreise, die **Bögen** ▾, Versatz und darunter das Skizzieren auf einer Fläche oder einer Ebene, **Skizze bearbeiten** ▾, **Arbeitsebenen** ▾ und **Auf Fläche** ▾), **Zwangsbedingungen** (die Listen **Geometrisch** ▾ und **Abmessungen** ▾), **Körper** (Extrusion, Sweep, Rotation, Loft, Skizze bearbeiten, **Mit Dicke** ▾ und **Grundkörper** ▾), **Teile** (Bauteile platzieren und bearbeiten), **Ändern** (Drücken/Ziehen, Verrundung, Fase, Schale, Teilen, **Reihen** ▾ und **Verschieben, drehen, spiegeln** ▾) und **Boolesch**. Eine Schaltfläche mit ▾ öffnet ihre Liste; jedes Werkzeug behält seine Buchstaben, und **Befehle…** und **Meine Werkzeuge** finden es wie bisher.
+
 Ein Studio-Körper hat eine IFC-Klasse wie jedes Element. Wählen Sie sie in seinen Eigenschaften: ein Stab, eine Platte, eine Bekleidung, ein Geländer, eine Decke oder eine andere. Seine Mengen und sein Export folgen dieser Klasse.
 
 ## Wo Sie skizzieren
@@ -98,7 +100,7 @@ Diese Werkzeuge arbeiten an den Flächen und Kanten des Körpers, wie er jetzt g
 
 ## Auf einer Fläche zeichnen
 
-In der 3D-Ansicht können Sie direkt auf eine Fläche zeichnen und das Gezeichnete hineindrücken oder herausziehen. Die Gruppe **Auf Fläche** der Registerkarte **Studio** enthält **Rechteck auf Fläche** (FRE), **Kreis auf Fläche** (FCI) und **Polygon auf Fläche** (FPL).
+In der 3D-Ansicht können Sie direkt auf eine Fläche zeichnen und das Gezeichnete hineindrücken oder herausziehen. **Studio → Skizze → Auf Fläche** ▾ enthält **Rechteck auf Fläche** (FRE), **Kreis auf Fläche** (FCI) und **Polygon auf Fläche** (FPL).
 
 1. Klicken Sie auf eine Fläche eines beliebigen Elements: eines Studio-Körpers, einer Wand, einer Decke oder einer Stütze. Der Klick ist der erste Punkt: die Ecke eines Rechtecks, der Mittelpunkt eines Kreises oder die erste Ecke eines Polygons. Die Fläche bleibt umrandet, solange Sie zeichnen.
 2. Bewegen Sie die Maus. Die Form folgt ihr auf der Fläche, ihre Größe daneben. Punkte fangen an den Ecken der Fläche, an den Mitten ihrer Kanten und an ihrer Mitte; sonst gehen sie in Zentimeterschritten, mit <kbd>Umschalt</kbd> in Schritten von 10 cm. Klicken Sie auf die gegenüberliegende Ecke oder auf einen Punkt des Kreises. Sie können die Größe auch eingeben: Breite und Höhe eines Rechtecks als `1200, 600`, oder den Radius eines Kreises. Ein Polygon nimmt einen Klick an jeder Ecke, oder eine eingegebene Länge in Richtung der Maus. Klicken Sie auf seine erste Ecke oder drücken Sie <kbd>Enter</kbd>, um es zu schließen; <kbd>Rücktaste</kbd> nimmt die letzte Ecke zurück.

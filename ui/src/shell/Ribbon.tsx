@@ -8,7 +8,7 @@
 
 import { setPrefs, usePrefs } from '../app/prefs';
 import { useEffect, useRef, useState } from 'react';
-import { Moon, Redo2, Search, Sun, Undo2 } from 'lucide-react';
+import { ChevronDown, Moon, Redo2, Search, Sun, Undo2 } from 'lucide-react';
 import { HelpMenu } from './HelpMenu';
 import { BrandName } from './BrandMark';
 import { useUi } from '../app/store';
@@ -107,14 +107,17 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
   usePrefs();
   const tab = { ...all, groups: all.groups.filter((g) => g.shown?.() ?? true) };
   const press = (tl: ToolDef, el?: HTMLElement) => { pressTool(tl, el); if (!tl.items?.length) onPicked?.(); };
+  // A pulldown is lit while one of its tools is on, and marked by its arrow.
+  const on = (tl: ToolDef) => tool === tl.id || !!tl.items?.some((x) => x.id === tool);
+  const mark = (tl: ToolDef, size: number) => (tl.items?.length ? <ChevronDown className="pulldown-mark" size={size} strokeWidth={2} aria-hidden /> : null);
   if (icons) return (
     <div className={`band icons${drop ? ' drop' : ''}`} role="toolbar" aria-label={tab.label} data-i18n-ctx={tab.i18nCtx} onWheel={wheelAcross}>
       {tab.groups.map((g, gi) => (
         <div className="group-inline" key={g.label} role="group" aria-label={g.label}>
           {gi > 0 && <span className="group-rule" aria-hidden />}
           {[...g.tools, ...(g.small ?? [])].map((tl) => (
-            <button type="button" key={tl.id} className={`tool icon-only${tool === tl.id ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label, g.label)} aria-label={tl.label}>
-              <tl.icon size={18} strokeWidth={1.5} />
+            <button type="button" key={tl.id} className={`tool icon-only${on(tl) ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label, g.label)} aria-label={tl.label} data-pulldown={tl.items?.length ? tl.id : undefined}>
+              <tl.icon size={18} strokeWidth={1.5} />{mark(tl, 9)}
             </button>
           ))}
         </div>
@@ -129,9 +132,9 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
             {g.tools.map((tl) => {
               const keys = bindingText(tl.id);
               return (
-                <button type="button" key={tl.id} className={`tool${tool === tl.id ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
+                <button type="button" key={tl.id} className={`tool${on(tl) ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)} data-pulldown={tl.items?.length ? tl.id : undefined}>
                   <tl.icon size={22} strokeWidth={1.5} />
-                  <span>{tl.label}</span>
+                  <span>{tl.label}{mark(tl, 10)}</span>
                   {keys && <kbd className="tool-key" data-no-i18n>{keys.split(', ')[0]}</kbd>}
                 </button>
               );
@@ -139,8 +142,8 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
             {g.small && g.small.length > 0 && (
               <div className="small-tools">
                 {g.small.map((tl) => (
-                  <button type="button" key={tl.id} className={`tool small${tool === tl.id ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
-                    <tl.icon size={14} strokeWidth={1.6} /><span>{tl.label}</span>
+                  <button type="button" key={tl.id} className={`tool small${on(tl) ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)} data-pulldown={tl.items?.length ? tl.id : undefined}>
+                    <tl.icon size={14} strokeWidth={1.6} /><span>{tl.label}</span>{tl.items?.length ? <ChevronDown size={10} strokeWidth={2} aria-hidden /> : null}
                   </button>
                 ))}
               </div>

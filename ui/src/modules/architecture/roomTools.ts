@@ -89,7 +89,7 @@ const divider = (ctx: ToolContext, kind: 'line' | 'polyline' | 'rectangle' | 'ar
 
 /** A room separation line (chained), straight or, set to Arc, an arc through three points: it bounds rooms as a wall would, with no body (an open-plan kitchen and living room). */
 export const roomDivider: ToolDef = chainTool({
-  id: 'architecture.roomDivider', label: 'Room separation line', icon: Minus, shortcut: 'RS',
+  id: 'architecture.roomDivider', label: 'Room separation line', icon: Minus, shortcut: 'LS',
   line: async (a, b, ctx) => { await divider(ctx, 'line', [a, b]); },
   arc: async (a, b, p, ctx) => { await divider(ctx, 'arc', [a, b, p]); },
 });

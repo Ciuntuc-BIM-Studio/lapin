@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Arcos", "Sketch edits": "Edições do esboço", "Geometric": "Geométricas", "Arrays": "Matrizes", "Move, rotate, mirror": "Mover, rodar, espelhar", "Carriers and fans": "Caminhos de cabos e ventiladores",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Largura (vazia: a do tipo; o primeiro lado de um contorno)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "O lote (o limite da propriedade) do terreno sob cada contorno fechado, com os seus arcos.", "An opening in the floor under each closed outline; a circle makes a round one.": "Uma abertura na laje sob cada contorno fechado; um círculo faz uma redonda.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Uma escada do tipo escolhido: o seu arranque no início do percurso, subindo ao longo dele; o primeiro lado de um contorno é o seu arranque e a sua largura.",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "Peças das ligações de aço", "Reinforcing bars": "Varões de armadura", "Bars by mark": "Varões por marca", "Place in its element": "Lugar no seu elemento", "Thickness (m)": "Espessura (m)", "Row of the members list": "Linha da lista de perfis", "Hall": "Pavilhão", "kg/m": "kg/m", "Each (kg, the row's)": "Unidade (kg, da linha)", "Row of the parts schedule": "Linha do mapa de peças", "Weld length (m)": "Comprimento de soldadura (m)", "Total length (m)": "Comprimento total (m)", "A type's bars of one mark: shape, Ø, length": "Varões de um tipo com uma marca: forma, Ø, comprimento",
   // One sketch canvas for every board: the shared bar (audit S11)
   "Open in 2D": "Abrir em 2D", "Open the sketch's plane as a 2D view: the same sketch, the same tools": "Abrir o plano do esboço como vista 2D: o mesmo esboço, as mesmas ferramentas", "Back to 3D": "Voltar ao 3D", "Back to the 3D view, the sketch on its plane": "Voltar à vista 3D, o esboço no seu plano", "Finish sketch: what is drawn is kept (one undo step)": "Terminar esboço: o que está desenhado fica (um passo de anular)", "Cancel: what this sketch drew is dropped": "Cancelar: o que este esboço desenhou é descartado",
   // Annotations drawn on a sheet itself (decision 620)
@@ -1184,6 +1190,12 @@ export const PT: Record<string, string> = {
   'Extract grille': 'Grelha de exaustão',
   'Rise / drop': 'Subida / descida',
   'Cap': 'Tampão',
+  'Coupling': 'Luva',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': 'Arrastar: mover o montante ao longo da parede (Ctrl-clique: retirá-lo)',
+  'Drag out or in: more or fewer king studs': 'Arrastar para fora ou para dentro: mais ou menos montantes principais',
+  'Drag out or in: more or fewer jack studs': 'Arrastar para fora ou para dentro: mais ou menos montantes de verga',
+  'Reset studs': 'Repor montantes',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": 'Os montantes movidos, adicionados ou retirados nesta parede (no seu alçado da estrutura) voltam ao módulo do seu tipo',
   'Service': 'Serviço',
   'Ports': 'Conectores',
   'open': 'livre',

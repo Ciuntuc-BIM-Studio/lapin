@@ -58,6 +58,12 @@ Warstwa stropu może też wychodzić poza jego obrys albo kończyć się przed n
 
 ![Strop z łukową krawędzią podzielony linią: prawa część zaznaczona](shots/floor-split.webp)
 
+Własne otwory stropu trafiają do części, w której leżą; warstwa wystająca poza łukową krawędź nadal wystaje na obu częściach; siatka sufitu podwieszanego zostaje tam, gdzie była, każda oprawa lub nawiewnik w części, w której leży jego komórka. Strop z eliptyczną krawędzią nie jest cięty linią.
+
+**Dach** jest dzielony i przycinany w ten sam sposób. Każda część zachowuje reguły swoich krawędzi (okap lub szczyt, nachylenie, wysunięcie), a cięcie jest szczytem bez wysunięcia; cięcie jest dozwolone tylko tam, gdzie zostawia dach takim, jaki był, z połaciami każdej części stojącymi tam, gdzie stały połacie dachu, jak w poprzek kalenicy dachu dwuspadowego lub wzdłuż niej. Gdzie indziej jest odrzucane (*would change its slopes*): połacie części wznosiłyby się do nowych kalenic. Okna dachowe, lukarny i rury spustowe trafiają do swojej części. Dach kolebkowy nie jest cięty.
+
+![Dach dwuspadowy podzielony w poprzek kalenicy: dwa dachy, te same połacie](shots/roof-split.webp)
+
 ## Dachy
 
 Wybierz **Architektura → Dach** (<kbd>RF</kbd>) i kliknij obrys ścian pod nim. Lapin buduje dach nad tym obrysem, na wysokości szczytu jego poziomu.

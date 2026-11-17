@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "圆弧", "Sketch edits": "草图编辑", "Geometric": "几何约束", "Arrays": "阵列", "Move, rotate, mirror": "移动、旋转、镜像", "Carriers and fans": "桥架和风机",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "宽度（空：类型的；轮廓的第一条边）", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "每个闭合轮廓下地形的地块（产权边界），保留其圆弧。", "An opening in the floor under each closed outline; a circle makes a round one.": "在每个闭合轮廓下的楼板中开洞；圆形生成圆洞。", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "所选类型的楼梯：起步在路径起点，沿路径上升；轮廓的第一条边即其起步和宽度。",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "钢连接零件", "Reinforcing bars": "钢筋", "Bars by mark": "按编号的钢筋", "Place in its element": "在其构件中的位置", "Thickness (m)": "厚度 (m)", "Row of the members list": "构件清单中的行", "Hall": "厂房", "kg/m": "kg/m", "Each (kg, the row's)": "单件 (kg，该行的)", "Row of the parts schedule": "零件明细表中的行", "Weld length (m)": "焊缝长度 (m)", "Total length (m)": "总长度 (m)", "A type's bars of one mark: shape, Ø, length": "同一编号的类型钢筋：形状、Ø、长度", "Partition": "分区",
   // One sketch canvas for every board: the shared bar (audit S11)
   "Open in 2D": "在二维中打开", "Open the sketch's plane as a 2D view: the same sketch, the same tools": "将草图的平面作为二维视图打开：同一草图，同样的工具", "Back to 3D": "返回三维", "Back to the 3D view, the sketch on its plane": "返回三维视图，草图在其平面上", "Finish sketch: what is drawn is kept (one undo step)": "完成草图：所绘内容保留（一步撤销）", "Cancel: what this sketch drew is dropped": "取消：此草图所绘内容被丢弃",
   // Annotations drawn on a sheet itself (decision 620)
@@ -1184,6 +1190,12 @@ export const ZH: Record<string, string> = {
   'Extract grille': '排风格栅',
   'Rise / drop': '上升 / 下降',
   'Cap': '管帽',
+  'Coupling': '管箍',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': '拖动：沿墙移动立柱（Ctrl 单击：移除）',
+  'Drag out or in: more or fewer king studs': '向外或向内拖动：增加或减少主立柱',
+  'Drag out or in: more or fewer jack studs': '向外或向内拖动：增加或减少门窗过梁支柱',
+  'Reset studs': '重置立柱',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": '在此墙上（其骨架立面中）移动、添加或移除的立柱恢复为其类型的模数',
   'Service': '服务',
   'Ports': '端口',
   'open': '未连接',

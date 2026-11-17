@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "ເສັ້ນໂຄ້ງ", "Sketch edits": "ແກ້ໄຂແບບຮ່າງ", "Geometric": "ເລຂາຄະນິດ", "Arrays": "ການຈັດລຽນ", "Move, rotate, mirror": "ຍ້າຍ, ໝູນ, ສະທ້ອນ", "Carriers and fans": "ຮາງສາຍ ແລະ ພັດລົມ",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "ຄວາມກວ້າງ (ຫວ່າງ: ຂອງປະເພດ; ຂອບທຳອິດຂອງເສັ້ນຂອບ)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "ຕອນດິນ (ຂອບເຂດຂອງຊັບສິນ) ຂອງພື້ນດິນໃຕ້ແຕ່ລະເສັ້ນຂອບປິດ, ຮັກສາເສັ້ນໂຄ້ງຂອງມັນໄວ້.", "An opening in the floor under each closed outline; a circle makes a round one.": "ຮູໃນພື້ນໃຕ້ແຕ່ລະເສັ້ນຂອບປິດ; ວົງມົນເຮັດໃຫ້ເປັນຮູມົນ.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "ຂັ້ນໄດຂອງປະເພດທີ່ເລືອກ: ຕີນຂອງມັນຢູ່ຈຸດເລີ່ມຂອງເສັ້ນທາງ, ຂຶ້ນໄປຕາມມັນ; ຂອບທຳອິດຂອງເສັ້ນຂອບແມ່ນຕີນ ແລະ ຄວາມກວ້າງຂອງມັນ.",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "ຊິ້ນສ່ວນຂອງຂໍ້ຕໍ່ເຫຼັກ", "Reinforcing bars": "ເຫຼັກເສີມ", "Bars by mark": "ເຫຼັກຕາມເຄື່ອງໝາຍ", "Place in its element": "ບ່ອນໃນອົງປະກອບຂອງມັນ", "Thickness (m)": "ຄວາມໜາ (m)", "Row of the members list": "ແຖວຂອງລາຍການໂຄງເຫຼັກ", "Hall": "ໂຮງ", "kg/m": "kg/m", "Each (kg, the row's)": "ແຕ່ລະອັນ (kg, ຂອງແຖວ)", "Row of the parts schedule": "ແຖວຂອງຕາຕະລາງຊິ້ນສ່ວນ", "Weld length (m)": "ຄວາມຍາວການເຊື່ອມ (m)", "Total length (m)": "ຄວາມຍາວລວມ (m)", "A type's bars of one mark: shape, Ø, length": "ເຫຼັກຂອງປະເພດໜຶ່ງທີ່ມີເຄື່ອງໝາຍດຽວ: ຮູບຊົງ, Ø, ຄວາມຍາວ",
   // One sketch canvas for every board: the shared bar (audit S11)
   "Open in 2D": "ເປີດໃນ 2D", "Open the sketch's plane as a 2D view: the same sketch, the same tools": "ເປີດພື້ນຂອງແບບຮ່າງເປັນມຸມມອງ 2D: ແບບຮ່າງດຽວກັນ, ເຄື່ອງມືດຽວກັນ", "Back to 3D": "ກັບໄປ 3D", "Back to the 3D view, the sketch on its plane": "ກັບໄປມຸມມອງ 3D, ແບບຮ່າງຢູ່ເທິງພື້ນຂອງມັນ", "Finish sketch: what is drawn is kept (one undo step)": "ສຳເລັດແບບຮ່າງ: ສິ່ງທີ່ແຕ້ມຖືກເກັບໄວ້ (ຍົກເລີກໄດ້ໜຶ່ງຂັ້ນ)", "Cancel: what this sketch drew is dropped": "ຍົກເລີກ: ສິ່ງທີ່ແບບຮ່າງນີ້ແຕ້ມຖືກລຶບອອກ",
   // Annotations drawn on a sheet itself (decision 620)
@@ -1170,6 +1176,12 @@ export const LO: Record<string, string> = {
   'Extract grille': 'ຕະແກງດູດອາກາດ',
   'Rise / drop': 'ຍົກຂຶ້ນ / ຫຼຸດລົງ',
   'Cap': 'ຝາອັດ',
+  'Coupling': 'ຂໍ້ຕໍ່',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': 'ລາກ: ຍ້າຍເສົາຕາມຝາ (Ctrl-ຄລິກ: ເອົາອອກ)',
+  'Drag out or in: more or fewer king studs': 'ລາກອອກ ຫຼື ເຂົ້າ: ເສົາຫຼັກຫຼາຍຂຶ້ນ ຫຼື ໜ້ອຍລົງ',
+  'Drag out or in: more or fewer jack studs': 'ລາກອອກ ຫຼື ເຂົ້າ: ເສົາຮອງຫຼາຍຂຶ້ນ ຫຼື ໜ້ອຍລົງ',
+  'Reset studs': 'ຕັ້ງເສົາຄືນໃໝ່',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": 'ເສົາທີ່ຍ້າຍ, ເພີ່ມ ຫຼື ເອົາອອກໃນຝານີ້ (ໃນຮູບດ້ານໂຄງ) ກັບຄືນຫາໂມດູນຂອງປະເພດ',
   'Service': 'ປະເພດງານລະບົບ',
   'Ports': 'ຊ່ອງຕໍ່',
   'open': 'ເປີດວ່າງ',

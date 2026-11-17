@@ -16,7 +16,7 @@ Selectează în 3D un solid Studio sau o piesă plasată, apoi fă una dintre ac
 
 - apasă **Tab**;
 - dă **dublu clic** pe piesă în 3D;
-- apasă **Editează piesa** în **Studio → Piesă**, sau în secțiunea **Piesă** din Proprietăți.
+- apasă **Editează piesa** în **Studio → Părți**, sau în secțiunea **Piesă** din Proprietăți.
 
 Piesa intră atunci în **modul de editare**. Restul modelului se estompează și nu poate fi selectat, dar rămâne acolo ca să te prinzi de el. Piesa se desenează ca de obicei, iar bara de deasupra vederii spune ce editezi.
 

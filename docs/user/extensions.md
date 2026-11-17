@@ -39,7 +39,7 @@ Click **Install**. Lapin downloads the file, checks that its size and SHA-256 ar
 | Rule packs | kept on this computer; **Add to this project** adds a rule pack of the project. Marked indicative: the values are the author's, check them against the norm in force |
 | Table and layer mappings | remembered by Lapin, so **Import table…** finds the column mapping by the table's headings and **Convert drafting to…** the converter of each layer; uninstalling puts your earlier choices back |
 
-If your library already has something of the same name, Lapin asks before replacing it. Nothing an extension brings is ever run: extensions are content.
+If your library already has a price list, profile library or hatch file of the same name that differs, the **Import preview** offers to keep both (with (2) after its name), replace it or skip; for a project template of the same name, Lapin asks before replacing it. Nothing an extension brings is ever run: extensions are content.
 
 Lapin's catalogue is also **signed** by Lapin Extensions: the catalogue and each of its files carry a signature that Lapin checks before it reads the list or installs a file, so a copy changed anywhere on the way is refused. A line above the list says **Signed by Lapin Extensions** when it is.
 

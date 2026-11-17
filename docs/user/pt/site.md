@@ -33,12 +33,16 @@ Tudo o que é importado fica guardado no arquivo do projeto. Um elemento recebe 
 ## Vias, curvas e linhas
 
 Uma **via** ou um **caminho** segue o seu eixo. Em **Corredor viário…** (CR), a guia **Curvas** dá a cada vértice do eixo um raio com uma clotoide de entrada e de saída, como um projetista de estradas traça uma curva; um vértice deixado em 0 continua sendo um canto, e curvas que não cabem entre as vizinhas são recusadas com o motivo. As estacas, o perfil longitudinal e as seções transversais seguem o eixo curvo, e o IFC 4.3 o grava como um alinhamento.
+Um caminho ou uma estrada, um muro de arrimo ou uma vala são divididos, aparados, estendidos e deslocados com as ferramentas das paredes (**Modificar → Dividir elemento**, **Modificar → Aparar/estender elementos**, **Deslocar**). As suas estações continuam: a segunda parte começa na estação onde caiu o corte, de modo que o perfil projetado, as seções transversais e as juntas pedidas em estações ficam onde estavam. Um corte tem de cair num trecho reto do eixo, não numa curva, e cada vértice mantém a sua curva. Um eixo importado como segmentos de alinhamento IFC 4.3 não é cortado aqui.
+
 
 As linhas de CAD viram elementos do terreno: **Via a partir de linhas CAD** (LR) e **Linha de quebra a partir de linhas CAD** (BL) pegam uma linha ou polilinha desenhada ou trazida por um DXF, seguem toda linha do seu layer que se liga a ela ponta a ponta, e fazem uma via ao longo dela ou uma linha de quebra do terreno. Quando as linhas trazem cotas (as linhas 3D de um DXF), elas dão o perfil da via ou os níveis da linha de quebra. Essas linhas são guardadas com as suas cotas e podem ser mostradas em 3D (a categoria *linhas*).
 
 ## Plataformas e o lote
 
 **Site → Platform** (<kbd>PD</kbd>) nivela o terreno dentro de um contorno a uma cota, com escavação e aterro; **Site → Parcel** (<kbd>PC</kbd>) desenha o limite da propriedade, a traço-ponto com a sua área. Ambas desenham o contorno com a mesma barra que uma laje: um **Polygon** cujas arestas podem ser arcos (<kbd>Space</kbd>), um **Rectangle** ou um **Circle**. Selecionadas, os seus cantos e arestas têm pegas (as do lote, no seu terreno), e o clique direito oferece **Make arc**, **Make straight**, **Fillet corner…** e **Chamfer corner…**, cada um um passo de anular. A plataforma nivela ao longo dos arcos verdadeiros; a área e o perímetro do lote são medidos neles, e o inventário de coordenadas lista os seus cantos.
+**Modificar → Dividir elemento** corta uma plataforma em duas ao longo de uma linha de dois pontos (cada parte nivelada à mesma altura, os seus furos na parte em que caem; um furo que a linha atravessa é recusado), e **Modificar → Aparar/estender elementos** apara uma plataforma ou o lote por um limite reto, mantendo o lado em que clicar. Um terreno mantém um lote: é aparado, não dividido.
+
 
 ## Plantas de situação e de localização
 

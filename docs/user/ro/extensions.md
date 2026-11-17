@@ -39,7 +39,7 @@ Clic pe **Instalează**. Lapin descarcă fișierul, verifică dacă mărimea și
 | Pachete de reguli | păstrate pe acest calculator; **Adaugă în acest proiect** adaugă un pachet de reguli al proiectului. Marcate orientative: valorile sunt ale autorului, verifică-le cu norma în vigoare |
 | Corespondențe de tabele și de straturi | ținute minte de Lapin, ca **Importă tabel…** să găsească potrivirea coloanelor după titlurile tabelului și **Convertește desenul în…** convertorul fiecărui strat; la dezinstalare alegerile tale de dinainte revin |
 
-Dacă biblioteca ta are deja ceva cu același nume, Lapin întreabă înainte să-l înlocuiască. Nimic din ce aduce o extensie nu se rulează: extensiile sunt conținut.
+Dacă biblioteca ta are deja o listă de prețuri, o bibliotecă de profile sau un fișier de hașuri cu același nume, dar diferit, **Previzualizarea importului** îți oferă să le păstrezi pe amândouă (cu (2) după nume), să-l înlocuiești sau să sari peste; pentru un șablon de proiect cu același nume, Lapin întreabă înainte să-l înlocuiască. Nimic din ce aduce o extensie nu se rulează: extensiile sunt conținut.
 
 Catalogul Lapin este și **semnat** de Lapin Extensions: catalogul și fiecare fișier al lui poartă o semnătură pe care Lapin o verifică înainte să citească lista sau să instaleze un fișier, așa că o copie schimbată pe drum este refuzată. O linie deasupra listei spune **Semnat de Lapin Extensions** când este.
 

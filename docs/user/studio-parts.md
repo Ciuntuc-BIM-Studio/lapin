@@ -16,7 +16,7 @@ Select one Studio solid or placed part in 3D, then do one of these:
 
 - press **Tab**;
 - **double-click** the part in 3D;
-- press **Edit part** in **Studio → Part**, or in the **Part** section of its Properties.
+- press **Edit part** in **Studio → Parts**, or in the **Part** section of its Properties.
 
 The part is then in **edit mode**. The rest of the model fades and cannot be selected, but it is still there to snap to. The part is drawn as usual, and the bar over the view says what you are editing.
 

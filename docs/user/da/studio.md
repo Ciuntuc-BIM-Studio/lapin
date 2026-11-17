@@ -10,6 +10,8 @@ Fanen **Studio** laver legemer, som ingen anden fane bygger: en bænk, et halvta
 
 ![Fanen Studio](shots/ribbon-studio.webp)
 
+Fanens værktøjer står i seks grupper: **Skitse** (linjer, rektangler, cirkler, **Buer** ▾, forskydning og, under dem, skitsering på en flade eller et plan, **Skitseredigering** ▾, **Arbejdsplaner** ▾ og **På flade** ▾), **Geometriske bånd** (listerne **Geometriske** ▾ og **Mål** ▾), **Legemer** (ekstrudér, fej, drej, loft, redigér skitse, **Med tykkelse** ▾ og **Grundformer** ▾), **Dele** (placering og redigering af dele), **Redigér** (skub/træk, afrunding, affasning, skal, deling, **Rækker** ▾ og **Flyt, drej, spejl** ▾) og **Boolesk**. En knap med ▾ åbner sin liste; hvert værktøj beholder sine bogstaver, og **Kommandoer…** og **Mine værktøjer** finder det som før.
+
 Et Studio-legeme har en IFC-klasse som ethvert element. Vælg den i dets egenskaber: en stang, en plade, en beklædning, et rækværk, et dæk eller en anden. Dets mængder og dets eksport følger klassen.
 
 ## Hvor du skitserer
@@ -98,7 +100,7 @@ Disse værktøjer arbejder på legemets flader og kanter, som det er bygget nu. 
 
 ## Tegn på en flade
 
-I 3D-visningen kan du tegne direkte på en flade og skubbe eller trække det, du har tegnet. Gruppen **På flade** på fanen **Studio** har **Rektangel på flade** (FRE), **Cirkel på flade** (FCI) og **Polygon på flade** (FPL).
+I 3D-visningen kan du tegne direkte på en flade og skubbe eller trække det, du har tegnet. **Studio → Skitse → På flade** ▾ har **Rektangel på flade** (FRE), **Cirkel på flade** (FCI) og **Polygon på flade** (FPL).
 
 1. Klik på en flade af et hvilket som helst element: et Studio-legeme, en væg, et dæk eller en søjle. Klikket er det første punkt: et rektangels hjørne, en cirkels centrum eller en polygons første hjørne. Fladen er omridset, mens du tegner.
 2. Flyt musen. Formen følger den på fladen, med sin størrelse ved siden af. Punkter fanger til fladens hjørner, midten af dens kanter og dens midte; ellers går de en centimeter ad gangen, eller 10 cm med <kbd>Shift</kbd>. Klik på det modsatte hjørne eller på et punkt på cirklen. Du kan også skrive størrelsen: et rektangels bredde og højde som `1200, 600`, eller en cirkels radius. En polygon tager et klik ved hvert hjørne, eller en skrevet længde i musens retning. Klik på dens første hjørne, eller tryk på <kbd>Enter</kbd> for at lukke den; <kbd>Backspace</kbd> tager det sidste hjørne tilbage.

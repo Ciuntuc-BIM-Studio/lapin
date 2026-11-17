@@ -58,6 +58,12 @@ Eine Schicht einer Decke kann auch über ihren Umriss hinausgehen oder davor end
 
 ![Eine Decke mit gekrümmter Kante, entlang einer Linie geteilt: der rechte Teil ist gewählt](shots/floor-split.webp)
 
+Die eigenen Löcher einer Decke gehen an den Teil, in dem sie liegen; eine Schicht, die über eine gekrümmte Kante hinausreicht, tut das auf beiden Teilen weiter; das Raster einer abgehängten Decke bleibt, wo es war, jede Leuchte oder jeder Auslass in dem Teil, in dem seine Zelle liegt. Eine Decke mit elliptischer Kante wird nicht von einer Linie geschnitten.
+
+Ein **Dach** wird auf dieselbe Weise geteilt und gestutzt. Jeder Teil behält die Regeln seiner Kanten (Traufe oder Giebel, Neigung, Überstand), und der Schnitt ist ein Giebel ohne Überstand; der Schnitt ist nur dort erlaubt, wo er das Dach so lässt, wie es war, die Flächen jedes Teils stehen, wo die des Dachs standen, wie quer über den First eines Satteldachs oder entlang davon. Anderswo wird er abgelehnt (*would change its slopes*): Die Flächen eines Teils würden zu neuen Firsten ansteigen. Dachfenster, Gauben und Fallrohre gehen an ihren Teil. Ein Tonnendach wird nicht geschnitten.
+
+![Ein Satteldach quer über den First geteilt: zwei Dächer, dieselben Flächen](shots/roof-split.webp)
+
 ## Dächer
 
 Wählen Sie **Architektur → Dach** (<kbd>RF</kbd>) und klicken Sie den Umriss der Wände darunter an. Lapin baut das Dach über diesem Umriss, oben auf seiner Ebene.

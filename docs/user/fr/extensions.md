@@ -35,7 +35,7 @@ Cliquez sur **Installer**. Lapin télécharge le fichier, vérifie que sa taille
 | Listes de prix | **Exécution → Listes de prix…**, marquées indicatives : les prix sont ceux de l'auteur, comparez-les aux vôtres |
 | Types | le projet ouvert quand vous l'installez, en une étape à annuler (**Gérer → Paquets de types…** exporte les vôtres) |
 
-Si votre bibliothèque contient déjà quelque chose du même nom, Lapin demande avant de le remplacer. Rien de ce qu'apporte une extension n'est jamais exécuté : les extensions sont du contenu.
+Si votre bibliothèque contient déjà une liste de prix, une bibliothèque de profilés ou un fichier de hachures du même nom qui diffère, l'**Aperçu de l’importation** propose de garder les deux (avec (2) après le nom), de le remplacer ou de l'ignorer ; pour un modèle de projet du même nom, Lapin demande avant de le remplacer. Rien de ce qu'apporte une extension n'est jamais exécuté : les extensions sont du contenu.
 
 Le catalogue de Lapin est aussi **signé** par Lapin Extensions : le catalogue et chacun de ses fichiers portent une signature que Lapin vérifie avant de lire la liste ou d'installer un fichier, si bien qu'une copie modifiée en chemin est refusée. Une ligne au-dessus de la liste indique **Signé par Lapin Extensions** quand c'est le cas.
 

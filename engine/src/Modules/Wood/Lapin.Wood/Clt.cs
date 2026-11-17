@@ -364,6 +364,59 @@ public sealed class CltSchedule : IScheduleSource
     public string Kind => "clt";
     public string Label => "CLT panels";
 
+    /// <summary>A walls', floors' or roofs' CLT panels as parts (audit S1), and the field schedule that gives this table, which its button now makes.</summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        r.Service<IPartSource>(new Parts());
+        r.Service(ShippedScheduleTemplate.Of("clt", "CLT panels", "clt", TemplateFields));
+    }
+
+    /// <summary>The panels of a CLT wall, floor or roof (<c>clt</c>), in the order its body lays them: each its mark, sizes, plies, grade, joint, area and volume.</summary>
+    sealed class Parts : IPartSource
+    {
+        public string Source => "clt";
+        public string Label => "CLT panels";
+        public IReadOnlyList<(string Key, string Label)> Fields =>
+        [
+            ("cltMark", "Mark"), ("cltIndex", "Place in its element"), ("cltLength", "Length (m)"), ("cltWidth", "Width (m)"), ("cltThickness", "Thickness (m)"),
+            ("cltPlies", "Plies"), ("cltGrade", "Grade"), ("cltJoint", "Joint"), ("cltArea", "Area (m²)"), ("cltVolume", "Volume (m³)"),
+        ];
+
+        public IEnumerable<ElementPart> PartsOf(IQueryContext q, Entity e)
+        {
+            if (e.Class is not (IfcClass.Wall or IfcClass.Slab or IfcClass.Roof)) yield break;
+            var i = 0;
+            foreach (var p in q.Geometry(e.Id)?.Parts.Where(x => x.Key?.StartsWith("clt:", StringComparison.Ordinal) == true) ?? [])
+            {
+                string P(string n) => (p.Properties ?? []).FirstOrDefault(x => x.Name == n).Value ?? "";
+                var a = double.TryParse(P("Area"), NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ? x : 0;
+                yield return ElementPart.Of(i.ToString(CultureInfo.InvariantCulture), ("cltMark", P("Mark")), ("cltIndex", i++), ("cltLength", FieldValue.OfText(P("Length"))),
+                    ("cltWidth", FieldValue.OfText(P("Width"))), ("cltThickness", FieldValue.OfText(P("Thickness"))), ("cltPlies", P("Plies")), ("cltGrade", P("Grade")),
+                    ("cltJoint", P("Joint")), ("cltArea", a), ("cltVolume", Measure.Volume(p.Solid)));
+            }
+        }
+    }
+
+    /// <summary>The table as a field schedule: a row per panel, the elements by name, the sizes as the panel gives them, a totals line of area and volume.</summary>
+    public const string TemplateFields = """
+        {
+          "source": "clt", "totals": "always",
+          "sort": ["name", "cltIndex"],
+          "columns": [
+            { "field": "cltMark", "heading": "Mark" },
+            { "field": "name", "heading": "Element" },
+            { "field": "cltLength", "heading": "Length (m)", "aggregate": "first", "format": "0.###" },
+            { "field": "cltWidth", "heading": "Width (m)", "aggregate": "first", "format": "0.###" },
+            { "field": "cltThickness", "heading": "Thickness (m)", "aggregate": "first", "format": "0.###" },
+            { "field": "cltPlies", "heading": "Plies" },
+            { "field": "cltGrade", "heading": "Grade" },
+            { "field": "cltJoint", "heading": "Joint" },
+            { "field": "cltArea", "heading": "Area (m²)", "aggregate": "sum", "decimals": 2 },
+            { "field": "cltVolume", "heading": "Volume (m³)", "aggregate": "sum", "decimals": 3 }
+          ]
+        }
+        """;
+
     public ScheduleGrid Grid(IQueryContext q)
     {
         string P(GeometryPart p, string n) => (p.Properties ?? []).FirstOrDefault(x => x.Name == n).Value ?? "";

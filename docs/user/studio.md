@@ -10,6 +10,8 @@ The **Studio** tab makes solids that no other tab builds: a bench, a canopy, a h
 
 ![The Studio tab](shots/ribbon-studio.webp)
 
+Its tools stand in six groups: **Sketch** (lines, rectangles, circles, the **Arcs** ▾, offset, and under it sketching on a face or a plane, the **Sketch edits** ▾, the **Work planes** ▾ and the **On face** ▾), **Constraints** (the **Geometric** ▾ and **Dimensions** ▾ lists), **Solids** (extrude, sweep, revolve, loft, edit sketch, the **Thick** ▾ and **Primitives** ▾), **Parts** (placing and editing parts), **Modify** (push/pull, fillet, chamfer, shell, split, the **Arrays** ▾ and **Move, rotate, mirror** ▾) and **Boolean**. A button with ▾ opens its list; each tool keeps its letters, and **Commands…** and **My tools** find it as before.
+
 A Studio solid has an IFC class, like any element. Choose it in its properties: a member, a plate, a covering, a railing, a slab or any other. Its quantities and its export follow that class.
 
 ## Where you sketch
@@ -100,7 +102,7 @@ These tools work on the faces and edges of the body as it is built now. The face
 
 ## Drawing on a face
 
-In the 3D view you can draw right on a face and push or pull what you drew. The **On face** group of the **Studio** tab has **Rectangle on face** (FRE), **Circle on face** (FCI) and **Polygon on face** (FPL).
+In the 3D view you can draw right on a face and push or pull what you drew. **Studio → Sketch → On face** ▾ has **Rectangle on face** (FRE), **Circle on face** (FCI) and **Polygon on face** (FPL).
 
 1. Click a face of any element: a Studio solid, a wall, a slab or a column. The click is the first point: a rectangle's corner, a circle's centre or a polygon's first corner. The face is outlined while you draw.
 2. Move the mouse. The shape follows it on the face, with its size beside it. Points snap to the face's corners, the middles of its edges and its middle; otherwise they go by the centimetre, or by 10 cm with <kbd>Shift</kbd>. Click the opposite corner, or a point on the circle. You can also type the size: a rectangle's width and height as `1200, 600`, or a circle's radius. A polygon takes a click at each corner, or a typed length along the mouse's direction. Click its first corner or press <kbd>Enter</kbd> to close it; <kbd>Backspace</kbd> takes the last corner back.
@@ -169,4 +171,4 @@ A **part** (what used to be a **family**) is a solid of your own with parameters
 
 ## Parts
 
-Select a solid or a placed part in 3D and press **Tab**, double-click it, or use **Studio → Part → Edit part**: the rest of the model fades and the part's tree lists its origin, sketches, steps and parameters. See the Parts page.
+Select a solid or a placed part in 3D and press **Tab**, double-click it, or use **Studio → Parts → Edit part**: the rest of the model fades and the part's tree lists its origin, sketches, steps and parameters. See the Parts page.

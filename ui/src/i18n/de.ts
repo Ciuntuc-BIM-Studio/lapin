@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Bögen", "Sketch edits": "Skizze bearbeiten", "Geometric": "Geometrisch", "Arrays": "Reihen", "Move, rotate, mirror": "Verschieben, drehen, spiegeln", "Carriers and fans": "Kabelträger und Ventilatoren",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Breite (leer: die des Typs; die erste Kante eines Umrisses)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Das Grundstück (die Grenze des Grundbesitzes) des Geländes unter jedem geschlossenen Umriss, seine Bögen erhalten.", "An opening in the floor under each closed outline; a circle makes a round one.": "Eine Öffnung in der Decke unter jedem geschlossenen Umriss; ein Kreis ergibt eine runde.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Eine Treppe des gewählten Typs: ihr Fuß am Anfang des Pfads, entlang ihm steigend; die erste Kante eines Umrisses ist ihr Fuß und ihre Breite.",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "Teile der Stahlanschlüsse", "Reinforcing bars": "Bewehrungsstäbe", "Bars by mark": "Stäbe nach Position", "Place in its element": "Platz in seinem Element", "Thickness (m)": "Dicke (m)", "Row of the members list": "Zeile der Stabliste", "Hall": "Halle", "kg/m": "kg/m", "Each (kg, the row's)": "Stück (kg, der Zeile)", "Row of the parts schedule": "Zeile der Teileliste", "Weld length (m)": "Schweißnahtlänge (m)", "Total length (m)": "Gesamtlänge (m)", "A type's bars of one mark: shape, Ø, length": "Stäbe eines Typs mit einer Position: Form, Ø, Länge",
   // One sketch canvas for every board: the shared bar (audit S11)
   "Open in 2D": "In 2D öffnen", "Open the sketch's plane as a 2D view: the same sketch, the same tools": "Die Ebene der Skizze als 2D-Ansicht öffnen: dieselbe Skizze, dieselben Werkzeuge", "Back to 3D": "Zurück zu 3D", "Back to the 3D view, the sketch on its plane": "Zurück zur 3D-Ansicht, die Skizze auf ihrer Ebene", "Finish sketch: what is drawn is kept (one undo step)": "Skizze beenden: das Gezeichnete bleibt (ein Rückgängig-Schritt)", "Cancel: what this sketch drew is dropped": "Abbrechen: was diese Skizze gezeichnet hat, wird verworfen",
   // Annotations drawn on a sheet itself (decision 620)
@@ -1186,6 +1192,12 @@ export const DE: Record<string, string> = {
   'Extract grille': 'Abluftgitter',
   'Rise / drop': 'Steigung / Fall',
   'Cap': 'Kappe',
+  'Coupling': 'Muffe',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': 'Ziehen: den Ständer entlang der Wand verschieben (Strg-Klick: entfernen)',
+  'Drag out or in: more or fewer king studs': 'Nach außen oder innen ziehen: mehr oder weniger Hauptständer',
+  'Drag out or in: more or fewer jack studs': 'Nach außen oder innen ziehen: mehr oder weniger Sturzständer',
+  'Reset studs': 'Ständer zurücksetzen',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": 'Auf dieser Wand verschobene, hinzugefügte oder entfernte Ständer (in ihrer Rahmenansicht) kehren zum Raster ihres Typs zurück',
   'Service': 'Gewerk',
   'Ports': 'Anschlüsse',
   'open': 'offen',

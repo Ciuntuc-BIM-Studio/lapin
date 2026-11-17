@@ -58,6 +58,12 @@ Una capa de un forjado también puede ir más allá de su contorno, o detenerse 
 
 ![Una losa con un borde curvo dividida por una línea: la parte de la derecha seleccionada](shots/floor-split.webp)
 
+Los huecos propios de una losa van a la parte en la que caen; una capa que sobrepasa un borde curvo sigue haciéndolo en ambas partes; la retícula de un falso techo queda donde estaba, cada luminaria o difusor en la parte en que cae su celda. Una losa con un borde elíptico no se corta con una línea.
+
+Un **tejado** se divide y recorta del mismo modo. Cada parte conserva las reglas de sus bordes (alero o hastial, pendiente, vuelo), y el corte es un hastial sin vuelo; el corte solo se permite donde deja el tejado como estaba, con los faldones de cada parte en pie donde estaban los del tejado, como a través de la cumbrera de un tejado a dos aguas o a lo largo de ella. En otro caso se rechaza (*would change its slopes*): los faldones de una parte subirían hasta nuevas cumbreras. Las ventanas de tejado, buhardillas y bajantes van a su parte. Un tejado en cañón no se corta.
+
+![Un tejado a dos aguas dividido a través de la cumbrera: dos tejados, los mismos faldones](shots/roof-split.webp)
+
 ## Cubiertas
 
 Elija **Arquitectura → Cubierta** (<kbd>RF</kbd>) y haga clic en el contorno de los muros que quedan debajo. Lapin construye la cubierta sobre ese contorno, en la parte superior de su nivel.

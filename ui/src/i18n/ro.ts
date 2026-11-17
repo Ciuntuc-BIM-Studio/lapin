@@ -1,6 +1,12 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Arce", "Sketch edits": "Editări de schiță", "Geometric": "Geometrice", "Arrays": "Multiplicări", "Move, rotate, mirror": "Mută, rotește, oglindește", "Carriers and fans": "Suporturi de cabluri și ventilatoare",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Lățime (goală: a tipului; prima latură a unui contur)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Parcela (limita proprietății) terenului de sub fiecare contur închis, cu arcele lui păstrate.", "An opening in the floor under each closed outline; a circle makes a round one.": "Un gol în planșeul de sub fiecare contur închis; un cerc face unul rotund.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "O scară de tipul ales: piciorul la începutul traseului, urcând de-a lungul lui; prima latură a unui contur îi este piciorul și lățimea.",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "Piesele îmbinărilor metalice", "Reinforcing bars": "Bare de armătură", "Bars by mark": "Bare pe poziții", "Place in its element": "Locul în elementul lui", "Thickness (m)": "Grosime (m)", "Row of the members list": "Rândul din lista barelor", "Hall": "Hală", "kg/m": "kg/m", "Each (kg, the row's)": "Bucata (kg, a rândului)", "Row of the parts schedule": "Rândul din extrasul pieselor", "Weld length (m)": "Lungimea sudurii (m)", "Total length (m)": "Lungime totală (m)", "A type's bars of one mark: shape, Ø, length": "Barele unui tip cu aceeași poziție: forma, Ø, lungimea",
   // One sketch canvas for every board: the shared bar (audit S11)
   "Open in 2D": "Deschide în 2D", "Open the sketch's plane as a 2D view: the same sketch, the same tools": "Deschide planul schiței ca vedere 2D: aceeași schiță, aceleași unelte", "Back to 3D": "Înapoi la 3D", "Back to the 3D view, the sketch on its plane": "Înapoi la vederea 3D, schița pe planul ei", "Finish sketch: what is drawn is kept (one undo step)": "Termină schița: ce e desenat se păstrează (un pas de anulare)", "Cancel: what this sketch drew is dropped": "Renunță: ce a desenat schița aceasta se elimină",
   // Annotations drawn on a sheet itself (decision 620)
@@ -1192,6 +1198,12 @@ export const RO: Record<string, string> = {
   'Extract grille': 'Grilă de evacuare',
   'Rise / drop': 'Urcare / coborâre',
   'Cap': 'Capac',
+  'Coupling': 'Mufă',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': 'Trage: mută montantul de-a lungul peretelui (Ctrl-clic: îl scoate)',
+  'Drag out or in: more or fewer king studs': 'Trage în afară sau înăuntru: mai mulți sau mai puțini montanți principali',
+  'Drag out or in: more or fewer jack studs': 'Trage în afară sau înăuntru: mai mulți sau mai puțini montanți de buiandrug',
+  'Reset studs': 'Resetează montanții',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": 'Montanții mutați, adăugați sau scoși pe acest perete (în elevația lui de cadru) revin la modulul tipului',
   'Service': 'Serviciu',
   'Ports': 'Porturi',
   'open': 'liber',

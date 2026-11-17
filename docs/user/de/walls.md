@@ -117,6 +117,8 @@ Unter einem Dach reichen die Schichten einer Wand bis zum Dach; eine Verlängeru
 
 **Ändern → Element versetzen** (OFFSET der Befehlszeile, das jetzt Elemente nimmt): Geben Sie den Abstand in der Einheit des Projekts ein, klicken Sie eine Wand im Grundriss an und dann die Seite, auf die die Kopie kommt. Die Kopie liegt parallel zur Wand, bei einer gekrümmten Wand konzentrisch, mit demselben Typ, denselben Schichten und Öffnungen. **A** (Achse, Standard) misst von der Achse, **F** (Flächen) von der Wandfläche, sodass die Fläche der Kopie den Abstand von ihr hat; **T** (Durch) nimmt einen Punkt, durch den die Kopie geht.
 
+Was an der Wand hängt, geht an den Teil, auf den es fällt. Ein Anstrich auf der Seite einer geraden Wand bleibt, wo er auf der Fläche war; einer, dessen Bereich über den Schnitt hinausläuft, streicht auch den anderen Teil, es sei denn, eine Teilungslinie der Fläche hält ihn auf, und einer über die ganze Fläche deckt jeden Teil. Ein Sonnenschutz entlang der Wand geht an den Teil, an dem er entlangläuft (einer quer über dem Schnitt wird abgelehnt, wie eine Tür); ein Balkon geht an den Teil, auf dem seine Mitte liegt, oder steht frei dort, wo er ist, wenn sein Teil weggeschnitten wird. In der Wand gezeichnete Stäbe gehören dem Teil, auf dem ihr Punkt liegt, die Schalung schalt jeden Teil, und die eigenen Ständer einer Holzrahmenwand (siehe [Holz](wood.md)) gehen mit ihrem Teil. Die Anstriche einer gekrümmten Wand bleiben auf ihrem ersten Teil.
+
 ![Zwei Wände an eine Grenze gestutzt und eine Wand mit Tür in zwei geteilt](shots/wall-split-trim.webp)
 
 ## Wandtypen

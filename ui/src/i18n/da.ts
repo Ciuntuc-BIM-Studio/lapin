@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Buer", "Sketch edits": "Skitseredigering", "Geometric": "Geometriske", "Arrays": "Rækker", "Move, rotate, mirror": "Flyt, drej, spejl", "Carriers and fans": "Kabelbakker og ventilatorer",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Bredde (tom: typens; en omrids' første kant)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Grunden (ejendommens grænse) for terrænet under hvert lukket omrids, med dets buer bevaret.", "An opening in the floor under each closed outline; a circle makes a round one.": "En åbning i dækket under hvert lukket omrids; en cirkel giver en rund.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "En trappe af den valgte type: dens fod ved stiens start, stigende langs den; et omrids' første kant er dens fod og bredde.",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "Stålsamlingers dele", "Reinforcing bars": "Armeringsjern", "Bars by mark": "Jern efter position", "Place in its element": "Plads i dets element", "Thickness (m)": "Tykkelse (m)", "Row of the members list": "Række i listen over stålprofiler", "Hall": "Hal", "kg/m": "kg/m", "Each (kg, the row's)": "Stk. (kg, rækkens)", "Row of the parts schedule": "Række i listen over dele", "Weld length (m)": "Svejselængde (m)", "Total length (m)": "Samlet længde (m)", "A type's bars of one mark: shape, Ø, length": "En types jern med samme position: form, Ø, længde",
   // One sketch canvas for every board: the shared bar (audit S11)
   "Open in 2D": "Åbn i 2D", "Open the sketch's plane as a 2D view: the same sketch, the same tools": "Åbn skitsens plan som en 2D-visning: samme skitse, samme værktøjer", "Back to 3D": "Tilbage til 3D", "Back to the 3D view, the sketch on its plane": "Tilbage til 3D-visningen, skitsen på sit plan", "Finish sketch: what is drawn is kept (one undo step)": "Afslut skitse: det tegnede bevares (ét fortryd-trin)", "Cancel: what this sketch drew is dropped": "Annuller: det, denne skitse tegnede, fjernes",
   // Annotations drawn on a sheet itself (decision 620)
@@ -1186,6 +1192,12 @@ export const DA: Record<string, string> = {
   'Extract grille': 'Udsugningsrist',
   'Rise / drop': 'Stigning / fald',
   'Cap': 'Prop',
+  'Coupling': 'Muffe',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': 'Træk: flyt stolpen langs væggen (Ctrl-klik: fjern den)',
+  'Drag out or in: more or fewer king studs': 'Træk ud eller ind: flere eller færre kongestolper',
+  'Drag out or in: more or fewer jack studs': 'Træk ud eller ind: flere eller færre bærestolper',
+  'Reset studs': 'Nulstil stolper',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": 'Stolper flyttet, tilføjet eller fjernet på denne væg (i dens rammeopstalt) går tilbage til typens modul',
   'Service': 'Forsyning',
   'Ports': 'Porte',
   'open': 'åben',

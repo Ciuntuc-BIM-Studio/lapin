@@ -10,6 +10,8 @@ La ficha **Studio** crea sólidos que ninguna otra ficha construye: un banco, un
 
 ![La ficha Studio](shots/ribbon-studio.webp)
 
+Sus herramientas están en seis grupos: **Boceto** (líneas, rectángulos, círculos, los **Arcos** ▾, desfase y, debajo, el croquizado sobre una cara o un plano, **Ediciones de boceto** ▾, **Planos de trabajo** ▾ y **En cara** ▾), **Restricciones** (las listas **Geométricas** ▾ y **Dimensiones** ▾), **Sólidos** (extruir, barrer, revolución, solevación, editar boceto, **Con espesor** ▾ y **Primitivas** ▾), **Partes** (colocar y editar piezas), **Modificar** (empujar/tirar, empalme, chaflán, vaciado, dividir, **Matrices** ▾ y **Mover, girar, simetría** ▾) y **Booleanas**. Un botón con ▾ abre su lista; cada herramienta conserva sus letras, y **Comandos…** y **Mis herramientas** la encuentran como antes.
+
 Un sólido Studio tiene una clase IFC, como cualquier elemento. Elíjala en sus propiedades: una barra, una placa, un revestimiento, una barandilla, una losa u otra. Sus cantidades y su exportación siguen esa clase.
 
 ## Dónde se dibuja
@@ -98,7 +100,7 @@ Estas herramientas trabajan sobre las caras y aristas del cuerpo tal como está 
 
 ## Dibujar sobre una cara
 
-En la vista 3D puede dibujar directamente sobre una cara y empujar o tirar de lo dibujado. El grupo **En cara** de la ficha **Studio** tiene **Rectángulo en cara** (FRE), **Círculo en cara** (FCI) y **Polígono en cara** (FPL).
+En la vista 3D puede dibujar directamente sobre una cara y empujar o tirar de lo dibujado. **Studio → Boceto → En cara** ▾ tiene **Rectángulo en cara** (FRE), **Círculo en cara** (FCI) y **Polígono en cara** (FPL).
 
 1. Haga clic en una cara de cualquier elemento: un sólido Studio, un muro, una losa o un pilar. El clic es el primer punto: la esquina de un rectángulo, el centro de un círculo o la primera esquina de un polígono. La cara queda contorneada mientras dibuja.
 2. Mueva el ratón. La forma lo sigue sobre la cara, con su tamaño al lado. Los puntos se enganchan a las esquinas de la cara, a los puntos medios de sus aristas y a su centro; si no, avanzan de centímetro en centímetro, o de 10 en 10 cm con <kbd>Mayús</kbd>. Haga clic en la esquina opuesta o en un punto del círculo. También puede escribir el tamaño: el ancho y el alto de un rectángulo como `1200, 600`, o el radio de un círculo. Un polígono toma un clic en cada esquina, o una longitud escrita en la dirección del ratón. Haga clic en su primera esquina o pulse <kbd>Intro</kbd> para cerrarlo; <kbd>Retroceso</kbd> quita la última esquina.

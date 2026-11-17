@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Łuki", "Sketch edits": "Edycja szkicu", "Geometric": "Geometryczne", "Arrays": "Szyki", "Move, rotate, mirror": "Przesuń, obróć, odbij", "Carriers and fans": "Koryta i wentylatory",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Szerokość (puste: typu; pierwsza krawędź obrysu)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Działka (granica nieruchomości) terenu pod każdym zamkniętym obrysem, z zachowanymi łukami.", "An opening in the floor under each closed outline; a circle makes a round one.": "Otwór w stropie pod każdym zamkniętym obrysem; okrąg daje okrągły.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Schody wybranego typu: ich początek na starcie ścieżki, wznoszące się wzdłuż niej; pierwsza krawędź obrysu to ich początek i szerokość.",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "Części połączeń stalowych", "Reinforcing bars": "Pręty zbrojeniowe", "Bars by mark": "Pręty według pozycji", "Place in its element": "Miejsce w jego elemencie", "Thickness (m)": "Grubość (m)", "Row of the members list": "Wiersz zestawienia prętów", "Hall": "Hala", "kg/m": "kg/m", "Each (kg, the row's)": "Sztuka (kg, wiersza)", "Row of the parts schedule": "Wiersz zestawienia części", "Weld length (m)": "Długość spoiny (m)", "Total length (m)": "Długość całkowita (m)", "A type's bars of one mark: shape, Ø, length": "Pręty typu o jednej pozycji: kształt, Ø, długość",
   // One sketch canvas for every board: the shared bar (audit S11)
   "Open in 2D": "Otwórz w 2D", "Open the sketch's plane as a 2D view: the same sketch, the same tools": "Otwórz płaszczyznę szkicu jako widok 2D: ten sam szkic, te same narzędzia", "Back to 3D": "Wróć do 3D", "Back to the 3D view, the sketch on its plane": "Wróć do widoku 3D, szkic na swojej płaszczyźnie", "Finish sketch: what is drawn is kept (one undo step)": "Zakończ szkic: to, co narysowane, zostaje (jeden krok cofania)", "Cancel: what this sketch drew is dropped": "Anuluj: to, co narysował ten szkic, zostaje odrzucone",
   // Annotations drawn on a sheet itself (decision 620)
@@ -1184,6 +1190,12 @@ export const PL: Record<string, string> = {
   'Extract grille': 'Kratka wywiewna',
   'Rise / drop': 'Pion w górę / w dół',
   'Cap': 'Zaślepka',
+  'Coupling': 'Złączka',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': 'Przeciągnij: przesuń słupek wzdłuż ściany (Ctrl-klik: usuń go)',
+  'Drag out or in: more or fewer king studs': 'Przeciągnij na zewnątrz lub do środka: więcej lub mniej słupków głównych',
+  'Drag out or in: more or fewer jack studs': 'Przeciągnij na zewnątrz lub do środka: więcej lub mniej słupków nadprożowych',
+  'Reset studs': 'Przywróć słupki',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": 'Słupki przesunięte, dodane lub usunięte na tej ścianie (w jej widoku szkieletu) wracają do modułu jej typu',
   'Service': 'Medium',
   'Ports': 'Przyłącza',
   'open': 'wolne',
