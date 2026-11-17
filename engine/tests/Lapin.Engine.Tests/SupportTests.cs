@@ -42,11 +42,11 @@ public class SupportTests
     [Fact]
     public void The_guide_opens_in_each_interface_language()
     {
-        Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/", Support.Guides["guide"]);
-        Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/ro/", Support.Guides["guideRo"]);
-        Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/da/", Support.Guides["guideDa"]);
-        Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/it/", Support.Guides["guideIt"]);
-        Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/pt/", Support.Guides["guidePt"]);
+        Assert.Equal("https://lapinbim.com/docs/", Support.Guides["guide"]);
+        Assert.Equal("https://lapinbim.com/docs/ro/", Support.Guides["guideRo"]);
+        Assert.Equal("https://lapinbim.com/docs/da/", Support.Guides["guideDa"]);
+        Assert.Equal("https://lapinbim.com/docs/it/", Support.Guides["guideIt"]);
+        Assert.Equal("https://lapinbim.com/docs/pt/", Support.Guides["guidePt"]);
         Assert.Equal(["guide", "guideDa", "guideDe", "guideEs", "guideFr", "guideIt", "guidePl", "guidePt", "guideRo"], Support.Guides.Keys.Order());
     }
 

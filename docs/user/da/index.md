@@ -11,7 +11,7 @@ Lapin er et BIM-modelleringsprogram til arkitekter og ingeniører. Du tegner væ
 Lapin kører to steder:
 
 - **På din computer.** Skrivebordsprogrammet til Windows, macOS og Linux er det hurtigste. Det opdaterer sig selv.
-- **I browseren.** [lapin.ciuntucbimstudio.ro](https://lapin.ciuntucbimstudio.ro/web/) kører det samme program uden at installere noget. Det er lidt langsommere.
+- **I browseren.** [lapinbim.com/app](https://lapinbim.com/app/) kører det samme program uden at installere noget. Det er lidt langsommere.
 
 ![Lapins arbejdsområde med et lille hus på stueetagens plan](shots/workspace.webp)
 

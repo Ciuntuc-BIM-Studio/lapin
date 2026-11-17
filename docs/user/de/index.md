@@ -11,7 +11,7 @@ Lapin ist ein BIM-Modellierer für Architekten und Ingenieure. Sie zeichnen Wän
 Lapin läuft an zwei Orten:
 
 - **Auf Ihrem Computer.** Die Desktop-Anwendung für Windows, macOS und Linux ist am schnellsten. Sie aktualisiert sich selbst.
-- **Im Browser.** [lapin.ciuntucbimstudio.ro](https://lapin.ciuntucbimstudio.ro/web/) führt dieselbe Anwendung aus, ohne dass Sie etwas installieren müssen. Sie ist etwas langsamer.
+- **Im Browser.** [lapinbim.com/app](https://lapinbim.com/app/) führt dieselbe Anwendung aus, ohne dass Sie etwas installieren müssen. Sie ist etwas langsamer.
 
 ![Der Arbeitsbereich von Lapin mit einem kleinen Haus im Grundriss des Erdgeschosses](shots/workspace.webp)
 

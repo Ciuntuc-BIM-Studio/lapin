@@ -15,8 +15,8 @@ namespace Lapin.Host;
 public static class Support
 {
     public const string CommunityUrl = "https://www.skool.com/bubblebim-club-1376/about";
-    public const string SiteUrl = "https://ciuntucbimstudio.ro";
-    public const string GuideUrl = "https://lapin.ciuntucbimstudio.ro/docs/";
+    public const string SiteUrl = "https://lapinbim.com";
+    public const string GuideUrl = "https://lapinbim.com/docs/";
     /// <summary>The guide's languages besides English (scripts/user-docs/languages.mjs), each at /docs/&lt;lang&gt;/ and opened as guideRo, guideEs…</summary>
     public static readonly string[] GuideLanguages = ["ro", "es", "de", "fr", "da", "it", "pl", "pt"];
 
@@ -24,7 +24,7 @@ public static class Support
     public static readonly IReadOnlyDictionary<string, string> Guides = new[] { KeyValuePair.Create("guide", GuideUrl) }
         .Concat(GuideLanguages.Select(l => KeyValuePair.Create($"guide{char.ToUpperInvariant(l[0])}{l[1..]}", $"{GuideUrl}{l}/")))
         .ToDictionary();
-    public const string SourceUrl = "https://github.com/Ciuntuc-BIM-Studio/lapin-pro";
+    public const string SourceUrl = "https://github.com/Ciuntuc-BIM-Studio/lapin";
     /// <summary>The forum of Lapin's users and fans (Discourse on the Lapin server; docs/plan-forum.md); Lapin's topics are in its category <see cref="ForumCategory"/>.</summary>
     public const string ForumUrl = "https://forum.lapinbim.com";
     public const string ForumCategory = "lapin";

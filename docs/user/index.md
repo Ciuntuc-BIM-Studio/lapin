@@ -11,7 +11,7 @@ Lapin is a BIM modeller for architects and engineers. You draw walls, floors, ro
 Lapin runs in two places:
 
 - **On your computer.** The desktop app for Windows, macOS and Linux is the fastest. It updates itself.
-- **In the browser.** [lapin.ciuntucbimstudio.ro](https://lapin.ciuntucbimstudio.ro/web/) runs the same app without installing anything. It is a little slower.
+- **In the browser.** [lapinbim.com/app](https://lapinbim.com/app/) runs the same app without installing anything. It is a little slower.
 
 ![Lapin's workspace with a small house on the ground floor plan](shots/workspace.webp)
 

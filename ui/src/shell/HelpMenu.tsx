@@ -1,6 +1,6 @@
 /**
  * Ask Me (the rabbit beside the ?) and the help menu (?): Ask Lapin (the FAQ, also on F1), the user guide
- * (lapin.ciuntucbimstudio.ro/docs, docs/user), report an issue (it
+ * (lapinbim.com/docs, docs/user), report an issue (it
  * reaches Ciuntuc BIM Studio with the app's last errors attached; a reply
  * only when asked for, read in Messages: replies.ts), the
  * forum (and a new topic on it), the community on Skool, the site, updates (the desktop app), About Lapin
@@ -144,7 +144,7 @@ export function HelpMenu() {
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('forum'); }}>Forum</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openForumTopic(); }}>Ask on the forum…</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('community'); }}>Community (Skool)</button>
-          <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>ciuntucbimstudio.ro</button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>lapinbim.com</button>
           {isDesktop() && <button type="button" role="menuitem" onClick={() => { setOpen(false); void checkForUpdates(true); }}>Check for updates…</button>}
           <div className="menu-langs" role="group" aria-label="Language" data-no-i18n>
             {LANGUAGES.map((l) => (

@@ -11,7 +11,7 @@ Lapin este un program BIM pentru arhitecți și ingineri. Desenezi în plan pere
 Lapin merge în două locuri:
 
 - **Pe calculatorul tău.** Aplicația desktop pentru Windows, macOS și Linux e cea mai rapidă. Se actualizează singură.
-- **În browser.** [lapin.ciuntucbimstudio.ro](https://lapin.ciuntucbimstudio.ro/web/) rulează aceeași aplicație fără să instalezi nimic. E puțin mai lentă.
+- **În browser.** [lapinbim.com/app](https://lapinbim.com/app/) rulează aceeași aplicație fără să instalezi nimic. E puțin mai lentă.
 
 ![Fereastra Lapin cu o casă mică în planul parterului](shots/workspace.webp)
 

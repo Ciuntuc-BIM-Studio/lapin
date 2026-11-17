@@ -82,7 +82,7 @@ for (const l of LANGS) if (!WORDS[l]) throw new Error(`render.mjs: the guide's w
 function dmy(date, sep) { return date.split('-').reverse().join(sep); }
 
 /** Where the guide is published: the alternates name each language's page by its full address. */
-const SITE = 'https://lapin.ciuntucbimstudio.ro/docs/';
+const SITE = 'https://lapinbim.com/docs/';
 /** A language's folder under the guide: none for English. */
 const folderOf = (lang) => (lang === 'en' ? '' : `${lang}/`);
 /** A video's title or summary in a language (English when it has none in it). */

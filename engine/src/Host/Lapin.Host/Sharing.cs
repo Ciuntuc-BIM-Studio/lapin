@@ -32,7 +32,7 @@ public sealed class Sharing(EngineHub hub)
     /// <summary>The protocol's version: a guest of another one is refused with a word to update.</summary>
     public const int Protocol = 2;
     public const string DefaultRelay = "wss://lapin.ciuntucbimstudio.ro/relay";
-    public const string DefaultJoinPage = "https://lapin.ciuntucbimstudio.ro/web/";
+    public const string DefaultJoinPage = "https://lapinbim.com/app/";
     static readonly string[] Colors = ["#d9480f", "#1971c2", "#2f9e44", "#ae3ec9", "#e8590c", "#0c8599", "#c2255c", "#5c940d", "#6741d9", "#f08c00"];
 
     readonly SemaphoreSlim _relaySending = new(1, 1);
