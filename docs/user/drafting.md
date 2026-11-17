@@ -287,6 +287,8 @@ Like any tag, a build-up tag follows its element, and sheets and PDFs print it a
 - **Other tables.** Give a table a name of one word in its editor (**Areas**, at the top), and any table reads its cells by that name: `{= table.Areas.B4 * 2}`, `{= sum(table.Areas.B2:B9)}`, or `{table.Areas.A1}` to show a cell as it reads. **Another table**, under the grid, shows the other tables: click a cell (shift-click for a range) and **Insert reference** puts it into the selected cell where the cursor was in the bar, inside a formula as it is, elsewhere as a field or as a total. A name is looked for on the same sheet first, so a sheet duplicated with its tables reads its own. Rename a table and what reads it follows; delete it and what read it shows `REF`; rows and columns put into it or taken out move the references other tables make to it, as in a spreadsheet. A formula that comes back to its own cell through another table shows `<…>`, and both tables say why.
 - **Merge** the selected cells (the first one's text stays), or **split** them again; insert rows above or below and columns left or right, or delete the selected ones.
 - **Widths and heights** are in paper millimetres, so a table reads the same at any scale. A row fits its text by default, never shorter than its height; tick **fit to text** for columns as wide as their widest text (wrapped text stays in a column of its own width).
+- **Turned text and padding.** **Text up (90°)** or **text down (270°)** turns the selected cells' text to read along the row's height, and a row that fits its text grows to its length (a column heading over narrow columns); in a row of a height of its own the text wraps at it. **Padding** sets the space round a cell's text (empty: the table's).
+- **Table styles.** **Save as style…** keeps the table's look in the project's drafting standards: its lines, its cells' colours, alignment and turns, its columns' widths and rows' heights and its **header rows** (tick **header row** for the selected rows). Asked to keep its cells too, the style is a template: a new table made in it starts as a copy. Your styles are offered beside the built-in looks when you make a table and in the editor's list, where choosing one restyles a table (its texts and widths stay). **Manage → Drafting standards → Tables** renames or removes them, and a standards file (**Export…**, **Import…**) carries them to other projects. The built-in looks stay as they were.
 - **Bold**, **italic**, alignment, text height, **text colour**, **background** and its **opacity** apply to the selected cells; **Borders** draws all lines, the outside, the inside, one side or none, at a width and in a colour.
 
 Each change is one undo step. The engine draws the table, so the view, the sheet, its PDF and its DXF show the same thing; it moves, copies and turns with the Modify tools.
@@ -296,6 +298,10 @@ Each change is one undo step. The engine draws the table, so the view, the sheet
 ![The table editor: a formula's total, two cells merged, the header shaded](shots/drafting-table-editor.webp)
 
 ![A table reading another: the picker under the grid shows the other table's cells, and the summary reads its total and a room's name](shots/drafting-table-refs.webp)
+
+![Column headings turned to read up their row, the table about to be saved as a style](shots/drafting-table-styles.webp)
+
+
 
 ### Grid axes
 

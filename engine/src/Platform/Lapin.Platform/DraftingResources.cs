@@ -497,6 +497,9 @@ public static class DraftingResources
             // A tag rule (issue #72): its condition a formula that reads, its type one of the standards'.
             if ((string?)a["kind"] == "tagRule" && list.OfType<JsonObject>().FirstOrDefault(x => (string?)x["id"] == id) is { } rule) TagRules.Check(rule, Book(ctx.Model));
             raw[key] = list;
+            // A table style (issue #71, stage 3): a name and a table of rows and columns, or it is refused rather than dropped.
+            if ((string?)a["kind"] == "table" && !(Standards.Read(raw).TableStyles ?? []).Any(t => t.Id == id))
+                throw new CommandException("A table style needs a name (80 characters at most) and a table with its rows and columns.");
             if ((string?)a["kind"] == "axis" && a["default"] is JsonValue dv && dv.TryGetValue<bool>(out var isDefault) && isDefault) raw["defaultAxisStyle"] = id;
             Write(ctx, raw);
             return new JsonObject { ["id"] = id };
@@ -508,7 +511,7 @@ public static class DraftingResources
             var kind = (string?)a["kind"];
             var key = ListKey(kind);
             var id = (string?)a["id"] ?? "";
-            if (id == Standards.Standard && kind is not ("tag" or "layerGroup" or "tagRule") || kind == "layer" && id == "0") throw new CommandException("The standard entry stays.");
+            if (id == Standards.Standard && kind is not ("tag" or "layerGroup" or "tagRule" or "table") || kind == "layer" && id == "0") throw new CommandException("The standard entry stays.");
             var raw = Standards.ToJson(Book(ctx.Model));
             raw[key] = new JsonArray(((raw[key] as JsonArray) ?? []).Where(x => (string?)x?["id"] != id).Select(x => x?.DeepClone()).ToArray());
             void Repoint(string listKey, string field)
@@ -624,10 +627,12 @@ public static class DraftingResources
     static string ListKey(string? kind) => kind switch
     {
         "text" => "textStyles", "dim" => "dimStyles", "axis" => "axisStyles", "tag" => "tagTypes", "layer" => "layers", "layerGroup" => "layerGroups", "tagRule" => "tagRules",
-        _ => throw new CommandException("A standard is a text, dim, axis, tag, tagRule, layer or layerGroup."),
+        "table" => "tableStyles",
+        _ => throw new CommandException("A standard is a text, dim, axis, tag, tagRule, table, layer or layerGroup."),
     };
 
-    internal static void Write(ICommandContext ctx, JsonObject raw)
+    /// <summary>The project's drafting standards replaced by <paramref name="raw"/>, read as a file is (one change of the step).</summary>
+    public static void Write(ICommandContext ctx, JsonObject raw)
     {
         var project = Project(ctx);
         var attrs = project.CloneAttrs();

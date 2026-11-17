@@ -27,8 +27,9 @@ public static class TableCommands
             var rows = Json.Number(a["rows"]) is double rn ? (int)rn : 4;
             var cols = Json.Number(a["cols"]) is double cn ? (int)cn : 3;
             var preset = (string?)a["preset"] ?? "header";
-            var table = DraftingTables.New(rows, cols, Json.Number(a["colWidth"]) ?? 25, Json.Number(a["rowHeight"]) ?? 7, preset);
-            if (a["cells"] is JsonArray cells) table = TableEdits.Apply(table, new JsonArray(new JsonObject { ["op"] = "set", ["cell"] = "A1", ["values"] = cells.DeepClone() }));
+            var styles = DraftingResources.Book(ctx.Model).TableStyles;
+            var table = DraftingTables.New(rows, cols, Json.Number(a["colWidth"]) ?? 25, Json.Number(a["rowHeight"]) ?? 7, preset, styles);
+            if (a["cells"] is JsonArray cells) table = TableEdits.Apply(table, new JsonArray(new JsonObject { ["op"] = "set", ["cell"] = "A1", ["values"] = cells.DeepClone() }), styles);
             var attrs = new JsonObject { ["viewId"] = viewId, ["at"] = J(P(a["at"])), ["angle"] = Json.Number(a["angle"]) ?? 0, ["table"] = table };
             if ((string?)a["textStyle"] is { } ts) attrs["textStyle"] = ts;
             var name = (string?)a["name"] is { Length: > 0 } given ? CheckName(ctx.Model, given, null) : "Table";
@@ -42,7 +43,7 @@ public static class TableCommands
         {
             var e = Require(ctx.Model, (string?)a["id"]);
             var ops = a["ops"] as JsonArray ?? (a["op"] != null ? [a.DeepClone()] : throw new CommandException("Which edits? ops: [{op, …}]."));
-            var (table, shifts) = TableEdits.ApplyTracked(e.Attrs["table"] as JsonObject, ops);
+            var (table, shifts) = TableEdits.ApplyTracked(e.Attrs["table"] as JsonObject, ops, DraftingResources.Book(ctx.Model).TableStyles);
             var attrs = e.CloneAttrs();
             attrs["table"] = table;
             ctx.Replace(e.With(attrs: attrs));
@@ -62,6 +63,31 @@ public static class TableCommands
         });
         // Renamed in its properties (element.rename) the same way.
         r.Service<IDrivenElements>(new TableNames());
+
+        // {id, name, cells?, styleId?} → {id}: the table saved as a table style of the drafting standards (stage 3): its look, its
+        // columns' and rows' sizes and header rows, and with cells its texts too (a template a new table copies). A style of the
+        // same name (or styleId) is replaced. One undo step.
+        r.Command("saveTableStyle", "Save table style", (ctx, a) =>
+        {
+            var e = Require(ctx.Model, (string?)a["id"]);
+            var name = ((string?)a["name"])?.Trim() is { Length: > 0 and <= 80 } n ? n : throw new CommandException("A table style needs a name (80 characters at most).");
+            var withCells = a["cells"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb;
+            var raw = Standards.ToJson(DraftingResources.Book(ctx.Model));
+            var list = raw["tableStyles"] as JsonArray ?? [];
+            var same = list.OfType<JsonObject>().FirstOrDefault(x => (string?)a["styleId"] is { } sid ? (string?)x["id"] == sid : string.Equals((string?)x["name"], name, StringComparison.OrdinalIgnoreCase));
+            var id = (string?)same?["id"] ?? "table-" + ctx.NewId()[..8];
+            var table = DraftingTables.StyleFrom(TableEdits.Normal(e.Attrs["table"] as JsonObject), withCells);
+            table.Remove("preset");
+            var entry = new JsonObject { ["id"] = id, ["name"] = name, ["table"] = table, ["cells"] = withCells };
+            if (same != null) list[list.IndexOf(same)] = entry; else list.Add((JsonNode)entry);
+            raw["tableStyles"] = list;
+            DraftingResources.Write(ctx, raw);
+            // The table is of that style now.
+            var now = ctx.Model.Get(e.Id)!;
+            var attrs = now.CloneAttrs();
+            if (attrs["table"] is JsonObject tj) { tj["preset"] = id; ctx.Replace(now.With(attrs: attrs)); }
+            return new JsonObject { ["id"] = id, ["name"] = name };
+        });
 
         // A table deleted: what read its cells reads REF, so a table later given its name does not take its place.
         r.Service<IDeletionFollowers>(new TableDeletions());
@@ -216,26 +242,10 @@ public static class TableCommands
             Vec2 To(double x, double y) => at + u * (x * mm) - n * (y * mm);
             var mk = new ViewMark(e.Id);
             Vec2[] Box(double x0, double y0, double x1, double y1) => [To(x0, y1), To(x1, y1), To(x1, y0), To(x0, y0)];
-            for (var i = 0; i < g.R; i++)
-                for (var j = 0; j < g.C; j++)
-                {
-                    var cell = g.Cells[i, j];
-                    if (cell.Covered || (cell.Str("fill") ?? (string?)g.Style["fill"]) is not { } fill || !HexColor.TryParse(fill, out _, out _, out _)) continue;
-                    mk.Fills.Add(([Box(l.X(j), l.Y(i), l.X(j + cell.ColSpan), l.Y(i + cell.RowSpan))], fill));
-                }
+            foreach (var (x0, y0, x1, y1, fill) in DraftingTables.Fills(g, l)) mk.Fills.Add(([Box(x0, y0, x1, y1)], fill));
             foreach (var (x0, y0, x1, y1, pen) in DraftingTables.Lines(g, l)) mk.Line(To(x0, y0), To(x1, y1), "TABLE", pen.W, pen.C);
-            for (var i = 0; i < g.R; i++)
-                for (var j = 0; j < g.C; j++)
-                {
-                    if (l.Texts[i, j] is not { Lines.Count: > 0 } t) continue;
-                    var cell = g.Cells[i, j];
-                    var (x0, x1, y0, y1) = (l.X(j), l.X(j + cell.ColSpan), l.Y(i), l.Y(i + cell.RowSpan));
-                    var block = DraftingTables.TextHeight(t);
-                    var top = t.VAlign switch { "top" => y0 + g.Pad, "bottom" => y1 - g.Pad - block, _ => (y0 + y1) / 2 - block / 2 };
-                    var (x, anchor) = t.Align switch { "center" => ((x0 + x1) / 2, "middle"), "right" => (x1 - g.Pad, "end"), _ => (x0 + g.Pad, "start") };
-                    for (var k = 0; k < t.Lines.Count; k++)
-                        mk.Text(new PenText(To(x, top + t.Size + k * t.Size * DraftingTables.LineStep), t.Lines[k], t.Size, angle, anchor, "bottom", t.Bold, text.Font, t.Italic), t.Color);
-                }
+            foreach (var p in DraftingTables.Placements(g, l))
+                mk.Text(new PenText(To(p.X, p.Y), p.Text, p.Style.Size, angle + p.Turn, p.Anchor, "bottom", p.Style.Bold, text.Font, p.Style.Italic), p.Style.Color);
             // What a click takes: the whole table; its corners snap.
             var outline = Box(0, 0, l.Width, l.Height);
             for (var k = 0; k < 4; k++) mk.Lines.Add((outline[k], outline[(k + 1) % 4], "PICK", 0, "none", null));

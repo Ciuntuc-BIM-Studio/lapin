@@ -11,7 +11,7 @@ namespace Lapin.Platform;
 /// Line types of the project's own and the drafting standards as a library (docs/plan-user-extensibility.md §3.6–3.7). Line types:
 /// made in Lapin or read from AutoCAD's <c>.lin</c>, kept in the project's standards (<c>drafting.lineTypes</c>), named by drafting
 /// layers, the standards' layers, axis styles and object styles. The standards' file, <c>.lapinstandards</c>: text, dimension and
-/// axis styles, tag types and the tag rules, layers and their groups, line types, hatch patterns, symbols and the marks' symbols, and with
+/// axis styles, tag types and the tag rules, the drafting tables' styles, layers and their groups, line types, hatch patterns, symbols and the marks' symbols, and with
 /// <c>options</c> the project's units, scales, marker sizes, object styles, pen table and dimension rules; brought into a project entry by entry,
 /// one that differs taking the choice given (update, keep both, skip). Each command one undo step.
 /// </summary>
@@ -109,7 +109,7 @@ public static class StandardsLibrary
 
     /// <summary>The lists the file and the project both hold, by kind: (kind, the list's key in the standards).</summary>
     static readonly (string Kind, string Key)[] Lists =
-        [("text", "textStyles"), ("dim", "dimStyles"), ("axis", "axisStyles"), ("tag", "tagTypes"), ("layer", "layers"), ("layerGroup", "layerGroups"), ("lineType", "lineTypes"), ("tagRule", "tagRules")];
+        [("text", "textStyles"), ("dim", "dimStyles"), ("axis", "axisStyles"), ("tag", "tagTypes"), ("layer", "layers"), ("layerGroup", "layerGroups"), ("lineType", "lineTypes"), ("tagRule", "tagRules"), ("table", "tableStyles")];
 
     /// <summary>Every entry of the file with whether the project has one of its id (a line type: its name) and whether it is the same.</summary>
     static List<(string Kind, string Id, string Name, bool Exists, bool Same)> Compare(IModelView m, JsonObject file)

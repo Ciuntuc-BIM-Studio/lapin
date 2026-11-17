@@ -4171,6 +4171,22 @@ export const FR: Record<string, string> = {
   "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "Un autre tableau se lit par son nom : {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
   "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "Le nom du tableau : un seul mot, pour que les formules d'autres tableaux puissent le lire (table.Areas.B4)",
   "Other tables read it once its name is one word.": "Les autres tableaux le lisent dès que son nom est un seul mot.",
+  // Drafting tables, stage 3: table styles, turned text, padding.
+  "This table's look, sizes and header rows kept in the drafting standards, for new tables and to restyle others": "L'aspect, les tailles et les lignes d'en-tête de ce tableau gardés dans les normes de dessin, pour de nouveaux tableaux et pour en restyler d'autres",
+  "The selected rows are header rows: a style's header, repeated when a long table breaks": "Les lignes sélectionnées sont des lignes d'en-tête : l'en-tête d'un style, répété quand un long tableau se coupe",
+  "header row": "ligne d'en-tête",
+  "The table style's name": "Le nom du style de tableau",
+  "Keep its cells too, so a new table in this style starts as a copy of it?": "Garder aussi ses cellules, pour qu'un nouveau tableau de ce style commence comme sa copie ?",
+  "The text along the row, or turned to read up or down it (the row fits its length)": "Le texte le long de la ligne, ou tourné pour se lire vers le haut ou vers le bas (la ligne s'ajuste à sa longueur)",
+  "text along": "texte en long",
+  "text up (90°)": "texte vers le haut (90°)",
+  "text down (270°)": "texte vers le bas (270°)",
+  "The space round the text in the cell; empty: the table's": "L'espace autour du texte dans la cellule ; vide : celui du tableau",
+  "Padding": "Marge intérieure",
+  "With its cells": "Avec ses cellules",
+  "A new table in this style copies its cells too": "Un nouveau tableau de ce style copie aussi ses cellules",
+  "No table styles yet.": "Pas encore de styles de tableau.",
+  "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Enregistrez un tableau comme style depuis son éditeur (Enregistrer comme style…) : son aspect, les largeurs de colonnes et hauteurs de lignes, ses lignes d'en-tête et, sur demande, ses cellules. Les préréglages intégrés restent tels quels.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

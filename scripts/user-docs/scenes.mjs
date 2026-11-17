@@ -7965,6 +7965,38 @@ export const scenes = [
     },
   },
   {
+    // Drafting tables, stage 3 (docs/plan-drafting-tables.md §6): column headings turned to read up their row, a cell's own
+    // padding, the table saved as a table style of the drafting standards and a new table made in it.
+    id: 'drafting-table-styles',
+    touches: ['drafting', 'core'],
+    async run(t) {
+      await t.fresh();
+      const sheet = await t.cmd('sheet.create', { name: 'Finishes', number: 'A-104', paper: 'A4' });
+      const paper = `paper:${sheet.id}`;
+      const made = await t.cmd('drafting.addTable', { viewId: paper, at: [0.03, 0.27], rows: 4, cols: 4, preset: 'header', name: 'Finishes',
+        cells: [['Room', 'Floor', 'Walls', 'Ceiling'], ['Living', 'oak', 'paint', 'plaster'], ['Kitchen', 'tiles', 'tiles', 'paint'], ['Bath', 'tiles', 'tiles', 'board']] });
+      await t.cmd('drafting.editTable', { id: made.id, ops: [
+        { op: 'style', range: 'B1:D1', style: { rot: 90, align: 'left', valign: 'bottom' } },
+        { op: 'fit', range: 'B1:D4', axis: 'cols' },
+        { op: 'style', range: 'A2:D4', style: { pad: 1.5 } },
+        { op: 'style', range: 'A3:D3', style: { fill: '#f2f2f2' } },
+      ] });
+      await t.cmd('drafting.saveTableStyle', { id: made.id, name: 'Finish schedule' });
+      await t.ui({ view: 'sheet', sheetId: sheet.id });
+      await t.page.waitForSelector('[data-testid=sheet-annotate]', { timeout: 10_000 });
+      await t.page.locator('[data-testid=sheet-annotate]').click();
+      await t.page.waitForSelector('[data-testid=paper-back]', { timeout: 10_000 });
+      await t.wait(800);
+      await t.page.evaluate(async (id) => (await import('/src/modules/drafting/table/tableStore.ts')).openTableEditor(id), made.id);
+      await t.page.waitForSelector('[data-table-editor]', { timeout: 10_000 });
+      await t.page.locator('[data-table-editor] td[data-cell=C1]').click();
+      await t.until(async () => (await t.page.locator('[data-testid=table-rot]').inputValue()) === '90', 'the heading reads up its row');
+      await t.shot('drafting-table-styles', { of: '[data-table-editor]', pad: 0 });
+      const book = await t.call('doc.query', { name: 'standards.get', args: {} });
+      t.expect((book.tableStyles ?? []).some((x) => x.name === 'Finish schedule'), 'the table style is kept in the drafting standards');
+    },
+  },
+  {
     id: 'title-blocks',
     async run(t) {
       // A title block of one's own (decision 340, report #76): the project's data and a parameter of its own, a Finnish-style

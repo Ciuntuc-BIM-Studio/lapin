@@ -4263,6 +4263,22 @@ export const LO: Record<string, string> = {
   "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "ຕາຕະລາງອື່ນອ່ານດ້ວຍຊື່ຂອງມັນ: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
   "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "ຊື່ຂອງຕາຕະລາງ: ຄຳດຽວ, ເພື່ອໃຫ້ສູດຂອງຕາຕະລາງອື່ນອ່ານໄດ້ (table.Areas.B4)",
   "Other tables read it once its name is one word.": "ຕາຕະລາງອື່ນຈະອ່ານມັນໄດ້ເມື່ອຊື່ຂອງມັນເປັນຄຳດຽວ.",
+  // Drafting tables, stage 3: table styles, turned text, padding.
+  "This table's look, sizes and header rows kept in the drafting standards, for new tables and to restyle others": "ຮູບແບບ, ຂະໜາດ ແລະ ແຖວຫົວຂອງຕາຕະລາງນີ້ເກັບໄວ້ໃນມາດຕະຖານການແຕ້ມ, ສຳລັບຕາຕະລາງໃໝ່ ແລະ ເພື່ອປ່ຽນຮູບແບບອັນອື່ນ",
+  "The selected rows are header rows: a style's header, repeated when a long table breaks": "ແຖວທີ່ເລືອກແມ່ນແຖວຫົວ: ຫົວຂອງຮູບແບບ, ເຮັດຊ້ຳເມື່ອຕາຕະລາງຍາວຖືກແບ່ງ",
+  "header row": "ແຖວຫົວ",
+  "The table style's name": "ຊື່ຂອງຮູບແບບຕາຕະລາງ",
+  "Keep its cells too, so a new table in this style starts as a copy of it?": "ເກັບຕາລາງໄວ້ນຳ, ເພື່ອໃຫ້ຕາຕະລາງໃໝ່ໃນຮູບແບບນີ້ເລີ່ມເປັນສຳເນົາຂອງມັນບໍ?",
+  "The text along the row, or turned to read up or down it (the row fits its length)": "ຂໍ້ຄວາມຕາມແຖວ, ຫຼື ໝຸນໃຫ້ອ່ານຂຶ້ນ ຫຼື ລົງ (ແຖວປັບຕາມຄວາມຍາວຂອງມັນ)",
+  "text along": "ຂໍ້ຄວາມຕາມແນວນອນ",
+  "text up (90°)": "ຂໍ້ຄວາມຂຶ້ນ (90°)",
+  "text down (270°)": "ຂໍ້ຄວາມລົງ (270°)",
+  "The space round the text in the cell; empty: the table's": "ໄລຍະອ້ອມຂໍ້ຄວາມໃນຕາລາງ; ຫວ່າງ: ຂອງຕາຕະລາງ",
+  "Padding": "ໄລຍະຫ່າງພາຍໃນ",
+  "With its cells": "ພ້ອມຕາລາງ",
+  "A new table in this style copies its cells too": "ຕາຕະລາງໃໝ່ໃນຮູບແບບນີ້ສຳເນົາຕາລາງຂອງມັນນຳ",
+  "No table styles yet.": "ຍັງບໍ່ມີຮູບແບບຕາຕະລາງ.",
+  "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "ບັນທຶກຕາຕະລາງເປັນຮູບແບບຈາກຕົວແກ້ໄຂຂອງມັນ (ບັນທຶກເປັນຮູບແບບ…): ຮູບແບບ, ຄວາມກວ້າງຖັນ ແລະ ຄວາມສູງແຖວ, ແຖວຫົວ ແລະ, ຖ້າຕ້ອງການ, ຕາລາງ. ຄ່າຕັ້ງໃນຕົວຍັງຄືເກົ່າ.",
 };
 
 /** Phrases with a number or a name in them. */

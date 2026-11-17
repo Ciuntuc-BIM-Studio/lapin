@@ -287,6 +287,8 @@ Ca orice etichetă, eticheta de stratificație își urmează elementul, iar pla
 - **Alte tabele.** Dă unui tabel un nume dintr-un cuvânt în editorul lui (**Areas**, sus), și orice tabel îi citește celulele după acest nume: `{= table.Areas.B4 * 2}`, `{= sum(table.Areas.B2:B9)}`, sau `{table.Areas.A1}` ca să arate o celulă așa cum se citește. **Alt tabel**, sub grilă, arată celelalte tabele: clic pe o celulă (Shift+clic pentru un interval), iar **Inserează referința** o pune în celula selectată unde era cursorul în bară, într-o formulă așa cum e, în rest ca un câmp sau ca un total. Un nume se caută întâi pe aceeași planșă, deci o planșă duplicată cu tabelele ei le citește pe ale sale. Redenumești un tabel și ce îl citește urmează; îl ștergi și ce îl citea arată `REF`; rândurile și coloanele adăugate sau scoase din el mută referințele altor tabele la el, ca într-un tabelar. O formulă care se întoarce la propria celulă printr-un alt tabel arată `<…>`, iar ambele tabele spun de ce.
 - **Unește** celulele selectate (rămâne textul primei) sau **desparte-le** din nou; adaugă rânduri deasupra sau dedesubt și coloane la stânga sau la dreapta, ori șterge-le pe cele selectate.
 - **Lățimile și înălțimile** sunt în milimetri de hârtie, așa că un tabel se citește la fel la orice scară. Un rând se potrivește implicit textului, niciodată mai scund decât înălțimea lui; bifează **potrivit textului** pentru coloane cât cel mai lat text al lor (textul împărțit pe rânduri rămâne într-o coloană cu lățimea ei proprie).
+- **Text rotit și spațiere.** **Text în sus (90°)** sau **text în jos (270°)** rotește textul celulelor selectate ca să se citească de-a lungul înălțimii rândului, iar un rând care se potrivește textului crește cât lungimea lui (un titlu de coloană peste coloane înguste); într-un rând cu înălțime proprie, textul se împarte pe rânduri la ea. **Spațiere** stabilește spațiul din jurul textului unei celule (gol: al tabelului).
+- **Stiluri de tabel.** **Salvează ca stil…** păstrează aspectul tabelului în standardele de desen ale proiectului: liniile, culorile celulelor, alinierea și rotirile, lățimile coloanelor, înălțimile rândurilor și **rândurile de antet** (bifează **rând de antet** pentru rândurile selectate). Dacă ceri să păstreze și celulele, stilul e un șablon: un tabel nou făcut în el pornește ca o copie. Stilurile tale apar lângă aspectele Lapin când faci un tabel și în lista editorului, unde alegerea unuia restilizează un tabel (textele și lățimile rămân). **Gestionare → Standarde de desen → Tabele** le redenumește sau le șterge, iar un fișier de standarde (**Export…**, **Import…**) le duce în alte proiecte. Aspectele Lapin rămân cum erau.
 - **Aldin**, **cursiv**, alinierea, înălțimea textului, **culoarea textului**, **fundalul** și **opacitatea** lui se aplică celulelor selectate; **Borduri** desenează toate liniile, conturul, interiorul, o latură sau niciuna, cu o grosime și o culoare.
 
 Fiecare modificare e un pas de anulare. Motorul desenează tabelul, deci vederea, planșa, PDF-ul și DXF-ul ei arată același lucru; se mută, se copiază și se rotește cu uneltele Modifică.
@@ -296,6 +298,10 @@ Fiecare modificare e un pas de anulare. Motorul desenează tabelul, deci vederea
 ![Editorul de tabel: un total calculat de o formulă, două celule unite, antetul colorat](shots/drafting-table-editor.webp)
 
 ![Un tabel care citește altul: alegătorul de sub grilă arată celulele celuilalt tabel, iar rezumatul citește totalul lui și numele unei camere](shots/drafting-table-refs.webp)
+
+![Titluri de coloană rotite ca să se citească în sus, tabelul gata să fie salvat ca stil](shots/drafting-table-styles.webp)
+
+
 
 ### Axe
 

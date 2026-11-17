@@ -4201,6 +4201,22 @@ export const ZH: Record<string, string> = {
   "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "其他表格按名称读取：{= table.Areas.B4 * 2}、{= sum(table.Areas.B2:B9)}、{table.Areas.A1}。",
   "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "表格名称：一个单词，以便其他表格的公式读取（table.Areas.B4）",
   "Other tables read it once its name is one word.": "名称为一个单词后，其他表格即可读取它。",
+  // Drafting tables, stage 3: table styles, turned text, padding.
+  "This table's look, sizes and header rows kept in the drafting standards, for new tables and to restyle others": "将此表格的外观、尺寸和标题行保存到制图标准中，用于新表格及为其他表格换样式",
+  "The selected rows are header rows: a style's header, repeated when a long table breaks": "所选行为标题行：样式的标题，长表格断开时重复显示",
+  "header row": "标题行",
+  "The table style's name": "表格样式名称",
+  "Keep its cells too, so a new table in this style starts as a copy of it?": "同时保留其单元格，使此样式的新表格以它的副本开始？",
+  "The text along the row, or turned to read up or down it (the row fits its length)": "文字沿行排列，或旋转为向上或向下阅读（行高适应其长度）",
+  "text along": "文字横排",
+  "text up (90°)": "文字向上（90°）",
+  "text down (270°)": "文字向下（270°）",
+  "The space round the text in the cell; empty: the table's": "单元格中文字周围的间距；留空：使用表格的",
+  "Padding": "内边距",
+  "With its cells": "含单元格",
+  "A new table in this style copies its cells too": "此样式的新表格也会复制其单元格",
+  "No table styles yet.": "尚无表格样式。",
+  "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "在表格编辑器中将其保存为样式（另存为样式…）：其外观、列宽与行高、标题行，以及（如需要）其单元格。内置预设保持不变。",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

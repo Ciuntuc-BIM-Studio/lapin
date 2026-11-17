@@ -16,7 +16,8 @@ import { NumberField } from '../../../shell/cells';
 import { ColourField } from '../../../shell/ColourField';
 import { BORDERS, PRESETS, address, colsOp, grow, inSel, insertAt, isTableName, norm, opacityOf, ownStyle, pasteBlock, rangeOf, refInsert, rowsOp, withOpacity, type Sel, type TableInfo, type TableJson, type TableOp } from './tableModel';
 import { TableRefPicker } from './TableRefPicker';
-import { useTableEditor } from './tableStore';
+import { useTableEditor, useTableStyles } from './tableStore';
+import { promptText, confirmAction } from '../../../shell/prompts';
 
 const HELP = "Type in a cell, or double-click it. Formulas read the table's cells: {= B2 * C2}, {= sum(D2:D9)}, {= average(B2:B5) | 0.0}; on a sheet, its fields too: {sheet.number}.";
 const HELP_TABLES = 'Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.';
@@ -36,6 +37,8 @@ export function TableEditor() {
   const [bar, setBar] = useState('');
   const [border, setBorder] = useState<{ edges: string; w: number; c: string }>({ edges: 'all', w: 0.25, c: '#000000' });
   const [name, setName] = useState('');
+  const styles = useTableStyles();
+
   const grid = useRef<HTMLDivElement>(null);
   const barCaret = useRef<{ from: number; to: number } | null>(null);
   const close = () => useUi.setState({ dialog: null });
@@ -109,6 +112,12 @@ export function TableEditor() {
     barCaret.current = { from: next.caret, to: next.caret };
     void edit({ op: 'set', cell: address(n.r0, n.c0), text: next.text });
   };
+  const saveStyle = () => {
+    const styleName = promptText('The table style\'s name', styles.find((st) => st.id === table?.preset)?.name ?? '');
+    if (!styleName?.trim()) return;
+    const cells = confirmAction('Keep its cells too, so a new table in this style starts as a copy of it?');
+    void execute('drafting.saveTableStyle', { id: node.id, name: styleName.trim(), cells });
+  };
   const rename = () => {
     const v = name.trim();
     if (v && v !== node.name) void execute('drafting.renameTable', { id: node.id, name: v }).then((r) => { if (!r) setName(node.name); });
@@ -118,6 +127,7 @@ export function TableEditor() {
   const colour = typeof own('color') === 'string' ? own('color') as string : '#000000';
   const colW = info?.colW[n.c0] ?? null, rowH = info?.rowH[n.r0] ?? null;
   const fitCols = !!table?.cols?.[n.c0]?.fit, fitRows = !!table?.rows?.[n.r0]?.fit;
+  const headerRows = !!table?.rows?.[n.r0]?.header;
 
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Table">
@@ -141,7 +151,10 @@ export function TableEditor() {
             <button type="button" className="icon" data-testid="table-split" title="Split the merged cells selected" onClick={() => void edit({ op: 'split', range })}><TableCellsSplit size={15} /></button>
             <select data-testid="table-preset-edit" title="The table's preset: its lines and header row" value={table?.preset ?? 'header'} onChange={(e) => void edit({ op: 'preset', preset: e.target.value })}>
               {PRESETS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+              {styles.map((st) => <option key={st.id} value={st.id} data-no-i18n>{st.name}</option>)}
             </select>
+            <button type="button" className="btn" data-testid="table-save-style" title="This table's look, sizes and header rows kept in the drafting standards, for new tables and to restyle others" onClick={saveStyle}>Save as style…</button>
+            <label title="The selected rows are header rows: a style's header, repeated when a long table breaks"><input type="checkbox" data-testid="table-header-rows" checked={headerRows} onChange={(e) => void edit({ op: 'header', range, on: e.target.checked })} /> header row</label>
           </div>
           <div className="table-tools" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginBottom: 6 }}>
             <button type="button" className={`icon${own('bold') ? ' on' : ''}`} data-testid="table-bold" title="Bold" onClick={() => style({ bold: !own('bold') })}><Bold size={15} /></button>
@@ -157,6 +170,13 @@ export function TableEditor() {
             </select>
             <span title="Text height on paper; empty: the table's">Text</span>
             <NumberField style={NUM} value={typeof own('size') === 'number' ? own('size') as number : null} placeholder="2.5" suffix="mm" min={0.5} max={50} onCommit={(v) => style({ size: v })} />
+            <select data-testid="table-rot" title="The text along the row, or turned to read up or down it (the row fits its length)" value={String(own('rot') ?? 0)} onChange={(e) => style({ rot: Number(e.target.value) })}>
+              <option value="0">text along</option>
+              <option value="90">text up (90°)</option>
+              <option value="270">text down (270°)</option>
+            </select>
+            <span title="The space round the text in the cell; empty: the table's">Padding</span>
+            <NumberField style={NUM} testId="table-pad" value={typeof own('pad') === 'number' ? own('pad') as number : null} placeholder="1" suffix="mm" min={0} max={50} onCommit={(v) => style({ pad: v })} />
             <span>Colour</span>
             <ColourField value={colour} onChange={(c) => style({ color: c })} />
             <span title="The cells' background">Background</span>
@@ -215,6 +235,8 @@ export function TableEditor() {
                               textAlign: (o('align') as 'left' | 'center' | 'right') ?? 'left', fontWeight: o('bold') ? 700 : 400, fontStyle: o('italic') ? 'italic' : 'normal',
                               color: (o('color') as string) ?? '#000', background: (o('fill') as string) ?? undefined,
                               outline: on ? '2px solid var(--accent, #2a6df4)' : undefined, outlineOffset: -2, fontSize: 12,
+                              // A turned cell (stage 3) reads up (90°) or down (270°) its row, as the drawing has it.
+                              ...(o('rot') === 90 ? { writingMode: 'vertical-rl' as const, transform: 'rotate(180deg)' } : o('rot') === 270 ? { writingMode: 'vertical-rl' as const } : {}),
                             }}>
                             {isEditing ? (
                               <textarea autoFocus data-testid="table-cell-input" value={editing.text} rows={Math.max(1, editing.text.split('\n').length)}

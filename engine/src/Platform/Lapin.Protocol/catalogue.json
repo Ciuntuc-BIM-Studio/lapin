@@ -340,6 +340,7 @@
     {"name":"drafting.removeLayer","module":"drafting","label":"Remove layer","args":[{"name":"name","type":"str"}]},
     {"name":"drafting.renameTable","module":"drafting","label":"Rename table","args":[{"name":"id","type":"str"},{"name":"name","type":"str"}]},
     {"name":"drafting.renumberAxes","module":"drafting","label":"Renumber grid axes","args":[{"name":"gridId","type":"str"},{"name":"tags","type":"list"},{"name":"direction","type":"str"},{"name":"scheme","type":"str"},{"name":"skipIO","type":"bool"},{"name":"reverse","type":"bool"},{"name":"descending","type":"bool"},{"name":"start","type":"str"},{"name":"prefix","type":"str"}]},
+    {"name":"drafting.saveTableStyle","module":"drafting","label":"Save table style","args":[{"name":"id","type":"str"},{"name":"name","type":"str"},{"name":"cells","type":"bool"},{"name":"styleId","type":"str"}]},
     {"name":"drafting.setDimensionRules","module":"drafting","label":"Dimension rules","args":[{"name":"exterior"},{"name":"rooms"}]},
     {"name":"drafting.setDimensionText","module":"drafting","label":"Dimension text","args":[{"name":"segment","type":"float"},{"name":"text","type":"str"},{"name":"id","type":"str"}]},
     {"name":"drafting.setDimensionValue","module":"drafting","label":"Dimension value","args":[{"name":"id","type":"str"},{"name":"value","type":"float"},{"name":"segment","type":"float"}]},

@@ -8,19 +8,21 @@ import { Table2 } from 'lucide-react';
 import type { NodeDto } from '../../../engine/protocol';
 import { execute } from '../../../engine/session';
 import { useUi } from '../../../app/store';
-import { isTable, openTableEditor, useNewTable } from './tableStore';
+import { isTable, openTableEditor, useNewTable, useTableStyles } from './tableStore';
 import type { ToolDef } from '../../../platform/module';
 import { NumberField } from '../../../shell/cells';
-import { PRESETS, type Preset, type TableJson } from './tableModel';
+import { PRESETS, type TableJson } from './tableModel';
 
 function TableOptions() {
   const { rows, cols, preset } = useNewTable();
+  const styles = useTableStyles();
   return (
     <>
       <NumberField className="cad-length" testId="table-rows" title="Rows of the new table" suffix="rows" value={rows} min={1} max={500} onCommit={(v) => { if (v) useNewTable.setState({ rows: Math.round(v) }); }} />
       <NumberField className="cad-length" testId="table-cols" title="Columns of the new table" suffix="columns" value={cols} min={1} max={100} onCommit={(v) => { if (v) useNewTable.setState({ cols: Math.round(v) }); }} />
-      <select className="cad-layer" data-testid="table-preset" title="How the new table looks" value={preset} onChange={(e) => useNewTable.setState({ preset: e.target.value as Preset })}>
+      <select className="cad-layer" data-testid="table-preset" title="How the new table looks" value={preset} onChange={(e) => useNewTable.setState({ preset: e.target.value })}>
         {PRESETS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+        {styles.map((st) => <option key={st.id} value={st.id} data-no-i18n>{st.name}</option>)}
       </select>
     </>
   );

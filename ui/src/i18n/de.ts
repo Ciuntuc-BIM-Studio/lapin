@@ -4167,6 +4167,22 @@ export const DE: Record<string, string> = {
   "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "Eine andere Tabelle wird über ihren Namen gelesen: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
   "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "Der Name der Tabelle: ein Wort, damit Formeln anderer Tabellen sie lesen können (table.Areas.B4)",
   "Other tables read it once its name is one word.": "Andere Tabellen lesen sie, sobald ihr Name ein Wort ist.",
+  // Drafting tables, stage 3: table styles, turned text, padding.
+  "This table's look, sizes and header rows kept in the drafting standards, for new tables and to restyle others": "Aussehen, Größen und Kopfzeilen dieser Tabelle in den Zeichnungsstandards gespeichert, für neue Tabellen und zum Umgestalten anderer",
+  "The selected rows are header rows: a style's header, repeated when a long table breaks": "Die gewählten Zeilen sind Kopfzeilen: der Kopf eines Stils, wiederholt, wenn eine lange Tabelle umbricht",
+  "header row": "Kopfzeile",
+  "The table style's name": "Der Name des Tabellenstils",
+  "Keep its cells too, so a new table in this style starts as a copy of it?": "Auch die Zellen behalten, sodass eine neue Tabelle in diesem Stil als Kopie davon beginnt?",
+  "The text along the row, or turned to read up or down it (the row fits its length)": "Der Text entlang der Zeile oder gedreht, um auf- oder abwärts zu lesen (die Zeile passt sich seiner Länge an)",
+  "text along": "Text waagerecht",
+  "text up (90°)": "Text aufwärts (90°)",
+  "text down (270°)": "Text abwärts (270°)",
+  "The space round the text in the cell; empty: the table's": "Der Abstand um den Text in der Zelle; leer: der der Tabelle",
+  "Padding": "Innenabstand",
+  "With its cells": "Mit Zellen",
+  "A new table in this style copies its cells too": "Eine neue Tabelle in diesem Stil kopiert auch seine Zellen",
+  "No table styles yet.": "Noch keine Tabellenstile.",
+  "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Speichere eine Tabelle in ihrem Editor als Stil (Als Stil speichern…): ihr Aussehen, Spaltenbreiten und Zeilenhöhen, Kopfzeilen und auf Wunsch ihre Zellen. Die eingebauten Vorlagen bleiben, wie sie sind.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

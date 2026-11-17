@@ -4210,6 +4210,22 @@ export const PL: Record<string, string> = {
   "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "Inną tabelę odczytuje się po nazwie: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
   "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "Nazwa tabeli: jedno słowo, aby formuły innych tabel mogły ją odczytać (table.Areas.B4)",
   "Other tables read it once its name is one word.": "Inne tabele odczytają ją, gdy jej nazwa będzie jednym słowem.",
+  // Drafting tables, stage 3: table styles, turned text, padding.
+  "This table's look, sizes and header rows kept in the drafting standards, for new tables and to restyle others": "Wygląd, rozmiary i wiersze nagłówka tej tabeli zachowane w standardach rysunkowych, dla nowych tabel i do zmiany stylu innych",
+  "The selected rows are header rows: a style's header, repeated when a long table breaks": "Zaznaczone wiersze to wiersze nagłówka: nagłówek stylu, powtarzany, gdy długa tabela się dzieli",
+  "header row": "wiersz nagłówka",
+  "The table style's name": "Nazwa stylu tabeli",
+  "Keep its cells too, so a new table in this style starts as a copy of it?": "Zachować też komórki, aby nowa tabela w tym stylu zaczynała się jako jej kopia?",
+  "The text along the row, or turned to read up or down it (the row fits its length)": "Tekst wzdłuż wiersza albo obrócony, by czytać go w górę lub w dół (wiersz dopasowuje się do jego długości)",
+  "text along": "tekst wzdłuż",
+  "text up (90°)": "tekst w górę (90°)",
+  "text down (270°)": "tekst w dół (270°)",
+  "The space round the text in the cell; empty: the table's": "Odstęp wokół tekstu w komórce; puste: tabeli",
+  "Padding": "Odstęp wewnętrzny",
+  "With its cells": "Z komórkami",
+  "A new table in this style copies its cells too": "Nowa tabela w tym stylu kopiuje też jego komórki",
+  "No table styles yet.": "Brak jeszcze stylów tabel.",
+  "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Zapisz tabelę jako styl w jej edytorze (Zapisz jako styl…): jej wygląd, szerokości kolumn i wysokości wierszy, wiersze nagłówka i, na życzenie, komórki. Wbudowane ustawienia pozostają bez zmian.",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

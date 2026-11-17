@@ -4204,6 +4204,22 @@ export const DA: Record<string, string> = {
   "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "En anden tabel læses ved sit navn: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
   "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "Tabellens navn: ét ord, så andre tabellers formler kan læse den (table.Areas.B4)",
   "Other tables read it once its name is one word.": "Andre tabeller læser den, når dens navn er ét ord.",
+  // Drafting tables, stage 3: table styles, turned text, padding.
+  "This table's look, sizes and header rows kept in the drafting standards, for new tables and to restyle others": "Tabellens udseende, størrelser og overskriftsrækker gemt i tegnestandarderne, til nye tabeller og til at give andre ny stil",
+  "The selected rows are header rows: a style's header, repeated when a long table breaks": "De valgte rækker er overskriftsrækker: en stils overskrift, gentaget når en lang tabel deles",
+  "header row": "overskriftsrække",
+  "The table style's name": "Tabelstilens navn",
+  "Keep its cells too, so a new table in this style starts as a copy of it?": "Behold også cellerne, så en ny tabel i denne stil starter som en kopi af den?",
+  "The text along the row, or turned to read up or down it (the row fits its length)": "Teksten langs rækken, eller drejet så den læses op eller ned (rækken tilpasses dens længde)",
+  "text along": "tekst langs",
+  "text up (90°)": "tekst opad (90°)",
+  "text down (270°)": "tekst nedad (270°)",
+  "The space round the text in the cell; empty: the table's": "Afstanden om teksten i cellen; tom: tabellens",
+  "Padding": "Indvendig margen",
+  "With its cells": "Med celler",
+  "A new table in this style copies its cells too": "En ny tabel i denne stil kopierer også dens celler",
+  "No table styles yet.": "Ingen tabelstile endnu.",
+  "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Gem en tabel som stil fra dens editor (Gem som stil…): dens udseende, kolonnebredder og rækkehøjder, overskriftsrækker og, hvis ønsket, dens celler. De indbyggede forvalg forbliver som de er.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

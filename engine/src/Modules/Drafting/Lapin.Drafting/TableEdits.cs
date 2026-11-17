@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Nodes;
+using Lapin.Drawing;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
@@ -15,11 +16,11 @@ namespace Lapin.Drafting;
 public static class TableEdits
 {
     public static readonly string[] Ops =
-        ["set", "style", "borders", "merge", "split", "insertRows", "deleteRows", "insertCols", "deleteCols", "colWidth", "rowHeight", "fit", "tableStyle", "preset"];
+        ["set", "style", "borders", "merge", "split", "insertRows", "deleteRows", "insertCols", "deleteCols", "colWidth", "rowHeight", "fit", "tableStyle", "preset", "header"];
 
     public static readonly string[] BorderKinds = ["all", "outer", "inner", "top", "bottom", "left", "right", "none", "default"];
 
-    static readonly string[] CellStyleKeys = ["fill", "color", "bold", "italic", "size", "align", "valign"];
+    static readonly string[] CellStyleKeys = ["fill", "color", "bold", "italic", "size", "align", "valign", "pad", "rot"];
     static readonly string[] TableStyleKeys = ["size", "pad", "color", "fill", "align", "valign", "grid", "outline"];
     static readonly string[] Sides = ["top", "bottom", "left", "right"];
 
@@ -86,6 +87,7 @@ public static class TableEdits
             "bold" or "italic" => v is JsonValue b && b.TryGetValue<bool>(out var x) ? x : throw new CommandException($"{k} is true or false."),
             "size" => Json.Number(v) is double s && s is >= 0.5 and <= 50 ? s : throw new CommandException("A text's height is 0.5 to 50 mm."),
             "pad" => Json.Number(v) is double p && p is >= 0 and <= 50 ? p : throw new CommandException("A cell's padding is 0 to 50 mm."),
+            "rot" => Json.Number(v) is double r && DraftingTables.Rotations.Contains((int)r) && r == Math.Floor(r) ? (r == 0 ? null : (int)r) : throw new CommandException("A cell's text turns 0, 90 or 270°."),
             "align" => (string?)v is { } a && DraftingTables.Aligns.Contains(a) ? a : throw new CommandException($"A text aligns {string.Join(", ", DraftingTables.Aligns)}."),
             "valign" => (string?)v is { } a && DraftingTables.VAligns.Contains(a) ? a : throw new CommandException($"A text stands {string.Join(", ", DraftingTables.VAligns)}."),
             "grid" or "outline" => SideValue(v),
@@ -101,9 +103,9 @@ public static class TableEdits
     }
 
     /// <summary>The ops applied in order to a table's JSON (a copy, returned): any that does not read refuses them all.</summary>
-    public static JsonObject Apply(JsonObject? table, JsonArray ops) => Apply(table, ops, null);
+    public static JsonObject Apply(JsonObject? table, JsonArray ops, IReadOnlyList<TableStyleDef>? styles = null) => Apply(table, ops, null, styles);
 
-    static JsonObject Apply(JsonObject? table, JsonArray ops, List<Shifted>? shifts)
+    static JsonObject Apply(JsonObject? table, JsonArray ops, List<Shifted>? shifts, IReadOnlyList<TableStyleDef>? styles)
     {
         var t = Normal(table);
         foreach (var n in ops)
@@ -196,6 +198,14 @@ public static class TableEdits
                     if (axis is "cols" or "both") Fit(Cols(t), b.C0, b.C1);
                     break;
                 }
+                // The rows of a range marked header rows or not (stage 3): a style's header, the rows a long table repeats (stage 5).
+                case "header":
+                {
+                    var b = RangeOf(op, g);
+                    var on = op["on"] is not JsonValue hv || !hv.TryGetValue<bool>(out var hb) || hb;
+                    for (var r = b.R0; r <= b.R1; r++) { var row = (JsonObject)Rows(t)[r]!; if (on) row["header"] = true; else row.Remove("header"); }
+                    break;
+                }
                 case "tableStyle":
                 {
                     var style = op["style"] as JsonObject ?? throw new CommandException($"A table's style is {{{string.Join(", ", TableStyleKeys)}}}.");
@@ -207,7 +217,14 @@ public static class TableEdits
                     }
                     break;
                 }
-                case "preset": DraftingTables.ApplyPreset(t, (string?)op["preset"] ?? throw new CommandException($"Which preset? One of {string.Join(", ", DraftingTables.Presets)}.")); break;
+                case "preset":
+                {
+                    var preset = (string?)op["preset"] ?? throw new CommandException($"Which preset? One of {string.Join(", ", DraftingTables.Presets)}, or a table style.");
+                    // A table style of the user's (stage 3): its look laid on the table's cells, their texts and sizes kept.
+                    if (DraftingTables.StyleOf(styles, preset) is { } st) DraftingTables.ApplyStyle(t, st, sizes: false);
+                    else DraftingTables.ApplyPreset(t, preset);
+                    break;
+                }
                 default: throw new CommandException($"„{name}” is not an edit of a table ({string.Join(", ", Ops)}).");
             }
         }
@@ -553,10 +570,10 @@ public static class TableEdits
     public sealed record Shifted(bool Rows, int At, int Count, bool Insert);
 
     /// <summary>The ops applied in order (as <see cref="Apply(JsonObject?, JsonArray)"/>), and the rows and columns they put in or took out, in order.</summary>
-    public static (JsonObject Table, List<Shifted> Shifts) ApplyTracked(JsonObject? table, JsonArray ops)
+    public static (JsonObject Table, List<Shifted> Shifts) ApplyTracked(JsonObject? table, JsonArray ops, IReadOnlyList<TableStyleDef>? styles = null)
     {
         var shifts = new List<Shifted>();
-        var t = Apply(table, ops, shifts);
+        var t = Apply(table, ops, shifts, styles);
         return (t, shifts);
     }
 }

@@ -30,7 +30,7 @@ import { TagRulesEditor } from './TagRulesEditor';
 import type { TagRuleDto } from './tagRules';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[] };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[]; tableStyles?: { id: string; name: string; cells?: boolean; table?: { rows?: unknown[]; cols?: unknown[] } }[] };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[]; lineType?: boolean; labels?: Record<string, string> };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -127,6 +127,7 @@ export function StandardsDialog() {
   const [group, setGroup] = useState('');
   const [project, setProject] = useState(() => standardsTab() === 'project');
   const [lines, setLines] = useState(false);
+  const [tables, setTables] = useState(false);
   const [pack, setPack] = useState<PackRead | null>(null);
   const lineTypes = useLineTypes();
   const systems = useSystems();
@@ -268,13 +269,15 @@ export function StandardsDialog() {
         </header>
         <div className="dialog-body">
           <div className="tabs-inline">
-            {TABS.map((t) => <button key={t.id} type="button" className={`tab-chip${t.id === tab.id && !project && !lines ? ' on' : ''}`} onClick={() => { setTab(t); setProject(false); setLines(false); setPack(null); }}>{t.label}</button>)}
-            <button type="button" className={`tab-chip${lines ? ' on' : ''}`} data-field="standards-tab-lines" onClick={() => { setLines(true); setProject(false); setPack(null); }}>Line types</button>
-            <button type="button" className={`tab-chip${project ? ' on' : ''}`} onClick={() => { setProject(true); setLines(false); setPack(null); }}>Project</button>
+            {TABS.map((t) => <button key={t.id} type="button" className={`tab-chip${t.id === tab.id && !project && !lines && !tables ? ' on' : ''}`} onClick={() => { setTab(t); setProject(false); setLines(false); setTables(false); setPack(null); }}>{t.label}</button>)}
+            <button type="button" className={`tab-chip${lines ? ' on' : ''}`} data-field="standards-tab-lines" onClick={() => { setLines(true); setProject(false); setTables(false); setPack(null); }}>Line types</button>
+            {/* The drafting tables' styles of the user's own (issue #71, stage 3). */}
+            <button type="button" className={`tab-chip${tables ? ' on' : ''}`} data-field="standards-tab-tables" onClick={() => { setTables(true); setLines(false); setProject(false); setPack(null); }}>Tables</button>
+            <button type="button" className={`tab-chip${project ? ' on' : ''}`} onClick={() => { setProject(true); setLines(false); setTables(false); setPack(null); }}>Project</button>
             <span className="grow" />
             <StandardsLibraryButtons onRead={setPack} />
           </div>
-          {pack ? <StandardsImportPanel read={pack} onDone={() => setPack(null)} /> : lines ? <LineTypesTab /> : project ? options : tab.id === 'tag' && rows.some((r) => r.id === editing && r.shape === 'buildup')
+          {pack ? <StandardsImportPanel read={pack} onDone={() => setPack(null)} /> : lines ? <LineTypesTab /> : tables ? <TableStylesTab styles={book.tableStyles ?? []} /> : project ? options : tab.id === 'tag' && rows.some((r) => r.id === editing && r.shape === 'buildup')
             ? <BuildupEditor entry={rows.find((r) => r.id === editing) as unknown as BuildupEntry} onClose={() => setEditing(null)} />
             : tab.id === 'tag' && rows.some((r) => r.id === editing)
             ? <LeaderEditor entry={rows.find((r) => r.id === editing) as unknown as LeaderEntry} onClose={() => setEditing(null)} />
@@ -330,10 +333,39 @@ export function StandardsDialog() {
           {/* The tag rules (issue #72): per class, a condition and the tag type it gives, the first that holds winning. */}
           {tab.id === 'tag' && <TagRulesEditor rules={book.tagRules ?? []} types={rows} />}
           </>}
-          {!pack && !lines && <StandardsFirmFolders onRead={setPack} />}
+          {!pack && !lines && !tables && <StandardsFirmFolders onRead={setPack} />}
           {error && <p className="error-text" role="alert">{error}</p>}
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * The drafting tables' styles of the user's own (issue #71, stage 3): each saved from a table's editor (Save as style…), its
+ * name changed or removed here; offered beside the built-in presets when a table is made or restyled, and carried by a
+ * standards file with the rest. A style kept with its cells is a template: a new table copies it whole.
+ */
+function TableStylesTab({ styles }: { styles: { id: string; name: string; cells?: boolean; table?: { rows?: unknown[]; cols?: unknown[] } }[] }) {
+  return (
+    <>
+      <table className="standards-table" data-testid="table-styles">
+        <thead><tr><th>Name</th><th>Size</th><th title="A new table in this style copies its cells too">With its cells</th><th /></tr></thead>
+        <tbody>
+          {styles.map((s) => (
+            <tr key={s.id}>
+              <td><input key={s.name} defaultValue={s.name} data-no-i18n
+                onBlur={(e) => { const name = e.target.value.trim(); if (name && name !== s.name) void execute('standards.set', { kind: 'table', entry: { id: s.id, name } }); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} /></td>
+              <td data-no-i18n>{`${s.table?.rows?.length ?? 0} × ${s.table?.cols?.length ?? 0}`}</td>
+              <td><input type="checkbox" checked={!!s.cells} onChange={(e) => void execute('standards.set', { kind: 'table', entry: { id: s.id, cells: e.target.checked } })} /></td>
+              <td className="row-tools"><button type="button" className="icon mini" title="Remove" onClick={() => void execute('standards.remove', { kind: 'table', id: s.id })}><Trash2 size={12} /></button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {styles.length === 0 && <p className="muted small">No table styles yet.</p>}
+      <p className="muted small">Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.</p>
+    </>
   );
 }

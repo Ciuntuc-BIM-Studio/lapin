@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Lapin.Drawing;
 using Lapin.Geometry;
 using Lapin.Model;
 
@@ -252,8 +253,11 @@ public static partial class DraftingTables
 
     // ------------------------------------------------------------ layout
 
-    /// <summary>A cell's text laid: its lines, height and the style it is drawn in.</summary>
-    public sealed record CellText(List<string> Lines, double Size, bool Bold, bool Italic, string Color, string Align, string VAlign);
+    /// <summary>
+    /// A cell's text laid: its lines, height and the style it is drawn in; <see cref="Rot"/> 0, 90 (read bottom to top) or 270
+    /// (top to bottom), the text then laid along the row's height (stage 3); <see cref="Pad"/> its padding (mm).
+    /// </summary>
+    public sealed record CellText(List<string> Lines, double Size, bool Bold, bool Italic, string Color, string Align, string VAlign, int Rot = 0, double Pad = 1);
 
     /// <summary>A table laid out in paper mm: each column's width and row's height (fit to their text where asked), each master cell's text.</summary>
     public sealed record Layout(double[] ColW, double[] RowH, CellText?[,] Texts)
@@ -266,17 +270,34 @@ public static partial class DraftingTables
 
     static string Pick(string? v, string[] allowed, string d) => v != null && allowed.Contains(v) ? v : d;
 
+    /// <summary>The turns a cell's text may take (°, counter-clockwise): along the row, or up or down it.</summary>
+    public static readonly int[] Rotations = [0, 90, 270];
+
+    /// <summary>A cell's turn (<c>rot</c>): 90 or 270, else 0.</summary>
+    public static int RotOf(Cell cell) => cell.Num("rot") is double r && (int)r is 90 or 270 && r == Math.Floor(r) ? (int)r : 0;
+
+    /// <summary>A cell's padding: its own (<c>pad</c>), else the table's.</summary>
+    public static double PadOf(Grid g, Cell cell) => cell.Num("pad") is double p && p >= 0 ? p : g.Pad;
+
+    static double SizeOf(Grid g, Cell cell) => cell.Num("size") is double s && s > 0 ? s : g.Size;
+
+    /// <summary>A cell's text styled, its lines wrapped at <paramref name="width"/> (along its reading: a turned cell's row height) less its padding; null: unwrapped.</summary>
     public static CellText Style(Grid g, Cell cell, string shown, double? width, string font, bool bold, bool italic, string color)
     {
-        var size = cell.Num("size") is double s && s > 0 ? s : g.Size;
-        var maxW = width is { } w ? Math.Max(size * CharWidth, w - 2 * g.Pad) : (double?)null;
+        var size = SizeOf(g, cell);
+        var pad = PadOf(g, cell);
+        var maxW = width is { } w ? Math.Max(size * CharWidth, w - 2 * pad) : (double?)null;
         var lines = shown.Length == 0 ? [] : TextWrap.Lines(shown, size * CharWidth, maxW);
         return new CellText(lines, size, cell.Bool("bold") ?? bold, cell.Bool("italic") ?? italic, cell.Str("color") ?? (string?)g.Style["color"] ?? color,
-            Pick(cell.Str("align") ?? (string?)g.Style["align"], Aligns, "left"), Pick(cell.Str("valign") ?? (string?)g.Style["valign"], VAligns, "middle"));
+            Pick(cell.Str("align") ?? (string?)g.Style["align"], Aligns, "left"), Pick(cell.Str("valign") ?? (string?)g.Style["valign"], VAligns, "middle"),
+            RotOf(cell), pad);
     }
 
     /// <summary>How tall a cell's text stands (mm): its first line, then a line step for each next.</summary>
     public static double TextHeight(CellText t) => t.Lines.Count == 0 ? 0 : t.Size + (t.Lines.Count - 1) * t.Size * LineStep;
+
+    /// <summary>How long a cell's longest line runs (mm).</summary>
+    public static double TextLength(CellText t) => t.Lines.Count == 0 ? 0 : t.Lines.Max(l => l.Length) * t.Size * CharWidth;
 
     static double TextWidth(string shown, double size) =>
         shown.Length == 0 ? 0 : shown.Replace("\r\n", "\n").Split('\n').Max(l => l.Length) * size * CharWidth;
@@ -284,10 +305,19 @@ public static partial class DraftingTables
     /// <summary>
     /// The table laid out: a column that fits its text is as wide as its widest single-column cell (padding both sides), within
     /// its min and max; a fixed one wraps its text at its width; a row that fits is as tall as its tallest single-row cell
-    /// (a merged cell does not size what it spans), within its min and max.
+    /// (a merged cell does not size what it spans), within its min and max. A turned cell (90°, 270°) is the other way round:
+    /// its lines stack across its column (which fits their height) and run along its row (which fits their length); in a row
+    /// of a fixed height they wrap at it.
     /// </summary>
     public static Layout Lay(Grid g, Values v, (string Font, bool Bold, bool Italic, string Color) text)
     {
+        // The height of the rows a turned cell spans when none of them fits (its lines wrap at it), else null.
+        double? Fixed(int r, int rs)
+        {
+            var h = 0.0;
+            for (var i = r; i < r + rs; i++) { if (g.Rows[i].Fit) return null; h += g.Rows[i].H; }
+            return h;
+        }
         var colW = new double[g.C];
         for (var c = 0; c < g.C; c++)
         {
@@ -298,8 +328,13 @@ public static partial class DraftingTables
             {
                 var cell = g.Cells[r, c];
                 if (cell.Covered || cell.ColSpan != 1) continue;
-                var size = cell.Num("size") is double s && s > 0 ? s : g.Size;
-                need = Math.Max(need, TextWidth(v.Shown(r, c), size) + 2 * g.Pad);
+                var pad = PadOf(g, cell);
+                if (RotOf(cell) != 0)
+                {
+                    var t = Style(g, cell, v.Shown(r, c), Fixed(r, cell.RowSpan), text.Font, text.Bold, text.Italic, text.Color);
+                    need = Math.Max(need, TextHeight(t) + 2 * pad);
+                }
+                else need = Math.Max(need, TextWidth(v.Shown(r, c), SizeOf(g, cell)) + 2 * pad);
             }
             colW[c] = Math.Clamp(need > 0 ? need : col.W, col.Min ?? 2, Math.Max(col.Min ?? 2, col.Max ?? 1000));
         }
@@ -311,7 +346,7 @@ public static partial class DraftingTables
                 if (cell.Covered) continue;
                 var w = 0.0;
                 for (var j = c; j < c + cell.ColSpan; j++) w += colW[j];
-                texts[r, c] = Style(g, cell, v.Shown(r, c), w, text.Font, text.Bold, text.Italic, text.Color);
+                texts[r, c] = Style(g, cell, v.Shown(r, c), RotOf(cell) != 0 ? Fixed(r, cell.RowSpan) : w, text.Font, text.Bold, text.Italic, text.Color);
             }
         var rowH = new double[g.R];
         for (var r = 0; r < g.R; r++)
@@ -320,11 +355,52 @@ public static partial class DraftingTables
             if (!row.Fit) { rowH[r] = row.H; continue; }
             var need = 0.0;
             for (var c = 0; c < g.C; c++)
-                if (texts[r, c] is { } t && g.Cells[r, c].RowSpan == 1) need = Math.Max(need, TextHeight(t) + 2 * g.Pad);
+                if (texts[r, c] is { } t && g.Cells[r, c].RowSpan == 1) need = Math.Max(need, (t.Rot != 0 ? TextLength(t) : TextHeight(t)) + 2 * t.Pad);
             // A row that fits is never shorter than its height (its min when it has one).
             rowH[r] = Math.Clamp(Math.Max(need, row.Min ?? row.H), 1, Math.Max(1, row.Max ?? 1000));
         }
         return new Layout(colW, rowH, texts);
+    }
+
+    /// <summary>A line of a cell's text where it is drawn: its point on its baseline (mm, x right and y down from the table's top-left), its anchor along its reading and its turn (°).</summary>
+    public sealed record Placed(double X, double Y, string Text, string Anchor, int Turn, CellText Style);
+
+    /// <summary>
+    /// Every line of the cells' texts placed in their cells: aligned and padded as their style says, along the row, or for a
+    /// turned cell along the cell's height (90°: read bottom to top, its lines stacking to the right; 270°: top to bottom).
+    /// </summary>
+    public static IEnumerable<Placed> Placements(Grid g, Layout l)
+    {
+        for (var i = 0; i < g.R; i++)
+            for (var j = 0; j < g.C; j++)
+            {
+                if (l.Texts[i, j] is not { Lines.Count: > 0 } t) continue;
+                var cell = g.Cells[i, j];
+                var (x0, x1, y0, y1) = (l.X(j), l.X(j + cell.ColSpan), l.Y(i), l.Y(i + cell.RowSpan));
+                // Laid in the text's own frame (a along its reading, b down its lines), then put in the cell.
+                var (w, h) = t.Rot == 0 ? (x1 - x0, y1 - y0) : (y1 - y0, x1 - x0);
+                var block = TextHeight(t);
+                var top = t.VAlign switch { "top" => t.Pad, "bottom" => h - t.Pad - block, _ => h / 2 - block / 2 };
+                var (a, anchor) = t.Align switch { "center" => (w / 2, "middle"), "right" => (w - t.Pad, "end"), _ => (t.Pad, "start") };
+                for (var k = 0; k < t.Lines.Count; k++)
+                {
+                    var b = top + t.Size + k * t.Size * LineStep;
+                    var (x, y) = t.Rot switch { 90 => (x0 + b, y1 - a), 270 => (x1 - b, y0 + a), _ => (x0 + a, y0 + b) };
+                    yield return new Placed(x, y, t.Lines[k], anchor, t.Rot, t);
+                }
+            }
+    }
+
+    /// <summary>The cells' backgrounds: each master cell's box (mm, from the table's top-left, y down) and its colour.</summary>
+    public static IEnumerable<(double X0, double Y0, double X1, double Y1, string Color)> Fills(Grid g, Layout l)
+    {
+        for (var i = 0; i < g.R; i++)
+            for (var j = 0; j < g.C; j++)
+            {
+                var cell = g.Cells[i, j];
+                if (cell.Covered || (cell.Str("fill") ?? (string?)g.Style["fill"]) is not { } fill || !HexColor.TryParse(fill, out _, out _, out _)) continue;
+                yield return (l.X(j), l.Y(i), l.X(j + cell.ColSpan), l.Y(i + cell.RowSpan), fill);
+            }
     }
 
     // ------------------------------------------------------------ lines
@@ -397,7 +473,7 @@ public static partial class DraftingTables
     /// <summary>A preset applied to a table's JSON: its lines, and its first row a header (bold; shaded, or ruled under in "minimal").</summary>
     public static void ApplyPreset(JsonObject t, string preset)
     {
-        if (!Presets.Contains(preset)) throw new CommandException($"A table's preset is one of {string.Join(", ", Presets)}.");
+        if (!Presets.Contains(preset)) throw new CommandException($"A table's preset is one of {string.Join(", ", Presets)}, or a table style of the drafting standards.");
         var (style, header) = PresetStyle(preset);
         var st = t["style"] as JsonObject ?? [];
         foreach (var (k, v) in style) st[k] = v?.DeepClone();
@@ -424,6 +500,93 @@ public static partial class DraftingTables
                 else { cell.Remove("bold"); cell.Remove("fill"); cell.Remove("bottom"); }
             }
         }
+    }
+
+    // ------------------------------------------------------------ table styles of the user's own (stage 3)
+
+    /// <summary>What a cell's own look is (its text and spans aside): what a table style carries from cell to cell.</summary>
+    public static readonly string[] LookKeys = ["fill", "color", "bold", "italic", "size", "align", "valign", "pad", "rot", "top", "bottom", "left", "right"];
+
+    /// <summary>A preset by its id: a built-in one, or one of the user's table styles; null when neither.</summary>
+    public static TableStyleDef? StyleOf(IReadOnlyList<TableStyleDef>? styles, string? id) =>
+        id == null || Presets.Contains(id) ? null : styles?.FirstOrDefault(s => s.Id == id) ?? styles?.FirstOrDefault(s => string.Equals(s.Name, id, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// A table style of the user's laid on a table's JSON (as a built-in preset is): its style; its header rows (the style's
+    /// leading rows marked header) on the table's first rows, the rest of the table taking the style's body rows in turn (so a
+    /// style of two body rows bands them); each cell the look of the style's cell in its column (the last for columns past
+    /// it), its text and spans kept. <paramref name="sizes"/>: the columns' widths and the rows' heights too (a new table).
+    /// </summary>
+    public static void ApplyStyle(JsonObject t, TableStyleDef st, bool sizes)
+    {
+        var tpl = st.Table;
+        var tRows = (tpl["rows"] as JsonArray ?? []).Select(n => n as JsonObject ?? []).ToList();
+        var tCols = (tpl["cols"] as JsonArray ?? []).Select(n => n as JsonObject ?? []).ToList();
+        var heads = tRows.TakeWhile(r => r["header"] is JsonValue h && h.TryGetValue<bool>(out var b) && b).Count();
+        var body = tRows.Count - heads;
+        t["style"] = tpl["style"] is JsonObject style ? style.DeepClone() : new JsonObject { ["size"] = 2.5, ["pad"] = 1 };
+        t["preset"] = st.Id;
+        var rows = (JsonArray)t["rows"]!;
+        for (var r = 0; r < rows.Count; r++)
+        {
+            var row = (JsonObject)rows[r]!;
+            var src = r < heads ? r : body > 0 ? heads + (r - heads) % body : -1;
+            if (r < heads) row["header"] = true; else row.Remove("header");
+            var from = src >= 0 && src < tRows.Count ? tRows[src] : null;
+            if (sizes && from != null)
+                foreach (var k in new[] { "h", "fit", "min", "max" }) { if (from[k] is { } v) row[k] = v.DeepClone(); else if (k != "h") row.Remove(k); }
+            var cells = (JsonArray)row["cells"]!;
+            var fromCells = from?["cells"] as JsonArray;
+            for (var c = 0; c < cells.Count; c++)
+            {
+                var look = fromCells is { Count: > 0 } ? fromCells[Math.Min(c, fromCells.Count - 1)] as JsonObject : null;
+                var had = cells[c] as JsonObject;
+                var cell = had ?? [];
+                foreach (var k in LookKeys) cell.Remove(k);
+                if (look != null) foreach (var k in LookKeys) if (look[k] is { } v) cell[k] = v.DeepClone();
+                if (cell.Count == 0) cells[c] = null;
+                else if (had == null) cells[c] = cell;
+            }
+        }
+        if (!sizes || tCols.Count == 0) return;
+        var cols = (JsonArray)t["cols"]!;
+        for (var c = 0; c < cols.Count; c++)
+        {
+            var from = tCols[Math.Min(c, tCols.Count - 1)];
+            var col = (JsonObject)cols[c]!;
+            foreach (var k in new[] { "w", "fit", "min", "max" }) { if (from[k] is { } v) col[k] = v.DeepClone(); else if (k != "w") col.Remove(k); }
+        }
+    }
+
+    /// <summary>A table saved as a style: its JSON as it is, its texts and spans left out unless <paramref name="cells"/> keeps them (a template).</summary>
+    public static JsonObject StyleFrom(JsonObject table, bool cells)
+    {
+        var t = (JsonObject)table.DeepClone();
+        if (cells) return t;
+        foreach (var rn in t["rows"] as JsonArray ?? [])
+            if ((rn as JsonObject)?["cells"] is JsonArray cs)
+                for (var c = 0; c < cs.Count; c++)
+                    if (cs[c] is JsonObject o)
+                    {
+                        foreach (var k in new[] { "t", "rs", "cs" }) o.Remove(k);
+                        if (o.Count == 0) cs[c] = null;
+                    }
+        return t;
+    }
+
+    /// <summary>A new table's JSON: rows × columns of empty cells of a width and a height, rows fitting their text above that height; a preset built in or the user's (a style kept with its cells is copied whole).</summary>
+    public static JsonObject New(int rows, int cols, double colWidth, double rowHeight, string preset, IReadOnlyList<TableStyleDef>? styles)
+    {
+        if (StyleOf(styles, preset) is not { } st) return New(rows, cols, colWidth, rowHeight, preset);
+        if (st.Cells)
+        {
+            var whole = (JsonObject)st.Table.DeepClone();
+            whole["preset"] = st.Id;
+            return whole;
+        }
+        var t = New(rows, cols, colWidth, rowHeight, "grid");
+        ApplyStyle(t, st, sizes: true);
+        return t;
     }
 
     /// <summary>A new table's JSON: rows × columns of empty cells of a width and a height, rows fitting their text above that height.</summary>

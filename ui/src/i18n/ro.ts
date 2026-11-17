@@ -4163,6 +4163,22 @@ export const RO: Record<string, string> = {
   "Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.": "Alt tabel se citește după nume: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.",
   "The table's name: one word, so other tables' formulas can read it (table.Areas.B4)": "Numele tabelului: un cuvânt, ca formulele altor tabele să-l poată citi (table.Areas.B4)",
   "Other tables read it once its name is one word.": "Alte tabele îl pot citi când numele lui e un singur cuvânt.",
+  // Drafting tables, stage 3: table styles, turned text, padding.
+  "This table's look, sizes and header rows kept in the drafting standards, for new tables and to restyle others": "Aspectul, dimensiunile și rândurile de antet ale tabelului păstrate în standardele de desen, pentru tabele noi și pentru a restiliza altele",
+  "The selected rows are header rows: a style's header, repeated when a long table breaks": "Rândurile selectate sunt rânduri de antet: antetul unui stil, repetat când un tabel lung se rupe",
+  "header row": "rând de antet",
+  "The table style's name": "Numele stilului de tabel",
+  "Keep its cells too, so a new table in this style starts as a copy of it?": "Păstrezi și celulele, ca un tabel nou în acest stil să pornească drept copie a lui?",
+  "The text along the row, or turned to read up or down it (the row fits its length)": "Textul de-a lungul rândului, sau rotit ca să se citească în sus ori în jos (rândul se potrivește lungimii lui)",
+  "text along": "text pe orizontală",
+  "text up (90°)": "text în sus (90°)",
+  "text down (270°)": "text în jos (270°)",
+  "The space round the text in the cell; empty: the table's": "Spațiul din jurul textului în celulă; gol: al tabelului",
+  "Padding": "Spațiere",
+  "With its cells": "Cu celulele",
+  "A new table in this style copies its cells too": "Un tabel nou în acest stil îi copiază și celulele",
+  "No table styles yet.": "Încă niciun stil de tabel.",
+  "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Salvează un tabel ca stil din editorul lui (Salvează ca stil…): aspectul, lățimile coloanelor și înălțimile rândurilor, rândurile de antet și, la cerere, celulele. Presetările Lapin rămân cum sunt.",
 };
 
 /** Phrases with a number or a name in them. */

@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
+using Lapin.Drawing;
 using Lapin.Drawing.Views;
 using Lapin.Geometry;
 using Lapin.Model;
@@ -503,5 +504,125 @@ public class DraftingTableTests
         // The row read taken out: REF.
         Edit(f, areas, Op("deleteRows", ("at", 4)));
         Assert.Equal("{= REF}", (string)Info(f, reader)["cells"]![0]![1]!["t"]!);
+    }
+
+    // ------------------------------------------------------------ stage 3: turned text, padding, table styles
+
+    [Fact]
+    public void A_turned_cell_reads_up_its_row_which_fits_its_length()
+    {
+        var f = F();
+        var id = Add(f, Plan(f), 2, 2, cells: Rows(["Ground floor", "x"], ["a", "b"]));
+        Edit(f, id, Op("style", ("range", "A1"), ("style", new JsonObject { ["rot"] = 90 })), Op("fit", ("range", "A1"), ("axis", "cols")));
+        var info = Info(f, id);
+        // 12 characters of 1.5 mm and its padding: the row is 20 mm; the column as wide as one line, 2.5 + 2 mm.
+        Assert.Equal(12 * 1.5 + 2, (double)info["rowH"]![0]!, 6);
+        Assert.Equal(4.5, (double)info["colW"]![0]!, 6);
+        var t = Mark(f, Plan(f), id).Texts.Single(x => x.Text.Text == "Ground floor").Text;
+        Assert.Equal(90, t.Angle, 6);
+        // Bottom to top from the cell's bottom-left corner: its baseline 1 + 2.5 mm right of the table's left (1 m at 1:100: 0.35 m), its start 1 mm above the row's bottom.
+        Assert.Equal(1 + 0.35, t.At.X, 9);
+        Assert.Equal(5 - 1.9, t.At.Y, 9);
+        Assert.Equal("start", t.Anchor);
+        // 270: top to bottom, from the cell's top-right corner.
+        Edit(f, id, Op("style", ("range", "A1"), ("style", new JsonObject { ["rot"] = 270 })));
+        t = Mark(f, Plan(f), id).Texts.Single(x => x.Text.Text == "Ground floor").Text;
+        Assert.Equal(270, t.Angle, 6);
+        Assert.Equal(1 + 0.45 - 0.35, t.At.X, 9);
+        Assert.Equal(5 - 0.1, t.At.Y, 9);
+        // In a row of a fixed height, a turned text wraps at it.
+        Edit(f, id, Op("rowHeight", ("range", "A1"), ("h", 12)));
+        Assert.Equal(2, Mark(f, Plan(f), id).Texts.Count(x => x.Text.Text is "Ground" or "floor"));
+        Assert.Throws<CommandException>(() => Edit(f, id, Op("style", ("range", "A1"), ("style", new JsonObject { ["rot"] = 45 }))));
+        Edit(f, id, Op("style", ("range", "A1"), ("style", new JsonObject { ["rot"] = 0 })));
+        Assert.Null(f.Model.Get(id)!.Attrs["table"]!["rows"]![0]!["cells"]![0]!["rot"]);
+    }
+
+    [Fact]
+    public void A_cell_s_own_padding_fits_and_places_its_text()
+    {
+        var f = F();
+        var id = Add(f, Plan(f), 2, 1, cells: Rows(["abcd"], ["ab"]));
+        Edit(f, id, Op("fit", ("range", "A1:A2"), ("axis", "cols")), Op("style", ("range", "A1"), ("style", new JsonObject { ["pad"] = 3 })));
+        Assert.Equal(4 * 1.5 + 6, (double)Info(f, id)["colW"]![0]!, 6);
+        Assert.Equal(1 + 0.3, Mark(f, Plan(f), id).Texts.Single(x => x.Text.Text == "abcd").Text.At.X, 9);
+        Assert.Equal(1 + 0.1, Mark(f, Plan(f), id).Texts.Single(x => x.Text.Text == "ab").Text.At.X, 9);
+    }
+
+    static JsonArray StyleList(Fixture f) => (JsonArray)(Standards.ToJson(DraftingResources.Book(f.Model))["tableStyles"] ?? new JsonArray());
+
+    [Fact]
+    public void A_table_saved_as_a_style_gives_new_tables_its_look_and_sizes_and_the_built_in_presets_stay()
+    {
+        var f = F();
+        var src = Add(f, Plan(f), 3, 2, preset: "none", cells: Rows(["Room", "Area"], ["x", "1"], ["y", "2"]));
+        Edit(f, src,
+            Op("tableStyle", ("style", new JsonObject { ["size"] = 3, ["outline"] = new JsonObject { ["w"] = 0.5, ["c"] = "#003366" } })),
+            Op("style", ("range", "A1:B1"), ("style", new JsonObject { ["bold"] = true, ["fill"] = "#003366", ["color"] = "#ffffff" })),
+            Op("style", ("range", "B2"), ("style", new JsonObject { ["align"] = "right" })),
+            Op("style", ("range", "A3:B3"), ("style", new JsonObject { ["fill"] = "#eeeeee" })),
+            Op("colWidth", ("range", "A1"), ("w", 40)),
+            Op("header", ("range", "A1"), ("on", true)));
+        var saved = f.Run("drafting.saveTableStyle", new JsonObject { ["id"] = src, ["name"] = "Office" })!;
+        var styleId = (string)saved["id"]!;
+        var entry = StyleList(f).OfType<JsonObject>().Single();
+        Assert.Equal("Office", (string)entry["name"]!);
+        // Without its cells: the texts are not in the style.
+        Assert.DoesNotContain("Room", entry.ToJsonString());
+        // A new table of 5 rows in that style: the header's look, the body rows banded as the style's two, the first column 40 mm.
+        var made = (string)f.Run("drafting.addTable", new JsonObject { ["viewId"] = Plan(f), ["at"] = J(20, 5), ["rows"] = 5, ["cols"] = 3, ["preset"] = styleId })!["id"]!;
+        var json = f.Model.Get(made)!.Attrs["table"]!;
+        Assert.Equal(styleId, (string)json["preset"]!);
+        Assert.True((bool)json["rows"]![0]!["header"]!);
+        Assert.Equal("#003366", (string)json["rows"]![0]!["cells"]![2]!["fill"]!);
+        Assert.Equal("right", (string)json["rows"]![1]!["cells"]![1]!["align"]!);
+        Assert.Equal("#eeeeee", (string)json["rows"]![2]!["cells"]![0]!["fill"]!);
+        Assert.Null(json["rows"]![3]!["cells"]![0]);
+        Assert.Equal("#eeeeee", (string)json["rows"]![4]!["cells"]![0]!["fill"]!);
+        Assert.Equal(40, (double)Info(f, made)["colW"]![0]!);
+        Assert.Contains(Mark(f, Plan(f), made).Lines, l => l.Width == 0.5 && l.Color == "#003366");
+        // Laid on a table with its texts: they stay, its widths stay.
+        var other = Add(f, Plan(f), 2, 2, preset: "grid", cells: Rows(["H1", "H2"], ["v", "w"]));
+        Edit(f, other, Op("preset", ("preset", "Office")));
+        var oj = f.Model.Get(other)!.Attrs["table"]!;
+        Assert.Equal("H1", (string)oj["rows"]![0]!["cells"]![0]!["t"]!);
+        Assert.True((bool)oj["rows"]![0]!["cells"]![0]!["bold"]!);
+        Assert.Equal(25, (double)Info(f, other)["colW"]![0]!);
+        // A built-in preset set again restores its look as it always did.
+        Edit(f, other, Op("preset", ("preset", "header")));
+        Assert.Equal(DraftingTables.HeaderFill, (string)f.Model.Get(other)!.Attrs["table"]!["rows"]![0]!["cells"]![0]!["fill"]!);
+        // Saved with its cells, a style is a template: a new table is it whole.
+        f.Run("drafting.saveTableStyle", new JsonObject { ["id"] = src, ["name"] = "Room list", ["cells"] = true });
+        var tplId = (string)StyleList(f).OfType<JsonObject>().Single(x => (string)x["name"]! == "Room list")["id"]!;
+        var fromTpl = (string)f.Run("drafting.addTable", new JsonObject { ["viewId"] = Plan(f), ["at"] = J(40, 5), ["rows"] = 9, ["cols"] = 9, ["preset"] = tplId })!["id"]!;
+        Assert.Equal(3, (int)Info(f, fromTpl)["rows"]!);
+        Assert.Equal("Room", Shown(f, fromTpl, 0, 0));
+        // Saved again under its name: replaced, not added.
+        f.Run("drafting.saveTableStyle", new JsonObject { ["id"] = other, ["name"] = "office" });
+        Assert.Equal(2, StyleList(f).Count);
+        // Each save one undo step.
+        f.Session.Undo();
+        Assert.Equal(2, StyleList(f).Count);
+        Assert.Throws<CommandException>(() => f.Run("drafting.saveTableStyle", new JsonObject { ["id"] = src, ["name"] = "" }));
+        Assert.Throws<CommandException>(() => Edit(f, other, Op("preset", ("preset", "No such style"))));
+    }
+
+    [Fact]
+    public void Table_styles_travel_in_a_standards_file_and_go_with_standards_remove()
+    {
+        var f = F();
+        var src = Add(f, Plan(f), 2, 2, preset: "minimal");
+        f.Run("drafting.saveTableStyle", new JsonObject { ["id"] = src, ["name"] = "Minimal office" });
+        var text = (string)f.Session.Query("standards.export", new JsonObject())!["text"]!;
+        Assert.Contains("tableStyles", text);
+        var g = F();
+        var read = (JsonObject)g.Session.Query("standards.readPack", new JsonObject { ["text"] = text })!;
+        Assert.Contains(((JsonArray)read["entries"]!).OfType<JsonObject>(), x => (string)x["kind"]! == "table" && (string)x["name"]! == "Minimal office");
+        g.Run("standards.importFrom", new JsonObject { ["text"] = text });
+        var style = StyleList(g).OfType<JsonObject>().Single();
+        Assert.Equal("Minimal office", (string)style["name"]!);
+        g.Run("standards.remove", new JsonObject { ["kind"] = "table", ["id"] = (string)style["id"]! });
+        Assert.Empty(StyleList(g));
+        Assert.Throws<CommandException>(() => g.Run("standards.set", new JsonObject { ["kind"] = "table", ["entry"] = new JsonObject { ["name"] = "Broken" } }));
     }
 }

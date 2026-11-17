@@ -108,12 +108,14 @@ not read and both say so.
 | `drafting.addTable` | `viewId, at, rows, cols, preset?, colWidth?, rowHeight?, angle?, textStyle?, cells?, name?` | places a table; `cells` fills it from A1 (Python, MCP) |
 | `drafting.editTable` | `id, ops: [{op, …}]` | applies the ops in order; one that does not read refuses them all |
 | `drafting.renameTable` | `id, name` | renames a table, the references to it following |
+| `drafting.saveTableStyle` | `id, name, cells?, styleId?` | keeps the table as a table style of the drafting standards |
 | `drafting.table` (query) | `id` | the name, the cells as typed and as shown, spans, the laid sizes, the errors |
 
 Ops (`TableEdits.Ops`): `set` (`cell, text` or `values` from that cell: a pasted block), `style` (`range, style`), `borders`
 (`range, edges: all|outer|inner|top|bottom|left|right|none|default, w, c`), `merge`, `split`, `insertRows`/`insertCols`
 (`at, count`), `deleteRows`/`deleteCols`, `colWidth` (`range, w`), `rowHeight` (`range, h`), `fit` (`range, axis:
-rows|cols|both, on, min?, max?`), `tableStyle` (`style`), `preset` (`preset`). Both commands are in the command catalogue;
+rows|cols|both, on, min?, max?`), `tableStyle` (`style`), `preset` (`preset`: built in, or a table style's id or name),
+`header` (`range, on`); `style` takes `pad` and `rot` too. Both commands are in the command catalogue;
 guests who may edit run them like any edit (no entry needed in `AllowedRemote`).
 
 ## 5. Interface
@@ -131,10 +133,28 @@ guests who may edit run them like any edit (no entry needed in `AllowedRemote`).
 ## 6. Presets
 
 Built in: `header` (grid lines, outline 0.35, first row bold and shaded), `grid`, `minimal` (no grid, a rule under the header),
-`none`. A preset sets the table's lines and styles its first row; set again it restyles them. **User presets** (stage 3) follow
-the standing rule of extensibility: a table saved as a *table style* in the Drafting standards (its `style`, column and row
-settings, header styling and optionally its cells as a template), offered in the tool's bar beside the built-in ones, kept in
-`.lapinstandards` libraries; the built-in presets stay the defaults with the same output.
+`none`. A preset sets the table's lines and styles its first row; set again it restyles them.
+
+**User presets (stage 3, done)** follow the standing rule of extensibility: a table saved as a *table style*
+(`drafting.saveTableStyle {id, name, cells?}`) is kept in the drafting standards (`StyleBook.TableStyles`, JSON
+`tableStyles: [{id, name, table, cells}]`), so `.lapinstandards` files carry it (`StandardsLibrary.Lists`, kind `table`) and
+`standards.set` / `standards.remove` (kind `table`) rename or remove it (Manage → Drafting standards → Tables). Its `table` is
+the table's JSON: its style, columns' and rows' sizes, header rows and cells' own looks; its texts and spans only when saved
+with `cells` (a template). A style is applied as a preset is, a copy of its look, never a live link (the built-in presets work
+the same way, and a table never changes because a style elsewhere was edited): `preset` in `drafting.addTable` and in the
+`preset` op takes a style's id or name (`DraftingTables.StyleOf`). `DraftingTables.ApplyStyle`: the style's `style`; its leading
+header rows on the table's first rows, the table's other rows taking the style's body rows in turn (two body rows band them);
+each cell the look (`LookKeys`: fill, colour, bold, italic, size, alignments, padding, turn, sides) of the style's cell in its
+column (the last one for columns past it), texts and spans kept; a new table also takes the widths and heights. A style with
+its cells gives a new table its copy whole (its rows and columns, not the bar's). Saved again under the same name, a style is
+replaced. The built-in presets keep their output.
+
+**Header rows** are marked by the `header` op (`range, on`); a style's header is its leading header rows (stage 5 repeats them).
+
+**Turned text and padding (stage 3, done).** A cell's `rot` (0, 90: read bottom to top, 270: top to bottom) lays its text along
+the row's height: the row fits the longest line, the column the lines' stack; in a row of a fixed height the text wraps at it
+(`DraftingTables.Lay`). `pad` is a cell's own padding over the table's. `DraftingTables.Placements` places every line of every
+cell (in the text's own frame, then turned into the cell) for the view's marks and the symbols alike.
 
 ## 7. Stages
 
@@ -145,8 +165,9 @@ settings, header styling and optionally its cells as a template), offered in the
 2. **Done.** Other tables' cells: table names, `table.<name>.A1` references and ranges across tables, rename and delete
    rewriting, rows and columns moving other tables' references, the cross-table cycle guard; the editor's name field and
    reference picker. Tests: `DraftingTableTests` (6 more), `tableModel.test.ts` (3 more).
-3. **User presets and cell rotation**: table styles in the Drafting standards and libraries; cell text turned 90°/270°
-   (`rot`), which lays the text along the row's height and fits the row to its length; per-cell padding.
+3. **Done.** User presets and cell rotation: table styles in the drafting standards and their files, saved from a table,
+   applied as presets, with their cells as templates; header rows; cell text turned 90°/270° (`rot`) with the row fitting its
+   length; per-cell padding. Tests: `DraftingTableTests` (4 more).
 4. **Tables in symbols and from the model**: a table inside a symbol definition (the room tag that grows with its text), its
    cells reading the symbol's live tokens (`{attr.…}`, `{= attr.area | 0.00}`) through the symbol's resolver, so a placed copy
    lays its own sizes; a cell reading a schedule's total or an element's parameter.
