@@ -1,0 +1,61 @@
+import { describe, expect, it } from 'vitest';
+import { address, colName, colsOp, grow, inSel, opacityOf, parseAddress, pasteBlock, rangeOf, rowsOp, withOpacity, type TableInfo } from './tableModel';
+
+describe('drafting table addresses', () => {
+  it('names columns and cells as a spreadsheet does', () => {
+    expect(colName(0)).toBe('A');
+    expect(colName(25)).toBe('Z');
+    expect(colName(26)).toBe('AA');
+    expect(colName(51)).toBe('AZ');
+    expect(address(2, 1)).toBe('B3');
+    expect(parseAddress('aa1')).toEqual({ r: 0, c: 26 });
+    expect(parseAddress('A0')).toBeNull();
+    expect(parseAddress('sheet.number')).toBeNull();
+  });
+
+  it('writes a selection as its range, either way round', () => {
+    expect(rangeOf({ r0: 3, c0: 2, r1: 0, c1: 0 })).toBe('A1:C4');
+    expect(rangeOf({ r0: 1, c0: 1, r1: 1, c1: 1 })).toBe('B2');
+    expect(inSel({ r0: 2, c0: 2, r1: 0, c1: 0 }, 1, 1)).toBe(true);
+    expect(inSel(null, 0, 0)).toBe(false);
+  });
+});
+
+describe('drafting table selection', () => {
+  const cell = (t = '') => ({ t, shown: t });
+  // A1:B1 merged (its master A1), the rest single.
+  const info: TableInfo = {
+    rows: 2, cols: 3, colW: [25, 25, 25], rowH: [7, 7], errors: [],
+    cells: [[{ ...cell('Title'), cs: 2 }, { ...cell(), covered: 'A1' }, cell()], [cell(), cell(), cell()]],
+  };
+
+  it('grows to take a merged cell in whole', () => {
+    expect(grow({ r0: 0, c0: 1, r1: 0, c1: 1 }, info)).toEqual({ r0: 0, c0: 0, r1: 0, c1: 1 });
+    expect(grow({ r0: 1, c0: 1, r1: 0, c1: 2 }, info)).toEqual({ r0: 0, c0: 0, r1: 1, c1: 2 });
+  });
+
+  it('puts rows and columns in beside the selection, or takes its own out', () => {
+    const s = { r0: 1, c0: 2, r1: 0, c1: 1 };
+    expect(rowsOp('above', s)).toEqual({ op: 'insertRows', at: 0, count: 1 });
+    expect(rowsOp('below', s)).toEqual({ op: 'insertRows', at: 2, count: 1 });
+    expect(rowsOp('delete', s)).toEqual({ op: 'deleteRows', at: 0, count: 2 });
+    expect(colsOp('left', s)).toEqual({ op: 'insertCols', at: 1, count: 1 });
+    expect(colsOp('right', s)).toEqual({ op: 'insertCols', at: 3, count: 1 });
+    expect(colsOp('delete', s)).toEqual({ op: 'deleteCols', at: 1, count: 2 });
+  });
+});
+
+describe('drafting table colours and paste', () => {
+  it('keeps an opacity in the colour, as the engine reads it', () => {
+    expect(withOpacity('#FF0000', 1)).toBe('#ff0000');
+    expect(withOpacity('#ff000080', 0.25)).toBe('#ff000040');
+    expect(opacityOf('#00ff0080')).toBeCloseTo(128 / 255);
+    expect(opacityOf('#00ff00')).toBe(1);
+    expect(opacityOf(null)).toBe(1);
+  });
+
+  it('reads a spreadsheet\'s cells pasted as rows of texts', () => {
+    expect(pasteBlock('a\tb\r\nc\td\n')).toEqual([['a', 'b'], ['c', 'd']]);
+    expect(pasteBlock('one')).toEqual([['one']]);
+  });
+});

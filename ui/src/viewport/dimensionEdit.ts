@@ -4,6 +4,7 @@ import { promptText } from '../shell/prompts';
 import type { Vec2 } from '../platform/module';
 import { execute, query, useSession } from '../engine/session';
 import { formatLength, parseLength, unitName } from '../engine/unitsStore';
+import { openTableEditor } from '../modules/drafting/table/tableStore';
 
 export interface DimensionInfo {
   value: number | null;
@@ -22,6 +23,8 @@ export interface DimensionInfo {
 /** `at`: where the double-click was (model coordinates): the segment nearest it is the one edited. */
 export async function editDimension(id: string, at?: Vec2): Promise<boolean> {
   const node = useSession.getState().nodes.get(id);
+  // A drafting table opens its editor (issue #71).
+  if (node?.props.predefinedType === 'TABLE') { openTableEditor(id); return true; }
   if (node?.props.predefinedType !== 'DIMENSION') return false;
   const d = await query<DimensionInfo>('drafting.dimension', { id, ...(at ? { at: [at.x, at.y] } : {}) });
   if (!d || d.value == null) return true;
