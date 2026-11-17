@@ -20,14 +20,22 @@ export function jambTo(c: Arc, along: number, width: number, side: 1 | -1, to: V
   return { along: fixed + (side * w) / 2, width: w };
 }
 
-export function wallOpeningGrips(id: string, c: Arc, along: number, width: number): Grip[] {
-  const f = frameAt(c, along);
+/**
+ * The opening's two jambs, near then far: each dragged sets its width and middle at once. A door's or window's opening
+ * passes the width to the element as its own size (forum topic 140), so its jambs are its grips too.
+ */
+export function joineryJambGrips(id: string, c: Arc, along: number, width: number): Grip[] {
   const jamb = (side: 1 | -1): Grip => ({
     key: side > 0 ? 'jamb+' : 'jamb-', kind: 'end', at: pointAt(c, along + (side * width) / 2), title: 'Drag the jamb: the opening\'s width',
     step: (to) => { const r = jambTo(c, along, width, side, to); return r ? { command: 'architecture.updateWallOpening', args: { id, along: r.along, width: r.width } } : null; },
   });
+  return [jamb(-1), jamb(1)];
+}
+
+export function wallOpeningGrips(id: string, c: Arc, along: number, width: number): Grip[] {
+  const f = frameAt(c, along);
   return [
     { key: 'along', kind: 'centre', at: f.at, title: 'Drag along the wall', step: (to) => ({ command: 'architecture.moveOpening', args: { id, along: project(c, to) } }) },
-    jamb(-1), jamb(1),
+    ...joineryJambGrips(id, c, along, width),
   ];
 }

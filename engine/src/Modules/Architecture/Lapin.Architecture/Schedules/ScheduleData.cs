@@ -97,7 +97,8 @@ public static class Schedules
                     return new ScheduleEntry(key, k, s, mk, name, s?.Width ?? 0, s?.Height ?? 0, counts, placed.Count, numbered, Params: ParamValues(m, type, placed));
                 }
                 // Curtain wall doors filling their cells (report #133): an entry for each size they stand at, besides the type's own.
-                List<(Entity e, JoinerySpec? Size)> sized = spec == null ? [] : all.Select(e => (e, Size: CurtainCells.SeatOf(m, e)?.Spec)).Where(x => x.Size is { } s && (Math.Abs(s.Width - spec.Width) > 5e-4 || Math.Abs(s.Height - spec.Height) > 5e-4)).ToList();
+                // Doors and windows of their own size (forum topic 140) the same: the type's construction at that size.
+                List<(Entity e, JoinerySpec? Size)> sized = spec == null ? [] : all.Select(e => (e, Size: CurtainCells.SeatOf(m, e)?.Spec ?? (Architecture.Openings.HasOwnSize(e) ? Architecture.Openings.Sized(spec, e) : null))).Where(x => x.Size is { } s && (Math.Abs(s.Width - spec.Width) > 5e-4 || Math.Abs(s.Height - spec.Height) > 5e-4)).ToList();
                 var bySize = sized.GroupBy(x => (W: Math.Round(x.Size!.Width * 1000), H: Math.Round(x.Size!.Height * 1000))).ToList();
                 own = own.Except(sized.Select(x => x.e)).ToList();
                 mirrored = mirrored.Except(sized.Select(x => x.e)).ToList();

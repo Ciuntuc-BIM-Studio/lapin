@@ -2136,6 +2136,7 @@ export const DA: Record<string, string> = {
   'Save data': 'Gem data',
   'Free text. In the schedules and in tags as {U-value}, {Fire rating}…; in IFC the fire rating and a U-value that is a number are Pset_WindowCommon / Pset_DoorCommon’s, the rest is in Lapin_Joinery.': 'Fri tekst. I skemaer og i tags som {U-value}, {Fire rating}…; i IFC hører brandklassen og en U-værdi, der er et tal, til Pset_WindowCommon / Pset_DoorCommon, resten er i Lapin_Joinery.',
   'Frame in the wall': 'Karm i væggen',
+  "Type's size": "Typens størrelse", "Back to its type's width and height: it follows the type again": "Tilbage til typens bredde og højde: den følger typen igen",
   'Centred (the type’s)': 'Centreret (typens)',
   'Where the frame sits across the wall; its type’s unless set here': 'Hvor karmen sidder i vægtykkelsen; typens, medmindre det sættes her',
   'Layout': 'Indretning',

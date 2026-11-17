@@ -982,6 +982,24 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // Doors' and windows' own size (forum topic 140, decision 664): {id | ids, width?, height?} (metres) over their type's, or
+        // {reset: true} back to the type's (with width or height: that one kept). One undo step for all; each checked in its wall.
+        r.Command("setJoinerySize", "Door or window size", (ctx, a) =>
+        {
+            var reset = a["reset"] is JsonValue rv && rv.TryGetValue<bool>(out var r0) && r0;
+            var (width, height) = (Json.Number(a["width"]), Json.Number(a["height"]));
+            if (!reset && width == null && height == null) throw new CommandException("Give a width, a height, or reset.");
+            var changed = 0;
+            foreach (var id in Ids(a))
+            {
+                if (ctx.Model.Get(id) is not { Class: IfcClass.Door or IfcClass.Window } fill) continue;
+                Openings.SetSize(ctx, fill, width, height, reset);
+                changed++;
+            }
+            if (changed == 0) throw new CommandException("Select doors or windows.");
+            return null;
+        });
+
         // The frame's place across the wall for some elements (report #76): from the exterior face, the core or the centre, a distance; {clear: true} back to the type's.
         r.Command("setJoineryPosition", "Place the frame in the wall", (ctx, a) =>
         {
@@ -1398,7 +1416,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             ? ctx.Model.Get(typeId) is { Class: IfcClass.DoorType or IfcClass.WindowType } t ? t : throw new CommandException("There is no such door or window type.")
             : Openings.EnsureType(ctx, kind);
         var along = Json.Number(a["along"]) ?? Openings.AlongOf(wall, new Vec2(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0));
-        var fill = Openings.AddFill(ctx, wall, type, along, Json.Number(a["sill"]));
+        // Its own width and height (forum topic 140) over the type's, where given.
+        var fill = Openings.AddFill(ctx, wall, type, along, Json.Number(a["sill"]), Json.Number(a["width"]), Json.Number(a["height"]));
         // Placed in the hand and to the side the tool chose (Space, the cursor's side of the wall).
         if (a["flipHand"] is JsonValue hv && hv.TryGetValue<bool>(out var hand) && hand) { Openings.Flip(ctx, fill, "x"); fill = ctx.Model.Get(fill.Id)!; }
         if (a["flipSide"] is JsonValue sv && sv.TryGetValue<bool>(out var side) && side) Openings.Flip(ctx, fill, "y");

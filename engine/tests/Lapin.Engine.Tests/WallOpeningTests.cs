@@ -40,8 +40,10 @@ public sealed class WallOpeningTests
         Assert.Throws<CommandException>(() => f.Run("architecture.updateWallOpening", new JsonObject { ["id"] = id, ["width"] = 4.5 }));
         Assert.Equal(2, f.Model.Get(id)!.Num("along"), 9);
         Assert.Equal(0.9, f.Model.Get(id)!.Num("width"), 9);
-        // A door's opening takes its size from the door's type.
-        Assert.Throws<CommandException>(() => f.Run("architecture.updateWallOpening", new JsonObject { ["id"] = Openings.OpeningOf(f.Model, door)!.Id, ["width"] = 1.5 }));
+        // A door's opening is the door's size: resized, the door takes the width as its own (forum topic 140), the opening keeping none.
+        f.Run("architecture.updateWallOpening", new JsonObject { ["id"] = Openings.OpeningOf(f.Model, door)!.Id, ["width"] = 1.5 });
+        Assert.Equal(1.5, f.Model.Get(door)!.Num(Openings.OwnWidthKey), 9);
+        Assert.Null(Openings.OpeningOf(f.Model, door)!.Attrs["width"]);
 
         // In IFC: two openings voiding the wall, one door filling one of them.
         using var ms = new MemoryStream();

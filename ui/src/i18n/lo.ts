@@ -2195,6 +2195,7 @@ export const LO: Record<string, string> = {
   'Save data': 'ບັນທຶກຂໍ້ມູນ',
   'Free text. In the schedules and in tags as {U-value}, {Fire rating}…; in IFC the fire rating and a U-value that is a number are Pset_WindowCommon / Pset_DoorCommon’s, the rest is in Lapin_Joinery.': 'ຂໍ້ຄວາມອິດສະຫຼະ. ໃນຕາຕະລາງ ແລະ ປ້າຍເປັນ {U-value}, {Fire rating}…; ໃນ IFC ຄວາມທົນໄຟ ແລະ ຄ່າ U ທີ່ເປັນຕົວເລກແມ່ນຂອງ Pset_WindowCommon / Pset_DoorCommon, ທີ່ເຫຼືອຢູ່ໃນ Lapin_Joinery.',
   'Frame in the wall': 'ວົງກົບໃນຝາ',
+  "Type's size": "ຂະໜາດຂອງປະເພດ", "Back to its type's width and height: it follows the type again": "ກັບຄືນຄວາມກວ້າງ ແລະ ຄວາມສູງຂອງປະເພດ: ມັນຕິດຕາມປະເພດອີກຄັ້ງ",
   'Centred (the type’s)': 'ຢູ່ກາງ (ຂອງປະເພດ)',
   'Where the frame sits across the wall; its type’s unless set here': 'ວົງກົບຢູ່ບ່ອນໃດໃນຄວາມໜາຂອງຝາ; ຂອງປະເພດ ເວັ້ນແຕ່ຕັ້ງຢູ່ນີ້',
   'Layout': 'ການຈັດວາງ',

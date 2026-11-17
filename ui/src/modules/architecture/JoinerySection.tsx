@@ -1,10 +1,12 @@
 /**
  * A door or window in the inspector: its type (and the configurator), its
- * place on its wall (along it, its sill), and Flip — the hand (left ↔ right)
+ * width and height (its own over its type's, forum topic 140), its place on
+ * its wall (along it, its sill), and Flip — the hand (left ↔ right)
  * or the side (interior ↔ exterior).
  */
 
-import { FlipHorizontal2, FlipVertical2, LayoutGrid, Settings2, SquareDashed } from 'lucide-react';
+import { FlipHorizontal2, FlipVertical2, LayoutGrid, RotateCcw, Settings2, SquareDashed } from 'lucide-react';
+import { joinerySize, sizeArgs } from './joinerySize';
 import { select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { mm, num, ofClass, relatedOf, relatingOf, typeOf } from '../../engine/model';
@@ -41,6 +43,9 @@ export function JoinerySection({ node }: { node: NodeDto }) {
   // The frame's place across the wall (report #76): the element's own over the type's.
   const ownPosition = node.props.position as Position | null | undefined;
   const position = ownPosition ?? spec?.position ?? null;
+  // Its size: its own over its type's (forum topic 140).
+  const size = joinerySize(node.props, spec);
+  const setSize = (change: { width?: number; height?: number } | 'reset') => void execute('architecture.setJoinerySize', sizeArgs(sameKind(node, JOINERY), change));
   const setPosition = (p: Position | null) => void execute('architecture.setJoineryPosition', p ? { ids: sameKind(node, JOINERY), ...p } : { ids: sameKind(node, JOINERY), clear: true });
   return (
     <div className="layers">
@@ -54,7 +59,14 @@ export function JoinerySection({ node }: { node: NodeDto }) {
         </span>
       </label>
       <dl className="fields">
-        <dt>Size</dt><dd className="num">{inCurtain && fit ? <span>its cell&apos;s</span> : <>{mm(spec?.width ?? 0)} × {mm(spec?.height ?? 0)}</>}</dd>
+        {inCurtain || !node.editable
+          ? <><dt>Size</dt><dd className="num">{inCurtain && fit ? <span>its cell&apos;s</span> : <>{mm(size.width)} × {mm(size.height)}</>}</dd></>
+          : <>
+            {/* Its own width and height over its type's (forum topic 140): one type, many sizes. */}
+            <dt>Width</dt><dd><LengthField testId="joinery-width" metres={size.width} onCommit={(v) => { if (v != null) setSize({ width: v }); }} /></dd>
+            <dt>Height</dt><dd><LengthField testId="joinery-height" metres={size.height} onCommit={(v) => { if (v != null) setSize({ height: v }); }} /></dd>
+            {size.own && <><dt /><dd><button type="button" className="btn" data-action="joinery-type-size" title="Back to its type's width and height: it follows the type again" onClick={() => setSize('reset')}><RotateCcw size={14} />Type's size</button></dd></>}
+          </>}
         <dt>{inCurtain ? 'In curtain wall' : 'In wall'}</dt><dd>{wall?.name ?? '—'}</dd>
         {inCurtain && <>
           <dt>Cell</dt><dd className="num" data-no-i18n>{String(node.props.cell ?? '—')}</dd>
@@ -71,7 +83,7 @@ export function JoinerySection({ node }: { node: NodeDto }) {
           </>}
         </>}
         {opening && node.editable && <>
-          <dt>Along the wall</dt><dd><AlongField id={node.id} along={num(opening, 'along')} width={num(opening, 'width') || spec?.width || 0} /></dd>
+          <dt>Along the wall</dt><dd><AlongField id={node.id} along={num(opening, 'along')} width={num(opening, 'width') || size.width} /></dd>
           <dt>Sill</dt><dd><LengthField metres={num(opening, 'sill')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { ids: sameKind(node, JOINERY), sill: v }); }} /></dd>
         </>}
         {node.editable && !inCurtain && <>
