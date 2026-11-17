@@ -217,6 +217,8 @@ A right click on a tab offers the same: **Open in a new window**, **Split: open 
 
 ## What a click selects
 
+**Ctrl+A** (**Select all**) selects everything the view in front shows that a click could take: in a plan, a section, an elevation or a drawing view, all that a selection window over the whole view would take; in 3D, the elements shown (not those hidden by the view or put away with Hide / Isolate). In a text field it selects the field's text, as usual.
+
 A click, a selection box or a lasso takes only what the view shows, in plans, sections, elevations, sheets' views and 3D. An element the view's Visibility / Graphics hides (its category, a subcategory, a filter), one put away with Hide / Isolate or by the view's phase, one outside the view range or crop, on a level, link or group not shown, or cut away by a section box, is passed over: the click takes what is drawn under it, and the element under the cursor that lights up is one you can see. With **Drill into assemblies** on, a click inside a whole still steps into its parts. With the modelling lines shown instead of the drawing (the pen button at the top of the plan), everything on the screen can be picked. The project browser, a schedule, a link in the properties panel and the dependencies still select an element by its name, hidden or not; the properties panel then says *Not shown in this view*.
 
 ## Right-click on a selection
