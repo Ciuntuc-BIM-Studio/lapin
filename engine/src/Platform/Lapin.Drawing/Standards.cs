@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using Lapin.Geometry;
 
 namespace Lapin.Drawing;
 
@@ -26,10 +27,48 @@ public sealed record TextStyle(string Id, string Name, double Height, string Fon
 /// stands further than <see cref="TextLeader"/> paper mm from its place: "on", "off", or as the project's standards say
 /// ("project", the default; <see cref="StyleBook.DimAutoText"/>; a null leader: <see cref="StyleBook.DimTextLeader"/>).
 /// </para>
+/// <para>
+/// The extension lines and the dimension line, as AutoCAD's dimension styles (issue #66, forum #131): <see cref="ExtSuppress"/>
+/// leaves out a string's first extension line, its last, or both ("first", "second", "both"; null: none, as before), which a
+/// dimension's own <c>extSuppress</c> overrides; <see cref="ExtFixed"/> gives every extension line one length on paper (mm),
+/// measured back from the dimension line towards what it measures, never nearer to it than <see cref="ExtGap"/> (null or 0:
+/// from the gap, as before); <see cref="ExtWeight"/>, <see cref="ExtColor"/>, <see cref="ExtLineType"/> and
+/// <see cref="DimLineWeight"/>, <see cref="DimLineColor"/>, <see cref="DimLineType"/> give the extension lines and the
+/// dimension line (its arrows and ticks take its colour) their own pen (paper mm), colour and line type; null: as before (a
+/// 0.13 mm pen, the style's colour, continuous).
+/// </para>
 /// </summary>
 public sealed record DimStyle(string Id, string Name, string TextStyle, string Arrow, double ArrowSize, double ExtGap, double ExtOver, string Placement, double TextGap, int Precision, string Unit, string? Color = null, string OpeningHeight = "off", string Zeros = "project",
-    string AutoText = "project", double? TextLeader = null)
+    string AutoText = "project", double? TextLeader = null,
+    string? ExtSuppress = null, double? ExtFixed = null, double? ExtWeight = null, string? ExtColor = null, string? ExtLineType = null,
+    double? DimLineWeight = null, string? DimLineColor = null, string? DimLineType = null)
 {
+    /// <summary>Whether the extension line at point <paramref name="index"/> of a string of <paramref name="count"/> points is left out: the first, the last, or both.</summary>
+    public bool SuppressesExtension(int index, int count) => ExtSuppress switch
+    {
+        "both" => index == 0 || index == count - 1,
+        "first" => index == 0,
+        "second" => index == count - 1,
+        _ => false,
+    };
+
+    /// <summary>
+    /// An extension line from the measured point <paramref name="p"/> to its foot <paramref name="q"/> on the dimension line
+    /// (<paramref name="dir"/>: from p towards q, unit; <paramref name="length"/>: from p to q), past it by the overshoot:
+    /// from the gap, or <see cref="ExtFixed"/> back from the dimension line (never nearer p than the gap); null when the point
+    /// stands within the gap of its line.
+    /// </summary>
+    public (Vec2 A, Vec2 B)? Extension(Vec2 p, Vec2 q, Vec2 dir, double length, double mm)
+    {
+        if (!(length > ExtGap * mm)) return null;
+        var from = ExtFixed is > 0 and var f && length - f * mm > ExtGap * mm ? q - dir * (f * mm) : p + dir * (ExtGap * mm);
+        return (from, q + dir * (ExtOver * mm));
+    }
+
+    /// <summary>The extension lines' pen (paper mm), the dimension line's: the style's own, else <paramref name="fallback"/>.</summary>
+    public double ExtWeightOr(double fallback) => ExtWeight is > 0 and var w ? w : fallback;
+    public double DimLineWeightOr(double fallback) => DimLineWeight is > 0 and var w ? w : fallback;
+
     /// <summary>Whether this (resolved) style drops its values' trailing zeros.</summary>
     [JsonIgnore] public bool SuppressesZeros => Zeros == "suppress";
     /// <summary>Whether this (resolved) style moves the values that do not fit clear of their neighbours.</summary>
@@ -189,6 +228,13 @@ public static class Standards
     public static readonly string[] ZeroChoices = ["project", "keep", "suppress"];
     /// <summary>A dimension style's automatic text placement (forum #78): as the project, on, off.</summary>
     public static readonly string[] AutoTextChoices = ["project", "on", "off"];
+    /// <summary>Which extension lines a dimension style or a dimension leaves out (issue #66): none, a string's first, its last, both.</summary>
+    public static readonly string[] ExtSuppressChoices = ["none", "first", "second", "both"];
+    /// <summary>The most a dimension style's pens (paper mm) and its fixed extension line length may be.</summary>
+    public const double MaxDimPen = 5, MaxExtFixed = 100;
+    /// <summary>An extension-line suppression as stored: first, second, both; null (none) for anything else.</summary>
+    public static string? ExtSuppressOf(JsonNode? v) => v is JsonValue j && j.TryGetValue<string>(out var s) && s is "first" or "second" or "both" ? s : null;
+    static double? Within(JsonNode? v, double max) => Lapin.Model.Json.Number(v) is { } d && double.IsFinite(d) && d > 0 && d <= max ? d : null;
     /// <summary>How far (paper mm) a value placed automatically may stand from its place before it takes a leader, by default; the most it may be set to.</summary>
     public const double DefaultTextLeader = 5, MaxTextLeader = 100;
     /// <summary>A leader distance (paper mm, 0 to <see cref="MaxTextLeader"/>), or null.</summary>
@@ -208,7 +254,7 @@ public static class Standards
 
     /// <summary>The fields an annotation may override, by kind (an axis overrides its line colour as lineColor).</summary>
     public static readonly string[] TextOverrides = ["height", "font", "bold", "italic", "color"];
-    public static readonly string[] DimOverrides = ["arrow", "arrowSize", "placement", "textGap", "precision", "unit", "color", "openingHeight", "zeros", "autoText", "textLeader"];
+    public static readonly string[] DimOverrides = ["arrow", "arrowSize", "placement", "textGap", "precision", "unit", "color", "openingHeight", "zeros", "autoText", "textLeader", "extSuppress", "extFixed"];
     public static readonly string[] AxisOverrides = ["bubble", "ends", "size", "lineType"];
 
     static string Str(JsonNode? v, string fallback) => v is JsonValue j && j.TryGetValue<string>(out var s) && s.Length > 0 ? s : fallback;
@@ -224,13 +270,18 @@ public static class Standards
         return new(Str(v["id"], d.Id), Str(v["name"], d.Name), Positive(v["height"], d.Height), OneOf(v["font"], Fonts, d.Font), True(v["bold"]), True(v["italic"]), Color(v["color"]));
     }
 
-    static DimStyle ReadDim(JsonObject v)
+    static DimStyle ReadDim(JsonObject v) => ReadDim(v, LineTypes);
+
+    static DimStyle ReadDim(JsonObject v, string[] lineTypes)
     {
         var d = DefaultDim;
+        string? LineType(JsonNode? x) => OneOf(x, lineTypes, "") is { Length: > 0 } lt ? lt : null;
         return new(Str(v["id"], d.Id), Str(v["name"], d.Name), Str(v["textStyle"], d.TextStyle), OneOf(v["arrow"], Arrows, d.Arrow), Num(v["arrowSize"], d.ArrowSize),
             Num(v["extGap"], d.ExtGap), Num(v["extOver"], d.ExtOver), OneOf(v["placement"], Placements, d.Placement), Num(v["textGap"], d.TextGap),
             v["precision"] is JsonValue pv && Lapin.Model.Json.Number(pv) is { } pn && double.IsFinite(pn) ? Math.Max(-1, (int)Math.Round(pn)) : d.Precision, OneOf(v["unit"], Units, d.Unit), Color(v["color"]), OneOf(v["openingHeight"], OpeningHeights, d.OpeningHeight),
-            OneOf(v["zeros"], ZeroChoices, d.Zeros), OneOf(v["autoText"], AutoTextChoices, d.AutoText), TextLeaderOf(v["textLeader"]));
+            OneOf(v["zeros"], ZeroChoices, d.Zeros), OneOf(v["autoText"], AutoTextChoices, d.AutoText), TextLeaderOf(v["textLeader"]),
+            ExtSuppressOf(v["extSuppress"]), Within(v["extFixed"], MaxExtFixed), Within(v["extWeight"], MaxDimPen), Color(v["extColor"]), LineType(v["extLineType"]),
+            Within(v["dimLineWeight"], MaxDimPen), Color(v["dimLineColor"]), LineType(v["dimLineType"]));
     }
 
     static AxisStyle ReadAxis(JsonObject v) => ReadAxis(v, LineTypes);
@@ -363,7 +414,7 @@ public static class Standards
         var def = o["defaultAxisStyle"] is JsonValue dv && dv.TryGetValue<string>(out var ds) && axes.Any(a => a.Id == ds) ? ds : Standard;
         return new StyleBook(
             WithStandard(List("textStyles").Select(ReadText).ToList(), DefaultText, t => t.Id),
-            WithStandard(List("dimStyles").Select(ReadDim).ToList(), DefaultDim, d => d.Id),
+            WithStandard(List("dimStyles").Select(v => ReadDim(v, names)).ToList(), DefaultDim, d => d.Id),
             axes, def,
             o["tagTypes"] is JsonArray ? List("tagTypes").Select(ReadTag).OfType<TagType>().ToList() : [.. DefaultTagTypes],
             WithStandard(List("layers").Select(v => ReadLayer(v, names)).ToList(), Layer0, l => l.Id, "0"),
@@ -420,6 +471,9 @@ public static class Standards
         if (s.Zeros is not ("keep" or "suppress")) s = s with { Zeros = b.SuppressZeros ? "suppress" : "keep" };
         if (s.AutoText is not ("on" or "off")) s = s with { AutoText = b.DimAutoText ? "on" : "off" };
         if (s.TextLeader is not { } leader || !(leader >= 0)) s = s with { TextLeader = b.DimTextLeader };
+        // A dimension's own suppression (issue #66) over its style's, "none" too; a fixed length of 0 or below: from the gap.
+        if (s.ExtSuppress is not ("first" or "second" or "both")) s = s with { ExtSuppress = null };
+        if (s.ExtFixed is not > 0) s = s with { ExtFixed = null };
         return s;
     }
 

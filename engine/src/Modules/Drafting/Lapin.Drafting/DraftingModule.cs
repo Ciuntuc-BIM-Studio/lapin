@@ -18,7 +18,9 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Class(new(IfcClass.Grid, "Grid", [], "#555555", Kind: "annotation"));
         r.Class(new(IfcClass.Annotation, "Annotation",
             [new("text", "Text", "text"), new("textStyle", "Text style", "text"), new("dimStyle", "Dimension style", "text"), new("angle", "Angle", "angle"),
-             new("format", "Slope written as", "choice", Choices: DimensionKinds.SlopeFormats), new("z", "Level written", "length"), new("textHeight", "Text height", "number", Min: 0.5, Max: 50)], "#555555", Kind: "annotation"));
+             new("format", "Slope written as", "choice", Choices: DimensionKinds.SlopeFormats), new("z", "Level written", "length"), new("textHeight", "Text height", "number", Min: 0.5, Max: 50),
+             // A dimension's extension lines left out (issue #66), over its style's.
+             new("extSuppress", "Extension lines left out", "choice", Choices: Standards.ExtSuppressChoices)], "#555555", Kind: "annotation"));
         // A draft with heights (a DXF's 3D lines) shows in 3D as lines; the rest have no geometry.
         r.Geometry(IfcClass.Annotation, Cad.Drafts.Geometry3d);
         r.Service<IViewAnnotations>(this);

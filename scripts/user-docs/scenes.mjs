@@ -11025,6 +11025,37 @@ export const scenes = [
     },
   },
   {
+    // A dimension style's extension lines and dimension line (issue #66): a string along the south wall, its end extension
+    // lines left out, the others at a fixed length in a blue dashed pen, the dimension line heavier; then the style's columns
+    // in Drafting standards → Dimensions.
+    id: 'dimension-extension-lines',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const view = `plan:${storey}`;
+      await t.cmd('standards.set', { kind: 'dim', entry: { id: 'fixed', name: 'Fixed extensions', extSuppress: 'both', extFixed: 4, extWeight: 0.18, extColor: '#2563eb', extLineType: 'dashed', dimLineWeight: 0.35 } });
+      await t.cmd('drafting.addDimension', { viewId: view, pts: [[0, 0], [2.55, 0], [3.45, 0], [8.9, 0], [10.1, 0], [12, 0]], at: [6, -2.2], dir: [1, 0], dimStyle: 'fixed' });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -0.5, y: -3.2 }, { x: 12.5, y: 1.2 }));
+      await t.wait(800);
+      const drawing = await t.call('doc.query', { name: 'view.drawing', args: { id: view } });
+      t.expect(JSON.stringify(drawing).toLowerCase().includes('#2563eb'), 'the extension lines are drawn in their own colour');
+      const [x0, y0] = await t.planPoint(-0.5, 1.0);
+      const [x1, y1] = await t.planPoint(12.5, -3.1);
+      await t.shot('dimension-extension-lines', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      await t.tool('manage.standards');
+      const dialog = t.page.locator('.dialog');
+      await dialog.getByText('Dimensions', { exact: true }).first().click();
+      await t.wait(400);
+      for (const col of ['Extension lines off', 'Fixed extension mm', 'Extension pen mm', 'Dimension line pen mm'])
+        t.expect(await dialog.locator('th', { hasText: col }).count() === 1, `the dimension styles have a ${col} column`);
+      t.expect(await dialog.locator('select').filter({ has: t.page.locator('option[value=second]') }).nth(1).inputValue() === 'both', 'the style leaves out both end extension lines');
+      await t.shot('dimension-extension-lines-style', { of: '.standards-table', pad: 6 });
+      await t.keys('Escape');
+    },
+  },
+  {
     // Automatic text placement (forum topic 78): the south facade's exterior dimensions with a 15 cm pier between a window
     // and a narrow opening; the values that do not fit between their witness lines stand outside them or a row up, clear of
     // the next string, and the setting in Dimension rules….

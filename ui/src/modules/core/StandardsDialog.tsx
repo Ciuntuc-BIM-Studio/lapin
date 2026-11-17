@@ -24,10 +24,11 @@ import { StandardsFirmFolders, StandardsImportPanel, StandardsLibraryButtons, ty
 import { BuildupEditor } from './BuildupEditor';
 import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
+import { EXT_SUPPRESS, EXT_SUPPRESS_LABELS } from './dimensionLines';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
 type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number };
-type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
+type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[]; lineType?: boolean; labels?: Record<string, string> };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
 const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot'];
@@ -37,6 +38,25 @@ const CHOICE_LABELS: Record<string, string> = { project: 'as the project', acros
   off: 'off', number: '150', h: 'h=150', hp: 'h=150, p=90', slash: '150/90',
   // A dimension's trailing zeros (forum #81).
   keep: 'keep (2.500)', suppress: 'suppress (2.5)' };
+/**
+ * A dimension style's extension lines and dimension line (issue #66): which extension lines a string leaves out (a dimension's
+ * own choice in its properties goes before), a fixed length back from the dimension line, and each line's pen, colour and
+ * line type. Empty: as before (from the gap, 0.13 mm, the style's colour, continuous).
+ */
+const DIM_LINE_COLS: Col[] = [
+  { key: 'extSuppress', label: 'Extension lines off', title: "Leave out a string's first extension line, its last, or both; a dimension's own choice in its properties goes before", kind: 'choice', choices: [...EXT_SUPPRESS], labels: EXT_SUPPRESS_LABELS },
+  { key: 'extFixed', label: 'Fixed extension mm', title: 'Every extension line this long on paper, measured back from the dimension line (never nearer the point than the gap); empty: from the gap', kind: 'mm' },
+  { key: 'extWeight', label: 'Extension pen mm', title: 'The extension lines\' pen on paper; empty: 0.13 mm', kind: 'mm' },
+  { key: 'extColor', label: 'Extension colour', kind: 'color' },
+  { key: 'extLineType', label: 'Extension line', kind: 'choice', choices: LINE_TYPES, lineType: true },
+  { key: 'dimLineWeight', label: 'Dimension line pen mm', title: 'The dimension line\'s pen on paper (its arrows too); empty: 0.13 mm', kind: 'mm' },
+  { key: 'dimLineColor', label: 'Dimension line colour', title: "The dimension line's colour, its arrows and ticks too; empty: the style's", kind: 'color' },
+  { key: 'dimLineType', label: 'Dimension line', kind: 'choice', choices: LINE_TYPES, lineType: true },
+];
+/** The dimension style fields left empty to say "as before" (sent as null). */
+const NULLABLE = new Set(['textLeader', 'extFixed', 'extWeight', 'dimLineWeight']);
+/** The colours that may be cleared back to the style's. */
+const CLEARABLE = new Set(['extColor', 'dimLineColor']);
 const TABS: Tab[] = [
   { id: 'text', label: 'Text', list: 'textStyles', fresh: { name: 'Text', height: 2.5 }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'height', label: 'Height mm', kind: 'mm' }, { key: 'font', label: 'Font', kind: 'choice', choices: ['sans', 'serif', 'mono'] },
@@ -52,7 +72,9 @@ const TABS: Tab[] = [
     { key: 'openingHeight', label: 'Opening height', title: 'Under a dimension segment across a door, window or opening: its height (and its sill), read from the model', kind: 'choice', choices: ['off', 'number', 'h', 'hp', 'slash'] },
     // Values that do not fit between their witness lines moved clear of their neighbours, with a leader past a distance (forum #78).
     { key: 'autoText', label: 'Text placement', title: 'A value that does not fit between its witness lines moves just outside its segment, or above and below the line in turn, clear of the other values; as the project: Annotate → Dimension rules… says', kind: 'choice', choices: ['project', 'on', 'off'] },
-    { key: 'textLeader', label: 'Leader beyond mm', title: 'A value moved further than this (mm on paper) from its place gets a leader to its segment; empty: as the project', kind: 'mm' }] },
+    { key: 'textLeader', label: 'Leader beyond mm', title: 'A value moved further than this (mm on paper) from its place gets a leader to its segment; empty: as the project', kind: 'mm' },
+    // The extension lines and the dimension line as AutoCAD's dimension styles have them (issue #66); empty: as before.
+    ...DIM_LINE_COLS] },
   { id: 'axis', label: 'Grid axes', list: 'axisStyles', fresh: { name: 'Axis' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'bubble', label: 'Bubble', kind: 'choice', choices: ['circle', 'square'] },
     { key: 'ends', label: 'Ends', kind: 'choice', choices: ['both', 'start', 'end', 'none'] }, { key: 'size', label: 'Size mm', kind: 'mm' },
@@ -131,11 +153,18 @@ export function StandardsDialog() {
     };
     switch (c.kind) {
       case 'bool': return <input type="checkbox" checked={v === true || (c.key === 'visible' && v !== false)} onChange={(ev) => put(ev.target.checked)} />;
-      case 'color': return <ColourField value={typeof v === 'string' ? v : '#18181b'} onChange={(v) => put(v)} />;
+      // A dimension style's extension or dimension line colour (issue #66) may be cleared: the style's colour again.
+      case 'color': return CLEARABLE.has(c.key)
+        ? <span className="colour-clearable" style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}><ColourField value={typeof v === 'string' ? v : String(e.color ?? '#000000')} onChange={(v) => put(v)} />
+          {typeof v === 'string' && <button type="button" className="icon" title="As the style's colour" onClick={() => put(null)}><X size={12} /></button>}</span>
+        : <ColourField value={typeof v === 'string' ? v : '#18181b'} onChange={(v) => put(v)} />;
       case 'choice': {
         // A line type is chosen among Lapin's and the project's own (Line types tab).
-        const names = c.key === 'lineType' ? withCurrent(lineTypeNames(lineTypes, c.choices), String(v ?? '') || null).filter((x) => !(tab.id === 'layer' && x === 'continuous')) : c.choices!;
-        return <select value={String(v ?? '')} onChange={(ev) => put(ev.target.value)}>{c.key === 'lineType' && tab.id === 'layer' && <option value="">continuous</option>}{names.map((x) => <option key={x} value={x}>{CHOICE_LABELS[x] ?? x}</option>)}</select>;
+        // A layer's, or a dimension style's extension or dimension line (issue #66), left empty is continuous (as before).
+        const isLine = c.key === 'lineType' || c.lineType === true;
+        const unset = isLine && (tab.id === 'layer' || c.lineType === true);
+        const names = isLine ? withCurrent(lineTypeNames(lineTypes, c.choices), String(v ?? '') || null).filter((x) => !(unset && x === 'continuous')) : c.choices!;
+        return <select value={String(v ?? (c.key === 'extSuppress' ? 'none' : ''))} onChange={(ev) => put(c.lineType && !ev.target.value ? null : ev.target.value)}>{unset && <option value="">continuous</option>}{names.map((x) => <option key={x} value={x}>{c.labels?.[x] ?? CHOICE_LABELS[x] ?? x}</option>)}</select>;
       }
       case 'style': return <select value={String(v ?? 'standard')} onChange={(ev) => put(ev.target.value)}>{book.textStyles.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>;
       case 'group': return <select value={String(v ?? '')} onChange={(ev) => put(ev.target.value || null)}><option value="">—</option>{book.layerGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select>;
@@ -150,7 +179,7 @@ export function StandardsDialog() {
             const t = ev.target.value.trim();
             if (t === String(v ?? '')) return;
             // A style's leader distance left empty: the project's (forum #78).
-            if (c.key === 'textLeader' && t === '') { put(null); return; }
+            if (NULLABLE.has(c.key) && t === '') { put(null); return; }
             if (numeric) { const n = Number(t.replace(',', '.')); if (Number.isFinite(n) && n >= 0) put(n); }
             else if (t || c.key === 'inner' || c.key === 'classes') put(t);
           }} />;
