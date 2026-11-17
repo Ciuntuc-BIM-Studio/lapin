@@ -2139,6 +2139,7 @@ export const ZH: Record<string, string> = {
   'Save data': '保存数据',
   'Free text. In the schedules and in tags as {U-value}, {Fire rating}…; in IFC the fire rating and a U-value that is a number are Pset_WindowCommon / Pset_DoorCommon’s, the rest is in Lapin_Joinery.': '自由文本。在明细表和标签中写作 {U-value}、{Fire rating}…；在 IFC 中，耐火等级和为数字的 U 值属于 Pset_WindowCommon / Pset_DoorCommon，其余在 Lapin_Joinery 中。',
   'Frame in the wall': '墙中的框',
+  "Type's size": "类型尺寸", "Back to its type's width and height: it follows the type again": "恢复为其类型的宽度和高度：重新跟随类型",
   'Centred (the type’s)': '居中（类型的设置）',
   'Where the frame sits across the wall; its type’s unless set here': '框在墙厚中的位置；除非在此设置，否则取类型的',
   'Layout': '布局',

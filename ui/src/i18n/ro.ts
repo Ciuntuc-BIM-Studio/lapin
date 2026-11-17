@@ -2136,6 +2136,7 @@ export const RO: Record<string, string> = {
   'Save data': 'Salvează datele',
   'Free text. In the schedules and in tags as {U-value}, {Fire rating}…; in IFC the fire rating and a U-value that is a number are Pset_WindowCommon / Pset_DoorCommon’s, the rest is in Lapin_Joinery.': 'Text liber. În extrase și în etichete ca {U-value}, {Fire rating}…; în IFC rezistența la foc și o valoare U care e număr sunt ale lui Pset_WindowCommon / Pset_DoorCommon, restul e în Lapin_Joinery.',
   'Frame in the wall': 'Tocul în perete',
+  "Type's size": "Mărimea tipului", "Back to its type's width and height: it follows the type again": "Înapoi la lățimea și înălțimea tipului: urmează din nou tipul",
   'Centred (the type’s)': 'Centrat (al tipului)',
   'Where the frame sits across the wall; its type’s unless set here': 'Unde stă tocul pe grosimea peretelui; al tipului, dacă nu se schimbă aici',
   'Layout': 'Dispunere',

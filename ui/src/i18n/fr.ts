@@ -2145,6 +2145,7 @@ export const FR: Record<string, string> = {
   'Save data': 'Enregistrer les données',
   'Free text. In the schedules and in tags as {U-value}, {Fire rating}…; in IFC the fire rating and a U-value that is a number are Pset_WindowCommon / Pset_DoorCommon’s, the rest is in Lapin_Joinery.': 'Texte libre. Dans les nomenclatures et les étiquettes sous la forme {U-value}, {Fire rating}… ; dans l’IFC, la résistance au feu et une valeur U numérique relèvent de Pset_WindowCommon / Pset_DoorCommon, le reste est dans Lapin_Joinery.',
   'Frame in the wall': 'Cadre dans le mur',
+  "Type's size": "Taille du type", "Back to its type's width and height: it follows the type again": "Revenir à la largeur et à la hauteur de son type : il suit de nouveau le type",
   'Centred (the type’s)': 'Centré (celui du type)',
   'Where the frame sits across the wall; its type’s unless set here': 'Où se trouve le cadre dans l’épaisseur du mur ; celui du type sauf réglage ici',
   'Layout': 'Disposition',

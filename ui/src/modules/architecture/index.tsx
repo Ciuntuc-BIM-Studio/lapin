@@ -44,7 +44,8 @@ import { WallThumb, SlabThumb, JoineryThumb } from './Thumbs';
 import { isWallOpening, wallOpening, WallOpeningSection } from './WallOpening';
 import { openingTool } from './openingTool';
 import { OpeningDims, OpeningDimsInView } from './TempDimensions';
-import { wallOpeningGrips } from './wallOpeningGrips';
+import { joineryJambGrips, wallOpeningGrips } from './wallOpeningGrips';
+import { joinerySize } from './joinerySize';
 import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingInRoom, ceilingLight, ceilingTypes } from './Ceilings';
 import { finishRoom, roomFinishSchedule, roomFinishes } from './roomFinishTools';
 import { finishPainter, paintBrush, paintClear, paintEyedropper, splitLine, splitRect, surfaceFinishSchedule } from './finishPainter';
@@ -252,9 +253,10 @@ const pathRefs = (node: NodeDto): RefLine[] => { const c = arcOf(node.props); re
 const wallRefs = (node: NodeDto): RefLine[] => pathRefs(node).map((r) => ({ ...r, faces: true }));
 
 /**
- * A door or window: dragged along its wall by its middle, and four flip
- * arrows round it: along the wall the hand (hinges on the other side), across
- * it the side (opening to the other face).
+ * A door or window: dragged along its wall by its middle, widened by either
+ * jamb (its own size, forum topic 140), and four flip arrows round it: along
+ * the wall the hand (hinges on the other side), across it the side (opening
+ * to the other face).
  */
 function joineryGrips(node: NodeDto): Grip[] {
   const s = useSession.getState();
@@ -274,6 +276,7 @@ function joineryGrips(node: NodeDto): Grip[] {
     arrow('hand-', { x: -f.along.x, y: -f.along.y }, 'Flip the hand: hinges on the other side', hand),
     arrow('side+', f.left, 'Flip the side: opens to the other face', side),
     arrow('side-', { x: -f.left.x, y: -f.left.y }, 'Flip the side: opens to the other face', side),
+    ...joineryJambGrips(opening.id, c, num(opening, 'along'), joinerySize(node.props, typeOf(s, node.id)?.props.spec as { width?: number } | undefined).width),
   ];
 }
 

@@ -66,9 +66,13 @@ public sealed class JoineryIfc : IJoineryIfc
         };
     }
 
-    /// <summary>A curtain wall's door at the size it stands in its cell (report #133); null for any other.</summary>
+    /// <summary>
+    /// A curtain wall's door at the size it stands in its cell (report #133), or a door or window of its own size (forum topic
+    /// 140): IFC's OverallWidth and OverallHeight are the occurrence's; null for one of its type's size.
+    /// </summary>
     public (double Width, double Height)? Size(IModelView m, Entity element) =>
-        CurtainCells.SeatOf(m, element) is { Spec: { } s } ? (s.Width, s.Height) : null;
+        CurtainCells.SeatOf(m, element) is { Spec: { } s } ? (s.Width, s.Height)
+        : Openings.HasOwnSize(element) && Openings.SpecOf(m, element.Id) is { } own ? (own.Width, own.Height) : null;
 
     public IfcJoineryPlace? Place(IModelView m, Entity element)
     {

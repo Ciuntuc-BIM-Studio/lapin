@@ -13,9 +13,10 @@ namespace Lapin.Architecture;
 /// <para>
 /// An opening keeps its place on its wall: <c>along</c>, its centre's
 /// distance from the wall's start along the axis, and <c>sill</c>, its bottom
-/// above the wall's base. Its width and height are its fill's type's (a
-/// changed type refits every opening it fills); an opening with no fill keeps
-/// its own. So an opening follows its wall through any edit.
+/// above the wall's base. Its width and height are its fill's: the element's
+/// own size where it has one (forum topic 140), else its type's (a changed type
+/// refits every opening it fills); an opening with no fill keeps its own. So an
+/// opening follows its wall through any edit.
 /// </para>
 /// </summary>
 public static class Openings
@@ -25,7 +26,7 @@ public static class Openings
 
     /// <summary>An opening's place and size on its wall; <paramref name="Shape"/>: its outline, the fill's type's or a bare opening's own (null: a rectangle).</summary>
     /// <remarks>
-    /// Along, Sill, Width and Height are the hole's. A door's or window's is its type's size unless its opening is the file's own
+    /// Along, Sill, Width and Height are the hole's. A door's or window's is its size (its own, else its type's) unless its opening is the file's own
     /// (<see cref="HoleWidthKey"/>, <see cref="HoleHeightKey"/>); the fill stands centred on it, <see cref="FillOffset"/> over its
     /// bottom (<see cref="FillOffsetKey"/>: a door on the finished floor in a hole the file cuts down to the slab), at <see cref="FillSill"/>.
     /// </remarks>
@@ -50,9 +51,69 @@ public static class Openings
         var fill = m.Get(fillId);
         // A curtain wall's door (report #133): its type at the size it stands in its cell.
         if (fill != null && CurtainCells.SeatOf(m, fill) is { } seat) return seat.Spec ?? spec;
+        // Its own size (forum topic 140): the type's construction at the element's width and height.
+        if (fill != null) spec = Sized(spec, fill);
         var own = JoineryPosition.From_(fill?.Attrs["position"]);
         if (own == null && spec.Position == null) return spec;
         return OpeningOf(m, fillId) is { } opening && WallOf(m, opening.Id) is { } wall ? spec.Positioned(m, wall, own, fill?.Bool("flipSide") == true) : spec;
+    }
+
+    /// <summary>
+    /// A door's or window's own size (forum topic 140, decision 664): <c>width</c> and <c>height</c> on the element, metres, each
+    /// over its type's. The type is the construction (frame, sashes, profiles, materials, data) and the default size of new ones;
+    /// an element without them is its type's size, as every element was before. Kept through a change of type until reset.
+    /// </summary>
+    public const string OwnWidthKey = "width", OwnHeightKey = "height";
+
+    /// <summary>The type's spec at the element's own size, where it has one.</summary>
+    public static JoinerySpec Sized(JoinerySpec typeSpec, Entity fill) =>
+        fill.NumOrNull(OwnWidthKey) is null && fill.NumOrNull(OwnHeightKey) is null ? typeSpec
+            : typeSpec with { Width = fill.NumOrNull(OwnWidthKey) ?? typeSpec.Width, Height = fill.NumOrNull(OwnHeightKey) ?? typeSpec.Height };
+
+    /// <summary>Whether a door or window has a size of its own (either dimension).</summary>
+    public static bool HasOwnSize(Entity fill) => fill.NumOrNull(OwnWidthKey) is not null || fill.NumOrNull(OwnHeightKey) is not null;
+
+    /// <summary>
+    /// A door's or window's own size set (forum topic 140): <paramref name="width"/>, <paramref name="height"/> (null: kept), or
+    /// back to its type's (<paramref name="reset"/>). A value equal to the type's is not kept, so the element follows the type
+    /// there. The type's construction is checked at the new size and the opening against its wall, as a resized opening is. Its
+    /// opening becomes the door's or window's size: an imported file's own hole round it goes (as with another type).
+    /// </summary>
+    public static void SetSize(IEdit edit, Entity fill, double? width, double? height, bool reset = false)
+    {
+        if (fill.Class is not (IfcClass.Door or IfcClass.Window)) throw new CommandException("Select doors or windows.");
+        if (CurtainCells.SeatOf(edit.Model, fill) is not null) throw new CommandException($"„{fill.Name}” is the size of its curtain wall cell: change the cell.");
+        if (edit.Model.RelatingOf(fill.Id, IfcClass.RelDefinesByType) is not { } type || JoinerySpec.From(type.Attrs["spec"]) is not { } typeSpec)
+            throw new CommandException($"„{fill.Name}” has no type with a configuration.");
+        var current = Sized(typeSpec, fill);
+        var (w, h) = reset ? (width ?? typeSpec.Width, height ?? typeSpec.Height) : (width ?? current.Width, height ?? current.Height);
+        if (!(w > 0 && h > 0) || !double.IsFinite(w) || !double.IsFinite(h)) throw new CommandException("A door or window needs a width and a height.");
+        if (Joinery.Problem(typeSpec with { Width = w, Height = h }) is { } problem) throw new CommandException($"At {w * 1000:0} × {h * 1000:0}: {problem}");
+        var attrs = fill.CloneAttrs();
+        if (Math.Abs(w - typeSpec.Width) < 1e-9) attrs.Remove(OwnWidthKey); else attrs[OwnWidthKey] = w;
+        if (Math.Abs(h - typeSpec.Height) < 1e-9) attrs.Remove(OwnHeightKey); else attrs[OwnHeightKey] = h;
+        if (OpeningOf(edit.Model, fill.Id) is { } opening)
+        {
+            var wall = WallOf(edit.Model, opening.Id) ?? throw new CommandException("The opening is in no wall.");
+            var placed = Place(edit.Model, opening);
+            // The door or window stays standing where it stood: its sill becomes the opening's.
+            var sill = placed.FillSill;
+            CheckFits(edit.Model, wall, placed.Along, sill, w, h, opening.Id);
+            ClearOwnHole(edit, opening);
+        }
+        edit.Replace(fill.With(attrs: attrs));
+    }
+
+    /// <summary>An opening's own hole (an imported file's, <see cref="HoleWidthKey"/>) dropped: the door or window filling it sets its size again, standing where it stood.</summary>
+    static void ClearOwnHole(IEdit edit, Entity opening)
+    {
+        if (opening.Attrs[HoleWidthKey] == null && opening.Attrs[HoleHeightKey] == null && opening.Attrs[FillOffsetKey] == null) return;
+        var attrs = opening.CloneAttrs();
+        attrs["sill"] = opening.Num("sill") + opening.Num(FillOffsetKey);
+        attrs.Remove(HoleWidthKey);
+        attrs.Remove(HoleHeightKey);
+        attrs.Remove(FillOffsetKey);
+        edit.Replace(opening.With(attrs: attrs));
     }
 
     /// <summary>
@@ -247,7 +308,12 @@ public static class Openings
         edit.Replace(type.With(name: spec.Name, attrs: TypeAttrs(spec)));
         foreach (var fill in edit.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
             if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
-                CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), spec.Width, spec.Height, opening.Id);
+            {
+                // One of its own size keeps it (forum topic 140), checked with the type's construction at that size.
+                var sized = Sized(spec, fill);
+                if (!ReferenceEquals(sized, spec) && Joinery.Problem(sized) is { } atSize) throw new CommandException($"„{fill.Name}”, {sized.Width * 1000:0} × {sized.Height * 1000:0}: {atSize}");
+                CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), sized.Width, sized.Height, opening.Id);
+            }
             // A curtain wall's door: still in its cell (report #133).
             else CurtainCells.CheckDoor(edit.Model, fill);
     }
@@ -259,17 +325,24 @@ public static class Openings
     /// itself (filling it) of the type, on the wall's storey. Refused when it
     /// does not fit.
     /// </summary>
-    public static Entity AddFill(IEdit edit, Entity wall, Entity type, double along, double? sill)
+    public static Entity AddFill(IEdit edit, Entity wall, Entity type, double along, double? sill, double? width = null, double? height = null)
     {
         var spec = JoinerySpec.From(type.Attrs["spec"]) ?? throw new CommandException($"„{type.Name}” has no configuration.");
         var s = sill ?? spec.SillHeight;
-        CheckFits(edit.Model, wall, along, s, spec.Width, spec.Height);
+        // Its own size (forum topic 140): kept on the element where it differs from the type's.
+        var own = new JsonObject { ["flipHand"] = false, ["flipSide"] = false };
+        if (width is { } w && Math.Abs(w - spec.Width) >= 1e-9) own[OwnWidthKey] = w;
+        if (height is { } h && Math.Abs(h - spec.Height) >= 1e-9) own[OwnHeightKey] = h;
+        var sized = spec with { Width = width ?? spec.Width, Height = height ?? spec.Height };
+        if (!(sized.Width > 0 && sized.Height > 0) || !double.IsFinite(sized.Width) || !double.IsFinite(sized.Height)) throw new CommandException("A door or window needs a width and a height.");
+        if ((width != null || height != null) && Joinery.Problem(sized) is { } problem) throw new CommandException($"At {sized.Width * 1000:0} × {sized.Height * 1000:0}: {problem}");
+        CheckFits(edit.Model, wall, along, s, sized.Width, sized.Height);
         var opening = new Entity(edit.NewId(), IfcClass.OpeningElement, "Opening", new JsonObject { ["along"] = along, ["sill"] = s }, "OPENING");
         edit.Add(opening);
         edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelVoidsElement, wall.Id, [opening.Id]));
         var cls = spec.IsDoor ? IfcClass.Door : IfcClass.Window;
         var marks = Numbering.Next(edit.Model.OfClass(cls));
-        var fill = new Entity(edit.NewId(), cls, $"{spec.Mark}{marks}", new JsonObject { ["flipHand"] = false, ["flipSide"] = false }, spec.IsDoor ? "DOOR" : "WINDOW");
+        var fill = new Entity(edit.NewId(), cls, $"{spec.Mark}{marks}", own, spec.IsDoor ? "DOOR" : "WINDOW");
         edit.Add(fill);
         edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelFillsElement, opening.Id, [fill.Id]));
         edit.Relate(IfcClass.RelDefinesByType, type.Id, fill.Id);
@@ -293,10 +366,13 @@ public static class Openings
         return opening;
     }
 
-    /// <summary>An opening alone resized (its width and height kept by itself; a door's or window's comes from its type), checked as it is placed.</summary>
+    /// <summary>
+    /// An opening resized, checked as it is placed: an opening alone keeps its width and height by itself; one a door or window
+    /// fills is that element's size, which takes the size as its own (forum topic 140, <see cref="SetSize"/>).
+    /// </summary>
     public static void Resize(IEdit edit, Entity opening, double? width, double? height)
     {
-        if (FillOf(edit.Model, opening.Id) is { } fill) throw new CommandException($"„{fill.Name}” sets its opening's size: change its type.");
+        if (FillOf(edit.Model, opening.Id) is { } fill) { SetSize(edit, fill, width, height); return; }
         var wall = WallOf(edit.Model, opening.Id) ?? throw new CommandException("The opening is in no wall.");
         var p = Place(edit.Model, opening);
         var (w, h) = (width ?? p.Width, height ?? p.Height);
@@ -362,19 +438,13 @@ public static class Openings
     {
         var spec = JoinerySpec.From(type.Attrs["spec"]) ?? throw new CommandException($"„{type.Name}” has no configuration.");
         if ((fill.Class == IfcClass.Door) != spec.IsDoor) throw new CommandException("A door takes a door type, a window a window type.");
+        // An element of its own size keeps it in the new type (forum topic 140), until reset.
+        var sized = Sized(spec, fill);
+        if (!ReferenceEquals(sized, spec) && Joinery.Problem(sized) is { } problem) throw new CommandException($"„{fill.Name}”, {sized.Width * 1000:0} × {sized.Height * 1000:0}: {problem}");
         if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
-            CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), spec.Width, spec.Height, opening.Id);
-        // Another type: its opening is the type's size again, the file's own hole (an imported one's) left behind.
-        if (OpeningOf(edit.Model, fill.Id) is { } own && (own.Attrs[HoleWidthKey] != null || own.Attrs[HoleHeightKey] != null || own.Attrs[FillOffsetKey] != null))
-        {
-            var attrs = own.CloneAttrs();
-            // The door or window stays where it stood: its sill becomes the opening's.
-            attrs["sill"] = own.Num("sill") + own.Num(FillOffsetKey);
-            attrs.Remove(HoleWidthKey);
-            attrs.Remove(HoleHeightKey);
-            attrs.Remove(FillOffsetKey);
-            edit.Replace(own.With(attrs: attrs));
-        }
+            CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), sized.Width, sized.Height, opening.Id);
+        // Another type: its opening is the door's or window's size again, the file's own hole (an imported one's) left behind.
+        if (OpeningOf(edit.Model, fill.Id) is { } own) ClearOwnHole(edit, own);
         edit.Relate(IfcClass.RelDefinesByType, type.Id, fill.Id);
         // A curtain wall's door takes its new type in its cell (report #133).
         CurtainCells.CheckDoor(edit.Model, edit.Model.Get(fill.Id)!);

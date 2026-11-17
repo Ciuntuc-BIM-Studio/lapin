@@ -2144,6 +2144,7 @@ export const IT: Record<string, string> = {
   'Save data': 'Salva i dati',
   'Free text. In the schedules and in tags as {U-value}, {Fire rating}…; in IFC the fire rating and a U-value that is a number are Pset_WindowCommon / Pset_DoorCommon’s, the rest is in Lapin_Joinery.': 'Testo libero. Negli abachi e nelle etichette come {U-value}, {Fire rating}…; nell’IFC la resistenza al fuoco e un valore U numerico sono di Pset_WindowCommon / Pset_DoorCommon, il resto è in Lapin_Joinery.',
   'Frame in the wall': 'Telaio nel muro',
+  "Type's size": "Dimensione del tipo", "Back to its type's width and height: it follows the type again": "Torna a larghezza e altezza del tipo: segue di nuovo il tipo",
   'Centred (the type’s)': 'Centrato (quello del tipo)',
   'Where the frame sits across the wall; its type’s unless set here': 'Dove sta il telaio nello spessore del muro; quello del tipo se non lo cambi qui',
   'Layout': 'Disposizione',

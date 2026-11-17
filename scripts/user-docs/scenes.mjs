@@ -1011,6 +1011,17 @@ export const scenes = [
       t.expect(door, 'a door in the house');
       await select(t, door.id);
       await t.shot('door-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
+      // One type, many sizes (forum topic 140): the door's own width, typed in its properties, then given up.
+      const width = t.page.locator('aside.props [data-field=joinery-width]');
+      t.expect(await width.count() === 1 && await t.page.locator('aside.props [data-field=joinery-height]').count() === 1, 'a door\'s width and height are fields of its own');
+      await width.fill('950');
+      await width.press('Enter');
+      await t.wait(400);
+      const sized = (await t.nodes()).find((n) => n.id === door.id);
+      t.expect(Math.abs((sized?.props.width ?? 0) - 0.95) < 1e-6, `the door 950 wide of its own (${sized?.props.width})`);
+      await t.page.locator('aside.props [data-action=joinery-type-size]').click();
+      await t.wait(400);
+      t.expect((await t.nodes()).find((n) => n.id === door.id)?.props.width == null, 'Type\'s size gives its own width up');
       await t.tool('architecture.joineryTypes');
       // The 3D preview under the drawings (report #108), drawn once the engine's meshes come.
       t.expect(await t.page.locator('[data-testid=joinery-preview-3d] canvas').count() === 1, 'the configurator shows its 3D preview');
