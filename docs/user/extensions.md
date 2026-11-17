@@ -69,7 +69,7 @@ The catalogue also lists **Python scripts**. On the desktop you can install one 
 
 ## Paid extensions
 
-Some extensions are **sold by their authors**, through their own shop (Lemon Squeezy or Gumroad). They are marked **Paid** in the list, with their price; the price is *indicative*: the one that counts is the seller's, at the checkout. Lapin Extensions takes no commission and is not part of the sale: the seller takes the payment, issues the invoice and handles refunds, under the terms that **Seller's terms** opens.
+Some extensions are **sold by their authors**, through their own shop (today Gumroad). They are marked **Paid** in the list, with their price; the price is *indicative*: the one that counts is the seller's, at the checkout. Lapin Extensions takes no commission and is not part of the sale: the seller takes the payment, issues the invoice and handles refunds, under the terms that **Seller's terms** opens.
 
 ![A paid extension's details: sold by its author, Buy, the licence key](shots/extensions-paid.webp)
 
@@ -93,6 +93,6 @@ Anyone can publish an extension. Export it from Lapin (My furniture → Export, 
 - **On the store**: sign in at store.lapinbim.com with your [forum](https://forum.lapinbim.com) account, open **Your extensions**, fill in the form and upload the file and a few screenshots. The store checks the file as Lapin will and sends it for review; your page shows the review and, once it is published, how many times it was downloaded. A new version goes the same way.
 - **On GitHub**: attach the file to a release of a repository of yours and add its manifest by a pull request on [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). Its README says how, and what the automatic checks look at.
 
-**To sell an extension**, set up the product with licence keys at your own Lemon Squeezy or Gumroad shop, then fill in **Sold through your own shop** in the store's form (the provider, the product's id, the checkout page, your terms of sale and refunds, and a price to show). You are the seller: the store lists it, keeps its file privately and gives it only to a valid key; it takes no commission ([author terms](https://store.lapinbim.com/legal/author-terms.html), section 5).
+**To sell an extension**, set up the product with licence keys at your own Gumroad shop, then fill in **Sold through your own shop** in the store's form (the provider, the product's id, the checkout page, your terms of sale and refunds, and a price to show). You are the seller: the store lists it, keeps its file privately and gives it only to a valid key; it takes no commission ([author terms](https://store.lapinbim.com/legal/author-terms.html), section 5).
 
 A types pack comes from **Manage → Type packs… → Export types…** (or **Save to library** at a type configurator); a symbol, line type, standards, rule pack, bar shapes or parameters file from the **Export** of its own dialog (**Manage → Symbols…**, **Drafting standards**, **Rules…**, **Bar shapes…**, **Shared parameters**; line types as a `.lin`); a price list from **Price lists…**, with the export button of a list on this computer (a `.lapinprices` file, its prices marked indicative).

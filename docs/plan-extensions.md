@@ -171,8 +171,8 @@ Aprobată de utilizator la 12.11.2026. Codul și testele sunt făcute; nimic nu 
 Hotărârile utilizatorului (17.11.2026, toate recomandările):
 
 1. **Ce se poate vinde acum:** conținutul și scripturile Python (felurile care există azi). Plug-in-urile JS (felul 3) și modulele C# semnate (felul 4) rămân pentru o etapă cu sandbox și permisiuni impuse; o listă explicită (`PAID_KINDS`) spune ce fel poate fi plătit, ca un fel nou să nu devină vandabil fără să hotărască cineva.
-2. **Furnizorii:** **Lemon Squeezy** și **Gumroad**, amândoi cu API public de verificare a cheii, fără cont API al nostru. Paddle mai târziu. Verificat pe 17.11.2026 în documentația lor:
-   - Lemon Squeezy: `POST https://api.lemonsqueezy.com/v1/licenses/validate`, formular `license_key` (și `instance_id`, nefolosit); răspuns `{valid, error, license_key: {status: inactive | active | expired | disabled, …}, instance, meta: {store_id, product_id, …}}`; erori 400 / 404 / 422 cu `error`. **`meta.product_id` trebuie comparat cu al manifestului**: altfel orice cheie a oricărui produs Lemon Squeezy ar trece. **Atenție: Lemon Squeezy nu mai primește înscrieri noi și se închide la 31.03.2027** (banda de pe docs.lemonsqueezy.com; vânzătorii lui sunt trimiși spre Stripe Managed Payments) — întrebare pentru utilizator, §12.9.
+2. **Furnizorii:** propus Lemon Squeezy și Gumroad; **rămâne doar Gumroad** (hotărârea utilizatorului din 17.11.2026, §12.9), cu API public de verificare a cheii, fără cont API al nostru. Verificat pe 17.11.2026 în documentația lui:
+   - **Lemon Squeezy, scos:** a închis înscrierile pe 16.11.2026 și nu mai procesează plăți de la 31.03.2027 (https://www.lemonsqueezy.com/blog/saying-goodbye-to-lemon-squeezy); vânzătorii lui sunt trimiși la Stripe Managed Payments, care, spune chiar ghidul de migrare (https://docs.lemonsqueezy.com/migration), „nu livrează fișiere, chei de licență sau legături de descărcare”.
    - Gumroad: `POST https://api.gumroad.com/v2/licenses/verify`, formular `product_id`, `license_key`, `increment_uses_count=false` (implicit e `true`: fiecare verificare ar număra o folosire); răspuns `{success, uses, purchase: {product_id, refunded, disputed, dispute_won, chargebacked, subscription_ended_at, subscription_cancelled_at, subscription_failed_at, …}}`; o cheie dezactivată răspunde 404 `{success: false, message: "This license key has been disabled."}`, una necunoscută 404 cu alt mesaj.
 3. **De unde vine pachetul plătit:** îl ține magazinul, **fără nicio copie publică**, și îl dă doar după o cheie bună, verificată la furnizor **de serverul magazinului**. Semnătura noastră rămâne pe pachet; autorul nu are nevoie de găzduire.
 4. **Fără internet:** o verificare reușită e ținută minte pe calculator; Lapin verifică din nou la actualizări; după instalare nimic nu e blocat fără internet.
@@ -183,8 +183,8 @@ Hotărârile utilizatorului (17.11.2026, toate recomandările):
 ### 12.1 Câmpul `purchase` din manifest
 
 ```
-purchase: { provider:    "lemonsqueezy" | "gumroad",
-            productId:   "<id-ul produsului la furnizor>",   // Lemon Squeezy: numărul produsului; Gumroad: product_id
+purchase: { provider:    "gumroad",                       // singurul acceptat azi (§12.9)
+            productId:   "<id-ul produsului la furnizor>",   // Gumroad: product_id (fila Content a produsului)
             checkoutUrl: "https://…",                         // pagina de cumpărare a autorului (Buy)
             terms:       "https://…",                         // termenii de vânzare și rambursare ai vânzătorului
             price?:      "29 EUR" }                           // doar afișat, „orientativ”; prețul real e al vânzătorului
@@ -214,9 +214,9 @@ Regulile (aceleași în `lapin-extensions/tools/lib.mjs` + `schema/manifest.sche
 | `OPTIONS` pe ambele | CORS pentru ediția din browser (`POST`, `content-type`) |
 
 - **Cheia stă în corpul cererii (POST)**, niciodată în adresă: adresele ajung în jurnalele nginx și Cloudflare.
-- **Furnizorii** (`providers.mjs`): câte o funcție pe furnizor, `fetch` cu `AbortSignal.timeout(10 s)`; rezultatul e `active` (cheie bună, pentru acest produs), `revoked` (cheie a produsului, dar rambursată, dezactivată, expirată, contestată, abonament încheiat), `invalid` (nu e o cheie a acestui produs), `unavailable` (furnizorul nu răspunde, 429, 5xx). Lemon Squeezy: `valid` + `meta.product_id` = `productId` + `status` `active`/`inactive` → `active`; `expired`/`disabled` → `revoked`. Gumroad: `success` + `product_id` + nici `refunded`, `chargebacked`, `disputed` fără `dispute_won`, `subscription_ended_at` trecut, `subscription_failed_at` → `active`; altfel `revoked`; 404 „disabled” → `revoked`; alt 404 → `invalid`.
-- **Ce păstrează magazinul: nimic despre chei.** Nicio cheie, niciun hash de cheie, nicio adresă IP nu e scrisă pe disc sau în jurnal. Jurnalul are un rând pe verificare: ora, id-ul extensiei, furnizorul și rezultatul (`licence <id> lemonsqueezy: active`). Limitele de rată folosesc, ca până acum, un hash sărat al adresei date de Cloudflare, **doar în memorie**, cel mult o oră.
-- **Limite:** 20 de verificări pe oră pe vizitator, 60 pe minut în total (cât permite Lemon Squeezy API-ului de licențe); peste ele 429 / `unavailable`. Corpul cererii ≤ 4 KB; cheia 1–200 de caractere tipăribile.
+- **Furnizorii** (`providers.mjs`): câte o funcție pe furnizor, `fetch` cu `AbortSignal.timeout(10 s)`; rezultatul e `active` (cheie bună, pentru acest produs), `revoked` (cheie a produsului, dar rambursată, dezactivată, expirată, contestată, abonament încheiat), `invalid` (nu e o cheie a acestui produs), `unavailable` (furnizorul nu răspunde, 429, 5xx). Gumroad: `success` + `product_id` + nici `refunded`, `chargebacked`, `disputed` fără `dispute_won`, `subscription_ended_at` trecut, `subscription_failed_at` → `active`; altfel `revoked`; 404 „disabled” → `revoked`; alt 404 → `invalid`.
+- **Ce păstrează magazinul: nimic despre chei.** Nicio cheie, niciun hash de cheie, nicio adresă IP nu e scrisă pe disc sau în jurnal. Jurnalul are un rând pe verificare: ora, id-ul extensiei, furnizorul și rezultatul (`licence <id> gumroad: active`). Limitele de rată folosesc, ca până acum, un hash sărat al adresei date de Cloudflare, **doar în memorie**, cel mult o oră.
+- **Limite:** 20 de verificări pe oră pe vizitator, 60 pe minut în total (o limită a noastră, ca furnizorul să nu fie bătut); peste ele 429 / `unavailable`. Corpul cererii ≤ 4 KB; cheia 1–200 de caractere tipăribile.
 - **Panoul autorului:** câmpurile `purchase` (opționale), fișierul plătit pus în `/data/paid/`; `cli.mjs paid` listează fișierele plătite ținute.
 
 ### 12.4 În Lapin
@@ -232,7 +232,7 @@ Regulile (aceleași în `lapin-extensions/tools/lib.mjs` + `schema/manifest.sche
 
 - **Termenii autorilor:** un paragraf „Selling an extension”: autorul e vânzătorul (prin furnizorul lui, care e merchant of record), stabilește prețul, facturează, face TVA-ul și rambursările, răspunde cumpărătorului; magazinul doar listează, ține și semnează pachetul și îl dă cumpărătorilor cu cheie bună; 0 % comision; licența dată magazinului pentru pachetele plătite e doar de păstrare, verificare, semnare și livrare către cumpărători, nu de copie publică; autorul ține `purchase` adevărat (o cheie revocată la rambursare).
 - **Termenii de utilizare:** „Paid extensions”: contractul de cumpărare e între cumpărător și autor (prin furnizor), Ciuntuc BIM Studio nu e parte; rambursările la vânzător; cheia rămâne pe calculator; ce e instalat rămâne și după revocare, fără actualizări.
-- **Confidențialitatea:** la o verificare, cheia trece prin magazin spre furnizor și nu e păstrată; ce se scrie în jurnal; furnizorii (Lemon Squeezy, Gumroad) ca destinatari, fiecare cu politica lui.
+- **Confidențialitatea:** la o verificare, cheia trece prin magazin spre furnizor și nu e păstrată; ce se scrie în jurnal; furnizorul (azi Gumroad) ca destinatar, fiecare cu politica lui.
 - **Pagina extensiei:** „Paid”, prețul „indicative”, **Buy** (spre `checkoutUrl`), „Sold by <autor> through <furnizor>” cu legătura la `purchase.terms`; fără butonul de descărcare.
 
 ### 12.6 Exemplul de test
@@ -248,12 +248,19 @@ Regulile (aceleași în `lapin-extensions/tools/lib.mjs` + `schema/manifest.sche
 
 ### 12.8 Ce rămâne
 
-- **Activări / locuri:** nu numărăm calculatoarele pe cheie (Lemon Squeezy `activate` cu `instance_id`, Gumroad `uses`); o cheie dată mai departe merge până o dezactivează autorul. De făcut dacă autorii o cer.
-- **Paddle** (cere un token API al vânzătorului, deci altă formă de verificare) și alți furnizori.
+- **Activări / locuri:** nu numărăm calculatoarele pe cheie (Gumroad `uses`); o cheie dată mai departe merge până o dezactivează autorul. De făcut dacă autorii o cer.
+- **Paddle, Stripe Managed Payments** și alți vânzători fără API de licențe: cheile emise de magazin, §12.10.
 - Felurile 3 și 4, cu sandbox-ul și permisiunile impuse.
 - O listă publică de revocări ale magazinului (o extensie scoasă) — §5.
 - Pașii de publicare: `deploy/store/README.md` → „Paid extensions”.
 
-### 12.9 Întrebări pentru utilizator
+### 12.9 Întrebarea, cu răspunsul utilizatorului (17.11.2026)
 
-1. **Lemon Squeezy se închide la 31.03.2027** și nu mai primește vânzători noi: îl păstrăm (doar pentru autorii care au deja magazin acolo, până la închidere) sau îl scoatem acum și adăugăm Stripe (Managed Payments / chei de licență Stripe) în locul lui? Codul e pregătit pentru oricare (un furnizor = o funcție în `providers.mjs` și o intrare în `PROVIDERS`).
+1. **Lemon Squeezy se închide la 31.03.2027:** îl păstrăm sau îl scoatem? **Răspuns: scos acum.** A închis înscrierile pe 16.11.2026 și nu mai procesează plăți de la 31.03.2027; Stripe Managed Payments, unde își trimite vânzătorii, nu dă chei de licență. **Gumroad e singurul furnizor** deocamdată: `PROVIDERS` / `PROVIDER_URLS` au doar `gumroad` (catalogul, magazinul, Lapin), un manifest cu `lemonsqueezy` e refuzat, textele juridice și ghidul numesc doar Gumroad.
+
+### 12.10 O etapă ulterioară (nefăcută): chei de licență emise de magazin
+
+Pentru vânzătorii fără API de licențe (Stripe Managed Payments, Paddle): **vânzătorul autorului anunță magazinul printr-un webhook la fiecare vânzare** (semnat cu secretul webhook-ului, verificat de magazin), iar **magazinul generează cheia** și o trimite cumpărătorului (sau vânzătorul o arată pe chitanță); la rambursare, alt webhook o revocă. Verificarea din Lapin rămâne aceeași (`/api/licence/check`, `/api/licensed/…`), doar că răspunde magazinul, nu furnizorul.
+
+- **Magazinul devine păstrătorul cheilor**, deci și al unor date personale: cheia legată de o cumpărare (id-ul comenzii, probabil e-mailul cumpărătorului, ca să-i fie retrimisă); ar cere: chei păstrate doar ca hash (Argon2/scrypt) plus o căutare după un prefix, nu în clar; temeiul (contractul, art. 6 alin. (1) lit. b), durata (cât e listată extensia plus termenul de prescripție), dreptul la ștergere (cu revocarea cheii), un acord de prelucrare cu fiecare autor (magazinul ar fi persoană împuternicită a vânzătorului), nota de confidențialitate și termenii autorilor schimbați, secretele webhook-urilor ale fiecărui autor în `store.env` sau criptate pe disc, copii de siguranță.
+- **Nu e construită acum**; de hotărât când un autor o cere.

@@ -65,7 +65,7 @@ Der Katalog listet auch **Python-Skripte**. In der Desktop-App kannst du schon e
 
 ## Kostenpflichtige Erweiterungen
 
-Manche Erweiterungen werden **von ihren Autoren verkauft**, über deren eigenen Shop (Lemon Squeezy oder Gumroad). Sie sind in der Liste als **Kostenpflichtig** markiert, mit ihrem Preis; der Preis ist *unverbindlich*: Es gilt der des Verkäufers an der Kasse. Lapin Extensions nimmt keine Provision und ist nicht Partei des Kaufs: Der Verkäufer nimmt die Zahlung ein, stellt die Rechnung aus und kümmert sich um Erstattungen, nach den Bedingungen, die **Bedingungen des Verkäufers** öffnet.
+Manche Erweiterungen werden **von ihren Autoren verkauft**, über deren eigenen Shop (derzeit Gumroad). Sie sind in der Liste als **Kostenpflichtig** markiert, mit ihrem Preis; der Preis ist *unverbindlich*: Es gilt der des Verkäufers an der Kasse. Lapin Extensions nimmt keine Provision und ist nicht Partei des Kaufs: Der Verkäufer nimmt die Zahlung ein, stellt die Rechnung aus und kümmert sich um Erstattungen, nach den Bedingungen, die **Bedingungen des Verkäufers** öffnet.
 
 ![Die Details einer kostenpflichtigen Erweiterung: vom Autor verkauft, Kaufen, der Lizenzschlüssel](shots/extensions-paid.webp)
 

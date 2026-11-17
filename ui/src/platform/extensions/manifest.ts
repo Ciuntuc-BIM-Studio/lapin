@@ -59,7 +59,9 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
  * (a kind added later is not for sale until decided: JS plug-ins and C# modules wait for a sandbox). The same lists are in
  * lapin-extensions' tools/lib.mjs.
  */
-export const PROVIDERS = { lemonsqueezy: 'Lemon Squeezy', gumroad: 'Gumroad' } as const;
+// Gumroad only: Lemon Squeezy closed sign-ups on 16.11.2026 and stops on 31.03.2027 (decision 660); merchants without a
+// licence API (Stripe Managed Payments, Paddle) wait for store-issued keys (docs/plan-extensions.md §12.10).
+export const PROVIDERS = { gumroad: 'Gumroad' } as const;
 export type Provider = keyof typeof PROVIDERS;
 export const PAID_KINDS: readonly ExtensionKind[] = ['furniture', 'template', 'types', 'profiles', 'hatches', 'titleBlock', 'priceList', 'symbols', 'lineTypes', 'standards', 'rules', 'barShapes', 'parameters', 'mapping', 'families', 'script'];
 

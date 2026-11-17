@@ -28,7 +28,9 @@ export const MAX_PACKAGE = 64 * 1024 * 1024;
  * public licence API the store asks. The providers accepted, and the kinds that may be sold (named one by one, so a kind
  * added later is not for sale until someone decides it: JS plug-ins and C# modules wait for a sandbox).
  */
-export const PROVIDERS = { lemonsqueezy: 'Lemon Squeezy', gumroad: 'Gumroad' };
+// Gumroad only: Lemon Squeezy closed sign-ups on 16.11.2026 and stops on 31.03.2027 (Lapin decision 660); merchants
+// without a licence API (Stripe Managed Payments, Paddle) wait for store-issued keys (lapin-pro plan-extensions §12.10).
+export const PROVIDERS = { gumroad: 'Gumroad' };
 export const PAID_KINDS = ['furniture', 'template', 'types', 'profiles', 'hatches', 'titleBlock', 'priceList', 'symbols', 'lineTypes', 'standards', 'rules', 'barShapes', 'parameters', 'mapping', 'families', 'script'];
 const PRODUCT_ID = /^[A-Za-z0-9_=+/.-]{1,100}$/;
 /** The store's address that gives a paid package to a valid licence key: https://<store>/api/licensed/<id>/<version>. */

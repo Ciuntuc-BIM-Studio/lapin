@@ -65,7 +65,7 @@ Kataloget oplister også **Python-scripts**. I skrivebordsprogrammet kan du inst
 
 ## Betalte udvidelser
 
-Nogle udvidelser **sælges af deres forfattere** gennem deres egen butik (Lemon Squeezy eller Gumroad). De er markeret **Betalt** i listen med deres pris; prisen er *vejledende*: det er sælgerens pris ved betalingen, der gælder. Lapin Extensions tager ingen provision og er ikke part i salget: sælgeren modtager betalingen, udsteder fakturaen og håndterer refusioner efter de vilkår, som **Sælgerens vilkår** åbner.
+Nogle udvidelser **sælges af deres forfattere** gennem deres egen butik (i dag Gumroad). De er markeret **Betalt** i listen med deres pris; prisen er *vejledende*: det er sælgerens pris ved betalingen, der gælder. Lapin Extensions tager ingen provision og er ikke part i salget: sælgeren modtager betalingen, udsteder fakturaen og håndterer refusioner efter de vilkår, som **Sælgerens vilkår** åbner.
 
 ![Detaljerne for en betalt udvidelse: solgt af forfatteren, Køb, licensnøglen](shots/extensions-paid.webp)
 

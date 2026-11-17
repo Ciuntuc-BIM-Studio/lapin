@@ -65,7 +65,7 @@ El catálogo también incluye **scripts de Python**. En la aplicación de escrit
 
 ## Extensiones de pago
 
-Algunas extensiones las **venden sus autores** en su propia tienda (Lemon Squeezy o Gumroad). Aparecen como **De pago** en la lista, con su precio; el precio es *orientativo*: el que cuenta es el del vendedor, al pagar. Lapin Extensions no cobra comisión y no es parte de la venta: el vendedor cobra el pago, emite la factura y gestiona los reembolsos, según las condiciones que abre **Condiciones del vendedor**.
+Algunas extensiones las **venden sus autores** en su propia tienda (hoy Gumroad). Aparecen como **De pago** en la lista, con su precio; el precio es *orientativo*: el que cuenta es el del vendedor, al pagar. Lapin Extensions no cobra comisión y no es parte de la venta: el vendedor cobra el pago, emite la factura y gestiona los reembolsos, según las condiciones que abre **Condiciones del vendedor**.
 
 ![Los detalles de una extensión de pago: la vende su autor, Comprar, la clave de licencia](shots/extensions-paid.webp)
 
