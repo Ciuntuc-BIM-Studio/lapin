@@ -1,5 +1,6 @@
 using Lapin.Alignments;
 using Lapin.Geometry;
+using Xunit.Abstractions;
 
 namespace Lapin.Engine.Tests;
 
@@ -119,17 +120,34 @@ public class RealignmentTests
         Assert.Equal(fit.Pis[1].Radius, h.Pis[i].Radius, 0);
     }
 
-    [Fact]
-    public void Five_kilometres_with_five_curves_are_realigned_in_seconds()
+    /// <summary>
+    /// 5 km with five curves (some 10,700 points) realigned in seconds, checked by the work it takes rather than by a
+    /// limit in seconds that a loaded machine broke (43 s in a full parallel run, 5 s alone; #81): the steps of the
+    /// least squares, counted (24 across and 34 up when written), and the time against the 1 km design's (one curve,
+    /// some 1,900 points) taken in the same run, each at its best of two (about 32×; a derivative taken over the whole
+    /// line instead of its PI's reach, or steps that multiply, go well past the margin). Run apart from the parallel
+    /// tests (<see cref="Scaling.Serial"/>).
+    /// </summary>
+    [Collection(Scaling.Serial)]
+    public class Timing(ITestOutputHelper output)
     {
-        List<AlignmentPi> line = [new(0, 0), new(800, 0, 900, 60, 60), new(1600, 400, 1200, 80, 80), new(2500, 450, 800, 60, 60), new(3200, 100, 1500, 50, 50), new(4200, 300, 1000, 60, 60), new(5000, 900)];
-        var measured = Worn(line);
-        var clock = System.Diagnostics.Stopwatch.StartNew();
-        var (pis, h, v) = Run(measured, new RealignOptions());
-        clock.Stop();
-        Assert.True(clock.Elapsed.TotalSeconds < 30, $"{clock.Elapsed.TotalSeconds:0.0} s for {measured.Count} points");
-        Assert.Equal(7, pis.Count);
-        Assert.Equal(0, h.MaxExcess, 3);
-        Assert.Equal(0, v.MaxExcess, 3);
+        [Fact]
+        public void Five_kilometres_with_five_curves_are_realigned_in_seconds()
+        {
+            List<AlignmentPi> line = [new(0, 0), new(800, 0, 900, 60, 60), new(1600, 400, 1200, 80, 80), new(2500, 450, 800, 60, 60), new(3200, 100, 1500, 50, 50), new(4200, 300, 1000, 60, 60), new(5000, 900)];
+            var measured = Worn(line);
+            var baseline = Worn(Design);
+            Run(baseline, new RealignOptions());
+            (List<AlignmentPi> Pis, Realignment.HorizontalResult H, Realignment.VerticalResult V)? got = null;
+            var best = Scaling.Best(2, () => Run(baseline, new RealignOptions()), () => got = Run(measured, new RealignOptions()));
+            var (pis, h, v) = got!.Value;
+            var ratio = best[1] / best[0];
+            output.WriteLine($"{baseline.Count} points {best[0]:0} ms, {measured.Count} points {best[1]:0} ms, ratio {ratio:0.0}; steps {h.Iterations} across, {v.Iterations} up");
+            Assert.True(h.Iterations <= 40 && v.Iterations <= 60, $"{h.Iterations} steps across, {v.Iterations} up");
+            Assert.True(ratio < 100, $"{measured.Count} points took {best[1]:0} ms, {ratio:0}× the {best[0]:0} ms of {baseline.Count}");
+            Assert.Equal(7, pis.Count);
+            Assert.Equal(0, h.MaxExcess, 3);
+            Assert.Equal(0, v.MaxExcess, 3);
+        }
     }
 }

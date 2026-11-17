@@ -13,6 +13,8 @@ Lapin merge în două locuri:
 - **Pe calculatorul tău.** Aplicația desktop pentru Windows, macOS și Linux e cea mai rapidă. Se actualizează singură.
 - **În browser.** [lapinbim.com/app](https://lapinbim.com/app/) rulează aceeași aplicație fără să instalezi nimic. E puțin mai lentă.
 
+Aplicația desktop se descarcă de pe [lapinbim.com/ro/download](https://lapinbim.com/ro/download/); aceleași fișiere sunt și pe [GitHub Releases](https://github.com/Ciuntuc-BIM-Studio/lapin/releases). Pe Linux, pachetul `.deb` pune Lapin în meniul de aplicații (la Grafică), cu o iconiță pe care tema ta de iconițe o poate înlocui, și deschide proiectele `.lapin` cu dublu clic. AppImage-ul are aceeași intrare de meniu, pentru programele care pun AppImage-urile în meniu (AppImageLauncher, Gear Lever).
+
 ![Fereastra Lapin cu o casă mică în planul parterului](shots/workspace.webp)
 
 > Imaginile din ghid sunt luate din Lapin la fiecare versiune publicată, așa că arată aplicația cum este azi.

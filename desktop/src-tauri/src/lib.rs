@@ -253,10 +253,13 @@ fn user_settings_write(
     write_atomic(&path, &text).map_err(|e| e.to_string())
 }
 
-/// The file this instance was started for (LAPIN_OPEN), if any: a project, an IFC or a DXF that exists.
+/// The file this instance was started for (LAPIN_OPEN, else the first argument: a file opened from the file manager
+/// through the Linux desktop entry's `Exec=… %f`), if any: a project, an IFC or a DXF that exists.
 #[tauri::command]
 fn startup_file() -> Option<String> {
-    std::env::var("LAPIN_OPEN").ok().filter(|p| !p.is_empty() && file_of_kind(p, PROJECT_FILES, "projects").is_ok())
+    std::env::var("LAPIN_OPEN").ok().filter(|p| !p.is_empty())
+        .or_else(|| std::env::args().nth(1))
+        .filter(|p| file_of_kind(p, PROJECT_FILES, "projects").is_ok())
 }
 
 /// A folder shown in the system's file manager (the project folder an issue went into: Manage → Project folder), or a
