@@ -123,4 +123,17 @@ public class SolidHatchColourTests
         Assert.Contains(pens, p => p.Layer == PenLayer.Fill && p.Fill == Yellow);
         Assert.Contains(pens, p => p.Layer == PenLayer.Hatch && p.Stroke == "#000000" && p.Segments.Count > 0);
     }
+
+    [Fact]
+    public void A_solid_hatch_takes_the_material_s_hatch_colour_over_its_fill_and_its_opacity()
+    {
+        // Decision 670: the hatch's own colour wins over the fill a solid is otherwise drawn in, at the hatch's opacity.
+        var (f, _) = InsulatedWall();
+        Graphics(f, Material(f, "Mineral wool"), "section", new JsonObject { ["hatchColor"] = "#ff8800", ["hatchOpacity"] = 50 });
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        Assert.Equal(["#ff880080"], Solids(Render(f, plan).Pens));
+        // Halftone alone on a solid with a fill: the fill washed halfway to white.
+        Graphics(f, Material(f, "Mineral wool"), "section", new JsonObject { ["hatchColor"] = null, ["hatchOpacity"] = null, ["halftone"] = true });
+        Assert.Equal([HexColor.Mix(Yellow, 0.5)], Solids(Render(f, plan).Pens));
+    }
 }

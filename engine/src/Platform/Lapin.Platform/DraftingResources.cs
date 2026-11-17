@@ -35,7 +35,48 @@ public static class DraftingResources
 
     static Entity Project(ICommandContext ctx) => Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
 
-    static readonly HashSet<string> GraphicsFields = ["hatch", "hatchScale", "fill", "hatchPen", "hatchAngle", "hatchAlign"];
+    static readonly HashSet<string> GraphicsFields = ["hatch", "hatchScale", "fill", "hatchPen", "hatchAngle", "hatchAlign", .. ViewGraphics.FlexFields, "reset"];
+
+    /// <summary>The fields a null takes back to the default (not given): all but hatch and fill, whose null is an explicit none.</summary>
+    static bool NullResets(string field) => field is not ("hatch" or "fill");
+
+    static readonly HashSet<string> BackgroundFields = ["hatch", "hatchScale", "hatchAngle", "hatchColor", "hatchWeight"];
+    static readonly HashSet<string> LineFields = ["color", "weight", "lineType"];
+
+    /// <summary>A colour as a material's graphics take it: #rrggbb.</summary>
+    static string Colour(JsonNode? v, string where, string what) =>
+        (string?)v is { } c && HexColor.IsColour(c) ? c.ToLowerInvariant() : throw new CommandException($"{where}: {what} is a colour (#rrggbb).");
+
+    /// <summary>A line weight in paper millimetres: 0.05 to 5 (the ISO series 0.13–1.0, or any value between).</summary>
+    static double Weight(JsonNode? v, string where, string what) =>
+        Json.Number(v) is { } w && double.IsFinite(w) && w >= 0.05 && w <= 5 ? Math.Round(w, 3) : throw new CommandException($"{where}: {what} is a line weight in mm, 0.05 to 5.");
+
+    /// <summary>An opacity in percent, 0 to 100.</summary>
+    static double Opacity(JsonNode? v, string where, string what) =>
+        Json.Number(v) is { } o && double.IsFinite(o) && o >= 0 && o <= 100 ? o : throw new CommandException($"{where}: {what} is a percentage, 0 to 100.");
+
+    /// <summary>A line type of the project's standards or a built-in one (continuous, dashed, dotted…), as the book names it.</summary>
+    static string LineType(IModelView m, JsonNode? v, string where)
+    {
+        var name = (string?)v ?? "";
+        return Standards.LineTypeNames(Book(m)).FirstOrDefault(n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase))
+            ?? throw new CommandException($"{where}: there is no line type „{name}”.");
+    }
+
+    /// <summary>A material's line (cutLine, separatorLine): {color, weight, lineType}, each checked; a null field is left out (the Object styles').</summary>
+    static JsonObject? CheckLine(IModelView m, JsonNode? v, string where, string what)
+    {
+        if (v is null) return null;
+        if (v is not JsonObject o) throw new CommandException($"{where}: {what} is {{color, weight, lineType}}.");
+        var r = new JsonObject();
+        foreach (var (k, x) in o)
+        {
+            if (!LineFields.Contains(k)) throw new CommandException($"{where}: „{k}” is not a field of {what} (color, weight, lineType).");
+            if (x is null) continue;
+            r[k] = k switch { "color" => Colour(x, where, what + "'s colour"), "weight" => Weight(x, where, what + "'s weight"), _ => LineType(m, x, where) };
+        }
+        return r.Count > 0 ? r : null;
+    }
 
     /// <summary>A view's graphics checked: a known pattern (or null for none), a positive scale, a colour (or "material"), a pen 1–16.</summary>
     static JsonObject CheckGraphics(IModelView m, JsonObject g, string where)
@@ -44,6 +85,8 @@ public static class DraftingResources
         foreach (var (k, v) in g)
         {
             if (!GraphicsFields.Contains(k)) throw new CommandException($"{where}: „{k}” is not a material graphic.");
+            // Null takes a field back to its default (decision 670), but for hatch and fill, where it is "none".
+            if (v is null && NullResets(k)) { o[k] = null; continue; }
             switch (k)
             {
                 case "hatch":
@@ -67,6 +110,42 @@ public static class DraftingResources
                     break;
                 case "hatchAlign":
                     o[k] = (string?)v is { } al && HatchAlign.All.Contains(al) ? al : throw new CommandException($"{where}: a hatch aligns to the \"view\" or to the \"layer\".");
+                    break;
+                // Decision 670: the hatch's own colour, weight, line type, opacity and halftone; the fill's opacity; a background hatch; the material's lines.
+                case "hatchColor": o[k] = Colour(v, where, "a hatch colour"); break;
+                case "hatchWeight": o[k] = Weight(v, where, "a hatch weight"); break;
+                case "hatchLineType": o[k] = LineType(m, v, where); break;
+                case "hatchOpacity": o[k] = Opacity(v, where, "a hatch's opacity"); break;
+                case "fillOpacity": o[k] = Opacity(v, where, "a fill's opacity"); break;
+                case "halftone":
+                    o[k] = v is JsonValue hv && hv.TryGetValue<bool>(out var ht) ? ht : throw new CommandException($"{where}: halftone is true or false.");
+                    break;
+                case "backgroundHatch":
+                {
+                    if (v is not JsonObject bg) throw new CommandException($"{where}: a background hatch is {{hatch, hatchScale, hatchAngle, hatchColor, hatchWeight}}.");
+                    var b = new JsonObject();
+                    foreach (var (bk, bv) in bg)
+                    {
+                        if (!BackgroundFields.Contains(bk)) throw new CommandException($"{where}: „{bk}” is not a field of a background hatch.");
+                        if (bv is null || (bk == "hatch" && (string?)bv is "")) continue;
+                        b[bk] = bk switch
+                        {
+                            "hatch" => HatchLibrary.Find((string)bv!, Patterns(m))?.Name ?? throw new CommandException($"There is no hatch pattern „{(string?)bv}”."),
+                            "hatchScale" => Json.Number(bv) is { } bs && bs > 0 && double.IsFinite(bs) ? bs : throw new CommandException($"{where}: the background hatch's scale must be positive."),
+                            "hatchAngle" => Json.Number(bv) is { } ba && double.IsFinite(ba) ? ba : throw new CommandException($"{where}: the background hatch's angle is in degrees."),
+                            "hatchColor" => Colour(bv, where, "the background hatch's colour"),
+                            _ => Weight(bv, where, "the background hatch's weight"),
+                        };
+                    }
+                    // Without a pattern it draws nothing: none kept.
+                    o[k] = b.ContainsKey("hatch") ? b : null;
+                    break;
+                }
+                case "cutLine": case "separatorLine": o[k] = CheckLine(m, v, where, k == "cutLine" ? "a cut line" : "a separator line"); break;
+                case "reset":
+                    if (v is not JsonArray fields || fields.Any(f => (string?)f is not { } fs || fs == "reset" || !GraphicsFields.Contains(fs)))
+                        throw new CommandException($"{where}: reset lists the fields to take back to their default ({string.Join(", ", GraphicsFields.Where(f => f != "reset"))}).");
+                    o[k] = v.DeepClone();
                     break;
             }
         }
@@ -164,10 +243,62 @@ public static class DraftingResources
             // Fields merge into what the view had (replace: they are all it has); a field set to null is "none" (hatch, fill).
             var replace = a["replace"] is JsonValue rv && rv.TryGetValue<bool>(out var rb) && rb;
             var merged = !replace && attrs[kind] as JsonObject is { } had ? (JsonObject)had.DeepClone() : new JsonObject();
-            foreach (var (k, v) in CheckGraphics(ctx.Model, g, mat.Name)) merged[k] = v?.DeepClone();
+            var checkedGraphics = CheckGraphics(ctx.Model, g, mat.Name);
+            // "reset": [fields] takes those back to the default first (hatch and fill to what the name suggests); a null does the same for any other field.
+            if (checkedGraphics["reset"] is JsonArray reset) foreach (var f in reset) merged.Remove((string)f!);
+            foreach (var (k, v) in checkedGraphics)
+            {
+                if (k == "reset") continue;
+                if (v is null && NullResets(k)) merged.Remove(k);
+                else merged[k] = v?.DeepClone();
+            }
             if (merged.Count > 0) attrs[kind] = merged; else attrs.Remove(kind);
         }
         return mat.With(name: ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : null, attrs: attrs);
+    }
+
+    /// <summary>The sample a material's graphics draw (material.preview, decision 670).</summary>
+    public static JsonObject Preview(IQueryContext q, JsonObject a)
+    {
+        var kind = (string?)a["kind"] ?? "section";
+        if (!MaterialGraphics.Kinds.Contains(kind)) throw new CommandException($"A kind of view is {string.Join(", ", MaterialGraphics.Kinds)}.");
+        var scale = Json.Number(a["scale"]) ?? 50;
+        if (!(scale >= 1 && scale <= 10000)) throw new CommandException("A scale is 1 to 10000.");
+        var width = Json.Number(a["width"]) ?? 60;
+        var height = Json.Number(a["height"]) ?? 15;
+        if (!(width >= 5 && width <= 500 && height >= 1 && height <= 200)) throw new CommandException("A sample is 5–500 mm wide and 1–200 mm high.");
+        var layout = (string?)a["layout"] ?? "strip";
+        if (layout is not ("strip" or "band")) throw new CommandException("A sample's layout is strip or band.");
+        var mat = (string?)a["id"] is { Length: > 0 } id ? Spatial.Require(q.Model, id, IfcClass.Material)
+            : new Entity("preview", IfcClass.Material, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : "Sample", []);
+        if (a["graphics"] is JsonObject draft)
+        {
+            var attrs = mat.CloneAttrs();
+            var merged = attrs[kind] as JsonObject is { } had ? (JsonObject)had.DeepClone() : new JsonObject();
+            var checkedGraphics = CheckGraphics(q.Model, draft, mat.Name);
+            if (checkedGraphics["reset"] is JsonArray reset) foreach (var f in reset) merged.Remove((string)f!);
+            foreach (var (k, v) in checkedGraphics)
+            {
+                if (k == "reset") continue;
+                if (v is null && NullResets(k)) merged.Remove(k); else merged[k] = v?.DeepClone();
+            }
+            attrs[kind] = merged;
+            if (a["color"] is JsonValue c && (string?)c is { } cs && HexColor.IsColour(cs)) attrs["color"] = cs;
+            mat = mat.With(attrs: attrs);
+        }
+        var look = MaterialGraphics.Resolve(mat, kind);
+        var book = Book(q.Model);
+        var project = Spatial.Project(q.Model);
+        var options = new Lapin.Drawing.Views.Pens.Options(scale, Patterns: Patterns(q.Model), Table: LineStyles.ReadTable(project?.Attrs["penTable"]), LineTypes: book.LineTypes,
+            LineStyle: LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, null, null, LineStyles.ReadTable(project?.Attrs["penTable"]), scale, book.LineTypes));
+        var (pens, bounds) = Lapin.Drawing.Views.MaterialSample.Draw(look, kind, scale, width, height, layout == "strip", options);
+        return new JsonObject
+        {
+            ["kind"] = kind, ["scale"] = scale, ["lineCap"] = book.LineCap, ["layout"] = layout,
+            ["pens"] = new JsonArray(pens.Select(p => (JsonNode)p.ToJson()).ToArray()),
+            ["bounds"] = new JsonArray(bounds.Min.X, bounds.Min.Y, bounds.Max.X, bounds.Max.Y),
+            ["resolved"] = look.ToJson(),
+        };
     }
 
     /// <summary>A name no material has: the one asked for, else with a number after it.</summary>
@@ -309,9 +440,24 @@ public static class DraftingResources
 
         // One step: the colour, transparency, category, membrane and joints, each kind of view's graphics (null: back to the name / the section),
         // and its data as material.setData takes it (description, params, measure).
+        // With ids (decision 670): the same change on several materials at once, one undo step (copying one material's graphics onto others); no renaming then.
         r.Command("material.update", "Change material", (ctx, a) =>
         {
-            var mat = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Material);
+            if (a["ids"] is JsonArray many)
+            {
+                if (a.ContainsKey("id")) throw new CommandException("Give id or ids, not both.");
+                if (a.ContainsKey("name")) throw new CommandException("Several materials cannot take one name.");
+                var ids = many.Select(x => (string?)x).Distinct().ToList();
+                if (ids.Count == 0) throw new CommandException("No material to change.");
+                foreach (var id in ids) Update(ctx, Spatial.Require(ctx.Model, id, IfcClass.Material), a);
+                return new JsonObject { ["changed"] = ids.Count };
+            }
+            Update(ctx, Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Material), a);
+            return null;
+        });
+
+        static void Update(ICommandContext ctx, Entity mat, JsonObject a)
+        {
             if (((string?)a["name"])?.Trim() is { Length: > 0 } n && !string.Equals(n, mat.Name, StringComparison.OrdinalIgnoreCase) && Materials.Find(ctx.Model, n) != null)
                 throw new CommandException($"There is already a material „{n}”.");
             var renamed = ((string?)a["name"])?.Trim() is { Length: > 0 } nn && nn != mat.Name ? nn : null;
@@ -320,8 +466,13 @@ public static class DraftingResources
             if (MaterialGraphics.JoinsOf(mat) != MaterialGraphics.JoinsOf(updated)) Rejoin(ctx, updated.Id, MaterialGraphics.JoinsOf(updated));
             // A material named elsewhere by its name (a door's frame, a sill, a zone) follows the new name.
             if (renamed != null) Rename(ctx, mat.Name, renamed, mat.Id);
-            return null;
-        });
+        }
+
+        // What a material draws like, on a sample drawn by the drawings' own path (decision 670): the configurator's preview.
+        // {id?, graphics?, kind (section|plan|elevation), scale, width?, height? (paper mm), layout? (strip|band)}: the material's
+        // graphics with the unsaved ones (graphics, checked as material.update checks a kind's) over them; the pens as view.drawing
+        // gives them (view metres, y up), their bounds, the scale.
+        r.Query("material.preview", (q, a) => Preview(q, a));
 
         // What the material says of itself (docs/plan-buildup-tags.md), in one step: its description (text, several lines), its
         // parameters ([{name, kind, value, pset?, options?}] as element.setParam checks them; a standard set's only with its own

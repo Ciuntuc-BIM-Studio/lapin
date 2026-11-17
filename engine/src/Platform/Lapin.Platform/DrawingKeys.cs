@@ -43,7 +43,9 @@ public static class DrawingKeys
     // ------------------------------------------------------------ the legend
 
     /// <summary>One row of a legend: its name, and what its swatch shows (a fill, a hatch, or a line).</summary>
-    public sealed record Entry(string Name, string? Fill = null, string? Hatch = null, double HatchScale = 1, double HatchAngle = 0, string? Stroke = null, double Width = 0, double[]? Dash = null);
+    /// <param name="Look">A material's graphics, which its swatch is drawn with (decision 670: its hatch colour and weight, background hatch, fill opacity).</param>
+    public sealed record Entry(string Name, string? Fill = null, string? Hatch = null, double HatchScale = 1, double HatchAngle = 0, string? Stroke = null, double Width = 0, double[]? Dash = null,
+        ResolvedMaterial? Look = null);
 
     /// <summary>What a legend lists: the materials the sheet's views cut, by name; or the lines they draw (role, type and width).</summary>
     public static List<Entry> Entries(IQueryContext q, Entity view, string kind, string? lang = null)
@@ -79,7 +81,7 @@ public static class DrawingKeys
                 {
                     var r = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, look) : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, look, id);
                     if (r == null || r.Membrane || o.ContainsKey(r.Name)) continue;
-                    o[r.Name] = new Entry(r.Name, r.Fill, r.Hatch, r.HatchScale <= 0 ? 1 : r.HatchScale, r.HatchAngle);
+                    o[r.Name] = new Entry(r.Name, r.Fill, r.Hatch, r.HatchScale <= 0 ? 1 : r.HatchScale, r.HatchAngle, Look: r);
                 }
             }
         }
@@ -132,15 +134,12 @@ public static class DrawingKeys
             }
             else
             {
-                if (r.Fill != null) mk.Fills.Add(([box], r.Fill));
-                if (r.Hatch is { } hn && HatchLibrary.Find(hn, patterns) is { } pattern)
+                // The swatch drawn as the drawings draw the material (MaterialSample): its fill, background hatch and hatch.
+                var look = r.Look ?? new ResolvedMaterial(r.Name, r.Hatch, r.HatchScale, r.Fill, null, false, false, null, "own", r.HatchAngle);
+                foreach (var pen in MaterialSample.Swatch(look, box, mm, patterns))
                 {
-                    if (pattern.Solid) mk.Fills.Add(([box], "#000000"));
-                    else
-                    {
-                        var (segs, _) = HatchFill.Segments([box], pattern, new HatchOptions(r.HatchScale * mm, r.HatchAngle, new Vec2(x0, y0), 4000));
-                        foreach (var s in segs) mk.Line(s.A, s.B, "LEGEND", Pens.Default.Hatch);
-                    }
+                    if (pen.Fill != null && pen.Loops.Count > 0) mk.Fills.Add((pen.Loops, pen.Fill));
+                    if (pen.Stroke != null) foreach (var (a, b) in pen.Segments) mk.Line(a, b, "LEGEND", pen.Width, pen.Stroke, pen.Dash);
                 }
                 mk.Polyline(box, true, "LEGEND", 0.18);
             }

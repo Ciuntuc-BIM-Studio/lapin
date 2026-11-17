@@ -6,13 +6,91 @@ using Lapin.Model;
 
 namespace Lapin.Drawing;
 
-/// <summary>A material as one kind of view draws it: a hatch (a pattern name, or none), its scale, a fill colour, a hatch pen.</summary>
+/// <summary>
+/// A line a material sets for itself in a kind of view (decision 670): its colour (#rrggbb), weight (paper mm) and line
+/// type (a project's or a built-in one's name); a field left out keeps what the view's Object styles give.
+/// </summary>
+public sealed record MaterialLine(string? Color = null, double? Weight = null, string? LineType = null)
+{
+    public bool Empty => Color == null && Weight == null && LineType == null;
+
+    public static MaterialLine? From(JsonNode? n) => n is JsonObject o && new MaterialLine(HexColor.Read(o["color"], null), Lapin.Model.Json.Number(o["weight"]) is { } w && w > 0 ? w : null,
+        (string?)o["lineType"] is { Length: > 0 } lt ? lt : null) is { Empty: false } l ? l : null;
+
+    /// <summary>Field by field: <paramref name="over"/>'s, else this one's.</summary>
+    public MaterialLine? Over(MaterialLine? over) => over == null ? this : new MaterialLine(over.Color ?? Color, over.Weight ?? Weight, over.LineType ?? LineType);
+
+    public JsonObject ToJson()
+    {
+        var o = new JsonObject();
+        if (Color != null) o["color"] = Color;
+        if (Weight is { } w) o["weight"] = w;
+        if (LineType != null) o["lineType"] = LineType;
+        return o;
+    }
+}
+
+/// <summary>
+/// A second hatch drawn under a material's own (decision 670, Revit's background pattern): its pattern, scale, angle,
+/// colour (#rrggbb, ink when unset) and line weight (paper mm, the hatch pen when unset).
+/// </summary>
+public sealed record BackgroundHatch(string? Hatch = null, double? HatchScale = null, double? HatchAngle = null, string? HatchColor = null, double? HatchWeight = null)
+{
+    public static BackgroundHatch? From(JsonNode? n) => n is JsonObject o
+        ? new BackgroundHatch((string?)o["hatch"] is { Length: > 0 } h ? h : null, Lapin.Model.Json.Number(o["hatchScale"]) is { } s && s > 0 ? s : null, Lapin.Model.Json.Number(o["hatchAngle"]),
+            HexColor.Read(o["hatchColor"], null), Lapin.Model.Json.Number(o["hatchWeight"]) is { } w && w > 0 ? w : null)
+        : null;
+
+    public BackgroundHatch Over(BackgroundHatch? over) => over == null ? this
+        : new BackgroundHatch(over.Hatch ?? Hatch, over.HatchScale ?? HatchScale, over.HatchAngle ?? HatchAngle, over.HatchColor ?? HatchColor, over.HatchWeight ?? HatchWeight);
+
+    public JsonObject ToJson()
+    {
+        var o = new JsonObject { ["hatch"] = Hatch };
+        if (HatchScale is { } s) o["hatchScale"] = s;
+        if (HatchAngle is { } a) o["hatchAngle"] = a;
+        if (HatchColor != null) o["hatchColor"] = HatchColor;
+        if (HatchWeight is { } w) o["hatchWeight"] = w;
+        return o;
+    }
+}
+
+/// <summary>
+/// A material as one kind of view draws it: a hatch (a pattern name, or none), its scale, a fill colour, a hatch pen; and
+/// (decision 670) the hatch's own colour, weight (paper mm, over the pen), line type, opacity (0–100) and halftone, the
+/// fill's opacity, a background hatch under the hatch, and the lines of its cut (<see cref="CutLine"/>: its outline;
+/// <see cref="SeparatorLine"/>: against the neighbouring layers of its element). Null: not given.
+/// </summary>
 public sealed record ViewGraphics(string? Hatch = null, double? HatchScale = null, string? Fill = null, int? HatchPen = null, double? HatchAngle = null, string? HatchAlign = null)
 {
+    public string? HatchColor { get; init; }
+    public double? HatchWeight { get; init; }
+    public string? HatchLineType { get; init; }
+    public double? HatchOpacity { get; init; }
+    public bool? Halftone { get; init; }
+    public double? FillOpacity { get; init; }
+    public BackgroundHatch? BackgroundHatch { get; init; }
+    public MaterialLine? CutLine { get; init; }
+    public MaterialLine? SeparatorLine { get; init; }
+
+    /// <summary>The fields decision 670 added, beside the first six.</summary>
+    public static readonly string[] FlexFields = ["hatchColor", "hatchWeight", "hatchLineType", "hatchOpacity", "halftone", "fillOpacity", "backgroundHatch", "cutLine", "separatorLine"];
+
     public static ViewGraphics? From(JsonNode? n) => n is JsonObject o
         ? new ViewGraphics(o.ContainsKey("hatch") ? (string?)o["hatch"] ?? "" : null, Lapin.Model.Json.Number(o["hatchScale"]),
             o.ContainsKey("fill") ? (string?)o["fill"] ?? "" : null, Lapin.Model.Json.Number(o["hatchPen"]) is { } p ? (int)p : null,
             Lapin.Model.Json.Number(o["hatchAngle"]), (string?)o["hatchAlign"] is { } al && al is "layer" or "view" ? al : null)
+        {
+            HatchColor = HexColor.Read(o["hatchColor"], null),
+            HatchWeight = Lapin.Model.Json.Number(o["hatchWeight"]) is { } w && w > 0 ? w : null,
+            HatchLineType = (string?)o["hatchLineType"] is { Length: > 0 } lt ? lt : null,
+            HatchOpacity = Lapin.Model.Json.Number(o["hatchOpacity"]) is { } ho ? Math.Clamp(ho, 0, 100) : null,
+            Halftone = o["halftone"] is JsonValue hv && hv.TryGetValue<bool>(out var ht) ? ht : null,
+            FillOpacity = Lapin.Model.Json.Number(o["fillOpacity"]) is { } fo ? Math.Clamp(fo, 0, 100) : null,
+            BackgroundHatch = Lapin.Drawing.BackgroundHatch.From(o["backgroundHatch"]),
+            CutLine = MaterialLine.From(o["cutLine"]),
+            SeparatorLine = MaterialLine.From(o["separatorLine"]),
+        }
         : null;
 }
 
@@ -38,11 +116,52 @@ public sealed record ElementHatch(double? Angle, Vec2? Origin);
 /// <param name="Joins">Whether its elements join others (forum topic 59): off, each keeps its own outline in a drawing, never merged with a neighbour's.</param>
 public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchScale, string? Fill, int? HatchPen, bool Membrane, bool DrawJoints, string? Color, string Source, double HatchAngle = 0, string HatchAlign = HatchAlign.View, bool Joins = true)
 {
+    /// <summary>The hatch's own colour (#rrggbb) over the category's; null: the category's, else ink.</summary>
+    public string? HatchColor { get; init; }
+    /// <summary>The hatch's weight (paper mm) over its pen; null: the pen's, else Lapin's hatch weight.</summary>
+    public double? HatchWeight { get; init; }
+    /// <summary>The hatch's line type (a name); null: continuous.</summary>
+    public string? HatchLineType { get; init; }
+    /// <summary>The hatch's opacity, 0–100; null: opaque.</summary>
+    public double? HatchOpacity { get; init; }
+    /// <summary>The hatch drawn halftone (its colour halfway to white).</summary>
+    public bool Halftone { get; init; }
+    /// <summary>The fill's opacity, 0–100; null: opaque.</summary>
+    public double? FillOpacity { get; init; }
+    /// <summary>A second hatch drawn under the hatch (its pattern known); null: none.</summary>
+    public BackgroundHatch? Background { get; init; }
+    /// <summary>The material's cut outline, over the Object styles' cut lines; null: theirs.</summary>
+    public MaterialLine? CutLine { get; init; }
+    /// <summary>The material's lines against its element's other layers, over the Object styles' layer lines; null: theirs.</summary>
+    public MaterialLine? SeparatorLine { get; init; }
+
+    /// <summary>Whether it sets anything decision 670 added (a drawing of materials that set none is drawn exactly as before).</summary>
+    public bool Flex => HatchColor != null || HatchWeight != null || HatchLineType != null || HatchOpacity != null || Halftone || FillOpacity != null || Background != null || CutLine != null || SeparatorLine != null;
+
+    /// <summary>The colour a hatch of this material is drawn in: its own over <paramref name="fallback"/>, halftone and opacity applied.</summary>
+    public string HatchInk(string fallback) => Ink(HatchColor ?? fallback, Halftone, HatchOpacity);
+
+    /// <summary>A colour washed halfway to white when halftone, given an opacity (0–100) when below full.</summary>
+    public static string Ink(string color, bool halftone, double? opacity)
+    {
+        var c = halftone ? HexColor.Mix(color, 0.5) : color;
+        return opacity is { } o && o < 100 ? HexColor.WithAlpha(c, o / 100) : c;
+    }
+
     public JsonObject ToJson()
     {
         var o = new JsonObject { ["name"] = Name, ["hatch"] = Hatch, ["hatchScale"] = HatchScale, ["fill"] = Fill, ["membrane"] = Membrane, ["drawJoints"] = DrawJoints, ["source"] = Source, ["hatchAngle"] = HatchAngle, ["hatchAlign"] = HatchAlign, ["joins"] = Joins };
         if (HatchPen is { } p) o["hatchPen"] = p;
         if (Color != null) o["color"] = Color;
+        if (HatchColor != null) o["hatchColor"] = HatchColor;
+        if (HatchWeight is { } w) o["hatchWeight"] = w;
+        if (HatchLineType != null) o["hatchLineType"] = HatchLineType;
+        if (HatchOpacity is { } ho) o["hatchOpacity"] = ho;
+        if (Halftone) o["halftone"] = true;
+        if (FillOpacity is { } fo) o["fillOpacity"] = fo;
+        if (Background != null) o["backgroundHatch"] = Background.ToJson();
+        if (CutLine != null) o["cutLine"] = CutLine.ToJson();
+        if (SeparatorLine != null) o["separatorLine"] = SeparatorLine.ToJson();
         return o;
     }
 }
@@ -220,7 +339,14 @@ public static class MaterialGraphics
         (null, null) => null,
         (null, _) => b,
         (_, null) => a,
-        _ => new ViewGraphics(b!.Hatch ?? a!.Hatch, b.HatchScale ?? a!.HatchScale, b.Fill ?? a!.Fill, b.HatchPen ?? a!.HatchPen, b.HatchAngle ?? a!.HatchAngle, b.HatchAlign ?? a!.HatchAlign),
+        _ => new ViewGraphics(b!.Hatch ?? a!.Hatch, b.HatchScale ?? a!.HatchScale, b.Fill ?? a!.Fill, b.HatchPen ?? a!.HatchPen, b.HatchAngle ?? a!.HatchAngle, b.HatchAlign ?? a!.HatchAlign)
+        {
+            HatchColor = b.HatchColor ?? a!.HatchColor, HatchWeight = b.HatchWeight ?? a!.HatchWeight, HatchLineType = b.HatchLineType ?? a!.HatchLineType,
+            HatchOpacity = b.HatchOpacity ?? a!.HatchOpacity, Halftone = b.Halftone ?? a!.Halftone, FillOpacity = b.FillOpacity ?? a!.FillOpacity,
+            BackgroundHatch = a!.BackgroundHatch is { } ab ? ab.Over(b.BackgroundHatch) : b.BackgroundHatch,
+            CutLine = a!.CutLine is { } ac ? ac.Over(b.CutLine) : b.CutLine,
+            SeparatorLine = a!.SeparatorLine is { } asl ? asl.Over(b.SeparatorLine) : b.SeparatorLine,
+        },
     };
 
     /// <summary>The material's graphics in one kind of view: its own fields, else what its name suggests (an elevation: <see cref="ElevationFromName"/>).</summary>
@@ -239,9 +365,19 @@ public static class MaterialGraphics
         var membrane = material?.Attrs["membrane"] is JsonValue mv && mv.TryGetValue<bool>(out var mb) ? mb : guess?.Membrane ?? false;
         if (membrane) hatch = null;
         var joints = material?.Attrs["drawJoints"] is JsonValue jv && jv.TryGetValue<bool>(out var j) && j;
+        // The flexible fields (decision 670): none given, none set, so a material that sets none draws as before.
+        var background = own?.BackgroundHatch is { Hatch: { Length: > 0 } bh } bg ? bg with { Hatch = bh.ToUpperInvariant() } : null;
         return new ResolvedMaterial(name, hatch, own?.HatchScale ?? 1, fill, own?.HatchPen, membrane, joints, color, hasOwn ? "own" : "name", own?.HatchAngle ?? 0, own?.HatchAlign ?? HatchAlign.View,
-            JoinsOf(material));
+            JoinsOf(material))
+        {
+            HatchColor = own?.HatchColor, HatchWeight = own?.HatchWeight, HatchLineType = own?.HatchLineType, HatchOpacity = own?.HatchOpacity is { } ho && ho < 100 ? ho : null,
+            Halftone = own?.Halftone == true, FillOpacity = fill != null && own?.FillOpacity is { } fo && fo < 100 ? fo : null,
+            Background = membrane ? null : background, CutLine = own?.CutLine, SeparatorLine = own?.SeparatorLine,
+        };
     }
+
+    /// <summary>The fill a resolved material lays under its hatch: its colour at its opacity; null: none.</summary>
+    public static string? FillInk(ResolvedMaterial g) => g.Fill is { } f ? (g.FillOpacity is { } o ? HexColor.WithAlpha(f, o / 100) : f) : null;
 
     /// <summary>Whether a material's elements join others (<c>joins</c>, forum topic 59): unless it says no; no material joins.</summary>
     public static bool JoinsOf(Entity? material) => !(material?.Attrs["joins"] is JsonValue v && v.TryGetValue<bool>(out var j) && !j);
@@ -282,19 +418,23 @@ public static class MaterialGraphics
         if (material.Str("color") is { } c) o["color"] = c;
         if (material.Attrs["transparency"] is { } t) o["transparency"] = t.DeepClone();
         var hatches = new JsonObject();
-        JsonObject? HatchOf(ViewGraphics? g)
+        // Its hatch, fill and (decision 670) the hatch's colour and weight and a background hatch, as IfcFillAreaStyle carries them.
+        JsonObject? HatchOf(ResolvedMaterial g)
         {
-            if (g == null || (string.IsNullOrEmpty(g.Hatch) && string.IsNullOrEmpty(g.Fill))) return null;
+            if (string.IsNullOrEmpty(g.Hatch) && string.IsNullOrEmpty(g.Fill) && g.Background == null) return null;
             var h = new JsonObject();
             if (!string.IsNullOrEmpty(g.Hatch)) h["pattern"] = g.Hatch.ToUpperInvariant();
-            if (!string.IsNullOrEmpty(g.Hatch) && g.HatchScale is { } s && s != 1) h["scale"] = s;
+            if (!string.IsNullOrEmpty(g.Hatch) && g.HatchScale != 1) h["scale"] = g.HatchScale;
             if (!string.IsNullOrEmpty(g.Fill)) h["background"] = g.Fill;
+            if (g.HatchColor != null) h["color"] = g.HatchColor;
+            if (g.HatchWeight is { } w) h["weight"] = w;
+            if (g.Background is { } bg) h["backgroundHatch"] = bg.ToJson();
             return h;
         }
         var section = Resolve(material, "section");
-        if (!section.Membrane && HatchOf(new ViewGraphics(section.Hatch, section.HatchScale, section.Fill)) is { } sh) hatches["section"] = sh;
-        if (a.ContainsKey("plan") && Resolve(material, "plan") is var plan && HatchOf(new ViewGraphics(plan.Hatch, plan.HatchScale, plan.Fill)) is { } ph) hatches["plan"] = ph;
-        if (a.ContainsKey("elevation") && Resolve(material, "elevation") is var el && HatchOf(new ViewGraphics(el.Hatch, el.HatchScale, el.Fill)) is { } eh) hatches["elevation"] = eh;
+        if (!section.Membrane && HatchOf(section) is { } sh) hatches["section"] = sh;
+        if (a.ContainsKey("plan") && Resolve(material, "plan") is var plan && HatchOf(plan) is { } ph) hatches["plan"] = ph;
+        if (a.ContainsKey("elevation") && Resolve(material, "elevation") is var el && HatchOf(el) is { } eh) hatches["elevation"] = eh;
         if (hatches.Count > 0) o["hatches"] = hatches;
         return o;
     }

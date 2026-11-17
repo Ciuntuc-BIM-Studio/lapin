@@ -64,6 +64,9 @@ public static partial class IfcExport
 {
     // Lapin's own sets: no "Pset_" prefix, which IFC keeps for the sets its specification declares (IfcPropertySet).
     public const string IntentSetName = "Lapin_Intent";
+
+    /// <summary>The names of a material's IfcFillAreaStyle for each kind of view (decision 670), which the import reads back.</summary>
+    public static readonly IReadOnlyDictionary<string, string> FillAreaStyleNames = new Dictionary<string, string> { ["section"] = "Section hatch", ["plan"] = "Plan hatch", ["elevation"] = "Elevation hatch" };
     /// <summary>A provision opening's set (decision 293): the run that cut it, its shape and size.</summary>
     public const string ProvisionSetName = "Lapin_ProvisionOpening";
     public const string PhaseSetName = "Lapin_Phase";
@@ -1453,9 +1456,46 @@ public static partial class IfcExport
             foreach (var (set, props) in sets)
                 f.Add("IFCMATERIALPROPERTIES", S(set), Null, L(props.Select(p => Single(p.Name, p.Value, sources?.GetValueOrDefault((set, p.Name)))).ToArray()), r);
             var style = Style(MaterialKey + id);
+            // Its drawing graphics set by hand (decision 670): an IfcFillAreaStyle per kind of view beside its surface style.
+            string[] looks = [style, .. mat != null ? FillAreaStyles(mat) : []];
             f.Add("IFCMATERIALDEFINITIONREPRESENTATION", Null, Null,
-                L(new[] { f.Add("IFCSTYLEDREPRESENTATION", model, Null, Null, L(new[] { f.Add("IFCSTYLEDITEM", Null, L(new[] { style }), Null) })) }), r);
+                L(new[] { f.Add("IFCSTYLEDREPRESENTATION", model, Null, Null, L(new[] { f.Add("IFCSTYLEDITEM", Null, L(looks), Null) })) }), r);
             return r;
+        }
+
+        /// <summary>
+        /// A material's drawing graphics as IFC says them (decision 670), only for a material that sets its own (one drawn
+        /// as its name suggests writes none, so its file is as before): an IfcFillAreaStyle per kind of view it sets, named
+        /// after the kind (<see cref="FillAreaStyleNames"/>), draughting, holding its fill as an IfcColourRgb, then its
+        /// background hatch and its hatch, each an IfcFillAreaStyleHatching whose IfcCurveStyle is named after the pattern
+        /// (the background's „Background PATTERN”) and carries its colour and width (paper metres), its line spacing and
+        /// angle the pattern's first line family's at its scale. A reader that knows Lapin's patterns reads the names back.
+        /// </summary>
+        List<string> FillAreaStyles(Entity mat)
+        {
+            var o = new List<string>();
+            var patterns = Lapin.Platform.DraftingResources.Patterns(m);
+            string Colour(string hex) { var (r, g, b) = HexColor.Unit(hex); return f.Add("IFCCOLOURRGB", Null, R(r), R(g), R(b)); }
+            string? Hatching(string? name, string curveName, double scale, double angleDeg, string? color, double weight)
+            {
+                if (name == null || Lapin.Drawing.Hatch.HatchLibrary.Find(name, patterns) is not { Solid: false } p || p.Families.Count == 0) return null;
+                var fam = p.Families[0];
+                var curve = f.Add("IFCCURVESTYLE", S(curveName), Null, Typed("IFCPOSITIVELENGTHMEASURE", R(weight / 1000)), Colour(color ?? "#000000"), False);
+                var spacing = Math.Max(1e-6, Math.Abs(fam.DeltaY) * scale / 1000);
+                return f.Add("IFCFILLAREASTYLEHATCHING", curve, Typed("IFCPOSITIVELENGTHMEASURE", R(spacing)), Null, Null, R((fam.AngleDeg + angleDeg) * Math.PI / 180));
+            }
+            foreach (var kind in Lapin.Drawing.MaterialGraphics.Kinds)
+            {
+                if (mat.Attrs[kind] is not JsonObject) continue;
+                var g = Lapin.Drawing.MaterialGraphics.Resolve(mat, kind);
+                if (g.Membrane) continue;
+                var fills = new List<string>();
+                if (g.Fill is { } fill) fills.Add(Colour(fill));
+                if (g.Background is { } bg && Hatching(bg.Hatch, "Background " + bg.Hatch, bg.HatchScale ?? g.HatchScale, bg.HatchAngle ?? 0, bg.HatchColor, bg.HatchWeight ?? Lapin.Drawing.Views.Pens.Default.Hatch) is { } bh) fills.Add(bh);
+                if (Hatching(g.Hatch, g.Hatch ?? "", g.HatchScale, g.HatchAngle, g.HatchColor, g.HatchWeight ?? Lapin.Drawing.Views.Pens.Default.Hatch) is { } fh) fills.Add(fh);
+                if (fills.Count > 0) o.Add(f.Add("IFCFILLAREASTYLE", S(FillAreaStyleNames[kind]), L(fills.ToArray()), False));
+            }
+            return o;
         }
 
         /// <summary>

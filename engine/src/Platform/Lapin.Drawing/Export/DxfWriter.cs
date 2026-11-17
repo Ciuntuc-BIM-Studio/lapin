@@ -91,6 +91,8 @@ public sealed class DxfWriter(double patternScale)
         var lt = LineType(dash);
         if (dash != null && lt != l.LineType) { yield return "6"; yield return lt; }
         if (width is { } w && LineWeight(w) != l.Weight) { yield return "370"; yield return LineWeight(w).ToString(CultureInfo.InvariantCulture); }
+        // A colour with an opacity (#rrggbbaa: a material's hatch or fill at an opacity, decision 670) as the entity's transparency: its alpha byte.
+        if (color != null && HexColor.Alpha(color) is var alpha && alpha < 0.999) { yield return "440"; yield return (0x02000000 | (int)Math.Round(alpha * 255)).ToString(CultureInfo.InvariantCulture); }
     }
 
     void Head(string kind, string layer, string? color = null, double? width = null, double[]? dash = null) =>

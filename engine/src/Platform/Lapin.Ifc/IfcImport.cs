@@ -677,6 +677,14 @@ public static partial class IfcImport
                         found = found.With(attrs: a);
                         edit.Replace(found);
                     }
+                    // Its drawing graphics from its IfcFillAreaStyles (decision 670), when the project's material sets none of its own.
+                    if (!Lapin.Drawing.MaterialGraphics.Kinds.Any(k => found.Attrs[k] != null) && FillGraphics(mat.Id, Lapin.Platform.DraftingResources.Patterns(edit.Model)) is { Count: > 0 } graphics)
+                    {
+                        var a = found.CloneAttrs();
+                        foreach (var (k, v) in graphics) a[k] = v!.DeepClone();
+                        found = found.With(attrs: a);
+                        edit.Replace(found);
+                    }
                     id = found.Id;
                     // Another program's material: its description and its property sets (docs/plan-buildup-tags.md), what the project's lacks.
                     if (ForeignData(found, mat) is { } withData) edit.Replace(withData);
@@ -755,6 +763,55 @@ public static partial class IfcImport
                             if (f.Get(shading[0]) is { Type: "IFCCOLOURRGB" } rgb)
                                 return HexColor.Of(Num(rgb[1]), Num(rgb[2]), Num(rgb[3]));
             return null;
+        }
+
+        /// <summary>
+        /// A material's drawing graphics from the IfcFillAreaStyles of its representation (decision 670), by kind of view (its
+        /// name: Lapin's <see cref="IfcExport.FillAreaStyleNames"/>, else a name saying plan or elevation, else the section):
+        /// an IfcColourRgb its fill; each IfcFillAreaStyleHatching a hatch, its IfcCurveStyle's name its pattern (a library
+        /// pattern, or what the name suggests, else lines at its angle) and „Background …” the background hatch, its colour and
+        /// width (paper metres) the hatch's, its spacing over the pattern's first family's its scale.
+        /// </summary>
+        JsonObject? FillGraphics(int material, IReadOnlyList<Lapin.Drawing.Hatch.HatchPattern> patterns)
+        {
+            JsonObject? o = null;
+            foreach (var rep in Rels.RepresentationsOf[material])
+                foreach (var styled in Items(rep[2]).SelectMany(r => Items(r[3])).Where(i => i.Type == "IFCSTYLEDITEM"))
+                    foreach (var style in Items(styled[1]).SelectMany(x => x.Type == "IFCPRESENTATIONSTYLEASSIGNMENT" ? Items(x[0]) : [x]).Where(x => x.Type == "IFCFILLAREASTYLE"))
+                    {
+                        var name = Str(style[0]) ?? "";
+                        var kind = IfcExport.FillAreaStyleNames.FirstOrDefault(kv => string.Equals(kv.Value, name, StringComparison.OrdinalIgnoreCase)).Key
+                            ?? (name.Contains("elevation", StringComparison.OrdinalIgnoreCase) ? "elevation" : name.Contains("plan", StringComparison.OrdinalIgnoreCase) ? "plan" : "section");
+                        if (o?.ContainsKey(kind) == true) continue;
+                        var g = new JsonObject();
+                        foreach (var item in Items(style[1]))
+                        {
+                            if (item.Type == "IFCCOLOURRGB") { g["fill"] = HexColor.Of(Num(item[1]), Num(item[2]), Num(item[3])); continue; }
+                            if (item.Type != "IFCFILLAREASTYLEHATCHING") continue;
+                            var curve = f.Get(item[0]);
+                            var curveName = Str(curve?[0]) ?? "";
+                            var background = curveName.StartsWith("Background ", StringComparison.OrdinalIgnoreCase);
+                            var patternName = background ? curveName["Background ".Length..].Trim() : curveName.Trim();
+                            var angle = Num(item[4]) * 180 / Math.PI;
+                            var spacing = Num(item[1]);
+                            var known = patternName.Length > 0 ? Lapin.Drawing.MaterialGraphics.FromIfcHatch(patternName, null, null, null, patterns) : null;
+                            var h = new JsonObject();
+                            if (known?.Hatch is { Length: > 0 } pattern && Lapin.Drawing.Hatch.HatchLibrary.Find(pattern, patterns) is { Families.Count: > 0 } p)
+                            {
+                                h["hatch"] = pattern;
+                                var fam = p.Families[0];
+                                if (Math.Abs(fam.DeltaY) > 1e-9 && spacing > 0 && Math.Round(spacing * 1000 / Math.Abs(fam.DeltaY), 3) is var sc && Math.Abs(sc - 1) > 1e-6) h["hatchScale"] = sc;
+                                if (Math.Round(angle - fam.AngleDeg, 3) is var ha && Math.Abs(ha) > 1e-6) h["hatchAngle"] = ha;
+                            }
+                            else h["hatch"] = Lapin.Drawing.MaterialGraphics.FromIfcHatch(null, null, angle, null)!.Hatch;
+                            if (curve != null && f.Get(curve[3]) is { Type: "IFCCOLOURRGB" } rgb && HexColor.Of(Num(rgb[1]), Num(rgb[2]), Num(rgb[3])) is var hc && hc != "#000000") h["hatchColor"] = hc;
+                            if (curve != null && curve[2] != null && Num(curve[2]) is var w && w > 0 && Math.Abs(w * 1000 - Lapin.Drawing.Views.Pens.Default.Hatch) > 1e-6) h["hatchWeight"] = Math.Round(w * 1000, 3);
+                            if (background) g["backgroundHatch"] = h;
+                            else foreach (var (k, v) in h) g[k] = v!.DeepClone();
+                        }
+                        if (g.Count > 0) (o ??= [])[kind] = g;
+                    }
+            return o;
         }
 
         /// <summary>A material's transparency from its representation's surface style (IfcSurfaceStyleShading or Rendering), when it has one above 0.</summary>

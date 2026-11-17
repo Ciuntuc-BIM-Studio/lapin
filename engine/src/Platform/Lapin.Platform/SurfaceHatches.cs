@@ -73,7 +73,7 @@ public static class SurfaceHatches
             if (resolved.TryGetValue(id, out var r)) return r;
             // A material named rather than kept (a track's ballast): its look guessed from the name, as cuts do.
             r = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, "elevation") : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, "elevation", id);
-            return resolved[id] = r is { Membrane: false } && (r.Hatch != null || r.Fill != null) ? r : null;
+            return resolved[id] = r is { Membrane: false } && (r.Hatch != null || r.Fill != null || r.Background != null) ? r : null;
         }
         var graphics = parts.Select(p => Graphics(p.Material)).ToArray();
         if (graphics.All(g => g == null)) return [];
@@ -85,91 +85,112 @@ public static class SurfaceHatches
             if (budget <= 0) break;
             Hatch(m, view.Id + (pieces.Count > 1 ? "#" + piece.Index : ""), piece, parts, graphics, joins, options, seamKeys, pens, ref budget);
         }
-        return pens.Values.Where(p => p.Loops.Count > 0 || p.Segments.Count > 0).OrderBy(p => p.Layer == FillLayer ? 0 : p.Fill != null ? 1 : 2).ToList();
+        // Fills, solid hatches, then line hatches: a material's background hatch (decision 670) under its hatch.
+        return pens.Where(kv => kv.Value.Loops.Count > 0 || kv.Value.Segments.Count > 0)
+            .OrderBy(kv => kv.Value.Layer == FillLayer ? 0 : kv.Key.StartsWith("solidbg:", StringComparison.Ordinal) ? 0.5 : kv.Value.Fill != null ? 1 : kv.Key.StartsWith("hatchbg:", StringComparison.Ordinal) ? 1.5 : 2)
+            .Select(kv => kv.Value).ToList();
     }
 
     static void Hatch(IModelView m, string cacheKey, Piece piece, IReadOnlyList<DrawPart> parts, ResolvedMaterial?[] graphics, bool joins,
-        Pens.Options options, Dictionary<string, string?> seamKeys, Dictionary<string, Pen> pens, ref int budget)
+        Pens.Options options, Dictionary<string, string?> seamKeys, Dictionary<string, Pen> pens, ref int left)
     {
-        var spec = piece.Spec;
-        var faces = piece.Scene();
-        var cache = CacheOf(cacheKey).For(faces);
-        var visible = faces.VisibleAll(s => graphics[s.Face.Owner] != null, cache);
-        if (visible.Count == 0) return;
-        var window = WindowOf(spec);
-        // Laid at its station: a developed section's piece moves along x.
-        var shift = new Vec2(piece.Station, 0);
-        Vec2 Laid(Vec2 p) => p + shift;
-        // The faces of one material going on in one plane share their hatch's origin on it (aligned to the layer).
-        var groups = new Dictionary<string, (Vec2 Min, bool Any)>();
-        string GroupOf(ViewFaces.Seen s)
+        var budget = left;
+        try { Draw(); }
+        finally { left = budget; }
+        void Draw()
         {
-            var p = parts[s.Face.Owner];
-            var key = Views.SeamKeyOf(m, p.Material, p.Class, seamKeys) ?? "\u0001" + p.Element;
-            if (!joins) key += "\u0000" + p.Element;
-            var n = s.Face.Normal;
-            var d = Vec3.Dot(s.Face.Loops[0][0], n);
-            return FormattableString.Invariant($"{key}|{Math.Round(n.X, 3)},{Math.Round(n.Y, 3)},{Math.Round(n.Z, 3)}|{Math.Round(d, 3)}");
-        }
-        var keys = new string[visible.Count];
-        for (var k = 0; k < visible.Count; k++)
-        {
-            var (s, cells) = visible[k];
-            if (cells.Count == 0 || graphics[s.Face.Owner]!.HatchAlign != HatchAlign.Layer) continue;
-            keys[k] = GroupOf(s);
-            var (h, w) = Axes(s.Face.Normal, faces.Frame);
-            var min = groups.TryGetValue(keys[k], out var g) ? g.Min : new Vec2(double.MaxValue, double.MaxValue);
-            foreach (var l in s.Face.Loops) foreach (var v in l) min = new Vec2(Math.Min(min.X, Vec3.Dot(v, h)), Math.Min(min.Y, Vec3.Dot(v, w)));
-            groups[keys[k]] = (min, true);
-        }
-        Pen Get(string key, Func<Pen> make) => pens.TryGetValue(key, out var p) ? p : pens[key] = make();
-        CategoryGraphics? Cat(string cls) => LineStyles.CategoryOf(cls) is { } c && options.Categories != null && options.Categories.TryGetValue(c, out var cg) ? cg : null;
-        var unit = options.Scale / 1000;
-        for (var k = 0; k < visible.Count; k++)
-        {
-            var (s, cells) = visible[k];
-            if (window is { } win) cells = cells.Select(c => ClipBox(c, win.X, win.Y)).Where(c => c.Length >= 3).ToList();
-            if (cells.Count == 0) continue;
-            var part = parts[s.Face.Owner];
-            var g = graphics[s.Face.Owner]!;
-            if (Cat(part.Class)?.Hidden == true) continue;
-            var loops = cells.Select(c => (IReadOnlyList<Vec2>)c).ToList();
-            if (g.Fill != null) Get("fill:" + g.Fill, () => new Pen(FillLayer, null, 0, g.Fill, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
-            if (g.Hatch == null || HatchLibrary.Find(g.Hatch, options.Patterns) is not { } pattern) continue;
-            var color = options.ElementColors?.GetValueOrDefault(part.Element) ?? Cat(part.Class)?.LineColor ?? "#000000";
-            // A solid pattern is the face's fill: in its fill colour, else in ink (forum topic 88); an element's override colour over both.
-            if (pattern.Solid)
+            var spec = piece.Spec;
+            var faces = piece.Scene();
+            var cache = CacheOf(cacheKey).For(faces);
+            var visible = faces.VisibleAll(s => graphics[s.Face.Owner] != null, cache);
+            if (visible.Count == 0) return;
+            var window = WindowOf(spec);
+            // Laid at its station: a developed section's piece moves along x.
+            var shift = new Vec2(piece.Station, 0);
+            Vec2 Laid(Vec2 p) => p + shift;
+            // The faces of one material going on in one plane share their hatch's origin on it (aligned to the layer).
+            var groups = new Dictionary<string, (Vec2 Min, bool Any)>();
+            string GroupOf(ViewFaces.Seen s)
             {
-                var solid = options.ElementColors?.GetValueOrDefault(part.Element) ?? g.Fill ?? color;
-                Get("solid:" + solid, () => new Pen(Layer, null, 0, solid, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
-                continue;
+                var p = parts[s.Face.Owner];
+                var key = Views.SeamKeyOf(m, p.Material, p.Class, seamKeys) ?? "\u0001" + p.Element;
+                if (!joins) key += "\u0000" + p.Element;
+                var n = s.Face.Normal;
+                var d = Vec3.Dot(s.Face.Loops[0][0], n);
+                return FormattableString.Invariant($"{key}|{Math.Round(n.X, 3)},{Math.Round(n.Y, 3)},{Math.Round(n.Z, 3)}|{Math.Round(d, 3)}");
             }
-            if (budget <= 0) continue;
-            var width = g.HatchPen is { } pn ? LineStyles.PenWidth(options.Table ?? LineStyles.DefaultPenTable(), pn, options.Scale) : Pens.Default.Hatch;
-            var pen = Get($"hatch:{color}:{width}", () => new Pen(Layer, color, width, null, null));
-            if (BattHatch.Is(pattern))
+            var keys = new string[visible.Count];
+            for (var k = 0; k < visible.Count; k++)
             {
-                // Insulation is never guessed for a surface (MaterialGraphics.ElevationFromName); asked for, its looped line runs
-                // along the face as it is seen, kept where the face is visible.
-                var outline = s.View.Select(l => (IReadOnlyList<Vec2>)l).ToList();
-                var batt = BattHatch.Segments(outline, 0, budget).Where(x => cells.Any(c => InConvex(c, (x.A + x.B) * 0.5))).ToList();
-                budget -= batt.Count;
-                pen.Segments.AddRange(batt.Select(x => (Laid(x.A), Laid(x.B))));
+                var (s, cells) = visible[k];
+                if (cells.Count == 0 || graphics[s.Face.Owner]!.HatchAlign != HatchAlign.Layer) continue;
+                keys[k] = GroupOf(s);
+                var (h, w) = Axes(s.Face.Normal, faces.Frame);
+                var min = groups.TryGetValue(keys[k], out var g) ? g.Min : new Vec2(double.MaxValue, double.MaxValue);
+                foreach (var l in s.Face.Loops) foreach (var v in l) min = new Vec2(Math.Min(min.X, Vec3.Dot(v, h)), Math.Min(min.Y, Vec3.Dot(v, w)));
+                groups[keys[k]] = (min, true);
             }
-            else if (keys[k] is { } gk && Affine(s.Face.Normal, Vec3.Dot(s.Face.Loops[0][0], s.Face.Normal), faces.Frame) is { } map)
+            Pen Get(string key, Func<Pen> make) => pens.TryGetValue(key, out var p) ? p : pens[key] = make();
+            CategoryGraphics? Cat(string cls) => LineStyles.CategoryOf(cls) is { } c && options.Categories != null && options.Categories.TryGetValue(c, out var cg) ? cg : null;
+            var unit = options.Scale / 1000;
+            for (var k = 0; k < visible.Count; k++)
             {
-                // On the face: the cells carried into its plane's own axes, hatched there from the group's corner, carried back.
-                var onFace = loops.Select(l => (IReadOnlyList<Vec2>)l.Select(map.ToFace).ToArray()).ToList();
-                var (segs, _) = HatchFill.Segments(onFace, pattern, new HatchOptions(g.HatchScale * unit, g.HatchAngle, groups[gk].Min, budget));
-                budget -= segs.Count;
-                pen.Segments.AddRange(segs.Select(x => (Laid(map.ToView(x.A)), Laid(map.ToView(x.B)))));
-            }
-            else
-            {
-                // Aligned to the view: a developed section's pieces hatch from the developed drawing's origin, so courses run on across them.
-                var (segs, _) = HatchFill.Segments(loops.Select(l => (IReadOnlyList<Vec2>)l.Select(Laid).ToArray()).ToList(), pattern, new HatchOptions(g.HatchScale * unit, g.HatchAngle, null, budget));
-                budget -= segs.Count;
-                pen.Segments.AddRange(segs.Select(x => (x.A, x.B)));
+                var (s, cells) = visible[k];
+                if (window is { } win) cells = cells.Select(c => ClipBox(c, win.X, win.Y)).Where(c => c.Length >= 3).ToList();
+                if (cells.Count == 0) continue;
+                var part = parts[s.Face.Owner];
+                var g = graphics[s.Face.Owner]!;
+                if (Cat(part.Class)?.Hidden == true) continue;
+                var loops = cells.Select(c => (IReadOnlyList<Vec2>)c).ToList();
+                if (MaterialGraphics.FillInk(g) is { } fillInk) Get("fill:" + fillInk, () => new Pen(FillLayer, null, 0, fillInk, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
+                var category = Cat(part.Class)?.LineColor ?? "#000000";
+                var elementColor = options.ElementColors?.GetValueOrDefault(part.Element);
+                // The background hatch under the hatch (decision 670), then the hatch: each its own colour and weight.
+                if (g.Background is { Hatch: { } bh } bg && HatchLibrary.Find(bh, options.Patterns) is { } bgPattern)
+                    Stroke(bgPattern, true, elementColor ?? ResolvedMaterial.Ink(bg.HatchColor ?? category, g.Halftone, g.HatchOpacity), bg.HatchWeight, null, bg.HatchScale ?? g.HatchScale, bg.HatchAngle ?? 0);
+                if (g.Hatch == null || HatchLibrary.Find(g.Hatch, options.Patterns) is not { } pattern) continue;
+                var color = elementColor ?? (g.Flex ? g.HatchInk(category) : category);
+                var dash = g.HatchLineType is { } lt && Dashes.Of(lt, options.LineTypes) is { Length: > 0 } ld ? ld : null;
+                Stroke(pattern, false, color, g.HatchWeight, dash, g.HatchScale, g.HatchAngle);
+
+                void Stroke(HatchPattern pattern, bool background, string color, double? weight, double[]? dash, double scale, double angle)
+                {
+                    // A solid pattern is the face's fill: in its fill colour, else in ink (forum topic 88); an element's override colour over both;
+                    // the material's own hatch colour over its fill (decision 670).
+                    if (pattern.Solid)
+                    {
+                        var solid = elementColor ?? (g.HatchColor != null || (background && g.Background?.HatchColor != null) ? color : g.Fill ?? color);
+                        Get((background ? "solidbg:" : "solid:") + solid, () => new Pen(Layer, null, 0, solid, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
+                        return;
+                    }
+                    if (budget <= 0) return;
+                    var width = weight ?? (!background && g.HatchPen is { } pn ? LineStyles.PenWidth(options.Table ?? LineStyles.DefaultPenTable(), pn, options.Scale) : Pens.Default.Hatch);
+                    var pen = Get($"{(background ? "hatchbg" : "hatch")}:{color}:{width}:{(dash == null ? "" : string.Join(" ", dash))}", () => new Pen(Layer, color, width, null, dash));
+                    if (BattHatch.Is(pattern))
+                    {
+                        // Insulation is never guessed for a surface (MaterialGraphics.ElevationFromName); asked for, its looped line runs
+                        // along the face as it is seen, kept where the face is visible.
+                        var outline = s.View.Select(l => (IReadOnlyList<Vec2>)l).ToList();
+                        var batt = BattHatch.Segments(outline, 0, budget).Where(x => cells.Any(c => InConvex(c, (x.A + x.B) * 0.5))).ToList();
+                        budget -= batt.Count;
+                        pen.Segments.AddRange(batt.Select(x => (Laid(x.A), Laid(x.B))));
+                    }
+                    else if (keys[k] is { } gk && Affine(s.Face.Normal, Vec3.Dot(s.Face.Loops[0][0], s.Face.Normal), faces.Frame) is { } map)
+                    {
+                        // On the face: the cells carried into its plane's own axes, hatched there from the group's corner, carried back.
+                        var onFace = loops.Select(l => (IReadOnlyList<Vec2>)l.Select(map.ToFace).ToArray()).ToList();
+                        var (segs, _) = HatchFill.Segments(onFace, pattern, new HatchOptions(scale * unit, angle, groups[gk].Min, budget));
+                        budget -= segs.Count;
+                        pen.Segments.AddRange(segs.Select(x => (Laid(map.ToView(x.A)), Laid(map.ToView(x.B)))));
+                    }
+                    else
+                    {
+                        // Aligned to the view: a developed section's pieces hatch from the developed drawing's origin, so courses run on across them.
+                        var (segs, _) = HatchFill.Segments(loops.Select(l => (IReadOnlyList<Vec2>)l.Select(Laid).ToArray()).ToList(), pattern, new HatchOptions(scale * unit, angle, null, budget));
+                        budget -= segs.Count;
+                        pen.Segments.AddRange(segs.Select(x => (x.A, x.B)));
+                    }
+                }
             }
         }
     }

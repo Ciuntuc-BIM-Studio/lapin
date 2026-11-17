@@ -282,11 +282,11 @@ public static class Pens
             Get("fill:" + fill, () => new Pen(PenLayer.Fill, null, 0, fill, null)).Loops.AddRange(f.Loops);
         }
 
-        // Hatches: the materials', unless the category lays its own over the cut.
+        // Hatches: the materials', unless the category lays its own over the cut (and then no background hatch either).
         var hatches = new List<MaterialHatch>(m?.Hatches ?? []);
         if (o.Categories != null)
         {
-            hatches = hatches.Select(h => Cat(h.Class)?.CutHatch is { } ch ? h with { Pattern = ch, Scale = 1 } : h).ToList();
+            hatches = hatches.Where(h => !(h.Background && Cat(h.Class)?.CutHatch != null)).Select(h => Cat(h.Class)?.CutHatch is { } ch ? h with { Pattern = ch, Scale = 1 } : h).ToList();
             for (var i = 0; i < d.Cuts.Count; i++)
                 if (Cat(d.Cuts[i].Class)?.CutHatch is { } ch && !(m?.Hatches.Any(h => ReferenceEquals(h.Loops, d.Cuts[i].Loops)) ?? false))
                     hatches.Add(new MaterialHatch(d.Cuts[i].Loops, ch, 1, null, d.Cuts[i].Class));
@@ -296,31 +296,43 @@ public static class Pens
         {
             var pattern = HatchLibrary.Find(h.Pattern, o.Patterns);
             if (pattern == null) continue;
-            var color = Cat(h.Class)?.LineColor ?? "#000000";
+            var category = Cat(h.Class)?.LineColor ?? "#000000";
+            // The material's own colour, weight, line type, opacity and halftone (decision 670) over the category's and Lapin's;
+            // a background hatch its own colour and weight, under the hatch (its pens keyed apart: Ordered lays them first).
+            var look = h.Look;
+            var bg = h.Background ? look?.Background : null;
+            var color = look == null ? category : bg != null ? ResolvedMaterial.Ink(bg.HatchColor ?? category, look.Halftone, look.HatchOpacity) : look.HatchInk(category);
+            var dash = !h.Background && look?.HatchLineType is { } lt && Dashes.Of(lt, o.LineTypes) is { Length: > 0 } ld ? ld : null;
+            double WidthOf(int? pen) => bg?.HatchWeight ?? (h.Background ? null : look?.HatchWeight) ?? (pen is { } pn ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), pn, o.Scale) : Default.Hatch);
+            var prefix = h.Background ? "hatchbg" : "hatch";
             if (BattHatch.Is(pattern))
             {
                 // The looped line along the layer, metres; a band under 1.2 mm on paper gets none.
                 var batt = BattHatch.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), 1.2 * o.Scale / 1000, Math.Max(0, budget));
                 budget -= batt.Count;
-                var bw = h.Pen is { } bp ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), bp, o.Scale) : Default.Hatch;
-                Get($"hatch:{color}:{bw}", () => new Pen(PenLayer.Hatch, color, bw, null, null)).Segments.AddRange(batt.Select(s => (s.A, s.B)));
+                var bw = WidthOf(h.Pen);
+                Get($"{prefix}:{color}:{bw}:{DashKey(dash)}", () => new Pen(PenLayer.Hatch, color, bw, null, dash)).Segments.AddRange(batt.Select(s => (s.A, s.B)));
                 continue;
             }
             if (pattern.Solid)
             {
-                // A solid pattern is the band's fill: in its fill colour (the category's, else the material's), else in ink (forum topic 88).
-                var solid = Cat(h.Class)?.FillColor ?? h.Fill ?? color;
-                Get("solid:" + solid, () => new Pen(PenLayer.Hatch, null, 0, solid, null)).Loops.AddRange(h.Loops);
+                // A solid pattern is the band's fill: in its fill colour (the category's, else the material's), else in ink (forum topic 88);
+                // a hatch colour the material gives over all of them (decision 670).
+                var solid = look?.HatchColor != null || bg?.HatchColor != null ? color : (Cat(h.Class)?.FillColor ?? h.Fill ?? category);
+                if (look != null && look.HatchColor == null && bg?.HatchColor == null) solid = ResolvedMaterial.Ink(solid, look.Halftone, look.HatchOpacity);
+                Get($"{(h.Background ? "solidbg" : "solid")}:" + solid, () => new Pen(PenLayer.Hatch, null, 0, solid, null)).Loops.AddRange(h.Loops);
                 continue;
             }
             // Patterns are paper millimetres at 1:1: at 1:scale a millimetre is scale/1000 m.
             var (segs, _) = HatchFill.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), pattern, new HatchOptions(h.Scale * o.Scale / 1000, h.Angle, h.Origin, Math.Max(0, budget)));
             budget -= segs.Count;
-            var width = h.Pen is { } pn ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), pn, o.Scale) : Default.Hatch;
-            Get($"hatch:{color}:{width}", () => new Pen(PenLayer.Hatch, color, width, null, null)).Segments.AddRange(segs.Select(s => (s.A, s.B)));
+            var width = WidthOf(h.Pen);
+            Get($"{prefix}:{color}:{width}:{DashKey(dash)}", () => new Pen(PenLayer.Hatch, color, width, null, dash)).Segments.AddRange(segs.Select(s => (s.A, s.B)));
         }
 
         var separations = Separations(d);
+        // The materials' own cut and layer lines (decision 670), by the line they fall on; none set, none looked for.
+        var materialLines = m != null && m.Graphics.Values.Any(g => g.CutLine != null || g.SeparatorLine != null) ? MaterialLines(d, m, separations) : null;
         for (var i = 0; i < d.Lines.Count; i++)
         {
             if (m?.DropLines.Contains(i) == true) continue;
@@ -333,6 +345,9 @@ public static class Pens
             // A layer line: its own style (Layer lines), field by field over the cut lines' (what it leaves unset is drawn as the cut).
             if (separation && o.LineStyle?.Invoke(LineRole.Separation, l.Class, l.Element) is { } sep)
                 styled = new ResolvedLine(sep.WidthMm ?? styled?.WidthMm, sep.Color ?? styled?.Color, sep.Dash ?? styled?.Dash);
+            // The material's own line, field by field over the Object styles' (a line edit and a filter's colour still win).
+            if (materialLines != null && materialLines.TryGetValue(i, out var ml))
+                styled = new ResolvedLine(ml.Weight ?? styled?.WidthMm, ml.Color ?? styled?.Color, ml.LineType != null ? Dashes.Of(ml.LineType, o.LineTypes) : styled?.Dash);
             // A line edit's style (Linework) wins over everything else.
             if (l.Style is { Empty: false } ls)
                 styled = new ResolvedLine(ls.Pen is { } lsPen ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), lsPen, o.Scale) : styled?.WidthMm, ls.Color ?? styled?.Color, ls.Pattern != null ? Dashes.Of(ls.Pattern, o.LineTypes) : styled?.Dash);
@@ -421,6 +436,47 @@ public static class Pens
         return o;
     }
 
+    /// <summary>
+    /// The line each cut line takes from the materials of the bands it bounds (decision 670): a line between two bands of
+    /// one element (or of two joined elements of one class, <see cref="Separations"/>) their <see cref="ResolvedMaterial.SeparatorLine"/>,
+    /// any other cut line their <see cref="ResolvedMaterial.CutLine"/>. Where two materials meet and both set one, the
+    /// heavier line wins (a weight set over none), then the material whose name sorts first, so a line is drawn once, the
+    /// same whichever side is read first. A line no material sets is left to the Object styles.
+    /// </summary>
+    public static Dictionary<int, MaterialLine> MaterialLines(ViewDrawing d, MaterialDrawingResult m, HashSet<int> separations)
+    {
+        var o = new Dictionary<int, MaterialLine>();
+        var grid = new EdgeGrid();
+        for (var i = 0; i < d.Cuts.Count; i++)
+        {
+            if (!m.Graphics.ContainsKey(i)) continue;
+            foreach (var loop in d.Cuts[i].Loops)
+                for (var k = 0; k < loop.Length; k++) grid.Add(i, loop[k], loop[(k + 1) % loop.Length]);
+        }
+        var on = new HashSet<int>();
+        for (var i = 0; i < d.Lines.Count; i++)
+        {
+            var l = d.Lines[i];
+            if (l.Role != LineRole.Cut) continue;
+            on.Clear();
+            grid.Holding(l.A, l.B, on);
+            if (on.Count == 0) continue;
+            var separator = separations.Contains(i);
+            MaterialLine? best = null;
+            string? bestName = null;
+            foreach (var poly in on)
+            {
+                var g = m.Graphics[poly];
+                if ((separator ? g.SeparatorLine : g.CutLine) is not { } spec) continue;
+                var w = spec.Weight ?? -1;
+                var bw = best?.Weight ?? -1;
+                if (best == null || w > bw || (w == bw && string.CompareOrdinal(g.Name, bestName) < 0)) (best, bestName) = (spec, g.Name);
+            }
+            if (best != null) o[i] = best;
+        }
+        return o;
+    }
+
     /// <summary>Polygons' edges on a grid in plan: an edge in the cells of its points every half cell, found from the middle of a line along it.</summary>
     sealed class EdgeGrid
     {
@@ -486,11 +542,13 @@ public static class Pens
             p.Segments.AddRange(merged);
         }
 
-        // Fills first, then hatches, then lines: beyond and hidden, overhead, seen, membranes, cut.
-        static int Order(Pen p) => p.Layer switch
+        // Fills first, then hatches (the materials' background hatches under their own, decision 670), then lines: beyond and
+        // hidden, overhead, seen, membranes, cut.
+        static double Order(string key, Pen p) => p.Layer switch
         {
-            PenLayer.Fill => 0, PenLayer.Hatch => p.Fill != null ? 1 : 2, PenLayer.Beyond or PenLayer.Hidden => 3, PenLayer.Overhead => 4, PenLayer.Seen => 5, PenLayer.Membrane => 6, _ => 7,
+            PenLayer.Fill => 0, PenLayer.Hatch => key.StartsWith("solidbg:", StringComparison.Ordinal) ? 0.5 : p.Fill != null ? 1 : key.StartsWith("hatchbg:", StringComparison.Ordinal) ? 1.5 : 2,
+            PenLayer.Beyond or PenLayer.Hidden => 3, PenLayer.Overhead => 4, PenLayer.Seen => 5, PenLayer.Membrane => 6, _ => 7,
         };
-        return pens.Values.OrderBy(Order).ToList();
+        return pens.OrderBy(kv => Order(kv.Key, kv.Value)).Select(kv => kv.Value).ToList();
     }
 }

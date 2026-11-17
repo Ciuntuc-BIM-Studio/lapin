@@ -69,6 +69,8 @@ Testele (`MaterialGraphicsReferenceTests`) verifică:
 - un **instantaneu** al desenului (pens serializate, nu pixeli), care se schimbă doar intenționat;
 - o pagină PDF generată, cu toate detaliile, pentru ochi.
 
+Stare (17.11.2026, decizia 670): **făcută pe motor.** Detaliile sunt în `engine/tests/Lapin.Engine.Tests/ReferenceDetails.cs` (construite din comenzi, deci refolosibile); PDF-ul și proiectele `.lapin` ale detaliilor se scriu cu `LAPIN_REFERENCE_PDF=1` în `build/material-graphics-reference/`, de unde scenele ghidului (etapa 8) le pot deschide. Desenele de azi trec toate regulile; instantaneul e `MaterialGraphicsReference.snap.txt`.
+
 ### Etapa 0b: configuratorul flexibil (prioritatea utilizatorului)
 
 Ce era etapa 6, lărgit și adus în față. Pe fiecare material, pentru fiecare fel de vedere (tăietură în secțiune, tăietură în plan, fațadă), tot ce se vede se poate seta. Ce rămâne nesetat vine, ca azi, de la categorie, de la standard sau din nume.
@@ -91,6 +93,15 @@ Ce era etapa 6, lărgit și adus în față. Pe fiecare material, pentru fiecare
   - IFC: două `IfcFillAreaStyleHatching`, culoarea și grosimea în `IfcCurveStyle`;
   - DXF: două entități HATCH cu culoarea și grosimea lor;
   - PDF, planșe, legenda de materiale (decizia 620), Bonsai.
+
+Stare (17.11.2026, decizia 670): **motorul e făcut; interfața urmează.** Abateri și precizări:
+
+- opacitatea e în culoare (`#rrggbbaa`); DXF o scrie ca transparență (codul 440);
+- DXF păstrează hașurile ca linii, cum făcea deja (nu entități HATCH): fundalul are culoarea și grosimea lui pe același strat HATCH;
+- IFC scrie `IfcFillAreaStyle` doar pentru materialele cu grafică proprie, ca fișierele proiectelor vechi să rămână la fel;
+- o linie de tăietură la întâlnirea a două materiale care setează linii: câștigă cea mai groasă, apoi numele care vine primul;
+- `null` readuce un câmp la implicit, dar la `hatch` și `fill` rămâne „niciuna” (ca înainte); `reset: [câmpuri]` readuce orice câmp;
+- rămase: capacele secțiunii 3D desenate ca planșă (drum separat) iau doar umplerea și hașura; redenumirea unui tip de linie nu urmează în materiale.
 
 ### Etapa 1: hașuri la mărime reală
 

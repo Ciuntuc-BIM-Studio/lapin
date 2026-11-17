@@ -7,7 +7,10 @@ public sealed record LayerRef(string? Material, string Name, double Thickness);
 
 /// <summary>A hatch to lay over a cut band: its loops, pattern, scale and pen, and the class it belongs to.</summary>
 /// <param name="Fill">The band's fill colour (its material's), which a solid pattern is drawn in (forum topic 88); null: none.</param>
-public sealed record MaterialHatch(IReadOnlyList<Vec2[]> Loops, string Pattern, double Scale, int? Pen, string Class, double Angle = 0, Vec2? Origin = null, string? Fill = null)
+/// <param name="Look">The material's graphics, whose hatch colour, weight, line type, opacity and halftone it is drawn with (decision 670); null: the category's and Lapin's.</param>
+/// <param name="Background">The material's background hatch (decision 670), drawn under its hatch in <see cref="Look"/>'s background colour and weight.</param>
+public sealed record MaterialHatch(IReadOnlyList<Vec2[]> Loops, string Pattern, double Scale, int? Pen, string Class, double Angle = 0, Vec2? Origin = null, string? Fill = null,
+    ResolvedMaterial? Look = null, bool Background = false)
 {
     /// <summary>A hatch aligned to the band it fills: its origin at the start of the band's longest edge, its angle along that edge (plus the material's own).</summary>
     public static MaterialHatch Aligned(IReadOnlyList<Vec2[]> loops, string pattern, double scale, int? pen, string cls, double angle, string align)
@@ -42,6 +45,8 @@ public sealed class MaterialDrawingResult
     public List<(Vec2 A, Vec2 B)> Membranes { get; } = [];
     /// <summary>Per polygon, the sides (over its loops in order) it shares with another element's band of its material.</summary>
     public Dictionary<int, HashSet<int>> Seams { get; } = [];
+    /// <summary>Per polygon drawn as a band (not a membrane), its material's graphics: its cut and layer lines (decision 670) are read from them.</summary>
+    public Dictionary<int, ResolvedMaterial> Graphics { get; } = [];
 }
 
 /// <summary>
@@ -221,12 +226,25 @@ public static class MaterialDrawing
                 continue;
             }
             if (g == null) continue;
-            o.Fills[i] = g.Fill;
+            o.Graphics[i] = g;
+            // The fill at its opacity (decision 670); a material that gives none is its fill as before.
+            o.Fills[i] = MaterialGraphics.FillInk(g);
+            var mine = elementHatch?.Invoke(p.Element);
+            // A material's background hatch (decision 670) under its own, laid as it is: from the element's alignment or the band's.
+            if (g.Background is { Hatch: { } bh } bg)
+            {
+                var bgScale = bg.HatchScale ?? g.HatchScale;
+                var bgAngle = bg.HatchAngle ?? 0;
+                o.Hatches.Add((mine is { } bo
+                    ? new MaterialHatch(p.Loops, bh, bgScale, null, p.Class, (bo.Angle ?? 0) + bgAngle, bo.Origin)
+                    : MaterialHatch.Aligned(p.Loops, bh, bgScale, null, p.Class, bgAngle, g.HatchAlign)) with { Fill = g.Fill, Look = g, Background = true });
+            }
             if (g.Hatch == null) continue;
+            var look = g.Flex ? g : null;
             // The element's own alignment over its material's: along its axis (one angle and origin for all its bands), or the view's.
-            if (elementHatch?.Invoke(p.Element) is { } own)
-                o.Hatches.Add(new MaterialHatch(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, (own.Angle ?? 0) + g.HatchAngle, own.Origin, g.Fill));
-            else o.Hatches.Add(MaterialHatch.Aligned(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, g.HatchAngle, g.HatchAlign) with { Fill = g.Fill });
+            if (mine is { } own)
+                o.Hatches.Add(new MaterialHatch(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, (own.Angle ?? 0) + g.HatchAngle, own.Origin, g.Fill, look));
+            else o.Hatches.Add(MaterialHatch.Aligned(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, g.HatchAngle, g.HatchAlign) with { Fill = g.Fill, Look = look });
         }
 
         // Edges of every band, by join key.
