@@ -4,6 +4,8 @@ order: 127
 summary: Drive Lapin with Python from the Script panel, a developer extra: a console and an editor that run your own Python, each Run one undo step.
 ---
 
+<!-- video python-automation -->
+
 ## Turn on Developer extras
 
 Lapin can be driven with Python: every tool is a command, and a script sends the same commands. The **Script** panel is a *developer extra*, off until you turn it on, so nothing of it shows otherwise.

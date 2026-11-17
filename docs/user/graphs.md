@@ -4,6 +4,8 @@ order: 128
 summary: Wire nodes into a recipe — numbers, lists, points and the tools' own commands — see what it would make as a ghost, and bake it in one undo step.
 ---
 
+<!-- video twisted-tower -->
+
 ## What a graph is
 
 A **graph** is a recipe drawn as boxes and wires. Each box is a **node**: a number, a range of numbers, a point, a sum, or one of the tools themselves (Wall, Floor, Column… every command of your edition). Wires carry what one node gives into another. Lapin works the graph out as you change it and shows what it would make as a **ghost** in the plans and the 3D view; nothing is made until you press **Bake**, and then it is one undo step.

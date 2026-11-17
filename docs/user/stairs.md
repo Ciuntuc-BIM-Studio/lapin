@@ -4,6 +4,8 @@ order: 42
 summary: Place a stair or a ramp between storeys or up to any height, set it up in its type, and make the few steps up to a porch or a door.
 ---
 
+<!-- video dogleg-stair -->
+
 ## Stairs
 
 Choose **Architecture → Stair** (<kbd>ST</kbd>). Click the foot of the stair (the middle of its first riser), then a point in the direction it climbs. For an L or U stair, a third click left or right of the flight sets which way it turns. The stair climbs from its storey to the storey above. Lapin works out the number of risers, the riser and the tread from the height and the type's rules.

@@ -4,6 +4,8 @@ order: 52
 summary: Bring the survey, the parcel, the neighbours and an orthophoto in real coordinates, from DXF, CSV, GeoJSON, CityJSON and a georeferenced image.
 ---
 
+<!-- video garden -->
+
 The **Site** tab holds the ground the building stands on: the terrain, the parcel, the neighbouring buildings and an aerial photo, each where it really is. The **Import** group brings them from the files surveyors and the cadastre hand over.
 
 ![The Site tab](shots/ribbon-site.webp)

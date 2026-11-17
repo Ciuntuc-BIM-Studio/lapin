@@ -30,6 +30,8 @@ Where two walls meet, Lapin joins them by itself. Their layers run into each oth
 
 ### A layered wall from solids
 
+<!-- video wall-from-solids -->
+
 A wall another program modelled as separate solids, one per layer (a timber-frame wall drawn in SketchUp as its cladding, battens, boards, insulation with its studs and gypsum), becomes one Lapin wall with **Architecture → Wall from solids** (<kbd>WFS</kbd>), or **Make a layered wall…** when you right-click the selected solids. Select them first: references an IFC, SKP, OBJ, glTF or DAE import brought, Studio solids, or a group holding them. Lapin reads them from their triangles: the solids running the same way, overlapping along and up, side by side across with no more than 10 cm between them, are one wall, and each set of them another wall. Across each wall, the solids that share a stretch of its thickness are one layer, in the order they lie.
 
 Before anything is made, the dialog shows each wall it found: its length, height and thickness, its layers with their materials and thicknesses (rounded to a millimetre), its openings, and what differs from the solids by more than 1 mm or 0.5 % of a layer's volume, as an import measures it; click a name to select that solid. You choose:

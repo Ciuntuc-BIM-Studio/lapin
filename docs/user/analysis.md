@@ -4,6 +4,8 @@ order: 52
 summary: Run a linear static analysis of the frame under your loads, read the diagrams of forces, moments and deformation in 3D, and set the end releases of the bars.
 ---
 
+<!-- video structural-analysis -->
+
 **Run analysis** in the **Loads** group of the **Structure** tab (and in the Loads dialog) analyses the bars, slabs and walls of the model under the loads and combinations of [Loads](loads.md), and shows the forces in them.
 
 ![The Loads group, with Run analysis](shots/ribbon-analysis.webp)

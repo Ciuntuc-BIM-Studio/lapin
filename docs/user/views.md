@@ -44,6 +44,8 @@ A section cut across a beam or a column (**Section here**, **Section across** on
 
 ## Elevations
 
+<!-- video elevations-entourage -->
+
 **+** next to **Elevations** makes the four elevations of the building at once.
 
 ![The south elevation](shots/elevation-view.webp)
@@ -285,6 +287,8 @@ Each change is one undo step. The engine draws the inset with the view, so sheet
 ![A plan with its wall's section inset at 1:20, cropped, a dimension drawn over it](shots/inset-view.webp)
 
 ## Detail callouts
+
+<!-- video detail-callouts -->
 
 A foundation, an eave, a window's head: some parts need drawing again larger, with all their dimensions and notes. **View → Detail callout** (or type **DC**) calls out an area of a plan, a section or an elevation, as Revit's and ArchiCAD's callouts do: draw a rectangle round it (two opposite corners). The tool's bar draws a **Circle** (its centre, then a point on it) or a **Polygon** (its corners, then Enter) instead.
 

@@ -280,6 +280,8 @@ Like any tag, a build-up tag follows its element, and sheets and PDFs print it a
 
 ### Tables
 
+<!-- video drafting-tables -->
+
 **Annotate → Table** (TT) puts a table of your own on a plan, a section, a drafting view or a sheet's paper: set its **rows**, **columns** and look in the command bar (**Header row**, **Grid lines**, **Minimal**, **No lines**), then click where its top-left corner goes. Its editor opens; double-click the table, or **Edit table…** in its properties, to open it again.
 
 - **Cells** hold text, on several lines (Shift+Enter in a cell). Type in a cell, or double-click it; Enter keeps the text and goes down, Tab goes right, Esc leaves it as it was. Cells copied from a spreadsheet paste as they are.
@@ -340,6 +342,8 @@ Every length here follows the project's units. In feet and inches, the ends and 
 ![The Annotate tab](shots/ribbon-annotate.webp)
 
 ## Symbols
+
+<!-- video sketch-canvas -->
 
 A symbol is a small drawing you reuse: a pile mark, a north arrow, a revision cloud's tag, a fire door's key. It is made of lines, polylines, rectangles, circles, arcs, fills, hatches and texts, and each copy placed in a view is one element that you can move, turn, flip, copy and delete. Change the symbol and every copy follows.
 

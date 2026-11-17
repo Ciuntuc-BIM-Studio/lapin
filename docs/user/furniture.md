@@ -4,6 +4,8 @@ order: 47
 summary: Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards, tables, desks and kitchens in six layouts, from parametric types, placed against walls with a click.
 ---
 
+<!-- video furniture -->
+
 ## Placing furniture
 
 The **Interior** tab has, after the finishes, one tool, **Place furniture**, for every kind of piece: the kind is chosen in the command line's bar (grouped as seating, beds, storage, tables and models), and each kind keeps its own letters: **Sofa** (<kbd>SO</kbd>), **Corner sofa**, **Armchair** (<kbd>AC</kbd>), **Chair**, **Bed** (<kbd>BD</kbd>), **Bedside table**, **Wardrobe** (<kbd>WD</kbd>), **Chest of drawers**, **Bookcase**, **Sideboard**, **Table** (<kbd>TB</kbd>), **Coffee table** and **Desk**. Choose the kind and click in the plan.

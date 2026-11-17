@@ -69,6 +69,8 @@ The arrow at the bar's end hides the quick tools; a small **Quick tools** handle
 
 ## My tools
 
+<!-- video my-tools -->
+
 **My tools** is a ribbon tab of your own, the first in the tab row: you put in it only the tools you use, taken from any tab, in groups you name.
 
 - **Put tools in.** Right-click any tool in the ribbon → **Add to My tools**, **Add to My tools in…** a group, or **Add to a new group in My tools**. Or drag a tool from another tab onto the **My tools** tab: held over it for a moment, the tab opens, and you drop the tool where a line shows it will land.

@@ -4,6 +4,8 @@ order: 87
 summary: Edit a Studio solid or a placed part in place with Tab — the rest of the model fades, and the part's tree lists its origin, sketches, steps and parameters.
 ---
 
+<!-- video studio-parts -->
+
 ## What a part is
 
 A **part** is a Studio solid with a definition behind it: a sketched solid with its steps, or an object of your own whose bodies follow **parameters** (what used to be a family). A part is placed as many times as you need, and each object keeps its own parameter values.

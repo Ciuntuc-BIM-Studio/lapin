@@ -4,6 +4,8 @@ order: 105
 summary: Make an element's own sheet in one dialog: its views drawn from its own axes, with its overall dimensions and its data, always live.
 ---
 
+<!-- video shop-drawings -->
+
 ## What a shop drawing is
 
 A shop drawing is the drawing of **one element**: a steel member, a Studio part, a plate. It has its own sheet with the title block, the views you ticked, drawn from the element's **own axes** (X along the part, Y across it, Z up) and not from the project's, the element's overall dimensions, and a table of its data (name, material, profile, weight and the like) above the title block.
