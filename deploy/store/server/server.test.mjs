@@ -101,6 +101,11 @@ describe('the store: pages and the catalogue', () => {
     const file = await get('/extensions/files/ro.other.living/1.0.0/l.lapinlib');
     assert.match(file.headers.get('cache-control'), /immutable/);
     assert.equal(await file.text(), 'abc');
+    for (const p of ['/extensions', '/extensions/']) {
+      const r = await get(p);
+      assert.equal(r.status, 302, p);
+      assert.equal(r.headers.get('location'), `${STORE}/`, p);
+    }
   });
 
   it('counts a download and redirects to the copy; past the visitor’s limit it still redirects, uncounted; stats say how many', async () => {

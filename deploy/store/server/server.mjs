@@ -429,6 +429,8 @@ export function storeService(options = {}) {
     const method = req.method ?? 'GET';
     const cors = { 'access-control-allow-origin': '*' };
 
+    // lapinbim.com/extensions itself is no file: a person who opens it is sent to the store's pages.
+    if ((path === '/extensions' || path === '/extensions/') && (method === 'GET' || method === 'HEAD')) return redirect(res, `${s.storeUrl}/`);
     // The catalogue: files for anyone (the browser edition reads them from another origin).
     if (path.startsWith('/extensions/') && (method === 'GET' || method === 'HEAD')) {
       const file = await fileUnder(join(s.publicDir, 'extensions'), path.slice('/extensions'.length));

@@ -23,6 +23,6 @@ if [[ $DRY == 1 ]]; then
   exit 0
 fi
 (cd "$HERE/server" && tar -cf - "${FILES[@]}") | ssh "$SERVER" "mkdir -p '$REMOTE_DIR/store' && tar -xf - -C '$REMOTE_DIR/store'"
-ssh "$SERVER" "cd '$REMOTE_DIR' && docker compose up -d store && sleep 2 && docker logs --tail 5 lapin-store && curl -fsS http://127.0.0.1:3465/api/health"
+ssh "$SERVER" "cd '$REMOTE_DIR' && docker compose up -d store && docker compose restart store && sleep 2 && docker logs --tail 5 lapin-store && curl -fsS http://127.0.0.1:3465/api/health"
 echo
 echo "✓ The store service is deployed."

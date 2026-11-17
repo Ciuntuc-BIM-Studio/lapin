@@ -22,6 +22,7 @@ The store's pages themselves are **not** here: they are generated from the catal
 |---|---|
 | `store.lapinbim.com/` | the store's pages (`/data/public/site`): the list, `/extension/<id>/`, `/authors/…`, `/publish/`, `/legal/…` |
 | `store.lapinbim.com/dashboard/` | the author dashboard |
+| `lapinbim.com/extensions/` | a redirect to `store.lapinbim.com/` (a person opening the catalogue's address lands on its pages) |
 | `lapinbim.com/extensions/index.json`, `index.json.sig`, `files/<id>/<version>/<file>` | the catalogue (`/data/public/extensions`), for Lapin; `Access-Control-Allow-Origin: *`; the index cached 5 minutes, the files for a year (a new version is a new path) |
 | `store.lapinbim.com/packages/<id>/<version>/<file>` | the files authors uploaded (`/data/packages`): a store submission's `package.url`, always as a download, sandboxed |
 | `/auth/login`, `/auth/callback`, `/auth/logout` | sign-in through the forum |
