@@ -8040,6 +8040,52 @@ export const scenes = [
     },
   },
   {
+    // Drafting tables: suggestions while typing and AutoSum. Rooms linked a row each read their area by its common name, a row
+    // below gets its total by the Σ button (Alt+=), and typing `{= el.` in a cell lists the linked room's fields with their values.
+    id: 'drafting-table-suggest',
+    touches: ['drafting', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const storey = await t.storey();
+      const rooms = [];
+      for (const [x1, y1, x2, y2, name] of [[0, 0, 5, 4, 'Living'], [5, 0, 8, 4, 'Kitchen'], [0, 4, 4, 7, 'Bedroom']])
+        rooms.push((await t.cmd('architecture.addRoom', { storeyId: storey, x1, y1, x2, y2, name })).id);
+      const table = await t.cmd('drafting.addTable', { viewId: `plan:${storey}`, at: [10, 6], rows: 2, cols: 3, preset: 'header', name: 'Rooms',
+        cells: [['Room', 'Area (m²)', 'Perimeter (m)'], ['{el.name}', '{= el.Area | 0.00}', '']] });
+      await t.cmd('drafting.editTable', { id: table.id, ops: [{ op: 'linkRows', at: 'A2', els: rooms }] });
+      await t.page.evaluate(async (id) => (await import('/src/modules/drafting/table/tableStore.ts')).openTableEditor(id), table.id);
+      await t.page.waitForSelector('[data-table-editor]', { timeout: 10_000 });
+      const cell = (a) => t.page.locator(`[data-table-editor] td[data-cell=${a}]`);
+      await t.until(async () => (await cell('B4').textContent()) === '12.00', 'a room\'s Area reads its net floor area');
+      // A row below the last room, opened by a double-click at once (the line above the grid stays put), its total by Σ.
+      await cell('A4').click();
+      await t.page.locator('[data-testid=table-row-below]').click();
+      await t.until(async () => (await cell('A5').count()) === 1, 'a row below');
+      await cell('A5').dblclick();
+      t.expect(await t.page.locator('[data-testid=table-cell-input]').count() === 1, 'the new row\'s cell opens on the first double-click');
+      await t.page.locator('[data-testid=table-cell-input]').fill('Total');
+      await t.page.locator('[data-testid=table-cell-input]').press('Enter');
+      await cell('B5').click();
+      await t.page.locator('[data-testid=table-autosum]').click();
+      await t.until(async () => (await cell('B5').textContent()) === '44', 'AutoSum adds up the rooms above');
+      // C3: typing a formula, the list offers the linked room's fields.
+      await cell('C3').dblclick();
+      const input = t.page.locator('[data-testid=table-cell-input]');
+      await input.fill('');
+      await input.pressSequentially('{= el.per', { delay: 40 });
+      await t.page.waitForSelector('[data-testid=suggest-list] [data-suggest="el.Perimeter"]', { timeout: 10_000 });
+      t.expect(await t.page.locator('[data-testid=table-errors]').count() === 0, 'no errors listed for the half-typed formula');
+      await t.shot('drafting-table-suggest', { of: '[data-table-editor]', pad: 0 });
+      await t.page.locator('[data-testid=suggest-list] [data-suggest="el.Perimeter"]').hover();
+      await input.press('Enter');
+      await input.pressSequentially(' | 0.00}', { delay: 20 });
+      await input.press('Enter');
+      await t.until(async () => (await cell('C3').textContent()) === '14.00', 'the suggestion accepted reads the kitchen\'s perimeter');
+      const info = await t.call('doc.query', { name: 'drafting.table', args: { id: table.id } });
+      t.expect(info.cells[4][1].t === '{= sum(B2:B4)}' && info.cells[2][2].t === '{= el.Perimeter | 0.00}', 'AutoSum and the suggestion wrote what the cells read');
+    },
+  },
+  {
     // Drafting tables, stage 5: a long table broken after four rows, each part with its header again, on a sheet.
     id: 'drafting-table-long',
     touches: ['drafting'],

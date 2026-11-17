@@ -16,7 +16,7 @@ namespace Lapin.Drafting;
 public static class TableEdits
 {
     public static readonly string[] Ops =
-        ["set", "style", "borders", "merge", "split", "insertRows", "deleteRows", "insertCols", "deleteCols", "colWidth", "rowHeight", "fit", "tableStyle", "preset", "header", "link", "linkRows", "parts", "load"];
+        ["set", "style", "borders", "merge", "split", "insertRows", "deleteRows", "insertCols", "deleteCols", "colWidth", "rowHeight", "fit", "tableStyle", "preset", "header", "link", "linkRows", "parts", "load", "autoSum"];
 
     public static readonly string[] BorderKinds = ["all", "outer", "inner", "top", "bottom", "left", "right", "none", "default"];
 
@@ -220,16 +220,20 @@ public static class TableEdits
                     else throw new CommandException("Link cells, rows or the table.");
                     break;
                 }
-                // Elements one a row from a row down (stage 4): rows added past the table's end, the first row's texts copied into
-                // the empty cells of the others, their references moved down as a spreadsheet's fill does.
+                // Elements one a row from a row down (stage 4): the rows from it that are empty or linked already take them, then
+                // rows go in before the first that holds a text of its own (a total, a note: kept under them, its sums taking the
+                // rows in) or past the table's end; the first row's texts copied into the empty cells of the others, their
+                // references moved down as a spreadsheet's fill does.
                 case "linkRows":
                 {
                     var at = DraftingTables.Parse((string?)op["at"] ?? (string?)op["cell"]) ?? throw new CommandException("From which row? A cell of it, such as A2.");
                     if (at.R >= g.R) throw new CommandException($"Row {at.R + 1} is past the table.");
                     var els = (op["els"] as JsonArray ?? throw new CommandException("Which elements? els: [ids].")).Select(x => Element(x, exists) ?? throw new CommandException("An element's id is missing.")).ToList();
                     if (els.Count == 0) throw new CommandException("Which elements? els: [ids].");
-                    var need = at.R + els.Count - g.R;
-                    if (need > 0) { Insert(t, g, rows: true, g.R, need); shifts?.Add(new Shifted(true, g.R, need, true)); }
+                    var stop = at.R + 1;
+                    while (stop < g.R && (Rows(t)[stop] is JsonObject sr && sr["el"] != null || Enumerable.Range(0, g.C).All(c => g.Cells[stop, c].Text.Length == 0))) stop++;
+                    var need = at.R + els.Count - stop;
+                    if (need > 0) { Insert(t, g, rows: true, stop, need); shifts?.Add(new Shifted(true, stop, need, true)); }
                     var copy = op["copy"] is not JsonValue cv || !cv.TryGetValue<bool>(out var cb) || cb;
                     var first = CellsOf(t, at.R);
                     for (var k = 0; k < els.Count; k++)
@@ -303,6 +307,8 @@ public static class TableEdits
                     else DraftingTables.ApplyPreset(t, preset);
                     break;
                 }
+                // Worked out on the table as it reads by the command (TableAutoSum), never here.
+                case "autoSum": throw new CommandException("AutoSum reads the table's values: drafting.editTable works it out.");
                 default: throw new CommandException($"„{name}” is not an edit of a table ({string.Join(", ", Ops)}).");
             }
         }
@@ -481,6 +487,22 @@ public static class TableEdits
             }
         }
         ShiftAll(t, rows, at, count, insert: true);
+        // A total under rows put in right below its range takes them in (a spreadsheet's sum over a list growing at its foot).
+        if (rows && at > 0) Extend(t, at, count);
+    }
+
+    /// <summary>Ranges of the table's own ending on row <paramref name="at"/> - 1, in cells below the <paramref name="count"/> rows put in at <paramref name="at"/>, reaching over them.</summary>
+    static void Extend(JsonObject t, int at, int count)
+    {
+        var rows = Rows(t);
+        for (var r = at + count; r < rows.Count; r++)
+            foreach (var cn in (rows[r] as JsonObject)?["cells"] as JsonArray ?? [])
+                if (cn is JsonObject o && (string?)o["t"] is { } text && text.Contains("{=", StringComparison.Ordinal))
+                {
+                    var now = MapRefs(text, x => x.Table == null && x.B is { } z && Math.Max(x.A.R, z.R) == at - 1
+                        ? Write(null, (Math.Min(x.A.R, z.R), Math.Min(x.A.C, z.C)), (at - 1 + count, Math.Max(x.A.C, z.C))) : null);
+                    if (now != text) o["t"] = now;
+                }
     }
 
     static void Delete(JsonObject t, DraftingTables.Grid g, bool rows, int at, int count)

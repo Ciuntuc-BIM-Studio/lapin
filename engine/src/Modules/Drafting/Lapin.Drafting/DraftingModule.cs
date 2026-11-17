@@ -51,6 +51,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         Tags.Register(r);
         // Drafting tables: cells, formulas, merges, on views and sheets (issue #71, docs/plan-drafting-tables.md).
         TableCommands.Register(r);
+        TableSuggest.Register(r);
 
         // ------------------------------------------------------------ grids
         r.Command("addAxis", "Grid axis", (ctx, a) =>

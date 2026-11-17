@@ -902,6 +902,8 @@
     {"name":"drafting.symbolBoard","module":"drafting","args":[{"name":"viewId","type":"str"}]},
     {"name":"drafting.table","module":"drafting","args":[{"name":"id","type":"str"}]},
     {"name":"drafting.tableExport","module":"drafting","args":[{"name":"id","type":"str"},{"name":"typed","type":"bool"},{"name":"format","type":"str"}]},
+    {"name":"drafting.tableSuggest","module":"drafting","args":[{"name":"id","type":"str"},{"name":"cell","type":"str"},{"name":"text","type":"str"},{"name":"caret","type":"float"}]},
+    {"name":"drafting.tableTry","module":"drafting","args":[{"name":"id","type":"str"},{"name":"cell","type":"str"},{"name":"text","type":"str"}]},
     {"name":"drafting.tagFields","module":"drafting","args":[{"name":"element","type":"str"}]},
     {"name":"drafting.tagPreview","module":"drafting","args":[{"name":"entry","type":"dict"},{"name":"tagType","type":"str"},{"name":"type","type":"str"}]},
     {"name":"drafting.titleBlockBoard","module":"drafting","args":[{"name":"viewId","type":"str"}]},

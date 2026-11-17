@@ -126,3 +126,28 @@ describe('drafting table grips on the drawing', () => {
     expect(sizeAt(row, { x: 0, y: 5 }, { x: 1, y: 5 }, 0, 0.1, 7)).toBe(1);
   });
 });
+
+describe('the table editor: fields, errors while typing, AutoSum', () => {
+  it('lists every field of a linked element once, its quantities\' common names too', async () => {
+    const { flattenFields } = await import('./tableModel');
+    const list = flattenFields({ groups: [{ fields: [{ token: 'name', label: 'name', value: 'Living' }] }, { fields: [{ token: 'NetFloorArea', label: 'Net floor area', value: '20 m²' }, { token: 'Area', label: 'Area', value: '20 m²' }, { token: 'area' }] }] });
+    expect(list.map((f) => f.field)).toEqual(['name', 'NetFloorArea', 'Area']);
+    expect(flattenFields(null)).toEqual([]);
+  });
+
+  it('shows the cell being typed\'s errors only once its text is tried, the others\' always', async () => {
+    const { cellErrors } = await import('./tableModel');
+    const all = ['A1: el.Ar: no such field', 'B2: reads itself.', 'A10: x'];
+    expect(cellErrors(all, null, null)).toEqual(all);
+    expect(cellErrors(all, 'A1', null)).toEqual(['B2: reads itself.', 'A10: x']);
+    expect(cellErrors(all, 'A1', ['A1: <el.Area +>'])).toEqual(['B2: reads itself.', 'A10: x', 'A1: <el.Area +>']);
+  });
+
+  it('asks AutoSum of the selection, by Alt+= wherever the Option key puts it', async () => {
+    const { autoSumOp, isAutoSumKey } = await import('./tableModel');
+    expect(autoSumOp({ r0: 3, c0: 1, r1: 3, c1: 1 })).toEqual({ op: 'autoSum', range: 'B4', fn: 'sum' });
+    expect(autoSumOp({ r0: 0, c0: 0, r1: 2, c1: 1 }, 'average')).toEqual({ op: 'autoSum', range: 'A1:B3', fn: 'average' });
+    expect(isAutoSumKey({ altKey: true, ctrlKey: false, metaKey: false, code: 'Equal' })).toBe(true);
+    expect(isAutoSumKey({ altKey: false, ctrlKey: false, metaKey: false, code: 'Equal' })).toBe(false);
+  });
+});

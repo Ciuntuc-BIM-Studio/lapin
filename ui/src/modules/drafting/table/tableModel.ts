@@ -209,3 +209,40 @@ export function sizeAt(g: SizeGrip, to: { x: number; y: number }, at: { x: numbe
   const along = g.kind === 'col' ? (d.x * Math.cos(r) + d.y * Math.sin(r)) / mm : -(d.x * -Math.sin(r) + d.y * Math.cos(r)) / mm;
   return Math.max(1, Math.round((along - start) * 10) / 10);
 }
+
+/** A field of a linked element the editor's list offers: its token (after `el.`), its label and its value now. */
+export interface FieldEntry { field: string; name: string; value?: string }
+
+/** `fields.available`'s groups as one list, each token once (an element's own, its quantities and their common names, its scopes'). */
+export function flattenFields(r: { groups?: { fields?: { token?: string; label?: string; value?: string | null }[] }[] } | null): FieldEntry[] {
+  const seen = new Set<string>();
+  const o: FieldEntry[] = [];
+  for (const g of r?.groups ?? [])
+    for (const f of g.fields ?? []) {
+      if (!f.token || seen.has(f.token.toLowerCase())) continue;
+      seen.add(f.token.toLowerCase());
+      o.push({ field: f.token, name: f.label ?? f.token, value: f.value ?? undefined });
+    }
+  return o;
+}
+
+/**
+ * The errors the editor lists: the table's, but for the cell being typed (`typing`, its address) only those its text gave
+ * when tried (`tried`, once typing paused), none while it has not been tried: no errors at every key for a half-typed formula.
+ */
+export function cellErrors(all: string[], typing: string | null, tried: string[] | null): string[] {
+  if (!typing) return all;
+  const mine = (e: string) => e.startsWith(`${typing}:`) || e.startsWith(`${typing} `);
+  return [...all.filter((e) => !mine(e)), ...(tried ?? [])];
+}
+
+/** The functions AutoSum offers beside the sum, as spreadsheets have them. */
+export const AUTO_FUNCTIONS = [
+  { id: 'sum', label: 'Sum' }, { id: 'average', label: 'Average' }, { id: 'count', label: 'Count' }, { id: 'min', label: 'Min' }, { id: 'max', label: 'Max' },
+] as const;
+
+/** AutoSum on a selection (the engine finds the numbers: above or left of one empty cell, under each column of several). */
+export const autoSumOp = (s: Sel, fn = 'sum'): TableOp => ({ op: 'autoSum', range: rangeOf(s), fn });
+
+/** Whether a key is AutoSum's (Alt+=, as in a spreadsheet; by the key's place, so the Mac's Option keeps it). */
+export const isAutoSumKey = (e: { altKey: boolean; ctrlKey: boolean; metaKey: boolean; code: string }): boolean => e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'Equal';

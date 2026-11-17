@@ -63,6 +63,17 @@ public static class Expr
     /// <summary>The functions a formula may call (shown in the interface's help).</summary>
     public static IReadOnlyList<string> FunctionNames => Functions;
 
+    /// <summary>Each function as it is called, for the suggestions while typing (a semicolon or a comma parts its values).</summary>
+    public static readonly IReadOnlyDictionary<string, string> Signatures = new Dictionary<string, string>
+    {
+        ["min"] = "min(a; b; …)", ["max"] = "max(a; b; …)", ["abs"] = "abs(x)", ["round"] = "round(x; decimals)",
+        ["floor"] = "floor(x)", ["ceil"] = "ceil(x)", ["sqrt"] = "sqrt(x)", ["sin"] = "sin(degrees)", ["cos"] = "cos(degrees)",
+        ["tan"] = "tan(degrees)", ["atan2"] = "atan2(y; x) → degrees", ["if"] = "if(condition; then; else)", ["clamp"] = "clamp(x; low; high)",
+        ["concat"] = "concat(a; b; …)", ["text"] = "text(x; \"0.00\")", ["upper"] = "upper(text)", ["lower"] = "lower(text)",
+        ["trim"] = "trim(text)", ["left"] = "left(text; n)", ["right"] = "right(text; n)", ["len"] = "len(text)", ["pad"] = "pad(x; n) → 007",
+        ["sum"] = "sum(A1:A9; …)", ["average"] = "average(A1:A9; …)", ["count"] = "count(A1:A9; …)",
+    };
+
     /// <summary>The value of <paramref name="formula"/> as a number; <paramref name="name"/> gives a name's number (null: unknown, an error).</summary>
     public static double Eval(string formula, Func<string, double?> name)
     {

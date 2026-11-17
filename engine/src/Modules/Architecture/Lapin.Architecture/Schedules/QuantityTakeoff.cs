@@ -29,12 +29,13 @@ public sealed class QuantityTakeoff : IScheduleSource
     /// <summary>The measures, their headings, and the quantity names that give them (the first an element has).</summary>
     static readonly (string Heading, string[] Names)[] Measures =
     [
-        ("Length (m)", ["Length"]),
-        ("Gross area (m²)", ["GrossSideArea", "GrossArea", "GrossFloorArea", "GrossSurfaceArea", "Area"]),
-        ("Net area (m²)", ["NetSideArea", "NetArea", "NetFloorArea", "NetSurfaceArea"]),
-        ("Gross volume (m³)", ["GrossVolume"]),
-        ("Net volume (m³)", ["NetVolume", "Volume"]),
-        ("Weight (kg)", ["NetWeight", "GrossWeight", "Weight"]),
+        // The common names' quantities (QuantityNames), as formulas, tags and table cells read Area, NetVolume…
+        ("Length (m)", QuantityNames.Length),
+        ("Gross area (m²)", QuantityNames.GrossArea),
+        ("Net area (m²)", QuantityNames.NetArea),
+        ("Gross volume (m³)", QuantityNames.GrossVolume),
+        ("Net volume (m³)", QuantityNames.NetVolume),
+        ("Weight (kg)", QuantityNames.Weight),
         // Pieces of a material counted by its board (docs/plan-buildup-tags.md): its area over the board's, rounded up per row.
         ("Pieces", [Pieces]),
     ];
