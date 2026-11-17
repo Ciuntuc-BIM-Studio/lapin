@@ -162,6 +162,10 @@ In IFC a ramp is an IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTER_T
 
 A railing's segments may be arcs. Right-click near a segment of a selected railing for **Make arc** (or **Make straight**), then drag the round grip at the arc's middle to bend it through a point; right-click a corner's grip for **Fillet corner…** or **Chamfer corner…**. **Fillet** and **Chamfer** (FILLET, CHAMFER) take railings too: click a railing on the two segments either side of a corner, or click two railings whose ends meet, or would meet carried on: they become one railing, the first one, round the arc. Its handrail, rails and glass follow the arc in short straight pieces no more than a millimetre off it, its posts and balusters are spaced along the arc as along a straight segment, and its length is the arc's own. **Draft → Convert → Railing** keeps a fillet's arc: lines, arcs and polylines that meet end to end become one railing (untick **One railing where they meet end to end** for one each). In IFC the true curve is its Axis. Stair and balcony railings follow their stair or balcony.
 
+A railing is split, trimmed, extended and offset with the walls' tools: **Modify → Split element** cuts it in two where you click (an arc into two arcs of the same circle; the first keeps the id), **Modify → Trim/Extend elements** brings the end beyond a boundary back to it or carries the nearer end on along its end segment (an arc round its circle), and **Offset** copies it parallel, arcs concentric, its corners where the moved segments meet. Their lengths add up to the railing's.
+
+![A railing with an arc split in two on its arc](shots/railing-split.webp)
+
 ![A railing with a rounded corner](shots/railing-fillet.webp)
 
 ## Balconies

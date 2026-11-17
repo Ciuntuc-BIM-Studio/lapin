@@ -8,7 +8,8 @@ namespace Lapin.Platform;
 /// Holes in an outline (audit S4): islands cut out of a floor, a ceiling or a platform as part of its own outline, not separate
 /// elements (a floor opening stays an element of its own). Kept beside the outline as <c>holes</c> (each a loop of corners, as
 /// <c>contour</c> keeps its) and, when an edge of one is curved, <c>holeArcs</c> (each hole's rises, <see cref="ArcOutline"/>,
-/// null for a hole of straight edges). An element with no hole keeps neither, so what was saved before reads unchanged.
+/// null for a hole of straight edges) and, when one runs along an ellipse, <c>holeEllipses</c> (each hole's elliptical edges,
+/// <see cref="EllipseEdge"/>, null for a hole with none). An element with no hole keeps none, so what was saved before reads unchanged.
 /// Each hole is checked: three corners at least, enclosing something, counter-clockwise, inside the outline and apart from the
 /// other holes.
 /// </summary>
@@ -16,20 +17,21 @@ public static class OutlineHoles
 {
     public const string Key = "holes";
     public const string ArcsKey = "holeArcs";
+    public const string EllipsesKey = "holeEllipses";
 
-    /// <summary>One hole: its corners (counter-clockwise) and its edges' rises (null when every edge is straight).</summary>
-    public sealed record Hole(IReadOnlyList<Vec2> Corners, double[]? Rises)
+    /// <summary>One hole: its corners (counter-clockwise), its edges' rises (null when every edge is straight) and its elliptical edges (null: none).</summary>
+    public sealed record Hole(IReadOnlyList<Vec2> Corners, double[]? Rises, EllipseEdge?[]? Ellipses = null)
     {
-        /// <summary>Its loop as built: each arc laid in chords by the one rule.</summary>
-        public IReadOnlyList<Vec2> Points => Rises != null ? ArcOutline.Points(Corners, Rises) : Corners;
-        public double Area => Math.Abs(ArcOutline.SignedArea(Corners, Rises));
-        public double Perimeter => ArcOutline.Perimeter(Corners, Rises);
+        /// <summary>Its loop as built: each arc and elliptical edge laid in chords by the one rule.</summary>
+        public IReadOnlyList<Vec2> Points => Rises != null || Ellipses != null ? ArcOutline.Points(Corners, Rises, null, Ellipses) : Corners;
+        public double Area => Math.Abs(ArcOutline.SignedArea(Corners, Rises, Ellipses));
+        public double Perimeter => ArcOutline.Perimeter(Corners, Rises, Ellipses);
     }
 
     /// <summary>The holes an element keeps (none: empty).</summary>
-    public static IReadOnlyList<Hole> Of(Entity e) => Read(e.Attrs[Key], e.Attrs[ArcsKey]);
+    public static IReadOnlyList<Hole> Of(Entity e) => Read(e.Attrs[Key], e.Attrs[ArcsKey], e.Attrs[EllipsesKey]);
 
-    public static IReadOnlyList<Hole> Read(JsonNode? holes, JsonNode? arcs)
+    public static IReadOnlyList<Hole> Read(JsonNode? holes, JsonNode? arcs, JsonNode? ellipses = null)
     {
         if (holes is not JsonArray arr) return [];
         var o = new List<Hole>();
@@ -37,7 +39,8 @@ public static class OutlineHoles
         {
             var c = Args.StoredPoints(arr[i]);
             if (c.Count < 3) continue;
-            o.Add(new Hole(c, arcs is JsonArray a && i < a.Count ? ArcOutline.Rises(a[i], c.Count) : null));
+            o.Add(new Hole(c, arcs is JsonArray a && i < a.Count ? ArcOutline.Rises(a[i], c.Count) : null,
+                ellipses is JsonArray el && i < el.Count ? EllipseEdge.Read(el[i], c.Count) : null));
         }
         return o;
     }
@@ -51,15 +54,19 @@ public static class OutlineHoles
     /// <summary>Writes the holes (none: both attributes taken away).</summary>
     public static void Write(JsonObject attrs, IReadOnlyList<Hole> holes)
     {
-        if (holes.Count == 0) { attrs.Remove(Key); attrs.Remove(ArcsKey); return; }
+        if (holes.Count == 0) { attrs.Remove(Key); attrs.Remove(ArcsKey); attrs.Remove(EllipsesKey); return; }
         attrs[Key] = new JsonArray([.. holes.Select(h => (JsonNode)new JsonArray([.. h.Corners.Select(p => (JsonNode)new JsonArray(p.X, p.Y))]))]);
         if (holes.Any(h => ArcOutline.HasArcs(h.Rises))) attrs[ArcsKey] = new JsonArray([.. holes.Select(h => ArcOutline.ToJson(h.Rises))]);
         else attrs.Remove(ArcsKey);
+        if (holes.Any(h => h.Ellipses?.Any(x => x != null) == true))
+            attrs[EllipsesKey] = new JsonArray([.. holes.Select(h => h.Ellipses?.Any(x => x != null) == true ? (JsonNode)new JsonArray([.. h.Ellipses.Select(x => (JsonNode?)x?.ToJson())]) : null)]);
+        else attrs.Remove(EllipsesKey);
     }
 
     /// <summary>
     /// The holes a command gives: <c>holes</c> ([[[x, y]…]…], each a loop) and, optional, <c>holeArcs</c> (each hole's rises or
-    /// null), each checked (<see cref="ArcOutline.Check"/>) and made counter-clockwise; null when the command gives none.
+    /// null) and <c>holeEllipses</c> (each hole's elliptical edges or null), each checked (<see cref="ArcOutline.Check"/>) and made
+    /// counter-clockwise; null when the command gives none.
     /// </summary>
     public static List<Hole>? Arg(JsonObject a)
     {
@@ -69,10 +76,24 @@ public static class OutlineHoles
         {
             var pts = Args.StoredPoints(arr[i]);
             var rises = a[ArcsKey] is JsonArray ra && i < ra.Count ? ArcOutline.RisesArg(ra[i], pts.Count) : null;
-            var (c, r) = ArcOutline.Check(pts, rises, "A hole");
-            o.Add(new Hole(c, r));
+            var given = a[EllipsesKey] is JsonArray ea && i < ea.Count && ea[i] is JsonArray one ? one.Select(EllipseEdge.From).ToArray() : null;
+            o.Add(Checked(pts, rises, given));
         }
         return o;
+    }
+
+    /// <summary>A hole checked (<see cref="ArcOutline.Check"/>: counter-clockwise), its elliptical edges fitted to its corners as they then run.</summary>
+    public static Hole Checked(IReadOnlyList<Vec2> pts, double[]? rises, IReadOnlyList<EllipseEdge?>? ellipses)
+    {
+        var (c, r) = ArcOutline.Check(pts, rises, "A hole");
+        // Given clockwise, the check runs it back: its edges taken in that order, each run back (an edge's corners alone cannot
+        // tell, when every edge is a piece of one ellipse).
+        if (ellipses != null && ellipses.Count == pts.Count && ellipses.Any(x => x != null) && ArcOutline.SignedArea(pts, rises, ellipses) < 0)
+        {
+            var n = ellipses.Count;
+            ellipses = [.. Enumerable.Range(0, n).Select(j => ellipses[((n - 2 - j) % n + n) % n]?.Reversed)];
+        }
+        return new Hole(c, r, EllipseEdge.Fit(c, ellipses));
     }
 
     /// <summary>
@@ -107,7 +128,8 @@ public static class OutlineHoles
     /// </summary>
     public static void Apply(JsonObject attrs, JsonObject a, string key = "contour", string arcsKey = ArcOutline.Key)
     {
-        var holes = Arg(a) ?? Read(attrs[Key], attrs[ArcsKey]).ToList();
+        var was = Read(attrs[Key], attrs[ArcsKey], attrs[EllipsesKey]);
+        var holes = Arg(a) is { } given ? a[EllipsesKey] == null ? Kept(given, was) : given : was.ToList();
         if (holes.Count > 0)
         {
             var corners = Args.StoredPoints(attrs[key]);
@@ -116,6 +138,24 @@ public static class OutlineHoles
         }
         Write(attrs, holes);
     }
+
+    /// <summary>
+    /// Holes given again without their elliptical edges (a grip's edit, which sends corners and rises): each keeps the edges hole k
+    /// had, moved with it when its corners all moved by one offset, else those whose ends its corners still lie on.
+    /// </summary>
+    static List<Hole> Kept(List<Hole> given, IReadOnlyList<Hole> was) =>
+    [
+        .. given.Select((h, k) =>
+        {
+            if (k >= was.Count || was[k].Ellipses is not { } old || old.Length != h.Corners.Count) return h;
+            var c = h.Corners;
+            var d = c[0] - was[k].Corners[0];
+            if (c.Select((p, i) => p - was[k].Corners[i]).All(x => (x - d).Length < 1e-9))
+                return h with { Ellipses = [.. old.Select(x => x == null ? null : x with { C = x.C + d })] };
+            var kept = old.Select((x, i) => x != null && x.Off(c[i]) < 1e-6 && x.Off(c[(i + 1) % c.Count]) < 1e-6 ? x : null).ToArray();
+            return kept.Any(x => x != null) ? h with { Ellipses = kept } : h;
+        }),
+    ];
 
     /// <summary>The hole an outline edit names (<c>hole</c>: its index), or null when it names the outline itself; refused when the element has no such hole.</summary>
     public static int? Index(JsonObject a, Entity e)
@@ -130,7 +170,10 @@ public static class OutlineHoles
     {
         var (c, r) = ArcOutline.Check(corners, rises, "A hole");
         var holes = Of(e).ToList();
-        holes[k] = new Hole(c, r);
+        // Its elliptical edges kept while their corners still lie on them.
+        var was = holes[k].Ellipses;
+        var kept = was != null && was.Length == c.Count ? was.Select((x, i) => x != null && x.Off(c[i]) < 1e-6 && x.Off(c[(i + 1) % c.Count]) < 1e-6 ? x : null).ToArray() : null;
+        holes[k] = new Hole(c, r, kept?.Any(x => x != null) == true ? kept : null);
         var attrs = e.CloneAttrs();
         Write(attrs, holes);
         Apply(attrs, new JsonObject(), key, arcsKey);
@@ -141,9 +184,9 @@ public static class OutlineHoles
     public static JsonObject Added(Entity e, JsonObject a)
     {
         var pts = Args.Points(a);
-        var (c, r) = ArcOutline.Check(pts, ArcOutline.RisesArg(a[ArcOutline.Key], pts.Count), "A hole");
+        var given = a[EllipseEdge.Key] is JsonArray ea ? ea.Select(EllipseEdge.From).ToArray() : null;
         var holes = Of(e).ToList();
-        holes.Add(new Hole(c, r));
+        holes.Add(Checked(pts, ArcOutline.RisesArg(a[ArcOutline.Key], pts.Count), given));
         var attrs = e.CloneAttrs();
         Write(attrs, holes);
         Apply(attrs, new JsonObject());

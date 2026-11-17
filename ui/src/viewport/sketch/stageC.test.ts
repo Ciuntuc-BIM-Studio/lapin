@@ -37,7 +37,7 @@ describe('stage C of the 3D sketch (decision 376)', () => {
   });
 
   it('SketchUp\'s one-letter shortcuts start tools that exist, and are off by default', () => {
-    const ids = new Set(studio.tabs!.flatMap((t) => t.groups.flatMap((g) => [...g.tools, ...(g.small ?? [])].map((x) => x.id))));
+    const ids = new Set(studio.tabs!.flatMap((t) => t.groups.flatMap((g) => [...g.tools, ...(g.small ?? [])].flatMap((x) => [x, ...(x.items ?? [])]).map((x) => x.id))));
     for (const [key, id] of Object.entries(SKETCHUP_KEYS)) {
       if (id === 'select' || id.startsWith('cad:')) continue;
       expect(ids.has(id), `${key} → ${id}`).toBe(true);

@@ -31,6 +31,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         r.Service<IViewAnnotations>(this);
         r.Service<IScheduleSource>(new BoardSchedule());
         r.Service<IScheduleSource>(new CltSchedule());
+        CltSchedule.RegisterTemplate(r);
         r.Service<IScheduleSource>(new PanelSchedule());
 
         // A joisted floor type (decision 244): {id (a floor type), spec (null: built of its layers)}.
@@ -128,6 +129,9 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         r.Command("frameView", "Frame elevation", (ctx, a) => new JsonObject { ["id"] = FrameView(ctx, ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Wall } w ? w : throw new CommandException("Pick a wall.")).Id });
         // The frame elevation as an element view role (decision 579), of a timber-frame or CLT wall.
         r.Service<IElementViewRoles>(new WoodViewRoles());
+        // A wall's own studs and its openings' kings and jacks, edited by grips in its frame elevation (audit §14).
+        StudEditing.Register(r);
+        r.Service<IPathPieces>(new WoodWallPieces());
         r.Service<IScheduleSource>(new TimberSchedule());
         TimberSchedule.RegisterTemplate(r);
 
@@ -336,7 +340,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
             p.Opening.Id, p.Along, p.Sill, p.Width, p.Height, p.Fill?.Class == IfcClass.Door || p.Sill <= 1e-6,
             p.Opening.Attrs[OpeningKey] is JsonObject own ? OpeningRule.From(own, spec.RuleFor(p.Width + 2 * spec.GapSide)) : null)).ToList();
         var origin = spec.LayoutFrom == "project" ? -Vec2.Dot(start, dir) : 0;
-        var result = Framing.Panelize(spec, u0, u1, top, bends, core.From, core.To, holes, origin, Junctions(m, wall, start, dir, axis.Length, u0, u1, bands));
+        var result = Framing.Panelize(spec, u0, u1, top, bends, core.From, core.To, holes, origin, Junctions(m, wall, start, dir, axis.Length, u0, u1, bands), Framing.StudEdits.Of(wall));
         var names = placed.ToDictionary(p => p.Opening.Id, p => p.Fill?.Name ?? "An opening");
         var warnings = result.Warnings.Select(w => names.Aggregate(w, (acc, kv) => acc.Replace(kv.Key + ":", kv.Value + ":"))).ToList();
         return new WallFrame(wall, spec, result with { Warnings = warnings }, start, dir, baseZ, u0, u1, profile is { Count: > 0 } ? profile.Max(p => p.V) : height);
@@ -488,7 +492,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         Vec2 P(double u, double z) => c.Map(f.At(u, z, y));
         var k = c.Scale / 1000;
         var text = Lapin.Drawing.Standards.ResolveText(c.Book, []);
-        var mk = new ViewMark(wallId);
+        var mk = new ViewMark(wallId) { Data = new JsonObject { ["frameGrips"] = StudEditing.Grips(f, (u, z) => P(u, z)) } };
         void Chain(IReadOnlyList<double> us, double z, string color)
         {
             var pts = us.Distinct().OrderBy(u => u).ToList();

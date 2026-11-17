@@ -35,7 +35,7 @@ Haz clic en **Instalar**. Lapin descarga el archivo, comprueba que su tamaño y 
 | Listas de precios | **Ejecución → Listas de precios…**, marcadas como orientativas: los precios son del autor, compáralos con los tuyos |
 | Tipos | el proyecto abierto cuando la instalas, en un paso para deshacer (**Gestionar → Paquetes de tipos…** exporta los tuyos) |
 
-Si tu biblioteca ya tiene algo con el mismo nombre, Lapin pregunta antes de sustituirlo. Nada de lo que trae una extensión se ejecuta jamás: las extensiones son contenido.
+Si tu biblioteca ya tiene una lista de precios, una biblioteca de perfiles o un archivo de tramas con el mismo nombre que difiere, la **Vista previa de la importación** ofrece conservar ambos (con (2) tras el nombre), sustituirlo u omitirlo; para una plantilla de proyecto del mismo nombre, Lapin pregunta antes de sustituirla. Nada de lo que trae una extensión se ejecuta jamás: las extensiones son contenido.
 
 El catálogo de Lapin también está **firmado** por Lapin Extensions: el catálogo y cada uno de sus archivos llevan una firma que Lapin comprueba antes de leer la lista o instalar un archivo, de modo que una copia cambiada por el camino se rechaza. Una línea sobre la lista dice **Firmado por Lapin Extensions** cuando lo está.
 

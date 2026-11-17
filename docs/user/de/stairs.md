@@ -140,6 +140,10 @@ In IFC ist eine Rampe ein IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUA
 
 Die Segmente eines Geländers dürfen Bögen sein. Rechtsklick nahe einem Segment eines ausgewählten Geländers für **Zum Bogen machen** (oder **Gerade machen**), dann den runden Griff in der Bogenmitte ziehen, um ihn durch einen Punkt zu biegen; Rechtsklick auf den Griff einer Ecke für **Ecke abrunden…** oder **Ecke abfasen…**. **Abrunden** und **Fase** (FILLET, CHAMFER) nehmen auch Geländer: ein Geländer auf den zwei Segmenten beiderseits einer Ecke anklicken, oder zwei Geländer, deren Enden sich treffen oder verlängert treffen würden: sie werden ein Geländer, das erste, um den Bogen. Handlauf, Stäbe und Glas folgen dem Bogen in kurzen geraden Stücken höchstens einen Millimeter daneben, Pfosten und Stäbe stehen entlang des Bogens wie entlang eines geraden Segments, und die Länge ist die des Bogens. **Draft → Convert → Railing** behält den Bogen einer Abrundung: Linien, Bögen und Polylinien, die Ende an Ende treffen, werden ein Geländer (**Ein Geländer, wo sie sich Ende an Ende treffen** abwählen für je eines). In IFC ist die wahre Kurve seine Achse. Treppen- und Balkongeländer folgen ihrer Treppe oder ihrem Balkon.
 
+Ein Geländer wird mit den Werkzeugen der Wände geteilt, gestutzt, gedehnt und versetzt: **Ändern → Element teilen** schneidet es dort in zwei, wo Sie klicken (ein Bogen in zwei Bögen desselben Kreises; der erste behält die Id), **Ändern → Elemente stutzen/dehnen** führt das Ende jenseits einer Grenze auf sie zurück oder führt das nähere Ende entlang seines Endsegments weiter (einen Bogen um seinen Kreis), und **Versetzen** kopiert es parallel, Bögen konzentrisch, mit den Ecken dort, wo sich die verschobenen Segmente treffen. Ihre Längen ergeben zusammen die des Geländers.
+
+![Ein Geländer mit einem in zwei geteilten Bogen](shots/railing-split.webp)
+
 ![Ein Geländer mit abgerundeter Ecke](shots/railing-fillet.webp)
 
 ## Balkone

@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "圆弧", "Sketch edits": "草图编辑", "Geometric": "几何约束", "Arrays": "阵列", "Move, rotate, mirror": "移动、旋转、镜像", "Carriers and fans": "桥架和风机",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "宽度（空：类型的；轮廓的第一条边）", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "每个闭合轮廓下地形的地块（产权边界），保留其圆弧。", "An opening in the floor under each closed outline; a circle makes a round one.": "在每个闭合轮廓下的楼板中开洞；圆形生成圆洞。", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "所选类型的楼梯：起步在路径起点，沿路径上升；轮廓的第一条边即其起步和宽度。",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "钢连接零件", "Reinforcing bars": "钢筋", "Bars by mark": "按编号的钢筋", "Place in its element": "在其构件中的位置", "Thickness (m)": "厚度 (m)", "Row of the members list": "构件清单中的行", "Hall": "厂房", "kg/m": "kg/m", "Each (kg, the row's)": "单件 (kg，该行的)", "Row of the parts schedule": "零件明细表中的行", "Weld length (m)": "焊缝长度 (m)", "Total length (m)": "总长度 (m)", "A type's bars of one mark: shape, Ø, length": "同一编号的类型钢筋：形状、Ø、长度", "Partition": "分区",
   // Annotations drawn on a sheet itself (decision 620)
   "drawing on the sheet": "图纸上的绘图", "Back to the sheet: place, move and crop its views there": "返回图纸：在那里放置、移动和裁剪其视图", "Draw on the sheet itself: texts, leader notes, lines, clouds, hatches, symbols, a legend, a scale bar (in paper mm)": "在图纸本身上绘制：文字、引线注释、线条、云线、填充图案、符号、图例、比例尺（以图纸毫米计）", "Revision cloud": "修订云线", "Leader note": "引线注释", "Annotate sheet": "注释图纸", "A legend goes on a sheet: open the sheet and click Annotate.": "图例放在图纸上：打开图纸并点击注释。", "Open a sheet first: then draw on it here.": "请先打开一张图纸：然后在这里在其上绘制。", "Revision cloud drawn.": "已绘制修订云线。", "First corner [Polygon]": "第一个角点 [多边形]", "Next point (Enter closes the cloud)": "下一点（Enter 闭合云线）", "First point": "第一点", "materials (hatches and fills)": "材料（填充图案和填充）", "line styles": "线型", "Its heading; {…} tokens as in a title block. Empty: LEGEND": "其标题；{…} 标记与图框中相同。为空：LEGEND", "Its length in metres of the model; empty: a round length about 80 mm long on paper": "其长度，以模型米计；为空：图纸上约 80 mm 的整数长度", "Divisions": "分段", "On a sheet: its own scale when it follows no view; empty: the sheet's first view's": "在图纸上：不跟随任何视图时其自身的比例；为空：图纸第一个视图的比例", "by view": "按视图", "Drawn as a revision cloud: scallops about this long on paper": "绘制为修订云线：图纸上弧长约为此值", "Change legend": "修改图例", "A legend goes on a sheet: open the sheet and annotate it.": "图例放在图纸上：打开图纸并注释它。", "A sheet's paper is not a view to place.": "图纸的纸面不是可放置的视图。", "A cloud's scallop is 1 to 100 mm.": "云线的弧长为 1 到 100 mm。",
   // Fixed schedules as shipped field-schedule templates, parts as rows (audit S1)
@@ -1182,6 +1188,12 @@ export const ZH: Record<string, string> = {
   'Extract grille': '排风格栅',
   'Rise / drop': '上升 / 下降',
   'Cap': '管帽',
+  'Coupling': '管箍',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': '拖动：沿墙移动立柱（Ctrl 单击：移除）',
+  'Drag out or in: more or fewer king studs': '向外或向内拖动：增加或减少主立柱',
+  'Drag out or in: more or fewer jack studs': '向外或向内拖动：增加或减少门窗过梁支柱',
+  'Reset studs': '重置立柱',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": '在此墙上（其骨架立面中）移动、添加或移除的立柱恢复为其类型的模数',
   'Service': '服务',
   'Ports': '端口',
   'open': '未连接',
@@ -3916,6 +3928,8 @@ export const ZH: Record<string, string> = {
   "Its centre, the end of one semi-axis, then the other semi-axis": "中心、一条半轴的端点，然后是另一条半轴", "End of one semi-axis": "一条半轴的端点", "Other semi-axis (a point or a value) · Arc (A)": "另一条半轴（点或数值）· 弧 (A)", "Other semi-axis (a point or a value)": "另一条半轴（点或数值）", "Start of the arc": "弧的起点", "End of the arc (anticlockwise)": "弧的终点（逆时针）", "Elliptical arc": "椭圆弧",
   "From drawn shape": "取自绘制图形", "From room": "取自房间", "Click inside a closed drafted shape: a polyline, a rectangle, a circle": "在闭合的绘制图形内单击：多段线、矩形、圆", "Click inside a room: its outline": "在房间内单击：取其轮廓", "No walls close round that point.": "没有墙围合该点。", "Click inside a closed drafted shape (a closed polyline, a rectangle or a circle).": "请在闭合的绘制图形（闭合多段线、矩形或圆）内单击。", "Click inside a room.": "请在房间内单击。",
   "Hole in the outline": "轮廓中的孔", "Hole in outline": "轮廓中的孔", "Hole in platform": "平台中的孔", "Drag to move the hole": "拖动以移动孔", "Remove hole": "删除孔",
+  "The language of its own words: its heading, the lines' roles and types": "其自身文字的语言：标题、线条的角色和类型",
+  "Drag to move the leader's arrow": "拖动以移动引线的箭头", "Drag to move the bend": "拖动以移动折点", "Move leader": "移动引线",
   // Fillet and chamfer on walls and railings, railings with arcs (a user's request)
   "A railing along each line, arc or polyline; those meeting end to end make one.": "沿每条直线、圆弧或多段线生成一道栏杆；首尾相接的合为一道。", "One railing where they meet end to end": "首尾相接处合为一道栏杆", "Drag to bend the segment through the point": "拖动使该段弯曲通过该点",
   // Edit sketch on outlines (forum topic 97, stage 3)
@@ -4033,6 +4047,47 @@ export const ZH: Record<string, string> = {
   'The element\'s classification (Manage → Classifications…): its code, or its title': '构件的分类（管理 → 分类…）：其代码或标题',
   'ALL DOORS & WINDOWS': '所有门窗',
   'Every door and window of the plan not tagged yet: a marker across its wall': '平面中尚未标记的每扇门和窗：横跨其墙的标记',
+  // Parts replace families (audit S6)
+  "Parts…": "零件…",
+  "Part…": "零件…",
+  "Part from sketch…": "由草图生成零件…",
+  "Make part from sketch…": "由草图创建零件…",
+  "Make part from sketch": "由草图创建零件",
+  "Make part": "创建零件",
+  "Add to part": "添加到零件",
+  "Held by": "所属于",
+  "Attribute": "属性",
+  "Delete this part from the project? Undo brings it back.": "从项目中删除此零件？撤销可恢复。",
+  "Part added to the project. Edit part opens its sketches and parameters.": "零件已添加到项目。编辑零件会打开其草图和参数。",
+  "Part (.lapinpart, .lapinfamily)": "零件 (.lapinpart, .lapinfamily)",
+  "Choose a part to save.": "请选择要保存的零件。",
+  "A new part, a box to start from": "新零件，以一个方盒为起点",
+  "A part's .lapinpart file (an older .lapinfamily too), exported from Lapin on this or another computer": "零件的 .lapinpart 文件（也可是旧的 .lapinfamily），从本机或其他电脑上的 Lapin 导出",
+  "Choose a part, or start a new one. A part is edited in its own edit mode (Edit part): its sketches, steps, parameters and the elements it holds. Objects of a part are placed from Studio → Part, and take their own values.": "选择一个零件，或新建一个。零件在其自己的编辑模式（编辑零件）中编辑：它的草图、步骤、参数和所含构件。零件的对象通过 Studio → 零件放置，并有各自的值。",
+  "Opens the part's edit mode on a placed object (one is placed when there is none)": "在已放置的对象上打开零件的编辑模式（没有时会先放置一个）",
+  "Place objects of this part on a plan": "在平面图上放置此零件的对象",
+  "The part as a .lapinpart file, to import on another computer": "零件的 .lapinpart 文件，可导入到另一台电脑",
+  "Open a storey first: a part is edited on an object placed on one.": "请先打开一个楼层：零件需在放置于楼层上的对象上编辑。",
+  "The part could not be placed.": "无法放置该零件。",
+  "The part had no object yet: one was placed at the origin of the active storey to edit it on.": "该零件还没有对象：已在当前楼层的原点放置一个以便编辑。",
+  "There is no part yet: make one in Studio → Parts…, or from a sketch.": "还没有零件：请在 Studio → 零件… 中创建，或由草图创建。",
+  "No part yet: Studio → Parts…": "还没有零件：Studio → 零件…",
+  "The part to place": "要放置的零件",
+  "The part in the Parts dialog": "在“零件”对话框中查看该零件",
+  "Its part is not in the project.": "其零件不在项目中。",
+  "Its sketches, steps, parameters and elements (Tab)": "其草图、步骤、参数和构件（Tab）",
+  "The part could not be made.": "无法创建该零件。",
+  "Part made: its parameters are W, H and D. Edit part opens its sketches.": "零件已创建：其参数为 W、H 和 D。编辑零件会打开其草图。",
+  "The closed outlines chosen made a part of your own, its body drawn from them: its name, depth and class are asked next.": "所选闭合轮廓会生成您自己的零件，其实体由这些轮廓绘制：接下来会询问名称、深度和类别。",
+  "None: select the elements and the part, then Studio → Add to part.": "无：选中构件和零件，然后选择 Studio → 添加到零件。",
+  "Let go: it stays in this object as a plain element, and goes from the others": "释放：它在此对象中保留为普通构件，并从其他对象中消失",
+  "Stop driving it": "停止驱动",
+  "Drive the attribute by a formula of the part's parameters": "用零件参数的公式驱动该属性",
+  "Edit it in the part, for every object of the part": "在零件中编辑，对零件的每个对象生效",
+  "Select one placed part and the elements to put into it: they become part of it, in every object of the part.": "选中一个已放置的零件和要放入其中的构件：它们将成为该零件的一部分，在零件的每个对象中生效。",
+  "Select the elements to put into the part together with the part itself.": "请连同零件本身一起选中要放入零件的构件。",
+  "The elements are part of the part now: edit them in its edit mode (Tab).": "这些构件现已成为零件的一部分：请在其编辑模式（Tab）中编辑。",
+  "Parts (old .lapinfamily)": "零件（旧版 .lapinfamily）",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

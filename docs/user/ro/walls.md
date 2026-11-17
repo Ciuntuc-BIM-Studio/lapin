@@ -150,6 +150,8 @@ Sub un acoperiș straturile peretelui urcă până la acoperiș; o prelungire **
 
 **Modifică → Paralelă din element** (comanda OFFSET din linia de comandă, care acceptă acum elemente): scrie distanța în unitatea proiectului, dă clic pe un perete într-un plan, apoi pe partea unde vine copia. Copia este paralelă cu peretele, concentrică la un perete curb, cu același tip, aceleași straturi și goluri. **A** (Axă, implicit) măsoară de la axă, **F** (Fețe) de la fața peretelui, astfel încât fața copiei să fie la distanța dată de a lui; **T** (Prin) ia un punct prin care trece copia.
 
+Ce stă pe perete merge la partea pe care cade. Un finisaj vopsit pe fața unui perete drept rămâne unde era pe față; unul a cărui zonă continuă peste tăietură vopsește și cealaltă parte, dacă nu o oprește o linie de împărțire a feței, iar unul vopsit pe toată fața le acoperă pe toate. Un parasolar de-a lungul peretelui merge la partea pe care o urmează (unul peste tăietură refuză, ca o ușă); un balcon merge la partea pe care îi cade mijlocul, sau rămâne liber unde este când partea lui e tăiată. Armăturile desenate în perete sunt găzduite de partea pe care le cade punctul, cofrajul cofrează fiecare parte, iar montanții proprii ai unui perete pe cadre de lemn (vezi [Lemn](wood.md)) merg cu partea lor. Finisajele unui perete curb rămân pe prima parte.
+
 ![Doi pereți tăiați la o limită și un perete cu ușă împărțit în doi](shots/wall-split-trim.webp)
 
 ## Tipurile de pereți
