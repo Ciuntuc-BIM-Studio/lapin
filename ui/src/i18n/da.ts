@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Buer", "Sketch edits": "Skitseredigering", "Geometric": "Geometriske", "Arrays": "Rækker", "Move, rotate, mirror": "Flyt, drej, spejl", "Carriers and fans": "Kabelbakker og ventilatorer",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Bredde (tom: typens; en omrids' første kant)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Grunden (ejendommens grænse) for terrænet under hvert lukket omrids, med dets buer bevaret.", "An opening in the floor under each closed outline; a circle makes a round one.": "En åbning i dækket under hvert lukket omrids; en cirkel giver en rund.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "En trappe af den valgte type: dens fod ved stiens start, stigende langs den; et omrids' første kant er dens fod og bredde.",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "Stålsamlingers dele", "Reinforcing bars": "Armeringsjern", "Bars by mark": "Jern efter position", "Place in its element": "Plads i dets element", "Thickness (m)": "Tykkelse (m)", "Row of the members list": "Række i listen over stålprofiler", "Hall": "Hal", "kg/m": "kg/m", "Each (kg, the row's)": "Stk. (kg, rækkens)", "Row of the parts schedule": "Række i listen over dele", "Weld length (m)": "Svejselængde (m)", "Total length (m)": "Samlet længde (m)", "A type's bars of one mark: shape, Ø, length": "En types jern med samme position: form, Ø, længde",
   // Annotations drawn on a sheet itself (decision 620)
   "drawing on the sheet": "tegning på arket", "Back to the sheet: place, move and crop its views there": "Tilbage til arket: placér, flyt og beskær dets visninger der", "Draw on the sheet itself: texts, leader notes, lines, clouds, hatches, symbols, a legend, a scale bar (in paper mm)": "Tegn på selve arket: tekster, noter med henvisningslinje, linjer, skyer, skraveringer, symboler, en signaturforklaring, en målestokslinje (i papir-mm)", "Revision cloud": "Revisionssky", "Leader note": "Note med henvisningslinje", "Annotate sheet": "Annotér ark", "A legend goes on a sheet: open the sheet and click Annotate.": "En signaturforklaring hører til på et ark: åbn arket og klik på Annotér.", "Open a sheet first: then draw on it here.": "Åbn først et ark: tegn så på det her.", "Revision cloud drawn.": "Revisionssky tegnet.", "First corner [Polygon]": "Første hjørne [Polygon]", "Next point (Enter closes the cloud)": "Næste punkt (Enter lukker skyen)", "First point": "Første punkt", "materials (hatches and fills)": "materialer (skraveringer og udfyldninger)", "line styles": "linjetyper", "Its heading; {…} tokens as in a title block. Empty: LEGEND": "Dens overskrift; {…}-felter som i et titelfelt. Tom: SIGNATURFORKLARING", "Its length in metres of the model; empty: a round length about 80 mm long on paper": "Dens længde i modellens meter; tom: en rund længde på omkring 80 mm på papir", "Divisions": "Inddelinger", "On a sheet: its own scale when it follows no view; empty: the sheet's first view's": "På et ark: dens egen målestok, når den ikke følger en visning; tom: arkets første visnings", "by view": "efter visning", "Drawn as a revision cloud: scallops about this long on paper": "Tegnet som revisionssky: buer omtrent så lange på papir", "Change legend": "Ændr signaturforklaring", "A legend goes on a sheet: open the sheet and annotate it.": "En signaturforklaring hører til på et ark: åbn arket og annotér det.", "A sheet's paper is not a view to place.": "Et arks papir er ikke en visning, der kan placeres.", "A cloud's scallop is 1 to 100 mm.": "En skys bue er 1 til 100 mm.",
   // Fixed schedules as shipped field-schedule templates, parts as rows (audit S1)
@@ -1184,6 +1190,12 @@ export const DA: Record<string, string> = {
   'Extract grille': 'Udsugningsrist',
   'Rise / drop': 'Stigning / fald',
   'Cap': 'Prop',
+  'Coupling': 'Muffe',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': 'Træk: flyt stolpen langs væggen (Ctrl-klik: fjern den)',
+  'Drag out or in: more or fewer king studs': 'Træk ud eller ind: flere eller færre kongestolper',
+  'Drag out or in: more or fewer jack studs': 'Træk ud eller ind: flere eller færre bærestolper',
+  'Reset studs': 'Nulstil stolper',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": 'Stolper flyttet, tilføjet eller fjernet på denne væg (i dens rammeopstalt) går tilbage til typens modul',
   'Service': 'Forsyning',
   'Ports': 'Porte',
   'open': 'åben',
@@ -3919,6 +3931,8 @@ export const DA: Record<string, string> = {
   "Its centre, the end of one semi-axis, then the other semi-axis": "Centrum, enden af en halvakse, så den anden halvakse", "End of one semi-axis": "Enden af en halvakse", "Other semi-axis (a point or a value) · Arc (A)": "Anden halvakse (et punkt eller en værdi) · Bue (A)", "Other semi-axis (a point or a value)": "Anden halvakse (et punkt eller en værdi)", "Start of the arc": "Buens start", "End of the arc (anticlockwise)": "Buens slutning (mod uret)", "Elliptical arc": "Ellipsebue",
   "From drawn shape": "Fra tegnet form", "From room": "Fra rum", "Click inside a closed drafted shape: a polyline, a rectangle, a circle": "Klik inden i en lukket tegnet form: en polylinje, et rektangel, en cirkel", "Click inside a room: its outline": "Klik inden i et rum: dets omrids", "No walls close round that point.": "Ingen vægge lukker sig om det punkt.", "Click inside a closed drafted shape (a closed polyline, a rectangle or a circle).": "Klik inden i en lukket tegnet form (en lukket polylinje, et rektangel eller en cirkel).", "Click inside a room.": "Klik inden i et rum.",
   "Hole in the outline": "Hul i omridset", "Hole in outline": "Hul i omrids", "Hole in platform": "Hul i platform", "Drag to move the hole": "Træk for at flytte hullet", "Remove hole": "Fjern hul",
+  "The language of its own words: its heading, the lines' roles and types": "Sproget for dens egne ord: overskriften, linjernes roller og typer",
+  "Drag to move the leader's arrow": "Træk for at flytte henvisningslinjens pil", "Drag to move the bend": "Træk for at flytte knækket", "Move leader": "Flyt henvisningslinje",
   // Fillet and chamfer on walls and railings, railings with arcs (a user's request)
   "A railing along each line, arc or polyline; those meeting end to end make one.": "Et gelænder langs hver linje, bue eller polylinje; dem, der mødes ende mod ende, bliver ét.", "One railing where they meet end to end": "Ét gelænder, hvor de mødes ende mod ende", "Drag to bend the segment through the point": "Træk for at bøje segmentet gennem punktet",
   // Edit sketch on outlines (forum topic 97, stage 3)
@@ -4036,6 +4050,47 @@ export const DA: Record<string, string> = {
   'The element\'s classification (Manage → Classifications…): its code, or its title': 'Elementets klassifikation (Administrer → Klassifikationer…): dens kode eller dens titel',
   'ALL DOORS & WINDOWS': 'ALLE DØRE & VINDUER',
   'Every door and window of the plan not tagged yet: a marker across its wall': 'Hver dør og hvert vindue på planen uden mærkat endnu: en markering på tværs af dens væg',
+  // Parts replace families (audit S6)
+  "Parts…": "Dele…",
+  "Part…": "Del…",
+  "Part from sketch…": "Del fra skitse…",
+  "Make part from sketch…": "Lav del fra skitse…",
+  "Make part from sketch": "Lav del fra skitse",
+  "Make part": "Lav delen",
+  "Add to part": "Føj til del",
+  "Held by": "Holdes af",
+  "Attribute": "Attribut",
+  "Delete this part from the project? Undo brings it back.": "Slet denne del fra projektet? Fortryd bringer den tilbage.",
+  "Part added to the project. Edit part opens its sketches and parameters.": "Del føjet til projektet. Rediger del åbner dens skitser og parametre.",
+  "Part (.lapinpart, .lapinfamily)": "Del (.lapinpart, .lapinfamily)",
+  "Choose a part to save.": "Vælg en del at gemme.",
+  "A new part, a box to start from": "En ny del, en kasse at starte fra",
+  "A part's .lapinpart file (an older .lapinfamily too), exported from Lapin on this or another computer": "En dels .lapinpart-fil (også en ældre .lapinfamily), eksporteret fra Lapin på denne eller en anden computer",
+  "Choose a part, or start a new one. A part is edited in its own edit mode (Edit part): its sketches, steps, parameters and the elements it holds. Objects of a part are placed from Studio → Part, and take their own values.": "Vælg en del, eller start en ny. En del redigeres i sin egen redigeringstilstand (Rediger del): dens skitser, trin, parametre og de elementer, den rummer. Objekter af en del placeres fra Studio → Del og får deres egne værdier.",
+  "Opens the part's edit mode on a placed object (one is placed when there is none)": "Åbner delens redigeringstilstand på et placeret objekt (der placeres et, hvis der ingen er)",
+  "Place objects of this part on a plan": "Placér objekter af denne del på en plan",
+  "The part as a .lapinpart file, to import on another computer": "Delen som en .lapinpart-fil, til import på en anden computer",
+  "Open a storey first: a part is edited on an object placed on one.": "Åbn først en etage: en del redigeres på et objekt placeret på en.",
+  "The part could not be placed.": "Delen kunne ikke placeres.",
+  "The part had no object yet: one was placed at the origin of the active storey to edit it on.": "Delen havde endnu intet objekt: der blev placeret et i den aktive etages origo til redigering.",
+  "There is no part yet: make one in Studio → Parts…, or from a sketch.": "Der er endnu ingen del: lav en i Studio → Dele… eller fra en skitse.",
+  "No part yet: Studio → Parts…": "Endnu ingen del: Studio → Dele…",
+  "The part to place": "Delen der skal placeres",
+  "The part in the Parts dialog": "Delen i dialogen Dele",
+  "Its part is not in the project.": "Dens del er ikke i projektet.",
+  "Its sketches, steps, parameters and elements (Tab)": "Dens skitser, trin, parametre og elementer (Tab)",
+  "The part could not be made.": "Delen kunne ikke oprettes.",
+  "Part made: its parameters are W, H and D. Edit part opens its sketches.": "Del oprettet: dens parametre er W, H og D. Rediger del åbner dens skitser.",
+  "The closed outlines chosen made a part of your own, its body drawn from them: its name, depth and class are asked next.": "De valgte lukkede konturer bliver en del af din egen, med kroppen tegnet ud fra dem: navn, dybde og klasse spørges om næste gang.",
+  "None: select the elements and the part, then Studio → Add to part.": "Ingen: markér elementerne og delen, og vælg derefter Studio → Føj til del.",
+  "Let go: it stays in this object as a plain element, and goes from the others": "Slip: det bliver i dette objekt som et almindeligt element og forsvinder fra de andre",
+  "Stop driving it": "Stop med at styre den",
+  "Drive the attribute by a formula of the part's parameters": "Styr attributten med en formel af delens parametre",
+  "Edit it in the part, for every object of the part": "Rediger det i delen, for hvert objekt af delen",
+  "Select one placed part and the elements to put into it: they become part of it, in every object of the part.": "Markér én placeret del og de elementer, der skal ind i den: de bliver en del af den i hvert objekt af delen.",
+  "Select the elements to put into the part together with the part itself.": "Markér de elementer, der skal ind i delen, sammen med selve delen.",
+  "The elements are part of the part now: edit them in its edit mode (Tab).": "Elementerne er nu en del af delen: rediger dem i dens redigeringstilstand (Tab).",
+  "Parts (old .lapinfamily)": "Dele (gammel .lapinfamily)",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

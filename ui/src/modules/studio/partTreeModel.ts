@@ -1,5 +1,7 @@
 /** The part's tree as `studio.partTree` answers it, and what the panel shows of it (pure, tested in editMode.test.ts). */
 
+import type { PartMember } from './partMembersModel';
+
 export type PartPlane = 'xy' | 'xz' | 'yz';
 export type PartParamKind = 'length' | 'number' | 'angle' | 'bool' | 'text' | 'integer';
 
@@ -29,6 +31,8 @@ export interface TreeParam {
 export interface PartTree {
   id: string; name: string; kind: 'formula' | 'recipe'; partTypeId?: string; planes: PartPlane[];
   sketches: TreeSketch[]; steps: TreeStep[]; params: TreeParam[];
+  /** The native elements the part holds (audit S6). */
+  members?: PartMember[];
 }
 
 /** The origin's three planes as the panel names them. */

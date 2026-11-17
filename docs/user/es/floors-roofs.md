@@ -26,7 +26,7 @@ La misma barra sirve a todas las herramientas de contorno (forjado, hueco de for
 
 ![La barra de las herramientas de contorno, con From drawn shape elegido](shots/outline-sources.webp)
 
-Para forjado, hueco de forjado, techo y habitación por contorno, la barra ofrece también **Ellipse**: su centro, el extremo de un semieje y luego el otro. Los bordes del contorno siguen la elipse verdadera (cuatro cuartos), medidos exactamente; una esquina movida fuera de la elipse vuelve rectos sus dos bordes, y una esquina junto a un borde elíptico no se redondea. IFC la lleva como IfcEllipse. **From drawn shape** toma igual una elipse dibujada.
+Para forjado, hueco de forjado, techo y habitación por contorno, la barra ofrece también **Ellipse**: su centro, el extremo de un semieje y luego el otro. Los bordes del contorno siguen la elipse verdadera (cuatro cuartos), medidos exactamente; una esquina movida fuera de la elipse vuelve rectos sus dos bordes, y una esquina junto a un borde elíptico no se redondea. IFC la lleva como IfcEllipse. **From drawn shape** toma igual una elipse dibujada. Un hueco propio de un forjado o un techo (**Hole in the outline**) también admite una elipse. Un contorno con un borde elíptico no se desfasa entero (Mayús-arrastrar, **Offset outline…**): la curva a una distancia de una elipse no es una elipse.
 
 ![Un forjado elíptico dibujándose junto a una elipse dibujada](shots/ellipse-floor.webp)
 
@@ -57,6 +57,12 @@ Una capa de un forjado también puede ir más allá de su contorno, o detenerse 
 **Modificar → Dividir elemento** sobre una losa o un techo pide dos puntos de una línea de corte: la línea continúa más allá de ellos y debe cruzar el contorno exactamente dos veces. La losa pasa a ser dos losas; la parte pulsada conserva el id (GlobalId en IFC), los arcos de los bordes siguen siendo arcos (un arco cortado sigue siendo un arco) y un hueco de la losa pasa a la parte en que está. Un hueco que cruce la línea se rechaza. **Modificar → Recortar/alargar elementos** acepta un límite recto (un muro, una viga o una línea dibujada) y corta allí la losa o el techo, conservando el lado pulsado.
 
 ![Una losa con un borde curvo dividida por una línea: la parte de la derecha seleccionada](shots/floor-split.webp)
+
+Los huecos propios de una losa van a la parte en la que caen; una capa que sobrepasa un borde curvo sigue haciéndolo en ambas partes; la retícula de un falso techo queda donde estaba, cada luminaria o difusor en la parte en que cae su celda. Una losa con un borde elíptico no se corta con una línea.
+
+Un **tejado** se divide y recorta del mismo modo. Cada parte conserva las reglas de sus bordes (alero o hastial, pendiente, vuelo), y el corte es un hastial sin vuelo; el corte solo se permite donde deja el tejado como estaba, con los faldones de cada parte en pie donde estaban los del tejado, como a través de la cumbrera de un tejado a dos aguas o a lo largo de ella. En otro caso se rechaza (*would change its slopes*): los faldones de una parte subirían hasta nuevas cumbreras. Las ventanas de tejado, buhardillas y bajantes van a su parte. Un tejado en cañón no se corta.
+
+![Un tejado a dos aguas dividido a través de la cumbrera: dos tejados, los mismos faldones](shots/roof-split.webp)
 
 ## Cubiertas
 

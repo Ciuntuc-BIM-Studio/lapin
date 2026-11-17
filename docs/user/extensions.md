@@ -1,7 +1,7 @@
 ---
 title: Extensions
 order: 126
-summary: Add furniture, project templates, wall, door and window types, symbols, line types, drafting standards, rule packs, bar shapes, shared parameters, families, profiles, hatch patterns, title blocks and price lists made by others from the Lapin Extensions catalogue, and remove them again.
+summary: Add furniture, project templates, wall, door and window types, symbols, line types, drafting standards, rule packs, bar shapes, shared parameters, families (parts), profiles, hatch patterns, title blocks and price lists made by others from the Lapin Extensions catalogue, and remove them again.
 ---
 
 ## The catalogue
@@ -35,11 +35,11 @@ Click **Install**. Lapin downloads the file, checks that its size and SHA-256 ar
 | Price lists | **Construction → Price lists…**, marked indicative: the prices are the author's, check them against your own |
 | Types | the project open when you install it, in one step to undo (**Manage → Type packs…** exports your own) |
 | Symbols | **Manage → Symbols…**, in this computer's library; **Add to this project** in Installed brings them into the project open |
-| Line types, Drafting standards, Bar shapes, Shared parameters, Families | kept on this computer; **Add to this project** in Installed (and the project browser's **Catalog → From the libraries**) brings them into the project open through the library's own import: line types into the project's line types, standards into **Drafting standards**, bar shapes into **Bar shapes…** (the edition needs the rebar module), parameters into **Shared parameters**, families into Studio's families (the studio module) |
+| Line types, Drafting standards, Bar shapes, Shared parameters, Families (parts) | kept on this computer; **Add to this project** in Installed (and the project browser's **Catalog → From the libraries**) brings them into the project open through the library's own import: line types into the project's line types, standards into **Drafting standards**, bar shapes into **Bar shapes…** (the edition needs the rebar module), parameters into **Shared parameters**, families into Studio's families (the studio module) |
 | Rule packs | kept on this computer; **Add to this project** adds a rule pack of the project. Marked indicative: the values are the author's, check them against the norm in force |
 | Table and layer mappings | remembered by Lapin, so **Import table…** finds the column mapping by the table's headings and **Convert drafting to…** the converter of each layer; uninstalling puts your earlier choices back |
 
-If your library already has something of the same name, Lapin asks before replacing it. Nothing an extension brings is ever run: extensions are content.
+If your library already has a price list, profile library or hatch file of the same name that differs, the **Import preview** offers to keep both (with (2) after its name), replace it or skip; for a project template of the same name, Lapin asks before replacing it. Nothing an extension brings is ever run: extensions are content.
 
 Lapin's catalogue is also **signed** by Lapin Extensions: the catalogue and each of its files carry a signature that Lapin checks before it reads the list or installs a file, so a copy changed anywhere on the way is refused. A line above the list says **Signed by Lapin Extensions** when it is.
 

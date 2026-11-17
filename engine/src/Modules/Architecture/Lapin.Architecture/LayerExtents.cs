@@ -157,15 +157,25 @@ public static class LayerExtents
     /// A floor's edge extents after its contour changed (a corner moved, added or taken away): each goes to the new edge lying
     /// along the old one (the same direction, on its line within 5 mm), its own index first; one whose edge is gone is dropped.
     /// </summary>
-    public static List<Extent> RemapEdges(IReadOnlyList<Extent> xs, IReadOnlyList<Vec2> was, IReadOnlyList<Vec2> now)
+    public static List<Extent> RemapEdges(IReadOnlyList<Extent> xs, IReadOnlyList<Vec2> was, IReadOnlyList<Vec2> now,
+        IReadOnlyList<double>? wasRises = null, IReadOnlyList<double>? nowRises = null)
     {
         if (!xs.Any(x => x.Edge == Edge)) return [.. xs];
+        double Rise(IReadOnlyList<double>? r, int i) => r != null && i < r.Count ? r[i] : 0;
         bool Same(int oi, int ni)
         {
             if (oi >= was.Count || ni >= now.Count) return false;
             var (a, b) = (was[oi], was[(oi + 1) % was.Count]);
             var (c, d) = (now[ni], now[(ni + 1) % now.Count]);
             if ((b - a).Length < 1e-9 || (d - c).Length < 1e-9) return false;
+            // A curved edge (audit §15): the same circle, the same way round, the new edge's ends on the old arc.
+            var (ro, rn) = (Rise(wasRises, oi), Rise(nowRises, ni));
+            if (Math.Abs(ro) > 1e-6 || Math.Abs(rn) > 1e-6)
+            {
+                if (Math.Abs(ro) <= 1e-6 || Math.Abs(rn) <= 1e-6 || Math.Sign(ro) != Math.Sign(rn)) return false;
+                var (co, cn) = (new PathCurve(a, b, ro), new PathCurve(c, d, rn));
+                return (co.Centre - cn.Centre).Length < 0.005 && Math.Abs(co.Radius - cn.Radius) < 0.005 && co.Distance(c) < 0.005 && co.Distance(d) < 0.005;
+            }
             var u = (b - a).Normalized();
             return Vec2.Dot(u, (d - c).Normalized()) > 0.999 && Math.Abs(Vec2.Cross(u, c - a)) < 0.005 && Math.Abs(Vec2.Cross(u, d - a)) < 0.005;
         }

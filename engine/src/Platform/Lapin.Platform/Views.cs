@@ -951,13 +951,17 @@ public static class Views
                 if (!into.TryGetValue(key, out var pen)) into[key] = pen = new Pen(fillLayer, null, 0, color, null);
                 pen.Loops.AddRange(loops);
             }
+            HashSet<Pen>? curved = mk.Curves.Count > 0 ? [] : null;
             foreach (var (la, lb, layer, width, color, dash) in mk.Lines)
             {
                 if (layer == "PICK" || (print && layer == ConstructionLayer)) continue;
                 var key = $"{layer}:{color}:{width}:{(dash == null ? "" : string.Join(" ", dash))}";
                 if (!into.TryGetValue(key, out var pen)) into[key] = pen = new Pen(layer, color, width, null, dash);
                 pen.Segments.Add((la, lb));
+                curved?.Add(pen);
             }
+            // The mark's exact curves go with every pen its lines went to: DXF finds which of their chords lie on them.
+            if (curved != null) foreach (var pen in curved) pen.Curves.AddRange(mk.Curves);
             foreach (var (t, color) in mk.Texts)
             {
                 var key = "TEXT:" + color;
@@ -1034,6 +1038,8 @@ public static class Views
         }
         (Vec2, Vec2)? bounds = pts.Count > 0 ? (new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y)), new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y))) : null;
         if (paper) bounds = PaperViews.Bounds(m, view);
+        // Drawn outlines' arcs and elliptical edges (floors, ceilings, rooms, balconies, platforms) beside their chords, for DXF: on a plan.
+        if (spec.Kind == "plan" && !paper && laid == null) OutlineCurves.Attach(m, pens, p => spec.Frame.Map(new Vec3(p.X, p.Y, 0)));
         double? depth = spec.Kind == "section" && spec.Below < ViewRanges.Unlimited ? spec.Below : null;
         // A developed section: where each piece lies in the model, and the stations (developed x) it covers.
         var frames = spec.Kind == "section" && Pieces(q, view) is { Count: > 1 } ps ? ps.Select(p => (p.Spec.Frame, p.Station, p.Station + p.Spec.Span!.Value.Max)).ToList() : null;
@@ -1138,6 +1144,7 @@ public static class Views
         {
             var o = new Pen(p.Layer, p.Stroke, p.Width, p.Fill, p.Dash?.Select(v => v * r.Scale * unit / 1000).ToArray());
             o.Segments.AddRange(p.Segments.Select(s => (place(s.A), place(s.B))));
+            o.Curves.AddRange(p.Curves.Select(c => c.Map(place)));
             o.Loops.AddRange(p.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(place).ToList()));
             o.Texts.AddRange(p.Texts.Select(t => t with { At = place(t.At), Height = t.Height * r.Scale * unit / 1000, Angle = t.Angle + turn }));
             return o;
@@ -1147,6 +1154,7 @@ public static class Views
         {
             var o = new Pen(p.Layer, p.Stroke, p.Width, p.Fill, p.Dash);
             o.Segments.AddRange(p.Segments.Select(s => (new Vec2(s.A.X, -s.A.Y), new Vec2(s.B.X, -s.B.Y))));
+            o.Curves.AddRange(p.Curves.Select(c => c.Map(v => new Vec2(v.X, -v.Y))));
             o.Loops.AddRange(p.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(v => new Vec2(v.X, -v.Y)).ToList()));
             o.Texts.AddRange(p.Texts.Select(t => t with { At = new Vec2(t.At.X, -t.At.Y) }));
             return o;

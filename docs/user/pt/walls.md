@@ -117,6 +117,8 @@ Sob um telhado as camadas de uma parede sobem até ao telhado; uma extensão **S
 
 **Modificar → Deslocar elemento** (OFFSET da linha de comandos, que agora aceita elementos): escreva a distância na unidade do projeto, clique numa parede numa planta e depois no lado onde vai a cópia. A cópia é paralela à parede, concêntrica numa parede curva, com o mesmo tipo, camadas e vãos. **A** (Eixo, por omissão) mede a partir do eixo, **F** (Faces) a partir da face da parede, de modo que a face da cópia fica a essa distância da sua; **T** (Por) toma um ponto por onde passa a cópia.
 
+O que está pendurado na parede vai para a parte em que cai. Um acabamento pintado no lado de uma parede reta fica onde estava na face; um cuja região segue além do corte pinta também a outra parte, a menos que uma linha de divisão da face o pare, e um pintado em toda a face cobre cada parte. Um brise ao longo da parede vai para a parte ao longo da qual corre (um que atravessa o corte é recusado, como uma porta); uma varanda vai para a parte em que está o seu meio, ou fica livre onde está quando a sua parte é cortada fora. As barras desenhadas na parede são hospedadas pela parte em que cai o seu ponto, a forma molda cada parte, e os montantes próprios de uma parede estruturada (ver [Madeira](wood.md)) vão com a sua parte. Os acabamentos de uma parede curva ficam na sua primeira parte.
+
 ![Duas paredes aparadas a um limite e uma parede com uma porta dividida em duas](shots/wall-split-trim.webp)
 
 ## Tipos de parede

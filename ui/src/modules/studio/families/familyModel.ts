@@ -27,7 +27,7 @@ export interface FBody {
   sketch?: string; shape?: string;
 }
 export interface FamilyDef { ifcClass: string; description?: string; planSymbol?: string; params: FParam[]; bodies: FBody[]; /** The part's own constrained sketches, kept untouched by this editor. */ sketches?: unknown[] }
-export interface FamilyDto { id: string; name: string; def: FamilyDef; uses: number }
+export interface FamilyDto { id: string; name: string; def: FamilyDef; uses: number; /** The definition as the engine holds it (with what the editor does not read: members…); null for a plain solid type. */ raw?: Record<string, unknown> | null }
 
 /** The IFC classes a family is exported as (a choice; the engine takes any Ifc class). */
 export const IFC_CLASSES = [

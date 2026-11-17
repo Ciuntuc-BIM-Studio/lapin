@@ -92,7 +92,13 @@ try {
     // Leaving with unsaved work asks first (the page's beforeunload): the check says leave.
     if (m.method === 'Page.javascriptDialogOpening') ws.send(JSON.stringify({ id: ++seq, method: 'Page.handleJavaScriptDialog', params: { accept: true } }));
   };
-  const send = (method, params = {}) => new Promise((r) => { const i = ++seq; pending.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
+  // A call Chrome never answers (a page blocked by a dialog, a hung evaluation) fails the check instead of hanging the run.
+  const send = (method, params = {}) => new Promise((r, j) => {
+    const i = ++seq;
+    const t = setTimeout(() => { pending.delete(i); j(new Error(`${method} got no answer in 60 s${params.expression ? `: ${String(params.expression).slice(0, 160)}` : ''}`)); }, 60_000);
+    pending.set(i, (m) => { clearTimeout(t); r(m); });
+    ws.send(JSON.stringify({ id: i, method, params }));
+  });
   const ev = async (expression) => (await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })).result?.result?.value;
   const mouse = (type, x, y) => send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: 1, buttons: type === 'mouseReleased' ? 0 : 1 });
   const click = async (x, y) => { await mouse('mouseMoved', x, y); await mouse('mousePressed', x, y); await mouse('mouseReleased', x, y); await sleep(150); };
@@ -131,6 +137,8 @@ try {
     return true;
   };
   await send('Runtime.enable');
+  // Page events from the start: the leave-with-unsaved-work dialog a navigation raises is answered (above) even when no project was opened through a file chooser.
+  await send('Page.enable');
   await send('Emulation.setDeviceMetricsOverride', { width: 1600, height: 950, deviceScaleFactor: 1, mobile: false });
 
   // 1. The engine starts in its worker.

@@ -13,7 +13,7 @@ import { engine, execute, useSession } from '../engine/session';
 import { phrase } from '../shell/prompts';
 import { Dialog } from '../shell/Dialog';
 import {
-  CHOICE_LABELS, STATUS_LABELS, chooseAll, defaultChoices, isConflict, previewCounts,
+  CHOICE_LABELS, STATUS_LABELS, chooseAll, defaultChoices, isConflict, previewCounts, rowsByName,
   type Choice, type LibraryHeader, type LibraryPreview, type LibraryRow, type LibraryTally,
 } from './libraryFile';
 
@@ -151,6 +151,21 @@ export function askImport(title: string, preview: LibraryPreview, run: (choices:
   const said = (r: LibraryTally | null) => { if (r) notify(tallySentence(r)); return r; };
   if (preview.conflicts === 0) return run(defaultChoices(preview.rows)).then(said);
   return new Promise((resolve) => useImport.setState({ pending: { title, preview, run, done: (r) => resolve(said(r)) } }));
+}
+
+/**
+ * One file kept in this computer's libraries (a price list, a profile library, a .pat in My patterns: not the project's, so
+ * no engine preview), through the same preview and choices (audit D13): straight on when nothing there has its name, or what
+ * has it is the same; else the import preview asks to keep both („Name (2)”), replace or skip. The choice — `new`, `same`,
+ * `both`, `update`, `skip` — or null when cancelled.
+ */
+export function chooseOnComputer<T>(title: string, kind: string, name: string, item: T, have: (name: string) => T | undefined, same: (a: T, b: T) => boolean): Promise<'new' | 'same' | Choice | null> {
+  const [row] = rowsByName([{ name, item }], have, same, kind);
+  if (row.status === 'new' || row.status === 'same') return Promise.resolve(row.status);
+  const preview: LibraryPreview = { format: kind, extension: '', what: kindLabel(kind), header: null, rows: [row], new: 0, same: 0, conflicts: 1 };
+  return new Promise((resolve) => useImport.setState({
+    pending: { title, preview, run: async (choices) => { resolve(choices[row.key] ?? 'both'); return {}; }, done: (r) => { if (!r) resolve(null); } },
+  }));
 }
 
 /** A question to the engine whose refusal is said. */

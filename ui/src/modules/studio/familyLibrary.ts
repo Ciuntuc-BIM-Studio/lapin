@@ -1,11 +1,11 @@
 /**
- * Families as a library kind (docs/plan-user-extensibility.md §4): a .lapinfamily (`{format: "lapin-family", version: 1, name,
- * def}`) read without the engine, brought into the project by `studio.importFamily`, and the extension kind `families`. Only
- * the library plumbing (the project's families come from `studio.families` and `studio.exportFamily`): the families' editor and
- * placing are in ./families.
+ * Parts as a library kind (docs/plan-user-extensibility.md §4, audit S6): a .lapinpart (`{format: "lapinpart", version: 1, name,
+ * def}`; an older .lapinfamily is read too) read without the engine, brought into the project through the one import preview,
+ * and the extension kind `families`. Only the library plumbing (the project's parts come from `studio.parts` and
+ * `studio.exportPart`): the parts' manager and placing are in ./parts and ./families.
  */
 
-import { exportFamily } from './families/familyApi';
+import { exportPart } from './families/familyApi';
 import { readFamily } from '../../platform/extensions/packs';
 import { fileKindInstaller } from '../../platform/extensions/fileKind';
 import { addContentInstaller } from '../../platform/extensions/runtime';
@@ -14,16 +14,17 @@ import { importLibraryText, tallySentence } from '../../platform/ImportPreview';
 
 export type { FamilyDto } from './families/familyModel';
 
-/** A project family as a .lapinfamily file's text (the firm folders' and this computer's saving). */
-export const familyFileText = async (id: string): Promise<{ text: string; file: string } | null> => exportFamily(id);
+/** A project part as a .lapinpart file's text (the firm folders' and this computer's saving). */
+export const familyFileText = async (id: string): Promise<{ text: string; file: string } | null> => exportPart(id);
 
 /** Through the one import preview (audit D13): a part of its name there kept both, replaced or skipped. */
-async function bring(text: string, file = 'family.lapinfamily'): Promise<string | null> {
+async function bring(text: string, file = 'part.lapinpart'): Promise<string | null> {
   const r = await importLibraryText(text, file);
   return r ? tallySentence(r) : null;
 }
 
-registerLibraryKind({ ext: 'lapinfamily', label: 'Families', module: 'studio', names: (t) => [readFamily(new TextEncoder().encode(t)).name], bring });
+registerLibraryKind({ ext: 'lapinpart', label: 'Parts', module: 'studio', names: (t) => [readFamily(new TextEncoder().encode(t)).name], bring });
+registerLibraryKind({ ext: 'lapinfamily', label: 'Parts (old .lapinfamily)', module: 'studio', names: (t) => [readFamily(new TextEncoder().encode(t)).name], bring });
 
 const files = {
   keep: keepComputerFile,

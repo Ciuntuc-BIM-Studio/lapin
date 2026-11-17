@@ -284,10 +284,67 @@ public static class Geo
         }
     }
 
+    /// <summary>A point in an ellipse's own frame: p − C = M·u + N·v (on the ellipse: u² + v² = 1, its parameter atan2(v, u)).</summary>
+    public static (double U, double V) EllipseFrame(Ellipse e, Vec2 p)
+    {
+        var (m, n, d) = (e.M, e.N, p - e.C);
+        var det = Vec2.Cross(m, n);
+        return (Vec2.Cross(d, n) / det, Vec2.Cross(m, d) / det);
+    }
+
+    /// <summary>Whether parameter <paramref name="t"/> lies on an ellipse (an elliptical arc's sweep, ends included).</summary>
+    public static bool OnEllipse(Ellipse e, double t) => e.Whole || AngleInArc(t, e.Start, e.End);
+
+    /// <summary>
+    /// Where the line through <paramref name="a"/> and <paramref name="b"/> meets an ellipse (the whole of it), exactly: each point, how far
+    /// along a→b (0 at a, 1 at b) and its parameter on the ellipse.
+    /// </summary>
+    public static List<(Vec2 P, double S, double T)> LineEllipse(Vec2 a, Vec2 b, Ellipse e)
+    {
+        var o = new List<(Vec2, double, double)>();
+        if (!(e.A > 1e-12) || !(Math.Abs(e.Ratio) > 1e-12)) return o;
+        var (ua, va) = EllipseFrame(e, a);
+        var (ub, vb) = EllipseFrame(e, b);
+        var (du, dv) = (ub - ua, vb - va);
+        var qa = du * du + dv * dv;
+        if (qa < 1e-30) return o;
+        var qb = 2 * (ua * du + va * dv);
+        var qc = ua * ua + va * va - 1;
+        var disc = qb * qb - 4 * qa * qc;
+        if (disc < -1e-12) return o;
+        var root = Math.Sqrt(Math.Max(0, disc));
+        foreach (var s in disc <= 1e-12 ? new[] { -qb / (2 * qa) } : new[] { (-qb - root) / (2 * qa), (-qb + root) / (2 * qa) })
+        {
+            var t = Math.Atan2(va + s * dv, ua + s * du);
+            o.Add((e.At(t), s, t));
+        }
+        return o;
+    }
+
     public static List<Vec2> Intersect(Shape a, Shape b)
     {
+        // An ellipse against straight pieces exactly (its chords for arcs and other ellipses, within a millimetre).
+        if (a is Ellipse ea && b is not Ellipse) return IntersectEllipse(ea, b);
+        if (b is Ellipse eb && a is not Ellipse) return IntersectEllipse(eb, a);
         var o = new List<Vec2>();
         foreach (var p in Prims(a)) foreach (var q in Prims(b)) foreach (var x in Intersect(p, q)) AddUnique(o, x);
+        return o;
+    }
+
+    static List<Vec2> IntersectEllipse(Ellipse e, Shape other)
+    {
+        var o = new List<Vec2>();
+        var chords = Prims(e);
+        foreach (var q in Prims(other))
+        {
+            if (q is SegP s)
+            {
+                foreach (var (p, at, t) in LineEllipse(s.A, s.B, e))
+                    if (at >= -1e-9 && at <= 1 + 1e-9 && OnEllipse(e, t)) AddUnique(o, p);
+                continue;
+            }
+            foreach (var c in chords) foreach (var x in Intersect(c, q)) AddUnique(o, x);
+        }
         return o;
     }
 
@@ -296,6 +353,9 @@ public static class Geo
     {
         var len = dir.Length;
         if (len < 1e-15) return [];
+        // An ellipse met exactly.
+        if (s is Ellipse el)
+            return [.. LineEllipse(origin, origin + dir, el).Where(h => h.S > 1e-9 && OnEllipse(el, h.T)).OrderBy(h => h.S).Select(h => (h.P, h.S))];
         var far = new SegP(origin, origin + dir * (1e6 / len));
         var hits = new List<(Vec2, double)>();
         foreach (var pr in Prims(s))
