@@ -69,6 +69,53 @@ public static class Grids
     }
 
     /// <summary>
+    /// The label before <paramref name="tag"/> (issue #64), Next's inverse: 2 → 1, 10 → 9, B → A, AA → Z, A2 → A1; null when
+    /// there is none (0, A, a label with no letter or number to count down).
+    /// </summary>
+    public static string? Prev(string tag)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(tag, @"^(.*?)(\d+)$");
+        if (m.Success)
+        {
+            var n = long.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture);
+            if (n == 0) return null;
+            var digits = m.Groups[2].Value;
+            var text = (n - 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            // Leading zeros kept: 05 → 04.
+            return m.Groups[1].Value + (digits.Length > 1 && digits[0] == '0' ? text.PadLeft(digits.Length, '0') : text);
+        }
+        if (tag.Length == 0 || !char.IsAsciiLetter(tag[^1])) return null;
+        var chars = tag.ToCharArray();
+        var i = chars.Length - 1;
+        for (; i >= 0 && char.IsAsciiLetter(chars[i]); i--)
+        {
+            if (chars[i] is not ('A' or 'a')) { chars[i]--; return new string(chars); }
+            chars[i] = chars[i] == 'A' ? 'Z' : 'z';
+        }
+        // Every letter borrowed: one letter fewer (AA → Z); a lone A has nothing before it.
+        var head = i + 1;
+        if (chars.Length - head == 1) return null;
+        return new string(chars, 0, head) + new string(chars, head + 1, chars.Length - head - 1);
+    }
+
+    /// <summary>
+    /// A family's labels counted from <paramref name="first"/> (Annotate → Grid…, issue #64): up with Next, or down with
+    /// Prev when <paramref name="descending"/> (refused when they would run out).
+    /// </summary>
+    public static List<string> Series(string first, int count, bool descending = false)
+    {
+        var list = new List<string>(count);
+        string? tag = first;
+        for (var i = 0; i < count; i++)
+        {
+            if (tag == null) throw new CommandException($"Counting down from {first}, the labels run out after {list[^1]}: start from a higher one.");
+            list.Add(tag);
+            tag = descending ? Prev(tag) : Next(tag);
+        }
+        return list;
+    }
+
+    /// <summary>
     /// A new axis's tag: after the last axis that runs the same way; the first
     /// axis of a direction takes the axis type's first label, or letters when
     /// another direction already counts in numbers (and the other way round).
@@ -140,27 +187,40 @@ public static class Grids
     /// <summary>
     /// The labels of a renumbering (forum #75): numbers from <paramref name="start"/> (an integer, its leading zeros kept:
     /// 01, 02…), or letters from it (A, B… Z, AA…), leaving out those with an I or an O when <paramref name="skipIO"/>;
-    /// each after <paramref name="prefix"/>.
+    /// each after <paramref name="prefix"/>. When <paramref name="descending"/> (issue #64) they count down from the start
+    /// (10, 9, 8…; E, D, C…), refused when they would run out; with no start, down to 1 or A (the ascending labels the
+    /// other way round).
     /// </summary>
-    public static List<string> Labels(int count, string scheme, string? start, string prefix = "", bool skipIO = true)
+    public static List<string> Labels(int count, string scheme, string? start, string prefix = "", bool skipIO = true, bool descending = false)
     {
+        if (descending && string.IsNullOrWhiteSpace(start))
+        {
+            var up = Labels(count, scheme, null, prefix, skipIO);
+            up.Reverse();
+            return up;
+        }
         var list = new List<string>(count);
         if (scheme == "numbers")
         {
             var first = start?.Trim() is { Length: > 0 } st ? st : "1";
             if (!long.TryParse(first, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n)) throw new CommandException("Numbers start from a whole number: 1, 0, 101.");
-            for (var i = 0; i < count; i++) list.Add(prefix + (n + i).ToString(System.Globalization.CultureInfo.InvariantCulture).PadLeft(first.Length, '0'));
+            if (descending && n - (count - 1) < 0) throw new CommandException($"Counting down from {first}, {count} axes need a start of {count - 1} or more.");
+            // Counting down, only a start written with leading zeros keeps its width (05, 04…; 10, 9…).
+            var width = !descending || (first.Length > 1 && first[0] == '0') ? first.Length : 1;
+            for (var i = 0; i < count; i++) list.Add(prefix + (descending ? n - i : n + i).ToString(System.Globalization.CultureInfo.InvariantCulture).PadLeft(width, '0'));
             return list;
         }
         if (scheme != "letters") throw new CommandException("Axes are renumbered with numbers or letters.");
-        var label = start?.Trim() is { Length: > 0 } sl ? sl : "A";
+        string? label = start?.Trim() is { Length: > 0 } sl ? sl : "A";
         if (!label.All(char.IsAsciiLetter)) throw new CommandException("Letters start from a letter: A, a, AA.");
-        if (skipIO) while (HasIO(label)) label = Next(label);
+        string? Step(string l) => descending ? Prev(l) : Next(l);
+        if (skipIO) while (label != null && HasIO(label)) label = Step(label);
         for (var i = 0; i < count; i++)
         {
+            if (label == null) throw new CommandException($"Counting down from {start!.Trim()}, the letters run out before {count} axes: start from a later one.");
             list.Add(prefix + label);
-            label = Next(label);
-            if (skipIO) while (HasIO(label)) label = Next(label);
+            label = Step(label);
+            if (skipIO) while (label != null && HasIO(label)) label = Step(label);
         }
         return list;
     }
@@ -168,9 +228,11 @@ public static class Grids
     /// <summary>
     /// The new tags of a renumbering (forum #75): the axes named (all of the family when none is, x the ones spaced along x,
     /// numbered left to right; y those spaced along y, bottom to top) in order across their family, each given the next
-    /// label. The axes named must run one way. Old tag → new tag, the unchanged ones too.
+    /// label. The axes named must run one way. With <paramref name="reverse"/> (issue #64) the order is the other way: right
+    /// to left, top to bottom; with <paramref name="descending"/> the labels count down (Labels). Old tag → new tag, the
+    /// unchanged ones too.
     /// </summary>
-    public static Dictionary<string, string> Renumber(IReadOnlyList<Axis> axes, IReadOnlyCollection<string>? tags, string? direction, string scheme, string? start, string prefix = "", bool skipIO = true)
+    public static Dictionary<string, string> Renumber(IReadOnlyList<Axis> axes, IReadOnlyCollection<string>? tags, string? direction, string scheme, string? start, string prefix = "", bool skipIO = true, bool reverse = false, bool descending = false)
     {
         List<Axis> chosen;
         if (tags is { Count: > 0 })
@@ -187,8 +249,9 @@ public static class Grids
             if (chosen.Count == 0) throw new CommandException(x ? "The grid has no axis running up the plan." : "The grid has no axis running across the plan.");
         }
         var n = Across(chosen[0].Dir);
-        var ordered = chosen.Select((a, i) => (a, i)).OrderBy(p => Math.Round(Vec2.Dot(p.a.A, n), 6)).ThenBy(p => p.i).Select(p => p.a).ToList();
-        var labels = Labels(ordered.Count, scheme, start, prefix ?? "", skipIO);
+        var sign = reverse ? -1 : 1;
+        var ordered = chosen.Select((a, i) => (a, i)).OrderBy(p => sign * Math.Round(Vec2.Dot(p.a.A, n), 6)).ThenBy(p => p.i).Select(p => p.a).ToList();
+        var labels = Labels(ordered.Count, scheme, start, prefix ?? "", skipIO, descending);
         var map = new Dictionary<string, string>();
         for (var i = 0; i < ordered.Count; i++) map[ordered[i].Tag] = labels[i];
         var others = axes.Where(a => !map.ContainsKey(a.Tag)).Select(a => a.Tag).ToHashSet();

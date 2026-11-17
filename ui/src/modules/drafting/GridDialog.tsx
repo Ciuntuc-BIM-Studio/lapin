@@ -1,7 +1,8 @@
 /**
  * Annotate → Grid… (report #68): a whole grid from its spacings, in the
  * project's units: the axes across (numbered), the axes along (lettered),
- * where it starts, its angle, how far the axes run past it, its first labels,
+ * where it starts, its angle, how far the axes run past it, its first labels
+ * (each family's running either way and counting up or down, issue #64),
  * and the axis type it is drawn in (Drafting standards → Grid axes); the
  * grid's axes so far kept or replaced. One undo step.
  */
@@ -13,7 +14,7 @@ import { execute, query, useSession } from '../../engine/session';
 import { LengthField, NumberField } from '../../shell/cells';
 import { lengthText, useStandards } from '../../engine/unitsStore';
 import { openStandards } from '../core/standardsTab';
-import { gridLines, readSpacings } from './gridSpec';
+import { firstForCounting, gridLines, readSpacings } from './gridSpec';
 import { axesOf, spacingOf } from '../../shell/gridAxes';
 import type { NodeDto } from '../../engine/protocol';
 
@@ -32,6 +33,10 @@ export function GridDialog() {
   const [extend, setExtend] = useState(1.5);
   const [firstX, setFirstX] = useState('1');
   const [firstY, setFirstY] = useState('A');
+  const [reverseX, setReverseX] = useState(false);
+  const [reverseY, setReverseY] = useState(false);
+  const [descendingX, setDescendingX] = useState(false);
+  const [descendingY, setDescendingY] = useState(false);
   const [replace, setReplace] = useState(existing > 0);
   const [styles, setStyles] = useState<{ list: AxisStyle[]; current: string }>({ list: [], current: 'standard' });
   useEffect(() => {
@@ -45,7 +50,9 @@ export function GridDialog() {
   const close = () => useUi.setState({ dialog: null });
   const make = async () => {
     if (!ok) return;
-    const r = await execute('drafting.makeGrid', { x: x!, y: y!, origin: [origin.x, origin.y], angle, extend, firstX, firstY, replace });
+    const r = await execute('drafting.makeGrid', { x: x!, y: y!, origin: [origin.x, origin.y], angle, extend, firstX, firstY, replace,
+      // The default order sends no flag, as before.
+      ...(reverseX ? { reverseX } : {}), ...(reverseY ? { reverseY } : {}), ...(descendingX ? { descendingX } : {}), ...(descendingY ? { descendingY } : {}) });
     if (r) { notify('The grid is made: select an axis to set it.'); close(); }
   };
   // The preview: the axes in a box, y up.
@@ -77,6 +84,16 @@ export function GridDialog() {
             <dd><LengthField metres={extend} min={0} onCommit={(v) => { if (v != null) setExtend(v); }} /></dd>
             <dt title="The labels the axes start from: 1, A, A1…; each next one follows">First labels</dt>
             <dd className="pair"><input className="cell" value={firstX} data-no-i18n onChange={(e) => setFirstX(e.target.value)} aria-label="Across" /><input className="cell" value={firstY} data-no-i18n onChange={(e) => setFirstY(e.target.value)} aria-label="Along" /></dd>
+            <dt title="Which way the labels run: the numbered axes, the lettered axes">Order</dt>
+            <dd className="pair">
+              <select data-grid-order-x value={reverseX ? 'reverse' : 'forward'} onChange={(e) => setReverseX(e.target.value === 'reverse')} aria-label="Across"><option value="forward">left to right</option><option value="reverse">right to left</option></select>
+              <select data-grid-order-y value={reverseY ? 'reverse' : 'forward'} onChange={(e) => setReverseY(e.target.value === 'reverse')} aria-label="Along"><option value="forward">bottom to top</option><option value="reverse">top to bottom</option></select>
+            </dd>
+            <dt title="Up from the first labels, or down from them">Counting</dt>
+            <dd className="pair">
+              <select data-grid-counting-x value={descendingX ? 'descending' : 'ascending'} onChange={(e) => { const down = e.target.value === 'descending'; setDescendingX(down); setFirstX(firstForCounting(firstX, '1', (x?.length ?? 0) + 1, down)); }} aria-label="Across"><option value="ascending">ascending</option><option value="descending">descending</option></select>
+              <select data-grid-counting-y value={descendingY ? 'descending' : 'ascending'} onChange={(e) => { const down = e.target.value === 'descending'; setDescendingY(down); setFirstY(firstForCounting(firstY, 'A', (y?.length ?? 0) + 1, down)); }} aria-label="Along"><option value="ascending">ascending</option><option value="descending">descending</option></select>
+            </dd>
             <dt title="How axes are drawn: bubbles, ends, size, line type (Drafting standards → Grid axes)">Axis type</dt>
             <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <select value={styles.current} onChange={(e) => void execute('standards.set', { kind: 'axis', entry: { id: e.target.value }, default: true })}>
