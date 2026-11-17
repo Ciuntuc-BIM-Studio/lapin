@@ -35,7 +35,7 @@ Fai clic su **Installa**. Lapin scarica il file, controlla che dimensione e SHA-
 | Listini prezzi | **Esecuzione → Listini prezzi…**, indicati come orientativi: i prezzi sono dell'autore, confrontali con i tuoi |
 | Tipi | il progetto aperto quando la installi, in un passo da annullare (**Gestisci → Pacchetti di tipi…** esporta i tuoi) |
 
-Se la tua libreria ha già qualcosa con lo stesso nome, Lapin chiede prima di sostituirlo. Nulla di ciò che porta un'estensione viene mai eseguito: le estensioni sono contenuto.
+Se la tua libreria ha già un listino prezzi, una libreria di profili o un file di retini con lo stesso nome ma diverso, l'**Anteprima dell’importazione** offre di tenerli entrambi (con (2) dopo il nome), sostituirlo o saltarlo; per un modello di progetto con lo stesso nome, Lapin chiede prima di sostituirlo. Nulla di ciò che porta un'estensione viene mai eseguito: le estensioni sono contenuto.
 
 Anche il catalogo di Lapin è **firmato** da Lapin Extensions: il catalogo e ciascuno dei suoi file portano una firma che Lapin verifica prima di leggere l'elenco o installare un file, così una copia modificata lungo la strada viene rifiutata. Una riga sopra l'elenco dice **Firmato da Lapin Extensions** quando lo è.
 

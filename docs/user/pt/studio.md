@@ -10,6 +10,8 @@ A guia **Studio** cria sólidos que nenhuma outra guia constrói: um banco, uma 
 
 ![A guia Studio](shots/ribbon-studio.webp)
 
+As suas ferramentas ficam em seis grupos: **Esboço** (linhas, retângulos, círculos, os **Arcos** ▾, deslocamento e, abaixo, o esboço sobre uma face ou um plano, **Edições do esboço** ▾, **Planos de trabalho** ▾ e **Na face** ▾), **Restrições** (as listas **Geométricas** ▾ e **Dimensões** ▾), **Sólidos** (extrusão, varredura, revolução, loft, editar esboço, **Com espessura** ▾ e **Primitivas** ▾), **Partes** (colocar e editar peças), **Modificar** (empurrar/puxar, concordância, chanfro, casca, dividir, **Matrizes** ▾ e **Mover, rodar, espelhar** ▾) e **Booleanas**. Um botão com ▾ abre a sua lista; cada ferramenta mantém as suas letras, e **Comandos…** e **Minhas ferramentas** a encontram como antes.
+
 Um sólido do Studio tem uma classe IFC, como qualquer elemento. Escolha-a nas suas propriedades: um membro, uma placa, um revestimento, um guarda-corpo, uma laje ou qualquer outra. Os seus quantitativos e a sua exportação seguem essa classe.
 
 ## Onde você esboça
@@ -98,7 +100,7 @@ Estas ferramentas trabalham nas faces e nas arestas do corpo como ele está cons
 
 ## Desenhar sobre uma face
 
-Na vista 3D você pode desenhar diretamente sobre uma face e empurrar ou puxar o que desenhou. O grupo **Na face** da guia **Studio** tem **Retângulo na face** (FRE), **Círculo na face** (FCI) e **Polígono na face** (FPL).
+Na vista 3D você pode desenhar diretamente sobre uma face e empurrar ou puxar o que desenhou. **Studio → Esboço → Na face** ▾ tem **Retângulo na face** (FRE), **Círculo na face** (FCI) e **Polígono na face** (FPL).
 
 1. Clique em uma face de qualquer elemento: um sólido do Studio, uma parede, uma laje ou um pilar. O clique é o primeiro ponto: o canto de um retângulo, o centro de um círculo ou o primeiro vértice de um polígono. A face fica contornada enquanto você desenha.
 2. Mova o mouse. A forma o acompanha sobre a face, com o seu tamanho ao lado. Os pontos se prendem aos cantos da face, aos pontos médios das suas arestas e ao seu centro; fora isso, andam de centímetro em centímetro, ou de 10 em 10 cm com <kbd>Shift</kbd>. Clique no canto oposto ou em um ponto do círculo. Você também pode digitar o tamanho: a largura e a altura de um retângulo como `1200, 600`, ou o raio de um círculo. Um polígono recebe um clique em cada vértice, ou um comprimento digitado na direção do mouse. Clique no seu primeiro vértice ou pressione <kbd>Enter</kbd> para fechá-lo; <kbd>Backspace</kbd> desfaz o último vértice.

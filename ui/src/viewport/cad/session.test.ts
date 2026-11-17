@@ -368,6 +368,9 @@ describe('edits on elements: TRIM/EXTEND on walls, TRIMEXTEND, SPLITELEMENT, OFF
     ['w2', { id: 'w2', type: 'IfcWall', props: { start: [4, -2], end: [4, 2] } }],
     ['b1', { id: 'b1', type: 'IfcBeam', props: { start: [0, 5], end: [8, 5] } }],
     ['s1', { id: 's1', type: 'IfcSlab', props: {} }],
+    ['r1', { id: 'r1', type: 'LapinRailing', props: { points: [[0, 0], [4, 0]] } }],
+    ['p1', { id: 'p1', type: 'IfcPavement', props: { path: [[0, 0], [20, 0]] } }],
+    ['roof1', { id: 'roof1', type: 'IfcRoof', props: { contour: [[0, 0], [10, 0], [10, 6], [0, 6]] } }],
   ]);
   const pickAt = (id: string | null) => (useCad.getState().host!.pickAny = () => id);
   const draftAt = (shape: unknown) => (useCad.getState().host!.pickDraft = () => (shape ? { id: 'd1', shape: shape as never } : null));
@@ -413,6 +416,21 @@ describe('edits on elements: TRIM/EXTEND on walls, TRIMEXTEND, SPLITELEMENT, OFF
     pickAt('s1'); await feedPoint(P(1, 1));
     await feedPoint(P(2, -1)); await feedPoint(P(2, 5));
     expect(engine.execute).toHaveBeenCalledWith('architecture.splitOutline', { id: 's1', a: [2, -1], b: [2, 5], keep: [1, 1] });
+  });
+
+  it('SPLITELEMENT, TRIMEXTEND and OFFSET take railings and paths along their lines', async () => {
+    await startCommand('SPLITELEMENT');
+    pickAt('r1'); await feedPoint(P(2, 0));
+    expect(engine.execute).toHaveBeenCalledWith('element.split', { id: 'r1', at: [2, 0] });
+    await submit('');
+    await startCommand('TRIMEXTEND');
+    draftAt({ type: 'line', a: P(5, -1), b: P(5, 1) });
+    await feedPoint(P(5, 0));
+    draftAt(null);
+    pickAt('p1'); await feedPoint(P(2, 0));
+    expect(engine.execute).toHaveBeenCalledWith('element.trimExtend', { id: 'p1', at: [2, 0], line: [[5, -1], [5, 1]] });
+    pickAt('roof1'); await feedPoint(P(2, 2));
+    expect(engine.execute).toHaveBeenCalledWith('element.trimOutline', { id: 'roof1', a: [5, -1], b: [5, 1], keep: [2, 2] });
   });
 
   it('OFFSET copies an element parallel, by its axis or between its faces', async () => {

@@ -30,7 +30,7 @@ Aceeași bară servește toate uneltele cu contur (placă, gol în placă, tavan
 
 ![Bara uneltelor cu contur, cu From drawn shape ales](shots/outline-sources.webp)
 
-Pentru placă, gol în placă, tavan și încăpere după contur, bara oferă și **Ellipse**: centrul, capătul unei semiaxe, apoi cealaltă. Laturile conturului merg pe elipsa adevărată (patru sferturi), măsurate exact; un colț mutat de pe elipsă îi face cele două laturi drepte, iar un colț lângă o latură eliptică nu se racordează. IFC o duce ca IfcEllipse. **From drawn shape** ia la fel o elipsă desenată.
+Pentru placă, gol în placă, tavan și încăpere după contur, bara oferă și **Ellipse**: centrul, capătul unei semiaxe, apoi cealaltă. Laturile conturului merg pe elipsa adevărată (patru sferturi), măsurate exact; un colț mutat de pe elipsă îi face cele două laturi drepte, iar un colț lângă o latură eliptică nu se racordează. IFC o duce ca IfcEllipse. **From drawn shape** ia la fel o elipsă desenată. Un gol propriu al plăcii sau al tavanului (**Hole in the outline**) ia și el o elipsă. Un contur cu o latură eliptică nu se decalează întreg (Shift-tragere, **Offset outline…**): curba aflată la o distanță de o elipsă nu e o elipsă.
 
 ![O placă eliptică desenată lângă o elipsă din Desen](shots/ellipse-floor.webp)
 
@@ -83,6 +83,12 @@ Catalogul tău vine dintr-o foaie de calcul: **Importă catalogul…** citește 
 **Modifică → Împarte elementul** pe o placă sau pe un plafon cere două puncte ale unei linii de tăiere: linia continuă dincolo de ele și trebuie să taie conturul exact de două ori. Placa devine două plăci; partea pe care ai apăsat păstrează id-ul (GlobalId-ul din IFC), arcele de pe margini rămân arce (un arc tăiat rămâne arc), iar golul din placă merge la partea în care se află. Un gol pe care îl taie linia refuză. **Modifică → Taie/Prelungește elemente** primește o limită dreaptă (un perete, o grindă sau o linie desenată) și taie placa sau plafonul acolo, păstrând partea pe care ai apăsat.
 
 ![O placă cu o margine curbă împărțită de o linie: partea din dreapta selectată](shots/floor-split.webp)
+
+Golurile proprii ale unui planșeu merg la partea în care sunt; un strat care trece de o latură curbă continuă așa pe ambele părți; grila unui tavan fals rămâne unde era, fiecare corp de iluminat sau difuzor în partea în care îi cade celula. Un planșeu cu o latură eliptică nu se taie după o linie.
+
+Un **acoperiș** se împarte și se taie la fel. Fiecare parte păstrează regulile laturilor ei (streașină sau fronton, pantă, consolă), iar tăietura devine un fronton fără consolă; tăietura e permisă doar unde lasă acoperișul cum era, cu pantele fiecărei părți unde erau ale acoperișului, ca peste coama unui acoperiș în două ape sau de-a lungul ei. În rest e refuzată (*would change its slopes*): pantele unei părți ar urca spre coame noi. Ferestrele de acoperiș, lucarnele și burlanele merg la partea lor. Un acoperiș în boltă nu se taie.
+
+![Un acoperiș în două ape împărțit peste coamă: două acoperișuri, aceleași pante](shots/roof-split.webp)
 
 ## Acoperișuri
 

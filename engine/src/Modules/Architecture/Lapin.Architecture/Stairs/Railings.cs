@@ -377,6 +377,8 @@ public static class Railings
         r.Quantities(Class, (e, _, m) => Quantities(e, m));
         // Moved, turned, mirrored and copied by its line (its points in plan; forum 102: a railing did not move, nor its dimensions).
         r.Service<IElementPlacement>(new Placed());
+        // Split, Trim/Extend and Offset (audit §15): along its points and arcs.
+        r.Service<IPolylinePieces>(new Pieces());
 
         // A railing along a line drawn in plan: {storeyId, points: [[x, y]…], arcs? (each segment's rise, left positive), style?,
         // height?, baseOffset?, join? (taken into a railing of the same design whose end it meets, as drafting converted is)}.
@@ -533,6 +535,20 @@ public static class Railings
             var id = Placement.DeepCopy(ctx, e, t);
             ctx.Replace(ctx.Model.Get(id)!.With(attrs: Carried(e, t)));
             return id;
+        }
+    }
+
+    /// <summary>A railing in the platform's split, trim, extend and offset: its points and arcs, nothing hosted on it.</summary>
+    sealed class Pieces : IPolylinePieces
+    {
+        public bool Handles(Entity e) => e.Class == Class && e.Attrs["points"] is JsonArray;
+
+        public (List<Vec2> Points, double[] Rises) Line(Entity e) { var p = Points(e); return (p, Rises(e, p.Count)); }
+
+        public void Piece(IModelView m, Entity e, JsonObject attrs, PolySlice slice, bool newStart, bool newEnd)
+        {
+            attrs["points"] = SectionPaths.PointsJson(slice.Points);
+            ArcOutline.Write(attrs, slice.Rises);
         }
     }
 }

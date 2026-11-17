@@ -117,6 +117,8 @@ Bajo una cubierta las capas de un muro suben hasta la cubierta; una extensión *
 
 **Modificar → Desfasar elemento** (OFFSET de la línea de comandos, que ahora acepta elementos): escriba la distancia en la unidad del proyecto, haga clic en un muro en una planta y después en el lado donde irá la copia. La copia es paralela al muro, concéntrica si es un muro curvo, con el mismo tipo, capas y huecos. **A** (Eje, por defecto) mide desde el eje, **F** (Caras) desde la cara del muro, de modo que la cara de la copia queda a esa distancia de la suya; **T** (Por) toma un punto por el que pasa la copia.
 
+Lo que cuelga del muro va a la parte sobre la que cae. Un acabado pintado en el lado de un muro recto queda donde estaba en la cara; uno cuya región continúa más allá del corte pinta también la otra parte, salvo que una línea de división de la cara lo detenga, y uno pintado en toda la cara cubre todas las partes. Un parasol a lo largo del muro va a la parte a lo largo de la cual discurre (uno a través del corte se rechaza, como una puerta); un balcón va a la parte sobre la que está su centro, o queda libre donde está cuando su parte se corta. Las barras dibujadas en el muro las aloja la parte en la que cae su punto, el encofrado encofra cada parte, y los montantes propios de un muro de entramado (véase [Madera](wood.md)) van con su parte. Los acabados de un muro curvo quedan en su primera parte.
+
 ![Dos muros recortados a un límite y un muro con una puerta dividido en dos](shots/wall-split-trim.webp)
 
 ## Tipos de muro

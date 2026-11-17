@@ -118,6 +118,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         // (docs/plan-user-extensibility.md §5.6) are parts now, their commands shortcuts onto the parts' and saved ones upgraded.
         Parts.Register(r);
         Families.Register(r);
+        PartMembers.Register(r);
         // A part in IFC (P3): its class's type with the body of its defaults as its map, its parameters in Lapin_PartParameters.
         var partIfc = new PartIfc();
         r.Service<IIfcTypeShapes>(partIfc);
@@ -126,6 +127,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         SketchConstraints.Register(r);
         OutlineSketches.Register(r);
         r.Service<IProjectUpgrade>(new FamilyPartUpgrade());
+        // After it: every part's bodies of formula corners drawn from sketches of its own (audit S6), as the part editor edits them.
+        r.Service<IProjectUpgrade>(new PartSketchUpgrade());
         // A box's walls with its bottom and top: an assembly (IfcElementAssembly) of separate elements, without a body of its own.
         r.Class(new(Boxes.AssemblyClass, "Assembly", [], "#b9b2a6"));
         r.Service<IGeometryFilter>(this);

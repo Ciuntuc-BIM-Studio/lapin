@@ -7,6 +7,7 @@
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { useSession } from '../../engine/session';
+import { memberIdsOf } from './partMembersModel';
 import { activePartSketch, sketchHooks } from './partSketchStore';
 import { doubleClickHandlers, enterScope, exitScope, tabHandlers, useScope, type Scope } from '../../platform/scope';
 
@@ -17,9 +18,13 @@ const PREFIX = 'part:';
 /** Whether a node is a Studio solid or a placed part: what the edit mode can open. */
 export const isEditable = (node: NodeDto | null | undefined): boolean => !!node && typeof node.props.operation === 'string' && node.props.operation !== '';
 
-/** The scope of a part: only that element belongs to it. */
+/**
+ * The scope of a part: that element, and the native elements it holds (walls, furniture…; read live from the placed part's
+ * `memberIds`, so they can be picked and edited inside the edit mode).
+ */
 export function partScope(node: NodeDto): Scope {
-  return { id: PREFIX + node.id, kind: PART_KIND, label: node.name, includes: (n) => n.id === node.id, holdsEsc: () => !!activePartSketch() };
+  const held = (): Set<string> => new Set(memberIdsOf(useSession.getState().nodes.get(node.id)?.props));
+  return { id: PREFIX + node.id, kind: PART_KIND, label: node.name, includes: (n) => n.id === node.id || held().has(n.id), holdsEsc: () => !!activePartSketch() };
 }
 
 /** The part being edited (its element's id), or null. */
@@ -27,8 +32,8 @@ export function editedPartId(scope: Scope | null = useScope.getState().scope): s
   return scope && scope.kind === PART_KIND && scope.id.startsWith(PREFIX) ? scope.id.slice(PREFIX.length) : null;
 }
 
-/** The ids that can be selected in the edit mode: the part alone. All of them with no edit mode on. */
-export const selectableIds = (ids: readonly string[], partId: string | null): string[] => (partId ? ids.filter((i) => i === partId) : [...ids]);
+/** The ids that can be selected in the edit mode: the part and its members. All of them with no edit mode on. */
+export const selectableIds = (ids: readonly string[], partId: string | null, members: readonly string[] = []): string[] => (partId ? ids.filter((i) => i === partId || members.includes(i)) : [...ids]);
 
 /** What the interface was doing when Tab was pressed. */
 export interface TabState {

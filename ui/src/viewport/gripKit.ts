@@ -157,8 +157,10 @@ export function holesOf(raw: unknown, rawArcs: unknown): { pts: Vec2[]; arcs?: n
  * with all the holes; its corners rounded or cut by the module's `roundCorner` / `chamferCorner` with `hole`; a grip in its middle
  * drags the hole and offers "Remove hole".
  */
-export function holeGrips(id: string, raw: unknown, rawArcs: unknown, save: (holes: number[][][], arcs: number[][]) => GripStep, module = 'architecture'): Grip[] {
+export function holeGrips(id: string, raw: unknown, rawArcs: unknown, save: (holes: number[][][], arcs: number[][]) => GripStep, module = 'architecture', rawEllipses?: unknown): Grip[] {
   const holes = holesOf(raw, rawArcs);
+  // A hole with an elliptical edge is not offset as a whole (the curve at a distance from an ellipse is no ellipse).
+  const elliptical = (k: number) => Array.isArray(rawEllipses) && Array.isArray(rawEllipses[k]) && (rawEllipses[k] as unknown[]).some(Boolean);
   const write = (k: number, next: { pts: Vec2[]; arcs?: number[] }) => {
     const all = holes.map((h, i) => (i === k ? next : h));
     return save(all.map((h) => toPairs(h.pts)), all.map((h) => h.arcs ?? h.pts.map(() => 0)));
@@ -168,7 +170,7 @@ export function holeGrips(id: string, raw: unknown, rawArcs: unknown, save: (hol
     const grips = outlineGrips({ pts: h.pts, arcs: h.arcs }, (o) => write(k, { pts: o.pts, arcs: o.arcs }), {
       fillet: (index, radius) => ({ command: `${module}.roundCorner`, args: { id, hole: k, index, radius } }),
       chamfer: (index, distance) => ({ command: `${module}.chamferCorner`, args: { id, hole: k, index, distance } }),
-    }, `h${k}`);
+    }, `h${k}`).map((g) => (g.offsetAll && elliptical(k) ? { ...g, offsetAll: undefined } : g));
     grips.push({
       key: `h${k}c`, kind: 'move', at: c, title: 'Drag to move the hole',
       step: (to: Vec2) => write(k, { pts: h.pts.map((p) => ({ x: p.x + to.x - c.x, y: p.y + to.y - c.y })), arcs: h.arcs }),

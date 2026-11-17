@@ -1,7 +1,7 @@
 ---
 title: Extensii
 order: 126
-summary: Adaugi mobilier, șabloane de proiect, tipuri de pereți, uși și ferestre, simboluri, tipuri de linie, standarde de desen, pachete de reguli, forme de bare, parametri comuni, familii, profile, hașuri, cartușe și liste de prețuri făcute de alții din catalogul Lapin Extensions, și le scoți din nou.
+summary: Adaugi mobilier, șabloane de proiect, tipuri de pereți, uși și ferestre, simboluri, tipuri de linie, standarde de desen, pachete de reguli, forme de bare, parametri comuni, familii (piese), profile, hașuri, cartușe și liste de prețuri făcute de alții din catalogul Lapin Extensions, și le scoți din nou.
 ---
 
 ## Catalogul
@@ -35,11 +35,11 @@ Clic pe **Instalează**. Lapin descarcă fișierul, verifică dacă mărimea și
 | Liste de prețuri | **Execuție → Liste de prețuri…**, marcate orientative: prețurile sunt ale autorului, verifică-le cu ale tale |
 | Tipuri | proiectul deschis când o instalezi, într-un pas de anulat (**Gestionare → Pachete de tipuri…** le exportă pe ale tale) |
 | Simboluri | **Gestionare → Simboluri…**, în biblioteca acestui calculator; **Adaugă în acest proiect** din Instalate le aduce în proiectul deschis |
-| Tipuri de linie, Standarde de desen, Forme de bare, Parametri comuni, Familii | păstrate pe acest calculator; **Adaugă în acest proiect** din Instalate (și **Catalog → Din biblioteci** din browserul proiectului) le aduce în proiectul deschis prin importul propriei biblioteci: tipurile de linie în tipurile de linie ale proiectului, standardele în **Standarde de desen**, formele de bare în **Forme de bare…** (ediția are nevoie de modulul rebar), parametrii în **Parametri comuni**, familiile în familiile din Studio (modulul studio) |
+| Tipuri de linie, Standarde de desen, Forme de bare, Parametri comuni, Familii (piese) | păstrate pe acest calculator; **Adaugă în acest proiect** din Instalate (și **Catalog → Din biblioteci** din browserul proiectului) le aduce în proiectul deschis prin importul propriei biblioteci: tipurile de linie în tipurile de linie ale proiectului, standardele în **Standarde de desen**, formele de bare în **Forme de bare…** (ediția are nevoie de modulul rebar), parametrii în **Parametri comuni**, familiile în familiile din Studio (modulul studio) |
 | Pachete de reguli | păstrate pe acest calculator; **Adaugă în acest proiect** adaugă un pachet de reguli al proiectului. Marcate orientative: valorile sunt ale autorului, verifică-le cu norma în vigoare |
 | Corespondențe de tabele și de straturi | ținute minte de Lapin, ca **Importă tabel…** să găsească potrivirea coloanelor după titlurile tabelului și **Convertește desenul în…** convertorul fiecărui strat; la dezinstalare alegerile tale de dinainte revin |
 
-Dacă biblioteca ta are deja ceva cu același nume, Lapin întreabă înainte să-l înlocuiască. Nimic din ce aduce o extensie nu se rulează: extensiile sunt conținut.
+Dacă biblioteca ta are deja o listă de prețuri, o bibliotecă de profile sau un fișier de hașuri cu același nume, dar diferit, **Previzualizarea importului** îți oferă să le păstrezi pe amândouă (cu (2) după nume), să-l înlocuiești sau să sari peste; pentru un șablon de proiect cu același nume, Lapin întreabă înainte să-l înlocuiască. Nimic din ce aduce o extensie nu se rulează: extensiile sunt conținut.
 
 Catalogul Lapin este și **semnat** de Lapin Extensions: catalogul și fiecare fișier al lui poartă o semnătură pe care Lapin o verifică înainte să citească lista sau să instaleze un fișier, așa că o copie schimbată pe drum este refuzată. O linie deasupra listei spune **Semnat de Lapin Extensions** când este.
 

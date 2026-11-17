@@ -8,8 +8,10 @@
  * assistants) is mep-pro's, which adds its groups to this tab.
  */
 
+import { pulldownTool } from '../../shell/pulldown';
 import { Box, Container, CookingPot, Cylinder, Filter, Fuel, GitBranchPlus, Heater, ShieldCheck, Waypoints } from 'lucide-react';
 import { AlarmSmoke, BellRing, CloudDrizzle, Cog, Droplet, FireExtinguisher, GitMerge, Hand, PanelTop, RefreshCw, Siren, ThermometerSun } from 'lucide-react';
+import { ListOrdered } from 'lucide-react';
 import { AirVent, ArrowDownToLine, Ban, Bath, CircleDot, Droplets, Fan, Flame, Gauge, GitFork, Lightbulb, Link2, Milestone, PencilLine, Route, SquarePen, Waves, MoveVertical, Plug, ScanSearch, ShowerHead, Spline, Thermometer, ToggleLeft, Toilet, Unlink, Utensils, Wind, Workflow, Wrench, Zap, Map as MapIcon } from 'lucide-react';
 import type { Icon } from '../../icons';
 import type { Grip, LapinModule, PlaceEntry, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -22,19 +24,19 @@ import { runSystem, schedule } from './tools';
 import { mepHooks } from './hooks';
 import { setMep, useMep } from './prefs';
 import { usePlaceRole } from './placeRole';
-import { activate } from '../../platform/modules';
+import { activate, findTool } from '../../platform/modules';
 import { MepSection } from './MepSection';
 import { editSystem, editedSystem, toggleEdit } from './edit';
 import { Background } from './Background';
 import { mainArgs } from './gas';
 import { LengthField } from '../../shell/cells';
-import { fanGroup } from './fans/tools';
+import { ceilingFan, fanDuct, fanRoomCheck, fanSchedule, fanTypes, inlineFan, lightFan, panelFan, wallFan, windowFan } from './fans/tools';
 import { chooseFanType, kindOf as fanKindOf } from './fans/fans';
 import { relatingOf } from '../../engine/model';
 import { FanSection } from './fans/FanSection';
 import { CLASS as FAN_CLASS, fanGrips } from './fans/fans';
 import { lazyPart } from '../../platform/lazyPart';
-import { cableTray, carrierGroup } from './carriers/tools';
+import { cableTray, carrierSchedule, layInCarrier } from './carriers/tools';
 import { useCarrierPrefs } from './carriers/carriers';
 import { CarrierSection } from './carriers/CarrierSection';
 import { CLASS as CARRIER_CLASS, carrierPoints } from './carriers/carriers';
@@ -52,7 +54,7 @@ const CATEGORIES: [string, string[]][] = [
   ['Plumbing', ['basin', 'wc', 'sink', 'shower', 'bath', 'waterMeter', 'stack', 'cleanout']],
   ['Electrical', ['panel', 'outlet', 'light', 'switch']],
   ['Air', ['fan', 'diffuser', 'grille']],
-  ['Fittings', ['valve', 'rise', 'cap']],
+  ['Fittings', ['valve', 'rise', 'cap', 'coupling']],
   ['Gas', ['meterBox', 'regulator', 'gasMeter', 'gasShutoff', 'gasTap', 'flexConnector', 'gasBoiler', 'cooker', 'waterHeater', 'tappingTee']],
   ['Fuel oil', ['oilTank', 'fillPoint', 'ventCap', 'oilFilter', 'oilBoiler']],
   ['Fire alarm', ['firePanel', 'smokeDetector', 'heatDetector', 'callPoint', 'sounder', 'sounderBeacon']],
@@ -81,6 +83,8 @@ const ROLES: RoleTool[] = [
   { id: 'valve', label: 'Valve', icon: CircleDot, services: ['*'], inline: true },
   { id: 'rise', label: 'Rise / drop', icon: MoveVertical, services: ['*'] },
   { id: 'cap', label: 'Cap', icon: Ban, services: ['*'] },
+  // Put by Split element where a run is cut in two (audit §15), or placed on a run by hand.
+  { id: 'coupling', label: 'Coupling', icon: GitMerge, services: ['*'], inline: true },
   // Gas: a residence's installation, from the meter box to the appliances; the street's tapping tee.
   { id: 'meterBox', label: 'Meter box', icon: Box, services: ['gas'] },
   { id: 'regulator', label: 'Gas regulator', icon: Gauge, services: ['gas'], inline: true },
@@ -472,17 +476,28 @@ const mep: LapinModule = {
   summary: 'Heating, water, drainage, ventilation, electrical, gas and fire protection systems drawn as schematics on the plan.',
   tabs: [{
     id: 'mep', label: 'MEP', order: 45, include: ['modify'],
+    // Fewer groups than the tools (audit S14): the tools used most stay buttons, the rest gathered under pulldowns; each keeps
+    // its id, letters and place in My tools.
     groups: [
-      { label: 'New system', tools: [], small: newSystems },
-      { label: 'System', tools: [edit], small: [systems, mepPlan, openPorts, equipmentSchedule, runSchedule, gasSchedule, fireSchedule] },
-      { label: 'Runs', tools: [run], small: [connect, disconnect, addHandle, detour, redraw] },
-      // Cable trays, ladders, trunking and conduit (report #147).
-      carrierGroup,
-      { label: 'Nodes', tools: [place] },
-      // Exhaust fans and ventilators (report #55): elements of their own, configured by type.
-      fanGroup,
-      { label: 'Street', tools: [], small: [gasMain, gasMainDrawn, serviceConnection] },
-      { label: 'Fire alarm', tools: [], small: [closeLoop] },
+      {
+        label: 'System',
+        tools: [pulldownTool('mep.more.newSystem', 'New system', Workflow, newSystems), edit],
+        small: [systems, mepPlan, openPorts,
+          pulldownTool('mep.more.schedules', 'Schedules', ListOrdered, [equipmentSchedule, runSchedule, gasSchedule, fireSchedule, carrierSchedule, fanSchedule, fanRoomCheck])],
+      },
+      {
+        label: 'Runs',
+        tools: [run, place],
+        small: [connect, disconnect, addHandle, detour, redraw,
+          // The fire alarm's loop, and what runs in the street to the building (gas mains, the service connection).
+          closeLoop, pulldownTool('mep.more.street', 'Street', Route, [gasMain, gasMainDrawn, serviceConnection])],
+      },
+      // Cable trays, ladders, trunking and conduit (report #147); exhaust fans and ventilators (report #55), configured by type.
+      {
+        label: 'Carriers and fans',
+        tools: [cableTray, pulldownTool('mep.more.fans', 'Fans', Fan, [wallFan, ceilingFan, inlineFan, windowFan, lightFan, panelFan])],
+        small: [layInCarrier, fanDuct, fanTypes],
+      },
     ],
   }],
   // The old tool of each role (Radiator, Valve…): the Place tool set to it, off the ribbon; their ids and letters work as before.
@@ -501,7 +516,7 @@ const mep: LapinModule = {
   similarFor: (n) => {
     if (n.type === FAN_CLASS) {
       const type = relatingOf(useSession.getState(), n.id, 'IfcRelDefinesByType') ?? undefined;
-      const tool = fanGroup.tools.concat(fanGroup.small).find((t) => t.id === `mep.fan.${fanKindOf(type)}`);
+      const tool = findTool(`mep.fan.${fanKindOf(type)}`);
       if (!tool) return null;
       return () => { if (type) chooseFanType(fanKindOf(type), type.id); activate(tool); };
     }
