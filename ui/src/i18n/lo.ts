@@ -4279,6 +4279,24 @@ export const LO: Record<string, string> = {
   "A new table in this style copies its cells too": "ຕາຕະລາງໃໝ່ໃນຮູບແບບນີ້ສຳເນົາຕາລາງຂອງມັນນຳ",
   "No table styles yet.": "ຍັງບໍ່ມີຮູບແບບຕາຕະລາງ.",
   "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "ບັນທຶກຕາຕະລາງເປັນຮູບແບບຈາກຕົວແກ້ໄຂຂອງມັນ (ບັນທຶກເປັນຮູບແບບ…): ຮູບແບບ, ຄວາມກວ້າງຖັນ ແລະ ຄວາມສູງແຖວ, ແຖວຫົວ ແລະ, ຖ້າຕ້ອງການ, ຕາລາງ. ຄ່າຕັ້ງໃນຕົວຍັງຄືເກົ່າ.",
+  // Drafting tables, stage 4: tables from the model.
+  "The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.": "ແບບຈຳລອງ: {el.name}, {= el.NetArea | 0.00} ອ່ານອົງປະກອບທີ່ເຊື່ອມໂຍງ; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} ຕາຕະລາງລາຍການ ຫຼື ຕົວກັ່ນຕອງມຸມມອງ, ຕາມຊື່.",
+  "Select the elements the table reads, in any view": "ເລືອກອົງປະກອບທີ່ຕາຕະລາງອ່ານ, ໃນມຸມມອງໃດກໍໄດ້",
+  "To the selected cells": "ໃສ່ຕາລາງທີ່ເລືອກ",
+  "A row each": "ແຕ່ລະອັນໜຶ່ງແຖວ",
+  "The whole table": "ທັງຕາຕະລາງ",
+  "The selected cells read the first element selected": "ຕາລາງທີ່ເລືອກອ່ານອົງປະກອບທຳອິດທີ່ເລືອກ",
+  "A row each from the first selected row, rows added as needed and the first row's texts copied down": "ແຕ່ລະອັນໜຶ່ງແຖວ ຈາກແຖວທຳອິດທີ່ເລືອກ, ເພີ່ມແຖວຕາມຕ້ອງການ ແລະ ສຳເນົາຂໍ້ຄວາມຂອງແຖວທຳອິດລົງ",
+  "Every cell without a link of its own reads the first element selected": "ທຸກຕາລາງທີ່ບໍ່ມີການເຊື່ອມໂຍງຂອງຕົນເອງ ອ່ານອົງປະກອບທຳອິດທີ່ເລືອກ",
+  "Link elements…": "ເຊື່ອມໂຍງອົງປະກອບ…",
+  "Link elements": "ເຊື່ອມໂຍງອົງປະກອບ",
+  "Link the selected cells, rows or the table to elements of the model: el.<field> reads them": "ເຊື່ອມໂຍງຕາລາງ, ແຖວ ຫຼື ຕາຕະລາງທີ່ເລືອກ ກັບອົງປະກອບຂອງແບບຈຳລອງ: el.<ຊ່ອງ> ອ່ານພວກມັນ",
+  "Unlink": "ຍົກເລີກການເຊື່ອມໂຍງ",
+  "The selected cells and their rows read no element of their own any more": "ຕາລາງທີ່ເລືອກ ແລະ ແຖວຂອງພວກມັນ ບໍ່ອ່ານອົງປະກອບຂອງຕົນເອງອີກ",
+  "Its row reads": "ແຖວຂອງມັນອ່ານ",
+  "The table reads": "ຕາຕະລາງອ່ານ",
+  "It reads": "ມັນອ່ານ",
+  "A field of that element put into the cell's text": "ຊ່ອງຂໍ້ມູນຂອງອົງປະກອບນັ້ນໃສ່ໃນຂໍ້ຄວາມຂອງຕາລາງ",
 };
 
 /** Phrases with a number or a name in them. */

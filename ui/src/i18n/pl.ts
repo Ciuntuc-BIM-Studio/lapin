@@ -4226,6 +4226,24 @@ export const PL: Record<string, string> = {
   "A new table in this style copies its cells too": "Nowa tabela w tym stylu kopiuje też jego komórki",
   "No table styles yet.": "Brak jeszcze stylów tabel.",
   "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Zapisz tabelę jako styl w jej edytorze (Zapisz jako styl…): jej wygląd, szerokości kolumn i wysokości wierszy, wiersze nagłówka i, na życzenie, komórki. Wbudowane ustawienia pozostają bez zmian.",
+  // Drafting tables, stage 4: tables from the model.
+  "The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.": "Model: {el.name}, {= el.NetArea | 0.00} odczytują połączony element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} zestawienie lub filtr widoku, po nazwie.",
+  "Select the elements the table reads, in any view": "Zaznacz w dowolnym widoku elementy, które odczytuje tabela",
+  "To the selected cells": "Do zaznaczonych komórek",
+  "A row each": "Po jednym wierszu",
+  "The whole table": "Cała tabela",
+  "The selected cells read the first element selected": "Zaznaczone komórki odczytują pierwszy zaznaczony element",
+  "A row each from the first selected row, rows added as needed and the first row's texts copied down": "Po jednym wierszu od pierwszego zaznaczonego, z dodanymi w razie potrzeby wierszami i tekstami pierwszego wiersza skopiowanymi w dół",
+  "Every cell without a link of its own reads the first element selected": "Każda komórka bez własnego połączenia odczytuje pierwszy zaznaczony element",
+  "Link elements…": "Połącz elementy…",
+  "Link elements": "Połącz elementy",
+  "Link the selected cells, rows or the table to elements of the model: el.<field> reads them": "Połącz zaznaczone komórki, wiersze lub tabelę z elementami modelu: el.<pole> je odczytuje",
+  "Unlink": "Rozłącz",
+  "The selected cells and their rows read no element of their own any more": "Zaznaczone komórki i ich wiersze nie odczytują już własnego elementu",
+  "Its row reads": "Jej wiersz odczytuje",
+  "The table reads": "Tabela odczytuje",
+  "It reads": "Odczytuje",
+  "A field of that element put into the cell's text": "Pole tego elementu wstawione do tekstu komórki",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

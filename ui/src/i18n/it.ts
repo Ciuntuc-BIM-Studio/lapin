@@ -4186,6 +4186,24 @@ export const IT: Record<string, string> = {
   "A new table in this style copies its cells too": "Una nuova tabella in questo stile ne copia anche le celle",
   "No table styles yet.": "Ancora nessuno stile di tabella.",
   "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Salva una tabella come stile dal suo editor (Salva come stile…): l'aspetto, le larghezze delle colonne e le altezze delle righe, le righe di intestazione e, se richiesto, le celle. I preset integrati restano come sono.",
+  // Drafting tables, stage 4: tables from the model.
+  "The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.": "Il modello: {el.name}, {= el.NetArea | 0.00} leggono l'elemento collegato; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} un abaco o un filtro di vista, per nome.",
+  "Select the elements the table reads, in any view": "Seleziona in qualsiasi vista gli elementi che la tabella legge",
+  "To the selected cells": "Alle celle selezionate",
+  "A row each": "Una riga ciascuno",
+  "The whole table": "Tutta la tabella",
+  "The selected cells read the first element selected": "Le celle selezionate leggono il primo elemento selezionato",
+  "A row each from the first selected row, rows added as needed and the first row's texts copied down": "Una riga ciascuno dalla prima riga selezionata, aggiungendo righe se serve e copiando in basso i testi della prima riga",
+  "Every cell without a link of its own reads the first element selected": "Ogni cella senza un proprio collegamento legge il primo elemento selezionato",
+  "Link elements…": "Collega elementi…",
+  "Link elements": "Collega elementi",
+  "Link the selected cells, rows or the table to elements of the model: el.<field> reads them": "Collega le celle selezionate, le righe o la tabella a elementi del modello: el.<campo> li legge",
+  "Unlink": "Scollega",
+  "The selected cells and their rows read no element of their own any more": "Le celle selezionate e le loro righe non leggono più un elemento proprio",
+  "Its row reads": "La sua riga legge",
+  "The table reads": "La tabella legge",
+  "It reads": "Legge",
+  "A field of that element put into the cell's text": "Un campo di quell'elemento inserito nel testo della cella",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

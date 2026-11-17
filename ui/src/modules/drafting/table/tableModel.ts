@@ -158,3 +158,27 @@ export function refInsert(text: string, caret: number, ref: string): string {
   if (inFormula) return ref;
   return ref.includes(':') ? `{= sum(${ref})}` : `{${ref}}`;
 }
+
+/** What a cell reads of the model (stage 4), as the engine says: the element it is linked to, its name, whether it is gone, and from where the link comes. */
+export interface CellLink { el?: string; elName?: string; elGone?: boolean; elFrom?: 'row' | 'table' }
+
+/** The elements a link takes from a selection: model elements only (not the table, not drafting, views or types). */
+export function linkable(ids: readonly string[], types: (id: string) => string | undefined, self: string): string[] {
+  return ids.filter((id) => id !== self && !!types(id) && !/^(IfcAnnotation|LapinView|IfcProject|IfcSite|IfcBuilding$|IfcBuildingStorey)/.test(types(id)!) && !types(id)!.endsWith('Type'));
+}
+
+/** The ops a link sends: the selected cells to one element, a row each from the first selected row, the whole table, or the links taken off. */
+export function linkOps(kind: 'cells' | 'rows' | 'table' | 'unlink', s: Sel, els: readonly string[]): TableOp[] {
+  const range = rangeOf(s);
+  if (kind === 'unlink') return [{ op: 'link', range, el: null }, { op: 'link', on: 'rows', range, el: null }];
+  if (!els.length) return [];
+  if (kind === 'rows') return [{ op: 'linkRows', at: address(norm(s).r0, 0), els: [...els] }];
+  if (kind === 'table') return [{ op: 'link', on: 'table', el: els[0] }];
+  return [{ op: 'link', range, el: els[0] }];
+}
+
+/** A field of the linked element as a cell writes it: a token showing it, or inside a formula the name alone. */
+export function fieldInsert(text: string, caret: number, field: string): string {
+  const name = `el.${field}`;
+  return refInsert(text, caret, name).replace(/^\{= sum\((.*)\)\}$/, '{$1}');
+}

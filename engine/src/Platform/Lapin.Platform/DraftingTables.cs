@@ -82,7 +82,17 @@ public static partial class DraftingTables
 
     public sealed record Side(double W, string C);
     public sealed record Col(double W, bool Fit, double? Min, double? Max);
-    public sealed record Row(double H, bool Fit, double? Min, double? Max, bool Header);
+    public sealed record Row(double H, bool Fit, double? Min, double? Max, bool Header)
+    {
+        /// <summary>The element the row's cells read (<c>el</c>, stage 4) when a cell has none of its own.</summary>
+        public string? El { get; init; }
+    }
+
+    /// <summary>
+    /// What a cell reads by a name its table does not hold (stage 4): <c>el.…</c>, <c>schedule.…</c>, <c>filter.…</c> for the cell
+    /// at (r, c); unknown (and why in <c>errors</c>) when it does not read. The model's reader (<see cref="ModelCells"/>).
+    /// </summary>
+    public delegate (bool Known, string? Shown, XValue? Value) CellNames(int r, int c, string name, List<string> errors);
 
     /// <summary>A cell as stored: its text, spans and own style (null: the table's); <see cref="Covered"/> when a merged cell hides it.</summary>
     public sealed record Cell(string Text, int RowSpan, int ColSpan, JsonObject Own)
@@ -106,6 +116,16 @@ public static partial class DraftingTables
         /// <summary>The cell whose region holds (r, c): itself, or the merged cell covering it.</summary>
         public required (int R, int C)[,] Master { get; init; }
 
+        /// <summary>The element the whole table reads (<c>el</c>) when neither a cell nor its row has one.</summary>
+        public string? El { get; init; }
+
+        /// <summary>The element a cell reads (stage 4): its own link (its merged cell's), else its row's, else the table's; null when none.</summary>
+        public string? LinkOf(int r, int c)
+        {
+            var (mr, mc) = Master[r, c];
+            return Cells[mr, mc].Str("el") is { Length: > 0 } own ? own : Rows[mr].El ?? El;
+        }
+
         public double Size => Json.Number(Style["size"]) is double s && s > 0 ? s : 2.5;
         public double Pad => Json.Number(Style["pad"]) is double p && p >= 0 ? p : 1;
         public Side GridSide => SideIn(Style["grid"], new Side(0.18, "#000000"));
@@ -127,7 +147,7 @@ public static partial class DraftingTables
         if (rowsJson.Count == 0) rowsJson.Add([]);
         var rows = rowsJson.Select(o => new Row(Json.Number(o["h"]) is double h && h > 0 ? h : 7,
             o["fit"] is JsonValue f && f.TryGetValue<bool>(out var fb) && fb, Json.Number(o["min"]), Json.Number(o["max"]),
-            o["header"] is JsonValue hv && hv.TryGetValue<bool>(out var hb) && hb)).ToList();
+            o["header"] is JsonValue hv && hv.TryGetValue<bool>(out var hb) && hb) { El = (string?)(o["el"] as JsonValue) is { Length: > 0 } el ? el : null }).ToList();
         var (nr, nc) = (rows.Count, cols.Count);
         var cells = new Cell[nr, nc];
         var master = new (int, int)[nr, nc];
@@ -149,7 +169,7 @@ public static partial class DraftingTables
                         if (i != r || j != c) { cells[i, j] = new Cell("", 1, 1, NoStyle) { Covered = true }; master[i, j] = (r, c); }
             }
         }
-        return new Grid { Cols = cols, Rows = rows, Cells = cells, Master = master, Style = t?["style"] as JsonObject ?? [] };
+        return new Grid { Cols = cols, Rows = rows, Cells = cells, Master = master, Style = t?["style"] as JsonObject ?? [], El = (string?)(t?["el"] as JsonValue) is { Length: > 0 } te ? te : null };
     }
 
     // ------------------------------------------------------------ values
@@ -163,8 +183,10 @@ public static partial class DraftingTables
     /// names (<c>table.Areas.B4</c>, <c>sum(table.Areas.B2:B9)</c>, <c>{table.Areas.B4}</c>), the guard against cycles kept
     /// across them. <paramref name="fields"/>, when given, fills a cell's own fields first (a tag symbol's <c>{number}</c>).
     /// </summary>
-    public sealed class Values(Grid g, Func<string, (bool Known, string? Value)>? outer = null, TableScope? scope = null, Entity? self = null, Func<string, string>? fields = null)
+    public sealed class Values(Grid g, Func<string, (bool Known, string? Value)>? outer = null, TableScope? scope = null, Entity? self = null, Func<string, string>? fields = null, CellNames? model = null)
     {
+        // The cells being worked out, the innermost last: what a name of the model reads is the cell asking's (its element).
+        readonly Stack<(int R, int C)> asking = new();
         readonly Dictionary<(int, int), (string Shown, XValue Value)> done = [];
         readonly HashSet<(string, int, int)> busy = scope?.Busy ?? [];
         readonly string key = self?.Id ?? "";
@@ -183,6 +205,7 @@ public static partial class DraftingTables
             var cell = g.Cells[r, c];
             if (cell.Covered || cell.Text.Length == 0) return done[(r, c)] = ("", new XValue(null, ""));
             busy.Add((key, r, c));
+            asking.Push((r, c));
             try
             {
                 var unknown = new List<string>();
@@ -200,16 +223,20 @@ public static partial class DraftingTables
                     }
                     text = LiveText.Formulas(text, Name, unknown, Range);
                 }
-                if ((outer != null || scope != null) && text.Contains('{')) text = TitleBlocks.Fill(text, Token, unknown);
+                if ((outer != null || scope != null || model != null) && text.Contains('{')) text = TitleBlocks.Fill(text, Token, unknown);
                 foreach (var u in unknown) Errors.Add($"{Address(r, c)}: {u}");
                 return done[(r, c)] = (text, whole ?? XValue.Read(text));
             }
-            finally { busy.Remove((key, r, c)); }
+            finally { busy.Remove((key, r, c)); asking.Pop(); }
         }
+
+        (bool Known, string? Shown, XValue? Value)? Model(string name) =>
+            model != null && asking.Count > 0 && ModelCells.Reads(name) && model(asking.Peek().R, asking.Peek().C, name, Errors) is { Known: true } m ? m : null;
 
         (bool Known, string? Value) Token(string name)
         {
             if (scope != null && TableScope.IsRef(name) && scope.Cell(self, name, Errors) is { } x) return (true, x.Shown);
+            if (Model(name) is { } m) return (true, m.Shown);
             return outer?.Invoke(name) ?? (false, null);
         }
 
@@ -227,6 +254,7 @@ public static partial class DraftingTables
         {
             if (Parse(name) is { } at) return Local(at.R, at.C);
             if (scope != null && TableScope.IsRef(name)) return scope.Cell(self, name, Errors)?.Value;
+            if (Model(name) is { } m) return m.Value;
             return outer?.Invoke(name) is { Known: true } k ? XValue.Read(k.Value ?? "") : null;
         }
 
@@ -500,6 +528,25 @@ public static partial class DraftingTables
                 else { cell.Remove("bold"); cell.Remove("fill"); cell.Remove("bottom"); }
             }
         }
+    }
+
+    /// <summary>
+    /// A table's JSON with its sizes times <paramref name="k"/> (widths, heights, their min and max, text heights, padding): a
+    /// table drawn on paper put into a model-scale symbol, whose mm are the building's. Line widths stay: they are pens on paper.
+    /// </summary>
+    public static JsonObject Scaled(JsonObject table, double k)
+    {
+        var t = (JsonObject)table.DeepClone();
+        if (Math.Abs(k - 1) < 1e-12) return t;
+        void Mul(JsonObject? o, params string[] keys) { if (o != null) foreach (var key in keys) if (Json.Number(o[key]) is double v) o[key] = Math.Round(v * k, 6); }
+        foreach (var c in t["cols"] as JsonArray ?? []) Mul(c as JsonObject, "w", "min", "max");
+        foreach (var r in t["rows"] as JsonArray ?? [])
+        {
+            Mul(r as JsonObject, "h", "min", "max");
+            foreach (var cell in (r as JsonObject)?["cells"] as JsonArray ?? []) Mul(cell as JsonObject, "size", "pad");
+        }
+        Mul(t["style"] as JsonObject, "size", "pad");
+        return t;
     }
 
     // ------------------------------------------------------------ table styles of the user's own (stage 3)

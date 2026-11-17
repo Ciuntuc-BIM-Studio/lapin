@@ -14,13 +14,14 @@ import { useUi } from '../../../app/store';
 import { execute, query, useSession } from '../../../engine/session';
 import { NumberField } from '../../../shell/cells';
 import { ColourField } from '../../../shell/ColourField';
-import { BORDERS, PRESETS, address, colsOp, grow, inSel, insertAt, isTableName, norm, opacityOf, ownStyle, pasteBlock, rangeOf, refInsert, rowsOp, withOpacity, type Sel, type TableInfo, type TableJson, type TableOp } from './tableModel';
+import { BORDERS, PRESETS, address, colsOp, fieldInsert, grow, inSel, insertAt, isTableName, linkOps, linkable, norm, opacityOf, ownStyle, pasteBlock, rangeOf, refInsert, rowsOp, withOpacity, type CellLink, type Sel, type TableInfo, type TableJson, type TableOp } from './tableModel';
 import { TableRefPicker } from './TableRefPicker';
 import { useTableEditor, useTableStyles } from './tableStore';
 import { promptText, confirmAction } from '../../../shell/prompts';
 
 const HELP = "Type in a cell, or double-click it. Formulas read the table's cells: {= B2 * C2}, {= sum(D2:D9)}, {= average(B2:B5) | 0.0}; on a sheet, its fields too: {sheet.number}.";
 const HELP_TABLES = 'Another table is read by its name: {= table.Areas.B4 * 2}, {= sum(table.Areas.B2:B9)}, {table.Areas.A1}.';
+const HELP_MODEL = 'The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.';
 
 /** A number field in the editor's bars: a short one, beside its label. */
 const NUM = { width: 64 } as const;
@@ -38,7 +39,10 @@ export function TableEditor() {
   const [border, setBorder] = useState<{ edges: string; w: number; c: string }>({ edges: 'all', w: 0.25, c: '#000000' });
   const [name, setName] = useState('');
   const styles = useTableStyles();
-
+  const [linking, setLinking] = useState(false);
+  const selected = useUi((s) => s.selected);
+  const nodes = useSession((s) => s.nodes);
+  const [fields, setFields] = useState<{ field: string; name: string; value?: string }[]>([]);
   const grid = useRef<HTMLDivElement>(null);
   const barCaret = useRef<{ from: number; to: number } | null>(null);
   const close = () => useUi.setState({ dialog: null });
@@ -53,7 +57,14 @@ export function TableEditor() {
   }, [id, node]);
 
   const n = norm(sel);
-  const first = info?.cells[n.r0]?.[n.c0];
+  const first = info?.cells[n.r0]?.[n.c0] as (TableInfo['cells'][number][number] & CellLink) | undefined;
+  const linked = first?.el && !first.elGone ? first.el : null;
+  useEffect(() => {
+    if (!linked) { setFields([]); return; }
+    let live = true;
+    void query<{ field: string; name: string; value?: string }[]>('params.fields', { id: linked }).then((r) => { if (live) setFields(Array.isArray(r) ? r : []); });
+    return () => { live = false; };
+  }, [linked]);
   useEffect(() => setBar(first?.t ?? ''), [first?.t, n.r0, n.c0]);
 
   const edit = useCallback(async (...ops: TableOp[]) => {
@@ -102,16 +113,21 @@ export function TableEditor() {
     void edit({ op: 'set', cell: address(n.r0, n.c0), values: pasteBlock(text) });
   };
   const style = (s: Record<string, unknown>) => void edit({ op: 'style', range, style: s });
-  /** Another table's cell or range put into the selected cell's text where the bar's caret was, as one edit. */
-  const insertRef = (ref: string) => {
+  /** Text put into the selected cell's text where the bar's caret was (what to put given the text and the caret), as one edit. */
+  const insertText = (what: (text: string, caret: number) => string) => {
     if (!first || first.covered) return;
     const text = bar;
     const at = barCaret.current ?? { from: text.length, to: text.length };
-    const next = insertAt(text, at.from, at.to, refInsert(text, at.from, ref));
+    const next = insertAt(text, at.from, at.to, what(text, at.from));
     setBar(next.text);
     barCaret.current = { from: next.caret, to: next.caret };
     void edit({ op: 'set', cell: address(n.r0, n.c0), text: next.text });
   };
+  /** Another table's cell or range put in (stage 2). */
+  const insertRef = (ref: string) => insertText((text, caret) => refInsert(text, caret, ref));
+  /** The elements selected in the views linked (stage 4), the editor back. */
+  const els = linkable(selected, (x) => nodes.get(x)?.type, id ?? '');
+  const link = (kind: 'cells' | 'rows' | 'table' | 'unlink') => { void edit(...linkOps(kind, n, els)); setLinking(false); };
   const saveStyle = () => {
     const styleName = promptText('The table style\'s name', styles.find((st) => st.id === table?.preset)?.name ?? '');
     if (!styleName?.trim()) return;
@@ -128,6 +144,18 @@ export function TableEditor() {
   const colW = info?.colW[n.c0] ?? null, rowH = info?.rowH[n.r0] ?? null;
   const fitCols = !!table?.cols?.[n.c0]?.fit, fitRows = !!table?.rows?.[n.r0]?.fit;
   const headerRows = !!table?.rows?.[n.r0]?.header;
+
+  if (linking) return (
+    <div data-testid="table-link-bar" role="toolbar" aria-label="Link elements"
+      style={{ position: 'fixed', top: 72, left: '50%', transform: 'translateX(-50%)', zIndex: 60, background: 'var(--panel, #fff)', color: 'var(--text, #000)', border: '1px solid var(--line, #8884)', borderRadius: 6, padding: '6px 10px', display: 'flex', gap: 6, alignItems: 'center', boxShadow: '0 2px 10px #0003' }}>
+      <span>Select the elements the table reads, in any view</span>
+      <span className="muted" data-no-i18n>{`(${els.length})`}</span>
+      <button type="button" className="btn" data-testid="table-link-cells" disabled={!els.length} title="The selected cells read the first element selected" onClick={() => link('cells')}>To the selected cells</button>
+      <button type="button" className="btn" data-testid="table-link-rows" disabled={!els.length} title="A row each from the first selected row, rows added as needed and the first row's texts copied down" onClick={() => link('rows')}>A row each</button>
+      <button type="button" className="btn" data-testid="table-link-table" disabled={!els.length} title="Every cell without a link of its own reads the first element selected" onClick={() => link('table')}>The whole table</button>
+      <button type="button" className="btn" onClick={() => setLinking(false)}>Cancel</button>
+    </div>
+  );
 
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Table">
@@ -154,6 +182,8 @@ export function TableEditor() {
               {styles.map((st) => <option key={st.id} value={st.id} data-no-i18n>{st.name}</option>)}
             </select>
             <button type="button" className="btn" data-testid="table-save-style" title="This table's look, sizes and header rows kept in the drafting standards, for new tables and to restyle others" onClick={saveStyle}>Save as style…</button>
+            <button type="button" className="btn" data-testid="table-link" title="Link the selected cells, rows or the table to elements of the model: el.<field> reads them" onClick={() => setLinking(true)}>Link elements…</button>
+            <button type="button" className="btn" data-testid="table-unlink" title="The selected cells and their rows read no element of their own any more" onClick={() => link('unlink')}>Unlink</button>
             <label title="The selected rows are header rows: a style's header, repeated when a long table breaks"><input type="checkbox" data-testid="table-header-rows" checked={headerRows} onChange={(e) => void edit({ op: 'header', range, on: e.target.checked })} /> header row</label>
           </div>
           <div className="table-tools" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginBottom: 6 }}>
@@ -209,6 +239,18 @@ export function TableEditor() {
               onBlur={() => { if (first && !first.covered && bar !== first.t) void edit({ op: 'set', cell: address(n.r0, n.c0), text: bar }); }}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); } }} />
           </div>
+          {first?.el && (
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }} data-testid="table-reads">
+              <span className="muted">{first.elFrom === 'row' ? 'Its row reads' : first.elFrom === 'table' ? 'The table reads' : 'It reads'}</span>
+              {first.elGone ? <span className="error-text">its element is gone</span> : <span data-no-i18n>{first.elName}</span>}
+              {fields.length > 0 && (
+                <select data-testid="table-field" value="" title="A field of that element put into the cell's text" onChange={(e) => { if (e.target.value) insertText((text, caret) => fieldInsert(text, caret, e.target.value)); }}>
+                  <option value="">Insert a field…</option>
+                  {fields.map((f) => <option key={f.field} value={f.field} data-no-i18n>{f.value ? `${f.field} = ${f.value}` : f.field}</option>)}
+                </select>
+              )}
+            </div>
+          )}
           <div ref={grid} tabIndex={0} data-testid="table-grid" onKeyDown={onGridKey} onPaste={onPaste}
             style={{ overflow: 'auto', maxHeight: '55vh', outline: 'none', border: '1px solid var(--line, #8884)' }}>
             {info && (
@@ -266,6 +308,7 @@ export function TableEditor() {
           <TableRefPicker self={node.id} onInsert={insertRef} />
           <p className="muted" style={{ marginTop: 6 }}>{HELP}</p>
           <p className="muted">{HELP_TABLES}</p>
+          <p className="muted">{HELP_MODEL}</p>
         </div>
       </div>
     </div>

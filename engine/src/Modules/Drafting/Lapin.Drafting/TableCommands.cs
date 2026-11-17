@@ -43,7 +43,8 @@ public static class TableCommands
         {
             var e = Require(ctx.Model, (string?)a["id"]);
             var ops = a["ops"] as JsonArray ?? (a["op"] != null ? [a.DeepClone()] : throw new CommandException("Which edits? ops: [{op, …}]."));
-            var (table, shifts) = TableEdits.ApplyTracked(e.Attrs["table"] as JsonObject, ops, DraftingResources.Book(ctx.Model).TableStyles);
+            var m = ctx.Model;
+            var (table, shifts) = TableEdits.ApplyTracked(e.Attrs["table"] as JsonObject, ops, DraftingResources.Book(m).TableStyles, id => m.Get(id) != null);
             var attrs = e.CloneAttrs();
             attrs["table"] = table;
             ctx.Replace(e.With(attrs: attrs));
@@ -107,6 +108,13 @@ public static class TableCommands
                     var c = g.Cells[i, j];
                     var o = new JsonObject { ["t"] = c.Text, ["shown"] = v.Shown(i, j) };
                     if (c.Covered) { var (mr, mc) = g.Master[i, j]; o["covered"] = DraftingTables.Address(mr, mc); }
+                    // The element it reads (stage 4): its own link, its row's or the table's; its name, or gone.
+                    if (!c.Covered && g.LinkOf(i, j) is { } link)
+                    {
+                        o["el"] = link;
+                        if (q.Model.Get(link) is { } linked) o["elName"] = linked.Name; else o["elGone"] = true;
+                        if (c.Str("el") == null) o["elFrom"] = g.Rows[i].El != null ? "row" : "table";
+                    }
                     if (c.RowSpan > 1) o["rs"] = c.RowSpan;
                     if (c.ColSpan > 1) o["cs"] = c.ColSpan;
                     row.Add((JsonNode)o);
@@ -142,7 +150,12 @@ public static class TableCommands
     }
 
     /// <summary>The project's tables as formulas read them, each with its own sheet's tokens, worked out once each.</summary>
-    public static TableScope Scope(IQueryContext? q, IModelView m) => new(m, t => OuterOf(q, t));
+    public static TableScope Scope(IQueryContext? q, IModelView m)
+    {
+        // What the cells read of the model (stage 4): one reader for the drawing, each element, schedule and filter read once.
+        var model = q != null ? new ModelCells(q) : null;
+        return new(m, t => OuterOf(q, t), model == null ? null : g => model.For(g));
+    }
 
     /// <summary>A table read, its cells worked out (its sheet's tokens, other tables' cells) and laid out.</summary>
     public static (DraftingTables.Grid Grid, DraftingTables.Values Values, DraftingTables.Layout Layout) Evaluate(IQueryContext? q, Entity e, Entity? view, TableScope? scope = null)

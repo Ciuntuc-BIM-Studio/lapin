@@ -4217,6 +4217,24 @@ export const ZH: Record<string, string> = {
   "A new table in this style copies its cells too": "此样式的新表格也会复制其单元格",
   "No table styles yet.": "尚无表格样式。",
   "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "在表格编辑器中将其保存为样式（另存为样式…）：其外观、列宽与行高、标题行，以及（如需要）其单元格。内置预设保持不变。",
+  // Drafting tables, stage 4: tables from the model.
+  "The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.": "模型：{el.name}、{= el.NetArea | 0.00} 读取所链接的构件；{= schedule.Doors.count}、{schedule.Rooms.total.Area}、{= filter.Walls.sum.Length} 按名称读取明细表或视图过滤器。",
+  "Select the elements the table reads, in any view": "在任意视图中选择表格要读取的构件",
+  "To the selected cells": "链接到所选单元格",
+  "A row each": "每个一行",
+  "The whole table": "整个表格",
+  "The selected cells read the first element selected": "所选单元格读取第一个所选构件",
+  "A row each from the first selected row, rows added as needed and the first row's texts copied down": "从第一个所选行起每个一行，按需添加行，并向下复制第一行的文字",
+  "Every cell without a link of its own reads the first element selected": "每个没有自身链接的单元格读取第一个所选构件",
+  "Link elements…": "链接构件…",
+  "Link elements": "链接构件",
+  "Link the selected cells, rows or the table to elements of the model: el.<field> reads them": "将所选单元格、行或表格链接到模型构件：el.<字段> 读取它们",
+  "Unlink": "取消链接",
+  "The selected cells and their rows read no element of their own any more": "所选单元格及其行不再读取自身的构件",
+  "Its row reads": "其所在行读取",
+  "The table reads": "表格读取",
+  "It reads": "读取",
+  "A field of that element put into the cell's text": "将该构件的字段插入单元格文字",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

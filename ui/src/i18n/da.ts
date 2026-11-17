@@ -4220,6 +4220,24 @@ export const DA: Record<string, string> = {
   "A new table in this style copies its cells too": "En ny tabel i denne stil kopierer også dens celler",
   "No table styles yet.": "Ingen tabelstile endnu.",
   "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Gem en tabel som stil fra dens editor (Gem som stil…): dens udseende, kolonnebredder og rækkehøjder, overskriftsrækker og, hvis ønsket, dens celler. De indbyggede forvalg forbliver som de er.",
+  // Drafting tables, stage 4: tables from the model.
+  "The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.": "Modellen: {el.name}, {= el.NetArea | 0.00} læser det tilknyttede element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} en liste eller et visningsfilter, ved navn.",
+  "Select the elements the table reads, in any view": "Vælg i en hvilken som helst visning de elementer, tabellen læser",
+  "To the selected cells": "Til de valgte celler",
+  "A row each": "En række hver",
+  "The whole table": "Hele tabellen",
+  "The selected cells read the first element selected": "De valgte celler læser det første valgte element",
+  "A row each from the first selected row, rows added as needed and the first row's texts copied down": "En række hver fra den første valgte række, rækker tilføjet efter behov og den første rækkes tekster kopieret ned",
+  "Every cell without a link of its own reads the first element selected": "Hver celle uden egen tilknytning læser det første valgte element",
+  "Link elements…": "Tilknyt elementer…",
+  "Link elements": "Tilknyt elementer",
+  "Link the selected cells, rows or the table to elements of the model: el.<field> reads them": "Tilknyt de valgte celler, rækker eller tabellen til modellens elementer: el.<felt> læser dem",
+  "Unlink": "Fjern tilknytning",
+  "The selected cells and their rows read no element of their own any more": "De valgte celler og deres rækker læser ikke længere et eget element",
+  "Its row reads": "Dens række læser",
+  "The table reads": "Tabellen læser",
+  "It reads": "Den læser",
+  "A field of that element put into the cell's text": "Et felt fra elementet sat ind i cellens tekst",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

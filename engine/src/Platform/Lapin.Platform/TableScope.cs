@@ -11,7 +11,7 @@ namespace Lapin.Platform;
 /// project. Each table read is worked out once per drawing (<see cref="Of"/>), and the guard against formulas going round in a
 /// circle is kept across tables (<see cref="Busy"/>): a cell reading back into the cell that asked for it, through another table or not, does not read.
 /// </summary>
-public sealed partial class TableScope(IModelView m, Func<Entity, Func<string, (bool Known, string? Value)>?>? outerFor = null)
+public sealed partial class TableScope(IModelView m, Func<Entity, Func<string, (bool Known, string? Value)>?>? outerFor = null, Func<DraftingTables.Grid, DraftingTables.CellNames?>? modelFor = null)
 {
     public const string Prefix = "table.";
 
@@ -64,7 +64,8 @@ public sealed partial class TableScope(IModelView m, Func<Entity, Func<string, (
     public DraftingTables.Values Of(Entity table)
     {
         if (made.TryGetValue(table.Id, out var v)) return v;
-        return made[table.Id] = new DraftingTables.Values(DraftingTables.Read(table), outerFor?.Invoke(table), this, table);
+        var g = DraftingTables.Read(table);
+        return made[table.Id] = new DraftingTables.Values(g, outerFor?.Invoke(table), this, table, null, modelFor?.Invoke(g));
     }
 
     /// <summary>Another table's cell as a reference names it: its text as shown and its value (an empty cell 0); null, with why in <paramref name="errors"/>, when it does not read.</summary>

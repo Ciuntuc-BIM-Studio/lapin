@@ -4223,6 +4223,24 @@ export const PT: Record<string, string> = {
   "A new table in this style copies its cells too": "Uma tabela nova neste estilo copia também as suas células",
   "No table styles yet.": "Ainda não há estilos de tabela.",
   "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Guarde uma tabela como estilo a partir do seu editor (Guardar como estilo…): o aspeto, as larguras das colunas e alturas das linhas, as linhas de cabeçalho e, se pedido, as células. As predefinições incorporadas ficam como estão.",
+  // Drafting tables, stage 4: tables from the model.
+  "The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.": "O modelo: {el.name}, {= el.NetArea | 0.00} leem o elemento ligado; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} uma tabela de quantidades ou um filtro de vista, pelo nome.",
+  "Select the elements the table reads, in any view": "Selecione, em qualquer vista, os elementos que a tabela lê",
+  "To the selected cells": "Às células selecionadas",
+  "A row each": "Uma linha cada",
+  "The whole table": "A tabela inteira",
+  "The selected cells read the first element selected": "As células selecionadas leem o primeiro elemento selecionado",
+  "A row each from the first selected row, rows added as needed and the first row's texts copied down": "Uma linha cada a partir da primeira linha selecionada, com linhas acrescentadas se preciso e os textos da primeira linha copiados para baixo",
+  "Every cell without a link of its own reads the first element selected": "Cada célula sem ligação própria lê o primeiro elemento selecionado",
+  "Link elements…": "Ligar elementos…",
+  "Link elements": "Ligar elementos",
+  "Link the selected cells, rows or the table to elements of the model: el.<field> reads them": "Liga as células selecionadas, as linhas ou a tabela a elementos do modelo: el.<campo> lê-os",
+  "Unlink": "Desligar",
+  "The selected cells and their rows read no element of their own any more": "As células selecionadas e as suas linhas já não leem um elemento próprio",
+  "Its row reads": "A sua linha lê",
+  "The table reads": "A tabela lê",
+  "It reads": "Lê",
+  "A field of that element put into the cell's text": "Um campo desse elemento posto no texto da célula",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

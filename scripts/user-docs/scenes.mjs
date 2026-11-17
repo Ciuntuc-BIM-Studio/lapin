@@ -7997,6 +7997,49 @@ export const scenes = [
     },
   },
   {
+    // Drafting tables, stage 4 (docs/plan-drafting-tables.md §3b): a table whose rows are linked to walls, each row reading its
+    // wall's name and length, and a symbol drawn as a table whose copies lay their own sizes from their values.
+    id: 'drafting-table-model',
+    touches: ['drafting', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const storey = await t.storey();
+      const walls = [];
+      for (const [i, [x1, y1, x2, y2]] of [[0, 0, 6, 0], [6, 0, 6, 4], [6, 4, 0, 4], [0, 4, 0, 0]].entries()) {
+        const w = await t.cmd('architecture.addWall', { storeyId: storey, x1, y1, x2, y2 });
+        await t.cmd('element.rename', { id: w.id, name: `W-0${i + 1}` });
+        walls.push(w.id);
+      }
+      const table = await t.cmd('drafting.addTable', { viewId: `plan:${storey}`, at: [8, 4], rows: 2, cols: 3, preset: 'header', name: 'Walls',
+        cells: [['Wall', 'Length (m)', 'Fire rating'], ['{el.name}', '{= el.Length | 0.00}', '{el.FireRating}']] });
+      await t.cmd('element.setParam', { id: walls[0], pset: 'Pset_WallCommon', name: 'FireRating', value: 'REI 90' });
+      await t.cmd('drafting.editTable', { id: table.id, ops: [{ op: 'linkRows', at: 'A2', els: walls }, { op: 'style', range: 'B2:B5', style: { align: 'right' } }] });
+      // A room box: a symbol drawn as a table, its copies reading their own values.
+      const def = {
+        scale: 'annotation', category: 'annotation',
+        items: [{ type: 'table', at: [0, 0], table: {
+          cols: [{ w: 10, fit: true }, { w: 10, fit: true }],
+          rows: [{ h: 5, fit: true, cells: [{ t: '{attr.name}', bold: true, cs: 2 }, null] }, { h: 5, fit: true, cells: [{ t: '{= attr.area | 0.00} m²' }, { t: '{attr.floor}' }] }],
+          style: { size: 2.5, pad: 1, grid: { w: 0.18, c: '#000000' }, outline: { w: 0.35, c: '#000000' } } } }],
+        attributes: [{ key: 'name', default: 'Room' }, { key: 'area', default: '0' }, { key: 'floor', default: '' }],
+      };
+      const sym = await t.cmd('symbols.create', { name: 'Room box', def });
+      await t.cmd('drafting.placeSymbol', { symbolId: sym.id, viewId: `plan:${storey}`, at: [0.6, 3.4], values: { name: 'Living room', area: '24.456', floor: 'oak' } });
+      await t.cmd('drafting.placeSymbol', { symbolId: sym.id, viewId: `plan:${storey}`, at: [3.6, 1.4], values: { name: 'WC', area: '3.5', floor: 'tiles' } });
+      await t.wait(1000);
+      await t.fit();
+      await t.shot('drafting-table-model-plan', { of: '.view-pane', pad: 0 });
+      await t.page.evaluate(async (id) => (await import('/src/modules/drafting/table/tableStore.ts')).openTableEditor(id), table.id);
+      await t.page.waitForSelector('[data-table-editor]', { timeout: 10_000 });
+      await t.page.locator('[data-table-editor] td[data-cell=B2]').click();
+      await t.until(async () => (await t.page.locator('[data-table-editor] td[data-cell=A5]').textContent()) === 'W-04', 'a row each wall');
+      await t.page.waitForSelector('[data-testid=table-reads]', { timeout: 10_000 });
+      await t.shot('drafting-table-model', { of: '[data-table-editor]', pad: 0 });
+      const info = await t.call('doc.query', { name: 'drafting.table', args: { id: table.id } });
+      t.expect(info.cells[1][1].shown === '6.00' && info.cells[1][2].shown === 'REI 90', 'the linked row reads its wall');
+    },
+  },
+  {
     id: 'title-blocks',
     async run(t) {
       // A title block of one's own (decision 340, report #76): the project's data and a parameter of its own, a Finnish-style

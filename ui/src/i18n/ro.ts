@@ -4179,6 +4179,24 @@ export const RO: Record<string, string> = {
   "A new table in this style copies its cells too": "Un tabel nou în acest stil îi copiază și celulele",
   "No table styles yet.": "Încă niciun stil de tabel.",
   "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Salvează un tabel ca stil din editorul lui (Salvează ca stil…): aspectul, lățimile coloanelor și înălțimile rândurilor, rândurile de antet și, la cerere, celulele. Presetările Lapin rămân cum sunt.",
+  // Drafting tables, stage 4: tables from the model.
+  "The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.": "Modelul: {el.name}, {= el.NetArea | 0.00} citesc elementul legat; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} un extras sau un filtru de vedere, după nume.",
+  "Select the elements the table reads, in any view": "Selectează elementele pe care le citește tabelul, în orice vedere",
+  "To the selected cells": "La celulele selectate",
+  "A row each": "Câte un rând fiecare",
+  "The whole table": "Tot tabelul",
+  "The selected cells read the first element selected": "Celulele selectate citesc primul element selectat",
+  "A row each from the first selected row, rows added as needed and the first row's texts copied down": "Câte un rând fiecare de la primul rând selectat, cu rânduri adăugate după nevoie și textele primului rând copiate în jos",
+  "Every cell without a link of its own reads the first element selected": "Fiecare celulă fără legătură proprie citește primul element selectat",
+  "Link elements…": "Leagă elemente…",
+  "Link elements": "Leagă elemente",
+  "Link the selected cells, rows or the table to elements of the model: el.<field> reads them": "Leagă celulele selectate, rândurile sau tabelul de elemente ale modelului: el.<câmp> le citește",
+  "Unlink": "Dezleagă",
+  "The selected cells and their rows read no element of their own any more": "Celulele selectate și rândurile lor nu mai citesc niciun element propriu",
+  "Its row reads": "Rândul lui citește",
+  "The table reads": "Tabelul citește",
+  "It reads": "Citește",
+  "A field of that element put into the cell's text": "Un câmp al acelui element pus în textul celulei",
 };
 
 /** Phrases with a number or a name in them. */

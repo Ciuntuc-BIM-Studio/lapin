@@ -4225,6 +4225,24 @@ export const ES: Record<string, string> = {
   "A new table in this style copies its cells too": "Una tabla nueva en este estilo copia también sus celdas",
   "No table styles yet.": "Aún no hay estilos de tabla.",
   "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Guarda una tabla como estilo desde su editor (Guardar como estilo…): su aspecto, los anchos de columna y altos de fila, sus filas de encabezado y, si se pide, sus celdas. Los preajustes integrados quedan como están.",
+  // Drafting tables, stage 4: tables from the model.
+  "The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.": "El modelo: {el.name}, {= el.NetArea | 0.00} leen el elemento vinculado; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} una tabla de planificación o un filtro de vista, por su nombre.",
+  "Select the elements the table reads, in any view": "Selecciona en cualquier vista los elementos que lee la tabla",
+  "To the selected cells": "A las celdas seleccionadas",
+  "A row each": "Una fila cada uno",
+  "The whole table": "Toda la tabla",
+  "The selected cells read the first element selected": "Las celdas seleccionadas leen el primer elemento seleccionado",
+  "A row each from the first selected row, rows added as needed and the first row's texts copied down": "Una fila cada uno desde la primera fila seleccionada, añadiendo filas si hace falta y copiando hacia abajo los textos de la primera fila",
+  "Every cell without a link of its own reads the first element selected": "Cada celda sin vínculo propio lee el primer elemento seleccionado",
+  "Link elements…": "Vincular elementos…",
+  "Link elements": "Vincular elementos",
+  "Link the selected cells, rows or the table to elements of the model: el.<field> reads them": "Vincula las celdas seleccionadas, las filas o la tabla a elementos del modelo: el.<campo> los lee",
+  "Unlink": "Desvincular",
+  "The selected cells and their rows read no element of their own any more": "Las celdas seleccionadas y sus filas ya no leen ningún elemento propio",
+  "Its row reads": "Su fila lee",
+  "The table reads": "La tabla lee",
+  "It reads": "Lee",
+  "A field of that element put into the cell's text": "Un campo de ese elemento puesto en el texto de la celda",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

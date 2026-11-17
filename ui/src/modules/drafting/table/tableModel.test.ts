@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { address, colName, colsOp, grow, inSel, insertAt, isTableName, opacityOf, parseAddress, pasteBlock, rangeOf, refInsert, rowsOp, tableRef, withOpacity, type TableInfo } from './tableModel';
+import { address, colName, colsOp, fieldInsert, grow, inSel, insertAt, linkOps, linkable, isTableName, opacityOf, parseAddress, pasteBlock, rangeOf, refInsert, rowsOp, tableRef, withOpacity, type TableInfo } from './tableModel';
 
 describe('drafting table addresses', () => {
   it('names columns and cells as a spreadsheet does', () => {
@@ -80,5 +80,26 @@ describe('drafting table references to other tables', () => {
     expect(refInsert('{= 1} and ', 10, 'table.A.B2:B9')).toBe('{= sum(table.A.B2:B9)}');
     expect(insertAt('ab', 1, 1, 'X')).toEqual({ text: 'aXb', caret: 2 });
     expect(insertAt('abcd', 1, 3, 'X')).toEqual({ text: 'aXd', caret: 2 });
+  });
+});
+
+describe('drafting table links to the model', () => {
+  const types: Record<string, string> = { w1: 'IfcWall', w2: 'IfcWall', t: 'IfcAnnotation', s: 'IfcBuildingStorey', wt: 'IfcWallType', d: 'IfcDoor' };
+  it('links model elements only, never the table itself', () => {
+    expect(linkable(['t', 'w1', 's', 'wt', 'd', 'nope'], (id) => types[id], 't')).toEqual(['w1', 'd']);
+  });
+
+  it('links cells, a row each from the first selected row, or the table, and unlinks', () => {
+    const s = { r0: 2, c0: 1, r1: 1, c1: 2 };
+    expect(linkOps('cells', s, ['w1', 'w2'])).toEqual([{ op: 'link', range: 'B2:C3', el: 'w1' }]);
+    expect(linkOps('rows', s, ['w1', 'w2'])).toEqual([{ op: 'linkRows', at: 'A2', els: ['w1', 'w2'] }]);
+    expect(linkOps('table', s, ['w2'])).toEqual([{ op: 'link', on: 'table', el: 'w2' }]);
+    expect(linkOps('unlink', s, [])).toEqual([{ op: 'link', range: 'B2:C3', el: null }, { op: 'link', on: 'rows', range: 'B2:C3', el: null }]);
+    expect(linkOps('cells', s, [])).toEqual([]);
+  });
+
+  it('puts a field in as a token, or its name alone inside a formula', () => {
+    expect(fieldInsert('', 0, 'FireRating')).toBe('{el.FireRating}');
+    expect(fieldInsert('{= 2 * ', 7, 'NetArea')).toBe('el.NetArea');
   });
 });

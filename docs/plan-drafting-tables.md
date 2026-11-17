@@ -101,6 +101,61 @@ not read and both say so.
   *Insert reference* put it into the selected cell where the bar's caret was: as it is inside a formula, else as a token
   `{table.Areas.B4}` or, for a range, its total `{= sum(…)}` (`tableModel.refInsert`).
 
+## 3b. Tables from the model (stage 4)
+
+The user's words: model-reading tables are "without doubt one of the most useful features to have". Two ways in, both
+following what Lapin already does for live text (`LiveText`, symbol resolvers, `{…}` tokens, field schedules).
+
+### A table in a symbol (4a)
+
+A symbol's items take a **table** (`{type: "table", at: [x, y] (its top-left, symbol mm), angle?, table: {…}, font?}`, the
+same JSON as a drafting table's). `SymbolRender.Render` lays it with the instance's resolver as the table's `outer`: its cells
+read the symbol's live tokens (`{attr.area}`, `{= attr.area | 0.00}`, `{view.scale}`, `{level.name}`), and in a tag's symbol
+the tagged element's fields first (`{number}`, `{= area * 1.1 | 0.00}`, bare names: the tag's `fields`, as a symbol's texts
+read them). So every placed copy, and every room or element tag drawn with the symbol, lays its own sizes: a room tag whose
+columns fit its name and its area. Its lines go out as strokes at their paper widths, its fills as fills, its texts as the
+symbol's texts (kept readable when the symbol turns). In a model-scale symbol the table's mm are the building's, as its
+texts' are. It is drawn on the symbol's board with **Annotate → Table** (a drafting table on the board, `ItemBoards`: laid,
+collected and patched like a text); *Save as symbol* takes tables among the drafting; *Explode* turns one into lines, fills
+and texts. A table in a symbol reads no other table and no model link (the symbol's element is the instance's).
+
+### Cells reading the model (4b)
+
+**Decisions (stage 4, logged in docs/decisions-pending.md):**
+
+1. **How a cell names its element: a link by id.** `el` holds the element's id (its GlobalId for a model element), on a cell,
+   on a row or on the whole table; the nearest wins (cell → row → table). Ids are what stays: a name, a mark or a position
+   changes, and Lapin keeps GlobalIds through regeneration and IFC round-trips (standing principle).
+2. **What it reads: the one field dictionary.** `el.<field>` is read by `ElementFields` (parameters, property sets,
+   attributes, the module's derived values, quantities from the geometry, formula parameters, scopes such as
+   `el.storey.name`), exactly as a field schedule's column and a filter read it. As a token `{el.FireRating}` it shows the
+   text a tag would write; in a formula `{= el.NetArea * 1.1 | 0.00}` it is the number in SI (m², m, m³), as schedules'
+   formulas read it.
+3. **Live: derived on every ask.** Nothing read from the model is stored in the table: every drawing (view, sheet, PDF, DXF,
+   the editor) works it out again, and views and sheets are drawn again on every change of the model, so a cell follows its
+   element at once. There is no cache to invalidate and nothing to upgrade.
+4. **When the element is gone:** the link stays (undo of the deletion brings the value back); the cell prints `<el.name>`
+   like any token that does not read, and the editor says "its element is gone". A copy of the table (Copy, Duplicate sheet)
+   reads the same elements.
+5. **Undo, saving, IFC:** linking is an op of `drafting.editTable` (`link`, `linkRows`), one undo step; links are plain
+   attributes of the table (absent when unused: no project upgrade). Drafting tables are annotations of views and are not
+   written to IFC (as texts are not); the elements they read keep their GlobalIds through an IFC round-trip.
+6. **A schedule's values:** `schedule.<name>.…` names a schedule of the project by its name (case, spaces and punctuation
+   aside, written without its spaces: `schedule.DoorSchedule.count` reads "Door schedule") or its id, as it is laid out (through `IDocumentTables`, the
+   reader documents use): `count` (its element rows), `total.<column>` (its last totals line as printed, else the sum of the
+   column), `sum`, `average`, `min`, `max` `.<column>` over its element rows, and a cell as printed (`schedule.Doors.B3`, row
+   1 its headings). A column by its heading (units in brackets aside: `Area` for "Area (m²)") or its letter.
+7. **Counting by filter:** `filter.<name>.count` and `filter.<name>.sum|average|min|max.<field>` over the elements one of
+   the project's view filters (Visibility / Graphics → Filters) takes, through the one `ElementFilter` engine. Conditions are
+   never written into a cell: a named filter keeps them where they are edited and reused.
+8. **Where it is worked out:** `ModelCells` (Platform) reads `el.`, `schedule.` and `filter.` for a table's cell, given to
+   `DraftingTables.Values` by the drafting module with its sheet's tokens; a formula's names and its tokens go through it.
+9. **Linking in the editor:** *Link elements…* hides the editor behind a bar; elements are selected in any view as usual,
+   then linked to the selected cells, to rows from the first selected one (one element a row, rows added as needed and the
+   first row's texts copied down, so a row written once with `{el.name}`, `{= el.area | 0.00}` lists them all), or to the
+   whole table; *Unlink* takes the links off. The editor shows which element the selected cell reads and lists its fields to
+   put in.
+
 ## 4. Commands (one undo step each)
 
 | Command | Arguments | Does |
@@ -168,9 +223,11 @@ cell (in the text's own frame, then turned into the cell) for the view's marks a
 3. **Done.** User presets and cell rotation: table styles in the drafting standards and their files, saved from a table,
    applied as presets, with their cells as templates; header rows; cell text turned 90°/270° (`rot`) with the row fitting its
    length; per-cell padding. Tests: `DraftingTableTests` (4 more).
-4. **Tables in symbols and from the model**: a table inside a symbol definition (the room tag that grows with its text), its
-   cells reading the symbol's live tokens (`{attr.…}`, `{= attr.area | 0.00}`) through the symbol's resolver, so a placed copy
-   lays its own sizes; a cell reading a schedule's total or an element's parameter.
+4. **Done.** Tables in symbols and from the model (§3b): a table item in a symbol, its cells reading each copy's live text
+   and a tag's element, laying its own sizes, drawn on the symbol's board, taken by Save as symbol, exploded; cells linked to
+   elements (cell, row, table) reading their fields through `ElementFields`, live, saying when the element is gone; a
+   schedule's count, totals, aggregates and cells; a view filter's count and sums; the editor's Link elements bar, Unlink and
+   field list. Tests: `DraftingTableModelTests` (10), `tableModel.test.ts` (3 more).
 5. **Long tables and exchange**: a table split across columns or sheets with its header repeated; CSV/XLSX import and export
    of the cells (written after the public specifications, no dependency); grips on the drawing for column widths and row
    heights (the marks already carry the laid sizes in `Data`).

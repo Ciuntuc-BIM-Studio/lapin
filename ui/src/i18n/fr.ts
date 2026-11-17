@@ -4187,6 +4187,24 @@ export const FR: Record<string, string> = {
   "A new table in this style copies its cells too": "Un nouveau tableau de ce style copie aussi ses cellules",
   "No table styles yet.": "Pas encore de styles de tableau.",
   "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Enregistrez un tableau comme style depuis son éditeur (Enregistrer comme style…) : son aspect, les largeurs de colonnes et hauteurs de lignes, ses lignes d'en-tête et, sur demande, ses cellules. Les préréglages intégrés restent tels quels.",
+  // Drafting tables, stage 4: tables from the model.
+  "The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.": "Le modèle : {el.name}, {= el.NetArea | 0.00} lisent l'élément lié ; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} une nomenclature ou un filtre de vue, par son nom.",
+  "Select the elements the table reads, in any view": "Sélectionnez, dans n'importe quelle vue, les éléments que lit le tableau",
+  "To the selected cells": "Aux cellules sélectionnées",
+  "A row each": "Une ligne chacun",
+  "The whole table": "Tout le tableau",
+  "The selected cells read the first element selected": "Les cellules sélectionnées lisent le premier élément sélectionné",
+  "A row each from the first selected row, rows added as needed and the first row's texts copied down": "Une ligne chacun à partir de la première ligne sélectionnée, des lignes ajoutées au besoin et les textes de la première ligne recopiés vers le bas",
+  "Every cell without a link of its own reads the first element selected": "Chaque cellule sans lien propre lit le premier élément sélectionné",
+  "Link elements…": "Lier des éléments…",
+  "Link elements": "Lier des éléments",
+  "Link the selected cells, rows or the table to elements of the model: el.<field> reads them": "Lier les cellules sélectionnées, les lignes ou le tableau à des éléments du modèle : el.<champ> les lit",
+  "Unlink": "Délier",
+  "The selected cells and their rows read no element of their own any more": "Les cellules sélectionnées et leurs lignes ne lisent plus d'élément propre",
+  "Its row reads": "Sa ligne lit",
+  "The table reads": "Le tableau lit",
+  "It reads": "Elle lit",
+  "A field of that element put into the cell's text": "Un champ de cet élément inséré dans le texte de la cellule",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

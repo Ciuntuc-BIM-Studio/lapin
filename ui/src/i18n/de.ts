@@ -4183,6 +4183,24 @@ export const DE: Record<string, string> = {
   "A new table in this style copies its cells too": "Eine neue Tabelle in diesem Stil kopiert auch seine Zellen",
   "No table styles yet.": "Noch keine Tabellenstile.",
   "Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.": "Speichere eine Tabelle in ihrem Editor als Stil (Als Stil speichern…): ihr Aussehen, Spaltenbreiten und Zeilenhöhen, Kopfzeilen und auf Wunsch ihre Zellen. Die eingebauten Vorlagen bleiben, wie sie sind.",
+  // Drafting tables, stage 4: tables from the model.
+  "The model: {el.name}, {= el.NetArea | 0.00} read the linked element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} a schedule or a view filter, by its name.": "Das Modell: {el.name}, {= el.NetArea | 0.00} lesen das verknüpfte Element; {= schedule.Doors.count}, {schedule.Rooms.total.Area}, {= filter.Walls.sum.Length} eine Liste oder einen Ansichtsfilter, über den Namen.",
+  "Select the elements the table reads, in any view": "Wähle in einer beliebigen Ansicht die Elemente, die die Tabelle liest",
+  "To the selected cells": "Mit den gewählten Zellen",
+  "A row each": "Je eine Zeile",
+  "The whole table": "Die ganze Tabelle",
+  "The selected cells read the first element selected": "Die gewählten Zellen lesen das erste gewählte Element",
+  "A row each from the first selected row, rows added as needed and the first row's texts copied down": "Je eine Zeile ab der ersten gewählten Zeile, Zeilen nach Bedarf hinzugefügt und die Texte der ersten Zeile nach unten kopiert",
+  "Every cell without a link of its own reads the first element selected": "Jede Zelle ohne eigene Verknüpfung liest das erste gewählte Element",
+  "Link elements…": "Elemente verknüpfen…",
+  "Link elements": "Elemente verknüpfen",
+  "Link the selected cells, rows or the table to elements of the model: el.<field> reads them": "Die gewählten Zellen, Zeilen oder die Tabelle mit Elementen des Modells verknüpfen: el.<Feld> liest sie",
+  "Unlink": "Verknüpfung lösen",
+  "The selected cells and their rows read no element of their own any more": "Die gewählten Zellen und ihre Zeilen lesen kein eigenes Element mehr",
+  "Its row reads": "Seine Zeile liest",
+  "The table reads": "Die Tabelle liest",
+  "It reads": "Sie liest",
+  "A field of that element put into the cell's text": "Ein Feld dieses Elements in den Text der Zelle eingefügt",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

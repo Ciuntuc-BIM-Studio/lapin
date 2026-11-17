@@ -171,6 +171,13 @@ public static class ItemBoards
                 var attrs = new JsonObject { ["viewId"] = viewId, ["at"] = J(TextStart(item, text, h, angle)), ["text"] = text, ["angle"] = angle, ["textHeight"] = h };
                 return new Entity(id(), IfcClass.Annotation, text.Length > 24 ? text[..24] + "…" : text.Length > 0 ? text : "Text", attrs, "TEXT");
             }
+            // A drafting table (stage 4 of the drafting tables): a table on the board, at its top-left, its cells as typed.
+            case "table" when item["table"] is JsonObject tj:
+            {
+                var attrs = new JsonObject { ["viewId"] = viewId, ["at"] = J(P(item["at"])), ["angle"] = Num(item, "angle"), ["table"] = tj.DeepClone() };
+                if ((string?)item["style"] is { Length: > 0 } ts) attrs["textStyle"] = ts;
+                return new Entity(id(), IfcClass.Annotation, name("Table"), attrs, DraftingTables.Predefined);
+            }
             case "image" when (string?)item["imageId"] is { } iid && m.Get(iid) is { Class: Images.Class }:
                 return new Entity(id(), ViewImages.Class, (string?)item["name"] is { Length: > 0 } n ? n : "Logo", new JsonObject
                 {
@@ -245,15 +252,15 @@ public static class ItemBoards
     /// (a symbol's do, a title block's do not: there a changed one is its points by the one rule). Refused, naming it, for what is
     /// none of a line, a shape, a hatch, a text or a picture (a dimension, a tag, a placed symbol).
     /// </summary>
-    public static Collected Collect(IModelView m, Entity view, JsonArray original, bool curves, string what)
+    public static Collected Collect(IModelView m, Entity view, JsonArray original, bool curves, string what, bool tables = false)
     {
         var byItem = new Dictionary<int, Entity>();
         var fresh = new List<Entity>();
         var images = new List<Entity>();
         foreach (var e in On(m, view.Id))
         {
-            var drawn = e.Class == ViewImages.Class || e.PredefinedType is Drafts.Predefined or "TEXT";
-            if (!drawn) throw new CommandException($"{what} takes lines, shapes, hatches and texts: „{e.Name}” is none of them. Delete it, or draw it with those, then Finish.");
+            var drawn = e.Class == ViewImages.Class || e.PredefinedType is Drafts.Predefined or "TEXT" || tables && e.PredefinedType == DraftingTables.Predefined;
+            if (!drawn) throw new CommandException($"{what} takes lines, shapes, hatches{(tables ? ", texts and tables" : " and texts")}: „{e.Name}” is none of them. Delete it, or draw it with those, then Finish.");
             if (e.PredefinedType == Drafts.Predefined && e.Str("role") == "draft") continue;
             if (e.Attrs[ItemKey] is JsonValue iv && iv.TryGetValue<int>(out var i) && i >= 0 && i < original.Count && original[i] is JsonObject && !byItem.ContainsKey(i)) byItem[i] = e;
             else if (e.Class == ViewImages.Class) images.Add(e);
@@ -293,6 +300,14 @@ public static class ItemBoards
             var at = start + u * ((string?)item["align"] switch { "end" => w, "middle" => w / 2, _ => 0 }) + n * ((string?)item["valign"] == "middle" ? h * Mm / 2 : 0);
             o["at"] = Pt(at); o["text"] = text; o["angle"] = Math.Round(angle, 6);
             if (item.ContainsKey("h") || Math.Abs(h - TextHeight) > 1e-9) o["h"] = Math.Round(h, 4);
+            return o;
+        }
+        // A table: where it stands and turns, its cells as edited on the board.
+        if (e.PredefinedType == DraftingTables.Predefined)
+        {
+            o["at"] = Pt(Args.PointOf(e.Attrs["at"]));
+            o["angle"] = Math.Round(e.Num("angle"), 6);
+            if (e.Attrs["table"] is JsonObject tj) o["table"] = tj.DeepClone();
             return o;
         }
         var shape = Drafts.ShapeOf(e);

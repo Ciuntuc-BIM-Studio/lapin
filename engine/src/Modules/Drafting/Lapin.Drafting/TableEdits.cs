@@ -16,7 +16,7 @@ namespace Lapin.Drafting;
 public static class TableEdits
 {
     public static readonly string[] Ops =
-        ["set", "style", "borders", "merge", "split", "insertRows", "deleteRows", "insertCols", "deleteCols", "colWidth", "rowHeight", "fit", "tableStyle", "preset", "header"];
+        ["set", "style", "borders", "merge", "split", "insertRows", "deleteRows", "insertCols", "deleteCols", "colWidth", "rowHeight", "fit", "tableStyle", "preset", "header", "link", "linkRows"];
 
     public static readonly string[] BorderKinds = ["all", "outer", "inner", "top", "bottom", "left", "right", "none", "default"];
 
@@ -103,9 +103,9 @@ public static class TableEdits
     }
 
     /// <summary>The ops applied in order to a table's JSON (a copy, returned): any that does not read refuses them all.</summary>
-    public static JsonObject Apply(JsonObject? table, JsonArray ops, IReadOnlyList<TableStyleDef>? styles = null) => Apply(table, ops, null, styles);
+    public static JsonObject Apply(JsonObject? table, JsonArray ops, IReadOnlyList<TableStyleDef>? styles = null, Func<string, bool>? exists = null) => Apply(table, ops, null, styles, exists);
 
-    static JsonObject Apply(JsonObject? table, JsonArray ops, List<Shifted>? shifts, IReadOnlyList<TableStyleDef>? styles)
+    static JsonObject Apply(JsonObject? table, JsonArray ops, List<Shifted>? shifts, IReadOnlyList<TableStyleDef>? styles, Func<string, bool>? exists)
     {
         var t = Normal(table);
         foreach (var n in ops)
@@ -206,6 +206,53 @@ public static class TableEdits
                     for (var r = b.R0; r <= b.R1; r++) { var row = (JsonObject)Rows(t)[r]!; if (on) row["header"] = true; else row.Remove("header"); }
                     break;
                 }
+                // Cells, rows or the whole table linked to an element (stage 4: el.<field> reads it), or unlinked (el null).
+                case "link":
+                {
+                    var el = Element(op["el"], exists);
+                    var on = (string?)op["on"] ?? "cells";
+                    if (on == "table") { if (el == null) t.Remove("el"); else t["el"] = el; break; }
+                    var b = RangeOf(op, g);
+                    if (on == "rows")
+                        for (var r = b.R0; r <= b.R1; r++) { var row = (JsonObject)Rows(t)[r]!; if (el == null) row.Remove("el"); else row["el"] = el; }
+                    else if (on == "cells")
+                        foreach (var (r, c) in Masters(g, b)) { var o = Own(t, r, c); if (el == null) o.Remove("el"); else o["el"] = el; Tidy(t, r, c); }
+                    else throw new CommandException("Link cells, rows or the table.");
+                    break;
+                }
+                // Elements one a row from a row down (stage 4): rows added past the table's end, the first row's texts copied into
+                // the empty cells of the others, their references moved down as a spreadsheet's fill does.
+                case "linkRows":
+                {
+                    var at = DraftingTables.Parse((string?)op["at"] ?? (string?)op["cell"]) ?? throw new CommandException("From which row? A cell of it, such as A2.");
+                    if (at.R >= g.R) throw new CommandException($"Row {at.R + 1} is past the table.");
+                    var els = (op["els"] as JsonArray ?? throw new CommandException("Which elements? els: [ids].")).Select(x => Element(x, exists) ?? throw new CommandException("An element's id is missing.")).ToList();
+                    if (els.Count == 0) throw new CommandException("Which elements? els: [ids].");
+                    var need = at.R + els.Count - g.R;
+                    if (need > 0) { Insert(t, g, rows: true, g.R, need); shifts?.Add(new Shifted(true, g.R, need, true)); }
+                    var copy = op["copy"] is not JsonValue cv || !cv.TryGetValue<bool>(out var cb) || cb;
+                    var first = CellsOf(t, at.R);
+                    for (var k = 0; k < els.Count; k++)
+                    {
+                        var row = (JsonObject)Rows(t)[at.R + k]!;
+                        row["el"] = els[k];
+                        if (!copy || k == 0) continue;
+                        var cells = CellsOf(t, at.R + k);
+                        for (var c = 0; c < cells.Count && c < first.Count; c++)
+                        {
+                            var target = cells[c] as JsonObject;
+                            if (first[c] is not JsonObject src || (string?)src["t"] is not { Length: > 0 } text || target != null && target.ContainsKey("t")) continue;
+                            var down = k;
+                            var moved = MapRefs(text, r => r.Table == null ? Write(null, (r.A.R + down, r.A.C), r.B is { } z ? (z.R + down, z.C) : null) : null);
+                            if (target != null) { target["t"] = moved; continue; }
+                            var o = (JsonObject)src.DeepClone();
+                            o.Remove("rs"); o.Remove("cs"); o.Remove("el");
+                            o["t"] = moved;
+                            cells[c] = o;
+                        }
+                    }
+                    break;
+                }
                 case "tableStyle":
                 {
                     var style = op["style"] as JsonObject ?? throw new CommandException($"A table's style is {{{string.Join(", ", TableStyleKeys)}}}.");
@@ -229,6 +276,14 @@ public static class TableEdits
             }
         }
         return t;
+    }
+
+    /// <summary>An element's id a link names (null: unlinked); refused when the model has no such element.</summary>
+    static string? Element(JsonNode? n, Func<string, bool>? exists)
+    {
+        if (n == null) return null;
+        var id = ((string?)n)?.Trim() is { Length: > 0 } x ? x : throw new CommandException("An element's id, or null to unlink.");
+        return exists == null || exists(id) ? id : throw new CommandException("There is no such element.");
     }
 
     /// <summary>The master cells whose regions meet a range, once each.</summary>
@@ -570,10 +625,10 @@ public static class TableEdits
     public sealed record Shifted(bool Rows, int At, int Count, bool Insert);
 
     /// <summary>The ops applied in order (as <see cref="Apply(JsonObject?, JsonArray)"/>), and the rows and columns they put in or took out, in order.</summary>
-    public static (JsonObject Table, List<Shifted> Shifts) ApplyTracked(JsonObject? table, JsonArray ops, IReadOnlyList<TableStyleDef>? styles = null)
+    public static (JsonObject Table, List<Shifted> Shifts) ApplyTracked(JsonObject? table, JsonArray ops, IReadOnlyList<TableStyleDef>? styles = null, Func<string, bool>? exists = null)
     {
         var shifts = new List<Shifted>();
-        var t = Apply(table, ops, shifts, styles);
+        var t = Apply(table, ops, shifts, styles, exists);
         return (t, shifts);
     }
 }

@@ -10,12 +10,13 @@ namespace Lapin.Platform;
 /// <see cref="Scale"/>: <c>annotation</c>, its mm are paper mm (a north arrow reads the same at any scale), or <c>model</c>, its mm are
 /// the building's (a bathtub drawn at its size). Attributes: the fields an instance fills (<c>{attr.key}</c>), with their defaults.
 /// <see cref="Layers"/>: the symbol's own layers (forum #120, the editor's: id, name, visibility, opacity), kept as given; an item
-/// names its layer by <c>layer</c>.
+/// names its layer by <c>layer</c>. A <c>table</c> item (docs/plan-drafting-tables.md §3b) is a drafting table, its top-left at
+/// <c>at</c>, its cells reading the instance's live text, so each placed copy lays its own sizes.
 /// </summary>
 public sealed record SymbolDef(string Scale, string Category, JsonArray Items, IReadOnlyList<SymbolAttribute> Attributes, string? Description = null, JsonArray? Layers = null)
 {
     public static readonly string[] Scales = ["annotation", "model"];
-    public static readonly string[] ItemTypes = ["line", "rect", "polyline", "circle", "arc", "text"];
+    public static readonly string[] ItemTypes = ["line", "rect", "polyline", "circle", "arc", "text", "table"];
     public const int MaxItems = 4000;
     /// <summary>A symbol's reach from its insertion point (mm): a model symbol up to 100 m, an annotation one up to a metre of paper.</summary>
     public const double MaxReach = 100_000;
@@ -103,6 +104,12 @@ public sealed record SymbolDef(string Scale, string Category, JsonArray Items, I
                 Pt(item["c"], "centre");
                 if (Num("r") <= 0) throw new CommandException($"Item {index} (arc) has a radius above 0.");
                 Num("start"); Num("end");
+                break;
+            case "table":
+                Pt(item["at"], "at");
+                if (item["table"] is not JsonObject t || t["rows"] is not JsonArray { Count: > 0 } rows || t["cols"] is not JsonArray { Count: > 0 } cols)
+                    throw new CommandException($"Item {index} (table) needs its table: its rows and columns.");
+                if (rows.Count > DraftingTables.MaxRows || cols.Count > DraftingTables.MaxCols) throw new CommandException($"Item {index} (table) has too many rows or columns.");
                 break;
             case "text":
                 Pt(item["at"], "at");
