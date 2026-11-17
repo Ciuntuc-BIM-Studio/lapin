@@ -16,6 +16,7 @@ import { execute, query, useSession } from '../../engine/session';
 import { PendingDialog } from './PendingDialog';
 import { MarkerSymbolsStandards, SymbolPicker, useSymbolList } from './symbols/SlotPicker';
 import { LineTypesTab } from './lineTypes/LineTypesTab';
+import { FrameLinesStandards } from './frameLine';
 import { useLineTypes } from './lineTypes/lineTypes';
 import { lineTypeNames, withCurrent } from './lineTypes/lineTypeModel';
 import { useSystems } from './classifications/classifications';
@@ -224,6 +225,7 @@ export function StandardsDialog() {
         ];
       })}
       <MarkerSymbolsStandards />
+      <FrameLinesStandards book={book as unknown as Record<string, unknown>} />
     </dl>
   );
   return (

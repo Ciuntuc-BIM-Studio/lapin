@@ -4102,6 +4102,17 @@ export const PL: Record<string, string> = {
   "Parts (old .lapinfamily)": "Części (stary .lapinfamily)",
   // The symbol editor's layers (forum #120).
   'Add layer': 'Dodaj warstwę', 'Remove layer': 'Usuń warstwę', 'Toggle visibility': 'Pokaż lub ukryj', 'Opacity (0–100, {attr.key} or {= formula})': 'Krycie (0–100, {attr.key} lub {= formuła})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Widoczność (prawda/fałsz, 0–100, {attr.key} lub {= formuła})',
+  // Callout boundaries and inset frames (issue #73).
+  "Pen weight": "Grubość pióra",
+  "default": "domyślny",
+  "Detail callout boundary": "Obrys odnośnika szczegółu",
+  "Inset view frame": "Ramka widoku wstawionego",
+  "Empty fields: Lapin's own.": "Puste pola: własne Lapina.",
+  "Its pen weight on paper (mm); default: the drafting standards', else Lapin's own": "Grubość pióra na papierze (mm); domyślnie: ze standardów rysunkowych, w przeciwnym razie własna Lapina",
+  "Its colour; default: the drafting standards', else Lapin's own": "Kolor; domyślnie: ze standardów rysunkowych, w przeciwnym razie własny Lapina",
+  "Its line type, Lapin's or one of the project's own (Drafting standards → Line types); default: the drafting standards', else Lapin's own": "Rodzaj linii, Lapina lub własny projektu (Standardy rysunkowe → Rodzaje linii); domyślnie: ze standardów rysunkowych, w przeciwnym razie własny Lapina",
+  "How detail callouts' boundaries are drawn in views, sheets and PDF; a callout's own, in its properties, goes before": "Jak rysowane są obrysy odnośników szczegółu w widokach, arkuszach i PDF; własny obrys odnośnika, w jego właściwościach, ma pierwszeństwo",
+  "How inset views' frames are drawn; an inset's own, in its properties, goes before": "Jak rysowane są ramki widoków wstawionych; własna ramka widoku, w jego właściwościach, ma pierwszeństwo",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

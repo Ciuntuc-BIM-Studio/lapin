@@ -4059,6 +4059,17 @@ export const DE: Record<string, string> = {
   "Parts (old .lapinfamily)": "Bauteile (altes .lapinfamily)",
   // The symbol editor's layers (forum #120).
   'Add layer': 'Layer hinzufügen', 'Remove layer': 'Layer entfernen', 'Toggle visibility': 'Ein- oder ausblenden', 'Opacity (0–100, {attr.key} or {= formula})': 'Deckkraft (0–100, {attr.key} oder {= Formel})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Sichtbarkeit (wahr/falsch, 0–100, {attr.key} oder {= Formel})',
+  // Callout boundaries and inset frames (issue #73).
+  "Pen weight": "Stiftstärke",
+  "default": "Standard",
+  "Detail callout boundary": "Umgrenzung des Detailverweises",
+  "Inset view frame": "Rahmen der eingesetzten Ansicht",
+  "Empty fields: Lapin's own.": "Leere Felder: Lapins eigene.",
+  "Its pen weight on paper (mm); default: the drafting standards', else Lapin's own": "Die Stiftstärke auf dem Papier (mm); Standard: die der Zeichnungsstandards, sonst Lapins eigene",
+  "Its colour; default: the drafting standards', else Lapin's own": "Die Farbe; Standard: die der Zeichnungsstandards, sonst Lapins eigene",
+  "Its line type, Lapin's or one of the project's own (Drafting standards → Line types); default: the drafting standards', else Lapin's own": "Der Linientyp, Lapins oder einer des Projekts (Zeichnungsstandards → Linientypen); Standard: der der Zeichnungsstandards, sonst Lapins eigener",
+  "How detail callouts' boundaries are drawn in views, sheets and PDF; a callout's own, in its properties, goes before": "Wie die Umgrenzungen der Detailverweise in Ansichten, Plänen und PDF gezeichnet werden; die eigene eines Verweises, in seinen Eigenschaften, geht vor",
+  "How inset views' frames are drawn; an inset's own, in its properties, goes before": "Wie die Rahmen eingesetzter Ansichten gezeichnet werden; der eigene einer eingesetzten Ansicht, in ihren Eigenschaften, geht vor",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

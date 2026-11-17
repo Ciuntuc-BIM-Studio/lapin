@@ -4062,6 +4062,17 @@ export const IT: Record<string, string> = {
   "Parts (old .lapinfamily)": "Componenti (vecchio .lapinfamily)",
   // The symbol editor's layers (forum #120).
   'Add layer': 'Aggiungi layer', 'Remove layer': 'Rimuovi layer', 'Toggle visibility': 'Mostra o nascondi', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacità (0–100, {attr.key} o {= formula})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Visibilità (vero/falso, 0–100, {attr.key} o {= formula})',
+  // Callout boundaries and inset frames (issue #73).
+  "Pen weight": "Spessore penna",
+  "default": "predefinito",
+  "Detail callout boundary": "Contorno del richiamo di dettaglio",
+  "Inset view frame": "Cornice della vista inserita",
+  "Empty fields: Lapin's own.": "Campi vuoti: quelli di Lapin.",
+  "Its pen weight on paper (mm); default: the drafting standards', else Lapin's own": "Il suo spessore di penna sulla carta (mm); predefinito: quello degli standard di disegno, altrimenti quello di Lapin",
+  "Its colour; default: the drafting standards', else Lapin's own": "Il suo colore; predefinito: quello degli standard di disegno, altrimenti quello di Lapin",
+  "Its line type, Lapin's or one of the project's own (Drafting standards → Line types); default: the drafting standards', else Lapin's own": "Il suo tipo di linea, di Lapin o uno del progetto (Standard di disegno → Tipi di linea); predefinito: quello degli standard di disegno, altrimenti quello di Lapin",
+  "How detail callouts' boundaries are drawn in views, sheets and PDF; a callout's own, in its properties, goes before": "Come sono disegnati i contorni dei richiami di dettaglio in viste, tavole e PDF; quello proprio di un richiamo, nelle sue proprietà, ha la precedenza",
+  "How inset views' frames are drawn; an inset's own, in its properties, goes before": "Come sono disegnate le cornici delle viste inserite; quella propria di una vista inserita, nelle sue proprietà, ha la precedenza",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

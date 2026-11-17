@@ -4101,6 +4101,17 @@ export const ES: Record<string, string> = {
   "Parts (old .lapinfamily)": "Piezas (antiguo .lapinfamily)",
   // The symbol editor's layers (forum #120).
   'Add layer': 'Añadir capa', 'Remove layer': 'Eliminar capa', 'Toggle visibility': 'Mostrar u ocultar', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacidad (0–100, {attr.key} o {= fórmula})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Visibilidad (verdadero/falso, 0–100, {attr.key} o {= fórmula})',
+  // Callout boundaries and inset frames (issue #73).
+  "Pen weight": "Grosor de pluma",
+  "default": "predeterminado",
+  "Detail callout boundary": "Contorno de la llamada de detalle",
+  "Inset view frame": "Marco de la vista insertada",
+  "Empty fields: Lapin's own.": "Campos vacíos: los propios de Lapin.",
+  "Its pen weight on paper (mm); default: the drafting standards', else Lapin's own": "Su grosor de pluma en papel (mm); predeterminado: el de los estándares de dibujo, si no el propio de Lapin",
+  "Its colour; default: the drafting standards', else Lapin's own": "Su color; predeterminado: el de los estándares de dibujo, si no el propio de Lapin",
+  "Its line type, Lapin's or one of the project's own (Drafting standards → Line types); default: the drafting standards', else Lapin's own": "Su tipo de línea, de Lapin o uno propio del proyecto (Estándares de dibujo → Tipos de línea); predeterminado: el de los estándares de dibujo, si no el propio de Lapin",
+  "How detail callouts' boundaries are drawn in views, sheets and PDF; a callout's own, in its properties, goes before": "Cómo se dibujan los contornos de las llamadas de detalle en vistas, planos y PDF; el propio de una llamada, en sus propiedades, va antes",
+  "How inset views' frames are drawn; an inset's own, in its properties, goes before": "Cómo se dibujan los marcos de las vistas insertadas; el propio de una vista insertada, en sus propiedades, va antes",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

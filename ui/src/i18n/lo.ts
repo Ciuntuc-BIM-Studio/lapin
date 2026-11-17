@@ -4155,6 +4155,17 @@ export const LO: Record<string, string> = {
   "Parts (old .lapinfamily)": "ຊິ້ນສ່ວນ (.lapinfamily ເກົ່າ)",
   // The symbol editor's layers (forum #120).
   'Add layer': 'ເພີ່ມຊັ້ນ', 'Remove layer': 'ລຶບຊັ້ນ', 'Toggle visibility': 'ສະແດງ ຫຼື ເຊື່ອງ', 'Opacity (0–100, {attr.key} or {= formula})': 'ຄວາມທຶບ (0–100, {attr.key} ຫຼື {= ສູດ})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'ການເບິ່ງເຫັນ (true/false, 0–100, {attr.key} ຫຼື {= ສູດ})',
+  // Callout boundaries and inset frames (issue #73).
+  "Pen weight": "ຄວາມໜາຂອງປາກກາ",
+  "default": "ຄ່າເລີ່ມຕົ້ນ",
+  "Detail callout boundary": "ຂອບເຂດຂອງການອ້າງອີງລາຍລະອຽດ",
+  "Inset view frame": "ກອບຂອງມຸມມອງແຊກ",
+  "Empty fields: Lapin's own.": "ຊ່ອງຫວ່າງ: ຂອງ Lapin ເອງ.",
+  "Its pen weight on paper (mm); default: the drafting standards', else Lapin's own": "ຄວາມໜາຂອງປາກກາເທິງເຈ້ຍ (mm); ຄ່າເລີ່ມຕົ້ນ: ຂອງມາດຕະຖານການແຕ້ມ, ຖ້າບໍ່ດັ່ງນັ້ນ ຂອງ Lapin ເອງ",
+  "Its colour; default: the drafting standards', else Lapin's own": "ສີຂອງມັນ; ຄ່າເລີ່ມຕົ້ນ: ຂອງມາດຕະຖານການແຕ້ມ, ຖ້າບໍ່ດັ່ງນັ້ນ ຂອງ Lapin ເອງ",
+  "Its line type, Lapin's or one of the project's own (Drafting standards → Line types); default: the drafting standards', else Lapin's own": "ປະເພດເສັ້ນ, ຂອງ Lapin ຫຼື ຂອງໂຄງການເອງ (ມາດຕະຖານການແຕ້ມ → ປະເພດເສັ້ນ); ຄ່າເລີ່ມຕົ້ນ: ຂອງມາດຕະຖານການແຕ້ມ, ຖ້າບໍ່ດັ່ງນັ້ນ ຂອງ Lapin ເອງ",
+  "How detail callouts' boundaries are drawn in views, sheets and PDF; a callout's own, in its properties, goes before": "ວິທີແຕ້ມຂອບເຂດຂອງການອ້າງອີງລາຍລະອຽດໃນມຸມມອງ, ແຜ່ນງານ ແລະ PDF; ຂອງການອ້າງອີງເອງ, ໃນຄຸນສົມບັດຂອງມັນ, ມາກ່ອນ",
+  "How inset views' frames are drawn; an inset's own, in its properties, goes before": "ວິທີແຕ້ມກອບຂອງມຸມມອງແຊກ; ຂອງມຸມມອງແຊກເອງ, ໃນຄຸນສົມບັດຂອງມັນ, ມາກ່ອນ",
 };
 
 /** Phrases with a number or a name in them. */

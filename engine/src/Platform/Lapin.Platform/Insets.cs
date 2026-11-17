@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
+using Lapin.Drawing;
 using Lapin.Geometry;
 using Lapin.Drawing.Views;
 using Lapin.Model;
@@ -41,7 +42,8 @@ public static class Insets
             }
             return new JsonObject { ["id"] = e.Id };
         });
-        // {id, at?, scale? (1:N; null: the source's), factor? (null: by the scale), frame?, source?, crop? ({min, max} in the source's coordinates; true: round what it shows now; null or false: none)}: one step.
+        // {id, at?, scale? (1:N; null: the source's), factor? (null: by the scale), frame?, source?, crop? ({min, max} in the source's coordinates; true: round what it shows now; null or false: none),
+        // lineWeight? (paper mm), lineColor?, lineType? (its frame's; each null: the project's again, issue #73)}: one step.
         r.Command("view.updateInset", "Inset view", (ctx, a) =>
         {
             var e = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x ? x : throw new CommandException("Not an inset.");
@@ -51,6 +53,7 @@ public static class Insets
             // Its own scale stands for the factor: the inset keeps it on paper whatever the host's scale.
             if (a.ContainsKey("scale")) { if (Json.Number(a["scale"]) is { } n && n >= 1) { attrs["scale"] = n; attrs.Remove("factor"); } else attrs.Remove("scale"); }
             if (a.ContainsKey("frame")) { if (a["frame"] is JsonValue fv && fv.TryGetValue<bool>(out var f) && !f) attrs["frame"] = false; else attrs.Remove("frame"); }
+            FrameLineCommands.SetOwn(ctx, a, attrs);
             if ((string?)a["source"] is { Length: > 0 } src)
             {
                 var source = Views.Find(ctx.Model, src) ?? throw new CommandException("There is no such view.");
@@ -112,6 +115,13 @@ public static class Insets
         inset.NumOrNull("factor") is { } k && k > 0 ? k
         : inset.NumOrNull("scale") is { } n && n >= 1 ? hostScale / n
         : hostScale / sourceScale;
+
+    /// <summary>Lapin's own inset frame: 0.18, grey, continuous.</summary>
+    public static readonly FramePen DefaultFrame = new(0.18, "#555555", null);
+
+    /// <summary>The pen an inset's frame is drawn with (issue #73): its own, else the project's standards', else Lapin's own.</summary>
+    public static FramePen FrameOf(StyleBook book, Entity inset) =>
+        FrameLines.Resolve(book, book.InsetFrame, FrameLines.Own(inset.Attrs, book), DefaultFrame);
 
     public static Entity Create(ICommandContext ctx, string hostId, string sourceId, Vec2 at, double? factor = null, bool frame = true, double? scale = null)
     {
@@ -185,7 +195,8 @@ public static class Insets
             var scale = c.Scale / factor;
             if (!(e.Attrs["frame"] is JsonValue fv && fv.TryGetValue<bool>(out var f) && !f))
             {
-                mk.Polyline([lo, new Vec2(hi.X, lo.Y), hi, new Vec2(lo.X, hi.Y)], true, Layer, 0.18, "#555555");
+                var pen = FrameOf(c.Book, e);
+                mk.Polyline([lo, new Vec2(hi.X, lo.Y), hi, new Vec2(lo.X, hi.Y)], true, Layer, pen.Width, pen.Color, pen.Dash);
                 var scaleText = $"1:{Math.Round(scale).ToString(CultureInfo.InvariantCulture)}";
                 // A symbol of the user's for its head (the inset's own, else the project's), on the frame's lower-left corner.
                 if (SymbolSlots.SymbolFor(c.Model, "calloutHead", e) is { } headSymbol)

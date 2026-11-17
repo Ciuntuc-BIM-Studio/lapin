@@ -14,6 +14,8 @@ import type { Grip, GripView, ToolDef, Vec2 } from '../../platform/module';
 import { NumberField } from '../../shell/cells';
 import { pt } from '../../viewport/gripKit';
 import { mapper } from '../../viewport/insetMap';
+import { FrameLineFields, useInheritedFrame } from './frameLine';
+import { ownFrameLine, ownPatch } from './frameLineModel';
 
 /** Another view drawn in this one: click where it goes, then choose it. */
 export const insetTool: ToolDef = {
@@ -70,6 +72,7 @@ export function InsetSection({ node }: { node: NodeDto }) {
   const scale = typeof node.props.scale === 'number' ? node.props.scale : null;
   const sourceScale = source.startsWith('plan:') ? null : nodes.get(source)?.props.scale;
   const factor = typeof node.props.factor === 'number' ? node.props.factor : null;
+  const base = useInheritedFrame('inset');
   return (
     <dl className="fields" data-testid="inset-section">
       <dt>View shown</dt>
@@ -87,6 +90,8 @@ export function InsetSection({ node }: { node: NodeDto }) {
       </dd>
       <dt title="A thin frame round it, with the shown view's name and scale under it">Framed</dt>
       <dd><input type="checkbox" data-testid="inset-frame" checked={node.props.frame !== false} onChange={(e) => set({ frame: e.target.checked })} /></dd>
+      {/* The frame's pen weight, colour and line type, its own over the drafting standards' (issue #73). */}
+      {node.props.frame !== false && <FrameLineFields field="inset-line" value={ownFrameLine(node.props)} base={base} onSet={(f, v) => set(ownPatch(f, v))} />}
       <dt title="Only a part of the shown view: drag the crop's corners in the view; off, the whole view">Crop</dt>
       <dd><input type="checkbox" data-testid="inset-crop" checked={!!node.props.crop} onChange={(e) => set({ crop: e.target.checked })} /></dd>
     </dl>

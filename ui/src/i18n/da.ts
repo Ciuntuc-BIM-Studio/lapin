@@ -4096,6 +4096,17 @@ export const DA: Record<string, string> = {
   "Parts (old .lapinfamily)": "Dele (gammel .lapinfamily)",
   // The symbol editor's layers (forum #120).
   'Add layer': 'Tilføj lag', 'Remove layer': 'Fjern lag', 'Toggle visibility': 'Vis eller skjul', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacitet (0–100, {attr.key} eller {= formel})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Synlighed (sand/falsk, 0–100, {attr.key} eller {= formel})',
+  // Callout boundaries and inset frames (issue #73).
+  "Pen weight": "Pennetykkelse",
+  "default": "standard",
+  "Detail callout boundary": "Detaljehenvisningens afgrænsning",
+  "Inset view frame": "Den indsatte visnings ramme",
+  "Empty fields: Lapin's own.": "Tomme felter: Lapins egne.",
+  "Its pen weight on paper (mm); default: the drafting standards', else Lapin's own": "Pennetykkelsen på papir (mm); standard: tegnestandardernes, ellers Lapins egen",
+  "Its colour; default: the drafting standards', else Lapin's own": "Farven; standard: tegnestandardernes, ellers Lapins egen",
+  "Its line type, Lapin's or one of the project's own (Drafting standards → Line types); default: the drafting standards', else Lapin's own": "Linjetypen, Lapins eller en af projektets egne (Tegnestandarder → Linjetyper); standard: tegnestandardernes, ellers Lapins egen",
+  "How detail callouts' boundaries are drawn in views, sheets and PDF; a callout's own, in its properties, goes before": "Hvordan detaljehenvisningers afgrænsninger tegnes i visninger, tegningsark og PDF; en henvisnings egen, i dens egenskaber, går forud",
+  "How inset views' frames are drawn; an inset's own, in its properties, goes before": "Hvordan indsatte visningers rammer tegnes; en indsat visnings egen, i dens egenskaber, går forud",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

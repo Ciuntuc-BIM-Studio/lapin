@@ -19,6 +19,8 @@ import { pt } from '../../viewport/gripKit';
 import { turnOfView } from './ViewCrop';
 import { registerDraftMenu } from '../../viewport/draftMenu';
 import { openCallout } from '../../viewport/openView';
+import { FrameLineFields, useInheritedFrame } from './frameLine';
+import { ownFrameLine, ownPatch } from './frameLineModel';
 
 export type CalloutShape = 'rect' | 'circle' | 'polygon';
 
@@ -197,6 +199,7 @@ export function CalloutSection({ node }: { node: NodeDto }) {
   const target = nodes.get(String(node.props.target ?? ''));
   const host = typeof node.props.viewId === 'string' ? node.props.viewId : null;
   const made = node.props.made === true;
+  const base = useInheritedFrame('callout', !!target);
   return (
     <dl className="fields" data-testid="callout-section">
       <dt title={made ? 'The detail view the callout made' : 'The view the callout refers to'}>{made ? 'Detail view' : 'Refers to'}</dt>
@@ -217,6 +220,9 @@ export function CalloutSection({ node }: { node: NodeDto }) {
           {referableViews(nodes, host).map((v) => <option key={v.id} value={v.id} data-no-i18n>{v.name} · {v.kind}</option>)}
         </select>
       </dd>
+      {/* Its boundary's pen weight, colour and line type, its own over the drafting standards' (issue #73). */}
+      <FrameLineFields field="callout-line" value={ownFrameLine(node.props)} base={base}
+        onSet={(f, v) => void execute('view.updateCallout', { id: node.id, ...ownPatch(f, v) })} />
     </dl>
   );
 }

@@ -4055,6 +4055,17 @@ export const RO: Record<string, string> = {
   "Parts (old .lapinfamily)": "Piese (vechiul .lapinfamily)",
   // The symbol editor's layers (forum #120).
   'Add layer': 'Adaugă layer', 'Remove layer': 'Șterge layerul', 'Toggle visibility': 'Arată sau ascunde', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacitate (0–100, {attr.key} sau {= formulă})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Vizibilitate (adevărat/fals, 0–100, {attr.key} sau {= formulă})',
+  // Callout boundaries and inset frames (issue #73).
+  "Pen weight": "Grosimea peniței",
+  "default": "implicit",
+  "Detail callout boundary": "Conturul chemării de detaliu",
+  "Inset view frame": "Chenarul vederii inserate",
+  "Empty fields: Lapin's own.": "Câmpurile goale: cele ale lui Lapin.",
+  "Its pen weight on paper (mm); default: the drafting standards', else Lapin's own": "Grosimea peniței pe hârtie (mm); implicit: a standardelor de desen, altfel a lui Lapin",
+  "Its colour; default: the drafting standards', else Lapin's own": "Culoarea; implicit: a standardelor de desen, altfel a lui Lapin",
+  "Its line type, Lapin's or one of the project's own (Drafting standards → Line types); default: the drafting standards', else Lapin's own": "Tipul de linie, al lui Lapin sau unul al proiectului (Standarde de desen → Tipuri de linie); implicit: al standardelor de desen, altfel al lui Lapin",
+  "How detail callouts' boundaries are drawn in views, sheets and PDF; a callout's own, in its properties, goes before": "Cum sunt desenate contururile chemărilor de detaliu în vederi, planșe și PDF; cel propriu al unei chemări, din proprietățile ei, are întâietate",
+  "How inset views' frames are drawn; an inset's own, in its properties, goes before": "Cum sunt desenate chenarele vederilor inserate; cel propriu al unei vederi inserate, din proprietățile ei, are întâietate",
 };
 
 /** Phrases with a number or a name in them. */

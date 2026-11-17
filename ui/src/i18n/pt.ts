@@ -4099,6 +4099,17 @@ export const PT: Record<string, string> = {
   "Parts (old .lapinfamily)": "Peças (antigo .lapinfamily)",
   // The symbol editor's layers (forum #120).
   'Add layer': 'Adicionar camada', 'Remove layer': 'Remover camada', 'Toggle visibility': 'Mostrar ou ocultar', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacidade (0–100, {attr.key} ou {= fórmula})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Visibilidade (verdadeiro/falso, 0–100, {attr.key} ou {= fórmula})',
+  // Callout boundaries and inset frames (issue #73).
+  "Pen weight": "Espessura da pena",
+  "default": "padrão",
+  "Detail callout boundary": "Contorno da chamada de detalhe",
+  "Inset view frame": "Moldura da vista inserida",
+  "Empty fields: Lapin's own.": "Campos vazios: os do próprio Lapin.",
+  "Its pen weight on paper (mm); default: the drafting standards', else Lapin's own": "A espessura da pena no papel (mm); padrão: a dos padrões de desenho, senão a do próprio Lapin",
+  "Its colour; default: the drafting standards', else Lapin's own": "A cor; padrão: a dos padrões de desenho, senão a do próprio Lapin",
+  "Its line type, Lapin's or one of the project's own (Drafting standards → Line types); default: the drafting standards', else Lapin's own": "O tipo de linha, do Lapin ou um do projeto (Padrões de desenho → Tipos de linha); padrão: o dos padrões de desenho, senão o do próprio Lapin",
+  "How detail callouts' boundaries are drawn in views, sheets and PDF; a callout's own, in its properties, goes before": "Como os contornos das chamadas de detalhe são desenhados em vistas, folhas e PDF; o próprio de uma chamada, nas suas propriedades, vem primeiro",
+  "How inset views' frames are drawn; an inset's own, in its properties, goes before": "Como as molduras das vistas inseridas são desenhadas; a própria de uma vista inserida, nas suas propriedades, vem primeiro",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

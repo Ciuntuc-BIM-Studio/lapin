@@ -46,6 +46,7 @@ public static class Callouts
         r.Class(new(Class, "Callout", [new("shape", "Shape", "choice", Choices: Shapes, ReadOnly: true)], "#000000", Kind: "annotation"));
         r.Service<IDeletion>(new Deletion());
         r.Service<ICommandFollowUp>(new FollowUp());
+        FrameLineCommands.Register(r);
 
         // A callout drawn on a view: {viewId, shape?: rect | circle | polygon, min + max (rect, the view's turned frame) | centre + radius |
         // pts, scale? (1:N), detail? (LOD), name?, reference? (a view that is there: nothing made), head? [dx, dy]}. One step: the callout and its detail view.
@@ -81,7 +82,8 @@ public static class Callouts
         });
 
         // A callout's boundary moved or reshaped ({id, shape?, min, max | centre, radius | pts}), its head moved ({head: [dx, dy] | null}),
-        // or what it calls ({reference: view}: it then refers to that view): one step, its detail view cropped again.
+        // or what it calls ({reference: view}: it then refers to that view), or how its boundary is drawn ({lineWeight (paper mm), lineColor, lineType}:
+        // each null is the project's again, issue #73): one step, its detail view cropped again.
         r.Command("view.updateCallout", "Callout", (ctx, a) =>
         {
             var e = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x ? x : throw new CommandException("Not a callout.");
@@ -99,6 +101,7 @@ public static class Callouts
             {
                 if (a["head"] is JsonArray) attrs["head"] = J(Args.Point(a["head"], "the head's offset")); else attrs.Remove("head");
             }
+            FrameLineCommands.SetOwn(ctx, a, attrs);
             if ((string?)a["reference"] is { Length: > 0 } refId)
             {
                 var referenced = Views.Find(ctx.Model, refId) ?? throw new CommandException("There is no such view to refer to.");
@@ -273,7 +276,8 @@ public static class Callouts
             var (number, sheet) = Head(m, target);
             var ink = target == null ? "#8f98a3" : "#000000";
             var mk = new ViewMark(e.Id);
-            mk.Polyline(outline, true, Layer, 0.35, ink, target == null ? [2, 1.5] : null);
+            var pen = BoundaryPen(c.Book, e, target != null);
+            mk.Polyline(outline, true, Layer, pen.Width, pen.Color, pen.Dash);
             // The head off the boundary's upper-right corner (its own offset, else 8 mm up and right on paper), a leader to it from the nearest point of the boundary.
             var (lo, hi) = Bounds(outline);
             var offset = Args.TryPoint(e.Attrs["head"]) ?? new Vec2(8 * c.Mm, 8 * c.Mm);
@@ -313,6 +317,13 @@ public static class Callouts
             yield return mk;
         }
     }
+
+    /// <summary>Lapin's own boundary: 0.35 black, grey and dashed while the callout refers to no view.</summary>
+    public static FramePen DefaultBoundary(bool refers) => refers ? new(0.35, "#000000", null) : new(0.35, "#8f98a3", [2, 1.5]);
+
+    /// <summary>The pen a callout's boundary is drawn with (issue #73): its own, else the project's standards', else Lapin's own.</summary>
+    public static FramePen BoundaryPen(StyleBook book, Entity callout, bool refers) =>
+        FrameLines.Resolve(book, book.CalloutLine, FrameLines.Own(callout.Attrs, book), DefaultBoundary(refers));
 
     static Vec2 Nearest(IReadOnlyList<Vec2> loop, Vec2 p)
     {

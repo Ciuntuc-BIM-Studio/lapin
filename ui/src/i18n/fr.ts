@@ -4063,6 +4063,17 @@ export const FR: Record<string, string> = {
   "Parts (old .lapinfamily)": "Pièces (ancien .lapinfamily)",
   // The symbol editor's layers (forum #120).
   'Add layer': 'Ajouter un calque', 'Remove layer': 'Supprimer le calque', 'Toggle visibility': 'Afficher ou masquer', 'Opacity (0–100, {attr.key} or {= formula})': 'Opacité (0–100, {attr.key} ou {= formule})', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': 'Visibilité (vrai/faux, 0–100, {attr.key} ou {= formule})',
+  // Callout boundaries and inset frames (issue #73).
+  "Pen weight": "Épaisseur de plume",
+  "default": "par défaut",
+  "Detail callout boundary": "Contour du rappel de détail",
+  "Inset view frame": "Cadre de la vue insérée",
+  "Empty fields: Lapin's own.": "Champs vides : ceux de Lapin.",
+  "Its pen weight on paper (mm); default: the drafting standards', else Lapin's own": "Son épaisseur de plume sur papier (mm) ; par défaut : celle des standards de dessin, sinon celle de Lapin",
+  "Its colour; default: the drafting standards', else Lapin's own": "Sa couleur ; par défaut : celle des standards de dessin, sinon celle de Lapin",
+  "Its line type, Lapin's or one of the project's own (Drafting standards → Line types); default: the drafting standards', else Lapin's own": "Son type de ligne, de Lapin ou un type propre au projet (Standards de dessin → Types de ligne) ; par défaut : celui des standards de dessin, sinon celui de Lapin",
+  "How detail callouts' boundaries are drawn in views, sheets and PDF; a callout's own, in its properties, goes before": "Comment les contours des rappels de détail sont dessinés dans les vues, les feuilles et le PDF ; celui propre à un rappel, dans ses propriétés, passe avant",
+  "How inset views' frames are drawn; an inset's own, in its properties, goes before": "Comment les cadres des vues insérées sont dessinés ; celui propre à une vue insérée, dans ses propriétés, passe avant",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

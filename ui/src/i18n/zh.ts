@@ -4093,6 +4093,17 @@ export const ZH: Record<string, string> = {
   "Parts (old .lapinfamily)": "零件（旧版 .lapinfamily）",
   // The symbol editor's layers (forum #120).
   'Add layer': '添加图层', 'Remove layer': '删除图层', 'Toggle visibility': '显示或隐藏', 'Opacity (0–100, {attr.key} or {= formula})': '不透明度（0–100、{attr.key} 或 {= 公式}）', 'Visibility (true/false, 0–100, {attr.key} or {= formula})': '可见性（true/false、0–100、{attr.key} 或 {= 公式}）',
+  // Callout boundaries and inset frames (issue #73).
+  "Pen weight": "笔宽",
+  "default": "默认",
+  "Detail callout boundary": "详图索引边界",
+  "Inset view frame": "嵌入视图边框",
+  "Empty fields: Lapin's own.": "空字段：使用 Lapin 自带的。",
+  "Its pen weight on paper (mm); default: the drafting standards', else Lapin's own": "纸面上的笔宽（mm）；默认：制图标准中的，否则为 Lapin 自带的",
+  "Its colour; default: the drafting standards', else Lapin's own": "颜色；默认：制图标准中的，否则为 Lapin 自带的",
+  "Its line type, Lapin's or one of the project's own (Drafting standards → Line types); default: the drafting standards', else Lapin's own": "线型，Lapin 的或项目自有的（制图标准 → 线型）；默认：制图标准中的，否则为 Lapin 自带的",
+  "How detail callouts' boundaries are drawn in views, sheets and PDF; a callout's own, in its properties, goes before": "详图索引边界在视图、图纸和 PDF 中的绘制方式；索引自身的设置（在其属性中）优先",
+  "How inset views' frames are drawn; an inset's own, in its properties, goes before": "嵌入视图边框的绘制方式；嵌入视图自身的设置（在其属性中）优先",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
