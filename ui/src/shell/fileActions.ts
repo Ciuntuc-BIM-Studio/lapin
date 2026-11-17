@@ -8,7 +8,7 @@ import type { FileAction } from '../platform/module';
 import { modules } from '../platform/modules';
 import { resolveFileActions } from '../platform/replaces';
 import { useUi } from '../app/store';
-import { importDxf, importIfc, linkPointCloud, newProject, openProject, saveProject, importFragments, importBos, importSdnf, linkLapin, importMesh, importTrace } from '../engine/files';
+import { importDxf, importIfc, linkPointCloud, newProject, openProject, saveProject, importFragments, importBos, importSdnf, linkLapin, importMesh, importTrace, importProjectTypes } from '../engine/files';
 import { openOptimize } from '../engine/ifcOptimize';
 import { engineInBrowser } from '../engine/session';
 import { hasModule } from '../platform/brand';
@@ -30,6 +30,8 @@ export function baseFileActions(): FileAction[] {
     // Project templates (issues #9 and #20, decision 470): the project's set-up kept on this computer, new projects started from it.
     { id: 'file.newFromTemplate', label: 'New from template…', run: dialog('projectTemplates') },
     { id: 'file.saveTemplate', label: 'Save as template…', run: dialog('saveTemplate') },
+    // Another project's types, chosen, with their materials (issue #74): the source only read.
+    { id: 'file.importProjectTypes', label: 'Import types from a project…', run: () => importProjectTypes() },
     { id: 'file.importIfc', label: 'Import IFC…', run: () => importIfc() },
     { id: 'file.importFragments', label: 'Import Fragments…', run: () => importFragments() },
     { id: 'file.importBos', label: 'Import BIM Open Schema…', run: () => importBos() },
@@ -62,7 +64,7 @@ export function baseFileActions(): FileAction[] {
 
 /** The menu of the computer's own user. The model exchanged (docs/fragments.md, Exchange): IFC and Fragments, chosen alike both ways. */
 export const HOST_SECTIONS: FileSection[] = [
-  { ids: ['file.new', 'file.newFromTemplate', 'file.open', 'file.save', 'file.saveAs', 'file.saveVersion', 'file.saveTemplate'] },
+  { ids: ['file.new', 'file.newFromTemplate', 'file.open', 'file.save', 'file.saveAs', 'file.saveVersion', 'file.saveTemplate', 'file.importProjectTypes'] },
   { head: 'IFC and Fragments', ids: ['file.importIfc', 'file.importFragments', 'file.importBos', 'file.importSdnf', 'file.linkIfc', 'file.linkLapin', 'file.exportExchange', 'file.exportJg', 'file.optimizeIfc'] },
   { head: 'Other formats', ids: ['file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh', 'file.exportMesh', 'file.exportHtml'] },
   { ids: ['file.extensions'] },

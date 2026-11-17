@@ -61,6 +61,14 @@ Your own types go into a pack from **Manage → Type packs…**: tick the types,
 
 ![Manage → Type packs…: a wall type chosen for export](shots/type-packs-export.webp)
 
+### Types from another project
+
+**File → Import types from a project…** takes types straight from another Lapin project, with no pack to export first. Choose its `.lapin` file: the dialog lists every type it has (walls, floors, roofs, doors, windows, columns, beams, stairs and the rest), with its kind, the materials it needs, how many elements use it there, and what it is to the project open now (**New**, **The same**, **Same name**, **Same item, changed**). Tick the types to bring in (**All** and **None** help) and click **Add to the project**: the chosen types come in with their layers, materials, profiles and parameters, in one step to undo. The other project is only read, never changed or saved, even when it was made by an older Lapin (it is brought up to date in memory, as opening it would).
+
+The rules are those of a type pack. A material is the project's when it has one of the same name; a type of the same name that differs is added beside it as *Name (2)*. A type keeps its GlobalId, so a type the project already has under the same GlobalId (both projects started from the same template, or the type came over before) is that very type: left as it is when nothing changed, replaced in place when it did (its elements follow), unless you choose **Keep both** or **Skip**. What differs is listed under the types, with the same choices as above. In a shared session only the host imports from a project; a guest can bring a `.lapintypes` instead.
+
+![File → Import types from a project…: the office's two wall types, one of the same name to choose for](shots/project-types.webp)
+
 ## Scripts
 
 The catalogue also lists **Python scripts**. On the desktop you can install one now; it runs once Lapin has its Python console, and only when you run it. Before you install it, its details say what it asks for (to read or change the open project, to reach files or the internet). A script can do on your computer what you can, so install scripts from authors you trust. The browser takes content packs only.

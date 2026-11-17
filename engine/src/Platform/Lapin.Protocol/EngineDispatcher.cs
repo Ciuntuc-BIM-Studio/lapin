@@ -1341,6 +1341,14 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 var r = HotLinks.Link(session, bytes, name, path, new HotLinks.Placing(Json.Number(p["x"]) ?? 0, Json.Number(p["y"]) ?? 0, Json.Number(p["rotation"]) ?? 0, (bool?)p["mirror"] ?? false), out var linked);
                 return (r.ToJson(), linked);
             }
+            case "library.projectTypes":
+            {
+                // Another project's types, for File → Import types from a project… (issue #74): by path, or its bytes in a browser;
+                // read into a model of its own, never written to. The import is the command library.importProjectTypes, with `text`.
+                ReportProgress("Reading the project", 0, 0);
+                var (bytes, name, _, _) = IfcBytes(p);
+                return (ProjectTypes.Preview(session, bytes, name), null);
+            }
             case "project.linksChanged":
                 // The linked projects whose files changed since they were read: Manage → Links says so, and a click reads them again.
                 return (new JsonArray([.. session.Model.OfClass(Links.Class).Where(HotLinks.Changed).Select(l => (JsonNode)l.Id)]), null);

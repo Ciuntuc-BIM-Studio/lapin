@@ -413,6 +413,7 @@
     {"name":"hatch.remove","module":"core","label":"Remove hatch pattern","args":[{"name":"name","type":"str"}]},
     {"name":"image.add","module":"core","label":"Import image","args":[{"name":"mime","type":"str"},{"name":"data","type":"str"},{"name":"name","type":"str"}]},
     {"name":"library.import","module":"core","label":"Import library","args":[{"name":"text","type":"str"},{"name":"ext","type":"str"},{"name":"all","type":"str"},{"name":"choices","type":"dict"}]},
+    {"name":"library.importProjectTypes","module":"core","label":"Import types from a project","args":[{"name":"text","type":"str"},{"name":"refs","type":"list"},{"name":"all","type":"str"},{"name":"choices","type":"dict"},{"name":"materials"},{"name":"types"}]},
     {"name":"link.convert","module":"core","label":"Convert link to native","args":[{"name":"id","type":"str"}]},
     {"name":"link.unlink","module":"core","label":"Unlink","args":[{"name":"id","type":"str"}]},
     {"name":"link.update","module":"core","label":"Change link","args":[{"name":"id","type":"str"},{"name":"visible","type":"bool"},{"name":"halftone","type":"bool"},{"name":"in3d","type":"bool"},{"name":"name","type":"str"}]},

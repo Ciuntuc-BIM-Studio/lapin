@@ -13,6 +13,7 @@ import { activeStorey, engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
 import { begin, editableText, end, surveyIfc, type EditableReport } from './ifcImport';
 import { sdnfSummary, type SdnfImportReport } from '../modules/steel/sdnfReport';
+import { projectTypesFile } from '../modules/core/projectTypes';
 import { emptyPane, notify, select, useUi } from '../app/store';
 import { usePrefs } from '../app/prefs';
 import { fitAfterImport, poseKey } from '../viewport/camera';
@@ -542,6 +543,19 @@ export async function importFragments(): Promise<void> {
   if (!path) return;
   // Looked at first, then chosen from, as an IFC is (docs/fragments.md, Exchange).
   await surveyIfc(picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path }, 'auto', 'frag');
+}
+
+/**
+ * File → Import types from a project… (issue #74): another .lapin picked, by path on the desktop, by its bytes in a browser (as
+ * a linked project is); its dialog asks the engine for its types (library.projectTypes) and brings the chosen ones in.
+ */
+export async function importProjectTypes(): Promise<void> {
+  if (!useSession.getState().connected) { notify('Open a project first.'); return; }
+  const picked = isDesktop() ? null : await pickFile('Lapin project', 'lapin');
+  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'Lapin project', extensions: ['lapin'] }]) : picked?.name ?? null;
+  if (!path) return;
+  projectTypesFile.current = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path };
+  useUi.setState({ dialog: 'projectTypes' });
 }
 
 /**

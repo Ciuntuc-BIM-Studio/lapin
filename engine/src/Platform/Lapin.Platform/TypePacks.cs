@@ -23,6 +23,9 @@ namespace Lapin.Platform;
 /// The user may choose otherwise for what the project has by name (types.readPack says what differs; <see cref="LibraryMerge"/>):
 /// a material updated in place from the pack or the pack's made beside it as „Name (2)”; a type updated in place (its id
 /// kept, its elements following) or skipped.</para>
+/// <para>File → Import types from a project… (issue #74) reads another project's types as a pack and brings them in by these same
+/// rules, with one difference (<c>keepIds</c>): a type keeps its GlobalId when the project has no entity of it, and one the project
+/// has under its very GlobalId is that type (the same: reused; changed: updated in place by default, else skipped or kept beside).</para>
 /// </summary>
 public static class TypePacks
 {
@@ -155,13 +158,17 @@ public static class TypePacks
     // ------------------------------------------------------------ what differs
 
     /// <summary>A material or a type of the pack the project has under the same name, and what differs (<see cref="LibraryMerge"/>).</summary>
-    public sealed record Conflict(string Key, string Class, string Name, IReadOnlyList<string> Differs);
+    public sealed record Conflict(string Key, string Class, string Name, IReadOnlyList<string> Differs, bool ById = false);
 
     /// <summary>
     /// Before the import: each material of the pack the project has by name with another definition, and each type of the
     /// pack the project has by class and name that is not the same, with what differs (ids compared by what they name).
     /// </summary>
-    public static (List<Conflict> Materials, List<Conflict> Types) Conflicts(IModelView m, Pack pack)
+    public static (List<Conflict> Materials, List<Conflict> Types) Conflicts(IModelView m, Pack pack) => Conflicts(m, pack, false);
+
+    /// <param name="keepIds">A project's types (Lapin.Protocol's ProjectTypes): a type the project has under its very GlobalId is
+    /// that type (its name aside), compared with it alone (<see cref="Conflict.ById"/>); the others by name, as a pack's.</param>
+    public static (List<Conflict> Materials, List<Conflict> Types) Conflicts(IModelView m, Pack pack, bool keepIds)
     {
         var byRef = pack.Types.Concat(pack.Resources).ToDictionary(i => i.Ref);
         var materials = new List<Conflict>();
@@ -172,26 +179,71 @@ public static class TypePacks
         var types = new List<Conflict>();
         foreach (var t in pack.Types)
         {
+            if (keepIds && SameId(m, t) is { } own)
+            {
+                if (Differences(m, own, t, byRef) is { Count: > 0 } byId) types.Add(new Conflict(t.Ref, t.Class, t.Name, byId, ById: true));
+                continue;
+            }
             var same = m.OfClass(t.Class).Where(e => string.Equals(e.Name, t.Name, StringComparison.OrdinalIgnoreCase)).ToList();
             if (same.Count == 0) continue;
-            var theirs = (JsonObject)Named(Comparable(t.Attrs), s => byRef.TryGetValue(s, out var x) ? x.Name : null)!;
             List<string>? least = null;
             foreach (var e in same)
             {
-                var ours = (JsonObject)Named(Comparable(e.Attrs), s => s != e.Id && m.Get(s) is { } x ? x.Name : null)!;
-                var d = LibraryMerge.Differs(ours, theirs);
-                var assoc = m.RelatingOf(e.Id, IfcClass.RelAssociatesMaterial);
-                var mine = t.Material is { } mr ? byRef[mr] : null;
-                var materialDiffers = mine is null ? assoc != null
-                    : assoc is null || assoc.Class != mine.Class
-                    || (mine.Class == IfcClass.Material ? !string.Equals(assoc.Name, mine.Name, StringComparison.OrdinalIgnoreCase)
-                        : !JsonNode.DeepEquals(Named(Comparable(assoc.Attrs), s => m.Get(s)?.Name), Named(Comparable(mine.Attrs), s => byRef.TryGetValue(s, out var x) ? x.Name : null)));
-                if (materialDiffers) d.Add(mine?.Class == IfcClass.Material || assoc?.Class == IfcClass.Material ? "material" : "layers");
+                var d = Differences(m, e, t, byRef);
                 if (least is null || d.Count < least.Count) least = d;
             }
             if (least is { Count: > 0 }) types.Add(new Conflict(t.Ref, t.Class, t.Name, least));
         }
         return (materials, types);
+    }
+
+    /// <summary>What differs between the project's type <paramref name="e"/> and the pack's <paramref name="t"/> (its name aside): its attributes, its material or its layers.</summary>
+    static List<string> Differences(IModelView m, Entity e, PackItem t, Dictionary<string, PackItem> byRef)
+    {
+        var theirs = (JsonObject)Named(Comparable(t.Attrs), s => byRef.TryGetValue(s, out var x) ? x.Name : null)!;
+        var ours = (JsonObject)Named(Comparable(e.Attrs), s => s != e.Id && m.Get(s) is { } x ? x.Name : null)!;
+        var d = LibraryMerge.Differs(ours, theirs);
+        var assoc = m.RelatingOf(e.Id, IfcClass.RelAssociatesMaterial);
+        var mine = t.Material is { } mr ? byRef[mr] : null;
+        var materialDiffers = mine is null ? assoc != null
+            : assoc is null || assoc.Class != mine.Class
+            || (mine.Class == IfcClass.Material ? !string.Equals(assoc.Name, mine.Name, StringComparison.OrdinalIgnoreCase)
+                : !JsonNode.DeepEquals(Named(Comparable(assoc.Attrs), s => m.Get(s)?.Name), Named(Comparable(mine.Attrs), s => byRef.TryGetValue(s, out var x) ? x.Name : null)));
+        if (materialDiffers) d.Add(mine?.Class == IfcClass.Material || assoc?.Class == IfcClass.Material ? "material" : "layers");
+        return d;
+    }
+
+    /// <summary>The project's type of the pack's type's very id (a GlobalId: the same type, come from the same project or template) and class; null when none.</summary>
+    public static Entity? SameId(IModelView m, PackItem t) => m.Get(t.Ref) is { } e && e.Class == t.Class ? e : null;
+
+    /// <summary>The names of the materials a type needs (its layers', those its attributes name), as the pack carries them.</summary>
+    public static List<string> MaterialsOf(Pack pack, PackItem type) =>
+        [.. Closure(pack, [type]).Where(x => x.Class == IfcClass.Material).Select(x => x.Name).Distinct(StringComparer.OrdinalIgnoreCase)];
+
+    /// <summary>
+    /// Everything the <paramref name="types"/> reach in the pack, themselves included: their materials and layer sets, what their
+    /// attributes point at by ref, and a material named under a material key when the pack carries one of that name.
+    /// </summary>
+    static List<PackItem> Closure(Pack pack, IReadOnlyList<PackItem> types)
+    {
+        var byRef = pack.Types.Concat(pack.Resources).ToDictionary(i => i.Ref);
+        var materialsByName = pack.Resources.Where(r => r.Class == IfcClass.Material)
+            .GroupBy(r => r.Name, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        var stack = new Stack<PackItem>(types);
+        foreach (var t in types) if (t.Material != null) stack.Push(byRef[t.Material]);
+        var visited = new HashSet<string>();
+        var o = new List<PackItem>();
+        while (stack.Count > 0)
+        {
+            var item = stack.Pop();
+            if (!visited.Add(item.Ref)) continue;
+            o.Add(item);
+            Walk(item.Attrs, false, s => { if (byRef.TryGetValue(s, out var x) && x.Ref != item.Ref) stack.Push(x); }, s =>
+            {
+                if (!byRef.ContainsKey(s) && materialsByName.TryGetValue(s, out var mat)) stack.Push(mat);
+            });
+        }
+        return o;
     }
 
     /// <summary>A tree with every string a <paramref name="nameOf"/> knows written as what it names (an id as „@Brick”), for comparing two projects' entities.</summary>
@@ -216,7 +268,7 @@ public static class TypePacks
     {
         public static readonly Choices None = new(new Dictionary<string, string>(), new Dictionary<string, string>());
         public string Material(string name) => Materials.TryGetValue(name, out var c) ? c : LibraryMerge.Keep;
-        public string Type(PackItem t) => Types.TryGetValue(t.Ref, out var c) || Types.TryGetValue(t.Name, out c) ? c : LibraryMerge.Both;
+        public string Type(PackItem t, string fallback = LibraryMerge.Both) => Types.TryGetValue(t.Ref, out var c) || Types.TryGetValue(t.Name, out c) ? c : fallback;
     }
 
     /// <summary>The pack's chosen types (none chosen: all) brought into the project; what became of each, and how many materials were made.</summary>
@@ -227,31 +279,22 @@ public static class TypePacks
     }
 
     /// <summary>The pack's chosen types brought in as <paramref name="choices"/> say for what the project has by name; one undo step.</summary>
-    public static (List<Outcome> Types, LibraryMerge.MaterialTally Materials) Import(ICommandContext ctx, Pack pack, IReadOnlyCollection<string>? chosen, Choices choices)
+    public static (List<Outcome> Types, LibraryMerge.MaterialTally Materials) Import(ICommandContext ctx, Pack pack, IReadOnlyCollection<string>? chosen, Choices choices) =>
+        Import(ctx, pack, chosen, choices, false);
+
+    /// <param name="keepIds">A project's types (Lapin.Protocol's ProjectTypes): each type made keeps its GlobalId (its ref) when
+    /// the project has no entity of that id; one the project has under its very id is that type: reused when the same (its name
+    /// aside), else updated in place by default (or skipped, or kept beside under a new id).</param>
+    public static (List<Outcome> Types, LibraryMerge.MaterialTally Materials) Import(ICommandContext ctx, Pack pack, IReadOnlyCollection<string>? chosen, Choices choices, bool keepIds)
     {
         var types = chosen is { Count: > 0 } ? pack.Types.Where(t => chosen.Contains(t.Ref)).ToList() : [.. pack.Types];
         if (types.Count == 0) throw new CommandException("None of the chosen types is in the pack.");
         var byRef = pack.Types.Concat(pack.Resources).ToDictionary(i => i.Ref);
-        var materialsByName = pack.Resources.Where(r => r.Class == IfcClass.Material)
-            .GroupBy(r => r.Name, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
         var owned = types.Where(t => t.Material != null && byRef[t.Material].Class != IfcClass.Material).Select(t => t.Material!).ToHashSet();
 
         // What the chosen types need, by ref (their own layer sets apart: they come with their type). A material named under a
         // material key comes when the pack carries it (the export takes every one the project had); any other name is the module's to settle.
-        var needed = new HashSet<string>();
-        var stack = new Stack<PackItem>(types);
-        foreach (var t in types) if (t.Material != null) stack.Push(byRef[t.Material]);
-        var visited = new HashSet<string>();
-        while (stack.Count > 0)
-        {
-            var item = stack.Pop();
-            if (!visited.Add(item.Ref)) continue;
-            if (!owned.Contains(item.Ref) && !types.Contains(item)) needed.Add(item.Ref);
-            Walk(item.Attrs, false, s => { if (byRef.TryGetValue(s, out var x) && x.Ref != item.Ref) stack.Push(x); }, s =>
-            {
-                if (!byRef.ContainsKey(s) && materialsByName.TryGetValue(s, out var mat)) stack.Push(mat);
-            });
-        }
+        var needed = Closure(pack, types).Where(item => !owned.Contains(item.Ref) && !types.Contains(item)).Select(item => item.Ref).ToHashSet();
 
         var map = new Dictionary<string, string>();
         // A material kept beside the project's as „Name (2)”: what names it by its name names the new one.
@@ -302,14 +345,14 @@ public static class TypePacks
                 && (i.Material is null || !owned.Contains(i.Material) || Refs(byRef[i.Material], byRef).All(map.ContainsKey))).ToList();
             if (ready.Count == 0)
             {
-                // Pointing at each other: new ids for all of them first.
-                foreach (var i in pending) map[i.Ref] = ctx.NewId();
+                // Pointing at each other: new ids for all of them first (a project's type its own GlobalId when free).
+                foreach (var i in pending) map[i.Ref] = keepIds && types.Contains(i) && Free(ctx.Model, i.Ref) ? i.Ref : ctx.NewId();
                 ready = pending;
             }
             foreach (var i in ready)
             {
                 pending.Remove(i);
-                if (types.Contains(i)) outcomes.Add(PlaceType(ctx, i, byRef, map, names, choices.Type(i)));
+                if (types.Contains(i)) outcomes.Add(PlaceType(ctx, i, byRef, map, names, choices.Type(i, keepIds && SameId(ctx.Model, i) != null ? LibraryMerge.Update : LibraryMerge.Both), keepIds));
                 else PlaceResource(ctx, i, map, names);
             }
         }
@@ -354,12 +397,30 @@ public static class TypePacks
         map[r.Ref] = id;
     }
 
-    static Outcome PlaceType(ICommandContext ctx, PackItem t, Dictionary<string, PackItem> byRef, Dictionary<string, string> map, Dictionary<string, string> names, string choice)
+    /// <summary>Whether <paramref name="id"/> can be an entity's of this project: a GlobalId no entity here has.</summary>
+    static bool Free(IModelView m, string id) => GlobalId.IsValid(id) && m.Get(id) is null;
+
+    static Outcome PlaceType(ICommandContext ctx, PackItem t, Dictionary<string, PackItem> byRef, Dictionary<string, string> map, Dictionary<string, string> names, string choice, bool keepIds = false)
     {
         var attrs = Mapped(t.Attrs, map, names);
         var set = t.Material is { } mr && byRef[mr].Class != IfcClass.Material ? byRef[mr] : null;
         var setAttrs = set is null ? null : Mapped(set.Attrs, map, names);
         var cycle = map.ContainsKey(t.Ref);
+        // The project's own type by its GlobalId: the same type, reused when it is the same (its name aside), else as chosen.
+        if (keepIds && !cycle && SameId(ctx.Model, t) is { } own)
+        {
+            var assoc = ctx.Model.RelatingOf(own.Id, IfcClass.RelAssociatesMaterial);
+            var fits = JsonNode.DeepEquals(Comparable(own.Attrs), Comparable(attrs)) && (t.Material is null ? assoc is null
+                : set is null ? assoc?.Id == map[t.Material]
+                : assoc is { } a && a.Class == set.Class && JsonNode.DeepEquals(Comparable(a.Attrs), Comparable(setAttrs!)));
+            if (fits || choice == LibraryMerge.Skip)
+            {
+                map[t.Ref] = own.Id;
+                if (fits && set != null) map[set.Ref] = assoc!.Id;
+                return new Outcome(t.Ref, t.Class, own.Name, own.Id, fits ? "reused" : "skipped");
+            }
+            if (choice == LibraryMerge.Update) return UpdateType(ctx, t, own, attrs, set, setAttrs, map);
+        }
         var sameName = ctx.Model.OfClass(t.Class).Where(e => string.Equals(e.Name, t.Name, StringComparison.OrdinalIgnoreCase)).ToList();
         if (!cycle)
             foreach (var e in sameName)
@@ -387,7 +448,7 @@ public static class TypePacks
             // A door's or window's spec carries its name too.
             if (attrs["spec"] is JsonObject spec && (string?)spec["name"] == t.Name) spec["name"] = name;
         }
-        var id = map.TryGetValue(t.Ref, out var given) ? given : ctx.NewId();
+        var id = map.TryGetValue(t.Ref, out var given) ? given : keepIds && Free(ctx.Model, t.Ref) ? t.Ref : ctx.NewId();
         var type = new Entity(id, t.Class, name, attrs, t.PredefinedType);
         ctx.Add(type);
         map[t.Ref] = id;
@@ -442,16 +503,17 @@ public static class TypePacks
     /// and made otherwise (keep both by default); each material the pack carries new, the same, or of the same name and defined
     /// otherwise (the project's kept by default: „skip”).
     /// </summary>
-    public static List<LibraryMerge.Row> Rows(IQueryContext q, Pack pack)
+    public static List<LibraryMerge.Row> Rows(IQueryContext q, Pack pack, bool keepIds = false)
     {
-        var (materials, conflicts) = Conflicts(q.Model, pack);
+        var (materials, conflicts) = Conflicts(q.Model, pack, keepIds);
         var rows = new List<LibraryMerge.Row>();
         foreach (var t in pack.Types)
         {
-            var exists = q.Model.OfClass(t.Class).Any(e => string.Equals(e.Name, t.Name, StringComparison.OrdinalIgnoreCase));
+            var byId = keepIds && SameId(q.Model, t) != null;
+            var exists = byId || q.Model.OfClass(t.Class).Any(e => string.Equals(e.Name, t.Name, StringComparison.OrdinalIgnoreCase));
             var c = conflicts.FirstOrDefault(x => x.Key == t.Ref);
             rows.Add(new LibraryMerge.Row("type:" + t.Ref, q.Describe(t.Class)?.Label ?? t.Class, t.Name,
-                !exists ? LibraryMerge.Match.New : c is null ? LibraryMerge.Match.Same : LibraryMerge.Match.Name, c?.Differs));
+                !exists ? LibraryMerge.Match.New : c is null ? LibraryMerge.Match.Same : byId ? LibraryMerge.Match.Id : LibraryMerge.Match.Name, c?.Differs));
         }
         foreach (var r in pack.Resources.Where(x => x.Class == IfcClass.Material).DistinctBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
         {
@@ -551,7 +613,25 @@ public static class TypePacks
             return Result(types, materials);
         });
 
-        r.Service<ILibraryFormat>(new LibraryFormat(Spec, (q, text) => Rows(q, Read(text, q.Describe)), (ctx, text, choices, all) =>
+        // File → Import types from a project… (issue #74): {text (the pack the engine read out of the project: the host's
+        // library.projectTypes), refs?, materials?: {name: keep|update|both}, types?: {ref: both|update|skip}, choices?: {"type:ref" |
+        // "material:name": …}, all?} → as types.importFrom. The same rules as a .lapintypes, the types keeping their GlobalIds: one
+        // the project has under its very GlobalId is that type (reused when the same, else updated in place by default). One undo step.
+        r.Command("library.importProjectTypes", "Import types from a project", (ctx, a) =>
+        {
+            var pack = Read((string?)a["text"] ?? throw new CommandException("Nothing to bring in: read the project's types first."), ctx.Describe);
+            var chosen = (a["refs"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet();
+            var all = (string?)a["all"] is { Length: > 0 } x ? x : null;
+            var unified = ChoicesOf(Rows(ctx.Query, pack, keepIds: true), a["choices"] as JsonObject, all);
+            var materials = new Dictionary<string, string>(unified.Materials, StringComparer.OrdinalIgnoreCase);
+            foreach (var (k, v) in LibraryMerge.Choices(a["materials"], LibraryMerge.MaterialChoices)) materials[k] = v;
+            var types = new Dictionary<string, string>(unified.Types);
+            foreach (var (k, v) in LibraryMerge.Choices(a["types"], LibraryMerge.TypeChoices)) types[k] = v;
+            var (made, tally) = Import(ctx, pack, chosen, new Choices(materials, types), keepIds: true);
+            return Result(made, tally);
+        });
+
+        r.Service<ILibraryFormat>(new LibraryFormat(Spec,(q, text) => Rows(q, Read(text, q.Describe)), (ctx, text, choices, all) =>
         {
             var pack = Read(text, ctx.Describe);
             var (types, materials) = Import(ctx, pack, null, ChoicesOf(Rows(ctx.Query, pack), choices, all));
