@@ -7,19 +7,21 @@ import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { storeService } from './server.mjs';
-import { checkLicence, isKeyShaped, readGumroad, readLemonSqueezy } from './providers.mjs';
+import { checkLicence, isKeyShaped, PROVIDER_URLS, readGumroad } from './providers.mjs';
 import { forumAnswer } from './discourse.mjs';
 import { sha256 } from './data.mjs';
 
 const STORE = 'https://store.lapinbim.com';
 const SECRET = 'a-test-secret-of-the-forum-and-the-store';
 const pat = Buffer.from('*BRICK, brick\n0, 0,0, 0,6.3\n');
-const KEYS = { ls: 'LS-GOOD-0001', lsOther: 'LS-OTHER-PRODUCT', lsOff: 'LS-DISABLED', gr: 'GR-GOOD-0001', grRefunded: 'GR-REFUNDED', grOff: 'GR-DISABLED' };
+const KEYS = { two: 'GR-TWO-0001', gr: 'GR-GOOD-0001', grRefunded: 'GR-REFUNDED', grOff: 'GR-DISABLED' };
+/** Which product each key was sold for (Gumroad scopes a key to its product). */
+const PRODUCT_OF = { [KEYS.two]: 'prod-two', [KEYS.gr]: 'prod-gr', [KEYS.grRefunded]: 'prod-gr', [KEYS.grOff]: 'prod-gr' };
 const paidManifest = (id, purchase, over = {}) => ({
   schema: 1, id, name: id, summary: 'x', version: '1.0.0', author: { name: 'Ana', forum: 'ana' }, license: 'LicenseRef-Ana-EULA', lapin: '*', kind: 'hatches',
   contents: { file: 'brick.pat' }, package: { url: `${STORE}/api/licensed/${id}/1.0.0`, sha256: sha256(pat), size: pat.length }, purchase, ...over,
 });
-const ls = paidManifest('ana.ls', { provider: 'lemonsqueezy', productId: '42', checkoutUrl: 'https://ana.lemonsqueezy.com/buy/x', terms: 'https://ana.example/terms' });
+const two = paidManifest('ana.two', { provider: 'gumroad', productId: 'prod-two', checkoutUrl: 'https://ana.gumroad.com/l/two', terms: 'https://ana.example/terms' });
 const gr = paidManifest('ana.gr', { provider: 'gumroad', productId: 'prod-gr', checkoutUrl: 'https://ana.gumroad.com/l/x', terms: 'https://ana.example/terms' });
 const missing = paidManifest('ana.nofile', { provider: 'gumroad', productId: 'prod-gr', checkoutUrl: 'https://ana.gumroad.com/l/x', terms: 'https://ana.example/terms' });
 const free = { schema: 1, id: 'ana.free', name: 'Free', summary: 'x', version: '1.0.0', author: { name: 'Ana' }, license: 'MIT', lapin: '*', kind: 'hatches', contents: { file: 'f.pat' }, package: { url: 'https://example.org/f.pat', sha256: 'a'.repeat(64), size: 3 } };
@@ -32,18 +34,12 @@ async function fakeProviders(url, init) {
   if (providers.slow) return new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(init.signal.reason)));
   if (providers.down) return new Response('busy', { status: 503 });
   const reply = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-  if (url === 'https://api.lemonsqueezy.com/v1/licenses/validate') {
-    const key = form.get('license_key');
-    if (key === KEYS.ls) return reply(200, { valid: true, error: null, license_key: { id: 1, status: 'active', key }, instance: null, meta: { store_id: 1, product_id: 42 } });
-    if (key === KEYS.lsOther) return reply(200, { valid: true, error: null, license_key: { id: 2, status: 'active', key }, instance: null, meta: { store_id: 9, product_id: 7 } });
-    if (key === KEYS.lsOff) return reply(400, { valid: false, error: 'This license key is disabled.', license_key: { id: 3, status: 'disabled', key }, meta: { product_id: 42 } });
-    return reply(404, { valid: false, error: 'license_key not found.' });
-  }
   if (url === 'https://api.gumroad.com/v2/licenses/verify') {
     assert.equal(form.get('increment_uses_count'), 'false', 'a check never counts a use');
     const key = form.get('license_key');
+    if (PRODUCT_OF[key] && PRODUCT_OF[key] !== form.get('product_id')) return reply(404, { success: false, message: 'That license does not exist for the provided product.' });
     const purchase = (o) => ({ product_id: form.get('product_id'), refunded: false, chargebacked: false, disputed: false, dispute_won: false, subscription_ended_at: null, subscription_cancelled_at: null, subscription_failed_at: null, license_key: key, ...o });
-    if (key === KEYS.gr) return reply(200, { success: true, uses: 0, purchase: purchase({}) });
+    if (key === KEYS.gr || key === KEYS.two) return reply(200, { success: true, uses: 0, purchase: purchase({}) });
     if (key === KEYS.grRefunded) return reply(200, { success: true, uses: 0, purchase: purchase({ refunded: true }) });
     if (key === KEYS.grOff) return reply(404, { success: false, message: 'This license key has been disabled.' });
     return reply(404, { success: false, message: 'That license does not exist for the provided product.' });
@@ -59,8 +55,8 @@ before(async () => {
   dataDir = await mkdtemp(join(tmpdir(), 'lapin-store-paid-'));
   const pub = join(dataDir, 'public');
   await mkdir(join(pub, 'extensions'), { recursive: true });
-  await writeFile(join(pub, 'extensions', 'index.json'), JSON.stringify({ format: 'lapin-extensions-index', version: 1, extensions: [ls, gr, missing, free] }));
-  for (const m of [ls, gr]) {
+  await writeFile(join(pub, 'extensions', 'index.json'), JSON.stringify({ format: 'lapin-extensions-index', version: 1, extensions: [two, gr, missing, free] }));
+  for (const m of [two, gr]) {
     await mkdir(join(dataDir, 'paid', m.id, '1.0.0'), { recursive: true });
     await writeFile(join(dataDir, 'paid', m.id, '1.0.0', 'brick.pat'), pat);
   }
@@ -81,11 +77,10 @@ const post = (path, body, headers = {}) => fetch(`${base}${path}`, { method: 'PO
 const check = async (id, key) => { const r = await post('/api/licence/check', { id, key }); return { http: r.status, ...(await r.json()) }; };
 
 describe('a licence key checked with the seller’s provider', () => {
-  it('Lemon Squeezy: a good key of this product is active; another product’s is invalid; a disabled one revoked; an unknown one invalid', async () => {
-    assert.equal((await check('ana.ls', KEYS.ls)).status, 'active');
-    assert.equal((await check('ana.ls', KEYS.lsOther)).status, 'invalid', 'any shop’s key validates there: the product is compared');
-    assert.equal((await check('ana.ls', KEYS.lsOff)).status, 'revoked');
-    assert.equal((await check('ana.ls', 'NOPE')).status, 'invalid');
+  it('a key is good only for the product it was sold for', async () => {
+    assert.equal((await check('ana.two', KEYS.two)).status, 'active');
+    assert.equal((await check('ana.two', KEYS.gr)).status, 'invalid', 'another product’s key');
+    assert.equal((await check('ana.gr', KEYS.two)).status, 'invalid');
   });
 
   it('Gumroad: good, refunded, disabled, unknown; never counted as a use', async () => {
@@ -114,13 +109,13 @@ describe('a licence key checked with the seller’s provider', () => {
 
 describe('the paid package', () => {
   it('is given to a good key only, the very file the index names', async () => {
-    const r = await post('/api/licensed/ana.ls/1.0.0', { key: KEYS.ls });
+    const r = await post('/api/licensed/ana.two/1.0.0', { key: KEYS.two });
     assert.equal(r.status, 200);
     assert.equal(r.headers.get('content-type'), 'application/octet-stream');
     assert.equal(r.headers.get('cache-control'), 'no-store');
     assert.equal(r.headers.get('access-control-allow-origin'), '*');
     assert.deepEqual(Buffer.from(await r.arrayBuffer()), pat);
-    assert.equal((await post('/api/licensed/ana.ls/1.0.0', { key: KEYS.lsOther })).status, 403);
+    assert.equal((await post('/api/licensed/ana.two/1.0.0', { key: KEYS.gr })).status, 403);
     const revoked = await post('/api/licensed/ana.gr/1.0.0', { key: KEYS.grRefunded });
     assert.equal(revoked.status, 403);
     assert.equal((await revoked.json()).status, 'revoked');
@@ -135,14 +130,14 @@ describe('the paid package', () => {
   });
 
   it('has no public path: not under /packages, /extensions/files or the download counter', async () => {
-    for (const p of ['/packages/ana.ls/1.0.0/brick.pat', '/extensions/files/ana.ls/1.0.0/brick.pat', '/paid/ana.ls/1.0.0/brick.pat', '/api/download/ana.ls/1.0.0']) {
+    for (const p of ['/packages/ana.two/1.0.0/brick.pat', '/extensions/files/ana.two/1.0.0/brick.pat', '/paid/ana.two/1.0.0/brick.pat', '/api/download/ana.two/1.0.0']) {
       assert.notEqual((await fetch(`${base}${p}`, { redirect: 'manual' })).status, 200, p);
       assert.notEqual((await fetch(`${base}${p}`, { redirect: 'manual' })).status, 302, p);
     }
   });
 
   it('answers the browser edition’s preflight', async () => {
-    const r = await fetch(`${base}/api/licensed/ana.ls/1.0.0`, { method: 'OPTIONS' });
+    const r = await fetch(`${base}/api/licensed/ana.two/1.0.0`, { method: 'OPTIONS' });
     assert.equal(r.status, 204);
     assert.match(r.headers.get('access-control-allow-methods'), /POST/);
     assert.match(r.headers.get('access-control-allow-headers'), /content-type/);
@@ -150,7 +145,7 @@ describe('the paid package', () => {
 
   it('logs the extension, the provider and the answer: never a key, never an address', () => {
     const log = lines.join('\n');
-    assert.match(log, /licence ana\.ls lemonsqueezy: active/);
+    assert.match(log, /licence ana\.two gumroad: active/);
     assert.match(log, /licence ana\.gr gumroad: revoked/);
     for (const k of [...Object.values(KEYS), 'NOPE']) assert.ok(!log.includes(k), `the key ${k} is not in the log`);
     assert.ok(!log.includes('203.0.113.7'), 'no address');
@@ -204,13 +199,9 @@ describe('a paid submission through the dashboard', () => {
 });
 
 describe('the providers’ answers read', () => {
-  it('Lemon Squeezy', () => {
-    assert.equal(readLemonSqueezy({ status: 200, body: { valid: true, license_key: { status: 'inactive' }, meta: { product_id: 42 } } }, '42').status, 'active', 'inactive: good, not activated yet');
-    assert.equal(readLemonSqueezy({ status: 200, body: { valid: false, license_key: { status: 'expired' }, meta: { product_id: 42 } } }, '42').status, 'revoked');
-    assert.equal(readLemonSqueezy({ status: 200, body: { valid: true, license_key: { status: 'active' } } }, '42').status, 'unavailable', 'valid but naming no product: nothing concluded');
-    assert.equal(readLemonSqueezy({ status: 422, body: { error: 'The license key field is required.' } }, '42').status, 'invalid');
-    assert.equal(readLemonSqueezy({ status: 429, body: {} }, '42').status, 'unavailable');
-    assert.equal(readLemonSqueezy({ status: 502, body: null }, '42').status, 'unavailable');
+  it('Gumroad only: Lemon Squeezy is closing (decision 660)', async () => {
+    assert.deepEqual(Object.keys(PROVIDER_URLS), ['gumroad']);
+    assert.equal((await checkLicence({ provider: 'lemonsqueezy', productId: '42' }, KEYS.gr, { fetch: fakeProviders })).status, 'unavailable');
   });
 
   it('Gumroad', () => {

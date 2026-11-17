@@ -65,7 +65,7 @@ Le catalogue liste aussi des **scripts Python**. Dans l'application de bureau, v
 
 ## Extensions payantes
 
-Certaines extensions sont **vendues par leurs auteurs**, dans leur propre boutique (Lemon Squeezy ou Gumroad). Elles sont marquées **Payante** dans la liste, avec leur prix ; ce prix est *indicatif* : celui qui compte est celui du vendeur, au paiement. Lapin Extensions ne prend aucune commission et n'est pas partie à la vente : le vendeur encaisse le paiement, émet la facture et gère les remboursements, selon les conditions qu'ouvre **Conditions du vendeur**.
+Certaines extensions sont **vendues par leurs auteurs**, dans leur propre boutique (aujourd’hui Gumroad). Elles sont marquées **Payante** dans la liste, avec leur prix ; ce prix est *indicatif* : celui qui compte est celui du vendeur, au paiement. Lapin Extensions ne prend aucune commission et n'est pas partie à la vente : le vendeur encaisse le paiement, émet la facture et gère les remboursements, selon les conditions qu'ouvre **Conditions du vendeur**.
 
 ![Les détails d'une extension payante : vendue par son auteur, Acheter, la clé de licence](shots/extensions-paid.webp)
 

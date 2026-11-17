@@ -65,7 +65,7 @@ Il catalogo elenca anche **script Python**. Nell'app desktop puoi installarne un
 
 ## Estensioni a pagamento
 
-Alcune estensioni sono **vendute dai loro autori**, nel proprio negozio (Lemon Squeezy o Gumroad). Sono segnate **A pagamento** nell'elenco, con il loro prezzo; il prezzo è *indicativo*: conta quello del venditore, al pagamento. Lapin Extensions non prende commissioni e non è parte della vendita: il venditore incassa il pagamento, emette la fattura e gestisce i rimborsi, secondo le condizioni che apre **Condizioni del venditore**.
+Alcune estensioni sono **vendute dai loro autori**, nel proprio negozio (oggi Gumroad). Sono segnate **A pagamento** nell'elenco, con il loro prezzo; il prezzo è *indicativo*: conta quello del venditore, al pagamento. Lapin Extensions non prende commissioni e non è parte della vendita: il venditore incassa il pagamento, emette la fattura e gestisce i rimborsi, secondo le condizioni che apre **Condizioni del venditore**.
 
 ![I dettagli di un'estensione a pagamento: venduta dal suo autore, Acquista, la chiave di licenza](shots/extensions-paid.webp)
 

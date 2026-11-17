@@ -65,7 +65,7 @@ Katalog zawiera też **skrypty Pythona**. W aplikacji na komputer możesz już j
 
 ## Płatne rozszerzenia
 
-Niektóre rozszerzenia są **sprzedawane przez ich autorów** we własnym sklepie (Lemon Squeezy lub Gumroad). Na liście są oznaczone jako **Płatne**, z ceną; cena jest *orientacyjna*: liczy się cena sprzedawcy przy płatności. Lapin Extensions nie pobiera prowizji i nie jest stroną sprzedaży: sprzedawca przyjmuje płatność, wystawia fakturę i obsługuje zwroty, na warunkach, które otwiera **Warunki sprzedawcy**.
+Niektóre rozszerzenia są **sprzedawane przez ich autorów** we własnym sklepie (obecnie Gumroad). Na liście są oznaczone jako **Płatne**, z ceną; cena jest *orientacyjna*: liczy się cena sprzedawcy przy płatności. Lapin Extensions nie pobiera prowizji i nie jest stroną sprzedaży: sprzedawca przyjmuje płatność, wystawia fakturę i obsługuje zwroty, na warunkach, które otwiera **Warunki sprzedawcy**.
 
 ![Szczegóły płatnego rozszerzenia: sprzedawane przez autora, Kup, klucz licencyjny](shots/extensions-paid.webp)
 

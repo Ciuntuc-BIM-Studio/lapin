@@ -69,7 +69,7 @@ Catalogul are și **scripturi Python**. În aplicația desktop poți instala unu
 
 ## Extensii plătite
 
-Unele extensii sunt **vândute de autorii lor**, prin propriul magazin (Lemon Squeezy sau Gumroad). Sunt marcate **Plătită** în listă, cu prețul lor; prețul e *orientativ*: contează cel al vânzătorului, din pagina de plată. Lapin Extensions nu ia comision și nu e parte la vânzare: vânzătorul încasează plata, emite factura și se ocupă de rambursări, după termenii pe care îi deschide **Termenii vânzătorului**.
+Unele extensii sunt **vândute de autorii lor**, prin propriul magazin (azi Gumroad). Sunt marcate **Plătită** în listă, cu prețul lor; prețul e *orientativ*: contează cel al vânzătorului, din pagina de plată. Lapin Extensions nu ia comision și nu e parte la vânzare: vânzătorul încasează plata, emite factura și se ocupă de rambursări, după termenii pe care îi deschide **Termenii vânzătorului**.
 
 ![Detaliile unei extensii plătite: vândută de autorul ei, Cumpără, cheia de licență](shots/extensions-paid.webp)
 
@@ -93,6 +93,6 @@ Oricine poate publica o extensie. O exporți din Lapin (Mobilierul meu → Expor
 - **Pe magazin**: intră pe store.lapinbim.com cu contul tău de pe [forum](https://forum.lapinbim.com), deschide **Your extensions** (extensiile tale), completează formularul și încarcă fișierul și câteva capturi de ecran. Magazinul verifică fișierul așa cum o va face Lapin și îl trimite la verificare; pagina ta arată verificarea și, după publicare, de câte ori a fost descărcat. O versiune nouă merge la fel.
 - **Pe GitHub**: atașează fișierul la un release al unui depozit al tău și adaugă manifestul lui printr-un pull request pe [Ciuntuc-BIM-Studio/lapin-extensions](https://github.com/Ciuntuc-BIM-Studio/lapin-extensions). README-ul lui spune cum, și ce verifică testele automate.
 
-**Ca să vinzi o extensie**, fă produsul cu chei de licență în magazinul tău de la Lemon Squeezy sau Gumroad, apoi completează **Sold through your own shop** în formularul magazinului (furnizorul, id-ul produsului, pagina de plată, termenii tăi de vânzare și rambursare și un preț de arătat). Tu ești vânzătorul: magazinul o listează, îi păstrează fișierul privat și îl dă doar unei chei bune; nu ia comision ([termenii autorilor](https://store.lapinbim.com/legal/author-terms.html), secțiunea 5).
+**Ca să vinzi o extensie**, fă produsul cu chei de licență în magazinul tău de la Gumroad, apoi completează **Sold through your own shop** în formularul magazinului (furnizorul, id-ul produsului, pagina de plată, termenii tăi de vânzare și rambursare și un preț de arătat). Tu ești vânzătorul: magazinul o listează, îi păstrează fișierul privat și îl dă doar unei chei bune; nu ia comision ([termenii autorilor](https://store.lapinbim.com/legal/author-terms.html), secțiunea 5).
 
 Un pachet de tipuri vine din **Gestionare → Pachete de tipuri… → Exportă tipuri…** (sau **Salvează în bibliotecă** la configuratorul unui tip); un fișier de simboluri, tipuri de linie, standarde, reguli, forme de bare sau parametri din **Exportă** al dialogului lui (**Gestionare → Simboluri…**, **Standarde de desen**, **Reguli…**, **Forme de bare…**, **Parametri comuni**; tipurile de linie ca `.lin`); o listă de prețuri din **Liste de prețuri…**, cu butonul de export al unei liste de pe acest calculator (un fișier `.lapinprices`, cu prețurile marcate orientative).

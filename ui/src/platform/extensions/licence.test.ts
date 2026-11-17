@@ -43,7 +43,7 @@ describe('a paid extension’s manifest', () => {
     expect(validateManifest(m)).toEqual([]);
     expect(isPaid(m)).toBe(true);
     expect(isPaid(furniturePack())).toBe(false);
-    expect(validateManifest({ ...m, purchase: { ...m.purchase!, provider: 'paypal' } }).join(' ')).toMatch(/purchase.provider must be one of lemonsqueezy, gumroad/);
+    expect(validateManifest({ ...m, purchase: { ...m.purchase!, provider: 'paypal' } }).join(' ')).toMatch(/purchase.provider must be one of gumroad/);
     expect(validateManifest({ ...m, purchase: { ...m.purchase!, checkoutUrl: 'http://x.ro' } }).join(' ')).toMatch(/checkoutUrl/);
     expect(validateManifest({ ...m, package: { ...m.package, url: 'https://github.com/a/b/x.lapinlib' } }).join(' ')).toMatch(/api\/licensed\/ana.sofas\/1.0.0/);
     expect(validateManifest({ ...m, package: { ...m.package, mirror: 'https://lapinbim.com/extensions/files/x' } }).join(' ')).toMatch(/no public copy/);
