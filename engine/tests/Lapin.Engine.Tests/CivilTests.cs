@@ -292,6 +292,8 @@ public class CivilTests
         var t = Slope(f);
         var pad = (string)f.Run("civil.addPlatform", new JsonObject { ["terrainId"] = t, ["x1"] = 22, ["y1"] = 10, ["x2"] = 30, ["y2"] = 20, ["elevation"] = 1.3 })!["id"]!;
         var ditch = (string)f.Run("civil.addDitch", new JsonObject { ["terrainId"] = t, ["points"] = new JsonArray(new JsonArray(2, 30), new JsonArray(10, 30)) })!["id"]!;
+        f.Run("civil.addSpot", new JsonObject { ["terrainId"] = t, ["x"] = 5, ["y"] = 5 });
+        f.Run("civil.addSlope", new JsonObject { ["terrainId"] = t, ["x1"] = 25, ["y1"] = 5, ["x2"] = 35, ["y2"] = 5 });
         var cutBefore = TerrainQty(f, t, "CutVolume");
         Assert.True(cutBefore > 1);
 
@@ -304,6 +306,11 @@ public class CivilTests
         Assert.Equal([pad], Terrains.Pads(f.Model, t).Select(x => x.Id));
         Assert.Equal([ditch], Terrains.DitchesOf(f.Model, other).Select(x => x.Id));
         Assert.Empty(Terrains.DitchesOf(f.Model, t));
+        // The spot level (x 5) goes with the left half, the slope tag (x 25-35) stays.
+        Assert.Single(Terrains.Spots(f.Model.Get(other)!));
+        Assert.Empty(Terrains.Spots(f.Model.Get(t)!));
+        Assert.Single(Terrains.SlopeTags(f.Model.Get(t)!));
+        Assert.Empty(Terrains.SlopeTags(f.Model.Get(other)!));
         Assert.Equal(1000, TerrainQty(f, t, "PlanArea"), 1);
         Assert.Equal(600, TerrainQty(f, other, "PlanArea"), 1);
         Assert.Contains(f.Session.Quantities(t), q => q.Name == "Lapin_EarthworkQuantities");
@@ -326,6 +333,8 @@ public class CivilTests
         Assert.Equal([pad], Terrains.Pads(f.Model, other).Select(x => x.Id));
         Assert.Equal([ditch], Terrains.DitchesOf(f.Model, other).Select(x => x.Id));
         Assert.Equal(cutBefore, TerrainQty(f, other, "CutVolume"), 3);
+        Assert.Single(Terrains.Spots(f.Model.Get(other)!));
+        Assert.Single(Terrains.SlopeTags(f.Model.Get(other)!));
         f.Session.Undo();
         Assert.NotNull(f.Model.Get(t));
         Assert.Equal([pad], Terrains.Pads(f.Model, t).Select(x => x.Id));

@@ -161,8 +161,18 @@ public static class SiteCommands
                 ArcOutline.Write(na, br, Terrains.BoundaryArcs);
                 return na;
             }
+            var keptAttrs = Half(lc, lr);
             var otherAttrs = Half(rc, rr);
-            ctx.Replace(t.With(attrs: Half(lc, lr)));
+            // What is placed on the terrain (spot levels, slope tags, subregions) goes to the half it lies in.
+            bool InOther(JsonNode? item) => PlacedAt(item) is { } at && !Polygon2.Contains(lc, at) && Polygon2.Contains(rc, at);
+            foreach (var key in PlacedKeys)
+            {
+                if (t.Attrs[key] is not JsonArray all) continue;
+                JsonArray Of(bool other) => new([.. all.Where(x => InOther(x) == other).Select(x => x?.DeepClone())]);
+                foreach (var (target, other) in new[] { (keptAttrs, false), (otherAttrs, true) })
+                    if (Of(other) is { Count: > 0 } mine) target[key] = mine; else target.Remove(key);
+            }
+            ctx.Replace(t.With(attrs: keptAttrs));
             var second = PathEdits.AddLike(ctx, t, otherAttrs);
             ctx.Replace(second.With(name: $"{t.Name} 2"));
             // What the terrain relates (what voids it) goes to the half it lies in.
@@ -218,6 +228,12 @@ public static class SiteCommands
             attrs.Remove(Terrains.BoundaryKey); attrs.Remove(Terrains.BoundaryArcs);
             if (breaklines.Count > 0) attrs["breaklines"] = breaklines; else attrs.Remove("breaklines");
             if (sculpts.Count > 0) attrs["sculpts"] = sculpts; else attrs.Remove("sculpts");
+            // Every one's spot levels, slope tags and subregions.
+            foreach (var key in PlacedKeys)
+            {
+                var all = new JsonArray([.. list.SelectMany(tr => (tr.Attrs[key] as JsonArray)?.Select(x => x?.DeepClone()) ?? [])]);
+                if (all.Count > 0) attrs[key] = all; else attrs.Remove(key);
+            }
             // A snapshot on any of them: the merged one's existing surface is every one's, side by side.
             if (list.Any(tr => tr.Attrs["existingPoints"] is JsonArray { Count: >= 3 })) attrs["existingPoints"] = Terrains.PointsJson(existing);
             else attrs.Remove("existingPoints");
@@ -418,6 +434,19 @@ public static class SiteCommands
 
     static string StoreyId(IModelView m, JsonObject a) =>
         (string?)a["storeyId"] ?? Spatial.Storeys(m).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+
+    /// <summary>The terrain's lists of things placed on it in plan, which a split shares out and a merge gathers.</summary>
+    static readonly string[] PlacedKeys = ["spots", "slopes", "subregions"];
+
+    /// <summary>Where an item of those lists lies: a point [x, y], a grade line's middle [x1, y1, x2, y2], an outline's centroid.</summary>
+    static Vec2? PlacedAt(JsonNode? item)
+    {
+        if (item is JsonObject o) return PointLists.Xy(o["contour"]) is { Count: >= 3 } c ? Polygon2.Centroid(c) : null;
+        if (item is not JsonArray a || a.Count < 2) return null;
+        var v = a.Select(x => Json.Number(x) ?? double.NaN).ToArray();
+        if (!v.All(double.IsFinite)) return null;
+        return v.Length >= 4 ? new Vec2((v[0] + v[2]) / 2, (v[1] + v[3]) / 2) : new Vec2(v[0], v[1]);
+    }
 
     /// <summary>Where an element on a terrain lies in plan, to tell which half of a split it goes to: its outline's centroid, else its path's midpoint.</summary>
     static Vec2? Anchor(Entity e)
