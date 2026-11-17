@@ -280,4 +280,37 @@ public class CivilTests
         var qty2 = Terrains.Quantities(f.Model.Get(t)!, geom2, f.Model).First();
         Assert.Equal(0, qty2.Quantities.First(i => i.Name == "FillVolume").Value, 2);
     }
+
+    [Fact]
+    public void Vertical_point_editing_and_subregions_and_sloped_pads_work()
+    {
+        var f = F();
+        var t = Slope(f);
+        var beforeZ = Terrains.Of(f.Model.Get(t)!).ElevationAt(0, 0)!.Value;
+
+        // T3: move point 0 up by 2 m in one undo step, then undo it.
+        f.Run("civil.moveTerrainPoint", new JsonObject { ["id"] = t, ["index"] = 0, ["dz"] = 2.0 });
+        Assert.Equal(beforeZ + 2.0, Terrains.Of(f.Model.Get(t)!).ElevationAt(0, 0)!.Value, 6);
+        f.Session.Undo();
+        Assert.Equal(beforeZ, Terrains.Of(f.Model.Get(t)!).ElevationAt(0, 0)!.Value, 6);
+
+        // T3: add and remove a point.
+        var added = (JsonObject)f.Run("civil.addTerrainPoint", new JsonObject { ["id"] = t, ["x"] = 15, ["y"] = 15, ["z"] = 5.0 })!;
+        Assert.Equal(5.0, Terrains.Of(f.Model.Get(t)!).ElevationAt(15, 15)!.Value, 6);
+        f.Run("civil.removeTerrainPoint", new JsonObject { ["id"] = t, ["index"] = (int)added["index"]! });
+
+        // T4: material subregion adds a GeometryPart and Lapin_SubregionQuantities without changing ground elevation.
+        var srPts = new JsonArray(new JsonArray(5, 5), new JsonArray(15, 5), new JsonArray(15, 15), new JsonArray(5, 15));
+        f.Run("civil.addSubregion", new JsonObject { ["terrainId"] = t, ["points"] = srPts, ["name"] = "Courtyard", ["material"] = "Gravel" });
+        var geom = Terrains.Geometry(f.Model.Get(t)!, f.Model, null)!;
+        Assert.Contains(geom.Parts, p => p.Name == "Courtyard");
+        var qSets = Terrains.Quantities(f.Model.Get(t)!, geom, f.Model).ToList();
+        var srQty = qSets.First(q => q.Name == "Lapin_SubregionQuantities");
+        Assert.Equal(100, srQty.Quantities.First(i => i.Name == "PlanArea").Value, 1);
+
+        // T4: sloped platform accepts cutSlope / fillSlope.
+        var padId = (string)f.Run("civil.addPlatform", new JsonObject { ["terrainId"] = t, ["x1"] = 20, ["y1"] = 20, ["x2"] = 30, ["y2"] = 30, ["elevation"] = 1.0 })!["id"]!;
+        f.Run("civil.updatePlatform", new JsonObject { ["id"] = padId, ["cutSlope"] = 1.5, ["fillSlope"] = 1.5 });
+        Assert.Equal(1.5, f.Model.Get(padId)!.Num("cutSlope"));
+    }
 }

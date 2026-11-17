@@ -125,6 +125,23 @@ public static class Terrains
             .Where(a => (a.Length == 2 || a.Length == 4) && a.All(double.IsFinite))
             .ToList() ?? [];
 
+    /// <summary>A material sub-region on the terrain (T4): changes surface material without modifying elevation.</summary>
+    public sealed record Subregion(string Id, string Name, IReadOnlyList<Vec2> Contour, double[]? Arcs, string Material);
+
+    public static List<Subregion> SubregionsOf(Entity e)
+    {
+        if (e.Attrs["subregions"] is not JsonArray arr) return [];
+        var list = new List<Subregion>();
+        foreach (var item in arr.OfType<JsonObject>())
+        {
+            var pts = PointLists.Xy(item["contour"]);
+            if (pts.Count < 3) continue;
+            var arcs = ArcOutline.Rises(item["arcs"], pts.Count);
+            list.Add(new Subregion((string?)item["id"] ?? $"sr{list.Count + 1}", (string?)item["name"] ?? $"Subregion {list.Count + 1}", pts, arcs, (string?)item["material"] ?? ""));
+        }
+        return list;
+    }
+
     public static IReadOnlyList<Vec2> Spots(Entity e) => Contour(e, "spots");
 
     /// <summary>The height of the breakline a point lies on in plan (within 1 mm), or null.</summary>
@@ -285,8 +302,18 @@ public static class Terrains
                 {
                     try
                     {
-                        var cut = z < top ? Prism.ExtrudeFootprint(outline, holes, z, top - z, "cut") : null;
-                        var fill = z > baseZ ? Prism.ExtrudeFootprint(outline, holes, baseZ, z - baseZ, "fill") : null;
+                        var cutSlope = Math.Max(0, pad.Num("cutSlope"));
+                        var fillSlope = Math.Max(0, pad.Num("fillSlope"));
+                        var cut = z < top
+                            ? (cutSlope > 0 && holes.Count == 0
+                                ? SlopedPrism(outline, z, Polyline2.Offset(outline, -(top - z) * cutSlope, closed: true, maxMitre: 3), top, "cut")
+                                : Prism.ExtrudeFootprint(outline, holes, z, top - z, "cut"))
+                            : null;
+                        var fill = z > baseZ
+                            ? (fillSlope > 0 && holes.Count == 0
+                                ? SlopedPrism(Polyline2.Offset(outline, -(z - baseZ) * fillSlope, closed: true, maxMitre: 3), baseZ, outline, z, "fill")
+                                : Prism.ExtrudeFootprint(outline, holes, baseZ, z - baseZ, "fill"))
+                            : null;
                         var cutVol = cut != null && booleans.Intersection(body, cut) is { } ci ? Measure.Volume(ci) : 0;
                         var fillVol = 0.0;
                         if (fill != null)
@@ -325,6 +352,8 @@ public static class Terrains
         }
         var material = e.Str("material");
         var parts = new List<GeometryPart> { new("Ground", Materials.ColorOf(m, material) is "#c9ced6" ? Color : Materials.ColorOf(m, material), body, material, "ground") };
+        foreach (var sr in SubregionsOf(e))
+            if (SubregionPart(t, sr, m) is { } part) parts.Add(part);
         if (e.Str("analysis") is { } kind && kind != "none" && Analysis.Of(m, e, kind) is { } analysis) parts.AddRange(Analysis.Overlay(analysis));
         var g = new ElementGeometry(parts, Plan(e, t, pads.Select(p => (p.Outline, p.Z, p.Holes)).ToList(), DitchesOf(m, e.Id).ToList()), null, problems.Count > 0 ? problems : null);
         Works.AddOrUpdate(g, works);
@@ -352,8 +381,55 @@ public static class Terrains
         foreach (var (a, b) in t.Boundary())
             items.Add(new PlanItem("terrainEdge", false, [new Vec2(t.Tin.Points[a].X, t.Tin.Points[a].Y), new Vec2(t.Tin.Points[b].X, t.Tin.Points[b].Y)]));
         foreach (var (outline, _, holes) in pads) { items.Add(new PlanItem("heavy", true, outline)); items.AddRange(holes.Select(h => new PlanItem("heavy", true, h))); }
+        foreach (var sr in SubregionsOf(e)) items.Add(new PlanItem("thin", true, ArcOutline.Points(sr.Contour, sr.Arcs)));
         foreach (var d in ditches) items.AddRange(Ditches.Plan(d));
         return items;
+    }
+
+    static Solid? SlopedPrism(IReadOnlyList<Vec2> bottomRing, double z0, IReadOnlyList<Vec2> topRing, double z1, string tag)
+    {
+        var n = bottomRing.Count;
+        if (n < 3 || topRing.Count != n || z1 <= z0 + 1e-9) return null;
+        var verts = new List<Vec3>(n * 2);
+        foreach (var p in bottomRing) verts.Add(new Vec3(p.X, p.Y, z0));
+        foreach (var p in topRing) verts.Add(new Vec3(p.X, p.Y, z1));
+        var botIds = Enumerable.Range(0, n).ToArray();
+        var topIds = Enumerable.Range(n, n).ToArray();
+        var tris = new List<(int, int, int)>();
+        tris.AddRange(Triangulator.Face(verts, botIds, null, new Vec3(0, 0, -1)));
+        tris.AddRange(Triangulator.Face(verts, topIds, null, new Vec3(0, 0, 1)));
+        for (var i = 0; i < n; i++)
+        {
+            var j = (i + 1) % n;
+            tris.Add((i, j, n + j));
+            tris.Add((i, n + j, n + i));
+        }
+        return SolidFromMesh.Build(verts, tris, tag);
+    }
+
+    static GeometryPart? SubregionPart(Terrain t, Subregion sr, IModelView m)
+    {
+        var poly = ArcOutline.Points(sr.Contour, sr.Arcs);
+        if (poly.Count < 3 || t.Tin.Triangles.Count == 0) return null;
+        var pts = new List<Vec3>(t.Tin.Points);
+        var segs = new List<(int, int)>();
+        // Preserve interior TIN edges that already exist, and constrain the sub-region's boundary.
+        var subTin = ClipToBoundary(pts, segs, t.Tin, poly);
+        if (subTin.Triangles.Count == 0) return null;
+        var n = subTin.Points.Count;
+        var verts = new List<Vec3>(n * 2);
+        foreach (var p in subTin.Points) verts.Add(new Vec3(p.X, p.Y, p.Z + 0.015));
+        foreach (var p in subTin.Points) verts.Add(new Vec3(p.X, p.Y, p.Z - 0.005));
+        var tris = new List<(int, int, int)>(subTin.Triangles.Count * 2 + n * 2);
+        tris.AddRange(subTin.Triangles);
+        foreach (var (a, b, c) in subTin.Triangles) tris.Add((n + a, n + c, n + b));
+        foreach (var (a, b) in new Terrain(subTin).Boundary())
+        {
+            tris.Add((a, n + a, b));
+            tris.Add((b, n + a, n + b));
+        }
+        if (SolidFromMesh.Build(verts, tris, "subregion") is not { } skin) return null;
+        return new GeometryPart(sr.Name, Materials.ColorOf(m, sr.Material), skin, sr.Material, "subregion:" + sr.Id);
     }
 
     /// <summary>Segments joined end to end into polylines (a contour's pieces, one per triangle, into its lines).</summary>
@@ -452,5 +528,13 @@ public static class Terrains
                 new("CutVolume", w.Cut, "VOLUME", "Cut"),
                 new("FillVolume", w.Fill, "VOLUME", "Fill"),
             ], "pad:" + w.Pad, m.Get(w.Pad)?.Name ?? "Earthwork");
+        foreach (var sr in SubregionsOf(e))
+        {
+            var area = Math.Abs(ArcOutline.SignedArea(sr.Contour, sr.Arcs));
+            yield return new QuantitySet("Lapin_SubregionQuantities",
+            [
+                new("PlanArea", area, "AREA", "Plan area"),
+            ], "subregion:" + sr.Id, sr.Name, sr.Material);
+        }
     }
 }

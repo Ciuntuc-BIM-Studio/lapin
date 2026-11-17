@@ -214,6 +214,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             // Its own holes (audit S4): given, or kept and checked against the outline as it now is.
             if (a[OutlineHoles.Key] != null || a["points"] != null || a["x1"] != null) OutlineHoles.Apply(attrs, a);
             if (Json.Number(a["elevation"]) is { } z) attrs["elevation"] = z;
+            foreach (var k in new[] { "cutSlope", "fillSlope" })
+                if (Json.Number(a[k]) is { } s) { if (s <= 0) attrs.Remove(k); else attrs[k] = s; }
             ctx.Replace(pad.With(attrs: attrs));
             return null;
         });

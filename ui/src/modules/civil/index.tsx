@@ -8,9 +8,9 @@
 import { create } from 'zustand';
 import { activate } from '../../platform/modules';
 import { promptText } from '../../shell/prompts';
-import { BrickWall, Crop, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
+import { BrickWall, Crop, Layers, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
-import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
+import type { Grip, Grip3D, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { curvedOutlineGrips, holeGrips, outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
 import { arcsOf, edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
@@ -21,7 +21,7 @@ import { formatLength, levelUnit, parseLevel, unitName } from '../../engine/unit
 import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './survey';
 import { TerrainSection } from './TerrainSection';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
-import { isDitch, setBrush, useBrush, type BrushKind } from './prefs';
+import { isDitch, setBrush, useBrush, useTerrainEdit, type BrushKind } from './prefs';
 import { EntourageSection, entourage, entourageRow, useEntouragePrefs } from './entourage';
 import { lazyPart } from '../../platform/lazyPart';
 
@@ -195,6 +195,18 @@ const slopeTag: ToolDef = {
   },
 };
 
+/** A material sub-region on the terrain without modifying elevation (T4). */
+const subregion: ToolDef = {
+  id: 'civil.subregion', label: 'Subregion', icon: Layers,
+  gesture: { kind: 'polygon', shapes: true },
+  options: PlainShapeBar,
+  space: toggleOutlineArcs,
+  complete: async ({ points, arcs }, ctx) => {
+    if (points.length < 3) return;
+    await ctx.execute('civil.addSubregion', { points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}) });
+  },
+};
+
 /** Every terrain of the project as one LandXML file. */
 const landXmlOut: ToolDef = { id: 'civil.landxmlExport', label: 'Export LandXML', icon: FileDown, run: () => void downloadLandXml().catch((e) => notify(e instanceof Error ? e.message : String(e))) };
 
@@ -355,7 +367,7 @@ const civil: LapinModule = {
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainBoundary, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
-      { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
+      { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, subregion, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
       { label: 'Entourage', tools: [entourage], small: [entourageRow, entourageKinds] },
     ],
@@ -377,6 +389,25 @@ const civil: LapinModule = {
     IfcPavement: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updatePath', args: { id: n.id, points: toPairs(pts) } })),
     LapinRetainingWall: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateRetainingWall', args: { id: n.id, points: toPairs(pts) } })),
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? outlineGrips({ pts }, (o) => ({ command: 'civil.updatePlanting', args: { id: n.id, points: toPairs(o.pts) } })) : []; },
+  },
+  grips3d: {
+    IfcGeographicElement: (n: NodeDto): Grip3D[] => {
+      if (!useTerrainEdit.getState().editPoints || !Array.isArray(n.props.points)) return [];
+      const datum = typeof n.props.datum === 'number' ? n.props.datum : 0;
+      return (n.props.points as unknown[]).flatMap((pt, i) => {
+        if (!Array.isArray(pt) || pt.length < 3) return [];
+        const [x, y, z] = pt as [number, number, number];
+        if (![x, y, z].every(Number.isFinite)) return [];
+        return [{
+          key: `pt${i}`,
+          kind: 'height' as const,
+          at: { x, y, z: z - datum },
+          dir: { x: 0, y: 0, z: 1 },
+          title: `Point ${i + 1}`,
+          step: (by: number) => ({ command: 'civil.moveTerrainPoint', args: { id: n.id, index: i, dz: by } }),
+        }];
+      });
+    },
   },
   references: {
     IfcEarthworksCut: (n: NodeDto) => { if (isDitch(n)) return pathRefs(n); const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts, arcsOf(n.props.arcs, pts.length))] : []; },

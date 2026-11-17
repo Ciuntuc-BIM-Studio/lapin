@@ -6,6 +6,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { SURVEY, downloadLandXml, pickText } from './survey';
 import { notify } from '../../app/store';
+import { useTerrainEdit } from './prefs';
 
 interface Legend { kind: string; area: number; bands: { key: string; label: string; color: string; area: number }[] }
 
@@ -17,11 +18,14 @@ export function TerrainSection({ node }: { node: NodeDto }) {
   const strokes = Array.isArray(node.props.sculpts) ? node.props.sculpts.length : 0;
   const spots = Array.isArray(node.props.spots) ? node.props.spots.length : 0;
   const slopes = Array.isArray(node.props.slopes) ? node.props.slopes.length : 0;
+  const subregions = Array.isArray(node.props.subregions) ? node.props.subregions.length : 0;
   const parcel = Array.isArray(node.props.parcel);
   const boundary = Array.isArray(node.props.boundary);
   const hasSnapshot = Array.isArray(node.props.existingPoints);
   const cutFillGrid = typeof node.props.cutFillGrid === 'number' ? node.props.cutFillGrid : 0;
   const analysis = typeof node.props.analysis === 'string' ? node.props.analysis : 'none';
+  const editPoints = useTerrainEdit((s) => s.editPoints);
+  const setEditPoints = useTerrainEdit((s) => s.setEditPoints);
   const relations = useSession((s) => s.relations);
   const nodes = useSession((s) => s.nodes);
   const pads = [...relations.values()].filter((r) => r.class === 'IfcRelVoidsElement' && r.relating === node.id).reduce((n, r) => n + r.related.length, 0);
@@ -35,7 +39,8 @@ export function TerrainSection({ node }: { node: NodeDto }) {
   return (
     <div className="layers">
       <dl className="fields">
-        <dt>Points</dt><dd>{count}</dd>
+        <dt>Points</dt>
+        <dd>{count} <button type="button" className="link small" onClick={() => setEditPoints(!editPoints)}>{editPoints ? 'done editing 3D' : 'edit in 3D'}</button></dd>
         <dt>Platforms, ditches, paths</dt><dd>{pads}</dd>
         <dt>Brush strokes</dt>
         <dd>{strokes}{strokes > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.clearSculpt', { id: node.id, last: true })}>undo last</button> · <button type="button" className="link small" onClick={() => void execute('civil.clearSculpt', { id: node.id })}>clear</button></>}</dd>
@@ -43,6 +48,8 @@ export function TerrainSection({ node }: { node: NodeDto }) {
         <dd>{spots}{spots > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.removeSpot', { id: node.id, all: true })}>clear</button></>}</dd>
         <dt>Slope tags</dt>
         <dd>{slopes}{slopes > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.removeSlope', { id: node.id, all: true })}>clear</button></>}</dd>
+        <dt>Subregions</dt>
+        <dd>{subregions}{subregions > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.removeSubregion', { id: node.id, all: true })}>clear</button></>}</dd>
         <dt>Boundary</dt>
         <dd>
           {boundary ? <>clipped <button type="button" className="link small" onClick={() => void execute('civil.setBoundary', { id: node.id })}>remove</button></>

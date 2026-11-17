@@ -46,9 +46,14 @@ export function EarthworkSection({ node }: { node: NodeDto }) {
       </dl>
     );
   }
+  const cutSlope = typeof node.props.cutSlope === 'number' ? node.props.cutSlope : 0;
+  const fillSlope = typeof node.props.fillSlope === 'number' ? node.props.fillSlope : 0;
+  const set = (args: Record<string, unknown>) => void execute('civil.updatePlatform', { id: node.id, ...args });
   return (
     <dl className="fields">
-      <dt>Elevation</dt><dd><Mm value={node.props.elevation} onCommit={(v) => void execute('civil.updatePlatform', { id: node.id, elevation: v })} /></dd>
+      <dt>Elevation</dt><dd><Mm value={node.props.elevation} onCommit={(v) => set({ elevation: v })} /></dd>
+      <dt>Cut slope</dt><dd>1 : <NumberField value={cutSlope} min={0} max={10} onCommit={(v) => { if (v != null) set({ cutSlope: v }); }} /></dd>
+      <dt>Fill slope</dt><dd>1 : <NumberField value={fillSlope} min={0} max={10} onCommit={(v) => { if (v != null) set({ fillSlope: v }); }} /></dd>
     </dl>
   );
 }

@@ -262,6 +262,114 @@ public static class SiteCommands
             return null;
         });
 
+        // T3: Move a single terrain survey point (vertical dz or exact model elevation z, optionally x/y) in one undo step.
+        r.Command("moveTerrainPoint", "Move terrain point", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var pts = Terrains.Points(t);
+            var idx = Json.Number(a["index"]) is { } ni ? (int)ni : -1;
+            if (idx < 0 || idx >= pts.Count) throw new CommandException("There is no such terrain point.");
+            var datum = t.Num("datum");
+            var p = pts[idx];
+            var x = Json.Number(a["x"]) ?? p.X;
+            var y = Json.Number(a["y"]) ?? p.Y;
+            var z = Json.Number(a["z"]) is { } exact ? exact + datum : p.Z + (Json.Number(a["dz"]) ?? 0);
+            pts[idx] = new Vec3(x, y, z);
+            var attrs = t.CloneAttrs();
+            attrs["points"] = Terrains.PointsJson(pts);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["index"] = idx, ["elevation"] = Math.Round(z - datum, 4) };
+        });
+
+        // T3: Batch-set or shift multiple terrain points' elevations in one undo step.
+        r.Command("setTerrainPoints", "Set terrain points", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var pts = Terrains.Points(t);
+            var indices = (a["indices"] as JsonArray)?.Select(x => Json.Number(x) is { } n ? (int)n : -1).Where(i => i >= 0 && i < pts.Count).Distinct().ToList() ?? [];
+            if (indices.Count == 0) throw new CommandException("No terrain points selected.");
+            var datum = t.Num("datum");
+            var exact = Json.Number(a["z"]);
+            var dz = Json.Number(a["dz"]) ?? 0;
+            foreach (var i in indices)
+            {
+                var p = pts[i];
+                pts[i] = p with { Z = exact is { } z ? z + datum : p.Z + dz };
+            }
+            var attrs = t.CloneAttrs();
+            attrs["points"] = Terrains.PointsJson(pts);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["count"] = indices.Count };
+        });
+
+        // T3: Add a survey point to an existing terrain (samples ground if z omitted).
+        r.Command("addTerrainPoint", "Add terrain point", (ctx, a) =>
+        {
+            var xy = Args.Point(a, "x", "y");
+            var t = TerrainAt(ctx.Model, a, xy);
+            var pts = Terrains.Points(t);
+            var datum = t.Num("datum");
+            var z = Json.Number(a["z"]) is { } exact ? exact + datum : (Terrains.Of(t).ElevationAt(xy.X, xy.Y) ?? 0) + datum;
+            pts.Add(new Vec3(xy.X, xy.Y, z));
+            var attrs = t.CloneAttrs();
+            attrs["points"] = Terrains.PointsJson(pts);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["index"] = pts.Count - 1, ["points"] = pts.Count };
+        });
+
+        // T3: Remove a survey point from a terrain.
+        r.Command("removeTerrainPoint", "Remove terrain point", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var pts = Terrains.Points(t);
+            var idx = Json.Number(a["index"]) is { } ni ? (int)ni : -1;
+            if (idx < 0 || idx >= pts.Count) throw new CommandException("There is no such terrain point.");
+            pts.RemoveAt(idx);
+            if (!Tin.Spans(pts)) throw new CommandException("The terrain needs at least three points that are not in a line.");
+            var attrs = t.CloneAttrs();
+            attrs["points"] = Terrains.PointsJson(pts);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["points"] = pts.Count };
+        });
+
+        // T4: A material sub-region on the terrain (changes surface material without modifying elevation).
+        r.Command("addSubregion", "Terrain subregion", (ctx, a) =>
+        {
+            var pts = Args.Points(a);
+            if (pts.Count < 3) throw new CommandException("A subregion needs three corners at least.");
+            var t = TerrainAt(ctx.Model, a, pts[0]);
+            var (outline, arcs) = Terrains.OutlineArg(a, null, "A subregion");
+            var list = (t.Attrs["subregions"] as JsonArray)?.Select(x => x!.DeepClone()).ToList() ?? [];
+            var id = ctx.NewId();
+            var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Subregion {list.Count + 1}";
+            var mat = Materials.Ensure(ctx, (string?)a["material"] ?? "Gravel", "#9e9b8f");
+            var obj = new JsonObject
+            {
+                ["id"] = id, ["name"] = name,
+                ["contour"] = Terrains.ContourJson(outline),
+                ["material"] = mat.Id,
+            };
+            if (arcs != null) obj["arcs"] = new JsonArray([.. arcs.Select(r0 => (JsonNode)Math.Round(r0, 9))]);
+            list.Add(obj);
+            var attrs = t.CloneAttrs();
+            attrs["subregions"] = new JsonArray([.. list]);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["id"] = id, ["terrainId"] = t.Id };
+        });
+
+        r.Command("removeSubregion", "Remove subregion", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var list = (t.Attrs["subregions"] as JsonArray)?.OfType<JsonObject>().Select(x => x.DeepClone().AsObject()).ToList() ?? [];
+            if (a["all"] is JsonValue av && av.TryGetValue<bool>(out var all) && all) list.Clear();
+            else if ((string?)a["subregionId"] is { } sid) list.RemoveAll(x => (string?)x["id"] == sid);
+            else if (Json.Number(a["index"]) is { } idx && idx >= 0 && idx < list.Count) list.RemoveAt((int)idx);
+            var attrs = t.CloneAttrs();
+            if (list.Count > 0) attrs["subregions"] = new JsonArray([.. list.Cast<JsonNode>()]); else attrs.Remove("subregions");
+            ctx.Replace(t.With(attrs: attrs));
+            return null;
+        });
+
         // What the colours mean, and how much ground each band covers.
         r.Query("analysis", (q, a) =>
         {
