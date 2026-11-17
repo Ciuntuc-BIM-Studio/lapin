@@ -76,6 +76,18 @@ export function useTagTypes(): TagTypeDto[] {
   return types;
 }
 
+/** The door and window markers' tag types (shaped "opening"), for a marker's own choice in its properties (issue #72). */
+function useMarkerTypes(): TagTypeDto[] {
+  const nodes = useSession((s) => s.nodes);
+  const [types, setTypes] = useState<TagTypeDto[]>([]);
+  useEffect(() => {
+    let live = true;
+    void query<{ tagTypes?: TagTypeDto[] }>('standards.get').then((b) => { if (live) setTypes((b?.tagTypes ?? []).filter((t) => t.shape === 'opening')); });
+    return () => { live = false; };
+  }, [nodes]);
+  return types;
+}
+
 /** A tag type of the standards by its id. */
 async function tagTypeById(id: string): Promise<TagTypeDto | undefined> {
   const b = await query<{ tagTypes?: TagTypeDto[] }>('standards.get');
@@ -461,9 +473,25 @@ export function TagFields({ node }: { node: NodeDto }) {
   const type = types.find((t) => t.id === tagType);
   const typeShape = leaderShapeOf(type);
   const shape = tagLeaderShape(node.props, type);
+  const markerTypes = useMarkerTypes();
+  // Its type chosen here (issue #72): the standards' tag rules leave it so until it is given back to them.
+  const fixed = node.props.typeFixed === true;
+  const byRules = fixed && <button type="button" className="btn mini" data-tag-by-rules title="The tag rules of the drafting standards choose its type again (the first that holds, else this one)" onClick={() => set({ byRules: true })}>By the rules</button>;
   return (
     <dl className="fields" data-tag-fields>
       <dt>Tagged element</dt><dd><span className="num">{target ? `${target.name} (${target.type})` : '—'}</span></dd>
+      <dt title="Off: printed nowhere (sheets, PDF, exports), drawn faintly on screen only, so it can be switched on again">Shown</dt>
+      <dd><input type="checkbox" checked={node.props.off !== true} data-tag-shown onChange={(e) => set({ shown: e.target.checked })} /></dd>
+      {marker && <>
+        <dt title="A marker type of the drafting standards (Manage → Drafting standards → Tags); chosen here, the tag rules leave it so">Tag type</dt>
+        <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <select className="cell" value={tagType} data-tag-marker-type onChange={(e) => set({ tagType: e.target.value })}>
+            {!markerTypes.some((t) => t.id === tagType) && <option value={tagType} data-no-i18n>{tagType}</option>}
+            {markerTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+          {byRules}
+        </dd>
+      </>}
       {!marker && <>
         <dt title="A field of the element, a parameter of its own or of its type, a standard property (filled or not: the tag follows when it is)">Shows</dt>
         <dd><select className="cell" value={template || tagType ? '' : field} data-tag-shows onChange={(e) => {
@@ -485,10 +513,10 @@ export function TagFields({ node }: { node: NodeDto }) {
         <dt title="Its own text: {fields} read from the element, | starts a new line (empty: what Shows or its type says)">Text</dt>
         <dd><Cell value={template} placeholder="{mark}|{FireRating}" onCommit={(t) => set({ template: t })} testId="tag-template" /></dd>
         <dt title="A tag type of the drafting standards (Manage → Drafting standards → Tags): its template and text style">Tag type</dt>
-        <dd><select className="cell" value={tagType} onChange={(e) => set({ tagType: e.target.value || null })}>
+        <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}><select className="cell" value={tagType} onChange={(e) => set({ tagType: e.target.value || null })}>
           <option value="">—</option>
           {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-        </select></dd>
+        </select>{byRules}</dd>
         <dt title="A line from the tag to the element; drag its grips to bend it or point it elsewhere">Leader</dt>
         <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <input type="checkbox" checked={leader} data-tag-leader-on onChange={(e) => set({ leader: e.target.checked })} />

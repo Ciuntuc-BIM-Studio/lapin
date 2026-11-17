@@ -25,9 +25,11 @@ import { BuildupEditor } from './BuildupEditor';
 import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 import { EXT_SUPPRESS, EXT_SUPPRESS_LABELS } from './dimensionLines';
+import { TagRulesEditor } from './TagRulesEditor';
+import type { TagRuleDto } from './tagRules';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[] };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[]; lineType?: boolean; labels?: Record<string, string> };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -285,12 +287,13 @@ export function StandardsDialog() {
                   {tab.id === 'tag' && <td>{e.shape === 'buildup'
                     ? <button type="button" className={`btn mini${editing === e.id ? ' on' : ''}`} data-field="tag-shape-buildup" title="Its header, line per layer, footer, order, leaders and width, with a preview" onClick={() => setEditing(editing === e.id ? null : e.id)}>Build-up…</button>
                     : <><button type="button" className="btn mini" data-field="tag-leader" title="Its leader: straight from a box, or an elbow under the text, with a preview" onClick={() => setEditing(e.id)}>Leader…</button>
-                      {e.shape !== 'opening' && (
-                        <span title="A symbol of your own drawn instead of the text: its texts' {fields} read the element, as the template's do (Manage → Symbols… to draw one)">
-                          <SymbolPicker field={`tag-symbol-${e.id}`} value={typeof e.symbol === 'string' ? e.symbol : null} list={symbols} category="annotation" noneLabel="Text only"
-                            onChange={(id) => set({ id: e.id, symbol: id })} />
-                        </span>
-                      )}
+                      {/* A door's or window's marker too (issue #72): the symbol at its line's exterior end, instead of its outer text. */}
+                      <span title={e.shape === 'opening'
+                        ? "A symbol of your own drawn at the marker's exterior end instead of its outer text: its texts' {fields} read the door or window ({mark}, {width}, {height}, {sill}), as the template's do (Manage → Symbols… to draw one)"
+                        : "A symbol of your own drawn instead of the text: its texts' {fields} read the element, as the template's do (Manage → Symbols… to draw one)"}>
+                        <SymbolPicker field={`tag-symbol-${e.id}`} value={typeof e.symbol === 'string' ? e.symbol : null} list={symbols} category="annotation" noneLabel="Text only"
+                          onChange={(id) => set({ id: e.id, symbol: id })} />
+                      </span>
                       {systems.length > 0 && (
                         <select className="mini" value="" data-field="tag-class-field" title="Add a classification field to the text: {classification.code}, {classification.title}, or a system's own code"
                           onChange={(ev) => { if (ev.target.value) set({ id: e.id, template: `${String(e.template ?? '')}${e.template ? ' ' : ''}{${ev.target.value}}` }); }}>
@@ -322,6 +325,8 @@ export function StandardsDialog() {
               </>
             )}
           </div>
+          {/* The tag rules (issue #72): per class, a condition and the tag type it gives, the first that holds winning. */}
+          {tab.id === 'tag' && <TagRulesEditor rules={book.tagRules ?? []} types={rows} />}
           </>}
           {!pack && !lines && <StandardsFirmFolders onRead={setPack} />}
           {error && <p className="error-text" role="alert">{error}</p>}

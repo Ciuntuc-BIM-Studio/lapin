@@ -246,6 +246,18 @@ A tag type, or the room stamp, can be a drawing of your own instead of a text. D
 
 ![A room stamp drawn by a symbol of one's own: K1.1 | Living / 24.5 m² | Oak](shots/room-tag-symbol.webp)
 
+A door's or window's marker (**Annotate → Door & window tags**) can be drawn by a symbol too: choose it beside the marker's type (**Door marker**, **Window marker**). The marker keeps its line across the wall and its inner text (width/height, the sill), and the symbol stands beyond the line's exterior end instead of the outer text, turned as the texts lie (along the wall, or along the line). Its texts read the door or window: `{mark}`, `{width}`, `{height}` and `{sill}` as the marker writes them (in the type's unit), any parameter, formulas. In the plan the symbol has the outer text's grips: drag it to move it, turn it by its grip; Ctrl/⌘-click puts it back. Without a symbol the marker is drawn as before.
+
+![Door markers drawn by a symbol of one's own, and a fire door given its own marker by a tag rule](shots/tag-marker-symbol.webp)
+
+#### Tag rules
+
+Under the tag types, **Tag rules** chooses a tag's type by what its element is. A rule has a **Class** (IfcDoor, IfcWindow, IfcSpace…), a **Condition** and the **Tag type** it gives. The condition is a formula over the element's fields, as `{= …}` reads them, written bare or in braces: `width > 1.2` (a door's or window's `width`, `height` and `sill` in metres), `FireRating != ""`, `IsExternal`, `storey.code == "P"`. It holds when it is true (a number other than 0, a text not empty). For each class the rules are tried in their order and the first that holds wins; the arrows move a rule up or down among its class's, the bin removes it, **New rule** adds one. A rule that holds gives its type to every tag of the element's class over the one the tag was made with, door and window markers and room stamps included, on every drawing, so a door made wider takes the wide door's marker. With no rule, or none that holds, each tag keeps its own type. A tag type removed takes its rules with it. The rules travel with the standards (**Export standards…**, a `.lapinstandards` file, where each rule is an entry of the import preview) and in the project.
+
+![The tag rules under the tag types](shots/tag-rules.webp)
+
+A tag can still have its own type: choose a **Tag type** in its properties (a marker's among the marker types) and the rules leave it so; **By the rules** gives it back to them. Untick **Shown** to switch one tag off: it prints nowhere (sheets, PDF, DXF) and stays on screen as a faint outline, so you can select it and switch it on again.
+
 #### Build-up tag
 
 A build-up tag writes an element's layers as an architectural note: a header (*EXTERIOR*), a line for each layer, a footer (*INTERIOR*). A new project has **Build-up (exterior → interior)**: each line is the material's description (its name when it has none), its λ when it has one, and the layer's thickness in mm. Choose it in the **Tag** tool's bar and click a wall, a floor, a roof or a room's finish; other elements get the field instead. The text is read from the model each time it is drawn: change a layer, a material's description or its λ, and the tag follows.

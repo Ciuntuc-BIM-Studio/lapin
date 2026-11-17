@@ -494,6 +494,8 @@ public static class DraftingResources
                 if ((string?)a["kind"] == "dim" && entry["openingHeight"] == null) entry["openingHeight"] = Standards.DimOf(Book(ctx.Model), Standards.Standard).OpeningHeight;
                 list.Add((JsonNode)entry);
             }
+            // A tag rule (issue #72): its condition a formula that reads, its type one of the standards'.
+            if ((string?)a["kind"] == "tagRule" && list.OfType<JsonObject>().FirstOrDefault(x => (string?)x["id"] == id) is { } rule) TagRules.Check(rule, Book(ctx.Model));
             raw[key] = list;
             if ((string?)a["kind"] == "axis" && a["default"] is JsonValue dv && dv.TryGetValue<bool>(out var isDefault) && isDefault) raw["defaultAxisStyle"] = id;
             Write(ctx, raw);
@@ -506,7 +508,7 @@ public static class DraftingResources
             var kind = (string?)a["kind"];
             var key = ListKey(kind);
             var id = (string?)a["id"] ?? "";
-            if (id == Standards.Standard && kind != "tag" && kind != "layerGroup" || kind == "layer" && id == "0") throw new CommandException("The standard entry stays.");
+            if (id == Standards.Standard && kind is not ("tag" or "layerGroup" or "tagRule") || kind == "layer" && id == "0") throw new CommandException("The standard entry stays.");
             var raw = Standards.ToJson(Book(ctx.Model));
             raw[key] = new JsonArray(((raw[key] as JsonArray) ?? []).Where(x => (string?)x?["id"] != id).Select(x => x?.DeepClone()).ToArray());
             void Repoint(string listKey, string field)
@@ -516,6 +518,27 @@ public static class DraftingResources
             if (kind == "text") { Repoint("dimStyles", "textStyle"); Repoint("axisStyles", "textStyle"); }
             if (kind == "layerGroup") Repoint("layers", "group");
             if (kind == "axis" && (string?)raw["defaultAxisStyle"] == id) raw["defaultAxisStyle"] = Standards.Standard;
+            // A tag type gone takes its rules with it (issue #72).
+            if (kind == "tag" && raw["tagRules"] is JsonArray rules)
+                raw["tagRules"] = new JsonArray(rules.Where(x => (string?)x?["tagType"] != id).Select(x => x?.DeepClone()).ToArray());
+            Write(ctx, raw);
+            return null;
+        });
+
+        // An entry moved to another place in its list (index from 0, clamped): the tag rules' order is the order they are tried in (issue #72).
+        r.Command("standards.move", "Change drafting standards", (ctx, a) =>
+        {
+            var key = ListKey((string?)a["kind"]);
+            var id = (string?)a["id"] ?? "";
+            if (Lapin.Model.Json.Number(a["index"]) is not { } to || !double.IsFinite(to)) throw new CommandException("Where to? An index in the list, from 0.");
+            var raw = Standards.ToJson(Book(ctx.Model));
+            var list = (raw[key] as JsonArray ?? []).Select(x => x?.DeepClone()).ToList();
+            var from = list.FindIndex(x => (string?)x?["id"] == id);
+            if (from < 0) throw new CommandException("There is no such entry.");
+            var item = list[from];
+            list.RemoveAt(from);
+            list.Insert(Math.Clamp((int)Math.Round(to), 0, list.Count), item);
+            raw[key] = new JsonArray([.. list]);
             Write(ctx, raw);
             return null;
         });
@@ -600,8 +623,8 @@ public static class DraftingResources
 
     static string ListKey(string? kind) => kind switch
     {
-        "text" => "textStyles", "dim" => "dimStyles", "axis" => "axisStyles", "tag" => "tagTypes", "layer" => "layers", "layerGroup" => "layerGroups",
-        _ => throw new CommandException("A standard is a text, dim, axis, tag, layer or layerGroup."),
+        "text" => "textStyles", "dim" => "dimStyles", "axis" => "axisStyles", "tag" => "tagTypes", "layer" => "layers", "layerGroup" => "layerGroups", "tagRule" => "tagRules",
+        _ => throw new CommandException("A standard is a text, dim, axis, tag, tagRule, layer or layerGroup."),
     };
 
     static void Write(ICommandContext ctx, JsonObject raw)

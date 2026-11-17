@@ -246,6 +246,18 @@ Un tip de etichetă, sau eticheta încăperilor, poate fi un desen al tău în l
 
 ![Eticheta unei încăperi desenată ca simbol propriu: K1.1 | Living / 24.5 m² | Oak](shots/room-tag-symbol.webp)
 
+Și marcajul unei uși sau al unei ferestre (**Adnotare → Etichete uși și ferestre**) poate fi desenat ca simbol: alege-l lângă tipul marcajului (**Door marker**, **Window marker**). Marcajul își păstrează linia peste perete și textul interior (lățime/înălțime, parapetul), iar simbolul stă dincolo de capătul exterior al liniei în locul textului exterior, rotit cum stau textele (de-a lungul peretelui sau de-a lungul liniei). Textele lui citesc ușa sau fereastra: `{mark}`, `{width}`, `{height}` și `{sill}` cum le scrie marcajul (în unitatea tipului), orice parametru, formule. În plan, simbolul are mânerele textului exterior: trage-l ca să-l muți, rotește-l din mânerul lui; Ctrl/⌘-clic îl pune la loc. Fără simbol, marcajul se desenează ca înainte.
+
+![Marcaje de uși desenate ca simbol propriu și o ușă rezistentă la foc cu marcajul ei, dat de o regulă de etichetare](shots/tag-marker-symbol.webp)
+
+#### Reguli de etichetare
+
+Sub tipurile de etichete, **Reguli de etichetare** alege tipul unei etichete după ce este elementul ei. O regulă are o **Clasă** (IfcDoor, IfcWindow, IfcSpace…), o **Condiție** și **Tipul de etichetă** pe care îl dă. Condiția e o formulă peste câmpurile elementului, cum le citește `{= …}`, scrisă simplu sau între acolade: `width > 1.2` (la uși și ferestre `width`, `height` și `sill` în metri), `FireRating != ""`, `IsExternal`, `storey.code == "P"`. Este îndeplinită când e adevărată (un număr diferit de 0, un text nevid). Pentru fiecare clasă regulile se încearcă în ordinea lor și prima îndeplinită câștigă; săgețile mută o regulă în sus sau în jos printre cele ale clasei ei, coșul o șterge, **Regulă nouă** adaugă una. O regulă îndeplinită își dă tipul fiecărei etichete din clasa elementului, peste cel cu care a fost făcută eticheta — inclusiv marcajele ușilor și ferestrelor și etichetele încăperilor —, la fiecare desenare, așa că o ușă lărgită ia marcajul ușii late. Fără reguli, sau fără una îndeplinită, fiecare etichetă își păstrează tipul. Un tip de etichetă șters își ia regulile cu el. Regulile merg cu standardele (**Exportă standardele…**, un fișier `.lapinstandards`, în care fiecare regulă e o intrare a previzualizării importului) și în proiect.
+
+![Regulile de etichetare sub tipurile de etichete](shots/tag-rules.webp)
+
+O etichetă poate avea totuși tipul ei: alege un **Tip de etichetă** în proprietățile ei (la un marcaj, printre tipurile de marcaj) și regulile îl lasă așa; **După reguli** îl dă înapoi regulilor. Debifează **Vizibil** ca să oprești o singură etichetă: nu se tipărește nicăieri (planșe, PDF, DXF) și rămâne pe ecran ca un contur estompat, ca s-o poți selecta și porni din nou.
+
 #### Eticheta de stratificație
 
 O etichetă de stratificație scrie straturile unui element ca o notă de arhitectură: un antet (*EXTERIOR*), un rând pentru fiecare strat, un final (*INTERIOR*). Un proiect nou are **Build-up (exterior → interior)**: fiecare rând e descrierea materialului (numele lui, dacă nu are descriere), λ-ul lui dacă îl are și grosimea stratului în mm. Alege-o în bara uneltei **Etichetă** și dă clic pe un perete, o placă, un acoperiș sau finisajul unei încăperi; celelalte elemente primesc câmpul ales. Textul se citește din model de fiecare dată când se desenează: schimbi un strat, descrierea unui material sau λ-ul lui, iar eticheta urmează.

@@ -182,49 +182,55 @@ public static class Tags
         foreach (var t in c.Model.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "TAG" && x.Str("viewId") == c.View.Id))
         {
             var e = c.Model.Get(t.Str("element") ?? "");
-            var type = Standards.TagTypeOf(c.Book, t.Str("tagType"));
+            // Its type: chosen for it, else the first tag rule of its element's class that holds, else its own (issue #72).
+            var type = TagRules.TypeOf(c.Model, c.Book, t, e);
             if (IsOpeningMarker(type, e, c.Kind)) continue;
-            var p = Dimensions.ParamsOf(t);
-            if (type != null && p["textStyle"] == null) p["textStyle"] = type.TextStyle;
-            var style = Standards.ResolveText(c.Book, p);
-            // Its points where its element has taken them since they were set (report #93).
-            var follow = TagHold.Follow(c.Model, t, e, c.Frame.Right, c.Frame.Up, c.Kind == "plan", c.Geometry);
-            Vec2? Followed(Vec2? p) => p is { } q && follow != null ? follow(q) : p;
-            // A build-up tag (docs/plan-buildup-tags.md): the element's layers as a note, its leaders one or one per layer.
-            if (type is { Shape: "buildup" }) { yield return BuildupTags.Mark(c, t, e, type, style, follow); continue; }
-            var at = Followed(Pt(t.Attrs["at"])) ?? default;
-            var angle = AngleOf(c, t, e);
-            var rad = angle * Math.PI / 180;
-            var lines = LinesOf(c.Model, t, e, type, c.Book.Units);
-            var color = e == null ? "#c0392b" : style.Color ?? "#000000";
-            var leaderOn = t.Attrs["leader"] is not JsonValue lv || !lv.TryGetValue<bool>(out var on) || on;
-            // A tag type drawn by a symbol of the user's (decision 552): the symbol at the tag's point, its texts the element's fields.
-            if (type?.Symbol is { } symbolId && e != null && TagSymbols.Lay(c, symbolId, at, rad, e) is { } laid)
-            {
-                yield return SymbolTag(c, t, e, laid, at, rad, color, leaderOn, Followed(Pt(t.Attrs["end"])) ?? Anchor(c.Drawing, e.Id), Followed(Pt(t.Attrs["elbow"])));
-                continue;
-            }
-            // An elbow (decision 331): the tag's point is its knee, the text beside it on its shoulder, no box.
-            if (TagLeaders.ShapeOf(t, type) == TagLeaders.Elbow)
-            {
-                var to = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Anchor(c.Drawing, e.Id) : null);
-                var (em, head, side) = TagLeaders.Plain(t.Id, lines, style, type, c.Mm, at, to, leaderOn, color, rad);
-                em.Data = ElbowData(at, head, side, leaderOn, e, to);
-                AngleData(em.Data, t, e, c, head, (lines.Count * TagLeaders.Pitch * style.Height * c.Mm + 2 * style.Height * c.Mm) / 2 + 1.5 * style.Height * c.Mm);
-                if (leaderOn && to is { } p0) em.Snaps.Add(p0);
-                em.Snaps.Add(at);
-                yield return em;
-                continue;
-            }
-            // The leader: to the spot it was pointed at, else the middle of what the element draws here; through its elbow.
-            var end = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Anchor(c.Drawing, e.Id) : null);
-            var elbow = Followed(Pt(t.Attrs["elbow"]));
-            var mk = Box(t.Id, lines, style, c.Mm, at, leaderOn ? end : null, elbow, t.Attrs["end"] is JsonArray || elbow != null, color, rad);
-            mk.Data!["of"] = e?.Id;
-            AngleData(mk.Data, t, e, c, at, (lines.Count * 1.5 * style.Height * c.Mm + 0.5 * style.Height * c.Mm) / 2 + 1.5 * style.Height * c.Mm);
-            mk.Data["leader"] = leaderOn;
-            yield return mk;
+            var mark = Mark(c, t, e, type);
+            yield return TagRules.Off(t) ? TagRules.Ghost(mark, c.Mm) : mark;
         }
+    }
+
+    /// <summary>A tag as its type draws it: a build-up, a symbol, an elbow or a box.</summary>
+    static ViewMark Mark(ViewContext c, Entity t, Entity? e, TagType? type)
+    {
+        var p = Dimensions.ParamsOf(t);
+        if (type != null && p["textStyle"] == null) p["textStyle"] = type.TextStyle;
+        var style = Standards.ResolveText(c.Book, p);
+        // Its points where its element has taken them since they were set (report #93).
+        var follow = TagHold.Follow(c.Model, t, e, c.Frame.Right, c.Frame.Up, c.Kind == "plan", c.Geometry);
+        Vec2? Followed(Vec2? p) => p is { } q && follow != null ? follow(q) : p;
+        // A build-up tag (docs/plan-buildup-tags.md): the element's layers as a note, its leaders one or one per layer.
+        if (type is { Shape: "buildup" }) return BuildupTags.Mark(c, t, e, type, style, follow);
+        var at = Followed(Pt(t.Attrs["at"])) ?? default;
+        var angle = AngleOf(c, t, e);
+        var rad = angle * Math.PI / 180;
+        var lines = LinesOf(c.Model, t, e, type, c.Book.Units);
+        var color = e == null ? "#c0392b" : style.Color ?? "#000000";
+        var leaderOn = t.Attrs["leader"] is not JsonValue lv || !lv.TryGetValue<bool>(out var on) || on;
+        // A tag type drawn by a symbol of the user's (decision 552): the symbol at the tag's point, its texts the element's fields.
+        if (type?.Symbol is { } symbolId && e != null && TagSymbols.Lay(c, symbolId, at, rad, e) is { } laid)
+        {
+            return SymbolTag(c, t, e, laid, at, rad, color, leaderOn, Followed(Pt(t.Attrs["end"])) ?? Anchor(c.Drawing, e.Id), Followed(Pt(t.Attrs["elbow"])));
+        }
+        // An elbow (decision 331): the tag's point is its knee, the text beside it on its shoulder, no box.
+        if (TagLeaders.ShapeOf(t, type) == TagLeaders.Elbow)
+        {
+            var to = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Anchor(c.Drawing, e.Id) : null);
+            var (em, head, side) = TagLeaders.Plain(t.Id, lines, style, type, c.Mm, at, to, leaderOn, color, rad);
+            em.Data = ElbowData(at, head, side, leaderOn, e, to);
+            AngleData(em.Data, t, e, c, head, (lines.Count * TagLeaders.Pitch * style.Height * c.Mm + 2 * style.Height * c.Mm) / 2 + 1.5 * style.Height * c.Mm);
+            if (leaderOn && to is { } p0) em.Snaps.Add(p0);
+            em.Snaps.Add(at);
+            return em;
+        }
+        // The leader: to the spot it was pointed at, else the middle of what the element draws here; through its elbow.
+        var end = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Anchor(c.Drawing, e.Id) : null);
+        var elbow = Followed(Pt(t.Attrs["elbow"]));
+        var mk = Box(t.Id, lines, style, c.Mm, at, leaderOn ? end : null, elbow, t.Attrs["end"] is JsonArray || elbow != null, color, rad);
+        mk.Data!["of"] = e?.Id;
+        AngleData(mk.Data, t, e, c, at, (lines.Count * 1.5 * style.Height * c.Mm + 0.5 * style.Height * c.Mm) / 2 + 1.5 * style.Height * c.Mm);
+        mk.Data["leader"] = leaderOn;
+        return mk;
     }
 
     public static void Register(IModuleRegistry r)
@@ -259,7 +265,8 @@ public static class Tags
             return new JsonObject { ["id"] = tag.Id };
         });
 
-        // A tag changed (report #64): its head moved (at: an elbow leader's knee), its leader bent (elbow; null: straight again),
+        // A tag changed (report #64; issue #72: tagType chosen keeps it over the tag rules, byRules gives it back to them, shown false
+        // switches it off): its head moved (at: an elbow leader's knee), its leader bent (elbow; null: straight again),
         // pointed elsewhere (end; null: back on the element's middle), switched on or off (leader), its shape (leaderShape
         // straight or elbow, null: its type's; decision 331); what it shows: a field, a template of its own (""
         // or null: none), a tag type (null: none, the field shows). A door's or window's marker edited part by part (decision
@@ -312,7 +319,7 @@ public static class Tags
                     attrs["field"] = CleanField((string?)a["field"]) ?? throw new CommandException("Which field does the tag show? A mark, a name, a class, a type or a parameter's name.");
                     // A field chosen is what the tag shows: no template over it.
                     if (!a.ContainsKey("template")) attrs.Remove("template");
-                    if (!a.ContainsKey("tagType")) attrs.Remove("tagType");
+                    if (!a.ContainsKey("tagType")) { attrs.Remove("tagType"); attrs.Remove(TagRules.FixedKey); }
                 }
                 if (a.ContainsKey("template"))
                 {
@@ -324,8 +331,18 @@ public static class Tags
                     {
                         if (Standards.TagTypeOf(book, typeId) == null) throw new CommandException("There is no such tag type.");
                         attrs["tagType"] = typeId;
+                        // Chosen for this tag (issue #72): the standards' tag rules leave it so, unless byRules gives it back to them.
+                        attrs[TagRules.FixedKey] = true;
                     }
-                    else attrs.Remove("tagType");
+                    else { attrs.Remove("tagType"); attrs.Remove(TagRules.FixedKey); }
+                }
+                // Its type given back to the tag rules (issue #72): the first that holds draws it, else its own type.
+                if (a["byRules"] is JsonValue br && br.TryGetValue<bool>(out var byRules) && byRules) attrs.Remove(TagRules.FixedKey);
+                // Switched off (issue #72): printed nowhere, drawn faintly on screen only; on again.
+                if (a.ContainsKey("shown"))
+                {
+                    if (a["shown"] is JsonValue sh && sh.TryGetValue<bool>(out var shown)) { if (shown) attrs.Remove(TagRules.OffKey); else attrs[TagRules.OffKey] = true; }
+                    else throw new CommandException("A tag is shown or not (true or false).");
                 }
                 // A marker's part edited on screen (decision 292): part with offset, rot or ext; reset (a part's, or all).
                 if (a.ContainsKey("part") || a.ContainsKey("reset"))
