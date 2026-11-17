@@ -90,6 +90,8 @@ const gridTool: ToolDef = { id: 'drafting.grid', label: 'Axis grid…', icon: Gr
 /** The axes renumbered in order across them (forum #75). */
 const renumberAxesTool: ToolDef = { id: 'drafting.renumberAxes', label: 'Renumber axes…', icon: ListOrdered, run: () => useUi.setState({ dialog: 'renumberAxes' }) };
 /** How axes look: Drafting standards → Grid axes. */
+/** Several levels at once from their heights (issue #83): core's New levels… dialog. */
+const newLevelsTool: ToolDef = { id: 'drafting.newLevels', label: 'New levels…', icon: ListPlus, run: () => useUi.setState({ dialog: 'newLevels' }) };
 const axisStylesTool: ToolDef = { id: 'drafting.axisStyles', label: 'Axis styles…', icon: Settings2, run: () => openStandards('axis') };
 function AxisOptions() {
   return (
@@ -982,7 +984,7 @@ const drafting: LapinModule = {
           small: [dimensionRulesTool, dimAddTool, dimDelTool] },
         // A drafting table (issue #71): cells, formulas, merges, on a view or a sheet.
         { label: 'Text', small: [textBox, leaderNote, tagOpeningsTool], tools: [text, tagTool, tableTool] },
-        { label: 'Datum', small: [gridTool, renumberAxesTool, axisStylesTool], tools: [
+        { label: 'Datum', small: [gridTool, renumberAxesTool, axisStylesTool, newLevelsTool], tools: [
           axis,
           levelTool,
         ] },

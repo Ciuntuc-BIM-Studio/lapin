@@ -121,7 +121,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         // from firstX, numbers by default), axes square to y likewise (from firstY, letters), each running past the outer ones by
         // `extend`; the grid turned by `angle` (degrees) about the origin. With `replace`, the grid's axes so far go. Each family's
         // labels may run the other way (reverseX: right to left, reverseY: top to bottom) and count down from their first label
-        // (descendingX, descendingY; issue #64).
+        // (descendingX, descendingY; issue #64). Each family's labels may stand between a prefix and a suffix of their own
+        // (prefixX, suffixX, prefixY, suffixY; issue #83): X-1, X-2…; A', B'….
         r.Command("makeGrid", "Grid", (ctx, a) =>
         {
             static List<double> Spacings(JsonNode? n) => n is JsonArray arr ? arr.Select(v => Json.Number(v) ?? double.NaN).ToList() : [];
@@ -152,18 +153,21 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             var reverseY = a["reverseY"] is JsonValue ryv && ryv.TryGetValue<bool>(out var ry) && ry;
             var descendingX = a["descendingX"] is JsonValue dxv && dxv.TryGetValue<bool>(out var dx) && dx;
             var descendingY = a["descendingY"] is JsonValue dyv && dyv.TryGetValue<bool>(out var dy) && dy;
-            // A family's labels, in the order its stations are made (left to right, bottom to top).
-            static List<string> Tags(string first, int count, bool reverse, bool descending)
+            // A family's labels, in the order its stations are made (left to right, bottom to top): counted from the first
+            // label, each between the family's prefix and suffix (issue #83), which are never counted themselves.
+            static List<string> Tags(string first, int count, bool reverse, bool descending, string prefix, string suffix)
             {
-                var list = Grids.Series(first, count, descending);
+                var list = Grids.Series(first, count, descending).Select(t => prefix + t + suffix).ToList();
+                if (list.Any(t => t.Contains('#'))) throw new CommandException("An axis label cannot hold #.");
                 if (reverse) list.Reverse();
                 return list;
             }
+            static string Around(JsonNode? n) => (string?)n ?? "";
             var sx = Stations(xs).ToList();
-            var tx = Tags(Label((string?)a["firstX"], "1"), sx.Count, reverseX, descendingX);
+            var tx = Tags(Label((string?)a["firstX"], "1"), sx.Count, reverseX, descendingX, Around(a["prefixX"]), Around(a["suffixX"]));
             for (var i = 0; i < tx.Count; i++) Line(tx[i], W(sx[i], -extend), W(sx[i], depth + extend));
             var sy = Stations(ys).ToList();
-            var ty = Tags(Label((string?)a["firstY"], "A"), sy.Count, reverseY, descendingY);
+            var ty = Tags(Label((string?)a["firstY"], "A"), sy.Count, reverseY, descendingY, Around(a["prefixY"]), Around(a["suffixY"]));
             for (var i = 0; i < ty.Count; i++) Line(ty[i], W(-extend, sy[i]), W(width + extend, sy[i]));
             Write(ctx, grid, axes);
             return new JsonObject { ["gridId"] = grid.Id, ["tags"] = made };

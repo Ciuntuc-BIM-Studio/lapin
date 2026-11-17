@@ -1,25 +1,27 @@
 /** The Grid dialog's spacings (report #68): typed as lengths in the project's units, laid out as the axes the engine makes. */
 
-import { parseLengths } from '../core/format';
+import { parseSpans } from '../core/spans';
 
 export interface GridSpec { x: number[]; y: number[]; extend: number; angle: number; origin: { x: number; y: number } }
 
-/** The spacings typed in a field ("6000 6000 4500", "3*6000", "20' 18'"): metres, or null when one does not read. A count times a length repeats it. */
+/** The spacings typed in a field ("6000 6000 4500", "3*6000", "100 2*300 200", "20' 18'"): metres, or null when one does not read (parseSpans says which). */
 export function readSpacings(text: string): number[] | null {
-  const out: number[] = [];
-  for (const piece of text.split(/[;\s]+(?=\d+\s*[*x×])|;/).flatMap((p) => p.trim() ? [p.trim()] : [])) {
-    const m = /^(\d+)\s*[*x×]\s*(.+)$/.exec(piece);
-    if (m) {
-      const one = parseLengths(m[2]);
-      if (!one || one.length !== 1 || Number(m[1]) < 1 || Number(m[1]) > 200) return null;
-      for (let i = 0; i < Number(m[1]); i++) out.push(one[0]);
-      continue;
-    }
-    const list = parseLengths(piece);
-    if (!list) return null;
-    out.push(...list);
-  }
-  return out.every((v) => v > 0) ? out : null;
+  const r = parseSpans(text);
+  return r.ok ? r.spans : null;
+}
+
+/**
+ * A family's labels as the dialog shows them (issue #83): the first ones and the last, each between the family's prefix
+ * and suffix; the count runs on the first label only, as the engine's Grids.Series. Counting down shows the first alone.
+ */
+export function labelSample(first: string, count: number, prefix = '', suffix = '', descending = false): string {
+  const start = first.trim() || '1';
+  if (count <= 0) return '';
+  const wrap = (t: string) => prefix + t + suffix;
+  if (descending) return count > 1 ? `${wrap(start)} …` : wrap(start);
+  const all = [start];
+  for (let i = 1; i < count; i++) all.push(nextLabel(all[i - 1]));
+  return (count <= 3 ? all.map(wrap) : [wrap(all[0]), wrap(all[1]), '…', wrap(all[count - 1])]).join(' ');
 }
 
 /** The axes' lines as the engine lays them (for the dialog's preview): across x at each station, along at each y station, each past the outer ones by `extend`. */

@@ -10,6 +10,10 @@ summary: Adaugi niveluri, le setezi cotele și vezi alt nivel sub planul pe care
 
 Navigatorul proiectului listează nivelurile sus, cel mai înalt primul. **+** de lângă **Niveluri** adaugă un nivel peste cel mai înalt.
 
+**Mai multe niveluri deodată.** Butonul de lângă **+** (sau **Adnotări → Repere → Niveluri noi…**) deschide **Niveluri noi**. Scrie **Înălțimile de etaje** de jos în sus, despărțite prin spații, cum se scriu distanțele în Rețea de axe: `3*3000 2800` face patru etaje, trei de 3000 și unul de 2800. Primul stă pe **Cota de bază** (partea de sus a celui mai înalt nivel, dacă nu scrii alta); fiecare următor stă pe cel de dedesubt. **Nume** e un model în care `{n}` e numărul, numărat de la **Primul număr**: `Level {n}` de la 3 dă Level 3, Level 4…. Lista de alături arată fiecare nivel nou cu cota lui. Nivelurile care există rămân cum sunt, iar cele noi sunt un singur pas de anulare.
+
+![Niveluri noi: patru etaje din înălțimile lor](shots/new-levels.webp)
+
 Selectează un nivel ca să vezi **cota de bază** și **cota superioară**. Oricare poate fi deasupra sau dedesubtul cotei ±0,00. Înălțimea nivelului e distanța dintre ele. Când muți baza, partea de sus rămâne pe loc. Un proiect nou începe cu Foundations, Ground floor și First floor. Un nivel are cel mult 100 m înălțime și stă în ±10 km față de ±0,00: o valoare scrisă în altă unitate e refuzată. O scară care ar urca mai mult de 50 m până la nivelul de deasupra se oprește acolo și spune de ce.
 
 ![Proprietățile unui nivel: cota de bază, cota superioară și înălțimea](shots/level-properties.webp)
