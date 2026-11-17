@@ -74,22 +74,23 @@ O piesă ale cărei corpuri sunt scrise ca colțuri (`[W, D]`, `[W - L, L]`…) 
 
 ## Editarea schiței unei piese
 
-Dă clic pe o schiță a piesei din arbore (sau dublu clic pe piesă în modul ei de editare, care deschide prima schiță cu un corp). Schița se editează **pe loc**:
+Apasă o schiță a piesei în arbore (sau dublu clic pe piesă în modul ei de editare, care deschide prima schiță cu un corp). Schița se deschide pe **aceeași planșetă de schiță ca orice altă schiță din Lapin** (desenul pe un plan, Editează schița unei plăci, schița pe o față):
 
-- camera 3D se întoarce să privească drept spre planul schiței, cu o mișcare lină, și revine unde era când ieși;
-- restul piesei rămâne estompat în spate, iar schița este desenată peste vedere: formele ei colorate după cât de libere sunt (albastru liber, închis complet ținut, roșu în conflict), glifele constrângerilor și cotele;
-- bara de jos numește schița, spune câte **grade de libertate** mai are și ține uneltele.
-- editarea schiței editează **piesa**, deci fiecare obiect al ei urmează. Schița se arată cum o păstrează piesa, cu valorile ei **implicite**: când obiectul are valori proprii (o lățime de 1600 unde implicitul piesei este 1200), bara spune *Editezi piesa: valorile arătate sunt cele implicite*, iar conturul propriu al obiectului este desenat punctat în spate.
+- camera 3D se întoarce lin să privească drept spre planul schiței și revine unde era când ieși;
+- restul piesei rămâne estompat în spate, iar schița e desenată pe planul ei: formele colorate după cât de libere sunt (albastru libere, închis complet fixate, roșu în conflict), glifele constrângerilor și cotele;
+- bara de jos numește schița, spune câte **grade de libertate** mai are și ține uneltele: uneltele din Desen, uneltele de constrângere, **Termină schița** și **Renunță**;
+- schița e a **piesei**, așa că toate obiectele ei urmează când termini. E arătată cum o păstrează piesa, cu valorile **implicite**: când obiectul are valori proprii (o lățime de 1600 unde implicit e 1200), o notă spune *Editezi piesa: valorile arătate sunt cele implicite*, iar conturul propriu al obiectului e desenat estompat în spate.
 
-![Schița unei piese editată pe loc: camera drept spre plan, formele, glifele și bara de unelte](shots/studio-part-sketch.webp)
+![Schița unei piese pe planșeta de schiță: camera drept spre plan, formele, glifele și bara](shots/studio-part-sketch.webp)
 
-- **Mută un punct** trăgându-l de mânerul pătrat: motorul rezolvă constrângerile în timp ce tragi și arată rezultatul pe loc; dacă mutarea nu e posibilă, spune de ce. O tragere este un singur pas de anulare.
-- **Desenează**: **Linie**, **Dreptunghi**, **Cerc** și **Arc (3 puncte)** în bară. Dă clic pe puncte; un punct aproape de unul existent se lipește de el și rămâne **coincident** cu el (ține Ctrl apăsat la clic ca să-l pui liber), iar laturile unui dreptunghi rămân orizontale și verticale. Fiecare formă este un pas de anulare, iar formele deja existente își păstrează identitatea, deci constrângerile lor rămân. **Șterge** scoate forma pe care dai clic (sau selectează o formă și apasă Delete). Esc lasă unealta jos.
-- **Constrângeri**: aceleași unelte ca la schița unui plan (Coincident, Orizontal, Egal, Fixează… și cotele), alese pe această schiță. Dublu clic pe o cotă îi schimbă valoarea, sau scrie `=` și o formulă din parametrii piesei (`=W - 2*L`): piesa o urmează, în fiecare obiect al ei. Vezi [Constrângerile schiței](sketch-constraints.md).
+- **Desenezi și modifici** cu comenzile din Desen, din bară, din fila Desen sau scrise în linia de comandă: **Linie**, **Polilinie**, **Dreptunghi**, **Cerc**, **Arc**, **Paralelă**, **Taie**, **Prelungește**, **Racordare**, **Teșire**, **Șterge**, plus Mută, Copiază, Rotește, Oglindește. Atragerile, urmărirea și lungimile scrise merg ca pe un plan. Un punct pus pe unul existent rămâne **coincident** cu el (ține Ctrl la clic ca să-l pui liber), laturile unui dreptunghi rămân orizontale și verticale. Fiecare comandă e un pas de anulare. Schița unei piese ia linii, polilinii, cercuri și arce: o elipsă, o hașură, un text sau o linie ajutătoare e refuzată la terminare.
+- **Muți un punct** selectând o formă și trăgând de mânerul ei: motorul rezolvă constrângerile când îi dai drumul.
+- **Constrângeri**: aceleași unelte ca în schița unui plan (Coincident, Orizontal, Egal, Fixează… și cotele). Dublu clic pe o cotă îi schimbă valoarea, sau scrii `=` și o formulă a parametrilor piesei (`=W - 2*L`). Vezi [Constrângeri de schiță](sketch-constraints.md).
+- **Deschide în 2D** arată aceeași schiță plat, pe vederea proprie a planului ei; **Înapoi la 3D** te întoarce.
 
-![O linie adăugată cu unealta Linie](shots/studio-part-sketch-line.webp)
+![O linie desenată cu Linie din Desen pe schița piesei](shots/studio-part-sketch-line.webp)
 
-Ieși cu **Termină schița**, cu **Esc** (după ce unealta e jos) sau cu **Tab**: ești înapoi în modul de editare al piesei, iar camera e cum era.
+**Termină schița** (sau **Esc** fără nicio comandă pornită, sau **Tab**) scrie schița în piesă într-un **singur pas de anulare**: toate obiectele piesei urmează, formele care erau își păstrează identitatea (corpurile desenate din ele rămân), iar tu revii în modul de editare al piesei, cu camera ca înainte. Dacă schița nu se poate păstra (nu se rezolvă, un corp își pierde conturul, valorile unui obiect nu s-ar construi), Lapin spune de ce și schița rămâne deschisă. **Renunță** aruncă ce s-a desenat: piesa rămâne cum era. Anularea după Termină readuce schița cum ai lăsat-o.
 
 ## Schițe și corpuri în arbore
 

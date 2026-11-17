@@ -74,22 +74,23 @@ A part whose bodies are written as corners (`[W, D]`, `[W - L, L]`…) can be tu
 
 ## Editing a part's sketch
 
-Click a sketch of the part in the tree (or double-click the part in its edit mode, which opens the first sketch with a body). The sketch is edited **in place**:
+Click a sketch of the part in the tree (or double-click the part in its edit mode, which opens the first sketch with a body). The sketch opens on the **same sketch canvas as every other sketch in Lapin** (a plan's drafting, a floor's Edit sketch, a sketch on a face):
 
 - the 3D camera turns to look straight at the sketch's plane, with a smooth move, and goes back to where it was when you leave;
-- the rest of the part stays faded behind, and the sketch is drawn over the view: its shapes coloured by how free they are (blue free, dark fully held, red in conflict), its constraint glyphs and its dimensions;
-- the bar at the bottom names the sketch, tells how many **degrees of freedom** it still has, and holds the tools.
-- editing the sketch edits the **part**, so every object of it follows. The sketch is shown as the part stores it, with the part's **default** values: when this object has values of its own (a width of 1600 where the part's default is 1200), the bar says *Editing the part: values shown are its defaults*, and the object's own outline is drawn dashed behind.
+- the rest of the part stays faded behind, and the sketch is drawn on its plane: its shapes coloured by how free they are (blue free, dark fully held, red in conflict), its constraint glyphs and its dimensions;
+- the bar at the bottom names the sketch, tells how many **degrees of freedom** it still has, and holds the tools: the Draft tools, the constraint tools, **Finish sketch** and **Cancel**;
+- the sketch is the **part's**, so every object of it follows when you finish. It is shown as the part stores it, with the part's **default** values: when this object has values of its own (a width of 1600 where the part's default is 1200), a note says *Editing the part: values shown are its defaults*, and the object's own outline is drawn faintly behind.
 
-![A part's sketch edited in place: the camera square to its plane, the shapes, the glyphs and the tool bar](shots/studio-part-sketch.webp)
+![A part's sketch on the sketch canvas: the camera square to its plane, the shapes, the glyphs and the bar](shots/studio-part-sketch.webp)
 
-- **Move a point** by dragging its square grip: the engine solves the constraints while you drag, and shows the result live; if the move is not possible it says why. One drag is one undo step.
-- **Draw**: **Line**, **Rectangle**, **Circle** and **Arc (3 points)** in the bar. Click the points; a point near an existing one snaps to it and stays **coincident** with it (hold Ctrl while clicking to place it free), and a rectangle's sides stay horizontal and vertical. Each shape is one undo step, and the shapes already there keep their identity, so their constraints stay. **Delete** takes away the shape you click (or select a shape and press Delete). Esc puts the tool down.
-- **Constraints**: the same tools as in a plan's sketch (Coincident, Horizontal, Equal, Fix… and the dimensions), picked on this sketch. Double-click a dimension to change its value, or type `=` and a formula of the part's parameters (`=W - 2*L`): the part follows, in every object of it. See [Sketch constraints](sketch-constraints.md).
+- **Draw and edit** with Draft's own commands, on the bar, in the Draft tab or typed in the command line: **Line**, **Polyline**, **Rectangle**, **Circle**, **Arc**, **Offset**, **Trim**, **Extend**, **Fillet**, **Chamfer**, **Erase**, and Move, Copy, Rotate, Mirror. The object snaps, tracking and the typed lengths work as on a plan. A point placed on an existing one stays **coincident** with it (hold Ctrl while clicking to place it free), a rectangle's sides stay horizontal and vertical. Each command is one undo step. A part's sketch takes lines, polylines, circles and arcs: an ellipse, a hatch, a text or a construction line is refused when you finish.
+- **Move a point** by selecting a shape and dragging its grip: the engine solves the constraints when you let go.
+- **Constraints**: the same tools as in a plan's sketch (Coincident, Horizontal, Equal, Fix… and the dimensions). Double-click a dimension to change its value, or type `=` and a formula of the part's parameters (`=W - 2*L`). See [Sketch constraints](sketch-constraints.md).
+- **Open in 2D** shows the same sketch flat, on its plane's own view; **Back to 3D** returns.
 
-![A line added with the Line tool](shots/studio-part-sketch-line.webp)
+![A line drawn with Draft's Line on the part's sketch](shots/studio-part-sketch-line.webp)
 
-Leave with **Finish sketch**, **Esc** (once the tool is down) or **Tab**: you are back in the part's edit mode, and the camera as it was.
+**Finish sketch** (or **Esc** with no command running, or **Tab**) writes the sketch into the part in **one undo step**: every object of the part follows, the shapes already there keep their identity (the bodies drawn from them stay), and you are back in the part's edit mode with the camera as it was. If the sketch cannot be kept (it does not solve, a body loses its outline, an object's values would not build) Lapin says why and the sketch stays open. **Cancel** drops what was drawn: the part as it was. Undo after Finish brings the sketch back as you left it.
 
 ## Sketches and bodies in the tree
 
