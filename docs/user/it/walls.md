@@ -117,6 +117,8 @@ Sotto un tetto gli strati di un muro salgono fino al tetto; un prolungamento **S
 
 **Modifica → Offset elemento** (OFFSET della riga di comando, che ora accetta elementi): scrivi la distanza nell’unità del progetto, fai clic su un muro in una pianta e poi sul lato dove va la copia. La copia è parallela al muro, concentrica per un muro curvo, con lo stesso tipo, gli stessi strati e le stesse aperture. **A** (Asse, predefinito) misura dall’asse, **F** (Facce) dalla faccia del muro, così la faccia della copia sta a quella distanza dalla sua; **T** (Per) prende un punto per cui passa la copia.
 
+Ciò che è appeso al muro va alla parte su cui cade. Una finitura dipinta sul lato di un muro rettilineo resta dov’era sulla faccia; una la cui regione prosegue oltre il taglio dipinge anche l’altra parte, a meno che una linea di divisione della faccia non la fermi, e una dipinta su tutta la faccia copre ogni parte. Un frangisole lungo il muro va alla parte lungo cui corre (uno a cavallo del taglio viene rifiutato, come una porta); un balcone va alla parte su cui si trova il suo centro, oppure resta libero dov’è quando la sua parte viene tagliata via. Le barre disegnate nel muro sono ospitate dalla parte in cui cade il loro punto, la cassaforma forma ogni parte, e i montanti propri di un muro a telaio (vedi [Legno](wood.md)) vanno con la loro parte. Le finiture di un muro curvo restano sulla sua prima parte.
+
 ![Due muri tagliati a un limite e un muro con una porta diviso in due](shots/wall-split-trim.webp)
 
 ## Tipi di muro

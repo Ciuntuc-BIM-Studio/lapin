@@ -207,9 +207,8 @@ public static class OutlineSketches
         var outer = loops.MaxBy(l => Math.Abs(ArcOutline.SignedArea(l.Corners, l.Rises, l.Ellipses)));
         var holes = loops.Where(l => !ReferenceEquals(l.Corners, outer.Corners)).Select(l =>
         {
-            if (l.Ellipses != null) throw new CommandException("A hole's edges are lines and arcs: an elliptical one is not kept in a hole yet.");
-            var (c, r) = ArcOutline.Check(l.Corners, l.Rises, "A hole");
-            return new OutlineHoles.Hole(c, r);
+            // Its elliptical edges too (audit §18 leftovers), fitted to its corners as the check runs them.
+            return OutlineHoles.Checked(l.Corners, l.Rises, l.Ellipses);
         }).ToList();
         return (outer.Corners, outer.Rises, outer.Ellipses, holes);
     }
@@ -219,7 +218,7 @@ public static class OutlineSketches
 
     static bool SameOutline(JsonObject sketch, Entity e) =>
         JsonNode.DeepEquals(sketch["contour"], e.Attrs["contour"]) && JsonNode.DeepEquals(sketch[ArcOutline.Key], e.Attrs[ArcOutline.Key])
-        && JsonNode.DeepEquals(sketch[OutlineHoles.Key], e.Attrs[OutlineHoles.Key]) && JsonNode.DeepEquals(sketch[EllipseEdge.Key], e.Attrs[EllipseEdge.Key]) && JsonNode.DeepEquals(sketch[OutlineHoles.ArcsKey], e.Attrs[OutlineHoles.ArcsKey]);
+        && JsonNode.DeepEquals(sketch[OutlineHoles.Key], e.Attrs[OutlineHoles.Key]) && JsonNode.DeepEquals(sketch[EllipseEdge.Key], e.Attrs[EllipseEdge.Key]) && JsonNode.DeepEquals(sketch[OutlineHoles.ArcsKey], e.Attrs[OutlineHoles.ArcsKey]) && JsonNode.DeepEquals(sketch[OutlineHoles.EllipsesKey], e.Attrs[OutlineHoles.EllipsesKey]);
 
     public static void Register(IModuleRegistry r)
     {
@@ -278,7 +277,7 @@ public static class OutlineSketches
                 var cs = new JsonArray();
                 // The outline, then each of its own holes (audit S4), every loop drawn one line or arc per edge.
                 var loops = new List<(IReadOnlyList<Vec2> Corners, IReadOnlyList<double>? Rises, IReadOnlyList<EllipseEdge?>? Ellipses)> { (corners, ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count), EllipseEdge.Of(e)) };
-                loops.AddRange(OutlineHoles.Of(e).Select(h => (h.Corners, (IReadOnlyList<double>?)h.Rises, (IReadOnlyList<EllipseEdge?>?)null)));
+                loops.AddRange(OutlineHoles.Of(e).Select(h => (h.Corners, (IReadOnlyList<double>?)h.Rises, (IReadOnlyList<EllipseEdge?>?)h.Ellipses)));
                 foreach (var (loopCorners, loopRises, loopEllipses) in loops)
                 {
                     var shapes = ShapesOf(loopCorners, loopRises, loopEllipses);
@@ -328,6 +327,7 @@ public static class OutlineSketches
                 OutlineHoles.Write(held, holes);
                 update[OutlineHoles.Key] = held[OutlineHoles.Key]?.DeepClone() ?? new JsonArray();
                 if (held[OutlineHoles.ArcsKey] is { } ha) update[OutlineHoles.ArcsKey] = ha.DeepClone();
+                if (held[OutlineHoles.EllipsesKey] is { } he) update[OutlineHoles.EllipsesKey] = he.DeepClone();
             }
             Command(ctx, UpdateCommand(e)!).Handler(ctx, update);
             // The sketch kept on the element: its shapes, its constraints, and the outline they made (to know it again).
@@ -346,7 +346,7 @@ public static class OutlineSketches
                 ["contour"] = after.Attrs["contour"]?.DeepClone(),
             };
             if (after.Attrs[ArcOutline.Key] is { } arcs) sketch[ArcOutline.Key] = arcs.DeepClone();
-            foreach (var k in new[] { OutlineHoles.Key, OutlineHoles.ArcsKey, EllipseEdge.Key })
+            foreach (var k in new[] { OutlineHoles.Key, OutlineHoles.ArcsKey, OutlineHoles.EllipsesKey, EllipseEdge.Key })
                 if (after.Attrs[k] is { } held) sketch[k] = held.DeepClone();
             var attrs = after.CloneAttrs();
             attrs[Key] = sketch;

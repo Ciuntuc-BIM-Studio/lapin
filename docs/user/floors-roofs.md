@@ -30,7 +30,7 @@ The same bar serves every outline tool (floor, floor opening, ceiling, hole, roo
 
 ![The outline tools' bar, From drawn shape chosen](shots/outline-sources.webp)
 
-For a floor, a floor opening, a ceiling and a room by outline the bar also offers **Ellipse**: its centre, the end of one semi-axis, then the other. The outline's edges run along the true ellipse (four quarter edges), measured exactly; a corner moved off the ellipse turns its two edges straight, and a corner beside an elliptical edge is not filleted. IFC carries it as an IfcEllipse. **From drawn shape** takes a drafted ellipse the same way.
+For a floor, a floor opening, a ceiling and a room by outline the bar also offers **Ellipse**: its centre, the end of one semi-axis, then the other. The outline's edges run along the true ellipse (four quarter edges), measured exactly; a corner moved off the ellipse turns its two edges straight, and a corner beside an elliptical edge is not filleted. IFC carries it as an IfcEllipse. **From drawn shape** takes a drafted ellipse the same way. A floor's or a ceiling's own hole (**Hole in the outline**) takes an ellipse too. An outline with an elliptical edge is not offset as a whole (Shift-drag, **Offset outline…**): the curve at a distance from an ellipse is no ellipse.
 
 ![An elliptical floor being drawn beside a drafted ellipse](shots/ellipse-floor.webp)
 
@@ -83,6 +83,12 @@ Your own catalogue comes in from a spreadsheet: **Import catalogue…** reads a 
 **Modify → Split element** on a floor or a ceiling asks for two points of a split line: it runs on past them and must cross the outline exactly twice. The floor becomes two floors; the part you clicked keeps the id (its GlobalId in IFC), arcs on the edges stay arcs (a cut arc stays an arc), and a floor opening goes with the part it lies in. An opening the line crosses refuses. **Modify → Trim/Extend elements** takes a straight boundary (a wall, a beam or a drafted line) and cuts the floor or ceiling there, keeping the side you click.
 
 ![A floor with a curved edge split along a line: the part on the right selected](shots/floor-split.webp)
+
+A floor's own holes go to the part they lie in; a layer that reaches past a curved edge keeps doing so on both parts; a false ceiling's grid stays where it was, each light or diffuser in the part its cell lies in. A floor with an elliptical edge is not cut by a line.
+
+A **roof** is split and trimmed the same way. Each part keeps the rules of its edges (eave or gable, pitch, overhang), and the cut is a gable with no overhang; the cut is allowed only where it leaves the roof as it was, each part's slopes standing where the roof's stood, as across a gable roof's ridge or along it. Elsewhere it is refused (*would change its slopes*): a part's slopes would rise to new ridges. Roof windows, dormers and downpipes go to their part. A barrel roof is not cut.
+
+![A gable roof split across its ridge: two roofs, the same slopes](shots/roof-split.webp)
 
 ## Roofs
 

@@ -33,12 +33,16 @@ Tout ce qui est importé est conservé dans le fichier du projet. Un objet prend
 ## Routes, courbes et tracés CAO
 
 Une **route** ou une **allée** suit son axe. Dans **Corridor…** (CR), l’onglet **Courbes** donne à chaque sommet de l’axe un rayon avec une clothoïde d’entrée et de sortie, comme un projeteur routier trace une courbe ; un sommet laissé à 0 reste un angle, et les courbes qui ne tiennent pas entre leurs voisines sont refusées, avec la raison. Les abscisses, le profil en long et les profils en travers suivent l’axe courbe, et l’IFC 4.3 l’écrit comme un alignement.
+Un chemin ou une route, un mur de soutènement ou un fossé se scinde, s’ajuste, se prolonge et se décale avec les outils des murs (**Modifier → Scinder l’élément**, **Modifier → Ajuster/prolonger les éléments**, **Décaler**). Ses stations se poursuivent : la seconde partie commence à la station où tombait la coupe, si bien que le profil projeté, les sections en travers et les jonctions demandées à des stations restent où elles étaient. Une coupe doit tomber sur un tronçon droit de l’axe, pas dans une courbe, et chaque sommet garde sa courbe. Un axe importé en segments d’alignement IFC 4.3 n’est pas coupé ici.
+
 
 Les tracés CAO deviennent des éléments du site : **Route depuis lignes CAO** (LR) et **Ligne de rupture depuis lignes CAO** (BL) prennent une ligne ou une polyligne dessinée ou venue d’un DXF, suivent toutes les lignes de son calque qui s’y raccordent bout à bout, et en font une route le long d’elle ou une ligne de rupture du terrain. Quand les lignes portent des altitudes (les lignes 3D d’un DXF), elles donnent le profil en long de la route ou les altitudes de la ligne de rupture. Ces lignes gardent leurs altitudes et peuvent s’afficher en 3D (la catégorie *tracés*).
 
 ## Plateformes et parcelle
 
 **Site → Platform** (<kbd>PD</kbd>) nivelle le terrain à l’intérieur d’un contour à une cote, en déblai et remblai ; **Site → Parcel** (<kbd>PC</kbd>) dessine la limite de la propriété, en trait mixte avec son aire. Les deux dessinent leur contour avec la même barre qu’un plancher : un **Polygon** dont les bords peuvent être des arcs (<kbd>Space</kbd>), un **Rectangle** ou un **Circle**. Sélectionnés, leurs angles et bords ont des poignées (ceux de la parcelle, sur son terrain), et le clic droit propose **Make arc**, **Make straight**, **Fillet corner…** et **Chamfer corner…**, chacun une étape d’annulation. La plateforme nivelle le long des vrais arcs ; l’aire et le périmètre de la parcelle sont mesurés sur eux, et l’inventaire des coordonnées liste ses angles.
+**Modifier → Scinder l’élément** coupe une plate-forme en deux le long d’une ligne de deux points (chaque partie nivelée à la même hauteur, ses trous sur la partie où ils tombent ; un trou que la ligne traverse est refusé), et **Modifier → Ajuster/prolonger les éléments** ajuste une plate-forme ou la parcelle par une limite droite, en gardant le côté où vous cliquez. Un terrain garde une seule parcelle : elle est ajustée, pas scindée.
+
 
 ## Plans de masse et plans de situation
 

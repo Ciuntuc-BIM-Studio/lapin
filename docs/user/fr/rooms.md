@@ -16,6 +16,8 @@ Pour un espace qui n’est pas entouré de murs, comme une terrasse ou l’extr�
 
 Les bords d’une pièce dessinée peuvent être courbes, comme ceux d’un plancher : la barre de **Room by outline** dessine un **Polygon** dont les bords peuvent être des arcs (**Arcs (Space)**), un **Rectangle** ou un **Circle**, et le clic droit sur la pièce sélectionnée propose **Make arc**, **Make straight**, **Fillet corner…** et **Chamfer corner…**. Son aire et son périmètre sont mesurés sur les vrais arcs, et en IFC le profil de l’espace est la vraie courbe. Une pièce trouvée d’après ses murs les suit : son contour ne s’édite donc pas ainsi.
 
+**Modifier → Scinder l’élément** coupe une pièce dessinée en deux le long d’une ligne de deux points : la partie où vous cliquez garde la pièce, l’autre est une nouvelle pièce portant le numéro suivant de l’étage, et leurs surfaces s’additionnent. **Modifier → Ajuster/prolonger les éléments** l’ajuste par une limite droite. Une pièce trouvée à partir de ses murs se divise plutôt par une ligne de séparation de pièces.
+
 ![Une pièce dessinée avec un bord courbe et un angle arrondi, une pièce ronde et un balcon à l’avant courbe](shots/rooms-curved.webp)
 
 ## Les propriétés d’une pièce

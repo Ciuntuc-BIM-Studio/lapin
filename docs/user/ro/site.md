@@ -58,6 +58,8 @@ Tot ce importi se păstrează în fișierul proiectului. Un element își ia num
 
 Un **drum** sau o **alee** își urmează axa. În **Coridor…** (CR), fila **Curbe** dă fiecărui vârf al axei o rază cu clotoidă la intrare și la ieșire, cum trasează un proiectant de drumuri o curbă; un vârf lăsat la 0 rămâne colț, iar curbele care nu încap între vecinele lor sunt refuzate, cu motivul. Kilometrajul, profilul longitudinal și profilurile transversale urmează axa curbă, iar IFC 4.3 o scrie ca aliniament.
 
+Un drum sau o alee, un zid de sprijin sau un șanț se împart, se taie, se prelungesc și se copiază paralel cu uneltele pereților (**Modifică → Împarte elementul**, **Modifică → Taie/Prelungește elemente**, **Paralelă**). Pozițiile kilometrice continuă: a doua parte începe la poziția unde a fost tăietura, așa că profilul proiectat, secțiunile transversale și rosturile cerute la poziții rămân unde erau. Tăietura trebuie să cadă pe o porțiune dreaptă a axei, nu într-o curbă, iar fiecare vârf își păstrează curba. O axă importată ca segmente de aliniament IFC 4.3 nu se taie aici.
+
 Liniatura CAD devine elemente de teren: **Drum din desen CAD** (LR) și **Linie de rupere din desen CAD** (BL) iau o linie sau o polilinie desenată sau adusă dintr-un DXF, urmează toate liniile de pe stratul ei care se leagă cap la cap și fac un drum de-a lungul ei sau o linie de rupere a terenului. Fiecare deschide **Desen → Convertește în…** pe ținta ei, cu linia aleasă ([Conversia desenului în elemente](drafting.md#conversia-desenului-în-elemente)), unde vezi lanțul înainte de conversie; acolo sunt și celelalte ținte ale terenului: un **Teren** prin curbe de nivel, o **Platformă** pe un contur închis, un **Traseu**. Când liniile au cote (liniile 3D ale unui DXF), ele dau profilul drumului sau cotele liniei de rupere. Asemenea linii se păstrează cu cotele lor și se pot arăta în 3D (categoria *liniatură*).
 
 În 3D, **Vizibilitate / Grafică** ascunde potecile, drumurile, bordurile și pavajele unei vederi odată cu categoria **Topografie**, iar rețelele de axe se ascund și ele prin intrarea lor din Vizibilitate / Grafică; în planuri, în stilurile de obiecte și în seturile de grafică salvate, aceste elemente de amenajare urmează acum și ele categoria Topografie.
@@ -65,6 +67,8 @@ Liniatura CAD devine elemente de teren: **Drum din desen CAD** (LR) și **Linie 
 ## Platforme și parcela
 
 **Site → Platform** (<kbd>PD</kbd>) nivelează terenul în interiorul unui contur la o cotă, cu săpătură și umplutură; **Site → Parcel** (<kbd>PC</kbd>) desenează limita proprietății, linie-punct, cu aria ei. Amândouă își desenează conturul cu aceeași bară ca un planșeu: un **Polygon** ale cărui laturi pot fi arce (<kbd>Space</kbd>), un **Rectangle** sau un **Circle**. Selectate, colțurile și laturile lor au mânere (ale parcelei, pe terenul ei), iar clicul dreapta oferă **Make arc**, **Make straight**, **Fillet corner…** și **Chamfer corner…**, fiecare un pas de anulare. Platforma nivelează terenul după arcele adevărate; aria și perimetrul parcelei se măsoară pe ele, iar inventarul de coordonate îi listează colțurile.
+
+**Modifică → Împarte elementul** taie o platformă în două după o linie de două puncte (fiecare parte nivelată la aceeași cotă, golurile pe partea în care sunt, un gol tăiat de linie refuză), iar **Modifică → Taie/Prelungește elemente** taie o platformă sau parcela după o limită dreaptă, păstrând partea pe care dai clic. Un teren are o singură parcelă: se taie, nu se împarte.
 
 ## Planul de situație și planul de încadrare
 

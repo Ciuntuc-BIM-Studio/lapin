@@ -162,6 +162,10 @@ Selectează o rampă ca să-i vezi tipul, **Lățime**, **Întoarcere**, **Decal
 
 Segmentele unei balustrade pot fi arce. Clic dreapta lângă un segment al unei balustrade selectate pentru **Fă arc** (sau **Fă dreaptă**), apoi trage mânerul rotund din mijlocul arcului ca să-l curbezi printr-un punct; clic dreapta pe mânerul unui colț pentru **Racordează colțul…** sau **Teșește colțul…**. **Fillet** și **Chamfer** (FILLET, CHAMFER) iau și balustrade: dă clic pe o balustradă pe cele două segmente de o parte și de alta a unui colț, sau pe două balustrade ale căror capete se întâlnesc, sau s-ar întâlni prelungite: devin o singură balustradă, prima, în jurul arcului. Mâna curentă, barele și sticla ei urmează arcul în bucăți drepte scurte, la cel mult un milimetru de el, stâlpii și balustrii sunt distanțați de-a lungul arcului ca pe un segment drept, iar lungimea ei este cea a arcului. **Draft → Convert → Railing** păstrează arcul unei racordări: liniile, arcele și poliliniile care se întâlnesc cap la cap devin o singură balustradă (debifează **O singură balustradă unde se întâlnesc cap la cap** pentru câte una). În IFC curba adevărată este axa ei. Balustradele scărilor și balcoanelor urmează scara sau balconul lor.
 
+O balustradă se împarte, se taie, se prelungește și se copiază paralel cu uneltele pereților: **Modifică → Împarte elementul** o taie în două unde dai clic (un arc în două arce ale aceluiași cerc; prima păstrează id-ul), **Modifică → Taie/Prelungește elemente** aduce capătul de dincolo de o limită înapoi la ea sau duce capătul mai apropiat mai departe pe ultimul segment (un arc pe cercul lui), iar **Paralelă** o copiază paralel, arcele concentrice, colțurile unde se întâlnesc segmentele mutate. Lungimile părților fac cât balustrada.
+
+![O balustradă cu un arc împărțită în două pe arc](shots/railing-split.webp)
+
 ![O balustradă cu un colț rotunjit](shots/railing-fillet.webp)
 
 ## Balcoane

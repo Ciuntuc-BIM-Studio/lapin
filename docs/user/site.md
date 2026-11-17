@@ -58,6 +58,8 @@ Everything imported is kept in the project file. A feature takes its name from t
 
 A **road** or a **path** follows its axis. In **Corridor…** (CR), the **Curves** tab gives each vertex of the axis a radius with a clothoid in and out, as a road designer lays a curve; a vertex left at 0 stays a corner, and curves that do not fit between their neighbours are refused with the reason. The stations, the long section and the cross-sections follow the curved axis, and IFC 4.3 writes it as an alignment.
 
+A path or a road, a retaining wall or a ditch is split, trimmed, extended and offset with the walls' tools (**Modify → Split element**, **Modify → Trim/Extend elements**, **Offset**). Its stations go on: the second part starts at the station where the cut was, so the designed profile, the cross-sections and the joints asked at stations stay where they were. A cut must fall on a straight stretch of the axis, not in a curve, and each vertex keeps its curve. An axis imported as IFC 4.3 alignment segments is not cut here.
+
 CAD linework becomes site elements: **Road from linework** (LR) and **Breakline from linework** (BL) take a line or polyline drafted or brought in by a DXF, follow every line on its layer that meets it end to end, and make a road along it or a breakline of the terrain. Each opens **Draft → Convert to…** on its target with the line picked ([Converting drafting to elements](drafting.md#converting-drafting-to-elements)), where you see the chain before converting; there the site's other targets are too: a **Terrain** through contours, a **Platform** on a closed outline, a **Path**. When the lines carry heights (a DXF's 3D lines), they give the road's profile or the breakline's levels. Such lines are kept with their heights and can be shown in 3D (the *linework* category).
 
 In 3D, **Visibility / Graphics** hides a view's paths, roads, kerbs and pavements with the **Topography** category, and the axis grids hide with their Visibility / Graphics entry too; in plans, object styles and saved graphics sets, those site elements now follow the Topography category too.
@@ -65,6 +67,8 @@ In 3D, **Visibility / Graphics** hides a view's paths, roads, kerbs and pavement
 ## Platforms and the parcel
 
 **Site → Platform** (<kbd>PD</kbd>) levels the ground inside an outline at one height, cutting and filling the terrain; **Site → Parcel** (<kbd>PC</kbd>) draws the property's boundary, dash-dotted with its area. Both draw their outline with the same bar as a floor: a **Polygon** whose edges may be arcs (<kbd>Space</kbd>), a **Rectangle** or a **Circle**. Selected, their corners and edges have grips (a parcel's on its terrain), and the right-click offers **Make arc**, **Make straight**, **Fillet corner…** and **Chamfer corner…**, each one undo step. The platform levels the ground along its true arcs; the parcel's area and perimeter are measured on them, and the coordinate inventory lists its corners.
+
+**Modify → Split element** cuts a platform in two along a line of two points (each part levelled at the same height, its holes on the part they lie in, a hole the line crosses refuses), and **Modify → Trim/Extend elements** trims a platform or the parcel by a straight boundary, keeping the side you click. A terrain keeps one parcel: it is trimmed, not split.
 
 ## Site plans and location plans
 

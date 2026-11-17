@@ -10,6 +10,8 @@ The **MEP** tab draws the building's services the way an engineer sketches them:
 
 ## A system in one click
 
+The MEP tab gathers its tools in three groups: **System** (**New system** ▾ with the services, **Edit system**, **Systems…**, **MEP plan**, **Open ports** and the **Schedules** ▾), **Runs** (**Run**, **Place node**, the run edits, **Close the loop** and the **Street** ▾) and **Carriers and fans** (**Cable tray**, the **Fans** ▾, **Lay in carrier**, **Duct to outlet**, **Fan types**). A button with ▾ opens its list; each tool keeps its letters, and **Commands…** and **My tools** find it as before.
+
 Under **New system**, choose the service (**Heating**, **Water**, **Hot water**, **Drainage**, **Electrical**, **Ventilation**) and click in the plan. Lapin places the whole system: the source where you clicked, a first endpoint a few metres away, and the run between them. The system opens for editing.
 
 ![A heating system on the ground floor plan: the boiler, two radiators under the windows and the runs between them](shots/mep-plan.webp)
@@ -31,6 +33,7 @@ Select a run: its handles sit on the line as it is drawn, even after you move th
 - **Ctrl-click** a handle to take it out, or the middle of a leg to add one; **Add handle** puts one where you click.
 - **Detour** (<kbd>DU</kbd>) takes a run round something in the way: click the run where the detour starts, click where it ends on the same leg, then move to the side it goes and click (or type the distance). The run goes out, along and back, with four new corners; it keeps its connections.
 - **Redraw path** (<kbd>RP</kbd>) gives a run a new route: select it (or start on it) and draw the path point by point, <kbd>Enter</kbd> to finish. The run keeps its system, its size and its connections, and its ends go back onto their ports.
+- **Modify → Split element** cuts a run in two where you click: a **coupling** (an inline fitting, IfcPipeFitting CONNECTOR) joins the two parts at the cut, their ends at its middle, so their lengths add up to the run's. The second part takes what the run's end was on, and each branch stays on the part it joins. A paired run (supply and return) is left with two open ends there. **Modify → Trim/Extend elements** brings a run's end to a boundary (the end lets go of the port it was on), and **Offset** copies a run parallel. A branch on the part a trim cuts away refuses.
 
 ![A radiator run taken round an obstacle with Detour: out, along and back](shots/mep-detour.webp)
 
@@ -51,7 +54,7 @@ In the properties panel a node shows its system, its role and its ports (open or
 
 ## Plans, lists and IFC
 
-**MEP plan** makes a plan of the MEP discipline for the level, filed under the MEP set in the browser. The **Equipment list** and the **Run list** under **System** are schedules like any other: they go on sheets and export with them.
+**MEP plan** makes a plan of the MEP discipline for the level, filed under the MEP set in the browser. The **Equipment list** and the **Run list** under **System → Schedules** are schedules like any other: they go on sheets and export with them.
 
 In an IFC export each system is an IfcDistributionSystem, every node and run has its IfcDistributionPorts, and the connections are written between the ports, so the network arrives in another program connected from the source to the last endpoint.
 
@@ -69,7 +72,7 @@ Each appliance keeps its **consumption** (m³/h) and its **appliance type** by i
 
 ### The supply in the street
 
-Under **Street**, **Gas main along…** (<kbd>GM</kbd>) lays a gas main along what you click — a road, an alignment, a drafted line, a wall — at the **offset** from it and the **depth (cover)** set in the command line's bar; under a terrain the depth is taken from the ground, else from the level. **Gas main** draws one point by point. The main goes in a medium-pressure gas system of PE pipe, with its **warning tape**.
+Under **Runs → Street**, **Gas main along…** (<kbd>GM</kbd>) lays a gas main along what you click — a road, an alignment, a drafted line, a wall — at the **offset** from it and the **depth (cover)** set in the command line's bar; under a terrain the depth is taken from the ground, else from the level. **Gas main** draws one point by point. The main goes in a medium-pressure gas system of PE pipe, with its **warning tape**.
 
 **Service connection** (<kbd>GS</kbd>): click the main, then the meter box. Lapin puts a **tapping tee** on the main, lays the service pipe square off it at its cover and on to the box, and rises into the box there.
 
@@ -81,7 +84,7 @@ Under **Street**, **Gas main along…** (<kbd>GM</kbd>) lays a gas main along wh
 
 ![A gas system's defaults: its gas and its pressure class](shots/mep-gas-systems.webp)
 
-**Gas and fuel oil bill of materials** under **System** lists, system by system, the pipes by material and size with their length (and of it the risers), the bends, tees and wall sleeves, the warning tape, the valves, meters and boxes, and the appliances with their installed consumption and heat output. In IFC a gas system is an IfcDistributionSystem of type GAS and a fuel oil one FUEL; the meter box is an IfcDistributionChamberElement, the meter an IfcFlowMeter GASMETER, the valves IfcValve, the cooker an IfcBurner, the tank an IfcTank.
+**Gas and fuel oil bill of materials** under **System → Schedules** lists, system by system, the pipes by material and size with their length (and of it the risers), the bends, tees and wall sleeves, the warning tape, the valves, meters and boxes, and the appliances with their installed consumption and heat output. In IFC a gas system is an IfcDistributionSystem of type GAS and a fuel oil one FUEL; the meter box is an IfcDistributionChamberElement, the meter an IfcFlowMeter GASMETER, the valves IfcValve, the cooker an IfcBurner, the tank an IfcTank.
 
 ![The gas and fuel oil bill of materials](shots/mep-gas-list.webp)
 
@@ -89,7 +92,7 @@ Sizing the pipes from the appliances' consumption and checking the pressure drop
 
 ## Fire protection
 
-**Fire alarm** and **Fire hydrants** are services of their own under **New system**, with their tools in the **Fire alarm** and **Fire hydrants** groups.
+**Fire alarm** and **Fire hydrants** are services of their own under **New system**, their devices put down with **Place node**, and the loop closed with **Close the loop** in the **Runs** group.
 
 **New system → Fire alarm** places the **fire alarm control panel** where you click and a first **smoke detector** beside it, joined by the loop's cable. Every device you place after that (**Smoke detector** <kbd>SD</kbd>, **Heat detector** <kbd>HD</kbd>, **Manual call point** <kbd>MC</kbd>, **Sounder**, **Sounder beacon**) joins the loop's open end, the device placed before it. The cable runs from one device to the next in the order you place them. **Close the loop** brings the cable from the last device back to the panel's return, so the loop is fed from both ends. The cable is a fire-resistant cable on the ceiling.
 
@@ -103,7 +106,7 @@ Each detector shows its **coverage** as a dashed circle. By default the radius c
 
 ![The fire alarm loop and the hydrants in 3D](shots/mep-fire-3d.webp)
 
-**Fire protection bill of materials** under **System** lists, system by system:
+**Fire protection bill of materials** under **System → Schedules** lists, system by system:
 
 - the panels, detectors, call points and sounders;
 - the loop's cable with its length, and whether each loop is closed;
@@ -118,7 +121,7 @@ Placing the detectors room by room from the planning table and checking that eve
 
 ## Exhaust fans
 
-The **Fans** group on the MEP tab places bathroom and kitchen extract fans as elements of their own, each of a type you configure:
+**Fans** (in the **Carriers and fans** group of the MEP tab) places bathroom and kitchen extract fans as elements of their own, each of a type you configure:
 
 - **Wall fan** (<kbd>VF</kbd>): an axial fan on a wall, blowing straight out through it;
 - **Ceiling fan**: a fan under the ceiling with a duct out of its side;
@@ -167,7 +170,7 @@ IFC writes a fan as an **IfcFan** of an **IfcFanType** with its predefined type 
 
 ## Cable trays and trunking
 
-The **Cable carriers** group on the MEP tab draws what cables lie in: **cable ladders**, **perforated** and **solid trays**, **trunking** (a closed box with its lid) and **conduit**.
+The **Carriers and fans** group on the MEP tab draws what cables lie in: **cable ladders**, **perforated** and **solid trays**, **trunking** (a closed box with its lid) and **conduit**.
 
 **Cable tray** (<kbd>CT</kbd>) draws a carrier as a run is drawn: click its points on the plan, Enter (or a click on the last point) finishes it. Its legs are laid at 45° steps, so it turns by 45° or 90°. The command line's bar chooses its type and its **elevation** (2.4 m above the storey by default). The types are the project's own and Lapin's built-in ones, grouped by kind: trays 100×60, 200×60, 300×60 and 400×100, a solid tray 200×60, ladders 300×100 and 600×100, trunking 40×40, 60×40 and 100×60, conduit Ø20, Ø25 and Ø32. The built-in sizes and limits are indicative: check them against the manufacturer's.
 

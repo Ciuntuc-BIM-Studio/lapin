@@ -273,6 +273,7 @@ public static class Drafts
                 if (construction) mk.Polyline(line, false, ConstructionLayer, Pens.Default.Hatch, "#8f98a3", [2, 1.5]);
                 else if (cloud > 0) mk.Polyline(Cloud(line, cloud * c.Mm), false, layer.Name, layer.Weight, color, layer.DashIn(c.Book));
                 else mk.Polyline(line, false, layer.Name, layer.Weight, color, layer.DashIn(c.Book));
+            if (cloud == 0 && CurveOf(shape) is { } curve) mk.Curves.Add(curve);
             var k = Geo.Keys(shape);
             mk.Snaps.AddRange([.. k.Endpoints, .. k.Midpoints, .. k.Centers, .. k.Quadrants]);
             mk.Shapes.Add(shape.ToJson());
@@ -281,6 +282,15 @@ public static class Drafts
     }
 
     static JsonObject Also(this JsonObject o, Action<JsonObject> f) { f(o); return o; }
+
+    /// <summary>A circle, an arc or an ellipse as the exact curve DXF writes it as (its chords draw it everywhere else); null for the others.</summary>
+    public static PenCurve? CurveOf(Shape s) => s switch
+    {
+        Circle c when c.R > 1e-9 => PenCurve.Circle(c.C, c.R),
+        Arc a when a.R > 1e-9 => PenCurve.Arc(a.C, a.R, a.Start, a.Sweep),
+        Ellipse e when e.A > 1e-9 && e.Ratio > 0 => PenCurve.Ellipse(e.C, e.M, e.Ratio, e.Whole ? 0 : e.Start, e.Sweep),
+        _ => null,
+    };
 
     /// <summary>
     /// A closed ring drawn as a revision cloud: each side cut into scallops about <paramref name="arc"/> long (view units), each

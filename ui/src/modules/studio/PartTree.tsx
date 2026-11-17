@@ -11,7 +11,7 @@ import { create } from 'zustand';
 import type { Overlay3DProps } from '../../platform/module';
 import { showPropsTab } from '../../app/panels';
 import { notify, useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
 import { LengthField, NumberField } from '../../shell/cells';
 import { formatLength } from '../../engine/unitsStore';
 import { modelBounds } from '../../viewport/sectionBox';
@@ -21,7 +21,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { editedPartId, editPart, finishPart } from './editMode';
 import { usePartTree } from './partTreeStore';
 import { ParamsButton } from './PartParams';
-import { editFamily } from './families/FamilyTools';
+import { PartMembersSection } from './PartMembersSection';
 import { editSketch } from './sketch';
 import { AddBody, AddSketch, BodyControls, ConstrainPartButton, LocalSketchActions } from './PartSketchTree';
 import { enterPartSketch } from './PartSketchEdit';
@@ -66,8 +66,16 @@ function openSketch(tree: PartTree, row: SketchRow): void {
   else if (row.opens === 'view') {
     // The sketch lives on its view, where the part's own isolation would hold its shapes out of reach: the edit mode ends, as the sketch opens.
     void finishPart().then(() => editSketch(tree.id));
-  } else if (row.opens === 'body' && tree.partTypeId) editFamily(tree.partTypeId);
-  else notify('That sketch is not in the model any more: redraw it to rebuild the solid.');
+  } else if (row.opens === 'body') {
+    // A body of formula corners: the part's own sketch is made of them first (Constrain part), then entered.
+    void execute('studio.constrainPart', { id: tree.id }).then(async () => {
+      const e = useSession.getState().error;
+      if (e) { notify(e); return; }
+      const fresh = await query<PartTree>('studio.partTree', { id: tree.id });
+      const own = fresh?.sketches.find((x) => x.local && x.frame);
+      if (own) await enterPartSketch(tree.id, own.id); else notify('That body has no sketch to open.');
+    });
+  } else notify('That sketch is not in the model any more: redraw it to rebuild the solid.');
 }
 
 export function PartTreePanel() {
@@ -139,6 +147,7 @@ export function PartTreePanel() {
             </ol>
             <AddBody tree={tree} />
           </div>
+          <PartMembersSection partId={id} members={tree.members ?? []} />
           <div className="part-section">
             <div className="row between"><div className="part-title">Parameters</div><ParamsButton /></div>
             {!params.length && <p className="muted small">None.</p>}

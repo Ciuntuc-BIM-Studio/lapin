@@ -16,11 +16,13 @@ For a space without walls all round, such as a terrace or one end of an open-pla
 
 A drawn room's edges can be curved, as a floor's: the **Room by outline** bar draws a **Polygon** whose edges may be arcs (**Arcs (Space)**), a **Rectangle** or a **Circle**, and the selected room's right-click offers **Make arc**, **Make straight**, **Fillet corner…** and **Chamfer corner…**. Its area and perimeter are measured on the true arcs, and in IFC its space's profile is the true curve. A room found from its walls follows them, so its outline is not edited this way.
 
+**Modify → Split element** cuts a drawn room in two along a line of two points: the part you click keeps the room, the other is a new room with the storey's next number, and their areas add up. **Modify → Trim/Extend elements** trims it by a straight boundary. A room found from its walls is divided by a room separation line instead.
+
 ![A drawn room with a curved edge and a rounded corner, a round room and a balcony with a curved front](shots/rooms-curved.webp)
 
 ## Room separation lines
 
-An open-plan kitchen and living room, the two ends of a hall, a gallery's landing: spaces with no wall between them that should still be rooms of their own. **Architecture → Room separation** (<kbd>RS</kbd> for a line) draws a line that bounds rooms as a wall would, with no body: a **line** (chained, each click the start of the next; set to **Arc** in the command line's bar it is an arc: its start, its end, a point it passes through), a **polyline** (its corners, then <kbd>Enter</kbd>), a **rectangle** (two opposite corners: the zone inside it becomes a room of its own), or a **circle** (its centre, a point on it). Draw it from wall to wall; an end a hair short of a wall's face still closes on it.
+An open-plan kitchen and living room, the two ends of a hall, a gallery's landing: spaces with no wall between them that should still be rooms of their own. **Architecture → Room separation** (<kbd>LS</kbd> for a line) draws a line that bounds rooms as a wall would, with no body: a **line** (chained, each click the start of the next; set to **Arc** in the command line's bar it is an arc: its start, its end, a point it passes through), a **polyline** (its corners, then <kbd>Enter</kbd>), a **rectangle** (two opposite corners: the zone inside it becomes a room of its own), or a **circle** (its centre, a point on it). Draw it from wall to wall; an end a hair short of a wall's face still closes on it.
 
 ![An open-plan kitchen and living room parted by a room separation line, each room with its own area](shots/room-dividers.webp)
 

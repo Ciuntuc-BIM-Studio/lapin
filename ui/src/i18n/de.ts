@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Bögen", "Sketch edits": "Skizze bearbeiten", "Geometric": "Geometrisch", "Arrays": "Reihen", "Move, rotate, mirror": "Verschieben, drehen, spiegeln", "Carriers and fans": "Kabelträger und Ventilatoren",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Breite (leer: die des Typs; die erste Kante eines Umrisses)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Das Grundstück (die Grenze des Grundbesitzes) des Geländes unter jedem geschlossenen Umriss, seine Bögen erhalten.", "An opening in the floor under each closed outline; a circle makes a round one.": "Eine Öffnung in der Decke unter jedem geschlossenen Umriss; ein Kreis ergibt eine runde.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Eine Treppe des gewählten Typs: ihr Fuß am Anfang des Pfads, entlang ihm steigend; die erste Kante eines Umrisses ist ihr Fuß und ihre Breite.",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "Teile der Stahlanschlüsse", "Reinforcing bars": "Bewehrungsstäbe", "Bars by mark": "Stäbe nach Position", "Place in its element": "Platz in seinem Element", "Thickness (m)": "Dicke (m)", "Row of the members list": "Zeile der Stabliste", "Hall": "Halle", "kg/m": "kg/m", "Each (kg, the row's)": "Stück (kg, der Zeile)", "Row of the parts schedule": "Zeile der Teileliste", "Weld length (m)": "Schweißnahtlänge (m)", "Total length (m)": "Gesamtlänge (m)", "A type's bars of one mark: shape, Ø, length": "Stäbe eines Typs mit einer Position: Form, Ø, Länge",
   // Annotations drawn on a sheet itself (decision 620)
   "drawing on the sheet": "Zeichnung auf dem Plan", "Back to the sheet: place, move and crop its views there": "Zurück zum Plan: dort seine Ansichten platzieren, verschieben und zuschneiden", "Draw on the sheet itself: texts, leader notes, lines, clouds, hatches, symbols, a legend, a scale bar (in paper mm)": "Auf dem Plan selbst zeichnen: Texte, Hinweise mit Führungslinie, Linien, Revisionswolken, Schraffuren, Symbole, eine Legende, eine Maßstabsleiste (in Papier-mm)", "Revision cloud": "Revisionswolke", "Leader note": "Hinweis mit Führungslinie", "Annotate sheet": "Plan beschriften", "A legend goes on a sheet: open the sheet and click Annotate.": "Eine Legende gehört auf einen Plan: Plan öffnen und Beschriften klicken.", "Open a sheet first: then draw on it here.": "Zuerst einen Plan öffnen: dann hier darauf zeichnen.", "Revision cloud drawn.": "Revisionswolke gezeichnet.", "First corner [Polygon]": "Erste Ecke [Polygon]", "Next point (Enter closes the cloud)": "Nächster Punkt (Enter schließt die Wolke)", "First point": "Erster Punkt", "materials (hatches and fills)": "Materialien (Schraffuren und Füllungen)", "line styles": "Linienstile", "Its heading; {…} tokens as in a title block. Empty: LEGEND": "Ihre Überschrift; {…}-Platzhalter wie in einem Plankopf. Leer: LEGENDE", "Its length in metres of the model; empty: a round length about 80 mm long on paper": "Ihre Länge in Metern des Modells; leer: eine runde Länge von etwa 80 mm auf Papier", "Divisions": "Unterteilungen", "On a sheet: its own scale when it follows no view; empty: the sheet's first view's": "Auf einem Plan: ihr eigener Maßstab, wenn sie keiner Ansicht folgt; leer: der der ersten Ansicht des Plans", "by view": "nach Ansicht", "Drawn as a revision cloud: scallops about this long on paper": "Als Revisionswolke gezeichnet: Bögen etwa so lang auf Papier", "Change legend": "Legende ändern", "A legend goes on a sheet: open the sheet and annotate it.": "Eine Legende gehört auf einen Plan: Plan öffnen und beschriften.", "A sheet's paper is not a view to place.": "Das Papier eines Plans ist keine platzierbare Ansicht.", "A cloud's scallop is 1 to 100 mm.": "Der Bogen einer Wolke misst 1 bis 100 mm.",
   // Fixed schedules as shipped field-schedule templates, parts as rows (audit S1)
@@ -1184,6 +1190,12 @@ export const DE: Record<string, string> = {
   'Extract grille': 'Abluftgitter',
   'Rise / drop': 'Steigung / Fall',
   'Cap': 'Kappe',
+  'Coupling': 'Muffe',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': 'Ziehen: den Ständer entlang der Wand verschieben (Strg-Klick: entfernen)',
+  'Drag out or in: more or fewer king studs': 'Nach außen oder innen ziehen: mehr oder weniger Hauptständer',
+  'Drag out or in: more or fewer jack studs': 'Nach außen oder innen ziehen: mehr oder weniger Sturzständer',
+  'Reset studs': 'Ständer zurücksetzen',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": 'Auf dieser Wand verschobene, hinzugefügte oder entfernte Ständer (in ihrer Rahmenansicht) kehren zum Raster ihres Typs zurück',
   'Service': 'Gewerk',
   'Ports': 'Anschlüsse',
   'open': 'offen',
@@ -3924,6 +3936,8 @@ export const DE: Record<string, string> = {
   "Its centre, the end of one semi-axis, then the other semi-axis": "Mittelpunkt, Ende einer Halbachse, dann die andere Halbachse", "End of one semi-axis": "Ende einer Halbachse", "Other semi-axis (a point or a value) · Arc (A)": "Andere Halbachse (ein Punkt oder ein Wert) · Bogen (A)", "Other semi-axis (a point or a value)": "Andere Halbachse (ein Punkt oder ein Wert)", "Start of the arc": "Anfang des Bogens", "End of the arc (anticlockwise)": "Ende des Bogens (gegen den Uhrzeigersinn)", "Elliptical arc": "Ellipsenbogen",
   "From drawn shape": "Aus gezeichneter Form", "From room": "Aus Raum", "Click inside a closed drafted shape: a polyline, a rectangle, a circle": "In eine geschlossene gezeichnete Form klicken: eine Polylinie, ein Rechteck, ein Kreis", "Click inside a room: its outline": "In einen Raum klicken: sein Umriss", "No walls close round that point.": "Keine Wände schließen sich um diesen Punkt.", "Click inside a closed drafted shape (a closed polyline, a rectangle or a circle).": "In eine geschlossene gezeichnete Form klicken (eine geschlossene Polylinie, ein Rechteck oder einen Kreis).", "Click inside a room.": "In einen Raum klicken.",
   "Hole in the outline": "Loch im Umriss", "Hole in outline": "Loch im Umriss", "Hole in platform": "Loch in der Plattform", "Drag to move the hole": "Ziehen, um das Loch zu verschieben", "Remove hole": "Loch entfernen",
+  "The language of its own words: its heading, the lines' roles and types": "Die Sprache ihrer eigenen Wörter: Überschrift, Rollen und Arten der Linien",
+  "Drag to move the leader's arrow": "Ziehen, um den Pfeil der Hinweislinie zu verschieben", "Drag to move the bend": "Ziehen, um den Knick zu verschieben", "Move leader": "Hinweislinie verschieben",
   // Fillet and chamfer on walls and railings, railings with arcs (a user's request)
   "A railing along each line, arc or polyline; those meeting end to end make one.": "Ein Geländer entlang jeder Linie, jedes Bogens oder jeder Polylinie; die sich Ende an Ende treffen, werden eines.", "One railing where they meet end to end": "Ein Geländer, wo sie sich Ende an Ende treffen", "Drag to bend the segment through the point": "Ziehen, um das Segment durch den Punkt zu biegen",
   // Edit sketch on outlines (forum topic 97, stage 3)
@@ -3999,6 +4013,47 @@ export const DE: Record<string, string> = {
   'The element\'s classification (Manage → Classifications…): its code, or its title': 'Die Klassifikation des Elements (Verwalten → Klassifikationen…): ihr Code oder ihr Titel',
   'ALL DOORS & WINDOWS': 'ALLE TÜREN & FENSTER',
   'Every door and window of the plan not tagged yet: a marker across its wall': 'Jede noch nicht beschriftete Tür und jedes Fenster des Grundrisses: eine Marke quer über ihre Wand',
+  // Parts replace families (audit S6)
+  "Parts…": "Bauteile…",
+  "Part…": "Bauteil…",
+  "Part from sketch…": "Bauteil aus Skizze…",
+  "Make part from sketch…": "Bauteil aus Skizze erstellen…",
+  "Make part from sketch": "Bauteil aus Skizze erstellen",
+  "Make part": "Bauteil erstellen",
+  "Add to part": "Zum Bauteil hinzufügen",
+  "Held by": "Gehalten von",
+  "Attribute": "Attribut",
+  "Delete this part from the project? Undo brings it back.": "Dieses Bauteil aus dem Projekt löschen? Rückgängig bringt es zurück.",
+  "Part added to the project. Edit part opens its sketches and parameters.": "Bauteil zum Projekt hinzugefügt. Bauteil bearbeiten öffnet seine Skizzen und Parameter.",
+  "Part (.lapinpart, .lapinfamily)": "Bauteil (.lapinpart, .lapinfamily)",
+  "Choose a part to save.": "Wählen Sie ein Bauteil zum Speichern.",
+  "A new part, a box to start from": "Ein neues Bauteil, ein Quader als Ausgangspunkt",
+  "A part's .lapinpart file (an older .lapinfamily too), exported from Lapin on this or another computer": "Die .lapinpart-Datei eines Bauteils (auch eine ältere .lapinfamily), aus Lapin auf diesem oder einem anderen Rechner exportiert",
+  "Choose a part, or start a new one. A part is edited in its own edit mode (Edit part): its sketches, steps, parameters and the elements it holds. Objects of a part are placed from Studio → Part, and take their own values.": "Wählen Sie ein Bauteil oder beginnen Sie ein neues. Ein Bauteil wird in seinem eigenen Bearbeitungsmodus bearbeitet (Bauteil bearbeiten): seine Skizzen, Schritte, Parameter und die Elemente, die es enthält. Objekte eines Bauteils werden über Studio → Bauteil platziert und haben eigene Werte.",
+  "Opens the part's edit mode on a placed object (one is placed when there is none)": "Öffnet den Bearbeitungsmodus des Bauteils an einem platzierten Objekt (es wird eines platziert, wenn es keins gibt)",
+  "Place objects of this part on a plan": "Objekte dieses Bauteils auf einem Grundriss platzieren",
+  "The part as a .lapinpart file, to import on another computer": "Das Bauteil als .lapinpart-Datei, zum Importieren auf einem anderen Rechner",
+  "Open a storey first: a part is edited on an object placed on one.": "Öffnen Sie zuerst ein Geschoss: Ein Bauteil wird an einem darauf platzierten Objekt bearbeitet.",
+  "The part could not be placed.": "Das Bauteil konnte nicht platziert werden.",
+  "The part had no object yet: one was placed at the origin of the active storey to edit it on.": "Das Bauteil hatte noch kein Objekt: Zum Bearbeiten wurde eines im Ursprung des aktiven Geschosses platziert.",
+  "There is no part yet: make one in Studio → Parts…, or from a sketch.": "Es gibt noch kein Bauteil: Erstellen Sie eines in Studio → Bauteile… oder aus einer Skizze.",
+  "No part yet: Studio → Parts…": "Noch kein Bauteil: Studio → Bauteile…",
+  "The part to place": "Das zu platzierende Bauteil",
+  "The part in the Parts dialog": "Das Bauteil im Dialog Bauteile",
+  "Its part is not in the project.": "Sein Bauteil ist nicht im Projekt.",
+  "Its sketches, steps, parameters and elements (Tab)": "Seine Skizzen, Schritte, Parameter und Elemente (Tab)",
+  "The part could not be made.": "Das Bauteil konnte nicht erstellt werden.",
+  "Part made: its parameters are W, H and D. Edit part opens its sketches.": "Bauteil erstellt: Seine Parameter sind W, H und D. Bauteil bearbeiten öffnet seine Skizzen.",
+  "The closed outlines chosen made a part of your own, its body drawn from them: its name, depth and class are asked next.": "Die gewählten geschlossenen Umrisse werden zu einem eigenen Bauteil, dessen Körper daraus gezeichnet wird: Name, Tiefe und Klasse werden als Nächstes abgefragt.",
+  "None: select the elements and the part, then Studio → Add to part.": "Keine: Wählen Sie die Elemente und das Bauteil aus, dann Studio → Zum Bauteil hinzufügen.",
+  "Let go: it stays in this object as a plain element, and goes from the others": "Loslassen: Es bleibt in diesem Objekt als einfaches Element und verschwindet aus den anderen",
+  "Stop driving it": "Nicht mehr steuern",
+  "Drive the attribute by a formula of the part's parameters": "Das Attribut durch eine Formel aus den Parametern des Bauteils steuern",
+  "Edit it in the part, for every object of the part": "Im Bauteil bearbeiten, für jedes Objekt des Bauteils",
+  "Select one placed part and the elements to put into it: they become part of it, in every object of the part.": "Wählen Sie ein platziertes Bauteil und die Elemente, die hinein sollen: Sie werden Teil davon, in jedem Objekt des Bauteils.",
+  "Select the elements to put into the part together with the part itself.": "Wählen Sie die Elemente, die ins Bauteil sollen, zusammen mit dem Bauteil selbst.",
+  "The elements are part of the part now: edit them in its edit mode (Tab).": "Die Elemente gehören nun zum Bauteil: Bearbeiten Sie sie in seinem Bearbeitungsmodus (Tab).",
+  "Parts (old .lapinfamily)": "Bauteile (altes .lapinfamily)",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

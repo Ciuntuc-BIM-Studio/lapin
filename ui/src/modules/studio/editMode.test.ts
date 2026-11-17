@@ -48,10 +48,25 @@ describe('the part edit mode', () => {
     expect(scope.includes(node('b'))).toBe(false);
     expect(selectableIds(['a', 'b', 'w'], 'a')).toEqual(['a']);
     expect(selectableIds(['a', 'b', 'w'], null)).toEqual(['a', 'b', 'w']);
+    expect(selectableIds(['a', 'b', 'w'], 'a', ['w'])).toEqual(['a', 'w']);
   });
 
   it('is not an edit mode of the part for another kind of scope', () => {
     expect(editedPartId({ id: 'mep:1', label: 'x', includes: () => true })).toBeNull();
+  });
+});
+
+describe('the part edit mode with members', () => {
+  it('lets the elements the placed part holds be picked, read live from the part', () => {
+    useSession.setState({ nodes: new Map([['p', node('p', { operation: 'part', memberIds: { wall: 'w1', 'wall/door': 'd1' } })], ['w1', node('w1')], ['d1', node('d1')], ['x', node('x')]]) });
+    const scope = partScope(useSession.getState().nodes.get('p')!);
+    expect(scope.includes(node('p'))).toBe(true);
+    expect(scope.includes(node('w1'))).toBe(true);
+    expect(scope.includes(node('d1'))).toBe(true);
+    expect(scope.includes(node('x'))).toBe(false);
+    // A member let go is out of the scope at once (the node is read again, not captured).
+    useSession.setState({ nodes: new Map([['p', node('p', { operation: 'part', memberIds: {} })]]) });
+    expect(scope.includes(node('w1'))).toBe(false);
   });
 });
 
@@ -66,6 +81,7 @@ describe('Tab', () => {
   it('does not steal Tab from a field, a dialog, a tool or another view', () => {
     expect(tabIntent(state({ inField: true }))).toBeNull();
     expect(tabIntent(state({ inField: true, editing: 'a' }))).toBeNull();
+    expect(tabIntent(state({ dialog: 'parts' }))).toBeNull();
     expect(tabIntent(state({ dialog: 'families' }))).toBeNull();
     expect(tabIntent(state({ tool: 'wall' }))).toBeNull();
     expect(tabIntent(state({ editing: 'a', tool: 'studio.pushPull' }))).toBeNull();

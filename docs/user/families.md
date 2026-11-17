@@ -1,66 +1,57 @@
 ---
 title: Families
 order: 86
-summary: Objects of your own with parameters — a table, a cabinet, a bench — made of bodies whose sizes follow formulas, placed like any element and exported as the IFC class you choose.
+summary: Families are parts now — objects of your own with parameters, a table, a cabinet, a bench — managed in Studio → Parts…, placed like any element and exported as the IFC class you choose.
 ---
 
-## What a family is
+## Families are parts now
 
-Families are now **parts**: a project with families opens them as parts with the same ids, and **Tab** on a placed one edits it in place (see the Parts page).
+What used to be a **family** is a **part**. A project saved with families opens them as parts with the same names, values and ids, and the objects placed from them stay where they were. Each corner that was a formula of the parameters is a sketch of the part's own, with its dimensions as constraints, so a part is edited in place: select an object of it and press **Tab** (see the [Parts](studio-parts.md) page). Older **`.lapinfamily`** files are still read and come in as parts.
 
-A **family** is an object you define once and place as many times as you need. It has **parameters** (a width, a height, a yes/no for a shelf) and **bodies**, each a closed outline pushed to a depth. Every corner, depth and offset is a number or a **formula** of the parameters, so one family gives a table of any size. Each object placed keeps its own values and follows the family when you change it.
+A part is an object you define once and place as many times as you need. It has **parameters** (a width, a height, a yes/no for a shelf) and **bodies**, each a closed sketch pushed to a depth, and it may also hold **elements** such as walls or furniture (see Parts). Each object placed keeps its own values and follows the part when you change it. A part belongs to the project; to use it in other projects, keep it in a library (below).
 
-A family is lighter than a type configurator: it has no layers or catalogue sizes, only the solids you describe. It belongs to the project. To use it in other projects, keep it in a library (below).
+## Studio → Parts…
 
-## Studio → Families…
+**Studio → Parts…** opens the [Place catalogue](interface.md#the-place-catalogue) on the parts, to place one; its **Parts…** button opens the manager: the parts of the project, each with the number of objects that use it.
 
-**Studio → Families…** opens the [Place catalogue](interface.md#the-place-catalogue) on the families, to place one; its **Families…** button opens the families of the project, each with the number of objects that use it. **New** starts a box with the parameters W, H and D.
+![The Parts dialog: the parts of the project, and for the one chosen its name, class and buttons](shots/parts-dialog.webp)
 
-![The Families dialog: a table with its wireframe, the values to try and its parameters](shots/families-dialog.webp)
+- **New** starts a box with the parameters W, H and D, ready to edit.
+- **Name**: type a new one and press Enter. **IFC class** is what the object is exported as: Building element proxy (the default), Furnishing element, Column, Beam, Member, Plate, Slab, Wall, Flow terminal and others. The rest of the definition is kept.
+- **Edit part** closes the dialog, turns to 3D and opens the part's edit mode on a placed object, where its sketches, steps, parameters and elements are edited. When the part has no object yet, one is placed at the origin of the active storey, and a notice says so.
+- **Place on a plan**, **Export…**, **Keep on this computer** and **Delete** are below; delete is refused while objects of the part stand in the project.
+- **Import…** reads a `.lapinpart` or an older `.lapinfamily` file through the import preview.
 
-- **Name**, **IFC class** and **Description** come first. The class is what the object is exported as: Building element proxy (the default), Furnishing element, Column, Beam, Member, Plate, Slab, Wall, Flow terminal and others.
-- The **wireframe** is built by the engine from the family as it stands, with each change. Type values under **Try values** to see another size; an empty one is the default.
-- **Parameters** have a key (letters and digits, starting with a letter: `W`, `Height`, `HasShelf`), a label, a kind and a default. The kinds are Length, Number, Angle and Yes/no. Lengths are in metres and angles in degrees here. When you change a key (`W` to `Width`), every formula of the family that names it follows: corners, holes, depth, offset and conditions. Only whole names change (`W2` and `max(` are left alone), and a key another parameter already has is refused with a message.
-- **Bodies** each have a plane: *Lying (xy)* is an outline on the floor pushed up, *Standing, front (xz)* and *Standing, side (yz)* stand up. The **corners** are rows of two cells, x and y. **Depth** is the distance the outline is pushed. **Offset x, y, z** moves the body from the object's origin. **Material** gives it a project material, and without one it is grey.
-
-Press **Save** to keep the changes: the objects already placed follow. **Revert** goes back to the saved family.
-
-## Formulas and conditions
-
-A cell holds a number or a formula: `W - 0.04`, `H / 2`, `2 * T`. The names are the parameters' keys, and the functions are the ones of the parameter formulas (min, max, round, floor, ceil, sqrt, sin, cos, tan, atan2, if, clamp). Open **Formulas** at the bottom of the dialog for the list of names this family can use. A cell with a formula is shown in colour.
-
-**Made when** is a condition: the body is made only when it is not 0. A yes/no parameter such as `HasShelf` works, and so does a comparison such as `W > 1.2`. In the table above the shelf has `HasShelf`, so objects with the shelf switched off have no shelf.
-
-When a formula does not read, the engine says why under the picture, and **Save** refuses it. The wireframe stays at the last good one.
-
-![A condition that does not read: the engine's sentence under the picture](shots/families-error.webp)
+The parameters, the bodies and their formulas are no longer edited in a table here: they are the part's tree in its edit mode (see Parts). A cell is still a number or a formula of the parameters, such as `W - 0.04`, `H / 2` or `2 * T`, and a body's **Made when** condition still switches it off (`HasShelf`, or a comparison such as `W > 1.2`).
 
 ## Placing objects
 
-**Studio → Family** places an object: choose the family in the bar, click on the plan. **R** turns it a quarter, **M** mirrors it, and the bar's buttons do the same. A ghost of the object, drawn as lines, follows the cursor on the plan, turned and mirrored as the bar says and as wide as the values in the bar make it. The bar also has one field per parameter: type a value for the next object, or leave it empty for the family's own. **Edit…** opens the family. **Place on a plan** in the dialog starts the same tool.
+**Studio → Part** places an object: choose the part in the bar, click on the plan. **R** turns it a quarter, **M** mirrors it, and the bar's buttons do the same. A ghost of the object, drawn as lines, follows the cursor on the plan, turned and mirrored as the bar says and as wide as the values in the bar make it. The bar also has one field per parameter: type a value for the next object, or leave it empty for the part's own. **Edit…** opens the part in the manager. **Place on a plan** in the manager starts the same tool.
 
-![The ghost of the table at the cursor, turned a quarter](shots/family-place-ghost.webp)
+![The ghost of the table at the cursor, turned a quarter](shots/part-place-ghost.webp)
 
-![The Family tool's bar: the family, its turn, its mirror and its values](shots/family-place-bar.webp)
+![The Part tool's bar: the part, its turn, its mirror and its values](shots/part-place-bar.webp)
 
-An object is moved, turned, mirrored, copied and deleted like any element. It is stored on the storey where you placed it.
+An object is moved, turned, mirrored, copied and deleted like any element. It is stored on the storey where you placed it. The old tool names (**Family**, **Families…**) still work in shortcuts, quick tools and saved interfaces.
 
 ## An object's properties
 
-Select an object to see its **Family** section in the properties. It shows the family and its IFC class, and **Edit family…** opens the dialog on it. Under it, the **Parameters** section lists only the parameters the part **publishes**: an instance parameter is a field for this object (an empty field is the part's value; type a value to give this object its own, clear it to go back), a type parameter is read-only, a derived one shows its formula. With several objects of a family selected, a value is set on all of them. See [Parts](studio-parts.md) for setting the parameters up. Under it, **Rotation**, **Height above the storey** and **Mirrored** are the object's own fields.
+Select an object to see its **Part** section in the properties. It shows the part and its IFC class, and **Parts…** opens the manager on it; the **Edit part** button below (or **Tab**) enters the edit mode. Under it, the **Parameters** section lists only the parameters the part **publishes**: an instance parameter is a field for this object (an empty field is the part's value; type a value to give this object its own, clear it to go back), a type parameter is read-only, a derived one shows its formula. With several objects of a part selected, a value is set on all of them. See [Parts](studio-parts.md) for setting the parameters up. Under it, **Rotation**, **Height above the storey** and **Mirrored** are the object's own fields.
 
-![An object's properties: its own width, the shelf switched off, the family's values in grey](shots/family-properties.webp)
+![An object's properties: its own width, the shelf switched off, the part's values in grey](shots/part-properties.webp)
 
-![The table objects in 3D, standing in the house](shots/family-3d.webp)
+![The table objects in 3D, standing in the house](shots/part-3d.webp)
 
-A family cannot be deleted while objects of it stand in the project: delete the objects first.
+A part cannot be deleted while objects of it stand in the project: delete the objects first.
 
-## Make family from sketch
+## Make part from sketch
 
-Draw closed outlines on a plan, a section or an elevation with the Draft tools (closed polylines, rectangles and circles), select them and choose **Make family from sketch…**, in the **Family** group of the Draft tab or with a right-click. The dialog asks the **name**, the **depth** and the **IFC class**. A plan's outlines lie flat and a section's or an elevation's stand. With **Width, height and depth as parameters** on, the family has the parameters `W`, `H` and `D`, and the outline's right and top corners follow `W` and `H`, so it stretches. The drafting stays where it was. The new family opens in the editor.
+Draw closed outlines on a plan, a section or an elevation with the Draft tools (closed polylines, rectangles and circles), select them and choose **Make part from sketch…**, in the **Part** group of the Draft tab or with a right-click. The dialog asks the **name**, the **depth** and the **IFC class**. A plan's outlines lie flat and a section's or an elevation's stand. With **Width, height and depth as parameters** on, the part has the parameters `W`, `H` and `D`, and the outline's right and top corners follow `W` and `H`, so it stretches. The drafting stays where it was. The new part is chosen in the manager; **Edit part** opens its sketch, drawn from your outline and constrained.
 
-![Make family from sketch: its name, depth and IFC class](shots/family-from-sketch.webp)
+![Make part from sketch: its name, depth and IFC class](shots/part-from-sketch.webp)
+
+![The new part in its edit mode: its sketch is the part's own](shots/part-from-sketch-tree.webp)
 
 ## Files and libraries
 
-A family is exported as a **`.lapinfamily`** file (**Export…**) and read back with **Import…**. **Keep on this computer** keeps a copy that the **Catalog** offers in every project. In the desktop app, **Firm folders** in the dialog lists the families in your firm's folders; a click adds one to the project, and **Save to firm folder…** writes the chosen family into a writable folder. See *Firm folders in the library dialogs* in the Interface page.
+A part is exported as a **`.lapinpart`** file (**Export…**) and read back with **Import…**; a `.lapinfamily` file made by an older version is read too. **Keep on this computer** keeps a copy that the **Catalog** offers in every project. In the desktop app, **Firm folders** in the dialog lists the parts in your firm's folders; a click adds one to the project, and **Save to firm folder…** writes the chosen part into a writable folder. See *Firm folders in the library dialogs* in the Interface page.

@@ -39,7 +39,7 @@ public sealed class LineworkConvertTargetsTests
         var f = F();
         var plan = Plan(f);
         var ids = f.Session.Query("drafting.converters", new JsonObject { ["viewId"] = plan })!["converters"]!.AsArray().Select(c => (string)c!["id"]!).ToHashSet();
-        Assert.Superset(new HashSet<string> { "roof", "ceiling", "balcony", "skirting", "terrain", "platform", "road", "civilPath", "breakline", "steelMembers", "steelColumns", "steelOutlines" }, ids);
+        Assert.Superset(new HashSet<string> { "roof", "ceiling", "balcony", "skirting", "terrain", "platform", "parcel", "floorOpening", "stair", "road", "civilPath", "breakline", "steelMembers", "steelColumns", "steelOutlines" }, ids);
         // A roof style's choice carries its name beside its id.
         var roof = f.Session.Query("drafting.converters", new JsonObject { ["viewId"] = plan })!["converters"]!.AsArray().Single(c => (string)c!["id"]! == "roof")!;
         Assert.Equal(roof["options"]![0]!["choices"]!.AsArray().Count, roof["options"]![0]!["choiceLabels"]!.AsArray().Count);
@@ -199,6 +199,70 @@ public sealed class LineworkConvertTargetsTests
         f.Run("civil.addTerrain", new JsonObject { ["points"] = new JsonArray(new JsonArray(0, 0, 10), new JsonArray(50, 0, 10), new JsonArray(50, 50, 12), new JsonArray(0, 50, 12)) });
         f.Run("drafting.convert", Convert(plan, line, "breakline"));
         Assert.Single((JsonArray)f.Model.OfClass(IfcClass.GeographicElement).Single().Attrs["breaklines"]!);
+    }
+
+    [Fact]
+    public void A_closed_outline_becomes_an_opening_in_the_floor_under_it_a_circle_a_round_one()
+    {
+        var f = F();
+        var plan = Plan(f);
+        f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(J(0, 0), J(10, 0), J(10, 8), J(0, 8)) });
+        var ids = Draw(f, plan, "0", Rect(2, 2, 4, 5), Circle(7, 4, 1), Rect(20, 20, 22, 22));
+        var preview = Preview(f, Convert(plan, ids, "floorOpening"));
+        Assert.Equal(2, (int)preview["ok"]!);
+        Assert.Contains("inside a floor", (string)preview["shapes"]!.AsArray().Single(s => s!["error"] != null)!["error"]!);
+        f.Run("drafting.convert", Convert(plan, ids, "floorOpening"));
+        var openings = f.Model.OfClass(IfcClass.OpeningElement).Where(o => o.Attrs["contour"] != null).ToList();
+        Assert.Equal(2, openings.Count);
+        Assert.Single(openings, o => ArcOutline.Rises(o.Attrs["arcs"], 4) is { Length: 4 });
+        // One undo step takes both away.
+        f.Session.Undo();
+        Assert.DoesNotContain(f.Model.OfClass(IfcClass.OpeningElement), o => o.Attrs["contour"] != null);
+    }
+
+    [Fact]
+    public void A_path_becomes_a_stair_climbing_along_it_and_an_outline_s_first_edge_its_foot_and_width()
+    {
+        var f = F();
+        var plan = Plan(f);
+        // An L path turning right at its second corner.
+        var path = Draw(f, plan, "0", new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 0), J(0, 3), J(2, 3)) });
+        f.Run("drafting.convert", Convert(plan, path, "stair"));
+        var stair = f.Model.OfClass(IfcClass.Stair).Single();
+        Assert.Equal([0.0, 0.0], ((JsonArray)stair.Attrs["at"]!).Select(x => (double)x!));
+        Assert.Equal(90, stair.Num("rotation"), 6);
+        Assert.Equal("right", stair.Str("turn"));
+        // An outline: its first edge (4 → 5.2 along y = 10) the foot, climbing into it, as wide.
+        var outline = Draw(f, plan, "0", Rect(4, 10, 5.2, 14));
+        f.Run("drafting.convert", Convert(plan, outline, "stair"));
+        var second = f.Model.OfClass(IfcClass.Stair).Single(x => x.Id != stair.Id);
+        Assert.Equal([4.6, 10.0], ((JsonArray)second.Attrs["at"]!).Select(x => Math.Round((double)x!, 9)));
+        Assert.Equal(90, second.Num("rotation"), 6);
+        Assert.Equal(1.2, second.Num("width"), 9);
+        // An arc is no stair's path.
+        var arc = Draw(f, plan, "0", Circle(30, 30, 2));
+        Assert.Contains("straight", (string)Preview(f, Convert(plan, arc, "stair"))["shapes"]![0]!["error"]!);
+    }
+
+    [Fact]
+    public void A_closed_outline_becomes_the_terrain_s_parcel_its_arcs_kept()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var circle = Draw(f, plan, "0", Circle(25, 25, 10));
+        Assert.Contains("make the terrain first", (string)Preview(f, Convert(plan, circle, "parcel"))["shapes"]![0]!["error"]!);
+        f.Run("civil.addTerrain", new JsonObject { ["points"] = new JsonArray(new JsonArray(0, 0, 10), new JsonArray(50, 0, 10), new JsonArray(50, 50, 12), new JsonArray(0, 50, 12)) });
+        f.Run("drafting.convert", Convert(plan, circle, "parcel"));
+        var t = f.Model.OfClass(IfcClass.GeographicElement).Single();
+        Assert.Equal(4, ((JsonArray)t.Attrs["parcel"]!).Count);
+        Assert.Equal(4, ArcOutline.Rises(t.Attrs[Terrains.ParcelArcs], 4)!.Length);
+        // A second outline replaces it, as Parcel does.
+        var rect = Draw(f, plan, "0", Rect(5, 5, 30, 20));
+        Assert.Contains("in place of its parcel", (string)Preview(f, Convert(plan, rect, "parcel"))["shapes"]![0]!["steps"]![0]!);
+        f.Run("drafting.convert", Convert(plan, rect, "parcel"));
+        t = f.Model.OfClass(IfcClass.GeographicElement).Single();
+        Assert.Equal(4, ((JsonArray)t.Attrs["parcel"]!).Count);
+        Assert.Null(t.Attrs[Terrains.ParcelArcs]);
     }
 
     // ------------------------------------------------------------ steel
