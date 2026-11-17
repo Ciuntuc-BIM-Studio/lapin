@@ -5,7 +5,7 @@ for cells, rows, columns and headers; multiline text with rotation; formulas; re
 cells; merge and split; widths and heights with min, max and fit-to-text; borders, text and background colours with opacity;
 placeable on sheets, on views and in symbols (a room tag that grows with its text).
 
-Stage 1 is built (decision 653). This page holds the design for all of it and what is left.
+All five stages are built (decision 653 for stage 1, the later ones in docs/decisions-pending.md). This page holds the design.
 
 ## 1. What a table is, and what it is not
 
@@ -164,13 +164,16 @@ and texts. A table in a symbol reads no other table and no model link (the symbo
 | `drafting.editTable` | `id, ops: [{op, …}]` | applies the ops in order; one that does not read refuses them all |
 | `drafting.renameTable` | `id, name` | renames a table, the references to it following |
 | `drafting.saveTableStyle` | `id, name, cells?, styleId?` | keeps the table as a table style of the drafting standards |
+| `drafting.placeTablePart` | `id, part, viewId, at, angle?` | places a long table's part on a view or a sheet of its own |
+| `drafting.tableExport` (query) | `id, format: csv\|xlsx, typed?` | the cells as a CSV text or a workbook (base64) |
 | `drafting.table` (query) | `id` | the name, the cells as typed and as shown, spans, the laid sizes, the errors |
 
 Ops (`TableEdits.Ops`): `set` (`cell, text` or `values` from that cell: a pasted block), `style` (`range, style`), `borders`
 (`range, edges: all|outer|inner|top|bottom|left|right|none|default, w, c`), `merge`, `split`, `insertRows`/`insertCols`
 (`at, count`), `deleteRows`/`deleteCols`, `colWidth` (`range, w`), `rowHeight` (`range, h`), `fit` (`range, axis:
 rows|cols|both, on, min?, max?`), `tableStyle` (`style`), `preset` (`preset`: built in, or a table style's id or name),
-`header` (`range, on`); `style` takes `pad` and `rot` too. Both commands are in the command catalogue;
+`header` (`range, on`), `link` (`range?, on: cells|rows|table, el`), `linkRows` (`at, els, copy?`), `parts` (`rows? | height?,
+gap?, dir?` or `off`), `load` (`text` or `data`, `at?`); `style` takes `pad` and `rot` too. Both commands are in the command catalogue;
 guests who may edit run them like any edit (no entry needed in `AllowedRemote`).
 
 ## 5. Interface
@@ -228,13 +231,24 @@ cell (in the text's own frame, then turned into the cell) for the view's marks a
    elements (cell, row, table) reading their fields through `ElementFields`, live, saying when the element is gone; a
    schedule's count, totals, aggregates and cells; a view filter's count and sums; the editor's Link elements bar, Unlink and
    field list. Tests: `DraftingTableModelTests` (10), `tableModel.test.ts` (3 more).
-5. **Long tables and exchange**: a table split across columns or sheets with its header repeated; CSV/XLSX import and export
-   of the cells (written after the public specifications, no dependency); grips on the drawing for column widths and row
-   heights (the marks already carry the laid sizes in `Data`).
+5. **Done.** Long tables and exchange: a table broken after so many body rows or at a height (`split: {rows | height, gap,
+   dir}`, op `parts`), each part with its leading header rows again, never through a merged cell (`DraftingTables.Parts`,
+   `Slice`), laid right of or under the first; a part placed on another view or sheet (`TABLEPART`, `{of, part}`,
+   `drafting.placeTablePart`), left out beside the table, drawn as the table reads, gone with it, back beside it when deleted.
+   Cells out as CSV (`CsvText`) and XLSX (the hand-written Office Open XML `XlsxWriter`), as they read or as typed (query
+   `drafting.tableExport`); in from CSV or a workbook's first sheet (`Tables.Read`, the readers the table imports already use;
+   op `load`), the table growing, one undo step. Grips on the drawing for the columns' widths and the rows' heights (of the
+   first part), each drag one `editTable`. Tests: `DraftingTableLongTests` (5), `tableModel.test.ts` (2 more).
+   Left out: merged cells and cell styles in the XLSX (values only, as schedules write them).
 
 ## 8. Files
 
-Engine: `engine/src/Modules/Drafting/Lapin.Drafting/DraftingTables.cs` (model, values, layout, lines, presets),
-`TableEdits.cs` (ops, reference rewriting), `TableCommands.cs` (commands, query, marks); `Expressions.cs` (ranges, `sum`,
-`average`, `count`). UI: `ui/src/modules/drafting/table/` (`tableModel.ts`, `tableStore.ts`, `tableTool.tsx`,
-`TableEditor.tsx`). Guide: docs/user/drafting.md → Tables, its scene `drafting-table`.
+Platform: `engine/src/Platform/Lapin.Platform/DraftingTables.cs` (model, values, layout, turned text, lines, presets, styles,
+parts), `TableScope.cs` (other tables' cells), `ModelCells.cs` (the model's names), `TextWrap.cs`, `Symbols/SymbolRender.cs`
+and `SymbolDef.cs` (tables in symbols), `Lapin.Drawing/Standards.cs` (`TableStyleDef`), `StandardsLibrary.cs`;
+`Expressions.cs` (ranges, `sum`, `average`, `count`). Drafting: `TableEdits.cs` (ops, reference rewriting), `TableCommands.cs`
+(commands, queries, marks, parts), `Cad/ItemBoards.cs` and `Cad/SymbolInstances.cs` (tables on symbol boards, Save as symbol).
+UI: `ui/src/modules/drafting/table/` (`tableModel.ts`, `tableStore.ts`, `tableTool.tsx` with the part tool and the grips,
+`TableEditor.tsx`, `TableRefPicker.tsx`), the Tables tab of `modules/core/StandardsDialog.tsx`. Tests: `DraftingTableTests`,
+`DraftingTableModelTests`, `DraftingTableLongTests`, `tableModel.test.ts`. Guide: docs/user/drafting.md → Tables, scenes
+`drafting-table`, `drafting-table-refs`, `drafting-table-styles`, `drafting-table-model`, `drafting-table-long`.

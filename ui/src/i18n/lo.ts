@@ -4297,6 +4297,26 @@ export const LO: Record<string, string> = {
   "The table reads": "ຕາຕະລາງອ່ານ",
   "It reads": "ມັນອ່ານ",
   "A field of that element put into the cell's text": "ຊ່ອງຂໍ້ມູນຂອງອົງປະກອບນັ້ນໃສ່ໃນຂໍ້ຄວາມຂອງຕາລາງ",
+  // Drafting tables, stage 5: long tables, CSV and XLSX, grips.
+  "A long table broken into parts, each with the header rows again": "ຕາຕະລາງຍາວແບ່ງເປັນສ່ວນ, ແຕ່ລະສ່ວນມີແຖວຫົວອີກ",
+  "Break after": "ແບ່ງຫຼັງຈາກ",
+  "Body rows a part": "ແຖວເນື້ອໃນຕໍ່ສ່ວນ",
+  "Or parts at most this tall on paper, the header in": "ຫຼື ສ່ວນທີ່ສູງບໍ່ເກີນນີ້ເທິງເຈ້ຍ, ລວມຫົວ",
+  "or at": "ຫຼື ທີ່",
+  "A part's height on paper": "ຄວາມສູງຂອງສ່ວນເທິງເຈ້ຍ",
+  "Where the next parts go": "ສ່ວນຕໍ່ໄປໄປໃສ",
+  "parts to the right": "ສ່ວນໄປທາງຂວາ",
+  "parts below": "ສ່ວນລຸ່ມ",
+  "A part placed on another sheet or view: click where its top-left corner goes": "ສ່ວນທີ່ວາງໃນແຜ່ນ ຫຼື ມຸມມອງອື່ນ: ຄລິກບ່ອນທີ່ມຸມຊ້າຍເທິງຂອງມັນໄປ",
+  "Place a part…": "ວາງສ່ວນ…",
+  "Cells from a CSV file or a workbook (XLSX), from the selected cell on; the table grows as needed": "ຕາລາງຈາກໄຟລ໌ CSV ຫຼື ສະໝຸດງານ (XLSX), ຈາກຕາລາງທີ່ເລືອກ; ຕາຕະລາງຂະຫຍາຍຕາມຕ້ອງການ",
+  "Load CSV/XLSX…": "ໂຫຼດ CSV/XLSX…",
+  "The cells as they read, as a CSV file": "ຕາລາງຕາມທີ່ອ່ານ, ເປັນໄຟລ໌ CSV",
+  "The cells as they read, as a workbook": "ຕາລາງຕາມທີ່ອ່ານ, ເປັນສະໝຸດງານ",
+  "Place table part": "ວາງສ່ວນຂອງຕາຕະລາງ",
+  "Drag: the column's width": "ລາກ: ຄວາມກວ້າງຂອງຖັນ",
+  "Drag: the row's height": "ລາກ: ຄວາມສູງຂອງແຖວ",
+  "A table": "ຕາຕະລາງ",
 };
 
 /** Phrases with a number or a name in them. */

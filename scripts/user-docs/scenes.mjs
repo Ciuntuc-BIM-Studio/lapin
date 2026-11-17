@@ -7937,9 +7937,9 @@ export const scenes = [
       await t.fresh();
       const sheet = await t.cmd('sheet.create', { name: 'Rooms', number: 'A-103', paper: 'A4' });
       const paper = `paper:${sheet.id}`;
-      await t.cmd('drafting.addTable', { viewId: paper, at: [0.03, 0.27], rows: 4, cols: 2, preset: 'header', name: 'Areas',
+      await t.cmd('drafting.addTable', { viewId: paper, at: [0.03, 0.19], rows: 4, cols: 2, preset: 'header', name: 'Areas',
         cells: [['Room', 'Area (m²)'], ['Living', '24.50'], ['Kitchen', '12.25'], ['Bedroom', '15.80']] });
-      const summary = await t.cmd('drafting.addTable', { viewId: paper, at: [0.11, 0.27], rows: 3, cols: 2, preset: 'header', name: 'Summary',
+      const summary = await t.cmd('drafting.addTable', { viewId: paper, at: [0.11, 0.19], rows: 3, cols: 2, preset: 'header', name: 'Summary',
         cells: [['What', 'Value'], ['Total area', '{= sum(table.Areas.B2:B4) | 0.00} m²'], ['Largest room', '']] });
       await t.ui({ view: 'sheet', sheetId: sheet.id });
       await t.page.waitForSelector('[data-testid=sheet-annotate]', { timeout: 10_000 });
@@ -7973,7 +7973,7 @@ export const scenes = [
       await t.fresh();
       const sheet = await t.cmd('sheet.create', { name: 'Finishes', number: 'A-104', paper: 'A4' });
       const paper = `paper:${sheet.id}`;
-      const made = await t.cmd('drafting.addTable', { viewId: paper, at: [0.03, 0.27], rows: 4, cols: 4, preset: 'header', name: 'Finishes',
+      const made = await t.cmd('drafting.addTable', { viewId: paper, at: [0.03, 0.19], rows: 4, cols: 4, preset: 'header', name: 'Finishes',
         cells: [['Room', 'Floor', 'Walls', 'Ceiling'], ['Living', 'oak', 'paint', 'plaster'], ['Kitchen', 'tiles', 'tiles', 'paint'], ['Bath', 'tiles', 'tiles', 'board']] });
       await t.cmd('drafting.editTable', { id: made.id, ops: [
         { op: 'style', range: 'B1:D1', style: { rot: 90, align: 'left', valign: 'bottom' } },
@@ -8037,6 +8037,29 @@ export const scenes = [
       await t.shot('drafting-table-model', { of: '[data-table-editor]', pad: 0 });
       const info = await t.call('doc.query', { name: 'drafting.table', args: { id: table.id } });
       t.expect(info.cells[1][1].shown === '6.00' && info.cells[1][2].shown === 'REI 90', 'the linked row reads its wall');
+    },
+  },
+  {
+    // Drafting tables, stage 5: a long table broken after four rows, each part with its header again, on a sheet.
+    id: 'drafting-table-long',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const sheet = await t.cmd('sheet.create', { name: 'Room list', number: 'A-105', paper: 'A4' });
+      const paper = `paper:${sheet.id}`;
+      const rooms = ['Hall', 'Living', 'Kitchen', 'Pantry', 'Bath', 'Bedroom 1', 'Bedroom 2', 'Study', 'Laundry', 'Terrace'];
+      const cells = [['No.', 'Room', 'Area (m²)'], ...rooms.map((r, i) => [String(i + 1), r, (8 + i * 2.35).toFixed(2)])];
+      const table = await t.cmd('drafting.addTable', { viewId: paper, at: [0.03, 0.19], rows: cells.length, cols: 3, preset: 'header', name: 'Rooms', cells });
+      await t.cmd('drafting.editTable', { id: table.id, ops: [{ op: 'fit', range: 'A1:C11', axis: 'cols', min: 10 }, { op: 'style', range: 'C2:C11', style: { align: 'right' } }, { op: 'parts', rows: 4, gap: 6 }] });
+      await t.ui({ view: 'sheet', sheetId: sheet.id });
+      await t.page.waitForSelector('[data-testid=sheet-annotate]', { timeout: 10_000 });
+      await t.page.locator('[data-testid=sheet-annotate]').click();
+      await t.page.waitForSelector('[data-testid=paper-back]', { timeout: 10_000 });
+      await t.wait(1000);
+      await t.fit();
+      const info = await t.call('doc.query', { name: 'drafting.table', args: { id: table.id } });
+      t.expect(info.parts === 3, 'ten rooms four a part: three parts');
+      await t.shot('drafting-table-long', { of: '.view-pane:has([data-testid=paper-back])', pad: 0 });
     },
   },
   {

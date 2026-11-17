@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { address, colName, colsOp, fieldInsert, grow, inSel, insertAt, linkOps, linkable, isTableName, opacityOf, parseAddress, pasteBlock, rangeOf, refInsert, rowsOp, tableRef, withOpacity, type TableInfo } from './tableModel';
+import { address, colName, colsOp, fieldInsert, grow, inSel, insertAt, linkOps, linkable, sizeAt, sizeGrips, isTableName, opacityOf, parseAddress, pasteBlock, rangeOf, refInsert, rowsOp, tableRef, withOpacity, type TableInfo } from './tableModel';
 
 describe('drafting table addresses', () => {
   it('names columns and cells as a spreadsheet does', () => {
@@ -101,5 +101,28 @@ describe('drafting table links to the model', () => {
   it('puts a field in as a token, or its name alone inside a formula', () => {
     expect(fieldInsert('', 0, 'FireRating')).toBe('{el.FireRating}');
     expect(fieldInsert('{= 2 * ', 7, 'NetArea')).toBe('el.NetArea');
+  });
+});
+
+describe('drafting table grips on the drawing', () => {
+  it('puts a grip at each column\'s end along the top and each row\'s foot along the left, turned with the table', () => {
+    const g = sizeGrips({ x: 1, y: 5 }, 0, 0.1, [25, 10], [7, 8]);
+    expect(g.map((x) => x.key)).toEqual(['col:0', 'col:1', 'row:0', 'row:1']);
+    expect(g[1].at.x).toBeCloseTo(4.5);
+    expect(g[1].at.y).toBeCloseTo(5);
+    expect(g[3].at.y).toBeCloseTo(3.5);
+    const turned = sizeGrips({ x: 0, y: 0 }, 90, 0.1, [10], [5]);
+    expect(turned[0].at.x).toBeCloseTo(0);
+    expect(turned[0].at.y).toBeCloseTo(1);
+    // A long table's first part: its rows keep their own numbers.
+    expect(sizeGrips({ x: 0, y: 0 }, 0, 1, [1], [1, 1], [0, 3]).map((x) => x.key)).toEqual(['col:0', 'row:0', 'row:3']);
+  });
+
+  it('reads a dropped grip as the width or height from where its column or row starts, to a tenth', () => {
+    const [col] = sizeGrips({ x: 1, y: 5 }, 0, 0.1, [25], [7]);
+    expect(sizeAt(col, { x: 1 + 3.04, y: 9 }, { x: 1, y: 5 }, 0, 0.1, 0)).toBe(30.4);
+    const row = sizeGrips({ x: 1, y: 5 }, 0, 0.1, [25], [7, 7])[2];
+    expect(sizeAt(row, { x: 0, y: 5 - 1.9 }, { x: 1, y: 5 }, 0, 0.1, 7)).toBe(12);
+    expect(sizeAt(row, { x: 0, y: 5 }, { x: 1, y: 5 }, 0, 0.1, 7)).toBe(1);
   });
 });

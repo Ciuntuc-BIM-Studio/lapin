@@ -16,6 +16,9 @@ export interface NewTable { rows: number; cols: number; preset: Preset | string 
 /** What the next table is made of, kept while the tool is used again. */
 export const useNewTable = create<NewTable>(() => ({ rows: 4, cols: 3, preset: 'header' }));
 
+/** A long table's part to place (stage 5): the table and which part, for the Place part tool's click. */
+export const useTablePart = create<{ id: string | null; part: number }>(() => ({ id: null, part: 1 }));
+
 /** The table the editor shows. */
 export const useTableEditor = create<{ id: string | null }>(() => ({ id: null }));
 

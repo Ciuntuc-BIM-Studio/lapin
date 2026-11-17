@@ -65,7 +65,7 @@ public sealed class AnnotationPlacement : IElementPlacement
             case SymbolInstances.Predefined:
                 SymbolInstances.Carry(attrs, OnPaper(m, attrs, t));
                 break;
-            case "TEXT" or DraftingTables.Predefined:
+            case "TEXT" or DraftingTables.Predefined or DraftingTables.PartPredefined:
                 attrs["at"] = J(t.Point(P(attrs["at"])));
                 var deg = Json.Number(attrs["angle"]) ?? 0;
                 attrs["angle"] = t.Angle(deg * Math.PI / 180) * 180 / Math.PI;

@@ -290,6 +290,9 @@ Like any tag, a build-up tag follows its element, and sheets and PDFs print it a
 - **Widths and heights** are in paper millimetres, so a table reads the same at any scale. A row fits its text by default, never shorter than its height; tick **fit to text** for columns as wide as their widest text (wrapped text stays in a column of its own width).
 - **Turned text and padding.** **Text up (90°)** or **text down (270°)** turns the selected cells' text to read along the row's height, and a row that fits its text grows to its length (a column heading over narrow columns); in a row of a height of its own the text wraps at it. **Padding** sets the space round a cell's text (empty: the table's).
 - **Table styles.** **Save as style…** keeps the table's look in the project's drafting standards: its lines, its cells' colours, alignment and turns, its columns' widths and rows' heights and its **header rows** (tick **header row** for the selected rows). Asked to keep its cells too, the style is a template: a new table made in it starts as a copy. Your styles are offered beside the built-in looks when you make a table and in the editor's list, where choosing one restyles a table (its texts and widths stay). **Manage → Drafting standards → Tables** renames or removes them, and a standards file (**Export…**, **Import…**) carries them to other projects. The built-in looks stay as they were.
+- **Long tables.** **Break after** a number of rows, **or at** a height on paper, and the table goes on in parts beside it (**parts to the right** or **parts below**), each with the header rows again (tick **header row** for the rows it repeats); a merged cell is never cut in two. **Place a part…** puts a part on another sheet or view: click where its top-left corner goes. It reads the table as it is now, moves with the Modify tools, and deleted it comes back beside the table.
+- **CSV and Excel.** **Load CSV/XLSX…** brings the cells of a CSV file or of a workbook's first sheet into the table from the selected cell on, adding rows and columns as needed, in one undo step; **CSV** and **XLSX** save the cells as they read.
+- **Grips.** Select a table in the view: the grips along its top edge set its columns' widths, those along its left edge its rows' heights (a row given a height stops fitting its text).
 - **Bold**, **italic**, alignment, text height, **text colour**, **background** and its **opacity** apply to the selected cells; **Borders** draws all lines, the outside, the inside, one side or none, at a width and in a colour.
 
 Each change is one undo step. The engine draws the table, so the view, the sheet, its PDF and its DXF show the same thing; it moves, copies and turns with the Modify tools.
@@ -305,6 +308,8 @@ Each change is one undo step. The engine draws the table, so the view, the sheet
 ![A table whose rows read the walls they are linked to: names, lengths and a fire rating, live](shots/drafting-table-model.webp)
 
 ![A room box drawn as a table in a symbol: each copy fits its own name and area](shots/drafting-table-model-plan.webp)
+
+![A long table broken after four rooms, each part with its header again, the second placed on a sheet of its own](shots/drafting-table-long.webp)
 
 ### Grid axes
 

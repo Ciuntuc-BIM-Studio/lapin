@@ -4244,6 +4244,26 @@ export const PL: Record<string, string> = {
   "The table reads": "Tabela odczytuje",
   "It reads": "Odczytuje",
   "A field of that element put into the cell's text": "Pole tego elementu wstawione do tekstu komórki",
+  // Drafting tables, stage 5: long tables, CSV and XLSX, grips.
+  "A long table broken into parts, each with the header rows again": "Długa tabela podzielona na części, każda znów z wierszami nagłówka",
+  "Break after": "Podziel po",
+  "Body rows a part": "Wiersze treści na część",
+  "Or parts at most this tall on paper, the header in": "Lub części najwyżej tak wysokie na papierze, z nagłówkiem",
+  "or at": "lub przy",
+  "A part's height on paper": "Wysokość części na papierze",
+  "Where the next parts go": "Gdzie idą kolejne części",
+  "parts to the right": "części w prawo",
+  "parts below": "części poniżej",
+  "A part placed on another sheet or view: click where its top-left corner goes": "Część umieszczona na innym arkuszu lub widoku: kliknij, gdzie ma być jej lewy górny róg",
+  "Place a part…": "Umieść część…",
+  "Cells from a CSV file or a workbook (XLSX), from the selected cell on; the table grows as needed": "Komórki z pliku CSV lub skoroszytu (XLSX), od zaznaczonej komórki; tabela rośnie w razie potrzeby",
+  "Load CSV/XLSX…": "Wczytaj CSV/XLSX…",
+  "The cells as they read, as a CSV file": "Komórki tak, jak się czytają, jako plik CSV",
+  "The cells as they read, as a workbook": "Komórki tak, jak się czytają, jako skoroszyt",
+  "Place table part": "Umieść część tabeli",
+  "Drag: the column's width": "Przeciągnij: szerokość kolumny",
+  "Drag: the row's height": "Przeciągnij: wysokość wiersza",
+  "A table": "Tabela",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

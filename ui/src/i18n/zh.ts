@@ -4235,6 +4235,26 @@ export const ZH: Record<string, string> = {
   "The table reads": "表格读取",
   "It reads": "读取",
   "A field of that element put into the cell's text": "将该构件的字段插入单元格文字",
+  // Drafting tables, stage 5: long tables, CSV and XLSX, grips.
+  "A long table broken into parts, each with the header rows again": "长表格分成若干部分，每部分重复标题行",
+  "Break after": "分段于",
+  "Body rows a part": "每部分的正文行数",
+  "Or parts at most this tall on paper, the header in": "或每部分在图纸上的最大高度（含标题）",
+  "or at": "或在",
+  "A part's height on paper": "每部分在图纸上的高度",
+  "Where the next parts go": "后续部分的位置",
+  "parts to the right": "部分向右排列",
+  "parts below": "部分向下排列",
+  "A part placed on another sheet or view: click where its top-left corner goes": "将某部分放到另一图纸或视图上：点击其左上角的位置",
+  "Place a part…": "放置部分…",
+  "Cells from a CSV file or a workbook (XLSX), from the selected cell on; the table grows as needed": "从 CSV 文件或工作簿（XLSX）读入单元格，自所选单元格起；表格按需扩展",
+  "Load CSV/XLSX…": "载入 CSV/XLSX…",
+  "The cells as they read, as a CSV file": "按显示内容导出单元格为 CSV 文件",
+  "The cells as they read, as a workbook": "按显示内容导出单元格为工作簿",
+  "Place table part": "放置表格部分",
+  "Drag: the column's width": "拖动：列宽",
+  "Drag: the row's height": "拖动：行高",
+  "A table": "表格",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

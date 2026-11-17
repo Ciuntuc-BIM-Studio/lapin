@@ -4197,6 +4197,26 @@ export const RO: Record<string, string> = {
   "The table reads": "Tabelul citește",
   "It reads": "Citește",
   "A field of that element put into the cell's text": "Un câmp al acelui element pus în textul celulei",
+  // Drafting tables, stage 5: long tables, CSV and XLSX, grips.
+  "A long table broken into parts, each with the header rows again": "Un tabel lung împărțit în părți, fiecare cu rândurile de antet din nou",
+  "Break after": "Rupe după",
+  "Body rows a part": "Rânduri de corp într-o parte",
+  "Or parts at most this tall on paper, the header in": "Sau părți cel mult atât de înalte pe hârtie, cu antet cu tot",
+  "or at": "sau la",
+  "A part's height on paper": "Înălțimea unei părți pe hârtie",
+  "Where the next parts go": "Unde merg părțile următoare",
+  "parts to the right": "părți la dreapta",
+  "parts below": "părți dedesubt",
+  "A part placed on another sheet or view: click where its top-left corner goes": "O parte pusă pe altă planșă sau vedere: clic unde vine colțul ei din stânga sus",
+  "Place a part…": "Pune o parte…",
+  "Cells from a CSV file or a workbook (XLSX), from the selected cell on; the table grows as needed": "Celule dintr-un fișier CSV sau un registru (XLSX), de la celula selectată încolo; tabelul crește după nevoie",
+  "Load CSV/XLSX…": "Încarcă CSV/XLSX…",
+  "The cells as they read, as a CSV file": "Celulele așa cum se citesc, ca fișier CSV",
+  "The cells as they read, as a workbook": "Celulele așa cum se citesc, ca registru",
+  "Place table part": "Pune o parte de tabel",
+  "Drag: the column's width": "Trage: lățimea coloanei",
+  "Drag: the row's height": "Trage: înălțimea rândului",
+  "A table": "Un tabel",
 };
 
 /** Phrases with a number or a name in them. */

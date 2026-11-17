@@ -16,7 +16,9 @@ import { NumberField } from '../../../shell/cells';
 import { ColourField } from '../../../shell/ColourField';
 import { BORDERS, PRESETS, address, colsOp, fieldInsert, grow, inSel, insertAt, isTableName, linkOps, linkable, norm, opacityOf, ownStyle, pasteBlock, rangeOf, refInsert, rowsOp, withOpacity, type CellLink, type Sel, type TableInfo, type TableJson, type TableOp } from './tableModel';
 import { TableRefPicker } from './TableRefPicker';
-import { useTableEditor, useTableStyles } from './tableStore';
+import { useTableEditor, useTablePart, useTableStyles } from './tableStore';
+import { notify } from '../../../app/store';
+import { pickFile, saveFile, safeFileName, toBase64 } from '../../../engine/files';
 import { promptText, confirmAction } from '../../../shell/prompts';
 
 const HELP = "Type in a cell, or double-click it. Formulas read the table's cells: {= B2 * C2}, {= sum(D2:D9)}, {= average(B2:B5) | 0.0}; on a sheet, its fields too: {sheet.number}.";
@@ -48,13 +50,13 @@ export function TableEditor() {
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => setName(node?.name ?? ''), [node?.name]);
 
-  // What the table reads now, again after every change of it (an undo too).
+  // What the table reads now, again after every change of the project (an undo too): its cells may read the model (stage 4).
   useEffect(() => {
     if (!id || !node) return;
     let live = true;
     void query<TableInfo>('drafting.table', { id }).then((r) => { if (live && r) setInfo(r); });
     return () => { live = false; };
-  }, [id, node]);
+  }, [id, node, nodes]);
 
   const n = norm(sel);
   const first = info?.cells[n.r0]?.[n.c0] as (TableInfo['cells'][number][number] & CellLink) | undefined;
@@ -133,6 +135,24 @@ export function TableEditor() {
     if (!styleName?.trim()) return;
     const cells = confirmAction('Keep its cells too, so a new table in this style starts as a copy of it?');
     void execute('drafting.saveTableStyle', { id: node.id, name: styleName.trim(), cells });
+  };
+  const split = (table as { split?: { rows?: number; height?: number; gap?: number; dir?: string } } | undefined)?.split;
+  const placePart = (part: number) => {
+    useTablePart.setState({ id: node.id, part });
+    useUi.setState({ dialog: null, tool: 'drafting.tablePart' });
+  };
+  const exportAs = async (format: 'csv' | 'xlsx') => {
+    const r = await query<{ text?: string; data?: string; file: string }>('drafting.tableExport', { id: node.id, format });
+    if (!r) return;
+    // A byte order mark first, so a spreadsheet reads the CSV as UTF-8.
+    const bytes = r.data ? Uint8Array.from(atob(r.data), (ch) => ch.charCodeAt(0)) : new TextEncoder().encode(`\uFEFF${r.text ?? ''}`);
+    const saved = await saveFile(bytes, safeFileName(r.file, 'table'), format === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv');
+    if (saved) notify(`Exported ${saved}.`);
+  };
+  const load = async () => {
+    const f = await pickFile('A table', ['csv', 'txt', 'xlsx']);
+    if (!f) return;
+    void edit({ op: 'load', data: toBase64(f.bytes), at: address(n.r0, n.c0) });
   };
   const rename = () => {
     const v = name.trim();
@@ -229,6 +249,29 @@ export function TableEditor() {
             <span title="The selected rows' height on paper">Height</span>
             <NumberField style={NUM} testId="table-row-height" value={rowH != null ? Math.round(rowH * 100) / 100 : null} suffix="mm" min={1} max={1000} onCommit={(v) => { if (v) void edit({ op: 'rowHeight', range, h: v }); }} />
             <label title="The selected rows as tall as their text, at least their height"><input type="checkbox" data-testid="table-fit-rows" checked={fitRows} onChange={(e) => void edit({ op: 'fit', range, axis: 'rows', on: e.target.checked })} /> fit to text</label>
+          </div>
+          <div className="table-tools" data-testid="table-long" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+            <span title="A long table broken into parts, each with the header rows again">Break after</span>
+            <NumberField style={NUM} testId="table-part-rows" title="Body rows a part" value={split?.rows ?? null} placeholder="—" suffix="rows" min={1} max={500} onCommit={(v) => void edit(v ? { op: 'parts', rows: Math.round(v), gap: split?.gap ?? 10, dir: split?.dir ?? 'right' } : { op: 'parts', off: true })} />
+            <span title="Or parts at most this tall on paper, the header in">or at</span>
+            <NumberField style={NUM} testId="table-part-height" title="A part's height on paper" value={split?.height ?? null} placeholder="—" suffix="mm" min={1} max={5000} onCommit={(v) => void edit(v ? { op: 'parts', height: v, gap: split?.gap ?? 10, dir: split?.dir ?? 'right' } : { op: 'parts', off: true })} />
+            <select title="Where the next parts go" value={split?.dir ?? 'right'} disabled={!split} onChange={(e) => void edit({ op: 'parts', ...(split?.rows ? { rows: split.rows } : {}), ...(split?.height ? { height: split.height } : {}), gap: split?.gap ?? 10, dir: e.target.value })}>
+              <option value="right">parts to the right</option>
+              <option value="down">parts below</option>
+            </select>
+            {(info?.parts ?? 1) > 1 && (
+              <>
+                <span className="muted" data-no-i18n>{`${info?.parts}`}</span>
+                <select data-testid="table-place-part" value="" title="A part placed on another sheet or view: click where its top-left corner goes" onChange={(e) => { if (e.target.value) placePart(Number(e.target.value)); }}>
+                  <option value="">Place a part…</option>
+                  {Array.from({ length: (info?.parts ?? 1) - 1 }, (_, k) => <option key={k} value={k + 1} data-no-i18n>{k + 2}</option>)}
+                </select>
+              </>
+            )}
+            <span className="grow" />
+            <button type="button" className="btn" data-testid="table-load" title="Cells from a CSV file or a workbook (XLSX), from the selected cell on; the table grows as needed" onClick={() => void load()}>Load CSV/XLSX…</button>
+            <button type="button" className="btn" data-testid="table-export-csv" title="The cells as they read, as a CSV file" onClick={() => void exportAs('csv')}>CSV</button>
+            <button type="button" className="btn" data-testid="table-export-xlsx" title="The cells as they read, as a workbook" onClick={() => void exportAs('xlsx')}>XLSX</button>
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginBottom: 6 }}>
             <span className="muted" data-testid="table-address" data-no-i18n style={{ minWidth: 56 }}>{range}</span>

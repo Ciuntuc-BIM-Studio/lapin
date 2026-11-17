@@ -4,14 +4,14 @@
  * its size and open the editor again; so does a double-click on it.
  */
 
-import { Table2 } from 'lucide-react';
+import { Table2, TableRowsSplit } from 'lucide-react';
 import type { NodeDto } from '../../../engine/protocol';
 import { execute } from '../../../engine/session';
 import { useUi } from '../../../app/store';
-import { isTable, openTableEditor, useNewTable, useTableStyles } from './tableStore';
-import type { ToolDef } from '../../../platform/module';
+import { isTable, openTableEditor, useNewTable, useTablePart, useTableStyles } from './tableStore';
+import type { Grip, GripView, ToolDef } from '../../../platform/module';
 import { NumberField } from '../../../shell/cells';
-import { PRESETS, type TableJson } from './tableModel';
+import { PRESETS, colName, sizeAt, sizeGrips, type TableJson } from './tableModel';
 
 function TableOptions() {
   const { rows, cols, preset } = useNewTable();
@@ -59,4 +59,39 @@ export function TableSection({ node }: { node: NodeDto }) {
       <dd><button type="button" className="btn" data-testid="table-edit" onClick={() => openTableEditor(node.id)}>Edit table…</button></dd>
     </dl>
   );
+}
+
+/** A long table's part placed on its own (stage 5): a click puts its top-left corner on the view or sheet in front. */
+export const tablePartTool: ToolDef = {
+  id: 'drafting.tablePart', label: 'Place table part', icon: TableRowsSplit,
+  gesture: { kind: 'point' },
+  complete: async ({ points: [p] }, ctx) => {
+    const { id, part } = useTablePart.getState();
+    if (!id) return;
+    const r = await ctx.execute('drafting.placeTablePart', { id, part, viewId: ctx.viewId, at: [p.x, p.y] }) as { id?: string } | null;
+    if (r?.id) useUi.setState({ selection: r.id, selected: [r.id], tool: null });
+  },
+};
+
+/** A table's grips on the drawing (stage 5): its columns' widths and rows' heights, each dragged as one edit. */
+export function tableGrips(node: NodeDto, view?: GripView): Grip[] {
+  if (!isTable(node) || !view?.mark?.data) return [];
+  const d = view.mark.data as { cols?: number[]; rows?: number[]; rowIndex?: number[]; mm?: number };
+  const at = Array.isArray(node.props.at) ? { x: Number((node.props.at as number[])[0]), y: Number((node.props.at as number[])[1]) } : null;
+  if (!at || !d.cols || !d.rows || !d.mm) return [];
+  const angle = typeof node.props.angle === 'number' ? node.props.angle : 0;
+  const mm = d.mm;
+  return sizeGrips(at, angle, mm, d.cols, d.rows, d.rowIndex).map((g) => {
+    const k = d.rowIndex ? d.rowIndex.indexOf(g.index) : g.index;
+    const start = g.kind === 'col' ? d.cols!.slice(0, g.index).reduce((a, b) => a + b, 0) : d.rows!.slice(0, k).reduce((a, b) => a + b, 0);
+    return {
+      key: g.key, at: g.at, kind: 'edgeMid' as const,
+      title: g.kind === 'col' ? 'Drag: the column\'s width' : 'Drag: the row\'s height',
+      step: (to) => {
+        const v = sizeAt(g, to, at, angle, mm, start);
+        const cell = g.kind === 'col' ? `${colName(g.index)}1` : `A${g.index + 1}`;
+        return { command: 'drafting.editTable', args: { id: node.id, ops: [g.kind === 'col' ? { op: 'colWidth', range: cell, w: v } : { op: 'rowHeight', range: cell, h: v }] } };
+      },
+    };
+  });
 }

@@ -16,7 +16,7 @@ namespace Lapin.Drafting;
 public static class TableEdits
 {
     public static readonly string[] Ops =
-        ["set", "style", "borders", "merge", "split", "insertRows", "deleteRows", "insertCols", "deleteCols", "colWidth", "rowHeight", "fit", "tableStyle", "preset", "header", "link", "linkRows"];
+        ["set", "style", "borders", "merge", "split", "insertRows", "deleteRows", "insertCols", "deleteCols", "colWidth", "rowHeight", "fit", "tableStyle", "preset", "header", "link", "linkRows", "parts", "load"];
 
     public static readonly string[] BorderKinds = ["all", "outer", "inner", "top", "bottom", "left", "right", "none", "default"];
 
@@ -253,6 +253,37 @@ public static class TableEdits
                     }
                     break;
                 }
+                // A long table broken into parts (stage 5): at most `rows` body rows a part, or parts at most `height` mm tall, laid
+                // `dir` (right, down) `gap` mm apart, each with the header rows again; off: one table.
+                case "parts":
+                {
+                    if (op["off"] is JsonValue ov && ov.TryGetValue<bool>(out var off) && off) { t.Remove("split"); break; }
+                    var sp = new JsonObject();
+                    if (op["rows"] != null) sp["rows"] = Json.Number(op["rows"]) is double pr && pr >= 1 && pr <= DraftingTables.MaxRows && pr == Math.Floor(pr) ? (int)pr : throw new CommandException("A part holds 1 row or more.");
+                    if (op["height"] != null) sp["height"] = Json.Number(op["height"]) is double ph && ph is > 0 and <= 5000 ? ph : throw new CommandException("A part's height is more than 0 and up to 5000 mm.");
+                    if (sp.Count == 0) throw new CommandException("Break the table after how many rows (rows), or at what height (height, mm)?");
+                    sp["gap"] = op["gap"] is null ? 10 : Json.Number(op["gap"]) is double pg && pg is >= 0 and <= 1000 ? pg : throw new CommandException("The gap between parts is 0 to 1000 mm.");
+                    sp["dir"] = (string?)op["dir"] is "down" ? "down" : (string?)op["dir"] is null or "right" ? "right" : throw new CommandException("The parts go right or down.");
+                    t["split"] = sp;
+                    break;
+                }
+                // Cells from a CSV text or a workbook (base64 data), from a cell on (stage 5): rows and columns added as needed.
+                case "load":
+                {
+                    var rowsIn = Loaded(op);
+                    var at = DraftingTables.Parse((string?)op["at"] ?? (string?)op["cell"] ?? "A1") ?? throw new CommandException("From which cell? Its address, such as A1.");
+                    var needR = at.R + rowsIn.Count - g.R;
+                    var needC = at.C + (rowsIn.Count == 0 ? 0 : rowsIn.Max(x => x.Count)) - g.C;
+                    if (at.R + rowsIn.Count > DraftingTables.MaxRows || at.C + (rowsIn.Count == 0 ? 0 : rowsIn.Max(x => x.Count)) > DraftingTables.MaxCols)
+                        throw new CommandException($"A table has up to {DraftingTables.MaxRows} rows and {DraftingTables.MaxCols} columns.");
+                    if (needR > 0) { Insert(t, g, rows: true, g.R, needR); shifts?.Add(new Shifted(true, g.R, needR, true)); }
+                    if (needC > 0) { var g2 = DraftingTables.Read(t); Insert(t, g2, rows: false, g2.C, needC); shifts?.Add(new Shifted(false, g2.C, needC, true)); }
+                    var g3 = DraftingTables.Read(t);
+                    for (var i = 0; i < rowsIn.Count; i++)
+                        for (var j = 0; j < rowsIn[i].Count; j++)
+                            if (!g3.Cells[at.R + i, at.C + j].Covered) Write(t, at.R + i, at.C + j, rowsIn[i][j]);
+                    break;
+                }
                 case "tableStyle":
                 {
                     var style = op["style"] as JsonObject ?? throw new CommandException($"A table's style is {{{string.Join(", ", TableStyleKeys)}}}.");
@@ -276,6 +307,24 @@ public static class TableEdits
             }
         }
         return t;
+    }
+
+    /// <summary>The rows of what <c>load</c> brings: a workbook's first sheet or a CSV file (base64 <c>data</c>), or a CSV <c>text</c>; trailing empty cells and rows left out.</summary>
+    static List<List<string>> Loaded(JsonObject op)
+    {
+        List<List<string>> rows;
+        if ((string?)op["data"] is { Length: > 0 } data)
+        {
+            byte[] bytes;
+            try { bytes = Convert.FromBase64String(data); } catch (FormatException) { throw new CommandException("The file is not base64."); }
+            rows = Tables.Read(bytes);
+        }
+        else if ((string?)op["text"] is { } text) rows = Tables.Csv(text.TrimStart('\uFEFF'));
+        else throw new CommandException("What to load? A CSV text, or a file's data (base64).");
+        rows = [.. rows.Select(r => { var c = r.ToList(); while (c.Count > 0 && c[^1].Trim().Length == 0) c.RemoveAt(c.Count - 1); return c; })];
+        while (rows.Count > 0 && rows[^1].Count == 0) rows.RemoveAt(rows.Count - 1);
+        if (rows.Count == 0) throw new CommandException("The file holds no cells.");
+        return rows;
     }
 
     /// <summary>An element's id a link names (null: unlinked); refused when the model has no such element.</summary>

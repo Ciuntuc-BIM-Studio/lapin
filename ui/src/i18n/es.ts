@@ -4243,6 +4243,26 @@ export const ES: Record<string, string> = {
   "The table reads": "La tabla lee",
   "It reads": "Lee",
   "A field of that element put into the cell's text": "Un campo de ese elemento puesto en el texto de la celda",
+  // Drafting tables, stage 5: long tables, CSV and XLSX, grips.
+  "A long table broken into parts, each with the header rows again": "Una tabla larga partida en partes, cada una con las filas de encabezado de nuevo",
+  "Break after": "Partir tras",
+  "Body rows a part": "Filas de cuerpo por parte",
+  "Or parts at most this tall on paper, the header in": "O partes de como mucho esta altura en papel, encabezado incluido",
+  "or at": "o a",
+  "A part's height on paper": "La altura de una parte en papel",
+  "Where the next parts go": "Dónde van las partes siguientes",
+  "parts to the right": "partes a la derecha",
+  "parts below": "partes debajo",
+  "A part placed on another sheet or view: click where its top-left corner goes": "Una parte puesta en otro plano o vista: haz clic donde va su esquina superior izquierda",
+  "Place a part…": "Colocar una parte…",
+  "Cells from a CSV file or a workbook (XLSX), from the selected cell on; the table grows as needed": "Celdas de un archivo CSV o un libro (XLSX), desde la celda seleccionada; la tabla crece según haga falta",
+  "Load CSV/XLSX…": "Cargar CSV/XLSX…",
+  "The cells as they read, as a CSV file": "Las celdas tal como se leen, como archivo CSV",
+  "The cells as they read, as a workbook": "Las celdas tal como se leen, como libro",
+  "Place table part": "Colocar parte de tabla",
+  "Drag: the column's width": "Arrastra: el ancho de la columna",
+  "Drag: the row's height": "Arrastra: el alto de la fila",
+  "A table": "Una tabla",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

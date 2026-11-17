@@ -549,6 +549,87 @@ public static partial class DraftingTables
         return t;
     }
 
+    // ------------------------------------------------------------ long tables (stage 5)
+
+    /// <summary>The predefined type of a long table's part placed on a view or a sheet of its own (<c>of</c>: the table, <c>part</c>: which).</summary>
+    public const string PartPredefined = "TABLEPART";
+
+    /// <summary>
+    /// How a long table breaks (<c>split</c>): at most <see cref="Rows"/> body rows a part, or parts at most <see cref="Height"/> mm
+    /// tall (its header rows in); the parts laid <see cref="Dir"/> (right or down) of the first, <see cref="Gap"/> mm apart.
+    /// </summary>
+    public sealed record Split(int? Rows, double? Height, double Gap, string Dir);
+
+    public static Split? SplitOf(JsonObject? t) =>
+        t?["split"] is JsonObject o && (Json.Number(o["rows"]) is > 0 || Json.Number(o["height"]) is > 0)
+            ? new Split(Json.Number(o["rows"]) is double r && r >= 1 ? (int)r : null, Json.Number(o["height"]) is double h && h > 0 ? h : null,
+                Json.Number(o["gap"]) is double gp && gp >= 0 ? gp : 10, (string?)o["dir"] == "down" ? "down" : "right")
+            : null;
+
+    /// <summary>How many rows lead the table as its header (the rows marked header from the first): what each part repeats.</summary>
+    public static int HeaderRows(Grid g) => g.Rows.TakeWhile(r => r.Header).Count();
+
+    /// <summary>
+    /// A table's parts, each its rows in order: its header rows, then its body rows taken a part at a time as <paramref name="s"/>
+    /// says (at least one a part), never breaking a merged cell; one part (every row) when it does not break.
+    /// </summary>
+    public static List<List<int>> Parts(Grid g, Layout l, Split? s)
+    {
+        var all = Enumerable.Range(0, g.R).ToList();
+        if (s == null) return [all];
+        var heads = HeaderRows(g);
+        if (heads >= g.R) return [all];
+        var headH = Enumerable.Range(0, heads).Sum(i => l.RowH[i]);
+        // A break after row r cuts a merged cell when a cell of the next row is covered by one starting at or above r.
+        bool Cuts(int r) => r + 1 < g.R && Enumerable.Range(0, g.C).Any(c => g.Master[r + 1, c].R <= r);
+        var parts = new List<List<int>>();
+        var cur = new List<int>();
+        var h = headH;
+        for (var r = heads; r < g.R; r++)
+        {
+            cur.Add(r);
+            h += l.RowH[r];
+            var next = r + 1 < g.R ? l.RowH[r + 1] : 0;
+            var full = s.Rows is { } n && cur.Count >= n || s.Height is { } mx && h + next > mx;
+            if (full && r + 1 < g.R && !Cuts(r)) { parts.Add([.. Enumerable.Range(0, heads), .. cur]); cur = []; h = headH; }
+        }
+        if (cur.Count > 0) parts.Add([.. Enumerable.Range(0, heads), .. cur]);
+        return parts;
+    }
+
+    /// <summary>
+    /// The table's rows <paramref name="rows"/> as a table of their own, its values and sizes as laid in the whole one: a part of a
+    /// long table, drawn by the same lines, fills and texts. A merged cell whose first cell is not among them is left empty.
+    /// </summary>
+    public static (Grid Grid, Layout Layout) Slice(Grid g, Layout l, IReadOnlyList<int> rows)
+    {
+        var at = new Dictionary<int, int>();
+        for (var k = 0; k < rows.Count; k++) at[rows[k]] = k;
+        var n = rows.Count;
+        var cells = new Cell[n, g.C];
+        var master = new (int, int)[n, g.C];
+        var texts = new CellText?[n, g.C];
+        for (var k = 0; k < n; k++)
+            for (var c = 0; c < g.C; c++)
+            {
+                var r = rows[k];
+                var (mr, mc) = g.Master[r, c];
+                if (at.TryGetValue(mr, out var km))
+                {
+                    var cell = g.Cells[r, c];
+                    // A span reaching past the rows taken stops at the last of them.
+                    var span = 1;
+                    while (span < cell.RowSpan && k + span < n && rows[k + span] == r + span) span++;
+                    cells[k, c] = cell.Covered ? cell : cell with { RowSpan = span };
+                    master[k, c] = (km, mc);
+                    texts[k, c] = l.Texts[r, c];
+                }
+                else { cells[k, c] = new Cell("", 1, 1, []); master[k, c] = (k, c); }
+            }
+        var grid = new Grid { Cols = g.Cols, Rows = [.. rows.Select(r => g.Rows[r])], Cells = cells, Master = master, Style = g.Style, El = g.El };
+        return (grid, new Layout(l.ColW, [.. rows.Select(r => l.RowH[r])], texts));
+    }
+
     // ------------------------------------------------------------ table styles of the user's own (stage 3)
 
     /// <summary>What a cell's own look is (its text and spans aside): what a table style carries from cell to cell.</summary>

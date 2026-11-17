@@ -43,7 +43,7 @@ export const inSel = (s: Sel | null, r: number, c: number): boolean => {
 
 /** A cell as the engine reads it back (`drafting.table`). */
 export interface TableCellInfo { t: string; shown: string; covered?: string; rs?: number; cs?: number }
-export interface TableInfo { rows: number; cols: number; cells: TableCellInfo[][]; colW: number[]; rowH: number[]; errors: string[] }
+export interface TableInfo { rows: number; cols: number; cells: TableCellInfo[][]; colW: number[]; rowH: number[]; errors: string[]; name?: string; parts?: number }
 
 /** A selection grown to take in whole every merged cell it touches (as a spreadsheet's does). */
 export function grow(s: Sel, info: TableInfo): Sel {
@@ -181,4 +181,31 @@ export function linkOps(kind: 'cells' | 'rows' | 'table' | 'unlink', s: Sel, els
 export function fieldInsert(text: string, caret: number, field: string): string {
   const name = `el.${field}`;
   return refInsert(text, caret, name).replace(/^\{= sum\((.*)\)\}$/, '{$1}');
+}
+
+/**
+ * The grips of a table on the drawing (stage 5): one at each column's right end along its top edge and one at each row's foot
+ * along its left edge (of its first part), in the view's coordinates; dragging one sets that column's width or row's height
+ * (paper mm, to a tenth). `at` the table's top-left, `angle` its turn (°), `mm` the view's metres a paper mm.
+ */
+export interface SizeGrip { key: string; at: { x: number; y: number }; kind: 'col' | 'row'; index: number }
+
+export function sizeGrips(at: { x: number; y: number }, angle: number, mm: number, colW: number[], rowH: number[], rowIndex?: number[]): SizeGrip[] {
+  const r = (angle * Math.PI) / 180;
+  const u = { x: Math.cos(r), y: Math.sin(r) }, n = { x: -Math.sin(r), y: Math.cos(r) };
+  const to = (x: number, y: number) => ({ x: at.x + u.x * x * mm - n.x * y * mm, y: at.y + u.y * x * mm - n.y * y * mm });
+  const o: SizeGrip[] = [];
+  let x = 0;
+  colW.forEach((w, c) => { x += w; o.push({ key: `col:${c}`, at: to(x, 0), kind: 'col', index: c }); });
+  let y = 0;
+  rowH.forEach((h, k) => { y += h; o.push({ key: `row:${rowIndex?.[k] ?? k}`, at: to(0, y), kind: 'row', index: rowIndex?.[k] ?? k }); });
+  return o;
+}
+
+/** A column's width or a row's height (paper mm, to a tenth, at least 1) where a grip is dropped: along the table from where that column or row starts. */
+export function sizeAt(g: SizeGrip, to: { x: number; y: number }, at: { x: number; y: number }, angle: number, mm: number, start: number): number {
+  const r = (angle * Math.PI) / 180;
+  const d = { x: to.x - at.x, y: to.y - at.y };
+  const along = g.kind === 'col' ? (d.x * Math.cos(r) + d.y * Math.sin(r)) / mm : -(d.x * -Math.sin(r) + d.y * Math.cos(r)) / mm;
+  return Math.max(1, Math.round((along - start) * 10) / 10);
 }

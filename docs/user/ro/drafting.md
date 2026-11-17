@@ -290,6 +290,9 @@ Ca orice etichetă, eticheta de stratificație își urmează elementul, iar pla
 - **Lățimile și înălțimile** sunt în milimetri de hârtie, așa că un tabel se citește la fel la orice scară. Un rând se potrivește implicit textului, niciodată mai scund decât înălțimea lui; bifează **potrivit textului** pentru coloane cât cel mai lat text al lor (textul împărțit pe rânduri rămâne într-o coloană cu lățimea ei proprie).
 - **Text rotit și spațiere.** **Text în sus (90°)** sau **text în jos (270°)** rotește textul celulelor selectate ca să se citească de-a lungul înălțimii rândului, iar un rând care se potrivește textului crește cât lungimea lui (un titlu de coloană peste coloane înguste); într-un rând cu înălțime proprie, textul se împarte pe rânduri la ea. **Spațiere** stabilește spațiul din jurul textului unei celule (gol: al tabelului).
 - **Stiluri de tabel.** **Salvează ca stil…** păstrează aspectul tabelului în standardele de desen ale proiectului: liniile, culorile celulelor, alinierea și rotirile, lățimile coloanelor, înălțimile rândurilor și **rândurile de antet** (bifează **rând de antet** pentru rândurile selectate). Dacă ceri să păstreze și celulele, stilul e un șablon: un tabel nou făcut în el pornește ca o copie. Stilurile tale apar lângă aspectele Lapin când faci un tabel și în lista editorului, unde alegerea unuia restilizează un tabel (textele și lățimile rămân). **Gestionare → Standarde de desen → Tabele** le redenumește sau le șterge, iar un fișier de standarde (**Export…**, **Import…**) le duce în alte proiecte. Aspectele Lapin rămân cum erau.
+- **Tabele lungi.** **Rupe după** un număr de rânduri, **sau la** o înălțime pe hârtie, iar tabelul continuă în părți lângă el (**părți la dreapta** sau **părți dedesubt**), fiecare cu rândurile de antet din nou (bifează **rând de antet** pentru rândurile pe care le repetă); o celulă unită nu se taie niciodată în două. **Pune o parte…** așază o parte pe altă planșă sau vedere: clic unde vine colțul ei din stânga sus. Citește tabelul așa cum e acum, se mută cu uneltele Modifică, iar ștearsă revine lângă tabel.
+- **CSV și Excel.** **Încarcă CSV/XLSX…** aduce celulele unui fișier CSV sau ale primei foi a unui registru în tabel, de la celula selectată încolo, adăugând rânduri și coloane după nevoie, într-un pas de anulare; **CSV** și **XLSX** salvează celulele așa cum se citesc.
+- **Prinderi.** Selectează un tabel în vedere: prinderile de pe marginea lui de sus stabilesc lățimile coloanelor, cele de pe marginea stângă înălțimile rândurilor (un rând cu înălțime dată nu se mai potrivește textului).
 - **Aldin**, **cursiv**, alinierea, înălțimea textului, **culoarea textului**, **fundalul** și **opacitatea** lui se aplică celulelor selectate; **Borduri** desenează toate liniile, conturul, interiorul, o latură sau niciuna, cu o grosime și o culoare.
 
 Fiecare modificare e un pas de anulare. Motorul desenează tabelul, deci vederea, planșa, PDF-ul și DXF-ul ei arată același lucru; se mută, se copiază și se rotește cu uneltele Modifică.
@@ -305,6 +308,8 @@ Fiecare modificare e un pas de anulare. Motorul desenează tabelul, deci vederea
 ![Un tabel ale cărui rânduri citesc pereții de care sunt legate: nume, lungimi și o rezistență la foc, în timp real](shots/drafting-table-model.webp)
 
 ![O etichetă de cameră desenată ca tabel într-un simbol: fiecare copie se potrivește numelui și ariei ei](shots/drafting-table-model-plan.webp)
+
+![Un tabel lung rupt după patru camere, fiecare parte cu antetul din nou, a doua pusă pe o planșă proprie](shots/drafting-table-long.webp)
 
 ### Axe
 

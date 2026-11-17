@@ -4205,6 +4205,26 @@ export const FR: Record<string, string> = {
   "The table reads": "Le tableau lit",
   "It reads": "Elle lit",
   "A field of that element put into the cell's text": "Un champ de cet élément inséré dans le texte de la cellule",
+  // Drafting tables, stage 5: long tables, CSV and XLSX, grips.
+  "A long table broken into parts, each with the header rows again": "Un long tableau coupé en parties, chacune avec à nouveau les lignes d'en-tête",
+  "Break after": "Couper après",
+  "Body rows a part": "Lignes de corps par partie",
+  "Or parts at most this tall on paper, the header in": "Ou des parties au plus aussi hautes sur le papier, en-tête compris",
+  "or at": "ou à",
+  "A part's height on paper": "La hauteur d'une partie sur le papier",
+  "Where the next parts go": "Où vont les parties suivantes",
+  "parts to the right": "parties à droite",
+  "parts below": "parties en dessous",
+  "A part placed on another sheet or view: click where its top-left corner goes": "Une partie placée sur une autre feuille ou vue : cliquez où va son coin supérieur gauche",
+  "Place a part…": "Placer une partie…",
+  "Cells from a CSV file or a workbook (XLSX), from the selected cell on; the table grows as needed": "Des cellules d'un fichier CSV ou d'un classeur (XLSX), à partir de la cellule sélectionnée ; le tableau grandit au besoin",
+  "Load CSV/XLSX…": "Charger CSV/XLSX…",
+  "The cells as they read, as a CSV file": "Les cellules telles qu'elles se lisent, en fichier CSV",
+  "The cells as they read, as a workbook": "Les cellules telles qu'elles se lisent, en classeur",
+  "Place table part": "Placer une partie de tableau",
+  "Drag: the column's width": "Faites glisser : la largeur de la colonne",
+  "Drag: the row's height": "Faites glisser : la hauteur de la ligne",
+  "A table": "Un tableau",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

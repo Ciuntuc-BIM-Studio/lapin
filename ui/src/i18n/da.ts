@@ -4238,6 +4238,26 @@ export const DA: Record<string, string> = {
   "The table reads": "Tabellen læser",
   "It reads": "Den læser",
   "A field of that element put into the cell's text": "Et felt fra elementet sat ind i cellens tekst",
+  // Drafting tables, stage 5: long tables, CSV and XLSX, grips.
+  "A long table broken into parts, each with the header rows again": "En lang tabel delt i dele, hver med overskriftsrækkerne igen",
+  "Break after": "Del efter",
+  "Body rows a part": "Indholdsrækker pr. del",
+  "Or parts at most this tall on paper, the header in": "Eller dele højst så høje på papiret, overskriften medregnet",
+  "or at": "eller ved",
+  "A part's height on paper": "En dels højde på papiret",
+  "Where the next parts go": "Hvor de næste dele kommer",
+  "parts to the right": "dele til højre",
+  "parts below": "dele nedenunder",
+  "A part placed on another sheet or view: click where its top-left corner goes": "En del sat på et andet ark eller en anden visning: klik, hvor dens øverste venstre hjørne skal være",
+  "Place a part…": "Placér en del…",
+  "Cells from a CSV file or a workbook (XLSX), from the selected cell on; the table grows as needed": "Celler fra en CSV-fil eller en projektmappe (XLSX), fra den valgte celle; tabellen vokser efter behov",
+  "Load CSV/XLSX…": "Indlæs CSV/XLSX…",
+  "The cells as they read, as a CSV file": "Cellerne som de læses, som CSV-fil",
+  "The cells as they read, as a workbook": "Cellerne som de læses, som projektmappe",
+  "Place table part": "Placér tabeldel",
+  "Drag: the column's width": "Træk: kolonnens bredde",
+  "Drag: the row's height": "Træk: rækkens højde",
+  "A table": "En tabel",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

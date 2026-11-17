@@ -25,6 +25,8 @@ export async function editDimension(id: string, at?: Vec2): Promise<boolean> {
   const node = useSession.getState().nodes.get(id);
   // A drafting table opens its editor (issue #71).
   if (node?.props.predefinedType === 'TABLE') { openTableEditor(id); return true; }
+  // A long table's part placed on its own (stage 5) opens its table.
+  if (node?.props.predefinedType === 'TABLEPART' && typeof node.props.of === 'string') { openTableEditor(node.props.of); return true; }
   if (node?.props.predefinedType !== 'DIMENSION') return false;
   const d = await query<DimensionInfo>('drafting.dimension', { id, ...(at ? { at: [at.x, at.y] } : {}) });
   if (!d || d.value == null) return true;
