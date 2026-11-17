@@ -1123,6 +1123,8 @@ export const ZH: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': '笔刷工具每点击一次为一笔，可用 Ctrl Z 撤销；地形的笔触可在检查器中清除。',
   // Site tools, stage 2
   'Spot level': '点标高', 'Spot levels': '点标高', 'Parcel': '地块', 'Export LandXML': '导出 LandXML', 'Analysis': '分析', 'slopes': '坡度',
+  'Split terrain': '拆分地形', 'Merge terrains': '合并地形', 'Select two terrains or more to merge them.': '请选择两个或更多地形进行合并。',
+  'Terrain boundary': '地形边界', 'Slope tag': '坡度标注', 'Slope tags': '坡度标注', 'Boundary': '边界', 'clipped': '已裁剪', 'convex hull': '凸包', 'from parcel': '取自地块', 'Cut/fill grid': '挖填网格', 'Graded region': '整平区域', 'reset to survey': '恢复为测量数据', 'snapshot existing': '快照现状地面',
   'cut and fill': '挖填方', 'elevations': '标高', 'drawn': '已绘制', 'remove': '移除', 'Planting schedule': '种植明细表',
   // The engine in the browser.
   'In the browser': '在浏览器中',

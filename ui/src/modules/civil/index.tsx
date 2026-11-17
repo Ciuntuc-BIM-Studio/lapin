@@ -8,7 +8,7 @@
 import { create } from 'zustand';
 import { activate } from '../../platform/modules';
 import { promptText } from '../../shell/prompts';
-import { BrickWall, Crop, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
+import { BrickWall, Combine, Crop, PenLine, Scissors, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -16,7 +16,7 @@ import { curvedOutlineGrips, holeGrips, outlineGrips, outlineRef, toPairs } from
 import { arcsOf, edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
 import { PlainShapeBar, toggleOutlineArcs } from '../../viewport/outlineShape';
 import { notify, useUi } from '../../app/store';
-import { execute, query } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
 import { formatLength, levelUnit, parseLevel, unitName } from '../../engine/unitsStore';
 import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './survey';
 import { TerrainSection } from './TerrainSection';
@@ -195,6 +195,27 @@ const slopeTag: ToolDef = {
   },
 };
 
+/** A terrain split in two along a line drawn across it: the larger half stays the terrain, what lies in the other moves with it (T1). */
+const splitTerrain: ToolDef = {
+  id: 'civil.splitTerrain', label: 'Split terrain', icon: Scissors,
+  gesture: { kind: 'twoPoints' },
+  complete: async ({ points }, ctx) => {
+    if (points.length < 2) return;
+    await ctx.execute('civil.splitTerrain', { x1: points[0].x, y1: points[0].y, x2: points[1].x, y2: points[1].y });
+  },
+};
+
+/** The selected terrains as one: the first selected keeps its identity and takes the others' points and platforms (T1). */
+const mergeTerrains: ToolDef = {
+  id: 'civil.mergeTerrains', label: 'Merge terrains', icon: Combine,
+  run: () => {
+    const nodes = useSession.getState().nodes;
+    const ids = useUi.getState().selected.filter((id) => { const n = nodes.get(id); return n?.type === 'IfcGeographicElement' && n.props.predefinedType === 'TERRAIN'; });
+    if (ids.length < 2) { notify('Select two terrains or more to merge them.'); return; }
+    void execute('civil.mergeTerrains', { ids });
+  },
+};
+
 /** Every terrain of the project as one LandXML file. */
 const landXmlOut: ToolDef = { id: 'civil.landxmlExport', label: 'Export LandXML', icon: FileDown, run: () => void downloadLandXml().catch((e) => notify(e instanceof Error ? e.message : String(e))) };
 
@@ -353,7 +374,7 @@ const civil: LapinModule = {
   tabs: [{
     id: 'site', label: 'Site', order: 40, include: ['modify'],
     groups: [
-      { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainBoundary, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
+      { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainBoundary, splitTerrain, mergeTerrains, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },

@@ -1125,6 +1125,8 @@ export const DE: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Jeder Klick eines Pinselwerkzeugs ist ein Strich, rückgängig mit Strg Z; die Striche eines Geländes lassen sich im Inspektor leeren.',
   // Site tools, stage 2
   'Spot level': 'Höhenkote', 'Spot levels': 'Höhenkoten', 'Parcel': 'Grundstück', 'Export LandXML': 'LandXML exportieren', 'Analysis': 'Analyse', 'slopes': 'Neigungen',
+  'Split terrain': 'Gelände teilen', 'Merge terrains': 'Gelände vereinen', 'Select two terrains or more to merge them.': 'Wählen Sie zwei oder mehr Gelände, um sie zu vereinen.',
+  'Terrain boundary': 'Geländegrenze', 'Slope tag': 'Neigungsangabe', 'Slope tags': 'Neigungsangaben', 'Boundary': 'Grenze', 'clipped': 'beschnitten', 'convex hull': 'konvexe Hülle', 'from parcel': 'vom Grundstück', 'Cut/fill grid': 'Abtrag/Auftrag-Raster', 'Graded region': 'Modellierter Bereich', 'reset to survey': 'auf Vermessung zurücksetzen', 'snapshot existing': 'Bestand festhalten',
   'cut and fill': 'Abtrag und Auftrag', 'elevations': 'Höhen', 'drawn': 'gezeichnet', 'remove': 'entfernen', 'Planting schedule': 'Pflanzliste',
   // The engine in the browser.
   'In the browser': 'Im Browser',

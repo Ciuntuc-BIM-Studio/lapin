@@ -245,10 +245,11 @@ public class CivilTests
         var split = (JsonObject)f.Run("civil.splitTerrain", new JsonObject { ["id"] = t, ["x1"] = 15, ["y1"] = -5, ["x2"] = 15, ["y2"] = 45 })!;
         var ids = split["ids"]!.AsArray().Select(x => (string)x!).ToList();
         Assert.Equal(2, ids.Count);
-        Assert.Null(f.Model.Get(t));
+        Assert.Equal(t, ids[0]);   // the larger half stays the terrain, its GlobalId kept
         var merged = (JsonObject)f.Run("civil.mergeTerrains", new JsonObject { ["ids"] = new JsonArray(ids[0], ids[1]) })!;
         var mergedId = (string)merged["id"]!;
-        Assert.NotNull(f.Model.Get(mergedId));
+        Assert.Equal(t, mergedId);
+        Assert.Null(f.Model.Get(ids[1]));
         Assert.NotNull(Terrains.Of(f.Model.Get(mergedId)!).ElevationAt(10, 10));
     }
 
@@ -279,5 +280,94 @@ public class CivilTests
         var geom2 = Terrains.Geometry(f.Model.Get(t)!, f.Model, null);
         var qty2 = Terrains.Quantities(f.Model.Get(t)!, geom2, f.Model).First();
         Assert.Equal(0, qty2.Quantities.First(i => i.Name == "FillVolume").Value, 2);
+    }
+
+    static double TerrainQty(Fixture f, string t, string name) =>
+        f.Session.Quantities(t).Single(q => q.Name == "Lapin_TerrainQuantities").Quantities.FirstOrDefault(x => x.Name == name)?.Value ?? 0;
+
+    [Fact]
+    public void Splitting_a_terrain_keeps_its_platforms_and_ditches_each_on_the_half_it_lies_in_and_merging_brings_them_back()
+    {
+        var f = F();
+        var t = Slope(f);
+        var pad = (string)f.Run("civil.addPlatform", new JsonObject { ["terrainId"] = t, ["x1"] = 22, ["y1"] = 10, ["x2"] = 30, ["y2"] = 20, ["elevation"] = 1.3 })!["id"]!;
+        var ditch = (string)f.Run("civil.addDitch", new JsonObject { ["terrainId"] = t, ["points"] = new JsonArray(new JsonArray(2, 30), new JsonArray(10, 30)) })!["id"]!;
+        var cutBefore = TerrainQty(f, t, "CutVolume");
+        Assert.True(cutBefore > 1);
+
+        // Along x = 15: the right half (25 × 40) is the larger and stays the terrain; the ditch (x 2–10) goes to the left one.
+        var ids = ((JsonObject)f.Run("civil.splitTerrain", new JsonObject { ["id"] = t, ["x1"] = 15, ["y1"] = -5, ["x2"] = 15, ["y2"] = 45 })!)["ids"]!.AsArray().Select(x => (string)x!).ToList();
+        Assert.Equal(t, ids[0]);
+        var other = ids[1];
+        Assert.NotNull(f.Model.Get(pad));
+        Assert.NotNull(f.Model.Get(ditch));
+        Assert.Equal([pad], Terrains.Pads(f.Model, t).Select(x => x.Id));
+        Assert.Equal([ditch], Terrains.DitchesOf(f.Model, other).Select(x => x.Id));
+        Assert.Empty(Terrains.DitchesOf(f.Model, t));
+        Assert.Equal(1000, TerrainQty(f, t, "PlanArea"), 1);
+        Assert.Equal(600, TerrainQty(f, other, "PlanArea"), 1);
+        Assert.Contains(f.Session.Quantities(t), q => q.Name == "Lapin_EarthworkQuantities");
+        Assert.True(TerrainQty(f, t, "CutVolume") > 1);
+        Assert.Equal(Spatial.StoreyOf(f.Model, t)?.Id, Spatial.StoreyOf(f.Model, other)?.Id);
+
+        // One undo step brings the whole terrain back, with both on it.
+        f.Session.Undo();
+        Assert.Null(f.Model.Get(other));
+        Assert.Null(f.Model.Get(t)!.Attrs[Terrains.BoundaryKey]);
+        Assert.Equal([pad], Terrains.Pads(f.Model, t).Select(x => x.Id));
+        Assert.Equal([ditch], Terrains.DitchesOf(f.Model, t).Select(x => x.Id));
+        f.Session.Redo();
+        Assert.Equal([ditch], Terrains.DitchesOf(f.Model, other).Select(x => x.Id));
+
+        // Merged back (the second first: it keeps its GlobalId and takes the platform).
+        var merged = (string)((JsonObject)f.Run("civil.mergeTerrains", new JsonObject { ["ids"] = new JsonArray(other, t) })!)["id"]!;
+        Assert.Equal(other, merged);
+        Assert.Null(f.Model.Get(t));
+        Assert.Equal([pad], Terrains.Pads(f.Model, other).Select(x => x.Id));
+        Assert.Equal([ditch], Terrains.DitchesOf(f.Model, other).Select(x => x.Id));
+        Assert.Equal(cutBefore, TerrainQty(f, other, "CutVolume"), 3);
+        f.Session.Undo();
+        Assert.NotNull(f.Model.Get(t));
+        Assert.Equal([pad], Terrains.Pads(f.Model, t).Select(x => x.Id));
+        Assert.Equal([ditch], Terrains.DitchesOf(f.Model, other).Select(x => x.Id));
+    }
+
+    [Fact]
+    public void Merging_terrains_on_different_datums_keeps_every_existing_surface_and_the_strokes_heights()
+    {
+        var f = F();
+        string Add(int x0, double datum)
+        {
+            var lines = new List<string>();
+            for (var i = 0; i <= 2; i++) for (var j = 0; j <= 4; j++) lines.Add($"{x0 + i * 10} {j * 10} {datum + 0.02 * (x0 + i * 10)}");
+            return (string)f.Run("civil.addTerrain", new JsonObject { ["text"] = string.Join("\n", lines), ["datum"] = datum, ["interval"] = 0.5, ["depth"] = 1 })!["id"]!;
+        }
+        var a = Add(0, 100);
+        var b = Add(40, 50);
+        // A: raised, then snapshotted (its existing ground is the raised one: no fill left). B: raised, and flattened to 2.0 elsewhere.
+        f.Run("civil.sculpt", new JsonObject { ["terrainId"] = a, ["kind"] = "raise", ["x"] = 10, ["y"] = 20, ["radius"] = 6, ["amount"] = 1.0 });
+        f.Run("civil.snapshotExisting", new JsonObject { ["id"] = a });
+        f.Run("civil.sculpt", new JsonObject { ["terrainId"] = b, ["kind"] = "raise", ["x"] = 50, ["y"] = 12, ["radius"] = 5, ["amount"] = 1.0 });
+        f.Run("civil.sculpt", new JsonObject { ["terrainId"] = b, ["kind"] = "flatten", ["x"] = 50, ["y"] = 30, ["radius"] = 5, ["level"] = 2.0 });
+        Assert.Equal(0, TerrainQty(f, a, "FillVolume"), 2);
+        var fillB = TerrainQty(f, b, "FillVolume");
+        var cutB = TerrainQty(f, b, "CutVolume");
+        Assert.True(fillB > 10);
+        var flatB = Terrains.Of(f.Model.Get(b)!).ElevationAt(50, 30)!.Value;
+        Assert.Equal(2.0, flatB, 2);
+
+        var m = (string)((JsonObject)f.Run("civil.mergeTerrains", new JsonObject { ["ids"] = new JsonArray(a, b) })!)["id"]!;
+        Assert.Equal(a, m);
+        var merged = f.Model.Get(m)!;
+        Assert.Equal(100, merged.Num("datum"));
+        // The existing surface is A's snapshot beside B's survey: the fill is B's raise only, as before.
+        Assert.True(merged.Attrs["existingPoints"] is JsonArray { Count: > 15 });
+        Assert.Equal(fillB, TerrainQty(f, m, "FillVolume"), 0);
+        Assert.Equal(cutB, TerrainQty(f, m, "CutVolume"), 0);
+        // Heights stay the model's: B's flatten still at 2.0, its ground where it was.
+        var tm = Terrains.Of(merged);
+        Assert.Equal(flatB, tm.ElevationAt(50, 30)!.Value, 3);
+        Assert.Equal(0.02 * 60, tm.ElevationAt(60, 0)!.Value - 0, 3);
+        Assert.Equal(Terrains.Existing(f.Model.Get(m)!).ElevationAt(10, 20)!.Value, tm.ElevationAt(10, 20)!.Value, 3);
     }
 }

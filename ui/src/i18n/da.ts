@@ -1125,6 +1125,8 @@ export const DA: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Hvert klik med et penselværktøj er ét strøg, der fortrydes med Ctrl Z; et terræns strøg kan ryddes i inspektøren.',
   // Site tools, stage 2
   'Spot level': 'Punktkote', 'Spot levels': 'Punktkoter', 'Parcel': 'Matrikel', 'Export LandXML': 'Eksportér LandXML', 'Analysis': 'Analyse', 'slopes': 'hældninger',
+  'Split terrain': 'Del terræn', 'Merge terrains': 'Flet terræner', 'Select two terrains or more to merge them.': 'Vælg to eller flere terræner for at flette dem.',
+  'Terrain boundary': 'Terrænafgrænsning', 'Slope tag': 'Hældningsmærke', 'Slope tags': 'Hældningsmærker', 'Boundary': 'Afgrænsning', 'clipped': 'beskåret', 'convex hull': 'konvekst hylster', 'from parcel': 'fra matrikel', 'Cut/fill grid': 'Af-/påfyldningsgitter', 'Graded region': 'Reguleret område', 'reset to survey': 'nulstil til opmåling', 'snapshot existing': 'fastfrys eksisterende',
   'cut and fill': 'afgravning og påfyldning', 'elevations': 'koter', 'drawn': 'tegnet', 'remove': 'fjern', 'Planting schedule': 'Beplantningsskema',
   // The engine in the browser.
   'In the browser': 'I browseren',
