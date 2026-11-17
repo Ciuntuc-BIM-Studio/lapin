@@ -26,3 +26,12 @@ export function pressTool(tl: ToolDef, button?: HTMLElement | null): void {
   }
   activate(tl);
 }
+
+/**
+ * A module's pulldown (audit S14: a crowded tab's tools gathered under fewer buttons): a button of its own id whose list is
+ * `items`, each still the tool it was (its id, letters, place in My tools and Commands…: platform/modules.ts `allTools`).
+ */
+export function pulldownTool(id: string, label: string, icon: ToolDef['icon'], items: readonly ToolDef[]): ToolDef {
+  const t: ToolDef = { id, label, icon, items, run: () => openPulldown(t) };
+  return t;
+}

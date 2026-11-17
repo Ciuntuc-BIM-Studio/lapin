@@ -201,6 +201,9 @@ public static class Roles
         new("rise", "Rise / drop", "IfcPipeFitting", "USERDEFINED", new(0.1, 0.1, 0.1), 0,
             [new("bottom", "*", Flow.Both, new(0, 0, 0), Down), new("top", "*", Flow.Both, new(0, 0, 0), Up)], "rise", "rise"),
         new("cap", "Cap", "IfcPipeFitting", "USERDEFINED", new(0.05, 0.05, 0.05), 0, [new("in", "*", Flow.Both, new(0, 0, 0.025), Left)], "cap", "endpoint"),
+        // A coupling: where a run was split (element.split), the two parts' ends meet in it, at its middle (so their lengths add up to the run's).
+        new("coupling", "Coupling", "IfcPipeFitting", "CONNECTOR", new(0.06, 0.06, 0.06), 0,
+            [new("in", "*", Flow.In, new(0, 0, 0.03), Left), new("out", "*", Flow.Out, new(0, 0, 0.03), Right)], "coupling", "inline"),
     ];
 
     public static Role? Get(string? id) => All.FirstOrDefault(r => r.Id == id);

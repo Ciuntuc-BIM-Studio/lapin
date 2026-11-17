@@ -1,6 +1,7 @@
 /**
  * New field schedule from a template: one the modules ship (audit S1: the fixed schedules' tables as field schedules), a
- * .lapinschedule kept on this computer, one of the firm's folders, or a file.
+ * .lapinschedule kept on this computer, one of the firm's folders, or a file. A field schedule of the template's name already in
+ * the project is offered the import choices every library file has (D13): keep both, update, skip.
  * A template names the types, storeys, materials, groups and phases of its filter, so it works in another project.
  */
 
@@ -8,18 +9,27 @@ import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
 import { FileUp, HardDriveDownload, Package, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
-import { execute } from '../../engine/session';
+import { execute, query } from '../../engine/session';
+import { askImport } from '../../platform/ImportPreview';
+import type { LibraryPreview, LibraryTally } from '../../platform/libraryFile';
 import { pickFile } from '../../engine/files';
 import { useLibraryFiles, type ComputerFile } from '../../platform/libraries';
 import { FirmFolderFiles } from '../core/FirmFolderFiles';
 import { forgetTemplate, keptTemplates, shippedTemplates, TEMPLATE_EXT, type ShippedTemplate } from '../../shell/fieldSchedule';
 import { openSchedule } from '../cost/schedules';
 
-/** The schedule a template makes, opened; a sentence in a notice when the engine refuses. */
-async function make(text: string, builtin?: string): Promise<boolean> {
-  const r = await execute('architecture.importSchedule', builtin ? { builtin } : { text }) as { id?: string } | null;
-  if (!r?.id) return false;
-  openSchedule(r.id);
+/**
+ * The schedule a template makes, opened. As every library import (audit D13): previewed first, and when the project has a
+ * field schedule of its name set up otherwise, the import preview asks to keep both („Name (2)”), update it or skip; one the
+ * same is opened as it is. False when the engine refuses the template (a cancel is not a refusal).
+ */
+async function make(text: string, builtin?: string, title?: string): Promise<boolean> {
+  const given = builtin ? { builtin } : { text };
+  const preview = await query<LibraryPreview>('schedule.templatePreview', given);
+  if (!preview) return false;
+  const r = await askImport(title ?? preview.rows[0]?.name ?? 'Schedule template', preview,
+    async (choices) => await execute('architecture.importSchedule', { ...given, choices }) as (LibraryTally & { id?: string }) | null) as (LibraryTally & { id?: string }) | null;
+  if (r?.id) openSchedule(r.id);
   return true;
 }
 
@@ -45,7 +55,7 @@ export function FieldTemplatesDialog() {
             <p className="muted small">The schedules the modules ship, as field schedules: make one, then change it as you like or keep it as your own template.</p>
             <ul className="plain-list" data-testid="shipped-templates">
               {shipped.map((t) => (
-                <li key={t.id}><button type="button" className="link" data-shipped={t.id} onClick={() => void make('', t.id)}>{t.label}</button></li>
+                <li key={t.id}><button type="button" className="link" data-shipped={t.id} onClick={() => void make('', t.id, t.label)}>{t.label}</button></li>
               ))}
             </ul>
           </>}
@@ -54,7 +64,7 @@ export function FieldTemplatesDialog() {
             <ul className="plain-list">
               {kept.map((f) => (
                 <li key={f.id}>
-                  <button type="button" className="link" data-template={f.name} data-no-i18n onClick={() => void make(f.text)}>{f.name}</button>
+                  <button type="button" className="link" data-template={f.name} data-no-i18n onClick={() => void make(f.text, undefined, f.name)}>{f.name}</button>
                   <span className="muted small" data-no-i18n>{f.at}</span><span className="grow" />
                   <button type="button" className="icon mini" title="Forget it on this computer" onClick={() => void forgetTemplate(f.name)}><Trash2 size={12} /></button>
                 </li>

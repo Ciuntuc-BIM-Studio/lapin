@@ -140,6 +140,10 @@ En IFC, une rampe est un IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUAR
 
 Les segments d'un garde-corps peuvent être des arcs. Un clic droit près d'un segment d'un garde-corps sélectionné offre **Faire un arc** (ou **Rendre droite**), puis faites glisser la poignée ronde au milieu de l'arc pour le courber par un point ; un clic droit sur la poignée d'un angle offre **Arrondir le coin…** ou **Chanfreiner le coin…**. **Raccord** et **Chanfrein** (FILLET, CHAMFER) prennent aussi les garde-corps : cliquez un garde-corps sur les deux segments de part et d'autre d'un angle, ou deux garde-corps dont les extrémités se rejoignent, ou se rejoindraient prolongées : ils deviennent un seul garde-corps, le premier, autour de l'arc. Sa main courante, ses lisses et son verre suivent l'arc en courts morceaux droits à un millimètre au plus de lui, ses poteaux et barreaux sont espacés le long de l'arc comme le long d'un segment droit, et sa longueur est celle de l'arc. **Draft → Convert → Railing** garde l'arc d'un raccord : les lignes, arcs et polylignes qui se rejoignent bout à bout deviennent un seul garde-corps (décochez **Un seul garde-corps là où ils se rejoignent bout à bout** pour un chacun). En IFC la vraie courbe est son axe. Les garde-corps d'escaliers et de balcons suivent leur escalier ou leur balcon.
 
+Un garde-corps se scinde, s’ajuste, se prolonge et se décale avec les outils des murs : **Modifier → Scinder l’élément** le coupe en deux là où vous cliquez (un arc en deux arcs du même cercle ; le premier garde l’id), **Modifier → Ajuster/prolonger les éléments** ramène à une limite l’extrémité qui la dépasse ou prolonge l’extrémité la plus proche le long de son segment d’extrémité (un arc sur son cercle), et **Décaler** le copie parallèlement, les arcs concentriques, ses angles là où se rejoignent les segments déplacés. Leurs longueurs s’additionnent pour donner celle du garde-corps.
+
+![Un garde-corps dont un arc est scindé en deux sur son arc](shots/railing-split.webp)
+
 ![Un garde-corps à l'angle arrondi](shots/railing-fillet.webp)
 
 ## Balcons

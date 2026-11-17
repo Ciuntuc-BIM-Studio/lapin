@@ -786,3 +786,25 @@ public static class Formwork
         };
     }
 }
+
+/// <summary>
+/// A host split (audit 2026-11-15 §15): its formwork, worked out from the host, stays on the first part and a copy of it (its
+/// type, faces, storey, phase) forms each new part, so the formed area of the parts adds up to the element's.
+/// </summary>
+sealed class FormworkParts : ISplitFollower
+{
+    public void Parts(ICommandContext ctx, Entity was, IReadOnlyList<PathPiece> pieces)
+    {
+        var m = ctx.Model;
+        foreach (var f in m.OfClass(Formwork.Class).Where(x => x.Str("host") == was.Id).ToList())
+            foreach (var p in pieces.Where(p => p.Id != was.Id))
+            {
+                var attrs = f.CloneAttrs();
+                attrs["host"] = p.Id;
+                var copy = new Entity(ctx.NewId(), f.Class, $"Formwork · {m.Get(p.Id)?.Name ?? was.Name}", attrs, f.PredefinedType);
+                ctx.Add(copy);
+                foreach (var r in m.RelationsOf(f.Id).Where(r => r.Related.Contains(f.Id) && r.Class is IfcClass.RelContainedInSpatialStructure or IfcClass.RelDefinesByType).ToList())
+                    ctx.Relate(r.Class, r.Relating, copy.Id);
+            }
+    }
+}

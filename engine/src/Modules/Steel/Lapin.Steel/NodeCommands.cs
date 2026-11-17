@@ -68,6 +68,7 @@ public static class NodeCommands
 
         r.Service<IDeletion>(new SteelDeletion());
         r.Service<IScheduleSource>(new SteelPartsSchedule());
+        SteelPartsSchedule.RegisterTemplate(r);
     }
 }
 
@@ -138,6 +139,80 @@ public sealed class SteelPartsSchedule : IScheduleSource
         foreach (var g in welds.GroupBy(w => w.Throat).OrderBy(g => g.Key))
             o.Add(new Row("Weld", $"a{Math.Round(g.Key * 1000).ToString(CultureInfo.InvariantCulture)}", "", g.Count(), g.Sum(w => w.Length), 0));
         return o;
+    }
+
+    /// <summary>
+    /// A connection's plates, bolts, anchors and welds as parts (<c>steelParts</c>), each with its row of the schedule (the
+    /// order it lists them in, by part, size and grade), its weight (a weld: its length).
+    /// </summary>
+    sealed class Parts : IPartSource
+    {
+        public string Source => "steelParts";
+        public string Label => "Steel connection parts";
+        public IReadOnlyList<(string Key, string Label)> Fields =>
+        [
+            ("steelPartRow", "Row of the parts schedule"), ("steelPart", "Part"), ("steelSize", "Size"), ("steelGrade", "Grade"),
+            ("steelWeldLength", "Weld length (m)"), ("steelPartWeight", "Weight (kg)"),
+        ];
+
+        public IEnumerable<ElementPart> PartsOf(IQueryContext q, Entity e)
+        {
+            if (e.Class != SteelNodes.Class) yield break;
+            var rows = RowsOf(q.Model);
+            double Row(string part, string size, string grade) => rows.TryGetValue((part, size, grade), out var r) ? r : rows.Count;
+            var b = SteelNodes.Build(q.Model, e);
+            var i = 0;
+            foreach (var p in b.Parts)
+            {
+                var props = p.Properties ?? [];
+                var part = SteelNodes.P(props, "Part");
+                yield return ElementPart.Of((i++).ToString(CultureInfo.InvariantCulture), ("steelPartRow", Row(part, SteelNodes.P(props, "Size"), SteelNodes.P(props, "Grade"))), ("steelPart", part),
+                    ("steelSize", SteelNodes.P(props, "Size")), ("steelGrade", SteelNodes.P(props, "Grade")), ("steelPartWeight", Measure.Volume(p.Solid) * SteelModule.SteelDensity));
+            }
+            foreach (var w in b.Welds)
+            {
+                var size = $"a{Math.Round(w.Throat * 1000).ToString(CultureInfo.InvariantCulture)}";
+                yield return ElementPart.Of((i++).ToString(CultureInfo.InvariantCulture), ("steelPartRow", Row("Weld", size, "")), ("steelPart", "Weld"), ("steelSize", size), ("steelWeldLength", w.Length));
+            }
+        }
+    }
+
+    /// <summary>Each row of the schedule by its part, size and grade: its place in the list (worked out once per edit).</summary>
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<IModelView, Tuple<long, Dictionary<(string, string, string), double>>> _rows = [];
+
+    static Dictionary<(string, string, string), double> RowsOf(IModelView m)
+    {
+        if (_rows.TryGetValue(m, out var c) && c.Item1 == m.Revision) return c.Item2;
+        var d = new Dictionary<(string, string, string), double>();
+        foreach (var (r, i) in Rows(m).Select((r, i) => (r, i))) d.TryAdd((r.Part, r.Size, r.Grade), i);
+        _rows.AddOrUpdate(m, Tuple.Create(m.Revision, d));
+        return d;
+    }
+
+    /// <summary>
+    /// The schedule as a field schedule: a row per part, size and grade, its count, its welds' length and its weight. Its totals
+    /// line counts the welds too (the fixed schedule counts the pieces only) and leaves the length blank when there are no welds.
+    /// </summary>
+    public const string TemplateFields = """
+        {
+          "source": "steelParts", "groupBy": ["steelPartRow"], "groupColumns": false, "count": false, "totals": "always",
+          "sort": ["steelPartRow"],
+          "columns": [
+            { "field": "steelPart", "heading": "Part", "aggregate": "first" },
+            { "field": "steelSize", "heading": "Size", "aggregate": "first" },
+            { "field": "steelGrade", "heading": "Grade", "aggregate": "first" },
+            { "field": "steelPart", "heading": "Count", "aggregate": "rows" },
+            { "field": "steelWeldLength", "heading": "Length (m)", "aggregate": "sum", "decimals": 2 },
+            { "field": "steelPartWeight", "heading": "Weight (kg)", "aggregate": "sum", "decimals": 1 }
+          ]
+        }
+        """;
+
+    /// <summary>The connections' parts as parts and this schedule as a template (offered beside it; its button stays the fixed one, for its count).</summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        r.Service<IPartSource>(new Parts());
+        r.Service(ShippedScheduleTemplate.Of("steelParts", "Steel parts", null, TemplateFields));
     }
 
     public ScheduleGrid Grid(IQueryContext q)

@@ -10,6 +10,8 @@ La ficha **Instalaciones** dibuja las instalaciones del edificio tal como las es
 
 ## Un sistema con un clic
 
+La pestaña Instalaciones reúne sus herramientas en tres grupos: **Sistema** (**Sistema nuevo** ▾ con las instalaciones, **Editar sistema**, **Sistemas…**, **Planta de instalaciones**, **Puertos libres** y **Tablas** ▾), **Tramos** (**Tramo**, **Colocar nodo**, las ediciones del tramo, **Cerrar el lazo** y **Calle** ▾) y **Bandejas y ventiladores** (**Bandeja portacables**, **Extractores** ▾, **Tender en canalización**, **Conducto a la salida**, **Tipos de extractores**). Un botón con ▾ abre su lista; cada herramienta conserva sus letras, y **Comandos…** y **Mis herramientas** la encuentran como antes.
+
 En **Sistema nuevo**, elija la instalación (**Calefacción**, **Agua**, **Agua caliente**, **Saneamiento**, **Electricidad**, **Ventilación**) y haga clic en la planta. Lapin coloca el sistema completo: la fuente donde hizo clic, un primer terminal a unos metros y el tramo entre ellos. El sistema se abre para su edición.
 
 ![Un sistema de calefacción en la planta baja: la caldera, dos radiadores bajo las ventanas y los tramos entre ellos](shots/mep-plan.webp)
@@ -31,6 +33,7 @@ Seleccione un tramo: sus pinzamientos están sobre la línea tal como está dibu
 - **Ctrl-clic** en un pinzamiento lo quita, y en el centro de un tramo recto añade uno; **Añadir pinzamiento** coloca uno donde haga clic.
 - **Desvío** (<kbd>DU</kbd>) hace que un tramo rodee un obstáculo: haga clic en el tramo donde empieza el desvío, haga clic donde termina en el mismo tramo recto, luego mueva el cursor hacia el lado por el que pasa y haga clic (o escriba la distancia). El tramo sale, avanza en paralelo y vuelve, con cuatro vértices nuevos; conserva sus conexiones.
 - **Redibujar trayectoria** (<kbd>RP</kbd>) da a un tramo un recorrido nuevo: selecciónelo (o empiece sobre él) y dibuje la trayectoria punto a punto, <kbd>Enter</kbd> para terminar. El tramo conserva su sistema, su tamaño y sus conexiones, y sus extremos vuelven a sus puertos.
+- **Modificar → Dividir elemento** corta un tramo en dos donde haga clic: un **manguito** (un accesorio en línea, IfcPipeFitting CONNECTOR) une las dos partes en el corte, con sus extremos en su centro, de modo que sus longitudes suman la del tramo. La segunda parte toma aquello en lo que estaba el extremo del tramo, y cada derivación queda en la parte a la que se une. Un tramo emparejado (impulsión y retorno) queda ahí con dos extremos abiertos. **Modificar → Recortar/alargar elementos** lleva el extremo de un tramo a un límite (el extremo suelta el puerto en el que estaba), y **Desfasar** copia un tramo en paralelo. Una derivación en la parte que un recorte elimina se rechaza.
 
 ![Un tramo de radiador que rodea un obstáculo con Desvío: sale, avanza y vuelve](shots/mep-detour.webp)
 
@@ -51,7 +54,7 @@ En el panel de propiedades, un nodo muestra su sistema, su función y sus puerto
 
 ## Plantas, listas e IFC
 
-**Planta de instalaciones** crea una planta de la disciplina de instalaciones para el nivel, archivada en el conjunto de instalaciones del navegador. La **Lista de equipos** y la **Lista de tramos** de **Sistema** son tablas como cualquier otra: van en las láminas y se exportan con ellas.
+**Planta de instalaciones** crea una planta de la disciplina de instalaciones para el nivel, archivada en el conjunto de instalaciones del navegador. La **Lista de equipos** y la **Lista de tramos** de **Sistema → Tablas** son tablas como cualquier otra: van en las láminas y se exportan con ellas.
 
 En una exportación IFC, cada sistema es un IfcDistributionSystem, cada nodo y cada tramo tienen sus IfcDistributionPorts, y las conexiones se escriben entre los puertos, de modo que la red llega a otro programa conectada desde la fuente hasta el último terminal.
 
@@ -69,7 +72,7 @@ Cada aparato guarda su **consumo** (m³/h) y su **tipo de aparato** según su ev
 
 ### El suministro en la calle
 
-En **Calle**, **Red de gas a lo largo de…** (<kbd>GM</kbd>) tiende una red de gas a lo largo de lo que eliges — una calle, un alineamiento, una línea dibujada, un muro — a la **distancia a la línea** y la **profundidad (recubrimiento)** de la barra de la línea de comandos; bajo un terreno la profundidad se mide desde el suelo, si no desde el nivel. **Red de gas** la dibuja punto a punto. La red va en un sistema de gas de media presión, de tubo de PE, con su **cinta de señalización**.
+En **Tramos → Calle**, **Red de gas a lo largo de…** (<kbd>GM</kbd>) tiende una red de gas a lo largo de lo que eliges — una calle, un alineamiento, una línea dibujada, un muro — a la **distancia a la línea** y la **profundidad (recubrimiento)** de la barra de la línea de comandos; bajo un terreno la profundidad se mide desde el suelo, si no desde el nivel. **Red de gas** la dibuja punto a punto. La red va en un sistema de gas de media presión, de tubo de PE, con su **cinta de señalización**.
 
 **Acometida** (<kbd>GS</kbd>): elige la red y luego el armario. Lapin pone una **toma en carga** en la red, tiende la tubería de acometida en perpendicular a ella a su profundidad y hasta el armario, y sube allí al armario.
 
@@ -81,7 +84,7 @@ En **Calle**, **Red de gas a lo largo de…** (<kbd>GM</kbd>) tiende una red de 
 
 ![Los valores por defecto de un sistema de gas: su gas y su clase de presión](shots/mep-gas-systems.webp)
 
-**Mediciones de gas y gasóleo** en **Sistema** lista, sistema por sistema, las tuberías por material y diámetro con su longitud (y de ella los montantes), los codos, tes y vainas, la cinta de señalización, las llaves, contadores y armarios, y los aparatos con su consumo y potencia instalados. En IFC un sistema de gas es un IfcDistributionSystem de tipo GAS y uno de gasóleo FUEL; el armario es un IfcDistributionChamberElement, el contador un IfcFlowMeter GASMETER, las llaves IfcValve, la cocina un IfcBurner, el depósito un IfcTank.
+**Mediciones de gas y gasóleo** en **Sistema → Tablas** lista, sistema por sistema, las tuberías por material y diámetro con su longitud (y de ella los montantes), los codos, tes y vainas, la cinta de señalización, las llaves, contadores y armarios, y los aparatos con su consumo y potencia instalados. En IFC un sistema de gas es un IfcDistributionSystem de tipo GAS y uno de gasóleo FUEL; el armario es un IfcDistributionChamberElement, el contador un IfcFlowMeter GASMETER, las llaves IfcValve, la cocina un IfcBurner, el depósito un IfcTank.
 
 ![Las mediciones de gas y gasóleo](shots/mep-gas-list.webp)
 
@@ -89,7 +92,7 @@ Dimensionar las tuberías por el consumo de los aparatos y comprobar la pérdida
 
 ## Protección contra incendios
 
-**Alarma de incendios** e **Hidrantes y BIE** son servicios propios en **Sistema nuevo**, con sus herramientas en los grupos **Alarma de incendios** e **Hidrantes y BIE**.
+**Alarma de incendios** e **Hidrantes y BIE** son servicios propios en **Sistema nuevo**, sus dispositivos se colocan con **Colocar nodo** y el lazo se cierra con **Cerrar el lazo** en el grupo **Tramos**.
 
 **Sistema nuevo → Alarma de incendios** coloca la **central de detección de incendios** donde haces clic y un primer **detector de humo** a su lado, unidos por el cable del lazo. Cada dispositivo que colocas después (**Detector de humo** <kbd>SD</kbd>, **Detector térmico** <kbd>HD</kbd>, **Pulsador manual de alarma** <kbd>MC</kbd>, **Sirena**, **Sirena con flash**) se une al extremo abierto del lazo, el dispositivo colocado antes que él. El cable va de un dispositivo al siguiente en el orden en que los colocas. **Cerrar el lazo** lleva el cable del último dispositivo de vuelta al retorno de la central, de modo que el lazo se alimenta por ambos extremos. El cable es un cable resistente al fuego, por el techo.
 
@@ -103,7 +106,7 @@ Cada detector muestra su **cobertura** como un círculo discontinuo. Por defecto
 
 ![El lazo de alarma de incendios y las BIE en 3D](shots/mep-fire-3d.webp)
 
-**Mediciones de protección contra incendios** en **Sistema** lista, sistema por sistema:
+**Mediciones de protección contra incendios** en **Sistema → Tablas** lista, sistema por sistema:
 
 - las centrales, detectores, pulsadores y sirenas;
 - el cable del lazo con su longitud, y si cada lazo está cerrado;
@@ -118,7 +121,7 @@ Colocar los detectores recinto por recinto según la tabla de diseño y comproba
 
 ## Extractores
 
-El grupo **Extractores** de la pestaña Instalaciones coloca extractores de baño y de cocina como elementos propios, cada uno de un tipo que usted configura:
+**Extractores** (en el grupo **Bandejas y ventiladores** de la pestaña Instalaciones) coloca extractores de baño y de cocina como elementos propios, cada uno de un tipo que usted configura:
 
 - **Extractor de pared** (<kbd>VF</kbd>): un ventilador axial en un muro, que expulsa el aire directamente a través de él;
 - **Extractor de techo**: un ventilador bajo el techo con un conducto que sale por su lateral;

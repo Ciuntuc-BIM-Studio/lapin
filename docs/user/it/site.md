@@ -33,12 +33,16 @@ Tutto ciò che importi è conservato nel file del progetto. Un elemento prende i
 ## Strade, curve e linee CAD
 
 Una **strada** o un **percorso** segue il suo asse. In **Corridoio stradale…** (CR), la scheda **Curve** dà a ogni vertice dell’asse un raggio con una clotoide in entrata e in uscita, come un progettista stradale traccia una curva; un vertice lasciato a 0 resta uno spigolo, e le curve che non stanno tra le loro vicine vengono rifiutate con il motivo. Le progressive, il profilo longitudinale e le sezioni trasversali seguono l’asse curvo, e IFC 4.3 lo scrive come tracciato.
+Un sentiero o una strada, un muro di sostegno o un fosso si dividono, si tagliano, si estendono e si spostano in parallelo con gli strumenti dei muri (**Modifica → Dividi elemento**, **Modifica → Taglia/estendi elementi**, **Offset**). Le sue stazioni proseguono: la seconda parte inizia alla stazione dove cadeva il taglio, così il profilo di progetto, le sezioni trasversali e i giunti richiesti alle stazioni restano dove erano. Un taglio deve cadere su un tratto rettilineo dell’asse, non in una curva, e ogni vertice mantiene la sua curva. Un asse importato come segmenti di allineamento IFC 4.3 non viene tagliato qui.
+
 
 Le linee CAD diventano elementi del sito: **Strada da linee CAD** (LR) e **Linea di discontinuità da linee CAD** (BL) prendono una linea o una polilinea disegnata o portata da un DXF, seguono ogni linea del suo layer che la incontra estremo a estremo, e ne fanno una strada lungo di essa o una linea di discontinuità del terreno. Quando le linee portano delle quote (le linee 3D di un DXF), danno il profilo della strada o le quote della linea di discontinuità. Queste linee sono conservate con le loro quote e possono essere mostrate in 3D (la categoria *linework*).
 
 ## Piattaforme e lotto
 
 **Site → Platform** (<kbd>PD</kbd>) livella il terreno dentro un contorno a una quota, con scavo e riporto; **Site → Parcel** (<kbd>PC</kbd>) disegna il confine della proprietà, a tratto e punto con la sua area. Entrambi disegnano il contorno con la stessa barra di un solaio: un **Polygon** i cui bordi possono essere archi (<kbd>Space</kbd>), un **Rectangle** o un **Circle**. Selezionati, angoli e bordi hanno maniglie (quelli del lotto, sul suo terreno), e il clic destro offre **Make arc**, **Make straight**, **Fillet corner…** e **Chamfer corner…**, ciascuno un passo di annullamento. La piattaforma livella lungo gli archi veri; area e perimetro del lotto sono misurati su di essi, e l’elenco delle coordinate ne riporta gli angoli.
+**Modifica → Dividi elemento** divide una piattaforma in due lungo una linea di due punti (ogni parte livellata alla stessa quota, i suoi fori sulla parte in cui cadono; un foro attraversato dalla linea viene rifiutato), e **Modifica → Taglia/estendi elementi** taglia una piattaforma o il lotto con un limite rettilineo, mantenendo il lato su cui fai clic. Un terreno mantiene un solo lotto: viene tagliato, non divisa.
+
 
 ## Planimetrie e inquadramenti territoriali
 

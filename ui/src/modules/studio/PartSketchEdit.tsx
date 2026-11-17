@@ -13,7 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Check, Circle as CircleIcon, Minus, Spline, Square, Trash2 } from 'lucide-react';
 import type { Overlay3DProps, Vec2 } from '../../platform/module';
-import { notify, useUi } from '../../app/store';
+import { notify } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { t as tr } from '../../i18n';
 import { useScope } from '../../platform/scope';
@@ -76,20 +76,6 @@ export async function enterPartSketch(partId: string, sketchId: string): Promise
   usePartSketch.setState({ partId, sketchId, tool: null, selected: null, saved });
   useCad.setState({ host: hostFor(partId, sketchId) });
   return true;
-}
-
-/**
- * The families dialog's way in: closes it, finds a placed part of the type in the project, opens its edit mode on the sketch. A part
- * nobody placed has no object to edit it on: say so.
- */
-export async function editPartSketchIn(typeId: string, sketchId: string): Promise<void> {
-  const st = useSession.getState();
-  const typed = new Set<string>();
-  for (const r of st.relations.values()) if (r.class === 'IfcRelDefinesByType' && r.relating === typeId) for (const id of r.related) typed.add(id);
-  const instance = [...st.nodes.values()].find((n) => n.props.operation === 'part' && typed.has(n.id));
-  if (!instance) { notify('Place the part first: its sketch is edited in the part\'s edit mode, on an object.'); return; }
-  useUi.setState({ dialog: null });
-  if (await enterPartSketch(instance.id, sketchId)) return;
 }
 
 /** Leaves the sketch: the camera as it was, the constraint commands off. Not an undo step. */

@@ -117,6 +117,8 @@ Pod dachem warstwy ściany sięgają do dachu; przedłużenie **Góra** przesuwa
 
 **Modyfikuj → Odsuń element** (OFFSET z wiersza poleceń, który teraz przyjmuje elementy): wpisz odległość w jednostce projektu, kliknij ścianę w rzucie, a potem stronę, po której ma leżeć kopia. Kopia jest równoległa do ściany, współśrodkowa dla ściany łukowej, z tym samym typem, warstwami i otworami. **A** (Oś, domyślnie) mierzy od osi, **F** (Lica) od lica ściany, tak że lico kopii leży w tej odległości od jej lica; **T** (Przez) bierze punkt, przez który przechodzi kopia.
 
+To, co wisi na ścianie, trafia do części, na którą przypada. Wykończenie namalowane na boku prostej ściany zostaje tam, gdzie było na licu; to, którego obszar biegnie dalej poza cięcie, maluje także drugą część, chyba że zatrzyma je linia podziału lica, a to namalowane na całym licu pokrywa każdą część. Osłona przeciwsłoneczna wzdłuż ściany trafia do części, wzdłuż której biegnie (osłona przez cięcie jest odrzucana, jak drzwi); balkon trafia do części, na której leży jego środek, albo stoi swobodnie tam, gdzie jest, gdy jego część zostanie odcięta. Pręty narysowane w ścianie są osadzone w części, na której leży ich punkt, szalunek formuje każdą część, a własne słupki ściany szkieletowej (zob. [Drewno](wood.md)) idą ze swoją częścią. Wykończenia ściany łukowej zostają na jej pierwszej części.
+
 ![Dwie ściany przycięte do granicy i ściana z drzwiami podzielona na dwie](shots/wall-split-trim.webp)
 
 ## Typy ścian

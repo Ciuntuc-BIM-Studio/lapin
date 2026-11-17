@@ -16,6 +16,8 @@ Per uno spazio non chiuso da muri su tutti i lati, come una terrazza o un’estr
 
 I bordi di un locale disegnato possono essere curvi, come quelli di un solaio: la barra di **Room by outline** disegna un **Polygon** i cui bordi possono essere archi (**Arcs (Space)**), un **Rectangle** o un **Circle**, e il clic destro sul locale selezionato offre **Make arc**, **Make straight**, **Fillet corner…** e **Chamfer corner…**. Area e perimetro sono misurati sugli archi veri, e in IFC il profilo dello spazio è la curva vera. Un locale trovato dai suoi muri li segue, quindi il suo contorno non si modifica così.
 
+**Modifica → Dividi elemento** divide un locale disegnato in due lungo una linea di due punti: la parte su cui fai clic mantiene il locale, l’altra è un nuovo locale con il numero successivo del piano, e le loro aree sommate danno quella di prima. **Modifica → Taglia/estendi elementi** lo taglia con un limite rettilineo. Un locale ricavato dai suoi muri viene invece diviso da una linea di separazione dei locali.
+
 ![Un locale disegnato con un bordo curvo e un angolo raccordato, un locale tondo e un balcone con il fronte curvo](shots/rooms-curved.webp)
 
 ## Le proprietà di un locale
