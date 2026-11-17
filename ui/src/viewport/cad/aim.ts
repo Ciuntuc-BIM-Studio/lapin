@@ -21,6 +21,8 @@ import { useSession } from '../../engine/session';
 import type { RegionTest } from '../selectBox';
 import { viewFrameAt } from '../viewFrame';
 import { insetUnder } from '../insetMap';
+import { usePaneIndex } from '../../app/pane';
+import { registerCadHost } from './hosts';
 
 /** What holds an aimed point that no object snap took: the ortho line from the base (on, or Shift held), a polar angle from the base, or a tracking guide through an acquired point. */
 export type AimLock = 'ortho' | 'polar' | 'tracking' | 'parallel' | 'tangent';
@@ -198,8 +200,9 @@ export function useCadCanvas(o: {
   const regionRef = useRef(o.inRegion);
   regionRef.current = o.inRegion;
   const marks = o.drawing?.marks;
+  const pane = usePaneIndex();
 
-  // The command line works on this view while it is shown.
+  // The command line works on this view while it is shown (with two panes, on the active pane's: hosts.ts).
   useEffect(() => {
     if (!o.viewId) return;
     const host: CadHost = {
@@ -239,9 +242,8 @@ export function useCadCanvas(o: {
       frameAt: (at) => viewFrameAt(frameRef.current, at),
       insetUnder: (pts) => insetUnder(marks, pts),
     };
-    useCad.setState({ host });
-    return () => { if (useCad.getState().host === host) useCad.setState({ host: null }); };
-  }, [o.viewId, drafts, marks]);
+    return registerCadHost(host, pane);
+  }, [o.viewId, drafts, marks, pane]);
 
   // A new command starts with nothing acquired.
   const command = useCad((s) => s.command);
