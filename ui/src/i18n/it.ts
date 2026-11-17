@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "Visto dall'inizio alla fine. La sommità è una sola linea dall'inizio del muro alla sua fine; un gradino sono due punti uno sopra l'altro.", "Finish with a flat top: the profile taken away": "Termina con la sommità piana: il profilo viene tolto", "Draw the top with Draft, from the start to the end": "Disegna la sommità con Disegno, dall'inizio alla fine", "Draw the outside and its chambers as closed shapes": "Disegna l'esterno e le sue camere come forme chiuse", "Draw the section first.": "Disegna prima la sezione.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "Archi", "Sketch edits": "Modifiche dello schizzo", "Geometric": "Geometrici", "Arrays": "Serie", "Move, rotate, mirror": "Sposta, ruota, specchia", "Carriers and fans": "Passerelle e ventilatori",
   // Convert to…: stair, floor opening, parcel (audit S12)

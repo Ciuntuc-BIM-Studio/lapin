@@ -126,6 +126,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         // Sketch constraints (stage C0): kept per sketch, carried through the drafting commands that replace shapes.
         SketchConstraints.Register(r);
         OutlineSketches.Register(r);
+        // The wall profile and the section profile on the shared sketch canvas (audit S11 stage 2).
+        ProfileBoards.Register(r);
         r.Service<IProjectUpgrade>(new FamilyPartUpgrade());
         // After it: every part's bodies of formula corners drawn from sketches of its own (audit S6), as the part editor edits them.
         r.Service<IProjectUpgrade>(new PartSketchUpgrade());

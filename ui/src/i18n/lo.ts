@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "ເບິ່ງຈາກຈຸດເລີ່ມຫາຈຸດສິ້ນສຸດ. ສ່ວນເທິງແມ່ນເສັ້ນດຽວຈາກຈຸດເລີ່ມຂອງຝາຫາຈຸດສິ້ນສຸດ; ຂັ້ນໄດແມ່ນສອງຈຸດຊ້ອນກັນ.", "Finish with a flat top: the profile taken away": "ສຳເລັດດ້ວຍສ່ວນເທິງຮາບ: ເອົາໂປຣໄຟລ໌ອອກ", "Draw the top with Draft, from the start to the end": "ແຕ້ມສ່ວນເທິງດ້ວຍ ແບບຮ່າງ, ຈາກຈຸດເລີ່ມຫາຈຸດສິ້ນສຸດ", "Draw the outside and its chambers as closed shapes": "ແຕ້ມດ້ານນອກ ແລະ ຊ່ອງຂອງມັນເປັນຮູບປິດ", "Draw the section first.": "ແຕ້ມໜ້າຕັດກ່ອນ.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "ເສັ້ນໂຄ້ງ", "Sketch edits": "ແກ້ໄຂແບບຮ່າງ", "Geometric": "ເລຂາຄະນິດ", "Arrays": "ການຈັດລຽນ", "Move, rotate, mirror": "ຍ້າຍ, ໝູນ, ສະທ້ອນ", "Carriers and fans": "ຮາງສາຍ ແລະ ພັດລົມ",
   // Convert to…: stair, floor opening, parcel (audit S12)

@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "从起点看向终点。顶部是从墙起点到终点的一条线；台阶是上下重叠的两个点。", "Finish with a flat top: the profile taken away": "以平顶完成：轮廓被移除", "Draw the top with Draft, from the start to the end": "用绘图绘制顶部，从起点到终点", "Draw the outside and its chambers as closed shapes": "将外轮廓及其腔室绘制为闭合形状", "Draw the section first.": "请先绘制截面。",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "圆弧", "Sketch edits": "草图编辑", "Geometric": "几何约束", "Arrays": "阵列", "Move, rotate, mirror": "移动、旋转、镜像", "Carriers and fans": "桥架和风机",
   // Convert to…: stair, floor opening, parcel (audit S12)

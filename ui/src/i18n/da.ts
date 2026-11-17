@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "Set fra start mod slut. Toppen er én linje fra væggens start til dens slut; et trin er to punkter over hinanden.", "Finish with a flat top: the profile taken away": "Afslut med flad top: profilen fjernes", "Draw the top with Draft, from the start to the end": "Tegn toppen med Tegning, fra start til slut", "Draw the outside and its chambers as closed shapes": "Tegn ydersiden og dens kamre som lukkede former", "Draw the section first.": "Tegn først profilen.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "Buer", "Sketch edits": "Skitseredigering", "Geometric": "Geometriske", "Arrays": "Rækker", "Move, rotate, mirror": "Flyt, drej, spejl", "Carriers and fans": "Kabelbakker og ventilatorer",
   // Convert to…: stair, floor opening, parcel (audit S12)

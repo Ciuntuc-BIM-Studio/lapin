@@ -26,6 +26,7 @@ import { engineInBrowser } from '../../../engine/session';
 import { pickFolder } from '../cde/cde';
 import { SectionView } from './SectionView';
 import { ProfileEditor, type EditorStart } from './ProfileEditor';
+import { openProfileBoard, profilesOnBoard, useBoardProfile } from './profileBoard';
 import { starter, toMm } from './sectionEditor';
 import { TableImport, type CheckDto, type ImportReport, type TableRead } from './TableImport';
 import { StandardChecks } from './StandardChecks';
@@ -142,11 +143,26 @@ export function ProfileLibrariesDialog() {
     const dto = await query<PropsDto>('profiles.properties', { profile });
     setOutline({ profile, library: 'My profiles', dto });
   };
-  const drawNew = () => setEditor({ name: 'Aluminium 50x100', material: 'aluminium', rings: starter('box', { width: 50, depth: 100, wall: 3 }), library: 'My profiles' });
+  // A profile finished on its board (Draw a profile…, Edit its outline… on the sketch canvas): named and kept here.
+  const boardDone = useBoardProfile((s) => s.done);
+  useEffect(() => {
+    if (!boardDone) return;
+    useBoardProfile.setState({ done: null });
+    void edited(boardDone.profile, boardDone.library);
+  }, [boardDone]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** A section drawn: on the shared sketch canvas (with Studio), else in the editor here. */
+  const drawNew = () => {
+    const start = { name: 'Aluminium 50x100', material: 'aluminium', rings: starter('box', { width: 50, depth: 100, wall: 3 }), library: 'My profiles' };
+    if (profilesOnBoard()) void openProfileBoard({ ...start, rings: start.rings.map((r) => r.map(([x, y]): [number, number] => [x / 1000, y / 1000])) });
+    else setEditor(start);
+  };
   /** The profile chosen, its outline in the editor: kept under its name in this computer's library it came from (else My profiles), the project's copy then marked newer. */
   const editOutline = () => {
     if (!current || !dto) return;
-    setEditor({ name: current.name, material: current.material ?? 'steel', rings: toMm(dto.rings), library: currentEntry?.origin === 'computer' ? currentEntry.name : 'My profiles' });
+    const library = currentEntry?.origin === 'computer' ? currentEntry.name : 'My profiles';
+    // On the canvas its outline as the engine lays it; finished unchanged, the profile as it was.
+    if (profilesOnBoard()) void openProfileBoard({ name: current.name, material: current.material ?? 'steel', library, profile: current });
+    else setEditor({ name: current.name, material: current.material ?? 'steel', rings: toMm(dto.rings), library });
   };
   const edited = async (profile: ProfileJson, library: string) => {
     const dtoNew = await query<PropsDto>('profiles.properties', { profile });

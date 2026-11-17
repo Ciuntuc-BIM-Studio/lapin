@@ -2766,6 +2766,13 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .sketch-bar-hint { font-size: 11px; }
 .sketch-bar-end { display: inline-flex; align-items: center; gap: 4px; padding-left: 8px; border-left: 1px solid var(--rule); }
 .sketch-bar .btn.small { width: auto; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 11px; letter-spacing: 0; text-transform: none; }
+/* A board's side form (audit S11 stage 2): what its editor had besides drawing, over the view's right side. */
+.sketch-board-panel { position: absolute; top: 280px; right: 12px; z-index: 6; width: 300px; max-height: calc(100% - 340px); overflow: auto; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: var(--hud); border: 1px solid var(--rule); border-radius: 8px; font-size: 12px; backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+.sketch-board-panel .row.wrap { flex-wrap: wrap; }
+.sketch-board-panel .btn.small { white-space: nowrap; width: auto; padding: 3px 8px; font-size: 11px; letter-spacing: 0; text-transform: none; }
+.sketch-board-panel .field-line { display: flex; flex-direction: column; gap: 2px; }
+.sketch-board-panel .problem { color: var(--warn, #b5651d); }
+.sketch-board-panel table.grid input { width: 64px; }
 .part-sketch-note.floating { position: absolute; left: 50%; top: 104px; transform: translateX(-50%); z-index: 6; padding: 2px 10px; background: var(--hud); border-radius: 6px; }
 /* The Place catalogue (S15): one search over every source, the cards in a grid. */
 .place-catalog { width: min(860px, calc(100vw - 32px)); }

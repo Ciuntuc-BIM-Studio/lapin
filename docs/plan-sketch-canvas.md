@@ -102,10 +102,10 @@ Each becomes a board by the same contract: a view of its own on its frame (made 
 copied in as drafts, its own Finish command writing the payload back in one step, Cancel dropping the view. The editors' dialogs
 keep their non-drawing fields (names, materials, attributes) beside the board.
 
-1. **Wall profile** (`WallProfileDialog`): a section view along the wall, start to end (a drawing view of its own, `wallProfileOf`);
+1. **Wall profile** (`WallProfileDialog`), **done** (decision 646; §6): a section view along the wall, start to end (a drawing view of its own, `wallProfileOf`);
    the top drawn as one polyline (and arcs, which the dialog cannot do today); Finish → `architecture.updateWall {profile}`. The
    smallest step and the clearest gain (Draft's snaps to levels and to the other walls in the section).
-2. **Profiles** (`ProfileEditor`): a drafting view in section mm (`profileOf`), the outside and each chamber a closed shape, the
+2. **Profiles** (`ProfileEditor`), **done** (decision 646; §6): a drafting view in section mm (`profileOf`), the outside and each chamber a closed shape, the
    starters as drafted shapes; constraints on (a profile's sizes as dimensions, later as parameters); Finish → the engine's profile
    maker (refusing crossing rings, centring), then the libraries as today.
 3. **Symbols** (`SymbolEditor`): a drafting view in the symbol's mm round its insertion point (`symbolOf`; paper or model scale), the
@@ -128,3 +128,23 @@ today each step stays, as Draft's do.
 - Two boards on one part's sketch at once are one (opened again, the same view is answered); a part edited by other commands while
   its board is open is overwritten by Finish with the board's sketch.
 - Fillet and chamfer in a constrained sketch still drop the corner's coincident (plan-outline-sketch.md, Left 1).
+
+## 6. Stage 2, items 1 and 2, as built (decision 646)
+
+- **Wall profile** (`studio.editWallProfile {id}`, `Lapin.Studio/ProfileBoards.cs`; UI `architecture/wallProfileBoard.tsx`): not a
+  section view but a reference plane standing on the wall's axis (x along the wall from its start, y up from its base), so the
+  profile's [u, v] are the drafts' coordinates, copied. Marked `wallProfileOf`, the wall hidden there; the top one polyline, the base
+  and ends construction lines. Finish (`finishWallProfile`) chains the drafts into one line from start to end (arcs and elliptical
+  arcs in chords by `Chords`: the payload holds points only) and writes it through `architecture.setWallProfile` or
+  `setCurtainWallProfile` in one step; refused, the board kept, when it branches, closes, is in pieces, turns back, runs past the ends
+  or goes under 50 mm. `flat: true` is Flat top. A curved curtain wall keeps the dialog.
+- **Profiles** (`studio.editProfile {profile?, rings?, name, material, library}`; UI `core/profileLibraries/profileBoard.tsx`): a level
+  plane far under the model, 1 mm deep (a blank sheet in the section's metres, 1:1), marked `profileOf`; each ring a closed polyline,
+  the axes construction lines. Finish (`finishProfile`) takes every closed shape as a ring, checks and centres it as
+  `profiles.fromRings` does and answers the profile; the libraries dialog then names and keeps it as before.
+- **Side forms**: `Board.panel`, beside the canvas, keeps the dialogs' other fields (starters, typed points, Flat top; name, material,
+  library, sizes, chamber, size and area). `studio.setBoardShapes` replaces a board's shapes in one step (a starter, a typed point);
+  `studio.profileBoard` reads what the drafts make now. `frameBoard` frames the shapes when the board opens.
+- **Storage**: nothing changes. Opened and finished unchanged is the same JSON (a stored wall profile; a flat wall stays flat; a
+  profile of any kind, an IPE staying an I). Constraints drawn on these boards are working aids, dropped at Finish (the payloads have
+  no place for them). Without Studio, both editors stay in their dialogs.

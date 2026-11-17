@@ -90,5 +90,6 @@ export function SketchBar2D() {
   const id = view === 'plan' ? planViewId : view === 'drawing' ? drawingViewId : null;
   const board = boardOf(id, nodes);
   if (!board) return null;
-  return <SketchBar board={board} in3d={false} />;
+  const Panel = board.panel;
+  return <><SketchBar board={board} in3d={false} />{Panel && <Panel key={board.viewId} board={board} />}</>;
 }

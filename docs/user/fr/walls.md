@@ -57,19 +57,19 @@ Le rayon est celui de l'axe des murs, le milieu de leur noyau. Tapez **I** (Insi
 
 ### Un mur selon son profil
 
-**Profil…** dans les propriétés d’un mur dessine son sommet en élévation, vu de son début à sa fin : un pignon, une pente, des redans, un mur qui suit un escalier. Faites glisser les points (**Maj** garde la hauteur d’un point), cliquez sur la ligne du haut pour en ajouter un, faites un clic droit sur un point pour l’enlever, ou tapez-les dans le tableau en millimètres. **Partir de** donne un **Pignon**, une **Pente** ou des **Gradins** jusqu’à la hauteur que vous tapez. Un redan, c’est deux points l’un au-dessus de l’autre. **Appliquer** donne sa forme au mur ; **Sommet plat** le rend de nouveau plat.
+**Profil…** dans les propriétés d’un mur ouvre son sommet sur la toile d’esquisse : une vue à part, posée sur l’axe du mur, vue de son début à sa fin, le mur y étant masqué et sa base et ses extrémités tracées comme lignes de construction. Le sommet est une seule ligne du début à la fin : un pignon, une pente, des redans, un mur qui suit un escalier. Dessinez-le avec les outils de **Dessin** sur la barre (**Ligne**, **Polyligne**, **Arc**, **Ajuster**, **Prolonger**, **Raccord**…), déplacez ses points par leurs poignées, accrochez-vous aux niveaux et aux autres murs de la vue, et tenez-le avec des contraintes et des cotes comme toute esquisse. Le formulaire latéral à côté part d’un **Pignon**, d’une **Pente** ou de **Gradins** jusqu’à la hauteur que vous tapez, liste les points du sommet en millimètres à retaper et propose **Sommet plat**. Un redan, c’est deux points l’un au-dessus de l’autre ; un arc est posé en petits tronçons droits. **Terminer l’esquisse** donne sa forme au mur en une seule étape d’annulation ; un sommet qui revient en arrière, qui est en morceaux ou qui dépasse les extrémités du mur est refusé avec la raison, et l’esquisse reste ouverte. **Annuler** laisse le mur tel qu’il était.
 
 Le mur reste un mur : son épaisseur, ses couches, ses jonctions et ses portes et fenêtres sont comme avant, et il s’exporte en IFC avec sa forme.
 
-![Un pignon dessiné dans l’éditeur de profil](shots/wall-profile-editor.webp)
+![Un pignon dessiné sur l’esquisse du mur, son faîtage tapé dans le formulaire latéral](shots/wall-profile-editor.webp)
 
 ![Le mur ouest de la maison en pignon, sa fenêtre gardée](shots/wall-profile-3d.webp)
 
 ### Le contour et les barres d’un mur-rideau
 
-**Profil…** dans les propriétés d’un mur-rideau dessine son contour en élévation, comme pour un mur : un pignon, une pente, des gradins ou un contour quelconque, avec des points à faire glisser, à ajouter ou à retirer et un tableau en millimètres. Le mur monte jusqu’à son point le plus haut. Sa trame gagne une ligne là où le contour se brise (une brisure à moins d’un meneau et demi d’une ligne de la trame est ramenée sur elle) ; chaque travée garde les traverses qui tiennent sous son point le plus bas ; le panneau au-dessus de la dernière monte jusqu’au contour et une barre de rive le suit, inclinée ; les meneaux sont coupés à lui. Les réglages du type restent, et **Profil…** rouvre le contour pour le changer, sans reconstruire ; **Sommet plat** rend le rectangle. Il se voit en 3D, élévations et coupes, les nomenclatures mesurent les panneaux et les barres tels que dessinés, et l’IFC les porte comme pièces.
+**Profil…** dans les propriétés d’un mur-rideau dessine son contour de la même manière, sur une esquisse à part : un pignon, une pente, des gradins ou un contour quelconque, avec le même formulaire latéral (un mur-rideau courbe garde la boîte de dialogue du profil, avec des points à faire glisser et un tableau en millimètres). Le mur monte jusqu’à son point le plus haut. Sa trame gagne une ligne là où le contour se brise (une brisure à moins d’un meneau et demi d’une ligne de la trame est ramenée sur elle) ; chaque travée garde les traverses qui tiennent sous son point le plus bas ; le panneau au-dessus de la dernière monte jusqu’au contour et une barre de rive le suit, inclinée ; les meneaux sont coupés à lui. Les réglages du type restent, et **Profil…** rouvre le contour pour le changer, sans reconstruire ; **Sommet plat** rend le rectangle. Il se voit en 3D, élévations et coupes, les nomenclatures mesurent les panneaux et les barres tels que dessinés, et l’IFC les porte comme pièces.
 
-![Un pignon dessiné comme contour d’un mur-rideau](shots/curtain-boundary-editor.webp)
+![Un pignon dessiné comme contour d’un mur-rideau, sur son esquisse](shots/curtain-boundary-editor.webp)
 
 ![Le mur-rideau sous son pignon, en 3D](shots/curtain-boundary-3d.webp)
 

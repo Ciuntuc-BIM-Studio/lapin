@@ -57,19 +57,19 @@ O raio é o do eixo das paredes, o meio do seu núcleo. Escreva **I** (Inside) o
 
 ### Uma parede pelo seu perfil
 
-**Perfil…** nas propriedades de uma parede desenha o seu topo em elevação, visto do início ao fim: uma empena, uma inclinação, degraus, uma parede que acompanha uma escada. Arraste os pontos (**Shift** mantém a altura de um ponto), clique na linha de cima para acrescentar um, clique com o botão direito num ponto para tirá-lo, ou digite-os na tabela em milímetros. **Começar de** dá um **Empena**, uma **Inclinação** ou **Degraus** até a altura que você digitar. Um degrau são dois pontos um sobre o outro. **Aplicar** dá forma à parede; **Topo plano** a deixa plana de novo.
+**Perfil…** nas propriedades de uma parede abre o seu topo na tela de esboço: uma vista própria, assente no eixo da parede, vista do início ao fim, com a parede oculta aí e a sua base e os seus extremos desenhados como linhas de construção. O topo é uma única linha do início ao fim: uma empena, uma inclinação, degraus, uma parede que acompanha uma escada. Desenhe-o com as ferramentas de **Desenho** na barra (**Linha**, **Polilinha**, **Arco**, **Aparar**, **Estender**, **Concordância**…), mova os seus pontos pelas pegas, encaixe nos níveis e nas outras paredes da vista e fixe-o com restrições e cotas como qualquer esboço. O formulário lateral ao lado parte de uma **Empena**, uma **Inclinação** ou **Degraus** até a altura que você digitar, lista os pontos do topo em milímetros para reescrever e tem **Topo plano**. Um degrau são dois pontos um sobre o outro; um arco é assente em pequenos troços retos. **Terminar esboço** dá forma à parede num único passo de anular; um topo que volta atrás, está em pedaços ou ultrapassa os extremos da parede é recusado com o motivo, e o esboço continua aberto. **Cancelar** deixa a parede como estava.
 
 A parede continua uma parede: a espessura, as camadas, as junções e as portas e janelas ficam como estavam, e ela é exportada para IFC com a sua forma.
 
-![Uma empena desenhada no editor de perfil](shots/wall-profile-editor.webp)
+![Uma empena desenhada no esboço da parede, a sua cumeeira escrita no formulário lateral](shots/wall-profile-editor.webp)
 
 ![A parede oeste da casa como empena, com a janela mantida](shots/wall-profile-3d.webp)
 
 ### O contorno e as barras de uma parede-cortina
 
-**Perfil…** nas propriedades de uma parede-cortina desenha o seu contorno em alçado, como numa parede: um frontão, uma inclinação, degraus ou qualquer contorno, com pontos para arrastar, acrescentar ou retirar e uma tabela em milímetros. A parede sobe até ao seu ponto mais alto. A sua malha ganha uma linha onde o contorno quebra (uma quebra a menos de um montante e meio de uma linha da malha é levada para ela); cada vão mantém as travessas que cabem sob o seu ponto mais baixo; o painel acima da última enche até ao contorno e uma barra de bordo segue-o, inclinada; os montantes são cortados por ele. As definições do tipo mantêm-se, e **Perfil…** volta a abrir o contorno para o mudar, sem reconstruir; **Topo plano** devolve o retângulo. Vê-se em 3D, alçados e cortes, os mapas medem painéis e barras como desenhados, e o IFC leva-os como peças.
+**Perfil…** nas propriedades de uma parede-cortina desenha o seu contorno do mesmo modo, num esboço próprio: um frontão, uma inclinação, degraus ou qualquer contorno, com o mesmo formulário lateral (uma parede-cortina curva mantém o diálogo de perfil, com pontos para arrastar e uma tabela em milímetros). A parede sobe até ao seu ponto mais alto. A sua malha ganha uma linha onde o contorno quebra (uma quebra a menos de um montante e meio de uma linha da malha é levada para ela); cada vão mantém as travessas que cabem sob o seu ponto mais baixo; o painel acima da última enche até ao contorno e uma barra de bordo segue-o, inclinada; os montantes são cortados por ele. As definições do tipo mantêm-se, e **Perfil…** volta a abrir o contorno para o mudar, sem reconstruir; **Topo plano** devolve o retângulo. Vê-se em 3D, alçados e cortes, os mapas medem painéis e barras como desenhados, e o IFC leva-os como peças.
 
-![Um frontão desenhado como contorno de uma parede-cortina](shots/curtain-boundary-editor.webp)
+![Uma empena desenhada como contorno de uma parede-cortina, no seu esboço](shots/curtain-boundary-editor.webp)
 
 ![A parede-cortina sob o seu frontão, em 3D](shots/curtain-boundary-3d.webp)
 

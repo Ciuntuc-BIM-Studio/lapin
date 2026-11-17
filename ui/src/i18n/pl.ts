@@ -3,6 +3,7 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "Widok od początku do końca. Góra to jedna linia od początku ściany do jej końca; stopień to dwa punkty jeden nad drugim.", "Finish with a flat top: the profile taken away": "Zakończ z płaską górą: profil zostaje usunięty", "Draw the top with Draft, from the start to the end": "Narysuj górę narzędziami Rysunek, od początku do końca", "Draw the outside and its chambers as closed shapes": "Narysuj obrys zewnętrzny i komory jako kształty zamknięte", "Draw the section first.": "Najpierw narysuj przekrój.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "Łuki", "Sketch edits": "Edycja szkicu", "Geometric": "Geometryczne", "Arrays": "Szyki", "Move, rotate, mirror": "Przesuń, obróć, odbij", "Carriers and fans": "Koryta i wentylatory",
   // Convert to…: stair, floor opening, parcel (audit S12)

@@ -1,6 +1,7 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  "Seen from its start to its end. The top is one line from the wall's start to its end; a step is two points one over the other.": "Văzut de la început spre capăt. Partea de sus e o singură linie de la începutul peretelui la capătul lui; o treaptă înseamnă două puncte unul deasupra celuilalt.", "Finish with a flat top: the profile taken away": "Termină cu partea de sus dreaptă: profilul se elimină", "Draw the top with Draft, from the start to the end": "Desenează partea de sus cu Desen, de la început la capăt", "Draw the outside and its chambers as closed shapes": "Desenează exteriorul și camerele lui ca forme închise", "Draw the section first.": "Desenează întâi secțiunea.",
   // MEP and Studio tabs regrouped under pulldowns (audit S14)
   "Arcs": "Arce", "Sketch edits": "Editări de schiță", "Geometric": "Geometrice", "Arrays": "Multiplicări", "Move, rotate, mirror": "Mută, rotește, oglindește", "Carriers and fans": "Suporturi de cabluri și ventilatoare",
   // Convert to…: stair, floor opening, parcel (audit S12)

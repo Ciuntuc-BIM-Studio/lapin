@@ -90,19 +90,19 @@ A wall recognised from an imported IFC whose end the file cuts at an angle keeps
 
 ### A wall by its profile
 
-**Profile…** in a wall's properties draws its top in elevation, seen from its start to its end: a gable, a slope, steps, a wall that follows a stair. Drag the points (**Shift** keeps a point's height), click the top line to add one, right-click a point to take it out, or type them in the table in millimetres. **Start from** gives a **Gable**, a **Slope** or **Steps** up to the height you type. A step is two points one over the other. **Apply** shapes the wall; **Flat top** makes it flat again.
+**Profile…** in a wall's properties opens its top on the sketch canvas: a view of its own standing on the wall's axis, seen from its start to its end, the wall hidden there and its base and ends drawn as construction lines. The top is one line from the start to the end: a gable, a slope, steps, a wall that follows a stair. Draw it with Draft's tools on the bar (Line, Polyline, Arc, Trim, Extend, Fillet…), move its points by their grips, snap to the levels and the other walls in the view, and hold it with constraints and dimensions as any sketch. The side form beside it starts from a **Gable**, a **Slope** or **Steps** up to the height you type, lists the top's points in millimetres to type over, and has **Flat top**. A step is two points one over the other; an arc is laid in short straight pieces. **Finish sketch** shapes the wall in one undo step; a top that turns back, is in pieces or runs past the wall's ends is refused with the reason, and the sketch stays open. **Cancel** leaves the wall as it was.
 
 The wall stays a wall: its thickness, its layers, its joins and its doors and windows are as they were, and it exports to IFC with its shape.
 
-![A gable drawn in the profile editor](shots/wall-profile-editor.webp)
+![A gable drawn on the wall's sketch, its ridge typed in the side form](shots/wall-profile-editor.webp)
 
 ![The house's west wall as a gable, its window kept](shots/wall-profile-3d.webp)
 
 ### A curtain wall's boundary and members
 
-**Profile…** in a curtain wall's properties draws its boundary in elevation, as for a wall: a gable, a slope, steps, or any outline, with points to drag, add or take out and a table in millimetres. The wall rises to its highest point. Its grid gains a line where the boundary bends (a bend within a mullion and a half of a grid line is moved onto it); each bay keeps the transoms that fit under its lowest point; the panel above the last one fills up to the boundary, and an edge member follows it, sloped; the mullions are cut to it. The type's settings stay, and **Profile…** opens the boundary again to change it, with no rebuilding; **Flat top** gives the rectangle back. It shows in 3D, elevations and sections, the schedules measure the panels and members as drawn, and the IFC carries them as parts.
+**Profile…** in a curtain wall's properties draws its boundary the same way, on a sketch of its own: a gable, a slope, steps, or any outline, with the same side form (a curved curtain wall keeps the profile dialog, with points to drag and a table in millimetres). The wall rises to its highest point. Its grid gains a line where the boundary bends (a bend within a mullion and a half of a grid line is moved onto it); each bay keeps the transoms that fit under its lowest point; the panel above the last one fills up to the boundary, and an edge member follows it, sloped; the mullions are cut to it. The type's settings stay, and **Profile…** opens the boundary again to change it, with no rebuilding; **Flat top** gives the rectangle back. It shows in 3D, elevations and sections, the schedules measure the panels and members as drawn, and the IFC carries them as parts.
 
-![A gable drawn as a curtain wall's boundary](shots/curtain-boundary-editor.webp)
+![A gable drawn as a curtain wall's boundary, on its sketch](shots/curtain-boundary-editor.webp)
 
 ![The curtain wall under its gable, in 3D](shots/curtain-boundary-3d.webp)
 

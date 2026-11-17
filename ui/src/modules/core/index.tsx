@@ -58,6 +58,8 @@ import './libraryKinds';
 import { MarkerSymbolSection, slotsFor } from './symbols/SlotPicker';
 import { openImportTable } from './tables/tables';
 import { FieldsInspectorDialog } from '../../shell/FieldsInspector';
+// A section profile's board on the shared sketch canvas (audit S11 stage 2): registered at once, so a project reopened with one open shows it.
+import './profileLibraries/profileBoard';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const ProfileLibrariesDialog = lazyPart(() => import('./profileLibraries/ProfileLibrariesDialog').then((m) => m.ProfileLibrariesDialog), { title: 'Profile libraries' });
