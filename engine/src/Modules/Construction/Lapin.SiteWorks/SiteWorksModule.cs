@@ -31,6 +31,7 @@ public sealed class SiteWorksModule : ILapinModule
         r.Geometry(Formwork.Class, (e, m, s) => Formwork.Geometry(e, m, s));
         r.Quantities(Formwork.Class, Formwork.Quantities);
         r.Service<IScheduleSource>(new FormworkSchedule());
+        r.Service<ISplitFollower>(new FormworkParts());
         r.Service<IScheduleSource>(new ScaffoldSchedule());
         ScaffoldSchedule.RegisterTemplate(r);
         r.Service<ITaskLife>(new TemporaryLives());

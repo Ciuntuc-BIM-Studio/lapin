@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "ເສັ້ນໂຄ້ງ", "Sketch edits": "ແກ້ໄຂແບບຮ່າງ", "Geometric": "ເລຂາຄະນິດ", "Arrays": "ການຈັດລຽນ", "Move, rotate, mirror": "ຍ້າຍ, ໝູນ, ສະທ້ອນ", "Carriers and fans": "ຮາງສາຍ ແລະ ພັດລົມ",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "ຄວາມກວ້າງ (ຫວ່າງ: ຂອງປະເພດ; ຂອບທຳອິດຂອງເສັ້ນຂອບ)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "ຕອນດິນ (ຂອບເຂດຂອງຊັບສິນ) ຂອງພື້ນດິນໃຕ້ແຕ່ລະເສັ້ນຂອບປິດ, ຮັກສາເສັ້ນໂຄ້ງຂອງມັນໄວ້.", "An opening in the floor under each closed outline; a circle makes a round one.": "ຮູໃນພື້ນໃຕ້ແຕ່ລະເສັ້ນຂອບປິດ; ວົງມົນເຮັດໃຫ້ເປັນຮູມົນ.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "ຂັ້ນໄດຂອງປະເພດທີ່ເລືອກ: ຕີນຂອງມັນຢູ່ຈຸດເລີ່ມຂອງເສັ້ນທາງ, ຂຶ້ນໄປຕາມມັນ; ຂອບທຳອິດຂອງເສັ້ນຂອບແມ່ນຕີນ ແລະ ຄວາມກວ້າງຂອງມັນ.",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "ຊິ້ນສ່ວນຂອງຂໍ້ຕໍ່ເຫຼັກ", "Reinforcing bars": "ເຫຼັກເສີມ", "Bars by mark": "ເຫຼັກຕາມເຄື່ອງໝາຍ", "Place in its element": "ບ່ອນໃນອົງປະກອບຂອງມັນ", "Thickness (m)": "ຄວາມໜາ (m)", "Row of the members list": "ແຖວຂອງລາຍການໂຄງເຫຼັກ", "Hall": "ໂຮງ", "kg/m": "kg/m", "Each (kg, the row's)": "ແຕ່ລະອັນ (kg, ຂອງແຖວ)", "Row of the parts schedule": "ແຖວຂອງຕາຕະລາງຊິ້ນສ່ວນ", "Weld length (m)": "ຄວາມຍາວການເຊື່ອມ (m)", "Total length (m)": "ຄວາມຍາວລວມ (m)", "A type's bars of one mark: shape, Ø, length": "ເຫຼັກຂອງປະເພດໜຶ່ງທີ່ມີເຄື່ອງໝາຍດຽວ: ຮູບຊົງ, Ø, ຄວາມຍາວ",
   // Annotations drawn on a sheet itself (decision 620)
   "drawing on the sheet": "ການແຕ້ມເທິງແຜ່ນ", "Back to the sheet: place, move and crop its views there": "ກັບໄປແຜ່ນ: ວາງ, ຍ້າຍ ແລະ ຕັດມຸມມອງຂອງມັນຢູ່ທີ່ນັ້ນ", "Draw on the sheet itself: texts, leader notes, lines, clouds, hatches, symbols, a legend, a scale bar (in paper mm)": "ແຕ້ມເທິງແຜ່ນເອງ: ຂໍ້ຄວາມ, ບັນທຶກມີເສັ້ນຊີ້, ເສັ້ນ, ເມກ, ລາຍແຮເງົາ, ສັນຍາລັກ, ຄຳອະທິບາຍສັນຍາລັກ, ແຖບມາດຕາສ່ວນ (ເປັນ mm ເຈ້ຍ)", "Revision cloud": "ເມກແກ້ໄຂ", "Leader note": "ບັນທຶກມີເສັ້ນຊີ້", "Annotate sheet": "ໃສ່ໝາຍເຫດແຜ່ນ", "A legend goes on a sheet: open the sheet and click Annotate.": "ຄຳອະທິບາຍສັນຍະລັກຢູ່ເທິງແຜ່ນ: ເປີດແຜ່ນ ແລ້ວກົດ ໃສ່ຄຳອະທິບາຍ.", "Open a sheet first: then draw on it here.": "ເປີດແຜ່ນກ່ອນ: ແລ້ວແຕ້ມເທິງມັນຢູ່ນີ້.", "Revision cloud drawn.": "ແຕ້ມເມກແກ້ໄຂແລ້ວ.", "First corner [Polygon]": "ມຸມທຳອິດ [ຫຼາຍແຈ]", "Next point (Enter closes the cloud)": "ຈຸດຕໍ່ໄປ (Enter ປິດເມກ)", "First point": "ຈຸດທຳອິດ", "materials (hatches and fills)": "ວັດສະດຸ (ລາຍແຮເງົາ ແລະ ການຕື່ມ)", "line styles": "ຮູບແບບເສັ້ນ", "Its heading; {…} tokens as in a title block. Empty: LEGEND": "ຫົວຂໍ້ຂອງມັນ; ໂທເຄັນ {…} ຄືໃນກອບຊື່. ວ່າງ: LEGEND", "Its length in metres of the model; empty: a round length about 80 mm long on paper": "ຄວາມຍາວຂອງມັນເປັນແມັດຂອງແບບຈຳລອງ; ວ່າງ: ຄວາມຍາວມົນປະມານ 80 mm ເທິງເຈ້ຍ", "Divisions": "ການແບ່ງ", "On a sheet: its own scale when it follows no view; empty: the sheet's first view's": "ເທິງແຜ່ນ: ມາດຕາສ່ວນຂອງມັນເອງເມື່ອບໍ່ຕາມມຸມມອງໃດ; ວ່າງ: ຂອງມຸມມອງທຳອິດຂອງແຜ່ນ", "by view": "ຕາມມຸມມອງ", "Drawn as a revision cloud: scallops about this long on paper": "ແຕ້ມເປັນເມກແກ້ໄຂ: ເສັ້ນໂຄ້ງຍາວປະມານນີ້ເທິງເຈ້ຍ", "Change legend": "ປ່ຽນຄຳອະທິບາຍສັນຍາລັກ", "A legend goes on a sheet: open the sheet and annotate it.": "ຄຳອະທິບາຍສັນຍາລັກຢູ່ເທິງແຜ່ນ: ເປີດແຜ່ນ ແລ້ວໃສ່ໝາຍເຫດ.", "A sheet's paper is not a view to place.": "ເຈ້ຍຂອງແຜ່ນບໍ່ແມ່ນມຸມມອງທີ່ຈະວາງ.", "A cloud's scallop is 1 to 100 mm.": "ເສັ້ນໂຄ້ງຂອງເມກແມ່ນ 1 ຫາ 100 mm.",
   // Fixed schedules as shipped field-schedule templates, parts as rows (audit S1)
@@ -1168,6 +1174,12 @@ export const LO: Record<string, string> = {
   'Extract grille': 'ຕະແກງດູດອາກາດ',
   'Rise / drop': 'ຍົກຂຶ້ນ / ຫຼຸດລົງ',
   'Cap': 'ຝາອັດ',
+  'Coupling': 'ຂໍ້ຕໍ່',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': 'ລາກ: ຍ້າຍເສົາຕາມຝາ (Ctrl-ຄລິກ: ເອົາອອກ)',
+  'Drag out or in: more or fewer king studs': 'ລາກອອກ ຫຼື ເຂົ້າ: ເສົາຫຼັກຫຼາຍຂຶ້ນ ຫຼື ໜ້ອຍລົງ',
+  'Drag out or in: more or fewer jack studs': 'ລາກອອກ ຫຼື ເຂົ້າ: ເສົາຮອງຫຼາຍຂຶ້ນ ຫຼື ໜ້ອຍລົງ',
+  'Reset studs': 'ຕັ້ງເສົາຄືນໃໝ່',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": 'ເສົາທີ່ຍ້າຍ, ເພີ່ມ ຫຼື ເອົາອອກໃນຝານີ້ (ໃນຮູບດ້ານໂຄງ) ກັບຄືນຫາໂມດູນຂອງປະເພດ',
   'Service': 'ປະເພດງານລະບົບ',
   'Ports': 'ຊ່ອງຕໍ່',
   'open': 'ເປີດວ່າງ',
@@ -3978,6 +3990,8 @@ export const LO: Record<string, string> = {
   "Its centre, the end of one semi-axis, then the other semi-axis": "ຈຸດສູນກາງ, ປາຍຂອງເຄິ່ງແກນໜຶ່ງ, ແລ້ວເຄິ່ງແກນອີກອັນ", "End of one semi-axis": "ປາຍຂອງເຄິ່ງແກນໜຶ່ງ", "Other semi-axis (a point or a value) · Arc (A)": "ເຄິ່ງແກນອີກອັນ (ຈຸດ ຫຼື ຄ່າ) · ເສັ້ນໂຄ້ງ (A)", "Other semi-axis (a point or a value)": "ເຄິ່ງແກນອີກອັນ (ຈຸດ ຫຼື ຄ່າ)", "Start of the arc": "ຈຸດເລີ່ມຂອງເສັ້ນໂຄ້ງ", "End of the arc (anticlockwise)": "ຈຸດສິ້ນສຸດຂອງເສັ້ນໂຄ້ງ (ທວນເຂັມໂມງ)", "Elliptical arc": "ເສັ້ນໂຄ້ງຮູບໄຂ່",
   "From drawn shape": "ຈາກຮູບທີ່ແຕ້ມ", "From room": "ຈາກຫ້ອງ", "Click inside a closed drafted shape: a polyline, a rectangle, a circle": "ຄລິກພາຍໃນຮູບແຕ້ມທີ່ປິດ: ເສັ້ນຫຼາຍເສັ້ນ, ຮູບສີ່ຫຼ່ຽມ, ວົງມົນ", "Click inside a room: its outline": "ຄລິກພາຍໃນຫ້ອງ: ເສັ້ນຂອບຂອງມັນ", "No walls close round that point.": "ບໍ່ມີຝາປິດອ້ອມຈຸດນັ້ນ.", "Click inside a closed drafted shape (a closed polyline, a rectangle or a circle).": "ຄລິກພາຍໃນຮູບແຕ້ມທີ່ປິດ (ເສັ້ນຫຼາຍເສັ້ນທີ່ປິດ, ຮູບສີ່ຫຼ່ຽມ ຫຼື ວົງມົນ).", "Click inside a room.": "ຄລິກພາຍໃນຫ້ອງ.",
   "Hole in the outline": "ຮູໃນເສັ້ນຂອບ", "Hole in outline": "ຮູໃນເສັ້ນຂອບ", "Hole in platform": "ຮູໃນພື້ນລະດັບ", "Drag to move the hole": "ລາກເພື່ອຍ້າຍຮູ", "Remove hole": "ລຶບຮູ",
+  "The language of its own words: its heading, the lines' roles and types": "ພາສາຂອງຄຳສັບຂອງມັນເອງ: ຫົວຂໍ້, ບົດບາດ ແລະ ປະເພດຂອງເສັ້ນ",
+  "Drag to move the leader's arrow": "ລາກເພື່ອຍ້າຍລູກສອນຂອງເສັ້ນຊີ້", "Drag to move the bend": "ລາກເພື່ອຍ້າຍຈຸດງໍ", "Move leader": "ຍ້າຍເສັ້ນຊີ້",
   // Fillet and chamfer on walls and railings, railings with arcs (a user's request)
   "A railing along each line, arc or polyline; those meeting end to end make one.": "ລາວກັນຕົກໜຶ່ງແຖວຕາມທຸກເສັ້ນ, ເສັ້ນໂຄ້ງ ຫຼື ເສັ້ນຫຼາຍທ່ອນ; ອັນທີ່ພົບກັນປາຍຕໍ່ປາຍກາຍເປັນອັນດຽວ.", "One railing where they meet end to end": "ລາວກັນຕົກອັນດຽວບ່ອນທີ່ພົບກັນປາຍຕໍ່ປາຍ", "Drag to bend the segment through the point": "ລາກເພື່ອໂຄ້ງທ່ອນຜ່ານຈຸດ",
   // Edit sketch on outlines (forum topic 97, stage 3)
@@ -4095,6 +4109,47 @@ export const LO: Record<string, string> = {
   'The element\'s classification (Manage → Classifications…): its code, or its title': 'ການຈັດປະເພດຂອງອົງປະກອບ (ຈັດການ → ການຈັດປະເພດ…): ລະຫັດ ຫຼື ຫົວຂໍ້ຂອງມັນ',
   'ALL DOORS & WINDOWS': 'ທຸກປະຕູ ແລະ ປ່ອງຢ້ຽມ',
   'Every door and window of the plan not tagged yet: a marker across its wall': 'ທຸກປະຕູ ແລະ ປ່ອງຢ້ຽມຂອງແຜນຜັງທີ່ຍັງບໍ່ມີປ້າຍ: ເຄື່ອງໝາຍຂວາງຝາຂອງມັນ',
+  // Parts replace families (audit S6)
+  "Parts…": "ຊິ້ນສ່ວນ…",
+  "Part…": "ຊິ້ນສ່ວນ…",
+  "Part from sketch…": "ຊິ້ນສ່ວນຈາກຮ່າງ…",
+  "Make part from sketch…": "ສ້າງຊິ້ນສ່ວນຈາກຮ່າງ…",
+  "Make part from sketch": "ສ້າງຊິ້ນສ່ວນຈາກຮ່າງ",
+  "Make part": "ສ້າງຊິ້ນສ່ວນ",
+  "Add to part": "ເພີ່ມໃສ່ຊິ້ນສ່ວນ",
+  "Held by": "ຖືໂດຍ",
+  "Attribute": "ຄຸນລັກສະນະ",
+  "Delete this part from the project? Undo brings it back.": "ລຶບຊິ້ນສ່ວນນີ້ອອກຈາກໂຄງການບໍ? ການຍົກເລີກຈະເອົາກັບຄືນມາ.",
+  "Part added to the project. Edit part opens its sketches and parameters.": "ເພີ່ມຊິ້ນສ່ວນເຂົ້າໂຄງການແລ້ວ. ແກ້ໄຂຊິ້ນສ່ວນຈະເປີດຮ່າງ ແລະ ພາລາມິເຕີຂອງມັນ.",
+  "Part (.lapinpart, .lapinfamily)": "ຊິ້ນສ່ວນ (.lapinpart, .lapinfamily)",
+  "Choose a part to save.": "ເລືອກຊິ້ນສ່ວນທີ່ຈະບັນທຶກ.",
+  "A new part, a box to start from": "ຊິ້ນສ່ວນໃໝ່, ເລີ່ມຈາກກ່ອງ",
+  "A part's .lapinpart file (an older .lapinfamily too), exported from Lapin on this or another computer": "ໄຟລ໌ .lapinpart ຂອງຊິ້ນສ່ວນ (ລວມທັງ .lapinfamily ເກົ່າ), ສົ່ງອອກຈາກ Lapin ໃນຄອມພິວເຕີນີ້ ຫຼື ເຄື່ອງອື່ນ",
+  "Choose a part, or start a new one. A part is edited in its own edit mode (Edit part): its sketches, steps, parameters and the elements it holds. Objects of a part are placed from Studio → Part, and take their own values.": "ເລືອກຊິ້ນສ່ວນ ຫຼື ເລີ່ມອັນໃໝ່. ຊິ້ນສ່ວນຖືກແກ້ໄຂໃນໂໝດແກ້ໄຂຂອງມັນເອງ (ແກ້ໄຂຊິ້ນສ່ວນ): ຮ່າງ, ຂັ້ນຕອນ, ພາລາມິເຕີ ແລະ ອົງປະກອບທີ່ມັນຖື. ວັດຖຸຂອງຊິ້ນສ່ວນຖືກວາງຈາກ Studio → ຊິ້ນສ່ວນ ແລະ ມີຄ່າຂອງຕົນເອງ.",
+  "Opens the part's edit mode on a placed object (one is placed when there is none)": "ເປີດໂໝດແກ້ໄຂຂອງຊິ້ນສ່ວນເທິງວັດຖຸທີ່ວາງແລ້ວ (ຖ້າບໍ່ມີ ຈະວາງໃຫ້ໜຶ່ງອັນ)",
+  "Place objects of this part on a plan": "ວາງວັດຖຸຂອງຊິ້ນສ່ວນນີ້ເທິງແຜນຜັງ",
+  "The part as a .lapinpart file, to import on another computer": "ຊິ້ນສ່ວນເປັນໄຟລ໌ .lapinpart, ເພື່ອນຳເຂົ້າໃນຄອມພິວເຕີເຄື່ອງອື່ນ",
+  "Open a storey first: a part is edited on an object placed on one.": "ເປີດຊັ້ນກ່ອນ: ຊິ້ນສ່ວນຖືກແກ້ໄຂເທິງວັດຖຸທີ່ວາງຢູ່ເທິງຊັ້ນ.",
+  "The part could not be placed.": "ບໍ່ສາມາດວາງຊິ້ນສ່ວນໄດ້.",
+  "The part had no object yet: one was placed at the origin of the active storey to edit it on.": "ຊິ້ນສ່ວນຍັງບໍ່ມີວັດຖຸ: ໄດ້ວາງໜຶ່ງອັນທີ່ຈຸດກຳເນີດຂອງຊັ້ນທີ່ໃຊ້ງານເພື່ອແກ້ໄຂ.",
+  "There is no part yet: make one in Studio → Parts…, or from a sketch.": "ຍັງບໍ່ມີຊິ້ນສ່ວນ: ສ້າງໃນ Studio → ຊິ້ນສ່ວນ… ຫຼື ຈາກຮ່າງ.",
+  "No part yet: Studio → Parts…": "ຍັງບໍ່ມີຊິ້ນສ່ວນ: Studio → ຊິ້ນສ່ວນ…",
+  "The part to place": "ຊິ້ນສ່ວນທີ່ຈະວາງ",
+  "The part in the Parts dialog": "ຊິ້ນສ່ວນໃນກ່ອງໂຕ້ຕອບຊິ້ນສ່ວນ",
+  "Its part is not in the project.": "ຊິ້ນສ່ວນຂອງມັນບໍ່ຢູ່ໃນໂຄງການ.",
+  "Its sketches, steps, parameters and elements (Tab)": "ຮ່າງ, ຂັ້ນຕອນ, ພາລາມິເຕີ ແລະ ອົງປະກອບຂອງມັນ (Tab)",
+  "The part could not be made.": "ບໍ່ສາມາດສ້າງຊິ້ນສ່ວນໄດ້.",
+  "Part made: its parameters are W, H and D. Edit part opens its sketches.": "ສ້າງຊິ້ນສ່ວນແລ້ວ: ພາລາມິເຕີຂອງມັນແມ່ນ W, H ແລະ D. ແກ້ໄຂຊິ້ນສ່ວນຈະເປີດຮ່າງຂອງມັນ.",
+  "The closed outlines chosen made a part of your own, its body drawn from them: its name, depth and class are asked next.": "ເສັ້ນຮອບວົງປິດທີ່ເລືອກກາຍເປັນຊິ້ນສ່ວນຂອງທ່ານເອງ, ຕົວຂອງມັນຖືກແຕ້ມຈາກພວກມັນ: ຊື່, ຄວາມເລິກ ແລະ ຄລາສຈະຖືກຖາມຕໍ່ໄປ.",
+  "None: select the elements and the part, then Studio → Add to part.": "ບໍ່ມີ: ເລືອກອົງປະກອບ ແລະ ຊິ້ນສ່ວນ, ແລ້ວ Studio → ເພີ່ມໃສ່ຊິ້ນສ່ວນ.",
+  "Let go: it stays in this object as a plain element, and goes from the others": "ປ່ອຍ: ມັນຍັງຢູ່ໃນວັດຖຸນີ້ເປັນອົງປະກອບທຳມະດາ ແລະ ຫາຍໄປຈາກອັນອື່ນ",
+  "Stop driving it": "ຢຸດຄວບຄຸມມັນ",
+  "Drive the attribute by a formula of the part's parameters": "ຄວບຄຸມຄຸນລັກສະນະດ້ວຍສູດຂອງພາລາມິເຕີຂອງຊິ້ນສ່ວນ",
+  "Edit it in the part, for every object of the part": "ແກ້ໄຂໃນຊິ້ນສ່ວນ, ສຳລັບທຸກວັດຖຸຂອງຊິ້ນສ່ວນ",
+  "Select one placed part and the elements to put into it: they become part of it, in every object of the part.": "ເລືອກຊິ້ນສ່ວນທີ່ວາງແລ້ວໜຶ່ງອັນ ແລະ ອົງປະກອບທີ່ຈະໃສ່ເຂົ້າ: ພວກມັນຈະກາຍເປັນສ່ວນໜຶ່ງຂອງມັນ ໃນທຸກວັດຖຸຂອງຊິ້ນສ່ວນ.",
+  "Select the elements to put into the part together with the part itself.": "ເລືອກອົງປະກອບທີ່ຈະໃສ່ໃນຊິ້ນສ່ວນ ພ້ອມກັບຊິ້ນສ່ວນເອງ.",
+  "The elements are part of the part now: edit them in its edit mode (Tab).": "ອົງປະກອບເປັນສ່ວນໜຶ່ງຂອງຊິ້ນສ່ວນແລ້ວ: ແກ້ໄຂໃນໂໝດແກ້ໄຂຂອງມັນ (Tab).",
+  "Parts (old .lapinfamily)": "ຊິ້ນສ່ວນ (.lapinfamily ເກົ່າ)",
 };
 
 /** Phrases with a number or a name in them. */

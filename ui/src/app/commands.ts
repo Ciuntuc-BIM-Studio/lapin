@@ -140,7 +140,8 @@ export function commands(): CommandDef[] {
     });
   };
   for (const t of defaultHotbar()) if (!ribbonTabs().some((tab) => tab.groups.some((g) => [...g.tools, ...(g.small ?? [])].some((x) => x.id === t.id)))) tool(t, 'Quick tools');
-  for (const tab of ribbonTabs()) for (const g of tab.groups) for (const t of [...g.tools, ...(g.small ?? [])]) tool(t, tab.label, g.label);
+  // A pulldown's tools under its tab and group too (audit S14: a crowded tab's tools gathered under fewer buttons).
+  for (const tab of ribbonTabs()) for (const g of tab.groups) for (const t of [...g.tools, ...(g.small ?? [])]) { tool(t, tab.label, g.label); for (const x of t.items ?? []) tool(x, tab.label, g.label); }
   for (const t of extraTools()) tool(t, 'Scripts');
   for (const t of allTools()) tool(t, 'Other');
   cached = out;

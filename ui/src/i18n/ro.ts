@@ -1,6 +1,12 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Arce", "Sketch edits": "Editări de schiță", "Geometric": "Geometrice", "Arrays": "Multiplicări", "Move, rotate, mirror": "Mută, rotește, oglindește", "Carriers and fans": "Suporturi de cabluri și ventilatoare",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Lățime (goală: a tipului; prima latură a unui contur)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Parcela (limita proprietății) terenului de sub fiecare contur închis, cu arcele lui păstrate.", "An opening in the floor under each closed outline; a circle makes a round one.": "Un gol în planșeul de sub fiecare contur închis; un cerc face unul rotund.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "O scară de tipul ales: piciorul la începutul traseului, urcând de-a lungul lui; prima latură a unui contur îi este piciorul și lățimea.",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "Piesele îmbinărilor metalice", "Reinforcing bars": "Bare de armătură", "Bars by mark": "Bare pe poziții", "Place in its element": "Locul în elementul lui", "Thickness (m)": "Grosime (m)", "Row of the members list": "Rândul din lista barelor", "Hall": "Hală", "kg/m": "kg/m", "Each (kg, the row's)": "Bucata (kg, a rândului)", "Row of the parts schedule": "Rândul din extrasul pieselor", "Weld length (m)": "Lungimea sudurii (m)", "Total length (m)": "Lungime totală (m)", "A type's bars of one mark: shape, Ø, length": "Barele unui tip cu aceeași poziție: forma, Ø, lungimea",
   // Annotations drawn on a sheet itself (decision 620)
   "drawing on the sheet": "desen pe planșă", "Back to the sheet: place, move and crop its views there": "Înapoi la planșă: acolo pui, muți și decupezi vederile ei", "Draw on the sheet itself: texts, leader notes, lines, clouds, hatches, symbols, a legend, a scale bar (in paper mm)": "Desenează pe planșa însăși: texte, note cu indicator, linii, nori, hașuri, simboluri, o legendă, o scară grafică (în mm de hârtie)", "Revision cloud": "Nor de revizie", "Leader note": "Notă cu indicator", "Annotate sheet": "Adnotează planșa", "A legend goes on a sheet: open the sheet and click Annotate.": "O legendă se pune pe o planșă: deschide planșa și apasă Adnotări.", "Open a sheet first: then draw on it here.": "Deschide mai întâi o planșă: apoi desenează pe ea aici.", "Revision cloud drawn.": "Norul de revizie e desenat.", "First corner [Polygon]": "Primul colț [Poligon]", "Next point (Enter closes the cloud)": "Punctul următor (Enter închide norul)", "First point": "Primul punct", "materials (hatches and fills)": "materiale (hașuri și umpluturi)", "line styles": "stiluri de linie", "Its heading; {…} tokens as in a title block. Empty: LEGEND": "Titlul ei; jetoanele {…} ca într-un cartuș. Gol: LEGENDĂ", "Its length in metres of the model; empty: a round length about 80 mm long on paper": "Lungimea ei în metri ai modelului; gol: o lungime rotundă de circa 80 mm pe hârtie", "Divisions": "Diviziuni", "On a sheet: its own scale when it follows no view; empty: the sheet's first view's": "Pe o planșă: scara ei proprie când nu urmează nicio vedere; gol: a primei vederi a planșei", "by view": "după vedere", "Drawn as a revision cloud: scallops about this long on paper": "Desenat ca nor de revizie: arce cam atât de lungi pe hârtie", "Change legend": "Schimbă legenda", "A legend goes on a sheet: open the sheet and annotate it.": "O legendă se pune pe o planșă: deschide planșa și adnoteaz-o.", "A sheet's paper is not a view to place.": "Hârtia unei planșe nu e o vedere de pus.", "A cloud's scallop is 1 to 100 mm.": "Arcul unui nor are între 1 și 100 mm.",
   // Fixed schedules as shipped field-schedule templates, parts as rows (audit S1)
@@ -1190,6 +1196,12 @@ export const RO: Record<string, string> = {
   'Extract grille': 'Grilă de evacuare',
   'Rise / drop': 'Urcare / coborâre',
   'Cap': 'Capac',
+  'Coupling': 'Mufă',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': 'Trage: mută montantul de-a lungul peretelui (Ctrl-clic: îl scoate)',
+  'Drag out or in: more or fewer king studs': 'Trage în afară sau înăuntru: mai mulți sau mai puțini montanți principali',
+  'Drag out or in: more or fewer jack studs': 'Trage în afară sau înăuntru: mai mulți sau mai puțini montanți de buiandrug',
+  'Reset studs': 'Resetează montanții',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": 'Montanții mutați, adăugați sau scoși pe acest perete (în elevația lui de cadru) revin la modulul tipului',
   'Service': 'Serviciu',
   'Ports': 'Porturi',
   'open': 'liber',
@@ -3920,6 +3932,8 @@ export const RO: Record<string, string> = {
   "Its centre, the end of one semi-axis, then the other semi-axis": "Centrul, capătul unei semiaxe, apoi cealaltă semiaxă", "End of one semi-axis": "Capătul unei semiaxe", "Other semi-axis (a point or a value) · Arc (A)": "Cealaltă semiaxă (un punct sau o valoare) · Arc (A)", "Other semi-axis (a point or a value)": "Cealaltă semiaxă (un punct sau o valoare)", "Start of the arc": "Începutul arcului", "End of the arc (anticlockwise)": "Sfârșitul arcului (în sens trigonometric)", "Elliptical arc": "Arc de elipsă",
   "From drawn shape": "Din formă desenată", "From room": "Din încăpere", "Click inside a closed drafted shape: a polyline, a rectangle, a circle": "Dă clic în interiorul unei forme desenate închise: o polilinie, un dreptunghi, un cerc", "Click inside a room: its outline": "Dă clic în interiorul unei încăperi: conturul ei", "No walls close round that point.": "Niciun perete nu se închide în jurul acelui punct.", "Click inside a closed drafted shape (a closed polyline, a rectangle or a circle).": "Dă clic în interiorul unei forme desenate închise (o polilinie închisă, un dreptunghi sau un cerc).", "Click inside a room.": "Dă clic în interiorul unei încăperi.",
   "Hole in the outline": "Gol în contur", "Hole in outline": "Gol în contur", "Hole in platform": "Gol în platformă", "Drag to move the hole": "Trage pentru a muta golul", "Remove hole": "Elimină golul",
+  "The language of its own words: its heading, the lines' roles and types": "Limba cuvintelor ei: titlul, rolurile și tipurile liniilor",
+  "Drag to move the leader's arrow": "Trage pentru a muta săgeata indicatorului", "Drag to move the bend": "Trage pentru a muta cotul", "Move leader": "Mută indicatorul",
   // Fillet and chamfer on walls and railings, railings with arcs (a user's request)
   "A railing along each line, arc or polyline; those meeting end to end make one.": "O balustradă de-a lungul fiecărei linii, fiecărui arc sau fiecărei polilinii; cele care se întâlnesc cap la cap fac una singură.", "One railing where they meet end to end": "O singură balustradă unde se întâlnesc cap la cap", "Drag to bend the segment through the point": "Trage pentru a curba segmentul prin punct",
   // Edit sketch on outlines (forum topic 97, stage 3)
@@ -3995,6 +4009,47 @@ export const RO: Record<string, string> = {
   'The element\'s classification (Manage → Classifications…): its code, or its title': 'Clasificarea elementului (Gestionare → Clasificări…): codul sau titlul ei',
   'ALL DOORS & WINDOWS': 'TOATE UȘILE ȘI FERESTRELE',
   'Every door and window of the plan not tagged yet: a marker across its wall': 'Fiecare ușă și fereastră a planului încă neetichetată: un marcaj peste peretele ei',
+  // Parts replace families (audit S6)
+  "Parts…": "Piese…",
+  "Part…": "Piesă…",
+  "Part from sketch…": "Piesă din schiță…",
+  "Make part from sketch…": "Fă piesă din schiță…",
+  "Make part from sketch": "Fă piesă din schiță",
+  "Make part": "Fă piesa",
+  "Add to part": "Adaugă la piesă",
+  "Held by": "Ținut de",
+  "Attribute": "Atribut",
+  "Delete this part from the project? Undo brings it back.": "Ștergi această piesă din proiect? Anularea o readuce.",
+  "Part added to the project. Edit part opens its sketches and parameters.": "Piesă adăugată în proiect. Editează piesa deschide schițele și parametrii ei.",
+  "Part (.lapinpart, .lapinfamily)": "Piesă (.lapinpart, .lapinfamily)",
+  "Choose a part to save.": "Alege o piesă de salvat.",
+  "A new part, a box to start from": "O piesă nouă, pornind de la o cutie",
+  "A part's .lapinpart file (an older .lapinfamily too), exported from Lapin on this or another computer": "Fișierul .lapinpart al unei piese (și un .lapinfamily mai vechi), exportat din Lapin pe acest calculator sau pe altul",
+  "Choose a part, or start a new one. A part is edited in its own edit mode (Edit part): its sketches, steps, parameters and the elements it holds. Objects of a part are placed from Studio → Part, and take their own values.": "Alege o piesă sau începe una nouă. O piesă se editează în modul ei de editare (Editează piesa): schițele, pașii, parametrii și elementele pe care le ține. Obiectele unei piese se plasează din Studio → Piesă și își iau valorile proprii.",
+  "Opens the part's edit mode on a placed object (one is placed when there is none)": "Deschide modul de editare al piesei pe un obiect plasat (se plasează unul dacă nu există)",
+  "Place objects of this part on a plan": "Plasează obiecte ale acestei piese pe un plan",
+  "The part as a .lapinpart file, to import on another computer": "Piesa ca fișier .lapinpart, de importat pe alt calculator",
+  "Open a storey first: a part is edited on an object placed on one.": "Deschide mai întâi un nivel: o piesă se editează pe un obiect plasat pe unul.",
+  "The part could not be placed.": "Piesa nu a putut fi plasată.",
+  "The part had no object yet: one was placed at the origin of the active storey to edit it on.": "Piesa nu avea încă niciun obiect: s-a plasat unul în originea nivelului activ, pentru a o edita.",
+  "There is no part yet: make one in Studio → Parts…, or from a sketch.": "Încă nu există nicio piesă: fă una în Studio → Piese… sau dintr-o schiță.",
+  "No part yet: Studio → Parts…": "Încă nicio piesă: Studio → Piese…",
+  "The part to place": "Piesa de plasat",
+  "The part in the Parts dialog": "Piesa în dialogul Piese",
+  "Its part is not in the project.": "Piesa lui nu este în proiect.",
+  "Its sketches, steps, parameters and elements (Tab)": "Schițele, pașii, parametrii și elementele ei (Tab)",
+  "The part could not be made.": "Piesa nu a putut fi făcută.",
+  "Part made: its parameters are W, H and D. Edit part opens its sketches.": "Piesă creată: parametrii ei sunt W, H și D. Editează piesa îi deschide schițele.",
+  "The closed outlines chosen made a part of your own, its body drawn from them: its name, depth and class are asked next.": "Contururile închise alese devin o piesă a ta, cu corpul desenat din ele: numele, adâncimea și clasa se cer în continuare.",
+  "None: select the elements and the part, then Studio → Add to part.": "Niciunul: selectează elementele și piesa, apoi Studio → Adaugă la piesă.",
+  "Let go: it stays in this object as a plain element, and goes from the others": "Eliberează: rămâne în acest obiect ca element obișnuit și dispare din celelalte",
+  "Stop driving it": "Nu o mai comanda",
+  "Drive the attribute by a formula of the part's parameters": "Comandă atributul printr-o formulă din parametrii piesei",
+  "Edit it in the part, for every object of the part": "Editează-l în piesă, pentru fiecare obiect al piesei",
+  "Select one placed part and the elements to put into it: they become part of it, in every object of the part.": "Selectează o piesă plasată și elementele de pus în ea: devin parte din ea, în fiecare obiect al piesei.",
+  "Select the elements to put into the part together with the part itself.": "Selectează elementele de pus în piesă, împreună cu piesa însăși.",
+  "The elements are part of the part now: edit them in its edit mode (Tab).": "Elementele fac acum parte din piesă: editează-le în modul ei de editare (Tab).",
+  "Parts (old .lapinfamily)": "Piese (vechiul .lapinfamily)",
 };
 
 /** Phrases with a number or a name in them. */

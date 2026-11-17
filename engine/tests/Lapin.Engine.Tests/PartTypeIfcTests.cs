@@ -149,11 +149,16 @@ public sealed class PartTypeIfcTests
         var content = LapinPackage.Read(new MemoryStream(ms.ToArray()));
         g.Session.Load(content.Entities, content.Relations, null, content.Classes);
         Assert.Equal(part, Parts.TypeOf(g.Model, g.Model.Get(placed[1])!)!.Id);
+        // Opened, its formula corners are drawn from sketches of its own (audit S6, PartSketchUpgrade): the same bodies; the shared
+        // keys (a hash of the definition) are those of the sketched part, the same at every opening.
+        var h = F();
+        h.Session.Load(content.Entities, content.Relations, null, content.Classes);
         foreach (var id in placed)
         {
             Assert.Equal(Volume(f, id), Volume(g, id), 9);
-            Assert.Equal(f.Session.Geometry(id)!.Instance!.Body, g.Session.Geometry(id)!.Instance!.Body);
+            Assert.Equal(h.Session.Geometry(id)!.Instance!.Body, g.Session.Geometry(id)!.Instance!.Body);
         }
+        Assert.Equal(2, placed.Select(id => g.Session.Geometry(id)!.Instance!.Body).Distinct().Count());
     }
 
     [Fact]

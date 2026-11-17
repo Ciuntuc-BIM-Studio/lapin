@@ -12,7 +12,7 @@ Constraints belong to the sketch and are saved with the project. They are not wr
 
 ## The Constraints tools
 
-**Studio → Constraints** (the third group of the Studio tab, so it is whole on screen at 1440 px without scrolling the ribbon) has one tool for each kind. Each one asks for what it needs in the view: click a point, an edge, a circle or an arc. The part under the cursor is lit and named (*vertex*, *start*, *end*, *centre*, *edge*, *curve*), and it snaps as drawing does. When the picks are complete, the constraint is made and the tool stays on for the next one; **Esc** ends it.
+**Studio → Constraints** (the second group of the Studio tab) has one tool for each kind, in two lists: **Geometric** ▾ and **Dimensions** ▾; their letters (CNC, CNH…) start them as before. Each one asks for what it needs in the view: click a point, an edge, a circle or an arc. The part under the cursor is lit and named (*vertex*, *start*, *end*, *centre*, *edge*, *curve*), and it snaps as drawing does. When the picks are complete, the constraint is made and the tool stays on for the next one; **Esc** ends it.
 
 ![A tool lights the edge under the cursor and names it](shots/sketch-constraints-pick.webp)
 
@@ -74,7 +74,7 @@ A chip at the bottom of the view says what the solver found, while the view has 
 
 ![Fully constrained: the glyphs, the two dimensions and the chip](shots/sketch-constraints-fixed.webp)
 
-In **Studio → Part**'s tree, each sketch shows its number of constraints and the same words.
+In the part's tree (**Studio → Parts → Edit part**), each sketch shows its number of constraints and the same words.
 
 ## A dimension drives the solid
 

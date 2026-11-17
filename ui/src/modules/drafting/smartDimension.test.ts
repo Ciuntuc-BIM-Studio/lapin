@@ -12,6 +12,8 @@ import { setStringMode, useDimTool } from './dimensionTool';
 import { useSmartDim } from './smartDimension';
 import { crossing, segmentAt, sidePoint } from './index';
 import { tagContent } from './tag';
+import { levelLineAt } from '../../viewport/cad/aim';
+import type { NodeDto } from '../../engine/protocol';
 
 const P = (x: number, y: number): Vec2 => ({ x, y });
 const adds = () => engine.execute.mock.calls.filter(([c]) => c === 'drafting.addDimension').map(([, a]) => a as Record<string, unknown>);
@@ -88,6 +90,31 @@ describe('the smart Dimension tool', () => {
     await submit('');
     await feedPoint(P(2, 1));
     expect(adds()).toEqual([{ viewId: 'v', dimKind: 'level', a: [1, 1], at: [2, 1] }]);
+  });
+
+  it('writes a spot elevation from a level line clicked in a section, without Enter', async () => {
+    const host = useCad.getState().host!;
+    useCad.setState({ host: { ...host, isPlan: () => false, pickLevel: (p: Vec2) => (Math.abs(p.y - 3) < 0.05 ? { id: 's1', y: 3 } : null) } });
+    await startCommand('DIMENSION');
+    await feedPoint(P(1, 3.02));
+    expect(useCad.getState().step?.prompt).toContain('Which side the text goes');
+    await feedPoint(P(2, 3.5));
+    // On the line itself, at its height.
+    expect(adds()).toEqual([{ viewId: 'v', dimKind: 'level', a: [1, 3], at: [2, 3.5] }]);
+    // Away from it, two points still make an aligned dimension; on a plan a level's line is not looked for.
+    for (const p of [P(0, 0), P(3, 1), P(0, 2)]) await feedPoint(p);
+    expect(adds()[1]).toEqual({ viewId: 'v', pts: [[0, 0], [3, 1]], at: [0, 2] });
+    useCad.setState({ host: { ...host, isPlan: () => true, pickLevel: () => ({ id: 's1', y: 3 }) } });
+    for (const p of [P(1, 3), P(4, 3), P(1, 4)]) await feedPoint(p);
+    expect(adds()[2]).toMatchObject({ pts: [[1, 3], [4, 3]] });
+  });
+
+  it('finds a storey\'s level line under a point, not another horizontal line', () => {
+    const nodes = new Map([['s1', { id: 's1', type: 'IfcBuildingStorey', name: 'L1', props: {} } as unknown as NodeDto], ['w1', { id: 'w1', type: 'IfcWall', name: 'W', props: {} } as unknown as NodeDto]]);
+    const marks = [{ id: 'w1', segments: [0, 3, 10, 3] }, { id: 's1', segments: [-1, 3.1, 12, 3.1] }];
+    expect(levelLineAt(P(5, 3.12), 0.05, marks, nodes)).toEqual({ id: 's1', y: 3.1 });
+    expect(levelLineAt(P(5, 3.3), 0.05, marks, nodes)).toBeNull();
+    expect(levelLineAt(P(20, 3.1), 0.05, marks, nodes)).toBeNull();
   });
 
   it('takes a kind typed at its first point, and asks again in that kind', async () => {

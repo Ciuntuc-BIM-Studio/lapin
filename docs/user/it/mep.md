@@ -10,6 +10,8 @@ La scheda **Impianti** disegna gli impianti dell’edificio come li abbozza un p
 
 ## Un sistema con un clic
 
+La scheda Impianti riunisce i suoi strumenti in tre gruppi: **Sistema** (**Nuovo sistema** ▾ con i servizi, **Modifica sistema**, **Sistemi…**, **Pianta impianti**, **Attacchi liberi** e **Abachi** ▾), **Tratti** (**Tratto**, **Posiziona nodo**, le modifiche del tratto, **Chiudi il loop** e **Strada** ▾) e **Passerelle e ventilatori** (**Passerella portacavi**, **Aspiratori** ▾, **Posa nella canalizzazione**, **Condotto verso lo sbocco**, **Tipi di aspiratori**). Un pulsante con ▾ apre il suo elenco; ogni strumento mantiene le sue lettere, e **Comandi…** e **I miei strumenti** lo trovano come prima.
+
 Sotto **Nuovo sistema**, scegli l’impianto (**Riscaldamento**, **Acqua**, **Acqua calda**, **Scarico**, **Elettrico**, **Ventilazione**) e fai clic sulla pianta. Lapin posiziona l’intero sistema: la sorgente dove hai fatto clic, un primo terminale a qualche metro di distanza e il tratto tra di essi. Il sistema si apre per la modifica.
 
 ![Un impianto di riscaldamento sulla pianta del piano terra: la caldaia, due radiatori sotto le finestre e i tratti tra di essi](shots/mep-plan.webp)
@@ -31,6 +33,7 @@ Seleziona un tratto: le sue maniglie stanno sulla linea così come è disegnata,
 - **Ctrl-clic** su una maniglia per toglierla, o sul centro di un segmento per aggiungerne una; **Aggiungi maniglia** ne mette una dove fai clic.
 - **Deviazione** (<kbd>DU</kbd>) fa passare un tratto attorno a un ostacolo: fai clic sul tratto dove inizia la deviazione, fai clic dove finisce sullo stesso segmento, poi spostati dal lato verso cui va e fai clic (o digita la distanza). Il tratto esce, prosegue e rientra, con quattro nuovi angoli; mantiene i suoi collegamenti.
 - **Ridisegna percorso** (<kbd>RP</kbd>) dà a un tratto un nuovo percorso: selezionalo (oppure parti da esso) e disegna il percorso punto per punto, <kbd>Enter</kbd> per terminare. Il tratto mantiene il suo sistema, la sua dimensione e i suoi collegamenti, e le sue estremità tornano sui loro attacchi.
+- **Modifica → Dividi elemento** taglia un tratto in due dove fai clic: un **manicotto** (un raccordo in linea, IfcPipeFitting CONNECTOR) unisce le due parti al taglio, con le loro estremità al suo centro, così le loro lunghezze sommate danno quella del tratto. La seconda parte prende ciò su cui si trovava l’estremità del tratto, e ogni derivazione resta sulla parte a cui si collega. Un tratto accoppiato (mandata e ritorno) resta lì con due estremità aperte. **Modifica → Taglia/estendi elementi** porta l’estremità di un tratto a un limite (l’estremità lascia la porta su cui si trovava), e **Offset** copia un tratto in parallelo. Una derivazione sulla parte che un taglio elimina viene rifiutata.
 
 ![Un tratto di radiatore fatto passare attorno a un ostacolo con Deviazione: esce, prosegue e rientra](shots/mep-detour.webp)
 
@@ -51,7 +54,7 @@ Nel pannello Proprietà un nodo mostra il suo sistema, il suo ruolo e i suoi att
 
 ## Piante, elenchi e IFC
 
-**Pianta impianti** crea una pianta della disciplina impiantistica per il livello, archiviata sotto il gruppo Impianti nel browser. L’**Elenco apparecchiature** e l’**Elenco tratti** sotto **Sistema** sono abachi come gli altri: vanno sulle tavole e si esportano con esse.
+**Pianta impianti** crea una pianta della disciplina impiantistica per il livello, archiviata sotto il gruppo Impianti nel browser. L’**Elenco apparecchiature** e l’**Elenco tratti** sotto **Sistema → Abachi** sono abachi come gli altri: vanno sulle tavole e si esportano con esse.
 
 In un’esportazione IFC ogni sistema è un IfcDistributionSystem, ogni nodo e tratto ha i suoi IfcDistributionPorts, e i collegamenti vengono scritti tra gli attacchi, così la rete arriva in un altro programma collegata dalla sorgente all’ultimo terminale.
 
@@ -69,7 +72,7 @@ Ogni apparecchio tiene il suo **consumo** (m³/h) e il suo **tipo di apparecchio
 
 ### L’alimentazione in strada
 
-Sotto **Strada**, **Condotta del gas lungo…** (<kbd>GM</kbd>) posa una condotta del gas lungo ciò su cui fai clic — una strada, un tracciato, una linea disegnata, un muro — alla **distanza dalla linea** e alla **profondità (ricoprimento)** della barra della riga di comando; sotto un terreno la profondità si misura dal suolo, altrimenti dal livello. **Condotta del gas** la disegna punto per punto. La condotta va in un sistema del gas a media pressione, in tubo di PE, con il suo **nastro di segnalazione**.
+Sotto **Tratti → Strada**, **Condotta del gas lungo…** (<kbd>GM</kbd>) posa una condotta del gas lungo ciò su cui fai clic — una strada, un tracciato, una linea disegnata, un muro — alla **distanza dalla linea** e alla **profondità (ricoprimento)** della barra della riga di comando; sotto un terreno la profondità si misura dal suolo, altrimenti dal livello. **Condotta del gas** la disegna punto per punto. La condotta va in un sistema del gas a media pressione, in tubo di PE, con il suo **nastro di segnalazione**.
 
 **Allacciamento** (<kbd>GS</kbd>): fai clic sulla condotta, poi sull’armadietto. Lapin mette una **presa in carico** sulla condotta, posa il tubo di allacciamento in squadra alla sua profondità fino all’armadietto, e lì risale nell’armadietto.
 
@@ -81,7 +84,7 @@ Sotto **Strada**, **Condotta del gas lungo…** (<kbd>GM</kbd>) posa una condott
 
 ![I valori di default di un sistema del gas: il suo gas e la sua classe di pressione](shots/mep-gas-systems.webp)
 
-**Computo gas e gasolio** sotto **Sistema** elenca, sistema per sistema, i tubi per materiale e diametro con la loro lunghezza (e di essa le colonne montanti), curve, raccordi a T e guaine, il nastro di segnalazione, valvole, contatori e armadietti, e gli apparecchi con consumo e potenza installati. In IFC un sistema del gas è un IfcDistributionSystem di tipo GAS e uno del gasolio FUEL; l’armadietto è un IfcDistributionChamberElement, il contatore un IfcFlowMeter GASMETER, le valvole IfcValve, la cucina un IfcBurner, il serbatoio un IfcTank.
+**Computo gas e gasolio** sotto **Sistema → Abachi** elenca, sistema per sistema, i tubi per materiale e diametro con la loro lunghezza (e di essa le colonne montanti), curve, raccordi a T e guaine, il nastro di segnalazione, valvole, contatori e armadietti, e gli apparecchi con consumo e potenza installati. In IFC un sistema del gas è un IfcDistributionSystem di tipo GAS e uno del gasolio FUEL; l’armadietto è un IfcDistributionChamberElement, il contatore un IfcFlowMeter GASMETER, le valvole IfcValve, la cucina un IfcBurner, il serbatoio un IfcTank.
 
 ![Il computo gas e gasolio](shots/mep-gas-list.webp)
 
@@ -89,7 +92,7 @@ Dimensionare i tubi dal consumo degli apparecchi e verificare la perdita di cari
 
 ## Protezione antincendio
 
-**Allarme incendio** e **Idranti** sono servizi a sé sotto **Nuovo sistema**, con i loro strumenti nei gruppi **Allarme incendio** e **Idranti**.
+**Allarme incendio** e **Idranti** sono servizi a sé sotto **Nuovo sistema**, i loro dispositivi si posizionano con **Posiziona nodo** e il loop si chiude con **Chiudi il loop** nel gruppo **Tratti**.
 
 **Nuovo sistema → Allarme incendio** mette la **centrale di rivelazione incendio** dove fai clic e un primo **rivelatore di fumo** accanto, collegati dal cavo del loop. Ogni dispositivo messo dopo (**Rivelatore di fumo** <kbd>SD</kbd>, **Rivelatore di calore** <kbd>HD</kbd>, **Pulsante manuale di allarme** <kbd>MC</kbd>, **Sirena**, **Sirena con lampeggiante**) si collega all’estremo aperto del loop, il dispositivo messo prima di lui. Il cavo va da un dispositivo al successivo nell’ordine in cui li metti. **Chiudi il loop** riporta il cavo dall’ultimo dispositivo al ritorno della centrale, così il loop è alimentato da entrambi gli estremi. Il cavo è un cavo resistente al fuoco, a soffitto.
 
@@ -103,7 +106,7 @@ Ogni rivelatore mostra la sua **copertura** come un cerchio tratteggiato. Di def
 
 ![Il loop di allarme incendio e gli idranti in 3D](shots/mep-fire-3d.webp)
 
-**Computo antincendio** sotto **Sistema** elenca, sistema per sistema:
+**Computo antincendio** sotto **Sistema → Abachi** elenca, sistema per sistema:
 
 - le centrali, i rivelatori, i pulsanti manuali e le sirene;
 - il cavo del loop con la sua lunghezza, e se ogni loop è chiuso;
@@ -118,7 +121,7 @@ Disporre i rivelatori locale per locale dalla tabella di progetto e verificare c
 
 ## Aspiratori
 
-Il gruppo **Ventilatori** nella scheda Impianti mette gli aspiratori di bagni e cucine come elementi propri, ciascuno di un tipo che configuri:
+**Aspiratori** (nel gruppo **Passerelle e ventilatori** della scheda Impianti) mette gli aspiratori di bagni e cucine come elementi propri, ciascuno di un tipo che configuri:
 
 - **Aspiratore a parete** (<kbd>VF</kbd>): un ventilatore assiale su una parete, che soffia dritto attraverso di essa;
 - **Aspiratore a soffitto**: un ventilatore sotto il soffitto con un condotto che esce dal lato;

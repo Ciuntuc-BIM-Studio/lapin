@@ -29,6 +29,10 @@ Vælg en dør eller et vindue: dets afsnit **Wood** viser råhulmålet, reglen o
 - **Plader**: sæt kryds ved et lag (OSB, træfiberplade, gipsplade) og angiv pladens format: laget lægges som stående plader med samlingerne på stolpemodulet, skåret ved råhullerne og langs toppen. **Wood → Boards schedule** tæller pladerne for hver væg, nettoarealet og spildet.
 - **Skeletopstalt**: i en skeletvægs afsnit **Wood** laver knappen et snit langs væggen gennem kernens midte, 1:20, alle dele skåret, med en målkæde gennem råhullerne, stolpemodulet under den og hvert råhuls størrelse. Den placeres på et ark som enhver visning.
 
+**Stolper i én væg.** Skelettet er sin types regel, regnet ud igen, hver gang væggen ændres; én væg kan dog afvige fra den. Markér væggen i dens skeletopstalt: hver stolpe har et greb. Træk en langs væggen for at flytte den, Ctrl/⌘-klik på den for at tage den ud; hver åbnings yderste gennemgående stolpe og yderste bærestolpe har også et greb, trukket ud eller ind for flere eller færre (åbningen beholder så sin egen regel, som i dens afsnit **Wood**). En stolpe, der ville stå på et andet element, afvises. **Reset studs** i væggens afsnit **Wood** sætter dens stolper tilbage på typens modul. En væg delt i to beholder sine egne stolper på delene.
+
+![En skeletopstalt med væggen markeret: et greb på hver stolpe, en stolpe flyttet væk fra modulet](shots/wood-frame-grips.webp)
+
 ## Præfabrikerede elementer
 
 Sæt flueben ved **Prefabricated panels** for at lave skelettet på værkstedet: angiv det **længste element** (så langt som værkstedets bord og lastbilen tillader) og det **korteste**. Hver væg deles i elementer ved den længste samling inden for den længde, i stolpemodulet hvor det kan lade sig gøre, aldrig gennem en åbnings gennemgående stolper, bærestolper, overligger eller bundrem, og aldrig gennem en T-samlings forstærkning. Hvert element bygges for sig, med egne endestolper og remme ved samlingerne. Et element, der ikke kan holdes inden for længden (en for bred åbning), forbliver helt, og væggen siger det.

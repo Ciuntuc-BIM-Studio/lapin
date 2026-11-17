@@ -117,6 +117,8 @@ Sous un toit, les couches d'un mur montent jusqu'au toit ; un prolongement **Hau
 
 **Modifier → Décaler l’élément** (OFFSET de la ligne de commande, qui accepte désormais les éléments) : tapez la distance dans l’unité du projet, cliquez sur un mur dans un plan, puis sur le côté où va la copie. La copie est parallèle au mur, concentrique pour un mur courbe, avec le même type, les mêmes couches et ouvertures. **A** (Axe, par défaut) mesure depuis l’axe, **F** (Faces) depuis la face du mur, si bien que la face de la copie se trouve à cette distance de la sienne ; **T** (Par) prend un point par où passe la copie.
 
+Ce qui est accroché au mur va à la partie sur laquelle cela tombe. Une finition peinte sur le côté d’un mur droit reste où elle était sur la face ; une dont la région se poursuit au-delà de la coupe peint aussi l’autre partie, sauf si une ligne de division de la face l’arrête, et une peinte sur toute la face couvre chaque partie. Un brise-soleil le long du mur va à la partie le long de laquelle il court (un brise-soleil à cheval sur la coupe est refusé, comme une porte) ; un balcon va à la partie sur laquelle se trouve son milieu, ou reste libre là où il est quand sa partie est supprimée. Les barres dessinées dans le mur sont portées par la partie sur laquelle tombe leur point, le coffrage coffre chaque partie, et les montants propres d’un mur à ossature (voir [Bois](wood.md)) suivent leur partie. Les finitions d’un mur courbe restent sur sa première partie.
+
 ![Deux murs ajustés à une limite et un mur avec une porte scindé en deux](shots/wall-split-trim.webp)
 
 ## Types de murs

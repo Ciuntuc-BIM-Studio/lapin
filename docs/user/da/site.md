@@ -33,12 +33,16 @@ Alt, der importeres, gemmes i projektfilen. Et objekt får sit navn fra filen (e
 ## Veje, kurver og CAD-linjer
 
 En **vej** eller en **sti** følger sin akse. I **Korridor…** (CR) giver fanen **Kurver** hvert knækpunkt på aksen en radius med klotoide ind og ud, sådan som en vejprojekterende lægger en kurve; et knækpunkt sat til 0 forbliver et hjørne, og kurver, der ikke kan være mellem deres naboer, afvises med begrundelsen. Stationeringen, længdeprofilet og tværprofilerne følger den krumme akse, og IFC 4.3 skriver den som en linjeføring.
+En sti eller en vej, en støttemur eller en grøft opdeles, trimmes, forlænges og forskydes med væggenes værktøjer (**Redigér → Opdel element**, **Redigér → Trim/forlæng elementer**, **Forskyd**). Dens stationer fortsætter: den anden del starter ved den station, hvor snittet faldt, så den projekterede længdeprofil, tværprofilerne og de samlinger, der er bedt om ved stationer, bliver, hvor de var. Et snit skal falde på en ret strækning af aksen, ikke i en kurve, og hvert knækpunkt beholder sin kurve. En akse importeret som IFC 4.3-alignment-segmenter deles ikke her.
+
 
 CAD-linjer bliver til terrænelementer: **Vej fra CAD-linjer** (LR) og **Brudlinje fra CAD-linjer** (BL) tager en tegnet linje eller polylinje eller en fra en DXF, følger alle linjer på dens lag, der mødes ende mod ende, og laver en vej langs den eller en brudlinje i terrænet. Når linjerne har koter (en DXF's 3D-linjer), giver de vejens længdeprofil eller brudlinjens koter. Sådanne linjer beholder deres koter og kan vises i 3D (kategorien *linjer*).
 
 ## Platforme og matriklen
 
 **Site → Platform** (<kbd>PD</kbd>) planerer terrænet inden for et omrids i én højde med afgravning og opfyldning; **Site → Parcel** (<kbd>PC</kbd>) tegner ejendommens skel, stiplet med dets areal. Begge tegner omridset med samme bjælke som et dæk: en **Polygon**, hvis kanter kan være buer (<kbd>Space</kbd>), en **Rectangle** eller en **Circle**. Valgt har deres hjørner og kanter greb (matriklens på dens terræn), og højreklik giver **Make arc**, **Make straight**, **Fillet corner…** og **Chamfer corner…**, hver ét fortrydelsestrin. Platformen planerer langs de sande buer; matriklens areal og omkreds måles på dem, og koordinatlisten viser dens hjørner.
+**Redigér → Opdel element** deler en platform i to langs en linje med to punkter (hver del planeret i samme højde, dens huller på den del, de ligger på, et hul, linjen krydser, afvises), og **Redigér → Trim/forlæng elementer** trimmer en platform eller matriklen med en ret grænse og beholder den side, du klikker på. Et terræn beholder én matrikel: den trimmes, ikke deles.
+
 
 ## Situationsplaner og oversigtskort
 

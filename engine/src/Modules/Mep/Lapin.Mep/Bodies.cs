@@ -145,6 +145,11 @@ public static class Bodies
                 Tube(detail, new(0, 0, 0.02), new(0, 0, h), 0.06, 14);
                 color = White;
                 break;
+            case "coupling":
+                // A sleeve a little wider than the run, over the two ends.
+                Tube(body, new(-w, 0, h / 2), new(w, 0, h / 2), Math.Min(d, h) / 2, 12);
+                color = Steel;
+                break;
             case "cap":
                 Tube(body, new(-w, 0, h / 2), new(w, 0, h / 2), Math.Min(d, h) / 2, 12);
                 color = Steel;
