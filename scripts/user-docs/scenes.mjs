@@ -5038,6 +5038,60 @@ export const scenes = [
     },
   },
   {
+    // The terrain's own tools (issue #82): a boundary drawn by its tool (an L, clipping the survey), a slope tag by two clicks,
+    // a gravel subregion by its tool, the cut/fill grid over a raised stroke, the terrain's properties, the subregion in 3D.
+    id: 'terrain-tools',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A 40 × 30 m slope surveyed every 5 m, rising 1 in 20 to the east and 1 in 50 to the north.
+      const lines = [];
+      for (let x = 0; x <= 40; x += 5) for (let y = 0; y <= 30; y += 5) lines.push(`${x} ${y} ${(100 + 0.05 * x + 0.02 * y).toFixed(3)}`);
+      const made = await t.cmd('civil.addTerrain', { text: lines.join('\n'), datum: 100, storeyId: s, interval: 0.25, majorEvery: 4, name: 'Survey' });
+      const id = made?.id;
+      t.expect(!!id, 'a terrain from the survey');
+      const terrain = async () => (await t.nodes()).find((n) => n.id === id);
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(800);
+      const clicks = async (pts) => { for (const [x, y] of pts) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(250); } };
+      // The boundary by its tool: an L, Enter closes it; the ground outside it goes.
+      await t.tool('civil.boundary');
+      await clicks([[2, 2], [38, 2], [38, 15], [22, 15], [22, 28], [2, 28]]);
+      await t.keys('Enter');
+      await t.until(async () => Array.isArray((await terrain())?.props.boundary), 'the boundary tool clips the terrain');
+      await t.keys('Escape');
+      // A slope tag by two clicks along the slope: 5.0 % and 1:20.
+      await t.tool('civil.slopeTag');
+      await clicks([[6, 6], [18, 6]]);
+      await t.until(async () => ((await terrain())?.props.slopes ?? []).length === 1, 'the slope tag tool tags the slope');
+      await t.keys('Escape');
+      // A gravel bed as a subregion by its tool: the ground keeps its levels, the bed its own material.
+      await t.tool('civil.subregion');
+      await clicks([[5, 17], [16, 17], [16, 25], [5, 25]]);
+      await t.keys('Enter');
+      await t.until(async () => ((await terrain())?.props.subregions ?? []).length === 1, 'the subregion tool draws a subregion');
+      await t.keys('Escape');
+      // A raised stroke and the cut/fill grid every 5 m: what the brush graded, against the survey.
+      await t.cmd('civil.sculpt', { terrainId: id, kind: 'raise', x: 30, y: 8, radius: 5, amount: 1 });
+      await t.cmd('civil.updateTerrain', { id, cutFillGrid: 5 });
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('terrain-tools-plan', { of: '[data-testid=plan]', pad: 0 });
+      await select(t, id);
+      await t.wait(800);
+      await t.until(async () => (await t.page.locator('aside.props').innerText().catch(() => '')).includes('Graded region'), 'the terrain\'s properties show its boundary, tags, subregions and grid');
+      await t.shot('terrain-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      await t.ui({ selection: null, selected: [], keyPlan: true });
+      await open3d(t);
+      await t.page.locator('button[title="Frame everything"]').first().click();
+      await t.wait(1200);
+      await t.shot('terrain-subregion-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     // Gates (report #57): a fence wall along the street with a sliding gate drawn on it by the tool (its middle on the wall's
     // axis, the wall cut, the zone it parks in dashed) and a pedestrian gate beside it; a wrought iron double gate on the parcel's
     // side edge from the built-in styles; the configurator with its preview; a gate's properties; the gates in 3D.

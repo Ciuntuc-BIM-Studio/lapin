@@ -1131,6 +1131,9 @@ export const RO: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Fiecare clic cu o unealtă de pensulă e o tușă, anulată cu Ctrl Z; tușele unui teren se pot șterge din inspector.',
   // Site tools, stage 2
   'Spot level': 'Cotă punctuală', 'Spot levels': 'Cote punctuale', 'Parcel': 'Parcelă', 'Export LandXML': 'Exportă LandXML', 'Analysis': 'Analiză', 'slopes': 'pante',
+  'Subregion': 'Subregiune', 'Subregions': 'Subregiuni', 'edit in 3D': 'editează în 3D', 'done editing 3D': 'gata cu editarea 3D', 'Cut slope': 'Taluz la săpătură', 'Fill slope': 'Taluz la umplutură', 'Survey point height': 'Cota punctului ridicat', 'Drag a point\'s grip up or down in the 3D view.': 'Trage în sus sau în jos mânerul unui punct în vederea 3D.', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': 'Mânere pe cele 400 de puncte cele mai apropiate de centrul vederii 3D: mută vederea ca să ajungi la celelalte.',
+  'Split terrain': 'Împarte terenul', 'Merge terrains': 'Unește terenurile', 'Select two terrains or more to merge them.': 'Selectează două terenuri sau mai multe ca să le unești.',
+  'Terrain boundary': 'Limita terenului', 'Slope tag': 'Etichetă de pantă', 'Slope tags': 'Etichete de pantă', 'Boundary': 'Limită', 'clipped': 'decupat', 'convex hull': 'înfășurătoare convexă', 'from parcel': 'din parcelă', 'Cut/fill grid': 'Grilă săpătură/umplutură', 'Graded region': 'Zonă sistematizată', 'reset to survey': 'revino la ridicare', 'snapshot existing': 'fixează terenul existent',
   'cut and fill': 'săpătură și umplutură', 'elevations': 'cote', 'drawn': 'desenată', 'remove': 'scoate', 'Planting schedule': 'Tabel de plantare',
   // The engine in the browser.
   'In the browser': 'În browser',

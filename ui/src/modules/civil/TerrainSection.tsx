@@ -5,8 +5,9 @@ import { FileDown, FileUp } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { SURVEY, downloadLandXml, pickText } from './survey';
-import { notify } from '../../app/store';
+import { notify, useUi } from '../../app/store';
 import { useTerrainEdit } from './prefs';
+import { MAX_POINT_GRIPS } from './pointGrips';
 
 interface Legend { kind: string; area: number; bands: { key: string; label: string; color: string; area: number }[] }
 
@@ -26,6 +27,8 @@ export function TerrainSection({ node }: { node: NodeDto }) {
   const analysis = typeof node.props.analysis === 'string' ? node.props.analysis : 'none';
   const editPoints = useTerrainEdit((s) => s.editPoints);
   const setEditPoints = useTerrainEdit((s) => s.setEditPoints);
+  // The 3D view draws its grips when the selection changes: the same selection again shows or hides the points' grips now.
+  const toggleEdit = (on: boolean) => { setEditPoints(on); useUi.setState({ selected: [...useUi.getState().selected] }); };
   const relations = useSession((s) => s.relations);
   const nodes = useSession((s) => s.nodes);
   const pads = [...relations.values()].filter((r) => r.class === 'IfcRelVoidsElement' && r.relating === node.id).reduce((n, r) => n + r.related.length, 0);
@@ -40,7 +43,11 @@ export function TerrainSection({ node }: { node: NodeDto }) {
     <div className="layers">
       <dl className="fields">
         <dt>Points</dt>
-        <dd>{count} <button type="button" className="link small" onClick={() => setEditPoints(!editPoints)}>{editPoints ? 'done editing 3D' : 'edit in 3D'}</button></dd>
+        <dd>{count} <button type="button" className="link small" onClick={() => toggleEdit(!editPoints)}>{editPoints ? 'done editing 3D' : 'edit in 3D'}</button>
+          {editPoints && <div className="muted small">{count > MAX_POINT_GRIPS
+            ? `Grips on the ${MAX_POINT_GRIPS} points nearest the 3D view's centre: move the view to reach the others.`
+            : 'Drag a point\'s grip up or down in the 3D view.'}</div>}
+        </dd>
         <dt>Platforms, ditches, paths</dt><dd>{pads}</dd>
         <dt>Brush strokes</dt>
         <dd>{strokes}{strokes > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.clearSculpt', { id: node.id, last: true })}>undo last</button> · <button type="button" className="link small" onClick={() => void execute('civil.clearSculpt', { id: node.id })}>clear</button></>}</dd>

@@ -70,6 +70,28 @@ Liniatura CAD devine elemente de teren: **Drum din desen CAD** (LR) și **Linie 
 
 **Modifică → Împarte elementul** taie o platformă în două după o linie de două puncte (fiecare parte nivelată la aceeași cotă, golurile pe partea în care sunt, un gol tăiat de linie refuză), iar **Modifică → Taie/Prelungește elemente** taie o platformă sau parcela după o limită dreaptă, păstrând partea pe care dai clic. Un teren are o singură parcelă: se taie, nu se împarte.
 
+**Taluzuri în jurul platformei.** Proprietățile platformei au **Taluz la săpătură** și **Taluz la umplutură**, ca 1 : N (orizontal pe vertical; 0, implicit, păstrează laturile verticale). Cu taluz, săpătura se lărgește în sus și umplutura se întinde în jos la acea pantă până întâlnesc terenul, așa că platforma se racordează la teren în loc să stea într-o groapă sau pe un mal vertical; săpătura și umplutura ei se măsoară pe volumele cu taluz. O platformă cu goluri își păstrează laturile verticale.
+
+## Terenul: limită, pante și sistematizare
+
+![Un teren ridicat topografic, decupat după o limită în L, o etichetă de pantă, o subregiune de pietriș și grila săpătură/umplutură peste o tușă ridicată](shots/terrain-tools-plan.webp)
+
+**Limita.** Un teren dintr-o ridicare topografică acoperă conturul exterior al punctelor (înfășurătoarea lor convexă). **Limita terenului** (în grupul **Teren**) desenează conturul pe care îl are terenul cu adevărat, un poligon ale cărui laturi pot fi arce (<kbd>Space</kbd>), un dreptunghi sau un cerc, ca o platformă: terenul din afara lui dispare, cu colțuri concave cu tot, iar curbele de nivel, solidul, secțiunile și cantitățile îl urmează. Colțurile lui au mânere. În proprietățile terenului, **Limită** spune **decupat** sau **înfășurătoare convexă**; **din parcelă** ia conturul parcelei drept limită, iar **scoate** revine la înfășurătoare.
+
+**Împărțire și unire.** **Împarte terenul** taie un teren în două după o linie de două puncte trasă peste el. Jumătatea mai mare rămâne terenul (își păstrează identitatea, GlobalId-ul din IFC); cealaltă devine un teren nou alături. Platformele, rigolele și aleile merg cu jumătatea în care se află (după mijlocul conturului, o alee după mijlocul ei), la fel cotele punctuale, etichetele de pantă și subregiunile, așa că nimic de pe teren nu se pierde. **Unește terenurile** adună terenurile selectate în primul selectat: punctele, liniile de frângere, tușele de pensulă, cotele punctuale, etichetele, subregiunile, platformele, rigolele și aleile lor trec toate, iar cotele rămân unde sunt chiar dacă terenurile erau citite față de repere diferite. Fiecare este un pas de anulare.
+
+**Etichete de pantă și cotele curbelor de nivel.** **Etichetă de pantă** scrie panta dintre două puncte pe care dai clic pe teren, în procente și ca 1 : N (5.0 %, 1:20.0), cu o săgeată spre vale. Fiecare curbă de nivel principală își poartă cota la mijloc, de-a lungul liniei, pe un fond curat, ca linia să se oprească sub text. În proprietățile terenului, **Etichete de pantă** le numără, iar **șterge toate** le scoate pe toate.
+
+**Săpătură și umplutură.** Pensula (**Ridică**, **Coboară**, **Nivelează**, **Netezește**) modelează terenul, iar săpătura și umplutura ei se măsoară față de terenul ridicat topografic: cantitățile de săpătură și umplutură ale terenului (*CutVolume*, *FillVolume*) numără sistematizarea făcută cu pensula împreună cu platformele, rigolele și aleile, iar *SculptCut* și *SculptFill* dau doar partea pensulei. **Grilă săpătură/umplutură** din proprietăți (2, 5 sau 10 m; **oprită** implicit) scrie diferența în fiecare punct al grilei în plan, albastru unde terenul a fost ridicat (+0.45), roșu unde a fost săpat (−0.30), gri unde e ca înainte. **Zonă sistematizată → fixează terenul existent** ia terenul așa cum este acum drept teren existent, ca următoarele tușe să se măsoare de acolo; **revino la ridicare** se întoarce la ridicarea topografică.
+
+![Proprietățile terenului: punctele, limita, etichetele de pantă, subregiunile, grila săpătură/umplutură și zona sistematizată](shots/terrain-properties.webp)
+
+**Editarea punctelor în 3D.** **editează în 3D**, lângă **Puncte** ale terenului, pune un mâner pe fiecare punct ridicat în vederea 3D: trage-l în sus sau în jos, ori scrie distanța, și punctul se mută cu atât, câte un pas de anulare. O ridicare mare (o suprafață LandXML cu mii de puncte) arată mânere pe cele 400 de puncte cele mai apropiate de mijlocul vederii 3D; mută vederea ca să ajungi la celelalte. **gata cu editarea 3D** scoate mânerele.
+
+**Subregiuni.** **Subregiune** (în grupul **Terasamente**) desenează o zonă a terenului cu materialul ei (pietriș, implicit): o curte, un gazon, un pat de pietriș. Terenul își păstrează cotele; zona își poartă materialul în 3D, ca o pieliță subțire care urmează chiar triunghiurile terenului, cu liniile de frângere cu tot, și e conturată în plan. Fiecare își dă aria în plan listelor (*Lapin_SubregionQuantities*). **Subregiuni** din proprietățile terenului le numără, iar **șterge toate** le scoate.
+
+![O subregiune de pietriș pe teren, în 3D](shots/terrain-subregion-3d.webp)
+
 ## Planul de situație și planul de încadrare
 
 Browserul proiectului are, sub niveluri, **Terenul** (*Site*): desenele amplasamentului, care nu țin de niciun etaj. Un proiect nou pornește cu două:

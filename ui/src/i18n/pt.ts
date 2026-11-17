@@ -1123,6 +1123,9 @@ export const PT: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Cada clique de uma ferramenta de pincel é uma pincelada, desfeita com Ctrl Z; as pinceladas de um terreno podem ser limpas no inspetor.',
   // Site tools, stage 2
   'Spot level': 'Cota pontual', 'Spot levels': 'Cotas pontuais', 'Parcel': 'Lote', 'Export LandXML': 'Exportar LandXML', 'Analysis': 'Análise', 'slopes': 'inclinações',
+  'Subregion': 'Sub-região', 'Subregions': 'Sub-regiões', 'edit in 3D': 'editar em 3D', 'done editing 3D': 'concluir edição 3D', 'Cut slope': 'Talude de corte', 'Fill slope': 'Talude de aterro', 'Survey point height': 'Cota do ponto levantado', 'Drag a point\'s grip up or down in the 3D view.': 'Arraste a alça de um ponto para cima ou para baixo na vista 3D.', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': 'Alças nos 400 pontos mais próximos do centro da vista 3D: mova a vista para alcançar os outros.',
+  'Split terrain': 'Dividir terreno', 'Merge terrains': 'Unir terrenos', 'Select two terrains or more to merge them.': 'Selecione dois ou mais terrenos para uni-los.',
+  'Terrain boundary': 'Limite do terreno', 'Slope tag': 'Etiqueta de inclinação', 'Slope tags': 'Etiquetas de inclinação', 'Boundary': 'Limite', 'clipped': 'recortado', 'convex hull': 'envoltória convexa', 'from parcel': 'do lote', 'Cut/fill grid': 'Grade de corte/aterro', 'Graded region': 'Área terraplenada', 'reset to survey': 'voltar ao levantamento', 'snapshot existing': 'congelar o existente',
   'cut and fill': 'corte e aterro', 'elevations': 'cotas', 'drawn': 'desenhado', 'remove': 'remover', 'Planting schedule': 'Tabela de plantio',
   // The engine in the browser.
   'In the browser': 'No navegador',

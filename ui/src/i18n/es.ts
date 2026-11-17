@@ -1125,6 +1125,9 @@ export const ES: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Cada clic de una herramienta de pincel es un trazo, que se deshace con Ctrl Z; los trazos de un terreno se pueden borrar en el inspector.',
   // Site tools, stage 2
   'Spot level': 'Cota de punto', 'Spot levels': 'Cotas de punto', 'Parcel': 'Parcela', 'Export LandXML': 'Exportar LandXML', 'Analysis': 'Análisis', 'slopes': 'pendientes',
+  'Subregion': 'Subregión', 'Subregions': 'Subregiones', 'edit in 3D': 'editar en 3D', 'done editing 3D': 'terminar edición 3D', 'Cut slope': 'Talud de desmonte', 'Fill slope': 'Talud de terraplén', 'Survey point height': 'Cota del punto levantado', 'Drag a point\'s grip up or down in the 3D view.': 'Arrastra el pinzamiento de un punto hacia arriba o hacia abajo en la vista 3D.', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': 'Pinzamientos en los 400 puntos más cercanos al centro de la vista 3D: mueve la vista para llegar a los demás.',
+  'Split terrain': 'Dividir terreno', 'Merge terrains': 'Unir terrenos', 'Select two terrains or more to merge them.': 'Selecciona dos terrenos o más para unirlos.',
+  'Terrain boundary': 'Límite del terreno', 'Slope tag': 'Etiqueta de pendiente', 'Slope tags': 'Etiquetas de pendiente', 'Boundary': 'Límite', 'clipped': 'recortado', 'convex hull': 'envolvente convexa', 'from parcel': 'de la parcela', 'Cut/fill grid': 'Cuadrícula de desmonte/terraplén', 'Graded region': 'Zona nivelada', 'reset to survey': 'volver al levantamiento', 'snapshot existing': 'fijar el terreno existente',
   'cut and fill': 'desmonte y terraplén', 'elevations': 'cotas', 'drawn': 'dibujada', 'remove': 'quitar', 'Planting schedule': 'Tabla de plantación',
   // The engine in the browser.
   'In the browser': 'En el navegador',

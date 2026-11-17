@@ -381,7 +381,8 @@ public static class Terrains
         foreach (var (a, b) in t.Boundary())
             items.Add(new PlanItem("terrainEdge", false, [new Vec2(t.Tin.Points[a].X, t.Tin.Points[a].Y), new Vec2(t.Tin.Points[b].X, t.Tin.Points[b].Y)]));
         foreach (var (outline, _, holes) in pads) { items.Add(new PlanItem("heavy", true, outline)); items.AddRange(holes.Select(h => new PlanItem("heavy", true, h))); }
-        foreach (var sr in SubregionsOf(e)) items.Add(new PlanItem("thin", true, ArcOutline.Points(sr.Contour, sr.Arcs)));
+        // A subregion's outline, a seen line (a kind the drawing has no role for would not be drawn).
+        foreach (var sr in SubregionsOf(e)) items.Add(new PlanItem("symbol", true, ArcOutline.Points(sr.Contour, sr.Arcs)));
         foreach (var d in ditches) items.AddRange(Ditches.Plan(d));
         return items;
     }
@@ -407,15 +408,90 @@ public static class Terrains
         return SolidFromMesh.Build(verts, tris, tag);
     }
 
+    /// <summary>
+    /// The terrain's own surface inside <paramref name="poly"/>: each of its triangles kept whole when inside, else
+    /// clipped to the polygon (Sutherland–Hodgman, the triangle being convex) and the piece triangulated in its plane.
+    /// No new triangulation, so the terrain's breaklines and edges hold exactly; null when nothing is inside.
+    /// </summary>
+    public static Tin? SubregionSurface(Terrain t, IReadOnlyList<Vec2> poly)
+    {
+        var tin = t.Tin;
+        if (poly.Count < 3 || tin.Triangles.Count == 0) return null;
+        var ring = Polygon2.EnsureCcw(poly).ToList();
+        double minX = ring.Min(p => p.X), maxX = ring.Max(p => p.X), minY = ring.Min(p => p.Y), maxY = ring.Max(p => p.Y);
+        var points = new List<Vec3>();
+        var at = new Dictionary<(long, long), int>();
+        int Weld(Vec3 p)
+        {
+            var k = ((long)Math.Round(p.X * 1e5), (long)Math.Round(p.Y * 1e5));
+            if (!at.TryGetValue(k, out var i)) { i = points.Count; at[k] = i; points.Add(p); }
+            return i;
+        }
+        var tris = new List<(int A, int B, int C)>();
+        static bool Crosses(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
+        {
+            double d1 = Vec2.Cross(b - a, c - a), d2 = Vec2.Cross(b - a, d - a), d3 = Vec2.Cross(d - c, a - c), d4 = Vec2.Cross(d - c, b - c);
+            return ((d1 > 0) != (d2 > 0) || Math.Abs(d1) < 1e-12 || Math.Abs(d2) < 1e-12) && ((d3 > 0) != (d4 > 0) || Math.Abs(d3) < 1e-12 || Math.Abs(d4) < 1e-12);
+        }
+        foreach (var (ia, ib, ic) in tin.Triangles)
+        {
+            var (pa, pb, pc) = (tin.Points[ia], tin.Points[ib], tin.Points[ic]);
+            if (Math.Max(pa.X, Math.Max(pb.X, pc.X)) < minX || Math.Min(pa.X, Math.Min(pb.X, pc.X)) > maxX
+                || Math.Max(pa.Y, Math.Max(pb.Y, pc.Y)) < minY || Math.Min(pa.Y, Math.Min(pb.Y, pc.Y)) > maxY) continue;
+            Vec2[] tri = [pa.Xy, pb.Xy, pc.Xy];
+            var corners = tri.Count(c => Polygon2.Contains(ring, c));
+            var crossing = false;
+            for (var i = 0; i < ring.Count && !crossing; i++)
+                for (var j = 0; j < 3 && !crossing; j++)
+                    crossing = Crosses(ring[i], ring[(i + 1) % ring.Count], tri[j], tri[(j + 1) % 3]);
+            var cornerInside = !crossing && ring.Any(r => Polygon2.Contains(tri, r));
+            if (!crossing && !cornerInside)
+            {
+                if (corners == 3) tris.Add((Weld(pa), Weld(pb), Weld(pc)));
+                continue;
+            }
+            // The polygon clipped by the triangle's three half-planes.
+            var piece = ring;
+            for (var j = 0; j < 3 && piece.Count >= 3; j++)
+            {
+                var (e0, e1) = (tri[j], tri[(j + 1) % 3]);
+                var next = new List<Vec2>(piece.Count + 2);
+                for (var i = 0; i < piece.Count; i++)
+                {
+                    var (s, q) = (piece[i], piece[(i + 1) % piece.Count]);
+                    double ds = Vec2.Cross(e1 - e0, s - e0), dq = Vec2.Cross(e1 - e0, q - e0);
+                    if (ds >= 0) next.Add(s);
+                    if ((ds >= 0) != (dq >= 0)) next.Add(s + (q - s) * (ds / (ds - dq)));
+                }
+                piece = next;
+            }
+            if (piece.Count < 3 || Math.Abs(Polygon2.SignedArea(piece)) < 1e-9) continue;
+            // Heights from the triangle's plane; a point within 1e-6 of a corner is that corner.
+            var den = (pb.Y - pc.Y) * (pa.X - pc.X) + (pc.X - pb.X) * (pa.Y - pc.Y);
+            Vec3 Lift(Vec2 p)
+            {
+                foreach (var c in new[] { pa, pb, pc }) if ((c.Xy - p).Length < 1e-6) return c;
+                var u = ((pb.Y - pc.Y) * (p.X - pc.X) + (pc.X - pb.X) * (p.Y - pc.Y)) / den;
+                var v = ((pc.Y - pa.Y) * (p.X - pc.X) + (pa.X - pc.X) * (p.Y - pc.Y)) / den;
+                return new Vec3(p.X, p.Y, u * pa.Z + v * pb.Z + (1 - u - v) * pc.Z);
+            }
+            var flat = piece.Select(p => Lift(p)).ToList();
+            var ids = Enumerable.Range(0, flat.Count).ToArray();
+            foreach (var (a, b, c) in Triangulator.Face(flat, ids, null, new Vec3(0, 0, 1)))
+            {
+                var (qa, qb, qc) = (flat[a], flat[b], flat[c]);
+                if (Math.Abs((qb.X - qa.X) * (qc.Y - qa.Y) - (qb.Y - qa.Y) * (qc.X - qa.X)) < 1e-10) continue;
+                var (wa, wb, wc) = (Weld(qa), Weld(qb), Weld(qc));
+                if (wa != wb && wb != wc && wa != wc) tris.Add((wa, wb, wc));
+            }
+        }
+        return tris.Count == 0 ? null : new Tin(points, tris);
+    }
+
     static GeometryPart? SubregionPart(Terrain t, Subregion sr, IModelView m)
     {
         var poly = ArcOutline.Points(sr.Contour, sr.Arcs);
-        if (poly.Count < 3 || t.Tin.Triangles.Count == 0) return null;
-        var pts = new List<Vec3>(t.Tin.Points);
-        var segs = new List<(int, int)>();
-        // Preserve interior TIN edges that already exist, and constrain the sub-region's boundary.
-        var subTin = ClipToBoundary(pts, segs, t.Tin, poly);
-        if (subTin.Triangles.Count == 0) return null;
+        if (poly.Count < 3 || SubregionSurface(t, poly) is not { } subTin) return null;
         var n = subTin.Points.Count;
         var verts = new List<Vec3>(n * 2);
         foreach (var p in subTin.Points) verts.Add(new Vec3(p.X, p.Y, p.Z + 0.015));
