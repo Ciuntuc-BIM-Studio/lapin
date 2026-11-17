@@ -14,7 +14,7 @@ import { runSteps } from '../../viewport/grips';
 import { Marks, ROW_PX, type Shown } from '../../viewport/TempDimMarks';
 import { axesOf, useAxesBeyond } from '../../shell/gridAxes';
 import { t } from '../../i18n';
-import { axisDims, commitSteps, formatDegrees, framePoint, parseDegrees } from './gridDims';
+import { axisClickPoint, axisDims, commitSteps, formatDegrees, framePoint, parseDegrees } from './gridDims';
 
 export function GridAxisDims({ toScreen, scale, view }: PlanOverlayProps) {
   const tool = useUi((s) => s.tool);
@@ -29,7 +29,7 @@ export function GridAxisDims({ toScreen, scale, view }: PlanOverlayProps) {
   if (drag && drag.owners.some((o) => o === gridId || o === one)) return null;
   const tag = one.slice(gridId.length + 1);
   const axes = axesOf(grid.props.axes);
-  const dims = axisDims(axes, tag);
+  const dims = axisDims(axes, tag, axisClickPoint(one));
   if (!dims?.dims.length) return null;
   const live = grid.editable !== false;
   const commit = (key: string) => (v: number) => runSteps(commitSteps(gridId, axes, dims, key, v, beyond));

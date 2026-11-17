@@ -16,6 +16,7 @@ import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems } from '../shell/selectionMenu';
 import { viewHideItems } from '../shell/viewHideMenu';
 import { dimensionItems } from '../modules/drafting/dimensionMenu';
+import { noteAxisClick } from '../modules/drafting/gridDims';
 import { symbolMenuItems } from '../modules/core/symbols/symbolTools';
 import { drawOrderItems, isDrafted } from './drawOrder';
 import { num } from '../engine/model';
@@ -447,7 +448,9 @@ export function PlanView() {
     if (tool?.gesture) acquire(p);
     if (!tool?.gesture) {
       // A member of a group picks the group (docs/groups.md); drilling, a part its wholes first (platform/assemblies.ts).
-      if (mods) pickByMods(pick(raw)?.id, mods, currentNavStyle()); else pickClick(pick(raw)?.id, { add, leaf });
+      const hitId = pick(raw)?.id;
+      noteAxisClick(hitId, raw);
+      if (mods) pickByMods(hitId, mods, currentNavStyle()); else pickClick(hitId, { add, leaf });
       return;
     }
     const g = tool.gesture;

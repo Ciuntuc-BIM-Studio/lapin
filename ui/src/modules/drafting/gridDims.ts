@@ -37,16 +37,30 @@ export const formatDegrees = (v: number): string => `${Math.round(v * 100) / 100
 /** A point of the parallel dimensions' frame. */
 export const framePoint = (g: ParallelDims, t: number, s: number): Vec2 => ({ x: g.n.x * t + g.d.x * s, y: g.n.y * t + g.d.y * s });
 
+/**
+ * Where along the axis the dimensions stand: the point clicked (`at`, metres along the axis) kept within the shared stretch
+ * `lo`..`hi`; the middle of that stretch with no click; the axis's own middle (`own`) when it shares none with its neighbours.
+ */
+export function stationAt(lo: number, hi: number, own: [number, number], at: number | null): number {
+  if (!(hi > lo)) return (own[0] + own[1]) / 2;
+  return at == null || !Number.isFinite(at) ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, at));
+}
+
+/** The place an axis was last clicked in a plan (world metres), so its dimensions stand there; selection by other means has none. */
+let clicked: { id: string; point: Vec2 } | null = null;
+export const noteAxisClick = (id: string | null | undefined, point: Vec2): void => { clicked = id && id.includes('#') ? { id, point } : null; };
+export const axisClickPoint = (id: string): Vec2 | null => (clicked?.id === id ? clicked.point : null);
+
 /** The selected axis's temporary dimensions; null when it has no neighbour to measure to. */
-export function axisDims(axes: GridAxis[], tag: string): AxisDims | null {
+export function axisDims(axes: GridAxis[], tag: string, near?: Vec2 | null): AxisDims | null {
   const axis = axes.find((x) => x.tag === tag);
   if (!axis) return null;
   const list = parallels(axes, axis).filter((p) => p.axis.tag === tag || Math.abs(p.offset - parallels([axis], axis)[0].offset) > 1e-6);
-  if (list.length > 1) return parallelDims(axis, list);
+  if (list.length > 1) return parallelDims(axis, list, near);
   return radialDims(axes, axis);
 }
 
-function parallelDims(axis: GridAxis, list: { axis: GridAxis; offset: number }[]): ParallelDims | null {
+function parallelDims(axis: GridAxis, list: { axis: GridAxis; offset: number }[], click?: Vec2 | null): ParallelDims | null {
   const i = list.findIndex((p) => p.axis.tag === axis.tag);
   const d = dirOf(axis);
   const n = { x: -d.y, y: d.x };
@@ -59,7 +73,7 @@ function parallelDims(axis: GridAxis, list: { axis: GridAxis; offset: number }[]
   // Where the dimensions stand: the middle of the stretch the selected axis shares with its neighbours (else its own middle).
   let [lo, hi] = range(axis);
   for (const p of near) { const [l, h] = range(p.axis); lo = Math.max(lo, l); hi = Math.min(hi, h); }
-  const station = hi > lo ? (lo + hi) / 2 : (range(axis)[0] + range(axis)[1]) / 2;
+  const station = stationAt(lo, hi, range(axis), click ? dot(click, d) : null);
   const dims = near.map((p): SpacingDim => {
     const a = off(p.axis);
     const side = a < b ? -1 : 1;
