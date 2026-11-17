@@ -203,6 +203,8 @@ public static partial class SketchConstraints
     public static Dictionary<string, double> ParamsOf(IModelView m, string viewId)
     {
         var o = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        // A part's own sketch opened on a board of its own (audit S11): its part's parameters, with their defaults.
+        if (PartSketches.BoardPart(m, viewId) is { } boardDef) return new Dictionary<string, double>(Parts.Values(boardDef, null), StringComparer.OrdinalIgnoreCase);
         var drafts = Drafts.On(m, viewId).Select(d => d.Id).ToHashSet();
         if (drafts.Count == 0) return o;
         foreach (var solid in StudioModule.Classes.SelectMany(m.OfClass))

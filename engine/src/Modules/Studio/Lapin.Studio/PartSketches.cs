@@ -594,6 +594,7 @@ public static partial class PartSketches
         r.Command("partSketchRemoveConstraint", "Remove constraint", RemoveConstraint);
         r.Command("partSketchSetShapes", "Edit part sketch", SetShapes);
         RegisterEdit(r);
+        RegisterBoard(r);
     }
 
     /// <summary>A sketch's solves by the values its formulas name (declared last, so the catalogue's reading of this file finds the commands' class).</summary>

@@ -258,6 +258,22 @@ public static class Parts
         return (Place, Dir, mirror);
     }
 
+    /// <summary>
+    /// Where a part's own sketch lies in the world, solved with the defaults' offset (what the sketch editor edits): its origin and
+    /// its (u, v) axes for a placed part, the part's own frame for the part itself (audit S11: the sketch's board, a reference plane).
+    /// </summary>
+    internal static (Vec3 Origin, Vec3 Right, Vec3 Up) SketchFrame(IModelView m, Entity? instance, JsonObject def, JsonObject sk)
+    {
+        var defaults = Values(def, null);
+        var (u, v, _) = Frame((string?)sk["plane"] ?? "xy");
+        Vec3 off = default;
+        try { if (sk["offset"] is JsonArray oa && oa.Count == 3) off = new Vec3(Eval(oa[0], defaults, "offset"), Eval(oa[1], defaults, "offset"), Eval(oa[2], defaults, "offset")); }
+        catch (CommandException) { }
+        if (instance == null || !IsInstance(instance)) return (off, u, v);
+        var (place, dir, _) = Placing(instance, m);
+        return (place(off), dir(u), dir(v));
+    }
+
     /// <summary>A placed part's bodies in the world, one geometry part each; Studio's steps are done on each after.</summary>
     public static (List<GeometryPart> Parts, List<string> Problems) Build(Entity e, IModelView m)
     {
