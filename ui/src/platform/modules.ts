@@ -97,13 +97,18 @@ export const typeFieldsOf = (cls: string) => modules.map((m) => m.typeFields?.[c
 /** The Place catalogue's sources, every module's, in their order (S15). */
 export const placeSources = (): PlaceSourceDef[] => modules.flatMap((m) => m.placeSources ?? []).sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
 
-/** Every tool of every module, once; then the tools added while the app runs (a script's: platform/extraTools.ts). */
+/**
+ * Every tool of every module, once; then the tools added while the app runs (a script's: platform/extraTools.ts). A module's
+ * pulldown (`items`: a crowded tab's tools gathered under one button, audit S14) counts its tools too, so their ids, letters,
+ * My tools and Commands… work wherever they stand.
+ */
 export const allTools = (): ToolDef[] => {
   const seen = new Map<string, ToolDef>();
+  const add = (t: ToolDef) => { seen.set(t.id, t); for (const x of t.items ?? []) if (!seen.has(x.id)) seen.set(x.id, x); };
   for (const m of modules) {
     for (const t of m.hotbar ?? []) seen.set(t.id, t);
-    for (const tab of m.tabs ?? []) for (const g of tab.groups) for (const t of [...g.tools, ...(g.small ?? [])]) seen.set(t.id, t);
-    for (const g of Object.values(m.sharedGroups ?? {})) for (const t of [...g.tools, ...(g.small ?? [])]) seen.set(t.id, t);
+    for (const tab of m.tabs ?? []) for (const g of tab.groups) for (const t of [...g.tools, ...(g.small ?? [])]) add(t);
+    for (const g of Object.values(m.sharedGroups ?? {})) for (const t of [...g.tools, ...(g.small ?? [])]) add(t);
     for (const t of m.legacyTools ?? []) if (!seen.has(t.id)) seen.set(t.id, t);
   }
   for (const t of extraTools()) if (!seen.has(t.id)) seen.set(t.id, t);

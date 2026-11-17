@@ -130,88 +130,46 @@ public sealed class WallPieces : IPathPieces
 }
 
 /// <summary>
-/// A floor's or a ceiling's outline split by a line into two elements, or trimmed by a line (audit 2026-11-15, §6;
-/// <see cref="OutlineCuts"/>). The element keeps its GlobalId and the part on the side picked (without a pick, the larger); the
-/// other part of a split is a new element like it (its type, storey, layers, properties, groups). Each keeps its edges' arcs and
-/// a floor its layer extents on the edges it keeps; the floor openings go to the part they lie in, and one the line crosses
-/// refuses (as one in the part a trim cuts away). One undo step.
+/// A floor's or a ceiling's outline split by a line into two elements, or trimmed by a line (audit 2026-11-15, §6 and §15;
+/// the platform's <see cref="OutlineSplits"/>, whose commands <c>architecture.splitOutline</c> and <c>trimOutline</c> stay as
+/// names of). A floor keeps its layer extents on the edges it keeps, straight or curved; a ceiling's grid stays where it was
+/// (its origin pinned) and each fixture goes to the part its cell lies in; the floor openings go to the part they lie in.
 /// </summary>
 public static class OutlineEdits
 {
     public static void Register(IModuleRegistry r)
     {
         // {id, a: [x, y], b: [x, y] (the line, run on past them), keep?: [x, y] (the side the element keeps)} → {ids: [element, new]}.
-        r.Command("splitOutline", "Split floor", (ctx, a) => Cut(ctx, a, split: true));
+        r.Command("splitOutline", "Split floor", (ctx, a) => OutlineSplits.Cut(ctx, a, split: true));
         // {id, a, b, keep: [x, y] (the side kept)} → {id}.
-        r.Command("trimOutline", "Trim outline", (ctx, a) => Cut(ctx, a, split: false));
+        r.Command("trimOutline", "Trim outline", (ctx, a) => OutlineSplits.Cut(ctx, a, split: false));
+        r.Service<IOutlinePieces>(new FloorPieces());
+        r.Service<IOutlinePieces>(new Roofs.RoofPieces());
+        r.Service<IOutlinePieces>(new Roofs.RoomPieces());
     }
 
-    static JsonObject Cut(ICommandContext ctx, JsonObject a, bool split)
+    sealed class FloorPieces : IOutlinePieces
     {
-        var m = ctx.Model;
-        var e = m.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
-        if (e.Class is not (IfcClass.Slab or Ceilings.Class)) throw new CommandException($"„{e.Name}” is not split by a line here: floors and ceilings are.");
-        if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException($"„{e.Name}” is a reference from a file: convert it to native first.");
-        Pins.Refuse([e]);
-        var corners = Slabs.Corners(e);
-        if (corners.Count < 3) throw new CommandException($"„{e.Name}” has no outline.");
-        var (p, q) = (Args.TryPoint(a["a"]) ?? throw new CommandException("The line's first point?"), Args.TryPoint(a["b"]) ?? throw new CommandException("The line's second point?"));
-        var keep = Args.TryPoint(a["keep"]);
-        if (!split && keep == null) throw new CommandException("Which side to keep? A point on it.");
-        var (left, right) = OutlineCuts.Split(corners, Slabs.Rises(e), p, q);
-        var dir = (q - p).Normalized();
-        bool LeftOf(Vec2 x) => Vec2.Cross(dir, x - p) > 0;
-        var keepLeft = keep is { } k ? LeftOf(k) : Math.Abs(ArcOutline.SignedArea(left.Corners, left.Rises)) >= Math.Abs(ArcOutline.SignedArea(right.Corners, right.Rises));
-        var (mine, other) = keepLeft ? (left, right) : (right, left);
-        var what = e.Class == IfcClass.Slab ? "A floor" : "A ceiling";
-        var (mc, mr) = ArcOutline.Check(mine.Corners, mine.Rises, what);
-        var (oc, otherRises) = ArcOutline.Check(other.Corners, other.Rises, what);
+        public bool Handles(Entity e) => e.Class is IfcClass.Slab or Ceilings.Class;
 
-        // The openings: on one side or the other of the line, never across.
-        var holes = Slabs.Holes(m, e.Id).ToList();
-        var toOther = new List<Entity>();
-        foreach (var (o, contour) in holes)
-        {
-            var sides = contour.Select(x => Vec2.Cross(dir, x - p)).ToList();
-            if (sides.Any(s => s > 1e-6) && sides.Any(s => s < -1e-6))
-                throw new CommandException($"The line crosses the opening „{o.Name}”: draw it beside the opening.");
-            var onLeft = sides.Sum() > 0;
-            if (onLeft == keepLeft) continue;
-            if (!split) throw new CommandException($"The opening „{o.Name}” lies in the part cut away: delete it first, or keep that side.");
-            toOther.Add(o);
-        }
+        public string What(Entity e) => e.Class == IfcClass.Slab ? "A floor" : "A ceiling";
 
-        var attrs = e.CloneAttrs();
-        Slabs.SetOutline(attrs, mc, mr);
-        Remap(e, attrs, mc);
-        if (!split)
+        public IEnumerable<(Entity Element, IReadOnlyList<Vec2> Contour)> Hosted(IModelView m, Entity e) => Slabs.Holes(m, e.Id);
+
+        public void Piece(ICommandContext ctx, Entity e, JsonObject attrs, IReadOnlyList<Vec2> corners, double[]? rises, bool first, Func<Vec2, bool> on)
         {
-            ctx.Replace(e.With(attrs: attrs));
-            return new JsonObject { ["id"] = e.Id };
-        }
-        var otherAttrs = e.CloneAttrs();
-        Slabs.SetOutline(otherAttrs, oc, otherRises);
-        Remap(e, otherAttrs, oc);
-        ctx.Replace(e.With(attrs: attrs));
-        var second = PathEdits.AddLike(ctx, e, otherAttrs);
-        foreach (var o in toOther)
-            foreach (var r in ctx.Model.RelationsOf(o.Id, IfcClass.RelVoidsElement).Where(r => r.Relating == e.Id).ToList())
+            if (e.Class == IfcClass.Slab && LayerExtents.Of(e) is { Count: > 0 } extents)
             {
-                if (r.Related.Count == 1) ctx.ReplaceRelation(r with { Relating = second.Id });
-                else
-                {
-                    ctx.ReplaceRelation(r with { Related = [.. r.Related.Where(x => x != o.Id)] });
-                    ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, second.Id, [o.Id]));
-                }
+                if (LayerExtents.ToJson(LayerExtents.RemapEdges(extents, Slabs.Corners(e), corners, Slabs.Rises(e), rises)) is { } kept) attrs[LayerExtents.Key] = kept;
+                else attrs.Remove(LayerExtents.Key);
             }
-        return new JsonObject { ["ids"] = new JsonArray(e.Id, second.Id) };
-    }
-
-    /// <summary>A floor's layer extents on the edges it keeps (along the old ones); a ceiling has none.</summary>
-    static void Remap(Entity e, JsonObject attrs, IReadOnlyList<Vec2> corners)
-    {
-        if (e.Class != IfcClass.Slab || LayerExtents.Of(e) is not { Count: > 0 } extents) return;
-        if (LayerExtents.ToJson(LayerExtents.RemapEdges(extents, Slabs.Corners(e), corners)) is { } kept) attrs[LayerExtents.Key] = kept;
-        else attrs.Remove(LayerExtents.Key);
+            if (e.Class != Ceilings.Class) return;
+            // A ceiling's grid stays where it was on each part (its origin pinned), its fixtures in the part their cell lies in.
+            var grid = Ceilings.GridOf(ctx.Model, e);
+            if (Ceilings.OriginOf(e) == null) attrs["origin"] = new JsonArray(Math.Round(grid.Origin.X, 9), Math.Round(grid.Origin.Y, 9));
+            if (attrs["fixtures"] is not JsonArray) return;
+            attrs["fixtures"] = new JsonArray([.. Ceilings.Fixtures(e).Where(f => on(grid.World(new Vec2((f.I + 0.5) * grid.W, (f.J + 0.5) * grid.L))))
+                .Select(f => (JsonNode)new JsonObject { ["kind"] = f.Kind, ["i"] = f.I, ["j"] = f.J })]);
+        }
     }
 }

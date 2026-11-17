@@ -248,13 +248,16 @@ public static class TypeStirrups
     }
 
     /// <summary>The schedule's entries for every element's configured stirrups: one per element and loop kind, under its mark.</summary>
-    public static IEnumerable<RebarSchedule.Entry> Entries(IModelView m)
+    public static IEnumerable<RebarSchedule.Entry> Entries(IModelView m) => Owned(m).Select(x => x.Entry);
+
+    /// <summary>The stirrups' entries, each with the beam or column it is laid in.</summary>
+    public static IEnumerable<(Entity Owner, RebarSchedule.Entry Entry)> Owned(IModelView m)
     {
         foreach (var e in Members(m))
             if (Of(m, e) is { } laid && laid.Stations.Count > 0)
                 foreach (var loop in laid.LoopsAt(laid.Stations[0]))
-                    yield return new RebarSchedule.Entry(laid.MarkOf(loop.Kind), laid.Spec.Diameter, loop.Kind == 1 && laid.Spec.Pattern == "diamond" ? "Diamond stirrup" : "Stirrup", laid.Stations.Count, laid.BarLength(loop), Derived: true,
-                        Partition: m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Str(Rebars.StirrupsPartitionKey)?.Trim() ?? "");
+                    yield return (e, new RebarSchedule.Entry(laid.MarkOf(loop.Kind), laid.Spec.Diameter, loop.Kind == 1 && laid.Spec.Pattern == "diamond" ? "Diamond stirrup" : "Stirrup", laid.Stations.Count, laid.BarLength(loop), Derived: true,
+                        Partition: m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Str(Rebars.StirrupsPartitionKey)?.Trim() ?? ""));
     }
 
     /// <summary>The elements a type's stirrups go in: the beams and the columns (read by class, not every entity).</summary>

@@ -35,7 +35,7 @@ Kliknij **Zainstaluj**. Lapin pobiera plik, sprawdza, czy jego rozmiar i SHA-256
 | Cenniki | **Realizacja → Cenniki…**, oznaczone jako orientacyjne: ceny są autora, porównaj je z własnymi |
 | Typy | projekt otwarty w chwili instalacji, w jednym kroku do cofnięcia (**Zarządzaj → Pakiety typów…** eksportuje Twoje) |
 
-Jeśli Twoja biblioteka ma już coś o tej samej nazwie, Lapin pyta przed zastąpieniem. Nic z tego, co przynosi rozszerzenie, nigdy nie jest uruchamiane: rozszerzenia to treść.
+Jeśli Twoja biblioteka ma już cennik, bibliotekę profili lub plik kreskowań o tej samej nazwie, ale inny, **Podgląd importu** proponuje zachować oba (z (2) po nazwie), zastąpić go lub pominąć; w przypadku szablonu projektu o tej samej nazwie Lapin pyta przed zastąpieniem. Nic z tego, co przynosi rozszerzenie, nigdy nie jest uruchamiane: rozszerzenia to treść.
 
 Katalog Lapina jest też **podpisany** przez Lapin Extensions: katalog i każdy jego plik niosą podpis, który Lapin sprawdza, zanim odczyta listę lub zainstaluje plik, więc kopia zmieniona po drodze jest odrzucana. Wiersz nad listą mówi **Podpisany przez Lapin Extensions**, gdy tak jest.
 

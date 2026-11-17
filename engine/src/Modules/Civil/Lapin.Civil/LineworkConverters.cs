@@ -72,6 +72,27 @@ public static class LineworkConverters
         }, "A platform levelled into the terrain on each closed outline.");
 
     /// <summary>
+    /// The property's boundary (audit S12): a closed outline made the parcel of the terrain under it (the one whose ground holds
+    /// its first corner, else the project's first), replacing the parcel it had; its edges straight or arcs (decision 623), a
+    /// circle round by its four quarter arcs.
+    /// </summary>
+    public static readonly LineworkConverter Parcel = new("parcel", "Parcel", "civil", "closed", Plan, [],
+        (q, view, s, _) =>
+        {
+            LineworkConversion.PlanStorey(q.Model, view);
+            if (s.Kind == "ellipse") throw new CommandException("A parcel's edges are straight or arcs: the ellipse is not converted (draw it as a polyline or with arcs).");
+            var terrains = q.Model.OfClass(IfcClass.GeographicElement).Where(t => t.PredefinedType == Terrains.Predefined).ToList();
+            var (corners, rises) = s.Outline();
+            var terrain = terrains.FirstOrDefault(t => Terrains.Of(t).ElevationAt(corners[0].X, corners[0].Y) != null) ?? terrains.FirstOrDefault()
+                ?? throw new CommandException("No terrain: a parcel is the boundary of one, so make the terrain first.");
+            var args = new JsonObject { ["terrainId"] = terrain.Id, ["points"] = LineworkConversion.Points(corners) };
+            // Straight edges given as such: setParcel keeps the arcs a parcel of as many corners had.
+            args["arcs"] = new JsonArray([.. (rises ?? new double[corners.Count]).Select(r => (JsonNode)Math.Round(r, 9))]);
+            var replaces = terrain.Attrs["parcel"] is JsonArray { Count: > 0 } ? ", in place of its parcel" : "";
+            return [new("civil.setParcel", args, $"The parcel of {terrain.Name}, {corners.Count} corners{replaces}")];
+        }, "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.");
+
+    /// <summary>
     /// The converter of what civil's linework becomes as <paramref name="kind"/> (road, path, breakline; a module's own, a track,
     /// through <see cref="LineworkElements.Makers"/>): the shapes chosen grouped by the chain each belongs to (lines and open
     /// polylines on its view and layer meeting end to end), one civil.fromLinework for each chain. A hook for premium modules too.
@@ -116,6 +137,6 @@ public static class LineworkConverters
 
     public static void Register(IModuleRegistry r)
     {
-        foreach (var c in new[] { Terrain, Platforms, Roads, Paths, Breaklines }) r.Service<LineworkConverter>(c);
+        foreach (var c in new[] { Terrain, Platforms, Parcel, Roads, Paths, Breaklines }) r.Service<LineworkConverter>(c);
     }
 }

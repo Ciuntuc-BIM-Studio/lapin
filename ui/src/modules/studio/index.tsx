@@ -8,6 +8,7 @@
  * LOFT are also command-line commands.
  */
 
+import { pulldownTool } from '../../shell/pulldown';
 import { confirmAction } from '../../shell/prompts';
 import {
   Boxes, PackagePlus, PencilRuler, ArrowUpDown, ArrowUpToLine, ArrowRightToLine, Eraser, Keyboard, Rainbow, Ruler, Spline, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
@@ -46,8 +47,10 @@ import { frameOfView } from '../../viewport/workPlane';
 import { cancel as cancelCommand } from '../../viewport/cad/session';
 import { toggleSketchupKeys, useDisplay } from '../../app/display';
 import './familyLibrary';
-import { FamiliesDialog } from './families/FamiliesDialog';
-import { partOf, isPlacedPart, FamilyFromSketchDialog, FamilySection, placeFamilyTool, startFamilyFromSketch } from './families/FamilyTools';
+import { PartsDialog } from './parts/PartsDialog';
+import { PartMemberSection } from './PartMembersSection';
+import { addToPartRequest } from './partMembersModel';
+import { partOf, isPlacedPart, PartFromSketchDialog, PartSection, placeFamilyTool, startPartFromSketch } from './families/FamilyTools';
 
 /** The thickness and height last used, the next command's defaults. */
 const last = { thickness: 0.2, height: 3 };
@@ -762,11 +765,18 @@ const primitive = (shape: string, label: string, icon: ToolDef['icon']): ToolDef
   },
 });
 
-/** Families of the user's own (docs/plan-user-extensibility.md §5.6): the place tool, the dialog with the editor, and one made from drafted outlines. */
-// The catalogue on the parts (S15); its Families… button opens the editor.
-const familiesDialogTool: ToolDef = { id: 'studio.families', label: 'Families…', icon: Boxes, run: () => openPlaceCatalog('parts') };
+/** Parts of the user's own (docs/plan-user-extensibility.md §5.6, audit S6; families were parts): the place tool, the manager dialog, and one made from drafted outlines. */
+// The catalogue on the parts (S15); its Parts… button opens the manager.
+const partsDialogTool: ToolDef = { id: 'studio.parts', label: 'Parts…', icon: Boxes, run: () => openPlaceCatalog('parts') };
+const partFromSketch: ToolDef = { id: 'studio.partFromSketch', label: 'Part from sketch…', icon: PackagePlus, run: startPartFromSketch };
+// The old ids stay tools (not on the ribbon) so shortcuts, quick slots and saved interfaces that name them keep working.
+const legacyFamilyTools: ToolDef[] = [
+  { ...placeFamilyTool, id: 'studio.family', label: 'Part' },
+  { ...partsDialogTool, id: 'studio.families', label: 'Parts…' },
+  { ...partFromSketch, id: 'studio.familyFromSketch' },
+];
 
-/** The Place catalogue's parts (families, S15): the project's, each a click from the Family tool set to it. */
+/** The Place catalogue's parts (S15): the project's, each a click from the Part tool set to it. */
 function usePartEntries(): PlaceEntry[] {
   const { families } = useFamilies();
   return families.map((f): PlaceEntry => ({
@@ -774,7 +784,20 @@ function usePartEntries(): PlaceEntry[] {
     place: () => { usePlaceFamily.setState({ familyId: f.id, values: {}, rotation: 0, mirror: false }); if (useUi.getState().tool !== placeFamilyTool.id) activate(placeFamilyTool); },
   }));
 }
-const familyFromSketch: ToolDef = { id: 'studio.familyFromSketch', label: 'Family from sketch…', icon: PackagePlus, run: startFamilyFromSketch };
+
+/** Add to part: the placed part and the other elements selected, the elements become the part's own (in every object of it). */
+const addToPart: ToolDef = {
+  id: 'studio.addToPart', label: 'Add to part', icon: PackagePlus, run: () => {
+    const st = useSession.getState();
+    const req = addToPartRequest(useUi.getState().selected, st.nodes);
+    if ('notice' in req) { notify(req.notice); return; }
+    void execute('studio.addPartMembers', req).then((r) => {
+      const err = useSession.getState().error;
+      if (err) notify(err);
+      else if (r) notify('The elements are part of the part now: edit them in its edit mode (Tab).');
+    });
+  },
+};
 
 registerEditMode();
 const editPartTool: ToolDef = { id: 'studio.editPart', label: 'Edit part', icon: PencilRuler, run: () => { useUi.setState({ view: '3d' }); editPart(); } };
@@ -786,36 +809,47 @@ const studio: LapinModule = {
   summary: 'Free-form solids: sketches on any face, extrude, sweep, loft, revolve, primitives, push/pull, fillets, shells, arrays and live booleans.',
   tabs: [
     // Beside Save as symbol: closed drafting made a family.
-    { id: 'draft', label: 'Draft', order: 10, groups: [{ label: 'Family', tools: [familyFromSketch] }] },
+    { id: 'draft', label: 'Draft', order: 10, groups: [{ label: 'Part', tools: [partFromSketch] }] },
     {
     id: 'studio', label: 'Studio', order: 50, include: ['modify'],
     groups: [
-      { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
-      { label: 'Thick', tools: [cmd('ring', 'Ring', Cylinder, 'RING'), cmd('box', 'Box', Container, 'BOX'), cmd('wallStrip', 'Wall strip', BrickWall, 'TWALL')] },
-      { label: 'Constraints', tools: [constraintTool(GEOMETRIC[0]), constraintTool(GEOMETRIC[2]), constraintTool(GEOMETRIC[3]), constraintTool(DIMENSIONS[0])], small: [...GEOMETRIC.filter((t) => !['coincident', 'horizontal', 'vertical'].includes(t.kind)).map(constraintTool), ...DIMENSIONS.slice(1).map(constraintTool)] },
+      // Fewer groups than the tools (audit S14: about eighty on one tab): the tools used most stay buttons, the rest gathered under
+      // pulldowns; each keeps its id, letters and place in My tools.
       {
         label: 'Sketch',
         tools: [sketchTool('line', 'LINE', 'Line', Slash, 'KL'), sketchTool('rect', 'RECTANGLE', 'Rectangle', RectangleHorizontal, 'KR'), sketchTool('circle', 'CIRCLE', 'Circle', Circle, 'KC'),
           // Two arcs, each one thing whatever the work plane (decision 377): SketchUp's by its chord and bulge, CAD's ARC through three points.
-          directTool('arc', '2-point arc', Rainbow, 'KA'),
-          { id: 'studio.sketch.arc3', label: '3-point arc', icon: Redo2, run: () => { useUi.setState({ view: '3d', tool: null }); void startCommand('ARC'); } },
+          pulldownTool('studio.more.arcs', 'Arcs', Rainbow, [directTool('arc', '2-point arc', Rainbow, 'KA'),
+            { id: 'studio.sketch.arc3', label: '3-point arc', icon: Redo2, run: () => { useUi.setState({ view: '3d', tool: null }); void startCommand('ARC'); } }]),
           sketchTool('offset', 'OFFSET', 'Offset', CopyPlus, 'KO')],
-        small: [sketchOnFace, sketchOnPlane, finishSketchTool, lookAtPlaneTool, sketchCad('trim', 'TRIM', 'Trim', Scissors), sketchCad('extend', 'EXTEND', 'Extend', ArrowRightToLine), sketchCad('fillet', 'FILLET', 'Fillet', CornerUpRight),
-          directTool('tape', 'Tape measure', Ruler, 'KM'), eraseGuides, followMe, sketchupKeys],
+        small: [sketchOnFace, sketchOnPlane, finishSketchTool, lookAtPlaneTool,
+          pulldownTool('studio.more.sketchEdits', 'Sketch edits', Scissors, [sketchCad('trim', 'TRIM', 'Trim', Scissors), sketchCad('extend', 'EXTEND', 'Extend', ArrowRightToLine), sketchCad('fillet', 'FILLET', 'Fillet', CornerUpRight),
+            directTool('tape', 'Tape measure', Ruler, 'KM'), eraseGuides, followMe, sketchupKeys]),
+          pulldownTool('studio.more.workPlanes', 'Work planes', SquareStack, [cmd('refPlane', 'Plane from view', SquareStack, 'REFPLANE'), planeOnFace, planeBy3]),
+          pulldownTool('studio.more.onFace', 'On face', Hexagon, [onFace('rect', 'Rectangle on face', RectangleHorizontal, 'FRE'), onFace('circle', 'Circle on face', Circle, 'FCI'), onFace('polygon', 'Polygon on face', Hexagon, 'FPL')])],
       },
-      { label: 'On face', tools: [onFace('rect', 'Rectangle on face', RectangleHorizontal, 'FRE'), onFace('circle', 'Circle on face', Circle, 'FCI'), onFace('polygon', 'Polygon on face', Hexagon, 'FPL')] },
-      { label: 'Work planes', tools: [cmd('refPlane', 'Plane from view', SquareStack, 'REFPLANE'), planeOnFace, planeBy3] },
       {
-        label: 'Primitives',
-        tools: [primitive('box', 'Cuboid', Box), primitive('cylinder', 'Cylinder', Cylinder)],
-        small: [primitive('sphere', 'Sphere', CircleDot), primitive('cone', 'Cone', Cone), primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)],
+        label: 'Constraints',
+        tools: [
+          pulldownTool('studio.more.geometric', 'Geometric', constraintTool(GEOMETRIC[0]).icon, GEOMETRIC.map(constraintTool)),
+          pulldownTool('studio.more.dimensions', 'Dimensions', constraintTool(DIMENSIONS[0]).icon, DIMENSIONS.map(constraintTool)),
+        ],
       },
-      { label: 'Part', tools: [editPartTool, finishPartTool] },
-      { label: 'Families', tools: [placeFamilyTool, familiesDialogTool], small: [familyFromSketch] },
+      {
+        label: 'Solids',
+        tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT')],
+        small: [{ id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() },
+          pulldownTool('studio.more.thick', 'Thick', Container, [cmd('ring', 'Ring', Cylinder, 'RING'), cmd('box', 'Box', Container, 'BOX'), cmd('wallStrip', 'Wall strip', BrickWall, 'TWALL')]),
+          pulldownTool('studio.more.primitives', 'Primitives', Cone, [primitive('box', 'Cuboid', Box), primitive('cylinder', 'Cylinder', Cylinder), primitive('sphere', 'Sphere', CircleDot), primitive('cone', 'Cone', Cone),
+            primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)])],
+      },
+      { label: 'Parts', tools: [placeFamilyTool, partsDialogTool, addToPart, editPartTool, finishPartTool], small: [partFromSketch] },
       {
         label: 'Modify',
         tools: [pushPull, roundTool('fillet'), roundTool('chamfer'), shell],
-        small: [upTo, splitTool('split'), splitTool('slice'), array, polarArray, rotate3d, mirror3d, move3d, makeSolid],
+        small: [upTo, splitTool('split'), splitTool('slice'), makeSolid,
+          pulldownTool('studio.more.arrays', 'Arrays', Grid3x3, [array, polarArray]),
+          pulldownTool('studio.more.transform', 'Move, rotate, mirror', Move3d, [move3d, rotate3d, mirror3d])],
       },
       {
         label: 'Boolean',
@@ -831,9 +865,11 @@ const studio: LapinModule = {
       },
     ],
   }],
-  dialogs: { families: FamiliesDialog, familyFromSketch: FamilyFromSketchDialog },
+  dialogs: { parts: PartsDialog, families: PartsDialog, partFromSketch: PartFromSketchDialog, familyFromSketch: PartFromSketchDialog },
+  legacyTools: legacyFamilyTools,
   propertySections: [
-    { id: 'studioFamily', label: 'Family', classes: SOLID_CLASSES, shows: isPlacedPart, component: FamilySection },
+    { id: 'studioFamily', label: 'Part', classes: SOLID_CLASSES, shows: isPlacedPart, component: PartSection },
+    { id: 'studioPartMember', label: 'Part', classes: ['*'], shows: (n) => typeof n.props.partKey === 'string', component: PartMemberSection },
     { id: 'studioParams', label: 'Parameters', classes: SOLID_CLASSES, shows: isPlacedPart, component: PublishedParamsSection },
     { id: 'studioEditPart', label: 'Part', classes: SOLID_CLASSES, shows: isEditable, component: EditPartSection },
     { id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard, fieldKeys: featureFieldKeys },
@@ -845,8 +881,8 @@ const studio: LapinModule = {
   planOverlays: [ConstraintOverlay],
   drawingOverlays: [ConstraintOverlay],
   overlays3d: [PartPlane3D, PartFlex3D, PartSketch3D],
-  // Create similar: a placed part's Family tool with its family, values, turn and hand; a primitive's tool of its shape.
-  placeSources: [{ id: 'parts', label: 'Families', order: 40, useEntries: usePartEntries, manage: { label: 'Families…', run: () => useUi.setState({ dialog: 'families' }) } }],
+  // Create similar: a placed part's Part tool with its part, values, turn and hand; a primitive's tool of its shape.
+  placeSources: [{ id: 'parts', label: 'Parts', order: 40, useEntries: usePartEntries, manage: { label: 'Parts…', run: () => useUi.setState({ dialog: 'parts' }) } }],
   similarFor: (n) => {
     if (isPlacedPart(n)) {
       const familyId = partOf(n.id);

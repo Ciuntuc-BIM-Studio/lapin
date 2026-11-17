@@ -16,6 +16,8 @@ Para un espacio sin muros alrededor, como una terraza o un extremo de una zona d
 
 Los bordes de una habitación dibujada pueden ser curvos, como los de un forjado: la barra de **Room by outline** dibuja un **Polygon** cuyos bordes pueden ser arcos (**Arcs (Space)**), un **Rectangle** o un **Circle**, y el clic derecho sobre la habitación seleccionada ofrece **Make arc**, **Make straight**, **Fillet corner…** y **Chamfer corner…**. Su área y su perímetro se miden sobre los arcos verdaderos, y en IFC el perfil del espacio es la curva verdadera. Una habitación hallada a partir de sus muros los sigue, así que su contorno no se edita de este modo.
 
+**Modificar → Dividir elemento** corta una estancia dibujada en dos a lo largo de una línea de dos puntos: la parte en la que haga clic conserva la estancia, la otra es una estancia nueva con el siguiente número de la planta, y sus áreas suman la anterior. **Modificar → Recortar/alargar elementos** la recorta con un límite recto. Una estancia hallada a partir de sus muros se divide, en cambio, con una línea de separación de estancias.
+
 ![Una habitación dibujada con un borde curvo y una esquina redondeada, una habitación redonda y un balcón con el frente curvo](shots/rooms-curved.webp)
 
 ## Las propiedades de una habitación

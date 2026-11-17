@@ -140,6 +140,10 @@ I IFC er en rampe en IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTER_
 
 Et rækværks segmenter kan være buer. Højreklik ved et segment af et valgt rækværk for **Gør til bue** (eller **Gør lige**), og træk så det runde greb midt på buen for at bøje den gennem et punkt; højreklik på et hjørnes greb for **Afrund hjørne…** eller **Affas hjørne…**. **Afrunding** og **Affasning** (FILLET, CHAMFER) tager også rækværker: klik på et rækværk på de to segmenter på hver side af et hjørne, eller på to rækværker, hvis ender mødes, eller ville mødes ført videre: de bliver ét rækværk, det første, rundt om buen. Håndlisten, stængerne og glasset følger buen i korte lige stykker højst en millimeter fra den, stolper og balustre fordeles langs buen som langs et lige segment, og længden er buens egen. **Draft → Convert → Railing** beholder en afrundings bue: linjer, buer og polylinjer, der mødes ende mod ende, bliver ét rækværk (fjern fluebenet i **Ét gelænder, hvor de mødes ende mod ende** for ét hver). I IFC er den sande kurve dets akse. Trappe- og altanrækværker følger deres trappe eller altan.
 
+Et rækværk opdeles, trimmes, forlænges og forskydes med væggenes værktøjer: **Redigér → Opdel element** deler det i to, hvor du klikker (en bue i to buer på samme cirkel; den første beholder id'et), **Redigér → Trim/forlæng elementer** fører enden hinsides en grænse tilbage til den eller forlænger den nærmeste ende videre langs dens endesegment (en bue rundt på sin cirkel), og **Forskyd** kopierer det parallelt, buer koncentrisk, med hjørnerne, hvor de flyttede segmenter mødes. Deres længder summer til rækværkets.
+
+![Et rækværk med en bue delt i to på buen](shots/railing-split.webp)
+
 ![Et rækværk med et afrundet hjørne](shots/railing-fillet.webp)
 
 ## Altaner

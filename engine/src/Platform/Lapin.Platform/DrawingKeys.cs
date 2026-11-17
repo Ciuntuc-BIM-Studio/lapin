@@ -46,7 +46,7 @@ public static class DrawingKeys
     public sealed record Entry(string Name, string? Fill = null, string? Hatch = null, double HatchScale = 1, double HatchAngle = 0, string? Stroke = null, double Width = 0, double[]? Dash = null);
 
     /// <summary>What a legend lists: the materials the sheet's views cut, by name; or the lines they draw (role, type and width).</summary>
-    public static List<Entry> Entries(IQueryContext q, Entity view, string kind)
+    public static List<Entry> Entries(IQueryContext q, Entity view, string kind, string? lang = null)
     {
         var m = q.Model;
         if (PaperViews.SheetOf(m, view) is not { } sheet) return [];
@@ -59,7 +59,8 @@ public static class DrawingKeys
             {
                 if (pen.Segments.Count == 0 || pen.Stroke == null || pen.Width <= 0 || !Roles.TryGetValue(pen.Layer, out var role)) continue;
                 var type = LineTypeName(book, pen.Dash);
-                var name = $"{role} · {type} · {Num(pen.Width)} mm";
+                // Lapin's own role and type names in the legend's language (a project's own line type keeps its name).
+                var name = $"{DrawingWords.Of(role, lang)} · {DrawingWords.Of(type, lang)} · {Num(pen.Width)} mm";
                 rows.TryAdd(name, new Entry(name, Stroke: pen.Stroke, Width: pen.Width, Dash: pen.Dash));
             }
             return [.. rows.Values.OrderByDescending(r => r.Width).ThenBy(r => r.Name, StringComparer.Ordinal).Take(30)];
@@ -104,18 +105,20 @@ public static class DrawingKeys
         if (c.Query == null) return null;
         var at = Args.PointOf(e.Attrs["at"]);
         var kind = e.Str("kind") == "lines" ? "lines" : "materials";
-        var rows = Entries(c.Query, c.View, kind);
+        // Its words in its own language (audit §16 leftovers), set from the interface's when it was placed.
+        var lang = DrawingWords.Known(e.Str("lang"));
+        var rows = Entries(c.Query, c.View, kind, lang);
         var mm = c.Mm;
         var text = Standards.ResolveText(c.Book, []);
         var mk = new ViewMark(e.Id);
-        var title = e.Str("title") is { Length: > 0 } t ? PaperViews.Fill(c, t) : kind == "lines" ? "LINES" : "LEGEND";
+        var title = e.Str("title") is { Length: > 0 } t ? PaperViews.Fill(c, t) : DrawingWords.Of(kind == "lines" ? "LINES" : "LEGEND", lang);
         mk.Text(new PenText(at - new Vec2(0, TitleH * mm), title, TitleH, 0, "start", "bottom", true, text.Font));
         var patterns = DraftingResources.Patterns(c.Model);
         var y = at.Y - (TitleH + 4) * mm;
         var width = Swatch + 4 + Label * 0.6 * Math.Max(12, rows.Count == 0 ? 0 : rows.Max(r => r.Name.Length));
         if (rows.Count == 0)
         {
-            mk.Text(new PenText(new Vec2(at.X, y - SwatchH * mm), "(none on this sheet's views)", Label, 0, "start", "bottom", false, text.Font), "#808080");
+            mk.Text(new PenText(new Vec2(at.X, y - SwatchH * mm), DrawingWords.Of("(none on this sheet's views)", lang), Label, 0, "start", "bottom", false, text.Font), "#808080");
             y -= Row * mm;
         }
         foreach (var r in rows)
@@ -228,6 +231,12 @@ public static class DrawingKeys
     {
         if ((string?)a["kind"] is { } k) attrs["kind"] = LegendKinds.Contains(k) ? k : throw new CommandException($"„{k}” is not a legend's kind ({string.Join(", ", LegendKinds)}).");
         if (a.ContainsKey("title")) { if ((string?)a["title"] is { Length: > 0 } t) attrs["title"] = t.Trim(); else attrs.Remove("title"); }
+        // The language its own words are written in (DrawingWords); null: English.
+        if (a.ContainsKey("lang"))
+        {
+            if ((string?)a["lang"] is { Length: > 0 } l) attrs["lang"] = DrawingWords.Known(l) ?? throw new CommandException($"„{l}” is not a language a legend is written in ({string.Join(", ", DrawingWords.Languages)}).");
+            else attrs.Remove("lang");
+        }
         foreach (var key in new[] { "length", "scale" })
             if (a.ContainsKey(key))
             {
@@ -246,7 +255,7 @@ public static class DrawingKeys
 
     public static void Register(IModuleRegistry r)
     {
-        // A legend on a sheet's paper: {viewId: paper:<sheet>, at (its top-left corner), kind: materials | lines, title}.
+        // A legend on a sheet's paper: {viewId: paper:<sheet>, at (its top-left corner), kind: materials | lines, title, lang (its own words' language)}.
         r.Command("sheet.addLegend", "Legend", (ctx, a) =>
         {
             var view = ViewOf(ctx, a);

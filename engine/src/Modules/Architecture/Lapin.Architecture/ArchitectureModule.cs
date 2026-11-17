@@ -344,6 +344,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         WallSweeps.Register(r);
         // A wall's part in split, trim and extend (PathEdits), and floors and ceilings split or trimmed by a line (audit 2026-11-15, §6).
         r.Service<IPathPieces>(new WallPieces());
+        // Finishes on faces, sunshades and balconies on the part of a wall or floor they fall on (audit §15).
+        r.Service<ISplitFollower>(new HostedParts());
         OutlineEdits.Register(r);
         RoomFinishes.Register(r);
         FinishZones.Register(r);

@@ -134,6 +134,69 @@ public static class LineworkConverters
         return [new("architecture.addWallOpening", args, $"An opening of its own outline in {best.Name}")];
     }, "A wall opening of the shape's outline, in the wall the view looks at.");
 
+    /// <summary>
+    /// A closed outline made an opening in the floor under it (audit S12, S14): the floor of the plan's storey whose outline holds
+    /// the shape's middle; its edges straight, arcs or a whole ellipse, as a floor's (decision 589).
+    /// </summary>
+    public static readonly LineworkConverter FloorOpenings = new("floorOpening", "Floor opening", "architecture", "closed", Plan, [],
+    (q, view, s, o) =>
+    {
+        var storey = LineworkConversion.PlanStorey(q.Model, view);
+        var (corners, rises) = s.Outline();
+        var mid = s.Middle;
+        var slab = q.Model.OfClass(IfcClass.Slab).FirstOrDefault(x => Spatial.StoreyOf(q.Model, x.Id)?.Id == storey.Id && Polygon2.Contains(Slabs.Contour(x), mid))
+            ?? throw new CommandException($"No floor on {storey.Name} under the shape: draw the opening inside a floor.");
+        var args = new JsonObject { ["storeyId"] = storey.Id, ["slabId"] = slab.Id, ["points"] = LineworkConversion.Points(corners) };
+        if (rises != null) args["arcs"] = new JsonArray([.. rises.Select(r => (JsonNode)Math.Round(r, 9))]);
+        if (s.Ellipses() is { } ellipses) args["ellipses"] = ellipses;
+        return [new("architecture.addSlabOpening", args, $"An opening of {corners.Count} corners in {slab.Name}")];
+    }, "An opening in the floor under each closed outline; a circle makes a round one.");
+
+    /// <summary>
+    /// A stair of the type chosen along a drafted path (audit S12), as far as a stair takes one: its foot and the way it climbs.
+    /// A line or polyline: the foot at its first point, climbing towards its second; a polyline turning at its second corner
+    /// turns the stair that way (an L or U type's). A closed outline: the foot at the middle of its first edge, climbing across
+    /// it into the outline, as wide as that edge. Its run, landings and turns are the type's (the configurator's).
+    /// </summary>
+    public static readonly LineworkConverter StairsAlong = new("stair", "Stair", "architecture", "any", Plan,
+    [
+        new("typeId", "Stair type", "type", TypeClass: IfcClass.StairType),
+        new("width", "Width (empty: the type's; an outline's first edge)", "length"),
+    ],
+    (q, view, s, o) =>
+    {
+        var storey = LineworkConversion.PlanStorey(q.Model, view);
+        LineworkConversion.Straight(s, "A stair's path");
+        var pts = s.Points;
+        if (pts.Count < 2) throw new CommandException("A stair's path needs two points at least.");
+        Vec2 foot, to;
+        string? turn = null;
+        double? width = LineworkConversion.Num(o, "width");
+        if (s.Closed && pts.Count >= 3)
+        {
+            var (a, b) = (pts[0], pts[1]);
+            foot = (a + b) * 0.5;
+            var along = (b - a).Normalized();
+            // Into the outline: its left when it runs counter-clockwise, else its right.
+            var area = 0.0;
+            for (var i = 0; i < pts.Count; i++) area += Vec2.Cross(pts[i], pts[(i + 1) % pts.Count]);
+            var inward = area >= 0 ? new Vec2(-along.Y, along.X) : new Vec2(along.Y, -along.X);
+            to = foot + inward;
+            width ??= (b - a).Length;
+        }
+        else
+        {
+            (foot, to) = (pts[0], pts[1]);
+            if (pts.Count >= 3 && Vec2.Cross(pts[1] - pts[0], pts[2] - pts[1]) is var c && Math.Abs(c) > 1e-9) turn = c > 0 ? "left" : "right";
+        }
+        if ((to - foot).Length < 1e-6) throw new CommandException("A stair's path needs its first two points apart.");
+        var args = new JsonObject { ["storeyId"] = storey.Id, ["x"] = Math.Round(foot.X, 9), ["y"] = Math.Round(foot.Y, 9), ["x2"] = Math.Round(to.X, 9), ["y2"] = Math.Round(to.Y, 9) };
+        if ((string?)o["typeId"] is { Length: > 0 } t) args["typeId"] = t;
+        if (turn != null) args["turn"] = turn;
+        if (width is { } w && w > 0) args["width"] = Math.Round(w, 9);
+        return [new("architecture.addStair", args, $"A stair on {storey.Name}")];
+    }, "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.");
+
     public static readonly LineworkConverter SkirtingsAlong = new("skirting", "Skirting", "architecture", "open", Plan,
     [
         new("typeId", "Skirting type", "type", TypeClass: Skirtings.TypeClass),
@@ -178,6 +241,6 @@ public static class LineworkConverters
 
     public static void Register(IModuleRegistry r)
     {
-        foreach (var c in new[] { Walls, Floors, Ceilings, Rooms, RoofsFromOutlines, Balconies, Railings, SkirtingsAlong, WallOpenings }) r.Service<LineworkConverter>(c);
+        foreach (var c in new[] { Walls, Floors, FloorOpenings, Ceilings, Rooms, RoofsFromOutlines, Balconies, StairsAlong, Railings, SkirtingsAlong, WallOpenings }) r.Service<LineworkConverter>(c);
     }
 }

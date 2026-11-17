@@ -83,6 +83,8 @@ public sealed class ViewMark(string? owner)
     public List<PenImage> Images { get; } = [];
     /// <summary>The exact shapes a click or a snap uses (drafted lines, arcs, circles), as their JSON.</summary>
     public List<System.Text.Json.Nodes.JsonObject> Shapes { get; } = [];
+    /// <summary>The exact curves the mark's lines were laid along (a drafted circle, arc or ellipse), for DXF (<see cref="PenCurve"/>).</summary>
+    public List<PenCurve> Curves { get; } = [];
     /// <summary>What the mark tells the interface of itself (a dimension string: its points as drawn now, for its grips).</summary>
     public System.Text.Json.Nodes.JsonObject? Data { get; set; }
 

@@ -140,6 +140,10 @@ En IFC una rampa es un IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTE
 
 Los segmentos de una barandilla pueden ser arcos. Clic derecho junto a un segmento de una barandilla seleccionada para **Convertir en arco** (o **Convertir en recto**), y arrastra el pinzamiento redondo del centro del arco para curvarlo por un punto; clic derecho en el pinzamiento de una esquina para **Redondear esquina…** o **Achaflanar esquina…**. **Empalme** y **Chaflán** (FILLET, CHAMFER) toman también barandillas: haz clic en una barandilla en los dos segmentos a cada lado de una esquina, o en dos barandillas cuyos extremos se encuentran, o se encontrarían prolongados: se vuelven una sola barandilla, la primera, alrededor del arco. El pasamanos, las barras y el vidrio siguen el arco en tramos rectos cortos a no más de un milímetro de él, los postes y balaustres se reparten a lo largo del arco como en un segmento recto, y su longitud es la del arco. **Draft → Convert → Railing** conserva el arco de un empalme: líneas, arcos y polilíneas que se encuentran extremo con extremo se vuelven una sola barandilla (desmarca **Una sola barandilla donde se encuentran extremo con extremo** para una cada una). En IFC la curva verdadera es su eje. Las barandillas de escaleras y balcones siguen su escalera o su balcón.
 
+Una barandilla se divide, recorta, alarga y desfasa con las herramientas de los muros: **Modificar → Dividir elemento** la corta en dos donde haga clic (un arco en dos arcos del mismo círculo; el primero conserva el id), **Modificar → Recortar/alargar elementos** devuelve a un límite el extremo que lo sobrepasa o prolonga el extremo más cercano a lo largo de su segmento final (un arco por su círculo), y **Desfasar** la copia en paralelo, los arcos concéntricos, con sus esquinas donde se encuentran los segmentos desplazados. Sus longitudes suman la de la barandilla.
+
+![Una barandilla con un arco dividido en dos sobre su arco](shots/railing-split.webp)
+
 ![Una barandilla con una esquina redondeada](shots/railing-fillet.webp)
 
 ## Balcones

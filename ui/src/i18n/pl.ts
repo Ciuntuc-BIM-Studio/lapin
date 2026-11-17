@@ -3,6 +3,12 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // MEP and Studio tabs regrouped under pulldowns (audit S14)
+  "Arcs": "Łuki", "Sketch edits": "Edycja szkicu", "Geometric": "Geometryczne", "Arrays": "Szyki", "Move, rotate, mirror": "Przesuń, obróć, odbij", "Carriers and fans": "Koryta i wentylatory",
+  // Convert to…: stair, floor opening, parcel (audit S12)
+  "Width (empty: the type's; an outline's first edge)": "Szerokość (puste: typu; pierwsza krawędź obrysu)", "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.": "Działka (granica nieruchomości) terenu pod każdym zamkniętym obrysem, z zachowanymi łukami.", "An opening in the floor under each closed outline; a circle makes a round one.": "Otwór w stropie pod każdym zamkniętym obrysem; okrąg daje okrągły.", "A stair of the type chosen: its foot at the path's start, climbing along it; an outline's first edge is its foot and width.": "Schody wybranego typu: ich początek na starcie ścieżki, wznoszące się wzdłuż niej; pierwsza krawędź obrysu to ich początek i szerokość.",
+  // Parts of steel, CLT and rebar for field schedules (audit S1)
+  "Steel connection parts": "Części połączeń stalowych", "Reinforcing bars": "Pręty zbrojeniowe", "Bars by mark": "Pręty według pozycji", "Place in its element": "Miejsce w jego elemencie", "Thickness (m)": "Grubość (m)", "Row of the members list": "Wiersz zestawienia prętów", "Hall": "Hala", "kg/m": "kg/m", "Each (kg, the row's)": "Sztuka (kg, wiersza)", "Row of the parts schedule": "Wiersz zestawienia części", "Weld length (m)": "Długość spoiny (m)", "Total length (m)": "Długość całkowita (m)", "A type's bars of one mark: shape, Ø, length": "Pręty typu o jednej pozycji: kształt, Ø, długość",
   // Annotations drawn on a sheet itself (decision 620)
   "drawing on the sheet": "rysunek na arkuszu", "Back to the sheet: place, move and crop its views there": "Powrót do arkusza: tam umieszczasz, przesuwasz i przycinasz jego widoki", "Draw on the sheet itself: texts, leader notes, lines, clouds, hatches, symbols, a legend, a scale bar (in paper mm)": "Rysuj na samym arkuszu: teksty, opisy z odnośnikiem, linie, chmurki, kreskowania, symbole, legendę, podziałkę (w mm papieru)", "Revision cloud": "Chmurka rewizji", "Leader note": "Opis z odnośnikiem", "Annotate sheet": "Opisz arkusz", "A legend goes on a sheet: open the sheet and click Annotate.": "Legenda trafia na arkusz: otwórz arkusz i kliknij Opisz.", "Open a sheet first: then draw on it here.": "Najpierw otwórz arkusz: potem rysuj na nim tutaj.", "Revision cloud drawn.": "Narysowano chmurkę rewizji.", "First corner [Polygon]": "Pierwszy narożnik [Wielokąt]", "Next point (Enter closes the cloud)": "Następny punkt (Enter zamyka chmurkę)", "First point": "Pierwszy punkt", "materials (hatches and fills)": "materiały (kreskowania i wypełnienia)", "line styles": "style linii", "Its heading; {…} tokens as in a title block. Empty: LEGEND": "Jej nagłówek; znaczniki {…} jak w tabliczce rysunkowej. Puste: LEGENDA", "Its length in metres of the model; empty: a round length about 80 mm long on paper": "Jej długość w metrach modelu; puste: okrągła długość około 80 mm na papierze", "Divisions": "Podziały", "On a sheet: its own scale when it follows no view; empty: the sheet's first view's": "Na arkuszu: jej własna skala, gdy nie podąża za żadnym widokiem; puste: skala pierwszego widoku arkusza", "by view": "wg widoku", "Drawn as a revision cloud: scallops about this long on paper": "Rysowane jako chmurka rewizji: łuki mniej więcej tej długości na papierze", "Change legend": "Zmień legendę", "A legend goes on a sheet: open the sheet and annotate it.": "Legenda trafia na arkusz: otwórz arkusz i opisz go.", "A sheet's paper is not a view to place.": "Papier arkusza nie jest widokiem do umieszczenia.", "A cloud's scallop is 1 to 100 mm.": "Łuk chmurki ma od 1 do 100 mm.",
   // Fixed schedules as shipped field-schedule templates, parts as rows (audit S1)
@@ -1182,6 +1188,12 @@ export const PL: Record<string, string> = {
   'Extract grille': 'Kratka wywiewna',
   'Rise / drop': 'Pion w górę / w dół',
   'Cap': 'Zaślepka',
+  'Coupling': 'Złączka',
+  'Drag: move the stud along the wall (Ctrl-click: take it out)': 'Przeciągnij: przesuń słupek wzdłuż ściany (Ctrl-klik: usuń go)',
+  'Drag out or in: more or fewer king studs': 'Przeciągnij na zewnątrz lub do środka: więcej lub mniej słupków głównych',
+  'Drag out or in: more or fewer jack studs': 'Przeciągnij na zewnątrz lub do środka: więcej lub mniej słupków nadprożowych',
+  'Reset studs': 'Przywróć słupki',
+  "Studs moved, added or taken out on this wall (in its frame elevation) go back to its type's module": 'Słupki przesunięte, dodane lub usunięte na tej ścianie (w jej widoku szkieletu) wracają do modułu jej typu',
   'Service': 'Medium',
   'Ports': 'Przyłącza',
   'open': 'wolne',
@@ -3925,6 +3937,8 @@ export const PL: Record<string, string> = {
   "Its centre, the end of one semi-axis, then the other semi-axis": "Środek, koniec jednej półosi, potem druga półoś", "End of one semi-axis": "Koniec jednej półosi", "Other semi-axis (a point or a value) · Arc (A)": "Druga półoś (punkt lub wartość) · Łuk (A)", "Other semi-axis (a point or a value)": "Druga półoś (punkt lub wartość)", "Start of the arc": "Początek łuku", "End of the arc (anticlockwise)": "Koniec łuku (przeciwnie do ruchu wskazówek zegara)", "Elliptical arc": "Łuk eliptyczny",
   "From drawn shape": "Z narysowanego kształtu", "From room": "Z pomieszczenia", "Click inside a closed drafted shape: a polyline, a rectangle, a circle": "Kliknij wewnątrz zamkniętego narysowanego kształtu: polilinii, prostokąta, okręgu", "Click inside a room: its outline": "Kliknij wewnątrz pomieszczenia: jego obrys", "No walls close round that point.": "Żadne ściany nie zamykają się wokół tego punktu.", "Click inside a closed drafted shape (a closed polyline, a rectangle or a circle).": "Kliknij wewnątrz zamkniętego narysowanego kształtu (zamkniętej polilinii, prostokąta lub okręgu).", "Click inside a room.": "Kliknij wewnątrz pomieszczenia.",
   "Hole in the outline": "Otwór w obrysie", "Hole in outline": "Otwór w obrysie", "Hole in platform": "Otwór w platformie", "Drag to move the hole": "Przeciągnij, aby przesunąć otwór", "Remove hole": "Usuń otwór",
+  "The language of its own words: its heading, the lines' roles and types": "Język jej własnych słów: nagłówek, role i rodzaje linii",
+  "Drag to move the leader's arrow": "Przeciągnij, aby przesunąć strzałkę odnośnika", "Drag to move the bend": "Przeciągnij, aby przesunąć załamanie", "Move leader": "Przesuń odnośnik",
   // Fillet and chamfer on walls and railings, railings with arcs (a user's request)
   "A railing along each line, arc or polyline; those meeting end to end make one.": "Balustrada wzdłuż każdej linii, łuku lub polilinii; te, które stykają się końcami, tworzą jedną.", "One railing where they meet end to end": "Jedna balustrada tam, gdzie stykają się końcami", "Drag to bend the segment through the point": "Przeciągnij, aby wygiąć odcinek przez punkt",
   // Edit sketch on outlines (forum topic 97, stage 3)
@@ -4042,6 +4056,47 @@ export const PL: Record<string, string> = {
   'The element\'s classification (Manage → Classifications…): its code, or its title': 'Klasyfikacja elementu (Zarządzaj → Klasyfikacje…): jej kod lub tytuł',
   'ALL DOORS & WINDOWS': 'WSZYSTKIE DRZWI I OKNA',
   'Every door and window of the plan not tagged yet: a marker across its wall': 'Każde drzwi i okno rzutu jeszcze bez etykiety: znacznik w poprzek ich ściany',
+  // Parts replace families (audit S6)
+  "Parts…": "Części…",
+  "Part…": "Część…",
+  "Part from sketch…": "Część ze szkicu…",
+  "Make part from sketch…": "Utwórz część ze szkicu…",
+  "Make part from sketch": "Utwórz część ze szkicu",
+  "Make part": "Utwórz część",
+  "Add to part": "Dodaj do części",
+  "Held by": "Należy do",
+  "Attribute": "Atrybut",
+  "Delete this part from the project? Undo brings it back.": "Usunąć tę część z projektu? Cofnij ją przywraca.",
+  "Part added to the project. Edit part opens its sketches and parameters.": "Część dodana do projektu. Edytuj część otwiera jej szkice i parametry.",
+  "Part (.lapinpart, .lapinfamily)": "Część (.lapinpart, .lapinfamily)",
+  "Choose a part to save.": "Wybierz część do zapisania.",
+  "A new part, a box to start from": "Nowa część, pudełko jako punkt wyjścia",
+  "A part's .lapinpart file (an older .lapinfamily too), exported from Lapin on this or another computer": "Plik .lapinpart części (także starszy .lapinfamily), wyeksportowany z Lapin na tym lub innym komputerze",
+  "Choose a part, or start a new one. A part is edited in its own edit mode (Edit part): its sketches, steps, parameters and the elements it holds. Objects of a part are placed from Studio → Part, and take their own values.": "Wybierz część lub zacznij nową. Część edytuje się we własnym trybie edycji (Edytuj część): jej szkice, kroki, parametry i elementy, które zawiera. Obiekty części umieszcza się z Studio → Część i mają własne wartości.",
+  "Opens the part's edit mode on a placed object (one is placed when there is none)": "Otwiera tryb edycji części na umieszczonym obiekcie (jeśli nie ma żadnego, jeden zostanie umieszczony)",
+  "Place objects of this part on a plan": "Umieść obiekty tej części na rzucie",
+  "The part as a .lapinpart file, to import on another computer": "Część jako plik .lapinpart, do zaimportowania na innym komputerze",
+  "Open a storey first: a part is edited on an object placed on one.": "Najpierw otwórz kondygnację: część edytuje się na obiekcie umieszczonym na jednej z nich.",
+  "The part could not be placed.": "Nie udało się umieścić części.",
+  "The part had no object yet: one was placed at the origin of the active storey to edit it on.": "Część nie miała jeszcze obiektu: do edycji umieszczono jeden w początku aktywnej kondygnacji.",
+  "There is no part yet: make one in Studio → Parts…, or from a sketch.": "Nie ma jeszcze żadnej części: utwórz ją w Studio → Części… lub ze szkicu.",
+  "No part yet: Studio → Parts…": "Jeszcze brak części: Studio → Części…",
+  "The part to place": "Część do umieszczenia",
+  "The part in the Parts dialog": "Część w oknie Części",
+  "Its part is not in the project.": "Jego części nie ma w projekcie.",
+  "Its sketches, steps, parameters and elements (Tab)": "Jej szkice, kroki, parametry i elementy (Tab)",
+  "The part could not be made.": "Nie udało się utworzyć części.",
+  "Part made: its parameters are W, H and D. Edit part opens its sketches.": "Część utworzona: jej parametry to W, H i D. Edytuj część otwiera jej szkice.",
+  "The closed outlines chosen made a part of your own, its body drawn from them: its name, depth and class are asked next.": "Wybrane zamknięte kontury tworzą Twoją własną część, której bryła jest z nich narysowana: nazwa, głębokość i klasa zostaną zapytane w następnym kroku.",
+  "None: select the elements and the part, then Studio → Add to part.": "Brak: zaznacz elementy i część, potem Studio → Dodaj do części.",
+  "Let go: it stays in this object as a plain element, and goes from the others": "Zwolnij: zostaje w tym obiekcie jako zwykły element, a znika z pozostałych",
+  "Stop driving it": "Przestań nim sterować",
+  "Drive the attribute by a formula of the part's parameters": "Steruj atrybutem formułą z parametrów części",
+  "Edit it in the part, for every object of the part": "Edytuj go w części, dla każdego obiektu części",
+  "Select one placed part and the elements to put into it: they become part of it, in every object of the part.": "Zaznacz jedną umieszczoną część i elementy do włożenia w nią: staną się jej częścią w każdym obiekcie części.",
+  "Select the elements to put into the part together with the part itself.": "Zaznacz elementy do włożenia w część razem z samą częścią.",
+  "The elements are part of the part now: edit them in its edit mode (Tab).": "Elementy są teraz częścią tej części: edytuj je w jej trybie edycji (Tab).",
+  "Parts (old .lapinfamily)": "Części (stary .lapinfamily)",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

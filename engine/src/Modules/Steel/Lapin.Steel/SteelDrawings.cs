@@ -31,6 +31,7 @@ public static class SteelDrawings
         // Both as element view roles (decision 579): a drawing rule asks for a hall's frame elevation or its anchor plan by them.
         r.Service<IElementViewRoles>(new SteelViewRoles());
         r.Service<IScheduleSource>(new SteelMembersSchedule());
+        SteelMembersSchedule.RegisterTemplate(r);
         r.Service<IViewAnnotations>(new SteelViewMarks());
     }
 
@@ -311,6 +312,13 @@ public sealed class SteelMembersSchedule : IScheduleSource
     /// </summary>
     public static (List<Row> Rows, Dictionary<string, string> Marks) Marked(IModelView m, Func<string, ElementGeometry?> geometry, bool register)
     {
+        var (rows, marks, _) = MarkedRows(m, geometry, register);
+        return (rows, marks);
+    }
+
+    /// <summary><see cref="Marked"/>, and the row each member is counted in (its index in the rows).</summary>
+    public static (List<Row> Rows, Dictionary<string, string> Marks, Dictionary<string, int> RowOf) MarkedRows(IModelView m, Func<string, ElementGeometry?> geometry, bool register)
+    {
         var items = new List<(string Hall, string Prefix, string Profile, double Length, string Start, string End, double KgPerM, double Each, double Paint, string Id)>();
         foreach (var e in m.OfClass(SteelModule.Member).Concat(m.OfClass(IfcClass.Beam)).Concat(m.OfClass(IfcClass.Column)))
         {
@@ -329,6 +337,7 @@ public sealed class SteelMembersSchedule : IScheduleSource
         }
         var o = new List<Row>();
         var marks = new Dictionary<string, string>();
+        var rowOf = new Dictionary<string, int>();
         foreach (var hall in items.GroupBy(x => x.Hall).OrderBy(g => g.Key.Length == 0).ThenBy(g => g.Key, StringComparer.Ordinal))
             foreach (var kind in hall.GroupBy(x => x.Prefix).OrderBy(g => Array.IndexOf(Order, g.Key)))
             {
@@ -338,10 +347,83 @@ public sealed class SteelMembersSchedule : IScheduleSource
                     var mark = $"{kind.Key}{++n}";
                     foreach (var x in g) marks[x.Id] = mark;
                     if (register && g.Select(x => m.Get(x.Id) is { } el ? Lapin.Platform.Marks.MarkOf(m, el) : null).Distinct().ToList() is [{ } own]) mark = own;
+                    foreach (var x in g) rowOf[x.Id] = o.Count;
                     o.Add(new Row(hall.Key, mark, g.Key.Profile, g.Key.Length, g.Key.Start, g.Key.End, g.Count(), g.First().KgPerM, g.Average(x => x.Each), g.Sum(x => x.Paint)));
                 }
             }
-        return (o, marks);
+        return (o, marks, rowOf);
+    }
+
+    // ------------------------------------------------------------ as a field schedule (audit S1)
+
+    /// <summary>The marking of a model, worked out once per edit: a field schedule asks it for each member.</summary>
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<IModelView, Tuple<long, List<Row>, Dictionary<string, int>, Dictionary<string, (double Each, double Paint)>>> _marked = [];
+
+    static Tuple<long, List<Row>, Dictionary<string, int>, Dictionary<string, (double Each, double Paint)>> MarkedOf(IQueryContext q)
+    {
+        if (_marked.TryGetValue(q.Model, out var c) && c.Item1 == q.Model.Revision) return c;
+        var (rows, _, rowOf) = MarkedRows(q.Model, q.Geometry, true);
+        var own = rowOf.ToDictionary(kv => kv.Key, kv => (rows[kv.Value].Each, rows[kv.Value].Paint / rows[kv.Value].Count));
+        c = Tuple.Create(q.Model.Revision, rows, rowOf, own);
+        _marked.AddOrUpdate(q.Model, c);
+        return c;
+    }
+
+    /// <summary>
+    /// A steel member, beam or column as a part (<c>steelMembers</c>): its row of the list (its hall, mark, profile, length, end
+    /// cuts, weight per metre and each) and its own weight and paint, which add up to the row's.
+    /// </summary>
+    sealed class Parts : IPartSource
+    {
+        public string Source => "steelMembers";
+        public string Label => "Steel members";
+        public IReadOnlyList<(string Key, string Label)> Fields =>
+        [
+            ("steelRow", "Row of the members list"), ("steelHall", "Hall"), ("steelMark", "Mark"), ("steelProfile", "Profile"), ("steelLength", "Length (mm)"),
+            ("steelStartCut", "Start cut"), ("steelEndCut", "End cut"), ("steelKgPerM", "kg/m"), ("steelEach", "Each (kg, the row's)"),
+            ("steelWeight", "Weight (kg)"), ("steelPaint", "Paint (m²)"),
+        ];
+
+        public IEnumerable<ElementPart> PartsOf(IQueryContext q, Entity e)
+        {
+            if (e.Class is not (SteelModule.Member or IfcClass.Beam or IfcClass.Column)) return [];
+            var c = MarkedOf(q);
+            if (!c.Item3.TryGetValue(e.Id, out var i)) return [];
+            var r = c.Item2[i];
+            return [ElementPart.Of("0", ("steelRow", i), ("steelHall", r.Hall), ("steelMark", r.Mark), ("steelProfile", r.Profile), ("steelLength", r.Length * 1000),
+                ("steelStartCut", r.Start), ("steelEndCut", r.End), ("steelKgPerM", r.KgPerM), ("steelEach", r.Each), ("steelWeight", r.Each), ("steelPaint", c.Item4[e.Id].Paint))];
+        }
+    }
+
+    /// <summary>
+    /// The members list as a field schedule: a row per mark, in the list's order, its count and weights. The fixed list's totals
+    /// under each hall (when there are several) are not given: a field schedule's subtotals come after all the rows.
+    /// </summary>
+    public const string TemplateFields = """
+        {
+          "source": "steelMembers", "groupBy": ["steelRow"], "groupColumns": false, "count": false, "totals": "always",
+          "sort": ["steelRow"],
+          "columns": [
+            { "field": "steelHall", "heading": "Halls", "aggregate": "first" },
+            { "field": "steelMark", "heading": "Mark", "aggregate": "first" },
+            { "field": "steelProfile", "heading": "Profile", "aggregate": "first" },
+            { "field": "steelLength", "heading": "Length (mm)", "aggregate": "first", "decimals": 0 },
+            { "field": "steelStartCut", "heading": "Start cut", "aggregate": "first" },
+            { "field": "steelEndCut", "heading": "End cut", "aggregate": "first" },
+            { "field": "steelRow", "heading": "Count", "aggregate": "rows" },
+            { "field": "steelKgPerM", "heading": "kg/m", "aggregate": "first", "decimals": 1 },
+            { "field": "steelEach", "heading": "Each (kg)", "aggregate": "first", "decimals": 1 },
+            { "field": "steelWeight", "heading": "Weight (kg)", "aggregate": "sum", "decimals": 1 },
+            { "field": "steelPaint", "heading": "Paint (m²)", "aggregate": "sum", "decimals": 2 }
+          ]
+        }
+        """;
+
+    /// <summary>The members as parts and the members list as a template (offered beside the fixed list, whose button stays: its totals per hall).</summary>
+    public static void RegisterTemplate(IModuleRegistry r)
+    {
+        r.Service<IPartSource>(new Parts());
+        r.Service(ShippedScheduleTemplate.Of("steelMembers", "Steel members", null, TemplateFields));
     }
 
     public ScheduleGrid Grid(IQueryContext q)
