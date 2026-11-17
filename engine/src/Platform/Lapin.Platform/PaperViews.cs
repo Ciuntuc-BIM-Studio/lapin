@@ -49,6 +49,7 @@ public static class PaperViews
     {
         var o = new Pen(pen.Layer, pen.Stroke, pen.Width, pen.Fill, pen.Dash) { Viewport = pen.Viewport, Block = pen.Block, Clip = clip };
         o.Segments.AddRange(pen.Segments.Select(s => (f(s.A), f(s.B))));
+        o.Curves.AddRange(pen.Curves.Select(c => c.Map(f)));
         o.Loops.AddRange(pen.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(f).ToList()));
         o.Texts.AddRange(pen.Texts.Select(t => t with { At = f(t.At) }));
         o.Images.AddRange(pen.Images.Select(i => i with { Corners = [.. i.Corners.Select(f)] }));
@@ -128,6 +129,8 @@ public static class PaperViews
             try { o.AddRange(source.Marks(c).Where(Mine)); }
             catch (Exception) { /* a module that cannot draw on paper draws nothing there */ }
         o.AddRange(DrawingKeys.Marks(c));
+        // The sheet's own symbols (placed with Place symbol…, in paper mm): picked here too, drawn by the sheet under the paper.
+        if (SheetOf(m, c.View) is { } sheet) o.AddRange(Symbols.PaperPickMarks(q, sheet));
         return o;
     }
 

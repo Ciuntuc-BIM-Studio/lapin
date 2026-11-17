@@ -155,17 +155,43 @@ public static class Parts
             if (bo["points"] is not JsonArray { Count: >= 3 } pts || pts.Any(p => p is not JsonArray { Count: 2 })) throw new CommandException("A body's outline has three corners at least, each [x, y].");
             bodies.Add((JsonNode)bo.DeepClone());
         }
-        if (bodies.Count == 0) throw new CommandException("A part has one body at least.");
+        // Native elements the part holds (audit S6, PartMembers): a part of members only needs no body of its own.
+        var members = o["members"] is JsonArray { Count: > 0 } givenMembers ? PartMembers.Check(givenMembers, defaults) : null;
+        if (bodies.Count == 0 && members == null) throw new CommandException("A part has one body at least.");
         var cls = ((string?)o["ifcClass"])?.Trim() is { Length: > 3 } c && c.StartsWith("Ifc", StringComparison.Ordinal) ? c : IfcClass.BuildingElementProxy;
         var def = new JsonObject { ["ifcClass"] = cls, ["params"] = ps };
         if (sketches != null) def["sketches"] = sketches;
         def["bodies"] = bodies;
+        if (members != null)
+        {
+            def["members"] = members;
+            if (o["memberJoins"] is JsonArray joins && PartMembers.CheckJoins(joins, members) is { Count: > 0 } kept) def["memberJoins"] = kept;
+        }
         if (((string?)o["description"])?.Trim() is { Length: > 0 } desc) def["description"] = desc;
         if (((string?)o["planSymbol"])?.Trim() is { Length: > 0 } sym) def["planSymbol"] = sym;
         // Built with its defaults: every corner, depth and condition reads, and something is made.
-        if (Bodies(def, Values(def, null)).Count == 0) throw new CommandException("With its defaults the part makes no body.");
+        if (Bodies(def, Values(def, null)).Count == 0 && members == null) throw new CommandException("With its defaults the part makes no body.");
         return def;
     }
+
+    /// <summary>
+    /// A definition whose bodies of formula corners are drawn from sketches of the part's own (audit S6: the part editor edits
+    /// sketches, not corners), checked; the same bodies and volumes (<see cref="PartSketches.Constrain"/>). The definition as it was
+    /// when it has no such body, or when its defaults do not build (it says why where it is used).
+    /// </summary>
+    public static JsonObject Sketched(JsonObject def)
+    {
+        if (!(def["bodies"] as JsonArray ?? []).OfType<JsonObject>().Any(b => b["sketch"] == null && b["points"] is JsonArray)) return def;
+        try
+        {
+            var (made, sketches) = PartSketches.Constrain(def);
+            return sketches.Count == 0 ? def : Check(made);
+        }
+        catch (CommandException) { return def; }
+    }
+
+    /// <summary>Whether a command asked for the corners as sketches (<c>constrain: true</c>, as the interface makes every part).</summary>
+    static bool Constrains(JsonObject a) => a["constrain"] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
 
     /// <summary>
     /// Drafted closed outlines made a part (a plan's lying, a section's or an elevation's standing): their corners from the lowest
@@ -374,6 +400,7 @@ public static class Parts
     public static JsonNode? Create(ICommandContext ctx, JsonObject a, string fallbackName)
     {
         var def = Check(a["def"]);
+        if (Constrains(a)) def = Sketched(def);
         var e = new Entity(ctx.NewId(), TypeClass, ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : fallbackName, new JsonObject { ["def"] = def });
         ctx.Add(e);
         return new JsonObject { ["id"] = e.Id };
@@ -451,6 +478,7 @@ public static class Parts
         var def = FromOutlines(outlines, standing, Json.Number(a["depth"]) ?? 0.5, a["parameterize"] is not JsonValue pv || !pv.TryGetValue<bool>(out var p) || p);
         if ((string?)a["ifcClass"] is { Length: > 3 } cls) def["ifcClass"] = cls;
         def = Check(def);
+        if (Constrains(a)) def = Sketched(def);
         var part = new Entity(ctx.NewId(), TypeClass, ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : fallbackName, new JsonObject { ["def"] = def });
         ctx.Add(part);
         return new JsonObject { ["id"] = part.Id, ["def"] = def.DeepClone() };
@@ -472,7 +500,8 @@ public static class Parts
     static LibraryMerge.Row Row(IModelView m, JsonObject file)
     {
         var name = NameIn(file);
-        var def = Check(file["def"]);
+        // As the one import brings it in: its corners drawn from sketches (audit S6), so a file brought twice is the same part.
+        var def = Sketched(Check(file["def"]));
         var mine = m.OfClass(TypeClass).FirstOrDefault(e => DefOf(e) != null && string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
         var match = mine is null ? LibraryMerge.Match.New : JsonNode.DeepEquals(DefOf(mine), def) ? LibraryMerge.Match.Same : LibraryMerge.Match.Name;
         return new LibraryMerge.Row(name, "part", name, match, match == LibraryMerge.Match.Name ? LibraryMerge.Differs(DefOf(mine!)!, def) : null);
@@ -501,11 +530,11 @@ public static class Parts
         {
             case LibraryMerge.Same: tally.Kept++; id = mine!.Id; break;
             case LibraryMerge.Skip: tally.Skipped++; id = mine!.Id; break;
-            case LibraryMerge.Update: Update(ctx, new JsonObject { ["def"] = file["def"]!.DeepClone() }, mine!); tally.Updated++; id = mine!.Id; break;
+            case LibraryMerge.Update: Update(ctx, new JsonObject { ["def"] = merge ? Sketched(Check(file["def"])) : file["def"]!.DeepClone() }, mine!); tally.Updated++; id = mine!.Id; break;
             default:
             {
                 var name = taken.Contains(row.Name) ? LibraryMerge.FreeName(taken.Contains, row.Name) : row.Name;
-                var e = new Entity(ctx.NewId(), TypeClass, name, new JsonObject { ["def"] = Check(file["def"]) });
+                var e = new Entity(ctx.NewId(), TypeClass, name, new JsonObject { ["def"] = merge ? Sketched(Check(file["def"])) : Check(file["def"]) });
                 ctx.Add(e);
                 tally.Added++;
                 if (name != row.Name) tally.Renamed.Add(name);
@@ -761,6 +790,8 @@ public static class Parts
             ["sketches"] = sketches, ["steps"] = steps, ["params"] = ps,
         };
         if (type != null) tree["partTypeId"] = type.Id;
+        // The native elements it holds (audit S6).
+        if (IsInstance(e) && PartMembers.HasMembers(DefOf(type))) tree["members"] = PartMembers.Tree(e, DefOf(type));
         return tree;
     }
 
@@ -895,6 +926,30 @@ public sealed class FamilyPartUpgrade : IProjectUpgrade
         foreach (var (family, ids) in typed)
             rs.Add(new Relation(GlobalId.FromGuid(new Guid(Md5.HashData(Encoding.UTF8.GetBytes("lapin-family-part:" + family)))), IfcClass.RelDefinesByType, family, ids));
         return (es, rs);
+    }
+}
+
+/// <summary>
+/// Saved parts (and the families they were) made editable in the part editor (audit S6): every body of formula corners drawn from a
+/// sketch of the part's own, its corners driving distanceX and distanceY dimensions with their formulas (<see cref="Parts.Sketched"/>):
+/// the same bodies, volumes, parameters, ids and placed parts. A part whose defaults do not build is left as it was.
+/// </summary>
+public sealed class PartSketchUpgrade : IProjectUpgrade
+{
+    public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations)
+    {
+        if (!entities.Any(e => e.Class == Parts.TypeClass && Parts.DefOf(e) is { } d && (d["bodies"] as JsonArray ?? []).OfType<JsonObject>().Any(b => b["sketch"] == null && b["points"] is JsonArray)))
+            return (entities, relations);
+        var es = entities.Select(e =>
+        {
+            if (e.Class != Parts.TypeClass || Parts.DefOf(e) is not { } def) return e;
+            var made = Parts.Sketched(def);
+            if (ReferenceEquals(made, def)) return e;
+            var attrs = e.CloneAttrs();
+            attrs["def"] = made;
+            return e.With(attrs: attrs);
+        }).ToList();
+        return (es, relations);
     }
 }
 

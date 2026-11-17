@@ -26,7 +26,7 @@ Ten sam pasek służy wszystkim narzędziom obrysu (strop, otwór w stropie, suf
 
 ![Pasek narzędzi obrysu z wybranym From drawn shape](shots/outline-sources.webp)
 
-Dla stropu, otworu w stropie, sufitu i pomieszczenia z obrysu pasek oferuje też **Ellipse**: środek, koniec jednej półosi, potem drugą. Krawędzie obrysu biegną po prawdziwej elipsie (cztery ćwiartki), mierzone dokładnie; narożnik przesunięty z elipsy prostuje swoje dwie krawędzie, a narożnik przy krawędzi eliptycznej nie jest zaokrąglany. IFC zapisuje ją jako IfcEllipse. **From drawn shape** bierze tak samo narysowaną elipsę.
+Dla stropu, otworu w stropie, sufitu i pomieszczenia z obrysu pasek oferuje też **Ellipse**: środek, koniec jednej półosi, potem drugą. Krawędzie obrysu biegną po prawdziwej elipsie (cztery ćwiartki), mierzone dokładnie; narożnik przesunięty z elipsy prostuje swoje dwie krawędzie, a narożnik przy krawędzi eliptycznej nie jest zaokrąglany. IFC zapisuje ją jako IfcEllipse. **From drawn shape** bierze tak samo narysowaną elipsę. Własny otwór stropu lub sufitu (**Hole in the outline**) też przyjmuje elipsę. Obrys z krawędzią eliptyczną nie jest odsuwany w całości (Shift-przeciągnij, **Offset outline…**): krzywa w odległości od elipsy nie jest elipsą.
 
 ![Eliptyczny strop rysowany obok narysowanej elipsy](shots/ellipse-floor.webp)
 
@@ -57,6 +57,12 @@ Warstwa stropu może też wychodzić poza jego obrys albo kończyć się przed n
 **Modyfikuj → Podziel element** na stropie lub suficie prosi o dwa punkty linii podziału: linia biegnie dalej poza nie i musi przeciąć obrys dokładnie dwa razy. Strop staje się dwoma stropami; kliknięta część zachowuje id (GlobalId w IFC), łuki na krawędziach pozostają łukami (przecięty łuk nadal jest łukiem), a otwór w stropie idzie z częścią, w której leży. Otwór, który linia przecina, jest odrzucany. **Modyfikuj → Utnij/wydłuż elementy** przyjmuje prostą granicę (ścianę, belkę lub narysowaną linię) i tnie tam strop lub sufit, zachowując klikniętą stronę.
 
 ![Strop z łukową krawędzią podzielony linią: prawa część zaznaczona](shots/floor-split.webp)
+
+Własne otwory stropu trafiają do części, w której leżą; warstwa wystająca poza łukową krawędź nadal wystaje na obu częściach; siatka sufitu podwieszanego zostaje tam, gdzie była, każda oprawa lub nawiewnik w części, w której leży jego komórka. Strop z eliptyczną krawędzią nie jest cięty linią.
+
+**Dach** jest dzielony i przycinany w ten sam sposób. Każda część zachowuje reguły swoich krawędzi (okap lub szczyt, nachylenie, wysunięcie), a cięcie jest szczytem bez wysunięcia; cięcie jest dozwolone tylko tam, gdzie zostawia dach takim, jaki był, z połaciami każdej części stojącymi tam, gdzie stały połacie dachu, jak w poprzek kalenicy dachu dwuspadowego lub wzdłuż niej. Gdzie indziej jest odrzucane (*would change its slopes*): połacie części wznosiłyby się do nowych kalenic. Okna dachowe, lukarny i rury spustowe trafiają do swojej części. Dach kolebkowy nie jest cięty.
+
+![Dach dwuspadowy podzielony w poprzek kalenicy: dwa dachy, te same połacie](shots/roof-split.webp)
 
 ## Dachy
 

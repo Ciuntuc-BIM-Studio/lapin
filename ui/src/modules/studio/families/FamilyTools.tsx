@@ -1,7 +1,7 @@
 /**
- * Families in use (docs/plan-user-extensibility.md §5.6): the Family place tool (pick a family, click on the plan, R turns it a
- * quarter, M mirrors it, the values asked for in the bar), the Properties of an object of a family (its family, each parameter's
- * own value, Edit family…), and Make family from sketch… (closed outlines drafted on a view, by the ribbon or a right-click).
+ * Parts in use (docs/plan-user-extensibility.md §5.6, audit S6; a part was a family): the Part place tool (pick a part, click on
+ * the plan, R turns it a quarter, M mirrors it, the values asked for in the bar), the Properties of an object of a part (its part,
+ * Edit part, Parts…), and Make part from sketch… (closed outlines drafted on a view, by the ribbon or a right-click).
  */
 
 import { backdropClose } from '../../../shell/Dialog';
@@ -16,13 +16,13 @@ import { formatLength, parseLength } from '../../../engine/unitsStore';
 import { t as tr } from '../../../i18n';
 import { registerDraftMenu } from '../../../viewport/draftMenu';
 import { registerConvertHandoff } from '../../core/convertHandoffs';
-import { familiesDialog, listFamilies, previewFamily, useFamilies, useFromSketch, usePlaceFamily } from './familyApi';
+import { partsDialog, listFamilies, previewFamily, useFamilies, useFromSketch, usePlaceFamily } from './familyApi';
 import { IFC_CLASSES, className, parseValue, placedEdges, planEdges, sketchSources, valuesOf, type FamilyDto } from './familyModel';
 
 /** An object of a family is a placed part (decision 517): a Studio solid of operation `part`, typed by its part (IfcRelDefinesByType). */
 export const isPlacedPart = (n?: NodeDto | null): boolean => !!n && n.props.operation === 'part';
 
-/** The part (family) a placed part is typed by. */
+/** The part (type) a placed part is typed by. */
 export const partOf = (id: string): string | undefined => {
   for (const r of useSession.getState().relations.values()) if (r.class === 'IfcRelDefinesByType' && r.related.includes(id)) return r.relating;
   return undefined;
@@ -34,11 +34,11 @@ const redraw = () => useToolTick.setState((s) => ({ n: s.n + 1 }));
 const turn = () => { usePlaceFamily.setState((s) => ({ rotation: (s.rotation + 90) % 360 })); redraw(); };
 const flip = () => { usePlaceFamily.setState((s) => ({ mirror: !s.mirror })); redraw(); };
 
-/** The ghost: the family's outline seen from above in its own frame, asked of the engine when the family or its values change. */
+/** The ghost: the part's outline seen from above in its own frame, asked of the engine when the family or its values change. */
 let ghostEdges: [number, number, number, number][] = [];
 
 export const placeFamilyTool: ToolDef = {
-  id: 'studio.family', label: 'Family', icon: Component, gesture: {
+  id: 'studio.part', label: 'Part', icon: Component, gesture: {
     kind: 'point',
     ghost: (at) => { const s = usePlaceFamily.getState(); return placedEdges(ghostEdges, at, s.rotation, s.mirror); },
   }, options: FamilyPlaceOptions, space: turn,
@@ -48,18 +48,18 @@ export const placeFamilyTool: ToolDef = {
     const families = await listFamilies();
     const s = usePlaceFamily.getState();
     const family = families.find((f) => f.id === s.familyId) ?? families[0];
-    if (!family) { notify('There is no family yet: make one in Studio → Families…, or from a sketch.'); useUi.setState({ tool: null }); return; }
+    if (!family) { notify('There is no part yet: make one in Studio → Parts…, or from a sketch.'); useUi.setState({ tool: null }); return; }
     if (family.id !== s.familyId) usePlaceFamily.setState({ familyId: family.id, values: {} });
     const values = valuesOf(family.def, s.values, (t) => parseLength(t));
-    const r = await ctx.execute('studio.placeFamily', {
-      familyId: family.id, storeyId: ctx.storeyId || activeStorey()?.id, at: [at.x, at.y], ...(s.rotation ? { rotation: s.rotation } : {}),
+    const r = await ctx.execute('studio.placePart', {
+      typeId: family.id, storeyId: ctx.storeyId || activeStorey()?.id, at: [at.x, at.y], ...(s.rotation ? { rotation: s.rotation } : {}),
       ...(s.mirror ? { mirror: true } : {}), ...(Object.keys(values).length ? { values } : {}),
     }) as { id?: string } | null;
     if (r?.id) select(r.id); else if (useSession.getState().error) notify(useSession.getState().error);
   },
 };
 
-/** The bar while placing: the family, its quarter turn and mirror (R, M), the values (empty: the default). */
+/** The bar while placing: the part, its quarter turn and mirror (R, M), the values (empty: the default). */
 function FamilyPlaceOptions() {
   const s = usePlaceFamily();
   const { families } = useFamilies();
@@ -90,10 +90,10 @@ function FamilyPlaceOptions() {
     window.addEventListener('keydown', on, true);
     return () => window.removeEventListener('keydown', on, true);
   }, []);
-  if (!families.length) return <span className="muted small">No family yet: Studio → Families…</span>;
+  if (!families.length) return <span className="muted small">No part yet: Studio → Parts…</span>;
   return (
     <>
-      <select className="cad-toggle" value={s.familyId ?? ''} data-family-pick title="The family to place" onChange={(e) => usePlaceFamily.setState({ familyId: e.target.value, values: {} })}>
+      <select className="cad-toggle" value={s.familyId ?? ''} data-family-pick title="The part to place" onChange={(e) => usePlaceFamily.setState({ familyId: e.target.value, values: {} })}>
         {families.map((f) => <option key={f.id} value={f.id} data-no-i18n>{f.name}</option>)}
       </select>
       <button type="button" className="cad-toggle" title="Turn a quarter (R or Space)" data-family-rotate onClick={turn}><RotateCw size={12} /> {s.rotation}°</button>
@@ -106,50 +106,50 @@ function FamilyPlaceOptions() {
             onKeyDown={(e) => e.stopPropagation()} onChange={(e) => { const v = e.target.value; usePlaceFamily.setState((x) => ({ values: { ...x.values, [p.key]: v } })); }} />
         </label>
       ))}
-      <button type="button" className="cad-toggle" data-family-edit title="Edit the family" onClick={() => editFamily(s.familyId)}><Pencil size={12} /> Edit…</button>
+      <button type="button" className="cad-toggle" data-family-edit title="The part in the Parts dialog" onClick={() => openParts(s.familyId)}><Pencil size={12} /> Edit…</button>
     </>
   );
 }
 
-/** The Families dialog, open on the family. */
-export function editFamily(id: string | null | undefined): void {
-  familiesDialog.open = id ?? null;
-  useUi.setState({ dialog: 'families' });
+/** The Parts dialog, open on the part. */
+export function openParts(id: string | null | undefined): void {
+  partsDialog.open = id ?? null;
+  useUi.setState({ dialog: 'parts' });
 }
 
 // ------------------------------------------------------------ the object's Properties
 
-export function FamilySection({ node }: { node: NodeDto }) {
+export function PartSection({ node }: { node: NodeDto }) {
   const { families } = useFamilies();
   const relations = useSession((x) => x.relations);
   const familyId = relations && partOf(node.id);
   const family: FamilyDto | undefined = families.find((f) => f.id === familyId);
-  if (!family) return <p className="muted small">Its family is not in the project.</p>;
+  if (!family) return <p className="muted small">Its part is not in the project.</p>;
   return (
-    <dl className="fields" data-section="family">
-      <dt>Family</dt>
+    <dl className="fields" data-section="part">
+      <dt>Part</dt>
       <dd className="row"><strong data-no-i18n>{family.name}</strong><span className="grow" />
-        <button type="button" className="btn small" data-field="family-edit" onClick={() => editFamily(family.id)}><Pencil size={12} />Edit family…</button></dd>
+        <button type="button" className="btn small" data-field="part-manager" onClick={() => openParts(family.id)}>Parts…</button></dd>
       <dt>IFC class</dt><dd className="muted" data-no-i18n>{className(family.def.ifcClass)}</dd>
     </dl>
   );
 }
 
-// ------------------------------------------------------------ Make family from sketch…
+// ------------------------------------------------------------ Make part from sketch…
 
-/** Make family from sketch…: the closed outlines selected on a drafting view (else it says what to select), then the dialog. */
-export function startFamilyFromSketch(): void {
+/** Make part from sketch…: the closed outlines selected on a drafting view (else it says what to select), then the dialog. */
+export function startPartFromSketch(): void {
   const src = sketchSources(useUi.getState().selected, useSession.getState().nodes);
   if (!src) { notify('Select closed drafting first: closed polylines, rectangles or circles drawn on a plan, a section or an elevation.'); return; }
   useFromSketch.setState({ request: src });
-  useUi.setState({ dialog: 'familyFromSketch' });
+  useUi.setState({ dialog: 'partFromSketch' });
 }
 
-registerDraftMenu((ids, nodes) => (sketchSources(ids, nodes) ? [{ label: 'Make family from sketch…', onSelect: startFamilyFromSketch }] : []));
-// In Convert to… too (audit S12).
-registerConvertHandoff({ id: 'family', label: 'Family…', description: 'The closed outlines chosen made a family of your own, its body drawn from them: its name, depth and class are asked next.', run: startFamilyFromSketch });
+registerDraftMenu((ids, nodes) => (sketchSources(ids, nodes) ? [{ label: 'Make part from sketch…', onSelect: startPartFromSketch }] : []));
+// In Convert to… too (its handoff id stays) (audit S12).
+registerConvertHandoff({ id: 'family', label: 'Part…', description: 'The closed outlines chosen made a part of your own, its body drawn from them: its name, depth and class are asked next.', run: startPartFromSketch });
 
-export function FamilyFromSketchDialog() {
+export function PartFromSketchDialog() {
   const request = useFromSketch((s) => s.request);
   const { families } = useFamilies();
   const [name, setName] = useState('');
@@ -158,23 +158,23 @@ export function FamilyFromSketchDialog() {
   const [parameterize, setParameterize] = useState(true);
   const [busy, setBusy] = useState(false);
   const close = () => { useFromSketch.setState({ request: null }); useUi.setState({ dialog: null }); };
-  useEffect(() => { if (!name && families) setName(freeFamilyName(families.map((f) => f.name))); }, [families]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!name && families) setName(freeName2(families.map((f) => f.name))); }, [families]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!request) return null;
   const d = parseLength(depth);
   const go = async () => {
     if (busy || d == null || d <= 0) return;
     setBusy(true);
-    const r = await execute('studio.familyFromSketch', { viewId: request.viewId, ids: request.ids, name: name.trim() || tr('Family'), depth: d, parameterize, ifcClass: cls }) as { id?: string } | null;
+    const r = await execute('studio.partFromSketch', { viewId: request.viewId, ids: request.ids, name: name.trim() || tr('Part'), depth: d, parameterize, ifcClass: cls, constrain: true }) as { id?: string } | null;
     setBusy(false);
-    if (!r?.id) { notify(useSession.getState().error ?? 'The family could not be made.'); return; }
-    notify('Family made: its parameters are W, H and D. Edit it in Studio → Families….');
+    if (!r?.id) { notify(useSession.getState().error ?? 'The part could not be made.'); return; }
+    notify('Part made: its parameters are W, H and D. Edit part opens its sketches.');
     close();
-    editFamily(r.id);
+    openParts(r.id);
   };
   return (
     <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
-      <div className="dialog tpl-save" role="dialog" aria-label="Make family from sketch" data-dialog="family-from-sketch" onClick={(e) => e.stopPropagation()}>
-        <header className="dialog-head"><span className="panel-title">Make family from sketch</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
+      <div className="dialog tpl-save" role="dialog" aria-label="Make part from sketch" data-dialog="part-from-sketch" onClick={(e) => e.stopPropagation()}>
+        <header className="dialog-head"><span className="panel-title">Make part from sketch</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           <label className="doc-info-row"><span className="muted small">Name</span>
             <input autoFocus value={name} onChange={(e) => setName(e.target.value)} data-field="fs-name" data-no-i18n onKeyDown={(e) => { if (e.key === 'Enter') void go(); }} /></label>
@@ -189,15 +189,15 @@ export function FamilyFromSketchDialog() {
         <footer className="dialog-foot">
           <span className="grow" />
           <button type="button" className="btn" onClick={close}>Cancel</button>
-          <button type="button" className="btn primary" disabled={busy || d == null || d <= 0} onClick={() => void go()} data-field="fs-go">Make family</button>
+          <button type="button" className="btn primary" disabled={busy || d == null || d <= 0} onClick={() => void go()} data-field="fs-go">Make part</button>
         </footer>
       </div>
     </div>
   );
 }
 
-const freeFamilyName = (taken: string[]): string => {
-  const base = tr('Family');
+const freeName2 = (taken: string[]): string => {
+  const base = tr('Part');
   if (!taken.includes(base)) return base;
   for (let i = 2; ; i++) if (!taken.includes(`${base} ${i}`)) return `${base} ${i}`;
 };

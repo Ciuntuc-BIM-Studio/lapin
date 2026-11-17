@@ -26,7 +26,7 @@ La même barre sert à tous les outils de contour (plancher, trémie, plafond, t
 
 ![La barre des outils de contour, From drawn shape choisi](shots/outline-sources.webp)
 
-Pour un plancher, une trémie, un plafond et une pièce par contour, la barre propose aussi **Ellipse** : son centre, l’extrémité d’un demi-axe, puis l’autre. Les bords du contour suivent la vraie ellipse (quatre quarts), mesurés exactement ; un angle sorti de l’ellipse rend ses deux bords droits, et un angle près d’un bord elliptique n’est pas arrondi. L’IFC la porte en IfcEllipse. **From drawn shape** prend de même une ellipse dessinée.
+Pour un plancher, une trémie, un plafond et une pièce par contour, la barre propose aussi **Ellipse** : son centre, l’extrémité d’un demi-axe, puis l’autre. Les bords du contour suivent la vraie ellipse (quatre quarts), mesurés exactement ; un angle sorti de l’ellipse rend ses deux bords droits, et un angle près d’un bord elliptique n’est pas arrondi. L’IFC la porte en IfcEllipse. **From drawn shape** prend de même une ellipse dessinée. Un trou propre d’un plancher ou d’un plafond (**Hole in the outline**) prend aussi une ellipse. Un contour avec un bord elliptique n’est pas décalé en entier (Maj-glisser, **Offset outline…**) : la courbe à une distance d’une ellipse n’est pas une ellipse.
 
 ![Un plancher elliptique en cours de dessin à côté d’une ellipse dessinée](shots/ellipse-floor.webp)
 
@@ -57,6 +57,12 @@ Une couche d'une dalle peut aussi aller au-delà de son contour, ou s'arrêter a
 **Modifier → Scinder l’élément** sur une dalle ou un plafond demande deux points d’une ligne de coupe : elle se prolonge au-delà et doit croiser le contour exactement deux fois. La dalle devient deux dalles ; la partie cliquée garde l’id (GlobalId en IFC), les arcs des bords restent des arcs (un arc coupé reste un arc) et une trémie va avec la partie où elle se trouve. Une trémie que la ligne traverse est refusée. **Modifier → Ajuster/prolonger les éléments** accepte une limite droite (un mur, une poutre ou une ligne dessinée) et coupe la dalle ou le plafond là, en gardant le côté cliqué.
 
 ![Une dalle à bord courbe scindée le long d’une ligne : la partie de droite sélectionnée](shots/floor-split.webp)
+
+Les trous propres d’une dalle vont à la partie où ils tombent ; une couche qui dépasse un bord courbe continue de le faire sur les deux parties ; la trame d’un faux plafond reste où elle était, chaque luminaire ou diffuseur dans la partie où tombe sa cellule. Une dalle à bord elliptique n’est pas coupée par une ligne.
+
+Un **toit** se scinde et s’ajuste de la même façon. Chaque partie garde les règles de ses bords (égout ou pignon, pente, débord), et la coupe est un pignon sans débord ; la coupe n’est permise que là où elle laisse le toit tel qu’il était, les pans de chaque partie restant là où étaient ceux du toit, comme en travers du faîtage d’un toit à deux pans ou le long de celui-ci. Ailleurs elle est refusée (*would change its slopes*) : les pans d’une partie monteraient jusqu’à de nouveaux faîtages. Les fenêtres de toit, lucarnes et descentes vont à leur partie. Un toit en berceau n’est pas coupé.
+
+![Un toit à deux pans scindé en travers du faîtage : deux toits, les mêmes pans](shots/roof-split.webp)
 
 ## Toits
 

@@ -26,7 +26,7 @@ Dieselbe Leiste dient jedem Umrisswerkzeug (Decke, Deckenöffnung, Unterdecke, L
 
 ![Die Leiste der Umrisswerkzeuge, From drawn shape gewählt](shots/outline-sources.webp)
 
-Für Decke, Deckenöffnung, Unterdecke und Raum nach Umriss bietet die Leiste auch **Ellipse**: Mittelpunkt, Ende einer Halbachse, dann die andere. Die Kanten des Umrisses folgen der wahren Ellipse (vier Viertelkanten), genau gemessen; eine von der Ellipse weggezogene Ecke macht ihre zwei Kanten gerade, eine Ecke an einer elliptischen Kante wird nicht abgerundet. IFC trägt sie als IfcEllipse. **From drawn shape** übernimmt eine gezeichnete Ellipse ebenso.
+Für Decke, Deckenöffnung, Unterdecke und Raum nach Umriss bietet die Leiste auch **Ellipse**: Mittelpunkt, Ende einer Halbachse, dann die andere. Die Kanten des Umrisses folgen der wahren Ellipse (vier Viertelkanten), genau gemessen; eine von der Ellipse weggezogene Ecke macht ihre zwei Kanten gerade, eine Ecke an einer elliptischen Kante wird nicht abgerundet. IFC trägt sie als IfcEllipse. **From drawn shape** übernimmt eine gezeichnete Ellipse ebenso. Ein eigenes Loch einer Decke oder Unterdecke (**Hole in the outline**) nimmt ebenfalls eine Ellipse. Ein Umriss mit einer elliptischen Kante wird nicht als Ganzes versetzt (Shift-Ziehen, **Offset outline…**): die Kurve im Abstand zu einer Ellipse ist keine Ellipse.
 
 ![Eine elliptische Decke neben einer gezeichneten Ellipse](shots/ellipse-floor.webp)
 
@@ -57,6 +57,12 @@ Eine Schicht einer Decke kann auch über ihren Umriss hinausgehen oder davor end
 **Ändern → Element teilen** auf einer Decke fragt nach zwei Punkten einer Trennlinie: Sie läuft über sie hinaus und muss den Umriss genau zweimal schneiden. Die Decke wird zu zwei Decken; der angeklickte Teil behält die ID (GlobalId in IFC), Bögen an den Kanten bleiben Bögen (ein geschnittener Bogen bleibt ein Bogen), und eine Deckenöffnung geht an den Teil, in dem sie liegt. Eine Öffnung, die die Linie kreuzt, wird abgelehnt. **Ändern → Elemente stutzen/dehnen** nimmt eine gerade Grenze (eine Wand, einen Träger oder eine gezeichnete Linie) und schneidet die Decke dort, wobei die angeklickte Seite bleibt.
 
 ![Eine Decke mit gekrümmter Kante, entlang einer Linie geteilt: der rechte Teil ist gewählt](shots/floor-split.webp)
+
+Die eigenen Löcher einer Decke gehen an den Teil, in dem sie liegen; eine Schicht, die über eine gekrümmte Kante hinausreicht, tut das auf beiden Teilen weiter; das Raster einer abgehängten Decke bleibt, wo es war, jede Leuchte oder jeder Auslass in dem Teil, in dem seine Zelle liegt. Eine Decke mit elliptischer Kante wird nicht von einer Linie geschnitten.
+
+Ein **Dach** wird auf dieselbe Weise geteilt und gestutzt. Jeder Teil behält die Regeln seiner Kanten (Traufe oder Giebel, Neigung, Überstand), und der Schnitt ist ein Giebel ohne Überstand; der Schnitt ist nur dort erlaubt, wo er das Dach so lässt, wie es war, die Flächen jedes Teils stehen, wo die des Dachs standen, wie quer über den First eines Satteldachs oder entlang davon. Anderswo wird er abgelehnt (*would change its slopes*): Die Flächen eines Teils würden zu neuen Firsten ansteigen. Dachfenster, Gauben und Fallrohre gehen an ihren Teil. Ein Tonnendach wird nicht geschnitten.
+
+![Ein Satteldach quer über den First geteilt: zwei Dächer, dieselben Flächen](shots/roof-split.webp)
 
 ## Dächer
 

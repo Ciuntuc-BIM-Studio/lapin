@@ -35,7 +35,7 @@ Klicke auf **Installieren**. Lapin lädt die Datei herunter, prüft, dass Größ
 | Preislisten | **Ausführung → Preislisten…**, als Richtwerte markiert: die Preise sind die des Autors, prüfe sie mit deinen eigenen |
 | Typen | das Projekt, das beim Installieren offen ist, in einem Schritt rückgängig zu machen (**Verwalten → Typpakete…** exportiert deine eigenen) |
 
-Hat deine Bibliothek schon etwas mit demselben Namen, fragt Lapin nach, bevor es ersetzt. Nichts, was eine Erweiterung mitbringt, wird je ausgeführt: Erweiterungen sind Inhalt.
+Hat deine Bibliothek schon eine Preisliste, eine Profilbibliothek oder eine Schraffurdatei mit demselben Namen, die sich unterscheidet, bietet die **Importvorschau** an, beide zu behalten (mit (2) nach dem Namen), sie zu ersetzen oder zu überspringen; bei einer Projektvorlage mit demselben Namen fragt Lapin nach, bevor es ersetzt. Nichts, was eine Erweiterung mitbringt, wird je ausgeführt: Erweiterungen sind Inhalt.
 
 Lapins Katalog ist außerdem von Lapin Extensions **signiert**: Der Katalog und jede seiner Dateien tragen eine Signatur, die Lapin prüft, bevor es die Liste liest oder eine Datei installiert; eine unterwegs veränderte Kopie wird daher abgelehnt. Eine Zeile über der Liste sagt **Signiert von Lapin Extensions**, wenn es so ist.
 

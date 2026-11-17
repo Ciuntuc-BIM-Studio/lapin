@@ -225,6 +225,12 @@ public sealed class FieldSchedule : IScheduleSource
             foreach (var source in sources)
                 foreach (var part in source.PartsOf(q, e))
                     items.Add((e.Id + "#" + part.Key, new ElementFields(q, e, units) { Own = part.Fields }));
+        // Parts of entities a schedule does not list (bars drawn on views), when the filter takes their owner.
+        var ctx = o.Filter != null ? new ElementFilter.Context(q, units: units) : null;
+        foreach (var source in sources)
+            foreach (var (owner, part) in source.LooseParts(q))
+                if (o.Filter == null || o.Filter.Matches(ctx!, owner, new ElementFields(q, owner, units)))
+                    items.Add((owner.Id + "#" + part.Key, new ElementFields(q, owner, units) { Own = part.Fields }));
         return items;
     }
 
