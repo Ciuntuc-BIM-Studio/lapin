@@ -597,9 +597,10 @@ public static class Dimensions
         room.Boxes.Add(TextRoom.Box.Segment(owner, TextRoom.Kind.Line, line[0] + u * ts.Min(), line[0] + u * ts.Max()));
         for (var i = 0; i < pts.Count; i++)
         {
+            if (style.SuppressesExtension(i, pts.Count)) continue;
             var side = offs[i] >= 0 ? 1 : -1;
-            if (Math.Abs(offs[i]) > style.ExtGap * mm)
-                room.Boxes.Add(TextRoom.Box.Segment(owner, TextRoom.Kind.Extension, pts[i] + n * (side * style.ExtGap * mm), line[i] + n * (side * style.ExtOver * mm)));
+            if (style.Extension(pts[i], line[i], n * side, Math.Abs(offs[i]), mm) is { } ext)
+                room.Boxes.Add(TextRoom.Box.Segment(owner, TextRoom.Kind.Extension, ext.A, ext.B));
         }
         var values = SegValues(c, pts, lay, style, text, texts, ref openings);
         foreach (var s in Segs(values, lay, text, moved, mm))
@@ -627,22 +628,28 @@ public static class Dimensions
         var text = Standards.ResolveText(c.Book, styleParams);
         var textAt = new JsonArray();
         var color = orphan ? "#c0392b" : style.Color ?? "#000000";
+        // The dimension line's and the extension lines' own pens, colours and line types (issue #66); unset: as the style's colour, 0.13 mm, continuous.
+        var lineColor = orphan ? color : style.DimLineColor ?? color;
+        var extColor = orphan ? color : style.ExtColor ?? color;
+        var (lineW, extW) = (style.DimLineWeightOr(Pens.Default.Hatch), style.ExtWeightOr(Pens.Default.Hatch));
+        var (lineDash, extDash) = (Standards.DashOf(c.Book, style.DimLineType), Standards.DashOf(c.Book, style.ExtLineType));
         var mm = c.Mm;
         var mk = new ViewMark(owner);
         // One dimension line, from the first point to the last as they lie along it.
         var ts = line.Select(q => Vec2.Dot(q - line[0], u)).ToList();
-        mk.Line(line[0] + u * ts.Min(), line[0] + u * ts.Max(), "DIMENSION", Pens.Default.Hatch, color);
+        mk.Line(line[0] + u * ts.Min(), line[0] + u * ts.Max(), "DIMENSION", lineW, lineColor, lineDash);
         var s = style.ArrowSize * mm;
-        // Each point once: its extension line (a gap from the measured point, past the dimension line by the overshoot), its tick or dot.
+        // Each point once: its extension line (a gap from the measured point, or a fixed length back from the dimension line;
+        // past it by the overshoot; none where the style or the dimension leaves it out), its tick or dot.
         for (var i = 0; i < pts.Count; i++)
         {
             var (p, q, off) = (pts[i], line[i], offs[i]);
             var side = off >= 0 ? 1 : -1;
-            if (Math.Abs(off) > style.ExtGap * mm) mk.Line(p + n * (side * style.ExtGap * mm), q + n * (side * style.ExtOver * mm), "DIMENSION", Pens.Default.Hatch, color);
+            if (!style.SuppressesExtension(i, pts.Count) && style.Extension(p, q, n * side, Math.Abs(off), mm) is { } ext) mk.Line(ext.A, ext.B, "DIMENSION", extW, extColor, extDash);
             switch (style.Arrow)
             {
-                case "tick": { var t = (u + n).Normalized() * (s / 2); mk.Line(q - t, q + t, "DIMENSION", Pens.Default.Seen, color); break; }
-                case "dot": mk.Polyline(ViewMark.Circle(q, s / 4, 12), true, "DIMENSION", Pens.Default.Seen, color); break;
+                case "tick": { var t = (u + n).Normalized() * (s / 2); mk.Line(q - t, q + t, "DIMENSION", Pens.Default.Seen, lineColor); break; }
+                case "dot": mk.Polyline(ViewMark.Circle(q, s / 4, 12), true, "DIMENSION", Pens.Default.Seen, lineColor); break;
             }
         }
         // The values as the style places them (in the style's unit, or the text written over it, reading left to right or
@@ -665,7 +672,7 @@ public static class Dimensions
             // Arrows: each segment's, at both its ends, pointing in.
             if (style.Arrow == "arrow")
                 foreach (var (q, inward) in new[] { (qa, su), (qb, -su) })
-                    mk.Line(q, q + inward * s + n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color).Line(q, q + inward * s - n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color);
+                    mk.Line(q, q + inward * s + n * (s * 0.3), "DIMENSION", lineW, lineColor).Line(q, q + inward * s - n * (s * 0.3), "DIMENSION", lineW, lineColor);
             var (value, readable, up, mid, tat, baseline) = (v.Text, v.Readable, v.Up, v.Mid, v.At, v.Baseline);
             // Moved by hand (close values kept clear of one another): a leader back to its segment once it stands off it.
             if (moved[i] is { } by)
@@ -724,6 +731,8 @@ public static class Dimensions
         if (e.Attrs["overrides"] is JsonObject o) foreach (var (k, v) in o) p["o." + k] = v?.DeepClone();
         // Its own text height (paper mm, decision 271) over the style's.
         if (e.NumOrNull("textHeight") is { } h) p["o.height"] = h;
+        // Its own extension lines left out (issue #66: first, second, both, or none of them whatever its style says) over the style's.
+        if (e.Str("extSuppress") is { } sup && Standards.ExtSuppressChoices.Contains(sup)) p["o.extSuppress"] = sup;
         return p;
     }
 

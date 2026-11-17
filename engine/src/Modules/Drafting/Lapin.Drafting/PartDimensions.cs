@@ -74,14 +74,18 @@ public static class PartDimensions
         var color = style.Color ?? "#000000";
         var mk = new ViewMark(owner);
         var xs = pts.Select(p => p.X).Prepend(zero.X).Distinct().OrderBy(x => x).ToList();
-        mk.Line(new Vec2(xs[0], y), new Vec2(xs[^1], y), "DIMENSION", Pens.Default.Hatch, color);
+        // The standards' dimension line and extension line pens (issue #66); unset: as before.
+        var lineColor = style.DimLineColor ?? color;
+        mk.Line(new Vec2(xs[0], y), new Vec2(xs[^1], y), "DIMENSION", style.DimLineWeightOr(Pens.Default.Hatch), lineColor, Standards.DashOf(c.Book, style.DimLineType));
         var s = style.ArrowSize * mm;
+        var extDash = Standards.DashOf(c.Book, style.ExtLineType);
         foreach (var p in pts.Prepend(zero).GroupBy(p => Math.Round(p.X, 6)).Select(g => g.First()))
         {
             var side = y >= p.Y ? 1 : -1;
-            if (Math.Abs(y - p.Y) > style.ExtGap * mm) mk.Line(new Vec2(p.X, p.Y + side * style.ExtGap * mm), new Vec2(p.X, y + side * style.ExtOver * mm), "DIMENSION", Pens.Default.Hatch, color);
+            if (style.Extension(p, new Vec2(p.X, y), new Vec2(0, side), Math.Abs(y - p.Y), mm) is { } ext)
+                mk.Line(ext.A, ext.B, "DIMENSION", style.ExtWeightOr(Pens.Default.Hatch), style.ExtColor ?? color, extDash);
             var t = new Vec2(1, 1).Normalized() * (s / 2);
-            mk.Line(new Vec2(p.X, y) - t, new Vec2(p.X, y) + t, "DIMENSION", Pens.Default.Seen, color);
+            mk.Line(new Vec2(p.X, y) - t, new Vec2(p.X, y) + t, "DIMENSION", Pens.Default.Seen, lineColor);
             // The value along the extension line, reading upwards, just past the base line.
             mk.Text(new PenText(new Vec2(p.X - style.TextGap * mm, y + side * (style.ExtOver + 1) * mm), Mm(p.X - zero.X), text.Height, 90, side > 0 ? "start" : "end", "bottom", text.Bold, text.Font, text.Italic), color);
         }

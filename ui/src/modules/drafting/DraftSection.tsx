@@ -24,6 +24,7 @@ import { ptStrict } from '../../platform/vec';
 import { TagFields } from './tag';
 import { selectionWith } from '../../shell/params';
 import { CloudFields, KeyFields } from './sheetAnnotations';
+import { EXT_SUPPRESS, EXT_SUPPRESS_LABELS, extSuppressAttr } from '../core/dimensionLines';
 
 /**
  * Who a style change goes to (a forum user's report, topic #29: a change with several selected reached only one): every
@@ -233,6 +234,13 @@ function DimensionFields({ node }: { node: NodeDto }) {
       <dt title="On the paper; empty: the dimension style's">Text height</dt>
       <dd><NumberField value={typeof node.props.textHeight === 'number' ? node.props.textHeight : null} placeholder="by style" suffix="mm" min={0.5} max={50}
         onCommit={(h) => void execute('element.update', { ids: alike(node), attrs: { textHeight: h } })} /></dd>
+      {/* Its own extension lines left out (issue #66): empty, as its dimension style says. */}
+      <dt title="Leave out its first extension line, its last, or both; empty: as its dimension style says">Extension lines off</dt>
+      <dd><select data-field="extSuppress" value={typeof node.props.extSuppress === 'string' ? node.props.extSuppress : ''}
+        onChange={(e) => void execute('element.update', { ids: alike(node), attrs: { extSuppress: extSuppressAttr(e.target.value) } })}>
+        <option value="">as the style</option>
+        {EXT_SUPPRESS.map((x) => <option key={x} value={x}>{EXT_SUPPRESS_LABELS[x]}</option>)}
+      </select></dd>
       {pts.length > 2 && <Row label="Points" value={String(pts.length)} />}
       {a && <Point label="Start" p={a} />}
       {b && <Point label="End" p={b} />}

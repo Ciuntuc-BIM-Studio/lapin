@@ -153,7 +153,12 @@ public static class DimensionKinds
             var (value, orphan) = Measure(c, c.Model, dim);
             var color = orphan ? "#c0392b" : style.Color ?? "#000000";
             var mm = c.Mm;
-            var w = Pens.Default.Hatch;
+            var w = style.DimLineWeightOr(Pens.Default.Hatch);
+            // The extension lines' and the dimension line's own pens (issue #66); unset: as before.
+            var extColor = orphan ? color : style.ExtColor ?? color;
+            var extW = style.ExtWeightOr(Pens.Default.Hatch);
+            var (lineDash, extDash) = (Standards.DashOf(c.Book, style.DimLineType), Standards.DashOf(c.Book, style.ExtLineType));
+            var lineColor = orphan ? color : style.DimLineColor ?? color;
             var mk = new ViewMark(dim.Id);
             void Label(Vec2 at, string s, double angleDeg = 0, string anchor = "middle", string baseline = "bottom") =>
                 mk.Text(new PenText(at, dim.Str("text") is { Length: > 0 } over ? over : s, text.Height, -Standards.ReadableDeg(-angleDeg), anchor, baseline, text.Bold, text.Font, text.Italic), color);
@@ -163,11 +168,15 @@ public static class DimensionKinds
                 var n = dir.Perp;
                 switch (style.Arrow)
                 {
-                    case "tick": { var t = (dir + n).Normalized() * (s / 2); mk.Line(tip - t, tip + t, "DIMENSION", Pens.Default.Seen, color); break; }
-                    case "dot": mk.Polyline(ViewMark.Circle(tip, s / 4, 12), true, "DIMENSION", Pens.Default.Seen, color); break;
-                    default: mk.Line(tip, tip - dir * s + n * (s * 0.3), "DIMENSION", w, color).Line(tip, tip - dir * s - n * (s * 0.3), "DIMENSION", w, color); break;
+                    case "tick": { var t = (dir + n).Normalized() * (s / 2); mk.Line(tip - t, tip + t, "DIMENSION", Pens.Default.Seen, lineColor); break; }
+                    case "dot": mk.Polyline(ViewMark.Circle(tip, s / 4, 12), true, "DIMENSION", Pens.Default.Seen, lineColor); break;
+                    default: mk.Line(tip, tip - dir * s + n * (s * 0.3), "DIMENSION", w, lineColor).Line(tip, tip - dir * s - n * (s * 0.3), "DIMENSION", w, lineColor); break;
                 }
             }
+            // Where a radial extension line starts: from the gap (<paramref name="gapStart"/>), or a fixed length back from the
+            // dimension line at <paramref name="reach"/> along the ray, never nearer the centre than the gap (issue #66).
+            Vec2 Fixed(Vec2 centre, Vec2 ray, double reach, Vec2 gapStart, double from) =>
+                style.ExtFixed is > 0 and var f && reach - f * mm > from + style.ExtGap * mm ? centre + ray * (reach - f * mm) : gapStart;
             var (cc, a, b, at) = (P(dim.Attrs["c"]), P(dim.Attrs["a"]), P(dim.Attrs["b"]), P(dim.Attrs["at"]));
             switch (dim.Str("dimKind"))
             {
@@ -182,9 +191,11 @@ public static class DimensionKinds
                     var start = Math.Abs(ccwFromU - sweep) < 1e-6 ? a0 : a1;
                     var n = Math.Max(8, (int)Math.Ceiling(sweep / (Math.PI / 36)));
                     var pts = Enumerable.Range(0, n + 1).Select(i => cc + new Vec2(Math.Cos(start + sweep * i / n), Math.Sin(start + sweep * i / n)) * r).ToList();
-                    mk.Polyline(pts, false, "DIMENSION", w, color);
-                    // Extension lines along the rays out to the arc.
-                    foreach (var (ray, p) in new[] { (u, a), (v, b) }) if ((p - cc).Length < r) mk.Line(p + ray * (style.ExtGap * mm), cc + ray * (r + style.ExtOver * mm), "DIMENSION", w, color);
+                    mk.Polyline(pts, false, "DIMENSION", w, lineColor, lineDash);
+                    // Extension lines along the rays out to the arc (from the gap, or a fixed length back from the arc), unless left out.
+                    foreach (var (k, ray, p) in new[] { (0, u, a), (1, v, b) })
+                        if ((p - cc).Length < r && !style.SuppressesExtension(k, 2))
+                            mk.Line(Fixed(cc, ray, r, p + ray * (style.ExtGap * mm), (p - cc).Length), cc + ray * (r + style.ExtOver * mm), "DIMENSION", extW, extColor, extDash);
                     Arrow(pts[0], (pts[0] - pts[1]).Normalized());
                     Arrow(pts[^1], (pts[^1] - pts[^2]).Normalized());
                     var mid = start + sweep / 2;
@@ -204,7 +215,7 @@ public static class DimensionKinds
                     var diameter = dim.Str("dimKind") == "diameter";
                     var from = diameter ? centre - dir * r : centre;
                     var to = (at - centre).Length > r ? at : onCircle;
-                    mk.Line(from, to, "DIMENSION", w, color);
+                    mk.Line(from, to, "DIMENSION", w, lineColor, lineDash);
                     Arrow(onCircle, dir);
                     if (diameter) Arrow(centre - dir * r, -dir);
                     var s = (diameter ? "Ø" : "R") + Standards.FormatDimension(value, style.Unit, style.Precision, style.SuppressesZeros);
@@ -221,11 +232,12 @@ public static class DimensionKinds
                     var off = Math.Max((at - centre).Length, r + 4 * mm);
                     var n = Math.Max(8, (int)Math.Ceiling(Math.Abs(sw) / (Math.PI / 36)));
                     var pts = Enumerable.Range(0, n + 1).Select(i => centre + new Vec2(Math.Cos(s0 + sw * i / n), Math.Sin(s0 + sw * i / n)) * off).ToList();
-                    mk.Polyline(pts, false, "DIMENSION", w, color);
-                    foreach (var t in new[] { s0, s0 + sw })
+                    mk.Polyline(pts, false, "DIMENSION", w, lineColor, lineDash);
+                    foreach (var (k, t) in new[] { (0, s0), (1, s0 + sw) })
                     {
+                        if (style.SuppressesExtension(k, 2)) continue;
                         var ray = new Vec2(Math.Cos(t), Math.Sin(t));
-                        mk.Line(centre + ray * (r + style.ExtGap * mm), centre + ray * (off + style.ExtOver * mm), "DIMENSION", w, color);
+                        mk.Line(Fixed(centre, ray, off, centre + ray * (r + style.ExtGap * mm), r), centre + ray * (off + style.ExtOver * mm), "DIMENSION", extW, extColor, extDash);
                     }
                     Arrow(pts[0], (pts[0] - pts[1]).Normalized());
                     Arrow(pts[^1], (pts[^1] - pts[^2]).Normalized());
@@ -244,7 +256,7 @@ public static class DimensionKinds
                     var lift = n * (style.TextGap * mm * 2);
                     var len = Math.Min(d.Length * 0.5, 18 * mm);
                     var (p, q) = (mid - down * (len / 2) + lift, mid + down * (len / 2) + lift);
-                    mk.Line(p, q, "DIMENSION", w, color);
+                    mk.Line(p, q, "DIMENSION", w, lineColor);
                     Arrow(q, down);
                     Label(mid + lift + n * (style.TextGap * mm), FormatSlope(value, dim.Str("format") ?? "auto"), Math.Atan2(u.Y, u.X) * 180 / Math.PI);
                     mk.Snaps.AddRange([a, b]);
@@ -255,9 +267,9 @@ public static class DimensionKinds
                     // The level mark: a triangle on the point, a line out to the text.
                     var s = 2.5 * mm;
                     var side = at.X >= a.X ? 1 : -1;
-                    mk.Polyline([a, a + new Vec2(-s * 0.6, s), a + new Vec2(s * 0.6, s)], true, "DIMENSION", w, color);
+                    mk.Polyline([a, a + new Vec2(-s * 0.6, s), a + new Vec2(s * 0.6, s)], true, "DIMENSION", w, lineColor);
                     var end = a + new Vec2(side * Math.Max(Math.Abs(at.X - a.X), 12 * mm), s);
-                    mk.Line(a + new Vec2(side * s * 0.6, s), end, "DIMENSION", w, color);
+                    mk.Line(a + new Vec2(side * s * 0.6, s), end, "DIMENSION", w, lineColor);
                     Label(a + new Vec2(side * s, s + style.TextGap * mm), LevelText(c.Book, dim, value, style.Unit), 0, side > 0 ? "start" : "end");
                     mk.Snaps.Add(a);
                     break;
@@ -266,15 +278,15 @@ public static class DimensionKinds
                 {
                     // The point marked with a small circle and cross, a leader to a shoulder, the two lines above and below it.
                     var r0 = 1.2 * mm;
-                    mk.Polyline(ViewMark.Circle(a, r0, 16), true, "DIMENSION", w, color);
-                    mk.Line(a - new Vec2(r0 * 1.6, 0), a + new Vec2(r0 * 1.6, 0), "DIMENSION", w, color).Line(a - new Vec2(0, r0 * 1.6), a + new Vec2(0, r0 * 1.6), "DIMENSION", w, color);
+                    mk.Polyline(ViewMark.Circle(a, r0, 16), true, "DIMENSION", w, lineColor);
+                    mk.Line(a - new Vec2(r0 * 1.6, 0), a + new Vec2(r0 * 1.6, 0), "DIMENSION", w, lineColor).Line(a - new Vec2(0, r0 * 1.6), a + new Vec2(0, r0 * 1.6), "DIMENSION", w, lineColor);
                     var (l1, l2) = CoordinateText(c.Model, a, dim.Str("system"));
                     var side = at.X >= a.X ? 1 : -1;
                     var shoulder = Math.Max(l1.Length, l2.Length) * text.Height * 0.62 * mm;
                     var dir = at - a;
-                    if (dir.Length > r0) mk.Line(a + dir.Normalized() * r0, at, "DIMENSION", w, color);
+                    if (dir.Length > r0) mk.Line(a + dir.Normalized() * r0, at, "DIMENSION", w, lineColor);
                     var end = at + new Vec2(side * shoulder, 0);
-                    mk.Line(at, end, "DIMENSION", w, color);
+                    mk.Line(at, end, "DIMENSION", w, lineColor);
                     var anchor = side > 0 ? "start" : "end";
                     var from = at + new Vec2(side * style.TextGap * mm, 0);
                     mk.Text(new PenText(from + new Vec2(0, style.TextGap * mm), l1, text.Height, 0, anchor, "bottom", text.Bold, text.Font, text.Italic), color);
@@ -285,7 +297,7 @@ public static class DimensionKinds
                 }
                 case "ordinate":
                 {
-                    mk.Line(a, at, "DIMENSION", w, color);
+                    mk.Line(a, at, "DIMENSION", w, lineColor);
                     var dir = (at - a).Length > 1e-9 ? (at - a).Normalized() : new Vec2(0, 1);
                     Label(at + dir * (style.TextGap * mm), Standards.FormatDimension(value, style.Unit, style.Precision, style.SuppressesZeros), Math.Atan2(dir.Y, dir.X) * 180 / Math.PI, dir.X >= 0 ? "start" : "end", "middle");
                     mk.Snaps.Add(a);
