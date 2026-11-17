@@ -26,7 +26,7 @@ A mesma barra serve todas as ferramentas de contorno (laje, abertura de laje, te
 
 ![A barra das ferramentas de contorno, com From drawn shape escolhido](shots/outline-sources.webp)
 
-Para laje, abertura de laje, teto e ambiente por contorno a barra oferece também **Ellipse**: o centro, a ponta de um semieixo e depois o outro. As arestas do contorno seguem a elipse verdadeira (quatro quartos), medidas exatamente; um canto tirado da elipse torna retas as suas duas arestas, e um canto junto a uma aresta elíptica não é arredondado. O IFC leva-a como IfcEllipse. **From drawn shape** toma do mesmo modo uma elipse desenhada.
+Para laje, abertura de laje, teto e ambiente por contorno a barra oferece também **Ellipse**: o centro, a ponta de um semieixo e depois o outro. As arestas do contorno seguem a elipse verdadeira (quatro quartos), medidas exatamente; um canto tirado da elipse torna retas as suas duas arestas, e um canto junto a uma aresta elíptica não é arredondado. O IFC leva-a como IfcEllipse. **From drawn shape** toma do mesmo modo uma elipse desenhada. Um furo próprio de uma laje ou de um teto (**Hole in the outline**) também aceita uma elipse. Um contorno com uma borda elíptica não é deslocado inteiro (Shift-arrastar, **Offset outline…**): a curva a uma distância de uma elipse não é uma elipse.
 
 ![Uma laje elíptica a ser desenhada ao lado de uma elipse desenhada](shots/ellipse-floor.webp)
 
@@ -57,6 +57,12 @@ Uma camada de uma laje também pode ir além do seu contorno, ou parar antes, à
 **Modificar → Dividir elemento** numa laje ou num teto pede dois pontos de uma linha de corte: a linha continua para lá deles e tem de cruzar o contorno exatamente duas vezes. A laje passa a ser duas lajes; a parte clicada mantém o id (GlobalId em IFC), os arcos nos bordos continuam arcos (um arco cortado continua um arco) e um vão da laje vai com a parte em que está. Um vão que a linha atravesse é recusado. **Modificar → Aparar/estender elementos** aceita um limite reto (uma parede, uma viga ou uma linha desenhada) e corta aí a laje ou o teto, mantendo o lado clicado.
 
 ![Uma laje com um bordo curvo dividida por uma linha: a parte da direita selecionada](shots/floor-split.webp)
+
+Os furos próprios de uma laje vão para a parte em que caem; uma camada que ultrapassa um bordo curvo continua a fazê-lo nas duas partes; a malha de um teto falso fica onde estava, cada luminária ou difusor na parte em que cai a sua célula. Uma laje com bordo elíptico não é cortada por uma linha.
+
+Um **telhado** é dividido e aparado do mesmo modo. Cada parte mantém as regras dos seus bordos (beiral ou empena, inclinação, beiral saliente), e o corte é uma empena sem beiral; o corte só é permitido onde deixa o telhado como estava, com as águas de cada parte onde estavam as do telhado, como através da cumeeira de um telhado de duas águas ou ao longo dela. Noutros casos é recusado (*would change its slopes*): as águas de uma parte subiriam a novas cumeeiras. Janelas de telhado, trapeiras e tubos de queda vão para a sua parte. Um telhado em abóbada de berço não é cortado.
+
+![Um telhado de duas águas dividido através da cumeeira: dois telhados, as mesmas águas](shots/roof-split.webp)
 
 ## Telhados
 

@@ -150,6 +150,8 @@ Under a roof a wall's layers go up to the roof; a **Top** extent moves the layer
 
 **Modify → Offset element** (the command line's OFFSET, which takes elements now): type the distance in the project's unit, click a wall in a plan, then the side to put the copy on. The copy is parallel to the wall, a curved wall's concentric, with the same type, layers and openings. **A** (Axis, the default) measures from the axis, **F** (Faces) from the wall's face, so that the copy's face stands the distance off it; **T** (Through) takes a point the copy goes through.
 
+What hangs on the wall goes to the part it falls on. A finish painted on a straight wall's side stays where it was on the face; one whose region runs on across the cut paints the other part too, unless a split line of the face stops it, and one painted over the whole face covers every part. A sunshade along the wall goes to the part it runs along (one across the cut refuses, as a door does); a balcony goes to the part its middle is on, or stands free where it is when its part is cut away. Bars drawn in the wall are hosted by the part their point lies on, the formwork forms each part, and a timber-frame wall's own studs (see [Wood](wood.md)) go with their part. A curved wall's finishes stay on its first part.
+
 ![Two walls trimmed to a boundary, and a wall with a door split in two](shots/wall-split-trim.webp)
 
 ## Wall types

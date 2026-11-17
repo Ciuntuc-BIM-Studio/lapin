@@ -21,6 +21,11 @@ public sealed class Pen(string layer, string? stroke, double width, string? fill
     public List<(Vec2 A, Vec2 B)> Segments { get; } = [];
     public List<IReadOnlyList<Vec2>> Loops { get; } = [];
     public List<PenText> Texts { get; } = [];
+    /// <summary>
+    /// The exact curves some of the segments were laid along (a circle, an arc, an ellipse): only DXF reads them, writing the
+    /// chords that still lie on one as that curve; the screen, PDF and SVG draw the chords (one rule: Chords).
+    /// </summary>
+    public List<PenCurve> Curves { get; } = [];
     /// <summary>Pictures laid on the drawing by their corners (an orthophoto under a site plan).</summary>
     public List<PenImage> Images { get; } = [];
     /// <summary>The box the pen is clipped to (x0, y0, x1, y1), as a sheet's viewport clips its view; null: none.</summary>
@@ -41,6 +46,49 @@ public sealed class Pen(string layer, string? stroke, double width, string? fill
         if (Texts.Count > 0) o["texts"] = new JsonArray(Texts.Select(t => (JsonNode)t.ToJson()).ToArray());
         if (Loops.Count > 0) o["loops"] = new JsonArray(Loops.Select(l => (JsonNode)new JsonArray(l.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray())).ToArray());
         return o;
+    }
+}
+
+/// <summary>
+/// An exact curve under a pen's chords: the points C + M cos t + N sin t for t from T0 over Sweep (anticlockwise in t; a
+/// whole one when Sweep is 2π). A circle has M and N perpendicular and equal, an ellipse perpendicular; kept as conjugate
+/// axes so any affine map (a sheet's scale and shift, a turn, a mirror, the paper's flip) maps it exactly (<see cref="Map"/>).
+/// It draws nothing itself: the pen's chords do, and DXF writes the chords that lie on it as it.
+/// </summary>
+public sealed record PenCurve(Vec2 C, Vec2 M, Vec2 N, double T0, double Sweep)
+{
+    public bool Whole => Sweep >= 2 * Math.PI - 1e-9;
+
+    public static PenCurve Circle(Vec2 c, double r) => new(c, new Vec2(r, 0), new Vec2(0, r), 0, 2 * Math.PI);
+    /// <summary>An arc from <paramref name="start"/> anticlockwise over <paramref name="sweep"/> (radians).</summary>
+    public static PenCurve Arc(Vec2 c, double r, double start, double sweep) => new(c, new Vec2(r, 0), new Vec2(0, r), start, sweep);
+    /// <summary>An ellipse by its major axis (a vector) and its ratio, from parameter <paramref name="start"/> over <paramref name="sweep"/>.</summary>
+    public static PenCurve Ellipse(Vec2 c, Vec2 major, double ratio, double start, double sweep) => new(c, major, new Vec2(-major.Y, major.X) * ratio, start, sweep);
+
+    public Vec2 At(double t) => C + M * Math.Cos(t) + N * Math.Sin(t);
+
+    /// <summary>The curve through an affine map (exact); through any other map only approximately, which DXF then finds off its chords.</summary>
+    public PenCurve Map(Func<Vec2, Vec2> f)
+    {
+        var c = f(C);
+        return this with { C = c, M = f(C + M) - c, N = f(C + N) - c };
+    }
+
+    /// <summary>
+    /// The parameter of a point on the curve (within <paramref name="tol"/> of it, relative to its size), in [T0, T0 + 2π);
+    /// null when it is off the curve. Whether it is inside the sweep is the caller's question.
+    /// </summary>
+    public double? ParamOf(Vec2 p, double tol = 1e-6)
+    {
+        var det = M.X * N.Y - M.Y * N.X;
+        if (Math.Abs(det) < 1e-18) return null;
+        var d = p - C;
+        var u = (d.X * N.Y - d.Y * N.X) / det;
+        var v = (M.X * d.Y - M.Y * d.X) / det;
+        if (Math.Abs(Math.Sqrt(u * u + v * v) - 1) > tol) return null;
+        var t = (Math.Atan2(v, u) - T0) % (2 * Math.PI);
+        if (t < 0) t += 2 * Math.PI;
+        return T0 + t;
     }
 }
 
@@ -133,6 +181,7 @@ public static class Turning
         var deg = radians * 180 / Math.PI;
         var o = new Pen(pen.Layer, pen.Stroke, pen.Width, pen.Fill, pen.Dash) { Viewport = pen.Viewport, Block = pen.Block, Clip = pen.Clip };
         o.Segments.AddRange(pen.Segments.Select(s => (Turn(s.A, radians), Turn(s.B, radians))));
+        o.Curves.AddRange(pen.Curves.Select(c => c.Map(p => Turn(p, radians))));
         o.Loops.AddRange(pen.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(p => Turn(p, radians)).ToList()));
         o.Texts.AddRange(pen.Texts.Select(t => { var u = Upright(t, deg, unitsPerMm); return u with { At = Turn(u.At, radians) }; }));
         o.Images.AddRange(pen.Images.Select(i => i with { Corners = [.. i.Corners.Select(p => Turn(p, radians))] }));

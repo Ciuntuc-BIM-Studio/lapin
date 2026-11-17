@@ -10,6 +10,8 @@ Fila **Studio** face solide pe care nu le construiește nicio altă filă: o ban
 
 ![Fila Studio](shots/ribbon-studio.webp)
 
+Uneltele ei stau în șase grupuri: **Schiță** (linii, dreptunghiuri, cercuri, **Arce** ▾, decalare și, sub ele, schițarea pe o față sau pe un plan, **Editări de schiță** ▾, **Planuri de lucru** ▾ și **Pe față** ▾), **Constrângeri** (listele **Geometrice** ▾ și **Dimensiuni** ▾), **Solide** (extrudare, baleiere, revoluție, loft, editare schiță, **Cu grosime** ▾ și **Primitive** ▾), **Părți** (plasarea și editarea pieselor), **Modifică** (împinge/trage, rotunjire, șanfren, coajă, divizare, **Multiplicări** ▾ și **Mută, rotește, oglindește** ▾) și **Booleene**. Un buton cu ▾ deschide lista lui; fiecare unealtă își păstrează literele, iar **Comenzi…** și **Uneltele mele** o găsesc ca până acum.
+
 Un solid Studio are o clasă IFC, ca orice element. O alegi în proprietățile lui: element de structură, placă, finisaj, balustradă, placă de planșeu sau oricare alta. Cantitățile și exportul lui urmează clasa aleasă.
 
 ## Unde schițezi
@@ -100,7 +102,7 @@ Uneltele acestea lucrează pe fețele și muchiile corpului așa cum e construit
 
 ## Desen pe o față
 
-În vederea 3D poți desena direct pe o față și apoi împingi sau tragi ce ai desenat. Grupul **Pe față** din fila **Studio** are **Dreptunghi pe față** (FRE), **Cerc pe față** (FCI) și **Poligon pe față** (FPL).
+În vederea 3D poți desena direct pe o față și apoi împingi sau tragi ce ai desenat. **Studio → Schiță → Pe față** ▾ are **Dreptunghi pe față** (FRE), **Cerc pe față** (FCI) și **Poligon pe față** (FPL).
 
 1. Dă clic pe o față a oricărui element: un solid Studio, un perete, o placă sau un stâlp. Clicul e primul punct: colțul dreptunghiului, centrul cercului sau primul colț al poligonului. Fața rămâne conturată cât timp desenezi.
 2. Mișcă mouse-ul. Forma îl urmează pe față, cu dimensiunea ei alături. Punctele se prind de colțurile feței, de mijloacele muchiilor ei și de mijlocul ei; altfel merg din centimetru în centimetru, sau din 10 în 10 cm cu <kbd>Shift</kbd>. Dă clic pe colțul opus sau pe un punct al cercului. Poți și să scrii dimensiunea: lățimea și înălțimea dreptunghiului ca `1200, 600`, sau raza cercului. Un poligon ia câte un clic la fiecare colț, sau o lungime scrisă pe direcția mouse-ului. Dă clic pe primul colț sau apasă <kbd>Enter</kbd> ca să-l închizi; <kbd>Backspace</kbd> ia înapoi ultimul colț.
@@ -163,10 +165,10 @@ Proprietățile unei polilinii îi arată laturile. Scrie lungimea unei laturi, 
 
 **Scade**, **Unește** și **Intersectează** combină orice elemente, primul selectat fiind ținta. Uneltele rămân editabile, iar rezultatul le urmează. **Arată operanzii** arată uneltele ascunse ale unei uniri, ca să le editezi. **Anulează operația** separă din nou elementele.
 
-## Familii
+## Piese și familii
 
-O **familie** este un solid propriu cu parametri, așezat de câte ori ai nevoie. Vezi pagina Familii. Familiile sunt acum piese: selectează una și apasă Tab ca s-o editezi pe loc (pagina Piese).
+O **piesă** (ceea ce se numea **familie**) este un solid propriu cu parametri, așezat de câte ori ai nevoie, din **Studio → Piese…**. Vezi pagina Familii pentru manager și pagina Piese: selectează un obiect al ei și apasă Tab ca s-o editezi pe loc.
 
 ## Piese
 
-Selectează în 3D un solid sau o piesă plasată și apasă **Tab**, dă dublu clic pe ea sau folosește **Studio → Piesă → Editează piesa**: restul modelului se estompează, iar arborele piesei arată originea, schițele, pașii și parametrii. Vezi pagina Piese.
+Selectează în 3D un solid sau o piesă plasată și apasă **Tab**, dă dublu clic pe ea sau folosește **Studio → Părți → Editează piesa**: restul modelului se estompează, iar arborele piesei arată originea, schițele, pașii și parametrii. Vezi pagina Piese.

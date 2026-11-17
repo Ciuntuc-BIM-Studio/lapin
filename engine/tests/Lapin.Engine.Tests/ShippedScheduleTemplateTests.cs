@@ -201,6 +201,90 @@ public class ShippedScheduleTemplateTests
     }
 
     [Fact]
+    public void Clt_template_lists_the_panels_as_parts_and_gives_the_clt_schedule()
+    {
+        var f = new Fixture(new ArchitectureModule(), new Lapin.Studio.StudioModule(), new Lapin.Wood.WoodModule());
+        var wall = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 12, ["y2"] = 0, ["name"] = "Wall B" })!["id"]!;
+        f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["along"] = 3 });
+        f.Run("wood.setClt", new JsonObject { ["id"] = Walls.TypeOf(f.Model, wall)!.Id, ["spec"] = (Lapin.Wood.CltSpec.Wall with { MaxLength = 5 }).ToJson() });
+        var slab = (string)f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = f.Storey, ["points"] = Outline(0, 0, 10, 6), ["name"] = "Floor A" })!["id"]!;
+        f.Run("wood.setClt", new JsonObject { ["id"] = f.Model.RelatingOf(slab, IfcClass.RelDefinesByType)!.Id, ["spec"] = (Lapin.Wood.CltSpec.Floor with { Joint = "spline" }).ToJson() });
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = f.Storey, ["points"] = Outline(20, 0, 10, 6), ["style"] = "traditional_campie", ["name"] = "Roof C" })!["id"]!;
+        f.Run("wood.setRoofClt", new JsonObject { ["id"] = roof, ["spec"] = Lapin.Wood.CltSpec.Floor.ToJson() });
+        var (fixedGrid, template) = Both(f, "clt");
+        Same(fixedGrid, template);
+        // Its button now makes the field schedule.
+        var shipped = (JsonArray)f.Session.Query("schedule.shippedTemplates", new JsonObject())!;
+        Assert.Contains(shipped, t => (string?)t!["id"] == "clt" && (string?)t["kind"] == "clt");
+    }
+
+    static Fixture Steel() => new(new ArchitectureModule(), new Lapin.Structure.StructureModule(), new Lapin.Steel.SteelModule(), new Lapin.Drafting.DraftingModule(), new Lapin.Studio.StudioModule());
+
+    static string Hall(Fixture f) => (string)f.Run("steel.addHall", new JsonObject { ["storeyId"] = f.Storey, ["attrs"] = new JsonObject() })!["id"]!;
+
+    [Fact]
+    public void Steel_members_template_lists_the_members_as_parts_and_gives_the_members_list_of_a_hall()
+    {
+        var f = Steel();
+        Hall(f);
+        var (fixedGrid, template) = Both(f, "steelMembers");
+        Same(fixedGrid, template);
+        // Offered beside the fixed list: its button stays the fixed one (its totals per hall, when there are several).
+        var shipped = (JsonArray)f.Session.Query("schedule.shippedTemplates", new JsonObject())!;
+        Assert.Contains(shipped, t => (string?)t!["id"] == "steelMembers" && t["kind"] == null);
+    }
+
+    [Fact]
+    public void Steel_parts_template_gives_the_parts_schedule_but_for_the_count_of_its_totals_line()
+    {
+        var f = Steel();
+        Hall(f);
+        var (fixedGrid, template) = Both(f, "steelParts");
+        Assert.True(fixedGrid.Rows.Count > 2, string.Join("\n", fixedGrid.Rows.Select(r => string.Join(" | ", r))));
+        Assert.Equal(fixedGrid.Columns, template.Columns);
+        // Every row the same, cell for cell.
+        Assert.Equal(fixedGrid.Rows.SkipLast(1).Select(r => string.Join(" | ", r)), template.Rows.SkipLast(1).Select(r => string.Join(" | ", r)));
+        // The totals line: the same length and weight; its count takes the welds too (the fixed one counts the pieces only).
+        var (a, b) = (fixedGrid.Rows[^1], template.Rows[^1]);
+        Assert.Equal([a[0], a[4], a[5]], [b[0], b[4], b[5]]);
+        var welds = fixedGrid.Rows.Where(r => r[0] == "Weld").Sum(r => int.Parse(r[3]));
+        Assert.Equal(int.Parse(a[3]) + welds, int.Parse(b[3]));
+    }
+
+    [Fact]
+    public void Rebar_template_lists_the_bars_as_parts_with_the_bar_bending_schedule_s_rows()
+    {
+        var f = new Fixture(new ArchitectureModule(), new Lapin.Structure.StructureModule(), new Lapin.Drafting.DraftingModule(), new Lapin.Rebar.RebarModule());
+        var view = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(0, 0), ["end"] = new JsonArray(6, 0) })!["id"]!;
+        string Bar(string shape, double d, double length, int count) => (string)f.Run("rebar.add", new JsonObject
+        {
+            ["viewId"] = view, ["shape"] = shape, ["at"] = new JsonArray(1, 1), ["diameter"] = d, ["count"] = count, ["params"] = new JsonObject { ["length"] = length },
+        })!["id"]!;
+        Bar("straight", 0.012, 2, 4);
+        Bar("straight", 0.016, 3.5, 2);
+        Bar("straight", 0.012, 1.2, 6);
+        f.Run("rebar.addRun", new JsonObject { ["viewId"] = view, ["start"] = new JsonArray(0, 0), ["end"] = new JsonArray(2, 0), ["diameter"] = 0.008 });
+        var fixedGrid = new Lapin.Rebar.RebarSchedule().Grid(f.Session.Reader);
+        var made = (string)f.Run("architecture.importSchedule", new JsonObject { ["builtin"] = "rebarMarks" })!["id"]!;
+        var template = new FieldSchedule().Grid(f.Session.Reader, f.Model.Get(made)!);
+        // The rows by mark: the same cells but for the note.
+        var marks = fixedGrid.Rows.Where(r => r[0] is { Length: > 0 } m && m != "Total").ToList();
+        Assert.Equal(4, marks.Count);
+        Assert.Equal(fixedGrid.Columns.Take(7), template.Columns);
+        Assert.Equal(marks.Select(r => string.Join(" | ", r.Take(7))), template.Rows.Take(marks.Count).Select(r => string.Join(" | ", r)));
+        // A totals line per diameter: its diameter, total length and mass (its „Total” in the Mark column).
+        var byDia = fixedGrid.Rows.Where(r => r[0] == "" && r[2] == "Total").Select(r => (r[1], r[5], r[6])).ToList();
+        Assert.Equal(3, byDia.Count);
+        Assert.Equal(byDia, template.Rows.Skip(marks.Count).Take(byDia.Count).Select(r => (r[1], r[5], r[6])));
+        Assert.All(template.Rows.Skip(marks.Count).Take(byDia.Count), r => Assert.Equal("Total", r[0]));
+        // And the mass of all.
+        Assert.Equal(fixedGrid.Rows[^1][6], template.Rows[^1][6]);
+        Assert.Equal("Total", template.Rows[^1][0]);
+        // The button stays the bar bending schedule.
+        Assert.DoesNotContain((JsonArray)f.Session.Query("schedule.shippedTemplates", new JsonObject())!, t => (string?)t!["kind"] == "rebar");
+    }
+
+    [Fact]
     public void Scaffold_template_gives_the_scaffold_schedule()
     {
         var f = new Fixture(new ArchitectureModule(), new Lapin.Structure.StructureModule(), new Lapin.Phases.PhasesModule(), new Lapin.Civil.CivilModule(), new Lapin.SiteWorks.SiteWorksModule());
@@ -208,6 +292,35 @@ public class ShippedScheduleTemplateTests
         f.Run("sitework.addScaffold", new JsonObject { ["points"] = new JsonArray(new JsonArray(0, 5), new JsonArray(7.3, 5), new JsonArray(7.3, 9)), ["height"] = 4.5 });
         var (fixedGrid, template) = Both(f, "scaffold");
         Same(fixedGrid, template);
+    }
+
+    [Fact]
+    public void A_template_is_previewed_as_every_library_import_and_made_as_chosen()
+    {
+        var f = new Fixture();
+        JsonObject Preview() => (JsonObject)f.Session.Query("schedule.templatePreview", new JsonObject { ["builtin"] = "sunshades" })!;
+        string Status(JsonObject p) => (string)((JsonArray)p["rows"]!)[0]!["status"]!;
+        Assert.Equal("new", Status(Preview()));
+        var first = (string)f.Run("architecture.importSchedule", new JsonObject { ["builtin"] = "sunshades", ["choices"] = new JsonObject() })!["id"]!;
+        // Made again unchanged: the same, kept (no second schedule).
+        Assert.Equal("same", Status(Preview()));
+        Assert.Equal(first, (string)f.Run("architecture.importSchedule", new JsonObject { ["builtin"] = "sunshades", ["choices"] = new JsonObject() })!["id"]!);
+        // Changed here: the same name, to keep both (the default), update or skip.
+        f.Run("architecture.updateSchedule", new JsonObject { ["id"] = first, ["fields"] = new JsonObject { ["columns"] = new JsonArray("name") } });
+        var p = Preview();
+        Assert.Equal("name", Status(p));
+        Assert.Equal(1, (int)p["conflicts"]!);
+        var key = (string)((JsonArray)p["rows"]!)[0]!["key"]!;
+        var both = f.Run("architecture.importSchedule", new JsonObject { ["builtin"] = "sunshades", ["choices"] = new JsonObject { [key] = "both" } })!;
+        Assert.NotEqual(first, (string)both["id"]!);
+        Assert.EndsWith("(2)", (string)both["name"]!);
+        f.Run("architecture.importSchedule", new JsonObject { ["builtin"] = "sunshades", ["choices"] = new JsonObject { [key] = "update" } });
+        Assert.Equal("same", Status(Preview()));
+        // A file's text is previewed the same way, its header read.
+        var text = (string)f.Session.Query("schedule.exportTemplate", new JsonObject { ["id"] = first })!["text"]!;
+        var fromFile = (JsonObject)f.Session.Query("schedule.templatePreview", new JsonObject { ["text"] = text })!;
+        Assert.Equal("same", Status(fromFile));
+        Assert.NotNull(fromFile["header"]);
     }
 
     [Fact]

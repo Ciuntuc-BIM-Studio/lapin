@@ -168,6 +168,112 @@ public sealed class DxfWriter(double patternScale)
         foreach (var p in pts) Target.AddRange(["10", Fmt(p.X), "20", Fmt(p.Y)]);
     }
 
+    public void Circle(Vec2 c, double r, string layer, string? color = null, double? width = null, double[]? dash = null)
+    {
+        Head("CIRCLE", layer, color, width, dash);
+        Target.AddRange(["100", "AcDbCircle", "10", Fmt(c.X), "20", Fmt(c.Y), "30", "0", "40", Fmt(r)]);
+    }
+
+    /// <summary>An arc, anticlockwise from <paramref name="startDeg"/> to <paramref name="endDeg"/> (degrees).</summary>
+    public void Arc(Vec2 c, double r, double startDeg, double endDeg, string layer, string? color = null, double? width = null, double[]? dash = null)
+    {
+        Head("ARC", layer, color, width, dash);
+        Target.AddRange(["100", "AcDbCircle", "10", Fmt(c.X), "20", Fmt(c.Y), "30", "0", "40", Fmt(r), "100", "AcDbArc", "50", Fmt(startDeg), "51", Fmt(endDeg)]);
+    }
+
+    /// <summary>An ellipse: its centre, its major axis (a vector from the centre), minor / major, and its start and end parameters (radians; 0 and 2π: whole).</summary>
+    public void Ellipse(Vec2 c, Vec2 major, double ratio, double start, double end, string layer, string? color = null, double? width = null, double[]? dash = null)
+    {
+        Head("ELLIPSE", layer, color, width, dash);
+        Target.AddRange(["100", "AcDbEllipse", "10", Fmt(c.X), "20", Fmt(c.Y), "30", "0", "11", Fmt(major.X), "21", Fmt(major.Y), "31", "0",
+            "210", "0", "220", "0", "230", "1", "40", Fmt(ratio), "41", Fmt6(start), "42", Fmt6(end)]);
+    }
+
+    static string Fmt6(double v) => double.IsFinite(v) ? Math.Round(v, 9).ToString("0.#########", CultureInfo.InvariantCulture) : "0";
+
+    /// <summary>
+    /// A curve's piece (<paramref name="from"/> to <paramref name="to"/> in its parameter, increasing) as DXF has it: a CIRCLE
+    /// or an ARC when its axes are equal, else an ELLIPSE, by its principal axes; a mirrored curve (its N clockwise from M)
+    /// runs the other way in DXF's anticlockwise parameter.
+    /// </summary>
+    public void Curve(PenCurve k, double from, double to, string layer, string? color = null, double? width = null, double[]? dash = null)
+    {
+        // The principal axes: where |M cos t + N sin t| is longest.
+        var (m, n) = (k.M, k.N);
+        var ts = 0.5 * Math.Atan2(2 * Vec2.Dot(m, n), Vec2.Dot(m, m) - Vec2.Dot(n, n));
+        var p = m * Math.Cos(ts) + n * Math.Sin(ts);
+        var q = n * Math.Cos(ts) - m * Math.Sin(ts);
+        if (q.Length > p.Length) { ts += Math.PI / 2; (p, q) = (q, p * -1); }
+        if (p.Length < 1e-12) return;
+        var ccw = Vec2.Cross(p, q) > 0;
+        var whole = to - from >= 2 * Math.PI - 1e-9;
+        // In P, Q's parameter s = t - ts; anticlockwise in DXF: s, or −s when mirrored (the ends swap).
+        var (s0, s1) = ccw ? (from - ts, to - ts) : (ts - to, ts - from);
+        var ratio = q.Length / p.Length;
+        if (Math.Abs(ratio - 1) < 1e-7)
+        {
+            if (whole) { Circle(k.C, p.Length, layer, color, width, dash); return; }
+            var a0 = Math.Atan2(p.Y, p.X);
+            Arc(k.C, p.Length, Deg(a0 + s0), Deg(a0 + s1), layer, color, width, dash);
+            return;
+        }
+        if (whole) { Ellipse(k.C, p, ratio, 0, 2 * Math.PI, layer, color, width, dash); return; }
+        var e0 = Norm(s0);
+        Ellipse(k.C, p, ratio, e0, e0 + (s1 - s0), layer, color, width, dash);
+        static double Norm(double a) { a %= 2 * Math.PI; return a < 0 ? a + 2 * Math.PI : a; }
+        static double Deg(double rad) { var d = rad * 180 / Math.PI % 360; return d < 0 ? d + 360 : d; }
+    }
+
+    /// <summary>
+    /// A pen's segments split into those laid along one of its curves and the rest: the curves' runs (a curve, and the
+    /// parameter spans its chords still cover, contiguous ones joined) and the segments left as lines. A chord is on a curve
+    /// when both its ends are (within a millionth of its size), inside its sweep and less than a fifth of a turn apart.
+    /// </summary>
+    public static (List<(PenCurve Curve, double From, double To)> Runs, List<(Vec2 A, Vec2 B)> Lines) Split(IReadOnlyList<(Vec2 A, Vec2 B)> segments, IReadOnlyList<PenCurve> curves)
+    {
+        var runs = new List<(PenCurve, double, double)>();
+        if (curves.Count == 0) return (runs, [.. segments]);
+        var used = new bool[segments.Count];
+        // The segments by their left end, so each curve looks only at those within its reach (a big plan has many of both).
+        var order = Enumerable.Range(0, segments.Count).OrderBy(i => Math.Min(segments[i].A.X, segments[i].B.X)).ToArray();
+        var left = order.Select(i => Math.Min(segments[i].A.X, segments[i].B.X)).ToArray();
+        foreach (var k in curves.Distinct())
+        {
+            var spans = new List<(double A, double B)>();
+            var reach = (k.M.Length + k.N.Length) * 1.000001;
+            var first = Array.BinarySearch(left, k.C.X - reach);
+            if (first < 0) first = ~first;
+            while (first > 0 && left[first - 1] >= k.C.X - reach) first--;
+            for (var o = first; o < order.Length && left[o] <= k.C.X + reach; o++)
+            {
+                var i = order[o];
+                if (used[i]) continue;
+                var (da, db) = (segments[i].A - k.C, segments[i].B - k.C);
+                if (Math.Abs(da.X) > reach || Math.Abs(da.Y) > reach || Math.Abs(db.X) > reach || Math.Abs(db.Y) > reach) continue;
+                if (k.ParamOf(segments[i].A) is not { } ta || k.ParamOf(segments[i].B) is not { } tb) continue;
+                // An arc's start read a turn later (rounding): it is its start.
+                if (!k.Whole) { if (ta > k.T0 + 2 * Math.PI - 1e-7) ta = k.T0; if (tb > k.T0 + 2 * Math.PI - 1e-7) tb = k.T0; }
+                var (lo, hi) = ta <= tb ? (ta, tb) : (tb, ta);
+                // A chord across the start of a whole curve: its span wraps past 2π.
+                if (hi - lo > Math.PI) { if (!k.Whole) continue; (lo, hi) = (hi, lo + 2 * Math.PI); }
+                if (hi - lo > 2 * Math.PI / 5 || hi - lo < 1e-12) continue;
+                if (!k.Whole && hi > k.T0 + k.Sweep + 1e-7) continue;
+                used[i] = true;
+                spans.Add((lo, hi));
+            }
+            if (spans.Count == 0) continue;
+            spans.Sort();
+            var merged = new List<(double A, double B)>();
+            foreach (var s in spans)
+                if (merged.Count > 0 && s.A <= merged[^1].B + 1e-7) merged[^1] = (merged[^1].A, Math.Max(merged[^1].B, s.B));
+                else merged.Add(s);
+            // A whole curve's last run may end where its first begins, a turn later.
+            if (k.Whole && merged.Count > 1 && merged[^1].B >= merged[0].A + 2 * Math.PI - 1e-7) { merged[0] = (merged[^1].A, merged[0].B + 2 * Math.PI); merged.RemoveAt(merged.Count - 1); }
+            foreach (var (a, b) in merged) runs.Add((k, a, Math.Min(b, a + 2 * Math.PI)));
+        }
+        return (runs, [.. segments.Where((_, i) => !used[i])]);
+    }
+
     /// <summary>A filled triangle (SOLID takes its corners 1, 2, 4, 3; a triangle repeats its last).</summary>
     public void Solid(Vec2 a, Vec2 b, Vec2 c, string layer, string? color = null)
     {
@@ -286,7 +392,10 @@ public sealed class DxfWriter(double patternScale)
             if (pen.Stroke != null && pen.Segments.Count > 0)
             {
                 var layer = w.Layer(pen.Layer, pen.Stroke, pen.Width, pen.Dash);
-                foreach (var (a, b) in pen.Segments) w.Line(P(a), P(b), layer, pen.Stroke, pen.Width, pen.Dash);
+                // The chords along an exact curve as that curve (a CIRCLE, an ARC, an ELLIPSE); the rest as lines.
+                var (runs, lines) = Split(pen.Segments, pen.Curves);
+                foreach (var (k, from, to) in runs) w.Curve(k.Map(P), from, to, layer, pen.Stroke, pen.Width, pen.Dash);
+                foreach (var (a, b) in lines) w.Line(P(a), P(b), layer, pen.Stroke, pen.Width, pen.Dash);
             }
             if (pen.Texts.Count > 0)
             {

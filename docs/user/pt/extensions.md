@@ -35,7 +35,7 @@ Clique em **Instalar**. O Lapin baixa o arquivo, confere se o tamanho e o SHA-25
 | Tabelas de preços | **Execução → Tabelas de preços…**, marcadas como indicativas: os preços são do autor, compare-os com os seus |
 | Tipos | o projeto aberto quando você a instala, em um passo para desfazer (**Gerenciar → Pacotes de tipos…** exporta os seus) |
 
-Se a sua biblioteca já tiver algo com o mesmo nome, o Lapin pergunta antes de substituir. Nada do que uma extensão traz é executado: extensões são conteúdo.
+Se a sua biblioteca já tiver uma lista de preços, uma biblioteca de perfis ou um ficheiro de tramas com o mesmo nome mas diferente, a **Pré-visualização da importação** oferece manter ambos (com (2) após o nome), substituí-lo ou ignorá-lo; para um modelo de projeto com o mesmo nome, o Lapin pergunta antes de substituir. Nada do que uma extensão traz é executado: extensões são conteúdo.
 
 O catálogo do Lapin também é **assinado** pela Lapin Extensions: o catálogo e cada um dos seus arquivos levam uma assinatura que o Lapin verifica antes de ler a lista ou instalar um arquivo, de modo que uma cópia alterada pelo caminho é recusada. Uma linha acima da lista diz **Assinado pela Lapin Extensions** quando é o caso.
 

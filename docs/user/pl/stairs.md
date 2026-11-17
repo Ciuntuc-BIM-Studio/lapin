@@ -140,6 +140,10 @@ W IFC pochylnia jest obiektem IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP,
 
 Odcinki balustrady mogą być łukami. Kliknij prawym przyciskiem przy odcinku zaznaczonej balustrady, aby wybrać **Zamień na łuk** (lub **Wyprostuj**), potem przeciągnij okrągły uchwyt na środku łuku, aby wygiąć go przez punkt; prawy przycisk na uchwycie narożnika daje **Zaokrąglij narożnik…** lub **Sfazuj narożnik…**. **Zaokrąglij** i **Fazuj** (FILLET, CHAMFER) biorą też balustrady: kliknij balustradę na dwóch odcinkach po obu stronach narożnika albo dwie balustrady, których końce się stykają lub stykałyby się po przedłużeniu: stają się jedną balustradą, pierwszą, wokół łuku. Pochwyt, pręty i szkło biegną wzdłuż łuku krótkimi prostymi odcinkami najwyżej milimetr od niego, słupki i tralki są rozstawione wzdłuż łuku jak wzdłuż prostego odcinka, a długość jest długością łuku. **Draft → Convert → Railing** zachowuje łuk zaokrąglenia: linie, łuki i polilinie stykające się końcami stają się jedną balustradą (odznacz **Jedna balustrada tam, gdzie stykają się końcami**, aby każda była osobno). W IFC prawdziwa krzywa jest jej osią. Balustrady schodów i balkonów idą za swoimi schodami lub balkonem.
 
+Balustradę dzieli się, przycina, wydłuża i odsuwa narzędziami ścian: **Modyfikuj → Podziel element** tnie ją na dwie tam, gdzie klikniesz (łuk na dwa łuki tego samego okręgu; pierwsza część zachowuje id), **Modyfikuj → Utnij/wydłuż elementy** cofa do granicy koniec, który ją przekracza, albo przedłuża bliższy koniec wzdłuż jego odcinka końcowego (łuk po jego okręgu), a **Odsuń** kopiuje ją równolegle, łuki współśrodkowo, z narożnikami tam, gdzie spotykają się przesunięte odcinki. Ich długości sumują się do długości balustrady.
+
+![Balustrada z łukiem podzielonym na dwa na swoim łuku](shots/railing-split.webp)
+
 ![Balustrada z zaokrąglonym narożnikiem](shots/railing-fillet.webp)
 
 ## Balkony

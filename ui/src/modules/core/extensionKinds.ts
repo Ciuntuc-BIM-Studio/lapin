@@ -1,13 +1,16 @@
 /**
  * Lapin Extensions (docs/plan-extensions.md): the content packs core's libraries take — profile libraries (.lapinprofiles,
  * kept on this computer), hatch patterns (.pat, My patterns) and title blocks (this computer's title blocks). Each is read
- * and checked first; one of the same name already there is replaced only when the user says so.
+ * and checked first; one of the same name already there, otherwise, goes through the import preview's choices (audit D13):
+ * keep both („Name (2)”), replace or skip.
  */
 
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { readPatterns, readProfileLibrary, readTitleBlock } from '../../platform/extensions/packs';
 import { addContentInstaller } from '../../platform/extensions/runtime';
+import { chooseOnComputer } from '../../platform/ImportPreview';
+import { freeName } from '../../platform/libraryFile';
 import { typesInstaller } from '../../platform/extensions/typesKind';
 import { typePackRows } from './typeLibrary';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
@@ -31,11 +34,15 @@ addContentInstaller(typesInstaller({
 
 addContentInstaller({
   kind: 'profiles',
-  install: async (file, _m, ctx) => {
+  install: async (file) => {
     const lib = readProfileLibrary(file.bytes);
-    if ((await computerLibraries()).some((l) => l.name === lib.name) && !(await ctx.confirm(`A profile library is already called „${lib.name}” on this computer. Replace it?`))) throw new Error(kept);
-    await keepOnComputer(lib as unknown as LibraryJson);
-    return { library: lib.name };
+    const there = await computerLibraries();
+    const choice = await chooseOnComputer(lib.name, 'profiles', lib.name, lib as unknown as LibraryJson,
+      (n) => there.find((l) => l.name === n)?.library, (a, b) => a.material === b.material && JSON.stringify(a.profiles) === JSON.stringify(b.profiles));
+    if (choice === null || choice === 'skip') throw new Error(kept);
+    const name = choice === 'both' ? freeName((n) => there.some((l) => l.name === n), lib.name) : lib.name;
+    await keepOnComputer({ ...(lib as unknown as LibraryJson), name });
+    return { library: name };
   },
   uninstall: async (r) => { if (typeof r.library === 'string') await forgetOnComputer(r.library); },
   open: { label: 'Profile libraries…', run: () => useUi.setState({ dialog: 'profileLibraries' }) },
@@ -43,11 +50,13 @@ addContentInstaller({
 
 addContentInstaller({
   kind: 'hatches',
-  install: async (file, _m, ctx) => {
+  install: async (file) => {
     const { text } = readPatterns(file.bytes);
-    if (myPatterns().some((p) => p.name === file.name) && !(await ctx.confirm(`My patterns already has „${file.name}”. Replace it?`))) throw new Error(kept);
-    keepPatterns(file.name, text);
-    return { patterns: file.name };
+    const choice = await chooseOnComputer(file.name, 'pattern', file.name, text, (n) => myPatterns().find((p) => p.name === n)?.text, (a, b) => a.trim() === b.trim());
+    if (choice === null || choice === 'skip') throw new Error(kept);
+    const name = choice === 'both' ? freeName((n) => myPatterns().some((p) => p.name === n), file.name) : file.name;
+    keepPatterns(name, text);
+    return { patterns: name };
   },
   uninstall: async (r) => { if (typeof r.patterns === 'string') forgetPatterns(r.patterns); },
   open: { label: 'Materials…', run: () => useUi.setState({ dialog: 'materials' }) },
