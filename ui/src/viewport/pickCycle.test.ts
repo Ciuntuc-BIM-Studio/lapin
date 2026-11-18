@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeDto, PlanItemDto, RenderItem } from '../engine/protocol';
 import { pickAllAt, pickAt, type Mark } from './planPick';
 import { pickDrawing, pickDrawingAll } from './drawingPick';
-import { cycleLabel, cycledId, describeNode, pickCycleTab, setCycleSource, stepCycle, usePickCycle, withFirst } from './pickCycle';
+import { cycleLabel, cycleOpen, cycledId, describeNode, pickCycleTab, setCycleSource, stepCycle, usePickCycle, withFirst } from './pickCycle';
 import { deleteTakesViewports, removeSteps } from './sheetDelete';
 import { boxOnPaper, pickSymbol, symbolsOn } from './sheetSymbols';
 
@@ -144,5 +144,22 @@ describe('symbols placed on a sheet', () => {
     expect(pickSymbol([big, small], P(65, 50))?.id).toBe('big');
     expect(pickSymbol([big, small], P(100, 100))).toBeNull();
     expect(pickSymbol([small], P(52.5, 50))?.id).toBe('small');
+  });
+});
+
+describe('cycleOpen: Tab and Shift+Tab while a tool picks (forum topic 149)', () => {
+  it('is open with nothing running and while a command or a tool picks elements', () => {
+    expect(cycleOpen(undefined, undefined, false)).toBe(true);
+    expect(cycleOpen(undefined, 'pick', false)).toBe(true);
+    expect(cycleOpen(undefined, 'select', false)).toBe(true);
+    expect(cycleOpen('pick', undefined, false)).toBe(true);
+    expect(cycleOpen('pickThenPoint', undefined, false)).toBe(true);
+  });
+  it('stays shut while a point or a value is asked, for other gestures and during a drag', () => {
+    expect(cycleOpen(undefined, 'point', false)).toBe(false);
+    expect(cycleOpen(undefined, 'text', false)).toBe(false);
+    expect(cycleOpen('twoPoints', undefined, false)).toBe(false);
+    expect(cycleOpen('pick', undefined, true)).toBe(false);
+    expect(cycleOpen('pick', undefined, false, [])).toBe(false);
   });
 });

@@ -35,7 +35,7 @@ import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, liveTaken, useLive } from './liveInput';
 import { useHighlight } from '../app/highlight';
 import { markSelected, nearestOf, pickAllAt, pickAt, regionIds } from './planPick';
-import { clearCycle, cycledId, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
+import { clearCycle, cycledId, cycleOpen, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
 import { markOwner } from './planPick';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
@@ -352,10 +352,10 @@ export function PlanView() {
   // Tab over several elements lights the next one, and a click takes it (forum topic 105: pickCycle.ts).
   const cycleKey = useRef(`plan-cycle:${Math.random().toString(36).slice(2)}`).current;
   const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null => {
-    if (!types) {
+    {
       const id = cycledId(usePickCycle.getState().cycle, cycleKey, p, 3 / view.scale);
       const hit = id ? markOwner(id, nodes) : null;
-      if (hit) return hit.pick === hit.owner.id ? hit.owner : { ...hit.owner, id: hit.pick, name: `Axis ${hit.pick.slice(hit.pick.indexOf('#') + 1)}` };
+      if (hit && (!types || types.includes('*') || types.includes(hit.owner.type))) return hit.pick === hit.owner.id ? hit.owner : { ...hit.owner, id: hit.pick, name: `Axis ${hit.pick.slice(hit.pick.indexOf('#') + 1)}` };
     }
     return pickAt(p, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks, types);
   }, [pickItems, nodes, view.scale, drawing, scope, cycleKey]);
@@ -444,7 +444,7 @@ export function PlanView() {
     const typed = typed0 ?? taken?.typed;
     // A drafting command takes the click: a snapped point, or what lies under the cursor.
     const step = useCad.getState().step;
-    if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : p); acquire(p); return; }
+    if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : p, undefined, step.snap ? p : undefined); acquire(p); return; }
     if (tool?.gesture) acquire(p);
     if (!tool?.gesture) {
       // A member of a group picks the group (docs/groups.md); drilling, a part its wholes first (platform/assemblies.ts).
@@ -586,11 +586,16 @@ export function PlanView() {
     raw: (cx, cy) => { const r = svgRef.current!.getBoundingClientRect(); return toWorld(cx - r.left, cy - r.top); },
     disabled: !!tool?.gesture || !!cadStep, svg: svgRef, marks: drawing?.marks,
   });
-  // What Tab cycles through here: every element under the pointer (nothing while a tool, a command or a drag is busy, so Tab keeps its meaning).
+  // What Tab cycles through here: every element under the pointer (also while a tool or a command picks elements; nothing while it waits for a point or a drag is on, so Tab keeps its meaning).
   cycleSource.current = {
     key: cycleKey,
     at: () => rawHover.current,
-    ids: (at) => (tool?.gesture || cadStep || drag.current || editor.dragging ? [] : withFirst(pickAt(at, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks)?.id, pickAllAt(at, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks))),
+    ids: (at) => {
+      if (!cycleOpen(tool?.gesture?.kind, cadStep?.want, !!(drag.current || editor.dragging))) return [];
+      const types = tool?.gesture && 'types' in tool.gesture ? tool.gesture.types : undefined;
+      const all = withFirst(pickAt(at, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks, types)?.id, pickAllAt(at, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks));
+      return types && !types.includes('*') ? all.filter((id) => { const n = nodes.get(id.includes('#') ? id.slice(0, id.indexOf('#')) : id); return !!n && types.includes(n.type); }) : all;
+    },
     tol: () => 3 / view.scale,
   };
   const cycle = usePickCycle((c) => c.cycle);
@@ -988,7 +993,7 @@ export function PlanView() {
     return null;
   })();
 
-  const marker = hover && (tool?.gesture || editor.dragging || cadStep?.want === 'point' || dragTrace) ? toScreen(hover.point) : null;
+  const marker = hover && (tool?.gesture || editor.dragging || cadStep?.want === 'point' || cadStep?.snap || dragTrace) ? toScreen(hover.point) : null;
 
   return (
     <div className="view-pane">

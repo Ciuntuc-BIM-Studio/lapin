@@ -44,7 +44,7 @@ import type { Shape } from './cad/shapes';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import { clearLiveRise, inModel, setLiveRise, viewFrameAt } from './viewFrame';
 import { markIds, markOwner, markSelected } from './planPick';
-import { cycledId, clearCycle, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
+import { cycledId, cycleOpen, clearCycle, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
 import { DrawingOverlays } from './DrawingOverlays';
@@ -315,7 +315,7 @@ export function DrawingView() {
   cycleSource.current = {
     key: cycleKey,
     at: () => rawHover.current,
-    ids: (p) => (tool?.gesture || cadStep || drag.current || editor.dragging ? [] : withFirst(pickDrawing(p, 6 / v.scale, drawing?.marks, nodes), pickDrawingAll(p, 6 / v.scale, drawing?.marks, nodes))),
+    ids: (p) => (!cycleOpen(tool?.gesture?.kind, cadStep?.want, !!(drag.current || editor.dragging), []) ? [] : withFirst(pickDrawing(p, 6 / v.scale, drawing?.marks, nodes), pickDrawingAll(p, 6 / v.scale, drawing?.marks, nodes))),
     tol: () => 3 / v.scale,
   };
   const cycle = usePickCycle((c) => c.cycle);
@@ -486,7 +486,7 @@ export function DrawingView() {
           const step = useCad.getState().step;
           const taken = liveTaken(aimed.point);
           const where = taken?.point ?? aimed.point;
-          if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : where); acquire(where); return; }
+          if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : where, undefined, step.snap ? where : undefined); acquire(where); return; }
           if (gestureClick(where, raw, taken?.typed)) return;
           pickByMods(pickAny(raw), modsOf(e), currentNavStyle());
         }}
