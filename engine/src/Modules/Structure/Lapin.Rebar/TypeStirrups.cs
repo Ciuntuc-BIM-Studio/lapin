@@ -94,7 +94,8 @@ public static class TypeStirrups
 
     public static StirrupSpec? SpecOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { } type ? StirrupSpec.Of(type) : null;
 
-    public static Laid? Of(IModelView m, Entity e)
+    /// <param name="services">With them, a column's stirrups run its height as built (its attached ends, docs/plan-attach-to.md A2).</param>
+    public static Laid? Of(IModelView m, Entity e, IServices? services = null)
     {
         if (SpecOf(m, e) is not { Enabled: true } spec) return null;
         if (e.Class == IfcClass.Beam)
@@ -124,12 +125,13 @@ public static class TypeStirrups
         }
         if (e.Class == IfcClass.Column)
         {
-            var (section, _, height) = Columns.Spec(m, e);
+            var built = Columns.Built(m, e, services);
+            var (section, height) = (built.Section, built.Height);
             if (section.Kind != "rectangle" || height <= 1e-6) return null;
             var (a, b) = Inside(section.Width, section.Depth, spec);
             if (a <= 0 || b <= 0) return null;
             var at = Args.PointOf(e.Attrs["at"]);
-            var baseZ = Spatial.Base(m, e);
+            var baseZ = built.Base;
             var rot = e.Num("rotation") * Math.PI / 180;
             var (ux, uy) = (new Vec2(Math.Cos(rot), Math.Sin(rot)), new Vec2(-Math.Sin(rot), Math.Cos(rot)));
             var stations = Runs.Positions(height, spec.Step, spec.RunZones(height));

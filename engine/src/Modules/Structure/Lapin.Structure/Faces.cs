@@ -15,10 +15,13 @@ public sealed class StructureFaces : IElementFaces
 {
     public bool Covers(string ifcClass) => ifcClass is IfcClass.Beam or IfcClass.Column or IfcClass.Footing;
 
-    public IReadOnlyList<ElementFace> FacesOf(Entity e, IModelView m) => e.Class switch
+    public IReadOnlyList<ElementFace> FacesOf(Entity e, IModelView m) => FacesOf(e, m, null);
+
+    /// <summary>With the services, a column's faces follow its attached ends (docs/plan-attach-to.md, A2).</summary>
+    public IReadOnlyList<ElementFace> FacesOf(Entity e, IModelView m, IServices? services) => e.Class switch
     {
         IfcClass.Beam => Beam(e, m),
-        IfcClass.Column => Column(e, m),
+        IfcClass.Column => Column(e, m, services),
         IfcClass.Footing => Footing(e, m),
         _ => [],
     };
@@ -74,9 +77,11 @@ public sealed class StructureFaces : IElementFaces
         ];
     }
 
-    static List<ElementFace> Column(Entity column, IModelView m)
+    static List<ElementFace> Column(Entity column, IModelView m, IServices? services)
     {
-        var (section, _, height) = Columns.Spec(m, column);
+        var built = Columns.Built(m, column, services);
+        if (built.Shaped) return AttachedColumn(column, m, services, built);
+        var (section, _, height) = (built.Section, built.Material, built.Height);
         var fp = Polygon2.EnsureCcw(Place.Placed(section.Outline(), Place.Point(column), column.Num("rotation")));
         if (fp.Count < 3 || !(height > 0)) return [];
         var z0 = Place.Elevation(m, column) + column.Num("baseOffset");
@@ -92,6 +97,40 @@ public sealed class StructureFaces : IElementFaces
             if ((b - a).Length < 1e-6) continue;
             faces.Add(ElementFaces.Upright($"Side[{i}]", $"Side {i + 1}", a, b, z0, z1, -(b - a).Normalized().Perp));
         }
+        return faces;
+    }
+
+    /// <summary>
+    /// An attached column's faces: its sides up to its ends as built (a ridge's and a step's points on them), its top and its
+    /// bottom on its ends (the plan's points of the section lifted onto them).
+    /// </summary>
+    static List<ElementFace> AttachedColumn(Entity column, IModelView m, IServices? services, BuiltColumn b)
+    {
+        var (fp, _) = ColumnEnds.Rings(column, b.Section);
+        if (fp.Count < 3) return [];
+        var topRing = new List<Vec3>();
+        var bottomRing = new List<Vec3>();
+        var sides = new List<ElementFace>();
+        for (var i = 0; i < fp.Count; i++)
+        {
+            var (a, c) = (fp[i], fp[(i + 1) % fp.Count]);
+            if ((c - a).Length < 1e-6) continue;
+            var ts = ColumnEnds.Breaks(b.Top, a, c, services, m).Union(ColumnEnds.Breaks(b.Bottom, a, c, services, m)).OrderBy(t => t).ToList();
+            var pts = ts.Select(t => a + (c - a) * t).ToList();
+            // Counter-clockwise seen from outside: along the bottom from a to c, back along the top.
+            var ring = pts.Select(p => p.At(b.Bottom.At(p))).Concat(pts.AsEnumerable().Reverse().Select(p => p.At(b.Top.At(p)))).ToList();
+            var outward = -(c - a).Normalized().Perp;
+            sides.Add(new ElementFace($"Side[{i}]", $"Side {i + 1}", ring, new Vec3(outward.X, outward.Y, 0)));
+            topRing.AddRange(pts.SkipLast(1).Select(p => p.At(b.Top.At(p))));
+            bottomRing.AddRange(pts.SkipLast(1).Select(p => p.At(b.Bottom.At(p))));
+        }
+        bottomRing.Reverse();
+        var faces = new List<ElementFace>
+        {
+            new("Bottom", "Bottom", bottomRing, VecMath.NewellNormal(bottomRing).Normalized()),
+            new("Top", "Top", topRing, VecMath.NewellNormal(topRing).Normalized()),
+        };
+        faces.AddRange(sides);
         return faces;
     }
 

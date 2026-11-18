@@ -86,7 +86,7 @@ public static class RebarBodies
         foreach (var e in TypeStirrups.Members(m))
         {
             if ((ids != null && !ids.Contains(e.Id)) || hides?.Invoke(e) == true) continue;
-            if (TypeStirrups.Of(m, e) is { } laid)
+            if (TypeStirrups.Of(m, e, services) is { } laid)
             {
                 var d = laid.Spec.Diameter;
                 var spec = new RebarSpec("stirrup", new Dictionary<string, double>(), null, d, null, null);
@@ -94,7 +94,7 @@ public static class RebarBodies
                     foreach (var loop in laid.LoopsAt(station))
                         yield return new Chain(Stirrup(loop, spec), d, Color(d));
             }
-            if (ColumnBars.Of(m, e, bases) is { } bars)
+            if (ColumnBars.Of(m, e, bases, services) is { } bars)
                 foreach (var bar in bars.Bars) yield return new Chain(bar, bars.Spec.Diameter, Color(bars.Spec.Diameter));
         }
     }

@@ -34,10 +34,19 @@ public static class BodySampler
     public sealed record Sampled(List<Tri> Tris, IReadOnlyList<string> Cycle, bool Closed)
     {
         public bool InCycle => Closed || Cycle.Count > 0;
+        /// <summary>Each target read, with its own triangles (what <see cref="Tris"/> joins): which of them covers what.</summary>
+        public IReadOnlyList<(Entity Target, List<Tri> Tris)> PerTarget { get; init; } = [];
     }
 
     /// <summary>A body's triangles, kept per entity (immutable) and model revision: every element under it asks for them.</summary>
     static readonly RevisionCache<List<Tri>> Cache = new();
+    /// <summary>The same, of a body as its own producer builds it before the cut order takes anything off (<see cref="Sample"/>'s <c>uncut</c>).</summary>
+    static readonly RevisionCache<List<Tri>> Uncut = new();
+    /// <summary>How many times each target's triangles were worked out (not taken from the cache): a test's look at the cache.</summary>
+    static readonly System.Collections.Concurrent.ConcurrentDictionary<string, int> Computed = new();
+
+    /// <summary>How many times <paramref name="targetId"/>'s triangles were worked out rather than taken from the cache.</summary>
+    public static int Reads(string targetId) => Computed.TryGetValue(targetId, out var n) ? n : 0;
 
     [ThreadStatic] static List<string>? _building;
     [ThreadStatic] static HashSet<string>? _closed;
@@ -45,14 +54,22 @@ public static class BodySampler
     /// <summary>
     /// The triangles of <paramref name="targets"/> for <paramref name="element"/>'s end, with the guard against a circle: a
     /// target whose reading is already under way on this thread (it is attached, through others, to this element) is left out,
-    /// and when the circle closes on <paramref name="element"/> itself it gets no triangles at all.
+    /// and when the circle closes on <paramref name="element"/> itself it gets no triangles at all. An element whose targets are
+    /// asked for again while they are being read (a target built from the element by a path no attachment names) gets none
+    /// either, the second time, and stands at its own end there.
+    /// <para><paramref name="uncut"/>: each target as its own producer builds it, before the cut order takes the higher
+    /// priorities' envelopes off (docs/plan-attach-to.md §3.6, "a target is read through what is attach-free of it"): a
+    /// column attached under a slab it cuts reads the slab's soffit, not the hole its own drawn envelope makes there. It is
+    /// also cheaper (no booleans). Walls read the targets as built (A1, unchanged).</para>
     /// </summary>
-    public static Sampled Sample(Entity element, IEnumerable<Entity> targets, IModelView m, IServices services)
+    public static Sampled Sample(Entity element, IEnumerable<Entity> targets, IModelView m, IServices services, bool uncut = false)
     {
         var building = _building ??= [];
         var closed = _closed ??= [];
+        if (building.Contains(element.Id)) return new Sampled([], [element.Id], true);
         var tris = new List<Tri>();
         var cycle = new List<string>();
+        var per = new List<(Entity, List<Tri>)>();
         building.Add(element.Id);
         try
         {
@@ -60,21 +77,32 @@ public static class BodySampler
             {
                 if (t.Id == element.Id) continue;
                 if (building.Contains(t.Id)) { closed.Add(t.Id); cycle.Add(t.Id); continue; }
-                tris.AddRange(TrianglesOf(t, m, services));
+                var mine = TrianglesOf(t, m, services, uncut);
+                tris.AddRange(mine);
+                per.Add((t, mine));
             }
         }
         finally { building.RemoveAt(building.Count - 1); }
-        return closed.Remove(element.Id) ? new Sampled([], cycle, true) : new Sampled(tris, cycle, false);
+        return closed.Remove(element.Id) ? new Sampled([], cycle, true) : new Sampled(tris, cycle, false) { PerTarget = per };
     }
 
     /// <summary>Whether this thread is reading <paramref name="id"/>'s targets now (a test's look at the guard).</summary>
     public static bool Building(string id) => _building?.Contains(id) == true;
 
     /// <summary>A body's triangles (cached per revision), without the guard: <see cref="Sample"/> is what an attached end reads.</summary>
-    public static List<Tri> TrianglesOf(Entity t, IModelView m, IServices services) => Cache.Get(t, m, v => Triangles(t, v, services));
+    public static List<Tri> TrianglesOf(Entity t, IModelView m, IServices services, bool uncut = false) =>
+        uncut ? Uncut.Get(t, m, v => Triangles(t, v, new WithoutCuts(services))) : Cache.Get(t, m, v => Triangles(t, v, services));
+
+    /// <summary>The session's services with no cut order: a producer then builds its element's own body (<see cref="CutPriorities"/> leaves it whole).</summary>
+    sealed class WithoutCuts(IServices inner) : IServices
+    {
+        public T? Get<T>() where T : class => typeof(T) == typeof(ICutters) ? null : inner.Get<T>();
+        public IReadOnlyList<T> All<T>() where T : class => typeof(T) == typeof(ICutters) ? [] : inner.All<T>();
+    }
 
     static List<Tri> Triangles(Entity t, IModelView m, IServices services)
     {
+        Computed.AddOrUpdate(t.Id, 1, (_, n) => n + 1);
         var producer = StoredBodies.Has(t) ? new GeometryProducer(StoredBodies.Geometry) : services.Get<IGeometryProducers>()?.Geometry(t.Class);
         var list = new List<Tri>();
         foreach (var part in producer?.Invoke(t, m, services)?.Parts ?? [])

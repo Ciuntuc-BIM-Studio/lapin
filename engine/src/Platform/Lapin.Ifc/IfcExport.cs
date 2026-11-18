@@ -1071,7 +1071,7 @@ public static partial class IfcExport
         IfcSweptBody? SweptOf(Entity e)
         {
             foreach (var src in s.Catalog.All<IIfcSweptBodies>())
-                if (src.BodyOf(m, e) is { } b) return b;
+                if (src.BodyOf(m, s.Catalog, e) is { } b) return b;
             return null;
         }
 

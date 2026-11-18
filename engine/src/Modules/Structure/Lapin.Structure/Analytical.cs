@@ -17,10 +17,12 @@ public sealed class StructureAnalytical : IAnalyticalElements
     {
         foreach (var c in m.OfClass(IfcClass.Column))
         {
-            var (section, material, height) = Columns.Spec(m, c);
+            // The column as built (its attached ends, docs/plan-attach-to.md A2): the analysis sees the length it stands at.
+            var built = Columns.Built(m, c, into.Services);
+            var (section, material, height) = (built.Section, built.Material, built.Height);
             if (!(height > 0)) { into.LeftOut.Add(new(c.Id, c.Name, c.Class, "no height")); continue; }
             var at = Place.Point(c);
-            var z = Place.Elevation(m, c) + c.Num("baseOffset");
+            var z = built.Base;
             var r = c.Num("rotation") * Math.PI / 180;
             // The section's depth (its outline's y) turned by the column's rotation.
             var depth = new Vec3(-Math.Sin(r), Math.Cos(r), 0);

@@ -32,6 +32,15 @@ public static class Columns
         return (section, type?.Str("material"), height);
     }
 
+    /// <summary>
+    /// The column as built (docs/plan-attach-to.md §3.6): its ends attached to bodies read now. Its own body and what is
+    /// measured from it (quantities, rebar, faces, the analytical line, IFC) read this; what other elements read of it (its
+    /// envelope, its drawn height for a beam's span, a steel member's axis) stays on <see cref="Spec"/>, so no build goes round
+    /// in a circle. Without services, or attachments, the column as drawn.
+    /// </summary>
+    public static BuiltColumn Built(IModelView m, Entity column, IServices? services) => ColumnEnds.Of(m, column, services);
+
+    /// <summary>The envelope a column cuts other elements with: as drawn (<see cref="Spec"/>), never as attached.</summary>
     public static Solid? Envelope(Entity column, IModelView m)
     {
         var (section, _, height) = Spec(m, column);
@@ -42,6 +51,8 @@ public static class Columns
     public static ElementGeometry? Geometry(Entity column, IModelView m, IServices? services)
     {
         var (section, material, _) = Spec(m, column);
+        var built = Built(m, column, services);
+        if (built.Shaped) return Attached(column, m, services, built);
         if (Envelope(column, m) is not { } solid) return new ElementGeometry([], Diagnostics: ["The column has no height."]);
         // At LOD 400 the real section (decision 415); every other reader the light one, with the same box.
         var fine = services?.Get<GeometryOptions>()?.Fine == true;
@@ -58,7 +69,12 @@ public static class Columns
             IReadOnlyList<Vec3> Up(IEnumerable<Vec2> ring) => Place.Placed(ring, Place.Point(column), column.Num("rotation")).Select(p => p.At(z)).ToList();
             solid = Prism.Extrude(Up(outlineOf), holes.Select(Up).ToList(), new Vec3(0, 0, Spec(m, column).Height), "column") ?? solid;
         }
-        var problems = new List<string>();
+        var problems = new List<string>(built.Problems);
+        return Finish(column, m, services, section, material, solid, problems);
+    }
+
+    static ElementGeometry Finish(Entity column, IModelView m, IServices? services, Section section, string? material, Solid solid, List<string> problems)
+    {
         var parts = CutPriorities.Apply(column, m, services, [new GeometryPart(column.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
         // The walls' and floors' layers reaching into it and set to cut (forum topic 89).
         parts = LayerExtentCuts.Apply(column, m, services, parts, problems);
@@ -66,10 +82,23 @@ public static class Columns
         return new ElementGeometry(parts, [new PlanItem("cut", true, footprint)], [Place.Point(column)], problems.Count > 0 ? problems : null) { FineShape = section.HasRealShape };
     }
 
+    /// <summary>A column whose ends are attached (docs/plan-attach-to.md §3.3): the prism between its ends as built, cut by the cut order as any column.</summary>
+    static ElementGeometry Attached(Entity column, IModelView m, IServices? services, BuiltColumn built)
+    {
+        var problems = new List<string>(built.Problems);
+        var fine = services?.Get<GeometryOptions>()?.Fine == true;
+        var (outer, holes) = ColumnEnds.Rings(column, built.Section, fine);
+        if (ColumnEnds.Body(built, outer, holes, services, problems) is not { } solid)
+            return new ElementGeometry([], Diagnostics: [.. problems, "The column has no height."]);
+        return Finish(column, m, services, built.Section, built.Material, solid, problems);
+    }
+
     public static IEnumerable<QuantitySet> Quantities(Entity column, ElementGeometry? g, IModelView m)
     {
         if (g == null || g.Parts.Count == 0) yield break;
-        var (section, _, height) = Spec(m, column);
+        // Measured from the column as built (its attached ends), the one its geometry was just built from.
+        var built = ColumnEnds.LastOf(m, column);
+        var (section, height) = (built.Section, built.Height);
         // The body the views draw has sharp corners: the real section holds RealRatio more (decision 418).
         var net = g.Parts.Sum(p => Measure.Volume(p.Solid)) * section.RealRatio;
         yield return new QuantitySet("Qto_ColumnBaseQuantities",
@@ -360,8 +389,18 @@ public static class Beams
 /// </summary>
 sealed class FrameIfcBodies : IIfcSweptBodies
 {
-    public IfcSweptBody? BodyOf(IModelView m, Entity e)
+    public IfcSweptBody? BodyOf(IModelView m, Entity e) => BodyOf(m, null, e);
+
+    /// <summary>
+    /// With the services, a column's attached ends: under planes, the sweep from its lowest corner to its highest clipped by
+    /// each plane (IfcBooleanClippingResult of IfcHalfSpaceSolid); on the boolean path, or cut by the cut order besides, null (the
+    /// B-rep it is).
+    /// </summary>
+    public IfcSweptBody? BodyOf(IModelView m, IServices? services, Entity e)
     {
+        if (services != null && e.Class == IfcClass.Column && e.Attrs["at"] is not null && !StoredBodies.Has(e) && e.Attrs["steelEnds"] is not JsonObject
+            && Columns.Built(m, e, services) is { Shaped: true } built)
+            return Clipped(m, services, e, built);
         if (e.Class is not (IfcClass.Column or IfcClass.Beam) || StoredBodies.Has(e) || e.Attrs["steelEnds"] is JsonObject) return null;
         if (e.Class == IfcClass.Column)
         {
@@ -379,5 +418,32 @@ sealed class FrameIfcBodies : IIfcSweptBodies
         var u = (span.End - span.Start).Normalized();
         var origin = span.Start.At(Beams.Top(m, e) - beamSection.Depth / 2);
         return new IfcSweptBody(beamSection.Sweep(m, origin, new Vec3(-u.Y, u.X, 0), new Vec3(u.X, u.Y, 0), (span.End - span.Start).Length, e.Bool("flipped")), [], []);
+    }
+
+    static IfcSweptBody? Clipped(IModelView m, IServices services, Entity e, BuiltColumn b)
+    {
+        if (b.Top.Boolean || b.Bottom.Boolean) return null;
+        var (outer, holes) = ColumnEnds.Rings(e, b.Section);
+        // Only when nothing else cut it: the body the views draw is the clipped sweep.
+        var problems = new List<string>();
+        if (ColumnEnds.Body(b, outer, holes, services, problems) is not { } own || Columns.Geometry(e, m, services) is not { Parts.Count: 1 } g) return null;
+        if (Math.Abs(Measure.Volume(own) - Measure.Volume(g.Parts[0].Solid)) > Math.Max(1e-9, Measure.Volume(own) * 1e-6)) return null;
+        // A plane cuts unless it is level (the sweep's own end then lies on it).
+        static bool Level(ColumnPlane q) => Math.Abs(q.Bx) < 1e-12 && Math.Abs(q.By) < 1e-12;
+        double Extreme(ColumnEnd x, bool top)
+        {
+            if (!x.Shaped) return x.Axis;
+            var zs = outer.Select(p => x.Planes.Count == 1 ? x.Planes[0].Z(p) : x.Reach);
+            return top ? zs.Max() : zs.Min();
+        }
+        var (z0, z1) = (Extreme(b.Bottom, false), Extreme(b.Top, true));
+        if (!(z1 - z0 > 1e-6)) return null;
+        var clips = new List<IfcClip>();
+        var at = Place.Point(e);
+        foreach (var (x, top) in new[] { (b.Top, true), (b.Bottom, false) })
+            foreach (var q in x.Planes)
+                if (x.Planes.Count > 1 || !Level(q)) clips.Add(new IfcClip(at.At(q.Z(at)), q.Normal(top)));
+        var r = e.Num("rotation") * Math.PI / 180;
+        return new IfcSweptBody(b.Section.Sweep(m, at.At(z0), new Vec3(Math.Cos(r), Math.Sin(r), 0), Vec3.UnitZ, z1 - z0, false), clips, []);
     }
 }

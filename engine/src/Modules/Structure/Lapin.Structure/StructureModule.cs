@@ -32,6 +32,8 @@ public sealed class StructureModule : ILapinModule
         r.Service<IElementFaces>(new StructureFaces());
         r.Service<IIfcSweptBodies>(new FootingIfcBodies());
         r.Service<IIfcSweptBodies>(new FrameIfcBodies());
+        // A column's top and bottom attached to bodies (docs/plan-attach-to.md, stage A2).
+        r.Service<IAttachable>(new ColumnAttach());
         r.Service<IProjectUpgrade>(new CatalogueSectionUpgrade());
         r.Geometry(IfcClass.Column, Columns.Geometry);
         r.Geometry(IfcClass.Beam, Beams.Geometry);

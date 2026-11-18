@@ -76,10 +76,14 @@ public static class ColumnBars
     public static ColumnBarsSpec? SpecOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { } type ? ColumnBarsSpec.Of(type) : null;
 
     /// <summary>A column's bars laid; <paramref name="bases"/>, made once, when many columns are asked in turn.</summary>
-    public static Laid? Of(IModelView m, Entity e, Bases? bases = null)
+    /// <param name="services">With them, the column as built (its attached ends, docs/plan-attach-to.md A2): bars that end in
+    /// it (hooked) stop under its attached top; bars that go on into a column standing on its drawn top keep the drawn height.</param>
+    public static Laid? Of(IModelView m, Entity e, Bases? bases = null, IServices? services = null)
     {
         if (e.Class != IfcClass.Column || SpecOf(m, e) is not { Enabled: true } spec) return null;
-        var (section, _, height) = Columns.Spec(m, e);
+        var (section, _, drawn) = Columns.Spec(m, e);
+        var built = Columns.Built(m, e, services);
+        var height = drawn;
         if (section.Kind != "rectangle" || height <= 1e-6) return null;
         var stirrups = TypeStirrups.SpecOf(m, e) ?? StirrupSpec.Default();
         var inset = stirrups.Cover + (stirrups.Enabled ? stirrups.Diameter : 0) + spec.Diameter / 2;
@@ -87,6 +91,7 @@ public static class ColumnBars
         if (hx <= 0 || hy <= 0) return null;
         var at = AtOf(e);
         var baseZ = BaseOf(m, e);
+        var drawnBase = baseZ;
         var rot = e.Num("rotation") * Math.PI / 180;
         var (u, v) = (new Vec2(Math.Cos(rot), Math.Sin(rot)), new Vec2(-Math.Sin(rot), Math.Cos(rot)));
         // Round the perimeter: the corners once, the rest of each face's bars between them.
@@ -97,6 +102,10 @@ public static class ColumnBars
         foreach (var x in Rebar3D.Spread(n, -hx, hx).Reverse<double>().Skip(1)) places.Add(new Vec2(x, hy));
         foreach (var y in Rebar3D.Spread(n, -hy, hy).Reverse<double>().Skip(1).Take(n - 2)) places.Add(new Vec2(-hx, y));
         var hooked = spec.Top == "hooks" || (spec.Top == "auto" && !Continues(bases ?? new Bases(m), e, at, u, v, section.Width / 2, section.Depth / 2, baseZ + height));
+        // Its ends as built: the bottom always; the top where the bars end in it (a column standing on its drawn top takes them on).
+        baseZ = built.Base;
+        height = (hooked ? built.Top.Axis : drawnBase + drawn) - baseZ;
+        if (height <= 1e-6) return null;
         if (!hooked)
         {
             var bars = places.Select(p => { var w = at + u * p.X + v * p.Y; return new[] { w.At(baseZ), w.At(baseZ + height + spec.Lap) }; }).ToList();

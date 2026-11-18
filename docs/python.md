@@ -210,6 +210,17 @@ for row in lapin.element.attachments(ids=walls)["elements"]:
     print(row["name"], [t["name"] for t in top["targets"]], top["result"].get("built"), top["problems"])
 ```
 
+Columns attach both ends, with a mode (`both`, `extend` only, `trim` only) and a gap: every column of the ground floor trimmed under the floor above, then each one's length as built:
+
+```python
+floor = lapin.model.of("IfcSlab")[0]
+columns = [c for c in lapin.model.of("IfcColumn") if c.storey == ground.id]
+lapin.element.attach_to(ids=columns, end="top", targets=[floor], mode="trim")
+for row in lapin.element.attachments(ids=columns)["elements"]:
+    top = next(e for e in row["ends"] if e["end"] == "top")
+    print(row["name"], top["result"]["built"], top["result"]["path"], top["problems"])
+```
+
 ## External geometry and live scripts
 
 A program that computes geometry (a generator, a DSL's compiler, a parametric script) works with Lapin through this package, never inside it: it gives Lapin bodies, Lapin keeps them as elements, and each side tells the other what changed. The contract, the four steps (decisions 541–542) and what Lapin deliberately does not do are in `docs/plan-external-geometry.md`.

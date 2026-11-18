@@ -79,6 +79,8 @@ public interface IIfcRecesses
 public interface IIfcSweptBodies
 {
     IfcSweptBody? BodyOf(IModelView model, Entity element);
+    /// <summary>The same with the session's services at hand: what reads other elements' bodies (a column's top attached to a slab's soffit) needs them.</summary>
+    IfcSweptBody? BodyOf(IModelView model, IServices services, Entity element) => BodyOf(model, element);
 }
 
 /// <summary>
