@@ -276,7 +276,8 @@ public static class SectionLooks
             : null;
         if (mat == null) return (null, null);
         var kept = m.Get(mat);
-        var look = kept != null ? Lapin.Drawing.MaterialGraphics.Resolve(kept, "section") : GlobalId.IsValid(mat) ? null : Lapin.Drawing.MaterialGraphics.Resolve(null, "section", mat);
+        var standard = Lapin.Platform.MaterialStandards.Of(m);
+        var look = kept != null ? Lapin.Drawing.MaterialGraphics.Resolve(kept, "section", standard: standard) : GlobalId.IsValid(mat) ? null : Lapin.Drawing.MaterialGraphics.Resolve(null, "section", mat, standard: standard);
         return (kept?.Name ?? mat, look?.Hatch);
     }
 }

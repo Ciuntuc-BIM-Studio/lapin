@@ -1487,7 +1487,7 @@ public static partial class IfcExport
             foreach (var kind in Lapin.Drawing.MaterialGraphics.Kinds)
             {
                 if (mat.Attrs[kind] is not JsonObject) continue;
-                var g = Lapin.Drawing.MaterialGraphics.Resolve(mat, kind);
+                var g = Lapin.Drawing.MaterialGraphics.Resolve(mat, kind, standard: Lapin.Platform.MaterialStandards.Of(m));
                 if (g.Membrane) continue;
                 var fills = new List<string>();
                 if (g.Fill is { } fill) fills.Add(Colour(fill));

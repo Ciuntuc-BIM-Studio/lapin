@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "ro.ciuntucbimstudio.standard-din-1356",
+  "name": "Material standard: DIN 1356",
+  "summary": "How materials draw in cuts, plans and facades after DIN 1356-1: Lapin's built-in „DIN 1356” standard as a pack (indicative).",
+  "description": "Masonry in 45° lines, aerated concrete in lines with dots, natural stone crossed by dashes; plain concrete speckled, reinforced concrete crosshatched; insulation as loops (soft) or zig-zag rows (rigid foam); timber grain; narrow metal sections filled solid from 1:50; facing brick 240 × 71 (NF). Material names in German and English. Indicative, drawn by Lapin from the general principles of the norm, not copied from it: check it against the standard your drawings must follow. Installed, it is added to the open project with „Add to this project” and applied from Manage → Drawing standards → Materials. Country: DE; norm: DIN 1356-1.",
+  "screenshots": [
+    "screenshot.png"
+  ],
+  "version": "1.0.0",
+  "author": {
+    "name": "Ciuntuc BIM Studio",
+    "github": "Ciuntuc-BIM-Studio",
+    "url": "https://lapinbim.com"
+  },
+  "license": "MIT",
+  "lapin": ">=0.1.1336",
+  "kind": "standards",
+  "tags": [
+    "standard",
+    "hatches",
+    "materials",
+    "din-1356",
+    "country-de",
+    "germany",
+    "example"
+  ],
+  "languages": [
+    "de",
+    "en"
+  ],
+  "permissions": [],
+  "indicative": true,
+  "contents": {
+    "file": "din-1356.lapinstandards",
+    "items": [
+      "34 rules (cut, plan and facade graphics by the material's name)",
+      "Patterns: DIN_PORENBETON, DIN_NATURSTEIN"
+    ]
+  },
+  "package": {
+    "url": "https://github.com/Ciuntuc-BIM-Studio/lapin-extensions/releases/download/standard-din-1356-v1.0.0/din-1356.lapinstandards",
+    "sha256": "022845182aa005144dcb8c5e2f4e58d2d2a26f404d4db21c895f898744ec4201",
+    "size": 19499
+  },
+  "homepage": "https://github.com/Ciuntuc-BIM-Studio/lapin-extensions/tree/main/extensions/ro.ciuntucbimstudio.standard-din-1356",
+  "forum": "https://forum.lapinbim.com/c/lapin"
+}

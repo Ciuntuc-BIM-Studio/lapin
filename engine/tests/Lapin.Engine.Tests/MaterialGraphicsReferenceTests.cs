@@ -38,14 +38,17 @@ public class MaterialGraphicsReferenceTests
 
     static readonly Lazy<List<Drawn>> All = new(DrawAll);
 
-    static List<Drawn> DrawAll()
+    static List<Drawn> DrawAll() => Draw(ReferenceDetails.All, ReferenceDetails.Scales);
+
+    /// <summary>Each detail's views drawn at each scale.</summary>
+    static List<Drawn> Draw(IEnumerable<Func<ReferenceDetails.Detail>> details, int[] scales)
     {
         var o = new List<Drawn>();
-        foreach (var make in ReferenceDetails.All)
+        foreach (var make in details)
         {
             var d = make();
             foreach (var (name, args) in d.Views)
-                foreach (var scale in ReferenceDetails.Scales)
+                foreach (var scale in scales)
                 {
                     var a = (JsonObject)args.DeepClone();
                     a["scale"] = scale;
@@ -65,8 +68,10 @@ public class MaterialGraphicsReferenceTests
 
     static Drawn Get(string detail, string view, int scale) => All.Value.Single(x => x.Detail.Name == detail && x.View == view && x.Scale == scale);
 
+    // As the view resolves it: its project's material standard (decision 673), at its scale.
     static ResolvedMaterial? Look(Drawn d, string? material) => material == null ? null
-        : d.Detail.F.Model.Get(material) is { } m ? MaterialGraphics.Resolve(m, d.Kind) : GlobalId.IsValid(material) ? null : MaterialGraphics.Resolve(null, d.Kind, material);
+        : d.Detail.F.Model.Get(material) is { } m ? MaterialGraphics.Resolve(m, d.Kind, scale: d.Scale, standard: MaterialStandards.Of(d.Detail.F.Model))
+        : GlobalId.IsValid(material) ? null : MaterialGraphics.Resolve(null, d.Kind, material, scale: d.Scale, standard: MaterialStandards.Of(d.Detail.F.Model));
 
     // ------------------------------------------------------------ geometry
 
@@ -98,10 +103,12 @@ public class MaterialGraphicsReferenceTests
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public void No_cut_line_runs_between_two_elements_bands_of_one_material(string detail, string view, int scale)
+    public void No_cut_line_runs_between_two_elements_bands_of_one_material(string detail, string view, int scale) => CheckNoCutLineInsideMaterial(Get(detail, view, scale));
+
+    internal static void CheckNoCutLineInsideMaterial(Drawn d)
     {
-        var d = Get(detail, view, scale);
-        if (d.R.Generated is not { } g || g.Cuts.Count == 0) return;
+        var (detail, view, scale) = (d.Detail.Name, d.View, d.Scale);
+                if (d.R.Generated is not { } g || g.Cuts.Count == 0) return;
         var tol = 1e-4;
         var bad = new List<string>();
         foreach (var pen in d.R.Pens.Where(p => p.Layer == PenLayer.Cut))
@@ -124,10 +131,12 @@ public class MaterialGraphicsReferenceTests
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public void Hatches_stay_inside_their_bands(string detail, string view, int scale)
+    public void Hatches_stay_inside_their_bands(string detail, string view, int scale) => CheckHatchesInside(Get(detail, view, scale));
+
+    internal static void CheckHatchesInside(Drawn d)
     {
-        var d = Get(detail, view, scale);
-        if (d.R.Generated is not { } g) return;
+        var (detail, view, scale) = (d.Detail.Name, d.View, d.Scale);
+                if (d.R.Generated is not { } g) return;
         var tol = 0.2 * scale / 1000;   // 0.2 mm on paper
         var outside = 0;
         var total = 0;
@@ -143,9 +152,12 @@ public class MaterialGraphicsReferenceTests
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public void Cut_lines_are_heavier_than_seen_lines_and_seen_lines_than_hatches(string detail, string view, int scale)
+    public void Cut_lines_are_heavier_than_seen_lines_and_seen_lines_than_hatches(string detail, string view, int scale) => CheckPenHierarchy(Get(detail, view, scale));
+
+    internal static void CheckPenHierarchy(Drawn d)
     {
-        var pens = Get(detail, view, scale).R.Pens.Where(p => p.Segments.Count > 0).ToList();
+        var (detail, view, scale) = (d.Detail.Name, d.View, d.Scale);
+        var pens = d.R.Pens.Where(p => p.Segments.Count > 0).ToList();
         double Max(string layer) => pens.Where(p => p.Layer == layer).Select(p => p.Width).DefaultIfEmpty(0).Max();
         double Min(string layer) => pens.Where(p => p.Layer == layer).Select(p => p.Width).DefaultIfEmpty(double.MaxValue).Min();
         var (cut, seen, hatch) = (Max(PenLayer.Cut), Max(PenLayer.Seen), Math.Max(Max(PenLayer.Hatch), Max(SurfaceHatches.Layer)));
@@ -156,10 +168,12 @@ public class MaterialGraphicsReferenceTests
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public void Every_band_whose_material_has_a_hatch_is_hatched(string detail, string view, int scale)
+    public void Every_band_whose_material_has_a_hatch_is_hatched(string detail, string view, int scale) => CheckBandsHatched(Get(detail, view, scale));
+
+    internal static void CheckBandsHatched(Drawn d)
     {
-        var d = Get(detail, view, scale);
-        var patterns = DraftingResources.Patterns(d.Detail.F.Model);
+        var (detail, view, scale) = (d.Detail.Name, d.View, d.Scale);
+                var patterns = DraftingResources.Patterns(d.Detail.F.Model);
         if (d.Kind == "elevation")
         {
             // A facade whose materials hatch their surfaces shows them.
@@ -184,10 +198,12 @@ public class MaterialGraphicsReferenceTests
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public void Membranes_lie_on_an_interface_or_along_their_own_band(string detail, string view, int scale)
+    public void Membranes_lie_on_an_interface_or_along_their_own_band(string detail, string view, int scale) => CheckMembranes(Get(detail, view, scale));
+
+    internal static void CheckMembranes(Drawn d)
     {
-        var d = Get(detail, view, scale);
-        if (d.R.Generated is not { } g) return;
+        var (detail, view, scale) = (d.Detail.Name, d.View, d.Scale);
+                if (d.R.Generated is not { } g) return;
         var tol = 1e-4;
         foreach (var (a, b) in d.R.Pens.Where(p => p.Layer == PenLayer.Membrane).SelectMany(p => p.Segments))
         {
@@ -204,6 +220,30 @@ public class MaterialGraphicsReferenceTests
         // The wall's and the floor's vapour barriers (1 mm) and the footing's waterproofing (marked a membrane) draw as membranes.
         foreach (var (detail, view) in new[] { ("composite-walls", "plan"), ("floor", "section"), ("strip-footing", "section") })
             Assert.NotEmpty(Get(detail, view, 50).R.Pens.Where(p => p.Layer == PenLayer.Membrane).SelectMany(p => p.Segments));
+    }
+
+    // ------------------------------------------------------------ every material standard (decision 673)
+
+    public static IEnumerable<object[]> Standards() => MaterialStandard.BuiltIns.Where(s => !s.IsLapin).Select(s => new object[] { s.Id });
+
+    /// <summary>Each built-in standard draws the details (applied to their projects) by the same rules, at 1:20 and 1:100.</summary>
+    [Theory]
+    [MemberData(nameof(Standards))]
+    public void Every_standard_draws_the_details_by_the_rules(string id)
+    {
+        var drawn = Draw(MaterialReferenceDetails.All.Select(x => (Func<ReferenceDetails.Detail>)(() =>
+            ReferenceDetails.Make(x.Build, f => f.Run("standards.applyMaterials", new JsonObject { ["id"] = id })))), [20, 100]);
+        foreach (var d in drawn)
+        {
+            Assert.Equal(id, MaterialStandards.Of(d.Detail.F.Model).Id);
+            CheckNoCutLineInsideMaterial(d);
+            CheckHatchesInside(d);
+            CheckPenHierarchy(d);
+            CheckBandsHatched(d);
+            CheckMembranes(d);
+        }
+        // The standard draws otherwise than Lapin's: somewhere a pen differs.
+        Assert.NotEqual(string.Concat(All.Value.Where(x => x.Scale is 20 or 100).Select(x => Snapshot(x.R.Pens))), string.Concat(drawn.Select(x => Snapshot(x.R.Pens))));
     }
 
     // ------------------------------------------------------------ the snapshot

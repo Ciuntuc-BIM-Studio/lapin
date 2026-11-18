@@ -89,7 +89,7 @@ public sealed record SmallScaleCut(string Mode = SmallScaleCut.AsMaterial, doubl
 /// <item>the view style's small-scale cut (<see cref="SmallScaleCut"/>, cut bands only);</item>
 /// <item>the material's step for the view's scale (<see cref="ScaleStep"/>);</item>
 /// <item>the material's own graphics;</item>
-/// <item>the standard / what its name suggests.</item>
+/// <item>the project's material standard (<see cref="MaterialStandards"/>, decision 673): its rule for the material's name or category.</item>
 /// </list>
 /// The last three are <see cref="MaterialGraphics.Resolve"/>; this lays the view's tiers over them. Visibility / Graphics' category
 /// fill colour and cut hatch still lay themselves over all of it when the pens are drawn (<see cref="Pens.Of"/>), as before.
@@ -102,6 +102,7 @@ public sealed class ViewMaterialGraphics
     readonly string _kind;
     readonly double? _scale;
     readonly bool _paper;
+    readonly MaterialStandard _standard;
     readonly SmallScaleCut? _small;
     readonly Dictionary<string, ResolvedMaterial?> _materials = [];
     readonly Dictionary<string, IReadOnlyList<LayerBand>?> _bands = [];
@@ -116,6 +117,8 @@ public sealed class ViewMaterialGraphics
         _kind = kind;
         _scale = scale;
         _paper = MaterialHatchUpgrade.PaperSurfaces(m);
+        // The project's material standard (decision 673): tier 7, what a material does not set itself.
+        _standard = MaterialStandards.Of(m);
         // Cuts only: an elevation's surfaces keep their materials' look.
         _small = kind != "elevation" && scale is { } s && style?.SmallScaleCut is { } sc && sc.Holds(s) ? sc : null;
     }
@@ -137,8 +140,8 @@ public sealed class ViewMaterialGraphics
         if (id == null) return null;
         if (_materials.TryGetValue(id, out var r)) return r;
         // A material named rather than kept (a track's ballast, its rails): its look guessed from the name.
-        return _materials[id] = _m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, _kind, paperSurfaces: _paper, scale: _scale)
-            : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, _kind, id, _paper, _scale);
+        return _materials[id] = _m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, _kind, paperSurfaces: _paper, scale: _scale, standard: _standard)
+            : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, _kind, id, _paper, _scale, _standard);
     }
 
     /// <summary>A cut band's graphics in the view: every tier, in the order of the precedence (the lowest first).</summary>

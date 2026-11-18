@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "ro.ciuntucbimstudio.standard-ro-sr-iso-128-50",
+  "name": "Material standard: România (SR ISO 128-50)",
+  "summary": "How materials draw in cuts, plans and facades after SR ISO 128-50: Lapin's built-in „România (SR ISO 128-50)” standard as a pack (indicative).",
+  "description": "The conventions of ISO 128-50 (SR ISO 128-50) with the materials named in Romanian and English: zidărie in 45° lines, BCA in 135° lines with dots, beton speckled, beton armat over 45° lines, polistiren crosshatched, vată minerală as loops, lemn grain, oțel filled solid from 1:50; facing brick 240 × 63. Indicative, drawn by Lapin from the general principles of the norm, not copied from it: check it against the standard your drawings must follow. Installed, it is added to the open project with „Add to this project” and applied from Manage → Drawing standards → Materials. Country: RO; norm: SR ISO 128-50.",
+  "screenshots": [
+    "screenshot.png"
+  ],
+  "version": "1.0.0",
+  "author": {
+    "name": "Ciuntuc BIM Studio",
+    "github": "Ciuntuc-BIM-Studio",
+    "url": "https://lapinbim.com"
+  },
+  "license": "MIT",
+  "lapin": ">=0.1.1336",
+  "kind": "standards",
+  "tags": [
+    "standard",
+    "hatches",
+    "materials",
+    "sr-iso-128-50",
+    "country-ro",
+    "romania",
+    "example"
+  ],
+  "languages": [
+    "ro",
+    "en"
+  ],
+  "permissions": [],
+  "indicative": true,
+  "contents": {
+    "file": "ro-sr-iso-128-50.lapinstandards",
+    "items": [
+      "34 rules (cut, plan and facade graphics by the material's name)",
+      "Patterns: ISO_135, ISO_AERATED, ISO_STONE"
+    ]
+  },
+  "package": {
+    "url": "https://github.com/Ciuntuc-BIM-Studio/lapin-extensions/releases/download/standard-ro-sr-iso-128-50-v1.0.0/ro-sr-iso-128-50.lapinstandards",
+    "sha256": "631ec27e578da2978aec392c5f6e7fed766aeec7a6fa178e7c2848b63de14fa0",
+    "size": 18440
+  },
+  "homepage": "https://github.com/Ciuntuc-BIM-Studio/lapin-extensions/tree/main/extensions/ro.ciuntucbimstudio.standard-ro-sr-iso-128-50",
+  "forum": "https://forum.lapinbim.com/c/lapin"
+}

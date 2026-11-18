@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "ro.ciuntucbimstudio.standard-bs-8888",
+  "name": "Material standard: BS 8888 / BS 1192",
+  "summary": "How materials draw in cuts, plans and facades after BS 8888, BS 1192: Lapin's built-in „BS 8888 / BS 1192” standard as a pack (indicative).",
+  "description": "Brickwork in 45° lines, blockwork in wider 45° lines with dashes between, stone crossed by dashes; concrete speckled, reinforced concrete over 45° lines; quilt insulation as loops, rigid insulation crosshatched; sawn timber grain; steel paired lines, filled solid from 1:50; facing brick 215 × 65. Indicative, drawn by Lapin from the general principles of the norm, not copied from it: check it against the standard your drawings must follow. Installed, it is added to the open project with „Add to this project” and applied from Manage → Drawing standards → Materials. Country: GB; norm: BS 8888, BS 1192.",
+  "screenshots": [
+    "screenshot.png"
+  ],
+  "version": "1.0.0",
+  "author": {
+    "name": "Ciuntuc BIM Studio",
+    "github": "Ciuntuc-BIM-Studio",
+    "url": "https://lapinbim.com"
+  },
+  "license": "MIT",
+  "lapin": ">=0.1.1336",
+  "kind": "standards",
+  "tags": [
+    "standard",
+    "hatches",
+    "materials",
+    "bs-8888",
+    "bs-1192",
+    "country-gb",
+    "uk",
+    "example"
+  ],
+  "languages": [
+    "en"
+  ],
+  "permissions": [],
+  "indicative": true,
+  "contents": {
+    "file": "bs-8888.lapinstandards",
+    "items": [
+      "34 rules (cut, plan and facade graphics by the material's name)",
+      "Patterns: BS_BLOCK, BS_STONE"
+    ]
+  },
+  "package": {
+    "url": "https://github.com/Ciuntuc-BIM-Studio/lapin-extensions/releases/download/standard-bs-8888-v1.0.0/bs-8888.lapinstandards",
+    "sha256": "e47994065ee9839d22218bbde9dce9ff1442bbd1783ce533964700b0c481bb05",
+    "size": 13791
+  },
+  "homepage": "https://github.com/Ciuntuc-BIM-Studio/lapin-extensions/tree/main/extensions/ro.ciuntucbimstudio.standard-bs-8888",
+  "forum": "https://forum.lapinbim.com/c/lapin"
+}

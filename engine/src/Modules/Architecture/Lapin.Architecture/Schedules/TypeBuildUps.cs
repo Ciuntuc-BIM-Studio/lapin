@@ -57,6 +57,7 @@ public static class TypeBuildUps
         if (cards.Count == 0) return [];
         var k = 1000 / scale;
         var patterns = DraftingResources.Patterns(m);
+        var standard = MaterialStandards.Of(m);
         string LabelOf((string Label, string Material, double Thickness, bool Core, Entity? MaterialEntity) l) => $"{l.Label}  {l.Material}  {Mm(l.Thickness)}";
         double CardW(Card c) => Math.Max(MinW, DimLeft + StripW + LabelGap + c.Layers.Max(l => LabelOf(l).Length) * LabelText * 0.58 + Pad);
         double BodyH(Card c) => Math.Max(c.Layers.Sum(l => l.Thickness) * k, c.Layers.Count * LabelRow);
@@ -98,7 +99,7 @@ public static class TypeBuildUps
                     // A layer of no thickness (a membrane, paint; decision 291) has no band: its line is drawn below.
                     if (!(t > 0)) { bounds.Add(y); continue; }
                     IReadOnlyList<Vec2> loop = [new(x0, y), new(x1, y), new(x1, y + t), new(x0, y + t)];
-                    var look = MaterialGraphics.Resolve(l.MaterialEntity, "section", l.MaterialEntity == null ? l.Material : null);
+                    var look = MaterialGraphics.Resolve(l.MaterialEntity, "section", l.MaterialEntity == null ? l.Material : null, standard: standard);
                     var pattern = look.Hatch is { } hn ? HatchLibrary.Find(hn, patterns) : null;
                     if (pattern is { Solid: true }) s.Fill(loop, "#2b2b2b");
                     else

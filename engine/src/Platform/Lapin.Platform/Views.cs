@@ -761,7 +761,7 @@ public static class Views
     {
         var k = material + "|" + ifcClass;
         if (cache.TryGetValue(k, out var key)) return key;
-        return cache[k] = MaterialDrawing.SeamKey(material == null ? null : m.Get(material) is { } mat ? MaterialGraphics.Resolve(mat, "elevation") : null, ifcClass);
+        return cache[k] = MaterialDrawing.SeamKey(material == null ? null : m.Get(material) is { } mat ? MaterialGraphics.Resolve(mat, "elevation", standard: MaterialStandards.Of(m)) : null, ifcClass);
     }
 
     /// <summary>

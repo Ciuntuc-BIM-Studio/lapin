@@ -6,6 +6,8 @@
   -->
   <ItemGroup>
     <EmbeddedResource Include="Export/dxf-r2000-skeleton.dxf" LogicalName="Lapin.Drawing.Export.dxf-r2000-skeleton.dxf" />
+    <!-- The material standards Lapin ships (decision 673), as data. -->
+    <EmbeddedResource Include="MaterialStandards/*.json" LogicalName="Lapin.Drawing.MaterialStandards.%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../Model/Lapin.Model/Lapin.Model.csproj" />

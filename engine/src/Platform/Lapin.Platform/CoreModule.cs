@@ -61,6 +61,7 @@ public sealed class CoreModule : ILapinModule
         DraftingResources.Register(r);
         // Line types of the project's own and the standards as a library (docs/plan-user-extensibility.md §3.6–3.7).
         StandardsLibrary.Register(r);
+        MaterialStandards.Register(r);
         // Rule packs: the norms the configurators use, as data (docs/plan-user-extensibility.md §5.4).
         RulePacks.Register(r);
         // Classifications, keynotes and shared parameter definitions (docs/plan-user-extensibility.md §7.3).

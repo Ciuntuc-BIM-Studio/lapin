@@ -117,6 +117,31 @@ public static class DraftingResources
         return r.Count > 0 ? r : null;
     }
 
+    // The patterns of a material standard being checked (decision 673): known beside the project's while its rules are checked.
+    [ThreadStatic] static IReadOnlyList<HatchPattern>? _standardPatterns;
+
+    static IEnumerable<HatchPattern> Known(IModelView m) => _standardPatterns is { Count: > 0 } sp ? Patterns(m).Concat(sp) : Patterns(m);
+
+    /// <summary>
+    /// A material standard's kind of view checked as a material's (decision 673), its own <paramref name="patterns"/> known beside
+    /// the project's: a field it leaves null is left out (but hatch and fill, whose null is an explicit none); reset refused.
+    /// </summary>
+    internal static JsonObject CheckStandardGraphics(IModelView m, JsonObject g, string where, IReadOnlyList<HatchPattern> patterns)
+    {
+        if (g.ContainsKey("reset")) throw new CommandException($"{where}: a standard's graphics have no reset.");
+        _standardPatterns = patterns;
+        try
+        {
+            var o = new JsonObject();
+            foreach (var (k, v) in CheckGraphics(m, g, where)) if (v != null || !NullResets(k)) o[k] = v?.DeepClone();
+            return o;
+        }
+        finally { _standardPatterns = null; }
+    }
+
+    /// <summary>A line of a standard's pens checked as a material's line (colour, weight, line type); null when it gives none.</summary>
+    internal static JsonObject? CheckStandardLine(IModelView m, JsonNode? v, string where, string what) => CheckLine(m, v, where, what);
+
     /// <summary>A view's graphics checked: a known pattern (or null for none), a positive scale, a colour (or "material"), a pen 1–16.</summary>
     static JsonObject CheckGraphics(IModelView m, JsonObject g, string where)
     {
@@ -131,7 +156,7 @@ public static class DraftingResources
                 case "hatch":
                     if (v is null || (string?)v is "" or null) { o[k] = null; break; }
                     var name = (string)v!;
-                    o[k] = HatchLibrary.Find(name, Patterns(m))?.Name ?? throw new CommandException($"There is no hatch pattern „{name}”.");
+                    o[k] = HatchLibrary.Find(name, Known(m))?.Name ?? throw new CommandException($"There is no hatch pattern „{name}”.");
                     break;
                 case "hatchScale":
                     o[k] = Json.Number(v) is { } s && s > 0 && double.IsFinite(s) ? s : throw new CommandException($"{where}: the hatch scale must be positive.");
@@ -173,7 +198,7 @@ public static class DraftingResources
                         if (bv is null || (bk == "hatch" && (string?)bv is "")) continue;
                         b[bk] = bk switch
                         {
-                            "hatch" => HatchLibrary.Find((string)bv!, Patterns(m))?.Name ?? throw new CommandException($"There is no hatch pattern „{(string?)bv}”."),
+                            "hatch" => HatchLibrary.Find((string)bv!, Known(m))?.Name ?? throw new CommandException($"There is no hatch pattern „{(string?)bv}”."),
                             "hatchScale" => Json.Number(bv) is { } bs && bs > 0 && double.IsFinite(bs) ? bs : throw new CommandException($"{where}: the background hatch's scale must be positive."),
                             "hatchAngle" => Json.Number(bv) is { } ba && double.IsFinite(ba) ? ba : throw new CommandException($"{where}: the background hatch's angle is in degrees."),
                             "hatchColor" => Colour(bv, where, "the background hatch's colour"),
@@ -332,7 +357,7 @@ public static class DraftingResources
             mat = mat.With(attrs: attrs);
         }
         // At the sample's scale, the material's step for it (decision 672).
-        var look = MaterialGraphics.Resolve(mat, kind, paperSurfaces: MaterialHatchUpgrade.PaperSurfaces(q.Model), scale: scale);
+        var look = MaterialGraphics.Resolve(mat, kind, paperSurfaces: MaterialHatchUpgrade.PaperSurfaces(q.Model), scale: scale, standard: MaterialStandards.Of(q.Model));
         var book = Book(q.Model);
         var project = Spatial.Project(q.Model);
         var options = new Lapin.Drawing.Views.Pens.Options(scale, Patterns: Patterns(q.Model), Table: LineStyles.ReadTable(project?.Attrs["penTable"]), LineTypes: book.LineTypes,
@@ -564,6 +589,7 @@ public static class DraftingResources
         {
         // A project made before real-size hatches (decision 671) suggests its surfaces' paper ones.
         var paper = MaterialHatchUpgrade.PaperSurfaces(q.Model);
+        var standard = MaterialStandards.Of(q.Model);
         return new JsonArray(q.Model.OfClass(IfcClass.Material).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).Select(mat =>
         {
             var o = new JsonObject { ["id"] = mat.Id, ["name"] = mat.Name, ["color"] = Materials.ColorOf(q.Model, mat.Id), ["inUse"] = InUse(q.Model, mat.Id), ["category"] = mat.Str("category") };
@@ -571,7 +597,7 @@ public static class DraftingResources
             o["look"] = MaterialLook.Of(mat).ToJson(mat);
             foreach (var kind in MaterialGraphics.Kinds)
             {
-                var k = MaterialGraphics.Resolve(mat, kind, paperSurfaces: paper).ToJson();
+                var k = MaterialGraphics.Resolve(mat, kind, paperSurfaces: paper, standard: standard).ToJson();
                 // Its steps by scale (decision 672), as saved on the kind (a plan's own; a plan takes the section's too).
                 if (mat.Attrs[kind]?["byScale"] is JsonArray steps) k["byScale"] = steps.DeepClone();
                 o[kind] = k;

@@ -179,6 +179,9 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
     /// </summary>
     public string? JoinAs { get; init; }
 
+    /// <summary>The material standard that gave what the material does not set itself, when not Lapin's (decision 673); null: Lapin's.</summary>
+    public string? Standard { get; init; }
+
     /// <summary>Whether it sets anything decision 670 added (a drawing of materials that set none is drawn exactly as before).</summary>
     public bool Flex => HatchColor != null || HatchWeight != null || HatchLineType != null || HatchOpacity != null || Halftone || FillOpacity != null || Background != null || CutLine != null || SeparatorLine != null;
 
@@ -208,6 +211,7 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
         if (SeparatorLine != null) o["separatorLine"] = SeparatorLine.ToJson();
         if (HatchUnits is { } hu) o["hatchUnits"] = Lapin.Drawing.Hatch.HatchScale.Name(hu);
         if (Step is { } st) o["step"] = new JsonObject { ["kind"] = st.Kind, ["index"] = st.Index };
+        if (Standard != null) o["standard"] = Standard;
         return o;
     }
 }
@@ -234,39 +238,17 @@ public static class MaterialGraphics
 
     public static string Normalise(string name) => Regex.Replace(name.Trim().ToLowerInvariant(), @"\s+", " ");
 
-    sealed record Guess(bool Membrane = false, string? Hatch = null);
-
     /// <summary>
-    /// What a name suggests for a cut (decision 460, after the tester's request of decision 456): the cut patterns Revit's
-    /// default materials carry, drawn by Lapin's own patterns. Brick, masonry and stone 45° lines (MASONRY, Revit's
-    /// "Masonry - Brick"); concrete blocks, aerated concrete and CMU a diagonal crosshatch (BLOCK, Revit's "Diagonal
-    /// crosshatch" on Concrete Masonry Units); concrete, cast in place or reinforced, the speckle (CONCRETE, Revit's
-    /// "Concrete"); rigid insulation a fine square grid (RIGID, Revit's "Insulation - Rigid"), batts and wool BATT; gypsum,
-    /// plaster and render a stipple (GYPSUM, Revit's "Gypsum-Plaster"); sand a dense stipple (SAND); timber its grain
-    /// (WOOD), plywood, OSB and CLT their crossed layers (WOODCROSS); steel and metal STEEL; earth and gravel theirs.
-    /// Tiles keep their grid (TILES: a roof's covering band shows). Glass, air, paint and finishes, membranes and a name nothing matches: none (Revit's Default material has no
-    /// cut pattern). Brick's courses are what a facade shows (<see cref="ElevationGuesses"/>). The first match wins:
-    /// membranes and insulation first ("bitumen sheet", "stone wool"), glass and air ("glass block"), blocks before
-    /// concrete and before masonry ("concrete block", "zidărie BCA").
+    /// What a name suggests for a cut (decision 460, after the tester's request of decision 456) is now data: the rules of the
+    /// built-in standard „Lapin" (<see cref="MaterialStandard.Lapin"/>, MaterialStandards/lapin.json, decision 673), with exactly the
+    /// results of the table it replaced. Brick, masonry and stone 45° lines (MASONRY); concrete blocks, aerated concrete and CMU a
+    /// diagonal crosshatch (BLOCK); concrete the speckle (CONCRETE); rigid insulation RIGID, batts and wool BATT; gypsum, plaster
+    /// and render GYPSUM; sand SAND; timber WOOD, plywood, OSB and CLT WOODCROSS; steel and metal STEEL; earth and gravel theirs;
+    /// tiles TILES. Glass, air, paint and finishes, membranes and a name nothing matches: none. The first match wins: membranes
+    /// and insulation first ("bitumen sheet", "stone wool"), glass and air ("glass block"), blocks before concrete and before
+    /// masonry ("concrete block", "zidărie BCA").
     /// </summary>
-    static readonly (Regex Re, Guess G)[] Guesses =
-    [
-        (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|sheet|folie|barier"), new(Membrane: true)),
-        (new(@"eps\b|xps\b|polystyren|polistiren|pir\b|pur\b|rigid|extrudat|expandat"), new(Hatch: "RIGID")),
-        (new(@"insul|wool|vata|izola|batt|fibre|fiber"), new(Hatch: "BATT")),
-        (new(@"glass|glazing|sticla|geam|\bair\b|cavity|\baer\b|lama de aer"), new()),
-        (new(@"block|\bcmu\b|bca|aac|ytong|boltari|blocuri"), new(Hatch: "BLOCK")),
-        (new(@"brick|masonry|caramid|zidari|clinker|stone|piatra"), new(Hatch: "MASONRY")),
-        (new(@"concrete|beton|screed|sapa|c\d\d/|reinforced|armat"), new(Hatch: "CONCRETE")),
-        (new(@"plywood|osb|\bclt\b|placaj"), new(Hatch: "WOODCROSS")),
-        (new(@"timber|wood|lemn|lumber|glulam"), new(Hatch: "WOOD")),
-        (new(@"steel|metal|otel|alumin"), new(Hatch: "STEEL")),
-        (new(@"\bsand\b|nisip"), new(Hatch: "SAND")),
-        (new(@"gravel|ballast|pietris|aggregate"), new(Hatch: "GRAVEL")),
-        (new(@"earth|soil|pamant|ground"), new(Hatch: "EARTH")),
-        (new(@"plaster|render|gypsum|tencuial|gips|stucco"), new(Hatch: "GYPSUM")),
-        (new(@"tile|ceramic|gresie|faianta|tigla|olan"), new(Hatch: "TILES")),
-    ];
+    sealed record Guess(bool Membrane = false, string? Hatch = null);
 
     /// <summary>
     /// The suggestions decision 325 made (a project with no <c>hatchRev</c>): brick and masonry in courses (BRICK), an
@@ -331,45 +313,25 @@ public static class MaterialGraphics
         (new(@"tile|ceramic|gresie|faianta|porcelain"), "TILES"),
     ];
 
-    /// <summary>
-    /// What a name suggests for a facade in a project made since decision 671 (<c>hatchRev</c> 3): the same matches as
-    /// decision 327's, drawn at the object's real size (<see cref="HatchUnits.Model"/>), so a brick's courses are a brick's
-    /// at any scale: brick 240×63 (Î3), concrete blocks 400×200, aerated blocks 600×250, coursed stone 600×300, boards
-    /// 150 mm, standing seams every 500 mm, roof tiles at a 330 mm gauge, tiles 300×300. Sand, gravel and earth have no size
-    /// and keep their paper patterns. A project made before keeps decision 327's (<c>MaterialHatchUpgrade</c>).
-    /// </summary>
-    static readonly (Regex Re, string? Hatch)[] ElevationGuesses =
-    [
-        (new(@"clay tile|concrete tile|roof ?tile|tigla|olan|shingle|sindrila|slate|ardezie"), "ROOF_TILES"),
-        (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|folie|barier"), null),
-        (new(@"insul|wool|eps\b|xps\b|polystyren|pir\b|pur\b|vata|izola"), null),
-        (new(@"plaster|render|gypsum|tencuial|gips|paint|vopsea|stucco|adhesive|adeziv"), null),
-        (new(@"bca|aac|ytong|aerated|autoclav"), "BLOCK_600X250"),
-        (new(@"block|\bcmu\b|boltari"), "BLOCK_400X200"),
-        (new(@"brick|masonry|caramid|zidari|clinker"), "BRICK_240X63"),
-        (new(@"stone|piatra|granit|marble|marmura|travertin|limestone|calcar|sandstone|ashlar"), "STONE_600X300"),
-        (new(@"timber|wood|lemn|larch|cedar|pine|spruce|lambriu|siding|weatherboard|scandura"), "BOARDS_150"),
-        (new(@"clad|placare|sandwich|trapez|tabla|zinc|copper|cupru|standing seam|faltuit|corrugated|cutat|metal sheet|steel sheet|roof sheet"), "METAL_SEAM_500"),
-        (new(@"concrete|beton|screed|sapa|c\d\d/"), null),
-        (new(@"\bsand\b|nisip"), "SAND"),
-        (new(@"gravel|ballast|pietris|aggregate"), "GRAVEL"),
-        (new(@"earth|soil|pamant|ground"), "EARTH"),
-        (new(@"tile|ceramic|gresie|faianta|porcelain"), "TILE_300X300"),
-    ];
+    // What a name suggests for a facade in a project made since decision 671 (hatchRev 3) is the rules of the built-in standard
+    // „Lapin" (decision 673): decision 327's matches drawn at the object's real size (brick 240×63, blocks 400×200, aerated
+    // blocks 600×250, coursed stone 600×300, boards 150 mm, standing seams every 500 mm, roof tiles at a 330 mm gauge, tiles
+    // 300×300; sand, gravel and earth keep their paper patterns). A project made before keeps decision 327's (MaterialHatchUpgrade).
 
     // Romanian diacritics fold to their letters, as the old names were typed.
     static string Fold(string name) => Normalise(name).Replace('ă', 'a').Replace('â', 'a').Replace('î', 'i').Replace('ș', 's').Replace('ş', 's').Replace('ț', 't').Replace('ţ', 't');
 
-    /// <summary>What the name matches (null: nothing does).</summary>
-    static Guess? GuessOf(string name, (Regex Re, Guess G)[]? table = null)
+    /// <summary>What the name matches in a legacy table (null: nothing does).</summary>
+    static Guess? GuessOf(string name, (Regex Re, Guess G)[] table)
     {
         var n = Fold(name);
-        foreach (var (re, g) in table ?? Guesses) if (re.IsMatch(n)) return g;
+        foreach (var (re, g) in table) if (re.IsMatch(n)) return g;
         return null;
     }
 
-    /// <summary>A section's hatch from the name: what it matches, else none.</summary>
-    static Guess Suggested(string name) => GuessOf(name) ?? new Guess();
+    /// <summary>What a standard's rules say of a cut by the name (<paramref name="standard"/> null: Lapin's): its hatch and whether it is a membrane; null when no rule matches.</summary>
+    static Guess? Suggested(string name, MaterialStandard? standard = null, string? category = null) =>
+        (standard ?? MaterialStandard.Lapin).CutRule(name, category) is { } r ? new Guess(r.Membrane ?? false, r.Section?.Hatch is { Length: > 0 } h ? h.ToUpperInvariant() : null) : null;
 
     /// <summary>
     /// What an earlier build's names suggested for a cut (a pattern, or none): decision 325's for a project of no
@@ -389,13 +351,17 @@ public static class MaterialGraphics
     /// </summary>
     public static string? ElevationFromName(string name, bool paper = false)
     {
-        var n = Fold(name);
-        foreach (var (re, h) in paper ? ElevationGuesses327 : ElevationGuesses) if (re.IsMatch(n)) return h;
-        return null;
+        if (paper)
+        {
+            var n = Fold(name);
+            foreach (var (re, h) in ElevationGuesses327) if (re.IsMatch(n)) return h;
+            return null;
+        }
+        return MaterialStandard.Lapin.ElevationRule(name)?.Elevation?.Hatch is { Length: > 0 } eh ? eh.ToUpperInvariant() : null;
     }
 
     /// <summary>What a name suggests for a section: its hatch (or none) and whether it is a membrane.</summary>
-    public static (string? Hatch, bool Membrane) FromName(string name) => Suggested(name) is var g ? (g.Hatch, g.Membrane) : default;
+    public static (string? Hatch, bool Membrane) FromName(string name) => Suggested(name) is { } g ? (g.Hatch, g.Membrane) : default;
 
     /// <summary>
     /// The material's own graphics for a kind of view (a plan: the section's fields, then the plan's own), each kind's step
@@ -422,7 +388,8 @@ public static class MaterialGraphics
         return (own, step);
     }
 
-    static ViewGraphics? Merge(ViewGraphics? a, ViewGraphics? b) => (a, b) switch
+    /// <summary>Two graphics field by field, <paramref name="b"/>'s over <paramref name="a"/>'s (lines and background hatches field by field too).</summary>
+    public static ViewGraphics? Merge(ViewGraphics? a, ViewGraphics? b) => (a, b) switch
     {
         (null, null) => null,
         (null, _) => b,
@@ -439,35 +406,49 @@ public static class MaterialGraphics
     };
 
     /// <summary>
-    /// The material's graphics in one kind of view: its own fields, else what its name suggests (an elevation:
-    /// <see cref="ElevationFromName"/>, the paper patterns when <paramref name="paperSurfaces"/>: a project made before
-    /// decision 671, <c>MaterialHatchUpgrade.PaperSurfaces</c>). At a view's <paramref name="scale"/> (a denominator), the
-    /// material's step for it over its own fields (decision 672, <see cref="ScaleStep"/>); no scale, no step.
+    /// The material's graphics in one kind of view: its own fields, else what the project's material standard gives it by its
+    /// name (<paramref name="standard"/>, decision 673; null: Lapin's, <see cref="MaterialStandard.Lapin"/>, today's look). An
+    /// elevation of a project made before decision 671 under Lapin's standard takes decision 327's paper patterns
+    /// (<paramref name="paperSurfaces"/>, <c>MaterialHatchUpgrade.PaperSurfaces</c>). At a view's <paramref name="scale"/> (a
+    /// denominator), each tier's step for it over its fields (decision 672, <see cref="ScaleStep"/>): the standard, its step, the
+    /// material's own, its step. A material that sets its own pattern takes its own scale, angle and units, never the
+    /// standard's for another pattern; one that sets its own background hatch, none of the standard's. No scale, no step.
     /// This is the material's tier of a view's graphics; what a view lays over it is <c>ViewMaterialGraphics</c> (Lapin.Platform).
     /// </summary>
-    public static ResolvedMaterial Resolve(Entity? material, string kind = "section", string? name = null, bool paperSurfaces = false, double? scale = null)
+    public static ResolvedMaterial Resolve(Entity? material, string kind = "section", string? name = null, bool paperSurfaces = false, double? scale = null, MaterialStandard? standard = null)
     {
         name ??= material?.Name ?? "";
+        standard ??= MaterialStandard.Lapin;
         var (own, step) = Own(material, kind, scale);
         var elevation = kind == "elevation";
-        var guess = elevation ? null : Suggested(name);
+        var category = material?.Str("category");
+        // The standard's tier: its rule for the name (a project before decision 671 under Lapin's: the paper facades).
+        ViewGraphics? std;
+        StandardRule? rule;
+        if (elevation && paperSurfaces && standard.IsLapin) (std, rule) = (new ViewGraphics(ElevationFromName(name, true) ?? ""), null);
+        else (std, rule) = standard.For(kind, name, category, scale);
+        if (std != null && own?.Hatch != null) std = std with { HatchScale = null, HatchAngle = null, HatchUnits = null };
+        if (std != null && own?.BackgroundHatch?.Hatch != null) std = std with { BackgroundHatch = null };
+        var g = Merge(std, own);
         var color = material?.Str("color");
-        // "" in an own field is an explicit none; null is "not given". An elevation's guess is the facade's (ElevationFromName).
-        string? hatch = own?.Hatch is { } h ? (h.Length == 0 ? null : h.ToUpperInvariant()) : elevation ? ElevationFromName(name, paperSurfaces) : guess?.Hatch;
+        // "" is an explicit none; null is "not given" (nothing suggested either: no hatch).
+        string? hatch = g?.Hatch is { Length: > 0 } h ? h.ToUpperInvariant() : null;
         // A fill only when asked: a colour, or "material" for the material's own (every material has a colour for 3D).
-        string? fill = own?.Fill is { Length: > 0 } f ? (f == "material" ? color : f) : null;
+        string? fill = g?.Fill is { Length: > 0 } f ? (f == "material" ? color : f) : null;
         var hasOwn = own != null || material?.Attrs.ContainsKey("membrane") == true;
-        var membrane = material?.Attrs["membrane"] is JsonValue mv && mv.TryGetValue<bool>(out var mb) ? mb : guess?.Membrane ?? false;
+        // A cut's membrane by its name (never a facade's).
+        var membrane = material?.Attrs["membrane"] is JsonValue mv && mv.TryGetValue<bool>(out var mb) ? mb : !elevation && rule?.Membrane == true;
         if (membrane) hatch = null;
         var joints = material?.Attrs["drawJoints"] is JsonValue jv && jv.TryGetValue<bool>(out var j) && j;
         // The flexible fields (decision 670): none given, none set, so a material that sets none draws as before.
-        var background = own?.BackgroundHatch is { Hatch: { Length: > 0 } bh } bg ? bg with { Hatch = bh.ToUpperInvariant() } : null;
-        return new ResolvedMaterial(name, hatch, own?.HatchScale ?? 1, fill, own?.HatchPen, membrane, joints, color, hasOwn ? "own" : "name", own?.HatchAngle ?? 0, own?.HatchAlign ?? HatchAlign.View,
+        var background = g?.BackgroundHatch is { Hatch: { Length: > 0 } bh } bg ? bg with { Hatch = bh.ToUpperInvariant() } : null;
+        return new ResolvedMaterial(name, hatch, g?.HatchScale ?? 1, fill, g?.HatchPen, membrane, joints, color, hasOwn ? "own" : "name", g?.HatchAngle ?? 0, g?.HatchAlign ?? HatchAlign.View,
             JoinsOf(material))
         {
-            HatchColor = own?.HatchColor, HatchWeight = own?.HatchWeight, HatchLineType = own?.HatchLineType, HatchOpacity = own?.HatchOpacity is { } ho && ho < 100 ? ho : null,
-            Halftone = own?.Halftone == true, FillOpacity = fill != null && own?.FillOpacity is { } fo && fo < 100 ? fo : null,
-            Background = membrane ? null : background, CutLine = own?.CutLine, SeparatorLine = own?.SeparatorLine, HatchUnits = own?.HatchUnits, Step = step,
+            HatchColor = g?.HatchColor, HatchWeight = g?.HatchWeight, HatchLineType = g?.HatchLineType, HatchOpacity = g?.HatchOpacity is { } ho && ho < 100 ? ho : null,
+            Halftone = g?.Halftone == true, FillOpacity = fill != null && g?.FillOpacity is { } fo && fo < 100 ? fo : null,
+            Background = membrane ? null : background, CutLine = g?.CutLine, SeparatorLine = g?.SeparatorLine, HatchUnits = g?.HatchUnits, Step = step,
+            Standard = standard.IsLapin ? null : standard.Id,
         };
     }
 
@@ -488,7 +469,7 @@ public static class MaterialGraphics
         if (pattern != null)
         {
             // A pattern named as no pattern of the library: what its name says, if it says anything (never the general lines).
-            var known = HatchLibrary.Find(pattern, extra) != null ? pattern.ToUpperInvariant() : GuessOf(pattern)?.Hatch;
+            var known = HatchLibrary.Find(pattern, extra) != null ? pattern.ToUpperInvariant() : Suggested(pattern)?.Hatch;
             if (known != null) g = new ViewGraphics(known, scale ?? 1);
         }
         else if (linesAngleDeg is { } a)

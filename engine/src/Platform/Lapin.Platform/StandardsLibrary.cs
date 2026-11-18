@@ -56,18 +56,71 @@ public static class StandardsLibrary
             foreach (var x in dl.OfType<JsonObject>()) if (string.Equals((string?)x["lineType"], from, StringComparison.OrdinalIgnoreCase)) x["lineType"] = to ?? "continuous";
         if (attrs["objectStyles"] is JsonObject os)
             foreach (var (_, cat) in os) foreach (var (_, spec) in cat as JsonObject ?? []) if (spec is JsonObject so && string.Equals((string?)so["pattern"], from, StringComparison.OrdinalIgnoreCase)) { if (to == null) so.Remove("pattern"); else so["pattern"] = to; }
+        // The project's own material standards' rules and pens (decision 673) name line types as materials do.
+        if (attrs[MaterialStandards.ListKey] is JsonArray standards) RepointGraphics(standards, from, to);
         ctx.Replace(project.With(attrs: attrs));
+        // Materials (decision 673): their hatch's line type and their cut and separator lines', in every kind of view, its steps by scale and its background.
+        foreach (var mat in ctx.Model.OfClass(IfcClass.Material).ToList())
+        {
+            var ma = mat.CloneAttrs();
+            if (RepointGraphics(ma, from, to)) ctx.Replace(mat.With(attrs: ma));
+        }
+    }
+
+    /// <summary>
+    /// A line type renamed or gone in a material's graphics (or anything holding them: a standard's rules): <c>hatchLineType</c>
+    /// and the <c>lineType</c> of <c>cutLine</c>, <c>separatorLine</c> and a standard's pens, anywhere in the tree (steps by scale,
+    /// background hatches); gone, the field is taken off (continuous). Whether anything changed.
+    /// </summary>
+    static bool RepointGraphics(JsonNode node, string from, string? to)
+    {
+        var changed = false;
+        switch (node)
+        {
+            case JsonObject o:
+                foreach (var k in o.Select(kv => kv.Key).ToList())
+                {
+                    var v = o[k];
+                    if (k == "hatchLineType" && v is JsonValue && string.Equals((string?)v, from, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (to == null) o.Remove(k); else o[k] = to;
+                        changed = true;
+                    }
+                    else if (k is "cutLine" or "separatorLine" or "cut" or "hatch" && v is JsonObject line && string.Equals((string?)line["lineType"], from, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (to == null) line.Remove("lineType"); else line["lineType"] = to;
+                        if (line.Count == 0) o.Remove(k);
+                        changed = true;
+                    }
+                    else if (v != null) changed |= RepointGraphics(v, from, to);
+                }
+                break;
+            case JsonArray a:
+                foreach (var x in a) if (x != null) changed |= RepointGraphics(x, from, to);
+                break;
+        }
+        return changed;
     }
 
     // ------------------------------------------------------------ the standards' file
 
     /// <summary>The project's standards as a file: the drafting standards, its hatch patterns, its symbols and the marks' symbols by name, and its options.</summary>
-    public static JsonObject Export(IModelView m, string? name)
+    public static JsonObject Export(IModelView m, string? name, IReadOnlyList<string>? materialStandards = null, bool onlyMaterials = false)
     {
         var project = Project(m);
         var o = new JsonObject();
         if (name is { Length: > 0 }) o["name"] = name;
+        // The material standards (decision 673): those named (a built-in one as data), else the project's own.
+        var materials = MaterialStandards.FileSection(m, materialStandards);
+        if (onlyMaterials)
+        {
+            // A pack of material standards alone (a store's extension): no drafting standards of the project's.
+            o["drafting"] = new JsonObject();
+            o["materialGraphics"] = materials ?? throw new CommandException("There is no material standard to write.");
+            return LibraryFile.Write(Spec, o, LibraryFile.SourceOf(m));
+        }
         o["drafting"] = Standards.ToJson(DraftingResources.Book(m));
+        if (materials != null) o["materialGraphics"] = materials;
         if (project.Str("hatchPatterns") is { Length: > 0 } pat) o["hatchPatterns"] = pat;
         var symbols = m.OfClass(Symbols.Class).OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ToList();
         if (symbols.Count > 0) o["symbols"] = new JsonArray(symbols.Select(e => (JsonNode)new JsonObject { ["name"] = e.Name, ["def"] = e.Attrs["def"]?.DeepClone() }).ToArray());
@@ -116,7 +169,7 @@ public static class StandardsLibrary
     {
         var o = new List<(string, string, string, bool, bool)>();
         // Both read as the project reads them, so a field written another way compares the same.
-        var theirs = Standards.ToJson(Standards.Read(file["drafting"]));
+        var theirs = Theirs(file);
         var mine = Standards.ToJson(DraftingResources.Book(m));
         foreach (var (kind, key) in Lists)
             foreach (var e in (theirs[key] as JsonArray ?? []).OfType<JsonObject>())
@@ -134,6 +187,12 @@ public static class StandardsLibrary
                 var have = myPatterns.FirstOrDefault(x => string.Equals(x.Name, p.Name, StringComparison.OrdinalIgnoreCase));
                 o.Add(("pattern", p.Name, p.Name, have != null, have != null && Pat.Serialize([have]) == Pat.Serialize([p])));
             }
+        // Material standards by id (decision 673).
+        foreach (var ms in MaterialStandards.InFile(file))
+        {
+            var (exists, same) = MaterialStandards.Compare(m, ms);
+            o.Add(("materialStandard", ms.Id, ms.Name, exists, same));
+        }
         foreach (var s in (file["symbols"] as JsonArray ?? []).OfType<JsonObject>())
         {
             var name = (string?)s["name"] ?? "";
@@ -142,6 +201,12 @@ public static class StandardsLibrary
         }
         return o;
     }
+
+    /// <summary>
+    /// The file's drafting standards as the project reads them; none when the file gives none (a pack of material standards alone,
+    /// decision 673, writes an empty <c>drafting</c>: read, it would be every default, shown as entries the project has).
+    /// </summary>
+    static JsonObject Theirs(JsonObject file) => file["drafting"] is JsonObject { Count: > 0 } d ? Standards.ToJson(Standards.Read(d)) : new JsonObject();
 
     /// <summary>A free id and name in a list for a copy kept beside the project's (<see cref="LibraryMerge"/>): „Name (2)”, id-2.</summary>
     static (string Id, string Name) Free(JsonArray list, string id, string name)
@@ -238,7 +303,8 @@ public static class StandardsLibrary
         // The project's standards as a .lapinstandards file.
         r.Query("standards.export", (q, a) =>
         {
-            var o = Export(q.Model, (string?)a["name"]);
+            var ids = a["materialStandards"] is JsonArray ms ? ms.Select(x => (string?)x).OfType<string>().ToList() : null;
+            var o = Export(q.Model, (string?)a["name"], ids, (string?)a["only"] == "materialGraphics");
             return new JsonObject { ["text"] = o.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), ["file"] = ((string?)a["name"] is { Length: > 0 } n ? n : "standards") + ".lapinstandards" };
         });
 
@@ -251,6 +317,16 @@ public static class StandardsLibrary
                 ["name"] = (string?)file["name"],
                 ["entries"] = new JsonArray(Compare(q.Model, file).Select(e => (JsonNode)new JsonObject { ["kind"] = e.Kind, ["id"] = e.Id, ["name"] = e.Name, ["exists"] = e.Exists, ["same"] = e.Same }).ToArray()),
                 ["options"] = file["objectStyles"] != null || file["penTable"] != null || file["symbolSlots"] != null || file["dimensionRules"] != null,
+                // Its material standards (decision 673), each with what it says of itself and whether the project has it.
+                ["materialStandards"] = new JsonArray(MaterialStandards.InFile(file).Select(ms =>
+                {
+                    var (exists, same) = MaterialStandards.Compare(q.Model, ms);
+                    var so = ms.Summary();
+                    so["builtin"] = MaterialStandard.FindBuiltIn(ms.Id) != null;
+                    so["exists"] = exists;
+                    so["same"] = same;
+                    return (JsonNode)so;
+                }).ToArray()),
             };
         });
 
@@ -314,7 +390,7 @@ public static class StandardsLibrary
             var renamed = new List<string>();
 
             // The drafting standards' lists.
-            var theirs = Standards.ToJson(Standards.Read(file["drafting"]));
+            var theirs = Theirs(file);
             var raw = Standards.ToJson(DraftingResources.Book(ctx.Model));
             foreach (var (kind, key) in Lists)
             {
@@ -394,6 +470,9 @@ public static class StandardsLibrary
                 added += (int?)result["added"] ?? 0; updated += (int?)result["updated"] ?? 0; kept += (int?)result["kept"] ?? 0; skipped += (int?)result["skipped"] ?? 0;
                 renamed.AddRange((result["renamed"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>());
             }
+
+            // Material standards (decision 673), after the patterns and line types their rules may name; never applied by importing.
+            MaterialStandards.Import(ctx, file, (kind, id) => Choice(kind, id), ref added, ref updated, ref kept, ref skipped, renamed);
 
             if (withOptions)
             {

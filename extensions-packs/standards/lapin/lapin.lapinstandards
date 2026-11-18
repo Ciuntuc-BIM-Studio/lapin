@@ -1,0 +1,622 @@
+{
+  "format": "lapin-standards",
+  "version": 1,
+  "name": "Lapin",
+  "drafting": {},
+  "materialGraphics": {
+    "standards": [
+      {
+        "id": "lapin",
+        "name": "Lapin",
+        "description": "Lapin's default look: the cut patterns of common default materials (masonry 45° lines, concrete speckle, blocks crosshatched, insulation, timber grain), drawn by Lapin's own patterns, and facades at the object's real size. One look recognised everywhere, not a country's norm. Indicative: check it against the standard your drawings must follow.",
+        "author": "Lapin",
+        "version": "1.0.0",
+        "license": "MIT",
+        "languages": [
+          "en",
+          "ro"
+        ],
+        "indicative": true,
+        "fold": "ro",
+        "rules": [
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "vapou?r",
+                  "barrier",
+                  "membrane",
+                  "foil",
+                  "\\bdpc\\b",
+                  "damp",
+                  "bitum",
+                  "sheet"
+                ],
+                "ro": [
+                  "folie",
+                  "barier"
+                ]
+              }
+            },
+            "membrane": true,
+            "category": "Membrane"
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "eps\\b",
+                  "xps\\b",
+                  "polystyren",
+                  "pir\\b",
+                  "pur\\b",
+                  "rigid"
+                ],
+                "ro": [
+                  "polistiren",
+                  "extrudat",
+                  "expandat"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "RIGID"
+            },
+            "category": "Insulation"
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "insul",
+                  "wool",
+                  "batt",
+                  "fibre",
+                  "fiber"
+                ],
+                "ro": [
+                  "vata",
+                  "izola"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "BATT"
+            },
+            "category": "Insulation"
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "glass",
+                  "glazing",
+                  "\\bair\\b",
+                  "cavity"
+                ],
+                "ro": [
+                  "sticla",
+                  "geam",
+                  "\\baer\\b",
+                  "lama de aer"
+                ]
+              }
+            },
+            "section": {
+              "hatch": null
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "block",
+                  "\\bcmu\\b",
+                  "aac",
+                  "ytong"
+                ],
+                "ro": [
+                  "bca",
+                  "boltari",
+                  "blocuri"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "BLOCK"
+            },
+            "category": "Structure"
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "brick",
+                  "masonry",
+                  "clinker",
+                  "stone"
+                ],
+                "ro": [
+                  "caramid",
+                  "zidari",
+                  "piatra"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "MASONRY"
+            },
+            "category": "Structure"
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "concrete",
+                  "screed",
+                  "c\\d\\d/",
+                  "reinforced"
+                ],
+                "ro": [
+                  "beton",
+                  "sapa",
+                  "armat"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "CONCRETE"
+            },
+            "category": "Structure"
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "plywood",
+                  "osb",
+                  "\\bclt\\b"
+                ],
+                "ro": [
+                  "placaj"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "WOODCROSS"
+            },
+            "category": "Structure"
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "timber",
+                  "wood",
+                  "lumber",
+                  "glulam"
+                ],
+                "ro": [
+                  "lemn"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "WOOD"
+            },
+            "category": "Structure"
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "steel",
+                  "metal",
+                  "alumin"
+                ],
+                "ro": [
+                  "otel"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "STEEL"
+            },
+            "category": "Structure"
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "\\bsand\\b"
+                ],
+                "ro": [
+                  "nisip"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "SAND"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "gravel",
+                  "ballast",
+                  "aggregate"
+                ],
+                "ro": [
+                  "pietris"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "GRAVEL"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "earth",
+                  "soil",
+                  "ground"
+                ],
+                "ro": [
+                  "pamant"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "EARTH"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "plaster",
+                  "render",
+                  "gypsum",
+                  "stucco"
+                ],
+                "ro": [
+                  "tencuial",
+                  "gips"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "GYPSUM"
+            },
+            "category": "Finish"
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "tile",
+                  "ceramic"
+                ],
+                "ro": [
+                  "gresie",
+                  "faianta",
+                  "tigla",
+                  "olan"
+                ]
+              }
+            },
+            "section": {
+              "hatch": "TILES"
+            },
+            "category": "Finish"
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "clay tile",
+                  "concrete tile",
+                  "roof ?tile",
+                  "shingle",
+                  "slate"
+                ],
+                "ro": [
+                  "tigla",
+                  "olan",
+                  "sindrila",
+                  "ardezie"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "ROOF_TILES"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "vapou?r",
+                  "barrier",
+                  "membrane",
+                  "foil",
+                  "\\bdpc\\b",
+                  "damp",
+                  "bitum"
+                ],
+                "ro": [
+                  "folie",
+                  "barier"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": null
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "insul",
+                  "wool",
+                  "eps\\b",
+                  "xps\\b",
+                  "polystyren",
+                  "pir\\b",
+                  "pur\\b"
+                ],
+                "ro": [
+                  "vata",
+                  "izola"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": null
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "plaster",
+                  "render",
+                  "gypsum",
+                  "paint",
+                  "stucco",
+                  "adhesive"
+                ],
+                "ro": [
+                  "tencuial",
+                  "gips",
+                  "vopsea",
+                  "adeziv"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": null
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "aac",
+                  "ytong",
+                  "aerated",
+                  "autoclav"
+                ],
+                "ro": [
+                  "bca"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "BLOCK_600X250"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "block",
+                  "\\bcmu\\b"
+                ],
+                "ro": [
+                  "boltari"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "BLOCK_400X200"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "brick",
+                  "masonry",
+                  "clinker"
+                ],
+                "ro": [
+                  "caramid",
+                  "zidari"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "BRICK_240X63"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "stone",
+                  "granit",
+                  "marble",
+                  "travertin",
+                  "limestone",
+                  "sandstone",
+                  "ashlar"
+                ],
+                "ro": [
+                  "piatra",
+                  "marmura",
+                  "calcar"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "STONE_600X300"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "timber",
+                  "wood",
+                  "larch",
+                  "cedar",
+                  "pine",
+                  "spruce",
+                  "siding",
+                  "weatherboard"
+                ],
+                "ro": [
+                  "lemn",
+                  "lambriu",
+                  "scandura"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "BOARDS_150"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "clad",
+                  "sandwich",
+                  "trapez",
+                  "zinc",
+                  "copper",
+                  "standing seam",
+                  "corrugated",
+                  "metal sheet",
+                  "steel sheet",
+                  "roof sheet"
+                ],
+                "ro": [
+                  "placare",
+                  "tabla",
+                  "cupru",
+                  "faltuit",
+                  "cutat"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "METAL_SEAM_500"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "concrete",
+                  "screed",
+                  "c\\d\\d/"
+                ],
+                "ro": [
+                  "beton",
+                  "sapa"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": null
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "\\bsand\\b"
+                ],
+                "ro": [
+                  "nisip"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "SAND"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "gravel",
+                  "ballast",
+                  "aggregate"
+                ],
+                "ro": [
+                  "pietris"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "GRAVEL"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "earth",
+                  "soil",
+                  "ground"
+                ],
+                "ro": [
+                  "pamant"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "EARTH"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "tile",
+                  "ceramic",
+                  "porcelain"
+                ],
+                "ro": [
+                  "gresie",
+                  "faianta"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "TILE_300X300"
+            }
+          }
+        ]
+      }
+    ],
+    "current": "lapin"
+  }
+}

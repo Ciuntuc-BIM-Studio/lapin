@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "id": "ro.ciuntucbimstudio.standard-iso-128-50",
+  "name": "Material standard: ISO 128-50",
+  "summary": "How materials draw in cuts, plans and facades after ISO 128-50: Lapin's built-in „ISO 128-50” standard as a pack (indicative).",
+  "description": "The general section is thin 45° lines, finer as the scale gets smaller and the areas narrower; masonry of other kinds turns the lines to 135°; concrete speckled, reinforced concrete over 45° lines; insulation as loops or a fine crosshatch; narrow metal sections filled solid from 1:50. Indicative, drawn by Lapin from the general principles of the norm, not copied from it: check it against the standard your drawings must follow. Installed, it is added to the open project with „Add to this project” and applied from Manage → Drawing standards → Materials. Country: none (international); norm: ISO 128-50.",
+  "screenshots": [
+    "screenshot.png"
+  ],
+  "version": "1.0.0",
+  "author": {
+    "name": "Ciuntuc BIM Studio",
+    "github": "Ciuntuc-BIM-Studio",
+    "url": "https://lapinbim.com"
+  },
+  "license": "MIT",
+  "lapin": ">=0.1.1336",
+  "kind": "standards",
+  "tags": [
+    "standard",
+    "hatches",
+    "materials",
+    "iso-128-50",
+    "international",
+    "example"
+  ],
+  "languages": [
+    "en"
+  ],
+  "permissions": [],
+  "indicative": true,
+  "contents": {
+    "file": "iso-128-50.lapinstandards",
+    "items": [
+      "34 rules (cut, plan and facade graphics by the material's name)",
+      "Patterns: ISO_135, ISO_AERATED, ISO_STONE"
+    ]
+  },
+  "package": {
+    "url": "https://github.com/Ciuntuc-BIM-Studio/lapin-extensions/releases/download/standard-iso-128-50-v1.0.0/iso-128-50.lapinstandards",
+    "sha256": "ed7a62c2d6717bb2dc4f8f9a6362a48a808da4bed0d1326cc2b5599762766695",
+    "size": 13996
+  },
+  "homepage": "https://github.com/Ciuntuc-BIM-Studio/lapin-extensions/tree/main/extensions/ro.ciuntucbimstudio.standard-iso-128-50",
+  "forum": "https://forum.lapinbim.com/c/lapin"
+}

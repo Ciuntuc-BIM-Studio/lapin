@@ -1,0 +1,568 @@
+{
+  "id": "bs-8888",
+  "name": "BS 8888 / BS 1192",
+  "author": "Lapin",
+  "country": "GB",
+  "norm": "BS 8888, BS 1192",
+  "version": "1.0.0",
+  "license": "MIT",
+  "languages": [
+    "en"
+  ],
+  "indicative": true,
+  "description": "Brickwork in 45° lines, blockwork in wider 45° lines with dashes between, stone crossed by dashes; concrete speckled, reinforced concrete over 45° lines; quilt insulation as loops, rigid insulation crosshatched; sawn timber grain; steel paired lines, filled solid from 1:50; facing brick 215 × 65. Indicative, drawn by Lapin from the general principles of the norm, not copied from it: check it against the standard your drawings must follow.",
+  "pens": {
+    "hatch": {
+      "weight": 0.13
+    }
+  },
+  "patterns": "*BS_BLOCK, Lapin: blockwork, 45 degree lines 5 mm with dashed lines between\n45, 0,0, 0,5\n45, -1.767767,1.767767, 2,5, 3,-2\n\n*BS_STONE, Lapin: natural stone, 45 degree lines 3 mm crossed by short 135 degree dashes\n45, 0,0, 0,3\n135, 0,0, 3,6, 1.5,-7.5\n",
+  "rules": [
+    {
+      "match": {
+        "names": {
+          "en": [
+            "vapou?r",
+            "barrier",
+            "membrane",
+            "foil",
+            "\\bdpc\\b",
+            "damp",
+            "bitum",
+            "waterproof"
+          ]
+        }
+      },
+      "membrane": true,
+      "category": "Membrane"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "eps\\b",
+            "xps\\b",
+            "polystyren",
+            "pir\\b",
+            "pur\\b",
+            "rigid"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "CROSS",
+        "hatchScale": 0.6
+      },
+      "category": "Insulation"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "insul",
+            "wool",
+            "batt",
+            "quilt",
+            "mineral fib"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "BATT"
+      },
+      "category": "Insulation"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "glass",
+            "glazing",
+            "\\bair\\b",
+            "cavity"
+          ]
+        }
+      },
+      "section": {
+        "hatch": null
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "aerated",
+            "autoclav",
+            "\\baac\\b",
+            "ytong"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "BS_BLOCK"
+      },
+      "category": "Structure"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "block",
+            "\\bcmu\\b"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "BS_BLOCK"
+      },
+      "category": "Structure"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "brick",
+            "masonry",
+            "clinker"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "LINES45",
+        "byScale": [
+          {
+            "from": 100,
+            "hatchScale": 0.7
+          }
+        ]
+      },
+      "category": "Structure"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "stone",
+            "granit",
+            "marble",
+            "limestone",
+            "sandstone",
+            "ashlar"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "BS_STONE"
+      },
+      "category": "Structure"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "tile",
+            "ceramic",
+            "porcelain"
+          ]
+        }
+      },
+      "section": {
+        "hatch": null
+      },
+      "category": "Finish"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "reinforced",
+            "\\brc\\b"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "RCONCRETE"
+      },
+      "category": "Structure"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "concrete",
+            "c\\d\\d/"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "CONCRETE"
+      },
+      "category": "Structure"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "screed",
+            "mortar"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "SAND",
+        "hatchScale": 1.3
+      },
+      "category": "Finish"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "plaster",
+            "render",
+            "gypsum",
+            "stucco"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "GYPSUM"
+      },
+      "category": "Finish"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "plywood",
+            "osb",
+            "\\bclt\\b",
+            "chipboard",
+            "particle ?board"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "WOODCROSS"
+      },
+      "category": "Structure"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "timber",
+            "wood",
+            "lumber",
+            "glulam"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "WOOD"
+      },
+      "category": "Structure"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "steel",
+            "metal",
+            "alumin",
+            "iron"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "STEEL",
+        "byScale": [
+          {
+            "from": 50,
+            "hatch": "SOLID"
+          }
+        ]
+      },
+      "category": "Structure"
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "\\bsand\\b"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "SAND"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "gravel",
+            "ballast",
+            "aggregate",
+            "hardcore"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "GRAVEL"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "earth",
+            "soil",
+            "ground"
+          ]
+        }
+      },
+      "section": {
+        "hatch": "EARTH"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "clay tile",
+            "concrete tile",
+            "roof ?tile",
+            "shingle",
+            "slate"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": "ROOF_TILES"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "vapou?r",
+            "barrier",
+            "membrane",
+            "foil",
+            "\\bdpc\\b",
+            "damp",
+            "bitum",
+            "waterproof"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": null
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "insul",
+            "wool",
+            "eps\\b",
+            "xps\\b",
+            "polystyren",
+            "pir\\b",
+            "pur\\b"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": null
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "plaster",
+            "render",
+            "gypsum",
+            "paint",
+            "stucco",
+            "adhesive"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": null
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "aerated",
+            "autoclav",
+            "\\baac\\b",
+            "ytong"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": "BLOCK_600X250"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "block",
+            "\\bcmu\\b"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": "BLOCK_400X200"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "brick",
+            "masonry",
+            "clinker"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": "BRICK_215X65"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "stone",
+            "granit",
+            "marble",
+            "limestone",
+            "sandstone",
+            "ashlar"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": "STONE_600X300"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "timber",
+            "wood",
+            "larch",
+            "cedar",
+            "pine",
+            "spruce",
+            "siding",
+            "weatherboard"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": "BOARDS_150"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "clad",
+            "sandwich",
+            "trapez",
+            "zinc",
+            "copper",
+            "standing seam",
+            "corrugated",
+            "metal sheet",
+            "steel sheet",
+            "roof sheet"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": "METAL_SEAM_500"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "concrete",
+            "screed",
+            "c\\d\\d/"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": null
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "\\bsand\\b"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": "SAND"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "gravel",
+            "ballast",
+            "aggregate",
+            "hardcore"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": "GRAVEL"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "earth",
+            "soil",
+            "ground"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": "EARTH"
+      }
+    },
+    {
+      "match": {
+        "names": {
+          "en": [
+            "tile",
+            "ceramic",
+            "porcelain"
+          ]
+        }
+      },
+      "elevation": {
+        "hatch": "TILE_300X300"
+      }
+    }
+  ]
+}

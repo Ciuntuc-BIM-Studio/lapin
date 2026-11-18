@@ -95,6 +95,8 @@ public static class BonsaiStyles
 
         // Each material: its cut hatch (and fill) where it is cut, its elevation hatch where it is seen.
         var paperSurfaces = MaterialHatchUpgrade.PaperSurfaces(m);
+        // The project's material standard (decision 673) gives what a material does not set.
+        var standard = MaterialStandards.Of(m);
         var taken = new Dictionary<string, string>(StringComparer.Ordinal);
         void Material(string name, Entity? material, bool layerToo)
         {
@@ -106,7 +108,7 @@ public static class BonsaiStyles
                 return;
             }
             taken[key] = name;
-            var section = MaterialGraphics.Resolve(material, "section", name);
+            var section = MaterialGraphics.Resolve(material, "section", name, standard: standard);
             var fill = section.Membrane ? null : patterns.Fill(section);
             var selectors = new List<string> { $".cut.material-{key}", $".surface.material-{key}", $".material-{key} .cut", $".material-{key} .surface" };
             if (layerToo) selectors.AddRange([$".cut.layer-material-{key}", $".surface.layer-material-{key}"]);
@@ -119,7 +121,7 @@ public static class BonsaiStyles
                 if (cl.LineType != null && Standards.DashOf(book, cl.LineType) is { Length: > 0 } cd) outline.Add($"stroke-dasharray: {string.Join(" ", cd.Select(N))}");
             }
             css.Append($"{string.Join(", ", selectors)} {{ fill: {fill ?? "white"};{string.Concat(outline.Select(x => " " + x + ";"))} }}\n");
-            var elevation = MaterialGraphics.Resolve(material, "elevation", name, paperSurfaces);
+            var elevation = MaterialGraphics.Resolve(material, "elevation", name, paperSurfaces, standard: standard);
             if (patterns.Fill(elevation, background: "white", ownFill: false) is { } seenFill)
                 css.Append($".projection.material-{key}, .material-{key} .projection {{ fill: {seenFill}; }}\n");
         }

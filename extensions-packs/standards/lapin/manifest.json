@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "id": "ro.ciuntucbimstudio.standard-lapin",
+  "name": "Material standard: Lapin",
+  "summary": "How materials draw in cuts, plans and facades: Lapin's built-in „Lapin” standard as a pack (indicative).",
+  "description": "Lapin's default look: the cut patterns of common default materials (masonry 45° lines, concrete speckle, blocks crosshatched, insulation, timber grain), drawn by Lapin's own patterns, and facades at the object's real size. One look recognised everywhere, not a country's norm. Indicative: check it against the standard your drawings must follow. Installed, it is added to the open project with „Add to this project” and applied from Manage → Drawing standards → Materials. Country: none (international); norm: none.",
+  "screenshots": [
+    "screenshot.png"
+  ],
+  "version": "1.0.0",
+  "author": {
+    "name": "Ciuntuc BIM Studio",
+    "github": "Ciuntuc-BIM-Studio",
+    "url": "https://lapinbim.com"
+  },
+  "license": "MIT",
+  "lapin": ">=0.1.1336",
+  "kind": "standards",
+  "tags": [
+    "standard",
+    "hatches",
+    "materials",
+    "lapin",
+    "example"
+  ],
+  "languages": [
+    "en",
+    "ro"
+  ],
+  "permissions": [],
+  "indicative": true,
+  "contents": {
+    "file": "lapin.lapinstandards",
+    "items": [
+      "30 rules (cut, plan and facade graphics by the material's name)"
+    ]
+  },
+  "package": {
+    "url": "https://github.com/Ciuntuc-BIM-Studio/lapin-extensions/releases/download/standard-lapin-v1.0.0/lapin.lapinstandards",
+    "sha256": "7d2d124aa0702209af0161da3ad9728fdf4af915cc71cf2a975c9e9f452e4b86",
+    "size": 14530
+  },
+  "homepage": "https://github.com/Ciuntuc-BIM-Studio/lapin-extensions/tree/main/extensions/ro.ciuntucbimstudio.standard-lapin",
+  "forum": "https://forum.lapinbim.com/c/lapin"
+}
