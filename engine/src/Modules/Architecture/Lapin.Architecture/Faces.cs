@@ -16,10 +16,13 @@ public sealed class ArchitectureFaces : IElementFaces
 {
     public bool Covers(string ifcClass) => ifcClass is IfcClass.Slab or IfcClass.Wall;
 
-    public IReadOnlyList<ElementFace> FacesOf(Entity e, IModelView m) => e.Class switch
+    public IReadOnlyList<ElementFace> FacesOf(Entity e, IModelView m) => FacesOf(e, m, null);
+
+    /// <summary>With the services, a wall's sides follow every body it is attached to (<see cref="WallTops"/>), as its own body does; without, Lapin's roofs only.</summary>
+    public IReadOnlyList<ElementFace> FacesOf(Entity e, IModelView m, IServices? services) => e.Class switch
     {
         IfcClass.Slab => Slab(e, m),
-        IfcClass.Wall => Wall(e, m),
+        IfcClass.Wall => Wall(e, m, services),
         _ => [],
     };
 
@@ -47,7 +50,7 @@ public sealed class ArchitectureFaces : IElementFaces
         return faces;
     }
 
-    static List<ElementFace> Wall(Entity wall, IModelView m)
+    static List<ElementFace> Wall(Entity wall, IModelView m, IServices? services)
     {
         if (Walls.Frame(wall, m) is not { } f) return [];
         var z0 = Spatial.Base(m, wall);
@@ -65,7 +68,7 @@ public sealed class ArchitectureFaces : IElementFaces
         }
         var dir = (f.End - f.Start).Normalized();
         var left = dir.Perp;
-        var roofTop = WallTops.Profile(wall, new RoofTop.WallAxis(f.Start, dir, (f.End - f.Start).Length, z0, z1 - z0, f.YMax - f.YMin), m, null);
+        var roofTop = WallTops.Profile(wall, new RoofTop.WallAxis(f.Start, dir, (f.End - f.Start).Length, z0, z1 - z0, f.YMax - f.YMin), m, services);
         Vec2 P(Vec2 at, double y) => at + left * y;
         // The openings through it, as holes in both faces.
         var holes = Openings.PlacedOn(m, wall.Id).Select(o => (A: f.Start + dir * (o.Along - o.Width / 2), B: f.Start + dir * (o.Along + o.Width / 2), Z0: z0 + o.Sill, Z1: z0 + o.Sill + o.Height)).ToList();

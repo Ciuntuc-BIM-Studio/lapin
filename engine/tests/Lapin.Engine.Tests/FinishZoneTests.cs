@@ -253,4 +253,194 @@ public class FinishZoneTests : IDisposable
         var zone = (string)f.Run("architecture.paintFinish", new JsonObject { ["hostId"] = wall, ["point"] = P(3, 2 + Left, H + 0.4), ["normal"] = P(0, 1, 0), ["finishType"] = etics })!["id"]!;
         Assert.True(f.Bounds(zone).Max.Z > H + 0.5);
     }
+
+    // ------------------------------------------------------------ forum #161: a finish never past its wall's shape
+
+    /// <summary>A gable roof over 0..8 × 0..4 (its eaves at H), and a cross wall along y at x = 3 under it.</summary>
+    static (Fixture F, string Roof, string Wall) UnderGable(double height = H)
+    {
+        var f = new Fixture();
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["storeyId"] = f.Storey,
+            ["points"] = new JsonArray(new JsonArray(-0.5, -0.5), new JsonArray(8.5, -0.5), new JsonArray(8.5, 4.5), new JsonArray(-0.5, 4.5)),
+            ["style"] = "fr_provence",                                 // gable, 24 degrees
+        })!["id"]!;
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["ridgeDirection"] = "x" } });
+        var wall = f.Wall(3, 0, 3, 4, height: height);
+        return (f, roof, wall);
+    }
+
+    /// <summary>A wall's side face as it stands now, in elevation (along y, or along x for a wall along x; z), and its area.</summary>
+    static (List<Vec2> Ring, double Size) SideFace(Fixture f, string wall, string role, bool alongX = false)
+    {
+        var face = ElementFaces.Find(f.Session.Reader.Services, f.Model.Get(wall)!, f.Model, role)!;
+        return (face.Outline.Select(p => new Vec2(alongX ? p.X : p.Y, p.Z)).ToList(), face.Size);
+    }
+
+    /// <summary>Every point of a zone's bodies, seen in elevation, lies on its wall's face (a tenth of a millimetre's leeway).</summary>
+    static void WithinFace(Fixture f, string zone, List<Vec2> ring, bool alongX = false)
+    {
+        var g = f.Session.Geometry(zone)!;
+        Assert.NotEmpty(g.Parts);
+        foreach (var part in g.Parts)
+            foreach (var v in part.Solid.Vertices)
+                Assert.True(Polygon2.Contains(ring, new Vec2(alongX ? v.X : v.Y, v.Z), 1e-4), $"({(alongX ? v.X : v.Y):0.###}, {v.Z:0.###}) is off the wall's face");
+    }
+
+    /// <summary>The top of an elevation ring over x (its highest crossing), flat past its ends.</summary>
+    static double TopAt(List<Vec2> ring, double x)
+    {
+        x = Math.Clamp(x, ring.Min(p => p.X), ring.Max(p => p.X));
+        var top = double.NegativeInfinity;
+        for (var i = 0; i < ring.Count; i++)
+        {
+            var (a, b) = (ring[i], ring[(i + 1) % ring.Count]);
+            if (x < Math.Min(a.X, b.X) - 1e-9 || x > Math.Max(a.X, b.X) + 1e-9) continue;
+            top = Math.Max(top, Math.Abs(b.X - a.X) < 1e-12 ? Math.Max(a.Y, b.Y) : a.Y + (b.Y - a.Y) * (x - a.X) / (b.X - a.X));
+        }
+        return top;
+    }
+
+    [Fact]
+    public void Four_facades_under_a_gable_roof_keep_their_mitres_and_the_gables_their_shape()
+    {
+        var f = new Fixture();
+        // As RoofTests' house: walls to the storey above (3 m), a gable roof on their axes, its ridge along x.
+        foreach (var ((x1, y1), (x2, y2)) in new[] { ((0.0, 0.0), (8.0, 0.0)), ((8.0, 0.0), (8.0, 4.0)), ((8.0, 4.0), (0.0, 4.0)), ((0.0, 4.0), (0.0, 0.0)) })
+            f.Wall(x1, y1, x2, y2);
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["storeyId"] = f.Storey,
+            ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(8, 0), new JsonArray(8, 4), new JsonArray(0, 4)),
+            ["style"] = "fr_provence",
+        })!["id"]!;
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["ridgeDirection"] = "x" } });
+        var etics = Library(f, "ETICS EPS 100");
+        var walls = f.Model.OfClass(IfcClass.Wall).ToList();
+        foreach (var w in walls) f.Run("architecture.paintFinish", new JsonObject { ["hostId"] = w.Id, ["face"] = "Face.Right", ["whole"] = true, ["finishType"] = etics });
+        // The gable walls (along y) rise to the roof by themselves; their ETICS follows the gable, and past the wall's ends to
+        // the mitre it stays at the height the gable has there.
+        var gables = walls.Where(w => Math.Abs(Walls.Start(w).X - Walls.End(w).X) < 1e-9).ToList();
+        Assert.Equal(2, gables.Count);
+        foreach (var w in gables)
+        {
+            Assert.True(f.Bounds(w.Id).Max.Z > H + 0.5);
+            var (ring, _) = SideFace(f, w.Id, "Face.Right");
+            var zone = Zones(f, w.Id).Single().Id;
+            foreach (var v in f.Session.Geometry(zone)!.Parts.SelectMany(p => p.Solid.Vertices))
+                Assert.True(v.Z <= TopAt(ring, v.Y) + 1e-4, $"({v.Y:0.###}, {v.Z:0.###}) is above the gable");
+            // Nothing missing either: the zone reaches the gable's peak.
+            Assert.Equal(ring.Max(p => p.Y), f.Bounds(zone).Max.Z, 4);
+        }
+        // The eaves walls, under their wall plates, the plain box as before.
+        double W = 8 + 2 * Right;
+        foreach (var w in walls.Except(gables)) Assert.Equal(W * f.Bounds(w.Id).Max.Z, Net(f, Zones(f, w.Id).Single().Id), 6);
+    }
+
+    [Fact]
+    public void A_finish_on_a_wall_attached_to_a_studio_body_stops_at_its_underside()
+    {
+        var f = new Fixture(new ArchitectureModule(), new Lapin.Drafting.DraftingModule(), new Lapin.Studio.StudioModule());
+        var upper = (string)f.Run("storey.create", [])!["id"]!;
+        var top = (string)f.Run("storey.create", [])!["id"]!;
+        string Plan(string storey) => (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = storey })!["id"]!;
+        string Draw(string view, double x0, double x1) => (string)f.Run("drafting.draw", new JsonObject
+        {
+            ["viewId"] = view,
+            ["shape"] = new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(new JsonArray(x0, 0), new JsonArray(x1, 0), new JsonArray(x1, 1), new JsonArray(x0, 1)), ["closed"] = true },
+        })!["ids"]![0]!;
+        // A loft whose underside climbs from +3.00 to +6.00 over 8 m (as RoofTests' wall under any body).
+        var a = Draw(Plan(upper), 0, 2);
+        var b = Draw(Plan(top), 8, 10);
+        var body = (string)f.Run("studio.loft", new JsonObject { ["profileId"] = a, ["profileIds"] = new JsonArray(a, b) })!["id"]!;
+        var wall = f.Wall(-1, 0.5, 12, 0.5);
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall), ["roofIds"] = new JsonArray(body) });
+        var (ring, size) = SideFace(f, wall, "Face.Left", alongX: true);
+        // The face climbs with the body: the slope's triangle, 8 · 3 / 2, over the plain wall's 13 · 3.
+        Assert.Equal(13 * 3 + 12, size, 1);
+        var paint = (string)f.Run("architecture.paintFinish", new JsonObject { ["hostId"] = wall, ["face"] = "Face.Left", ["whole"] = true, ["layers"] = new JsonArray(new JsonObject { ["material"] = "Paint", ["thickness"] = 0.001 }) })!["id"]!;
+        Assert.Equal(size, Net(f, paint), 4);
+        WithinFace(f, paint, ring, alongX: true);
+    }
+
+    [Fact]
+    public void A_finish_painted_on_a_wall_attached_to_a_gable_roof_stops_at_the_roof_and_measures_the_gable()
+    {
+        var (f, _, wall) = UnderGable();
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall) });
+        var (ring, size) = SideFace(f, wall, "Face.Left");
+        Assert.True(f.Bounds(wall).Max.Z > H + 0.5);
+        Assert.True(size > 4 * H + 0.5);
+        var etics = Library(f, "ETICS EPS 100");
+        var zone = (string)f.Run("architecture.paintFinish", new JsonObject { ["hostId"] = wall, ["face"] = "Face.Left", ["whole"] = true, ["finishType"] = etics })!["id"]!;
+        // Its area is the gable's, not the box round it, and nothing of it stands above the roof.
+        Assert.Equal(size, Net(f, zone), 4);
+        Assert.Equal(size * Etics, Volume(f, zone), 4);
+        WithinFace(f, zone, ring);
+    }
+
+    [Fact]
+    public void A_finish_painted_before_the_wall_was_attached_follows_its_new_top()
+    {
+        var (f, _, wall) = UnderGable();
+        var etics = Library(f, "ETICS EPS 100");
+        var zone = (string)f.Run("architecture.paintFinish", new JsonObject { ["hostId"] = wall, ["face"] = "Face.Left", ["whole"] = true, ["finishType"] = etics })!["id"]!;
+        Assert.Equal(4 * H, Net(f, zone), 6);
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall) });
+        var (ring, size) = SideFace(f, wall, "Face.Left");
+        Assert.Equal(size, Net(f, zone), 4);
+        WithinFace(f, zone, ring);
+        // Detached again: back to the wall's own box, the zone untouched all along.
+        f.Run("architecture.detachFromRoof", new JsonObject { ["ids"] = new JsonArray(wall) });
+        Assert.Equal(4 * H, Net(f, zone), 6);
+    }
+
+    [Fact]
+    public void A_region_painted_high_on_a_wall_a_roof_later_cuts_keeps_to_what_is_left_of_the_face()
+    {
+        // A wall 5 m high, tiles over 4 m and plaster below, before the roof: the roof (eaves at 3 m) then cuts it.
+        var (f, _, wall) = UnderGable(height: 5);
+        f.Run("architecture.detachFromRoof", new JsonObject { ["ids"] = new JsonArray(wall) });
+        var tiles = Library(f, "Wall tiles");
+        var plaster = Library(f, "Lime plaster 25");
+        f.Run("architecture.splitFinishFace", new JsonObject { ["hostId"] = wall, ["face"] = "Face.Left", ["height"] = 4.0 });
+        var low = (string)f.Run("architecture.paintFinish", new JsonObject { ["hostId"] = wall, ["face"] = "Face.Left", ["whole"] = true, ["finishType"] = plaster })!["id"]!;
+        var high = (string)f.Run("architecture.paintFinish", new JsonObject { ["hostId"] = wall, ["point"] = P(3 - Left, 2, 4.5), ["normal"] = P(-1, 0, 0), ["finishType"] = tiles })!["id"]!;
+        Assert.Equal(4 * 1.0, Net(f, high), 6);
+        var seed = f.Model.Get(high)!.Attrs["seed"]!.ToJsonString();
+
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall) });
+        var (ring, size) = SideFace(f, wall, "Face.Left");
+        Assert.True(f.Bounds(wall).Max.Z < 5 - 0.1);
+        // The plaster keeps to the face, whatever of it the roof left; the zone above the cut, where the roof leaves nothing
+        // of its region, builds nothing — and both zones are kept as painted.
+        WithinFace(f, low, ring);
+        var highGeometry = f.Session.Geometry(high)!;
+        foreach (var v in highGeometry.Parts.SelectMany(p => p.Solid.Vertices))
+            Assert.True(Polygon2.Contains(ring, new Vec2(v.Y, v.Z), 1e-4), $"({v.Y:0.###}, {v.Z:0.###}) is off the wall's face");
+        Assert.Equal(size, Net(f, low) + (highGeometry.Parts.Count > 0 ? Net(f, high) : 0), 4);
+        Assert.Equal(seed, f.Model.Get(high)!.Attrs["seed"]!.ToJsonString());
+    }
+
+    [Fact]
+    public void A_rectangle_drawn_past_the_top_of_a_gable_paints_only_what_is_on_the_wall()
+    {
+        var (f, _, wall) = UnderGable();
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall) });
+        var (ring, _) = SideFace(f, wall, "Face.Left");
+        var x = 3 - Left;
+        // The user drags a rectangle from 2 m up to 8 m: well past the gable's peak.
+        f.Run("architecture.splitFinishFace", new JsonObject
+        {
+            ["hostId"] = wall, ["face"] = "Face.Left", ["closed"] = true,
+            ["points"] = new JsonArray(P(x, 0.5, 2), P(x, 3.5, 2), P(x, 3.5, 8), P(x, 0.5, 8)),
+        });
+        var tiles = Library(f, "Wall tiles");
+        var zone = (string)f.Run("architecture.paintFinish", new JsonObject { ["hostId"] = wall, ["point"] = P(x, 2, 2.5), ["normal"] = P(-1, 0, 0), ["finishType"] = tiles })!["id"]!;
+        WithinFace(f, zone, ring);
+        // Its area is the rectangle's part under the roof: the box 3 m wide from 2 m up to the gable, less than 3 × 6.
+        var under = Polygon2.ClipBox(ring, 0.5, 2, 3.5, 8);
+        Assert.Equal(Math.Abs(Polygon2.SignedArea(under)), Net(f, zone), 4);
+    }
 }

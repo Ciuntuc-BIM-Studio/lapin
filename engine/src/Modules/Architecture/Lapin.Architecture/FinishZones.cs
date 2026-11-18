@@ -122,14 +122,56 @@ public static class FinishZones
                 var axis = new[] { 0.0, Vec3.Dot(new Vec3(Walls.End(host).X - Walls.Start(host).X, Walls.End(host).Y - Walls.Start(host).Y, 0), u) };
                 var (a0, a1) = (axis.Min(), axis.Max());
                 var (u0, u1) = (on.Min(), on.Max());
-                var (v0, v1) = (outline.Min(p => p.Y), outline.Max(p => p.Y));
-                outline = [new(u0, v0), new(u1, v0), new(u1, v1), new(u0, v1)];
+                // The face's own shape (its top under a roof, a gable, a step: forum #161), never the box round it: carried flat
+                // past the axis's ends to an outer corner, cut where a join stops the layer short.
+                outline = AlongFootprint(outline, u0, u1);
                 low = u0 < a0 - 1e-3;
                 high = u1 > a1 + 1e-3;
             }
         }
         if (Polygon2.SignedArea(outline) < 0) outline.Reverse();
         return new Frame(face, o, u, v, n, outline, holes, low, high);
+    }
+
+    /// <summary>
+    /// A wall side's outline (in its frame: u along, v up; its bottom level, its top whatever is over the wall) over the
+    /// layer's footprint [u0, u1]: its end edges carried out flat where the footprint runs past them (an outer corner), the
+    /// whole clipped to it where it stops short. The one place a painted finish gets its extent from, so every region and body
+    /// built on the face keeps to the wall's real shape, whatever its top did since the zone was painted (forum #161).
+    /// </summary>
+    static List<Vec2> AlongFootprint(List<Vec2> outline, double u0, double u1)
+    {
+        var ring = new List<Vec2>(outline);
+        if (Polygon2.SignedArea(ring) < 0) ring.Reverse();
+        var (a0, a1) = (ring.Min(p => p.X), ring.Max(p => p.X));
+        var o = new List<Vec2>(ring.Count + 4);
+        for (var i = 0; i < ring.Count; i++)
+        {
+            var (p, q) = (ring[i], ring[(i + 1) % ring.Count]);
+            o.Add(p);
+            // Counter-clockwise, the low end goes down and the high end up: out to the footprint's end at the same heights.
+            if (u0 < a0 - 1e-9 && Math.Abs(p.X - a0) < 1e-6 && Math.Abs(q.X - a0) < 1e-6 && q.Y < p.Y) { o.Add(new(u0, p.Y)); o.Add(new(u0, q.Y)); }
+            if (u1 > a1 + 1e-9 && Math.Abs(p.X - a1) < 1e-6 && Math.Abs(q.X - a1) < 1e-6 && q.Y > p.Y) { o.Add(new(u1, p.Y)); o.Add(new(u1, q.Y)); }
+        }
+        var clipped = Polygon2.ClipBox(o, u0, double.NegativeInfinity, u1, double.PositiveInfinity);
+        // Points on a straight line dropped (the old ends where the outline was carried past them).
+        var clean = new List<Vec2>();
+        foreach (var p in clipped)
+        {
+            if (clean.Count > 0 && (p - clean[^1]).Length < 1e-9) continue;
+            clean.Add(p);
+        }
+        if (clean.Count > 1 && (clean[0] - clean[^1]).Length < 1e-9) clean.RemoveAt(clean.Count - 1);
+        for (var changed = true; changed && clean.Count > 3;)
+        {
+            changed = false;
+            for (var i = 0; i < clean.Count && clean.Count > 3; i++)
+            {
+                var (a, b, c) = (clean[(i + clean.Count - 1) % clean.Count], clean[i], clean[(i + 1) % clean.Count]);
+                if (Math.Abs(Vec2.Cross(b - a, c - b)) < 1e-12 && Vec2.Dot(b - a, c - b) >= 0) { clean.RemoveAt(i); changed = true; break; }
+            }
+        }
+        return clean.Count >= 3 ? clean : ring;
     }
 
     /// <summary>The face a command names: <c>face</c> (its role), else the one at <c>point</c> (3D with <c>normal</c>; a plan's x, y without).</summary>
