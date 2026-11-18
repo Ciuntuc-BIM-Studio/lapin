@@ -14,11 +14,17 @@ import { DescriptorField, LengthField, NumberField } from '../../shell/cells';
 import { PendingDialog } from '../core/PendingDialog';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { mergeEdge, type Edge } from './roofEdges';
-import { Pencil, RotateCcw, Save, Trash2, X } from 'lucide-react';
-import { useUi } from '../../app/store';
+import { Pencil, RotateCcw, Save, Trash2, X, BookMarked, FileDown, FileUp } from 'lucide-react';
+import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
+import { pickFile, safeFileName, saveFile } from '../../engine/files';
 import type { FieldDescriptor } from '../../engine/protocol';
 import { t, useLang } from '../../i18n';
+import {
+  applyRoofTemplateArgs, exportRoofTemplatesJson, forgetRoofTemplate, importRoofTemplates,
+  libraryRoofTemplates, parseRoofTemplatesJson, renameRoofTemplate, saveRoofTemplate, subscribeRoofTemplates,
+  type UserRoofTemplate,
+} from './roofTemplateLibrary';
 
 type Style = { id: string; label: string; family: string; region: string; shape: string; pitch: number; covering: string; description?: string; structure?: string | null };
 type Covering = { id: string; color: string; minPitch: number };
@@ -39,7 +45,7 @@ interface Preview {
   downpipes?: string;
   summary?: [string, string][];
 }
-interface Draft { style?: string; attrs: Record<string, unknown>; edges?: Edge[] }
+interface Draft { style?: string; templateId?: string; attrs: Record<string, unknown>; edges?: Edge[] }
 
 const TABS = [['shape', 'Shape'], ['covering', 'Covering and drainage'], ['framing', 'Framing'], ['openings', 'Openings']] as const;
 type Tab = (typeof TABS)[number][0];
@@ -160,6 +166,9 @@ export function RoofDialog() {
   const [tab, setTab] = useState<Tab>('shape');
   const [draft, setDraft] = useState<Draft>({ attrs: {} });
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [userTemplates, setUserTemplates] = useState<UserRoofTemplate[]>(() => libraryRoofTemplates());
+
+  useEffect(() => subscribeRoofTemplates(() => setUserTemplates(libraryRoofTemplates())), []);
 
   // The preview follows the draft and the roof as it stands (an undo, a grip moved).
   useEffect(() => {
@@ -174,7 +183,7 @@ export function RoofDialog() {
 
   if (!node) return <PendingDialog title="Roof" />;
   const close = () => useUi.setState({ dialog: null });
-  const dirty = Boolean(draft.style) || Object.keys(draft.attrs).length > 0 || draft.edges !== undefined;
+  const dirty = Boolean(draft.style) || Boolean(draft.templateId) || Object.keys(draft.attrs).length > 0 || draft.edges !== undefined;
   const value = (k: string): unknown => (k in draft.attrs ? draft.attrs[k] : preview?.attrs?.[k] ?? node.props[k] ?? DEFAULTS[k]);
   const set = (k: string, v: unknown) => setDraft((d) => ({ ...d, attrs: { ...d.attrs, [k]: v } }));
   const contour = (preview?.outline ?? (node.props.contour as [number, number][] | undefined) ?? []);
@@ -182,11 +191,15 @@ export function RoofDialog() {
   const setEdge = (i: number, patch: Partial<NonNullable<Edge>> | null) => setDraft((d) => ({ ...d, edges: mergeEdge(edges, contour.length, i, patch) }));
   const cycleEdge = (i: number) => setEdge(i, { kind: edges[i]?.kind === undefined ? 'eave' : edges[i]?.kind === 'eave' ? 'gable' : undefined });
   const pickStyle = (id: string) => setDraft({ style: id, attrs: {} });
+  const pickUserTemplate = (tpl: UserRoofTemplate) => {
+    const args = applyRoofTemplateArgs(node.id, tpl, contour);
+    setDraft({ templateId: tpl.id, attrs: args.attrs, edges: args.edges });
+  };
   const apply = async () => {
     await execute('architecture.updateRoof', draftArgs());
     if (!useSession.getState().error) setDraft({ attrs: {} });
   };
-  const current = draft.style ?? (dirty ? undefined : (node.props.style as string | undefined));
+  const current = draft.style ?? draft.templateId ?? (dirty ? undefined : (node.props.style as string | undefined));
   const draftArgs = () => ({ id: node.id, ...(draft.style ? { style: draft.style } : {}), attrs: draft.attrs, ...(draft.edges ? { edges: draft.edges } : {}) });
   // Saved as the project's own style: a new one under a name, or the one it has saved again (its roofs follow).
   const saveAs = async () => {
@@ -196,10 +209,53 @@ export function RoofDialog() {
     if (!useSession.getState().error) setDraft({ attrs: {} });
   };
   const ownStyle = own.find((s) => s.id === (draft.style ?? node.props.style));
+  const activeTemplate = draft.templateId ? userTemplates.find((u) => u.id === draft.templateId) : undefined;
   const update = async () => {
     if (!ownStyle) return;
     await execute('architecture.saveRoofStyle', { ...draftArgs(), name: ownStyle.label, styleId: ownStyle.id });
     if (!useSession.getState().error) setDraft({ attrs: {} });
+  };
+  const saveAsTemplate = () => {
+    const defaultName = ownStyle?.label ?? activeTemplate?.label ?? node.name;
+    const name = promptText(t('Name of the roof template'), defaultName);
+    if (!name?.trim()) return;
+    const source: Record<string, unknown> = { ...node.props, ...(preview?.attrs ?? {}), ...draft.attrs };
+    let res = saveRoofTemplate(name, source, { contour });
+    if (res.status === 'exists') {
+      if (!confirmAction(t('A user template with this name already exists. Replace it?'))) return;
+      res = saveRoofTemplate(name, source, { overwrite: true, contour });
+    }
+    if (res.status === 'full') {
+      notify("This computer's library is full: the roof template was not saved.");
+      return;
+    }
+    if (res.status === 'kept') notify(`Saved user template "${res.template.label}".`);
+  };
+  const exportUserTemplates = async (list: UserRoofTemplate[], baseName: string) => {
+    const text = exportRoofTemplatesJson(list);
+    const saved = await saveFile(new TextEncoder().encode(text), `${safeFileName(baseName, 'roof-templates')}.json`, 'application/json');
+    if (saved) notify(`Exported ${saved}.`);
+  };
+  const importUserTemplates = async () => {
+    const f = await pickFile('Roof templates (JSON)', 'json');
+    if (!f) return;
+    let parsed: unknown;
+    try { parsed = JSON.parse(new TextDecoder().decode(f.bytes)); } catch { notify('That file is not a roof template.'); return; }
+    const incoming = parseRoofTemplatesJson(parsed);
+    if (incoming.length === 0) { notify('That file contains no valid roof templates.'); return; }
+    const firstPass = importRoofTemplates(incoming, false);
+    let totalAdded = firstPass.added;
+    let totalUpdated = firstPass.updated;
+    if (firstPass.skipped > 0 && confirmAction(t(`${firstPass.skipped} template(s) already exist. Replace them?`))) {
+      const secondPass = importRoofTemplates(incoming, true);
+      totalAdded += secondPass.added;
+      totalUpdated += secondPass.updated;
+      if (secondPass.full) { notify("This computer's library is full."); return; }
+    } else if (firstPass.full) {
+      notify("This computer's library is full.");
+      return;
+    }
+    notify(`Imported ${totalAdded} new and ${totalUpdated} updated template(s).`);
   };
   const families = [...new Set(styles.map((s) => s.family))];
   const covering = coverings.find((c) => c.id === value('covering'));
@@ -235,6 +291,23 @@ export function RoofDialog() {
                 </button>
                 <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the roof style'), s.label); if (n?.trim()) void execute('architecture.renameRoofStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
                 <button type="button" className="icon mini" title="Delete the style (its roofs keep how they look)" onClick={() => { if (confirmAction(t('Delete this roof style? Its roofs keep how they look.'))) void execute('architecture.deleteRoofStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
+              </div>
+            ))}
+            <div className="row roof-own">
+              <p className="eyebrow grow">User templates</p>
+              <button type="button" className="icon mini" title="Import user templates from JSON…" onClick={() => void importUserTemplates()}><FileUp size={12} /></button>
+              {userTemplates.length > 0 && <button type="button" className="icon mini" title="Export all user templates to JSON…" onClick={() => void exportUserTemplates(userTemplates, 'roof-templates')}><FileDown size={12} /></button>}
+            </div>
+            {userTemplates.length === 0 && <p className="muted small">Save a roof as a template to reuse it in future projects.</p>}
+            {userTemplates.map((tpl) => (
+              <div key={tpl.id} className="row roof-own">
+                <button type="button" className={`tree-item grow${current === tpl.id ? ' on' : ''}`} onClick={() => pickUserTemplate(tpl)}>
+                  <span className="grow">{tpl.label}</span>
+                  <span className="muted small">{t(tpl.shape)}{tpl.shape === 'barrel' ? '' : ` ${tpl.pitch}°`}{tpl.structure && tpl.structure !== 'rafters' ? ` · ${tpl.structure}` : ''}</span>
+                </button>
+                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = promptText(t('Name of the roof template'), tpl.label); if (n?.trim()) renameRoofTemplate(tpl.id, n); }}><Pencil size={12} /></button>
+                <button type="button" className="icon mini" title="Export template to JSON…" onClick={() => void exportUserTemplates([tpl], tpl.label)}><FileDown size={12} /></button>
+                <button type="button" className="icon mini" title="Delete user template" onClick={() => { if (confirmAction(t('Delete this user roof template?'))) { forgetRoofTemplate(tpl.id); if (draft.templateId === tpl.id) setDraft({ attrs: {} }); } }}><Trash2 size={12} /></button>
               </div>
             ))}
             {families.map((fam) => (
@@ -327,10 +400,11 @@ export function RoofDialog() {
                 )}
               </div>
               <div className="row joinery-actions">
-                <span className="muted small grow">{dirty ? (draft.style ? `${styles.find((s) => s.id === draft.style)?.label ?? draft.style}${Object.keys(draft.attrs).length || draft.edges ? ', changed by hand' : ''}` : 'Changed, not applied yet') : ''}</span>
+                <span className="muted small grow">{dirty ? (draft.style ? `${styles.find((s) => s.id === draft.style)?.label ?? own.find((s) => s.id === draft.style)?.label ?? draft.style}${Object.keys(draft.attrs).length || draft.edges ? ', changed by hand' : ''}` : activeTemplate ? activeTemplate.label : 'Changed, not applied yet') : ''}</span>
                 <button type="button" className="btn" disabled={!dirty} onClick={() => setDraft({ attrs: {} })}><RotateCcw size={14} />Reset</button>
                 {ownStyle && <button type="button" className="btn" disabled={Boolean(preview?.problem)} title={`Save the roof as it is configured into ${ownStyle.label}; every roof of the style follows`} onClick={() => void update()}><Save size={14} />Update style</button>}
                 <button type="button" className="btn" disabled={Boolean(preview?.problem)} title="Save the roof as it is configured as a style of the project" onClick={() => void saveAs()}><Save size={14} />Save as style…</button>
+                <button type="button" className="btn" disabled={Boolean(preview?.problem)} title="Save the roof as it is configured as a reusable template for future projects" onClick={saveAsTemplate}><BookMarked size={14} />Save as template…</button>
                 <button type="button" className="btn primary" disabled={!dirty || Boolean(preview?.problem)} onClick={() => void apply()}>Apply</button>
               </div>
               {error && <p className="error-text" role="alert">{error}</p>}
