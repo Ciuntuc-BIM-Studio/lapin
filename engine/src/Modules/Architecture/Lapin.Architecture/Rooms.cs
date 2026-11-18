@@ -460,7 +460,7 @@ public static class Rooms
             if (pattern.Solid) mark.Fills.Add((loops, look.HatchColor));
             else
             {
-                var (segs, _) = HatchFill.Segments(loops, pattern, new HatchOptions(look.HatchScale * c.Mm, 0, null, 40_000));
+                var (segs, _) = HatchFill.Segments(loops, pattern, new HatchOptions(HatchScale.Factor(pattern, c.Scale, look.HatchScale), 0, null, 40_000));
                 foreach (var s in segs) mark.Line(s.A, s.B, "ROOM-HATCH", Pens.Default.Hatch, look.HatchColor);
             }
         }
@@ -480,9 +480,12 @@ public static class Rooms
         if (RoomFinishes.SpecOf(m, finish) is not { } spec || RoomFinishes.HatchOf(m, spec, part) is not { } h
             || HatchLibrary.Find(h.Pattern, patterns) is not { Solid: false } pattern) return null;
         var mark = new ViewMark(null) { Under = true };
+        var minSpacing = ViewStyles.Of(m, c.View).MinHatchSpacing;
         foreach (var loops in RoomFinishes.PlanRegions(m, room, o, spec, part))
         {
-            var (segs, _) = HatchFill.Segments(loops, pattern, new HatchOptions(h.Scale * c.Mm, h.Angle, null, 40_000));
+            // Paper or real size (decision 671: tiles their own size); a real-size pattern too dense for the view's style is not drawn.
+            if (HatchScale.Lay(pattern, c.Scale, h.Scale, h.Angle, null, 40_000, null, minSpacing) is not { } laid) continue;
+            var (segs, _) = HatchFill.Segments(loops, pattern, laid);
             foreach (var s in segs) mark.Line(s.A, s.B, FinishLayer, Pens.Default.Hatch, h.Color);
         }
         return mark.Lines.Count > 0 ? mark : null;

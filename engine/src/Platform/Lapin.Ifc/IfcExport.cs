@@ -1493,7 +1493,9 @@ public static partial class IfcExport
                 if (g.Fill is { } fill) fills.Add(Colour(fill));
                 if (g.Background is { } bg && Hatching(bg.Hatch, "Background " + bg.Hatch, bg.HatchScale ?? g.HatchScale, bg.HatchAngle ?? 0, bg.HatchColor, bg.HatchWeight ?? Lapin.Drawing.Views.Pens.Default.Hatch) is { } bh) fills.Add(bh);
                 if (Hatching(g.Hatch, g.Hatch ?? "", g.HatchScale, g.HatchAngle, g.HatchColor, g.HatchWeight ?? Lapin.Drawing.Views.Pens.Default.Hatch) is { } fh) fills.Add(fh);
-                if (fills.Count > 0) o.Add(f.Add("IFCFILLAREASTYLE", S(FillAreaStyleNames[kind]), L(fills.ToArray()), False));
+                // A real-size hatch (decision 671) is a model fill area style: its spacings are lengths of the object.
+                var model = g.Hatch != null && Lapin.Drawing.Hatch.HatchLibrary.Find(g.Hatch, patterns) is { } hp && Lapin.Drawing.Hatch.HatchScale.UnitsOf(hp, g.HatchUnits) == Lapin.Drawing.Hatch.HatchUnits.Model;
+                if (fills.Count > 0) o.Add(f.Add("IFCFILLAREASTYLE", S(FillAreaStyleNames[kind]), L(fills.ToArray()), model ? True : False));
             }
             return o;
         }

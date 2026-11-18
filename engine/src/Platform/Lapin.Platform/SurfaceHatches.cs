@@ -67,12 +67,14 @@ public static class SurfaceHatches
         if (pieces.Count == 0 || !Allowed(m, view, pieces[0].Spec)) return [];
         // Each material's elevation graphics, once; a part draws a surface only when its material gives a hatch or a fill.
         var resolved = new Dictionary<string, ResolvedMaterial?>();
+        // A project made before real-size hatches (decision 671) goes on suggesting the paper ones.
+        var paper = MaterialHatchUpgrade.PaperSurfaces(m);
         ResolvedMaterial? Graphics(string? id)
         {
             if (id == null) return null;
             if (resolved.TryGetValue(id, out var r)) return r;
             // A material named rather than kept (a track's ballast): its look guessed from the name, as cuts do.
-            r = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, "elevation") : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, "elevation", id);
+            r = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, "elevation", paperSurfaces: paper) : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, "elevation", id, paper);
             return resolved[id] = r is { Membrane: false } && (r.Hatch != null || r.Fill != null || r.Background != null) ? r : null;
         }
         var graphics = parts.Select(p => Graphics(p.Material)).ToArray();
@@ -132,7 +134,24 @@ public static class SurfaceHatches
             }
             Pen Get(string key, Func<Pen> make) => pens.TryGetValue(key, out var p) ? p : pens[key] = make();
             CategoryGraphics? Cat(string cls) => LineStyles.CategoryOf(cls) is { } c && options.Categories != null && options.Categories.TryGetValue(c, out var cg) ? cg : null;
-            var unit = options.Scale / 1000;
+            // What each element's faces reach lowest and leftmost in the view (decision 671): a real-size hatch's courses start at its base,
+            // an element's own hatch origin (HatchOrigins) is measured from there.
+            Dictionary<string, Vec2>? lowest = null;
+            Vec2 LowestOf(string element)
+            {
+                if (lowest == null)
+                {
+                    lowest = [];
+                    foreach (var f in faces.Faces)
+                    {
+                        var el = parts[f.Owner].Element;
+                        var lo = lowest.TryGetValue(el, out var had) ? had : new Vec2(double.MaxValue, double.MaxValue);
+                        foreach (var l in f.Loops) foreach (var v in l) { var q = faces.Frame.Map(v); lo = new Vec2(Math.Min(lo.X, q.X), Math.Min(lo.Y, q.Y)); }
+                        lowest[el] = lo;
+                    }
+                }
+                return lowest.TryGetValue(element, out var low) ? low : default;
+            }
             for (var k = 0; k < visible.Count; k++)
             {
                 var (s, cells) = visible[k];
@@ -164,6 +183,13 @@ public static class SurfaceHatches
                         return;
                     }
                     if (budget <= 0) return;
+                    // Paper or real size (decision 671; the material's hatchUnits over the pattern's, for its own hatch); too dense on paper, not drawn.
+                    var over = background ? null : g.HatchUnits;
+                    var model = HatchScale.UnitsOf(pattern, over) == HatchUnits.Model;
+                    var factor = HatchScale.Factor(pattern, options.Scale, scale, over);
+                    if (!BattHatch.Is(pattern) && HatchScale.TooDense(pattern, factor, options.Scale, options.MinHatchSpacing, over)) return;
+                    var element = m.Get(part.Element);
+                    var own = element != null && HatchOrigins.Of(element) != null;
                     var width = weight ?? (!background && g.HatchPen is { } pn ? LineStyles.PenWidth(options.Table ?? LineStyles.DefaultPenTable(), pn, options.Scale) : Pens.Default.Hatch);
                     var pen = Get($"{(background ? "hatchbg" : "hatch")}:{color}:{width}:{(dash == null ? "" : string.Join(" ", dash))}", () => new Pen(Layer, color, width, null, dash));
                     if (BattHatch.Is(pattern))
@@ -179,14 +205,18 @@ public static class SurfaceHatches
                     {
                         // On the face: the cells carried into its plane's own axes, hatched there from the group's corner, carried back.
                         var onFace = loops.Select(l => (IReadOnlyList<Vec2>)l.Select(map.ToFace).ToArray()).ToList();
-                        var (segs, _) = HatchFill.Segments(onFace, pattern, new HatchOptions(scale * unit, angle, groups[gk].Min, budget));
+                        // From the group's bottom left, or the element's own origin carried onto the face.
+                        var from = own && HatchOrigins.InView(element, faces.Frame, LowestOf(part.Element), model) is { } vo ? map.ToFace(vo) : groups[gk].Min;
+                        var (segs, _) = HatchFill.Segments(onFace, pattern, new HatchOptions(factor, angle, from, budget));
                         budget -= segs.Count;
                         pen.Segments.AddRange(segs.Select(x => (Laid(map.ToView(x.A)), Laid(map.ToView(x.B)))));
                     }
                     else
                     {
                         // Aligned to the view: a developed section's pieces hatch from the developed drawing's origin, so courses run on across them.
-                        var (segs, _) = HatchFill.Segments(loops.Select(l => (IReadOnlyList<Vec2>)l.Select(Laid).ToArray()).ToList(), pattern, new HatchOptions(scale * unit, angle, null, budget));
+                        // A real-size pattern from the element's base, an element's own origin from there (decision 671); a paper one from the view's origin.
+                        var from = HatchOrigins.InView(element, faces.Frame, LowestOf(part.Element), model) is { } vo ? (Vec2?)(own ? Laid(vo) : vo) : null;
+                        var (segs, _) = HatchFill.Segments(loops.Select(l => (IReadOnlyList<Vec2>)l.Select(Laid).ToArray()).ToList(), pattern, new HatchOptions(factor, angle, from, budget));
                         budget -= segs.Count;
                         pen.Segments.AddRange(segs.Select(x => (x.A, x.B)));
                     }

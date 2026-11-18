@@ -72,6 +72,8 @@ public sealed record ViewGraphics(string? Hatch = null, double? HatchScale = nul
     public BackgroundHatch? BackgroundHatch { get; init; }
     public MaterialLine? CutLine { get; init; }
     public MaterialLine? SeparatorLine { get; init; }
+    /// <summary>The units its hatch lies in over the pattern's own (decision 671, rare): paper or model; null: the pattern's.</summary>
+    public HatchUnits? HatchUnits { get; init; }
 
     /// <summary>The fields decision 670 added, beside the first six.</summary>
     public static readonly string[] FlexFields = ["hatchColor", "hatchWeight", "hatchLineType", "hatchOpacity", "halftone", "fillOpacity", "backgroundHatch", "cutLine", "separatorLine"];
@@ -90,6 +92,7 @@ public sealed record ViewGraphics(string? Hatch = null, double? HatchScale = nul
             BackgroundHatch = Lapin.Drawing.BackgroundHatch.From(o["backgroundHatch"]),
             CutLine = MaterialLine.From(o["cutLine"]),
             SeparatorLine = MaterialLine.From(o["separatorLine"]),
+            HatchUnits = Lapin.Drawing.Hatch.HatchScale.Parse((string?)o["hatchUnits"]),
         }
         : null;
 }
@@ -135,6 +138,9 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
     /// <summary>The material's lines against its element's other layers, over the Object styles' layer lines; null: theirs.</summary>
     public MaterialLine? SeparatorLine { get; init; }
 
+    /// <summary>The units its hatch lies in over the pattern's own (decision 671): paper or model; null: the pattern's.</summary>
+    public HatchUnits? HatchUnits { get; init; }
+
     /// <summary>Whether it sets anything decision 670 added (a drawing of materials that set none is drawn exactly as before).</summary>
     public bool Flex => HatchColor != null || HatchWeight != null || HatchLineType != null || HatchOpacity != null || Halftone || FillOpacity != null || Background != null || CutLine != null || SeparatorLine != null;
 
@@ -162,6 +168,7 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
         if (Background != null) o["backgroundHatch"] = Background.ToJson();
         if (CutLine != null) o["cutLine"] = CutLine.ToJson();
         if (SeparatorLine != null) o["separatorLine"] = SeparatorLine.ToJson();
+        if (HatchUnits is { } hu) o["hatchUnits"] = Lapin.Drawing.Hatch.HatchScale.Name(hu);
         return o;
     }
 }
@@ -268,7 +275,7 @@ public static class MaterialGraphics
     /// as horizontal courses. The first match wins: roof coverings first ("concrete tile", "bitumen shingle"), then the hidden
     /// layers ("stone wool" is insulation), then timber before cladding ("timber cladding" is boards).
     /// </summary>
-    static readonly (Regex Re, string? Hatch)[] ElevationGuesses =
+    static readonly (Regex Re, string? Hatch)[] ElevationGuesses327 =
     [
         (new(@"clay tile|concrete tile|roof ?tile|tigla|olan|shingle|sindrila|slate|ardezie"), "HORIZONTAL"),
         (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|folie|barier"), null),
@@ -283,6 +290,32 @@ public static class MaterialGraphics
         (new(@"gravel|ballast|pietris|aggregate"), "GRAVEL"),
         (new(@"earth|soil|pamant|ground"), "EARTH"),
         (new(@"tile|ceramic|gresie|faianta|porcelain"), "TILES"),
+    ];
+
+    /// <summary>
+    /// What a name suggests for a facade in a project made since decision 671 (<c>hatchRev</c> 3): the same matches as
+    /// decision 327's, drawn at the object's real size (<see cref="HatchUnits.Model"/>), so a brick's courses are a brick's
+    /// at any scale: brick 240×63 (Î3), concrete blocks 400×200, aerated blocks 600×250, coursed stone 600×300, boards
+    /// 150 mm, standing seams every 500 mm, roof tiles at a 330 mm gauge, tiles 300×300. Sand, gravel and earth have no size
+    /// and keep their paper patterns. A project made before keeps decision 327's (<c>MaterialHatchUpgrade</c>).
+    /// </summary>
+    static readonly (Regex Re, string? Hatch)[] ElevationGuesses =
+    [
+        (new(@"clay tile|concrete tile|roof ?tile|tigla|olan|shingle|sindrila|slate|ardezie"), "ROOF_TILES"),
+        (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|folie|barier"), null),
+        (new(@"insul|wool|eps\b|xps\b|polystyren|pir\b|pur\b|vata|izola"), null),
+        (new(@"plaster|render|gypsum|tencuial|gips|paint|vopsea|stucco|adhesive|adeziv"), null),
+        (new(@"bca|aac|ytong|aerated|autoclav"), "BLOCK_600X250"),
+        (new(@"block|\bcmu\b|boltari"), "BLOCK_400X200"),
+        (new(@"brick|masonry|caramid|zidari|clinker"), "BRICK_240X63"),
+        (new(@"stone|piatra|granit|marble|marmura|travertin|limestone|calcar|sandstone|ashlar"), "STONE_600X300"),
+        (new(@"timber|wood|lemn|larch|cedar|pine|spruce|lambriu|siding|weatherboard|scandura"), "BOARDS_150"),
+        (new(@"clad|placare|sandwich|trapez|tabla|zinc|copper|cupru|standing seam|faltuit|corrugated|cutat|metal sheet|steel sheet|roof sheet"), "METAL_SEAM_500"),
+        (new(@"concrete|beton|screed|sapa|c\d\d/"), null),
+        (new(@"\bsand\b|nisip"), "SAND"),
+        (new(@"gravel|ballast|pietris|aggregate"), "GRAVEL"),
+        (new(@"earth|soil|pamant|ground"), "EARTH"),
+        (new(@"tile|ceramic|gresie|faianta|porcelain"), "TILE_300X300"),
     ];
 
     // Romanian diacritics fold to their letters, as the old names were typed.
@@ -310,11 +343,15 @@ public static class MaterialGraphics
         _ => FromName(name).Hatch,
     };
 
-    /// <summary>What a name suggests for an elevation's surface hatch: a pattern, or none (insulation, membranes, finishes, concrete, an unknown name).</summary>
-    public static string? ElevationFromName(string name)
+    /// <summary>
+    /// What a name suggests for an elevation's surface hatch: a pattern, or none (insulation, membranes, finishes, concrete,
+    /// an unknown name); real-size patterns (decision 671), or with <paramref name="paper"/> decision 327's paper ones (a
+    /// project made before decision 671).
+    /// </summary>
+    public static string? ElevationFromName(string name, bool paper = false)
     {
         var n = Fold(name);
-        foreach (var (re, h) in ElevationGuesses) if (re.IsMatch(n)) return h;
+        foreach (var (re, h) in paper ? ElevationGuesses327 : ElevationGuesses) if (re.IsMatch(n)) return h;
         return null;
     }
 
@@ -346,11 +383,16 @@ public static class MaterialGraphics
             BackgroundHatch = a!.BackgroundHatch is { } ab ? ab.Over(b.BackgroundHatch) : b.BackgroundHatch,
             CutLine = a!.CutLine is { } ac ? ac.Over(b.CutLine) : b.CutLine,
             SeparatorLine = a!.SeparatorLine is { } asl ? asl.Over(b.SeparatorLine) : b.SeparatorLine,
+            HatchUnits = b.HatchUnits ?? a!.HatchUnits,
         },
     };
 
-    /// <summary>The material's graphics in one kind of view: its own fields, else what its name suggests (an elevation: <see cref="ElevationFromName"/>).</summary>
-    public static ResolvedMaterial Resolve(Entity? material, string kind = "section", string? name = null)
+    /// <summary>
+    /// The material's graphics in one kind of view: its own fields, else what its name suggests (an elevation:
+    /// <see cref="ElevationFromName"/>, the paper patterns when <paramref name="paperSurfaces"/>: a project made before
+    /// decision 671, <c>MaterialHatchUpgrade.PaperSurfaces</c>).
+    /// </summary>
+    public static ResolvedMaterial Resolve(Entity? material, string kind = "section", string? name = null, bool paperSurfaces = false)
     {
         name ??= material?.Name ?? "";
         var own = Own(material, kind);
@@ -358,7 +400,7 @@ public static class MaterialGraphics
         var guess = elevation ? null : Suggested(name);
         var color = material?.Str("color");
         // "" in an own field is an explicit none; null is "not given". An elevation's guess is the facade's (ElevationFromName).
-        string? hatch = own?.Hatch is { } h ? (h.Length == 0 ? null : h.ToUpperInvariant()) : elevation ? ElevationFromName(name) : guess?.Hatch;
+        string? hatch = own?.Hatch is { } h ? (h.Length == 0 ? null : h.ToUpperInvariant()) : elevation ? ElevationFromName(name, paperSurfaces) : guess?.Hatch;
         // A fill only when asked: a colour, or "material" for the material's own (every material has a colour for 3D).
         string? fill = own?.Fill is { Length: > 0 } f ? (f == "material" ? color : f) : null;
         var hasOwn = own != null || material?.Attrs.ContainsKey("membrane") == true;
@@ -372,7 +414,7 @@ public static class MaterialGraphics
         {
             HatchColor = own?.HatchColor, HatchWeight = own?.HatchWeight, HatchLineType = own?.HatchLineType, HatchOpacity = own?.HatchOpacity is { } ho && ho < 100 ? ho : null,
             Halftone = own?.Halftone == true, FillOpacity = fill != null && own?.FillOpacity is { } fo && fo < 100 ? fo : null,
-            Background = membrane ? null : background, CutLine = own?.CutLine, SeparatorLine = own?.SeparatorLine,
+            Background = membrane ? null : background, CutLine = own?.CutLine, SeparatorLine = own?.SeparatorLine, HatchUnits = own?.HatchUnits,
         };
     }
 

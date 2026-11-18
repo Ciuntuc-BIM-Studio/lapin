@@ -103,6 +103,7 @@ public sealed class CoreModule : ILapinModule
         // Split, trim/extend and offset on walls, beams and strip footings (audit 2026-11-15, §6).
         PathEdits.Register(r);
         OutlineSplits.Register(r);
+        HatchOrigins.Register(r);
         Components.Register(r);
         // The wholes an element is a part of, for drill-down picking.
         Assemblies.Register(r);

@@ -37,7 +37,9 @@ namespace Lapin.Platform;
 /// <item><c>entourage</c>: how people, cars and plants draw in 2D (decision 341): <c>outline</c> (the default, a style
 /// saved before it too: a plan's simple symbol, an elevation's or a section's silhouette, never their bodies' edges),
 /// <c>abstract</c> (circles and boxes), <c>detailed</c> (the symbols and projected bodies drawn before) or <c>none</c>;
-/// <c>entourageFill</c>: the silhouettes' fill in elevations and sections, a colour, none by default.</item>
+/// <c>entourageFill</c>: the silhouettes' fill in elevations and sections, a colour, none by default;</item>
+/// <item><c>minHatchSpacing</c>: the closest (paper mm) a real-size hatch's lines may lie and still be drawn (decision 671):
+/// 0.7 by default, a style saved before too; a brick's courses at 1:200 lie closer and are left out; 0 draws them all.</item>
 /// </list>
 /// A view takes its style (<c>viewStyle</c>, else its discipline's), and may
 /// set any of these itself: what it sets wins over the style.
@@ -48,7 +50,7 @@ public static class ViewStyles
     public static readonly string[] LayerModes = ["all", "noFinishes", "core", "coreLoadBearing"];
     const string LayerModesText = "all, noFinishes, core or coreLoadBearing";
     public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch", "entourage", "entourageFill", "detail",
-        "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection"];
+        "minHatchSpacing", "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection"];
 
     /// <summary>
     /// The finish layers by the kind of view (the forum's topic #30): whether plans, and whether sections and elevations, draw
@@ -76,7 +78,7 @@ public static class ViewStyles
     /// </summary>
     public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null, int Detail = PlanDetail.Lod350,
         bool WallFinishesPlan = true, bool WallFinishesSection = true, bool FloorFinishesPlan = true, bool FloorFinishesSection = true, string? LayersPlan = null, string? LayersSection = null,
-        bool FinishElements = true)
+        bool FinishElements = true, double MinHatchSpacing = Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing)
     {
         /// <summary>The partial structure display of a view of this kind (a plan, a section or an elevation, another).</summary>
         public string LayersFor(string? viewKind) => viewKind switch
@@ -92,6 +94,7 @@ public static class ViewStyles
             ["voids"] = Voids, ["voidSizes"] = VoidSizes, ["finishHatch"] = FinishHatch, ["surfaceHatch"] = SurfaceHatch,
             ["entourage"] = Entourage, ["entourageFill"] = EntourageFill, ["detail"] = Detail,
             ["wallFinishesPlan"] = WallFinishesPlan, ["wallFinishesSection"] = WallFinishesSection, ["floorFinishesPlan"] = FloorFinishesPlan, ["floorFinishesSection"] = FloorFinishesSection,
+            ["minHatchSpacing"] = MinHatchSpacing,
         });
 
         /// <summary>Whether a view of this kind draws the finishes of a category's layers (walls; slabs and coverings for floors); true for any other kind of view or category.</summary>
@@ -140,7 +143,12 @@ public static class ViewStyles
             // A style saved before the structure display by kind of view (decision 500): its plans and sections take its layers.
             Mode(o["layersPlan"]), Mode(o["layersSection"]),
             // Whether the separate finish elements go with the finish layers (decision 502): a project made before is marked false (StructureUpgrade).
-            On(o["finishElements"]));
+            On(o["finishElements"]),
+            // A style saved before real-size hatches (decision 671): the default threshold (it had no real-size hatch to leave out).
+            Spacing(o["minHatchSpacing"]) ?? Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing);
+
+        /// <summary>A hatch spacing threshold (paper mm, 0 or more); null when it is not one.</summary>
+        internal static double? Spacing(JsonNode? n) => Json.Number(n) is { } v && v >= 0 && double.IsFinite(v) ? v : null;
 
         static string? Mode(JsonNode? n) => (string?)n is { } l && LayerModes.Contains(l) ? l : null;
 
@@ -209,8 +217,11 @@ public static class ViewStyles
             WallFinishesSection = Own(o["wallFinishesSection"]) ?? s.WallFinishesSection,
             FloorFinishesPlan = Own(o["floorFinishesPlan"]) ?? s.FloorFinishesPlan,
             FloorFinishesSection = Own(o["floorFinishesSection"]) ?? s.FloorFinishesSection,
+            MinHatchSpacing = Style.Spacing(o["minHatchSpacing"]) ?? s.MinHatchSpacing,
         };
     }
+
+    const string SpacingProblem = "minHatchSpacing is a distance on paper in mm, 0 or more (0: every real-size hatch is drawn).";
 
     static bool? Own(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) ? b : null;
 
@@ -368,6 +379,7 @@ public static class ViewStyles
         if (a.ContainsKey("entourageFill")) s = s with { EntourageFill = CheckedFill(a["entourageFill"]) };
         if (a.ContainsKey("detail")) s = s with { Detail = PlanDetail.LodOf(a["detail"]) ?? throw new CommandException(PlanDetail.LodProblem) };
         if (a.ContainsKey("graphicsSet")) s = s with { GraphicsSet = (string?)a["graphicsSet"] is { Length: > 0 } gs ? gs : null };
+        if (a.ContainsKey("minHatchSpacing")) s = s with { MinHatchSpacing = Style.Spacing(a["minHatchSpacing"]) ?? throw new CommandException(SpacingProblem) };
         if (a.ContainsKey("finishElements")) s = s with { FinishElements = Own(a["finishElements"]) ?? throw new CommandException("finishElements is true or false.") };
         foreach (var f in FinishFields)
         {
@@ -511,6 +523,8 @@ public static class ViewStyles
                 else if (f == "entourageFill") own[f] = CheckedFill(value) ?? "none";
                 // The view's level of development (decision 404): 100, 200, 300, 350 or 400.
                 else if (f == "detail") own[f] = PlanDetail.LodOf(value) ?? throw new CommandException(PlanDetail.LodProblem);
+                // The real-size hatches' threshold (decision 671), paper mm.
+                else if (f == "minHatchSpacing") own[f] = Style.Spacing(value) ?? throw new CommandException(SpacingProblem);
                 else own[f] = value is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException($"{f} is true or false.");
             }
             if (own.Count > 0) attrs["styleOverrides"] = own; else attrs.Remove("styleOverrides");

@@ -146,3 +146,47 @@ public static class HatchFill
             }
     }
 }
+
+/// <summary>
+/// How big a pattern lies in a drawing (decision 671): a paper pattern's millimetres are paper millimetres, so at 1:scale
+/// a millimetre is scale/1000 m of the drawing; a model pattern's are the object's, a millimetre 1/1000 m at any scale.
+/// A model pattern so dense on paper that its lines would run together (its closest family under
+/// <see cref="DefaultMinSpacing"/> mm apart, a view style's <c>minHatchSpacing</c>) is not drawn.
+/// </summary>
+public static class HatchScale
+{
+    /// <summary>The closest a real-size hatch's lines may lie on paper (mm) and still be drawn (decision 671, Î4).</summary>
+    public const double DefaultMinSpacing = 0.7;
+
+    /// <summary>The units a pattern lies in: <paramref name="over"/> (a material's <c>hatchUnits</c>), else the pattern's own.</summary>
+    public static HatchUnits UnitsOf(HatchPattern p, HatchUnits? over = null) => over ?? p.Units;
+
+    /// <summary>"paper" or "model", as the protocol writes them.</summary>
+    public static string Name(HatchUnits u) => u == HatchUnits.Model ? "model" : "paper";
+
+    /// <summary>"paper" or "model" read (any case); null otherwise.</summary>
+    public static HatchUnits? Parse(string? s) => s?.Trim().ToLowerInvariant() switch { "paper" => HatchUnits.Paper, "model" => HatchUnits.Model, _ => null };
+
+    /// <summary>Drawing metres per pattern unit at 1:<paramref name="viewScale"/>, times the material's own <paramref name="userScale"/>.</summary>
+    public static double Factor(HatchPattern p, double viewScale, double userScale = 1, HatchUnits? over = null) =>
+        userScale * (UnitsOf(p, over) == HatchUnits.Model ? 0.001 : viewScale / 1000);
+
+    /// <summary>How far apart (paper mm) the closest lines of a pattern lie at a <paramref name="factor"/> (drawing metres per unit) at 1:<paramref name="viewScale"/>; ∞ with no lines.</summary>
+    public static double PaperSpacing(HatchPattern p, double factor, double viewScale)
+    {
+        var min = double.PositiveInfinity;
+        foreach (var f in p.Families) if (Math.Abs(f.DeltaY) > 1e-12) min = Math.Min(min, Math.Abs(f.DeltaY));
+        return min * factor * 1000 / viewScale;
+    }
+
+    /// <summary>Whether a model pattern lies too dense to draw (paper patterns are always drawn, as before).</summary>
+    public static bool TooDense(HatchPattern p, double factor, double viewScale, double minSpacing, HatchUnits? over = null) =>
+        UnitsOf(p, over) == HatchUnits.Model && minSpacing > 0 && viewScale > 0 && PaperSpacing(p, factor, viewScale) < minSpacing - 1e-9;
+
+    /// <summary>The options a pattern is laid with in a drawing at 1:<paramref name="viewScale"/>; null when it is too dense to draw.</summary>
+    public static HatchOptions? Lay(HatchPattern p, double viewScale, double userScale, double angle, Vec2? origin, int max, HatchUnits? over = null, double minSpacing = DefaultMinSpacing)
+    {
+        var factor = Factor(p, viewScale, userScale, over);
+        return TooDense(p, factor, viewScale, minSpacing, over) ? null : new HatchOptions(factor, angle, origin, max);
+    }
+}

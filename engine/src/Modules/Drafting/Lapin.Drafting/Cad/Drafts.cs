@@ -253,7 +253,7 @@ public static class Drafts
                 {
                     var scale = Json.Number(h["scale"]) ?? 1;
                     var origin = Args.TryPoint(h["origin"]);
-                    var (segs, _) = HatchFill.Segments(loops, pattern, new HatchOptions(scale * c.Mm, Json.Number(h["angle"]) ?? 0, origin, 20_000));
+                    var (segs, _) = HatchFill.Segments(loops, pattern, new HatchOptions(HatchScale.Factor(pattern, c.Scale, scale), Json.Number(h["angle"]) ?? 0, origin, 20_000));
                     foreach (var s in segs) mk.Line(s.A, s.B, layer.Name, Pens.Default.Hatch, color);
                 }
                 foreach (var l in loops) mk.Shapes.Add(new Polyline(l, true).ToJson().Also(j => j["hatch"] = true));

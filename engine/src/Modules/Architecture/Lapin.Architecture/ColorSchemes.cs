@@ -351,7 +351,7 @@ public static class ColorSchemes
                 if (e.Hatch != null && HatchLibrary.Find(e.Hatch, patterns) is { } pattern)
                 {
                     if (pattern.Solid) mark.Fills.Add((loops, e.HatchColor ?? "#555555"));
-                    else foreach (var s in HatchFill.Segments(loops, pattern, new HatchOptions(e.HatchScale * c.Mm, 0, null, 4_000)).Segments) mark.Line(s.A, s.B, "LEGEND", Pens.Default.Hatch, e.HatchColor ?? "#555555");
+                    else foreach (var s in HatchFill.Segments(loops, pattern, new HatchOptions(HatchScale.Factor(pattern, c.Scale, e.HatchScale), 0, null, 4_000)).Segments) mark.Line(s.A, s.B, "LEGEND", Pens.Default.Hatch, e.HatchColor ?? "#555555");
                 }
                 mark.Polyline(box, true, "LEGEND", Pens.Default.Hatch, color);
                 var label = e.Value;

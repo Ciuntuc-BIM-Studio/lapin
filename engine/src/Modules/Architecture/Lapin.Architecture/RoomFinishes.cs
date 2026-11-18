@@ -538,10 +538,25 @@ public static class RoomFinishes
         (new(@"epoxy|resin|concrete|screed|terrazzo|beton|sapa|rasina"), "CONCRETE"),
     ];
 
-    static string? SurfaceOf(string name)
+    /// <summary>
+    /// The same, at the object's real size (decision 671; a project made since, <c>hatchRev</c> 3): tiles and stone 600×600,
+    /// wall tiles (faianță) 300×300, parquet and boards 150 mm; carpet, sheet flooring and poured floors have no size and keep
+    /// their paper patterns. A project made before goes on with the paper ones (<see cref="MaterialHatchUpgrade.PaperSurfaces(IModelView)"/>).
+    /// </summary>
+    static readonly (System.Text.RegularExpressions.Regex Re, string Pattern)[] RealSurfaces =
+    [
+        (new(@"faianta|wall tile"), "TILE_300X300"),
+        (new(@"tile|ceramic|porcelain|stone|marble|granit|terrazzo|gresie|piatra|marmura"), "TILE_600X600"),
+        (new(@"parquet|laminat|wood|timber|oak|beech|plank|board|deck|lemn|parchet|stejar"), "BOARDS_150"),
+        (new(@"carpet|textile|mocheta|covor"), "CROSS"),
+        (new(@"vinyl|linoleum|pvc|rubber|lvt|cauciuc"), "HORIZONTAL"),
+        (new(@"epoxy|resin|concrete|screed|terrazzo|beton|sapa|rasina"), "CONCRETE"),
+    ];
+
+    static string? SurfaceOf(string name, bool paper = true)
     {
         var n = Lapin.Drawing.MaterialGraphics.Normalise(name).Replace('ă', 'a').Replace('â', 'a').Replace('î', 'i').Replace('ș', 's').Replace('ş', 's').Replace('ț', 't').Replace('ţ', 't');
-        foreach (var (re, pattern) in Surfaces) if (re.IsMatch(n)) return pattern;
+        foreach (var (re, pattern) in paper ? Surfaces : RealSurfaces) if (re.IsMatch(n)) return pattern;
         return null;
     }
 
@@ -564,7 +579,7 @@ public static class RoomFinishes
             var material = Materials.Find(m, l.Material);
             if (Lapin.Drawing.ViewGraphics.From(material?.Attrs["elevation"]) is { Hatch: { Length: > 0 } mine } g)
                 return new PlanHatch(mine.ToUpperInvariant(), (g.HatchScale ?? 1) * h.Scale, (g.HatchAngle ?? 0) + h.Angle, color);
-            if (SurfaceOf(l.Material) is { } guess) return new PlanHatch(guess, h.Scale, h.Angle, color);
+            if (SurfaceOf(l.Material, MaterialHatchUpgrade.PaperSurfaces(m)) is { } guess) return new PlanHatch(guess, h.Scale, h.Angle, color);
         }
         return new PlanHatch("LINES45", h.Scale, h.Angle, color);
     }

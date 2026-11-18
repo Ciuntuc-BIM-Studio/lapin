@@ -11,13 +11,28 @@ namespace Lapin.Platform;
 /// lines, an unknown name 45° lines), is given that one as its own (none as an explicit none), its other fields as they
 /// were; then the project is marked <see cref="Rev"/>. Materials of their own hatch, membranes and those today's table
 /// draws the same are left as they are.
+/// <para>
+/// From <c>hatchRev</c> 3 (decision 671) a facade's and a floor finish's hatch suggested by the name is drawn at the
+/// object's real size (BRICK_240X63, TILE_300X300…). A project saved before is marked <see cref="PaperKey"/>, so its
+/// elevations and plans go on suggesting the paper patterns they drew (BRICK, TILES…), and nothing it drew changes. A mark
+/// on the project rather than on each material (as revisions 1 and 2 did): a floor finish takes a material's own elevation
+/// hatch over its name's suggestion, so a pattern pinned on the material would have changed old plans.
+/// </para>
 /// </summary>
 public sealed class MaterialHatchUpgrade : IProjectUpgrade
 {
     /// <summary>The project's mark of the table its materials' hatches are suggested by (a new project has today's).</summary>
     public const string RevKey = "hatchRev";
-    /// <summary>Today's table: Revit's default materials' cut patterns (decision 460).</summary>
-    public const int Rev = 2;
+    /// <summary>Today's table: Revit's default materials' cut patterns (decision 460); facades and floor finishes at real size (decision 671).</summary>
+    public const int Rev = 3;
+
+    /// <summary>The project's mark that its surfaces' (elevations', floor finishes') suggested hatches are the paper ones of before decision 671.</summary>
+    public const string PaperKey = "paperSurfaceHatches";
+
+    /// <summary>Whether a project suggests the paper surface hatches of before decision 671 (it was saved before them).</summary>
+    public static bool PaperSurfaces(IModelView m) => PaperSurfaces(Spatial.Project(m));
+
+    public static bool PaperSurfaces(Entity? project) => project?.Attrs[PaperKey] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
 
     public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations)
     {
@@ -30,9 +45,10 @@ public sealed class MaterialHatchUpgrade : IProjectUpgrade
             {
                 var pa = e.CloneAttrs();
                 pa[RevKey] = Rev;
+                if (saved < 3) pa[PaperKey] = true;
                 return e.With(attrs: pa);
             }
-            return e.Class == IfcClass.Material ? Kept(e, saved) : e;
+            return e.Class == IfcClass.Material && saved < 2 ? Kept(e, saved) : e;
         }).ToList(), relations);
     }
 

@@ -125,9 +125,10 @@ static class ReferenceDetails
         var brick = f.Type("Facing brick", ("Gypsum plaster", 0.015, false), ("Brick masonry", 0.25, true), ("Facing brick", 0.115, false));
         var timber = f.Type("Timber clad", ("Gypsum plaster", 0.015, false), ("Brick masonry", 0.25, true), ("Timber cladding", 0.02, false));
         var metal = f.Type("Metal clad", ("Gypsum plaster", 0.015, false), ("Brick masonry", 0.25, true), ("Metal cladding", 0.01, false));
-        f.Wall(0, 0, 3, 0, brick);
-        f.Wall(3, 0, 6, 0, timber);
-        f.Wall(6, 0, 9, 0, metal);
+        // Drawn right to left, so the facing (the last layer, on the right of the axis) is the south face the elevation sees.
+        f.Wall(3, 0, 0, 0, brick);
+        f.Wall(6, 0, 3, 0, timber);
+        f.Wall(9, 0, 6, 0, metal);
         f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = f.Storey, ["points"] = Pts((0, 0), (9, 0), (9, 5), (0, 5)), ["style"] = "fr_provence" });
         return new Detail("facade", "Facade: facing brick, timber and metal cladding, roof tiles", f, [("elevation", new JsonObject { ["kind"] = "elevation", ["direction"] = "south" })]);
     }

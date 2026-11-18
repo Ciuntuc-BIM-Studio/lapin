@@ -60,7 +60,8 @@ public sealed class SectionHatchDefaultTests
     [Fact]
     public void Brick_courses_stay_the_elevation_s_and_an_IFC_hatch_of_no_known_name_stays_none()
     {
-        Assert.Equal("BRICK", MaterialGraphics.Resolve(Mat("Facing brick"), "elevation").Hatch);
+        Assert.Equal("BRICK_240X63", MaterialGraphics.Resolve(Mat("Facing brick"), "elevation").Hatch);
+        Assert.Equal("BRICK", MaterialGraphics.Resolve(Mat("Facing brick"), "elevation", paperSurfaces: true).Hatch);
         Assert.Null(MaterialGraphics.FromIfcHatch("Whatever", null, null, null));
         Assert.Equal("MASONRY", MaterialGraphics.FromIfcHatch("Masonry hatch", null, null, null)!.Hatch);
     }

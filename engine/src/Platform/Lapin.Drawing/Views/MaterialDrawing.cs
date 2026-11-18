@@ -9,8 +9,9 @@ public sealed record LayerRef(string? Material, string Name, double Thickness);
 /// <param name="Fill">The band's fill colour (its material's), which a solid pattern is drawn in (forum topic 88); null: none.</param>
 /// <param name="Look">The material's graphics, whose hatch colour, weight, line type, opacity and halftone it is drawn with (decision 670); null: the category's and Lapin's.</param>
 /// <param name="Background">The material's background hatch (decision 670), drawn under its hatch in <see cref="Look"/>'s background colour and weight.</param>
+/// <param name="Units">The units its pattern lies in over the pattern's own (a material's <c>hatchUnits</c>, decision 671); null: the pattern's.</param>
 public sealed record MaterialHatch(IReadOnlyList<Vec2[]> Loops, string Pattern, double Scale, int? Pen, string Class, double Angle = 0, Vec2? Origin = null, string? Fill = null,
-    ResolvedMaterial? Look = null, bool Background = false)
+    ResolvedMaterial? Look = null, bool Background = false, Lapin.Drawing.Hatch.HatchUnits? Units = null)
 {
     /// <summary>A hatch aligned to the band it fills: its origin at the start of the band's longest edge, its angle along that edge (plus the material's own).</summary>
     public static MaterialHatch Aligned(IReadOnlyList<Vec2[]> loops, string pattern, double scale, int? pen, string cls, double angle, string align)
@@ -243,8 +244,8 @@ public static class MaterialDrawing
             var look = g.Flex ? g : null;
             // The element's own alignment over its material's: along its axis (one angle and origin for all its bands), or the view's.
             if (mine is { } own)
-                o.Hatches.Add(new MaterialHatch(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, (own.Angle ?? 0) + g.HatchAngle, own.Origin, g.Fill, look));
-            else o.Hatches.Add(MaterialHatch.Aligned(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, g.HatchAngle, g.HatchAlign) with { Fill = g.Fill, Look = look });
+                o.Hatches.Add(new MaterialHatch(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, (own.Angle ?? 0) + g.HatchAngle, own.Origin, g.Fill, look, Units: g.HatchUnits));
+            else o.Hatches.Add(MaterialHatch.Aligned(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, g.HatchAngle, g.HatchAlign) with { Fill = g.Fill, Look = look, Units = g.HatchUnits });
         }
 
         // Edges of every band, by join key.

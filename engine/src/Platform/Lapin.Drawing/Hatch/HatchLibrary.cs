@@ -4,6 +4,9 @@ namespace Lapin.Drawing.Hatch;
 /// The built-in patterns (the old Lapin's own designs), in millimetres as they
 /// print at 1:1 on paper: the caller scales them to the drawing. A project's
 /// imported patterns take precedence over a built-in of the same name.
+/// The real-size ones (decision 671, <c>;%TYPE=MODEL</c>, <see cref="HatchUnits.Model"/>) are millimetres of the
+/// object: brick courses (240×63, the Romanian format, the default; 240×71; 215×65) with 10 mm joints drawn as one line
+/// at the joint, blocks, tiles, boards, coursed stone, roof tiles and standing-seam sheet, drawn by Lapin.
 /// </summary>
 public static class HatchLibrary
 {
@@ -104,6 +107,61 @@ public static class HatchLibrary
 37, 0.8,1.1, 2.3,3.1, 0.5,-4.2
 118, 2.1,0.4, 1.9,3.6, 0.4,-3.9
 74, 1.4,2.2, 2.6,3.4, 0,-2.8
+
+;; Real size (millimetres of the object; decision 671)
+*BRICK_240X63, Brick 240 x 63 running bond, 10 mm joints (real size)
+;%TYPE=MODEL
+0, 0,0, 0,73
+90, 0,0, 73,125, 73,-73
+
+*BRICK_240X71, Brick 240 x 71 running bond, 10 mm joints (real size)
+;%TYPE=MODEL
+0, 0,0, 0,81
+90, 0,0, 81,125, 81,-81
+
+*BRICK_215X65, Brick 215 x 65 running bond, 10 mm joints (real size)
+;%TYPE=MODEL
+0, 0,0, 0,75
+90, 0,0, 75,112.5, 75,-75
+
+*BLOCK_400X200, Concrete blocks 390 x 190, 10 mm joints, half bond (real size)
+;%TYPE=MODEL
+0, 0,0, 0,200
+90, 0,0, 200,200, 200,-200
+
+*BLOCK_600X250, Aerated concrete blocks 600 x 250, half bond (real size)
+;%TYPE=MODEL
+0, 0,0, 0,250
+90, 0,0, 250,300, 250,-250
+
+*TILE_300X300, Tiles 300 x 300 (real size)
+;%TYPE=MODEL
+0, 0,0, 0,300
+90, 0,0, 0,300
+
+*TILE_600X600, Tiles 600 x 600 (real size)
+;%TYPE=MODEL
+0, 0,0, 0,600
+90, 0,0, 0,600
+
+*BOARDS_150, Timber boards 150 mm, 2.4 m long, staggered butt joints (real size)
+;%TYPE=MODEL
+0, 0,0, 0,150
+90, 0,0, 150,600, 150,-450
+
+*STONE_600X300, Coursed stone 600 x 300, joints staggered by a third (real size)
+;%TYPE=MODEL
+0, 0,0, 0,300
+90, 0,0, 300,200, 300,-600
+
+*ROOF_TILES, Roof tiles: courses at a 330 mm gauge, 300 mm wide, half bond (real size)
+;%TYPE=MODEL
+0, 0,0, 0,330
+90, 0,0, 330,150, 330,-330
+
+*METAL_SEAM_500, Standing-seam metal sheet, seams every 500 mm (real size)
+;%TYPE=MODEL
+90, 0,0, 0,500
 """;
 
     static readonly List<HatchPattern> Patterns = [.. Pat.Parse(BuiltIn).Patterns, BattHatch.Pattern];

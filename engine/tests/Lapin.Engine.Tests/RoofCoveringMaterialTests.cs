@@ -103,10 +103,11 @@ public class RoofCoveringMaterialTests
     {
         var f = new Fixture();
         var roof = AddRoof(f);
-        // From the south the south slope faces the viewer: courses, every one level.
+        // From the south the south slope faces the viewer: courses, level, and the tiles' joints up between them (ROOF_TILES, decision 671).
         var south = Hatch(Render(f, Elevation(f, "south")));
         Assert.NotEmpty(south);
-        Assert.All(south, s => Assert.True(Math.Abs(s.A.Y - s.B.Y) < 1e-6));
+        Assert.All(south, s => Assert.True(Math.Abs(s.A.Y - s.B.Y) < 1e-6 || Math.Abs(s.A.X - s.B.X) < 1e-6));
+        Assert.True(south.Where(s => Math.Abs(s.A.Y - s.B.Y) < 1e-6).Sum(s => (s.B - s.A).Length) > 0.25 * Length(south));
         // Within the roof, between the eaves and the ridge (the plates at 3 m, the ridge 3 · tan 24° above them).
         var (lo, hi) = f.Bounds(roof);
         Assert.All(south, s => Assert.InRange((s.A.Y + s.B.Y) / 2, lo.Z - 1e-6, hi.Z + 1e-6));

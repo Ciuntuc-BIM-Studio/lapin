@@ -35,9 +35,12 @@ public static class DraftingResources
 
     static Entity Project(ICommandContext ctx) => Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
 
-    static readonly HashSet<string> GraphicsFields = ["hatch", "hatchScale", "fill", "hatchPen", "hatchAngle", "hatchAlign", .. ViewGraphics.FlexFields, "reset"];
+    static readonly HashSet<string> GraphicsFields = ["hatch", "hatchScale", "fill", "hatchPen", "hatchAngle", "hatchAlign", .. ViewGraphics.FlexFields, "hatchUnits", "reset"];
 
     /// <summary>The fields a null takes back to the default (not given): all but hatch and fill, whose null is an explicit none.</summary>
+    /// <summary>The scale a real-size pattern's swatch is drawn at when none is asked (decision 671): 1:20, where a brick reads as one.</summary>
+    public const double PreviewScale = 20;
+
     static bool NullResets(string field) => field is not ("hatch" or "fill");
 
     static readonly HashSet<string> BackgroundFields = ["hatch", "hatchScale", "hatchAngle", "hatchColor", "hatchWeight"];
@@ -112,6 +115,10 @@ public static class DraftingResources
                     o[k] = (string?)v is { } al && HatchAlign.All.Contains(al) ? al : throw new CommandException($"{where}: a hatch aligns to the \"view\" or to the \"layer\".");
                     break;
                 // Decision 670: the hatch's own colour, weight, line type, opacity and halftone; the fill's opacity; a background hatch; the material's lines.
+                // Decision 671: the units its hatch lies in over the pattern's own (rare).
+                case "hatchUnits":
+                    o[k] = HatchScale.Parse((string?)v) is { } hu ? HatchScale.Name(hu) : throw new CommandException($"{where}: hatch units are \"paper\" or \"model\".");
+                    break;
                 case "hatchColor": o[k] = Colour(v, where, "a hatch colour"); break;
                 case "hatchWeight": o[k] = Weight(v, where, "a hatch weight"); break;
                 case "hatchLineType": o[k] = LineType(m, v, where); break;
@@ -286,7 +293,7 @@ public static class DraftingResources
             if (a["color"] is JsonValue c && (string?)c is { } cs && HexColor.IsColour(cs)) attrs["color"] = cs;
             mat = mat.With(attrs: attrs);
         }
-        var look = MaterialGraphics.Resolve(mat, kind);
+        var look = MaterialGraphics.Resolve(mat, kind, paperSurfaces: MaterialHatchUpgrade.PaperSurfaces(q.Model));
         var book = Book(q.Model);
         var project = Spatial.Project(q.Model);
         var options = new Lapin.Drawing.Views.Pens.Options(scale, Patterns: Patterns(q.Model), Table: LineStyles.ReadTable(project?.Attrs["penTable"]), LineTypes: book.LineTypes,
@@ -514,16 +521,21 @@ public static class DraftingResources
         });
 
         // Every material, how it draws in each kind of view, and whether it is used.
-        r.Query("material.list", (q, _) => new JsonArray(q.Model.OfClass(IfcClass.Material).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).Select(mat =>
+        r.Query("material.list", (q, _) =>
+        {
+        // A project made before real-size hatches (decision 671) suggests its surfaces' paper ones.
+        var paper = MaterialHatchUpgrade.PaperSurfaces(q.Model);
+        return new JsonArray(q.Model.OfClass(IfcClass.Material).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).Select(mat =>
         {
             var o = new JsonObject { ["id"] = mat.Id, ["name"] = mat.Name, ["color"] = Materials.ColorOf(q.Model, mat.Id), ["inUse"] = InUse(q.Model, mat.Id), ["category"] = mat.Str("category") };
             // How it renders: its own values and, for the rest, what its name gives.
             o["look"] = MaterialLook.Of(mat).ToJson(mat);
-            foreach (var kind in MaterialGraphics.Kinds) o[kind] = MaterialGraphics.Resolve(mat, kind).ToJson();
+            foreach (var kind in MaterialGraphics.Kinds) o[kind] = MaterialGraphics.Resolve(mat, kind, paperSurfaces: paper).ToJson();
             o["own"] = new JsonObject(MaterialGraphics.Kinds.Where(k => mat.Attrs[k] != null).Select(k => KeyValuePair.Create(k, (JsonNode?)mat.Attrs[k]!.DeepClone())));
             MaterialFields.Write(mat, o);
             return (JsonNode)o;
-        }).ToArray()));
+        }).ToArray());
+        });
 
         // ------------------------------------------------------------ hatch patterns
         // A .pat file as a kind of library file (LibraryMerge): a pattern of a name the project has is that pattern, updated by
@@ -591,23 +603,30 @@ public static class DraftingResources
             var own = Patterns(q.Model);
             var names = own.Select(p => p.Name).ToHashSet();
             return new JsonArray(own.Select(p => (p, true)).Concat(HatchLibrary.BuiltInPatterns.Where(p => !names.Contains(p.Name)).Select(p => (p, false)))
-                .Select(x => (JsonNode)new JsonObject { ["name"] = x.p.Name, ["description"] = x.p.Description, ["solid"] = x.p.Solid, ["project"] = x.Item2 }).ToArray());
+                .Select(x => (JsonNode)new JsonObject { ["name"] = x.p.Name, ["description"] = x.p.Description, ["solid"] = x.p.Solid, ["project"] = x.Item2, ["units"] = HatchScale.Name(x.p.Units) }).ToArray());
         });
 
-        // A pattern's strokes over a square (paper mm): the swatches of the materials dialog.
+        // A pattern's strokes over a square (paper mm): the swatches of the materials dialog. A real-size pattern (decision 671) is
+        // drawn at 1:viewScale (default 20, where a brick reads as one), or at the units asked ({units: "paper"|"model"}).
         r.Query("hatch.preview", (q, a) =>
         {
             var size = Json.Number(a["size"]) ?? 20;
             var pattern = HatchLibrary.Find((string?)a["pattern"] ?? "", Patterns(q.Model));
             if (pattern == null) return new JsonObject { ["solid"] = false, ["segments"] = new JsonArray() };
+            var units = HatchScale.UnitsOf(pattern, HatchScale.Parse((string?)a["units"]));
+            var viewScale = Json.Number(a["viewScale"]) is { } vs && vs > 0 && double.IsFinite(vs) ? vs : PreviewScale;
+            // Paper mm per pattern unit: a paper pattern's are paper mm; a model one's the object's, at 1:viewScale.
+            var per = (Json.Number(a["scale"]) ?? 1) * (units == HatchUnits.Model ? 1 / viewScale : 1);
             Vec2[] box = [new(0, 0), new(size, 0), new(size, size), new(0, size)];
             // The batt's swatch: a band a third of the square high, its loops along it.
             var segs = BattHatch.Is(pattern)
                 ? BattHatch.Segments([[new(0, size / 3), new(size, size / 3), new(size, 2 * size / 3), new(0, 2 * size / 3)]], 0, 4000)
-                : HatchFill.Segments([box], pattern, new HatchOptions(Json.Number(a["scale"]) ?? 1, Json.Number(a["angle"]) ?? 0, MaxSegments: 4000)).Segments;
+                : HatchFill.Segments([box], pattern, new HatchOptions(per, Json.Number(a["angle"]) ?? 0, MaxSegments: 4000)).Segments;
             return new JsonObject
             {
                 ["solid"] = pattern.Solid,
+                ["units"] = HatchScale.Name(units),
+                ["viewScale"] = units == HatchUnits.Model ? viewScale : null,
                 ["segments"] = new JsonArray(segs.SelectMany(s => new[] { s.A.X, s.A.Y, s.B.X, s.B.Y }).Select(v => (JsonNode)Math.Round(v, 4)).ToArray()),
             };
         });

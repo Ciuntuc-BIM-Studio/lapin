@@ -94,6 +94,7 @@ public static class BonsaiStyles
         css.Append('\n');
 
         // Each material: its cut hatch (and fill) where it is cut, its elevation hatch where it is seen.
+        var paperSurfaces = MaterialHatchUpgrade.PaperSurfaces(m);
         var taken = new Dictionary<string, string>(StringComparer.Ordinal);
         void Material(string name, Entity? material, bool layerToo)
         {
@@ -118,7 +119,7 @@ public static class BonsaiStyles
                 if (cl.LineType != null && Standards.DashOf(book, cl.LineType) is { Length: > 0 } cd) outline.Add($"stroke-dasharray: {string.Join(" ", cd.Select(N))}");
             }
             css.Append($"{string.Join(", ", selectors)} {{ fill: {fill ?? "white"};{string.Concat(outline.Select(x => " " + x + ";"))} }}\n");
-            var elevation = MaterialGraphics.Resolve(material, "elevation", name);
+            var elevation = MaterialGraphics.Resolve(material, "elevation", name, paperSurfaces);
             if (patterns.Fill(elevation, background: "white", ownFill: false) is { } seenFill)
                 css.Append($".projection.material-{key}, .material-{key} .projection {{ fill: {seenFill}; }}\n");
         }
@@ -163,15 +164,17 @@ public static class BonsaiStyles
             var layers = new List<(HatchPattern P, double Scale, double Angle, string Color, double Width)>();
             HatchPattern? Find(string? h) => string.IsNullOrEmpty(h) ? null : HatchLibrary.Find(h.Equals(BattHatch.Name, StringComparison.OrdinalIgnoreCase) ? "INSULATION" : h, extra);
             static double Positive(double s) => s <= 0 || !double.IsFinite(s) ? 1 : s;
+            // A stylesheet has no scale: a real-size pattern (decision 671) is drawn as at 1:100.
+            static double Paper(HatchPattern p, HatchUnits? over, double s) => HatchScale.UnitsOf(p, over) == HatchUnits.Model ? s / 100 : s;
             if (g.Background is { } b && Find(b.Hatch) is { } bp)
             {
                 if (bp.Solid) return ResolvedMaterial.Ink(b.HatchColor ?? "#000000", g.Halftone, g.HatchOpacity);
-                layers.Add((bp, Positive(b.HatchScale ?? g.HatchScale), b.HatchAngle ?? 0, ResolvedMaterial.Ink(b.HatchColor ?? "#000000", g.Halftone, g.HatchOpacity), b.HatchWeight ?? pen));
+                layers.Add((bp, Paper(bp, null, Positive(b.HatchScale ?? g.HatchScale)), b.HatchAngle ?? 0, ResolvedMaterial.Ink(b.HatchColor ?? "#000000", g.Halftone, g.HatchOpacity), b.HatchWeight ?? pen));
             }
             if (Find(g.Hatch) is { } p)
             {
                 if (p.Solid) return g.HatchColor != null ? g.HatchInk("#000000") : "black";
-                layers.Add((p, Positive(g.HatchScale), g.HatchAngle, g.HatchInk("#000000"), g.HatchWeight ?? pen));
+                layers.Add((p, Paper(p, g.HatchUnits, Positive(g.HatchScale)), g.HatchAngle, g.HatchInk("#000000"), g.HatchWeight ?? pen));
             }
             if (layers.Count == 0) return fill;
             var id = "lapin-" + string.Join("-", layers.Select(l => ClassName(l.P.Name).ToLowerInvariant() + (Math.Abs(l.Scale - 1) > 1e-9 ? $"-x{N(l.Scale).Replace('.', '_')}" : "")

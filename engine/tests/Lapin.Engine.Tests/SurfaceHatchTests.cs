@@ -208,11 +208,12 @@ public class SurfaceHatchTests
     [InlineData("Timber cladding", "BOARDS")]
     public void A_material_s_name_suggests_its_elevation_hatch(string name, string? hatch)
     {
+        // Decision 327's paper patterns, as a project made before decision 671 goes on drawing them (ModelHatchTests: a new one's).
         var material = new Entity("m", IfcClass.Material, name, []);
-        var r = MaterialGraphics.Resolve(material, "elevation");
+        var r = MaterialGraphics.Resolve(material, "elevation", paperSurfaces: true);
         Assert.Equal(hatch, r.Hatch);
         Assert.Equal("name", r.Source);
-        Assert.Equal(hatch, MaterialGraphics.ElevationFromName(name));
+        Assert.Equal(hatch, MaterialGraphics.ElevationFromName(name, paper: true));
     }
 
     [Fact]
@@ -239,14 +240,13 @@ public class SurfaceHatchTests
     public void A_guessed_hatch_is_drawn_and_an_explicit_none_is_respected()
     {
         var f = new Fixture();
-        // "Facing brick" with nothing set: BRICK from its name.
+        // "Facing brick" with nothing set: BRICK_240X63 from its name (decision 671), its courses 73 mm apart from the wall's base at 0.
         f.Wall(0, 0, 8, 0, f.Type("Brick 40", ("Facing brick", 0.1, false), ("Concrete", 0.2, true), ("Facing brick", 0.1, false)));
         var view = Elevation(f);
         var guessed = Hatch(Render(f, view));
         Assert.NotEmpty(guessed);
-        // The same courses as BRICK set by hand.
-        var levels = guessed.Where(s => Math.Abs(s.A.Y - s.B.Y) < 1e-9).Select(s => Math.Round(s.A.Y, 3)).Distinct().ToList();
-        Assert.All(levels, y => Assert.Equal(0, Math.Abs(Math.IEEERemainder(y, 0.4)), 3));
+        var levels = guessed.Where(s => Math.Abs(s.A.Y - s.B.Y) < 1e-9).Select(s => Math.Round(s.A.Y, 4)).Distinct().ToList();
+        Assert.All(levels, y => Assert.Equal(0, Math.Abs(Math.IEEERemainder(y, 0.073)), 3));
         // Its Elevation hatch set to none: nothing.
         var brick = f.Model.OfClass(IfcClass.Material).First(e => e.Name == "Facing brick").Id;
         f.Run("material.update", new JsonObject { ["id"] = brick, ["elevation"] = new JsonObject { ["hatch"] = null } });

@@ -770,7 +770,9 @@ public sealed partial class Session
             var (angle, origin) = Math.Abs(n.Z) >= 0.9 || look.HatchAlign == Lapin.Drawing.HatchAlign.Layer ? AlongLayer(loops) : (0.0, (Vec2?)null);
             var segs = Lapin.Drawing.Hatch.BattHatch.Is(pattern)
                 ? Lapin.Drawing.Hatch.BattHatch.Segments(loops, 1.2 * scale / 1000, 20_000)
-                : Lapin.Drawing.Hatch.HatchFill.Segments(loops, pattern, new Lapin.Drawing.Hatch.HatchOptions(look.HatchScale * scale / 1000, angle + look.HatchAngle, origin, 20_000)).Segments;
+                // Paper or real size (decision 671); a real-size pattern too dense at this scale is not drawn.
+                : Lapin.Drawing.Hatch.HatchScale.Lay(pattern, scale, look.HatchScale, angle + look.HatchAngle, origin, 20_000, look.HatchUnits) is { } laid
+                    ? Lapin.Drawing.Hatch.HatchFill.Segments(loops, pattern, laid).Segments : [];
             foreach (var s in segs)
                 foreach (var p in new[] { s.A, s.B })
                 {

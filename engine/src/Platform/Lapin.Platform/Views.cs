@@ -796,9 +796,10 @@ public static class Views
         // An elevation cut by its marker's line (decision 460) hatches its cut as a section does.
         var kind = spec.Kind == "plan" ? "plan" : spec.Kind is "elevation" or "3d" && !spec.Cut ? "elevation" : "section";
         var resolved = new Dictionary<string, ResolvedMaterial?>();
+        var paperSurfaces = MaterialHatchUpgrade.PaperSurfaces(m);
         ResolvedMaterial? Resolved(string? id) => id == null ? null
             // A material named rather than kept (a track's ballast, its rails): its look guessed from the name.
-            : resolved.TryGetValue(id, out var r) ? r : resolved[id] = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, kind) : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, kind, id);
+            : resolved.TryGetValue(id, out var r) ? r : resolved[id] = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, kind, paperSurfaces: paperSurfaces) : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, kind, id, paperSurfaces);
         // Each element's layers, so a layer thinner than a membrane (or of a membrane's material) draws as one.
         var layerSets = new Dictionary<string, IReadOnlyList<LayerRef>?>();
         IReadOnlyList<LayerRef>? LayersOf(string element) => layerSets.TryGetValue(element, out var ls) ? ls
@@ -820,7 +821,9 @@ public static class Views
                         var along = Math.Atan2(b.Y - a.Y, b.X - a.X) * 180 / Math.PI;
                         // The axis's direction, not its sense: a wall drawn either way hatches alike.
                         if (along > 90 + 1e-9 || along <= -90 + 1e-9) along += along > 0 ? -180 : 180;
-                        h = new ElementHatch(along, along == Math.Atan2(b.Y - a.Y, b.X - a.X) * 180 / Math.PI ? a : b);
+                        // Its own hatch origin (decision 671): along the axis from its start, and across it to its left.
+                        var from = HatchOrigins.OnAxis(e, a, b) ?? (along == Math.Atan2(b.Y - a.Y, b.X - a.X) * 180 / Math.PI ? a : b);
+                        h = new ElementHatch(along, from);
                         break;
                     }
                 }
@@ -870,7 +873,8 @@ public static class Views
             }
         var lineTypes = DraftingResources.Book(m).LineTypes;
         var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, elementLines, table, scale, lineTypes);
-        var penOptions = new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table, LineTypes: lineTypes);
+        var penOptions = new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table, LineTypes: lineTypes,
+            MinHatchSpacing: ViewStyles.Of(m, view).MinHatchSpacing);
         var pens = Pens.Of(drawing, materials, penOptions);
         // The faces the drawing sees, worked out once for its shadows and its surface hatches: a developed section's on each
         // piece (its own cut areas hiding what is behind them), the parts' faces gathered once for all of them.

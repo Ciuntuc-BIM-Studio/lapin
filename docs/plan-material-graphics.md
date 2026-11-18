@@ -118,6 +118,17 @@ Stare (17.11.2026, decizia 670): **motorul e făcut; interfața urmează.** Abat
 - **Originea pe element:** asizele unei fațade pornesc de la baza peretelui sau de la cota nivelului. Un grip mută originea (`hatchOrigin` pe element, un pas de anulare).
 - Planurile de pardoseală (`finishHatch`) folosesc modelele `model`, ca plăcile să aibă mărimea lor.
 
+Stare (17.11.2026, decizia 671): **motorul e făcut; interfața urmează.** Abateri și precizări:
+
+- unitățile: `HatchPattern.Units` (`paper` / `model`); `.pat` citește `;%TYPE=MODEL|DRAFTING` (după header sau înaintea lui) și `;%UNITS=MM|INCH` (inch × 25,4), scrie `;%TYPE=MODEL` doar la modelele `model`, deci fișierele de azi se scriu la fel;
+- modelele noi, desenate de Lapin, cu rostul ca o singură linie (o linie dublă la 10 mm s-ar contopi pe hârtie): `BRICK_240X63` (implicit), `BRICK_240X71`, `BRICK_215X65`, `BLOCK_400X200`, `BLOCK_600X250` (BCA, adăugat: o fațadă de BCA nu e de cărămidă), `TILE_300X300`, `TILE_600X600`, `BOARDS_150` (2,4 m, rosturi decalate), `STONE_600X300`, `ROOF_TILES` (pas 330, lățime 300), `METAL_SEAM_500`;
+- proiectele vechi: în loc să fixeze o hașură pe fiecare material (ca la `hatchRev` 1 și 2), upgrade-ul pune pe proiect `paperSurfaceHatches: true`, iar ghicirea pentru fațade și pardoseli rămâne cea pe hârtie. Motivul: o pardoseală ia hașura de fațadă proprie a materialului înaintea ghicirii, deci o hașură fixată pe material ar fi schimbat planurile vechi (stejarul ar fi trecut de la WOOD la BOARDS);
+- pragul de densitate: câmpul de stil `minHatchSpacing` (mm pe hârtie, implicit 0,7; 0 desenează tot), suprascris pe vedere cu `view.setStyle`; se aplică doar modelelor `model`, unde nu se desenează nimic (nici umplere în loc);
+- originea: `hatchOrigin` pe element, `[u, v]` în metri în cadrul elementului (la un perete: `u` de-a lungul axei de la start, `v` în sus de la bază în fațade și secțiuni, spre stânga axei în plan); comanda `element.setHatchOrigin {id|ids, origin: [u, v] | null}`, un pas de anulare. Fără origine, un model `model` pornește asizele de la baza elementului (pe orizontală de la originea vederii, ca rosturile să continue de la un perete la altul); un model `paper` rămâne la originea vederii, deci nu trebuie poartă pe `hatchRev`: proiectele vechi nu aveau modele `model`;
+- legendele desenează un model `model` la scara vederii în care stau (același drum ca desenul); `hatch.preview` la 1:20 (sau `viewScale`); foaia de stil Bonsai, care n-are scară, la 1:100; IFC scrie `ModelOrDraughting` adevărat pentru un model `model`;
+- pardoselile în plan: plăci și piatră `TILE_600X600`, faianța `TILE_300X300`, parchet și scânduri `BOARDS_150`; mocheta, PVC-ul și pardoselile turnate rămân pe hârtie (n-au mărime);
+- rămase: hașurile simbolurilor, ale tabelului straturilor (`TypeBuildUps`) și ale cartușelor rămân pe hârtie; importul IFC nu citește încă `ModelOrDraughting`; capetele secțiunii 3D iau unitățile, dar nu și originea elementului.
+
 ### Etapa 2: reprezentarea după scară
 
 - Pe material, pe fiecare fel de vedere: `byScale`, o listă de trepte `{ from, to, hatch, fill, pen }`. Exemplu pentru beton:

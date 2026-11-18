@@ -11,13 +11,20 @@ public sealed record HatchLineFamily(double AngleDeg, Vec2 Origin, double DeltaX
     public override int GetHashCode() => HashCode.Combine(AngleDeg, Origin, DeltaX, DeltaY, Dashes.Count);
 }
 
-/// <summary>A hatch pattern: its families of lines, or a solid fill when it has none.</summary>
-public sealed record HatchPattern(string Name, string Description, IReadOnlyList<HatchLineFamily> Families)
+/// <summary>
+/// What a pattern's numbers measure (decision 671): <see cref="Paper"/>, millimetres as printed, the same on paper at any
+/// scale (a cut's 45° lines); <see cref="Model"/>, millimetres of the real object, so the pattern keeps its real size and
+/// gets finer on paper as the scale gets smaller (a brick's courses, a floor's tiles). <c>.pat</c>: <c>;%TYPE=MODEL</c>.
+/// </summary>
+public enum HatchUnits { Paper, Model }
+
+/// <summary>A hatch pattern: its families of lines, or a solid fill when it has none; its numbers in <see cref="Units"/>.</summary>
+public sealed record HatchPattern(string Name, string Description, IReadOnlyList<HatchLineFamily> Families, HatchUnits Units = HatchUnits.Paper)
 {
     /// <summary>No line families: a solid fill, unless it is the batt, which draws by its own rule (BattHatch).</summary>
     public bool Solid => Families.Count == 0 && !Name.Equals(BattHatch.Name, StringComparison.OrdinalIgnoreCase);
-    public bool Equals(HatchPattern? o) => o is not null && Name == o.Name && Description == o.Description && Families.SequenceEqual(o.Families);
-    public override int GetHashCode() => HashCode.Combine(Name, Description, Families.Count);
+    public bool Equals(HatchPattern? o) => o is not null && Name == o.Name && Description == o.Description && Units == o.Units && Families.SequenceEqual(o.Families);
+    public override int GetHashCode() => HashCode.Combine(Name, Description, Families.Count, Units);
 }
 
 /// <summary>
@@ -27,7 +34,10 @@ public sealed record HatchPattern(string Name, string Description, IReadOnlyList
 /// angle, x-origin, y-origin, delta-x, delta-y [, dash1, dash2, ...]
 /// </code>
 /// <c>;</c> starts a comment. A pattern without line families is a solid fill.
-/// Units are abstract: the caller scales them.
+/// Two of the format's public comment headers are read (decision 671): <c>;%TYPE=MODEL</c> (or <c>DRAFTING</c>) after a
+/// pattern's header, or before it, marks the pattern's units (<see cref="HatchUnits"/>; none: paper), and
+/// <c>;%UNITS=INCH</c> anywhere before a pattern turns its lengths into millimetres (<c>MM</c>, the default, keeps them).
+/// The writer writes <c>;%TYPE=MODEL</c> after a model pattern's header; paper patterns as before.
 /// </summary>
 public static class Pat
 {
@@ -35,13 +45,32 @@ public static class Pat
     {
         var patterns = new List<HatchPattern>();
         var errors = new List<string>();
-        (string Name, string Description, List<HatchLineFamily> Families)? current = null;
-        void Finish() { if (current is { } c) patterns.Add(new HatchPattern(c.Name, c.Description, c.Families)); }
+        (string Name, string Description, List<HatchLineFamily> Families, HatchUnits Units)? current = null;
+        void Finish() { if (current is { } c) patterns.Add(new HatchPattern(c.Name, c.Description, c.Families, c.Units)); }
+        // A ;%TYPE= line before a header: the next pattern's units. ;%UNITS=INCH: lengths × 25.4 from there on.
+        HatchUnits? pending = null;
+        var unit = 1.0;
         var lines = text.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
         for (var i = 0; i < lines.Length; i++)
         {
             var lineNo = i + 1;
             var raw = lines[i].TrimStart('﻿');
+            if (raw.TrimStart() is var header && header.StartsWith(";%", StringComparison.Ordinal))
+            {
+                var kv = header[2..].Split('=', 2);
+                var key = kv[0].Trim().ToUpperInvariant();
+                var value = kv.Length > 1 ? kv[1].Trim().ToUpperInvariant() : "";
+                if (key == "TYPE" && value is "MODEL" or "DRAFTING")
+                {
+                    var u = value == "MODEL" ? HatchUnits.Model : HatchUnits.Paper;
+                    // Right after a header (before its first line): that pattern's; else the next one's.
+                    if (current is { } c0 && c0.Families.Count == 0) current = c0 with { Units = u };
+                    else pending = u;
+                }
+                else if (key == "UNITS" && value is "INCH" or "INCHES") unit = 25.4;
+                else if (key == "UNITS" && value is "MM" or "MILLIMETERS" or "MILLIMETRES") unit = 1;
+                continue;
+            }
             var semi = raw.IndexOf(';');
             var line = (semi >= 0 ? raw[..semi] : raw).Trim();
             if (line.Length == 0) continue;
@@ -53,7 +82,8 @@ public static class Pat
                 var name = (comma >= 0 ? body[..comma] : body).Trim().ToUpperInvariant();
                 var description = comma >= 0 ? body[(comma + 1)..].Trim() : "";
                 if (name.Length == 0) { errors.Add($"line {lineNo}: pattern header without a name"); current = null; continue; }
-                current = (name, description, []);
+                current = (name, description, [], pending ?? HatchUnits.Paper);
+                pending = null;
                 continue;
             }
             if (current is not { } cur) { errors.Add($"line {lineNo}: line family outside of a pattern (missing *NAME header)"); continue; }
@@ -69,7 +99,7 @@ public static class Pat
             }
             if (bad != null) { errors.Add($"line {lineNo}: invalid number \"{bad}\""); continue; }
             if (nums.Count < 5) { errors.Add($"line {lineNo}: expected at least 5 values (angle, x, y, delta-x, delta-y), got {nums.Count}"); continue; }
-            cur.Families.Add(new HatchLineFamily(nums[0], new Vec2(nums[1], nums[2]), nums[3], nums[4], nums.Skip(5).ToList()));
+            cur.Families.Add(new HatchLineFamily(nums[0], new Vec2(nums[1] * unit, nums[2] * unit), nums[3] * unit, nums[4] * unit, nums.Skip(5).Select(v => v * unit).ToList()));
         }
         Finish();
         return (patterns, errors);
@@ -85,6 +115,7 @@ public static class Pat
         {
             var desc = System.Text.RegularExpressions.Regex.Replace(p.Description, @"[\r\n;]+", " ").Trim();
             sb.Append(desc.Length > 0 ? $"*{p.Name.ToUpperInvariant()}, {desc}" : $"*{p.Name.ToUpperInvariant()}").Append('\n');
+            if (p.Units == HatchUnits.Model) sb.Append(";%TYPE=MODEL\n");
             foreach (var f in p.Families)
                 sb.Append(string.Join(", ", new[] { f.AngleDeg, f.Origin.X, f.Origin.Y, f.DeltaX, f.DeltaY }.Concat(f.Dashes).Select(Fmt))).Append('\n');
         }

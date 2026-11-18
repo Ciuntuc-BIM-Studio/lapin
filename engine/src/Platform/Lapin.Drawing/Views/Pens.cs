@@ -251,7 +251,8 @@ public static class Pens
 
     public sealed record Options(double Scale = 100, bool HiddenLines = true, LineStyles.Resolver? LineStyle = null,
         IReadOnlyDictionary<string, CategoryGraphics>? Categories = null, IReadOnlyList<HatchPattern>? Patterns = null, int MaxHatchSegments = 60_000,
-        IReadOnlyDictionary<string, string>? ElementColors = null, LineStyles.PenTable? Table = null, IReadOnlyList<LineTypeDef>? LineTypes = null);
+        IReadOnlyDictionary<string, string>? ElementColors = null, LineStyles.PenTable? Table = null, IReadOnlyList<LineTypeDef>? LineTypes = null,
+        double MinHatchSpacing = HatchScale.DefaultMinSpacing);
 
     /// <summary>A colour washed out towards white (a cut filled with a phase's colour stays readable under its hatch).</summary>
     static string Pale(string css) => HexColor.Mix(css, 0.6);
@@ -286,7 +287,7 @@ public static class Pens
         var hatches = new List<MaterialHatch>(m?.Hatches ?? []);
         if (o.Categories != null)
         {
-            hatches = hatches.Where(h => !(h.Background && Cat(h.Class)?.CutHatch != null)).Select(h => Cat(h.Class)?.CutHatch is { } ch ? h with { Pattern = ch, Scale = 1 } : h).ToList();
+            hatches = hatches.Where(h => !(h.Background && Cat(h.Class)?.CutHatch != null)).Select(h => Cat(h.Class)?.CutHatch is { } ch ? h with { Pattern = ch, Scale = 1, Units = null } : h).ToList();
             for (var i = 0; i < d.Cuts.Count; i++)
                 if (Cat(d.Cuts[i].Class)?.CutHatch is { } ch && !(m?.Hatches.Any(h => ReferenceEquals(h.Loops, d.Cuts[i].Loops)) ?? false))
                     hatches.Add(new MaterialHatch(d.Cuts[i].Loops, ch, 1, null, d.Cuts[i].Class));
@@ -323,8 +324,10 @@ public static class Pens
                 Get($"{(h.Background ? "solidbg" : "solid")}:" + solid, () => new Pen(PenLayer.Hatch, null, 0, solid, null)).Loops.AddRange(h.Loops);
                 continue;
             }
-            // Patterns are paper millimetres at 1:1: at 1:scale a millimetre is scale/1000 m.
-            var (segs, _) = HatchFill.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), pattern, new HatchOptions(h.Scale * o.Scale / 1000, h.Angle, h.Origin, Math.Max(0, budget)));
+            // Paper patterns are paper millimetres at 1:1 (at 1:scale a millimetre is scale/1000 m), model ones the object's
+            // (decision 671); a model pattern too dense on paper for the view's style is not drawn.
+            if (HatchScale.Lay(pattern, o.Scale, h.Scale, h.Angle, h.Origin, Math.Max(0, budget), h.Units, o.MinHatchSpacing) is not { } laid) continue;
+            var (segs, _) = HatchFill.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), pattern, laid);
             budget -= segs.Count;
             var width = WidthOf(h.Pen);
             Get($"{prefix}:{color}:{width}:{DashKey(dash)}", () => new Pen(PenLayer.Hatch, color, width, null, dash)).Segments.AddRange(segs.Select(s => (s.A, s.B)));
