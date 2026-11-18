@@ -18,13 +18,14 @@ import { fromJson, toJson, type Shape } from '../../viewport/cad/shapes';
 import { ROLES, roleLabel } from '../../viewport/cad/session';
 import { sideLengths, withSideLength } from '../../viewport/cad/sides';
 import { formatLength, lengthText, unitLabel, useStandards } from '../../engine/unitsStore';
-import { Cell, LengthCell, LengthField, NumberField } from '../../shell/cells';
+import { LengthCell, LengthField, NumberField } from '../../shell/cells';
 import { useLayers, type DraftLayer } from '../../viewport/cad/layers';
 import { ptStrict } from '../../platform/vec';
 import { TagFields } from './tag';
 import { selectionWith } from '../../shell/params';
 import { CloudFields, KeyFields } from './sheetAnnotations';
 import { EXT_SUPPRESS, EXT_SUPPRESS_LABELS, extSuppressAttr } from '../core/dimensionLines';
+import { TEXT_ALIGNS, TEXT_ALIGN_LABELS, alignAttr, alignOf, styleOptions, type StyleEntry } from './textProps';
 
 /**
  * Who a style change goes to (a forum user's report, topic #29: a change with several selected reached only one): every
@@ -200,19 +201,50 @@ function Drafted({ node }: { node: NodeDto }) {
   );
 }
 
+/** The project's text and dimension styles (Manage → Drafting standards), read again when the model changes. */
+function useStyleBook(): { textStyles: StyleEntry[]; dimStyles: StyleEntry[] } {
+  const version = useSession((s) => s.version);
+  const [book, setBook] = useState<{ textStyles: StyleEntry[]; dimStyles: StyleEntry[] }>({ textStyles: [], dimStyles: [] });
+  useEffect(() => {
+    let live = true;
+    void query<{ textStyles?: StyleEntry[]; dimStyles?: StyleEntry[] }>('standards.get').then((b) => {
+      if (live && b) setBook({ textStyles: b.textStyles ?? [], dimStyles: b.dimStyles ?? [] });
+    });
+    return () => { live = false; };
+  }, [version]);
+  return book;
+}
+
+/** A style picked by name and kept by its id; "default" (none) takes the standard one. */
+function StylePick({ list, value, field, onPick }: { list: StyleEntry[]; value: unknown; field: string; onPick: (id: string | null) => void }) {
+  const o = styleOptions(list, value);
+  return (
+    <select className="cell" data-field={field} value={o.value} onChange={(e) => onPick(e.target.value || null)}>
+      <option value="">default</option>
+      {o.options.map((s) => <option key={s.id} value={s.id} data-no-i18n>{s.label}</option>)}
+    </select>
+  );
+}
+
 function TextFields({ node }: { node: NodeDto }) {
   const set = (attrs: Record<string, unknown>) => void execute('element.update', { ids: 'text' in attrs ? [node.id] : alike(node), attrs });
   const at = ptStrict(node.props.at);
   const text = typeof node.props.text === 'string' ? node.props.text : '';
   const [body, setBody] = useState(text);
   useEffect(() => setBody(text), [text]);
+  const styles = useStyleBook();
   return (
     <dl className="fields">
       <dt>Text</dt>
       <dd><textarea rows={2} value={body} onChange={(e) => setBody(e.target.value)} onBlur={() => { if (body.trim() && body !== text) set({ text: body }); }} /></dd>
-      <dt>Text style</dt><dd><Cell value={typeof node.props.textStyle === 'string' ? node.props.textStyle : ''} placeholder="default" onCommit={(t) => set({ textStyle: t.trim() || null })} /></dd>
+      {/* The project's text styles by name, kept by id (forum topic 148: a name typed found no style). */}
+      <dt>Text style</dt><dd><StylePick list={styles.textStyles} value={node.props.textStyle} field="textStyle" onPick={(id) => set({ textStyle: id })} /></dd>
+      <dt title="Without a width, of its point; with one, in its box">Alignment</dt>
+      <dd><select className="cell" data-field="align" value={alignOf(node.props.align)} onChange={(e) => set({ align: alignAttr(e.target.value) })}>
+        {TEXT_ALIGNS.map((a) => <option key={a} value={a}>{TEXT_ALIGN_LABELS[a]}</option>)}
+      </select></dd>
       <dt>Angle</dt><dd><Num value={typeof node.props.angle === 'number' ? node.props.angle : 0} onCommit={(a) => set({ angle: a })} suffix="°" /></dd>
-      <dt title="Wrap lines at this width; empty: no wrapping">Width</dt><dd><LengthCell metres={typeof node.props.width === 'number' ? node.props.width : null} placeholder="auto" onCommit={(w) => set({ width: w && w > 0 ? w : null })} /></dd>
+      <dt title="Wrap lines at this width; empty: no wrapping">Width</dt><dd data-field="text-width"><LengthCell metres={typeof node.props.width === 'number' ? node.props.width : null} placeholder="auto" onCommit={(w) => set({ width: w && w > 0 ? w : null })} /></dd>
       {at && <Point label="Position" p={at} />}
       {/* A leader note's arrow (decision 620): taken off, the text stays. */}
       {Array.isArray(node.props.leader) && node.props.leader.length > 0 && (
@@ -226,10 +258,12 @@ function DimensionFields({ node }: { node: NodeDto }) {
   // A string's points (pts); an older dimension's two ends (a, b).
   const pts = Array.isArray(node.props.pts) ? (node.props.pts as unknown[]).map(ptStrict).filter((p): p is NonNullable<ReturnType<typeof ptStrict>> => !!p) : [ptStrict(node.props.a), ptStrict(node.props.b)].filter((p): p is NonNullable<ReturnType<typeof ptStrict>> => !!p);
   const a = pts[0], b = pts[pts.length - 1], at = ptStrict(node.props.at);
+  const styles = useStyleBook();
   return (
     <dl className="fields">
       <Row label="Kind" value={ptStrict(node.props.dir) ? 'Linear' : 'Aligned'} />
-      <dt>Dimension style</dt><dd><input value={typeof node.props.dimStyle === 'string' ? node.props.dimStyle : ''} placeholder="default" onChange={(e) => void execute('element.update', { ids: alike(node), attrs: { dimStyle: e.target.value || null } })} /></dd>
+      {/* The project's dimension styles by name, kept by id (as a text's style, forum topic 148). */}
+      <dt>Dimension style</dt><dd><StylePick list={styles.dimStyles} value={node.props.dimStyle} field="dimStyle" onPick={(id) => void execute('element.update', { ids: alike(node), attrs: { dimStyle: id } })} /></dd>
       {/* Its own text height on the paper (decision 271); empty: the dimension style's. */}
       <dt title="On the paper; empty: the dimension style's">Text height</dt>
       <dd><NumberField value={typeof node.props.textHeight === 'number' ? node.props.textHeight : null} placeholder="by style" suffix="mm" min={0.5} max={50}

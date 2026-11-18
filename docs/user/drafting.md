@@ -137,6 +137,10 @@ Where drafted elements overlap, the one drawn later lies on top. To change it, s
 
 The **Annotate** tab has the dimensions, text, grid axes, levels and tags. A dimension reads the model, so it updates when a wall moves. How text, dimensions, axes and tags look is set in **Manage → Drafting standards**.
 
+**A text's properties.** Select a text to change it in the properties panel: its **Text**, its **Text style** (the project's text styles by name, from **Manage → Drafting standards → Text**; **default** is the Standard one), its **Alignment** (**Left**, **Centre** or **Right**), its **Angle** and its **Width**. Without a width, the text's point is where its lines start, their middle or their end, by its alignment; with a width, the lines wrap at it and are aligned in that box, which stays where you drew it (a **Text box** has its width from the start). Empty the width to stop wrapping. A leader note's **Leader** can be taken off there too (**remove**). With several texts selected, the style, alignment, angle and width go to all of them. Each change is one step to undo, and sheets, the PDF and the DXF print the text as you see it.
+
+![A text's properties: its style, alignment, angle and width](shots/text-properties.webp)
+
 A **Leader note** (Annotate → Text) is a text with an arrow: click where the arrow points, then where the text goes, and type it. A **Revision cloud** (Draft → Fill, or REVCLOUD) draws a rectangle or a polygon as scallops; **Revision cloud** in the properties of a closed polyline or circle turns it into one or back. A **Scale bar** (Annotate → Sheets) is drawn at the view's scale. They work on every view and on sheets, where a legend of the views and live fields in texts join them (see Sheets).
 
 ### The Dimension tool

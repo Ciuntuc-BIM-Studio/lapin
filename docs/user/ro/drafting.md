@@ -137,6 +137,10 @@ Unde elementele desenate se suprapun, cel desenat mai târziu stă deasupra. Ca 
 
 Tabul **Adnotări** are cotele, textele, axele, cotele de nivel și etichetele. O cotă citește modelul, așa că se actualizează când se mută un perete. Cum arată textele, cotele, axele și etichetele se setează în **Gestionare → Standarde de desen**.
 
+**Proprietățile unui text.** Selectează un text ca să-l schimbi în panoul de proprietăți: **Text**, **Stil de text** (stilurile de text ale proiectului, după nume, din **Gestionare → Standarde de desen → Text**; **implicit** e cel Standard), **Aliniere** (**Stânga**, **Centru** sau **Dreapta**), **Unghi** și **Lățime**. Fără lățime, punctul textului e locul unde încep rândurile, mijlocul sau capătul lor, după aliniere; cu lățime, rândurile se rup la ea și se aliniază în caseta aceea, care rămâne unde ai desenat-o (o casetă de text, **Text box**, are lățimea de la început). Golește lățimea ca rândurile să nu se mai rupă. Tot acolo i se poate scoate unei note **Linia de indicație** (**scoate**). Cu mai multe texte selectate, stilul, alinierea, unghiul și lățimea merg la toate. Fiecare schimbare e un singur pas de anulare, iar planșele, PDF-ul și DXF-ul tipăresc textul cum îl vezi.
+
+![Proprietățile unui text: stilul, alinierea, unghiul și lățimea](shots/text-properties.webp)
+
 O **Notă cu indicator** (Adnotări → Text) e un text cu săgeată: dă clic unde arată săgeata, apoi unde stă textul, și scrie-l. Un **Nor de revizie** (Desen → Umplutură sau REVCLOUD) desenează un dreptunghi sau un poligon din arce; **Nor de revizie** din proprietățile unei polilinii închise sau ale unui cerc o face nor sau o readuce la loc. O **Scară grafică** (Adnotări → Planșe) se desenează la scara vederii. Merg pe orice vedere și pe planșe, unde li se adaugă o legendă a vederilor și câmpuri vii în texte (vezi Planșe).
 
 ### Unealta Cote

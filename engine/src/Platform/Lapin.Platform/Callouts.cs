@@ -257,7 +257,8 @@ public static class Callouts
     {
         if (target == null) return ("?", "–");
         var (sheet, number) = SymbolSlots.PlacedOn(m, target.Id);
-        return (sheet.Length > 0 ? number : "–", sheet.Length > 0 ? sheet : "–");
+        // A mark of its own (report #167) is written even while the view is on no sheet.
+        return (sheet.Length > 0 || SymbolSlots.OwnMark(target) != null ? number : "–", sheet.Length > 0 ? sheet : "–");
     }
 
     /// <summary>The view's callouts: each its boundary, a leader and its head with the called view's number and sheet.</summary>

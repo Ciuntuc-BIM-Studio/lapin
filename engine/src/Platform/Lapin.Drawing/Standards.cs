@@ -488,8 +488,10 @@ public static class Standards
 
     // ------------------------------------------------------------ resolving
 
-    public static TextStyle TextOf(StyleBook b, string? id) => b.TextStyles.FirstOrDefault(s => s.Id == id) ?? b.TextStyles.FirstOrDefault(s => s.Id == Standard) ?? DefaultText;
-    public static DimStyle DimOf(StyleBook b, string? id) => b.DimStyles.FirstOrDefault(s => s.Id == id) ?? b.DimStyles.FirstOrDefault(s => s.Id == Standard) ?? DefaultDim;
+    // A style by its id, else by its name as typed (forum topic 148: a name typed in a text's properties found nothing), else the standard one.
+    public static TextStyle TextOf(StyleBook b, string? id) => b.TextStyles.FirstOrDefault(s => s.Id == id) ?? b.TextStyles.FirstOrDefault(s => Named(s.Name, id)) ?? b.TextStyles.FirstOrDefault(s => s.Id == Standard) ?? DefaultText;
+    public static DimStyle DimOf(StyleBook b, string? id) => b.DimStyles.FirstOrDefault(s => s.Id == id) ?? b.DimStyles.FirstOrDefault(s => Named(s.Name, id)) ?? b.DimStyles.FirstOrDefault(s => s.Id == Standard) ?? DefaultDim;
+    static bool Named(string name, string? typed) => typed is { Length: > 0 } t && string.Equals(name.Trim(), t.Trim(), StringComparison.OrdinalIgnoreCase);
     public static AxisStyle AxisOf(StyleBook b, string? id) => b.AxisStyles.FirstOrDefault(s => s.Id == id) ?? b.AxisStyles.FirstOrDefault(s => s.Id == Standard) ?? DefaultAxis;
 
     /// <summary>A record with the overrides in <paramref name="p"/> (<c>o.field</c>) applied, each only when its type fits.</summary>

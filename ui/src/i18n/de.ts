@@ -4252,6 +4252,8 @@ export const DE: Record<string, string> = {
   "Type properties": "Typeigenschaften",
   "Also write type properties on each occurrence": "Typeigenschaften auch an jedes Exemplar schreiben",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "jede Wand des Typs hat sie (IsExternal, FireRating); ein Exemplar-Standardwert ist die eigene Kopie jeder Wand",
+  // A drafted text's alignment (forum topic 148); a view's mark (report #167).
+  'Alignment': 'Ausrichtung', 'automatic': 'automatisch', 'Without a width, of its point; with one, in its box': 'Ohne Breite: an seinem Punkt; mit Breite: in seinem Rahmen', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Was die Markierung der Ansicht schreibt: den Namen des Schnitts oder der Ansicht mit Lapins eigenem Kopf, ihre Nummer auf dem Plan mit einem Kopfsymbol, einem Detailverweis oder einem Ansichtstitel. Leer: automatisch.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
