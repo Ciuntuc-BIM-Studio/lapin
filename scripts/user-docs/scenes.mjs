@@ -633,6 +633,53 @@ export const scenes = [
     },
   },
   {
+    // A wall's temporary dimensions (decision 693): a partition inside a room shows its distances across to the walls either side
+    // and from its free ends to the walls ahead; 2000 typed to the north wall moves it; while drawing, the same, read only.
+    id: 'wall-temp-dimensions',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const brick = (await t.cmd('architecture.createWallType', { name: 'Brick 300', layers: [{ material: 'Brick', thickness: 0.3, core: true }] })).id;
+      const part = (await t.cmd('architecture.createWallType', { name: 'Partition 200', layers: [{ material: 'Brick', thickness: 0.2, core: true }] })).id;
+      const storeyId = await t.storey();
+      const add = async (x1, y1, x2, y2, typeId) => (await t.cmd('architecture.addWall', { storeyId, x1, y1, x2, y2, typeId })).id;
+      for (const [x1, y1, x2, y2] of [[0, 0, 6, 0], [6, 0, 6, 5], [6, 5, 0, 5], [0, 5, 0, 0]]) await add(x1, y1, x2, y2, brick);
+      const host = await add(1, 2, 4, 2, part);
+      await t.ui({ keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -1.5, y: -1.5 }, { x: 7.5, y: 6.5 }));
+      await t.wait(800);
+      await t.ui({ selection: host, selected: [host] });
+      await t.wait(900);
+      const dims = t.page.locator('[data-testid=wall-dims]');
+      t.expect(await dims.count() === 1, 'a selected wall shows its temporary dimensions');
+      const value = async (key) => Number(await dims.locator(`[data-dim="${key}"]`).getAttribute('data-value'));
+      t.expect(Math.abs(await value('x:left') - 2.85) < 1e-6 && Math.abs(await value('x:right') - 1.85) < 1e-6, 'across: 2850 to the north wall, 1850 to the south one');
+      t.expect(Math.abs(await value('e:start') - 0.85) < 1e-6 && Math.abs(await value('e:end') - 1.85) < 1e-6, 'along: 850 from its start to the west wall, 1850 from its end to the east one');
+      const [x0, y0] = await t.planPoint(-1.5, 6.5);
+      const [x1, y1] = await t.planPoint(7.5, -1.5);
+      await t.shot('wall-temp-dimensions', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      await dims.locator('[data-dim="x:left"] [data-value-hit]').click();
+      await t.page.locator('[data-field=temp-dim]').fill('2000');
+      await t.page.locator('[data-field=temp-dim]').press('Enter');
+      await t.wait(900);
+      const moved = (await t.nodes()).find((n) => n.id === host);
+      t.expect(Math.abs(moved.props.start[1] - 2.85) < 1e-6 && Math.abs(moved.props.end[1] - 2.85) < 1e-6, `2000 from the north wall: the wall at y = 2.85 (${JSON.stringify(moved.props.start)})`);
+      // While drawing: from the line clicked to the walls beside it, read only.
+      await t.ui({ selection: null, selected: [] });
+      await t.keys('w', 'a');
+      await t.wait(300);
+      const [ax, ay] = await t.planPoint(1, 1);
+      await t.page.mouse.move(ax, ay, { steps: 3 });
+      await t.page.mouse.click(ax, ay);
+      await t.wait(250);
+      const [bx, by] = await t.planPoint(3.5, 1);
+      await t.page.mouse.move(bx, by, { steps: 8 });
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-testid=wall-dims][data-drawing=true]').count() === 1, 'a wall being drawn shows its distances to the walls beside it');
+      await t.keys('Escape', 'Escape');
+    },
+  },
+  {
     // Space while the Wall tool draws (decision 692): the line clicked goes to the other side of the wall, the bar's list
     // follows, and the wall's body drawn beside the line moves across it before the click.
     id: 'wall-space-flip',
@@ -670,8 +717,8 @@ export const scenes = [
       await t.keys('Escape', 'Escape');
       await t.wait(300);
       const wall = (await t.nodes()).find((n) => n.type === 'IfcWall');
-      // Drawn on its interior face along +x: its axis 140 mm to the right (below) of the line clicked.
-      t.expect(wall && Math.abs(wall.props.start[1] + 0.14) < 1e-6, `the wall is built on the side shown (${JSON.stringify(wall?.props.start)})`);
+      // Drawn on its interior face along +x: its axis 140 mm to the right (below) of the line clicked near y = 0 (on its exterior face it would be 225 above).
+      t.expect(wall && wall.props.start[1] < -0.05 && wall.props.start[1] > -0.3, `the wall is built on the side shown (${JSON.stringify(wall?.props.start)})`);
       // The choice as a user leaves it: the core centre.
       await t.keys('w', 'a');
       await t.wait(300);

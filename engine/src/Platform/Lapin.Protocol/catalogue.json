@@ -859,6 +859,7 @@
     {"name":"architecture.sunshadePreview","module":"architecture","args":[{"name":"spec","type":"dict"},{"name":"kind","type":"str"},{"name":"length","type":"float"},{"name":"height","type":"float"}]},
     {"name":"architecture.underStairPreview","module":"architecture","args":[{"name":"id","type":"str"},{"name":"stairId","type":"str"},{"name":"style","type":"str"},{"name":"spec","type":"dict"}]},
     {"name":"architecture.wallFromSolids","module":"architecture","args":[]},
+    {"name":"architecture.wallLines","module":"architecture","args":[{"name":"id","type":"str"},{"name":"storeyId","type":"str"}]},
     {"name":"architecture.wallTop","module":"architecture","args":[{"name":"id","type":"str"}]},
     {"name":"array.of","module":"core","args":[{"name":"id","type":"str"}]},
     {"name":"array.preview","module":"core","args":[{"name":"id","type":"str"}]},

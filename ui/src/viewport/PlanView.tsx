@@ -29,6 +29,7 @@ import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { askPlacement, findTool, useToolTick } from '../platform/modules';
 import { gestureKey } from './gestureKeys';
+import { setDrawnPath } from './drawnPath';
 import { placedAt, reasonLines, requestFor, resetPlacement, setPlacing, usePlacement, verdictFor } from '../platform/placement';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
@@ -1015,6 +1016,13 @@ export function PlanView() {
     }
     return null;
   })();
+  // The straight piece being drawn, for the plan overlays (a wall's temporary dimensions before the click: decision 693).
+  const drawnTo = tool?.gesture?.kind === 'twoPoints' && pts.length === 1 && hover
+    ? (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point : null;
+  useEffect(() => {
+    setDrawnPath(drawnTo && tool ? { tool: tool.id, storeyId: storey?.id ?? null, a: pts[0], b: drawnTo } : null);
+  }, [tool, pts, drawnTo?.x, drawnTo?.y, storey?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => setDrawnPath(null), []);
 
   const marker = hover && (tool?.gesture || editor.dragging || cadStep?.want === 'point' || cadStep?.snap || dragTrace) ? toScreen(hover.point) : null;
 

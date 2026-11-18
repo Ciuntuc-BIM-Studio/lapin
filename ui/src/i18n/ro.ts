@@ -4517,6 +4517,11 @@ export const RO: Record<string, string> = {
   "Other side (Space)": "Cealaltă parte (Space)",
   "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "Space: aceeași linie de cealaltă parte a peretelui (fața exterioară și cea interioară își schimbă locul, un decalaj își schimbă semnul); fantoma peretelui arată unde va fi construit",
   "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "Centrul miezului nu are o altă parte: alege o față sau un decalaj ca să-l treci de partea cealaltă cu Space, sau întoarce peretele după aceea cu săgeata lui.",
+  // A wall's temporary dimensions (decision 693).
+  "The grid axis": "Axa caroiajului",
+  "Click: measure from the wall's reference line, its near face or its far face": "Clic: măsoară de la linia de referință a peretelui, de la fața apropiată sau de la fața îndepărtată",
+  "Click to type the distance: the wall moves to match": "Clic ca să scrii distanța: peretele se mută ca să se potrivească",
+  "Click to type the distance: the wall's end moves to match": "Clic ca să scrii distanța: capătul peretelui se mută ca să se potrivească",
 };
 
 /** Phrases with a number or a name in them. */

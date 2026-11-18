@@ -81,6 +81,21 @@ The properties panel shows the selected wall. The top of the panel holds its typ
 
 ![A wall's properties](shots/wall-properties.webp)
 
+### Temporary dimensions
+
+Select one straight wall in a plan and Lapin draws **temporary dimensions** for it, as it does for a door or window ([Temporary dimensions](doors-windows.md#temporary-dimensions)):
+
+- **Across**, from the wall's reference (the [reference line](#drawing-walls) it keeps, else its axis) to the nearest parallel wall or grid axis on each side that runs beside it, standing halfway along the stretch they share;
+- **Along**, from each free end to the first wall its line runs into beyond that end. An end joined to another wall has none (moving it would leave the join).
+
+Click a value, type a new distance (in the project's unit; sums such as `3000+150` work) and press <kbd>Enter</kbd>: the wall moves square to itself, or its end along it, so that the dimension reads what you typed, the other wall staying where it is. It is one step to undo, and the wall's joins and its doors and windows behave as when you drag its grips. <kbd>Esc</kbd> leaves the value as it was. Click the dot at the other wall's end of a dimension to measure to its far face, its core's faces or its axis; click the dot at the selected wall's end to measure from its near or far face instead of its reference. The padlock makes the dimension a permanent one of the view.
+
+While you draw a wall, after its first click, the same dimensions show, read only, from the line you are clicking to the walls beside it and from the cursor to the wall ahead, so you can stop at the distance you want (or type it in the length box).
+
+Curved walls have no temporary dimensions, and walls are not measured to curved walls.
+
+![A wall's temporary dimensions: across to the walls either side, along to the wall its end runs toward](shots/wall-temp-dimensions.webp)
+
 ### Rounding or cutting a corner
 
 **Architecture → Fillet** (the command line's FILLET, <kbd>F</kbd>) rounds the corner between two walls with a curved wall: type the radius (Enter keeps the last one), then click the first wall and the second. Both are trimmed back to where the arc touches them, or carried on to it when they do not reach the corner yet, as CAD's fillet does with two lines. The curved wall is the first wall again (its type, height, base, top and layers, on the same side) and is joined to both. Click each wall on the part to keep: where two walls cross, the other parts go. A radius of 0 makes a sharp corner, both walls carried on to meet. **Architecture → Chamfer** (CHAMFER) cuts the corner with a straight wall instead, its distance measured along each wall from the corner. Right-click a selected wall's end grip where it meets another wall for **Fillet corner…** and **Chamfer corner…**, the radius or distance typed. Each is one step of undo.

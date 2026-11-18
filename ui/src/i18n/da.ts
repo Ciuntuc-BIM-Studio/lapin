@@ -4558,6 +4558,11 @@ export const DA: Record<string, string> = {
   "Other side (Space)": "Anden side (Mellemrum)",
   "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "Mellemrum: samme linje på den anden side af væggen (yder- og indersiden bytter, en forskydning skifter fortegn); væggens skygge viser, hvor den bygges",
   "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "Kernens midte har ingen anden side: vælg en side eller en forskydning for at skifte side med Mellemrum, eller vend væggen bagefter med dens pil.",
+  // A wall's temporary dimensions (decision 693).
+  "The grid axis": "Gitteraksen",
+  "Click: measure from the wall's reference line, its near face or its far face": "Klik: mål fra væggens referencelinje, dens nære side eller dens fjerne side",
+  "Click to type the distance: the wall moves to match": "Klik for at skrive afstanden: væggen flyttes, så den passer",
+  "Click to type the distance: the wall's end moves to match": "Klik for at skrive afstanden: væggens ende flyttes, så den passer",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

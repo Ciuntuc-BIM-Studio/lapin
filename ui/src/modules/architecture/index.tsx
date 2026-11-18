@@ -23,7 +23,9 @@ import { setJoinStyle, setRememberLine, setWallLine, setWallLineOffset, useWallP
 import { LengthField } from '../../shell/cells';
 import { axisFromReference, referenceArc } from '../../viewport/wallReference';
 import { WallLayers } from './WallLayers';
-import { bandsOf, lineLeft, mirrorLine, wallGhost } from './wallLine';
+import { mirrorLine, wallGhost } from './wallLine';
+import { newWallSection } from './newWallSection';
+import { WallDims } from './WallTempDims';
 import { WallTopOption, wallTopArgs } from './WallTop';
 import { JoinerySection } from './JoinerySection';
 import { SlabSection } from './SlabSection';
@@ -126,14 +128,7 @@ const wall: ToolDef = chainTool({
   },
   more: () => <><WallLineOption /><WallTopOption /></>,
   // The wall's body beside the line drawn, on the side it will be built (decision 692).
-  body: (path) => {
-    const s = useSession.getState();
-    const wanted = useUi.getState().wallTypeId;
-    const type = (wanted ? s.nodes.get(wanted) : undefined) ?? ofClass(s, 'IfcWallType')[0];
-    const bands = bandsOf(type ? typeLayers(s, type.id) : []);
-    const { line, lineOffset } = useWallPrefs.getState();
-    return wallGhost(path, bands, lineLeft(bands, line, lineOffset));
-  },
+  body: (path) => { const { bands, left } = newWallSection(); return wallGhost(path, bands, left); },
   // Space: the line on the other side (Revit's Spacebar), before the first click or between clicks.
   space: flipWallLine,
   spaceHint: () => {
@@ -753,7 +748,8 @@ const architecture: LapinModule = {
     },
   },
   // A door's, window's or wall opening's temporary dimensions (decision 511).
-  planOverlays: [OpeningDims, LayerEditPlan],
+  // And a wall's (decision 693), selected or being drawn.
+  planOverlays: [OpeningDims, WallDims, LayerEditPlan],
   overlays: [FinishPainterPanel],
   drawingOverlays: [OpeningDimsInView, LayerEditDrawing],
   grips3d: architectureGrips3d,

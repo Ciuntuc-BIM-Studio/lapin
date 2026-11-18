@@ -4555,6 +4555,11 @@ export const ZH: Record<string, string> = {
   "Other side (Space)": "另一侧 (空格)",
   "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "空格：墙另一侧的同一条线（外表面与内表面互换，偏移量改变正负号）；墙的预览显示它将建在何处",
   "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "核心中心没有另一侧：请选择一个面或偏移量，再用空格换到另一侧，或之后用墙的箭头翻转墙。",
+  // A wall's temporary dimensions (decision 693).
+  "The grid axis": "轴网轴线",
+  "Click: measure from the wall's reference line, its near face or its far face": "单击：从墙的参照线、近侧面或远侧面开始测量",
+  "Click to type the distance: the wall moves to match": "单击输入距离：墙随之移动",
+  "Click to type the distance: the wall's end moves to match": "单击输入距离：墙端随之移动",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

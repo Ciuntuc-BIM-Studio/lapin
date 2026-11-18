@@ -932,6 +932,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // What a selected door's, window's or opening's temporary dimensions measure to along its wall (decision 511):
         // {id (the opening, or the door or window filling it) | wallId (one being placed)}.
         r.Query("openingReferences", (q, a) => OpeningReferences.Of(q, a));
+        // What a wall's temporary dimensions measure to (decision 693): the storey's straight walls, their faces and joins; {storeyId | id}.
+        r.Query("wallLines", (q, a) => WallLines.Of(q, a));
 
         r.Command("flipJoinery", "Flip", (ctx, a) =>
         {

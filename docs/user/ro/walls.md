@@ -79,6 +79,21 @@ Panoul de proprietăți arată peretele selectat. Sus sunt tipul și straturile 
 
 ![Proprietățile unui perete](shots/wall-properties.webp)
 
+### Cote temporare
+
+Selectează un perete drept într-un plan și Lapin îi desenează **cote temporare**, ca pentru o ușă sau o fereastră ([Cote temporare](doors-windows.md#cote-temporare)):
+
+- **De-a curmezișul**, de la referința peretelui ([linia de referință](#desenarea-peretilor) pe care o păstrează, altfel axa lui) la cel mai apropiat perete paralel sau ax de caroiaj de fiecare parte care merge pe lângă el, așezate la jumătatea porțiunii pe care o au în comun;
+- **În lungul lui**, de la fiecare capăt liber la primul perete în care intră linia lui dincolo de acel capăt. Un capăt îmbinat cu alt perete nu are (mutarea lui ar desface îmbinarea).
+
+Dă clic pe o valoare, scrie o distanță nouă (în unitatea proiectului; merg și sume ca `3000+150`) și apasă <kbd>Enter</kbd>: peretele se mută perpendicular pe el, sau capătul lui în lungul lui, ca să se citească ce ai scris, celălalt perete rămânând pe loc. E un singur pas de anulare, iar îmbinările peretelui și ușile și ferestrele lui se poartă ca atunci când îi tragi de mânere. <kbd>Esc</kbd> lasă valoarea cum era. Clic pe punctul de la capătul cotei dinspre celălalt perete ca să măsori la fața lui îndepărtată, la fețele miezului sau la axă; clic pe punctul de la capătul dinspre peretele selectat ca să măsori de la fața lui apropiată sau îndepărtată în loc de referință. Lacătul face din cotă una permanentă a vederii.
+
+Cât desenezi un perete, după primul clic, aceleași cote apar, doar de citit, de la linia pe care dai clic la pereții de alături și de la cursor la peretele din față, ca să te oprești la distanța dorită (sau să o scrii în caseta lungimii).
+
+Pereții curbi nu au cote temporare, iar pereții nu se măsoară la pereți curbi.
+
+![Cotele temporare ale unui perete: de-a curmezișul la pereții de o parte și de alta, în lung la peretele spre care merge capătul](shots/wall-temp-dimensions.webp)
+
 ### Racordarea sau teșirea unui colț
 
 **Architecture → Fillet** (FILLET în linia de comandă, <kbd>F</kbd>) rotunjește colțul dintre doi pereți cu un perete curb: scrie raza (Enter o păstrează pe ultima), apoi dă clic pe primul perete și pe al doilea. Amândoi sunt scurtați până unde îi atinge arcul, sau prelungiți până la el când încă nu ajung la colț, cum face racordarea din CAD cu două linii. Peretele curb este din nou primul perete (tipul, înălțimea, baza, partea de sus și straturile lui, pe aceeași parte) și e îmbinat cu amândoi. Dă clic pe fiecare perete pe partea de păstrat: unde doi pereți se încrucișează, celelalte părți dispar. O rază 0 face un colț ascuțit, amândoi pereții prelungiți până se întâlnesc. **Architecture → Chamfer** (CHAMFER) taie colțul cu un perete drept, distanța măsurată pe fiecare perete de la colț. Clic dreapta pe mânerul de capăt al unui perete selectat, unde întâlnește alt perete, pentru **Racordează colțul…** și **Teșește colțul…**, cu raza sau distanța scrisă. Fiecare e un singur pas de anulare.

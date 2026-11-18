@@ -4564,6 +4564,11 @@ export const PL: Record<string, string> = {
   "Other side (Space)": "Druga strona ściany (Spacja)",
   "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "Spacja: ta sama linia po drugiej stronie ściany (lico zewnętrzne i wewnętrzne zamieniają się, odsunięcie zmienia znak); podgląd ściany pokazuje, gdzie zostanie zbudowana",
   "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "Środek rdzenia nie ma drugiej strony: wybierz lico lub odsunięcie, aby zmienić stronę Spacją, albo odwróć ścianę potem jej strzałką.",
+  // A wall's temporary dimensions (decision 693).
+  "The grid axis": "Oś siatki",
+  "Click: measure from the wall's reference line, its near face or its far face": "Kliknij: mierz od linii odniesienia ściany, jej bliższego lub dalszego lica",
+  "Click to type the distance: the wall moves to match": "Kliknij, aby wpisać odległość: ściana przesunie się odpowiednio",
+  "Click to type the distance: the wall's end moves to match": "Kliknij, aby wpisać odległość: koniec ściany przesunie się odpowiednio",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

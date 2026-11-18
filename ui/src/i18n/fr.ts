@@ -4525,6 +4525,11 @@ export const FR: Record<string, string> = {
   "Other side (Space)": "Autre côté (Espace)",
   "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "Espace : la même ligne de l’autre côté du mur (les faces extérieure et intérieure s’échangent, un décalage change de signe) ; l’aperçu du mur montre où il sera construit",
   "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "Le centre du noyau n’a pas d’autre côté : choisissez une face ou un décalage pour changer de côté avec Espace, ou retournez le mur ensuite avec sa flèche.",
+  // A wall's temporary dimensions (decision 693).
+  "The grid axis": "L’axe de la trame",
+  "Click: measure from the wall's reference line, its near face or its far face": "Clic : mesurer depuis la ligne de référence du mur, sa face proche ou sa face éloignée",
+  "Click to type the distance: the wall moves to match": "Cliquez pour saisir la distance : le mur se déplace en conséquence",
+  "Click to type the distance: the wall's end moves to match": "Cliquez pour saisir la distance : l’extrémité du mur se déplace en conséquence",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

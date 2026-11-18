@@ -4521,6 +4521,11 @@ export const DE: Record<string, string> = {
   "Other side (Space)": "Andere Seite (Leertaste)",
   "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "Leertaste: dieselbe Linie auf der anderen Seite der Wand (Außen- und Innenseite tauschen, ein Versatz wechselt das Vorzeichen); die Vorschau der Wand zeigt, wo sie gebaut wird",
   "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "Die Kernmitte hat keine andere Seite: Wähle eine Seite oder einen Versatz, um sie mit der Leertaste zu wechseln, oder drehe die Wand danach mit ihrem Pfeil um.",
+  // A wall's temporary dimensions (decision 693).
+  "The grid axis": "Die Rasterachse",
+  "Click: measure from the wall's reference line, its near face or its far face": "Klick: von der Referenzlinie der Wand, ihrer nahen oder ihrer fernen Seite messen",
+  "Click to type the distance: the wall moves to match": "Klicken, um den Abstand einzugeben: Die Wand wird passend verschoben",
+  "Click to type the distance: the wall's end moves to match": "Klicken, um den Abstand einzugeben: Das Wandende wird passend verschoben",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
