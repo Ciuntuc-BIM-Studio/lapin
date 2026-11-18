@@ -668,13 +668,17 @@ public static class DraftingResources
             return null;
         });
 
+        // Patterns made from their numbers or drawn (stage 7 of docs/plan-material-graphics.md).
+        HatchPatternCommands.Register(r);
+
         // The patterns a material can take: the project's, then the built-in ones it does not override.
         r.Query("hatch.list", (q, _) =>
         {
             var own = Patterns(q.Model);
             var names = own.Select(p => p.Name).ToHashSet();
             return new JsonArray(own.Select(p => (p, true)).Concat(HatchLibrary.BuiltInPatterns.Where(p => !names.Contains(p.Name)).Select(p => (p, false)))
-                .Select(x => (JsonNode)new JsonObject { ["name"] = x.p.Name, ["description"] = x.p.Description, ["solid"] = x.p.Solid, ["project"] = x.Item2, ["units"] = HatchScale.Name(x.p.Units) }).ToArray());
+                .Select(x => (JsonNode)new JsonObject { ["name"] = x.p.Name, ["description"] = x.p.Description, ["solid"] = x.p.Solid, ["project"] = x.Item2, ["units"] = HatchScale.Name(x.p.Units),
+                    ["kind"] = BattHatch.Is(x.p) ? "batt" : x.p.Tile != null ? "tile" : x.p.Solid ? "solid" : "lines" }).ToArray());
         });
 
         // A pattern's strokes over a square (paper mm): the swatches of the materials dialog. A real-size pattern (decision 671) is
@@ -682,7 +686,8 @@ public static class DraftingResources
         r.Query("hatch.preview", (q, a) =>
         {
             var size = Json.Number(a["size"]) ?? 20;
-            var pattern = HatchLibrary.Find((string?)a["pattern"] ?? "", Patterns(q.Model));
+            // A pattern being edited, not saved (stage 7): its definition inline, {units, families | tile}.
+            var pattern = a["pattern"] is JsonObject inline ? HatchPatternCommands.Definition(inline, "PREVIEW", "") : HatchLibrary.Find((string?)a["pattern"] ?? "", Patterns(q.Model));
             if (pattern == null) return new JsonObject { ["solid"] = false, ["segments"] = new JsonArray() };
             var units = HatchScale.UnitsOf(pattern, HatchScale.Parse((string?)a["units"]));
             var viewScale = Json.Number(a["viewScale"]) is { } vs && vs > 0 && double.IsFinite(vs) ? vs : PreviewScale;

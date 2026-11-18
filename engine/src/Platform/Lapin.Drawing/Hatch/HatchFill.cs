@@ -46,6 +46,7 @@ public static class HatchFill
         if (pattern.Solid || !(o.Scale > 0) || !double.IsFinite(o.Scale)) return (em.Out, false);
         var usable = loops.Where(l => l.Count >= 3).ToList();
         if (usable.Count == 0) return (em.Out, false);
+        if (pattern.Tile is { } tile) Tiled(usable, tile, o, em);
         foreach (var f in pattern.Families)
         {
             if (em.Truncated) break;
@@ -127,6 +128,108 @@ public static class HatchFill
         }
     }
 
+    /// <summary>
+    /// A tile pattern's strokes (stage 7): its cell's pieces laid on every cell of its grid that reaches the region, each clipped to
+    /// the region even-odd (a dot kept when it is inside). Arcs are made straight by the one rule for curves
+    /// (<see cref="Chords"/>) at their size in the drawing.
+    /// </summary>
+    static void Tiled(List<IReadOnlyList<Vec2>> loops, HatchTile tile, HatchOptions o, Emitter em)
+    {
+        var s = o.Scale;
+        var (w, h) = (tile.Width * s, tile.Height * s);
+        if (!(w > 1e-12 && h > 1e-12) || !double.IsFinite(w) || !double.IsFinite(h)) return;
+        var rot = o.AngleDeg * Math.PI / 180;
+        var (cr, sr) = (Math.Cos(rot), Math.Sin(rot));
+        var origin = o.Origin ?? new Vec2(0, 0);
+        // The region in the grid's frame (its origin, its axes turned with the pattern), where cells are boxes.
+        Vec2 ToGrid(Vec2 p) { var d = p - origin; return new Vec2(d.X * cr + d.Y * sr, -d.X * sr + d.Y * cr); }
+        Vec2 FromGrid(Vec2 q) => new(origin.X + q.X * cr - q.Y * sr, origin.Y + q.X * sr + q.Y * cr);
+        var region = loops.Select(l => l.Select(ToGrid).ToArray()).ToList();
+        var (minX, minY, maxX, maxY) = (double.MaxValue, double.MaxValue, double.MinValue, double.MinValue);
+        foreach (var l in region) foreach (var p in l) { minX = Math.Min(minX, p.X); minY = Math.Min(minY, p.Y); maxX = Math.Max(maxX, p.X); maxY = Math.Max(maxY, p.Y); }
+        // The cell's pieces at the drawing's size: straight pieces and dots, arcs as their chords.
+        var pieces = new List<(Vec2 A, Vec2 B)>();
+        foreach (var l in tile.Lines) pieces.Add((l.A * s, l.B * s));
+        foreach (var a in tile.Arcs)
+        {
+            var pts = Chords.Arc(a.C * s, a.R * s, a.Start * Math.PI / 180, (a.Whole ? 360 : a.Sweep) * Math.PI / 180, a.Whole ? 3 : 1);
+            for (var k = 0; k + 1 < pts.Count; k++) pieces.Add((pts[k], pts[k + 1]));
+        }
+        if (pieces.Count == 0) return;
+        var (pMinX, pMinY, pMaxX, pMaxY) = (double.MaxValue, double.MaxValue, double.MinValue, double.MinValue);
+        foreach (var (a, b) in pieces) { pMinX = Math.Min(pMinX, Math.Min(a.X, b.X)); pMinY = Math.Min(pMinY, Math.Min(a.Y, b.Y)); pMaxX = Math.Max(pMaxX, Math.Max(a.X, b.X)); pMaxY = Math.Max(pMaxY, Math.Max(a.Y, b.Y)); }
+        var (i0, i1) = ((long)Math.Floor((minX - pMaxX) / w), (long)Math.Ceiling((maxX - pMinX) / w));
+        var (j0, j1) = ((long)Math.Floor((minY - pMaxY) / h), (long)Math.Ceiling((maxY - pMinY) / h));
+        if ((double)(i1 - i0 + 1) * (j1 - j0 + 1) * pieces.Count > (double)em.Max * 20 + 10000) { em.Truncated = true; return; }
+        var edges = new List<(Vec2 A, Vec2 B)>();
+        foreach (var l in region) for (int k = 0, m = l.Length - 1; k < l.Length; m = k++) if (l[m] != l[k]) edges.Add((l[m], l[k]));
+        var ts = new List<double>();
+        for (var j = j0; j <= j1; j++)
+            for (var i = i0; i <= i1; i++)
+            {
+                var shift = new Vec2(i * w, j * h);
+                // A cell whose pieces' box misses the region's: nothing.
+                if (pMaxX + shift.X < minX || pMinX + shift.X > maxX || pMaxY + shift.Y < minY || pMinY + shift.Y > maxY) continue;
+                foreach (var (pa, pb) in pieces)
+                {
+                    var (a, b) = (pa + shift, pb + shift);
+                    if (Math.Max(a.X, b.X) < minX || Math.Min(a.X, b.X) > maxX || Math.Max(a.Y, b.Y) < minY || Math.Min(a.Y, b.Y) > maxY) continue;
+                    var d = b - a;
+                    if (d.Length < 1e-12)
+                    {
+                        if (Inside(region, a)) Emit(a, a);
+                        if (em.Truncated) return;
+                        continue;
+                    }
+                    ts.Clear();
+                    ts.Add(0);
+                    ts.Add(1);
+                    foreach (var (ea, eb) in edges)
+                        if (Cross(a, d, ea, eb) is { } t) ts.Add(t);
+                    ts.Sort();
+                    for (var k = 0; k + 1 < ts.Count; k++)
+                    {
+                        var (t0, t1) = (ts[k], ts[k + 1]);
+                        if (t1 - t0 < 1e-9) continue;
+                        if (!Inside(region, a + d * ((t0 + t1) / 2))) continue;
+                        // Runs that go on through a crossing that changes nothing (a vertex touched) stay one stroke.
+                        var end = t1;
+                        while (k + 2 < ts.Count && Inside(region, a + d * ((ts[k + 1] + ts[k + 2]) / 2))) { k++; end = ts[k + 1]; }
+                        Emit(a + d * t0, a + d * end);
+                        if (em.Truncated) return;
+                    }
+                }
+            }
+
+        void Emit(Vec2 a, Vec2 b)
+        {
+            if (em.Out.Count >= em.Max) { em.Truncated = true; return; }
+            em.Out.Add(new HatchSegment(FromGrid(a), FromGrid(b)));
+        }
+    }
+
+    /// <summary>Where the segment a + t·d (0 &lt; t &lt; 1) crosses the edge e0–e1; null when it does not, or runs along it.</summary>
+    static double? Cross(Vec2 a, Vec2 d, Vec2 e0, Vec2 e1)
+    {
+        var e = e1 - e0;
+        var den = d.X * e.Y - d.Y * e.X;
+        if (Math.Abs(den) < 1e-18) return null;
+        var w = e0 - a;
+        var t = (w.X * e.Y - w.Y * e.X) / den;
+        var u = (w.X * d.Y - w.Y * d.X) / den;
+        return t > 0 && t < 1 && u >= 0 && u <= 1 ? t : null;
+    }
+
+    /// <summary>Whether a point is inside loops, even-odd.</summary>
+    static bool Inside(List<Vec2[]> loops, Vec2 p)
+    {
+        var inside = false;
+        foreach (var l in loops)
+            for (int i = 0, j = l.Length - 1; i < l.Length; j = i++)
+                if ((l[i].Y > p.Y) != (l[j].Y > p.Y) && p.X < (l[j].X - l[i].X) * (p.Y - l[i].Y) / (l[j].Y - l[i].Y) + l[i].X) inside = !inside;
+        return inside;
+    }
+
     static void Dashed(Emitter em, double lx, double ly, double dx, double dy, double t0, double t1, double[] dashes, double period)
     {
         var pos = Math.Floor(t0 / period) * period;
@@ -176,6 +279,8 @@ public static class HatchScale
     {
         var min = double.PositiveInfinity;
         foreach (var f in p.Families) if (Math.Abs(f.DeltaY) > 1e-12) min = Math.Min(min, Math.Abs(f.DeltaY));
+        // A tile's cell repeats at its smaller side (stage 7).
+        if (p.Tile is { } t) min = Math.Min(min, Math.Min(t.Width, t.Height));
         return min * factor * 1000 / viewScale;
     }
 

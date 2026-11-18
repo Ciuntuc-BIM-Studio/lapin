@@ -364,6 +364,64 @@ public static class SymbolInstances
             return new JsonObject { ["symbolId"] = symbol.Id, ["name"] = symbol.Name, ["instanceId"] = instance };
         });
 
+        // Drafted linework of a view saved as a hatch pattern (stage 7 of docs/plan-material-graphics.md, Save as hatch pattern…):
+        // {viewId, ids, cell: {width, height, origin?: [x, y]} (the view's metres; none: the linework's bounds), name, description?,
+        // units: paper | model}. Straight pieces and dots that line families say exactly make a .pat pattern; anything else a tile.
+        r.Command("drafting.toPattern", "Save as hatch pattern", (ctx, a) =>
+        {
+            var m = ctx.Model;
+            var view = Views.Find(m, (string?)a["viewId"] ?? (string?)a["view"] ?? "") ?? throw new CommandException("There is no such view.");
+            var sources = Ids(a).Select(id => m.Get(id) ?? throw new CommandException("Something chosen is gone.")).ToList();
+            if (sources.Any(e => e.Class != IfcClass.Annotation || e.PredefinedType != Drafts.Predefined || e.Str("viewId") != view.Id || e.Attrs["hatch"] is JsonObject))
+                throw new CommandException("A hatch pattern is drawn with drafted lines, polylines, arcs and circles of this view.");
+            var name = HatchPatternCommands.CheckName((string?)a["name"]);
+            var units = a["units"] is null ? HatchUnits.Paper : HatchScale.Parse((string?)a["units"]) ?? throw new CommandException("A pattern's units are \"paper\" or \"model\".");
+            // Pattern millimetres per metre of the view: the object's, or the paper's at the view's scale.
+            var per = units == HatchUnits.Model ? 1000 : 1000 / (view.NumOrNull("scale") is { } sc && sc > 0 ? sc : 100);
+            var prims = sources.Where(e => e.Str("role") != "draft").Select(Drafts.ShapeOf).OfType<Shape>().SelectMany(Geo.Prims).ToList();
+            if (prims.Count == 0) throw new CommandException("Nothing to save: construction lines are not part of a pattern.");
+            var cell = a["cell"] as JsonObject;
+            var (lo, hi) = Bounds(prims);
+            var origin = cell?["origin"] is { } on ? P(on, "The cell's origin") : lo;
+            var w = Json.Number(cell?["width"]) ?? hi.X - origin.X;
+            var h = Json.Number(cell?["height"]) ?? hi.Y - origin.Y;
+            if (!(w * per > 0.01 && h * per > 0.01)) throw new CommandException("The cell has a width and a height (the view's metres).");
+            TileLine? Clip(Vec2 pa, Vec2 pb)
+            {
+                // The piece kept inside the cell (Liang–Barsky), in pattern millimetres from its lower left corner.
+                var (p0, d) = ((pa - origin) * per, (pb - pa) * per);
+                var (wm, hm, eps) = (w * per, h * per, 1e-6);
+                double t0 = 0, t1 = 1;
+                foreach (var (p, q) in new[] { (-d.X, p0.X + eps), (d.X, wm + eps - p0.X), (-d.Y, p0.Y + eps), (d.Y, hm + eps - p0.Y) })
+                {
+                    if (Math.Abs(p) < 1e-15) { if (q < 0) return null; continue; }
+                    var t = q / p;
+                    if (p < 0) t0 = Math.Max(t0, t); else t1 = Math.Min(t1, t);
+                    if (t0 > t1) return null;
+                }
+                Vec2 In(Vec2 v) => new(Math.Clamp(v.X, 0, wm), Math.Clamp(v.Y, 0, hm));
+                return new TileLine(In(p0 + d * t0), In(p0 + d * t1));
+            }
+            var lines = new List<TileLine>();
+            var arcs = new List<TileArc>();
+            foreach (var pr in prims)
+                switch (pr)
+                {
+                    case SegP sp when Clip(sp.A, sp.B) is { } tl: lines.Add(tl); break;
+                    case ArcP ap:
+                        var c = (ap.C - origin) * per;
+                        var rr = ap.R * per;
+                        // An arc wholly off the cell is left out; one crossing its edge repeats as drawn.
+                        if (c.X + rr < 0 || c.Y + rr < 0 || c.X - rr > w * per || c.Y - rr > h * per) break;
+                        arcs.Add(new TileArc(c, rr, ap.Full ? 0 : ap.Start * 180 / Math.PI, ap.Full ? 360 : Geo.Sweep(ap.Start, ap.End) * 180 / Math.PI));
+                        break;
+                }
+            if (lines.Count + arcs.Count == 0) throw new CommandException("Nothing of the linework is inside the cell.");
+            var pattern = TileFit.Make(name, ((string?)a["description"])?.Trim() ?? "", units, Math.Round(w * per, 6), Math.Round(h * per, 6), lines, arcs);
+            HatchPatternCommands.Add(ctx, pattern);
+            return new JsonObject { ["name"] = pattern.Name, ["kind"] = pattern.Tile != null ? "tile" : "lines", ["families"] = pattern.Families.Count };
+        });
+
         // Placed symbols exploded into drafting on their views (their texts filled as they read now).
         r.Command("drafting.explodeSymbol", "Explode symbol", (ctx, a) =>
         {
@@ -372,6 +430,19 @@ public static class SymbolInstances
                 foreach (var x in Explode(ctx, Require(ctx.Model, id))) made.Add((JsonNode)x);
             return new JsonObject { ["ids"] = made };
         });
+    }
+
+    static (Vec2 Lo, Vec2 Hi) Bounds(List<Prim> prims)
+    {
+        var (lo, hi) = (new Vec2(double.MaxValue, double.MaxValue), new Vec2(double.MinValue, double.MinValue));
+        void Take(Vec2 p) { lo = new Vec2(Math.Min(lo.X, p.X), Math.Min(lo.Y, p.Y)); hi = new Vec2(Math.Max(hi.X, p.X), Math.Max(hi.Y, p.Y)); }
+        foreach (var pr in prims)
+            switch (pr)
+            {
+                case SegP s: Take(s.A); Take(s.B); break;
+                case ArcP ar: Take(ar.C - new Vec2(ar.R, ar.R)); Take(ar.C + new Vec2(ar.R, ar.R)); break;
+            }
+        return (lo, hi);
     }
 
     /// <summary>A placed symbol carried by a move, a turn or a mirror: its point, its angle, and a mirror turns it over (its texts stay readable).</summary>

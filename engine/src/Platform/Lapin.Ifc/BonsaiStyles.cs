@@ -192,6 +192,33 @@ public static class BonsaiStyles
             var families = new List<string>();
             var i = 0;
             foreach (var (p, scale, angle, color, width) in layers)
+            {
+                if (p.Tile is { } tile)
+                {
+                    // A tile pattern (stage 7): its cell an SVG pattern of its own, as SVG repeats tiles natively.
+                    var fid = $"{id}-{i++}";
+                    var stroke = HexColor.Opaque(color);
+                    var opacity = HexColor.Alpha(color) is var a && a < 0.999 ? $" stroke-opacity=\"{N(a)}\"" : "";
+                    var t = (Math.Abs(angle) > 1e-9 ? $"rotate({N(-angle)}) " : "") + $"scale({N(scale)} {N(-scale)})";
+                    var d = new System.Text.StringBuilder();
+                    foreach (var l in tile.Lines)
+                        d.Append(l.Dot ? $"M{N(l.A.X)} {N(l.A.Y)}h0.01 " : $"M{N(l.A.X)} {N(l.A.Y)}L{N(l.B.X)} {N(l.B.Y)} ");
+                    var circles = new System.Text.StringBuilder();
+                    foreach (var arc in tile.Arcs)
+                    {
+                        if (arc.Whole) { circles.Append($"<circle cx=\"{N(arc.C.X)}\" cy=\"{N(arc.C.Y)}\" r=\"{N(arc.R)}\"/>"); continue; }
+                        var a0 = arc.Start * Math.PI / 180;
+                        var a1 = (arc.Start + arc.Sweep) * Math.PI / 180;
+                        var (x0, y0) = (arc.C.X + arc.R * Math.Cos(a0), arc.C.Y + arc.R * Math.Sin(a0));
+                        var (x1, y1) = (arc.C.X + arc.R * Math.Cos(a1), arc.C.Y + arc.R * Math.Sin(a1));
+                        d.Append($"M{N(x0)} {N(y0)}A{N(arc.R)} {N(arc.R)} 0 {(Math.Abs(arc.Sweep) > 180 ? 1 : 0)} {(arc.Sweep > 0 ? 1 : 0)} {N(x1)} {N(y1)} ");
+                    }
+                    svg.Append($"  <pattern id=\"{fid}\" patternUnits=\"userSpaceOnUse\" width=\"{N(tile.Width)}\" height=\"{N(tile.Height)}\" patternTransform=\"{t}\">")
+                       .Append($"<g fill=\"none\" stroke=\"{(stroke == "#000000" ? "black" : stroke)}\"{opacity} stroke-width=\"{N(width / scale)}\" stroke-linecap=\"round\">")
+                       .Append(d.Length > 0 ? $"<path d=\"{d.ToString().TrimEnd()}\"/>" : "").Append(circles).Append("</g></pattern>\n");
+                    families.Add(fid);
+                    continue;
+                }
                 foreach (var f in p.Families)
                 {
                     if (Math.Abs(f.DeltaY) < 1e-9) continue;
@@ -209,6 +236,7 @@ public static class BonsaiStyles
                        .Append(dash != null ? $" stroke-dasharray=\"{dash}\"" : "").Append("/></pattern>\n");
                     families.Add(fid);
                 }
+            }
             // The hatch: a large tile (a metre of paper, past any sheet) of its background and its families laid over it.
             const double Tile = 1000;
             svg.Append($"  <pattern id=\"{id}\" patternUnits=\"userSpaceOnUse\" width=\"{N(Tile)}\" height=\"{N(Tile)}\">");

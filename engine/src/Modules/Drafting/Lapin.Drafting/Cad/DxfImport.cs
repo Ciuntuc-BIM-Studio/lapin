@@ -492,7 +492,7 @@ public static class DxfImport
                     NewPatterns.Add(made);
                     return name;
                 }
-                if (existing.Families.SequenceEqual(families)) return existing.Name;
+                if (existing.Tile == null && existing.Families.SequenceEqual(families)) return existing.Name;
             }
         }
 

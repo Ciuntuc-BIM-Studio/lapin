@@ -1478,11 +1478,20 @@ public static partial class IfcExport
             string Colour(string hex) { var (r, g, b) = HexColor.Unit(hex); return f.Add("IFCCOLOURRGB", Null, R(r), R(g), R(b)); }
             string? Hatching(string? name, string curveName, double scale, double angleDeg, string? color, double weight)
             {
-                if (name == null || Lapin.Drawing.Hatch.HatchLibrary.Find(name, patterns) is not { Solid: false } p || p.Families.Count == 0) return null;
-                var fam = p.Families[0];
+                if (name == null || Lapin.Drawing.Hatch.HatchLibrary.Find(name, patterns) is not { Solid: false } p) return null;
+                // A tile pattern (stage 7) as the nearest line hatching: along its longest straight piece (0° with none), its
+                // cell's smaller side apart; the curve style named after it, which Lapin reads back.
+                double famAngle, famSpacing;
+                if (p.Families.Count > 0) (famAngle, famSpacing) = (p.Families[0].AngleDeg, p.Families[0].DeltaY);
+                else if (p.Tile is { } tile)
+                {
+                    var longest = tile.Lines.Where(l => !l.Dot).OrderByDescending(l => (l.B - l.A).Length).Select(l => (Vec2?)(l.B - l.A)).FirstOrDefault();
+                    (famAngle, famSpacing) = (longest is { } d ? Math.Atan2(d.Y, d.X) * 180 / Math.PI : 0, Math.Min(tile.Width, tile.Height));
+                }
+                else return null;
                 var curve = f.Add("IFCCURVESTYLE", S(curveName), Null, Typed("IFCPOSITIVELENGTHMEASURE", R(weight / 1000)), Colour(color ?? "#000000"), False);
-                var spacing = Math.Max(1e-6, Math.Abs(fam.DeltaY) * scale / 1000);
-                return f.Add("IFCFILLAREASTYLEHATCHING", curve, Typed("IFCPOSITIVELENGTHMEASURE", R(spacing)), Null, Null, R((fam.AngleDeg + angleDeg) * Math.PI / 180));
+                var spacing = Math.Max(1e-6, Math.Abs(famSpacing) * scale / 1000);
+                return f.Add("IFCFILLAREASTYLEHATCHING", curve, Typed("IFCPOSITIVELENGTHMEASURE", R(spacing)), Null, Null, R((famAngle + angleDeg) * Math.PI / 180));
             }
             foreach (var kind in Lapin.Drawing.MaterialGraphics.Kinds)
             {
