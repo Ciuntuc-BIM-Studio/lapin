@@ -193,6 +193,15 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
     /// <summary>The same for its fill: the subcategory's fill colour (or halftone) over the category's.</summary>
     public bool KeepsFill { get; init; }
 
+    /// <summary>
+    /// Whether a view filter gave its fill (stage 5 of docs/plan-material-graphics.md): the filter's own colour for the element's
+    /// lines no longer pales over it, the fill being asked for.
+    /// </summary>
+    public bool FilterFill { get; init; }
+
+    /// <summary>The names of the view filters whose hatch or fill lay over it (stage 5); null: none.</summary>
+    public string? Filters { get; init; }
+
     /// <summary>Whether it sets anything decision 670 added (a drawing of materials that set none is drawn exactly as before).</summary>
     public bool Flex => HatchColor != null || HatchWeight != null || HatchLineType != null || HatchOpacity != null || Halftone || FillOpacity != null || Background != null || CutLine != null || SeparatorLine != null
         || KeepsHatch || KeepsFill;
@@ -225,6 +234,7 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
         if (Step is { } st) o["step"] = new JsonObject { ["kind"] = st.Kind, ["index"] = st.Index };
         if (Standard != null) o["standard"] = Standard;
         if (GraphicsSet != null) o["set"] = GraphicsSet;
+        if (Filters != null) o["filters"] = Filters;
         return o;
     }
 }

@@ -126,6 +126,50 @@ public static class GraphicsSets
         return o.Count > 0 ? o : null;
     }
 
+    /// <summary>
+    /// A view's filter row checked (stage 5 of docs/plan-material-graphics.md): its hatch and fill fields (<c>cutHatch</c>,
+    /// <c>surfaceHatch</c> a pattern the project knows or "none"; <c>cutFill</c>, <c>surfaceFill</c> a colour or "none";
+    /// <c>hatchColor</c> a colour; <c>hatchHalftone</c> true or false; <c>cutLine</c> {color?, weight? (mm)}); a field null left
+    /// out; the fields of decision 394 (hidden, color, halftone, transparency, pen, pattern) kept as they come.
+    /// </summary>
+    internal static JsonObject CheckFilterRow(IModelView m, JsonObject row)
+    {
+        var o = new JsonObject();
+        foreach (var (k, v) in row)
+        {
+            if (!VisibilityGraphics.FilterFields.Contains(k)) throw new CommandException($"„{k}” is not a field of a view's filter ({string.Join(", ", VisibilityGraphics.FilterFields)}).");
+            if (v is null) continue;
+            o[k] = k switch
+            {
+                "cutHatch" or "surfaceHatch" => (string?)v is "" or "none" ? "none" : Lapin.Drawing.Hatch.HatchLibrary.Find((string?)v ?? "", DraftingResources.Patterns(m))?.Name ?? throw new CommandException($"There is no hatch pattern „{(string?)v}”."),
+                "cutFill" or "surfaceFill" when (string?)v is "" or "none" => "none",
+                "cutFill" or "surfaceFill" or "hatchColor" => (string?)v is { } c && HexColor.IsColour(c) ? c.ToLowerInvariant() : throw new CommandException($"A filter's {k} is a colour (#rrggbb){(k == "hatchColor" ? "" : " or none")}."),
+                "hatchHalftone" => v is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException("A filter's hatchHalftone is true or false."),
+                "cutLine" => CheckLine(v),
+                _ => v.DeepClone(),
+            };
+        }
+        return o;
+
+        static JsonObject CheckLine(JsonNode v)
+        {
+            if (v is not JsonObject l) throw new CommandException("A filter's cutLine is {color?: #rrggbb, weight?: mm}.");
+            var o = new JsonObject();
+            foreach (var (k, x) in l)
+            {
+                if (x is null) continue;
+                o[k] = k switch
+                {
+                    "color" => (string?)x is { } c && HexColor.IsColour(c) ? c.ToLowerInvariant() : throw new CommandException("A filter's cutLine color is a colour (#rrggbb)."),
+                    "weight" => Lapin.Model.Json.Number(x) is { } w && w > 0 && w <= 5 ? w : throw new CommandException("A filter's cutLine weight is millimetres on paper, over 0 and up to 5."),
+                    _ => throw new CommandException($"„{k}” is not a field of a filter's cutLine (color, weight)."),
+                };
+            }
+            if (o.Count == 0) throw new CommandException("A filter's cutLine gives a color, a weight or both.");
+            return o;
+        }
+    }
+
     public static void Register(IModuleRegistry r)
     {
         // One row of a view's graphics: a category, an IFC class or an element ({hidden, lineColor, lineWeight, fillColor, cutHatch}; null clears it).
@@ -223,7 +267,7 @@ public static class GraphicsSets
                 foreach (var row in fl.OfType<JsonObject>())
                 {
                     if ((string?)row["id"] is not { } fid || !known.Contains(fid)) throw new CommandException("There is no such filter.");
-                    rows.Add((JsonNode)row.DeepClone());
+                    rows.Add((JsonNode)CheckFilterRow(ctx.Model, row));
                 }
                 if (rows.Count > 0) into["filters"] = rows; else into.Remove("filters");
             }
@@ -346,6 +390,8 @@ public static class GraphicsSets
                 ["subcategories"] = new JsonObject(VisibilityGraphics.SubcategoriesOf.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)new JsonArray(kv.Value.Select(x => (JsonNode)x).ToArray())))),
                 // What a subcategory's row may give (decision 674): hidden, cutHatch, fillColor, lineColor, lineWeight, halftone.
                 ["subcategoryFields"] = new JsonArray(VisibilityGraphics.SubFields.Select(x => (JsonNode)x).ToArray()),
+                // What a filter's row may give (stage 5 of docs/plan-material-graphics.md): its lines and colours, its hatch and fill.
+                ["filterFields"] = new JsonArray(VisibilityGraphics.FilterFields.Select(x => (JsonNode)x).ToArray()),
                 ["annotations"] = new JsonArray(VisibilityGraphics.AnnotationCategories.Select(c => (JsonNode)c).ToArray()),
                 ["filters"] = new JsonArray(ViewFilters.All(q.Model).Select(f => (JsonNode)new JsonObject { ["id"] = f.Id, ["name"] = f.Name }).ToArray()),
                 ["imports"] = Imports(q.Model, v),

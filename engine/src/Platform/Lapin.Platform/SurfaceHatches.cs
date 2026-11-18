@@ -69,15 +69,17 @@ public static class SurfaceHatches
         var resolved = new Dictionary<string, ResolvedMaterial?>();
         // The view's material graphics (decision 672): the material's elevation step for the view's scale; a project made
         // before real-size hatches (decision 671) goes on suggesting the paper ones; a name is guessed from, as cuts do.
-        var viewMaterials = new ViewMaterialGraphics(m, "elevation", options.Scale, ViewStyles.Of(m, view));
-        ResolvedMaterial? Graphics(string? id)
+        // The view's filters (stage 5) lay their surface hatch and fill over the faces of the elements they take.
+        var vg = VisibilityGraphics.Of(m, view);
+        var viewMaterials = new ViewMaterialGraphics(m, "elevation", options.Scale, ViewStyles.Of(m, view), vg.HasFilterGraphics ? vg : null);
+        ResolvedMaterial? Material(string? id)
         {
             if (id == null) return null;
             if (resolved.TryGetValue(id, out var r)) return r;
-            r = viewMaterials.Material(id);
-            return resolved[id] = r is { Membrane: false } && (r.Hatch != null || r.Fill != null || r.Background != null) ? r : null;
+            return resolved[id] = viewMaterials.Material(id);
         }
-        var graphics = parts.Select(p => Graphics(p.Material)).ToArray();
+        static ResolvedMaterial? Drawn(ResolvedMaterial? r) => r is { Membrane: false } && (r.Hatch != null || r.Fill != null || r.Background != null) ? r : null;
+        var graphics = parts.Select(p => Drawn(viewMaterials.Surface(p.Element, p.Class, Material(p.Material)))).ToArray();
         if (graphics.All(g => g == null)) return [];
         var joins = ViewStyles.Of(m, view).Joins;
         var pens = new Dictionary<string, Pen>();
@@ -168,7 +170,8 @@ public static class SurfaceHatches
                 if (g.Background is { Hatch: { } bh } bg && HatchLibrary.Find(bh, options.Patterns) is { } bgPattern)
                     Stroke(bgPattern, true, elementColor ?? ResolvedMaterial.Ink(bg.HatchColor ?? category, g.Halftone, g.HatchOpacity), bg.HatchWeight, null, bg.HatchScale ?? g.HatchScale, bg.HatchAngle ?? 0);
                 if (g.Hatch == null || HatchLibrary.Find(g.Hatch, options.Patterns) is not { } pattern) continue;
-                var color = elementColor ?? (g.Flex ? g.HatchInk(category) : category);
+                // A filter's own hatch colour (stage 5) over its colour for the element's lines.
+                var color = (g.Filters != null && g.HatchColor != null ? null : elementColor) ?? (g.Flex ? g.HatchInk(category) : category);
                 var dash = g.HatchLineType is { } lt && Dashes.Of(lt, options.LineTypes) is { Length: > 0 } ld ? ld : null;
                 Stroke(pattern, false, color, g.HatchWeight, dash, g.HatchScale, g.HatchAngle);
 

@@ -209,6 +209,16 @@ Filtrele vederii primesc coloanele **Cut hatch** și **Cut fill**, plus semiton 
 
 Același resolver, deci ajung în PDF, DXF și planșe.
 
+Stare (18.11.2026, decizia 675): **motorul e făcut; interfața urmează.** Abateri și precizări:
+
+- rândul unui filtru în vedere (`graphics.filters[i]`, și rândurile proprii ale legăturilor „custom”) primește `cutHatch` (un model; `none` = fără), `cutFill` (`#rrggbb`; `none` = fără), `hatchColor`, `hatchHalftone` (true/false), `cutLine` `{color?, weight?}` (mm pe hârtie) pentru benzile tăiate și, ieftin de adăugat, `surfaceHatch` / `surfaceFill` pentru fețele văzute ale fațadelor (`hatchColor` și `hatchHalftone` valorează pentru amândouă). Câmp cu câmp, primul filtru din lista vederii care ia elementul și dă câmpul îl dă (regula lui Revit, ca la celelalte coloane); `view.graphics` verifică rândul (modelul cunoscut, culorile, grosimea 0–5 mm, niciun câmp necunoscut), iar `view.visibility` dă `filterFields`;
+- treapta 2 din `ViewMaterialGraphics` (`FilterOver`): peste subcategorie, set, `smallScaleCut` și material; hașura și umplerea categoriei din V/G nu se mai pun peste ale filtrului (`KeepsHatch`, `KeepsFill`). Modelul filtrului e la scara lui proprie, unghiul 0, fără fundal. Umplerea filtrului nu mai e spălată de culoarea liniilor filtrului (`FilterFill`): „portanții plini negri” cu liniile roșii rămân negri. O bandă fără material primește și ea ce desenează filtrul (un perete fără material plin negru); o membrană își păstrează linia. Două benzi ale aceluiași material se unesc doar când filtrele le desenează la fel (`JoinAs` cu cheia filtrelor);
+- se aplică în planuri, secțiuni, fațade (benzile tăiate și, cu `surface*`, fețele), planșe, PDF și DXF (prin penițe, ca până acum); 3D-ul nu (filtrele lui rămân culoare și transparență);
+- legendele (rămas din etapa 4): desenate cu setul de grafică al vederii plasate (fără `smallScaleCut`, ca înainte), iar un filtru care dă hașură sau umplere unui element tăiat în vedere are rândul lui în legendă, cu numele filtrului;
+- un proiect vechi (rânduri fără câmpurile noi) se desenează exact ca înainte (`HasFilterGraphics` fals: niciun element nu e întrebat);
+- rămase: interfața (coloanele Cut hatch / Cut fill / Hatch colour / Halftone / Surface în fila Filters), grafica subcategoriei pe membrane (o membrană e o singură peniță; ar cere penițe pe culoare) și pe benzile fără material (nu au subcategorie de strat);
+- teste: `FilterHatchTests` (6).
+
 ### Etapa 6: mutată
 
 Prim-planul, fundalul și culoarea hașurii fac acum parte din etapa 0b, cu prioritate.

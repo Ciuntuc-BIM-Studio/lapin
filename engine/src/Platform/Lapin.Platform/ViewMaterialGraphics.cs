@@ -84,7 +84,9 @@ public sealed record SmallScaleCut(string Mode = SmallScaleCut.AsMaterial, doubl
 /// The one place a view decides how a material draws in it (decision 672). Precedence, the higher over the lower, field by field:
 /// <list type="number">
 /// <item>an element's own override (hook: none yet);</item>
-/// <item>the view's filters (stage 5 of docs/plan-material-graphics.md, hook);</item>
+/// <item>the view's filters (stage 5 of docs/plan-material-graphics.md): the first filter in the view's list that takes the element
+/// and gives a field gives it (<see cref="VisibilityGraphics.FilterGraphics"/>): a cut hatch, a cut fill, a hatch colour, the hatch
+/// halftone, the cut outline; an elevation's seen faces their surface hatch and fill;</item>
 /// <item>(2.5) the view's Visibility / Graphics subcategory graphics (decision 674): a layer's subcategory (core, finishes,
 /// insulation, membranes, other layers) giving a cut hatch, a fill colour, a line colour and weight or halftone — the view's
 /// own overrides, so over its style's set, and over its category's cut hatch and fill colour, being the more particular;</item>
@@ -120,7 +122,8 @@ public sealed class ViewMaterialGraphics
     /// <param name="scale">The view's scale denominator; null: no step by scale (an export with no scale).</param>
     /// <param name="style">The view's style as it draws (<see cref="ViewStyles.Of"/>); null: none of its tiers.</param>
     /// <param name="visibility">The view's Visibility / Graphics, whose subcategories' graphics lay over the bands (decision 674); null: none.</param>
-    public ViewMaterialGraphics(IModelView m, string kind, double? scale, ViewStyles.Style? style = null, VisibilityGraphics? visibility = null)
+    /// <param name="smallScale">Whether the style's small-scale cut holds (a legend shows a material without it, decision 672).</param>
+    public ViewMaterialGraphics(IModelView m, string kind, double? scale, ViewStyles.Style? style = null, VisibilityGraphics? visibility = null, bool smallScale = true)
     {
         _m = m;
         _kind = kind;
@@ -129,10 +132,10 @@ public sealed class ViewMaterialGraphics
         // The project's material standard (decision 673): tier 7, what a material does not set itself.
         _standard = MaterialStandards.Of(m);
         // Cuts only: an elevation's surfaces keep their materials' look.
-        _small = kind != "elevation" && scale is { } s && style?.SmallScaleCut is { } sc && sc.Holds(s) ? sc : null;
+        _small = smallScale && kind != "elevation" && scale is { } s && style?.SmallScaleCut is { } sc && sc.Holds(s) ? sc : null;
         // The view's material graphics set (decision 674): tier 3, over the small-scale cut.
         _set = style?.MaterialGraphicsSet is { } setId ? MaterialGraphicsSets.Find(m, setId) : null;
-        _vg = visibility is { HasSubGraphics: true } ? visibility : null;
+        _vg = visibility is { HasSubGraphics: true } or { HasFilterGraphics: true } ? visibility : null;
     }
 
     public static ViewMaterialGraphics For(IModelView m, Entity view, string kind, double scale) => new(m, kind, scale, ViewStyles.Of(m, view), VisibilityGraphics.Of(m, view));
@@ -183,9 +186,53 @@ public sealed class ViewMaterialGraphics
         // The small-scale cut (tier 4) under the set (tier 3).
         if (_small != null && SmallScaleCut.Takes(p.Class)) g = SetOver(SmallScaled(p.Material == null ? null : Base(p.Material), p, _small), p.Material);
         else g = Material(p.Material);
-        // Tier 2.5: the view's subcategory graphics. Stage 5: the view's filters. Then an element's own override.
-        if (_vg != null && g != null && _m.Get(p.Element) is { } el && _vg.SubGraphics(el, p.Key) is { } sub) g = SubOver(g, sub.Sub, sub.Category);
+        // Tier 2.5: the view's subcategory graphics. Tier 2: the view's filters (stage 5). Then an element's own override.
+        if (_vg != null && _m.Get(p.Element) is { } el)
+        {
+            if (g != null && _vg.SubGraphics(el, p.Key) is { } sub) g = SubOver(g, sub.Sub, sub.Category);
+            if (_vg.FilterGraphics(el) is { } fl) g = FilterOver(g, fl, p.Class, cut: true);
+        }
         return g;
+    }
+
+    /// <summary>
+    /// The graphics an elevation's seen face of an element draws with: its material's (<see cref="Material"/>) with the view's
+    /// filters over them (stage 5: their surface hatch and fill, hatch colour and halftone); null: no surface drawn.
+    /// </summary>
+    public ResolvedMaterial? Surface(string element, string cls, ResolvedMaterial? g)
+    {
+        if (_vg == null || _m.Get(element) is not { } el || _vg.FilterGraphics(el) is not { } fl) return g;
+        return FilterOver(g, fl, cls, cut: false);
+    }
+
+    /// <summary>
+    /// A band (or, <paramref name="cut"/> false, a seen face) with the view's filters' hatch and fill over it (stage 5): the pattern
+    /// ("none": none) at its own scale, the fill ("none": none; a filter's line colour no longer pales over it), the hatch colour,
+    /// the hatch halftone, the cut outline's colour and weight. A band with no material takes them too (a wall with none filled
+    /// black as load-bearing); a membrane keeps its line. Bands of one material join only when the filters draw them alike.
+    /// </summary>
+    static ResolvedMaterial? FilterOver(ResolvedMaterial? g, VisibilityGraphics.FilterLook fl, string cls, bool cut)
+    {
+        static string? Colour(JsonNode? n) => (string?)n is { } c && HexColor.IsColour(c) ? c.ToLowerInvariant() : null;
+        static bool None(JsonNode? n) => (string?)n is "" or "none" or null;
+        var r = fl.Row;
+        var (hatchKey, fillKey) = cut ? ("cutHatch", "cutFill") : ("surfaceHatch", "surfaceFill");
+        var gives = fl.Gives(hatchKey) || fl.Gives(fillKey) || fl.Gives("hatchColor") || fl.Gives("hatchHalftone") || cut && fl.Gives("cutLine");
+        if (!gives || g?.Membrane == true) return g;
+        // A band with no material: only what the filter itself draws.
+        if (g == null)
+        {
+            if (!(fl.Gives(hatchKey) && !None(r[hatchKey]) || fl.Gives(fillKey) && !None(r[fillKey]) || cut && fl.Gives("cutLine"))) return null;
+            g = new ResolvedMaterial("", null, 1, null, null, false, false, null, "filter") { JoinAs = "\u0001class:" + cls };
+        }
+        var o = g;
+        if (fl.Gives(hatchKey))
+            o = o with { Hatch = None(r[hatchKey]) ? null : ((string)r[hatchKey]!).ToUpperInvariant(), HatchScale = 1, HatchAngle = 0, HatchUnits = null, Background = null, KeepsHatch = true };
+        if (fl.Gives(fillKey)) o = o with { Fill = None(r[fillKey]) ? null : Colour(r[fillKey]), FillOpacity = null, KeepsFill = true, FilterFill = true };
+        if (Colour(r["hatchColor"]) is { } hc) o = o with { HatchColor = hc };
+        if (r["hatchHalftone"] is JsonValue hv && hv.TryGetValue<bool>(out var half)) o = o with { Halftone = half };
+        if (cut && MaterialLine.From(r["cutLine"]) is { } line) o = o with { CutLine = o.CutLine is { } had ? had.Over(line) : line };
+        return o with { Filters = fl.Names, JoinAs = (o.JoinAs ?? MaterialGraphics.Normalise(o.Name)) + "\u0001filter:" + fl.Key };
     }
 
     /// <summary>

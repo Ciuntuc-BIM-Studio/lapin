@@ -219,6 +219,53 @@ public sealed class VisibilityGraphics
         HasLinks || (SubjectFaded && Subject != null) || (Graphics?["filters"] as JsonArray)?.OfType<JsonObject>().Any(r => r.Count > 2 || r.Any(kv => kv.Key is not ("id" or "hidden"))) == true
         || (Graphics?["categories"] as JsonObject)?.Any(c => c.Value?["halftone"] != null || c.Value?["transparency"] != null) == true;
 
+    /// <summary>
+    /// The hatch and fill a filter's row may give the elements it takes (stage 5 of docs/plan-material-graphics.md): cutHatch (a
+    /// pattern, "none"), cutFill (#rrggbb, "none"), hatchColor, hatchHalftone, cutLine {color, weight} for the cut bands;
+    /// surfaceHatch and surfaceFill for the faces an elevation sees; hatchColor and hatchHalftone for both.
+    /// </summary>
+    public static readonly string[] FilterGraphicsFields = ["cutHatch", "cutFill", "hatchColor", "hatchHalftone", "cutLine", "surfaceHatch", "surfaceFill"];
+
+    /// <summary>Every field of a view's filter row: its filter, shown or hidden, its lines and colours (decision 394), its hatch and fill.</summary>
+    public static readonly string[] FilterFields = ["id", "hidden", "color", "halftone", "transparency", "pen", "pattern", .. FilterGraphicsFields];
+
+    bool? _hasFilterGraphics;
+
+    /// <summary>Whether any filter row in the view's graphics (or a link's own) gives a hatch or a fill: none, and no element is asked.</summary>
+    public bool HasFilterGraphics => _hasFilterGraphics ??= new[] { Graphics }.Concat((Graphics?["links"] as JsonObject ?? []).Select(l => l.Value as JsonObject))
+        .Any(g => (g?["filters"] as JsonArray)?.OfType<JsonObject>().Any(r => FilterGraphicsFields.Any(r.ContainsKey)) == true);
+
+    readonly Dictionary<string, FilterLook?> filterLooks = [];
+
+    /// <summary>
+    /// What the filters that take an element give its hatch and fill, field by field: the first filter in the view's order that
+    /// gives a field gives it (Revit's rule, as for a filter's other columns); null when none gives any.
+    /// </summary>
+    public FilterLook? FilterGraphics(Entity e)
+    {
+        if (!HasFilterGraphics) return null;
+        if (filterLooks.TryGetValue(e.Id, out var had)) return had;
+        JsonObject? o = null;
+        var names = new List<string>();
+        foreach (var (f, row) in FiltersOf(RulesFor(e)))
+        {
+            if (!FilterGraphicsFields.Any(row.ContainsKey) || !Takes(f, e)) continue;
+            var gave = false;
+            foreach (var k in FilterGraphicsFields)
+                if (row[k] is { } v && !(o?.ContainsKey(k) ?? false)) { (o ??= [])[k] = v.DeepClone(); gave = true; }
+            if (gave) names.Add(f.Name);
+        }
+        return filterLooks[e.Id] = o == null ? null : new FilterLook(o, string.Join(" + ", names));
+    }
+
+    /// <summary>What the filters taking an element give its hatch and fill (<see cref="FilterGraphicsFields"/>), and the names of those that gave it.</summary>
+    public sealed record FilterLook(JsonObject Row, string Names)
+    {
+        /// <summary>What tells two looks apart: elements of one material join only when the filters draw them alike.</summary>
+        public string Key { get; } = Row.ToJsonString();
+        public bool Gives(string field) => Row.ContainsKey(field);
+    }
+
     /// <summary>The colour an element's lines (and its fills, paled) draw in: a filter's colour or halftone, else its category's halftone, else its link's; null: its own.</summary>
     public string? ColorOf(Entity e)
     {

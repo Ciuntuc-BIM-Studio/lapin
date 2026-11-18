@@ -270,8 +270,10 @@ public static class Pens
             if (m?.HidePolygons.Contains(i) == true) continue;
             var p = d.Cuts[i];
             // A subcategory's own fill (decision 674) over the category's.
-            var keeps = m != null && m.Graphics.TryGetValue(i, out var kg) && kg.KeepsFill;
-            var fill = (o.ElementColors?.GetValueOrDefault(p.Element) is { } ec ? Pale(ec) : null) ?? (keeps ? null : Cat(p.Class)?.FillColor) ?? (m != null && m.Fills.TryGetValue(i, out var f) ? f : null);
+            var look = m != null && m.Graphics.TryGetValue(i, out var kg) ? kg : null;
+            var keeps = look?.KeepsFill == true;
+            // A view filter's own fill (stage 5) over its colour for the element's lines, paled.
+            var fill = (look?.FilterFill != true && o.ElementColors?.GetValueOrDefault(p.Element) is { } ec ? Pale(ec) : null) ?? (keeps ? null : Cat(p.Class)?.FillColor) ?? (m != null && m.Fills.TryGetValue(i, out var f) ? f : null);
             if (fill == null) continue;
             var pen = Get("fill:" + fill, () => new Pen(PenLayer.Fill, null, 0, fill, null));
             pen.Loops.AddRange(p.Loops);

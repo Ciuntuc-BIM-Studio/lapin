@@ -72,11 +72,20 @@ public static class DrawingKeys
         {
             if (pl.Drawing.Generated is not { } drawing) continue;
             var look = pl.Drawing.Kind == "plan" ? "plan" : "section";
-            // At the placed view's scale (decision 672): a material's step for it, as the view draws it.
-            var viewMaterials = new ViewMaterialGraphics(m, look, pl.Drawing.Scale);
+            // At the placed view's scale (decision 672): a material's step for it, as the view draws it, with the view's material
+            // graphics set (decision 674), without the small-scale cut; and its filters' hatches and fills (stage 5) as rows of their own.
+            var vg = VisibilityGraphics.Of(m, pl.View);
+            var viewMaterials = new ViewMaterialGraphics(m, look, pl.Drawing.Scale, ViewStyles.Of(m, pl.View), vg, smallScale: false);
             var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
             foreach (var cut in drawing.Cuts)
             {
+                if (vg.HasFilterGraphics && m.Get(cut.Element) is { } el && vg.FilterGraphics(el) is { } fl
+                    && (fl.Gives("cutHatch") || fl.Gives("cutFill")) && !o.ContainsKey(fl.Names) && viewMaterials.Band(cut) is { Filters: { } names } fr)
+                {
+                    // What the filters themselves draw, over a band of no material of its own.
+                    var r = fr with { Name = names, Hatch = fl.Gives("cutHatch") ? fr.Hatch : null, Fill = fl.Gives("cutFill") ? fr.Fill : null, Background = null };
+                    o[names] = new Entry(names, r.Fill, r.Hatch, r.HatchScale <= 0 ? 1 : r.HatchScale, r.HatchAngle, Look: r);
+                }
                 IEnumerable<string> mats = cut.Material is { } one ? [one]
                     : (bands.TryGetValue(cut.Element, out var b) ? b : bands[cut.Element] = LayerSets.BandsOf(m, cut.Element))?.Select(x => x.Material) ?? [];
                 foreach (var id in mats.Where(x => !string.IsNullOrEmpty(x)))
