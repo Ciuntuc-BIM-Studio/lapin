@@ -152,6 +152,8 @@ export function PreferencesDialog() {
               <h4>Keyboard</h4>
               <label className="row small"><input type="checkbox" data-field="prefs-letters" checked={keys.letters} onChange={(e) => setKeymap({ ...keys, letters: e.target.checked })} /> Letter shortcuts (Revit-style)</label>
               <p className="muted small">Typed letters such as WA start a tool. Off: letters always go to the command line, and Enter or Space runs a command, an alias, or the command whose letters they are. The ` key gives the command line all typing, whichever is on. Your own aliases are in Keyboard shortcuts…</p>
+              <label className="row small"><input type="checkbox" data-field="prefs-click-out" checked={p.clickOutAccepts} onChange={(e) => setPrefs({ clickOutAccepts: e.target.checked })} /> A click outside an input box accepts it</label>
+              <p className="muted small">Off by default. On: with a value typed in the box by the cursor or on the command line, a left click elsewhere accepts it as Enter does, and that click is used up (it places no point of its own). Esc or a right click throws the typed value away instead. Fields in the Properties panel already take their value when you click away.</p>
               <h4>Developer extras</h4>
               <label className="row small"><input type="checkbox" data-field="prefs-developer-extras" checked={p.developerExtras} onChange={(e) => setPrefs({ developerExtras: e.target.checked })} /> Developer extras: the Script panel, to drive Lapin with Python</label>
               <p className="muted small">Off by default. On: View → Script opens a Python console and an editor; each Run is one undo step. A script can do anything you can do on this computer.</p>

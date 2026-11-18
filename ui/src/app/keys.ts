@@ -24,6 +24,7 @@ import { chordOf, isBareKey, matchSequence, PendingSequence, type Keymap } from 
 import { keymap, runCommand } from './commands';
 import { useKeymap } from './shortcuts';
 import { valueOwner } from './valueOwner';
+import { installClickOut } from './clickOut';
 
 /** What `keyIntent` needs to know about the key press. */
 export interface KeyPress {
@@ -278,6 +279,7 @@ export function useShortcuts(): void {
     const first = () => { toolAtKeydown = useUi.getState().tool; };
     window.addEventListener('keydown', first, true);
     window.addEventListener('keydown', onKey);
-    return () => { window.removeEventListener('keydown', first, true); window.removeEventListener('keydown', onKey); };
+    const offClickOut = installClickOut();
+    return () => { window.removeEventListener('keydown', first, true); window.removeEventListener('keydown', onKey); offClickOut(); };
   }, []);
 }
