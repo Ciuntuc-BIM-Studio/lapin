@@ -418,6 +418,13 @@ describe('edits on elements: TRIM/EXTEND on walls, TRIMEXTEND, SPLITELEMENT, OFF
     expect(engine.execute).toHaveBeenCalledWith('architecture.splitOutline', { id: 's1', a: [2, -1], b: [2, 5], keep: [1, 1] });
   });
 
+  it('SPLITELEMENT cuts at the snapped point, the element being the one under the raw cursor (forum topic 150)', async () => {
+    await startCommand('SPLITELEMENT');
+    expect(useCad.getState().step?.snap).toBe(true);
+    pickAt('w1'); await feedPoint(P(3.02, 0.01), undefined, P(3, 0));
+    expect(engine.execute).toHaveBeenCalledWith('element.split', { id: 'w1', at: [3, 0] });
+  });
+
   it('SPLITELEMENT, TRIMEXTEND and OFFSET take railings and paths along their lines', async () => {
     await startCommand('SPLITELEMENT');
     pickAt('r1'); await feedPoint(P(2, 0));

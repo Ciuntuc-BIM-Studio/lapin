@@ -314,3 +314,14 @@ describe('Tab in the workspace (forum #125)', () => {
     expect(send({ closest: () => ({}) } as unknown as HTMLElement, state({ keymap: emptyMap }))).toBe(false);
   });
 });
+
+describe('Shift+Tab while a tool picks (forum topic 149)', () => {
+  const map = resolveKeymap([cmd('app.pickCycleBack', ['Shift+Tab'])], { 'app.pickCycleBack': ['Shift+Tab'] });
+  it('runs the previous-candidate command with a step waiting or a tool active, not with text typed', () => {
+    const k = press('Tab', { shiftKey: true });
+    expect(keyIntent(k, state({ keymap: map }))).toEqual({ kind: 'command', id: 'app.pickCycleBack' });
+    expect(keyIntent(k, state({ keymap: map, step: { want: 'pick' } }))).toEqual({ kind: 'command', id: 'app.pickCycleBack' });
+    expect(keyIntent(k, state({ keymap: map, tool: 'wall', step: { want: 'pick' } }))).toEqual({ kind: 'command', id: 'app.pickCycleBack' });
+    expect(keyIntent(k, state({ keymap: map, buffer: 'L', step: { want: 'point' } }))).toBeNull();
+  });
+});

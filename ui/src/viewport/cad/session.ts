@@ -92,6 +92,8 @@ export interface Step {
   rect?: string;
   /** The element under the cursor is lit while the step waits for one (Match properties' targets, decision 490). */
   hover?: boolean;
+  /** A pick step whose point matters (SPLITELEMENT's cut): the cursor snaps as for a point, the marker shows, and `pickElement` / `pick` get the snapped point; the element is still the one under the raw cursor. */
+  snap?: boolean;
 }
 
 interface CadState {
@@ -770,7 +772,7 @@ function splitElement(): Step {
     prompt: atCrossing
       ? 'Pick the element to split where something crosses it [Point] (Enter to finish)'
       : 'Click the element where to split it [Intersection] (Enter to finish)',
-    want: 'pick',
+    want: 'pick', snap: true,
     keywords: { I: toggle(true), INTERSECTION: toggle(true), P: toggle(false), POINT: toggle(false) },
     pick: () => { log('Pick a wall, a beam, a strip footing, a floor or a ceiling.'); return first(); },
     pickElement: async (id, at) => {
@@ -1000,22 +1002,23 @@ export function cancel(quiet = false): void {
 }
 
 /** A point clicked in a view (already snapped). */
-const feed = serial(async (p: Vec2, typed: { length?: number; angle?: number } | undefined, free: boolean, aim: Aimed | null): Promise<void> => {
+const feed = serial(async (p: Vec2, typed: { length?: number; angle?: number } | undefined, free: boolean, aim: Aimed | null, snapped?: Vec2): Promise<void> => {
   const s = useCad.getState();
   if (!s.step) return;
   useCad.setState({ lastPoint: p });
   if (s.step.want === 'pick' && s.host) {
     const hit = s.host.pickDraft(p);
     const element = !hit && s.step.pickElement && s.host.isPlan?.() !== false ? s.host.pickAny(p) : null;
-    if (element) { await advance(s.step.pickElement!(element, p)); return; }
+    const at = s.step.snap && snapped ? snapped : p;
+    if (element) { await advance(s.step.pickElement!(element, at)); return; }
     if (!hit) { log(s.step.pickElement ? 'Nothing to pick there.' : 'Nothing drafted there.'); return; }
-    await advance(s.step.pick?.(hit, p));
+    await advance(s.step.pick?.(hit, at));
     return;
   }
   if (s.step.point) { noteFed(p, { typed, free, aim }); await advance(s.step.point(p)); }
 });
 /** A point clicked in a view (already snapped), or typed at its cursor (`typed`: the length and angle). How it was found, and whether Ctrl placed it free, is read now. */
-export const feedPoint = (p: Vec2, typed?: { length?: number; angle?: number }): Promise<void> => feed(p, typed, ctrlHeld, useCad.getState().aim);
+export const feedPoint = (p: Vec2, typed?: { length?: number; angle?: number }, snapped?: Vec2): Promise<void> => feed(p, typed, ctrlHeld, useCad.getState().aim, snapped);
 
 /** An element clicked in the 3D view while a step takes elements (`element`): true when it took it. */
 export function feedElement(id: string): boolean {
