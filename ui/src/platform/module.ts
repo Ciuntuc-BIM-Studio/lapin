@@ -308,7 +308,7 @@ export interface GripView {
 
 /** A line drawn over a selected element: its axis (walls, beams), its outline (slabs, roofs), its sketch (Studio). */
 export interface RefLine {
-  points: Vec2[]; closed: boolean; kind: 'axis' | 'outline' | 'sketch'; view?: string; /** A grid axis's tag: drawn only when that axis is selected. */ tag?: string;
+  points: Vec2[]; closed: boolean; /** reference: a wall's kept reference line (decision 685). */ kind: 'axis' | 'outline' | 'sketch' | 'reference'; view?: string; /** A grid axis's tag: drawn only when that axis is selected. */ tag?: string;
   /** A wall's axis: an arrowhead the way it was drawn and its faces' letters, R on its right, L on its left (report #79; viewport/faceMarks.ts). */
   faces?: boolean;
 }

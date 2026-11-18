@@ -26,7 +26,24 @@ Unde se întâlnesc doi pereți, Lapin îi îmbină singur. Straturile lor intr�
 - **La 45°**, **Cap la cap** și **Inversează** (grupul **Îmbinări**, comun cu grinzile și fundațiile) schimbă cum se întâlnesc colțurile pereților selectați; **Inversează** schimbă care dintre cei doi pereți trece prin colț.
 - **Îmbinare automată la început** și **Îmbinare automată la sfârșit**, în proprietățile unui perete (și ale unei grinzi sau ale unei fundații continue), spun dacă fiecare capăt se îmbină singur cu ce întâlnește; se aplică tuturor pereților selectați. Un capăt oprit își păstrează îmbinările pe care le are (**Îmbină pereții** face încă una acolo, iar uneltele de îmbinare o scot), nu face alta nouă și niciun capăt al altui perete nu e adus la el, așa că peretele își păstrează lungimea și capetele orice s-ar desena sau modifica în jurul lui. Clic dreapta pe grip-ul unui capăt al peretelui selectat dă **Nu îmbina la acest capăt** (sau **Îmbină automat la acest capăt**, care îl îmbină pe loc cu ce întâlnește acolo). Capetele pereților importați dintr-un fișier IFC pornesc oprite: rămân cum le are fișierul când le schimbi înălțimea, tipul sau lungimea, iar ușile și ferestrele lor rămân pe loc în plan când li se mută începutul.
 
-**Linia pe care desenezi.** Cât timp unealta Wall e activă, lista din bara liniei de comandă alege linia pe care dai clic: **Axul miezului** (axa, ca până acum), **Miez, fața exterioară**, **Miez, fața interioară**, **Fața exterioară** sau **Fața interioară**. Exteriorul e dreapta peretelui în sensul desenării (desenează în jurul clădirii în sens invers acelor de ceasornic ca să fie în afară). Axa peretelui rămâne pe miez, decalată față de linie, iar pereții desenați unul după altul pe aceeași față se întâlnesc în colțul acelei fețe.
+**Linia pe care desenezi.** Cât timp unealta Wall e activă, lista din bara liniei de comandă alege linia pe care dai clic: **Axul miezului** (axa, ca până acum), **Miez, fața exterioară**, **Miez, fața interioară**, **Fața exterioară**, **Fața interioară** sau **Distanță față de axul miezului**, care cere o distanță (pozitivă la stânga în sensul desenării, negativă la dreapta). Exteriorul e dreapta peretelui în sensul desenării (desenează în jurul clădirii în sens invers acelor de ceasornic ca să fie în afară). Axa peretelui rămâne pe miez, decalată față de linie, iar pereții desenați unul după altul pe aceeași față se întâlnesc în colțul acelei fețe. Pereții curbi (**Arc** în unealta Wall, sau <kbd>WC</kbd>) se desenează și ei pe linia aleasă, cu axa urmând-o la aceeași distanță.
+
+**Ține minte linia de referință.** Bifeaz-o lângă listă și fiecare perete pe care îl desenezi păstrează linia aceea ca *linie de referință*. Nebifată (implicit), linia doar așază peretele, ca până acum. Un perete care păstrează o linie de referință:
+
+- o arată ca linie continuă lângă axa lui punctată când e selectat, iar mânerele capetelor stau pe ea, așa că tragi peretele de linia pe care l-ai desenat;
+- o dă snap-ului **Axa peretelui** (capetele ei și linia însăși), așa că **Mută**, **Copiază**, cotele și pereții următori o pot prinde;
+- crește în jurul ei când i se schimbă **Grosimea** sau tipul: linia rămâne pe loc și peretele se îngroașă dinspre ea (un perete desenat pe fața exterioară își păstrează fața acolo unde era);
+- se întoarce în jurul ei când îl **Întorci**.
+
+Axa peretelui rămâne pe miez, așa că îmbinările, schimbul IFC și celelalte unelte merg ca înainte.
+
+![Linia uneltei Wall: o distanță față de axul miezului și Ține minte linia de referință](shots/wall-reference-tool.webp)
+
+Linia de referință se poate schimba oricând pe un perete: **Linia de referință** din proprietățile lui oferă aceleași linii, fețele dintre straturile lui (**Fața de strat: Izolație | Cărămidă**) și **Distanță față de axul miezului** cu distanța ei. Schimbarea ei mută linia, nu peretele. **Axul miezului (axa)** face ca peretele să nu mai păstreze niciuna.
+
+![Linia de referință a unui perete în proprietățile lui](shots/wall-reference-properties.webp)
+
+![Un perete desenat pe fața exterioară și îngroșat: fața rămâne unde era](shots/wall-reference-plan.webp)
 
 ### Un perete stratificat din solide
 

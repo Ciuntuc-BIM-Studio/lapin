@@ -8,32 +8,40 @@
 
 import type { Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
-import { arcOf, arcShape, isArc, middle } from '../arc';
+import { arcOf, arcShape, isArc, middle, type Arc } from '../arc';
+import { referenceArc } from '../wallReference';
 import { arcsOf, edgeArc, fromPairs } from '../contour';
 import { normAngle, type Shape } from './shapes';
 
 /** The classes whose axis is a wall's. */
 export const WALL_CLASSES: ReadonlySet<string> = new Set(['IfcWall', 'IfcCurtainWall']);
 
-/** The shown walls' axes, a line or an arc each. */
+/** A wall's axis, and the reference line it keeps when it keeps one (decision 685): the lines its Wall axis snap takes. */
+function wallLines(n: NodeDto): Arc[] {
+  const c = arcOf(n.props);
+  if (!c) return [];
+  const ref = referenceArc(n.props);
+  return ref ? [c, ref.arc] : [c];
+}
+
+/** The shown walls' axes, a line or an arc each, and the reference lines they keep. */
 export function wallAxes(items: readonly { nodeId: string }[], nodes: ReadonlyMap<string, NodeDto>): Shape[] {
   const out: Shape[] = [];
   for (const r of items) {
     const n = nodes.get(r.nodeId);
     if (!n || !WALL_CLASSES.has(n.type)) continue;
-    const c = arcOf(n.props);
-    if (c && Math.hypot(c.b.x - c.a.x, c.b.y - c.a.y) > 1e-9) out.push(arcShape(c));
+    for (const c of wallLines(n)) if (Math.hypot(c.b.x - c.a.x, c.b.y - c.a.y) > 1e-9) out.push(arcShape(c));
   }
   return out;
 }
 
-/** The ends of the shown walls' axes, as the engine lists them among an element's snap points (a curved one's middle too). */
+/** The ends of the shown walls' axes, as the engine lists them among an element's snap points (a curved one's middle too); a kept reference line's too. */
 export function wallAxisPoints(items: readonly { nodeId: string }[], nodes: ReadonlyMap<string, NodeDto>): Vec2[] {
   const out: Vec2[] = [];
   for (const r of items) {
     const n = nodes.get(r.nodeId);
-    const c = n && WALL_CLASSES.has(n.type) ? arcOf(n.props) : null;
-    if (c) out.push(c.a, c.b, ...(isArc(c) ? [middle(c)] : []));
+    if (!n || !WALL_CLASSES.has(n.type)) continue;
+    for (const c of wallLines(n)) out.push(c.a, c.b, ...(isArc(c) ? [middle(c)] : []));
   }
   return out;
 }

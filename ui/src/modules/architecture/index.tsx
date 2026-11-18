@@ -19,7 +19,9 @@ import { activate } from '../../platform/modules';
 import { gateGroup } from './gates/tools';
 import { GateSection } from './gates/GateSection';
 import { CLASS as GATE_CLASS, gateGrips, overallOf } from './gates/gates';
-import { setJoinStyle, setWallLine, useWallPrefs, type WallLine } from './prefs';
+import { setJoinStyle, setRememberLine, setWallLine, setWallLineOffset, useWallPrefs, wallLineArgs, type WallLine } from './prefs';
+import { LengthField } from '../../shell/cells';
+import { axisFromReference, referenceArc } from '../../viewport/wallReference';
 import { WallLayers } from './WallLayers';
 import { WallTopOption, wallTopArgs } from './WallTop';
 import { JoinerySection } from './JoinerySection';
@@ -112,29 +114,46 @@ const wall: ToolDef = chainTool({
   id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'), typed: typedBy('IfcWallType', 'wallTypeId', 'wallTypes', WallThumb),
   line: async (a, b, ctx) => {
     const typeId = useUi.getState().wallTypeId;
-    const { joinStyle, line } = useWallPrefs.getState();
-    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, joinStyle, ...(line !== 'core' ? { reference: line } : {}), ...(typeId ? { typeId } : {}), ...wallTopArgs() });
+    const prefs = useWallPrefs.getState();
+    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, joinStyle: prefs.joinStyle, ...wallLineArgs(prefs), ...(typeId ? { typeId } : {}), ...wallTopArgs() });
   },
-  // An arc is drawn on the core's centre (the wall's line is for straight pieces).
+  // An arc is drawn on the chosen line too (GitHub #63): its axis concentric with it.
   arc: async (a, b, p, ctx) => {
     const typeId = useUi.getState().wallTypeId;
-    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, joinStyle: useWallPrefs.getState().joinStyle, ...(typeId ? { typeId } : {}), ...wallTopArgs() });
+    const prefs = useWallPrefs.getState();
+    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, joinStyle: prefs.joinStyle, ...wallLineArgs(prefs), ...(typeId ? { typeId } : {}), ...wallTopArgs() });
   },
   more: () => <><WallLineOption /><WallTopOption /></>,
 });
 
-/** The line a wall is drawn on, chosen in the command line's bar while the Wall tool is on (decision 237). */
+/**
+ * The line a wall is drawn on, chosen in the command line's bar while the Wall tool is on (decision 237): a face, or an offset
+ * from the core's centre; with "Remember reference line" ticked the walls drawn keep it as their reference line, the one they
+ * are snapped, moved and grown by (forum topic 159, decision 685). Unticked, the line only places them, as before.
+ */
 function WallLineOption() {
-  const line = useWallPrefs((s) => s.line);
+  const { line, lineOffset, remember } = useWallPrefs();
   return (
-    <select className={`cad-layer${line !== 'core' ? ' on' : ''}`} value={line} data-testid="wall-line" title="The line you click: the core's centre (the axis), a face of the core, or a finish face; the exterior is the wall's right as you draw"
-      onChange={(e) => setWallLine(e.target.value as WallLine)}>
-      <option value="core">Core centre</option>
-      <option value="coreExterior">Core, exterior face</option>
-      <option value="coreInterior">Core, interior face</option>
-      <option value="exterior">Exterior face</option>
-      <option value="interior">Interior face</option>
-    </select>
+    <>
+      <select className={`cad-layer${line !== 'core' ? ' on' : ''}`} value={line} data-testid="wall-line" title="The line you click: the core's centre (the axis), a face of the core, a finish face, or an offset from the core's centre; the exterior is the wall's right as you draw"
+        onChange={(e) => setWallLine(e.target.value as WallLine)}>
+        <option value="core">Core centre</option>
+        <option value="coreExterior">Core, exterior face</option>
+        <option value="coreInterior">Core, interior face</option>
+        <option value="exterior">Exterior face</option>
+        <option value="interior">Interior face</option>
+        <option value="offset">Offset from the core centre</option>
+      </select>
+      {line === 'offset' && (
+        <LengthField metres={lineOffset} testId="wall-line-offset" style={{ width: 80 }} title="How far the line you click lies from the core's centre: positive to the left as you draw, negative to the right (the exterior)"
+          onCommit={(m) => { if (m != null) setWallLineOffset(m); }} />
+      )}
+      <label className="cad-layer" title="The walls keep this line as their reference line: they are snapped and moved by it, and grow round it when their thickness or type changes. Unticked, the line only places them."
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <input type="checkbox" data-testid="wall-remember-line" checked={remember} onChange={(e) => setRememberLine(e.target.checked)} />
+        <span>Remember reference line</span>
+      </label>
+    </>
   );
 }
 
@@ -207,8 +226,14 @@ function wallGrips(node: NodeDto): Grip[] {
   const c = arcOf(node.props);
   if (!c) return [];
   const flipped = usageOf(useSession.getState(), node.id)?.negative ?? false;
+  // A wall that keeps a reference line (decision 685) is dragged by it: its grips on that line, the axis following at its distance.
+  const ref = referenceArc(node.props);
+  const update = (s: Vec2, e: Vec2, rise: number) => {
+    const axis = ref ? axisFromReference({ a: s, b: e, rise }, ref.left) : { a: s, b: e, rise };
+    return { command: 'architecture.updateWall', args: { id: node.id, x1: axis.a.x, y1: axis.a.y, x2: axis.b.x, y2: axis.b.y, arc: axis.rise, detachJoinedEnds: true } };
+  };
   return [
-    ...withWallCorners(node, c, withAutoJoinMenus(node.id, node.props, pathGrips(c, (s, e, rise) => ({ command: 'architecture.updateWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise, detachJoinedEnds: true } })))),
+    ...withWallCorners(node, ref?.arc ?? c, withAutoJoinMenus(node.id, node.props, pathGrips(ref?.arc ?? c, update))),
     flipAcross(c, flipped ? 1 : -1, 'Flip: swap the wall\'s faces (its exterior goes to the other side)', () => ({ command: 'architecture.flipWall', args: { ids: sameKind(node) } })),
   ];
 }
@@ -250,7 +275,11 @@ export function withWallCorners(node: NodeDto, c: Arc, grips: Grip[]): Grip[] {
 }
 const pathRefs = (node: NodeDto): RefLine[] => { const c = arcOf(node.props); return c ? [pathRef(c)] : []; };
 /** A wall's axis with the way it was drawn and its faces, R and L, as the Wall types dialog's legend shows them (report #79). */
-const wallRefs = (node: NodeDto): RefLine[] => pathRefs(node).map((r) => ({ ...r, faces: true }));
+const wallRefs = (node: NodeDto): RefLine[] => {
+  const ref = referenceArc(node.props);
+  // And the reference line it keeps (decision 685), drawn solid beside the dashed axis.
+  return [...pathRefs(node).map((r) => ({ ...r, faces: true })), ...(ref ? [{ ...pathRef(ref.arc), kind: 'reference' as const }] : [])];
+};
 
 /**
  * A door or window: dragged along its wall by its middle, widened by either

@@ -28,9 +28,12 @@ public static partial class WallThickness
             var layers = type == null ? [] : LayerSets.LayersOf(edit.Model, type.Id);
             if (type == null || layers.Count == 0)
             {
+                // A wall that keeps a reference line grows round it (decision 685).
+                var before = WallReference.Before(edit.Model, wall);
                 var attrs = wall.CloneAttrs();
                 attrs["thickness"] = thickness;
                 edit.Replace(wall.With(attrs: attrs));
+                WallReference.Keep(edit, wall.Id, before);
                 continue;
             }
             var target = Resized(layers, thickness);

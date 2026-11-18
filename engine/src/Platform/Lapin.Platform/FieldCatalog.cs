@@ -72,7 +72,7 @@ public static partial class FieldCatalog
     /// <summary>Attributes that are Lapin's own bookkeeping, not fields a tag would show.</summary>
     static readonly HashSet<string> Internal = new(StringComparer.OrdinalIgnoreCase)
     {
-        "params", "properties", "exportAs", "ifcClass", "reference", "auto", "storeyId", "viewId", "objectType", IfcSource.Key, Plan2d.Key, ReferenceQuantities.Key,
+        "params", "properties", "exportAs", "ifcClass", "reference", "referenceLine", "auto", "storeyId", "viewId", "objectType", IfcSource.Key, Plan2d.Key, ReferenceQuantities.Key,
     };
 
     static readonly (string Key, string Description)[] Builtins =

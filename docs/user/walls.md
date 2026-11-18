@@ -26,7 +26,24 @@ Where two walls meet, Lapin joins them by itself. Their layers run into each oth
 - **Mitre**, **Butt** and **Swap** (the **Joins** group, shared with beams and footings) change how the corners of the selected walls meet; **Swap** changes which of the two walls runs through.
 - **Join automatically at start** and **Join automatically at end**, in a wall's properties (a beam's and a strip footing's too), say whether each end joins what it meets by itself; they apply to every wall selected. An end turned off keeps the joins it has (**Join walls** still makes one there, and the join tools take it off), makes no new one, and no other wall's end is brought to it, so the wall keeps its length and its ends whatever is drawn or edited round it. Right-click a selected wall's end grip for **Don't join at this end** (or **Join automatically at this end**, which joins what it meets there at once). The ends of walls imported from an IFC file start off: they stay as the file has them when you change their height, type or length, and their doors and windows stay where they are in plan when their start moves.
 
-**The line you draw on.** While the Wall tool is on, the list in the command line's bar chooses the line you click: **Core centre** (the axis, as before), **Core, exterior face**, **Core, interior face**, **Exterior face** or **Interior face**. The exterior is the wall's right as you draw (draw round a building anticlockwise to have it outside). The wall's axis stays on its core, set off from the line, and walls drawn one after the other on the same face meet at the corner of that face.
+**The line you draw on.** While the Wall tool is on, the list in the command line's bar chooses the line you click: **Core centre** (the axis, as before), **Core, exterior face**, **Core, interior face**, **Exterior face**, **Interior face** or **Offset from the core centre**, which takes a distance (positive to the left as you draw, negative to the right). The exterior is the wall's right as you draw (draw round a building anticlockwise to have it outside). The wall's axis stays on its core, set off from the line, and walls drawn one after the other on the same face meet at the corner of that face. Curved walls (**Arc** in the Wall tool, or <kbd>WC</kbd>) are drawn on the chosen line too, their axis following it at the same distance.
+
+**Remember reference line.** Tick it beside the list and each wall you draw keeps that line as its *reference line*. Unticked (the default), the line only places the wall, as before. A wall that keeps a reference line:
+
+- shows it as a solid line beside its dashed axis when selected, and its end grips sit on it, so you drag the wall by the line you drew;
+- lends it to the **Wall axis** snap (its ends and the line itself), so **Move**, **Copy**, dimensions and the next walls can pick it up;
+- grows round it when its **Thickness** or its type changes: the line stays where it is and the wall thickens away from it (a wall drawn on its exterior face keeps that face where it was);
+- turns round it when you **Flip** it.
+
+The wall's axis stays on its core, so joins, IFC exchange and the other tools work as before.
+
+![The Wall tool's line: an offset from the core centre, and Remember reference line](shots/wall-reference-tool.webp)
+
+The reference line can be changed afterwards on any wall: **Reference line** in its properties offers the same lines, the faces between its layers (**Layer face: Insulation | Brick**), and **Offset from the core centre** with its distance. Changing it moves the line, not the wall. **Core centre (the axis)** makes the wall keep none again.
+
+![A wall's reference line in its properties](shots/wall-reference-properties.webp)
+
+![A wall drawn on its exterior face and made thicker: the face stays where it was](shots/wall-reference-plan.webp)
 
 ### A layered wall from solids
 

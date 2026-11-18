@@ -79,20 +79,28 @@ public static class Walls
     /// mirrored when the wall runs the negative way. A type without layers
     /// leaves the wall its own thickness.
     /// </summary>
-    public static void LayOut(IEdit edit, Entity wall, Entity type) =>
+    /// <remarks>A wall that keeps a reference line (<see cref="WallReference"/>) grows round it: its axis set off so the line stays.</remarks>
+    public static void LayOut(IEdit edit, Entity wall, Entity type)
+    {
+        var before = edit.Model.Get(wall.Id) is { } current ? WallReference.Before(edit.Model, current) : null;
         LayerSets.LayOut(edit, wall, type, "AXIS2", Layers.CoreOffset);
+        WallReference.Keep(edit, wall.Id, before);
+    }
 
     /// <summary>
     /// Flips the wall across its axis: its ends stay, its layers swap faces
     /// (the usage's sense turns and its offset changes sign), so the body is
-    /// mirrored across the axis. A wall flips only that way.
+    /// mirrored across the axis. A wall flips only that way; one that keeps a
+    /// reference line (<see cref="WallReference"/>) turns round that line.
     /// </summary>
     public static void Flip(IEdit edit, Entity wall, string axis = "y")
     {
         if (axis == "x") throw new CommandException("A wall flips across its axis (Flip Y): its ends stay where they are.");
+        var before = edit.Model.Get(wall.Id) is { } current ? WallReference.Before(edit.Model, current) : null;
         LayerSets.Flip(edit, wall.Id);
+        WallReference.Keep(edit, wall.Id, before);
         // Its type's sweeps go with the type's faces.
-        WallSweepTypes.Rebuild(edit, wall);
+        WallSweepTypes.Rebuild(edit, edit.Model.Get(wall.Id) ?? wall);
     }
 
     /// <summary>A layer band of the wall's section: across the axis (left of it positive), its material, whether it is the core, its priority at joins (<see cref="Layers.Rank"/>).</summary>
