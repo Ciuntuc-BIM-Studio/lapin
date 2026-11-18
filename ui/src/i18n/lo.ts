@@ -4347,6 +4347,8 @@ export const LO: Record<string, string> = {
   "Type properties": "ຄຸນສົມບັດຂອງປະເພດ",
   "Also write type properties on each occurrence": "ຂຽນຄຸນສົມບັດຂອງປະເພດໃສ່ທຸກອິນສະແຕນນຳ",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "ທຸກຝາຂອງປະເພດມີພວກມັນ (IsExternal, FireRating); ຄ່າເລີ່ມຕົ້ນຂອງອິນສະແຕນແມ່ນສຳເນົາຂອງແຕ່ລະຝາເອງ",
+  // A drafted text's alignment (forum topic 148); a view's mark (report #167).
+  'Alignment': 'ການຈັດວາງ', 'automatic': 'ອັດຕະໂນມັດ', 'Without a width, of its point; with one, in its box': 'ບໍ່ມີຄວາມກວ້າງ: ຕາມຈຸດຂອງມັນ; ມີຄວາມກວ້າງ: ໃນກອບຂອງມັນ', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'ສິ່ງທີ່ເຄື່ອງໝາຍຂອງມຸມມອງຂຽນ: ຊື່ຂອງພາກຕັດ ຫຼື ດ້ານໜ້າ ກັບຫົວຂອງ Lapin ເອງ, ເລກຂອງມັນໃນແຜ່ນກັບສັນຍາລັກຫົວ, ການອ້າງອີງ ຫຼື ຫົວຂໍ້ມຸມມອງ. ຫວ່າງ: ອັດຕະໂນມັດ.',
 };
 
 /** Phrases with a number or a name in them. */

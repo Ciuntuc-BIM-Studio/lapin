@@ -1218,7 +1218,7 @@ public static class Views
                     mk.Line(foot, tip, "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head + look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head - look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
-                      .Text(new PenText(tip + look * (0.35 * u), v.Name, textHeight, Baseline: "middle", Font: text.Font));
+                      .Text(new PenText(tip + look * (0.35 * u), SymbolSlots.MarkerText(v), textHeight, Baseline: "middle", Font: text.Font));
                     heads.Add((JsonNode)new JsonObject { ["end"] = key, ["at"] = new JsonArray(Math.Round(tip.X, 6), Math.Round(tip.Y, 6)), ["offset"] = new JsonArray(Math.Round(off.X, 6), Math.Round(off.Y, 6)) });
                 }
                 mk.Data = new JsonObject { ["heads"] = heads };
@@ -1553,6 +1553,9 @@ public static class Views
             new("openingSymbols", "Opening symbols", "choice", Choices: ["show", "hide"]),
             // The layer a section's marker is on, so views hide markers by layer (SectionMarkers).
             new("markerLayer", "Marker layer", "text"),
+            // The view's mark of its own (report #167): what its markers write over its name, and its symbols, callouts and title over
+            // its number on its sheet; empty: as before (SymbolSlots.OwnMark).
+            new(SymbolSlots.MarkKey, "Mark", "text"),
             // A section's or elevation's marker: its symbol's size and its text's height (paper mm; empty: the drafting standards', decision 455).
             new("markSize", "Marker size (mm)", "number", Min: Standards.MinMarkSize, Max: Standards.MaxMarkSize),
             new("markTextSize", "Marker text (mm)", "number", Min: Standards.MinMarkText, Max: Standards.MaxMarkText),

@@ -4294,6 +4294,8 @@ export const PL: Record<string, string> = {
   "Type properties": "Właściwości typu",
   "Also write type properties on each occurrence": "Zapisz właściwości typu także na każdym wystąpieniu",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "każda ściana typu je ma (IsExternal, FireRating); domyślna wartość wystąpienia to własna kopia każdej ściany",
+  // A drafted text's alignment (forum topic 148); a view's mark (report #167).
+  'Alignment': 'Wyrównanie', 'automatic': 'automatycznie', 'Without a width, of its point; with one, in its box': 'Bez szerokości: względem punktu; z szerokością: w ramce', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Co pisze znacznik widoku: nazwę przekroju lub elewacji z własną główką Lapina, jego numer na arkuszu z symbolem główki, odnośnik lub tytuł widoku. Puste: automatycznie.',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

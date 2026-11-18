@@ -13,8 +13,12 @@ import { t as tr } from '../../../i18n';
 import { byCategory, type SymSummary } from './symbolModel';
 import { listSymbols, type SymList } from './symbols';
 import { Thumb } from './Thumb';
+import { Cell } from '../../../shell/cells';
+import { automaticMark } from './viewMark';
 
 export interface SlotInfo { id: string; label: string; owner: string; category: string; project: string | null; own: string | null }
+/** A view's mark: its name, its number on its sheet (empty: on none) and that sheet's number, and its mark of its own (null: none). */
+export interface ViewMarkInfo { name: string; number: string; sheet: string; own: string | null }
 
 export const useSymbolList = (): SymList => {
   const version = useSession((s) => s.version);
@@ -23,15 +27,18 @@ export const useSymbolList = (): SymList => {
   return list;
 };
 
-export const useSlots = (ownerId?: string): SlotInfo[] => {
+export const useSlots = (ownerId?: string): SlotInfo[] => useSlotsAndMark(ownerId).slots;
+
+/** The slots, and for a view its mark: what its marks write without one of its own, and its own (report #167). */
+export const useSlotsAndMark = (ownerId?: string): { slots: SlotInfo[]; mark: ViewMarkInfo | null } => {
   const version = useSession((s) => s.version);
-  const [slots, setSlots] = useState<SlotInfo[]>([]);
+  const [got, setGot] = useState<{ slots: SlotInfo[]; mark: ViewMarkInfo | null }>({ slots: [], mark: null });
   useEffect(() => {
     let live = true;
-    void query<{ slots: SlotInfo[] }>('symbols.slots', ownerId ? { ownerId } : {}).then((r) => { if (live) setSlots(r?.slots ?? []); });
+    void query<{ slots: SlotInfo[]; mark?: ViewMarkInfo }>('symbols.slots', ownerId ? { ownerId } : {}).then((r) => { if (live) setGot({ slots: r?.slots ?? [], mark: r?.mark ?? null }); });
     return () => { live = false; };
   }, [version, ownerId]);
-  return slots;
+  return got;
 };
 
 /** The symbols with the slot's own category first, then the rest by category. */
@@ -119,13 +126,21 @@ export function slotsFor(node: NodeDto): string[] {
 /** Properties: the symbol this mark is drawn with, its own or the project's. */
 export function MarkerSymbolSection({ node }: { node: NodeDto }) {
   const list = useSymbolList();
-  const slots = useSlots(node.id);
+  const { slots, mark } = useSlotsAndMark(node.id);
   const wanted = slotsFor(node);
   const ids = selectionWith(node, (n) => n.type === node.type && (n.props.kind ?? null) === (node.props.kind ?? null));
   const mine = slots.filter((s) => wanted.includes(s.id) && (node.type !== 'LapinView' || s.owner === 'view' || s.owner === node.props.kind));
   if (!mine.length) return null;
+  const own = typeof node.props.detailNumber === 'string' ? node.props.detailNumber : '';
   return (
     <dl className="fields" data-testid="marker-symbol-section">
+      {/* The text its marks write (report #167): its own, or (empty) the automatic one shown greyed. One view at a time. */}
+      {node.type === 'LapinView' && mark && (
+        <>
+          <dt title="What the view's marker writes: the section's or elevation's name with Lapin's own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.">Mark</dt>
+          <dd><Cell testId="detailNumber" value={own} placeholder={automaticMark(node.props.kind, slots, mark) ?? 'automatic'} onCommit={(t) => void execute('element.update', { ids: [node.id], attrs: { detailNumber: t.trim() || null } })} /></dd>
+        </>
+      )}
       {mine.map((s) => {
         return [
           <dt key={`t${s.id}`} title={s.label}>{mine.length > 1 ? s.label : 'Marker symbol'}</dt>,

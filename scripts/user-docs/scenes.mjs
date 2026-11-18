@@ -6825,6 +6825,72 @@ export const scenes = [
     },
   },
   {
+    // In-app report #167: a section's marker writes its name until it is given a Mark of its own, in its properties, the
+    // automatic text shown greyed there; emptied, it is automatic again.
+    id: 'section-mark',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [x1, y1, x2, y2] of [[0, 0, 8, 0], [8, 0, 8, 6], [8, 6, 0, 6], [0, 6, 0, 0]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2 });
+      const sec = (await t.cmd('view.create', { kind: 'section', start: [4, -2], end: [4, 8] })).id;
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true });
+      await t.wait(800);
+      await t.fit();
+      await select(t, sec);
+      await t.wait(800);
+      const plan = `plan:${s}`;
+      const texts = async () => ((await t.call('view.drawing', { id: plan }))?.pens ?? []).flatMap((p) => p.texts ?? []).map((x) => x.text);
+      const cell = t.page.locator('aside.props input[data-field=detailNumber]');
+      t.expect(await cell.count() === 1, 'a section\'s Mark is in its properties');
+      t.expect(await cell.getAttribute('placeholder') === 'Section 1', 'its placeholder is what the marker writes now, the section\'s name');
+      t.expect((await texts()).filter((x) => x === 'Section 1').length === 2, 'both heads write the section\'s name');
+      await cell.fill('A');
+      await cell.press('Enter');
+      await t.wait(1000);
+      t.expect((await texts()).filter((x) => x === 'A').length === 2, 'both heads write the Mark given');
+      t.expect((await t.nodes()).find((n) => n.id === sec)?.name === 'Section 1', 'the section keeps its name');
+      await t.shot('section-mark', { of: 'aside.props', pad: 0, maxHeight: 560 });
+    },
+  },
+  {
+    // Forum topic 148: a drafted text's style (by name, kept by id), alignment and width changed in its properties, each one
+    // step to undo; before, the engine refused the width and the alignment, and a style's name typed found no style.
+    id: 'text-properties',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const plan = `plan:${s}`;
+      await t.cmd('standards.set', { kind: 'text', entry: { name: 'Title', height: 5, bold: true } });
+      const id = (await t.cmd('drafting.addText', { viewId: plan, at: [0, 0], text: 'Ground floor: the living room, the kitchen and the hall' })).id;
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true });
+      await t.wait(800);
+      await t.fit();
+      await select(t, id);
+      await t.wait(800);
+      const props = t.page.locator('aside.props');
+      const node = async () => (await t.nodes()).find((n) => n.id === id);
+      const style = props.locator('select[data-field=textStyle]');
+      t.expect(await style.count() === 1, 'a text\'s style is chosen from a list');
+      const title = await style.locator('option', { hasText: 'Title' }).getAttribute('value');
+      t.expect(!!title && title !== 'Title', 'the project\'s styles are listed by name, kept by id');
+      await style.selectOption(title);
+      await t.wait(600);
+      t.expect((await node())?.props.textStyle === title, 'the style chosen is the text\'s');
+      await props.locator('select[data-field=align]').selectOption('center');
+      await t.wait(600);
+      t.expect((await node())?.props.align === 'center', 'the text is centred');
+      const width = props.locator('[data-field=text-width] input');
+      await width.fill('4000');
+      await width.press('Enter');
+      await t.wait(800);
+      t.expect(Math.abs(((await node())?.props.width ?? 0) - 4) < 1e-6, 'the text wraps at a width of 4 m');
+      await t.fit();
+      await t.shot('text-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
+    },
+  },
+  {
     // A tester's report (#106, decision 382): a DXF imported into a plan lies in the 3D view on its storey's level, in its
     // layers' colours, its hatch faint; one import is switched off and on, and View → DXF in 3D hides them all.
     id: 'dxf-3d',

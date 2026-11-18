@@ -107,7 +107,7 @@ public static class SectionMarkers
                     mk.Line(top, tip, "SECTION", Pens.Default.Seen, "#333333")
                       .Line(tip, tip - dir * head + dir.Perp * (head * 0.5), "SECTION", Pens.Default.Seen, "#333333")
                       .Line(tip, tip - dir * head - dir.Perp * (head * 0.5), "SECTION", Pens.Default.Seen, "#333333")
-                      .Text(new PenText(tip + dir * (0.35 * u), v.Name, textHeight, Anchor: dir.X < -0.5 ? "end" : "start", Baseline: "middle", Font: text.Font), "#333333");
+                      .Text(new PenText(tip + dir * (0.35 * u), SymbolSlots.MarkerText(v), textHeight, Anchor: dir.X < -0.5 ? "end" : "start", Baseline: "middle", Font: text.Font), "#333333");
                     mk.Snaps.AddRange([a, b]);
                 }
             }

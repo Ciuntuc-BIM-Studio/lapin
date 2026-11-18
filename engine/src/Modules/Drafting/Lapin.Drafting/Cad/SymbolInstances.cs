@@ -162,12 +162,19 @@ public static class SymbolInstances
                 var style = Standards.ResolveText(book, Dimensions.ParamsOf(e));
                 var text = e.Str("text") ?? "";
                 var at = Args.PointOf(e.Attrs["at"]);
+                // Its alignment kept (forum topic 148): in a box of its own width, the anchor goes to the box's middle or right side.
+                var (share, anchor) = Texts.AlignOf(e);
+                if (e.NumOrNull("width") is { } bw && bw > 0)
+                {
+                    var r = e.Num("angle") * Math.PI / 180;
+                    at += new Vec2(Math.Cos(r), Math.Sin(r)) * (share * bw);
+                }
                 // A text's height is paper mm: a model symbol's mm are the building's.
                 var h = model ? style.Height * mm * 1000 : style.Height;
                 var o = new JsonObject
                 {
                     ["type"] = "text", ["at"] = Pt(at), ["text"] = text, ["h"] = N(h), ["angle"] = N(Deg(e.Num("angle") * Math.PI / 180)),
-                    ["align"] = "start", ["valign"] = "bottom", ["bold"] = style.Bold, ["italic"] = style.Italic, ["font"] = style.Font,
+                    ["align"] = anchor, ["valign"] = "bottom", ["bold"] = style.Bold, ["italic"] = style.Italic, ["font"] = style.Font,
                 };
                 if (style.Color != null) o["color"] = style.Color;
                 items.Add((JsonNode)o);

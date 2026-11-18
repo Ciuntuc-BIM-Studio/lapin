@@ -4288,6 +4288,8 @@ export const DA: Record<string, string> = {
   "Type properties": "Typeegenskaber",
   "Also write type properties on each occurrence": "Skriv også typeegenskaber på hver forekomst",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "hver væg af typen har dem (IsExternal, FireRating); en forekomststandard er hver vægs egen kopi",
+  // A drafted text's alignment (forum topic 148); a view's mark (report #167).
+  'Alignment': 'Justering', 'automatic': 'automatisk', 'Without a width, of its point; with one, in its box': 'Uden bredde: ved sit punkt; med bredde: i sin boks', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Hvad visningens markering skriver: snittets eller facadens navn med Lapins eget hoved, dets nummer på tegningen med et hovedsymbol, en henvisning eller en visningstitel. Tom: automatisk.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
