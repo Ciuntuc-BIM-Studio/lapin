@@ -9,16 +9,16 @@
 import { create } from 'zustand';
 import type { Vec2 } from '../platform/module';
 import { tangentAt, arcLength, type Arc } from './arc';
-import { useSession, query } from '../engine/session';
+import { useSession, query, engine } from '../engine/session';
 import { arcsOf, fromPairs, outlinePoints } from './contour';
 
 /**
  * The outline's source (audit S4, one gesture for every outline tool): drawn (a polygon whose edges may be arcs, a rectangle, a
  * circle) or taken with a click: inside the walls that close round it, from a closed drafted shape, from a room.
  */
-export type OutlineShape = 'polygon' | 'rectangle' | 'circle' | 'ellipse' | 'inside' | 'drawn' | 'room';
+export type OutlineShape = 'polygon' | 'rectangle' | 'circle' | 'ellipse' | 'inside' | 'drawn' | 'room' | 'building';
 /** The sources a click takes the whole outline from. */
-export const PICKED: readonly OutlineShape[] = ['inside', 'drawn', 'room'];
+export const PICKED: readonly OutlineShape[] = ['inside', 'drawn', 'room', 'building'];
 
 export const useOutlineShape = create<{ shape: OutlineShape; arcs: boolean }>(() => ({ shape: 'polygon', arcs: false }));
 
@@ -91,7 +91,7 @@ export function wholeEllipse(c: Vec2, m: Vec2, ratio: number): { pts: Vec2[]; el
 }
 
 /** The tool's bar: the shape it draws, and in a polygon whether the next edges are arcs (Space); or where a click takes it from. */
-export function OutlineShapeBar({ ellipse = false }: { ellipse?: boolean }) {
+export function OutlineShapeBar({ ellipse = false, building = false }: { ellipse?: boolean; building?: boolean }) {
   const { shape, arcs } = useOutlineShape();
   const choices: [OutlineShape, string, string][] = [
     ['polygon', 'Polygon', 'Click the corners, then the first one again (or Enter)'],
@@ -101,6 +101,7 @@ export function OutlineShapeBar({ ellipse = false }: { ellipse?: boolean }) {
     ['inside', 'Inside walls', 'Click inside the walls that close round it'],
     ['drawn', 'From drawn shape', 'Click inside a closed drafted shape: a polyline, a rectangle, a circle'],
     ['room', 'From room', 'Click inside a room: its outline'],
+    ...(building ? [['building', 'Trace building', 'Click anywhere on the storey: the exterior face of the core of the walls that enclose the building (stubs, fences and finishes left out)'] as [OutlineShape, string, string]] : []),
   ];
   return (
     <span className="outline-shape" data-testid="outline-shape">
@@ -114,7 +115,8 @@ export function OutlineShapeBar({ ellipse = false }: { ellipse?: boolean }) {
 export const PlainShapeBar = () => <OutlineShapeBar />;
 /** The bar of the tools whose outline may be an ellipse (a floor, a floor opening, a ceiling, a room by outline). */
 export const EllipseShapeBar = () => <OutlineShapeBar ellipse />;
-export const FloorShapeBar = EllipseShapeBar;
+/** The Floor tool's bar: an ellipse too, and the whole building traced (forum topic 158). */
+export const FloorShapeBar = () => <OutlineShapeBar ellipse building />;
 
 /** Whether a point lies inside a closed loop (even-odd). */
 export function inLoop(loop: Vec2[], p: Vec2): boolean {
@@ -163,6 +165,17 @@ export function outlineOfDraft(shape: unknown): PickedOutline | null {
  * corners and arcs; else the outline it found). A text saying why when there is none.
  */
 export async function pickOutline(source: OutlineShape, p: Vec2, storeyId: string | null, viewId?: string | null): Promise<PickedOutline | string> {
+  // The whole building (forum topic 158, the Floor tool's): the exterior face of the core of the walls that enclose it, the engine's.
+  if (source === 'building') {
+    try {
+      // Asked directly, so the engine's reason (where the walls leave a gap) reaches the user.
+      const r = await engine.call<{ points?: unknown; arcs?: unknown }>('doc.query', { name: 'architecture.buildingOutline', args: { ...(storeyId ? { storeyId } : {}), at: [p.x, p.y] } });
+      const pts = fromPairs(r?.points);
+      return pts.length >= 3 ? { pts, ...(Array.isArray(r?.arcs) ? { arcs: arcsOf(r.arcs, pts.length) } : {}) } : 'The walls do not close round the building.';
+    } catch (e) {
+      return e instanceof Error ? e.message : 'The walls do not close round the building.';
+    }
+  }
   if (source === 'inside') {
     const r = await query<{ points?: unknown }>('architecture.outlineInside', { ...(storeyId ? { storeyId } : {}), x: p.x, y: p.y });
     const pts = fromPairs(r?.points);

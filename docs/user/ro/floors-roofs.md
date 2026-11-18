@@ -30,6 +30,14 @@ Aceeași bară servește toate uneltele cu contur (placă, gol în placă, tavan
 
 ![Bara uneltelor cu contur, cu From drawn shape ales](shots/outline-sources.webp)
 
+### Trasează clădirea
+
+Ca să pui o singură placă sub tot nivelul, alege **Trasează clădirea** în bara uneltei **Placă** și dă clic oriunde în plan (în interiorul clădirii sau pe unul din pereții ei). Lapin găsește pereții nivelului activ care închid clădirea și pune conturul plăcii pe **fața exterioară a miezului** lor: straturile din afara miezului (termoizolația, tencuiala, placajul) rămân pe dinafară, iar un tip de perete fără strat marcat ca miez folosește stratul cel mai gros. Rămân deoparte și pereții care nu închid nimic: un ciot de perete ieșit dintr-un perete, un gard, un zid de grădină liber. Pereții curbi dau laturi curbe, iar pereții de grosimi diferite se întâlnesc în colțurile propriilor miezuri. Placa e una obișnuită, de tipul ales în unealtă, un singur pas de anulare, editată apoi ca oricare alta.
+
+Când pereții lasă un gol (două capete de perete la mai puțin de 1,5 m unul de altul, sau un perete care se oprește înaintea altuia), nu se face nimic: mesajul numește golul și locul lui, ca să-l închizi sau să îmbini pereții. Un gol în interiorul clădirii (o trecere lângă un perete despărțitor) nu contează. Cu două clădiri pe același nivel, se trasează cea în care dai clic; un clic în afara amândurora o ia pe cea mai mare. O curte interioară închisă de pereți nu devine gol: nu se poate deosebi de o încăpere; taie-o apoi cu **Gol în contur**.
+
+![O placă trasată pe o clădire în L: ciotul de perete și zidul liber rămân deoparte](shots/floor-trace-building.webp)
+
 Pentru placă, gol în placă, tavan și încăpere după contur, bara oferă și **Ellipse**: centrul, capătul unei semiaxe, apoi cealaltă. Laturile conturului merg pe elipsa adevărată (patru sferturi), măsurate exact; un colț mutat de pe elipsă îi face cele două laturi drepte, iar un colț lângă o latură eliptică nu se racordează. IFC o duce ca IfcEllipse. **From drawn shape** ia la fel o elipsă desenată. Un gol propriu al plăcii sau al tavanului (**Hole in the outline**) ia și el o elipsă. Decalarea întregului contur (Shift-tragere, **Offset outline…**) face dintr-o latură eliptică curba adevărată de la acea distanță, din laturi drepte scurte (curba aflată la o distanță de o elipsă nu e o elipsă); spre interior se oprește înainte ca curba să se plieze la cea mai strânsă curbură a elipsei.
 
 ![O placă eliptică desenată lângă o elipsă din Desen](shots/ellipse-floor.webp)

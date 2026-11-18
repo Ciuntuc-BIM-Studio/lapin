@@ -32,6 +32,14 @@ The same bar serves every outline tool (floor, floor opening, ceiling, hole, roo
 
 ![The outline tools' bar, From drawn shape chosen](shots/outline-sources.webp)
 
+### Trace building
+
+To put one floor under the whole storey, choose **Trace building** in the **Floor** tool's bar and click anywhere on the plan (inside the building, or on one of its walls). Lapin finds the walls of the active storey that close round the building and puts the floor's outline on the **exterior face of their core**: the layers outside the core (insulation, render, cladding) are left out, and a wall type with no layer marked core uses its thickest layer. Walls that enclose nothing are left out too: a stub standing out from a wall, a fence, a garden wall standing free. Curved walls give curved edges, and walls of different thicknesses meet at the corners of their own cores. The floor is an ordinary floor of the type chosen in the tool, one undo step, edited afterwards like any other.
+
+When the walls leave a gap (two wall ends less than 1.5 m apart, or a wall stopping short of another), nothing is made: the message names the gap and where it is, so you can close it or join the walls. A gap inside the building (a passage beside a partition) does not matter. With two buildings on one storey, the one you click inside is traced; a click outside both takes the larger. A courtyard closed by walls is not made a hole: it cannot be told from a room; cut it afterwards with **Hole in the outline**.
+
+![A floor traced on an L-shaped building: the stub and the free-standing wall left out](shots/floor-trace-building.webp)
+
 For a floor, a floor opening, a ceiling and a room by outline the bar also offers **Ellipse**: its centre, the end of one semi-axis, then the other. The outline's edges run along the true ellipse (four quarter edges), measured exactly; a corner moved off the ellipse turns its two edges straight, and a corner beside an elliptical edge is not filleted. IFC carries it as an IfcEllipse. **From drawn shape** takes a drafted ellipse the same way. A floor's or a ceiling's own hole (**Hole in the outline**) takes an ellipse too. Offsetting the whole outline (Shift-drag, **Offset outline…**) turns an elliptical edge into the true curve at that distance, laid in short straight edges (the curve at a distance from an ellipse is no ellipse); inwards it stops before the curve would fold at the ellipse's tightest bend.
 
 ![An elliptical floor being drawn beside a drafted ellipse](shots/ellipse-floor.webp)
