@@ -647,6 +647,8 @@ export const RO: Record<string, string> = {
   "Survey point (map)": "Punctul topografic (hartă)",
   "Quadrant": "Cadran",
   "Wall axis": "Axa peretelui",
+  "No snap (for this point)": "Fără snap (pentru acest punct)",
+  "Snap settings…": "Setările snap-ului…",
   "Perpendicular": "Perpendicular",
   "Nearest": "Cel mai apropiat",
   "Coordinates at the cursor": "Coordonatele la cursor",

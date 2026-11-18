@@ -653,6 +653,8 @@ export const DA: Record<string, string> = {
   "Survey point (map)": "Opmålingspunkt (kort)",
   "Quadrant": "Kvadrant",
   "Wall axis": "Vægakse",
+  "No snap (for this point)": "Intet snap (for dette punkt)",
+  "Snap settings…": "Snapindstillinger…",
   "Perpendicular": "Vinkelret",
   "Nearest": "Nærmeste",
   "Coordinates at the cursor": "Koordinater ved markøren",

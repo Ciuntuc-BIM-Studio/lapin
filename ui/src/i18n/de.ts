@@ -653,6 +653,8 @@ export const DE: Record<string, string> = {
   "Survey point (map)": "Vermessungspunkt (Karte)",
   "Quadrant": "Quadrant",
   "Wall axis": "Wandachse",
+  "No snap (for this point)": "Kein Fang (für diesen Punkt)",
+  "Snap settings…": "Fangeinstellungen…",
   "Perpendicular": "Senkrecht",
   "Nearest": "Nächster Punkt",
   "Coordinates at the cursor": "Koordinaten am Cursor",

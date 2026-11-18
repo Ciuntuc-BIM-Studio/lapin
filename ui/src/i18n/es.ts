@@ -653,6 +653,8 @@ export const ES: Record<string, string> = {
   "Survey point (map)": "Punto de reconocimiento (mapa)",
   "Quadrant": "Cuadrante",
   "Wall axis": "Eje del muro",
+  "No snap (for this point)": "Sin forzado (para este punto)",
+  "Snap settings…": "Ajustes de forzado…",
   "Perpendicular": "Perpendicular",
   "Nearest": "Más cercano",
   "Coordinates at the cursor": "Coordenadas en el cursor",

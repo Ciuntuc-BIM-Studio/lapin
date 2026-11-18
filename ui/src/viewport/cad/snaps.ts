@@ -144,3 +144,20 @@ export function findSnap(p: Vec2, shapes: readonly Shape[], index: SnapIndex | n
   if (ax && ne) return dist(ax.point, p) <= dist(ne.point, p) + 1e-12 ? ax : ne;
   return ax ?? ne ?? null;
 }
+
+/** Object Snap Override (forum topic 154): the one snap, or 'none', the next point is limited to. */
+export type SnapOverride = SnapMode | 'none';
+
+/** AutoCAD's short codes, typed at the command line while a point is asked. */
+export const SNAP_CODES: Readonly<Record<string, SnapOverride>> = {
+  END: 'endpoint', MID: 'midpoint', INT: 'intersection', CEN: 'center', QUA: 'quadrant', PER: 'perpendicular', TAN: 'tangent', NEA: 'nearest', AXI: 'wallAxis', NON: 'none',
+};
+
+/** The snaps the next point may use: the override alone, else the running ones. */
+export function modesFor(override: SnapOverride | null, running: readonly SnapMode[]): Set<SnapMode> {
+  if (override === 'none') return new Set();
+  return new Set(override ? [override] : running);
+}
+
+/** Whether object snapping applies to the next point: an armed kind snaps even with the SNAP switch off (as in AutoCAD), 'none' never does. */
+export const snapsOn = (override: SnapOverride | null, osnap: boolean): boolean => (override ? override !== 'none' : osnap);

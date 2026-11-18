@@ -20,6 +20,7 @@ import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './inp
 import { lengthText, parseLength } from '../../engine/unitsStore';
 import { arcThrough, arcTangent, bounds, dist, ellipseAt, ellipseOf, ellipsePoints, fromJson, normAngle, toJson, type Shape } from './shapes';
 import { mapShape } from '../insetMap';
+import { SNAP_CODES, type SnapOverride } from './snaps';
 import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
 import { lassoTest, type RegionTest } from '../selectBox';
@@ -107,6 +108,8 @@ interface CadState {
   aim: Aimed | null;
   lastPoint: Vec2 | null;
   osnap: boolean;
+  /** Object Snap Override (forum topic 154): the one snap (or none) the next point uses; Ctrl + right click or a typed code (MID, END…) arms it, the point taken or Esc lets it go. */
+  snapOverride: SnapOverride | null;
   ortho: boolean;
   polar: boolean;
   layer: string;
@@ -131,7 +134,7 @@ interface CadState {
 
 export const useCad = create<CadState>(() => ({
   buffer: '', takeAll: false, history: [], command: null, step: null, last: null, cursor: null, aim: null, lastPoint: null,
-  osnap: true, ortho: false, polar: true, layer: '0', role: '', host: null,
+  osnap: true, snapOverride: null, ortho: false, polar: true, layer: '0', role: '', host: null,
   offset: 0.5, offsetThrough: false, offsetFrom: 'axis', trimFace: 'axis', radius: 0, filletLine: 'axis', chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
 }));
 
@@ -994,7 +997,7 @@ export function cancel(quiet = false): void {
   if (s.step?.escape) void Promise.resolve(s.step.escape()).catch(() => undefined);
   generation++;
   resetRecording();
-  useCad.setState({ command: null, step: null, buffer: '' });
+  useCad.setState({ command: null, step: null, buffer: '', snapOverride: null });
   liveEnd('cad');
   traceEnd('cad');
 }
@@ -1003,7 +1006,7 @@ export function cancel(quiet = false): void {
 const feed = serial(async (p: Vec2, typed: { length?: number; angle?: number } | undefined, free: boolean, aim: Aimed | null): Promise<void> => {
   const s = useCad.getState();
   if (!s.step) return;
-  useCad.setState({ lastPoint: p });
+  useCad.setState({ lastPoint: p, snapOverride: null });
   if (s.step.want === 'pick' && s.host) {
     const hit = s.host.pickDraft(p);
     const element = !hit && s.step.pickElement && s.host.isPlan?.() !== false ? s.host.pickAny(p) : null;
@@ -1051,6 +1054,8 @@ export const submit = serial(async (raw: string): Promise<void> => {
   if (step.want === 'text' && step.text) { await advance(step.text(raw)); return; }
   const kw = text.toUpperCase();
   if (step.keywords?.[kw]) { await advance(step.keywords[kw]()); return; }
+  // AutoCAD's snap codes while a point is asked (MID, END, CEN…): the next point takes only that snap. A step's own keyword of the same name went first.
+  if (step.want === 'point' && SNAP_CODES[kw]) { useCad.setState({ snapOverride: SNAP_CODES[kw] }); return; }
   const n = step.scalar ? parseScalar(text, step.want !== 'point') : null;
   if (n != null && step.scalar) { await advance(step.scalar(n)); return; }
   if (step.want === 'point' || step.want === 'select' || step.want === 'pick' || step.want === 'none') {

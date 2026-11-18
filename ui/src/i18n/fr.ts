@@ -653,6 +653,8 @@ export const FR: Record<string, string> = {
   "Survey point (map)": "Point topographique (carte)",
   "Quadrant": "Quadrant",
   "Wall axis": "Axe du mur",
+  "No snap (for this point)": "Aucun accrochage (pour ce point)",
+  "Snap settings…": "Réglages de l’accrochage…",
   "Perpendicular": "Perpendiculaire",
   "Nearest": "Le plus proche",
   "Coordinates at the cursor": "Coordonnées au curseur",

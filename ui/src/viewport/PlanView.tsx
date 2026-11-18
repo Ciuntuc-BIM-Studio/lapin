@@ -65,6 +65,7 @@ import './cad/plan';
 import { FOLLOW_UCS, normalizeDeg, orientationOf, screenAxes, screenCorners, setOrientation, turnOf } from './orientation';
 import { ask, numberField } from '../shell/AskBox';
 import { feedPoint, finishStep, startCommand, useCad } from './cad/session';
+import { overridePress, spendOverride } from './cad/snapOverride';
 import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
@@ -616,6 +617,7 @@ export function PlanView() {
   useEffect(() => () => setCycleSource(null, cycleKey), [cycleKey]);
 
   const onPointerDown = (e: React.PointerEvent) => {
+    if (overridePress(e)) { drag.current = null; return; }
     (e.target as Element).setPointerCapture?.(e.pointerId);
     if (middleTwice.current(e)) { fitModel(); return; }
     if (editor.onPointerDown(e)) return;
@@ -703,6 +705,7 @@ export function PlanView() {
   };
   const onPointerUp = (e: React.PointerEvent) => {
     if (editor.onPointerUp()) return;
+    spendOverride(e);
     const d = drag.current;
     drag.current = null;
     if (box) {
