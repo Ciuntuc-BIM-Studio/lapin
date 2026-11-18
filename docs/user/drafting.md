@@ -387,7 +387,7 @@ Draw the symbol in a plan, section or drafting view with the ordinary tools (lin
 
 ### Placing a symbol
 
-Choose **Annotate → Symbols → Symbol** (or type **SYMBOL**, **SYM**) in a plan, a section, an elevation or a drafting view. A ghost of the symbol follows the cursor; click to place it, and keep clicking for more copies. **Esc** ends the tool. The command line's bar has the symbol to place, the turn button, the two flip buttons and one box per attribute. **Space** turns the symbol a quarter; type **R** and **Enter** to turn it, **X** or **Y** and **Enter** to flip it left to right or top to bottom. Whatever the turn or the flip, texts stay readable: left to right, or bottom to top when they have turned a quarter, never upside down or mirrored.
+Choose **Annotate → Symbols → Symbol** (or type **SYMBOL**, **SYM**) in a plan, a section, an elevation or a drafting view. A ghost of the symbol follows the cursor; click to place it, and keep clicking for more copies: placing goes on until you end it with **Enter**, **Esc** or a right-click in the view (there is no place-once setting). The banner over the view says so: *Click to place another · Space turns · Enter or Esc to finish*. The command line's bar has the symbol to place, the turn button, the two flip buttons and one box per attribute. **Space** turns the symbol a quarter (and so does the turn button); type **R** and **Enter** to turn it, **X** or **Y** and **Enter** to flip it left to right or top to bottom, or use the flip buttons. Whatever the turn or the flip, texts stay readable: left to right, or bottom to top when they have turned a quarter, never upside down or mirrored.
 
 ![Placing the symbol: its options in the command line](shots/symbol-place.webp)
 

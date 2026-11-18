@@ -4250,6 +4250,7 @@ export const RO: Record<string, string> = {
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "orice perete al tipului le are (IsExternal, FireRating); o valoare implicită de instanță e copia proprie a fiecărui perete",
   // A drafted text's alignment (forum topic 148); a view's mark (report #167).
   'Alignment': 'Aliniere', 'automatic': 'automat', 'Without a width, of its point; with one, in its box': 'Fără lățime, față de punctul lui; cu lățime, în caseta lui', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Ce scrie marcajul vederii: numele secțiunii sau al fațadei cu capul propriu Lapin, numărul ei pe planșă cu un simbol de cap, o trimitere (callout) sau un titlu de vedere. Gol: automat.',
+  'Click to place another · Space turns · Enter or Esc to finish': 'Clic pentru încă unul · Space îl rotește · Enter sau Esc termină',
 };
 
 /** Phrases with a number or a name in them. */

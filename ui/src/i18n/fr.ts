@@ -4258,6 +4258,7 @@ export const FR: Record<string, string> = {
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "chaque mur du type les a (IsExternal, FireRating) ; une valeur par défaut d'occurrence est la copie propre de chaque mur",
   // A drafted text's alignment (forum topic 148); a view's mark (report #167).
   'Alignment': 'Alignement', 'automatic': 'automatique', 'Without a width, of its point; with one, in its box': 'Sans largeur, par rapport à son point ; avec une largeur, dans son cadre', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Ce qu\'écrit le repère de la vue : le nom de la coupe ou de l\'élévation avec la tête propre à Lapin, son numéro sur sa feuille avec un symbole de tête, un rappel ou un titre de vue. Vide : automatique.',
+  'Click to place another · Space turns · Enter or Esc to finish': 'Clic pour en placer un autre · Espace le tourne · Entrée ou Échap pour finir',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

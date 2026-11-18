@@ -4288,6 +4288,7 @@ export const ZH: Record<string, string> = {
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "该类型的每面墙都有这些参数（IsExternal、FireRating）；实例默认值是每面墙自己的副本",
   // A drafted text's alignment (forum topic 148); a view's mark (report #167).
   'Alignment': '对齐', 'automatic': '自动', 'Without a width, of its point; with one, in its box': '无宽度时相对于其插入点；有宽度时在其文本框内', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': '视图标记所写的内容：使用 Lapin 自带标头时为剖面或立面的名称；使用标头符号、详图索引或视图标题时为其在图纸上的编号。留空：自动。',
+  'Click to place another · Space turns · Enter or Esc to finish': '单击再放置一个 · 空格键旋转 · Enter 或 Esc 结束',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

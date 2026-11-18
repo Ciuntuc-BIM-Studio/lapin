@@ -100,6 +100,15 @@ describe('keyIntent', () => {
     expect(keyIntent(press('a'), state({ buffer: '2w' }))).toEqual({ kind: 'type', buffer: '2wa' });
   });
 
+  it('gives a step with its own Space (a symbol turning) the Space, and Enter and Esc finish it', () => {
+    const placing = state({ step: { want: 'point', space: true } });
+    expect(keyIntent(press(' '), placing)).toEqual({ kind: 'stepSpace' });
+    expect(keyIntent(press('Enter'), placing)).toEqual({ kind: 'submit' });
+    expect(keyIntent(press('Escape'), placing)).toEqual({ kind: 'cancel' });
+    // Typed text goes on as before.
+    expect(keyIntent(press(' '), state({ buffer: 'r', step: { want: 'point', space: true } }))).toEqual({ kind: 'submit' });
+  });
+
   it('submits with Enter or Space, except when a plan gesture or nothing is waiting', () => {
     expect(keyIntent(press('Enter'), state({ buffer: 'line' }))).toEqual({ kind: 'submit' });
     expect(keyIntent(press(' '), state({ hasLast: true }))).toEqual({ kind: 'submit' });
