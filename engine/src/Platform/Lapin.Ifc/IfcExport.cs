@@ -88,9 +88,8 @@ public static partial class IfcExport
     public static IfcExportResult Write(Session session, string path, IfcExportOptions? options = null)
     {
         // Built in memory first: a failed export leaves no file behind.
-        using var ms = new MemoryStream();
-        var result = Write(session, ms, System.IO.Path.GetFileName(path), options);
-        File.WriteAllBytes(path, ms.ToArray());
+        var (bytes, result) = Bytes(session, System.IO.Path.GetFileName(path), options);
+        File.WriteAllBytes(path, bytes);
         // Bonsai's drawing styles beside it, under the names the file gives them (BBIM_Documentation).
         if (options?.BonsaiStyles == true)
         {
@@ -111,6 +110,18 @@ public static partial class IfcExport
         w.Run();
         w.File.Write(output, name, w.O.Ifc43 ? "ViewDefinition [ReferenceView]" : "ViewDefinition [ReferenceView_V1.2]", w.O.SchemaName);
         return new IfcExportResult(name, w.O.SchemaName, w.Elements, w.PartCount, w.StoreyCount, w.Notes);
+    }
+
+    /// <summary>
+    /// The project as IFC, the file's bytes in one array of its size (report #156: a browser's engine holds a large file once,
+    /// not in a growing stream and a copy of it too).
+    /// </summary>
+    public static (byte[] Bytes, IfcExportResult Result) Bytes(Session session, string name, IfcExportOptions? options = null)
+    {
+        var w = new Writer(session, options ?? new IfcExportOptions()) { IfcName = name };
+        w.Run();
+        var bytes = w.File.ToArray(name, w.O.Ifc43 ? "ViewDefinition [ReferenceView]" : "ViewDefinition [ReferenceView_V1.2]", w.O.SchemaName);
+        return (bytes, new IfcExportResult(name, w.O.SchemaName, w.Elements, w.PartCount, w.StoreyCount, w.Notes));
     }
 
     /// <summary>An IFC class and what the element is as one: its predefined type (empty: the class has none) and, user-defined, the object type that names it.</summary>

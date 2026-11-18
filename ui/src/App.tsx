@@ -120,12 +120,16 @@ function EngineNotice() {
 
 function Notice() {
   const notice = useUi((s) => s.notice);
+  const stays = useUi((s) => s.noticeStays);
   useEffect(() => {
-    if (!notice) return;
+    if (!notice || stays) return;
     const t = setTimeout(() => notify(null), 4000);
     return () => clearTimeout(t);
-  }, [notice]);
-  return notice ? <div className="notice notice-status" role="status">{notice}</div> : null;
+  }, [notice, stays]);
+  if (!notice) return null;
+  // A failure stays until closed (report #156).
+  if (stays) return <div className="notice notice-status notice-problem" role="alert">{notice}<button type="button" className="icon" title="Close" onClick={() => notify(null)}><X size={13} /></button></div>;
+  return <div className="notice notice-status" role="status">{notice}</div>;
 }
 
 /** A pane's tabs: every view opened so far (one list for the workspace), the pane's own marked; split, close, or open it in a window of its own (desktop). */
