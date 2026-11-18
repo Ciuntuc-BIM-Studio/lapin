@@ -36,6 +36,8 @@ export interface Prefs {
   newProjectProfileStandards: string[] | null;
   /** The project template File → New starts from (decision 470): a template's id on this computer; null, Lapin's default. */
   defaultTemplate: string | null;
+  /** The material standard a new project applies after it is made (stage 3 of the material graphics): a built-in standard's id; null, Lapin's own. Never taken from the language or the country. */
+  newProjectMaterialStandard: string | null;
   /** Developer extras (decision 489): the Script panel (Python) on View → Developer. Off: nothing of it shows. */
   developerExtras: boolean;
   /** The Python the Script panel runs (a path or a command); null: the one found on this computer. */
@@ -55,7 +57,7 @@ export const POLAR_STEPS: readonly number[] = [5, 10, 15, 22.5, 30, 45, 90];
 export const DEFAULT_PREFS: Prefs = {
   theme: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
   snapModes: [...SNAP_MODES], polarStep: 45, coords: 'internal',
-  profileStandardsHidden: [], newProjectProfileStandards: null, defaultTemplate: null,
+  profileStandardsHidden: [], newProjectProfileStandards: null, defaultTemplate: null, newProjectMaterialStandard: null,
   developerExtras: false, pythonPath: null, externalEditor: null, navStyle: DEFAULT_NAV_STYLE, constrainWhileDrawing: true,
   openingAlong: { from: 'start', point: 'centre' },
 };
@@ -83,6 +85,7 @@ export function readPrefs(stored: unknown): Prefs {
     profileStandardsHidden: names(o.profileStandardsHidden) ?? [],
     newProjectProfileStandards: names(o.newProjectProfileStandards),
     defaultTemplate: typeof o.defaultTemplate === 'string' && o.defaultTemplate.trim() ? o.defaultTemplate : null,
+    newProjectMaterialStandard: typeof o.newProjectMaterialStandard === 'string' && /^[a-z0-9][a-z0-9._-]*$/i.test(o.newProjectMaterialStandard) && o.newProjectMaterialStandard !== 'lapin' ? o.newProjectMaterialStandard : null,
     developerExtras: o.developerExtras === true,
     pythonPath: typeof o.pythonPath === 'string' && o.pythonPath.trim() ? o.pythonPath.trim() : null,
     externalEditor: typeof o.externalEditor === 'string' && o.externalEditor.trim() ? o.externalEditor.trim() : null,

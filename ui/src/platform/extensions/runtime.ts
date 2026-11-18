@@ -25,7 +25,7 @@ import { engine, engineInBrowser, useSession } from '../../engine/session';
 import { deleteTemplate, importTemplate, indexedRows } from '../../engine/templates';
 import { toBase64 } from '../../engine/files';
 import { hasModule } from '../brand';
-import { installExtension, uninstallExtension, type ContentInstaller, type InstalledExtension, type InstalledStore } from './install';
+import { download, installExtension, uninstallExtension, type ContentInstaller, type InstalledExtension, type InstalledStore } from './install';
 import { readIndex, type AppFacts, type ExtensionKind, type Manifest } from './manifest';
 import { STORE_KEYS } from './keys';
 import { afterCheck, checkLicenceKey, dueForCheck, LicenceError, type LicenceRecord, type StoreAnswer } from './licence';
@@ -223,6 +223,14 @@ export async function install(m: Manifest, key?: string): Promise<InstalledExten
     if (e instanceof LicenceError && (e.reason === 'revoked' || e.reason === 'invalid') && kept && useKey === kept.key) putLicence(m.id, { ...kept, status: 'revoked', checkedAt: new Date().toISOString() });
     throw e;
   } finally { useExtensions.setState({ busy: null }); }
+}
+
+/** A package's bytes, downloaded and checked (size, SHA-256, signature) like an install's, and nothing installed: for a preview before Install. */
+export async function fetchPackage(m: Manifest, key?: string): Promise<Uint8Array> {
+  const base = useExtensions.getState().from ?? undefined;
+  const signature = { keys: STORE_KEYS, required: base === DEFAULT_INDEX && STORE_KEYS.length > 0 };
+  const useKey = key ?? useExtensions.getState().licences[m.id]?.key ?? null;
+  return download(m, { app: appFacts(), fetchBytes, base, signature, licence: { key: useKey, post: postJson } });
 }
 
 export async function uninstall(id: string): Promise<void> {

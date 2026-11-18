@@ -274,6 +274,8 @@ export function StandardsDialog() {
             {/* The drafting tables' styles of the user's own (issue #71, stage 3). */}
             <button type="button" className={`tab-chip${tables ? ' on' : ''}`} data-field="standards-tab-tables" onClick={() => { setTables(true); setLines(false); setProject(false); setPack(null); }}>Tables</button>
             <button type="button" className={`tab-chip${project ? ' on' : ''}`} onClick={() => { setProject(true); setLines(false); setTables(false); setPack(null); }}>Project</button>
+            {/* How materials draw in cuts, plans and facades: the material standards (stage 3 of the material graphics). */}
+            <button type="button" className="tab-chip" data-field="standards-tab-materials" title="How materials draw in cuts, plans and facades: Lapin's, ISO, DIN, BS, your own or the store's" onClick={() => useUi.setState({ dialog: 'materialStandards' })}>Materials</button>
             <span className="grow" />
             <StandardsLibraryButtons onRead={setPack} />
           </div>

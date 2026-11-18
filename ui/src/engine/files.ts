@@ -16,6 +16,7 @@ import { sdnfSummary, type SdnfImportReport } from '../modules/steel/sdnfReport'
 import { projectTypesFile } from '../modules/core/projectTypes';
 import { emptyPane, notify, select, useUi } from '../app/store';
 import { usePrefs } from '../app/prefs';
+import { applyNewProjectStandard } from './newProjectStandard';
 import { fitAfterImport, poseKey } from '../viewport/camera';
 import { flushUserSettings } from '../app/userSettings';
 
@@ -241,6 +242,7 @@ export async function newProject(storeys?: NewStorey[], lapinDefault = false): P
     if (template) {
       try {
         await startFromTemplate(template.id);
+        await applyNewProjectStandard();
         enter();
         return true;
       } catch (e) {
@@ -253,6 +255,7 @@ export async function newProject(storeys?: NewStorey[], lapinDefault = false): P
     const profileStandards = usePrefs.getState().newProjectProfileStandards;
     const params = { ...(storeys?.length ? { storeys } : {}), ...(profileStandards ? { profileStandards } : {}) };
     await engine.call('project.new', Object.keys(params).length ? params : undefined);
+    await applyNewProjectStandard();
     enter();
     return true;
   } catch (e) {

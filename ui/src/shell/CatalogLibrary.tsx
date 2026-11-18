@@ -95,6 +95,9 @@ export async function gatherCatalog(): Promise<{ entries: CatalogEntry[]; proble
   return { entries, problems };
 }
 
+/** Opens Manage → Material standards on its store tab (the dialog loads when it opens). */
+const openMaterialStandards = (tab: 'store') => { void import('../modules/core/materialStandardsOpen').then((m) => m.openMaterialStandards(tab)); };
+
 export function CatalogLibrary() {
   const files = useLibraryFiles((s) => s.version);
   const folders = useLibraries((s) => s.version);
@@ -125,6 +128,7 @@ export function CatalogLibrary() {
         <button type="button" className={`kind-chip${source == null ? ' on' : ''}`} onClick={() => setSource(null)}>Every source</button>
         {SOURCES.map((s) => <button type="button" key={s.id} className={`kind-chip${source === s.id ? ' on' : ''}`} data-source={s.id} onClick={() => setSource(s.id)}>{s.label}</button>)}
       </div>
+      {kind === 'lapinstandards' && <p className="small pad"><button type="button" className="link" data-action="catalog-material-standards" onClick={() => openMaterialStandards('store')}>Material standards from the store…</button></p>}
       {state.loading && <p className="muted small pad">Reading the libraries…</p>}
       {!state.loading && shown.length === 0 && <p className="muted small pad">{state.entries.length === 0 ? 'Nothing here yet: save types and symbols to this computer or a firm folder, or install extensions.' : 'Nothing matches.'}</p>}
       <ul className="catalog-lib-list">

@@ -14,8 +14,10 @@ import { openPulldown } from '../../shell/pulldown';
 import { PlaceCatalogDialog, openPlaceCatalog } from '../../shell/PlaceCatalog';
 import { corePlaceSources } from './placeSources';
 import { registerCommand, startCommand } from '../../viewport/cad/session';
-import type { LapinModule, ToolDef } from '../../platform/module';
+import type { GripView, LapinModule, ToolDef } from '../../platform/module';
 import { voidLabelGrips } from '../../platform/labelParts';
+import { HATCH_ORIGIN_TYPES } from './hatchOrigin';
+import { hatchOriginGrips } from './hatchOriginGrip';
 import type { NodeDto } from '../../engine/protocol';
 import { viewShowsField } from './planeFields';
 import { closePane, setTool, splitPane, useUi } from '../../app/store';
@@ -70,6 +72,7 @@ const SheetRemarksDialog = lazyPart(() => import('./cde/pdfRemarks/RemarksDialog
 const RemarksDialog = lazyPart(() => import('./remarks/RemarksDialog').then((m) => m.RemarksDialog), { title: 'Remarks' });
 const ImportIfcDialog = lazyPart(() => import('./ImportIfcDialog').then((m) => m.ImportIfcDialog));
 const MaterialsDialog = lazyPart(() => import('./MaterialsDialog').then((m) => m.MaterialsDialog), { title: 'Materials' });
+const MaterialStandardsDialog = lazyPart(() => import('./MaterialStandardsDialog').then((m) => m.MaterialStandardsDialog), { title: 'Material standards' });
 const StandardsDialog = lazyPart(() => import('./StandardsDialog').then((m) => m.StandardsDialog), { title: 'Drafting standards' });
 const BrowserSetsDialog = lazyPart(() => import('./BrowserSetsDialog').then((m) => m.BrowserSetsDialog), { title: 'Organize the browser' });
 const ViewRangeDialog = lazyPart(() => import('./ViewRangeDialog').then((m) => m.ViewRangeDialog), { title: 'View range' });
@@ -225,6 +228,7 @@ const core: LapinModule = {
         { id: 'manage.materials', label: 'Materials', icon: Palette, run: () => useUi.setState({ dialog: 'materials' }) },
         allTypesTool,
         { id: 'manage.standards', label: 'Drafting standards', icon: Hash, run: () => useUi.setState({ dialog: 'standards' }) },
+        { id: 'manage.materialStandards', label: 'Material standards', icon: Palette, run: () => useUi.setState({ dialog: 'materialStandards' }) },
         { id: 'manage.objectStyles', label: 'Object styles', icon: PenTool, run: () => useUi.setState({ dialog: 'objectStyles' }) },
         { id: 'manage.location', label: 'Location', icon: MapPin, run: () => useUi.setState({ dialog: 'location' }) },
         { id: 'manage.cutOrder', label: 'Cut order', icon: Scissors, run: () => useUi.setState({ dialog: 'cutOrder' }) },
@@ -390,10 +394,15 @@ const core: LapinModule = {
     ],
   }],
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
-  grips: { LapinView: (n, v) => [...sectionGrips(n, v), ...cropGrips(n)], LapinInset: insetGrips, LapinCallout: (n, v) => calloutGrips(n, v), IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
+  grips: {
+    LapinView: (n, v) => [...sectionGrips(n, v), ...cropGrips(n)], LapinInset: insetGrips, LapinCallout: (n, v) => calloutGrips(n, v), IfcOpeningElement: voidLabelGrips,
+    // Where an element's hatch starts, dragged in a plan, an elevation or a section (stage 3 of the material graphics).
+    ...Object.fromEntries([...HATCH_ORIGIN_TYPES].filter((c) => c !== 'IfcRoof').map((c) => [c, (n: NodeDto, v?: GripView) => hatchOriginGrips(n, v)])),
+    IfcRoof: (n, v) => [...voidLabelGrips(n, v), ...hatchOriginGrips(n, v)],
+  },
   references: { LapinView: sectionRefs },
   placeSources: corePlaceSources,
-  dialogs: { insetPick: InsetPickDialog, placeCatalog: PlaceCatalogDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, newLevels: NewLevelsDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, typePacks: TypePacksDialog, projectTypes: ProjectTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog },
+  dialogs: { insetPick: InsetPickDialog, placeCatalog: PlaceCatalogDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, materialStandards: MaterialStandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, newLevels: NewLevelsDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, typePacks: TypePacksDialog, projectTypes: ProjectTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },

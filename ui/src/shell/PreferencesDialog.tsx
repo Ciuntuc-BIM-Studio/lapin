@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { FolderPlus, Trash2, X } from 'lucide-react';
 import { useUi } from '../app/store';
 import { NAV_STYLES, NAV_STYLE_IDS, type NavStyleId } from '../app/navStyle';
+import { MaterialStandardChoice } from './MaterialStandardChoice';
 import { POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, usePrefs, type CoordSystem, type ThemeChoice } from '../app/prefs';
 import { setDisplay, useDisplay, type Display } from '../app/display';
 import { ACCENT_3D, setHighlight, useHighlight } from '../app/highlight';
@@ -145,6 +146,7 @@ export function PreferencesDialog() {
                 {saved.map((t) => <option key={t.id} value={t.id} data-no-i18n>{t.name}</option>)}
               </select></label>
               <p className="muted small">File → New project starts from this template: its types, materials, units, styles, storeys and sheets. File → Save as template… makes one from the project open.</p>
+              <MaterialStandardChoice />
               <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'projectTemplates' })}>Project templates…</button></p>
               <h4>Interface</h4>
               <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'interface' })}>Interface…</button>

@@ -14,6 +14,8 @@ import { savedTemplatePicture, startFrom, templates } from './templates';
 import { ProjectTemplatesDialog } from './ProjectTemplatesDialog';
 import { defaultTemplateOf, refreshTemplates, startFromTemplate, useTemplates } from '../engine/templates';
 import { usePrefs } from '../app/prefs';
+import { applyNewProjectStandard } from '../engine/newProjectStandard';
+import { MaterialStandardChoice } from './MaterialStandardChoice';
 import { engineInBrowser, useSession } from '../engine/session';
 import { discardWork, enter, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
 import { notify, useUi } from '../app/store';
@@ -35,7 +37,7 @@ export function StartScreen() {
   const choosing = useUi((s) => s.dialog === 'projectTemplates');
   const fromSaved = async (id: string) => {
     if (doc?.dirty && !confirmAction('The project has unsaved changes. Start a new one anyway?')) return;
-    try { await startFromTemplate(id); enter(); } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
+    try { await startFromTemplate(id); await applyNewProjectStandard(); enter(); } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
   };
   const back = () => useUi.setState({ screen: 'workspace' });
   const joining = useUi((s) => s.dialog === 'join');
@@ -46,6 +48,7 @@ export function StartScreen() {
         <h1 className="start-brand"><BrandName big /></h1>
         <p className="muted">{tagline()}</p>
         <button type="button" className="btn primary big" disabled={!connected} onClick={() => void newProject()}><FilePlus2 size={18} />New project</button>
+        <MaterialStandardChoice />
         {fromTemplate && <p className="muted small" data-start="default-template"><span>From the template</span> <span data-no-i18n>{fromTemplate.name}</span></p>}
         <button type="button" className="btn big" data-start="templates" disabled={!connected} onClick={() => useUi.setState({ dialog: 'projectTemplates' })}><LayoutTemplate size={18} />New from template…</button>
         <button type="button" className="btn big" disabled={!connected} onClick={() => void openProject()}><FolderOpen size={18} />Open project…</button>

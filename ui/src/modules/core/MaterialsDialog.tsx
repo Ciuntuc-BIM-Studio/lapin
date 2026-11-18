@@ -165,6 +165,7 @@ export function MaterialsDialog() {
           <span className="panel-title">Materials</span>
           {returnTo && <button type="button" className="btn" data-testid="materials-back" onClick={returnToDialog}><ArrowLeft size={13} />{returnTo === 'slabTypes' ? 'Back to Floor types' : 'Back to Wall types'}</button>}
           <span className="grow" />
+          <button type="button" className="btn compact" data-action="material-standards" title="How materials draw by standard: Lapin's, ISO, DIN, BS, your own or the store's" onClick={() => useUi.setState({ dialog: 'materialStandards' })}>Material standards…</button>
           <button type="button" className="icon" onClick={() => useUi.setState({ dialog: null })} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body split">
