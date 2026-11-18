@@ -4285,6 +4285,7 @@ export const ZH: Record<string, string> = {
   "Type properties": "类型属性",
   "Also write type properties on each occurrence": "同时将类型属性写到每个实例上",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "该类型的每面墙都有这些参数（IsExternal、FireRating）；实例默认值是每面墙自己的副本",
+  'Click to place another · Space turns · Enter or Esc to finish': '单击再放置一个 · 空格键旋转 · Enter 或 Esc 结束',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

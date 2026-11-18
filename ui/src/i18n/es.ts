@@ -4293,6 +4293,7 @@ export const ES: Record<string, string> = {
   "Type properties": "Propiedades del tipo",
   "Also write type properties on each occurrence": "Escribir también las propiedades del tipo en cada ejemplar",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "cada muro del tipo las tiene (IsExternal, FireRating); un valor por defecto de ejemplar es la copia propia de cada muro",
+  'Click to place another · Space turns · Enter or Esc to finish': 'Clic para colocar otro · Espacio lo gira · Intro o Esc para terminar',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

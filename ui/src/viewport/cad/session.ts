@@ -82,8 +82,12 @@ export interface Step {
   text?: (s: string) => Next;
   /** Keywords (upper case) and what they do. */
   keywords?: Record<string, () => Next>;
-  /** Enter with nothing typed. */
+  /** Enter with nothing typed (and a right-click in the view). */
   enter?: () => Next;
+  /** Space with nothing typed, when it means something other than Enter (a symbol's quarter turn); without it Space is Enter. */
+  space?: () => Next;
+  /** What the viewport's banner says while this step waits (a repeating tool: how to go on and how to finish). */
+  hint?: string;
   /** Escape (or another command starting): what the step keeps of the work so far, as a dimension string keeps its points. */
   escape?: () => void | Promise<void>;
   /** An element clicked in the 3D view (where a click has no point on a drawing): the step takes it, rather than the selection. */
@@ -1030,6 +1034,16 @@ export const finishStep = serial(async (): Promise<boolean> => {
   if (!s.step?.enter) return false;
   log('');
   await advance(s.step.enter());
+  return true;
+});
+
+/** Space with nothing typed: the step's own `space`, else what Enter does; false when no step is running. */
+export const spaceStep = serial(async (): Promise<boolean> => {
+  const s = useCad.getState();
+  if (!s.step) return false;
+  if (!s.step.space) { await submit(''); return true; }
+  log('');
+  await advance(s.step.space());
   return true;
 });
 

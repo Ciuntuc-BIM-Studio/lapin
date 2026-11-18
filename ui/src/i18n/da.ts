@@ -4288,6 +4288,7 @@ export const DA: Record<string, string> = {
   "Type properties": "Typeegenskaber",
   "Also write type properties on each occurrence": "Skriv også typeegenskaber på hver forekomst",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "hver væg af typen har dem (IsExternal, FireRating); en forekomststandard er hver vægs egen kopi",
+  'Click to place another · Space turns · Enter or Esc to finish': 'Klik for at placere endnu en · Mellemrum drejer · Enter eller Esc afslutter',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

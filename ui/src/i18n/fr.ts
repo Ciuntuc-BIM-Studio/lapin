@@ -4255,6 +4255,7 @@ export const FR: Record<string, string> = {
   "Type properties": "Propriétés du type",
   "Also write type properties on each occurrence": "Écrire aussi les propriétés du type sur chaque occurrence",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "chaque mur du type les a (IsExternal, FireRating) ; une valeur par défaut d'occurrence est la copie propre de chaque mur",
+  'Click to place another · Space turns · Enter or Esc to finish': 'Clic pour en placer un autre · Espace le tourne · Entrée ou Échap pour finir',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

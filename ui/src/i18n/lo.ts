@@ -4347,6 +4347,7 @@ export const LO: Record<string, string> = {
   "Type properties": "ຄຸນສົມບັດຂອງປະເພດ",
   "Also write type properties on each occurrence": "ຂຽນຄຸນສົມບັດຂອງປະເພດໃສ່ທຸກອິນສະແຕນນຳ",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "ທຸກຝາຂອງປະເພດມີພວກມັນ (IsExternal, FireRating); ຄ່າເລີ່ມຕົ້ນຂອງອິນສະແຕນແມ່ນສຳເນົາຂອງແຕ່ລະຝາເອງ",
+  'Click to place another · Space turns · Enter or Esc to finish': 'ຄລິກເພື່ອວາງອີກອັນ · Space ຫມຸນ · Enter ຫຼື Esc ເພື່ອຈົບ',
 };
 
 /** Phrases with a number or a name in them. */

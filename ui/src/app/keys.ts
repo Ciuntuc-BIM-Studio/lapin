@@ -18,7 +18,7 @@ import { useEffect } from 'react';
 import { select, useUi } from './store';
 import { findTool, hotbarIds, useToolTick } from '../platform/modules';
 import { reach } from './hotbar';
-import { cancel, submit, useCad } from '../viewport/cad/session';
+import { cancel, spaceStep, submit, useCad } from '../viewport/cad/session';
 import { liveCommit, liveToggleMode, useLive } from '../viewport/liveInput';
 import { chordOf, isBareKey, matchSequence, PendingSequence, type Keymap } from './shortcuts';
 import { keymap, runCommand } from './commands';
@@ -52,7 +52,7 @@ export interface KeySnapshot {
   /** The command line's text. */
   buffer: string;
   /** The running command's step: what it wants ("text" takes any character). */
-  step: { want?: string } | null;
+  step: { want?: string; space?: boolean } | null;
   /** Whether the active tool takes Space (a door's other hand). */
   toolSpace?: boolean;
   /** Whether a command ran before (Enter or Space repeats it). */
@@ -78,7 +78,7 @@ export type KeyIntent =
   | { kind: 'toolSpace' }
   /** The ` key: the command line takes all typing, or gives it back. */
   | { kind: 'cmdMode' }
-  | { kind: 'closeDialog' } | { kind: 'deselect' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
+  | { kind: 'closeDialog' } | { kind: 'deselect' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'stepSpace' } | { kind: 'backspace' }
   | { kind: 'type'; buffer: string }
   | { kind: 'valueType'; key: string } | { kind: 'valueBack' } | { kind: 'valueEnter' }
   | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' } | { kind: 'liveClear' } | { kind: 'liveCommit' } | { kind: 'liveMode' };
@@ -157,6 +157,8 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   // Esc: first the running command (or what is typed), then, with nothing on, the selection lets go (a drilled one steps up first: DrillCrumbs).
   if (e.key === 'Escape') return s.step || s.buffer || all ? { kind: 'cancel' } : !s.tool && s.selected.length ? { kind: 'deselect' } : null;
   if (e.key === ' ' && !typing && s.toolSpace) return { kind: 'toolSpace' };
+  // A step with a Space of its own (a symbol's turn) takes it when nothing is typed; Enter then finishes.
+  if (e.key === ' ' && !s.buffer && s.step?.space) return { kind: 'stepSpace' };
   if (e.key === 'Enter' || (e.key === ' ' && (typing || s.hasLast) && s.step?.want !== 'text')) {
     // Plan gestures (a floor's outline) take their own Enter.
     // The command line given all typing: Enter with nothing typed gives it back.
@@ -195,7 +197,7 @@ function snapshot(): KeySnapshot {
   const cad = useCad.getState();
   return {
     screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool ?? toolAtKeydown, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
-    buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
+    buffer: cad.buffer, step: cad.step ? { want: cad.step.want, space: !!cad.step.space } : null, hasLast: !!cad.last,
     hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll,
     live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang), rect: !!l.rect, mode: l.mode }; })(),
     value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
@@ -232,6 +234,7 @@ export function carryOut(intent: KeyIntent): void {
       void submit(useCad.getState().buffer).then(() => { if (!had && !useCad.getState().step) useCad.setState({ takeAll: false }); });
       break;
     }
+    case 'stepSpace': void spaceStep(); break;
     case 'backspace': useCad.setState((s) => ({ buffer: s.buffer.slice(0, -1) })); break;
     case 'type': useCad.setState({ buffer: intent.buffer }); break;
     case 'valueType': { const o = valueOwner(); if (o) o.set(o.text() + intent.key); break; }

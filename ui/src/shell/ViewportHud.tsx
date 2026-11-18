@@ -10,6 +10,7 @@
 import { useShallow } from 'zustand/react/shallow';
 import { usePrefs } from '../app/prefs';
 import { useUi } from '../app/store';
+import { useCad } from '../viewport/cad/session';
 import { useInterface } from '../app/interface';
 import { hint } from '../app/commands';
 import { activateSlot, findTool, hotbarIds, putInSlot, quickSlot, resetSlots, swapSlots, typeSlot, typesOf } from '../platform/modules';
@@ -96,7 +97,9 @@ export function ViewportHud() {
       { label: 'Reset quick tools', onSelect: resetSlots },
     ]);
   };
-  const hintText = toolHint(tool);
+  // A repeating CAD command (Symbol) says how to go on and how to finish.
+  const stepHint = useCad((s) => s.step?.hint ?? null);
+  const hintText = stepHint ?? toolHint(tool);
   return (
     <>
       {/* Not over a schedule: its toolbar runs across the pane's top, and it has no mode, level or snap to tell (report #65). */}

@@ -4247,6 +4247,7 @@ export const RO: Record<string, string> = {
   "Type properties": "Proprietățile tipului",
   "Also write type properties on each occurrence": "Scrie proprietățile tipului și pe fiecare instanță",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "orice perete al tipului le are (IsExternal, FireRating); o valoare implicită de instanță e copia proprie a fiecărui perete",
+  'Click to place another · Space turns · Enter or Esc to finish': 'Clic pentru încă unul · Space îl rotește · Enter sau Esc termină',
 };
 
 /** Phrases with a number or a name in them. */

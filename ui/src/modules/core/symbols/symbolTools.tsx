@@ -65,6 +65,9 @@ export const viewScaleOf = (viewId: string): number => {
   return v > 0 ? v : 100;
 };
 
+/** The viewport banner while the tool runs. */
+export const PLACE_HINT = 'Click to place another · Space turns · Enter or Esc to finish';
+
 let unsubscribe: (() => void) | null = null;
 
 function placeStep(): Step {
@@ -74,10 +77,13 @@ function placeStep(): Step {
   const turn = () => { usePlace.setState((p) => ({ angle: turned(p.angle) })); return placeStep(); };
   const flip = (axis: 'x' | 'y') => () => { usePlace.setState((p) => toggled(p, axis)); return placeStep(); };
   return {
-    prompt: `Insertion point of „${s.name}” [Rotate / X flip / Y flip] (Space turns it, Esc ends)`, want: 'point',
+    prompt: `Insertion point of „${s.name}” [Rotate / X flip / Y flip] (Space turns it, Enter or Esc ends)`, want: 'point',
+    hint: PLACE_HINT,
     preview: (c: Vec2): Shape[] => ghostShapes(ghost.pens, c, k),
     keywords: { R: turn, ROTATE: turn, X: flip('x'), Y: flip('y'), FLIPX: flip('x'), FLIPY: flip('y') },
-    enter: turn,
+    // Enter (and a right-click in the view) ends, as in every repeating command; Space turns.
+    enter: () => null,
+    space: turn,
     point: async (p) => {
       const h = cadHost();
       const st = usePlace.getState();

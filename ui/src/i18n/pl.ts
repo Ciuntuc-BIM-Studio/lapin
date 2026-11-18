@@ -4294,6 +4294,7 @@ export const PL: Record<string, string> = {
   "Type properties": "Właściwości typu",
   "Also write type properties on each occurrence": "Zapisz właściwości typu także na każdym wystąpieniu",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "każda ściana typu je ma (IsExternal, FireRating); domyślna wartość wystąpienia to własna kopia każdej ściany",
+  'Click to place another · Space turns · Enter or Esc to finish': 'Kliknij, aby umieścić kolejny · Spacja obraca · Enter lub Esc kończy',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
