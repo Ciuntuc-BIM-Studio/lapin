@@ -182,8 +182,20 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
     /// <summary>The material standard that gave what the material does not set itself, when not Lapin's (decision 673); null: Lapin's.</summary>
     public string? Standard { get; init; }
 
+    /// <summary>The view style's material graphics set whose entry lay over it (decision 674), its id; null: none.</summary>
+    public string? GraphicsSet { get; init; }
+
+    /// <summary>
+    /// Whether a view's subcategory graphics gave its cut hatch (decision 674): the category's cut hatch in Visibility / Graphics
+    /// does not lay itself over it, the subcategory being the more particular of the two.
+    /// </summary>
+    public bool KeepsHatch { get; init; }
+    /// <summary>The same for its fill: the subcategory's fill colour (or halftone) over the category's.</summary>
+    public bool KeepsFill { get; init; }
+
     /// <summary>Whether it sets anything decision 670 added (a drawing of materials that set none is drawn exactly as before).</summary>
-    public bool Flex => HatchColor != null || HatchWeight != null || HatchLineType != null || HatchOpacity != null || Halftone || FillOpacity != null || Background != null || CutLine != null || SeparatorLine != null;
+    public bool Flex => HatchColor != null || HatchWeight != null || HatchLineType != null || HatchOpacity != null || Halftone || FillOpacity != null || Background != null || CutLine != null || SeparatorLine != null
+        || KeepsHatch || KeepsFill;
 
     /// <summary>The colour a hatch of this material is drawn in: its own over <paramref name="fallback"/>, halftone and opacity applied.</summary>
     public string HatchInk(string fallback) => Ink(HatchColor ?? fallback, Halftone, HatchOpacity);
@@ -212,6 +224,7 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
         if (HatchUnits is { } hu) o["hatchUnits"] = Lapin.Drawing.Hatch.HatchScale.Name(hu);
         if (Step is { } st) o["step"] = new JsonObject { ["kind"] = st.Kind, ["index"] = st.Index };
         if (Standard != null) o["standard"] = Standard;
+        if (GraphicsSet != null) o["set"] = GraphicsSet;
         return o;
     }
 }
@@ -368,13 +381,18 @@ public static class MaterialGraphics
     /// for 1:<paramref name="scale"/> laid over its fields (decision 672: a plan takes the section's step, then its own
     /// fields, then its own step); the step that did, the last one laid. No scale, no step.
     /// </summary>
-    static (ViewGraphics? Own, (string, int)? Step) Own(Entity? material, string kind, double? scale)
+    static (ViewGraphics? Own, (string, int)? Step) Own(Entity? material, string kind, double? scale) => material == null ? (null, null) : OwnOf(material.Attrs, kind, scale);
+
+    /// <summary>
+    /// The graphics a holder of kinds of view gives one kind at 1:<paramref name="scale"/> (a material's attributes, an entry of a
+    /// material graphics set, decision 674): a plan the section's fields with their step, then its own with its step; the step laid last.
+    /// </summary>
+    public static (ViewGraphics? Own, (string, int)? Step) OwnOf(JsonObject attrs, string kind, double? scale)
     {
-        if (material == null) return (null, null);
         (string, int)? step = null;
         ViewGraphics? Stepped(string k)
         {
-            var g = ViewGraphics.From(material.Attrs[k]);
+            var g = ViewGraphics.From(attrs[k]);
             if (g?.StepAt(scale) is not { } at) return g;
             step = (k, at.Index);
             return Merge(g, at.Step.Fields);
@@ -449,6 +467,43 @@ public static class MaterialGraphics
             Halftone = g?.Halftone == true, FillOpacity = fill != null && g?.FillOpacity is { } fo && fo < 100 ? fo : null,
             Background = membrane ? null : background, CutLine = g?.CutLine, SeparatorLine = g?.SeparatorLine, HatchUnits = g?.HatchUnits, Step = step,
             Standard = standard.IsLapin ? null : standard.Id,
+        };
+    }
+
+    /// <summary>
+    /// A material's graphics in a view with a higher tier's laid over them field by field (decision 674: a view style's material
+    /// graphics set): its hatch (<c>""</c>: none) with its own scale, angle and units and its own background hatch alone, never the
+    /// material's for another pattern; its fill (<c>""</c>: none, <c>material</c>: the material's colour); the pen, alignment,
+    /// colours, weights, line type, opacities, halftone; the background hatch and the lines field by field. A membrane stays one.
+    /// </summary>
+    public static ResolvedMaterial Over(ResolvedMaterial r, ViewGraphics g)
+    {
+        var o = r;
+        if (g.Hatch != null)
+        {
+            var hatch = g.Hatch.Length > 0 && !r.Membrane ? g.Hatch.ToUpperInvariant() : null;
+            var bg = g.BackgroundHatch is { Hatch: { Length: > 0 } bh } b && !r.Membrane ? b with { Hatch = bh.ToUpperInvariant() } : null;
+            o = o with { Hatch = hatch, HatchScale = g.HatchScale ?? 1, HatchAngle = g.HatchAngle ?? 0, HatchUnits = g.HatchUnits, Background = bg };
+        }
+        else
+        {
+            if (g.HatchScale is { } hs) o = o with { HatchScale = hs };
+            if (g.HatchAngle is { } ha) o = o with { HatchAngle = ha };
+            if (g.HatchUnits is { } hu) o = o with { HatchUnits = hu };
+            if (g.BackgroundHatch is { } gb && !r.Membrane)
+                o = o with { Background = (r.Background is { } rb ? rb.Over(gb) : gb) is { Hatch: { Length: > 0 } nh } nb ? nb with { Hatch = nh.ToUpperInvariant() } : null };
+        }
+        if (g.Fill != null) o = o with { Fill = g.Fill.Length == 0 ? null : g.Fill == "material" ? r.Color : g.Fill };
+        if (g.FillOpacity is { } fo) o = o with { FillOpacity = fo < 100 ? fo : null };
+        if (o.Fill == null) o = o with { FillOpacity = null };
+        if (g.HatchPen is { } pen) o = o with { HatchPen = pen };
+        if (g.HatchAlign is { } al) o = o with { HatchAlign = al };
+        return o with
+        {
+            HatchColor = g.HatchColor ?? o.HatchColor, HatchWeight = g.HatchWeight ?? o.HatchWeight, HatchLineType = g.HatchLineType ?? o.HatchLineType,
+            HatchOpacity = g.HatchOpacity is { } ho ? (ho < 100 ? ho : null) : o.HatchOpacity, Halftone = g.Halftone ?? o.Halftone,
+            CutLine = o.CutLine is { } cl ? cl.Over(g.CutLine) : g.CutLine,
+            SeparatorLine = o.SeparatorLine is { } sl ? sl.Over(g.SeparatorLine) : g.SeparatorLine,
         };
     }
 

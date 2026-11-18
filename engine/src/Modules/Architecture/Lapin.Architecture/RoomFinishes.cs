@@ -564,6 +564,9 @@ public static class RoomFinishes
     /// The hatch a finish's floor (or ceiling) draws in plan: none when the part has no layers or its hatch is off; its own
     /// pattern when it has one; else the face layer's material's (the floor's top layer, the ceiling's last), the first going
     /// inwards whose surface pattern is set (Manage → Materials, Elevation) or suggested by its name; else diagonal lines.
+    /// In a project made since decision 674 (<see cref="MaterialStandards.NewLook(IModelView)"/>) the name's suggestion is the
+    /// project's material standard's (its rule for a surface, at its scale and angle, Lapin's 1.1 naming floor coverings), not
+    /// this table of its own; a project made before keeps the table.
     /// </summary>
     public static PlanHatch? HatchOf(IModelView m, RoomFinishSpec spec, string part)
     {
@@ -573,8 +576,21 @@ public static class RoomFinishes
         if (h.Mode == "none") return null;
         var color = h.Color ?? HatchColor;
         if (h.Mode == "own" && h.Pattern is { } own) return new PlanHatch(own, h.Scale, h.Angle, color);
+        var ordered = part == "ceiling" ? layers.AsEnumerable().Reverse() : layers;
+        if (MaterialStandards.NewLook(m))
+        {
+            // The material's surface as the project's standard completes it (its own elevation graphics, else the standard's rule).
+            var standard = MaterialStandards.Of(m);
+            foreach (var l in ordered)
+            {
+                var material = Materials.Find(m, l.Material);
+                var g = Lapin.Drawing.MaterialGraphics.Resolve(material, "elevation", material == null ? l.Material : null, standard: standard);
+                if (g.Hatch is { } pattern) return new PlanHatch(pattern, g.HatchScale * h.Scale, g.HatchAngle + h.Angle, color);
+            }
+            return new PlanHatch("LINES45", h.Scale, h.Angle, color);
+        }
         // From the face inwards: the floor's top layer first, the ceiling's lowest.
-        foreach (var l in part == "ceiling" ? layers.AsEnumerable().Reverse() : layers)
+        foreach (var l in ordered)
         {
             var material = Materials.Find(m, l.Material);
             if (Lapin.Drawing.ViewGraphics.From(material?.Attrs["elevation"]) is { Hatch: { Length: > 0 } mine } g)

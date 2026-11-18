@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Drawing;
+using Lapin.Geometry;
 using Lapin.Model;
 
 namespace Lapin.Platform;
@@ -99,6 +100,32 @@ public static class GraphicsSets
         ctx.Replace(project.With(attrs: pa));
     }
 
+    /// <summary>
+    /// A subcategory's row checked (decision 674): <c>hidden</c> and <c>halftone</c> true or false, <c>cutHatch</c> a pattern the
+    /// project knows ("" or "none": no hatch), <c>fillColor</c> and <c>lineColor</c> colours (<c>fillColor</c> "" or "none": no fill),
+    /// <c>lineWeight</c> a pen of the ISO series (mm); a field null left out.
+    /// </summary>
+    static JsonObject? CheckSubRow(IModelView m, JsonObject? row)
+    {
+        if (row == null) return null;
+        var o = new JsonObject();
+        foreach (var (k, v) in row)
+        {
+            if (!VisibilityGraphics.SubFields.Contains(k)) throw new CommandException($"„{k}” is not a field of a subcategory ({string.Join(", ", VisibilityGraphics.SubFields)}).");
+            if (v is null) continue;
+            o[k] = k switch
+            {
+                "hidden" or "halftone" => v is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException($"A subcategory's {k} is true or false."),
+                "cutHatch" => (string?)v is "" or "none" ? "none" : Lapin.Drawing.Hatch.HatchLibrary.Find((string?)v ?? "", DraftingResources.Patterns(m))?.Name ?? throw new CommandException($"There is no hatch pattern „{(string?)v}”."),
+                "fillColor" when (string?)v is "" or "none" => "none",
+                "fillColor" or "lineColor" => (string?)v is { } c && HexColor.IsColour(c) ? c.ToLowerInvariant() : throw new CommandException($"A subcategory's {k} is a colour (#rrggbb)."),
+                _ => Lapin.Drawing.Views.Pens.WeightMm(VisibilityGraphics.WeightText(v)) is { } mm
+                    ? mm.ToString(System.Globalization.CultureInfo.InvariantCulture) : throw new CommandException("A subcategory's lineWeight is a pen of the ISO series (0.13 … 1.0 mm)."),
+            };
+        }
+        return o.Count > 0 ? o : null;
+    }
+
     public static void Register(IModuleRegistry r)
     {
         // One row of a view's graphics: a category, an IFC class or an element ({hidden, lineColor, lineWeight, fillColor, cutHatch}; null clears it).
@@ -138,6 +165,7 @@ public static class GraphicsSets
                 if ((string?)a["sub"] is { } sub)
                 {
                     if (!VisibilityGraphics.Subcategories.Contains(sub)) throw new CommandException($"„{sub}” is not a subcategory.");
+                    value = CheckSubRow(ctx.Model, value);
                     var cats = into["categories"] as JsonObject ?? new JsonObject();
                     var row = cats[cat] as JsonObject ?? new JsonObject();
                     SetIn(row, "sub", sub, value);
@@ -316,6 +344,8 @@ public static class GraphicsSets
                 // Its level of development (decision 404): the one it draws at, the one it sets itself (null: its style's), its style's.
                 ["detail"] = ViewDetail.Of(q.Model, v), ["ownDetail"] = ViewDetail.Own(v, VisibilityGraphics.Of(q.Model, v)), ["styleDetail"] = ViewStyles.StyleOf(q.Model, v).Detail,
                 ["subcategories"] = new JsonObject(VisibilityGraphics.SubcategoriesOf.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)new JsonArray(kv.Value.Select(x => (JsonNode)x).ToArray())))),
+                // What a subcategory's row may give (decision 674): hidden, cutHatch, fillColor, lineColor, lineWeight, halftone.
+                ["subcategoryFields"] = new JsonArray(VisibilityGraphics.SubFields.Select(x => (JsonNode)x).ToArray()),
                 ["annotations"] = new JsonArray(VisibilityGraphics.AnnotationCategories.Select(c => (JsonNode)c).ToArray()),
                 ["filters"] = new JsonArray(ViewFilters.All(q.Model).Select(f => (JsonNode)new JsonObject { ["id"] = f.Id, ["name"] = f.Name }).ToArray()),
                 ["imports"] = Imports(q.Model, v),
@@ -402,11 +432,22 @@ public static class GraphicsSets
             if (vg.ColorOf(e) is { } color && color != Links.Halftone) (look ??= new JsonObject())["color"] = color;
             // A 3D view under LOD 300 (decisions 401, 404, 405) leaves out the details of doors and windows (sills, boards, hardware), their glazing bars and handles (and at LOD 100 their sashes) and the openings' linings.
             var details = lessDetail && e.Class is IfcClass.Door or IfcClass.Window or IfcClass.Wall;
-            if ((vg.HiddenSubs(e) != null || details) && q.Geometry(e.Id) is { } geo)
+            if ((vg.HiddenSubs(e) != null || details || vg.HasSubGraphics) && q.Geometry(e.Id) is { } geo)
             {
                 var parts = new JsonObject();
                 foreach (var p in geo.Parts)
-                    if (p.Key is { } k && !parts.ContainsKey(k) && (vg.HidesPart(e, k) || details && !PlanDetail.Shows(e.Class, k, lod))) parts[k] = new JsonObject { ["hidden"] = true };
+                {
+                    if (p.Key is not { } k || parts.ContainsKey(k)) continue;
+                    if (vg.HidesPart(e, k) || details && !PlanDetail.Shows(e.Class, k, lod)) { parts[k] = new JsonObject { ["hidden"] = true }; continue; }
+                    // A subcategory's graphics (decision 674): halftone as a halftone element (35 % opaque), its fill colour as the part's colour.
+                    if (vg.SubGraphics(e, k) is { } sub)
+                    {
+                        var pl = new JsonObject();
+                        if ((string?)sub.Sub["fillColor"] is { Length: 7 } fc) pl["color"] = fc;
+                        if (sub.Sub["halftone"] is JsonValue hv && hv.TryGetValue<bool>(out var half) && half) pl["opacity"] = 0.35;
+                        if (pl.Count > 0) parts[k] = pl;
+                    }
+                }
                 if (parts.Count > 0) (look ??= new JsonObject())["parts"] = parts;
             }
             if (look != null) o[e.Id] = look;

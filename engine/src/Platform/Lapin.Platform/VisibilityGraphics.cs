@@ -282,6 +282,40 @@ public sealed class VisibilityGraphics
         return sub.Any(s => True(s.Value?["hidden"])) ? sub : null;
     }
 
+    /// <summary>The graphics a subcategory's row may give beside <c>hidden</c> (decision 674).</summary>
+    public static readonly string[] SubGraphicsFields = ["cutHatch", "fillColor", "lineColor", "lineWeight", "halftone"];
+
+    /// <summary>The fields of a subcategory's row: shown or hidden, and its graphics.</summary>
+    public static readonly string[] SubFields = ["hidden", .. SubGraphicsFields];
+
+    /// <summary>A weight as a row writes it: a pen's name or millimetres, as text or as a number.</summary>
+    public static string? WeightText(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : Json.Number(n)?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    static bool GivesGraphics(JsonNode? row) => row is JsonObject o && SubGraphicsFields.Any(o.ContainsKey);
+
+    bool? _hasSubGraphics;
+
+    /// <summary>
+    /// Whether any subcategory in the view's graphics (or a link's own) gives graphics (decision 674): none, and the drawing asks
+    /// no part for its subcategory.
+    /// </summary>
+    public bool HasSubGraphics => _hasSubGraphics ??= Rows(Graphics).Concat((Graphics?["links"] as JsonObject ?? []).Select(l => l.Value as JsonObject))
+        .Any(g => (g?["categories"] as JsonObject)?.Any(c => (c.Value?["sub"] as JsonObject)?.Any(x => GivesGraphics(x.Value)) == true) == true);
+
+    static IEnumerable<JsonObject?> Rows(JsonObject? g) => [g];
+
+    /// <summary>
+    /// The graphics a part of an element takes from its subcategory in this view (decision 674): its subcategory's row when it gives
+    /// any (cut hatch, fill colour, line colour and weight, halftone), with its category's row (whose fill colour a halftone washes);
+    /// null when its subcategory gives none.
+    /// </summary>
+    public (JsonObject Sub, JsonObject? Category)? SubGraphics(Entity e, string? partKey)
+    {
+        if (!HasSubGraphics || ReferenceLayers.CategoryOf(e) is not { } c || RulesFor(e)?["categories"]?[c] is not JsonObject cat || cat["sub"] is not JsonObject subs) return null;
+        if (SubOf(e, partKey) is not { } s || subs[s] is not JsonObject row || !GivesGraphics(row)) return null;
+        return (row, cat);
+    }
+
     /// <summary>Whether the view hides one part of an element by its subcategory (a wall's finishes, a door's reveals).</summary>
     /// <remarks>
     /// <paramref name="cut"/> false: a part a plan sees under or over its cut plane, not cut by it (a floor under it, a soffit

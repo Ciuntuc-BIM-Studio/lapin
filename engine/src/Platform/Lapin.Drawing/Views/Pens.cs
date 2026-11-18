@@ -269,7 +269,9 @@ public static class Pens
         {
             if (m?.HidePolygons.Contains(i) == true) continue;
             var p = d.Cuts[i];
-            var fill = (o.ElementColors?.GetValueOrDefault(p.Element) is { } ec ? Pale(ec) : null) ?? Cat(p.Class)?.FillColor ?? (m != null && m.Fills.TryGetValue(i, out var f) ? f : null);
+            // A subcategory's own fill (decision 674) over the category's.
+            var keeps = m != null && m.Graphics.TryGetValue(i, out var kg) && kg.KeepsFill;
+            var fill = (o.ElementColors?.GetValueOrDefault(p.Element) is { } ec ? Pale(ec) : null) ?? (keeps ? null : Cat(p.Class)?.FillColor) ?? (m != null && m.Fills.TryGetValue(i, out var f) ? f : null);
             if (fill == null) continue;
             var pen = Get("fill:" + fill, () => new Pen(PenLayer.Fill, null, 0, fill, null));
             pen.Loops.AddRange(p.Loops);
@@ -287,9 +289,12 @@ public static class Pens
         var hatches = new List<MaterialHatch>(m?.Hatches ?? []);
         if (o.Categories != null)
         {
-            hatches = hatches.Where(h => !(h.Background && Cat(h.Class)?.CutHatch != null)).Select(h => Cat(h.Class)?.CutHatch is { } ch ? h with { Pattern = ch, Scale = 1, Units = null } : h).ToList();
+            // A band whose subcategory gives its own cut hatch (decision 674) keeps it: the subcategory is the more particular.
+            hatches = hatches.Where(h => !(h.Background && h.Look?.KeepsHatch != true && Cat(h.Class)?.CutHatch != null))
+                .Select(h => h.Look?.KeepsHatch != true && Cat(h.Class)?.CutHatch is { } ch ? h with { Pattern = ch, Scale = 1, Units = null } : h).ToList();
             for (var i = 0; i < d.Cuts.Count; i++)
-                if (Cat(d.Cuts[i].Class)?.CutHatch is { } ch && !(m?.Hatches.Any(h => ReferenceEquals(h.Loops, d.Cuts[i].Loops)) ?? false))
+                if (Cat(d.Cuts[i].Class)?.CutHatch is { } ch && !(m?.Hatches.Any(h => ReferenceEquals(h.Loops, d.Cuts[i].Loops)) ?? false)
+                    && !(m != null && m.Graphics.TryGetValue(i, out var kg) && kg.KeepsHatch))
                     hatches.Add(new MaterialHatch(d.Cuts[i].Loops, ch, 1, null, d.Cuts[i].Class));
         }
         var budget = o.MaxHatchSegments;
@@ -319,7 +324,7 @@ public static class Pens
             {
                 // A solid pattern is the band's fill: in its fill colour (the category's, else the material's), else in ink (forum topic 88);
                 // a hatch colour the material gives over all of them (decision 670).
-                var solid = look?.HatchColor != null || bg?.HatchColor != null ? color : (Cat(h.Class)?.FillColor ?? h.Fill ?? category);
+                var solid = look?.HatchColor != null || bg?.HatchColor != null ? color : ((look?.KeepsFill == true ? null : Cat(h.Class)?.FillColor) ?? h.Fill ?? category);
                 if (look != null && look.HatchColor == null && bg?.HatchColor == null) solid = ResolvedMaterial.Ink(solid, look.Halftone, look.HatchOpacity);
                 Get($"{(h.Background ? "solidbg" : "solid")}:" + solid, () => new Pen(PenLayer.Hatch, null, 0, solid, null)).Loops.AddRange(h.Loops);
                 continue;

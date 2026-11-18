@@ -1,6 +1,6 @@
 # Material graphics reference details: the model's pens of each view (decision 670). LAPIN_UPDATE_SNAPSHOTS=1 writes it again.
 composite-walls/plan 1:20
-  HATCH #000000 0.13 - - s=408 len=67.68 loops=0
+  HATCH #000000 0.13 - - s=348 len=59.51 loops=0
   HIDDEN #666666 0.18 - 1.5,1 s=5 len=0.41 loops=0
   OVERHEAD #888888 0.175 - 2,1 s=4 len=4 loops=0
   SEEN #000000 0.25 - - s=22 len=14.85 loops=0
@@ -8,7 +8,7 @@ composite-walls/plan 1:20
   CUT #000000 0.5 - - s=40 len=20.23 loops=0
   CUT #000000 0.25 - - s=24 len=33.89 loops=0
 composite-walls/plan 1:50
-  HATCH #000000 0.13 - - s=125 len=20.36 loops=0
+  HATCH #000000 0.13 - - s=105 len=23.99 loops=0
   HIDDEN #666666 0.18 - 1.5,1 s=5 len=0.41 loops=0
   OVERHEAD #888888 0.175 - 2,1 s=4 len=4 loops=0
   SEEN #000000 0.25 - - s=22 len=14.85 loops=0
@@ -16,7 +16,7 @@ composite-walls/plan 1:50
   CUT #000000 0.5 - - s=40 len=20.23 loops=0
   CUT #000000 0.25 - - s=24 len=33.89 loops=0
 composite-walls/plan 1:100
-  HATCH #000000 0.13 - - s=56 len=10.16 loops=0
+  HATCH #000000 0.13 - - s=45 len=9.06 loops=0
   HIDDEN #666666 0.18 - 1.5,1 s=5 len=0.41 loops=0
   OVERHEAD #888888 0.175 - 2,1 s=4 len=4 loops=0
   SEEN #000000 0.25 - - s=22 len=14.85 loops=0
@@ -24,96 +24,96 @@ composite-walls/plan 1:100
   CUT #000000 0.5 - - s=40 len=20.23 loops=0
   CUT #000000 0.25 - - s=24 len=33.89 loops=0
 composite-walls/section 1:20
-  HATCH #000000 0.13 - - s=82 len=10.96 loops=0
+  HATCH #000000 0.13 - - s=70 len=8.47 loops=0
   HIDDEN #666666 0.18 - 1.5,1 s=11 len=4.22 loops=0
   SEEN #000000 0.25 - - s=15 len=3.22 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=0.9 loops=0
   CUT #000000 0.5 - - s=20 len=8.27 loops=0
   CUT #000000 0.25 - - s=11 len=6.26 loops=0
 composite-walls/section 1:50
-  HATCH #000000 0.13 - - s=22 len=4.66 loops=0
+  HATCH #000000 0.13 - - s=18 len=4.26 loops=0
   HIDDEN #666666 0.18 - 1.5,1 s=11 len=4.22 loops=0
   SEEN #000000 0.25 - - s=15 len=3.22 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=0.9 loops=0
   CUT #000000 0.5 - - s=20 len=8.27 loops=0
   CUT #000000 0.25 - - s=11 len=6.26 loops=0
 composite-walls/section 1:100
-  HATCH #000000 0.13 - - s=10 len=1.52 loops=0
+  HATCH #000000 0.13 - - s=9 len=1.42 loops=0
   HIDDEN #666666 0.18 - 1.5,1 s=11 len=4.22 loops=0
   SEEN #000000 0.25 - - s=15 len=3.22 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=0.9 loops=0
   CUT #000000 0.5 - - s=20 len=8.27 loops=0
   CUT #000000 0.25 - - s=11 len=6.26 loops=0
 wall-on-slab/section 1:20
-  HATCH #000000 0.13 - - s=239 len=14.87 loops=0
+  HATCH #000000 0.13 - - s=297 len=14.64 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=1.28 loops=0
   CUT #000000 0.25 - - s=6 len=11.12 loops=0
   CUT #000000 0.5 - - s=7 len=9.36 loops=0
 wall-on-slab/section 1:50
-  HATCH #000000 0.13 - - s=61 len=5.48 loops=0
+  HATCH #000000 0.13 - - s=68 len=5.3 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=1.28 loops=0
   CUT #000000 0.25 - - s=6 len=11.12 loops=0
   CUT #000000 0.5 - - s=7 len=9.36 loops=0
 wall-on-slab/section 1:100
-  HATCH #000000 0.13 - - s=25 len=2.76 loops=0
+  HATCH #000000 0.13 - - s=24 len=2.65 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=1.28 loops=0
   CUT #000000 0.25 - - s=6 len=11.12 loops=0
   CUT #000000 0.5 - - s=7 len=9.36 loops=0
 floor/section 1:20
-  HATCH #000000 0.13 - - s=171 len=5.02 loops=0
+  HATCH #000000 0.13 - - s=258 len=4.64 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=2 loops=0
   CUT #000000 0.25 - - s=4 len=8 loops=0
   CUT #000000 0.5 - - s=4 len=4.52 loops=0
 floor/section 1:50
-  HATCH #000000 0.13 - - s=41 len=1.2 loops=0
+  HATCH #000000 0.13 - - s=51 len=1.07 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=2 loops=0
   CUT #000000 0.25 - - s=4 len=8 loops=0
   CUT #000000 0.5 - - s=4 len=4.52 loops=0
 floor/section 1:100
-  HATCH #000000 0.13 - - s=15 len=0.49 loops=0
+  HATCH #000000 0.13 - - s=19 len=0.51 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=2 loops=0
   CUT #000000 0.25 - - s=4 len=8 loops=0
   CUT #000000 0.5 - - s=4 len=4.52 loops=0
 strip-footing/section 1:20
-  HATCH #000000 0.13 - - s=229 len=7.03 loops=0
+  HATCH #000000 0.13 - - s=365 len=5.11 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=1.4 loops=0
   CUT #000000 0.25 - - s=4 len=4.62 loops=0
   CUT #000000 0.5 - - s=8 len=4.8 loops=0
 strip-footing/section 1:50
-  HATCH #000000 0.13 - - s=47 len=3.1 loops=0
+  HATCH #000000 0.13 - - s=66 len=2.85 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=1.4 loops=0
   CUT #000000 0.25 - - s=4 len=4.62 loops=0
   CUT #000000 0.5 - - s=8 len=4.8 loops=0
 strip-footing/section 1:100
-  HATCH #000000 0.13 - - s=14 len=0.84 loops=0
+  HATCH #000000 0.13 - - s=18 len=0.57 loops=0
   MEMBRANE #000000 0.5 - 3,1.5 s=1 len=1.4 loops=0
   CUT #000000 0.25 - - s=4 len=4.62 loops=0
   CUT #000000 0.5 - - s=8 len=4.8 loops=0
 column-beam/plan 1:20
-  HATCH #000000 0.13 - - s=198 len=22.19 loops=0
+  HATCH #000000 0.13 - - s=222 len=22.29 loops=0
   OVERHEAD #888888 0.175 - 2,1 s=8 len=10.4 loops=0
   CUT #000000 0.5 - - s=8 len=11.86 loops=0
   CUT #000000 0.25 - - s=4 len=9.4 loops=0
 column-beam/plan 1:50
-  HATCH #000000 0.13 - - s=74 len=8.82 loops=0
+  HATCH #000000 0.13 - - s=77 len=8.86 loops=0
   OVERHEAD #888888 0.175 - 2,1 s=8 len=10.4 loops=0
   CUT #000000 0.5 - - s=8 len=11.86 loops=0
   CUT #000000 0.25 - - s=4 len=9.4 loops=0
 column-beam/plan 1:100
-  HATCH #000000 0.13 - - s=36 len=4.55 loops=0
+  HATCH #000000 0.13 - - s=37 len=4.56 loops=0
   OVERHEAD #888888 0.175 - 2,1 s=8 len=10.4 loops=0
   CUT #000000 0.5 - - s=8 len=11.86 loops=0
   CUT #000000 0.25 - - s=4 len=9.4 loops=0
 column-beam/section 1:20
-  HATCH #000000 0.13 - - s=118 len=12.72 loops=0
+  HATCH #000000 0.13 - - s=142 len=12.79 loops=0
   CUT #000000 0.5 - - s=7 len=7.71 loops=0
   CUT #000000 0.25 - - s=2 len=6 loops=0
 column-beam/section 1:50
-  HATCH #000000 0.13 - - s=39 len=5.07 loops=0
+  HATCH #000000 0.13 - - s=44 len=5.12 loops=0
   CUT #000000 0.5 - - s=7 len=7.71 loops=0
   CUT #000000 0.25 - - s=2 len=6 loops=0
 column-beam/section 1:100
-  HATCH #000000 0.13 - - s=10 len=2.64 loops=0
+  HATCH #000000 0.13 - - s=9 len=2.63 loops=0
   CUT #000000 0.5 - - s=7 len=7.71 loops=0
   CUT #000000 0.25 - - s=2 len=6 loops=0
 roof/section 1:20

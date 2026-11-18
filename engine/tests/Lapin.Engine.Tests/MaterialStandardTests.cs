@@ -130,7 +130,7 @@ public class MaterialStandardTests
     public void A_project_that_names_no_standard_draws_by_Lapins()
     {
         var f = new Fixture();
-        Assert.Same(MaterialStandard.Lapin, MaterialStandards.Of(f.Model));
+        Assert.Same(MaterialStandard.LapinCurrent, MaterialStandards.Of(f.Model));
         Assert.Null(Spatial.Project(f.Model)!.Attrs[MaterialStandards.Key]);
         var list = f.Session.Query("standards.materialList", [])!;
         Assert.Equal("lapin", (string?)list["current"]);
@@ -340,7 +340,7 @@ public class MaterialStandardTests
         f.Run("standards.applyMaterials", new JsonObject { ["id"] = id });
         Assert.Equal(id, MaterialStandards.Of(f.Model).Id);
         f.Run("standards.materialRemove", new JsonObject { ["id"] = id });
-        Assert.Same(MaterialStandard.Lapin, MaterialStandards.Of(f.Model));
+        Assert.Same(MaterialStandard.LapinCurrent, MaterialStandards.Of(f.Model));
         f.Session.Undo();
         Assert.Equal(id, MaterialStandards.Of(f.Model).Id);
         f.Session.Undo();
@@ -364,7 +364,7 @@ public class MaterialStandardTests
         var id = (string)made["id"]!;
         var s = MaterialStandards.Find(Spatial.Project(a.Model), id)!;
         Assert.Equal("lapin", s.BasedOn);
-        Assert.Equal(3 + MaterialStandard.Lapin.Rules.Count, s.Rules.Count);
+        Assert.Equal(3 + MaterialStandard.LapinCurrent.Rules.Count, s.Rules.Count);
         Assert.Contains(s.Patterns, p => p.Name == "MY_DOTS");
         var text = (string)a.Session.Query("standards.export", new JsonObject { ["name"] = "Office", ["materialStandards"] = new JsonArray(id), ["only"] = "materialGraphics" })!["text"]!;
         var file = JsonNode.Parse(text)!.AsObject();
@@ -378,7 +378,7 @@ public class MaterialStandardTests
         Assert.Contains((JsonArray)read["entries"]!, e => (string?)e!["kind"] == "materialStandard");
         b.Run("standards.importFrom", new JsonObject { ["text"] = text });
         // Importing never applies it.
-        Assert.Same(MaterialStandard.Lapin, MaterialStandards.Of(b.Model));
+        Assert.Same(MaterialStandard.LapinCurrent, MaterialStandards.Of(b.Model));
         b.Run("standards.applyMaterials", new JsonObject { ["id"] = id });
         foreach (var name in new[] { "Brick masonry", "Mineral wool", "Larch cladding", "Odd stuff" })
             foreach (var kind in MaterialGraphics.Kinds)
@@ -459,7 +459,7 @@ public class MaterialStandardTests
         // Drawn with the standard: its stone pattern for nothing here, but its masonry hatch in 45° lines at its thin pen.
         Assert.Contains("0.13", (string)o["svg"]!);
         // The open project is untouched; a standard given inline (a store's pack not yet installed) draws too.
-        Assert.Same(MaterialStandard.Lapin, MaterialStandards.Of(f.Model));
+        Assert.Same(MaterialStandard.LapinCurrent, MaterialStandards.Of(f.Model));
         var inline = f.Session.Query("standards.previewSheet", new JsonObject { ["standard"] = MaterialStandard.FindBuiltIn("bs-8888")!.ToJson().Also(j => j["id"] = "my-bs"), ["details"] = new JsonArray("composite-walls"), ["drawings"] = false })!;
         Assert.Single((JsonArray)inline["details"]!);
         Assert.Equal("my-bs", (string?)inline["standard"]!["id"]);

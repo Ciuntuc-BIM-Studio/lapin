@@ -8,9 +8,9 @@
       {
         "id": "lapin",
         "name": "Lapin",
-        "description": "Lapin's default look: the cut patterns of common default materials (masonry 45° lines, concrete speckle, blocks crosshatched, insulation, timber grain), drawn by Lapin's own patterns, and facades at the object's real size. One look recognised everywhere, not a country's norm. Indicative: check it against the standard your drawings must follow.",
+        "description": "Lapin's default look: the cut patterns of common default materials (masonry 45° lines, concrete speckle, blocks crosshatched, insulation, timber grain), drawn by Lapin's own patterns, and facades at the object's real size. One look recognised everywhere, not a country's norm. Version 1.1 (projects made since 18.11.2026) balances the tones: rigid insulation's grid and the blocks' crosshatch drawn wider, the concrete speckle closer; floor coverings seen from above (parquet, carpet, sheet floors, poured floors, floor tiles). Indicative: check it against the standard your drawings must follow.",
         "author": "Lapin",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "license": "MIT",
         "languages": [
           "en",
@@ -60,7 +60,8 @@
               }
             },
             "section": {
-              "hatch": "RIGID"
+              "hatch": "RIGID",
+              "hatchScale": 1.5
             },
             "category": "Insulation"
           },
@@ -123,7 +124,8 @@
               }
             },
             "section": {
-              "hatch": "BLOCK"
+              "hatch": "BLOCK",
+              "hatchScale": 1.25
             },
             "category": "Structure"
           },
@@ -165,7 +167,8 @@
               }
             },
             "section": {
-              "hatch": "CONCRETE"
+              "hatch": "CONCRETE",
+              "hatchScale": 0.75
             },
             "category": "Structure"
           },
@@ -533,6 +536,28 @@
             "match": {
               "names": {
                 "en": [
+                  "epoxy",
+                  "resin",
+                  "screed",
+                  "polished concrete",
+                  "poured floor"
+                ],
+                "ro": [
+                  "rasina",
+                  "sapa",
+                  "beton slefuit",
+                  "pardoseala turnata"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "CONCRETE"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
                   "concrete",
                   "screed",
                   "c\\d\\d/"
@@ -594,6 +619,79 @@
             },
             "elevation": {
               "hatch": "EARTH"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "parquet",
+                  "laminate",
+                  "plank floor",
+                  "decking"
+                ],
+                "ro": [
+                  "parchet",
+                  "laminat",
+                  "dusumea"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "BOARDS_150"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "carpet",
+                  "textile"
+                ],
+                "ro": [
+                  "mocheta",
+                  "covor"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "CROSS"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "vinyl",
+                  "linoleum",
+                  "\\bpvc\\b",
+                  "rubber",
+                  "\\blvt\\b"
+                ],
+                "ro": [
+                  "cauciuc"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "HORIZONTAL"
+            }
+          },
+          {
+            "match": {
+              "names": {
+                "en": [
+                  "porcelain",
+                  "floor tile",
+                  "terrazzo"
+                ],
+                "ro": [
+                  "gresie"
+                ]
+              }
+            },
+            "elevation": {
+              "hatch": "TILE_600X600"
             }
           },
           {

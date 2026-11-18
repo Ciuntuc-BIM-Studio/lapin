@@ -62,6 +62,7 @@ public sealed class CoreModule : ILapinModule
         // Line types of the project's own and the standards as a library (docs/plan-user-extensibility.md §3.6–3.7).
         StandardsLibrary.Register(r);
         MaterialStandards.Register(r);
+        MaterialGraphicsSets.Register(r);
         // Rule packs: the norms the configurators use, as data (docs/plan-user-extensibility.md §5.4).
         RulePacks.Register(r);
         // Classifications, keynotes and shared parameter definitions (docs/plan-user-extensibility.md §7.3).
@@ -732,7 +733,7 @@ public static class Spatial
         var project = Project(edit.Model);
         if (project == null)
         {
-            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev, [ViewFilterUpgrade.RevKey] = ViewFilterUpgrade.Rev, [ViewStyles.StructureRevKey] = ViewStyles.StructureRev });
+            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev, [ViewFilterUpgrade.RevKey] = ViewFilterUpgrade.Rev, [ViewStyles.StructureRevKey] = ViewStyles.StructureRev, [MaterialStandards.LookRevKey] = MaterialStandards.LookRev });
             edit.Add(project);
         }
         var site = edit.Model.OfClass(IfcClass.Site).FirstOrDefault();

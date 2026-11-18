@@ -85,14 +85,19 @@ public sealed record SmallScaleCut(string Mode = SmallScaleCut.AsMaterial, doubl
 /// <list type="number">
 /// <item>an element's own override (hook: none yet);</item>
 /// <item>the view's filters (stage 5 of docs/plan-material-graphics.md, hook);</item>
-/// <item>the view style's material graphics set (stage 4, hook);</item>
+/// <item>(2.5) the view's Visibility / Graphics subcategory graphics (decision 674): a layer's subcategory (core, finishes,
+/// insulation, membranes, other layers) giving a cut hatch, a fill colour, a line colour and weight or halftone — the view's
+/// own overrides, so over its style's set, and over its category's cut hatch and fill colour, being the more particular;</item>
+/// <item>the material graphics set of the view (its own, else its style's; decision 674, <see cref="MaterialGraphicsSets"/>):
+/// its entry for the material, at the view's scale;</item>
 /// <item>the view style's small-scale cut (<see cref="SmallScaleCut"/>, cut bands only);</item>
 /// <item>the material's step for the view's scale (<see cref="ScaleStep"/>);</item>
 /// <item>the material's own graphics;</item>
 /// <item>the project's material standard (<see cref="MaterialStandards"/>, decision 673): its rule for the material's name or category.</item>
 /// </list>
 /// The last three are <see cref="MaterialGraphics.Resolve"/>; this lays the view's tiers over them. Visibility / Graphics' category
-/// fill colour and cut hatch still lay themselves over all of it when the pens are drawn (<see cref="Pens.Of"/>), as before.
+/// fill colour and cut hatch still lay themselves over all of it when the pens are drawn (<see cref="Pens.Of"/>), as before, but
+/// for a band whose subcategory gives its own (<see cref="ResolvedMaterial.KeepsHatch"/>, <see cref="ResolvedMaterial.KeepsFill"/>).
 /// Plans, sections, cut elevations, sheets (each viewport at its view's scale), PDF and DXF draw through
 /// <see cref="Views.Render"/>; elevations' surfaces through <see cref="SurfaceHatches"/>; legends at their view's scale.
 /// </summary>
@@ -104,6 +109,9 @@ public sealed class ViewMaterialGraphics
     readonly bool _paper;
     readonly MaterialStandard _standard;
     readonly SmallScaleCut? _small;
+    readonly MaterialGraphicsSets.Set? _set;
+    readonly VisibilityGraphics? _vg;
+    readonly Dictionary<string, ResolvedMaterial?> _base = [];
     readonly Dictionary<string, ResolvedMaterial?> _materials = [];
     readonly Dictionary<string, IReadOnlyList<LayerBand>?> _bands = [];
     readonly Dictionary<string, string> _outlineKeys = [];
@@ -111,7 +119,8 @@ public sealed class ViewMaterialGraphics
     /// <param name="kind">section, plan or elevation (the material's kind of view).</param>
     /// <param name="scale">The view's scale denominator; null: no step by scale (an export with no scale).</param>
     /// <param name="style">The view's style as it draws (<see cref="ViewStyles.Of"/>); null: none of its tiers.</param>
-    public ViewMaterialGraphics(IModelView m, string kind, double? scale, ViewStyles.Style? style = null)
+    /// <param name="visibility">The view's Visibility / Graphics, whose subcategories' graphics lay over the bands (decision 674); null: none.</param>
+    public ViewMaterialGraphics(IModelView m, string kind, double? scale, ViewStyles.Style? style = null, VisibilityGraphics? visibility = null)
     {
         _m = m;
         _kind = kind;
@@ -121,9 +130,15 @@ public sealed class ViewMaterialGraphics
         _standard = MaterialStandards.Of(m);
         // Cuts only: an elevation's surfaces keep their materials' look.
         _small = kind != "elevation" && scale is { } s && style?.SmallScaleCut is { } sc && sc.Holds(s) ? sc : null;
+        // The view's material graphics set (decision 674): tier 3, over the small-scale cut.
+        _set = style?.MaterialGraphicsSet is { } setId ? MaterialGraphicsSets.Find(m, setId) : null;
+        _vg = visibility is { HasSubGraphics: true } ? visibility : null;
     }
 
-    public static ViewMaterialGraphics For(IModelView m, Entity view, string kind, double scale) => new(m, kind, scale, ViewStyles.Of(m, view));
+    public static ViewMaterialGraphics For(IModelView m, Entity view, string kind, double scale) => new(m, kind, scale, ViewStyles.Of(m, view), VisibilityGraphics.Of(m, view));
+
+    /// <summary>The material graphics set the view draws with (null: none).</summary>
+    public MaterialGraphicsSets.Set? Set => _set;
 
     /// <summary>The small-scale cut that holds in the view (null: none, or asMaterial).</summary>
     public SmallScaleCut? SmallScale => _small;
@@ -139,18 +154,74 @@ public sealed class ViewMaterialGraphics
     {
         if (id == null) return null;
         if (_materials.TryGetValue(id, out var r)) return r;
+        return _materials[id] = SetOver(Base(id), id);
+    }
+
+    /// <summary>A material's own tiers: the standard, the material, their steps by scale.</summary>
+    ResolvedMaterial? Base(string id)
+    {
+        if (_base.TryGetValue(id, out var r)) return r;
         // A material named rather than kept (a track's ballast, its rails): its look guessed from the name.
-        return _materials[id] = _m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, _kind, paperSurfaces: _paper, scale: _scale, standard: _standard)
+        return _base[id] = _m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, _kind, paperSurfaces: _paper, scale: _scale, standard: _standard)
             : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, _kind, id, _paper, _scale, _standard);
+    }
+
+    /// <summary>The set's entry for a material laid over its graphics (tier 3); unchanged without a set, an entry, or graphics.</summary>
+    ResolvedMaterial? SetOver(ResolvedMaterial? g, string? id)
+    {
+        if (_set == null || g == null || id == null) return g;
+        var mat = _m.Get(id) is { Class: IfcClass.Material } e ? e : null;
+        var name = mat?.Name ?? (GlobalId.IsValid(id) ? null : id);
+        if (name == null || _set.For(mat?.Id, name, MaterialGraphicsSets.CategoryOf(mat, name, _standard)) is not { } entry || entry.For(_kind, _scale) is not { } eg) return g;
+        return MaterialGraphics.Over(g, eg) with { GraphicsSet = _set.Id };
     }
 
     /// <summary>A cut band's graphics in the view: every tier, in the order of the precedence (the lowest first).</summary>
     public ResolvedMaterial? Band(DPolygon p)
     {
-        var g = Material(p.Material);
-        if (_small != null && SmallScaleCut.Takes(p.Class)) g = SmallScaled(g, p, _small);
-        // Stage 4: the view style's material graphics set over it. Stage 5: the view's filters. Then an element's own override.
+        ResolvedMaterial? g;
+        // The small-scale cut (tier 4) under the set (tier 3).
+        if (_small != null && SmallScaleCut.Takes(p.Class)) g = SetOver(SmallScaled(p.Material == null ? null : Base(p.Material), p, _small), p.Material);
+        else g = Material(p.Material);
+        // Tier 2.5: the view's subcategory graphics. Stage 5: the view's filters. Then an element's own override.
+        if (_vg != null && g != null && _m.Get(p.Element) is { } el && _vg.SubGraphics(el, p.Key) is { } sub) g = SubOver(g, sub.Sub, sub.Category);
         return g;
+    }
+
+    /// <summary>
+    /// A band with its subcategory's graphics over it (decision 674): its cut hatch (a pattern; "" or "none": none) at its pattern's
+    /// own scale, its fill colour ("" or "none": none), its lines' colour and weight (an ISO pen: the cut outline that weight, the
+    /// lines between layers two pens lighter, as a category's), and halftone: the hatch, the fill (the subcategory's, else the
+    /// category's, else the band's) and the lines washed halfway to white.
+    /// </summary>
+    static ResolvedMaterial SubOver(ResolvedMaterial g, JsonObject row, JsonObject? category)
+    {
+        static string? Colour(JsonNode? n) => (string?)n is { } c && HexColor.IsColour(c) ? c.ToLowerInvariant() : null;
+        static bool None(JsonNode? n) => (string?)n is "" or "none" or null;
+        var o = g;
+        if (row.ContainsKey("cutHatch") && !g.Membrane)
+            o = o with { Hatch = None(row["cutHatch"]) ? null : ((string)row["cutHatch"]!).ToUpperInvariant(), HatchScale = 1, HatchAngle = 0, HatchUnits = null, Background = null, KeepsHatch = true };
+        if (row.ContainsKey("fillColor")) o = o with { Fill = None(row["fillColor"]) ? null : Colour(row["fillColor"]), FillOpacity = null, KeepsFill = true };
+        var color = Colour(row["lineColor"]);
+        var weight = Pens.WeightMm(VisibilityGraphics.WeightText(row["lineWeight"]));
+        if (color != null || weight != null)
+        {
+            var cut = new MaterialLine(color, weight);
+            var sep = new MaterialLine(color, weight is { } w ? Pens.SeenWeight(w) : null);
+            o = o with { CutLine = o.CutLine is { } cl ? cl.Over(cut) : cut, SeparatorLine = o.SeparatorLine is { } sl ? sl.Over(sep) : sep };
+        }
+        if (row["halftone"] is JsonValue hv && hv.TryGetValue<bool>(out var half) && half)
+        {
+            var fill = row.ContainsKey("fillColor") ? o.Fill : Colour(category?["fillColor"]) ?? o.Fill;
+            string Wash(string? c) => HexColor.Mix(c ?? "#000000", 0.5);
+            o = o with
+            {
+                Halftone = true, Fill = fill == null ? null : Wash(fill), KeepsFill = fill != null || o.KeepsFill,
+                CutLine = (o.CutLine ?? new MaterialLine()) with { Color = Wash(o.CutLine?.Color) },
+                SeparatorLine = (o.SeparatorLine ?? new MaterialLine()) with { Color = Wash(o.SeparatorLine?.Color) },
+            };
+        }
+        return o;
     }
 
     /// <summary>A band as the small-scale cut draws it.</summary>

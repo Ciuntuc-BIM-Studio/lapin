@@ -306,21 +306,35 @@ public sealed class MaterialStandard
 
     static readonly string[] BuiltInIds = [LapinId, "iso-128-50", "din-1356", "ro-sr-iso-128-50", "bs-8888"];
 
-    static readonly Lazy<IReadOnlyList<MaterialStandard>> Shipped = new(() => BuiltInIds.Select(Load).ToList());
+    static readonly Lazy<IReadOnlyList<MaterialStandard>> Shipped = new(() => BuiltInIds.Select(id => Load(id)).ToList());
 
-    static MaterialStandard Load(string id)
+    static readonly Lazy<MaterialStandard> Lapin10 = new(() => Load(LapinId, "lapin-1.0"));
+
+    static MaterialStandard Load(string id, string? file = null)
     {
-        using var s = typeof(MaterialStandard).Assembly.GetManifestResourceStream($"Lapin.Drawing.MaterialStandards.{id}.json")
+        using var s = typeof(MaterialStandard).Assembly.GetManifestResourceStream($"Lapin.Drawing.MaterialStandards.{file ?? id}.json")
             ?? throw new InvalidOperationException($"The built-in material standard „{id}” is missing.");
         using var reader = new StreamReader(s);
         return Read(JsonNode.Parse(reader.ReadToEnd()) as JsonObject ?? throw new InvalidOperationException($"„{id}” is not a standard."), builtIn: true);
     }
 
-    /// <summary>The standards Lapin ships, Lapin first.</summary>
+    /// <summary>The standards Lapin ships, Lapin first (its current version, <see cref="LapinCurrent"/>).</summary>
     public static IReadOnlyList<MaterialStandard> BuiltIns => Shipped.Value;
 
-    /// <summary>Lapin's own, the default of every project that names none.</summary>
-    public static MaterialStandard Lapin => Shipped.Value[0];
+    /// <summary>
+    /// Lapin's own as it was first shipped (version 1.0, MaterialStandards/lapin-1.0.json: exactly the coded tables it replaced): the
+    /// look of a project made before version 1.1 (decision 674; one without the mark <c>materialLookRev</c>) and of code that
+    /// resolves a material with no project. A project made since draws by <see cref="LapinCurrent"/>.
+    /// </summary>
+    public static MaterialStandard Lapin => Lapin10.Value;
+
+    /// <summary>
+    /// Lapin's own now (version 1.1, MaterialStandards/lapin.json, decision 674): version 1.0 with its tones balanced (rigid
+    /// insulation's grid at 1.5 and the blocks' crosshatch at 1.25 times, the concrete speckle at 0.75) and floor coverings' surfaces
+    /// (parquet and laminate boards, carpet, sheet floors, poured floors, floor tiles 600×600). What a new project draws by, what the
+    /// store's pack and the lists show.
+    /// </summary>
+    public static MaterialStandard LapinCurrent => Shipped.Value[0];
 
     public static MaterialStandard? FindBuiltIn(string? id) => id == null ? null : Shipped.Value.FirstOrDefault(s => string.Equals(s.Id, id, StringComparison.OrdinalIgnoreCase));
 }

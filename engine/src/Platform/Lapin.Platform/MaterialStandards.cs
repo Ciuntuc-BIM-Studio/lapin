@@ -39,14 +39,35 @@ public static class MaterialStandards
     /// <summary>The id of the standard the project names (Lapin's when none).</summary>
     public static string CurrentId(Entity? project) => (string?)project?.Attrs[Key] is { Length: > 0 } id ? id : MaterialStandard.LapinId;
 
-    /// <summary>A standard by its id: a built-in one, else the project's.</summary>
+    /// <summary>
+    /// The project's mark that it was made with Lapin's look of decision 674 (stage 4 of docs/plan-material-graphics.md): Lapin's
+    /// standard at version 1.1 (<see cref="MaterialStandard.LapinCurrent"/>), the built-in material graphics sets of the Structural
+    /// and MEP styles (<see cref="MaterialGraphicsSets"/>), rooms' floor finishes hatched by the standard. A new project has it
+    /// (<see cref="Spatial.EnsureBuilding(IEdit, SpatialSeed?)"/>); one made before never gains it, so it draws as it did (Î10).
+    /// </summary>
+    public const string LookRevKey = "materialLookRev";
+    public const int LookRev = 1;
+
+    /// <summary>Whether a project was made with the look of decision 674 (<see cref="LookRevKey"/>).</summary>
+    public static bool NewLook(Entity? project) => Json.Number(project?.Attrs[LookRevKey]) is { } r && r >= LookRev;
+
+    public static bool NewLook(IModelView m) => NewLook(Spatial.Project(m));
+
+    /// <summary>Lapin's standard as a project draws by it: version 1.1 for a project made since decision 674, else 1.0, exactly as before.</summary>
+    public static MaterialStandard LapinOf(Entity? project) => NewLook(project) ? MaterialStandard.LapinCurrent : MaterialStandard.Lapin;
+
+    /// <summary>The built-in standards as a project sees them: Lapin's in the version it draws by (<see cref="LapinOf"/>), then the others.</summary>
+    public static IReadOnlyList<MaterialStandard> BuiltInsOf(Entity? project) =>
+        NewLook(project) ? MaterialStandard.BuiltIns : [MaterialStandard.Lapin, .. MaterialStandard.BuiltIns.Skip(1)];
+
+    /// <summary>A standard by its id: a built-in one (Lapin's in the project's version), else the project's.</summary>
     public static MaterialStandard? Find(Entity? project, string? id) =>
-        id == null ? null : MaterialStandard.FindBuiltIn(id) ?? Own(project).FirstOrDefault(s => string.Equals(s.Id, id, StringComparison.OrdinalIgnoreCase));
+        id == null ? null : MaterialStandard.FindBuiltIn(id) is { } b ? (b.IsLapin ? LapinOf(project) : b) : Own(project).FirstOrDefault(s => string.Equals(s.Id, id, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The standard the project's materials draw by (Lapin's when it names none, or one it no longer has).</summary>
     public static MaterialStandard Of(IModelView m) => Of(Spatial.Project(m));
 
-    public static MaterialStandard Of(Entity? project) => Find(project, CurrentId(project)) ?? MaterialStandard.Lapin;
+    public static MaterialStandard Of(Entity? project) => Find(project, CurrentId(project)) ?? LapinOf(project);
 
     static Entity Project(IModelView m) => Spatial.Project(m) ?? throw new CommandException("The model has no project.");
 
@@ -457,7 +478,7 @@ public static class MaterialStandards
             return new JsonObject
             {
                 ["current"] = Of(project).Id,
-                ["standards"] = new JsonArray(MaterialStandard.BuiltIns.Concat(Own(project)).Select(s => (JsonNode)s.Summary()).ToArray()),
+                ["standards"] = new JsonArray(BuiltInsOf(project).Concat(Own(project)).Select(s => (JsonNode)s.Summary()).ToArray()),
             };
         });
 

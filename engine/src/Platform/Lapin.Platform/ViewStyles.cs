@@ -42,6 +42,9 @@ namespace Lapin.Platform;
 /// 0.7 by default, a style saved before too; a brick's courses at 1:200 lie closer and are left out; 0 draws them all.</item>
 /// <item><c>smallScaleCut</c>: how cuts draw from a scale on (decision 672, <see cref="SmallScaleCut"/>): {mode, from, color};
 /// none (asMaterial, today's look) by default and for a style saved before.</item>
+/// <item><c>materialGraphicsSet</c>: the material graphics set its views draw their materials with (decision 674,
+/// <see cref="MaterialGraphicsSets"/>); in a project made since, the Structural style names „Structure” and the MEP style
+/// „MEP”; none in a project made before (Î10). A view names another, or <c>none</c>, with <c>view.setStyle</c>.</item>
 /// </list>
 /// A view takes its style (<c>viewStyle</c>, else its discipline's), and may
 /// set any of these itself: what it sets wins over the style.
@@ -52,7 +55,7 @@ public static class ViewStyles
     public static readonly string[] LayerModes = ["all", "noFinishes", "core", "coreLoadBearing"];
     const string LayerModesText = "all, noFinishes, core or coreLoadBearing";
     public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch", "entourage", "entourageFill", "detail",
-        "minHatchSpacing", "smallScaleCut", "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection"];
+        "minHatchSpacing", "smallScaleCut", "materialGraphicsSet", "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection"];
 
     /// <summary>
     /// The finish layers by the kind of view (the forum's topic #30): whether plans, and whether sections and elevations, draw
@@ -80,7 +83,7 @@ public static class ViewStyles
     /// </summary>
     public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null, int Detail = PlanDetail.Lod350,
         bool WallFinishesPlan = true, bool WallFinishesSection = true, bool FloorFinishesPlan = true, bool FloorFinishesSection = true, string? LayersPlan = null, string? LayersSection = null,
-        bool FinishElements = true, double MinHatchSpacing = Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing, SmallScaleCut? SmallScaleCut = null)
+        bool FinishElements = true, double MinHatchSpacing = Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing, SmallScaleCut? SmallScaleCut = null, string? MaterialGraphicsSet = null)
     {
         /// <summary>The partial structure display of a view of this kind (a plan, a section or an elevation, another).</summary>
         public string LayersFor(string? viewKind) => viewKind switch
@@ -121,6 +124,8 @@ public static class ViewStyles
             if (!FinishElements) o["finishElements"] = false;
             // Written only when set (decision 672), so a style that sets none saves as before.
             if (SmallScaleCut != null) o["smallScaleCut"] = SmallScaleCut.ToJson();
+            // The same (decision 674).
+            if (MaterialGraphicsSet != null) o["materialGraphicsSet"] = MaterialGraphicsSet;
             return o;
         }
 
@@ -151,7 +156,9 @@ public static class ViewStyles
             // A style saved before real-size hatches (decision 671): the default threshold (it had no real-size hatch to leave out).
             Spacing(o["minHatchSpacing"]) ?? Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing,
             // A style saved before the small-scale cuts (decision 672): none, today's look (Î5).
-            Lapin.Platform.SmallScaleCut.Read(o["smallScaleCut"]));
+            Lapin.Platform.SmallScaleCut.Read(o["smallScaleCut"]),
+            // A style saved before the material graphics sets (decision 674): none.
+            (string?)o["materialGraphicsSet"] is { Length: > 0 } mgs ? mgs : null);
 
         /// <summary>A hatch spacing threshold (paper mm, 0 or more); null when it is not one.</summary>
         internal static double? Spacing(JsonNode? n) => Json.Number(n) is { } v && v >= 0 && double.IsFinite(v) ? v : null;
@@ -182,10 +189,21 @@ public static class ViewStyles
     /// <summary>The styles a project made before decision 500 read as when it had none of its own: every view the entire model but the structural ones.</summary>
     public static IReadOnlyList<Style> LegacyDefaults => Defaults.Select(s => s with { LayersPlan = null, LayersSection = null, FinishElements = false }).ToList();
 
+    /// <summary>
+    /// The styles a project made since decision 674 reads as when it has none of its own (<see cref="MaterialStandards.NewLook(Entity?)"/>):
+    /// <see cref="Defaults"/>, the Structural style naming the material graphics set „Structure”, the MEP style „MEP” (Î10).
+    /// </summary>
+    public static readonly IReadOnlyList<Style> NewDefaults = Defaults.Select(s => s.Id switch
+    {
+        "structural" => s with { MaterialGraphicsSet = MaterialGraphicsSets.StructureId },
+        "mep" => s with { MaterialGraphicsSet = MaterialGraphicsSets.MepId },
+        _ => s,
+    }).ToList();
+
     public static IReadOnlyList<Style> All(IModelView m) =>
-        Spatial.Project(m)?.Attrs[Key] is JsonArray arr && arr.Count > 0
+        Spatial.Project(m) is var project && project?.Attrs[Key] is JsonArray arr && arr.Count > 0
             ? arr.OfType<JsonObject>().Select(Style.From).Where(s => s.Id.Length > 0).ToList()
-            : Defaults;
+            : MaterialStandards.NewLook(project) ? NewDefaults : Defaults;
 
     /// <summary>The style a view takes: the one it names, else its discipline's, else the first.</summary>
     public static Style StyleOf(IModelView m, Entity view)
@@ -226,7 +244,20 @@ public static class ViewStyles
             MinHatchSpacing = Style.Spacing(o["minHatchSpacing"]) ?? s.MinHatchSpacing,
             // The view's own, field by field over its style's (decision 672).
             SmallScaleCut = o["smallScaleCut"] is JsonObject sc ? SmallScaleCut.Read(sc, s.SmallScaleCut) : s.SmallScaleCut,
+            // The view's own set (decision 674), or none ("none") over its style's.
+            MaterialGraphicsSet = (string?)o["materialGraphicsSet"] is { Length: > 0 } ms ? (ms == NoSet ? null : ms) : s.MaterialGraphicsSet,
         };
+    }
+
+    /// <summary>What a view names over its style's set to draw with none (decision 674).</summary>
+    public const string NoSet = "none";
+
+    /// <summary>A command's set (viewStyle.create/update, view.setStyle): one of the project's (its id), or none ("none", "" or null on a style).</summary>
+    static string? CheckedSet(IModelView m, JsonNode? v, bool view)
+    {
+        if (v is null || (string?)v is "" or NoSet) return view ? NoSet : null;
+        var id = (string?)v ?? throw new CommandException("materialGraphicsSet is a material graphics set's id, or none.");
+        return MaterialGraphicsSets.Find(m, id)?.Id ?? throw new CommandException($"There is no material graphics set „{id}”.");
     }
 
     const string SpacingProblem = "minHatchSpacing is a distance on paper in mm, 0 or more (0: every real-size hatch is drawn).";
@@ -390,6 +421,7 @@ public static class ViewStyles
         if (a.ContainsKey("minHatchSpacing")) s = s with { MinHatchSpacing = Style.Spacing(a["minHatchSpacing"]) ?? throw new CommandException(SpacingProblem) };
         // The small-scale cuts (decision 672): fields over the style's, null back to none.
         if (a.ContainsKey("smallScaleCut")) s = s with { SmallScaleCut = a["smallScaleCut"] is null ? null : SmallScaleCut.Read(SmallScaleCut.Checked(a["smallScaleCut"]), s.SmallScaleCut) };
+        if (a.ContainsKey("materialGraphicsSet")) s = s with { MaterialGraphicsSet = (string?)a["materialGraphicsSet"] is { Length: > 0 } ms && ms != NoSet ? ms : null };
         if (a.ContainsKey("finishElements")) s = s with { FinishElements = Own(a["finishElements"]) ?? throw new CommandException("finishElements is true or false.") };
         foreach (var f in FinishFields)
         {
@@ -438,6 +470,22 @@ public static class ViewStyles
         }
     }
 
+    /// <summary>A material graphics set removed (decision 674): the styles that named it name none, the views that named it take their style's.</summary>
+    internal static void ForgetMaterialSet(ICommandContext ctx, string setId)
+    {
+        var all = All(ctx.Model).ToList();
+        bool Is(string? id) => string.Equals(id, setId, StringComparison.OrdinalIgnoreCase);
+        if (all.Any(s => Is(s.MaterialGraphicsSet))) Save(ctx, all.Select(s => Is(s.MaterialGraphicsSet) ? s with { MaterialGraphicsSet = null } : s));
+        foreach (var v in ctx.Model.OfClass(Views.Class).Where(v => Is((string?)v.Attrs["styleOverrides"]?["materialGraphicsSet"])).ToList())
+        {
+            var attrs = v.CloneAttrs();
+            var own = (JsonObject)attrs["styleOverrides"]!.DeepClone();
+            own.Remove("materialGraphicsSet");
+            if (own.Count > 0) attrs["styleOverrides"] = own; else attrs.Remove("styleOverrides");
+            ctx.Replace(v.With(attrs: attrs));
+        }
+    }
+
     /// <summary>A graphics set removed: the styles that named it name none.</summary>
     internal static void ForgetSet(ICommandContext ctx, string setId)
     {
@@ -470,6 +518,7 @@ public static class ViewStyles
             var source = (string?)a["from"] is { } fid ? all.FirstOrDefault(s => s.Id == fid) ?? throw new CommandException("There is no such view style.") : all[0];
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : $"{source.Name} copy";
             for (var k = 2; all.Any(x => x.Name == name); k++) name = $"{source.Name} copy {k}";
+            if (a.ContainsKey("materialGraphicsSet")) { a = (JsonObject)a.DeepClone(); a["materialGraphicsSet"] = CheckedSet(ctx.Model, a["materialGraphicsSet"], false); }
             var made = Patch(source with { Id = ctx.NewId(), Name = name }, a);
             all.Add(made);
             Save(ctx, all);
@@ -481,6 +530,7 @@ public static class ViewStyles
             var all = All(ctx.Model).ToList();
             var i = all.FindIndex(s => s.Id == (string?)a["id"]);
             if (i < 0) throw new CommandException("There is no such view style.");
+            if (a.ContainsKey("materialGraphicsSet")) { a = (JsonObject)a.DeepClone(); a["materialGraphicsSet"] = CheckedSet(ctx.Model, a["materialGraphicsSet"], false); }
             all[i] = Patch(all[i], a);
             Save(ctx, all);
             return null;
@@ -537,6 +587,8 @@ public static class ViewStyles
                 else if (f == "minHatchSpacing") own[f] = Style.Spacing(value) ?? throw new CommandException(SpacingProblem);
                 // The small-scale cuts (decision 672): the fields given, over the style's (mode, from, color).
                 else if (f == "smallScaleCut") own[f] = SmallScaleCut.Checked(value);
+                // The material graphics set (decision 674): one of the project's, or "none" over the style's.
+                else if (f == "materialGraphicsSet") own[f] = CheckedSet(ctx.Model, value, true);
                 else own[f] = value is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException($"{f} is true or false.");
             }
             if (own.Count > 0) attrs["styleOverrides"] = own; else attrs.Remove("styleOverrides");
