@@ -458,7 +458,11 @@ public static class Roof
             {
                 new("GutterLength", gutters.Sum(x => x.Length), "LENGTH", $"{(spec.Box ? "Box gutter" : "Half-round gutter")} {Math.Round(spec.Width * 1000)}"),
             };
-            if (spec.Ends) q2.Add(new("GutterEndCount", gutters.Count * 2, "COUNT", "Gutter end caps"));
+            if (spec.Ends)
+            {
+                var ends = gutters.Sum(x => (x.CapStart ? 1 : 0) + (x.CapEnd ? 1 : 0));
+                if (ends > 0) q2.Add(new("GutterEndCount", ends, "COUNT", "Gutter end caps"));
+            }
             if (autos.Count > 0) { q2.Add(new("DownpipeCount", autos.Count, "COUNT", "Downpipes")); q2.Add(new("DownpipeLength", autos.Sum(), "LENGTH", "Downpipe Ø100")); }
             yield return new QuantitySet("Lapin_RoofDrainageQuantities", q2, "drainage", "Gutters and downpipes");
         }

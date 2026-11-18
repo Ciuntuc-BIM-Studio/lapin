@@ -551,4 +551,105 @@ public class RoofTests
         Assert.Equal(3, f.Bounds(wall).Max.Z, 6);
         Assert.Throws<CommandException>(() => f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall), ["roofIds"] = new JsonArray(f.Wall(0, 5, 5, 5)) }));
     }
+
+    [Fact]
+    public void Hip_roof_gutters_miter_at_corners_without_gaps_or_internal_caps()
+    {
+        var f = new Fixture();
+        var roof = AddRoof(f, "traditional_campie");                      // hip 28°, 600 mm eaves
+        f.Run("architecture.updateRoof", new JsonObject
+        {
+            ["id"] = roof,
+            ["attrs"] = new JsonObject { ["gutterProfile"] = "box", ["gutterWidth"] = 0.14, ["gutterOffset"] = 0.05, ["gutterFall"] = 5 },
+        });
+        var r = Roof.Resolve(f.Model.Get(roof)!, f.Model)!;
+        var shape = Roof.Solve(r).Shape!;
+        var gutters = RoofParts.Gutters(r, shape);
+        Assert.Equal(4, gutters.Count);
+        Assert.All(gutters, g =>
+        {
+            Assert.False(g.CapStart);
+            Assert.False(g.CapEnd);
+            Assert.NotEqual(0, g.StartMiter);
+            Assert.NotEqual(0, g.EndMiter);
+        });
+        Assert.Equal(0, Q(f, roof, "GutterEndCount", "drainage"), 9);
+
+        // South eave (y = -0.6) and east eave (x = 10.6) meet at their outer corner (10.6 + 0.05 + 0.14, -0.6 - 0.05 - 0.14).
+        var parts = f.Session.Geometry(roof)!.Parts.Where(p => p.Key!.StartsWith("gutter:")).ToList();
+        Assert.Equal(4, parts.Count);
+        Assert.All(parts, p => Assert.True(Measure.SignedVolume(p.Solid) > 0));
+        var south = parts[0].Solid.Vertices;
+        var east = parts[1].Solid.Vertices;
+        var cornerX = 10.6 + 0.05 + 0.14;
+        var cornerY = -0.6 - 0.05 - 0.14;
+        Assert.Contains(south, v => Math.Abs(v.X - cornerX) < 1e-4 && Math.Abs(v.Y - cornerY) < 1e-4);
+        Assert.Contains(east, v => Math.Abs(v.X - cornerX) < 1e-4 && Math.Abs(v.Y - cornerY) < 1e-4);
+    }
+
+    [Fact]
+    public void Free_gutter_ends_keep_end_caps_when_an_edge_has_no_gutter_or_on_a_gable()
+    {
+        var f = new Fixture();
+        var roof = AddRoof(f, "traditional_campie");
+        // Disable south eave's gutter: east and west gutters now have one free end each, while north corners stay joined.
+        f.Run("architecture.updateRoof", new JsonObject
+        {
+            ["id"] = roof,
+            ["edges"] = new JsonArray(new JsonObject { ["gutter"] = false }, null, null, null),
+        });
+        var r = Roof.Resolve(f.Model.Get(roof)!, f.Model)!;
+        var gutters = RoofParts.Gutters(r, Roof.Solve(r).Shape!);
+        Assert.Equal(3, gutters.Count);
+        Assert.Equal(2, gutters.Sum(g => (g.CapStart ? 1 : 0) + (g.CapEnd ? 1 : 0)));
+        Assert.Equal(2, Q(f, roof, "GutterEndCount", "drainage"), 9);
+
+        // Gable roof: 2 parallel eaves, 4 free ends.
+        f.Run("architecture.updateRoof", new JsonObject
+        {
+            ["id"] = roof,
+            ["attrs"] = new JsonObject { ["shape"] = "gable" },
+            ["edges"] = new JsonArray(new JsonObject { ["gutter"] = true }, null, null, null),
+        });
+        Assert.Equal(4, Q(f, roof, "GutterEndCount", "drainage"), 9);
+    }
+
+    [Fact]
+    public void L_shaped_hip_roof_miters_both_exterior_and_interior_corners_without_overlap()
+    {
+        var f = new Fixture();
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["storeyId"] = f.Storey,
+            ["points"] = Corners((0, 0), (10, 0), (10, 4), (4, 4), (4, 10), (0, 10)),
+            ["style"] = "traditional_campie",
+        })!["id"]!;
+        var r = Roof.Resolve(f.Model.Get(roof)!, f.Model)!;
+        var shape = Roof.Solve(r).Shape!;
+        var gutters = RoofParts.Gutters(r, shape);
+        Assert.Equal(6, gutters.Count);
+        Assert.All(gutters, g =>
+        {
+            Assert.False(g.CapStart);
+            Assert.False(g.CapEnd);
+        });
+
+        // Every adjacent pair of gutters shares the exact same outer miter corner point and does not overshoot past it.
+        const double width = 0.125;
+        for (var i = 0; i < gutters.Count; i++)
+        {
+            var g1 = gutters[i];
+            var g2 = gutters[(i + 1) % gutters.Count];
+            var d1 = (g1.B - g1.A).Xy.Normalized();
+            var d2 = (g2.B - g2.A).Xy.Normalized();
+            var outer1 = g1.B.Xy + g1.Out * width + d1 * (width * g1.EndMiter);
+            var outer2 = g2.A.Xy + g2.Out * width + d2 * (width * g2.StartMiter);
+            Assert.True((outer1 - outer2).Length < 1e-6, $"Corner {i}: {outer1} != {outer2}");
+        }
+
+        // Built gutter solids have positive volume and meet at the interior corner without overshooting.
+        var parts = f.Session.Geometry(roof)!.Parts.Where(p => p.Key!.StartsWith("gutter:")).ToList();
+        Assert.Equal(6, parts.Count);
+        Assert.All(parts, p => Assert.True(Measure.SignedVolume(p.Solid) > 0));
+    }
 }

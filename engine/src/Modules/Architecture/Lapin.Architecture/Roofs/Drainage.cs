@@ -142,14 +142,28 @@ public static class Drainage
             if (s1 - s0 < 1e-4) continue;
             var a = g.A + dir * s0 - new Vec3(0, 0, depth(s0));
             var b = g.A + dir * s1 - new Vec3(0, 0, depth(s1));
-            if (RoofParts.Channel(g with { A = a, B = b }, spec.Box, tag, spec.R) is { } c) o.Add(c);
+            var seg = g with
+            {
+                A = a,
+                B = b,
+                StartMiter = s0 < 1e-4 ? g.StartMiter : 0,
+                EndMiter = g.Length - s1 < 1e-4 ? g.EndMiter : 0,
+            };
+            if (RoofParts.Channel(seg, spec.Box, tag, spec.R) is { } c) o.Add(c);
         }
         if (spec.Ends)
-            foreach (var (s, inward) in new[] { (0.0, 1.0), (g.Length, -1.0) })
+        {
+            if (g.CapStart)
             {
-                var at = g.A + dir * s - new Vec3(0, 0, depth(s));
-                if (RoofParts.Cap(g with { A = at, B = at + dir * inward }, spec.Box, spec.R, tag) is { } cap) o.Add(cap);
+                var at = g.A - new Vec3(0, 0, depth(0));
+                if (RoofParts.Cap(g with { A = at, B = at + dir }, spec.Box, spec.R, tag) is { } cap) o.Add(cap);
             }
+            if (g.CapEnd)
+            {
+                var at = g.B - new Vec3(0, 0, depth(g.Length));
+                if (RoofParts.Cap(g with { A = at, B = at - dir }, spec.Box, spec.R, tag) is { } cap) o.Add(cap);
+            }
+        }
         return o;
     }
 

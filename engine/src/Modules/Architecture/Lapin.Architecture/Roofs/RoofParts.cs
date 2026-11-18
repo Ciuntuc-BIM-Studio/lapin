@@ -334,15 +334,20 @@ public static class RoofParts
         return w > k0 && w < k1 ? w : null;
     }
 
-    /// <summary>A gutter run: one eave line, where the covering ends, outward from the roof; the outline edge it belongs to (decision 235).</summary>
-    public sealed record Gutter(Vec3 A, Vec3 B, Vec2 Out, int Edge = -1)
+    /// <summary>
+    /// A gutter run: one eave line, where the covering ends, outward from the roof; the outline edge it belongs to (decision 235).
+    /// <see cref="StartMiter"/> and <see cref="EndMiter"/> are the slopes along the run per unit outward width at each end where
+    /// it miters into an adjacent gutter; <see cref="CapStart"/> and <see cref="CapEnd"/> are false at joined corners.
+    /// </summary>
+    public sealed record Gutter(Vec3 A, Vec3 B, Vec2 Out, int Edge = -1, double StartMiter = 0, double EndMiter = 0, bool CapStart = true, bool CapEnd = true)
     {
         public double Length => (B - A).Length;
     }
 
     /// <summary>
     /// Gutters under the eave lines (none when the roof has none, nor on an eave edge whose gutter is off): just below the
-    /// covering's edge, set out from it by the gutter's offset and down by its drop (decision 235).
+    /// covering's edge, set out from it by the gutter's offset and down by its drop (decision 235). Adjacent eave gutters at
+    /// the same height are mitered at their shared corner and omit their end caps there.
     /// </summary>
     public static List<Gutter> Gutters(Roof.Resolved r, RoofShape s)
     {
@@ -352,7 +357,7 @@ public static class RoofParts
         // Only where the water goes: an eave line that is its slope's lowest edge (a shed roof's high edge is drawn as an eave too, but takes no gutter).
         bool Low(RoofLine l) => s.Planes.FirstOrDefault(p => p.Points.Any(q => (q - l.A).Length < 1e-6) && p.Points.Any(q => (q - l.B).Length < 1e-6)) is not { } plane
             || Math.Max(l.A.Z, l.B.Z) <= plane.Points.Min(q => q.Z) + 1e-6;
-        return s.Lines.Where(l => l.Kind == LineKind.Eave && Low(l)).Select(l =>
+        var items = s.Lines.Where(l => l.Kind == LineKind.Eave && Low(l)).Select(l =>
         {
             var d = (l.B - l.A).Xy.Normalized();
             var outward = d.Perp;
@@ -362,8 +367,54 @@ public static class RoofParts
             var reach = (edge >= 0 ? r.Rules[edge].Overhang : 0) + 0.05;
             if (Polygon2.Contains(inside, mid + outward * reach)) outward = -outward;
             var shift = new Vec3(outward.X, outward.Y, 0) * spec.Offset + new Vec3(0, 0, r.StructureDepth - spec.Drop);
-            return new Gutter(l.A + shift, l.B + shift, outward, edge);
-        }).Where(g => g.Length > 0.3 && Drainage.HasGutter(r.Roof, g.Edge)).ToList();
+            return (G: new Gutter(l.A + shift, l.B + shift, outward, edge), RawA: l.A, RawB: l.B);
+        }).Where(x => x.G.Length > 0.3 && Drainage.HasGutter(r.Roof, x.G.Edge)).ToList();
+
+        for (var i = 0; i < items.Count; i++)
+        {
+            for (var j = i + 1; j < items.Count; j++)
+            {
+                var (gi, ai, bi) = items[i];
+                var (gj, aj, bj) = items[j];
+                (int EndI, int EndJ)? match =
+                    (ai - aj).Length < 1e-4 ? (0, 0) :
+                    (ai - bj).Length < 1e-4 ? (0, 1) :
+                    (bi - aj).Length < 1e-4 ? (1, 0) :
+                    (bi - bj).Length < 1e-4 ? (1, 1) : null;
+                if (match is not var (endI, endJ)) continue;
+
+                var di = (bi - ai).Xy.Normalized();
+                var dj = (bj - aj).Xy.Normalized();
+                var den = Vec2.Cross(di, dj);
+                double mi = 0, mj = 0;
+                if (Math.Abs(den) < 1e-4)
+                {
+                    // Collinear split eave: suppress internal end caps without mitering; ignore 180° hairpins.
+                    if (Vec2.Dot(gi.Out, gj.Out) < 0.999) continue;
+                }
+                else
+                {
+                    mi = Vec2.Cross(gj.Out - gi.Out, dj) / den;
+                    mj = Vec2.Cross(gi.Out - gj.Out, di) / -den;
+                }
+
+                var shiftI = new Vec3(di.X, di.Y, 0) * (spec.Offset * mi);
+                var shiftJ = new Vec3(dj.X, dj.Y, 0) * (spec.Offset * mj);
+                items[i] = items[i] with
+                {
+                    G = endI == 0
+                        ? gi with { A = gi.A + shiftI, StartMiter = mi, CapStart = false }
+                        : gi with { B = gi.B + shiftI, EndMiter = mi, CapEnd = false },
+                };
+                items[j] = items[j] with
+                {
+                    G = endJ == 0
+                        ? gj with { A = gj.A + shiftJ, StartMiter = mj, CapStart = false }
+                        : gj with { B = gj.B + shiftJ, EndMiter = mj, CapEnd = false },
+                };
+            }
+        }
+        return items.Select(x => x.G).ToList();
     }
 
     /// <summary>Snow guard rows: along every eave plane, 0.6 m up the slope from the eave (a second row on long slopes), on the covering.</summary>
@@ -408,25 +459,60 @@ public static class RoofParts
     public static Solid? Channel(Gutter g, bool box, string? tag = null, double R = 0.0625)
     {
         const double wall = 0.006;
-        var dir = (g.B - g.A).Normalized();
         var outV = new Vec3(g.Out.X, g.Out.Y, 0);
-        var c = g.A + outV * R;                   // the channel's axis, at the covering's edge level
-        List<Vec3> profile;
+        List<(double X, double Z)> xz = [];
         if (box)
         {
             double w = 2 * R, h = 0.09;
-            Vec3 P(double x, double z) => c + outV * (x - R) + new Vec3(0, 0, z);
-            profile = [P(0, 0), P(0, -h), P(w, -h), P(w, 0), P(w - wall, 0), P(w - wall, -h + wall), P(wall, -h + wall), P(wall, 0)];
+            xz = [(0, 0), (0, -h), (w, -h), (w, 0), (w - wall, 0), (w - wall, -h + wall), (wall, -h + wall), (wall, 0)];
         }
         else
         {
             // A half annulus, open at the top.
             var k = Chords.Count(R, Math.PI, 2);
-            var outer = Enumerable.Range(0, k + 1).Select(i => { var t = Math.PI * i / k; return c + outV * (-R * Math.Cos(t)) + new Vec3(0, 0, -R * Math.Sin(t)); });
-            var inner = Enumerable.Range(0, k + 1).Reverse().Select(i => { var t = Math.PI * i / k; return c + outV * (-(R - wall) * Math.Cos(t)) + new Vec3(0, 0, -(R - wall) * Math.Sin(t)); });
-            profile = [.. outer, .. inner];
+            for (var i = 0; i <= k; i++) { var t = Math.PI * i / k; xz.Add((R * (1 - Math.Cos(t)), -R * Math.Sin(t))); }
+            for (var i = k; i >= 0; i--) { var t = Math.PI * i / k; xz.Add((R - (R - wall) * Math.Cos(t), -(R - wall) * Math.Sin(t))); }
         }
-        return Prism.Extrude(profile, null, g.B - g.A, tag);
+        if (Math.Abs(g.StartMiter) < 1e-9 && Math.Abs(g.EndMiter) < 1e-9)
+        {
+            var profile = xz.Select(p => g.A + outV * p.X + new Vec3(0, 0, p.Z)).ToList();
+            return Prism.Extrude(profile, null, g.B - g.A, tag);
+        }
+        var dirXY = new Vec3(g.B.X - g.A.X, g.B.Y - g.A.Y, 0);
+        if (dirXY.Length < 1e-9) return null;
+        dirXY = dirXY.Normalized();
+        var lo = xz.Select(p => g.A + outV * p.X + dirXY * (p.X * g.StartMiter) + new Vec3(0, 0, p.Z)).ToList();
+        var hi = xz.Select(p => g.B + outV * p.X + dirXY * (p.X * g.EndMiter) + new Vec3(0, 0, p.Z)).ToList();
+        var nStart = VecMath.NewellNormal(lo);
+        if (nStart.Length < Tolerance.Area) return null;
+        if (Vec3.Dot(nStart, dirXY) < 0) { lo.Reverse(); hi.Reverse(); nStart = -nStart; }
+        var nEnd = VecMath.NewellNormal(hi);
+        if (nEnd.Length < Tolerance.Area) return null;
+        if (Vec3.Dot(nEnd, dirXY) < 0) nEnd = -nEnd;
+        var n = lo.Count;
+        var verts = new List<Vec3>(n * 2);
+        verts.AddRange(lo);
+        verts.AddRange(hi);
+        var faces = new List<FaceInput>
+        {
+            new(Enumerable.Range(0, n).Reverse().ToArray(), null, -nStart, "start"),
+            new(Enumerable.Range(n, n).ToArray(), null, nEnd, "end"),
+        };
+        var sloping = Math.Abs(g.B.Z - g.A.Z) > 1e-9;
+        for (var i = 0; i < n; i++)
+        {
+            var j = (i + 1) % n;
+            if (sloping)
+            {
+                faces.Add(new FaceInput([i, j, n + j], null, Vec3.Cross(lo[j] - lo[i], hi[j] - lo[i]), "side"));
+                faces.Add(new FaceInput([i, n + j, n + i], null, Vec3.Cross(hi[j] - lo[i], hi[i] - lo[i]), "side"));
+            }
+            else
+            {
+                faces.Add(new FaceInput([i, j, n + j, n + i], null, Vec3.Cross(lo[j] - lo[i], hi[i] - lo[i]), "side"));
+            }
+        }
+        return SolidBuilder.Make(verts, faces, tag);
     }
 
     /// <summary>A gutter's end cap at A, 4 mm thick towards B: its channel's outline filled.</summary>
