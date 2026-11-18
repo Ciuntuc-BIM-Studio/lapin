@@ -175,6 +175,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         var finishLinks = new RoomFinishLinks();
         r.Service<ITransformFollowers>(finishLinks);
         r.Service<IDeletionFollowers>(finishLinks);
+        // A wall's top attached to an element deleted lets go of it, never widening to every roof (docs/plan-attach-to.md, A0).
+        r.Service<IDeletionFollowers>(new AttachedLinks());
         // A height typed on a wall with a top (the inspector's element.update): a height of its own, the wall unconnected.
         r.Service<IElementUpdate>(new WallTopDeletion());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
@@ -1172,6 +1174,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 var attrs = wall.CloneAttrs();
                 attrs["roofTop"] = "attach";
                 if (roofIds.Count > 0) attrs["roofIds"] = new JsonArray(roofIds.Select(x => (JsonNode)x).ToArray()); else attrs.Remove("roofIds");
+                attrs.Remove(WallTops.GoneKey);
                 ctx.Replace(wall.With(attrs: attrs));
             }
             return null;
@@ -1186,6 +1189,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 var attrs = wall.CloneAttrs();
                 attrs["roofTop"] = mode;
                 attrs.Remove("roofIds");
+                attrs.Remove(WallTops.GoneKey);
                 ctx.Replace(wall.With(attrs: attrs));
             }
             return null;
@@ -1678,6 +1682,14 @@ sealed class WallTopDeletion : IDeletion, IElementUpdate
 {
     public void Updated(ICommandContext ctx, Entity before, Entity after)
     {
+        // Its top's mode changed by hand (the inspector's roofTop): what it lost to a deletion is no longer a problem.
+        if (after.Class == IfcClass.Wall && after.Attrs[WallTops.GoneKey] != null && after.Str("roofTop") != before.Str("roofTop"))
+        {
+            var cleared = after.CloneAttrs();
+            cleared.Remove(WallTops.GoneKey);
+            ctx.Replace(after.With(attrs: cleared));
+            after = ctx.Model.Get(after.Id)!;
+        }
         if (after.Class != IfcClass.Wall || WallTop.Of(after) == null || Math.Abs(after.Num("height", Walls.DefaultHeight) - before.Num("height", Walls.DefaultHeight)) < 1e-12) return;
         var attrs = after.CloneAttrs();
         attrs.Remove(WallTop.Key);

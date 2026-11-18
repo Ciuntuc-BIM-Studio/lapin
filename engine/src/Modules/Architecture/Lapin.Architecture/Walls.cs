@@ -266,6 +266,7 @@ public static class Walls
         if (PathCurve.Of(wall) is { IsArc: true } arc) return ArcGeometry(wall, arc, m, services);
         var problems = new List<string>();
         if (WallTop.Problem(m, wall) is { } topProblem) problems.Add(topProblem);
+        if (WallTops.Problem(m, wall) is { } attachProblem) problems.Add(attachProblem);
         var paths = services?.Get<IPathElements>();
         // Its ends where its joins put them; a free end cut at its own angle (startAngle, endAngle).
         var ends = Joins.WithOwnEnds(paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2], wall, Frame(wall, m));
@@ -953,6 +954,7 @@ public static class Walls
     {
         var problems = new List<string>();
         if (WallTop.Problem(m, wall) is { } topProblem) problems.Add(topProblem);
+        if (WallTops.Problem(m, wall) is { } attachProblem) problems.Add(attachProblem);
         var paths = services?.Get<IPathElements>();
         var ends = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
         var length = c.Length;

@@ -41,12 +41,9 @@ public static class RoofTop
     /// <summary>How a wall takes roofs: auto, attach or none.</summary>
     public static readonly string[] Modes = ["auto", "attach", "none"];
 
-    /// <summary>The roofs a wall attached to roofs follows: those it names, else all.</summary>
-    public static IEnumerable<Entity> AttachedRoofs(Entity wall, IModelView m)
-    {
-        var named = wall.Attrs["roofIds"] is System.Text.Json.Nodes.JsonArray ids ? ids.Select(x => (string?)x).OfType<string>().ToList() : null;
-        return named is { Count: > 0 } ? named.Select(m.Get).OfType<Entity>().Where(r => r.Class == IfcClass.Roof) : m.OfClass(IfcClass.Roof);
-    }
+    /// <summary>The roofs a wall attached to roofs follows: those it names that are still there, else (naming none) all.</summary>
+    public static IEnumerable<Entity> AttachedRoofs(Entity wall, IModelView m) =>
+        WallTops.Named(wall) is { } named ? named.Select(m.Get).OfType<Entity>().Where(r => r.Class == IfcClass.Roof) : m.OfClass(IfcClass.Roof);
 
     /// <summary>The roofs over an element's storey.</summary>
     public static IEnumerable<Entity> RoofsOver(string elementId, IModelView m)

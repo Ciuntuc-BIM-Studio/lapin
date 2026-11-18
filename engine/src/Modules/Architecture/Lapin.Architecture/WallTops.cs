@@ -78,8 +78,8 @@ public static class WallTops
         IEnumerable<Entity> targets;
         if (mode == "attach")
         {
-            var named = wall.Attrs["roofIds"] is JsonArray ids ? ids.Select(x => (string?)x).OfType<string>().Select(m.Get).OfType<Entity>().ToList() : null;
-            targets = named is { Count: > 0 } ? named : m.OfClass(IfcClass.Roof);
+            // Named, only what is still there: a target gone never widens it to every roof. Naming none, every roof.
+            targets = Named(wall) is { } named ? named.Select(m.Get).OfType<Entity>().ToList() : m.OfClass(IfcClass.Roof);
         }
         else targets = RoofTop.RoofsOver(wall.Id, m);
         var o = new List<Tri>();
@@ -92,6 +92,26 @@ public static class WallTops
             o.AddRange(TrianglesOf(t, m, services));
         }
         return o;
+    }
+
+    /// <summary>The ids an attached wall names (<c>roofIds</c>), or null when it names none (it then takes every roof).</summary>
+    public static List<string>? Named(Entity wall) =>
+        wall.Attrs["roofIds"] is JsonArray ids && ids.Select(x => (string?)x).OfType<string>().ToList() is { Count: > 0 } named ? named : null;
+
+    /// <summary>The names of what a wall's top was attached to before they were all deleted, kept for the Problems panel (<see cref="AttachedLinks"/>).</summary>
+    public const string GoneKey = "roofTopGone";
+
+    /// <summary>What is wrong with what the wall's top is attached to (for the Problems panel); null when nothing is.</summary>
+    public static string? Problem(IModelView m, Entity wall)
+    {
+        var mode = wall.Str("roofTop") ?? "auto";
+        if (mode == "attach" && Named(wall) is { } named && named.Where(id => m.Get(id) == null).ToList() is { Count: > 0 } missing)
+            return missing.Count == named.Count
+                ? $"What its top is attached to is gone ({string.Join(", ", missing)}): it stands at its own height."
+                : $"Part of what its top is attached to is gone ({string.Join(", ", missing)}): it follows the rest.";
+        if (mode == "none" && wall.Attrs[GoneKey] is JsonArray gone && gone.Count > 0)
+            return $"What its top was attached to was deleted ({string.Join(", ", gone.Select(x => $"„{(string?)x}”"))}): it stands at its own height. Attach it again, or detach it.";
+        return null;
     }
 
     static List<Tri> TrianglesOf(Entity t, IModelView m, IServices services) => Cache.Get(t, m, v => Triangles(t, v, services));
@@ -244,5 +264,32 @@ public static class WallTops
         var t = Math.Clamp(((b.U - a.U) * dx + (b.V - a.V) * dy) / len2, 0, 1);
         var (px, py) = (a.U + dx * t - b.U, a.V + dy * t - b.V);
         return Math.Sqrt(px * px + py * py);
+    }
+}
+
+/// <summary>
+/// What an attached wall names goes with it (docs/plan-attach-to.md §1.1, stage A0): a target deleted is taken out of
+/// every wall's <c>roofIds</c> in the delete's undo step. A wall left naming nothing stands at its own height
+/// (<c>roofTop</c> none), never rising to every roof as a wall attached without names does, and keeps the names of what
+/// it lost for the Problems panel (<see cref="WallTops.GoneKey"/>) until it is attached again or detached.
+/// </summary>
+sealed class AttachedLinks : IDeletionFollowers
+{
+    public void Deleting(ICommandContext ctx, IReadOnlySet<string> deleting)
+    {
+        foreach (var wall in ctx.Model.OfClass(IfcClass.Wall).Where(w => !deleting.Contains(w.Id)).ToList())
+        {
+            if (WallTops.Named(wall) is not { } named || !named.Any(deleting.Contains)) continue;
+            var attrs = wall.CloneAttrs();
+            var left = named.Where(id => !deleting.Contains(id)).ToList();
+            if (left.Count > 0) attrs["roofIds"] = new JsonArray([.. left.Select(x => (JsonNode)x)]);
+            else
+            {
+                attrs.Remove("roofIds");
+                attrs["roofTop"] = "none";
+                attrs[WallTops.GoneKey] = new JsonArray([.. named.Select(id => (JsonNode)(ctx.Model.Get(id)?.Name ?? id))]);
+            }
+            ctx.Replace(wall.With(attrs: attrs));
+        }
     }
 }
