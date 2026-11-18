@@ -2828,3 +2828,20 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 /* Real-size hatch patterns: the badge beside a picker (stage 1 of the material graphics). */
 .units-badge { display: inline-block; margin-left: 6px; padding: 0 5px; border: 1px solid var(--ink-muted); border-radius: 8px; font-size: 10px; line-height: 15px; white-space: nowrap; color: var(--ink-muted); }
 .gfx-control .hatch-swatch { margin-left: 6px; flex: none; }
+
+/* Material graphics by scale (stage 2) */
+.gfx-bytscale { display: flex; flex-direction: column; gap: 6px; }
+.gfx-bs-help { margin: 0; }
+.gfx-step { border: 1px solid var(--rule); border-radius: 3px; padding: 4px 6px; }
+.gfx-step.active { border-color: var(--accent, #3b6fd4); box-shadow: inset 3px 0 0 var(--accent, #3b6fd4); }
+.gfx-step-head { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.gfx-step-no { font-weight: 600; min-width: 1.2em; }
+.gfx-scale-end { display: inline-flex; align-items: center; gap: 3px; }
+.gfx-scale-end input.num { width: 4.5em; }
+.gfx-step-applies { color: var(--accent, #3b6fd4); font-weight: 600; }
+.gfx-step-sum { margin: 2px 0; }
+.gfx-step-problem { margin: 2px 0; color: var(--danger, #c0392b); }
+.gfx-step details > summary { cursor: pointer; }
+.gfx-bs-actions { display: flex; gap: 12px; }
+.small-scale-cut { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.small-scale-cut input.num { width: 4.5em; }

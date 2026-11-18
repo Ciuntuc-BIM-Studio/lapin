@@ -16,8 +16,9 @@ import { HatchSwatch } from './HatchSwatch';
 import { PatternOptions, UNITS_LABEL, UnitsBadge, effectiveUnits, scaleLabel, unitsOf, type HatchUnits } from './hatchUnits';
 import { useLineTypes } from './lineTypes/lineTypes';
 import { MaterialGraphicsPreview } from './MaterialGraphicsPreview';
+import { MaterialScaleSteps } from './MaterialScaleSteps';
 import {
-  ISO_WEIGHTS, fieldPatch, groupPatch, inheritedText, isSet, parseNumber, parseOpacity, parseWeight, swatchFill, swatchInk, updateArgs,
+  ISO_WEIGHTS, fieldPatch, groupPatch, inheritedText, isSet, parseNumber, parseOpacity, parseWeight, stepsOf, stepsPatch, swatchFill, swatchInk, updateArgs,
   type Field, type GroupField, type MaterialKind, type MaterialRow, type OwnGraphics, type SampleLayout,
 } from './materialGraphicsModel';
 
@@ -29,7 +30,7 @@ export const MATERIAL_KINDS: { kind: MaterialKind; label: string }[] = [{ kind: 
 export const useGraphicsPrefs = create<{ scale: number; layout: SampleLayout }>(() => ({ scale: 50, layout: 'strip' }));
 
 /** A row of the configurator: its label, the control, and the way back to the default when the field is set. */
-function Row({ label, title, set, onReset, children, testId }: { label: string; title?: string; set: boolean; onReset: () => void; children: ReactNode; testId?: string }) {
+export function Row({ label, title, set, onReset, children, testId }: { label: string; title?: string; set: boolean; onReset: () => void; children: ReactNode; testId?: string }) {
   return (
     <div className={`gfx-row${set ? ' own' : ''}`} title={title} data-testid={testId}>
       <span className="gfx-label small">{label}</span>
@@ -40,7 +41,7 @@ function Row({ label, title, set, onReset, children, testId }: { label: string; 
 }
 
 /** A number typed, committed when the field is left; empty goes back to the default; the inherited value shows as the placeholder. */
-function NumberInput({ id, value, placeholder, parse, onCommit, list, field }: { id: string; value: number | undefined; placeholder: string; parse: (t: string) => number | null; onCommit: (v: number | undefined) => void; list?: string; field?: string }) {
+export function NumberInput({ id, value, placeholder, parse, onCommit, list, field }: { id: string; value: number | undefined; placeholder: string; parse: (t: string) => number | null; onCommit: (v: number | undefined) => void; list?: string; field?: string }) {
   return (
     <input className="num" data-field={field} key={`${id}:${value ?? ''}`} defaultValue={value ?? ''} placeholder={placeholder} list={list} inputMode="decimal"
       onBlur={(e) => {
@@ -55,7 +56,7 @@ function NumberInput({ id, value, placeholder, parse, onCommit, list, field }: {
 }
 
 /** A percentage: the slider moves the preview (a draft) and the value goes to the engine when let go. */
-function OpacityInput({ value, inherited, onDraft, onCommit, field }: { value: number | undefined; inherited: number; onDraft: (v: number | undefined) => void; onCommit: (v: number) => void; field?: string }) {
+export function OpacityInput({ value, inherited, onDraft, onCommit, field }: { value: number | undefined; inherited: number; onDraft: (v: number | undefined) => void; onCommit: (v: number) => void; field?: string }) {
   const [live, setLive] = useState<number | null>(null);
   const shown = live ?? value ?? inherited;
   const done = () => { if (live !== null) { const v = live; setLive(null); onCommit(v); } };
@@ -72,14 +73,14 @@ function OpacityInput({ value, inherited, onDraft, onCommit, field }: { value: n
 }
 
 /** A colour: automatic until one is chosen (a button showing what it is now), then the colour field. */
-function ColourControl({ value, auto, onSet }: { value: string | undefined; auto: string; onSet: (v: string) => void }) {
+export function ColourControl({ value, auto, onSet }: { value: string | undefined; auto: string; onSet: (v: string) => void }) {
   if (value === undefined) {
     return <button type="button" className="gfx-auto" title="Automatic: click to choose a colour" onClick={() => onSet(auto)}><span className="swatch" style={{ background: auto }} />Automatic</button>;
   }
   return <ColourField value={value} onChange={(v) => onSet(v.slice(0, 7))} />;
 }
 
-function LineTypeSelect({ value, onSet, field }: { value: string | undefined; onSet: (v: string) => void; field?: string }) {
+export function LineTypeSelect({ value, onSet, field }: { value: string | undefined; onSet: (v: string) => void; field?: string }) {
   const lt = useLineTypes();
   const names = [...(lt?.builtin ?? []).map((b) => b.name), ...(lt?.own ?? []).map((o) => o.name)];
   const shown = value ?? '';
@@ -103,6 +104,7 @@ const Section = ({ title, open, children, name }: { title: string; open: boolean
 export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }: { m: MaterialRow; hatches: HatchPattern[]; targets?: MaterialRow[]; compact?: boolean }) {
   const [kind, setKind] = useState<MaterialKind>('section');
   const [draft, setDraft] = useState<Record<string, unknown>>({});
+  const [activeStep, setActiveStep] = useState<number | null>(null);
   const prefs = useGraphicsPrefs();
   const ids = (targets && targets.length ? targets : [m]).map((x) => x.id);
   const own = m.own[kind] as OwnGraphics | undefined;
@@ -161,7 +163,7 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
       </div>
       {ids.length > 1 && <p className="small gfx-multi" data-testid="material-graphics-multi">{`Changes go to all ${ids.length} selected materials.`}</p>}
       <MaterialGraphicsPreview id={m.id} kind={kind} draft={draft} scale={prefs.scale} layout={prefs.layout} width={compact ? 300 : 340}
-        onScale={(scale) => useGraphicsPrefs.setState({ scale })} onLayout={(layout) => useGraphicsPrefs.setState({ layout })} version={m} />
+        onScale={(scale) => useGraphicsPrefs.setState({ scale })} onLayout={(layout) => useGraphicsPrefs.setState({ layout })} onStep={setActiveStep} version={m} />
 
       <Section title="Hatch" name="hatch" open>
         <Row label="Pattern" set={hatchValue !== '*'} onReset={() => setField('hatch', undefined)}>
@@ -250,6 +252,11 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
         {lineRows('cutLine', 'material-cutline')}
         <span className="eyebrow">Separator lines</span>
         {lineRows('separatorLine', 'material-separator')}
+      </Section>
+
+      <Section title="By scale" name="by-scale" open={!compact && stepsOf(own).length > 0}>
+        <MaterialScaleSteps kind={kind} materialId={m.id} steps={stepsOf(own)} r={r} hatches={hatches} activeIndex={activeStep}
+          onSteps={(steps) => send(stepsPatch(steps))} onPreviewAt={(scale) => useGraphicsPrefs.setState({ scale })} />
       </Section>
     </div>
   );

@@ -12,11 +12,11 @@ import { drawsOnDark, type DrawingDto } from '../../viewport/drawing';
 import { fitBounds } from './typePreviewState';
 import { GRAPHICS_SCALES, previewArgs, type MaterialKind, type SampleLayout } from './materialGraphicsModel';
 
-type PreviewDto = DrawingDto & { layout?: string; resolved?: unknown };
+type PreviewDto = DrawingDto & { layout?: string; resolved?: { step?: { kind: string; index: number } | null } };
 
-export function MaterialGraphicsPreview({ id, kind, draft, version, scale, layout, onScale, onLayout, width = 300, height = 74 }: {
+export function MaterialGraphicsPreview({ id, kind, draft, version, scale, layout, onScale, onLayout, onStep, width = 300, height = 74 }: {
   id: string; kind: MaterialKind; draft: Record<string, unknown>; version?: unknown; scale: number; layout: SampleLayout;
-  onScale: (s: number) => void; onLayout: (l: SampleLayout) => void; width?: number; height?: number;
+  onScale: (s: number) => void; onLayout: (l: SampleLayout) => void; /** The by-scale step the engine applied at this scale (null: none). */ onStep?: (index: number | null) => void; width?: number; height?: number;
 }) {
   const onDark = drawsOnDark(useUi((s) => s.theme));
   const [data, setData] = useState<PreviewDto | null>(null);
@@ -29,7 +29,7 @@ export function MaterialGraphicsPreview({ id, kind, draft, version, scale, layou
       const args = previewArgs(id, kind, scale, layout, JSON.parse(draftJson) as Record<string, unknown>, { width: 60, height: layout === 'band' ? 30 : 15 });
       void query<PreviewDto>('material.preview', args).then((r) => {
         if (n !== asked.current) return;
-        if (r) { setData(r); setProblem(''); } else setProblem('The preview could not be drawn.');
+        if (r) { setData(r); setProblem(''); onStep?.(r.resolved?.step && r.resolved.step.kind === kind ? r.resolved.step.index : null); } else setProblem('The preview could not be drawn.');
       });
     }, 200);
     return () => clearTimeout(timer);
@@ -41,7 +41,7 @@ export function MaterialGraphicsPreview({ id, kind, draft, version, scale, layou
         <span className="eyebrow">Preview</span>
         <span className="grow" />
         <label title="Scale of the sample"><select data-testid="material-preview-scale" value={scale} onChange={(e) => onScale(Number(e.target.value))}>
-          {GRAPHICS_SCALES.map((s) => <option key={s} value={s}>1:{s}</option>)}
+          {(GRAPHICS_SCALES.includes(scale as never) ? GRAPHICS_SCALES : [...GRAPHICS_SCALES, scale].sort((a, b) => a - b)).map((s) => <option key={s} value={s}>1:{s}</option>)}
         </select></label>
         <span className="tabs" role="tablist">
           {(['strip', 'band'] as const).map((l) => (

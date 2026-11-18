@@ -43,7 +43,9 @@ export interface ViewStyle { id: string; name: string; discipline: string | null
   /** Whether the partial structure display leaves out the separate finish elements (rooms' finishes, skirtings, finish coverings) with the finish layers (decision 502); on unless false (a project made before). */
   finishElements?: boolean;
   /** Hatch lines closer than this on paper (mm, default 0.7) are not drawn; 0 draws all (docs/plan-material-graphics.md, stage 1). */
-  minHatchSpacing?: number }
+  minHatchSpacing?: number;
+  /** What cut elements draw at small scales (docs/plan-material-graphics.md, stage 2); unset: as their materials say. */
+  smallScaleCut?: SmallScaleCut | null }
 
 /** The engine's default of the minimum hatch spacing, paper millimetres. */
 export const DEFAULT_MIN_HATCH_SPACING = 0.7;
@@ -95,3 +97,19 @@ export const LODS: [number, string, string][] = [
 export const lodLabel = (n: number | undefined) => LODS.find(([k]) => k === n)?.[1] ?? (n ? `LOD ${n}` : '');
 /** What a level shows, each level's addition in turn: the title of its choice. */
 export const LOD_HELP = 'How much of the model the view draws, never by its scale: ' + LODS.map(([, l, d]) => `${l}: ${d}`).join('. ') + '.';
+
+/** How cut elements draw from a small scale on: as their materials say, plain solid, an outline only, or the core layer alone. */
+export type SmallScaleCutMode = 'asMaterial' | 'solid' | 'outline' | 'coreOnly';
+export type SmallScaleCut = { mode?: SmallScaleCutMode; from?: number; color?: string | null };
+export const SMALL_SCALE_MODES: [SmallScaleCutMode, string][] = [['asMaterial', 'As material'], ['solid', 'Solid'], ['outline', 'Outline only'], ['coreOnly', 'Core only']];
+export const DEFAULT_CUT_FROM = 200;
+
+/** A threshold typed ("200", "1:200"): a whole scale denominator from 1 to 100000, or null. */
+export function parseCutFrom(text: string): number | null {
+  const s = text.trim().replace(/^1\s*:\s*/, '');
+  const v = Number(s);
+  return /^\d+$/.test(s) && v >= 1 && v <= 100000 ? v : null;
+}
+
+/** The patch for one part of the small-scale cut changed (the engine lays it field by field; a colour of null takes it away). */
+export function smallScaleCutPatch(part: SmallScaleCut): { smallScaleCut: SmallScaleCut } { return { smallScaleCut: part }; }
