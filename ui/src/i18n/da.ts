@@ -652,6 +652,7 @@ export const DA: Record<string, string> = {
   "Project base point": "Projektets basispunkt",
   "Survey point (map)": "Opmålingspunkt (kort)",
   "Quadrant": "Kvadrant",
+  "Wall axis": "Vægakse",
   "Perpendicular": "Vinkelret",
   "Nearest": "Nærmeste",
   "Coordinates at the cursor": "Koordinater ved markøren",
