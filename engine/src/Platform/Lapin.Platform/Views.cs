@@ -795,11 +795,8 @@ public static class Views
         var (drawing, lineworkOrphans) = Linework.Apply(generated, ViewLinework.Edits(view));
         // An elevation cut by its marker's line (decision 460) hatches its cut as a section does.
         var kind = spec.Kind == "plan" ? "plan" : spec.Kind is "elevation" or "3d" && !spec.Cut ? "elevation" : "section";
-        var resolved = new Dictionary<string, ResolvedMaterial?>();
-        var paperSurfaces = MaterialHatchUpgrade.PaperSurfaces(m);
-        ResolvedMaterial? Resolved(string? id) => id == null ? null
-            // A material named rather than kept (a track's ballast, its rails): its look guessed from the name.
-            : resolved.TryGetValue(id, out var r) ? r : resolved[id] = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, kind, paperSurfaces: paperSurfaces) : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, kind, id, paperSurfaces);
+        // The view's material graphics (decision 672): one precedence for every band, the material's step for the view's scale and its style's small-scale cut.
+        var viewMaterials = ViewMaterialGraphics.For(m, view, kind, scale);
         // Each element's layers, so a layer thinner than a membrane (or of a membrane's material) draws as one.
         var layerSets = new Dictionary<string, IReadOnlyList<LayerRef>?>();
         IReadOnlyList<LayerRef>? LayersOf(string element) => layerSets.TryGetValue(element, out var ls) ? ls
@@ -830,9 +827,10 @@ public static class Views
             return ownHatch[element] = h;
         }
         // A coarse view (decision 401): a layered element's layers one area, no membranes drawn between them.
-        var coarse = ViewDetail.Of(m, view) <= PlanDetail.Lod100;
-        var materials = MaterialDrawing.Apply(drawing, p => Resolved(p.Material), coarse ? null : LayersOf,
-            l => l.Thickness < MaterialGraphics.MembraneThickness || Resolved(l.Material)?.Membrane == true, joins: ViewStyles.Of(m, view).Joins, elementHatch: OwnHatch, mergeOwn: coarse);
+        // A small-scale cut drawn solid or as outlines (decision 672) merges them the same way.
+        var coarse = ViewDetail.Of(m, view) <= PlanDetail.Lod100 || viewMaterials.MergesBands;
+        var materials = MaterialDrawing.Apply(drawing, viewMaterials.Band, coarse ? null : LayersOf,
+            l => l.Thickness < MaterialGraphics.MembraneThickness || viewMaterials.Material(l.Material)?.Membrane == true, joins: ViewStyles.Of(m, view).Joins, elementHatch: OwnHatch, mergeOwn: coarse);
         // A cut left without a fill: the fill a module gives its elements (a Studio solid's white), asked once per element.
         if (q.Services.All<ICutFill>() is { Count: > 0 } cutFills)
         {

@@ -35,7 +35,43 @@ public static class DraftingResources
 
     static Entity Project(ICommandContext ctx) => Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
 
-    static readonly HashSet<string> GraphicsFields = ["hatch", "hatchScale", "fill", "hatchPen", "hatchAngle", "hatchAlign", .. ViewGraphics.FlexFields, "hatchUnits", "reset"];
+    static readonly HashSet<string> GraphicsFields = ["hatch", "hatchScale", "fill", "hatchPen", "hatchAngle", "hatchAlign", .. ViewGraphics.FlexFields, "hatchUnits", "byScale", "reset"];
+
+    /// <summary>The most steps by scale a kind of view keeps (decision 672).</summary>
+    const int MaxScaleSteps = 20;
+
+    /// <summary>
+    /// A kind's steps by scale checked (decision 672): an ordered list of {from?, to?, …fields}, from and to scale denominators
+    /// (1 to 100000, from ≤ to, at least one), the fields any of a kind's graphics but byScale and reset, checked as they are; a
+    /// null in a step is none for hatch and fill, left out for any other. An empty list is none.
+    /// </summary>
+    static JsonArray? CheckSteps(IModelView m, JsonNode? v, string where)
+    {
+        if (v is not JsonArray steps) throw new CommandException($"{where}: byScale is a list of steps {{from?, to?, …graphics}}.");
+        if (steps.Count > MaxScaleSteps) throw new CommandException($"{where}: a kind of view keeps at most {MaxScaleSteps} steps by scale.");
+        var o = new JsonArray();
+        for (var i = 0; i < steps.Count; i++)
+        {
+            var at = $"{where}, step {i + 1}";
+            if (steps[i] is not JsonObject step) throw new CommandException($"{at}: a step is {{from?, to?, …graphics}}.");
+            double? Bound(string k) => !step.ContainsKey(k) || step[k] is null ? null
+                : Json.Number(step[k]) is { } d && d >= 1 && d <= 100000 && double.IsFinite(d) ? d : throw new CommandException($"{at}: {k} is a scale denominator, 1 to 100000 (100 for 1:100).");
+            var (from, to) = (Bound("from"), Bound("to"));
+            if (from == null && to == null) throw new CommandException($"{at}: a step gives from, to or both.");
+            if (from > to) throw new CommandException($"{at}: from (1:{from}) is a larger scale than to (1:{to}); from is the larger scale, to the smaller.");
+            var fields = new JsonObject();
+            foreach (var (k, x) in step) if (k is not ("from" or "to")) fields[k] = x?.DeepClone();
+            if (fields.ContainsKey("byScale") || fields.ContainsKey("reset")) throw new CommandException($"{at}: a step holds graphics, not byScale or reset.");
+            var g = CheckGraphics(m, fields, at);
+            var r = new JsonObject();
+            if (from is { } f) r["from"] = f;
+            if (to is { } t) r["to"] = t;
+            foreach (var (k, x) in g) if (x != null || !NullResets(k)) r[k] = x?.DeepClone();
+            if (r.Count == (from != null ? 1 : 0) + (to != null ? 1 : 0)) throw new CommandException($"{at}: a step changes at least one field.");
+            o.Add((JsonNode)r);
+        }
+        return o.Count > 0 ? o : null;
+    }
 
     /// <summary>The fields a null takes back to the default (not given): all but hatch and fill, whose null is an explicit none.</summary>
     /// <summary>The scale a real-size pattern's swatch is drawn at when none is asked (decision 671): 1:20, where a brick reads as one.</summary>
@@ -149,6 +185,8 @@ public static class DraftingResources
                     break;
                 }
                 case "cutLine": case "separatorLine": o[k] = CheckLine(m, v, where, k == "cutLine" ? "a cut line" : "a separator line"); break;
+                // Decision 672: its steps by scale.
+                case "byScale": o[k] = CheckSteps(m, v, where); break;
                 case "reset":
                     if (v is not JsonArray fields || fields.Any(f => (string?)f is not { } fs || fs == "reset" || !GraphicsFields.Contains(fs)))
                         throw new CommandException($"{where}: reset lists the fields to take back to their default ({string.Join(", ", GraphicsFields.Where(f => f != "reset"))}).");
@@ -293,7 +331,8 @@ public static class DraftingResources
             if (a["color"] is JsonValue c && (string?)c is { } cs && HexColor.IsColour(cs)) attrs["color"] = cs;
             mat = mat.With(attrs: attrs);
         }
-        var look = MaterialGraphics.Resolve(mat, kind, paperSurfaces: MaterialHatchUpgrade.PaperSurfaces(q.Model));
+        // At the sample's scale, the material's step for it (decision 672).
+        var look = MaterialGraphics.Resolve(mat, kind, paperSurfaces: MaterialHatchUpgrade.PaperSurfaces(q.Model), scale: scale);
         var book = Book(q.Model);
         var project = Spatial.Project(q.Model);
         var options = new Lapin.Drawing.Views.Pens.Options(scale, Patterns: Patterns(q.Model), Table: LineStyles.ReadTable(project?.Attrs["penTable"]), LineTypes: book.LineTypes,
@@ -530,7 +569,13 @@ public static class DraftingResources
             var o = new JsonObject { ["id"] = mat.Id, ["name"] = mat.Name, ["color"] = Materials.ColorOf(q.Model, mat.Id), ["inUse"] = InUse(q.Model, mat.Id), ["category"] = mat.Str("category") };
             // How it renders: its own values and, for the rest, what its name gives.
             o["look"] = MaterialLook.Of(mat).ToJson(mat);
-            foreach (var kind in MaterialGraphics.Kinds) o[kind] = MaterialGraphics.Resolve(mat, kind, paperSurfaces: paper).ToJson();
+            foreach (var kind in MaterialGraphics.Kinds)
+            {
+                var k = MaterialGraphics.Resolve(mat, kind, paperSurfaces: paper).ToJson();
+                // Its steps by scale (decision 672), as saved on the kind (a plan's own; a plan takes the section's too).
+                if (mat.Attrs[kind]?["byScale"] is JsonArray steps) k["byScale"] = steps.DeepClone();
+                o[kind] = k;
+            }
             o["own"] = new JsonObject(MaterialGraphics.Kinds.Where(k => mat.Attrs[k] != null).Select(k => KeyValuePair.Create(k, (JsonNode?)mat.Attrs[k]!.DeepClone())));
             MaterialFields.Write(mat, o);
             return (JsonNode)o;

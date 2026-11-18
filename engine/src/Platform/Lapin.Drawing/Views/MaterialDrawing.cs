@@ -187,7 +187,8 @@ public static class MaterialDrawing
     static string? JoinKey(DPolygon p, ResolvedMaterial? g)
     {
         // A material that stays out of joins (forum topic 59) keeps each element's own outline, as one whose joints are drawn.
-        if (g != null) return g.Membrane || g.DrawJoints || !g.Joins ? null : MaterialGraphics.Normalise(g.Name);
+        // A view's small-scale cut (decision 672) joins its bands by what it makes of them (one solid colour, one outline).
+        if (g != null) return g.Membrane || g.DrawJoints || !g.Joins ? null : g.JoinAs ?? MaterialGraphics.Normalise(g.Name);
         // A leading space: no trimmed material name can be the same key.
         return KindOf(p.Class) is { } k ? " kind:" + k : null;
     }

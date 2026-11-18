@@ -40,6 +40,8 @@ namespace Lapin.Platform;
 /// <c>entourageFill</c>: the silhouettes' fill in elevations and sections, a colour, none by default;</item>
 /// <item><c>minHatchSpacing</c>: the closest (paper mm) a real-size hatch's lines may lie and still be drawn (decision 671):
 /// 0.7 by default, a style saved before too; a brick's courses at 1:200 lie closer and are left out; 0 draws them all.</item>
+/// <item><c>smallScaleCut</c>: how cuts draw from a scale on (decision 672, <see cref="SmallScaleCut"/>): {mode, from, color};
+/// none (asMaterial, today's look) by default and for a style saved before.</item>
 /// </list>
 /// A view takes its style (<c>viewStyle</c>, else its discipline's), and may
 /// set any of these itself: what it sets wins over the style.
@@ -50,7 +52,7 @@ public static class ViewStyles
     public static readonly string[] LayerModes = ["all", "noFinishes", "core", "coreLoadBearing"];
     const string LayerModesText = "all, noFinishes, core or coreLoadBearing";
     public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch", "entourage", "entourageFill", "detail",
-        "minHatchSpacing", "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection"];
+        "minHatchSpacing", "smallScaleCut", "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection"];
 
     /// <summary>
     /// The finish layers by the kind of view (the forum's topic #30): whether plans, and whether sections and elevations, draw
@@ -78,7 +80,7 @@ public static class ViewStyles
     /// </summary>
     public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null, int Detail = PlanDetail.Lod350,
         bool WallFinishesPlan = true, bool WallFinishesSection = true, bool FloorFinishesPlan = true, bool FloorFinishesSection = true, string? LayersPlan = null, string? LayersSection = null,
-        bool FinishElements = true, double MinHatchSpacing = Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing)
+        bool FinishElements = true, double MinHatchSpacing = Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing, SmallScaleCut? SmallScaleCut = null)
     {
         /// <summary>The partial structure display of a view of this kind (a plan, a section or an elevation, another).</summary>
         public string LayersFor(string? viewKind) => viewKind switch
@@ -117,6 +119,8 @@ public static class ViewStyles
             if (LayersPlan != null) o["layersPlan"] = LayersPlan;
             if (LayersSection != null) o["layersSection"] = LayersSection;
             if (!FinishElements) o["finishElements"] = false;
+            // Written only when set (decision 672), so a style that sets none saves as before.
+            if (SmallScaleCut != null) o["smallScaleCut"] = SmallScaleCut.ToJson();
             return o;
         }
 
@@ -145,7 +149,9 @@ public static class ViewStyles
             // Whether the separate finish elements go with the finish layers (decision 502): a project made before is marked false (StructureUpgrade).
             On(o["finishElements"]),
             // A style saved before real-size hatches (decision 671): the default threshold (it had no real-size hatch to leave out).
-            Spacing(o["minHatchSpacing"]) ?? Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing);
+            Spacing(o["minHatchSpacing"]) ?? Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing,
+            // A style saved before the small-scale cuts (decision 672): none, today's look (Î5).
+            Lapin.Platform.SmallScaleCut.Read(o["smallScaleCut"]));
 
         /// <summary>A hatch spacing threshold (paper mm, 0 or more); null when it is not one.</summary>
         internal static double? Spacing(JsonNode? n) => Json.Number(n) is { } v && v >= 0 && double.IsFinite(v) ? v : null;
@@ -218,6 +224,8 @@ public static class ViewStyles
             FloorFinishesPlan = Own(o["floorFinishesPlan"]) ?? s.FloorFinishesPlan,
             FloorFinishesSection = Own(o["floorFinishesSection"]) ?? s.FloorFinishesSection,
             MinHatchSpacing = Style.Spacing(o["minHatchSpacing"]) ?? s.MinHatchSpacing,
+            // The view's own, field by field over its style's (decision 672).
+            SmallScaleCut = o["smallScaleCut"] is JsonObject sc ? SmallScaleCut.Read(sc, s.SmallScaleCut) : s.SmallScaleCut,
         };
     }
 
@@ -380,6 +388,8 @@ public static class ViewStyles
         if (a.ContainsKey("detail")) s = s with { Detail = PlanDetail.LodOf(a["detail"]) ?? throw new CommandException(PlanDetail.LodProblem) };
         if (a.ContainsKey("graphicsSet")) s = s with { GraphicsSet = (string?)a["graphicsSet"] is { Length: > 0 } gs ? gs : null };
         if (a.ContainsKey("minHatchSpacing")) s = s with { MinHatchSpacing = Style.Spacing(a["minHatchSpacing"]) ?? throw new CommandException(SpacingProblem) };
+        // The small-scale cuts (decision 672): fields over the style's, null back to none.
+        if (a.ContainsKey("smallScaleCut")) s = s with { SmallScaleCut = a["smallScaleCut"] is null ? null : SmallScaleCut.Read(SmallScaleCut.Checked(a["smallScaleCut"]), s.SmallScaleCut) };
         if (a.ContainsKey("finishElements")) s = s with { FinishElements = Own(a["finishElements"]) ?? throw new CommandException("finishElements is true or false.") };
         foreach (var f in FinishFields)
         {
@@ -525,6 +535,8 @@ public static class ViewStyles
                 else if (f == "detail") own[f] = PlanDetail.LodOf(value) ?? throw new CommandException(PlanDetail.LodProblem);
                 // The real-size hatches' threshold (decision 671), paper mm.
                 else if (f == "minHatchSpacing") own[f] = Style.Spacing(value) ?? throw new CommandException(SpacingProblem);
+                // The small-scale cuts (decision 672): the fields given, over the style's (mode, from, color).
+                else if (f == "smallScaleCut") own[f] = SmallScaleCut.Checked(value);
                 else own[f] = value is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException($"{f} is true or false.");
             }
             if (own.Count > 0) attrs["styleOverrides"] = own; else attrs.Remove("styleOverrides");

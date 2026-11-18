@@ -67,14 +67,14 @@ public static class SurfaceHatches
         if (pieces.Count == 0 || !Allowed(m, view, pieces[0].Spec)) return [];
         // Each material's elevation graphics, once; a part draws a surface only when its material gives a hatch or a fill.
         var resolved = new Dictionary<string, ResolvedMaterial?>();
-        // A project made before real-size hatches (decision 671) goes on suggesting the paper ones.
-        var paper = MaterialHatchUpgrade.PaperSurfaces(m);
+        // The view's material graphics (decision 672): the material's elevation step for the view's scale; a project made
+        // before real-size hatches (decision 671) goes on suggesting the paper ones; a name is guessed from, as cuts do.
+        var viewMaterials = new ViewMaterialGraphics(m, "elevation", options.Scale, ViewStyles.Of(m, view));
         ResolvedMaterial? Graphics(string? id)
         {
             if (id == null) return null;
             if (resolved.TryGetValue(id, out var r)) return r;
-            // A material named rather than kept (a track's ballast): its look guessed from the name, as cuts do.
-            r = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, "elevation", paperSurfaces: paper) : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, "elevation", id, paper);
+            r = viewMaterials.Material(id);
             return resolved[id] = r is { Membrane: false } && (r.Hatch != null || r.Fill != null || r.Background != null) ? r : null;
         }
         var graphics = parts.Select(p => Graphics(p.Material)).ToArray();

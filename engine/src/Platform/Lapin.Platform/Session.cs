@@ -737,7 +737,8 @@ public sealed partial class Session
             var (id, part, gp) = owners[k];
             if (!byNode.TryGetValue(id, out var list)) { byNode[id] = list = []; result.Add(new CapItem(id, list)); }
             if (!drawing) { list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges)); continue; }
-            var look = MaterialGraphics.Resolve(gp.Material == null ? null : _store.Get(gp.Material), "section", gp.Material != null && _store.Get(gp.Material) == null && !GlobalId.IsValid(gp.Material) ? gp.Material : null);
+            // At the drawing's scale, its step by scale (decision 672).
+            var look = MaterialGraphics.Resolve(gp.Material == null ? null : _store.Get(gp.Material), "section", gp.Material != null && _store.Get(gp.Material) == null && !GlobalId.IsValid(gp.Material) ? gp.Material : null, scale: scale);
             var (fill, hatch) = CapHatch(faces[k], look, patterns!, scale);
             list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges, fill, hatch));
         }

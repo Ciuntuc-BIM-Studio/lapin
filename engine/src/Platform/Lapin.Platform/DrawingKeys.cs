@@ -72,6 +72,8 @@ public static class DrawingKeys
         {
             if (pl.Drawing.Generated is not { } drawing) continue;
             var look = pl.Drawing.Kind == "plan" ? "plan" : "section";
+            // At the placed view's scale (decision 672): a material's step for it, as the view draws it.
+            var viewMaterials = new ViewMaterialGraphics(m, look, pl.Drawing.Scale);
             var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
             foreach (var cut in drawing.Cuts)
             {
@@ -79,7 +81,7 @@ public static class DrawingKeys
                     : (bands.TryGetValue(cut.Element, out var b) ? b : bands[cut.Element] = LayerSets.BandsOf(m, cut.Element))?.Select(x => x.Material) ?? [];
                 foreach (var id in mats.Where(x => !string.IsNullOrEmpty(x)))
                 {
-                    var r = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, look) : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, look, id);
+                    var r = viewMaterials.Material(id);
                     if (r == null || r.Membrane || o.ContainsKey(r.Name)) continue;
                     o[r.Name] = new Entry(r.Name, r.Fill, r.Hatch, r.HatchScale <= 0 ? 1 : r.HatchScale, r.HatchAngle, Look: r);
                 }

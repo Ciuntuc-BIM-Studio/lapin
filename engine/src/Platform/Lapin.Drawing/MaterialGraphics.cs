@@ -75,6 +75,12 @@ public sealed record ViewGraphics(string? Hatch = null, double? HatchScale = nul
     /// <summary>The units its hatch lies in over the pattern's own (decision 671, rare): paper or model; null: the pattern's.</summary>
     public HatchUnits? HatchUnits { get; init; }
 
+    /// <summary>
+    /// Its steps by scale (decision 672, <see cref="ScaleStep"/>): in order, the first whose range holds a view's scale lays its
+    /// fields over these, field by field; null: none (the material looks the same at every scale, as before).
+    /// </summary>
+    public IReadOnlyList<ScaleStep>? ByScale { get; init; }
+
     /// <summary>The fields decision 670 added, beside the first six.</summary>
     public static readonly string[] FlexFields = ["hatchColor", "hatchWeight", "hatchLineType", "hatchOpacity", "halftone", "fillOpacity", "backgroundHatch", "cutLine", "separatorLine"];
 
@@ -93,8 +99,31 @@ public sealed record ViewGraphics(string? Hatch = null, double? HatchScale = nul
             CutLine = MaterialLine.From(o["cutLine"]),
             SeparatorLine = MaterialLine.From(o["separatorLine"]),
             HatchUnits = Lapin.Drawing.Hatch.HatchScale.Parse((string?)o["hatchUnits"]),
+            ByScale = o["byScale"] is JsonArray steps && steps.OfType<JsonObject>().Select(ScaleStep.Read).OfType<ScaleStep>().ToList() is { Count: > 0 } l ? l : null,
         }
         : null;
+
+    /// <summary>The first of its steps whose range holds 1:<paramref name="scale"/> (its index), or none.</summary>
+    public (ScaleStep Step, int Index)? StepAt(double? scale)
+    {
+        if (scale is not { } s || ByScale == null) return null;
+        for (var i = 0; i < ByScale.Count; i++) if (ByScale[i].Holds(s)) return (ByScale[i], i);
+        return null;
+    }
+}
+
+/// <summary>
+/// A step of a material's graphics by scale (decision 672): from 1:<see cref="From"/> to 1:<see cref="To"/>, both scale
+/// denominators and both held (from 100: 1:100 and every smaller scale, 1:200, 1:500; to 50: 1:50 and every larger one, 1:20);
+/// one left out is open. <see cref="Fields"/>: any of a kind of view's graphics (hatch, fill, pen, colours, weights, lines…),
+/// laid over the material's own field by field where the step holds.
+/// </summary>
+public sealed record ScaleStep(double? From, double? To, ViewGraphics Fields)
+{
+    public bool Holds(double scale) => (From is not { } f || scale >= f - 1e-9) && (To is not { } t || scale <= t + 1e-9);
+
+    public static ScaleStep? Read(JsonObject o) =>
+        ViewGraphics.From(o) is { } g ? new ScaleStep(Lapin.Model.Json.Number(o["from"]), Lapin.Model.Json.Number(o["to"]), g with { ByScale = null }) : null;
 }
 
 /// <summary>Where a material's hatch starts and turns: from the view's origin, or from each band it fills (its origin on the band's longest edge, its angle along it).</summary>
@@ -141,6 +170,15 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
     /// <summary>The units its hatch lies in over the pattern's own (decision 671): paper or model; null: the pattern's.</summary>
     public HatchUnits? HatchUnits { get; init; }
 
+    /// <summary>The step by scale it was resolved with (decision 672): the kind of view whose steps gave it and its index; null: none.</summary>
+    public (string Kind, int Index)? Step { get; init; }
+
+    /// <summary>
+    /// What its cut bands join by in place of its name (decision 672: a view's small-scale cut, whose solid bands of one
+    /// colour read as one area); null: its name, as before.
+    /// </summary>
+    public string? JoinAs { get; init; }
+
     /// <summary>Whether it sets anything decision 670 added (a drawing of materials that set none is drawn exactly as before).</summary>
     public bool Flex => HatchColor != null || HatchWeight != null || HatchLineType != null || HatchOpacity != null || Halftone || FillOpacity != null || Background != null || CutLine != null || SeparatorLine != null;
 
@@ -169,6 +207,7 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
         if (CutLine != null) o["cutLine"] = CutLine.ToJson();
         if (SeparatorLine != null) o["separatorLine"] = SeparatorLine.ToJson();
         if (HatchUnits is { } hu) o["hatchUnits"] = Lapin.Drawing.Hatch.HatchScale.Name(hu);
+        if (Step is { } st) o["step"] = new JsonObject { ["kind"] = st.Kind, ["index"] = st.Index };
         return o;
     }
 }
@@ -358,17 +397,29 @@ public static class MaterialGraphics
     /// <summary>What a name suggests for a section: its hatch (or none) and whether it is a membrane.</summary>
     public static (string? Hatch, bool Membrane) FromName(string name) => Suggested(name) is var g ? (g.Hatch, g.Membrane) : default;
 
-    /// <summary>The material's own graphics for a kind of view (a plan: the section's fields, then the plan's own).</summary>
-    static ViewGraphics? Own(Entity? material, string kind)
+    /// <summary>
+    /// The material's own graphics for a kind of view (a plan: the section's fields, then the plan's own), each kind's step
+    /// for 1:<paramref name="scale"/> laid over its fields (decision 672: a plan takes the section's step, then its own
+    /// fields, then its own step); the step that did, the last one laid. No scale, no step.
+    /// </summary>
+    static (ViewGraphics? Own, (string, int)? Step) Own(Entity? material, string kind, double? scale)
     {
-        if (material == null) return null;
-        var section = ViewGraphics.From(material.Attrs["section"]);
-        return kind switch
+        if (material == null) return (null, null);
+        (string, int)? step = null;
+        ViewGraphics? Stepped(string k)
         {
-            "section" => section,
-            "plan" => Merge(section, ViewGraphics.From(material.Attrs["plan"])),
-            _ => ViewGraphics.From(material.Attrs["elevation"]),
+            var g = ViewGraphics.From(material.Attrs[k]);
+            if (g?.StepAt(scale) is not { } at) return g;
+            step = (k, at.Index);
+            return Merge(g, at.Step.Fields);
+        }
+        var own = kind switch
+        {
+            "section" => Stepped("section"),
+            "plan" => Merge(Stepped("section"), Stepped("plan")),
+            _ => Stepped("elevation"),
         };
+        return (own, step);
     }
 
     static ViewGraphics? Merge(ViewGraphics? a, ViewGraphics? b) => (a, b) switch
@@ -390,12 +441,14 @@ public static class MaterialGraphics
     /// <summary>
     /// The material's graphics in one kind of view: its own fields, else what its name suggests (an elevation:
     /// <see cref="ElevationFromName"/>, the paper patterns when <paramref name="paperSurfaces"/>: a project made before
-    /// decision 671, <c>MaterialHatchUpgrade.PaperSurfaces</c>).
+    /// decision 671, <c>MaterialHatchUpgrade.PaperSurfaces</c>). At a view's <paramref name="scale"/> (a denominator), the
+    /// material's step for it over its own fields (decision 672, <see cref="ScaleStep"/>); no scale, no step.
+    /// This is the material's tier of a view's graphics; what a view lays over it is <c>ViewMaterialGraphics</c> (Lapin.Platform).
     /// </summary>
-    public static ResolvedMaterial Resolve(Entity? material, string kind = "section", string? name = null, bool paperSurfaces = false)
+    public static ResolvedMaterial Resolve(Entity? material, string kind = "section", string? name = null, bool paperSurfaces = false, double? scale = null)
     {
         name ??= material?.Name ?? "";
-        var own = Own(material, kind);
+        var (own, step) = Own(material, kind, scale);
         var elevation = kind == "elevation";
         var guess = elevation ? null : Suggested(name);
         var color = material?.Str("color");
@@ -414,7 +467,7 @@ public static class MaterialGraphics
         {
             HatchColor = own?.HatchColor, HatchWeight = own?.HatchWeight, HatchLineType = own?.HatchLineType, HatchOpacity = own?.HatchOpacity is { } ho && ho < 100 ? ho : null,
             Halftone = own?.Halftone == true, FillOpacity = fill != null && own?.FillOpacity is { } fo && fo < 100 ? fo : null,
-            Background = membrane ? null : background, CutLine = own?.CutLine, SeparatorLine = own?.SeparatorLine, HatchUnits = own?.HatchUnits,
+            Background = membrane ? null : background, CutLine = own?.CutLine, SeparatorLine = own?.SeparatorLine, HatchUnits = own?.HatchUnits, Step = step,
         };
     }
 
