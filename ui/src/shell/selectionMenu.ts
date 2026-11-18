@@ -4,8 +4,8 @@
  * it to other storeys, or move it to another (their dialogs); offset an outline's every edge (Offset outline…, decision 609).
  */
 
-import { useUi } from '../app/store';
-import { useSession } from '../engine/session';
+import { notify, useUi } from '../app/store';
+import { execute, useSession } from '../engine/session';
 import { copyable } from '../modules/core/CopyToStoreysDialog';
 import { drawableElement } from '../modules/core/shopDrawing';
 import { editSelectedGroup, groupSelection, removeFromGroup, ungroupSelection } from '../modules/core/groupTools';
@@ -130,6 +130,25 @@ export function historyItems(): MenuItem[] {
   return [{ label: 'Previous selections', submenu: sub, onSelect: () => undefined }];
 }
 
+/** Explode a selected parametric roof into editable 3D solids (forum topic 160), when Studio is available. */
+export function explodeRoofItems(): MenuItem[] {
+  const { selected } = useUi.getState();
+  if (selected.length !== 1) return [];
+  const n = useSession.getState().nodes.get(selected[0]);
+  if (!n || !n.editable || n.type !== 'IfcRoof') return [];
+  if (!allTools().some((t) => t.id === 'studio.fromElement')) return [];
+  return [{
+    label: 'Explode',
+    onSelect: () => void execute('architecture.explodeRoof', { id: n.id }).then((r) => {
+      const ids = (r as { ids?: string[] } | null)?.ids ?? [];
+      if (ids.length) {
+        useUi.setState({ selected: ids, selection: ids[0] ?? null });
+        notify('Roof exploded into editable 3D solids.');
+      }
+    }),
+  }];
+}
+
 export function selectionItems(): MenuItem[] {
   const { selected } = useUi.getState();
   const storeys: MenuItem[] = copyable(selected, useSession.getState().nodes).length ? [
@@ -137,7 +156,7 @@ export function selectionItems(): MenuItem[] {
     { label: 'Move to storey…', onSelect: () => useUi.setState({ dialog: 'moveToStorey' }) },
   ] : [];
   const shop: MenuItem[] = drawableElement(selected, useSession.getState().nodes) ? [{ label: 'Make drawing…', onSelect: () => useUi.setState({ dialog: 'shopDrawing' }) }] : [];
-  return [...offsetMenuItems(), ...scaleImageItems(), ...groupItems(), ...storeys, ...shop, ...wallFromSolidsItems(), ...similarItems(), ...editTypeItems(), ...editSketchItems(), ...historyItems()];
+  return [...offsetMenuItems(), ...scaleImageItems(), ...groupItems(), ...storeys, ...shop, ...wallFromSolidsItems(), ...explodeRoofItems(), ...similarItems(), ...editTypeItems(), ...editSketchItems(), ...historyItems()];
 }
 
 /** The 3D view's temporary Hide and Isolate (HH, HI) for the selection, and Show all (HR) while something is hidden. */

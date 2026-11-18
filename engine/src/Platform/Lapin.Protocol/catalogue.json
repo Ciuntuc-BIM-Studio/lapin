@@ -79,6 +79,7 @@
     {"name":"architecture.duplicateGateType","module":"architecture","label":"Duplicate gate type","args":[{"name":"id","type":"str"},{"name":"name","type":"str"}]},
     {"name":"architecture.duplicateSunshadeType","module":"architecture","label":"Duplicate sunshade type","args":[{"name":"id","type":"str"},{"name":"name","type":"str"}]},
     {"name":"architecture.editJoineryOutline","module":"architecture","label":"Edit outline","args":[{"name":"typeId","type":"str"}]},
+    {"name":"architecture.explodeRoof","module":"architecture","label":"Explode roof","args":[{"name":"id","type":"str"}]},
     {"name":"architecture.extendWall","module":"architecture","label":"Extend wall","args":[{"name":"id","type":"str"},{"name":"at"}]},
     {"name":"architecture.fillColorScheme","module":"architecture","label":"Fill missing colours","args":[{"name":"id","type":"str"}]},
     {"name":"architecture.fillToOpening","module":"architecture","label":"Change to opening","args":[{"name":"ids","type":"list"},{"name":"id","type":"str"}]},

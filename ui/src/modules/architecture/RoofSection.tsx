@@ -5,8 +5,8 @@
  */
 
 import { projectOf } from '../../shell/nodeIndex';
-import { Settings2 } from 'lucide-react';
-import { useUi } from '../../app/store';
+import { Blocks, Settings2 } from 'lucide-react';
+import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { t, useLang } from '../../i18n';
@@ -79,6 +79,19 @@ export function RoofSection({ node }: { node: NodeDto }) {
             ))}
           </tbody>
         </table>
+      )}
+      {node.editable && (
+        <div className="row-wrap">
+          <button type="button" className="btn" data-action="roof-explode"
+            title="Convert the roof's parts into editable 3D solids"
+            onClick={() => void execute('architecture.explodeRoof', { id: node.id }).then((r) => {
+              const ids = (r as { ids?: string[] } | null)?.ids ?? [];
+              if (ids.length) {
+                useUi.setState({ selected: ids, selection: ids[0] ?? null });
+                notify('Roof exploded into editable 3D solids.');
+              }
+            })}><Blocks size={14} />Explode</button>
+        </div>
       )}
     </div>
   );

@@ -843,6 +843,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // Explode a parametric roof into editable 3D solids (one per current GeometryPart), in one undo step.
+        r.Command("explodeRoof", "Explode roof", (ctx, a) =>
+        {
+            var roof = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Roof);
+            var made = Roof.Explode(ctx, roof);
+            return new JsonObject { ["ids"] = new JsonArray(made.Select(id => (JsonNode)id).ToArray()) };
+        });
+
         // The project's own roof styles (decision 233): the roof as the draft makes it saved under a name (a new style, or the one
         // of that name or id saved again, which its roofs take again), the roof taking it; renamed; deleted (its roofs kept as they are).
         r.Command("saveRoofStyle", "Save roof style", (ctx, a) =>
