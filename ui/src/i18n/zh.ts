@@ -2227,6 +2227,8 @@ export const ZH: Record<string, string> = {
   // An elevation's marker moved into the building clips it (decision 460)
   "Drag: move the marker (moved into the building, the elevation starts seeing at its line)": "拖动：移动标记（移入建筑内时，立面从标记线开始可见）", "Move elevation marker": "移动立面标记", "Only an elevation's marker is moved this way.": "只有立面标记可以这样移动。", "A marker's place is in metres.": "标记的位置以米为单位。",
   "Letter shortcuts (Revit-style)": "字母快捷键（Revit 风格）",
+  "A click outside an input box accepts it": "在输入框外单击即接受输入",
+  "Off by default. On: with a value typed in the box by the cursor or on the command line, a left click elsewhere accepts it as Enter does, and that click is used up (it places no point of its own). Esc or a right click throws the typed value away instead. Fields in the Properties panel already take their value when you click away.": "默认关闭。开启后：当光标旁的输入框或命令行中已输入数值时，在其他位置单击左键会像回车一样接受它，该次单击被消耗（不会另外放置一个点）。Esc 或单击右键则放弃已输入的值。“属性”面板中的字段在点击别处时本来就会提交其值。",
   "Typed letters such as WA start a tool. Off: letters always go to the command line, and Enter or Space runs a command, an alias, or the command whose letters they are. The ` key gives the command line all typing, whichever is on. Your own aliases are in Keyboard shortcuts…": "键入的字母（如 WA）会启动工具。关闭后：字母始终进入命令行，按 Enter 或空格运行命令、别名，或字母所对应的命令。无论开关如何，` 键都会让命令行接管全部键入。你自己的别名在键盘快捷键…中设置。",
   "Keyboard": "键盘",
   "Command line: take all typing": "命令行：接管全部键入",
