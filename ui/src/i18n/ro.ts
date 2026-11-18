@@ -646,6 +646,7 @@ export const RO: Record<string, string> = {
   "Project base point": "Punctul de bază al proiectului",
   "Survey point (map)": "Punctul topografic (hartă)",
   "Quadrant": "Cadran",
+  "Wall axis": "Axa peretelui",
   "Perpendicular": "Perpendicular",
   "Nearest": "Cel mai apropiat",
   "Coordinates at the cursor": "Coordonatele la cursor",

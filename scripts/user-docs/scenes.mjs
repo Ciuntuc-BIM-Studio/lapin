@@ -4936,6 +4936,8 @@ export const scenes = [
       await t.page.getByRole('radio').nth(1).check();
       await t.wait(300);
       t.expect(await t.page.locator('[data-field=prefs-grid-step]').count() > 0, 'a fixed grid asks for its step');
+      // Forum topic 151: Tangent and Wall axis among the object snaps, both on.
+      t.expect(await t.page.locator('[data-field=prefs-snap-tangent]').isChecked() && await t.page.locator('[data-field=prefs-snap-wallAxis]').isChecked(), 'Tangent and Wall axis are listed, and on');
       await t.shot('preferences', { of: '.prefs-dialog', pad: 0 });
       await t.page.getByRole('radio').nth(0).check();
       await t.ui({ dialog: null });
@@ -4943,7 +4945,7 @@ export const scenes = [
       // The snap menu: a right click on SNAP under the plan.
       await t.page.locator('[data-testid=snap-toggle]').first().click({ button: 'right' });
       await t.wait(400);
-      t.expect(await t.page.getByRole('menuitem').count() >= 8, 'the snap menu lists the object snaps');
+      t.expect(await t.page.getByRole('menuitem').count() >= 10, 'the snap menu lists the object snaps');
       await t.shot('snap-menu', { clip: await t.page.evaluate(() => { const m = document.querySelector('[role=menu]') ?? document.querySelector('.context-menu'); const r = (m ?? document.body).getBoundingClientRect(); return { x: Math.max(0, r.left - 240), y: Math.max(0, r.top - 40), width: Math.min(window.innerWidth, r.width + 480), height: Math.min(window.innerHeight - Math.max(0, r.top - 40), r.height + 120) }; }) });
       await t.page.keyboard.press('Escape');
       // A UCS turned 30° at a corner of the house, the grid along its axes.

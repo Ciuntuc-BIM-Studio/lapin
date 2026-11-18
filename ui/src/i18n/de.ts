@@ -652,6 +652,7 @@ export const DE: Record<string, string> = {
   "Project base point": "Projektbasispunkt",
   "Survey point (map)": "Vermessungspunkt (Karte)",
   "Quadrant": "Quadrant",
+  "Wall axis": "Wandachse",
   "Perpendicular": "Senkrecht",
   "Nearest": "Nächster Punkt",
   "Coordinates at the cursor": "Koordinaten am Cursor",

@@ -652,6 +652,7 @@ export const ZH: Record<string, string> = {
   "Project base point": "项目基点",
   "Survey point (map)": "测量点（地图）",
   "Quadrant": "象限点",
+  "Wall axis": "墙轴线",
   "Perpendicular": "垂足",
   "Nearest": "最近点",
   "Coordinates at the cursor": "光标处的坐标",

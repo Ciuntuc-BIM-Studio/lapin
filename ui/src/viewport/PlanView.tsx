@@ -57,6 +57,7 @@ import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { CadOverlay } from './cad/canvas';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
+import { WALL_CLASSES, elementCurves, wallAxes, wallAxisPoints } from './cad/elementSnaps';
 import { clearShown, hiddenInDrawing, publishShown, shownItems, shownWholeOf } from './cad/shown';
 import { CommandLine } from './cad/CommandLine';
 import './cad/ucs';
@@ -228,7 +229,17 @@ export function PlanView() {
   // What the snaps and the selection take: only the elements the view's drawing shows (forum #31, decisions 491 and 498), all
   // of them over modelling lines; a part of a whole drawn as one keeps its own lines (drilling into assemblies).
   const snapItems = useMemo(() => shownItems(items, drawing, shownWholeOf(relations, (id) => wholeOf(id, nodes, relations))), [items, drawing, nodes, relations]);
-  const snapPoints = useMemo(() => snapItems.flatMap((r) => pairs(r.snaps ?? [])), [snapItems]);
+  // Forum topic 151: with the Wall axis snap on, a wall's axis ends are its (named so, and taken after the drawn lines' ends and
+  // crossings); off, they stay the endpoints they always were.
+  const wallAxisOn = usePrefs((p) => p.snapModes.includes('wallAxis'));
+  const snapPoints = useMemo(() => snapItems.flatMap((r) => {
+    const own = pairs(r.snaps ?? []);
+    if (!wallAxisOn || !WALL_CLASSES.has(nodes.get(r.nodeId)?.type ?? '')) return own;
+    const ends = wallAxisPoints([r], nodes);
+    return own.filter((q) => !ends.some((e) => Math.hypot(e.x - q.x, e.y - q.y) < 1e-9));
+  }), [snapItems, wallAxisOn, nodes]);
+  const snapWallAxes = useMemo(() => wallAxes(snapItems, nodes), [snapItems, nodes]);
+  const snapCurves = useMemo(() => elementCurves(snapItems, nodes), [snapItems, nodes]);
   // Marks with exact shapes or line segments are already parsed by snapShapes() with their endpoint/midpoint/centre kinds;
   // turning their flat snaps list into zero-length lines would label midpoints as endpoints (forum #111).
   const markSnaps = useMemo(() => (drawing?.marks ?? []).filter((m) => !(m as { shapes?: unknown[] }).shapes?.length && !m.segments?.length).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
@@ -392,6 +403,7 @@ export function PlanView() {
   const { aim, acquire } = useCadCanvas({
     viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, outlines,
     inRegion: (takes) => regionIds(takes, pickItems, nodes, scope ? undefined : drawing?.marks), axes,
+    wallAxes: snapWallAxes, curves: snapCurves,
   });
   const cadStep = useCad((s) => s.step);
   /** The selection dragged by its body (its trace shows over the plan). */

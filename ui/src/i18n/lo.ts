@@ -652,6 +652,7 @@ export const LO: Record<string, string> = {
   "Project base point": "ຈຸດຫຼັກຖານໂຄງການ (Base point)",
   "Survey point (map)": "ຈຸດສຳຫຼວດພິກັດ (Survey point) (ແຜນທີ່)",
   "Quadrant": "ຈຸດສີ່ສ່ວນວົງມົນ",
+  "Wall axis": "ແກນຝາ",
   "Perpendicular": "ຕັ້ງສາກ",
   "Nearest": "ໃກ້ທີ່ສຸດ",
   "Coordinates at the cursor": "ພິກັດຢູ່ບ່ອນເຄີເຊີ",

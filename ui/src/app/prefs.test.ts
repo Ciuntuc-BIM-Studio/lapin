@@ -11,7 +11,8 @@ describe('preferences (decision 445)', () => {
   it('reads what was kept, anything unreadable at its default', () => {
     expect(readPrefs(null)).toEqual(DEFAULT_PREFS);
     const p = readPrefs({ theme: 'graphite', gridMode: 'fixed', gridStep: 0.25, gridMajor: 4, snapModes: ['endpoint', 'bogus'], polarStep: 30, coords: 'survey', gridSnap: false });
-    expect(p).toMatchObject({ theme: 'graphite', gridMode: 'fixed', gridStep: 0.25, gridMajor: 4, snapModes: ['endpoint'], polarStep: 30, coords: 'survey', gridSnap: false });
+    // Kept before Tangent and Wall axis existed (forum topic 151): those two come on, as they are by default.
+    expect(p).toMatchObject({ theme: 'graphite', gridMode: 'fixed', gridStep: 0.25, gridMajor: 4, snapModes: ['endpoint', 'tangent', 'wallAxis'], polarStep: 30, coords: 'survey', gridSnap: false });
     expect(readPrefs({ theme: 'neon', gridStep: -1, polarStep: 7, gridMajor: 0.5 })).toMatchObject({ theme: 'paper', gridStep: 1, polarStep: 45, gridMajor: 5 });
   });
 
