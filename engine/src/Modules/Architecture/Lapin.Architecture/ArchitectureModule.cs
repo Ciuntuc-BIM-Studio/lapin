@@ -476,6 +476,27 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return new JsonObject { ["points"] = Slabs.ContourJson(region.Outer) };
         });
 
+        // The building's outline on a storey (forum topic 158, the Floor tool's "Trace building"): {storeyId?, at?: [x, y]} →
+        // {points, arcs?, walls, area}: the exterior face of the core of the walls enclosing the building (BuildingTrace); refused,
+        // naming the gap, when they do not close. The preview and the floor come from the same code.
+        r.Query("buildingOutline", (q, a) =>
+        {
+            var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+            var traced = Traced(q.Model, q.Services, storeyId, a["at"]);
+            var o = new JsonObject { ["points"] = Slabs.ContourJson(traced.Corners), ["walls"] = new JsonArray(traced.Walls.Select(id => (JsonNode)id).ToArray()), ["area"] = traced.Area };
+            if (traced.Rises != null) o["arcs"] = new JsonArray(traced.Rises.Select(x => (JsonNode)x).ToArray());
+            return o;
+        });
+        // A floor on that outline: {storeyId?, at?, typeId?, offset?} → {id}; one undo step, as a floor drawn.
+        r.Command("addFloorFromBuilding", "Floor", (ctx, a) =>
+        {
+            var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+            var type = (string?)a["typeId"] is { } typeId ? Spatial.Require(ctx.Model, typeId, IfcClass.SlabType) : null;
+            var traced = Traced(ctx.Model, ctx.Services, storeyId, a["at"]);
+            var slab = Slabs.Add(ctx, storeyId, traced.Corners, Json.Number(a["offset"]) ?? 0, type, traced.Rises);
+            return new JsonObject { ["id"] = slab.Id };
+        });
+
         // A hole in a floor's or a ceiling's own outline (audit S4): {id? (the floor or ceiling; else the floor, then the ceiling, of
         // the storey that holds the loop), storeyId?, points, arcs?} → {id}; {id, hole} takes one away. One undo step each.
         r.Command("addOutlineHole", "Hole in outline", (ctx, a) =>
@@ -1452,6 +1473,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     }
 
     static IPathElements Paths(ICommandContext ctx) => ctx.Services.Get<IPathElements>()!;
+
+    /// <summary>The building traced on the storey ({at?: [x, y]}: the building round that point), or refused saying why (forum topic 158).</summary>
+    static BuildingTrace.Traced Traced(IModelView m, IServices services, string storeyId, JsonNode? point)
+    {
+        Vec2? at = point is JsonArray xy && xy.Count >= 2 ? new Vec2(Json.Number(xy[0]) ?? 0, Json.Number(xy[1]) ?? 0) : null;
+        var (traced, problem) = BuildingTrace.Of(m, services, storeyId, at);
+        return traced ?? throw new CommandException(problem ?? "The walls do not close round the building.");
+    }
 
     static JoinStyle? Style(JsonNode? n) => Args.JoinStyle(n);
 

@@ -2054,6 +2054,44 @@ export const scenes = [
     },
   },
   {
+    // Trace building (forum topic 158): the Floor tool's bar takes the whole building with one click, on the exterior face of the
+    // core of the walls that enclose it; a stub and a free-standing wall outside are left out.
+    id: 'floor-trace-building',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const type = await t.cmd('architecture.createWallType', { name: 'Insulated brick', layers: [{ material: 'Insulation', thickness: 0.1 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 }] });
+      const wall = (x1, y1, x2, y2) => t.cmd('architecture.addWall', { storeyId: storey, x1, y1, x2, y2, typeId: type.id });
+      // An L: six outer walls, a partition, a 1 m stub and a garden wall standing free.
+      for (const [a, b, c, d] of [[0, 0, 12, 0], [12, 0, 12, 5], [12, 5, 6, 5], [6, 5, 6, 9], [6, 9, 0, 9], [0, 9, 0, 0], [6, 0, 6, 5], [12, 2.5, 13, 2.5], [15, 0, 15, 4]]) await wall(a, b, c, d);
+      await t.ui({ view: 'plan', planViewId: null });
+      await t.wait(400);
+      await t.fit();
+      await t.wait(500);
+      await t.tool('architecture.slab');
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=building]').click();
+      t.expect(await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=building][aria-pressed=true]').count() === 1, 'the Floor tool\'s bar offers Trace building');
+      const [x, y] = await t.planPoint(3, 3);
+      await t.page.mouse.click(x, y);
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcSlab' && Array.isArray(n.props.contour) && n.props.contour.length === 6), 'one floor on the building\'s outline, six corners');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      // Selected, so its outline shows on the cores' exterior faces.
+      const slab = (await t.nodes()).find((n) => n.type === 'IfcSlab');
+      await select(t, slab.id);
+      await t.wait(400);
+      await t.shot('floor-trace-building');
+      await t.ui({ selection: null, selected: [] });
+      await t.tool('architecture.slab');
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=polygon]').click();
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // A true ellipse (audit S4): Draft → Ellipse (centre, one semi-axis's end, the other semi-axis) kept as an ellipse; the Floor
     // tool's bar draws an elliptical floor, measured on the ellipse.
     id: 'drafting-ellipse',

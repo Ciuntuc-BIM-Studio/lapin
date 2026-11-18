@@ -3962,6 +3962,7 @@ export const ZH: Record<string, string> = {
   "Its own outline": "自身轮廓", "A wall opening of the shape's outline, in the wall the view looks at.": "按图形轮廓在视图所对的墙上开洞。",
   "Its centre, the end of one semi-axis, then the other semi-axis": "中心、一条半轴的端点，然后是另一条半轴", "End of one semi-axis": "一条半轴的端点", "Other semi-axis (a point or a value) · Arc (A)": "另一条半轴（点或数值）· 弧 (A)", "Other semi-axis (a point or a value)": "另一条半轴（点或数值）", "Start of the arc": "弧的起点", "End of the arc (anticlockwise)": "弧的终点（逆时针）", "Elliptical arc": "椭圆弧",
   "From drawn shape": "取自绘制图形", "From room": "取自房间", "Click inside a closed drafted shape: a polyline, a rectangle, a circle": "在闭合的绘制图形内单击：多段线、矩形、圆", "Click inside a room: its outline": "在房间内单击：取其轮廓", "No walls close round that point.": "没有墙围合该点。", "Click inside a closed drafted shape (a closed polyline, a rectangle or a circle).": "请在闭合的绘制图形（闭合多段线、矩形或圆）内单击。", "Click inside a room.": "请在房间内单击。",
+  "Trace building": "描绘建筑", "Click anywhere on the storey: the exterior face of the core of the walls that enclose the building (stubs, fences and finishes left out)": "在楼层任意处单击：围合建筑的墙体核心层外表面（不含短墙、围栏和饰面）", "The walls do not close round the building.": "墙体未围合建筑。", "The walls do not close round any area.": "墙体未围合任何区域。", "There are no walls on this storey to trace.": "此楼层没有可描绘的墙。",
   "Hole in the outline": "轮廓中的孔", "Hole in outline": "轮廓中的孔", "Hole in platform": "平台中的孔", "Drag to move the hole": "拖动以移动孔", "Remove hole": "删除孔",
   "The language of its own words: its heading, the lines' roles and types": "其自身文字的语言：标题、线条的角色和类型",
   "Drag to move the leader's arrow": "拖动以移动引线的箭头", "Drag to move the bend": "拖动以移动折点", "Move leader": "移动引线",
@@ -4874,4 +4875,6 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^Saved (.+\.zip)\.$/, (m) => `已保存 ${m[1]}。`],
   [/^Entry (\d+) names no material or word: pick one or choose another match\.$/, (m) => `第 ${m[1]} 个条目没有指定材料或词：请选择一个，或选择其他匹配方式。`],
   [/^(\d+) entries$/, (m) => `${m[1]} 个条目`],
+  [/^The walls do not close round the building: there is a gap of (.+) m between (\(.+?\)) and (\(.+?\))\. Close it, or draw the floor's outline\.$/, (m) => `墙体未围合建筑：${m[2]} 与 ${m[3]} 之间有 ${m[1]} m 的缺口。请将其封闭，或绘制楼板轮廓。`],
+  [/^The walls do not close round the building: no closed loop of walls\. Free wall ends at (.+)\.$/, (m) => `墙体未围合建筑：没有闭合的墙环。自由墙端位于 ${m[1]}。`],
 ];
