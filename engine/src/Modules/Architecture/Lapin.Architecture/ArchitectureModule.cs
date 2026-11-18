@@ -177,6 +177,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IDeletionFollowers>(finishLinks);
         // A wall's top attached to an element deleted lets go of it, never widening to every roof (docs/plan-attach-to.md, A0).
         r.Service<IDeletionFollowers>(new AttachedLinks());
+        // A wall's top through element.attachTo / detach / attachments (docs/plan-attach-to.md, A1), over roofTop, roofIds and top.
+        r.Service<IAttachable>(new WallAttach());
         // A height typed on a wall with a top (the inspector's element.update): a height of its own, the wall unconnected.
         r.Service<IElementUpdate>(new WallTopDeletion());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));

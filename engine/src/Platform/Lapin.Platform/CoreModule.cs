@@ -104,6 +104,8 @@ public sealed class CoreModule : ILapinModule
         Arrays.Register(r);
         // Split, trim/extend and offset on walls, beams and strip footings (audit 2026-11-15, §6).
         PathEdits.Register(r);
+        // A top or bottom attached to bodies or a level, for every class with an IAttachable (docs/plan-attach-to.md, A1).
+        Attachments.Register(r);
         OutlineSplits.Register(r);
         HatchOrigins.Register(r);
         Components.Register(r);

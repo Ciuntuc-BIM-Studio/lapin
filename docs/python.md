@@ -198,6 +198,18 @@ with lapin.batch("Walls +20 cm"):
         w.update(height=w.height + 0.2)
 ```
 
+Every wall of the ground floor's top attached to a body over it (a roof, a slab, a Studio solid; `element.attachTo`, one undo step), then what each one's top is attached to:
+
+```python
+roof = lapin.model.of("IfcRoof")[0]
+ground = lapin.model.storey()
+walls = [w for w in lapin.model.of("IfcWall") if w.storey == ground.id]
+lapin.element.attach_to(ids=walls, end="top", targets=[roof])
+for row in lapin.element.attachments(ids=walls)["elements"]:
+    top = row["ends"][0]
+    print(row["name"], [t["name"] for t in top["targets"]], top["result"].get("built"), top["problems"])
+```
+
 ## External geometry and live scripts
 
 A program that computes geometry (a generator, a DSL's compiler, a parametric script) works with Lapin through this package, never inside it: it gives Lapin bodies, Lapin keeps them as elements, and each side tells the other what changed. The contract, the four steps (decisions 541–542) and what Lapin deliberately does not do are in `docs/plan-external-geometry.md`.

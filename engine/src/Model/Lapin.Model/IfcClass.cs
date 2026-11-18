@@ -55,4 +55,5 @@ public static class IfcClass
     public const string RelFillsElement = "IfcRelFillsElement";
     public const string RelConnectsPathElements = "IfcRelConnectsPathElements";
     public const string RelInterferesElements = "IfcRelInterferesElements";
+    public const string RelConnectsElements = "IfcRelConnectsElements";
 }
