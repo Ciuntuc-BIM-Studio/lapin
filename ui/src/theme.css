@@ -287,7 +287,8 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 /* The view's scale, picked in its corner (decision 492): as the zoom chip beside it, the scale in the ink. */
 .chip.scale-pick { cursor: pointer; background: none; border-color: var(--rule-strong); color: var(--ink); text-transform: none; letter-spacing: 0; font-size: 11px; font-variant-numeric: tabular-nums; margin: 0 0 4px 6px; max-width: 120px; }
 .chip.scale-pick:hover:not(:disabled) { border-color: var(--accent); }
-.hud-hint { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); padding: 6px 14px; background: var(--accent); color: var(--accent-ink); border-radius: 3px; font-weight: 600; letter-spacing: 0.04em; }
+/* The tool's prompt banner stands below the view's toolbar row (top 8 px, one row about 30 px high), never under it (forum topic 152), and above the view's own chips. */
+.hud-hint { position: absolute; left: 50%; top: 46px; transform: translateX(-50%); z-index: 6; max-width: calc(100% - 24px); text-align: center; pointer-events: none; padding: 6px 14px; background: var(--accent); color: var(--accent-ink); border-radius: 3px; font-weight: 600; letter-spacing: 0.04em; }
 .hotbar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; background: var(--hud); border: 1px solid var(--rule); border-radius: 4px; backdrop-filter: blur(4px); }
 .slot { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid var(--rule-strong); border-radius: 3px; background: var(--panel); cursor: pointer; }
 .slot svg { color: var(--ink); }
@@ -577,14 +578,15 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .plan-items:not(.ghost).drilled .plan-item:not(.in-drill):not(.selected) { opacity: 0.45; }
 .scope-bar { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 5px 6px 5px 14px; background: var(--accent); color: var(--accent-ink); border-radius: 3px; font-weight: 600; letter-spacing: 0.04em; z-index: 5; }
 .scope-bar button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 2px; padding: 3px 10px; font-weight: 600; cursor: pointer; }
-.scope-bar + .hud-hint { top: 50px; }
+.scope-bar + .hud-hint { top: 84px; }
 .drill-crumbs { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; max-width: calc(100% - 32px); overflow: hidden; padding: 3px 6px; background: var(--hud); color: var(--ink); border: 1px solid var(--rule-strong); border-radius: 999px; font-size: 12px; z-index: 5; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }
 .drill-crumbs button { background: none; border: 0; color: inherit; padding: 2px 6px; border-radius: 999px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 18em; }
 .drill-crumbs button:hover { background: var(--wash); }
 .drill-crumbs button.current { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .drill-crumbs .drill-sep { opacity: 0.5; }
-.scope-bar ~ .drill-crumbs, .hud-hint ~ .drill-crumbs { top: 50px; }
-.scope-bar ~ .hud-hint ~ .drill-crumbs { top: 88px; }
+.scope-bar ~ .drill-crumbs { top: 50px; }
+.hud-hint ~ .drill-crumbs { top: 88px; }
+.scope-bar ~ .hud-hint ~ .drill-crumbs { top: 126px; }
 .scope-bar .scope-what { display: flex; gap: 0.4em; text-transform: uppercase; }
 .drawing-svg .paper { fill: var(--paper, #fbfaf7); }
 /* A section or an elevation in the dark theme lies on the theme's background like a plan (report #90); its black pens in the theme's ink (DrawingLayer's onDark). */
