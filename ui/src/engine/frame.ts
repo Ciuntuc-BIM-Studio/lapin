@@ -1,8 +1,8 @@
 /**
  * The engine's binary frames (engine/src/Host/Lapin.Host/BinaryFrame.cs):
  * "LPF1", the JSON header's length (uint32 LE), the header, then the buffers.
- * An array in the header is `{"$buf":offset,"n":count,"t":"f32"|"i32"}`; it
- * becomes a typed-array view on the frame, no copy. A small one is copied: a
+ * An array in the header is `{"$buf":offset,"n":count,"t":"f32"|"i32"|"u8"}`; it
+ * becomes a typed-array view on the frame, no copy (`u8`: a file's bytes, an export asked for with `binary`, report #156). A small one is copied: a
  * view keeps its whole frame alive, and an instance's matrix (12 numbers) or
  * an empty list would keep a 20 MB part of a big import for as long as the
  * element lasts (docs/plan-instancing.md).
@@ -15,7 +15,7 @@ const COPY_UP_TO = 64;
 const NO_FLOATS = new Float32Array(0);
 const NO_INTS = new Int32Array(0);
 
-interface BufRef { $buf: number; n: number; t: 'f32' | 'i32' }
+interface BufRef { $buf: number; n: number; t: 'f32' | 'i32' | 'u8' }
 
 const isRef = (v: unknown): v is BufRef =>
   typeof v === 'object' && v !== null && typeof (v as BufRef).$buf === 'number' && typeof (v as BufRef).n === 'number' && typeof (v as BufRef).t === 'string';
@@ -28,6 +28,8 @@ export function decodeFrame<T = unknown>(frame: ArrayBuffer): T {
   const text = new TextDecoder().decode(bytes.subarray(8, base));
   return JSON.parse(text, (_key, value: unknown) => {
     if (!isRef(value)) return value;
+    // A file's bytes: a view, the frame is the file's for as long as it is being saved.
+    if (value.t === 'u8') return new Uint8Array(frame, base + value.$buf, value.n);
     if (value.n === 0 && COPY_UP_TO >= 0) return value.t === 'f32' ? NO_FLOATS : NO_INTS;
     if (value.t === 'f32') { const v = new Float32Array(frame, base + value.$buf, value.n); return value.n <= COPY_UP_TO ? v.slice() : v; }
     if (value.t === 'i32') { const v = new Int32Array(frame, base + value.$buf, value.n); return value.n <= COPY_UP_TO ? v.slice() : v; }

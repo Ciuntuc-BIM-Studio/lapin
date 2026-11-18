@@ -12,7 +12,7 @@ namespace Lapin.Protocol;
 /// </summary>
 public sealed partial class EngineDispatcher
 {
-    (object? Result, Diff? Diff) ExportHtml(JsonObject p, Func<byte[], string, JsonObject> deliver)
+    (object? Result, Diff? Diff) ExportHtml(JsonObject p, Func<ArraySegment<byte>, string, JsonObject> deliver)
     {
         var o = HtmlExportOptions.From(p);
         ReportProgress("Writing the page", 0, 0);

@@ -16,15 +16,44 @@ public sealed class Step
     /// <summary>The application named in the header (the product: Lapin, or an edition under its own name).</summary>
     public string Application { get; set; } = "Lapin";
 
-    readonly StringBuilder _data = new();
+    /// <summary>
+    /// The data section as UTF-8, in chunks of a megabyte or more, each holding whole lines (report #156): a 33-bay steel hall
+    /// is 150 MB of IFC, which as text (two bytes a character) in one growing builder took twice that and more, where the
+    /// browser's engine has 2 GB for everything.
+    /// </summary>
+    readonly List<(byte[] Bytes, int Used)> _chunks = [];
+    byte[] _chunk = [];
+    int _used;
+    const int ChunkSize = 1 << 20;
     int _next = 1;
+
+    /// <summary>The data section's bytes so far.</summary>
+    public long DataLength => _chunks.Sum(c => (long)c.Used) + _used;
 
     /// <summary>Adds an entity; returns its reference (#12).</summary>
     public string Add(string entity, params string[] attributes)
     {
         var id = $"#{_next++}";
-        _data.Append(id).Append('=').Append(entity).Append('(').Append(string.Join(',', attributes)).Append(");\n");
+        Append(string.Concat(id, "=", entity, "(", string.Join(',', attributes), ");\n"));
         return id;
+    }
+
+    void Append(string line)
+    {
+        var n = Encoding.UTF8.GetByteCount(line);
+        if (_used + n > _chunk.Length)
+        {
+            if (_used > 0) _chunks.Add((_chunk, _used));
+            _chunk = new byte[Math.Max(ChunkSize, n)];
+            _used = 0;
+        }
+        _used += Encoding.UTF8.GetBytes(line, _chunk.AsSpan(_used));
+    }
+
+    IEnumerable<ReadOnlyMemory<byte>> Data()
+    {
+        foreach (var (bytes, used) in _chunks) yield return bytes.AsMemory(0, used);
+        if (_used > 0) yield return _chunk.AsMemory(0, _used);
     }
 
     public const string Null = "$";
@@ -88,14 +117,35 @@ public sealed class Step
     /// <summary>The file into a stream.</summary>
     public void Write(Stream output, string name, string description, string schema = "IFC4")
     {
-        using var w = new StreamWriter(output, new UTF8Encoding(false), leaveOpen: true) { NewLine = "\n" };
+        output.Write(Header(name, description, schema));
+        // In its chunks: a big model's data is more than one string or array can hold.
+        foreach (var chunk in Data()) output.Write(chunk.Span);
+        output.Write(Footer);
+    }
+
+    /// <summary>The whole file as one array, of its exact size: no stream growing by doubling, no copy of it (report #156).</summary>
+    public byte[] ToArray(string name, string description, string schema = "IFC4")
+    {
+        var header = Header(name, description, schema);
+        var length = header.Length + DataLength + Footer.Length;
+        if (length > Array.MaxLength) throw new InvalidOperationException($"The IFC file would be {length / 1e9:0.0} GB: more than one file can be made of in memory.");
+        var o = new byte[length];
+        header.CopyTo(o, 0);
+        var at = header.Length;
+        foreach (var chunk in Data()) { chunk.Span.CopyTo(o.AsSpan(at)); at += chunk.Length; }
+        Footer.CopyTo(o.AsSpan(at));
+        return o;
+    }
+
+    static ReadOnlySpan<byte> Footer => "ENDSEC;\nEND-ISO-10303-21;\n"u8;
+
+    byte[] Header(string name, string description, string schema)
+    {
         var now = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
-        w.Write("ISO-10303-21;\nHEADER;\n");
-        w.Write($"FILE_DESCRIPTION(({S(description)}),'2;1');\n");
-        w.Write($"FILE_NAME({S(name)},'{now}',(''),(''),{S(Application)},{S(Application)},'');\n");
-        w.Write($"FILE_SCHEMA(('{schema}'));\nENDSEC;\nDATA;\n");
-        // In its chunks: a big model's data is more than one string can hold.
-        foreach (var chunk in _data.GetChunks()) w.Write(chunk.Span);
-        w.Write("ENDSEC;\nEND-ISO-10303-21;\n");
+        return Encoding.UTF8.GetBytes(
+            "ISO-10303-21;\nHEADER;\n" +
+            $"FILE_DESCRIPTION(({S(description)}),'2;1');\n" +
+            $"FILE_NAME({S(name)},'{now}',(''),(''),{S(Application)},{S(Application)},'');\n" +
+            $"FILE_SCHEMA(('{schema}'));\nENDSEC;\nDATA;\n");
     }
 }

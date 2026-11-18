@@ -43,6 +43,13 @@ class FrameTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             decode(encode({"x": {"$buf": 0, "n": 1, "t": "f64"}}, [b"\0" * 8]))
 
+    def test_a_files_bytes_come_as_a_view_with_the_floats_after_them_aligned(self):
+        # An export asked for with binary=True (report #156): its file in the frame, 14 bytes padded to 16.
+        floats = struct.pack("<2f", 1.5, 2.5)
+        m = decode(encode({"result": {"data": {"$buf": 0, "n": 14, "t": "u8"}, "p": {"$buf": 16, "n": 2, "t": "f32"}}}, [b"ISO-10303-21;\n\0\0", floats]))
+        self.assertEqual(bytes(m.result.data), b"ISO-10303-21;\n")
+        self.assertEqual(m.result.p.tolist(), [1.5, 2.5])
+
 
 class NameTests(unittest.TestCase):
     def test_the_engines_names_in_python(self):

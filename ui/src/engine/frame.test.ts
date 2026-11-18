@@ -26,6 +26,18 @@ describe('engine frames', () => {
     expect(msg.big.buffer).toBe(frame);
   });
 
+  it('reads a file\'s bytes as a view on the frame, the floats after them still aligned (report #156)', () => {
+    const file = new TextEncoder().encode('ISO-10303-21;\n'); // 14 bytes: the next buffer starts at 16
+    const floats = new Float32Array([1.5, 2.5]);
+    const padded = new Uint8Array(16); padded.set(file);
+    const frame = encodeFrame({ result: { data: { $buf: 0, n: file.length, t: 'u8' }, p: { $buf: 16, n: 2, t: 'f32' } } }, [padded, floats]);
+    const msg = decodeFrame<{ result: { data: Uint8Array; p: Float32Array } }>(frame);
+    expect(msg.result.data).toBeInstanceOf(Uint8Array);
+    expect(new TextDecoder().decode(msg.result.data)).toBe('ISO-10303-21;\n');
+    expect(msg.result.data.buffer).toBe(frame);
+    expect([...msg.result.p]).toEqual([1.5, 2.5]);
+  });
+
   it('refuses what is not a frame', () => {
     expect(() => decodeFrame(new TextEncoder().encode('{"id":1}').buffer)).toThrow(/Not a Lapin frame/);
   });

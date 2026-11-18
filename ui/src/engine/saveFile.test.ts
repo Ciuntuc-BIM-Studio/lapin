@@ -6,7 +6,8 @@ const call = vi.fn((_m: string, _p: unknown, _o?: unknown) => Promise.resolve({}
 const save = vi.fn((_o: unknown): Promise<string | null> => Promise.resolve('/Users/me/Desktop/Type assemblies.csv'));
 vi.mock('./session', () => ({ engine: { call: (m: string, p: unknown, o?: unknown) => call(m, p, o) }, engineInBrowser: false, activeStorey: () => null, useSession: { getState: () => ({}) } }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ save: (o: unknown) => save(o) }));
-vi.mock('../app/store', () => ({ notify: vi.fn(), select: vi.fn(), emptyPane: vi.fn(), useUi: { getState: () => ({}), setState: vi.fn() } }));
+const notifyProblem = vi.fn();
+vi.mock('../app/store', () => ({ notify: vi.fn(), notifyProblem: (t: string) => notifyProblem(t), select: vi.fn(), emptyPane: vi.fn(), useUi: { getState: () => ({}), setState: vi.fn() } }));
 const askName = vi.fn((_t: string, _f: unknown): Promise<Record<string, string> | null> => Promise.resolve({ name: 'Schedule.csv' }));
 vi.mock('../shell/AskBox', () => ({ ask: (t: string, f: unknown) => askName(t, f), textField: (key: string, label: string, value: string) => ({ key, label, value, text: true }) }));
 vi.mock('./ifcImport', () => ({ editableText: vi.fn(), surveyIfc: vi.fn() }));
@@ -14,7 +15,7 @@ vi.mock('./ifcImport', () => ({ editableText: vi.fn(), surveyIfc: vi.fn() }));
 import { chooseTarget, exportFile, safeFileName, saveFile } from './files';
 
 const g = globalThis as unknown as Record<string, unknown>;
-afterEach(() => { delete g.window; delete g.document; call.mockClear(); save.mockClear(); askName.mockClear(); });
+afterEach(() => { delete g.window; delete g.document; call.mockClear(); save.mockClear(); askName.mockClear(); notifyProblem.mockClear(); });
 
 describe('saveFile', () => {
   it('asks where on the desktop, with the default name and its extension, and has the engine write the bytes there', async () => {
@@ -86,6 +87,35 @@ describe('saveFile', () => {
     call.mockClear();
     await exportFile('project.exportIfc', {}, 'My house.ifc', 'ifc');
     expect(call).not.toHaveBeenCalled();
+  });
+
+  it('asks the engine for the bytes in its frame and saves them as they come (report #156)', async () => {
+    const write = vi.fn(); const close = vi.fn();
+    const handle = { name: 'Hall.ifc', createWritable: () => Promise.resolve({ write, close }) };
+    g.window = { showSaveFilePicker: () => Promise.resolve(handle) };
+    const bytes = new TextEncoder().encode('ISO-10303-21;');
+    call.mockResolvedValueOnce({ name: 'project.ifc', bytes: bytes.length, data: bytes });
+    expect(await exportFile('project.exportIfc', { schema: 'IFC4' }, 'Hall.ifc', 'ifc')).toBe(true);
+    expect(call.mock.calls[0][1]).toEqual({ schema: 'IFC4', binary: true });
+    expect(write).toHaveBeenCalledWith(bytes);
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('leaves no empty file when the export fails after the save picker made it, and says why until closed (report #156)', async () => {
+    const write = vi.fn(); const remove = vi.fn(() => Promise.resolve());
+    const handle = { name: 'Hall.ifc', createWritable: () => Promise.resolve({ write, close: vi.fn() }), remove };
+    g.window = { showSaveFilePicker: () => Promise.resolve(handle) };
+    call.mockRejectedValueOnce(new Error('Internal engine error: Out of memory'));
+    expect(await exportFile('project.exportIfc', {}, 'Hall.ifc', 'ifc')).toBe(false);
+    expect(write).not.toHaveBeenCalled();
+    expect(remove).toHaveBeenCalled();
+    expect(notifyProblem).toHaveBeenCalledWith('Nothing was exported: Internal engine error: Out of memory');
+    // A reply with no bytes in it is a failure too, never an empty file.
+    call.mockResolvedValueOnce({ name: 'project.ifc', data: new Uint8Array(0) });
+    expect(await exportFile('project.exportIfc', {}, 'Hall.ifc', 'ifc')).toBe(false);
+    expect(write).not.toHaveBeenCalled();
+    expect(remove).toHaveBeenCalledTimes(2);
+    expect(notifyProblem).toHaveBeenLastCalledWith('Nothing was exported: The engine sent back no file.');
   });
 
   it('makes a name the file systems take', () => {

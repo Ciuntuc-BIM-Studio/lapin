@@ -405,6 +405,8 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 /* Dialogs. */
 /* A notice stays readable over an open dialog and off the view's headers: low in the window, above the dialogs. */
 .notice.notice-status { position: fixed; top: auto; bottom: 44px; z-index: 500; pointer-events: none; }
+.notice.notice-problem { pointer-events: auto; display: flex; gap: 10px; align-items: center; max-width: min(640px, calc(100vw - 32px)); background: var(--danger, #9b2c2c); color: #fff; }
+.notice.notice-problem button.icon { color: inherit; }
 [role="dialog"][tabindex="-1"]:focus { outline: none; }
 .lazy-part { padding: 16px; }
 .dialog-backdrop { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(20, 18, 15, 0.35); }
