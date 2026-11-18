@@ -50,6 +50,9 @@ public interface IElementFaces
 {
     bool Covers(string ifcClass);
     IReadOnlyList<ElementFace> FacesOf(Entity entity, IModelView model);
+
+    /// <summary>The faces with the session's services at hand: what reads other elements' bodies (a wall's top under a Studio solid or an imported roof it is attached to) needs them.</summary>
+    IReadOnlyList<ElementFace> FacesOf(Entity entity, IModelView model, IServices? services) => FacesOf(entity, model);
 }
 
 public static class ElementFaces
@@ -76,7 +79,7 @@ public static class ElementFaces
 
     /// <summary>An element's named faces, from whichever module declares its class; none when no module does.</summary>
     public static IReadOnlyList<ElementFace> Of(IServices services, Entity e, IModelView m) =>
-        services.All<IElementFaces>().FirstOrDefault(f => f.Covers(e.Class))?.FacesOf(e, m) ?? [];
+        services.All<IElementFaces>().FirstOrDefault(f => f.Covers(e.Class))?.FacesOf(e, m, services) ?? [];
 
     public static ElementFace? Find(IServices services, Entity e, IModelView m, string role) =>
         Of(services, e, m).FirstOrDefault(f => f.Role == role);
