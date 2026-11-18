@@ -652,6 +652,9 @@ export const LO: Record<string, string> = {
   "Project base point": "ຈຸດຫຼັກຖານໂຄງການ (Base point)",
   "Survey point (map)": "ຈຸດສຳຫຼວດພິກັດ (Survey point) (ແຜນທີ່)",
   "Quadrant": "ຈຸດສີ່ສ່ວນວົງມົນ",
+  "Wall axis": "ແກນຝາ",
+  "No snap (for this point)": "ບໍ່ມີ snap (ສຳລັບຈຸດນີ້)",
+  "Snap settings…": "ການຕັ້ງຄ່າ snap…",
   "Perpendicular": "ຕັ້ງສາກ",
   "Nearest": "ໃກ້ທີ່ສຸດ",
   "Coordinates at the cursor": "ພິກັດຢູ່ບ່ອນເຄີເຊີ",
@@ -1109,6 +1112,9 @@ export const LO: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'ການກົດແປງແຕ່ລະຄັ້ງຄືໜຶ່ງຮອຍເສັ້ນ, ຍົກເລີກການກະທຳໄດ້ດ້ວຍ Ctrl Z; ສາມາດລ້າງຮອຍແປງຂອງພື້ນດິນອອກໄດ້ໃນແຜງກວດກາ.',
   // Site tools, stage 2
   'Spot level': 'ຈຸດລະດັບຄວາມສູງ', 'Spot levels': 'ຈຸດລະດັບຄວາມສູງ', 'Parcel': 'ຕອນດິນ', 'Export LandXML': 'ສົ່ງອອກ LandXML', 'Analysis': 'ການວິເຄາະ', 'slopes': 'ຄວາມຄ້ອຍ',
+  'Subregion': 'ເຂດຍ່ອຍ', 'Subregions': 'ເຂດຍ່ອຍທັງໝົດ', 'edit in 3D': 'ແກ້ໄຂໃນ 3D', 'done editing 3D': 'ແກ້ໄຂ 3D ແລ້ວ', 'Cut slope': 'ຄວາມຄ້ອຍຂຸດ', 'Fill slope': 'ຄວາມຄ້ອຍຖົມ', 'Survey point height': 'ລະດັບຄວາມສູງຂອງຈຸດສຳຫຼວດ', 'Drag a point\'s grip up or down in the 3D view.': 'ລາກຈຸດຈັບຂອງຈຸດຂຶ້ນ ຫຼື ລົງໃນມຸມມອງ 3D.', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': 'ຈຸດຈັບຢູ່ 400 ຈຸດທີ່ໃກ້ກາງມຸມມອງ 3D ທີ່ສຸດ: ເລື່ອນມຸມມອງເພື່ອໄປຫາຈຸດອື່ນ.',
+  'Split terrain': 'ແບ່ງດິນ', 'Merge terrains': 'ລວມດິນ', 'Select two terrains or more to merge them.': 'ເລືອກດິນສອງຕອນ ຫຼື ຫຼາຍກວ່ານັ້ນເພື່ອລວມ.',
+  'Terrain boundary': 'ຂອບເຂດດິນ', 'Slope tag': 'ປ້າຍຄວາມຄ້ອຍ', 'Slope tags': 'ປ້າຍຄວາມຄ້ອຍທັງໝົດ', 'Boundary': 'ຂອບເຂດ', 'clipped': 'ຕັດແລ້ວ', 'convex hull': 'ເປືອກນູນ', 'from parcel': 'ຈາກດິນຕອນ', 'Cut/fill grid': 'ຕາໜ່າງຂຸດ/ຖົມ', 'Graded region': 'ເຂດປັບລະດັບ', 'reset to survey': 'ກັບໄປຂໍ້ມູນສຳຫຼວດ', 'snapshot existing': 'ບັນທຶກດິນເດີມ',
   'cut and fill': 'ຂຸດ ແລະ ຖົມ', 'elevations': 'ລະດັບຄວາມສູງ', 'drawn': 'ແຕ້ມແລ້ວ', 'remove': 'ລຶບອອກ', 'Planting schedule': 'ຕາຕະລາງລາຍການຕົ້ນໄມ້',
   // The engine in the browser.
   'In the browser': 'ໃນບຣາວເຊີ',
@@ -2280,6 +2286,8 @@ export const LO: Record<string, string> = {
   // An elevation's marker moved into the building clips it (decision 460)
   "Drag: move the marker (moved into the building, the elevation starts seeing at its line)": "ລາກ: ຍ້າຍເຄື່ອງໝາຍ (ຍ້າຍເຂົ້າໃນອາຄານ, ດ້ານໜ້າເລີ່ມເຫັນຈາກເສັ້ນຂອງມັນ)", "Move elevation marker": "ຍ້າຍເຄື່ອງໝາຍດ້ານໜ້າ", "Only an elevation's marker is moved this way.": "ມີແຕ່ເຄື່ອງໝາຍຂອງດ້ານໜ້າທີ່ຍ້າຍແບບນີ້.", "A marker's place is in metres.": "ຕຳແໜ່ງຂອງເຄື່ອງໝາຍເປັນແມັດ.",
   "Letter shortcuts (Revit-style)": "ທາງລັດຕົວອັກສອນ (ແບບ Revit)",
+  "A click outside an input box accepts it": "ການກົດນອກຊ່ອງປ້ອນຂໍ້ມູນຈະຍອມຮັບມັນ",
+  "Off by default. On: with a value typed in the box by the cursor or on the command line, a left click elsewhere accepts it as Enter does, and that click is used up (it places no point of its own). Esc or a right click throws the typed value away instead. Fields in the Properties panel already take their value when you click away.": "ປິດໄວ້ຕາມຄ່າເລີ່ມຕົ້ນ. ເປີດ: ເມື່ອມີຄ່າທີ່ພິມໃນຊ່ອງຂ້າງເຄີເຊີ ຫຼື ໃນແຖວຄຳສັ່ງ, ການກົດຊ້າຍບ່ອນອື່ນຈະຍອມຮັບຄ່ານັ້ນຄືກັບກົດ Enter, ແລະການກົດນັ້ນຖືກໃຊ້ໝົດ (ບໍ່ວາງຈຸດຂອງມັນເອງ). Esc ຫຼື ການກົດຂວາຈະຖິ້ມຄ່າທີ່ພິມແທນ. ຊ່ອງໃນແຜງຄຸນສົມບັດຮັບຄ່າຢູ່ແລ້ວເມື່ອກົດບ່ອນອື່ນ.",
   "Typed letters such as WA start a tool. Off: letters always go to the command line, and Enter or Space runs a command, an alias, or the command whose letters they are. The ` key gives the command line all typing, whichever is on. Your own aliases are in Keyboard shortcuts…": "ຕົວອັກສອນທີ່ພິມ ເຊັ່ນ WA ຈະເລີ່ມເຄື່ອງມື. ປິດ: ຕົວອັກສອນຈະໄປທີ່ແຖວຄຳສັ່ງສະເໝີ ແລະ Enter ຫຼື Space ຈະແລ່ນຄຳສັ່ງ, ນາມແຝງ ຫຼືຄຳສັ່ງທີ່ມີຕົວອັກສອນນັ້ນ. ປຸ່ມ ` ໃຫ້ແຖວຄຳສັ່ງຮັບການພິມທັງໝົດ ບໍ່ວ່າຈະເປີດອັນໃດ. ນາມແຝງຂອງທ່ານຢູ່ໃນທາງລັດແປ້ນພິມ…",
   "Keyboard": "ແປ້ນພິມ",
   "Command line: take all typing": "ແຖວຄຳສັ່ງ: ຮັບການພິມທັງໝົດ",
@@ -3225,6 +3233,7 @@ export const LO: Record<string, string> = {
   "Export CSV…": "ສົ່ງອອກ CSV…",
   "Export standards…": "ສົ່ງອອກມາດຕະຖານ…",
   "Exported ${saved}.": "ສົ່ງອອກ ${saved} ແລ້ວ.",
+  "The engine sent back no file.": "ເຄື່ອງຈັກບໍ່ໄດ້ສົ່ງໄຟລ໌ກັບມາ.",
   "Factor of Ø": "ປັດໄຈຂອງ Ø",
   "Find a code or a title": "ຊອກຫາລະຫັດ ຫຼືຊື່",
   "Functions:": "ຟັງຊັນ:",
@@ -4344,7 +4353,7 @@ export const LO: Record<string, string> = {
   "Type properties": "ຄຸນສົມບັດຂອງປະເພດ",
   "Also write type properties on each occurrence": "ຂຽນຄຸນສົມບັດຂອງປະເພດໃສ່ທຸກອິນສະແຕນນຳ",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "ທຸກຝາຂອງປະເພດມີພວກມັນ (IsExternal, FireRating); ຄ່າເລີ່ມຕົ້ນຂອງອິນສະແຕນແມ່ນສຳເນົາຂອງແຕ່ລະຝາເອງ",
-  // Material graphics configurator (decision 670, stage 0b)
+  // Material graphics configurator (decision 678, stage 0b)
   'Lines': 'ເສັ້ນ', 'Weight, mm': 'ຄວາມໜາ, ມມ', 'Fill opacity': 'ຄວາມບໍ່ໂປ່ງໃສຂອງການຕື່ມ', 'Second pattern': 'ແບບທີສອງ', 'Cut outline': 'ເສັ້ນຂອບຂອງການຕັດ', 'Separator lines': 'ເສັ້ນແບ່ງ', 'Strip': 'ແຖບ', 'facade|Elevation': 'ດ້ານໜ້າອາຄານ', 'material|Band': 'ແຖບ', 'Clear selection': 'ລ້າງການເລືອກ', 'Copy graphics from…': 'ສຳເນົາກຣາຟິກຈາກ…', 'from the pen': 'ຈາກປາກກາ', 'Opacity, per cent': 'ຄວາມບໍ່ໂປ່ງໃສ, ເປີເຊັນ', 'Automatic: click to choose a colour': 'ອັດຕະໂນມັດ: ກົດເພື່ອເລືອກສີ', 'Scale of the sample': 'ມາດຕາສ່ວນຂອງຕົວຢ່າງ', 'Preview of the material graphics': 'ຕົວຢ່າງກຣາຟິກຂອງວັດສະດຸ', 'A strip of the material between two lines': 'ແຖບຂອງວັດສະດຸລະຫວ່າງສອງເສັ້ນ', 'A band between two layers, with the lines that separate them': 'ແຖບລະຫວ່າງສອງຊັ້ນ, ພ້ອມເສັ້ນທີ່ແບ່ງພວກມັນ', 'Tick several materials to change their graphics together': 'ຕິກຫຼາຍວັດສະດຸເພື່ອປ່ຽນກຣາຟິກຂອງພວກມັນພ້ອມກັນ', 'Select this material with others': 'ເລືອກວັດສະດຸນີ້ພ້ອມກັບອັນອື່ນ', 'Its hatches, fills and lines for the cut in a section, in a plan and for the elevation: one undo step': 'ເສັ້ນລາຍ, ການຕື່ມ ແລະ ເສັ້ນຂອງມັນສຳລັບການຕັດໃນຮູບຕັດ, ໃນແປນ ແລະ ສຳລັບດ້ານຂອງອາຄານ: ຂັ້ນຕອນຍົກເລີກດຽວ', 'Paper millimetres: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5': 'ມິນລີແມັດເທິງເຈ້ຍ: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0 ຫຼື ຄ່າໃດກໍໄດ້ຕັ້ງແຕ່ 0.05 ເຖິງ 5', 'The weight of the hatch lines on paper: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5; it wins over the pen': 'ຄວາມໜາຂອງເສັ້ນລາຍເທິງເຈ້ຍ: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0 ຫຼື ຄ່າໃດກໍໄດ້ຕັ້ງແຕ່ 0.05 ເຖິງ 5; ມັນຊະນະປາກກາ', 'The colour of the hatch; automatic: the category colour': 'ສີຂອງເສັ້ນລາຍ; ອັດຕະໂນມັດ: ສີຂອງປະເພດ', 'A pen of the pen table (1 to 16), when no weight is set': 'ປາກກາຈາກຕາຕະລາງປາກກາ (1 ເຖິງ 16), ເມື່ອບໍ່ໄດ້ຕັ້ງຄວາມໜາ', 'The hatch in a lighter tone, as a background': 'ເສັ້ນລາຍໃນໂທນທີ່ອ່ອນກວ່າ, ເປັນພື້ນຫຼັງ', 'A second hatch under the first (a background and a foreground, as in Revit)': 'ເສັ້ນລາຍທີສອງຢູ່ລຸ່ມອັນທຳອິດ (ພື້ນຫຼັງ ແລະ ພື້ນໜ້າ, ຄືໃນ Revit)', 'A change below goes to all of them, in one undo step.': 'ການປ່ຽນແປງຂ້າງລຸ່ມໃຊ້ກັບທັງໝົດ, ໃນຂັ້ນຕອນຍົກເລີກດຽວ.', 'What is not set comes from the name, the category or the Object styles; a field’s arrow takes it back there.': 'ສິ່ງທີ່ບໍ່ໄດ້ຕັ້ງມາຈາກຊື່, ປະເພດ ຫຼື ແບບວັດຖຸ; ລູກສອນຂອງຊ່ອງນັ້ນຈະສົ່ງມັນກັບຄືນໄປບ່ອນນັ້ນ.',
   "Real size": "ຂະໜາດຈິງ",
   "Some real size": "ຂະໜາດຈິງບາງສ່ວນ",
@@ -4362,7 +4371,6 @@ export const LO: Record<string, string> = {
   "Hatch origin, up (v)": "ຈຸດເລີ່ມຂອງລາຍແຮ້ເງົາ, ຂຶ້ນເທິງ (v)",
   "Where the element's hatches start, in its own frame: along its axis from the start, and up from its base in elevations and sections (to the left of the axis in a plan). Real-size patterns (bricks, tiles) start their courses here": "ບ່ອນທີ່ລາຍແຮ້ເງົາຂອງອົງປະກອບເລີ່ມ, ໃນກອບຂອງມັນເອງ: ຕາມແກນຈາກຈຸດເລີ່ມ ແລະ ຂຶ້ນເທິງຈາກຖານໃນດ້ານຂ້າງ ແລະ ຮູບຕັດ (ຊ້າຍຂອງແກນໃນແປນ). ແບບຮູບຂະໜາດຈິງ (ດິນຈີ່, ກະເບື້ອງ) ເລີ່ມແຖວຂອງມັນຢູ່ບ່ອນນີ້",
   "Up from the element's base in elevations and sections; to the left of the axis in a plan": "ຂຶ້ນເທິງຈາກຖານຂອງອົງປະກອບໃນດ້ານຂ້າງ ແລະ ຮູບຕັດ; ຊ້າຍຂອງແກນໃນແປນ",
-  "automatic": "ອັດຕະໂນມັດ",
   " automatic": " ອັດຕະໂນມັດ",
   "Back to automatic: the view's origin, or the element's base for a real-size pattern": "ກັບຄືນເປັນອັດຕະໂນມັດ: ຈຸດເລີ່ມຂອງມຸມມອງ ຫຼື ຖານຂອງອົງປະກອບສຳລັບແບບຮູບຂະໜາດຈິງ",
   "Reset the hatch origin": "ຕັ້ງຈຸດເລີ່ມຂອງລາຍແຮ້ເງົາຄືນໃໝ່",
@@ -4600,6 +4608,9 @@ export const LO: Record<string, string> = {
   "as the view": "ຄືມຸມມອງ",
   "Tile": "ກະເບື້ອງ",
   "Batt": "ຜ້າຫົ່ມ",
+  // A drafted text's alignment (forum topic 148); a view's mark (report #167).
+  'Alignment': 'ການຈັດວາງ', 'automatic': 'ອັດຕະໂນມັດ', 'Without a width, of its point; with one, in its box': 'ບໍ່ມີຄວາມກວ້າງ: ຕາມຈຸດຂອງມັນ; ມີຄວາມກວ້າງ: ໃນກອບຂອງມັນ', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'ສິ່ງທີ່ເຄື່ອງໝາຍຂອງມຸມມອງຂຽນ: ຊື່ຂອງພາກຕັດ ຫຼື ດ້ານໜ້າ ກັບຫົວຂອງ Lapin ເອງ, ເລກຂອງມັນໃນແຜ່ນກັບສັນຍາລັກຫົວ, ການອ້າງອີງ ຫຼື ຫົວຂໍ້ມຸມມອງ. ຫວ່າງ: ອັດຕະໂນມັດ.',
+  'Click to place another · Space turns · Enter or Esc to finish': 'ຄລິກເພື່ອວາງອີກອັນ · Space ຫມຸນ · Enter ຫຼື Esc ເພື່ອຈົບ',
 };
 
 /** Phrases with a number or a name in them. */
@@ -4615,6 +4626,7 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `ເພີ່ມ ${m[1]} ປະເພດເສັ້ນ, ອັບເດດ ${m[2]}, ຂ້າມ ${m[3]}.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `ເພີ່ມ ${m[1]} ພາຣາມິເຕີ, ອັບເດດ ${m[2]}.`],
   [/^(\d+) shapes added, (\d+) updated\.$/, (m) => `ເພີ່ມ ${m[1]} ຮູບຮ່າງ, ອັບເດດ ${m[2]}.`],
+  [/^Nothing was exported: (.+)$/, (m) => `ບໍ່ມີຫຍັງຖືກສົ່ງອອກ: ${m[1]}`],
   [/^Exported (.+): (\d+) records\.$/, (m) => `ສົ່ງອອກ ${m[1]}: ${m[2]} ລາຍການ.`],
   [/^Exported (.+): (\d+) records, (\d+) bars laid by types left out \(they have no drawn shape\)\.$/, (m) => `ສົ່ງອອກ ${m[1]}: ${m[2]} ລາຍການ, ຍົກເວັ້ນ ${m[3]} ເຫຼັກເສັ້ນທີ່ວາງໂດຍປະເພດ (ບໍ່ມີຮູບຮ່າງທີ່ແຕ້ມ).`],
   [/^Model imported: (\d+) materials to give a role\.$/, (m) => `ນຳເຂົ້າແບບແລ້ວ: ${m[1]} ວັດສະດຸທີ່ຕ້ອງກຳນົດບົດບາດ.`],

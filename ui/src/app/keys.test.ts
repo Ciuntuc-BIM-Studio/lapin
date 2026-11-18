@@ -100,6 +100,15 @@ describe('keyIntent', () => {
     expect(keyIntent(press('a'), state({ buffer: '2w' }))).toEqual({ kind: 'type', buffer: '2wa' });
   });
 
+  it('gives a step with its own Space (a symbol turning) the Space, and Enter and Esc finish it', () => {
+    const placing = state({ step: { want: 'point', space: true } });
+    expect(keyIntent(press(' '), placing)).toEqual({ kind: 'stepSpace' });
+    expect(keyIntent(press('Enter'), placing)).toEqual({ kind: 'submit' });
+    expect(keyIntent(press('Escape'), placing)).toEqual({ kind: 'cancel' });
+    // Typed text goes on as before.
+    expect(keyIntent(press(' '), state({ buffer: 'r', step: { want: 'point', space: true } }))).toEqual({ kind: 'submit' });
+  });
+
   it('submits with Enter or Space, except when a plan gesture or nothing is waiting', () => {
     expect(keyIntent(press('Enter'), state({ buffer: 'line' }))).toEqual({ kind: 'submit' });
     expect(keyIntent(press(' '), state({ hasLast: true }))).toEqual({ kind: 'submit' });
@@ -312,5 +321,16 @@ describe('Tab in the workspace (forum #125)', () => {
     expect(send(null, state({ keymap: emptyMap }))).toBe(true);
     expect(send(null, state({ keymap: emptyMap, dialog: 'shortcuts' }))).toBe(false);
     expect(send({ closest: () => ({}) } as unknown as HTMLElement, state({ keymap: emptyMap }))).toBe(false);
+  });
+});
+
+describe('Shift+Tab while a tool picks (forum topic 149)', () => {
+  const map = resolveKeymap([cmd('app.pickCycleBack', ['Shift+Tab'])], { 'app.pickCycleBack': ['Shift+Tab'] });
+  it('runs the previous-candidate command with a step waiting or a tool active, not with text typed', () => {
+    const k = press('Tab', { shiftKey: true });
+    expect(keyIntent(k, state({ keymap: map }))).toEqual({ kind: 'command', id: 'app.pickCycleBack' });
+    expect(keyIntent(k, state({ keymap: map, step: { want: 'pick' } }))).toEqual({ kind: 'command', id: 'app.pickCycleBack' });
+    expect(keyIntent(k, state({ keymap: map, tool: 'wall', step: { want: 'pick' } }))).toEqual({ kind: 'command', id: 'app.pickCycleBack' });
+    expect(keyIntent(k, state({ keymap: map, buffer: 'L', step: { want: 'point' } }))).toBeNull();
   });
 });

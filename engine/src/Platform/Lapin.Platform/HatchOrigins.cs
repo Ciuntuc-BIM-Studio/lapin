@@ -5,7 +5,7 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>
-/// Where an element's hatches start (decision 671): its attribute <c>hatchOrigin</c>, <c>[u, v]</c> in metres in the
+/// Where an element's hatches start (decision 679): its attribute <c>hatchOrigin</c>, <c>[u, v]</c> in metres in the
 /// element's own frame, so it moves with the element.
 /// <list type="bullet">
 /// <item>An element with an axis (<c>start</c>, <c>end</c>: a wall, a beam): <c>u</c> along the axis from its start; in a

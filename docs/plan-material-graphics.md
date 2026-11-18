@@ -69,7 +69,7 @@ Testele (`MaterialGraphicsReferenceTests`) verifică:
 - un **instantaneu** al desenului (pens serializate, nu pixeli), care se schimbă doar intenționat;
 - o pagină PDF generată, cu toate detaliile, pentru ochi.
 
-Stare (17.11.2026, decizia 670): **făcută pe motor.** Detaliile sunt în `engine/tests/Lapin.Engine.Tests/ReferenceDetails.cs` (construite din comenzi, deci refolosibile); PDF-ul și proiectele `.lapin` ale detaliilor se scriu cu `LAPIN_REFERENCE_PDF=1` în `build/material-graphics-reference/`, de unde scenele ghidului (etapa 8) le pot deschide. Desenele de azi trec toate regulile; instantaneul e `MaterialGraphicsReference.snap.txt`.
+Stare (17.11.2026, decizia 678): **făcută pe motor.** Detaliile sunt în `engine/tests/Lapin.Engine.Tests/ReferenceDetails.cs` (construite din comenzi, deci refolosibile); PDF-ul și proiectele `.lapin` ale detaliilor se scriu cu `LAPIN_REFERENCE_PDF=1` în `build/material-graphics-reference/`, de unde scenele ghidului (etapa 8) le pot deschide. Desenele de azi trec toate regulile; instantaneul e `MaterialGraphicsReference.snap.txt`.
 
 ### Etapa 0b: configuratorul flexibil (prioritatea utilizatorului)
 
@@ -94,7 +94,7 @@ Ce era etapa 6, lărgit și adus în față. Pe fiecare material, pentru fiecare
   - DXF: două entități HATCH cu culoarea și grosimea lor;
   - PDF, planșe, legenda de materiale (decizia 620), Bonsai.
 
-Stare (17.11.2026, decizia 670): **motorul e făcut; interfața urmează.** Abateri și precizări:
+Stare (17.11.2026, decizia 678): **motorul e făcut; interfața urmează.** Abateri și precizări:
 
 - opacitatea e în culoare (`#rrggbbaa`); DXF o scrie ca transparență (codul 440);
 - DXF păstrează hașurile ca linii, cum făcea deja (nu entități HATCH): fundalul are culoarea și grosimea lui pe același strat HATCH;
@@ -118,7 +118,7 @@ Stare (17.11.2026, decizia 670): **motorul e făcut; interfața urmează.** Abat
 - **Originea pe element:** asizele unei fațade pornesc de la baza peretelui sau de la cota nivelului. Un grip mută originea (`hatchOrigin` pe element, un pas de anulare).
 - Planurile de pardoseală (`finishHatch`) folosesc modelele `model`, ca plăcile să aibă mărimea lor.
 
-Stare (17.11.2026, decizia 671): **motorul e făcut; interfața urmează.** Abateri și precizări:
+Stare (17.11.2026, decizia 679): **motorul e făcut; interfața urmează.** Abateri și precizări:
 
 - unitățile: `HatchPattern.Units` (`paper` / `model`); `.pat` citește `;%TYPE=MODEL|DRAFTING` (după header sau înaintea lui) și `;%UNITS=MM|INCH` (inch × 25,4), scrie `;%TYPE=MODEL` doar la modelele `model`, deci fișierele de azi se scriu la fel;
 - modelele noi, desenate de Lapin, cu rostul ca o singură linie (o linie dublă la 10 mm s-ar contopi pe hârtie): `BRICK_240X63` (implicit), `BRICK_240X71`, `BRICK_215X65`, `BLOCK_400X200`, `BLOCK_600X250` (BCA, adăugat: o fațadă de BCA nu e de cărămidă), `TILE_300X300`, `TILE_600X600`, `BOARDS_150` (2,4 m, rosturi decalate), `STONE_600X300`, `ROOF_TILES` (pas 330, lățime 300), `METAL_SEAM_500`;
@@ -169,24 +169,24 @@ Stare (17.11.2026, decizia 671): **motorul e făcut; interfața urmează.** Abat
   - un pachet actualizat în magazin e oferit proiectelor care îl folosesc, cu „Actualizează” și previzualizarea diferențelor, niciodată automat.
 - Pachetele livrate cu Lapin (Lapin, ISO 128-50, DIN 1356, România SR ISO 128-50, BS) sunt și ele în magazin, ca exemple pentru autori.
 
-Stare (18.11.2026, decizia 673): **motorul e făcut; interfața urmează.** Abateri și precizări:
+Stare (18.11.2026, decizia 681): **motorul e făcut; interfața urmează.** Abateri și precizări:
 
 - standardul e date (`MaterialStandard`, Lapin.Drawing): id, nume, descriere, autor, țară, normă, versiune, licență, limbi, `indicative`, `basedOn`, `fold`; reguli ordonate `{match: {names: {en: […], ro: […], de: […]}, category?}, section?, plan?, elevation?, membrane?, category?}` (fiecare nume e un cuvânt sau o expresie mică, căutat în numele materialului împăturit: litere mici, un spațiu, fără diacritice — după un tabel, motorul rulează fără ICU); modelele lui (`patterns`, text `.pat`, hârtie sau model); penițele lui (`pens: {hatch, cut}`: culoare, grosime, tip de linie, sub reguli). O tăietură ia prima regulă care spune ceva de tăietură (section, plan sau membrane), o fațadă prima care spune ceva de fațadă; aceeași listă le ține pe amândouă;
 - „Lapin” e `MaterialStandards/lapin.json`, cu exact rezultatele tabelelor de cod (verificat pe peste 1500 de nume, cu diacritice și fără); tabelele vechi pentru `hatchRev` 0–1 și fațadele de hârtie rămân în cod. Pachetele livrate sunt fișiere JSON încorporate: `iso-128-50`, `din-1356`, `ro-sr-iso-128-50`, `bs-8888`, desenate de Lapin din principiile generale, toate marcate orientative; modelele noi: `ISO_135`, `ISO_AERATED`, `ISO_STONE`, `DIN_PORENBETON`, `DIN_NATURSTEIN`, `BS_BLOCK`, `BS_STONE`;
 - ordinea, de jos în sus: standardul, treapta lui de scară, materialul, treapta lui; un material cu modelul lui nu ia scara, unghiul și unitățile standardului; unul cu fundalul lui nu ia fundalul standardului. Membrana unei reguli e a tăieturii (fațada: nu);
 - proiectul își numește standardul (`materialStandard`, lipsă = „lapin”), standardele lui sunt în `materialStandards`. „Aplică” pune numele, copiază modelele standardului în ale proiectului (cele lipsă, și pe cele cu același nume desenate altfel) și dă materialelor fără categorie categoria regulii; cu `overwrite` scoate din material câmpurile pe care standardul le setează pentru el (și, cu penițe, culoarea, grosimea, tipul hașurii și linia de tăietură, și steagul de membrană). Importul nu aplică niciodată;
 - un pachet doar de standarde (`only: "materialGraphics"`) scrie `drafting: {}`; la citire, un `drafting` gol nu mai e citit ca toate valorile implicite;
-- revizia estetică a lui „Lapin” (făcută în decizia 674, vezi etapa 4: „Lapin” 1.1 pentru proiectele noi) **nu era făcută aici**: pe planșele de referință, izolația rigidă (grila RIGID de 2,4 mm) e cel mai închis ton din detalii, mai închis decât zidăria (densitate de cerneală ~0,83 față de ~0,31 mm/mm²), iar betonul (punctat) e mai deschis decât zidăria; propunerea: RIGID la `hatchScale` 1,5 și CONCRETE la 0,75 pentru proiectele noi. Nu am aplicat-o: fiecare proiect de test e „nou”, deci ar schimba instantaneul și multe teste, și e o alegere de gust pe care o lasă utilizatorului (o versiune 1.1 a pachetului „lapin”, marcată pe proiectele noi);
+- revizia estetică a lui „Lapin” (făcută în decizia 682, vezi etapa 4: „Lapin” 1.1 pentru proiectele noi) **nu era făcută aici**: pe planșele de referință, izolația rigidă (grila RIGID de 2,4 mm) e cel mai închis ton din detalii, mai închis decât zidăria (densitate de cerneală ~0,83 față de ~0,31 mm/mm²), iar betonul (punctat) e mai deschis decât zidăria; propunerea: RIGID la `hatchScale` 1,5 și CONCRETE la 0,75 pentru proiectele noi. Nu am aplicat-o: fiecare proiect de test e „nou”, deci ar schimba instantaneul și multe teste, și e o alegere de gust pe care o lasă utilizatorului (o versiune 1.1 a pachetului „lapin”, marcată pe proiectele noi);
 - exemplele pentru magazin sunt în `extensions-packs/standards/<id>/` (manifest, `.lapinstandards`, `screenshot.png` din `standards.previewSheet`), validate cu regulile catalogului; manifestul nu are câmpuri pentru țară și normă (schema are `additionalProperties: false`): sunt în etichete (`country-de`) și în descriere, până când schema primește `country` și `norm`. `LAPIN_WRITE_PACKS=1` le scrie din nou (`MaterialStandardTests`);
 - tot aici: `element.hatchOriginPoint` / `element.hatchOriginAt` (mânerul originii hașurii), `hatchOrigin` e deja în `node.props`; redenumirea sau ștergerea unui tip de linie al proiectului trece și prin materiale (`hatchLineType`, `cutLine`, `separatorLine`, în trepte și fundal) și prin standardele proiectului;
-- rămase: interfața (alegerea la proiect nou, editorul de tabel, Aplică cu previzualizare, Catalogul → Standarde, „Publică în magazin”), oferirea unei versiuni noi a unui pachet instalat; plăcile de pardoseală ale camerelor (`RoomFinishes`) iau standardul din decizia 674 (proiectele noi).
+- rămase: interfața (alegerea la proiect nou, editorul de tabel, Aplică cu previzualizare, Catalogul → Standarde, „Publică în magazin”), oferirea unei versiuni noi a unui pachet instalat; plăcile de pardoseală ale camerelor (`RoomFinishes`) iau standardul din decizia 682 (proiectele noi).
 
 ### Etapa 4: grafica pe disciplină, pe stil și pe subcategorie
 
 - **Seturi de grafică a materialelor** (`materialGraphicsSets` pe proiect): pe material sau pe categoria materialului (Structure, Finish, Insulation…), hașura, umplerea și penița care înlocuiesc ce dă materialul. Un stil de vedere numește un set. Exemplu „Structură”: betonul plin gri, zidăria linii la 45°, finisajele fără hașură.
 - **Subcategoriile din Visibility/Graphics** primesc grafică: hașură de tăietură, umplere, culoare, semiton. E ce a rămas din etapa C a `plan-visibility-graphics.md`. Exemplu: izolația semiton, finisajele fără hașură, miezul plin.
 
-Stare (18.11.2026, decizia 674): **motorul e făcut; interfața urmează.** Abateri și precizări:
+Stare (18.11.2026, decizia 682): **motorul e făcut; interfața urmează.** Abateri și precizări:
 
 - **seturile** (`materialGraphicsSets` pe proiect, `MaterialGraphicsSets`, Lapin.Platform): `{id, name, entries: [{match: {material?, materialName?, category?}, section?, plan?, elevation?}]}`, fiecare fel de vedere cu toate câmpurile etapelor 0b, 1 și 2 (și `byScale`), verificate ca la `material.update`. O intrare se potrivește când tot ce dă se potrivește: `material` = id-ul materialului, `materialName` = un cuvânt sau o expresie mică găsită în numele împăturit (litere mici, fără diacritice, ca la standard), `category` = categoria materialului (a lui, altfel cea pe care standardul proiectului o dă numelui); `match: {}` ia orice material. Dintre intrările potrivite câștigă **cea mai particulară** (id > nume > categorie > orice), iar la egalitate prima din listă. Abatere: `materialName` e expresie, nu nume exact, ca setul „Structură” să poată deosebi betonul de zidărie (ambele Structure);
 - un stil numește setul (`materialGraphicsSet`, scris doar când e setat); o vedere îl suprascrie cu `view.setStyle {materialGraphicsSet: id | "none"}`, `null` îl readuce pe al stilului (`none` = niciun set peste al stilului). Comenzi, fiecare un pas de anulare: `materialGraphicsSet.list` (interogare: `{sets: [{id, name, entries, builtIn, edited, styles}], categories}`), `.create {name, from?, entries?}` → `{id}`, `.update {id, name?, entries?}`, `.delete {id}` (stilurile care îl numesc rămân fără set, vederile care îl numesc iau al stilului); `viewStyle.create/update {materialGraphicsSet}` verifică id-ul. Redenumirea unui tip de linie trece și prin seturi;
@@ -209,7 +209,7 @@ Filtrele vederii primesc coloanele **Cut hatch** și **Cut fill**, plus semiton 
 
 Același resolver, deci ajung în PDF, DXF și planșe.
 
-Stare (18.11.2026, decizia 675): **motorul e făcut; interfața urmează.** Abateri și precizări:
+Stare (18.11.2026, decizia 683): **motorul e făcut; interfața urmează.** Abateri și precizări:
 
 - rândul unui filtru în vedere (`graphics.filters[i]`, și rândurile proprii ale legăturilor „custom”) primește `cutHatch` (un model; `none` = fără), `cutFill` (`#rrggbb`; `none` = fără), `hatchColor`, `hatchHalftone` (true/false), `cutLine` `{color?, weight?}` (mm pe hârtie) pentru benzile tăiate și, ieftin de adăugat, `surfaceHatch` / `surfaceFill` pentru fețele văzute ale fațadelor (`hatchColor` și `hatchHalftone` valorează pentru amândouă). Câmp cu câmp, primul filtru din lista vederii care ia elementul și dă câmpul îl dă (regula lui Revit, ca la celelalte coloane); `view.graphics` verifică rândul (modelul cunoscut, culorile, grosimea 0–5 mm, niciun câmp necunoscut), iar `view.visibility` dă `filterFields`;
 - treapta 2 din `ViewMaterialGraphics` (`FilterOver`): peste subcategorie, set, `smallScaleCut` și material; hașura și umplerea categoriei din V/G nu se mai pun peste ale filtrului (`KeepsHatch`, `KeepsFill`). Modelul filtrului e la scara lui proprie, unghiul 0, fără fundal. Umplerea filtrului nu mai e spălată de culoarea liniilor filtrului (`FilterFill`): „portanții plini negri” cu liniile roșii rămân negri. O bandă fără material primește și ea ce desenează filtrul (un perete fără material plin negru); o membrană își păstrează linia. Două benzi ale aceluiași material se unesc doar când filtrele le desenează la fel (`JoinAs` cu cheia filtrelor);
@@ -229,7 +229,7 @@ Prim-planul, fundalul și culoarea hașurii fac acum parte din etapa 0b, cu prio
 - **Editor de familii de linii** cu previzualizare la scara aleasă: unghi, origine, deplasare, distanță, liniuțe. E ce face un `.pat`, dar fără să scrii text.
 - „Hașurile mele” trec în folderele firmei (biblioteca unificată, etapa 5 din `plan-user-extensibility.md`).
 
-Stare (18.11.2026, decizia 676): **motorul e făcut; interfața urmează.** Abateri și precizări:
+Stare (18.11.2026, decizia 684): **motorul e făcut; interfața urmează.** Abateri și precizări:
 
 - **familii de linii din numere:** `hatch.create {name, description?, units: paper|model, families: [{angle, origin: [x, y], deltaX, deltaY, dashes: [..]}]}` → `{name}`; `hatch.update {name, newName?, description?, units?, families? | tile?}` → `{name, repointed}`; `hatch.delete {name, force?}` → `{repointed}`; interogări `hatch.get {name}` (definiția: `kind` solid | lines | tile | batt, `families`, `tile`, `uses`), `hatch.usage {name}` → `{count}`, `hatch.exportPat {names?}` → `{text, skipped}`; `hatch.list` dă și `kind`. Fiecare comandă e un pas de anulare. Numele e un cuvânt (litere, cifre, `_`, `-`), scris cu majuscule ca în `.pat`; un model nou nu poate lua numele unuia livrat; cele livrate nu se schimbă și nu se șterg (`hatch.import` poate încă să le suprascrie, ca până acum; `hatch.remove` rămâne, fără urmărire);
 - **redenumirea** urmează modelul peste tot unde e numit, în atributele oricărei entități: `hatch` al materialelor (și în trepte, fundal, standardele și seturile proiectului), `cutHatch` / `surfaceHatch` al rândurilor din V/G și al filtrelor, `pattern` al hașurilor desenate și al hașurilor din simboluri. **Ștergerea** unui model folosit e refuzată (mesajul spune în câte locuri) fără `force: true`; cu `force`, ce îl numea rămâne fără hașură (materiale, standarde, seturi; rândurile `none`), iar hașurile desenate și cele din simboluri iau `LINES45` (o hașură desenată are mereu un model). Abatere de la tipurile de linie (care cad pe continuu fără întrebare): o hașură care dispare se vede mult mai tare decât o linie care devine continuă, deci interfața întreabă întâi (`hatch.usage`);
@@ -244,7 +244,7 @@ Stare (18.11.2026, decizia 676): **motorul e făcut; interfața urmează.** Abat
 ### Etapa 8: ghidul, video-urile, răspunsul
 
 - Pagina nouă din ghid, „Grafica materialelor” (EN și RO): standardul, materialul, treptele de scară, seturile pe stil, filtrele, desenarea unui model. Scenele ei sunt detaliile din etapa 0.
-Stare (18.11.2026, decizia 672): **motorul e făcut; interfața urmează.** Abateri și precizări:
+Stare (18.11.2026, decizia 680): **motorul e făcut; interfața urmează.** Abateri și precizări:
 
 - `byScale` stă pe fiecare fel de vedere al materialului (`section.byScale`, `plan.byScale`, `elevation.byScale`): o listă ordonată de trepte `{ from?, to?, …orice câmp al etapelor 0b și 1 }`; `from` și `to` sunt numitorii scării, ambii incluși (`from: 100` = 1:100 și mai mic; `to: 50` = 1:50 și mai mare), cel puțin unul dat, `from ≤ to`; prima treaptă care conține scara vederii își pune câmpurile peste ale materialului, câmp cu câmp (și în `cutLine`, `separatorLine`, `backgroundHatch`). Un plan ia treapta secțiunii, apoi câmpurile lui, apoi treapta lui. Fără scară (IFC, Bonsai, `material.list`) nu se ia nicio treaptă;
 - `material.update` verifică treptele ca pe câmpurile 0b (cel mult 20; `null` sau `[]` le scoate, la fel `reset: ["byScale"]`); într-o treaptă, `hatch: null` și `fill: null` înseamnă „niciuna”, alt `null` e lăsat afară; `material.preview` le arată la `scale`, iar `resolved.step` spune treapta luată; `material.list` dă `byScale` pe fiecare fel de vedere;

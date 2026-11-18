@@ -72,6 +72,28 @@ In 3D, **Visibility / Graphics** hides a view's paths, roads, kerbs and pavement
 
 **Modify → Split element** cuts a platform in two along a line of two points (each part levelled at the same height, its holes on the part they lie in, a hole the line crosses refuses), and **Modify → Trim/Extend elements** trims a platform or the parcel by a straight boundary, keeping the side you click. A terrain keeps one parcel: it is trimmed, not split.
 
+**Slopes round a platform.** A platform's properties take a **Cut slope** and a **Fill slope** as 1 : N (horizontal over vertical; 0, the default, keeps its sides vertical). With a slope the cut widens upwards and the fill spreads downwards at that batter until they meet the ground, so the platform runs out into the terrain instead of standing in a vertical pit or on a vertical bank; its cut and fill are measured on the sloped volumes. A platform with holes keeps vertical sides.
+
+## The terrain: boundary, slopes and grading
+
+![A survey clipped to an L-shaped boundary, a slope tag, a gravel subregion and the cut/fill grid over a raised stroke](shots/terrain-tools-plan.webp)
+
+**Boundary.** A terrain from a survey covers its points' outer outline (their convex hull). **Terrain boundary** (in the **Terrain** group) draws the outline the ground really has, a polygon whose edges may be arcs (<kbd>Space</kbd>), a rectangle or a circle, as a platform: the ground outside it goes, concave corners and all, and its contours, solid, sections and quantities follow. Its corners have grips. In the terrain's properties, **Boundary** says **clipped** or **convex hull**; **from parcel** takes the parcel's outline as the boundary, and **remove** goes back to the hull.
+
+**Split and merge.** **Split terrain** cuts a terrain in two along a line of two points drawn across it. The larger half stays the terrain (it keeps its identity, its GlobalId in IFC); the other becomes a new terrain beside it. Platforms, ditches and paths go with the half they lie in (by their outline's middle, a path by its midpoint), as do spot levels, slope tags and subregions, so nothing on the ground is lost. **Merge terrains** joins the terrains selected into the first one selected: their points, breaklines, brush strokes, spot levels, tags, subregions, platforms, ditches and paths all come over, and their heights stay where they are even when the terrains were read from different datums. Each is one undo step.
+
+**Slope tags and contour labels.** **Slope tag** writes the fall between two points you click on the terrain, in per cent and as 1 : N (5.0 %, 1:20.0), with an arrow downhill. Each major contour carries its level at its middle, along the line, on a clear background so the line stops under the text. In the terrain's properties, **Slope tags** counts them and **clear** takes them all away.
+
+**Cut and fill.** The brush (**Raise**, **Lower**, **Flatten**, **Smooth**) grades the ground, and its cut and fill are measured against the ground as surveyed: the terrain's **Cut** and **Fill** quantities (*CutVolume*, *FillVolume*) count the brush's grading together with its platforms, ditches and paths, and **Grading cut** and **Grading fill** (*SculptCut*, *SculptFill*) give the brush's part alone. **Cut/fill grid** in its properties (2, 5 or 10 m; **off** by default) writes the difference at every grid point in plan, blue where the ground was raised (+0.45), red where it was cut (−0.30), grey where it is as it was. **Graded region → snapshot existing** takes the ground as it now is as the existing ground, so the next strokes are measured from there; **reset to survey** goes back to the survey.
+
+![The terrain's properties: its points, boundary, slope tags, subregions, cut/fill grid and graded region](shots/terrain-properties.webp)
+
+**Editing points in 3D.** **edit in 3D** beside the terrain's **Points** puts a grip on each survey point in the 3D view: drag it up or down, or type the distance, and the point moves by that much, one undo step each. A large survey (a LandXML surface of thousands of points) shows grips on the 400 points nearest the middle of the 3D view; move the view to reach the others. **done editing 3D** takes the grips away.
+
+**Subregions.** **Subregion** (in the **Earthworks** group) draws an area of the terrain with a material of its own (gravel by default): a courtyard, a lawn, a gravel bed. The ground keeps its levels; the area wears its material in 3D, as a thin skin that follows the terrain's own triangles, breaklines included, and is outlined in plan. Each gives its plan area to schedules (*Lapin_SubregionQuantities*). **Subregions** in the terrain's properties counts them, and **clear** removes them.
+
+![A gravel subregion on the terrain in 3D](shots/terrain-subregion-3d.webp)
+
 ## Site plans and location plans
 
 The project browser has a **Site** under the levels: the site's own drawings, which belong to no storey. A new project starts with two:

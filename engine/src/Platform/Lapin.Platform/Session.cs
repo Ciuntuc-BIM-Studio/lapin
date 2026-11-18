@@ -738,7 +738,7 @@ public sealed partial class Session
             var (id, part, gp) = owners[k];
             if (!byNode.TryGetValue(id, out var list)) { byNode[id] = list = []; result.Add(new CapItem(id, list)); }
             if (!drawing) { list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges)); continue; }
-            // At the drawing's scale, its step by scale (decision 672).
+            // At the drawing's scale, its step by scale (decision 680).
             var look = MaterialGraphics.Resolve(gp.Material == null ? null : _store.Get(gp.Material), "section", gp.Material != null && _store.Get(gp.Material) == null && !GlobalId.IsValid(gp.Material) ? gp.Material : null, scale: scale, standard: standard);
             var (fill, hatch) = CapHatch(faces[k], look, patterns!, scale);
             list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges, fill, hatch));
@@ -772,7 +772,7 @@ public sealed partial class Session
             var (angle, origin) = Math.Abs(n.Z) >= 0.9 || look.HatchAlign == Lapin.Drawing.HatchAlign.Layer ? AlongLayer(loops) : (0.0, (Vec2?)null);
             var segs = Lapin.Drawing.Hatch.BattHatch.Is(pattern)
                 ? Lapin.Drawing.Hatch.BattHatch.Segments(loops, 1.2 * scale / 1000, 20_000)
-                // Paper or real size (decision 671); a real-size pattern too dense at this scale is not drawn.
+                // Paper or real size (decision 679); a real-size pattern too dense at this scale is not drawn.
                 : Lapin.Drawing.Hatch.HatchScale.Lay(pattern, scale, look.HatchScale, angle + look.HatchAngle, origin, 20_000, look.HatchUnits) is { } laid
                     ? Lapin.Drawing.Hatch.HatchFill.Segments(loops, pattern, laid).Segments : [];
             foreach (var s in segs)

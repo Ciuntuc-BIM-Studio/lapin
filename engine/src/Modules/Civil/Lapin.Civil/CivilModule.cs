@@ -107,6 +107,12 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 ["interval"] = Terrains.Interval(Json.Number(a["interval"])) ?? 0.5, ["majorEvery"] = Json.Number(a["majorEvery"]) ?? 5,
                 ["depth"] = Json.Number(a["depth"]) ?? 2, ["material"] = earth.Id,
             };
+            if (a["boundary"] is JsonArray bArr && bArr.Count >= 3)
+            {
+                var (bPts, bArcs) = Terrains.OutlineArg(new JsonObject { ["points"] = bArr.DeepClone(), ["arcs"] = a["arcs"]?.DeepClone() }, null, "A terrain boundary");
+                attrs[Terrains.BoundaryKey] = Terrains.ContourJson(bPts);
+                ArcOutline.Write(attrs, bArcs, Terrains.BoundaryArcs);
+            }
             var t = new Entity(ctx.NewId(), IfcClass.GeographicElement, name, attrs, Terrains.Predefined);
             ctx.Add(t);
             Spatial.Contain(ctx, storeyId, t.Id);
@@ -125,6 +131,11 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             }
             foreach (var k in new[] { "datum", "interval", "majorEvery", "depth" })
                 if (Json.Number(a[k]) is { } v) attrs[k] = k == "interval" ? Terrains.Interval(v) : v;
+            if (Json.Number(a["cutFillGrid"]) is { } grid)
+            {
+                if (grid <= 0) attrs.Remove("cutFillGrid"); else attrs["cutFillGrid"] = Math.Max(0.5, grid);
+            }
+            if (a["contourLabels"] is JsonValue clv && clv.TryGetValue<bool>(out var cl)) attrs["contourLabels"] = cl;
             if ((string?)a["analysis"] is { } analysis)
             {
                 if (!Analysis.Kinds.Contains(analysis)) throw new CommandException("An analysis shows slopes, cut and fill, or elevations; or none.");
@@ -203,6 +214,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             // Its own holes (audit S4): given, or kept and checked against the outline as it now is.
             if (a[OutlineHoles.Key] != null || a["points"] != null || a["x1"] != null) OutlineHoles.Apply(attrs, a);
             if (Json.Number(a["elevation"]) is { } z) attrs["elevation"] = z;
+            foreach (var k in new[] { "cutSlope", "fillSlope" })
+                if (Json.Number(a[k]) is { } s) { if (s <= 0) attrs.Remove(k); else attrs[k] = s; }
             ctx.Replace(pad.With(attrs: attrs));
             return null;
         });
@@ -323,14 +336,20 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             var major = Math.Max(1, (int)Math.Round(e.NumOrNull("majorEvery") ?? 5));
             if (interval <= 0 || (t.Bounds.Max.Z - t.Bounds.Min.Z) / interval > 2000) continue;
             var mk = new ViewMark(e.Id);
-            foreach (var z in t.Levels(interval * major))
+            var padAreas = Terrains.Pads(c.Model, e.Id)
+                .Select(p => (Outer: ArcOutline.BuiltOf(p), Holes: (IReadOnlyList<IReadOnlyList<Vec2>>)OutlineHoles.Built(p)))
+                .Where(p => p.Outer.Count >= 3).ToList();
+            if (e.Attrs["contourLabels"] is not JsonValue clv || !clv.TryGetValue<bool>(out var showLabels) || showLabels)
             {
-                // On the contour's longest piece, along it.
-                var segs = t.Contour(z);
-                if (segs.Count == 0) continue;
-                var (a, b) = segs.MaxBy(s => (s.B - s.A).Length);
-                var angle = -Standards.ReadableDeg(-Math.Atan2(b.Y - a.Y, b.X - a.X) * 180 / Math.PI);
-                mk.Text(new PenText((a + b) * 0.5, Standards.FormatLevel(z, c.Book), text.Height * 0.8, angle, "middle", "middle", false, text.Font), "#5d7a3e");
+                foreach (var z in t.Levels(interval * major))
+                {
+                    foreach (var line in Terrains.ChainedContours(t, z, padAreas))
+                    {
+                        if (MidpointTangent(line) is not { } mid || mid.Length < Math.Max(1.5, text.Height * 4)) continue;
+                        var angle = -Standards.ReadableDeg(-Math.Atan2(mid.Dir.Y, mid.Dir.X) * 180 / Math.PI);
+                        mk.Text(new PenText(mid.Pos, Standards.FormatLevel(z, c.Book), text.Height * 0.8, angle, "middle", "middle", true, text.Font), "#5d7a3e");
+                    }
+                }
             }
             foreach (var pad in Terrains.Pads(c.Model, e.Id))
             {
@@ -348,6 +367,66 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 mk.Line(p - new Vec2(0, r), p + new Vec2(0, r), "LEVELS", Pens.Default.Seen, "#000000");
                 mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), Standards.FormatLevel(z, c.Book), text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#000000");
                 mk.Snaps.Add(p);
+            }
+            // Slope tags: point gradient arrow or two-point grade line.
+            foreach (var s in Terrains.SlopeTags(e))
+            {
+                if (s.Length == 2)
+                {
+                    var p = new Vec2(s[0], s[1]);
+                    if (Analysis.Proposed(c.Model, e, t, p) is not { } z0) continue;
+                    var h = Math.Max(0.25, Math.Min(t.Bounds.Max.X - t.Bounds.Min.X, t.Bounds.Max.Y - t.Bounds.Min.Y) / 100);
+                    var zx1 = Analysis.Proposed(c.Model, e, t, new Vec2(p.X + h, p.Y)) ?? z0;
+                    var zx0 = Analysis.Proposed(c.Model, e, t, new Vec2(p.X - h, p.Y)) ?? z0;
+                    var zy1 = Analysis.Proposed(c.Model, e, t, new Vec2(p.X, p.Y + h)) ?? z0;
+                    var zy0 = Analysis.Proposed(c.Model, e, t, new Vec2(p.X, p.Y - h)) ?? z0;
+                    var grad = new Vec2((zx1 - zx0) / (2 * h), (zy1 - zy0) / (2 * h));
+                    var pct = grad.Length * 100;
+                    var dir = grad.Length > 1e-6 ? (-grad).Normalized() : new Vec2(1, 0);
+                    var len = 3.0 * c.Mm;
+                    var a = p - dir * (len * 0.5);
+                    var b = p + dir * (len * 0.5);
+                    DrawSlopeArrow(mk, a, b, c.Mm, $"{pct:0.0} %", text.Height, text.Font);
+                    mk.Snaps.Add(p);
+                }
+                else if (s.Length == 4)
+                {
+                    var (p1, p2) = (new Vec2(s[0], s[1]), new Vec2(s[2], s[3]));
+                    var run = (p2 - p1).Length;
+                    if (run < 1e-6 || Analysis.Proposed(c.Model, e, t, p1) is not { } z1 || Analysis.Proposed(c.Model, e, t, p2) is not { } z2) continue;
+                    var (hi, lo) = z1 >= z2 ? (p1, p2) : (p2, p1);
+                    var dz = Math.Abs(z1 - z2);
+                    var pct = dz / run * 100;
+                    var label = dz > 1e-4 ? $"{pct:0.0} % (1:{run / dz:0.0})" : "0.0 %";
+                    DrawSlopeArrow(mk, hi, lo, c.Mm, label, text.Height, text.Font);
+                    mk.Snaps.Add(p1); mk.Snaps.Add(p2);
+                }
+            }
+            // Cut/fill grid labels in plan (T5).
+            if (e.NumOrNull("cutFillGrid") is { } grid && grid >= 0.5)
+            {
+                var existing = Terrains.Existing(e);
+                var (min, max) = t.Bounds;
+                var nx = (int)Math.Ceiling((max.X - min.X) / grid);
+                var ny = (int)Math.Ceiling((max.Y - min.Y) / grid);
+                if ((long)nx * ny <= 2500)
+                {
+                    var x0 = Math.Ceiling(min.X / grid) * grid;
+                    var y0 = Math.Ceiling(min.Y / grid) * grid;
+                    var cr = 0.6 * c.Mm;
+                    for (var gx = x0; gx <= max.X + 1e-9; gx += grid)
+                        for (var gy = y0; gy <= max.Y + 1e-9; gy += grid)
+                        {
+                            var gp = new Vec2(gx, gy);
+                            if (Analysis.Proposed(c.Model, e, t, gp) is not { } zp || existing.ElevationAt(gx, gy) is not { } ze) continue;
+                            var dz = zp - ze;
+                            var col = dz > 0.01 ? "#2166ac" : dz < -0.01 ? "#c0392b" : "#666666";
+                            mk.Line(gp - new Vec2(cr, 0), gp + new Vec2(cr, 0), "LEVELS", Pens.Default.Seen, col);
+                            mk.Line(gp - new Vec2(0, cr), gp + new Vec2(0, cr), "LEVELS", Pens.Default.Seen, col);
+                            var txt = dz >= 0 ? $"+{dz:0.00}" : $"{dz:0.00}";
+                            mk.Text(new PenText(gp + new Vec2(cr * 1.2, 0), txt, text.Height * 0.7, 0, "start", "middle", false, text.Font), col);
+                        }
+                }
             }
             // The parcel: its boundary, dash-dotted, and its area.
             if (ArcOutline.BuiltOf(e, "parcel", Terrains.ParcelArcs) is { Count: >= 3 } parcel)
@@ -374,6 +453,41 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 foreach (var (loops, color) in Analysis.Fills(analysis)) mk.Fills.Add((loops, color));
             yield return mk;
         }
+    }
+
+    static (Vec2 Pos, Vec2 Dir, double Length)? MidpointTangent(IReadOnlyList<Vec2> line)
+    {
+        if (line.Count < 2) return null;
+        double total = 0;
+        for (var i = 1; i < line.Count; i++) total += (line[i] - line[i - 1]).Length;
+        if (total < 1e-6) return null;
+        var half = total * 0.5;
+        double acc = 0;
+        for (var i = 1; i < line.Count; i++)
+        {
+            var seg = line[i] - line[i - 1];
+            var len = seg.Length;
+            if (acc + len >= half && len > 1e-9)
+            {
+                var t = (half - acc) / len;
+                return (line[i - 1] + seg * t, seg * (1 / len), total);
+            }
+            acc += len;
+        }
+        var last = line[^1] - line[^2];
+        return (line[^1], last.Length > 1e-9 ? last.Normalized() : new Vec2(1, 0), total);
+    }
+
+    static void DrawSlopeArrow(ViewMark mk, Vec2 a, Vec2 b, double mm, string label, double textHeight, string font)
+    {
+        var dir = (b - a).Normalized();
+        var perp = new Vec2(-dir.Y, dir.X);
+        var head = 1.2 * mm;
+        mk.Line(a, b, "LEVELS", Pens.Default.Seen, "#2d5a27");
+        mk.Line(b, b - dir * head + perp * (head * 0.45), "LEVELS", Pens.Default.Seen, "#2d5a27");
+        mk.Line(b, b - dir * head - perp * (head * 0.45), "LEVELS", Pens.Default.Seen, "#2d5a27");
+        var angle = -Standards.ReadableDeg(-Math.Atan2(dir.Y, dir.X) * 180 / Math.PI);
+        mk.Text(new PenText((a + b) * 0.5 + perp * (1.1 * mm), label, textHeight * 0.8, angle, "middle", "middle", true, font), "#2d5a27");
     }
 }
 

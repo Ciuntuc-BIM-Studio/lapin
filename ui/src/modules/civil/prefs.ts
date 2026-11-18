@@ -13,3 +13,9 @@ export const setBrush = (patch: Partial<Brush>): void => useBrush.setState(patch
 
 /** An earthwork that is a ditch (a trench along a path), not a platform. */
 export const isDitch = (n: NodeDto) => n.type === 'IfcEarthworksCut' && n.props.predefinedType === 'TRENCH';
+
+/** Whether 3D vertical point grips are shown for the selected terrain. */
+export const useTerrainEdit = create<{ editPoints: boolean; setEditPoints: (v: boolean) => void }>((set) => ({
+  editPoints: false,
+  setEditPoints: (editPoints) => set({ editPoints }),
+}));

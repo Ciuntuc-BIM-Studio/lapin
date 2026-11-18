@@ -38,11 +38,11 @@ namespace Lapin.Platform;
 /// saved before it too: a plan's simple symbol, an elevation's or a section's silhouette, never their bodies' edges),
 /// <c>abstract</c> (circles and boxes), <c>detailed</c> (the symbols and projected bodies drawn before) or <c>none</c>;
 /// <c>entourageFill</c>: the silhouettes' fill in elevations and sections, a colour, none by default;</item>
-/// <item><c>minHatchSpacing</c>: the closest (paper mm) a real-size hatch's lines may lie and still be drawn (decision 671):
+/// <item><c>minHatchSpacing</c>: the closest (paper mm) a real-size hatch's lines may lie and still be drawn (decision 679):
 /// 0.7 by default, a style saved before too; a brick's courses at 1:200 lie closer and are left out; 0 draws them all.</item>
-/// <item><c>smallScaleCut</c>: how cuts draw from a scale on (decision 672, <see cref="SmallScaleCut"/>): {mode, from, color};
+/// <item><c>smallScaleCut</c>: how cuts draw from a scale on (decision 680, <see cref="SmallScaleCut"/>): {mode, from, color};
 /// none (asMaterial, today's look) by default and for a style saved before.</item>
-/// <item><c>materialGraphicsSet</c>: the material graphics set its views draw their materials with (decision 674,
+/// <item><c>materialGraphicsSet</c>: the material graphics set its views draw their materials with (decision 682,
 /// <see cref="MaterialGraphicsSets"/>); in a project made since, the Structural style names „Structure” and the MEP style
 /// „MEP”; none in a project made before (Î10). A view names another, or <c>none</c>, with <c>view.setStyle</c>.</item>
 /// </list>
@@ -122,9 +122,9 @@ public static class ViewStyles
             if (LayersPlan != null) o["layersPlan"] = LayersPlan;
             if (LayersSection != null) o["layersSection"] = LayersSection;
             if (!FinishElements) o["finishElements"] = false;
-            // Written only when set (decision 672), so a style that sets none saves as before.
+            // Written only when set (decision 680), so a style that sets none saves as before.
             if (SmallScaleCut != null) o["smallScaleCut"] = SmallScaleCut.ToJson();
-            // The same (decision 674).
+            // The same (decision 682).
             if (MaterialGraphicsSet != null) o["materialGraphicsSet"] = MaterialGraphicsSet;
             return o;
         }
@@ -153,11 +153,11 @@ public static class ViewStyles
             Mode(o["layersPlan"]), Mode(o["layersSection"]),
             // Whether the separate finish elements go with the finish layers (decision 502): a project made before is marked false (StructureUpgrade).
             On(o["finishElements"]),
-            // A style saved before real-size hatches (decision 671): the default threshold (it had no real-size hatch to leave out).
+            // A style saved before real-size hatches (decision 679): the default threshold (it had no real-size hatch to leave out).
             Spacing(o["minHatchSpacing"]) ?? Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing,
-            // A style saved before the small-scale cuts (decision 672): none, today's look (Î5).
+            // A style saved before the small-scale cuts (decision 680): none, today's look (Î5).
             Lapin.Platform.SmallScaleCut.Read(o["smallScaleCut"]),
-            // A style saved before the material graphics sets (decision 674): none.
+            // A style saved before the material graphics sets (decision 682): none.
             (string?)o["materialGraphicsSet"] is { Length: > 0 } mgs ? mgs : null);
 
         /// <summary>A hatch spacing threshold (paper mm, 0 or more); null when it is not one.</summary>
@@ -190,7 +190,7 @@ public static class ViewStyles
     public static IReadOnlyList<Style> LegacyDefaults => Defaults.Select(s => s with { LayersPlan = null, LayersSection = null, FinishElements = false }).ToList();
 
     /// <summary>
-    /// The styles a project made since decision 674 reads as when it has none of its own (<see cref="MaterialStandards.NewLook(Entity?)"/>):
+    /// The styles a project made since decision 682 reads as when it has none of its own (<see cref="MaterialStandards.NewLook(Entity?)"/>):
     /// <see cref="Defaults"/>, the Structural style naming the material graphics set „Structure”, the MEP style „MEP” (Î10).
     /// </summary>
     public static readonly IReadOnlyList<Style> NewDefaults = Defaults.Select(s => s.Id switch
@@ -242,14 +242,14 @@ public static class ViewStyles
             FloorFinishesPlan = Own(o["floorFinishesPlan"]) ?? s.FloorFinishesPlan,
             FloorFinishesSection = Own(o["floorFinishesSection"]) ?? s.FloorFinishesSection,
             MinHatchSpacing = Style.Spacing(o["minHatchSpacing"]) ?? s.MinHatchSpacing,
-            // The view's own, field by field over its style's (decision 672).
+            // The view's own, field by field over its style's (decision 680).
             SmallScaleCut = o["smallScaleCut"] is JsonObject sc ? SmallScaleCut.Read(sc, s.SmallScaleCut) : s.SmallScaleCut,
-            // The view's own set (decision 674), or none ("none") over its style's.
+            // The view's own set (decision 682), or none ("none") over its style's.
             MaterialGraphicsSet = (string?)o["materialGraphicsSet"] is { Length: > 0 } ms ? (ms == NoSet ? null : ms) : s.MaterialGraphicsSet,
         };
     }
 
-    /// <summary>What a view names over its style's set to draw with none (decision 674).</summary>
+    /// <summary>What a view names over its style's set to draw with none (decision 682).</summary>
     public const string NoSet = "none";
 
     /// <summary>A command's set (viewStyle.create/update, view.setStyle): one of the project's (its id), or none ("none", "" or null on a style).</summary>
@@ -419,7 +419,7 @@ public static class ViewStyles
         if (a.ContainsKey("detail")) s = s with { Detail = PlanDetail.LodOf(a["detail"]) ?? throw new CommandException(PlanDetail.LodProblem) };
         if (a.ContainsKey("graphicsSet")) s = s with { GraphicsSet = (string?)a["graphicsSet"] is { Length: > 0 } gs ? gs : null };
         if (a.ContainsKey("minHatchSpacing")) s = s with { MinHatchSpacing = Style.Spacing(a["minHatchSpacing"]) ?? throw new CommandException(SpacingProblem) };
-        // The small-scale cuts (decision 672): fields over the style's, null back to none.
+        // The small-scale cuts (decision 680): fields over the style's, null back to none.
         if (a.ContainsKey("smallScaleCut")) s = s with { SmallScaleCut = a["smallScaleCut"] is null ? null : SmallScaleCut.Read(SmallScaleCut.Checked(a["smallScaleCut"]), s.SmallScaleCut) };
         if (a.ContainsKey("materialGraphicsSet")) s = s with { MaterialGraphicsSet = (string?)a["materialGraphicsSet"] is { Length: > 0 } ms && ms != NoSet ? ms : null };
         if (a.ContainsKey("finishElements")) s = s with { FinishElements = Own(a["finishElements"]) ?? throw new CommandException("finishElements is true or false.") };
@@ -470,7 +470,7 @@ public static class ViewStyles
         }
     }
 
-    /// <summary>A material graphics set removed (decision 674): the styles that named it name none, the views that named it take their style's.</summary>
+    /// <summary>A material graphics set removed (decision 682): the styles that named it name none, the views that named it take their style's.</summary>
     internal static void ForgetMaterialSet(ICommandContext ctx, string setId)
     {
         var all = All(ctx.Model).ToList();
@@ -583,11 +583,11 @@ public static class ViewStyles
                 else if (f == "entourageFill") own[f] = CheckedFill(value) ?? "none";
                 // The view's level of development (decision 404): 100, 200, 300, 350 or 400.
                 else if (f == "detail") own[f] = PlanDetail.LodOf(value) ?? throw new CommandException(PlanDetail.LodProblem);
-                // The real-size hatches' threshold (decision 671), paper mm.
+                // The real-size hatches' threshold (decision 679), paper mm.
                 else if (f == "minHatchSpacing") own[f] = Style.Spacing(value) ?? throw new CommandException(SpacingProblem);
-                // The small-scale cuts (decision 672): the fields given, over the style's (mode, from, color).
+                // The small-scale cuts (decision 680): the fields given, over the style's (mode, from, color).
                 else if (f == "smallScaleCut") own[f] = SmallScaleCut.Checked(value);
-                // The material graphics set (decision 674): one of the project's, or "none" over the style's.
+                // The material graphics set (decision 682): one of the project's, or "none" over the style's.
                 else if (f == "materialGraphicsSet") own[f] = CheckedSet(ctx.Model, value, true);
                 else own[f] = value is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException($"{f} is true or false.");
             }

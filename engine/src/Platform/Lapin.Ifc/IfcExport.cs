@@ -65,7 +65,7 @@ public static partial class IfcExport
     // Lapin's own sets: no "Pset_" prefix, which IFC keeps for the sets its specification declares (IfcPropertySet).
     public const string IntentSetName = "Lapin_Intent";
 
-    /// <summary>The names of a material's IfcFillAreaStyle for each kind of view (decision 670), which the import reads back.</summary>
+    /// <summary>The names of a material's IfcFillAreaStyle for each kind of view (decision 678), which the import reads back.</summary>
     public static readonly IReadOnlyDictionary<string, string> FillAreaStyleNames = new Dictionary<string, string> { ["section"] = "Section hatch", ["plan"] = "Plan hatch", ["elevation"] = "Elevation hatch" };
     /// <summary>A provision opening's set (decision 293): the run that cut it, its shape and size.</summary>
     public const string ProvisionSetName = "Lapin_ProvisionOpening";
@@ -91,9 +91,8 @@ public static partial class IfcExport
     public static IfcExportResult Write(Session session, string path, IfcExportOptions? options = null)
     {
         // Built in memory first: a failed export leaves no file behind.
-        using var ms = new MemoryStream();
-        var result = Write(session, ms, System.IO.Path.GetFileName(path), options);
-        File.WriteAllBytes(path, ms.ToArray());
+        var (bytes, result) = Bytes(session, System.IO.Path.GetFileName(path), options);
+        File.WriteAllBytes(path, bytes);
         // Bonsai's drawing styles beside it, under the names the file gives them (BBIM_Documentation).
         if (options?.BonsaiStyles == true)
         {
@@ -114,6 +113,18 @@ public static partial class IfcExport
         w.Run();
         w.File.Write(output, name, w.O.Ifc43 ? "ViewDefinition [ReferenceView]" : "ViewDefinition [ReferenceView_V1.2]", w.O.SchemaName);
         return new IfcExportResult(name, w.O.SchemaName, w.Elements, w.PartCount, w.StoreyCount, w.Notes);
+    }
+
+    /// <summary>
+    /// The project as IFC, the file's bytes in one array of its size (report #156: a browser's engine holds a large file once,
+    /// not in a growing stream and a copy of it too).
+    /// </summary>
+    public static (byte[] Bytes, IfcExportResult Result) Bytes(Session session, string name, IfcExportOptions? options = null)
+    {
+        var w = new Writer(session, options ?? new IfcExportOptions()) { IfcName = name };
+        w.Run();
+        var bytes = w.File.ToArray(name, w.O.Ifc43 ? "ViewDefinition [ReferenceView]" : "ViewDefinition [ReferenceView_V1.2]", w.O.SchemaName);
+        return (bytes, new IfcExportResult(name, w.O.SchemaName, w.Elements, w.PartCount, w.StoreyCount, w.Notes));
     }
 
     /// <summary>An IFC class and what the element is as one: its predefined type (empty: the class has none) and, user-defined, the object type that names it.</summary>
@@ -1456,7 +1467,7 @@ public static partial class IfcExport
             foreach (var (set, props) in sets)
                 f.Add("IFCMATERIALPROPERTIES", S(set), Null, L(props.Select(p => Single(p.Name, p.Value, sources?.GetValueOrDefault((set, p.Name)))).ToArray()), r);
             var style = Style(MaterialKey + id);
-            // Its drawing graphics set by hand (decision 670): an IfcFillAreaStyle per kind of view beside its surface style.
+            // Its drawing graphics set by hand (decision 678): an IfcFillAreaStyle per kind of view beside its surface style.
             string[] looks = [style, .. mat != null ? FillAreaStyles(mat) : []];
             f.Add("IFCMATERIALDEFINITIONREPRESENTATION", Null, Null,
                 L(new[] { f.Add("IFCSTYLEDREPRESENTATION", model, Null, Null, L(new[] { f.Add("IFCSTYLEDITEM", Null, L(looks), Null) })) }), r);
@@ -1464,7 +1475,7 @@ public static partial class IfcExport
         }
 
         /// <summary>
-        /// A material's drawing graphics as IFC says them (decision 670), only for a material that sets its own (one drawn
+        /// A material's drawing graphics as IFC says them (decision 678), only for a material that sets its own (one drawn
         /// as its name suggests writes none, so its file is as before): an IfcFillAreaStyle per kind of view it sets, named
         /// after the kind (<see cref="FillAreaStyleNames"/>), draughting, holding its fill as an IfcColourRgb, then its
         /// background hatch and its hatch, each an IfcFillAreaStyleHatching whose IfcCurveStyle is named after the pattern
@@ -1502,7 +1513,7 @@ public static partial class IfcExport
                 if (g.Fill is { } fill) fills.Add(Colour(fill));
                 if (g.Background is { } bg && Hatching(bg.Hatch, "Background " + bg.Hatch, bg.HatchScale ?? g.HatchScale, bg.HatchAngle ?? 0, bg.HatchColor, bg.HatchWeight ?? Lapin.Drawing.Views.Pens.Default.Hatch) is { } bh) fills.Add(bh);
                 if (Hatching(g.Hatch, g.Hatch ?? "", g.HatchScale, g.HatchAngle, g.HatchColor, g.HatchWeight ?? Lapin.Drawing.Views.Pens.Default.Hatch) is { } fh) fills.Add(fh);
-                // A real-size hatch (decision 671) is a model fill area style: its spacings are lengths of the object.
+                // A real-size hatch (decision 679) is a model fill area style: its spacings are lengths of the object.
                 var model = g.Hatch != null && Lapin.Drawing.Hatch.HatchLibrary.Find(g.Hatch, patterns) is { } hp && Lapin.Drawing.Hatch.HatchScale.UnitsOf(hp, g.HatchUnits) == Lapin.Drawing.Hatch.HatchUnits.Model;
                 if (fills.Count > 0) o.Add(f.Add("IFCFILLAREASTYLE", S(FillAreaStyleNames[kind]), L(fills.ToArray()), model ? True : False));
             }

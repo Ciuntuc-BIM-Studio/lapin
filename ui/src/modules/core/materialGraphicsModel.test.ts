@@ -1,4 +1,4 @@
-/** The material graphics configurator's payloads (stage 0b, decision 670). */
+/** The material graphics configurator's payloads (stage 0b, decision 678). */
 
 import { describe, expect, it } from 'vitest';
 import { useLang } from '../../i18n';

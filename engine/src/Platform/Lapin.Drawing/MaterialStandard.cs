@@ -7,7 +7,7 @@ using Lapin.Drawing.Hatch;
 namespace Lapin.Drawing;
 
 /// <summary>
-/// What a rule of a material standard matches (decision 673): a material's name, by the words or small regular expressions of
+/// What a rule of a material standard matches (decision 681): a material's name, by the words or small regular expressions of
 /// <see cref="Names"/> (per language: en, ro, de…; any of them found in the name, folded as <see cref="MaterialStandard.Fold"/>
 /// folds it), and when <see cref="Category"/> is given the material's category too (a rule with no names matches by its
 /// category alone).
@@ -15,7 +15,7 @@ namespace Lapin.Drawing;
 public sealed record StandardMatch(IReadOnlyDictionary<string, IReadOnlyList<string>> Names, string? Category);
 
 /// <summary>
-/// A rule of a material standard (decision 673): what it matches, and what a material it matches draws when the material does
+/// A rule of a material standard (decision 681): what it matches, and what a material it matches draws when the material does
 /// not say so itself: its cut (<see cref="Section"/>), its plan over the cut (<see cref="Plan"/>), its facade
 /// (<see cref="Elevation"/>), any field of a kind of view's graphics with its steps by scale; whether it is a membrane; the
 /// category it suggests (taken by a material of none when the standard is applied).
@@ -46,7 +46,7 @@ public sealed class StandardRule
 }
 
 /// <summary>
-/// A standard of material graphics as data (docs/plan-material-graphics.md stage 3, decision 673): its id, name, author, country,
+/// A standard of material graphics as data (docs/plan-material-graphics.md stage 3, decision 681): its id, name, author, country,
 /// norm, version, licence and the languages of its rules' names; its ordered rules (<see cref="StandardRule"/>: a material's name
 /// or category → its cut, plan and facade graphics, membrane, category); its own hatch patterns (<c>.pat</c> text, paper or
 /// model units); the pens it gives every cut (<see cref="Pens"/>: the hatch's and the cut outline's colour, weight and line
@@ -323,13 +323,13 @@ public sealed class MaterialStandard
 
     /// <summary>
     /// Lapin's own as it was first shipped (version 1.0, MaterialStandards/lapin-1.0.json: exactly the coded tables it replaced): the
-    /// look of a project made before version 1.1 (decision 674; one without the mark <c>materialLookRev</c>) and of code that
+    /// look of a project made before version 1.1 (decision 682; one without the mark <c>materialLookRev</c>) and of code that
     /// resolves a material with no project. A project made since draws by <see cref="LapinCurrent"/>.
     /// </summary>
     public static MaterialStandard Lapin => Lapin10.Value;
 
     /// <summary>
-    /// Lapin's own now (version 1.1, MaterialStandards/lapin.json, decision 674): version 1.0 with its tones balanced (rigid
+    /// Lapin's own now (version 1.1, MaterialStandards/lapin.json, decision 682): version 1.0 with its tones balanced (rigid
     /// insulation's grid at 1.5 and the blocks' crosshatch at 1.25 times, the concrete speckle at 0.75) and floor coverings' surfaces
     /// (parquet and laminate boards, carpet, sheet floors, poured floors, floor tiles 600×600). What a new project draws by, what the
     /// store's pack and the lists show.

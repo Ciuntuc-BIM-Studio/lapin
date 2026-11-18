@@ -220,4 +220,235 @@ public class CivilTests
         Assert.Equal(1000 * 1200.0 / 3937, survey[2].Y, 9);
         Assert.Equal(1000, LandXml.Surfaces(Xml("<Metric linearUnit=\"meter\"/>")).Single().Points[1].X);
     }
+
+    [Fact]
+    public void Irregular_concave_boundary_clips_the_TIN_and_split_and_merge_roundtrip()
+    {
+        var f = F();
+        var t = Slope(f);
+        // L-shaped boundary: 40x40 minus the top-right 20x20 quadrant (area = 1600 - 400 = 1200 m²).
+        var lShape = new JsonArray(
+            new JsonArray(0, 0), new JsonArray(40, 0), new JsonArray(40, 20),
+            new JsonArray(20, 20), new JsonArray(20, 40), new JsonArray(0, 40));
+        f.Run("civil.setBoundary", new JsonObject { ["id"] = t, ["points"] = lShape });
+        var clipped = Terrains.Of(f.Model.Get(t)!);
+        Assert.NotNull(clipped.ElevationAt(10, 10));
+        Assert.Null(clipped.ElevationAt(30, 30)); // inside the concave notch
+        var geom = Terrains.Geometry(f.Model.Get(t)!, f.Model, null);
+        Assert.NotNull(geom);
+        Assert.Single(geom!.Parts);
+        var qty = Terrains.Quantities(f.Model.Get(t)!, geom, f.Model).First();
+        var area = qty.Quantities.First(i => i.Name == "PlanArea").Value;
+        Assert.Equal(1200, area, 1);
+
+        // Split along x = 15 into two terrains, then merge them back.
+        var split = (JsonObject)f.Run("civil.splitTerrain", new JsonObject { ["id"] = t, ["x1"] = 15, ["y1"] = -5, ["x2"] = 15, ["y2"] = 45 })!;
+        var ids = split["ids"]!.AsArray().Select(x => (string)x!).ToList();
+        Assert.Equal(2, ids.Count);
+        Assert.Equal(t, ids[0]);   // the larger half stays the terrain, its GlobalId kept
+        var merged = (JsonObject)f.Run("civil.mergeTerrains", new JsonObject { ["ids"] = new JsonArray(ids[0], ids[1]) })!;
+        var mergedId = (string)merged["id"]!;
+        Assert.Equal(t, mergedId);
+        Assert.Null(f.Model.Get(ids[1]));
+        Assert.NotNull(Terrains.Of(f.Model.Get(mergedId)!).ElevationAt(10, 10));
+    }
+
+    [Fact]
+    public void Slope_tags_and_cut_fill_grid_draw_in_plan_and_sculpt_reports_graded_volumes()
+    {
+        var f = F();
+        var t = Slope(f);
+        // Two-point grade line along +x on z = 0.05 x -> 5.0 % (1:20.0), plus cut/fill grid and a raise sculpt.
+        f.Run("civil.addSlope", new JsonObject { ["id"] = t, ["x1"] = 5, ["y1"] = 5, ["x2"] = 25, ["y2"] = 5 });
+        f.Run("civil.sculpt", new JsonObject { ["id"] = t, ["kind"] = "raise", ["x"] = 20, ["y"] = 20, ["radius"] = 6, ["amount"] = 1.0 });
+        f.Run("civil.updateTerrain", new JsonObject { ["id"] = t, ["cutFillGrid"] = 10 });
+
+        var geom = Terrains.Geometry(f.Model.Get(t)!, f.Model, null);
+        var qty = Terrains.Quantities(f.Model.Get(t)!, geom, f.Model).First();
+        Assert.True(qty.Quantities.First(i => i.Name == "FillVolume").Value > 10);
+        Assert.True(qty.Quantities.First(i => i.Name == "SculptFill").Value > 10);
+
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        var d = (JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!;
+        var texts = d["pens"]!.AsArray().OfType<JsonObject>().Where(p => p["texts"] != null)
+            .SelectMany(p => p["texts"]!.AsArray().OfType<JsonObject>()).Select(x => (string)x["text"]!).ToList();
+        Assert.Contains(texts, txt => txt.Contains("5.0 %"));
+        Assert.Contains(texts, txt => txt.StartsWith("+1.00") || txt.StartsWith("+0."));
+
+        // Snapshot existing makes the sculpted surface the new baseline (zero fill vs snapshot).
+        f.Run("civil.snapshotExisting", new JsonObject { ["id"] = t });
+        var geom2 = Terrains.Geometry(f.Model.Get(t)!, f.Model, null);
+        var qty2 = Terrains.Quantities(f.Model.Get(t)!, geom2, f.Model).First();
+        Assert.Equal(0, qty2.Quantities.First(i => i.Name == "FillVolume").Value, 2);
+    }
+
+    [Fact]
+    public void Vertical_point_editing_and_subregions_and_sloped_pads_work()
+    {
+        var f = F();
+        var t = Slope(f);
+        var beforeZ = Terrains.Of(f.Model.Get(t)!).ElevationAt(0, 0)!.Value;
+
+        // T3: move point 0 up by 2 m in one undo step, then undo it.
+        f.Run("civil.moveTerrainPoint", new JsonObject { ["id"] = t, ["index"] = 0, ["dz"] = 2.0 });
+        Assert.Equal(beforeZ + 2.0, Terrains.Of(f.Model.Get(t)!).ElevationAt(0, 0)!.Value, 6);
+        f.Session.Undo();
+        Assert.Equal(beforeZ, Terrains.Of(f.Model.Get(t)!).ElevationAt(0, 0)!.Value, 6);
+
+        // T3: add and remove a point.
+        var added = (JsonObject)f.Run("civil.addTerrainPoint", new JsonObject { ["id"] = t, ["x"] = 15, ["y"] = 15, ["z"] = 5.0 })!;
+        Assert.Equal(5.0, Terrains.Of(f.Model.Get(t)!).ElevationAt(15, 15)!.Value, 6);
+        f.Run("civil.removeTerrainPoint", new JsonObject { ["id"] = t, ["index"] = (int)added["index"]! });
+
+        // T4: material subregion adds a GeometryPart and Lapin_SubregionQuantities without changing ground elevation.
+        var srPts = new JsonArray(new JsonArray(5, 5), new JsonArray(15, 5), new JsonArray(15, 15), new JsonArray(5, 15));
+        f.Run("civil.addSubregion", new JsonObject { ["terrainId"] = t, ["points"] = srPts, ["name"] = "Courtyard", ["material"] = "Gravel" });
+        var geom = Terrains.Geometry(f.Model.Get(t)!, f.Model, null)!;
+        Assert.Contains(geom.Parts, p => p.Name == "Courtyard");
+        var qSets = Terrains.Quantities(f.Model.Get(t)!, geom, f.Model).ToList();
+        var srQty = qSets.First(q => q.Name == "Lapin_SubregionQuantities");
+        Assert.Equal(100, srQty.Quantities.First(i => i.Name == "PlanArea").Value, 1);
+
+        // T4: sloped platform accepts cutSlope / fillSlope.
+        var padId = (string)f.Run("civil.addPlatform", new JsonObject { ["terrainId"] = t, ["x1"] = 20, ["y1"] = 20, ["x2"] = 30, ["y2"] = 30, ["elevation"] = 1.0 })!["id"]!;
+        f.Run("civil.updatePlatform", new JsonObject { ["id"] = padId, ["cutSlope"] = 1.5, ["fillSlope"] = 1.5 });
+        Assert.Equal(1.5, f.Model.Get(padId)!.Num("cutSlope"));
+    }
+
+    static double TerrainQty(Fixture f, string t, string name) =>
+        f.Session.Quantities(t).Single(q => q.Name == "Lapin_TerrainQuantities").Quantities.FirstOrDefault(x => x.Name == name)?.Value ?? 0;
+
+    [Fact]
+    public void Splitting_a_terrain_keeps_its_platforms_and_ditches_each_on_the_half_it_lies_in_and_merging_brings_them_back()
+    {
+        var f = F();
+        var t = Slope(f);
+        var pad = (string)f.Run("civil.addPlatform", new JsonObject { ["terrainId"] = t, ["x1"] = 22, ["y1"] = 10, ["x2"] = 30, ["y2"] = 20, ["elevation"] = 1.3 })!["id"]!;
+        var ditch = (string)f.Run("civil.addDitch", new JsonObject { ["terrainId"] = t, ["points"] = new JsonArray(new JsonArray(2, 30), new JsonArray(10, 30)) })!["id"]!;
+        f.Run("civil.addSpot", new JsonObject { ["terrainId"] = t, ["x"] = 5, ["y"] = 5 });
+        f.Run("civil.addSlope", new JsonObject { ["terrainId"] = t, ["x1"] = 25, ["y1"] = 5, ["x2"] = 35, ["y2"] = 5 });
+        var cutBefore = TerrainQty(f, t, "CutVolume");
+        Assert.True(cutBefore > 1);
+
+        // Along x = 15: the right half (25 × 40) is the larger and stays the terrain; the ditch (x 2–10) goes to the left one.
+        var ids = ((JsonObject)f.Run("civil.splitTerrain", new JsonObject { ["id"] = t, ["x1"] = 15, ["y1"] = -5, ["x2"] = 15, ["y2"] = 45 })!)["ids"]!.AsArray().Select(x => (string)x!).ToList();
+        Assert.Equal(t, ids[0]);
+        var other = ids[1];
+        Assert.NotNull(f.Model.Get(pad));
+        Assert.NotNull(f.Model.Get(ditch));
+        Assert.Equal([pad], Terrains.Pads(f.Model, t).Select(x => x.Id));
+        Assert.Equal([ditch], Terrains.DitchesOf(f.Model, other).Select(x => x.Id));
+        Assert.Empty(Terrains.DitchesOf(f.Model, t));
+        // The spot level (x 5) goes with the left half, the slope tag (x 25-35) stays.
+        Assert.Single(Terrains.Spots(f.Model.Get(other)!));
+        Assert.Empty(Terrains.Spots(f.Model.Get(t)!));
+        Assert.Single(Terrains.SlopeTags(f.Model.Get(t)!));
+        Assert.Empty(Terrains.SlopeTags(f.Model.Get(other)!));
+        Assert.Equal(1000, TerrainQty(f, t, "PlanArea"), 1);
+        Assert.Equal(600, TerrainQty(f, other, "PlanArea"), 1);
+        Assert.Contains(f.Session.Quantities(t), q => q.Name == "Lapin_EarthworkQuantities");
+        Assert.True(TerrainQty(f, t, "CutVolume") > 1);
+        Assert.Equal(Spatial.StoreyOf(f.Model, t)?.Id, Spatial.StoreyOf(f.Model, other)?.Id);
+
+        // One undo step brings the whole terrain back, with both on it.
+        f.Session.Undo();
+        Assert.Null(f.Model.Get(other));
+        Assert.Null(f.Model.Get(t)!.Attrs[Terrains.BoundaryKey]);
+        Assert.Equal([pad], Terrains.Pads(f.Model, t).Select(x => x.Id));
+        Assert.Equal([ditch], Terrains.DitchesOf(f.Model, t).Select(x => x.Id));
+        f.Session.Redo();
+        Assert.Equal([ditch], Terrains.DitchesOf(f.Model, other).Select(x => x.Id));
+
+        // Merged back (the second first: it keeps its GlobalId and takes the platform).
+        var merged = (string)((JsonObject)f.Run("civil.mergeTerrains", new JsonObject { ["ids"] = new JsonArray(other, t) })!)["id"]!;
+        Assert.Equal(other, merged);
+        Assert.Null(f.Model.Get(t));
+        Assert.Equal([pad], Terrains.Pads(f.Model, other).Select(x => x.Id));
+        Assert.Equal([ditch], Terrains.DitchesOf(f.Model, other).Select(x => x.Id));
+        Assert.Equal(cutBefore, TerrainQty(f, other, "CutVolume"), 3);
+        Assert.Single(Terrains.Spots(f.Model.Get(other)!));
+        Assert.Single(Terrains.SlopeTags(f.Model.Get(other)!));
+        f.Session.Undo();
+        Assert.NotNull(f.Model.Get(t));
+        Assert.Equal([pad], Terrains.Pads(f.Model, t).Select(x => x.Id));
+        Assert.Equal([ditch], Terrains.DitchesOf(f.Model, other).Select(x => x.Id));
+    }
+
+    [Fact]
+    public void Merging_terrains_on_different_datums_keeps_every_existing_surface_and_the_strokes_heights()
+    {
+        var f = F();
+        string Add(int x0, double datum)
+        {
+            var lines = new List<string>();
+            for (var i = 0; i <= 2; i++) for (var j = 0; j <= 4; j++) lines.Add($"{x0 + i * 10} {j * 10} {datum + 0.02 * (x0 + i * 10)}");
+            return (string)f.Run("civil.addTerrain", new JsonObject { ["text"] = string.Join("\n", lines), ["datum"] = datum, ["interval"] = 0.5, ["depth"] = 1 })!["id"]!;
+        }
+        var a = Add(0, 100);
+        var b = Add(40, 50);
+        // A: raised, then snapshotted (its existing ground is the raised one: no fill left). B: raised, and flattened to 2.0 elsewhere.
+        f.Run("civil.sculpt", new JsonObject { ["terrainId"] = a, ["kind"] = "raise", ["x"] = 10, ["y"] = 20, ["radius"] = 6, ["amount"] = 1.0 });
+        f.Run("civil.snapshotExisting", new JsonObject { ["id"] = a });
+        f.Run("civil.sculpt", new JsonObject { ["terrainId"] = b, ["kind"] = "raise", ["x"] = 50, ["y"] = 12, ["radius"] = 5, ["amount"] = 1.0 });
+        f.Run("civil.sculpt", new JsonObject { ["terrainId"] = b, ["kind"] = "flatten", ["x"] = 50, ["y"] = 30, ["radius"] = 5, ["level"] = 2.0 });
+        Assert.Equal(0, TerrainQty(f, a, "FillVolume"), 2);
+        var fillB = TerrainQty(f, b, "FillVolume");
+        var cutB = TerrainQty(f, b, "CutVolume");
+        Assert.True(fillB > 10);
+        var flatB = Terrains.Of(f.Model.Get(b)!).ElevationAt(50, 30)!.Value;
+        Assert.Equal(2.0, flatB, 2);
+
+        var m = (string)((JsonObject)f.Run("civil.mergeTerrains", new JsonObject { ["ids"] = new JsonArray(a, b) })!)["id"]!;
+        Assert.Equal(a, m);
+        var merged = f.Model.Get(m)!;
+        Assert.Equal(100, merged.Num("datum"));
+        // The existing surface is A's snapshot beside B's survey: the fill is B's raise only, as before.
+        Assert.True(merged.Attrs["existingPoints"] is JsonArray { Count: > 15 });
+        Assert.Equal(fillB, TerrainQty(f, m, "FillVolume"), 0);
+        Assert.Equal(cutB, TerrainQty(f, m, "CutVolume"), 0);
+        // Heights stay the model's: B's flatten still at 2.0, its ground where it was.
+        var tm = Terrains.Of(merged);
+        Assert.Equal(flatB, tm.ElevationAt(50, 30)!.Value, 3);
+        Assert.Equal(0.02 * 60, tm.ElevationAt(60, 0)!.Value - 0, 3);
+        Assert.Equal(Terrains.Existing(f.Model.Get(m)!).ElevationAt(10, 20)!.Value, tm.ElevationAt(10, 20)!.Value, 3);
+    }
+
+    [Fact]
+    public void A_subregions_skin_follows_the_ground_along_a_breakline_and_keeps_its_area()
+    {
+        var f = F();
+        var t = Slope(f);
+        // A ridge at model height 3.0 across the grid's diagonals: no survey point lies on it, so only the constraint holds it.
+        f.Run("civil.setBreakline", new JsonObject { ["id"] = t, ["points"] = new JsonArray(new JsonArray(3, 7, 103), new JsonArray(36, 33, 103)) });
+        // A concave (L-shaped) subregion over most of it: 30 × 30 less the 15 × 15 corner = 675 m².
+        var outline = new JsonArray(new JsonArray(5, 5), new JsonArray(35, 5), new JsonArray(35, 20), new JsonArray(20, 20), new JsonArray(20, 35), new JsonArray(5, 35));
+        f.Run("civil.addSubregion", new JsonObject { ["terrainId"] = t, ["points"] = outline, ["name"] = "Gravel bed", ["material"] = "Gravel" });
+        var e = f.Model.Get(t)!;
+        var ground = Terrains.Of(e);
+        var sr = Terrains.SubregionsOf(e).Single();
+        var surface = Terrains.SubregionSurface(ground, ArcOutline.Points(sr.Contour, sr.Arcs))!;
+        var skin = new Terrain(surface);
+        double plan = surface.Triangles.Sum(x => Math.Abs((surface.Points[x.B].X - surface.Points[x.A].X) * (surface.Points[x.C].Y - surface.Points[x.A].Y) - (surface.Points[x.B].Y - surface.Points[x.A].Y) * (surface.Points[x.C].X - surface.Points[x.A].X)) / 2);
+        Assert.Equal(675, plan, 3);
+        // Along the ridge and a hand either side of it, inside the subregion: the skin's top (1.5 cm over its surface) within 2 cm of the ground.
+        var (p, q) = (new Vec2(3, 7), new Vec2(36, 33));
+        var normal = new Vec2(-(q - p).Y, (q - p).X) * (1 / (q - p).Length);
+        var checkedPoints = 0;
+        for (var k = 1; k < 20; k++)
+            foreach (var off in new[] { -0.3, 0.0, 0.3 })
+            {
+                var s = p + (q - p) * (k / 20.0) + normal * off;
+                if (!Polygon2.Contains(ArcOutline.Points(sr.Contour, sr.Arcs), s)) continue;
+                var top = skin.ElevationAt(s.X, s.Y)!.Value + 0.015;
+                Assert.InRange(top - ground.ElevationAt(s.X, s.Y)!.Value, -0.02, 0.02);
+                checkedPoints++;
+            }
+        Assert.True(checkedPoints > 20);
+        Assert.Equal(3.0, ground.ElevationAt(15, 7 + 26 * 12 / 33.0)!.Value, 6);
+        // The part is a closed skin, in the geometry with its area.
+        var geom = f.Session.Geometry(t)!;
+        Assert.Contains(geom.Parts, x => x.Name == "Gravel bed");
+        Assert.Contains(geom.Plan!, x => x.Kind == "symbol" && x.Closed && x.Points.Count == 6);
+        Assert.Equal(675, f.Session.Quantities(t).Single(x => x.Name == "Lapin_SubregionQuantities").Quantities.Single(x => x.Name == "PlanArea").Value, 3);
+    }
 }

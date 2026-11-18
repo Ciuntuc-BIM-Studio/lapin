@@ -4936,6 +4936,8 @@ export const scenes = [
       await t.page.getByRole('radio').nth(1).check();
       await t.wait(300);
       t.expect(await t.page.locator('[data-field=prefs-grid-step]').count() > 0, 'a fixed grid asks for its step');
+      // Forum topic 151: Tangent and Wall axis among the object snaps, both on.
+      t.expect(await t.page.locator('[data-field=prefs-snap-tangent]').isChecked() && await t.page.locator('[data-field=prefs-snap-wallAxis]').isChecked(), 'Tangent and Wall axis are listed, and on');
       await t.shot('preferences', { of: '.prefs-dialog', pad: 0 });
       await t.page.getByRole('radio').nth(0).check();
       await t.ui({ dialog: null });
@@ -4943,7 +4945,7 @@ export const scenes = [
       // The snap menu: a right click on SNAP under the plan.
       await t.page.locator('[data-testid=snap-toggle]').first().click({ button: 'right' });
       await t.wait(400);
-      t.expect(await t.page.getByRole('menuitem').count() >= 8, 'the snap menu lists the object snaps');
+      t.expect(await t.page.getByRole('menuitem').count() >= 10, 'the snap menu lists the object snaps');
       await t.shot('snap-menu', { clip: await t.page.evaluate(() => { const m = document.querySelector('[role=menu]') ?? document.querySelector('.context-menu'); const r = (m ?? document.body).getBoundingClientRect(); return { x: Math.max(0, r.left - 240), y: Math.max(0, r.top - 40), width: Math.min(window.innerWidth, r.width + 480), height: Math.min(window.innerHeight - Math.max(0, r.top - 40), r.height + 120) }; }) });
       await t.page.keyboard.press('Escape');
       // A UCS turned 30° at a corner of the house, the grid along its axes.
@@ -5035,6 +5037,60 @@ export const scenes = [
       await t.shot('site-location-plan', { of: '[data-testid=plan]', pad: 0 });
       await quiet2.evaluate((el) => el.remove());
       await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // The terrain's own tools (issue #82): a boundary drawn by its tool (an L, clipping the survey), a slope tag by two clicks,
+    // a gravel subregion by its tool, the cut/fill grid over a raised stroke, the terrain's properties, the subregion in 3D.
+    id: 'terrain-tools',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A 40 × 30 m slope surveyed every 5 m, rising 1 in 20 to the east and 1 in 50 to the north.
+      const lines = [];
+      for (let x = 0; x <= 40; x += 5) for (let y = 0; y <= 30; y += 5) lines.push(`${x} ${y} ${(100 + 0.05 * x + 0.02 * y).toFixed(3)}`);
+      const made = await t.cmd('civil.addTerrain', { text: lines.join('\n'), datum: 100, storeyId: s, interval: 0.25, majorEvery: 4, name: 'Survey' });
+      const id = made?.id;
+      t.expect(!!id, 'a terrain from the survey');
+      const terrain = async () => (await t.nodes()).find((n) => n.id === id);
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(800);
+      const clicks = async (pts) => { for (const [x, y] of pts) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(250); } };
+      // The boundary by its tool: an L, Enter closes it; the ground outside it goes.
+      await t.tool('civil.boundary');
+      await clicks([[2, 2], [38, 2], [38, 15], [22, 15], [22, 28], [2, 28]]);
+      await t.keys('Enter');
+      await t.until(async () => Array.isArray((await terrain())?.props.boundary), 'the boundary tool clips the terrain');
+      await t.keys('Escape');
+      // A slope tag by two clicks along the slope: 5.0 % and 1:20.
+      await t.tool('civil.slopeTag');
+      await clicks([[6, 6], [18, 6]]);
+      await t.until(async () => ((await terrain())?.props.slopes ?? []).length === 1, 'the slope tag tool tags the slope');
+      await t.keys('Escape');
+      // A gravel bed as a subregion by its tool: the ground keeps its levels, the bed its own material.
+      await t.tool('civil.subregion');
+      await clicks([[5, 17], [16, 17], [16, 25], [5, 25]]);
+      await t.keys('Enter');
+      await t.until(async () => ((await terrain())?.props.subregions ?? []).length === 1, 'the subregion tool draws a subregion');
+      await t.keys('Escape');
+      // A raised stroke and the cut/fill grid every 5 m: what the brush graded, against the survey.
+      await t.cmd('civil.sculpt', { terrainId: id, kind: 'raise', x: 30, y: 8, radius: 5, amount: 1 });
+      await t.cmd('civil.updateTerrain', { id, cutFillGrid: 5 });
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('terrain-tools-plan', { of: '[data-testid=plan]', pad: 0 });
+      await select(t, id);
+      await t.wait(800);
+      await t.until(async () => (await t.page.locator('aside.props').innerText().catch(() => '')).includes('Graded region'), 'the terrain\'s properties show its boundary, tags, subregions and grid');
+      await t.shot('terrain-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      await t.ui({ selection: null, selected: [], keyPlan: true });
+      await open3d(t);
+      await t.page.locator('button[title="Frame everything"]').first().click();
+      await t.wait(1200);
+      await t.shot('terrain-subregion-3d', { of: 'canvas', pad: 0 });
     },
   },
   {
@@ -6768,6 +6824,72 @@ export const scenes = [
         return s.useSession.getState().error;
       }, beam);
       t.expect(/tip them over/.test(refused ?? ''), `a turn of the beam in the elevation is refused (${refused})`);
+    },
+  },
+  {
+    // In-app report #167: a section's marker writes its name until it is given a Mark of its own, in its properties, the
+    // automatic text shown greyed there; emptied, it is automatic again.
+    id: 'section-mark',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [x1, y1, x2, y2] of [[0, 0, 8, 0], [8, 0, 8, 6], [8, 6, 0, 6], [0, 6, 0, 0]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2 });
+      const sec = (await t.cmd('view.create', { kind: 'section', start: [4, -2], end: [4, 8] })).id;
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true });
+      await t.wait(800);
+      await t.fit();
+      await select(t, sec);
+      await t.wait(800);
+      const plan = `plan:${s}`;
+      const texts = async () => ((await t.call('view.drawing', { id: plan }))?.pens ?? []).flatMap((p) => p.texts ?? []).map((x) => x.text);
+      const cell = t.page.locator('aside.props input[data-field=detailNumber]');
+      t.expect(await cell.count() === 1, 'a section\'s Mark is in its properties');
+      t.expect(await cell.getAttribute('placeholder') === 'Section 1', 'its placeholder is what the marker writes now, the section\'s name');
+      t.expect((await texts()).filter((x) => x === 'Section 1').length === 2, 'both heads write the section\'s name');
+      await cell.fill('A');
+      await cell.press('Enter');
+      await t.wait(1000);
+      t.expect((await texts()).filter((x) => x === 'A').length === 2, 'both heads write the Mark given');
+      t.expect((await t.nodes()).find((n) => n.id === sec)?.name === 'Section 1', 'the section keeps its name');
+      await t.shot('section-mark', { of: 'aside.props', pad: 0, maxHeight: 560 });
+    },
+  },
+  {
+    // Forum topic 148: a drafted text's style (by name, kept by id), alignment and width changed in its properties, each one
+    // step to undo; before, the engine refused the width and the alignment, and a style's name typed found no style.
+    id: 'text-properties',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const plan = `plan:${s}`;
+      await t.cmd('standards.set', { kind: 'text', entry: { name: 'Title', height: 5, bold: true } });
+      const id = (await t.cmd('drafting.addText', { viewId: plan, at: [0, 0], text: 'Ground floor: the living room, the kitchen and the hall' })).id;
+      await t.ui({ view: 'plan', keyPlan: false, planDrawing: true });
+      await t.wait(800);
+      await t.fit();
+      await select(t, id);
+      await t.wait(800);
+      const props = t.page.locator('aside.props');
+      const node = async () => (await t.nodes()).find((n) => n.id === id);
+      const style = props.locator('select[data-field=textStyle]');
+      t.expect(await style.count() === 1, 'a text\'s style is chosen from a list');
+      const title = await style.locator('option', { hasText: 'Title' }).getAttribute('value');
+      t.expect(!!title && title !== 'Title', 'the project\'s styles are listed by name, kept by id');
+      await style.selectOption(title);
+      await t.wait(600);
+      t.expect((await node())?.props.textStyle === title, 'the style chosen is the text\'s');
+      await props.locator('select[data-field=align]').selectOption('center');
+      await t.wait(600);
+      t.expect((await node())?.props.align === 'center', 'the text is centred');
+      const width = props.locator('[data-field=text-width] input');
+      await width.fill('4000');
+      await width.press('Enter');
+      await t.wait(800);
+      t.expect(Math.abs(((await node())?.props.width ?? 0) - 4) < 1e-6, 'the text wraps at a width of 4 m');
+      await t.fit();
+      await t.shot('text-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
     },
   },
   {

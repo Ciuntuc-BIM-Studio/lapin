@@ -43,7 +43,7 @@ public static class DrawingKeys
     // ------------------------------------------------------------ the legend
 
     /// <summary>One row of a legend: its name, and what its swatch shows (a fill, a hatch, or a line).</summary>
-    /// <param name="Look">A material's graphics, which its swatch is drawn with (decision 670: its hatch colour and weight, background hatch, fill opacity).</param>
+    /// <param name="Look">A material's graphics, which its swatch is drawn with (decision 678: its hatch colour and weight, background hatch, fill opacity).</param>
     public sealed record Entry(string Name, string? Fill = null, string? Hatch = null, double HatchScale = 1, double HatchAngle = 0, string? Stroke = null, double Width = 0, double[]? Dash = null,
         ResolvedMaterial? Look = null);
 
@@ -72,8 +72,8 @@ public static class DrawingKeys
         {
             if (pl.Drawing.Generated is not { } drawing) continue;
             var look = pl.Drawing.Kind == "plan" ? "plan" : "section";
-            // At the placed view's scale (decision 672): a material's step for it, as the view draws it, with the view's material
-            // graphics set (decision 674), without the small-scale cut; and its filters' hatches and fills (stage 5) as rows of their own.
+            // At the placed view's scale (decision 680): a material's step for it, as the view draws it, with the view's material
+            // graphics set (decision 682), without the small-scale cut; and its filters' hatches and fills (stage 5) as rows of their own.
             var vg = VisibilityGraphics.Of(m, pl.View);
             var viewMaterials = new ViewMaterialGraphics(m, look, pl.Drawing.Scale, ViewStyles.Of(m, pl.View), vg, smallScale: false);
             var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();

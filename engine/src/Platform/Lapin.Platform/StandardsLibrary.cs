@@ -56,12 +56,12 @@ public static class StandardsLibrary
             foreach (var x in dl.OfType<JsonObject>()) if (string.Equals((string?)x["lineType"], from, StringComparison.OrdinalIgnoreCase)) x["lineType"] = to ?? "continuous";
         if (attrs["objectStyles"] is JsonObject os)
             foreach (var (_, cat) in os) foreach (var (_, spec) in cat as JsonObject ?? []) if (spec is JsonObject so && string.Equals((string?)so["pattern"], from, StringComparison.OrdinalIgnoreCase)) { if (to == null) so.Remove("pattern"); else so["pattern"] = to; }
-        // The project's own material standards' rules and pens (decision 673) name line types as materials do.
+        // The project's own material standards' rules and pens (decision 681) name line types as materials do.
         if (attrs[MaterialStandards.ListKey] is JsonArray standards) RepointGraphics(standards, from, to);
-        // The material graphics sets' entries (decision 674) too.
+        // The material graphics sets' entries (decision 682) too.
         if (attrs[MaterialGraphicsSets.Key] is JsonArray sets) RepointGraphics(sets, from, to);
         ctx.Replace(project.With(attrs: attrs));
-        // Materials (decision 673): their hatch's line type and their cut and separator lines', in every kind of view, its steps by scale and its background.
+        // Materials (decision 681): their hatch's line type and their cut and separator lines', in every kind of view, its steps by scale and its background.
         foreach (var mat in ctx.Model.OfClass(IfcClass.Material).ToList())
         {
             var ma = mat.CloneAttrs();
@@ -107,16 +107,16 @@ public static class StandardsLibrary
     // ------------------------------------------------------------ the standards' file
 
     /// <summary>The project's standards as a file: the drafting standards, its hatch patterns, its symbols and the marks' symbols by name, and its options.</summary>
-    /// <param name="materialSets">The material graphics sets to write (decision 674): their ids; null: every set of the project, but
+    /// <param name="materialSets">The material graphics sets to write (decision 682): their ids; null: every set of the project, but
     /// none in a pack of material standards alone (<paramref name="onlyMaterials"/>), which writes those named only.</param>
     public static JsonObject Export(IModelView m, string? name, IReadOnlyList<string>? materialStandards = null, bool onlyMaterials = false, IReadOnlyList<string>? materialSets = null)
     {
         var project = Project(m);
         var o = new JsonObject();
         if (name is { Length: > 0 }) o["name"] = name;
-        // The material standards (decision 673): those named (a built-in one as data), else the project's own.
+        // The material standards (decision 681): those named (a built-in one as data), else the project's own.
         var materials = MaterialStandards.FileSection(m, materialStandards);
-        // The material graphics sets (decision 674), so a firm's sets travel with its standard.
+        // The material graphics sets (decision 682), so a firm's sets travel with its standard.
         var sets = onlyMaterials && materialSets == null ? null : MaterialGraphicsSets.FileSection(m, materialSets);
         if (onlyMaterials)
         {
@@ -196,13 +196,13 @@ public static class StandardsLibrary
                 var have = myPatterns.FirstOrDefault(x => string.Equals(x.Name, p.Name, StringComparison.OrdinalIgnoreCase));
                 o.Add(("pattern", p.Name, p.Name, have != null, have != null && Pat.Serialize([have]) == Pat.Serialize([p])));
             }
-        // Material standards by id (decision 673).
+        // Material standards by id (decision 681).
         foreach (var ms in MaterialStandards.InFile(file))
         {
             var (exists, same) = MaterialStandards.Compare(m, ms);
             o.Add(("materialStandard", ms.Id, ms.Name, exists, same));
         }
-        // Material graphics sets by id (decision 674).
+        // Material graphics sets by id (decision 682).
         foreach (var set in MaterialGraphicsSets.InFile(file))
         {
             var (exists, same) = MaterialGraphicsSets.Compare(m, set);
@@ -219,7 +219,7 @@ public static class StandardsLibrary
 
     /// <summary>
     /// The file's drafting standards as the project reads them; none when the file gives none (a pack of material standards alone,
-    /// decision 673, writes an empty <c>drafting</c>: read, it would be every default, shown as entries the project has).
+    /// decision 681, writes an empty <c>drafting</c>: read, it would be every default, shown as entries the project has).
     /// </summary>
     static JsonObject Theirs(JsonObject file) => file["drafting"] is JsonObject { Count: > 0 } d ? Standards.ToJson(Standards.Read(d)) : new JsonObject();
 
@@ -333,7 +333,7 @@ public static class StandardsLibrary
                 ["name"] = (string?)file["name"],
                 ["entries"] = new JsonArray(Compare(q.Model, file).Select(e => (JsonNode)new JsonObject { ["kind"] = e.Kind, ["id"] = e.Id, ["name"] = e.Name, ["exists"] = e.Exists, ["same"] = e.Same }).ToArray()),
                 ["options"] = file["objectStyles"] != null || file["penTable"] != null || file["symbolSlots"] != null || file["dimensionRules"] != null,
-                // Its material standards (decision 673), each with what it says of itself and whether the project has it.
+                // Its material standards (decision 681), each with what it says of itself and whether the project has it.
                 ["materialStandards"] = new JsonArray(MaterialStandards.InFile(file).Select(ms =>
                 {
                     var (exists, same) = MaterialStandards.Compare(q.Model, ms);
@@ -343,7 +343,7 @@ public static class StandardsLibrary
                     so["same"] = same;
                     return (JsonNode)so;
                 }).ToArray()),
-                // Its material graphics sets (decision 674): {id, name, entries (their count), exists, same}.
+                // Its material graphics sets (decision 682): {id, name, entries (their count), exists, same}.
                 ["materialGraphicsSets"] = new JsonArray(MaterialGraphicsSets.InFile(file).Select(set =>
                 {
                     var (exists, same) = MaterialGraphicsSets.Compare(q.Model, set);
@@ -493,9 +493,9 @@ public static class StandardsLibrary
                 renamed.AddRange((result["renamed"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>());
             }
 
-            // Material standards (decision 673), after the patterns and line types their rules may name; never applied by importing.
+            // Material standards (decision 681), after the patterns and line types their rules may name; never applied by importing.
             MaterialStandards.Import(ctx, file, (kind, id) => Choice(kind, id), ref added, ref updated, ref kept, ref skipped, renamed);
-            // Material graphics sets (decision 674), by id, with the same choices; never named by a style by importing.
+            // Material graphics sets (decision 682), by id, with the same choices; never named by a style by importing.
             MaterialGraphicsSets.Import(ctx, file, (kind, id) => Choice(kind, id), ref added, ref updated, ref kept, ref skipped, renamed);
 
             if (withOptions)

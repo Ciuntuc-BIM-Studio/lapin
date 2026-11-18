@@ -67,8 +67,8 @@ public static class SurfaceHatches
         if (pieces.Count == 0 || !Allowed(m, view, pieces[0].Spec)) return [];
         // Each material's elevation graphics, once; a part draws a surface only when its material gives a hatch or a fill.
         var resolved = new Dictionary<string, ResolvedMaterial?>();
-        // The view's material graphics (decision 672): the material's elevation step for the view's scale; a project made
-        // before real-size hatches (decision 671) goes on suggesting the paper ones; a name is guessed from, as cuts do.
+        // The view's material graphics (decision 680): the material's elevation step for the view's scale; a project made
+        // before real-size hatches (decision 679) goes on suggesting the paper ones; a name is guessed from, as cuts do.
         // The view's filters (stage 5) lay their surface hatch and fill over the faces of the elements they take.
         var vg = VisibilityGraphics.Of(m, view);
         var viewMaterials = new ViewMaterialGraphics(m, "elevation", options.Scale, ViewStyles.Of(m, view), vg.HasFilterGraphics ? vg : null);
@@ -89,7 +89,7 @@ public static class SurfaceHatches
             if (budget <= 0) break;
             Hatch(m, view.Id + (pieces.Count > 1 ? "#" + piece.Index : ""), piece, parts, graphics, joins, options, seamKeys, pens, ref budget);
         }
-        // Fills, solid hatches, then line hatches: a material's background hatch (decision 670) under its hatch.
+        // Fills, solid hatches, then line hatches: a material's background hatch (decision 678) under its hatch.
         return pens.Where(kv => kv.Value.Loops.Count > 0 || kv.Value.Segments.Count > 0)
             .OrderBy(kv => kv.Value.Layer == FillLayer ? 0 : kv.Key.StartsWith("solidbg:", StringComparison.Ordinal) ? 0.5 : kv.Value.Fill != null ? 1 : kv.Key.StartsWith("hatchbg:", StringComparison.Ordinal) ? 1.5 : 2)
             .Select(kv => kv.Value).ToList();
@@ -136,7 +136,7 @@ public static class SurfaceHatches
             }
             Pen Get(string key, Func<Pen> make) => pens.TryGetValue(key, out var p) ? p : pens[key] = make();
             CategoryGraphics? Cat(string cls) => LineStyles.CategoryOf(cls) is { } c && options.Categories != null && options.Categories.TryGetValue(c, out var cg) ? cg : null;
-            // What each element's faces reach lowest and leftmost in the view (decision 671): a real-size hatch's courses start at its base,
+            // What each element's faces reach lowest and leftmost in the view (decision 679): a real-size hatch's courses start at its base,
             // an element's own hatch origin (HatchOrigins) is measured from there.
             Dictionary<string, Vec2>? lowest = null;
             Vec2 LowestOf(string element)
@@ -166,7 +166,7 @@ public static class SurfaceHatches
                 if (MaterialGraphics.FillInk(g) is { } fillInk) Get("fill:" + fillInk, () => new Pen(FillLayer, null, 0, fillInk, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
                 var category = Cat(part.Class)?.LineColor ?? "#000000";
                 var elementColor = options.ElementColors?.GetValueOrDefault(part.Element);
-                // The background hatch under the hatch (decision 670), then the hatch: each its own colour and weight.
+                // The background hatch under the hatch (decision 678), then the hatch: each its own colour and weight.
                 if (g.Background is { Hatch: { } bh } bg && HatchLibrary.Find(bh, options.Patterns) is { } bgPattern)
                     Stroke(bgPattern, true, elementColor ?? ResolvedMaterial.Ink(bg.HatchColor ?? category, g.Halftone, g.HatchOpacity), bg.HatchWeight, null, bg.HatchScale ?? g.HatchScale, bg.HatchAngle ?? 0);
                 if (g.Hatch == null || HatchLibrary.Find(g.Hatch, options.Patterns) is not { } pattern) continue;
@@ -178,7 +178,7 @@ public static class SurfaceHatches
                 void Stroke(HatchPattern pattern, bool background, string color, double? weight, double[]? dash, double scale, double angle)
                 {
                     // A solid pattern is the face's fill: in its fill colour, else in ink (forum topic 88); an element's override colour over both;
-                    // the material's own hatch colour over its fill (decision 670).
+                    // the material's own hatch colour over its fill (decision 678).
                     if (pattern.Solid)
                     {
                         var solid = elementColor ?? (g.HatchColor != null || (background && g.Background?.HatchColor != null) ? color : g.Fill ?? color);
@@ -186,7 +186,7 @@ public static class SurfaceHatches
                         return;
                     }
                     if (budget <= 0) return;
-                    // Paper or real size (decision 671; the material's hatchUnits over the pattern's, for its own hatch); too dense on paper, not drawn.
+                    // Paper or real size (decision 679; the material's hatchUnits over the pattern's, for its own hatch); too dense on paper, not drawn.
                     var over = background ? null : g.HatchUnits;
                     var model = HatchScale.UnitsOf(pattern, over) == HatchUnits.Model;
                     var factor = HatchScale.Factor(pattern, options.Scale, scale, over);
@@ -217,7 +217,7 @@ public static class SurfaceHatches
                     else
                     {
                         // Aligned to the view: a developed section's pieces hatch from the developed drawing's origin, so courses run on across them.
-                        // A real-size pattern from the element's base, an element's own origin from there (decision 671); a paper one from the view's origin.
+                        // A real-size pattern from the element's base, an element's own origin from there (decision 679); a paper one from the view's origin.
                         var from = HatchOrigins.InView(element, faces.Frame, LowestOf(part.Element), model) is { } vo ? (Vec2?)(own ? Laid(vo) : vo) : null;
                         var (segs, _) = HatchFill.Segments(loops.Select(l => (IReadOnlyList<Vec2>)l.Select(Laid).ToArray()).ToList(), pattern, new HatchOptions(factor, angle, from, budget));
                         budget -= segs.Count;

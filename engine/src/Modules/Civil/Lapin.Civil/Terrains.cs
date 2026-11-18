@@ -21,6 +21,8 @@ public static class Terrains
 {
     public const string Predefined = "TERRAIN";
     public const string Color = "#7a9a5a";
+    public const string BoundaryKey = "boundary";
+    public const string BoundaryArcs = "boundaryArcs";
     /// <summary>The finest contour interval (m), as the configurator's field: a finer one asked is taken as this.</summary>
     public const double MinInterval = 0.05;
 
@@ -32,12 +34,24 @@ public static class Terrains
 
     public static List<Vec3> Points(Entity e) => PointLists.Xyz(e.Attrs["points"]);
 
+    public static List<Vec3> ExistingPoints(Entity e) =>
+        e.Attrs["existingPoints"] is JsonArray arr && arr.Count >= 3 ? PointLists.Xyz(arr) : Points(e);
+
     public static JsonArray PointsJson(IEnumerable<Vec3> pts) => new(pts.Select(p => (JsonNode)new JsonArray(p.X, p.Y, p.Z)).ToArray());
+
+    public static IReadOnlyList<Vec2> BoundaryOutline(Entity e) => ArcOutline.BuiltOf(e, BoundaryKey, BoundaryArcs);
 
     static readonly ConditionalWeakTable<Entity, Terrain> Cache = new();
 
     /// <summary>The terrain in model heights (z − datum).</summary>
-    public static Terrain Of(Entity e) => Cache.GetValue(e, x =>
+    public static Terrain Of(Entity e) => Cache.GetValue(e, x => BuildTerrain(x, sculpted: true));
+
+    static readonly ConditionalWeakTable<Entity, Terrain> ExistingCache = new();
+
+    /// <summary>The ground as surveyed (or snapshotted in <c>existingPoints</c>), before the brush (what cut and fill are measured against).</summary>
+    public static Terrain Existing(Entity e) => ExistingCache.GetValue(e, x => BuildTerrain(x, sculpted: false));
+
+    static Terrain BuildTerrain(Entity x, bool sculpted)
     {
         var datum = x.Num("datum");
         // Breaklines first (their heights win where a survey point is in the same place), their segments kept as edges.
@@ -45,30 +59,88 @@ public static class Terrains
         var segments = new List<(int, int)>();
         var lines = Breaklines(x);
         foreach (var line in lines)
-        {
             for (var i = 0; i < line.Count; i++) { if (i > 0) segments.Add((all.Count - 1, all.Count)); all.Add(line[i]); }
-        }
+        var basePts = sculpted ? Points(x) : ExistingPoints(x);
         // A survey point on a breakline takes the breakline's height there: the line holds.
-        all.AddRange(Points(x).Select(p => OnBreakline(lines, p) is { } z ? p with { Z = z } : p));
-        // The brush's strokes, in order, over the survey: the ground as it was worked.
-        var pts = Sculpt.Apply(all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList(), segments, Sculpt.Of(x));
-        return new Terrain(Tin.Delaunay(pts, segments));
-    });
+        all.AddRange(basePts.Select(p => OnBreakline(lines, p) is { } z ? p with { Z = z } : p));
+        var pts = all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList();
+        if (sculpted) pts = Sculpt.Apply(pts, segments, Sculpt.Of(x));
+        var tin = Tin.Delaunay(pts, segments);
+        var boundary = BoundaryOutline(x);
+        if (boundary.Count >= 3 && tin.Triangles.Count > 0)
+            tin = ClipToBoundary(pts, segments, tin, boundary);
+        return new Terrain(tin);
+    }
 
-    static readonly ConditionalWeakTable<Entity, Terrain> ExistingCache = new();
-
-    /// <summary>The ground as surveyed, before the brush (what cut and fill are measured against).</summary>
-    public static Terrain Existing(Entity e) => ExistingCache.GetValue(e, x =>
+    /// <summary>Constrains the TIN to <paramref name="boundary"/> and discards triangles outside it, compacting unused points.</summary>
+    static Tin ClipToBoundary(List<Vec3> pts, List<(int, int)> segments, Tin baseTin, IReadOnlyList<Vec2> boundary)
     {
-        var datum = x.Num("datum");
-        var all = new List<Vec3>();
-        var segments = new List<(int, int)>();
-        var lines = Breaklines(x);
-        foreach (var line in lines)
-            for (var i = 0; i < line.Count; i++) { if (i > 0) segments.Add((all.Count - 1, all.Count)); all.Add(line[i]); }
-        all.AddRange(Points(x).Select(p => OnBreakline(lines, p) is { } z ? p with { Z = z } : p));
-        return new Terrain(Tin.Delaunay(all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList(), segments));
-    });
+        var baseTerrain = new Terrain(baseTin);
+        var bStart = pts.Count;
+        for (var i = 0; i < boundary.Count; i++)
+        {
+            var v = boundary[i];
+            var z = baseTerrain.ElevationAt(v.X, v.Y)
+                ?? baseTin.Points.MinBy(p => (p.X - v.X) * (p.X - v.X) + (p.Y - v.Y) * (p.Y - v.Y)).Z;
+            pts.Add(new Vec3(v.X, v.Y, z));
+            segments.Add((bStart + i, bStart + (i + 1) % boundary.Count));
+        }
+        var constrained = Tin.Delaunay(pts, segments);
+        var kept = new List<(int A, int B, int C)>();
+        foreach (var (a, b, c) in constrained.Triangles)
+        {
+            var (pa, pb, pc) = (constrained.Points[a], constrained.Points[b], constrained.Points[c]);
+            var mid = new Vec2((pa.X + pb.X + pc.X) / 3, (pa.Y + pb.Y + pc.Y) / 3);
+            if (Polygon2.Contains(boundary, mid)) kept.Add((a, b, c));
+        }
+        if (kept.Count == 0) return constrained;
+        var remap = new Dictionary<int, int>();
+        var compactPts = new List<Vec3>();
+        int Map(int idx)
+        {
+            if (!remap.TryGetValue(idx, out var n)) { n = compactPts.Count; remap[idx] = n; compactPts.Add(constrained.Points[idx]); }
+            return n;
+        }
+        var compactTris = kept.Select(t => (Map(t.A), Map(t.B), Map(t.C))).ToList();
+        return new Tin(compactPts, compactTris);
+    }
+
+    /// <summary>Ordered 2D boundary loop of a terrain's TIN (for splitting when no explicit boundary is set).</summary>
+    public static List<Vec2> BoundaryLoop(Terrain t)
+    {
+        var boundary = t.Boundary();
+        if (boundary.Count == 0) return [];
+        var next = boundary.GroupBy(e => e.A).ToDictionary(g => g.Key, g => g.First().B);
+        var loop = new List<Vec2>();
+        var start = boundary[0].A;
+        var v = start;
+        do { loop.Add(t.Tin.Points[v].Xy); v = next.GetValueOrDefault(v, -1); } while (v >= 0 && v != start && loop.Count <= boundary.Count);
+        return loop;
+    }
+
+    /// <summary>Slope tags on the terrain: [x, y] (point slope) or [x1, y1, x2, y2] (two-point grade line).</summary>
+    public static List<double[]> SlopeTags(Entity e) =>
+        (e.Attrs["slopes"] as JsonArray)?.OfType<JsonArray>()
+            .Select(a => a.Select(v => Json.Number(v) ?? double.NaN).ToArray())
+            .Where(a => (a.Length == 2 || a.Length == 4) && a.All(double.IsFinite))
+            .ToList() ?? [];
+
+    /// <summary>A material sub-region on the terrain (T4): changes surface material without modifying elevation.</summary>
+    public sealed record Subregion(string Id, string Name, IReadOnlyList<Vec2> Contour, double[]? Arcs, string Material);
+
+    public static List<Subregion> SubregionsOf(Entity e)
+    {
+        if (e.Attrs["subregions"] is not JsonArray arr) return [];
+        var list = new List<Subregion>();
+        foreach (var item in arr.OfType<JsonObject>())
+        {
+            var pts = PointLists.Xy(item["contour"]);
+            if (pts.Count < 3) continue;
+            var arcs = ArcOutline.Rises(item["arcs"], pts.Count);
+            list.Add(new Subregion((string?)item["id"] ?? $"sr{list.Count + 1}", (string?)item["name"] ?? $"Subregion {list.Count + 1}", pts, arcs, (string?)item["material"] ?? ""));
+        }
+        return list;
+    }
 
     public static IReadOnlyList<Vec2> Spots(Entity e) => Contour(e, "spots");
 
@@ -136,53 +208,87 @@ public static class Terrains
         return Polygon2.EnsureCcw(clean).ToList();
     }
 
-    /// <summary>The ground as a closed solid: the TIN on top, its hull's sides, a flat base.</summary>
+    /// <summary>The ground as a closed solid: the TIN on top, its boundary sides, a flat base (works for concave boundaries and multiple loops).</summary>
     public static Solid? Body(Terrain t, double baseZ)
     {
         var tin = t.Tin;
         if (tin.Triangles.Count == 0) return null;
-        var n = tin.Points.Count;
-        var verts = new List<Vec3>(tin.Points);
-        var tris = new List<(int, int, int)>(tin.Triangles);
-        var boundary = t.Boundary();
-        // The hull's chain, counter-clockwise, from its directed edges.
-        var next = boundary.GroupBy(e => e.A).ToDictionary(g => g.Key, g => g.First().B);
-        var hull = new List<int>();
-        if (boundary.Count > 0)
+        var remap = new Dictionary<int, int>();
+        var top = new List<Vec3>();
+        int Map(int idx)
         {
-            var start = boundary[0].A;
-            var v = start;
-            do { hull.Add(v); v = next.GetValueOrDefault(v, -1); } while (v >= 0 && v != start && hull.Count <= boundary.Count);
+            if (!remap.TryGetValue(idx, out var n)) { n = top.Count; remap[idx] = n; top.Add(tin.Points[idx]); }
+            return n;
         }
-        var below = new Dictionary<int, int>();
-        foreach (var i in hull) { below[i] = verts.Count; verts.Add(new Vec3(tin.Points[i].X, tin.Points[i].Y, baseZ)); }
-        for (var k = 0; k < hull.Count; k++)
+        var topTris = tin.Triangles.Select(tr => (Map(tr.A), Map(tr.B), Map(tr.C))).ToList();
+        var n = top.Count;
+        var verts = new List<Vec3>(n * 2);
+        verts.AddRange(top);
+        foreach (var p in top) verts.Add(new Vec3(p.X, p.Y, baseZ));
+        var tris = new List<(int, int, int)>(topTris.Count * 2 + n * 2);
+        tris.AddRange(topTris);
+        // Bottom face: same triangulation at baseZ with reversed winding, facing down.
+        foreach (var (a, b, c) in topTris) tris.Add((n + a, n + c, n + b));
+        foreach (var (a0, b0) in t.Boundary())
         {
-            int a = hull[k], b = hull[(k + 1) % hull.Count];
-            tris.Add((a, below[a], b));
-            tris.Add((b, below[a], below[b]));
+            int a = remap[a0], b = remap[b0];
+            tris.Add((a, n + a, b));
+            tris.Add((b, n + a, n + b));
         }
-        // The base: a fan around the hull's centroid, facing down.
-        var c = verts.Count;
-        verts.Add(new Vec3(hull.Average(i => tin.Points[i].X), hull.Average(i => tin.Points[i].Y), baseZ));
-        for (var k = 0; k < hull.Count; k++) tris.Add((c, below[hull[(k + 1) % hull.Count]], below[hull[k]]));
-        _ = n;
         return SolidFromMesh.Build(verts, tris, "terrain");
     }
 
     /// <summary>What a platform takes away and brings: its cut and fill (m³).</summary>
     public sealed record Earthwork(string Pad, double Cut, double Fill);
 
+    public sealed record SculptVolume(double Cut, double Fill);
+
     static readonly ConditionalWeakTable<ElementGeometry, List<Earthwork>> Works = new();
+    static readonly ConditionalWeakTable<ElementGeometry, SculptVolume> SculptWorks = new();
 
     public static IReadOnlyList<Earthwork> EarthworksOf(ElementGeometry g) => Works.TryGetValue(g, out var w) ? w : [];
+
+    public static (double Cut, double Fill) SculptEarthworkOf(ElementGeometry g) => SculptWorks.TryGetValue(g, out var s) ? (s.Cut, s.Fill) : (0, 0);
+
+    static (double Cut, double Fill) ComputeSculptEarthwork(Entity e, Terrain existing, Terrain proposed, double baseZ, IServices? services)
+    {
+        var hasDifference = Sculpt.Of(e).Count > 0 || e.Attrs["existingPoints"] is JsonArray { Count: >= 3 };
+        if (!hasDifference) return (0, 0);
+        if (services?.Get<ISolidBooleans>() is { } booleans && Body(existing, baseZ) is { } exBody && Body(proposed, baseZ) is { } prBody)
+        {
+            try
+            {
+                var cut = booleans.Difference(exBody, [prBody], "cut") is { } c ? Measure.Volume(c) : 0;
+                var fill = booleans.Difference(prBody, [exBody], "fill") is { } f ? Measure.Volume(f) : 0;
+                return (cut, fill);
+            }
+            catch (InvalidOperationException) { }
+        }
+        // Fallback grid integration when manifold is unavailable.
+        var (min, max) = proposed.Bounds;
+        var span = Math.Max(max.X - min.X, max.Y - min.Y);
+        var step = Math.Max(span / 80, 0.25);
+        double cutSum = 0, fillSum = 0, cellArea = step * step;
+        for (var x = min.X; x < max.X; x += step)
+            for (var y = min.Y; y < max.Y; y += step)
+            {
+                var (cx, cy) = (x + step / 2, y + step / 2);
+                if (proposed.ElevationAt(cx, cy) is not { } zp || existing.ElevationAt(cx, cy) is not { } ze) continue;
+                var dz = zp - ze;
+                if (dz > 0) fillSum += dz * cellArea; else cutSum += -dz * cellArea;
+            }
+        return (cutSum, fillSum);
+    }
 
     public static ElementGeometry? Geometry(Entity e, IModelView m, IServices? services)
     {
         var t = Of(e);
         if (t.Tin.Triangles.Count == 0) return new ElementGeometry([], Diagnostics: ["The terrain needs at least three points that are not in a line."]);
-        var baseZ = t.Bounds.Min.Z - Math.Max(e.NumOrNull("depth") ?? 2, 0.1);
+        var existing = Existing(e);
+        var minZ = existing.Tin.Triangles.Count > 0 ? Math.Min(t.Bounds.Min.Z, existing.Bounds.Min.Z) : t.Bounds.Min.Z;
+        var baseZ = minZ - Math.Max(e.NumOrNull("depth") ?? 2, 0.1);
         if (Body(t, baseZ) is not { } body) return new ElementGeometry([], Diagnostics: ["The terrain's surface could not be closed into a solid."]);
+        var (sculptCut, sculptFill) = existing.Tin.Triangles.Count > 0 ? ComputeSculptEarthwork(e, existing, t, baseZ, services) : (0.0, 0.0);
         var problems = new List<string>();
         var works = new List<Earthwork>();
         // A platform's own holes (audit S4) keep their ground as it is.
@@ -196,8 +302,18 @@ public static class Terrains
                 {
                     try
                     {
-                        var cut = z < top ? Prism.ExtrudeFootprint(outline, holes, z, top - z, "cut") : null;
-                        var fill = z > baseZ ? Prism.ExtrudeFootprint(outline, holes, baseZ, z - baseZ, "fill") : null;
+                        var cutSlope = Math.Max(0, pad.Num("cutSlope"));
+                        var fillSlope = Math.Max(0, pad.Num("fillSlope"));
+                        var cut = z < top
+                            ? (cutSlope > 0 && holes.Count == 0
+                                ? SlopedPrism(outline, z, Polyline2.Offset(outline, -(top - z) * cutSlope, closed: true, maxMitre: 3), top, "cut")
+                                : Prism.ExtrudeFootprint(outline, holes, z, top - z, "cut"))
+                            : null;
+                        var fill = z > baseZ
+                            ? (fillSlope > 0 && holes.Count == 0
+                                ? SlopedPrism(Polyline2.Offset(outline, -(z - baseZ) * fillSlope, closed: true, maxMitre: 3), baseZ, outline, z, "fill")
+                                : Prism.ExtrudeFootprint(outline, holes, baseZ, z - baseZ, "fill"))
+                            : null;
                         var cutVol = cut != null && booleans.Intersection(body, cut) is { } ci ? Measure.Volume(ci) : 0;
                         var fillVol = 0.0;
                         if (fill != null)
@@ -236,11 +352,18 @@ public static class Terrains
         }
         var material = e.Str("material");
         var parts = new List<GeometryPart> { new("Ground", Materials.ColorOf(m, material) is "#c9ced6" ? Color : Materials.ColorOf(m, material), body, material, "ground") };
+        foreach (var sr in SubregionsOf(e))
+            if (SubregionPart(t, sr, m) is { } part) parts.Add(part);
         if (e.Str("analysis") is { } kind && kind != "none" && Analysis.Of(m, e, kind) is { } analysis) parts.AddRange(Analysis.Overlay(analysis));
         var g = new ElementGeometry(parts, Plan(e, t, pads.Select(p => (p.Outline, p.Z, p.Holes)).ToList(), DitchesOf(m, e.Id).ToList()), null, problems.Count > 0 ? problems : null);
         Works.AddOrUpdate(g, works);
+        SculptWorks.AddOrUpdate(g, new SculptVolume(sculptCut, sculptFill));
         return g;
     }
+
+    /// <summary>Chained contour polylines at elevation <paramref name="z"/>, clipped outside <paramref name="pads"/>.</summary>
+    public static List<List<Vec2>> ChainedContours(Terrain t, double z, IEnumerable<(IReadOnlyList<Vec2> Outer, IReadOnlyList<IReadOnlyList<Vec2>> Holes)> pads) =>
+        Chain(t.Contour(z).SelectMany(s => Outside(s.A, s.B, pads)).ToList());
 
     /// <summary>The plan: contours (the major ones heavier) outside the platforms, the terrain's edge, the platforms' outlines.</summary>
     static List<PlanItem> Plan(Entity e, Terrain t, List<(IReadOnlyList<Vec2> Outline, double Z, IReadOnlyList<IReadOnlyList<Vec2>> Holes)> pads, List<Entity> ditches)
@@ -248,18 +371,141 @@ public static class Terrains
         var items = new List<PlanItem>();
         var interval = e.NumOrNull("interval") ?? 0.5;
         var major = Math.Max(1, (int)Math.Round(e.NumOrNull("majorEvery") ?? 5));
+        var padAreas = pads.Select(x => (x.Outline, x.Holes)).ToList();
         if (interval > 0 && (t.Bounds.Max.Z - t.Bounds.Min.Z) / interval <= 2000)
             foreach (var z in t.Levels(interval))
             {
                 var kind = Math.Abs(z / interval / major - Math.Round(z / interval / major)) < 1e-6 ? "contourMajor" : "contour";
-                var pieces = t.Contour(z).SelectMany(s => Outside(s.A, s.B, pads.Select(x => (x.Outline, x.Holes)))).ToList();
-                foreach (var line in Chain(pieces)) items.Add(new PlanItem(kind, false, line));
+                foreach (var line in ChainedContours(t, z, padAreas)) items.Add(new PlanItem(kind, false, line));
             }
         foreach (var (a, b) in t.Boundary())
             items.Add(new PlanItem("terrainEdge", false, [new Vec2(t.Tin.Points[a].X, t.Tin.Points[a].Y), new Vec2(t.Tin.Points[b].X, t.Tin.Points[b].Y)]));
         foreach (var (outline, _, holes) in pads) { items.Add(new PlanItem("heavy", true, outline)); items.AddRange(holes.Select(h => new PlanItem("heavy", true, h))); }
+        // A subregion's outline, a seen line (a kind the drawing has no role for would not be drawn).
+        foreach (var sr in SubregionsOf(e)) items.Add(new PlanItem("symbol", true, ArcOutline.Points(sr.Contour, sr.Arcs)));
         foreach (var d in ditches) items.AddRange(Ditches.Plan(d));
         return items;
+    }
+
+    static Solid? SlopedPrism(IReadOnlyList<Vec2> bottomRing, double z0, IReadOnlyList<Vec2> topRing, double z1, string tag)
+    {
+        var n = bottomRing.Count;
+        if (n < 3 || topRing.Count != n || z1 <= z0 + 1e-9) return null;
+        var verts = new List<Vec3>(n * 2);
+        foreach (var p in bottomRing) verts.Add(new Vec3(p.X, p.Y, z0));
+        foreach (var p in topRing) verts.Add(new Vec3(p.X, p.Y, z1));
+        var botIds = Enumerable.Range(0, n).ToArray();
+        var topIds = Enumerable.Range(n, n).ToArray();
+        var tris = new List<(int, int, int)>();
+        tris.AddRange(Triangulator.Face(verts, botIds, null, new Vec3(0, 0, -1)));
+        tris.AddRange(Triangulator.Face(verts, topIds, null, new Vec3(0, 0, 1)));
+        for (var i = 0; i < n; i++)
+        {
+            var j = (i + 1) % n;
+            tris.Add((i, j, n + j));
+            tris.Add((i, n + j, n + i));
+        }
+        return SolidFromMesh.Build(verts, tris, tag);
+    }
+
+    /// <summary>
+    /// The terrain's own surface inside <paramref name="poly"/>: each of its triangles kept whole when inside, else
+    /// clipped to the polygon (Sutherland–Hodgman, the triangle being convex) and the piece triangulated in its plane.
+    /// No new triangulation, so the terrain's breaklines and edges hold exactly; null when nothing is inside.
+    /// </summary>
+    public static Tin? SubregionSurface(Terrain t, IReadOnlyList<Vec2> poly)
+    {
+        var tin = t.Tin;
+        if (poly.Count < 3 || tin.Triangles.Count == 0) return null;
+        var ring = Polygon2.EnsureCcw(poly).ToList();
+        double minX = ring.Min(p => p.X), maxX = ring.Max(p => p.X), minY = ring.Min(p => p.Y), maxY = ring.Max(p => p.Y);
+        var points = new List<Vec3>();
+        var at = new Dictionary<(long, long), int>();
+        int Weld(Vec3 p)
+        {
+            var k = ((long)Math.Round(p.X * 1e5), (long)Math.Round(p.Y * 1e5));
+            if (!at.TryGetValue(k, out var i)) { i = points.Count; at[k] = i; points.Add(p); }
+            return i;
+        }
+        var tris = new List<(int A, int B, int C)>();
+        static bool Crosses(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
+        {
+            double d1 = Vec2.Cross(b - a, c - a), d2 = Vec2.Cross(b - a, d - a), d3 = Vec2.Cross(d - c, a - c), d4 = Vec2.Cross(d - c, b - c);
+            return ((d1 > 0) != (d2 > 0) || Math.Abs(d1) < 1e-12 || Math.Abs(d2) < 1e-12) && ((d3 > 0) != (d4 > 0) || Math.Abs(d3) < 1e-12 || Math.Abs(d4) < 1e-12);
+        }
+        foreach (var (ia, ib, ic) in tin.Triangles)
+        {
+            var (pa, pb, pc) = (tin.Points[ia], tin.Points[ib], tin.Points[ic]);
+            if (Math.Max(pa.X, Math.Max(pb.X, pc.X)) < minX || Math.Min(pa.X, Math.Min(pb.X, pc.X)) > maxX
+                || Math.Max(pa.Y, Math.Max(pb.Y, pc.Y)) < minY || Math.Min(pa.Y, Math.Min(pb.Y, pc.Y)) > maxY) continue;
+            Vec2[] tri = [pa.Xy, pb.Xy, pc.Xy];
+            var corners = tri.Count(c => Polygon2.Contains(ring, c));
+            var crossing = false;
+            for (var i = 0; i < ring.Count && !crossing; i++)
+                for (var j = 0; j < 3 && !crossing; j++)
+                    crossing = Crosses(ring[i], ring[(i + 1) % ring.Count], tri[j], tri[(j + 1) % 3]);
+            var cornerInside = !crossing && ring.Any(r => Polygon2.Contains(tri, r));
+            if (!crossing && !cornerInside)
+            {
+                if (corners == 3) tris.Add((Weld(pa), Weld(pb), Weld(pc)));
+                continue;
+            }
+            // The polygon clipped by the triangle's three half-planes.
+            var piece = ring;
+            for (var j = 0; j < 3 && piece.Count >= 3; j++)
+            {
+                var (e0, e1) = (tri[j], tri[(j + 1) % 3]);
+                var next = new List<Vec2>(piece.Count + 2);
+                for (var i = 0; i < piece.Count; i++)
+                {
+                    var (s, q) = (piece[i], piece[(i + 1) % piece.Count]);
+                    double ds = Vec2.Cross(e1 - e0, s - e0), dq = Vec2.Cross(e1 - e0, q - e0);
+                    if (ds >= 0) next.Add(s);
+                    if ((ds >= 0) != (dq >= 0)) next.Add(s + (q - s) * (ds / (ds - dq)));
+                }
+                piece = next;
+            }
+            if (piece.Count < 3 || Math.Abs(Polygon2.SignedArea(piece)) < 1e-9) continue;
+            // Heights from the triangle's plane; a point within 1e-6 of a corner is that corner.
+            var den = (pb.Y - pc.Y) * (pa.X - pc.X) + (pc.X - pb.X) * (pa.Y - pc.Y);
+            Vec3 Lift(Vec2 p)
+            {
+                foreach (var c in new[] { pa, pb, pc }) if ((c.Xy - p).Length < 1e-6) return c;
+                var u = ((pb.Y - pc.Y) * (p.X - pc.X) + (pc.X - pb.X) * (p.Y - pc.Y)) / den;
+                var v = ((pc.Y - pa.Y) * (p.X - pc.X) + (pa.X - pc.X) * (p.Y - pc.Y)) / den;
+                return new Vec3(p.X, p.Y, u * pa.Z + v * pb.Z + (1 - u - v) * pc.Z);
+            }
+            var flat = piece.Select(p => Lift(p)).ToList();
+            var ids = Enumerable.Range(0, flat.Count).ToArray();
+            foreach (var (a, b, c) in Triangulator.Face(flat, ids, null, new Vec3(0, 0, 1)))
+            {
+                var (qa, qb, qc) = (flat[a], flat[b], flat[c]);
+                if (Math.Abs((qb.X - qa.X) * (qc.Y - qa.Y) - (qb.Y - qa.Y) * (qc.X - qa.X)) < 1e-10) continue;
+                var (wa, wb, wc) = (Weld(qa), Weld(qb), Weld(qc));
+                if (wa != wb && wb != wc && wa != wc) tris.Add((wa, wb, wc));
+            }
+        }
+        return tris.Count == 0 ? null : new Tin(points, tris);
+    }
+
+    static GeometryPart? SubregionPart(Terrain t, Subregion sr, IModelView m)
+    {
+        var poly = ArcOutline.Points(sr.Contour, sr.Arcs);
+        if (poly.Count < 3 || SubregionSurface(t, poly) is not { } subTin) return null;
+        var n = subTin.Points.Count;
+        var verts = new List<Vec3>(n * 2);
+        foreach (var p in subTin.Points) verts.Add(new Vec3(p.X, p.Y, p.Z + 0.015));
+        foreach (var p in subTin.Points) verts.Add(new Vec3(p.X, p.Y, p.Z - 0.005));
+        var tris = new List<(int, int, int)>(subTin.Triangles.Count * 2 + n * 2);
+        tris.AddRange(subTin.Triangles);
+        foreach (var (a, b, c) in subTin.Triangles) tris.Add((n + a, n + c, n + b));
+        foreach (var (a, b) in new Terrain(subTin).Boundary())
+        {
+            tris.Add((a, n + a, b));
+            tris.Add((b, n + a, n + b));
+        }
+        if (SolidFromMesh.Build(verts, tris, "subregion") is not { } skin) return null;
+        return new GeometryPart(sr.Name, Materials.ColorOf(m, sr.Material), skin, sr.Material, "subregion:" + sr.Id);
     }
 
     /// <summary>Segments joined end to end into polylines (a contour's pieces, one per triangle, into its lines).</summary>
@@ -336,14 +582,19 @@ public static class Terrains
             surface += Vec3.Cross(q - p, r - p).Length / 2;
         }
         var works = EarthworksOf(g);
+        var (sculptCut, sculptFill) = SculptEarthworkOf(g);
+        var totalCut = sculptCut + works.Sum(w => w.Cut);
+        var totalFill = sculptFill + works.Sum(w => w.Fill);
         yield return new QuantitySet("Lapin_TerrainQuantities",
         [
             new("PlanArea", plan, "AREA", "Plan area"),
             new("SurfaceArea", surface, "AREA", "Surface area"),
             new("MinElevation", t.Bounds.Min.Z, "LENGTH", "Lowest point"),
             new("MaxElevation", t.Bounds.Max.Z, "LENGTH", "Highest point"),
-            new("CutVolume", works.Sum(w => w.Cut), "VOLUME", "Cut"),
-            new("FillVolume", works.Sum(w => w.Fill), "VOLUME", "Fill"),
+            new("CutVolume", totalCut, "VOLUME", "Cut"),
+            new("FillVolume", totalFill, "VOLUME", "Fill"),
+            new("NetVolume", totalCut - totalFill, "VOLUME", "Net cut − fill"),
+            .. sculptCut > 0 || sculptFill > 0 ? new Quantity[] { new("SculptCut", sculptCut, "VOLUME", "Grading cut"), new("SculptFill", sculptFill, "VOLUME", "Grading fill") } : [],
             // Exactly, its arcs as arcs (decision 589).
             .. Contour(e, "parcel") is { Count: >= 3 } ? new Quantity[] { new("ParcelArea", ArcOutline.AreaOf(e, "parcel", ParcelArcs), "AREA", "Parcel"), new("ParcelPerimeter", ArcOutline.PerimeterOf(e, "parcel", ParcelArcs), "LENGTH", "Parcel boundary") } : [],
         ]);
@@ -353,5 +604,13 @@ public static class Terrains
                 new("CutVolume", w.Cut, "VOLUME", "Cut"),
                 new("FillVolume", w.Fill, "VOLUME", "Fill"),
             ], "pad:" + w.Pad, m.Get(w.Pad)?.Name ?? "Earthwork");
+        foreach (var sr in SubregionsOf(e))
+        {
+            var area = Math.Abs(ArcOutline.SignedArea(sr.Contour, sr.Arcs));
+            yield return new QuantitySet("Lapin_SubregionQuantities",
+            [
+                new("PlanArea", area, "AREA", "Plan area"),
+            ], "subregion:" + sr.Id, sr.Name, sr.Material);
+        }
     }
 }

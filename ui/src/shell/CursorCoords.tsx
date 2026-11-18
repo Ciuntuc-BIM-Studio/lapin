@@ -22,6 +22,7 @@ export const COORD_LABELS: Record<CoordSystem, string> = {
 };
 export const SNAP_LABELS: Record<SnapMode, string> = {
   endpoint: 'Endpoint', midpoint: 'Midpoint', intersection: 'Intersection', center: 'Centre', quadrant: 'Quadrant', perpendicular: 'Perpendicular', nearest: 'Nearest',
+  tangent: 'Tangent', wallAxis: 'Wall axis',
 };
 
 const fixed3 = (v: number) => v.toFixed(3);

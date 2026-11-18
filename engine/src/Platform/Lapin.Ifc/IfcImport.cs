@@ -677,7 +677,7 @@ public static partial class IfcImport
                         found = found.With(attrs: a);
                         edit.Replace(found);
                     }
-                    // Its drawing graphics from its IfcFillAreaStyles (decision 670), when the project's material sets none of its own.
+                    // Its drawing graphics from its IfcFillAreaStyles (decision 678), when the project's material sets none of its own.
                     if (!Lapin.Drawing.MaterialGraphics.Kinds.Any(k => found.Attrs[k] != null) && FillGraphics(mat.Id, Lapin.Platform.DraftingResources.Patterns(edit.Model)) is { Count: > 0 } graphics)
                     {
                         var a = found.CloneAttrs();
@@ -766,7 +766,7 @@ public static partial class IfcImport
         }
 
         /// <summary>
-        /// A material's drawing graphics from the IfcFillAreaStyles of its representation (decision 670), by kind of view (its
+        /// A material's drawing graphics from the IfcFillAreaStyles of its representation (decision 678), by kind of view (its
         /// name: Lapin's <see cref="IfcExport.FillAreaStyleNames"/>, else a name saying plan or elevation, else the section):
         /// an IfcColourRgb its fill; each IfcFillAreaStyleHatching a hatch, its IfcCurveStyle's name its pattern (a library
         /// pattern, or what the name suggests, else lines at its angle) and „Background …” the background hatch, its colour and

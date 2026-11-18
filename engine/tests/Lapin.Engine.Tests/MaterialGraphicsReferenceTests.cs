@@ -14,7 +14,7 @@ using Lapin.Protocol;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Stage 0 of docs/plan-material-graphics.md (decision 670): the reference details (<see cref="ReferenceDetails"/>), each view
+/// Stage 0 of docs/plan-material-graphics.md (decision 678): the reference details (<see cref="ReferenceDetails"/>), each view
 /// drawn at 1:20, 1:50 and 1:100 by the engine's own path (Views.Render → Pens), checked for what is right whatever the
 /// convention:
 /// <list type="bullet">
@@ -68,7 +68,7 @@ public class MaterialGraphicsReferenceTests
 
     static Drawn Get(string detail, string view, int scale) => All.Value.Single(x => x.Detail.Name == detail && x.View == view && x.Scale == scale);
 
-    // As the view resolves it: its project's material standard (decision 673), at its scale.
+    // As the view resolves it: its project's material standard (decision 681), at its scale.
     static ResolvedMaterial? Look(Drawn d, string? material) => material == null ? null
         : d.Detail.F.Model.Get(material) is { } m ? MaterialGraphics.Resolve(m, d.Kind, scale: d.Scale, standard: MaterialStandards.Of(d.Detail.F.Model))
         : GlobalId.IsValid(material) ? null : MaterialGraphics.Resolve(null, d.Kind, material, scale: d.Scale, standard: MaterialStandards.Of(d.Detail.F.Model));
@@ -222,7 +222,7 @@ public class MaterialGraphicsReferenceTests
             Assert.NotEmpty(Get(detail, view, 50).R.Pens.Where(p => p.Layer == PenLayer.Membrane).SelectMany(p => p.Segments));
     }
 
-    // ------------------------------------------------------------ every material standard (decision 673)
+    // ------------------------------------------------------------ every material standard (decision 681)
 
     public static IEnumerable<object[]> Standards() => MaterialStandard.BuiltIns.Where(s => !s.IsLapin).Select(s => new object[] { s.Id });
 
@@ -267,7 +267,7 @@ public class MaterialGraphicsReferenceTests
     [Fact]
     public void The_pens_are_as_the_snapshot_keeps_them()
     {
-        var b = new StringBuilder("# Material graphics reference details: the model's pens of each view (decision 670). LAPIN_UPDATE_SNAPSHOTS=1 writes it again.\n");
+        var b = new StringBuilder("# Material graphics reference details: the model's pens of each view (decision 678). LAPIN_UPDATE_SNAPSHOTS=1 writes it again.\n");
         foreach (var d in All.Value) b.Append(d.Detail.Name).Append('/').Append(d.View).Append(" 1:").Append(d.Scale).Append('\n').Append(Snapshot(d.R.Pens));
         var now = b.ToString();
         var path = SnapshotPath();

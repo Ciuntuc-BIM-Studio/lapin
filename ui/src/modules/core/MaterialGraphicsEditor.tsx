@@ -1,5 +1,5 @@
 /**
- * The material graphics configurator (docs/plan-material-graphics.md, stage 0b, decision 670). One editor for Manage → Materials
+ * The material graphics configurator (docs/plan-material-graphics.md, stage 0b, decision 678). One editor for Manage → Materials
  * and for the popover beside a layer's swatch: per kind of view (cut in a section, cut in a plan, elevation) the hatch (pattern,
  * scale, angle, alignment, colour, weight, line type, opacity, halftone), the background (a fill and a second pattern) and the
  * lines (the cut's outline and the separator between layers), each field with its way back to the default and the inherited

@@ -6,11 +6,11 @@ using Lapin.Structure;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// The reference details of the material graphics (docs/plan-material-graphics.md, stage 0, decision 670): small projects
+/// The reference details of the material graphics (docs/plan-material-graphics.md, stage 0, decision 678): small projects
 /// built from commands, as a user draws them, each with the views that show what its materials draw. Each view is made
 /// at 1:20, 1:50 and 1:100 (<see cref="Scales"/>). They are the fixtures of <see cref="MaterialGraphicsReferenceTests"/>
 /// and, saved as .lapin projects with <c>LAPIN_REFERENCE_PDF=1</c>, what the user guide's scenes open (stage 8). Their
-/// builders are the engine's (<see cref="MaterialReferenceDetails"/>, decision 673: the standards' sample sheets draw them too).
+/// builders are the engine's (<see cref="MaterialReferenceDetails"/>, decision 681: the standards' sample sheets draw them too).
 /// </summary>
 static class ReferenceDetails
 {

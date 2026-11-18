@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Vec2 } from '../../platform/module';
 import type { DrawingDto } from '../drawing';
-import { SnapIndex, findSnap, type SnapMode } from './snaps';
+import { SnapIndex, findSnap, isLineSnap, modesFor, snapsOn, type SnapMode } from './snaps';
 import { usePrefs } from '../../app/prefs';
 import { fromFrame, isIdentity, toFrame, ucsOf, useLocation, type Frame } from '../../app/location';
 import { fromJson, intersectPrims, keyPoints, nearestOnShape, prims, type Shape } from './shapes';
@@ -36,11 +36,17 @@ export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: Sn
  * angle; then the nearest snap; then the grid or the raw point (squared to
  * the base with ortho). `lock` says which constraint actually holds the point.
  */
-export interface AimInput { base: Vec2 | null; ortho: boolean; polar: boolean; snap: { point: Vec2; mode: SnapMode; shape?: Shape } | null; acquired: readonly Vec2[]; tol: number; grid?: number; polarStep?: number; frame?: Frame | null; /** The drafted sides and curves a line may be held parallel or tangent to, and how near the cursor they must pass (metres). */ relate?: { sides: readonly SideRef[]; curves: readonly CurveRef[]; reach: number } }
+export interface AimInput { base: Vec2 | null; ortho: boolean; polar: boolean; snap: { point: Vec2; mode: SnapMode; shape?: Shape; /** A wall axis taken along its line, not at its ends or middle. */ along?: boolean } | null; acquired: readonly Vec2[]; tol: number; grid?: number; polarStep?: number; frame?: Frame | null; /** The drafted sides and curves a line may be held parallel or tangent to, and how near the cursor they must pass (metres). */ relate?: { sides: readonly SideRef[]; curves: readonly CurveRef[]; reach: number } }
 
 export function resolveAim(raw: Vec2, c: AimInput): Aimed {
+  // The Tangent snap (forum topic 151) holds the line tangent: a drafted circle or arc it touches is named, as the tangent inference names it.
+  if (c.snap?.mode === 'tangent' && c.base) {
+    const h = c.relate ? tangentHold(c.base, c.snap.point, c.relate.curves, c.tol) : null;
+    const to = h && Math.hypot(h.point.x - c.snap.point.x, h.point.y - c.snap.point.y) < 1e-9 ? h.to : undefined;
+    return { point: c.snap.point, kind: 'point', mode: 'tangent', guides: [{ from: c.base, to: c.snap.point, kind: 'tangent' }], lock: 'tangent', ...(to ? { to } : {}) };
+  }
   // A line held parallel to a drafted one, or tangent to a curve (in the world: the sides and curves are): after the object snaps, before the ortho and guide lines (and never with ortho on).
-  if (c.relate && c.base && !c.ortho && !(c.snap && c.snap.mode !== 'nearest')) {
+  if (c.relate && c.base && !c.ortho && !(c.snap && !isLineSnap(c.snap))) {
     const h = tangentHold(c.base, raw, c.relate.curves, c.tol) ?? parallelHold(c.base, raw, c.relate.sides, c.relate.reach, c.tol);
     if (h) return { point: h.point, kind: 'point', guides: [{ from: h.guide.from, to: h.guide.to, kind: h.lock }], lock: h.lock, to: h.to };
   }
@@ -53,7 +59,7 @@ export function resolveAim(raw: Vec2, c: AimInput): Aimed {
   }
   const { base, snap: s, tol } = c;
   const ortho = c.ortho && !!base;
-  if (s && s.mode !== 'nearest') return { point: s.point, kind: 'point', mode: s.mode, guides: [] };
+  if (s && !isLineSnap(s)) return { point: s.point, kind: 'point', mode: s.mode, guides: [] };
   // Guide lines: the orthogonal lines through acquired points (and the base), the polar angles.
   const pool = base ? [...c.acquired, base] : c.acquired;
   if (ortho && base) {
@@ -64,7 +70,7 @@ export function resolveAim(raw: Vec2, c: AimInput): Aimed {
     if (t) return { point: t.point, kind: 'point', guides: t.guides, lock: t.guides.some((g) => g.kind === 'polar') ? 'polar' : 'tracking' };
   }
   if (s) {
-    // Nearest, with the grid on: the point slides along the shape to the nearest grid line, so one axis is the object's and the other the grid's.
+    // Nearest (or along a wall axis), with the grid on: the point slides along the shape to the nearest grid line, so one axis is the object's and the other the grid's.
     const slid = c.grid && c.grid > 0 && s.shape ? onGrid(s.shape, raw, s.point, c.grid) : null;
     return { point: slid ?? s.point, kind: 'point', mode: s.mode, guides: [] };
   }
@@ -134,6 +140,8 @@ export function snapShapes(drawing: DrawingDto | null, extra: Shape[] = []): { s
 
 /** The first drafted shape a snap of this kind at `p` could have come from: its end, middle, centre or quadrant there, or its line through the point. */
 export function draftThrough(drafts: ReadonlyMap<string, Shape[]>, p: Vec2, mode: SnapMode): string | null {
+  // A wall axis is no drafted shape's.
+  if (mode === 'wallAxis') return null;
   const at = (list: Vec2[]) => list.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 1e-6);
   for (const [id, list] of drafts) for (const sh of list) {
     const k = keyPoints(sh);
@@ -177,6 +185,10 @@ export function useCadCanvas(o: {
   inRegion?: (takes: RegionTest) => string[];
   /** The axes ortho, polar tracking and the grid follow where no UCS is set: a turned plan's screen axes (decision 526). */
   axes?: Frame | null;
+  /** The shown walls' axes, for the Wall axis snap (forum topic 151). */
+  wallAxes?: Shape[];
+  /** The shown elements' own curves (a curved wall's faces, an outline's curved edges), for the Tangent snap. */
+  curves?: Shape[];
 }) {
   const axesRef = useRef(o.axes ?? null);
   axesRef.current = o.axes ?? null;
@@ -189,6 +201,10 @@ export function useCadCanvas(o: {
   const { shapes, drafts, owners } = useMemo(() => snapShapes(o.drawing, o.extra), [o.drawing, o.extra]);
   const related = useMemo(() => relatables(drafts), [drafts]);
   const index = useMemo(() => new SnapIndex(shapes), [shapes]);
+  const wallAxesRef = useRef(o.wallAxes);
+  wallAxesRef.current = o.wallAxes;
+  const curvesRef = useRef(o.curves);
+  curvesRef.current = o.curves;
   const acquired = useRef<Vec2[]>([]);
   const hold = useRef<{ p: Vec2; timer: ReturnType<typeof setTimeout> } | null>(null);
   const scaleRef = useRef(o.scale);
@@ -255,8 +271,9 @@ export function useCadCanvas(o: {
     const tol = 10 / scaleRef.current;
     const base = from ?? cad.step?.base ?? null;
     const prefs = usePrefs.getState();
-    const s = cad.osnap ? findSnap(raw, shapes, index, { tolerance: tol, modes: new Set(prefs.snapModes), from: base }) : null;
-    if (s && s.mode !== 'nearest') {
+    // Object Snap Override (forum topic 154): an armed snap is the only one this point takes.
+    const s = snapsOn(cad.snapOverride, cad.osnap) ? findSnap(raw, shapes, index, { tolerance: tol, modes: modesFor(cad.snapOverride, prefs.snapModes), from: base, wallAxes: wallAxesRef.current, curves: curvesRef.current }) : null;
+    if (s && !isLineSnap(s)) {
       // Resting on a snap acquires it for the guide lines.
       if (!hold.current || Math.hypot(hold.current.p.x - s.point.x, hold.current.p.y - s.point.y) > 1e-9) {
         if (hold.current) clearTimeout(hold.current.timer);
@@ -267,9 +284,9 @@ export function useCadCanvas(o: {
       }
     } else if (hold.current) { clearTimeout(hold.current.timer); hold.current = null; }
     const frame = planRef.current ? ucsOf(useLocation.getState().loc) ?? axesRef.current : null;
-    const aimed = resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s ? { point: s.point, mode: s.mode, shape: shapes[s.shape] } : null, acquired: acquired.current, tol, grid: o2.grid, frame, relate: { ...related, reach: 40 / scaleRef.current } });
+    const aimed = resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s ? { point: s.point, mode: s.mode, shape: s.on ?? shapes[s.shape], along: s.along } : null, acquired: acquired.current, tol, grid: o2.grid, frame, relate: { ...related, reach: 40 / scaleRef.current } });
     // The drafted shape the point lies on: the snap's own, else the first drafted shape through the point (the model's lines may be found first where they coincide).
-    const owner = aimed.mode ? (s && aimed.mode === s.mode ? owners[s.shape] : null) ?? draftThrough(drafts, aimed.point, aimed.mode) : null;
+    const owner = aimed.mode ? (s && aimed.mode === s.mode && s.shape >= 0 ? owners[s.shape] : null) ?? draftThrough(drafts, aimed.point, aimed.mode) : null;
     return owner ? { ...aimed, shapeId: owner } : aimed;
   }, [shapes, index, owners, drafts, related]);
 

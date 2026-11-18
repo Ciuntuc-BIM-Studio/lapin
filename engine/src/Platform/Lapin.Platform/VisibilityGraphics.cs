@@ -329,7 +329,7 @@ public sealed class VisibilityGraphics
         return sub.Any(s => True(s.Value?["hidden"])) ? sub : null;
     }
 
-    /// <summary>The graphics a subcategory's row may give beside <c>hidden</c> (decision 674).</summary>
+    /// <summary>The graphics a subcategory's row may give beside <c>hidden</c> (decision 682).</summary>
     public static readonly string[] SubGraphicsFields = ["cutHatch", "fillColor", "lineColor", "lineWeight", "halftone"];
 
     /// <summary>The fields of a subcategory's row: shown or hidden, and its graphics.</summary>
@@ -343,7 +343,7 @@ public sealed class VisibilityGraphics
     bool? _hasSubGraphics;
 
     /// <summary>
-    /// Whether any subcategory in the view's graphics (or a link's own) gives graphics (decision 674): none, and the drawing asks
+    /// Whether any subcategory in the view's graphics (or a link's own) gives graphics (decision 682): none, and the drawing asks
     /// no part for its subcategory.
     /// </summary>
     public bool HasSubGraphics => _hasSubGraphics ??= Rows(Graphics).Concat((Graphics?["links"] as JsonObject ?? []).Select(l => l.Value as JsonObject))
@@ -352,7 +352,7 @@ public sealed class VisibilityGraphics
     static IEnumerable<JsonObject?> Rows(JsonObject? g) => [g];
 
     /// <summary>
-    /// The graphics a part of an element takes from its subcategory in this view (decision 674): its subcategory's row when it gives
+    /// The graphics a part of an element takes from its subcategory in this view (decision 682): its subcategory's row when it gives
     /// any (cut hatch, fill colour, line colour and weight, halftone), with its category's row (whose fill colour a halftone washes);
     /// null when its subcategory gives none.
     /// </summary>

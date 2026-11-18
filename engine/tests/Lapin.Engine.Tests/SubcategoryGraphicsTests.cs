@@ -8,7 +8,7 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Stage 4 of docs/plan-material-graphics.md (decision 674), what stage C of docs/plan-visibility-graphics.md left: a subcategory
+/// Stage 4 of docs/plan-material-graphics.md (decision 682), what stage C of docs/plan-visibility-graphics.md left: a subcategory
 /// of Visibility / Graphics (a layer's role: core, finishes, insulation…) gives its cut hatch, fill colour, line colour and weight
 /// and halftone. Each reaches the pens; it lies over the style's material graphics set and over its category's cut hatch and
 /// fill colour; graphics sets and a link's own rows carry it; the 3D takes its halftone and colour per part; rows are checked.

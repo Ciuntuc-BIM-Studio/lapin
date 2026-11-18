@@ -929,6 +929,9 @@ public static class Fields
                 var c = (string?)value;
                 return HexColor.IsColour(c) ? c! : throw new CommandException($"{f.Label} is a colour like #a8a8a8.");
             }
+            // A field only taken off here (a text's leader, drawn by its tool and moved by its grips): a value is refused, null removes it.
+            case "removeOnly":
+                throw new CommandException($"{f.Label} is drawn with its tool and moved by its grips; here it can only be taken off.");
             default:
                 return (string?)value ?? throw new CommandException($"{f.Label} must be text.");
         }

@@ -1,4 +1,4 @@
-/** The configurator's strings are in every language (decision 670, stage 0b). */
+/** The configurator's strings are in every language (decision 678, stage 0b). */
 
 import { describe, expect, it } from 'vitest';
 import { LANGUAGES, loadAllLanguages, translate, type Lang } from '../../i18n';

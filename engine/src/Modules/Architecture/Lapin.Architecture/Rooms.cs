@@ -483,7 +483,7 @@ public static class Rooms
         var minSpacing = ViewStyles.Of(m, c.View).MinHatchSpacing;
         foreach (var loops in RoomFinishes.PlanRegions(m, room, o, spec, part))
         {
-            // Paper or real size (decision 671: tiles their own size); a real-size pattern too dense for the view's style is not drawn.
+            // Paper or real size (decision 679: tiles their own size); a real-size pattern too dense for the view's style is not drawn.
             if (HatchScale.Lay(pattern, c.Scale, h.Scale, h.Angle, null, 40_000, null, minSpacing) is not { } laid) continue;
             var (segs, _) = HatchFill.Segments(loops, pattern, laid);
             foreach (var s in segs) mark.Line(s.A, s.B, FinishLayer, Pens.Default.Hatch, h.Color);

@@ -8,7 +8,7 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Real-size hatches (decision 671, docs/plan-material-graphics.md stage 1): a pattern's units (paper or model) read from
+/// Real-size hatches (decision 679, docs/plan-material-graphics.md stage 1): a pattern's units (paper or model) read from
 /// and written to <c>.pat</c> (<c>;%TYPE=MODEL</c>, <c>;%UNITS=INCH</c>); a model pattern keeps its real size at any scale;
 /// one denser on paper than the view style's <c>minHatchSpacing</c> is not drawn; a new project's facades take the real-size
 /// patterns from their names while a project saved before keeps its paper ones; an element's <c>hatchOrigin</c> moves its

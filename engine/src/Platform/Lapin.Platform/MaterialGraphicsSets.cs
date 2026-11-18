@@ -7,7 +7,7 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>
-/// Material graphics sets (stage 4 of docs/plan-material-graphics.md, decision 674): the project's named sets (<see cref="Key"/>)
+/// Material graphics sets (stage 4 of docs/plan-material-graphics.md, decision 682): the project's named sets (<see cref="Key"/>)
 /// of what a discipline's drawings make of its materials, over what the materials and the standard give: „Structure” draws
 /// concrete solid grey and masonry in 45° lines, finishes plain, insulation halftone. A view style names one
 /// (<c>materialGraphicsSet</c>), a view may name another or none (<c>view.setStyle</c>); it is the third tier of
@@ -15,19 +15,19 @@ namespace Lapin.Platform;
 /// the material's own.
 /// <para>
 /// A set is <c>{id, name, entries: [{match: {material?, materialName?, category?}, section?, plan?, elevation?}]}</c>: each kind
-/// of view's graphics as a material's (every field of decisions 670–672, steps by scale too). An entry matches a material when
+/// of view's graphics as a material's (every field of decisions 678–680, steps by scale too). An entry matches a material when
 /// all it gives holds: <c>material</c> its id; <c>materialName</c> a word or a small expression found in its name (folded as a
 /// standard folds it: lower case, one space, no diacritics); <c>category</c> its category (its own, else what the project's
 /// standard says of its name); an entry matching nothing in particular (<c>match: {}</c>) takes every material. Of the entries
 /// that match, the most particular wins (a material's id over a name over a category over all), the first of them in order
 /// when two are as particular.
 /// </para>
-/// A project made since decision 674 has two built in (<see cref="BuiltIns"/>: „Structure” for the Structural style, „MEP” for
+/// A project made since decision 682 has two built in (<see cref="BuiltIns"/>: „Structure” for the Structural style, „MEP” for
 /// the MEP style) until it changes its list; one made before has none, and its styles name none (Î10). Every command one undo step.
 /// </summary>
 public static class MaterialGraphicsSets
 {
-    /// <summary>The project's sets (absent: the built-in ones in a project made since decision 674, none in one made before).</summary>
+    /// <summary>The project's sets (absent: the built-in ones in a project made since decision 682, none in one made before).</summary>
     public const string Key = "materialGraphicsSets";
     public const string StructureId = "structure", MepId = "mep";
     static readonly HashSet<string> SetFields = ["id", "name", "entries"];
@@ -150,7 +150,7 @@ public static class MaterialGraphicsSets
     static readonly Lazy<IReadOnlyList<Set>> Shipped = new(() => [.. JsonNode.Parse(BuiltInJson)!.AsArray().OfType<JsonObject>().Select(Read)]);
 
     /// <summary>
-    /// The sets a project made since decision 674 starts with: „Structure” (the Structural style's: concrete solid grey 40 %, blocks,
+    /// The sets a project made since decision 682 starts with: „Structure” (the Structural style's: concrete solid grey 40 %, blocks,
     /// brick and stone in 45° lines, finishes with no hatch and no fill, insulation halftone) and „MEP” (the MEP style's: no hatch,
     /// no fill, the cut lines grey, the hatch halftone).
     /// </summary>
@@ -160,7 +160,7 @@ public static class MaterialGraphicsSets
 
     static readonly ConditionalWeakTable<JsonNode, List<Set>> Parsed = new();
 
-    /// <summary>The project's sets: its list (one it cannot read left out), else the built-in ones in a project made since decision 674.</summary>
+    /// <summary>The project's sets: its list (one it cannot read left out), else the built-in ones in a project made since decision 682.</summary>
     public static IReadOnlyList<Set> All(Entity? project) =>
         project?.Attrs[Key] is JsonArray a ? Parsed.GetValue(a, n => [.. ((JsonArray)n).OfType<JsonObject>().Select(TryRead).OfType<Set>()])
         : MaterialStandards.NewLook(project) ? BuiltIns : [];
@@ -209,7 +209,7 @@ public static class MaterialGraphicsSets
     {
         var project = Project(ctx.Model);
         var attrs = project.CloneAttrs();
-        // Kept even empty: a project made since decision 674 that removed its sets does not get the built-in ones back.
+        // Kept even empty: a project made since decision 682 that removed its sets does not get the built-in ones back.
         attrs[Key] = new JsonArray(sets.Select(s => (JsonNode)s.Json.DeepClone()).ToArray());
         ctx.Replace(project.With(attrs: attrs));
     }

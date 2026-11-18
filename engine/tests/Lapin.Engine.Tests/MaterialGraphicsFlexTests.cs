@@ -10,7 +10,7 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Stage 0b of docs/plan-material-graphics.md (decision 670), the flexible material configurator: on each material and kind
+/// Stage 0b of docs/plan-material-graphics.md (decision 678), the flexible material configurator: on each material and kind
 /// of view, the hatch's colour, weight, line type, opacity and halftone, the fill's opacity, a background hatch, and its
 /// cut and separator lines reach the pens of plans, sections, elevations, the legend, the preview, DXF, IFC and Bonsai;
 /// what is left unset draws as before; material.update checks them, takes several materials in one step and resets a field.

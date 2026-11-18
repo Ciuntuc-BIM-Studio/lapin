@@ -35,7 +35,7 @@ import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, liveTaken, useLive } from './liveInput';
 import { useHighlight } from '../app/highlight';
 import { markSelected, nearestOf, pickAllAt, pickAt, regionIds } from './planPick';
-import { clearCycle, cycledId, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
+import { clearCycle, cycledId, cycleOpen, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
 import { markOwner } from './planPick';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
@@ -57,6 +57,7 @@ import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { CadOverlay } from './cad/canvas';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
+import { WALL_CLASSES, elementCurves, wallAxes, wallAxisPoints } from './cad/elementSnaps';
 import { clearShown, hiddenInDrawing, publishShown, shownItems, shownWholeOf } from './cad/shown';
 import { CommandLine } from './cad/CommandLine';
 import './cad/ucs';
@@ -64,6 +65,7 @@ import './cad/plan';
 import { FOLLOW_UCS, normalizeDeg, orientationOf, screenAxes, screenCorners, setOrientation, turnOf } from './orientation';
 import { ask, numberField } from '../shell/AskBox';
 import { feedPoint, finishStep, startCommand, useCad } from './cad/session';
+import { overridePress, spendOverride } from './cad/snapOverride';
 import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
@@ -228,7 +230,17 @@ export function PlanView() {
   // What the snaps and the selection take: only the elements the view's drawing shows (forum #31, decisions 491 and 498), all
   // of them over modelling lines; a part of a whole drawn as one keeps its own lines (drilling into assemblies).
   const snapItems = useMemo(() => shownItems(items, drawing, shownWholeOf(relations, (id) => wholeOf(id, nodes, relations))), [items, drawing, nodes, relations]);
-  const snapPoints = useMemo(() => snapItems.flatMap((r) => pairs(r.snaps ?? [])), [snapItems]);
+  // Forum topic 151: with the Wall axis snap on, a wall's axis ends are its (named so, and taken after the drawn lines' ends and
+  // crossings); off, they stay the endpoints they always were.
+  const wallAxisOn = usePrefs((p) => p.snapModes.includes('wallAxis'));
+  const snapPoints = useMemo(() => snapItems.flatMap((r) => {
+    const own = pairs(r.snaps ?? []);
+    if (!wallAxisOn || !WALL_CLASSES.has(nodes.get(r.nodeId)?.type ?? '')) return own;
+    const ends = wallAxisPoints([r], nodes);
+    return own.filter((q) => !ends.some((e) => Math.hypot(e.x - q.x, e.y - q.y) < 1e-9));
+  }), [snapItems, wallAxisOn, nodes]);
+  const snapWallAxes = useMemo(() => wallAxes(snapItems, nodes), [snapItems, nodes]);
+  const snapCurves = useMemo(() => elementCurves(snapItems, nodes), [snapItems, nodes]);
   // Marks with exact shapes or line segments are already parsed by snapShapes() with their endpoint/midpoint/centre kinds;
   // turning their flat snaps list into zero-length lines would label midpoints as endpoints (forum #111).
   const markSnaps = useMemo(() => (drawing?.marks ?? []).filter((m) => !(m as { shapes?: unknown[] }).shapes?.length && !m.segments?.length).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
@@ -352,10 +364,10 @@ export function PlanView() {
   // Tab over several elements lights the next one, and a click takes it (forum topic 105: pickCycle.ts).
   const cycleKey = useRef(`plan-cycle:${Math.random().toString(36).slice(2)}`).current;
   const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null => {
-    if (!types) {
+    {
       const id = cycledId(usePickCycle.getState().cycle, cycleKey, p, 3 / view.scale);
       const hit = id ? markOwner(id, nodes) : null;
-      if (hit) return hit.pick === hit.owner.id ? hit.owner : { ...hit.owner, id: hit.pick, name: `Axis ${hit.pick.slice(hit.pick.indexOf('#') + 1)}` };
+      if (hit && (!types || types.includes('*') || types.includes(hit.owner.type))) return hit.pick === hit.owner.id ? hit.owner : { ...hit.owner, id: hit.pick, name: `Axis ${hit.pick.slice(hit.pick.indexOf('#') + 1)}` };
     }
     return pickAt(p, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks, types);
   }, [pickItems, nodes, view.scale, drawing, scope, cycleKey]);
@@ -392,6 +404,7 @@ export function PlanView() {
   const { aim, acquire } = useCadCanvas({
     viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, outlines,
     inRegion: (takes) => regionIds(takes, pickItems, nodes, scope ? undefined : drawing?.marks), axes,
+    wallAxes: snapWallAxes, curves: snapCurves,
   });
   const cadStep = useCad((s) => s.step);
   /** The selection dragged by its body (its trace shows over the plan). */
@@ -444,7 +457,7 @@ export function PlanView() {
     const typed = typed0 ?? taken?.typed;
     // A drafting command takes the click: a snapped point, or what lies under the cursor.
     const step = useCad.getState().step;
-    if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : p); acquire(p); return; }
+    if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : p, undefined, step.snap ? p : undefined); acquire(p); return; }
     if (tool?.gesture) acquire(p);
     if (!tool?.gesture) {
       // A member of a group picks the group (docs/groups.md); drilling, a part its wholes first (platform/assemblies.ts).
@@ -586,11 +599,16 @@ export function PlanView() {
     raw: (cx, cy) => { const r = svgRef.current!.getBoundingClientRect(); return toWorld(cx - r.left, cy - r.top); },
     disabled: !!tool?.gesture || !!cadStep, svg: svgRef, marks: drawing?.marks,
   });
-  // What Tab cycles through here: every element under the pointer (nothing while a tool, a command or a drag is busy, so Tab keeps its meaning).
+  // What Tab cycles through here: every element under the pointer (also while a tool or a command picks elements; nothing while it waits for a point or a drag is on, so Tab keeps its meaning).
   cycleSource.current = {
     key: cycleKey,
     at: () => rawHover.current,
-    ids: (at) => (tool?.gesture || cadStep || drag.current || editor.dragging ? [] : withFirst(pickAt(at, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks)?.id, pickAllAt(at, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks))),
+    ids: (at) => {
+      if (!cycleOpen(tool?.gesture?.kind, cadStep?.want, !!(drag.current || editor.dragging))) return [];
+      const types = tool?.gesture && 'types' in tool.gesture ? tool.gesture.types : undefined;
+      const all = withFirst(pickAt(at, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks, types)?.id, pickAllAt(at, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks));
+      return types && !types.includes('*') ? all.filter((id) => { const n = nodes.get(id.includes('#') ? id.slice(0, id.indexOf('#')) : id); return !!n && types.includes(n.type); }) : all;
+    },
     tol: () => 3 / view.scale,
   };
   const cycle = usePickCycle((c) => c.cycle);
@@ -604,6 +622,7 @@ export function PlanView() {
   useEffect(() => () => setCycleSource(null, cycleKey), [cycleKey]);
 
   const onPointerDown = (e: React.PointerEvent) => {
+    if (overridePress(e)) { drag.current = null; return; }
     (e.target as Element).setPointerCapture?.(e.pointerId);
     if (middleTwice.current(e)) { fitModel(); return; }
     if (editor.onPointerDown(e)) return;
@@ -691,6 +710,7 @@ export function PlanView() {
   };
   const onPointerUp = (e: React.PointerEvent) => {
     if (editor.onPointerUp()) return;
+    spendOverride(e);
     const d = drag.current;
     drag.current = null;
     if (box) {
@@ -988,7 +1008,7 @@ export function PlanView() {
     return null;
   })();
 
-  const marker = hover && (tool?.gesture || editor.dragging || cadStep?.want === 'point' || dragTrace) ? toScreen(hover.point) : null;
+  const marker = hover && (tool?.gesture || editor.dragging || cadStep?.want === 'point' || cadStep?.snap || dragTrace) ? toScreen(hover.point) : null;
 
   return (
     <div className="view-pane">

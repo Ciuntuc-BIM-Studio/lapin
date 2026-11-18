@@ -20,7 +20,11 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             [new("text", "Text", "text"), new("textStyle", "Text style", "text"), new("dimStyle", "Dimension style", "text"), new("angle", "Angle", "angle"),
              new("format", "Slope written as", "choice", Choices: DimensionKinds.SlopeFormats), new("z", "Level written", "length"), new("textHeight", "Text height", "number", Min: 0.5, Max: 50),
              // A dimension's extension lines left out (issue #66), over its style's.
-             new("extSuppress", "Extension lines left out", "choice", Choices: Standards.ExtSuppressChoices)], "#555555", Kind: "annotation"));
+             new("extSuppress", "Extension lines left out", "choice", Choices: Standards.ExtSuppressChoices),
+             // A text's box width (its lines wrap at it), its lines' alignment, and its leader taken off (forum topic 148: the
+             // properties panel sent them and the engine refused them, "Annotation has no field „width”").
+             new("width", "Width", "length", Min: 0, ShowIf: Texts.OnTexts), new("align", "Alignment", "choice", Choices: Texts.Alignments, ShowIf: Texts.OnTexts),
+             new("leader", "Leader", Texts.LeaderKind, ShowIf: Texts.OnTexts)], "#555555", Kind: "annotation"));
         // A draft with heights (a DXF's 3D lines) shows in 3D as lines; the rest have no geometry.
         r.Geometry(IfcClass.Annotation, Cad.Drafts.Geometry3d);
         r.Service<IViewAnnotations>(this);

@@ -3,6 +3,7 @@
 import { t } from '../../i18n';
 import type { Vec2 } from '../../platform/module';
 import type { SnapMode } from './snaps';
+import { overrideLabel } from './snapOverride';
 import { polylines, type Shape } from './shapes';
 import { movedShape, useCad } from './session';
 import type { Aimed } from './aim';
@@ -46,11 +47,18 @@ const GLYPH: Record<SnapMode, (x: number, y: number) => JSX.Element> = {
   quadrant: (x, y) => <path d={`M${x},${y - 6}L${x + 6},${y}L${x},${y + 6}L${x - 6},${y}Z`} />,
   perpendicular: (x, y) => <path d={`M${x - 5},${y + 5}H${x + 5}M${x - 3},${y + 5}V${y - 5}`} />,
   nearest: (x, y) => <path d={`M${x - 5},${y - 5}H${x + 5}L${x - 5},${y + 5}H${x + 5}Z`} />,
+  // Forum topic 151: a circle with the line touching it on top (as CAD marks a tangent), and an axis' dash-dot through a small circle.
+  tangent: (x, y) => <g><circle cx={x} cy={y} r={5} /><path d={`M${x - 7},${y - 5}H${x + 7}`} /></g>,
+  wallAxis: (x, y) => <g><circle cx={x} cy={y} r={3.5} /><path d={`M${x - 11},${y}H${x - 6}M${x - 4},${y}H${x - 3}M${x + 3},${y}H${x + 4}M${x + 6},${y}H${x + 11}`} /></g>,
 };
+
+/** What the marker says beside it: the snap's name (a wall axis's in two words). */
+const TIP: Partial<Record<SnapMode, string>> = { wallAxis: 'wall axis' };
 
 /** The snap marker, the guides and the running command's preview, in screen coordinates. */
 export function CadOverlay({ aimed, toScreen }: { aimed: Aimed | null; toScreen: ToScreen }) {
   const step = useCad((s) => s.step);
+  const override = useCad((s) => s.snapOverride);
   const live = useLive();
   if (!aimed) return null;
   const c = toScreen(aimed.point);
@@ -69,8 +77,9 @@ export function CadOverlay({ aimed, toScreen }: { aimed: Aimed | null; toScreen:
       })}
       {preview.flatMap((s, i) => pointsOf(s, toScreen).map((pts, j) => <polyline key={`${i}:${j}`} className="cad-preview" points={pts} />))}
       {labels.map((l, i) => { const q = toScreen(l.at); return <text key={`t${i}`} className="cad-preview-text" x={q.x} y={q.y - 4} textAnchor="middle">{l.text}</text>; })}
-      {(aimed.lock === 'parallel' || aimed.lock === 'tangent') && <text className="cad-preview-text" x={c.x + 9} y={c.y - 9}>{t(aimed.lock === 'parallel' ? 'Parallel' : 'Tangent')}</text>}
-      {aimed.mode && <g className="cad-snap">{GLYPH[aimed.mode](c.x, c.y)}<text x={c.x + 9} y={c.y - 9}>{aimed.mode}</text></g>}
+      {!aimed.mode && (aimed.lock === 'parallel' || aimed.lock === 'tangent') && <text className="cad-preview-text" x={c.x + 9} y={c.y - 9}>{t(aimed.lock === 'parallel' ? 'Parallel' : 'Tangent')}</text>}
+      {override && <text className="cad-preview-text cad-snap-override" data-testid="snap-override" x={c.x + 9} y={c.y + 22}>{`${t('Snap')}: ${t(overrideLabel(override))} · ${t('Esc cancels')}`}</text>}
+      {aimed.mode && <g className="cad-snap">{GLYPH[aimed.mode](c.x, c.y)}<text x={c.x + 9} y={c.y - 9}>{TIP[aimed.mode] ?? aimed.mode}</text></g>}
     </g>
   );
 }

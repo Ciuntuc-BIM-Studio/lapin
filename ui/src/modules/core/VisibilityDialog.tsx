@@ -48,8 +48,8 @@ export interface Visibility {
   graphics?: Graphics | null; graphicsSet?: string | null; fromStyle?: boolean; style?: string;
   /** Its level of development (decision 404): drawn at, its own (null: its style's), its style's. */ detail?: number; ownDetail?: number | null; styleDetail?: number;
   sets: { id: string; name: string }[]; categories: string[]; subcategories?: Record<string, string[]>;
-  /** What a subcategory's row may give (decision 674). */ subcategoryFields?: string[];
-  /** What a view filter's row may give (decision 675). */ filterFields?: string[];
+  /** What a subcategory's row may give (decision 682). */ subcategoryFields?: string[];
+  /** What a view filter's row may give (decision 683). */ filterFields?: string[];
   /** Hidden until the graphics show them (rooms, in 3D). */ hiddenByDefault?: string[];
   links?: LinkInfo[]; annotations?: string[]; imports?: ImportInfo[]; filters?: { id: string; name: string }[];
   pointClouds?: CloudInfo[];
@@ -184,7 +184,7 @@ export function VisibilityDialog() {
     void execute('view.graphics', { id: target, link: id, value: Object.keys(next).length ? next : null });
   };
 
-  /** A subcategory's graphics cells (decision 674): line colour, line weight, fill, cut hatch, halftone; what the engine says its rows may give. */
+  /** A subcategory's graphics cells (decision 682): line colour, line weight, fill, cut hatch, halftone; what the engine says its rows may give. */
   const subCells = (c: string, sub: string, sr: Row, enabled: boolean, link?: string) => {
     const has = (f: string) => !v.subcategoryFields || v.subcategoryFields.includes(f);
     const put = (patch: Row) => setCategory(c, patch, link, sub);

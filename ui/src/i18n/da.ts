@@ -652,6 +652,9 @@ export const DA: Record<string, string> = {
   "Project base point": "Projektets basispunkt",
   "Survey point (map)": "Opmålingspunkt (kort)",
   "Quadrant": "Kvadrant",
+  "Wall axis": "Vægakse",
+  "No snap (for this point)": "Intet snap (for dette punkt)",
+  "Snap settings…": "Snapindstillinger…",
   "Perpendicular": "Vinkelret",
   "Nearest": "Nærmeste",
   "Coordinates at the cursor": "Koordinater ved markøren",
@@ -1125,6 +1128,9 @@ export const DA: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Hvert klik med et penselværktøj er ét strøg, der fortrydes med Ctrl Z; et terræns strøg kan ryddes i inspektøren.',
   // Site tools, stage 2
   'Spot level': 'Punktkote', 'Spot levels': 'Punktkoter', 'Parcel': 'Matrikel', 'Export LandXML': 'Eksportér LandXML', 'Analysis': 'Analyse', 'slopes': 'hældninger',
+  'Subregion': 'Delområde', 'Subregions': 'Delområder', 'edit in 3D': 'redigér i 3D', 'done editing 3D': 'afslut 3D-redigering', 'Cut slope': 'Afgravningsskråning', 'Fill slope': 'Påfyldningsskråning', 'Survey point height': 'Opmålingspunktets kote', 'Drag a point\'s grip up or down in the 3D view.': 'Træk et punkts greb op eller ned i 3D-visningen.', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': 'Greb på de 400 punkter nærmest 3D-visningens midte: flyt visningen for at nå de andre.',
+  'Split terrain': 'Del terræn', 'Merge terrains': 'Flet terræner', 'Select two terrains or more to merge them.': 'Vælg to eller flere terræner for at flette dem.',
+  'Terrain boundary': 'Terrænafgrænsning', 'Slope tag': 'Hældningsmærke', 'Slope tags': 'Hældningsmærker', 'Boundary': 'Afgrænsning', 'clipped': 'beskåret', 'convex hull': 'konvekst hylster', 'from parcel': 'fra matrikel', 'Cut/fill grid': 'Af-/påfyldningsgitter', 'Graded region': 'Reguleret område', 'reset to survey': 'nulstil til opmåling', 'snapshot existing': 'fastfrys eksisterende',
   'cut and fill': 'afgravning og påfyldning', 'elevations': 'koter', 'drawn': 'tegnet', 'remove': 'fjern', 'Planting schedule': 'Beplantningsskema',
   // The engine in the browser.
   'In the browser': 'I browseren',
@@ -2221,6 +2227,8 @@ export const DA: Record<string, string> = {
   // An elevation's marker moved into the building clips it (decision 460)
   "Drag: move the marker (moved into the building, the elevation starts seeing at its line)": "Træk: flyt markøren (flyttet ind i bygningen begynder facaden at se fra dens linje)", "Move elevation marker": "Flyt facademarkør", "Only an elevation's marker is moved this way.": "Kun en facades markør flyttes på denne måde.", "A marker's place is in metres.": "En markørs placering angives i meter.",
   "Letter shortcuts (Revit-style)": "Bogstavgenveje (som i Revit)",
+  "A click outside an input box accepts it": "Et klik uden for indtastningsfeltet accepterer det",
+  "Off by default. On: with a value typed in the box by the cursor or on the command line, a left click elsewhere accepts it as Enter does, and that click is used up (it places no point of its own). Esc or a right click throws the typed value away instead. Fields in the Properties panel already take their value when you click away.": "Slået fra som standard. Slået til: med en værdi skrevet i feltet ved markøren eller på kommandolinjen accepterer et venstreklik et andet sted den som Enter, og klikket bruges op (det sætter intet punkt selv). Esc eller et højreklik kasserer i stedet den skrevne værdi. Felter i panelet Egenskaber tager allerede deres værdi, når man klikker væk.",
   "Typed letters such as WA start a tool. Off: letters always go to the command line, and Enter or Space runs a command, an alias, or the command whose letters they are. The ` key gives the command line all typing, whichever is on. Your own aliases are in Keyboard shortcuts…": "Indtastede bogstaver som WA starter et værktøj. Fra: bogstaver går altid til kommandolinjen, og Enter eller mellemrum kører en kommando, et alias eller den kommando, bogstaverne er. Tasten ` giver kommandolinjen al tastning, uanset hvad der er slået til. Dine egne aliasser findes under Tastaturgenveje…",
   "Keyboard": "Tastatur",
   "Command line: take all typing": "Kommandolinje: tag al tastning",
@@ -3166,6 +3174,7 @@ export const DA: Record<string, string> = {
   "Export CSV…": "Eksportér CSV…",
   "Export standards…": "Eksportér standarder…",
   "Exported ${saved}.": "${saved} eksporteret.",
+  "The engine sent back no file.": "Motoren sendte ingen fil tilbage.",
   "Factor of Ø": "Faktor af Ø",
   "Find a code or a title": "Find en kode eller en titel",
   "Functions:": "Funktioner:",
@@ -4285,7 +4294,7 @@ export const DA: Record<string, string> = {
   "Type properties": "Typeegenskaber",
   "Also write type properties on each occurrence": "Skriv også typeegenskaber på hver forekomst",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "hver væg af typen har dem (IsExternal, FireRating); en forekomststandard er hver vægs egen kopi",
-  // Material graphics configurator (decision 670, stage 0b)
+  // Material graphics configurator (decision 678, stage 0b)
   'Lines': 'Linjer', 'Weight, mm': 'Tykkelse, mm', 'Fill opacity': 'Fyldets opacitet', 'Second pattern': 'Andet mønster', 'Cut outline': 'Snitkontur', 'Separator lines': 'Skillelinjer', 'Strip': 'Strimmel', 'facade|Elevation': 'Facade', 'material|Band': 'Bånd', 'Clear selection': 'Ryd markering', 'Copy graphics from…': 'Kopiér grafik fra…', 'from the pen': 'fra pennen', 'Opacity, per cent': 'Opacitet, procent', 'Automatic: click to choose a colour': 'Automatisk: klik for at vælge en farve', 'Scale of the sample': 'Prøvens målestok', 'Preview of the material graphics': 'Forhåndsvisning af materialets grafik', 'A strip of the material between two lines': 'En strimmel af materialet mellem to linjer', 'A band between two layers, with the lines that separate them': 'Et bånd mellem to lag, med linjerne der adskiller dem', 'Tick several materials to change their graphics together': 'Afkryds flere materialer for at ændre deres grafik samtidig', 'Select this material with others': 'Vælg dette materiale sammen med andre', 'Its hatches, fills and lines for the cut in a section, in a plan and for the elevation: one undo step': 'Dets skraveringer, fyld og linjer for snittet i en sektion, i en plan og for facaden: ét fortrydelsestrin', 'Paper millimetres: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5': 'Papirmillimeter: 0,13 · 0,18 · 0,25 · 0,35 · 0,5 · 0,7 · 1,0 eller en vilkårlig værdi fra 0,05 til 5', 'The weight of the hatch lines on paper: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5; it wins over the pen': 'Skraveringslinjernes tykkelse på papir: 0,13 · 0,18 · 0,25 · 0,35 · 0,5 · 0,7 · 1,0 eller en vilkårlig værdi fra 0,05 til 5; den går forud for pennen', 'The colour of the hatch; automatic: the category colour': 'Skraveringens farve; automatisk: kategoriens farve', 'A pen of the pen table (1 to 16), when no weight is set': 'En pen fra pentabellen (1 til 16), når ingen tykkelse er sat', 'The hatch in a lighter tone, as a background': 'Skraveringen i en lysere tone, som baggrund', 'A second hatch under the first (a background and a foreground, as in Revit)': 'En anden skravering under den første (baggrund og forgrund, som i Revit)', 'A change below goes to all of them, in one undo step.': 'En ændring nedenfor gælder for alle, i ét fortrydelsestrin.', 'What is not set comes from the name, the category or the Object styles; a field’s arrow takes it back there.': 'Det, der ikke er sat, kommer fra navnet, kategorien eller objektstilene; et felts pil sætter det tilbage dertil.',
   "Real size": "Reel størrelse",
   "Some real size": "Delvis reel størrelse",
@@ -4303,7 +4312,6 @@ export const DA: Record<string, string> = {
   "Hatch origin, up (v)": "Skraveringens udgangspunkt, op (v)",
   "Where the element's hatches start, in its own frame: along its axis from the start, and up from its base in elevations and sections (to the left of the axis in a plan). Real-size patterns (bricks, tiles) start their courses here": "Hvor elementets skraveringer starter, i dets eget koordinatsystem: langs dets akse fra starten og op fra dets bund i facader og snit (til venstre for aksen i plan). Mønstre i reel størrelse (mursten, fliser) starter deres skifter her",
   "Up from the element's base in elevations and sections; to the left of the axis in a plan": "Op fra elementets bund i facader og snit; til venstre for aksen i plan",
-  "automatic": "automatisk",
   " automatic": " automatisk",
   "Back to automatic: the view's origin, or the element's base for a real-size pattern": "Tilbage til automatisk: visningens udgangspunkt eller, for et mønster i reel størrelse, elementets bund",
   "Reset the hatch origin": "Nulstil skraveringens udgangspunkt",
@@ -4541,6 +4549,9 @@ export const DA: Record<string, string> = {
   "as the view": "som visningen",
   "Tile": "Flise",
   "Batt": "Måtte",
+  // A drafted text's alignment (forum topic 148); a view's mark (report #167).
+  'Alignment': 'Justering', 'automatic': 'automatisk', 'Without a width, of its point; with one, in its box': 'Uden bredde: ved sit punkt; med bredde: i sin boks', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Hvad visningens markering skriver: snittets eller facadens navn med Lapins eget hoved, dets nummer på tegningen med et hovedsymbol, en henvisning eller en visningstitel. Tom: automatisk.',
+  'Click to place another · Space turns · Enter or Esc to finish': 'Klik for at placere endnu en · Mellemrum drejer · Enter eller Esc afslutter',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -4558,6 +4569,7 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} linjetyper tilføjet, ${m[2]} opdateret, ${m[3]} sprunget over.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} parametre tilføjet, ${m[2]} opdateret.`],
   [/^(\d+) shapes added, (\d+) updated\.$/, (m) => `${m[1]} former tilføjet, ${m[2]} opdateret.`],
+  [/^Nothing was exported: (.+)$/, (m) => `Intet blev eksporteret: ${m[1]}`],
   [/^Exported (.+): (\d+) records\.$/, (m) => `${m[1]} eksporteret: ${m[2]} poster.`],
   [/^Exported (.+): (\d+) records, (\d+) bars laid by types left out \(they have no drawn shape\)\.$/, (m) => `${m[1]} eksporteret: ${m[2]} poster, ${m[3]} stænger lagt af typer udeladt (de har ingen tegnet form).`],
   [/^Model imported: (\d+) materials to give a role\.$/, (m) => `Model importeret: ${m[1]} materialer, der skal have en rolle.`],

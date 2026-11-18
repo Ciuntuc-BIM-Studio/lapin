@@ -7,9 +7,9 @@ public sealed record LayerRef(string? Material, string Name, double Thickness);
 
 /// <summary>A hatch to lay over a cut band: its loops, pattern, scale and pen, and the class it belongs to.</summary>
 /// <param name="Fill">The band's fill colour (its material's), which a solid pattern is drawn in (forum topic 88); null: none.</param>
-/// <param name="Look">The material's graphics, whose hatch colour, weight, line type, opacity and halftone it is drawn with (decision 670); null: the category's and Lapin's.</param>
-/// <param name="Background">The material's background hatch (decision 670), drawn under its hatch in <see cref="Look"/>'s background colour and weight.</param>
-/// <param name="Units">The units its pattern lies in over the pattern's own (a material's <c>hatchUnits</c>, decision 671); null: the pattern's.</param>
+/// <param name="Look">The material's graphics, whose hatch colour, weight, line type, opacity and halftone it is drawn with (decision 678); null: the category's and Lapin's.</param>
+/// <param name="Background">The material's background hatch (decision 678), drawn under its hatch in <see cref="Look"/>'s background colour and weight.</param>
+/// <param name="Units">The units its pattern lies in over the pattern's own (a material's <c>hatchUnits</c>, decision 679); null: the pattern's.</param>
 public sealed record MaterialHatch(IReadOnlyList<Vec2[]> Loops, string Pattern, double Scale, int? Pen, string Class, double Angle = 0, Vec2? Origin = null, string? Fill = null,
     ResolvedMaterial? Look = null, bool Background = false, Lapin.Drawing.Hatch.HatchUnits? Units = null)
 {
@@ -46,7 +46,7 @@ public sealed class MaterialDrawingResult
     public List<(Vec2 A, Vec2 B)> Membranes { get; } = [];
     /// <summary>Per polygon, the sides (over its loops in order) it shares with another element's band of its material.</summary>
     public Dictionary<int, HashSet<int>> Seams { get; } = [];
-    /// <summary>Per polygon drawn as a band (not a membrane), its material's graphics: its cut and layer lines (decision 670) are read from them.</summary>
+    /// <summary>Per polygon drawn as a band (not a membrane), its material's graphics: its cut and layer lines (decision 678) are read from them.</summary>
     public Dictionary<int, ResolvedMaterial> Graphics { get; } = [];
 }
 
@@ -187,7 +187,7 @@ public static class MaterialDrawing
     static string? JoinKey(DPolygon p, ResolvedMaterial? g)
     {
         // A material that stays out of joins (forum topic 59) keeps each element's own outline, as one whose joints are drawn.
-        // A view's small-scale cut (decision 672) joins its bands by what it makes of them (one solid colour, one outline).
+        // A view's small-scale cut (decision 680) joins its bands by what it makes of them (one solid colour, one outline).
         if (g != null) return g.Membrane || g.DrawJoints || !g.Joins ? null : g.JoinAs ?? MaterialGraphics.Normalise(g.Name);
         // A leading space: no trimmed material name can be the same key.
         return KindOf(p.Class) is { } k ? " kind:" + k : null;
@@ -229,10 +229,10 @@ public static class MaterialDrawing
             }
             if (g == null) continue;
             o.Graphics[i] = g;
-            // The fill at its opacity (decision 670); a material that gives none is its fill as before.
+            // The fill at its opacity (decision 678); a material that gives none is its fill as before.
             o.Fills[i] = MaterialGraphics.FillInk(g);
             var mine = elementHatch?.Invoke(p.Element);
-            // A material's background hatch (decision 670) under its own, laid as it is: from the element's alignment or the band's.
+            // A material's background hatch (decision 678) under its own, laid as it is: from the element's alignment or the band's.
             if (g.Background is { Hatch: { } bh } bg)
             {
                 var bgScale = bg.HatchScale ?? g.HatchScale;

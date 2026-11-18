@@ -646,6 +646,9 @@ export const RO: Record<string, string> = {
   "Project base point": "Punctul de bază al proiectului",
   "Survey point (map)": "Punctul topografic (hartă)",
   "Quadrant": "Cadran",
+  "Wall axis": "Axa peretelui",
+  "No snap (for this point)": "Fără snap (pentru acest punct)",
+  "Snap settings…": "Setările snap-ului…",
   "Perpendicular": "Perpendicular",
   "Nearest": "Cel mai apropiat",
   "Coordinates at the cursor": "Coordonatele la cursor",
@@ -1131,6 +1134,9 @@ export const RO: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Fiecare clic cu o unealtă de pensulă e o tușă, anulată cu Ctrl Z; tușele unui teren se pot șterge din inspector.',
   // Site tools, stage 2
   'Spot level': 'Cotă punctuală', 'Spot levels': 'Cote punctuale', 'Parcel': 'Parcelă', 'Export LandXML': 'Exportă LandXML', 'Analysis': 'Analiză', 'slopes': 'pante',
+  'Subregion': 'Subregiune', 'Subregions': 'Subregiuni', 'edit in 3D': 'editează în 3D', 'done editing 3D': 'gata cu editarea 3D', 'Cut slope': 'Taluz la săpătură', 'Fill slope': 'Taluz la umplutură', 'Survey point height': 'Cota punctului ridicat', 'Drag a point\'s grip up or down in the 3D view.': 'Trage în sus sau în jos mânerul unui punct în vederea 3D.', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': 'Mânere pe cele 400 de puncte cele mai apropiate de centrul vederii 3D: mută vederea ca să ajungi la celelalte.',
+  'Split terrain': 'Împarte terenul', 'Merge terrains': 'Unește terenurile', 'Select two terrains or more to merge them.': 'Selectează două terenuri sau mai multe ca să le unești.',
+  'Terrain boundary': 'Limita terenului', 'Slope tag': 'Etichetă de pantă', 'Slope tags': 'Etichete de pantă', 'Boundary': 'Limită', 'clipped': 'decupat', 'convex hull': 'înfășurătoare convexă', 'from parcel': 'din parcelă', 'Cut/fill grid': 'Grilă săpătură/umplutură', 'Graded region': 'Zonă sistematizată', 'reset to survey': 'revino la ridicare', 'snapshot existing': 'fixează terenul existent',
   'cut and fill': 'săpătură și umplutură', 'elevations': 'cote', 'drawn': 'desenată', 'remove': 'scoate', 'Planting schedule': 'Tabel de plantare',
   // The engine in the browser.
   'In the browser': 'În browser',
@@ -2221,6 +2227,8 @@ export const RO: Record<string, string> = {
   // An elevation's marker moved into the building clips it (decision 460)
   "Drag: move the marker (moved into the building, the elevation starts seeing at its line)": "Trage: mută marcatorul (mutat în clădire, fațada începe să vadă de la linia lui)", "Move elevation marker": "Mută marcatorul fațadei", "Only an elevation's marker is moved this way.": "Doar marcatorul unei fațade se mută așa.", "A marker's place is in metres.": "Locul unui marcator se dă în metri.",
   "Letter shortcuts (Revit-style)": "Scurtături cu litere (ca în Revit)",
+  "A click outside an input box accepts it": "Un clic în afara casetei de introducere o acceptă",
+  "Off by default. On: with a value typed in the box by the cursor or on the command line, a left click elsewhere accepts it as Enter does, and that click is used up (it places no point of its own). Esc or a right click throws the typed value away instead. Fields in the Properties panel already take their value when you click away.": "Oprit implicit. Pornit: cu o valoare tastată în caseta de lângă cursor sau în linia de comandă, un clic stânga în altă parte o acceptă ca Enter, iar clicul este consumat (nu pune un punct al lui). Esc sau clic dreapta aruncă în schimb valoarea tastată. Câmpurile din panoul Proprietăți își iau deja valoarea când dai clic în altă parte.",
   "Typed letters such as WA start a tool. Off: letters always go to the command line, and Enter or Space runs a command, an alias, or the command whose letters they are. The ` key gives the command line all typing, whichever is on. Your own aliases are in Keyboard shortcuts…": "Literele tastate, ca WA, pornesc o unealtă. Oprit: literele merg mereu în linia de comandă, iar Enter sau Spațiu rulează o comandă, un alias sau comanda ale cărei litere sunt. Tasta ` dă liniei de comandă toată tastarea, indiferent ce e pornit. Aliasurile tale sunt în Scurtături de tastatură…",
   "Keyboard": "Tastatură",
   "Command line: take all typing": "Linia de comandă: preia toată tastarea",
@@ -3167,6 +3175,7 @@ export const RO: Record<string, string> = {
   "Export CSV…": "Exportă CSV…",
   "Export standards…": "Exportă standardele…",
   "Exported ${saved}.": "Exportat ${saved}.",
+  "The engine sent back no file.": "Motorul nu a trimis niciun fișier.",
   "Factor of Ø": "Factor de Ø",
   "Find a code or a title": "Caută un cod sau un titlu",
   "Functions:": "Funcții:",
@@ -4244,7 +4253,7 @@ export const RO: Record<string, string> = {
   "Type properties": "Proprietățile tipului",
   "Also write type properties on each occurrence": "Scrie proprietățile tipului și pe fiecare instanță",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "orice perete al tipului le are (IsExternal, FireRating); o valoare implicită de instanță e copia proprie a fiecărui perete",
-  // Material graphics configurator (decision 670, stage 0b)
+  // Material graphics configurator (decision 678, stage 0b)
   'Lines': 'Linii', 'Weight, mm': 'Grosime, mm', 'Fill opacity': 'Opacitatea umplerii', 'Second pattern': 'Al doilea model', 'Cut outline': 'Conturul tăieturii', 'Separator lines': 'Linii de separare', 'Strip': 'Fâșie', 'facade|Elevation': 'Fațadă', 'material|Band': 'Bandă', 'Clear selection': 'Șterge selecția', 'Copy graphics from…': 'Copiază grafica de la…', 'from the pen': 'de la peniță', 'Opacity, per cent': 'Opacitate, procente', 'Automatic: click to choose a colour': 'Automat: clic pentru a alege o culoare', 'Scale of the sample': 'Scara probei', 'Preview of the material graphics': 'Previzualizarea grafică a materialului', 'A strip of the material between two lines': 'O fâșie de material între două linii', 'A band between two layers, with the lines that separate them': 'O bandă între două straturi, cu liniile care le separă', 'Tick several materials to change their graphics together': 'Bifați mai multe materiale ca să le schimbați grafica împreună', 'Select this material with others': 'Selectează acest material împreună cu altele', 'Its hatches, fills and lines for the cut in a section, in a plan and for the elevation: one undo step': 'Hașurile, umplerile și liniile lui pentru tăietura în secțiune, în plan și pentru fațadă: un singur pas de anulare', 'Paper millimetres: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5': 'Milimetri pe hârtie: 0,13 · 0,18 · 0,25 · 0,35 · 0,5 · 0,7 · 1,0 sau orice valoare de la 0,05 la 5', 'The weight of the hatch lines on paper: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5; it wins over the pen': 'Grosimea liniilor hașurii pe hârtie: 0,13 · 0,18 · 0,25 · 0,35 · 0,5 · 0,7 · 1,0 sau orice valoare de la 0,05 la 5; câștigă în fața peniței', 'The colour of the hatch; automatic: the category colour': 'Culoarea hașurii; automat: culoarea categoriei', 'A pen of the pen table (1 to 16), when no weight is set': 'O peniță din tabelul de penițe (1 până la 16), când nu e setată o grosime', 'The hatch in a lighter tone, as a background': 'Hașura într-un ton mai deschis, ca fundal', 'A second hatch under the first (a background and a foreground, as in Revit)': 'O a doua hașură sub prima (fundal și prim-plan, ca în Revit)', 'A change below goes to all of them, in one undo step.': 'O schimbare de mai jos merge la toate, într-un singur pas de anulare.', 'What is not set comes from the name, the category or the Object styles; a field’s arrow takes it back there.': 'Ce nu e setat vine de la nume, de la categorie sau de la Object styles; săgeata unui câmp îl readuce acolo.',
   "Real size": "Mărime reală",
   "Some real size": "Parțial mărime reală",
@@ -4262,7 +4271,6 @@ export const RO: Record<string, string> = {
   "Hatch origin, up (v)": "Originea hașurii, în sus (v)",
   "Where the element's hatches start, in its own frame: along its axis from the start, and up from its base in elevations and sections (to the left of the axis in a plan). Real-size patterns (bricks, tiles) start their courses here": "Unde încep hașurile elementului, în cadrul lui: de-a lungul axei de la start și în sus de la bază în fațade și secțiuni (spre stânga axei în plan). Modelele în mărime reală (cărămizi, plăci) își încep rândurile aici",
   "Up from the element's base in elevations and sections; to the left of the axis in a plan": "În sus de la baza elementului în fațade și secțiuni; spre stânga axei în plan",
-  "automatic": "automată",
   " automatic": " automată",
   "Back to automatic: the view's origin, or the element's base for a real-size pattern": "Înapoi la automat: originea vederii sau, la un model în mărime reală, baza elementului",
   "Reset the hatch origin": "Resetează originea hașurii",
@@ -4500,6 +4508,9 @@ export const RO: Record<string, string> = {
   "as the view": "ca vederea",
   "Tile": "Tile",
   "Batt": "Saltea",
+  // A drafted text's alignment (forum topic 148); a view's mark (report #167).
+  'Alignment': 'Aliniere', 'automatic': 'automat', 'Without a width, of its point; with one, in its box': 'Fără lățime, față de punctul lui; cu lățime, în caseta lui', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Ce scrie marcajul vederii: numele secțiunii sau al fațadei cu capul propriu Lapin, numărul ei pe planșă cu un simbol de cap, o trimitere (callout) sau un titlu de vedere. Gol: automat.',
+  'Click to place another · Space turns · Enter or Esc to finish': 'Clic pentru încă unul · Space îl rotește · Enter sau Esc termină',
 };
 
 /** Phrases with a number or a name in them. */
@@ -4515,6 +4526,7 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} tipuri de linie adăugate, ${m[2]} actualizate, ${m[3]} omise.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} parametri adăugați, ${m[2]} actualizați.`],
   [/^(\d+) shapes added, (\d+) updated\.$/, (m) => `${m[1]} forme adăugate, ${m[2]} actualizate.`],
+  [/^Nothing was exported: (.+)$/, (m) => `Nu s-a exportat nimic: ${m[1]}`],
   [/^Exported (.+): (\d+) records\.$/, (m) => `Exportat ${m[1]}: ${m[2]} înregistrări.`],
   [/^Exported (.+): (\d+) records, (\d+) bars laid by types left out \(they have no drawn shape\)\.$/, (m) => `Exportat ${m[1]}: ${m[2]} înregistrări, ${m[3]} bare puse de tipuri omise (nu au formă desenată).`],
   [/^Model imported: (\d+) materials to give a role\.$/, (m) => `Model importat: ${m[1]} materiale cărora să li se dea un rol.`],

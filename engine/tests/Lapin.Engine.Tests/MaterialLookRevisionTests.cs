@@ -7,7 +7,7 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Decision 674's leftovers of stage 3 (docs/plan-material-graphics.md): Lapin's standard at version 1.1 for a project made since
+/// Decision 682's leftovers of stage 3 (docs/plan-material-graphics.md): Lapin's standard at version 1.1 for a project made since
 /// (tones balanced: rigid insulation 1.5, blocks 1.25, concrete 0.75; floor coverings' surfaces), a project made before drawing
 /// by 1.0 exactly; rooms' floor finishes hatched by the project's standard in a new project, by their own table in an old one.
 /// </summary>
@@ -15,7 +15,7 @@ public class MaterialLookRevisionTests
 {
     static string Mat(Fixture f, string name) => f.Model.OfClass(IfcClass.Material).First(m => m.Name == name).Id;
 
-    /// <summary>A project made before decision 674: its mark taken off.</summary>
+    /// <summary>A project made before decision 682: its mark taken off.</summary>
     static void MakeOld(Fixture f) => f.Session.Edit("old", e =>
     {
         var p = Spatial.Project(e.Model)!;

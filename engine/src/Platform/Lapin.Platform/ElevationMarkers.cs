@@ -133,7 +133,7 @@ public static class ElevationMarkers
             var away = d * -1;
             var gap = r + 0.3 * r + (Math.Abs(away.Y) > 0.5 ? 0.6 * textHeight * c.Mm : 0);
             var anchor = away.X > 0.5 ? "start" : away.X < -0.5 ? "end" : "middle";
-            mk.Text(new PenText(centre + away * gap, v.Name, textHeight, Anchor: anchor, Baseline: "middle", Font: text.Font));
+            mk.Text(new PenText(centre + away * gap, SymbolSlots.MarkerText(v), textHeight, Anchor: anchor, Baseline: "middle", Font: text.Font));
             }
             mk.Snaps.AddRange([a, bEnd]);
             mk.Data = new JsonObject

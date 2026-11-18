@@ -539,7 +539,7 @@ public static class RoomFinishes
     ];
 
     /// <summary>
-    /// The same, at the object's real size (decision 671; a project made since, <c>hatchRev</c> 3): tiles and stone 600×600,
+    /// The same, at the object's real size (decision 679; a project made since, <c>hatchRev</c> 3): tiles and stone 600×600,
     /// wall tiles (faianță) 300×300, parquet and boards 150 mm; carpet, sheet flooring and poured floors have no size and keep
     /// their paper patterns. A project made before goes on with the paper ones (<see cref="MaterialHatchUpgrade.PaperSurfaces(IModelView)"/>).
     /// </summary>
@@ -564,7 +564,7 @@ public static class RoomFinishes
     /// The hatch a finish's floor (or ceiling) draws in plan: none when the part has no layers or its hatch is off; its own
     /// pattern when it has one; else the face layer's material's (the floor's top layer, the ceiling's last), the first going
     /// inwards whose surface pattern is set (Manage → Materials, Elevation) or suggested by its name; else diagonal lines.
-    /// In a project made since decision 674 (<see cref="MaterialStandards.NewLook(IModelView)"/>) the name's suggestion is the
+    /// In a project made since decision 682 (<see cref="MaterialStandards.NewLook(IModelView)"/>) the name's suggestion is the
     /// project's material standard's (its rule for a surface, at its scale and angle, Lapin's 1.1 naming floor coverings), not
     /// this table of its own; a project made before keeps the table.
     /// </summary>

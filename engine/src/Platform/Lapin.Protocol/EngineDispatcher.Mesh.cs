@@ -23,7 +23,7 @@ public sealed partial class EngineDispatcher
 
     /// <summary>The model as a 3D mesh (docs/plan-mesh-export.md): glb, gltf, usdz, usda or dae; a 3D view's visible elements, or all; a phase; edges; the origin.</summary>
     [MethodImpl(MethodImplOptions.NoInlining)]
-    (object? Result, Diff? Diff) ExportMesh(JsonObject p, Func<byte[], string, JsonObject> deliver)
+    (object? Result, Diff? Diff) ExportMesh(JsonObject p, Func<ArraySegment<byte>, string, JsonObject> deliver)
     {
         var options = Lapin.Mesh.MeshExportOptions.From(p);
         // The kinds and storeys chosen (the export survey's), left out as the hidden are.

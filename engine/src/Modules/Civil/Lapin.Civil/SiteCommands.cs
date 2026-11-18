@@ -104,6 +104,314 @@ public static class SiteCommands
             return new JsonObject { ["id"] = t.Id, ["area"] = attrsPts == null ? 0 : Math.Round(Math.Abs(ArcOutline.SignedArea(attrsPts, arcs)), 2) };
         });
 
+        // T1: An irregular boundary clipping the terrain's TIN, or none (back to convex hull); fromParcel copies its parcel.
+        r.Command("setBoundary", "Terrain boundary", (ctx, a) =>
+        {
+            var fromParcel = a["fromParcel"] is JsonValue fp && fp.TryGetValue<bool>(out var b) && b;
+            var given = a["points"] != null;
+            var first = given ? Args.Points(a) : null;
+            var t = first is { Count: > 0 } ? TerrainAt(ctx.Model, a, first[0]) : Terrain(ctx.Model, (string?)a["terrainId"] ?? (string?)a["id"]);
+            var attrs = t.CloneAttrs();
+            if (fromParcel)
+            {
+                var parcel = ArcOutline.CornersOf(t, "parcel");
+                if (parcel.Count < 3) throw new CommandException("The terrain has no parcel to copy.");
+                attrs[Terrains.BoundaryKey] = Terrains.ContourJson(parcel);
+                ArcOutline.Write(attrs, ArcOutline.RisesOf(t, "parcel", Terrains.ParcelArcs), Terrains.BoundaryArcs);
+            }
+            else if (given)
+            {
+                var (pts, arcs) = Terrains.OutlineArg(a, ArcOutline.RisesOf(t, Terrains.BoundaryKey, Terrains.BoundaryArcs), "A terrain boundary");
+                attrs[Terrains.BoundaryKey] = Terrains.ContourJson(pts);
+                ArcOutline.Write(attrs, arcs, Terrains.BoundaryArcs);
+            }
+            else
+            {
+                attrs.Remove(Terrains.BoundaryKey);
+                attrs.Remove(Terrains.BoundaryArcs);
+            }
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["id"] = t.Id };
+        });
+
+        // T1: Split a terrain into two along a line. The larger half stays the terrain (its GlobalId, relations and
+        // everything voiding it); the other half is a new terrain like it, and what lies in it (platforms, ditches,
+        // paths: by their outline's centroid or their path's midpoint) moves over to it. One undo step.
+        r.Command("splitTerrain", "Split terrain", (ctx, a) =>
+        {
+            var (p, q) = a["points"] != null
+                ? (Args.Points(a) is { Count: >= 2 } pts ? (pts[0], pts[1]) : throw new CommandException("A split line needs two points."))
+                : (Args.Point(a, "x1", "y1"), Args.Point(a, "x2", "y2"));
+            // The terrain named, else the one under the line's middle.
+            var t = (string?)a["id"] is { } tid ? Terrain(ctx.Model, tid) : TerrainAt(ctx.Model, a, (p + q) * 0.5);
+            var corners = ArcOutline.CornersOf(t, Terrains.BoundaryKey);
+            double[]? rises = corners.Count >= 3 ? ArcOutline.RisesOf(t, Terrains.BoundaryKey, Terrains.BoundaryArcs) : null;
+            if (corners.Count < 3) corners = Terrains.BoundaryLoop(Terrains.Of(t));
+            if (corners.Count < 3) throw new CommandException("The terrain has no boundary to split.");
+            var (left, right) = OutlineCuts.Split(corners, rises, p, q);
+            var (lc, lr) = ArcOutline.Check(left.Corners, left.Rises, "A terrain boundary");
+            var (rc, rr) = ArcOutline.Check(right.Corners, right.Rises, "A terrain boundary");
+            // The larger half keeps the terrain.
+            if (Math.Abs(Polygon2.SignedArea(rc)) > Math.Abs(Polygon2.SignedArea(lc))) (lc, lr, rc, rr) = (rc, rr, lc, lr);
+            JsonObject Half(IReadOnlyList<Vec2> bc, double[]? br)
+            {
+                var na = t.CloneAttrs();
+                na.Remove("parcel"); na.Remove(Terrains.ParcelArcs);
+                na[Terrains.BoundaryKey] = Terrains.ContourJson(bc);
+                ArcOutline.Write(na, br, Terrains.BoundaryArcs);
+                return na;
+            }
+            var keptAttrs = Half(lc, lr);
+            var otherAttrs = Half(rc, rr);
+            // What is placed on the terrain (spot levels, slope tags, subregions) goes to the half it lies in.
+            bool InOther(JsonNode? item) => PlacedAt(item) is { } at && !Polygon2.Contains(lc, at) && Polygon2.Contains(rc, at);
+            foreach (var key in PlacedKeys)
+            {
+                if (t.Attrs[key] is not JsonArray all) continue;
+                JsonArray Of(bool other) => new([.. all.Where(x => InOther(x) == other).Select(x => x?.DeepClone())]);
+                foreach (var (target, other) in new[] { (keptAttrs, false), (otherAttrs, true) })
+                    if (Of(other) is { Count: > 0 } mine) target[key] = mine; else target.Remove(key);
+            }
+            ctx.Replace(t.With(attrs: keptAttrs));
+            var second = PathEdits.AddLike(ctx, t, otherAttrs);
+            ctx.Replace(second.With(name: $"{t.Name} 2"));
+            // What the terrain relates (what voids it) goes to the half it lies in.
+            foreach (var rel in ctx.Model.RelationsOf(t.Id).Where(x => x.Relating == t.Id).ToList())
+            {
+                var moving = rel.Related.Where(id => ctx.Model.Get(id) is { } o && Anchor(o) is { } at && !Polygon2.Contains(lc, at) && Polygon2.Contains(rc, at)).ToList();
+                if (moving.Count == 0) continue;
+                var staying = rel.Related.Where(id => !moving.Contains(id)).ToList();
+                if (staying.Count == 0) ctx.ReplaceRelation(rel with { Relating = second.Id });
+                else
+                {
+                    ctx.ReplaceRelation(rel with { Related = staying });
+                    ctx.AddRelation(new Relation(ctx.NewId(), rel.Class, second.Id, moving));
+                }
+            }
+            return new JsonObject { ["ids"] = new JsonArray(t.Id, second.Id) };
+        });
+
+        // T1: Merge two or more terrains into one: the first keeps its GlobalId and takes the others' points,
+        // breaklines, strokes, existing surfaces and what voids them (platforms, ditches, paths); the others go.
+        r.Command("mergeTerrains", "Merge terrains", (ctx, a) =>
+        {
+            var ids = (a["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().Distinct().ToList() ?? [];
+            if (ids.Count < 2) throw new CommandException("Select two terrains at least to merge.");
+            var list = ids.Select(id => Terrain(ctx.Model, id)).ToList();
+            var primary = list[0];
+            var datum = primary.Num("datum");
+            var seen = new HashSet<(long, long)>();
+            var seenExisting = new HashSet<(long, long)>();
+            var pts = new List<Vec3>();
+            var existing = new List<Vec3>();
+            var breaklines = new JsonArray();
+            var sculpts = new JsonArray();
+            static (long, long) Key(Vec3 p) => ((long)Math.Round(p.X * 1e6), (long)Math.Round(p.Y * 1e6));
+            foreach (var tr in list)
+            {
+                // Heights are kept as model heights: a survey height z read from datum d is z - d + datum here.
+                var d = tr.Num("datum");
+                foreach (var p in Terrains.Points(tr))
+                    if (seen.Add(Key(p))) pts.Add(new Vec3(p.X, p.Y, p.Z - d + datum));
+                // Each one's existing surface: its snapshot, else its survey (what its own cut and fill were measured against).
+                foreach (var p in Terrains.ExistingPoints(tr))
+                    if (seenExisting.Add(Key(p))) existing.Add(new Vec3(p.X, p.Y, p.Z - d + datum));
+                foreach (var bl in Terrains.Breaklines(tr))
+                    breaklines.Add((JsonNode)Terrains.PointsJson(bl.Select(p => new Vec3(p.X, p.Y, p.Z - d + datum))));
+                // Strokes work in model heights (a flatten's level too), which the merge keeps: they carry over as they are.
+                foreach (var sc in Sculpt.Of(tr))
+                    sculpts.Add((JsonNode)sc.ToJson());
+            }
+            if (!Tin.Spans(pts)) throw new CommandException("The merged points need three that are not in a line.");
+            var attrs = primary.CloneAttrs();
+            attrs["points"] = Terrains.PointsJson(pts);
+            attrs.Remove(Terrains.BoundaryKey); attrs.Remove(Terrains.BoundaryArcs);
+            if (breaklines.Count > 0) attrs["breaklines"] = breaklines; else attrs.Remove("breaklines");
+            if (sculpts.Count > 0) attrs["sculpts"] = sculpts; else attrs.Remove("sculpts");
+            // Every one's spot levels, slope tags and subregions.
+            foreach (var key in PlacedKeys)
+            {
+                var all = new JsonArray([.. list.SelectMany(tr => (tr.Attrs[key] as JsonArray)?.Select(x => x?.DeepClone()) ?? [])]);
+                if (all.Count > 0) attrs[key] = all; else attrs.Remove(key);
+            }
+            // A snapshot on any of them: the merged one's existing surface is every one's, side by side.
+            if (list.Any(tr => tr.Attrs["existingPoints"] is JsonArray { Count: >= 3 })) attrs["existingPoints"] = Terrains.PointsJson(existing);
+            else attrs.Remove("existingPoints");
+            ctx.Replace(primary.With(attrs: attrs));
+            foreach (var tr in list.Skip(1))
+            {
+                foreach (var rel in ctx.Model.RelationsOf(tr.Id).Where(x => x.Relating == tr.Id).ToList())
+                    ctx.ReplaceRelation(rel with { Relating = primary.Id });
+                ctx.Remove(tr.Id);
+            }
+            return new JsonObject { ["id"] = primary.Id, ["points"] = pts.Count };
+        });
+
+        // T2: A slope tag on the terrain (point slope [x, y] or two-point grade line [x1, y1, x2, y2]).
+        r.Command("addSlope", "Slope tag", (ctx, a) =>
+        {
+            var hasLine = a["x2"] != null && a["y2"] != null;
+            var p1 = hasLine ? Args.Point(a, "x1", "y1") : Args.Point(a, "x", "y");
+            var t = TerrainAt(ctx.Model, a, p1);
+            var slopes = (t.Attrs["slopes"] as JsonArray)?.Select(x => x!.DeepClone()).ToList() ?? [];
+            if (hasLine)
+            {
+                var p2 = Args.Point(a, "x2", "y2");
+                if ((p2 - p1).Length < 0.05) throw new CommandException("A grade line needs two distinct points.");
+                slopes.Add(new JsonArray(p1.X, p1.Y, p2.X, p2.Y));
+            }
+            else slopes.Add(new JsonArray(p1.X, p1.Y));
+            var attrs = t.CloneAttrs();
+            attrs["slopes"] = new JsonArray([.. slopes]);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["count"] = slopes.Count };
+        });
+
+        r.Command("removeSlope", "Remove slope tag", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var slopes = Terrains.SlopeTags(t).ToList();
+            var attrs = t.CloneAttrs();
+            if (a["all"] is JsonValue av && av.TryGetValue<bool>(out var all) && all) slopes.Clear();
+            else if (Json.Number(a["index"]) is { } i && i >= 0 && i < slopes.Count) slopes.RemoveAt((int)i);
+            else if (a["x"] != null && slopes.Count > 0)
+            {
+                var p = Args.Point(a, "x", "y");
+                slopes.Remove(slopes.MinBy(s => (new Vec2(s[0], s[1]) - p).Length)!);
+            }
+            if (slopes.Count > 0) attrs["slopes"] = new JsonArray(slopes.Select(s => (JsonNode)new JsonArray([.. s.Select(v => (JsonNode)v)])).ToArray());
+            else attrs.Remove("slopes");
+            ctx.Replace(t.With(attrs: attrs));
+            return null;
+        });
+
+        // T5: Freeze the current ground as the existing surface for cut/fill comparison (or reset to the original survey).
+        r.Command("snapshotExisting", "Graded region snapshot", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var attrs = t.CloneAttrs();
+            if (a["reset"] is JsonValue rv && rv.TryGetValue<bool>(out var reset) && reset)
+            {
+                attrs.Remove("existingPoints");
+            }
+            else
+            {
+                var datum = t.Num("datum");
+                var current = Terrains.Of(t).Tin.Points.Select(p => new Vec3(p.X, p.Y, p.Z + datum)).ToList();
+                attrs["existingPoints"] = Terrains.PointsJson(current);
+            }
+            ctx.Replace(t.With(attrs: attrs));
+            return null;
+        });
+
+        // T3: Move a single terrain survey point (vertical dz or exact model elevation z, optionally x/y) in one undo step.
+        r.Command("moveTerrainPoint", "Move terrain point", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var pts = Terrains.Points(t);
+            var idx = Json.Number(a["index"]) is { } ni ? (int)ni : -1;
+            if (idx < 0 || idx >= pts.Count) throw new CommandException("There is no such terrain point.");
+            var datum = t.Num("datum");
+            var p = pts[idx];
+            var x = Json.Number(a["x"]) ?? p.X;
+            var y = Json.Number(a["y"]) ?? p.Y;
+            var z = Json.Number(a["z"]) is { } exact ? exact + datum : p.Z + (Json.Number(a["dz"]) ?? 0);
+            pts[idx] = new Vec3(x, y, z);
+            var attrs = t.CloneAttrs();
+            attrs["points"] = Terrains.PointsJson(pts);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["index"] = idx, ["elevation"] = Math.Round(z - datum, 4) };
+        });
+
+        // T3: Batch-set or shift multiple terrain points' elevations in one undo step.
+        r.Command("setTerrainPoints", "Set terrain points", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var pts = Terrains.Points(t);
+            var indices = (a["indices"] as JsonArray)?.Select(x => Json.Number(x) is { } n ? (int)n : -1).Where(i => i >= 0 && i < pts.Count).Distinct().ToList() ?? [];
+            if (indices.Count == 0) throw new CommandException("No terrain points selected.");
+            var datum = t.Num("datum");
+            var exact = Json.Number(a["z"]);
+            var dz = Json.Number(a["dz"]) ?? 0;
+            foreach (var i in indices)
+            {
+                var p = pts[i];
+                pts[i] = p with { Z = exact is { } z ? z + datum : p.Z + dz };
+            }
+            var attrs = t.CloneAttrs();
+            attrs["points"] = Terrains.PointsJson(pts);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["count"] = indices.Count };
+        });
+
+        // T3: Add a survey point to an existing terrain (samples ground if z omitted).
+        r.Command("addTerrainPoint", "Add terrain point", (ctx, a) =>
+        {
+            var xy = Args.Point(a, "x", "y");
+            var t = TerrainAt(ctx.Model, a, xy);
+            var pts = Terrains.Points(t);
+            var datum = t.Num("datum");
+            var z = Json.Number(a["z"]) is { } exact ? exact + datum : (Terrains.Of(t).ElevationAt(xy.X, xy.Y) ?? 0) + datum;
+            pts.Add(new Vec3(xy.X, xy.Y, z));
+            var attrs = t.CloneAttrs();
+            attrs["points"] = Terrains.PointsJson(pts);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["index"] = pts.Count - 1, ["points"] = pts.Count };
+        });
+
+        // T3: Remove a survey point from a terrain.
+        r.Command("removeTerrainPoint", "Remove terrain point", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var pts = Terrains.Points(t);
+            var idx = Json.Number(a["index"]) is { } ni ? (int)ni : -1;
+            if (idx < 0 || idx >= pts.Count) throw new CommandException("There is no such terrain point.");
+            pts.RemoveAt(idx);
+            if (!Tin.Spans(pts)) throw new CommandException("The terrain needs at least three points that are not in a line.");
+            var attrs = t.CloneAttrs();
+            attrs["points"] = Terrains.PointsJson(pts);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["points"] = pts.Count };
+        });
+
+        // T4: A material sub-region on the terrain (changes surface material without modifying elevation).
+        r.Command("addSubregion", "Terrain subregion", (ctx, a) =>
+        {
+            var pts = Args.Points(a);
+            if (pts.Count < 3) throw new CommandException("A subregion needs three corners at least.");
+            var t = TerrainAt(ctx.Model, a, pts[0]);
+            var (outline, arcs) = Terrains.OutlineArg(a, null, "A subregion");
+            var list = (t.Attrs["subregions"] as JsonArray)?.Select(x => x!.DeepClone()).ToList() ?? [];
+            var id = ctx.NewId();
+            var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Subregion {list.Count + 1}";
+            var mat = Materials.Ensure(ctx, (string?)a["material"] ?? "Gravel", "#9e9b8f");
+            var obj = new JsonObject
+            {
+                ["id"] = id, ["name"] = name,
+                ["contour"] = Terrains.ContourJson(outline),
+                ["material"] = mat.Id,
+            };
+            if (arcs != null) obj["arcs"] = new JsonArray([.. arcs.Select(r0 => (JsonNode)Math.Round(r0, 9))]);
+            list.Add(obj);
+            var attrs = t.CloneAttrs();
+            attrs["subregions"] = new JsonArray([.. list]);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["id"] = id, ["terrainId"] = t.Id };
+        });
+
+        r.Command("removeSubregion", "Remove subregion", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var list = (t.Attrs["subregions"] as JsonArray)?.OfType<JsonObject>().Select(x => x.DeepClone().AsObject()).ToList() ?? [];
+            if (a["all"] is JsonValue av && av.TryGetValue<bool>(out var all) && all) list.Clear();
+            else if ((string?)a["subregionId"] is { } sid) list.RemoveAll(x => (string?)x["id"] == sid);
+            else if (Json.Number(a["index"]) is { } idx && idx >= 0 && idx < list.Count) list.RemoveAt((int)idx);
+            var attrs = t.CloneAttrs();
+            if (list.Count > 0) attrs["subregions"] = new JsonArray([.. list.Cast<JsonNode>()]); else attrs.Remove("subregions");
+            ctx.Replace(t.With(attrs: attrs));
+            return null;
+        });
+
         // What the colours mean, and how much ground each band covers.
         r.Query("analysis", (q, a) =>
         {
@@ -234,6 +542,35 @@ public static class SiteCommands
 
     static string StoreyId(IModelView m, JsonObject a) =>
         (string?)a["storeyId"] ?? Spatial.Storeys(m).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+
+    /// <summary>The terrain's lists of things placed on it in plan, which a split shares out and a merge gathers.</summary>
+    static readonly string[] PlacedKeys = ["spots", "slopes", "subregions"];
+
+    /// <summary>Where an item of those lists lies: a point [x, y], a grade line's middle [x1, y1, x2, y2], an outline's centroid.</summary>
+    static Vec2? PlacedAt(JsonNode? item)
+    {
+        if (item is JsonObject o) return PointLists.Xy(o["contour"]) is { Count: >= 3 } c ? Polygon2.Centroid(c) : null;
+        if (item is not JsonArray a || a.Count < 2) return null;
+        var v = a.Select(x => Json.Number(x) ?? double.NaN).ToArray();
+        if (!v.All(double.IsFinite)) return null;
+        return v.Length >= 4 ? new Vec2((v[0] + v[2]) / 2, (v[1] + v[3]) / 2) : new Vec2(v[0], v[1]);
+    }
+
+    /// <summary>Where an element on a terrain lies in plan, to tell which half of a split it goes to: its outline's centroid, else its path's midpoint.</summary>
+    static Vec2? Anchor(Entity e)
+    {
+        if (Terrains.Contour(e) is { Count: >= 3 } c) return Polygon2.Centroid(c);
+        var path = Terrains.Contour(e, "path");
+        if (path.Count < 2) return path.Count == 1 ? path[0] : null;
+        var half = Polyline2.Length(path) / 2;
+        for (var i = 0; i + 1 < path.Count; i++)
+        {
+            var len = (path[i + 1] - path[i]).Length;
+            if (half <= len && len > 0) return path[i] + (path[i + 1] - path[i]) * (half / len);
+            half -= len;
+        }
+        return path[^1];
+    }
 
     static Entity Terrain(IModelView m, string? id) =>
         m.Get(id ?? "") is { Class: IfcClass.GeographicElement } t && t.PredefinedType == Terrains.Predefined ? t : throw new CommandException("There is no such terrain.");

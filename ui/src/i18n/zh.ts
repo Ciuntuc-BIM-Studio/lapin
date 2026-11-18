@@ -652,6 +652,9 @@ export const ZH: Record<string, string> = {
   "Project base point": "项目基点",
   "Survey point (map)": "测量点（地图）",
   "Quadrant": "象限点",
+  "Wall axis": "墙轴线",
+  "No snap (for this point)": "无捕捉（此点）",
+  "Snap settings…": "捕捉设置…",
   "Perpendicular": "垂足",
   "Nearest": "最近点",
   "Coordinates at the cursor": "光标处的坐标",
@@ -1123,6 +1126,9 @@ export const ZH: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': '笔刷工具每点击一次为一笔，可用 Ctrl Z 撤销；地形的笔触可在检查器中清除。',
   // Site tools, stage 2
   'Spot level': '点标高', 'Spot levels': '点标高', 'Parcel': '地块', 'Export LandXML': '导出 LandXML', 'Analysis': '分析', 'slopes': '坡度',
+  'Subregion': '子区域', 'Subregions': '子区域', 'edit in 3D': '在三维中编辑', 'done editing 3D': '完成三维编辑', 'Cut slope': '挖方边坡', 'Fill slope': '填方边坡', 'Survey point height': '测量点高程', 'Drag a point\'s grip up or down in the 3D view.': '在三维视图中上下拖动点的夹点。', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': '夹点仅显示在最靠近三维视图中心的 400 个点上：移动视图以到达其他点。',
+  'Split terrain': '拆分地形', 'Merge terrains': '合并地形', 'Select two terrains or more to merge them.': '请选择两个或更多地形进行合并。',
+  'Terrain boundary': '地形边界', 'Slope tag': '坡度标注', 'Slope tags': '坡度标注', 'Boundary': '边界', 'clipped': '已裁剪', 'convex hull': '凸包', 'from parcel': '取自地块', 'Cut/fill grid': '挖填网格', 'Graded region': '整平区域', 'reset to survey': '恢复为测量数据', 'snapshot existing': '快照现状地面',
   'cut and fill': '挖填方', 'elevations': '标高', 'drawn': '已绘制', 'remove': '移除', 'Planting schedule': '种植明细表',
   // The engine in the browser.
   'In the browser': '在浏览器中',
@@ -2224,6 +2230,8 @@ export const ZH: Record<string, string> = {
   // An elevation's marker moved into the building clips it (decision 460)
   "Drag: move the marker (moved into the building, the elevation starts seeing at its line)": "拖动：移动标记（移入建筑内时，立面从标记线开始可见）", "Move elevation marker": "移动立面标记", "Only an elevation's marker is moved this way.": "只有立面标记可以这样移动。", "A marker's place is in metres.": "标记的位置以米为单位。",
   "Letter shortcuts (Revit-style)": "字母快捷键（Revit 风格）",
+  "A click outside an input box accepts it": "在输入框外单击即接受输入",
+  "Off by default. On: with a value typed in the box by the cursor or on the command line, a left click elsewhere accepts it as Enter does, and that click is used up (it places no point of its own). Esc or a right click throws the typed value away instead. Fields in the Properties panel already take their value when you click away.": "默认关闭。开启后：当光标旁的输入框或命令行中已输入数值时，在其他位置单击左键会像回车一样接受它，该次单击被消耗（不会另外放置一个点）。Esc 或单击右键则放弃已输入的值。“属性”面板中的字段在点击别处时本来就会提交其值。",
   "Typed letters such as WA start a tool. Off: letters always go to the command line, and Enter or Space runs a command, an alias, or the command whose letters they are. The ` key gives the command line all typing, whichever is on. Your own aliases are in Keyboard shortcuts…": "键入的字母（如 WA）会启动工具。关闭后：字母始终进入命令行，按 Enter 或空格运行命令、别名，或字母所对应的命令。无论开关如何，` 键都会让命令行接管全部键入。你自己的别名在键盘快捷键…中设置。",
   "Keyboard": "键盘",
   "Command line: take all typing": "命令行：接管全部键入",
@@ -3163,6 +3171,7 @@ export const ZH: Record<string, string> = {
   "Export CSV…": "导出 CSV…",
   "Export standards…": "导出标准…",
   "Exported ${saved}.": "已导出 ${saved}。",
+  "The engine sent back no file.": "引擎没有返回文件。",
   "Factor of Ø": "Ø 系数",
   "Find a code or a title": "查找代码或标题",
   "Functions:": "函数：",
@@ -4282,7 +4291,7 @@ export const ZH: Record<string, string> = {
   "Type properties": "类型属性",
   "Also write type properties on each occurrence": "同时将类型属性写到每个实例上",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "该类型的每面墙都有这些参数（IsExternal、FireRating）；实例默认值是每面墙自己的副本",
-  // Material graphics configurator (decision 670, stage 0b)
+  // Material graphics configurator (decision 678, stage 0b)
   'Lines': '线条', 'Weight, mm': '线宽，毫米', 'Fill opacity': '填充不透明度', 'Second pattern': '第二图案', 'Cut outline': '剖切轮廓', 'Separator lines': '分隔线', 'Strip': '条带', 'facade|Elevation': '立面', 'material|Band': '带', 'Clear selection': '清除选择', 'Copy graphics from…': '复制图形自…', 'from the pen': '来自笔', 'Opacity, per cent': '不透明度，百分比', 'Automatic: click to choose a colour': '自动：点击以选择颜色', 'Scale of the sample': '样例比例', 'Preview of the material graphics': '材料图形预览', 'A strip of the material between two lines': '两条线之间的材料条带', 'A band between two layers, with the lines that separate them': '两层之间的带状区域，带有分隔它们的线', 'Tick several materials to change their graphics together': '勾选多个材料以一起更改其图形', 'Select this material with others': '将此材料与其他材料一起选择', 'Its hatches, fills and lines for the cut in a section, in a plan and for the elevation: one undo step': '其剖面中的剖切、平面中的剖切和立面的填充图案、填充和线条：一个撤销步骤', 'Paper millimetres: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5': '纸面毫米：0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0，或 0.05 到 5 之间的任意值', 'The weight of the hatch lines on paper: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5; it wins over the pen': '纸面上填充图案线条的线宽：0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0，或 0.05 到 5 之间的任意值；优先于笔', 'The colour of the hatch; automatic: the category colour': '填充图案的颜色；自动：类别的颜色', 'A pen of the pen table (1 to 16), when no weight is set': '笔表中的一支笔（1 至 16），未设置线宽时使用', 'The hatch in a lighter tone, as a background': '填充图案用较浅的色调，作为背景', 'A second hatch under the first (a background and a foreground, as in Revit)': '第一个图案下的第二个图案（背景与前景，如 Revit）', 'A change below goes to all of them, in one undo step.': '下面的更改会应用于所有这些材料，仅一个撤销步骤。', 'What is not set comes from the name, the category or the Object styles; a field’s arrow takes it back there.': '未设置的内容来自名称、类别或对象样式；字段的箭头会将其恢复到那里。',
   "Real size": "真实尺寸",
   "Some real size": "部分为真实尺寸",
@@ -4300,7 +4309,6 @@ export const ZH: Record<string, string> = {
   "Hatch origin, up (v)": "填充原点，向上 (v)",
   "Where the element's hatches start, in its own frame: along its axis from the start, and up from its base in elevations and sections (to the left of the axis in a plan). Real-size patterns (bricks, tiles) start their courses here": "构件填充的起点，位于其自身坐标系：沿其轴线从起点算起，以及在立面和剖面中从其底部向上（平面中为轴线左侧）。真实尺寸图案（砖、瓷砖）的排列从此处开始",
   "Up from the element's base in elevations and sections; to the left of the axis in a plan": "在立面和剖面中从构件底部向上；平面中为轴线左侧",
-  "automatic": "自动",
   " automatic": " 自动",
   "Back to automatic: the view's origin, or the element's base for a real-size pattern": "恢复为自动：视图的原点，或真实尺寸图案时为构件的底部",
   "Reset the hatch origin": "重置填充原点",
@@ -4538,6 +4546,9 @@ export const ZH: Record<string, string> = {
   "as the view": "同视图",
   "Tile": "平铺",
   "Batt": "卷材",
+  // A drafted text's alignment (forum topic 148); a view's mark (report #167).
+  'Alignment': '对齐', 'automatic': '自动', 'Without a width, of its point; with one, in its box': '无宽度时相对于其插入点；有宽度时在其文本框内', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': '视图标记所写的内容：使用 Lapin 自带标头时为剖面或立面的名称；使用标头符号、详图索引或视图标题时为其在图纸上的编号。留空：自动。',
+  'Click to place another · Space turns · Enter or Esc to finish': '单击再放置一个 · 空格键旋转 · Enter 或 Esc 结束',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -4552,6 +4563,7 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `已添加 ${m[1]} 个线型，已更新 ${m[2]} 个，已跳过 ${m[3]} 个。`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `已添加 ${m[1]} 个参数，已更新 ${m[2]} 个。`],
   [/^(\d+) shapes added, (\d+) updated\.$/, (m) => `已添加 ${m[1]} 个形状，已更新 ${m[2]} 个。`],
+  [/^Nothing was exported: (.+)$/, (m) => `未导出任何内容：${m[1]}`],
   [/^Exported (.+): (\d+) records\.$/, (m) => `已导出 ${m[1]}：${m[2]} 条记录。`],
   [/^Exported (.+): (\d+) records, (\d+) bars laid by types left out \(they have no drawn shape\)\.$/, (m) => `已导出 ${m[1]}：${m[2]} 条记录，忽略 ${m[3]} 根由类型布置的钢筋（它们没有绘制形状）。`],
   [/^Model imported: (\d+) materials to give a role\.$/, (m) => `模型已导入：${m[1]} 种材质待指定角色。`],

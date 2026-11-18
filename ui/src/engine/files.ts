@@ -14,7 +14,7 @@ import { LONG_TIMEOUT_MS } from './client';
 import { begin, editableText, end, surveyIfc, type EditableReport } from './ifcImport';
 import { sdnfSummary, type SdnfImportReport } from '../modules/steel/sdnfReport';
 import { projectTypesFile } from '../modules/core/projectTypes';
-import { emptyPane, notify, select, useUi } from '../app/store';
+import { emptyPane, notify, notifyProblem, select, useUi } from '../app/store';
 import { usePrefs } from '../app/prefs';
 import { applyNewProjectStandard } from './newProjectStandard';
 import { fitAfterImport, poseKey } from '../viewport/camera';
@@ -450,25 +450,44 @@ export async function guardWindowClose(): Promise<void> {
  */
 const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step', glb: 'model/gltf-binary', gltf: 'model/gltf+json', usdz: 'model/vnd.usdz+zip', usda: 'model/vnd.usda', dae: 'model/vnd.collada+xml', frag: 'application/octet-stream', bcfzip: 'application/zip', bcf: 'application/zip', zip: 'application/zip', csv: 'text/csv', json: 'application/json', html: 'text/html' };
 
-export async function exportFile(method: string, args: Record<string, unknown>, name: string, ext: string): Promise<void> {
+export async function exportFile(method: string, args: Record<string, unknown>, name: string, ext: string): Promise<boolean> {
+  let target: SaveTarget | null = null;
   try {
     if (isDesktop()) {
       const dialog = await import('@tauri-apps/plugin-dialog');
       const path = await dialog.save({ defaultPath: name, filters: [{ name: ext.toUpperCase(), extensions: [ext] }] });
-      if (typeof path !== 'string') return;
+      if (typeof path !== 'string') return false;
       await engine.call(method, { ...args, path }, { timeoutMs: LONG_TIMEOUT_MS });
       notify(`Exported ${path.split(/[\\/]/).pop()}.`);
-      return;
+      return true;
     }
     // Asked before the engine works: the picker needs the click that began the export, which a long export outlives.
-    const target = await chooseTarget(name, MIME[ext] ?? 'application/octet-stream');
-    if (!target) return;
-    const r = await engine.call<{ data: string }>(method, args, { timeoutMs: LONG_TIMEOUT_MS });
-    await writeTarget(target, fromBase64(r.data), MIME[ext] ?? 'application/octet-stream');
+    target = await chooseTarget(name, MIME[ext] ?? 'application/octet-stream');
+    if (!target) return false;
+    // The file's bytes as they are in the reply's frame (`binary`), not as base64 text, which a large export outgrew (report #156).
+    const r = await engine.call<{ data: string | Uint8Array }>(method, { ...args, binary: true }, { timeoutMs: LONG_TIMEOUT_MS });
+    const bytes = fileBytes(r?.data);
+    if (!bytes) throw new Error('The engine sent back no file.');
+    await writeTarget(target, bytes, MIME[ext] ?? 'application/octet-stream');
     notify(`Exported ${target.name}.`);
+    return true;
   } catch (e) {
-    notify(e instanceof Error ? e.message : String(e));
+    // The browser's save picker made the file when it was chosen: a failed export takes it away again, so no empty file is left behind.
+    if (target?.handle) await discardTarget(target.handle);
+    notifyProblem(`Nothing was exported: ${e instanceof Error ? e.message : String(e)}`);
+    return false;
   }
+}
+
+/** An export's bytes from its reply: a buffer of the frame (asked with `binary`), or base64 from a call that has no other way; null when none came. */
+export function fileBytes(data: unknown): Uint8Array | null {
+  const bytes = data instanceof Uint8Array ? data : typeof data === 'string' ? fromBase64(data) : null;
+  return bytes && bytes.length > 0 ? bytes : null;
+}
+
+/** The file the save picker made for an export that then failed, removed (where the browser can: Chrome and Edge since 110). */
+export async function discardTarget(handle: FileSystemFileHandle): Promise<void> {
+  try { await (handle as FileSystemFileHandle & { remove?: () => Promise<void> }).remove?.(); } catch { /* left as it is: the notice says nothing was exported */ }
 }
 
 /**

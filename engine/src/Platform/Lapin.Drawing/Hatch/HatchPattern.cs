@@ -12,7 +12,7 @@ public sealed record HatchLineFamily(double AngleDeg, Vec2 Origin, double DeltaX
 }
 
 /// <summary>
-/// What a pattern's numbers measure (decision 671): <see cref="Paper"/>, millimetres as printed, the same on paper at any
+/// What a pattern's numbers measure (decision 679): <see cref="Paper"/>, millimetres as printed, the same on paper at any
 /// scale (a cut's 45° lines); <see cref="Model"/>, millimetres of the real object, so the pattern keeps its real size and
 /// gets finer on paper as the scale gets smaller (a brick's courses, a floor's tiles). <c>.pat</c>: <c>;%TYPE=MODEL</c>.
 /// </summary>
@@ -64,7 +64,7 @@ public sealed record HatchTile(double Width, double Height, IReadOnlyList<TileLi
 /// angle, x-origin, y-origin, delta-x, delta-y [, dash1, dash2, ...]
 /// </code>
 /// <c>;</c> starts a comment. A pattern without line families is a solid fill.
-/// Two of the format's public comment headers are read (decision 671): <c>;%TYPE=MODEL</c> (or <c>DRAFTING</c>) after a
+/// Two of the format's public comment headers are read (decision 679): <c>;%TYPE=MODEL</c> (or <c>DRAFTING</c>) after a
 /// pattern's header, or before it, marks the pattern's units (<see cref="HatchUnits"/>; none: paper), and
 /// <c>;%UNITS=INCH</c> anywhere before a pattern turns its lengths into millimetres (<c>MM</c>, the default, keeps them).
 /// The writer writes <c>;%TYPE=MODEL</c> after a model pattern's header; paper patterns as before.

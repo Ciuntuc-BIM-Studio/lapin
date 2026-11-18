@@ -269,7 +269,7 @@ public static class Pens
         {
             if (m?.HidePolygons.Contains(i) == true) continue;
             var p = d.Cuts[i];
-            // A subcategory's own fill (decision 674) over the category's.
+            // A subcategory's own fill (decision 682) over the category's.
             var look = m != null && m.Graphics.TryGetValue(i, out var kg) ? kg : null;
             var keeps = look?.KeepsFill == true;
             // A view filter's own fill (stage 5) over its colour for the element's lines, paled.
@@ -291,7 +291,7 @@ public static class Pens
         var hatches = new List<MaterialHatch>(m?.Hatches ?? []);
         if (o.Categories != null)
         {
-            // A band whose subcategory gives its own cut hatch (decision 674) keeps it: the subcategory is the more particular.
+            // A band whose subcategory gives its own cut hatch (decision 682) keeps it: the subcategory is the more particular.
             hatches = hatches.Where(h => !(h.Background && h.Look?.KeepsHatch != true && Cat(h.Class)?.CutHatch != null))
                 .Select(h => h.Look?.KeepsHatch != true && Cat(h.Class)?.CutHatch is { } ch ? h with { Pattern = ch, Scale = 1, Units = null } : h).ToList();
             for (var i = 0; i < d.Cuts.Count; i++)
@@ -305,7 +305,7 @@ public static class Pens
             var pattern = HatchLibrary.Find(h.Pattern, o.Patterns);
             if (pattern == null) continue;
             var category = Cat(h.Class)?.LineColor ?? "#000000";
-            // The material's own colour, weight, line type, opacity and halftone (decision 670) over the category's and Lapin's;
+            // The material's own colour, weight, line type, opacity and halftone (decision 678) over the category's and Lapin's;
             // a background hatch its own colour and weight, under the hatch (its pens keyed apart: Ordered lays them first).
             var look = h.Look;
             var bg = h.Background ? look?.Background : null;
@@ -325,14 +325,14 @@ public static class Pens
             if (pattern.Solid)
             {
                 // A solid pattern is the band's fill: in its fill colour (the category's, else the material's), else in ink (forum topic 88);
-                // a hatch colour the material gives over all of them (decision 670).
+                // a hatch colour the material gives over all of them (decision 678).
                 var solid = look?.HatchColor != null || bg?.HatchColor != null ? color : ((look?.KeepsFill == true ? null : Cat(h.Class)?.FillColor) ?? h.Fill ?? category);
                 if (look != null && look.HatchColor == null && bg?.HatchColor == null) solid = ResolvedMaterial.Ink(solid, look.Halftone, look.HatchOpacity);
                 Get($"{(h.Background ? "solidbg" : "solid")}:" + solid, () => new Pen(PenLayer.Hatch, null, 0, solid, null)).Loops.AddRange(h.Loops);
                 continue;
             }
             // Paper patterns are paper millimetres at 1:1 (at 1:scale a millimetre is scale/1000 m), model ones the object's
-            // (decision 671); a model pattern too dense on paper for the view's style is not drawn.
+            // (decision 679); a model pattern too dense on paper for the view's style is not drawn.
             if (HatchScale.Lay(pattern, o.Scale, h.Scale, h.Angle, h.Origin, Math.Max(0, budget), h.Units, o.MinHatchSpacing) is not { } laid) continue;
             var (segs, _) = HatchFill.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), pattern, laid);
             budget -= segs.Count;
@@ -341,7 +341,7 @@ public static class Pens
         }
 
         var separations = Separations(d);
-        // The materials' own cut and layer lines (decision 670), by the line they fall on; none set, none looked for.
+        // The materials' own cut and layer lines (decision 678), by the line they fall on; none set, none looked for.
         var materialLines = m != null && m.Graphics.Values.Any(g => g.CutLine != null || g.SeparatorLine != null) ? MaterialLines(d, m, separations) : null;
         for (var i = 0; i < d.Lines.Count; i++)
         {
@@ -447,7 +447,7 @@ public static class Pens
     }
 
     /// <summary>
-    /// The line each cut line takes from the materials of the bands it bounds (decision 670): a line between two bands of
+    /// The line each cut line takes from the materials of the bands it bounds (decision 678): a line between two bands of
     /// one element (or of two joined elements of one class, <see cref="Separations"/>) their <see cref="ResolvedMaterial.SeparatorLine"/>,
     /// any other cut line their <see cref="ResolvedMaterial.CutLine"/>. Where two materials meet and both set one, the
     /// heavier line wins (a weight set over none), then the material whose name sorts first, so a line is drawn once, the
@@ -552,7 +552,7 @@ public static class Pens
             p.Segments.AddRange(merged);
         }
 
-        // Fills first, then hatches (the materials' background hatches under their own, decision 670), then lines: beyond and
+        // Fills first, then hatches (the materials' background hatches under their own, decision 678), then lines: beyond and
         // hidden, overhead, seen, membranes, cut.
         static double Order(string key, Pen p) => p.Layer switch
         {

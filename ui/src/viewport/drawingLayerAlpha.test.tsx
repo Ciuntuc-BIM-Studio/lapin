@@ -1,4 +1,4 @@
-/** A pen's #rrggbbaa is drawn as its colour at its opacity (material graphics, decision 670). */
+/** A pen's #rrggbbaa is drawn as its colour at its opacity (material graphics, decision 678). */
 
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';

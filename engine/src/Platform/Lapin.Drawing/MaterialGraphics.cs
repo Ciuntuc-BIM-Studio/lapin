@@ -7,7 +7,7 @@ using Lapin.Model;
 namespace Lapin.Drawing;
 
 /// <summary>
-/// A line a material sets for itself in a kind of view (decision 670): its colour (#rrggbb), weight (paper mm) and line
+/// A line a material sets for itself in a kind of view (decision 678): its colour (#rrggbb), weight (paper mm) and line
 /// type (a project's or a built-in one's name); a field left out keeps what the view's Object styles give.
 /// </summary>
 public sealed record MaterialLine(string? Color = null, double? Weight = null, string? LineType = null)
@@ -31,7 +31,7 @@ public sealed record MaterialLine(string? Color = null, double? Weight = null, s
 }
 
 /// <summary>
-/// A second hatch drawn under a material's own (decision 670, Revit's background pattern): its pattern, scale, angle,
+/// A second hatch drawn under a material's own (decision 678, Revit's background pattern): its pattern, scale, angle,
 /// colour (#rrggbb, ink when unset) and line weight (paper mm, the hatch pen when unset).
 /// </summary>
 public sealed record BackgroundHatch(string? Hatch = null, double? HatchScale = null, double? HatchAngle = null, string? HatchColor = null, double? HatchWeight = null)
@@ -57,7 +57,7 @@ public sealed record BackgroundHatch(string? Hatch = null, double? HatchScale = 
 
 /// <summary>
 /// A material as one kind of view draws it: a hatch (a pattern name, or none), its scale, a fill colour, a hatch pen; and
-/// (decision 670) the hatch's own colour, weight (paper mm, over the pen), line type, opacity (0–100) and halftone, the
+/// (decision 678) the hatch's own colour, weight (paper mm, over the pen), line type, opacity (0–100) and halftone, the
 /// fill's opacity, a background hatch under the hatch, and the lines of its cut (<see cref="CutLine"/>: its outline;
 /// <see cref="SeparatorLine"/>: against the neighbouring layers of its element). Null: not given.
 /// </summary>
@@ -72,16 +72,16 @@ public sealed record ViewGraphics(string? Hatch = null, double? HatchScale = nul
     public BackgroundHatch? BackgroundHatch { get; init; }
     public MaterialLine? CutLine { get; init; }
     public MaterialLine? SeparatorLine { get; init; }
-    /// <summary>The units its hatch lies in over the pattern's own (decision 671, rare): paper or model; null: the pattern's.</summary>
+    /// <summary>The units its hatch lies in over the pattern's own (decision 679, rare): paper or model; null: the pattern's.</summary>
     public HatchUnits? HatchUnits { get; init; }
 
     /// <summary>
-    /// Its steps by scale (decision 672, <see cref="ScaleStep"/>): in order, the first whose range holds a view's scale lays its
+    /// Its steps by scale (decision 680, <see cref="ScaleStep"/>): in order, the first whose range holds a view's scale lays its
     /// fields over these, field by field; null: none (the material looks the same at every scale, as before).
     /// </summary>
     public IReadOnlyList<ScaleStep>? ByScale { get; init; }
 
-    /// <summary>The fields decision 670 added, beside the first six.</summary>
+    /// <summary>The fields decision 678 added, beside the first six.</summary>
     public static readonly string[] FlexFields = ["hatchColor", "hatchWeight", "hatchLineType", "hatchOpacity", "halftone", "fillOpacity", "backgroundHatch", "cutLine", "separatorLine"];
 
     public static ViewGraphics? From(JsonNode? n) => n is JsonObject o
@@ -113,7 +113,7 @@ public sealed record ViewGraphics(string? Hatch = null, double? HatchScale = nul
 }
 
 /// <summary>
-/// A step of a material's graphics by scale (decision 672): from 1:<see cref="From"/> to 1:<see cref="To"/>, both scale
+/// A step of a material's graphics by scale (decision 680): from 1:<see cref="From"/> to 1:<see cref="To"/>, both scale
 /// denominators and both held (from 100: 1:100 and every smaller scale, 1:200, 1:500; to 50: 1:50 and every larger one, 1:20);
 /// one left out is open. <see cref="Fields"/>: any of a kind of view's graphics (hatch, fill, pen, colours, weights, lines…),
 /// laid over the material's own field by field where the step holds.
@@ -167,26 +167,26 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
     /// <summary>The material's lines against its element's other layers, over the Object styles' layer lines; null: theirs.</summary>
     public MaterialLine? SeparatorLine { get; init; }
 
-    /// <summary>The units its hatch lies in over the pattern's own (decision 671): paper or model; null: the pattern's.</summary>
+    /// <summary>The units its hatch lies in over the pattern's own (decision 679): paper or model; null: the pattern's.</summary>
     public HatchUnits? HatchUnits { get; init; }
 
-    /// <summary>The step by scale it was resolved with (decision 672): the kind of view whose steps gave it and its index; null: none.</summary>
+    /// <summary>The step by scale it was resolved with (decision 680): the kind of view whose steps gave it and its index; null: none.</summary>
     public (string Kind, int Index)? Step { get; init; }
 
     /// <summary>
-    /// What its cut bands join by in place of its name (decision 672: a view's small-scale cut, whose solid bands of one
+    /// What its cut bands join by in place of its name (decision 680: a view's small-scale cut, whose solid bands of one
     /// colour read as one area); null: its name, as before.
     /// </summary>
     public string? JoinAs { get; init; }
 
-    /// <summary>The material standard that gave what the material does not set itself, when not Lapin's (decision 673); null: Lapin's.</summary>
+    /// <summary>The material standard that gave what the material does not set itself, when not Lapin's (decision 681); null: Lapin's.</summary>
     public string? Standard { get; init; }
 
-    /// <summary>The view style's material graphics set whose entry lay over it (decision 674), its id; null: none.</summary>
+    /// <summary>The view style's material graphics set whose entry lay over it (decision 682), its id; null: none.</summary>
     public string? GraphicsSet { get; init; }
 
     /// <summary>
-    /// Whether a view's subcategory graphics gave its cut hatch (decision 674): the category's cut hatch in Visibility / Graphics
+    /// Whether a view's subcategory graphics gave its cut hatch (decision 682): the category's cut hatch in Visibility / Graphics
     /// does not lay itself over it, the subcategory being the more particular of the two.
     /// </summary>
     public bool KeepsHatch { get; init; }
@@ -202,7 +202,7 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
     /// <summary>The names of the view filters whose hatch or fill lay over it (stage 5); null: none.</summary>
     public string? Filters { get; init; }
 
-    /// <summary>Whether it sets anything decision 670 added (a drawing of materials that set none is drawn exactly as before).</summary>
+    /// <summary>Whether it sets anything decision 678 added (a drawing of materials that set none is drawn exactly as before).</summary>
     public bool Flex => HatchColor != null || HatchWeight != null || HatchLineType != null || HatchOpacity != null || Halftone || FillOpacity != null || Background != null || CutLine != null || SeparatorLine != null
         || KeepsHatch || KeepsFill;
 
@@ -263,7 +263,7 @@ public static class MaterialGraphics
 
     /// <summary>
     /// What a name suggests for a cut (decision 460, after the tester's request of decision 456) is now data: the rules of the
-    /// built-in standard „Lapin" (<see cref="MaterialStandard.Lapin"/>, MaterialStandards/lapin.json, decision 673), with exactly the
+    /// built-in standard „Lapin" (<see cref="MaterialStandard.Lapin"/>, MaterialStandards/lapin.json, decision 681), with exactly the
     /// results of the table it replaced. Brick, masonry and stone 45° lines (MASONRY); concrete blocks, aerated concrete and CMU a
     /// diagonal crosshatch (BLOCK); concrete the speckle (CONCRETE); rigid insulation RIGID, batts and wool BATT; gypsum, plaster
     /// and render GYPSUM; sand SAND; timber WOOD, plywood, OSB and CLT WOODCROSS; steel and metal STEEL; earth and gravel theirs;
@@ -336,8 +336,8 @@ public static class MaterialGraphics
         (new(@"tile|ceramic|gresie|faianta|porcelain"), "TILES"),
     ];
 
-    // What a name suggests for a facade in a project made since decision 671 (hatchRev 3) is the rules of the built-in standard
-    // „Lapin" (decision 673): decision 327's matches drawn at the object's real size (brick 240×63, blocks 400×200, aerated
+    // What a name suggests for a facade in a project made since decision 679 (hatchRev 3) is the rules of the built-in standard
+    // „Lapin" (decision 681): decision 327's matches drawn at the object's real size (brick 240×63, blocks 400×200, aerated
     // blocks 600×250, coursed stone 600×300, boards 150 mm, standing seams every 500 mm, roof tiles at a 330 mm gauge, tiles
     // 300×300; sand, gravel and earth keep their paper patterns). A project made before keeps decision 327's (MaterialHatchUpgrade).
 
@@ -369,8 +369,8 @@ public static class MaterialGraphics
 
     /// <summary>
     /// What a name suggests for an elevation's surface hatch: a pattern, or none (insulation, membranes, finishes, concrete,
-    /// an unknown name); real-size patterns (decision 671), or with <paramref name="paper"/> decision 327's paper ones (a
-    /// project made before decision 671).
+    /// an unknown name); real-size patterns (decision 679), or with <paramref name="paper"/> decision 327's paper ones (a
+    /// project made before decision 679).
     /// </summary>
     public static string? ElevationFromName(string name, bool paper = false)
     {
@@ -388,14 +388,14 @@ public static class MaterialGraphics
 
     /// <summary>
     /// The material's own graphics for a kind of view (a plan: the section's fields, then the plan's own), each kind's step
-    /// for 1:<paramref name="scale"/> laid over its fields (decision 672: a plan takes the section's step, then its own
+    /// for 1:<paramref name="scale"/> laid over its fields (decision 680: a plan takes the section's step, then its own
     /// fields, then its own step); the step that did, the last one laid. No scale, no step.
     /// </summary>
     static (ViewGraphics? Own, (string, int)? Step) Own(Entity? material, string kind, double? scale) => material == null ? (null, null) : OwnOf(material.Attrs, kind, scale);
 
     /// <summary>
     /// The graphics a holder of kinds of view gives one kind at 1:<paramref name="scale"/> (a material's attributes, an entry of a
-    /// material graphics set, decision 674): a plan the section's fields with their step, then its own with its step; the step laid last.
+    /// material graphics set, decision 682): a plan the section's fields with their step, then its own with its step; the step laid last.
     /// </summary>
     public static (ViewGraphics? Own, (string, int)? Step) OwnOf(JsonObject attrs, string kind, double? scale)
     {
@@ -435,10 +435,10 @@ public static class MaterialGraphics
 
     /// <summary>
     /// The material's graphics in one kind of view: its own fields, else what the project's material standard gives it by its
-    /// name (<paramref name="standard"/>, decision 673; null: Lapin's, <see cref="MaterialStandard.Lapin"/>, today's look). An
-    /// elevation of a project made before decision 671 under Lapin's standard takes decision 327's paper patterns
+    /// name (<paramref name="standard"/>, decision 681; null: Lapin's, <see cref="MaterialStandard.Lapin"/>, today's look). An
+    /// elevation of a project made before decision 679 under Lapin's standard takes decision 327's paper patterns
     /// (<paramref name="paperSurfaces"/>, <c>MaterialHatchUpgrade.PaperSurfaces</c>). At a view's <paramref name="scale"/> (a
-    /// denominator), each tier's step for it over its fields (decision 672, <see cref="ScaleStep"/>): the standard, its step, the
+    /// denominator), each tier's step for it over its fields (decision 680, <see cref="ScaleStep"/>): the standard, its step, the
     /// material's own, its step. A material that sets its own pattern takes its own scale, angle and units, never the
     /// standard's for another pattern; one that sets its own background hatch, none of the standard's. No scale, no step.
     /// This is the material's tier of a view's graphics; what a view lays over it is <c>ViewMaterialGraphics</c> (Lapin.Platform).
@@ -450,7 +450,7 @@ public static class MaterialGraphics
         var (own, step) = Own(material, kind, scale);
         var elevation = kind == "elevation";
         var category = material?.Str("category");
-        // The standard's tier: its rule for the name (a project before decision 671 under Lapin's: the paper facades).
+        // The standard's tier: its rule for the name (a project before decision 679 under Lapin's: the paper facades).
         ViewGraphics? std;
         StandardRule? rule;
         if (elevation && paperSurfaces && standard.IsLapin) (std, rule) = (new ViewGraphics(ElevationFromName(name, true) ?? ""), null);
@@ -468,7 +468,7 @@ public static class MaterialGraphics
         var membrane = material?.Attrs["membrane"] is JsonValue mv && mv.TryGetValue<bool>(out var mb) ? mb : !elevation && rule?.Membrane == true;
         if (membrane) hatch = null;
         var joints = material?.Attrs["drawJoints"] is JsonValue jv && jv.TryGetValue<bool>(out var j) && j;
-        // The flexible fields (decision 670): none given, none set, so a material that sets none draws as before.
+        // The flexible fields (decision 678): none given, none set, so a material that sets none draws as before.
         var background = g?.BackgroundHatch is { Hatch: { Length: > 0 } bh } bg ? bg with { Hatch = bh.ToUpperInvariant() } : null;
         return new ResolvedMaterial(name, hatch, g?.HatchScale ?? 1, fill, g?.HatchPen, membrane, joints, color, hasOwn ? "own" : "name", g?.HatchAngle ?? 0, g?.HatchAlign ?? HatchAlign.View,
             JoinsOf(material))
@@ -481,7 +481,7 @@ public static class MaterialGraphics
     }
 
     /// <summary>
-    /// A material's graphics in a view with a higher tier's laid over them field by field (decision 674: a view style's material
+    /// A material's graphics in a view with a higher tier's laid over them field by field (decision 682: a view style's material
     /// graphics set): its hatch (<c>""</c>: none) with its own scale, angle and units and its own background hatch alone, never the
     /// material's for another pattern; its fill (<c>""</c>: none, <c>material</c>: the material's colour); the pen, alignment,
     /// colours, weights, line type, opacities, halftone; the background hatch and the lines field by field. A membrane stays one.
@@ -559,7 +559,7 @@ public static class MaterialGraphics
         if (material.Str("color") is { } c) o["color"] = c;
         if (material.Attrs["transparency"] is { } t) o["transparency"] = t.DeepClone();
         var hatches = new JsonObject();
-        // Its hatch, fill and (decision 670) the hatch's colour and weight and a background hatch, as IfcFillAreaStyle carries them.
+        // Its hatch, fill and (decision 678) the hatch's colour and weight and a background hatch, as IfcFillAreaStyle carries them.
         JsonObject? HatchOf(ResolvedMaterial g)
         {
             if (string.IsNullOrEmpty(g.Hatch) && string.IsNullOrEmpty(g.Fill) && g.Background == null) return null;

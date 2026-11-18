@@ -33,6 +33,18 @@ export interface CycleSource {
 const dist = (a: Vec2, b: Vec2) => Math.hypot(a.x - b.x, a.y - b.y);
 const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x));
 
+/**
+ * Whether Tab / Shift+Tab may cycle what lies under the pointer now (forum topic 149): when nothing is running, and while a
+ * tool or a command is picking elements (a pick or pickThenPoint gesture, a command step asking for a pick or a selection),
+ * but not while it waits for a point or a value, nor while a drag is on (there Tab keeps its meaning).
+ */
+export function cycleOpen(gesture: string | undefined, stepWant: string | undefined, dragging: boolean, gestures: readonly string[] = ['pick', 'pickThenPoint']): boolean {
+  if (dragging) return false;
+  if (gesture && !gestures.includes(gesture)) return false;
+  if (stepWant && stepWant !== 'pick' && stepWant !== 'select') return false;
+  return true;
+}
+
 /** The candidates with the one a plain click takes first. */
 export const withFirst = (first: string | null | undefined, ids: string[]): string[] => (first ? [first, ...ids.filter((i) => i !== first)] : ids);
 

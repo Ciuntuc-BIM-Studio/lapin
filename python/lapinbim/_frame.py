@@ -5,11 +5,12 @@
     "LPF1"           4 bytes, the frame's mark
     header length    uint32 LE, the JSON header's bytes
     header           the message as JSON (UTF-8), padded with spaces to a multiple of 4
-    buffers          every float / int array of the message, back to back, each 4-aligned
+    buffers          every float / int array of the message, and a file's bytes, back to back, each 4-aligned
 
-In the header an array is a reference, ``{"$buf": offset, "n": count, "t": "f32" | "i32"}``, its offset counted
-from the start of the buffers. It is read as a ``memoryview`` on the frame (format ``"f"`` or ``"i"``), without
+In the header an array is a reference, ``{"$buf": offset, "n": count, "t": "f32" | "i32" | "u8"}``, its offset counted
+from the start of the buffers. It is read as a ``memoryview`` on the frame (format ``"f"``, ``"i"`` or ``"B"``), without
 copying: ``len``, indexing and ``tolist()`` work, and ``numpy.frombuffer(v, numpy.float32)`` takes it as it is.
+``"u8"`` is an export's file, sent so when the call asks with ``binary=True`` (else it comes as base64 text).
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ from typing import Any
 from ._names import camel
 
 MARK = b"LPF1"
-TYPES = {"f32": "f", "i32": "i"}
+TYPES = {"f32": "f", "i32": "i", "u8": "B"}
 
 
 class Obj(dict):
@@ -49,6 +50,8 @@ def _array(frame: memoryview, base: int, ref: dict) -> Any:
         raise ValueError(f"Unknown buffer type {ref['t']!r}.")
     start = base + int(ref["$buf"])
     n = int(ref["n"])
+    if fmt == "B":
+        return frame[start : start + n]
     view = frame[start : start + 4 * n]
     if sys.byteorder == "little":
         return view.cast("f") if fmt == "f" else view.cast("i")

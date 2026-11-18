@@ -20,6 +20,7 @@ import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './inp
 import { lengthText, parseLength } from '../../engine/unitsStore';
 import { arcThrough, arcTangent, bounds, dist, ellipseAt, ellipseOf, ellipsePoints, fromJson, normAngle, toJson, type Shape } from './shapes';
 import { mapShape } from '../insetMap';
+import { SNAP_CODES, type SnapOverride } from './snaps';
 import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
 import { lassoTest, type RegionTest } from '../selectBox';
@@ -82,8 +83,12 @@ export interface Step {
   text?: (s: string) => Next;
   /** Keywords (upper case) and what they do. */
   keywords?: Record<string, () => Next>;
-  /** Enter with nothing typed. */
+  /** Enter with nothing typed (and a right-click in the view). */
   enter?: () => Next;
+  /** Space with nothing typed, when it means something other than Enter (a symbol's quarter turn); without it Space is Enter. */
+  space?: () => Next;
+  /** What the viewport's banner says while this step waits (a repeating tool: how to go on and how to finish). */
+  hint?: string;
   /** Escape (or another command starting): what the step keeps of the work so far, as a dimension string keeps its points. */
   escape?: () => void | Promise<void>;
   /** An element clicked in the 3D view (where a click has no point on a drawing): the step takes it, rather than the selection. */
@@ -92,6 +97,8 @@ export interface Step {
   rect?: string;
   /** The element under the cursor is lit while the step waits for one (Match properties' targets, decision 490). */
   hover?: boolean;
+  /** A pick step whose point matters (SPLITELEMENT's cut): the cursor snaps as for a point, the marker shows, and `pickElement` / `pick` get the snapped point; the element is still the one under the raw cursor. */
+  snap?: boolean;
 }
 
 interface CadState {
@@ -107,6 +114,8 @@ interface CadState {
   aim: Aimed | null;
   lastPoint: Vec2 | null;
   osnap: boolean;
+  /** Object Snap Override (forum topic 154): the one snap (or none) the next point uses; Ctrl + right click or a typed code (MID, END…) arms it, the point taken or Esc lets it go. */
+  snapOverride: SnapOverride | null;
   ortho: boolean;
   polar: boolean;
   layer: string;
@@ -131,7 +140,7 @@ interface CadState {
 
 export const useCad = create<CadState>(() => ({
   buffer: '', takeAll: false, history: [], command: null, step: null, last: null, cursor: null, aim: null, lastPoint: null,
-  osnap: true, ortho: false, polar: true, layer: '0', role: '', host: null,
+  osnap: true, snapOverride: null, ortho: false, polar: true, layer: '0', role: '', host: null,
   offset: 0.5, offsetThrough: false, offsetFrom: 'axis', trimFace: 'axis', radius: 0, filletLine: 'axis', chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
 }));
 
@@ -770,7 +779,7 @@ function splitElement(): Step {
     prompt: atCrossing
       ? 'Pick the element to split where something crosses it [Point] (Enter to finish)'
       : 'Click the element where to split it [Intersection] (Enter to finish)',
-    want: 'pick',
+    want: 'pick', snap: true,
     keywords: { I: toggle(true), INTERSECTION: toggle(true), P: toggle(false), POINT: toggle(false) },
     pick: () => { log('Pick a wall, a beam, a strip footing, a floor or a ceiling.'); return first(); },
     pickElement: async (id, at) => {
@@ -994,28 +1003,29 @@ export function cancel(quiet = false): void {
   if (s.step?.escape) void Promise.resolve(s.step.escape()).catch(() => undefined);
   generation++;
   resetRecording();
-  useCad.setState({ command: null, step: null, buffer: '' });
+  useCad.setState({ command: null, step: null, buffer: '', snapOverride: null });
   liveEnd('cad');
   traceEnd('cad');
 }
 
 /** A point clicked in a view (already snapped). */
-const feed = serial(async (p: Vec2, typed: { length?: number; angle?: number } | undefined, free: boolean, aim: Aimed | null): Promise<void> => {
+const feed = serial(async (p: Vec2, typed: { length?: number; angle?: number } | undefined, free: boolean, aim: Aimed | null, snapped?: Vec2): Promise<void> => {
   const s = useCad.getState();
   if (!s.step) return;
-  useCad.setState({ lastPoint: p });
+  useCad.setState({ lastPoint: p, snapOverride: null });
   if (s.step.want === 'pick' && s.host) {
     const hit = s.host.pickDraft(p);
     const element = !hit && s.step.pickElement && s.host.isPlan?.() !== false ? s.host.pickAny(p) : null;
-    if (element) { await advance(s.step.pickElement!(element, p)); return; }
+    const at = s.step.snap && snapped ? snapped : p;
+    if (element) { await advance(s.step.pickElement!(element, at)); return; }
     if (!hit) { log(s.step.pickElement ? 'Nothing to pick there.' : 'Nothing drafted there.'); return; }
-    await advance(s.step.pick?.(hit, p));
+    await advance(s.step.pick?.(hit, at));
     return;
   }
   if (s.step.point) { noteFed(p, { typed, free, aim }); await advance(s.step.point(p)); }
 });
 /** A point clicked in a view (already snapped), or typed at its cursor (`typed`: the length and angle). How it was found, and whether Ctrl placed it free, is read now. */
-export const feedPoint = (p: Vec2, typed?: { length?: number; angle?: number }): Promise<void> => feed(p, typed, ctrlHeld, useCad.getState().aim);
+export const feedPoint = (p: Vec2, typed?: { length?: number; angle?: number }, snapped?: Vec2): Promise<void> => feed(p, typed, ctrlHeld, useCad.getState().aim, snapped);
 
 /** An element clicked in the 3D view while a step takes elements (`element`): true when it took it. */
 export function feedElement(id: string): boolean {
@@ -1030,6 +1040,16 @@ export const finishStep = serial(async (): Promise<boolean> => {
   if (!s.step?.enter) return false;
   log('');
   await advance(s.step.enter());
+  return true;
+});
+
+/** Space with nothing typed: the step's own `space`, else what Enter does; false when no step is running. */
+export const spaceStep = serial(async (): Promise<boolean> => {
+  const s = useCad.getState();
+  if (!s.step) return false;
+  if (!s.step.space) { await submit(''); return true; }
+  log('');
+  await advance(s.step.space());
   return true;
 });
 
@@ -1051,6 +1071,8 @@ export const submit = serial(async (raw: string): Promise<void> => {
   if (step.want === 'text' && step.text) { await advance(step.text(raw)); return; }
   const kw = text.toUpperCase();
   if (step.keywords?.[kw]) { await advance(step.keywords[kw]()); return; }
+  // AutoCAD's snap codes while a point is asked (MID, END, CEN…): the next point takes only that snap. A step's own keyword of the same name went first.
+  if (step.want === 'point' && SNAP_CODES[kw]) { useCad.setState({ snapOverride: SNAP_CODES[kw] }); return; }
   const n = step.scalar ? parseScalar(text, step.want !== 'point') : null;
   if (n != null && step.scalar) { await advance(step.scalar(n)); return; }
   if (step.want === 'point' || step.want === 'select' || step.want === 'pick' || step.want === 'none') {

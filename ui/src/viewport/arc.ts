@@ -70,6 +70,19 @@ export function axisLine(c: Arc): Vec2[] {
   return Array.from({ length: n + 1 }, (_, i) => pointAt(c, (l * i) / n));
 }
 
+/**
+ * The axis as a drafted shape, exact (the snaps' own: forum topic 151): a line, or the arc from its centre and radius, anticlockwise
+ * from `start` to `end` in radians (as cad/shapes.ts has arcs).
+ */
+export function arcShape(c: Arc): { type: 'line'; a: Vec2; b: Vec2 } | { type: 'arc'; c: Vec2; r: number; start: number; end: number } {
+  if (!isArc(c)) return { type: 'line', a: c.a, b: c.b };
+  const f = frame(c);
+  const norm = (a: number) => { const r = a % (2 * Math.PI); return r < 0 ? r + 2 * Math.PI : r; };
+  const ta = norm(f.start), tb = norm(Math.atan2(c.b.y - f.centre.y, c.b.x - f.centre.x));
+  // Anticlockwise (sense +1) from a to b; clockwise from a to b is anticlockwise from b to a.
+  return f.sense > 0 ? { type: 'arc', c: f.centre, r: f.r, start: ta, end: tb } : { type: 'arc', c: f.centre, r: f.r, start: tb, end: ta };
+}
+
 /** The middle of the axis (on the arc). */
 export const middle = (c: Arc): Vec2 => pointAt(c, arcLength(c) / 2);
 

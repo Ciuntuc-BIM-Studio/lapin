@@ -1,5 +1,5 @@
 /**
- * The material graphics configurator's pure side (docs/plan-material-graphics.md, stage 0b, decision 670): what a material
+ * The material graphics configurator's pure side (docs/plan-material-graphics.md, stage 0b, decision 678): what a material
  * says of its graphics per kind of view (as material.list gives it), the payloads the configurator sends (one field, one
  * nested group, reset, many materials in one step, copy from another) and the questions it asks of the engine's preview.
  * Opacity is carried in colours as #rrggbbaa by the engine; here it is a percentage beside the colour (the commands take it so).

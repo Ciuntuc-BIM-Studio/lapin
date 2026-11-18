@@ -4,8 +4,8 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>
-/// The reference details of the material graphics (docs/plan-material-graphics.md, stage 0, decision 670; moved into the engine
-/// by decision 673): small projects built from commands, as a user draws them, each with the views that show what its materials
+/// The reference details of the material graphics (docs/plan-material-graphics.md, stage 0, decision 678; moved into the engine
+/// by decision 681): small projects built from commands, as a user draws them, each with the views that show what its materials
 /// draw. The engine draws them for a material standard's sample sheet (<c>standards.previewSheet</c>: the catalogue's preview,
 /// the store's pictures); the tests (<c>ReferenceDetails</c>, <c>MaterialGraphicsReferenceTests</c>) check and snapshot them.
 /// They need the architecture and structure modules' commands; a detail whose commands the product lacks is left out.

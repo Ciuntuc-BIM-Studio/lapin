@@ -7,7 +7,7 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Stage 2 of docs/plan-material-graphics.md (decision 672), representation by scale: a material's steps by scale (byScale)
+/// Stage 2 of docs/plan-material-graphics.md (decision 680), representation by scale: a material's steps by scale (byScale)
 /// lay their fields over its own where the view's scale lies in their range; a view style's small-scale cut (smallScaleCut)
 /// draws cuts solid, as outlines or the core alone from a threshold on; a view overrides it; what sets none draws as before.
 /// </summary>

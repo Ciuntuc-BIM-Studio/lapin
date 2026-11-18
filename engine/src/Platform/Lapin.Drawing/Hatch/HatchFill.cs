@@ -251,14 +251,14 @@ public static class HatchFill
 }
 
 /// <summary>
-/// How big a pattern lies in a drawing (decision 671): a paper pattern's millimetres are paper millimetres, so at 1:scale
+/// How big a pattern lies in a drawing (decision 679): a paper pattern's millimetres are paper millimetres, so at 1:scale
 /// a millimetre is scale/1000 m of the drawing; a model pattern's are the object's, a millimetre 1/1000 m at any scale.
 /// A model pattern so dense on paper that its lines would run together (its closest family under
 /// <see cref="DefaultMinSpacing"/> mm apart, a view style's <c>minHatchSpacing</c>) is not drawn.
 /// </summary>
 public static class HatchScale
 {
-    /// <summary>The closest a real-size hatch's lines may lie on paper (mm) and still be drawn (decision 671, Î4).</summary>
+    /// <summary>The closest a real-size hatch's lines may lie on paper (mm) and still be drawn (decision 679, Î4).</summary>
     public const double DefaultMinSpacing = 0.7;
 
     /// <summary>The units a pattern lies in: <paramref name="over"/> (a material's <c>hatchUnits</c>), else the pattern's own.</summary>

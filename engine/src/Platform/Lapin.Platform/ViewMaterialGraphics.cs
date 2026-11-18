@@ -7,7 +7,7 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>
-/// How a view's cuts draw from a scale on (decision 672, Revit's coarse scale fill with a scale threshold instead of a LOD):
+/// How a view's cuts draw from a scale on (decision 680, Revit's coarse scale fill with a scale threshold instead of a LOD):
 /// <list type="bullet">
 /// <item><c>asMaterial</c>: as the materials say (the default, today's look; Î5);</item>
 /// <item><c>solid</c>: each cut element one area filled in <see cref="Color"/> (else the category's fill colour, else ink), no
@@ -81,21 +81,21 @@ public sealed record SmallScaleCut(string Mode = SmallScaleCut.AsMaterial, doubl
 }
 
 /// <summary>
-/// The one place a view decides how a material draws in it (decision 672). Precedence, the higher over the lower, field by field:
+/// The one place a view decides how a material draws in it (decision 680). Precedence, the higher over the lower, field by field:
 /// <list type="number">
 /// <item>an element's own override (hook: none yet);</item>
 /// <item>the view's filters (stage 5 of docs/plan-material-graphics.md): the first filter in the view's list that takes the element
 /// and gives a field gives it (<see cref="VisibilityGraphics.FilterGraphics"/>): a cut hatch, a cut fill, a hatch colour, the hatch
 /// halftone, the cut outline; an elevation's seen faces their surface hatch and fill;</item>
-/// <item>(2.5) the view's Visibility / Graphics subcategory graphics (decision 674): a layer's subcategory (core, finishes,
+/// <item>(2.5) the view's Visibility / Graphics subcategory graphics (decision 682): a layer's subcategory (core, finishes,
 /// insulation, membranes, other layers) giving a cut hatch, a fill colour, a line colour and weight or halftone — the view's
 /// own overrides, so over its style's set, and over its category's cut hatch and fill colour, being the more particular;</item>
-/// <item>the material graphics set of the view (its own, else its style's; decision 674, <see cref="MaterialGraphicsSets"/>):
+/// <item>the material graphics set of the view (its own, else its style's; decision 682, <see cref="MaterialGraphicsSets"/>):
 /// its entry for the material, at the view's scale;</item>
 /// <item>the view style's small-scale cut (<see cref="SmallScaleCut"/>, cut bands only);</item>
 /// <item>the material's step for the view's scale (<see cref="ScaleStep"/>);</item>
 /// <item>the material's own graphics;</item>
-/// <item>the project's material standard (<see cref="MaterialStandards"/>, decision 673): its rule for the material's name or category.</item>
+/// <item>the project's material standard (<see cref="MaterialStandards"/>, decision 681): its rule for the material's name or category.</item>
 /// </list>
 /// The last three are <see cref="MaterialGraphics.Resolve"/>; this lays the view's tiers over them. Visibility / Graphics' category
 /// fill colour and cut hatch still lay themselves over all of it when the pens are drawn (<see cref="Pens.Of"/>), as before, but
@@ -121,19 +121,19 @@ public sealed class ViewMaterialGraphics
     /// <param name="kind">section, plan or elevation (the material's kind of view).</param>
     /// <param name="scale">The view's scale denominator; null: no step by scale (an export with no scale).</param>
     /// <param name="style">The view's style as it draws (<see cref="ViewStyles.Of"/>); null: none of its tiers.</param>
-    /// <param name="visibility">The view's Visibility / Graphics, whose subcategories' graphics lay over the bands (decision 674); null: none.</param>
-    /// <param name="smallScale">Whether the style's small-scale cut holds (a legend shows a material without it, decision 672).</param>
+    /// <param name="visibility">The view's Visibility / Graphics, whose subcategories' graphics lay over the bands (decision 682); null: none.</param>
+    /// <param name="smallScale">Whether the style's small-scale cut holds (a legend shows a material without it, decision 680).</param>
     public ViewMaterialGraphics(IModelView m, string kind, double? scale, ViewStyles.Style? style = null, VisibilityGraphics? visibility = null, bool smallScale = true)
     {
         _m = m;
         _kind = kind;
         _scale = scale;
         _paper = MaterialHatchUpgrade.PaperSurfaces(m);
-        // The project's material standard (decision 673): tier 7, what a material does not set itself.
+        // The project's material standard (decision 681): tier 7, what a material does not set itself.
         _standard = MaterialStandards.Of(m);
         // Cuts only: an elevation's surfaces keep their materials' look.
         _small = smallScale && kind != "elevation" && scale is { } s && style?.SmallScaleCut is { } sc && sc.Holds(s) ? sc : null;
-        // The view's material graphics set (decision 674): tier 3, over the small-scale cut.
+        // The view's material graphics set (decision 682): tier 3, over the small-scale cut.
         _set = style?.MaterialGraphicsSet is { } setId ? MaterialGraphicsSets.Find(m, setId) : null;
         _vg = visibility is { HasSubGraphics: true } or { HasFilterGraphics: true } ? visibility : null;
     }
@@ -236,7 +236,7 @@ public sealed class ViewMaterialGraphics
     }
 
     /// <summary>
-    /// A band with its subcategory's graphics over it (decision 674): its cut hatch (a pattern; "" or "none": none) at its pattern's
+    /// A band with its subcategory's graphics over it (decision 682): its cut hatch (a pattern; "" or "none": none) at its pattern's
     /// own scale, its fill colour ("" or "none": none), its lines' colour and weight (an ISO pen: the cut outline that weight, the
     /// lines between layers two pens lighter, as a category's), and halftone: the hatch, the fill (the subcategory's, else the
     /// category's, else the band's) and the lines washed halfway to white.

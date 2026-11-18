@@ -101,7 +101,7 @@ public static class GraphicsSets
     }
 
     /// <summary>
-    /// A subcategory's row checked (decision 674): <c>hidden</c> and <c>halftone</c> true or false, <c>cutHatch</c> a pattern the
+    /// A subcategory's row checked (decision 682): <c>hidden</c> and <c>halftone</c> true or false, <c>cutHatch</c> a pattern the
     /// project knows ("" or "none": no hatch), <c>fillColor</c> and <c>lineColor</c> colours (<c>fillColor</c> "" or "none": no fill),
     /// <c>lineWeight</c> a pen of the ISO series (mm); a field null left out.
     /// </summary>
@@ -388,7 +388,7 @@ public static class GraphicsSets
                 // Its level of development (decision 404): the one it draws at, the one it sets itself (null: its style's), its style's.
                 ["detail"] = ViewDetail.Of(q.Model, v), ["ownDetail"] = ViewDetail.Own(v, VisibilityGraphics.Of(q.Model, v)), ["styleDetail"] = ViewStyles.StyleOf(q.Model, v).Detail,
                 ["subcategories"] = new JsonObject(VisibilityGraphics.SubcategoriesOf.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)new JsonArray(kv.Value.Select(x => (JsonNode)x).ToArray())))),
-                // What a subcategory's row may give (decision 674): hidden, cutHatch, fillColor, lineColor, lineWeight, halftone.
+                // What a subcategory's row may give (decision 682): hidden, cutHatch, fillColor, lineColor, lineWeight, halftone.
                 ["subcategoryFields"] = new JsonArray(VisibilityGraphics.SubFields.Select(x => (JsonNode)x).ToArray()),
                 // What a filter's row may give (stage 5 of docs/plan-material-graphics.md): its lines and colours, its hatch and fill.
                 ["filterFields"] = new JsonArray(VisibilityGraphics.FilterFields.Select(x => (JsonNode)x).ToArray()),
@@ -485,7 +485,7 @@ public static class GraphicsSets
                 {
                     if (p.Key is not { } k || parts.ContainsKey(k)) continue;
                     if (vg.HidesPart(e, k) || details && !PlanDetail.Shows(e.Class, k, lod)) { parts[k] = new JsonObject { ["hidden"] = true }; continue; }
-                    // A subcategory's graphics (decision 674): halftone as a halftone element (35 % opaque), its fill colour as the part's colour.
+                    // A subcategory's graphics (decision 682): halftone as a halftone element (35 % opaque), its fill colour as the part's colour.
                     if (vg.SubGraphics(e, k) is { } sub)
                     {
                         var pl = new JsonObject();

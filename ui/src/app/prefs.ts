@@ -27,6 +27,11 @@ export interface Prefs {
   /** Points snap to the grid where no object snap takes them. */
   gridSnap: boolean;
   snapModes: SnapMode[];
+  /**
+   * The object snaps there were when these settings were kept (forum topic 151): one added since is on when it is on by default,
+   * whatever the snaps kept, and one turned off since stays off.
+   */
+  snapModesKnown: SnapMode[];
   /** Polar tracking's increment, degrees. */
   polarStep: number;
   coords: CoordSystem;
@@ -50,16 +55,23 @@ export interface Prefs {
   constrainWhileDrawing: boolean;
   /** What an opening's "Along the wall" measures (Properties): from the wall's start, the meeting wall's face or its core face, to the opening's start, centre or end. */
   openingAlong: { from: 'start' | 'face' | 'core'; point: 'start' | 'centre' | 'end' };
+  /** A click outside the input box takes what is typed in it, as Enter does (forum 155); off: it stays pending, as before. Esc and a right click throw it away. */
+  clickOutAccepts: boolean;
 }
 
-export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'nearest'];
+export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'tangent', 'nearest', 'wallAxis'];
+/** The object snaps before forum topic 151 added Tangent and Wall axis: what settings kept with no list of known snaps knew. */
+const FIRST_SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'nearest'];
+/** The object snaps on by default (all of them: none takes a point ahead of the drawn lines' ends and crossings). */
+const SNAP_MODES_ON: readonly SnapMode[] = SNAP_MODES;
 export const POLAR_STEPS: readonly number[] = [5, 10, 15, 22.5, 30, 45, 90];
 export const DEFAULT_PREFS: Prefs = {
   theme: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
-  snapModes: [...SNAP_MODES], polarStep: 45, coords: 'internal',
+  snapModes: [...SNAP_MODES], snapModesKnown: [...SNAP_MODES], polarStep: 45, coords: 'internal',
   profileStandardsHidden: [], newProjectProfileStandards: null, defaultTemplate: null, newProjectMaterialStandard: null,
   developerExtras: false, pythonPath: null, externalEditor: null, navStyle: DEFAULT_NAV_STYLE, constrainWhileDrawing: true,
   openingAlong: { from: 'start', point: 'centre' },
+  clickOutAccepts: false,
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -73,13 +85,17 @@ export function readPrefs(stored: unknown): Prefs {
   const d = DEFAULT_PREFS;
   const step = typeof o.gridStep === 'number' && Number.isFinite(o.gridStep) && o.gridStep > 0 ? Math.min(1000, Math.max(0.001, o.gridStep)) : d.gridStep;
   const major = typeof o.gridMajor === 'number' && Number.isInteger(o.gridMajor) && o.gridMajor >= 1 && o.gridMajor <= 100 ? o.gridMajor : d.gridMajor;
-  const modes = Array.isArray(o.snapModes) ? SNAP_MODES.filter((m) => (o.snapModes as unknown[]).includes(m)) : d.snapModes;
+  const known: readonly unknown[] = Array.isArray(o.snapModesKnown) ? o.snapModesKnown : FIRST_SNAP_MODES;
+  const modes = Array.isArray(o.snapModes)
+    ? SNAP_MODES.filter((m) => (o.snapModes as unknown[]).includes(m) || (!known.includes(m) && SNAP_MODES_ON.includes(m)))
+    : d.snapModes;
   return {
     theme: pick(o.theme, ['paper', 'graphite', 'system'] as const, d.theme),
     gridMode: pick(o.gridMode, ['adaptive', 'fixed'] as const, d.gridMode),
     gridStep: step, gridMajor: major,
     gridSnap: o.gridSnap !== false,
     snapModes: modes,
+    snapModesKnown: [...SNAP_MODES],
     polarStep: pick(o.polarStep, POLAR_STEPS, d.polarStep),
     coords: pick(o.coords, ['internal', 'project', 'survey', 'ucs'] as const, d.coords),
     profileStandardsHidden: names(o.profileStandardsHidden) ?? [],
@@ -91,6 +107,7 @@ export function readPrefs(stored: unknown): Prefs {
     externalEditor: typeof o.externalEditor === 'string' && o.externalEditor.trim() ? o.externalEditor.trim() : null,
     navStyle: pick(o.navStyle, NAV_STYLE_IDS, d.navStyle),
     constrainWhileDrawing: o.constrainWhileDrawing !== false,
+    clickOutAccepts: o.clickOutAccepts === true,
     openingAlong: {
       from: pick((o.openingAlong as { from?: unknown } | undefined)?.from, ['start', 'face', 'core'] as const, d.openingAlong.from),
       point: pick((o.openingAlong as { point?: unknown } | undefined)?.point, ['start', 'centre', 'end'] as const, d.openingAlong.point),

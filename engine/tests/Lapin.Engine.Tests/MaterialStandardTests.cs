@@ -11,14 +11,14 @@ using Lapin.Structure;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Stage 3 of docs/plan-material-graphics.md (decision 673): material standards as data. Lapin's built-in standard gives exactly
+/// Stage 3 of docs/plan-material-graphics.md (decision 681): material standards as data. Lapin's built-in standard gives exactly
 /// what the coded tables it replaced gave; the packs resolve sensibly in their languages; a project names its standard, switched
 /// with or without overwriting its materials' own graphics, previewed without a change; a standard made from a project's
 /// materials, exported and imported with the merge choices; every command one undo step.
 /// </summary>
 public class MaterialStandardTests
 {
-    // ------------------------------------------------------------ the oracle: the coded tables of decisions 460 and 671
+    // ------------------------------------------------------------ the oracle: the coded tables of decisions 460 and 679
 
     static readonly (Regex Re, bool Membrane, string? Hatch)[] OldCut =
     [

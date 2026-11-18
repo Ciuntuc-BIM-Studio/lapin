@@ -27,7 +27,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
   const paths = useMemo(() => drawing.pens.map((p, i) => {
     // A fill with an opacity (#rrggbbaa, a room colour's, forum #79) is drawn as its colour at that opacity.
     const seen = splitAlpha(p.fill);
-    // A pen's stroke carries its opacity the same way (a material's hatch opacity, decision 670): its colour alone and strokeOpacity.
+    // A pen's stroke carries its opacity the same way (a material's hatch opacity, decision 678): its colour alone and strokeOpacity.
     const line = splitAlpha(p.stroke);
     const stroke = screenInk(line.color, onDark), fill = screenFill(seen.color, onDark);
     let d = '';

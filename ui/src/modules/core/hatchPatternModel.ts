@@ -1,5 +1,5 @@
 /**
- * Hatch patterns made by hand (docs/plan-material-graphics.md, stage 7, decision 676): the line-family editor's model. A family is what
+ * Hatch patterns made by hand (docs/plan-material-graphics.md, stage 7, decision 684): the line-family editor's model. A family is what
  * a .pat line says (angle, origin, the offset to the next line, dashes), edited as numbers; the commands are `hatch.create`,
  * `hatch.update`, `hatch.delete` (asking `hatch.usage` first) and `drafting.toPattern`.
  */

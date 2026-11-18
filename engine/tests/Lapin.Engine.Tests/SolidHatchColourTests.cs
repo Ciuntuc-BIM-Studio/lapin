@@ -127,7 +127,7 @@ public class SolidHatchColourTests
     [Fact]
     public void A_solid_hatch_takes_the_material_s_hatch_colour_over_its_fill_and_its_opacity()
     {
-        // Decision 670: the hatch's own colour wins over the fill a solid is otherwise drawn in, at the hatch's opacity.
+        // Decision 678: the hatch's own colour wins over the fill a solid is otherwise drawn in, at the hatch's opacity.
         var (f, _) = InsulatedWall();
         Graphics(f, Material(f, "Mineral wool"), "section", new JsonObject { ["hatchColor"] = "#ff8800", ["hatchOpacity"] = 50 });
         var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;

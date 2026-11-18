@@ -192,7 +192,7 @@ public class RoomFinishTests
         var spec = RoomFinishes.SpecOf(f.Model, f.Model.OfClass(RoomFinishes.TypeClass).Single(t => t.Name == "Living room"))!;
         var o = Rooms.Of(f.Model.Get(room)!, f.Model, f.Session.Geometry)!;
         Assert.Equal(2, RoomFinishes.PlanRegions(f.Model, f.Model.Get(room)!, o, spec, "floor").Count);
-        // Boards at their real size (decision 671; a project made before: WOOD).
+        // Boards at their real size (decision 679; a project made before: WOOD).
         Assert.Equal("BOARDS_150", RoomFinishes.HatchOf(f.Model, spec, "floor")!.Pattern);
 
         // The room says not: no hatch; null brings it back.

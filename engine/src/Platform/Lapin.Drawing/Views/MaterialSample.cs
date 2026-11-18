@@ -3,7 +3,7 @@ using Lapin.Geometry;
 namespace Lapin.Drawing.Views;
 
 /// <summary>
-/// A material drawn on a sample by the drawings' own path (decision 670): a band, or a strip of three layers with the
+/// A material drawn on a sample by the drawings' own path (decision 678): a band, or a strip of three layers with the
 /// material between two plain neighbours, cut as a wall's layers are (<see cref="MaterialDrawing.Apply"/> then
 /// <see cref="Pens.Of"/>), so what the material configurator previews is what a view, a sheet and the PDF print; and a
 /// legend's swatch, filled and hatched the same way.

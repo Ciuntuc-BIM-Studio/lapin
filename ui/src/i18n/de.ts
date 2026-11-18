@@ -652,6 +652,9 @@ export const DE: Record<string, string> = {
   "Project base point": "Projektbasispunkt",
   "Survey point (map)": "Vermessungspunkt (Karte)",
   "Quadrant": "Quadrant",
+  "Wall axis": "Wandachse",
+  "No snap (for this point)": "Kein Fang (für diesen Punkt)",
+  "Snap settings…": "Fangeinstellungen…",
   "Perpendicular": "Senkrecht",
   "Nearest": "Nächster Punkt",
   "Coordinates at the cursor": "Koordinaten am Cursor",
@@ -1125,6 +1128,9 @@ export const DE: Record<string, string> = {
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Jeder Klick eines Pinselwerkzeugs ist ein Strich, rückgängig mit Strg Z; die Striche eines Geländes lassen sich im Inspektor leeren.',
   // Site tools, stage 2
   'Spot level': 'Höhenkote', 'Spot levels': 'Höhenkoten', 'Parcel': 'Grundstück', 'Export LandXML': 'LandXML exportieren', 'Analysis': 'Analyse', 'slopes': 'Neigungen',
+  'Subregion': 'Teilbereich', 'Subregions': 'Teilbereiche', 'edit in 3D': 'in 3D bearbeiten', 'done editing 3D': '3D-Bearbeitung beenden', 'Cut slope': 'Abtragsböschung', 'Fill slope': 'Auftragsböschung', 'Survey point height': 'Höhe des Vermessungspunkts', 'Drag a point\'s grip up or down in the 3D view.': 'Ziehen Sie den Griff eines Punkts in der 3D-Ansicht nach oben oder unten.', 'Grips on the 400 points nearest the 3D view\'s centre: move the view to reach the others.': 'Griffe an den 400 Punkten nächst der Mitte der 3D-Ansicht: verschieben Sie die Ansicht, um die anderen zu erreichen.',
+  'Split terrain': 'Gelände teilen', 'Merge terrains': 'Gelände vereinen', 'Select two terrains or more to merge them.': 'Wählen Sie zwei oder mehr Gelände, um sie zu vereinen.',
+  'Terrain boundary': 'Geländegrenze', 'Slope tag': 'Neigungsangabe', 'Slope tags': 'Neigungsangaben', 'Boundary': 'Grenze', 'clipped': 'beschnitten', 'convex hull': 'konvexe Hülle', 'from parcel': 'vom Grundstück', 'Cut/fill grid': 'Abtrag/Auftrag-Raster', 'Graded region': 'Modellierter Bereich', 'reset to survey': 'auf Vermessung zurücksetzen', 'snapshot existing': 'Bestand festhalten',
   'cut and fill': 'Abtrag und Auftrag', 'elevations': 'Höhen', 'drawn': 'gezeichnet', 'remove': 'entfernen', 'Planting schedule': 'Pflanzliste',
   // The engine in the browser.
   'In the browser': 'Im Browser',
@@ -2226,6 +2232,8 @@ export const DE: Record<string, string> = {
   // An elevation's marker moved into the building clips it (decision 460)
   "Drag: move the marker (moved into the building, the elevation starts seeing at its line)": "Ziehen: die Marke verschieben (ins Gebäude verschoben, beginnt die Ansicht an ihrer Linie zu sehen)", "Move elevation marker": "Ansichtsmarke verschieben", "Only an elevation's marker is moved this way.": "Nur die Marke einer Ansicht wird so verschoben.", "A marker's place is in metres.": "Der Ort einer Marke wird in Metern angegeben.",
   "Letter shortcuts (Revit-style)": "Buchstabenkürzel (wie in Revit)",
+  "A click outside an input box accepts it": "Ein Klick außerhalb des Eingabefelds übernimmt es",
+  "Off by default. On: with a value typed in the box by the cursor or on the command line, a left click elsewhere accepts it as Enter does, and that click is used up (it places no point of its own). Esc or a right click throws the typed value away instead. Fields in the Properties panel already take their value when you click away.": "Standardmäßig aus. Ein: Bei einem Wert, der im Feld am Cursor oder in der Befehlszeile getippt wurde, übernimmt ein Linksklick woanders ihn wie die Eingabetaste, und der Klick ist verbraucht (er setzt keinen eigenen Punkt). Esc oder ein Rechtsklick verwirft den getippten Wert stattdessen. Felder im Eigenschaftenbereich übernehmen ihren Wert schon, wenn man woanders klickt.",
   "Typed letters such as WA start a tool. Off: letters always go to the command line, and Enter or Space runs a command, an alias, or the command whose letters they are. The ` key gives the command line all typing, whichever is on. Your own aliases are in Keyboard shortcuts…": "Getippte Buchstaben wie WA starten ein Werkzeug. Aus: Buchstaben gehen immer in die Befehlszeile, und Enter oder Leertaste führt einen Befehl, einen Alias oder den Befehl mit diesen Buchstaben aus. Die Taste ` gibt der Befehlszeile alle Eingaben, egal was an ist. Eigene Aliase stehen unter Tastenkürzel…",
   "Keyboard": "Tastatur",
   "Command line: take all typing": "Befehlszeile: alle Eingaben übernehmen",
@@ -3171,6 +3179,7 @@ export const DE: Record<string, string> = {
   "Export CSV…": "CSV exportieren…",
   "Export standards…": "Standards exportieren…",
   "Exported ${saved}.": "${saved} exportiert.",
+  "The engine sent back no file.": "Die Engine hat keine Datei zurückgegeben.",
   "Factor of Ø": "Faktor von Ø",
   "Find a code or a title": "Einen Code oder einen Titel suchen",
   "Functions:": "Funktionen:",
@@ -4248,7 +4257,7 @@ export const DE: Record<string, string> = {
   "Type properties": "Typeigenschaften",
   "Also write type properties on each occurrence": "Typeigenschaften auch an jedes Exemplar schreiben",
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "jede Wand des Typs hat sie (IsExternal, FireRating); ein Exemplar-Standardwert ist die eigene Kopie jeder Wand",
-  // Material graphics configurator (decision 670, stage 0b)
+  // Material graphics configurator (decision 678, stage 0b)
   'Lines': 'Linien', 'Weight, mm': 'Strichstärke, mm', 'Fill opacity': 'Deckkraft der Füllung', 'Second pattern': 'Zweites Muster', 'Cut outline': 'Schnittkontur', 'Separator lines': 'Trennlinien', 'Strip': 'Streifen', 'facade|Elevation': 'Ansicht', 'material|Band': 'Band', 'Clear selection': 'Auswahl aufheben', 'Copy graphics from…': 'Grafik kopieren von…', 'from the pen': 'vom Stift', 'Opacity, per cent': 'Deckkraft, Prozent', 'Automatic: click to choose a colour': 'Automatisch: klicken, um eine Farbe zu wählen', 'Scale of the sample': 'Maßstab der Probe', 'Preview of the material graphics': 'Vorschau der Materialgrafik', 'A strip of the material between two lines': 'Ein Streifen des Materials zwischen zwei Linien', 'A band between two layers, with the lines that separate them': 'Ein Band zwischen zwei Schichten, mit den Linien, die sie trennen', 'Tick several materials to change their graphics together': 'Mehrere Materialien ankreuzen, um ihre Grafik gemeinsam zu ändern', 'Select this material with others': 'Dieses Material zusammen mit anderen auswählen', 'Its hatches, fills and lines for the cut in a section, in a plan and for the elevation: one undo step': 'Seine Schraffuren, Füllungen und Linien für den Schnitt in der Ansicht, im Grundriss und für die Ansicht: ein Rückgängig-Schritt', 'Paper millimetres: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5': 'Papiermillimeter: 0,13 · 0,18 · 0,25 · 0,35 · 0,5 · 0,7 · 1,0 oder ein beliebiger Wert von 0,05 bis 5', 'The weight of the hatch lines on paper: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5; it wins over the pen': 'Die Strichstärke der Schraffurlinien auf Papier: 0,13 · 0,18 · 0,25 · 0,35 · 0,5 · 0,7 · 1,0 oder ein beliebiger Wert von 0,05 bis 5; sie hat Vorrang vor dem Stift', 'The colour of the hatch; automatic: the category colour': 'Die Farbe der Schraffur; automatisch: die Kategoriefarbe', 'A pen of the pen table (1 to 16), when no weight is set': 'Ein Stift der Stifttabelle (1 bis 16), wenn keine Strichstärke gesetzt ist', 'The hatch in a lighter tone, as a background': 'Die Schraffur in einem helleren Ton, als Hintergrund', 'A second hatch under the first (a background and a foreground, as in Revit)': 'Eine zweite Schraffur unter der ersten (Hinter- und Vordergrund, wie in Revit)', 'A change below goes to all of them, in one undo step.': 'Eine Änderung unten gilt für alle, in einem Rückgängig-Schritt.', 'What is not set comes from the name, the category or the Object styles; a field’s arrow takes it back there.': 'Was nicht gesetzt ist, kommt vom Namen, der Kategorie oder den Objektstilen; der Pfeil eines Feldes setzt es dorthin zurück.',
   "Real size": "Echte Größe",
   "Some real size": "Teils echte Größe",
@@ -4266,7 +4275,6 @@ export const DE: Record<string, string> = {
   "Hatch origin, up (v)": "Schraffurursprung, nach oben (v)",
   "Where the element's hatches start, in its own frame: along its axis from the start, and up from its base in elevations and sections (to the left of the axis in a plan). Real-size patterns (bricks, tiles) start their courses here": "Wo die Schraffuren des Elements beginnen, in seinem eigenen Bezug: entlang seiner Achse vom Anfang und nach oben von seiner Basis in Ansichten und Schnitten (links der Achse im Grundriss). Muster in echter Größe (Ziegel, Fliesen) beginnen ihre Schichten hier",
   "Up from the element's base in elevations and sections; to the left of the axis in a plan": "Nach oben von der Basis des Elements in Ansichten und Schnitten; links der Achse im Grundriss",
-  "automatic": "automatisch",
   " automatic": " automatisch",
   "Back to automatic: the view's origin, or the element's base for a real-size pattern": "Zurück zu automatisch: der Ursprung der Ansicht oder, bei einem Muster in echter Größe, die Basis des Elements",
   "Reset the hatch origin": "Schraffurursprung zurücksetzen",
@@ -4504,6 +4512,9 @@ export const DE: Record<string, string> = {
   "as the view": "wie die Ansicht",
   "Tile": "Kachel",
   "Batt": "Matte",
+  // A drafted text's alignment (forum topic 148); a view's mark (report #167).
+  'Alignment': 'Ausrichtung', 'automatic': 'automatisch', 'Without a width, of its point; with one, in its box': 'Ohne Breite: an seinem Punkt; mit Breite: in seinem Rahmen', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Was die Markierung der Ansicht schreibt: den Namen des Schnitts oder der Ansicht mit Lapins eigenem Kopf, ihre Nummer auf dem Plan mit einem Kopfsymbol, einem Detailverweis oder einem Ansichtstitel. Leer: automatisch.',
+  'Click to place another · Space turns · Enter or Esc to finish': 'Klicken, um ein weiteres zu setzen · Leertaste dreht · Enter oder Esc beendet',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -4521,6 +4532,7 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^(\d+) line types added, (\d+) updated, (\d+) skipped\.$/, (m) => `${m[1]} Linientypen hinzugefügt, ${m[2]} aktualisiert, ${m[3]} übersprungen.`],
   [/^(\d+) parameters added, (\d+) updated\.$/, (m) => `${m[1]} Parameter hinzugefügt, ${m[2]} aktualisiert.`],
   [/^(\d+) shapes added, (\d+) updated\.$/, (m) => `${m[1]} Formen hinzugefügt, ${m[2]} aktualisiert.`],
+  [/^Nothing was exported: (.+)$/, (m) => `Es wurde nichts exportiert: ${m[1]}`],
   [/^Exported (.+): (\d+) records\.$/, (m) => `${m[1]} exportiert: ${m[2]} Datensätze.`],
   [/^Exported (.+): (\d+) records, (\d+) bars laid by types left out \(they have no drawn shape\)\.$/, (m) => `${m[1]} exportiert: ${m[2]} Datensätze, ${m[3]} von Typen verlegte Stäbe ausgelassen (sie haben keine gezeichnete Form).`],
   [/^Model imported: (\d+) materials to give a role\.$/, (m) => `Modell importiert: ${m[1]} Materialien, denen eine Rolle zuzuweisen ist.`],

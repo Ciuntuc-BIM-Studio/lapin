@@ -708,6 +708,12 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// the host (reports, links opened, the recovery journal); exports come
     /// back as bytes, imports bring theirs. A viewer looks; an editor edits.
     /// </summary>
+    /// <summary>
+    /// The largest file a reply carries as base64 (report #156): JSON takes a string of at most 166 666 666 characters, the
+    /// base64 of 125 MB. A larger one is written to a path, or sent as binary in the frame (<see cref="FrameBytes"/>).
+    /// </summary>
+    public const int MaxBase64Bytes = 120_000_000;
+
     /// <summary>The library files a firm's folder may hold (docs/plan-user-extensibility.md §4.2), by extension.</summary>
     public static readonly string[] LibraryKinds = ["lapinsymbols", "lapintypes", "lapinstandards", "lapinrules", "lapinbarshapes", "lapinparams", "lapinmapping", "lapinfamily", "lapinpart", "lapinlib", "lapintitleblock", "lapinprofiles", "lapinprices", "lapinschedule", "lapinaliases", "pat", "lin"];
 
@@ -834,14 +840,19 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         if (method is "project.save" or "project.saveBytes" or "project.saveVersion" or "project.updateVersion") session.RefuseDuringStep(ownerToo: true);
         // Another project: a file surveyed for this one (its bytes, its index) is not kept for it.
         if (method is "project.new" or "project.newFromTemplate" or "project.open" or "project.openBytes" or "recovery.restore") { _surveyed = null; _fragSurveyed = null; _bosSurveyed = null; }
-        // A file written where asked (the desktop's save dialog), else handed back to download (a browser).
-        JsonObject Deliver(byte[] bytes, string name)
+        // A file written where asked (the desktop's save dialog), else handed back to download (a browser): as a buffer of the reply's
+        // frame when the caller asks for it so (`binary`, the interface does), else as base64, which JSON caps (report #156).
+        JsonObject Deliver(ArraySegment<byte> bytes, string name)
         {
             if ((string?)p["path"] is { Length: > 0 } path)
             {
-                File.WriteAllBytes(HostFiles.Check(path), bytes);
-                return new JsonObject { ["path"] = path, ["bytes"] = bytes.Length };
+                File.WriteAllBytes(HostFiles.Check(path), bytes.AsSpan());
+                return new JsonObject { ["path"] = path, ["bytes"] = bytes.Count };
             }
+            if (p["binary"] is JsonValue bin && bin.TryGetValue<bool>(out var binary) && binary)
+                return new JsonObject { ["name"] = name, ["bytes"] = bytes.Count, ["data"] = JsonValue.Create(new FrameBytes(bytes), ProtocolJson.Default.FrameBytes) };
+            if (bytes.Count > MaxBase64Bytes)
+                throw new CommandException($"The file is {bytes.Count / 1e6:0} MB: more than a reply can carry as text. Give a path to write it to, or ask for its bytes as binary (\"binary\": true).");
             return new JsonObject { ["name"] = name, ["data"] = Convert.ToBase64String(bytes) };
         }
 
@@ -1179,9 +1190,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     // `typePropertiesOnOccurrences` (issue #30): the type's properties also on each of its elements, the element's own value winning.
                     p["typePropertiesOnOccurrences"] is JsonValue tv && tv.TryGetValue<bool>(out var onOccurrences) && onOccurrences);
                 if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, RefuseOverRead(HostFiles.Check(ifcPath)), options).ToJson(), null);
-                using var ms = new MemoryStream();
-                IfcExport.Write(session, ms, "project.ifc", options);
-                return (Deliver(ms.ToArray(), "project.ifc"), null);
+                // The file made once, of its size: a hall of 33 bays is 150 MB of IFC (report #156).
+                var (ifc, _) = IfcExport.Bytes(session, "project.ifc", options);
+                return (Deliver(ifc, "project.ifc"), null);
             }
             case "project.exportMesh": return ExportMesh(p, Deliver);
             // Lapin for the browser (decision 482): the project as one .html, a viewer and the package; what its dialog shows first.

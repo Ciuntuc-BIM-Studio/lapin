@@ -170,7 +170,7 @@ export function pensToSvg(img: { w: number; h: number; pens: PenDto[] }, image?:
     const s = p.segments ?? [];
     for (let k = 0; k + 3 < s.length; k += 4) d += `M${n(s[k])} ${n(s[k + 1])}L${n(s[k + 2])} ${n(s[k + 3])}`;
     if (!d) continue;
-    // A colour with an opacity (#rrggbbaa, decision 670) is written as the colour and its opacity: older SVG readers know only #rrggbb.
+    // A colour with an opacity (#rrggbbaa, decision 678) is written as the colour and its opacity: older SVG readers know only #rrggbb.
     const ln = splitAlpha(p.stroke), fl = splitAlpha(p.fill);
     const stroke = ln.color ? ` stroke="${esc(ln.color)}"${ln.opacity < 1 ? ` stroke-opacity="${ln.opacity}"` : ''} stroke-width="${n(Math.max(p.width, 0.05))}" stroke-linecap="round" stroke-linejoin="round"` : ' stroke="none"';
     const dash = p.stroke && p.dash?.length ? ` stroke-dasharray="${p.dash.map(n).join(' ')}"` : '';

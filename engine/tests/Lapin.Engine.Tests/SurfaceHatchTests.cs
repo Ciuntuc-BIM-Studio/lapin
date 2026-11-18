@@ -208,7 +208,7 @@ public class SurfaceHatchTests
     [InlineData("Timber cladding", "BOARDS")]
     public void A_material_s_name_suggests_its_elevation_hatch(string name, string? hatch)
     {
-        // Decision 327's paper patterns, as a project made before decision 671 goes on drawing them (ModelHatchTests: a new one's).
+        // Decision 327's paper patterns, as a project made before decision 679 goes on drawing them (ModelHatchTests: a new one's).
         var material = new Entity("m", IfcClass.Material, name, []);
         var r = MaterialGraphics.Resolve(material, "elevation", paperSurfaces: true);
         Assert.Equal(hatch, r.Hatch);
@@ -240,7 +240,7 @@ public class SurfaceHatchTests
     public void A_guessed_hatch_is_drawn_and_an_explicit_none_is_respected()
     {
         var f = new Fixture();
-        // "Facing brick" with nothing set: BRICK_240X63 from its name (decision 671), its courses 73 mm apart from the wall's base at 0.
+        // "Facing brick" with nothing set: BRICK_240X63 from its name (decision 679), its courses 73 mm apart from the wall's base at 0.
         f.Wall(0, 0, 8, 0, f.Type("Brick 40", ("Facing brick", 0.1, false), ("Concrete", 0.2, true), ("Facing brick", 0.1, false)));
         var view = Elevation(f);
         var guessed = Hatch(Render(f, view));

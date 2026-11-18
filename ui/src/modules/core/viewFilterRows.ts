@@ -1,6 +1,6 @@
 /**
  * A view's filter row (docs/plan-material-graphics.md, stage 5): the old fields (shown, colour, halftone, transparency, pen, pattern)
- * and the hatch and fill fields of decision 675. `view.visibility` lists the fields the engine knows (`filterFields`); the engine
+ * and the hatch and fill fields of decision 683. `view.visibility` lists the fields the engine knows (`filterFields`); the engine
  * refuses any other, so a row is sent with only those.
  */
 

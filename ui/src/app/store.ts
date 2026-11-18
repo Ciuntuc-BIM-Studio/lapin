@@ -133,6 +133,8 @@ export interface UiState extends Pane {
   returnTo: string | null;
   /** A message for the user (saved, recovered…), cleared by the next one. */
   notice: string | null;
+  /** The notice is a failure the user must see (an export that made nothing, report #156): it stays until closed. */
+  noticeStays: boolean;
   theme: Theme;
   /** How the 3D draws: shaded, shaded with edges, X-ray (every surface see-through, the selection solid), or wireframe. */
   visualStyle: 'shaded' | 'edges' | 'xray' | 'wireframe';
@@ -149,7 +151,7 @@ export interface UiState extends Pane {
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, openingVoids: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, memberTypeId: null, ceilingTypeId: null, skirtingTypeId: null, roomFinishTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, slabTypeId: null, roofStyle: null, balconyId: null, balconyStyle: null, dialog: null, materialFocus: null, returnTo: null, notice: null, theme: startTheme(), visualStyle: 'edges', fog: false, keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, openingVoids: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, memberTypeId: null, ceilingTypeId: null, skirtingTypeId: null, roomFinishTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, slabTypeId: null, roofStyle: null, balconyId: null, balconyStyle: null, dialog: null, materialFocus: null, returnTo: null, notice: null, noticeStays: false, theme: startTheme(), visualStyle: 'edges', fog: false, keyPlan: true,
 }));
 
 /**
@@ -270,4 +272,6 @@ export function select(id: string | null, add = false): void {
   const next = selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id];
   useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
 }
-export const notify = (notice: string | null) => useUi.setState({ notice });
+export const notify = (notice: string | null) => useUi.setState({ notice, noticeStays: false });
+/** A failure said until the user closes it (report #156: an export's error, gone in four seconds, was missed and left an empty file unexplained). */
+export const notifyProblem = (notice: string) => useUi.setState({ notice, noticeStays: true });

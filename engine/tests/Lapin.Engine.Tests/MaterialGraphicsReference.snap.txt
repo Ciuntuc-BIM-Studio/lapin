@@ -1,4 +1,4 @@
-# Material graphics reference details: the model's pens of each view (decision 670). LAPIN_UPDATE_SNAPSHOTS=1 writes it again.
+# Material graphics reference details: the model's pens of each view (decision 678). LAPIN_UPDATE_SNAPSHOTS=1 writes it again.
 composite-walls/plan 1:20
   HATCH #000000 0.13 - - s=348 len=59.51 loops=0
   HIDDEN #666666 0.18 - 1.5,1 s=5 len=0.41 loops=0

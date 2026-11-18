@@ -37,11 +37,11 @@ public static class DraftingResources
 
     static readonly HashSet<string> GraphicsFields = ["hatch", "hatchScale", "fill", "hatchPen", "hatchAngle", "hatchAlign", .. ViewGraphics.FlexFields, "hatchUnits", "byScale", "reset"];
 
-    /// <summary>The most steps by scale a kind of view keeps (decision 672).</summary>
+    /// <summary>The most steps by scale a kind of view keeps (decision 680).</summary>
     const int MaxScaleSteps = 20;
 
     /// <summary>
-    /// A kind's steps by scale checked (decision 672): an ordered list of {from?, to?, …fields}, from and to scale denominators
+    /// A kind's steps by scale checked (decision 680): an ordered list of {from?, to?, …fields}, from and to scale denominators
     /// (1 to 100000, from ≤ to, at least one), the fields any of a kind's graphics but byScale and reset, checked as they are; a
     /// null in a step is none for hatch and fill, left out for any other. An empty list is none.
     /// </summary>
@@ -74,7 +74,7 @@ public static class DraftingResources
     }
 
     /// <summary>The fields a null takes back to the default (not given): all but hatch and fill, whose null is an explicit none.</summary>
-    /// <summary>The scale a real-size pattern's swatch is drawn at when none is asked (decision 671): 1:20, where a brick reads as one.</summary>
+    /// <summary>The scale a real-size pattern's swatch is drawn at when none is asked (decision 679): 1:20, where a brick reads as one.</summary>
     public const double PreviewScale = 20;
 
     static bool NullResets(string field) => field is not ("hatch" or "fill");
@@ -117,13 +117,13 @@ public static class DraftingResources
         return r.Count > 0 ? r : null;
     }
 
-    // The patterns of a material standard being checked (decision 673): known beside the project's while its rules are checked.
+    // The patterns of a material standard being checked (decision 681): known beside the project's while its rules are checked.
     [ThreadStatic] static IReadOnlyList<HatchPattern>? _standardPatterns;
 
     static IEnumerable<HatchPattern> Known(IModelView m) => _standardPatterns is { Count: > 0 } sp ? Patterns(m).Concat(sp) : Patterns(m);
 
     /// <summary>
-    /// A material standard's kind of view checked as a material's (decision 673), its own <paramref name="patterns"/> known beside
+    /// A material standard's kind of view checked as a material's (decision 681), its own <paramref name="patterns"/> known beside
     /// the project's: a field it leaves null is left out (but hatch and fill, whose null is an explicit none); reset refused.
     /// </summary>
     internal static JsonObject CheckStandardGraphics(IModelView m, JsonObject g, string where, IReadOnlyList<HatchPattern> patterns)
@@ -149,7 +149,7 @@ public static class DraftingResources
         foreach (var (k, v) in g)
         {
             if (!GraphicsFields.Contains(k)) throw new CommandException($"{where}: „{k}” is not a material graphic.");
-            // Null takes a field back to its default (decision 670), but for hatch and fill, where it is "none".
+            // Null takes a field back to its default (decision 678), but for hatch and fill, where it is "none".
             if (v is null && NullResets(k)) { o[k] = null; continue; }
             switch (k)
             {
@@ -175,8 +175,8 @@ public static class DraftingResources
                 case "hatchAlign":
                     o[k] = (string?)v is { } al && HatchAlign.All.Contains(al) ? al : throw new CommandException($"{where}: a hatch aligns to the \"view\" or to the \"layer\".");
                     break;
-                // Decision 670: the hatch's own colour, weight, line type, opacity and halftone; the fill's opacity; a background hatch; the material's lines.
-                // Decision 671: the units its hatch lies in over the pattern's own (rare).
+                // Decision 678: the hatch's own colour, weight, line type, opacity and halftone; the fill's opacity; a background hatch; the material's lines.
+                // Decision 679: the units its hatch lies in over the pattern's own (rare).
                 case "hatchUnits":
                     o[k] = HatchScale.Parse((string?)v) is { } hu ? HatchScale.Name(hu) : throw new CommandException($"{where}: hatch units are \"paper\" or \"model\".");
                     break;
@@ -210,7 +210,7 @@ public static class DraftingResources
                     break;
                 }
                 case "cutLine": case "separatorLine": o[k] = CheckLine(m, v, where, k == "cutLine" ? "a cut line" : "a separator line"); break;
-                // Decision 672: its steps by scale.
+                // Decision 680: its steps by scale.
                 case "byScale": o[k] = CheckSteps(m, v, where); break;
                 case "reset":
                     if (v is not JsonArray fields || fields.Any(f => (string?)f is not { } fs || fs == "reset" || !GraphicsFields.Contains(fs)))
@@ -327,7 +327,7 @@ public static class DraftingResources
         return mat.With(name: ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : null, attrs: attrs);
     }
 
-    /// <summary>The sample a material's graphics draw (material.preview, decision 670).</summary>
+    /// <summary>The sample a material's graphics draw (material.preview, decision 678).</summary>
     public static JsonObject Preview(IQueryContext q, JsonObject a)
     {
         var kind = (string?)a["kind"] ?? "section";
@@ -356,7 +356,7 @@ public static class DraftingResources
             if (a["color"] is JsonValue c && (string?)c is { } cs && HexColor.IsColour(cs)) attrs["color"] = cs;
             mat = mat.With(attrs: attrs);
         }
-        // At the sample's scale, the material's step for it (decision 672).
+        // At the sample's scale, the material's step for it (decision 680).
         var look = MaterialGraphics.Resolve(mat, kind, paperSurfaces: MaterialHatchUpgrade.PaperSurfaces(q.Model), scale: scale, standard: MaterialStandards.Of(q.Model));
         var book = Book(q.Model);
         var project = Spatial.Project(q.Model);
@@ -511,7 +511,7 @@ public static class DraftingResources
 
         // One step: the colour, transparency, category, membrane and joints, each kind of view's graphics (null: back to the name / the section),
         // and its data as material.setData takes it (description, params, measure).
-        // With ids (decision 670): the same change on several materials at once, one undo step (copying one material's graphics onto others); no renaming then.
+        // With ids (decision 678): the same change on several materials at once, one undo step (copying one material's graphics onto others); no renaming then.
         r.Command("material.update", "Change material", (ctx, a) =>
         {
             if (a["ids"] is JsonArray many)
@@ -539,7 +539,7 @@ public static class DraftingResources
             if (renamed != null) Rename(ctx, mat.Name, renamed, mat.Id);
         }
 
-        // What a material draws like, on a sample drawn by the drawings' own path (decision 670): the configurator's preview.
+        // What a material draws like, on a sample drawn by the drawings' own path (decision 678): the configurator's preview.
         // {id?, graphics?, kind (section|plan|elevation), scale, width?, height? (paper mm), layout? (strip|band)}: the material's
         // graphics with the unsaved ones (graphics, checked as material.update checks a kind's) over them; the pens as view.drawing
         // gives them (view metres, y up), their bounds, the scale.
@@ -587,7 +587,7 @@ public static class DraftingResources
         // Every material, how it draws in each kind of view, and whether it is used.
         r.Query("material.list", (q, _) =>
         {
-        // A project made before real-size hatches (decision 671) suggests its surfaces' paper ones.
+        // A project made before real-size hatches (decision 679) suggests its surfaces' paper ones.
         var paper = MaterialHatchUpgrade.PaperSurfaces(q.Model);
         var standard = MaterialStandards.Of(q.Model);
         return new JsonArray(q.Model.OfClass(IfcClass.Material).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).Select(mat =>
@@ -598,7 +598,7 @@ public static class DraftingResources
             foreach (var kind in MaterialGraphics.Kinds)
             {
                 var k = MaterialGraphics.Resolve(mat, kind, paperSurfaces: paper, standard: standard).ToJson();
-                // Its steps by scale (decision 672), as saved on the kind (a plan's own; a plan takes the section's too).
+                // Its steps by scale (decision 680), as saved on the kind (a plan's own; a plan takes the section's too).
                 if (mat.Attrs[kind]?["byScale"] is JsonArray steps) k["byScale"] = steps.DeepClone();
                 o[kind] = k;
             }
@@ -681,7 +681,7 @@ public static class DraftingResources
                     ["kind"] = BattHatch.Is(x.p) ? "batt" : x.p.Tile != null ? "tile" : x.p.Solid ? "solid" : "lines" }).ToArray());
         });
 
-        // A pattern's strokes over a square (paper mm): the swatches of the materials dialog. A real-size pattern (decision 671) is
+        // A pattern's strokes over a square (paper mm): the swatches of the materials dialog. A real-size pattern (decision 679) is
         // drawn at 1:viewScale (default 20, where a brick reads as one), or at the units asked ({units: "paper"|"model"}).
         r.Query("hatch.preview", (q, a) =>
         {

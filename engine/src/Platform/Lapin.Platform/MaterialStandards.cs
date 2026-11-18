@@ -11,7 +11,7 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>
-/// The project's material standard (docs/plan-material-graphics.md stage 3, decision 673): the project names the one its
+/// The project's material standard (docs/plan-material-graphics.md stage 3, decision 681): the project names the one its
 /// materials draw by (<see cref="Key"/>, none: Lapin's, today's look) among the built-in ones (<see cref="MaterialStandard.BuiltIns"/>)
 /// and its own (<see cref="ListKey"/>: duplicated, edited, made from its materials, imported from a <c>.lapinstandards</c> file or
 /// from the store). Applying one (<c>standards.applyMaterials</c>) leaves the materials' own graphics as they are (Î9), unless
@@ -40,7 +40,7 @@ public static class MaterialStandards
     public static string CurrentId(Entity? project) => (string?)project?.Attrs[Key] is { Length: > 0 } id ? id : MaterialStandard.LapinId;
 
     /// <summary>
-    /// The project's mark that it was made with Lapin's look of decision 674 (stage 4 of docs/plan-material-graphics.md): Lapin's
+    /// The project's mark that it was made with Lapin's look of decision 682 (stage 4 of docs/plan-material-graphics.md): Lapin's
     /// standard at version 1.1 (<see cref="MaterialStandard.LapinCurrent"/>), the built-in material graphics sets of the Structural
     /// and MEP styles (<see cref="MaterialGraphicsSets"/>), rooms' floor finishes hatched by the standard. A new project has it
     /// (<see cref="Spatial.EnsureBuilding(IEdit, SpatialSeed?)"/>); one made before never gains it, so it draws as it did (Î10).
@@ -48,12 +48,12 @@ public static class MaterialStandards
     public const string LookRevKey = "materialLookRev";
     public const int LookRev = 1;
 
-    /// <summary>Whether a project was made with the look of decision 674 (<see cref="LookRevKey"/>).</summary>
+    /// <summary>Whether a project was made with the look of decision 682 (<see cref="LookRevKey"/>).</summary>
     public static bool NewLook(Entity? project) => Json.Number(project?.Attrs[LookRevKey]) is { } r && r >= LookRev;
 
     public static bool NewLook(IModelView m) => NewLook(Spatial.Project(m));
 
-    /// <summary>Lapin's standard as a project draws by it: version 1.1 for a project made since decision 674, else 1.0, exactly as before.</summary>
+    /// <summary>Lapin's standard as a project draws by it: version 1.1 for a project made since decision 682, else 1.0, exactly as before.</summary>
     public static MaterialStandard LapinOf(Entity? project) => NewLook(project) ? MaterialStandard.LapinCurrent : MaterialStandard.Lapin;
 
     /// <summary>The built-in standards as a project sees them: Lapin's in the version it draws by (<see cref="LapinOf"/>), then the others.</summary>

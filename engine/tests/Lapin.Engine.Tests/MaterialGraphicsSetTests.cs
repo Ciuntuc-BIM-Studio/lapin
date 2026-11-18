@@ -7,7 +7,7 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Stage 4 of docs/plan-material-graphics.md (decision 674): material graphics sets. An entry rules a material by its id over a
+/// Stage 4 of docs/plan-material-graphics.md (decision 682): material graphics sets. An entry rules a material by its id over a
 /// name over a category over all; a view style names a set and a view names another or none; a set removed leaves its styles
 /// none; a project made since has „Structure” and „MEP” for its Structural and MEP styles, one made before none; sets travel in
 /// a .lapinstandards file with the merge choices; every command one undo step.
@@ -37,7 +37,7 @@ public class MaterialGraphicsSetTests
 
     static JsonObject Entry(JsonObject match, JsonObject section) => new() { ["match"] = match, ["section"] = section };
 
-    /// <summary>A project made before decision 674: its mark taken off.</summary>
+    /// <summary>A project made before decision 682: its mark taken off.</summary>
     static void MakeOld(Fixture f) => f.Session.Edit("old", e =>
     {
         var p = Spatial.Project(e.Model)!;

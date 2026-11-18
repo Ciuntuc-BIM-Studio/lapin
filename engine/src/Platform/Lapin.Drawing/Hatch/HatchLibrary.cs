@@ -4,7 +4,7 @@ namespace Lapin.Drawing.Hatch;
 /// The built-in patterns (the old Lapin's own designs), in millimetres as they
 /// print at 1:1 on paper: the caller scales them to the drawing. A project's
 /// imported patterns take precedence over a built-in of the same name.
-/// The real-size ones (decision 671, <c>;%TYPE=MODEL</c>, <see cref="HatchUnits.Model"/>) are millimetres of the
+/// The real-size ones (decision 679, <c>;%TYPE=MODEL</c>, <see cref="HatchUnits.Model"/>) are millimetres of the
 /// object: brick courses (240×63, the Romanian format, the default; 240×71; 215×65) with 10 mm joints drawn as one line
 /// at the joint, blocks, tiles, boards, coursed stone, roof tiles and standing-seam sheet, drawn by Lapin.
 /// </summary>
@@ -108,7 +108,7 @@ public static class HatchLibrary
 118, 2.1,0.4, 1.9,3.6, 0.4,-3.9
 74, 1.4,2.2, 2.6,3.4, 0,-2.8
 
-;; Real size (millimetres of the object; decision 671)
+;; Real size (millimetres of the object; decision 679)
 *BRICK_240X63, Brick 240 x 63 running bond, 10 mm joints (real size)
 ;%TYPE=MODEL
 0, 0,0, 0,73

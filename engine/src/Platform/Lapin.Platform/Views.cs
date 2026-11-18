@@ -795,7 +795,7 @@ public static class Views
         var (drawing, lineworkOrphans) = Linework.Apply(generated, ViewLinework.Edits(view));
         // An elevation cut by its marker's line (decision 460) hatches its cut as a section does.
         var kind = spec.Kind == "plan" ? "plan" : spec.Kind is "elevation" or "3d" && !spec.Cut ? "elevation" : "section";
-        // The view's material graphics (decision 672): one precedence for every band, the material's step for the view's scale and its style's small-scale cut.
+        // The view's material graphics (decision 680): one precedence for every band, the material's step for the view's scale and its style's small-scale cut.
         var viewMaterials = ViewMaterialGraphics.For(m, view, kind, scale);
         // Each element's layers, so a layer thinner than a membrane (or of a membrane's material) draws as one.
         var layerSets = new Dictionary<string, IReadOnlyList<LayerRef>?>();
@@ -818,7 +818,7 @@ public static class Views
                         var along = Math.Atan2(b.Y - a.Y, b.X - a.X) * 180 / Math.PI;
                         // The axis's direction, not its sense: a wall drawn either way hatches alike.
                         if (along > 90 + 1e-9 || along <= -90 + 1e-9) along += along > 0 ? -180 : 180;
-                        // Its own hatch origin (decision 671): along the axis from its start, and across it to its left.
+                        // Its own hatch origin (decision 679): along the axis from its start, and across it to its left.
                         var from = HatchOrigins.OnAxis(e, a, b) ?? (along == Math.Atan2(b.Y - a.Y, b.X - a.X) * 180 / Math.PI ? a : b);
                         h = new ElementHatch(along, from);
                         break;
@@ -827,7 +827,7 @@ public static class Views
             return ownHatch[element] = h;
         }
         // A coarse view (decision 401): a layered element's layers one area, no membranes drawn between them.
-        // A small-scale cut drawn solid or as outlines (decision 672) merges them the same way.
+        // A small-scale cut drawn solid or as outlines (decision 680) merges them the same way.
         var coarse = ViewDetail.Of(m, view) <= PlanDetail.Lod100 || viewMaterials.MergesBands;
         var materials = MaterialDrawing.Apply(drawing, viewMaterials.Band, coarse ? null : LayersOf,
             l => l.Thickness < MaterialGraphics.MembraneThickness || viewMaterials.Material(l.Material)?.Membrane == true, joins: ViewStyles.Of(m, view).Joins, elementHatch: OwnHatch, mergeOwn: coarse);
@@ -1220,7 +1220,7 @@ public static class Views
                     mk.Line(foot, tip, "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head + look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head - look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
-                      .Text(new PenText(tip + look * (0.35 * u), v.Name, textHeight, Baseline: "middle", Font: text.Font));
+                      .Text(new PenText(tip + look * (0.35 * u), SymbolSlots.MarkerText(v), textHeight, Baseline: "middle", Font: text.Font));
                     heads.Add((JsonNode)new JsonObject { ["end"] = key, ["at"] = new JsonArray(Math.Round(tip.X, 6), Math.Round(tip.Y, 6)), ["offset"] = new JsonArray(Math.Round(off.X, 6), Math.Round(off.Y, 6)) });
                 }
                 mk.Data = new JsonObject { ["heads"] = heads };
@@ -1555,6 +1555,9 @@ public static class Views
             new("openingSymbols", "Opening symbols", "choice", Choices: ["show", "hide"]),
             // The layer a section's marker is on, so views hide markers by layer (SectionMarkers).
             new("markerLayer", "Marker layer", "text"),
+            // The view's mark of its own (report #167): what its markers write over its name, and its symbols, callouts and title over
+            // its number on its sheet; empty: as before (SymbolSlots.OwnMark).
+            new(SymbolSlots.MarkKey, "Mark", "text"),
             // A section's or elevation's marker: its symbol's size and its text's height (paper mm; empty: the drafting standards', decision 455).
             new("markSize", "Marker size (mm)", "number", Min: Standards.MinMarkSize, Max: Standards.MaxMarkSize),
             new("markTextSize", "Marker text (mm)", "number", Min: Standards.MinMarkText, Max: Standards.MaxMarkText),

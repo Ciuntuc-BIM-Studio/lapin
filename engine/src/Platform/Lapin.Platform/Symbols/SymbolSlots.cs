@@ -43,16 +43,30 @@ public static class SymbolSlots
         return null;
     }
 
-    /// <summary>The sheet a view is placed on (its number) and its number there (its place among the sheet's views, 1, 2…); none: empty.</summary>
-    public static (string Sheet, string Number) PlacedOn(IModelView m, string viewId)
+    /// <summary>
+    /// The view's mark of its own (<c>detailNumber</c>, "Mark" in its properties, report #167); null: none. It goes before the view's
+    /// number on its sheet wherever that is written, and before its name in Lapin's own section and elevation markers.
+    /// </summary>
+    public const string MarkKey = "detailNumber";
+    public static string? OwnMark(Entity? view) => view?.Str(MarkKey) is { } s && s.Trim().Length > 0 ? s.Trim() : null;
+
+    /// <summary>What Lapin's own marker of a section or an elevation writes: its mark of its own, else its name (as before).</summary>
+    public static string MarkerText(Entity view) => OwnMark(view) ?? view.Name;
+
+    /// <summary>
+    /// The sheet a view is placed on (its number) and its number there (its mark of its own, else its place among the sheet's views,
+    /// 1, 2…); none: empty. <paramref name="own"/> false: its place alone (the automatic number the properties show).
+    /// </summary>
+    public static (string Sheet, string Number) PlacedOn(IModelView m, string viewId, bool own = true)
     {
+        var mark = own ? OwnMark(m.Get(viewId)) : null;
         foreach (var sheet in m.OfClass(Sheets.Class).OrderBy(s => s.Str("number") ?? "", StringComparer.Ordinal))
         {
             var vps = Sheets.Viewports(sheet);
             var i = vps.FindIndex(v => v.ViewId == viewId);
-            if (i >= 0) return (sheet.Str("number") ?? "", m.Get(viewId)?.Str("detailNumber") is { Length: > 0 } own ? own : (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            if (i >= 0) return (sheet.Str("number") ?? "", mark ?? (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
         }
-        return ("", m.Get(viewId)?.Str("detailNumber") ?? "");
+        return ("", mark ?? "");
     }
 
     /// <summary>A mark's tokens: a view's (a section, an elevation, an inset's view) name, number, sheet and scale, and its attributes' names for Lapin's own symbols.</summary>
@@ -106,7 +120,7 @@ public static class SymbolSlots
         {
             var m = q.Model;
             var owner = m.Get((string?)a["ownerId"] ?? "");
-            return new JsonObject
+            var o = new JsonObject
             {
                 ["slots"] = new JsonArray(All.Select(s => (JsonNode)new JsonObject
                 {
@@ -115,6 +129,13 @@ public static class SymbolSlots
                     ["own"] = (string?)owner?.Attrs[Key]?[s.Id],
                 }).ToArray()),
             };
+            // A view's mark (report #167): what its marks write without one of its own (its name, its number on its sheet), and its own.
+            if (owner is { Class: Views.Class })
+            {
+                var (sheet, number) = PlacedOn(m, owner.Id, own: false);
+                o["mark"] = new JsonObject { ["name"] = owner.Name, ["number"] = number, ["sheet"] = sheet, ["own"] = OwnMark(owner) };
+            }
+            return o;
         });
 
         // A slot's symbol set, one undo step: on the project ({slot, symbolId}), or on marks of their own ({slot, symbolId, ownerIds});

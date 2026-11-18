@@ -95,7 +95,7 @@ public static class BonsaiStyles
 
         // Each material: its cut hatch (and fill) where it is cut, its elevation hatch where it is seen.
         var paperSurfaces = MaterialHatchUpgrade.PaperSurfaces(m);
-        // The project's material standard (decision 673) gives what a material does not set.
+        // The project's material standard (decision 681) gives what a material does not set.
         var standard = MaterialStandards.Of(m);
         var taken = new Dictionary<string, string>(StringComparer.Ordinal);
         void Material(string name, Entity? material, bool layerToo)
@@ -112,7 +112,7 @@ public static class BonsaiStyles
             var fill = section.Membrane ? null : patterns.Fill(section);
             var selectors = new List<string> { $".cut.material-{key}", $".surface.material-{key}", $".material-{key} .cut", $".material-{key} .surface" };
             if (layerToo) selectors.AddRange([$".cut.layer-material-{key}", $".surface.layer-material-{key}"]);
-            // Its cut outline as it sets it (decision 670): colour, weight, dashes.
+            // Its cut outline as it sets it (decision 678): colour, weight, dashes.
             var outline = new List<string>();
             if (!section.Membrane && section.CutLine is { } cl)
             {
@@ -157,7 +157,7 @@ public static class BonsaiStyles
 
         /// <summary>
         /// The fill of a material's graphics (a url, a colour) or null when it has none: its fill (at its opacity, unless
-        /// <paramref name="ownFill"/> is off), its background hatch and its hatch over it, each in its colour and weight (decision 670).
+        /// <paramref name="ownFill"/> is off), its background hatch and its hatch over it, each in its colour and weight (decision 678).
         /// </summary>
         public string? Fill(ResolvedMaterial g, string? background = null, bool ownFill = true)
         {
@@ -166,7 +166,7 @@ public static class BonsaiStyles
             var layers = new List<(HatchPattern P, double Scale, double Angle, string Color, double Width)>();
             HatchPattern? Find(string? h) => string.IsNullOrEmpty(h) ? null : HatchLibrary.Find(h.Equals(BattHatch.Name, StringComparison.OrdinalIgnoreCase) ? "INSULATION" : h, extra);
             static double Positive(double s) => s <= 0 || !double.IsFinite(s) ? 1 : s;
-            // A stylesheet has no scale: a real-size pattern (decision 671) is drawn as at 1:100.
+            // A stylesheet has no scale: a real-size pattern (decision 679) is drawn as at 1:100.
             static double Paper(HatchPattern p, HatchUnits? over, double s) => HatchScale.UnitsOf(p, over) == HatchUnits.Model ? s / 100 : s;
             if (g.Background is { } b && Find(b.Hatch) is { } bp)
             {
