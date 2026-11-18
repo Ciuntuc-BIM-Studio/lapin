@@ -728,7 +728,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("webSection", "Truss webs", "choice", Choices: Roof.RafterSections, ShowIf: FramedAs("trusses")),
             new("timberGrade", "Timber grade", "choice", Choices: Roof.TimberGrades, ShowIf: Framed),
             new("collarHeight", "Collar ties: share of the rise", "number", Min: 0.3, Max: 0.9, ShowIf: FramedAs("collar")),
-            new("rafterTail", "Rafter tails", "choice", Choices: ["plumb", "square"], ShowIf: Framed),
+            new("rafterTail", "Rafter tails", "choice", Choices: Roofs.RoofParts.TailTypes, ShowIf: Framed),
             new("rafterSeat", "Rafter seat on the wall plate", "choice", Choices: ["birdsmouth", "none"], ShowIf: Framed),
             new("purlins", "Purlins per slope", "number", Min: 0, Max: 3, ShowIf: Framed),
             new("gutterProfile", "Gutters", "choice", Choices: RoofCatalog.GutterProfiles),

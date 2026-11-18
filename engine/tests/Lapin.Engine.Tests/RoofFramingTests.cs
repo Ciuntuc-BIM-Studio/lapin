@@ -174,6 +174,54 @@ public class RoofFramingTests
         finally { File.Delete(path); }
     }
 
+    [Fact]
+    public void All_rafter_tail_profiles_build_valid_solids_and_previews()
+    {
+        var f = new Fixture();
+        var roof = AddRoof(f, "se_falu_red", new JsonObject { ["structure"] = "rafters", ["rafterSection"] = "45x195 mm", ["rafterSpacing"] = 0.8 });
+
+        foreach (var tail in RoofParts.TailTypes)
+        {
+            foreach (var seat in new[] { "none", "birdsmouth" })
+            {
+                f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["rafterTail"] = tail, ["rafterSeat"] = seat } });
+                var (_, members) = Framing(f, roof);
+                var rafters = members.Where(m => m.Role == "rafter").ToList();
+                Assert.NotEmpty(rafters);
+                foreach (var m in rafters)
+                {
+                    var body = m.Body("rafter");
+                    Assert.NotNull(body);
+                    Assert.True(body.Vertices.Length >= 8, $"{tail}/{seat}: expected >= 8 vertices, got {body.Vertices.Length}");
+                    Assert.True(body.Faces.Length >= 6, $"{tail}/{seat}: expected >= 6 faces, got {body.Faces.Length}");
+                }
+                if (seat == "none")
+                {
+                    var count = rafters[0].Profile!.Count;
+                    if (tail is "plumb" or "square") Assert.Equal(4, count);
+                    else if (tail is "level" or "bevel") Assert.Equal(5, count);
+                    else if (tail == "stepped") Assert.Equal(8, count);
+                    else if (tail == "curved") Assert.True(count > 6, $"curved should be discretized by Chords, got {count}");
+                }
+            }
+
+            var preview = RoofPreview.Of(f.Model.Get(roof)!, f.Model);
+            var section = preview["section"]?.AsObject();
+            Assert.NotNull(section);
+            var items = section!["items"]!.AsArray();
+            Assert.Contains(items, it => (string?)it?["role"] == "rafter");
+        }
+
+        // Short overhang / short rafter must not invert or fail.
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["overhang"] = 0.05, ["rafterSeat"] = "birdsmouth" } });
+        foreach (var tail in RoofParts.TailTypes)
+        {
+            f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["rafterTail"] = tail } });
+            var (_, members) = Framing(f, roof);
+            Assert.All(members.Where(m => m.Role == "rafter"), m => Assert.NotNull(m.Body("rafter")));
+        }
+    }
+
     sealed class Q(Fixture f) : IQueryContext
     {
         public IModelView Model => f.Model;
