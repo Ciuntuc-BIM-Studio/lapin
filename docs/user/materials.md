@@ -10,7 +10,7 @@ summary: Set each material's colour, hatches and joints, put your own image on i
 
 ## Appearance: how a material renders
 
-The **Appearance** tab sets how the material looks in 3D and in the renderers you export to. The **2D graphics** tab keeps its hatches and pens, as before.
+The **Appearance** tab sets how the material looks in 3D and in the renderers you export to. The **2D graphics** tab sets its hatches, fills, lines and pens; see [Material graphics](material-graphics.md).
 
 ![A material's appearance, with its live preview](shots/material-appearance.webp)
 
@@ -70,6 +70,8 @@ The IFC export names each material's surface style after it too, with its transp
 An IFC file from another program brings its glass see-through: the transparency of a material's surface style, or of the style on a body itself, becomes the material's **Transparency** (a body's style gives its part a material named after the style). The imported file itself is never changed.
 
 ## What a material sets
+
+Hatch colour, weight, line type, opacity and halftone, the background and second pattern, the cut outline, real-size patterns, steps by scale and the material standards are in [Material graphics](material-graphics.md). The list below is what a material sets in short.
 
 - **Colour (3D)** and the faces drawn on it in 3D. Lapin guesses them from the name, for example a brick's courses or a tile's grid. **Ends** and **Top and bottom** can look different from the faces.
 - **Hatch** for each place it is drawn: cut in a section, cut in a plan, and seen in an elevation. Each has its scale, angle, alignment, fill and pen. A **SOLID** hatch fills in its fill colour (**Fill → colour…**, for example yellow for insulation), in plans, sections, sheets and the 3D's cut; without a fill it is black. Until you give it one, a cut takes the pattern its name suggests, as Revit's default materials do: brick, masonry and stone 45° lines (MASONRY), concrete blocks and aerated concrete a diagonal crosshatch (BLOCK), concrete, cast in place or reinforced, speckled (CONCRETE), rigid insulation (EPS, XPS, PIR) a fine square grid (RIGID), mineral wool BATT, gypsum and plaster a stipple (GYPSUM), sand a dense one (SAND), timber WOOD, plywood, OSB and CLT WOODCROSS, steel STEEL, earth EARTH, gravel GRAVEL, tiles TILES; glass, air, paint, membranes and any other name none. Brick's courses are an elevation's. A project made before keeps the hatches it had. An elevation or a section hatches the faces it sees with the elevation hatch, where nothing nearer hides them (Views, Surface hatches); until you give it one, its name suggests one (brick BRICK, stone STONE, timber BOARDS, metal cladding VERTICAL), never insulation's BATT.

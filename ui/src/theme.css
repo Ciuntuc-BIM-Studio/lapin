@@ -577,7 +577,7 @@ table.layer-edit:not(.zones):not(.material-params) > tbody > tr:not(.layer-parts
 .gfx-row.own .gfx-label { font-weight: 600; }
 .gfx-control { display: flex; gap: 6px; align-items: center; min-width: 0; }
 .gfx-control select { max-width: 100%; }
-.gfx-control input.num { width: 5.5em; }
+.gfx-control input.num { width: 8em; }
 .gfx-nobtn { width: 18px; }
 .gfx-opacity { display: inline-flex; align-items: center; gap: 4px; }
 .gfx-opacity input[type=range] { width: 96px; }
@@ -2837,7 +2837,7 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .gfx-step-head { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .gfx-step-no { font-weight: 600; min-width: 1.2em; }
 .gfx-scale-end { display: inline-flex; align-items: center; gap: 3px; }
-.gfx-scale-end input.num { width: 4.5em; }
+.gfx-scale-end input.num { width: 6em; }
 .gfx-step-applies { color: var(--accent, #3b6fd4); font-weight: 600; }
 .gfx-step-sum { margin: 2px 0; }
 .gfx-step-problem { margin: 2px 0; color: var(--danger, #c0392b); }
@@ -2852,7 +2852,7 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .standard-row, .standard-store-row { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 3px; }
 .standard-row.current { border-color: var(--accent, #3b6fd4); box-shadow: inset 3px 0 0 var(--accent, #3b6fd4); }
 .standard-row .catalog-text, .standard-store-row .catalog-text { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
-.badge.on { color: var(--accent, #3b6fd4); border-color: var(--accent, #3b6fd4); }
+.badge.on { background: var(--accent-wash, transparent); color: var(--accent, #3b6fd4); border: 1px solid var(--accent, #3b6fd4); line-height: 14px; }
 .badge.warn { color: var(--danger, #c0392b); border-color: var(--danger, #c0392b); }
 .standard-split { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(280px, 1.6fr); gap: 12px; align-items: start; }
 .standard-fields { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -2872,12 +2872,13 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .standard-apply-table table { border-collapse: collapse; width: 100%; }
 .standard-apply-table td, .standard-apply-table th { padding: 2px 6px; text-align: left; vertical-align: middle; }
 .standard-look { white-space: nowrap; }
+.standard-pair { display: inline-flex; align-items: center; gap: 4px; }
 .standard-look svg { vertical-align: middle; }
 .standard-store-split { display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px; align-items: start; }
 .standard-publish, .standard-from-project { display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--rule); border-radius: 3px; padding: 8px; }
 .standard-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 /* Manage → Hatch patterns (material graphics, stage 7) */
-.hatch-patterns { display: grid; grid-template-columns: 250px 1fr; gap: 12px; min-height: 420px; }
+.hatch-patterns { display: grid; grid-template-columns: 300px 1fr; gap: 12px; min-height: 420px; }
 .hp-list { display: flex; flex-direction: column; gap: 6px; min-width: 0; overflow: auto; max-height: 70vh; }
 .hp-items { display: flex; flex-direction: column; gap: 1px; margin: 0; padding: 0; }
 .hp-item { display: flex; gap: 6px; width: 100%; text-align: left; padding: 2px 6px; border: 0; background: transparent; border-radius: 3px; cursor: pointer; }
@@ -2896,3 +2897,10 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .hp-foot { align-items: center; }
 .vv-filter-wide { overflow-x: auto; }
 .vv-fill-cell { display: inline-flex; gap: 2px; align-items: center; }
+/* A rule's name words are regular expressions: case matters ( is not \B), so no capitals forced. */
+[data-testid=rule-names] .chip { text-transform: none; letter-spacing: 0; font-size: 11px; }
+
+.hp-list > .row { flex-wrap: wrap; gap: 4px; }
+.hp-list > .row .btn { white-space: nowrap; }
+.hp-head { gap: 10px; }
+.hp-head label { display: flex; align-items: center; gap: 6px; }

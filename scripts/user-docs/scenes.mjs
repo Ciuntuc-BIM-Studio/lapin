@@ -13084,6 +13084,267 @@ export const scenes = [
       await exchange.getByRole('button', { name: 'Cancel' }).click();
     },
   },
+  // --- material graphics scenes (begin)
+  {
+    // Material graphics (docs/plan-material-graphics.md, stages 0b-2): a wall type cut in a section, its materials' graphics in
+    // Manage -> Materials (hatch, background, lines, real-size units, steps by scale), several materials at once, and the
+    // layer swatch's popover in Wall types.
+    id: 'matgfx-editor',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 300', layers: [
+        { material: 'Render', thickness: 0.02 }, { material: 'Mineral wool', thickness: 0.1 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 },
+      ] })).id;
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 8, y2: 0, typeId: type });
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 8, y1: 0, x2: 8, y2: 6, typeId: type });
+      await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [4, -2], end: [4, 3], depth: 1, scale: 20 });
+      await t.wait(800);
+      await t.tool('manage.materials');
+      const dialog = t.page.locator('.dialog');
+      const row = (label) => dialog.locator(`.gfx-row:has(> .gfx-label:text-is("${label}"))`).first();
+      const section = (name) => dialog.locator(`[data-section=${name}]`);
+      const shotOf = async (name, loc, pad = 8) => { await loc.evaluate((e) => e.scrollIntoView({ block: 'start' })); await t.wait(200); await t.shot(name, { of: loc, pad }); };
+      const wool = (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === 'Mineral wool');
+      const brick = (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === 'Brick');
+      await dialog.locator('[data-material="Brick"]').click();
+      await t.wait(400);
+      await dialog.locator('[data-tab=graphics]').click();
+      await t.wait(800);
+      t.expect(await dialog.locator('[data-testid=material-graphics]').count() === 1, 'the graphics editor is in the 2D graphics tab');
+      t.expect(await dialog.locator('.gfx-kind').count() === 3, 'three kinds of view: section, plan and elevation');
+      // Hatch: real-size units, a colour, a weight in mm, a line type and an opacity.
+      await dialog.locator('[data-field=material-hatch-units-section]').selectOption('model');
+      await t.wait(500);
+      await row('Weight, mm').locator('input').fill('0.35');
+      await row('Weight, mm').locator('input').press('Enter');
+      await t.wait(600);
+      await row('Angle').locator('input').fill('45');
+      await row('Angle').locator('input').press('Enter');
+      await t.wait(600);
+      await dialog.locator('[data-field=material-hatch-linetype-section]').selectOption({ index: 1 }).catch(() => {});
+      await t.wait(500);
+      let m = (await t.nodes()).find((n) => n.id === brick.id);
+      t.expect(m.props.section?.hatchUnits === 'model' && m.props.section?.hatchWeight === 0.35, 'units and weight are the material\'s own (material.update)');
+      await shotOf('material-graphics-hatch', section('hatch'));
+      // Background: the material's colour and a second pattern; the lines.
+      await dialog.locator('[data-field=material-fill-section]').selectOption('material');
+      await t.wait(500);
+      await dialog.locator('[data-field=material-bg-hatch-section]').selectOption({ index: 3 });
+      await t.wait(600);
+      await shotOf('material-graphics-background', section('background'));
+      await row('Weight, mm').nth(0).scrollIntoViewIfNeeded();
+      await shotOf('material-graphics-lines', section('lines'));
+      await dialog.locator('[data-testid=material-graphics] .gfx-preview, .material-gfx-preview').first().scrollIntoViewIfNeeded();
+      await shotOf('material-graphics-preview', dialog.locator('.material-gfx-preview').first());
+      // By scale: a step from 1:100 with a plain fill and no hatch.
+      await section('by-scale').evaluate((e) => { e.open = true; });
+      await dialog.locator('[data-testid=step-simplify]').click().catch(() => {});
+      await t.wait(800);
+      await shotOf('material-graphics-steps', section('by-scale'));
+      // Several materials at once.
+      await dialog.locator('[data-testid=material-pick]').nth(2).check();
+      await dialog.locator('[data-testid=material-pick]').nth(0).check();
+      await t.wait(600);
+      t.expect(await dialog.locator('[data-testid=material-multi], [data-testid=material-graphics-multi]').count() >= 1, 'ticking several materials changes their graphics together');
+      await t.shot('material-multi', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-testid=material-copy-graphics]').scrollIntoViewIfNeeded();
+      await t.shot('material-copy-graphics', { of: '[data-testid=material-copy-graphics]', pad: 10 });
+      await dialog.locator('button[title="Close"]').first().click();
+      await t.wait(400);
+      await openFromBrowser(t, 'A-A', 2500);
+      await t.fit();
+      await t.shot('material-graphics-section', { of: '[data-testid=drawing]', pad: 0 });
+      // The same editor beside a layer's swatch in Wall types.
+      await t.ui({ wallTypeId: type });
+      await t.tool('architecture.wallTypes');
+      await t.wait(600);
+      await t.page.locator('.dialog [data-testid=layer-hatch]').nth(2).click();
+      await t.until(async () => await t.page.locator('.gfx-editor[data-compact]').count() === 1, 'the layer swatch opens the graphics editor');
+      await t.shot('layer-swatch-graphics', { of: '.gfx-editor[data-compact]', pad: 14 });
+    },
+  },
+  {
+    // Material standards (docs/plan-material-graphics.md, stage 3): the built-in packs, chosen at a new project, applied with a
+    // preview, edited as a copy, saved from the project, and the store tab.
+    id: 'matgfx-standards',
+    async run(t) {
+      await t.start();
+      const choice = t.page.locator('[data-testid=new-project-standard]');
+      t.expect(await choice.count() === 1, 'the start screen offers the material standard for a new project');
+      await t.shot('material-standard-start', { of: choice, pad: 14 });
+      await t.fresh();
+      const s = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 300', layers: [
+        { material: 'Render', thickness: 0.02 }, { material: 'Mineral wool', thickness: 0.1 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Concrete', thickness: 0.1 },
+      ] })).id;
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 8, y2: 0, typeId: type });
+      await t.tool('manage.materialStandards');
+      const dialog = t.page.locator('.dialog');
+      await t.until(async () => await dialog.locator('[data-testid=standard-row]').count() >= 2, 'the built-in standards are listed');
+      t.expect(await dialog.locator('[data-testid=standard-badge-builtin]').count() >= 2, 'the built-in packs are marked');
+      await t.shot('material-standards', { of: '.dialog', pad: 0 });
+      // Apply one with its preview.
+      const names = await dialog.locator('[data-testid=standard-row]').allInnerTexts();
+      t.expect(names[0].startsWith('Lapin'), 'Lapin\'s own standard heads the list');
+      await dialog.locator('[data-testid=standard-row]').nth(1).locator('[data-action=standard-apply-open]').click();
+      await t.until(async () => await dialog.locator('[data-testid=apply-row]').count() >= 1, 'the preview lists the materials it would change');
+      await t.shot('material-standard-apply', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-action=standard-apply]').click();
+      await t.wait(1200);
+      // A duplicate to edit: a built-in pack is read-only.
+      await dialog.locator('[data-testid=standard-row]').first().locator('[data-action=standard-duplicate]').click();
+      await t.wait(1000);
+      await t.until(async () => await dialog.locator('[data-testid=standard-editor]').count() === 1, 'a copy opens in the editor');
+      await t.shot('material-standard-editor', { of: '.dialog', pad: 0 });
+      await dialog.getByRole('button', { name: 'Close', exact: true }).last().click();
+      await t.wait(600);
+      // From the project: the graphics set by hand, as a new standard.
+      await dialog.locator('[data-action=standard-from-project]').click();
+      await t.wait(600);
+      await t.shot('material-standard-from-project', { of: '.dialog', pad: 0 });
+      await dialog.getByRole('button', { name: 'Cancel', exact: true }).first().click();
+      await t.wait(400);
+      await dialog.locator('[data-tab=store]').click();
+      await t.wait(2500);
+      await t.shot('material-standard-store', { of: '.dialog', pad: 0 });
+    },
+  },
+  {
+    // Material graphics sets (stage 4) and the hatch patterns dialog (stage 7).
+    id: 'matgfx-sets-patterns',
+    async run(t) {
+      await t.fresh();
+      await t.tool('manage.materialGraphicsSets');
+      const dialog = t.page.locator('.dialog');
+      await t.until(async () => await dialog.locator('[data-testid=set-row]').count() >= 1, 'the sets are listed');
+      await t.shot('material-graphics-sets', { of: '.dialog', pad: 0 });
+      await dialog.locator('button[title="Close"]').first().click();
+      await t.wait(400);
+      await t.tool('manage.hatchPatterns');
+      await t.until(async () => await dialog.locator('[data-testid=hp-list]').count() === 1, 'the hatch patterns are listed');
+      await dialog.locator('[data-testid=hp-new]').click();
+      await t.wait(800);
+    },
+  },
+  {
+    // Where a view reads the material graphics (stages 2-5): the hatch origin in the panel and its grip, the view's minimum hatch
+    // spacing, Small-scale cut and Material graphics set, the same in View styles, subcategory graphics and a filter's hatch in
+    // Visibility/Graphics.
+    id: 'matgfx-views',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 300', layers: [
+        { material: 'Render', thickness: 0.02 }, { material: 'Mineral wool', thickness: 0.1 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 },
+      ] })).id;
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 8, y2: 0, typeId: type })).id;
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 8, y1: 0, x2: 8, y2: 6, typeId: type });
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 8, y1: 6, x2: 0, y2: 6, typeId: type });
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 6, x2: 0, y2: 0, typeId: type });
+      const sec = (await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [4, -2], end: [4, 8], depth: 1, scale: 50 })).id;
+      const south = (await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South' })).id;
+      await t.wait(800);
+      // The hatch origin: the panel's row and the grip, in the elevation (a real-size pattern's own view).
+      await openFromBrowser(t, 'South', 2500);
+      await t.fit();
+      await select(t, wall);
+      await t.wait(1200);
+      t.expect(await t.page.locator('[data-testid=hatch-origin]').count() === 1, 'the properties panel has a hatch origin row');
+      const grips = await t.page.locator('[data-grip=hatchOrigin]').count();
+      t.expect(grips === 1, 'the hatch origin grip shows in an elevation');
+      await openFromBrowser(t, 'Ground floor', 2000);
+      await select(t, wall);
+      await t.wait(1200);
+      t.expect(await t.page.locator('[data-grip=hatchOrigin]').count() === 1, 'the hatch origin grip shows in a plan');
+      await t.page.locator('[data-testid=hatch-origin]').scrollIntoViewIfNeeded();
+      await t.shot('hatch-origin-panel', { of: '[data-testid=hatch-origin]', pad: 10 });
+      await t.fit();
+      await t.shot('hatch-origin-grip', { of: '[data-testid=plan]', pad: 0 });
+      // View settings of the section.
+      await select(t, sec);
+      await t.page.locator('nav.browser').getByText('A-A', { exact: true }).first().click();
+      await t.page.waitForSelector('.view-settings');
+      for (const id of ['view-min-hatch-spacing', 'view-small-scale-cut', 'view-material-graphics-set']) t.expect(await t.page.locator(`[data-testid=${id}]`).count() === 1, `View settings has ${id}`);
+      await t.page.locator('[data-testid=view-min-hatch-spacing]').scrollIntoViewIfNeeded();
+      await t.shot('view-material-graphics', { of: '.view-settings', pad: 0, maxHeight: 900 });
+      // View styles.
+      await t.ui({ dialog: 'viewStyles' });
+      await t.wait(900);
+      await t.shot('view-styles-material-graphics', { of: '.dialog', pad: 0 });
+      await t.page.keyboard.press('Escape');
+      await t.wait(400);
+      // Visibility/Graphics: the walls' subcategories with their graphics, and a filter that changes hatch.
+      await t.tool('view.layers');
+      const dialog = t.page.locator('[data-testid=vv-dialog]');
+      await dialog.waitFor({ timeout: 10_000 });
+      await dialog.locator('tr[data-category=walls] button.icon').click();
+      await t.wait(600);
+      await t.shot('vg-subcategory-graphics', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 720 });
+    },
+  },
+  {
+    // A filter that changes hatch and fill (stage 5); drawn linework saved as a hatch pattern and a line-family pattern made by
+    // its numbers (stage 7); the material standard at a project's start in Preferences (stage 3).
+    id: 'matgfx-patterns',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor V/G' })).id;
+      await t.ui({ view: 'plan', planViewId: plan, keyPlan: false });
+      await t.wait(1500);
+      await t.tool('manage.viewFilters');
+      const dialog = t.page.locator('[data-testid=vv-dialog]');
+      await dialog.waitFor({ timeout: 10_000 });
+      await dialog.locator('[data-testid=vv-new-filter]').click();
+      await t.wait(1200);
+      await dialog.locator('.vv-filters tbody tr input[type=checkbox]').first().click();
+      await t.wait(800);
+      await t.shot('vg-filter-hatch', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 640 });
+      await t.page.keyboard.press('Escape');
+      await t.wait(400);
+      // Save as hatch pattern: a brick bond drawn as lines in a drawing, a cell of 2 x 1.
+      const draw = async (a, b) => { const r = await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [a, b] } }); return r.id ?? r.ids?.[0]; };
+      const ids = [await draw([0, 0], [2, 0]), await draw([0, 1], [2, 1]), await draw([0.5, 0], [0.5, 1]), await draw([1.5, 1], [1.5, 2])];
+      await t.page.evaluate(async ([viewId, ids]) => {
+        const cell = (await import('/src/modules/core/hatchPatternModel.ts')).cellOf({ x: 0, y: 0 }, { x: 2, y: 1 });
+        (await import('/src/modules/core/hatchPatternTools.tsx')).useSaveHatch.setState({ request: { viewId, ids, cell } });
+        (await import('/src/app/store.ts')).useUi.setState({ dialog: 'saveHatch' });
+      }, [plan, ids]);
+      await t.wait(1500);
+      const retry = t.page.getByRole('button', { name: 'Try again' });
+      if (await retry.count()) {  await retry.click(); await t.wait(1500); }
+      const save = t.page.locator('.dialog').last();
+      await save.locator('[data-field=hp-save-name]').fill('BOND-2X1');
+      await t.shot('save-hatch', { of: '.dialog', pad: 0 });
+      await save.locator('[data-field=hp-save-go]').click();
+      await t.until(async () => await t.page.locator('[data-testid=hp-result]').count() === 1, 'the pattern is saved');
+      await t.shot('save-hatch-result', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-field=hp-open-editor]').click();
+      await t.wait(1200);
+      await t.shot('hatch-patterns-saved', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(400);
+      // A pattern from its numbers: a line family.
+      await t.tool('manage.hatchPatterns');
+      const dialog2 = t.page.locator('.dialog');
+      await dialog2.locator('[data-testid=hp-new]').click();
+      await t.wait(600);
+      await dialog2.locator('[data-field=hp-name]').fill('DIAGONAL-5');
+      await dialog2.locator('[data-testid=hp-families] input.num').nth(4).fill('5');
+      await dialog2.locator('[data-testid=hp-families] input.num').nth(4).press('Tab');
+      await t.wait(800);
+      await dialog2.locator('[data-testid=hp-save]').click().catch(async () => { await dialog2.getByRole('button', { name: 'Make pattern' }).click(); });
+      await t.wait(1000);
+      await t.shot('hatch-patterns-family', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(400);
+      await t.ui({ dialog: 'preferences' });
+      await t.wait(900);
+      await t.shot('preferences-material-standard', { of: '.prefs-dialog', pad: 0 });
+    },
+  },
+  // --- material graphics scenes (end)
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

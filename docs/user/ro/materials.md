@@ -10,7 +10,7 @@ summary: Setezi culoarea, hașurile și rosturile fiecărui material, pui pe el 
 
 ## Aspect: cum se randează un material
 
-Fila **Aspect** setează cum arată materialul în 3D și în programele de randare în care exporți. Fila **Grafică 2D** păstrează hașurile și penițele, ca înainte.
+Fila **Aspect** setează cum arată materialul în 3D și în programele de randare în care exporți. Fila **Grafică 2D** setează hașurile, umplerile, liniile și penițele; vezi [Grafica materialelor](material-graphics.md).
 
 ![Aspectul unui material, cu previzualizarea lui](shots/material-appearance.webp)
 
@@ -70,6 +70,8 @@ Twinmotion, Lumion, Enscape, Blender și alte programe de randare înlocuiesc ma
 Un fișier IFC din alt program își aduce sticla transparentă: transparența stilului de suprafață al unui material, sau a stilului de pe un corp, devine **Transparența** materialului (stilul unui corp dă părții lui un material numit după stil). Fișierul importat nu se schimbă niciodată.
 
 ## Ce setează un material
+
+Culoarea, grosimea, tipul de linie, opacitatea și halftone-ul hașurii, fundalul și al doilea model, conturul tăieturii, modelele în mărime reală, pașii după scară și standardele de materiale sunt în [Grafica materialelor](material-graphics.md). Lista de mai jos spune pe scurt ce setează un material.
 
 - **Culoare (3D)** și fețele desenate pe el în 3D. Lapin le ghicește din nume, de exemplu rândurile unei cărămizi sau rosturile unei plăci de faianță. **Capete** și **Sus și jos** pot arăta altfel decât fețele.
 - **Hașura** pentru fiecare loc în care se desenează: secționat într-o secțiune, secționat într-un plan, și văzut într-o fațadă. Fiecare are scara, unghiul, alinierea, umplutura și penița ei. O hașură **SOLID** umple în culoarea umpluturii ei (**Umplutură → culoare…**, de exemplu galben pentru izolație), în planuri, secțiuni, planșe și tăietura din 3D; fără umplutură e neagră. Până nu i-o dai, o tăietură ia modelul pe care îl sugerează numele ei, ca materialele implicite din Revit: cărămidă, zidărie și piatră linii la 45° (MASONRY), blocuri de beton și beton celular o hașură încrucișată în diagonală (BLOCK), beton, turnat pe loc sau armat, punctat (CONCRETE), izolație rigidă (EPS, XPS, PIR) o grilă fină pătrată (RIGID), vată minerală BATT, gips și tencuială un punctat (GYPSUM), nisip unul des (SAND), lemn WOOD, placaj, OSB și CLT WOODCROSS, oțel STEEL, pământ EARTH, pietriș GRAVEL, plăcile și țiglele TILES; sticlă, aer, vopsea, membrane și orice alt nume nimic. Rândurile cărămizii sunt ale unei fațade. Un proiect făcut înainte păstrează hașurile pe care le avea. O fațadă sau o secțiune hașurează fețele pe care le vede cu hașura de fațadă, unde nimic mai apropiat nu le ascunde (Vederi, Hașurile suprafețelor); până nu i-o dai, numele îi propune una (cărămidă BRICK, piatră STONE, lemn BOARDS, placare metalică VERTICAL), niciodată BATT-ul izolației.

@@ -26,7 +26,7 @@ const Row = ({ m }: { m: ApplyRow }) => (
     <td data-no-i18n>{m.name}</td>
     {(['section', 'plan', 'elevation'] as const).map((k) => (
       <td key={k} className="standard-look">
-        <Look look={m.before[k]} kind={k} />{m.changed ? <><ArrowRight size={11} aria-hidden /><Look look={m.after[k]} kind={k} /></> : null}
+        <span className="standard-pair"><Look look={m.before[k]} kind={k} />{m.changed ? <><ArrowRight size={11} aria-hidden /><Look look={m.after[k]} kind={k} /></> : null}</span>
       </td>
     ))}
     <td className="muted small">{m.changed ? (m.cleared ? 'its own graphics are replaced' : 'changes') : 'unchanged'}</td>

@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { create } from 'zustand';
+import { t } from '../../i18n';
 import { ColourField } from '../../shell/ColourField';
 import { execute } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
@@ -169,13 +170,13 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
       <Section title="Hatch" name="hatch" open>
         <Row label="Pattern" set={hatchValue !== '*'} onReset={() => setField('hatch', undefined)}>
           <select data-field={`material-hatch-${kind}`} value={hatchValue} onChange={(e) => (e.target.value === '*' ? setField('hatch', undefined) : setField('hatch', e.target.value || null))}>
-            <option value="*">{`from the name${guessed && r.hatch ? ` (${r.hatch})` : ''}`}</option>
+            <option value="*">{t('from the name')}{guessed && r.hatch ? ` (${r.hatch})` : ''}</option>
             <option value="">none</option>
             {patternOptions}
           </select>
           <UnitsBadge units={unitsOf(shownPattern)} />
           {!compact && <button type="button" className="link small" data-testid="edit-pattern" onClick={() => openHatchPatterns({ select: shownPattern?.name ?? null, fresh: !shownPattern, fromMaterial: m.name })}>New / Edit pattern…</button>}
-          {shownPattern && !shownPattern.solid && <HatchSwatch hatch={shownPattern.name} scale={own?.hatchScale ?? r.hatchScale} units={units} viewScale={prefs.scale} size={22} />}
+          {shownPattern && !shownPattern.solid && <HatchSwatch hatch={shownPattern.name} scale={own?.hatchScale ?? r.hatchScale} size={22} />}
         </Row>
         <Row label="Units" title="Pattern's own: as the pattern says. Drafting: the spacing is paper millimetres, the same on every scale. Real size: it is the real object's millimetres, so it follows the view's scale" set={has('hatchUnits')} onReset={() => setField('hatchUnits', undefined)}>
           <select data-field={`material-hatch-units-${kind}`} value={own?.hatchUnits ?? ''} onChange={(e) => setField('hatchUnits', e.target.value || undefined)}>
