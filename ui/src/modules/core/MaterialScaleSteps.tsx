@@ -11,7 +11,7 @@ import { ColourField } from '../../shell/ColourField';
 import { ColourControl, LineTypeSelect, NumberInput, OpacityInput, Row, type HatchPattern } from './MaterialGraphicsEditor';
 import { PatternOptions } from './hatchUnits';
 import {
-  MAX_STEPS, SCALE_PRESETS, addStep, duplicateStep, moveStep, newStep, parseNumber, parseScaleDenominator, parseWeight, rangeLabel, removeStep,
+  MAX_STEPS, SCALE_PRESETS, addStep, duplicateStep, moveStep, localNumber, newStep, parseNumber, parseScaleDenominator, parseWeight, rangeLabel, removeStep,
   sampleScale, setStepField, setStepGroup, setStepRange, simplifySteps, stepFields, stepsProblem,
   type Field, type GroupField, type MaterialKind, type ResolvedGraphics, type ScaleStep,
 } from './materialGraphicsModel';
@@ -52,7 +52,7 @@ function StepFields({ step, i, r, hatches, apply, idKey }: { step: ScaleStep; i:
           <ColourControl value={l.color as string | undefined} auto={r[g]?.color ?? '#000000'} onSet={(v) => grp(g, 'color', v)} />
         </Row>
         <Row label="Weight, mm" set={l.weight !== undefined} onReset={() => grp(g, 'weight', undefined)}>
-          {num(`${g}w`, l.weight as number | undefined, r[g]?.weight != null ? String(r[g]?.weight) : 'Object styles', parseWeight, (v) => grp(g, 'weight', v))}
+          {num(`${g}w`, l.weight as number | undefined, r[g]?.weight != null ? localNumber(r[g]!.weight!) : 'Object styles', parseWeight, (v) => grp(g, 'weight', v))}
         </Row>
         <Row label="Line type" set={l.lineType !== undefined} onReset={() => grp(g, 'lineType', undefined)}>
           <LineTypeSelect value={l.lineType as string | undefined} onSet={(v) => grp(g, 'lineType', v)} />
@@ -75,10 +75,10 @@ function StepFields({ step, i, r, hatches, apply, idKey }: { step: ScaleStep; i:
         </select>
       </Row>
       <Row label="Scale (×)" set={has('hatchScale')} onReset={() => set('hatchScale', undefined)}>
-        {num('s', step.hatchScale, String(r.hatchScale), (x) => { const v = parseNumber(x); return v > 0 ? v : null; }, (v) => set('hatchScale', v))}
+        {num('s', step.hatchScale, localNumber(r.hatchScale), (x) => { const v = parseNumber(x); return v > 0 ? v : null; }, (v) => set('hatchScale', v))}
       </Row>
       <Row label="Angle" set={has('hatchAngle')} onReset={() => set('hatchAngle', undefined)}>
-        {num('a', step.hatchAngle, String(r.hatchAngle ?? 0), (x) => { const v = parseNumber(x); return Number.isFinite(v) ? v : null; }, (v) => set('hatchAngle', v))}
+        {num('a', step.hatchAngle, localNumber(r.hatchAngle ?? 0), (x) => { const v = parseNumber(x); return Number.isFinite(v) ? v : null; }, (v) => set('hatchAngle', v))}
       </Row>
       <Row label="Align" set={has('hatchAlign')} onReset={() => set('hatchAlign', undefined)}>
         <select value={step.hatchAlign ?? ''} onChange={(e) => set('hatchAlign', e.target.value || undefined)}><option value="">as the material</option><option value="view">view</option><option value="layer">layer</option></select>
@@ -87,7 +87,7 @@ function StepFields({ step, i, r, hatches, apply, idKey }: { step: ScaleStep; i:
         <ColourControl value={step.hatchColor} auto={r.hatchColor ?? '#000000'} onSet={(v) => set('hatchColor', v)} />
       </Row>
       <Row label="Weight, mm" set={has('hatchWeight')} onReset={() => set('hatchWeight', undefined)}>
-        {num('hw', step.hatchWeight, r.hatchWeight != null ? String(r.hatchWeight) : 'from the pen', parseWeight, (v) => set('hatchWeight', v), { list: 'gfx-iso-weights' })}
+        {num('hw', step.hatchWeight, r.hatchWeight != null ? localNumber(r.hatchWeight) : 'from the pen', parseWeight, (v) => set('hatchWeight', v), { list: 'gfx-iso-weights' })}
       </Row>
       <Row label="Pen" set={has('hatchPen')} onReset={() => set('hatchPen', undefined)}>
         {num('p', step.hatchPen, String(r.hatchPen ?? '—'), (x) => { const v = parseNumber(x); return v >= 1 && v <= 16 ? v : null; }, (v) => set('hatchPen', v))}

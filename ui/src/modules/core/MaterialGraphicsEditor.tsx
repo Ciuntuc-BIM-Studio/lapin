@@ -20,7 +20,7 @@ import { useLineTypes } from './lineTypes/lineTypes';
 import { MaterialGraphicsPreview } from './MaterialGraphicsPreview';
 import { MaterialScaleSteps } from './MaterialScaleSteps';
 import {
-  ISO_WEIGHTS, fieldPatch, groupPatch, inheritedText, isSet, parseNumber, parseOpacity, parseWeight, stepsOf, stepsPatch, swatchFill, swatchInk, updateArgs,
+  ISO_WEIGHTS, fieldPatch, groupPatch, inheritedText, isSet, localNumber, parseNumber, parseOpacity, parseWeight, stepsOf, stepsPatch, swatchFill, swatchInk, updateArgs,
   type Field, type GroupField, type MaterialKind, type MaterialRow, type OwnGraphics, type SampleLayout,
 } from './materialGraphicsModel';
 
@@ -45,12 +45,12 @@ export function Row({ label, title, set, onReset, children, testId }: { label: s
 /** A number typed, committed when the field is left; empty goes back to the default; the inherited value shows as the placeholder. */
 export function NumberInput({ id, value, placeholder, parse, onCommit, list, field }: { id: string; value: number | undefined; placeholder: string; parse: (t: string) => number | null; onCommit: (v: number | undefined) => void; list?: string; field?: string }) {
   return (
-    <input className="num" data-field={field} key={`${id}:${value ?? ''}`} defaultValue={value ?? ''} placeholder={placeholder} list={list} inputMode="decimal"
+    <input className="num" data-field={field} key={`${id}:${value ?? ''}`} defaultValue={value === undefined ? '' : localNumber(value)} placeholder={placeholder} list={list} inputMode="decimal"
       onBlur={(e) => {
         const text = e.target.value;
         if (text.trim() === '') { if (value !== undefined) onCommit(undefined); return; }
         const v = parse(text);
-        if (v === null) { e.target.value = value === undefined ? '' : String(value); return; }
+        if (v === null) { e.target.value = value === undefined ? '' : localNumber(value); return; }
         if (v !== value) onCommit(v);
       }}
       onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
@@ -138,7 +138,7 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
           <ColourControl value={l.color} auto={r[group]?.color ?? '#000000'} onSet={(v) => setIn(group, 'color', v)} />
         </Row>
         <Row label="Weight, mm" title="Paper millimetres: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5" set={l.weight !== undefined} onReset={() => setIn(group, 'weight', undefined)}>
-          <NumberInput id={`${m.id}${kind}${group}w`} value={l.weight} placeholder={r[group]?.weight != null ? String(r[group]?.weight) : 'Object styles'} parse={parseWeight} list="gfx-iso-weights" onCommit={(v) => setIn(group, 'weight', v)} field={`${prefix}-weight`} />
+          <NumberInput id={`${m.id}${kind}${group}w`} value={l.weight} placeholder={r[group]?.weight != null ? localNumber(r[group]!.weight!) : 'Object styles'} parse={parseWeight} list="gfx-iso-weights" onCommit={(v) => setIn(group, 'weight', v)} field={`${prefix}-weight`} />
         </Row>
         <Row label="Line type" set={l.lineType !== undefined} onReset={() => setIn(group, 'lineType', undefined)}>
           <LineTypeSelect value={l.lineType} onSet={(v) => setIn(group, 'lineType', v)} field={`${prefix}-linetype`} />
@@ -149,7 +149,7 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
 
   return (
     <div className="gfx-editor" data-testid="material-graphics" data-compact={compact || undefined}>
-      <datalist id="gfx-iso-weights">{ISO_WEIGHTS.map((w) => <option key={w} value={w} />)}</datalist>
+      <datalist id="gfx-iso-weights">{ISO_WEIGHTS.map((w) => <option key={w} value={localNumber(w)} />)}</datalist>
       <div className="gfx-kinds" role="tablist">
         {MATERIAL_KINDS.map(({ kind: k, label }) => {
           const x = m[k];
@@ -157,7 +157,7 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
           return (
             <button key={k} type="button" role="tab" aria-selected={kind === k} data-kind={k} className={`tab gfx-kind${kind === k ? ' on' : ''}`} onClick={() => setKind(k)}>
               <HatchSwatch hatch={x.hatch} scale={x.hatchScale} fill={swatchFill(x, m.color)} ink={ink.color} inkOpacity={ink.opacity} size={22} membrane={k !== 'elevation' && x.membrane} />
-              <span>{label}</span>
+              <span data-i18n-ctx={k === 'elevation' ? 'facade' : undefined}>{label}</span>
             </button>
           );
         })}
@@ -198,7 +198,7 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
           <ColourControl value={own?.hatchColor} auto={r.hatchColor ?? '#000000'} onSet={(v) => setField('hatchColor', v)} />
         </Row>
         <Row label="Weight, mm" title="The weight of the hatch lines on paper: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5; it wins over the pen" set={has('hatchWeight')} onReset={() => setField('hatchWeight', undefined)}>
-          <NumberInput id={`${m.id}${kind}hw`} value={own?.hatchWeight} placeholder={r.hatchWeight != null ? String(r.hatchWeight) : 'from the pen'} parse={parseWeight} list="gfx-iso-weights" onCommit={(v) => setField('hatchWeight', v)} field={`material-hatch-weight-${kind}`} />
+          <NumberInput id={`${m.id}${kind}hw`} value={own?.hatchWeight} placeholder={r.hatchWeight != null ? localNumber(r.hatchWeight) : 'from the pen'} parse={parseWeight} list="gfx-iso-weights" onCommit={(v) => setField('hatchWeight', v)} field={`material-hatch-weight-${kind}`} />
         </Row>
         <Row label="Pen" title="A pen of the pen table (1 to 16), when no weight is set" set={has('hatchPen')} onReset={() => setField('hatchPen', undefined)}>
           <NumberInput id={`${m.id}${kind}p`} value={own?.hatchPen} placeholder={inheritedText(r, 'hatchPen') || '—'} parse={(t) => { const v = parseNumber(t); return v >= 1 && v <= 16 ? v : null; }} onCommit={(v) => setField('hatchPen', v)} />
@@ -235,7 +235,7 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
         {bg && (
           <>
             <Row label={scaleLabel(bgUnits)} set={bg.hatchScale !== undefined} onReset={() => setIn('backgroundHatch', 'hatchScale', undefined)}>
-              <NumberInput id={`${m.id}${kind}bs`} value={bg.hatchScale} placeholder={String(own?.hatchScale ?? r.hatchScale)} parse={(t) => { const v = parseNumber(t); return v > 0 ? v : null; }} onCommit={(v) => setIn('backgroundHatch', 'hatchScale', v)} />
+              <NumberInput id={`${m.id}${kind}bs`} value={bg.hatchScale} placeholder={localNumber(own?.hatchScale ?? r.hatchScale)} parse={(t) => { const v = parseNumber(t); return v > 0 ? v : null; }} onCommit={(v) => setIn('backgroundHatch', 'hatchScale', v)} />
             </Row>
             <Row label="Angle" set={bg.hatchAngle !== undefined} onReset={() => setIn('backgroundHatch', 'hatchAngle', undefined)}>
               <NumberInput id={`${m.id}${kind}ba`} value={bg.hatchAngle} placeholder="0" parse={(t) => { const v = parseNumber(t); return Number.isFinite(v) ? v : null; }} onCommit={(v) => setIn('backgroundHatch', 'hatchAngle', v)} />

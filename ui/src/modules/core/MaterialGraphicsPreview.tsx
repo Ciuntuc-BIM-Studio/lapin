@@ -46,7 +46,7 @@ export function MaterialGraphicsPreview({ id, kind, draft, version, scale, layou
         <span className="tabs" role="tablist">
           {(['strip', 'band'] as const).map((l) => (
             <button key={l} type="button" role="tab" aria-selected={layout === l} data-layout={l} className={`tab${layout === l ? ' on' : ''}`}
-              title={l === 'strip' ? 'A strip of the material between two lines' : 'A band between two layers, with the lines that separate them'} onClick={() => onLayout(l)}>{l === 'strip' ? 'Strip' : 'Band'}</button>
+              title={l === 'strip' ? 'A strip of the material between two lines' : 'A band between two layers, with the lines that separate them'} onClick={() => onLayout(l)}>{l === 'strip' ? 'Strip' : <span data-i18n-ctx="material">Band</span>}</button>
           ))}
         </span>
       </div>

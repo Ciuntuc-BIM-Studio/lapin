@@ -21,3 +21,15 @@ describe('the material graphics configurator\'s strings', () => {
     });
   }
 });
+
+describe('words that mean something else elsewhere', () => {
+  it('the facade view and the material band have their own phrases', () => {
+    expect(translate('facade|Elevation', 'ro')).toBe('Fațadă');
+    expect(translate('material|Band', 'ro')).toBe('Bandă');
+    expect(translate('Elevation', 'ro')).toBe('Cotă');
+    for (const lang of LANGUAGES.map((l) => l.id).filter((l) => l !== ('en' as Lang))) {
+      expect(translate('Elevation', lang, 'facade'), lang).not.toBe(translate('Elevation', lang));
+      expect(translate('Band', lang, 'material'), lang).not.toBeNull();
+    }
+  });
+});

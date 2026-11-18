@@ -1,9 +1,10 @@
 /** The material graphics configurator's payloads (stage 0b, decision 670). */
 
 import { describe, expect, it } from 'vitest';
+import { useLang } from '../../i18n';
 import { splitAlpha, withOpacity } from '../../viewport/drawing';
 import {
-  copyArgs, draftGraphics, fieldPatch, groupPatch, inheritedText, isSet, parseNumber, parseOpacity, parseWeight, previewArgs, sameGraphics, swatchFill, swatchInk, updateArgs,
+  copyArgs, draftGraphics, localNumber, fieldPatch, groupPatch, inheritedText, isSet, parseNumber, parseOpacity, parseWeight, previewArgs, sameGraphics, swatchFill, swatchInk, updateArgs,
   type MaterialRow, type ResolvedGraphics,
 } from './materialGraphicsModel';
 
@@ -116,5 +117,20 @@ describe('a multi-selection', () => {
   it('knows when the materials share their graphics', () => {
     expect(sameGraphics([row('a', { section: { hatch: 'X' } }), row('b', { section: { hatch: 'X' } })])).toBe(true);
     expect(sameGraphics([row('a', { section: { hatch: 'X' } }), row('b')])).toBe(false);
+  });
+});
+
+describe('a number as shown', () => {
+  it('takes the language\'s decimal separator, and what it shows is read back', () => {
+    const was = useLang.getState().lang;
+    try {
+      useLang.setState({ lang: 'ro' });
+      expect(localNumber(0.35)).toBe('0,35');
+      expect(parseWeight(localNumber(0.35))).toBe(0.35);
+      expect(inheritedText(resolved({ hatchScale: 1.5 }), 'hatchScale')).toBe('1,5');
+      useLang.setState({ lang: 'en' });
+      expect(localNumber(0.35)).toBe('0.35');
+      expect(localNumber(1000)).toBe('1000');
+    } finally { useLang.setState({ lang: was }); }
   });
 });

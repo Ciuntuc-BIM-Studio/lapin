@@ -20,7 +20,7 @@ import { PatternOptions, UNITS_LABEL } from './hatchUnits';
 import { MaterialStandardSheet } from './MaterialStandardSheet';
 import { MaterialStandardPublish } from './MaterialStandardPublish';
 import {
-  ISO_WEIGHTS, fieldPatch, groupPatch, isSet, parseNumber, parseWeight, stepsOf, stepsPatch, type Field, type GroupField, type MaterialKind, type OwnGraphics, type ResolvedGraphics,
+  ISO_WEIGHTS, fieldPatch, groupPatch, isSet, localNumber, parseNumber, parseWeight, stepsOf, stepsPatch, type Field, type GroupField, type MaterialKind, type OwnGraphics, type ResolvedGraphics,
 } from './materialGraphicsModel';
 import {
   RULE_CATEGORIES, addPatterns, addRule, blankStandard, duplicateRule, moveRule, moveRuleTo, nameRows, parseNames, patchRuleKind, removeLanguage, removePattern, removeRuleAt,
@@ -68,7 +68,7 @@ export function RuleGraphicsFields({ kind, gfx, hatches, onPatch }: { kind: Mate
   };
   return (
     <div className="rule-gfx" data-testid="rule-graphics" data-kind={kind}>
-      <datalist id="gfx-iso-weights">{ISO_WEIGHTS.map((w) => <option key={w} value={w} />)}</datalist>
+      <datalist id="gfx-iso-weights">{ISO_WEIGHTS.map((w) => <option key={w} value={localNumber(w)} />)}</datalist>
       <Row label="Pattern" set={hatchValue !== '*'} onReset={() => set('hatch', undefined)}>
         <select data-field={`rule-hatch-${kind}`} value={hatchValue} onChange={(e) => (e.target.value === '*' ? set('hatch', undefined) : set('hatch', e.target.value || null))}>
           <option value="*">not set by this rule</option>
@@ -149,7 +149,7 @@ function RuleEditor({ rule, hatches, onChange }: { rule: Rule; hatches: HatchPat
       <div className="gfx-kinds" role="tablist">
         {MATERIAL_KINDS.map(({ kind: k, label }) => (
           <button key={k} type="button" role="tab" aria-selected={kind === k} data-kind={k} className={`tab gfx-kind${kind === k ? ' on' : ''}`} onClick={() => setKind(k)}>
-            <span>{label}</span>{rule[k] && <span className="muted small" aria-hidden> •</span>}
+            <span data-i18n-ctx={k === 'elevation' ? 'facade' : undefined}>{label}</span>{rule[k] && <span className="muted small" aria-hidden> •</span>}
           </button>
         ))}
         {rule[kind] && <button type="button" className="icon mini" title="This rule says nothing of it" aria-label="This rule says nothing of it" onClick={() => onChange((x) => patchRuleKind(x, kind, null))}><X size={11} /></button>}

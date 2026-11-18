@@ -5,6 +5,7 @@
  * Opacity is carried in colours as #rrggbbaa by the engine; here it is a percentage beside the colour (the commands take it so).
  */
 
+import { useLang } from '../../i18n';
 import { splitAlpha, withOpacity } from '../../viewport/drawing';
 
 export type MaterialKind = 'section' | 'plan' | 'elevation';
@@ -35,6 +36,11 @@ export const WEIGHT_RANGE: [number, number] = [0.05, 5];
 /** The scales of the preview. */
 export const GRAPHICS_SCALES = [20, 50, 100, 200, 500] as const;
 export type SampleLayout = 'strip' | 'band';
+
+/** A number as the editors show it: the language's decimal separator (a comma in Romanian), no grouping. */
+export function localNumber(v: number): string {
+  try { return new Intl.NumberFormat(useLang.getState().lang, { useGrouping: false, maximumFractionDigits: 6 }).format(v); } catch { return String(v); }
+}
 
 /** A number as a person types it (a comma too); NaN for anything else. */
 export function parseNumber(text: string): number {
@@ -93,7 +99,7 @@ export function copyArgs(targets: readonly string[], from: MaterialRow): Record<
 /** What a field shows when it is not set: the resolved value, as text for an input's placeholder. */
 export function inheritedText(r: ResolvedGraphics | undefined, field: Field): string {
   const v = r?.[field];
-  return v === undefined || v === null || typeof v === 'object' ? '' : String(v);
+  return v === undefined || v === null || typeof v === 'object' ? '' : typeof v === 'number' ? localNumber(v) : String(v);
 }
 
 /** A line of the band as the resolved graphics have it, with the keys it leaves out. */
