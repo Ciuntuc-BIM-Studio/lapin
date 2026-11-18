@@ -9,18 +9,18 @@ import { hatchPreviews as cache, useHatchEpoch, type HatchPreview as Preview } f
  * `ink`: the hatch's colour (the ink's when unset), `inkOpacity` its opacity 0–1; `fill` may carry its opacity (#rrggbbaa), or
  * `fillOpacity` gives it 0–100.
  */
-export function HatchSwatch({ hatch, scale = 1, fill, size = 44, membrane = false, revision = 0, ink, inkOpacity = 1, fillOpacity }: { hatch: string | null; scale?: number; fill?: string | null; size?: number; membrane?: boolean; revision?: number; ink?: string; inkOpacity?: number; fillOpacity?: number }) {
+export function HatchSwatch({ hatch, scale = 1, fill, size = 44, membrane = false, revision = 0, ink, inkOpacity = 1, fillOpacity, units, viewScale }: { hatch: string | null; scale?: number; fill?: string | null; size?: number; membrane?: boolean; revision?: number; ink?: string; inkOpacity?: number; fillOpacity?: number; units?: 'paper' | 'model'; viewScale?: number }) {
   const epoch = useHatchEpoch((s) => s.epoch);
-  const key = `${hatch}|${scale}|${revision}|${epoch}`;
+  const key = `${hatch}|${scale}|${units ?? ''}|${viewScale ?? ''}|${revision}|${epoch}`;
   const [p, setP] = useState<Preview | null>(cache.get(key) ?? null);
   useEffect(() => {
     if (!hatch) { setP(null); return; }
     const hit = cache.get(key);
     if (hit) { setP(hit); return; }
     let live = true;
-    void query<Preview>('hatch.preview', { pattern: hatch, scale, size: 20 }).then((r) => { if (r) { cache.set(key, r); if (live) setP(r); } });
+    void query<Preview>('hatch.preview', { pattern: hatch, scale, size: 20, ...(units ? { units } : {}), ...(viewScale ? { viewScale } : {}) }).then((r) => { if (r) { cache.set(key, r); if (live) setP(r); } });
     return () => { live = false; };
-  }, [key, hatch, scale]);
+  }, [key, hatch, scale, units, viewScale]);
   const k = size / 20;
   const segs = p?.segments ?? [];
   const seen = splitAlpha(fill);

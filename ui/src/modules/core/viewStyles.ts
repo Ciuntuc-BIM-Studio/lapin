@@ -41,7 +41,18 @@ export interface ViewStyle { id: string; name: string; discipline: string | null
   /** Its plans' and its sections' and elevations' partial structure display (decision 500); unset, its layers. */
   layersPlan?: LayerMode | null; layersSection?: LayerMode | null;
   /** Whether the partial structure display leaves out the separate finish elements (rooms' finishes, skirtings, finish coverings) with the finish layers (decision 502); on unless false (a project made before). */
-  finishElements?: boolean }
+  finishElements?: boolean;
+  /** Hatch lines closer than this on paper (mm, default 0.7) are not drawn; 0 draws all (docs/plan-material-graphics.md, stage 1). */
+  minHatchSpacing?: number }
+
+/** The engine's default of the minimum hatch spacing, paper millimetres. */
+export const DEFAULT_MIN_HATCH_SPACING = 0.7;
+
+/** A minimum hatch spacing typed (a comma too): 0 or more, or null when the text is not one. */
+export function parseMinSpacing(text: string): number | null {
+  const v = Number(text.trim().replace(',', '.'));
+  return text.trim() !== '' && Number.isFinite(v) && v >= 0 && v <= 100 ? v : null;
+}
 
 /** The four finish choices, by kind of view and category, with their labels and what they do, as View settings and View styles offer them. */
 export const FINISH_FIELDS: { key: 'wallFinishesPlan' | 'wallFinishesSection' | 'floorFinishesPlan' | 'floorFinishesSection'; plan: boolean; label: string; column: string; title: string }[] = [

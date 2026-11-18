@@ -21,6 +21,7 @@ import { useSchemes } from './rooms';
 import { RoomFinishField } from './RoomFinishes';
 import { RoomOpeningsField } from './RoomOpenings';
 import { sameKind } from '../../shell/params';
+import { PatternOptions, type PatternInfo } from '../core/hatchUnits';
 
 /** A text field with suggestions (an HTML datalist): commits on blur or Enter. */
 function Suggest({ value, options, onCommit, id, placeholder }: { value: string; options: string[]; onCommit: (v: string) => void; id: string; placeholder?: string }) {
@@ -45,8 +46,8 @@ export function RoomSection({ node }: { node: NodeDto }) {
   const [s] = useSchemes();
   const finish = useSession((x) => (typeof node.props.finishType === 'string' ? x.nodes.get(node.props.finishType) : undefined));
   const inherited = finishFloorOf(finish);
-  const [hatches, setHatches] = useState<string[]>([]);
-  useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setHatches(r.map((h) => h.name))); }, []);
+  const [hatches, setHatches] = useState<PatternInfo[]>([]);
+  useEffect(() => { void query<PatternInfo[]>('hatch.list').then((r) => r && setHatches(r)); }, []);
   const str = (k: string) => (typeof node.props[k] === 'string' ? (node.props[k] as string) : '');
   // With several rooms selected, each takes it (topic #29), but its number, which is its own.
   const update = (k: string, v: unknown) => void execute('element.update', { ids: k === 'number' ? [node.id] : sameKind(node), attrs: { [k]: v === '' ? null : v } });
@@ -94,7 +95,7 @@ export function RoomSection({ node }: { node: NodeDto }) {
         <dd className="row">
           <select value={hatch} onChange={(e) => update('fillHatch', e.target.value)}>
             <option value="">as its scheme</option>
-            {hatches.map((h) => <option key={h} value={h}>{h}</option>)}
+            <PatternOptions patterns={hatches} current={hatch || undefined} />
           </select>
           {hatch && <NumberField className="narrow" min={0.1} title="Hatch scale" value={typeof node.props.hatchScale === 'number' ? node.props.hatchScale : 1} onCommit={(v) => { if (v != null) update('hatchScale', v); }} />}
           {hatch && <HatchSwatch hatch={hatch} scale={typeof node.props.hatchScale === 'number' ? node.props.hatchScale : 1} fill={str('fillColor') || null} size={24} />}

@@ -20,6 +20,7 @@ import { hatchOf, withHatch, type FinishHatch, type FinishHatchMode, type HatchP
 import { MaterialPicker } from '../core/MaterialPicker';
 import { PendingDialog } from '../core/PendingDialog';
 import { openPainter } from './finishPainter';
+import { PatternOptions, type PatternInfo } from '../core/hatchUnits';
 
 interface FinishPart { material: string; height: number; thickness?: number | null }
 interface FinishLayer { material: string; thickness: number; parts?: FinishPart[] | null }
@@ -84,8 +85,8 @@ function LayersTable({ layers, onChange, pieces, testId }: { layers: FinishLayer
 
 /** How plans hatch a finish's floor (or a reflected ceiling plan its ceiling): from its material, a pattern of its own, or not at all. */
 function PlanHatchRow({ spec, part, onChange }: { spec: RoomFinishSpec; part: HatchPart; onChange: (patch: Partial<RoomFinishSpec>) => void }) {
-  const [patterns, setPatterns] = useState<string[]>([]);
-  useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setPatterns(r.map((h) => h.name).filter((n) => n !== 'SOLID'))); }, []);
+  const [patterns, setPatterns] = useState<PatternInfo[]>([]);
+  useEffect(() => { void query<PatternInfo[]>('hatch.list').then((r) => r && setPatterns(r.filter((h) => h.name !== 'SOLID'))); }, []);
   const h = hatchOf(spec, part);
   const set = (patch: Partial<FinishHatch>) => onChange(withHatch(spec, part, patch));
   return (
@@ -100,7 +101,7 @@ function PlanHatchRow({ spec, part, onChange }: { spec: RoomFinishSpec; part: Ha
       </select>
       {h.mode === 'own' && (
         <select data-field="hatch-pattern" value={h.pattern ?? ''} onChange={(e) => set({ pattern: e.target.value })}>
-          {patterns.map((n) => <option key={n} value={n} data-no-i18n>{n}</option>)}
+          <PatternOptions patterns={patterns} />
         </select>
       )}
       {h.mode !== 'none' && (

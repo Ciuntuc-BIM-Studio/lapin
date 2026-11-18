@@ -18,7 +18,7 @@ export type GroupField = 'backgroundHatch' | 'cutLine' | 'separatorLine';
 
 /** What a material stores for a kind of view (material.list's `own`). */
 export type OwnGraphics = {
-  hatch?: string | null; hatchScale?: number; fill?: string | null; hatchPen?: number; hatchAngle?: number; hatchAlign?: 'view' | 'layer';
+  hatch?: string | null; hatchScale?: number; fill?: string | null; hatchPen?: number; hatchUnits?: 'paper' | 'model'; hatchAngle?: number; hatchAlign?: 'view' | 'layer';
   hatchColor?: string; hatchWeight?: number; hatchLineType?: string; hatchOpacity?: number; halftone?: boolean; fillOpacity?: number;
   backgroundHatch?: BackgroundHatch; cutLine?: LineSpec; separatorLine?: LineSpec;
 };

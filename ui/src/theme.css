@@ -2824,3 +2824,7 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .place-catalog-list .catalog-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 .place-catalog .place-group { margin: 6px 0 4px; }
 .place-catalog .place-source > h3 { margin: 4px 0; }
+
+/* Real-size hatch patterns: the badge beside a picker (stage 1 of the material graphics). */
+.units-badge { display: inline-block; margin-left: 6px; padding: 0 5px; border: 1px solid var(--ink-muted); border-radius: 8px; font-size: 10px; line-height: 15px; white-space: nowrap; color: var(--ink-muted); }
+.gfx-control .hatch-swatch { margin-left: 6px; flex: none; }

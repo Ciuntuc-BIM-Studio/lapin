@@ -27,6 +27,8 @@ import { QuantitiesSection } from './QuantitiesSection';
 import { DependenciesSection } from './DependenciesSection';
 import { deleteElements } from '../engine/dependents';
 import { isPinned, setPinned } from '../modules/core/pinTools';
+import { HatchOriginSection } from '../modules/core/HatchOriginSection';
+import { hasHatchOrigin } from '../modules/core/hatchOrigin';
 import { ParamsSection } from './ParamsSection';
 import { AxisFields } from './AxisFields';
 import { paramKey, sameKind, type Param } from './params';
@@ -344,6 +346,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
           </dl>
         </Group>
       )}
+      {node.editable && hasHatchOrigin(node) && <Group id="hatchOrigin" label="Hatch origin"><HatchOriginSection node={node} /></Group>}
       {cls && cls.fields.length > 0 && node.editable && !sections.some((s) => s.replacesFields?.(node)) && (
         <Group id="dimensions" label="Dimensions">
           <dl className="fields">{fieldsShown(cls.fields, sections, node, sameKind(node).map((id) => nodes.get(id)).filter((n): n is NodeDto => !!n)).filter((f) => f.key !== elevation?.key).map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>

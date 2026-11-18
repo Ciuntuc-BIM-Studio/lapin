@@ -202,7 +202,7 @@ export function MaterialsDialog() {
                 <ul className="plain">
                   {mine.map((f) => (
                     <li key={f.name} className="row">
-                      <span className="grow small" title={f.names.join(', ')}>{f.name} <span className="muted">· {f.names.length}</span></span>
+                      <span className="grow small" title={f.names.join(', ')}>{f.name} <span className="muted">· {f.names.length}</span>{(f.model?.length ?? 0) > 0 && <span className="units-badge" data-units="model" title={`Real size: ${f.model?.join(', ')}`}>{f.model?.length === f.names.length ? 'Real size' : 'Some real size'}</span>}</span>
                       <button type="button" className="icon mini" title="Forget this file (projects keep what they use)" onClick={() => { forgetPatterns(f.name); setMine(myPatterns()); }}><Trash2 size={12} /></button>
                     </li>
                   ))}

@@ -23,6 +23,7 @@ import { useSchemes, type SchemeEntry } from './rooms';
 import { colorLegend } from './roomTools';
 import { withOpacity } from '../../viewport/drawing';
 import { areaText as area, useStandards } from '../../engine/unitsStore';
+import { PatternOptions, type PatternInfo } from '../core/hatchUnits';
 
 
 export function RoomColorsDialog() {
@@ -36,11 +37,11 @@ export function RoomColorsDialog() {
   useStandards((x) => x.units);
   const [picked, setPicked] = useState<string | null>(null);
   const [all, setAll] = useState(false);
-  const [hatches, setHatches] = useState<string[]>([]);
+  const [hatches, setHatches] = useState<PatternInfo[]>([]);
   const close = () => useUi.setState({ dialog: null });
 
   useEffect(() => { if (uiView === 'plan') void frontView().then(setViewId); }, [uiView]);
-  useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setHatches(r.map((h) => h.name))); }, []);
+  useEffect(() => { void query<PatternInfo[]>('hatch.list').then((r) => r && setHatches(r)); }, []);
 
   const view = viewId ? nodes.get(viewId) : undefined;
   const scheme = s?.schemes.find((x) => x.id === (picked ?? s.viewScheme ?? s.schemes[0]?.id)) ?? null;
@@ -126,7 +127,7 @@ export function RoomColorsDialog() {
                     <td>
                       <select value={entry?.hatch ?? ''} onChange={(e) => set(value, { hatch: e.target.value || null })}>
                         <option value="">none</option>
-                        {hatches.map((h) => <option key={h} value={h}>{h}</option>)}
+                        <PatternOptions patterns={hatches} current={entry?.hatch ?? undefined} />
                       </select>
                     </td>
                     <td><NumberField className="narrow" title="Hatch scale" min={0.1} readOnly={!entry?.hatch} value={entry?.hatchScale ?? 1}

@@ -25,6 +25,7 @@ import { TagFields } from './tag';
 import { selectionWith } from '../../shell/params';
 import { CloudFields, KeyFields } from './sheetAnnotations';
 import { EXT_SUPPRESS, EXT_SUPPRESS_LABELS, extSuppressAttr } from '../core/dimensionLines';
+import { PatternOptions, type PatternInfo } from '../core/hatchUnits';
 
 /**
  * Who a style change goes to (a forum user's report, topic #29: a change with several selected reached only one): every
@@ -128,8 +129,8 @@ function ShapeFields({ node, shape }: { node: NodeDto; shape: Shape }) {
 /** A drafted hatch: its pattern, scale and angle, and where its pattern starts (the origin; empty: the view's). */
 function HatchFields({ node, hatch }: { node: NodeDto; hatch: Record<string, unknown> }) {
   useStandards((s) => s.units);
-  const [patterns, setPatterns] = useState<string[]>([]);
-  useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setPatterns(r.map((h) => h.name))); }, []);
+  const [patterns, setPatterns] = useState<PatternInfo[]>([]);
+  useEffect(() => { void query<PatternInfo[]>('hatch.list').then((r) => r && setPatterns(r)); }, []);
   const loops = Array.isArray(hatch.loops) ? (hatch.loops as unknown[][]).map((l) => l.map(ptStrict).filter((p): p is Vec2 => !!p)) : [];
   const area = loops.length ? loops.reduce((a, l, i) => a + (i === 0 ? 1 : -1) * polygonArea(l), 0) : null;
   const set = (patch: Record<string, unknown>) => void execute('drafting.updateDraft', { ids: patch.origin !== undefined ? [node.id] : hatches(node), hatch: patch });
@@ -139,7 +140,7 @@ function HatchFields({ node, hatch }: { node: NodeDto; hatch: Record<string, unk
   return (
     <>
       <dt>Pattern</dt>
-      <dd><select value={pattern} onChange={(e) => set({ pattern: e.target.value })}>{(patterns.includes(pattern) ? patterns : [pattern, ...patterns]).map((p) => <option key={p} value={p}>{p}</option>)}</select></dd>
+      <dd><select value={pattern} onChange={(e) => set({ pattern: e.target.value })}><PatternOptions patterns={patterns} current={pattern} /></select></dd>
       <dt>Scale</dt><dd><Num value={Number(hatch.scale ?? 1)} onCommit={(s) => { if (s > 0) set({ scale: s }); }} /></dd>
       <dt>Angle</dt><dd><Num value={Number(hatch.angle ?? 0)} onCommit={(a) => set({ angle: a })} suffix="°" /></dd>
       <dt title="Opaque background fill behind the hatch lines (transparent when off)">Background</dt>

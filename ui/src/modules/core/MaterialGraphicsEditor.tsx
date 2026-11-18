@@ -13,6 +13,7 @@ import { create } from 'zustand';
 import { ColourField } from '../../shell/ColourField';
 import { execute } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
+import { PatternOptions, UNITS_LABEL, UnitsBadge, effectiveUnits, scaleLabel, unitsOf, type HatchUnits } from './hatchUnits';
 import { useLineTypes } from './lineTypes/lineTypes';
 import { MaterialGraphicsPreview } from './MaterialGraphicsPreview';
 import {
@@ -20,7 +21,7 @@ import {
   type Field, type GroupField, type MaterialKind, type MaterialRow, type OwnGraphics, type SampleLayout,
 } from './materialGraphicsModel';
 
-export type HatchPattern = { name: string; description: string; solid: boolean; project: boolean };
+export type HatchPattern = { name: string; description: string; solid: boolean; project: boolean; units?: HatchUnits };
 
 export const MATERIAL_KINDS: { kind: MaterialKind; label: string }[] = [{ kind: 'section', label: 'Cut (section)' }, { kind: 'plan', label: 'Cut (plan)' }, { kind: 'elevation', label: 'Elevation' }];
 
@@ -119,7 +120,12 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
   const guessed = hatchValue === '*' && !(kind === 'plan' && m.own.section && 'hatch' in m.own.section);
   const fillMode = own?.fill === 'material' ? 'material' : own?.fill ? 'colour' : '';
   const bg = own?.backgroundHatch;
-  const patternOptions = hatches.map((h) => <option key={h.name} value={h.name}>{h.name}{h.project ? ' (project)' : ''}</option>);
+  const patternOptions = <PatternOptions patterns={hatches} />;
+  const patternNamed = (name: string | null | undefined) => hatches.find((h) => h.name === name);
+  // The units the hatch is drawn in: the material's own choice, else its pattern's (the section's for a plan with none of its own).
+  const shownPattern = patternNamed(hatchValue === '*' ? r.hatch : hatchValue);
+  const units = effectiveUnits(own?.hatchUnits, shownPattern);
+  const bgUnits = effectiveUnits(undefined, patternNamed(bg?.hatch));
   const lineRows = (group: 'cutLine' | 'separatorLine', prefix: string) => {
     const l = own?.[group] ?? {};
     return (
@@ -164,8 +170,17 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
             <option value="">none</option>
             {patternOptions}
           </select>
+          <UnitsBadge units={unitsOf(shownPattern)} />
+          {shownPattern && !shownPattern.solid && <HatchSwatch hatch={shownPattern.name} scale={own?.hatchScale ?? r.hatchScale} units={units} viewScale={prefs.scale} size={22} />}
         </Row>
-        <Row label="Scale" set={has('hatchScale')} onReset={() => setField('hatchScale', undefined)}>
+        <Row label="Units" title="Pattern's own: as the pattern says. Drafting: the spacing is paper millimetres, the same on every scale. Real size: it is the real object's millimetres, so it follows the view's scale" set={has('hatchUnits')} onReset={() => setField('hatchUnits', undefined)}>
+          <select data-field={`material-hatch-units-${kind}`} value={own?.hatchUnits ?? ''} onChange={(e) => setField('hatchUnits', e.target.value || undefined)}>
+            <option value="">pattern's own</option>
+            <option value="paper">{UNITS_LABEL.paper}</option>
+            <option value="model">{UNITS_LABEL.model}</option>
+          </select>
+        </Row>
+        <Row label={scaleLabel(units)} title={units === 'model' ? 'Real size: 1 is the pattern at the real object\'s size; 2 twice as large' : 'A factor on the pattern\'s spacing on paper'} set={has('hatchScale')} onReset={() => setField('hatchScale', undefined)}>
           <NumberInput id={`${m.id}${kind}s`} value={own?.hatchScale} placeholder={inheritedText(r, 'hatchScale')} parse={(t) => { const v = parseNumber(t); return v > 0 ? v : null; }} onCommit={(v) => setField('hatchScale', v)} />
         </Row>
         <Row label="Angle" set={has('hatchAngle')} onReset={() => setField('hatchAngle', undefined)}>
@@ -214,7 +229,7 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
         </Row>
         {bg && (
           <>
-            <Row label="Scale" set={bg.hatchScale !== undefined} onReset={() => setIn('backgroundHatch', 'hatchScale', undefined)}>
+            <Row label={scaleLabel(bgUnits)} set={bg.hatchScale !== undefined} onReset={() => setIn('backgroundHatch', 'hatchScale', undefined)}>
               <NumberInput id={`${m.id}${kind}bs`} value={bg.hatchScale} placeholder={String(own?.hatchScale ?? r.hatchScale)} parse={(t) => { const v = parseNumber(t); return v > 0 ? v : null; }} onCommit={(v) => setIn('backgroundHatch', 'hatchScale', v)} />
             </Row>
             <Row label="Angle" set={bg.hatchAngle !== undefined} onReset={() => setIn('backgroundHatch', 'hatchAngle', undefined)}>

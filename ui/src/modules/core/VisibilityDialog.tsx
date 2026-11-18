@@ -24,6 +24,7 @@ import { DraftGroupEditor } from '../../shell/ConditionGroupEditor';
 import { fromViewFilter, toViewFilter, type ViewRule } from '../../shell/conditionGroup';
 import { LOD_HELP, LODS, lodLabel } from './viewStyles';
 import { CLASS_COLORS, CLASS_NAMES } from '../../viewport/pointClouds3d';
+import { PatternOptions, type PatternInfo } from './hatchUnits';
 
 export interface LineSpec { pattern?: string; pen?: number; color?: string }
 export interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string; halftone?: boolean; transparency?: number; lines?: Record<string, LineSpec>; sub?: Record<string, Row> }
@@ -121,7 +122,7 @@ export function VisibilityDialog() {
   const error = useSession((s) => s.error);
   const [target, setTarget] = useState<string | null>(null);
   const [v, setV] = useState<Visibility | null>(null);
-  const [hatches, setHatches] = useState<string[]>([]);
+  const [hatches, setHatches] = useState<PatternInfo[]>([]);
   // Read once (an initializer may run twice in development), forgotten once the dialog is up.
   const [tab, setTab] = useState<Tab>(() => nextTab ?? 'categories');
   useEffect(() => { nextTab = null; }, []);
@@ -140,7 +141,7 @@ export function VisibilityDialog() {
     void query<Visibility>('view.visibility', { id: target }).then((x) => { if (live) setV(x); });
     return () => { live = false; };
   }, [target, nodes]);
-  useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setHatches(r.map((h) => h.name))); }, []);
+  useEffect(() => { void query<PatternInfo[]>('hatch.list').then((r) => r && setHatches(r)); }, []);
   // The project's filters with their rules, and how many elements each takes now.
   useEffect(() => {
     let live = true;
@@ -216,7 +217,7 @@ export function VisibilityDialog() {
                       {r.lines?.separation && <button type="button" className="icon mini" title="As the cut lines" onClick={() => setCategory(c, { lines: withLayerLines(r.lines, { pen: undefined, pattern: undefined, color: undefined }) })}><X size={10} /></button>}
                     </td>
                     <td><ColourField value={r.fillColor ?? '#ffffff'} onChange={(v) => setCategory(c, { fillColor: v })} />{r.fillColor && <button type="button" className="icon mini" title="No fill of its own" onClick={() => setCategory(c, { fillColor: '' })}><X size={10} /></button>}</td>
-                    <td><select value={r.cutHatch ?? ''} onChange={(e) => setCategory(c, { cutHatch: e.target.value })}><option value="">the materials'</option>{hatches.map((h) => <option key={h} value={h}>{h}</option>)}</select></td>
+                    <td><select value={r.cutHatch ?? ''} onChange={(e) => setCategory(c, { cutHatch: e.target.value })}><option value="">the materials'</option><PatternOptions patterns={hatches} /></select></td>
                     <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => setCategory(c, { halftone: e.target.checked })} /></td>
                     <td><NumberField className="vv-number" title="Transparency" min={0} max={95} value={r.transparency ?? 0} onCommit={(v) => { if (v != null) setCategory(c, { transparency: v }); }} /></td>
                   </>

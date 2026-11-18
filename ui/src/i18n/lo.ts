@@ -4346,6 +4346,26 @@ export const LO: Record<string, string> = {
   "every wall of the type has them (IsExternal, FireRating); an instance default is each wall's own copy": "ທຸກຝາຂອງປະເພດມີພວກມັນ (IsExternal, FireRating); ຄ່າເລີ່ມຕົ້ນຂອງອິນສະແຕນແມ່ນສຳເນົາຂອງແຕ່ລະຝາເອງ",
   // Material graphics configurator (decision 670, stage 0b)
   'Lines': 'ເສັ້ນ', 'Weight, mm': 'ຄວາມໜາ, ມມ', 'Fill opacity': 'ຄວາມບໍ່ໂປ່ງໃສຂອງການຕື່ມ', 'Second pattern': 'ແບບທີສອງ', 'Cut outline': 'ເສັ້ນຂອບຂອງການຕັດ', 'Separator lines': 'ເສັ້ນແບ່ງ', 'Strip': 'ແຖບ', 'Clear selection': 'ລ້າງການເລືອກ', 'Copy graphics from…': 'ສຳເນົາກຣາຟິກຈາກ…', 'from the pen': 'ຈາກປາກກາ', 'Opacity, per cent': 'ຄວາມບໍ່ໂປ່ງໃສ, ເປີເຊັນ', 'Automatic: click to choose a colour': 'ອັດຕະໂນມັດ: ກົດເພື່ອເລືອກສີ', 'Scale of the sample': 'ມາດຕາສ່ວນຂອງຕົວຢ່າງ', 'Preview of the material graphics': 'ຕົວຢ່າງກຣາຟິກຂອງວັດສະດຸ', 'A strip of the material between two lines': 'ແຖບຂອງວັດສະດຸລະຫວ່າງສອງເສັ້ນ', 'A band between two layers, with the lines that separate them': 'ແຖບລະຫວ່າງສອງຊັ້ນ, ພ້ອມເສັ້ນທີ່ແບ່ງພວກມັນ', 'Tick several materials to change their graphics together': 'ຕິກຫຼາຍວັດສະດຸເພື່ອປ່ຽນກຣາຟິກຂອງພວກມັນພ້ອມກັນ', 'Select this material with others': 'ເລືອກວັດສະດຸນີ້ພ້ອມກັບອັນອື່ນ', 'Its hatches, fills and lines for the cut in a section, in a plan and for the elevation: one undo step': 'ເສັ້ນລາຍ, ການຕື່ມ ແລະ ເສັ້ນຂອງມັນສຳລັບການຕັດໃນຮູບຕັດ, ໃນແປນ ແລະ ສຳລັບດ້ານຂອງອາຄານ: ຂັ້ນຕອນຍົກເລີກດຽວ', 'Paper millimetres: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5': 'ມິນລີແມັດເທິງເຈ້ຍ: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0 ຫຼື ຄ່າໃດກໍໄດ້ຕັ້ງແຕ່ 0.05 ເຖິງ 5', 'The weight of the hatch lines on paper: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0, or any value from 0.05 to 5; it wins over the pen': 'ຄວາມໜາຂອງເສັ້ນລາຍເທິງເຈ້ຍ: 0.13 · 0.18 · 0.25 · 0.35 · 0.5 · 0.7 · 1.0 ຫຼື ຄ່າໃດກໍໄດ້ຕັ້ງແຕ່ 0.05 ເຖິງ 5; ມັນຊະນະປາກກາ', 'The colour of the hatch; automatic: the category colour': 'ສີຂອງເສັ້ນລາຍ; ອັດຕະໂນມັດ: ສີຂອງປະເພດ', 'A pen of the pen table (1 to 16), when no weight is set': 'ປາກກາຈາກຕາຕະລາງປາກກາ (1 ເຖິງ 16), ເມື່ອບໍ່ໄດ້ຕັ້ງຄວາມໜາ', 'The hatch in a lighter tone, as a background': 'ເສັ້ນລາຍໃນໂທນທີ່ອ່ອນກວ່າ, ເປັນພື້ນຫຼັງ', 'A second hatch under the first (a background and a foreground, as in Revit)': 'ເສັ້ນລາຍທີສອງຢູ່ລຸ່ມອັນທຳອິດ (ພື້ນຫຼັງ ແລະ ພື້ນໜ້າ, ຄືໃນ Revit)', 'A change below goes to all of them, in one undo step.': 'ການປ່ຽນແປງຂ້າງລຸ່ມໃຊ້ກັບທັງໝົດ, ໃນຂັ້ນຕອນຍົກເລີກດຽວ.', 'What is not set comes from the name, the category or the Object styles; a field’s arrow takes it back there.': 'ສິ່ງທີ່ບໍ່ໄດ້ຕັ້ງມາຈາກຊື່, ປະເພດ ຫຼື ແບບວັດຖຸ; ລູກສອນຂອງຊ່ອງນັ້ນຈະສົ່ງມັນກັບຄືນໄປບ່ອນນັ້ນ.',
+  "Real size": "ຂະໜາດຈິງ",
+  "Some real size": "ຂະໜາດຈິງບາງສ່ວນ",
+  "pattern's own": "ຂອງແບບຮູບເອງ",
+  "Scale (×)": "ມາດຕາສ່ວນ (×)",
+  "Scale (1 = real size)": "ມາດຕາສ່ວນ (1 = ຂະໜາດຈິງ)",
+  "Min. hatch spacing (mm)": "ໄລຍະຫ່າງຂັ້ນຕ່ຳຂອງລາຍແຮ້ເງົາ (mm)",
+  "Hatch lines closer together than this on paper are not drawn: the area shows as an outline with a plain fill. 0 draws every line.": "ເສັ້ນລາຍແຮ້ເງົາທີ່ຢູ່ໃກ້ກັນກວ່ານີ້ເທິງເຈ້ຍຈະບໍ່ຖືກແຕ້ມ: ພື້ນທີ່ຈະສະແດງເປັນເສັ້ນຂອບທີ່ເຕັມດ້ວຍສີທຳມະດາ. 0 ແຕ້ມທຸກເສັ້ນ.",
+  "Pattern's own: as the pattern says. Drafting: the spacing is paper millimetres, the same on every scale. Real size: it is the real object's millimetres, so it follows the view's scale": "ຂອງແບບຮູບເອງ: ຕາມທີ່ແບບຮູບບອກ. ແຕ້ມ: ໄລຍະຫ່າງເປັນມິນລິແມັດເທິງເຈ້ຍ, ເທົ່າກັນທຸກມາດຕາສ່ວນ. ຂະໜາດຈິງ: ເປັນມິນລິແມັດຂອງວັດຖຸຈິງ, ດັ່ງນັ້ນຈຶ່ງຕາມມາດຕາສ່ວນຂອງມຸມມອງ",
+  "Real size: 1 is the pattern at the real object's size; 2 twice as large": "ຂະໜາດຈິງ: 1 ແມ່ນແບບຮູບຂະໜາດເທົ່າວັດຖຸຈິງ; 2 ໃຫຍ່ກວ່າສອງເທົ່າ",
+  "A factor on the pattern's spacing on paper": "ຕົວຄູນຂອງໄລຍະຫ່າງແບບຮູບເທິງເຈ້ຍ",
+  "Real-size pattern: its spacing is the real object's millimetres (brick courses, tiles, boards), so it follows the view's scale": "ແບບຮູບຂະໜາດຈິງ: ໄລຍະຫ່າງເປັນມິນລິແມັດຂອງວັດຖຸຈິງ (ແຖວດິນຈີ່, ກະເບື້ອງ, ແຜ່ນໄມ້), ດັ່ງນັ້ນຈຶ່ງຕາມມາດຕາສ່ວນຂອງມຸມມອງ",
+  "Hatch origin": "ຈຸດເລີ່ມຂອງລາຍແຮ້ເງົາ",
+  "Hatch origin, along (u)": "ຈຸດເລີ່ມຂອງລາຍແຮ້ເງົາ, ຕາມແກນ (u)",
+  "Hatch origin, up (v)": "ຈຸດເລີ່ມຂອງລາຍແຮ້ເງົາ, ຂຶ້ນເທິງ (v)",
+  "Where the element's hatches start, in its own frame: along its axis from the start, and up from its base in elevations and sections (to the left of the axis in a plan). Real-size patterns (bricks, tiles) start their courses here": "ບ່ອນທີ່ລາຍແຮ້ເງົາຂອງອົງປະກອບເລີ່ມ, ໃນກອບຂອງມັນເອງ: ຕາມແກນຈາກຈຸດເລີ່ມ ແລະ ຂຶ້ນເທິງຈາກຖານໃນດ້ານຂ້າງ ແລະ ຮູບຕັດ (ຊ້າຍຂອງແກນໃນແປນ). ແບບຮູບຂະໜາດຈິງ (ດິນຈີ່, ກະເບື້ອງ) ເລີ່ມແຖວຂອງມັນຢູ່ບ່ອນນີ້",
+  "Up from the element's base in elevations and sections; to the left of the axis in a plan": "ຂຶ້ນເທິງຈາກຖານຂອງອົງປະກອບໃນດ້ານຂ້າງ ແລະ ຮູບຕັດ; ຊ້າຍຂອງແກນໃນແປນ",
+  "automatic": "ອັດຕະໂນມັດ",
+  " automatic": " ອັດຕະໂນມັດ",
+  "Back to automatic: the view's origin, or the element's base for a real-size pattern": "ກັບຄືນເປັນອັດຕະໂນມັດ: ຈຸດເລີ່ມຂອງມຸມມອງ ຫຼື ຖານຂອງອົງປະກອບສຳລັບແບບຮູບຂະໜາດຈິງ",
+  "Reset the hatch origin": "ຕັ້ງຈຸດເລີ່ມຂອງລາຍແຮ້ເງົາຄືນໃໝ່",
 };
 
 /** Phrases with a number or a name in them. */
