@@ -15,7 +15,7 @@ import { registerCommand, startCommand, type Step } from '../../viewport/cad/ses
 import type { Shape } from '../../viewport/cad/shapes';
 import { num, ofClass, relatingOf, typeLayers, typeOf, usageOf } from '../../engine/model';
 import { fillFlips, fillGhost, flipFillHand, useFillHand, type PanelLike } from './fillPlacing';
-import { activate } from '../../platform/modules';
+import { activate, useToolTick } from '../../platform/modules';
 import { gateGroup } from './gates/tools';
 import { GateSection } from './gates/GateSection';
 import { CLASS as GATE_CLASS, gateGrips, overallOf } from './gates/gates';
@@ -23,6 +23,7 @@ import { setJoinStyle, setRememberLine, setWallLine, setWallLineOffset, useWallP
 import { LengthField } from '../../shell/cells';
 import { axisFromReference, referenceArc } from '../../viewport/wallReference';
 import { WallLayers } from './WallLayers';
+import { bandsOf, lineLeft, mirrorLine, wallGhost } from './wallLine';
 import { WallTopOption, wallTopArgs } from './WallTop';
 import { JoinerySection } from './JoinerySection';
 import { SlabSection } from './SlabSection';
@@ -124,7 +125,36 @@ const wall: ToolDef = chainTool({
     await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, joinStyle: prefs.joinStyle, ...wallLineArgs(prefs), ...(typeId ? { typeId } : {}), ...wallTopArgs() });
   },
   more: () => <><WallLineOption /><WallTopOption /></>,
+  // The wall's body beside the line drawn, on the side it will be built (decision 692).
+  body: (path) => {
+    const s = useSession.getState();
+    const wanted = useUi.getState().wallTypeId;
+    const type = (wanted ? s.nodes.get(wanted) : undefined) ?? ofClass(s, 'IfcWallType')[0];
+    const bands = bandsOf(type ? typeLayers(s, type.id) : []);
+    const { line, lineOffset } = useWallPrefs.getState();
+    return wallGhost(path, bands, lineLeft(bands, line, lineOffset));
+  },
+  // Space: the line on the other side (Revit's Spacebar), before the first click or between clicks.
+  space: flipWallLine,
+  spaceHint: () => {
+    const { line, lineOffset } = useWallPrefs.getState();
+    const next = mirrorLine(line, lineOffset);
+    return next ? `the other side (${LINE_NAMES[next.line]})` : null;
+  },
 });
+
+/** The lines' names, as the bar's list writes them. */
+const LINE_NAMES: Record<WallLine, string> = { core: 'Core centre', coreExterior: 'Core, exterior face', coreInterior: 'Core, interior face', exterior: 'Exterior face', interior: 'Interior face', offset: 'Offset from the core centre' };
+
+/** Space while the Wall tool is on (decision 692): the line drawn on goes to the other side of the wall; the core's centre has none. */
+function flipWallLine(): void {
+  const { line, lineOffset } = useWallPrefs.getState();
+  const next = mirrorLine(line, lineOffset);
+  if (!next) { notify('The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.'); return; }
+  if (next.line !== line) setWallLine(next.line);
+  if (next.lineOffset !== lineOffset) setWallLineOffset(next.lineOffset);
+  useToolTick.setState((t) => ({ n: t.n + 1 }));
+}
 
 /**
  * The line a wall is drawn on, chosen in the command line's bar while the Wall tool is on (decision 237): a face, or an offset
@@ -136,7 +166,7 @@ function WallLineOption() {
   return (
     <>
       <select className={`cad-layer${line !== 'core' ? ' on' : ''}`} value={line} data-testid="wall-line" title="The line you click: the core's centre (the axis), a face of the core, a finish face, or an offset from the core's centre; the exterior is the wall's right as you draw"
-        onChange={(e) => setWallLine(e.target.value as WallLine)}>
+        onChange={(e) => { setWallLine(e.target.value as WallLine); useToolTick.setState((t) => ({ n: t.n + 1 })); }}>
         <option value="core">Core centre</option>
         <option value="coreExterior">Core, exterior face</option>
         <option value="coreInterior">Core, interior face</option>
@@ -144,9 +174,11 @@ function WallLineOption() {
         <option value="interior">Interior face</option>
         <option value="offset">Offset from the core centre</option>
       </select>
+      <button type="button" className="btn small" data-action="wall-line-flip" disabled={line === 'core'} onClick={flipWallLine}
+        title="Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built">Other side (Space)</button>
       {line === 'offset' && (
         <LengthField metres={lineOffset} testId="wall-line-offset" style={{ width: 80 }} title="How far the line you click lies from the core's centre: positive to the left as you draw, negative to the right (the exterior)"
-          onCommit={(m) => { if (m != null) setWallLineOffset(m); }} />
+          onCommit={(m) => { if (m != null) { setWallLineOffset(m); useToolTick.setState((t) => ({ n: t.n + 1 })); } }} />
       )}
       <label className="cad-layer" title="The walls keep this line as their reference line: they are snapped and moved by it, and grow round it when their thickness or type changes. Unticked, the line only places them."
         style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>

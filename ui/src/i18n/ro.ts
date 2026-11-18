@@ -4513,6 +4513,10 @@ export const RO: Record<string, string> = {
   // A drafted text's alignment (forum topic 148); a view's mark (report #167).
   'Alignment': 'Aliniere', 'automatic': 'automat', 'Without a width, of its point; with one, in its box': 'Fără lățime, față de punctul lui; cu lățime, în caseta lui', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Ce scrie marcajul vederii: numele secțiunii sau al fațadei cu capul propriu Lapin, numărul ei pe planșă cu un simbol de cap, o trimitere (callout) sau un titlu de vedere. Gol: automat.',
   'Click to place another · Space turns · Enter or Esc to finish': 'Clic pentru încă unul · Space îl rotește · Enter sau Esc termină',
+  // The Wall tool's Space: the line on the other side (decision 692).
+  "Other side (Space)": "Cealaltă parte (Space)",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "Space: aceeași linie de cealaltă parte a peretelui (fața exterioară și cea interioară își schimbă locul, un decalaj își schimbă semnul); fantoma peretelui arată unde va fi construit",
+  "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "Centrul miezului nu are o altă parte: alege o față sau un decalaj ca să-l treci de partea cealaltă cu Space, sau întoarce peretele după aceea cu săgeata lui.",
 };
 
 /** Phrases with a number or a name in them. */

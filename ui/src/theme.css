@@ -373,6 +373,8 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .plan-label { font-size: 11px; fill: var(--ink-muted); }
 .plan-preview line, .plan-preview polyline, .plan-preview rect { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 6 4; }
 .plan-preview line.closing { opacity: 0.5; }
+/* A wall's body as it will be built, beside the line drawn (decision 692): solid and faint, the line itself dashed over it. */
+.plan-preview .plan-body polyline { stroke-dasharray: none; stroke-width: 1; opacity: 0.7; }
 .plan-preview text { font-size: 11px; fill: var(--accent); font-variant-numeric: tabular-nums; }
 .plan-vertex { fill: var(--accent); }
 .plan-snap { fill: none; stroke: var(--accent); stroke-width: 1.2; }

@@ -12,7 +12,7 @@ import { useInterface } from '../../app/interface';
 import { bindingText, useBindings } from '../../app/commands';
 import { toolHint } from '../../shell/ViewportHud';
 import { LiveBar } from '../LiveBox';
-import { findTool } from '../../platform/modules';
+import { findTool, useToolTick } from '../../platform/modules';
 import { ROLES, findCommand, roleLabel, useCad } from './session';
 import { useLayers } from './layers';
 import { openSnapMenu, UcsChip, useSnapSummary } from '../../shell/CursorCoords';
@@ -31,6 +31,7 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
   const promptHere = useInterface((s) => s.parts.prompt === 'commandLine');
   useBindings();
   const layers = useLayers();
+  useToolTick((s) => s.n); // Space while a tool is on changes what its hint says (a wall's line)
   const hint = promptHere ? toolHint(tool) : null;
   const twoD = view === 'plan' || view === 'drawing';
   const key = (id: string) => { const k = bindingText(id).split(', ')[0]; return k ? ` (${k})` : ''; };

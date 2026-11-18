@@ -633,6 +633,53 @@ export const scenes = [
     },
   },
   {
+    // Space while the Wall tool draws (decision 692): the line clicked goes to the other side of the wall, the bar's list
+    // follows, and the wall's body drawn beside the line moves across it before the click.
+    id: 'wall-space-flip',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Insulated 365', layers: [
+        { material: 'Insulation', thickness: 0.1 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 }] })).id;
+      await t.ui({ wallTypeId: type });
+      await t.keys('w', 'a');
+      await t.wait(300);
+      await t.page.locator('[data-testid=wall-line]').selectOption('exterior');
+      const [ax, ay] = await t.planPoint(0, 0);
+      await t.page.mouse.move(ax, ay, { steps: 3 });
+      await t.page.mouse.click(ax, ay);
+      await t.wait(250);
+      const [bx, by] = await t.planPoint(5, 0);
+      await t.page.mouse.move(bx, by, { steps: 8 });
+      await t.wait(300);
+      const body = t.page.locator('[data-testid=draw-body]');
+      t.expect(await body.count() === 1, 'the wall\'s body is drawn beside the line before the click');
+      // Screen y grows downwards: drawn along +x on the exterior face, the body lies above the line (to its left).
+      const above = async () => { const b = await body.boundingBox(); return b ? b.y + b.height / 2 < ay : null; };
+      t.expect(await above() === true, 'on the exterior face the body lies to the left of the line');
+      const [x0, y0] = await t.planPoint(-1, 1.5);
+      const [x1, y1] = await t.planPoint(6, -1.5);
+      await t.shot('wall-space-before', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      await t.keys(' ');
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-testid=wall-line]').inputValue() === 'interior', 'Space: the interior face, shown in the bar\'s list');
+      t.expect(await above() === false, 'after Space the body lies to the right of the line');
+      await t.shot('wall-space-after', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      await t.page.mouse.click(bx, by);
+      await t.wait(400);
+      await t.keys('Escape', 'Escape');
+      await t.wait(300);
+      const wall = (await t.nodes()).find((n) => n.type === 'IfcWall');
+      // Drawn on its interior face along +x: its axis 140 mm to the right (below) of the line clicked.
+      t.expect(wall && Math.abs(wall.props.start[1] + 0.14) < 1e-6, `the wall is built on the side shown (${JSON.stringify(wall?.props.start)})`);
+      // The choice as a user leaves it: the core centre.
+      await t.keys('w', 'a');
+      await t.wait(300);
+      await t.page.locator('[data-testid=wall-line]').selectOption('core');
+      await t.keys('Escape', 'Escape');
+    },
+  },
+  {
     // A wall's layer through the floor's layers by priority (the forum's topic #30): the brick core ticked ↓ in Wall types goes
     // through the floor finish and the screed onto the concrete; the section shows it, the floor loses what the wall takes.
     id: 'wall-into-floor',

@@ -21,8 +21,6 @@ export function setChainMode(id: string, mode: ChainMode): void {
   useToolTick.setState((s) => ({ n: s.n + 1 }));
 }
 
-const LINE: Gesture = { kind: 'twoPoints', repeat: true };
-const ARC: Gesture = { kind: 'threePoints', arc: true };
 
 /** The Line / Arc choice in the command line's bar. */
 function ModeOption({ id }: { id: string }) {
@@ -43,12 +41,16 @@ interface ChainSpec extends Omit<ToolDef, 'gesture' | 'complete' | 'options' | '
   arc: (a: Vec2, b: Vec2, p: Vec2, ctx: ToolContext) => Promise<void> | void;
   /** What else the tool lets one choose while it is on, beside the Line / Arc choice. */
   more?: ComponentType;
+  /** What the path drawn would build, drawn with it before the click (a wall's body, decision 692). */
+  body?: (path: { a: Vec2; b: Vec2; rise: number }) => Vec2[][];
 }
 
 /** A chain tool: its gesture and what it makes follow its mode. */
 export function chainTool(spec: ChainSpec): ToolDef {
-  const { line, arc, more: More, ...def } = spec;
+  const { line, arc, more: More, body, ...def } = spec;
   const id = def.id;
+  const LINE: Gesture = { kind: 'twoPoints', repeat: true, ...(body ? { body } : {}) };
+  const ARC: Gesture = { kind: 'threePoints', arc: true, ...(body ? { body } : {}) };
   const tool: ToolDef = {
     ...def,
     get gesture(): Gesture { return chainMode(id) === 'arc' ? ARC : LINE; },

@@ -4551,6 +4551,10 @@ export const ZH: Record<string, string> = {
   // A drafted text's alignment (forum topic 148); a view's mark (report #167).
   'Alignment': '对齐', 'automatic': '自动', 'Without a width, of its point; with one, in its box': '无宽度时相对于其插入点；有宽度时在其文本框内', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': '视图标记所写的内容：使用 Lapin 自带标头时为剖面或立面的名称；使用标头符号、详图索引或视图标题时为其在图纸上的编号。留空：自动。',
   'Click to place another · Space turns · Enter or Esc to finish': '单击再放置一个 · 空格键旋转 · Enter 或 Esc 结束',
+  // The Wall tool's Space: the line on the other side (decision 692).
+  "Other side (Space)": "另一侧 (空格)",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "空格：墙另一侧的同一条线（外表面与内表面互换，偏移量改变正负号）；墙的预览显示它将建在何处",
+  "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "核心中心没有另一侧：请选择一个面或偏移量，再用空格换到另一侧，或之后用墙的箭头翻转墙。",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

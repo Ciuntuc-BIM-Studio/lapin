@@ -46,9 +46,9 @@ describe('the tools merged into others', () => {
     const { chainMode, setChainMode } = await import('../modules/core/chainTool');
     const wall = findTool('architecture.wall')!;
     setChainMode(wall.id, 'line');
-    expect(wall.gesture).toEqual({ kind: 'twoPoints', repeat: true });
+    expect(wall.gesture).toMatchObject({ kind: 'twoPoints', repeat: true });
     setChainMode(wall.id, 'arc');
-    expect(wall.gesture).toEqual({ kind: 'threePoints', arc: true });
+    expect(wall.gesture).toMatchObject({ kind: 'threePoints', arc: true });
     expect(wall.mode?.()).toBe('arc');
     setChainMode(wall.id, 'line');
     activate(findTool('architecture.curvedWall')!);

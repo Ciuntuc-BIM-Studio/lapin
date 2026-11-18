@@ -4560,6 +4560,10 @@ export const PL: Record<string, string> = {
   // A drafted text's alignment (forum topic 148); a view's mark (report #167).
   'Alignment': 'Wyrównanie', 'automatic': 'automatycznie', 'Without a width, of its point; with one, in its box': 'Bez szerokości: względem punktu; z szerokością: w ramce', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Co pisze znacznik widoku: nazwę przekroju lub elewacji z własną główką Lapina, jego numer na arkuszu z symbolem główki, odnośnik lub tytuł widoku. Puste: automatycznie.',
   'Click to place another · Space turns · Enter or Esc to finish': 'Kliknij, aby umieścić kolejny · Spacja obraca · Enter lub Esc kończy',
+  // The Wall tool's Space: the line on the other side (decision 692).
+  "Other side (Space)": "Druga strona ściany (Spacja)",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "Spacja: ta sama linia po drugiej stronie ściany (lico zewnętrzne i wewnętrzne zamieniają się, odsunięcie zmienia znak); podgląd ściany pokazuje, gdzie zostanie zbudowana",
+  "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "Środek rdzenia nie ma drugiej strony: wybierz lico lub odsunięcie, aby zmienić stronę Spacją, albo odwróć ścianę potem jej strzałką.",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

@@ -4520,6 +4520,10 @@ export const IT: Record<string, string> = {
   // A drafted text's alignment (forum topic 148); a view's mark (report #167).
   'Alignment': 'Allineamento', 'automatic': 'automatico', 'Without a width, of its point; with one, in its box': 'Senza larghezza, rispetto al suo punto; con larghezza, nel suo riquadro', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Ciò che scrive il marcatore della vista: il nome della sezione o del prospetto con la testa propria di Lapin, il suo numero sulla tavola con un simbolo di testa, un richiamo o un titolo di vista. Vuoto: automatico.',
   'Click to place another · Space turns · Enter or Esc to finish': 'Clic per posizionarne un altro · Spazio lo ruota · Invio o Esc per finire',
+  // The Wall tool's Space: the line on the other side (decision 692).
+  "Other side (Space)": "Altro lato (Spazio)",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "Spazio: la stessa linea dall’altro lato del muro (le facce esterna e interna si scambiano, uno scostamento cambia segno); l’anteprima del muro mostra dove sarà costruito",
+  "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "Il centro del nucleo non ha un altro lato: scegli una faccia o uno scostamento per cambiare lato con Spazio, oppure inverti il muro dopo con la sua freccia.",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

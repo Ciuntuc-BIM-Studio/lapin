@@ -28,6 +28,12 @@ Unde se întâlnesc doi pereți, Lapin îi îmbină singur. Straturile lor intr�
 
 **Linia pe care desenezi.** Cât timp unealta Wall e activă, lista din bara liniei de comandă alege linia pe care dai clic: **Axul miezului** (axa, ca până acum), **Miez, fața exterioară**, **Miez, fața interioară**, **Fața exterioară**, **Fața interioară** sau **Distanță față de axul miezului**, care cere o distanță (pozitivă la stânga în sensul desenării, negativă la dreapta). Exteriorul e dreapta peretelui în sensul desenării (desenează în jurul clădirii în sens invers acelor de ceasornic ca să fie în afară). Axa peretelui rămâne pe miez, decalată față de linie, iar pereții desenați unul după altul pe aceeași față se întâlnesc în colțul acelei fețe. Pereții curbi (**Arc** în unealta Wall, sau <kbd>WC</kbd>) se desenează și ei pe linia aleasă, cu axa urmând-o la aceeași distanță.
 
+**Space: cealaltă parte.** Cât desenezi, corpul peretelui apare estompat lângă linia pe care dai clic, de partea pe care va fi construit. Apasă <kbd>Space</kbd> (sau **Cealaltă parte (Space)** din bară), înainte de primul clic sau între clicuri, și la Arc, ca să iei aceeași linie de cealaltă parte a peretelui: **Fața exterioară** devine **Fața interioară** și invers, **Miez, fața exterioară** devine **Miez, fața interioară**, iar o distanță își schimbă semnul. Lista din bară arată linia aleasă acum, iar indicația de deasupra vederii spune ce dă următorul <kbd>Space</kbd>. Exteriorul peretelui rămâne la dreapta lui în sensul desenării: ce trece de cealaltă parte a liniei e corpul lui. **Axul miezului** nu are o altă parte (miezul e mijlocul peretelui): alege întâi o față sau o distanță, sau întoarce după aceea peretele desenat cu săgeata lui.
+
+![Desenat pe fața exterioară: corpul peretelui la stânga liniei](shots/wall-space-before.webp)
+
+![După Space: fața interioară, corpul la dreapta aceleiași linii](shots/wall-space-after.webp)
+
 **Ține minte linia de referință.** Bifeaz-o lângă listă și fiecare perete pe care îl desenezi păstrează linia aceea ca *linie de referință*. Nebifată (implicit), linia doar așază peretele, ca până acum. Un perete care păstrează o linie de referință:
 
 - o arată ca linie continuă lângă axa lui punctată când e selectat, iar mânerele capetelor stau pe ea, așa că tragi peretele de linia pe care l-ai desenat;

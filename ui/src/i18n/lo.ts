@@ -4613,6 +4613,10 @@ export const LO: Record<string, string> = {
   // A drafted text's alignment (forum topic 148); a view's mark (report #167).
   'Alignment': 'ການຈັດວາງ', 'automatic': 'ອັດຕະໂນມັດ', 'Without a width, of its point; with one, in its box': 'ບໍ່ມີຄວາມກວ້າງ: ຕາມຈຸດຂອງມັນ; ມີຄວາມກວ້າງ: ໃນກອບຂອງມັນ', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'ສິ່ງທີ່ເຄື່ອງໝາຍຂອງມຸມມອງຂຽນ: ຊື່ຂອງພາກຕັດ ຫຼື ດ້ານໜ້າ ກັບຫົວຂອງ Lapin ເອງ, ເລກຂອງມັນໃນແຜ່ນກັບສັນຍາລັກຫົວ, ການອ້າງອີງ ຫຼື ຫົວຂໍ້ມຸມມອງ. ຫວ່າງ: ອັດຕະໂນມັດ.',
   'Click to place another · Space turns · Enter or Esc to finish': 'ຄລິກເພື່ອວາງອີກອັນ · Space ຫມຸນ · Enter ຫຼື Esc ເພື່ອຈົບ',
+  // The Wall tool's Space: the line on the other side (decision 692).
+  "Other side (Space)": "ອີກຂ້າງ (Space)",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "Space: ເສັ້ນດຽວກັນຢູ່ອີກຂ້າງຂອງຝາ (ໜ້າດ້ານນອກ ແລະ ດ້ານໃນສະລັບກັນ, ໄລຍະເລື່ອນປ່ຽນເຄື່ອງໝາຍ); ເງົາຂອງຝາສະແດງບ່ອນທີ່ມັນຈະຖືກສ້າງ",
+  "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "ໃຈກາງແກນບໍ່ມີອີກຂ້າງ: ເລືອກໜ້າ ຫຼື ໄລຍະເລື່ອນເພື່ອປ່ຽນຂ້າງດ້ວຍ Space, ຫຼື ປີ້ນຝາພາຍຫຼັງດ້ວຍລູກສອນຂອງມັນ.",
 };
 
 /** Phrases with a number or a name in them. */

@@ -4521,6 +4521,10 @@ export const FR: Record<string, string> = {
   // A drafted text's alignment (forum topic 148); a view's mark (report #167).
   'Alignment': 'Alignement', 'automatic': 'automatique', 'Without a width, of its point; with one, in its box': 'Sans largeur, par rapport à son point ; avec une largeur, dans son cadre', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Ce qu\'écrit le repère de la vue : le nom de la coupe ou de l\'élévation avec la tête propre à Lapin, son numéro sur sa feuille avec un symbole de tête, un rappel ou un titre de vue. Vide : automatique.',
   'Click to place another · Space turns · Enter or Esc to finish': 'Clic pour en placer un autre · Espace le tourne · Entrée ou Échap pour finir',
+  // The Wall tool's Space: the line on the other side (decision 692).
+  "Other side (Space)": "Autre côté (Espace)",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "Espace : la même ligne de l’autre côté du mur (les faces extérieure et intérieure s’échangent, un décalage change de signe) ; l’aperçu du mur montre où il sera construit",
+  "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "Le centre du noyau n’a pas d’autre côté : choisissez une face ou un décalage pour changer de côté avec Espace, ou retournez le mur ensuite avec sa flèche.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

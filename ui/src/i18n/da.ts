@@ -4554,6 +4554,10 @@ export const DA: Record<string, string> = {
   // A drafted text's alignment (forum topic 148); a view's mark (report #167).
   'Alignment': 'Justering', 'automatic': 'automatisk', 'Without a width, of its point; with one, in its box': 'Uden bredde: ved sit punkt; med bredde: i sin boks', 'What the view\'s marker writes: the section\'s or elevation\'s name with Lapin\'s own head, its number on its sheet with a head symbol, a callout or a view title. Empty: automatic.': 'Hvad visningens markering skriver: snittets eller facadens navn med Lapins eget hoved, dets nummer på tegningen med et hovedsymbol, en henvisning eller en visningstitel. Tom: automatisk.',
   'Click to place another · Space turns · Enter or Esc to finish': 'Klik for at placere endnu en · Mellemrum drejer · Enter eller Esc afslutter',
+  // The Wall tool's Space: the line on the other side (decision 692).
+  "Other side (Space)": "Anden side (Mellemrum)",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built": "Mellemrum: samme linje på den anden side af væggen (yder- og indersiden bytter, en forskydning skifter fortegn); væggens skygge viser, hvor den bygges",
+  "The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.": "Kernens midte har ingen anden side: vælg en side eller en forskydning for at skifte side med Mellemrum, eller vend væggen bagefter med dens pil.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

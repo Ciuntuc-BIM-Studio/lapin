@@ -13,7 +13,7 @@ import { useUi } from '../app/store';
 import { useCad } from '../viewport/cad/session';
 import { useInterface } from '../app/interface';
 import { hint } from '../app/commands';
-import { activateSlot, findTool, hotbarIds, putInSlot, quickSlot, resetSlots, swapSlots, typeSlot, typesOf } from '../platform/modules';
+import { activateSlot, findTool, hotbarIds, putInSlot, quickSlot, resetSlots, swapSlots, typeSlot, typesOf, useToolTick } from '../platform/modules';
 import { reach, SLOT_DRAG, TOOL_DRAG, useHotbars } from '../app/hotbar';
 import { openContextMenu } from './ContextMenu';
 import { useState, type DragEvent, type MouseEvent } from 'react';
@@ -33,7 +33,9 @@ export function toolHint(tool: string | null): string | null {
   const g = active?.gesture;
   if (!active || !g) return null;
   if (g.kind === 'twoPoints' && g.measure) return `${active.label}: click two points a known distance apart · type their true distance (2400, 50m) · Esc cancels`;
-  if (g.kind === 'twoPoints') return `${active.label}: click its start, then its end · Shift squares it · ${g.repeat ? 'Enter ends the chain, Esc cancels' : 'Esc cancels'}`;
+  const space = active.spaceHint?.();
+  if (g.kind === 'twoPoints') return `${active.label}: click its start, then its end · Shift squares it${space ? ` · Space: ${space}` : ''} · ${g.repeat ? 'Enter ends the chain, Esc cancels' : 'Esc cancels'}`;
+  if (g.kind === 'threePoints' && g.arc && space) return `${active.label}: click its start, its end, then a point it passes through · Space: ${space} · Esc cancels`;
   if (g.kind === 'pickThenPoint') return `${active.label}: ${g.hint ?? 'click the element, then a point · Enter takes the first click alone, Esc cancels'}`;
   return null;
 }
@@ -99,6 +101,7 @@ export function ViewportHud() {
   };
   // A repeating CAD command (Symbol) says how to go on and how to finish.
   const stepHint = useCad((s) => s.step?.hint ?? null);
+  useToolTick((s) => s.n); // Space while a tool is on changes what its hint says (a wall's line)
   const hintText = stepHint ?? toolHint(tool);
   return (
     <>

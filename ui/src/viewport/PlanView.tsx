@@ -923,10 +923,17 @@ export function PlanView() {
       const ps = own.map(toScreen);
       return <g className="plan-preview"><polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} /></g>;
     }
+    // What the path would build (a wall's body, on the side of the line it goes: decision 692).
+    const body = (path: { a: Vec2; b: Vec2; rise: number }) => {
+      const gb = tool.gesture?.kind === 'twoPoints' || tool.gesture?.kind === 'threePoints' ? tool.gesture.body : undefined;
+      const lines = gb && Math.hypot(path.b.x - path.a.x, path.b.y - path.a.y) > 1e-6 ? gb(path) : [];
+      return lines.length ? <g className="plan-body" data-testid="draw-body">{lines.map((l, i) => <polyline key={i} fill="none" points={l.map(toScreen).map((p) => `${p.x},${p.y}`).join(' ')} />)}</g> : null;
+    };
     if ((g === 'twoPoints' || g === 'pickThenPoint') && pts.length === 1) {
       const a = toScreen(pts[0]), b = toScreen(cur);
       return (
         <g className="plan-preview">
+          {g === 'twoPoints' && body({ a: pts[0], b: cur, rise: 0 })}
           <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
           <text x={(a.x + b.x) / 2 + 8} y={(a.y + b.y) / 2 - 8}>{lengthText(Math.hypot(cur.x - pts[0].x, cur.y - pts[0].y))}</text>
         </g>
@@ -940,6 +947,7 @@ export function PlanView() {
       const m = toScreen(line[Math.floor(line.length / 2)]);
       return (
         <g className="plan-preview">
+          {body(pts.length === 2 ? { a: pts[0], b, rise: riseThrough(pts[0], b, cur) } : { a: pts[0], b, rise: 0 })}
           <polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} />
           <text x={m.x + 8} y={m.y - 8}>{pts.length === 2 ? `R ${lengthText(Math.abs(radiusOf(pts[0], b, cur)))}` : lengthText(Math.hypot(b.x - pts[0].x, b.y - pts[0].y))}</text>
         </g>

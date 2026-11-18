@@ -16,7 +16,8 @@ export interface Vec2 { x: number; y: number }
 /** How a tool takes its input in a view: the gesture, then one engine command. */
 export type Gesture =
   | { kind: 'twoPoints'; /** Chained: the end of one is the start of the next (walls). */ repeat?: boolean;
-    /** Measuring (Scale image, forum 143): the second point is the cursor's, and a length typed is the true distance between the two (the tool's `typed`). */ measure?: boolean }
+    /** Measuring (Scale image, forum 143): the second point is the cursor's, and a length typed is the true distance between the two (the tool's `typed`). */ measure?: boolean;
+    /** What the path drawn would build, as lines on the plan (metres), drawn with it as the cursor moves (a wall's body on the side of the line it goes, decision 692). */ body?: (path: { a: Vec2; b: Vec2; rise: number }) => Vec2[][] }
   /** `ghost`: what the click would put there, as lines on the plan (metres), redrawn as the cursor moves (a family's outline, turned and mirrored). */
   | { kind: 'point'; ghost?: (at: Vec2) => Vec2[][] }
   | { kind: 'rectangle' }
@@ -27,6 +28,8 @@ export type Gesture =
     constrain?: (placed: Vec2[], aimed: Vec2) => Vec2;
     /** What the tool would make, drawn as the cursor moves (a detour's bypass); null: the gesture's own preview. */
     preview?: (placed: Vec2[], aimed: Vec2) => Vec2[] | null;
+    /** With `arc`: what the arc drawn would build, as `twoPoints`' `body`. */
+    body?: (path: { a: Vec2; b: Vec2; rise: number }) => Vec2[][];
   }
   /** `shapes` (forum topic 97): in a plan, its bar's shape (viewport/outlineShape: polygon with arcs, rectangle, circle, inside walls) is drawn. */
   | { kind: 'polygon'; shapes?: boolean }
@@ -109,6 +112,8 @@ export interface ToolDef {
   mode?: () => string;
   /** What Space does while the tool is on and nothing is typed (a door's other hand). */
   space?: () => void;
+  /** What Space does now, in a few words, for the hint over the view (a wall: the line on the other side). */
+  spaceHint?: () => string | null;
   /** What the tool lets one choose while it is on (the line a wall is drawn on), shown in the command line's bar. */
   options?: ComponentType;
   /** What it puts down, shown in Properties while it is on (the type a wall is drawn with), before the first click. */
