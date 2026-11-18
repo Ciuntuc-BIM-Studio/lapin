@@ -109,6 +109,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IViewAnnotations>(this);
         // The Wall types dialog's preview: the type in a sample wall with a T joined to it (decision 529).
         r.Service<ITypePreview>(new WallTypePreview());
+        // A wall's kept reference line, told to the interface (decision 685).
+        r.Service<INodeProps>(new WallReference.Props());
         // The walls' and floors' layers past their edges cutting columns, beams and footings too (forum topic 89, stage 4).
         r.Service<ILayerExtentCuts>(new LayerExtents.Cuts());
         // Drafted linework made walls, floors, rooms and railings (docs/plan-user-extensibility.md §7.4).
@@ -1102,10 +1104,16 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 catch (CommandException) when (!asked) { ta = wall.CloneAttrs(); }
                 ctx.Replace(wall = wall.With(attrs: ta));
             }
-            // Drawn on another line than the core's centre (decision 237): the axis set off from it; a straight wall only.
-            if ((string?)a["reference"] is { Length: > 0 } reference && reference != "core" && rise == 0) wall = WallReference.Apply(ctx, wall, reference);
             // A curved wall: the arc through its ends, rising off the chord (or through a third point), before it joins.
-            if (rise != 0) { var attrs = wall.CloneAttrs(); attrs[PathCurve.Key] = rise; ctx.Replace(wall.With(attrs: attrs)); }
+            if (rise != 0) { var attrs = wall.CloneAttrs(); attrs[PathCurve.Key] = rise; ctx.Replace(wall = wall.With(attrs: attrs)); }
+            // Drawn on another line than the core's centre (decision 237; an arc too since #63): the axis set off from it (concentric
+            // on an arc). rememberReference: the wall keeps that line as its reference (forum topic 159, decision 685).
+            if (a["reference"] is { } reference)
+            {
+                var line = WallReference.Parse(reference);
+                var remember = a["rememberReference"] is JsonValue rv && rv.TryGetValue<bool>(out var rb) && rb;
+                if (!line.IsCoreCentre) wall = WallReference.Apply(ctx, wall, line, remember);
+            }
             if (!unjoined) Joins.Auto(ctx, Paths(ctx), wall.Id, Style(a["joinStyle"]) ?? JoinStyle.Mitre);
             return new JsonObject { ["id"] = wall.Id };
         });
@@ -1285,6 +1293,15 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Command("setWallThickness", "Change wall thickness", (ctx, a) =>
         {
             WallThickness.Set(ctx, Ids(a), Json.Number(a["thickness"]) ?? throw new CommandException("Give the wall's thickness."));
+            return null;
+        });
+
+        // A wall's reference line (forum topic 159, GitHub #63, decision 685): {ids, kind (coreCentre, coreExterior, coreInterior,
+        // exteriorFace, interiorFace, layer, offset), offset? (metres left of the core's centre), layer? (a face, 0 the exterior)}.
+        // The line the walls are snapped, moved and grown by changes; the walls stay where they are. coreCentre: none kept.
+        r.Command("setWallReference", "Reference line", (ctx, a) =>
+        {
+            WallReference.Set(ctx, Ids(a), WallReference.Parse(a["reference"]?.DeepClone() ?? new JsonObject { ["kind"] = a["kind"]?.DeepClone(), ["offset"] = a["offset"]?.DeepClone(), ["layer"] = a["layer"]?.DeepClone() }));
             return null;
         });
 

@@ -14,6 +14,7 @@ import { sameKind } from '../../shell/params';
 import { LengthField } from '../../shell/cells';
 import { WallTopFields } from './WallTop';
 import { openWallProfile } from './wallProfileBoard';
+import { WallReferenceField } from './WallReferenceField';
 
 const THICKNESS_TIP = 'The wall\'s thickness comes from its type\'s layers. Type a new one and the selected walls take the type with the same build-up and that thickness (the core resized, the finishes kept): the project\'s, or a new one named after their type, e.g. Partition wall 150mm.';
 
@@ -81,6 +82,8 @@ export function WallLayers({ node }: { node: NodeDto }) {
               onCommit={(t) => { if (t != null) void execute('architecture.setWallThickness', { ids: sameKind(node), thickness: t }); }} /></dd>
           : <dd className="num">{lengthText(total)}</dd>}
         <dt>Layers run</dt><dd>{usage ? (usage.negative ? 'flipped' : 'as drawn') : '—'}</dd>
+        {/* The line it keeps besides its axis (forum topic 159, decision 685). */}
+        <WallReferenceField node={node} layers={layers} name={(l) => l.name ?? materialName(model, l.material)} />
       </dl>
       {/* Where it goes up to (the forum's topic #45): the storey above, a storey, or a height of its own. */}
       <WallTopFields node={node} />

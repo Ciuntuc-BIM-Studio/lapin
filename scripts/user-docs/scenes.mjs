@@ -585,6 +585,54 @@ export const scenes = [
     },
   },
   {
+    // A wall's reference line kept with it (forum topic 159, GitHub #63, decision 685): drawn on its exterior face with Remember
+    // reference line ticked, the wall keeps that line; Properties shows it, and a thicker wall grows inwards, its face staying put.
+    id: 'wall-reference',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Insulated 365', layers: [
+        { material: 'Insulation', thickness: 0.1 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 }] })).id;
+      await t.ui({ wallTypeId: type });
+      await t.keys('w', 'a');
+      await t.wait(300);
+      await t.page.locator('[data-testid=wall-line]').selectOption('exterior');
+      const remember = t.page.locator('[data-testid=wall-remember-line]');
+      t.expect(await remember.count() === 1, 'the Wall tool offers Remember reference line');
+      if (!(await remember.isChecked())) await remember.check();
+      await t.page.locator('[data-testid=wall-line]').selectOption('offset');
+      t.expect(await t.page.locator('[data-testid=wall-line-offset]').count() === 1, 'an offset from the core centre takes a distance');
+      await t.shot('wall-reference-tool', { of: '[data-testid=command-line]', pad: 0 });
+      await t.page.locator('[data-testid=wall-line]').selectOption('exterior');
+      for (const [x, y] of [[0, 0], [6, 0]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(300); }
+      await t.keys('Escape', 'Escape');
+      await t.wait(300);
+      const wall = (await t.nodes()).find((n) => n.type === 'IfcWall');
+      t.expect(wall?.props.referenceLine?.kind === 'exteriorFace', `the wall keeps its exterior face as its reference line (${JSON.stringify(wall?.props.referenceLine)})`);
+      const faceY = wall?.props.referenceAxis?.start?.[1];
+      t.expect(Math.abs((wall?.props.start?.[1] ?? 0) - faceY - 0.225) < 1e-6, 'its axis lies 225 mm in from the face drawn');
+      await select(t, wall.id);
+      await t.wait(400);
+      t.expect(await t.page.locator('[data-testid=wall-reference]').inputValue() === 'exteriorFace', 'Properties shows the reference line');
+      await t.shot('wall-reference-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      // Thicker: the core 250 → 350, the exterior face where it was, the wall grown inwards.
+      await t.cmd('architecture.setWallThickness', { ids: [wall.id], thickness: 0.465 });
+      await t.wait(400);
+      const after = (await t.nodes()).find((n) => n.id === wall.id);
+      t.expect(Math.abs(after.props.referenceAxis.start[1] - faceY) < 1e-6 && Math.abs(after.props.start[1] - faceY - 0.275) < 1e-6, 'a thicker wall keeps its reference line where it was');
+      await t.fit();
+      await t.wait(400);
+      await t.shot('wall-reference-plan', { clip: { x: 250, y: 120, width: 1190, height: 700 } });
+      // The choices as a user leaves them: the core centre, not remembered.
+      await t.ui({ selection: null, selected: [] });
+      await t.keys('w', 'a');
+      await t.wait(300);
+      await t.page.locator('[data-testid=wall-line]').selectOption('core');
+      await t.page.locator('[data-testid=wall-remember-line]').uncheck();
+      await t.keys('Escape', 'Escape');
+    },
+  },
+  {
     // A wall's layer through the floor's layers by priority (the forum's topic #30): the brick core ticked ↓ in Wall types goes
     // through the floor finish and the screed onto the concrete; the section shows it, the floor loses what the wall takes.
     id: 'wall-into-floor',

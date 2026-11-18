@@ -44,7 +44,7 @@ Lapin snaps to the ends, middles and intersections of what is drawn, and to the 
 
 ![The snap menu under the plan](shots/snap-menu.webp)
 
-**Wall axis.** In a plan the cursor snaps to a wall's axis, the line the wall is placed by (the dash-dot line shown on a selected wall): anywhere along it, marked *wall axis*, and to its two ends and its middle (on a curved wall, the middle of the arc). It helps to start a wall, a dimension or a line from the middle of another wall's thickness. The ends and crossings of the drawn lines still go first: where a corner and the axis are both under the cursor, the corner is taken. Along a line, the nearer of the axis and the wall's face wins.
+**Wall axis.** In a plan the cursor snaps to a wall's axis, the line the wall is placed by (the dash-dot line shown on a selected wall): anywhere along it, marked *wall axis*, and to its two ends and its middle (on a curved wall, the middle of the arc). It helps to start a wall, a dimension or a line from the middle of another wall's thickness. A wall that keeps a reference line (a face, or an offset: see [The line you draw on](walls.md)) lends that line too, with its ends. The ends and crossings of the drawn lines still go first: where a corner and the axis are both under the cursor, the corner is taken. Along a line, the nearer of the axis and the wall's face wins.
 
 **Tangent.** While drawing a line, a polyline or a wall from a point, bring the cursor near a circle, an arc or an ellipse: it snaps to the point where the line from the previous point just touches the curve, marked *tangent*. Drafted curves, curved walls (their faces and axis) and the curved edges of floors, ceilings and roofs are touched exactly, not their drawn segments.
 
