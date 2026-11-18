@@ -47,6 +47,7 @@ export interface Visibility {
   graphics?: Graphics | null; graphicsSet?: string | null; fromStyle?: boolean; style?: string;
   /** Its level of development (decision 404): drawn at, its own (null: its style's), its style's. */ detail?: number; ownDetail?: number | null; styleDetail?: number;
   sets: { id: string; name: string }[]; categories: string[]; subcategories?: Record<string, string[]>;
+  /** What a subcategory's row may give (decision 674). */ subcategoryFields?: string[];
   /** Hidden until the graphics show them (rooms, in 3D). */ hiddenByDefault?: string[];
   links?: LinkInfo[]; annotations?: string[]; imports?: ImportInfo[]; filters?: { id: string; name: string }[];
   pointClouds?: CloudInfo[];
@@ -181,10 +182,31 @@ export function VisibilityDialog() {
     void execute('view.graphics', { id: target, link: id, value: Object.keys(next).length ? next : null });
   };
 
+  /** A subcategory's graphics cells (decision 674): line colour, line weight, fill, cut hatch, halftone; what the engine says its rows may give. */
+  const subCells = (c: string, sub: string, sr: Row, enabled: boolean, link?: string) => {
+    const has = (f: string) => !v.subcategoryFields || v.subcategoryFields.includes(f);
+    const put = (patch: Row) => setCategory(c, patch, link, sub);
+    const fillMode = sr.fillColor === 'none' ? 'none' : sr.fillColor ? 'colour' : '';
+    const cells = [
+      <td key="lc">{has('lineColor') && <><ColourField aria-label="Line colour" value={sr.lineColor ?? '#000000'} onChange={(x) => put({ lineColor: x })} />{sr.lineColor && <button type="button" className="icon mini" title="As the category" aria-label="As the category" onClick={() => put({ lineColor: '' })}><X size={10} /></button>}</>}</td>,
+      <td key="lw">{has('lineWeight') && <select aria-label="Line weight" disabled={!enabled} value={sr.lineWeight ?? ''} onChange={(e) => put({ lineWeight: e.target.value })}>{(sr.lineWeight && !WEIGHTS.includes(sr.lineWeight) ? [...WEIGHTS, sr.lineWeight] : WEIGHTS).map((w) => <option key={w} value={w}>{w === '' ? 'as the category' : `${w} mm`}</option>)}</select>}</td>,
+      <td key="x" colSpan={2} />,
+      <td key="fc">{has('fillColor') && <>
+        <select aria-label="Fill" disabled={!enabled} value={fillMode} onChange={(e) => put({ fillColor: e.target.value === 'none' ? 'none' : e.target.value === 'colour' ? (sr.fillColor && sr.fillColor !== 'none' ? sr.fillColor : '#ffffff') : '' })}>
+          <option value="">as the category</option><option value="none">none</option><option value="colour">colour…</option>
+        </select>
+        {fillMode === 'colour' && <ColourField aria-label="Fill colour" value={sr.fillColor ?? '#ffffff'} onChange={(x) => put({ fillColor: x })} />}</>}</td>,
+      <td key="ch">{has('cutHatch') && <select aria-label="Cut hatch" disabled={!enabled} value={sr.cutHatch ?? ''} onChange={(e) => put({ cutHatch: e.target.value })}>
+        <option value="">as the category</option><option value="none">none</option><PatternOptions patterns={hatches} /></select>}</td>,
+      <td key="ht">{has('halftone') && <input type="checkbox" aria-label="Halftone" disabled={!enabled} checked={!!sr.halftone} onChange={(e) => put({ halftone: e.target.checked })} />}</td>,
+    ];
+    return <>{cells}{!link && <td />}</>;
+  };
+
   /** The categories, each unfolding into its subcategories; full columns for the view's own, Shown alone inside a link. */
   const categoryTable = (link?: string) => (
     <table className="layer-table vv-categories">
-      <thead><tr><th>Shown</th><th>Category</th>{!link && <><th>Line colour</th><th>Line weight</th><th>Pattern</th><th title="The lines between a cut element's layers (a wall's, a floor's): pen, line type, colour">Layer lines</th><th>Fill</th><th>Cut hatch</th><th>Halftone</th><th title="In 3D: 0 opaque, 100 clear">Transparency</th></>}</tr></thead>
+      <thead><tr><th>Shown</th><th>Category</th>{link && v.categories.some((c) => v.subcategories?.[c]?.length) && <><th>Line colour</th><th>Line weight</th><th colSpan={2} /><th>Fill</th><th>Cut hatch</th><th>Halftone</th></>}{!link && <><th>Line colour</th><th>Line weight</th><th>Pattern</th><th title="The lines between a cut element's layers (a wall's, a floor's): pen, line type, colour">Layer lines</th><th>Fill</th><th>Cut hatch</th><th>Halftone</th><th title="In 3D: 0 opaque, 100 clear">Transparency</th></>}</tr></thead>
       <tbody>
         {v.categories.map((c) => {
           const r = rulesOf(link).categories?.[c] ?? {};
@@ -203,6 +225,7 @@ export function VisibilityDialog() {
                     {categoryName(c)}
                   </span>
                 </td>
+                {link && v.categories.some((x) => v.subcategories?.[x]?.length) && <td colSpan={7} />}
                 {!link && (
                   <>
                     <td><ColourField value={r.lineColor ?? '#000000'} onChange={(v) => setCategory(c, { lineColor: v })} />{r.lineColor && <button type="button" className="icon mini" title="As the object styles" onClick={() => setCategory(c, { lineColor: '' })}><X size={10} /></button>}</td>
@@ -229,7 +252,7 @@ export function VisibilityDialog() {
                   <tr key={s} className="vv-sub" data-sub={`${c}.${s}`}>
                     <td><input type="checkbox" aria-label={`${categoryName(c)} ▸ ${categoryName(s)}`} checked={shown && !sr.hidden} disabled={!shown} onChange={(e) => setCategory(c, { hidden: !e.target.checked }, link, s)} /></td>
                     <td className="vv-sub-name">{categoryName(s)}</td>
-                    {!link && <td colSpan={8} />}
+                    {subCells(c, s, sr, shown && !sr.hidden, link)}
                   </tr>
                 );
               })}

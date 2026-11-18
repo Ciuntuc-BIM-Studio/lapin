@@ -22,7 +22,7 @@ const KINDS: Record<string, string> = {
   symbol: 'Symbol', material: 'Material', rulePack: 'Rule pack', titleBlock: 'Title block', part: 'Part', parameter: 'Parameter',
   alias: 'Alias', barShape: 'Bar shape', lineType: 'Line type', pattern: 'Hatch pattern', schedule: 'Schedule', furniture: 'Furniture',
   profiles: 'Profile library', priceList: 'Price list', text: 'Text style', dim: 'Dimension style', axis: 'Axis style', tag: 'Tag type',
-  layer: 'Layer', layerGroup: 'Layer group', tagRule: 'Tag rule',
+  layer: 'Layer', layerGroup: 'Layer group', tagRule: 'Tag rule', materialGraphicsSet: 'Material graphics set',
 };
 export const kindLabel = (kind: string): string => KINDS[kind] ?? kind;
 

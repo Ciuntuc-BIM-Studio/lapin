@@ -24,7 +24,8 @@ import { execute, query, useSession } from '../../engine/session';
 import { DisciplinePicker } from './DisciplinePicker';
 import { SmallScaleCutControl } from './SmallScaleCutControl';
 import { t } from '../../i18n';
-import { ENTOURAGE_FILLS, parseMinSpacing, ENTOURAGE_MODES, FINISH_FIELDS, LOD_HELP, LODS, STRUCTURE_MODES, structureLabel, styleStructure, useViewStyles, type EntourageMode, type LayerMode, type ViewStyle } from './viewStyles';
+import { useMaterialGraphicsSets } from './materialGraphicsSets';
+import { materialSetChoice, materialSetPatch, ENTOURAGE_FILLS, parseMinSpacing, ENTOURAGE_MODES, FINISH_FIELDS, LOD_HELP, LODS, STRUCTURE_MODES, structureLabel, styleStructure, useViewStyles, type EntourageMode, type LayerMode, type ViewStyle } from './viewStyles';
 import { frontView } from '../../viewport/frontView';
 import { storeys } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
@@ -53,6 +54,7 @@ const STRUCTURE_HELP = 'Which layers of walls, floors and roofs the view draws, 
 function ViewSettingsEditor({ view }: { view: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
   const styles = useViewStyles();
+  const matSets = useMaterialGraphicsSets().sets;
   // The settings read for a view, kept with its id: another view's (the panel moved on, an answer late) are never shown or sent.
   const [read, setRead] = useState<{ id: string; state: ViewStyleState } | null>(null);
   useEffect(() => {
@@ -107,6 +109,14 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
         <dt title="What cut elements draw from a small scale on: as their materials say, plain solid, an outline only, or the core layer alone">Small-scale cut</dt>
         <dd>
           <SmallScaleCutControl testId="view-small-scale-cut" value={state.resolved.smallScaleCut} onChange={(part) => set({ smallScaleCut: part })} /><Reset field="smallScaleCut" />
+        </dd>
+        <dt title="How the materials draw in this view: by a material graphics set (its entries replace what the materials say), or by the materials alone">Material graphics</dt>
+        <dd>
+          <select data-testid="view-material-graphics-set" value={materialSetChoice(state.resolved.materialGraphicsSet)} onChange={(e) => set(materialSetPatch(e.target.value))}>
+            <option value="none">none: the materials' own</option>
+            {matSets.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select><Reset field="materialGraphicsSet" />
+          <button type="button" className="link small" onClick={() => useUi.setState({ dialog: 'materialGraphicsSets' })}>Edit sets…</button>
         </dd>
         <dt title={STRUCTURE_HELP}>Partial structure display</dt>
         <dd>
@@ -261,6 +271,7 @@ export function ViewStylesDialog() {
   // The project's graphics sets, which a style can name as its views' (decision 391).
   const nodes = useSession((s) => s.nodes);
   const [sets, setSets] = useState<{ id: string; name: string }[]>([]);
+  const matSets = useMaterialGraphicsSets().sets;
   useEffect(() => { void query<{ sets: { id: string; name: string }[] }>('view.visibility', { id: '3d' }).then((r) => r && setSets(r.sets)); }, [nodes]);
   const error = useSession((s) => s.error);
   const close = () => useUi.setState({ dialog: null });
@@ -271,7 +282,7 @@ export function ViewStylesDialog() {
         <header className="dialog-head"><span className="panel-title">View styles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           <table className="layer-table view-styles">
-            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th title={LOD_HELP}>Level of development</th><th title="Partial structure display of the style's plans: which layers of walls, floors and roofs they draw">Structure in plans</th><th title="Partial structure display of the style's sections and elevations">Structure in sections</th><th title="Partial structure display of the style's 3D views and other views">Structure in 3D</th><th title="The partial structure display leaves out the rooms' finishes, the skirtings and the finish coverings with the finish layers; a project made before draws them until this is ticked">Finish elements</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</th><th title="Elevations and sections hatch the faces they see with their materials' elevation hatch (Manage → Materials), where nothing nearer hides them">Surface hatches</th>{FINISH_FIELDS.map((f) => <th key={f.key} title={f.title}>{f.column}</th>)}<th title="How people, cars and plants draw in plans, elevations and sections: outlines (simple symbols and silhouettes), abstract (circles and boxes), detailed (every line of their symbols and bodies) or not at all; their bodies stay in 3D">Entourage in 2D</th><th title="The fill of the silhouettes elevations and sections draw for people, cars and plants">Silhouette fill</th><th title="Hatch lines closer together than this on paper are not drawn: the area shows as an outline with a plain fill. 0 draws every line.">Min. hatch spacing (mm)</th><th title="What cut elements draw from a small scale on: as their materials say, plain solid, an outline only, or the core layer alone">Small-scale cut</th><th title="The Visibility / Graphics set its views take when they have none of their own, as a view template">Graphics set</th><th /></tr></thead>
+            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th title={LOD_HELP}>Level of development</th><th title="Partial structure display of the style's plans: which layers of walls, floors and roofs they draw">Structure in plans</th><th title="Partial structure display of the style's sections and elevations">Structure in sections</th><th title="Partial structure display of the style's 3D views and other views">Structure in 3D</th><th title="The partial structure display leaves out the rooms' finishes, the skirtings and the finish coverings with the finish layers; a project made before draws them until this is ticked">Finish elements</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</th><th title="Elevations and sections hatch the faces they see with their materials' elevation hatch (Manage → Materials), where nothing nearer hides them">Surface hatches</th>{FINISH_FIELDS.map((f) => <th key={f.key} title={f.title}>{f.column}</th>)}<th title="How people, cars and plants draw in plans, elevations and sections: outlines (simple symbols and silhouettes), abstract (circles and boxes), detailed (every line of their symbols and bodies) or not at all; their bodies stay in 3D">Entourage in 2D</th><th title="The fill of the silhouettes elevations and sections draw for people, cars and plants">Silhouette fill</th><th title="Hatch lines closer together than this on paper are not drawn: the area shows as an outline with a plain fill. 0 draws every line.">Min. hatch spacing (mm)</th><th title="What cut elements draw from a small scale on: as their materials say, plain solid, an outline only, or the core layer alone">Small-scale cut</th><th title="The Visibility / Graphics set its views take when they have none of their own, as a view template">Graphics set</th><th title="How the materials draw in the style's views: a material graphics set (Manage → Material graphics sets), or the materials' own graphics">Material graphics</th><th /></tr></thead>
             <tbody>
               {styles.map((s) => (
                 <tr key={s.id}>
@@ -295,6 +306,7 @@ export function ViewStylesDialog() {
                   <td><input className="num" data-testid="style-min-hatch-spacing" key={String(s.minHatchSpacing ?? 0.7)} defaultValue={s.minHatchSpacing ?? 0.7} inputMode="decimal" onBlur={(e) => { const v = parseMinSpacing(e.target.value); if (v === null) { e.target.value = String(s.minHatchSpacing ?? 0.7); return; } if (v !== (s.minHatchSpacing ?? 0.7)) update(s.id, { minHatchSpacing: v }); }} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} /></td>
                   <td><SmallScaleCutControl testId={`style-small-scale-cut-${s.id}`} value={s.smallScaleCut} onChange={(part) => update(s.id, { smallScaleCut: part })} />{s.smallScaleCut && <button type="button" className="icon mini" title="Remove the small-scale cut" aria-label="Remove the small-scale cut" onClick={() => void execute('viewStyle.update', { id: s.id, smallScaleCut: null })}><RotateCcw size={11} /></button>}</td>
                   <td><select data-testid="style-graphics-set" value={s.graphicsSet ?? ''} onChange={(e) => update(s.id, { graphicsSet: e.target.value || null })}><option value="">none</option>{sets.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select></td>
+                  <td><select data-testid="style-material-graphics-set" value={s.materialGraphicsSet ?? ''} onChange={(e) => update(s.id, { materialGraphicsSet: e.target.value || null })}><option value="">none</option>{matSets.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select></td>
                   <td className="row-tools">
                     <button type="button" className="icon mini" title="Duplicate" onClick={() => void execute('viewStyle.create', { from: s.id })}><Copy size={12} /></button>
                     <button type="button" className="icon mini" title="Delete: its views take their discipline's style" disabled={styles.length < 2}

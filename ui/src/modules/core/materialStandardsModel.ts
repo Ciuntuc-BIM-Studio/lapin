@@ -176,6 +176,16 @@ export function sheetArgs(target: { id: string } | { standard: MaterialStandard 
 // ---- the list ------------------------------------------------------------------------------------------------------------
 
 /** A standard's line in the list: country, norm, version, rules. */
+/** A version as the interface names it: major and minor ("1.1.0" is "1.1"). */
+export const shortVersion = (v: string): string => v.split('.').slice(0, 2).join('.');
+
+/** The standard the project draws by, with its version ("Lapin 1.1"), or null when the list does not name it. */
+export function currentOf(l: StandardList): string | null {
+  const s = l.standards.find((x) => x.id === l.current);
+  if (!s) return null;
+  return s.version ? `${s.name} ${shortVersion(s.version)}` : s.name;
+}
+
 export function standardMeta(s: StandardSummary): string {
   return [s.country, s.norm, s.version ? `v${s.version}` : '', `${s.rules} rules`].filter(Boolean).join(' · ');
 }

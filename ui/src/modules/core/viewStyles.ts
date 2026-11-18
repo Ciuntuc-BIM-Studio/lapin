@@ -45,7 +45,9 @@ export interface ViewStyle { id: string; name: string; discipline: string | null
   /** Hatch lines closer than this on paper (mm, default 0.7) are not drawn; 0 draws all (docs/plan-material-graphics.md, stage 1). */
   minHatchSpacing?: number;
   /** What cut elements draw at small scales (docs/plan-material-graphics.md, stage 2); unset: as their materials say. */
-  smallScaleCut?: SmallScaleCut | null }
+  smallScaleCut?: SmallScaleCut | null;
+  /** The material graphics set its views draw by (docs/plan-material-graphics.md, stage 4); unset: the materials' own graphics. */
+  materialGraphicsSet?: string | null }
 
 /** The engine's default of the minimum hatch spacing, paper millimetres. */
 export const DEFAULT_MIN_HATCH_SPACING = 0.7;
@@ -113,3 +115,9 @@ export function parseCutFrom(text: string): number | null {
 
 /** The patch for one part of the small-scale cut changed (the engine lays it field by field; a colour of null takes it away). */
 export function smallScaleCutPatch(part: SmallScaleCut): { smallScaleCut: SmallScaleCut } { return { smallScaleCut: part }; }
+
+/** The patch for a view's own material graphics choice: 'none' draws by the materials alone, an id is a set (the way back to the style's is a null, by Reset). */
+export function materialSetPatch(choice: string): { materialGraphicsSet: string } { return { materialGraphicsSet: choice }; }
+
+/** What a view's select shows: the set it resolves to ('none' when it draws by the materials). */
+export const materialSetChoice = (resolved: string | null | undefined): string => resolved || 'none';

@@ -18,7 +18,7 @@ import { StandardsImportPanel, type PackRead } from './StandardsLibrary';
 import { MaterialStandardEditor, newStandardDraft } from './MaterialStandardEditor';
 import { MaterialStandardApply } from './MaterialStandardApply';
 import { MaterialStandardStore } from './MaterialStandardStore';
-import { standardMeta, type MaterialStandard, type StandardList, type StandardSummary } from './materialStandardsModel';
+import { currentOf, standardMeta, type MaterialStandard, type StandardList, type StandardSummary } from './materialStandardsModel';
 import { takeMaterialStandardsTab } from './materialStandardsOpen';
 import type { StandardsPack } from './standardsLibraryModel';
 
@@ -95,6 +95,10 @@ export function MaterialStandardsDialog() {
       {tab === 'project' && (
         <>
           <p className="muted small">A standard tells how each material draws in cuts, plans and facades. Lapin’s own is the default; a standard is never chosen for you by your language or country.</p>
+          {!panel && list && currentOf(list) && (
+            <p className="small" data-testid="standard-version-note"><span>The project draws by</span> <b data-no-i18n>{currentOf(list)}</b>
+              {/ 1\.0$/.test(currentOf(list) ?? '') && /^Lapin /.test(currentOf(list) ?? '') && <span className="muted"> · <span>A new project starts with Lapin 1.1; import its pack from the store to use it here.</span></span>}</p>
+          )}
           {!panel && (
             <>
               <div className="row">

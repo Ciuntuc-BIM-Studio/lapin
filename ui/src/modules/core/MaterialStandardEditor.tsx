@@ -45,7 +45,7 @@ function ChipInput({ value, onChange, label }: { value: string[]; onChange: (v: 
 }
 
 /** One kind's graphics of a rule: the material editor's fields over a plain object; every change is a patch the model applies. */
-function RuleGraphicsFields({ kind, gfx, hatches, onPatch }: { kind: MaterialKind; gfx: RuleGraphics | undefined; hatches: HatchPattern[]; onPatch: (p: Record<string, unknown> | null) => void }) {
+export function RuleGraphicsFields({ kind, gfx, hatches, onPatch }: { kind: MaterialKind; gfx: RuleGraphics | undefined; hatches: HatchPattern[]; onPatch: (p: Record<string, unknown> | null) => void }) {
   const own = (gfx ?? {}) as OwnGraphics;
   const has = (f: Field) => isSet(own, f);
   const set = (f: Field, v: unknown) => onPatch(fieldPatch(f, v));
