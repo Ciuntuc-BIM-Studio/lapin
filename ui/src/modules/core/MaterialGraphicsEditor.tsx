@@ -14,6 +14,7 @@ import { ColourField } from '../../shell/ColourField';
 import { execute } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
 import { PatternOptions, UNITS_LABEL, UnitsBadge, effectiveUnits, scaleLabel, unitsOf, type HatchUnits } from './hatchUnits';
+import { openHatchPatterns } from './hatchEditorOpen';
 import { useLineTypes } from './lineTypes/lineTypes';
 import { MaterialGraphicsPreview } from './MaterialGraphicsPreview';
 import { MaterialScaleSteps } from './MaterialScaleSteps';
@@ -173,6 +174,7 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
             {patternOptions}
           </select>
           <UnitsBadge units={unitsOf(shownPattern)} />
+          {!compact && <button type="button" className="link small" data-testid="edit-pattern" onClick={() => openHatchPatterns({ select: shownPattern?.name ?? null, fresh: !shownPattern, fromMaterial: m.name })}>New / Edit pattern…</button>}
           {shownPattern && !shownPattern.solid && <HatchSwatch hatch={shownPattern.name} scale={own?.hatchScale ?? r.hatchScale} units={units} viewScale={prefs.scale} size={22} />}
         </Row>
         <Row label="Units" title="Pattern's own: as the pattern says. Drafting: the spacing is paper millimetres, the same on every scale. Real size: it is the real object's millimetres, so it follows the view's scale" set={has('hatchUnits')} onReset={() => setField('hatchUnits', undefined)}>

@@ -25,12 +25,13 @@ import { fromViewFilter, toViewFilter, type ViewRule } from '../../shell/conditi
 import { LOD_HELP, LODS, lodLabel } from './viewStyles';
 import { CLASS_COLORS, CLASS_NAMES } from '../../viewport/pointClouds3d';
 import { PatternOptions, type PatternInfo } from './hatchUnits';
+import { cellMode, cellValue, fieldAllowed, filtersPayload, withCutLine, type FilterRow } from './viewFilterRows';
 
 export interface LineSpec { pattern?: string; pen?: number; color?: string }
 export interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string; halftone?: boolean; transparency?: number; lines?: Record<string, LineSpec>; sub?: Record<string, Row> }
 interface Rules { categories?: Record<string, Row>; classes?: Record<string, Row> }
 export interface LinkRow extends Rules { display?: 'host' | 'custom'; hidden?: boolean; halftone?: boolean }
-export interface FilterRow { id: string; hidden?: boolean; color?: string; halftone?: boolean; transparency?: number; pattern?: string }
+export type { FilterRow };
 interface Graphics extends Rules {
   links?: Record<string, LinkRow>; annotations?: Record<string, { hidden?: boolean; color?: string; halftone?: boolean }>; detailLevel?: string;
   imports?: Record<string, { hidden?: boolean; halftone?: boolean; layers?: Record<string, { hidden?: boolean }> }>; filters?: FilterRow[];
@@ -48,6 +49,7 @@ export interface Visibility {
   /** Its level of development (decision 404): drawn at, its own (null: its style's), its style's. */ detail?: number; ownDetail?: number | null; styleDetail?: number;
   sets: { id: string; name: string }[]; categories: string[]; subcategories?: Record<string, string[]>;
   /** What a subcategory's row may give (decision 674). */ subcategoryFields?: string[];
+  /** What a view filter's row may give (decision 675). */ filterFields?: string[];
   /** Hidden until the graphics show them (rooms, in 3D). */ hiddenByDefault?: string[];
   links?: LinkInfo[]; annotations?: string[]; imports?: ImportInfo[]; filters?: { id: string; name: string }[];
   pointClouds?: CloudInfo[];
@@ -389,7 +391,7 @@ export function VisibilityDialog() {
             )
           )}
           {tab === 'pointClouds' && <PointCloudsTab target={target} clouds={v.pointClouds ?? []} rows={v.graphics?.pointClouds ?? {}} in3d={!view} />}
-          {tab === 'filters' && <FiltersTab target={target} rows={v.graphics?.filters ?? []} defs={defs} counts={counts} editing={editing} setEditing={setEditing} />}
+          {tab === 'filters' && <FiltersTab target={target} rows={v.graphics?.filters ?? []} fields={v.filterFields} hatches={hatches} defs={defs} counts={counts} editing={editing} setEditing={setEditing} />}
           {tab === 'links' && (
             links.length === 0 ? <p className="muted small">The project has no links: File → Link IFC…, or Import DXF… as a link.</p> : (
               <>
@@ -433,18 +435,28 @@ export function VisibilityDialog() {
 }
 
 /** The Filters tab: the view's filters in order (shown or hidden), and the project's filters with their rules. */
-function FiltersTab({ target, rows, defs, counts, editing, setEditing }: { target: string; rows: FilterRow[]; defs: ViewFilter[]; counts: Record<string, number>; editing: string | null; setEditing: (id: string | null) => void }) {
+function FiltersTab({ target, rows, fields, hatches, defs, counts, editing, setEditing }: { target: string; rows: FilterRow[]; fields?: string[]; hatches: PatternInfo[]; defs: ViewFilter[]; counts: Record<string, number>; editing: string | null; setEditing: (id: string | null) => void }) {
   const ownLines = useLineTypes();
-  const save = (next: FilterRow[]) => void execute('view.graphics', { id: target, filters: next.map((r) => Object.fromEntries(Object.entries(r).filter(([, x]) => x !== undefined))) });
+  const save = (next: FilterRow[]) => void execute('view.graphics', { id: target, filters: filtersPayload(next, fields) });
   const used = rows.filter((r) => defs.some((d) => d.id === r.id));
   const put = (id: string, patch: Partial<FilterRow>) => save(used.map((x) => (x.id === id ? { ...x, ...patch } : x)));
   const unused = defs.filter((d) => !used.some((r) => r.id === d.id));
   const edited = defs.find((d) => d.id === editing);
+  const has = (f: string) => fieldAllowed(fields, f);
   return (
     <div className="vv-filters">
       {used.length === 0 ? <p className="muted small">This view uses no filter. Add one of the project's below, or make a new one.</p> : (
+        <div className="vv-filter-wide">
         <table className="layer-table">
-          <thead><tr><th>Shown</th><th>Filter</th><th>Elements</th><th>Colour</th><th>Pattern</th><th>Halftone</th><th title="In 3D: 0 opaque, 100 clear">Transparency</th><th /></tr></thead>
+          <thead><tr><th>Shown</th><th>Filter</th><th>Elements</th><th>Colour</th><th>Pattern</th><th>Halftone</th><th title="In 3D: 0 opaque, 100 clear">Transparency</th>
+            {has('cutHatch') && <th title="The hatch the filter's elements take where they are cut">Cut hatch</th>}
+            {has('cutFill') && <th title="The fill the filter's elements take where they are cut">Cut fill</th>}
+            {has('hatchColor') && <th title="The colour of the hatch lines">Hatch colour</th>}
+            {has('hatchHalftone') && <th title="The hatch lines drawn halftone">Hatch halftone</th>}
+            {has('cutLine') && <th title="The outline of the cut: colour and weight in paper millimetres">Cut line</th>}
+            {has('surfaceHatch') && <th title="The hatch on the faces seen in an elevation">Surface hatch</th>}
+            {has('surfaceFill') && <th title="The fill of the faces seen in an elevation">Surface fill</th>}
+            <th /></tr></thead>
           <tbody>
             {used.map((r, i) => {
               const d = defs.find((x) => x.id === r.id)!;
@@ -457,6 +469,17 @@ function FiltersTab({ target, rows, defs, counts, editing, setEditing }: { targe
                   <td><select aria-label="Pattern" value={r.pattern ?? ''} onChange={(e) => put(r.id, { pattern: e.target.value || undefined })}>{patternChoices(PATTERNS, ownLines).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
                   <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => put(r.id, { halftone: e.target.checked || undefined })} /></td>
                   <td><NumberField className="vv-number" title="Transparency" min={0} max={95} value={r.transparency ?? 0} onCommit={(v) => { if (v != null) put(r.id, { transparency: v || undefined }); }} /></td>
+                  {has('cutHatch') && <td><HatchCell label="Cut hatch" value={r.cutHatch} hatches={hatches} onChange={(v) => put(r.id, { cutHatch: v })} /></td>}
+                  {has('cutFill') && <td><FillCell label="Cut fill" value={r.cutFill} onChange={(v) => put(r.id, { cutFill: v })} /></td>}
+                  {has('hatchColor') && <td><ColourField aria-label="Hatch colour" value={r.hatchColor ?? '#000000'} onChange={(v) => put(r.id, { hatchColor: v })} />{r.hatchColor && <button type="button" className="icon mini" title="Its own colour" onClick={() => put(r.id, { hatchColor: undefined })}><X size={10} /></button>}</td>}
+                  {has('hatchHalftone') && <td><input type="checkbox" aria-label="Hatch halftone" checked={!!r.hatchHalftone} onChange={(e) => put(r.id, { hatchHalftone: e.target.checked || undefined })} /></td>}
+                  {has('cutLine') && <td className="vv-fill-cell">
+                    <ColourField aria-label="Cut line colour" value={r.cutLine?.color ?? '#000000'} onChange={(v) => save(used.map((x) => (x.id === r.id ? withCutLine(x, { color: v }) : x)))} />
+                    {r.cutLine?.color && <button type="button" className="icon mini" title="Its own colour" onClick={() => save(used.map((x) => (x.id === r.id ? withCutLine(x, { color: undefined }) : x)))}><X size={10} /></button>}
+                    <NumberField className="vv-number" title="Cut line weight, mm" min={0} max={5} value={r.cutLine?.weight ?? 0} onCommit={(v) => { if (v != null) save(used.map((x) => (x.id === r.id ? withCutLine(x, { weight: v || undefined }) : x))); }} />
+                  </td>}
+                  {has('surfaceHatch') && <td><HatchCell label="Surface hatch" value={r.surfaceHatch} hatches={hatches} onChange={(v) => put(r.id, { surfaceHatch: v })} /></td>}
+                  {has('surfaceFill') && <td><FillCell label="Surface fill" value={r.surfaceFill} onChange={(v) => put(r.id, { surfaceFill: v })} /></td>}
                   <td className="row-tools">
                     <button type="button" className="icon mini" title="Up: before the others" disabled={i === 0} onClick={() => save(moveRow(used, i, -1))}><ArrowUp size={12} /></button>
                     <button type="button" className="icon mini" title="Down" disabled={i === used.length - 1} onClick={() => save(moveRow(used, i, 1))}><ArrowDown size={12} /></button>
@@ -467,6 +490,7 @@ function FiltersTab({ target, rows, defs, counts, editing, setEditing }: { targe
             })}
           </tbody>
         </table>
+        </div>
       )}
       <div className="row vv-set">
         {unused.length > 0 && (
@@ -491,6 +515,32 @@ function FiltersTab({ target, rows, defs, counts, editing, setEditing }: { targe
         </div>
       )}
     </div>
+  );
+}
+
+/** A filter's hatch: not set (the view's own), none, or a pattern. */
+function HatchCell({ label, value, hatches, onChange }: { label: string; value: string | undefined; hatches: PatternInfo[]; onChange: (v: string | undefined) => void }) {
+  return (
+    <select aria-label={label} value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)}>
+      <option value="">as the view</option>
+      <option value="none">none</option>
+      <PatternOptions patterns={hatches} current={value && value !== 'none' ? value : undefined} />
+    </select>
+  );
+}
+
+/** A filter's fill: not set, none, or a colour. */
+function FillCell({ label, value, onChange }: { label: string; value: string | undefined; onChange: (v: string | undefined) => void }) {
+  const mode = cellMode(value);
+  return (
+    <span className="vv-fill-cell">
+      <select aria-label={label} value={mode} onChange={(e) => onChange(cellValue(e.target.value as 'unset' | 'none' | 'value', value, '#000000'))}>
+        <option value="unset">as the view</option>
+        <option value="none">none</option>
+        <option value="value">colour</option>
+      </select>
+      {mode === 'value' && <ColourField aria-label={label} value={value ?? '#000000'} onChange={(v) => onChange(v)} />}
+    </span>
   );
 }
 

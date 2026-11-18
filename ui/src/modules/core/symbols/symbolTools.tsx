@@ -19,6 +19,7 @@ import { byCategory, defaultValues, ghostFactor, ghostShapes, toggled, turned, t
 import type { PenDto } from '../../../viewport/drawing';
 import { draftMenuItems } from '../../../viewport/draftMenu';
 import { registerConvertHandoff } from '../convertHandoffs';
+import { hatchMenuItems } from '../hatchPatternTools';
 
 // ------------------------------------------------------------ the place tool
 
@@ -188,6 +189,7 @@ registerConvertHandoff({ id: 'profile', label: 'Profile…', description: 'A clo
 export function symbolMenuItems(ids: string[], nodes: Map<string, NodeDto>): MenuItem[] {
   const out: MenuItem[] = [];
   if (ids.some((id) => isSymbolSource(nodes.get(id)))) out.push({ label: 'Save as symbol…', onSelect: () => void startCommand('SAVESYMBOL') });
+  out.push(...hatchMenuItems(ids, nodes));
   // Drafted lines and shapes made walls, floors, columns, bars… (Convert to…, the drafting module's dialog).
   if (ids.some((id) => { const n = nodes.get(id); return n?.type === 'IfcAnnotation' && typeof n.props.viewId === 'string' && !!n.props.shape && n.props.predefinedType !== 'SYMBOL'; })) {
     out.push({ label: 'Convert to…', onSelect: () => void import('../../drafting/convert/convert').then((m) => m.convertSelection()) });

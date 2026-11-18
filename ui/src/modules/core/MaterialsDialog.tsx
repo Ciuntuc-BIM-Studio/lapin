@@ -25,6 +25,7 @@ import { MaterialGraphicsTable, type HatchPattern as Hatch, type MaterialRow as 
 import { copyArgs } from './materialGraphicsModel';
 import { OwnImage, ReliefMaps } from './OwnImage';
 import { MaterialPreview } from './MaterialPreview';
+import { openHatchPatterns } from './hatchEditorOpen';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
 import { FirmFolderFiles } from './FirmFolderFiles';
 import { forgetHatchPreviews } from './hatchCache';
@@ -196,7 +197,11 @@ export function MaterialsDialog() {
             <button type="button" className={`btn${library ? ' on' : ''}`} data-action="material-library" onClick={() => setLibrary((v) => !v)}><Library size={14} />From the library…</button>
             <button type="button" className="btn" onClick={importPat}><FileUp size={14} />Import .pat</button>
             <FirmFolderFiles ext="pat" onPick={(f) => importPatFile(f.name, new TextDecoder().decode(f.bytes))}
-              save={{ disabled: mine.length === 0, get: async () => ({ text: mine.map((f) => f.text).join('\n'), name: 'My patterns' }) }} />
+              save={{ disabled: mine.length === 0, choices: ['All my patterns', ...mine.map((f) => f.name)], get: async (c) => {
+                const files = c && c !== 'All my patterns' ? mine.filter((f) => f.name === c) : mine;
+                return files.length ? { text: files.map((f) => f.text).join('\n'), name: files.length === 1 ? files[0].name.replace(/\.pat$/i, '') : 'My patterns' } : null;
+              } }} />
+            <button type="button" className="btn" data-testid="open-hatch-patterns" onClick={() => openHatchPatterns({})}>Hatch patterns…</button>
             {mine.length > 0 && (
               <div className="my-patterns">
                 <span className="eyebrow" title="The .pat files you imported, kept on this computer for any project">My patterns</span>
