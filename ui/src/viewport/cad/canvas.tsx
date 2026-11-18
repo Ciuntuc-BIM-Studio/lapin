@@ -3,6 +3,7 @@
 import { t } from '../../i18n';
 import type { Vec2 } from '../../platform/module';
 import type { SnapMode } from './snaps';
+import { overrideLabel } from './snapOverride';
 import { polylines, type Shape } from './shapes';
 import { movedShape, useCad } from './session';
 import type { Aimed } from './aim';
@@ -57,6 +58,7 @@ const TIP: Partial<Record<SnapMode, string>> = { wallAxis: 'wall axis' };
 /** The snap marker, the guides and the running command's preview, in screen coordinates. */
 export function CadOverlay({ aimed, toScreen }: { aimed: Aimed | null; toScreen: ToScreen }) {
   const step = useCad((s) => s.step);
+  const override = useCad((s) => s.snapOverride);
   const live = useLive();
   if (!aimed) return null;
   const c = toScreen(aimed.point);
@@ -76,6 +78,7 @@ export function CadOverlay({ aimed, toScreen }: { aimed: Aimed | null; toScreen:
       {preview.flatMap((s, i) => pointsOf(s, toScreen).map((pts, j) => <polyline key={`${i}:${j}`} className="cad-preview" points={pts} />))}
       {labels.map((l, i) => { const q = toScreen(l.at); return <text key={`t${i}`} className="cad-preview-text" x={q.x} y={q.y - 4} textAnchor="middle">{l.text}</text>; })}
       {!aimed.mode && (aimed.lock === 'parallel' || aimed.lock === 'tangent') && <text className="cad-preview-text" x={c.x + 9} y={c.y - 9}>{t(aimed.lock === 'parallel' ? 'Parallel' : 'Tangent')}</text>}
+      {override && <text className="cad-preview-text cad-snap-override" data-testid="snap-override" x={c.x + 9} y={c.y + 22}>{`${t('Snap')}: ${t(overrideLabel(override))} · ${t('Esc cancels')}`}</text>}
       {aimed.mode && <g className="cad-snap">{GLYPH[aimed.mode](c.x, c.y)}<text x={c.x + 9} y={c.y - 9}>{TIP[aimed.mode] ?? aimed.mode}</text></g>}
     </g>
   );

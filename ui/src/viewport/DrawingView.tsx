@@ -40,6 +40,7 @@ import { CadOverlay } from './cad/canvas';
 import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, finishStep, frameArg, useCad } from './cad/session';
+import { overridePress, spendOverride } from './cad/snapOverride';
 import type { Shape } from './cad/shapes';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import { clearLiveRise, inModel, setLiveRise, viewFrameAt } from './viewFrame';
@@ -387,6 +388,7 @@ export function DrawingView() {
           setView({ scale, cx: p.x - (p.x - v.cx) * (v.scale / scale), cy: p.y - (p.y - v.cy) * (v.scale / scale) });
         }}
         onPointerDown={(e) => {
+          if (overridePress(e)) { drag.current = null; return; }
           if (middleTwice.current(e)) { fit(); return; }
           if (editor.onPointerDown(e)) return;
           // Pressed on what is selected, with no tool or command running: a drag carries the selection.
@@ -450,6 +452,7 @@ export function DrawingView() {
         onPointerCancel={() => { drag.current = null; setBox(null); if (carrying()) { carryEnd(); clearLiveRise(); } }}
         onPointerUp={(e) => {
           if (editor.onPointerUp()) return;
+          spendOverride(e);
           const d = drag.current;
           drag.current = null;
           if (box) {

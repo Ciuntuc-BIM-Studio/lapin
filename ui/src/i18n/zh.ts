@@ -653,6 +653,8 @@ export const ZH: Record<string, string> = {
   "Survey point (map)": "测量点（地图）",
   "Quadrant": "象限点",
   "Wall axis": "墙轴线",
+  "No snap (for this point)": "无捕捉（此点）",
+  "Snap settings…": "捕捉设置…",
   "Perpendicular": "垂足",
   "Nearest": "最近点",
   "Coordinates at the cursor": "光标处的坐标",

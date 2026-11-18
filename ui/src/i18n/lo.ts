@@ -653,6 +653,8 @@ export const LO: Record<string, string> = {
   "Survey point (map)": "ຈຸດສຳຫຼວດພິກັດ (Survey point) (ແຜນທີ່)",
   "Quadrant": "ຈຸດສີ່ສ່ວນວົງມົນ",
   "Wall axis": "ແກນຝາ",
+  "No snap (for this point)": "ບໍ່ມີ snap (ສຳລັບຈຸດນີ້)",
+  "Snap settings…": "ການຕັ້ງຄ່າ snap…",
   "Perpendicular": "ຕັ້ງສາກ",
   "Nearest": "ໃກ້ທີ່ສຸດ",
   "Coordinates at the cursor": "ພິກັດຢູ່ບ່ອນເຄີເຊີ",

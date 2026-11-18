@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Vec2 } from '../../platform/module';
 import type { DrawingDto } from '../drawing';
-import { SnapIndex, findSnap, isLineSnap, type SnapMode } from './snaps';
+import { SnapIndex, findSnap, isLineSnap, modesFor, snapsOn, type SnapMode } from './snaps';
 import { usePrefs } from '../../app/prefs';
 import { fromFrame, isIdentity, toFrame, ucsOf, useLocation, type Frame } from '../../app/location';
 import { fromJson, intersectPrims, keyPoints, nearestOnShape, prims, type Shape } from './shapes';
@@ -271,7 +271,8 @@ export function useCadCanvas(o: {
     const tol = 10 / scaleRef.current;
     const base = from ?? cad.step?.base ?? null;
     const prefs = usePrefs.getState();
-    const s = cad.osnap ? findSnap(raw, shapes, index, { tolerance: tol, modes: new Set(prefs.snapModes), from: base, wallAxes: wallAxesRef.current, curves: curvesRef.current }) : null;
+    // Object Snap Override (forum topic 154): an armed snap is the only one this point takes.
+    const s = snapsOn(cad.snapOverride, cad.osnap) ? findSnap(raw, shapes, index, { tolerance: tol, modes: modesFor(cad.snapOverride, prefs.snapModes), from: base, wallAxes: wallAxesRef.current, curves: curvesRef.current }) : null;
     if (s && !isLineSnap(s)) {
       // Resting on a snap acquires it for the guide lines.
       if (!hold.current || Math.hypot(hold.current.p.x - s.point.x, hold.current.p.y - s.point.y) > 1e-9) {
