@@ -655,6 +655,8 @@ export const LO: Record<string, string> = {
   "Survey point (map)": "ຈຸດສຳຫຼວດພິກັດ (Survey point) (ແຜນທີ່)",
   "Quadrant": "ຈຸດສີ່ສ່ວນວົງມົນ",
   "Wall axis": "ແກນຝາ",
+  "Grid only (every other snap off)": "ຕາຂ່າຍເທົ່ານັ້ນ (ປິດ snap ອື່ນທັງໝົດ)",
+  "Grid only: every other snap is off; only the grid axes, their crossings and ends snap (type GRID for one point). Esc turns it off": "ຕາຂ່າຍເທົ່ານັ້ນ: ປິດ snap ອື່ນທັງໝົດ; ຈັບສະເພາະແກນຕາຂ່າຍ, ຈຸດຕັດ ແລະ ປາຍຂອງມັນ (ພິມ GRID ສຳລັບຈຸດດຽວ). Esc ປິດມັນ",
   "No snap (for this point)": "ບໍ່ມີ snap (ສຳລັບຈຸດນີ້)",
   "Snap settings…": "ການຕັ້ງຄ່າ snap…",
   "Perpendicular": "ຕັ້ງສາກ",

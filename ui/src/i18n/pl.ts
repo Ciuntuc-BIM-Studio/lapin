@@ -655,6 +655,8 @@ export const PL: Record<string, string> = {
   "Survey point (map)": "Punkt pomiarowy (mapa)",
   "Quadrant": "Kwadrant",
   "Wall axis": "Oś ściany",
+  "Grid only (every other snap off)": "Tylko siatka (wszystkie inne przyciągania wyłączone)",
+  "Grid only: every other snap is off; only the grid axes, their crossings and ends snap (type GRID for one point). Esc turns it off": "Tylko siatka: wszystkie inne przyciągania są wyłączone; przyciągają tylko osie siatki, ich przecięcia i końce (wpisz GRID dla jednego punktu). Esc wyłącza",
   "No snap (for this point)": "Bez przyciągania (dla tego punktu)",
   "Snap settings…": "Ustawienia przyciągania…",
   "Perpendicular": "Prostopadle",

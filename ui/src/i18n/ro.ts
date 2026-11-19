@@ -649,6 +649,8 @@ export const RO: Record<string, string> = {
   "Survey point (map)": "Punctul topografic (hartă)",
   "Quadrant": "Cadran",
   "Wall axis": "Axa peretelui",
+  "Grid only (every other snap off)": "Doar grila (toate celelalte snap-uri oprite)",
+  "Grid only: every other snap is off; only the grid axes, their crossings and ends snap (type GRID for one point). Esc turns it off": "Doar grila: toate celelalte snap-uri sunt oprite; se prinde doar de axele grilei, intersecțiile și capetele lor (tastează GRID pentru un singur punct). Esc o oprește",
   "No snap (for this point)": "Fără snap (pentru acest punct)",
   "Snap settings…": "Setările snap-ului…",
   "Perpendicular": "Perpendicular",

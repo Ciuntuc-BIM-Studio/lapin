@@ -187,6 +187,8 @@ export function useCadCanvas(o: {
   axes?: Frame | null;
   /** The shown walls' axes, for the Wall axis snap (forum topic 151). */
   wallAxes?: Shape[];
+  /** The shown grid's axes, for the Grid axis snap and "Grid only". */
+  gridAxes?: Shape[];
   /** The shown elements' own curves (a curved wall's faces, an outline's curved edges), for the Tangent snap. */
   curves?: Shape[];
 }) {
@@ -203,6 +205,8 @@ export function useCadCanvas(o: {
   const index = useMemo(() => new SnapIndex(shapes), [shapes]);
   const wallAxesRef = useRef(o.wallAxes);
   wallAxesRef.current = o.wallAxes;
+  const gridAxesRef = useRef(o.gridAxes);
+  gridAxesRef.current = o.gridAxes;
   const curvesRef = useRef(o.curves);
   curvesRef.current = o.curves;
   const acquired = useRef<Vec2[]>([]);
@@ -275,7 +279,7 @@ export function useCadCanvas(o: {
     const base = from ?? cad.step?.base ?? null;
     const prefs = usePrefs.getState();
     // Object Snap Override (forum topic 154): an armed snap is the only one this point takes.
-    const s = snapsOn(cad.snapOverride, cad.osnap) ? findSnap(raw, shapes, index, { tolerance: tol, modes: modesFor(cad.snapOverride, prefs.snapModes), from: base, wallAxes: wallAxesRef.current, curves: curvesRef.current }) : null;
+    const s = snapsOn(cad.snapOverride, cad.osnap, cad.gridOnly) ? findSnap(raw, shapes, index, { tolerance: tol, modes: modesFor(cad.snapOverride, prefs.snapModes, cad.gridOnly), from: base, wallAxes: wallAxesRef.current, gridAxes: gridAxesRef.current, curves: curvesRef.current }) : null;
     if (s && !isLineSnap(s)) {
       // Resting on a snap acquires it for the guide lines.
       if (!hold.current || Math.hypot(hold.current.p.x - s.point.x, hold.current.p.y - s.point.y) > 1e-9) {
@@ -287,7 +291,9 @@ export function useCadCanvas(o: {
       }
     } else if (hold.current) { clearTimeout(hold.current.timer); hold.current = null; }
     const frame = planRef.current ? ucsOf(useLocation.getState().loc) ?? axesRef.current : null;
-    const aimed = resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s ? { point: s.point, mode: s.mode, shape: s.on ?? shapes[s.shape], along: s.along } : null, acquired: acquired.current, tol, grid: o2.grid, frame, relate: { ...related, reach: 40 / scaleRef.current } });
+    // "Grid only": no guides, no relations, no grid snapping: the point is on a grid axis or where the cursor is (ortho and polar stay the user's).
+    const gridOnlyNow = cad.gridOnly && !cad.snapOverride;
+    const aimed = resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s ? { point: s.point, mode: s.mode, shape: s.on ?? shapes[s.shape], along: s.along } : null, acquired: gridOnlyNow ? [] : acquired.current, tol, grid: gridOnlyNow ? undefined : o2.grid, frame, relate: gridOnlyNow ? undefined : { ...related, reach: 40 / scaleRef.current } });
     // The drafted shape the point lies on: the snap's own, else the first drafted shape through the point (the model's lines may be found first where they coincide).
     const owner = aimed.mode ? (s && aimed.mode === s.mode && s.shape >= 0 ? owners[s.shape] : null) ?? draftThrough(drafts, aimed.point, aimed.mode) : null;
     return owner ? { ...aimed, shapeId: owner } : aimed;

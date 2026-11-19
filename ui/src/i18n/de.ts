@@ -655,6 +655,8 @@ export const DE: Record<string, string> = {
   "Survey point (map)": "Vermessungspunkt (Karte)",
   "Quadrant": "Quadrant",
   "Wall axis": "Wandachse",
+  "Grid only (every other snap off)": "Nur Raster (alle anderen Fänge aus)",
+  "Grid only: every other snap is off; only the grid axes, their crossings and ends snap (type GRID for one point). Esc turns it off": "Nur Raster: alle anderen Fänge sind aus; nur die Rasterachsen, ihre Schnittpunkte und Enden fangen (GRID tippen für einen Punkt). Esc schaltet es aus",
   "No snap (for this point)": "Kein Fang (für diesen Punkt)",
   "Snap settings…": "Fangeinstellungen…",
   "Perpendicular": "Senkrecht",

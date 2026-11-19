@@ -655,6 +655,8 @@ export const PT: Record<string, string> = {
   "Survey point (map)": "Ponto de levantamento (mapa)",
   "Quadrant": "Quadrante",
   "Wall axis": "Eixo da parede",
+  "Grid only (every other snap off)": "Só grelha (todos os outros snaps desligados)",
+  "Grid only: every other snap is off; only the grid axes, their crossings and ends snap (type GRID for one point). Esc turns it off": "Só grelha: todos os outros snaps estão desligados; só os eixos da grelha, os seus cruzamentos e extremos prendem (escreva GRID para um ponto). Esc desliga",
   "No snap (for this point)": "Sem snap (para este ponto)",
   "Snap settings…": "Definições de snap…",
   "Perpendicular": "Perpendicular",

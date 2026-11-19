@@ -22,7 +22,7 @@ export const COORD_LABELS: Record<CoordSystem, string> = {
 };
 export const SNAP_LABELS: Record<SnapMode, string> = {
   endpoint: 'Endpoint', midpoint: 'Midpoint', intersection: 'Intersection', center: 'Centre', quadrant: 'Quadrant', perpendicular: 'Perpendicular', nearest: 'Nearest',
-  tangent: 'Tangent', wallAxis: 'Wall axis',
+  tangent: 'Tangent', wallAxis: 'Wall axis', gridAxis: 'Grid axis',
 };
 
 const fixed3 = (v: number) => v.toFixed(3);
@@ -92,6 +92,7 @@ export function openSnapMenu(x: number, y: number): void {
   const toggle = (m: SnapMode) => setPrefs({ snapModes: p.snapModes.includes(m) ? p.snapModes.filter((k) => k !== m) : [...p.snapModes, m] });
   const items: MenuItem[] = [
     ...SNAP_MODES.map((m) => ({ label: SNAP_LABELS[m], checked: p.snapModes.includes(m), onSelect: () => toggle(m) })),
+    { label: 'Grid only (every other snap off)', checked: useCad.getState().gridOnly, onSelect: () => useCad.setState((c) => ({ gridOnly: !c.gridOnly })) },
     { label: 'Snap to the grid', checked: p.gridSnap, onSelect: () => setPrefs({ gridSnap: !p.gridSnap }) },
     ...POLAR_STEPS.map((a) => ({ label: `${t('Polar every')} ${a}°`, checked: p.polarStep === a, onSelect: () => { setPrefs({ polarStep: a }); useCad.setState({ polar: true }); } })),
     { label: 'Preferences…', onSelect: () => useUi.setState({ dialog: 'preferences' }) },

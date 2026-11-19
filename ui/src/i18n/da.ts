@@ -655,6 +655,8 @@ export const DA: Record<string, string> = {
   "Survey point (map)": "Opmålingspunkt (kort)",
   "Quadrant": "Kvadrant",
   "Wall axis": "Vægakse",
+  "Grid only (every other snap off)": "Kun gitter (alle andre snaps slået fra)",
+  "Grid only: every other snap is off; only the grid axes, their crossings and ends snap (type GRID for one point). Esc turns it off": "Kun gitter: alle andre snaps er slået fra; kun gitterets akser, deres skæringer og ender fanges (skriv GRID for ét punkt). Esc slår det fra",
   "No snap (for this point)": "Intet snap (for dette punkt)",
   "Snap settings…": "Snapindstillinger…",
   "Perpendicular": "Vinkelret",

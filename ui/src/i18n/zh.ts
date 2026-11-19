@@ -655,6 +655,8 @@ export const ZH: Record<string, string> = {
   "Survey point (map)": "测量点（地图）",
   "Quadrant": "象限点",
   "Wall axis": "墙轴线",
+  "Grid only (every other snap off)": "仅轴网（关闭其他所有捕捉）",
+  "Grid only: every other snap is off; only the grid axes, their crossings and ends snap (type GRID for one point). Esc turns it off": "仅轴网：关闭其他所有捕捉；只捕捉轴网的轴线、其交点和端点（输入 GRID 仅用于一个点）。按 Esc 关闭",
   "No snap (for this point)": "无捕捉（此点）",
   "Snap settings…": "捕捉设置…",
   "Perpendicular": "垂足",
