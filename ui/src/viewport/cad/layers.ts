@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { create } from 'zustand';
 import { query, useSession } from '../../engine/session';
 
-export interface DraftLayer { name: string; color: string; weight: number; lineType: string; visible: boolean; locked: boolean }
+export interface DraftLayer { name: string; color: string; weight: number; lineType: string; visible: boolean; locked: boolean; group?: string }
 
 const useDraftLayers = create<{ layers: DraftLayer[] }>(() => ({ layers: [] }));
 

@@ -157,7 +157,7 @@ public static class Underlays3d
             var layerName = e.Str("layer") ?? "0";
             if (layerName == Drafts.ConstructionLayer || e.Str("role") == "draft") continue;
             var layer = layers.GetValueOrDefault(layerName) ?? layers["0"];
-            if (!layer.Visible) continue;
+            if (!layer.Shows) continue;
             string? source = null;
             var halftone = false;
             if (Links.Of(m, e) is { } link)

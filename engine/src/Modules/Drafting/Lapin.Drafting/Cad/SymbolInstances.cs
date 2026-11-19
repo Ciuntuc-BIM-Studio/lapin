@@ -24,7 +24,7 @@ public static class SymbolInstances
         foreach (var e in Symbols.Instances(c.Model).Where(e => e.Str("viewId") == c.View.Id))
         {
             var layer = layers.GetValueOrDefault(e.Str("layer") ?? "0") ?? layers["0"];
-            if (!layer.Visible || hidden.Contains(layer.Name)) continue;
+            if (!layer.Shows || hidden.Contains(layer.Name)) continue;
             if (Symbols.Mark(c, e, layer.Name, layer.Color) is { } mk) yield return mk;
         }
     }
