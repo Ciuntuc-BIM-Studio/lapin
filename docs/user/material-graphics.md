@@ -143,6 +143,8 @@ On the **Filters** tab a filter also sets **Cut hatch**, **Cut fill**, **Hatch c
 
 The strongest wins: an element's own, the view's filters, the subcategory, the view's graphics set, the small-scale cut, the material's step, the material, then the standard.
 
+To change one element's hatch in one view only (a strip foundation's hatch scale, an elevation's hatching removed), select it and use **Graphics in this view…** (right-click, or Properties → **Graphics in view**): it is the strongest level of all. See [Graphics in this view](views.md#graphics-in-this-view).
+
 ## Hatch patterns
 
 **Manage → Hatch patterns** lists the built-in patterns, **This project**'s own and **My patterns**. Besides **Import .pat** and **Export .pat**, **New pattern** makes one from its numbers: a family of lines is an **Angle**, an **Origin** (x, y), a **Delta** (x, y: the offset of the next line) and **Dashes** (**+ Dash**, **+ Gap**, **+ Dot**); **Add a family** crosses another. The preview and the real spacing show as you type, and **Units** and **Scale** say how it is laid. **Make pattern** saves it; renaming a pattern follows into every material, standard, set and filter that names it. A pattern in use is not deleted without asking.

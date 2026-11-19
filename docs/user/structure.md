@@ -59,6 +59,22 @@ The preview lists each type as **New**, **Already in the project** (left as it i
 
 ![Structure types: a precast lintel type imported from a producer's table, its mark, bearing and stock lengths](shots/structure-types-lintel.webp)
 
+## Finish layers on columns
+
+A column type has **Finish layers, outward** in **Structure types** (the **Columns** tab): plaster, fire boards or insulation round the core. Each row is a **material**, a **thickness** and the **faces** it covers: **+X**, **−X**, **+Y** and **−Y**, the section's own axes (X along its width, Y along its length). All ticked is all round; untick a face that stands against a wall. **Add layer** adds a row, the bin removes one, and the first row is the innermost.
+
+![Structure types: a column type with a plaster layer all round and a fire board on one face](shots/column-layers-types.webp)
+
+- **Steel sections.** A steel I or H section is boxed round its outline, as fire boards are.
+- **Plans and sections.** Each layer is drawn round the core with its own material's hatch ([Material graphics](material-graphics.md)).
+- **Visibility / Graphics.** The layers fall under the column category's subcategories (core, finishes, insulation…) and obey the view styles' layers modes as a wall's layers do. A new project's plans leave finishes out by default, as they do the walls' plaster.
+- **3D.** The layers show in 3D.
+- **Quantities.** They are measured per layer in the column's quantities (*Lapin_ColumnLayerQuantities*): width, side area and volume.
+- **IFC.** A column with layers goes out with an *IfcMaterialConstituentSet*: *Core* and one constituent per layer.
+- **Walls.** A wall that meets a column stops at its outermost layer.
+
+![A plan with two columns cut, their layers hatched round the core](shots/column-layers-plan.webp)
+
 ## Beam types as lintels
 
 A beam type can be the product of a precast lintel. In **Wall types** or in a door's or window's configurator, **Lintels → Precast**, then the arrow, **Product** lists the **Beam types** first: the lintel takes the type's section (its width across the wall, its height), the shortest of its lengths that covers the opening and both bearings (a type with no lengths is cut to length), and its material unless the rule names one. Its bearing is the type's own: the bearing field shows it greyed, and a value typed there is the rule's own, until you clear it. Clicked in **Structure types**, a beam type shows its **Mark**, its **Bearing** and its **Stock lengths** (millimetres, separated by spaces or |) to change; the lintels follow the type. Importing a manufacturer's lintel catalogue (the button beside **Product**) makes each product a beam type too, so lintels and beam types are one list; products imported before still work.
@@ -66,6 +82,10 @@ A beam type can be the product of a precast lintel. In **Wall types** or in a do
 ![A wall type's lintels: precast, the beam type KP 7 as the product](shots/lintel-beam-type.webp)
 
 The lintels stay parts of their wall, as before; in IFC each is an *IfcBeam* LINTEL typed by its *IfcBeamType*, and the lintel schedule lists them by the type's mark and name, with the code of the length each takes.
+
+## Strip footing graphics in a view
+
+A strip footing's hatch is its material's. To change it in one view (the hatch's scale or angle, no hatch, a colour), or to draw a hatched elevation of it plain, select the footing and choose **Graphics in this view…** (right-click in the plan, section or elevation, or **Properties → Graphics in view**): **Cut** sets what plans and sections hatch, **Seen faces** what an elevation hatches. See [Graphics in this view](views.md#graphics-in-this-view).
 
 ## Strip footing profile
 

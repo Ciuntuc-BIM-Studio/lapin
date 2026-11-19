@@ -59,6 +59,22 @@ Previzualizarea arată fiecare tip ca **Nou**, **Există deja în proiect** (lă
 
 ![Tipuri structurale: un tip de buiandrug prefabricat importat din tabelul unui producător, cu marca, rezemarea și lungimile de stoc](shots/structure-types-lintel.webp)
 
+## Straturi de finisaj la stâlpi
+
+Un tip de stâlp are **Finish layers, outward** (straturi de finisaj, spre exterior) în **Tipuri structurale** (fila **Stâlpi**): tencuială, plăci antifoc sau izolație în jurul miezului. Fiecare rând are un **material**, o **grosime** și **fețele** pe care le acoperă: **+X**, **−X**, **+Y** și **−Y**, axele proprii ale secțiunii (X pe lățimea ei, Y pe lungime). Cu toate bifate, stratul merge pe tot conturul; debifează o față care stă lipită de un perete. **Add layer** adaugă un rând, coșul îl șterge, iar primul rând e cel mai din interior.
+
+![Tipuri structurale: un tip de stâlp cu un strat de tencuială peste tot și o placă antifoc pe o față](shots/column-layers-types.webp)
+
+- **Secțiuni metalice.** O secțiune I sau H de oțel e învelită în jurul conturului ei, cum se fac plăcile antifoc.
+- **Planuri și secțiuni.** Fiecare strat se desenează în jurul miezului cu hașura propriului material ([Grafica materialelor](material-graphics.md)).
+- **Visibility / Graphics.** Straturile intră în subcategoriile categoriei stâlpilor (miez, finisaje, izolație…) și ascultă de modurile de straturi ale stilurilor de vedere, ca straturile unui perete. Planurile unui proiect nou lasă finisajele deoparte implicit, ca tencuiala pereților.
+- **3D.** Straturile se văd în 3D.
+- **Cantități.** Se măsoară pe straturi în cantitățile stâlpului (*Lapin_ColumnLayerQuantities*): lățime, arie laterală și volum.
+- **IFC.** Un stâlp cu straturi iese cu un *IfcMaterialConstituentSet*: *Core* și câte un constituent pentru fiecare strat.
+- **Pereți.** Un perete care întâlnește un stâlp se oprește la stratul lui cel mai exterior.
+
+![Un plan cu doi stâlpi secționați, straturile lor hașurate în jurul miezului](shots/column-layers-plan.webp)
+
 ## Tipuri de grinzi ca buiandrugi
 
 Un tip de grindă poate fi produsul unui buiandrug prefabricat. În **Tipuri de pereți** sau în configuratorul unei uși ori ferestre, **Buiandrugi → Prefabricat**, apoi săgeata: **Produs** arată întâi **Tipurile de grinzi**: buiandrugul ia secțiunea tipului (lățimea pe grosimea peretelui, înălțimea), cea mai scurtă dintre lungimile lui care acoperă golul și ambele rezemări (un tip fără lungimi se taie la lungime) și materialul lui, dacă regula nu numește altul. Rezemarea e a tipului: câmpul de rezemare o arată estompat, iar o valoare scrisă acolo e a regulii, până o ștergi. Ales în **Tipuri structurale**, un tip de grindă își arată **Marca**, **Rezemarea** și **Lungimile de stoc** (milimetri, separați prin spații sau |) ca să le schimbi; buiandrugii urmează tipul. Importul catalogului de buiandrugi al unui producător (butonul de lângă **Produs**) face din fiecare produs și un tip de grindă, așa că buiandrugii și tipurile de grinzi sunt o singură listă; produsele importate înainte merg mai departe.
@@ -66,6 +82,10 @@ Un tip de grindă poate fi produsul unui buiandrug prefabricat. În **Tipuri de 
 ![Buiandrugii unui tip de perete: prefabricați, tipul de grindă KP 7 ca produs](shots/lintel-beam-type.webp)
 
 Buiandrugii rămân părți ale peretelui lor, ca până acum; în IFC fiecare e un *IfcBeam* LINTEL cu tipul său *IfcBeamType*, iar tabelul buiandrugilor îi listează după marcajul și numele tipului, cu codul lungimii pe care o ia fiecare.
+
+## Grafica unei fundații continue într-o vedere
+
+Hașura unei fundații continue e cea a materialului ei. Ca s-o schimbi într-o singură vedere (scara sau unghiul hașurii, fără hașură, o culoare), sau ca să desenezi simplu o fațadă hașurată a ei, selectează fundația și alege **Graphics in this view…** (clic dreapta într-un plan, o secțiune sau o fațadă, sau **Properties → Graphics in view**): **Cut** setează ce hașurează planurile și secțiunile, **Seen faces** ce hașurează o fațadă. Vezi [Grafică în această vedere](views.md#grafică-în-această-vedere).
 
 ## Fundații continue cu profil
 

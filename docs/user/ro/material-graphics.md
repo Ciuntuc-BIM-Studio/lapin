@@ -143,6 +143,8 @@ Fiecare intrare potrivește un material, o expresie de nume sau o categorie și 
 
 Câștigă cel mai puternic: ce are elementul însuși, filtrele vederii, subcategoria, setul de grafică al vederii, tăietura la scară mică, pasul materialului, materialul, apoi standardul.
 
+Ca să schimbi hașura unui singur element într-o singură vedere (scara hașurii unei fundații continue, hașura scoasă dintr-o fațadă), selectează-l și folosește **Graphics in this view…** (clic dreapta sau Properties → **Graphics in view**): e cel mai puternic nivel dintre toate. Vezi [Grafică în această vedere](views.md#grafică-în-această-vedere).
+
 ## Hașuri
 
 **Gestionare → Hașuri** listează modelele incluse, cele ale **Acestui proiect** și **Hașurile mele**. Pe lângă **Importă .pat** și **Exportă .pat**, **Model nou** face unul din numerele lui: o familie de linii e un **Unghi**, o **Origine** (x, y), un **Delta** (x, y: decalajul liniei următoare) și **Liniuțe** (**+ Liniuță**, **+ Pauză**, **+ Punct**); **Adaugă o familie** încrucișează alta. Previzualizarea și distanța reală apar pe măsură ce scrii, iar **Unități** și **Scară** spun cum se așază. **Fă modelul** îl salvează; redenumirea unui model se propagă în fiecare material, standard, set și filtru care îl numește. Un model folosit nu se șterge fără să te întrebe.

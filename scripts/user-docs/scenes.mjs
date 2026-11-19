@@ -5021,6 +5021,65 @@ export const scenes = [
     },
   },
   {
+    // Decision 718 (issue #88): Graphics in this view, the strongest level, set per element for the view in front (or every plan, section and elevation).
+    id: 'element-graphics',
+    touches: ['core', 'architecture', 'structure'],
+    async run(t) {
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor graphics' })).id;
+      await t.ui({ view: 'plan', planViewId: plan, keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      // The south wall's cut left unhatched and filled black, in this view alone.
+      await t.cmd('view.elementGraphics', { id: plan, ids: [walls[0]], value: { cutHatch: 'none', cutFill: '#000000' } });
+      await t.wait(800);
+      await select(t, walls[0]);
+      await t.until(async () => (await t.page.locator('aside.props').getByText('Graphics in this view…').count()) >= 1, 'Properties offers Graphics in this view');
+      await t.wait(500);
+      await t.shot('element-graphics-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
+      await t.ui({ dialog: 'elementGraphics' });
+      const dialog = t.page.locator('[data-dialog=elementGraphics]');
+      await dialog.waitFor({ timeout: 10_000 });
+      await t.wait(600);
+      await t.shot('element-graphics-dialog', { of: '[data-dialog=elementGraphics]', pad: 0, maxHeight: 700 });
+      await t.ui({ dialog: null });
+      await t.ui({ selection: null, selected: [] });
+      await t.wait(600);
+      await t.shot('element-graphics-plan', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // Decision 719 (issue #108): a column type's finish layers, drawn, measured and exported like a wall's.
+    id: 'structure-column-layers',
+    touches: ['core', 'architecture', 'structure'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const type = (await t.cmd('structure.createColumnType', {
+        name: 'C30 plastered, fire-boarded', section: { kind: 'rectangle', width: 0.3, depth: 0.3 },
+        finishLayers: [{ material: 'Plaster', thickness: 0.015 }, { material: 'Fire board', thickness: 0.025, faces: ['+x'] }],
+      })).id;
+      await t.cmd('structure.addColumn', { storeyId: s, typeId: type, x: 3, y: 3 });
+      await t.cmd('structure.addColumn', { storeyId: s, typeId: type, x: 6, y: 3 });
+      await t.wait(800);
+      await t.tool('structure.types');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('li.tree-item', { hasText: 'C30 plastered' }).first().click();
+      await t.wait(600);
+      t.expect(await dialog.locator('[data-testid=column-layers]').count() === 1, 'the column type shows its finish layers');
+      await t.shot('column-layers-types', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      // Every layer in plans, so the plaster shows beside the board (a new project's plans leave finishes out).
+      await t.cmd('viewStyle.update', { id: 'architectural', layersPlan: 'all' });
+      await t.ui({ view: 'plan', selection: null, selected: [] });
+      await t.wait(800);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('column-layers-plan', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // Structural analysis, stage S0 (docs/plan-fem.md §8): the load cases, an area load by its tool, a room's imposed-load category, the summary and the combinations.
     id: 'loads',
     touches: ['core', 'architecture', 'structure', 'analysis'],

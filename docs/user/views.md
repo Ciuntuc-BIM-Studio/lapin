@@ -389,6 +389,29 @@ The settings belong to the view, or to a named set that several views share (**S
 
 ![The same plan at LOD 100: one outline hatched as the core](shots/detail-coarse.webp)
 
+### Graphics in this view
+
+**Graphics in this view…** sets how one element draws in one view, as Revit's *Override Graphics in View → By Element*. Select one or more elements (a strip foundation, a column, a wall, a floor, any element) and right-click in a plan, a section or an elevation, then **Graphics in this view…**; or, in **Properties**, open the group **Graphics in view** and press **Graphics in this view…**. That group also says whether the element has graphics of its own in the view in front, and its reset button takes them away.
+
+![The Graphics in view group in Properties](shots/element-graphics-properties.webp)
+
+The dialog sets, for the selected elements in the view in front:
+
+- **Cut** (plans, sections): the **pattern** (as the material, none, or a pattern), its **scale** (1 is the pattern's own size), its **angle** and the **fill** (as the material, none, or a colour).
+- **Seen faces** (elevations): the same four, for the faces an elevation sees. Set the pattern to **none** and a hatched elevation is drawn plain.
+- **Hatch**: the hatch's **colour** and **halftone**.
+- **Cut lines** and **Projection lines**: **colour**, **weight** in mm and **line type**.
+- **Halftone**: the whole element drawn grey.
+- **Apply to**: **this view**, or **every plan, section and elevation**.
+
+![The Graphics in this view dialog: the wall's cut unhatched and filled black](shots/element-graphics-dialog.webp)
+
+**Apply** is one undo step. **Reset** takes the selected elements back to their material's graphics and the view's.
+
+This is the strongest level: it wins over the material's graphics (Manage → Materials → 2D graphics, see [Material graphics](material-graphics.md)) and over the view's Visibility / Graphics, its categories, subcategories and filters. It stays with the view, not with a graphics set or a view style. Drawings, sheets, PDF and DXF print what it sets.
+
+![A plan with one wall's cut unhatched and filled black](shots/element-graphics-plan.webp)
+
 ### Point clouds in views
 
 A linked point cloud (*Import and export*, Point clouds) shows in every view. A **plan** draws the slice its cut takes, 10 cm round the cut plane, as dots under the walls; a **section** the slice just behind its plane; an **elevation** every point it faces, the nearest in front. The dots are the scan's own colours, darkened to read on paper, and they print on sheets and in the PDF as the screen shows them. Their points are snaps: draw walls over a scan's slice and they land on its faces. In the **3D view** the placing tools and Move snap to the cloud's points as they do to corners. A new plan opens framed on the model, or on the cloud's slice when it has nothing else; only the part of the slice on the screen is drawn, so a scan of a whole district stays quick zoomed in on one building.

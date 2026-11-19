@@ -384,6 +384,29 @@ Setările sunt ale vederii sau ale unui set cu nume, comun mai multor vederi (**
 
 ![Același plan la LOD 100: un singur contur hașurat ca miezul](shots/detail-coarse.webp)
 
+### Grafică în această vedere
+
+**Graphics in this view…** setează cum se desenează un singur element într-o singură vedere, ca *Override Graphics in View → By Element* din Revit. Selectează unul sau mai multe elemente (o fundație continuă, un stâlp, un perete, un planșeu, orice element) și dă clic dreapta într-un plan, o secțiune sau o fațadă, apoi **Graphics in this view…**; sau, în **Properties**, deschide grupul **Graphics in view** și apasă **Graphics in this view…**. Grupul spune și dacă elementul are grafică proprie în vederea din față, iar butonul lui de resetare i-o ia.
+
+![Grupul Graphics in view din Properties](shots/element-graphics-properties.webp)
+
+Dialogul setează, pentru elementele selectate, în vederea din față:
+
+- **Cut** (planuri, secțiuni): **hașura** (ca materialul, fără, sau o hașură), **scara** ei (1 e mărimea proprie a hașurii), **unghiul** și **umplutura** (ca materialul, fără, sau o culoare).
+- **Seen faces** (fațade): aceleași patru, pentru fețele pe care le vede o fațadă. Pune hașura pe **none** și o fațadă hașurată se desenează simplu.
+- **Hatch**: **culoarea** și **halftone** ale hașurii.
+- **Cut lines** și **Projection lines**: **culoare**, **grosime** în mm și **tip de linie**.
+- **Halftone**: tot elementul desenat în gri.
+- **Apply to**: **this view** sau **every plan, section and elevation**.
+
+![Dialogul Graphics in this view: secțiunea peretelui fără hașură și umplută cu negru](shots/element-graphics-dialog.webp)
+
+**Apply** e un singur pas de anulare. **Reset** readuce elementele selectate la grafica materialului lor și a vederii.
+
+E cel mai puternic nivel: se impune peste grafica materialului (Manage → Materials → 2D graphics, vezi [Grafica materialelor](material-graphics.md)) și peste Visibility / Graphics al vederii, cu categoriile, subcategoriile și filtrele ei. Rămâne la vedere, nu la un set de grafică sau la un stil de vedere. Desenele, planșele, PDF-ul și DXF-ul tipăresc ce setează.
+
+![Un plan cu secțiunea unui perete fără hașură și umplută cu negru](shots/element-graphics-plan.webp)
+
 ### Norii de puncte în vederi
 
 Un nor de puncte legat (*Import și export*, Nori de puncte) se vede în toate vederile. Un **plan** desenează felia pe care o ia tăietura lui, 10 cm în jurul planului de tăiere, ca puncte sub pereți; o **secțiune** felia de imediat din spatele planului ei; o **fațadă** toate punctele spre care privește, cele mai apropiate în față. Punctele au culorile scanării, întunecate ca să se citească pe hârtie, și se tipăresc pe planșe și în PDF cum le arată ecranul. Punctele lor sunt puncte de snap: pereții desenați peste felia unei scanări ajung pe fețele ei. În **vederea 3D** uneltele de așezare și Move fac snap pe punctele norului ca pe colțuri. Un plan nou se deschide încadrat pe model, sau pe felia norului când nu are altceva; se desenează doar partea feliei aflată pe ecran, așa că scanarea unui cartier întreg rămâne rapidă cu zoom pe o singură clădire.
