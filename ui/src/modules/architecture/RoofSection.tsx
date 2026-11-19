@@ -38,7 +38,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
   const pickStyleOrTemplate = (val: string) => {
     if (isUserRoofTemplateId(val)) {
       const tpl = userTemplates.find((u) => u.id === val);
-      if (tpl) void execute('architecture.updateRoof', applyRoofTemplateArgs(node.id, tpl, contour));
+      if (tpl) void execute('architecture.updateRoof', applyRoofTemplateArgs(node.id, tpl, contour as [number, number][]));
       return;
     }
     void execute('architecture.roofStyle', { id: node.id, style: val });
