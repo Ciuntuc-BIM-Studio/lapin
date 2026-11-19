@@ -96,6 +96,10 @@ export function RoofSection({ node }: { node: NodeDto }) {
           </tbody>
         </table>
       )}
+      <button type="button" className="btn compact" data-testid="roof-unfolded-covering" title="Unfolded 2D covering plan at 1:50 with dimensions and areas"
+        onClick={() => void execute('architecture.unfoldRoofCovering', { id: node.id }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'drawing', drawingViewId: id }); })}>
+        Unfolded covering
+      </button>
     </div>
   );
 }

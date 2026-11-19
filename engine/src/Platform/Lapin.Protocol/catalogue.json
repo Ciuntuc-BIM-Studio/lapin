@@ -163,6 +163,7 @@
     {"name":"architecture.tagOpenings","module":"architecture","label":"Tag doors and windows","args":[{"name":"viewId","type":"str"},{"name":"doorType","type":"str"},{"name":"windowType","type":"str"}]},
     {"name":"architecture.trimOutline","module":"architecture","label":"Trim outline","args":[{"name":"id","type":"str"},{"name":"a","type":"list"},{"name":"b","type":"list"},{"name":"keep","type":"list"}]},
     {"name":"architecture.trimWall","module":"architecture","label":"Trim wall","args":[{"name":"id","type":"str"},{"name":"at"}]},
+    {"name":"architecture.unfoldRoofCovering","module":"architecture","label":"Unfolded covering","args":[{"name":"id","type":"str"}]},
     {"name":"architecture.updateBalcony","module":"architecture","label":"Change balcony","args":[{"name":"id","type":"str"},{"name":"style","type":"str"},{"name":"attrs","type":"dict"},{"name":"x","type":"float"},{"name":"y","type":"float"},{"name":"along","type":"float"},{"name":"contour","type":"list"},{"name":"arcs"}]},
     {"name":"architecture.updateCeiling","module":"architecture","label":"Change ceiling","args":[{"name":"id","type":"str"},{"name":"points","type":"list"},{"name":"arcs"},{"name":"height","type":"float"},{"name":"origin","type":"list"},{"name":"typeId","type":"str"}]},
     {"name":"architecture.updateCeilingType","module":"architecture","label":"Change ceiling type","args":[{"name":"id","type":"str"},{"name":"spec"}]},
