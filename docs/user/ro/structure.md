@@ -14,6 +14,16 @@ Tabul **Structură** are cadrele și fundațiile.
 - **Grindă** (<kbd>BM</kbd>): un clic la fiecare capăt; cu **Arc** în bara liniei de comandă (**Linie** / **Arc**), dai clic pe cele două capete, apoi pe un punct prin care trece arcul. **Grindă curbă** (<kbd>BC</kbd>) pornește unealta Grindă deja pe **Arc**.
 - **Stâlpi pe axe** pune câte un stâlp la fiecare intersecție a axelor. Axele le desenezi cu **Adnotări → Axă** (<kbd>GR</kbd>).
 
+## Cote temporare
+
+Selectează un stâlp într-un plan și Lapin îi desenează **cotele temporare**, pe fiecare din axele lui, la cea mai apropiată față de perete, stâlp sau ax de caroiaj paralel de fiecare parte; selectează o grindă dreaptă și ele merg de-a curmezișul ei la grinzile, pereții și axele paralele de o parte și de alta, și de la fiecare capăt liber în lungul ei la grinda sau peretele spre care merge, ca la [pereți](walls.md#cote-temporare).
+
+De unde pornesc și unde se opresc urmează [referința cotelor](walls.md#referinta-cotelor-de-la-fata-miezului-la-fata-miezului) aleasă de tine: cu **Fețele miezului** un stâlp se măsoară de la fața secțiunii lui (fără [straturile de finisaj](#straturi-de-finisaj-la-stalpi)) la fața miezului peretelui, cu **Fețe (finisaj)** de la tencuiala lui la finisajul peretelui, cu **Axă / centru** de la centrul lui. Fețele miezului unei grinzi sunt laturile ei. Dă clic pe o valoare, scrie o distanță și apasă <kbd>Enter</kbd>: stâlpul se mută perpendicular pe linia măsurată, grinda perpendicular pe ea sau capătul ei în lung, un singur pas de anulare. Punctele și lacătul merg ca la pereți.
+
+Cât pui un stâlp, cotele apar, doar de citit, de la stâlpul de sub cursor (secțiunea și straturile de finisaj ale tipului lui); cât desenezi o grindă, de la linia desenată. Lista **Cote temporare** din bara uneltelor Stâlp și Grindă alege referința.
+
+![Cotele temporare ale unui stâlp, de la fața miezului la fața miezului](shots/column-temp-dimensions.webp)
+
 ## Fundații
 
 - **Fundație continuă** (<kbd>SF</kbd>) merge sub pereți. Straturile ei exterioare se îmbină la 45° în colțuri.

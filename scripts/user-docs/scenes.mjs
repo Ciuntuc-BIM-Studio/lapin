@@ -680,6 +680,110 @@ export const scenes = [
     },
   },
   {
+    // Decision 733 (a user: "core face to core face whenever I draw"): the dimension reference, kept in Preferences and chosen in
+    // the Wall tool's bar; a layered wall selected, then one being drawn, measured core face to core face.
+    id: 'wall-temp-dims-core',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const layered = (await t.cmd('architecture.createWallType', { name: 'Plastered brick 375', layers: [
+        { material: 'Plaster', thickness: 0.02 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Insulation', thickness: 0.1 }] })).id;
+      const storeyId = await t.storey();
+      const add = async (x1, y1, x2, y2) => (await t.cmd('architecture.addWall', { storeyId, x1, y1, x2, y2, typeId: layered })).id;
+      const south = await add(0, 0, 6, 0);
+      const north = await add(6, 5, 0, 5);
+      await t.ui({ keyPlan: false, wallTypeId: layered });
+      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'core' }));
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -1.5, y: -1.5 }, { x: 7.5, y: 6.5 }));
+      await t.wait(800);
+      // The south wall selected: core face (0.125) to the north wall's core face (4.875), the plaster and insulation left out.
+      await t.ui({ selection: south, selected: [south] });
+      await t.wait(900);
+      const dims = t.page.locator('[data-testid=wall-dims]');
+      const value = async (key) => Number(await dims.locator(`[data-dim="${key}"]`).getAttribute('data-value'));
+      t.expect(Math.abs(await value('x:left') - 4.75) < 1e-6, `core face to core face: 4750 (${await value('x:left')})`);
+      t.expect(await dims.locator('[data-dim="x:left"]').getAttribute('data-what') === 'near core face', 'the other wall\'s end on its core face');
+      // A right click on the dot: make the reference that dimension shows the default, or choose another.
+      await dims.locator('[data-dim="x:left"] [data-end=ref]').click({ button: 'right' });
+      await t.wait(300);
+      t.expect(await t.page.getByRole('menuitem').count() === 5, 'the dot\'s menu: make this the default, and the four references');
+      await t.page.keyboard.press('Escape');
+      await t.ui({ selection: null, selected: [] });
+      // Drawing a third wall between them, on its core centre: from its core face toward each neighbour.
+      await t.keys('w', 'a');
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-testid=temp-dim-ref]').inputValue() === 'core', 'the Wall tool\'s bar shows the reference kept');
+      const [ax, ay] = await t.planPoint(1, 2);
+      await t.page.mouse.move(ax, ay, { steps: 3 });
+      await t.page.mouse.click(ax, ay);
+      await t.wait(250);
+      const [bx, by] = await t.planPoint(4.5, 2);
+      await t.page.mouse.move(bx, by, { steps: 8 });
+      await t.wait(700);
+      const drawing = t.page.locator('[data-testid=wall-dims][data-drawing=true]');
+      t.expect(await drawing.count() === 1, 'a wall being drawn shows its distances to the walls beside it');
+      const left = Number(await drawing.locator('[data-dim="x:left"]').getAttribute('data-value'));
+      // Its core face toward north at 2.125, north's at 4.875 (the click may land on the 50 mm grid either side of y = 2).
+      t.expect(Math.abs(left - 2.75) < 0.06, `drawn: core face to core face 2750 (${left})`);
+      const [x0, y0] = await t.planPoint(-1.5, 6.5);
+      const [x1, y1] = await t.planPoint(7.5, -1.5);
+      await t.shot('wall-temp-dims-core', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      await t.keys('Escape', 'Escape');
+      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'reference' }));
+      void north;
+    },
+  },
+  {
+    // Decision 733: a column's temporary dimensions (both its axes) to the walls and columns beside it, core face to core
+    // face (its plaster and the wall's left out); a value typed moves it; while placing one, read-only from the cursor.
+    id: 'column-temp-dimensions',
+    touches: ['structure', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const layered = (await t.cmd('architecture.createWallType', { name: 'Plastered brick 375', layers: [
+        { material: 'Plaster', thickness: 0.02 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Insulation', thickness: 0.1 }] })).id;
+      const storeyId = await t.storey();
+      await t.cmd('architecture.addWall', { storeyId, x1: 0, y1: 0, x2: 6, y2: 0, typeId: layered });
+      await t.cmd('architecture.addWall', { storeyId, x1: 0, y1: 5, x2: 0, y2: 0, typeId: layered });
+      const type = (await t.cmd('structure.createColumnType', { name: 'C30 plastered', section: { kind: 'rectangle', width: 0.3, depth: 0.3 }, height: 3, finishLayers: [{ material: 'Plaster', thickness: 0.015 }] })).id;
+      const column = (await t.cmd('structure.addColumn', { storeyId, typeId: type, x: 3, y: 2 })).id;
+      await t.cmd('structure.addColumn', { storeyId, typeId: type, x: 3, y: 4.5 });
+      await t.ui({ keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'core' }));
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -1, y: -1 }, { x: 6, y: 5.5 }));
+      await t.wait(800);
+      await t.ui({ selection: column, selected: [column] });
+      await t.wait(900);
+      const dims = t.page.locator('[data-testid=column-dims]');
+      t.expect(await dims.count() === 1, 'a selected column shows its temporary dimensions');
+      const value = async (key) => Number(await dims.locator(`[data-dim="${key}"]`).getAttribute('data-value'));
+      // Its core face at y = 1.85 to the south wall's core face at 0.125; its −x core face at 2.85 to the west wall's at 0.125.
+      t.expect(Math.abs(await value('x:x:right') - 1.725) < 1e-6, `to the south wall, core face to core face: 1725 (${await value('x:x:right')})`);
+      t.expect(Math.abs(await value('y:x:left') - 2.725) < 1e-6, `to the west wall: 2725 (${await value('y:x:left')})`);
+      t.expect(Math.abs(await value('x:x:left') - 2.2) < 1e-6, `to the column above, core face to core face: 2200 (${await value('x:x:left')})`);
+      const [x0, y0] = await t.planPoint(-1, 5.5);
+      const [x1, y1] = await t.planPoint(6, -1);
+      await t.shot('column-temp-dimensions', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      await dims.locator('[data-dim="x:x:right"] [data-value-hit]').click();
+      await t.page.locator('[data-field=temp-dim]').fill('1500');
+      await t.page.locator('[data-field=temp-dim]').press('Enter');
+      await t.wait(900);
+      const moved = (await t.nodes()).find((n) => n.id === column);
+      t.expect(Math.abs(moved.props.at[1] - 1.775) < 1e-6 && Math.abs(moved.props.at[0] - 3) < 1e-6, `1500 from the wall's core: the column at y = 1.775 (${JSON.stringify(moved.props.at)})`);
+      // Placing one: read-only from the column under the cursor.
+      await t.ui({ selection: null, selected: [] });
+      await t.keys('c', 'l');
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-testid=temp-dim-ref]').count() === 1, 'the Column tool\'s bar chooses the dimension reference');
+      const [px, py] = await t.planPoint(1.5, 3);
+      await t.page.mouse.move(px, py, { steps: 6 });
+      await t.wait(700);
+      t.expect(await t.page.locator('[data-testid=column-dims][data-drawing=true]').count() === 1, 'a column being placed shows its distances');
+      await t.keys('Escape', 'Escape');
+      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'reference' }));
+    },
+  },
+  {
     // Space while the Wall tool draws (decision 692): the line clicked goes to the other side of the wall, the bar's list
     // follows, and the wall's body drawn beside the line moves across it before the click.
     id: 'wall-space-flip',
@@ -5269,6 +5373,8 @@ export const scenes = [
       t.expect(await t.page.locator('[data-field=prefs-grid-step]').count() > 0, 'a fixed grid asks for its step');
       // Forum topic 151: Tangent and Wall axis among the object snaps, both on.
       t.expect(await t.page.locator('[data-field=prefs-snap-tangent]').isChecked() && await t.page.locator('[data-field=prefs-snap-wallAxis]').isChecked(), 'Tangent and Wall axis are listed, and on');
+      // Decision 733: where temporary dimensions measure from (core faces, faces, axis, reference line).
+      t.expect(await t.page.locator('[data-testid=prefs-temp-dim-ref] input[type=radio]').count() === 4, 'the temporary dimensions\' reference, four choices');
       await t.shot('preferences', { of: '.prefs-dialog', pad: 0 });
       await t.page.getByRole('radio').nth(0).check();
       await t.ui({ dialog: null });

@@ -14,6 +14,16 @@ The **Structure** tab holds the frame and the foundations.
 - **Beam** (<kbd>BM</kbd>): click its two ends; with **Arc** in the command line's bar (**Line** / **Arc**), click its two ends, then a point the arc passes through. **Curved beam** (<kbd>BC</kbd>) starts the Beam tool already set to **Arc**.
 - **Columns at grid** places a column at every crossing of the grid axes. To draw the axes, use **Annotate → Grid axis** (<kbd>GR</kbd>).
 
+## Temporary dimensions
+
+Select one column in a plan and Lapin draws its **temporary dimensions**, along each of its own axes, to the nearest parallel wall face, column or grid axis on each side; select one straight beam and they run across it to the parallel beams, walls and grid axes either side, and from each free end along it to the beam or wall it runs toward, as a [wall's](walls.md#temporary-dimensions) do.
+
+Where they start and end follows your [dimension reference](walls.md#dimension-reference-core-face-to-core-face): with **Core faces** a column measures from its section's face (its [finish layers](#finish-layers-on-columns) left out) to the wall's core face, with **Faces (finish)** from its plaster to the wall's finish, with **Axis / centre** from its centre. A beam's core faces are its sides. Click a value, type a distance and press <kbd>Enter</kbd>: the column moves square to the line measured, the beam square to itself or its end along it, one step to undo. The dots and the padlock work as on walls.
+
+While you place a column, the dimensions show, read only, from the column under the cursor (its type's section and finish layers); while you draw a beam, from the line drawn. The **Temporary dimensions** list in the Column and Beam tools' bars chooses the reference.
+
+![A column's temporary dimensions, core face to core face](shots/column-temp-dimensions.webp)
+
 ## Foundations
 
 - **Strip footing** (<kbd>SF</kbd>) runs under walls. Its outer layers are mitred at the corners.

@@ -87,9 +87,22 @@ Selectează un perete drept într-un plan și Lapin îi desenează **cote tempor
 - **De-a curmezișul**, de la referința peretelui ([linia de referință](#desenarea-peretilor) pe care o păstrează, altfel axa lui) la cel mai apropiat perete paralel sau ax de caroiaj de fiecare parte care merge pe lângă el, așezate la jumătatea porțiunii pe care o au în comun;
 - **În lungul lui**, de la fiecare capăt liber la primul perete în care intră linia lui dincolo de acel capăt. Un capăt îmbinat cu alt perete nu are (mutarea lui ar desface îmbinarea).
 
-Dă clic pe o valoare, scrie o distanță nouă (în unitatea proiectului; merg și sume ca `3000+150`) și apasă <kbd>Enter</kbd>: peretele se mută perpendicular pe el, sau capătul lui în lungul lui, ca să se citească ce ai scris, celălalt perete rămânând pe loc. E un singur pas de anulare, iar îmbinările peretelui și ușile și ferestrele lui se poartă ca atunci când îi tragi de mânere. <kbd>Esc</kbd> lasă valoarea cum era. Clic pe punctul de la capătul cotei dinspre celălalt perete ca să măsori la fața lui îndepărtată, la fețele miezului sau la axă; clic pe punctul de la capătul dinspre peretele selectat ca să măsori de la fața lui apropiată sau îndepărtată în loc de referință. Lacătul face din cotă una permanentă a vederii.
+Dă clic pe o valoare, scrie o distanță nouă (în unitatea proiectului; merg și sume ca `3000+150`) și apasă <kbd>Enter</kbd>: peretele se mută perpendicular pe el, sau capătul lui în lungul lui, ca să se citească ce ai scris, celălalt perete rămânând pe loc. E un singur pas de anulare, iar îmbinările peretelui și ușile și ferestrele lui se poartă ca atunci când îi tragi de mânere. <kbd>Esc</kbd> lasă valoarea cum era. Clic pe punctul de la capătul cotei dinspre celălalt perete ca să măsori la fața lui îndepărtată, la fețele miezului sau la axă; clic pe punctul de la capătul dinspre peretele selectat ca să măsori de la fața lui apropiată sau îndepărtată, de la fețele miezului sau de la axă în loc de referință. Cu ce capete pornește o cotă hotărăște [referința cotelor](#referinta-cotelor-de-la-fata-miezului-la-fata-miezului) aleasă de tine. Lacătul face din cotă una permanentă a vederii.
 
 Cât desenezi un perete, după primul clic, aceleași cote apar, doar de citit, de la linia pe care dai clic la pereții de alături și de la cursor la peretele din față, ca să te oprești la distanța dorită (sau să o scrii în caseta lungimii).
+
+#### Referința cotelor: de la fața miezului la fața miezului
+
+De unde și până unde stau capetele cotelor temporare e o setare a ta, păstrată pe acest calculator pentru toate proiectele: **Fișier → Preferințe… → Grilă și snap → Cote temporare**, lista **Cote temporare** din bara uneltelor Perete, Stâlp și Grindă, sau un clic dreapta pe punctul unei cote. Se aplică pereților, [stâlpilor și grinzilor](structure.md#cote-temporare), selectați sau în desenare:
+
+- **Fețele miezului**: de la fața miezului peretelui dinspre celălalt perete la fața miezului celuilalt dinspre el, fără tencuială și izolație de nicio parte. Un perete al cărui singur strat e miezul se măsoară de la fețele lui.
+- **Fețe (finisaj)**: de la fața finisată la fața finisată.
+- **Axă / centru**: de la axă la axă (centrul unui stâlp).
+- **Linia de referință** (implicit, ca înainte): de la linia de referință a peretelui, sau de la axa lui, la fața apropiată a celuilalt.
+
+Cât desenezi, linia pe care dai clic se măsoară după aceeași alegere: cu **Fețele miezului** cota pornește de la fața miezului peretelui nou dinspre vecin, calculată din tipul ales și din linia pe care e desenat (lista din bară, <kbd>Space</kbd>), ca să desenezi un perete la o distanță liberă de zidărie față de următorul. Clicul pe un punct schimbă tot doar acea cotă. Un clic dreapta pe un punct deschide **Fă-o implicită** (referința pe care o arată acum cota acelui punct) și cele patru alegeri.
+
+![De la fața miezului la fața miezului cât se desenează un perete](shots/wall-temp-dims-core.webp)
 
 Pereții curbi nu au cote temporare, iar pereții nu se măsoară la pereți curbi.
 
