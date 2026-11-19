@@ -25,6 +25,12 @@ describe('live text in the designer', () => {
     expect(fillText('Client: {project.client}| {sheet.number}', values)).toBe('Client: | A-101');
   });
 
+  it('takes a {sheet.*} field the sample sheet has not typed as the sheet\'s own, empty, never unknown (forum 90)', () => {
+    expect(textRuns('Muutos {sheet.muutos}', values)).toEqual([{ text: 'Muutos ', kind: 'plain' }, { text: '{sheet.muutos}', kind: 'empty', key: 'sheet.muutos' }]);
+    expect(fillText('[{sheet.piirustuslaji}]', values)).toBe('[]');
+    expect(textRuns('{sheet.bad-key}', values)[0].kind).toBe('unknown');
+  });
+
   it('puts a token at the end of a text, a space before it', () => {
     expect(insertToken('', 'sheet.number')).toBe('{sheet.number}');
     expect(insertToken('Sheet', 'sheet.number')).toBe('Sheet {sheet.number}');

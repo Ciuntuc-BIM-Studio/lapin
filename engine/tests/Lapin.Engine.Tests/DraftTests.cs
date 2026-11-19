@@ -133,6 +133,46 @@ public class DraftTests
     }
 
     [Fact]
+    public void A_drafted_hatch_on_paper_looks_the_same_at_every_scale_and_a_real_size_one_follows_the_scale()
+    {
+        // Report #157: a hatch set up at 1:50 must look proportional at 1:100 and 1:10. A paper hatch keeps its paper spacing
+        // (denser on the object at a larger scale number); one given real size (units: model) keeps its spacing on the object.
+        var f = F();
+        string PlanAt(double scale) => (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey, ["scale"] = scale })!["id"]!;
+        (string Plan, string Hatch) Square(double scale)
+        {
+            var plan = PlanAt(scale);
+            Draw(f, plan, new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 0), J(10, 0), J(10, 10), J(0, 10)), ["closed"] = true });
+            return (plan, (string)f.Run("drafting.hatch", new JsonObject { ["viewId"] = plan, ["at"] = J(1, 1), ["pattern"] = "LINES45" })!["id"]!);
+        }
+        // The hatch's strokes: the lines on its layer but the square's four sides.
+        int Strokes(string plan) => Views.Render(f.Session.Reader, Views.Find(f.Model, plan)!).Pens.Where(p => p.Layer == "0").Sum(p => p.Segments.Count) - 4;
+        var (p50, h50) = Square(50);
+        var (p100, h100) = Square(100);
+        // Paper: twice the model spacing at 1:100, so about half the strokes.
+        var (paper50, paper100) = (Strokes(p50), Strokes(p100));
+        Assert.InRange(paper50 / (double)paper100, 1.8, 2.2);
+        // Given real size at 1:50: the scale turned by the view's (1 on paper at 1:50 is 50 real), so it looks as it did there.
+        f.Run("drafting.updateDraft", new JsonObject { ["id"] = h50, ["hatch"] = new JsonObject { ["units"] = "model" } });
+        Assert.Equal(50, (double)f.Model.Get(h50)!.Attrs["hatch"]!["scale"]!, 9);
+        Assert.Equal("model", (string?)f.Model.Get(h50)!.Attrs["hatch"]!["units"]);
+        Assert.Equal(paper50, Strokes(p50));
+        // The same hatch at 1:100 keeps its spacing on the object: as many strokes as at 1:50.
+        f.Run("drafting.updateDraft", new JsonObject { ["id"] = h100, ["hatch"] = new JsonObject { ["units"] = "model", ["scale"] = 50 } });
+        Assert.Equal(paper50, Strokes(p100));
+        // Back to paper: the scale turned back; one undo step each.
+        f.Run("drafting.updateDraft", new JsonObject { ["id"] = h50, ["hatch"] = new JsonObject { ["units"] = null } });
+        Assert.Equal(1, (double)f.Model.Get(h50)!.Attrs["hatch"]!["scale"]!, 9);
+        Assert.Null(f.Model.Get(h50)!.Attrs["hatch"]!["units"]);
+        f.Session.Undo();
+        Assert.Equal("model", (string?)f.Model.Get(h50)!.Attrs["hatch"]!["units"]);
+        Assert.Throws<CommandException>(() => f.Run("drafting.updateDraft", new JsonObject { ["id"] = h50, ["hatch"] = new JsonObject { ["units"] = "metres" } }));
+        // Made real size from the start.
+        var made = (string)f.Run("drafting.hatch", new JsonObject { ["viewId"] = p100, ["at"] = J(1, 1), ["pattern"] = "LINES45", ["units"] = "model", ["scale"] = 50 })!["id"]!;
+        Assert.Equal("model", (string?)f.Model.Get(made)!.Attrs["hatch"]!["units"]);
+    }
+
+    [Fact]
     public void Explode_splits_polylines_and_rectangles_into_lines_on_the_same_layer_in_one_undo_step_and_leaves_the_rest()
     {
         // Report #121, decision 430: JOIN welds lines into a polyline, EXPLODE is the way back.

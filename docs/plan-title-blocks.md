@@ -47,7 +47,9 @@ An entity of the project (not exported to IFC), named, holding its template:
   - `project.*`: the name and every field of Project information, the user's own parameters; `param.<Name>` the
     project's parameters of decision 119.
   - `sheet.*`: number, name, scale (the scales of its views), paper, size, orientation, revision, status, date, drawnBy,
-    checkedBy, phase, client, discipline, index and count (sheet x of y), and any title block field the sheet sets.
+    checkedBy, phase, client, discipline, index and count (sheet x of y); any other `sheet.<key>` is a field of the
+    sheet's own (forum 90, decision 710): its value, else the project information's field or parameter of that key, else
+    empty; the sheet's properties list the ones its template uses (`sheet.titleBlockFields`).
   - `system.*`: printDate, printTime, file, app.
   An unknown token prints as `<key>` (a placeholder the designer and the sheet show, and the CDE check reports); a known one
   with no value prints empty.

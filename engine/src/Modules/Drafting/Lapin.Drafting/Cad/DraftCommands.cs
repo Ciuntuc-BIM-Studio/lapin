@@ -208,6 +208,22 @@ public static class DraftCommands
                         had["pattern"] = HatchLibrary.Find(name, DraftingResources.Patterns(ctx.Model))?.Name ?? throw new CommandException($"There is no hatch pattern „{name}”.");
                     }
                     if (hp.ContainsKey("scale")) had["scale"] = Json.Number(hp["scale"]) is { } hs && hs > 0 ? hs : throw new CommandException("The hatch scale must be positive.");
+                    // Its size, on paper or real (report #157); null: as its pattern is. Changed without a scale, the scale is turned
+                    // by the view's so the hatch looks as it did at that scale (1 on paper at 1:50 is 50 real).
+                    if (hp.ContainsKey("units"))
+                    {
+                        var pattern = HatchLibrary.Find((string?)had["pattern"] ?? "LINES45", DraftingResources.Patterns(ctx.Model));
+                        var was = pattern == null ? null : (HatchUnits?)HatchScale.UnitsOf(pattern, Drafts.UnitsOf(had));
+                        HatchUnits? over = hp["units"] is null ? null : HatchScale.Parse((string?)hp["units"]) ?? throw new CommandException("A hatch's units are paper or model.");
+                        if (over is { } u) had["units"] = HatchScale.Name(u); else had.Remove("units");
+                        var now = pattern == null ? null : (HatchUnits?)HatchScale.UnitsOf(pattern, over);
+                        if (!hp.ContainsKey("scale") && was != null && now != null && was != now)
+                        {
+                            var viewScale = Views.Find(ctx.Model, e.Str("viewId") ?? "")?.NumOrNull("scale") is > 0 and var vs ? vs : 100;
+                            var s0 = Json.Number(had["scale"]) ?? 1;
+                            had["scale"] = Math.Round(now == HatchUnits.Model ? s0 * viewScale : s0 / viewScale, 9);
+                        }
+                    }
                     if (hp.ContainsKey("angle")) had["angle"] = Json.Number(hp["angle"]) ?? 0;
                     if (hp.ContainsKey("origin")) { if (hp["origin"] is JsonArray ho && ho.Count >= 2) had["origin"] = new JsonArray(Json.Number(ho[0]) ?? 0, Json.Number(ho[1]) ?? 0); else had.Remove("origin"); }
                     if (hp.ContainsKey("background"))
@@ -380,6 +396,8 @@ public static class DraftCommands
                 ["pattern"] = pattern, ["scale"] = Json.Number(a["scale"]) ?? 1, ["angle"] = Json.Number(a["angle"]) ?? 0,
                 ["loops"] = new JsonArray(region.Select(l => (JsonNode)new JsonArray(l.Select(q => (JsonNode)new JsonArray(q.X, q.Y)).ToArray())).ToArray()),
             };
+            // Its size, on paper or real (report #157); none given: as its pattern is.
+            if (a["units"] is not null) hatch["units"] = HatchScale.Name(HatchScale.Parse((string?)a["units"]) ?? throw new CommandException("A hatch's units are paper or model."));
             var attrs = new JsonObject { ["viewId"] = view.Id, ["layer"] = layer, ["hatch"] = hatch };
             if ((string?)a["color"] is { } c) attrs["color"] = c;
             var e = new Entity(ctx.NewId(), IfcClass.Annotation, $"Hatch {pattern}", attrs, Drafts.Predefined);

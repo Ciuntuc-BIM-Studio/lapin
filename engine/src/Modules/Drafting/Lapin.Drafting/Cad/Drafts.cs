@@ -214,6 +214,9 @@ public static class Drafts
         return loops;
     }
 
+    /// <summary>A drafted hatch's own size (report #157): "paper" or "model"; null, its pattern's.</summary>
+    public static HatchUnits? UnitsOf(JsonObject hatch) => HatchScale.Parse((string?)hatch["units"]);
+
     public static IReadOnlyList<IReadOnlyList<Vec2>> HatchLoops(Entity e) =>
         (e.Attrs["hatch"]?["loops"] as JsonArray)?.OfType<JsonArray>()
             .Select(l => (IReadOnlyList<Vec2>)Args.StoredPoints(l)).ToList() ?? [];
@@ -256,8 +259,10 @@ public static class Drafts
                 {
                     var scale = Json.Number(h["scale"]) ?? 1;
                     var origin = Args.TryPoint(h["origin"]);
-                    var (segs, _) = HatchFill.Segments(loops, pattern, new HatchOptions(HatchScale.Factor(pattern, c.Scale, scale), Json.Number(h["angle"]) ?? 0, origin, 20_000));
-                    foreach (var s in segs) mk.Line(s.A, s.B, layer.Name, Pens.Default.Hatch, color);
+                    // Its size: on paper (the same at every scale) or real (following the view's scale), as the hatch says, else
+                    // as its pattern is (report #157); a real-size one too dense on paper at this scale is left out, as an element's.
+                    if (HatchScale.Lay(pattern, c.Scale, scale, Json.Number(h["angle"]) ?? 0, origin, 20_000, UnitsOf(h), ViewStyles.Of(c.Model, c.View).MinHatchSpacing) is { } laid)
+                        foreach (var s in HatchFill.Segments(loops, pattern, laid).Segments) mk.Line(s.A, s.B, layer.Name, Pens.Default.Hatch, color);
                 }
                 foreach (var l in loops) mk.Shapes.Add(new Polyline(l, true).ToJson().Also(j => j["hatch"] = true));
                 // A hatch is taken by its outline and by a click inside it: a solid one has no lines to click (report #122, decision 429).

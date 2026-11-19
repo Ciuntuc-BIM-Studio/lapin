@@ -58,6 +58,8 @@ The same editor opens beside a layer's hatch swatch in **Wall types** and **Floo
 
 A pattern is in **paper** millimetres (*Drafting*: the same spacing at every scale, as for a section's cut) or in **real** millimetres (*Real size*: a brick course is 63 mm tall at 1:20, 1:50 and 1:100, so it gets finer as the scale shrinks). **Units** in the material's graphics chooses; *pattern's own* follows the pattern. In real size, **Scale** 1 is the real object's size, 2 twice as large.
 
+So a hatch that should keep its proportion to the drawing when the view's scale changes (set at 1:50, the same pattern on the object at 1:100 and 1:10) is a **Real size** one; a **Drafting** one keeps its look on paper instead, the same spacing in millimetres at every scale. A hatch you draft yourself (**Draft → Hatch**) has the same **Units** in its properties: choosing another keeps it looking as it does at its view's scale (scale 1 in drafting units at 1:50 becomes 50 in real size), and from then on it follows the scale as you chose.
+
 Lapin ships real-size patterns: facing brick in three formats (240 × 63, 240 × 71 and 215 × 65), blocks, tiles 300 and 600 mm, boards, stone, roof tiles and a standing-seam metal roof. A new project's facades and floor finishes take them by the materials' names; a project made before keeps the drafting hatches it had.
 
 **Min. hatch spacing** (**View settings**, **Manage → View styles**) stops a real-size hatch from turning into ink: lines closer than this on paper (default 0.7 mm) are not drawn, and the area shows as an outline with a plain fill. 0 draws every line.

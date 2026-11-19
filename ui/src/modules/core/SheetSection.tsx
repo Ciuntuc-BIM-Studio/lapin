@@ -1,25 +1,37 @@
 /**
  * A sheet in the inspector: its discipline (the browser's set it sits in), its title block (the project's default or one of
- * its own, decision 340) and its title block fields (empty: the project's name, today's date).
+ * its own, decision 340) and its title block fields: the usual ones, then every other {sheet.*} field its title block uses
+ * (forum 90), each empty one showing greyed what prints instead (the project information's, the project's name, today's date).
  */
 
 import { useEffect, useState } from 'react';
 import { useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { t as tr } from '../../i18n';
 import { DisciplinePicker } from './DisciplinePicker';
 import { listTitleBlocks, setSheetTitleBlock, type TbList } from './titleBlocks/titleBlocks';
 import { titleBlocksDialog } from './titleBlocks/TitleBlocksDialog';
 
+/** A field the sheet types for its title block: its own value, and what prints when it is left empty. */
+export interface SheetTbField { key: string; label: string; value?: string | null; otherwise?: string | null }
+
 // The revision and the status are set by an issue (Manage → Issue…) and may be typed; the phase is the design stage the sheet belongs to.
-const FIELDS: [string, string][] = [['project', 'Project'], ['client', 'Client'], ['drawnBy', 'Drawn by'], ['checkedBy', 'Checked by'], ['date', 'Date'], ['phase', 'Phase'], ['revision', 'Revision'], ['status', 'Status']];
+// Shown until the engine says which fields the sheet's title block uses.
+const FIELDS: SheetTbField[] = [['project', 'Project'], ['client', 'Client'], ['drawnBy', 'Drawn by'], ['checkedBy', 'Checked by'], ['date', 'Date'], ['phase', 'Phase'], ['revision', 'Revision'], ['status', 'Status']]
+  .map(([key, label]) => ({ key, label }));
 
 export function SheetSection({ node }: { node: NodeDto }) {
   const tb = (node.props.titleBlock as Record<string, string> | undefined) ?? {};
   const version = useSession((s) => s.version);
   const [blocks, setBlocks] = useState<TbList | null>(null);
   useEffect(() => { void listTitleBlocks().then(setBlocks); }, [version]);
+  const [fields, setFields] = useState<SheetTbField[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    void query<{ fields: SheetTbField[] }>('sheet.titleBlockFields', { id: node.id }).then((r) => { if (live && r) setFields(r.fields); });
+    return () => { live = false; };
+  }, [node.id, version]);
   const own = typeof node.props.titleBlockId === 'string' ? node.props.titleBlockId : '';
   const def = blocks?.items.find((b) => b.id === blocks.default);
   return (
@@ -35,10 +47,12 @@ export function SheetSection({ node }: { node: NodeDto }) {
         <button type="button" className="btn mini" title="Edit the title blocks: Manage → Title blocks…" data-field="sheet-title-blocks"
           onClick={() => { titleBlocksDialog.open = own || blocks?.default || null; useUi.setState({ dialog: 'titleBlocks' }); }}>…</button>
       </dd>
-      {FIELDS.map(([key, label]) => (
+      {(fields ?? FIELDS).map(({ key, label, otherwise }) => (
         <span key={key} style={{ display: 'contents' }}>
-          <dt>{label}</dt>
-          <dd><input key={`${node.id}${key}${tb[key] ?? ''}`} defaultValue={tb[key] ?? ''} disabled={!node.editable}
+          {/* A field of the title block's own is named by its key, as typed in the designer. */}
+          <dt title={`{sheet.${key}}`} {...(label === key ? { 'data-no-i18n': true } : {})}>{label}</dt>
+          <dd><input key={`${node.id}${key}${tb[key] ?? ''}`} defaultValue={tb[key] ?? ''} disabled={!node.editable} data-field={`sheet-tb-${key}`}
+            placeholder={otherwise ?? ''} data-no-i18n
             onBlur={(e) => e.target.value !== (tb[key] ?? '') && void execute('sheet.titleBlock', { id: node.id, fields: { [key]: e.target.value } })} /></dd>
         </span>
       ))}

@@ -3,15 +3,19 @@
  * and levels; forum 90), round a centre (an angle filled) or along a path, any element alike: a wall, a column, a group,
  * an imported mesh's chair, and drafting (forum 90): a drafted shape, a text or a symbol on a plan, a section, an elevation
  * or a drafting view, in that view's own x and y. A row's or a grid's step is typed, or clicked in the view (ARRAYSTEP: two
- * points, a typed distance along the cursor's direction, the copies drawn live). One undo step (element.array). ARRAY on
- * the command line, and the Draft tab's Modify panel, start it too.
+ * points, a typed distance along the cursor's direction, the copies drawn live); a polar array's centre is typed or clicked
+ * (ARRAYCENTRE, the copies drawn round the pointer). The dialog shows only the method's own fields and says by its field
+ * what is wrong (forum 90; arrayDialog.ts). One undo step (element.array). ARRAY on the command line, and the Draft tab's
+ * Modify panel, start it too.
  */
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
-import { ask, choiceField, lengthField, numberField } from '../../shell/AskBox';
+import { ask, choiceField, lengthField, numberField, type Field } from '../../shell/AskBox';
 import { cadLog, moved, registerCommand, shapesOf, startCommand, useCad, type Step } from '../../viewport/cad/session';
 import type { Shape } from '../../viewport/cad/shapes';
-import { arraySkipNotes, arrayTargets, gridOffsets, itemCount, stepArgs, stepBetween, type ArrayPlace, type ArrayTargets, type StepJob, type V3 } from './arrayGrid';
+import { rotatedShape } from '../../viewport/cad/rotate';
+import { arrayFieldShown, checkArray, polarArgs, polarStep } from './arrayDialog';
+import { arraySkipNotes, arrayTargets, gridOffsets, stepArgs, stepBetween, type ArrayPlace, type ArrayTargets, type StepJob, type V3 } from './arrayGrid';
 
 type Vec2 = { x: number; y: number };
 type PathRule = Record<string, unknown>;
@@ -150,58 +154,89 @@ export function arrayable(): ArrayTargets {
   return arrayTargets(useUi.getState().selected, useSession.getState().nodes, arrayPlace());
 }
 
+/** The polar array whose centre is clicked (the dialog's answers), for ARRAYCENTRE. */
+let centreJob: { ids: string[]; answers: Record<string, string | number> } | null = null;
+
+/** ARRAYCENTRE: the centre of a polar array clicked (or typed on the command line), the copies drawn round the pointer meanwhile. */
+function centreStep(): Step {
+  const job = centreJob;
+  if (!job) return { prompt: 'Nothing to array', want: 'none', enter: () => null };
+  const outline = shapesOf(job.ids);
+  const count = Math.round(Number(job.answers.count)), step = polarStep(count, Number(job.answers.angle));
+  return {
+    prompt: 'Centre of the array (click, or type x,y)', want: 'point',
+    preview: (c) => Array.from({ length: Math.min(count, GHOST_MOST) - 1 }, (_, i) => outline.map((sh) => rotatedShape(sh, c, step * (i + 1)))).flat(),
+    point: async (p) => {
+      centreJob = null;
+      const r = await execute('element.array', polarArgs(job.ids, job.answers, p));
+      if (!r) cadLog(useSession.getState().error ?? 'The array could not be made.');
+      return null;
+    },
+  };
+}
+registerCommand({ names: ['ARRAYCENTRE', 'ARRAYCENTER'], label: 'Array round a clicked centre', start: centreStep });
+
+/**
+ * The dialog (forum 90): only the fields of the method chosen are shown, changing with it, and an answer that cannot make
+ * an array is said by its field, the box kept open. A row's or a grid's step and a polar array's centre are typed or
+ * clicked in the plan.
+ */
 export async function arraySelection(): Promise<void> {
   const targets = arrayable();
   const ids = targets.ids;
   const notes = arraySkipNotes(targets);
   if (!ids.length) { notify(notes[0] ?? 'Select what to array first, then Array.'); return; }
   for (const n of notes) notify(n);
-  const r = await ask('Array', [
+  // Clicking a step, a centre or a path needs a plan (or a section, an elevation, a drafting view) open, not the 3D view.
+  const inPlan = !!useCad.getState().host && arrayPlace() !== '3d';
+  const fields: Field[] = [
     choiceField('kind', 'Kind', 'row', [{ value: 'row', label: 'In a row' }, { value: 'grid', label: 'In a grid (columns × rows)' }, { value: 'polar', label: 'Round a centre' }, { value: 'path', label: 'Along a path' }]),
-    numberField('count', 'Copies (with the first; in a grid, the columns)', 3),
+    numberField('count', 'Copies (with the first)', 3),
+    numberField('cols', 'Columns', 3), numberField('rows', 'Rows', 2), numberField('levels', 'Levels', 1),
     choiceField('by', 'Step given by', 'typed', [{ value: 'typed', label: 'Typing it (step x, y, z)' }, { value: 'click', label: 'Clicking two points in a plan' }]),
     lengthField('dx', 'Step x', 1), lengthField('dy', 'Step y', 0), lengthField('dz', 'Step z', 0),
-    numberField('angle', 'Angle filled (°)', 360), lengthField('cx', 'Centre x', 0), lengthField('cy', 'Centre y', 0),
+    lengthField('rx', 'Row step x', 0), lengthField('ry', 'Row step y', 1), lengthField('lz', 'Level step z', 3),
+    numberField('angle', 'Angle filled (°)', 360),
+    choiceField('centreBy', 'Centre given by', inPlan ? 'click' : 'typed', [{ value: 'click', label: 'Clicking it in a plan' }, { value: 'typed', label: 'Typing it (centre x, y)' }]),
+    lengthField('cx', 'Centre x', 0), lengthField('cy', 'Centre y', 0),
     lengthField('spacing', 'Spacing along the path (0: share out by the copies)', 0),
     lengthField('start', 'Start distance', 0), lengthField('end', 'End distance', 0), lengthField('offset', 'Offset from the path (+ left)', 0),
     choiceField('orient', 'Orientation', 'tangent', [{ value: 'tangent', label: 'Along the path' }, { value: 'fixed', label: 'Fixed' }]),
     choiceField('flip', 'Turn round', 'no', [{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]),
-    // A grid's own, after the others so the fields before them keep their places.
-    numberField('rows', 'Rows (in a grid)', 2), lengthField('rx', 'Row step x (in a grid)', 0), lengthField('ry', 'Row step y (in a grid)', 1),
-    numberField('levels', 'Levels (in a grid)', 1), lengthField('lz', 'Level step z (in a grid)', 3),
-  ]);
+  ].map((f) => ({ ...f, show: (v: Record<string, string>) => arrayFieldShown(f.key, v) }));
+  const r = await ask('Array', fields, { check: checkArray });
   if (!r) return;
   if (r.kind === 'path') {
     const count = Number(r.count), spacing = Number(r.spacing);
-    if (!(count >= 1) && !(spacing > 0)) { notify('Give the copies or a spacing.'); return; }
     const rule: PathRule = { kind: 'path', orient: r.orient, flip: r.flip === 'yes', start: Number(r.start), end: Number(r.end), offset: Number(r.offset) };
     if (count >= 1) rule.count = count;
     if (spacing > 0) rule.spacing = spacing;
-    if (!useCad.getState().host) { notify('Open a plan to click the path in.'); return; }
+    if (!inPlan) { notify('Open a plan to click the path in.'); return; }
     pending = { ids, rule };
     await startCommand('ARRAYPATH');
     return;
   }
-  if (r.kind === 'row' || r.kind === 'grid') {
-    const job: StepJob = {
-      ids, kind: r.kind, count: Math.round(Number(r.count)), rows: Math.max(1, Math.round(Number(r.rows))),
-      levels: Math.max(1, Math.round(Number(r.levels))), dz: Number(r.dz), levelStep: [0, 0, Number(r.lz)],
-    };
-    if (!(itemCount(job) >= 2)) { notify('An array has at least two items, the first among them.'); return; }
-    if (r.by === 'click') {
-      if (!useCad.getState().host) { notify('Open a plan to click the step in.'); return; }
-      stepJob = job;
-      await startCommand('ARRAYSTEP');
+  if (r.kind === 'polar') {
+    if (r.centreBy === 'click') {
+      if (!inPlan) { notify('Open a plan to click the centre in.'); return; }
+      centreJob = { ids, answers: r };
+      await startCommand('ARRAYCENTRE');
       return;
     }
-    if (r.kind === 'grid') {
-      const args = stepArgs(job, { x: Number(r.dx), y: Number(r.dy) }, { x: Number(r.rx), y: Number(r.ry) });
-      await execute('element.array', args);
-      return;
-    }
+    await execute('element.array', polarArgs(ids, r, { x: Number(r.cx), y: Number(r.cy) }));
+    return;
   }
-  if (r.kind === 'polar') await execute('element.array', { ids, kind: 'polar', count: Number(r.count), angle: Number(r.angle), center: [Number(r.cx), Number(r.cy)] });
-  else await execute('element.array', { ids, count: Number(r.count), step: [Number(r.dx), Number(r.dy), Number(r.dz)] });
+  const job: StepJob = {
+    ids, kind: r.kind === 'grid' ? 'grid' : 'row', count: Math.round(Number(r.kind === 'grid' ? r.cols : r.count)), rows: r.kind === 'grid' ? Math.max(1, Math.round(Number(r.rows))) : 1,
+    levels: r.kind === 'grid' ? Math.max(1, Math.round(Number(r.levels))) : 1, dz: Number(r.dz), levelStep: [0, 0, Number(r.lz)],
+  };
+  if (r.by === 'click') {
+    if (!inPlan) { notify('Open a plan to click the step in.'); return; }
+    stepJob = job;
+    await startCommand('ARRAYSTEP');
+    return;
+  }
+  await execute('element.array', stepArgs(job, { x: Number(r.dx), y: Number(r.dy) }, { x: Number(r.rx), y: Number(r.ry) }));
 }
 
 // The command line's (and the Draft tab's) Array: the dialog, on the selection.

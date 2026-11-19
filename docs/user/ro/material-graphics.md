@@ -58,6 +58,8 @@ Același editor se deschide lângă mostra de hașură a unui strat din **Tipuri
 
 Un model e în milimetri pe **hârtie** (*Desen*: aceeași distanță la orice scară, ca la tăietura unei secțiuni) sau în milimetri **reali** (*Mărime reală*: un rând de cărămizi are 63 mm înălțime la 1:20, 1:50 și 1:100, deci devine mai fin când scara se micșorează). **Unități** din grafica materialului alege; *a modelului* urmează modelul. La mărime reală, **Scară** 1 e dimensiunea obiectului real, 2 de două ori mai mare.
 
+Deci o hașură care trebuie să-și păstreze proporția față de desen când se schimbă scara vederii (pusă la 1:50, același model pe obiect la 1:100 și la 1:10) e una la **Mărime reală**; una de **Desen** își păstrează în schimb aspectul pe hârtie, aceeași distanță în milimetri la orice scară. O hașură pe care o desenezi tu (**Desen → Hașură**) are aceleași **Unități** în proprietățile ei: alegând altele, arată la fel ca acum la scara vederii ei (scara 1 în unități de desen la 1:50 devine 50 la mărime reală), iar de acum urmează scara cum ai ales.
+
 Lapin vine cu modele în mărime reală: cărămidă aparentă în trei formate (240 × 63, 240 × 71 și 215 × 65), blocuri, plăci de 300 și 600 mm, scânduri, piatră, țigle și un acoperiș metalic cu falț. Fațadele și finisajele de pardoseală ale unui proiect nou le iau după numele materialelor; un proiect făcut înainte păstrează hașurile de desen pe care le avea.
 
 **Distanța minimă a hașurii** (**Setările vederii**, **Gestionare → Stiluri de vedere**) împiedică o hașură în mărime reală să devină o pată de cerneală: liniile mai apropiate decât atât pe hârtie (implicit 0,7 mm) nu se desenează, iar suprafața apare ca un contur cu umplere simplă. 0 desenează toate liniile.

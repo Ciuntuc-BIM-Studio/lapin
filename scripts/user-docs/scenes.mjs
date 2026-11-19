@@ -10577,10 +10577,11 @@ export const scenes = [
       // Modify → Array round the table's middle: six chairs in a full turn.
       await t.tool('modify.array');
       t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
-      await page.locator('.ask-box select').first().selectOption('polar');
-      const inputs = page.locator('.ask-box input');
-      await inputs.nth(0).fill('6');
-      await inputs.nth(4).fill('360');
+      await page.locator('.ask-box [data-field=kind]').selectOption('polar');
+      // In 3D the centre is typed: the copies, the angle and the centre are all the dialog shows (forum 90).
+      t.expect(await page.locator('.ask-box [data-field=dx]').count() === 0, 'round a centre asks for no step');
+      await page.locator('.ask-box [data-field=count]').fill('6');
+      await page.locator('.ask-box [data-field=angle]').fill('360');
       await page.locator('.ask-box button.primary').click();
       await t.until(async () => (await chairs()).length === 6, 'six chairs round the table');
       await t.ui({ selection: null, selected: [] });
@@ -10661,8 +10662,8 @@ export const scenes = [
       // Modify → Array → Along a path: five columns, then a click on the arc and Enter (the selection stays where it is).
       await t.tool('modify.array');
       t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
-      await page.locator('.ask-box select').first().selectOption('path');
-      await page.locator('.ask-box input').nth(0).fill('5');
+      await page.locator('.ask-box [data-field=kind]').selectOption('path');
+      await page.locator('.ask-box [data-field=count]').fill('5');
       await page.locator('.ask-box button.primary').click();
       await t.wait(600);
       const [px, py] = await t.planPoint(6 * Math.cos(Math.PI / 4), 6 * Math.sin(Math.PI / 4));
@@ -10701,11 +10702,10 @@ export const scenes = [
       // Modify → Array → In a grid: four columns, three rows, the steps given by clicking.
       await t.tool('modify.array');
       t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
-      await page.locator('.ask-box select').nth(0).selectOption('grid');
-      await page.locator('.ask-box select').nth(1).selectOption('click');
-      const inputs = page.locator('.ask-box input');
-      await inputs.nth(0).fill('4');
-      await inputs.nth(11).fill('3');
+      await page.locator('.ask-box [data-field=kind]').selectOption('grid');
+      await page.locator('.ask-box [data-field=by]').selectOption('click');
+      await page.locator('.ask-box [data-field=cols]').fill('4');
+      await page.locator('.ask-box [data-field=rows]').fill('3');
       await page.locator('.ask-box button.primary').click();
       await t.wait(600);
       // The first point, the next column 3 m east, the next row 2.5 m north: the ghost follows the pointer.
@@ -10747,9 +10747,8 @@ export const scenes = [
       // Draft → Modify → Array, in a row: four, 2 m apart.
       await t.tool('cad.array');
       t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
-      const inputs = page.locator('.ask-box input');
-      await inputs.nth(0).fill('4');
-      await inputs.nth(1).fill('2 m');
+      await page.locator('.ask-box [data-field=count]').fill('4');
+      await page.locator('.ask-box [data-field=dx]').fill('2 m');
       await page.locator('.ask-box button.primary').click();
       await t.until(async () => (await drafts()).length === 4, 'four rectangles in a row');
       // A copy shows its Array section: five copies instead of four.
@@ -10764,6 +10763,60 @@ export const scenes = [
       await t.ui({ selection: copy.id, selected: [copy.id] });
       await t.wait(800);
       await t.shot('array-draft', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // Round a centre (forum 90): a drafted rectangle arrayed round a centre clicked in the plan; the dialog shows only the
+    // method's fields, says which one is wrong and moves by its title.
+    id: 'array-polar',
+    touches: ['drafting'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      const plan = 'plan:' + storey;
+      // A round table (a drafted circle) and a chair's outline beside it: the chair goes round the table's centre.
+      await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'circle', c: [0, 0], r: 1.5 } });
+      const rect = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[1.8, -0.3], [2.4, -0.3], [2.4, 0.3], [1.8, 0.3]], closed: true } })).ids[0];
+      await t.ui({ view: 'plan', keyPlan: false, selection: rect, selected: [rect] });
+      await t.wait(1000);
+      await t.fit();
+      // Out a little, so the copies round the table are all in the picture.
+      { const [px, py] = await t.planPoint(0, 0); await page.mouse.move(px, py); for (let i = 0; i < 4; i++) { await page.mouse.wheel(0, 100); await t.wait(80); } await t.wait(600); }
+      await t.ui({ selection: rect, selected: [rect] });
+      await t.wait(600);
+      const drafts = async () => (await t.nodes()).filter((x) => x.type === 'IfcAnnotation' && x.props.predefinedType === 'DRAFT');
+      await t.tool('cad.array');
+      t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
+      await page.locator('.ask-box [data-field=kind]').selectOption('polar');
+      t.expect(await page.locator('.ask-box [data-field=dx]').count() === 0, 'round a centre asks for no step');
+      t.expect(await page.locator('.ask-box [data-field=centreBy]').inputValue() === 'click', 'the centre is clicked in a plan');
+      // A wrong answer is said by its field, the box kept open.
+      await page.locator('.ask-box [data-field=angle]').fill('0');
+      await page.locator('.ask-box button.primary').click();
+      await t.wait(300);
+      t.expect(await page.locator('[data-testid=ask-problem]').count() === 1, 'the angle is said to be wrong');
+      t.expect(await page.locator('.ask-box .ask-row.wrong [data-field=angle]').count() === 1, 'the angle field is marked');
+      // Dragged by its title, the box moves.
+      const head = await page.locator('.ask-box .ask-title').boundingBox();
+      await page.mouse.move(head.x + 20, head.y + 5);
+      await page.mouse.down();
+      await page.mouse.move(head.x - 80, head.y + 45, { steps: 5 });
+      await page.mouse.up();
+      const moved = await page.locator('.ask-box .ask-title').boundingBox();
+      t.expect(Math.abs(moved.x - (head.x - 100)) < 3 && Math.abs(moved.y - (head.y + 40)) < 3, 'the box moved by its title');
+      await page.locator('.ask-box [data-field=count]').fill('6');
+      await page.locator('.ask-box [data-field=angle]').fill('360');
+      await page.locator('.ask-box button.primary').click();
+      await t.wait(600);
+      // The centre: the copies drawn round the pointer, then a click.
+      const [cx, cy] = await t.planPoint(0, 0);
+      await page.mouse.move(cx + 40, cy + 30, { steps: 4 });
+      await page.mouse.move(cx, cy, { steps: 6 });
+      await t.wait(600);
+      await t.shot('array-polar', { of: '[data-testid=plan]', pad: 0 });
+      await page.mouse.click(cx, cy);
+      await t.until(async () => (await drafts()).length === 7, 'six chairs round the table');
     },
   },
   {

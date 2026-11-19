@@ -3,7 +3,9 @@
  * the window, its place remembered for the session per dialog (so it opens where it was left), a double click on the
  * title putting it back in the middle. One listener for the whole window: a dialog is any `.dialog` with a
  * `.dialog-head`, so the ones modules add are covered without a call of their own. The dialog moves by the CSS
- * `translate` property, its layout (centred by its backdrop) left as it is, and its focus untouched.
+ * `translate` property, its layout (centred by its backdrop) left as it is, and its focus untouched. The box that asks for
+ * values beside the pointer (`.ask-box`, shell/AskBox.tsx: the Array's) moves by its title the same way (forum 90), never
+ * remembered: it opens at the pointer each time.
  */
 
 export interface Box { left: number; top: number; right: number; bottom: number }
@@ -51,7 +53,7 @@ const windowSize = () => ({ w: window.innerWidth, h: window.innerHeight });
 
 /** A dialog just opened: where it was left, if it was. */
 function restore(dialog: HTMLElement) {
-  if (dialog.dataset.dragKey) return;
+  if (dialog.dataset.dragKey || dialog.classList.contains('ask-box')) return;
   const key = keyOf(dialog);
   dialog.dataset.dragKey = key;
   const was = remembered.get(key);
@@ -65,8 +67,8 @@ export function installDialogDrag(): () => void {
   const headOf = (e: Event) => {
     const t = e.target as Element | null;
     if (!t || !t.closest) return null;
-    const head = t.closest<HTMLElement>('.dialog-head');
-    const dialog = head?.closest<HTMLElement>('.dialog');
+    const head = t.closest<HTMLElement>('.dialog-head, .ask-title');
+    const dialog = head?.closest<HTMLElement>('.dialog, .ask-box');
     if (!head || !dialog || t.closest(OWN)) return null;
     return { head, dialog };
   };
@@ -85,7 +87,7 @@ export function installDialogDrag(): () => void {
   };
   const end = (e: PointerEvent) => {
     if (!drag || e.pointerId !== drag.id) return;
-    remembered.set(drag.dialog.dataset.dragKey ?? keyOf(drag.dialog), offsetOf(drag.dialog));
+    if (!drag.dialog.classList.contains('ask-box')) remembered.set(drag.dialog.dataset.dragKey ?? keyOf(drag.dialog), offsetOf(drag.dialog));
     try { drag.head.releasePointerCapture(e.pointerId); } catch { /* already released */ }
     drag = null;
   };
