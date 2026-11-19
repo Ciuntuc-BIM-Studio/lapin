@@ -37,6 +37,22 @@ Enrique (arhitect, ArchiCAD) a desenat cum trebuie să arate o scară de beton �
 - **Balustradele una câte una** (decizia 593): rămân piese ale scării, selectate ca `stairId#railing:left|right` (ca axele unui caroiaj). Setările fiecărei părți stau pe scară în `railings.left|right` (`kind` balustrade/handrail, `height`, `style`, `profile`; lipsă: ale tipului), schimbate de `architecture.updateStairRailing` (și `on`: pune sau scoate partea); `element.delete` pe id-ul balustradei o scoate din `railingSides` (`StairDeletion`). Planul desenează fiecare balustradă ca marcaj propriu (`StairMarks`), un clic în plan sau în 3D o selectează (`subSelectionPick`, `subSelectionPanels` în contractul modulelor UI), panoul ei e `StairRailingPanel`. În IFC: un IfcRailing al scării (BALUSTRADE, sau HANDRAIL pe perete), cu setul `Lapin_StairRailing` (Side, Kind, Height), GlobalId-ul derivat din scară și cheia piesei, deci stabil la reconstruire.
 - Teste: `StairDogLegTests` (intradosurile, suprapunerea, volumul, linia mâinii curente punct cu punct, bara fără goluri la 5 mm, montantul de jos, fundația, selecția, ștergerea, IFC și GlobalId-urile); `StairTests` actualizat pentru montanții noi de la capete.
 
+## Scara din schiță (cerută de utilizatori, 19.11.2026; decizia 694)
+
+Ca „stair by sketch” din Revit: scara se desenează, nu se alege dintr-o formă. Architecture → Circulation → **Stair by sketch** (comanda `STAIRSKETCH`, `STS`) deschide o planșetă de schiță (un plan propriu al etajului, `studio.editStairSketch`), unde se desenează cu uneltele din Desen linii de trei roluri:
+
+- **Boundary** (verde): cele două laturi ale scării, fiecare una sau mai multe linii și arce cap la cap; o linie fără rol contează ca latură.
+- **Riser**: fiecare contratreaptă, de la o latură la cealaltă (o linie, un arc sau o polilinie; trasă până la 5 cm de latură o atinge). Fără contratrepte desenate, cele ale regulilor se împart egal de-a lungul liniei de la mijlocul laturilor.
+- **Path**: spune doar încotro urcă scara, de la capătul mai apropiat de începutul ei; „Climbs the other way” o întoarce.
+
+n contratrepte desenate = n contratrepte de H / n; fiecare treaptă e forma dintre două contratrepte și cele două laturi, la cota ei (n − 1 trepte, ultima contratreaptă urcă pe placa de sus). O treaptă mai adâncă de max(0,5 m, 1,5 × treapta maximă a regulilor) e podest. Laturile curbe dau trepte balansate. Panoul planșetei arată, pe măsură ce se desenează, contratreptele desenate față de cele cerute de înălțime, h, b, lățimea și podestele, sau ce e greșit (`studio.stairSketchCheck`).
+
+**Termină schița** (`studio.finishStairSketch`, un pas de anulare) face scara (`architecture.addSketchStair`) sau o redesenează (`architecture.updateStairSketch`, id-ul și GlobalId-ul păstrate); o schiță care nu dă o scară e refuzată, cu motivul, și planșeta rămâne deschisă. Scara ține schița în sistemul ei (`sketch`: laturile, contratreptele, linia de urcare, ca bucăți `[ax, ay, bx, by, rise]`, piciorul la origine, urcând pe +X), deci mutarea și rotirea o poartă; e intenție de proiectare și merge în IFC cu celelalte atribute (`IfcStair` NOTDEFINED). Clic dreapta → Edit sketch, sau în inspector „Edit sketch” și „Use the type's shape” (scoate schița).
+
+În motor (`Stairs/StairSketch.cs`) scara din schiță e un `Resolved` ca oricare: treptele ca trepte balansate (conturul și cota fiecăreia), podestele ca podeste, plus `SketchRun` (contratreptele de la stânga la dreapta, laturile, linia de mers prin mijlocul contratreptelor). Corpul (prisme în trepte), simbolul din plan tăiat la planul de secționare, numerele treptelor, balustradele (pe fiecare latură, paralele cu panta peste trepte, orizontale peste podeste), golul din placa de sus, cantitățile și IFC-ul sunt cele ale tuturor scărilor. Teste: `StairSketchTests` (9), `stairSketchBoard.test.ts`.
+
+Rămase: grips pe laturi și contratrepte direct în plan (acum: Edit sketch), rampele din schiță, placa continuă (intradosul) sub treptele din schiță (acum în trepte, ca la treptele balansate), contratreptele generate perpendicular pe linia de urcare desenată (acum: între punctele egale ale laturilor).
+
 ## Principii
 
 1. **Se pleacă de la ce știe utilizatorul:** de unde pleacă scara, până unde urcă și cât loc are. Motorul propune contratreapta, treapta și numărul de trepte după normă; utilizatorul corectează doar ce vrea.

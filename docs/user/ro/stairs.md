@@ -68,6 +68,28 @@ Un plan taie scara acolo unde o traversează planul lui de secționare (1,20 m p
 
 La **În plan**, **Deasupra planului de secționare** alege **Cu linie întreruptă**, **Nedesenat** (scara se oprește la linia de întrerupere, cu săgeata pe ea, iar numerele de deasupra tăieturii lipsesc) sau **Scara întreagă, fără tăietură**; **Linia de întrerupere** e **În zigzag** sau **Două linii paralele**. Planul de pe ecran, planșele și PDF-ul lor sunt desenate de același motor, deci arată aceeași scară.
 
+## Scara din schiță
+
+Când nicio formă gata făcută nu se potrivește, desenează scara ca în Revit. **Arhitectură → Circulații → Scară din schiță** (sau scrie `STS`) deschide o planșă proprie: un plan al nivelului, cu formularul lateral al scării alături. Desenează cu uneltele din Desen linii de trei roluri, alese cu butoanele din capul formularului:
+
+- **Limită** (desenată verde): cele două laturi ale scării, o linie sau arce cap la cap pe fiecare parte. O linie fără rol se socotește limită.
+- **Contratreaptă**: câte o linie pentru fiecare contratreaptă, de la o latură la cealaltă. Dacă nu desenezi nici una, regulile tipului hotărăsc câte sunt, iar ele se distribuie uniform pe linia de la mijlocul distanței dintre laturi.
+- **Traseu**: arată doar în ce sens urcă scara, de la începutul traseului. **Urcă în sens invers** îl întoarce.
+
+![Planșa scării: două linii de limită verzi, formularul lateral cu valorile pe care le dau](shots/stair-sketch-board.webp)
+
+Pe măsură ce desenezi, formularul lateral arată ce fac liniile: contratrepte (cele desenate și câte cere înălțimea), contratreapta și treapta, lățimea și podestele, sau ce nu e în regulă. Un spațiu mare între două contratrepte devine **podest**; laturile curbe (arce) dau trepte balansate care se răsucesc în jurul curbei. Dacă unele valori ies din regulile tipului de scară, **Verificările** scării spun care.
+
+**Termină schița** face scara într-un singur pas de anulare sau spune de ce nu se poate (planșa rămâne deschisă); **Renunță** renunță la schiță. Scara este apoi ca oricare alta: simbolul ei în plan e tăiat la planul de secționare, primește balustrade, golul din placa de deasupra, cantitățile și IFC-ul ei.
+
+![Scara în plan](shots/stair-sketch-plan.webp)
+
+![Scara în 3D](shots/stair-sketch-3d.webp)
+
+Ca s-o schimbi, selectează scara și alege **Editează schița** (clic dreapta, sau în proprietăți): se deschide din nou planșa cu liniile scării. La o scară cu forma tipului ei, **Desenează din schiță** începe o schiță pe ea, iar **Folosește forma tipului** scoate schița de pe scară. O scară desenată din schiță arată în proprietăți contratreptele, înălțimea contratreptei, treapta și lungimea în plan, în loc de valorile fixe ale tipului.
+
+![O scară desenată din schiță, în proprietăți](shots/stair-sketch-properties.webp)
+
 ## Trepte de intrare (o terasă)
 
 Treptele până la ușa de la intrare au o diferență de nivel proprie: urcă de la teren, aflat cu câteva trepte sub parter, până la ±0.00. Lapin are pentru ele un tip de scară gata făcut, **Trepte de intrare**: lat de 2 m, trei contratrepte de 150 mm, din beton plin turnat pe teren, fără balustradă.

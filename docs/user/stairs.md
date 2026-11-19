@@ -70,6 +70,28 @@ A plan cuts a stair where its cut plane crosses it (1.20 m above the storey, unl
 
 Under **In plan**, **Over the cut plane** chooses **Dashed**, **Not drawn** (the stair stops at the break line, the arrow on it, and the numbers above the cut are left out) or **Whole stair, no cut**; **Break line** is a **Zigzag** or **Two parallel lines**. The plan on screen, the sheets and their PDF are drawn by the same engine, so they show the same stair.
 
+## Stair by sketch
+
+When no ready-made shape fits, draw the stair as Revit does. **Architecture → Circulation → Stair by sketch** (or type `STS`) opens a board of its own: a plan of the storey, with the stair's side form beside it. Draw with Draft's tools lines of three roles, picked with the buttons at the top of the side form:
+
+- **Boundary** (drawn green): the stair's two sides, a line or arcs end to end on each side. A line with no role counts as a boundary.
+- **Riser**: one line for each riser, from one side to the other. If you draw none, the type's rules decide how many there are, and they are spread evenly along the line midway between the sides.
+- **Path**: only says which way the stair climbs, from the path's start. **Climbs the other way** turns it round.
+
+![The stair's board: two green boundary lines, the side form with the numbers they make](shots/stair-sketch-board.webp)
+
+As you draw, the side form shows what the lines make: the risers (those drawn, and how many the height asks), the riser and the tread, the width and the landings, or what is wrong. A wide gap between two risers becomes a **landing**; curved sides (arcs) give winders that fan round the curve. If some numbers fall outside the stair type's rules, the stair's **Checks** say which.
+
+**Finish sketch** makes the stair in one undo step, or says why it cannot (the board stays open); **Cancel** drops the sketch. The stair is then like any other: its plan symbol is cut at the cut plane, it gets its railings, the opening in the floor above, its quantities and its IFC.
+
+![The stair in plan](shots/stair-sketch-plan.webp)
+
+![The stair in 3D](shots/stair-sketch-3d.webp)
+
+To change it, select the stair and choose **Edit sketch** (right-click, or in the properties), which opens the board again with the stair's lines. For a stair of its type's shape, **Draw by sketch** starts a sketch there; **Use the type's shape** takes the sketch off the stair again. A stair drawn by sketch shows its risers, riser, tread and run in the properties instead of the type's fixed numbers.
+
+![A stair drawn by sketch in the properties](shots/stair-sketch-properties.webp)
+
 ## Entrance steps (a porch)
 
 The steps up to a front door have a rise of their own: from the ground, a few steps below the ground floor, up to ±0.00. Lapin has a ready-made stair type for them, **Entrance steps**: 2 m wide, three risers of 150 mm, solid concrete cast on the ground, with no railing.

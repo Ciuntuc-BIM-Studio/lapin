@@ -3935,6 +3935,53 @@ export const scenes = [
     },
   },
   {
+    // A stair by sketch, as Revit's (users asked, 19.11.2026): Stair by sketch opens a board of its own over the storey; two
+    // boundary lines (the stair's sides) drawn with Draft's tools, no risers (the rules' are spread along it), Finish sketch
+    // makes the stair, seen in plan and in 3D; Edit sketch (right-click) opens the sketch again.
+    id: 'stair-by-sketch',
+    touches: ['architecture', 'studio', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      // A fresh project already has its First floor above, which the stair climbs to.
+      await t.ui({ keyPlan: false });
+      await t.wait(600);
+      await t.tool('architecture.stairBySketch');
+      await t.page.locator('[data-testid=stair-sketch-panel]').waitFor({ timeout: 10_000 });
+      const view = (await t.nodes()).find((n) => n.props?.stairSketchOf != null);
+      t.expect(view, 'the stair\'s sketch has a plan of its own');
+      const bar = t.page.locator('[data-sketch-bar=stair-sketch]');
+      t.expect(await bar.count() === 1, 'the sketch bar over the board');
+      // The two sides, drawn as Draft draws them with the role Boundary on (the side form's default).
+      const role = await t.page.evaluate(async () => (await import('/src/viewport/cad/session.ts')).useCad.getState().role);
+      t.expect(role === 'boundary', `new lines take the Boundary role (${role})`);
+      for (const [a, b] of [[[0, 0], [5, 0]], [[0, 1.1], [5, 1.1]]]) await t.cmd('drafting.draw', { viewId: view.id, role: 'boundary', shape: { type: 'line', a, b } });
+      await t.fit();
+      await t.wait(1200);
+      const panel = t.page.locator('[data-testid=stair-sketch-panel]');
+      await t.until(async () => (await panel.locator('[data-testid=stair-sketch-numbers]').count()) === 1, 'the side form shows the numbers of the stair the lines make');
+      await t.page.mouse.move(10, 300);
+      await t.shot('stair-sketch-board');
+      await bar.locator('[data-action=finish-stair-sketch]').click();
+      await t.until(async () => (await t.page.locator('[data-sketch-bar=stair-sketch]').count()) === 0, 'Finish sketch leaves the board', 10_000);
+      const stair = (await t.nodes()).find((n) => n.type === 'IfcStair');
+      t.expect(stair, 'the sketch made a stair');
+      t.expect(!(await t.nodes()).some((n) => n.id === view.id), 'the sketch\'s plan is gone');
+      await t.fit();
+      await t.wait(1000);
+      await t.shot('stair-sketch-plan', { of: '[data-testid=plan]', pad: 0 });
+      // Its properties: drawn by sketch, with Edit sketch beside it.
+      await select(t, stair.id);
+      await t.wait(800);
+      t.expect(await t.page.locator('aside.props [data-action=stair-edit-sketch]').count() === 1, 'the stair\'s properties offer Edit sketch');
+      await t.shot('stair-sketch-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.1, pitch: -0.3, distance: 10, target: { x: 2.5, y: 0.5, z: 1.5 } }, false));
+      await t.wait(1500);
+      await t.shot('stair-sketch-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     // A U stair with winders at both corners and a straight tread between them (a tester's report #109).
     id: 'stair-winder-u',
     async run(t) {
