@@ -546,14 +546,59 @@ public static class Joinery
         return o;
     }
 
-    /// <summary>A panel's rectangle: its cells and the mullions or transoms between them.</summary>
+    /// <summary>
+    /// A panel's rectangle: its cells and the mullions or transoms between them. A panel sliding past its neighbour on the
+    /// other track (forum topic 180) reaches over the mullion between them, so its meeting stile overlaps the neighbour's.
+    /// </summary>
     public static CellRect PanelRect(JoinerySpec s, JoineryPanel p)
     {
         var (cols, rows) = Grid(s);
         var c1 = Math.Min(cols.Count - 1, p.Col + p.ColSpan - 1);
         var r1 = Math.Min(rows.Count - 1, p.Row + p.RowSpan - 1);
         var z0 = rows[p.Row].A + (RailUnder(s, p) ? s.Frame.Width : 0);
-        return new CellRect(cols[p.Col].A, cols[c1].B, z0, rows[r1].B);
+        var r = new CellRect(cols[p.Col].A, cols[c1].B, z0, rows[r1].B);
+        if (SlidesPast(s, Normalised(s), p) is { } b)
+            r = b > c1 - 1 ? r with { X1 = cols[b + 1].A } : r with { X0 = cols[b].B };
+        return r;
+    }
+
+    /// <summary>Whether a type's panels run on staggered tracks: a door with a lift-and-slide or tilt-and-slide leaf, a window with a sliding sash.</summary>
+    public static bool HasTracks(JoinerySpec s, List<JoineryPanel> panels) =>
+        s.Frameless == null && ((s.IsDoor && panels.Any(p => LiftSlides(p.Operation))) || (!s.IsDoor && panels.Any(p => p.Operation is "sliding-left" or "sliding-right")));
+
+    /// <summary>
+    /// The track a panel runs on in a type with tracks (<see cref="HasTracks"/>): −1 the inner (room) one, +1 the outer, 0 none (in
+    /// the frame's middle). A lift-and-slide leaf runs inside; the fixed panes of the bottom row stand outside; a sliding window's
+    /// sashes alternate, every second one outside when the row has more than one.
+    /// </summary>
+    public static int TrackOf(JoinerySpec s, List<JoineryPanel> panels, JoineryPanel p)
+    {
+        if (!HasTracks(s, panels)) return 0;
+        if (s.IsDoor && LiftSlides(p.Operation)) return -1;
+        if (p.Operation == "fixed") return p.Row == 0 ? 1 : 0;
+        if (!s.IsDoor && p.Operation is "sliding-left" or "sliding-right")
+            return panels.Count(q => q.Row == p.Row && q.Operation is "sliding-left" or "sliding-right") > 1 && p.Col % 2 == 1 ? 1 : -1;
+        return 0;
+    }
+
+    /// <summary>
+    /// The column boundary a sliding panel runs past (forum topic 180, decision 725): a lift-and-slide leaf, or a sliding window's
+    /// sash, towards its side, where a mullion parts it from a neighbour on the other track. That mullion stands only off the
+    /// panel's track, so nothing is in its way, and the panel reaches over it (<see cref="PanelRect"/>). Null for any other panel.
+    /// </summary>
+    public static int? SlidesPast(JoinerySpec s, List<JoineryPanel> panels, JoineryPanel p)
+    {
+        if (!(LiftSlides(p.Operation) && s.IsDoor) && !(!s.IsDoor && p.Operation is "sliding-left" or "sliding-right")) return null;
+        var track = TrackOf(s, panels, p);
+        if (track == 0) return null;
+        var right = p.Operation.EndsWith("-right", StringComparison.Ordinal);
+        var b = right ? p.Col + p.ColSpan - 1 : p.Col - 1;
+        var widths = MullionWidths(s);
+        if (b < 0 || b >= widths.Length || widths[b] <= 1e-9) return null;
+        // The neighbour across it, in the panel's rows, on the other track.
+        var col = right ? b + 1 : b;
+        var next = panels.FirstOrDefault(q => q.Col <= col && q.Col + q.ColSpan - 1 >= col && q.Row <= p.Row + p.RowSpan - 1 && q.Row + q.RowSpan - 1 >= p.Row);
+        return next != null && TrackOf(s, panels, next) is var t && t != 0 && t != track ? b : null;
     }
 
     /// <summary>
@@ -792,12 +837,21 @@ public static class Joinery
     public static string? HandleSide(string op) =>
         op.EndsWith("-left") ? "right" : op.EndsWith("-right") ? "left" : op == "bottom-hung" ? "top" : op == "top-hung" ? "bottom" : null;
 
-    static IEnumerable<JoineryBox> Bars(JoinerySpec s, List<JoineryPanel> panels, double y0, double y1)
+    static IEnumerable<JoineryBox> Bars(JoinerySpec s, List<JoineryPanel> panels, double y0, double y1, double track = 0)
     {
         var (cols, rows) = Grid(s);
         bool SpansCol(int boundary, int row) => panels.Any(p => p.Col <= boundary && p.Col + p.ColSpan - 1 > boundary && p.Row <= row && p.Row + p.RowSpan - 1 >= row);
         bool SpansRow(int boundary, int col) => panels.Any(p => p.Row <= boundary && p.Row + p.RowSpan - 1 > boundary && p.Col <= col && p.Col + p.ColSpan - 1 >= col);
         JoineryBox Box(double x0, double x1, double z0, double z1) => new("frame", new Vec3(x0, y0, z0), new Vec3(x1, y1, z1));
+        // A mullion a panel slides past (forum topic 180, decision 725): it stands off that panel's track (the inner one's, the outer one's).
+        var past = panels.Select(p => (p, b: SlidesPast(s, panels, p))).Where(x => x.b != null).ToList();
+        (double A, double B) Across(int boundary, int row)
+        {
+            var (a, b) = (y0, y1);
+            foreach (var (p, _) in past.Where(x => x.b == boundary && x.p.Row <= row && x.p.Row + x.p.RowSpan - 1 >= row))
+                if (TrackOf(s, panels, p) < 0) a = Math.Max(a, y0 + track); else b = Math.Min(b, y1 - track);
+            return (a, b);
+        }
         var arched = JoineryShapes.ArchedPanes(s);
         for (var i = 0; i < cols.Count - 1; i++)
             for (var r = 0; r < rows.Count; r++)
@@ -806,9 +860,14 @@ public static class Joinery
                 else if (arched && r == rows.Count - 1)
                 {
                     var (x0, x1) = (cols[i].B, cols[i + 1].A);
-                    yield return JoineryShapes.Prism("frame", [new(x0, rows[r].A), new(x1, rows[r].A), new(x1, JoineryShapes.Top(s, x1, s.Frame.Width)), new(x0, JoineryShapes.Top(s, x0, s.Frame.Width))], y0, y1);
+                    var (ya, yb) = Across(i, r);
+                    if (yb - ya > 1e-6) yield return JoineryShapes.Prism("frame", [new(x0, rows[r].A), new(x1, rows[r].A), new(x1, JoineryShapes.Top(s, x1, s.Frame.Width)), new(x0, JoineryShapes.Top(s, x0, s.Frame.Width))], ya, yb);
                 }
-                else yield return Box(cols[i].B, cols[i + 1].A, rows[r].A, rows[r].B);
+                else
+                {
+                    var (ya, yb) = Across(i, r);
+                    if (yb - ya > 1e-6) yield return new("frame", new Vec3(cols[i].B, ya, rows[r].A), new Vec3(cols[i + 1].A, yb, rows[r].B));
+                }
         for (var j = 0; j < rows.Count - 1; j++)
             for (var c = 0; c < cols.Count; c++)
                 if (!SpansRow(j, c)) yield return Box(cols[c].A, cols[c].B, rows[j].B, rows[j + 1].A);
@@ -965,7 +1024,9 @@ public static class Joinery
         // What a library profile is the real shape of is not added over it (the system's beads stay: they are pieces of their own).
         bool frameStop = s.FrameSection == null, sashLip = s.SashSection == null;
         var panels = Normalised(s);
-        boxes.AddRange(Bars(s, panels, y0, y1));
+        var sh = s.Sash;
+        var track = Math.Min(sh.Depth, f.Depth / 2);
+        boxes.AddRange(Bars(s, panels, y0, y1, track));
         // A window's sash in a door's bottom row (forum topic 34): a bottom rail under it, on the threshold.
         foreach (var p in panels.Where(p => RailUnder(s, p)))
         {
@@ -973,13 +1034,10 @@ public static class Joinery
             boxes.AddRange(WithSection(new("frame", new(pr0.X0, y0, inner.Z0), new(pr0.X1, y1, pr0.Z0)), s.FrameSection, false, 1));
         }
 
-        var sh = s.Sash;
         var pr = s.Profile;
         var pairs = Meetings(s);
         // A lift-and-slide or tilt-and-slide leaf, or a sliding window's sash, runs on staggered inner/outer tracks.
-        var tracks = (s.IsDoor && panels.Any(p => LiftSlides(p.Operation)))
-            || (!s.IsDoor && panels.Any(p => p.Operation is "sliding-left" or "sliding-right"));
-        var track = Math.Min(sh.Depth, f.Depth / 2);
+        var tracks = HasTracks(s, panels);
         foreach (var p in panels)
         {
             var r = PanelRect(s, p);
@@ -1055,8 +1113,7 @@ public static class Joinery
                 double yc = f.Offset;
                 if (slides)
                 {
-                    var rowSlides = panels.Count(q => q.Row == p.Row && q.Operation is "sliding-left" or "sliding-right");
-                    var outerTrack = rowSlides > 1 && p.Col % 2 == 1;
+                    var outerTrack = TrackOf(s, panels, p) > 0;
                     (sy0, sy1) = outerTrack ? (y1 - track, y1) : (y0, y0 + track);
                     yc = (sy0 + sy1) / 2;
                 }
