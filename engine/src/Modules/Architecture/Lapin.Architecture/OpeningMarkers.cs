@@ -102,7 +102,7 @@ public static class OpeningMarkers
         }
         // Its outer text, or the type's symbol there (issue #72), its texts reading the door or window as the template does.
         if (type.Symbol is not { } symbolId || !Symbol(c, mark, data, symbolId, fill, values, b, outward, along, alongLine, parts, color))
-            Write("o", b, outward, TagText.Lines(type.Template, c.Model, fill, values, c.Book.Units));
+            Write("o", b, outward, TagText.Lines(type.Written, c.Model, fill, values, c.Book.Units));
         Write("i", a, outward * -1, TagText.Lines(type.Inner, c.Model, fill, values, c.Book.Units));
         mark.Data = new JsonObject { ["of"] = fill.Id, ["marker"] = true, ["parts"] = data };
         mark.Snaps.Add(a);

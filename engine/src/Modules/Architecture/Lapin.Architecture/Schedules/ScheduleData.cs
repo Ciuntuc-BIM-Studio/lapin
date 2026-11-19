@@ -84,7 +84,8 @@ public static class Schedules
             {
                 var spec = JoinerySpec.From(type.Attrs["spec"]);
                 var all = m.RelatedOf(type.Id, IfcClass.RelDefinesByType).Where(e => e.Class is IfcClass.Door or IfcClass.Window).ToList();
-                var mark = spec?.Mark ?? type.Str("mark") ?? "";
+                // The type's mark; a type whose mark was cleared, its category's rule's (decision 737).
+                var mark = spec?.Mark is { Length: > 0 } sm ? sm : MarkRules.TypeMark(m, type) ?? spec?.Mark ?? "";
                 var mirrored = all.Where(Architecture.Joinery.IsMirrored).ToList();
                 var own = all.Except(mirrored).ToList();
                 ScheduleEntry Entry(string key, JoinerySpec? s, string mk, string name, List<Entity> placed)

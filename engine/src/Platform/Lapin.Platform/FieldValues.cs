@@ -181,7 +181,7 @@ public static partial class FieldCatalog
             {
                 if (!typeFields.TryGetValue(type.Id, out var tf))
                 {
-                    tf = [("type.name", "name", type.Name, 't'), ("type.mark", "mark", type.Str("mark") ?? "", 't')];
+                    tf = [("type.name", "name", type.Name, 't'), ("type.mark", "mark", MarkRules.TypeMark(q.Model, type) ?? "", 't')];
                     var td = q.Describe(type.Class);
                     foreach (var (key, v) in type.Attrs)
                     {

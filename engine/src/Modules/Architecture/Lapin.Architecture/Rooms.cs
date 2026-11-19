@@ -506,7 +506,7 @@ public static class Rooms
             drawn.Snaps.Add(at);
             return drawn;
         }
-        var lines = TagText.Lines(type.Template, c.Model, room, values, c.Book.Units);
+        var lines = TagText.Lines(type.Written, c.Model, room, values, c.Book.Units);
         var h = style.Height * c.Mm;
         var step = h * 1.5;
         var color = o.Lost ? "#c0392b" : style.Color ?? "#000000";

@@ -107,17 +107,24 @@ public sealed record AxisStyle(string Id, string Name, string TextStyle, string 
 /// its lines as drawn, its texts' {fields} read from the tagged element as the template's are, at the tag's point. A door's or
 /// window's marker (issue #72) draws the symbol at its line's exterior end instead of its outer text, its texts reading the
 /// door or window ({mark}, {width}, {height}, {sill} as the marker writes them, any field, formulas); without one it is as before.
+/// A tag's text is built as a mark is (decision 737): a <see cref="Prefix"/> and a <see cref="Suffix"/> round its template (<see cref="Written"/>).
 /// </summary>
 public sealed record TagType(string Id, string Name, string Template, IReadOnlyList<string> Classes,
     string Shape = "box", string Inner = "", string Unit = "cm", double Reach = 6, string TextStyle = Standards.Standard, string TextOrientation = "across",
     string? Header = null, string? Footer = null, string? Order = null, bool? ZeroLayers = null, string? Leaders = null, string? Bullet = null, double? Width = null,
-    string? LeaderShape = null, string? Underline = null, double? Extension = null, string? Symbol = null)
+    string? LeaderShape = null, string? Underline = null, double? Extension = null, string? Symbol = null, string? Prefix = null, string? Suffix = null)
 {
     public bool Equals(TagType? o) => o is not null && Id == o.Id && Name == o.Name && Template == o.Template && Classes.SequenceEqual(o.Classes)
         && Shape == o.Shape && Inner == o.Inner && Unit == o.Unit && Reach == o.Reach && TextStyle == o.TextStyle && TextOrientation == o.TextOrientation
         && Header == o.Header && Footer == o.Footer && Order == o.Order && ZeroLayers == o.ZeroLayers && Leaders == o.Leaders && Bullet == o.Bullet && Width == o.Width
-        && LeaderShape == o.LeaderShape && Underline == o.Underline && Extension == o.Extension && Symbol == o.Symbol;
+        && LeaderShape == o.LeaderShape && Underline == o.Underline && Extension == o.Extension && Symbol == o.Symbol && Prefix == o.Prefix && Suffix == o.Suffix;
     public override int GetHashCode() => HashCode.Combine(Id, Name, Template, Shape, Inner, Header, Footer, Order);
+
+    /// <summary>
+    /// What the tag writes (decision 737, tags built as marks are): its <see cref="Prefix"/>, its template, its <see cref="Suffix"/>;
+    /// the prefix opens the first line, the suffix closes the last. A build-up tag's template is its line per layer: as it is.
+    /// </summary>
+    [JsonIgnore] public string Written => Shape == "buildup" ? Template : (Prefix ?? "") + Template + (Suffix ?? "");
 
     /// <summary>A build-up tag's layers the other way: interior to exterior, bottom to top.</summary>
     [JsonIgnore] public bool Reversed => Order == "in-out";
@@ -349,7 +356,7 @@ public static class Standards
             Lapin.Model.Json.Number(v["width"]) is { } w && double.IsFinite(w) && w > 0 ? Math.Clamp(w, 10, 1000) : null,
             Choice("leaderShape", LeaderShapes), Choice("underline", Underlines),
             Lapin.Model.Json.Number(v["extension"]) is { } ext && double.IsFinite(ext) && ext >= 0 ? Math.Min(ext, 100) : null,
-            Text("symbol"));
+            Text("symbol"), Text("prefix"), Text("suffix"));
     }
 
     /// <summary>A tag rule as a file or a command gives it: a class, a condition and a tag type, each not empty; null when it is not one.</summary>
