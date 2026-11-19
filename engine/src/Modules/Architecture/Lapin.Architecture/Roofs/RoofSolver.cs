@@ -149,7 +149,11 @@ public static class RoofSolver
         var brk = OffsetEdges(pts, inset);
         // The break outline must still be the same polygon, smaller: no edge turned round, no corner lost.
         var fits = Polygon2.SignedArea(brk) > 1 && Enumerable.Range(0, pts.Count).All(i =>
-            Vec2.Dot(brk[(i + 1) % pts.Count] - brk[i], pts[(i + 1) % pts.Count] - pts[i]) > 0.01);
+        {
+            var a = brk[(i + 1) % pts.Count] - brk[i];
+            var b = pts[(i + 1) % pts.Count] - pts[i];
+            return a.Length > 1e-6 && Vec2.Dot(a, b) > 1e-4 * a.Length * b.Length;
+        });
         if (!fits || hb <= 0 || lower.Height <= hb + 1e-6) throw new ArgumentException("The mansard does not fit: its break is too high for this outline.");
         var upper = Solve(brk, rs.Select(r => r with { Pitch = r.Kind == EdgeKind.Eave ? mansard.UpperPitch : r.Pitch, Overhang = 0 }).ToList());
         Vec3 Up(Vec3 p) => p with { Z = p.Z + hb };

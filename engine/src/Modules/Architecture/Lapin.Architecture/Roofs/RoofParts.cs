@@ -363,7 +363,7 @@ public static class RoofParts
             if (Polygon2.Contains(inside, mid + outward * reach)) outward = -outward;
             var shift = new Vec3(outward.X, outward.Y, 0) * spec.Offset + new Vec3(0, 0, r.StructureDepth - spec.Drop);
             return new Gutter(l.A + shift, l.B + shift, outward, edge);
-        }).Where(g => g.Length > 0.3 && Drainage.HasGutter(r.Roof, g.Edge)).ToList();
+        }).Where(g => g.Length > (r.EdgeOf != null ? 0.02 : 0.3) && Drainage.HasGutter(r.Roof, r.LogicalEdge(g.Edge))).ToList();
     }
 
     /// <summary>Snow guard rows: along every eave plane, 0.6 m up the slope from the eave (a second row on long slopes), on the covering.</summary>
