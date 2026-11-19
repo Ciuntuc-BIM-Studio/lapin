@@ -1048,6 +1048,9 @@ export const LO: Record<string, string> = {
   'Gross floor area': 'ເນື້ອທີ່ພື້ນລວມ', 'Net perimeter': 'ເສັ້ນຮອບວຽນສຸດທິ', 'Finished ceiling height': 'ຄວາມສູງເພດານສຳເລັດ',
   'Volume': 'ບໍລິມາດ', 'Area': 'ເນື້ອທີ່', 'Net volume': 'ບໍລິມາດສຸດທິ', 'Gross volume': 'ບໍລິມາດລວມ', 'Net area': 'ເນື້ອທີ່ສຸດທິ', 'Gross area': 'ເນື້ອທີ່ລວມ', 'Perimeter': 'ລວງຮອບ',
   'Surface area': 'ເນື້ອທີ່ຜິວ', 'Plan area': 'ເນື້ອທີ່ຮູບແຜນຜັງ', 'Lowest point': 'ຈຸດຕ່ຳສຸດ', 'Highest point': 'ຈຸດສູງສຸດ', 'Fill': 'ສີຖົມ',
+  // A terrain's earthworks in its quantities, and a merge whose boundaries make no one outline (filming the terrain tutorial, 19.11.2026)
+  "earthwork|Cut": "ການຂຸດ", "earthwork|Fill": "ການຖົມ", "Net cut − fill": "ການຂຸດສຸດທິ − ການຖົມ",
+  "The terrains' boundaries do not make one outline (they lie apart or leave a gap between them): the merged terrain covers all its points. Draw its boundary again (Terrain boundary) to clip it.": "ຂອບເຂດຂອງດິນບໍ່ເປັນເສັ້ນຂອບດຽວ (ພວກມັນຢູ່ຫ່າງກັນ ຫຼື ມີຊ່ອງວ່າງລະຫວ່າງກັນ): ດິນທີ່ລວມກັນປົກຄຸມທຸກຈຸດຂອງມັນ. ແຕ້ມຂອບເຂດຂອງມັນຄືນໃໝ່ (ຂອບເຂດດິນ) ເພື່ອຕັດມັນ.",
   // Panes, zoom, the key plan
   'Profile on the path': 'ຮູບຕັດຕາມເສັ້ນທາງ', 'Gap from the path': 'ໄລຍະຫ່າງຈາກເສັ້ນທາງ', 'centre': 'ກາງ', 'right': 'ຂວາ', 'left': 'ຊ້າຍ',
 'Attach to roof': 'ຕິດໃສ່ຫຼັງຄາ', 'Detach from roof': 'ປົດອອກຈາກຫຼັງຄາ', 'Top under a roof': 'ຂອບເທິງໃຕ້ຫຼັງຄາ', 'Start cut angle': 'ມຸມຕັດຕົ້ນ', 'End cut angle': 'ມຸມຕັດປາຍ', 'attach': 'ຕິດໃສ່', 'none': 'ບໍ່ມີ',

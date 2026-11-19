@@ -1053,6 +1053,9 @@ export const DA: Record<string, string> = {
   'Gross floor area': 'Brutto gulvareal', 'Net perimeter': 'Netto omkreds', 'Finished ceiling height': 'Færdig lofthøjde',
   'Volume': 'Volumen', 'Area': 'Areal', 'Net volume': 'Nettovolumen', 'Gross volume': 'Bruttovolumen', 'Net area': 'Nettoareal', 'Gross area': 'Bruttoareal', 'Perimeter': 'Omkreds',
   'Surface area': 'Overfladeareal', 'Plan area': 'Planareal', 'Lowest point': 'Laveste punkt', 'Highest point': 'Højeste punkt', 'Fill': 'Fyld',
+  // A terrain's earthworks in its quantities, and a merge whose boundaries make no one outline (filming the terrain tutorial, 19.11.2026)
+  "earthwork|Cut": "Afgravning", "earthwork|Fill": "Opfyldning", "Net cut − fill": "Netto afgravning − opfyldning",
+  "The terrains' boundaries do not make one outline (they lie apart or leave a gap between them): the merged terrain covers all its points. Draw its boundary again (Terrain boundary) to clip it.": "Terrænernes afgrænsninger danner ikke én kontur (de ligger hver for sig eller efterlader et hul imellem sig): det samlede terræn dækker alle sine punkter. Tegn dets afgrænsning igen (Terrænafgrænsning) for at beskære det.",
   // Panes, zoom, the key plan
   'Profile on the path': 'Profil på stien', 'Gap from the path': 'Afstand fra stien', 'centre': 'midte', 'right': 'højre', 'left': 'venstre',
   'Attach to roof': 'Fastgør til tag', 'Detach from roof': 'Frigør fra tag', 'Top under a roof': 'Top under et tag', 'Start cut angle': 'Startsnitvinkel', 'End cut angle': 'Slutsnitvinkel', 'attach': 'fastgør', 'none': 'ingen',

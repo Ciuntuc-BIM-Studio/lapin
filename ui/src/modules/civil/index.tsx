@@ -226,7 +226,11 @@ const mergeTerrains: ToolDef = {
     const nodes = useSession.getState().nodes;
     const ids = useUi.getState().selected.filter((id) => { const n = nodes.get(id); return n?.type === 'IfcGeographicElement' && n.props.predefinedType === 'TERRAIN'; });
     if (ids.length < 2) { notify('Select two terrains or more to merge them.'); return; }
-    void execute('civil.mergeTerrains', { ids });
+    // Their boundaries are joined into one; when they cannot be (apart, or a gap between them), the engine says so.
+    void execute('civil.mergeTerrains', { ids }).then((r) => {
+      const problems = (r as { problems?: string[] } | null)?.problems;
+      if (problems?.length) notify(problems.join(' '));
+    });
   },
 };
 

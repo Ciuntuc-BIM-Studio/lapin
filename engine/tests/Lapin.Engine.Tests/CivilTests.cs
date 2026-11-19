@@ -251,6 +251,10 @@ public class CivilTests
         Assert.Equal(t, mergedId);
         Assert.Null(f.Model.Get(ids[1]));
         Assert.NotNull(Terrains.Of(f.Model.Get(mergedId)!).ElevationAt(10, 10));
+        // The L comes back (filming the terrain tutorial, 19.11.2026: it was the hull), its notch still out.
+        Assert.Equal(6, ArcOutline.CornersOf(f.Model.Get(mergedId)!, Terrains.BoundaryKey).Count);
+        Assert.Null(Terrains.Of(f.Model.Get(mergedId)!).ElevationAt(30, 30));
+        Assert.Equal(1200, Terrains.Quantities(f.Model.Get(mergedId)!, Terrains.Geometry(f.Model.Get(mergedId)!, f.Model, null), f.Model).First().Quantities.First(i => i.Name == "PlanArea").Value, 1);
     }
 
     [Fact]

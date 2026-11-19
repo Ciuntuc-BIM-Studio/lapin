@@ -1053,6 +1053,9 @@ export const ES: Record<string, string> = {
   'Gross floor area': 'Superficie bruta de suelo', 'Net perimeter': 'Perímetro neto', 'Finished ceiling height': 'Altura libre acabada',
   'Volume': 'Volumen', 'Area': 'Área', 'Net volume': 'Volumen neto', 'Gross volume': 'Volumen bruto', 'Net area': 'Área neta', 'Gross area': 'Área bruta', 'Perimeter': 'Perímetro',
   'Surface area': 'Área de superficie', 'Plan area': 'Área en planta', 'Lowest point': 'Punto más bajo', 'Highest point': 'Punto más alto', 'Fill': 'Relleno',
+  // A terrain's earthworks in its quantities, and a merge whose boundaries make no one outline (filming the terrain tutorial, 19.11.2026)
+  "earthwork|Cut": "Desmonte", "earthwork|Fill": "Terraplén", "Net cut − fill": "Desmonte neto − terraplén",
+  "The terrains' boundaries do not make one outline (they lie apart or leave a gap between them): the merged terrain covers all its points. Draw its boundary again (Terrain boundary) to clip it.": "Los límites de los terrenos no forman un solo contorno (están separados o dejan un hueco entre ellos): el terreno unido cubre todos sus puntos. Dibuja de nuevo su límite (Límite del terreno) para recortarlo.",
   // Panes, zoom, the key plan
   'Profile on the path': 'Perfil en la trayectoria', 'Gap from the path': 'Separación de la trayectoria', 'centre': 'centrado', 'right': 'a la derecha', 'left': 'a la izquierda',
   'Attach to roof': 'Enlazar a cubierta', 'Detach from roof': 'Desenlazar de la cubierta', 'Top under a roof': 'Parte superior bajo una cubierta', 'Start cut angle': 'Ángulo de corte inicial', 'End cut angle': 'Ángulo de corte final', 'attach': 'enlazar', 'none': 'ninguno',

@@ -225,7 +225,20 @@ public static class SiteCommands
             if (!Tin.Spans(pts)) throw new CommandException("The merged points need three that are not in a line.");
             var attrs = primary.CloneAttrs();
             attrs["points"] = Terrains.PointsJson(pts);
+            // The boundary: the union of theirs (one with none counts as the outline its points cover). Two halves of a split
+            // come back as the outline they were cut from; when the union is not one outline, the merged terrain covers all its
+            // points and the result says so (none of them bounded: none, as before).
+            var problems = new JsonArray();
             attrs.Remove(Terrains.BoundaryKey); attrs.Remove(Terrains.BoundaryArcs);
+            if (list.Any(tr => ArcOutline.CornersOf(tr, Terrains.BoundaryKey).Count >= 3))
+            {
+                if (MergedBoundary(list) is { } outline)
+                {
+                    attrs[Terrains.BoundaryKey] = Terrains.ContourJson(outline.Corners);
+                    ArcOutline.Write(attrs, outline.Rises, Terrains.BoundaryArcs);
+                }
+                else problems.Add((JsonNode)MergedBoundaryProblem);
+            }
             if (breaklines.Count > 0) attrs["breaklines"] = breaklines; else attrs.Remove("breaklines");
             if (sculpts.Count > 0) attrs["sculpts"] = sculpts; else attrs.Remove("sculpts");
             // Every one's spot levels, slope tags and subregions.
@@ -244,7 +257,9 @@ public static class SiteCommands
                     ctx.ReplaceRelation(rel with { Relating = primary.Id });
                 ctx.Remove(tr.Id);
             }
-            return new JsonObject { ["id"] = primary.Id, ["points"] = pts.Count };
+            var result = new JsonObject { ["id"] = primary.Id, ["points"] = pts.Count };
+            if (problems.Count > 0) result["problems"] = problems;
+            return result;
         });
 
         // T2: A slope tag on the terrain (point slope [x, y] or two-point grade line [x1, y1, x2, y2]).
@@ -542,6 +557,31 @@ public static class SiteCommands
 
     static string StoreyId(IModelView m, JsonObject a) =>
         (string?)a["storeyId"] ?? Spatial.Storeys(m).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+
+    /// <summary>What a merge says when the terrains' boundaries do not make one outline.</summary>
+    public const string MergedBoundaryProblem = "The terrains' boundaries do not make one outline (they lie apart or leave a gap between them): the merged terrain covers all its points. Draw its boundary again (Terrain boundary) to clip it.";
+
+    /// <summary>
+    /// The boundary of terrains merged: the union of their drawn boundaries (arcs kept), a terrain with none taking the outline
+    /// its triangles cover; null when that is not one outline with no gap.
+    /// </summary>
+    internal static OutlineUnion.Loop? MergedBoundary(IReadOnlyList<Entity> terrains)
+    {
+        var loops = new List<OutlineUnion.Loop>();
+        foreach (var tr in terrains)
+        {
+            var corners = ArcOutline.CornersOf(tr, Terrains.BoundaryKey);
+            if (corners.Count >= 3) loops.Add(new OutlineUnion.Loop(corners, ArcOutline.RisesOf(tr, Terrains.BoundaryKey, Terrains.BoundaryArcs)));
+            else if (Terrains.BoundaryLoop(Terrains.Of(tr)) is { Count: >= 3 } loop) loops.Add(new OutlineUnion.Loop(loop, null));
+        }
+        if (OutlineUnion.Of(loops)?.Single is not { } one) return null;
+        try
+        {
+            var (c, r) = ArcOutline.Check(one.Corners, one.Rises, "A terrain boundary");
+            return new OutlineUnion.Loop(c, r);
+        }
+        catch (CommandException) { return null; }
+    }
 
     /// <summary>The terrain's lists of things placed on it in plan, which a split shares out and a merge gathers.</summary>
     static readonly string[] PlacedKeys = ["spots", "slopes", "subregions"];

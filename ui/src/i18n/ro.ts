@@ -1047,6 +1047,9 @@ export const RO: Record<string, string> = {
   'Gross floor area': 'Aria brută a pardoselii', 'Net perimeter': 'Perimetru net', 'Finished ceiling height': 'Înălțimea liberă finisată',
   'Volume': 'Volum', 'Area': 'Arie', 'Net volume': 'Volum net', 'Gross volume': 'Volum brut', 'Net area': 'Arie netă', 'Gross area': 'Arie brută', 'Perimeter': 'Perimetru',
   'Surface area': 'Arie a suprafeței', 'Plan area': 'Arie în plan', 'Lowest point': 'Punctul cel mai jos', 'Highest point': 'Punctul cel mai înalt', 'Fill': 'Umplutură',
+  // A terrain's earthworks in its quantities, and a merge whose boundaries make no one outline (filming the terrain tutorial, 19.11.2026)
+  "earthwork|Cut": "Săpătură", "earthwork|Fill": "Umplutură", "Net cut − fill": "Săpătură netă − umplutură",
+  "The terrains' boundaries do not make one outline (they lie apart or leave a gap between them): the merged terrain covers all its points. Draw its boundary again (Terrain boundary) to clip it.": "Limitele terenurilor nu formează un singur contur (sunt depărtate sau lasă un gol între ele): terenul unit acoperă toate punctele lui. Desenează-i din nou limita (Limita terenului) ca să-l decupezi.",
   // Panes, zoom, the key plan
   'Profile on the path': 'Profilul pe traseu', 'Gap from the path': 'Distanța de la traseu', 'centre': 'pe mijloc', 'right': 'la dreapta', 'left': 'la stânga',
   'Attach to roof': 'Atașează la acoperiș', 'Detach from roof': 'Detașează de acoperiș', 'Top under a roof': 'Capătul sub acoperiș', 'Start cut angle': 'Unghiul tăieturii la început', 'End cut angle': 'Unghiul tăieturii la sfârșit', 'attach': 'atașat', 'none': 'niciunul',

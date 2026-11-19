@@ -1051,6 +1051,9 @@ export const ZH: Record<string, string> = {
   'Gross floor area': '毛地面面积', 'Net perimeter': '净周长', 'Finished ceiling height': '完成面净高',
   'Volume': '体积', 'Area': '面积', 'Net volume': '净体积', 'Gross volume': '毛体积', 'Net area': '净面积', 'Gross area': '毛面积', 'Perimeter': '周长',
   'Surface area': '表面积', 'Plan area': '平面面积', 'Lowest point': '最低点', 'Highest point': '最高点', 'Fill': '填充',
+  // A terrain's earthworks in its quantities, and a merge whose boundaries make no one outline (filming the terrain tutorial, 19.11.2026)
+  "earthwork|Cut": "挖方", "earthwork|Fill": "填方", "Net cut − fill": "净挖方 − 填方",
+  "The terrains' boundaries do not make one outline (they lie apart or leave a gap between them): the merged terrain covers all its points. Draw its boundary again (Terrain boundary) to clip it.": "各地形的边界不能构成一个轮廓（它们彼此分离，或在之间留有空隙）：合并后的地形覆盖其所有点。请重新绘制其边界（地形边界）以裁剪它。",
   // Panes, zoom, the key plan
   'Profile on the path': '路径上的轮廓', 'Gap from the path': '距路径间距', 'centre': '居中', 'right': '右', 'left': '左',
   'Attach to roof': '附着到屋顶', 'Detach from roof': '从屋顶分离', 'Top under a roof': '顶部至屋顶下', 'Start cut angle': '起点切割角度', 'End cut angle': '终点切割角度', 'attach': '附着', 'none': '无',

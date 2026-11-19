@@ -1053,6 +1053,9 @@ export const FR: Record<string, string> = {
   'Gross floor area': 'Surface brute de plancher', 'Net perimeter': 'Périmètre net', 'Finished ceiling height': 'Hauteur sous plafond finie',
   'Volume': 'Volume', 'Area': 'Surface', 'Net volume': 'Volume net', 'Gross volume': 'Volume brut', 'Net area': 'Surface nette', 'Gross area': 'Surface brute', 'Perimeter': 'Périmètre',
   'Surface area': 'Aire de surface', 'Plan area': 'Surface en plan', 'Lowest point': 'Point le plus bas', 'Highest point': 'Point le plus haut', 'Fill': 'Remplissage',
+  // A terrain's earthworks in its quantities, and a merge whose boundaries make no one outline (filming the terrain tutorial, 19.11.2026)
+  "earthwork|Cut": "Déblai", "earthwork|Fill": "Remblai", "Net cut − fill": "Déblai net − remblai",
+  "The terrains' boundaries do not make one outline (they lie apart or leave a gap between them): the merged terrain covers all its points. Draw its boundary again (Terrain boundary) to clip it.": "Les limites des terrains ne forment pas un seul contour (elles sont éloignées ou laissent un vide entre elles) : le terrain fusionné couvre tous ses points. Redessinez sa limite (Limite du terrain) pour le découper.",
   // Panes, zoom, the key plan
   'Profile on the path': 'Profil sur la trajectoire', 'Gap from the path': 'Écart par rapport à la trajectoire', 'centre': 'centré', 'right': 'à droite', 'left': 'à gauche',
   'Attach to roof': 'Attacher au toit', 'Detach from roof': 'Détacher du toit', 'Top under a roof': 'Haut sous un toit', 'Start cut angle': 'Angle de coupe au début', 'End cut angle': 'Angle de coupe à la fin', 'attach': 'attacher', 'none': 'aucun',

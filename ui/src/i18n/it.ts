@@ -1053,6 +1053,9 @@ export const IT: Record<string, string> = {
   'Gross floor area': 'Superficie lorda del pavimento', 'Net perimeter': 'Perimetro netto', 'Finished ceiling height': 'Altezza netta finita',
   'Volume': 'Volume', 'Area': 'Area', 'Net volume': 'Volume netto', 'Gross volume': 'Volume lordo', 'Net area': 'Area netta', 'Gross area': 'Area lorda', 'Perimeter': 'Perimetro',
   'Surface area': 'Area della superficie', 'Plan area': 'Area in pianta', 'Lowest point': 'Punto più basso', 'Highest point': 'Punto più alto', 'Fill': 'Riempimento',
+  // A terrain's earthworks in its quantities, and a merge whose boundaries make no one outline (filming the terrain tutorial, 19.11.2026)
+  "earthwork|Cut": "Scavo", "earthwork|Fill": "Riporto", "Net cut − fill": "Scavo netto − riporto",
+  "The terrains' boundaries do not make one outline (they lie apart or leave a gap between them): the merged terrain covers all its points. Draw its boundary again (Terrain boundary) to clip it.": "I confini dei terreni non formano un solo contorno (sono separati o lasciano un vuoto tra loro): il terreno unito copre tutti i suoi punti. Disegna di nuovo il suo confine (Confine del terreno) per ritagliarlo.",
   // Panes, zoom, the key plan
   'Profile on the path': 'Profilo sul percorso', 'Gap from the path': 'Distanza dal percorso', 'centre': 'centrato', 'right': 'a destra', 'left': 'a sinistra',
   'Attach to roof': 'Collega al tetto', 'Detach from roof': 'Scollega dal tetto', 'Top under a roof': 'Sommità sotto un tetto', 'Start cut angle': 'Angolo di taglio iniziale', 'End cut angle': 'Angolo di taglio finale', 'attach': 'collega', 'none': 'nessuno',
