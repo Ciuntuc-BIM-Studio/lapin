@@ -445,6 +445,10 @@ public sealed class CoreModule : ILapinModule
             return o;
         });
 
+        // Align (Revit's; forum topics 109, 170, 171): {ids, reference: [a, b], line: [a, b], referenceId?, lock?, frame?}: the
+        // elements moved square to the reference until the line picked on them lies on it, by element.transform's move.
+        r.Command("element.align", "Align", (ctx, a) => ElementAlign.Run(ctx, a));
+
         // Copies in a row or round a centre (decision 448), or along a path, kept as an arrangement (decision 481, Arrays):
         // {ids, count (with the first), step: [x, y, z] | fit: [x, y, z]} or {kind: "polar", count, angle filled (degrees,
         // 360 a full turn), center: [x, y]} or {kind: "grid", count (the columns), step, rows, rowStep, levels, levelStep;

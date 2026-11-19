@@ -384,6 +384,7 @@
     {"name":"drawing.remove","module":"core","label":"Remove shop drawing","args":[{"name":"id","type":"str"}]},
     {"name":"drawing.update","module":"core","label":"Update shop drawing","args":[{"name":"id","type":"str"}]},
     {"name":"edit.batch","module":"core","label":"Edit","args":[{"name":"steps","type":"list"},{"name":"label"}]},
+    {"name":"element.align","module":"core","label":"Align","args":[{"name":"reference"},{"name":"line"},{"name":"referenceId","type":"str"},{"name":"lock","type":"bool"},{"name":"frame","type":"dict"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"element.array","module":"core","label":"Array","args":[{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"element.attachTo","module":"core","label":"Attach top or bottom","args":[{"name":"add","type":"bool"},{"name":"end","type":"str"},{"name":"targets","type":"list"},{"name":"level","type":"dict"},{"name":"offset","type":"float"},{"name":"mode","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"element.copyToStoreys","module":"core","label":"Copy to storeys","args":[{"name":"storeyIds","type":"list"},{"name":"keep","type":"str"},{"name":"hosted"},{"name":"relations"},{"name":"skipDuplicates"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},

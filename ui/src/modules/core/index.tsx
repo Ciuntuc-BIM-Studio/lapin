@@ -4,7 +4,7 @@ import { LibraryImportHost } from '../../platform/ImportPreview';
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { ArrowLeftRight, CornerDownRight, CopyPlus, Slash, Scale, Braces, Tags, Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
+import { AlignStartVertical, ArrowLeftRight, CornerDownRight, CopyPlus, Slash, Scale, Braces, Tags, Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { notify } from '../../app/store';
@@ -14,6 +14,8 @@ import { openPulldown } from '../../shell/pulldown';
 import { PlaceCatalogDialog, openPlaceCatalog } from '../../shell/PlaceCatalog';
 import { corePlaceSources } from './placeSources';
 import { registerCommand, startCommand } from '../../viewport/cad/session';
+// ALIGN (Modify → Align, Revit's; forum topics 109, 170, 171).
+import '../../viewport/cad/align';
 import type { GripView, LapinModule, ToolDef } from '../../platform/module';
 import { voidLabelGrips } from '../../platform/labelParts';
 import { HATCH_ORIGIN_TYPES } from './hatchOrigin';
@@ -193,6 +195,8 @@ const core: LapinModule = {
     // The corners of walls, beams and strip footings (S13): the tab's own Joins group (a wall's Join, the new-corner style) goes with it.
     joins: { label: 'Joins', tools: [joinTool('Mitre', 'core.mitre', Slash, { style: 'mitre' }), joinTool('Butt', 'core.butt', CornerDownRight, { style: 'butt' }), joinTool('Swap', 'core.swap', ArrowLeftRight, { swap: true })] },
     modify: { label: 'Modify', tools: [], small: [
+      // Revit's Align (forum topics 109, 170, 171): a reference line, then the parallel line on the element to bring onto it.
+      { id: 'modify.align', label: 'Align', icon: AlignStartVertical, shortcut: 'AL', run: () => void startCommand('ALIGN') },
       { id: 'modify.move', label: 'Move', icon: Move, run: () => void startCommand('MOVE') },
       { id: 'modify.copy', label: 'Copy', icon: Copy, run: () => void startCommand('COPY') },
       { id: 'modify.rotate', label: 'Rotate', icon: RotateCw, run: () => void startCommand('ROTATEREF') },

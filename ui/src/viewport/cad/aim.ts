@@ -248,10 +248,13 @@ export function useCadCanvas(o: {
         if (exact) return exact;
         const own = outlinesRef.current?.(id);
         if (own?.length) return own;
-        // An annotation: its drawn segments.
-        const s = marks?.find((m) => m.id === id)?.segments ?? [];
+        // An annotation, or an element in a section or an elevation: its drawn segments (an element's parts' marks, id:part, too).
         const out: Shape[] = [];
-        for (let k = 0; k + 3 < s.length; k += 4) out.push({ type: 'line', a: { x: s[k], y: s[k + 1] }, b: { x: s[k + 2], y: s[k + 3] } });
+        for (const m of marks ?? []) {
+          if (m.id !== id && !m.id.startsWith(`${id}:`)) continue;
+          const s = m.segments;
+          for (let k = 0; k + 3 < s.length; k += 4) out.push({ type: 'line', a: { x: s[k], y: s[k + 1] }, b: { x: s[k + 2], y: s[k + 3] } });
+        }
         return out;
       },
       inRegion: (takes) => regionRef.current?.(takes) ?? [],
