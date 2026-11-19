@@ -165,10 +165,60 @@ public static partial class TitleBlocks
                     return (true, (Math.Max(i, 0) + 1).ToString(CultureInfo.InvariantCulture));
                 }
                 default:
-                    // Any other field the sheet's title block sets (typed in its properties or by a command).
-                    return tb?[k] is JsonValue ? (true, Own(k)) : (false, null);
+                    // Any other field is the sheet's own (typed in its properties, forum 90: a Finnish block's "muutos" or
+                    // "piirustuslaji"): its value, else the project information's field or parameter of the same key, else empty.
+                    if (!SheetKeyRx().IsMatch(k)) return (false, null);
+                    return (true, Own(k) ?? ProjectBehind(m, k));
             }
         }
+    }
+
+    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_]*$")]
+    private static partial Regex SheetKeyRx();
+
+    /// <summary>The project information's field or parameter a sheet field of the same key falls back to; null when none says.</summary>
+    static string? ProjectBehind(IModelView m, string k) =>
+        Documents.ProjectInfo.Fields.FirstOrDefault(f => f.Key.Equals(k, StringComparison.OrdinalIgnoreCase)) is { Key: { } fk }
+            ? Documents.ProjectInfo.Get(m, fk)
+            : Documents.ProjectInfo.Customs(m).FirstOrDefault(c => c.Key.Equals(k, StringComparison.OrdinalIgnoreCase))?.Printed;
+
+    /// <summary>The sheet fields worked out from the sheet itself, never typed: its number, name, scales, paper, discipline, x of y.</summary>
+    static readonly HashSet<string> DerivedSheetFields = ["number", "name", "title", "scale", "paper", "size", "orientation", "discipline", "index", "count"];
+
+    /// <summary>The fields a sheet types for its title block, in this order before the template's own (forum 90).</summary>
+    public static readonly (string Key, string Label)[] TypedSheetFields =
+    [
+        ("project", "Project"), ("client", "Client"), ("drawnBy", "Drawn by"), ("checkedBy", "Checked by"), ("approvedBy", "Approved by"),
+        ("date", "Date"), ("phase", "Phase"), ("revision", "Revision"), ("status", "Status"),
+    ];
+
+    /// <summary>
+    /// What a sheet's properties offer to type for its title block (forum 90): the usual fields, then every other <c>{sheet.*}</c>
+    /// field its template uses and any the sheet already set, each with its own value and what prints when it is left empty
+    /// (the project information's, today's date, the project's name).
+    /// </summary>
+    public static List<(string Key, string Label, string? Own, string? Otherwise)> SheetFields(IQueryContext q, Entity sheet)
+    {
+        var m = q.Model;
+        var tb = sheet.Attrs["titleBlock"] as JsonObject;
+        var keys = TypedSheetFields.ToList();
+        void More(string k)
+        {
+            if (DerivedSheetFields.Contains(k) || !SheetKeyRx().IsMatch(k) || keys.Any(x => x.Key.Equals(k, StringComparison.OrdinalIgnoreCase))) return;
+            var label = Documents.ProjectInfo.Fields.FirstOrDefault(f => f.Key.Equals(k, StringComparison.OrdinalIgnoreCase)).Label
+                ?? Documents.ProjectInfo.Customs(m).FirstOrDefault(c => c.Key.Equals(k, StringComparison.OrdinalIgnoreCase))?.Label ?? k;
+            keys.Add((k, label));
+        }
+        if (TemplateOf(m, sheet) is { } t)
+            foreach (var item in t.Items.OfType<JsonObject>().Where(i => (string?)i["type"] == "text"))
+                foreach (var token in Tokens(item["text"]?.ToString() ?? "").Where(x => x.StartsWith("sheet.", StringComparison.Ordinal)))
+                    More(token["sheet.".Length..]);
+        foreach (var (k, _) in tb ?? []) More(k);
+        // What each prints when the sheet leaves it empty: the same field resolved on the sheet without its own values.
+        var bare = sheet.CloneAttrs();
+        bare.Remove("titleBlock");
+        var otherwise = Resolver(q, sheet.With(attrs: bare), []);
+        return [.. keys.Select(x => (x.Key, x.Label, Cde.CdeCheckContext.Field(sheet, x.Key), otherwise("sheet." + x.Key).Value is { Length: > 0 } v ? v : null))];
     }
 
     static string? ParamText(JsonObject p) => p["value"] is not { } v ? null

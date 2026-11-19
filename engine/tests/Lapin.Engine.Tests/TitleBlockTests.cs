@@ -74,6 +74,58 @@ public sealed class TitleBlockTests : IDisposable
     }
 
     [Fact]
+    public void A_sheet_fills_its_template_s_own_fields_and_the_project_information_stands_behind_them()
+    {
+        // Forum 90: a Finnish title block of the user's own, its fields from the project information and from the sheet.
+        var f = F();
+        f.Run("project.setInfo", new JsonObject
+        {
+            ["name"] = "Parikkaankatu 47", ["number"] = "001-2025", ["client"] = "As Oy Parikka", ["address"] = "Parikkaankatu 47, Helsinki",
+            ["cadastral"] = "91-12-34-5", ["designer"] = "Arkkitehti Oy", ["author"] = "PK", ["checkedBy"] = "MV", ["phase"] = "valmistunut",
+        });
+        f.Run("project.setParameter", new JsonObject { ["key"] = "kortteli", ["label"] = "Kortteli", ["value"] = "12" });
+        var a = Sheet(f, name: "Pohjapiirros");
+        var tb = Create(f, Template(178, 95, "bottomRight",
+            Text(2, 90, "{project.name} · {project.address} · {project.cadastral}"),
+            Text(2, 80, "{project.client} / {project.designer} / {project.number} / {project.phase}"),
+            Text(2, 70, "{sheet.name} {sheet.number} {sheet.scale}"),
+            Text(2, 60, "Piirtäjä {sheet.drawnBy} · tark. {sheet.checkedBy} · rak. {sheet.client}"),
+            Text(2, 50, "Laji [{sheet.piirustuslaji}] muutos [{sheet.muutos}]"),
+            Text(2, 40, "Suunnittelija {sheet.designer} · kortteli {sheet.kortteli}")));
+        f.Run("sheet.setTitleBlock", new JsonObject { ["id"] = a, ["titleBlockId"] = tb });
+        var texts = Texts(f, a);
+        Assert.Contains("Parikkaankatu 47 · Parikkaankatu 47, Helsinki · 91-12-34-5", texts);
+        Assert.Contains("As Oy Parikka / Arkkitehti Oy / 001-2025 / valmistunut", texts);
+        Assert.Contains("Piirtäjä PK · tark. MV · rak. As Oy Parikka", texts);
+        // A field of the sheet's own not typed yet prints empty, never as a placeholder; a sheet field named as a project
+        // information field or parameter shows the project's until the sheet says otherwise.
+        Assert.Contains("Laji [] muutos []", texts);
+        Assert.Contains("Suunnittelija Arkkitehti Oy · kortteli 12", texts);
+        Assert.Empty(TitleBlocks.Unknown(f.Session.Reader, f.Model.Get(a)!));
+
+        // The sheet's properties list what it may type: the usual fields, then the template's own, with what prints when empty.
+        var fields = ((JsonArray)f.Session.Query("sheet.titleBlockFields", new JsonObject { ["id"] = a })!["fields"]!).OfType<JsonObject>().ToList();
+        string? Field(string key, string what) => (string?)fields.Single(x => (string?)x["key"] == key)[what];
+        Assert.Equal(["project", "client", "drawnBy", "checkedBy", "approvedBy", "date", "phase", "revision", "status", "piirustuslaji", "muutos", "designer", "kortteli"],
+            fields.Select(x => (string)x["key"]!));
+        Assert.Equal("PK", Field("drawnBy", "otherwise"));
+        Assert.Null(Field("drawnBy", "value"));
+        Assert.Equal("Designer", Field("designer", "label"));
+        Assert.Equal("Kortteli", Field("kortteli", "label"));
+        Assert.Equal("piirustuslaji", Field("piirustuslaji", "label"));
+
+        f.Run("sheet.titleBlock", new JsonObject { ["id"] = a, ["fields"] = new JsonObject { ["piirustuslaji"] = "Pohjapiirros", ["muutos"] = "A", ["drawnBy"] = "JL", ["designer"] = "Toinen Oy" } });
+        texts = Texts(f, a);
+        Assert.Contains("Laji [Pohjapiirros] muutos [A]", texts);
+        Assert.Contains("Piirtäjä JL · tark. MV · rak. As Oy Parikka", texts);
+        Assert.Contains("Suunnittelija Toinen Oy · kortteli 12", texts);
+        fields = ((JsonArray)f.Session.Query("sheet.titleBlockFields", new JsonObject { ["id"] = a })!["fields"]!).OfType<JsonObject>().ToList();
+        Assert.Equal("JL", Field("drawnBy", "value"));
+        Assert.Equal("PK", Field("drawnBy", "otherwise"));
+        Assert.Equal("Pohjapiirros", Field("piirustuslaji", "value"));
+    }
+
+    [Fact]
     public void A_parameter_nobody_has_prints_as_a_placeholder_and_the_check_says_so_an_empty_one_prints_nothing()
     {
         var f = F();

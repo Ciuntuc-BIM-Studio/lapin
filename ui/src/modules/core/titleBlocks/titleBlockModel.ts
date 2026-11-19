@@ -58,13 +58,17 @@ export const tokensOf = (text: string): string[] => [...text.matchAll(TOKEN)].ma
 export interface TextRun { text: string; kind: 'plain' | 'value' | 'empty' | 'unknown'; key?: string }
 
 /** A text cut into runs by its tokens, each filled from `values` (a key there with no value is empty; a key not there unknown). */
+/** A field of a sheet's own: `sheet.` and a key (letters, digits, _). */
+const SHEET_OWN = /^sheet\.[A-Za-z][A-Za-z0-9_]*$/;
+
 export function textRuns(text: string, values: Map<string, string | null | undefined>): TextRun[] {
   const runs: TextRun[] = [];
   let at = 0;
   for (const m of text.matchAll(TOKEN)) {
     if (m.index! > at) runs.push({ text: text.slice(at, m.index), kind: 'plain' });
     const key = m[1];
-    if (!values.has(key)) runs.push({ text: `<${key}>`, kind: 'unknown', key });
+    // A {sheet.*} field the sample sheet has not typed is the sheet's own (forum 90), filled in each sheet's properties: empty, never unknown.
+    if (!values.has(key) && !SHEET_OWN.test(key)) runs.push({ text: `<${key}>`, kind: 'unknown', key });
     else {
       const v = values.get(key);
       runs.push(v ? { text: v, kind: 'value', key } : { text: `{${key}}`, kind: 'empty', key });

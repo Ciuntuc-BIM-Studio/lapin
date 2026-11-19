@@ -173,6 +173,17 @@ public static partial class TitleBlocks
             };
         });
 
+        // What a sheet types for its title block (forum 90): the usual fields and its template's own {sheet.*} ones, each with its
+        // value and what prints when it is left empty.
+        r.Query("sheet.titleBlockFields", (q, a) =>
+        {
+            var sheet = q.Model.Get((string?)a["id"] ?? "") is { Class: Sheets.Class } s ? s : throw new CommandException("Which sheet?");
+            return new JsonObject
+            {
+                ["fields"] = new JsonArray(SheetFields(q, sheet).Select(f => (JsonNode)new JsonObject { ["key"] = f.Key, ["label"] = f.Label, ["value"] = f.Own, ["otherwise"] = f.Otherwise }).ToArray()),
+            };
+        });
+
         // A block alone, drawn as a sheet would (a template given, or one by id), for the list and the designer.
         r.Query("titleBlock.preview", (q, a) =>
         {
