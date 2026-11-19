@@ -166,6 +166,7 @@ public static class Walls
         var extents = LayerExtents.Effective(wall, m);
         // A layer's own extent short of an end (forum topic 89); one past it is a piece of its own (ExtentPieces).
         double Reach(int end, Band b, bool atFrom) => BaseReach(end, b, atFrom) + LayerExtents.Short(extents, b.Index, end == 0 ? LayerExtents.Start : LayerExtents.End);
+        var fills = paths != null ? new[] { NodeFill(m, wall, 0, ranked), NodeFill(m, wall, 1, ranked) } : new (int Band, Vec2[] Insert)?[2];
         List<IReadOnlyList<Vec2>> Footprints(Band band)
         {
             Vec2[] whole =
@@ -173,7 +174,7 @@ public static class Walls
                 P(-Reach(0, band, true), band.From), P(length + Reach(1, band, true), band.From),
                 P(length + Reach(1, band, false), band.To), P(-Reach(0, band, false), band.To),
             ];
-            return Pieces(whole, crossings(band), start, dir, length);
+            return Pieces(WithFill(whole, band, fills), crossings(band), start, dir, length);
         }
         return new Layout(start, end, dir, length, z, HeightOf(m, wall), bands, Footprints, BaseReach);
     }
@@ -347,6 +348,8 @@ public static class Walls
             catch (InvalidOperationException ex) { problems.Add($"{part.Name}: an opening could not be cut ({ex.Message})."); return part; }
         }
         var layered = LayerSets.BandsOf(m, wall.Id);
+        // At a node of three walls or more, the gap the cores leave there, filled by one of them.
+        var fills = paths != null ? new[] { NodeFill(m, wall, 0, ranked), NodeFill(m, wall, 1, ranked) } : new (int Band, Vec2[] Insert)?[2];
         var gaps = openings.Concat(through).Where(o => o.Sill < PlanCutAbove(m, wall) && o.Sill + o.Height > PlanCutAbove(m, wall))
             .Select(o => (From: o.Along - o.Width / 2 - Vec2.Dot(start - Start(wall), dir), To: o.Along + o.Width / 2 - Vec2.Dot(start - Start(wall), dir))).OrderBy(g => g.From).ToList();
         foreach (var band in bands)
@@ -364,9 +367,9 @@ public static class Walls
                 P(-Reach(0, band, true) - past0, band.From), P(length + Reach(1, band, true) + past1, band.From),
                 P(length + Reach(1, band, false) + past1, band.To), P(-Reach(0, band, false) - past0, band.To),
             ];
-            var planPieces = Pieces(planWhole, crossings(band), start, dir, length);
+            var planPieces = Pieces(WithFill(planWhole, band, fills), crossings(band), start, dir, length);
             // The band in the pieces the walls meeting this one leave of it (one, when none interrupts it).
-            var bandPieces = Pieces(whole, crossings(band), start, dir, length);
+            var bandPieces = Pieces(WithFill(whole, band, fills), crossings(band), start, dir, length);
             for (var pi = 0; pi < bandPieces.Count; pi++)
             {
                 var footprint = bandPieces[pi];
@@ -715,6 +718,9 @@ public static class Walls
     static Func<Band, (double From, double To)>?[] LayerCorners(IModelView m, Entity wall, IPathElements paths, Vec2 start, Vec2 dir, double length, IReadOnlyList<Band> bands, Func<Entity, int?> ranked)
     {
         var o = new Func<Band, (double From, double To)>?[2];
+        // A node of three walls or more (the forum's topic 164): each layer edge meets its like on the neighbour on its side.
+        for (var i = 0; i < 2; i++)
+            if (Joins.NodeOf(m, wall, i) is { } node) o[i] = NodeCorner(m, i, start, dir, length, bands, node);
         foreach (var r in Joins.Of(m, wall.Id))
         {
             var join = Joins.Compute(m, r, paths, out _);
@@ -722,12 +728,190 @@ public static class Walls
             var side = r.Relating == wall.Id ? join.A : join.B;
             var i = side.Connection switch { Connection.AtStart => 0, Connection.AtEnd => 1, _ => -1 };
             if (i < 0 || o[i] != null || m.Get(Joins.Other(r, wall.Id)) is not { } other) continue;
-            // A node of three walls or more: the layers follow the body's fan cut (Joins.Fan), not one corner of the pairs.
+            // A node the layers could not be paired at (a wall of no length among them): the body's fan cut (Joins.Fan).
             if (Joins.IsNode(m, wall, i)) continue;
             var elements = Math.Sign((ranked(wall) ?? 0) - (ranked(other) ?? 0));
             o[i] = LayerCorner(m, start, dir, length, i == 0, bands, other, join.Style, side.RunsThrough, join.Kind == JoinKind.T, elements);
         }
         return o;
+    }
+
+    /// <summary>
+    /// How each layer ends at a node, where three walls or more end at one point (the forum's topic 164: two walls joined
+    /// clean, a third at the same point did not). Round the node, each wall's layer edges on one side meet the edges of its
+    /// neighbour on that side as at a mitred corner of two (<see cref="CornerEdges"/>: from the core outwards, a finish with
+    /// the neighbour's finish, the core's face with the neighbour's core face, the last on the outer face); a neighbour in
+    /// line leaves them square at the node. The edges inside a core go straight across it. What the cores leave between them
+    /// at the node is filled by one of them (<see cref="NodeFill"/>), so the cores meet. Null when it cannot be paired so.
+    /// </summary>
+    static Func<Band, (double From, double To)>? NodeCorner(IModelView m, int end, Vec2 start, Vec2 dir, double length, IReadOnlyList<Band> bands,
+        IReadOnlyList<(Entity E, int End)> partners)
+    {
+        if (NodeEdges(m, end, start, dir, length, bands, partners) is not { } edge) return null;
+        return band => band.To - band.From < 1e-12 ? (0, 0) : (edge(band.From), edge(band.To));
+    }
+
+    /// <summary>The direction a wall leaves a node by (its end there: 0 start, 1 end); null for one of no length.</summary>
+    static Vec2? Leaving(Entity e, int end)
+    {
+        var along = End(e) - Start(e);
+        if (along.Length < MinLength) return null;
+        var d = along.Normalized();
+        return end == 0 ? d : -d;
+    }
+
+    /// <summary>
+    /// A wall's layer edges at a node (<see cref="NodeCorner"/>): for an edge at <c>y</c> across the wall, its reach past
+    /// the wall's end there. The wall's frame is <paramref name="start"/>, <paramref name="dir"/>, <paramref name="length"/>.
+    /// </summary>
+    static Func<double, double>? NodeEdges(IModelView m, int end, Vec2 start, Vec2 dir, double length, IReadOnlyList<Band> bands,
+        IReadOnlyList<(Entity E, int End)> partners)
+    {
+        if (bands.Count == 0) return null;
+        var mine = end == 0 ? dir : -dir;
+        var round = new List<(Entity? E, int End, Vec2 Dir, double Angle)> { (null, end, dir, Math.Atan2(mine.Y, mine.X)) };
+        foreach (var (e, pe) in partners)
+        {
+            if (Leaving(e, pe) is not { } u) return null;
+            round.Add((e, pe, (End(e) - Start(e)).Normalized(), Math.Atan2(u.Y, u.X)));
+        }
+        var sorted = round.OrderBy(x => x.Angle).ToList();
+        var k = sorted.FindIndex(x => x.E == null);
+        var (ccw, cw) = (sorted[(k + 1) % sorted.Count], sorted[(k - 1 + sorted.Count) % sorted.Count]);
+        var thickness = bands.Max(b => b.To) - bands.Min(b => b.From);
+        var left = dir.Perp;
+        // The counter-clockwise side of a wall leaving the node: its left (+y) when it leaves by its start.
+        var cs = end == 0 ? 1 : -1;
+        Func<double, double> Facing((Entity? E, int End, Vec2 Dir, double Angle) n, int mySide, int theirSide)
+        {
+            var me = new CornerEdges(bands, mySide);
+            var them = new CornerEdges(Section(m, n.E!), theirSide);
+            var (os, od) = (Start(n.E!), n.Dir);
+            var cross = Vec2.Cross(dir, od);
+            return y =>
+            {
+                // In line: square at the node.
+                if (Math.Abs(cross) < 1e-6) return 0;
+                var p = start + left * y;
+                var s = Vec2.Cross(os + od.Perp * them.Partner(me, y) - p, od) / cross;
+                return Math.Min(end == 0 ? -s : s - length, 2 * thickness);
+            };
+        }
+        // The neighbour counter-clockwise faces this wall with its clockwise side, and the other way round.
+        var toCcw = Facing(ccw, cs, ccw.End == 0 ? -1 : 1);
+        var toCw = Facing(cw, -cs, cw.End == 0 ? 1 : -1);
+        var core = new CornerEdges(bands, 1);
+        var (lo, hi) = (core.CoreLo, core.CoreHi);
+        Func<double, double> loSide = cs > 0 ? toCw : toCcw, hiSide = cs > 0 ? toCcw : toCw;
+        return y =>
+        {
+            if (y <= lo + 1e-9) return loSide(y);
+            if (y >= hi - 1e-9) return hiSide(y);
+            // Inside the core: straight across it.
+            var (a, b) = (loSide(lo), hiSide(hi));
+            return a + (b - a) * (y - lo) / (hi - lo);
+        };
+    }
+
+    /// <summary>
+    /// The walls round a node, each by the end it has there, in the frame its layer edges are reckoned in (<see cref="NodeEdges"/>):
+    /// a wall ending there, its own axis; a wall running through it (in <see cref="Joins.NodeOf"/> twice), each half from the
+    /// node on. Null when one has no length or cannot be paired.
+    /// </summary>
+    static List<(Entity E, int End, bool Half, Vec2 Start, Vec2 Dir, double Length, double Angle, IReadOnlyList<Band> Bands, Func<double, double> Edge)>? NodeRound(
+        IModelView m, Vec2 node, IReadOnlyList<(Entity E, int End)> all)
+    {
+        var o = new List<(Entity E, int End, bool Half, Vec2 Start, Vec2 Dir, double Length, double Angle, IReadOnlyList<Band> Bands, Func<double, double> Edge)>();
+        for (var i = 0; i < all.Count; i++)
+        {
+            var (e, pe) = all[i];
+            if (Leaving(e, pe) is not { } u) return null;
+            var half = all.Count(x => x.E.Id == e.Id) > 1;
+            var (s, t) = (Start(e), End(e));
+            var dir = (t - s).Normalized();
+            if (half) (s, t) = pe == 0 ? (node, t) : (s, node);
+            var length = (t - s).Length;
+            var bands = Section(m, e);
+            if (bands.Count == 0 || length < MinLength) return null;
+            var others = all.Where((_, k) => k != i).ToList();
+            if (NodeEdges(m, pe, s, dir, length, bands, others) is not { } edge) return null;
+            o.Add((e, pe, half, s, dir, length, Math.Atan2(u.Y, u.X), bands, edge));
+        }
+        return o;
+    }
+
+    /// <summary>Where a wall's layer edge at <c>y</c> ends at a node (<see cref="NodeRound"/>), in plan.</summary>
+    static Vec2 NodePoint((Entity E, int End, bool Half, Vec2 Start, Vec2 Dir, double Length, double Angle, IReadOnlyList<Band> Bands, Func<double, double> Edge) w, double y) =>
+        (w.End == 0 ? w.Start - w.Dir * w.Edge(y) : w.Start + w.Dir * (w.Length + w.Edge(y))) + w.Dir.Perp * y;
+
+    /// <summary>
+    /// What the cores leave between them at a node of three walls or more (each core ending on its neighbours' cores, a
+    /// gap stays round the point), given to one core so the cores meet: of the walls ending there, the one whose core
+    /// ranks highest (its layer's priority), then the higher element priority, then the thicker core, then the first made.
+    /// A wall running through the node keeps its core as it is: the gap is then what lies between its core's face and the
+    /// cores ending on it. For that wall's end at the node: the band that takes it and the points to put in its outline
+    /// between the band's two corners at that end (from the corner at its From edge at the end, at its To edge at the
+    /// start); null for every other wall, or no gap.
+    /// </summary>
+    static (int Band, Vec2[] Insert)? NodeFill(IModelView m, Entity wall, int end, Func<Entity, int?> ranked)
+    {
+        if (Joins.NodeOf(m, wall, end) is not { } partners) return null;
+        var node = end == 0 ? Start(wall) : End(wall);
+        if (NodeRound(m, node, partners.Prepend((wall, end)).ToList()) is not { } round) return null;
+        var main = round.Where(x => !x.Half).Select(x => (W: x, Rank: CoreRank(x.Bands), Element: ranked(x.E) ?? 0, Core: new CornerEdges(x.Bands, 1)))
+            .OrderByDescending(x => x.Rank).ThenByDescending(x => x.Element).ThenByDescending(x => x.Core.CoreHi - x.Core.CoreLo)
+            .ThenBy(x => x.W.E.Id, StringComparer.Ordinal).First();
+        if (main.W.E.Id != wall.Id) return null;
+        var sorted = round.OrderBy(x => x.Angle).ToList();
+        // Round the node counter-clockwise, each wall's core corners there (clockwise, then counter-clockwise); a half of a
+        // wall running through leaves out the corner facing its other half, which its core goes on through.
+        var ring = new List<(Vec2 P, int Owner, bool Ccw)>();
+        for (var k = 0; k < sorted.Count; k++)
+        {
+            var w = sorted[k];
+            var core = new CornerEdges(w.Bands, 1);
+            var (lo, hi) = (NodePoint(w, core.CoreLo), NodePoint(w, core.CoreHi));
+            // Leaving by its start, its left (the core's high face) is its counter-clockwise side.
+            var (cw, ccw) = w.End == 0 ? (lo, hi) : (hi, lo);
+            bool Twin(int j) => sorted[j].E.Id == w.E.Id;
+            if (!(w.Half && Twin((k - 1 + sorted.Count) % sorted.Count))) ring.Add((cw, k, false));
+            if (!(w.Half && Twin((k + 1) % sorted.Count))) ring.Add((ccw, k, true));
+        }
+        if (Polygon2.SignedArea(ring.Select(x => x.P).ToList()) < 1e-9) return null;
+        // Round from this wall's counter-clockwise corner to its clockwise one: the gap's outline less this wall's own edge.
+        var me = sorted.FindIndex(x => x.E.Id == wall.Id && !x.Half);
+        var from = ring.FindIndex(x => x.Owner == me && x.Ccw);
+        if (from < 0) return null;
+        var insert = new List<Vec2>();
+        for (var i = 0; i < ring.Count; i++)
+        {
+            var p = ring[(from + i) % ring.Count].P;
+            if (insert.Count == 0 || (insert[^1] - p).Length > 1e-9) insert.Add(p);
+        }
+        var bandsOf = main.W.Bands;
+        var cores = bandsOf.Where(b => b.Core && b.To - b.From > 1e-12).ToList();
+        var pool = (cores.Count > 0 ? cores : bandsOf.Where(b => b.To - b.From > 1e-12)).ToList();
+        if (pool.Count == 0) return null;
+        return (pool.OrderByDescending(b => b.To - b.From).First().Index, insert.ToArray());
+    }
+
+    /// <summary>A band's outline (start From, end From, end To, start To) with a node's gap put in at either end (<see cref="NodeFill"/>).</summary>
+    static Vec2[] WithFill(Vec2[] whole, Band band, (int Band, Vec2[] Insert)?[] fills)
+    {
+        if (fills[0] is not { } f0 || f0.Band != band.Index) f0 = default;
+        if (fills[1] is not { } f1 || f1.Band != band.Index) f1 = default;
+        if (f0.Insert == null && f1.Insert == null) return whole;
+        var o = new List<Vec2> { whole[0], whole[1] };
+        if (f1.Insert != null) o.AddRange(f1.Insert);
+        o.Add(whole[2]);
+        o.Add(whole[3]);
+        if (f0.Insert != null) o.AddRange(f0.Insert);
+        // No point twice in a row (a band that is the whole core starts and ends the gap at its own corners).
+        var clean = new List<Vec2>();
+        foreach (var p in o)
+            if (clean.Count == 0 || (clean[^1] - p).Length > 1e-9) clean.Add(p);
+        while (clean.Count > 3 && (clean[^1] - clean[0]).Length <= 1e-9) clean.RemoveAt(clean.Count - 1);
+        return clean.ToArray();
     }
 
     /// <summary>The rank of a wall's core at a join: its core layer's priority (the highest of its core's).</summary>
@@ -830,6 +1014,7 @@ public static class Walls
         void Gap(Band b, Cutter a, Cutter c) { if (!gaps.TryGetValue(b.Index, out var l)) gaps[b.Index] = l = []; l.Add((a, c)); }
         var left = dir.Perp;
         const double eps = 1e-9;
+        var nodes = new List<Vec2>();
         foreach (var r in Joins.Of(m, wall.Id))
         {
             var join = Joins.Compute(m, r, paths, out _);
@@ -837,6 +1022,17 @@ public static class Walls
             var side = r.Relating == wall.Id ? join.A : join.B;
             if (join.Kind == JoinKind.T && !side.RunsThrough) continue;
             if (m.Get(Joins.Other(r, wall.Id)) is not { } other || PathCurve.Of(other) is { IsArc: true }) continue;
+            // Two walls or more ending on this one at one point (the forum's topic 164): a node, each layer there cut where it meets its like.
+            var theirSide = r.Relating == wall.Id ? join.B : join.A;
+            var theirEnd = theirSide.Connection switch { Connection.AtStart => 0, Connection.AtEnd => 1, _ => -1 };
+            if (join.Kind == JoinKind.T && theirEnd >= 0 && Joins.NodeOf(m, other, theirEnd) is { } node && node.Count(x => x.E.Id == wall.Id) == 2)
+            {
+                var at = theirEnd == 0 ? Start(other) : End(other);
+                if (nodes.Any(p => (p - at).Length < 1e-6)) continue;
+                nodes.Add(at);
+                NodeGaps(m, wall, at, node.Where(x => x.E.Id != wall.Id).Prepend((other, theirEnd)).ToList(), bands, Gap);
+                continue;
+            }
             var (os, oe) = (Start(other), End(other));
             if ((oe - os).Length < MinLength) continue;
             var od = (oe - os).Normalized();
@@ -884,14 +1080,43 @@ public static class Walls
         return band => gaps.TryGetValue(band.Index, out var l) ? l : [];
     }
 
+    /// <summary>
+    /// The layers of a wall that runs through a node (two walls or more ending on it at one point, on one side, the forum's
+    /// topic 164) interrupted there: each layer on their side, between where it meets its like on the first of them and on
+    /// the last, as each half of it would end at the node (<see cref="NodeEdges"/>); its core and the other side go on.
+    /// </summary>
+    static void NodeGaps(IModelView m, Entity wall, Vec2 node, IReadOnlyList<(Entity E, int End)> ends, IReadOnlyList<Band> bands, Action<Band, Cutter, Cutter> gap)
+    {
+        var all = ends.Append((wall, 0)).Append((wall, 1)).ToList();
+        if (NodeRound(m, node, all) is not { } round) return;
+        var halves = round.Where(x => x.Half).ToList();
+        if (halves.Count != 2) return;
+        var dir = (End(wall) - Start(wall)).Normalized();
+        var far = ends[0].End == 0 ? End(ends[0].E) : Start(ends[0].E);
+        var side = Math.Sign(Vec2.Cross(dir, far - node));
+        var core = new CornerEdges(bands, 1);
+        foreach (var b in bands)
+        {
+            if (b.To - b.From < 1e-12 || (side > 0 ? b.From < core.CoreHi - 1e-9 : b.To > core.CoreLo + 1e-9)) continue;
+            Cutter? Line((Entity E, int End, bool Half, Vec2 Start, Vec2 Dir, double Length, double Angle, IReadOnlyList<Band> Bands, Func<double, double> Edge) h)
+            {
+                var (p, q) = (NodePoint(h, b.From), NodePoint(h, b.To));
+                return (q - p).Length < 1e-9 ? null : new Cutter(p, (q - p).Normalized());
+            }
+            if (Line(halves[0]) is { } a && Line(halves[1]) is { } c) gap(b, a, c);
+        }
+    }
+
     /// <summary>The footprint with each gap taken out of it: what lies before the gap's first line and what lies after its second; pieces with no area dropped.</summary>
     static List<IReadOnlyList<Vec2>> Pieces(IReadOnlyList<Vec2> footprint, IReadOnlyList<(Cutter A, Cutter B)> gaps, Vec2 start, Vec2 dir, double length)
     {
         var pieces = new List<IReadOnlyList<Vec2>> { footprint };
         if (gaps.Count == 0) return pieces;
-        var (behind, ahead) = (start - dir * (length + 1), start + dir * (2 * length + 1));
+        // Reckoned along the band's own middle (a node's gap lines are slanted: on the axis they may cross in the other order).
+        var mid = start + dir.Perp * Vec2.Dot(Polygon2.Centroid(footprint) - start, dir.Perp);
+        var (behind, ahead) = (mid - dir * (length + 1), mid + dir * (2 * length + 1));
         static double Side(Cutter c, Vec2 q) => Vec2.Cross(c.Dir, q - c.Point);
-        double Along(Cutter c) => Vec2.Cross(c.Point - start, c.Dir) / Vec2.Cross(dir, c.Dir);
+        double Along(Cutter c) => Vec2.Cross(c.Point - mid, c.Dir) / Vec2.Cross(dir, c.Dir);
         foreach (var (a, b) in gaps)
         {
             // The gap's lines in the order the axis meets them; what the far end behind sees of the first stays, what the far end ahead sees of the second stays.

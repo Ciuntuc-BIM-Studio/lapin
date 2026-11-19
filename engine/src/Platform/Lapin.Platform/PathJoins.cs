@@ -124,21 +124,76 @@ public static class Joins
     /// </summary>
     static (Vec2 Point, EndCut Cut)? NodeAt(IModelView m, Entity e, int end, IPathElements paths, Func<Entity, JoinWall?>? frameFor)
     {
+        if (NodeOf(m, e, end) is not { } partners) return null;
+        if ((frameFor?.Invoke(e) ?? paths.FrameOf(e, m)) is not { } me) return null;
+        var at = end == 0 ? me.Start : me.End;
+        var others = new List<(JoinWall, int)>();
+        foreach (var (o, oe) in partners)
+        {
+            if ((frameFor?.Invoke(o) ?? paths.FrameOf(o, m)) is not { } f) return null;
+            // The element running through the node: its two halves, each leaving the node one way.
+            if (partners.Count(x => x.E.Id == o.Id) > 1) f = oe == 0 ? f with { Start = at } : f with { End = at };
+            others.Add((f, oe));
+        }
+        return Fan(me, end, others);
+    }
+
+    /// <summary>
+    /// The others joined at an element's end when it is a node of three or more, each by its end there (0 start, 1 end):
+    /// ends joined at one point, or ends on one side of an element running through that point (the forum's topic 164: a
+    /// T with two walls or more ending on it at one point), which is then in the list twice, once for each half of it
+    /// (0: the half leaving the node towards its end, 1: towards its start). Null when the end is no such node (one join
+    /// there, a plain T, ends on both sides of a run, an arc among them).
+    /// </summary>
+    public static IReadOnlyList<(Entity E, int End)>? NodeOf(IModelView m, Entity e, int end)
+    {
         var mine = end == 0 ? "ATSTART" : "ATEND";
         var partners = new List<(Entity E, int End)>();
+        Entity? through = null;
         foreach (var r in Of(m, e.Id))
         {
             if ((string?)r.Attrs?[r.Relating == e.Id ? "relatingConnection" : "relatedConnection"] != mine) continue;
             var theirs = (string?)r.Attrs?[r.Relating == e.Id ? "relatedConnection" : "relatingConnection"];
-            if (theirs is not ("ATSTART" or "ATEND") || m.Get(Other(r, e.Id)) is not { } o) return null;
+            if (m.Get(Other(r, e.Id)) is not { } o) return null;
+            if (theirs == "ATPATH")
+            {
+                if (through != null) return null;
+                through = o;
+                continue;
+            }
+            if (theirs is not ("ATSTART" or "ATEND")) return null;
             partners.Add((o, theirs == "ATSTART" ? 0 : 1));
         }
-        if (partners.Count < 2 || PathCurve.Of(e).IsArc || partners.Any(x => PathCurve.Of(x.E).IsArc)) return null;
-        if ((frameFor?.Invoke(e) ?? paths.FrameOf(e, m)) is not { } me) return null;
-        var others = new List<(JoinWall, int)>();
-        foreach (var (o, oe) in partners)
-            if ((frameFor?.Invoke(o) ?? paths.FrameOf(o, m)) is { } f) others.Add((f, oe)); else return null;
-        return Fan(me, end, others);
+        if (PathCurve.Of(e).IsArc || partners.Any(x => PathCurve.Of(x.E).IsArc)) return null;
+        if (through == null) return partners.Count < 2 ? null : partners;
+        if (partners.Count == 0 || PathCurve.Of(through).IsArc || !OneSide(through, partners.Prepend((e, end)))) return null;
+        partners.Add((through, 0));
+        partners.Add((through, 1));
+        return partners;
+    }
+
+    /// <summary>Whether ends meeting at a point on a straight element's run all lie on one side of it.</summary>
+    static bool OneSide(Entity through, IEnumerable<(Entity E, int End)> ends)
+    {
+        var (ts, td) = (Start(through), (End(through) - Start(through)).Normalized());
+        var sides = ends.Select(x => Math.Sign(Vec2.Cross(td, (x.End == 0 ? End(x.E) : Start(x.E)) - ts))).Distinct().ToList();
+        return sides.Count == 1 && sides[0] != 0;
+    }
+
+    /// <summary>The ends joined at an element's end (each other's end there, none on a run); empty when it is free.</summary>
+    static List<(Entity E, int End)> EndsJoinedAt(IModelView m, Entity e, int end, out bool onRun)
+    {
+        var mine = end == 0 ? "ATSTART" : "ATEND";
+        var o = new List<(Entity E, int End)>();
+        onRun = false;
+        foreach (var r in Of(m, e.Id))
+        {
+            if ((string?)r.Attrs?[r.Relating == e.Id ? "relatingConnection" : "relatedConnection"] != mine) continue;
+            var theirs = (string?)r.Attrs?[r.Relating == e.Id ? "relatedConnection" : "relatingConnection"];
+            if (theirs is "ATSTART" or "ATEND" && m.Get(Other(r, e.Id)) is { } x) o.Add((x, theirs == "ATSTART" ? 0 : 1));
+            else onRun = true;
+        }
+        return o;
     }
 
     /// <summary>
@@ -396,6 +451,9 @@ public static class Joins
             if (JoinedEnds(m, e)[end] || !AutoAt(e, end)) continue;
             var at = end == 0 ? Start(e) : End(e);
             var joinedHere = false;
+            // The ends joined at this point so far, and the element whose run it ends on there (a T of two or more ends, topic 164).
+            var endsHere = new List<(Entity E, int End)>();
+            Entity? runHere = null;
             foreach (var other in others.OrderBy(o => DistanceTo(o, at)))
             {
                 if (Between(m, id, other.Id) != null) continue;
@@ -409,14 +467,21 @@ public static class Joins
                 // fan, NodeAt), else left alone.
                 var theirs = trial.B.Connection == Connection.AtStart ? 0 : 1;
                 var node = trial.B.Connection != Connection.AtPath && ((theirs == 0 ? Start(current) : End(current)) - at).Length <= NodeTolerance;
+                // A run through the very point (the forum's topic 164): this end and the ends there make a T node on it, on one side of it.
+                var onRun = trial.B.Connection == Connection.AtPath && (trial.Point - at).Length <= NodeTolerance;
                 // Their end there does not join automatically (decision 546): it stays where it is.
                 if (trial.B.Connection != Connection.AtPath && !AutoAt(current, theirs)) continue;
                 if (trial.B.Connection != Connection.AtPath && JoinedEnds(m, current)[theirs] && !node) continue;
-                if (joinedHere && !node) continue;
+                if (joinedHere && !node && !(onRun && runHere == null)) continue;
+                // A T node takes the ends on one side of the run only; the others stay as they are.
+                if (node && runHere != null && !OneSide(runHere, endsHere.Append((current, theirs)).Prepend((m.Get(id)!, end)))) continue;
+                if (joinedHere && onRun && !OneSide(current, endsHere.Prepend((m.Get(id)!, end)))) continue;
                 Join(edit, paths, e, current, trial.Kind == JoinKind.L ? style : JoinStyle.Butt);
                 joinedHere = true;
-                // Only more ends at this very point join it after the first.
-                if (!node) break;
+                if (node) endsHere.Add((current, theirs));
+                if (onRun) runHere = current;
+                // Only more ends at this very point (or a run through it) join it after the first.
+                if (!node && !onRun) break;
             }
         }
         // Others whose free end lies on this element's path: a T, this one through.
@@ -431,7 +496,16 @@ public static class Joins
             catch (CommandException) { continue; }
             if (trial.Kind != JoinKind.T || trial.A.Connection != Connection.AtPath) continue;
             var theirEnd = trial.B.Connection == Connection.AtStart ? 0 : 1;
-            if (JoinedEnds(m, current)[theirEnd] || !AutoAt(current, theirEnd)) continue;
+            if (!AutoAt(current, theirEnd)) continue;
+            if (JoinedEnds(m, current)[theirEnd])
+            {
+                // An end joined to other ends at one point (a corner, a node) that this run passes through: a T node on it (the
+                // forum's topic 164), when they all lie on one side of it and none is on a run already.
+                var at = theirEnd == 0 ? Start(current) : End(current);
+                var ends = EndsJoinedAt(m, current, theirEnd, out var onRun);
+                if (onRun || ends.Count == 0 || (trial.Point - at).Length > NodeTolerance
+                    || ends.Any(x => ((x.End == 0 ? Start(x.E) : End(x.E)) - at).Length > NodeTolerance) || !OneSide(e, ends.Prepend((current, theirEnd)))) continue;
+            }
             Join(edit, paths, e, current);
         }
         // Others whose run this element's run crosses: an X, the one already there through (the thicker, when they differ).
