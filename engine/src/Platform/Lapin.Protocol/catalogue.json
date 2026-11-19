@@ -1141,6 +1141,7 @@
     {"name":"types.ordered","module":"core","args":[{"name":"class","type":"str"}]},
     {"name":"types.preview","module":"core","args":[{"name":"class","type":"str"},{"name":"type","type":"dict"},{"name":"sample","type":"dict"},{"name":"views","type":"list"},{"name":"scale","type":"float"},{"name":"detail","type":"str"},{"name":"layers","type":"str"},{"name":"styleId","type":"str"}]},
     {"name":"types.readPack","module":"core","args":[{"name":"text","type":"str"}]},
+    {"name":"view.dimLines","module":"core","args":[{"name":"id","type":"str"},{"name":"storeyId","type":"str"},{"name":"kinds","type":"list"}]},
     {"name":"view.drawing","module":"core","args":[{"name":"id","type":"str"},{"name":"storeyId","type":"str"}]},
     {"name":"view.elementGraphicsOf","module":"core","args":[{"name":"id","type":"str"},{"name":"ids","type":"list"}]},
     {"name":"view.hidden3d","module":"core","args":[{"name":"id","type":"str"}]},

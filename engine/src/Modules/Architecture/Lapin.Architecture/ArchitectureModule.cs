@@ -963,6 +963,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Query("openingReferences", (q, a) => OpeningReferences.Of(q, a));
         // What a wall's temporary dimensions measure to (decision 693): the storey's straight walls, their faces and joins; {storeyId | id}.
         r.Query("wallLines", (q, a) => WallLines.Of(q, a));
+        r.Service<IDimLineProvider>(new WallDimLines());
 
         r.Command("flipJoinery", "Flip", (ctx, a) =>
         {
