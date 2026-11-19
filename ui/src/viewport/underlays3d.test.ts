@@ -26,6 +26,13 @@ describe('an imported DXF in 3D (decision 382)', () => {
     const own = node('o', 'IfcAnnotation', { predefinedType: 'DRAFT', shape: { type: 'line' } });
     const lifted = node('z', 'IfcAnnotation', { predefinedType: 'DRAFT', dxf: true, heights: [0, 1] });
     expect([line, hatch, own, lifted].map(isUnderlayNode)).toEqual([true, true, false, false]);
+    // A DXF's block kept as a symbol is its drawing too (issue #103); a symbol placed by hand is not.
+    const block = node('b', 'IfcAnnotation', { predefinedType: 'SYMBOL', dxf: true, dxfImport: 'imp', symbolId: 's' });
+    const placed = node('q', 'IfcAnnotation', { predefinedType: 'SYMBOL', symbolId: 's' });
+    expect([block, placed].map(isUnderlayNode)).toEqual([true, false]);
+    // Its definition edited: asked again.
+    const def = node('s', 'LapinSymbol');
+    expect(underlaySources(new Map([[block.id, block], [def.id, def]])).refs).toEqual([block, def]);
 
     const wall = node('w', 'IfcWall');
     const project = node('p', 'IfcProject');

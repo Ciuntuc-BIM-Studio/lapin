@@ -8,7 +8,7 @@ namespace Lapin.Drafting.Cad;
 
 /// <summary>
 /// An imported DXF in the 3D view (a tester's report #106, decision 382): the flat drawing a DXF brought into a view
-/// (its lines, polylines, circles, arcs and hatches, marked <c>dxf</c>) laid on that view's plane in the model, as
+/// (its lines, polylines, circles, arcs and hatches, marked <c>dxf</c>, and its blocks kept as symbols) laid on that view's plane in the model, as
 /// <see cref="Views.PlaneOf"/> reads it (a plan's at its storey's level, a section's on its cut, piece by piece when
 /// developed, an elevation's once fixed, a reference plane's). Not one element each, as the hand-drafted shapes are
 /// (<see cref="Drafts.Geometry3d"/>): a plan of tens of thousands of lines would be as many objects. They come in
@@ -46,9 +46,12 @@ public static class Underlays3d
 
     static bool Shown(JsonNode? record) => record is not JsonObject o || o[ShownKey] is not JsonValue v || !v.TryGetValue<bool>(out var b) || b;
 
-    /// <summary>Whether a drafted entity is a DXF's flat drawing: a shape marked <c>dxf</c> or anything an import recorded, never one with heights.</summary>
+    /// <summary>
+    /// Whether a drafted entity is a DXF's flat drawing: a shape or a placed symbol (a block kept as a symbol, issue #103)
+    /// marked <c>dxf</c> or anything an import recorded, never a shape with heights.
+    /// </summary>
     public static bool IsUnderlay(Entity e) =>
-        e.Class == IfcClass.Annotation && e.PredefinedType == Drafts.Predefined && (e.Bool("dxf") || e.Str(ImportKey) != null) && e.Attrs["heights"] is not JsonArray;
+        e.Class == IfcClass.Annotation && (e.PredefinedType is Drafts.Predefined or SymbolInstances.Predefined) && (e.Bool("dxf") || e.Str(ImportKey) != null) && e.Attrs["heights"] is not JsonArray;
 
     /// <summary>An import's or a link's drawing shown in 3D or not (one undo step).</summary>
     public static void SetShown(ICommandContext ctx, string id, bool shown)
@@ -176,19 +179,27 @@ public static class Underlays3d
             if (!planes.TryGetValue(vid, out var vp)) planes[vid] = vp = ViewPlanes.Of(m, services, view);
             if (vp == null) continue;
             var color = Rgb(halftone ? Links.Halftone : e.Str("color") ?? layer.Color);
-            var shape = Drafts.ShapeOf(e);
-            var hatch = e.Attrs["hatch"] as JsonObject;
-            var loops = hatch?["loops"] is JsonArray la ? la.Select(Loop).Where(l => l.Count >= 3).ToList() : [];
-            if (shape == null && loops.Count == 0) continue;
-            var (lo, hi) = shape != null ? Geo.Bounds(shape) : (new Vec2(loops.Min(l => l.Min(p => p.X)), 0), new Vec2(loops.Max(l => l.Max(p => p.X)), 0));
-            var piece = vp.At((lo.X + hi.X) / 2);
+            List<List<Vec2>> runs, loops;
+            if (e.PredefinedType == SymbolInstances.Predefined)
+            {
+                // A block kept as a symbol: its strokes and its fills' loops where it stands on the view.
+                if (SymbolInstances.Linework(m, e, view) is not { } drawn) continue;
+                (runs, loops) = drawn;
+            }
+            else
+            {
+                runs = Drafts.ShapeOf(e) is { } shape ? Drafts.Flatten(shape) : [];
+                loops = e.Attrs["hatch"] is JsonObject hatch && hatch["loops"] is JsonArray la ? la.Select(Loop).Where(l => l.Count >= 3).ToList() : [];
+            }
+            var xs = runs.SelectMany(r => r).Concat(loops.SelectMany(l => l)).Select(p => p.X).ToList();
+            if (xs.Count == 0) continue;
+            var piece = vp.At((xs.Min() + xs.Max()) / 2);
             var key = (vid, piece, source, layer.Name);
             if (!batches.TryGetValue(key, out var batch))
                 batches[key] = batch = new Batch(vid, view.Str("storeyId"), source, layer.Name, vp[piece]);
             var plane = batch.Plane;
-            if (shape != null)
-                foreach (var run in Drafts.Flatten(shape))
-                    for (var i = 0; i + 1 < run.Count; i++) batch.Segment(plane.World(run[i]), plane.World(run[i + 1]), color);
+            foreach (var run in runs)
+                for (var i = 0; i + 1 < run.Count; i++) batch.Segment(plane.World(run[i]), plane.World(run[i + 1]), color);
             if (loops.Count > 0) Fill(batch, loops, color);
         }
         return new JsonArray(batches.Values.Select(b => (JsonNode)b.ToJson()).ToArray());
