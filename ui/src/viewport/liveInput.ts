@@ -64,6 +64,9 @@ const modes = new Map<string, LiveMode>();
 
 export const useLive = create<LiveState>(() => ({ owner: null, base: null, cursor: null, len: '', ang: '', focus: 'len', commit: null, delta: false, mode: 'polar', rect: null, measure: false }));
 
+/** A rectangle opens on width and height (report #173: type the sizes after the base point); a reference point's offset on distance and angle. */
+const defaultMode = (rect: string): LiveMode => (rect.startsWith('ref:') ? 'polar' : 'rect');
+
 /** A segment starts at `base`: its length and angle can now be typed. */
 export function liveBegin(owner: string, base: Vec2, commit: (p: Vec2, typed?: number, typedAngle?: number) => void, o: { delta?: boolean; rect?: string; measure?: boolean } = {}): void {
   const s = useLive.getState();
@@ -71,7 +74,7 @@ export function liveBegin(owner: string, base: Vec2, commit: (p: Vec2, typed?: n
   const rect = o.rect ?? null;
   const measure = !!o.measure;
   if (s.owner === owner && s.base && Math.hypot(s.base.x - base.x, s.base.y - base.y) < 1e-12) { useLive.setState({ commit, delta, measure }); return; }
-  useLive.setState({ owner, base, commit, delta, measure, len: '', ang: '', focus: 'len', rect, mode: rect ? modes.get(rect) ?? 'polar' : 'polar' });
+  useLive.setState({ owner, base, commit, delta, measure, len: '', ang: '', focus: 'len', rect, mode: rect ? modes.get(rect) ?? defaultMode(rect) : 'polar' });
 }
 export const liveCursor = (p: Vec2 | null) => useLive.setState({ cursor: p });
 export function liveEnd(owner?: string): void {
