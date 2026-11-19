@@ -631,6 +631,8 @@ public static class Dimensions
         // The dimension line's and the extension lines' own pens, colours and line types (issue #66); unset: as the style's colour, 0.13 mm, continuous.
         var lineColor = orphan ? color : style.DimLineColor ?? color;
         var extColor = orphan ? color : style.ExtColor ?? color;
+        // The values' own colour (forum topic 173): the dimension's, else its style's text colour, else its text style's, else the style's.
+        var textColor = orphan ? color : Standards.DimTextColor(styleParams, style, text) ?? color;
         var (lineW, extW) = (style.DimLineWeightOr(Pens.Default.Hatch), style.ExtWeightOr(Pens.Default.Hatch));
         var (lineDash, extDash) = (Standards.DashOf(c.Book, style.DimLineType), Standards.DashOf(c.Book, style.ExtLineType));
         var mm = c.Mm;
@@ -697,7 +699,7 @@ public static class Dimensions
                     mk.Line(mid, DimensionTextPlacement.Box(owner, seg, placed).Nearest(mid), "DIMENSION", Pens.Default.Hatch, color);
                 }
             }
-            mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font, text.Italic), color);
+            mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font, text.Italic), textColor);
             textAt.Add((JsonNode)J(tat));
             autoAt.Add(auto.TryGetValue(i, out var a) ? (JsonNode)J(a) : null);
             // A segment across a door, a window or a bare opening: its height under the line (decision 338), moved with the value
@@ -706,7 +708,7 @@ public static class Dimensions
             {
                 var h = text.Height * mm;
                 for (var k = 0; k < rows.Count; k++)
-                    mk.Text(new PenText(mid - up * (v.RowsTop + h + k * h * OpeningHeights.Pitch) + (moved[i] ?? default), rows[k], text.Height, readable, "middle", "bottom", text.Bold, text.Font, text.Italic), color);
+                    mk.Text(new PenText(mid - up * (v.RowsTop + h + k * h * OpeningHeights.Pitch) + (moved[i] ?? default), rows[k], text.Height, readable, "middle", "bottom", text.Bold, text.Font, text.Italic), textColor);
             }
         }
         mk.Snaps.AddRange(line);

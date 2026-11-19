@@ -37,11 +37,15 @@ public sealed record TextStyle(string Id, string Name, double Height, string Fon
 /// dimension line (its arrows and ticks take its colour) their own pen (paper mm), colour and line type; null: as before (a
 /// 0.13 mm pen, the style's colour, continuous).
 /// </para>
+/// <para>
+/// Its values' colour (forum topic 173, decision 732): <see cref="TextColor"/>, the style's own text colour, else its text
+/// style's colour, else the style's colour (<see cref="Standards.DimTextColor"/>); a dimension's own colour goes before all.
+/// </para>
 /// </summary>
 public sealed record DimStyle(string Id, string Name, string TextStyle, string Arrow, double ArrowSize, double ExtGap, double ExtOver, string Placement, double TextGap, int Precision, string Unit, string? Color = null, string OpeningHeight = "off", string Zeros = "project",
     string AutoText = "project", double? TextLeader = null,
     string? ExtSuppress = null, double? ExtFixed = null, double? ExtWeight = null, string? ExtColor = null, string? ExtLineType = null,
-    double? DimLineWeight = null, string? DimLineColor = null, string? DimLineType = null)
+    double? DimLineWeight = null, string? DimLineColor = null, string? DimLineType = null, string? TextColor = null)
 {
     /// <summary>Whether the extension line at point <paramref name="index"/> of a string of <paramref name="count"/> points is left out: the first, the last, or both.</summary>
     public bool SuppressesExtension(int index, int count) => ExtSuppress switch
@@ -311,7 +315,7 @@ public static class Standards
             v["precision"] is JsonValue pv && Lapin.Model.Json.Number(pv) is { } pn && double.IsFinite(pn) ? Math.Max(-1, (int)Math.Round(pn)) : d.Precision, OneOf(v["unit"], Units, d.Unit), Color(v["color"]), OneOf(v["openingHeight"], OpeningHeights, d.OpeningHeight),
             OneOf(v["zeros"], ZeroChoices, d.Zeros), OneOf(v["autoText"], AutoTextChoices, d.AutoText), TextLeaderOf(v["textLeader"]),
             ExtSuppressOf(v["extSuppress"]), Within(v["extFixed"], MaxExtFixed), Within(v["extWeight"], MaxDimPen), Color(v["extColor"]), LineType(v["extLineType"]),
-            Within(v["dimLineWeight"], MaxDimPen), Color(v["dimLineColor"]), LineType(v["dimLineType"]));
+            Within(v["dimLineWeight"], MaxDimPen), Color(v["dimLineColor"]), LineType(v["dimLineType"]), Color(v["textColor"]));
     }
 
     static AxisStyle ReadAxis(JsonObject v) => ReadAxis(v, LineTypes);
@@ -537,6 +541,14 @@ public static class Standards
         if (s.ExtFixed is not > 0) s = s with { ExtFixed = null };
         return s;
     }
+
+    /// <summary>
+    /// The colour a dimension's values are written in (forum topic 173, decision 732), with <paramref name="dim"/> and
+    /// <paramref name="text"/> resolved from <paramref name="p"/>: the dimension's own colour when it has one (o.color), else its
+    /// style's text colour, else its text style's colour, else its style's colour; null: black.
+    /// </summary>
+    public static string? DimTextColor(JsonObject p, DimStyle dim, TextStyle text) =>
+        p["o.color"] is JsonValue ? dim.Color : dim.TextColor ?? text.Color ?? dim.Color;
 
     public static AxisStyle ResolveAxis(StyleBook b, JsonObject p)
     {

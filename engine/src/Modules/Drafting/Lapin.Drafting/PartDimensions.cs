@@ -87,7 +87,7 @@ public static class PartDimensions
             var t = new Vec2(1, 1).Normalized() * (s / 2);
             mk.Line(new Vec2(p.X, y) - t, new Vec2(p.X, y) + t, "DIMENSION", Pens.Default.Seen, lineColor);
             // The value along the extension line, reading upwards, just past the base line.
-            mk.Text(new PenText(new Vec2(p.X - style.TextGap * mm, y + side * (style.ExtOver + 1) * mm), Mm(p.X - zero.X), text.Height, 90, side > 0 ? "start" : "end", "bottom", text.Bold, text.Font, text.Italic), color);
+            mk.Text(new PenText(new Vec2(p.X - style.TextGap * mm, y + side * (style.ExtOver + 1) * mm), Mm(p.X - zero.X), text.Height, 90, side > 0 ? "start" : "end", "bottom", text.Bold, text.Font, text.Italic), Standards.DimTextColor([], style, text) ?? color);
         }
         mk.Snaps.AddRange(xs.Select(x => new Vec2(x, y)));
         mk.Data = new JsonObject { ["partDim"] = owner[(owner.LastIndexOf(":partdim:", StringComparison.Ordinal) + 9)..] };
@@ -115,7 +115,8 @@ public static class PartDimensions
         var (r, u, d) = (Local(c.Frame.Right), Local(c.Frame.Up), Local(c.Frame.Dir));
         Vec2 P(Vec3 local) => c.Frame.Map(f.World(local));
         var text = Standards.ResolveText(c.Book, []);
-        var color = Standards.ResolveDim(c.Book, []).Color ?? "#000000";
+        // Its labels in the dimensions' text colour (forum topic 173).
+        var color = Standards.DimTextColor([], Standards.ResolveDim(c.Book, []), text) ?? "#000000";
         var above = max.Y + FirstOffset * mm;
         var left = min.X - FirstOffset * mm;
 
