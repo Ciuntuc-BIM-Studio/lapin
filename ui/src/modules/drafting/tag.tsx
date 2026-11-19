@@ -41,8 +41,21 @@ export const TAG_SOURCES: readonly { source: TagSource; label: string }[] = [
  * What the TAG command puts down: its source; for an element the field it shows (a parameter's name too) or a tag type (its
  * template wins); a room's field; a parameter's name; a build-up tag type; a keynote's code or title; a leader or none.
  */
-interface TagPrefs { source: TagSource; field: string; tagType: string; leader: boolean; roomField: string; parameter: string; buildup: string; keynote: 'code' | 'title' }
-export const useTagPrefs = create<TagPrefs>(() => ({ source: 'element', field: 'mark', tagType: '', leader: true, roomField: 'name', parameter: 'FireRating', buildup: '', keynote: 'code' }));
+interface TagPrefs { source: TagSource; field: string; tagType: string; leader: boolean; roomField: string; parameter: string; buildup: string; keynote: 'code' | 'title'; part: TagPart }
+export const useTagPrefs = create<TagPrefs>(() => ({ source: 'element', field: 'mark', tagType: '', leader: true, roomField: 'name', parameter: 'FireRating', buildup: '', keynote: 'code', part: '' }));
+
+/**
+ * A part of the element a tag may point at instead (forum topic 178, decision 727): a window's interior or exterior sill. '' tags
+ * the element, unless the click lands on one of its parts the engine places (a sill clicked tags the sill).
+ */
+export type TagPart = '' | 'sill:inside' | 'sill:outside';
+export const TAG_PARTS: readonly [TagPart, string][] = [['', 'The element'], ['sill:inside', 'A window\'s interior sill'], ['sill:outside', 'A window\'s exterior sill']];
+
+/** What a tag tells the engine of the part it points at: the part chosen for a door or window, else the click's point (the part it lands on). */
+export function tagPartArgs(part: TagPart, cls: string | undefined, click: Vec2 | undefined): { part: string } | { pick: [number, number] } | Record<string, never> {
+  if (part && (cls === 'IfcWindow' || cls === 'IfcDoor')) return { part };
+  return click ? { pick: [click.x, click.y] } : {};
+}
 
 /** The room fields a room tag offers first (the room stamp's: Rooms.Values in the engine). */
 export const ROOM_TAG_FIELDS: [string, string][] = [['name', 'Name'], ['number', 'Number'], ['area', 'Area'], ['function', 'Function'], ['height', 'Height'], ['finish.floor', 'Finish: floor']];
@@ -174,7 +187,7 @@ export function TagOptions() {
 
 /** An element's tag: a field or any parameter, or a tag type of the standards (as the Tag tool always had). */
 function ElementShows({ types }: { types: TagTypeDto[] }) {
-  const { field, tagType } = useTagPrefs();
+  const { field, tagType, part } = useTagPrefs();
   const known = QUICK_FIELDS.some(([k]) => k === field);
   return (
     <>
@@ -191,6 +204,10 @@ function ElementShows({ types }: { types: TagTypeDto[] }) {
       <select className={`cad-layer${tagType ? ' on' : ''}`} value={tagType} data-tag-type title="A tag type of the drafting standards: its template, its text style" onChange={(e) => useTagPrefs.setState({ tagType: e.target.value })}>
         <option value="">no tag type</option>
         {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+      </select>
+      <select className={`cad-layer${part ? ' on' : ''}`} value={part} data-tag-part title="What of a door or window it tags: the element, or its interior or exterior sill (a click on a sill tags the sill too)"
+        onChange={(e) => useTagPrefs.setState({ part: e.target.value as TagPart })}>
+        {TAG_PARTS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
       </select>
     </>
   );
@@ -230,7 +247,7 @@ export function tagCommand(): Step {
     ...Object.fromEntries(TAG_SOURCES.map((x) => [x.source.toUpperCase(), () => { useTagPrefs.setState({ source: x.source }); return pick(); }])),
   });
   const shows = () => { const c = tagContent(useTagPrefs.getState()); return 'tagType' in c ? `type ${c.tagType}` : c.field; };
-  const put = async (id: string, at: Vec2, elbow?: Vec2) => {
+  const put = async (id: string, at: Vec2, elbow?: Vec2, click?: Vec2) => {
     const h = cadHost();
     if (!h) return;
     const p = useTagPrefs.getState();
@@ -250,6 +267,8 @@ export function tagCommand(): Step {
       viewId: h.viewId, element: id, at: [at.x, at.y],
       ...(typed ? { tagType } : { field: 'field' in c ? c.field : p.field }),
       ...(text ? { text } : {}),
+      // A window's sill (decision 727): the one chosen, else the one the click landed on.
+      ...(p.source === 'element' || p.source === 'parameter' || p.source === 'text' ? tagPartArgs(p.part, cls, click) : {}),
       ...(p.leader ? {} : { leader: false }),
       ...(elbow ? { elbow: [elbow.x, elbow.y] } : {}),
     });
@@ -273,14 +292,14 @@ export function tagCommand(): Step {
             const far = { x: c.x + (c.x >= p.x ? w : -w), y: c.y };
             return [{ type: 'line' as const, a: p, b: c }, { type: 'line' as const, a: c, b: far }];
           },
-          point: async (at: Vec2) => { await put(id, at); return pick(); },
+          point: async (at: Vec2) => { await put(id, at, undefined, p); return pick(); },
         };
       }
       const head = (elbow?: Vec2): Step => ({
         prompt: elbow ? 'Where the tag goes' : 'Where the tag goes [Elbow]', want: 'point', base: elbow ?? p,
         preview: (c) => (elbow ? [{ type: 'line', a: p, b: elbow }, { type: 'line', a: elbow, b: c }] : [{ type: 'line', a: p, b: c }]),
         ...(elbow ? {} : { keywords: { E: () => ({ prompt: 'The leader\'s elbow', want: 'point' as const, base: p, preview: (c: Vec2) => [{ type: 'line' as const, a: p, b: c }], point: (k: Vec2) => head(k) }) } }),
-        point: async (at) => { await put(id, at, elbow); return pick(); },
+        point: async (at) => { await put(id, at, elbow, p); return pick(); },
       });
       return head();
     },
@@ -501,6 +520,8 @@ export function TagFields({ node }: { node: NodeDto }) {
   return (
     <dl className="fields" data-tag-fields>
       <dt>Tagged element</dt><dd><span className="num">{target ? `${target.name} (${target.type})` : '—'}</span></dd>
+      {/* A tag of a part of the element (decision 727): which one, the window's interior or exterior sill. */}
+      {typeof node.props.part === 'string' && <><dt>Tagged part</dt><dd data-testid="tag-part">{TAG_PARTS.find(([k]) => k === node.props.part)?.[1] ?? <span data-no-i18n>{node.props.part}</span>}</dd></>}
       <dt title="Off: printed nowhere (sheets, PDF, exports), drawn faintly on screen only, so it can be switched on again">Shown</dt>
       <dd><input type="checkbox" checked={node.props.off !== true} data-tag-shown onChange={(e) => set({ shown: e.target.checked })} /></dd>
       {marker && <>
