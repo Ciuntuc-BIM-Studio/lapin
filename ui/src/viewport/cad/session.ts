@@ -118,6 +118,8 @@ interface CadState {
   osnap: boolean;
   /** Object Snap Override (forum topic 154): the one snap (or none) the next point uses; Ctrl + right click or a typed code (MID, END…) arms it, the point taken or Esc lets it go. */
   snapOverride: SnapOverride | null;
+  /** "Grid only": a lasting mode where only the grid's axes, their crossings and ends snap. */
+  gridOnly: boolean;
   ortho: boolean;
   polar: boolean;
   layer: string;
@@ -142,7 +144,7 @@ interface CadState {
 
 export const useCad = create<CadState>(() => ({
   buffer: '', takeAll: false, history: [], command: null, step: null, last: null, cursor: null, aim: null, lastPoint: null,
-  osnap: true, snapOverride: null, ortho: false, polar: true, layer: '0', role: '', host: null,
+  osnap: true, snapOverride: null, gridOnly: false, ortho: false, polar: true, layer: '0', role: '', host: null,
   offset: 0.5, offsetThrough: false, offsetFrom: 'axis', trimFace: 'axis', radius: 0, filletLine: 'axis', chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
 }));
 

@@ -59,7 +59,7 @@ export interface Prefs {
   clickOutAccepts: boolean;
 }
 
-export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'tangent', 'nearest', 'wallAxis'];
+export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'tangent', 'nearest', 'wallAxis', 'gridAxis'];
 /** The object snaps before forum topic 151 added Tangent and Wall axis: what settings kept with no list of known snaps knew. */
 const FIRST_SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'nearest'];
 /** The object snaps on by default (all of them: none takes a point ahead of the drawn lines' ends and crossings). */

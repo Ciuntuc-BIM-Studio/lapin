@@ -655,6 +655,8 @@ export const ES: Record<string, string> = {
   "Survey point (map)": "Punto de reconocimiento (mapa)",
   "Quadrant": "Cuadrante",
   "Wall axis": "Eje del muro",
+  "Grid only (every other snap off)": "Solo retícula (todos los demás snaps desactivados)",
+  "Grid only: every other snap is off; only the grid axes, their crossings and ends snap (type GRID for one point). Esc turns it off": "Solo retícula: todos los demás snaps están desactivados; solo se capturan los ejes de la retícula, sus cruces y extremos (escriba GRID para un punto). Esc lo desactiva",
   "No snap (for this point)": "Sin forzado (para este punto)",
   "Snap settings…": "Ajustes de forzado…",
   "Perpendicular": "Perpendicular",

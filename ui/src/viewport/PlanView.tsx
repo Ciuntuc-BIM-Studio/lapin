@@ -58,7 +58,7 @@ import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { CadOverlay } from './cad/canvas';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
-import { WALL_CLASSES, elementCurves, wallAxes, wallAxisPoints } from './cad/elementSnaps';
+import { WALL_CLASSES, elementCurves, gridAxisShapes, wallAxes, wallAxisPoints } from './cad/elementSnaps';
 import { clearShown, hiddenInDrawing, publishShown, shownItems, shownWholeOf } from './cad/shown';
 import { CommandLine } from './cad/CommandLine';
 import './cad/ucs';
@@ -241,6 +241,8 @@ export function PlanView() {
     return own.filter((q) => !ends.some((e) => Math.hypot(e.x - q.x, e.y - q.y) < 1e-9));
   }), [snapItems, wallAxisOn, nodes]);
   const snapWallAxes = useMemo(() => wallAxes(snapItems, nodes), [snapItems, nodes]);
+  // The shown grid's axes (an IfcGrid's `axes`, each a line): the Grid axis snap and "Grid only" take them.
+  const snapGridAxes = useMemo(() => snapItems.flatMap((r) => (nodes.get(r.nodeId)?.type === 'IfcGrid' ? gridAxisShapes(nodes.get(r.nodeId)?.props.axes) : [])), [snapItems, nodes]);
   const snapCurves = useMemo(() => elementCurves(snapItems, nodes), [snapItems, nodes]);
   // Marks with exact shapes or line segments are already parsed by snapShapes() with their endpoint/midpoint/centre kinds;
   // turning their flat snaps list into zero-length lines would label midpoints as endpoints (forum #111).
@@ -405,7 +407,7 @@ export function PlanView() {
   const { aim, acquire } = useCadCanvas({
     viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, outlines,
     inRegion: (takes) => regionIds(takes, pickItems, nodes, scope ? undefined : drawing?.marks), axes,
-    wallAxes: snapWallAxes, curves: snapCurves,
+    wallAxes: snapWallAxes, gridAxes: snapGridAxes, curves: snapCurves,
   });
   const cadStep = useCad((s) => s.step);
   /** The selection dragged by its body (its trace shows over the plan). */

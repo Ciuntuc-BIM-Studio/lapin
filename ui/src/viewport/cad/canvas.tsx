@@ -49,11 +49,13 @@ const GLYPH: Record<SnapMode, (x: number, y: number) => JSX.Element> = {
   nearest: (x, y) => <path d={`M${x - 5},${y - 5}H${x + 5}L${x - 5},${y + 5}H${x + 5}Z`} />,
   // Forum topic 151: a circle with the line touching it on top (as CAD marks a tangent), and an axis' dash-dot through a small circle.
   tangent: (x, y) => <g><circle cx={x} cy={y} r={5} /><path d={`M${x - 7},${y - 5}H${x + 7}`} /></g>,
+  // The grid axis: a diamond on a dash-dot line.
+  gridAxis: (x, y) => <g><path d={`M${x},${y - 5}L${x + 5},${y}L${x},${y + 5}L${x - 5},${y}Z`} /><path d={`M${x - 11},${y}H${x - 7}M${x + 7},${y}H${x + 11}`} /></g>,
   wallAxis: (x, y) => <g><circle cx={x} cy={y} r={3.5} /><path d={`M${x - 11},${y}H${x - 6}M${x - 4},${y}H${x - 3}M${x + 3},${y}H${x + 4}M${x + 6},${y}H${x + 11}`} /></g>,
 };
 
 /** What the marker says beside it: the snap's name (a wall axis's in two words). */
-const TIP: Partial<Record<SnapMode, string>> = { wallAxis: 'wall axis' };
+const TIP: Partial<Record<SnapMode, string>> = { wallAxis: 'wall axis', gridAxis: 'grid axis' };
 
 /** The snap marker, the guides and the running command's preview, in screen coordinates. */
 export function CadOverlay({ aimed, toScreen }: { aimed: Aimed | null; toScreen: ToScreen }) {

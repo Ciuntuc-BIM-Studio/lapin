@@ -11,6 +11,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { arcOf, arcShape, isArc, middle, type Arc } from '../arc';
 import { referenceArc } from '../wallReference';
 import { arcsOf, edgeArc, fromPairs } from '../contour';
+import { axesOf } from '../../shell/gridAxes';
 import { normAngle, type Shape } from './shapes';
 
 /** The classes whose axis is a wall's. */
@@ -103,4 +104,9 @@ function facesAround(axis: Extract<Shape, { type: 'arc' }>, plan: PlanLike['plan
     out.push({ type: 'arc', c: axis.c, r: g.r, start: normAngle(axis.start + lo), end: normAngle(axis.start + hi) });
   }
   return out;
+}
+
+/** A grid's axes (its `axes` property: tag, a, b) as lines, the Grid axis snap's: none of zero length. */
+export function gridAxisShapes(raw: unknown): Shape[] {
+  return axesOf(raw).filter((x) => Math.hypot(x.b.x - x.a.x, x.b.y - x.a.y) > 1e-9).map((x): Shape => ({ type: 'line', a: x.a, b: x.b }));
 }

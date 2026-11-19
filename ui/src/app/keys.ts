@@ -156,7 +156,7 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   }
   const typing = s.buffer.length > 0 || !!s.step;
   // Esc: first the running command (or what is typed), then, with nothing on, the selection lets go (a drilled one steps up first: DrillCrumbs).
-  if (e.key === 'Escape') return s.step || s.buffer || all || useCad.getState().snapOverride ? { kind: 'cancel' } : !s.tool && s.selected.length ? { kind: 'deselect' } : null;
+  if (e.key === 'Escape') return s.step || s.buffer || all || useCad.getState().snapOverride || useCad.getState().gridOnly ? { kind: 'cancel' } : !s.tool && s.selected.length ? { kind: 'deselect' } : null;
   if (e.key === ' ' && !typing && s.toolSpace) return { kind: 'toolSpace' };
   // A step with a Space of its own (a symbol's turn) takes it when nothing is typed; Enter then finishes.
   if (e.key === ' ' && !s.buffer && s.step?.space) return { kind: 'stepSpace' };
@@ -230,6 +230,8 @@ export function carryOut(intent: KeyIntent): void {
     case 'cancel':
       // An armed snap override (forum topic 154) is what Esc lets go of first; the command keeps running.
       if (useCad.getState().snapOverride) { useCad.setState({ snapOverride: null }); break; }
+      // "Grid only" ends with the Esc that has no command left to cancel.
+      if (useCad.getState().gridOnly && !useCad.getState().step && !useCad.getState().buffer && !useCad.getState().takeAll) { useCad.setState({ gridOnly: false }); break; }
       cancel(); useCad.setState({ takeAll: false }); break;
     case 'cmdMode': useCad.setState((c) => ({ takeAll: !c.takeAll })); break;
     case 'submit': {

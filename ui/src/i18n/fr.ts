@@ -655,6 +655,8 @@ export const FR: Record<string, string> = {
   "Survey point (map)": "Point topographique (carte)",
   "Quadrant": "Quadrant",
   "Wall axis": "Axe du mur",
+  "Grid only (every other snap off)": "Grille seule (tous les autres accrochages désactivés)",
+  "Grid only: every other snap is off; only the grid axes, their crossings and ends snap (type GRID for one point). Esc turns it off": "Grille seule: tous les autres accrochages sont désactivés; seuls les axes de la grille, leurs croisements et leurs extrémités accrochent (tapez GRID pour un point). Échap la désactive",
   "No snap (for this point)": "Aucun accrochage (pour ce point)",
   "Snap settings…": "Réglages de l’accrochage…",
   "Perpendicular": "Perpendiculaire",

@@ -13,8 +13,8 @@
 import type { Vec2 } from '../../platform/module';
 import { angleInArc, bounds, dist, ellipseWhole, intersectShapes, keyPoints, nearestOnShape, prims, type Shape } from './shapes';
 
-export type SnapMode = 'endpoint' | 'midpoint' | 'center' | 'quadrant' | 'intersection' | 'perpendicular' | 'nearest' | 'tangent' | 'wallAxis';
-export const ALL_MODES: ReadonlySet<SnapMode> = new Set<SnapMode>(['endpoint', 'midpoint', 'center', 'quadrant', 'intersection', 'perpendicular', 'nearest', 'tangent', 'wallAxis']);
+export type SnapMode = 'endpoint' | 'midpoint' | 'center' | 'quadrant' | 'intersection' | 'perpendicular' | 'nearest' | 'tangent' | 'wallAxis' | 'gridAxis';
+export const ALL_MODES: ReadonlySet<SnapMode> = new Set<SnapMode>(['endpoint', 'midpoint', 'center', 'quadrant', 'intersection', 'perpendicular', 'nearest', 'tangent', 'wallAxis', 'gridAxis']);
 
 /** A broad phase: each shape's box in the cells of a grid. */
 export class SnapIndex {
@@ -58,6 +58,8 @@ export interface SnapOptions {
   wallAxes?: readonly Shape[];
   /** Curves the drawn lines only approximate (an element's arcs, chorded): the Tangent snap's, besides the drawn circles, arcs and ellipses. */
   curves?: readonly Shape[];
+  /** The shown grid's axes (a line each: IfcGrid's): the Grid axis snap's, and all that "Grid only" takes. */
+  gridAxes?: readonly Shape[];
 }
 /**
  * `shape` is the index in the shapes searched (−1: a wall axis or an element curve, then `on` is it). `along`: a point anywhere
@@ -66,10 +68,10 @@ export interface SnapOptions {
 export interface Snap { point: Vec2; mode: SnapMode; shape: number; on?: Shape; along?: boolean }
 
 /** A snap that slides along a line (the nearest point, a point on a wall axis), not a point of its own: ortho and the guides go first. */
-export const isLineSnap = (s: { mode: SnapMode; along?: boolean }) => s.mode === 'nearest' || (s.mode === 'wallAxis' && !!s.along);
+export const isLineSnap = (s: { mode: SnapMode; along?: boolean }) => s.mode === 'nearest' || ((s.mode === 'wallAxis' || s.mode === 'gridAxis') && !!s.along);
 
-type Key = SnapMode | 'axisPoint';
-const ORDER: Key[] = ['endpoint', 'intersection', 'axisPoint', 'midpoint', 'tangent', 'center', 'quadrant', 'perpendicular'];
+type Key = SnapMode | 'axisPoint' | 'gridPoint' | 'gridPerp';
+const ORDER: Key[] = ['endpoint', 'intersection', 'axisPoint', 'gridPoint', 'midpoint', 'tangent', 'center', 'quadrant', 'perpendicular', 'gridPerp'];
 
 /** Where a line from `from` touches the curve (a circle, an arc where it runs, an ellipse or an elliptical arc where it runs): none from inside it or on it. */
 export function tangentPoints(s: Shape, from: Vec2): Vec2[] {
@@ -138,11 +140,47 @@ export function findSnap(p: Vec2, shapes: readonly Shape[], index: SnapIndex | n
       for (const q of [...k.endpoints, ...k.midpoints]) offerAs('axisPoint', { point: q, mode: 'wallAxis', shape: -1, on: ax });
       offerAs('wallAxis', { point: nearestOnShape(ax, p).point, mode: 'wallAxis', shape: -1, on: ax, along: true });
     }
+  if (o.modes.has('gridAxis')) {
+    const axes = o.gridAxes ?? [];
+    for (const ax of axes) {
+      for (const q of keyPoints(ax).endpoints) offerAs('gridPoint', { point: q, mode: 'gridAxis', shape: -1, on: ax });
+      if (o.from) for (const pr of prims(ax)) if (pr.kind === 'seg') {
+        const dx = pr.b.x - pr.a.x, dy = pr.b.y - pr.a.y, l2 = dx * dx + dy * dy;
+        const t = l2 < 1e-18 ? -1 : ((o.from.x - pr.a.x) * dx + (o.from.y - pr.a.y) * dy) / l2;
+        if (t >= 0 && t <= 1) offerAs('gridPerp', { point: { x: pr.a.x + dx * t, y: pr.a.y + dy * t }, mode: 'gridAxis', shape: -1, on: ax });
+      }
+      offerAs('gridAxis', { point: nearestOnShape(ax, p).point, mode: 'gridAxis', shape: -1, on: ax, along: true });
+    }
+    for (const q of gridCrossings(axes, p, tol)) offerAs('gridPoint', { point: q, mode: 'gridAxis', shape: -1 });
+  }
   for (const m of ORDER) { const s = best.get(m); if (s) return s; }
-  // On a line: the nearer of the wall axis and the drawn lines (the axis on a tie).
-  const ax = best.get('wallAxis'), ne = best.get('nearest');
-  if (ax && ne) return dist(ax.point, p) <= dist(ne.point, p) + 1e-12 ? ax : ne;
-  return ax ?? ne ?? null;
+  // On a line: the nearer of the wall axis, the grid axis and the drawn lines (an axis on a tie).
+  const ax = best.get('wallAxis'), gx = best.get('gridAxis'), ne = best.get('nearest');
+  const axis = ax && gx ? (dist(ax.point, p) <= dist(gx.point, p) + 1e-12 ? ax : gx) : ax ?? gx;
+  if (axis && ne) return dist(axis.point, p) <= dist(ne.point, p) + 1e-12 ? axis : ne;
+  return axis ?? ne ?? null;
+}
+
+/** How far past its ends an axis still counts as crossing another (m): a grid's lines rarely stop exactly at each other. */
+const AXIS_REACH = 0.5;
+
+/** Where the grid's axes cross, near `p` (within `tol`): two lines' crossing, each line taken a little past its ends. */
+export function gridCrossings(axes: readonly Shape[], p: Vec2, tol: number): Vec2[] {
+  const segs: { a: Vec2; b: Vec2 }[] = [];
+  for (const ax of axes) if (ax.type === 'line' && dist(ax.a, ax.b) > 1e-9) segs.push(ax);
+  const out: Vec2[] = [];
+  for (let i = 0; i < segs.length; i++) for (let j = i + 1; j < segs.length; j++) {
+    const { a, b } = segs[i], { a: c, b: d } = segs[j];
+    const r = { x: b.x - a.x, y: b.y - a.y }, s = { x: d.x - c.x, y: d.y - c.y };
+    const den = r.x * s.y - r.y * s.x;
+    if (Math.abs(den) < 1e-12 * Math.hypot(r.x, r.y) * Math.hypot(s.x, s.y)) continue;
+    const t = ((c.x - a.x) * s.y - (c.y - a.y) * s.x) / den, u = ((c.x - a.x) * r.y - (c.y - a.y) * r.x) / den;
+    const lr = Math.hypot(r.x, r.y), ls = Math.hypot(s.x, s.y);
+    if (t < -AXIS_REACH / lr || t > 1 + AXIS_REACH / lr || u < -AXIS_REACH / ls || u > 1 + AXIS_REACH / ls) continue;
+    const q = { x: a.x + t * r.x, y: a.y + t * r.y };
+    if (dist(q, p) <= tol) out.push(q);
+  }
+  return out;
 }
 
 /** Object Snap Override (forum topic 154): the one snap, or 'none', the next point is limited to. */
@@ -150,14 +188,16 @@ export type SnapOverride = SnapMode | 'none';
 
 /** AutoCAD's short codes, typed at the command line while a point is asked. */
 export const SNAP_CODES: Readonly<Record<string, SnapOverride>> = {
-  END: 'endpoint', MID: 'midpoint', INT: 'intersection', CEN: 'center', QUA: 'quadrant', PER: 'perpendicular', TAN: 'tangent', NEA: 'nearest', AXI: 'wallAxis', NON: 'none',
+  END: 'endpoint', MID: 'midpoint', INT: 'intersection', CEN: 'center', QUA: 'quadrant', PER: 'perpendicular', TAN: 'tangent', NEA: 'nearest', AXI: 'wallAxis', GRID: 'gridAxis', NON: 'none',
 };
 
 /** The snaps the next point may use: the override alone, else the running ones. */
-export function modesFor(override: SnapOverride | null, running: readonly SnapMode[]): Set<SnapMode> {
+export function modesFor(override: SnapOverride | null, running: readonly SnapMode[], gridOnly = false): Set<SnapMode> {
   if (override === 'none') return new Set();
-  return new Set(override ? [override] : running);
+  if (override) return new Set([override]);
+  // "Grid only": every other snap is ignored, whatever the SNAP menu has on.
+  return gridOnly ? new Set<SnapMode>(['gridAxis']) : new Set(running);
 }
 
-/** Whether object snapping applies to the next point: an armed kind snaps even with the SNAP switch off (as in AutoCAD), 'none' never does. */
-export const snapsOn = (override: SnapOverride | null, osnap: boolean): boolean => (override ? override !== 'none' : osnap);
+/** Whether object snapping applies to the next point: an armed kind snaps even with the SNAP switch off (as in AutoCAD), 'none' never does; "Grid only" snaps too. */
+export const snapsOn = (override: SnapOverride | null, osnap: boolean, gridOnly = false): boolean => (override ? override !== 'none' : osnap || gridOnly);

@@ -22,7 +22,7 @@ import { t } from '../../i18n';
 /** The prompt, what is typed, the switches and the layer: the part both kinds of line have. */
 export function CadPrompt({ inline }: { inline?: boolean }) {
   // Only what the prompt shows: not the cursor, which moves on every pointer move.
-  const { buffer, takeAll, step, command, osnap, ortho, polar, layer, role } = useCad(useShallow((s) => ({ buffer: s.buffer, takeAll: s.takeAll, step: s.step, command: s.command, osnap: s.osnap, ortho: s.ortho, polar: s.polar, layer: s.layer, role: s.role })));
+  const { buffer, takeAll, step, command, osnap, gridOnly, ortho, polar, layer, role } = useCad(useShallow((s) => ({ buffer: s.buffer, takeAll: s.takeAll, step: s.step, command: s.command, osnap: s.osnap, gridOnly: s.gridOnly, ortho: s.ortho, polar: s.polar, layer: s.layer, role: s.role })));
   const tool = useUi((s) => s.tool);
   const snaps = useSnapSummary();
   const polarStep = usePrefs((s) => s.polarStep);
@@ -46,6 +46,8 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
       <button type="button" className={`cad-toggle${osnap ? ' on' : ''}`} data-testid="snap-toggle" title={`${t('Object snap')}${key('app.osnap')}: ${snaps}. ${t('Right click: which snaps')}`} onClick={() => useCad.setState({ osnap: !osnap })}
         onContextMenu={(e) => { e.preventDefault(); openSnapMenu(e.clientX, e.clientY); }}>SNAP</button>
       <button type="button" className="cad-toggle cad-more" data-testid="snap-menu" title="Snap settings" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); openSnapMenu(r.left, r.top); }}>▾</button>
+      <button type="button" className={`cad-toggle${gridOnly ? ' on' : ''}`} data-testid="grid-only-toggle" aria-pressed={gridOnly}
+        title={t('Grid only: every other snap is off; only the grid axes, their crossings and ends snap (type GRID for one point). Esc turns it off')} onClick={() => useCad.setState({ gridOnly: !gridOnly })}>GRID</button>
       <button type="button" className={`cad-toggle${ortho ? ' on' : ''}`} title={bindingText('app.ortho') ? `Ortho (${bindingText('app.ortho').split(', ')[0]}; hold Shift)` : 'Ortho (hold Shift)'} onClick={() => useCad.setState({ ortho: !ortho })}>ORTHO</button>
       <UcsChip />
       <button type="button" className={`cad-toggle${polar ? ' on' : ''}`} title={`${t('Polar tracking every')} ${polarStep}°${key('app.polar')}`} onClick={() => useCad.setState({ polar: !polar })}>POLAR</button>
