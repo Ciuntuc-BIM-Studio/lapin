@@ -24,6 +24,28 @@ A section need not be one straight line. **Jogged section** (<kbd>SJ</kbd>) draw
 
 Select the section in the browser to set its scale, its depth, its discipline and its style in the properties panel.
 
+### How far a section sees
+
+A section draws what its plane cuts and, behind it, everything it sees up to its **depth**. Empty, the depth has no end. Set it under **Depth** in the view's settings (**View → View settings**, or the section's properties). You can also drag it in a plan: select the section, and a grip stands on its far line, at the middle. Drag the grip towards the cut or away from it. A dashed line shows where the section stops seeing. A section without a depth has the grip out in front of its line, ready to drag in. Ctrl/⌘-click the grip and the section sees without end again. Each change is one step to undo.
+
+**Beyond the cut** in the view's settings says what the section draws up to its depth:
+
+- **Full depth**: everything it sees, in the seen pen. This is the default, and how sections were drawn before.
+- **Cut + near**: what lies within **Near depth** of the cut (1 m unless you set it) is drawn as usual. An element lying wholly farther away is drawn in the background pen, thin and grey, with its surface hatches greyed too, like ArchiCAD's marked distant area. Use it to keep the cut readable with the building in the background.
+- **Cut only**: only what the section plane cuts, with nothing seen beyond it. Use it for details. Walls, slabs and beams keep their cut hatches. Nothing farther is drawn: no surface hatches, shadows, silhouettes or voids.
+
+A view style says it for all its views (**Manage → View styles**: the **Beyond the cut** and **Near depth** columns), and a view can set its own over its style. The button beside the field puts the view back on its style. The background lines are on their own layer (*BEYOND*). **Manage → Object styles** can give them another pen or colour. Sheets, the PDF and the DXF print exactly what the view shows. **Show in 3D** cuts the model and keeps to the section's depth.
+
+An elevation has the same settings. Its **Depth** is measured from the front of the model, or from its marker's line once the marker is moved into the building. Once it has a depth, its far line has a grip in the plan as well. **Cut + near** puts what lies farther than the near depth in the background. **Cut only** applies only when the marker has been moved into the building, so that the elevation cuts. An elevation outside the building cuts nothing and draws everything.
+
+![A section's settings: Beyond the cut set to Cut + near, its near depth and its depth](shots/section-depth-settings.webp)
+
+![Cut + near: the cut walls drawn as usual, the north wall 6 m away in the thin grey background pen](shots/section-depth.webp)
+
+![Cut only: the same section with only what its plane cuts](shots/section-cut-only.webp)
+
+![A section selected in plan: its far line dashed, with the grip that drags its depth](shots/section-far-grip.webp)
+
 **The view's scale.** At the top of a plan, a section or an elevation, beside the zoom (its size on screen against paper), the scale picker shows the view's scale and changes it: one of the project's standard scales, or **Custom…** for one of your own (1:75), in one step to undo. On a sheet, pick a view and its scale shows there too; changing it changes the view, on every sheet that shows it. **Default scales…** opens **Manage → Drafting standards → Project**: **Standard scales** are the scales the picker offers, and **New plans at 1:**, **New sections at 1:** and **New elevations at 1:** the scale each new view takes (empty: 1:100). A level's plan with no view of its own draws at the plan scale.
 
 ![The scale picker at the top of a section, beside the zoom](shots/view-scale.webp)
