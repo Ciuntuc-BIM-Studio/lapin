@@ -25,7 +25,7 @@ import { TagFields } from './tag';
 import { selectionWith } from '../../shell/params';
 import { CloudFields, KeyFields } from './sheetAnnotations';
 import { EXT_SUPPRESS, EXT_SUPPRESS_LABELS, extSuppressAttr } from '../core/dimensionLines';
-import { PatternOptions, type PatternInfo } from '../core/hatchUnits';
+import { PatternOptions, UNITS_LABEL, effectiveUnits, scaleLabel, type HatchUnits, type PatternInfo } from '../core/hatchUnits';
 import { TEXT_ALIGNS, TEXT_ALIGN_LABELS, alignAttr, alignOf, styleOptions, type StyleEntry } from './textProps';
 
 /**
@@ -127,7 +127,11 @@ function ShapeFields({ node, shape }: { node: NodeDto; shape: Shape }) {
   }
 }
 
-/** A drafted hatch: its pattern, scale and angle, and where its pattern starts (the origin; empty: the view's). */
+/**
+ * A drafted hatch: its pattern, its size (on paper, the same at every scale, or real, following the view's scale: report #157;
+ * changed, the engine turns the scale by the view's so it looks as it did), scale and angle, and where its pattern starts
+ * (the origin; empty: the view's).
+ */
 function HatchFields({ node, hatch }: { node: NodeDto; hatch: Record<string, unknown> }) {
   useStandards((s) => s.units);
   const [patterns, setPatterns] = useState<PatternInfo[]>([]);
@@ -138,11 +142,19 @@ function HatchFields({ node, hatch }: { node: NodeDto; hatch: Record<string, unk
   const pattern = String(hatch.pattern ?? 'SOLID');
   const origin = ptStrict(hatch.origin);
   const bg = typeof hatch.background === 'string' ? hatch.background : null;
+  const own = hatch.units === 'paper' || hatch.units === 'model' ? (hatch.units as HatchUnits) : undefined;
+  const units = effectiveUnits(own, patterns.find((p) => p.name === pattern));
   return (
     <>
       <dt>Pattern</dt>
       <dd><select value={pattern} onChange={(e) => set({ pattern: e.target.value })}><PatternOptions patterns={patterns} current={pattern} /></select></dd>
-      <dt>Scale</dt><dd><Num value={Number(hatch.scale ?? 1)} onCommit={(s) => { if (s > 0) set({ scale: s }); }} /></dd>
+      <dt title="Pattern's own: as the pattern says. Drafting: the spacing is paper millimetres, the same on every scale. Real size: it is the real object's millimetres, so it follows the view's scale">Units</dt>
+      <dd><select data-field="draft-hatch-units" value={own ?? ''} onChange={(e) => set({ units: e.target.value || null })}>
+        <option value="">pattern's own</option>
+        <option value="paper">{UNITS_LABEL.paper}</option>
+        <option value="model">{UNITS_LABEL.model}</option>
+      </select></dd>
+      <dt>{scaleLabel(units)}</dt><dd><Num value={Number(hatch.scale ?? 1)} onCommit={(s) => { if (s > 0) set({ scale: s }); }} /></dd>
       <dt>Angle</dt><dd><Num value={Number(hatch.angle ?? 0)} onCommit={(a) => set({ angle: a })} suffix="°" /></dd>
       <dt title="Opaque background fill behind the hatch lines (transparent when off)">Background</dt>
       <dd className="row">
