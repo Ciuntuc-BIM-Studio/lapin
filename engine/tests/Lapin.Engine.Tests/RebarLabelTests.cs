@@ -40,14 +40,14 @@ public class RebarLabelTests
     [Fact]
     public void The_parts_make_the_text_and_the_defaults_differ_by_kind()
     {
-        Assert.Equal("3Ø16 L=6000", LabelStyle.Default("bars").Text(new LabelFacts("3", 0.016, null, 6.0, 1, "B500C")));
-        Assert.Equal("41Ø8/150", LabelStyle.Default("stirrups").Text(new LabelFacts("41", 0.008, "150", 2.16, 1, "B500C")));
-        Assert.Equal("25Ø8/100-200", LabelStyle.Default("runs").Text(new LabelFacts("25", 0.008, "100-200", 2.16, 1, "B500C")));
-        Assert.Equal("8Ø16", LabelStyle.Default("columnBars").Text(new LabelFacts("8", 0.016, null, 4.0, 1, "B500C")));
+        Assert.Equal("3Ø16 L=6000", LabelStyle.Default("bars").Text(new LabelFacts("3", 0.016, null, 6.0, "1", "B500C")));
+        Assert.Equal("41Ø8/150", LabelStyle.Default("stirrups").Text(new LabelFacts("41", 0.008, "150", 2.16, "1", "B500C")));
+        Assert.Equal("25Ø8/100-200", LabelStyle.Default("runs").Text(new LabelFacts("25", 0.008, "100-200", 2.16, "1", "B500C")));
+        Assert.Equal("8Ø16", LabelStyle.Default("columnBars").Text(new LabelFacts("8", 0.016, null, 4.0, "1", "B500C")));
         // Any order, with the mark, the steel and free text; a part without a value is left out.
         var custom = LabelStyle.Default("bars").Apply(LabelStyle.Patch(null, new JsonObject { ["parts"] = "mark text:– count diameter steel length" }));
-        Assert.Equal("2 – 3Ø16 B500C L=6000", custom.Text(new LabelFacts("3", 0.016, null, 6.0, 2, "B500C")));
-        Assert.Equal("– 3Ø16 B500C", custom.Text(new LabelFacts("3", 0.016, null, null, 0, "B500C")));
+        Assert.Equal("2 – 3Ø16 B500C L=6000", custom.Text(new LabelFacts("3", 0.016, null, 6.0, "2", "B500C")));
+        Assert.Equal("– 3Ø16 B500C", custom.Text(new LabelFacts("3", 0.016, null, null, "", "B500C")));
         Assert.Equal("along", LabelStyle.Default("stirrups").Direction);
         Assert.Equal("horizontal", LabelStyle.Default("bars").Direction);
         Assert.Throws<CommandException>(() => LabelStyle.Patch(null, new JsonObject { ["parts"] = "count weight" }));

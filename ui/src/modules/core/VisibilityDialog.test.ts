@@ -13,6 +13,9 @@ describe('Visibility / Graphics rows', () => {
     expect(categoryName('steelConnections')).toBe('Steel connections');
     expect(categoryName('otherLayers')).toBe('Other layers');
     expect(categoryName('mep')).toBe('MEP');
+    expect(categoryName('longitudinal')).toBe('Longitudinal bars');
+    expect(categoryName('stirrups')).toBe('Stirrups and ties');
+    expect(categoryName('sets')).toBe('Rebar sets');
     expect(categoryName('somethingNew')).toBe('SomethingNew');
   });
 

@@ -7,9 +7,9 @@ import { execute } from '../../engine/session';
 import { useRebarCatalog } from './RebarSection';
 import { steelChoices, useRebarRules } from './rebarRules';
 import { LengthField, NumberField } from '../../shell/cells';
-import { LabelStyleFields, useRebarSettings, type LabelKind, type LabelStylePatch, type RebarSettings as Settings } from './LabelStyleFields';
+import { LabelStyleFields, MARK_GROUPS, useRebarSettings, type LabelKind, type MarkGroup, type LabelStylePatch, type RebarSettings as Settings } from './LabelStyleFields';
 
-const KINDS: { id: LabelKind; label: string }[] = [{ id: 'bars', label: 'Bars' }, { id: 'stirrups', label: 'Stirrups on the type' }, { id: 'columnBars', label: 'Column bars' }, { id: 'runs', label: 'Distributions' }];
+const KINDS: { id: LabelKind; label: string }[] = [{ id: 'bars', label: 'Bars' }, { id: 'stirrups', label: 'Stirrups on the type' }, { id: 'columnBars', label: 'Column bars' }, { id: 'runs', label: 'Distributions' }, { id: 'sets', label: 'Rebar sets' }];
 
 /** The stock length bars come in (6 m, 12 m, or any) and the lap a split bar overlaps by (50Ø, or a value), decision 227. */
 function StockAndLapFields({ s, set }: { s: Settings; set: (patch: Partial<Settings>) => void }) {
@@ -31,6 +31,41 @@ function StockAndLapFields({ s, set }: { s: Settings; set: (patch: Partial<Setti
         </select>
         {s.lapLength != null && <LengthField metres={s.lapLength} min={0.01} max={5} onCommit={(m) => { if (m != null) set({ lapLength: m }); }} />}
       </label>
+    </div>
+  );
+}
+
+const GROUP_NAMES: Record<MarkGroup, string> = { straight: 'Straight bars', L: 'L bars', U: 'U bars', stirrup: 'Stirrups', tie: 'Ties', polyline: 'Polyline bars', other: 'Other shapes' };
+
+/** A text applied when left or on Enter (a pattern half typed is not sent). */
+function CommitText({ value, onCommit, placeholder, width, testId }: { value: string; onCommit: (v: string) => void; placeholder?: string; width?: number; testId?: string }) {
+  const [text, setText] = useState(value);
+  useEffect(() => setText(value), [value]);
+  return <input className="cell" type="text" value={text} placeholder={placeholder} spellCheck={false} data-no-i18n data-field={testId} style={{ width: width ?? 110 }}
+    onChange={(e) => setText(e.target.value)} onBlur={() => { if (text !== value) onCommit(text); }}
+    onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); else if (e.key === 'Escape') setText(value); e.stopPropagation(); }} />;
+}
+
+/** How bars are marked (decision 729): the pattern, a prefix for each shape group, renumbering. */
+function MarksBlock({ s }: { s: Settings }) {
+  const marks = s.marks;
+  const [note, setNote] = useState('');
+  if (!marks) return null;
+  const renumber = () => void execute('rebar.renumber', {}).then((r) => { const n = (r as { changed?: number } | null)?.changed; if (typeof n === 'number') setNote(`${n}`); });
+  return (
+    <div data-field="rebar-marks">
+      <p className="eyebrow">Marks</p>
+      <label className="field-line"><span className="eyebrow">Mark pattern</span>
+        <CommitText value={marks.pattern} placeholder="{prefix}{n}" width={150} testId="rebar-mark-pattern" onCommit={(v) => void execute('rebar.setSettings', { marks: { pattern: v.trim() || null } })} />
+      </label>
+      <p className="muted small">{'Tokens: {prefix} {n} {partition} {d} {shape}; a formula such as {= n | 00} pads the number.'}</p>
+      {MARK_GROUPS.map((g) => (
+        <label key={g} className="field-line"><span className="eyebrow">{GROUP_NAMES[g]}</span>
+          <CommitText value={marks.prefixes?.[g] ?? ''} width={80} testId={`rebar-mark-prefix-${g}`} onCommit={(v) => void execute('rebar.setSettings', { marks: { prefixes: { [g]: v.trim() || null } } })} />
+        </label>
+      ))}
+      <p className="muted small">Marks are numbered apart in each prefix and partition: R1, R2… beside U1, U2…. Numbers already given never change by themselves.</p>
+      <div className="row small"><button type="button" className="btn" data-action="rebar-renumber" onClick={renumber}>Renumber marks</button>{note && <span className="muted small num">{note}</span>}</div>
     </div>
   );
 }
@@ -67,6 +102,7 @@ export function RebarSettingsDialog() {
           <p className="muted small">Bars are drawn as thick as they are; bend radii follow SR EN 1992-1-1 (a mandrel of 4Ø up to Ø16, 7Ø over). The schedule's lengths are the nominal ones, hooks included.</p>
           <StockAndLapFields s={s} set={set} />
           <p className="muted small">A bar longer than the stock length is cut in two with Split bar, the lap where you put it (from one station to another along the bar); this lap length is taken when only one point is given. Each piece has its own mark in the schedule.</p>
+          <MarksBlock s={s} />
           <p className="eyebrow">Labels</p>
           <label className="field-line"><span className="eyebrow">For</span>
             <select value={kind} onChange={(e) => setKind(e.target.value as LabelKind)}>{KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}</select>

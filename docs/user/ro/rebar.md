@@ -112,4 +112,51 @@ O **partiție** împarte barele în seturi separate, ca în Revit: etrierii grin
 
 ![Extrasul de armare cu două partiții](shots/rebar-partitions.webp)
 
+## Armarea în planuri
+
+Un plan de structură arată armătura **etajului său** și atât: o bară aparține etajului fundației, grinzii, plăcii sau peretelui în care stă, iar o bară fără gazdă e arătată după domeniul vederii planului. Barele etajului de dedesubt rămân în afara imaginii.
+
+În **Visibility/Graphics**, categoria **Armare** are trei subcategorii: **Bare longitudinale**, **Etrieri și agrafe** și **Seturi de armare**. Debifează una ca să ascunzi acele bare doar în vederea respectivă. **Ascunde în vedere** pe o fundație sau o grindă ascunde și barele ei.
+
+## Prefixe de mărci
+
+Mărcile barelor pot începe cu litere după forma barei, cum se scriu de obicei listele de armare: R1, R2 pentru bare drepte, U1 pentru bare în U, S1 pentru etrieri. În **Setări armare → Mărci**:
+
+- **Model de marcă:** cum se scrie o marcă, de regulă `{prefix}{n}`. Jetoanele sunt `{prefix}`, `{n}`, `{partition}`, `{d}` (diametrul) și `{shape}`; o formulă precum `{prefix}{= n | 00}` completează numărul cu zerouri (R01, R02…). Un model trebuie să conțină numărul.
+- **Un prefix pentru fiecare grup:** bare drepte (și bare în secțiune), bare în L, bare în U, etrieri, agrafe, bare polilinie și alte forme (cele proprii ale proiectului). Barele stâlpilor iau prefixul barelor drepte. Un prefix are cel mult opt caractere.
+- **Prefix propriu:** o bară, o distribuție sau un set de armare are în proprietăți **Prefix de marcă**; gol, ia prefixul formei sale.
+
+Mărcile sunt numerotate separat în fiecare prefix și partiție: R1, R2… lângă U1, U2…. Numerele deja date nu se schimbă singure; **Renumerotează mărcile** o ia de la 1 în fiecare partiție și prefix și spune câte mărci s-au schimbat.
+
+## Seturi de armare
+
+Un **set de armare** așază dintr-un clic barele unei plăci, fundații sau perete întreg, ca o plasă, și e desenat și numărat de la gazdă: schimbi placa și barele o urmează. Grupul **Seturi** din fila Armare simplă are două unelte:
+
+- **Set de armare:** apasă pe o placă, o fundație sau un perete.
+- **Set de armare în zonă:** într-un plan, desenează un poligon; setul acoperă zona plăcii de sub el.
+
+Bara uneltei alege **Stratul**, **Direcția**, **Diametrul** și **Distanța** cu care se fac seturile noi; lăsate pe **Implicit**, primul set al unei plăci e stratul de jos pe x, iar un al doilea set ia direcția care îl încrucișează.
+
+**Straturi.** O placă sau o fundație are **B1** și **B2** (jos, primul pe direcția stratului, al doilea peste el) și **T1** și **T2** (sus). Un perete are **E1** și **E2** pe fața exterioară și **I1** și **I2** pe cea interioară.
+
+**Direcție.** Setul unei plăci merge pe x, pe y sau sub un unghi în plan; al unui perete, orizontal sau vertical.
+
+**Distanță sau număr.** Barele se așază la o distanță (de la 30 mm la 2 m) sau într-un număr, repartizate pe gazdă. **Acoperirea** e cea din setări, dacă setul nu o are pe a lui. Golurile din placă opresc barele la marginea golului, fiecare cu acoperirea ei.
+
+**Picioare.** O lungime în **Picioare** îndoaie capetele barei în gazdă, ceea ce o face bară în U.
+
+**Suprapus la lungimea de livrare.** O bară mai lungă decât lungimea de livrare din Setări armare e tăiată cu suprapunere (cea din setări); debifează ca să păstrezi o singură bară lungă.
+
+**Ce arată planurile și secțiunile.** **Vizibil** alege câte bare desenează un plan: **O bară** cu eticheta, **Capetele** sau **Toate barele**. Într-o secțiune prin gazdă, barele sunt punctele care sunt.
+
+**Eticheta.** Un set e etichetat cu numărul, diametrul, distanța și stratul: `28Ø12/150 B1`, cu marca într-un balon și un șir de cotă de-a lungul barelor. Le plasezi și le tragi cu mânerele lor; mânerul șirului îl alunecă de-a lungul barelor. Stilul etichetei e felul **Seturi de armare** al etichetelor din Setări armare (și al setului însuși).
+
+![O placă cu un gol și două seturi, B1 pe x și B2 pe y, etichetate în planul ei de structură](shots/rebar-sets.webp)
+
+Proprietățile setului dau lungimile și masa lui:
+
+![Proprietățile unui set de armare: strat, direcție, distanță, acoperire, picioare, marcă, lungimile și masa](shots/rebar-set-properties.webp)
+
+**Extrasele.** Extrasul de armare primește câte un rând pentru fiecare lungime a unui set; lista de îndoire după standard numerotează fiecare lungime ca submarcă a setului (12a, 12b…). Seturile nu se exportă în IFC din modulul liber.
+
 **Setări armare** ține alegerile proiectului: o culoare pentru fiecare diametru, mărimile textului și ale balonului pe hârtie, oțelul, acoperirea, lungimile segmentelor scrise pe bare și stilul etichetelor pentru fiecare fel.

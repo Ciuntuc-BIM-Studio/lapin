@@ -15,8 +15,8 @@ namespace Lapin.Rebar;
 /// </summary>
 public sealed record LabelStyle(IReadOnlyList<string> Parts, bool Balloon, string Direction, string Side, double Offset, string Leader, string Line)
 {
-    public static readonly string[] Kinds = ["bars", "stirrups", "columnBars", "runs"];
-    public static readonly string[] Tokens = ["count", "diameter", "step", "length", "mark", "steel"];
+    public static readonly string[] Kinds = ["bars", "stirrups", "columnBars", "runs", "sets"];
+    public static readonly string[] Tokens = ["count", "diameter", "step", "length", "mark", "steel", "layer"];
     public static readonly string[] Directions = ["horizontal", "along"];
     /// <summary>In the view's coordinates; <c>auto</c>: to the right of dots, above lines, under a distribution's string.</summary>
     public static readonly string[] Sides = ["auto", "above", "below", "left", "right"];
@@ -33,6 +33,8 @@ public sealed record LabelStyle(IReadOnlyList<string> Parts, bool Balloon, strin
     {
         "stirrups" or "runs" => new LabelStyle(["count", "diameter", "step"], true, "along", "auto", 4, "one", "string") { Kind = kind },
         "columnBars" => new LabelStyle(["count", "diameter"], true, "horizontal", "auto", 4, "each", "none") { Kind = kind },
+        // A rebar set's tag (decision 730, Revit's multi-rebar annotation): the distribution line on the bars, „12Ø12/150 B1”.
+        "sets" => new LabelStyle(["count", "diameter", "step", "layer"], true, "along", "auto", 0, "one", "string") { Kind = kind },
         _ => new LabelStyle(["count", "diameter", "length"], true, "horizontal", "auto", 4, "each", "none") { Kind = kind },
     };
 
@@ -146,7 +148,8 @@ public sealed record LabelStyle(IReadOnlyList<string> Parts, bool Balloon, strin
                 "diameter" => RebarShapes.Dia(f.Diameter),
                 "step" => f.Step != null ? "/" + f.Step : null,
                 "length" => f.Length is { } len ? "L=" + RebarShapes.Mm(len) : null,
-                "mark" => f.Mark > 0 ? f.Mark.ToString(CultureInfo.InvariantCulture) : null,
+                "mark" => f.Mark.Length > 0 ? f.Mark : null,
+                "layer" => f.Layer,
                 "steel" => f.Steel,
                 _ => part.StartsWith("text:", StringComparison.Ordinal) ? part[5..] : null,
             };
@@ -162,7 +165,8 @@ public sealed record LabelStyle(IReadOnlyList<string> Parts, bool Balloon, strin
 }
 
 /// <summary>What a label can say of a group: how many ("41", "2×41"), the diameter, the step text, the length of one, the mark, the steel.</summary>
-public sealed record LabelFacts(string Count, double Diameter, string? Step, double? Length, int Mark, string Steel);
+/// <remarks>The mark as written (decision 729: its prefix and pattern), "" for none; the layer of a set (B1, T2…), null for any other group.</remarks>
+public sealed record LabelFacts(string Count, double Diameter, string? Step, double? Length, string Mark, string Steel, string? Layer = null);
 
 /// <summary>
 /// Where the user put a label, each part null when left to the engine: its point (the balloon's, or the text's without one),
@@ -224,6 +228,10 @@ public sealed record LabelRequest(ViewMark Mark, string Owner, string Key, Label
     public string? AutoSide { get; init; }
     /// <summary>A distribution's string, drawn when the style asks for it (<see cref="LabelStyle.Line"/>).</summary>
     public LabelString? String { get; init; }
+    /// <summary>The mark as the balloon writes it (decision 729: R12, U3); null: the number alone.</summary>
+    public string? MarkText { get; init; }
+    /// <summary>The balloon's text.</summary>
+    public string Balloon => MarkText is { Length: > 0 } t ? t : MarkNo.ToString(CultureInfo.InvariantCulture);
 }
 
 public static class RebarLabels
@@ -240,7 +248,7 @@ public static class RebarLabels
 
     /// <summary>The facts a bar or a distribution drawn by hand gives its label.</summary>
     public static LabelFacts FactsOf(Entity e, RebarSpec s, RebarSettings st, string count, string? step = null) =>
-        new(count, s.Diameter, step, RebarShapes.Length(s), Rebars.Mark(e), e.Str("steel") ?? st.Steel);
+        new(count, s.Diameter, step, RebarShapes.Length(s), RebarMarks.TextOf(st, e), e.Str("steel") ?? st.Steel);
 
     /// <summary>The partial style kept on a bar or a distribution (<c>label.style</c>).</summary>
     public static JsonObject? StyleOf(Entity e) => e.Attrs[LabelStyle.Key] is JsonObject o ? o["style"] as JsonObject : null;
@@ -253,7 +261,7 @@ public static class RebarLabels
     public static void Draw(ViewContext c, RebarSettings st, IReadOnlyList<LabelRequest> requests)
     {
         var taken = requests.Where(r => r.Placed?.At != null).Select(r => r.Placed!.At!.Value).ToList();
-        var order = requests.Select((r, i) => (r, i)).OrderBy(x => x.r.MarkNo > 0 ? x.r.MarkNo : int.MaxValue).ThenBy(x => x.i).Select(x => x.r);
+        var order = requests.Select((r, i) => (r, i)).OrderBy(x => x.r.MarkNo > 0 ? 0 : 1).ThenBy(x => new string((x.r.MarkText ?? "").Where(ch => !char.IsDigit(ch)).ToArray()), StringComparer.Ordinal).ThenBy(x => x.r.MarkNo).ThenBy(x => x.i).Select(x => x.r);
         foreach (var r in order)
         {
             var data = r.String != null && r.Style.Line == "string" ? DrawString(c, st, r, r.String) : DrawBeside(c, st, r, taken);
@@ -310,7 +318,7 @@ public static class RebarLabels
         var data = new JsonObject { ["at"] = Rebars.J(at) };
         if (balloon)
         {
-            Balloon(mk, st, at, r0, r.MarkNo, r.Color);
+            Balloon(mk, st, at, r0, r.Balloon, r.Color);
             Leader(mk, c, r, at, r0, place.Elbow, Targets(r, place.Elbow ?? at), data);
             // The text to the right of the balloon (to its left when the label stands left of the bars), or after it along the direction.
             var left = horizontal && side == "left";
@@ -368,7 +376,7 @@ public static class RebarLabels
         if (balloon)
         {
             at = place.At ?? sp.Path.At(0, y) - sp.Path.TangentAt(0) * r0;
-            Balloon(mk, st, at, r0, r.MarkNo, r.Color);
+            Balloon(mk, st, at, r0, r.Balloon, r.Color);
             var target = RebarModule.Nearest(line, place.Elbow ?? at, line[0]);
             Leader(mk, c, r, at, r0, place.Elbow, [target], data);
             mk.Text(new PenText(textAt, r.Text, st.TextHeight, angle, "middle", "bottom"), r.Color);
@@ -395,10 +403,12 @@ public static class RebarLabels
         return (u, angle, Math.Abs(angle) < 1e-9);
     }
 
-    static void Balloon(ViewMark mk, RebarSettings st, Vec2 at, double r0, int mark, string color)
+    static void Balloon(ViewMark mk, RebarSettings st, Vec2 at, double r0, string mark, string color)
     {
         mk.Polyline(ViewMark.Circle(at, r0, 32), true, RebarShapes.AnnotationLayer, 0.35, color);
-        mk.Text(new PenText(at, mark.ToString(CultureInfo.InvariantCulture), st.TextHeight, 0, "middle", "middle", true), color);
+        // A longer mark (R12, U105) written smaller, so it stays inside the balloon (a character is about 0.6 of the height wide).
+        var height = mark.Length <= 2 ? st.TextHeight : Math.Min(st.TextHeight, 0.85 * st.Balloon / (0.6 * mark.Length));
+        mk.Text(new PenText(at, mark, height, 0, "middle", "middle", true), color);
     }
 
     /// <summary>

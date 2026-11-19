@@ -4,7 +4,7 @@
  * or a column at a click, inset beside it in the same view, with the context round it.
  */
 
-import { Crosshair, FileDown, Minus, Scissors, Settings2, Shapes, Slice, Square, Table2, Ruler } from 'lucide-react';
+import { Crosshair, Grid3x3, Rows3, FileDown, Minus, Scissors, Settings2, Shapes, Slice, Square, Table2, Ruler } from 'lucide-react';
 import { SectionIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -13,6 +13,9 @@ import { notify, useUi } from '../../app/store';
 import { execute } from '../../engine/session';
 import { activate } from '../../platform/modules';
 import { RebarRunSection, RebarSection } from './RebarSection';
+import { RebarSetSection } from './RebarSetSection';
+import { SetToolOptions } from './SetTool';
+import { setArgs, useSetOptions } from './setOptions';
 import { BarDotIcon, LBarIcon, PolylineBarIcon, StirrupIcon, StirrupsIcon, TieIcon, UBarIcon } from './icons';
 import { structureHooks } from '../structure/hooks';
 import { StirrupsFields } from './StirrupsFields';
@@ -74,6 +77,28 @@ const run: ToolDef = {
   gesture: { kind: 'twoPoints' },
   options: PartitionOptions,
   complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('rebar.addRun', { viewId: ctx.viewId, start: [a.x, a.y], end: [b.x, b.y], ...partitionArg() }); },
+};
+/** Bars laid over a slab, a footing or a wall, in layers (decision 730): a click on the host. */
+const setTool: ToolDef = {
+  id: 'rebar.set', label: 'Rebar set', icon: Grid3x3,
+  gesture: { kind: 'pick', types: ['IfcSlab', 'IfcFooting', 'IfcWall'] },
+  options: SetToolOptions,
+  complete: async ({ entity }, ctx) => {
+    if (!entity) return;
+    const r = await ctx.execute('rebar.addSet', { host: entity.id, ...setArgs(useSetOptions.getState()), ...partitionArg() }) as { id?: string } | null;
+    if (r?.id) useUi.setState({ selected: [r.id] });
+  },
+};
+/** A set over a region drawn in a plan, whatever lies under it (slabs only). */
+const setInRegion: ToolDef = {
+  id: 'rebar.setRegion', label: 'Rebar set in region', icon: Rows3,
+  gesture: { kind: 'polyline' },
+  options: SetToolOptions,
+  complete: async ({ points }, ctx) => {
+    if (points.length < 3) return;
+    const r = await ctx.execute('rebar.addSet', { viewId: ctx.viewId, region: points.map((p) => [p.x, p.y]), ...setArgs(useSetOptions.getState()), ...partitionArg() }) as { id?: string } | null;
+    if (r?.id) useUi.setState({ selected: [r.id] });
+  },
 };
 /** A section across the element clicked, where it was clicked, inset beside the click in this view. */
 const sectionHere: ToolDef = {
@@ -223,6 +248,7 @@ export const rebarModule: LapinModule = {
       { label: 'Sections', tools: [sectionHere, sectionAcross, insetView] },
       { label: 'Bars', tools: [straight, lBar, uBar, stirrup, polylineBar], small: [tie, dot, userShapeBar, alongEdges, asSection, splitBar] },
       { label: 'Distribution', tools: [run] },
+      { label: 'Sets', tools: [setTool, setInRegion] },
       { label: 'Schedule', tools: [schedule, bendingSchedule, barShapes, settings, bars3d], small: [exportBvbs] },
     ],
   }],
@@ -235,12 +261,14 @@ export const rebarModule: LapinModule = {
       activate([straight, lBar, uBar, stirrup, tie, dot, polylineBar].find((t) => t.id === `rebar.${shape}`) ?? straight);
     },
     LapinRebarRun: () => activate(run),
+    LapinRebarSet: () => activate(setTool),
   },
   // A beam's and a column's grips here are their generated labels' (the stirrups', the column bars'), beside the structure module's own.
-  grips: { LapinRebar: barGrips, LapinRebarRun: runGrips, IfcBeam: labelGrips, IfcColumn: labelGrips },
+  grips: { LapinRebar: barGrips, LapinRebarRun: runGrips, LapinRebarSet: labelGrips, IfcBeam: labelGrips, IfcColumn: labelGrips },
   propertySections: [
     { id: 'rebar.bar', label: 'Bar', classes: ['LapinRebar'], component: RebarSection },
     { id: 'rebar.run', label: 'Distribution', classes: ['LapinRebarRun'], component: RebarRunSection },
+    { id: 'rebar.set', label: 'Rebar set', classes: ['LapinRebarSet'], component: RebarSetSection },
   ],
   dialogs: { rebarSettings: RebarSettingsDialog, barShapes: BarShapesDialog, bendingSchedule: BendingScheduleDialog },
 };

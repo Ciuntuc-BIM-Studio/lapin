@@ -89,8 +89,22 @@ function CoverField({ node, d, set }: { node: NodeDto; d: Described | null; set:
   );
 }
 
+/** A bar's, a distribution's or a set's own mark prefix; empty takes its shape's from the settings (decision 729). */
+export function MarkPrefixField({ node, command }: { node: NodeDto; command: string }) {
+  const own = typeof node.props.markPrefix === 'string' ? node.props.markPrefix : '';
+  const [text, setText] = useState(own);
+  useEffect(() => setText(own), [own]);
+  const apply = () => { if (text.trim() !== own) void execute(command, { id: node.id, markPrefix: text.trim() }); };
+  return (
+    <label className="field-line" data-field="rebar-mark-prefix"><span className="eyebrow">Mark prefix</span>
+      <input className="cell" type="text" value={text} maxLength={8} placeholder="shape's" data-no-i18n style={{ width: 80 }} title="Letters the mark starts with; empty: the prefix of the bar's shape, set in Rebar settings"
+        onChange={(e) => setText(e.target.value)} onBlur={apply} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); else if (e.key === 'Escape') setText(own); e.stopPropagation(); }} />
+    </label>
+  );
+}
+
 /** A bar's or a distribution's own label style, over the project's for its kind; its place (the balloon, the elbow, the string) is dragged by its grips. */
-function LabelBlock({ node, kind, command }: { node: NodeDto; kind: 'bars' | 'runs'; command: string }) {
+export function LabelBlock({ node, kind, command }: { node: NodeDto; kind: 'bars' | 'runs' | 'sets'; command: string }) {
   const settings = useRebarSettings();
   const label = node.props.label as { at?: number[]; elbow?: number[]; offset?: number; style?: LabelStylePatch } | undefined;
   const placed = !!(label?.at || label?.elbow || label?.offset != null);
@@ -98,7 +112,7 @@ function LabelBlock({ node, kind, command }: { node: NodeDto; kind: 'bars' | 'ru
     <>
       <p className="eyebrow">Label</p>
       <LabelStyleFields style={label?.style} base={settings?.labels[kind]} onChange={(style) => void execute(command, { id: node.id, label: { style } })}
-        onReset={() => void execute(command, { id: node.id, label: { style: null } })} testId="rebar-label" withLine={kind === 'runs'} />
+        onReset={() => void execute(command, { id: node.id, label: { style: null } })} testId="rebar-label" withLine={kind === 'runs' || kind === 'sets'} />
       {placed && <button type="button" className="link small" onClick={() => void execute(command, { id: node.id, label: { at: null, elbow: null, offset: null } })}>Put the label back</button>}
     </>
   );
@@ -209,6 +223,7 @@ export function RebarSection({ node }: { node: NodeDto }) {
           {diameterChoices(rules, catalog.diameters, diameter).map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000 * 10) / 10}</option>)}
         </select>
       </label>
+      <MarkPrefixField node={node} command="rebar.update" />
       <p className="eyebrow">Hooks</p>
       <HookFields label="Start" hook={hooks.start} diameter={diameter} onChange={(h) => setHook('start', h)} />
       <HookFields label="End" hook={hooks.end} diameter={diameter} onChange={(h) => setHook('end', h)} />
@@ -295,6 +310,7 @@ export function RebarRunSection({ node }: { node: NodeDto }) {
           {diameterChoices(rules, catalog.diameters, typeof node.props.diameter === 'number' ? node.props.diameter : 0.008).map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000 * 10) / 10}</option>)}
         </select>
       </label>
+      <MarkPrefixField node={node} command="rebar.updateRun" />
       <p className="eyebrow">Zones</p>
       {zones.length === 0 && <p className="muted small">One step along the whole path. Zones put a closer step at the ends (a third each, for a seismic beam).</p>}
       {zones.map((z, i) => (

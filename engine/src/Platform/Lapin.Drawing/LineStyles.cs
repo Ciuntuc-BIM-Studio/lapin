@@ -89,7 +89,7 @@ public static class LineStyles
         "IFCBUILDINGELEMENTPROXY" or "IFCPLATE" or "IFCFOOTING" => "other",
         // The categories Visibility / Graphics added (decision 391): what had none, hidden only by its IFC class before.
         "IFCCOVERING" or "LAPINROOMFINISH" or "LAPINSKIRTING" or "LAPINCEILING" => "coverings",
-        "LAPINREBAR" or "LAPINREBARRUN" or "IFCREINFORCINGBAR" or "IFCREINFORCINGMESH" or "IFCTENDON" => "rebar",
+        "LAPINREBAR" or "LAPINREBARRUN" or "LAPINREBARSET" or "IFCREINFORCINGBAR" or "IFCREINFORCINGMESH" or "IFCTENDON" => "rebar",
         "LAPINFORMWORK" => "formwork",
         "LAPINSCAFFOLD" => "scaffolds",
         "IFCPIPESEGMENT" or "IFCPIPEFITTING" or "IFCDUCTSEGMENT" or "IFCDUCTFITTING" or "IFCCABLESEGMENT" or "IFCCABLECARRIERSEGMENT"

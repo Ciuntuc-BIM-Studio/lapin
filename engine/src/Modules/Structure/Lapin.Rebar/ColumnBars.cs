@@ -159,11 +159,15 @@ public static class ColumnBars
             var mk = new ViewMark($"{e.Id}:columnBars");
             var color = Rebar3D.Draw(mk, c, st, dots, lines, laid.Spec.Diameter, RebarShapes.LongitudinalLayer);
             var style = LabelStyle.Resolve("columnBars", st, laid.Spec.Label);
-            var text = style.Text(new LabelFacts(laid.Bars.Count.ToString(CultureInfo.InvariantCulture), laid.Spec.Diameter, null, laid.Length, laid.Spec.Mark, st.Steel));
-            labels.Add(new LabelRequest(mk, e.Id, "columnBars", style, text, laid.Spec.Mark, color, lines, dots, RebarLabels.AlongOf(lines), RebarLabels.PlacedOn(c.View, e.Id, "columnBars")));
+            var text = style.Text(new LabelFacts(laid.Bars.Count.ToString(CultureInfo.InvariantCulture), laid.Spec.Diameter, null, laid.Length, ColumnBarsText(m, st, e, laid.Spec), st.Steel));
+            labels.Add(new LabelRequest(mk, e.Id, "columnBars", style, text, laid.Spec.Mark, color, lines, dots, RebarLabels.AlongOf(lines), RebarLabels.PlacedOn(c.View, e.Id, "columnBars")) { MarkText = ColumnBarsText(m, st, e, laid.Spec) });
             yield return mk;
         }
     }
+
+    /// <summary>A column's bars' mark as written (decision 729): the straight bars' prefix, in its type's partition.</summary>
+    static string ColumnBarsText(IModelView m, RebarSettings st, Entity column, ColumnBarsSpec spec) =>
+        RebarMarks.ColumnBarsText(st, spec.Mark, m.RelatingOf(column.Id, IfcClass.RelDefinesByType)?.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "", spec.Diameter);
 
     /// <summary>The schedule's entries: each column's bars under its type's mark, one entry per length (a hook's tail is as long as its face lets it be).</summary>
     public static IEnumerable<RebarSchedule.Entry> Entries(IModelView m) => Owned(m).Select(x => x.Entry);
@@ -176,7 +180,7 @@ public static class ColumnBars
             if (Of(m, e, bases) is { } laid)
                 foreach (var g in laid.Lengths.GroupBy(x => Math.Round(x, 4)))
                     yield return (e, new RebarSchedule.Entry(laid.Spec.Mark, laid.Spec.Diameter, laid.Hooked ? "L bar" : "Straight bar", g.Count(), g.First(), Derived: true,
-                        Partition: m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? ""));
+                        Partition: m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "") { MarkText = ColumnBarsText(m, RebarSettings.Of(m), e, laid.Spec) });
     }
 
     public static int HighestMark(IModelView m, string partition = "") => m.OfClass(IfcClass.ColumnType)
@@ -198,7 +202,7 @@ public static class ColumnBars
         var partition = a.ContainsKey("partition") ? ((string?)a["partition"])?.Trim() ?? "" : type.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "";
         var moved = partition != (type.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "");
         var mark = (int)(Json.Number(a["mark"]) ?? (moved ? 0 : now.Mark));
-        if (enabled && mark <= 0) mark = Rebars.NextMark(ctx.Model, partition);
+        if (enabled && mark <= 0) mark = Rebars.NextMark(ctx.Model, partition, RebarMarks.PrefixOf(RebarSettings.Of(ctx.Model), "straight"));
         var top = (string?)a["top"] ?? now.Top;
         if (!ColumnBarsSpec.Tops.Contains(top)) throw new CommandException("A column's bars end as starter bars, with hooks, or by the column above (auto).");
         var label = a.ContainsKey(LabelStyle.Key) ? LabelStyle.Patch(now.Label, a[LabelStyle.Key]) : now.Label;

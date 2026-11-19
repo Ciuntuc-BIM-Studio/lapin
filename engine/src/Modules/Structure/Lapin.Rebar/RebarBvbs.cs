@@ -59,7 +59,11 @@ public static class RebarBvbs
     }
 
     /// <summary>One mark's BF2D record, its checksum and CR LF.</summary>
-    public static string Record(string project, string plan, string index, int mark, RebarSpec s, int count, string steel)
+    public static string Record(string project, string plan, string index, int mark, RebarSpec s, int count, string steel) =>
+        Record(project, plan, index, mark.ToString(CultureInfo.InvariantCulture), s, count, steel);
+
+    /// <summary>A BF2D record whose position is the mark as written (decision 729: R12), cleaned of the format's separators.</summary>
+    public static string Record(string project, string plan, string index, string mark, RebarSpec s, int count, string steel)
     {
         var length = RebarShapes.Length(s);
         var weight = length * RebarShapes.MassPerMetre(s.Diameter);
@@ -67,7 +71,7 @@ public static class RebarBvbs
         sb.Append('j').Append(Clean(project)).Append('@')
           .Append('r').Append(Clean(plan)).Append('@')
           .Append('i').Append(Clean(index)).Append('@')
-          .Append('p').Append(mark.ToString(CultureInfo.InvariantCulture)).Append('@')
+          .Append('p').Append(Clean(mark)).Append('@')
           .Append('l').Append(I(length * 1000)).Append('@')
           .Append('n').Append(count.ToString(CultureInfo.InvariantCulture)).Append('@')
           .Append('e').Append(D(weight)).Append('@')
@@ -84,18 +88,32 @@ public static class RebarBvbs
     }
 
     /// <summary>The marks drawn (bars and distributions), each its first bar's shape, all its bars counted.</summary>
-    static List<(int Mark, RebarSpec Spec, int Count, Entity First)> Marks(IModelView m)
+    /// <remarks>
+    /// Marks as written (decision 729), sorted by their letters then their number. A set's bars (decision 730) come as straight bars
+    /// (or U bars with their legs), one record per length: a set whose bars differ in length (an opening, a skewed edge) writes
+    /// its mark with a letter for each (12a, 12b…), as a bending shop reads sub-marks.
+    /// </remarks>
+    static List<(string Mark, RebarSpec Spec, int Count, Entity First)> Marks(IModelView m, Func<string, ElementGeometry?>? geometry)
     {
         bool Drawn(Entity e) => !e.Bool("excludeSchedule") && Views.Find(m, e.Str("viewId") ?? "") != null;
-        var o = new List<(int Mark, RebarSpec Spec, int Count, Entity First)>();
-        foreach (var e in m.OfClass(Rebars.Class).Where(Drawn)) o.Add((Rebars.Mark(e), Rebars.SpecOf(e), Rebars.Pieces(e), e));
+        var st = RebarSettings.Of(m);
+        var o = new List<(string Mark, int No, RebarSpec Spec, int Count, Entity First)>();
+        foreach (var e in m.OfClass(Rebars.Class).Where(Drawn)) o.Add((RebarMarks.TextOf(st, e), Rebars.Mark(e), Rebars.SpecOf(e), Rebars.Pieces(e), e));
         foreach (var e in m.OfClass(Rebars.RunClass).Where(Drawn))
         {
             var s = Rebars.SpecOf(e);
             var (_, positions, _, _) = Rebars.RunOf(e, s);
-            o.Add((Rebars.Mark(e), s, positions.Count * Rebars.Count(e), e));
+            o.Add((RebarMarks.TextOf(st, e), Rebars.Mark(e), s, positions.Count * Rebars.Count(e), e));
         }
-        return [.. o.GroupBy(x => x.Mark).OrderBy(g => g.Key).Select(g => (g.Key, g.First().Spec, g.Sum(x => x.Count), g.First().First))];
+        foreach (var e in m.OfClass(RebarSets.Class))
+        {
+            var pieces = RebarSets.PieceSpecs(m, st, e, geometry);
+            var mark = RebarMarks.TextOf(st, e);
+            for (var i = 0; i < pieces.Count; i++)
+                o.Add((pieces.Count > 1 ? mark + (char)('a' + Math.Min(i, 25)) : mark, Rebars.Mark(e), pieces[i].Spec, pieces[i].Count, e));
+        }
+        return [.. o.GroupBy(x => x.Mark).OrderBy(g => new string([.. g.Key.Where(c => !char.IsDigit(c))]), StringComparer.Ordinal).ThenBy(g => g.First().No).ThenBy(g => g.Key, StringComparer.Ordinal)
+            .Select(g => (g.Key, g.First().Spec, g.Sum(x => x.Count), g.First().First))];
     }
 
     static string CodeOf(RebarSpec s, Entity e) =>
@@ -106,7 +124,7 @@ public static class RebarBvbs
         // The bending schedule by the standard: mark, Ø, shape code, A…, count, length, total, mass, one row a mark.
         r.Query("bendingSchedule", (q, _) =>
         {
-            var marks = Marks(q.Model);
+            var marks = Marks(q.Model, q.Geometry);
             var most = marks.Count == 0 ? 0 : marks.Max(x => RebarShapeData.Dims(x.Spec).Count);
             var dims = Enumerable.Range(0, Math.Min(most, 8)).Select(i => ((char)('A' + i)).ToString()).ToList();
             var rows = new JsonArray();
@@ -133,9 +151,9 @@ public static class RebarBvbs
             var project = Spatial.Project(m)?.Name ?? "";
             var sb = new StringBuilder();
             var count = 0;
-            foreach (var (mark, s, n, first) in Marks(m))
+            foreach (var (mark, s, n, first) in Marks(m, q.Geometry))
             {
-                var plan = Views.Find(m, first.Str("viewId") ?? "")?.Name ?? "";
+                var plan = Views.Find(m, first.Str("viewId") ?? "")?.Name ?? (first.Str("host") is { } h ? Spatial.StoreyOf(m, h)?.Name : null) ?? "";
                 sb.Append(Record(project, (string?)a["plan"] ?? plan, (string?)a["index"] ?? "", mark, s, n, first.Str("steel") ?? RebarShapes.DefaultSteel)).Append("\r\n");
                 count++;
             }

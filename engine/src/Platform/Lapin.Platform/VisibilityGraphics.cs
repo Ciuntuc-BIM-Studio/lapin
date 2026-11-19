@@ -15,7 +15,9 @@ namespace Lapin.Platform;
 public sealed class VisibilityGraphics
 {
     /// <summary>The parts of an element a category can show or hide apart: its layers by their role, a door's or a window's reveals.</summary>
-    public static readonly string[] Subcategories = ["core", "finishes", "insulation", "membranes", "otherLayers", "reveals"];
+    /// <summary>The reinforcement's (decision 728): longitudinal bars, stirrups and ties, rebar sets; the rebar module reads them.</summary>
+    public static readonly string[] RebarSubs = ["longitudinal", "stirrups", "sets"];
+    public static readonly string[] Subcategories = ["core", "finishes", "insulation", "membranes", "otherLayers", "reveals", .. RebarSubs];
     static readonly string[] LayerSubs = ["core", "finishes", "insulation", "membranes", "otherLayers"];
 
     /// <summary>The subcategories each category offers: the layers where its elements can be layered, the reveals of doors and windows.</summary>
@@ -23,7 +25,7 @@ public sealed class VisibilityGraphics
     {
         ["walls"] = LayerSubs, ["slabs"] = LayerSubs, ["roofs"] = LayerSubs, ["coverings"] = LayerSubs,
         ["beams"] = LayerSubs, ["columns"] = LayerSubs, ["other"] = LayerSubs,
-        ["doors"] = ["reveals"], ["windows"] = ["reveals"],
+        ["doors"] = ["reveals"], ["windows"] = ["reveals"], ["rebar"] = RebarSubs,
     };
 
     /// <summary>A link's display in a view: its elements ruled by the view's graphics (the default) or by the link's own.</summary>

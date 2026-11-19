@@ -96,6 +96,7 @@ export const CATEGORY_NAMES: Record<string, string> = {
   core: 'Core', finishes: 'Finishes', insulation: 'Insulation', membranes: 'Membranes', otherLayers: 'Other layers', reveals: 'Reveals',
   dimensions: 'Dimensions', texts: 'Texts', tags: 'Tags', roomTags: 'Room tags', grids: 'Grids', levels: 'Levels', sections: 'Section marks',
   elevations: 'Elevation marks', callouts: 'Callouts', refPlanes: 'Reference planes', viewBoundaries: 'View boundaries', legends: 'Legends', symbols: 'Symbols', keys: 'North arrows and scale bars',
+  longitudinal: 'Longitudinal bars', stirrups: 'Stirrups and ties', sets: 'Rebar sets',
 };
 
 /** The tab the dialog opens on next (Manage → View filters opens it on Filters). */
