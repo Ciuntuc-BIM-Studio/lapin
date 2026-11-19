@@ -61,3 +61,7 @@ Grinzișoarele înlocuiesc miezul planșeului; straturile de deasupra și de ded
 ## Extrasul de lemn
 
 **Wood → Timber schedule** face lista de debitare a întregului lemn din proiect, piesele pereților și ale șarpantelor: piesa, secțiunea, clasa, lungimea, bucățile, lungimea totală și volumul, cu totalurile pe secțiune. În IFC fiecare piesă e un IfcMember (STUD, PLATE, buiandrugul și pervazul cu numele lor) sub peretele ei, iar izolația un IfcCovering INSULATION.
+
+## Șarpanta
+
+**Lemn → Șarpanta acoperișului** deschide configuratorul de acoperiș pe fila lui **Șarpantă** pentru acoperișul selectat (sau pentru singurul din proiect): structura, secțiunile căpriorilor, panelor, grinzii de coamă, cosoroabelor și cleștilor, capetele și așezarea. **Lemn → Lemnăria acoperișului** face lista de debitare a acoperișurilor ca extras, găsit în browserul proiectului la **Extrase**. Vezi *Șarpanta din lemn* în pagina Plăci și acoperișuri.

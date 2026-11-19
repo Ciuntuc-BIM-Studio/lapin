@@ -127,11 +127,27 @@ Select the roof to change it in the properties panel:
 
 **Gutters and downpipes.** In the configurator's **Covering and drainage** the gutter takes its size, how far out of the eave and how far below the covering it hangs, its fall to the outlets (mm/m) and its end caps; the edges' table switches each eave's gutter on or off. The downpipes start as the roof's own, one every 10 m; **Make them editable** turns them into elements, and **Architecture → Downpipe** adds one with a click on a gutter. A downpipe's grip slides it along its gutter only; its properties set its diameter, the shoe at its foot and its route, a chain of segments each with its length and its angle from the vertical (towards the wall), the last one down to the ground. In IFC a gutter is an IfcPipeSegment GUTTER and a downpipe a rigid segment named Downpipe.
 
+**Mitred corners.** Gutters of eaves that meet at a corner at the same height are cut at the angle of the corner and joined, with no end caps there; a gutter that goes on in a straight line is one run.
+
 The walls on the roof's level stop under it and rise to its gables by themselves, under a curved roof too. A wall on another level follows the roof after **Architecture → Attach to roof** (<kbd>AR</kbd>): select the walls, then click the roof. The same tool takes any other body over the walls: a Studio solid, a slab, a beam, an element imported from IFC. The walls rise to its underside and are cut along it, whatever its shape. **Detach from roof** undoes it.
 
 **Architecture → Opening** set to **Roof window** or **Dormer** adds an opening to a roof: click on a slope. They belong to the roof. Select the roof, and each one shows its grips in plan. Drag the grip at its middle to move it on the roof. Drag a roof window's edge or corner grips to resize it on its slope (the opposite edge stays where it is; you can type the length as you drag). The width runs along the eave and the length up the slope, measured on the slope. A dormer has a grip at each side for its width. A change that would not fit on the roof is refused. To remove one, right-click its grip and choose **Remove roof window** (or **Remove dormer**), press **Delete** while the cursor is over its grip, or **Ctrl/⌘-click** its middle grip. The roof's properties list them too: type a window's width and length there, or click **×** to remove it. A dormer's roof is covered in the roof's covering material and measured with it: the roof's quantities list the **dormer covering** apart (the area of its slopes, the number of dormers), so the quantity takeoff by material, the estimate and a planning task on the covering count the roof's slopes (less the dormers' notches) and the dormers' roofs, each once.
 
 ![A roof window's grip on the selected roof](shots/roof-window-grip.webp)
+
+### Slopes, curves and layers
+
+**Slope markers.** Select a roof in plan and each edge shows a marker a little inside it: an arrow with the pitch (for example 30°) on an eave, a bar with **G** on a gable. Click a marker to turn that edge into a gable or an eave; click again to go back to the roof's automatic choice. A marker drawn in the accent colour is an edge you set by hand. A flat or barrel roof shows none.
+
+**Curved edges and rounded corners.** A roof's outline takes arcs and rounded corners as a floor's does (see *Curved edges, fillets and round floors* above): drag the grips of its edges and corners, or type an **Arc** in the edges' table of the properties (the rise off the chord in m; empty or 0 is straight). The edge rules follow the edges.
+
+**Layers.** In the configurator, the **Layers** tab builds the roof's covering as your own stack, from the inside to the top of the rafters or the base plane: each layer has a **Role** (structure, insulation, sheathing, membrane, finish), a **Material** and a **Thickness**; move them up or down, remove one, or **Clear custom layers** to go back to the covering and structure of the style. The section beside shows them. Under **Unlocked layer extensions**, a layer can stop short of the overhang or reach past it: choose the layer, an edge (or **All round**) and the distance. The properties show the stack's size with an **Edit…** link.
+
+**Templates for other projects.** **Save as template…** in the configurator keeps the roof as it is set, edges and layers included, in this computer's library, apart from the project's styles. The templates are listed as **User templates** in the configurator, over the styles, and in the roof's style list; pick one to set it on the roof, and use the buttons beside it to rename, export to a JSON file, delete, or import templates from a file.
+
+**Explode.** **Explode**, in the roof's properties and on its right-click menu, turns the roof into editable Studio solids, one per part (covering, rafters, plates and so on), with their names and materials, in one undo step. The roof is gone, with the downpipes it carried.
+
+**Unfolded covering.** **Unfolded covering** in the roof's properties makes a drafting view of the covering laid flat at 1:50: each roof plane at its true size (a barrel roof unrolled), with its edge lengths, the openings cut out and the area of each plane and of the whole. It opens at once and stays in the project browser.
 
 ### Timber framing
 
@@ -143,6 +159,8 @@ The walls on the roof's level stop under it and rise to its gables by themselves
 - **none**: a deck, no timber.
 
 **Rafters and chords** takes the old sections in cm or the Nordic ones in mm (45×95 to 45×245); **Truss webs** and **Timber grade** (C14 to C30, glulam) go with them. The rafters sit on the wall plate by a bird's mouth (**Rafter seat on the wall plate**) and end at the eave plumb or square (**Rafter tails**). The **Swedish truss roof** and **Nordic collar-tie roof** styles bring their framing with them.
+
+**Sections of the other members.** The configurator's **Framing** tab also sets the **Purlin section**, the **Ridge beam section** and the **Wall plate section** (and the **Collar tie section** for collar roofs), each taken from the lists of sections. **Rafter tails** has six cuts: **plumb** (a vertical cut), **square** (cut square to the rafter), **level** (a small horizontal cut at the foot), **bevel** (a sloped chamfer under the end), **stepped** (two small steps) and **curved** (a rounded underside). The **Roof framing** tool in the **Wood** tab (select a roof first) and **Configure roof framing…** in a roof's **Wood** properties open the configurator on this tab.
 
 Every member is a part of its own: the **Roof timber** schedule lists them as a cutting list (member, section, grade, length, pieces, volume), and IFC gets each as an IfcMember of its type, each truss as an IfcElementAssembly.
 

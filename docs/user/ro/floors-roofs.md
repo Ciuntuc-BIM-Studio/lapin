@@ -125,11 +125,27 @@ Selectează acoperișul ca să-l schimbi în panoul de proprietăți:
 
 **Jgheaburi și burlane.** În **Învelitoare și ape** din configurator, jgheabul are mărimea, distanța în afara streșinii, coborârea sub învelitoare, panta spre guri (mm/m) și capacele de capăt; tabelul laturilor pornește sau oprește jgheabul fiecărei streșini. Burlanele pornesc ca ale acoperișului, câte unul la 10 m; **Fă-le editabile** le face elemente, iar **Architecture → Downpipe** adaugă unul cu un clic pe jgheab. Gripul unui burlan îl mută doar de-a lungul jgheabului; în proprietăți îi dai diametrul, cotul de la bază și traseul, un lanț de segmente, fiecare cu lungimea și unghiul lui față de verticală (spre perete), ultimul până la sol. În IFC jgheabul e IfcPipeSegment GUTTER, iar burlanul un segment rigid numit Downpipe.
 
+**Colțuri tăiate la unghi.** Jgheaburile streașinilor care se întâlnesc într-un colț, la aceeași înălțime, sunt tăiate la unghiul colțului și îmbinate, fără capace acolo; un jgheab care merge înainte în linie dreaptă e o singură rampă.
+
 Pereții de pe nivelul acoperișului se opresc singuri sub el și urcă la frontoane, și sub un acoperiș boltit. Un perete de pe alt nivel urmează acoperișul după **Arhitectură → Atașează la acoperiș** (<kbd>AR</kbd>): selectezi pereții, apoi dai clic pe acoperiș. Aceeași unealtă primește orice alt corp de deasupra pereților: un solid din Studio, o placă, o grindă, un element importat din IFC. Pereții urcă până la fața lui de jos și sunt tăiați după ea, oricare i-ar fi forma. **Detașează de acoperiș** anulează asta.
 
 **Arhitectură → Gol** cu **Fereastră de acoperiș** sau **Lucarnă** adaugă un gol în acoperiș: dai clic pe o pantă. Ele țin de acoperiș. Selectezi acoperișul și fiecare își arată mânerele în plan. Tragi de mânerul din mijloc ca s-o muți pe acoperiș. Tragi de mânerele de pe marginile sau colțurile unei ferestre de acoperiș ca s-o redimensionezi pe pantă (marginea opusă rămâne pe loc; lungimea o poți scrie în timp ce tragi). Lățimea e de-a lungul streașinii, iar lungimea pe pantă, măsurată pe pantă. O lucarnă are câte un mâner pe fiecare latură pentru lățime. O schimbare care n-ar încăpea pe acoperiș nu se lasă. Ca s-o scoți, dai clic dreapta pe un mâner al ei și alegi **Scoate fereastra de acoperiș** (sau **Scoate lucarna**), apeși **Delete** cu cursorul deasupra mânerului sau dai **Ctrl/⌘-clic** pe mânerul din mijloc. Proprietățile acoperișului le listează și ele: acolo scrii lățimea și lungimea unei ferestre sau o scoți cu **×**. Acoperișul unei lucarne e acoperit cu materialul învelitorii și măsurat cu ea: cantitățile acoperișului dau separat **învelitoarea lucarnelor** (aria pantelor ei, numărul lucarnelor), deci antemăsurătoarea după material, devizul și o sarcină de planificare pe învelitoare numără pantele acoperișului (fără decupajele lucarnelor) și acoperișurile lucarnelor, fiecare o dată.
 
 ![Mânerul unei ferestre de acoperiș pe acoperișul selectat](shots/roof-window-grip.webp)
+
+### Pante, curbe și straturi
+
+**Marcajele pantelor.** Selectează un acoperiș în plan și fiecare latură arată un marcaj puțin în interior: o săgeată cu panta (de exemplu 30°) la o streașină, o bară cu **G** la un fronton. Un clic pe marcaj face latura fronton sau streașină; încă un clic o duce înapoi la alegerea automată a acoperișului. Un marcaj desenat în culoarea de accent e o latură stabilită de mână. Un acoperiș plat sau boltit nu are marcaje.
+
+**Laturi curbe și colțuri rotunjite.** Conturul unui acoperiș primește arce și colțuri rotunjite ca la o placă (vezi *Laturi curbe, racordări și plăci rotunde* mai sus): trage de grip-urile laturilor și colțurilor sau scrie un **Arc** în tabelul laturilor din proprietăți (săgeata față de coardă, în m; gol sau 0 înseamnă dreaptă). Regulile laturilor urmează laturile.
+
+**Straturi.** În configurator, fila **Layere** construiește învelitoarea acoperișului ca un teanc al tău, de la interior până deasupra căpriorilor sau planului de bază: fiecare strat are un **Rol** (structură, izolație, astereală, membrană, finisaj), un **Material** și o **Grosime**; le muți în sus sau în jos, scoți unul sau **Șterge layerele proprii** ca să revii la învelitoarea și structura stilului. Secțiunea alăturată le arată. La **Extinderi de layer deblocate**, un strat se poate opri înainte de streașină sau o poate depăși: alegi stratul, o latură (sau **Pe tot conturul**) și distanța. Proprietățile arată grosimea totală a teancului, cu un link **Editează…**.
+
+**Șabloane pentru alte proiecte.** **Salvează ca șablon…** din configurator păstrează acoperișul așa cum e stabilit, cu laturi și straturi, în biblioteca acestui calculator, separat de stilurile proiectului. Șabloanele sunt listate ca **Șabloane proprii** în configurator, deasupra stilurilor, și în lista de stiluri a acoperișului; alegi unul ca să-l pui pe acoperiș, iar butoanele de lângă el îl redenumesc, îl exportă într-un fișier JSON, îl șterg sau importă șabloane dintr-un fișier.
+
+**Explodează.** **Explodează**, în proprietățile acoperișului și în meniul lui de clic dreapta, face din acoperiș solide editabile din Studio, câte unul pe parte (învelitoare, căpriori, cosoroabe etc.), cu numele și materialele lor, într-un singur pas de Undo. Acoperișul dispare, odată cu burlanele pe care le purta.
+
+**Învelitoarea desfășurată.** **Învelitoare desfășurată** din proprietățile acoperișului face o vedere de desen a învelitorii întinse la 1:50: fiecare apă în mărime reală (acoperișul boltit desfăcut), cu lungimile laturilor, golurile decupate și aria fiecărei ape și a întregii învelitori. Se deschide pe loc și rămâne în browserul proiectului.
 
 ### Șarpanta din lemn
 
@@ -141,6 +157,8 @@ Pereții de pe nivelul acoperișului se opresc singuri sub el și urcă la front
 - **none**: o placă, fără lemn.
 
 **Căpriori și tălpi** primește secțiunile vechi în cm sau pe cele nordice în mm (45×95 până la 45×245); alături, **Diagonalele fermelor** și **Clasa lemnului** (C14 până la C30, lemn lamelar). Căpriorii stau pe cosoroabă printr-o crestătură (**Așezarea căpriorilor pe cosoroabă**) și se termină la streașină vertical sau în echer (**Capătul căpriorilor la streașină**). Stilurile **Swedish truss roof** și **Nordic collar-tie roof** își aduc șarpanta cu ele.
+
+**Secțiunile celorlalte piese.** Fila **Șarpantă** a configuratorului stabilește și **Secțiunea panei**, **Secțiunea grinzii de coamă** și **Secțiunea cosoroabei** (și **Secțiunea cleștelui** la acoperișurile cu clești), fiecare din listele de secțiuni. **Capătul căpriorilor la streașină** are șase tăieturi: **verticale**, **drepte** (tăiat perpendicular pe căprior), **orizontale** (o mică treaptă tăiată orizontal), **teșite** (o teșitură înclinată sub capăt), **în trepte** (două trepte mici) și **curb** (o rotunjire). Unealta **Șarpanta acoperișului** din fila **Lemn** (selectează întâi un acoperiș) și **Configurează șarpanta acoperișului…** din proprietățile **Lemn** ale acoperișului deschid configuratorul pe această filă.
 
 Fiecare piesă e o parte a acoperișului: extrasul **Roof timber** le dă ca listă de debitare (piesa, secțiunea, clasa, lungimea, bucățile, volumul), iar în IFC fiecare e un IfcMember cu tipul lui, fiecare fermă un IfcElementAssembly.
 

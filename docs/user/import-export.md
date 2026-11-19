@@ -64,6 +64,10 @@ With **Parts** set to **grouped under their element**, a wall whose layers are c
 
 A reference keeps the openings its file cut into it, with the doors and windows filling them: **Export IFC, Fragments or BOS…** writes them back with the file's GlobalIds, and a reference moved, turned, mirrored or copied takes its doors and windows with it (a copy gets openings of its own, filled by copies of them). Deleting a reference deletes the doors and windows in it, as with a Lapin wall; a door deleted on its own, or moved away, leaves the opening empty.
 
+**Spaces.** Some programs fail on the extruded profile an IfcSpace is written with (CYPECAD MEP is one). Tick **Spaces: export as faceted B-rep (instead of SweptSolid)** in **Export IFC, Fragments or BOS…** and each space is written as a faceted B-rep of its own geometry instead. Unticked (the default), the file is as it always was.
+
+**Spaces.** Some programs fail on the extruded profile an IfcSpace is written with (CYPECAD MEP is one). Tick **Spaces: export as faceted B-rep (instead of SweptSolid)** in **Export IFC, Fragments or BOS…** and each space is written as a faceted B-rep of its own geometry instead. Unticked (the default), the file is as it always was.
+
 On the desktop, **Bonsai drawing styles** (in **Export IFC, Fragments or BOS…**) writes beside the IFC a stylesheet (`name.css`) and its hatches (`name-patterns.svg`) for Bonsai (BlenderBIM), whose drawings are styled by CSS: each material's cut hatch, fill and elevation hatch, the cut and seen lines of your object styles and the text of your drafting standards. The IFC names both files, so a drawing you create in Bonsai from it takes them.
 
 ![Export IFC, Fragments or BOS](shots/export-exchange.webp)

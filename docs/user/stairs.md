@@ -56,6 +56,14 @@ The railing's height is measured upright from the treads' nosing line to the han
 
 A concrete stair is one slab: each flight's waist runs into the landing, so the flight's soffit meets the landing's soffit in one line, with no notch at the landing's edge, no step and no concrete counted twice. On the **Construction** tab, **Footing under the first flight** stands the first flight's foot on a footing of its own (its **Footing depth** under the floor and its **Footing width** under the first tread, flush with the first riser), exported to IFC as an IfcFooting. In IFC each railing is an IfcRailing of the stair (BALUSTRADE, or HANDRAIL on the wall) with its side, kind and height, and keeps its GlobalId when the stair changes.
 
+### The landing
+
+On an L, U or split stair, and a straight stair with a landing, the landing's place is yours. **Landing after step** (in **Stair types**, on the **Shape** tab, and in a stair's own properties) says after which riser of the first flight the landing comes; empty, it comes halfway. On an **L shape** with a landing (not winders), **Landing width** sets how far the landing runs across the turn, on its own: empty or 0, it is as wide as the stair. **Landing length** keeps setting how far it runs along the first flight. A spiral and a curved stair have no landing, so they have neither field.
+
+### The landing
+
+On an L, U or split stair, and a straight stair with a landing, the landing's place is yours. **Landing after step** (in **Stair types**, on the **Shape** tab, and in a stair's own properties) says after which riser of the first flight the landing comes; empty, it comes halfway. On an **L shape** with a landing (not winders), **Landing width** sets how far the landing runs across the turn, on its own: empty or 0, it is as wide as the stair. **Landing length** keeps setting how far it runs along the first flight. A spiral and a curved stair have no landing, so they have neither field.
+
 ### Numbered steps
 
 Under **In plan** on the **Shape** tab: **Number the steps** writes each step's number in a circle, from the first riser up; **Label** writes the risers, the riser and the tread, and the width by the foot; **"UP" at the foot of the arrow** marks where it starts. Plans and sheets show them. The numbers stand beside the walking line, never on it: on the right going up a straight stair, on the outer side of a turn, outwards on a spiral.
@@ -69,6 +77,14 @@ Under **In plan** on the **Shape** tab: **Number the steps** writes each step's 
 A plan cuts a stair where its cut plane crosses it (1.20 m above the storey, unless the view sets another cut height), as drawing standards do. The steps under the cut are drawn as seen; a break line crosses the flight, slanted, where the nosings reach the cut height; the steps above it are dashed, in the style of what lies over the cut. The walking line goes on to the top, dashed past the break, with its arrow at the top. Where the cut falls on winders or on a spiral, the break goes straight across the walking line there. A stair wholly under the cut (entrance steps) is drawn whole.
 
 Under **In plan**, **Over the cut plane** chooses **Dashed**, **Not drawn** (the stair stops at the break line, the arrow on it, and the numbers above the cut are left out) or **Whole stair, no cut**; **Break line** is a **Zigzag** or **Two parallel lines**. The plan on screen, the sheets and their PDF are drawn by the same engine, so they show the same stair.
+
+### The stair on the floor above
+
+A plan of the floor a stair arrives at shows it too: the part of the stair that reaches that floor, as the plan cuts it, with the steps, the landing and the walking line, and the arrow ends in **DN** (down) at the top step in place of the **UP** at the foot. The **Label** of the stair's sizes is written only on the plan of the floor it starts from. Numbered steps and the other **In plan** choices follow the stair's type, as on its own floor.
+
+### The stair on the floor above
+
+A plan of the floor a stair arrives at shows it too: the part of the stair that reaches that floor, as the plan cuts it, with the steps, the landing and the walking line, and the arrow ends in **DN** (down) at the top step in place of the **UP** at the foot. The **Label** of the stair's sizes is written only on the plan of the floor it starts from. Numbered steps and the other **In plan** choices follow the stair's type, as on its own floor.
 
 ## Stair by sketch
 

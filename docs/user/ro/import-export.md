@@ -64,6 +64,8 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 
 O referință își păstrează golurile pe care i le-a tăiat fișierul ei, cu ușile și ferestrele care le umplu: **Exportă IFC, Fragments sau BOS…** le scrie înapoi cu GlobalId-urile fișierului, iar o referință mutată, rotită, oglindită sau copiată își ia ușile și ferestrele cu ea (o copie primește goluri proprii, umplute de copii ale lor). Ștergerea unei referințe șterge ușile și ferestrele din ea, ca la un perete Lapin; o ușă ștearsă singură, sau mutată în altă parte, lasă golul gol.
 
+**Încăperi.** Unele programe nu citesc profilul extrudat cu care e scris un IfcSpace (CYPECAD MEP e unul). Bifează **Încăperi: exportă ca B-rep fațetat (în loc de SweptSolid)** în **Exportă IFC, Fragments sau BOS…** și fiecare încăpere se scrie în schimb ca B-rep fațetat din geometria ei. Nebifat (implicit), fișierul e ca întotdeauna.
+
 Pe desktop, **Stiluri de desen Bonsai** scrie lângă IFC o foaie de stil (`nume.css`) și hașurile ei (`nume-patterns.svg`) pentru Bonsai (BlenderBIM), ale cărui desene se stilizează cu CSS: hașura secțiunii, umplerea și hașura de fațadă ale fiecărui material, liniile de secțiune și de proiecție din stilurile de obiect și textul din standardele de desen. IFC-ul numește ambele fișiere, deci un desen pe care îl faceți în Bonsai din el le ia.
 
 ![Exportă IFC, Fragments sau BOS](shots/export-exchange.webp)

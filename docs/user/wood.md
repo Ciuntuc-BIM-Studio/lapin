@@ -61,3 +61,7 @@ The joists replace the floor's core; the layers above and below stay. Their memb
 ## The Timber schedule
 
 **Wood → Timber schedule** makes a cutting list of every piece of timber in the project, the walls' members and the roofs' framing: member, section, grade, length, pieces, total length and volume, with the totals by section. In IFC each member is an IfcMember (STUD, PLATE, a header or sill by name) under its wall, and the insulation an IfcCovering INSULATION.
+
+## Roof framing
+
+**Wood → Roof framing** opens the roof configurator on its **Framing** tab for the selected roof (or the project's only roof): the structure, the sections of rafters, purlins, ridge beam, wall plates and collar ties, the tails and the seat. **Wood → Roof timber** makes the roofs' cutting list as a schedule, found in the project browser under **Schedules**. See *Timber framing* in the Floors and roofs page.

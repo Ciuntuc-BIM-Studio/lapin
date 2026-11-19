@@ -34,6 +34,14 @@ Pentru o distanță exactă, folosește **Mută** (<kbd>M</kbd>) sau **Copiază*
 
 ![Proprietățile unei uși](shots/door-properties.webp)
 
+**Deschis sau închis.** Câmpul **Stare** al unei uși sau ferestre din panoul de proprietăți (când e editabilă) alege cum se arată: **Implicit (deschisă în plan, închisă în 3D)**, **Deschisă (plan și 3D)** sau **Închisă (plan și 3D)**; cu mai multe selectate, le schimbă pe toate. Deschisă, o canat pe balamale stă rotită cu un sfert de tură spre interior în 3D, iar una glisantă e împinsă într-o parte, aproape cât lățimea ochiului ei; tocul rămâne. În plan, **Deschisă** desenează canatul deschis, cu arcul lui, iar **Închisă** îl desenează închis, fără arc.
+
+**Ferestre glisante.** Canaturile unei ferestre glisante, când un rând are mai mult de unul, merg pe două șine: unul din două pe cea interioară, celelalte pe cea exterioară, așa că se încrucișează și stau pe planuri diferite în 3D, în secțiune și în plan.
+
+**Deschis sau închis.** Câmpul **Stare** al unei uși sau ferestre din panoul de proprietăți (când e editabilă) alege cum se arată: **Implicit (deschisă în plan, închisă în 3D)**, **Deschisă (plan și 3D)** sau **Închisă (plan și 3D)**; cu mai multe selectate, le schimbă pe toate. Deschisă, o canat pe balamale stă rotită cu un sfert de tură spre interior în 3D, iar una glisantă e împinsă într-o parte, aproape cât lățimea ochiului ei; tocul rămâne. În plan, **Deschisă** desenează canatul deschis, cu arcul lui, iar **Închisă** îl desenează închis, fără arc.
+
+**Ferestre glisante.** Canaturile unei ferestre glisante, când un rând are mai mult de unul, merg pe două șine: unul din două pe cea interioară, celelalte pe cea exterioară, așa că se încrucișează și stau pe planuri diferite în 3D, în secțiune și în plan.
+
 ### Cote temporare
 
 Selectează în plan o ușă, o fereastră sau un gol din perete și Lapin desenează **cote temporare** de-a lungul peretelui, pe fața în care vin pereții care îl întâlnesc: de la fiecare muchie a golului la cea mai apropiată față a unui perete care îi întâlnește sau îi traversează peretele (sau la capătul peretelui însuși) și, când un alt gol din același perete e mai aproape, încă una, punctată, până la acel gol. Urmăresc golul cât timp îl tragi și se arată și când pui unul cu **Ușă** sau **Fereastră**, înainte de clic.

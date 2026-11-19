@@ -54,6 +54,14 @@ Fiecare balustradă a unei scări poate fi selectată singură: dă clic pe ea �
 
 O scară de beton e o singură placă: placa fiecărei rampe intră în podest, astfel că intradosul rampei întâlnește intradosul podestului într-o singură linie, fără crestătură la marginea podestului, fără treaptă și fără beton numărat de două ori. În fila **Construcție**, **Fundație sub prima rampă** pune piciorul primei rampe pe o fundație proprie (cu **Adâncimea fundației** sub pardoseală și **Lățimea tălpii** sub prima treaptă, la fața primei contratrepte), exportată în IFC ca IfcFooting. În IFC fiecare balustradă e un IfcRailing al scării (BALUSTRADE, sau HANDRAIL pe perete) cu partea, felul și înălțimea ei, și își păstrează GlobalId-ul când scara se schimbă.
 
+### Podestul
+
+La o scară în L, în U sau bifurcată, și la una dreaptă cu podest, locul podestului îl alegi tu. **Podest după treapta** (în **Tipuri de scări**, în fila **Formă**, și în proprietățile scării) spune după care contratreaptă a primei rampe vine podestul; gol, vine la jumătate. La o scară **în L** cu podest (nu cu trepte balansate), **Lățimea podestului** dă cât se întinde podestul în sensul întoarcerii, separat: gol sau 0, e cât lățimea scării. **Lungimea podestului** rămâne cât se întinde pe lungul primei rampe. Scara în spirală și cea curbă n-au podest, deci n-au nici unul dintre aceste câmpuri.
+
+### Podestul
+
+La o scară în L, în U sau bifurcată, și la una dreaptă cu podest, locul podestului îl alegi tu. **Podest după treapta** (în **Tipuri de scări**, în fila **Formă**, și în proprietățile scării) spune după care contratreaptă a primei rampe vine podestul; gol, vine la jumătate. La o scară **în L** cu podest (nu cu trepte balansate), **Lățimea podestului** dă cât se întinde podestul în sensul întoarcerii, separat: gol sau 0, e cât lățimea scării. **Lungimea podestului** rămâne cât se întinde pe lungul primei rampe. Scara în spirală și cea curbă n-au podest, deci n-au nici unul dintre aceste câmpuri.
+
 ### Treptele numerotate
 
 La **În plan**, în fila **Formă**: **Numerotează treptele** scrie numărul fiecărei trepte într-un cerc, de la prima contratreaptă în sus; **Etichetă** scrie contratreptele, înălțimea și lățimea treptei și lățimea scării lângă picior; **„UP” la piciorul săgeții** arată de unde pornește. Planurile și planșele le arată. Numerele stau lângă linia de pas, niciodată pe ea: în dreapta ei la urcare pe o scară dreaptă, pe partea exterioară a unei întoarceri, spre exterior pe o scară în spirală.
@@ -67,6 +75,14 @@ La **În plan**, în fila **Formă**: **Numerotează treptele** scrie numărul f
 Un plan taie scara acolo unde o traversează planul lui de secționare (1,20 m peste etaj, dacă vederea nu are altă înălțime de tăiere), ca în standardele de desen. Treptele de sub tăietură se desenează văzute; o linie de întrerupere traversează rampa, oblic, acolo unde nasurile treptelor ajung la înălțimea tăieturii; treptele de deasupra se desenează cu linie întreruptă, ca tot ce e deasupra tăieturii. Linia de pas continuă până sus, întreruptă după linia de întrerupere, cu săgeata sus. Când tăietura cade pe trepte balansate sau pe o scară în spirală, linia de întrerupere traversează drept linia de pas în acel loc. O scară aflată toată sub tăietură (treptele de la intrare) se desenează întreagă.
 
 La **În plan**, **Deasupra planului de secționare** alege **Cu linie întreruptă**, **Nedesenat** (scara se oprește la linia de întrerupere, cu săgeata pe ea, iar numerele de deasupra tăieturii lipsesc) sau **Scara întreagă, fără tăietură**; **Linia de întrerupere** e **În zigzag** sau **Două linii paralele**. Planul de pe ecran, planșele și PDF-ul lor sunt desenate de același motor, deci arată aceeași scară.
+
+### Scara pe etajul de deasupra
+
+Planul etajului în care ajunge o scară o arată și pe ea: partea scării care ajunge la acel etaj, tăiată de plan, cu trepte, podest și linia de pas, iar săgeata se încheie cu **DN** (în jos) la ultima treaptă, în loc de **UP** la picior. **Eticheta** cu mărimile scării se scrie doar în planul etajului de la care pornește. Treptele numerotate și celelalte alegeri de la **În plan** urmează tipul scării, ca pe etajul ei.
+
+### Scara pe etajul de deasupra
+
+Planul etajului în care ajunge o scară o arată și pe ea: partea scării care ajunge la acel etaj, tăiată de plan, cu trepte, podest și linia de pas, iar săgeata se încheie cu **DN** (în jos) la ultima treaptă, în loc de **UP** la picior. **Eticheta** cu mărimile scării se scrie doar în planul etajului de la care pornește. Treptele numerotate și celelalte alegeri de la **În plan** urmează tipul scării, ca pe etajul ei.
 
 ## Scara din schiță
 

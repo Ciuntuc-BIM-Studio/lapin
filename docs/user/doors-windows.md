@@ -34,6 +34,14 @@ For an exact distance, use **Move** (<kbd>M</kbd>) or **Copy** (<kbd>CO</kbd>) o
 
 ![A door's properties](shots/door-properties.webp)
 
+**Open or closed.** A door or window's **State** in the properties panel (when it is editable) chooses how it is shown: **Default (plan open, 3D closed)**, **Open (plan & 3D)** or **Closed (plan & 3D)**; with several selected, it sets them all. Open, a hinged leaf stands turned a quarter turn to the inside in 3D and a sliding one is pushed aside, nearly the whole width of its pane; the frame stays. In plan, **Open** draws the leaf open, with its swing, and **Closed** draws it shut, with no swing.
+
+**Sliding windows.** The sashes of a sliding window, when a row has more than one, run on two tracks: every other sash on the inner one and the rest on the outer one, so they pass each other and stand on different planes in 3D, section and plan.
+
+**Open or closed.** A door or window's **State** in the properties panel (when it is editable) chooses how it is shown: **Default (plan open, 3D closed)**, **Open (plan & 3D)** or **Closed (plan & 3D)**; with several selected, it sets them all. Open, a hinged leaf stands turned a quarter turn to the inside in 3D and a sliding one is pushed aside, nearly the whole width of its pane; the frame stays. In plan, **Open** draws the leaf open, with its swing, and **Closed** draws it shut, with no swing.
+
+**Sliding windows.** The sashes of a sliding window, when a row has more than one, run on two tracks: every other sash on the inner one and the rest on the outer one, so they pass each other and stand on different planes in 3D, section and plan.
+
 ### Temporary dimensions
 
 Select one door, window or wall opening in a plan and Lapin draws **temporary dimensions** along its wall, on the face the walls meeting it come in to: from each of its edges to the nearest face of a wall that meets or crosses its wall (or to the wall's own end), and, when another opening of the same wall is nearer, a second, dashed one to that opening. They follow the opening while you drag it, and they are shown while you place one with **Door** or **Window**, before the click.
