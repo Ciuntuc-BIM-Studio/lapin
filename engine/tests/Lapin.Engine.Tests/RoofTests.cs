@@ -832,4 +832,148 @@ public class RoofTests
         Assert.Null(Slabs.Rises(straight));
         Assert.Equal(4, Roof.Resolve(straight, f.Model)!.Outline.Count);
     }
+
+    // ------------------------------------------------------------ customizable roof layers & unlocked extensions (forum 160)
+
+    [Fact]
+    public void Custom_roof_layers_build_distinct_parts_with_expected_thicknesses_and_materials()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var roofId = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(10, 0), new JsonArray(10, 6), new JsonArray(0, 6)),
+        })!["id"]!;
+        f.Run("architecture.updateRoof", new JsonObject
+        {
+            ["id"] = roofId,
+            ["attrs"] = new JsonObject
+            {
+                ["structure"] = "none",
+                ["layers"] = new JsonArray(
+                    new JsonObject { ["material"] = "OSB", ["thickness"] = 0.022, ["role"] = "sheathing" },
+                    new JsonObject { ["material"] = "Mineral wool", ["thickness"] = 0.16, ["role"] = "insulation" },
+                    new JsonObject { ["material"] = "Clay tile", ["thickness"] = 0.03, ["role"] = "finish" }
+                ),
+            },
+        });
+        var geom = f.Session.Geometry(roofId)!;
+        var l0 = geom.Parts.Single(p => p.Key == "layer:0");
+        var l1 = geom.Parts.Single(p => p.Key == "layer:1");
+        var l2 = geom.Parts.Single(p => p.Key == "layer:2");
+        Assert.DoesNotContain(geom.Parts, p => p.Key is "covering" or "deck");
+        Assert.NotNull(l0.Material);
+        Assert.NotNull(l1.Material);
+        Assert.NotNull(l2.Material);
+        Assert.NotEqual(l0.Material, l1.Material);
+        Assert.NotEqual(l1.Material, l2.Material);
+
+        var roof = f.Session.Model.Get(roofId)!;
+        var q = Roof.Quantities(roof, geom, f.Session.Model).ToList();
+        var layerQtos = q.Where(x => x.Name == "Lapin_RoofLayerQuantities").ToList();
+        Assert.Equal(3, layerQtos.Count);
+        Assert.Equal(0.022, layerQtos[0].Quantities.Single(i => i.Name == "Width").Value, 6);
+        Assert.Equal(0.16, layerQtos[1].Quantities.Single(i => i.Name == "Width").Value, 6);
+        Assert.Equal(0.03, layerQtos[2].Quantities.Single(i => i.Name == "Width").Value, 6);
+
+        // Volumes scale with layer thickness (same roof area).
+        var v0 = Measure.Volume(l0.Solid);
+        var v1 = Measure.Volume(l1.Solid);
+        var v2 = Measure.Volume(l2.Solid);
+        Assert.Equal(0.16 / 0.022, v1 / v0, 2);
+        Assert.Equal(0.03 / 0.022, v2 / v0, 2);
+
+        // RoofPreview section emits each layer.
+        var preview = RoofPreview.Of(roof, f.Session.Model);
+        var secItems = preview["section"]!["items"]!.AsArray().OfType<JsonObject>().ToList();
+        Assert.Contains(secItems, i => (string?)i["role"] == "layer:0");
+        Assert.Contains(secItems, i => (string?)i["role"] == "layer:1");
+        Assert.Contains(secItems, i => (string?)i["role"] == "layer:2");
+    }
+
+    [Fact]
+    public void Unlocked_layer_extensions_shift_individual_layer_boundaries_in_3d_and_section()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var roofId = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(10, 0), new JsonArray(10, 6), new JsonArray(0, 6)),
+        })!["id"]!;
+        f.Run("architecture.updateRoof", new JsonObject
+        {
+            ["id"] = roofId,
+            ["attrs"] = new JsonObject
+            {
+                ["shape"] = "gable",
+                ["pitch"] = 30,
+                ["overhang"] = 0.5,
+                ["gableOverhang"] = 0.3,
+                ["layers"] = new JsonArray(
+                    new JsonObject { ["material"] = "OSB", ["thickness"] = 0.02, ["role"] = "sheathing" },
+                    new JsonObject { ["material"] = "Mineral wool", ["thickness"] = 0.14, ["role"] = "insulation" },
+                    new JsonObject { ["material"] = "Clay tile", ["thickness"] = 0.04, ["role"] = "finish" }
+                ),
+                ["layerExtents"] = new JsonArray(
+                    new JsonObject { ["layer"] = 0, ["edge"] = "outline", ["offset"] = 0.25 },
+                    new JsonObject { ["layer"] = 1, ["edge"] = "edge", ["index"] = 0, ["offset"] = -0.20 }
+                ),
+            },
+        });
+        var geom = f.Session.Geometry(roofId)!;
+        var b0 = Measure.Bounds(geom.Parts.Single(p => p.Key == "layer:0").Solid)!.Value;
+        var b1 = Measure.Bounds(geom.Parts.Single(p => p.Key == "layer:1").Solid)!.Value;
+        var b2 = Measure.Bounds(geom.Parts.Single(p => p.Key == "layer:2").Solid)!.Value;
+
+        // Layer 0 extends +0.25 m all round past layer 2 (which has 0 extent).
+        Assert.Equal(b2.Min.X - 0.25, b0.Min.X, 3);
+        Assert.Equal(b2.Max.X + 0.25, b0.Max.X, 3);
+        Assert.Equal(b2.Min.Y - 0.25, b0.Min.Y, 3);
+        Assert.Equal(b2.Max.Y + 0.25, b0.Max.Y, 3);
+
+        // Layer 1 stops 0.20 m short at edge 0 (y = 0 eave), while its other edges match layer 2.
+        Assert.Equal(b2.Min.Y + 0.20, b1.Min.Y, 3);
+        Assert.Equal(b2.Max.Y, b1.Max.Y, 3);
+        Assert.Equal(b2.Min.X, b1.Min.X, 3);
+        Assert.Equal(b2.Max.X, b1.Max.X, 3);
+
+        // Section preview reflects the independent X extents of layer 0 and layer 1 vs layer 2.
+        var preview = RoofPreview.Of(f.Session.Model.Get(roofId)!, f.Session.Model);
+        var items = preview["section"]!["items"]!.AsArray().OfType<JsonObject>().ToList();
+        static (double MinX, double MaxX) XSpan(IEnumerable<JsonObject> layerItems)
+        {
+            var xs = layerItems.SelectMany(i => i["pts"]!.AsArray().Where((_, k) => k % 2 == 0).Select(v => (double)v!)).ToList();
+            return (xs.Min(), xs.Max());
+        }
+        var s0 = XSpan(items.Where(i => (string?)i["role"] == "layer:0"));
+        var s1 = XSpan(items.Where(i => (string?)i["role"] == "layer:1"));
+        var s2 = XSpan(items.Where(i => (string?)i["role"] == "layer:2"));
+        Assert.Equal(s2.MaxX - s2.MinX + 0.50, s0.MaxX - s0.MinX, 2);
+        Assert.Equal(s2.MaxX - s2.MinX - 0.20, s1.MaxX - s1.MinX, 2);
+    }
+
+    [Fact]
+    public void Roofs_without_layers_keep_legacy_covering_and_deck_behavior()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var framedId = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(8, 0), new JsonArray(8, 6), new JsonArray(0, 6)),
+        })!["id"]!;
+        var framedGeom = f.Session.Geometry(framedId)!;
+        Assert.Contains(framedGeom.Parts, p => p.Key == "covering");
+        Assert.DoesNotContain(framedGeom.Parts, p => p.Key?.StartsWith("layer:") == true);
+
+        var deckId = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["points"] = new JsonArray(new JsonArray(0, 10), new JsonArray(8, 10), new JsonArray(8, 16), new JsonArray(0, 16)),
+        })!["id"]!;
+        f.Run("architecture.updateRoof", new JsonObject
+        {
+            ["id"] = deckId,
+            ["attrs"] = new JsonObject { ["structure"] = "none" },
+        });
+        var deckGeom = f.Session.Geometry(deckId)!;
+        Assert.Contains(deckGeom.Parts, p => p.Key == "covering");
+        Assert.Contains(deckGeom.Parts, p => p.Key == "deck");
+        Assert.DoesNotContain(deckGeom.Parts, p => p.Key?.StartsWith("layer:") == true);
+    }
 }

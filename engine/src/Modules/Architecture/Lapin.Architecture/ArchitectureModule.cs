@@ -1414,6 +1414,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         {
             var style = RoofCatalog.StyleOf(sid) ?? throw new CommandException($"There is no roof style „{sid}”.");
             attrs.Remove("edges");
+            attrs.Remove("layers");
             string[] own = style.Structure != null ? ["eaveOffset", "rafterTail", "rafterSeat"] : ["structure", "rafterSection", "rafterSpacing", "purlins", "purlinSection", "ridgeSection", "plateSection", "collarSection", "eaveOffset", "webSection", "timberGrade", "rafterTail", "rafterSeat"];
             // The covering's material follows the covering below (one chosen by the user stays).
             foreach (var (k, v) in Roof.Attrs(style, Roof.Contour(roof))) if (k != RoofCoverings.Key && (!own.Contains(k) || attrs[k] == null)) attrs[k] = v?.DeepClone();
@@ -1424,6 +1425,48 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         var fields = RoofClass?.Fields ?? [];
         foreach (var (k, v) in a["attrs"] as JsonObject ?? [])
         {
+            if (k == "layers")
+            {
+                if (v == null || v is JsonArray { Count: 0 }) { attrs.Remove("layers"); continue; }
+                if (v is not JsonArray arr) throw new CommandException("Roof layers must be a list.");
+                var clean = new JsonArray();
+                foreach (var item in arr)
+                {
+                    if (item is not JsonObject lo) throw new CommandException("Each roof layer must be an object.");
+                    if (Json.Number(lo["thickness"]) is not { } t || !double.IsFinite(t) || t <= 1e-4 || t > 2.0)
+                        throw new CommandException("Each roof layer's thickness must be between 0.1 mm and 2 m.");
+                    var c = new JsonObject { ["material"] = ((string?)lo["material"] ?? "").Trim(), ["thickness"] = t };
+                    if (((string?)lo["role"])?.Trim() is { Length: > 0 } role) c["role"] = role;
+                    if (((string?)lo["name"])?.Trim() is { Length: > 0 } name) c["name"] = name;
+                    clean.Add((JsonNode)c);
+                }
+                attrs["layers"] = clean;
+                continue;
+            }
+            if (k == LayerExtents.Key)
+            {
+                if (v == null || v is JsonArray { Count: 0 }) { attrs.Remove(LayerExtents.Key); continue; }
+                if (v is not JsonArray arr) throw new CommandException("Layer extents must be a list.");
+                var clean = new JsonArray();
+                foreach (var item in arr)
+                {
+                    if (item is not JsonObject xo) throw new CommandException("Each layer extent must be an object.");
+                    if (Json.Number(xo["layer"]) is not { } li || li < 0 || li != Math.Floor(li)) throw new CommandException("Layer extent: invalid layer index.");
+                    if ((string?)xo["edge"] is not (LayerExtents.Outline or LayerExtents.Edge)) throw new CommandException("A roof layer extent's edge must be outline or edge.");
+                    if (Json.Number(xo["offset"]) is not { } off || !double.IsFinite(off) || Math.Abs(off) > LayerExtents.MaxOffset)
+                        throw new CommandException($"A layer reaches at most {LayerExtents.MaxOffset * 1000:0} mm past or short of its edge.");
+                    var c = new JsonObject { ["layer"] = (int)li, ["edge"] = (string)xo["edge"]!, ["offset"] = off };
+                    if ((string)xo["edge"]! == LayerExtents.Edge)
+                    {
+                        if (Json.Number(xo["index"]) is not { } idx || idx < 0 || idx != Math.Floor(idx)) throw new CommandException("Layer extent: invalid edge index.");
+                        c["index"] = (int)idx;
+                    }
+                    if (LayerExtents.CutsArg(xo["cuts"]) == true) c["cuts"] = xo["cuts"]!.DeepClone();
+                    clean.Add((JsonNode)c);
+                }
+                attrs[LayerExtents.Key] = clean;
+                continue;
+            }
             var f = fields.FirstOrDefault(x => x.Key == k && !x.ReadOnly) ?? (k is "lowEdge" or "gutterColor" ? new FieldDescriptor(k, k, k == "lowEdge" ? "number" : "color") : throw new CommandException($"„{k}” is not a roof field."));
             if (v == null) attrs.Remove(k); else attrs[k] = Fields.Check(f, v);
         }
@@ -1433,6 +1476,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             Slabs.SetOutline(attrs, outline, arcs);
             // The rules kept by edge go with the edges they were on.
             if (!a.ContainsKey("edges")) RoofEdges.Renumber(attrs, RoofEdges.Match(Roof.Contour(roof), outline));
+            if (LayerExtents.Of(roof) is { Count: > 0 } ext && (a["attrs"] as JsonObject)?.ContainsKey(LayerExtents.Key) != true)
+            {
+                if (LayerExtents.ToJson(LayerExtents.RemapEdges(ext, Roof.Contour(roof), outline)) is { } kept) attrs[LayerExtents.Key] = kept;
+                else attrs.Remove(LayerExtents.Key);
+            }
         }
         else if (a["arcs"] != null)
         {
@@ -1571,7 +1619,20 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             index = null;
             return;
         }
-        if (e.Class is not (IfcClass.Wall or IfcClass.Slab)) throw new CommandException("Layer extents are for walls and floors and their types.");
+        if (e.Class == IfcClass.Roof)
+        {
+            if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException("A reference keeps its file's body: convert it to a native element first.");
+            var rLayers = Roof.LayersOf(e);
+            if (rLayers.Count == 0) throw new CommandException("The roof has no custom layers.");
+            if (layer >= rLayers.Count) throw new CommandException($"The roof has no layer {layer + 1}.");
+            if (!(rLayers[layer].Thickness > 1e-9)) throw new CommandException("A layer of no thickness has no body to extend.");
+            if (edge == LayerExtents.Outline) { index = null; return; }
+            if (edge != LayerExtents.Edge) throw new CommandException("A roof's layer extends all round its outline or at one edge of it.");
+            var rn = Roof.Contour(e).Count;
+            if (index is not { } ri || ri < 0 || ri >= rn) throw new CommandException($"Which edge? The roof's outline has {rn}, from 0.");
+            return;
+        }
+        if (e.Class is not (IfcClass.Wall or IfcClass.Slab)) throw new CommandException("Layer extents are for walls, floors and roofs and their types.");
         // A reference keeps the body its file gave it: Lapin does not build its layers, so it has none to extend.
         if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException("A reference keeps its file's body: convert it to a native element first.");
         if (LayerSets.BandsOf(m, e.Id) is not { Count: > 0 } bands) throw new CommandException("The element has no layers: give it a type with layers first.");

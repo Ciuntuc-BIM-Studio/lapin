@@ -81,6 +81,13 @@ export function RoofSection({ node }: { node: NodeDto }) {
           })}
         </tbody>
       </table>
+      {Array.isArray(node.props.layers) && node.props.layers.length > 0 && (
+        <p className="muted small">
+          Layers: {node.props.layers.length} · {lengthText((node.props.layers as { thickness?: number }[]).reduce((s, l) => s + (l.thickness ?? 0), 0))}
+          {' '}
+          <button type="button" className="link" disabled={!node.editable} onClick={() => useUi.setState({ dialog: 'roof', roofId: node.id })}>Edit…</button>
+        </p>
+      )}
       {Array.isArray(node.props.openings) && node.props.openings.length > 0 && (
         <table className="roof-openings">
           <caption className="muted small">Roof windows and dormers: drag one's middle grip in plan to move it, its edges' grips to resize it; ×, Delete over its grip or a right-click on it removes it.</caption>

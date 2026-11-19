@@ -30,7 +30,13 @@ public static class RoofPreview
         if (Roof.Problem(r) is { } problem) { o["problem"] = problem; return o; }
         if (r.Flat)
         {
-            o["summary"] = new JsonArray(Row("Covering", $"{N(Math.Abs(Polygon2.SignedArea(Roof.EaveOutline(r))), "0.0")} m²"), DeckRow(r));
+            if (r.HasLayers)
+            {
+                o["section"] = FlatSection(r);
+                o["summary"] = new JsonArray(Row("Roof area", $"{N(Math.Abs(Polygon2.SignedArea(Roof.EaveOutline(r))), "0.0")} m²"), LayersRow(r));
+            }
+            else
+                o["summary"] = new JsonArray(Row("Covering", $"{N(Math.Abs(Polygon2.SignedArea(Roof.EaveOutline(r))), "0.0")} m²"), DeckRow(r));
             return o;
         }
         var (shape, why) = Roof.Solve(r);
@@ -44,9 +50,12 @@ public static class RoofPreview
         o["section"] = Section(r, shape, members);
 
         var summary = new JsonArray(
-            Row("Covering", $"{N(shape.Planes.Sum(p => VecMath.NewellNormal(p.Points).Length), "0.0")} m² · {r.Covering.Id}"),
+            Row(r.HasLayers ? "Roof area" : "Covering", r.HasLayers
+                ? $"{N(shape.Planes.Sum(p => VecMath.NewellNormal(p.Points).Length), "0.0")} m²"
+                : $"{N(shape.Planes.Sum(p => VecMath.NewellNormal(p.Points).Length), "0.0")} m² · {r.Covering.Id}"),
             Row("Height over the plates", $"{N(shape.Height - r.BaseZ, "0.00")} m"));
-        if (!r.Framed) summary.Add((JsonNode)DeckRow(r));
+        if (r.HasLayers) summary.Add((JsonNode)LayersRow(r));
+        else if (!r.Framed) summary.Add((JsonNode)DeckRow(r));
         if (members.Count > 0)
         {
             var trusses = members.Where(x => x.Truss >= 0).Select(x => x.Truss).Distinct().Count();
@@ -72,6 +81,52 @@ public static class RoofPreview
     static JsonArray DeckRow(Roof.Resolved r) =>
         Row("Deck", $"{(RoofCoverings.DeckNameOf(r.Roof) is { Length: > 0 } d ? d : "—")} · {N(r.StructureDepth * 100, "0.#")} cm");
 
+    static JsonArray LayersRow(Roof.Resolved r) =>
+        Row("Layers", $"{r.Layers.Count} · {N(r.Layers.Sum(l => l.Thickness) * 100, "0.#")} cm");
+
+    static JsonObject FlatSection(Roof.Resolved r)
+    {
+        var eave = Enumerable.Range(0, r.Outline.Count)
+            .Select(i => r.Outline[(i + 1) % r.Outline.Count] - r.Outline[i]).MaxBy(d => d.Length);
+        var axis = eave.Normalized();
+        var n = new Vec2(-axis.Y, axis.X);
+        var c = r.Outline.Aggregate(new Vec2(0, 0), (s, p) => s + p) * (1.0 / r.Outline.Count);
+        var items = new JsonArray();
+        void Add(string role, IEnumerable<(double X, double Z)> pts, string? name = null, string? material = null, string? layerRole = null)
+        {
+            var obj = new JsonObject { ["role"] = role, ["pts"] = new JsonArray(pts.SelectMany(p => new[] { (JsonNode)Math.Round(p.X, 4), Math.Round(p.Z, 4) }).ToArray()) };
+            if (name != null) obj["name"] = name;
+            if (material != null) obj["material"] = material;
+            if (layerRole != null) obj["layerRole"] = layerRole;
+            items.Add((JsonNode)obj);
+        }
+        var z = r.BaseZ;
+        var baseEaves = Roof.EaveOutline(r);
+        for (var li = 0; li < r.Layers.Count; li++)
+        {
+            var layer = r.Layers[li];
+            var poly = Roof.LayerEaveOutline(r, li) ?? baseEaves;
+            foreach (var (k0, k1) in RoofParts.Crossings(poly, c, n))
+                Add($"layer:{li}", [(k0, z), (k1, z), (k1, z + layer.Thickness), (k0, z + layer.Thickness)], layer.DisplayName, layer.Material, layer.Role);
+            z += layer.Thickness;
+        }
+        foreach (var (w0, w1) in RoofParts.Crossings(r.Outline, c, n))
+            foreach (var w in new[] { w0, w1 })
+                Add("wall", [(w - 0.15, r.PlateZ - 0.8), (w + 0.15, r.PlateZ - 0.8), (w + 0.15, r.PlateZ), (w - 0.15, r.PlateZ)]);
+        var xs = items.SelectMany(i => ((JsonArray)i!["pts"]!).Where((_, k) => k % 2 == 0).Select(v => (double)v!)).DefaultIfEmpty(0).ToList();
+        var zs = items.SelectMany(i => ((JsonArray)i!["pts"]!).Where((_, k) => k % 2 == 1).Select(v => (double)v!)).DefaultIfEmpty(0).ToList();
+        var walls = RoofParts.Crossings(r.Outline, c, n);
+        return new JsonObject
+        {
+            ["items"] = items,
+            ["box"] = new JsonArray(xs.Min(), zs.Min(), xs.Max(), zs.Max()),
+            ["span"] = walls.Count > 0 ? Math.Round(walls[^1].T1 - walls[0].T0, 3) : null,
+            ["walls"] = new JsonArray(walls.SelectMany(w => new[] { (JsonNode)Math.Round(w.T0, 4), Math.Round(w.T1, 4) }).ToArray()),
+            ["plate"] = Math.Round(r.BaseZ, 4),
+            ["top"] = Math.Round(z, 4),
+        };
+    }
+
     /// <summary>
     /// A vertical section across the main ridge (or the longest eave) through the outline's middle: x across, z up. The covering
     /// over the slopes it crosses, the walls under the plates, the members a cut there meets: of the rafters and chords that stand
@@ -88,21 +143,52 @@ public static class RoofPreview
         double X(Vec3 p) => Vec2.Dot(p.Xy - c, n);
         double Along(Vec3 p) => Vec2.Dot(p.Xy - c, axis);
         var items = new JsonArray();
-        void Add(string role, IEnumerable<(double X, double Z)> pts) =>
-            items.Add((JsonNode)new JsonObject { ["role"] = role, ["pts"] = new JsonArray(pts.SelectMany(p => new[] { (JsonNode)Math.Round(p.X, 4), Math.Round(p.Z, 4) }).ToArray()) });
-
-        // The covering (or the deck) over each slope the cut crosses: from the structure's top to the covering's.
-        foreach (var plane in shape.Planes)
+        void Add(string role, IEnumerable<(double X, double Z)> pts, string? name = null, string? material = null, string? layerRole = null)
         {
-            var z = RoofSolver.PlaneZ(plane.Points);
-            foreach (var (k0, k1) in RoofParts.Crossings(plane.Points.Select(q => q.Xy).ToList(), c, n))
+            var obj = new JsonObject { ["role"] = role, ["pts"] = new JsonArray(pts.SelectMany(p => new[] { (JsonNode)Math.Round(p.X, 4), Math.Round(p.Z, 4) }).ToArray()) };
+            if (name != null) obj["name"] = name;
+            if (material != null) obj["material"] = material;
+            if (layerRole != null) obj["layerRole"] = layerRole;
+            items.Add((JsonNode)obj);
+        }
+
+        if (r.HasLayers)
+        {
+            var from = r.BaseLayerOffset;
+            for (var li = 0; li < r.Layers.Count; li++)
             {
-                double Zk(double k) => z(c + n * k);
-                var sec = Math.Sqrt(1 + Math.Pow((Zk(k1) - Zk(k0)) / (k1 - k0), 2));
-                var (lo, hi) = (r.StructureDepth * sec, r.Thickness * sec);
-                Add("covering", [(k0, Zk(k0) + lo), (k1, Zk(k1) + lo), (k1, Zk(k1) + hi), (k0, Zk(k0) + hi)]);
-                // Without framing, the deck under it (decision 329).
-                if (!r.Framed) Add("deck", [(k0, Zk(k0)), (k1, Zk(k1)), (k1, Zk(k1) + lo), (k0, Zk(k0) + lo)]);
+                var layer = r.Layers[li];
+                var lShape = Roof.LayerShape(r, shape, li);
+                var to = from + layer.Thickness;
+                foreach (var plane in lShape.Planes)
+                {
+                    var z = RoofSolver.PlaneZ(plane.Points);
+                    foreach (var (k0, k1) in RoofParts.Crossings(plane.Points.Select(q => q.Xy).ToList(), c, n))
+                    {
+                        double Zk(double k) => z(c + n * k);
+                        var sec = Math.Sqrt(1 + Math.Pow((Zk(k1) - Zk(k0)) / (k1 - k0), 2));
+                        var (lo, hi) = (from * sec, to * sec);
+                        Add($"layer:{li}", [(k0, Zk(k0) + lo), (k1, Zk(k1) + lo), (k1, Zk(k1) + hi), (k0, Zk(k0) + hi)], layer.DisplayName, layer.Material, layer.Role);
+                    }
+                }
+                from = to;
+            }
+        }
+        else
+        {
+            // The covering (or the deck) over each slope the cut crosses: from the structure's top to the covering's.
+            foreach (var plane in shape.Planes)
+            {
+                var z = RoofSolver.PlaneZ(plane.Points);
+                foreach (var (k0, k1) in RoofParts.Crossings(plane.Points.Select(q => q.Xy).ToList(), c, n))
+                {
+                    double Zk(double k) => z(c + n * k);
+                    var sec = Math.Sqrt(1 + Math.Pow((Zk(k1) - Zk(k0)) / (k1 - k0), 2));
+                    var (lo, hi) = (r.StructureDepth * sec, r.Thickness * sec);
+                    Add("covering", [(k0, Zk(k0) + lo), (k1, Zk(k1) + lo), (k1, Zk(k1) + hi), (k0, Zk(k0) + hi)]);
+                    // Without framing, the deck under it (decision 329).
+                    if (!r.Framed) Add("deck", [(k0, Zk(k0)), (k1, Zk(k1)), (k1, Zk(k1) + lo), (k0, Zk(k0) + lo)]);
+                }
             }
         }
         // The walls under the wall line, a storey's top's worth down.

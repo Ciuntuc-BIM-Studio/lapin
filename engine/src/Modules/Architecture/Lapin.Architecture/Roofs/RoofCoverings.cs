@@ -93,6 +93,8 @@ public static class RoofCoverings
     /// <summary>The roof's covering material made when the project has none of that name (none for an empty name).</summary>
     public static void Ensure(IEdit edit, Entity roof)
     {
+        foreach (var layer in Roof.LayersOf(roof))
+            if (layer.Material.Length > 0) Materials.Ensure(edit, layer.Material);
         if (Unframed(roof.Attrs) && DeckNameOf(roof) is { Length: > 0 } deck) Materials.Ensure(edit, deck);
         var name = NameOf(roof);
         if (name.Length == 0 || Materials.Find(edit.Model, name) != null) return;
@@ -193,6 +195,21 @@ public sealed class RoofBuildUps : IElementBuildUps
     public BuildUp? Of(IModelView m, Entity e)
     {
         if (e.Class != IfcClass.Roof || Roof.Resolve(e, m) is not { } r) return null;
+        if (r.HasLayers)
+        {
+            var custom = new List<BuildupLayer>();
+            var ord = 0;
+            for (var li = r.Layers.Count - 1; li >= 0; li--)
+            {
+                var l = r.Layers[li];
+                var matId = l.Material.Length == 0 ? null : Materials.Find(m, l.Material)?.Id;
+                var keys = li == r.Layers.Count - 1 ? new[] { $"layer:{li}", "dormer-roofs" } : new[] { $"layer:{li}" };
+                custom.Add(new BuildupLayer(ord++, matId, l.Thickness, l.Role == "structure", l.DisplayName, Keys: keys));
+            }
+            if (r.Framed)
+                custom.Add(new BuildupLayer(ord, null, r.Rafter.D, true, $"{RoofParts.RoleLabel(r.Scheme == "trusses" ? "topChord" : "rafter")}s {r.Roof.Str("rafterSection") ?? "8x16"}", Keys: FramingKeys));
+            return new BuildUp(custom, true);
+        }
         var name = RoofCoverings.NameOf(e);
         // Each layer with the parts it is drawn as, so a task builds the structure and another the covering (decision 332).
         var covering = new BuildupLayer(0, name.Length == 0 ? null : Materials.Find(m, name)?.Id, r.Covering.Thickness, false, name.Length == 0 ? r.Covering.Id : name,
