@@ -451,7 +451,7 @@ public static class RoofParts
             if (Polygon2.Contains(inside, mid + outward * reach)) outward = -outward;
             var shift = new Vec3(outward.X, outward.Y, 0) * spec.Offset + new Vec3(0, 0, r.StructureDepth - spec.Drop);
             return (G: new Gutter(l.A + shift, l.B + shift, outward, edge), RawA: l.A, RawB: l.B);
-        }).Where(x => x.G.Length > 0.3 && Drainage.HasGutter(r.Roof, x.G.Edge)).ToList();
+        }).Where(x => x.G.Length > (r.EdgeOf != null ? 0.02 : 0.3) && Drainage.HasGutter(r.Roof, r.LogicalEdge(x.G.Edge))).ToList();
 
         for (var i = 0; i < items.Count; i++)
         {

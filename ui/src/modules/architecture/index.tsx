@@ -353,16 +353,15 @@ function curtainGrips(node: NodeDto): Grip[] {
   return c ? pathGrips(c, (s, e, rise) => ({ command: 'architecture.updateCurtainWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise } })) : [];
 }
 /**
- * A slab, floor opening, ceiling or roof: its outline's vertices and edges (a roof's edge rules follow its edges). A floor's,
- * an opening's and a ceiling's edges may be arcs and their corners rounded or cut (forum topic 97, stage 2); a roof's stay
- * straight, its edge rules being per straight edge.
+ * A slab, floor opening, ceiling or roof: its outline's vertices and edges (a roof's edge rules follow its edges). Their
+ * edges may be arcs and their corners rounded or cut (forum topic 97, stage 2; forum topic 160 for roofs).
  */
 function contourGrips(command: string, withEdges = false) {
   return (node: NodeDto): Grip[] => {
     const pts = fromPairs(node.props.contour);
     if (pts.length < 3) return [];
     const edges = withEdges && Array.isArray(node.props.edges) && node.props.edges.length === pts.length ? (node.props.edges as unknown[]) : undefined;
-    const curved = !withEdges && !node.props.stairId;
+    const curved = !node.props.stairId;
     const arcs = curved ? arcsOf(node.props.arcs, pts.length) : undefined;
     const outline = outlineGrips({ pts, edges, arcs }, (o) => ({ command, args: { id: node.id, points: toPairs(o.pts), ...(o.edges ? { edges: o.edges } : {}), ...(curved ? { arcs: o.arcs ?? o.pts.map(() => 0) } : {}) } }),
       curved ? {

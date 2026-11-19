@@ -716,4 +716,120 @@ public class RoofTests
         Assert.NotNull(f.Model.Get(roofId));
         Assert.Equal(pipesBefore.Count, f.Model.OfClass(Drainage.DownpipeClass).Count(p => p.Str("roofId") == roofId));
     }
+
+    // ------------------------------------------------------------ curved boundaries & fillets (forum topic 160)
+
+    [Theory]
+    [InlineData("flat")]
+    [InlineData("shed")]
+    [InlineData("hip")]
+    public void A_roof_with_a_curved_edge_resolves_solves_and_builds_parts(string shape)
+    {
+        var f = new Fixture(new ArchitectureModule());
+        // 10 x 6 rectangle with the front edge (edge 0, y = 0) bulging outward by 1.2 m (negative rise on CCW outline).
+        var id = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(10, 0), new JsonArray(10, 6), new JsonArray(0, 6)),
+            ["arcs"] = new JsonArray(-1.2, 0, 0, 0),
+        })!["id"]!;
+        f.Run("architecture.updateRoof", new JsonObject
+        {
+            ["id"] = id,
+            ["attrs"] = new JsonObject { ["shape"] = shape, ["pitch"] = 30, ["overhang"] = 0.5 },
+            ["edges"] = new JsonArray(new JsonObject { ["overhang"] = 0.7 }, null, null, null),
+        });
+
+        var roof = f.Model.Get(id)!;
+        Assert.Equal(4, Roof.Contour(roof).Count);
+        var resolved = Roof.Resolve(roof, f.Model)!;
+        Assert.NotNull(resolved);
+        Assert.NotNull(resolved.EdgeOf);
+        // Edge 0 was discretized into multiple chord segments, all sharing logical edge 0's 0.7 m overhang.
+        var edge0Segments = Enumerable.Range(0, resolved.Outline.Count).Where(k => resolved.LogicalEdge(k) == 0).ToList();
+        Assert.True(edge0Segments.Count > 5);
+        Assert.All(edge0Segments, k => Assert.Equal(0.7, resolved.Rules[k].Overhang, 6));
+
+        if (shape != "flat")
+        {
+            var (solved, problem) = Roof.Solve(resolved);
+            Assert.Null(problem);
+            Assert.NotNull(solved);
+            Assert.True(solved!.Planes.Count > 0);
+            Planar(solved);
+        }
+
+        var geom = f.Session.Geometry(id)!;
+        Assert.Null(geom.Diagnostics);
+        Assert.Contains(geom.Parts, p => p.Key == "covering");
+        if (shape == "hip")
+        {
+            Assert.Contains(geom.Parts, p => p.Key?.StartsWith("timber:") == true);
+            Assert.Contains(geom.Parts, p => p.Key?.StartsWith("gutter:") == true);
+        }
+    }
+
+    [Fact]
+    public void Filleting_a_roof_corner_produces_an_arc_of_the_requested_radius_and_undo_restores_it()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var id = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["x1"] = 0, ["y1"] = 0, ["x2"] = 10, ["y2"] = 6,
+        })!["id"]!;
+        f.Run("architecture.updateRoof", new JsonObject
+        {
+            ["id"] = id,
+            ["attrs"] = new JsonObject { ["shape"] = "hip", ["pitch"] = 30, ["overhang"] = 0.4 },
+            ["edges"] = new JsonArray(null, new JsonObject { ["pitch"] = 40 }, null, null),
+        });
+
+        var before = f.Model.Get(id)!;
+        Assert.Equal(4, Roof.Contour(before).Count);
+        Assert.Null(Slabs.Rises(before));
+
+        // Fillet corner 1 (at [10, 0]) with radius 1.5 m.
+        f.Run("architecture.roundCorner", new JsonObject { ["id"] = id, ["index"] = 1, ["radius"] = 1.5 });
+
+        var after = f.Model.Get(id)!;
+        var corners = Roof.Contour(after);
+        var rises = Slabs.Rises(after);
+        Assert.Equal(5, corners.Count);
+        Assert.NotNull(rises);
+        // Edge 1 is the fillet arc between [8.5, 0] and [10, 1.5], radius 1.5 m.
+        var fillet = ArcOutline.Edge(corners, rises, 1);
+        Assert.True(fillet.IsArc);
+        Assert.Equal(1.5, fillet.Radius, 4);
+        // Edge 1's old 40° pitch rule moved to edge 2 (after the inserted fillet edge).
+        var rules = Roof.Rules(after, corners);
+        Assert.Equal(40, rules[2].Pitch, 6);
+
+        var geom = f.Session.Geometry(id)!;
+        Assert.Null(geom.Diagnostics);
+        Assert.Contains(geom.Parts, p => p.Key == "covering");
+
+        // Undo restores the pre-fillet 4-corner roof.
+        Assert.NotNull(f.Session.Undo());
+        var undone = f.Model.Get(id)!;
+        Assert.Equal(4, Roof.Contour(undone).Count);
+        Assert.Null(Slabs.Rises(undone));
+        Assert.Equal(40, Roof.Rules(undone, Roof.Contour(undone))[1].Pitch, 6);
+    }
+
+    [Fact]
+    public void Setting_a_roof_edge_arc_bends_and_straightens_the_edge()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var id = (string)f.Run("architecture.addRoof", new JsonObject { ["x1"] = 0, ["y1"] = 0, ["x2"] = 8, ["y2"] = 6 })!["id"]!;
+        f.Run("architecture.setEdgeArc", new JsonObject { ["id"] = id, ["index"] = 0, ["rise"] = -0.8 });
+
+        var bent = f.Model.Get(id)!;
+        Assert.NotNull(Slabs.Rises(bent));
+        Assert.True(Roof.Resolve(bent, f.Model)!.Outline.Count > 4);
+        Assert.Contains(f.Session.Geometry(id)!.Parts, p => p.Key == "covering");
+
+        f.Run("architecture.setEdgeArc", new JsonObject { ["id"] = id, ["index"] = 0, ["rise"] = 0 });
+        var straight = f.Model.Get(id)!;
+        Assert.Null(Slabs.Rises(straight));
+        Assert.Equal(4, Roof.Resolve(straight, f.Model)!.Outline.Count);
+    }
 }

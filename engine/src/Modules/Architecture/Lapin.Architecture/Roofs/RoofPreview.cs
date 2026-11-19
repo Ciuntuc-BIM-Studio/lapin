@@ -21,8 +21,11 @@ public static class RoofPreview
     {
         var o = new JsonObject { ["attrs"] = roof.Attrs.DeepClone() };
         if (Roof.Resolve(roof, m) is not { } r) { o["problem"] = "A roof needs three corners at least."; return o; }
-        o["outline"] = Pts(r.Outline);
-        o["kinds"] = new JsonArray(r.Rules.Select(x => (JsonNode)(x.Kind == EdgeKind.Gable ? "gable" : "eave")).ToArray());
+        var corners = Roof.Contour(roof);
+        var logicalRules = Roof.Rules(roof, corners);
+        o["outline"] = Pts(corners);
+        if (r.EdgeOf != null) o["builtOutline"] = Pts(r.Outline);
+        o["kinds"] = new JsonArray(logicalRules.Select(x => (JsonNode)(x.Kind == EdgeKind.Gable ? "gable" : "eave")).ToArray());
         o["eaves"] = Pts(Roof.EaveOutline(r));
         if (Roof.Problem(r) is { } problem) { o["problem"] = problem; return o; }
         if (r.Flat)

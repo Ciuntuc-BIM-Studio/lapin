@@ -31,7 +31,8 @@ export function RoofSection({ node }: { node: NodeDto }) {
   const own = (project?.props.roofStyles as { id: string; label: string; shape: string; pitch: number }[] | undefined) ?? [];
   const [userTemplates, setUserTemplates] = useState<UserRoofTemplate[]>(() => libraryRoofTemplates());
   useEffect(() => subscribeRoofTemplates(() => setUserTemplates(libraryRoofTemplates())), []);
-  const contour = (node.props.contour as [number, number][] | undefined) ?? [];
+  const contour = (node.props.contour as number[][] | undefined) ?? [];
+  const arcs = (node.props.arcs as number[] | undefined) ?? [];
   const edges = (node.props.edges as Edge[] | undefined) ?? [];
   const setEdge = (i: number, patch: Partial<NonNullable<Edge>> | null) => void execute('architecture.updateRoof', { id: node.id, edges: mergeEdge(edges, contour.length, i, patch) });
   const pickStyleOrTemplate = (val: string) => {
@@ -58,7 +59,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
         </span>
       </label>
       <table className="roof-edges">
-        <thead><tr><th>Edge</th><th>Kind</th><th>°</th><th>Overhang</th></tr></thead>
+        <thead><tr><th>Edge</th><th>Kind</th><th>°</th><th>Overhang</th><th>Arc</th></tr></thead>
         <tbody>
           {contour.map((p, i) => {
             const q = contour[(i + 1) % contour.length];
@@ -74,6 +75,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
                 </td>
                 <td><NumberField value={e?.pitch} blank readOnly={!node.editable} placeholder={String(node.props.pitch ?? '')} onCommit={(v) => setEdge(i, { pitch: v ?? undefined })} /></td>
                 <td><LengthField metres={e?.overhang} blank noUnit readOnly={!node.editable} onCommit={(v) => setEdge(i, { overhang: v ?? undefined })} /></td>
+                <td><LengthField metres={arcs[i] || null} blank noUnit readOnly={!node.editable} title="Arc rise (m off the chord; empty or 0 straight)" onCommit={(v) => void execute('architecture.setEdgeArc', { id: node.id, index: i, rise: v ?? 0 })} /></td>
               </tr>
             );
           })}

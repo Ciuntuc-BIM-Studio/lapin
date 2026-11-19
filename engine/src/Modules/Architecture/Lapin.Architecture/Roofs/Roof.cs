@@ -47,8 +47,9 @@ public static class Roof
     /// wall plates' underside (the storey's top + the eave offset). Its planes
     /// are the rafters' underside, which rests on the plates.
     /// </summary>
-    public sealed record Resolved(Entity Roof, IReadOnlyList<Vec2> Outline, IReadOnlyList<EdgeRule> Rules, double PlateZ)
+    public sealed record Resolved(Entity Roof, IReadOnlyList<Vec2> Outline, IReadOnlyList<EdgeRule> Rules, double PlateZ, IReadOnlyList<int>? EdgeOf = null)
     {
+        public int LogicalEdge(int i) => EdgeOf != null && i >= 0 && i < EdgeOf.Count ? EdgeOf[i] : i;
         public bool Flat => Roof.Str("shape") == "flat";
         /// <summary>A barrel vault: a circular arc between its two eaves, <see cref="Rise"/> high at the crown (a quarter of the span when not said).</summary>
         public bool Barrel => Roof.Str("shape") == "barrel";
@@ -81,16 +82,22 @@ public static class Roof
         public double Thickness => StructureDepth + Covering.Thickness;
     }
 
-    /// <summary>A roof's outline: its corners, its edges straight (its edge rules are per straight edge; a curved edge is not offered on roofs).</summary>
+    /// <summary>A roof's logical corners (its <c>contour</c>); curved edges are kept in <c>arcs</c> (<see cref="ArcOutline"/>) and discretized in <see cref="Resolve"/>.</summary>
     public static IReadOnlyList<Vec2> Contour(Entity roof) => Slabs.Corners(roof);
 
     public static Resolved? Resolve(Entity roof, IModelView m)
     {
-        var outline = Contour(roof);
-        if (outline.Count < 3) return null;
+        var corners = Contour(roof);
+        if (corners.Count < 3) return null;
         var storey = Spatial.StoreyOf(m, roof.Id);
         var plateZ = (storey?.Num("elevation") ?? 0) + (storey?.Num("height", 3) ?? 3) + roof.Num("eaveOffset");
-        return new Resolved(roof, outline, Rules(roof, outline), plateZ);
+        var logicalRules = Rules(roof, corners);
+        if (Slabs.Rises(roof) is not { } rises)
+            return new Resolved(roof, corners, logicalRules, plateZ);
+        var edgeOf = new List<int>();
+        var outline = ArcOutline.Points(corners, rises, edgeOf);
+        var rules = edgeOf.Select(i => logicalRules[i]).ToList();
+        return new Resolved(roof, outline, rules, plateZ, edgeOf);
     }
 
     /// <summary>The rule of every edge: the shape's kinds, the roof's pitch and overhang, each edge's overrides.</summary>

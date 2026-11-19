@@ -771,11 +771,12 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Command("addRoof", "Roof", (ctx, a) =>
         {
             var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
-            var contour = Slabs.CheckContour(Points(a));
+            var (contour, arcs) = Slabs.OutlineArg(a["arcs"], Points(a), null, "A roof");
             // A project's own style (decision 233) over the catalogue's first, or one of the catalogue's.
             var own = ProjectRoofStyles.Of(ctx.Model, (string?)a["style"]);
             var style = own != null ? RoofCatalog.Styles[0] : (string?)a["style"] is { } sid ? RoofCatalog.StyleOf(sid) ?? throw new CommandException($"There is no roof style „{sid}”.") : RoofCatalog.Styles[0];
             var attrs = Roof.Attrs(style, contour);
+            ArcOutline.Write(attrs, arcs);
             if (own != null) ProjectRoofStyles.Apply(attrs, own, contour);
             var roof = new Entity(ctx.NewId(), IfcClass.Roof, $"Roof {Numbering.Next(ctx.Model.OfClass(IfcClass.Roof))}", attrs, "NOTDEFINED");
             roof = RoofCoverings.Settle(ctx, null, roof);
@@ -1428,12 +1429,17 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         }
         if (a["points"] != null || a["x1"] != null)
         {
-            var outline = Slabs.CheckContour(Points(a));
-            attrs["contour"] = Slabs.ContourJson(outline);
+            var (outline, arcs) = Slabs.OutlineArg(a["arcs"], Points(a), roof, "A roof");
+            Slabs.SetOutline(attrs, outline, arcs);
             // The rules kept by edge go with the edges they were on.
             if (!a.ContainsKey("edges")) RoofEdges.Renumber(attrs, RoofEdges.Match(Roof.Contour(roof), outline));
         }
-        var corners = Slabs.Contour(roof.With(attrs: attrs)).Count;
+        else if (a["arcs"] != null)
+        {
+            var (outline, arcs) = Slabs.OutlineArg(a["arcs"], Slabs.Corners(roof.With(attrs: attrs)), roof, "A roof");
+            Slabs.SetOutline(attrs, outline, arcs);
+        }
+        var corners = Slabs.Corners(roof.With(attrs: attrs)).Count;
         if (a.ContainsKey("edges"))
         {
             if (a["edges"] is JsonArray edges)
@@ -1597,9 +1603,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     {
         var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
         // A drawn room and a drawn balcony too (decision 589): a room found from its walls follows them, a styled balcony its fields.
-        if (!(e.Class is IfcClass.Slab || e.Class == Ceilings.Class || (e.Class == IfcClass.OpeningElement && e.Attrs["contour"] != null && e.Str("stairId") == null)
+        if (!(e.Class is IfcClass.Slab or IfcClass.Roof || e.Class == Ceilings.Class || (e.Class == IfcClass.OpeningElement && e.Attrs["contour"] != null && e.Str("stairId") == null)
             || (e.Class == Rooms.Class && !e.Bool("auto")) || (e.Class == Balconies.BalconyModule.Class && e.Attrs["contour"] != null)))
-            throw new CommandException("Only a floor, a floor opening, a ceiling, a drawn room or a drawn balcony has its outline's edges bent and its corners rounded here.");
+            throw new CommandException("Only a floor, a floor opening, a ceiling, a roof, a drawn room or a drawn balcony has its outline's edges bent and its corners rounded here.");
         if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException("An element kept as it came from its file is not edited by its outline.");
         var corners = Slabs.Corners(e);
         if (corners.Count < 3) throw new CommandException("The element has no outline.");
@@ -1625,9 +1631,20 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             Balconies.BalconyModule.Update(ctx, new JsonObject { ["id"] = e.Id, ["contour"] = Slabs.ContourJson(corners), ["arcs"] = ArcOutline.ToJson(rises) ?? new JsonArray([.. corners.Select(_ => (JsonNode)0)]) });
             return;
         }
-        var (c, r) = ArcOutline.Check(corners, rises, e.Class == IfcClass.Slab ? "A floor" : e.Class == Ceilings.Class ? "A ceiling" : e.Class == Rooms.Class ? "A room" : "An opening");
+        var (c, r) = ArcOutline.Check(corners, rises, e.Class == IfcClass.Slab ? "A floor" : e.Class == IfcClass.Roof ? "A roof" : e.Class == Ceilings.Class ? "A ceiling" : e.Class == Rooms.Class ? "A room" : "An opening");
         var attrs = e.CloneAttrs();
         Slabs.SetOutline(attrs, c, r);
+        if (e.Class == IfcClass.Roof)
+        {
+            var matched = c.Count != was.Count ? RoofEdges.Match(was, c) : null;
+            if (matched != null) RoofEdges.Renumber(attrs, matched);
+            var next = e.With(attrs: attrs);
+            CheckRoof(ctx.Model, next);
+            CheckRoofOpenings(ctx.Model, next);
+            ctx.Replace(next);
+            if (matched != null) RoofEdges.Downpipes(ctx, e, next, matched, p => p);
+            return;
+        }
         Slabs.SetEllipses(attrs, new JsonObject(), e);
         if (e.Class == IfcClass.Slab) RemapExtents(e, attrs, c);
         OutlineHoles.Apply(attrs, new JsonObject());

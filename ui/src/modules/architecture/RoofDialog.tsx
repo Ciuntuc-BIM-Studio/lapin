@@ -36,6 +36,7 @@ interface Preview {
   problem?: string | null;
   attrs?: Record<string, unknown>;
   outline?: [number, number][];
+  builtOutline?: [number, number][];
   eaves?: [number, number][];
   kinds?: ('eave' | 'gable')[];
   lines?: { kind: string; a: [number, number]; b: [number, number] }[];
@@ -101,7 +102,7 @@ function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown
 /** The plan: the wall line with its edges (thick: eave, dashed: gable; click to go auto → eave → gable), the eaves, ridges, hips and valleys. */
 function PlanPlot({ p, edges, onEdge }: { p: Preview; edges: Edge[]; onEdge: (i: number) => void }) {
   const W = 360, H = 240, pad = 22;
-  const all = [...(p.outline ?? []), ...(p.eaves ?? [])];
+  const all = [...(p.builtOutline ?? p.outline ?? []), ...(p.eaves ?? [])];
   if (all.length < 3) return <svg width={W} height={H} />;
   const [x0, x1] = [Math.min(...all.map((q) => q[0])), Math.max(...all.map((q) => q[0]))];
   const [y0, y1] = [Math.min(...all.map((q) => q[1])), Math.max(...all.map((q) => q[1]))];
@@ -113,7 +114,7 @@ function PlanPlot({ p, edges, onEdge }: { p: Preview; edges: Edge[]; onEdge: (i:
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-label="Plan">
       {p.eaves && <path d={path(p.eaves)} fill="#f3ece2" stroke="#8a8378" strokeDasharray="4 3" strokeWidth={0.8} />}
-      <path d={path(outline)} fill="#ffffff" stroke="none" />
+      <path d={path(p.builtOutline ?? outline)} fill="#ffffff" stroke="none" />
       {(p.outlets ?? []).map((o, i) => <circle key={`o${i}`} cx={X(o[0])} cy={Y(o[1])} r={3} fill="#2b5f9e"><title>Downpipe</title></circle>)}
       {(p.lines ?? []).map((l, i) => (
         <line key={i} x1={X(l.a[0])} y1={Y(l.a[1])} x2={X(l.b[0])} y2={Y(l.b[1])} stroke={l.kind === 'valley' ? '#2b5f9e' : '#5a3a22'} strokeWidth={l.kind === 'ridge' ? 1.6 : 1} />
