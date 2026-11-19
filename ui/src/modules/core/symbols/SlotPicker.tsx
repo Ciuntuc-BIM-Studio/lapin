@@ -4,7 +4,7 @@
  * Properties, which names a symbol of its own (or the project's). A slot's category lists its kind of symbols first; any symbol may be chosen.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { NodeDto } from '../../../engine/protocol';
 import { execute, query, useSession } from '../../../engine/session';
@@ -47,30 +47,45 @@ export const orderForSlot = (items: SymSummary[], order: string[], category: str
   return [...groups.filter(([c]) => c === category), ...groups.filter(([c]) => c !== category)];
 };
 
+/** Where the list opens, in window coordinates: under the button, or above it when there is more room there, never off the window. */
+export const listPlace = (r: { left: number; top: number; bottom: number }, w: number, h: number): { position: 'fixed'; left: number; top?: number; bottom?: number; maxHeight: number } => {
+  const below = h - r.bottom - 8, above = r.top - 8;
+  const left = Math.max(4, Math.min(r.left, w - 264));
+  return below >= 220 || below >= above
+    ? { position: 'fixed', left, top: r.bottom, maxHeight: Math.max(120, Math.min(420, below)) }
+    : { position: 'fixed', left, bottom: h - r.top, maxHeight: Math.max(120, Math.min(420, above)) };
+};
+
 /** A symbol chosen from a list drawn with previews; `noneLabel` is the choice that names no symbol. */
 export function SymbolPicker({ value, onChange, list, category, noneLabel, field }: {
   value: string | null; onChange: (id: string | null) => void; list: SymList; category: string; noneLabel: string; field?: string;
 }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLSpanElement>(null);
+  const [place, setPlace] = useState<CSSProperties>({});
   useEffect(() => {
     if (!open) return;
     const off = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
     document.addEventListener('mousedown', off);
     return () => document.removeEventListener('mousedown', off);
   }, [open]);
+  // The list is fixed to the window, not absolute in the panel: a Properties table clips what overflows it (reports #168, #169).
+  const toggle = () => {
+    if (!open && box.current) setPlace(listPlace(box.current.getBoundingClientRect(), window.innerWidth, window.innerHeight));
+    setOpen(!open);
+  };
   const groups = useMemo(() => orderForSlot(list.items, list.categories, category), [list, category]);
   const current = value ? list.items.find((i) => i.id === value) : undefined;
   const pick = (id: string | null) => { setOpen(false); onChange(id); };
   return (
     <span className="slot-picker" ref={box}>
-      <button type="button" className="btn slot-current" data-field={field} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button type="button" className="btn slot-current" data-field={field} aria-haspopup="listbox" aria-expanded={open} onClick={toggle}>
         {current ? <Thumb p={current.preview} /> : null}
         <span className="grow" data-no-i18n={current ? true : undefined}>{current ? (current.builtin ? tr(current.name) : current.name) : value ? value : noneLabel}</span>
         <ChevronDown size={12} />
       </button>
       {open && (
-        <div className="slot-list" role="listbox">
+        <div className="slot-list" role="listbox" style={place}>
           <button type="button" role="option" aria-selected={!value} className={`slot-row${!value ? ' on' : ''}`} data-symbol="" onClick={() => pick(null)}><span className="sy-thumb" /><span>{noneLabel}</span></button>
           {groups.map(([cat, items]) => (
             <div key={cat}>

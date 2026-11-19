@@ -58,27 +58,27 @@ describe('live input', () => {
     expect(useLive.getState().mode).toBe('polar');          // not a rectangle: no switch
     liveEnd('tool');
     liveBegin('tool', { x: 0, y: 0 }, () => {}, { rect: 'draft.rect' });
-    expect(useLive.getState().mode).toBe('polar');
+    expect(useLive.getState().mode).toBe('rect');           // a rectangle opens on width and height (report #173)
     useLive.setState({ len: '12' });
     liveToggleMode();
-    expect(useLive.getState()).toMatchObject({ mode: 'rect', len: '', ang: '', focus: 'len' });
+    expect(useLive.getState()).toMatchObject({ mode: 'polar', len: '', ang: '', focus: 'len' });
     liveEnd('tool');
     liveBegin('tool', { x: 0, y: 0 }, () => {}, { rect: 'draft.rect' });
-    expect(useLive.getState().mode).toBe('rect');           // remembered
+    expect(useLive.getState().mode).toBe('polar');          // remembered
     liveEnd('tool');
     liveBegin('tool', { x: 0, y: 0 }, () => {}, { rect: 'other.rect' });
-    expect(useLive.getState().mode).toBe('polar');          // per tool
+    expect(useLive.getState().mode).toBe('rect');           // per tool
     liveEnd('tool');
     liveBegin('tool', { x: 0, y: 0 }, () => {}, { rect: 'draft.rect' });
     liveToggleMode();
-    expect(useLive.getState().mode).toBe('polar');
+    expect(useLive.getState().mode).toBe('rect');
     liveEnd('tool');
   });
 
   it('Enter takes the typed width and height as the corner', () => {
     const got: { x: number; y: number }[] = [];
     liveBegin('tool', { x: 0, y: 0 }, (p) => got.push(p), { rect: 'draft.rect2' });
-    liveToggleMode();
+    expect(useLive.getState().mode).toBe('rect');
     useLive.setState({ cursor: { x: 1, y: 1 }, len: '2000', ang: '-1500' });
     expect(liveCommit()).toBe(true);
     expect(got[0].x).toBeCloseTo(2, 9); expect(got[0].y).toBeCloseTo(-1.5, 9);
