@@ -3,10 +3,12 @@
  * line's bar (a field, any parameter, a tag type) and its leader; a tag's
  * grips (its head, the leader's elbow and end; an elbow leader's knee, decision
  * 330); and its properties: what it shows, a template of its own, its type, the
- * leader on or off and its shape.
+ * leader on or off and its shape. A text tag (issue #92) says what the user types
+ * in a box of several lines, its {fields} live; a double-click edits it.
  */
 
 import { promptText } from '../../shell/prompts';
+import { askText } from '../../shell/AskBox';
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import type { NodeDto } from '../../engine/protocol';
@@ -27,10 +29,12 @@ import { leaderShapeOf, rotationFor, snapKnee, snapTurn, tagLeaderShape, turnAng
  * a room (one of its fields), a parameter by its name, a material or layer (a build-up tag type), a keynote (its classification's
  * code or title). Each is the same TAG command and the same engine command (`drafting.addTag`).
  */
-export type TagSource = 'element' | 'room' | 'parameter' | 'material' | 'keynote';
+export type TagSource = 'element' | 'room' | 'parameter' | 'material' | 'keynote' | 'text';
 export const TAG_SOURCES: readonly { source: TagSource; label: string }[] = [
   { source: 'element', label: 'Element' }, { source: 'room', label: 'Room' }, { source: 'parameter', label: 'Parameter' },
   { source: 'material', label: 'Material / layers' }, { source: 'keynote', label: 'Keynote' },
+  // A text tag (issue #92): the words typed in a box, on a tag's leader to the element it follows.
+  { source: 'text', label: 'Free text' },
 ];
 
 /**
@@ -50,6 +54,8 @@ export function tagContent(p: Pick<TagPrefs, 'source' | 'field' | 'tagType' | 'r
     case 'parameter': return { field: p.parameter.trim().replace(/^\{|\}$/g, '').trim() || 'mark' };
     case 'material': return p.buildup ? { tagType: p.buildup } : { field: 'mark' };
     case 'keynote': return { field: `classification.${p.keynote}` };
+    // A text tag: its words are asked for once it is placed; its type (when chosen) gives its box or shoulder and its text style.
+    case 'text': return p.tagType ? { tagType: p.tagType } : { field: 'mark' };
     default: return p.tagType ? { tagType: p.tagType } : { field: p.field };
   }
 }
@@ -139,6 +145,12 @@ export function TagOptions() {
         </>
       )}
       {p.source === 'parameter' && <ParameterField />}
+      {p.source === 'text' && (
+        <select className={`cad-layer${p.tagType ? ' on' : ''}`} value={p.tagType} data-tag-text-type title="A tag type of the drafting standards for its look: its box or shoulder and its text style (the words are yours)" onChange={(e) => useTagPrefs.setState({ tagType: e.target.value })}>
+          <option value="">no tag type</option>
+          {types.filter((t) => t.shape !== 'buildup').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select>
+      )}
       {p.source === 'material' && (
         <>
           <select className={`cad-layer${p.buildup ? ' on' : ''}`} value={p.buildup} data-tag-buildup title="A build-up tag type: the element's layers, a line each (Drafting standards → Tags)" onChange={(e) => useTagPrefs.setState({ buildup: e.target.value })}>
@@ -228,15 +240,22 @@ export function tagCommand(): Step {
     const type = tagType ? (await tagTypeById(tagType)) : undefined;
     const cls = useSession.getState().nodes.get(id)?.type;
     const typed = !!tagType && !(type?.shape === 'buildup' && !buildupTags(type, cls));
+    // A text tag (issue #92): what it says, typed now (several lines; {fields} read from the element).
+    let text: string | null = null;
+    if (p.source === 'text') {
+      text = await askText('Text tag', 'What it says ({fields} of the element live)');
+      if (!text?.trim()) return;
+    }
     await execute('drafting.addTag', {
       viewId: h.viewId, element: id, at: [at.x, at.y],
       ...(typed ? { tagType } : { field: 'field' in c ? c.field : p.field }),
+      ...(text ? { text } : {}),
       ...(p.leader ? {} : { leader: false }),
       ...(elbow ? { elbow: [elbow.x, elbow.y] } : {}),
     });
   };
   const pick = (): Step => ({
-    prompt: `Click the ${useTagPrefs.getState().source === 'room' ? 'room' : 'element'} to tag [${shows()}: ELEMENT/ROOM/PARAMETER/MATERIAL/KEYNOTE · MARK/NAME/CLASS/TYPE/FIELD/LEADER ${useTagPrefs.getState().leader ? 'on' : 'off'}]`, want: 'select',
+    prompt: `Click the ${useTagPrefs.getState().source === 'room' ? 'room' : 'element'} to tag [${useTagPrefs.getState().source === 'text' ? 'free text' : shows()}: ELEMENT/ROOM/PARAMETER/MATERIAL/KEYNOTE/TEXT · MARK/NAME/CLASS/TYPE/FIELD/LEADER ${useTagPrefs.getState().leader ? 'on' : 'off'}]`, want: 'select',
     keywords: words(),
     point: async (p) => {
       const id = cadHost()?.pickAny(p);
@@ -462,6 +481,8 @@ export function TagFields({ node }: { node: NodeDto }) {
   const tagType = typeof node.props.tagType === 'string' ? node.props.tagType : '';
   const field = String(node.props.field ?? 'mark');
   const template = typeof node.props.template === 'string' ? node.props.template : '';
+  // A text tag (issue #92): its own words, edited here or by a double-click on it.
+  const freeText = typeof node.props.text === 'string' ? node.props.text : null;
   const leader = node.props.leader !== false;
   const rotation = Number(node.props.rotation ?? 0) || 0;
   const align = node.props.align === true;
@@ -492,7 +513,11 @@ export function TagFields({ node }: { node: NodeDto }) {
           {byRules}
         </dd>
       </>}
-      {!marker && <>
+      {!marker && freeText != null && <>
+        <dt title="What the text tag says, as typed: several lines, {fields} read from the element ({mark}, {FireRating}, {storey.name}); double-click it in the view to edit it">Text tag</dt>
+        <dd><FreeTextField value={freeText} onCommit={(t) => set({ text: t })} /></dd>
+      </>}
+      {!marker && freeText == null && <>
         <dt title="A field of the element, a parameter of its own or of its type, a standard property (filled or not: the tag follows when it is)">Shows</dt>
         <dd><select className="cell" value={template || tagType ? '' : field} data-tag-shows onChange={(e) => {
           if (e.target.value === '*') { const f = askField(); if (f) set({ field: f }); return; }
@@ -512,6 +537,8 @@ export function TagFields({ node }: { node: NodeDto }) {
         </select></dd>
         <dt title="Its own text: {fields} read from the element, | starts a new line (empty: what Shows or its type says)">Text</dt>
         <dd><Cell value={template} placeholder="{mark}|{FireRating}" onCommit={(t) => set({ template: t })} testId="tag-template" /></dd>
+      </>}
+      {!marker && <>
         <dt title="A tag type of the drafting standards (Manage → Drafting standards → Tags): its template and text style">Tag type</dt>
         <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}><select className="cell" value={tagType} onChange={(e) => set({ tagType: e.target.value || null })}>
           <option value="">—</option>
@@ -549,4 +576,12 @@ export function TagFields({ node }: { node: NodeDto }) {
       {at && !marker && <><dt>Position</dt><dd className="pair"><Pair p={at} /></dd></>}
     </dl>
   );
+}
+
+/** A text tag's words in Properties: several lines, written when the box is left (empty: a tag that reads its field again). */
+function FreeTextField({ value, onCommit }: { value: string; onCommit: (text: string) => void }) {
+  const [body, setBody] = useState(value);
+  useEffect(() => setBody(value), [value]);
+  return <textarea rows={3} value={body} data-tag-text onChange={(e) => setBody(e.target.value)}
+    onKeyDown={(e) => e.stopPropagation()} onBlur={() => { if (body !== value) onCommit(body); }} />;
 }

@@ -2,21 +2,23 @@
  * Annotating a sheet itself (decision 620): its paper is a view (`paper:<sheet>`, viewport/paperView.ts) where the Draft
  * and Annotate tools draw in paper millimetres. Here what is new for it, which works on any view too: a leader note (an
  * arrow to a text), a revision cloud (REVCLOUD: a rectangle or a polygon drawn as scallops), and the keys to a drawing,
- * a legend of what the sheet's views draw (the materials they cut, or their lines; a sheet's only) and a scale bar.
+ * a legend of what the sheet's views draw (the materials they cut, or their lines; a sheet's only), a scale bar and a north
+ * arrow (issue #111: on a plan or a sheet; a site plan's own two are these, standing by themselves until moved by their grip).
  */
 
 import { useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute } from '../../engine/session';
 import { notify, useUi } from '../../app/store';
-import type { ToolDef, Vec2 } from '../../platform/module';
 import { promptText } from '../../shell/prompts';
 import { NumberField } from '../../shell/cells';
 import { cadHost, cadLog, registerCommand, startCommand, useCad, type Step } from '../../viewport/cad/session';
 import { toJson, type Shape } from '../../viewport/cad/shapes';
 import { isPaperView, openPaper } from '../../viewport/paperView';
 import { LANGUAGES, useLang } from '../../i18n';
-import { Cloud, PenLine as PenLineIcon, MessageSquareText, PencilRuler, TableProperties } from 'lucide-react';
+import { Cloud, Compass, PenLine as PenLineIcon, MessageSquareText, PencilRuler, TableProperties } from 'lucide-react';
+import type { Grip, GripView, ToolDef, Vec2 } from '../../platform/module';
+import { pt } from '../../viewport/gripKit';
 
 /** A revision cloud's scallop on paper (mm), as CAD draws one by default. */
 export const CLOUD_ARC = 8;
@@ -80,6 +82,29 @@ export const scaleBarTool: ToolDef = {
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('sheet.addScaleBar', { viewId: ctx.viewId, at: [p.x, p.y] }); },
 };
 
+/** A north arrow (issue #111): its middle, on a plan or a sheet's paper; pointing to true north (Manage → Location). */
+export const northArrowTool: ToolDef = {
+  id: 'drafting.northArrow', label: 'North arrow', icon: Compass,
+  gesture: { kind: 'point' },
+  complete: async ({ points: [p] }, ctx) => { await ctx.execute('sheet.addNorthArrow', { viewId: ctx.viewId, at: [p.x, p.y] }); },
+};
+
+/**
+ * A legend's, a scale bar's or a north arrow's grip (issue #111): its point where the view drew it (one standing by itself
+ * included), dragged to move it there.
+ */
+export function keyGrips(node: NodeDto, view?: GripView): Grip[] {
+  const kind = node.props.predefinedType;
+  if (kind !== 'SCALEBAR' && kind !== 'NORTHARROW' && kind !== 'SHEETLEGEND') return [];
+  const at = pt((view?.mark?.data as { at?: unknown } | undefined)?.at) ?? pt(node.props.at);
+  if (!at) return [];
+  const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
+  return [{
+    key: 'at', kind: 'move', at, view: viewId, title: 'Drag: move it here',
+    step: (to: Vec2) => ({ command: 'sheet.updateKey', args: { id: node.id, at: [to.x, to.y] } }),
+  }];
+}
+
 /** Drawing on the sheet open now: its paper in the drawing pane. */
 export const annotateSheetTool: ToolDef = {
   id: 'drafting.annotateSheet', label: 'Annotate sheet', icon: PenLineIcon,
@@ -118,8 +143,35 @@ export function KeyFields({ node }: { node: NodeDto }) {
       </dl>
     );
   }
+  // On a view, a scale bar or a north arrow may stand by itself (where a site plan draws its own) until it is moved.
+  const onView = typeof node.props.viewId === 'string' && !isPaperView(node.props.viewId);
+  const placed = Array.isArray(node.props.at);
+  const position = onView && (
+    <>
+      <dt title="By itself: where a site plan draws it, round the drawing, as the drawing grows; moved by its grip, it stays where it is put">Position</dt>
+      <dd className="pair">
+        <span className="muted">{placed ? 'where it was put' : 'by itself'}</span>
+        {placed && <button type="button" className="btn mini" data-key-auto onClick={() => set({ at: null })}>Put it back by itself</button>}
+      </dd>
+    </>
+  );
+  if (node.props.predefinedType === 'NORTHARROW') {
+    return (
+      <dl className="fields">
+        <dt title="Its circle across on paper; empty: 14 mm. Its symbol: Marker symbol, below">Size</dt>
+        <dd><NumberField value={num(node.props.size)} placeholder="14" suffix="mm" min={3} max={200} onCommit={(v) => set({ size: v && v > 0 ? v : null })} /></dd>
+        {position}
+      </dl>
+    );
+  }
   return (
     <dl className="fields">
+      <dt title="Lapin's (round divisions, each numbered), or a site plan's (about 60 mm in five parts, its half and its length written)">Look</dt>
+      <dd><select data-testid="scalebar-look" value={node.props.look === 'site' ? 'site' : ''} onChange={(e) => set({ look: e.target.value || null })}>
+        <option value="">Lapin's</option>
+        <option value="site">site plan's</option>
+      </select></dd>
+      {position}
       <dt title="Its length in metres of the model; empty: a round length about 80 mm long on paper">Length</dt>
       <dd><NumberField value={num(node.props.length)} placeholder="auto" suffix="m" min={0.01} onCommit={(v) => set({ length: v && v > 0 ? v : null })} /></dd>
       <dt>Divisions</dt>

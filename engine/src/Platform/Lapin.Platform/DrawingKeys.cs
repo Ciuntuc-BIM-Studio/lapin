@@ -11,14 +11,22 @@ namespace Lapin.Platform;
 /// <summary>
 /// Keys to a drawing (decision 620): a legend on a sheet's paper of what its views draw, live (the materials their cuts are
 /// hatched and filled with, or the lines they are drawn in), and a scale bar, on the paper (at a view's scale or its own) or
-/// on any view (at the view's). Both are IfcAnnotation of the view they are on (<c>SHEETLEGEND</c> {viewId, at, kind:
-/// materials | lines, title}; <c>SCALEBAR</c> {viewId, at, length (m, none: a round length about 80 mm long on paper),
-/// divisions, scale, viewportId}); <c>at</c> is the legend's top-left corner, the bar's left end, in the view's coordinates.
+/// on any view (at the view's), and a north arrow (issue #111) on a plan or a sheet's paper. Each is an IfcAnnotation of the
+/// view it is on (<c>SHEETLEGEND</c> {viewId, at, kind: materials | lines, title}; <c>SCALEBAR</c> {viewId, at, length (m,
+/// none: a round length about 80 mm long on paper), divisions, scale, viewportId, look: site}; <c>NORTHARROW</c> {viewId, at,
+/// size (paper mm, none: 14), viewportId, symbolSlots.northArrow}); <c>at</c> is the legend's top-left corner, the bar's left
+/// end, the arrow's middle, in the view's coordinates. A bar or an arrow on a view without <c>at</c> stands where a site plan
+/// drew its own (<see cref="AutoAt"/>: the arrow right of the drawing's top, the bar under its bottom left), until it is moved.
 /// </summary>
 public static class DrawingKeys
 {
     public const string Legend = "SHEETLEGEND";
     public const string ScaleBar = "SCALEBAR";
+    public const string NorthArrow = "NORTHARROW";
+    /// <summary>A scale bar's looks: Lapin's (none), or a site plan's (<c>site</c>: about 60 mm in five parts, its length's half and whole written).</summary>
+    public static readonly string[] Looks = ["site"];
+    /// <summary>A north arrow's size when it gives none: its circle's diameter on paper (mm).</summary>
+    public const double ArrowSize = 14;
     public static readonly string[] LegendKinds = ["materials", "lines"];
 
     const double Row = 7, Swatch = 14, SwatchH = 5, Label = 2.5, TitleH = 3.5;
@@ -32,6 +40,7 @@ public static class DrawingKeys
             {
                 if (e.PredefinedType == Legend) mk = LegendMark(c, e);
                 else if (e.PredefinedType == ScaleBar) mk = ScaleBarMark(c, e);
+                else if (e.PredefinedType == NorthArrow) mk = NorthArrowMark(c, e);
             }
             catch (CommandException) { }
             if (mk != null) yield return mk;
@@ -199,18 +208,75 @@ public static class DrawingKeys
         return Math.Abs(lead - 2) < 1e-6 ? 4 : Math.Abs(lead - 5) < 1e-6 || Math.Abs(lead - 1) < 1e-6 ? 5 : 4;
     }
 
-    static ViewMark ScaleBarMark(ViewContext c, Entity e)
+    /// <summary>
+    /// Where a scale bar's left end or a north arrow's middle stands on a view when it has no point of its own: where a site plan
+    /// drew its own (8 mm round the drawing; the arrow right of its top, the bar 6 mm under its bottom left); null on a sheet's
+    /// paper (a key there is always placed) or with nothing drawn.
+    /// </summary>
+    public static Vec2? AutoAt(ViewContext c, Entity e)
     {
-        var at = Args.PointOf(e.Attrs["at"]);
+        if (PaperViews.Is(c.View) || c.Drawing.Bounds is not { } box) return null;
+        var mm = c.Mm;
+        var (lo, hi) = (box.Min - new Vec2(8 * mm, 8 * mm), box.Max + new Vec2(8 * mm, 8 * mm));
+        if (e.PredefinedType == NorthArrow)
+        {
+            var r = SizeOf(e) / 2 * mm;
+            return new Vec2(hi.X + 4 * mm + r, hi.Y - r - 6 * mm);
+        }
+        return new Vec2(lo.X, lo.Y - 6 * mm);
+    }
+
+    /// <summary>A key's point: its own, else where it stands by itself (<see cref="AutoAt"/>); null: nowhere to draw it.</summary>
+    static Vec2? AtOf(ViewContext c, Entity e) => Args.TryPoint(e.Attrs["at"]) ?? AutoAt(c, e);
+
+    /// <summary>A north arrow's size (its circle's diameter on paper, mm).</summary>
+    public static double SizeOf(Entity e) => e.NumOrNull("size") is double s && s > 0 ? s : ArrowSize;
+
+    /// <summary>The site plan's look of a bar: its first scale bar's, as a site plan drew it before (decision 722).</summary>
+    static bool SiteLook(Entity e) => e.Str("look") == "site";
+
+    /// <summary>What the mark tells the interface of a key: its point as drawn, and whether it stands by itself.</summary>
+    static JsonObject KeyData(Entity e, Vec2 at) => new() { ["at"] = new JsonArray(at.X, at.Y), ["auto"] = e.Attrs["at"] is not JsonArray };
+
+    static ViewMark? ScaleBarMark(ViewContext c, Entity e)
+    {
+        if (AtOf(c, e) is not { } at) return null;
         var scale = ScaleOf(c, e);
         var mm = c.Mm;
         // Drawing units for a metre of the model: one on a view; on the paper (m of paper), what a metre is at the bar's scale.
         var perMetre = PaperViews.Is(c.View) ? 1 / scale : 1;
+        var text = Standards.ResolveText(c.Book, []);
+        var mk = new ViewMark(e.Id);
+        if (SiteLook(e))
+        {
+            // A site plan's bar (as SitePlans drew it): about 60 mm on paper, in five parts alternately filled, its half and its length written.
+            var length0 = e.NumOrNull("length") is double l0 && l0 > 0 ? l0 : SitePlans.Nice(60 * scale / 1000);
+            var parts = Math.Clamp((int)(e.NumOrNull("divisions") ?? 5), 1, 20);
+            var part = length0 / parts * perMetre;
+            var h0 = 1.5 * mm;
+            const string layer = "SITE";
+            for (var k = 0; k < parts; k++)
+            {
+                Vec2 a = at + new Vec2(k * part, 0), b = at + new Vec2((k + 1) * part, h0);
+                var rect = new[] { a, new Vec2(b.X, a.Y), b, new Vec2(a.X, b.Y) };
+                mk.Polyline(rect, true, layer, Pens.Default.Seen, "#000000");
+                if (k % 2 == 0) mk.Fills.Add(([rect], "#000000"));
+            }
+            static string F0(double v) => v.ToString("0", CultureInfo.InvariantCulture);
+            foreach (var (x, label) in new[] { (0.0, "0"), (length0 / 2, F0(length0 / 2)), (length0, $"{F0(length0)} m") })
+                mk.Text(new PenText(at + new Vec2(x * perMetre, h0 + 1.2 * mm), label, text.Height * 0.8, 0, "middle", "bottom", false, text.Font), "#000000");
+            mk.Text(new PenText(at + new Vec2(0, -2.5 * mm), $"1:{F0(scale)}", text.Height * 0.8, 0, "start", "top", false, text.Font), "#000000");
+            var end0 = at.X + length0 * perMetre;
+            IReadOnlyList<Vec2> box0 = [new(at.X, at.Y - 5 * mm), new(end0, at.Y - 5 * mm), new(end0, at.Y + h0 + 4 * mm), new(at.X, at.Y + h0 + 4 * mm)];
+            mk.Hit = ([box0], true);
+            mk.Snaps.AddRange([at, new Vec2(end0, at.Y)]);
+            mk.Data = KeyData(e, at);
+            mk.Data["scale"] = scale; mk.Data["length"] = length0; mk.Data["divisions"] = parts;
+            return mk;
+        }
         var length = e.NumOrNull("length") is double l && l > 0 ? l : NiceLength(scale);
         var n = Math.Clamp((int)(e.NumOrNull("divisions") ?? DivisionsOf(length)), 1, 20);
         var h = 2 * mm;
-        var text = Standards.ResolveText(c.Book, []);
-        var mk = new ViewMark(e.Id);
         var step = length / n * perMetre;
         for (var i = 0; i < n; i++)
         {
@@ -226,7 +292,73 @@ public static class DrawingKeys
         IReadOnlyList<Vec2> all = [new(at.X, at.Y - 4 * mm), new(end, at.Y - 4 * mm), new(end, at.Y + h + 4 * mm), new(at.X, at.Y + h + 4 * mm)];
         mk.Hit = ([all], true);
         mk.Snaps.AddRange([at, new Vec2(end, at.Y)]);
-        mk.Data = new JsonObject { ["scale"] = scale, ["length"] = length, ["divisions"] = n };
+        mk.Data = KeyData(e, at);
+        mk.Data["scale"] = scale; mk.Data["length"] = length; mk.Data["divisions"] = n;
+        return mk;
+    }
+
+    // ------------------------------------------------------------ the north arrow
+
+    /// <summary>
+    /// True north as drawn (a unit vector, the view's coordinates): the project's +Y turned by the base point's angle (as the IFC
+    /// export writes it); on a sheet's paper, as its viewport (<c>viewportId</c>, else the sheet's first plan) lays that view out.
+    /// </summary>
+    public static Vec2 NorthOf(ViewContext c, Entity e)
+    {
+        var th = (Location.Base(c.Model).NorthAngle ?? 0) * Math.PI / 180;
+        var n = new Vec2(-Math.Sin(th), Math.Cos(th));
+        if (!PaperViews.Is(c.View) || c.Query == null || PaperViews.SheetOf(c.Model, c.View) is not { } sheet) return n;
+        var placed = PaperViews.Placements(c.Query, sheet).Where(p => !p.Content).ToList();
+        var pl = e.Str("viewportId") is { } vp ? placed.FirstOrDefault(p => p.Viewport.Id == vp) : null;
+        pl ??= placed.FirstOrDefault(p => p.Drawing.Kind == "plan");
+        if (pl == null) return n;
+        // Paper mm, y down: the north of the view's middle as the sheet lays it.
+        var d = pl.ToPaper(pl.Middle + n) - pl.ToPaper(pl.Middle);
+        var v = new Vec2(d.X, -d.Y);
+        return v.Length < 1e-12 ? n : v * (1 / v.Length);
+    }
+
+    /// <summary>The symbol an arrow is drawn with: its own, else its view's, else the project's (Marker symbols); null: Lapin's own arrow.</summary>
+    static string? ArrowSymbol(IModelView m, Entity e, Entity view)
+    {
+        foreach (var owner in new[] { e, view })
+            if ((string?)owner.Attrs[SymbolSlots.Key]?["northArrow"] is { Length: > 0 } id && Symbols.DefOf(m, id) != null) return id;
+        return SymbolSlots.SymbolFor(m, "northArrow");
+    }
+
+    static ViewMark? NorthArrowMark(ViewContext c, Entity e)
+    {
+        if (AtOf(c, e) is not { } at) return null;
+        var mm = c.Mm;
+        var size = SizeOf(e);
+        var n = NorthOf(c, e);
+        var east = new Vec2(n.Y, -n.X);
+        var r = size / 2 * mm;
+        const string ink = "#000000";
+        var layer = SitePlans.Of(c.View) != null ? "SITE" : "NORTHARROW";
+        var mk = new ViewMark(e.Id);
+        // A symbol of the user's: where Lapin's arrow is, its +y to true north, as large against the default as the arrow.
+        if (ArrowSymbol(c.Model, e, c.View) is { } symbol) SymbolSlots.Draw(c, mk, symbol, at, n, false, size / ArrowSize, layer, ink, _ => (false, null));
+        else
+        {
+            var text = Standards.ResolveText(c.Book, []);
+            mk.Polyline(ViewMark.Circle(at, r, 48), true, layer, Pens.Default.Seen, ink);
+            var tip = at + n * (r * 1.25);
+            var tail = at - n * (r * 0.8);
+            Vec2 left = at - n * (r * 0.45) - east * (r * 0.45), right = at - n * (r * 0.45) + east * (r * 0.45);
+            mk.Polyline([tip, right, tail, left], true, layer, Pens.Default.Seen, ink);
+            // The east half filled, as the usual arrow.
+            mk.Fills.Add(([[tip, right, tail]], ink));
+            mk.Text(new PenText(tip + n * (2.5 * mm), "N", text.Height * 1.2 * size / ArrowSize, 0, "middle", "bottom", true, text.Font), ink);
+        }
+        // What a click takes: the arrow's square, with its N.
+        var k = r * 1.6;
+        IReadOnlyList<Vec2> hit = [at + new Vec2(-k, -k), at + new Vec2(k, -k), at + new Vec2(k, k + 3 * mm), at + new Vec2(-k, k + 3 * mm)];
+        mk.Hit = ([hit], true);
+        mk.Snaps.Add(at);
+        mk.Data = KeyData(e, at);
+        mk.Data["size"] = size;
+        mk.Data["north"] = new JsonArray(Math.Round(n.X, 6), Math.Round(n.Y, 6));
         return mk;
     }
 
@@ -261,7 +393,33 @@ public static class DrawingKeys
             else throw new CommandException("A scale bar has 1 to 20 divisions.");
         }
         if (a.ContainsKey("viewportId")) { if ((string?)a["viewportId"] is { Length: > 0 } vp) attrs["viewportId"] = vp; else attrs.Remove("viewportId"); }
+        // A north arrow's size (its circle's diameter on paper, mm; null: 14); a bar's look (site: a site plan's; null: Lapin's).
+        if (a.ContainsKey("size"))
+        {
+            if (Json.Number(a["size"]) is { } z && z >= 3 && z <= 200) attrs["size"] = z;
+            else if (a["size"] == null) attrs.Remove("size");
+            else throw new CommandException("A north arrow is 3 to 200 mm across on paper.");
+        }
+        if (a.ContainsKey("look"))
+        {
+            if ((string?)a["look"] is { Length: > 0 } lk) attrs["look"] = Looks.Contains(lk) ? lk : throw new CommandException($"„{lk}” is not a scale bar's look (site, or none: Lapin's).");
+            else attrs.Remove("look");
+        }
     }
+
+    /// <summary>
+    /// A view's north arrow and scale bar as a site plan has them (decision 722), standing by themselves until moved: the
+    /// annotations to add for the keys asked (an arrow, a bar in the site's look).
+    /// </summary>
+    public static IEnumerable<Entity> SiteKeys(Func<string> newId, string viewId, bool arrow = true, bool bar = true)
+    {
+        if (arrow) yield return new Entity(newId(), IfcClass.Annotation, "North arrow", new JsonObject { ["viewId"] = viewId }, NorthArrow);
+        if (bar) yield return new Entity(newId(), IfcClass.Annotation, "Scale bar", new JsonObject { ["viewId"] = viewId, ["look"] = "site" }, ScaleBar);
+    }
+
+    /// <summary>The view's own keys of a kind (north arrows or scale bars).</summary>
+    public static IEnumerable<Entity> On(IModelView m, string viewId, string predefined) =>
+        m.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == predefined && x.Str("viewId") == viewId);
 
     public static void Register(IModuleRegistry r)
     {
@@ -277,27 +435,50 @@ public static class DrawingKeys
             return new JsonObject { ["id"] = e.Id };
         });
 
-        // A scale bar: {viewId, at (its left end), length (m), divisions, scale, viewportId (on paper: at that view's scale)}.
+        // A scale bar: {viewId, at (its left end), length (m), divisions, scale, viewportId (on paper: at that view's scale), look (site)}.
         r.Command("sheet.addScaleBar", "Scale bar", (ctx, a) =>
         {
             var view = ViewOf(ctx, a);
-            var attrs = new JsonObject { ["viewId"] = view.Id, ["at"] = At(a["at"]) };
+            var attrs = new JsonObject { ["viewId"] = view.Id };
+            // On a view it may stand by itself (none: under the drawing's bottom left, where a site plan draws its own).
+            if (a["at"] != null || PaperViews.Is(view)) attrs["at"] = At(a["at"]);
             Apply(attrs, a);
             var e = new Entity(ctx.NewId(), IfcClass.Annotation, "Scale bar", attrs, ScaleBar);
             ctx.Add(e);
             return new JsonObject { ["id"] = e.Id };
         });
 
-        // A legend's or a scale bar's settings: {id | ids, kind, title, length, divisions, scale, viewportId}; null clears one.
+        // A north arrow (issue #111): {viewId (a plan or a sheet's paper), at? (its middle; none on a view: right of the drawing's
+        // top, where a site plan draws it), size? (paper mm), viewportId? (on paper: north as that view is laid out)}.
+        r.Command("sheet.addNorthArrow", "North arrow", (ctx, a) =>
+        {
+            var view = ViewOf(ctx, a);
+            if (!PaperViews.Is(view) && (view.Str("kind") ?? "plan") != "plan") throw new CommandException("A north arrow goes on a plan or a sheet.");
+            var attrs = new JsonObject { ["viewId"] = view.Id };
+            if (a["at"] != null) attrs["at"] = At(a["at"]);
+            else if (PaperViews.Is(view)) throw new CommandException("Where? [x, y].");
+            Apply(attrs, a);
+            var e = new Entity(ctx.NewId(), IfcClass.Annotation, "North arrow", attrs, NorthArrow);
+            ctx.Add(e);
+            return new JsonObject { ["id"] = e.Id };
+        });
+
+        // A legend's, a scale bar's or a north arrow's settings: {id | ids, at (null on a view: back where it stands by itself), kind, title,
+        // length, divisions, scale, viewportId, size, look}; null clears one.
         r.Command("sheet.updateKey", "Change legend", (ctx, a) =>
         {
             var ids = Args.Ids(a);
-            if (ids.Count == 0) throw new CommandException("Which legend or scale bar?");
+            if (ids.Count == 0) throw new CommandException("Which legend, scale bar or north arrow?");
             foreach (var id in ids)
             {
-                var e = ctx.Model.Get(id) is { Class: IfcClass.Annotation, PredefinedType: Legend or ScaleBar } x ? x : throw new CommandException("Not a legend or a scale bar.");
+                var e = ctx.Model.Get(id) is { Class: IfcClass.Annotation, PredefinedType: Legend or ScaleBar or NorthArrow } x ? x : throw new CommandException("Not a legend, a scale bar or a north arrow.");
                 var attrs = e.CloneAttrs();
                 if (a["at"] != null) attrs["at"] = At(a["at"]);
+                else if (a.ContainsKey("at"))
+                {
+                    if (e.PredefinedType == Legend || Views.Find(ctx.Model, e.Str("viewId") ?? "") is not { } kv || PaperViews.Is(kv)) throw new CommandException("On a sheet it stays where it is placed: give it a point.");
+                    attrs.Remove("at");
+                }
                 Apply(attrs, a);
                 ctx.Replace(e.With(attrs: attrs));
             }

@@ -157,7 +157,7 @@ Tabul **Adnotări** are cotele, textele, axele, cotele de nivel și etichetele. 
 
 ![Proprietățile unui text: stilul, alinierea, unghiul și lățimea](shots/text-properties.webp)
 
-O **Notă cu indicator** (Adnotări → Text) e un text cu săgeată: dă clic unde arată săgeata, apoi unde stă textul, și scrie-l. Un **Nor de revizie** (Desen → Umplutură sau REVCLOUD) desenează un dreptunghi sau un poligon din arce; **Nor de revizie** din proprietățile unei polilinii închise sau ale unui cerc o face nor sau o readuce la loc. O **Scară grafică** (Adnotări → Planșe) se desenează la scara vederii. Merg pe orice vedere și pe planșe, unde li se adaugă o legendă a vederilor și câmpuri vii în texte (vezi Planșe).
+O **Notă cu indicator** (Adnotări → Text) e un text cu săgeată: dă clic unde arată săgeata, apoi unde stă textul, și scrie-l. Un **Nor de revizie** (Desen → Umplutură sau REVCLOUD) desenează un dreptunghi sau un poligon din arce; **Nor de revizie** din proprietățile unei polilinii închise sau ale unui cerc o face nor sau o readuce la loc. O **Scară grafică** (Adnotări → Planșe) se desenează la scara vederii. O **Săgeată a nordului** (Adnotări → Planșe) se pune cu un clic pe mijlocul ei, pe un plan sau pe hârtia unei planșe; pe planșă arată cum așază fereastra vederii planul, și un plan rotit. Pe o vedere, săgeata nordului și scara grafică stau *de la sine* (săgeata în dreapta sus a desenului, scara sub colțul lui din stânga jos, urmând desenul) până le muți cu mânerul; **Pune-l înapoi de la sine** din proprietăți le readuce. Săgeata are o **Mărime** (mm, implicit 14) și un **Simbol de marcaj**; scara, un **Aspect**, o **Lungime**, **Diviziuni** și o **Scară**. Merg pe orice vedere și pe planșe, unde li se adaugă o legendă a vederilor și câmpuri vii în texte (vezi Planșe).
 
 ### Unealta Cote
 
@@ -239,10 +239,15 @@ Cotele încăperilor au doar **Detalii** (latura, cu ancadramentele golurilor) �
 - **Parametru**: scrie numele parametrului în bară (**Rezistență la foc**, `Pset_WallCommon.FireRating`). **Adnotări → Etichetează un parametru**, plecat acum de pe panglică, pornește în continuare unealta aici.
 - **Material / straturi**: un tip de [etichetă de stratificație](#eticheta-de-stratificatie); **TIPURI DE ETICHETE…** deschide editorul lor.
 - **Notă de cod**: codul clasificării elementului (sau titlul ei), vezi [Clasificări](classifications.md).
+- **Text liber**: cuvintele tale. Dă clic pe element, apoi unde merge eticheta; o casetă cere textul (mai multe rânduri: Enter e rând nou, Ctrl/⌘+Enter sau **OK** încheie). Câmpurile **{…}** ale elementului sunt în direct: `{mark}`, `{FireRating}`, `{storey.name}`, `{= formule}`. Are aceeași linie de indicație, casetă sau umăr și aceleași stiluri ca orice etichetă (un tip de etichetă ales în bară îi dă aspectul) și își urmează elementul. **Etichetă de text** din proprietățile ei editează cuvintele; dublu clic pe etichetă în vedere le cere din nou.
 
 **INDICAȚIE** pornește sau oprește linia de indicație. Dă clic pe element, apoi unde merge eticheta (tastează întâi **E** ca să frângi linia într-un cot). Scrise la cererea elementului, **ELEMENT**, **ROOM**, **PARAMETER**, **MATERIAL** și **KEYNOTE** aleg și ele sursa.
 
 ![Unealta Etichetă la sursa Încăpere: aria încăperii](shots/tag-sources.webp)
+
+![O etichetă de text pe un perete: două rânduri, unul un câmp în direct](shots/tag-free-text.webp)
+
+![Proprietățile unei etichete de text](shots/tag-free-text-properties.webp)
 
 ![Bara uneltei Etichetă sub vedere](shots/tag-options.webp)
 

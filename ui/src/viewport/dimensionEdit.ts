@@ -1,10 +1,11 @@
-/** Double-click on a dimension: the value typed for the segment under the cursor drives what it measures (and, in a string, what follows). */
+/** Double-click on a dimension: the value typed for the segment under the cursor drives what it measures (and, in a string, what follows); on a text tag, its words (issue #92). */
 
 import { promptText } from '../shell/prompts';
 import type { Vec2 } from '../platform/module';
 import { execute, query, useSession } from '../engine/session';
 import { formatLength, parseLength, unitName } from '../engine/unitsStore';
 import { openTableEditor } from '../modules/drafting/table/tableStore';
+import { askText } from '../shell/AskBox';
 
 export interface DimensionInfo {
   value: number | null;
@@ -27,6 +28,12 @@ export async function editDimension(id: string, at?: Vec2): Promise<boolean> {
   if (node?.props.predefinedType === 'TABLE') { openTableEditor(id); return true; }
   // A long table's part placed on its own (stage 5) opens its table.
   if (node?.props.predefinedType === 'TABLEPART' && typeof node.props.of === 'string') { openTableEditor(node.props.of); return true; }
+  // A text tag (issue #92): its words asked again, the tag changed in one step.
+  if (node?.props.predefinedType === 'TAG' && typeof node.props.text === 'string') {
+    const text = await askText('Text tag', 'What it says ({fields} of the element live)', node.props.text);
+    if (text != null && text.trim() && text !== node.props.text) await execute('drafting.updateTag', { id, text });
+    return true;
+  }
   if (node?.props.predefinedType !== 'DIMENSION') return false;
   const d = await query<DimensionInfo>('drafting.dimension', { id, ...(at ? { at: [at.x, at.y] } : {}) });
   if (!d || d.value == null) return true;

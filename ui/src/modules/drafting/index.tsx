@@ -36,7 +36,7 @@ import { GridAxisDims } from './GridAxisDims';
 import '../core/symbols/symbolTools';
 import { convertLayersInFront, convertSelection } from './convert/convert';
 import { SymbolSection } from '../core/symbols/SymbolSection';
-import { annotateSheetTool, leaderNote, legendTool, revisionCloudTool, scaleBarTool } from './sheetAnnotations';
+import { annotateSheetTool, keyGrips, leaderNote, legendTool, northArrowTool, revisionCloudTool, scaleBarTool } from './sheetAnnotations';
 import { surveyPoint, useLocation } from '../../app/location';
 import { TableSection, tableGrips, tablePartTool, tableTool } from './table/tableTool';
 
@@ -49,7 +49,7 @@ const LayersDialog = lazyPart(() => import('./LayersDialog').then((m) => m.Layer
 const TableEditor = lazyPart(() => import('./table/TableEditor').then((m) => m.TableEditor), { title: 'Table' });
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string, one object. Points on an element's cut edge, a grid axis or a wall's centre line follow it. */
-const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG', 'SYMBOL', 'SHEETLEGEND', 'SCALEBAR', 'TABLE', 'TABLEPART']);
+const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG', 'SYMBOL', 'SHEETLEGEND', 'SCALEBAR', 'NORTHARROW', 'TABLE', 'TABLEPART']);
 const draftsFields = (node: NodeDto) => DRAFTED.has(String(node.props.predefinedType));
 
 /**
@@ -883,7 +883,7 @@ function leaderGrips(node: NodeDto): Grip[] {
   });
 }
 
-const annotationGrips = (node: NodeDto, view?: GripView): Grip[] => [...draftGrips(node), ...leaderGrips(node), ...dimensionGrips(node, view), ...tagGrips(node, view), ...tableGrips(node, view)];
+const annotationGrips = (node: NodeDto, view?: GripView): Grip[] => [...draftGrips(node), ...leaderGrips(node), ...dimensionGrips(node, view), ...tagGrips(node, view), ...tableGrips(node, view), ...keyGrips(node, view)];
 
 /** A grid's axes: each axis's ends and middle (keys "<tag>:start"…), shown when that axis is selected (grid#tag). */
 function gridGrips(node: NodeDto): Grip[] {
@@ -1004,7 +1004,7 @@ const drafting: LapinModule = {
           run: () => void execute('marks.number', {}).then(() => notify('The parts are numbered: identical parts share a mark.')),
         }] },
         // Drawing on a sheet itself (decision 620): its paper, a legend of its views, a scale bar, a revision cloud.
-        { label: 'Sheets', small: [annotateSheetTool, legendTool, scaleBarTool, revisionCloudTool], tools: [{ id: 'sheet', label: 'Sheet', icon: FileText, run: () => void execute('sheet.create', { name: 'Sheet', paper: 'A3' }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'sheet', sheetId: id, selection: id, selected: [id] }); }) }, viewBoundary] },
+        { label: 'Sheets', small: [annotateSheetTool, legendTool, scaleBarTool, northArrowTool, revisionCloudTool], tools: [{ id: 'sheet', label: 'Sheet', icon: FileText, run: () => void execute('sheet.create', { name: 'Sheet', paper: 'A3' }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'sheet', sheetId: id, selection: id, selected: [id] }); }) }, viewBoundary] },
       ],
     },
   ],

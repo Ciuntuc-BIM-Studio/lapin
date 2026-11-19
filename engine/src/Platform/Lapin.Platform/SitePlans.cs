@@ -14,9 +14,12 @@ namespace Lapin.Platform;
 /// 1:2000) are plan views with <c>site</c> set: the whole model seen from
 /// above, every storey, nothing cut and nothing hidden drawn, what lies wholly
 /// below ±0.00 left out; the terrain, paths and plants by their symbols. Over
-/// them a north arrow, the map's coordinate grid (when the project is tied to
-/// the map) and a scale bar. A site plan stands on its host storey (the
-/// terrain's, else the ground floor's), where what is drawn on it goes.
+/// them the map's coordinate grid (when the project is tied to the map), and a
+/// north arrow and a scale bar of its own (decision 722: annotations of the view,
+/// <see cref="DrawingKeys"/>, which can be moved, sized and deleted; a project
+/// saved before has them made when it opens, <see cref="KeysUpgrade"/>). A site
+/// plan stands on its host storey (the terrain's, else the ground floor's), where
+/// what is drawn on it goes.
 /// </summary>
 public static class SitePlans
 {
@@ -43,8 +46,40 @@ public static class SitePlans
     }
 
     static bool Flag(Entity view, string key) => !(view.Attrs[key] is JsonValue v && v.TryGetValue<bool>(out var b) && !b);
-    public static bool NorthArrow(Entity view) => Flag(view, "northArrow");
-    public static bool ScaleBar(Entity view) => Flag(view, "scaleBar");
+    /// <summary>Whether a view has a north arrow of its own (an annotation, decision 722).</summary>
+    public static bool NorthArrow(IModelView m, Entity view) => DrawingKeys.On(m, view.Id, DrawingKeys.NorthArrow).Any();
+    /// <summary>Whether a view has a scale bar of its own.</summary>
+    public static bool ScaleBar(IModelView m, Entity view) => DrawingKeys.On(m, view.Id, DrawingKeys.ScaleBar).Any();
+
+    /// <summary>On a site view, the flag that says its keys are annotations of its own (decision 722); a view without it is brought up to date.</summary>
+    public const string KeysKey = "siteKeys";
+
+    /// <summary>
+    /// A project saved before decision 722 (its site plans drew their north arrow and scale bar themselves, <c>northArrow</c> and
+    /// <c>scaleBar</c> false leaving one out): each site view's keys made annotations of its own, standing where they stood.
+    /// </summary>
+    public sealed class KeysUpgrade : IProjectUpgrade
+    {
+        public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations)
+        {
+            if (!entities.Any(e => Of(e) != null && e.Attrs[KeysKey] == null)) return (entities, relations);
+            var list = new List<Entity>(entities.Count + 4);
+            var added = new List<Entity>();
+            foreach (var e in entities)
+            {
+                if (Of(e) == null || e.Attrs[KeysKey] != null) { list.Add(e); continue; }
+                var attrs = e.CloneAttrs();
+                var (arrow, bar) = (Flag(e, "northArrow"), Flag(e, "scaleBar"));
+                attrs.Remove("northArrow");
+                attrs.Remove("scaleBar");
+                attrs[KeysKey] = true;
+                list.Add(e.With(attrs: attrs));
+                added.AddRange(DrawingKeys.SiteKeys(GlobalId.New, e.Id, arrow, bar));
+            }
+            list.AddRange(added);
+            return (list, relations);
+        }
+    }
 
     /// <summary>Whether the project stands out (its buildings filled, the parcel in red): a location plan's default, a site plan's on request.</summary>
     public static bool Highlight(Entity view) => view.Attrs["highlight"] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : Of(view) == LocationPlan;
@@ -58,7 +93,7 @@ public static class SitePlans
     /// <summary>A site view's attributes on create: its purpose, scale and name.</summary>
     public static (JsonObject Attrs, string Name) New(string purpose, string storeyId, double? scale, string? name)
     {
-        var attrs = new JsonObject { ["kind"] = "plan", ["site"] = purpose, ["storeyId"] = storeyId, ["scale"] = scale ?? DefaultScale(purpose), ["cutHeight"] = Views.DefaultCut };
+        var attrs = new JsonObject { ["kind"] = "plan", ["site"] = purpose, ["storeyId"] = storeyId, ["scale"] = scale ?? DefaultScale(purpose), ["cutHeight"] = Views.DefaultCut, [KeysKey] = true };
         return (attrs, name ?? DefaultName(purpose));
     }
 
@@ -78,9 +113,15 @@ public static class SitePlans
         {
             if (a["highlight"] is JsonValue hv && hv.TryGetValue<bool>(out var h)) attrs["highlight"] = h; else attrs.Remove("highlight");
         }
-        foreach (var k in new[] { "northArrow", "scaleBar" })
-            if (a[k] is JsonValue fv && fv.TryGetValue<bool>(out var on)) { if (on) attrs.Remove(k); else attrs[k] = false; }
         ctx.Replace(v.With(attrs: attrs));
+        // Its north arrow and scale bar (decision 722): one added where a site plan draws it when switched on, every one taken off when off.
+        foreach (var (k, kind) in new[] { ("northArrow", DrawingKeys.NorthArrow), ("scaleBar", DrawingKeys.ScaleBar) })
+        {
+            if (a[k] is not JsonValue fv || !fv.TryGetValue<bool>(out var on)) continue;
+            var have = DrawingKeys.On(ctx.Model, v.Id, kind).ToList();
+            if (on && have.Count == 0 && ctx.Describe(IfcClass.Annotation) != null) foreach (var key in DrawingKeys.SiteKeys(ctx.NewId, v.Id, kind == DrawingKeys.NorthArrow, kind == DrawingKeys.ScaleBar)) ctx.Add(key);
+            if (!on) foreach (var key in have) ctx.Remove(key.Id);
+        }
     }
 
     /// <summary>A step of 1, 2 or 5 × 10ⁿ nearest <paramref name="x"/> from below.</summary>
@@ -94,10 +135,9 @@ public static class SitePlans
 
     const string Layer = "SITE";
     const string Ink = "#000000";
-    static string F0(double v) => v.ToString("0", CultureInfo.InvariantCulture);
     static string Grouped(double v) => Math.Round(v).ToString("#,0", CultureInfo.InvariantCulture).Replace(",", " ");
 
-    /// <summary>A site view's north arrow, coordinate grid and scale bar, round what it draws.</summary>
+    /// <summary>A site view's highlight and coordinate grid, round what it draws.</summary>
     public static IEnumerable<ViewMark> Marks(ViewContext c)
     {
         if (c.Kind != "plan" || Of(c.View) == null) yield break;
@@ -110,55 +150,7 @@ public static class SitePlans
 
         if (SitePlans.GridStep(c.View) is var step && step > 0 && GeoRef.Georeferenced(c.Model) && Grid(c, lo, hi, step, text) is { } grid) yield return grid;
 
-        if (NorthArrow(c.View))
-        {
-            // True north: the project's +Y turned by the base point's angle (as the IFC export writes it).
-            var th = (Location.Base(c.Model).NorthAngle ?? 0) * Math.PI / 180;
-            var n = new Vec2(-Math.Sin(th), Math.Cos(th));
-            var e = new Vec2(n.Y, -n.X);
-            var r = 7 * mm;
-            var at = new Vec2(hi.X + 4 * mm + r, hi.Y - r - 6 * mm);
-            var mk = new ViewMark(null);
-            // A symbol of the user's (the view's own, else the project's): where Lapin's arrow is, its +y to true north.
-            if (SymbolSlots.SymbolFor(c.Model, "northArrow", c.View) is { } northSymbol)
-            {
-                SymbolSlots.Draw(c, mk, northSymbol, at, n, false, 1, Layer, Ink, _ => (false, null));
-                yield return mk;
-            }
-            else
-            {
-            mk.Polyline(ViewMark.Circle(at, r, 48), true, Layer, Pens.Default.Seen, Ink);
-            var tip = at + n * (r * 1.25);
-            var tail = at - n * (r * 0.8);
-            Vec2 left = at - n * (r * 0.45) - e * (r * 0.45), right = at - n * (r * 0.45) + e * (r * 0.45);
-            mk.Polyline([tip, right, tail, left], true, Layer, Pens.Default.Seen, Ink);
-            // The east half filled, as the usual arrow.
-            mk.Fills.Add(([[tip, right, tail]], Ink));
-            mk.Text(new PenText(tip + n * (2.5 * mm), "N", text.Height * 1.2, 0, "middle", "bottom", true, text.Font), Ink);
-            yield return mk;
-            }
-        }
-
-        if (ScaleBar(c.View))
-        {
-            // About 60 mm on paper, in five parts, alternately filled.
-            var length = Nice(60 * mm);
-            var part = length / 5;
-            var h = 1.5 * mm;
-            var o = new Vec2(lo.X, lo.Y - 6 * mm);
-            var mk = new ViewMark(null);
-            for (var k = 0; k < 5; k++)
-            {
-                Vec2 a = o + new Vec2(k * part, 0), b = o + new Vec2((k + 1) * part, h);
-                var rect = new[] { a, new Vec2(b.X, a.Y), b, new Vec2(a.X, b.Y) };
-                mk.Polyline(rect, true, Layer, Pens.Default.Seen, Ink);
-                if (k % 2 == 0) mk.Fills.Add(([rect], Ink));
-            }
-            foreach (var (x, label) in new[] { (0.0, "0"), (length / 2, F0(length / 2)), (length, $"{F0(length)} m") })
-                mk.Text(new PenText(o + new Vec2(x, h + 1.2 * mm), label, text.Height * 0.8, 0, "middle", "bottom", false, text.Font), Ink);
-            mk.Text(new PenText(o + new Vec2(0, -2.5 * mm), $"1:{F0(c.Scale)}", text.Height * 0.8, 0, "start", "top", false, text.Font), Ink);
-            yield return mk;
-        }
+        // The north arrow and the scale bar are annotations of the view (decision 722, DrawingKeys).
     }
 
     /// <summary>What a site view draws by its symbols, not as the project's buildings: the terrain, paths, plants, people and cars, and the site's features (the neighbours among them).</summary>

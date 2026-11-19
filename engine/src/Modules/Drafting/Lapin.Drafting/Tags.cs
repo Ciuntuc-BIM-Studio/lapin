@@ -23,6 +23,11 @@ namespace Lapin.Drafting;
 /// door's or window's marker (a type shaped "opening") is drawn in plans by
 /// the architecture module, which knows the wall it sits in. A tag follows its
 /// element when it moves, turns or is reshaped (report #93, <see cref="TagHold"/>).
+/// <para>
+/// A text tag (issue #92, decision 723) says what the user typed (<c>text</c>, lines on new lines) instead of a field: the same
+/// leader, box or shoulder, styles and grips, following its element as any tag; its <c>{…}</c> are live, read from the element
+/// as a template's ({mark}, {FireRating}, {storey.name}, {= area * 1.1 | 0.00}).
+/// </para>
 /// </summary>
 public static class Tags
 {
@@ -50,9 +55,23 @@ public static class Tags
     static Vec2? Pt(JsonNode? n) => n is JsonArray a && a.Count >= 2 && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y ? new Vec2(x, y) : null;
     static JsonArray J(Vec2 p) => new(p.X, p.Y);
 
-    /// <summary>The lines a tag shows: its own template, else its type's, else its field; "?" when they come out empty or the element is gone.</summary>
+    /// <summary>A text tag's own text (issue #92): what it says, its lines on new lines; null for a tag that reads a field.</summary>
+    public static string? FreeText(Entity tag) => tag.Str("text") is { } t && t.Trim().Length > 0 ? t : null;
+
+    /// <summary>A text tag's lines (issue #92): each as typed, its {…} read from the element; an empty line kept between others, none at either end.</summary>
+    public static IReadOnlyList<string> FreeLines(IModelView m, string text, Entity? e, string units)
+    {
+        var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Select(l => (e != null ? TagText.Fill(l, m, e, null, units) : l).TrimEnd()).ToList();
+        while (lines.Count > 0 && lines[0].Trim().Length == 0) lines.RemoveAt(0);
+        while (lines.Count > 0 && lines[^1].Trim().Length == 0) lines.RemoveAt(lines.Count - 1);
+        return lines.Count > 0 ? lines : ["?"];
+    }
+
+    /// <summary>The lines a tag shows: its own text (a text tag), else its own template, else its type's, else its field; "?" when they come out empty or the element is gone.</summary>
     public static IReadOnlyList<string> LinesOf(IModelView m, Entity tag, Entity? e, TagType? type, string units)
     {
+        // A text tag says what was typed, its element gone or not (its colour tells that).
+        if (FreeText(tag) is { } free) return FreeLines(m, free, e, units);
         if (e == null) return ["?"];
         var template = tag.Str("template") is { Length: > 0 } own ? own : type?.Template;
         var lines = template != null ? TagText.Lines(template, m, e, null, units) : [Text(m, e, tag.Str("field") ?? "mark", units) ?? ""];
@@ -200,7 +219,9 @@ public static class Tags
         var follow = TagHold.Follow(c.Model, t, e, c.Frame.Right, c.Frame.Up, c.Kind == "plan", c.Geometry);
         Vec2? Followed(Vec2? p) => p is { } q && follow != null ? follow(q) : p;
         // A build-up tag (docs/plan-buildup-tags.md): the element's layers as a note, its leaders one or one per layer.
-        if (type is { Shape: "buildup" }) return BuildupTags.Mark(c, t, e, type, style, follow);
+        // A text tag (issue #92) writes its own words in the type's box or shoulder, never a build-up's layers or a symbol's fields.
+        var free = FreeText(t) != null;
+        if (type is { Shape: "buildup" } && !free) return BuildupTags.Mark(c, t, e, type, style, follow);
         var at = Followed(Pt(t.Attrs["at"])) ?? default;
         var angle = AngleOf(c, t, e);
         var rad = angle * Math.PI / 180;
@@ -208,7 +229,7 @@ public static class Tags
         var color = e == null ? "#c0392b" : style.Color ?? "#000000";
         var leaderOn = t.Attrs["leader"] is not JsonValue lv || !lv.TryGetValue<bool>(out var on) || on;
         // A tag type drawn by a symbol of the user's (decision 552): the symbol at the tag's point, its texts the element's fields.
-        if (type?.Symbol is { } symbolId && e != null && TagSymbols.Lay(c, symbolId, at, rad, e) is { } laid)
+        if (type?.Symbol is { } symbolId && e != null && !free && TagSymbols.Lay(c, symbolId, at, rad, e) is { } laid)
         {
             return SymbolTag(c, t, e, laid, at, rad, color, leaderOn, Followed(Pt(t.Attrs["end"])) ?? Anchor(c.Drawing, e.Id), Followed(Pt(t.Attrs["elbow"])));
         }
@@ -251,6 +272,9 @@ public static class Tags
             if (typeId != null && Standards.TagTypeOf(book, typeId) == null) throw new CommandException("There is no such tag type.");
             var type = typeId != null ? Standards.TagTypeOf(book, typeId) : field == null ? Standards.TagTypeOf(book, null, e.Class) : null;
             var attrs = new JsonObject { ["viewId"] = viewId, ["element"] = e.Id, ["field"] = field ?? "mark", ["at"] = at };
+            // A text tag (issue #92): what it says, typed; its {…} read from the element.
+            var free = a["text"] is null ? null : ((string?)a["text"])?.Trim('\n', '\r', ' ') is { Length: > 0 } ft ? ft : throw new CommandException("Write what the text tag says.");
+            if (free != null) attrs["text"] = free;
             if (type != null) attrs["tagType"] = type.Id;
             if (a["leader"] is JsonValue lv && lv.TryGetValue<bool>(out var leader) && !leader) attrs["leader"] = false;
             if (Pt(a["elbow"]) is { } elbow) attrs["elbow"] = J(elbow);
@@ -260,13 +284,13 @@ public static class Tags
             attrs[TagLeaders.RevKey] = TagLeaders.Rev;
             // Where the element stands now: the tag follows it from there (report #93).
             TagHold.Hold(ctx.Model, attrs, e, Views.Find(ctx.Model, viewId) is { } v && TagHold.Axes(ctx.Model, v) is { Plan: true }, ctx.Query.Geometry);
-            var tag = new Entity(ctx.NewId(), IfcClass.Annotation, $"Tag {TagText.Mark(ctx.Model, e)}", attrs, "TAG");
+            var tag = new Entity(ctx.NewId(), IfcClass.Annotation, free != null ? "Text tag" : $"Tag {TagText.Mark(ctx.Model, e)}", attrs, "TAG");
             ctx.Add(tag);
             return new JsonObject { ["id"] = tag.Id };
         });
 
         // A tag changed (report #64; issue #72: tagType chosen keeps it over the tag rules, byRules gives it back to them, shown false
-        // switches it off): its head moved (at: an elbow leader's knee), its leader bent (elbow; null: straight again),
+        // switches it off; issue #92: text, a text tag's own words): its head moved (at: an elbow leader's knee), its leader bent (elbow; null: straight again),
         // pointed elsewhere (end; null: back on the element's middle), switched on or off (leader), its shape (leaderShape
         // straight or elbow, null: its type's; decision 331); what it shows: a field, a template of its own (""
         // or null: none), a tag type (null: none, the field shows). A door's or window's marker edited part by part (decision
@@ -317,13 +341,19 @@ public static class Tags
                 if (a.ContainsKey("field"))
                 {
                     attrs["field"] = CleanField((string?)a["field"]) ?? throw new CommandException("Which field does the tag show? A mark, a name, a class, a type or a parameter's name.");
-                    // A field chosen is what the tag shows: no template over it.
+                    // A field chosen is what the tag shows: no template or text of its own over it.
                     if (!a.ContainsKey("template")) attrs.Remove("template");
+                    if (!a.ContainsKey("text")) attrs.Remove("text");
                     if (!a.ContainsKey("tagType")) { attrs.Remove("tagType"); attrs.Remove(TagRules.FixedKey); }
                 }
                 if (a.ContainsKey("template"))
                 {
                     if (((string?)a["template"])?.Trim() is { Length: > 0 } tpl) attrs["template"] = tpl; else attrs.Remove("template");
+                }
+                // Its own text (issue #92): a text tag's words, typed (lines on new lines); "" or null: a tag that reads its field again.
+                if (a.ContainsKey("text"))
+                {
+                    if (((string?)a["text"])?.Trim('\n', '\r', ' ') is { Length: > 0 } txt) attrs["text"] = txt; else attrs.Remove("text");
                 }
                 if (a.ContainsKey("tagType"))
                 {

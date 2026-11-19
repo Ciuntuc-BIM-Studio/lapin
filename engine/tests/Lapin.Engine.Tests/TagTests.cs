@@ -107,4 +107,57 @@ public class TagTests
         Assert.Throws<CommandException>(() => f.Run("drafting.updateTag", new JsonObject { ["id"] = w, ["leader"] = true }));
         Assert.Throws<CommandException>(() => f.Run("drafting.updateTag", new JsonObject { ["id"] = t, ["field"] = "  " }));
     }
+
+    [Fact]
+    public void A_text_tag_says_what_was_typed_its_fields_live_on_a_tags_leader_and_follows_its_element()
+    {
+        // Issue #92 (report #162): a tag with a text box instead of a field.
+        var f = F();
+        var w = f.Wall(0, 0, 5, 0);
+        var view = "plan:" + f.Storey;
+        f.Run("element.setParam", new JsonObject { ["ids"] = new JsonArray(w), ["name"] = "Fire rating", ["kind"] = "text", ["value"] = "REI 90" });
+        var t = (string)f.Run("drafting.addTag", new JsonObject
+        {
+            ["viewId"] = view, ["element"] = w, ["at"] = new JsonArray(2.5, 2), ["text"] = "Check on site | twice\n\nFire: {FireRating}\n",
+        })!["id"]!;
+        Assert.Equal("Text tag", f.Model.Get(t)!.Name);
+        var d = Draw(f, view);
+        var texts = Texts(d);
+        // Its lines as typed (a bar kept, an empty line between them), its field read from the wall.
+        Assert.Contains("Check on site | twice", texts);
+        Assert.Contains("Fire: REI 90", texts);
+        Assert.Equal(["Check on site | twice", "", "Fire: REI 90"], Tags.FreeLines(f.Model, "\nCheck on site | twice\n\nFire: {FireRating}\n\n", f.Model.Get(w), "mm"));
+        // A tag's leader to the wall, drawn by the engine.
+        Assert.NotNull(Mark(d, t)["data"]!["end"]);
+        f.Run("element.setParam", new JsonObject { ["ids"] = new JsonArray(w), ["name"] = "Fire rating", ["kind"] = "text", ["value"] = "REI 120" });
+        Assert.Contains("Fire: REI 120", Texts(Draw(f, view)));
+        // It follows the wall as any tag.
+        var before = Pt(Mark(Draw(f, view), t)["data"]!["at"]);
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(w), ["op"] = "move", ["by"] = new JsonArray(0, -3) });
+        var after = Pt(Mark(Draw(f, view), t)["data"]!["at"]);
+        Assert.Equal(before[1] - 3, after[1], 6);
+        // Edited (a double-click): the new words; emptied: a tag that reads its field again; a field chosen takes its text off.
+        f.Run("drafting.updateTag", new JsonObject { ["id"] = t, ["text"] = "Kept" });
+        Assert.Contains("Kept", Texts(Draw(f, view)));
+        f.Run("drafting.updateTag", new JsonObject { ["id"] = t, ["text"] = "" });
+        Assert.Null(f.Model.Get(t)!.Attrs["text"]);
+        Assert.DoesNotContain("Kept", Texts(Draw(f, view)));
+        f.Run("drafting.updateTag", new JsonObject { ["id"] = t, ["text"] = "Again" });
+        f.Run("drafting.updateTag", new JsonObject { ["id"] = t, ["field"] = "name" });
+        Assert.Null(f.Model.Get(t)!.Attrs["text"]);
+        // A text tag says something.
+        Assert.Throws<CommandException>(() => f.Run("drafting.addTag", new JsonObject { ["viewId"] = view, ["element"] = w, ["at"] = new JsonArray(1, 1), ["text"] = " \n " }));
+    }
+
+    [Fact]
+    public void A_text_tag_of_a_build_up_type_writes_its_own_words_in_the_types_style()
+    {
+        var f = F();
+        var w = f.Wall(0, 0, 5, 0);
+        var view = "plan:" + f.Storey;
+        var t = (string)f.Run("drafting.addTag", new JsonObject { ["viewId"] = view, ["element"] = w, ["tagType"] = "buildup", ["at"] = new JsonArray(2.5, 2), ["text"] = "See detail 4" })!["id"]!;
+        var texts = Texts(Draw(f, view));
+        Assert.Contains("See detail 4", texts);
+        Assert.Equal("buildup", f.Model.Get(t)!.Str("tagType"));
+    }
 }
