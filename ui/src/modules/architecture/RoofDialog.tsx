@@ -14,7 +14,8 @@ import { DescriptorField, LengthField, NumberField } from '../../shell/cells';
 import { PendingDialog } from '../core/PendingDialog';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { mergeEdge, type Edge } from './roofEdges';
-import { Pencil, RotateCcw, Save, Trash2, X } from 'lucide-react';
+import { EDGE, OUTLINE, extentsOf, type LayerExtent } from './layerExtents';
+import { ArrowDown, ArrowUp, Pencil, Plus, RotateCcw, Save, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { FieldDescriptor } from '../../engine/protocol';
@@ -25,7 +26,13 @@ type Covering = { id: string; color: string; minPitch: number };
 /** A project's own style (decision 233), kept on the project. */
 type OwnStyle = { id: string; label: string; shape: string; pitch: number; structure?: string };
 
-type Item = { role: string; pts: number[] };
+type Item = { role: string; pts: number[]; name?: string; material?: string; layerRole?: string };
+interface RoofLayer { material: string; thickness: number; role?: string; name?: string }
+const ROOF_LAYER_ROLES = ['structure', 'insulation', 'sheathing', 'membrane', 'finish'] as const;
+const LAYER_ROLE_FILL: Record<string, string> = {
+  structure: '#c9b79c', insulation: '#e5c158', sheathing: '#b98a5a', membrane: '#4a5568', finish: '#b0563d',
+};
+const LAYER_PALETTE = ['#c9b79c', '#e5c158', '#b98a5a', '#4a5568', '#b0563d'];
 interface Preview {
   problem?: string | null;
   attrs?: Record<string, unknown>;
@@ -41,7 +48,7 @@ interface Preview {
 }
 interface Draft { style?: string; attrs: Record<string, unknown>; edges?: Edge[] }
 
-const TABS = [['shape', 'Shape'], ['covering', 'Covering and drainage'], ['framing', 'Framing'], ['openings', 'Openings']] as const;
+const TABS = [['shape', 'Shape'], ['covering', 'Covering and drainage'], ['layers', 'Layers'], ['framing', 'Framing'], ['openings', 'Openings']] as const;
 type Tab = (typeof TABS)[number][0];
 
 /** A flat roof, a vault or one without a structure: a deck under its covering. */
@@ -54,6 +61,7 @@ const FIELDS: Record<Tab, [string, ((v: (k: string) => unknown) => boolean)?][]>
   covering: [['covering'], ['coveringMaterial'], ['gutterProfile'], ['gutterMaterial', (v) => v('gutterProfile') !== 'none'],
     ['gutterWidth', (v) => v('gutterProfile') !== 'none'], ['gutterOffset', (v) => v('gutterProfile') !== 'none'], ['gutterDrop', (v) => v('gutterProfile') !== 'none'],
     ['gutterFall', (v) => v('gutterProfile') !== 'none'], ['gutterEnds', (v) => v('gutterProfile') !== 'none'], ['downpipes', (v) => v('gutterProfile') !== 'none'], ['snowGuards']],
+  layers: [],
   framing: [['structure', (v) => !['flat', 'barrel'].includes(String(v('shape')))],
     ['rafterSection', (v) => !['none'].includes(String(v('structure')))], ['rafterSpacing', (v) => v('structure') !== 'none'],
     ['purlins', (v) => (v('structure') ?? 'rafters') === 'rafters'], ['webSection', (v) => v('structure') === 'trusses'], ['collarHeight', (v) => v('structure') === 'collar'],
@@ -133,13 +141,22 @@ function SectionPlot({ s }: { s: NonNullable<Preview['section']> }) {
   const k = Math.min((W - 2 * pad) / Math.max(1e-6, x1 - x0), (H - 2 * pad - 14) / Math.max(1e-6, z1 - z0));
   const X = (x: number) => (W - (x1 - x0) * k) / 2 + (x - x0) * k;
   const Z = (z: number) => H - pad - 14 - (z - z0) * k;
-  const order = (r: string) => (r === 'wall' ? 0 : r === 'covering' || r === 'deck' ? 1 : r === 'plate' ? 2 : 3);
+  const order = (r: string) => (r === 'wall' ? 0 : r === 'covering' || r === 'deck' || r.startsWith('layer:') ? 1 : r === 'plate' ? 2 : 3);
   const items = [...s.items].sort((a, b) => order(a.role) - order(b.role));
+  const fillOf = (it: Item) => {
+    if (it.role.startsWith('layer:')) {
+      const idx = Number(it.role.slice(6));
+      return (it.layerRole && LAYER_ROLE_FILL[it.layerRole]) || LAYER_PALETTE[idx % LAYER_PALETTE.length];
+    }
+    return ROLE_FILL[it.role] ?? '#c99a64';
+  };
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-label="Section">
       {items.map((it, i) => (
         <polygon key={i} points={it.pts.reduce<string[]>((acc, v, j) => (j % 2 ? [...acc.slice(0, -1), `${acc[acc.length - 1]},${Z(v)}`] : [...acc, `${X(v)}`]), []).join(' ')}
-          fill={ROLE_FILL[it.role] ?? '#c99a64'} stroke="#3a2a1a" strokeWidth={0.5} opacity={it.role === 'covering' ? 0.85 : 1}><title>{it.role}</title></polygon>
+          fill={fillOf(it)} stroke="#3a2a1a" strokeWidth={0.5} opacity={it.role === 'covering' ? 0.85 : 1}>
+          <title>{it.name ? `${it.name}${it.material ? ` (${it.material})` : ''}` : it.role}</title>
+        </polygon>
       ))}
       {s.span != null && <text x={W / 2} y={H - 4} textAnchor="middle" fontSize={10}>{`${lengthText(s.span)} · ${lengthText(s.top - s.plate)}`}</text>}
     </svg>
@@ -205,6 +222,36 @@ export function RoofDialog() {
   const covering = coverings.find((c) => c.id === value('covering'));
   const pitch = Number(value('pitch'));
   const openings = (node.props.openings as { id: string; name: string; kind: string; width?: number; length?: number }[] | undefined) ?? [];
+  const rawLayers = value('layers');
+  const roofLayers: RoofLayer[] = Array.isArray(rawLayers) ? rawLayers : [];
+  const layerExtents = extentsOf({ layerExtents: value('layerExtents') });
+  const setLayersAndExtents = (nextLayers: RoofLayer[], nextExtents: LayerExtent[]) =>
+    setDraft((d) => ({ ...d, attrs: { ...d.attrs, layers: nextLayers, layerExtents: nextExtents } }));
+  const updateLayer = (i: number, patch: Partial<RoofLayer>) =>
+    set('layers', roofLayers.map((l, k) => (k === i ? { ...l, ...patch } : l)));
+  const removeLayer = (i: number) => {
+    const nextL = roofLayers.filter((_, k) => k !== i);
+    const nextE = layerExtents.filter((x) => x.layer !== i).map((x) => (x.layer > i ? { ...x, layer: x.layer - 1 } : x));
+    setLayersAndExtents(nextL, nextE);
+  };
+  const moveLayer = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= roofLayers.length) return;
+    const nextL = [...roofLayers];
+    [nextL[i], nextL[j]] = [nextL[j], nextL[i]];
+    const nextE = layerExtents.map((x) => (x.layer === i ? { ...x, layer: j } : x.layer === j ? { ...x, layer: i } : x));
+    setLayersAndExtents(nextL, nextE);
+  };
+  const addLayer = () =>
+    set('layers', [...roofLayers, { material: String(value('coveringMaterial') || value('covering') || 'Clay tile'), thickness: 0.04, role: roofLayers.length === 0 ? 'sheathing' : 'finish' }]);
+  const clearLayers = () => setLayersAndExtents([], []);
+  const setExtents = (next: LayerExtent[]) => set('layerExtents', next);
+  const edgeValue = (x: LayerExtent) => (x.edge === EDGE ? `${EDGE}:${x.index ?? 0}` : x.edge);
+  const fromEdge = (x: LayerExtent, v: string): LayerExtent => {
+    if (v.startsWith(`${EDGE}:`)) return { ...x, edge: EDGE, index: Number(v.slice(EDGE.length + 1)) };
+    const { index: _drop, ...rest } = x;
+    return { ...rest, edge: v };
+  };
 
   const rows = FIELDS[tab].filter(([k, when]) => fields.has(k) && (!when || when(value))).map(([k]) => {
     const f = fields.get(k)!;
@@ -295,6 +342,73 @@ export function RoofDialog() {
                     )}
                   </>
                 )}
+                {tab === 'layers' && (
+                  <div className="roof-layers" data-testid="roof-layers-editor">
+                    {roofLayers.length === 0 ? (
+                      <p className="muted small">Using default covering and structure. Add layers to define a custom multi-layer buildup.</p>
+                    ) : (
+                      <>
+                        <p className="muted small">Bottom (inside) to top (outside) above the rafters or base plane.</p>
+                        <table className="roof-edges">
+                          <thead><tr><th>#</th><th>Role</th><th>Material</th><th>Thickness</th><th /></tr></thead>
+                          <tbody>
+                            {roofLayers.map((l, i) => (
+                              <tr key={i}>
+                                <td className="num">{i + 1}</td>
+                                <td>
+                                  <select value={l.role ?? ''} onChange={(e) => updateLayer(i, { role: e.target.value || undefined })}>
+                                    <option value="">—</option>
+                                    {ROOF_LAYER_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                                  </select>
+                                </td>
+                                <td><MaterialPicker value={l.material} placeholder="none" allowEmpty onChange={(m) => updateLayer(i, { material: m })} /></td>
+                                <td><LengthField metres={l.thickness} min={0.001} max={2} onCommit={(m) => { if (m != null) updateLayer(i, { thickness: m }); }} /></td>
+                                <td className="row" style={{ gap: 2 }}>
+                                  <button type="button" className="icon mini" title="Move down" disabled={i === 0} onClick={() => moveLayer(i, -1)}><ArrowUp size={12} /></button>
+                                  <button type="button" className="icon mini" title="Move up" disabled={i === roofLayers.length - 1} onClick={() => moveLayer(i, 1)}><ArrowDown size={12} /></button>
+                                  <button type="button" className="icon mini" title="Remove" onClick={() => removeLayer(i)}><X size={12} /></button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </>
+                    )}
+                    <div className="row" style={{ gap: 6, marginTop: 6 }}>
+                      <button type="button" className="small" data-testid="roof-layer-add" onClick={addLayer}><Plus size={12} /> Add layer</button>
+                      {roofLayers.length > 0 && (
+                        <button type="button" className="small" onClick={clearLayers}>Clear custom layers</button>
+                      )}
+                    </div>
+                    {roofLayers.length > 0 && (
+                      <div className="layer-extents" style={{ marginTop: 12 }}>
+                        <p className="eyebrow">Unlocked layer extensions</p>
+                        {layerExtents.length === 0 ? (
+                          <p className="muted small">Every layer ends at the roof's overhang.</p>
+                        ) : (
+                          layerExtents.map((x, ei) => (
+                            <div key={ei} className="layer-extent" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) auto auto', gap: 4, alignItems: 'center', marginTop: 6 }}>
+                              <select style={{ minWidth: 0 }} value={x.layer} onChange={(e) => setExtents(layerExtents.map((y, k) => (k === ei ? { ...y, layer: Number(e.target.value) } : y)))}>
+                                {roofLayers.map((l, li) => <option key={li} value={li}>{li + 1} · {l.name || l.material || l.role || 'Layer'}</option>)}
+                              </select>
+                              <select style={{ minWidth: 0 }} value={edgeValue(x)} onChange={(e) => setExtents(layerExtents.map((y, k) => (k === ei ? fromEdge(y, e.target.value) : y)))}>
+                                <option value={OUTLINE}>All round</option>
+                                {contour.map((_, idx) => <option key={idx} value={`${EDGE}:${idx}`}>Edge {idx + 1}</option>)}
+                              </select>
+                              <LengthField metres={x.offset} min={-1} max={1} onCommit={(m) => { if (m != null) setExtents(layerExtents.map((y, k) => (k === ei ? { ...y, offset: m } : y))); }} />
+                              <button type="button" className="icon" title="Remove" onClick={() => setExtents(layerExtents.filter((_, k) => k !== ei))}><X size={12} /></button>
+                            </div>
+                          ))
+                        )}
+                        <div className="row" style={{ marginTop: 6 }}>
+                          <button type="button" className="small" data-testid="roof-layer-extent-add" onClick={() => setExtents([...layerExtents, { layer: 0, edge: OUTLINE, offset: 0.05 }])}>
+                            <Plus size={12} /> Add layer extension
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {tab === 'openings' && (
                   openings.length === 0
                     ? <p className="muted small">No roof windows or dormers yet: Architecture → Roof window or Dormer, then a click on a slope.</p>
@@ -316,9 +430,9 @@ export function RoofDialog() {
                 )}
               </div>
               <div className="joinery-preview">
-                {preview && (tab === 'framing' && preview.section ? <SectionPlot s={preview.section} /> : <PlanPlot p={preview} edges={edges} onEdge={cycleEdge} />)}
-                {tab !== 'framing' && <p className="muted small">Click an edge: auto, eave, gable.</p>}
-                {tab === 'framing' && preview?.section && <p className="muted small">Section across the ridge, at the middle.</p>}
+                {preview && ((tab === 'framing' || tab === 'layers') && preview.section ? <SectionPlot s={preview.section} /> : <PlanPlot p={preview} edges={edges} onEdge={cycleEdge} />)}
+                {tab !== 'framing' && tab !== 'layers' && <p className="muted small">Click an edge: auto, eave, gable.</p>}
+                {(tab === 'framing' || tab === 'layers') && preview?.section && <p className="muted small">Section across the ridge, at the middle.</p>}
                 {preview?.problem && <p className="error-text">{preview.problem}</p>}
                 {preview?.summary && (
                   <dl className="fields roof-summary">

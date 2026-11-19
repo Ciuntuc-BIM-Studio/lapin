@@ -300,7 +300,7 @@ public static class RoofSolver
     }
 
     /// <summary>Keep the part of a planar loop where inside(p) ≥ 0 (Sutherland–Hodgman, one half-plane).</summary>
-    static List<Vec3> ClipHalf(IReadOnlyList<Vec3> loop, Func<Vec3, double> inside)
+    internal static List<Vec3> ClipHalf(IReadOnlyList<Vec3> loop, Func<Vec3, double> inside)
     {
         var o = Polygon2.ClipHalf(loop, inside, Eps);
         return o.Where((p, i) => (p - o[(i + o.Count - 1) % o.Count]).Length > 1e-9).ToList();

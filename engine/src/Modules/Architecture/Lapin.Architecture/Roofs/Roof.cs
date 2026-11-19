@@ -5,6 +5,12 @@ using Lapin.Platform;
 
 namespace Lapin.Architecture.Roofs;
 
+/// <summary>One layer in a roof's custom compound buildup (bottom-to-top above the rafters or base plane).</summary>
+public sealed record RoofLayer(string Material, double Thickness, string? Role = null, string? Name = null)
+{
+    public string DisplayName => Name is { Length: > 0 } n ? n : Material is { Length: > 0 } m ? m : Role is { Length: > 0 } r ? r : "Layer";
+}
+
 /// <summary>
 /// A roof (adapted from BubbleBIM Pro's): an IfcRoof is its outline (the wall
 /// line, storey-local, counter-clockwise) at the top of its storey, and its
@@ -69,9 +75,30 @@ public static class Roof
         public double BaseZ => PlateZ + (Framed ? WallPlate.D : 0);
         /// <summary>A roof without framing: its deck's thickness (decision 329), the roof's own, else 16 cm.</summary>
         public double DeckThickness => Roof.NumOrNull("deckThickness") is { } t && t > 0.005 ? t : Deck;
-        /// <summary>From the planes to the covering's underside: rafters and battens, or the deck.</summary>
-        public double StructureDepth => Framed ? Rafter.D + Battens : DeckThickness;
-        public double Thickness => StructureDepth + Covering.Thickness;
+        /// <summary>Custom multi-layer buildup (bottom-to-top above the rafters or base plane); empty for legacy covering + structure roofs.</summary>
+        public IReadOnlyList<RoofLayer> Layers { get; } = LayersOf(Roof);
+        public bool HasLayers => Layers.Count > 0;
+        /// <summary>Where the first custom layer starts along the slope normal: above the rafters when framed, else on the base plane.</summary>
+        public double BaseLayerOffset => Framed ? Rafter.D : 0;
+        /// <summary>From the planes to the covering's underside: rafters and battens, or the deck (or rafters alone when custom layers are present).</summary>
+        public double StructureDepth => HasLayers ? (Framed ? Rafter.D : Layers.Sum(l => l.Thickness)) : (Framed ? Rafter.D + Battens : DeckThickness);
+        public double Thickness => HasLayers ? BaseLayerOffset + Layers.Sum(l => l.Thickness) : StructureDepth + Covering.Thickness;
+    }
+
+    /// <summary>Custom layers on a roof (bottom-to-top above the rafters or base plane); empty for a standard covering + structure roof.</summary>
+    public static IReadOnlyList<RoofLayer> LayersOf(Entity roof)
+    {
+        if (roof.Attrs["layers"] is not JsonArray arr || arr.Count == 0) return [];
+        var o = new List<RoofLayer>(arr.Count);
+        foreach (var item in arr.OfType<JsonObject>())
+        {
+            if (Json.Number(item["thickness"]) is not { } t || !double.IsFinite(t) || t <= 1e-6) continue;
+            var mat = ((string?)item["material"] ?? "").Trim();
+            var role = ((string?)item["role"])?.Trim();
+            var name = ((string?)item["name"])?.Trim();
+            o.Add(new RoofLayer(mat, t, string.IsNullOrEmpty(role) ? null : role, string.IsNullOrEmpty(name) ? null : name));
+        }
+        return o;
     }
 
     /// <summary>A roof's outline: its corners, its edges straight (its edge rules are per straight edge; a curved edge is not offered on roofs).</summary>
@@ -203,17 +230,87 @@ public static class Roof
     public static (RoofShape? Shape, string? Problem) Solve(Resolved r)
     {
         if (r.Flat) return (null, null);
-        try
-        {
-            var s = r.Barrel ? RoofSolver.SolveBarrel(r.Outline, r.Rules, r.Rise) : RoofSolver.Solve(r.Outline, r.Rules, r.Mansard);
-            Vec3 Up(Vec3 p) => p with { Z = p.Z + r.BaseZ };
-            return (new RoofShape(
-                s.Planes.Select(p => p with { Points = p.Points.Select(Up).ToArray() }).ToList(),
-                s.Gables.Select(x => (x.Edge, x.Points.Select(Up).ToArray())).ToList(),
-                s.Lines.Select(l => l with { A = Up(l.A), B = Up(l.B) }).ToList(),
-                s.Outline, s.Rules, s.Arc is { } arc ? arc with { Zc = arc.Zc + r.BaseZ } : null), null);
-        }
+        try { return (SolveShapeOnly(r.Outline, r.Rules, r.BaseZ, r.Barrel, r.Rise, r.Mansard), null); }
         catch (ArgumentException e) { return (null, e.Message); }
+    }
+
+    static RoofShape SolveShapeOnly(IReadOnlyList<Vec2> outline, IReadOnlyList<EdgeRule> rules, double baseZ, bool barrel, double? rise, Mansard? mansard)
+    {
+        var s = barrel ? RoofSolver.SolveBarrel(outline, rules, rise) : RoofSolver.Solve(outline, rules, mansard);
+        Vec3 Up(Vec3 p) => p with { Z = p.Z + baseZ };
+        return new RoofShape(
+            s.Planes.Select(p => p with { Points = p.Points.Select(Up).ToArray() }).ToList(),
+            s.Gables.Select(x => (x.Edge, x.Points.Select(Up).ToArray())).ToList(),
+            s.Lines.Select(l => l with { A = Up(l.A), B = Up(l.B) }).ToList(),
+            s.Outline, s.Rules, s.Arc is { } arc ? arc with { Zc = arc.Zc + baseZ } : null);
+    }
+
+    /// <summary>
+    /// Per-edge extension offsets for layer <paramref name="layerIndex"/> in oriented outline order (matching <see cref="RoofShape.Outline"/>).
+    /// Null when every edge has zero offset.
+    /// </summary>
+    public static double[]? LayerOffsets(Resolved r, int layerIndex)
+    {
+        var extents = LayerExtents.Of(r.Roof);
+        if (extents.Count == 0) return null;
+        var d = LayerExtents.SlabDistances(extents, layerIndex, r.Outline.Count, x => x.Offset);
+        if (d == null) return null;
+        var pts = r.Outline.ToList();
+        if (pts.Count > 1 && (pts[0] - pts[^1]).Length < 1e-9) pts.RemoveAt(pts.Count - 1);
+        var n = pts.Count;
+        if (n >= 3 && Polygon2.SignedArea(pts) < 0)
+            d = Enumerable.Range(0, n).Select(j => d[(2 * n - 2 - j) % n]).ToArray();
+        return d;
+    }
+
+    /// <summary>A flat roof layer's footprint in plan after applying its unlocked edge extensions; null if degenerate.</summary>
+    public static Vec2[]? LayerEaveOutline(Resolved r, int layerIndex)
+    {
+        var (pts, rules) = RoofSolver.Orient(r.Outline, r.Rules);
+        var d = LayerOffsets(r, layerIndex);
+        var oh = d == null ? rules.Select(x => x.Overhang).ToArray() : Enumerable.Range(0, pts.Count).Select(i => rules[i].Overhang + d[i]).ToArray();
+        var poly = RoofSolver.OffsetEdges(pts, oh);
+        return Polygon2.SignedArea(poly) > 1e-6 && LayerExtents.Simple(poly) ? poly : null;
+    }
+
+    /// <summary>
+    /// The solved roof shape for a single layer after applying its unlocked edge extensions (<c>layerExtents</c>).
+    /// Returns <paramref name="baseShape"/> when the layer has no extensions.
+    /// </summary>
+    public static RoofShape LayerShape(Resolved r, RoofShape baseShape, int layerIndex, List<string>? diags = null)
+    {
+        if (LayerOffsets(r, layerIndex) is not { } d) return baseShape;
+        var n = baseShape.Outline.Count;
+        var rules = baseShape.Rules;
+        var extRules = Enumerable.Range(0, n).Select(i => rules[i] with { Overhang = Math.Max(0, rules[i].Overhang + d[i]) }).ToList();
+        RoofShape? solved = null;
+        var problem = r.Barrel ? RoofSolver.BarrelProblem(baseShape.Outline, extRules, r.Rise) : RoofSolver.Problem(baseShape.Outline, extRules);
+        if (problem == null)
+        {
+            try { solved = SolveShapeOnly(baseShape.Outline, extRules, r.BaseZ, r.Barrel, r.Rise, r.Mansard); }
+            catch (ArgumentException) { solved = null; }
+        }
+        if (solved == null)
+        {
+            diags?.Add($"Layer {layerIndex + 1}: its edge extensions could not be built; using the roof's outline.");
+            return baseShape;
+        }
+        var planes = solved.Planes.ToList();
+        for (var i = 0; i < n; i++)
+        {
+            var netOh = rules[i].Overhang + d[i];
+            if (netOh >= -1e-9) continue;
+            var a = solved.Outline[i];
+            var b = solved.Outline[(i + 1) % n];
+            var nIn = (b - a).Normalized().Perp;
+            for (var pi = 0; pi < planes.Count; pi++)
+            {
+                if (rules[i].Kind == EdgeKind.Eave && planes[pi].Edge != i) continue;
+                var clipped = RoofSolver.ClipHalf(planes[pi].Points, q => Vec2.Dot(q.Xy - a, nIn) + netOh);
+                planes[pi] = planes[pi] with { Points = clipped };
+            }
+        }
+        return solved with { Planes = planes };
     }
 
     /// <summary>A barrel roof's span: between the two eaves the shape gives the outline; null when it has no such pair.</summary>
@@ -254,24 +351,60 @@ public static class Roof
         GeometryPart DeckPart(Solid s) => new("Deck", RoofCoverings.DeckColorOf(roof, m), s, RoofCoverings.DeckMaterialOf(roof, m), "deck");
         if (r.Flat)
         {
-            if (Prism.ExtrudeFootprint(eaves, r.BaseZ, r.StructureDepth, "deck") is { } deck) parts.Add(DeckPart(deck));
-            if (Prism.ExtrudeFootprint(eaves, r.BaseZ + r.StructureDepth, r.Covering.Thickness, "covering") is { } slab) parts.Add(new GeometryPart("Covering", coveringColor, slab, coveringMaterial, "covering"));
+            if (r.HasLayers)
+            {
+                var from = r.BaseZ;
+                for (var li = 0; li < r.Layers.Count; li++)
+                {
+                    var layer = r.Layers[li];
+                    var footprint = LayerEaveOutline(r, li) ?? eaves;
+                    var matId = layer.Material.Length > 0 ? Materials.Find(m, layer.Material)?.Id ?? layer.Material : null;
+                    var color = layer.Material.Length > 0 ? Materials.ColorOf(m, matId) : "#c9ced6";
+                    if (Prism.ExtrudeFootprint(footprint, from, layer.Thickness, $"layer:{li}") is { } solid)
+                        parts.Add(new GeometryPart(layer.DisplayName, color, solid, matId, $"layer:{li}"));
+                    from += layer.Thickness;
+                }
+            }
+            else
+            {
+                if (Prism.ExtrudeFootprint(eaves, r.BaseZ, r.StructureDepth, "deck") is { } deck) parts.Add(DeckPart(deck));
+                if (Prism.ExtrudeFootprint(eaves, r.BaseZ + r.StructureDepth, r.Covering.Thickness, "covering") is { } slab) parts.Add(new GeometryPart("Covering", coveringColor, slab, coveringMaterial, "covering"));
+            }
             return new ElementGeometry(parts, plan, r.Outline);
         }
         var (shape, problem) = Solve(r);
         if (shape == null) return new ElementGeometry([], plan, r.Outline, [problem ?? "The roof cannot be solved."]);
         // The covering's least pitch: the project's rule pack's, else the catalogue's (docs/plan-user-extensibility.md §5.4).
         var minPitch = RoofRuleSection.MinPitch(m, r.Covering);
-        if (!r.Barrel && r.Rules.Any(x => x.Kind == EdgeKind.Eave && x.Pitch < minPitch))
+        if (!r.HasLayers && !r.Barrel && r.Rules.Any(x => x.Kind == EdgeKind.Eave && x.Pitch < minPitch))
             diags.Add($"{r.Covering.Id} needs a pitch of at least {minPitch:0}°.");
 
         // Each plane as the covering's body, over the rafters and battens (or the deck), vertically, so planes of one pitch share their hips and ridges.
         // A vault's strips go out along the circle's radius instead, so they meet on their shared edges.
         var openings = r.Barrel ? [] : RoofOpenings.Place(roof, shape, m, diags);
         if (r.Barrel && RoofOpenings.Of(roof).Any()) diags.Add("A barrel roof takes no roof windows or dormers yet: they are left out.");
-        if (!r.Framed && Band(r, shape, openings, 0, r.StructureDepth, "deck") is { Count: > 0 } deckBody) parts.Add(DeckPart(Openings.Combine(deckBody, "deck")));
-        var covering = Band(r, shape, openings, r.StructureDepth, r.Covering.Thickness, "covering");
-        if (covering.Count > 0) parts.Add(new GeometryPart("Covering", coveringColor, Openings.Combine(covering, "covering"), coveringMaterial, "covering"));
+        if (r.HasLayers)
+        {
+            var from = r.BaseLayerOffset;
+            for (var li = 0; li < r.Layers.Count; li++)
+            {
+                var layer = r.Layers[li];
+                var lShape = LayerShape(r, shape, li, diags);
+                var tag = $"layer:{li}";
+                var matId = layer.Material.Length > 0 ? Materials.Find(m, layer.Material)?.Id ?? layer.Material : null;
+                var color = layer.Material.Length > 0 ? Materials.ColorOf(m, matId) : "#c9ced6";
+                var solids = Band(r, lShape, openings, from, layer.Thickness, tag);
+                if (solids.Count > 0)
+                    parts.Add(new GeometryPart(layer.DisplayName, color, Openings.Combine(solids, tag), matId, tag));
+                from += layer.Thickness;
+            }
+        }
+        else
+        {
+            if (!r.Framed && Band(r, shape, openings, 0, r.StructureDepth, "deck") is { Count: > 0 } deckBody) parts.Add(DeckPart(Openings.Combine(deckBody, "deck")));
+            var covering = Band(r, shape, openings, r.StructureDepth, r.Covering.Thickness, "covering");
+            if (covering.Count > 0) parts.Add(new GeometryPart("Covering", coveringColor, Openings.Combine(covering, "covering"), coveringMaterial, "covering"));
+        }
 
         // Its roof windows and dormers, as parts of it.
         var (frames, glass, dormerWalls, dormerRoofs) = (new List<Solid>(), new List<Solid>(), new List<Solid>(), new List<Solid>());
@@ -375,7 +508,13 @@ public static class Roof
     public static Solid? Envelope(Entity roof, IModelView m)
     {
         if (Resolve(roof, m) is not { } r) return null;
-        if (r.Framed) return Geometry(roof, m)?.Parts.FirstOrDefault(p => p.Key == "covering")?.Solid;
+        if (r.Framed)
+        {
+            var g = Geometry(roof, m);
+            if (!r.HasLayers) return g?.Parts.FirstOrDefault(p => p.Key == "covering")?.Solid;
+            var layers = g?.Parts.Where(p => p.Key?.StartsWith("layer:") == true).Select(p => p.Solid).ToList() ?? [];
+            return layers.Count == 0 ? null : Openings.Combine(layers, "covering");
+        }
         if (r.Flat) return Prism.ExtrudeFootprint(EaveOutline(r), r.BaseZ, r.Thickness, "covering");
         var (shape, _) = Solve(r);
         if (shape == null) return null;
@@ -391,8 +530,12 @@ public static class Roof
         {
             var flat = Math.Abs(Polygon2.SignedArea(EaveOutline(r)));
             yield return new QuantitySet("Qto_RoofBaseQuantities", [new("GrossArea", flat, "AREA", "Covering")]);
-            if (CoveringSet(roof, r, m, flat, flat) is { } fc) yield return fc;
-            if (DeckSet(roof, r, m, flat, flat, geometry) is { } fd) yield return fd;
+            if (r.HasLayers) { foreach (var ls in LayerQuantities(r, m, flat, flat, geometry)) yield return ls; }
+            else
+            {
+                if (CoveringSet(roof, r, m, flat, flat) is { } fc) yield return fc;
+                if (DeckSet(roof, r, m, flat, flat, geometry) is { } fd) yield return fd;
+            }
             yield break;
         }
         var (shape, _) = Solve(r);
@@ -401,8 +544,8 @@ public static class Roof
         var holes = RoofOpenings.Place(roof, shape, m, []);
         var q = new List<Quantity>
         {
-            new("GrossArea", shape.Planes.Sum(p => VecMath.NewellNormal(p.Points).Length), "AREA", $"Covering ({r.Covering.Id})"),
-            new("NetArea", shape.Planes.Sum(p => VecMath.NewellNormal(p.Points).Length) - holes.Sum(h => VecMath.NewellNormal(h.Hole.ToList()).Length), "AREA", "Covering, net"),
+            new("GrossArea", shape.Planes.Sum(p => VecMath.NewellNormal(p.Points).Length), "AREA", r.HasLayers ? "Roof area" : $"Covering ({r.Covering.Id})"),
+            new("NetArea", shape.Planes.Sum(p => VecMath.NewellNormal(p.Points).Length) - holes.Sum(h => VecMath.NewellNormal(h.Hole.ToList()).Length), "AREA", r.HasLayers ? "Roof area, net" : "Covering, net"),
             new("ProjectedArea", shape.Planes.Sum(p => Math.Abs(Polygon2.SignedArea(p.Points.Select(x => x.Xy).ToList()))), "AREA", "In plan"),
         };
         foreach (var (kind, name, label) in new[]
@@ -415,8 +558,12 @@ public static class Roof
             if (len > 1e-6) q.Add(new(name, len, "LENGTH", label));
         }
         yield return new QuantitySet("Qto_RoofBaseQuantities", q);
-        if (CoveringSet(roof, r, m, q[0].Value, q[1].Value) is { } cs) yield return cs;
-        if (!r.Framed && DeckSet(roof, r, m, q[0].Value, q[1].Value, geometry) is { } ds) yield return ds;
+        if (r.HasLayers) { foreach (var ls in LayerQuantities(r, m, q[0].Value, q[1].Value, geometry)) yield return ls; }
+        else
+        {
+            if (CoveringSet(roof, r, m, q[0].Value, q[1].Value) is { } cs) yield return cs;
+            if (!r.Framed && DeckSet(roof, r, m, q[0].Value, q[1].Value, geometry) is { } ds) yield return ds;
+        }
         if (DormerSet(roof, r, m, holes) is { } dr) yield return dr;
         if (RoofOpenings.Quantities(holes).ToList() is { Count: > 0 } oq) yield return new QuantitySet("Lapin_RoofOpeningQuantities", oq, "openings", "Roof windows and dormers");
 
@@ -518,6 +665,25 @@ public static class Roof
             new("GrossVolume", r.Barrel && built is { } bg ? bg : gross * t, "VOLUME", "Gross volume"),
             new("NetVolume", built ?? net * t, "VOLUME", "Net volume"),
         ], "deck", $"Deck ({RoofCoverings.DeckNameOf(roof)})", material);
+    }
+
+    static IEnumerable<QuantitySet> LayerQuantities(Resolved r, IModelView m, double gross, double net, ElementGeometry? geometry)
+    {
+        for (var li = 0; li < r.Layers.Count; li++)
+        {
+            var layer = r.Layers[li];
+            var matId = layer.Material.Length > 0 ? Materials.Find(m, layer.Material)?.Id ?? layer.Material : null;
+            var key = $"layer:{li}";
+            var built = geometry?.Parts.FirstOrDefault(p => p.Key == key) is { } part ? Measure.Volume(part.Solid) : (double?)null;
+            yield return new QuantitySet("Lapin_RoofLayerQuantities",
+            [
+                new("Width", layer.Thickness, "LENGTH", "Thickness"),
+                new("GrossArea", gross, "AREA", "Gross area"),
+                new("NetArea", net, "AREA", "Net area"),
+                new("GrossVolume", gross * layer.Thickness, "VOLUME", "Gross volume"),
+                new("NetVolume", built ?? net * layer.Thickness, "VOLUME", "Net volume"),
+            ], key, layer.DisplayName, matId);
+        }
     }
 
     /// <summary>The body between a strip of the vault's underside and the same strip moved out: 8 corners, 6 faces.</summary>
