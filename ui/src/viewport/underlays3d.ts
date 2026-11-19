@@ -6,8 +6,8 @@
  * batch is one LineSegments (a colour a vertex, thin, never picked) and its
  * hatches one faint mesh, so a drawing of tens of thousands of lines is a few
  * objects. They are asked for again only when what they are made of changes:
- * the DXF's shapes, the project (its layers, its imports' switches), a link,
- * a view or a storey. View → DXF in 3D shows or hides them all.
+ * the DXF's shapes and its blocks kept as symbols (issue #103), the project
+ * (its layers, its imports' switches), a link, a view, a storey or a symbol. View → DXF in 3D shows or hides them all.
  */
 
 import * as THREE from 'three';
@@ -24,17 +24,17 @@ export interface UnderlayBatch {
 /** Lifted off their plane by this much (m), towards the side it is seen from, so a slab's top does not swallow them. */
 export const LIFT = 0.002;
 
-/** A drafted entity that is a DXF's flat drawing (its heights make it an element in space instead). */
+/** A drafted entity that is a DXF's flat drawing, a shape or a block kept as a symbol (its heights make a shape an element in space instead). */
 export const isUnderlayNode = (n: NodeDto): boolean =>
-  n.type === 'IfcAnnotation' && n.props.predefinedType === 'DRAFT' && (n.props.dxf === true || typeof n.props.dxfImport === 'string') && !Array.isArray(n.props.heights);
+  n.type === 'IfcAnnotation' && (n.props.predefinedType === 'DRAFT' || n.props.predefinedType === 'SYMBOL') && (n.props.dxf === true || typeof n.props.dxfImport === 'string') && !Array.isArray(n.props.heights);
 
-/** What the batches are made of: the DXF shapes, and what places or hides them (the project, links, views, storeys). */
+/** What the batches are made of: the DXF shapes and symbols, and what places, draws or hides them (the project, links, views, storeys, symbols' definitions). */
 export function underlaySources(nodes: ReadonlyMap<string, NodeDto>): { refs: NodeDto[]; any: boolean } {
   const refs: NodeDto[] = [];
   let any = false;
   for (const n of nodes.values()) {
     if (n.type === 'IfcAnnotation') { if (isUnderlayNode(n)) { refs.push(n); any = true; } }
-    else if (n.type === 'IfcProject' || n.type === 'LapinLink' || n.type === 'LapinView' || n.type === 'IfcBuildingStorey') refs.push(n);
+    else if (n.type === 'IfcProject' || n.type === 'LapinLink' || n.type === 'LapinView' || n.type === 'IfcBuildingStorey' || n.type === 'LapinSymbol') refs.push(n);
   }
   return { refs, any };
 }

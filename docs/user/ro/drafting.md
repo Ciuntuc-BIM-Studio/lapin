@@ -403,7 +403,7 @@ Alege **Adnotări → Simboluri → Simbol** (sau scrie **SYMBOL**, **SYM**) în
 
 ![Trei copii: așezată ca desenată, oglindită, rotită](shots/symbol-placed.webp)
 
-Un simbol așezat se selectează ca orice element. În **Proprietăți → Simbol** îl poți schimba cu alt simbol, îi poți da **Unghiul** și **Factor de mărime**, **Oglindire X** și **Oglindire Y**, schimba valoarea fiecărui atribut, alege stratul și culoarea, **Editează simbolul** (simbolul însuși: toate copiile îl urmează) și **Explodează**, care înlocuiește copia cu linii, forme și texte simple, pe care le editezi pe rând. Mută, Rotește, Oglindește, Copiază și celelalte unelte de desen merg pe un simbol ca pe orice element desenat. Un simbol aparține vederii lui, ca o cotă, iar planșele, PDF-ul și DXF-ul îl tipăresc așa cum îl vezi (în DXF e un bloc).
+Un simbol așezat se selectează ca orice element. În **Proprietăți → Simbol** îl poți schimba cu alt simbol, îi poți da **Unghiul** și **Factor de mărime**, **Oglindire X** și **Oglindire Y**, schimba valoarea fiecărui atribut, alege stratul și culoarea, **Editează simbolul** (simbolul însuși: toate copiile îl urmează) și **Explodează**, care înlocuiește copia cu linii, forme și texte simple, pe care le editezi pe rând. Mută, Rotește, Oglindește, Copiază și celelalte unelte de desen merg pe un simbol ca pe orice element desenat. Un simbol aparține vederii lui, ca o cotă, iar planșele, PDF-ul și DXF-ul îl tipăresc așa cum îl vezi (în DXF e un bloc). În **vederea 3D** un simbol așezat pe un plan, o secțiune sau o fațadă stă pe planul acelei vederi, ca liniile desenate (doar liniile lui, nu și textele); **Vedere → Desene în 3D** îl arată sau îl ascunde odată cu ele.
 
 ![Proprietățile unui simbol așezat](shots/symbol-properties.webp)
 
@@ -469,7 +469,7 @@ Un desen pe layere se convertește layer cu layer: **Desen → Convertește → 
 
 ### Blocurile DXF ca simboluri
 
-Un DXF cu blocuri (scaune, uși, simbolurile unui birou) le poate păstra: în dialogul de import, **Blocuri → păstrează ca simboluri**. Fiecare bloc devine un simbol al proiectului, la scara modelului, iar fiecare inserție devine o copie așezată, rotită și întoarsă ca în fișier; fără bifă, blocurile sunt descompuse în linii. Blocurile sunt apoi în **Gestionare → Simboluri…** ca orice alt simbol, unde poți edita unul și toate copiile îl urmează, iar o copie se selectează, se mută și se numără ca un singur element. Mesajul de după import numără simbolurile și copiile.
+Un DXF cu blocuri (scaune, uși, simbolurile unui birou) le poate păstra: în dialogul de import, **Blocuri → păstrează ca simboluri**. Fiecare bloc devine un simbol al proiectului, la scara modelului, iar fiecare inserție devine o copie așezată, rotită și întoarsă ca în fișier; fără bifă, blocurile sunt descompuse în linii. Blocurile sunt apoi în **Gestionare → Simboluri…** ca orice alt simbol, unde poți edita unul și toate copiile îl urmează, iar o copie se selectează, se mută și se numără ca un singur element. Mesajul de după import numără simbolurile și copiile. În vederea 3D copiile stau pe planul vederii împreună cu restul desenului DXF, acolo unde ar sta blocurile descompuse: **În 3D** din proprietățile unei copii comută tot importul, iar **Vedere → DXF în 3D** toate importurile.
 
 ![Trei inserții ale unui bloc, ca simboluri așezate](shots/dxf-blocks.webp)
 

@@ -29,6 +29,49 @@ public static class SymbolInstances
         }
     }
 
+    /// <summary>
+    /// A placed symbol's drawing in its view's own metres, as it draws there (its pose, scale, flips and the layers its
+    /// attributes hide): its strokes as runs of points (a closed one back to its start, circles and arcs in chords) and
+    /// the loops of its fills and hatches. Texts are left out. Null when its symbol is gone.
+    /// </summary>
+    public static (List<List<Vec2>> Runs, List<List<Vec2>> Loops)? Linework(IModelView m, Entity e, Entity view)
+    {
+        if (Symbols.DefOf(m, e.Str("symbolId")) is not { } def) return null;
+        var (at, angle, scale, fx, fy) = Symbols.Pose(e);
+        var mm = (view.NumOrNull("scale") ?? 100) / 1000;
+        var model = def.Scale == "model";
+        var unit = (model ? 0.001 : mm) * scale;
+        var x = new SymbolXf(at, angle * Math.PI / 180, unit, model ? scale * 0.001 / mm : scale, fx, fy);
+        var sd = SymbolRender.Render(m, def, Symbols.Resolver(m, def, e, view, at), unit);
+        var runs = new List<List<Vec2>>();
+        foreach (var s in sd.Strokes)
+        {
+            var pts = s.Pts.Select(x.Point).ToList();
+            if (s.Closed && pts.Count >= 3 && (pts[0] - pts[^1]).Length > 1e-12) pts.Add(pts[0]);
+            if (pts.Count >= 2) runs.Add(pts);
+        }
+        var loops = sd.Fills.SelectMany(f => f.Loops).Concat(sd.Hatches.SelectMany(h => h.Loops))
+            .Select(l => l.Select(x.Point).ToList()).Where(l => l.Count >= 3).ToList();
+        return (runs, loops);
+    }
+
+    /// <summary>
+    /// A placed symbol in the 3D view (issue #103): its strokes on its view's plane, as a drafted shape stands there
+    /// (<see cref="Drafts.Geometry3d"/>), in its own colour or its layer's. A DXF's block kept as a symbol (<c>dxf</c>, or
+    /// made by an import) is part of the DXF's drawing and comes with it in <see cref="Underlays3d"/> instead, under the
+    /// import's and the link's 3D switches; a symbol on a sheet or on a 3D view has none.
+    /// </summary>
+    public static ElementGeometry? Geometry3d(Entity e, IModelView m, IServices services)
+    {
+        if (e.PredefinedType != Predefined || Underlays3d.IsUnderlay(e)) return null;
+        if (Views.Find(m, e.Str("viewId") ?? "") is not { } view || view.Str("kind") is "3d") return null;
+        if (Linework(m, e, view) is not { Runs.Count: > 0 } drawn) return null;
+        var xs = drawn.Runs.SelectMany(r => r).Select(p => p.X).ToList();
+        if (Views.PlaneOf(m, services, view, (xs.Min() + xs.Max()) / 2) is not { } plane) return null;
+        var color = e.Str("color") ?? Drafts.LayerOf(m, e.Str("layer")).Color;
+        return new ElementGeometry([], Lines: drawn.Runs.Select(run => (IReadOnlyList<Vec3>)run.Select(plane.World).ToList()).ToList(), LineColor: color);
+    }
+
     static Entity Require(IModelView m, string? id) =>
         m.Get(id ?? "") is { Class: IfcClass.Annotation, PredefinedType: Predefined } e ? e : throw new CommandException("Not a placed symbol.");
 

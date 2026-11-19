@@ -105,10 +105,12 @@ public static class Drafts
     /// other shape drawn by hand on its view's plane (<see cref="Views.PlaneOf"/>: a plan's at its storey's level, a
     /// section's, an elevation's once fixed, a reference plane's), circles and arcs in chords. Construction lines
     /// (role draft) and a DXF's flat drawing (<c>dxf</c>, from an import) stay on their views; dimensions, texts and
-    /// tags are other annotations and have no geometry. View → Drafts in 3D hides them all in the interface.
+    /// tags are other annotations and have no geometry. A placed symbol stands there too (<see cref="SymbolInstances.Geometry3d"/>).
+    /// View → Drafts in 3D hides them all in the interface.
     /// </summary>
     public static ElementGeometry? Geometry3d(Entity e, IModelView m, IServices services)
     {
+        if (e.PredefinedType == SymbolInstances.Predefined) return SymbolInstances.Geometry3d(e, m, services);
         if (e.PredefinedType != Predefined) return null;
         var shape = ShapeOf(e);
         var color = e.Str("color") ?? RoleColor(e.Str("role")) ?? LayerOf(m, e.Str("layer")).Color;

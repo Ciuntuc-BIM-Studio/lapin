@@ -407,7 +407,7 @@ Choose **Annotate → Symbols → Symbol** (or type **SYMBOL**, **SYM**) in a pl
 
 ![Three copies: placed as drawn, flipped, turned](shots/symbol-placed.webp)
 
-A placed symbol is selected like any element. In **Properties → Symbol** you can swap it for another symbol, set its **Angle** and **Size factor**, **Flip X** and **Flip Y**, change each attribute's value, choose its layer and colour, **Edit symbol** (the symbol itself: every copy follows) and **Explode**, which replaces the copy with plain lines, shapes and texts that you can edit one by one. Move, Rotate, Mirror, Copy and the other drafting tools work on a symbol like on any drafted element. A symbol belongs to its view, like a dimension, and sheets, the PDF and the DXF print it as you see it (in DXF it is a block).
+A placed symbol is selected like any element. In **Properties → Symbol** you can swap it for another symbol, set its **Angle** and **Size factor**, **Flip X** and **Flip Y**, change each attribute's value, choose its layer and colour, **Edit symbol** (the symbol itself: every copy follows) and **Explode**, which replaces the copy with plain lines, shapes and texts that you can edit one by one. Move, Rotate, Mirror, Copy and the other drafting tools work on a symbol like on any drafted element. A symbol belongs to its view, like a dimension, and sheets, the PDF and the DXF print it as you see it (in DXF it is a block). In the **3D view** a symbol placed on a plan, a section or an elevation stands on that view's plane, as drafted lines do (its lines only, not its texts); **View → Drafts in 3D** shows or hides it with them.
 
 ![A placed symbol's properties](shots/symbol-properties.webp)
 
@@ -473,7 +473,7 @@ A drawing in layers is converted layer by layer: **Draft → Convert → Convert
 
 ### DXF blocks as symbols
 
-A DXF that has blocks (chairs, doors, a firm's symbols) can keep them: in the import dialog, **Blocks → keep as symbols**. Each block becomes a symbol of the project, at model scale, and each insert becomes one placed copy, turned and flipped as in the file; without it the blocks are exploded into lines. The blocks are then in **Manage → Symbols…** like any other symbol, where you can edit one and every copy follows, and a copy is selected, moved and counted as one element. The notice after the import counts the symbols and copies.
+A DXF that has blocks (chairs, doors, a firm's symbols) can keep them: in the import dialog, **Blocks → keep as symbols**. Each block becomes a symbol of the project, at model scale, and each insert becomes one placed copy, turned and flipped as in the file; without it the blocks are exploded into lines. The blocks are then in **Manage → Symbols…** like any other symbol, where you can edit one and every copy follows, and a copy is selected, moved and counted as one element. The notice after the import counts the symbols and copies. In the 3D view the copies lie on the view's plane with the rest of the DXF's drawing, where the exploded blocks would lie: **In 3D** in a copy's properties switches the whole import, and **View → DXF in 3D** every import.
 
 ![Three inserts of one block, as placed symbols](shots/dxf-blocks.webp)
 
