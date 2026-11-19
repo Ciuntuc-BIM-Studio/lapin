@@ -28,6 +28,7 @@ import { DependenciesSection } from './DependenciesSection';
 import { deleteElements } from '../engine/dependents';
 import { isPinned, setPinned } from '../modules/core/pinTools';
 import { HatchOriginSection } from '../modules/core/HatchOriginSection';
+import { ElementGraphicsSection } from '../modules/core/ElementGraphicsSection';
 import { hasHatchOrigin } from '../modules/core/hatchOrigin';
 import { ParamsSection } from './ParamsSection';
 import { AxisFields } from './AxisFields';
@@ -375,6 +376,8 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
         </Group>
       )}
       {node.editable && hasHatchOrigin(node) && <Group id="hatchOrigin" label="Hatch origin"><HatchOriginSection node={node} /></Group>}
+      {/* Graphics in the view in front (decision 718): hatch, fill and lines over the material's, for any element a view draws. */}
+      {node.editable && (node.storeyId || typeof node.props.viewId === 'string') && !node.type.endsWith('Type') && node.type !== 'LapinView' && <Group id="elementGraphics" label="Graphics in view"><ElementGraphicsSection node={node} /></Group>}
       {cls && cls.fields.length > 0 && node.editable && !sections.some((s) => s.replacesFields?.(node)) && (
         <Group id="dimensions" label="Dimensions">
           <dl className="fields">{fieldsShown(cls.fields, sections, node, sameKind(node).map((id) => nodes.get(id)).filter((n): n is NodeDto => !!n)).filter((f) => f.key !== elevation?.key).map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
