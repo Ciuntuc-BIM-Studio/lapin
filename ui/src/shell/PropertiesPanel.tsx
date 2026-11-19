@@ -36,6 +36,7 @@ import { paramKey, sameKind, type Param } from './params';
 import { filterSets, importedSets } from './ifcProperties';
 import { MaterialPicker } from '../modules/core/MaterialPicker';
 import { hiddenHere, useShownHere } from '../viewport/cad/shown';
+import { ElementMarkField, hasMark, TypeMarkField } from '../modules/core/MarkField';
 
 /** An input that commits on Enter or when it loses focus, not on every key. */
 function Commit({ value, onCommit, suffix, className }: { value: string; onCommit: (v: string) => void; suffix?: string; className?: string }) {
@@ -319,6 +320,8 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
         {node.editable
           ? <Commit className="panel-title-input" value={node.name} onCommit={(name) => void execute('element.rename', { id: node.id, name })} />
           : <span className="panel-title">{node.name}</span>}
+        {/* Its own mark (forum topic 177), its type's shown while it has none. */}
+        {hasMark(node) && <ElementMarkField node={node} />}
       </div>
       <label className="props-filter"><Search size={12} /><input placeholder="Filter properties" value={filter} onChange={(e) => setFilter(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setFilter(''); }} /></label>
       {notShown && <p className="muted small pad props-not-shown" data-testid="not-shown-here"><EyeOff size={12} /> Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.</p>}
@@ -389,6 +392,8 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
       {node.editable && type && (
         <Group id="typeParams" label={`Type parameters · ${type.name}`}>
           <p className="muted small pad">Every element of the type has these; a change here changes them all ({relatedOf(model, type.id, 'IfcRelDefinesByType').length}).</p>
+          {/* The type's mark (forum topic 177), as its type editor has it at the top. */}
+          <div className="pad"><TypeMarkField typeId={type.id} /></div>
           {TypeFields && <TypeFields type={type} node={node} />}
           <ClassificationSection node={type} ids={() => [type.id]} />
           <ParamsSection node={type} ids={() => [type.id]} shadowed={new Set(((Array.isArray(node.props.params) ? node.props.params : []) as unknown as Param[]).map(paramKey))} />

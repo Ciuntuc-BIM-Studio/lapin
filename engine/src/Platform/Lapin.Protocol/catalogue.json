@@ -401,6 +401,7 @@
     {"name":"element.setAutoJoin","module":"core","label":"Join automatically","args":[{"name":"start"},{"name":"end"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"element.setBody","module":"core","label":"Set body","args":[{"name":"id","type":"str"},{"name":"units"},{"name":"body"},{"name":"placement"}]},
     {"name":"element.setHatchOrigin","module":"core","label":"Hatch origin","args":[{"name":"origin","type":"list"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
+    {"name":"element.setMark","module":"core","label":"Set mark","args":[{"name":"mark","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"element.setParam","module":"core","label":"Set parameter","args":[{"name":"name","type":"str"},{"name":"pset","type":"str"},{"name":"kind","type":"str"},{"name":"options","type":"list"},{"name":"value"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"element.split","module":"core","label":"Split element","args":[{"name":"id","type":"str"},{"name":"at","type":"list"},{"name":"with"},{"name":"line","type":"list"},{"name":"arc","type":"dict"},{"name":"face","type":"str"}]},
     {"name":"element.splitOutline","module":"core","label":"Split outline","args":[{"name":"id","type":"str"},{"name":"a","type":"list"},{"name":"b","type":"list"},{"name":"keep","type":"list"}]},

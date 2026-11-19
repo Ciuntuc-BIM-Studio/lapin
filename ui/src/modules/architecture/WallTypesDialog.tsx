@@ -40,6 +40,7 @@ import { ParamsSection } from '../../shell/ParamsSection';
 import { DraftParams } from '../../shell/DraftParams';
 import { draftJson } from '../../shell/typeParamDraft';
 import type { Param } from '../../shell/params';
+import { TypeMarkField } from '../core/MarkField';
 
 /** A layer as the editor holds it: lengths in metres; from and to null for the whole height. */
 interface Row extends LayerFlags { material: string; thickness: number; core: boolean; from: number | null; to: number | null; parts: Part[]; priority: number | null; note: string }
@@ -195,6 +196,8 @@ export function WallTypesDialog() {
           </ul>
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
+            {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
+            <TypeMarkField typeId={editing} />
             {/* Duplicate, and the type's place in every list of wall types (forum #71). */}
             <TypeListActions id={editing} onDuplicated={setEditing} {...endsOf(types, editing)} />
             <p className="muted small" data-testid="wall-face-note">Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.</p>

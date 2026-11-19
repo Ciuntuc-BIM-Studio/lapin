@@ -82,6 +82,8 @@ The properties panel shows the selected wall. The top of the panel holds its typ
 
 ![A wall's properties](shots/wall-properties.webp)
 
+**A wall's own mark.** Under the wall's name at the top of the properties panel, **Mark** is the wall's own (*W1.03*), greyed with its type's mark (or its type's name) while it has none. A mark of its own goes before its type's in its tags (`{mark}`) and schedules, and the IFC export writes it as the wall's **Tag**; empty it to take the type's again. Floors, columns, beams, doors and the other built elements have it at the same place. Each change is one step to undo.
+
 ### Temporary dimensions
 
 Select one straight wall in a plan and Lapin draws **temporary dimensions** for it, as it does for a door or window ([Temporary dimensions](doors-windows.md#temporary-dimensions)):
@@ -204,6 +206,8 @@ What hangs on the wall goes to the part it falls on. A finish painted on a strai
 ## Wall types
 
 A wall type is a set of layers, from the face on the right of the way the wall is drawn (the outside, when you draw round a building anticlockwise) to the face on its left. Each layer has a material and a thickness, and one layer is the **core**. The wall's line runs along the core. To edit the types, choose **Architecture → Wall types**. A layer other than the core may have a height of its own: **Layer from** and **Layer up to** set how high the layer goes over the wall's base (not the wall's own top: the placeholder says *wall top* where it runs to the wall's top; a tiled dado up to 1500, a cladding from 300 up); empty, it runs the whole height.
+
+**Mark.** Under the type's name, **Mark** is the type's mark (*W1*, *P-24*), as a door's or window's type has it; the floor, ceiling, curtain wall, stair and ramp, column, beam and footing types have it at the same place. Type it and press <kbd>Enter</kbd>: one step to undo. A tag's `{mark}` writes it for every wall of the type (`{TypeMark}` and `{type.mark}` write the type's alone), schedules list it, and the IFC export writes it as the walls' *Pset_WallCommon* **Reference**. Empty, the type has none and `{mark}` writes the type's name, as before. A type's mark is also in the properties of any of its walls, at the top of **Type parameters**.
 
 **Duplicate and order.** Every type dialog (wall, floor, door and window, stair and ramp, column, beam and footing types) has **Duplicate** beside the type's name: it makes a type of its own with the same layers and settings, named „Name 2” (then „Name 3”…; „Brick 25 (2)” when the name ends in a number, so the number never reads as part of it), listed just after the original, ready to change without touching the first. The **↑** and **↓** next to it move the type up or down its list; every list and picker of those types (the properties panel's type, the tool's **New element**, the dialogs) shows them in that order, which the project keeps. Types never moved stay in the order they were made; a new type comes last. Each is one undo step.
 
