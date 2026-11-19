@@ -28,6 +28,9 @@ import { scopeOf, setQuickToolsHidden, useBars } from '../app/bars';
 const level = (e: number) => formatLevel(e);
 
 /** What the active tool asks for, when it is a two-point or a pick-then-point tool; null otherwise. */
+/** The views whose own toolbar fills the pane's top, where the mode / level card would lie over it (reports #65, #170). */
+export const hudHidesOver = (view: string): boolean => view === 'SCHEDULE' || view === 'SHEET';
+
 export function toolHint(tool: string | null): string | null {
   const active = findTool(tool);
   const g = active?.gesture;
@@ -105,8 +108,8 @@ export function ViewportHud() {
   const hintText = stepHint ?? toolHint(tool);
   return (
     <>
-      {/* Not over a schedule: its toolbar runs across the pane's top, and it has no mode, level or snap to tell (report #65). */}
-      {parts.hud === 'over' && facts.view !== 'SCHEDULE' && (
+      {/* Not over a schedule or a sheet: their toolbars run across the pane's top (reports #65, #170), and a schedule has no mode, level or snap to tell. */}
+      {parts.hud === 'over' && !hudHidesOver(facts.view) && (
         <div className="hud-card">
           <span className="eyebrow">Mode</span><span>{facts.mode}</span>
           <span className="eyebrow">Level</span><span>{facts.level} <span className="accent">{facts.elevation}</span></span>
