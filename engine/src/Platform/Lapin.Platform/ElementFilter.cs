@@ -472,7 +472,7 @@ public sealed record ElementFilter(IReadOnlyList<string> Classes, IReadOnlyList<
             Take(x.Str("material"));
             Associated(m.RelatingOf(x.Id, IfcClass.RelAssociatesMaterial), 0);
         }
-        foreach (var b in LayerSets.BandsOf(m, e.Id) ?? []) { Take(b.Material); foreach (var p in b.Parts ?? []) Take(p.Material); }
+        foreach (var b in LayerSets.DrawnBandsOf(m, e.Id) ?? []) { Take(b.Material); foreach (var p in b.Parts ?? []) Take(p.Material); }
         if (type != null) foreach (var l in LayerSets.LayersOf(m, type.Id)) { Take(l.Material); foreach (var p in l.Parts ?? []) Take(p.Material); }
         foreach (var l in BuildUps.Of(m, e, q.Services)?.Layers ?? []) { Take(l.Material); foreach (var p in l.PartMaterials ?? []) Take(p); }
         foreach (var p in q.Geometry(e.Id)?.Parts ?? []) Take(p.Material);

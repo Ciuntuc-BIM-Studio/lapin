@@ -418,7 +418,7 @@ public sealed class VisibilityGraphics
         if (partKey.StartsWith("reveal", StringComparison.Ordinal)) return "reveals";
         if (!partKey.StartsWith("layer:", StringComparison.Ordinal)
             || !int.TryParse(partKey.AsSpan(6), System.Globalization.CultureInfo.InvariantCulture, out var index)) return null;
-        if (!bands.TryGetValue(e.Id, out var list)) bands[e.Id] = list = LayerSets.BandsOf(m, e.Id);
+        if (!bands.TryGetValue(e.Id, out var list)) bands[e.Id] = list = LayerSets.DrawnBandsOf(m, e.Id);
         // A reference's layers, from its file's material (decision 400).
         if (list == null) return ReferenceLayers.SubOfPart(m, e, partKey);
         if (index < 0 || index >= list.Count) return null;

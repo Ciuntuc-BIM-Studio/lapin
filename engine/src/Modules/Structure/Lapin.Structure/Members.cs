@@ -41,19 +41,27 @@ public static class Columns
     public static BuiltColumn Built(IModelView m, Entity column, IServices? services) => ColumnEnds.Of(m, column, services);
 
     /// <summary>The envelope a column cuts other elements with: as drawn (<see cref="Spec"/>), never as attached.</summary>
-    public static Solid? Envelope(Entity column, IModelView m)
+    public static Solid? Envelope(Entity column, IModelView m) => Envelope(column, m, true);
+
+    /// <param name="withLayers">With its finish layers (decision 719): their outline, so a wall round the column stops at its plaster; false: the core's.</param>
+    static Solid? Envelope(Entity column, IModelView m, bool withLayers)
     {
         var (section, _, height) = Spec(m, column);
         var z = Place.Elevation(m, column) + column.Num("baseOffset");
-        return Prism.ExtrudeFootprint(Place.Placed(section.Outline(), Place.Point(column), column.Num("rotation")), z, height, "column");
+        var outline = withLayers && Layers(m, column) is { Count: > 0 } layers ? ColumnWraps.Shapes(section, layers).Outline : section.Outline();
+        return Prism.ExtrudeFootprint(Place.Placed(outline, Place.Point(column), column.Num("rotation")), z, height, "column");
     }
+
+    /// <summary>The finish layers its type lays round it (decision 719); none for a column placed by an IFC or without a type.</summary>
+    public static IReadOnlyList<WrapLayer> Layers(IModelView m, Entity column) =>
+        column.Attrs["at"] is null || StoredBodies.Has(column) ? [] : ColumnLayers.Read(Place.TypeOf(m, column.Id));
 
     public static ElementGeometry? Geometry(Entity column, IModelView m, IServices? services)
     {
         var (section, material, _) = Spec(m, column);
         var built = Built(m, column, services);
         if (built.Shaped) return Attached(column, m, services, built);
-        if (Envelope(column, m) is not { } solid) return new ElementGeometry([], Diagnostics: ["The column has no height."]);
+        if (Envelope(column, m, false) is not { } solid) return new ElementGeometry([], Diagnostics: ["The column has no height."]);
         // At LOD 400 the real section (decision 415); every other reader the light one, with the same box.
         var fine = services?.Get<GeometryOptions>()?.Fine == true;
         var (outlineOf, holes) = fine ? section.Real() : (section.Outline(), section.Holes());
@@ -75,11 +83,36 @@ public static class Columns
 
     static ElementGeometry Finish(Entity column, IModelView m, IServices? services, Section section, string? material, Solid solid, List<string> problems)
     {
-        var parts = CutPriorities.Apply(column, m, services, [new GeometryPart(column.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
+        var own = new List<GeometryPart> { new(column.Name, Materials.ColorOf(m, material), solid, material, "body") };
+        own.AddRange(LayerParts(column, m, services, section, problems));
+        var parts = CutPriorities.Apply(column, m, services, own, problems);
         // The walls' and floors' layers reaching into it and set to cut (forum topic 89).
         parts = LayerExtentCuts.Apply(column, m, services, parts, problems);
         var footprint = Place.Placed(section.Outline(), Place.Point(column), column.Num("rotation"));
         return new ElementGeometry(parts, [new PlanItem("cut", true, footprint)], [Place.Point(column)], problems.Count > 0 ? problems : null) { FineShape = section.HasRealShape };
+    }
+
+    /// <summary>
+    /// Its finish layers as parts (decision 719): each layer's rings round the core (<see cref="ColumnWraps.Shapes"/>) between the
+    /// column's ends as built (attached ends cut them as they cut the core), keyed layer:1, layer:2… outward, in their materials.
+    /// </summary>
+    static IEnumerable<GeometryPart> LayerParts(Entity column, IModelView m, IServices? services, Section section, List<string> problems)
+    {
+        var layers = Layers(m, column);
+        if (layers.Count == 0) yield break;
+        var built = Built(m, column, services);
+        var (shapes, _) = ColumnWraps.Shapes(section, layers);
+        for (var i = 0; i < shapes.Count; i++)
+        {
+            var l = layers[i];
+            var name = l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}";
+            foreach (var region in shapes[i])
+            {
+                var placed = region.Select(r => ColumnWraps.Placed(column, r)).ToList();
+                if (ColumnEnds.Body(built, placed[0], placed.Skip(1).ToList(), services, problems) is { } ring)
+                    yield return new GeometryPart(name, Materials.ColorOf(m, l.Material), ring, l.Material, ColumnLayers.PartKey(i));
+            }
+        }
     }
 
     /// <summary>A column whose ends are attached (docs/plan-attach-to.md §3.3): the prism between its ends as built, cut by the cut order as any column.</summary>
@@ -100,7 +133,7 @@ public static class Columns
         var built = ColumnEnds.LastOf(m, column);
         var (section, height) = (built.Section, built.Height);
         // The body the views draw has sharp corners: the real section holds RealRatio more (decision 418).
-        var net = g.Parts.Sum(p => Measure.Volume(p.Solid)) * section.RealRatio;
+        var net = g.Parts.Where(p => !IsLayer(p.Key)).Sum(p => Measure.Volume(p.Solid)) * section.RealRatio;
         yield return new QuantitySet("Qto_ColumnBaseQuantities",
         [
             new("Length", height, "LENGTH"),
@@ -108,7 +141,25 @@ public static class Columns
             new("GrossVolume", section.Area * height, "VOLUME", "Gross volume"),
             new("NetVolume", net, "VOLUME", "Net volume"),
         ]);
+        // Its finish layers (decision 719), each measured from its own parts: thickness, the area it covers, its volume.
+        var layers = Layers(m, column);
+        for (var i = 0; i < layers.Count; i++)
+        {
+            var key = ColumnLayers.PartKey(i);
+            var mine = g.Parts.Where(p => p.Key == key).ToList();
+            if (mine.Count == 0) continue;
+            var v = mine.Sum(p => Measure.Volume(p.Solid));
+            var t = layers[i].Thickness;
+            yield return new QuantitySet("Lapin_ColumnLayerQuantities",
+            [
+                new("Width", t, "LENGTH"),
+                new("NetSideArea", v / t, "AREA", "Net side area"),
+                new("NetVolume", v, "VOLUME", "Net volume"),
+            ], key, mine[0].Name, layers[i].Material);
+        }
     }
+
+    static bool IsLayer(string? key) => key != null && key.StartsWith("layer:", StringComparison.Ordinal);
 }
 
 /// <summary>
@@ -398,13 +449,14 @@ sealed class FrameIfcBodies : IIfcSweptBodies
     /// </summary>
     public IfcSweptBody? BodyOf(IModelView m, IServices? services, Entity e)
     {
-        if (services != null && e.Class == IfcClass.Column && e.Attrs["at"] is not null && !StoredBodies.Has(e) && e.Attrs["steelEnds"] is not JsonObject
+        if (services != null && e.Class == IfcClass.Column && e.Attrs["at"] is not null && !StoredBodies.Has(e) && e.Attrs["steelEnds"] is not JsonObject && Columns.Layers(m, e).Count == 0
             && Columns.Built(m, e, services) is { Shaped: true } built)
             return Clipped(m, services, e, built);
         if (e.Class is not (IfcClass.Column or IfcClass.Beam) || StoredBodies.Has(e) || e.Attrs["steelEnds"] is JsonObject) return null;
         if (e.Class == IfcClass.Column)
         {
-            if (e.Attrs["at"] is null) return null;
+            // With finish layers (decision 719) its body is several solids, written as they are built.
+            if (e.Attrs["at"] is null || Columns.Layers(m, e).Count > 0) return null;
             var (section, _, height) = Columns.Spec(m, e);
             if (!(height > 0)) return null;
             var at = Place.Point(e);

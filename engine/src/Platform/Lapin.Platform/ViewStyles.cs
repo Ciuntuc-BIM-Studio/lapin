@@ -290,7 +290,7 @@ public static class ViewStyles
         }
         if (layers == "all" || partKey is not { } k || !k.StartsWith("layer:", StringComparison.Ordinal)
             || !int.TryParse(k.AsSpan(6), System.Globalization.CultureInfo.InvariantCulture, out var index)) return true;
-        if (!cache.TryGetValue(element, out var bands)) cache[element] = bands = LayerSets.BandsOf(m, element);
+        if (!cache.TryGetValue(element, out var bands)) cache[element] = bands = LayerSets.DrawnBandsOf(m, element);
         // A reference's layers, from its file's material (decision 400): the same modes.
         if (bands == null && m.Get(element) is { } refEl && ReferenceLayers.Of(m, refEl) is { } rs)
         {

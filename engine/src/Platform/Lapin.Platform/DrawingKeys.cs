@@ -87,7 +87,7 @@ public static class DrawingKeys
                     o[names] = new Entry(names, r.Fill, r.Hatch, r.HatchScale <= 0 ? 1 : r.HatchScale, r.HatchAngle, Look: r);
                 }
                 IEnumerable<string> mats = cut.Material is { } one ? [one]
-                    : (bands.TryGetValue(cut.Element, out var b) ? b : bands[cut.Element] = LayerSets.BandsOf(m, cut.Element))?.Select(x => x.Material) ?? [];
+                    : (bands.TryGetValue(cut.Element, out var b) ? b : bands[cut.Element] = LayerSets.DrawnBandsOf(m, cut.Element))?.Select(x => x.Material) ?? [];
                 foreach (var id in mats.Where(x => !string.IsNullOrEmpty(x)))
                 {
                     var r = viewMaterials.Material(id);

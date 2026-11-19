@@ -342,7 +342,7 @@ public sealed class ViewMaterialGraphics
     /// </summary>
     bool IsCore(DPolygon p)
     {
-        if (!_bands.TryGetValue(p.Element, out var bands)) _bands[p.Element] = bands = LayerSets.BandsOf(_m, p.Element);
+        if (!_bands.TryGetValue(p.Element, out var bands)) _bands[p.Element] = bands = LayerSets.DrawnBandsOf(_m, p.Element);
         if (bands is not { Count: > 0 }) return true;
         var i = -1;
         if (p.Key is { } key && key.StartsWith("layer:", StringComparison.Ordinal) && int.TryParse(key.AsSpan(6), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var n) && n >= 0 && n < bands.Count) i = n;

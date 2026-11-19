@@ -52,7 +52,18 @@ public sealed class StructureModule : ILapinModule
 
         // ------------------------------------------------------------ columns
         r.Command("createColumnType", "New column type", (ctx, a) =>
-            Section.FromArgs(ctx, a, out var cm) is var cs ? new JsonObject { ["id"] = Columns.CreateType(ctx, (string?)a["name"], cs, Json.Number(a["height"]), (string?)a["material"] ?? cm ?? (cs.IsProfile ? "Steel" : "Reinforced concrete")).Id } : null);
+        {
+            var cs = Section.FromArgs(ctx, a, out var cm);
+            var type = Columns.CreateType(ctx, (string?)a["name"], cs, Json.Number(a["height"]), (string?)a["material"] ?? cm ?? (cs.IsProfile ? "Steel" : "Reinforced concrete"));
+            // Its finish layers round the core (decision 719).
+            if (ColumnLayers.Parse(ctx, a[ColumnLayers.Key]) is { Count: > 0 } layers)
+            {
+                var attrs = type.CloneAttrs();
+                attrs[ColumnLayers.Key] = ColumnLayers.Write(layers);
+                ctx.Replace(type.With(attrs: attrs));
+            }
+            return new JsonObject { ["id"] = type.Id };
+        });
 
         // A column, beam or footing type changed after it was made: its size, its name; its elements follow.
         r.Command("updateType", "Change type", (ctx, a) =>
