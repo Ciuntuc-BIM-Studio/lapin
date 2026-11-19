@@ -199,4 +199,17 @@ public class StairPlanCutTests
         Assert.Contains("\"STAIR\"", steps);
         Assert.DoesNotContain("\"STAIR-OVERHEAD\"", steps);
     }
+
+    [Fact]
+    public void The_upper_floor_plan_draws_the_stair_arrival_and_numbers()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var upper = (string)f.Run("storey.create", new JsonObject { ["name"] = "Level 1", ["elevation"] = 3.0, ["height"] = 3.0 })!["id"]!;
+        Place(f, StairSpec.Default() with { Symbols = new StairPlanSymbols(Numbers: true, Up: true) });
+        var json = ((JsonObject)f.Session.Query("view.drawing", new JsonObject { ["storeyId"] = upper })!)["pens"]!.ToJsonString();
+        Assert.Contains("\"STAIR\"", json);
+        Assert.Contains("\"STAIR-NUMBERS\"", json);
+        Assert.Contains("\"DN\"", json);
+        Assert.DoesNotContain("\"UP\"", json);
+    }
 }
