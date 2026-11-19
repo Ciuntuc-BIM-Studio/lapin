@@ -28,6 +28,7 @@ import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 import { EXT_SUPPRESS, EXT_SUPPRESS_LABELS } from './dimensionLines';
 import { TagRulesEditor } from './TagRulesEditor';
 import type { TagRuleDto } from './tagRules';
+import { FieldPicker } from '../../shell/FieldPicker';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
 type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[]; tableStyles?: { id: string; name: string; cells?: boolean; table?: { rows?: unknown[]; cols?: unknown[] } }[] };
@@ -87,7 +88,11 @@ const TABS: Tab[] = [
   // A tag's template reads the element: {mark}, {name}, {type}, {class}, a door's or window's {width}, {height}, {sill} (in the unit given), a room's {number}, {area}, {perimeter}, {height}, {volume}, {function}; "|" starts a new line.
   { id: 'tag', label: 'Tags', list: 'tagTypes', fresh: { name: 'Tag', template: '{mark}', leaderShape: 'elbow' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'shape', label: 'Shape', kind: 'choice', choices: ['box', 'opening', 'room', 'buildup'] },
-    { key: 'template', label: 'Text (outside)', kind: 'text' }, { key: 'inner', label: 'Inside', kind: 'text' },
+    // Built as a mark is (decision 737): a prefix and a suffix round the template, a formula of fields.
+    { key: 'prefix', label: 'Prefix', title: 'Written before the text (its first line); plain text', kind: 'text' },
+    { key: 'template', label: 'Text (outside)', kind: 'text' },
+    { key: 'suffix', label: 'Suffix', title: 'Written after the text (its last line); plain text', kind: 'text' },
+    { key: 'inner', label: 'Inside', kind: 'text' },
     { key: 'unit', label: 'Unit', kind: 'choice', choices: ['cm', 'mm', 'm', 'ft-in', 'in', 'project'] }, { key: 'reach', label: 'Past faces mm', kind: 'mm' },
     // A door's or window's marker: its texts across its line (along the wall) or along it, always upright (decision 292).
     { key: 'textOrientation', label: 'Text direction', kind: 'choice', choices: ['across', 'along'] },
@@ -118,6 +123,8 @@ const scaleList = (text: string): number[] => text.split(/[,;\s]+/).map((x) => N
 
 /** How a tag's template reads the element (report #64), one phrase for the translations. */
 const TAG_HELP = 'A template reads the element: {mark}, {name}, {type}, {class}, any parameter by its name ({Fire rating}) or a standard one ({Pset_WallCommon.FireRating}); | starts a new line.';
+/** A tag's text built as a mark is (decision 737), one phrase for the translations. */
+const TAG_BUILD_HELP = 'Build the text as a mark: a prefix, the template with its fields and formulas ({= n | 00}, {storey.code}), a suffix. + Field… adds a field; Manage → Mark rules… builds the {mark} itself.';
 /** The Layers tab's layers are the drafting layers (forum #168, decision 714), one phrase for the translations. */
 const LAYER_HELP = 'These are the project\'s drafting layers, the same as Draft → Layers and the layer command: lines drawn by layer take their colour, pen and line type.';
 /** A build-up tag's own rule, one phrase for the translations. */
@@ -311,6 +318,11 @@ export function StandardsDialog() {
                         <SymbolPicker field={`tag-symbol-${e.id}`} value={typeof e.symbol === 'string' ? e.symbol : null} list={symbols} category="annotation" noneLabel="Text only"
                           onChange={(id) => set({ id: e.id, symbol: id })} />
                       </span>
+                      {/* Any field the element has, added to the text (decision 737), as the title blocks' fields are. */}
+                      <span className="tag-field-picker" title="Add a field to the text: any parameter, the storey's, the type's, a quantity">
+                        <FieldPicker value="" placeholder="+ Field…" testId={`tag-field-${e.id}`}
+                          onPick={(t) => set({ id: e.id, template: `${String(e.template ?? '')}${t.startsWith('{') ? t : `{${t}}`}` })} />
+                      </span>
                       {systems.length > 0 && (
                         <select className="mini" value="" data-field="tag-class-field" title="Add a classification field to the text: {classification.code}, {classification.title}, or a system's own code"
                           onChange={(ev) => { if (ev.target.value) set({ id: e.id, template: `${String(e.template ?? '')}${e.template ? ' ' : ''}{${ev.target.value}}` }); }}>
@@ -324,6 +336,7 @@ export function StandardsDialog() {
             </tbody>
           </table>
           {tab.id === 'tag' && <p className="muted small" data-tag-help>{TAG_HELP}</p>}
+          {tab.id === 'tag' && <p className="muted small" data-tag-build-help>{TAG_BUILD_HELP}</p>}
           {tab.id === 'tag' && <p className="muted small">{BUILDUP_HELP}</p>}
           {tab.id === 'layer' && <p className="muted small" data-layer-help>{LAYER_HELP}</p>}
           {tab.id === 'tag' && systems.length > 0 && <p className="muted small">{'A tag may also read the classification: {classification.code}, {classification.title} or a system\'s own code, {classification.<System>}; the + Classification… list adds one.'}</p>}
