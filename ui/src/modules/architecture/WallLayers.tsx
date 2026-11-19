@@ -5,7 +5,6 @@
  */
 
 import { FlipHorizontal2, Mountain, Settings2 } from 'lucide-react';
-import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { materialColor, materialName, ofClass, typeLayers, typeOf, usageOf, wallLength } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
@@ -15,6 +14,7 @@ import { LengthField } from '../../shell/cells';
 import { WallTopFields } from './WallTop';
 import { openWallProfile } from './wallProfileBoard';
 import { WallReferenceField } from './WallReferenceField';
+import { openTypeDialog } from '../../shell/typeToEdit';
 
 const THICKNESS_TIP = 'The wall\'s thickness comes from its type\'s layers. Type a new one and the selected walls take the type with the same build-up and that thickness (the core resized, the finishes kept): the project\'s, or a new one named after their type, e.g. Partition wall 150mm.';
 
@@ -47,7 +47,7 @@ export function WallLayers({ node }: { node: NodeDto }) {
             {!type && <option value="">(none)</option>}
             {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
-          <button type="button" className="icon" title="Wall types…" onClick={() => useUi.setState({ dialog: 'wallTypes' })}><Settings2 size={14} /></button>
+          <button type="button" className="icon" title="Wall types…" onClick={() => openTypeDialog('wallTypes', type?.id)}><Settings2 size={14} /></button>
         </span>
       </label>
       {layers.length > 0 && (

@@ -18,6 +18,7 @@ import { lazyPart } from '../../platform/lazyPart';
 import { StripOption, stripArgs, useStripPrefs, wallTypes } from './stripOptions';
 import { withAutoJoinMenus } from '../core/autoJoin';
 import { arcAlias, chainTool, setChainMode } from '../core/chainTool';
+import { openTypeDialog } from '../../shell/typeToEdit';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const StructureTypesDialog = lazyPart(() => import('./StructureTypesDialog').then((m) => m.StructureTypesDialog), { title: 'Structure types' });
@@ -122,6 +123,8 @@ const structure: LapinModule = {
   hotbar: [column, beam],
   propertySections: [{ id: 'structure', label: 'Structure', classes: ['IfcColumn', 'IfcBeam', 'IfcFooting'], component: StructureSection }],
   dialogs: { structureTypes: StructureTypesDialog },
+  // Edit type… (decision 726): the dialog opened on the element's type.
+  editType: Object.fromEntries(['IfcColumnType', 'IfcBeamType', 'IfcFootingType'].map((c) => [c, (id: string) => openTypeDialog('structureTypes', id)])),
   grips: { IfcBeam: memberGrips, IfcFooting: (n) => (n.props.start ? memberGrips(n) : []), IfcColumn: pointGrip },
   references: { IfcBeam: pathRefs, IfcFooting: (n) => (n.props.start ? pathRefs(n) : []) },
   // Create similar: the element's tool with its type (a beam's or a strip's arc too; a strip with its wall when its type has one).

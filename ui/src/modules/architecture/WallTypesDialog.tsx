@@ -41,6 +41,7 @@ import { DraftParams } from '../../shell/DraftParams';
 import { draftJson } from '../../shell/typeParamDraft';
 import type { Param } from '../../shell/params';
 import { TypeMarkField } from '../core/MarkField';
+import { typeToEdit } from '../../shell/typeToEdit';
 
 /** A layer as the editor holds it: lengths in metres; from and to null for the whole height. */
 interface Row extends LayerFlags { material: string; thickness: number; core: boolean; from: number | null; to: number | null; parts: Part[]; priority: number | null; note: string }
@@ -94,7 +95,7 @@ export function WallTypesDialog() {
   const kept = useRef<Kept | null | undefined>(undefined);
   if (kept.current === undefined) kept.current = takeStash<Kept>('wallTypes');
   const k0 = kept.current;
-  const [editing, setEditing] = useState<string | null>(k0 ? k0.editing : (current && nodes.has(current) ? current : null) ?? types[0]?.id ?? null);
+  const [editing, setEditing] = useState<string | null>(k0 ? k0.editing : typeToEdit('wallTypes') ?? (current && nodes.has(current) ? current : null) ?? types[0]?.id ?? null);
   const [name, setName] = useState(k0?.name ?? '');
   const [rows, setRows] = useState<Row[]>(k0?.rows ?? blank());
   const [zones, setZones] = useState<ZoneRow[]>(k0?.zones ?? []);

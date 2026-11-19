@@ -21,6 +21,7 @@ import { newElement, typedBy } from './NewElement';
 import { SkirtingThumb } from './Thumbs';
 import { PROFILES, profilePath, type SkirtingSpec } from './skirtingProfile';
 import { createScheduleOf } from '../../shell/fieldSchedule';
+import { openTypeDialog, typeToEdit } from '../../shell/typeToEdit';
 
 const chosenType = () => (useUi.getState().skirtingTypeId ? { typeId: useUi.getState().skirtingTypeId } : {});
 
@@ -80,7 +81,7 @@ export function SkirtingTypesDialog() {
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = ofClass(model, 'LapinSkirtingType');
   const catalog = info?.catalogs['architecture.skirtings'] as unknown as { spec: SkirtingSpec; library: SkirtingSpec[] } | undefined;
-  const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
+  const [editing, setEditing] = useState<string | null>(typeToEdit('skirtingTypes') ?? types[0]?.id ?? null);
   const [spec, setSpec] = useState<SkirtingSpec | null>(null);
   // What a new type starts from (a new object on each New…, so the editor reloads).
   const [fresh, setFresh] = useState<{ from: SkirtingSpec | null }>({ from: null });
@@ -168,7 +169,7 @@ export function SkirtingSection({ node }: { node: NodeDto }) {
         <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => set({ typeId: e.target.value })}>
           {types.map((t) => <option key={t.id} value={t.id} data-no-i18n>{t.name}</option>)}
         </select>
-        <button type="button" className="link small" onClick={() => useUi.setState({ dialog: 'skirtingTypes' })}>Skirting types…</button>
+        <button type="button" className="link small" onClick={() => openTypeDialog('skirtingTypes', type?.id)}>Skirting types…</button>
       </label>
       {spec && <div className="row" style={{ gap: 8 }}><ProfilePreview spec={spec} size={64} /><span className="small">{PROFILES.find((p) => p.id === spec.profile)?.label}</span></div>}
       <dl className="fields">

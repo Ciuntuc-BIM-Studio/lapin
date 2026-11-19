@@ -16,6 +16,7 @@ import { sameKind } from '../../shell/params';
 import { AlongField } from './AlongField';
 import { JoineryDataButton } from './JoineryData';
 import type { Position } from './JoineryDialog';
+import { openTypeDialog } from '../../shell/typeToEdit';
 
 /** Doors and windows flip together. */
 const JOINERY = ['IfcDoor', 'IfcWindow'];
@@ -56,7 +57,7 @@ export function JoinerySection({ node }: { node: NodeDto }) {
           <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('architecture.setJoineryType', { ids: sameKind(node), typeId: e.target.value })}>
             {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
-          <button type="button" className="icon" title="Doors and windows…" onClick={() => useUi.setState({ dialog: 'joinery' })}><Settings2 size={14} /></button>
+          <button type="button" className="icon" title="Doors and windows…" onClick={() => openTypeDialog('joinery', type?.id)}><Settings2 size={14} /></button>
         </span>
       </label>
       <dl className="fields">

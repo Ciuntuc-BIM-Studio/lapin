@@ -24,6 +24,7 @@ import { deleteType } from '../core/deleteType';
 import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { TypeListActions, endsOf } from '../../shell/TypeListActions';
 import { TypeMarkField } from '../core/MarkField';
+import { typeToEdit } from '../../shell/typeToEdit';
 
 interface Rules { set: string; riserMin: number; riserMax: number; riserTarget: number; treadMin: number; treadMax: number; treadTarget: number; stepMin: number; stepMax: number; minWidth: number; maxRisers: number; headroom: number; maxSlope: number; minRisers?: number }
 interface Spec {
@@ -99,7 +100,7 @@ export function StairTypesDialog() {
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = [...ofClass(model, 'IfcStairType'), ...ofClass(model, 'IfcRampType')];
   const defaults = info?.catalogs['architecture.stairDefaults'] as unknown as Defaults | undefined;
-  const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
+  const [editing, setEditing] = useState<string | null>(typeToEdit('stairTypes') ?? types[0]?.id ?? null);
   const [spec, setSpec] = useState<Spec | null>(null);
   const [tab, setTab] = useState<'shape' | 'rules' | 'construction'>('shape');
   const [height, setHeight] = useState(3.0);

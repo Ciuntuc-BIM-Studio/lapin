@@ -10,6 +10,7 @@ import { arcsOf, fromPairs } from '../../viewport/contour';
 import { FloorShapeBar, EllipseShapeBar, loopOf, toggleOutlineArcs, type EllipseEdgeJson } from '../../viewport/outlineShape';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
+import { createScheduleOf } from '../../shell/fieldSchedule';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
 import { registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import type { Shape } from '../../viewport/cad/shapes';
@@ -18,7 +19,7 @@ import { fillFlips, fillGhost, flipFillHand, useFillHand, type PanelLike } from 
 import { activate, useToolTick } from '../../platform/modules';
 import { gateGroup } from './gates/tools';
 import { GateSection } from './gates/GateSection';
-import { CLASS as GATE_CLASS, gateGrips, overallOf } from './gates/gates';
+import { CLASS as GATE_CLASS, TYPE_CLASS as GATE_TYPE, gateGrips, overallOf, useGateTypesDialog } from './gates/gates';
 import { setJoinStyle, setRememberLine, setWallLine, setWallLineOffset, useWallPrefs, wallLineArgs, type WallLine } from './prefs';
 import { LengthField } from '../../shell/cells';
 import { axisFromReference, referenceArc } from '../../viewport/wallReference';
@@ -63,7 +64,7 @@ import { colorLegend, room, roomColors, roomDivider, roomDividerArc, roomDivider
 import { sameKind } from '../../shell/params';
 import { withAutoJoinMenus } from '../core/autoJoin';
 import { arcAlias, chainTool, setChainMode } from '../core/chainTool';
-import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, sunshadeGrips, sunshadeSchedule, sunshadeTypes } from './Sunshades';
+import { SHADE, SHADE_TYPE, editShadeType, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, sunshadeGrips, sunshadeSchedule, sunshadeTypes } from './Sunshades';
 import { lazyPart } from '../../platform/lazyPart';
 import { StairRailingPanel, railingPick } from './StairRailingPanel';
 import './joineryBoard';
@@ -672,6 +673,11 @@ const underStair: ToolDef = {
     else openUnderStair(picked.id);
   },
 };
+/** The window sills' schedule (forum topic 178, decision 727): each kind of sill, how many and on which windows, for their supplier. */
+const windowSillSchedule: ToolDef = {
+  id: 'architecture.windowSillSchedule', label: 'Window sill schedule', icon: Table2,
+  run: () => void createScheduleOf('windowSills').then((r) => { if (r) notify('Window sill schedule made: it is in the project browser, under Schedules.'); }),
+};
 const underStairSchedule: ToolDef = {
   id: 'architecture.underStairSchedule', label: 'Under-stair schedule', icon: Table2,
   run: () => void execute('architecture.createSchedule', { kind: 'underStairs' }).then((r) => { if (r) notify('Under-stair schedule made: it is in the project browser, under Schedules.'); }),
@@ -688,7 +694,7 @@ const architecture: LapinModule = {
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify', 'joins'],
     groups: [
       { label: 'Build', tools: [wall, opening, slab, roof], small: [wallFromSolids, curtainWall, roofConfigurator, downpipe, railing] },
-      { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes, sunshadeTypes] },
+      { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes, sunshadeTypes, windowSillSchedule] },
       // Sunshades (report #56): on a window, along a facade; their schedule.
       { label: 'Sunshades', tools: [sunshade], small: [sunshadeAlong, sunshadeSchedule] },
       // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
@@ -792,6 +798,8 @@ const architecture: LapinModule = {
     },
     [BALCONY]: (n) => { useUi.setState({ balconyStyle: styleOf(n) || null }); activate(n.props.kind === 'mezzanine' ? galleryEdge : n.props.contour ? balconyOutline : balcony); },
   },
+  // Edit type… (decision 726) on a sunshade or a gate: its own dialog on its type (the others: their placing tool's dialog).
+  editType: { [SHADE_TYPE]: (id) => editShadeType(id), [GATE_TYPE]: (id) => { useGateTypesDialog.setState({ typeId: id }); useUi.setState({ dialog: 'gateTypes' }); } },
   setType: {
     IfcWall: (ids, typeId) => execute('architecture.setWallType', { ids, typeId }),
     IfcSlab: (ids, typeId) => execute('architecture.setSlabType', { ids, typeId }),

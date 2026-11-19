@@ -245,6 +245,8 @@ Room dimensions have only **Details** (the side, with the openings' jambs) and *
 - **Keynote**: the element's classification code (or its title), see [Classifications](classifications.md).
 - **Free text**: your own words. Click the element, then where the tag goes; a box asks for the text (several lines: Enter is a new line, Ctrl/⌘+Enter or **OK** is done). **{…}** fields of the element are live: `{mark}`, `{FireRating}`, `{storey.name}`, `{= formulas}`. It has the same leader, box or shoulder and styles as any tag (a tag type chosen in the bar gives its look) and follows its element. **Text tag** in its properties edits the words; double-click the tag in the view to be asked again.
 
+**A window's sill.** For the **Element**, **Parameter** and **Free text** sources, the last list of the bar chooses what of a door or window is tagged: **The element**, **A window's interior sill** or **A window's exterior sill**. With **The element**, a click on a sill in a plan or a section tags the sill all the same. A sill's tag says it in a few words and reads its fields (`{sillMaterial}`, `{sillLength}`, `{sillSide}`); see [Doors and windows](doors-windows.md#frame-position-and-sills).
+
 **LEADER** turns the leader on or off. Click the element, then where the tag goes (type **E** first to bend the leader at an elbow). Typed at the element's prompt, **ELEMENT**, **ROOM**, **PARAMETER**, **MATERIAL** and **KEYNOTE** choose the source too.
 
 ![The Tag tool at its Room source: the room's area](shots/tag-sources.webp)

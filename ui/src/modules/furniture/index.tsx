@@ -267,6 +267,7 @@ const furniture: LapinModule = {
       if (useUi.getState().tool !== place.id) activate(place);
     },
   },
+  editType: { IfcFurnitureType: (id) => editType(id) },
   setType: { [CLASS]: (ids, typeId) => execute('furniture.setType', { ids, typeId }) },
 };
 

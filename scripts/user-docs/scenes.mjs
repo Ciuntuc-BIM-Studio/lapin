@@ -1742,6 +1742,39 @@ export const scenes = [
     },
   },
   {
+    // A window's sills tagged and scheduled (forum topic 178, decision 727): two windows of a type with a granite exterior sill and
+    // a timber interior one, the others with plain boards; the ribbon's Window sill schedule (a field schedule from the shipped
+    // template, a row per kind of sill); a tag on an exterior sill reading its fields.
+    id: 'window-sills',
+    touches: ['architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      const page = t.page;
+      const info = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().info.catalogs['architecture.joinery']);
+      await t.cmd('material.create', { name: 'Granite' });
+      const dressed = (await t.cmd('architecture.createJoineryType', { spec: { ...info.defaultWindow, name: 'Window 1200×1500 granite', mark: 'W2', details: {
+        sillInside: { on: true, projection: 0.04, thickness: 0.03, overhang: 0.02, slope: 0, material: 'Timber' },
+        sillOutside: { on: true, projection: 0.05, thickness: 0.03, overhang: 0.03, slope: 10, material: 'Granite' } } } })).id;
+      const windows = (await t.nodes()).filter((n) => n.type === 'IfcWindow');
+      await t.cmd('architecture.setJoineryType', { ids: [windows[1].id, windows[2].id], typeId: dressed });
+      await t.tool('architecture.windowSillSchedule');
+      await t.wait(1200);
+      const schedule = (await t.nodes()).find((n) => n.type === 'LapinSchedule' && n.name === 'Window sills');
+      t.expect(schedule && schedule.props.kind === 'fields', 'Window sill schedule makes a field schedule from the shipped template');
+      await t.ui({ view: 'schedule', scheduleId: schedule.id, keyPlan: false });
+      await t.wait(1500);
+      t.expect(await t.page.locator('[data-testid=schedule] text', { hasText: 'Granite' }).count() >= 1, 'the granite sills have their row');
+      await t.shot('window-sill-schedule', { of: '.schedule-pane', pad: 0 });
+      // A tag on the exterior sill of a dressed window: its few words, its leader to the sill.
+      const view = `plan:${windows[1].storeyId}`;
+      const tag = (await t.cmd('drafting.addTag', { viewId: view, element: windows[1].id, part: 'sill:outside', at: [3.5, 8 + 1.6] })).id;
+      const made = (await t.nodes()).find((n) => n.id === tag);
+      t.expect(made && made.props.part === 'sill:outside' && made.props.field === 'partLabel', 'a tag of the exterior sill');
+      await t.ui({ view: 'plan', keyPlan: true });
+    },
+  },
+  {
     // Sunshades (report #56): a concrete canopy put on a window with the Sunshade tool, louvres, fins, an awning, a pergola and
     // an external blind; the noon helper on the canopy; the types dialog; in plan (overhead dashed) and in 3D.
     id: 'sunshades',

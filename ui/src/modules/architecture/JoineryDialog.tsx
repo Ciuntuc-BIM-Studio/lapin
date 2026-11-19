@@ -33,6 +33,7 @@ import { JoineryDataButton } from './JoineryData';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 import { GARAGE_LABELS, GARAGE_OPERATIONS, garageName, garageOf, sizeLabel, withGarageKind, type Garage, type GarageOperation } from './garageDoors';
 import { TypeListActions, endsOf } from '../../shell/TypeListActions';
+import { typeToEdit } from '../../shell/typeToEdit';
 
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
 /** A profile system's finer shapes (decision 370): the frame's rebate, the sash lapping over it, glazing beads, a drip. */
@@ -881,7 +882,7 @@ export function JoineryDialog() {
     garage?: { sizes?: GarageSize[] };
     profileSystems?: Record<string, { frame: Spec['frame']; sash: Spec['sash']; profile: Profile }> } | undefined;
   const bayStyles = info?.catalogs['architecture.bayStyles'] as unknown as { spec: Spec }[] | undefined;
-  const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
+  const [editing, setEditing] = useState<string | null>(typeToEdit('joinery') ?? types[0]?.id ?? null);
   // What a new type starts from (a new object each time New door or New window is clicked, so the editor reloads).
   const [fresh, setFresh] = useState<{ kind: 'door' | 'window'; bay?: boolean; preset?: string }>({ kind: 'window' });
   const [spec, setSpec] = useState<Spec | null>(null);

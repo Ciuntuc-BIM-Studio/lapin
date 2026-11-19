@@ -28,6 +28,12 @@ namespace Lapin.Drafting;
 /// leader, box or shoulder, styles and grips, following its element as any tag; its <c>{…}</c> are live, read from the element
 /// as a template's ({mark}, {FireRating}, {storey.name}, {= area * 1.1 | 0.00}).
 /// </para>
+/// <para>
+/// A tag of a part (forum topic 178, decision 727): <c>part</c> names a part of its element a module lists as a schedule's rows
+/// (<see cref="IPartSource"/>: a window's interior or exterior sill), so the tag reads the part's fields first ({sillMaterial},
+/// {sillLength}; by default its few words, <c>partLabel</c>) and its leader points at the part. A click on the part in a view
+/// tags it (<c>pick</c>, the click's point); the element stays what the tag follows.
+/// </para>
 /// </summary>
 public static class Tags
 {
@@ -52,6 +58,49 @@ public static class Tags
         return pts.Count == 0 ? null : new Vec2((pts.Min(p => p.X) + pts.Max(p => p.X)) / 2, (pts.Min(p => p.Y) + pts.Max(p => p.Y)) / 2);
     }
 
+    /// <summary>The part of <paramref name="e"/> a tag names (<c>part</c>), as its module lists it; null when it names none or the element has it no more.</summary>
+    public static ElementPart? PartOf(IQueryContext? q, Entity? e, string? key)
+    {
+        if (q == null || e == null || string.IsNullOrEmpty(key)) return null;
+        foreach (var source in q.Services.All<IPartSource>())
+            foreach (var p in source.PartsOf(q, e))
+                if (p.Key == key) return p;
+        return null;
+    }
+
+    /// <summary>A part's fields as a tag's text reads them, by their keys.</summary>
+    static Dictionary<string, string>? FieldsOf(ElementPart? p) =>
+        p == null ? null : p.Fields.ToDictionary(kv => kv.Key, kv => kv.Value.Shown, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Where a tag of a part points: the middle of the part's corners in the view; null when its source does not place it.</summary>
+    static Vec2? PartAnchor(ViewContext c, ElementPart? p)
+    {
+        if (p?.Points is not { Count: > 0 } pts) return null;
+        var v = pts.Select(c.Map).ToList();
+        return new Vec2((v.Min(q => q.X) + v.Max(q => q.X)) / 2, (v.Min(q => q.Y) + v.Max(q => q.Y)) / 2);
+    }
+
+    /// <summary>
+    /// The part of <paramref name="e"/> a click at <paramref name="at"/> (the view's coordinates, <paramref name="frame"/>'s) lands
+    /// on: of the parts its modules place, the smallest whose outline in the view, a little grown, holds the point; null: the element.
+    /// </summary>
+    public static string? PartAt(IQueryContext q, Entity e, ViewFrame frame, Vec2 at, double tolerance)
+    {
+        string? best = null;
+        var area = double.MaxValue;
+        foreach (var source in q.Services.All<IPartSource>())
+            foreach (var p in source.PartsOf(q, e))
+            {
+                if (p.Points is not { Count: > 0 } pts) continue;
+                var v = pts.Select(frame.Map).ToList();
+                var (x0, x1, y0, y1) = (v.Min(z => z.X) - tolerance, v.Max(z => z.X) + tolerance, v.Min(z => z.Y) - tolerance, v.Max(z => z.Y) + tolerance);
+                if (at.X < x0 || at.X > x1 || at.Y < y0 || at.Y > y1) continue;
+                var a = (x1 - x0) * (y1 - y0);
+                if (a < area) (best, area) = (p.Key, a);
+            }
+        return best;
+    }
+
     static Vec2? Pt(JsonNode? n) => n is JsonArray a && a.Count >= 2 && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y ? new Vec2(x, y) : null;
     static JsonArray J(Vec2 p) => new(p.X, p.Y);
 
@@ -59,22 +108,22 @@ public static class Tags
     public static string? FreeText(Entity tag) => tag.Str("text") is { } t && t.Trim().Length > 0 ? t : null;
 
     /// <summary>A text tag's lines (issue #92): each as typed, its {…} read from the element; an empty line kept between others, none at either end.</summary>
-    public static IReadOnlyList<string> FreeLines(IModelView m, string text, Entity? e, string units)
+    public static IReadOnlyList<string> FreeLines(IModelView m, string text, Entity? e, string units, IReadOnlyDictionary<string, string>? part = null)
     {
-        var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Select(l => (e != null ? TagText.Fill(l, m, e, null, units) : l).TrimEnd()).ToList();
+        var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Select(l => (e != null ? TagText.Fill(l, m, e, part, units) : l).TrimEnd()).ToList();
         while (lines.Count > 0 && lines[0].Trim().Length == 0) lines.RemoveAt(0);
         while (lines.Count > 0 && lines[^1].Trim().Length == 0) lines.RemoveAt(lines.Count - 1);
         return lines.Count > 0 ? lines : ["?"];
     }
 
     /// <summary>The lines a tag shows: its own text (a text tag), else its own template, else its type's, else its field; "?" when they come out empty or the element is gone.</summary>
-    public static IReadOnlyList<string> LinesOf(IModelView m, Entity tag, Entity? e, TagType? type, string units)
+    public static IReadOnlyList<string> LinesOf(IModelView m, Entity tag, Entity? e, TagType? type, string units, IReadOnlyDictionary<string, string>? part = null)
     {
         // A text tag says what was typed, its element gone or not (its colour tells that).
-        if (FreeText(tag) is { } free) return FreeLines(m, free, e, units);
+        if (FreeText(tag) is { } free) return FreeLines(m, free, e, units, part);
         if (e == null) return ["?"];
         var template = tag.Str("template") is { Length: > 0 } own ? own : type?.Template;
-        var lines = template != null ? TagText.Lines(template, m, e, null, units) : [Text(m, e, tag.Str("field") ?? "mark", units) ?? ""];
+        var lines = template != null ? TagText.Lines(template, m, e, part, units) : [TagText.Value(m, e, tag.Str("field") ?? "mark", part, units)];
         lines = lines.Where(l => l.Length > 0).ToList();
         return lines.Count > 0 ? lines : ["?"];
     }
@@ -203,7 +252,7 @@ public static class Tags
             var e = c.Model.Get(t.Str("element") ?? "");
             // Its type: chosen for it, else the first tag rule of its element's class that holds, else its own (issue #72).
             var type = TagRules.TypeOf(c.Model, c.Book, t, e);
-            if (IsOpeningMarker(type, e, c.Kind)) continue;
+            if (IsOpeningMarker(type, e, c.Kind) && t.Str("part") == null) continue;
             var mark = Mark(c, t, e, type);
             yield return TagRules.Off(t) ? TagRules.Ghost(mark, c.Mm) : mark;
         }
@@ -225,18 +274,22 @@ public static class Tags
         var at = Followed(Pt(t.Attrs["at"])) ?? default;
         var angle = AngleOf(c, t, e);
         var rad = angle * Math.PI / 180;
-        var lines = LinesOf(c.Model, t, e, type, c.Book.Units);
-        var color = e == null ? "#c0392b" : style.Color ?? "#000000";
+        // A tag of a part (decision 727): its fields read first, its leader to the part; a part gone leaves it red as an element gone does.
+        var partKey = t.Str("part");
+        var part = PartOf(c.Query, e, partKey);
+        var lines = partKey != null && part == null && FreeText(t) == null ? ["?"] : LinesOf(c.Model, t, e, type, c.Book.Units, FieldsOf(part));
+        var color = e == null || (partKey != null && part == null) ? "#c0392b" : style.Color ?? "#000000";
+        Vec2? Aim(Entity el) => PartAnchor(c, part) ?? Anchor(c.Drawing, el.Id);
         var leaderOn = t.Attrs["leader"] is not JsonValue lv || !lv.TryGetValue<bool>(out var on) || on;
         // A tag type drawn by a symbol of the user's (decision 552): the symbol at the tag's point, its texts the element's fields.
         if (type?.Symbol is { } symbolId && e != null && !free && TagSymbols.Lay(c, symbolId, at, rad, e) is { } laid)
         {
-            return SymbolTag(c, t, e, laid, at, rad, color, leaderOn, Followed(Pt(t.Attrs["end"])) ?? Anchor(c.Drawing, e.Id), Followed(Pt(t.Attrs["elbow"])));
+            return SymbolTag(c, t, e, laid, at, rad, color, leaderOn, Followed(Pt(t.Attrs["end"])) ?? Aim(e), Followed(Pt(t.Attrs["elbow"])));
         }
         // An elbow (decision 331): the tag's point is its knee, the text beside it on its shoulder, no box.
         if (TagLeaders.ShapeOf(t, type) == TagLeaders.Elbow)
         {
-            var to = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Anchor(c.Drawing, e.Id) : null);
+            var to = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Aim(e) : null);
             var (em, head, side) = TagLeaders.Plain(t.Id, lines, style, type, c.Mm, at, to, leaderOn, color, rad);
             em.Data = ElbowData(at, head, side, leaderOn, e, to);
             AngleData(em.Data, t, e, c, head, (lines.Count * TagLeaders.Pitch * style.Height * c.Mm + 2 * style.Height * c.Mm) / 2 + 1.5 * style.Height * c.Mm);
@@ -245,7 +298,7 @@ public static class Tags
             return em;
         }
         // The leader: to the spot it was pointed at, else the middle of what the element draws here; through its elbow.
-        var end = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Anchor(c.Drawing, e.Id) : null);
+        var end = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Aim(e) : null);
         var elbow = Followed(Pt(t.Attrs["elbow"]));
         var mk = Box(t.Id, lines, style, c.Mm, at, leaderOn ? end : null, elbow, t.Attrs["end"] is JsonArray || elbow != null, color, rad);
         mk.Data!["of"] = e?.Id;
@@ -256,7 +309,8 @@ public static class Tags
 
     public static void Register(IModuleRegistry r)
     {
-        // A tag of an element on a view: its mark (or name, class, type, any parameter), at a point.
+        // A tag of an element on a view: its mark (or name, class, type, any parameter), at a point; of one of its parts (decision 727:
+        // part, a window's sill:inside or sill:outside; or pick, the click's point in the view, the part it lands on).
         r.Command("addTag", "Tag", (ctx, a) =>
         {
             var viewId = (string?)a["viewId"] ?? throw new CommandException("A tag is put on a view.");
@@ -271,7 +325,19 @@ public static class Tags
             var typeId = (string?)a["tagType"];
             if (typeId != null && Standards.TagTypeOf(book, typeId) == null) throw new CommandException("There is no such tag type.");
             var type = typeId != null ? Standards.TagTypeOf(book, typeId) : field == null ? Standards.TagTypeOf(book, null, e.Class) : null;
+            // A part of the element (decision 727): the one named, else the one the click (pick, in the view) landed on; its
+            // few words by default, and none of the class's own tag types (a window's marker is the window's).
+            string? part = null;
+            if ((string?)a["part"] is { Length: > 0 } named)
+                part = PartOf(ctx.Query, e, named) != null ? named : throw new CommandException("The element has no such part.");
+            else if (Pt(a["pick"]) is { } pick && Views.Find(ctx.Model, viewId) is { } pv
+                && ctx.Query.Services.All<IPartSource>().Any(s => s.PartsOf(ctx.Query, e).Any(x => x.Points != null))
+                && (Views.Spec(ctx.Model, pv, [], ctx.Query.Services).Spec ?? Views.Generate(ctx.Query, pv).Spec) is { } vs)
+                part = PartAt(ctx.Query, e, vs.Frame, pick, 0.01);
+            // A part's tag shows the part's few words unless another field or a tag type was asked for (the element's mark is the element's).
+            if (part != null && typeId == null && field is null or "mark") (type, field) = (null, "partLabel");
             var attrs = new JsonObject { ["viewId"] = viewId, ["element"] = e.Id, ["field"] = field ?? "mark", ["at"] = at };
+            if (part != null) attrs["part"] = part;
             // A text tag (issue #92): what it says, typed; its {…} read from the element.
             var free = a["text"] is null ? null : ((string?)a["text"])?.Trim('\n', '\r', ' ') is { Length: > 0 } ft ? ft : throw new CommandException("Write what the text tag says.");
             if (free != null) attrs["text"] = free;
@@ -284,7 +350,7 @@ public static class Tags
             attrs[TagLeaders.RevKey] = TagLeaders.Rev;
             // Where the element stands now: the tag follows it from there (report #93).
             TagHold.Hold(ctx.Model, attrs, e, Views.Find(ctx.Model, viewId) is { } v && TagHold.Axes(ctx.Model, v) is { Plan: true }, ctx.Query.Geometry);
-            var tag = new Entity(ctx.NewId(), IfcClass.Annotation, free != null ? "Text tag" : $"Tag {TagText.Mark(ctx.Model, e)}", attrs, "TAG");
+            var tag = new Entity(ctx.NewId(), IfcClass.Annotation, free != null ? "Text tag" : part != null ? $"Tag {TagText.Mark(ctx.Model, e)} {part}" : $"Tag {TagText.Mark(ctx.Model, e)}", attrs, "TAG");
             ctx.Add(tag);
             return new JsonObject { ["id"] = tag.Id };
         });

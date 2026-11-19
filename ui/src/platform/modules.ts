@@ -92,6 +92,8 @@ export function similarFor(node: NodeDto): (() => void) | null {
   return () => { tool.typed!.set(type.id); if (useUi.getState().tool !== tool.id) activate(tool); };
 }
 export const setTypeOf = (cls: string) => modules.map((m) => m.setType?.[cls]).find(Boolean) ?? null;
+/** What opens a type's own dialog on it (Edit type…), from the first module with one for its class. */
+export const typeEditorOf = (cls: string) => modules.map((m) => m.editType?.[cls]).find(Boolean) ?? null;
 export const typeFieldsOf = (cls: string) => modules.map((m) => m.typeFields?.[cls]).find(Boolean) ?? null;
 
 /** The Place catalogue's sources, every module's, in their order (S15). */

@@ -157,6 +157,14 @@ const sitework: LapinModule = {
   ],
   dialogs: { scaffoldTypes: ScaffoldDialog, formworkTypes: FormworkDialog },
   typeFields: { LapinScaffoldType: ScaffoldTypeFields, LapinFormworkType: FormworkTypeFields },
+  // Edit type… (decision 726): the dialog opened on the element's type.
+  editType: {
+    LapinScaffoldType: (id) => { setSiteWorks({ scaffoldTypeId: id }); useUi.setState({ dialog: 'scaffoldTypes' }); },
+    LapinFormworkType: (id) => {
+      const kind = useSession.getState().nodes.get(id)?.props.kind;
+      setSiteWorks({ formworkTypeId: id, formworkKind: kind === 'beam' || kind === 'upright' ? kind : 'slab' }); useUi.setState({ dialog: 'formworkTypes' });
+    },
+  },
   similar: {
     LapinScaffold: (n) => { setSiteWorks({ scaffoldTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(scaffold); },
     LapinFormwork: (n) => { setSiteWorks({ formworkTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(formworkOnFace); },

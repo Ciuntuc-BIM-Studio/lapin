@@ -7,7 +7,7 @@
  * gives an element another one.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
@@ -27,6 +27,7 @@ import { SectionGlyph } from '../steel/SteelTypesDialog';
 import type { ProfileJson } from '../core/profiles';
 import { TypeListActions, endsOf } from '../../shell/TypeListActions';
 import { TypeTableFiles } from './TypeTableImport';
+import { typeToEdit } from '../../shell/typeToEdit';
 import { formatLengths, parseLengths } from './lintelFields';
 import { FACES, toggleFace, wrapsArg, wrapsOf, type Wrap } from './columnLayers';
 import { TypeMarkField } from '../core/MarkField';
@@ -105,6 +106,15 @@ export function StructureTypesDialog() {
     }
   };
   const fresh = () => { setEditing(null); setName(''); setWraps([]); };
+  // Edit type… on a column, beam or footing (decision 726): the dialog opens on its type, under its kind.
+  useEffect(() => {
+    const id = typeToEdit('structureTypes');
+    const t = id ? nodes.get(id) : undefined;
+    if (!t) return;
+    setKind(t.type === 'IfcColumnType' ? 'column' : t.type === 'IfcBeamType' ? 'beam' : t.props.kind === 'strip' ? 'strip' : 'pad');
+    pick(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const switchKind = (k: Kind) => { setKind(k); fresh(); };
 
   const sectionOf = () => shape === 'polygon' ? { kind: shape, width: w, depth: w, sides } : { kind: shape, width: w, depth: shape === 'circle' ? w : d };

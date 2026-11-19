@@ -23,6 +23,7 @@ import { TypeListActions, endsOf } from '../../shell/TypeListActions';
 import { BeamBlockFields } from './BeamBlockFields';
 import { BEAM_BLOCK_DEFAULT, beamBlockDepth, beamBlockOf, withCoreDepth, type BeamBlockSpec } from './beamBlock';
 import { TypeMarkField } from '../core/MarkField';
+import { typeToEdit } from '../../shell/typeToEdit';
 
 /** A layer as the editor holds it: the thickness in metres; its priority (null: its material's, else 50 for the core and 0 for the rest) and category (null: its material's). */
 interface Row { material: string; thickness: number; core: boolean; note?: string; priority?: number | null; category?: string | null }
@@ -40,7 +41,7 @@ export function SlabTypesDialog() {
   const kept = useRef<{ editing: string | null; name: string; rows: Row[] } | null | undefined>(undefined);
   if (kept.current === undefined) kept.current = takeStash<{ editing: string | null; name: string; rows: Row[] }>('slabTypes');
   const k0 = kept.current;
-  const [editing, setEditing] = useState<string | null>(k0 ? k0.editing : types[0]?.id ?? null);
+  const [editing, setEditing] = useState<string | null>(k0 ? k0.editing : typeToEdit('slabTypes') ?? types[0]?.id ?? null);
   const [name, setName] = useState(k0?.name ?? '');
   const [rows, setRows] = useState<Row[]>(k0?.rows ?? blank());
   // Report #134: a layered floor, or one of beam and block (its core the structure).

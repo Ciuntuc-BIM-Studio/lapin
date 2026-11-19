@@ -20,6 +20,7 @@ import { PendingDialog } from '../core/PendingDialog';
 import { newElement, typedBy } from './NewElement';
 import { SlabThumb } from './Thumbs';
 import { TypeMarkField } from '../core/MarkField';
+import { openTypeDialog, typeToEdit } from '../../shell/typeToEdit';
 
 export interface CeilingSpec {
   name: string; system: 'grid' | 'plain'; tileWidth: number; tileLength: number; thickness: number;
@@ -76,7 +77,7 @@ export function CeilingTypesDialog() {
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = ofClass(model, 'LapinCeilingType');
   const catalog = info?.catalogs['architecture.ceilings'] as unknown as { spec: CeilingSpec; plain: CeilingSpec } | undefined;
-  const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
+  const [editing, setEditing] = useState<string | null>(typeToEdit('ceilingTypes') ?? types[0]?.id ?? null);
   const [spec, setSpec] = useState<CeilingSpec | null>(null);
   // What a new type starts from (a new object on each New…, so the editor reloads).
   const [fresh, setFresh] = useState<{ system: 'grid' | 'plain' }>({ system: 'grid' });
@@ -166,7 +167,7 @@ export function CeilingSection({ node }: { node: NodeDto }) {
         <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => set({ typeId: e.target.value })}>
           {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-        <button type="button" className="link small" onClick={() => useUi.setState({ dialog: 'ceilingTypes' })}>Ceiling types…</button>
+        <button type="button" className="link small" onClick={() => openTypeDialog('ceilingTypes', type?.id)}>Ceiling types…</button>
       </label>
       <dl className="fields">
         <dt>Height</dt>
