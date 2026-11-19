@@ -4644,6 +4644,27 @@ export const PL: Record<string, string> = {
   "level": "poziome",
   "bevel": "ścięte",
   "stepped": "schodkowe",
+  // What a section or an elevation sees beyond its cut (issue #93, decision 721).
+  "Full depth": "Pełna głębokość",
+  "Everything the view sees up to its depth, in the seen pen": "Wszystko, co widok widzi do swojej głębokości, piórem widocznych",
+  "Cut + near": "Przekrój + blisko",
+  "What lies within the near depth of the cut in the seen pen; what lies wholly farther, up to the depth, in a thin grey background pen": "To, co leży w bliskiej głębokości przekroju, piórem widocznych; to, co leży całe dalej, do głębokości, cienkim szarym piórem tła",
+  "Cut only": "Tylko przekrój",
+  "Only what the section plane cuts: nothing seen beyond it (for details)": "Tylko to, co tnie płaszczyzna przekroju: nic widocznego za nią (do detali)",
+  "What the view draws beyond its cut: everything up to its depth, the near part with the rest in a thin grey background pen, or only what the plane cuts (for details)": "Co widok rysuje za swoim przekrojem: wszystko do swojej głębokości, bliską część z resztą cienkim szarym piórem tła, albo tylko to, co tnie płaszczyzna (do detali)",
+  "Beyond the cut": "Za przekrojem",
+  "only once its marker is moved into the building": "dopiero gdy jego znacznik zostanie przesunięty do budynku",
+  "How far from the cut elements draw in full; an element lying wholly farther goes to the background": "Jak daleko od przekroju elementy rysują się w pełni; element leżący cały dalej przechodzi do tła",
+  "Near depth": "Bliska głębokość",
+  "How far the elevation sees, from the model's front (or its marker's line moved into the building); empty: without end. Also its far line's grip in plan.": "Jak daleko widzi elewacja, od przodu modelu (lub od linii jej znacznika przesuniętej do budynku); puste: bez końca. Także uchwyt jej dalekiej linii w rzucie.",
+  "How far the section sees beyond its cut (its far clip); empty: without end. Also its far line's grip in plan.": "Jak daleko przekrój widzi za swoim cięciem (jego dalekie ograniczenie); puste: bez końca. Także uchwyt jego dalekiej linii w rzucie.",
+  "What the style's sections and elevations draw beyond their cut: everything up to their depth, the near part with the rest in a grey background pen, or only the cut": "Co przekroje i elewacje stylu rysują za swoim przekrojem: wszystko do swojej głębokości, bliską część z resztą szarym piórem tła, albo tylko przekrój",
+  "With Cut + near: how far from the cut elements draw in full before the background": "Przy Przekrój + blisko: jak daleko od przekroju elementy rysują się w pełni przed tłem",
+  "Drag: how far the section sees (its far clip; now without end)": "Przeciągnij: jak daleko widzi przekrój (jego dalekie ograniczenie; teraz bez końca)",
+  "Drag: how far the section sees (its far clip); Ctrl/⌘-click: without end": "Przeciągnij: jak daleko widzi przekrój (jego dalekie ograniczenie); Ctrl/⌘-klik: bez końca",
+  "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Przeciągnij: jak daleko widzi elewacja (jej dalekie ograniczenie); Ctrl/⌘-klik: bez końca",
+  "Only a section or an elevation has a depth.": "Tylko przekrój lub elewacja ma głębokość.",
+  "A view's depth is a length over 0.": "Głębokość widoku to długość większa od 0.",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

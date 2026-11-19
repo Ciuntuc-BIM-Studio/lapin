@@ -4638,6 +4638,27 @@ export const DA: Record<string, string> = {
   "level": "vandrette",
   "bevel": "skrå",
   "stepped": "trappede",
+  // What a section or an elevation sees beyond its cut (issue #93, decision 721).
+  "Full depth": "Fuld dybde",
+  "Everything the view sees up to its depth, in the seen pen": "Alt hvad visningen ser op til sin dybde, med pennen for set",
+  "Cut + near": "Snit + nær",
+  "What lies within the near depth of the cut in the seen pen; what lies wholly farther, up to the depth, in a thin grey background pen": "Hvad der ligger inden for snittets nærdybde, med pennen for set; hvad der ligger helt længere væk, op til dybden, med en tynd grå baggrundspen",
+  "Cut only": "Kun snit",
+  "Only what the section plane cuts: nothing seen beyond it (for details)": "Kun hvad snitplanet skærer: intet set bagved (til detaljer)",
+  "What the view draws beyond its cut: everything up to its depth, the near part with the rest in a thin grey background pen, or only what the plane cuts (for details)": "Hvad visningen tegner bag sit snit: alt op til sin dybde, den nære del med resten i en tynd grå baggrundspen, eller kun hvad planet skærer (til detaljer)",
+  "Beyond the cut": "Bag snittet",
+  "only once its marker is moved into the building": "først når dens markør er flyttet ind i bygningen",
+  "How far from the cut elements draw in full; an element lying wholly farther goes to the background": "Hvor langt fra snittet elementer tegnes fuldt; et element der ligger helt længere væk går i baggrunden",
+  "Near depth": "Nærdybde",
+  "How far the elevation sees, from the model's front (or its marker's line moved into the building); empty: without end. Also its far line's grip in plan.": "Hvor langt facaden ser, fra modellens forside (eller dens markørs linje flyttet ind i bygningen); tom: uden ende. Også greb på dens fjerne linje i plan.",
+  "How far the section sees beyond its cut (its far clip); empty: without end. Also its far line's grip in plan.": "Hvor langt snittet ser bag sit snit (dets fjerne afgrænsning); tom: uden ende. Også greb på dets fjerne linje i plan.",
+  "What the style's sections and elevations draw beyond their cut: everything up to their depth, the near part with the rest in a grey background pen, or only the cut": "Hvad stilens snit og facader tegner bag deres snit: alt op til deres dybde, den nære del med resten i en grå baggrundspen, eller kun snittet",
+  "With Cut + near: how far from the cut elements draw in full before the background": "Med Snit + nær: hvor langt fra snittet elementer tegnes fuldt før baggrunden",
+  "Drag: how far the section sees (its far clip; now without end)": "Træk: hvor langt snittet ser (dets fjerne afgrænsning; nu uden ende)",
+  "Drag: how far the section sees (its far clip); Ctrl/⌘-click: without end": "Træk: hvor langt snittet ser (dets fjerne afgrænsning); Ctrl/⌘-klik: uden ende",
+  "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Træk: hvor langt facaden ser (dens fjerne afgrænsning); Ctrl/⌘-klik: uden ende",
+  "Only a section or an elevation has a depth.": "Kun et snit eller en facade har en dybde.",
+  "A view's depth is a length over 0.": "En visnings dybde er en længde over 0.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

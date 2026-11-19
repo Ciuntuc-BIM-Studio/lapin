@@ -4635,6 +4635,27 @@ export const ZH: Record<string, string> = {
   "level": "水平",
   "bevel": "斜切",
   "stepped": "阶梯形",
+  // What a section or an elevation sees beyond its cut (issue #93, decision 721).
+  "Full depth": "完整深度",
+  "Everything the view sees up to its depth, in the seen pen": "视图在其深度内看到的一切，用可见线画笔",
+  "Cut + near": "剖切 + 近处",
+  "What lies within the near depth of the cut in the seen pen; what lies wholly farther, up to the depth, in a thin grey background pen": "位于剖切近处深度内的部分用可见线画笔；完全更远的部分直到深度用细灰色背景画笔",
+  "Cut only": "仅剖切",
+  "Only what the section plane cuts: nothing seen beyond it (for details)": "仅剖切平面切到的部分：不显示其后看到的任何内容（用于详图）",
+  "What the view draws beyond its cut: everything up to its depth, the near part with the rest in a thin grey background pen, or only what the plane cuts (for details)": "视图在剖切之后绘制的内容：直到其深度的一切、近处部分加上用细灰色背景画笔绘制的其余部分，或仅剖切平面切到的部分（用于详图）",
+  "Beyond the cut": "剖切之后",
+  "only once its marker is moved into the building": "仅当其标记被移入建筑内时",
+  "How far from the cut elements draw in full; an element lying wholly farther goes to the background": "距剖切多远的构件完整绘制；完全更远的构件转为背景",
+  "Near depth": "近处深度",
+  "How far the elevation sees, from the model's front (or its marker's line moved into the building); empty: without end. Also its far line's grip in plan.": "立面从模型正面（或移入建筑内的标记线）看多远；空：无限。也可在平面中拖动其远端线的夹点。",
+  "How far the section sees beyond its cut (its far clip); empty: without end. Also its far line's grip in plan.": "剖面在剖切之后看多远（其远剪裁）；空：无限。也可在平面中拖动其远端线的夹点。",
+  "What the style's sections and elevations draw beyond their cut: everything up to their depth, the near part with the rest in a grey background pen, or only the cut": "该样式的剖面和立面在剖切之后绘制的内容：直到其深度的一切、近处部分加上用灰色背景画笔绘制的其余部分，或仅剖切",
+  "With Cut + near: how far from the cut elements draw in full before the background": "使用剖切 + 近处时：距剖切多远的构件在背景之前完整绘制",
+  "Drag: how far the section sees (its far clip; now without end)": "拖动：剖面看多远（其远剪裁；当前无限）",
+  "Drag: how far the section sees (its far clip); Ctrl/⌘-click: without end": "拖动：剖面看多远（其远剪裁）；Ctrl/⌘-单击：无限",
+  "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "拖动：立面看多远（其远剪裁）；Ctrl/⌘-单击：无限",
+  "Only a section or an elevation has a depth.": "只有剖面或立面才有深度。",
+  "A view's depth is a length over 0.": "视图的深度是大于 0 的长度。",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

@@ -55,6 +55,7 @@ import { ViewSettingsDialog, ViewSettingsSection, ViewStylesDialog } from './Vie
 import { cutAtPlan, toggleSectionBox } from '../../viewport/sectionBoxTools';
 import { frontDiscipline } from './disciplines';
 import { sectionGrips, sectionRefs, sectionTools } from './sections';
+import { elevationFarGrips, sectionFarGrips, sectionFarLine } from './ViewDepth';
 import { lazyPart } from '../../platform/lazyPart';
 // Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
 import './extensionKinds';
@@ -404,12 +405,12 @@ const core: LapinModule = {
   }],
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
   grips: {
-    LapinView: (n, v) => [...sectionGrips(n, v), ...cropGrips(n)], LapinInset: insetGrips, LapinCallout: (n, v) => calloutGrips(n, v), IfcOpeningElement: voidLabelGrips,
+    LapinView: (n, v) => [...sectionGrips(n, v), ...sectionFarGrips(n), ...elevationFarGrips(n, v), ...cropGrips(n)], LapinInset: insetGrips, LapinCallout: (n, v) => calloutGrips(n, v), IfcOpeningElement: voidLabelGrips,
     // Where an element's hatch starts, dragged in a plan, an elevation or a section (stage 3 of the material graphics).
     ...Object.fromEntries([...HATCH_ORIGIN_TYPES].filter((c) => c !== 'IfcRoof').map((c) => [c, (n: NodeDto, v?: GripView) => hatchOriginGrips(n, v)])),
     IfcRoof: (n, v) => [...voidLabelGrips(n, v), ...hatchOriginGrips(n, v)],
   },
-  references: { LapinView: sectionRefs },
+  references: { LapinView: (n) => [...sectionRefs(n), ...sectionFarLine(n)] },
   placeSources: corePlaceSources,
   dialogs: { insetPick: InsetPickDialog, placeCatalog: PlaceCatalogDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, materialStandards: MaterialStandardsDialog, materialGraphicsSets: MaterialGraphicsSetsDialog, hatchPatterns: HatchPatternsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, newLevels: NewLevelsDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, typePacks: TypePacksDialog, projectTypes: ProjectTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, saveHatch: SaveHatchDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog },
   background: CoreBackground,

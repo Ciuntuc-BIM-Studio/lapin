@@ -7,6 +7,8 @@ const PLANE_KEYS = ['x', 'y', 'z', 'bearing', 'tilt', 'spin', 'width', 'height']
 export function viewShowsField(kind: unknown, key: string): boolean {
   if (PLANE_KEYS.includes(key)) return kind === 'plane';
   if (key === 'planeDepth') return kind === 'elevation';
+  // A view's depth (decision 721): how far a section, an elevation or a plane sees; a plan has its view range instead.
+  if (key === 'depth') return kind === 'section' || kind === 'elevation' || kind === 'plane';
   // The layer a section's marker is on (decision 223): only a section has a marker.
   if (key === 'markerLayer') return kind === 'section';
   // A view's mark (report #167) is under Marker symbol, with what it writes without one as its placeholder.

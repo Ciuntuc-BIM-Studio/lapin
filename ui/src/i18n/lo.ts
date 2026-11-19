@@ -4697,6 +4697,27 @@ export const LO: Record<string, string> = {
   "level": "ແນວນອນ",
   "bevel": "ຕັດຝຽງ",
   "stepped": "ເປັນຂັ້ນ",
+  // What a section or an elevation sees beyond its cut (issue #93, decision 721).
+  "Full depth": "ຄວາມເລິກເຕັມ",
+  "Everything the view sees up to its depth, in the seen pen": "ທຸກຢ່າງທີ່ມຸມມອງເຫັນຈົນເຖິງຄວາມເລິກຂອງມັນ, ດ້ວຍປາກກາເສັ້ນທີ່ເຫັນ",
+  "Cut + near": "ຕັດ + ໃກ້",
+  "What lies within the near depth of the cut in the seen pen; what lies wholly farther, up to the depth, in a thin grey background pen": "ສິ່ງທີ່ຢູ່ໃນຄວາມເລິກໃກ້ຂອງການຕັດ, ດ້ວຍປາກກາເສັ້ນທີ່ເຫັນ; ສິ່ງທີ່ຢູ່ໄກກວ່າທັງໝົດ, ຈົນເຖິງຄວາມເລິກ, ດ້ວຍປາກກາພື້ນຫຼັງບາງສີເທົາ",
+  "Cut only": "ສະເພາະການຕັດ",
+  "Only what the section plane cuts: nothing seen beyond it (for details)": "ສະເພາະສິ່ງທີ່ລະນາບຕັດຕັດຜ່ານ: ບໍ່ເຫັນຫຍັງເລີຍທາງຫຼັງ (ສຳລັບລາຍລະອຽດ)",
+  "What the view draws beyond its cut: everything up to its depth, the near part with the rest in a thin grey background pen, or only what the plane cuts (for details)": "ສິ່ງທີ່ມຸມມອງແຕ້ມທາງຫຼັງການຕັດ: ທຸກຢ່າງຈົນເຖິງຄວາມເລິກ, ສ່ວນໃກ້ ແລະ ສ່ວນທີ່ເຫຼືອດ້ວຍປາກກາພື້ນຫຼັງບາງສີເທົາ, ຫຼື ສະເພາະສິ່ງທີ່ລະນາບຕັດ (ສຳລັບລາຍລະອຽດ)",
+  "Beyond the cut": "ທາງຫຼັງການຕັດ",
+  "only once its marker is moved into the building": "ພຽງແຕ່ເມື່ອເຄື່ອງໝາຍຂອງມັນຖືກຍ້າຍເຂົ້າໄປໃນອາຄານ",
+  "How far from the cut elements draw in full; an element lying wholly farther goes to the background": "ໄກຈາກການຕັດເທົ່າໃດທີ່ອົງປະກອບຖືກແຕ້ມເຕັມ; ອົງປະກອບທີ່ຢູ່ໄກກວ່າທັງໝົດໄປເປັນພື້ນຫຼັງ",
+  "Near depth": "ຄວາມເລິກໃກ້",
+  "How far the elevation sees, from the model's front (or its marker's line moved into the building); empty: without end. Also its far line's grip in plan.": "ຮູບດ້ານເຫັນໄກເທົ່າໃດ, ຈາກດ້ານໜ້າຂອງແບບຈຳລອງ (ຫຼື ເສັ້ນເຄື່ອງໝາຍທີ່ຍ້າຍເຂົ້າໄປໃນອາຄານ); ຫວ່າງ: ບໍ່ມີທີ່ສິ້ນສຸດ. ພ້ອມທັງຈຸດຈັບເສັ້ນໄກຂອງມັນໃນແຜນຜັງ.",
+  "How far the section sees beyond its cut (its far clip); empty: without end. Also its far line's grip in plan.": "ຮູບຕັດເຫັນໄກເທົ່າໃດທາງຫຼັງການຕັດ (ຂອບເຂດໄກຂອງມັນ); ຫວ່າງ: ບໍ່ມີທີ່ສິ້ນສຸດ. ພ້ອມທັງຈຸດຈັບເສັ້ນໄກຂອງມັນໃນແຜນຜັງ.",
+  "What the style's sections and elevations draw beyond their cut: everything up to their depth, the near part with the rest in a grey background pen, or only the cut": "ສິ່ງທີ່ຮູບຕັດ ແລະ ຮູບດ້ານຂອງຮູບແບບແຕ້ມທາງຫຼັງການຕັດ: ທຸກຢ່າງຈົນເຖິງຄວາມເລິກ, ສ່ວນໃກ້ ແລະ ສ່ວນທີ່ເຫຼືອດ້ວຍປາກກາພື້ນຫຼັງສີເທົາ, ຫຼື ສະເພາະການຕັດ",
+  "With Cut + near: how far from the cut elements draw in full before the background": "ກັບ ຕັດ + ໃກ້: ໄກຈາກການຕັດເທົ່າໃດທີ່ອົງປະກອບຖືກແຕ້ມເຕັມກ່ອນພື້ນຫຼັງ",
+  "Drag: how far the section sees (its far clip; now without end)": "ລາກ: ຮູບຕັດເຫັນໄກເທົ່າໃດ (ຂອບເຂດໄກ; ຕອນນີ້ບໍ່ມີທີ່ສິ້ນສຸດ)",
+  "Drag: how far the section sees (its far clip); Ctrl/⌘-click: without end": "ລາກ: ຮູບຕັດເຫັນໄກເທົ່າໃດ (ຂອບເຂດໄກ); Ctrl/⌘-ຄລິກ: ບໍ່ມີທີ່ສິ້ນສຸດ",
+  "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "ລາກ: ຮູບດ້ານເຫັນໄກເທົ່າໃດ (ຂອບເຂດໄກ); Ctrl/⌘-ຄລິກ: ບໍ່ມີທີ່ສິ້ນສຸດ",
+  "Only a section or an elevation has a depth.": "ມີແຕ່ຮູບຕັດ ຫຼື ຮູບດ້ານທີ່ມີຄວາມເລິກ.",
+  "A view's depth is a length over 0.": "ຄວາມເລິກຂອງມຸມມອງແມ່ນຄວາມຍາວຫຼາຍກວ່າ 0.",
 };
 
 /** Phrases with a number or a name in them. */

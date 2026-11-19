@@ -4604,6 +4604,27 @@ export const IT: Record<string, string> = {
   "level": "orizzontali",
   "bevel": "smussati",
   "stepped": "a gradini",
+  // What a section or an elevation sees beyond its cut (issue #93, decision 721).
+  "Full depth": "Profondità intera",
+  "Everything the view sees up to its depth, in the seen pen": "Tutto ciò che la vista vede fino alla sua profondità, con la penna del visto",
+  "Cut + near": "Taglio + vicino",
+  "What lies within the near depth of the cut in the seen pen; what lies wholly farther, up to the depth, in a thin grey background pen": "Ciò che sta entro la profondità vicina del taglio, con la penna del visto; ciò che sta tutto più lontano, fino alla profondità, con una penna di sfondo sottile e grigia",
+  "Cut only": "Solo taglio",
+  "Only what the section plane cuts: nothing seen beyond it (for details)": "Solo ciò che il piano di sezione taglia: niente visto oltre (per i dettagli)",
+  "What the view draws beyond its cut: everything up to its depth, the near part with the rest in a thin grey background pen, or only what the plane cuts (for details)": "Ciò che la vista disegna oltre il suo taglio: tutto fino alla sua profondità, la parte vicina con il resto in una penna di sfondo sottile e grigia, o solo ciò che il piano taglia (per i dettagli)",
+  "Beyond the cut": "Oltre il taglio",
+  "only once its marker is moved into the building": "solo quando il suo marcatore è spostato dentro l'edificio",
+  "How far from the cut elements draw in full; an element lying wholly farther goes to the background": "A che distanza dal taglio gli elementi si disegnano per intero; un elemento tutto più lontano passa allo sfondo",
+  "Near depth": "Profondità vicina",
+  "How far the elevation sees, from the model's front (or its marker's line moved into the building); empty: without end. Also its far line's grip in plan.": "Fin dove vede il prospetto, dal fronte del modello (o dalla linea del suo marcatore spostata dentro l'edificio); vuoto: senza fine. Anche la maniglia della sua linea lontana in pianta.",
+  "How far the section sees beyond its cut (its far clip); empty: without end. Also its far line's grip in plan.": "Fin dove vede la sezione oltre il suo taglio (il suo limite lontano); vuoto: senza fine. Anche la maniglia della sua linea lontana in pianta.",
+  "What the style's sections and elevations draw beyond their cut: everything up to their depth, the near part with the rest in a grey background pen, or only the cut": "Ciò che le sezioni e i prospetti dello stile disegnano oltre il loro taglio: tutto fino alla loro profondità, la parte vicina con il resto in una penna di sfondo grigia, o solo il taglio",
+  "With Cut + near: how far from the cut elements draw in full before the background": "Con Taglio + vicino: a che distanza dal taglio gli elementi si disegnano per intero prima dello sfondo",
+  "Drag: how far the section sees (its far clip; now without end)": "Trascina: fin dove vede la sezione (il suo limite lontano; ora senza fine)",
+  "Drag: how far the section sees (its far clip); Ctrl/⌘-click: without end": "Trascina: fin dove vede la sezione (il suo limite lontano); Ctrl/⌘-clic: senza fine",
+  "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Trascina: fin dove vede il prospetto (il suo limite lontano); Ctrl/⌘-clic: senza fine",
+  "Only a section or an elevation has a depth.": "Solo una sezione o un prospetto ha una profondità.",
+  "A view's depth is a length over 0.": "La profondità di una vista è una lunghezza maggiore di 0.",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

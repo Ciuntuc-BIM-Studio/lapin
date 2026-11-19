@@ -47,7 +47,22 @@ export interface ViewStyle { id: string; name: string; discipline: string | null
   /** What cut elements draw at small scales (docs/plan-material-graphics.md, stage 2); unset: as their materials say. */
   smallScaleCut?: SmallScaleCut | null;
   /** The material graphics set its views draw by (docs/plan-material-graphics.md, stage 4); unset: the materials' own graphics. */
-  materialGraphicsSet?: string | null }
+  materialGraphicsSet?: string | null;
+  /** What sections and elevations draw beyond their cut (issue #93, decision 721); unset: full. */
+  beyond?: BeyondMode;
+  /** Where `near` puts the rest in the background, metres from the cut (default 1). */
+  nearDepth?: number }
+
+/** What a section or an elevation draws beyond its cut (decision 721): everything, the near part with the rest in the background, or only the cut. */
+export type BeyondMode = 'full' | 'near' | 'cut';
+/** The engine's default near depth, metres. */
+export const DEFAULT_NEAR_DEPTH = 1;
+/** The presets as the editors offer them, with what each does. */
+export const BEYOND_MODES: [BeyondMode, string, string][] = [
+  ['full', 'Full depth', 'Everything the view sees up to its depth, in the seen pen'],
+  ['near', 'Cut + near', 'What lies within the near depth of the cut in the seen pen; what lies wholly farther, up to the depth, in a thin grey background pen'],
+  ['cut', 'Cut only', 'Only what the section plane cuts: nothing seen beyond it (for details)'],
+];
 
 /** The engine's default of the minimum hatch spacing, paper millimetres. */
 export const DEFAULT_MIN_HATCH_SPACING = 0.7;

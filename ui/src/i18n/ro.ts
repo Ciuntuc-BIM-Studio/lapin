@@ -4597,6 +4597,27 @@ export const RO: Record<string, string> = {
   "level": "orizontale",
   "bevel": "teșite",
   "stepped": "în trepte",
+  // What a section or an elevation sees beyond its cut (issue #93, decision 721).
+  "Full depth": "Toată adâncimea",
+  "Everything the view sees up to its depth, in the seen pen": "Tot ce vede vederea până la adâncimea ei, cu creionul liniilor văzute",
+  "Cut + near": "Tăietură + aproape",
+  "What lies within the near depth of the cut in the seen pen; what lies wholly farther, up to the depth, in a thin grey background pen": "Ce se află în adâncimea apropiată a tăieturii, cu creionul liniilor văzute; ce se află în întregime mai departe, până la adâncime, cu un creion de fundal subțire și gri",
+  "Cut only": "Doar tăietura",
+  "Only what the section plane cuts: nothing seen beyond it (for details)": "Doar ce taie planul secțiunii: nimic văzut dincolo de el (pentru detalii)",
+  "What the view draws beyond its cut: everything up to its depth, the near part with the rest in a thin grey background pen, or only what the plane cuts (for details)": "Ce desenează vederea dincolo de tăietura ei: tot până la adâncimea ei, partea apropiată cu restul într-un creion de fundal subțire și gri, sau doar ce taie planul (pentru detalii)",
+  "Beyond the cut": "Dincolo de tăietură",
+  "only once its marker is moved into the building": "doar după ce marcatorul ei e mutat în clădire",
+  "How far from the cut elements draw in full; an element lying wholly farther goes to the background": "Cât de departe de tăietură se desenează elementele întregi; un element aflat în întregime mai departe trece în fundal",
+  "Near depth": "Adâncimea apropiată",
+  "How far the elevation sees, from the model's front (or its marker's line moved into the building); empty: without end. Also its far line's grip in plan.": "Cât de departe vede fațada, de la fața modelului (sau de la linia marcatorului ei mutată în clădire); gol: fără capăt. Și prinderea liniei ei îndepărtate în plan.",
+  "How far the section sees beyond its cut (its far clip); empty: without end. Also its far line's grip in plan.": "Cât de departe vede secțiunea dincolo de tăietura ei (limita ei îndepărtată); gol: fără capăt. Și prinderea liniei ei îndepărtate în plan.",
+  "What the style's sections and elevations draw beyond their cut: everything up to their depth, the near part with the rest in a grey background pen, or only the cut": "Ce desenează secțiunile și fațadele stilului dincolo de tăietura lor: tot până la adâncimea lor, partea apropiată cu restul într-un creion de fundal gri, sau doar tăietura",
+  "With Cut + near: how far from the cut elements draw in full before the background": "Cu Tăietură + aproape: cât de departe de tăietură se desenează elementele întregi înainte de fundal",
+  "Drag: how far the section sees (its far clip; now without end)": "Trage: cât de departe vede secțiunea (limita ei îndepărtată; acum fără capăt)",
+  "Drag: how far the section sees (its far clip); Ctrl/⌘-click: without end": "Trage: cât de departe vede secțiunea (limita ei îndepărtată); Ctrl/⌘-clic: fără capăt",
+  "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Trage: cât de departe vede fațada (limita ei îndepărtată); Ctrl/⌘-clic: fără capăt",
+  "Only a section or an elevation has a depth.": "Doar o secțiune sau o fațadă are adâncime.",
+  "A view's depth is a length over 0.": "Adâncimea unei vederi este o lungime mai mare decât 0.",
 };
 
 /** Phrases with a number or a name in them. */
