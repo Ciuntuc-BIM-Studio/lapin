@@ -337,7 +337,7 @@ public static class Views
         var copy = new Entity(ctx.NewId(), Class, name is { Length: > 0 } ? name : CopyName(ctx.Model, src.Name, Class), attrs);
         ctx.Add(copy);
         var annotations = 0;
-        // Its north arrows and scale bars go with it always (decision 723: a site plan's are its settings); with detailing, every annotation.
+        // Its north arrows and scale bars go with it always (decision 722: a site plan's are its settings); with detailing, every annotation.
         foreach (var ann in ctx.Model.OfClass(IfcClass.Annotation).Where(x => x.Str("viewId") == id && (withDetailing || x.PredefinedType is DrawingKeys.NorthArrow or DrawingKeys.ScaleBar)).ToList())
             {
                 var aa = ann.CloneAttrs();
@@ -1664,7 +1664,7 @@ public static class Views
             var first = kind == "plan" && attrs["site"] == null && !attrs.ContainsKey("foundation") && (string?)attrs["storeyId"] is { } onStorey && StoreyPlans.Of(ctx.Model, onStorey) == null ? onStorey : null;
             var v = new Entity(ctx.NewId(), Class, name, attrs);
             ctx.Add(v);
-            // A site view's north arrow and scale bar (decision 723): annotations of its own, standing by themselves until moved (drafting's class: a product with it).
+            // A site view's north arrow and scale bar (decision 722): annotations of its own, standing by themselves until moved (drafting's class: a product with it).
             if (SitePlans.Of(v) != null && ctx.Describe(IfcClass.Annotation) != null) foreach (var key in DrawingKeys.SiteKeys(ctx.NewId, v.Id)) ctx.Add(key);
             if (first != null) StoreyPlans.Rehome(ctx, first, v.Id);
             return new JsonObject { ["id"] = v.Id };

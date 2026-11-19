@@ -151,7 +151,7 @@ The **Annotate** tab has the dimensions, text, grid axes, levels and tags. A dim
 
 ![A text's properties: its style, alignment, angle and width](shots/text-properties.webp)
 
-A **Leader note** (Annotate → Text) is a text with an arrow: click where the arrow points, then where the text goes, and type it. A **Revision cloud** (Draft → Fill, or REVCLOUD) draws a rectangle or a polygon as scallops; **Revision cloud** in the properties of a closed polyline or circle turns it into one or back. A **Scale bar** (Annotate → Sheets) is drawn at the view's scale. They work on every view and on sheets, where a legend of the views and live fields in texts join them (see Sheets).
+A **Leader note** (Annotate → Text) is a text with an arrow: click where the arrow points, then where the text goes, and type it. A **Revision cloud** (Draft → Fill, or REVCLOUD) draws a rectangle or a polygon as scallops; **Revision cloud** in the properties of a closed polyline or circle turns it into one or back. A **Scale bar** (Annotate → Sheets) is drawn at the view's scale. A **North arrow** (Annotate → Sheets) is placed with a click on its middle, on a plan or on a sheet's paper; on a sheet it points as its viewport lays out the plan, a rotated plan too. On a view, a north arrow or a scale bar stands *by itself* (arrow right of the drawing's top, bar under its bottom left, following the drawing) until you move it by its grip; **Put it back by itself** in its properties returns it. The arrow has a **Size** (mm, 14 by default) and a **Marker symbol**; the bar a **Look**, **Length**, **Divisions** and **Scale**. They work on every view and on sheets, where a legend of the views and live fields in texts join them (see Sheets).
 
 ### The Dimension tool
 
@@ -233,10 +233,15 @@ Room dimensions have only **Details** (the side, with the openings' jambs) and *
 - **Parameter**: type the parameter's name in the bar (**Fire rating**, `Pset_WallCommon.FireRating`). **Annotate → Tag a parameter**, off the ribbon now, still starts the tool here.
 - **Material / layers**: a [build-up tag](#build-up-tag) type; **TAG TYPES…** opens their editor.
 - **Keynote**: the element's classification code (or its title), see [Classifications](classifications.md).
+- **Free text**: your own words. Click the element, then where the tag goes; a box asks for the text (several lines: Enter is a new line, Ctrl/⌘+Enter or **OK** is done). **{…}** fields of the element are live: `{mark}`, `{FireRating}`, `{storey.name}`, `{= formulas}`. It has the same leader, box or shoulder and styles as any tag (a tag type chosen in the bar gives its look) and follows its element. **Text tag** in its properties edits the words; double-click the tag in the view to be asked again.
 
 **LEADER** turns the leader on or off. Click the element, then where the tag goes (type **E** first to bend the leader at an elbow). Typed at the element's prompt, **ELEMENT**, **ROOM**, **PARAMETER**, **MATERIAL** and **KEYNOTE** choose the source too.
 
 ![The Tag tool at its Room source: the room's area](shots/tag-sources.webp)
+
+![A text tag on a wall: two lines, one a live field](shots/tag-free-text.webp)
+
+![A text tag's properties](shots/tag-free-text-properties.webp)
 
 ![The Tag tool's bar under the view](shots/tag-options.webp)
 

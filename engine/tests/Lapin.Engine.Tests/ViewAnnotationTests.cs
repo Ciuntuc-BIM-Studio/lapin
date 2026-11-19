@@ -9,7 +9,7 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// A view's annotations (issue #111, decisions 722 and 723): any annotation hidden in one view by itself (Hide in view, a grid's
+/// A view's annotations (issue #111, decision 722): any annotation hidden in one view by itself (Hide in view, a grid's
 /// axis among them), only the view's own annotations shown (the grids, levels, rooms' stamps and other views' marks left out),
 /// and a north arrow and a scale bar that are annotations of the view: moved, sized, their symbol chosen, hidden by their
 /// category, printed where they stand; a site plan's made so when a project saved before opens.

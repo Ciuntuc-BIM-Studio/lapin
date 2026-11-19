@@ -242,7 +242,7 @@ Select several elements (Shift-click, or drag a box) and the properties panel sh
 
 A right click in a plan, a section or an elevation, with something selected, offers to put it away:
 
-- **Hide in view** hides the selection in this view for good, as Revit's *Hide in view*: it is kept with the project, and the view's sheets, PDF and DXF leave it out too. Each hide is one undo step. A level's default plan becomes its plan view when something is hidden in it.
+- **Hide in view** hides the selection in this view for good, as Revit's *Hide in view*: it is kept with the project, and the view's sheets, PDF and DXF leave it out too. Each hide is one undo step. A level's default plan becomes its plan view when something is hidden in it. Annotations go the same way: a text, a dimension, a tag, a level's mark, another view's section or elevation marker, a north arrow, and one grid axis alone (only that axis, in this view only).
 - **Hide for now** (<kbd>HH</kbd>) and **Isolate for now** (<kbd>HI</kbd>) hide the selection, or everything else, in this view only until **Reset temporary hide/isolate** (<kbd>HR</kbd>). They are not saved or undone, and they print nothing differently. The same keys in 3D hide and isolate in the 3D view, as before.
 - **Reveal hidden** draws what the view hides in magenta, so it can be picked: select it and choose **Unhide in view** to show it again. Choose **Reveal hidden** again to turn it off.
 

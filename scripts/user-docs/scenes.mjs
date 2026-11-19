@@ -5312,6 +5312,51 @@ export const scenes = [
     },
   },
   {
+    // A view's annotations (issue #111): a site plan's north arrow, selected, its properties; moved by hand it stays where it is put.
+    id: 'view-north-arrow',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.page.locator('[data-testid=browser-site] button.tree-item').first().click();
+      await t.wait(1500);
+      await t.fit();
+      const arrow = async () => (await t.nodes()).find((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'NORTHARROW');
+      let a = await arrow();
+      t.expect(!!a, 'the site plan\'s north arrow is an annotation of the view');
+      const quiet = await t.page.addStyleTag({ content: '.hotbar { display: none !important }' });
+      await select(t, a.id);
+      await t.wait(800);
+      await t.shot('view-north-arrow', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      // Moved: it stays where it is put.
+      await t.cmd('sheet.updateKey', { id: a.id, at: [17, 11], size: 8 });
+      await t.wait(800);
+      a = await arrow();
+      t.expect(!!a.props.at, 'a moved north arrow keeps its place');
+      await t.shot('view-north-arrow-moved', { of: '[data-testid=plan]', pad: 0 });
+      await quiet.evaluate((el) => el.remove());
+    },
+  },
+  {
+    // A text tag (issue #92): the words typed, a field of the element live.
+    id: 'tag-free-text',
+    touches: ['drafting', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      const tag = await t.cmd('drafting.addTag', { viewId: `plan:${storey}`, element: walls[1], text: 'Load-bearing\n{name}', at: [8.6, 3], leaderShape: 'straight' });
+      t.expect(!!tag?.id, 'a text tag');
+      await select(t, tag.id);
+      await t.wait(800);
+      await t.shot('tag-free-text', { of: '[data-testid=plan]', pad: 0 });
+      await t.shot('tag-free-text-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+    },
+  },
+  {
     // The terrain's own tools (issue #82): a boundary drawn by its tool (an L, clipping the survey), a slope tag by two clicks,
     // a gravel subregion by its tool, the cut/fill grid over a raised stroke, the terrain's properties, the subregion in 3D.
     id: 'terrain-tools',
@@ -5993,7 +6038,7 @@ export const scenes = [
       // Walls ▸ Finishes off.
       await dialog.locator('tr[data-category=walls] button.icon').click();
       // A click (the box follows the engine's answer, so Playwright's uncheck would not see it change at once).
-      await dialog.locator('tr[data-sub="walls.finishes"] input[type=checkbox]').click();
+      await dialog.locator('tr[data-sub="walls.finishes"] input[type=checkbox]').first().click();
       await t.wait(800);
       const vis = () => t.call('doc.query', { name: 'view.visibility', args: { id: plan } });
       t.expect((await vis()).graphics?.categories?.walls?.sub?.finishes?.hidden === true, 'the walls\' finishes hidden as a subcategory');
@@ -6173,6 +6218,10 @@ export const scenes = [
       await t.wait(800);
       g = (await vis()).graphics;
       t.expect(g?.annotations?.dimensions?.hidden === true, 'the dimensions hidden as an annotation category');
+      // Only this view's own annotations (issue #111): the grids, levels' marks and other views' marks left out.
+      await dialog.locator('[data-own-annotations]').click();
+      await t.wait(800);
+      t.expect((await vis()).graphics?.ownAnnotationsOnly === true, 'only this view\'s own annotations');
       await t.shot('vg-annotations', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 640 });
       // Imported categories: the survey's TREES layer off, the import halftone.
       await dialog.locator('[data-tab=imports]').click();

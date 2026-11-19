@@ -232,7 +232,7 @@ public static class DrawingKeys
     /// <summary>A north arrow's size (its circle's diameter on paper, mm).</summary>
     public static double SizeOf(Entity e) => e.NumOrNull("size") is double s && s > 0 ? s : ArrowSize;
 
-    /// <summary>The site plan's look of a bar: its first scale bar's, as a site plan drew it before (decision 723).</summary>
+    /// <summary>The site plan's look of a bar: its first scale bar's, as a site plan drew it before (decision 722).</summary>
     static bool SiteLook(Entity e) => e.Str("look") == "site";
 
     /// <summary>What the mark tells the interface of a key: its point as drawn, and whether it stands by itself.</summary>
@@ -408,7 +408,7 @@ public static class DrawingKeys
     }
 
     /// <summary>
-    /// A view's north arrow and scale bar as a site plan has them (decision 723), standing by themselves until moved: the
+    /// A view's north arrow and scale bar as a site plan has them (decision 722), standing by themselves until moved: the
     /// annotations to add for the keys asked (an arrow, a bar in the site's look).
     /// </summary>
     public static IEnumerable<Entity> SiteKeys(Func<string> newId, string viewId, bool arrow = true, bool bar = true)

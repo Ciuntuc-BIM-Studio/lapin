@@ -3,7 +3,7 @@
  * location plan (1:2000), plan views the engine draws as the whole model from
  * above, with a north arrow, the map's coordinate grid and a scale bar. In a
  * site view's settings: what it is, the grid's step, whether the arrow and
- * the bar are there (annotations of the view, decision 723: select one to
+ * the bar are there (annotations of the view, decision 722: select one to
  * move it by its grip, size it or choose its symbol), and whether the project
  * stands out in red.
  */
@@ -25,7 +25,7 @@ export async function createSiteView(purpose: SitePurpose): Promise<string | nul
 /** The site view's own fields, in its view settings. */
 export function SitePlanFields({ view }: { view: NodeDto }) {
   const set = (patch: Record<string, unknown>) => void execute('view.setSite', { id: view.id, ...patch });
-  // Its north arrow and scale bar are annotations of its own (decision 723): there when one is.
+  // Its north arrow and scale bar are annotations of its own (decision 722): there when one is.
   const nodes = useSession((s) => s.nodes);
   const has = (kind: string) => [...nodes.values()].some((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === kind && n.props.viewId === view.id);
   const scale = Number(view.props.scale ?? 500);

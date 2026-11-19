@@ -192,7 +192,7 @@ public sealed partial class CdeTests : IDisposable
         var f = F();
         var site = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["site"] = "situation", ["storeyId"] = f.Storey })!["id"]!;
         Assert.Empty(Of(Check(f), "northArrow"));
-        // Its north arrow is an annotation of its own (decision 723): switched off, or deleted.
+        // Its north arrow is an annotation of its own (decision 722): switched off, or deleted.
         f.Run("view.setSite", new JsonObject { ["id"] = site, ["northArrow"] = false });
         Assert.Contains(Of(Check(f), "northArrow"), x => !x.Blocking && x.ViewId == site);
     }

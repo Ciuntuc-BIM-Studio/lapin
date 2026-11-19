@@ -24,7 +24,7 @@ namespace Lapin.Drafting;
 /// the architecture module, which knows the wall it sits in. A tag follows its
 /// element when it moves, turns or is reshaped (report #93, <see cref="TagHold"/>).
 /// <para>
-/// A text tag (issue #92, decision 722) says what the user typed (<c>text</c>, lines on new lines) instead of a field: the same
+/// A text tag (issue #92, decision 723) says what the user typed (<c>text</c>, lines on new lines) instead of a field: the same
 /// leader, box or shoulder, styles and grips, following its element as any tag; its <c>{…}</c> are live, read from the element
 /// as a template's ({mark}, {FireRating}, {storey.name}, {= area * 1.1 | 0.00}).
 /// </para>

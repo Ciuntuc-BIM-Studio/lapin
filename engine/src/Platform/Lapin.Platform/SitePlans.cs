@@ -15,7 +15,7 @@ namespace Lapin.Platform;
 /// above, every storey, nothing cut and nothing hidden drawn, what lies wholly
 /// below ±0.00 left out; the terrain, paths and plants by their symbols. Over
 /// them the map's coordinate grid (when the project is tied to the map), and a
-/// north arrow and a scale bar of its own (decision 723: annotations of the view,
+/// north arrow and a scale bar of its own (decision 722: annotations of the view,
 /// <see cref="DrawingKeys"/>, which can be moved, sized and deleted; a project
 /// saved before has them made when it opens, <see cref="KeysUpgrade"/>). A site
 /// plan stands on its host storey (the terrain's, else the ground floor's), where
@@ -46,16 +46,16 @@ public static class SitePlans
     }
 
     static bool Flag(Entity view, string key) => !(view.Attrs[key] is JsonValue v && v.TryGetValue<bool>(out var b) && !b);
-    /// <summary>Whether a view has a north arrow of its own (an annotation, decision 723).</summary>
+    /// <summary>Whether a view has a north arrow of its own (an annotation, decision 722).</summary>
     public static bool NorthArrow(IModelView m, Entity view) => DrawingKeys.On(m, view.Id, DrawingKeys.NorthArrow).Any();
     /// <summary>Whether a view has a scale bar of its own.</summary>
     public static bool ScaleBar(IModelView m, Entity view) => DrawingKeys.On(m, view.Id, DrawingKeys.ScaleBar).Any();
 
-    /// <summary>On a site view, the flag that says its keys are annotations of its own (decision 723); a view without it is brought up to date.</summary>
+    /// <summary>On a site view, the flag that says its keys are annotations of its own (decision 722); a view without it is brought up to date.</summary>
     public const string KeysKey = "siteKeys";
 
     /// <summary>
-    /// A project saved before decision 723 (its site plans drew their north arrow and scale bar themselves, <c>northArrow</c> and
+    /// A project saved before decision 722 (its site plans drew their north arrow and scale bar themselves, <c>northArrow</c> and
     /// <c>scaleBar</c> false leaving one out): each site view's keys made annotations of its own, standing where they stood.
     /// </summary>
     public sealed class KeysUpgrade : IProjectUpgrade
@@ -114,7 +114,7 @@ public static class SitePlans
             if (a["highlight"] is JsonValue hv && hv.TryGetValue<bool>(out var h)) attrs["highlight"] = h; else attrs.Remove("highlight");
         }
         ctx.Replace(v.With(attrs: attrs));
-        // Its north arrow and scale bar (decision 723): one added where a site plan draws it when switched on, every one taken off when off.
+        // Its north arrow and scale bar (decision 722): one added where a site plan draws it when switched on, every one taken off when off.
         foreach (var (k, kind) in new[] { ("northArrow", DrawingKeys.NorthArrow), ("scaleBar", DrawingKeys.ScaleBar) })
         {
             if (a[k] is not JsonValue fv || !fv.TryGetValue<bool>(out var on)) continue;
@@ -150,7 +150,7 @@ public static class SitePlans
 
         if (SitePlans.GridStep(c.View) is var step && step > 0 && GeoRef.Georeferenced(c.Model) && Grid(c, lo, hi, step, text) is { } grid) yield return grid;
 
-        // The north arrow and the scale bar are annotations of the view (decision 723, DrawingKeys).
+        // The north arrow and the scale bar are annotations of the view (decision 722, DrawingKeys).
     }
 
     /// <summary>What a site view draws by its symbols, not as the project's buildings: the terrain, paths, plants, people and cars, and the site's features (the neighbours among them).</summary>
