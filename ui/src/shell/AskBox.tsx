@@ -14,6 +14,8 @@ import { parseLength, formatLength, unitLabel } from '../engine/unitsStore';
 
 export interface Field {
   key: string; label: string; value: string; length?: boolean; text?: boolean; choices?: { value: string; label: string }[];
+  /** A text of several lines (a text tag's, issue #92): Enter starts a new line, Ctrl/⌘+Enter takes the answers. */
+  multiline?: boolean;
   /** Shown only when this says so of the answers as typed (each field's text, a choice's value). */
   show?: (values: Record<string, string>) => boolean;
 }
@@ -50,6 +52,12 @@ export function ask(title: string, fields: Field[], opts: { check?: AskCheck } =
 export function lengthField(key: string, label: string, metres: number): Field { return { key, label, value: formatLength(metres), length: true }; }
 export function numberField(key: string, label: string, n: number): Field { return { key, label, value: String(n) }; }
 export function textField(key: string, label: string, value: string): Field { return { key, label, value, text: true }; }
+
+/** A text of several lines asked for (Enter: a new line; Ctrl/⌘+Enter or OK: taken); null when dropped. */
+export async function askText(title: string, label: string, initial = ''): Promise<string | null> {
+  const r = await ask(title, [{ key: 'v', label, value: initial, text: true, multiline: true }]);
+  return r ? String(r.v) : null;
+}
 export function choiceField(key: string, label: string, value: string, choices: { value: string; label: string }[]): Field { return { key, label, value, choices }; }
 
 /** The fields shown for the answers as typed. */
@@ -87,9 +95,9 @@ export function AskBox() {
     setProblem(null);
     // The first field takes the keys: a text in it selected, ready to be typed over.
     setTimeout(() => {
-      const first = box.current?.querySelector<HTMLInputElement | HTMLSelectElement>('input, select');
+      const first = box.current?.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea');
       first?.focus();
-      if (first instanceof HTMLInputElement) first.select();
+      if (first instanceof HTMLInputElement || first instanceof HTMLTextAreaElement) first.select();
     }, 0);
   }, [asking]);
   if (!asking) return null;
@@ -118,14 +126,22 @@ export function AskBox() {
   return (
     // A new box for each question (its key), so one moved before opens at the pointer again.
     <div key={asking.n} ref={box} className="ask-box" style={{ left, top }} role="dialog" aria-label={asking.title}
-      onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') done(); if (e.key === 'Escape') close(null); }}>
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        // In a text of several lines, Enter is a new line: Ctrl/⌘+Enter takes the answers.
+        const lines = e.target instanceof HTMLTextAreaElement && !(e.ctrlKey || e.metaKey);
+        if (e.key === 'Enter' && !lines) { e.preventDefault(); done(); }
+        if (e.key === 'Escape') close(null);
+      }}>
       <div className="ask-title" title="Drag to move">{asking.title}</div>
       {shown.map((f) => (
         <label key={f.key} className={`ask-row${problem?.key === f.key ? ' wrong' : ''}`}>
           <span>{f.label}</span>
           {f.choices
             ? <select data-field={f.key} value={now[f.key]} onChange={(e) => set(f.key, e.target.value)}>{f.choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select>
-            : <input data-field={f.key} className={f.text ? undefined : 'num'} value={now[f.key] ?? ''} onChange={(e) => set(f.key, e.target.value)} />}
+            : f.multiline
+              ? <textarea data-field={f.key} rows={4} cols={34} value={now[f.key] ?? ''} title="Enter: a new line · Ctrl/⌘+Enter: OK" onChange={(e) => set(f.key, e.target.value)} />
+              : <input data-field={f.key} className={f.text ? undefined : 'num'} value={now[f.key] ?? ''} onChange={(e) => set(f.key, e.target.value)} />}
           {f.length && <span className="muted">{unitLabel()}</span>}
         </label>
       ))}
