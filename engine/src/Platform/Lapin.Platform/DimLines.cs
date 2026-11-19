@@ -14,7 +14,14 @@ namespace Lapin.Platform;
 public sealed record DimLine(
     string Id, string Name, string Kind, Vec2 Start, Vec2 End, double FaceMin, double FaceMax, double CoreMin, double CoreMax,
     double? Reference = null, string? Part = null,
-    IReadOnlyList<string>? JoinsStart = null, IReadOnlyList<string>? JoinsEnd = null, IReadOnlyList<string>? JoinsPath = null);
+    IReadOnlyList<string>? JoinsStart = null, IReadOnlyList<string>? JoinsEnd = null, IReadOnlyList<string>? JoinsPath = null)
+{
+    /// <summary>
+    /// The middle of its core (decision 738, Revit's "Center of core"), metres left of its axis: off the axis when the core is not
+    /// centred on it (a wall with more than one core layer, an imported wall's layers offset, a column's section off its point).
+    /// </summary>
+    public double CoreCentre => (CoreMin + CoreMax) / 2;
+}
 
 /// <summary>
 /// A module's elements as temporary-dimension lines (decision 733): walls (architecture), columns and beams (structure);
@@ -28,7 +35,7 @@ public interface IDimLineProvider
 /// <summary>
 /// <c>view.dimLines</c> (decision 733): every provider's lines for a storey (<c>storeyId</c>, or an element's: <c>id</c>),
 /// optionally only some kinds (<c>kinds</c>: ["wall", "column", "beam"]). One query for every temporary dimension in plan,
-/// the interface measuring from them by the user's dimension reference (core faces, faces, axis, reference line). Read-only.
+/// the interface measuring from them by the user's dimension reference (core faces, centre of core: <c>coreCentre</c>, decision 738; faces, axis, reference line). Read-only.
 /// </summary>
 public static class DimLines
 {
@@ -58,7 +65,7 @@ public static class DimLines
                 var o = new JsonObject
                 {
                     ["id"] = l.Id, ["name"] = l.Name, ["kind"] = l.Kind, ["start"] = J(l.Start), ["end"] = J(l.End),
-                    ["faces"] = Pair(l.FaceMin, l.FaceMax), ["core"] = Pair(l.CoreMin, l.CoreMax),
+                    ["faces"] = Pair(l.FaceMin, l.FaceMax), ["core"] = Pair(l.CoreMin, l.CoreMax), ["coreCentre"] = Math.Round(l.CoreCentre, 9),
                 };
                 if (l.Part != null) o["part"] = l.Part;
                 if (l.Reference is { } rf) o["reference"] = Math.Round(rf, 9);
