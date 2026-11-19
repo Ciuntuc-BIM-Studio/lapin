@@ -56,8 +56,18 @@ export function RoofWoodSection({ node }: { node: NodeDto }) {
   const s = spec ?? CLT_FLOOR;
   const set = (patch: Partial<CltSpec>) => send({ ...s, ...patch });
   const plies = Object.entries(ROOF_PLIES).find(([, v]) => v.join('/') === s.plies.join('/'))?.[0] ?? '';
+  const structure = (node.props.structure as string | undefined) ?? 'rafters';
+  const rafterSection = (node.props.rafterSection as string | undefined) ?? '8x16';
+  const grade = (node.props.timberGrade as string | undefined) ?? 'C24';
   return (
     <div className="layers">
+      {spec == null && structure !== 'none' && (
+        <div className="pad">
+          <p className="muted small">{structure === 'trusses' ? 'Trusses' : structure === 'collar' ? 'Collar ties' : 'Rafters & purlins'} · {rafterSection} · {grade}</p>
+          <button type="button" className="btn compact" data-testid="wood-roof-framing" disabled={!node.editable}
+            onClick={() => useUi.setState({ dialog: 'roof', roofId: node.id, roofDialogTab: 'framing' })}>Configure roof framing…</button>
+        </div>
+      )}
       <dl className="fields">
         <dt title="Its planes as CLT panels in place of its rafters or trusses; the wall plates and the covering stay">CLT panels</dt>
         <dd><input type="checkbox" data-testid="wood-roof-clt" checked={spec != null} disabled={!node.editable} onChange={(e) => send(e.target.checked ? CLT_FLOOR : null)} /></dd>

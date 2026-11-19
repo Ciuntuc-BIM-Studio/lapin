@@ -5,11 +5,11 @@
  * window's framing, with its own rule.
  */
 
-import { Settings2, Table2 } from 'lucide-react';
+import { Home, Settings2, Table2 } from 'lucide-react';
 import type { Grip, GripView, LapinModule, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
-import { execute } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
 import { OpeningWoodSection, RoofWoodSection, WallWoodSection } from './Sections';
 import { lazyPart } from '../../platform/lazyPart';
 import { createScheduleOf } from '../../shell/fieldSchedule';
@@ -18,6 +18,24 @@ import { createScheduleOf } from '../../shell/fieldSchedule';
 const FrameDialog = lazyPart(() => import('./FrameDialog').then((m) => m.FrameDialog), { title: 'Timber frame' });
 
 const frame: ToolDef = { id: 'wood.frame', label: 'Timber frame and CLT', icon: Settings2, run: () => useUi.setState({ dialog: 'woodFrame' }) };
+const roofFraming: ToolDef = {
+  id: 'wood.roofFraming', label: 'Roof framing', icon: Home,
+  run: () => {
+    const { selected } = useUi.getState();
+    const { nodes } = useSession.getState();
+    let roof = selected.map((id) => nodes.get(id)).find((n) => n?.type === 'IfcRoof');
+    if (!roof) {
+      const roofs = [...nodes.values()].filter((n) => n.type === 'IfcRoof');
+      if (roofs.length === 1) roof = roofs[0];
+    }
+    if (!roof) { notify('Select a roof first, then open Roof framing.'); return; }
+    useUi.setState({ dialog: 'roof', roofId: roof.id, roofDialogTab: 'framing' });
+  },
+};
+const roofTimber: ToolDef = {
+  id: 'wood.roofTimber', label: 'Roof timber', icon: Table2,
+  run: () => void createScheduleOf('roofTimber').then((r) => { if (r) notify('Roof timber cutting list made: it is in the project browser, under Schedules.'); }),
+};
 const boards: ToolDef = {
   id: 'wood.boards', label: 'Boards schedule', icon: Table2,
   run: () => void execute('architecture.createSchedule', { kind: 'boards' }).then((r) => { if (r) notify('Boards schedule made: it is in the project browser, under Schedules.'); }),
@@ -63,8 +81,8 @@ export const woodModule: LapinModule = {
   tabs: [{
     id: 'wood', label: 'Wood', order: 33, include: ['modify'],
     groups: [
-      { label: 'Frame', tools: [frame] },
-      { label: 'Schedule', tools: [schedule, boards, panels, cltSchedule] },
+      { label: 'Frame', tools: [frame, roofFraming] },
+      { label: 'Schedule', tools: [schedule, roofTimber, boards, panels, cltSchedule] },
     ],
   }],
   dialogs: { woodFrame: FrameDialog },

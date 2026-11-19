@@ -732,9 +732,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("webSection", "Truss webs", "choice", Choices: Roof.RafterSections, ShowIf: FramedAs("trusses")),
             new("timberGrade", "Timber grade", "choice", Choices: Roof.TimberGrades, ShowIf: Framed),
             new("collarHeight", "Collar ties: share of the rise", "number", Min: 0.3, Max: 0.9, ShowIf: FramedAs("collar")),
+            new("collarSection", "Collar tie section", "choice", Choices: Roof.RafterSections, ShowIf: FramedAs("collar")),
             new("rafterTail", "Rafter tails", "choice", Choices: ["plumb", "square"], ShowIf: Framed),
             new("rafterSeat", "Rafter seat on the wall plate", "choice", Choices: ["birdsmouth", "none"], ShowIf: Framed),
             new("purlins", "Purlins per slope", "number", Min: 0, Max: 3, ShowIf: Framed),
+            new("purlinSection", "Purlin section", "choice", Choices: Roof.BeamSections, ShowIf: FramedAs("rafters")),
+            new("ridgeSection", "Ridge beam section", "choice", Choices: Roof.BeamSections, ShowIf: FramedAs("rafters")),
+            new("plateSection", "Wall plate section", "choice", Choices: Roof.BeamSections, ShowIf: Framed),
             new("gutterProfile", "Gutters", "choice", Choices: RoofCatalog.GutterProfiles),
             new("gutterMaterial", "Gutter material", "choice", Choices: RoofCatalog.GutterMaterials),
             new("snowGuards", "Snow guards", "choice", Choices: ["True", "False"]),
@@ -1376,7 +1380,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         {
             var style = RoofCatalog.StyleOf(sid) ?? throw new CommandException($"There is no roof style „{sid}”.");
             attrs.Remove("edges");
-            string[] own = style.Structure != null ? ["eaveOffset", "rafterTail", "rafterSeat"] : ["structure", "rafterSection", "rafterSpacing", "purlins", "eaveOffset", "webSection", "timberGrade", "rafterTail", "rafterSeat"];
+            string[] own = style.Structure != null ? ["eaveOffset", "rafterTail", "rafterSeat"] : ["structure", "rafterSection", "rafterSpacing", "purlins", "purlinSection", "ridgeSection", "plateSection", "collarSection", "eaveOffset", "webSection", "timberGrade", "rafterTail", "rafterSeat"];
             // The covering's material follows the covering below (one chosen by the user stays).
             foreach (var (k, v) in Roof.Attrs(style, Roof.Contour(roof))) if (k != RoofCoverings.Key && (!own.Contains(k) || attrs[k] == null)) attrs[k] = v?.DeepClone();
             if (style.Shape != "mansard") { attrs.Remove("upperPitch"); attrs.Remove("mansardInset"); }

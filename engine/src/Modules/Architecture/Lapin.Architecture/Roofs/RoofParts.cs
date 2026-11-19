@@ -85,7 +85,7 @@ public static class RoofParts
             .Select(o => o.Hole.Select(q => q.Xy).ToList()).ToList() ?? [];
 
     /// <summary>How a rafter is cut: its section, its tail (plumb or square), and whether it is notched over the wall plate.</summary>
-    sealed record Cut(double W, double D, string Tail, bool Seat, double PlateTop);
+    sealed record Cut(double W, double D, string Tail, bool Seat, double PlateTop, double PlateW);
 
     /// <summary>
     /// A rafter (or a top chord) in the vertical plane through <paramref name="p"/> along <paramref name="u"/>, from k0 to k1,
@@ -112,7 +112,7 @@ public static class RoofParts
         if (wall is { } kw && c.Seat && tan > 1e-6)
         {
             var sw = Math.Abs(kw - low);
-            var so = Math.Max(Math.Max(tail, 0), sw - Roof.WallPlate.W / 2);
+            var so = Math.Max(Math.Max(tail, 0), sw - c.PlateW / 2);
             so = Math.Max(so, sw - v / 3 / tan);
             if (sw > so + 1e-4 && sw < run - 1e-4)
             {
@@ -138,9 +138,12 @@ public static class RoofParts
         var o = new List<Member>();
         if (!r.Framed) return o;
         var (rw, rd) = r.Rafter;
+        var (wpw, wpd) = r.WallPlateSection;
+        var (pw, pd) = r.PurlinSection;
+        var (rgw, rgd) = r.RidgeBeamSection;
         var spacing = Math.Max(0.3, r.Roof.NumOrNull("rafterSpacing") ?? 0.8);
         var purlins = r.Scheme == "rafters" ? Math.Clamp((int)(r.Roof.NumOrNull("purlins") ?? 1), 0, 3) : 0;
-        var cut = new Cut(rw, rd, r.Roof.Str("rafterTail") == "square" ? "square" : "plumb", r.Roof.Str("rafterSeat") != "none", r.BaseZ);
+        var cut = new Cut(rw, rd, r.Roof.Str("rafterTail") == "square" ? "square" : "plumb", r.Roof.Str("rafterSeat") != "none", r.BaseZ, wpw);
         var frames = Frames(s);
         var minNz = frames.Count == 0 ? 1 : frames.Min(f => f.Normal.Z);
 
@@ -194,7 +197,7 @@ public static class RoofParts
                 var h = eaveZ + (top - eaveZ) * j / (purlins + 1);
                 var p = a + f.N * ((h - eaveZ) / f.Tan);
                 foreach (var (t0, t1) in Crossings(f.Plan, p, f.D))
-                    o.Add(new Member("purlin", (p + f.D * t0).At(h - Roof.Purlin.D / 2), (p + f.D * t1).At(h - Roof.Purlin.D / 2), Roof.Purlin.W, Roof.Purlin.D));
+                    o.Add(new Member("purlin", (p + f.D * t0).At(h - pd / 2), (p + f.D * t1).At(h - pd / 2), pw, pd));
             }
         }
 
@@ -205,7 +208,7 @@ public static class RoofParts
         foreach (var l in s.Lines)
         {
             if (l.Kind == LineKind.Ridge && r.Scheme == "rafters")
-                o.Add(new Member("ridge", l.A with { Z = l.A.Z - Roof.RidgeBeam.D / 2 }, l.B with { Z = l.B.Z - Roof.RidgeBeam.D / 2 }, Roof.RidgeBeam.W, Roof.RidgeBeam.D));
+                o.Add(new Member("ridge", l.A with { Z = l.A.Z - rgd / 2 }, l.B with { Z = l.B.Z - rgd / 2 }, rgw, rgd));
             else if (l.Kind is LineKind.Hip or LineKind.Valley)
             {
                 var dz = rd / minNz - Roof.HipRafter.D / 2;
@@ -216,8 +219,8 @@ public static class RoofParts
         for (int i = 0; i < s.Outline.Count; i++)
         {
             if (s.Rules[i].Kind != EdgeKind.Eave) continue;
-            var z = r.PlateZ + Roof.WallPlate.D / 2;
-            o.Add(new Member("plate", s.Outline[i].At(z), s.Outline[(i + 1) % s.Outline.Count].At(z), Roof.WallPlate.W, Roof.WallPlate.D));
+            var z = r.PlateZ + wpd / 2;
+            o.Add(new Member("plate", s.Outline[i].At(z), s.Outline[(i + 1) % s.Outline.Count].At(z), wpw, wpd));
         }
         return o.Where(m => m.Length > 0.05).ToList();
     }
@@ -266,22 +269,23 @@ public static class RoofParts
                 o.Add(Rafter("rafter", p, n, a.K0, a.K1, k => Z(a.F, k), cut, WallOn(walls, a.K0, a.K1, k => Z(a.F, k))));
                 o.Add(Rafter("rafter", p, n, b.K0, b.K1, k => Z(b.F, k), cut, WallOn(walls, b.K0, b.K1, k => Z(b.F, k))));
                 // The collar tie: level, beside the couple, at its share of the rise, from the one rafter's centre line to the other's.
+                var (cw, cd) = r.CollarSection;
                 var peak = Z(a.F, a.K1);
                 var share = Math.Clamp(r.Roof.NumOrNull("collarHeight") ?? 0.66, 0.3, 0.9);
-                var zc = r.BaseZ + (peak - r.BaseZ) * share + rd / 2;
+                var zc = r.BaseZ + (peak - r.BaseZ) * share + cd / 2;
                 var (ga, gb) = ((Z(a.F, a.K1) - Z(a.F, a.K0)) / (a.K1 - a.K0), (Z(b.F, b.K1) - Z(b.F, b.K0)) / (b.K1 - b.K0));
                 var (va, vb) = (rd * Math.Sqrt(1 + ga * ga), rd * Math.Sqrt(1 + gb * gb));
                 var ka = a.K0 + (zc - va / 2 - Z(a.F, a.K0)) / ga;
                 var kb = b.K0 + (zc - vb / 2 - Z(b.F, b.K0)) / gb;
                 if (kb - ka > 0.2)
-                    o.Add(new Member("collar", (p + n * ka).At(zc) + (u * rw).At(0), (p + n * kb).At(zc) + (u * rw).At(0), rw, rd));
+                    o.Add(new Member("collar", (p + n * ka).At(zc) + (u * ((rw + cw) / 2)).At(0), (p + n * kb).At(zc) + (u * ((rw + cw) / 2)).At(0), cw, cd));
                 continue;
             }
             // A truss: the top chords on the slopes, the bottom chord on the plates, the webs between.
             var chord = cut with { Seat = false };
             var zb = r.BaseZ + rd / 2;
             var (ww, wd) = r.Web;
-            var (bl, bh) = (w0 - Roof.WallPlate.W / 2, w1 + Roof.WallPlate.W / 2);
+            var (bl, bh) = (w0 - cut.PlateW / 2, w1 + cut.PlateW / 2);
             foreach (var x in segs) o.Add(Rafter("topChord", p, n, x.K0, x.K1, k => Z(x.F, k), chord, null, truss));
             o.Add(new Member("bottomChord", (p + n * bl).At(zb), (p + n * bh).At(zb), rw, rd) { Truss = truss });
             Vec3 Bottom(double k) => (p + n * k).At(zb);
@@ -308,7 +312,7 @@ public static class RoofParts
             else
             {
                 var x = segs[0];
-                var high = Z(x.F, w1) > Z(x.F, w0) ? w1 - Roof.WallPlate.W / 2 : w0 + Roof.WallPlate.W / 2;
+                var high = Z(x.F, w1) > Z(x.F, w0) ? w1 - cut.PlateW / 2 : w0 + cut.PlateW / 2;
                 var lowEnd = high > (w0 + w1) / 2 ? w0 : w1;
                 Vec3 Top(double k) => (p + n * k).At(Z(x.F, k));
                 // A mono truss: a post at the high end; over 3 m a post at the middle and two diagonals (N).

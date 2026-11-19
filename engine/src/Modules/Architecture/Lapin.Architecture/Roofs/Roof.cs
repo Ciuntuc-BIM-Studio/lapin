@@ -25,6 +25,8 @@ public static class Roof
     public const double Deck = 0.16;
     /// <summary>Rafter and chord sections: the old ones in cm, the Nordic ones in mm (said so).</summary>
     public static readonly string[] RafterSections = ["8x16", "10x16", "10x18", "10x20", "12x22", "45x95 mm", "45x120 mm", "45x145 mm", "45x170 mm", "45x195 mm", "45x220 mm", "45x245 mm", "70x220 mm"];
+    /// <summary>Sections for purlins, ridge beams, and wall plates (cm, or mm).</summary>
+    public static readonly string[] BeamSections = ["10x16", "10x18", "10x20", "12x22", "14x14", "14x16", "14x20", "16x24", "45x145 mm", "45x170 mm", "45x195 mm", "45x220 mm", "45x245 mm", "70x220 mm"];
     /// <summary>The framing systems (decision 229): rafters on purlins, couples with collar ties, prefabricated trusses, or none (a deck).</summary>
     public static readonly string[] Structures = ["rafters", "collar", "trusses", "none"];
     public static readonly string[] TimberGrades = ["C14", "C16", "C18", "C24", "C30", "GL24h", "GL28h", "GL30c"];
@@ -65,8 +67,13 @@ public static class Roof
         /// <summary>The covering chosen, as thick as the roof says (<c>coveringThickness</c>, a foreign roof's, decision 334), else the catalogue's.</summary>
         public RoofCatalog.Covering Covering => RoofCatalog.CoveringOf(Roof.Str("covering")) is var c && Roof.NumOrNull("coveringThickness") is { } t && t > 0.001 ? c with { Thickness = t } : c;
         public (double W, double D) Rafter => Section(Roof.Str("rafterSection"), (0.08, 0.16));
+        /// <summary>Configurable sections for wall plates, ridge beams, purlins, and collar ties (defaulting to the standard sections).</summary>
+        public (double W, double D) WallPlateSection => Section(Roof.Str("plateSection"), WallPlate);
+        public (double W, double D) RidgeBeamSection => Section(Roof.Str("ridgeSection"), RidgeBeam);
+        public (double W, double D) PurlinSection => Section(Roof.Str("purlinSection"), Purlin);
+        public (double W, double D) CollarSection => Section(Roof.Str("collarSection"), Rafter);
         /// <summary>The planes' height over the wall line: on the plates when framed.</summary>
-        public double BaseZ => PlateZ + (Framed ? WallPlate.D : 0);
+        public double BaseZ => PlateZ + (Framed ? WallPlateSection.D : 0);
         /// <summary>A roof without framing: its deck's thickness (decision 329), the roof's own, else 16 cm.</summary>
         public double DeckThickness => Roof.NumOrNull("deckThickness") is { } t && t > 0.005 ? t : Deck;
         /// <summary>From the planes to the covering's underside: rafters and battens, or the deck.</summary>

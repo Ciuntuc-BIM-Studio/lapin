@@ -174,6 +174,60 @@ public class RoofFramingTests
         finally { File.Delete(path); }
     }
 
+    [Fact]
+    public void Purlin_ridge_and_wall_plate_sections_are_configurable_with_classic_defaults()
+    {
+        var f = new Fixture();
+        var roof = AddRoof(f, "se_falu_red", new JsonObject { ["structure"] = "rafters", ["purlins"] = 1 });
+        var (r0, m0) = Framing(f, roof);
+        Assert.All(m0.Where(m => m.Role == "purlin"), m => Assert.Equal(Roof.Purlin, (m.Width, m.Depth)));
+        Assert.All(m0.Where(m => m.Role == "ridge"), m => Assert.Equal(Roof.RidgeBeam, (m.Width, m.Depth)));
+        Assert.All(m0.Where(m => m.Role == "plate"), m => Assert.Equal(Roof.WallPlate, (m.Width, m.Depth)));
+        Assert.Equal(r0.PlateZ + Roof.WallPlate.D, r0.BaseZ, 9);
+
+        f.Run("architecture.updateRoof", new JsonObject
+        {
+            ["id"] = roof,
+            ["attrs"] = new JsonObject
+            {
+                ["purlinSection"] = "16x24",
+                ["ridgeSection"] = "12x22",
+                ["plateSection"] = "10x16",
+            },
+        });
+        var (r1, m1) = Framing(f, roof);
+        Assert.All(m1.Where(m => m.Role == "purlin"), m => Assert.Equal((0.16, 0.24), (m.Width, m.Depth)));
+        Assert.All(m1.Where(m => m.Role == "ridge"), m => Assert.Equal((0.12, 0.22), (m.Width, m.Depth)));
+        Assert.All(m1.Where(m => m.Role == "plate"), m => Assert.Equal((0.10, 0.16), (m.Width, m.Depth)));
+        Assert.Equal(r1.PlateZ + 0.16, r1.BaseZ, 9);
+
+        var rows = RoofTimberSchedule.Rows(f.Model);
+        Assert.Contains(rows, x => x.Role == "Purlin" && x.Section == "160x240 mm");
+        Assert.Contains(rows, x => x.Role == "Ridge beam" && x.Section == "120x220 mm");
+        Assert.Contains(rows, x => x.Role == "Wall plate" && x.Section == "100x160 mm");
+    }
+
+    [Fact]
+    public void Collar_tie_section_is_configurable_and_defaults_to_rafter_section()
+    {
+        var f = new Fixture();
+        var roof = AddRoof(f, "nordic_collar");
+        var (r0, m0) = Framing(f, roof);
+        Assert.All(m0.Where(m => m.Role == "collar"), m => Assert.Equal((0.045, 0.195), (m.Width, m.Depth)));
+
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["collarSection"] = "45x145 mm" } });
+        var (r1, m1) = Framing(f, roof);
+        Assert.All(m1.Where(m => m.Role == "rafter"), m => Assert.Equal((0.045, 0.195), (m.Width, m.Depth)));
+        var collars = m1.Where(m => m.Role == "collar").ToList();
+        Assert.NotEmpty(collars);
+        var rise = 3 * Math.Tan(38 * Math.PI / 180);
+        Assert.All(collars, c =>
+        {
+            Assert.Equal((0.045, 0.145), (c.Width, c.Depth));
+            Assert.Equal(r1.BaseZ + 0.66 * rise + 0.145 / 2, c.A.Z, 6);
+        });
+    }
+
     sealed class Q(Fixture f) : IQueryContext
     {
         public IModelView Model => f.Model;

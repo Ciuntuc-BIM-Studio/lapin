@@ -56,7 +56,12 @@ const FIELDS: Record<Tab, [string, ((v: (k: string) => unknown) => boolean)?][]>
     ['gutterFall', (v) => v('gutterProfile') !== 'none'], ['gutterEnds', (v) => v('gutterProfile') !== 'none'], ['downpipes', (v) => v('gutterProfile') !== 'none'], ['snowGuards']],
   framing: [['structure', (v) => !['flat', 'barrel'].includes(String(v('shape')))],
     ['rafterSection', (v) => !['none'].includes(String(v('structure')))], ['rafterSpacing', (v) => v('structure') !== 'none'],
-    ['purlins', (v) => (v('structure') ?? 'rafters') === 'rafters'], ['webSection', (v) => v('structure') === 'trusses'], ['collarHeight', (v) => v('structure') === 'collar'],
+    ['purlins', (v) => (v('structure') ?? 'rafters') === 'rafters'],
+    ['purlinSection', (v) => (v('structure') ?? 'rafters') === 'rafters' && Number(v('purlins') ?? 1) > 0],
+    ['ridgeSection', (v) => (v('structure') ?? 'rafters') === 'rafters'],
+    ['plateSection', (v) => v('structure') !== 'none'],
+    ['webSection', (v) => v('structure') === 'trusses'], ['collarHeight', (v) => v('structure') === 'collar'],
+    ['collarSection', (v) => v('structure') === 'collar'],
     ['timberGrade', (v) => v('structure') !== 'none'], ['rafterTail', (v) => v('structure') !== 'none'], ['rafterSeat', (v) => ['rafters', 'collar', undefined].includes(v('structure') as string | undefined)],
     // Without framing, the deck under the covering (decision 329).
     ['deckMaterial', unframed], ['deckThickness', unframed]],
@@ -64,7 +69,7 @@ const FIELDS: Record<Tab, [string, ((v: (k: string) => unknown) => boolean)?][]>
 };
 
 /** What the engine takes for a field the roof does not have yet (a roof made before the field was). */
-const DEFAULTS: Record<string, unknown> = { rafterTail: 'plumb', rafterSeat: 'birdsmouth', collarHeight: 0.66, timberGrade: 'C24', webSection: '45x95 mm', ridgeDirection: 'auto', shedFlip: false,
+const DEFAULTS: Record<string, unknown> = { rafterTail: 'plumb', rafterSeat: 'birdsmouth', collarHeight: 0.66, timberGrade: 'C24', webSection: '45x95 mm', purlinSection: '14x16', ridgeSection: '14x20', plateSection: '14x14', ridgeDirection: 'auto', shedFlip: false,
   gutterWidth: 0.125, gutterOffset: 0, gutterDrop: 0, gutterFall: 0, gutterEnds: 'True', downpipes: 'auto', deckMaterial: 'Reinforced concrete', deckThickness: 0.16 };
 
 const ROLE_FILL: Record<string, string> = {
@@ -157,9 +162,14 @@ export function RoofDialog() {
   const own = (project?.props.roofStyles as OwnStyle[] | undefined) ?? [];
   const coverings = (info?.catalogs['architecture.roofCoverings'] as unknown as Covering[] | undefined) ?? [];
   const fields = useMemo(() => new Map((info?.nodeTypes.find((c) => c.type === 'IfcRoof')?.fields ?? []).map((f) => [f.key, f])), [info]);
-  const [tab, setTab] = useState<Tab>('shape');
+  const initialTab = useUi((s) => s.roofDialogTab);
+  const [tab, setTab] = useState<Tab>(() => initialTab ?? 'shape');
   const [draft, setDraft] = useState<Draft>({ attrs: {} });
   const [preview, setPreview] = useState<Preview | null>(null);
+
+  useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
 
   // The preview follows the draft and the roof as it stands (an undo, a grip moved).
   useEffect(() => {
@@ -173,7 +183,7 @@ export function RoofDialog() {
   useEffect(() => { if (!node) useUi.setState({ dialog: null }); }, [node]);
 
   if (!node) return <PendingDialog title="Roof" />;
-  const close = () => useUi.setState({ dialog: null });
+  const close = () => useUi.setState({ dialog: null, roofDialogTab: null });
   const dirty = Boolean(draft.style) || Object.keys(draft.attrs).length > 0 || draft.edges !== undefined;
   const value = (k: string): unknown => (k in draft.attrs ? draft.attrs[k] : preview?.attrs?.[k] ?? node.props[k] ?? DEFAULTS[k]);
   const set = (k: string, v: unknown) => setDraft((d) => ({ ...d, attrs: { ...d.attrs, [k]: v } }));
@@ -208,9 +218,10 @@ export function RoofDialog() {
 
   const rows = FIELDS[tab].filter(([k, when]) => fields.has(k) && (!when || when(value))).map(([k]) => {
     const f = fields.get(k)!;
+    const fieldValue = k === 'collarSection' ? (value(k) ?? value('rafterSection')) : value(k);
     return (
       <label key={k} className="field-line roof-field"><span className="eyebrow">{f.label}</span>
-        <FieldInput f={f} value={value(k)} onChange={(v) => set(k, v)} />
+        <FieldInput f={f} value={fieldValue} onChange={(v) => set(k, v)} />
       </label>
     );
   });
