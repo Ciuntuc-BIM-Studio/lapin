@@ -33,6 +33,7 @@ import { LayerExtentsSection, hasLayerExtents } from './LayerExtentsSection';
 import { editLayers, editingLayersOf, layerGrips } from './layerEdit';
 import { LayerEditDrawing, LayerEditPlan, LayerEditWatcher } from './LayerEditOverlays';
 import { RoofSection } from './RoofSection';
+import { roofSlopeGrips } from './roofEdges';
 import { roofOpeningGrips, roofOpeningRefs } from './roofOpeningGrips';
 import { DownpipeSection, downpipe, downpipeGrips } from './Downpipe';
 import { railing, railingGrips, railingRefs } from './Railing';
@@ -379,7 +380,7 @@ function contourGrips(command: string, withEdges = false) {
  * edges and corners and a dormer's sides resize it on its slope (refused where it would not fit); Ctrl/⌘-click, Delete
  * over a grip or its right-click menu takes it out.
  */
-const roofGrips = (node: NodeDto): Grip[] => [...contourGrips('architecture.updateRoof', true)(node), ...roofOpeningGrips(node)];
+const roofGrips = (node: NodeDto): Grip[] => [...contourGrips('architecture.updateRoof', true)(node), ...roofSlopeGrips(node), ...roofOpeningGrips(node)];
 const contourRefs = (node: NodeDto): RefLine[] => {
   const pts = fromPairs(node.props.contour);
   if (pts.length < 3) return [];

@@ -456,6 +456,18 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 /* A flip arrow: click to flip the element that way. */
 .plan-grip.flip { fill: var(--accent); stroke: var(--accent); stroke-width: 1.4; stroke-linejoin: round; cursor: pointer; }
 .plan-grip.flip.hot { fill: var(--panel); }
+/* A roof edge's slope/gable indicator: eave slope arrow + pitch; gable bar + G badge. */
+.plan-grip.slope { cursor: pointer; stroke-linejoin: round; }
+.plan-grip.slope.eave { fill: var(--accent); stroke: var(--accent); stroke-width: 1.6; }
+.plan-grip.slope.eave.hot { fill: var(--panel); }
+.plan-grip.slope.gable { fill: var(--panel); stroke: var(--ink-muted); stroke-width: 1.4; stroke-dasharray: 3 2; }
+.plan-grip.slope.gable.override { stroke: var(--accent); stroke-dasharray: none; }
+.plan-grip.slope.gable.hot { fill: var(--accent-wash); stroke: var(--accent); }
+.slope-gable-bar { fill: none; stroke: var(--ink-muted); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.slope-gable-bar.override, .slope-gable-bar.hot { stroke: var(--accent); }
+.slope-label { font: 700 10px var(--font); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.slope-label.eave { fill: var(--accent); paint-order: stroke; stroke: var(--bg, #fff); stroke-width: 3px; }
+.slope-label.gable { fill: var(--ink); }
 .fields dt.shadowed { text-decoration: line-through; color: var(--muted); }
 .plan-grip-hit { fill: transparent; stroke: none; cursor: pointer; }
 /* A selected element's reference lines: its axis dash-dot, its outline and its sketch dashed, in the accent. */

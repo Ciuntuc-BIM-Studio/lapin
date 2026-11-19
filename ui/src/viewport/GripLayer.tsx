@@ -41,8 +41,9 @@ import { endPreview, previewDrag, viewHasConstraints } from './cad/sketchStore';
 /** Where a model point shows on screen; `z` (the 3D view's) is the height it stands at. */
 type ToScreen = (p: Vec2, z?: number) => { x: number; y: number };
 
-/** How far out from its point a flip arrow is drawn, px. */
+/** How far out from its point a flip arrow or roof slope indicator is drawn, px. */
 const FLIP_OUT = 22;
+const SLOPE_IN = 22;
 
 /** A point a fraction of the way along a polyline (model), with the direction it runs there. */
 function alongLine(pts: Vec2[], frac: number): { at: Vec2; dir: Vec2 } {
@@ -142,16 +143,18 @@ export function useGripEditor(o: GripEditorOptions) {
   const groups = useMemo(() => groupGrips(grips, 3 / Math.max(o.scale, 1e-9)), [grips, o.scale]);
   const pickOf = (g: GripGroup) => pick[g.key] ?? g.members.length;
   const zOf = (g: GripGroup) => o.zOf?.(g.members[0].owner);
-  /** Where a group shows on screen: its point, a flip arrow a little way out along its direction. */
+  /** Where a group shows on screen: its point, a flip arrow or slope indicator offset along its direction. */
   const screenOf = (g: GripGroup, at: Vec2 = g.at) => {
     const z = zOf(g);
     const q = o.toScreen(at, z);
+    const kind = g.members[0].kind;
     const d = g.members[0].dir;
-    if (g.members[0].kind !== 'flip' || !d) return { ...q, ux: 0, uy: 0 };
+    if ((kind !== 'flip' && kind !== 'slope') || !d) return { ...q, ux: 0, uy: 0 };
     const r = o.toScreen({ x: at.x + d.x * 0.01, y: at.y + d.y * 0.01 }, z);
     const l = Math.hypot(r.x - q.x, r.y - q.y) || 1;
     const ux = (r.x - q.x) / l, uy = (r.y - q.y) / l;
-    return { x: q.x + ux * FLIP_OUT, y: q.y + uy * FLIP_OUT, ux, uy };
+    const dist = kind === 'slope' ? SLOPE_IN : FLIP_OUT;
+    return { x: q.x + ux * dist, y: q.y + uy * dist, ux, uy };
   };
 
   // A view that goes while a grip is dragged takes its trace with it.
@@ -187,11 +190,12 @@ export function useGripEditor(o: GripEditorOptions) {
   }, [o.svg]);
   const hit = useCallback((e: { clientX: number; clientY: number }) => {
     const p = local(e);
-    let best: GripGroup | null = null, bd = 8;
+    let best: GripGroup | null = null, bd = 12;
     for (const g of groups) {
       const q = screenOf(g);
+      const limit = g.members[0].kind === 'slope' ? 12 : 8;
       const d = Math.hypot(q.x - p.x, q.y - p.y);
-      if (d < bd) { bd = d; best = g; }
+      if (d < limit && d < bd) { bd = d; best = g; }
     }
     return best;
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -214,8 +218,8 @@ export function useGripEditor(o: GripEditorOptions) {
     const g = hit(e);
     if (!g) return false;
     const who = movers(g, pickOf(g), e.altKey);
-    // A flip arrow: a click.
-    if (who[0].kind === 'flip') { void runSteps([who[0].click?.()]); return true; }
+    // A flip arrow or roof slope indicator: a click.
+    if (who[0].kind === 'flip' || who[0].kind === 'slope') { void runSteps([who[0].click?.()]); return true; }
     const copy = (e.ctrlKey || e.metaKey) && who[0].kind === 'move';
     const first = who[0];
     // Shift on an edge's middle: the whole outline offset, every edge (decision 609).
@@ -385,6 +389,36 @@ export function useGripEditor(o: GripEditorOptions) {
       const d = `M${tip.x} ${tip.y}L${q.x - ux * 2 + nx * 5} ${q.y - uy * 2 + ny * 5}L${q.x - ux * 2 - nx * 5} ${q.y - uy * 2 - ny * 5}Z`
         + `M${q.x - ux * 2} ${q.y - uy * 2}L${q.x - ux * 10} ${q.y - uy * 10}`;
       return <g key={`${g.key}:${i}`}><circle cx={q.x} cy={q.y} r={9} className="plan-grip-hit" /><path d={d} className={cls} /><title>{title}</title></g>;
+    }
+    // A roof edge's slope/gable indicator: eave shows an inward slope arrow + pitch; gable shows a parallel bar + G badge.
+    if (kind === 'slope') {
+      const { ux, uy } = q, nx = -uy, ny = ux;
+      const slope = g.members[0].slope;
+      const label = g.members[0].label ?? '';
+      const overrideCls = slope?.override ? ' override' : '';
+      if (slope?.kind === 'gable') {
+        const bar = `M${q.x - nx * 8 - ux * 7} ${q.y - ny * 8 - uy * 7}L${q.x + nx * 8 - ux * 7} ${q.y + ny * 8 - uy * 7}`;
+        return (
+          <g key={`${g.key}:${i}`} data-grip={g.members[0].key} data-slope-kind="gable">
+            <circle cx={q.x} cy={q.y} r={12} className="plan-grip-hit" />
+            <path d={bar} className={`slope-gable-bar${overrideCls}${hover === g ? ' hot' : ''}`} />
+            <circle cx={q.x} cy={q.y} r={8} className={`${cls} gable${overrideCls}`} />
+            <text x={q.x} y={q.y} className="slope-label gable">{label || 'G'}</text>
+            <title>{title}</title>
+          </g>
+        );
+      }
+      const tip = { x: q.x + ux * 7, y: q.y + uy * 7 };
+      const d = `M${tip.x} ${tip.y}L${q.x + ux * 1 + nx * 4.5} ${q.y + uy * 1 + ny * 4.5}L${q.x + ux * 1 - nx * 4.5} ${q.y + uy * 1 - ny * 4.5}Z`
+        + `M${q.x + ux * 1} ${q.y + uy * 1}L${q.x - ux * 9} ${q.y - uy * 9}`;
+      return (
+        <g key={`${g.key}:${i}`} data-grip={g.members[0].key} data-slope-kind="eave">
+          <circle cx={q.x} cy={q.y} r={12} className="plan-grip-hit" />
+          <path d={d} className={`${cls} eave${overrideCls}`} />
+          {label && <text x={q.x + ux * 16} y={q.y + uy * 16} className="slope-label eave">{label}</text>}
+          <title>{title}</title>
+        </g>
+      );
     }
     // A rebar's anchor: a small orange diamond standing the cover outside the bar, for the formwork's face.
     const body = kind === 'edgeMid' ? <path d={`M${q.x - 4} ${q.y}L${q.x} ${q.y - 4}L${q.x + 4} ${q.y}L${q.x} ${q.y + 4}Z`} className={cls} />
