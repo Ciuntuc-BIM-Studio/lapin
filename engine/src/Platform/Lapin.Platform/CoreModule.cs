@@ -79,6 +79,8 @@ public sealed class CoreModule : ILapinModule
         r.Service<IProjectUpgrade>(new MaterialHatchUpgrade());
         r.Service<IProjectUpgrade>(new ViewFilterUpgrade());
         r.Service<IProjectUpgrade>(new ViewStyles.StructureUpgrade());
+        // A site plan's north arrow and scale bar as annotations of its own (decision 723, issue #111).
+        r.Service<IProjectUpgrade>(new SitePlans.KeysUpgrade());
         // References move, turn, mirror, copy and rise like any element (decision 448).
         var references = new ReferencePlacement();
         r.Service<IElementPlacement>(references);

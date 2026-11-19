@@ -128,6 +128,8 @@ export function slotsFor(node: NodeDto): string[] {
   if (node.type === 'IfcGrid') return ['gridBubble'];
   if (node.type === 'IfcBuildingStorey') return ['levelHead'];
   if (node.type === 'LapinInset' || node.type === 'LapinCallout') return ['calloutHead'];
+  // A north arrow (issue #111): its own symbol over its view's and the project's.
+  if (node.type === 'IfcAnnotation') return node.props.predefinedType === 'NORTHARROW' ? ['northArrow'] : [];
   if (node.type === 'LapinView') {
     const kind = node.props.kind;
     if (kind === 'section') return ['sectionHead', 'viewTitle'];
@@ -143,7 +145,7 @@ export function MarkerSymbolSection({ node }: { node: NodeDto }) {
   const list = useSymbolList();
   const { slots, mark } = useSlotsAndMark(node.id);
   const wanted = slotsFor(node);
-  const ids = selectionWith(node, (n) => n.type === node.type && (n.props.kind ?? null) === (node.props.kind ?? null));
+  const ids = selectionWith(node, (n) => n.type === node.type && (n.props.kind ?? null) === (node.props.kind ?? null) && (n.props.predefinedType ?? null) === (node.props.predefinedType ?? null));
   const mine = slots.filter((s) => wanted.includes(s.id) && (node.type !== 'LapinView' || s.owner === 'view' || s.owner === node.props.kind));
   if (!mine.length) return null;
   const own = typeof node.props.detailNumber === 'string' ? node.props.detailNumber : '';

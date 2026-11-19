@@ -30,7 +30,7 @@ public sealed class VisibilityGraphics
     public static readonly string[] LinkDisplays = ["host", "custom"];
 
     /// <summary>The annotation categories, by what owns a mark (stage B).</summary>
-    public static readonly string[] AnnotationCategories = ["dimensions", "texts", "tags", "roomTags", "grids", "levels", "sections", "elevations", "callouts", "refPlanes", "viewBoundaries", "legends", "symbols"];
+    public static readonly string[] AnnotationCategories = ["dimensions", "texts", "tags", "roomTags", "grids", "levels", "sections", "elevations", "callouts", "refPlanes", "viewBoundaries", "legends", "symbols", "keys"];
 
     readonly IModelView m;
     readonly bool in3d;
@@ -124,6 +124,7 @@ public sealed class VisibilityGraphics
         {
             Subject = ElementViews.SubjectOf(view),
             SubjectFaded = ElementViews.ContextOf(view) == "faded",
+            ViewId = view.Id,
         };
     }
 
@@ -197,7 +198,7 @@ public sealed class VisibilityGraphics
     /// <summary>The annotation category of a mark's owner (a dimension, a grid, a level, a room's stamp…), or null when it is not an annotation.</summary>
     public static string? AnnotationOf(Entity e, ViewMark? mk = null) => mk?.Owner is { } ow && ow.Contains(":partdim:", StringComparison.Ordinal) ? "dimensions" : e.Class switch
     {
-        IfcClass.Annotation => e.PredefinedType switch { "DIMENSION" => "dimensions", "TEXT" or "TABLE" or "TABLEPART" => "texts", "TAG" => "tags", "LEGEND" => "legends", "SYMBOL" => "symbols", _ => null },
+        IfcClass.Annotation => e.PredefinedType switch { "DIMENSION" => "dimensions", "TEXT" or "TABLE" or "TABLEPART" => "texts", "TAG" => "tags", "LEGEND" => "legends", "SYMBOL" => "symbols", DrawingKeys.NorthArrow or DrawingKeys.ScaleBar => "keys", _ => null },
         IfcClass.Grid => "grids",
         IfcClass.BuildingStorey => "levels",
         IfcClass.Space => mk is { Under: false, Pick: false } ? "roomTags" : null,
@@ -322,6 +323,20 @@ public sealed class VisibilityGraphics
     /// <summary>Whether the view hides an annotation category.</summary>
     public bool HidesAnnotation(string category) => True(Graphics?["annotations"]?[category]?["hidden"]);
 
+    /// <summary>The view whose graphics these are (null: graphics read as given), whose own annotations <see cref="OwnAnnotationsOnly"/> keeps.</summary>
+    public string? ViewId { get; private init; }
+
+    /// <summary>
+    /// Whether the view shows only the annotations drawn on it (issue #111, decision 722: <c>ownAnnotationsOnly</c>): the marks of
+    /// annotations that come from elsewhere left out, the grids, the levels' marks, the rooms' stamps, other views' section,
+    /// elevation and callout marks and reference planes; its own dimensions, texts, tags, symbols, keys and insets stay.
+    /// </summary>
+    public bool OwnAnnotationsOnly => True(Graphics?["ownAnnotationsOnly"]);
+
+    /// <summary>Whether a mark is an annotation that does not belong to this view (<see cref="OwnAnnotationsOnly"/>): another view's, or the model's (a grid, a level, a room's stamp).</summary>
+    public bool Foreign(Entity e, ViewMark mk) =>
+        ViewId != null && AnnotationOf(e, mk) != null && e.Str("viewId") != ViewId && mk.Data?["via"] == null;
+
     /// <summary>The subcategories an element's category hides in this view (null: none, so its parts need not be asked).</summary>
     public JsonObject? HiddenSubs(Entity e)
     {
@@ -409,13 +424,13 @@ public sealed class VisibilityGraphics
         return LayerSets.SubOf(m, list[index]);
     }
 
-    /// <summary>The entity a mark belongs to: its owner, or the element before the owner's colon (a beam's stirrups, a grid's axis).</summary>
+    /// <summary>The entity a mark belongs to: its owner, or the element before the owner's colon (a beam's stirrups) or hash (a grid's axis, grid#A).</summary>
     public static Entity? OwnerOf(IModelView m, string? owner)
     {
         if (owner == null) return null;
         if (m.Get(owner) is { } e) return e;
-        var colon = owner.IndexOf(':');
-        return colon > 0 ? m.Get(owner[..colon]) : null;
+        var cut = owner.IndexOfAny([':', '#']);
+        return cut > 0 ? m.Get(owner[..cut]) : null;
     }
 
     /// <summary>
@@ -428,6 +443,8 @@ public sealed class VisibilityGraphics
         if (OwnerOf(m, mk.Owner) is not { } e) return false;
         // Annotation categories (stage B): a dimension, a grid, a section's mark, a room's stamp…
         if (AnnotationOf(e, mk) is { } ac && HidesAnnotation(ac)) return true;
+        // Only its own annotations (decision 722): what comes from elsewhere left out.
+        if (OwnAnnotationsOnly && Foreign(e, mk)) return true;
         // Imported categories: a DXF import by its file and its layers, a traced PDF or image.
         if (e.Str(DxfImportKey) is { } imp && ImportRow(imp) is { } ir && (True(ir["hidden"]) || (e.Str("layer") is { } layer && True(ir["layers"]?[layer]?["hidden"])))) return true;
         if (e.Class == "LapinViewImage" && True(ImportRow(e.Id)?["hidden"])) return true;

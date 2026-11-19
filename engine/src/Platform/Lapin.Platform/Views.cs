@@ -337,8 +337,8 @@ public static class Views
         var copy = new Entity(ctx.NewId(), Class, name is { Length: > 0 } ? name : CopyName(ctx.Model, src.Name, Class), attrs);
         ctx.Add(copy);
         var annotations = 0;
-        if (withDetailing)
-            foreach (var ann in ctx.Model.OfClass(IfcClass.Annotation).Where(x => x.Str("viewId") == id).ToList())
+        // Its north arrows and scale bars go with it always (decision 723: a site plan's are its settings); with detailing, every annotation.
+        foreach (var ann in ctx.Model.OfClass(IfcClass.Annotation).Where(x => x.Str("viewId") == id && (withDetailing || x.PredefinedType is DrawingKeys.NorthArrow or DrawingKeys.ScaleBar)).ToList())
             {
                 var aa = ann.CloneAttrs();
                 aa["viewId"] = copy.Id;
@@ -935,6 +935,13 @@ public static class Views
         if (flat && !paper && spec.Kind != "plan") marks.AddRange(OpeningPickMarks(q, view, laid?.Select(p => (p.Spec, p.Station, p.Drawing)).ToList() ?? [(spec, 0.0, generated)], vg));
         // What the view's Visibility / Graphics hides goes with its marks (decision 391): a hidden category's tags and bars, a link hidden here.
         marks.RemoveAll(vg.HidesMark);
+        // Hide in view (issue #111): an annotation hidden here by itself (a text, a dimension, a grid, a level's mark, a north arrow,
+        // another view's marker) goes with the elements it hides; with Reveal hidden on, drawn in the reveal colour instead.
+        var hiddenHere = ViewHiding.Hidden(view);
+        if (hiddenHere.Count > 0) marks.RemoveAll(mk => mk.Owner != null && (hiddenHere.Contains(mk.Owner) || VisibilityGraphics.OwnerOf(m, mk.Owner) is { } ho && hiddenHere.Contains(ho.Id)));
+        if (revealed.Count > 0)
+            foreach (var mk in marks)
+                if (mk.Owner != null && (revealed.Contains(mk.Owner) || VisibilityGraphics.OwnerOf(m, mk.Owner) is { } ro && revealed.Contains(ro.Id))) ViewHiding.Recolor(mk);
         // The point clouds the view's cut takes, as dots under the drawing (decision 396; the view's Point clouds tab hides them, not its categories): a plan's or a section's slice, an elevation's front.
         if (laid == null && flat && !paper)
             try { marks.AddRange(PointCloudSlices.Marks(ctx, spec, vg)); }
@@ -1657,6 +1664,8 @@ public static class Views
             var first = kind == "plan" && attrs["site"] == null && !attrs.ContainsKey("foundation") && (string?)attrs["storeyId"] is { } onStorey && StoreyPlans.Of(ctx.Model, onStorey) == null ? onStorey : null;
             var v = new Entity(ctx.NewId(), Class, name, attrs);
             ctx.Add(v);
+            // A site view's north arrow and scale bar (decision 723): annotations of its own, standing by themselves until moved (drafting's class: a product with it).
+            if (SitePlans.Of(v) != null && ctx.Describe(IfcClass.Annotation) != null) foreach (var key in DrawingKeys.SiteKeys(ctx.NewId, v.Id)) ctx.Add(key);
             if (first != null) StoreyPlans.Rehome(ctx, first, v.Id);
             return new JsonObject { ["id"] = v.Id };
         });

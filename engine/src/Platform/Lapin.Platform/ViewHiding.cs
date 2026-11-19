@@ -4,7 +4,8 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>
-/// Hide in view (forum topic 73, Revit's): elements a plan, section or elevation leaves out, kept on the view
+/// Hide in view (forum topic 73, Revit's): elements a plan, section or elevation leaves out (and annotations, issue #111: a
+/// text, a dimension, a grid, a level's mark, another view's marker, the view's north arrow), kept on the view
 /// (<c>hiddenElements</c>, which every drawing, sheet and export of it reads), one step each; a level's default plan is saved
 /// as its plan view to keep them (<see cref="Views.OwnView"/>). Over them, for the interface only, a view's temporary hide
 /// and isolate (not saved, not undone, as the 3D view's HH, HI, HR) and Reveal hidden, given with the drawing asked for
@@ -49,6 +50,14 @@ public static class ViewHiding
     /// <summary>The elements a drawing draws revealed (hidden in the view, shown because Reveal hidden is on).</summary>
     public static HashSet<string> Revealed(Entity view) => (view.Attrs[RevealKey] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
 
+    /// <summary>An annotation's mark drawn revealed: its lines, texts and fills in <see cref="RevealColor"/>.</summary>
+    public static void Recolor(ViewMark mk)
+    {
+        for (var i = 0; i < mk.Lines.Count; i++) if (mk.Lines[i].Layer != "PICK") mk.Lines[i] = mk.Lines[i] with { Color = RevealColor };
+        for (var i = 0; i < mk.Texts.Count; i++) mk.Texts[i] = mk.Texts[i] with { Color = RevealColor };
+        for (var i = 0; i < mk.Fills.Count; i++) mk.Fills[i] = mk.Fills[i] with { Color = RevealColor };
+    }
+
     public static void Register(IModuleRegistry r)
     {
         // Hide in view: {viewId, ids}. A 3D view's are its own (its Visibility / Graphics); a level's default plan becomes its plan view.
@@ -57,7 +66,8 @@ public static class ViewHiding
             var view = Views.Find(ctx.Model, (string?)a["viewId"] ?? "") ?? throw new CommandException("There is no such view.");
             var ids = Ids(a["ids"]);
             if (ids.Count == 0) throw new CommandException("Select what to hide in the view first.");
-            foreach (var id in ids) if (ctx.Model.Get(id) is null) throw new CommandException("There is no such element.");
+            // An element, an annotation, or one axis of a grid (grid#A, issue #111).
+            foreach (var id in ids) if (ctx.Model.Get(id) is null && VisibilityGraphics.OwnerOf(ctx.Model, id) is not { Class: IfcClass.Grid }) throw new CommandException("There is no such element.");
             if (view.Id == GraphicsSets.View3d) throw new CommandException("The project's 3D view hides for now (HH): save it as a 3D view of its own to keep what it hides.");
             var id0 = Views.OwnView(ctx, view, attrs =>
             {

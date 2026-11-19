@@ -65,6 +65,10 @@ public sealed class AnnotationPlacement : IElementPlacement
             case SymbolInstances.Predefined:
                 SymbolInstances.Carry(attrs, OnPaper(m, attrs, t));
                 break;
+            // A legend, a scale bar or a north arrow (issue #111): its point; one standing by itself (no point) stays so.
+            case DrawingKeys.Legend or DrawingKeys.ScaleBar or DrawingKeys.NorthArrow:
+                if (attrs["at"] is JsonArray) attrs["at"] = J(t.Point(P(attrs["at"])));
+                break;
             case "TEXT" or DraftingTables.Predefined or DraftingTables.PartPredefined:
                 attrs["at"] = J(t.Point(P(attrs["at"])));
                 var deg = Json.Number(attrs["angle"]) ?? 0;

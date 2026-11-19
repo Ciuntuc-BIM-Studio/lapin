@@ -424,7 +424,7 @@ const core: LapinModule = {
     { id: 'inset', label: 'Inset view', classes: ['LapinInset'], component: InsetSection, replacesFields: () => true },
     { id: 'callout', label: 'Detail callout', classes: ['LapinCallout'], component: CalloutSection, replacesFields: () => true },
     // The symbol a section, an elevation, a grid axis, a level, a callout or a view is marked with (docs/plan-user-extensibility.md §3.3).
-    { id: 'markerSymbol', label: 'Marker symbol', classes: ['LapinView', 'IfcGrid', 'IfcBuildingStorey', 'LapinInset', 'LapinCallout'], shows: (n) => slotsFor(n).length > 0, component: MarkerSymbolSection },
+    { id: 'markerSymbol', label: 'Marker symbol', classes: ['LapinView', 'IfcGrid', 'IfcBuildingStorey', 'LapinInset', 'LapinCallout', 'IfcAnnotation'], shows: (n) => slotsFor(n).length > 0, component: MarkerSymbolSection },
   ],
   hotbar: [
     { id: 'select', label: 'Select', icon: MousePointer2, shortcut: 'Esc', run: () => setTool(null) },

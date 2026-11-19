@@ -239,6 +239,12 @@ public static class GraphicsSets
                 if (!VisibilityGraphics.AnnotationCategories.Contains(ann)) throw new CommandException($"„{ann}” is not an annotation category.");
                 SetIn(g, "annotations", ann, value);
             }
+            // Only the view's own annotations (issue #111, decision 722): true, or false / null (every annotation it shows).
+            if (a.ContainsKey("ownAnnotationsOnly"))
+            {
+                if (a["ownAnnotationsOnly"] is JsonValue ov && ov.TryGetValue<bool>(out var only) && only) g["ownAnnotationsOnly"] = true;
+                else if (a["ownAnnotationsOnly"] is null or JsonValue) g.Remove("ownAnnotationsOnly");
+            }
             if ((string?)a["import"] is { } imp)
             {
                 var imports = g["imports"]?.DeepClone() as JsonObject ?? new JsonObject();
