@@ -84,12 +84,91 @@ public static class RoofParts
         openings?.Where(o => ReferenceEquals(o.Host.Plane, f.Plane))
             .Select(o => o.Hole.Select(q => q.Xy).ToList()).ToList() ?? [];
 
-    /// <summary>How a rafter is cut: its section, its tail (plumb or square), and whether it is notched over the wall plate.</summary>
+    /// <summary>How a rafter is cut: its section, its tail profile, and whether it is notched over the wall plate.</summary>
     sealed record Cut(double W, double D, string Tail, bool Seat, double PlateTop);
+
+    /// <summary>The built-in rafter tail cut types.</summary>
+    public static readonly string[] TailTypes = ["plumb", "square", "level", "bevel", "stepped", "curved"];
+
+    /// <summary>
+    /// Computes the horizontal pullback <c>TailX</c> along the rafter's underside and any intermediate profile points
+    /// from the top-left corner <c>(0, Zs(0) + v)</c> down to <c>(TailX, Zs(TailX))</c>. Bounded by <c>run</c> so short
+    /// rafters never invert or self-intersect.
+    /// </summary>
+    static (double TailX, List<(double Sv, double Z)> TailPts) TailProfile(
+        string tail, double run, double d, double v, double tan, double secant, Func<double, double> zs)
+    {
+        var pts = new List<(double Sv, double Z)>();
+        if (run < 1e-3) return (0, pts);
+
+        switch (tail)
+        {
+            case "square":
+            {
+                var sin = tan / secant;
+                var tx = d * sin < run * 0.5 ? d * sin : 0;
+                return (tx, pts);
+            }
+            case "level":
+            {
+                if (tan <= 1e-4) return (0, pts);
+                var h = Math.Min(v * 0.5, run * 0.45 * tan);
+                var tx = h / tan;
+                if (tx < 1e-4) return (0, pts);
+                pts.Add((0, zs(0) + h));
+                return (tx, pts);
+            }
+            case "bevel":
+            {
+                var tx = Math.Min(d * 0.85, run * 0.45);
+                if (tx < 1e-4) return (0, pts);
+                pts.Add((0, zs(0) + v * 0.30));
+                return (tx, pts);
+            }
+            case "stepped":
+            {
+                var tx = Math.Min(d * 1.0, Math.Min(run * 0.45, tan > 1e-6 ? 0.45 * v / tan : d * 1.0));
+                if (tx < 2e-4) return (0, pts);
+                var s1 = tx * 0.5;
+                var z1 = zs(0) + v * 0.68;
+                var z2 = zs(0) + v * 0.48;
+                pts.Add((0, z1));
+                pts.Add((s1, z1));
+                pts.Add((s1, z2));
+                pts.Add((tx, z2));
+                return (tx, pts);
+            }
+            case "curved":
+            {
+                var tx = Math.Min(d * 1.2, Math.Min(run * 0.45, tan > 1e-6 ? 0.55 * v / tan : d * 1.2));
+                if (tx < 2e-4) return (0, pts);
+                var zStart = zs(0) + v * 0.72;
+                var zEnd = zs(tx);
+                var dz = zStart - zEnd;
+                if (dz < 1e-4) return (0, pts);
+                var zMid = (zStart + zEnd) * 0.5;
+                var n = Chords.Ellipse(tx * 0.5, dz * 0.5, Math.PI / 2, min: 2);
+                pts.Add((0, zStart));
+                for (int i = 1; i <= n; i++)
+                {
+                    var t = Math.PI / 2 * (1 - (double)i / n);
+                    pts.Add((tx * 0.5 * Math.Cos(t), zMid + dz * 0.5 * Math.Sin(t)));
+                }
+                for (int i = 1; i < n; i++)
+                {
+                    var t = Math.PI / 2 * ((double)i / n);
+                    pts.Add((tx - tx * 0.5 * Math.Cos(t), zMid - dz * 0.5 * Math.Sin(t)));
+                }
+                return (tx, pts);
+            }
+            default: // "plumb"
+                return (0, pts);
+        }
+    }
 
     /// <summary>
     /// A rafter (or a top chord) in the vertical plane through <paramref name="p"/> along <paramref name="u"/>, from k0 to k1,
-    /// its underside on z(k): its high end cut plumb, its low end (the eave) plumb or square, and, when <paramref name="wall"/>
+    /// its underside on z(k): its high end cut plumb, its low end (the eave) cut to <see cref="Cut.Tail"/>, and, when <paramref name="wall"/>
     /// (the wall line's k) lies on it, a bird's mouth there: a level seat on the plate from the wall line out to the plate's
     /// outer face and a plumb heel, at most a third of the rafter's depth.
     /// </summary>
@@ -106,8 +185,7 @@ public static class RoofParts
         double Zs(double sv) => z(low + dir * sv);
         Vec3 P(double sv, double zv) => (p + u * (low + dir * sv) - side * (c.W / 2)).At(zv);
         var face = new List<Vec3>();
-        var sin = tan / secant;
-        var tail = c.Tail == "square" && c.D * sin < run * 0.5 ? c.D * sin : 0;
+        var (tail, tailPts) = TailProfile(c.Tail, run, c.D, v, tan, secant, Zs);
         face.Add(P(tail, Zs(tail)));
         if (wall is { } kw && c.Seat && tan > 1e-6)
         {
@@ -124,6 +202,7 @@ public static class RoofParts
         face.Add(P(run, Zs(run)));
         face.Add(P(run, Zs(run) + v));
         face.Add(P(0, Zs(0) + v));
+        foreach (var (sv, zv) in tailPts) face.Add(P(sv, zv));
         Vec3 Axis(double k) => (p + u * k).At(z(k) + v / 2);
         return new Member(role, Axis(k0), Axis(k1), c.W, c.D) { Profile = face, Side = (side * c.W).At(0), Truss = truss };
     }
@@ -140,7 +219,7 @@ public static class RoofParts
         var (rw, rd) = r.Rafter;
         var spacing = Math.Max(0.3, r.Roof.NumOrNull("rafterSpacing") ?? 0.8);
         var purlins = r.Scheme == "rafters" ? Math.Clamp((int)(r.Roof.NumOrNull("purlins") ?? 1), 0, 3) : 0;
-        var cut = new Cut(rw, rd, r.Roof.Str("rafterTail") == "square" ? "square" : "plumb", r.Roof.Str("rafterSeat") != "none", r.BaseZ);
+        var cut = new Cut(rw, rd, r.Roof.Str("rafterTail") ?? "plumb", r.Roof.Str("rafterSeat") != "none", r.BaseZ);
         var frames = Frames(s);
         var minNz = frames.Count == 0 ? 1 : frames.Min(f => f.Normal.Z);
 
