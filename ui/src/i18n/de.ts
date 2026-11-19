@@ -1053,6 +1053,9 @@ export const DE: Record<string, string> = {
   'Gross floor area': 'Brutto-Bodenfläche', 'Net perimeter': 'Netto-Umfang', 'Finished ceiling height': 'Lichte Höhe fertig',
   'Volume': 'Volumen', 'Area': 'Fläche', 'Net volume': 'Nettovolumen', 'Gross volume': 'Bruttovolumen', 'Net area': 'Nettofläche', 'Gross area': 'Bruttofläche', 'Perimeter': 'Umfang',
   'Surface area': 'Oberfläche', 'Plan area': 'Grundfläche', 'Lowest point': 'Tiefster Punkt', 'Highest point': 'Höchster Punkt', 'Fill': 'Füllung',
+  // A terrain's earthworks in its quantities, and a merge whose boundaries make no one outline (filming the terrain tutorial, 19.11.2026)
+  "earthwork|Cut": "Abtrag", "earthwork|Fill": "Auftrag", "Net cut − fill": "Netto Abtrag − Auftrag",
+  "The terrains' boundaries do not make one outline (they lie apart or leave a gap between them): the merged terrain covers all its points. Draw its boundary again (Terrain boundary) to clip it.": "Die Grenzen der Gelände ergeben keinen einzigen Umriss (sie liegen auseinander oder lassen eine Lücke zwischen sich): Das vereinte Gelände umfasst alle seine Punkte. Zeichne seine Grenze erneut (Geländegrenze), um es zuzuschneiden.",
   // Panes, zoom, the key plan
   'Profile on the path': 'Profil auf dem Pfad', 'Gap from the path': 'Abstand vom Pfad', 'centre': 'mittig', 'right': 'rechts', 'left': 'links',
   'Attach to roof': 'An Dach anbinden', 'Detach from roof': 'Vom Dach lösen', 'Top under a roof': 'Oberkante unter einem Dach', 'Start cut angle': 'Schnittwinkel am Anfang', 'End cut angle': 'Schnittwinkel am Ende', 'attach': 'anbinden', 'none': 'keine',

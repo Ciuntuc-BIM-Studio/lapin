@@ -1051,6 +1051,9 @@ export const PL: Record<string, string> = {
   'Gross floor area': 'Powierzchnia brutto podłogi', 'Net perimeter': 'Obwód netto', 'Finished ceiling height': 'Wysokość w świetle po wykończeniu',
   'Volume': 'Objętość', 'Area': 'Powierzchnia', 'Net volume': 'Objętość netto', 'Gross volume': 'Objętość brutto', 'Net area': 'Powierzchnia netto', 'Gross area': 'Powierzchnia brutto', 'Perimeter': 'Obwód',
   'Surface area': 'Pole powierzchni', 'Plan area': 'Powierzchnia w rzucie', 'Lowest point': 'Najniższy punkt', 'Highest point': 'Najwyższy punkt', 'Fill': 'Wypełnienie',
+  // A terrain's earthworks in its quantities, and a merge whose boundaries make no one outline (filming the terrain tutorial, 19.11.2026)
+  "earthwork|Cut": "Wykop", "earthwork|Fill": "Nasyp", "Net cut − fill": "Wykop netto − nasyp",
+  "The terrains' boundaries do not make one outline (they lie apart or leave a gap between them): the merged terrain covers all its points. Draw its boundary again (Terrain boundary) to clip it.": "Granice terenów nie tworzą jednego obrysu (leżą osobno lub zostawiają między sobą lukę): połączony teren obejmuje wszystkie swoje punkty. Narysuj ponownie jego granicę (Granica terenu), aby go przyciąć.",
   // Panes, zoom, the key plan
   'Profile on the path': 'Profil na ścieżce', 'Gap from the path': 'Odstęp od ścieżki', 'centre': 'na środku', 'right': 'z prawej', 'left': 'z lewej',
   'Attach to roof': 'Dołącz do dachu', 'Detach from roof': 'Odłącz od dachu', 'Top under a roof': 'Góra pod dachem', 'Start cut angle': 'Kąt cięcia na początku', 'End cut angle': 'Kąt cięcia na końcu', 'attach': 'dołącz', 'none': 'brak',
