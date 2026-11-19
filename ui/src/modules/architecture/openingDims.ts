@@ -2,14 +2,16 @@
  * A door's, a window's or a bare opening's temporary dimensions in plan (a tester's report, decision 511; Revit's temporary
  * dimensions): with one selected, a dimension from each of its edges to the nearest reference along its wall on that side
  * (a face of a wall meeting it, else the wall's own end), and one to the nearest neighbouring opening when that is nearer.
- * Their ends are cycled by a click (the opening's edge or its centre; the reference's near face, far face, core faces, axis,
- * or the other opening's near edge, centre, far edge), and a value typed moves the opening along its wall so that the
+ * Where their ends stand follows the user's Temporary Dimension Properties (decision 738: the opening's edges or its centre;
+ * a wall's faces, core faces, centre of core or axis). Their ends are cycled by a click (the opening's edge or its centre; the
+ * reference's near face, far face, core faces, axis, centre of core, or the other opening's near edge, centre, far edge), and a value typed moves the opening along its wall so that the
  * dimension reads it, the reference staying where it is.
  *
  * Pure: what architecture.openingReferences answers, and positions along the wall's axis in metres from its start.
  */
 
 import type { Vec2 } from '../../platform/module';
+import type { DimRef, OpeningDimRef } from '../../viewport/lineDims';
 
 export type Side = 'left' | 'right';
 /** Which way along the wall a dimension runs from the opening: −1 towards the wall's start, +1 towards its end. */
@@ -41,7 +43,7 @@ export interface OpeningRefs {
   openings?: RefOpening[];
 }
 
-export type RefWhat = 'nearFace' | 'farFace' | 'nearCore' | 'farCore' | 'axis' | 'end' | 'nearEdge' | 'centre' | 'farEdge';
+export type RefWhat = 'nearFace' | 'farFace' | 'nearCore' | 'farCore' | 'axis' | 'coreCentre' | 'end' | 'nearEdge' | 'centre' | 'farEdge';
 export interface RefOption { what: RefWhat; s: number }
 /** Something a dimension's far end can hold on: a wall meeting the host, the host's end, another opening. */
 export interface RefTarget { key: string; kind: 'wall' | 'end' | 'opening'; name: string; options: RefOption[] }
@@ -97,6 +99,9 @@ export function targetsOn(r: OpeningRefs, side: Side, way: Way, edge: number): R
     const opts: RefOption[] = [{ what: 'nearFace', s: near }, { what: 'farFace', s: far }];
     if (c) opts.push(...(way < 0 ? [{ what: 'nearCore' as const, s: c[1] }, { what: 'farCore' as const, s: c[0] }] : [{ what: 'nearCore' as const, s: c[0] }, { what: 'farCore' as const, s: c[1] }]));
     opts.push({ what: 'axis', s: on.axis });
+    // The middle of its core (decision 738): where the axis is unless the core is off it (then a place of its own).
+    const cc = c ?? f;
+    opts.push({ what: 'coreCentre', s: (cc[0] + cc[cc.length - 1]) / 2 });
     out.push({ key: `wall:${w.id}`, kind: 'wall', name: w.name, options: distinct(opts) });
   }
   const ends = r.ends?.[side];
@@ -115,12 +120,33 @@ export function targetsOn(r: OpeningRefs, side: Side, way: Way, edge: number): R
   return out.sort((a, b) => dist(a) - dist(b) || (a.kind === 'wall' ? -1 : b.kind === 'wall' ? 1 : 0));
 }
 
+/** Where the user's references put a dimension's ends unless its dots were clicked (decision 738). */
+export interface DimModes {
+  /** Doors and windows: from the opening's edges (openings, the default) or its centre (centrelines), to another opening's alike. */
+  opening?: OpeningDimRef;
+  /** Walls: their faces, core faces, centre of core or axis; the near face when not given (decision 511's way), as for `reference`. */
+  walls?: DimRef;
+}
+
+/** Which of a reference's options the user's references choose (decision 738): a wall's by the walls', an opening's by the doors'. */
+export function defaultOption(target: RefTarget, m: DimModes = {}): number {
+  const find = (...whats: RefWhat[]) => { for (const w of whats) { const i = target.options.findIndex((o) => o.what === w); if (i >= 0) return i; } return 0; };
+  if (target.kind === 'opening') return m.opening === 'centre' ? find('centre') : 0;
+  if (target.kind !== 'wall') return 0;
+  switch (m.walls) {
+    case 'core': return find('nearCore', 'nearFace');
+    case 'coreCentre': return find('coreCentre', 'axis');
+    case 'axis': return find('axis');
+    default: return 0;
+  }
+}
+
 /**
  * The dimensions shown for an opening `along` its wall, `width` wide: on each side the nearest wall face or wall end (row 0),
- * and the nearest other opening when it is nearer (row 1); each as `picks` say (its option, its own end), else the defaults
- * (the near face, the opening's edge).
+ * and the nearest other opening when it is nearer (row 1); each as `picks` say (its option, its own end), else as the user's
+ * references say (`modes`: decision 738), else the near face and the opening's edge.
  */
-export function tempDims(r: OpeningRefs, side: Side, along: number, width: number, picks: Record<string, DimPick> = {}): TempDim[] {
+export function tempDims(r: OpeningRefs, side: Side, along: number, width: number, picks: Record<string, DimPick> = {}, modes: DimModes = {}): TempDim[] {
   const out: TempDim[] = [];
   for (const way of [-1, 1] as Way[]) {
     const edge = along + (way * width) / 2;
@@ -133,8 +159,8 @@ export function tempDims(r: OpeningRefs, side: Side, along: number, width: numbe
     for (const [row, target] of rows) {
       const key = `${way}:${row}`;
       const pick = picks[key] ?? {};
-      const opt = ((pick.opt ?? 0) % target.options.length + target.options.length) % target.options.length;
-      const own = pick.own ?? 'edge';
+      const opt = ((pick.opt ?? defaultOption(target, modes)) % target.options.length + target.options.length) % target.options.length;
+      const own = pick.own ?? (modes.opening === 'centre' ? 'centre' : 'edge');
       const refS = target.options[opt].s;
       const ownS = own === 'edge' ? edge : along;
       out.push({ key, way, row, target, opt, own, refS, ownS, value: Math.abs(ownS - refS) * faceScale(r, side) });

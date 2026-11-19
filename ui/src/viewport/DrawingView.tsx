@@ -258,7 +258,7 @@ export function DrawingView() {
       const act = gestureKey(e.key, tool?.gesture, pts.length, !!picked.current);
       if (act === 'completePick') {
         const l = useLive.getState();
-        if (e.defaultPrevented || (l.owner === 'tool' && (l.len || l.ang))) return;
+        if (e.defaultPrevented || (l.owner === 'tool' && (l.len || l.ang || l.rel))) return;
         void complete([pts[0]], picked.current!);
         return;
       }
@@ -524,7 +524,7 @@ export function DrawingView() {
         ))}
         {pts.length > 0 && (() => {
           // The next point: the cursor's, or where a typed length puts it.
-          const cur = hover ? (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point : null;
+          const cur = hover ? (live.owner === 'tool' && (live.len || live.ang || live.rel) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point : null;
           const chain = [...pts, ...(cur ? [cur] : [])].map(toScreen);
           const closed = tool?.gesture?.kind === 'polygon' || tool?.gesture?.kind === 'rectangle';
           const d = tool?.gesture?.kind === 'rectangle' && chain.length === 2

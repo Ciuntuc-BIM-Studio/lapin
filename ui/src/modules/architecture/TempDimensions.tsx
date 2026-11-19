@@ -6,6 +6,8 @@
  *
  * - The value: a click types it (the project's unit, sums allowed); Enter moves the opening so that the dimension reads
  *   it, the reference staying put (architecture.moveOpening: along the wall, or its sill; one undo step); Escape leaves it.
+ * - Where the ends stand: as the user's Temporary Dimension Properties say (decision 738: the opening's edges or its centre; a
+ *   wall's faces, core faces, centre of core or axis), until a dot is clicked.
  * - The opening's end (a small dot): a click switches it between the opening's edge and its centre.
  * - The reference's end: a click takes the next thing on it (a wall's near face, far face, core faces, axis; the other
  *   opening's near edge, centre, far edge).
@@ -24,10 +26,11 @@ import { useGripDrag } from '../../viewport/gripDrag';
 import { markOwner } from '../../viewport/planPick';
 import { arcOf } from '../../viewport/arc';
 import { t } from '../../i18n';
+import { usePrefs } from '../../app/prefs';
 import { jambTo } from './wallOpeningGrips';
 import {
   alongFor, alongOf, arcDimension, at, chooseSide, faceOn, faceScale, sillFor, tempDims, toView, verticalDims,
-  type DimPick, type OpeningRefs, type Side, type TempDim,
+  type DimModes, type DimPick, type OpeningRefs, type Side, type TempDim,
 } from './openingDims';
 
 
@@ -70,6 +73,13 @@ function usePicks(who: string): [Record<string, DimPick>, (key: string, p: DimPi
   return [now, (key, p) => setPicks({ who, p: { ...now, [key]: { ...now[key], ...p } } })];
 }
 
+/** The user's Temporary Dimension Properties (decision 738): doors and windows from their edges or centres, walls by their reference. */
+function useModes(): DimModes {
+  const opening = usePrefs((s) => s.tempDimOpeningRef);
+  const walls = usePrefs((s) => s.tempDimRef);
+  return { opening, walls };
+}
+
 /** The along-the-wall dimensions as `Shown`s: `pt(s, out)` places them; `permanent` makes one a dimension of the view. */
 function alongShown(refs: OpeningRefs, side: Side, dims: TempDim[], width: number, live: boolean, pick: (key: string, p: DimPick) => void,
   pt: (s: number, out: number) => Vec2, steps: number, permanent?: (d: TempDim) => void): Shown[] {
@@ -95,7 +105,8 @@ export function OpeningDims({ toScreen, scale, view }: PlanOverlayProps) {
   const place = tool && placing && (tool === `architecture.${placing.kind}` || tool === 'architecture.opening') && placing.host.type === 'IfcWall' && placing.host.storeyId === view.storeyId ? placing : null;
   const sel = selectedOpening && (!view.storeyId || !selectedOpening.storeyId || selectedOpening.storeyId === view.storeyId) ? selectedOpening : null;
   const refs = useRefs(place ? { wallId: place.host.id } : sel ? { id: sel.id } : null);
-  const [picks, pick] = usePicks(sel?.id ?? '');
+  const modes = useModes();
+  const [picks, pick] = usePicks(`${sel?.id ?? ''}|${modes.opening}|${modes.walls}`);
 
   const wallId = place ? place.host.id : sel?.wallId;
   if (!wallId || !refs || !refs.faces || refs.wallId !== wallId || !(scale > 0)) return null;
@@ -121,7 +132,7 @@ export function OpeningDims({ toScreen, scale, view }: PlanOverlayProps) {
   }
   const live = !place && !drag;
   const side = chooseSide(refs);
-  const dims = tempDims(refs, side, along, width, picks);
+  const dims = tempDims(refs, side, along, width, picks, modes);
   if (!dims.length) return null;
   const face = refs.faces[side];
   const sgn = side === 'left' ? 1 : -1;
@@ -153,7 +164,8 @@ export function OpeningDimsInView({ toScreen, scale, view, drawing }: DrawingOve
   // Only where the view draws it.
   const shown = !!sel && !!drawing?.marks?.some((m) => { const o = markOwner(m.id, nodes); return o?.owner.id === sel.owner || o?.pick === sel.owner; });
   const refs = useRefs(sel && shown && drawing?.frame && !drawing.developed ? { id: sel.id } : null);
-  const [picks, pick] = usePicks(sel?.id ?? '');
+  const modes = useModes();
+  const [picks, pick] = usePicks(`${sel?.id ?? ''}|${modes.opening}|${modes.walls}`);
   if (!sel || !refs || !drawing?.frame || drawing.developed || refs.opening?.id !== sel.id || !refs.faces || !(scale > 0)) return null;
   const f = drawing.frame;
   const side = faceOn(refs, f);
@@ -169,7 +181,7 @@ export function OpeningDimsInView({ toScreen, scale, view, drawing }: DrawingOve
     const mid = inView((d.refS + d.ownS) / 2, o.top! + ROW_PX[d.row] / scale);
     void execute('drafting.addDimension', { viewId, a: [a.x, a.y], b: [b.x, b.y], at: [mid.x, mid.y] });
   } : undefined;
-  const along = alongShown(refs, side, tempDims(refs, side, o.along, o.width, picks), o.width, true, pick, pt, 1, permanentAlong);
+  const along = alongShown(refs, side, tempDims(refs, side, o.along, o.width, picks, modes), o.width, true, pick, pt, 1, permanentAlong);
   // Up its side: beside the edge further right in the view, from the storey's level to its bottom and to its top.
   const edges = [o.along - o.width / 2, o.along + o.width / 2];
   const xs = edges.map((s) => inView(s, o.bottom!).x);

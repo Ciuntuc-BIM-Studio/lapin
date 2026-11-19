@@ -64,7 +64,7 @@ export function CadOverlay({ aimed, toScreen }: { aimed: Aimed | null; toScreen:
   const live = useLive();
   if (!aimed) return null;
   const c = toScreen(aimed.point);
-  const typed = live.owner && (live.len || live.ang) ? livePoint({ ...live, cursor: aimed.point }) : null;
+  const typed = live.owner && (live.len || live.ang || live.rel) ? livePoint({ ...live, cursor: aimed.point }) : null;
   const to = typed ?? aimed.point;
   const preview = step?.preview ? step.preview(to) : [];
   const labels = step?.labels ? step.labels(to) : [];

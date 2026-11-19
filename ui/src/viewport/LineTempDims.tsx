@@ -2,8 +2,8 @@
  * The temporary dimensions walls, columns and beams share in plan (decision 733; the measuring in lineDims.ts): the storey's
  * lines from the engine (`view.dimLines`), the grid's axes, the choices made on each dimension's dots, and one component
  * that draws a host's dimensions with their values to type, their dots to cycle, and a right click on a dot for the dimension
- * reference's menu ("make this the default", or any of core faces, faces, axis, reference line: Preferences → Grid and snaps
- * keeps it). The tools' bars choose it too (`DimRefChoice`).
+ * reference's menu ("make this the default", or any of centrelines, faces, centre of core, faces of core, reference line, or the
+ * Temporary Dimension Properties dialog: decision 738, kept for the user). The tools' bars choose it too (`DimRefChoice`).
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -15,11 +15,12 @@ import { axesOf } from '../shell/gridAxes';
 import { openContextMenu } from '../shell/ContextMenu';
 import { t } from '../i18n';
 import { Marks, ROW_PX, type Shown } from './TempDimMarks';
+import { openTempDimProperties } from './tempDimProps';
 import { DIM_REFS, DIM_REF_LABELS, framePoint, refOfPlace, type AxisLine, type DimLineInfo, type DimPick, type DimRef, type Host, type LineDim } from './lineDims';
 
 interface Answer {
   storeyId: string;
-  lines: { id: string; name: string; kind: string; part?: string; start: [number, number]; end: [number, number]; faces: [number, number]; core: [number, number]; reference?: number; joins?: DimLineInfo['joins'] }[];
+  lines: { id: string; name: string; kind: string; part?: string; start: [number, number]; end: [number, number]; faces: [number, number]; core: [number, number]; coreCentre?: number; reference?: number; joins?: DimLineInfo['joins'] }[];
 }
 
 /** The storey's lines from the engine, asked again whenever the model changes; the last answer kept until the next. */
@@ -36,7 +37,7 @@ export function useDimLines(storeyId: string | null): DimLineInfo[] | null {
         storeyId: r.storeyId,
         lines: r.lines.map((w) => ({
           id: w.id, name: w.name, kind: w.kind, part: w.part, a: { x: w.start[0], y: w.start[1] }, b: { x: w.end[0], y: w.end[1] },
-          faces: w.faces, core: w.core, reference: w.reference, joins: w.joins,
+          faces: w.faces, core: w.core, coreCentre: w.coreCentre, reference: w.reference, joins: w.joins,
         })),
       });
     });
@@ -66,7 +67,7 @@ export function usePicks(who: string): [Record<string, DimPick>, (key: string, p
 export const useDimRef = (): DimRef => usePrefs((s) => s.tempDimRef);
 export const setDimRef = (r: DimRef) => setPrefs({ tempDimRef: r });
 
-const DIM_REF_TITLE = 'Where temporary dimensions measure from and to: core face to core face, finish face to finish face, axis to axis, or from the element\'s reference line to the other\'s near face. Kept in Preferences → Grid and snaps.';
+const DIM_REF_TITLE = 'Where temporary dimensions measure from and to: centreline to centreline, finish face to finish face, centre of core to centre of core, core face to core face, or from the element\'s reference line to the other\'s near face. Kept for you: Annotate → Temporary dimensions….';
 
 /** The dimension reference in a tool's bar (Wall, Column, Beam): kept for every temporary dimension. */
 export function DimRefChoice() {
@@ -95,10 +96,11 @@ export interface HostDims {
 export function TempDimSet({ testId, className, sets, live, drawing, pick, toScreen, scale, view }:
   { testId: string; className: string; sets: HostDims[]; live: boolean; drawing?: boolean; pick: (key: string, p: DimPick) => void } & Pick<PlanOverlayProps, 'toScreen' | 'scale' | 'view'>) {
   const current = useDimRef();
-  // A dot's right click: this dimension's other end made the default for every one, or any of the four.
+  // A dot's right click: this dimension's other end made the default for every one, or any of the five; or the whole dialog (decision 738).
   const menu = (x: number, y: number, make: DimRef) => openContextMenu(x, y, [
     { label: 'Make this the default', hint: DIM_REF_LABELS[make], onSelect: () => setDimRef(make) },
     ...DIM_REFS.map((r) => ({ label: DIM_REF_LABELS[r], checked: r === current, onSelect: () => setDimRef(r) })),
+    { label: 'Temporary dimension properties…', onSelect: openTempDimProperties },
   ]);
   const viewId = view.id ?? `plan:${view.storeyId}`;
   const items: Shown[] = [];
