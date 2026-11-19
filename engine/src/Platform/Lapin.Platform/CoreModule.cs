@@ -79,6 +79,8 @@ public sealed class CoreModule : ILapinModule
         r.Service<IProjectUpgrade>(new MaterialHatchUpgrade());
         r.Service<IProjectUpgrade>(new ViewFilterUpgrade());
         r.Service<IProjectUpgrade>(new ViewStyles.StructureUpgrade());
+        // The standards' own layers merged into the project's one list of drafting layers (forum #168, decision 714).
+        r.Service<IProjectUpgrade>(new DraftLayers.ListUpgrade());
         // References move, turn, mirror, copy and rise like any element (decision 448).
         var references = new ReferencePlacement();
         r.Service<IElementPlacement>(references);

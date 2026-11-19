@@ -764,15 +764,18 @@ public static class DxfCurves
         return ww[p] == 0 ? new Vec2(x[p], y[p]) : new Vec2(x[p] / ww[p], y[p] / ww[p]);
     }
 
-    /// <summary>A line type's dashes as one of Lapin's four: continuous, dashed, dotted, dash-dot.</summary>
+    /// <summary>A line type's dashes as one of Lapin's: continuous, dashed, dotted, dash-dot, dash-dot-dot.</summary>
     public static string LineType(string? name, double[]? elements)
     {
         var n = (name ?? "").ToUpperInvariant();
         if (n is "" or "CONTINUOUS" or "BYLAYER" or "BYBLOCK" || elements is not { Length: > 1 }) return "continuous";
         var dashes = elements.Where(e => e > 1e-12).Count();
         var dots = elements.Where(e => Math.Abs(e) <= 1e-12).Count();
+        // Two dots to a dash (AutoCAD's DIVIDE, a section line): dash dot dot (decision 715).
+        if (dashes > 0 && dots >= 2 * dashes) return "dashdotdot";
         if (dashes > 0 && dots > 0) return "dashdot";
         if (dashes == 0 && dots > 0) return "dotted";
+        if (n.Contains("DIVIDE") || n.Contains("PHANTOM") || n.Contains("DOTDOT")) return "dashdotdot";
         if (n.Contains("DOT") && n.Contains("DASH")) return "dashdot";
         if (n.Contains("DOT")) return "dotted";
         return "dashed";

@@ -20,7 +20,22 @@ public static class DraftingResources
     public static IReadOnlyList<HatchPattern> Patterns(IModelView m) =>
         Spatial.Project(m)?.Str("hatchPatterns") is { Length: > 0 } text ? Pat.Parse(text).Patterns : [];
 
-    public static StyleBook Book(IModelView m) => Standards.Read(Spatial.Project(m)?.Attrs["drafting"]);
+    /// <summary>The project's drafting standards; their layers the project's one list of drafting layers (<see cref="DraftLayers"/>, decision 714).</summary>
+    public static StyleBook Book(IModelView m)
+    {
+        var attrs = Spatial.Project(m)?.Attrs;
+        var book = Standards.Read(attrs?["drafting"]);
+        var names = Standards.LineTypeNames(book);
+        // Read once per stored list (an entity's attributes are replaced, never changed in place) and the line types it was read with.
+        if (attrs?[DraftLayers.Key] is not JsonArray stored) return book with { Layers = DraftLayers.Of(attrs, names) };
+        if (LayerCache.TryGetValue(stored, out var hit) && hit.Names.SequenceEqual(names)) return book with { Layers = hit.Layers };
+        var layers = DraftLayers.Of(attrs, names);
+        LayerCache.AddOrUpdate(stored, new CachedLayers(names, layers));
+        return book with { Layers = layers };
+    }
+
+    sealed record CachedLayers(string[] Names, IReadOnlyList<DraftLayer> Layers);
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<JsonArray, CachedLayers> LayerCache = new();
 
     /// <summary>A .pat file's patterns as the import preview shows them: new, the same as the project's of its name, or the same pattern drawn otherwise (updated by default).</summary>
     static List<LibraryMerge.Row> PatternRows(IModelView m, string text)
@@ -722,10 +737,12 @@ public static class DraftingResources
         {
             var key = ListKey((string?)a["kind"]);
             if (a["entry"] is not JsonObject entry) throw new CommandException("Nothing to set.");
-            var id = (string?)entry["id"] is { Length: > 0 } given ? given : $"{(string?)a["kind"]}-{ctx.NewId()[..8]}";
-            entry = (JsonObject)entry.DeepClone();
-            entry["id"] = id;
             var raw = Standards.ToJson(Book(ctx.Model));
+            entry = (JsonObject)entry.DeepClone();
+            // A layer is one of the project's drafting layers, its id its name (decision 714): renamed, its shapes follow it.
+            var id = (string?)a["kind"] == "layer" ? LayerId(ctx, raw, entry)
+                : (string?)entry["id"] is { Length: > 0 } given ? given : $"{(string?)a["kind"]}-{ctx.NewId()[..8]}";
+            entry["id"] = id;
             var list = raw[key] as JsonArray ?? [];
             var at = list.Select((x, i) => (x, i)).FirstOrDefault(p => (string?)p.x?["id"] == id);
             if (at.x is JsonObject old)
@@ -759,6 +776,12 @@ public static class DraftingResources
             var id = (string?)a["id"] ?? "";
             if (id == Standards.Standard && kind is not ("tag" or "layerGroup" or "tagRule" or "table") || kind == "layer" && id == "0") throw new CommandException("The standard entry stays.");
             var raw = Standards.ToJson(Book(ctx.Model));
+            // A drafting layer removed: its shapes go to layer 0, as Draft → Layers does.
+            if (kind == "layer")
+            {
+                if (!(raw["layers"] as JsonArray ?? []).Any(x => (string?)x?["id"] == id)) throw new CommandException("There is no such layer.");
+                DraftLayers.Repoint(ctx, id, DraftLayers.Zero);
+            }
             raw[key] = new JsonArray(((raw[key] as JsonArray) ?? []).Where(x => (string?)x?["id"] != id).Select(x => x?.DeepClone()).ToArray());
             void Repoint(string listKey, string field)
             {
@@ -865,7 +888,10 @@ public static class DraftingResources
         // A whole standards file (another project's, an office template): read tolerantly, replacing the project's.
         r.Command("standards.replace", "Load drafting standards", (ctx, a) =>
         {
-            Write(ctx, Standards.ToJson(Standards.Read(a["standards"])));
+            var raw = Standards.ToJson(Standards.Read(a["standards"]));
+            // Its layers go into the project's drafting layers by name; the project's others stay, with the shapes on them (decision 714).
+            raw["layers"] = new JsonArray([.. WithLayers(Book(ctx.Model).Layers, DraftLayers.InFile(a["standards"] as JsonObject)).Select(LayerJson)]);
+            Write(ctx, raw);
             return null;
         });
     }
@@ -877,12 +903,63 @@ public static class DraftingResources
         _ => throw new CommandException("A standard is a text, dim, axis, tag, tagRule, table, layer or layerGroup."),
     };
 
-    /// <summary>The project's drafting standards replaced by <paramref name="raw"/>, read as a file is (one change of the step).</summary>
+    /// <summary>
+    /// The project's drafting standards replaced by <paramref name="raw"/>, read as a file is (one change of the step). Its
+    /// <c>layers</c>, when it has them, are the project's drafting layers (<see cref="DraftLayers"/>, decision 714): those the same
+    /// kept as stored, those changed or new written, those left out gone (their shapes are the caller's to move).
+    /// </summary>
     public static void Write(ICommandContext ctx, JsonObject raw)
     {
         var project = Project(ctx);
         var attrs = project.CloneAttrs();
-        attrs["drafting"] = Standards.ToJson(Standards.Read(raw));
+        var book = Standards.Read(raw);
+        var json = Standards.ToJson(book);
+        json.Remove("layers");
+        attrs["drafting"] = json;
+        if (raw["layers"] is JsonArray) attrs[DraftLayers.Key] = DraftLayers.Merged(attrs, book.Layers, Standards.LineTypeNames(book));
         ctx.Replace(project.With(attrs: attrs));
+    }
+
+    /// <summary>A layer as the standards' JSON writes it.</summary>
+    public static JsonObject LayerJson(DraftLayer l) => (JsonObject)System.Text.Json.JsonSerializer.SerializeToNode(DraftLayers.Norm(l), DrawingJson.Default.DraftLayer)!;
+
+    /// <summary>The project's layers with <paramref name="theirs"/> (a file's) laid over them by name, ignoring case: one the project has keeps its name, a new one comes last.</summary>
+    public static List<DraftLayer> WithLayers(IEnumerable<DraftLayer> mine, IEnumerable<DraftLayer> theirs)
+    {
+        var list = mine.Select(DraftLayers.Norm).ToList();
+        foreach (var t in theirs.Select(DraftLayers.Norm))
+        {
+            var i = list.FindIndex(l => string.Equals(l.Name, t.Name, StringComparison.OrdinalIgnoreCase));
+            if (i >= 0) list[i] = t with { Id = list[i].Id, Name = list[i].Name };
+            else list.Add(t);
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// A standards' layer entry's id, its name (decision 714): an entry of an existing layer's id renamed when its name is another
+    /// (not layer 0, not to a name taken), its shapes moved with it; a new one by its name, or „Name (2)” when that is taken.
+    /// </summary>
+    static string LayerId(ICommandContext ctx, JsonObject raw, JsonObject entry)
+    {
+        var names = (raw["layers"] as JsonArray ?? []).OfType<JsonObject>().Select(x => (string?)x["id"] ?? "").ToList();
+        var name = ((string?)entry["name"])?.Trim();
+        var id = ((string?)entry["id"])?.Trim();
+        if (id is { Length: > 0 } && names.Contains(id))
+        {
+            if (name is not { Length: > 0 } || name == id) { entry["name"] = id; return id; }
+            if (id == DraftLayers.Zero) throw new CommandException("Layer 0 keeps its name.");
+            if (names.Contains(name)) throw new CommandException($"There is a layer „{name}” already.");
+            DraftLayers.Repoint(ctx, id, name);
+            // The entry merges over the old one by id: the old one renamed.
+            foreach (var x in (raw["layers"] as JsonArray ?? []).OfType<JsonObject>()) if ((string?)x["id"] == id) x["id"] = name;
+            entry["name"] = name;
+            return name;
+        }
+        var want = name is { Length: > 0 } ? name : id is { Length: > 0 } ? id : "Layer";
+        var free = want;
+        for (var n = 2; names.Contains(free); n++) free = $"{want} ({n})";
+        entry["name"] = free;
+        return free;
     }
 }

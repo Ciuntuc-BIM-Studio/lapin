@@ -22,13 +22,8 @@ public static class StandardsLibrary
 
     static Entity Project(IModelView m) => Spatial.Project(m) ?? throw new CommandException("The model has no project.");
 
-    static void WriteBook(ICommandContext ctx, JsonObject raw)
-    {
-        var project = Project(ctx.Model);
-        var attrs = project.CloneAttrs();
-        attrs["drafting"] = Standards.ToJson(Standards.Read(raw));
-        ctx.Replace(project.With(attrs: attrs));
-    }
+    /// <summary>The standards written as the project keeps them: their layers the project's drafting layers (decision 714).</summary>
+    static void WriteBook(ICommandContext ctx, JsonObject raw) => DraftingResources.Write(ctx, raw);
 
     static JsonObject LineTypeJson(LineTypeDef l)
     {
@@ -61,6 +56,13 @@ public static class StandardsLibrary
         // The material graphics sets' entries (decision 682) too.
         if (attrs[MaterialGraphicsSets.Key] is JsonArray sets) RepointGraphics(sets, from, to);
         ctx.Replace(project.With(attrs: attrs));
+        // A drafted shape's own line type (decision 715): renamed with it, gone to its layer's.
+        foreach (var e in ctx.Model.OfClass(IfcClass.Annotation).Where(e => e.PredefinedType == DraftLayers.Predefined && string.Equals(e.Str("lineType"), from, StringComparison.OrdinalIgnoreCase)).ToList())
+        {
+            var ea = e.CloneAttrs();
+            if (to == null) ea.Remove("lineType"); else ea["lineType"] = to;
+            ctx.Replace(e.With(attrs: ea));
+        }
         // Materials (decision 681): their hatch's line type and their cut and separator lines', in every kind of view, its steps by scale and its background.
         foreach (var mat in ctx.Model.OfClass(IfcClass.Material).ToList())
         {
@@ -187,7 +189,9 @@ public static class StandardsLibrary
                 var have = (mine[key] as JsonArray ?? []).OfType<JsonObject>().FirstOrDefault(x => string.Equals((string?)x["id"] ?? (string?)x["name"], id, StringComparison.OrdinalIgnoreCase));
                 // A tag rule has no name: what it says (issue #72).
                 var name = kind == "tagRule" ? $"{(string?)e["class"]}: {(string?)e["when"]} → {(string?)e["tagType"]}" : (string?)e["name"] ?? id;
-                o.Add((kind, id, name, have != null, have != null && JsonNode.DeepEquals(have, e)));
+                // A layer by its name, ignoring case (decision 714).
+                var same = have != null && (kind == "layer" ? JsonNode.DeepEquals(have, LayerAs(e, have)) : JsonNode.DeepEquals(have, e));
+                o.Add((kind, id, name, have != null, same));
             }
         var myPatterns = DraftingResources.Patterns(m);
         if ((string?)file["hatchPatterns"] is { Length: > 0 } pt)
@@ -217,11 +221,27 @@ public static class StandardsLibrary
         return o;
     }
 
+    /// <summary>A file's layer with the project's name for it (the one its shapes name).</summary>
+    static JsonObject LayerAs(JsonObject theirs, JsonObject mine)
+    {
+        var e = (JsonObject)theirs.DeepClone();
+        e["id"] = mine["id"]?.DeepClone();
+        e["name"] = mine["name"]?.DeepClone();
+        return e;
+    }
+
     /// <summary>
     /// The file's drafting standards as the project reads them; none when the file gives none (a pack of material standards alone,
     /// decision 681, writes an empty <c>drafting</c>: read, it would be every default, shown as entries the project has).
     /// </summary>
-    static JsonObject Theirs(JsonObject file) => file["drafting"] is JsonObject { Count: > 0 } d ? Standards.ToJson(Standards.Read(d)) : new JsonObject();
+    /// <remarks>Its layers (decision 714): those it lists, each by its name (an older file's ids were the standards' own).</remarks>
+    static JsonObject Theirs(JsonObject file)
+    {
+        if (file["drafting"] is not JsonObject { Count: > 0 } d) return new JsonObject();
+        var o = Standards.ToJson(Standards.Read(d));
+        o["layers"] = new JsonArray([.. DraftLayers.InFile(d).Select(DraftingResources.LayerJson)]);
+        return o;
+    }
 
     /// <summary>A free id and name in a list for a copy kept beside the project's (<see cref="LibraryMerge"/>): „Name (2)”, id-2.</summary>
     static (string Id, string Name) Free(JsonArray list, string id, string name)
@@ -237,7 +257,7 @@ public static class StandardsLibrary
         r.Query("standards.lineTypes", (q, _) => new JsonObject
         {
             ["builtin"] = new JsonArray(Standards.LineTypes.Concat(LineStyles.Patterns).Distinct().Where(n => n is not ("continuous" or "solid"))
-                .Select(n => (JsonNode)new JsonObject { ["name"] = n, ["dashes"] = new JsonArray(Dashes.Of(n).Select(d => (JsonNode)d).ToArray()) }).ToArray()),
+                .Select(n => (JsonNode)new JsonObject { ["name"] = n, ["description"] = Dashes.Description(n), ["dashes"] = new JsonArray(Dashes.Of(n).Select(d => (JsonNode)d).ToArray()) }).ToArray()),
             ["own"] = new JsonArray((DraftingResources.Book(q.Model).LineTypes ?? []).Select(l => (JsonNode)LineTypeJson(l)).ToArray()),
         });
 
@@ -417,11 +437,13 @@ public static class StandardsLibrary
             foreach (var (kind, key) in Lists)
             {
                 var list = raw[key] as JsonArray ?? [];
-                foreach (var e in (theirs[key] as JsonArray ?? []).OfType<JsonObject>())
+                foreach (var entry in (theirs[key] as JsonArray ?? []).OfType<JsonObject>())
                 {
-                    var id = (string?)e["id"] ?? (string?)e["name"] ?? "";
+                    var id = (string?)entry["id"] ?? (string?)entry["name"] ?? "";
                     var at = list.OfType<JsonObject>().FirstOrDefault(x => string.Equals((string?)x["id"] ?? (string?)x["name"], id, StringComparison.OrdinalIgnoreCase));
-                    if (at == null) { list.Add((JsonNode)e.DeepClone()); added++; continue; }
+                    if (at == null) { list.Add((JsonNode)entry.DeepClone()); added++; continue; }
+                    // A drafting layer keeps the project's name, the one its shapes name (decision 714).
+                    var e = kind == "layer" ? LayerAs(entry, at) : entry;
                     if (JsonNode.DeepEquals(at, e)) { kept++; continue; }
                     switch (Choice(kind, id))
                     {
@@ -430,7 +452,7 @@ public static class StandardsLibrary
                         {
                             var copy = (JsonObject)e.DeepClone();
                             var (nid, nname) = Free(list, id, (string?)e["name"] ?? id);
-                            copy["id"] = kind == "lineType" ? nname : nid;
+                            copy["id"] = kind is "lineType" or "layer" ? nname : nid;
                             copy["name"] = nname;
                             list.Add((JsonNode)copy);
                             added++;

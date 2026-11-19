@@ -152,7 +152,6 @@ public sealed record TableStyleDef(string Id, string Name, System.Text.Json.Node
 /// <summary>Layers gathered under a group that shows and locks them together.</summary>
 public sealed record LayerGroup(string Id, string Name, bool Visible, bool Locked);
 
-/// <summary>A drafting layer: its colour, pen (paper mm) and line type, shown or locked by itself or its group.</summary>
 /// <summary>
 /// A line type of the project's own (docs/plan-user-extensibility.md §3.6): its name (what a layer, an axis style or an object
 /// style names), its dashes on paper (mm: dash, gap, dash, gap…; a dot is a dash of 0.1 mm) and what it is. Read from an
@@ -160,6 +159,10 @@ public sealed record LayerGroup(string Id, string Name, bool Visible, bool Locke
 /// </summary>
 public sealed record LineTypeDef(string Id, string Name, double[] Dashes, string? Description = null);
 
+/// <summary>
+/// A drafting layer as the standards show it: one of the project's <c>draftLayers</c> (forum #168, decision 714: one list, keyed by
+/// its name, so <see cref="Id"/> is its name), its colour, pen (paper mm) and line type, shown or locked by itself or its group.
+/// </summary>
 public sealed record DraftLayer(string Id, string Name, string Color, bool Visible, bool Locked, string? Group = null, double? LineWeight = null, string? LineType = null);
 
 /// <summary>
@@ -277,7 +280,7 @@ public static class Standards
     public static readonly string[] LineCaps = ["round", "square"];
     public static readonly string[] Bubbles = ["circle", "square"];
     public static readonly string[] AxisEnds = ["both", "start", "end", "none"];
-    public static readonly string[] LineTypes = ["continuous", "dashed", "dotted", "dashdot"];
+    public static readonly string[] LineTypes = ["continuous", "dashed", "dotted", "dashdot", "dashdotdot"];
 
     /// <summary>The fields an annotation may override, by kind (an axis overrides its line colour as lineColor).</summary>
     public static readonly string[] TextOverrides = ["height", "font", "bold", "italic", "color"];
@@ -414,7 +417,8 @@ public static class Standards
 
     static DraftLayer ReadLayer(JsonObject v) => ReadLayer(v, LineTypes);
 
-    static DraftLayer ReadLayer(JsonObject v, string[] lineTypes) => new(
+    /// <summary>A drafting layer as a file or a command gives it, tolerantly, its line type one of <paramref name="lineTypes"/> (else none: continuous).</summary>
+    public static DraftLayer ReadLayer(JsonObject v, string[] lineTypes) => new(
         Str(v["id"], "0"), Str(v["name"], Str(v["id"], "0")), Color(v["color"]) ?? Layer0.Color, v["visible"] is not JsonValue vv || !vv.TryGetValue<bool>(out var vis) || vis,
         True(v["locked"]), v["group"] is JsonValue g && g.TryGetValue<string>(out var gs) && gs.Length > 0 ? gs : null,
         Num(v["lineWeight"], -1) is var w && w > 0 ? w : null, OneOf(v["lineType"], lineTypes, "") is { Length: > 0 } lt ? lt : null);
@@ -659,4 +663,5 @@ public static class Standards
 [System.Text.Json.Serialization.JsonSerializable(typeof(TextStyle))]
 [System.Text.Json.Serialization.JsonSerializable(typeof(DimStyle))]
 [System.Text.Json.Serialization.JsonSerializable(typeof(AxisStyle))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(DraftLayer))]
 public partial class DrawingJson : System.Text.Json.Serialization.JsonSerializerContext;

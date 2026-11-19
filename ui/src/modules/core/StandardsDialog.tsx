@@ -34,7 +34,7 @@ type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagT
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[]; lineType?: boolean; labels?: Record<string, string> };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
-const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot'];
+const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot', 'dashdotdot'];
 /** How a choice reads where its value alone would not say it. */
 const CHOICE_LABELS: Record<string, string> = { project: 'as the project', across: 'perpendicular to the tag line', along: 'along the tag line', buildup: 'build-up',
   // An opening's height under a dimension line across it (report #92, decision 338).
@@ -116,6 +116,8 @@ const scaleList = (text: string): number[] => text.split(/[,;\s]+/).map((x) => N
 
 /** How a tag's template reads the element (report #64), one phrase for the translations. */
 const TAG_HELP = 'A template reads the element: {mark}, {name}, {type}, {class}, any parameter by its name ({Fire rating}) or a standard one ({Pset_WallCommon.FireRating}); | starts a new line.';
+/** The Layers tab's layers are the drafting layers (forum #168, decision 714), one phrase for the translations. */
+const LAYER_HELP = 'These are the project\'s drafting layers, the same as Draft → Layers and the layer command: lines drawn by layer take their colour, pen and line type.';
 /** A build-up tag's own rule, one phrase for the translations. */
 const BUILDUP_HELP = 'A build-up tag writes the element\'s layers: its header, its line once per layer, its footer. Open it with Build-up… to set them.';
 
@@ -315,6 +317,7 @@ export function StandardsDialog() {
           </table>
           {tab.id === 'tag' && <p className="muted small" data-tag-help>{TAG_HELP}</p>}
           {tab.id === 'tag' && <p className="muted small">{BUILDUP_HELP}</p>}
+          {tab.id === 'layer' && <p className="muted small" data-layer-help>{LAYER_HELP}</p>}
           {tab.id === 'tag' && systems.length > 0 && <p className="muted small">{'A tag may also read the classification: {classification.code}, {classification.title} or a system\'s own code, {classification.<System>}; the + Classification… list adds one.'}</p>}
           <div className="row">
             <button type="button" className="btn" onClick={() => set({ ...tab.fresh, name: `${tab.fresh.name} ${rows.length + 1}` })}><Plus size={14} />New</button>

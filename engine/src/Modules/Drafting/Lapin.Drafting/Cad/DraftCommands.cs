@@ -167,7 +167,7 @@ public static class DraftCommands
             var view = View(ctx, (string?)a["viewId"]);
             var layer = (string?)a["layer"] ?? "0";
             if (Drafts.Layers(ctx.Model).All(l => l.Name != layer)) throw new CommandException($"There is no layer „{layer}”.");
-            if (Drafts.LayerOf(ctx.Model, layer).Locked) throw new CommandException($"The layer „{layer}” is locked.");
+            if (Drafts.LayerOf(ctx.Model, layer).Held) throw new CommandException($"The layer „{layer}” is locked.");
             var shapes = a["shapes"] is JsonArray arr ? arr.Select(ShapeArg).ToList() : [ShapeArg(a["shape"])];
             var role = Drafts.CheckRole(a["role"]);
             var cloud = Cloud(a["cloud"]);
@@ -199,6 +199,18 @@ public static class DraftCommands
                     attrs["layer"] = layer;
                 }
                 if (a.ContainsKey("color")) { if ((string?)a["color"] is { } c) attrs["color"] = c; else attrs.Remove("color"); }
+                // Its own pen (paper mm) and line type, over its layer's; null: by layer again (issue #89, decision 715).
+                if (a.ContainsKey("weight"))
+                {
+                    if (a["weight"] is null) attrs.Remove("weight");
+                    else attrs["weight"] = Json.Number(a["weight"]) is { } w && w >= Drafts.MinWeight && w <= Drafts.MaxWeight ? Math.Round(w, 4) : throw new CommandException($"A pen is {Drafts.MinWeight}–{Drafts.MaxWeight} mm on paper.");
+                }
+                if (a.ContainsKey("lineType"))
+                {
+                    if (a["lineType"] is null) attrs.Remove("lineType");
+                    else attrs["lineType"] = (string?)a["lineType"] is { } lt && Lapin.Drawing.Standards.LineTypeNames(DraftingResources.Book(ctx.Model)).FirstOrDefault(n => string.Equals(n, lt.Trim(), StringComparison.OrdinalIgnoreCase)) is { } known
+                        ? known : throw new CommandException($"„{(string?)a["lineType"]}” is not a line type (Manage → Drafting standards → Line types).");
+                }
                 // A hatch's pattern, scale, angle (°) and origin (where its pattern starts, in the view), merged into what it had.
                 if (a["hatch"] is JsonObject hp && attrs["hatch"] is JsonObject had)
                 {
@@ -417,17 +429,14 @@ public static class DraftCommands
             var i = layers.FindIndex(l => l.Name == name);
             var cur = i >= 0 ? layers[i] : new CadLayer(name);
             var json = cur.ToJson();
-            foreach (var k in new[] { "color", "weight", "lineType", "visible", "locked" }) if (a[k] != null) json[k] = a[k]!.DeepClone();
+            foreach (var k in new[] { "color", "weight", "lineType", "visible", "locked", "group" }) if (a[k] != null) json[k] = a[k]!.DeepClone();
             var newName = ((string?)a["newName"])?.Trim();
             if (newName is { Length: > 0 } && newName != name)
             {
                 if (name == "0") throw new CommandException("Layer 0 keeps its name.");
                 if (layers.Any(l => l.Name == newName)) throw new CommandException($"There is a layer „{newName}” already.");
                 json["name"] = newName;
-                foreach (var e in ctx.Model.OfClass(IfcClass.Annotation).Where(e => e.PredefinedType == Drafts.Predefined && e.Str("layer") == name).ToList())
-                {
-                    var at = e.CloneAttrs(); at["layer"] = newName; ctx.Replace(e.With(attrs: at));
-                }
+                DraftLayers.Repoint(ctx, name, newName);
             }
             var layer = CadLayer.From(json)!;
             if (i >= 0) layers[i] = layer; else layers.Add(layer);
@@ -442,10 +451,7 @@ public static class DraftCommands
             if (name == "0") throw new CommandException("Layer 0 cannot be removed.");
             var layers = Drafts.Layers(ctx.Model).ToList();
             if (layers.RemoveAll(l => l.Name == name) == 0) throw new CommandException("There is no such layer.");
-            foreach (var e in ctx.Model.OfClass(IfcClass.Annotation).Where(e => e.PredefinedType == Drafts.Predefined && e.Str("layer") == name).ToList())
-            {
-                var at = e.CloneAttrs(); at["layer"] = "0"; ctx.Replace(e.With(attrs: at));
-            }
+            DraftLayers.Repoint(ctx, name!, DraftLayers.Zero);
             Drafts.WriteLayers(ctx, layers);
             return null;
         });

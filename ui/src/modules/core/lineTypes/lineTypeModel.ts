@@ -4,7 +4,7 @@
  * and what a .lin import does with each type. The engine checks the same limits (2 to 24 values, each above 0 and under 100 mm).
  */
 
-export interface BuiltinLineType { name: string; dashes: number[] }
+export interface BuiltinLineType { name: string; dashes: number[]; description?: string | null }
 export interface OwnLineType { id: string; name: string; dashes: number[]; description?: string | null }
 export interface LineTypesDto { builtin: BuiltinLineType[]; own: OwnLineType[] }
 

@@ -8,10 +8,23 @@ using Lapin.Platform;
 
 namespace Lapin.Drafting.Cad;
 
-/// <summary>A drafting layer: its colour, pen width (paper mm), line type, and whether it shows and can be edited.</summary>
-public sealed record CadLayer(string Name, string Color = "#18181b", double Weight = 0.25, string LineType = "continuous", bool Visible = true, bool Locked = false)
+/// <summary>
+/// A drafting layer: its colour, pen width (paper mm), line type, and whether it shows and can be edited; the standards' layer
+/// group it is in (<see cref="Group"/>), which shows and locks its layers together (<see cref="Shows"/>, <see cref="Held"/>).
+/// One list, the project's <c>draftLayers</c> (<see cref="DraftLayers"/>, decision 714), whichever way it was made.
+/// </summary>
+public sealed record CadLayer(string Name, string Color = "#18181b", double Weight = 0.25, string LineType = "continuous", bool Visible = true, bool Locked = false, string? Group = null)
 {
-    public static readonly string[] LineTypes = ["continuous", "dashed", "dotted", "dashdot"];
+    /// <summary>Its group hidden (read from the standards; never written with the layer).</summary>
+    public bool GroupHidden { get; init; }
+    /// <summary>Its group locked (read from the standards; never written with the layer).</summary>
+    public bool GroupLocked { get; init; }
+    /// <summary>Whether it shows: its own switch and its group's.</summary>
+    public bool Shows => Visible && !GroupHidden;
+    /// <summary>Whether its shapes are held from editing: by itself or its group.</summary>
+    public bool Held => Locked || GroupLocked;
+
+    public static readonly string[] LineTypes = ["continuous", "dashed", "dotted", "dashdot", "dashdotdot"];
 
     /// <summary>The line type's dashes on paper (mm), Lapin's own only.</summary>
     public double[]? Dash => Dashes.Of(LineType) is { Length: > 0 } d ? d : null;
@@ -19,7 +32,12 @@ public sealed record CadLayer(string Name, string Color = "#18181b", double Weig
     /// <summary>The line type's dashes on paper (mm): the project's own of that name (docs/plan-user-extensibility.md §3.6), else Lapin's.</summary>
     public double[]? DashIn(StyleBook book) => Standards.DashOf(book, LineType) is { Length: > 0 } d ? d : null;
 
-    public JsonObject ToJson() => new() { ["name"] = Name, ["color"] = Color, ["weight"] = Weight, ["lineType"] = LineType, ["visible"] = Visible, ["locked"] = Locked };
+    public JsonObject ToJson()
+    {
+        var o = new JsonObject { ["name"] = Name, ["color"] = Color, ["weight"] = Weight, ["lineType"] = LineType, ["visible"] = Visible, ["locked"] = Locked };
+        if (Group != null) o["group"] = Group;
+        return o;
+    }
 
     public static CadLayer? From(JsonNode? n)
     {
@@ -27,7 +45,8 @@ public sealed record CadLayer(string Name, string Color = "#18181b", double Weig
         static bool B(JsonNode? x, bool d) => x is JsonValue v && v.TryGetValue<bool>(out var b) ? b : d;
         // Lapin's line types, or one of the project's own by its name (an unknown one draws continuous).
         var lt = (string?)o["lineType"] is { Length: > 0 and <= 64 } l ? l : "continuous";
-        return new CadLayer(name, (string?)o["color"] ?? "#18181b", Math.Clamp(Json.Number(o["weight"]) ?? 0.25, 0.05, 2), lt, B(o["visible"], true), B(o["locked"], false));
+        var group = o["group"] is JsonValue gv && gv.TryGetValue<string>(out var g) && g.Length > 0 ? g : null;
+        return new CadLayer(name, (string?)o["color"] ?? "#18181b", Math.Clamp(Json.Number(o["weight"]) ?? 0.25, 0.05, 2), lt, B(o["visible"], true), B(o["locked"], false), group);
     }
 }
 
@@ -40,13 +59,28 @@ public sealed record CadLayer(string Name, string Color = "#18181b", double Weig
 public static class Drafts
 {
     public const string Predefined = "DRAFT";
+    /// <summary>What a drafted shape's own pen may be (paper mm), as a layer's.</summary>
+    public const double MinWeight = 0.05, MaxWeight = 2;
+
+    /// <summary>A drafted shape's pen (paper mm): its own (issue #89, decision 715), else its layer's.</summary>
+    public static double WeightOf(Entity e, CadLayer layer) => e.NumOrNull("weight") is double w && w > 0 ? Math.Clamp(w, MinWeight, MaxWeight) : layer.Weight;
+
+    /// <summary>A drafted shape's dashes on paper (mm): its own line type's (continuous: none), else its layer's.</summary>
+    public static double[]? DashOf(Entity e, CadLayer layer, StyleBook book) =>
+        e.Str("lineType") is { Length: > 0 } lt ? (Standards.DashOf(book, lt) is { Length: > 0 } d ? d : null) : layer.DashIn(book);
     /// <summary>The mark layer of construction lines: drawn on screen, left out of sheets, PDF and DXF.</summary>
     public const string ConstructionLayer = Views.ConstructionLayer;
 
     public static IReadOnlyList<CadLayer> Layers(IModelView m)
     {
-        var list = (Spatial.Project(m)?.Attrs["draftLayers"] as JsonArray)?.Select(CadLayer.From).OfType<CadLayer>().ToList() ?? [];
+        var project = Spatial.Project(m);
+        var list = (project?.Attrs[DraftLayers.Key] as JsonArray)?.Select(CadLayer.From).OfType<CadLayer>().ToList() ?? [];
         if (list.All(l => l.Name != "0")) list.Insert(0, new CadLayer("0"));
+        // The standards' layer groups show and lock their layers together.
+        if (list.Any(l => l.Group != null) && project?.Attrs["drafting"]?["layerGroups"] is JsonArray groups)
+            for (var i = 0; i < list.Count; i++)
+                if (list[i].Group is { } gid && groups.OfType<JsonObject>().FirstOrDefault(x => (string?)x["id"] == gid) is { } g)
+                    list[i] = list[i] with { GroupHidden = g["visible"] is JsonValue v && v.TryGetValue<bool>(out var vis) && !vis, GroupLocked = g["locked"] is JsonValue lv && lv.TryGetValue<bool>(out var lk) && lk };
         return list;
     }
 
@@ -56,7 +90,7 @@ public static class Drafts
     {
         var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
         var attrs = project.CloneAttrs();
-        attrs["draftLayers"] = new JsonArray(layers.Select(l => (JsonNode)l.ToJson()).ToArray());
+        attrs[DraftLayers.Key] = new JsonArray(layers.Select(l => (JsonNode)l.ToJson()).ToArray());
         ctx.Replace(project.With(attrs: attrs));
     }
 
@@ -137,7 +171,7 @@ public static class Drafts
     public static Entity Require(IModelView m, string? id, bool editable = true)
     {
         var e = m.Get(id ?? "") is { Class: IfcClass.Annotation, PredefinedType: Predefined } x ? x : throw new CommandException("Not a drafted shape.");
-        if (editable && LayerOf(m, e.Str("layer")).Locked) throw new CommandException($"The layer „{e.Str("layer")}” is locked.");
+        if (editable && LayerOf(m, e.Str("layer")).Held) throw new CommandException($"The layer „{e.Str("layer")}” is locked.");
         return e;
     }
 
@@ -231,7 +265,7 @@ public static class Drafts
         foreach (var e in On(c.Model, c.View.Id))
         {
             var layer = layers.GetValueOrDefault(e.Str("layer") ?? "0") ?? layers["0"];
-            if (!layer.Visible || hidden.Contains(layer.Name)) continue;
+            if (!layer.Shows || hidden.Contains(layer.Name)) continue;
             var color = e.Str("color") ?? RoleColor(e.Str("role")) ?? layer.Color;
             // A link's shapes: out when it is hidden, grey when it is halftone.
             if (e.Str(Links.Key) is { } linkId)
@@ -279,8 +313,8 @@ public static class Drafts
             var cloud = e.NumOrNull("cloud") is double arc && arc > 0 && shape is Polyline { Closed: true } or Circle ? arc : 0;
             foreach (var line in Geo.Polylines(shape))
                 if (construction) mk.Polyline(line, false, ConstructionLayer, Pens.Default.Hatch, "#8f98a3", [2, 1.5]);
-                else if (cloud > 0) mk.Polyline(Cloud(line, cloud * c.Mm), false, layer.Name, layer.Weight, color, layer.DashIn(c.Book));
-                else mk.Polyline(line, false, layer.Name, layer.Weight, color, layer.DashIn(c.Book));
+                else if (cloud > 0) mk.Polyline(Cloud(line, cloud * c.Mm), false, layer.Name, WeightOf(e, layer), color, DashOf(e, layer, c.Book));
+                else mk.Polyline(line, false, layer.Name, WeightOf(e, layer), color, DashOf(e, layer, c.Book));
             if (cloud == 0 && CurveOf(shape) is { } curve) mk.Curves.Add(curve);
             var k = Geo.Keys(shape);
             mk.Snaps.AddRange([.. k.Endpoints, .. k.Midpoints, .. k.Centers, .. k.Quadrants]);
