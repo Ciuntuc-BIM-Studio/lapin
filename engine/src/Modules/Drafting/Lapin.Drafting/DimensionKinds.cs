@@ -372,6 +372,8 @@ public static class DimensionKinds
                         keep.Add((JsonNode)new JsonObject { ["element"] = id, ["way"] = (Json.Number(n!["way"]) ?? 1) < 0 ? -1 : 1 });
                     }
                     attrs["holds"] = keep;
+                    // Its padlock closed (decision 739): the angle kept from now on, at what it reads.
+                    if (a[AngleLocks.Key] is JsonValue lv && lv.TryGetValue<bool>(out var locked) && locked) attrs[AngleLocks.Key] = true;
                     attrs["r"] = Math.Max((P(a["at"]) - P(a["c"])).Length, 0.05);
                     var made = new Entity("", IfcClass.Annotation, "", attrs, "DIMENSION");
                     if (Held(ctx.Model, made) is null) throw new CommandException("The two elements are parallel: there is no angle between them.");
@@ -455,6 +457,8 @@ public static class DimensionKinds
         var turn = (Vec2.Cross(u, v) >= 0 ? 1 : -1) * (value - now);
         if (Math.Abs(turn) < 1e-9) return;
         var id = (string)dim.Attrs["holds"]![1]!["element"]!;
+        // Locked (decision 739): kept at the new value from now on, which the lock's follow-up then holds to.
+        if (AngleLocks.IsLocked(dim)) AngleLocks.Record(ctx, ctx.Model.Get(dim.Id)!, value);
         var t = ElementTransform.Run(ctx, new JsonObject { ["ids"] = new JsonArray(id), ["op"] = "rotate", ["center"] = J(c), ["angle"] = turn });
         ElementTransform.JoinWhatMeets(ctx, t);
     }

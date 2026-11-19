@@ -1,11 +1,12 @@
 /**
  * What a right-click offers for the dimension strings selected (forum topic 74): split each into single dimensions, join
  * several that go on from one another, and align several on one dimension line. Split and join are the engine's commands;
- * aligning moves each parallel string's line (`moveDimension`) onto the first one's, as one undo step.
+ * aligning moves each parallel string's line (`moveDimension`) onto the first one's, as one undo step. An angle held on two
+ * elements locks or unlocks (decision 739).
  */
 
 import type { NodeDto } from '../../engine/protocol';
-import { useSession } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
 import { notify, select, useUi } from '../../app/store';
 import type { MenuItem } from '../../shell/ContextMenu';
 import { pt } from '../../viewport/gripKit';
@@ -46,10 +47,29 @@ export function alignSteps(dims: NodeDto[]): { steps: GripStep[]; skipped: numbe
   return { steps, skipped };
 }
 
+/** An angle held on two elements (decision 738), which its padlock locks (decision 739). */
+export const isHeldAngle = (n: NodeDto | undefined): n is NodeDto =>
+  n?.props.predefinedType === 'DIMENSION' && n.props.dimKind === 'angular' && Array.isArray(n.props.holds) && n.editable !== false;
+
+/** The command that locks or unlocks the angle (one undo step). */
+export function lockCommand(id: string, locked: boolean): [string, { id: string; attrs: { locked: boolean } }] {
+  return ['element.update', { id, attrs: { locked } }];
+}
+
+/** Lock the angle / Unlock the angle, for one held angle selected. */
+export function angleLockItems(selected: string[], nodes: Map<string, NodeDto>): MenuItem[] {
+  const n = selected.length === 1 ? nodes.get(selected[0]) : undefined;
+  if (!isHeldAngle(n)) return [];
+  const locked = n.props.locked === true;
+  return [{ label: locked ? 'Unlock the angle' : 'Lock the angle', checked: locked, onSelect: () => void execute(...lockCommand(n.id, !locked)) }];
+}
+
 /** Split into single dimensions, Join selected dimensions, Align selected dimensions: those that apply to the selection. */
 export function dimensionItems(): MenuItem[] {
   const { selected } = useUi.getState();
   const nodes = useSession.getState().nodes;
+  const angle = angleLockItems(selected, nodes);
+  if (angle.length) return angle;
   const dims = selected.map((id) => nodes.get(id)).filter(isDimensionString);
   if (!dims.length || dims.length !== selected.length) return [];
   const items: MenuItem[] = [];

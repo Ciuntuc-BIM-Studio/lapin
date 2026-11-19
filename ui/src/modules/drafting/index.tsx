@@ -33,6 +33,7 @@ import { ScaleImageSection, scaleImageShows } from './ScaleImageSection';
 import { TagOptions, setTagSource, tagCommand, tagGrips, tagOpenings } from './tag';
 import { DRAW_ORDER, drawOrder } from '../../viewport/drawOrder';
 import { lazyPart } from '../../platform/lazyPart';
+import { AngleLockMark } from './AngleLock';
 import { GridAxisDims } from './GridAxisDims';
 import '../core/symbols/symbolTools';
 import { convertLayersInFront, convertSelection } from './convert/convert';
@@ -1025,7 +1026,7 @@ const drafting: LapinModule = {
   ],
   grips: { IfcAnnotation: annotationGrips, IfcGrid: gridGrips, LapinViewBoundary: boundaryGrips },
   // A selected grid axis's temporary dimensions to its neighbours (forum #78).
-  planOverlays: [GridAxisDims],
+  planOverlays: [GridAxisDims, AngleLockMark],
   references: { IfcGrid: gridRefs },
 };
 

@@ -514,6 +514,9 @@ table.layer-edit:not(.zones):not(.material-params) > tbody > tr:not(.layer-parts
 [data-end]:hover .temp-dim-end { r: 4.5; }
 .temp-dim-lock { fill: none; stroke: var(--accent); stroke-width: 1.2; stroke-linejoin: round; opacity: 0.7; }
 [data-lock]:hover .temp-dim-lock { opacity: 1; fill: var(--accent-wash); }
+.angle-lock .temp-dim-lock { opacity: 0.85; }
+.angle-lock.locked .temp-dim-lock { opacity: 1; fill: var(--accent-wash); }
+.angle-lock:hover .temp-dim-lock { opacity: 1; }
 .temp-dim-input { width: 100%; box-sizing: border-box; font: 600 12px var(--font); text-align: center; padding: 2px 4px; border: 1.5px solid var(--accent); border-radius: 4px; background: var(--panel); color: var(--ink); }
 .qset + .qset { margin-top: 10px; }
 .qset-head { font-weight: 600; margin-bottom: 4px; }
