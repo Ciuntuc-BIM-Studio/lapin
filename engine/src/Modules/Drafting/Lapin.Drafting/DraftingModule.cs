@@ -86,6 +86,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             if ((q - p).Length < 1e-3) throw new CommandException("An axis needs two different points.");
             axes[i] = new Axis(tag, p, q, ends);
             Write(ctx, grid, axes);
+            var delta = (p + q) * 0.5 - (x.A + x.B) * 0.5;
+            Pins.FollowAxis(ctx, grid.Id, tag, Placement2D.Move(delta));
             // Dimensions on the axis follow its new name (forum #75).
             if (tag != x.Tag) Grids.Retag(ctx, grid.Id, new Dictionary<string, string> { [x.Tag] = tag });
             return null;
@@ -746,6 +748,7 @@ sealed class AxisPlacement : IPartPlacement
         var attrs = grid.CloneAttrs();
         attrs["axes"] = new JsonArray(axes.Select(x => (JsonNode)x.ToJson()).ToArray());
         ctx.Replace(grid.With(attrs: attrs));
+        if (!copy) Pins.FollowAxis(ctx, grid.Id, tag, t);
         return Grids.AxisId(grid.Id, moved.Tag);
     }
 }

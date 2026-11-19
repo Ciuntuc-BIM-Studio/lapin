@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Lapin.Geometry;
 using Lapin.Model;
 
 namespace Lapin.Platform;
@@ -12,6 +13,7 @@ namespace Lapin.Platform;
 public static class Pins
 {
     public const string Key = "pinned";
+    public const string LockedToKey = "lockedTo";
 
     /// <summary>The plan attributes that say where an element stands, which a pinned one keeps (<see cref="Placement.Carry"/>'s).</summary>
     public static readonly string[] PlaceKeys = ["start", "end", "at", "a", "b", "rotation", "contour", "points", "islands", "shape", "xf"];
@@ -54,10 +56,54 @@ public static class Pins
             if (ctx.Model.Get(id) is not { } e || e.Class is IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey) continue;
             if (Is(e) == pinned) continue;
             var attrs = e.CloneAttrs();
-            if (pinned) attrs[Key] = true; else attrs.Remove(Key);
+            if (pinned) attrs[Key] = true; else { attrs.Remove(Key); attrs.Remove(LockedToKey); }
             ctx.Replace(e.With(attrs: attrs));
             changed++;
         }
         return changed;
+    }
+
+    /// <summary>Link or unlink elements to a grid axis or reference plane (issue #37); linking also pins the element.</summary>
+    public static int LockTo(ICommandContext ctx, IReadOnlyList<string> given, JsonObject? target)
+    {
+        var (ids, groups) = Groups.Expand(ctx.Model, given);
+        var changed = 0;
+        foreach (var id in ids.Concat(groups).Distinct())
+        {
+            if (ctx.Model.Get(id) is not { } e || e.Class is IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey) continue;
+            var attrs = e.CloneAttrs();
+            if (target == null) attrs.Remove(LockedToKey);
+            else { attrs[LockedToKey] = target.DeepClone(); attrs[Key] = true; }
+            ctx.Replace(e.With(attrs: attrs));
+            changed++;
+        }
+        return changed;
+    }
+
+    static bool IsIdentity(Placement2D t) =>
+        t.Point(new Vec2(0, 0)).Length < 1e-9 && (t.Dir(new Vec2(1, 0)) - new Vec2(1, 0)).Length < 1e-9 && !t.Mirrored;
+
+    /// <summary>Move/stretch elements locked to a grid axis when that axis moves.</summary>
+    public static void FollowAxis(ICommandContext ctx, string gridId, string tag, Placement2D t)
+    {
+        if (IsIdentity(t)) return;
+        var followers = ctx.Model.Entities.Where(e => e.Attrs[LockedToKey] is JsonObject o
+            && (string?)o["kind"] == "axis" && (string?)o["gridId"] == gridId && (string?)o["tag"] == tag).ToList();
+        if (followers.Count == 0) return;
+        var moving = followers.Select(e => e.Id).ToHashSet();
+        foreach (var e in followers)
+            if (ctx.Model.Get(e.Id) is { } now) Placement.Transform(ctx, now, t, moving);
+    }
+
+    /// <summary>Move/stretch elements locked to a reference plane when that plane moves.</summary>
+    public static void FollowPlane(ICommandContext ctx, string planeId, Placement2D t, IReadOnlySet<string> alreadyMoving)
+    {
+        if (IsIdentity(t)) return;
+        var followers = ctx.Model.Entities.Where(e => !alreadyMoving.Contains(e.Id) && e.Attrs[LockedToKey] is JsonObject o
+            && (string?)o["kind"] == "plane" && (string?)o["id"] == planeId).ToList();
+        if (followers.Count == 0) return;
+        var moving = alreadyMoving.Concat(followers.Select(e => e.Id)).ToHashSet();
+        foreach (var e in followers)
+            if (ctx.Model.Get(e.Id) is { } now) Placement.Transform(ctx, now, t, moving);
     }
 }

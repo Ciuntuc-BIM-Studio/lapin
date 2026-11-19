@@ -16,7 +16,7 @@ import { activeStorey, execute, useSession } from '../engine/session';
 import { ownPlanOf } from '../viewport/storeyPlan';
 import { frontView } from '../viewport/frontView';
 import { view3dNode } from '../viewport/storeys3d';
-import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
+import { ofClass, relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
 import { elevationOf, offsetFor, raisedBy } from '../engine/elevation';
 import { useLiveRise } from '../viewport/viewFrame';
 import { fieldShown, type FieldDescriptor, type NodeDto } from '../engine/protocol';
@@ -337,6 +337,34 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
             </dd>
             <dt title="A pinned element stays where it is: it is not moved, turned, mirrored, sent to another storey nor deleted until it is unpinned. Its other fields still change">Pinned</dt>
             <dd><input type="checkbox" data-field="pinned" checked={isPinned(node)} onChange={(e) => void setPinned(useUi.getState().selected.includes(node.id) ? useUi.getState().selected : [node.id], e.target.checked)} /></dd>
+            {(() => {
+              const targets = [
+                ...ofClass(model, 'IfcGrid').flatMap((g) => ((g.props.axes as { tag: string }[] | undefined) ?? []).map((ax) => ({
+                  key: `axis:${g.id}:${ax.tag}`, label: `Axis ${ax.tag}`, target: { kind: 'axis', gridId: g.id, tag: ax.tag },
+                }))),
+                ...ofClass(model, 'LapinView').filter((v) => v.props.kind === 'plane').map((v) => ({
+                  key: `plane:${v.id}`, label: `Ref plane · ${v.name}`, target: { kind: 'plane', id: v.id },
+                })),
+              ];
+              if (targets.length === 0) return null;
+              const lt = node.props.lockedTo as { kind?: string; gridId?: string; tag?: string; id?: string } | undefined;
+              const lockKey = lt?.kind === 'axis' && lt.gridId && lt.tag ? `axis:${lt.gridId}:${lt.tag}` : lt?.kind === 'plane' && lt.id ? `plane:${lt.id}` : '';
+              const targetIds = useUi.getState().selected.includes(node.id) ? useUi.getState().selected : [node.id];
+              return (
+                <>
+                  <dt title="Link this locked element to a grid axis or reference plane so it moves or stretches when that axis or plane moves">Linked to</dt>
+                  <dd>
+                    <select className="cell" data-field="locked-to" value={lockKey} onChange={(e) => {
+                      const hit = targets.find((x) => x.key === e.target.value);
+                      void execute('element.lockTo', { ids: targetIds, target: hit?.target ?? null });
+                    }}>
+                      <option value="">None</option>
+                      {targets.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+                    </select>
+                  </dd>
+                </>
+              );
+            })()}
             {elevation && <>
               <dt title="The level's elevation and this offset from it: the figure below follows it">Offset from level</dt>
               <dd><LengthCell metres={elevation.offset} onCommit={(v) => void execute('element.update', { ids: sameKind(node), attrs: { [elevation.key]: v } })} /></dd>
