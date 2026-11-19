@@ -112,4 +112,51 @@ A **partition** sorts bars into sets of their own, as in Revit: beam stirrups, b
 
 ![The bar schedule with two partitions](shots/rebar-partitions.webp)
 
+## Rebar in plans
+
+A structural plan shows the reinforcement of **its own storey** only: a bar belongs to the storey of the footing, beam, slab or wall it sits in, and a bar with no host is shown by the plan's view range. Bars of the storey below stay out of the picture.
+
+In **Visibility/Graphics** the **Rebar** category has three subcategories: **Longitudinal bars**, **Stirrups and ties** and **Rebar sets**. Untick one to hide those bars in that view alone. **Hide in view** on a footing or a beam hides its bars with it.
+
+## Mark prefixes
+
+Bar marks can start with letters by the shape of the bar, as bar lists are usually written: R1, R2 for straight bars, U1 for U bars, S1 for stirrups. In **Rebar settings → Marks**:
+
+- **Mark pattern:** how a mark is written, `{prefix}{n}` as a rule. The tokens are `{prefix}`, `{n}`, `{partition}`, `{d}` (the diameter) and `{shape}`; a formula such as `{prefix}{= n | 00}` pads the number (R01, R02…). A pattern must hold the number.
+- **A prefix for each group:** straight bars (and bars in section), L bars, U bars, stirrups, ties, polyline bars and other shapes (the project's own). Column bars take the straight bars' prefix. A prefix is up to eight characters.
+- **Its own prefix:** a bar, a distribution or a rebar set has a **Mark prefix** in its properties; empty takes the one of its shape.
+
+Marks are numbered apart in each prefix and partition: R1, R2… beside U1, U2…. Numbers already given never change by themselves; **Renumber marks** starts again from 1 in each partition and prefix, and says how many marks changed.
+
+## Rebar sets
+
+A **rebar set** lays the bars of a whole slab, footing or wall as a mat, from one click, and is drawn and counted from the host: change the slab and the bars follow. The **Sets** group of the Simple rebar tab has two tools:
+
+- **Rebar set:** click a slab, a footing or a wall.
+- **Rebar set in region:** in a plan, draw a polygon; the set covers that region of the slab under it.
+
+The tool's bar chooses the **Layer**, the **Direction**, the **Diameter** and the **Spacing** new sets get; left on **Default**, a slab's first set is the bottom layer along x, and a second set takes the crossing direction.
+
+**Layers.** A slab or a footing has **B1** and **B2** (bottom, the first along the layer's direction, the second across it) and **T1** and **T2** (top). A wall has **E1** and **E2** on its exterior face and **I1** and **I2** on the interior one.
+
+**Direction.** A slab's set runs along x, along y or at an angle in plan; a wall's horizontal or vertical.
+
+**Spacing or count.** Bars are laid at a spacing (30 mm to 2 m) or as a count, spread over the host. The **cover** is the settings' unless the set has its own. Openings in the slab stop the bars at the opening's edge, each with the cover.
+
+**Legs.** A length in **Legs** turns the bar's ends into the host, which makes it a U bar.
+
+**Lapped at the stock length.** A bar over the stock length of Rebar settings is cut with a lap (the settings' lap); untick it to keep one long bar.
+
+**What plans and sections show.** **Shown** chooses how many bars a plan draws: **One bar** with the tag, **The ends**, or **All bars**. In a section across the host, the bars are the dots they are.
+
+**The tag.** A set is tagged with its count, diameter, spacing and layer: `28Ø12/150 B1`, with its mark in a balloon and a string along the bars. Place and drag them with their grips; the string's grip slides it along the bars. The tag's style is the **Rebar sets** kind of the labels in Rebar settings (and the set's own).
+
+![A slab with an opening and two sets, B1 along x and B2 along y, tagged in its structural plan](shots/rebar-sets.webp)
+
+The set's properties give its lengths and mass:
+
+![A rebar set's properties: layer, direction, spacing, cover, legs, mark, and its lengths and mass](shots/rebar-set-properties.webp)
+
+**The schedules.** The bar schedule gets a row for each length of a set; the bending schedule by the standard numbers each length as a sub-mark of the set's (12a, 12b…). Sets are not exported to IFC by the free module.
+
 **Rebar settings** holds the project's choices: a colour for each diameter, the text and balloon sizes on paper, the steel, the cover, the segment lengths written along the bars, and the labels' style for each kind.

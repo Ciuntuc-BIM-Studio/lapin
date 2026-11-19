@@ -10747,6 +10747,37 @@ export const scenes = [
     },
   },
   {
+    // Rebar sets (decisions 728-730): a slab with an opening, a bottom mat in each direction, drawn on its structural plan with the
+    // tag "12Ø12/150 B1" and the marks prefixed R; the set's properties beside it.
+    id: 'rebar-sets',
+    touches: ['rebar', 'structure', 'architecture'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const s = await t.storey();
+      const slab = (await t.cmd('architecture.addSlab', { storeyId: s, points: [[0, 0], [6, 0], [6, 4], [0, 4]] })).id;
+      await t.cmd('architecture.addSlabOpening', { slabId: slab, points: [[2.4, 1.4], [3.6, 1.4], [3.6, 2.6], [2.4, 2.6]] });
+      await t.cmd('rebar.setSettings', { marks: { prefixes: { straight: 'R' } } });
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: s, discipline: 'Structure', name: 'Slab reinforcement' })).id;
+      const b1 = (await t.cmd('rebar.addSet', { host: slab, layer: 'B1', direction: 'x', diameter: 0.012, step: 0.15 })).id;
+      const b2 = (await t.cmd('rebar.addSet', { host: slab, layer: 'B2', direction: 'y', diameter: 0.012, step: 0.2 })).id;
+      await t.cmd('rebar.placeLabel', { viewId: plan, owner: b1, key: 'set', at: [0.4, 3.3], offset: 14 });
+      await t.cmd('rebar.placeLabel', { viewId: plan, owner: b2, key: 'set', at: [4.2, 0.7], offset: -14 });
+      const d = await t.call('doc.query', { name: 'rebar.describeSet', args: { id: b1 } });
+      t.expect(d && d.bars > 0 && /B1/.test(d.label), 'the set describes itself with its layer');
+      await t.ui({ view: 'drawing', drawingViewId: plan, selection: null, selected: [], keyPlan: false });
+      await t.wait(1500);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('rebar-sets', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ selection: b1, selected: [b1] });
+      await t.wait(1000);
+      t.expect(await page.locator('aside.props [data-field=rebar-set]').count() === 1, 'a set has its property section');
+      await t.shot('rebar-set-properties', { of: 'aside.props [data-field=rebar-set]', pad: 6 });
+      await t.ui({ selection: null, selected: [], keyPlan: true });
+    },
+  },
+  {
     // An imported mesh's chair placed like any element (decision 448): six of them round a table with Modify → Array, their
     // triangles shared.
     id: 'reference-array',
