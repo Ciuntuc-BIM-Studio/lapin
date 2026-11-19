@@ -34,7 +34,7 @@ public static class StairBuilder
         static int? Whole(double? v) => v is { } x ? (int)Math.Round(x) : null;
         // A winding turn's corners (report #109): the winders at each and the straight treads between a U's.
         return new(e.NumOrNull("width"), Whole(e.NumOrNull("risers")), e.NumOrNull("riserHeight"), e.NumOrNull("tread"), e.NumOrNull("landing"), e.NumOrNull("sweep"),
-            Whole(e.NumOrNull("winders")), Whole(e.NumOrNull("windersEnd")), Whole(e.NumOrNull("treadsBetween")));
+            Whole(e.NumOrNull("winders")), Whole(e.NumOrNull("windersEnd")), Whole(e.NumOrNull("treadsBetween")), e.NumOrNull("landingWidth"), Whole(e.NumOrNull("landingRiser")));
     }
 
     /// <summary>The railing's sides for an instance: its own (<c>railingSides</c>), else the type's.</summary>

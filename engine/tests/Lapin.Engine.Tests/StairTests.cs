@@ -542,4 +542,25 @@ public class StairTests
         }
         finally { File.Delete(path); }
     }
+
+    [Fact]
+    public void L_stair_supports_custom_landing_step_and_independent_landing_dimensions()
+    {
+        var f = TwoStoreys(out _);
+        var id = Stair(f, "l");
+        f.Run("architecture.updateStair", new JsonObject { ["id"] = id, ["landingRiser"] = 4, ["landing"] = 1.6, ["landingWidth"] = 1.3 });
+        var check = (JsonObject)f.Session.Query("architecture.stairCheck", new JsonObject { ["id"] = id })!;
+        var flights = ((JsonArray)check["flights"]!).Select(x => (int)x!).ToArray();
+        Assert.Equal(4, flights[0]);
+        Assert.True(flights[1] > 4);
+
+        var (r, _, _) = StairBuilder.Resolve(f.Model, f.Model.Get(id)!)!.Value;
+        var ld = Assert.Single(r.Landings);
+        var minX = ld.Outline.Min(p => p.X);
+        var maxX = ld.Outline.Max(p => p.X);
+        var minY = ld.Outline.Min(p => p.Y);
+        var maxY = ld.Outline.Max(p => p.Y);
+        Assert.Equal(1.6, maxX - minX, 6);
+        Assert.Equal(1.3, maxY - minY, 6);
+    }
 }

@@ -122,6 +122,8 @@ export function StairSection({ node }: { node: NodeDto }) {
         <dt>Riser</dt><dd><MmInput value={num('riserHeight')} placeholder={n ? mm(n.riserHeight) : ''} onCommit={(v) => set({ riserHeight: v })} /></dd>
         <dt>Tread</dt><dd><MmInput value={num('tread')} placeholder={n ? mm(n.tread) : ''} onCommit={(v) => set({ tread: v })} /></dd>
         {n?.sweep == null && !(n?.turn === 'winders' && (n.shape === 'l' || n.shape === 'u')) && <><dt>Landing length</dt><dd><MmInput value={num('landing')} placeholder={n ? mm(n.landing) : ''} onCommit={(v) => set({ landing: v })} /></dd></>}
+        {n?.sweep == null && n?.shape === 'l' && n?.turn !== 'winders' && <><dt>Landing width</dt><dd><MmInput value={num('landingWidth')} placeholder={n ? mm(n.landing) : ''} onCommit={(v) => set({ landingWidth: v })} /></dd></>}
+        {n?.sweep == null && n?.shape !== 'straight' && <><dt>Landing after step</dt><dd><NumberField testId="stair-landing-riser" value={num('landingRiser')} placeholder={n?.flights?.[0] ? String(n.flights[0]) : ''} blank integer min={1} max={60} onCommit={(v) => set({ landingRiser: v })} /></dd></>}
         {n?.turn === 'winders' && n.corners && <>
           <dt>{n.shape === 'u' ? 'Winders, corner 1' : 'Winders'}</dt>
           <dd><NumberField testId="stair-winders" value={num('winders')} placeholder={String(n.corners[0])} blank integer min={1} max={6} onCommit={(v) => set({ winders: v })} /></dd>
