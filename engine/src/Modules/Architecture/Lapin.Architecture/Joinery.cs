@@ -976,8 +976,9 @@ public static class Joinery
         var sh = s.Sash;
         var pr = s.Profile;
         var pairs = Meetings(s);
-        // A lift-and-slide or tilt-and-slide leaf runs on the inner track, the fixed panes beside it stand on the outer one.
-        var tracks = s.IsDoor && panels.Any(p => LiftSlides(p.Operation));
+        // A lift-and-slide or tilt-and-slide leaf, or a sliding window's sash, runs on staggered inner/outer tracks.
+        var tracks = (s.IsDoor && panels.Any(p => LiftSlides(p.Operation)))
+            || (!s.IsDoor && panels.Any(p => p.Operation is "sliding-left" or "sliding-right"));
         var track = Math.Min(sh.Depth, f.Depth / 2);
         foreach (var p in panels)
         {
@@ -1050,24 +1051,33 @@ public static class Joinery
             }
             else
             {
+                var slides = !s.IsDoor && p.Operation is "sliding-left" or "sliding-right";
+                double yc = f.Offset;
+                if (slides)
+                {
+                    var rowSlides = panels.Count(q => q.Row == p.Row && q.Operation is "sliding-left" or "sliding-right");
+                    var outerTrack = rowSlides > 1 && p.Col % 2 == 1;
+                    (sy0, sy1) = outerTrack ? (y1 - track, y1) : (y0, y0 + track);
+                    yc = (sy0 + sy1) / 2;
+                }
                 if (s.SashSection != null && Out(0) == null) boxes.AddRange(SectionRing(r, sh.Width, sy0, sy1, "sash", s.SashSection));
                 else boxes.AddRange(Band(0, sh.Width, sy0, sy1, "sash"));
-                if (solid) boxes.Add(Sheet("leaf", sh.Width, f.Offset, infillT));
+                if (solid) boxes.Add(Sheet("leaf", sh.Width, yc, slides ? Math.Min(infillT, track) : infillT));
                 else
                 {
-                    boxes.Add(Sheet("glass", sh.Width, f.Offset, sh.GlassThickness));
-                    boxes.AddRange(Muntins(s, Inset(r, sh.Width), f.Offset, sh.Depth, Out(sh.Width)));
+                    boxes.Add(Sheet("glass", sh.Width, yc, Math.Min(sh.GlassThickness, sy1 - sy0)));
+                    boxes.AddRange(Muntins(s, Inset(r, sh.Width), yc, sy1 - sy0, Out(sh.Width)));
                 }
                 if (pr != null)
                 {
                     // The frame's stop on the exterior half, the sash's lip lapping over the frame inside, its beads, its drip.
-                    if (frameStop) boxes.AddRange(Band(0, pr.Rebate, sy1, y1, "frame"));
-                    if (sashLip && pr.Overlap > 0) boxes.AddRange(Band(-pr.Overlap, Math.Min(0.012, sh.Width / 3), sy0 - 0.006, sy0, "sash"));
-                    boxes.AddRange(Band(sh.Width, sh.Width + pr.Bead, f.Offset - infillT / 2 - 0.018, f.Offset - infillT / 2, "sash"));
+                    if (frameStop && !slides) boxes.AddRange(Band(0, pr.Rebate, sy1, y1, "frame"));
+                    if (sashLip && !slides && pr.Overlap > 0) boxes.AddRange(Band(-pr.Overlap, Math.Min(0.012, sh.Width / 3), sy0 - 0.006, sy0, "sash"));
+                    boxes.AddRange(Band(sh.Width, sh.Width + pr.Bead, yc - infillT / 2 - 0.018, yc - infillT / 2, "sash"));
                     // A sash in a door stands on its rail or a transom (forum topic 34), so it drips as a window's does.
-                    if (sashLip && pr.Drip) boxes.Add(new("sash", new(r.X0 + sh.Width, sy1, r.Z0 + 0.005), new(r.X1 - sh.Width, sy1 + 0.012, r.Z0 + 0.02)));
+                    if (sashLip && !slides && pr.Drip) boxes.Add(new("sash", new(r.X0 + sh.Width, sy1, r.Z0 + 0.005), new(r.X1 - sh.Width, sy1 + 0.012, r.Z0 + 0.02)));
                 }
-                boxes.AddRange(HandleBoxes(s, r, p.Operation, sy0 - (pr != null && sashLip && pr.Overlap > 0 ? 0.006 : 0), -1, false));
+                boxes.AddRange(HandleBoxes(s, r, p.Operation, sy0 - (pr != null && sashLip && !slides && pr.Overlap > 0 ? 0.006 : 0), -1, false));
             }
         }
         // A drip on the frame's bottom member outside.

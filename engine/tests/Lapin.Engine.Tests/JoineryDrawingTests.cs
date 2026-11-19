@@ -108,4 +108,23 @@ public class JoineryDrawingTests
         Assert.Empty(Segments(Q(f, "view.drawing", new JsonObject { ["id"] = south }), "JOINERY"));
         Assert.NotEmpty(Segments(Q(f, "view.drawing", new JsonObject { ["id"] = north }), "JOINERY"));
     }
+
+    [Fact]
+    public void A_two_leaf_sliding_window_places_its_leaves_on_distinct_planes()
+    {
+        var f = Full();
+        var wall = f.Wall(0, 0, 6, 0);
+        var window = (string)f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["along"] = 3 })!["id"]!;
+        var spec = Openings.SpecOf(f.Model, window)! with
+        {
+            Columns = [0.5, 0.5],
+            Rows = [1.0],
+            Panels = [new(0, 0, "sliding-left"), new(0, 1, "sliding-right")],
+        };
+        var glassY = Joinery.Boxes(spec).Where(b => b.Role == "glass").Select(b => Math.Round((b.Min.Y + b.Max.Y) / 2, 4)).Distinct().OrderBy(y => y).ToList();
+        Assert.Equal(2, glassY.Count);
+        Assert.True(glassY[1] - glassY[0] > 0.02);
+        var plan = JoinerySymbols.Plan(spec);
+        Assert.NotEmpty(plan);
+    }
 }
