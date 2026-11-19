@@ -41,6 +41,12 @@ public static class StructureTypes
                     if (Json.Number(a["height"]) is { } h) attrs["height"] = h > 0 ? h : throw new CommandException("A column's height must be positive.");
                     else attrs.Remove("height");
                 }
+                // A column's finish layers round its core (decision 719): [{material, thickness, name?, category?, faces?}]; null or [] none.
+                if (type.Class == IfcClass.ColumnType && a.ContainsKey(ColumnLayers.Key))
+                {
+                    var layers = ColumnLayers.Parse(edit, a[ColumnLayers.Key]);
+                    if (layers.Count > 0) attrs[ColumnLayers.Key] = ColumnLayers.Write(layers); else attrs.Remove(ColumnLayers.Key);
+                }
                 // A beam type as a lintel (report #135): its mark, default bearing, stock lengths, manufacturer and code; a key sent empty taken away.
                 if (new[] { LintelTypes.MarkKey, LintelTypes.BearingKey, LintelTypes.LengthsKey, LintelTypes.ManufacturerKey, LintelTypes.CodeKey }.Any(a.ContainsKey))
                 {

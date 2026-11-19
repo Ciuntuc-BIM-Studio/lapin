@@ -862,6 +862,15 @@ public static class Views
         var vg = VisibilityGraphics.Of(m, view);
         // The view's filters' line styles (decision 394), per element, under the elements' own overrides.
         var elementLines = graphics?["elements"]?.DeepClone() as JsonObject;
+        // An element's own lines in this view (decision 718): its cut and projection lines over the rows above.
+        if (vg.ElementRows is { } ownRows)
+            foreach (var (id, row) in ownRows)
+                if (ElementGraphics.LinesOf(row as JsonObject) is { } own)
+                {
+                    elementLines ??= [];
+                    if (elementLines[id] is not JsonObject into) elementLines[id] = into = [];
+                    foreach (var (role, ownSpec) in own) into[role] = ownSpec?.DeepClone();
+                }
         // Reveal hidden (forum topic 73): what the view hides drawn in its colour, so it can be picked and shown again.
         var revealed = ViewHiding.Revealed(view);
         if (filters.Count > 0 || halftoneOthers || vg.HasOverrides || revealed.Count > 0)

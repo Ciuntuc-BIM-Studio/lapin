@@ -1550,6 +1550,26 @@ public static partial class IfcExport
             return set;
         }
 
+        /// <summary>
+        /// A column's core and finish layers (decision 719) as an IfcMaterialConstituentSet: IFC4 gives a column a profile set
+        /// (its core) and layers only to planar elements, so the layers laid round a column are constituents, one per material
+        /// part (the core first, named "Core", then each layer by its name, its Category Core, Finish, Insulation…), the body's
+        /// solids written as they are built; one set per combination, shared. Null for a column without finish layers.
+        /// </summary>
+        string? ColumnConstituentsOf(Entity e, List<GeometryPart> parts)
+        {
+            if (e.Class != IfcClass.Column || LayerSets.DrawnBandsOf(m, e.Id) is not { Count: > 1 } bands || !parts.Any(p => p.Key is { } k && k.StartsWith("layer:", StringComparison.Ordinal))) return null;
+            var list = bands.Where(b => m.Get(b.Material) is { Class: IfcClass.Material })
+                .Select(b => (Name: b.Core ? "Core" : b.Name, b.Material, Category: b.Core ? "Core" : LayerSets.SubOf(m, b) switch { "finishes" => "Finish", "insulation" => "Insulation", "membranes" => "Membrane", _ => "Other" })).ToList();
+            if (list.Count < 2) return null;
+            var signature = "column|" + string.Join("|", list.Select(x => x.Name + "=" + x.Material + "=" + x.Category));
+            if (constituentSets.TryGetValue(signature, out var known)) return known.Ref;
+            var constituents = list.Select(x => f.Add("IFCMATERIALCONSTITUENT", S(x.Name), Null, Material(x.Material), Null, S(x.Category))).ToArray();
+            var set = f.Add("IFCMATERIALCONSTITUENTSET", S(Types.Of(m, e.Id)?.Name ?? "Column"), Null, L(constituents));
+            constituentSets[signature] = (set, Gid(e.Id, "constituents"), []);
+            return set;
+        }
+
         void Associate(string set, string entity) => constituentSets.Values.First(x => x.Ref == set).Users.Add(entity);
 
         void UseMaterial(string materialId, string entity) => (materialUses.TryGetValue(materialId, out var l) ? l : materialUses[materialId] = []).Add(entity);
@@ -1562,6 +1582,13 @@ public static partial class IfcExport
             {
                 Associate(constituents, entity);
                 if (type is var (key, typeRef) && constituentTypes.Add(key)) Associate(constituents, typeRef);
+                return;
+            }
+            // A column with finish layers round its core (decision 719): its core and layers as constituents, on it and its type.
+            if (!grouped && ColumnConstituentsOf(e, parts) is { } columnSet)
+            {
+                Associate(columnSet, entity);
+                if (type is var (ckey, ctypeRef) && constituentTypes.Add(ckey)) Associate(columnSet, ctypeRef);
                 return;
             }
             if (LayerSets.UsageOf(m, e.Id) is { } u && Layers.ReadUsage(u) is { } usage && m.Get(usage.ForLayerSet) is { } set)

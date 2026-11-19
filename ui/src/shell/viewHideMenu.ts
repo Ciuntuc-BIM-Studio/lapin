@@ -5,7 +5,7 @@
  * after the selection's, so the menu's other providers stay as they are.
  */
 
-import { Eye, EyeOff, Focus, ListFilter, RotateCcw, ScanEye } from 'lucide-react';
+import { Eye, EyeOff, Focus, ListFilter, Paintbrush, RotateCcw, ScanEye } from 'lucide-react';
 import { createElement } from 'react';
 import { useUi } from '../app/store';
 import { hiddenInView, hideInView, hideTemporarily, isolateTemporarily, resetTemporarily, tempOf, toggleReveal, unhideInView } from '../viewport/viewTemporary';
@@ -24,6 +24,8 @@ export function viewHideItems(viewId: string | null): MenuItem[] {
       { label: 'Hide in view', icon: icon(EyeOff), onSelect: () => void hideInView(viewId) },
       { label: 'Hide for now', icon: icon(EyeOff), shortcut: 'HH', onSelect: () => hideTemporarily(viewId) },
       { label: 'Isolate for now', icon: icon(Focus), shortcut: 'HI', onSelect: () => isolateTemporarily(viewId) },
+      // Its hatch, fill and lines in this view, over its material's (decision 718).
+      { label: 'Graphics in this view…', icon: icon(Paintbrush), onSelect: () => useUi.setState({ dialog: 'elementGraphics' }) },
     );
   }
   if (t.hidden.length || t.isolated) items.push({ label: 'Reset temporary hide/isolate', icon: icon(RotateCcw), shortcut: 'HR', onSelect: () => resetTemporarily(viewId) });

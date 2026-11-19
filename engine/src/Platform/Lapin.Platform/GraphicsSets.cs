@@ -172,6 +172,8 @@ public static class GraphicsSets
 
     public static void Register(IModuleRegistry r)
     {
+        // Graphics per element in a view (decision 718).
+        ElementGraphics.Register(r);
         // One row of a view's graphics: a category, an IFC class or an element ({hidden, lineColor, lineWeight, fillColor, cutHatch}; null clears it).
         // A view that takes a set changes the set, for all its views.
         // A category's subcategory (sub: core, finishes…) is a row of its own under the category's (its sub). A link's row

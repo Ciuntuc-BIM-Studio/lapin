@@ -8,7 +8,7 @@
  */
 
 import { useState } from 'react';
-import { Trash2, X } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { ofClass, typeLayers } from '../../engine/model';
@@ -28,6 +28,7 @@ import type { ProfileJson } from '../core/profiles';
 import { TypeListActions, endsOf } from '../../shell/TypeListActions';
 import { TypeTableFiles } from './TypeTableImport';
 import { formatLengths, parseLengths } from './lintelFields';
+import { FACES, toggleFace, wrapsArg, wrapsOf, type Wrap } from './columnLayers';
 
 type Kind = 'column' | 'beam' | 'strip' | 'pad';
 type Shape = 'rectangle' | 'circle' | 'polygon' | 'library';
@@ -68,6 +69,8 @@ export function StructureTypesDialog() {
   const [mark, setMark] = useState('');
   const [bearing, setBearing] = useState<number | null>(null);
   const [lengths, setLengths] = useState<number[]>([]);
+  // A column's finish layers round its core (decision 719), outward.
+  const [wraps, setWraps] = useState<Wrap[]>([]);
   const [steps, setSteps] = useState<Step[]>([{ length: 1.8, width: 1.8, height: 0.5 }, { length: 1, width: 1, height: 0.4 }]);
   const list = kind === 'column' ? ofClass(model, 'IfcColumnType') : kind === 'beam' ? ofClass(model, 'IfcBeamType')
     : ofClass(model, 'IfcFootingType').filter((t) => t.props.kind === kind);
@@ -83,6 +86,7 @@ export function StructureTypesDialog() {
       setShape(sec.kind === 'circle' || sec.kind === 'polygon' ? sec.kind : sec.kind && sec.kind !== 'rectangle' ? 'library' : 'rectangle'); setW(num(sec.width, 0.3)); setD(num(sec.depth, 0.3));
       if (sec.kind === 'polygon') setSides(num(sec.sides, 8));
     }
+    setWraps(t.type === 'IfcColumnType' ? wrapsOf(t, nodes) : []);
     setMark(typeof t.props.mark === 'string' ? t.props.mark : '');
     setBearing(typeof t.props.bearing === 'number' ? t.props.bearing : null);
     setLengths(Array.isArray(t.props.lengths) ? (t.props.lengths as number[]) : []);
@@ -99,7 +103,7 @@ export function StructureTypesDialog() {
       setSteps((t.props.steps as Step[] | undefined) ?? []);
     }
   };
-  const fresh = () => { setEditing(null); setName(''); };
+  const fresh = () => { setEditing(null); setName(''); setWraps([]); };
   const switchKind = (k: Kind) => { setKind(k); fresh(); };
 
   const sectionOf = () => shape === 'polygon' ? { kind: shape, width: w, depth: w, sides } : { kind: shape, width: w, depth: shape === 'circle' ? w : d };
@@ -111,6 +115,7 @@ export function StructureTypesDialog() {
     if ((kind === 'column' || kind === 'beam') && shape === 'library') { if (lib.picked) Object.assign(args, { profile: lib.picked.profile, library: lib.picked.library }); }
     else if (kind === 'column' || kind === 'beam') args.section = section;
     if (kind === 'column' || kind === 'beam') Object.assign(args, { mark, ...(kind === 'beam' ? { bearing, lengths } : {}) });
+    if (kind === 'column') args.finishLayers = wrapsArg(wraps);
     else if (kind === 'strip' && stripShape === 'profile') Object.assign(args, { bottom, ...(profileId ? { profileId } : {}) });
     else if (kind === 'strip') Object.assign(args, { stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom, ...(edited.props.profile ? { profile: null } : { core }) });
     else Object.assign(args, { bottom, steps });
@@ -124,7 +129,7 @@ export function StructureTypesDialog() {
     if ((kind === 'column' || kind === 'beam') && shape === 'library') {
       if (!lib.picked) return;
       await execute(kind === 'column' ? 'structure.createColumnType' : 'structure.createBeamType', { name, profile: lib.picked.profile, library: lib.picked.library });
-    } else if (kind === 'column') await execute('structure.createColumnType', { name, section });
+    } else if (kind === 'column') await execute('structure.createColumnType', { name, section, ...(wrapsArg(wraps).length ? { finishLayers: wrapsArg(wraps) } : {}) });
     else if (kind === 'beam') await execute('structure.createBeamType', { name, section });
     else if (kind === 'strip' && stripShape === 'profile') {
       if (!profileId) return;
@@ -197,6 +202,7 @@ export function StructureTypesDialog() {
               <label className="field-line"><span className="eyebrow">Stock lengths</span>
                 <Cell value={formatLengths(lengths)} title="Millimetres, separated by spaces or |" onCommit={(t) => { const l = parseLengths(t); if (!l) return false; setLengths(l); }} /></label>
             </>}
+            {kind === 'column' && <ColumnLayersEditor wraps={wraps} onChange={setWraps} materials={ofClass(model, 'IfcMaterial').map((m) => m.name)} />}
             {edited && (kind === 'column' || kind === 'beam') && structureHooks.typeExtras.map((Extra, i) => <Extra key={i} type={edited} kind={kind} />)}
             {kind === 'strip' && <label className="field-line"><span className="eyebrow">Shape</span>
               <select data-field="strip-shape" value={stripShape} onChange={(e) => setStripShape(e.target.value as 'standard' | 'profile')}>
@@ -227,6 +233,35 @@ export function StructureTypesDialog() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A column type's finish layers (decision 719): each a material and a thickness, laid outward round the core, all round or on
+ * the faces ticked (the section's own axes: X along its width, Y along its length); a steel section is boxed round its outline.
+ */
+function ColumnLayersEditor({ wraps, onChange, materials }: { wraps: Wrap[]; onChange: (w: Wrap[]) => void; materials: string[] }) {
+  const put = (i: number, w: Wrap) => onChange(wraps.map((x, j) => (j === i ? w : x)));
+  return (
+    <div className="column-layers" data-testid="column-layers">
+      <p className="eyebrow">Finish layers, outward</p>
+      <p className="muted small">Plaster, fire boards, insulation round the core, drawn in plans and sections with each material's hatch and measured by layer. Untick a face it does not cover (a face against a wall).</p>
+      <datalist id="column-layer-materials">{materials.map((m) => <option key={m} value={m} />)}</datalist>
+      {wraps.length > 0 && <table className="grid small">
+        <thead><tr><th>Material</th><th>Thickness</th><th title="The section's own axes: X along its width, Y along its length">Faces</th><th /></tr></thead>
+        <tbody>{wraps.map((w, i) => (
+          <tr key={i}>
+            <td><input list="column-layer-materials" data-field={`column-layer-material-${i}`} value={w.material} onChange={(e) => put(i, { ...w, material: e.target.value })} /></td>
+            <td><LengthField metres={w.thickness} min={0.001} onCommit={(m) => { if (m != null) put(i, { ...w, thickness: m }); }} /></td>
+            <td className="row">{FACES.map((f) => (
+              <label key={f} className="small"><input type="checkbox" data-field={`column-layer-face-${i}-${f}`} checked={w.faces.includes(f)} onChange={() => put(i, toggleFace(w, f))} /><span data-no-i18n>{f.toUpperCase()}</span></label>
+            ))}</td>
+            <td><button type="button" className="icon mini" title="Remove the layer" aria-label="Remove the layer" onClick={() => onChange(wraps.filter((_, j) => j !== i))}><Trash2 size={11} /></button></td>
+          </tr>
+        ))}</tbody>
+      </table>}
+      <button type="button" className="btn small" data-action="column-layer-add" onClick={() => onChange([...wraps, { material: wraps.length ? 'Fire board' : 'Plaster', thickness: wraps.length ? 0.025 : 0.015, faces: [...FACES] }])}><Plus size={12} />Add layer</button>
     </div>
   );
 }

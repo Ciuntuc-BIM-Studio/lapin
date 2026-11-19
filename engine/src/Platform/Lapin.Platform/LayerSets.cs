@@ -170,6 +170,13 @@ public static class LayerSets
     }
 
     /// <summary>
+    /// The layers an element draws by its part keys: its layer set's bands, else a column's finish layers round its core
+    /// (decision 719, <see cref="ColumnLayers.BandsOf"/>); null when it has neither. What reads an element's parts by their
+    /// <c>layer:&lt;n&gt;</c> keys in a view (subcategories, layers modes, a small-scale cut's core) asks this.
+    /// </summary>
+    public static IReadOnlyList<LayerBand>? DrawnBandsOf(IModelView m, string occurrenceId) => BandsOf(m, occurrenceId) ?? ColumnLayers.BandsOf(m, occurrenceId);
+
+    /// <summary>
     /// A layer's role, as Visibility / Graphics names its subcategories: the core; else by the layer's own category when it gives
     /// one (the forum's topic #30), else by its material's (a finish by <see cref="Materials.IsFinish"/>, by its name when it has
     /// no category): finishes, insulation, membranes or other layers.

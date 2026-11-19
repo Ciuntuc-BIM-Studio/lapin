@@ -83,7 +83,8 @@ public sealed record SmallScaleCut(string Mode = SmallScaleCut.AsMaterial, doubl
 /// <summary>
 /// The one place a view decides how a material draws in it (decision 680). Precedence, the higher over the lower, field by field:
 /// <list type="number">
-/// <item>an element's own override (hook: none yet);</item>
+/// <item>an element's own override in the view (decision 718, <see cref="ElementGraphics"/>): its cut hatch (a pattern or none, its
+/// scale and angle), cut fill, hatch colour and halftone, cut line; an elevation's seen faces their surface hatch and fill;</item>
 /// <item>the view's filters (stage 5 of docs/plan-material-graphics.md): the first filter in the view's list that takes the element
 /// and gives a field gives it (<see cref="VisibilityGraphics.FilterGraphics"/>): a cut hatch, a cut fill, a hatch colour, the hatch
 /// halftone, the cut outline; an elevation's seen faces their surface hatch and fill;</item>
@@ -135,7 +136,7 @@ public sealed class ViewMaterialGraphics
         _small = smallScale && kind != "elevation" && scale is { } s && style?.SmallScaleCut is { } sc && sc.Holds(s) ? sc : null;
         // The view's material graphics set (decision 682): tier 3, over the small-scale cut.
         _set = style?.MaterialGraphicsSet is { } setId ? MaterialGraphicsSets.Find(m, setId) : null;
-        _vg = visibility is { HasSubGraphics: true } or { HasFilterGraphics: true } ? visibility : null;
+        _vg = visibility is { HasSubGraphics: true } or { HasFilterGraphics: true } or { HasElementGraphics: true } ? visibility : null;
     }
 
     public static ViewMaterialGraphics For(IModelView m, Entity view, string kind, double scale) => new(m, kind, scale, ViewStyles.Of(m, view), VisibilityGraphics.Of(m, view));
@@ -191,6 +192,8 @@ public sealed class ViewMaterialGraphics
         {
             if (g != null && _vg.SubGraphics(el, p.Key) is { } sub) g = SubOver(g, sub.Sub, sub.Category);
             if (_vg.FilterGraphics(el) is { } fl) g = FilterOver(g, fl, p.Class, cut: true);
+            // Tier 1: the element's own override in this view (decision 718).
+            if (_vg.ElementRow(el.Id) is { } own) g = ElementOver(g, own, p.Class, cut: true);
         }
         return g;
     }
@@ -201,8 +204,45 @@ public sealed class ViewMaterialGraphics
     /// </summary>
     public ResolvedMaterial? Surface(string element, string cls, ResolvedMaterial? g)
     {
-        if (_vg == null || _m.Get(element) is not { } el || _vg.FilterGraphics(el) is not { } fl) return g;
-        return FilterOver(g, fl, cls, cut: false);
+        if (_vg == null || _m.Get(element) is not { } el) return g;
+        if (_vg.FilterGraphics(el) is { } fl) g = FilterOver(g, fl, cls, cut: false);
+        if (_vg.ElementRow(el.Id) is { } own) g = ElementOver(g, own, cls, cut: false);
+        return g;
+    }
+
+    /// <summary>
+    /// A band (or, <paramref name="cut"/> false, a seen face) with the element's own override in the view over it (decision 718,
+    /// <see cref="ElementGraphics"/>): the pattern ("none": none) at its scale (<c>cutHatchScale</c>, 1 the pattern's own) and
+    /// angle; or, without a pattern, the material's pattern at that scale and angle; the fill ("none": none); the hatch colour and
+    /// halftone; the cut outline. A band with no material takes what the row draws; a membrane keeps its line.
+    /// Bands of one material join only with bands the same override draws alike.
+    /// </summary>
+    static ResolvedMaterial? ElementOver(ResolvedMaterial? g, JsonObject r, string cls, bool cut)
+    {
+        static string? Colour(JsonNode? n) => (string?)n is { } c && HexColor.IsColour(c) ? c.ToLowerInvariant() : null;
+        static bool None(JsonNode? n) => (string?)n is "" or "none" or null;
+        var (hatchKey, fillKey, scaleKey, angleKey) = cut ? ("cutHatch", "cutFill", "cutHatchScale", "cutHatchAngle") : ("surfaceHatch", "surfaceFill", "surfaceHatchScale", "surfaceHatchAngle");
+        bool Gives(string k) => r.ContainsKey(k);
+        var line = cut ? MaterialLine.From(r["cutLine"]) : null;
+        if (!(Gives(hatchKey) || Gives(fillKey) || Gives(scaleKey) || Gives(angleKey) || Gives("hatchColor") || Gives("hatchHalftone") || line != null)) return g;
+        if (g?.Membrane == true) return g;
+        if (g == null)
+        {
+            if (!(Gives(hatchKey) && !None(r[hatchKey]) || Gives(fillKey) && !None(r[fillKey]) || line != null)) return null;
+            g = new ResolvedMaterial("", null, 1, null, null, false, false, null, "element") { JoinAs = "\u0001class:" + cls };
+        }
+        var o = g;
+        var scale = Json.Number(r[scaleKey]) is { } sc && sc > 0 && double.IsFinite(sc) ? sc : (double?)null;
+        var angle = Json.Number(r[angleKey]) is { } an && double.IsFinite(an) ? an : (double?)null;
+        if (Gives(hatchKey))
+            o = o with { Hatch = None(r[hatchKey]) ? null : ((string)r[hatchKey]!).ToUpperInvariant(), HatchScale = scale ?? 1, HatchAngle = angle ?? 0, HatchUnits = null, Background = null, KeepsHatch = true };
+        else if (scale != null || angle != null)
+            o = o with { HatchScale = scale ?? o.HatchScale, HatchAngle = angle ?? o.HatchAngle, KeepsHatch = o.Hatch != null || o.KeepsHatch };
+        if (Gives(fillKey)) o = o with { Fill = None(r[fillKey]) ? null : Colour(r[fillKey]), FillOpacity = null, KeepsFill = true, FilterFill = true };
+        if (Colour(r["hatchColor"]) is { } hc) o = o with { HatchColor = hc };
+        if (r["hatchHalftone"] is JsonValue hv && hv.TryGetValue<bool>(out var half)) o = o with { Halftone = half };
+        if (line != null) o = o with { CutLine = o.CutLine is { } had ? had.Over(line) : line };
+        return o with { JoinAs = (o.JoinAs ?? MaterialGraphics.Normalise(o.Name)) + "\u0001element:" + r.ToJsonString() };
     }
 
     /// <summary>
@@ -302,7 +342,7 @@ public sealed class ViewMaterialGraphics
     /// </summary>
     bool IsCore(DPolygon p)
     {
-        if (!_bands.TryGetValue(p.Element, out var bands)) _bands[p.Element] = bands = LayerSets.BandsOf(_m, p.Element);
+        if (!_bands.TryGetValue(p.Element, out var bands)) _bands[p.Element] = bands = LayerSets.DrawnBandsOf(_m, p.Element);
         if (bands is not { Count: > 0 }) return true;
         var i = -1;
         if (p.Key is { } key && key.StartsWith("layer:", StringComparison.Ordinal) && int.TryParse(key.AsSpan(6), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var n) && n >= 0 && n < bands.Count) i = n;
