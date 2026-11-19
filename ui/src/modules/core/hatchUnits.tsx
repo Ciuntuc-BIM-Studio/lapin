@@ -42,6 +42,19 @@ export function PatternOptions({ patterns, skip, current }: { patterns: readonly
   return <>{groups.map((g) => <optgroup key={g.units} label={UNITS_LABEL[g.units]}>{g.items.map(opt)}</optgroup>)}</>;
 }
 
+/**
+ * How a hatch turns (decision 725): with the element it fills (a wall's along its axis in a plan, the default of a project
+ * made since), fixed to the view (a project's default before), or from each band it fills.
+ */
+export type HatchAlign = 'element' | 'view' | 'layer';
+export const ALIGN_LABEL: Record<HatchAlign, string> = { element: 'With the element', view: 'Fixed to the view', layer: 'Each layer' };
+export const HATCH_ALIGNS: readonly HatchAlign[] = ['element', 'view', 'layer'];
+
+/** The alignments as <option>s. */
+export function AlignOptions() {
+  return <>{HATCH_ALIGNS.map((a) => <option key={a} value={a}>{ALIGN_LABEL[a]}</option>)}</>;
+}
+
 /** A small badge for real-size patterns. */
 export function UnitsBadge({ units }: { units: HatchUnits }) {
   return units === 'model' ? <span className="badge units-badge" title={UNITS_HELP.model} data-units="model">Real size</span> : null;

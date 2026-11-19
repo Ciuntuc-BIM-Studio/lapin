@@ -9,7 +9,7 @@ import { ArrowDown, ArrowUp, Copy, Eye, Plus, Trash2, Wand2 } from 'lucide-react
 import { t } from '../../i18n';
 import { ColourField } from '../../shell/ColourField';
 import { ColourControl, LineTypeSelect, NumberInput, OpacityInput, Row, type HatchPattern } from './MaterialGraphicsEditor';
-import { PatternOptions } from './hatchUnits';
+import { AlignOptions, PatternOptions } from './hatchUnits';
 import {
   MAX_STEPS, SCALE_PRESETS, addStep, duplicateStep, moveStep, localNumber, newStep, parseNumber, parseScaleDenominator, parseWeight, rangeLabel, removeStep,
   sampleScale, setStepField, setStepGroup, setStepRange, simplifySteps, stepFields, stepsProblem,
@@ -81,7 +81,7 @@ function StepFields({ step, i, r, hatches, apply, idKey }: { step: ScaleStep; i:
         {num('a', step.hatchAngle, localNumber(r.hatchAngle ?? 0), (x) => { const v = parseNumber(x); return Number.isFinite(v) ? v : null; }, (v) => set('hatchAngle', v))}
       </Row>
       <Row label="Align" set={has('hatchAlign')} onReset={() => set('hatchAlign', undefined)}>
-        <select value={step.hatchAlign ?? ''} onChange={(e) => set('hatchAlign', e.target.value || undefined)}><option value="">as the material</option><option value="view">view</option><option value="layer">layer</option></select>
+        <select value={step.hatchAlign ?? ''} onChange={(e) => set('hatchAlign', e.target.value || undefined)}><option value="">as the material</option><AlignOptions /></select>
       </Row>
       <Row label="Colour" set={has('hatchColor')} onReset={() => set('hatchColor', undefined)}>
         <ColourControl value={step.hatchColor} auto={r.hatchColor ?? '#000000'} onSet={(v) => set('hatchColor', v)} />

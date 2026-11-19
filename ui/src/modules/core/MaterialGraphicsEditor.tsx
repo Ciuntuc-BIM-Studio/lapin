@@ -14,7 +14,7 @@ import { t } from '../../i18n';
 import { ColourField } from '../../shell/ColourField';
 import { execute } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
-import { PatternOptions, UNITS_LABEL, UnitsBadge, effectiveUnits, scaleLabel, unitsOf, type HatchUnits } from './hatchUnits';
+import { AlignOptions, PatternOptions, UNITS_LABEL, UnitsBadge, effectiveUnits, scaleLabel, unitsOf, type HatchUnits } from './hatchUnits';
 import { openHatchPatterns } from './hatchEditorOpen';
 import { useLineTypes } from './lineTypes/lineTypes';
 import { MaterialGraphicsPreview } from './MaterialGraphicsPreview';
@@ -191,8 +191,8 @@ export function MaterialGraphicsEditor({ m, hatches, targets, compact = false }:
         <Row label="Angle" set={has('hatchAngle')} onReset={() => setField('hatchAngle', undefined)}>
           <NumberInput id={`${m.id}${kind}a`} value={own?.hatchAngle} placeholder={inheritedText(r, 'hatchAngle') || '0'} parse={(t) => { const v = parseNumber(t); return Number.isFinite(v) ? v : null; }} onCommit={(v) => setField('hatchAngle', v)} />
         </Row>
-        <Row label="Align" title="Where the hatch starts and turns: from the view's origin, or from each band it fills (along the band's longest edge)" set={has('hatchAlign')} onReset={() => setField('hatchAlign', undefined)}>
-          <select value={r.hatchAlign ?? 'view'} onChange={(e) => setField('hatchAlign', e.target.value)}><option value="view">view</option><option value="layer">layer</option></select>
+        <Row label="Align" title="How the hatch turns: with the element (along a wall's axis in a plan, turning with it), fixed to the view, or from each band it fills (along the band's longest edge)" set={has('hatchAlign')} onReset={() => setField('hatchAlign', undefined)}>
+          <select value={r.hatchAlign ?? 'view'} onChange={(e) => setField('hatchAlign', e.target.value)}><AlignOptions /></select>
         </Row>
         <Row label="Colour" title="The colour of the hatch; automatic: the category colour" set={has('hatchColor')} onReset={() => setField('hatchColor', undefined)}>
           <ColourControl value={own?.hatchColor} auto={r.hatchColor ?? '#000000'} onSet={(v) => setField('hatchColor', v)} />
