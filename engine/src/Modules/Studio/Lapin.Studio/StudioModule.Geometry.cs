@@ -53,7 +53,8 @@ public sealed partial class StudioModule
         var plan = new List<PlanItem>();
         if (sketchPlan != null && features is not { Count: > 0 } && Placed(e) == null) plan.AddRange(sketchPlan);
         else if (Polygon2.ConvexHull(solid.Vertices.Select(v => new Vec2(v.X, v.Y))) is { Length: >= 3 } hull) plan.Add(new PlanItem("outline", true, hull));
-        var parts = new List<GeometryPart> { new(e.Name, material != null ? Materials.ColorOf(m, material) : "#b9b2a6", solid, material, "body") };
+        var color = material != null ? Materials.ColorOf(m, material) : e.Str("color") is { Length: > 0 } c ? c : "#b9b2a6";
+        var parts = new List<GeometryPart> { new(e.Name, color, solid, material, "body") };
         // Cut by what ranks above it (walls through a pavement…); its envelope for others is the uncut solid. A void
         // only cuts what it is a tool of: nothing ranks over it.
         if (!IsVoid(e)) parts = CutPriorities.Apply(e, m, services, parts, problems);

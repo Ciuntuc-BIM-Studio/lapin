@@ -556,4 +556,61 @@ public static class Roof
         if (s.Shape == "barrel" && BarrelSpan(contour.ToList()) is { } span) o["rise"] = Math.Round(span * s.BarrelRise, 3);
         return o;
     }
+
+    /// <summary>
+    /// Explodes a parametric <see cref="IfcClass.Roof"/> into editable Studio 3D solids (one per current
+    /// <see cref="GeometryPart"/>), placed on the roof's storey with matching names, materials, and colours,
+    /// and removes the original roof (and any hosted <see cref="Drainage.DownpipeClass"/> elements) in one undo step.
+    /// </summary>
+    public static List<string> Explode(ICommandContext ctx, Entity roof)
+    {
+        if (ctx.Services.Get<IGeometryProducers>()?.Geometry(IfcClass.BuildingElementProxy) == null)
+            throw new CommandException("Exploding a roof into editable 3D solids requires the Studio module.");
+        var storey = Spatial.StoreyOf(ctx.Model, roof.Id) ?? throw new CommandException("The roof is not on a storey.");
+        var parts = ((ctx.Query.Geometry(roof.Id) ?? Geometry(roof, ctx.Model, ctx.Services))?.Parts ?? []).ToList();
+        var downpipes = ctx.Model.OfClass(Drainage.DownpipeClass).Where(p => p.Str("roofId") == roof.Id).ToList();
+        foreach (var dp in downpipes)
+            if (ctx.Query.Geometry(dp.Id)?.Parts is { Count: > 0 } dpParts) parts.AddRange(dpParts);
+        parts = parts.Where(p => p.Solid.Vertices.Count() > 0).ToList();
+        if (parts.Count == 0) throw new CommandException("The roof has no 3D geometry to explode.");
+
+        var made = new List<string>(parts.Count);
+        foreach (var part in parts)
+        {
+            var vs = part.Solid.Vertices;
+            var at = new Vec3(
+                (vs.Min(v => v.X) + vs.Max(v => v.X)) / 2,
+                (vs.Min(v => v.Y) + vs.Max(v => v.Y)) / 2,
+                vs.Min(v => v.Z));
+            var body = StoredBodies.Write([(
+                part.Name,
+                part.Color,
+                vs.Select(v => v - at).ToList(),
+                Measure.Triangles(part.Solid).ToList())]);
+            var (cls, predefined) = part.Key switch
+            {
+                "covering" or "deck" or "dormer-roofs" => ("IfcCovering", "ROOFING"),
+                { } k when k.StartsWith("timber:", StringComparison.Ordinal) || k.StartsWith("truss:", StringComparison.Ordinal) => ("IfcMember", "RAFTER"),
+                _ => (IfcClass.BuildingElementProxy, "ELEMENT"),
+            };
+            var attrs = new JsonObject
+            {
+                ["operation"] = "body",
+                [StoredBodies.SolidBodyKey] = body,
+                ["at"] = new JsonArray(at.X, at.Y, at.Z),
+                ["rotation"] = 0,
+            };
+            if (part.Material is { Length: > 0 } mat) attrs["material"] = mat;
+            if (part.Color is { Length: > 0 } col) attrs["color"] = col;
+            var name = string.IsNullOrWhiteSpace(part.Name) ? roof.Name : part.Name;
+            var solid = new Entity(ctx.NewId(), cls, name, attrs, predefined);
+            ctx.Add(solid);
+            Spatial.Contain(ctx, storey.Id, solid.Id);
+            made.Add(solid.Id);
+        }
+
+        foreach (var dp in downpipes) ctx.Remove(dp.Id);
+        ctx.Remove(roof.Id);
+        return made;
+    }
 }

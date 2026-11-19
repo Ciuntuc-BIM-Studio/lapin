@@ -652,4 +652,68 @@ public class RoofTests
         Assert.Equal(6, parts.Count);
         Assert.All(parts, p => Assert.True(Measure.SignedVolume(p.Solid) > 0));
     }
+
+    [Fact]
+    public void Exploding_a_roof_replaces_it_with_editable_Studio_solids_and_undo_restores_it()
+    {
+        var f = new Fixture(new ArchitectureModule(), new StudioModule());
+        var pts = new JsonArray(Rect.Select(p => (JsonNode)new JsonArray(p.X, p.Y)).ToArray());
+        var roofId = (string)f.Run("architecture.addRoof", new JsonObject { ["points"] = pts })!["id"]!;
+        var storeyId = Spatial.StoreyOf(f.Model, roofId)!.Id;
+        var beforeParts = f.Session.Geometry(roofId)!.Parts;
+        Assert.NotEmpty(beforeParts);
+
+        var res = f.Run("architecture.explodeRoof", new JsonObject { ["id"] = roofId })!;
+        var made = res["ids"]!.AsArray().Select(x => (string)x!).ToList();
+
+        Assert.Null(f.Model.Get(roofId));
+        Assert.Equal(beforeParts.Count, made.Count);
+        for (var i = 0; i < made.Count; i++)
+        {
+            var solid = f.Model.Get(made[i])!;
+            Assert.Equal("body", solid.Str("operation"));
+            Assert.NotNull(solid.Attrs[StoredBodies.SolidBodyKey]);
+            Assert.Equal(storeyId, Spatial.StoreyOf(f.Model, solid.Id)?.Id);
+            Assert.Equal(beforeParts[i].Name, solid.Name);
+            Assert.Equal(beforeParts[i].Material, solid.Str("material"));
+            var built = f.Session.Geometry(solid.Id)!.Parts;
+            Assert.Single(built);
+            Assert.Equal(beforeParts[i].Color, built[0].Color);
+            Assert.Equal(Measure.Volume(beforeParts[i].Solid), Measure.Volume(built[0].Solid), 1);
+        }
+
+        // The exploded solids are editable via Studio / element transforms.
+        var first = made[0];
+        var minX = f.Bounds(first).Min.X;
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(first), ["op"] = "move", ["by"] = new JsonArray(1, 0) });
+        Assert.Equal(minX + 1, f.Bounds(first).Min.X, 4);
+
+        // One undo step restores the original parametric roof (after undoing the transform first).
+        f.Session.Undo();
+        f.Session.Undo();
+        Assert.NotNull(f.Model.Get(roofId));
+        Assert.All(made, id => Assert.Null(f.Model.Get(id)));
+    }
+
+    [Fact]
+    public void Exploding_a_roof_with_hosted_downpipes_removes_downpipes_and_undo_restores_all()
+    {
+        var f = new Fixture(new ArchitectureModule(), new StudioModule());
+        var pts = new JsonArray(Rect.Select(p => (JsonNode)new JsonArray(p.X, p.Y)).ToArray());
+        var roofId = (string)f.Run("architecture.addRoof", new JsonObject { ["points"] = pts })!["id"]!;
+        f.Run("architecture.makeDownpipes", new JsonObject { ["id"] = roofId });
+        var pipesBefore = f.Model.OfClass(Drainage.DownpipeClass).Where(p => p.Str("roofId") == roofId).Select(p => p.Id).ToList();
+        Assert.NotEmpty(pipesBefore);
+
+        var res = f.Run("architecture.explodeRoof", new JsonObject { ["id"] = roofId })!;
+        var made = res["ids"]!.AsArray().Select(x => (string)x!).ToList();
+
+        Assert.Null(f.Model.Get(roofId));
+        Assert.DoesNotContain(f.Model.OfClass(Drainage.DownpipeClass), p => p.Str("roofId") == roofId);
+        Assert.NotEmpty(made);
+
+        f.Session.Undo();
+        Assert.NotNull(f.Model.Get(roofId));
+        Assert.Equal(pipesBefore.Count, f.Model.OfClass(Drainage.DownpipeClass).Count(p => p.Str("roofId") == roofId));
+    }
 }
