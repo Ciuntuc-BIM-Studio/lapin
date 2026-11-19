@@ -153,6 +153,15 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IVoidShapes>(new VoidShapes());
         r.Service<IIfcElementSets>(new JoineryDataSets());
         r.Service<IIfcElementSets>(new FloorSpringSets());
+        // A roof's own build-up for its R and U-value (issue #67): its custom layers; a framed roof's rafter zone under them is not counted.
+        Thermal.AddLayers(IfcClass.Roof, (m, roof) =>
+        {
+            var layers = Roofs.Roof.LayersOf(roof);
+            if (layers.Count == 0) return null;
+            var framed = Roofs.Roof.Resolve(roof, m)?.Framed ?? false;
+            IReadOnlyList<string> notes = framed ? ["The rafter zone under the layers (timber and what fills it) is not counted."] : [];
+            return ("roof", layers.Select(l => new ThermalLayerInput(l.DisplayName, l.Material.Length > 0 ? Materials.Find(m, l.Material)?.Id : null, l.Thickness)).ToList(), "element", notes);
+        });
         r.Service<Lapin.Platform.Coordination.IOpeningVoids>(new ArchitectureVoids());
         // The openings' boxes a dimension across one reads its height from (report #92, decision 338).
         r.Service<IWallOpenings>(new ArchitectureWallOpenings());

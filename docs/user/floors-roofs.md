@@ -164,6 +164,10 @@ The walls on the roof's level stop under it and rise to its gables by themselves
 
 Every member is a part of its own: the **Roof timber** schedule lists them as a cutting list (member, section, grade, length, pieces, volume), and IFC gets each as an IfcMember of its type, each truss as an IfcElementAssembly.
 
+## Thermal resistance and U-value
+
+A floor or a roof, and its type, shows its **R** and **U** in **Thermal** in its properties, worked out from its layers like a wall's (EN ISO 6946). The heat-flow case is **Floor over outside air** for a floor and **Roof** for a roof; choose **Floor on the ground**, **Floor over an unheated space** or **Ceiling under an unheated space** where it applies. See [Thermal resistance and U-value](walls.md#thermal-resistance-and-u-value) for λ, the surface resistances, the fields and the IFC export.
+
 ## False ceilings
 
 **Interior → Ceiling** (<kbd>CG</kbd>) draws a false ceiling over an outline you click; **Ceiling in a room** fills the room you click, following its outline. A ceiling hangs at its **Height** over the storey (2700 mm unless you change it in its properties).

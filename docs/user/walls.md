@@ -254,6 +254,24 @@ A parameter the type has for itself, such as a fire rating, is shared by every e
 
 The **Type assemblies** schedule (Schedules → + → Type assemblies) lists every wall and floor type with its mark, its total thickness, how many elements use it, and its layers in order.
 
+## Thermal resistance and U-value
+
+Lapin works out the thermal resistance **R** and the transmittance **U** of every wall, floor and roof from its layers, by EN ISO 6946: each layer has R = thickness ÷ λ, the total is R = Rsi + the layers + Rse, and U = 1 ÷ R. Select a wall (or a wall type, a floor, a roof) and look at **Thermal** in its properties.
+
+![The Thermal section of a wall: its U-value, R, case and layers](shots/thermal-section.webp)
+
+- **Where λ comes from.** First the material's own **Thermal conductivity λ** (Manage → Materials → Data). Without one, Lapin uses its **indicative** λ by the material's name (mineral wool, EPS, XPS, reinforced concrete, brick, aerated concrete, timber, gypsum board, plaster and so on), marked with a star; the layer says what it took the material for. You can turn this off in **Surface resistances… → Use Lapin's indicative λ for materials without their own**. A layer of air or cavity (a material named *air* or *cavity*) takes its R from the table of EN ISO 6946 for an unventilated air layer.
+- **A missing λ.** A layer with no λ is never guessed: the U-value reads **Incomplete** and the layers without λ are named. Give the material its λ and it completes.
+- **The case.** The surface resistances Rsi and Rse depend on which way the heat flows and what is on the other side. The **Heat-flow case** is **By its kind** (an external wall, a roof, a floor over outside air) unless you choose another: a wall to an unheated space, a wall against the ground, a ceiling under an unheated space, a floor over an unheated space, a floor on the ground. A case chosen for a type is the type's; one chosen for an element is its own.
+- **The surface resistances** are the project's. **Surface resistances…** (also Manage → **Thermal settings**) lists the cases with their Rsi and Rse; type a new value and press Enter, or use the arrow to go back to Lapin's. Lapin's values are indicative: check them against the norm and your project's requirements.
+- **A typed value wins.** If you give the element or its type a **ThermalTransmittance** parameter, that value is shown as **Typed** and is the one used in IFC and in tags; the derived value is still shown beside it.
+
+The values are also fields you can use in tags, schedules and formulas: **{UValue}** (W/m²K, empty while incomplete), **{RValue}** (the total R), **{UValueMissing}** (the layers without λ) and **{ThermalTransmittance}** (the typed value if there is one, else the derived one). The **Tag** type *Thermal transmittance* (U = {ThermalTransmittance}) now shows the derived value. The **Type assemblies** schedule has the columns **λ**, **R** and **U**.
+
+The IFC export writes the derived value as *ThermalTransmittance* in *Pset_WallCommon*, *Pset_SlabCommon* and *Pset_RoofCommon* when it is complete and you typed none.
+
+![The thermal settings: Rsi and Rse of each case](shots/thermal-settings.webp)
+
 ## Wall sweeps and reveals
 
 **Architecture → Wall sweep** (<kbd>WB</kbd>) runs a profile along a wall's face: a cornice, a band, a plinth, a sill. **Wall reveal** (<kbd>RV</kbd>) cuts one into the wall: a groove, a shadow gap. Choose the profile and the height in the command line's bar, then click the wall's face. In 3D the sweep goes at the height you click; in a plan it goes at the height typed, on the side you click. **from the top** measures the height down from the wall's top, for a cornice under the eaves. **Sweep on selected walls** and **Reveal on selected walls** put the same on every wall selected, on its exterior face.

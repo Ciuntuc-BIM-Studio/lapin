@@ -38,6 +38,8 @@ Tabul **Date** ține ce spune materialul despre el. Îl scrii o dată; îl cite�
 - **Măsurat după** spune cum îl numără **Execuție → Antemăsurătoare** (pe material) și devizul: **arie** (m², un rând pe grosime: plăci, termoizolații, membrane), **volum** (m³: beton, balast, șapă), **masă** (kg, din densitate) sau **bucăți** (plăci de mărimea pe care o dai). Lăsat gol, se măsoară cum se măsoară elementele lui.
 - **Grosimi din catalog (mm)**: grosimile în care îl face producătorul, de exemplu *50, 80, 100, 150, 200, 240*. Tabelele de straturi din **Tipuri de pereți** și **Tipuri de plăci** le oferă lângă grosime (poți scrie și alta), iar un strat de altă grosime e marcat cu un semn de avertizare.
 
+**Conductivitatea termică λ** este ce folosește Lapin pentru rezistența termică și valoarea U a pereților, planșeelor și acoperișurilor; un material fără ea e luat după nume, marcat orientativ, sau lasă valoarea U incompletă (vezi [Rezistența termică și valoarea U](walls.md#rezistența-termică-și-valoarea-u)).
+
 Exportul IFC scrie descrierea ca Description a materialului și parametrii ca seturile lui de proprietăți; importul le citește înapoi, și din fișierul altui program.
 
 ## Un singur material pentru toate tocurile și toată sticla

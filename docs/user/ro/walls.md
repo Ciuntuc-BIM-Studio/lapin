@@ -288,6 +288,24 @@ Selectezi un profil și folosești **MOVE** sau **COPY** ca pentru orice element
 
 Placajele se modelează cu straturile peretelui, nu cu profile. Adaugi un strat de finisaj pe exteriorul tipului de perete (piatră, lambriu, plăci fibrociment, un termosistem), cu grosimea și materialul lui. **Strat de la** și **Strat până la** îi dau o înălțime proprie (un soclu de piatră până la 600, tencuială deasupra), iar butonul **straturi** al stratului îi schimbă materialul în benzi pe înălțime. Pentru un placaj care stă separat de perete, desenezi un perete al lui pe față (opțiunea de linie **Fața exterioară** a uneltei de pereți), cu un tip făcut din straturile placajului. Placajul pus scândură cu scândură (scânduri verticale sau orizontale, șipci) nu se modelează încă.
 
+## Rezistența termică și valoarea U
+
+Lapin calculează rezistența termică **R** și transmitanța **U** a fiecărui perete, planșeu și acoperiș din straturile lui, după EN ISO 6946: fiecare strat are R = grosime ÷ λ, totalul este R = Rsi + straturile + Rse, iar U = 1 ÷ R. Selectează un perete (sau un tip de perete, un planșeu, un acoperiș) și vezi **Termic** în proprietăți.
+
+![Secțiunea Termic a unui perete: valoarea U, R, cazul și straturile](shots/thermal-section.webp)
+
+- **De unde vine λ.** Mai întâi **Conductivitatea termică λ** a materialului (Gestionare → Materiale → Date). Dacă lipsește, Lapin folosește λ-ul său **orientativ** după numele materialului (vată minerală, EPS, XPS, beton armat, cărămidă, BCA, lemn, gips-carton, tencuială etc.), marcat cu o steluță; stratul arată drept ce a luat materialul. Poți opri asta din **Rezistențe superficiale… → Folosește λ orientativ al Lapin pentru materialele fără λ propriu**. Un strat de aer sau de cavitate (un material numit *aer* sau *cavitate*) își ia R din tabelul EN ISO 6946 pentru un strat de aer neventilat.
+- **Un λ lipsă.** Un strat fără λ nu e ghicit niciodată: valoarea U arată **Incomplet** și straturile fără λ sunt numite. Dă materialului λ-ul lui și se completează.
+- **Cazul.** Rezistențele superficiale Rsi și Rse depind de sensul fluxului de căldură și de ce e de cealaltă parte. **Cazul fluxului de căldură** este **După tipul său** (perete exterior, acoperiș, planșeu peste aer exterior) dacă nu alegi altul: perete către spațiu neîncălzit, perete lipit de pământ, plafon sub spațiu neîncălzit, planșeu peste spațiu neîncălzit, planșeu pe pământ. Un caz ales pentru un tip este al tipului; unul ales pentru un element este al lui.
+- **Rezistențele superficiale** sunt ale proiectului. **Rezistențe superficiale…** (și Gestionare → **Setări termice**) listează cazurile cu Rsi și Rse; scrie o valoare nouă și apasă Enter, sau folosește săgeata pentru a reveni la cea a Lapin. Valorile Lapin sunt orientative: verifică-le față de normă și de cerințele proiectului.
+- **Valoarea introdusă are prioritate.** Dacă dai elementului sau tipului său un parametru **ThermalTransmittance**, valoarea apare ca **Introdusă** și este cea folosită în IFC și în etichete; valoarea calculată rămâne afișată alături.
+
+Valorile sunt și câmpuri pe care le poți folosi în etichete, tabele și formule: **{UValue}** (W/m²K, gol cât e incomplet), **{RValue}** (R total), **{UValueMissing}** (straturile fără λ) și **{ThermalTransmittance}** (valoarea introdusă dacă există, altfel cea calculată). Tipul de etichetă *Thermal transmittance* (U = {ThermalTransmittance}) arată acum valoarea calculată. Tabelul **Type assemblies** are coloanele **λ**, **R** și **U**.
+
+Exportul IFC scrie valoarea calculată ca *ThermalTransmittance* în *Pset_WallCommon*, *Pset_SlabCommon* și *Pset_RoofCommon* când e completă și nu ai introdus una.
+
+![Setările termice: Rsi și Rse ale fiecărui caz](shots/thermal-settings.webp)
+
 ## Pereți sub acoperiș
 
 Pereții de pe același nivel cu un acoperiș se opresc singuri sub el și urcă până la frontoanele lui. Pentru un perete de pe alt nivel, selectează-l și alege **Arhitectură → Atașează la acoperiș** (<kbd>AR</kbd>), apoi dă clic pe acoperiș, sau pe orice alt corp până la care trebuie să urce peretele: un solid din Studio, un element importat. Vezi [Plăci și acoperișuri](floors-roofs.md).

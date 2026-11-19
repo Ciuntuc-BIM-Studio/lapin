@@ -162,6 +162,10 @@ Pereții de pe nivelul acoperișului se opresc singuri sub el și urcă la front
 
 Fiecare piesă e o parte a acoperișului: extrasul **Roof timber** le dă ca listă de debitare (piesa, secțiunea, clasa, lungimea, bucățile, volumul), iar în IFC fiecare e un IfcMember cu tipul lui, fiecare fermă un IfcElementAssembly.
 
+## Rezistența termică și valoarea U
+
+Un planșeu sau un acoperiș, și tipul lui, arată **R** și **U** în **Termic**, în proprietăți, calculate din straturi ca la un perete (EN ISO 6946). Cazul fluxului de căldură este **Planșeu peste aer exterior** pentru un planșeu și **Acoperiș** pentru un acoperiș; alege **Planșeu pe pământ**, **Planșeu peste spațiu neîncălzit** sau **Plafon sub spațiu neîncălzit** unde e cazul. Vezi [Rezistența termică și valoarea U](walls.md#rezistența-termică-și-valoarea-u) pentru λ, rezistențele superficiale, câmpuri și exportul IFC.
+
 ## Tavane false
 
 **Interior → Tavan** (<kbd>CG</kbd>) desenează un tavan fals pe un contur pe care îl dai prin clicuri; **Tavan într-o cameră** umple camera pe care dai clic, după conturul ei. Un tavan stă la **Înălțimea** lui peste etaj (2700 mm, dacă nu o schimbi în proprietăți).
