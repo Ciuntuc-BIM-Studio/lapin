@@ -46,6 +46,9 @@ import { editSelectedGroup, groupSelection, makeComponent, makeUnit, removeFromG
 import { toggleRegion3d } from '../../viewport/select3d';
 import { hideHere, isolateHere, resetHere } from '../../viewport/viewTemporary';
 import { QuickSelectDialog } from './QuickSelectDialog';
+import { ThermalSection } from './ThermalSection';
+import { ThermalSettingsDialog } from './ThermalSettingsDialog';
+import { THERMAL_CLASSES } from './thermal';
 import { cropGrips } from './ViewCrop';
 import { InsetSection, insetGrips, insetTool } from './insets';
 import { CalloutSection, calloutCircleTool, calloutGrips, calloutPolygonTool, calloutTool } from './callouts';
@@ -256,6 +259,7 @@ const core: LapinModule = {
         // The types imports made replaced by the project's own, the choice remembered (docs/spec-ifc.md, Î9).
         // The names the office gives to fields, read by schedules, tags and formulas (docs/plan-user-extensibility.md §11.4).
         { id: 'manage.fieldAliases', label: 'Field names', icon: Braces, run: () => useUi.setState({ dialog: 'fieldAliases' }) },
+        { id: 'manage.thermalSettings', label: 'Thermal settings', icon: Gauge, run: () => useUi.setState({ dialog: 'thermalSettings' }) },
         { id: 'manage.mapTypes', label: 'Map imported types', icon: ArrowRightLeft, run: () => useUi.setState({ dialog: 'mapTypes' }) },
         // Types of any kind out of the project as a .lapintypes (a types extension's file) and into it from one (docs/plan-extensions.md, §9.3).
         { id: 'manage.typePacks', label: 'Type packs', icon: PackageOpen, run: () => useUi.setState({ dialog: 'typePacks' }) },
@@ -411,10 +415,12 @@ const core: LapinModule = {
   },
   references: { LapinView: sectionRefs },
   placeSources: corePlaceSources,
-  dialogs: { insetPick: InsetPickDialog, placeCatalog: PlaceCatalogDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, materialStandards: MaterialStandardsDialog, materialGraphicsSets: MaterialGraphicsSetsDialog, hatchPatterns: HatchPatternsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, newLevels: NewLevelsDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, typePacks: TypePacksDialog, projectTypes: ProjectTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, saveHatch: SaveHatchDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog },
+  dialogs: { insetPick: InsetPickDialog, placeCatalog: PlaceCatalogDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, materialStandards: MaterialStandardsDialog, materialGraphicsSets: MaterialGraphicsSetsDialog, hatchPatterns: HatchPatternsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, newLevels: NewLevelsDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, typePacks: TypePacksDialog, projectTypes: ProjectTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, saveHatch: SaveHatchDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog, thermalSettings: ThermalSettingsDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },
+    // U-value and R from the layers (EN ISO 6946; issue #67).
+    { id: 'thermal', label: 'Thermal', classes: THERMAL_CLASSES, component: ThermalSection },
     { id: 'array', label: 'Array', classes: ['*'], shows: (n) => arrayOf(n, useSession.getState().nodes) !== null, component: ArraySection },
     // Each end joining automatically or not (the forum's topic #50, decision 546).
     { id: 'autoJoin', label: 'Joins', classes: ['IfcWall', 'IfcBeam', 'IfcFooting'], shows: (n) => isPathElement(n.props), component: AutoJoinSection },

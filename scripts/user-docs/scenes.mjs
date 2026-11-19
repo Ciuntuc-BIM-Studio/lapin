@@ -7494,6 +7494,42 @@ export const scenes = [
     },
   },
   {
+    // Thermal resistance and U-value (GitHub #67, EN ISO 6946): a wall with layers whose λ is the material's own (the wool, the
+    // render) or Lapin's indicative one by name (the brick, the plaster); the Thermal section of its properties with U, R, the
+    // case and the layers; then the dialog of the surface resistances.
+    id: 'thermal',
+    touches: ['architecture', 'core'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const type = await t.cmd('architecture.createWallType', { name: 'ETICS 150', layers: [
+        { material: 'Render', thickness: 0.01 }, { material: 'Mineral wool', thickness: 0.15 },
+        { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 }] });
+      const id = async (name) => (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === name)?.id;
+      const lambda = (v) => [{ pset: 'Pset_MaterialThermal', name: 'ThermalConductivity', value: v }];
+      await t.cmd('material.setData', { id: await id('Mineral wool'), params: lambda(0.035) });
+      await t.cmd('material.setData', { id: await id('Render'), params: lambda(0.87) });
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 8, y2: 0, typeId: type.id })).id;
+      await t.fit();
+      await select(t, wall);
+      await t.wait(800);
+      const section = t.page.locator('[data-testid=thermal-section]');
+      t.expect(await section.count() === 1, 'a wall shows the Thermal section in its properties');
+      t.expect(await section.locator('[data-testid=thermal-u]').count() === 1, 'its U-value is worked out from the layers');
+      t.expect(await section.locator('[data-testid=thermal-indicative]').count() >= 1, 'the λ taken by name is marked indicative');
+      t.expect(await section.locator('[data-field=thermal-case]').count() === 1, 'the heat-flow case can be chosen');
+      await section.scrollIntoViewIfNeeded();
+      await t.shot('thermal-section', { of: '[data-testid=thermal-section]', pad: 8 });
+      await section.locator('[data-field=thermal-settings]').click();
+      await t.wait(600);
+      const dialog = t.page.locator('[data-testid=thermal-settings]');
+      t.expect(await dialog.count() === 1, 'Surface resistances… opens the thermal settings');
+      await t.shot('thermal-settings', { of: '.dialog', pad: 0 });
+      await dialog.locator('button[title="Close"]').first().click();
+      await t.wait(300);
+    },
+  },
+  {
     // The build-up tag (docs/plan-buildup-tags.md, stage 2): a facade wall drawn east to west (its exterior, its first layer's
     // side, to the north), its materials described with their λ; the default build-up tag placed by TAG above it, a second
     // tag type with a leader per layer beside its end; then the tag type's editor in Drafting standards → Tags with its preview.

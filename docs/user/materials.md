@@ -38,6 +38,8 @@ The **Data** tab holds what the material says of itself. You write it once; ever
 - **Measured by** says how **Construction → Quantity takeoff** (by material) and the estimate count it: **area** (m², a row per thickness: boards, insulation, membranes), **volume** (m³: concrete, ballast, screed), **mass** (kg, from its density) or **count** (pieces of a board of the size you give). Left empty, it is measured as its elements are.
 - **Catalogue thicknesses (mm)**: the thicknesses its maker makes it in, for example *50, 80, 100, 150, 200, 240*. The layer tables of **Wall types** and **Floor types** offer them beside the thickness (you can still type another), and a layer of another thickness is marked with a warning sign.
 
+**Thermal conductivity λ** is what Lapin uses for the thermal resistance and U-value of walls, floors and roofs; a material without it is taken by its name, marked indicative, or leaves the U-value incomplete (see [Thermal resistance and U-value](walls.md#thermal-resistance-and-u-value)).
+
 The IFC export writes the description as the material's Description and the parameters as its property sets; an import reads them back, also from another program's file.
 
 ## One material for all frames and all glass
