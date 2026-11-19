@@ -822,6 +822,16 @@ export const scenes = [
       await t.wait(700);
       const kept = (await t.nodes()).find((n) => n.props.dimKind === 'angular');
       t.expect(!!kept && Array.isArray(kept.props.holds) && kept.props.holds.length === 2, 'a permanent angular dimension held on the two walls');
+      // Decision 739: it is locked; the other wall turned, the selected one turns with it, and its padlock shows shut.
+      t.expect(kept.props.locked === true, 'the angle locked');
+      const other = (await t.nodes()).find((n) => n.type === 'IfcWall' && n.id !== turned);
+      await t.cmd('element.transform', { ids: [other.id], op: 'rotate', center: [0, 0], angle: 10 });
+      const after = (await t.nodes()).find((n) => n.id === turned);
+      const dir = Math.atan2(after.props.end[1] - after.props.start[1], after.props.end[0] - after.props.start[0]) * 180 / Math.PI;
+      t.expect(Math.abs(dir - 100) < 1e-6, `the other wall turned 10°: the locked one follows to 100° (${dir})`);
+      await t.ui({ selection: kept.id, selected: [kept.id] });
+      await t.wait(700);
+      t.expect(await t.page.locator('[data-testid=angle-lock] [data-angle-lock=locked]').count() === 1, 'its padlock shut beside the arc');
       await t.ui({ selection: null, selected: [] });
       // Drawing a chain of walls: the second piece's angle to the first, 90° square.
       await t.keys('w', 'a');
