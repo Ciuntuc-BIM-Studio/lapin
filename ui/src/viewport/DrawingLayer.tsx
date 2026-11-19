@@ -10,6 +10,7 @@ import { screenWidth, useDisplay } from '../app/display';
 import { screenFill, screenInk, splitAlpha, type DrawingDto, type PenDto } from './drawing';
 import { imageUrl, visibleCrop } from './imageCrop';
 import { uprightText } from './orientation';
+import { clipSegment, outside, screenRect } from './screenClip';
 
 type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
 
@@ -31,14 +32,24 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
     const line = splitAlpha(p.stroke);
     const stroke = screenInk(line.color, onDark), fill = screenFill(seen.color, onDark);
     let d = '';
-    const pt = (x: number, y: number) => { const s = toScreen({ x, y }); return `${s.x.toFixed(1)} ${s.y.toFixed(1)}`; };
+    const fmt = (q: { x: number; y: number }) => `${q.x.toFixed(1)} ${q.y.toFixed(1)}`;
+    // On a view that says its screen, only what it shows (screenClip.ts, forum topic 162): zoomed far in, every line
+    // dashed whole past the screen made each frame slower the further one zoomed.
+    const rect = screen ? screenRect(screen.w, screen.h) : null;
+    const dashes = p.dash ? p.dash.map((v) => Math.round(Math.max(1, Math.min(v * pxPerMm, v * 8)) * 10) / 10) : null;
+    const period = dashes ? dashes.reduce((a, b) => a + b, 0) * (dashes.length % 2 ? 2 : 1) : 0;
     for (const loop of p.loops ?? []) {
-      for (let k = 0; k + 1 < loop.length; k += 2) d += `${k === 0 ? 'M' : 'L'}${pt(loop[k], loop[k + 1])}`;
+      const on: number[] = [];
+      for (let k = 0; k + 1 < loop.length; k += 2) { const q = toScreen({ x: loop[k], y: loop[k + 1] }); on.push(q.x, q.y); }
+      if (rect && outside(on, rect)) continue;
+      for (let k = 0; k + 1 < on.length; k += 2) d += `${k === 0 ? 'M' : 'L'}${on[k].toFixed(1)} ${on[k + 1].toFixed(1)}`;
       d += 'Z';
     }
     const s = p.segments ?? [];
     for (let k = 0; k + 3 < s.length; k += 4) {
-      const a = pt(s[k], s[k + 1]), b = pt(s[k + 2], s[k + 3]);
+      let qa = toScreen({ x: s[k], y: s[k + 1] }), qb = toScreen({ x: s[k + 2], y: s[k + 3] });
+      if (rect) { const c = clipSegment(qa, qb, rect, period); if (!c) continue; [qa, qb] = c; }
+      const a = fmt(qa), b = fmt(qb);
       d += a === b ? `M${a}h0.8` : `M${a}L${b}`;
     }
     // True to paper, within what a screen shows well when zoomed far in or out.
@@ -53,6 +64,8 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
             // A turned plan (decision 526, or true north up) keeps its texts readable: upright within ±90°, as the engine prints them.
             const u = uprightText(t, turnDeg, (drawing.scale ?? 100) / 1000);
             const at = toScreen({ x: u.x, y: u.y });
+            // Far off the screen (by more than the text can reach from its anchor), left out.
+            if (rect && outside([at.x, at.y], [rect[0] - size * (t.text.length + 1), rect[1] - size * (t.text.length + 1), rect[2] + size * (t.text.length + 1), rect[3] + size * (t.text.length + 1)])) return null;
             return (
               <text key={k} x={at.x} y={at.y} fontSize={size} fontWeight={t.bold ? 700 : 400} fontStyle={t.italic ? 'italic' : undefined}
                 fontFamily={t.font === 'serif' ? 'ui-serif, Georgia, serif' : t.font === 'mono' ? 'ui-monospace, Menlo, monospace' : 'ui-sans-serif, system-ui, sans-serif'}
@@ -67,7 +80,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
     return (
       <path key={i} d={d} className={`pen pen-${p.layer.toLowerCase()}`} fill={fill ?? 'none'} fillOpacity={seen.opacity < 1 ? seen.opacity : undefined} fillRule="evenodd"
         stroke={stroke ?? 'none'} strokeOpacity={line.opacity < 1 ? line.opacity : undefined} strokeWidth={width} strokeLinecap={cap} strokeLinejoin={cap === 'square' ? 'miter' : 'round'}
-        strokeDasharray={p.dash ? p.dash.map((v) => Math.max(1, Math.min(v * pxPerMm, v * 8)).toFixed(1)).join(' ') : undefined} />
+        strokeDasharray={dashes ? dashes.join(' ') : undefined} />
     );
   }), [drawing, cap, toScreen, pxPerMm, onDark, minText, screen, turnDeg]);
   return <g className="drawing-layer">{paths}</g>;

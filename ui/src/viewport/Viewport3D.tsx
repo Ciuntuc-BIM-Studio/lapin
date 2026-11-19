@@ -698,7 +698,9 @@ export function Viewport3D() {
 
   useEffect(() => {
     const el = host.current!;
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    // The faster graphics chip where a laptop has two (forum topic 162): a model seen close fills the screen, and the
+    // integrated chip a webview is often given by default could barely turn the view.
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setClearColor(CLEAR[useUi.getState().theme]);
     rendererRef.current = renderer;
@@ -808,7 +810,7 @@ export function Viewport3D() {
         const refPlanes = s.getObjectByName('ref-planes');
         const shown = refPlanes?.visible ?? false;
         if (refPlanes) refPlanes.visible = false;
-        try { realism.render(cam); } finally { if (refPlanes) refPlanes.visible = shown; }
+        try { realism.render(cam, controls.target.distanceTo(cam.position)); } finally { if (refPlanes) refPlanes.visible = shown; }
         return renderer.domElement;
       },
       // Drawn once more right before it is read: the drawing buffer is not kept between frames.
@@ -818,7 +820,7 @@ export function Viewport3D() {
           const refPlanes = s.getObjectByName('ref-planes');
           const shown = refPlanes?.visible ?? false;
           if (refPlanes) refPlanes.visible = false;
-          try { realism.render(cam); } finally { if (refPlanes) refPlanes.visible = shown; }
+          try { realism.render(cam, controls.target.distanceTo(cam.position)); } finally { if (refPlanes) refPlanes.visible = shown; }
           const src = renderer.domElement;
           const scale = Math.min(1, maxWidth / Math.max(src.width, 1));
           if (scale >= 1) return src.toDataURL('image/png');
@@ -983,7 +985,7 @@ export function Viewport3D() {
       else if (!trailing) trailing = window.setTimeout(() => { trailing = 0; invalidate.current(); }, LOD_EVERY);
     };
     let frame = 0;
-    const draw = () => { relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); fitShadow(); realism.render(cam); if (host.current) host.current.dataset.cloudPoints = String(clouds.drawn()); };
+    const draw = () => { relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); fitShadow(); realism.render(cam, controls.target.distanceTo(cam.position)); if (host.current) host.current.dataset.cloudPoints = String(clouds.drawn()); };
     invalidate.current = () => {
       if (!frame) frame = requestAnimationFrame(() => { frame = 0; draw(); });
     };

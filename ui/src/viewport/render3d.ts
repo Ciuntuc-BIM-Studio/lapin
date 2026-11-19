@@ -71,6 +71,28 @@ export function sunColour(altitude: number, out = new THREE.Color()): THREE.Colo
   return out.setRGB(1, 0.62 + (0.97 - 0.62) * t, 0.36 + (0.92 - 0.36) * t, THREE.SRGBColorSpace);
 }
 
+/** The occlusion's reach in the model (BimGo's 0.6 m) and how far it spreads on screen at most, in device pixels. */
+export const AO_RADIUS = 0.6;
+export const AO_MAX_PX = 96;
+
+/**
+ * The occlusion's reach for a camera (forum topic 162): 0.6 m, but never more than AO_MAX_PX device pixels on screen at
+ * the distance looked at. The pass samples its depth within that reach round every pixel: zoomed in close, 0.6 m covered
+ * the whole screen and every sample missed the GPU's texture cache, so a frame took several times as long as at a
+ * building's width (a slower graphics chip could barely turn the view). `pxPerMetre` is the screen's device pixels a
+ * metre covers there.
+ */
+export function aoRadius(pxPerMetre: number): number {
+  if (!Number.isFinite(pxPerMetre) || pxPerMetre <= 0) return AO_RADIUS;
+  return Math.min(AO_RADIUS, AO_MAX_PX / pxPerMetre);
+}
+
+/** The device pixels a metre covers at `distance` from a perspective camera (fov in degrees) or in an orthographic one (`metresHigh`). */
+export function devicePxPerMetre(heightPx: number, view: { fovDeg: number; distance: number } | { metresHigh: number }): number {
+  if ('metresHigh' in view) return heightPx / Math.max(view.metresHigh, 1e-9);
+  return heightPx / (2 * Math.max(view.distance, 1e-6) * Math.tan((view.fovDeg * Math.PI) / 360));
+}
+
 /**
  * The occlusion pass, made blind to what is seen through (glass, faded phases): it would darken what is behind
  * them. GTAOPass hides lines and points from its depth and normals by a method three renamed between releases
@@ -173,7 +195,7 @@ export class Realism {
     this.renderPass = new RenderPass(this.scene, camera);
     this.occlusion = occlusion(this.scene, camera, w, h);
     // About BimGo's 0.6 m: a corner's shade reaches a hand's breadth or two out of it.
-    this.occlusion.updateGtaoMaterial({ radius: 0.6, distanceExponent: 1, thickness: 1, scale: 1, samples: 16 });
+    this.occlusion.updateGtaoMaterial({ radius: AO_RADIUS, distanceExponent: 1, thickness: 1, scale: 1, samples: 16 });
     this.occlusion.blendIntensity = 0.9;
     composer.addPass(this.renderPass);
     composer.addPass(this.occlusion);
@@ -189,8 +211,8 @@ export class Realism {
     this.composer.setSize(this.size.x, this.size.y);
   }
 
-  /** The scene drawn from a camera, by the profile. */
-  render(camera: THREE.PerspectiveCamera | THREE.OrthographicCamera): void {
+  /** The scene drawn from a camera, by the profile; `distance`: how far the camera looks (to the orbit's target), for the occlusion's reach. */
+  render(camera: THREE.PerspectiveCamera | THREE.OrthographicCamera, distance?: number): void {
     const spec = this.spec;
     this.sky.visible = spec.sky && (camera as THREE.PerspectiveCamera).isPerspectiveCamera === true;
     if (this.sky.visible) this.sky.position.copy(camera.position);
@@ -207,6 +229,16 @@ export class Realism {
         if (m.defines.PERSPECTIVE_CAMERA !== perspective) { m.defines.PERSPECTIVE_CAMERA = perspective; m.needsUpdate = true; }
       }
     }
+    // Its reach held to a few dozen pixels on screen, its falloff with it (the shade keeps its look, only smaller when close).
+    const heightPx = this.size.y * this.renderer.getPixelRatio();
+    const ortho = camera as THREE.OrthographicCamera;
+    const ppm = ortho.isOrthographicCamera
+      ? devicePxPerMetre(heightPx, { metresHigh: (ortho.top - ortho.bottom) / ortho.zoom })
+      : distance !== undefined ? devicePxPerMetre(heightPx, { fovDeg: (camera as THREE.PerspectiveCamera).fov, distance }) : NaN;
+    const r = aoRadius(ppm);
+    const u = this.occlusion.gtaoMaterial.uniforms;
+    u.radius.value = r;
+    u.thickness.value = r / AO_RADIUS;
     this.composer.render();
   }
 
