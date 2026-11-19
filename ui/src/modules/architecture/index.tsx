@@ -18,7 +18,7 @@ import { fillFlips, fillGhost, flipFillHand, useFillHand, type PanelLike } from 
 import { activate, useToolTick } from '../../platform/modules';
 import { gateGroup } from './gates/tools';
 import { GateSection } from './gates/GateSection';
-import { CLASS as GATE_CLASS, gateGrips, overallOf } from './gates/gates';
+import { CLASS as GATE_CLASS, TYPE_CLASS as GATE_TYPE, gateGrips, overallOf, useGateTypesDialog } from './gates/gates';
 import { setJoinStyle, setRememberLine, setWallLine, setWallLineOffset, useWallPrefs, wallLineArgs, type WallLine } from './prefs';
 import { LengthField } from '../../shell/cells';
 import { axisFromReference, referenceArc } from '../../viewport/wallReference';
@@ -63,7 +63,7 @@ import { colorLegend, room, roomColors, roomDivider, roomDividerArc, roomDivider
 import { sameKind } from '../../shell/params';
 import { withAutoJoinMenus } from '../core/autoJoin';
 import { arcAlias, chainTool, setChainMode } from '../core/chainTool';
-import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, sunshadeGrips, sunshadeSchedule, sunshadeTypes } from './Sunshades';
+import { SHADE, SHADE_TYPE, editShadeType, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, sunshadeGrips, sunshadeSchedule, sunshadeTypes } from './Sunshades';
 import { lazyPart } from '../../platform/lazyPart';
 import { StairRailingPanel, railingPick } from './StairRailingPanel';
 import './joineryBoard';
@@ -792,6 +792,8 @@ const architecture: LapinModule = {
     },
     [BALCONY]: (n) => { useUi.setState({ balconyStyle: styleOf(n) || null }); activate(n.props.kind === 'mezzanine' ? galleryEdge : n.props.contour ? balconyOutline : balcony); },
   },
+  // Edit type… (decision 726) on a sunshade or a gate: its own dialog on its type (the others: their placing tool's dialog).
+  editType: { [SHADE_TYPE]: (id) => editShadeType(id), [GATE_TYPE]: (id) => { useGateTypesDialog.setState({ typeId: id }); useUi.setState({ dialog: 'gateTypes' }); } },
   setType: {
     IfcWall: (ids, typeId) => execute('architecture.setWallType', { ids, typeId }),
     IfcSlab: (ids, typeId) => execute('architecture.setSlabType', { ids, typeId }),

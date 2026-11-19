@@ -23,6 +23,7 @@ import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 import { placeJson, type Place } from './memberPlace';
 import { PlaceFields } from './PlaceFields';
+import { typeToEdit } from '../../shell/typeToEdit';
 
 interface Grid { mode: 'count' | 'spacing' | 'max' | 'offsets'; count?: number; spacing?: number; justify?: 'start' | 'center' | 'end'; offsets?: number[] }
 /** A member's size; `profile`: the library profile whose real outline its body takes (decision 417), with that size. */
@@ -88,7 +89,7 @@ export function CurtainWallDialog() {
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = ofClass(model, 'IfcCurtainWallType');
   const fallback = info?.catalogs['architecture.curtainWallDefault'] as unknown as CurtainSpec | undefined;
-  const [editing, setEditing] = useState<string | null>(useUi.getState().curtainTypeId ?? types[0]?.id ?? null);
+  const [editing, setEditing] = useState<string | null>(typeToEdit('curtainWalls') ?? useUi.getState().curtainTypeId ?? types[0]?.id ?? null);
   const [name, setName] = useState('');
   const [spec, setSpec] = useState<CurtainSpec | null>(null);
   const [size, setSize] = useState({ length: 6, height: 3 });

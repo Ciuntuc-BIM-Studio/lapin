@@ -10,7 +10,8 @@ import { copyable } from '../modules/core/CopyToStoreysDialog';
 import { drawableElement } from '../modules/core/shopDrawing';
 import { editSelectedGroup, groupSelection, removeFromGroup, ungroupSelection } from '../modules/core/groupTools';
 import { GROUP, groupOf, membersOf } from '../platform/groups';
-import { allTools } from '../platform/modules';
+import { allTools, typeEditorOf } from '../platform/modules';
+import { openTypeDialog } from './typeToEdit';
 import { hasModule } from '../platform/brand';
 import { typeOf } from '../engine/model';
 import { hiddenHere, useShownHere } from '../viewport/cad/shown';
@@ -76,7 +77,6 @@ export function similarItems(): MenuItem[] {
   return items;
 }
 
-/** Edit type: the types dialog of the selected element's type (the same one Edit types… opens), the type made the current one. */
 /**
  * "Edit sketch" on a floor, a floor opening or a ceiling (forum topic 97, stage 3): its outline opened as a sketch, when the
  * product has Studio's Edit sketch.
@@ -112,16 +112,23 @@ export function scaleImageItems(): MenuItem[] {
   return allTools().some((t) => t.id === SCALE_IMAGE_TOOL) ? [{ label: 'Scale to a known distance…', onSelect: () => startScaleImage(selected[0]) }] : [];
 }
 
+/**
+ * Edit type: the types dialog of the selected element's type, opened on that type (forum topic 176, decision 726): a module's own
+ * editor for the class (`editType`), else the dialog of the tool placing it (the same one Edit types… opens), the type made the
+ * current one.
+ */
 export function editTypeItems(): MenuItem[] {
   const { selected } = useUi.getState();
   if (selected.length !== 1) return [];
   const state = useSession.getState();
   const type = typeOf({ nodes: state.nodes, relations: state.relations }, selected[0]);
   if (!type) return [];
+  const own = typeEditorOf(type.type);
+  if (own) return [{ label: 'Edit type…', onSelect: () => own(type.id) }];
   const tool = allTools().find((t) => t.typed?.cls === type.type && t.typed.dialog);
   if (!tool?.typed?.dialog) return [];
   const dialog = tool.typed.dialog;
-  return [{ label: 'Edit type…', onSelect: () => { tool.typed!.set(type.id); useUi.setState({ dialog }); } }];
+  return [{ label: 'Edit type…', onSelect: () => { tool.typed!.set(type.id); openTypeDialog(dialog, type.id); } }];
 }
 
 /** Previous selections: the last ten, the newest first, each one a click to select it again. */

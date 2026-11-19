@@ -10,12 +10,12 @@ import { useEffect, useMemo, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { ofClass, relatingOf } from '../../engine/model';
-import { useUi } from '../../app/store';
 import { formatLength, lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { levelText } from './stairPlacement';
 import { UnderStairLinks } from './UnderStairSection';
 import { editStairSketch, sketchStairs } from './stairSketchBoard';
+import { openTypeDialog } from '../../shell/typeToEdit';
 
 export interface StairCheck { key: string; label: string; value: number; min: number | null; max: number | null; ok: boolean }
 export interface StairNumbers {
@@ -78,7 +78,7 @@ export function StairSection({ node }: { node: NodeDto }) {
         <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => set({ typeId: e.target.value })}>
           {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-        <button type="button" className="link small" onClick={() => useUi.setState({ dialog: 'stairTypes' })}>{ramp ? 'Ramp types…' : 'Stair types…'}</button>
+        <button type="button" className="link small" onClick={() => openTypeDialog('stairTypes', type?.id)}>{ramp ? 'Ramp types…' : 'Stair types…'}</button>
       </label>
       {!ramp && sketchStairs() && (
         <div className="row wrap" style={{ gap: 4 }}>

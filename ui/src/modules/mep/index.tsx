@@ -34,7 +34,7 @@ import { ceilingFan, fanDuct, fanRoomCheck, fanSchedule, fanTypes, inlineFan, li
 import { chooseFanType, kindOf as fanKindOf } from './fans/fans';
 import { relatingOf } from '../../engine/model';
 import { FanSection } from './fans/FanSection';
-import { CLASS as FAN_CLASS, fanGrips } from './fans/fans';
+import { CLASS as FAN_CLASS, TYPE_CLASS as FAN_TYPE, fanGrips, useFanTypesDialog } from './fans/fans';
 import { lazyPart } from '../../platform/lazyPart';
 import { cableTray, carrierSchedule, layInCarrier } from './carriers/tools';
 import { useCarrierPrefs } from './carriers/carriers';
@@ -529,6 +529,7 @@ const mep: LapinModule = {
     if (!r) return null;
     return () => { usePlaceRole.setState({ role: r.id }); if (useUi.getState().tool !== place.id) activate(place); };
   },
+  editType: { [FAN_TYPE]: (id) => { useFanTypesDialog.setState({ typeId: id }); useUi.setState({ dialog: 'fanTypes' }); } },
   setType: { [FAN_CLASS]: (ids, typeId) => execute('mep.setFanType', { ids, typeId }) },
   references: { ...byClass(references), [CARRIER_CLASS]: (n: NodeDto): RefLine[] => [{ points: carrierPoints(n), closed: false, kind: 'axis' }] },
 };

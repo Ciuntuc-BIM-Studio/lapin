@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Settings2 } from 'lucide-react';
-import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { ofClass, typeOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
@@ -10,6 +9,7 @@ import { describeType } from './describe';
 import { sameKind } from '../../shell/params';
 import { LengthField } from '../../shell/cells';
 import type { PadLevel } from './padLevel';
+import { openTypeDialog } from '../../shell/typeToEdit';
 
 const TYPE_CLASS: Record<string, string> = { IfcColumn: 'IfcColumnType', IfcBeam: 'IfcBeamType', IfcFooting: 'IfcFootingType' };
 
@@ -28,7 +28,7 @@ export function StructureSection({ node }: { node: NodeDto }) {
           <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('structure.setType', { ids: sameKind(node), typeId: e.target.value })}>
             {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
-          <button type="button" className="icon" title="Structure types…" onClick={() => useUi.setState({ dialog: 'structureTypes' })}><Settings2 size={14} /></button>
+          <button type="button" className="icon" title="Structure types…" onClick={() => openTypeDialog('structureTypes', type?.id)}><Settings2 size={14} /></button>
         </span>
       </label>
       <p className="muted small">{describeType(type)}</p>
