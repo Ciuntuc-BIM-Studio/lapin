@@ -11,7 +11,7 @@
 
 import { create } from 'zustand';
 import type { SnapMode } from '../viewport/cad/snaps';
-import { DIM_REFS, type DimRef } from '../viewport/lineDims';
+import { DIM_REFS, OPENING_DIM_REFS, type DimRef, type OpeningDimRef } from '../viewport/lineDims';
 import { DEFAULT_NAV_STYLE, NAV_STYLE_IDS, type NavStyleId } from './navStyle';
 
 export type ThemeChoice = 'paper' | 'graphite' | 'system';
@@ -60,10 +60,16 @@ export interface Prefs {
   clickOutAccepts: boolean;
   /**
    * Where temporary dimensions in plan measure from and to (decision 733, the old Lapin's "Wall dimension snap"): core faces,
-   * faces (finish), axis / centre, or the reference line (a wall's kept line, else its axis, to the other's near face: as before).
+   * faces (finish), axis / centre, the centre of the core (decision 738), or the reference line (a wall's kept line, else its
+   * axis, to the other's near face: as before).
    * For walls, columns and beams, selected or being drawn; a dimension's dot still cycles that one dimension.
    */
   tempDimRef: DimRef;
+  /**
+   * Where a door's, a window's or an opening's temporary dimensions measure from (decision 738, the Temporary Dimension
+   * Properties' "Doors and windows"): its edges (openings) or its centre (centrelines); a dot still switches one dimension.
+   */
+  tempDimOpeningRef: OpeningDimRef;
 }
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'tangent', 'nearest', 'wallAxis', 'gridAxis'];
@@ -80,6 +86,7 @@ export const DEFAULT_PREFS: Prefs = {
   openingAlong: { from: 'start', point: 'centre' },
   clickOutAccepts: false,
   tempDimRef: 'core',
+  tempDimOpeningRef: 'openings',
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -117,6 +124,7 @@ export function readPrefs(stored: unknown): Prefs {
     constrainWhileDrawing: o.constrainWhileDrawing !== false,
     clickOutAccepts: o.clickOutAccepts === true,
     tempDimRef: pick(o.tempDimRef, DIM_REFS, d.tempDimRef),
+    tempDimOpeningRef: pick(o.tempDimOpeningRef, OPENING_DIM_REFS, d.tempDimOpeningRef),
     openingAlong: {
       from: pick((o.openingAlong as { from?: unknown } | undefined)?.from, ['start', 'face', 'core'] as const, d.openingAlong.from),
       point: pick((o.openingAlong as { point?: unknown } | undefined)?.point, ['start', 'centre', 'end'] as const, d.openingAlong.point),

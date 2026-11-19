@@ -5,26 +5,41 @@
  * line on each side that runs beside it and, when it has free ends, along to the first element its line runs into beyond each.
  * Pure: the walls', columns' and beams' overlays (WallTempDims, ColumnBeamDims) draw and commit what this works out.
  *
- * - Where each end of a dimension stands follows the user's dimension reference (`DimRef`, Preferences → Grid and snaps, the
- *   tools' bars, the dot's menu): core faces (core face to core face), faces (finish), axis (the centre or insertion axis), or
+ * - Where each end of a dimension stands follows the user's dimension reference (`DimRef`, Annotate → Temporary dimensions…,
+ *   Preferences → Grid and snaps, the tools' bars, the dot's menu): core faces (core face to core face), faces (finish), the
+ *   centre of the core (decision 738), axis (the centre or insertion axis), or
  *   reference line (from the host's reference line, a wall's kept line else its axis, to the other's near face: decision 693's
  *   way, the default).
- * - A click on an end's dot cycles that dimension's end only: the other's near face → far face → core faces → axis; the host's
- *   own reference → near face → far face → core faces → axis.
+ * - A click on an end's dot cycles that dimension's end only: the other's near face → far face → core faces → centre of core
+ *   (when off the axis) → axis; the host's own reference → near face → far face → core faces → centre of core → axis.
  * - A value typed moves the host square to its line (across) or its end along it (`commitAcross`, `commitEnd`: the new axis).
  */
 
 import type { Vec2 } from '../platform/module';
 
-/** Where temporary dimensions measure from and to (decision 733). */
-export type DimRef = 'reference' | 'core' | 'faces' | 'axis';
-export const DIM_REFS: readonly DimRef[] = ['core', 'faces', 'axis', 'reference'];
+/**
+ * Where temporary dimensions measure from and to (decision 733; decision 738: Revit's Temporary Dimension Properties): the
+ * centrelines (an element's axis, a column's centre), the faces (finish), the centre of the core (the middle of its core
+ * layers, off the axis when the core is not centred on it), the core's faces (the default), or Lapin's reference line.
+ */
+export type DimRef = 'reference' | 'core' | 'coreCentre' | 'faces' | 'axis';
+/** In Revit's order, Lapin's reference line last. */
+export const DIM_REFS: readonly DimRef[] = ['axis', 'faces', 'coreCentre', 'core', 'reference'];
 export const DIM_REF_LABELS: Record<DimRef, string> = {
-  core: 'Core faces',
-  faces: 'Faces (finish)',
-  axis: 'Axis / centre',
+  axis: 'Centrelines',
+  faces: 'Faces',
+  coreCentre: 'Centre of core',
+  core: 'Faces of core',
   reference: 'Reference line',
 };
+
+/**
+ * Where a door's, a window's or an opening's temporary dimensions measure from (decision 738, Revit's "Doors and Windows"):
+ * its edges (Openings, the default: decision 511's way) or its centre (Centerlines), and so another opening's centre too.
+ */
+export type OpeningDimRef = 'openings' | 'centre';
+export const OPENING_DIM_REFS: readonly OpeningDimRef[] = ['centre', 'openings'];
+export const OPENING_DIM_REF_LABELS: Record<OpeningDimRef, string> = { centre: 'Centrelines', openings: 'Openings' };
 
 export interface Joins { start: string[]; end: string[]; path: string[] }
 
@@ -32,13 +47,15 @@ export interface Joins { start: string[]; end: string[]; path: string[] }
 export interface DimLineInfo {
   id: string; name: string; kind?: string; part?: string; a: Vec2; b: Vec2;
   faces: [number, number]; core?: [number, number]; reference?: number; joins?: Joins;
+  /** The middle of its core, left of its axis (decision 738; the middle of `core`, else of `faces`, when not given). */
+  coreCentre?: number;
 }
 
 /** A grid axis: `id` the grid's id and the axis's tag (`grid#B`). */
 export interface AxisLine { id: string; name: string; a: Vec2; b: Vec2 }
 
 /** The element measured: its axis (or the line being drawn), its reference `ref` metres left of it, its faces, core faces and joins. */
-export interface Host { id?: string; a: Vec2; b: Vec2; ref: number; faces: [number, number]; core?: [number, number]; joins?: Joins }
+export interface Host { id?: string; a: Vec2; b: Vec2; ref: number; faces: [number, number]; core?: [number, number]; joins?: Joins; coreCentre?: number }
 
 /** The user's choices for one dimension: which of the other's places (`opt`), which of the host's own (`own`). */
 export interface DimPick { opt?: number; own?: number }
@@ -70,8 +87,14 @@ export const distinctCore = (faces: [number, number], core?: [number, number]): 
 
 /** A line taken as the host, its reference `ref` metres left of its axis (else the reference line it keeps, else its axis). */
 export const hostOf = (w: DimLineInfo, ref?: number): Host => ({
-  id: w.id, a: w.a, b: w.b, ref: ref ?? w.reference ?? 0, faces: w.faces, core: w.core, joins: w.joins ?? { start: [], end: [], path: [] },
+  id: w.id, a: w.a, b: w.b, ref: ref ?? w.reference ?? 0, faces: w.faces, core: w.core, joins: w.joins ?? { start: [], end: [], path: [] }, coreCentre: w.coreCentre,
 });
+
+/** The middle of a line's core, left of its axis: as the engine gives it, else the middle of its core (or its faces). */
+export const coreCentreOf = (w: { faces: [number, number]; core?: [number, number]; coreCentre?: number }): number =>
+  w.coreCentre ?? ((w.core ?? w.faces)[0] + (w.core ?? w.faces)[1]) / 2;
+/** A centre of core off the axis by more than this (m) is a place of its own; nearer, it is the axis. */
+const OFF_AXIS = 1e-6;
 
 /** The host's frame: its start, direction, left normal and length. */
 export function frameOf(h: Host): { o: Vec2; d: Vec2; n: Vec2; length: number } {
@@ -85,7 +108,7 @@ export const framePoint = (h: Host, t: number, s: number): Vec2 => {
   return { x: f.o.x + f.n.x * t + f.d.x * s, y: f.o.y + f.n.y * t + f.d.y * s };
 };
 
-/** The other's places, ordered from the one nearest `from` outwards: near face, far face, core faces, axis. */
+/** The other's places, ordered from the one nearest `from` outwards: near face, far face, core faces, centre of core, axis. */
 function places(at: (y: number) => number, w: DimLineInfo | null, from: number): { what: string; at: number }[] {
   if (!w) return [{ what: 'axis', at: at(0) }];
   const byNear = (p: number[]) => [...p].sort((x, y) => Math.abs(x - from) - Math.abs(y - from));
@@ -93,6 +116,8 @@ function places(at: (y: number) => number, w: DimLineInfo | null, from: number):
   const out = [{ what: 'near face', at: nf }, { what: 'far face', at: ff }];
   const core = distinctCore(w.faces, w.core);
   if (core) { const [nc, fc] = byNear(core.map(at)); out.push({ what: 'near core face', at: nc }, { what: 'far core face', at: fc }); }
+  const cc = coreCentreOf(w);
+  if (Math.abs(cc) > OFF_AXIS) out.push({ what: 'core centre', at: at(cc) });
   out.push({ what: 'axis', at: at(0) });
   return out;
 }
@@ -104,15 +129,21 @@ function ownPlaces(h: Host, side: 1 | -1): { what: string; at: number }[] {
     { what: 'near face', at: near(h.faces) }, { what: 'far face', at: far(h.faces) }];
   const core = distinctCore(h.faces, h.core);
   if (core) out.push({ what: 'near core face', at: near(core) }, { what: 'far core face', at: far(core) });
+  const cc = coreCentreOf(h);
+  if (Math.abs(cc) > OFF_AXIS && Math.abs(cc - h.ref) > OFF_AXIS) out.push({ what: 'core centre', at: cc });
   if (Math.abs(h.ref) > 1e-9) out.push({ what: 'axis', at: 0 });
   return out;
 }
 
-/** Which of the places the reference chooses: a core face where there is one (else the face), the near face, the axis. */
+/**
+ * Which of the places the reference chooses: a core face where there is one (else the face), the near face, the centre of the
+ * core (else the axis: a core centred on it), the axis.
+ */
 function defaultIndex(opts: { what: string }[], mode: DimRef): number {
   const find = (w: string) => opts.findIndex((o) => o.what === w);
   if (mode === 'reference') return 0; // the host's reference line; the other's near face
-  if (mode === 'axis') { const i = find('axis'); return i >= 0 ? i : 0; }
+  if (mode === 'coreCentre') { const i = find('core centre'); if (i >= 0) return i; }
+  if (mode === 'axis' || mode === 'coreCentre') { const i = find('axis'); return i >= 0 ? i : 0; }
   if (mode === 'core') { const i = find('near core face'); if (i >= 0) return i; }
   const i = find('near face');
   return i >= 0 ? i : 0;
@@ -124,7 +155,7 @@ function defaultIndex(opts: { what: string }[], mode: DimRef): number {
  */
 export function refOfPlace(what: string, ownWhat?: string): DimRef {
   if (what === 'near face' && ownWhat === 'reference') return 'reference';
-  return what === 'axis' ? 'axis' : what.includes('core') ? 'core' : 'faces';
+  return what === 'axis' ? 'axis' : what === 'core centre' ? 'coreCentre' : what.includes('core') ? 'core' : 'faces';
 }
 
 const pickOf = (n: number, i: number) => ((i % n) + n) % n;

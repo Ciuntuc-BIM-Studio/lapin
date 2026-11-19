@@ -80,7 +80,7 @@ if (typeof window !== 'undefined') {
     if (e.key !== 'Tab' || e.ctrlKey || e.metaKey || e.altKey) return;
     const cad = useCad.getState();
     const live = useLive.getState();
-    if (!LINEAR_COMMANDS.has(cad.command ?? '') || !cad.step?.base || useDimTool.getState().orient === null || live.len || live.ang) return;
+    if (!LINEAR_COMMANDS.has(cad.command ?? '') || !cad.step?.base || useDimTool.getState().orient === null || live.len || live.ang || live.rel) return;
     if ((e.target as HTMLElement | null)?.closest?.('input, select, textarea')) return;
     e.preventDefault();
     e.stopPropagation();

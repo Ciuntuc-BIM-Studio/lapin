@@ -12,7 +12,10 @@ namespace Lapin.Drafting;
 /// The dimensions beside the aligned and linear ones (a dimension's
 /// <c>dimKind</c>), each drawn in the view's dimension style:
 /// <list type="bullet">
-/// <item><c>angular</c>: the angle at <c>c</c> between the rays to <c>a</c> and <c>b</c>, its arc through <c>at</c>;</item>
+/// <item><c>angular</c>: the angle at <c>c</c> between the rays to <c>a</c> and <c>b</c>, its arc through <c>at</c>; held on two straight path
+/// elements (<c>holds</c>: each its element and <c>way</c> along its axis from where they meet; decision 738, an angular temporary
+/// dimension's padlock), its vertex where their axes cross and its rays along them, so it follows them, and its value typed turns
+/// the second about the vertex;</item>
 /// <item><c>radial</c> and <c>diameter</c>: a circle's or arc's radius (R) or diameter (Ø), its centre <c>c</c> and a point <c>a</c> on it, the text at <c>at</c>; held on a drafted circle or arc (<c>shape</c>), it follows the shape and drives its radius;</item>
 /// <item><c>arc</c>: an arc's length (⌒), held on a drafted arc (<c>shape</c>) or its centre, radius and angles;</item>
 /// <item><c>slope</c>: the slope of the line from <c>a</c> to <c>b</c>, in % or degrees (<c>format</c>: auto, %, deg, ratio; auto: % under 15 %, degrees above), its arrow pointing down the slope;</item>
@@ -73,6 +76,12 @@ public static class DimensionKinds
         var round = Round(m, dim);
         var orphan = dim.Str("shape") != null && round == null;
         var (cc, a, b) = (P(dim.Attrs["c"]), P(dim.Attrs["a"]), P(dim.Attrs["b"]));
+        var atStored = P(dim.Attrs["at"]);
+        if (kind == "angular" && dim.Attrs["holds"] != null)
+        {
+            if (Held(m, dim) is { } h) (cc, a, b, atStored) = h;
+            else orphan = true;
+        }
         switch (kind)
         {
             case "angular":
@@ -81,7 +90,7 @@ public static class DimensionKinds
                 if (u.Length < 1e-9 || v.Length < 1e-9) return (0, orphan);
                 var ang = Math.Abs(Math.Atan2(Vec2.Cross(u, v), Vec2.Dot(u, v))) * 180 / Math.PI;
                 // The sector the arc's point lies in: the smaller angle, or the reflex one.
-                var at = P(dim.Attrs["at"]) - cc;
+                var at = atStored - cc;
                 if (at.Length > 1e-9 && !Between(u, v, at)) ang = 360 - ang;
                 return (ang, orphan);
             }
@@ -110,6 +119,32 @@ public static class DimensionKinds
             }
         }
         return (0, orphan);
+    }
+
+    /// <summary>
+    /// An angle held on two straight path elements (decision 738): its vertex where their axes (start → end) cross, a point on
+    /// each ray (the element's axis that <c>way</c> from the vertex) and the arc's point on the bisector, <c>r</c> from the vertex;
+    /// null when either element is gone, has no straight axis, or they have turned parallel.
+    /// </summary>
+    public static (Vec2 C, Vec2 A, Vec2 B, Vec2 At)? Held(IModelView m, Entity dim)
+    {
+        if (dim.Attrs["holds"] is not JsonArray { Count: 2 } holds) return null;
+        var rays = new List<(Vec2 O, Vec2 U)>(2);
+        foreach (var n in holds)
+        {
+            if (n is not JsonObject o || (string?)o["element"] is not { } id || m.Get(id) is not { } e || e.Attrs["start"] is not JsonArray || e.Attrs["end"] is not JsonArray) return null;
+            if (PathCurve.Of(e).IsArc) return null;
+            var (s0, s1) = (P(e.Attrs["start"]), P(e.Attrs["end"]));
+            if ((s1 - s0).Length < 1e-9) return null;
+            rays.Add((s0, (s1 - s0).Normalized() * ((Json.Number(o["way"]) ?? 1) < 0 ? -1 : 1)));
+        }
+        var ((o1, u1), (o2, u2)) = (rays[0], rays[1]);
+        var cr = Vec2.Cross(u1, u2);
+        if (Math.Abs(cr) < 1e-6) return null;
+        var c = o1 + u1 * (Vec2.Cross(o2 - o1, u2) / cr);
+        var r = dim.NumOrNull("r") is > 1e-6 and var rr ? rr : Math.Max((P(dim.Attrs["at"]) - P(dim.Attrs["c"])).Length, 0.5);
+        var bis = (u1 + u2).Length > 1e-9 ? (u1 + u2).Normalized() : u1.Perp;
+        return (c, c + u1 * r, c + u2 * r, c + bis * r);
     }
 
     /// <summary>Whether w lies in the smaller sector from u to v.</summary>
@@ -180,6 +215,7 @@ public static class DimensionKinds
             Vec2 Fixed(Vec2 centre, Vec2 ray, double reach, Vec2 gapStart, double from) =>
                 style.ExtFixed is > 0 and var f && reach - f * mm > from + style.ExtGap * mm ? centre + ray * (reach - f * mm) : gapStart;
             var (cc, a, b, at) = (P(dim.Attrs["c"]), P(dim.Attrs["a"]), P(dim.Attrs["b"]), P(dim.Attrs["at"]));
+            if (dim.Str("dimKind") == "angular" && Held(c.Model, dim) is { } held) (cc, a, b, at) = held;
             switch (dim.Str("dimKind"))
             {
                 case "angular":
@@ -323,6 +359,23 @@ public static class DimensionKinds
         {
             case "angular":
                 if (a["c"] is null || a["a"] is null || a["b"] is null) throw new CommandException("An angle needs its vertex and a point on each side.");
+                // Held on two straight path elements (decision 738): each its element and the way along its axis from the vertex.
+                if (a["holds"] is JsonArray held)
+                {
+                    if (held.Count != 2) throw new CommandException("An angle holds on two elements.");
+                    var keep = new JsonArray();
+                    foreach (var n in held)
+                    {
+                        var id = (string?)n?["element"] ?? throw new CommandException("Which element does the angle hold on?");
+                        if (ctx.Model.Get(id) is not { } e || e.Attrs["start"] is not JsonArray || e.Attrs["end"] is not JsonArray)
+                            throw new CommandException("An angle holds on straight elements with an axis (walls, beams).");
+                        keep.Add((JsonNode)new JsonObject { ["element"] = id, ["way"] = (Json.Number(n!["way"]) ?? 1) < 0 ? -1 : 1 });
+                    }
+                    attrs["holds"] = keep;
+                    attrs["r"] = Math.Max((P(a["at"]) - P(a["c"])).Length, 0.05);
+                    var made = new Entity("", IfcClass.Annotation, "", attrs, "DIMENSION");
+                    if (Held(ctx.Model, made) is null) throw new CommandException("The two elements are parallel: there is no angle between them.");
+                }
                 break;
             case "radial" or "diameter" or "arc":
                 if ((string?)a["shape"] is { } sid)
@@ -374,7 +427,8 @@ public static class DimensionKinds
     public static void Drive(ICommandContext ctx, Entity dim, double value)
     {
         var kind = dim.Str("dimKind");
-        if (kind is not ("radial" or "diameter")) throw new CommandException("Only a radius or a diameter held on a drafted circle drives it.");
+        if (kind == "angular" && dim.Attrs["holds"] != null) { DriveAngle(ctx, dim, value); return; }
+        if (kind is not ("radial" or "diameter")) throw new CommandException("Only a radius or a diameter held on a drafted circle, or an angle held on two elements, drives it.");
         if (dim.Str("shape") is not { } id || ctx.Model.Get(id) is not { } d) throw new CommandException("The dimension holds on no drafted circle: there is nothing to change.");
         var r = kind == "diameter" ? value / 2 : value;
         if (r <= 0) throw new CommandException("A radius is above zero.");
@@ -385,5 +439,23 @@ public static class DimensionKinds
             _ => throw new CommandException("The dimension holds on no drafted circle."),
         };
         Drafts.Set(ctx, Drafts.Require(ctx.Model, id), next);
+    }
+
+    /// <summary>
+    /// An angle held on two elements typed (decision 738): the second element turned about the vertex until the angle reads
+    /// <paramref name="value"/> degrees, as element.transform turns it (its joins worked out again); one undo step.
+    /// </summary>
+    static void DriveAngle(ICommandContext ctx, Entity dim, double value)
+    {
+        if (value <= 0 || value >= 180) throw new CommandException("An angle between two elements is above 0° and under 180°.");
+        if (Held(ctx.Model, dim) is not { } held) throw new CommandException("The angle lost one of its elements: there is nothing to turn.");
+        var (c, a, b, _) = held;
+        var (u, v) = ((a - c).Normalized(), (b - c).Normalized());
+        var now = Math.Abs(Math.Atan2(Vec2.Cross(u, v), Vec2.Dot(u, v))) * 180 / Math.PI;
+        var turn = (Vec2.Cross(u, v) >= 0 ? 1 : -1) * (value - now);
+        if (Math.Abs(turn) < 1e-9) return;
+        var id = (string)dim.Attrs["holds"]![1]!["element"]!;
+        var t = ElementTransform.Run(ctx, new JsonObject { ["ids"] = new JsonArray(id), ["op"] = "rotate", ["center"] = J(c), ["angle"] = turn });
+        ElementTransform.JoinWhatMeets(ctx, t);
     }
 }

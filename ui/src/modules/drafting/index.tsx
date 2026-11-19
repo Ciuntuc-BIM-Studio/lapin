@@ -2,6 +2,7 @@
 
 import { promptText } from '../../shell/prompts';
 import { ArrowRightToLine, Crosshair, Egg, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, SlidersHorizontal, SquareDashed, Image as ImageIcon, Ruler, Replace, Shapes, Shapes as SymbolsIcon, FolderPlus, ListOrdered, FileImage } from 'lucide-react';
+import { openTempDimProperties } from '../../viewport/tempDimProps';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import { openPlaceCatalog } from '../../shell/placeCatalogStore';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -981,7 +982,7 @@ const drafting: LapinModule = {
         // One Dimension tool (S9): the kinds are in its bar, the old buttons its aliases (legacyTools); the generated strings stay beside it.
         { label: 'Dimension', tools: [dimension, roomDimensions, exteriorDimensions],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
-          small: [dimensionRulesTool, dimAddTool, dimDelTool] },
+          small: [dimensionRulesTool, dimAddTool, dimDelTool, { id: 'drafting.tempDimensions', label: 'Temporary dimensions…', icon: Ruler, run: openTempDimProperties }] },
         // A drafting table (issue #71): cells, formulas, merges, on a view or a sheet.
         { label: 'Text', small: [textBox, leaderNote, tagOpeningsTool], tools: [text, tagTool, tableTool] },
         { label: 'Datum', small: [gridTool, renumberAxesTool, axisStylesTool, newLevelsTool], tools: [

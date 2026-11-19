@@ -30,6 +30,7 @@ import type { FaceHit, Vec2 } from '../platform/module';
 import { askPlacement, findTool, useToolTick } from '../platform/modules';
 import { gestureKey } from './gestureKeys';
 import { setDrawnPath } from './drawnPath';
+import { previousRef } from './angleDims';
 import { placedAt, reasonLines, requestFor, resetPlacement, setPlacing, usePlacement, verdictFor } from '../platform/placement';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
@@ -430,6 +431,11 @@ export function PlanView() {
     return p.x === a.point.x && p.y === a.point.y ? a : { ...a, point: p, kind: 'free', guides: [], lock: undefined };
   };
 
+  /** The start of the piece a chain tool drew last (its next piece's angle is measured from it); none when the chain starts again. */
+  const chainPrev = useRef<Vec2 | null>(null);
+  useEffect(() => { if (pts.length === 0) chainPrev.current = null; }, [pts.length]);
+  useEffect(() => { chainPrev.current = null; }, [toolId]);
+
   /** The element a pick-then-point gesture took with its first click. */
   const picked = useRef<NodeDto | undefined>(undefined);
   useEffect(() => { picked.current = undefined; }, [toolId]);
@@ -441,7 +447,8 @@ export function PlanView() {
     const inset = drawsThroughInsets(tool.id) ? insetUnder(drawing?.marks, points) : null;
     if (inset) await completeTool(tool, { points: points.map(inset.map), entity, typed, ...(rot ? { rotation: rot } : {}) }, inset.source);
     else await completeTool(tool, { points, entity, face, typed, ...(rot ? { rotation: rot } : {}), ...(arcs?.some((r) => Math.abs(r) > 1e-6) ? { arcs } : {}), ...(ellipses?.some(Boolean) ? { ellipses } : {}) });
-    if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) setPts([points[points.length - 1]]);
+    // A chain goes on from the last point: the piece just drawn is what the next one's angle is measured from (decision 738).
+    if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) { chainPrev.current = points.length >= 2 ? points[points.length - 2] : null; setPts([points[points.length - 1]]); }
     else setPts([]);
   }, [tool, drawing, rot]);
 
@@ -559,7 +566,7 @@ export function PlanView() {
       const act = gestureKey(e.key, tool?.gesture, pts.length, !!picked.current);
       if (act === 'completePick') {
         const l = useLive.getState();
-        if (l.owner === 'tool' && (l.len || l.ang)) return;
+        if (l.owner === 'tool' && (l.len || l.ang || l.rel)) return;
         void complete([pts[0]], picked.current!);
         return;
       }
@@ -586,9 +593,13 @@ export function PlanView() {
     const k = tool?.gesture?.kind;
     const base = last ?? refPt;
     if (base && (k === 'point' || k === 'twoPoints' || k === 'polyline' || k === 'polygon' || k === 'rectangle' || k === 'threePoints' || k === 'pickThenPoint')) {
+      // The angle to the piece before (decision 738): a polyline's previous point, a chain tool's last piece's start.
+      const prev = !last ? null : k === 'polyline' || k === 'polygon' ? pts[pts.length - 2] : k === 'twoPoints' ? chainPrev.current : null;
+      const ref = previousRef(last ?? base, prev);
       liveBegin('tool', base, (p, typed) => { if (!last && refPt) setRefPt(null); clickRef.current(p, p, false, typed); },
         k === 'rectangle' && last ? { rect: tool?.id ?? 'rectangle' } : !last && refPt ? { rect: `ref:${tool?.id ?? 'point'}`, delta: true }
-          : last && tool?.gesture?.kind === 'twoPoints' && tool.gesture.measure ? { measure: true } : {});
+          : last && tool?.gesture?.kind === 'twoPoints' && tool.gesture.measure ? { measure: true }
+          : last && (k === 'twoPoints' || k === 'polyline' || k === 'polygon') ? { angles: true, ...(ref ? { ref } : {}) } : {});
     } else liveEnd('tool');
   }, [last, refPt, tool]);
   useEffect(() => () => liveEnd('tool'), []);
@@ -872,7 +883,7 @@ export function PlanView() {
 
   const preview = (() => {
     if (!tool?.gesture || !hover) return null;
-    const cur = (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point;
+    const cur = (live.owner === 'tool' && (live.len || live.ang || live.rel) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point;
     if (pts.length === 0 && refPt) {
       const a = toScreen(refPt), b = toScreen(cur);
       return (
@@ -1022,7 +1033,7 @@ export function PlanView() {
   // A point tool's (a column's: decision 733) is the point the cursor would place, `a` and `b` both.
   const pointTool = tool?.gesture?.kind === 'point';
   const drawnTo = (tool?.gesture?.kind === 'twoPoints' && pts.length === 1) || (pointTool && pts.length === 0) ? hover
-    ? (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point : null : null;
+    ? (live.owner === 'tool' && (live.len || live.ang || live.rel) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point : null : null;
   useEffect(() => {
     setDrawnPath(drawnTo && tool ? { tool: tool.id, storeyId: storey?.id ?? null, a: pointTool ? drawnTo : pts[0], b: drawnTo } : null);
   }, [tool, pts, drawnTo?.x, drawnTo?.y, storey?.id]); // eslint-disable-line react-hooks/exhaustive-deps

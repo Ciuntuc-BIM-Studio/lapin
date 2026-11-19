@@ -22,6 +22,7 @@ import { arcThrough, arcTangent, bounds, dist, ellipseAt, ellipseOf, ellipsePoin
 import { mapShape } from '../insetMap';
 import { SNAP_CODES, type SnapOverride } from './snaps';
 import { liveBegin, liveEnd } from '../liveInput';
+import { previousRef } from '../angleDims';
 import { traceBegin, traceEnd } from '../moveTrace';
 import { lassoTest, type RegionTest } from '../selectBox';
 import { pt, xy } from '../../platform/vec';
@@ -93,6 +94,10 @@ export interface Step {
   escape?: () => void | Promise<void>;
   /** An element clicked in the 3D view (where a click has no point on a drawing): the step takes it, rather than the selection. */
   element?: (id: string) => Next;
+  /** The previous point of the line or polyline being drawn (decision 738): the live box measures the angle to that segment too. */
+  angleFrom?: Vec2;
+  /** A line's or polyline's segment (decision 738): its angle at its start is drawn (to `angleFrom`, the element it starts on, or X). */
+  angles?: boolean;
   /** The step is a rectangle's other corner: the box at the cursor offers width and height as well as length and angle (the mode remembered by this key). */
   rect?: string;
   /** The element under the cursor is lit while the step waits for one (Match properties' targets, decision 490). */
@@ -163,7 +168,10 @@ async function advance(next: Next): Promise<void> {
   if (step) useCad.setState({ step });
   else useCad.setState({ step: null, command: null });
   // A point asked for from a base: its length and angle can be typed at the cursor.
-  if (step && step.want === 'point' && step.base) liveBegin('cad', step.base, (p, typed, angle) => void feedPoint(p, { length: typed, angle }), { delta: !!step.trace, ...(step.rect ? { rect: step.rect } : {}) });
+  if (step && step.want === 'point' && step.base) {
+    const ref = step.trace || step.rect ? null : previousRef(step.base, step.angleFrom);
+    liveBegin('cad', step.base, (p, typed, angle) => void feedPoint(p, { length: typed, angle }), { delta: !!step.trace, ...(step.rect ? { rect: step.rect } : {}), ...(ref ? { ref } : {}), ...(step.angles ? { angles: true } : {}) });
+  }
   else liveEnd('cad');
   if (step?.trace && step.base) traceBegin('cad', step.base, step.trace);
   else traceEnd('cad');
@@ -296,6 +304,7 @@ function line(): Step {
   const pts: Vec2[] = [];
   const from = (a: Vec2): Step => ({
     prompt: pts.length >= 2 ? 'Next point [Close/Undo]' : 'Next point [Undo]', want: 'point', base: a,
+    angles: true, ...(pts.length >= 2 ? { angleFrom: pts[pts.length - 2] } : {}),
     preview: (c) => [{ type: 'line', a, b: c }],
     // A segment refused (a locked layer, no view) is not one: the line goes on from where it was, and U never undoes an edit of before.
     point: async (b) => { if (!(await draw([{ type: 'line', a, b }])).length) return from(a); pts.push(b); return from(b); },
@@ -313,6 +322,7 @@ function pline(): Step {
   const finish = async (closed: boolean) => { if (pts.length >= (closed ? 3 : 2)) await draw([{ type: 'polyline', pts: [...pts], closed }]); return null; };
   const next = (): Step => ({
     prompt: 'Next point [Close/Undo], Enter to finish', want: 'point', base: pts[pts.length - 1],
+    angles: true, ...(pts.length >= 2 ? { angleFrom: pts[pts.length - 2] } : {}),
     preview: (c) => [{ type: 'polyline', pts: [...pts, c], closed: false }],
     point: (p) => { pts.push(p); return next(); },
     keywords: { C: () => finish(true), U: () => { pts.pop(); return pts.length ? next() : pline(); } },

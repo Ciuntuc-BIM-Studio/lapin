@@ -48,7 +48,7 @@ export function applyClickOut(action: ClickOutAction): boolean {
       const hadBuffer = !!useCad.getState().buffer;
       if (hadBuffer) useCad.setState({ buffer: '' });
       const l = useLive.getState();
-      if (l.len || l.ang) useLive.setState({ len: '', ang: '' });
+      if (l.len || l.ang || l.rel) useLive.setState({ len: '', ang: '', rel: '' });
       return true;
     }
     default: return false;
@@ -61,7 +61,7 @@ export function installClickOut(): () => void {
   const onDown = (e: PointerEvent) => {
     const l = useLive.getState();
     const action = clickOutAction(e.button, e.target as Element | null, {
-      enabled: usePrefs.getState().clickOutAccepts, buffer: useCad.getState().buffer, liveTyped: !!(l.owner && (l.len || l.ang)), dialog: !!useUi.getState().dialog,
+      enabled: usePrefs.getState().clickOutAccepts, buffer: useCad.getState().buffer, liveTyped: !!(l.owner && (l.len || l.ang || l.rel)), dialog: !!useUi.getState().dialog,
     });
     if (!action || !applyClickOut(action)) return;
     e.stopPropagation();

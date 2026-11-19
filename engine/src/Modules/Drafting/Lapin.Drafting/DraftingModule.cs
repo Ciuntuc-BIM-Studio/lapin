@@ -524,7 +524,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             if (DimensionKinds.IsKind(dim))
             {
                 var (v, lost) = DimensionKinds.Measure(null, q.Model, dim);
-                return new JsonObject { ["value"] = double.IsInfinity(v) ? null : v, ["orphan"] = lost, ["driving"] = dim.Str("dimKind") is "radial" or "diameter" && dim.Str("shape") != null, ["kind"] = dim.Str("dimKind") };
+                return new JsonObject { ["value"] = double.IsInfinity(v) ? null : v, ["orphan"] = lost, ["driving"] = (dim.Str("dimKind") is "radial" or "diameter" && dim.Str("shape") != null) || (dim.Str("dimKind") == "angular" && dim.Attrs["holds"] != null), ["kind"] = dim.Str("dimKind") };
             }
             var (drawing, spec, _) = Views.Generate(q, view);
             if (drawing == null || spec == null) return null;

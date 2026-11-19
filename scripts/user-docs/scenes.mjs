@@ -708,7 +708,7 @@ export const scenes = [
       // A right click on the dot: make the reference that dimension shows the default, or choose another.
       await dims.locator('[data-dim="x:left"] [data-end=ref]').click({ button: 'right' });
       await t.wait(300);
-      t.expect(await t.page.getByRole('menuitem').count() === 5, 'the dot\'s menu: make this the default, and the four references');
+      t.expect(await t.page.getByRole('menuitem').count() === 7, 'the dot\'s menu: make this the default, the five references, and the Temporary dimension properties');
       await t.page.keyboard.press('Escape');
       await t.ui({ selection: null, selected: [] });
       // Drawing a third wall between them, on its core centre: from its core face toward each neighbour.
@@ -733,6 +733,112 @@ export const scenes = [
       await t.keys('Escape', 'Escape');
       await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'core' }));
       void north;
+    },
+  },
+  {
+    // Decision 738 (a user: "select and remember the preference as we have in the Revit workflow"): Revit's Temporary Dimension
+    // Properties, opened from a dimension dot's right click (and Annotate or Manage → Temporary dimensions…); OK keeps the choice,
+    // Cancel leaves it; doors and windows measured from their centres with Centrelines.
+    id: 'temp-dim-properties',
+    touches: ['architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const prefs = async () => t.page.evaluate(async () => { const p = (await import('/src/app/prefs.ts')).usePrefs.getState(); return { walls: p.tempDimRef, openings: p.tempDimOpeningRef }; });
+      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'core', tempDimOpeningRef: 'openings' }));
+      const layered = (await t.cmd('architecture.createWallType', { name: 'Plastered brick 375', layers: [
+        { material: 'Plaster', thickness: 0.02 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Insulation', thickness: 0.1 }] })).id;
+      const storeyId = await t.storey();
+      const add = async (x1, y1, x2, y2) => (await t.cmd('architecture.addWall', { storeyId, x1, y1, x2, y2, typeId: layered })).id;
+      const south = await add(0, 0, 8, 0);
+      await add(8, 5, 0, 5);
+      await add(5, 0, 5, 5);
+      const w1 = (await t.cmd('architecture.addWindow', { wallId: south, x: 1.5, y: 0 })).id;
+      await t.cmd('architecture.addWindow', { wallId: south, x: 3.5, y: 0 });
+      await t.ui({ keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -1.5, y: -1.5 }, { x: 9.5, y: 6.5 }));
+      await t.wait(800);
+      await t.ui({ selection: south, selected: [south] });
+      await t.wait(900);
+      // A right click on a dot, then the last entry: the dialog.
+      await t.page.locator('[data-testid=wall-dims] [data-dim="x:left"] [data-end=ref]').click({ button: 'right' });
+      await t.wait(300);
+      await t.page.getByRole('menuitem').last().click();
+      await t.page.waitForSelector('[data-testid=temp-dim-dialog]', { timeout: 10_000 });
+      t.expect(await t.page.locator('[data-testid=temp-dim-dialog] [data-field=temp-dim-walls-core]').isChecked(), 'Faces of core, the default, is chosen');
+      t.expect(await t.page.locator('[data-testid=temp-dim-dialog] input[type=radio]').count() === 7, 'five choices for walls, two for doors and windows');
+      await t.shot('temp-dim-properties', { of: '[data-testid=temp-dim-dialog]', pad: 0 });
+      // Cancel leaves the choice as it was.
+      await t.page.locator('[data-field=temp-dim-walls-axis]').check();
+      await t.page.locator('[data-testid=temp-dim-cancel]').click();
+      t.expect((await prefs()).walls === 'core', 'Cancel keeps Faces of core');
+      // Doors and windows from their centrelines, kept with OK.
+      await t.ui({ dialog: 'tempDimProperties' });
+      await t.page.waitForSelector('[data-testid=temp-dim-dialog]', { timeout: 10_000 });
+      await t.page.locator('[data-field=temp-dim-openings-centre]').check();
+      await t.page.locator('[data-testid=temp-dim-ok]').click();
+      await t.wait(300);
+      t.expect((await prefs()).openings === 'centre', 'OK keeps Centrelines for doors and windows');
+      await t.ui({ selection: w1, selected: [w1] });
+      await t.wait(900);
+      const dim = t.page.locator('[data-testid=temp-dims] [data-dim="1:1"]');
+      t.expect(await dim.getAttribute('data-own') === 'centre' && await dim.getAttribute('data-what') === 'centre', 'the window measured centre to centre to the next one');
+      t.expect(Math.abs(Number(await dim.getAttribute('data-value')) - 2) < 1e-6, `2000 between the windows' centres (${await dim.getAttribute('data-value')})`);
+      await t.ui({ selection: null, selected: [] });
+      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'core', tempDimOpeningRef: 'openings' }));
+    },
+  },
+  {
+    // Decision 738 (users: "angular temporary dimensions we can fix"): a wall meeting another at 60° shows the angle at the corner;
+    // 90 typed turns it about the corner; the padlock makes a permanent angle held on both walls; while a chain of walls is drawn,
+    // the angle to the previous piece.
+    id: 'wall-temp-dim-angle',
+    touches: ['architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const brick = (await t.cmd('architecture.createWallType', { name: 'Brick 300', layers: [{ material: 'Brick', thickness: 0.3, core: true }] })).id;
+      const storeyId = await t.storey();
+      const add = async (x1, y1, x2, y2) => (await t.cmd('architecture.addWall', { storeyId, x1, y1, x2, y2, typeId: brick })).id;
+      await add(0, 0, 6, 0);
+      const turned = await add(0, 0, 4 * Math.cos(Math.PI / 3), 4 * Math.sin(Math.PI / 3));
+      await t.ui({ keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -1.5, y: -1.5 }, { x: 7, y: 5 }));
+      await t.wait(800);
+      await t.ui({ selection: turned, selected: [turned] });
+      await t.wait(900);
+      const angle = t.page.locator('[data-testid=angle-dims] [data-dim="angle:start"]');
+      t.expect(await angle.count() === 1, 'the selected wall shows its angle at the corner');
+      t.expect(Math.abs(Number(await angle.getAttribute('data-value')) - 60) < 1e-6, `60° to the other wall (${await angle.getAttribute('data-value')})`);
+      const [x0, y0] = await t.planPoint(-1.5, 5);
+      const [x1, y1] = await t.planPoint(7, -1.5);
+      await t.shot('wall-temp-dim-angle', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      await angle.locator('[data-value-hit]').click();
+      await t.page.locator('[data-field=temp-dim]').fill('90');
+      await t.page.locator('[data-field=temp-dim]').press('Enter');
+      await t.wait(900);
+      const w = (await t.nodes()).find((n) => n.id === turned);
+      t.expect(Math.abs(w.props.end[0] - w.props.start[0]) < 1e-6, `90 typed: the wall square to the other, turned about the corner (${JSON.stringify(w.props.end)})`);
+      // The padlock: a permanent angle of the plan, held on both walls.
+      await t.page.locator('[data-testid=angle-dims] [data-dim="angle:start"] [data-lock]').click();
+      await t.wait(700);
+      const kept = (await t.nodes()).find((n) => n.props.dimKind === 'angular');
+      t.expect(!!kept && Array.isArray(kept.props.holds) && kept.props.holds.length === 2, 'a permanent angular dimension held on the two walls');
+      await t.ui({ selection: null, selected: [] });
+      // Drawing a chain of walls: the second piece's angle to the first, 90° square.
+      await t.keys('w', 'a');
+      await t.wait(300);
+      for (const [x, y] of [[2, 3], [5, 3]]) {
+        const [px, py] = await t.planPoint(x, y);
+        await t.page.mouse.move(px, py, { steps: 4 });
+        await t.page.mouse.click(px, py);
+        await t.wait(300);
+      }
+      const [qx, qy] = await t.planPoint(5, 4.5);
+      await t.page.mouse.move(qx, qy, { steps: 8 });
+      await t.wait(600);
+      const drawn = t.page.locator('[data-testid=angle-dims-drawn]');
+      t.expect(await drawn.getAttribute('data-ref') === 'previous', 'measured from the piece drawn before');
+      t.expect(Math.abs(Number(await drawn.locator('[data-dim]').getAttribute('data-value')) - 90) < 0.5, `90° to it (${await drawn.locator('[data-dim]').getAttribute('data-value')})`);
+      await t.keys('Escape', 'Escape');
     },
   },
   {
@@ -5433,7 +5539,8 @@ export const scenes = [
       // Forum topic 151: Tangent and Wall axis among the object snaps, both on.
       t.expect(await t.page.locator('[data-field=prefs-snap-tangent]').isChecked() && await t.page.locator('[data-field=prefs-snap-wallAxis]').isChecked(), 'Tangent and Wall axis are listed, and on');
       // Decision 733: where temporary dimensions measure from (core faces, faces, axis, reference line).
-      t.expect(await t.page.locator('[data-testid=prefs-temp-dim-ref] input[type=radio]').count() === 4, 'the temporary dimensions\' reference, four choices');
+      // Decision 738: the same as Annotate → Temporary dimensions…: five for walls, two for doors and windows.
+      t.expect(await t.page.locator('[data-testid=prefs-temp-dim-ref] input[type=radio]').count() === 7, 'the temporary dimensions\' references, five for walls and two for doors and windows');
       await t.shot('preferences', { of: '.prefs-dialog', pad: 0 });
       await t.page.getByRole('radio').nth(0).check();
       await t.ui({ dialog: null });

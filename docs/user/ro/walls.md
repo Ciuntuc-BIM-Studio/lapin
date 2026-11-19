@@ -95,20 +95,35 @@ Cât desenezi un perete, după primul clic, aceleași cote apar, doar de citit, 
 
 #### Referința cotelor: de la fața miezului la fața miezului
 
-De unde și până unde stau capetele cotelor temporare e o setare a ta, păstrată pe acest calculator pentru toate proiectele: **Fișier → Preferințe… → Grilă și snap → Cote temporare**, lista **Cote temporare** din bara uneltelor Perete, Stâlp și Grindă, sau un clic dreapta pe punctul unei cote. Se aplică pereților, [stâlpilor și grinzilor](structure.md#cote-temporare), selectați sau în desenare:
+De unde și până unde stau capetele cotelor temporare e o setare a ta, păstrată pe acest calculator pentru toate proiectele, ca în **Temporary Dimension Properties** din Revit: **Adnotări → Cote temporare…** (și la **Gestionare**), sau un clic dreapta pe punctul unei cote → **Proprietățile cotelor temporare…**. Fereastra are două grupuri; alege și dă clic pe **OK** (**Renunță** le lasă cum erau). Aceleași alegeri sunt și la **Fișier → Preferințe… → Grilă și snap → Cote temporare**, iar cea a pereților și în lista **Cote temporare** din bara uneltelor Perete, Stâlp și Grindă; toate merg împreună.
 
+**Pereți** (și [stâlpi și grinzi](structure.md#cote-temporare)), selectați sau în desenare:
+
+- **Axe**: de la axă la axă (centrul unui stâlp).
+- **Fețe**: de la fața finisată la fața finisată.
+- **Centrul miezului**: de la mijlocul straturilor miezului la al celuilalt. La un perete desenat în Lapin e chiar axa (axa lui stă pe miez) și diferă de ea când miezul nu e centrat pe axă, ca la unii pereți importați.
 - **Fețele miezului** (implicit): de la fața miezului peretelui dinspre celălalt perete la fața miezului celuilalt dinspre el, fără tencuială și izolație de nicio parte. Un perete al cărui singur strat e miezul se măsoară de la fețele lui.
-- **Fețe (finisaj)**: de la fața finisată la fața finisată.
-- **Axă / centru**: de la axă la axă (centrul unui stâlp).
-- **Linia de referință** (cum era înainte): de la linia de referință a peretelui, sau de la axa lui, la fața apropiată a celuilalt.
+- **Linia de referință** (a Lapin, sub cele patru din Revit, cum măsura Lapin la început): de la linia de referință a peretelui, sau de la axa lui, la fața apropiată a celuilalt.
 
-Cât desenezi, linia pe care dai clic se măsoară după aceeași alegere: cu **Fețele miezului** cota pornește de la fața miezului peretelui nou dinspre vecin, calculată din tipul ales și din linia pe care e desenat (lista din bară, <kbd>Space</kbd>), ca să desenezi un perete la o distanță liberă de zidărie față de următorul. Clicul pe un punct schimbă tot doar acea cotă. Un clic dreapta pe un punct deschide **Fă-o implicită** (referința pe care o arată acum cota acelui punct) și cele patru alegeri.
+**Uși și ferestre** ([cotele lor temporare](doors-windows.md#cote-temporare)): **Axe** măsoară de la mijlocul golului (la mijlocul altui gol), **Goluri** (implicit) de la muchiile lui. Cotele lor până la un perete se opresc la fața, la fața miezului, la centrul miezului sau la axa peretelui, cum spune alegerea pentru pereți.
+
+![Fereastra Proprietățile cotelor temporare](shots/temp-dim-properties.webp)
+
+Cât desenezi, linia pe care dai clic se măsoară după aceeași alegere: cu **Fețele miezului** cota pornește de la fața miezului peretelui nou dinspre vecin, calculată din tipul ales și din linia pe care e desenat (lista din bară, <kbd>Space</kbd>), ca să desenezi un perete la o distanță liberă de zidărie față de următorul. Clicul pe un punct schimbă tot doar acea cotă. Un clic dreapta pe un punct deschide **Fă-o implicită** (referința pe care o arată acum cota acelui punct), cele cinci alegeri și **Proprietățile cotelor temporare…**.
 
 ![De la fața miezului la fața miezului cât se desenează un perete](shots/wall-temp-dims-core.webp)
 
 Pereții curbi nu au cote temporare, iar pereții nu se măsoară la pereți curbi.
 
 ![Cotele temporare ale unui perete: de-a curmezișul la pereții de o parte și de alta, în lung la peretele spre care merge capătul](shots/wall-temp-dimensions.webp)
+
+#### Cote temporare unghiulare
+
+Un perete drept selectat care întâlnește alt perete (sau o grindă) neparalel cu el, îmbinat la capătul lui sau cu capătul pe el, arată **unghiul** dintre ei în punctul în care li se încrucișează axele: cel mai mic dintre cele două unghiuri, în grade, cu arcul lui. Dă clic pe valoare, scrie un unghi (merg și sume ca `45+15`) și apasă <kbd>Enter</kbd>: peretele selectat se rotește în jurul acelui punct până când unghiul arată ce ai scris, cu îmbinările păstrate. E un singur pas de anulare. Lacătul face din el o **cotă unghiulară permanentă** a planului, legată de ambii pereți: îi urmează când oricare e mutat sau rotit, iar o valoare scrisă în ea (dublu clic pe ea) rotește din nou peretele selectat. Nu blochează unghiul: rotirea ulterioară a oricăruia dintre pereți schimbă ce arată.
+
+Cât desenezi un perete, o grindă, o linie sau o polilinie, se arată și unghiul de la începutul segmentului: față de segmentul anterior (unghiul din interiorul colțului: 90° în echer, 180° drept înainte), altfel față de peretele sau grinda pe care începe segmentul, altfel față de axa X (cum arată câmpul **∠**). Căsuța de lângă cursor îl are ca al treilea câmp, **∡**: apasă <kbd>Tab</kbd> până se aprinde, scrie unghiul și segmentul ia acea direcție, de partea referinței în care e cursorul; scrie și o lungime, sau dă clic, ca să pui punctul.
+
+![O cotă temporară unghiulară la colțul a doi pereți](shots/wall-temp-dim-angle.webp)
 
 ### Racordarea sau teșirea unui colț
 

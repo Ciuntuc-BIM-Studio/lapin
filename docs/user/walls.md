@@ -97,20 +97,35 @@ While you draw a wall, after its first click, the same dimensions show, read onl
 
 #### Dimension reference: core face to core face
 
-Where the ends of temporary dimensions stand is a setting of yours, kept on this computer for every project: **File → Preferences… → Grid and snaps → Temporary dimensions**, the **Temporary dimensions** list in the Wall, Column and Beam tools' bars, or a right click on a dimension's dot. It applies to walls, [columns and beams](structure.md#temporary-dimensions), selected or being drawn:
+Where the ends of temporary dimensions stand is a setting of yours, kept on this computer for every project, as in Revit's **Temporary Dimension Properties**: **Annotate → Temporary dimensions…** (also under **Manage**), or a right click on a dimension's dot → **Temporary dimension properties…**. The dialog has two groups; choose and click **OK** (**Cancel** leaves them as they were). The same choices are on **File → Preferences… → Grid and snaps → Temporary dimensions**, and the walls' one in the **Temporary dimensions** list of the Wall, Column and Beam tools' bars; all of them stay in step.
 
-- **Core faces** (the default): from the wall's core face nearest the other wall to the other's core face nearest it, the plaster and insulation left out on both sides. A wall whose only layer is its core measures from its faces.
-- **Faces (finish)**: finish face to finish face.
-- **Axis / centre**: axis to axis (a column's centre).
-- **Reference line** (as Lapin measured before): from the wall's reference line, or its axis, to the other's near face.
+**Walls** (and [columns and beams](structure.md#temporary-dimensions)), selected or being drawn:
 
-While you draw, the line you click is measured by the same choice: with **Core faces** the dimension starts at the new wall's core face toward its neighbour, worked out from the type chosen and the line it is drawn on (the bar's list, <kbd>Space</kbd>), so you can draw a wall at a clear distance of brickwork from the next one. Clicking a dot still changes that one dimension only. A right click on a dot opens **Make this the default** (the reference that dot's dimension shows now) and the four choices.
+- **Centrelines**: axis to axis (a column's centre).
+- **Faces**: finish face to finish face.
+- **Centre of core**: the middle of the core's layers to the other's. It is the axis for a wall Lapin draws (its axis stands on its core), and differs from it when the core is not centred on the axis, as in some imported walls.
+- **Faces of core** (the default): from the wall's core face nearest the other wall to the other's core face nearest it, the plaster and insulation left out on both sides. A wall whose only layer is its core measures from its faces.
+- **Reference line** (Lapin's own, below Revit's four, as Lapin measured first): from the wall's reference line, or its axis, to the other's near face.
+
+**Doors and windows** ([their temporary dimensions](doors-windows.md#temporary-dimensions)): **Centrelines** measures from the opening's centre (to another opening's centre), **Openings** (the default) from its edges. Their dimensions to a wall end on the wall's face, core face, centre of core or axis as the walls' choice says.
+
+![The Temporary dimension properties dialog](shots/temp-dim-properties.webp)
+
+While you draw, the line you click is measured by the same choice: with **Faces of core** the dimension starts at the new wall's core face toward its neighbour, worked out from the type chosen and the line it is drawn on (the bar's list, <kbd>Space</kbd>), so you can draw a wall at a clear distance of brickwork from the next one. Clicking a dot still changes that one dimension only. A right click on a dot opens **Make this the default** (the reference that dot's dimension shows now), the five choices and **Temporary dimension properties…**.
 
 ![Core face to core face while a wall is drawn](shots/wall-temp-dims-core.webp)
 
 Curved walls have no temporary dimensions, and walls are not measured to curved walls.
 
 ![A wall's temporary dimensions: across to the walls either side, along to the wall its end runs toward](shots/wall-temp-dimensions.webp)
+
+#### Angular temporary dimensions
+
+A selected straight wall that meets another wall (or a beam) that is not parallel to it, joined at its end or with its end on it, shows the **angle** between them at the point where their axes cross: the smaller of the two angles, in degrees, with its arc. Click the value, type an angle (sums such as `45+15` work) and press <kbd>Enter</kbd>: the selected wall turns about that point until the angle reads what you typed, its joins kept. It is one step to undo. The padlock makes it a **permanent angular dimension** of the plan, held on both walls: it follows them when either is moved or turned, and a value typed into it (double-click it) turns the selected wall again. It does not lock the angle: turning either wall later changes what it reads.
+
+While you draw a wall, a beam, a line or a polyline, the angle at the start of the segment shows too: to the previous segment (the angle inside the corner: 90° square, 180° straight on), else to the wall or beam the segment starts on, else from the X axis (as the **∠** field reads it). The box at the cursor has it as a third field, **∡**: press <kbd>Tab</kbd> until it is lit, type the angle and the segment takes that direction, on the side of the reference the cursor is; type a length too, or click, to place the point.
+
+![An angular temporary dimension at the corner of two walls](shots/wall-temp-dim-angle.webp)
 
 ### Rounding or cutting a corner
 

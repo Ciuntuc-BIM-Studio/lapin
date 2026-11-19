@@ -164,3 +164,36 @@ describe("a door's or window's temporary dimensions", () => {
     expect(verticalDims(refs())).toEqual([]);
   });
 });
+
+describe("a door's or window's temporary dimensions by the Temporary Dimension Properties (decision 738)", () => {
+  // The host 6 m long, a layered T at 4.5 on its left whose core (4.35 … 4.6) is off its axis (4.5): its core centre 4.475.
+  const layered = (): OpeningRefs => refs({
+    walls: [{ id: 'lt', name: 'Layered', sides: ['left'], left: { faces: [4.32, 4.68], core: [4.35, 4.6], axis: 4.5 }, right: { faces: [4.32, 4.68], core: [4.35, 4.6], axis: 4.5 } }],
+    openings: [{ id: 'd', name: 'D1', along: 3.2, width: 0.9 }],
+  });
+
+  it('Centrelines: from the opening\'s centre to the other opening\'s centre', () => {
+    const d = tempDims(layered(), 'left', 1.5, 1.2, {}, { opening: 'centre' }).find((x) => x.target.kind === 'opening')!;
+    expect(d.own).toBe('centre');
+    expect(d.target.options[d.opt].what).toBe('centre');
+    expect(d.value).toBeCloseTo(1.7, 9);
+  });
+
+  it('Openings (the default): from its edge to the other\'s near edge, as before', () => {
+    const d = tempDims(layered(), 'left', 1.5, 1.2).find((x) => x.target.kind === 'opening')!;
+    expect(d.own).toBe('edge');
+    expect(d.value).toBeCloseTo(3.2 - 0.45 - 2.1, 9);
+  });
+
+  it('to a wall by the walls\' reference: its core face, the centre of its core, its axis', () => {
+    const at = (walls: 'core' | 'coreCentre' | 'axis' | 'faces') => {
+      const d = tempDims(layered(), 'left', 3, 1.2, {}, { walls }).find((x) => x.target.kind === 'wall')!;
+      return d.target.options[d.opt];
+    };
+    expect(at('faces')).toMatchObject({ what: 'nearFace', s: 4.32 });
+    expect(at('core')).toMatchObject({ what: 'nearCore', s: 4.35 });
+    expect(at('coreCentre').what).toBe('coreCentre');
+    expect(at('coreCentre').s).toBeCloseTo(4.475, 9);
+    expect(at('axis')).toMatchObject({ what: 'axis', s: 4.5 });
+  });
+});

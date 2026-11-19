@@ -6,6 +6,7 @@ import { execute, query, useSession } from '../engine/session';
 import { formatLength, parseLength, unitName } from '../engine/unitsStore';
 import { openTableEditor } from '../modules/drafting/table/tableStore';
 import { askText } from '../shell/AskBox';
+import { formatAngle, parseAngle } from './liveInput';
 
 export interface DimensionInfo {
   value: number | null;
@@ -39,6 +40,13 @@ export async function editDimension(id: string, at?: Vec2): Promise<boolean> {
   if (!d || d.value == null) return true;
   if (d.orphan) { useSession.setState({ error: 'The dimension lost its element: free it in its properties first.' }); return true; }
   if (!d.driving) { useSession.setState({ error: 'Neither end of this segment holds on an element: there is nothing to move.' }); return true; }
+  // An angle held on two elements (decision 738): typed in degrees, the second element turns about where they meet.
+  if (d.kind === 'angular') {
+    const answer = promptText('Angle (°): the element turns to match', formatAngle(d.value));
+    const v = answer == null ? null : parseAngle(answer);
+    if (v != null && v > 0) await execute('drafting.setDimensionValue', { id, value: v });
+    return true;
+  }
   const which = (d.segments ?? 1) > 1 ? ` (segment ${(d.segment ?? 0) + 1} of ${d.segments})` : '';
   const answer = promptText('Dimension value ({unit}){which}: the element moves to match', formatLength(d.value), { unit: unitName(), which });
   const v = answer == null ? null : parseLength(answer);

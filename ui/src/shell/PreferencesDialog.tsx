@@ -31,7 +31,7 @@ import { refreshTemplates, useTemplates } from '../engine/templates';
 import { engineInBrowser } from '../engine/session';
 import { isDesktop } from '../engine/files';
 import { pickFolder } from '../modules/core/cde/cde';
-import { DIM_REFS, DIM_REF_LABELS, type DimRef } from '../viewport/lineDims';
+import { TempDimSettings } from '../viewport/TempDimSettings';
 import { firmFoldersAvailable, prefsStart, setFirmFolders, useFirmFiles } from '../modules/core/firmFolders';
 
 type Page = 'general' | 'grid' | 'coords' | 'display' | 'colours' | 'profiles' | 'libraries';
@@ -202,10 +202,10 @@ export function PreferencesDialog() {
               </select></label>
               <h4>Temporary dimensions</h4>
               <div data-testid="prefs-temp-dim-ref">
-                <Radio name="Temporary dimensions" value={p.tempDimRef} onChange={(v: DimRef) => setPrefs({ tempDimRef: v })}
-                  options={DIM_REFS.map((r) => ({ id: r, label: DIM_REF_LABELS[r] }))} />
+                <TempDimSettings value={{ walls: p.tempDimRef, openings: p.tempDimOpeningRef }} name="prefs-temp-dims"
+                  onChange={(v) => setPrefs({ tempDimRef: v.walls, tempDimOpeningRef: v.openings })} />
               </div>
-              <p className="muted small">Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.</p>
+              <p className="muted small">Where temporary dimensions measure from, as Revit's Temporary Dimension Properties: walls, columns and beams from their centrelines, their finish faces, the centre of their core, their core's faces, or from the element's reference line to the other's near face (as before); doors and windows from their centre or their edges. The same as Annotate → Temporary dimensions…, the Wall, Column and Beam tools' bars, and a right click on a dimension's dot.</p>
             </>}
             {page === 'coords' && <>
               <h4>Coordinates at the cursor</h4>

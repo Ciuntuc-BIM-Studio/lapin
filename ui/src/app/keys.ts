@@ -19,7 +19,7 @@ import { select, useUi } from './store';
 import { findTool, hotbarIds, useToolTick } from '../platform/modules';
 import { reach } from './hotbar';
 import { cancel, spaceStep, submit, useCad } from '../viewport/cad/session';
-import { liveCommit, liveToggleMode, useLive } from '../viewport/liveInput';
+import { liveCommit, liveFields, liveToggleMode, useLive } from '../viewport/liveInput';
 import { chordOf, isBareKey, matchSequence, PendingSequence, type Keymap } from './shortcuts';
 import { keymap, runCommand } from './commands';
 import { useKeymap } from './shortcuts';
@@ -82,7 +82,7 @@ export type KeyIntent =
   | { kind: 'closeDialog' } | { kind: 'deselect' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'stepSpace' } | { kind: 'backspace' }
   | { kind: 'type'; buffer: string }
   | { kind: 'valueType'; key: string } | { kind: 'valueBack' } | { kind: 'valueEnter' }
-  | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' } | { kind: 'liveClear' } | { kind: 'liveCommit' } | { kind: 'liveMode' };
+  | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' | 'rel' } | { kind: 'liveClear' } | { kind: 'liveCommit' } | { kind: 'liveMode' };
 
 /** The units a typed length may end in (parseLength reads them). */
 const UNIT_SUFFIXES = ['mm', 'cm', 'dm', 'm', 'in', 'ft', "'", '"'];
@@ -200,7 +200,7 @@ function snapshot(): KeySnapshot {
     screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool ?? toolAtKeydown, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want, space: !!cad.step.space } : null, hasLast: !!cad.last,
     hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll,
-    live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang), rect: !!l.rect, mode: l.mode }; })(),
+    live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang || l.rel), rect: !!l.rect, mode: l.mode }; })(),
     value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
   };
 }
@@ -249,8 +249,9 @@ export function carryOut(intent: KeyIntent): void {
     case 'liveType': useLive.setState((l) => ({ [l.focus]: l[l.focus] + intent.key })); break;
     case 'liveBack': useLive.setState((l) => ({ [l.focus]: l[l.focus].slice(0, -1) })); break;
     // A measuring gesture has its one field, the true distance.
-    case 'liveFocus': useLive.setState((l) => ({ focus: l.measure ? 'len' : intent.field ?? (l.focus === 'len' ? 'ang' : 'len') })); break;
-    case 'liveClear': useLive.setState({ len: '', ang: '' }); break;
+    // Tab: the next field (length → angle → the angle to the reference, when there is one: decision 738).
+    case 'liveFocus': useLive.setState((l) => { const fs = liveFields(l); return { focus: intent.field && fs.includes(intent.field) ? intent.field : fs[(fs.indexOf(l.focus) + 1) % fs.length] }; }); break;
+    case 'liveClear': useLive.setState({ len: '', ang: '', rel: '' }); break;
     case 'liveCommit': liveCommit(); break;
     case 'liveMode': liveToggleMode(); break;
   }
