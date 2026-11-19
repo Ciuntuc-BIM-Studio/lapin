@@ -58,6 +58,12 @@ Un tip de apartament are dimensiuni fixe: nu se întinde după un loc mai lat sa
 
 **Modificare → Repetare** face copii ale selecției, orice element sau grup, în patru feluri. **Pe un șir** cere un pas pe x, y și z. **În rețea** cere coloane × rânduri (și niveluri, dacă vrei mai multe): pasul x, y, z merge de la o coloană la următoarea, pasul între rânduri de la un rând la următorul, iar pasul între niveluri ridică fiecare nivel. **În jurul unui centru** cere unghiul pe care îl umplu copiile și centrul (360° le împarte pe un cerc întreg). **Pe un traseu** le pune de-a lungul unei linii pe care dai clic.
 
+Dialogul arată doar ce îi trebuie felului ales și se schimbă odată cu el: un șir cere pasul, o rețea coloanele, rândurile, nivelurile și pașii, în jurul unui centru copiile, unghiul și centrul, pe un traseu ce e descris mai jos. Când un răspuns nu poate face o repetare, caseta rămâne deschisă, marchează câmpul și spune ce îi trebuie, *Pas x: Dă pasul de la o copie la următoarea*. Trage caseta de titlu ca să vezi desenul de sub ea.
+
+În jurul unui centru, **Centrul dat prin** e **Clic pe el într-un plan** când e deschis un plan, o secțiune sau o vedere de desen: după **OK**, copiile sunt desenate în jurul cursorului cât îl muți, iar un clic (sau `x,y` tastat în linia de comandă) pune centrul acolo. **Tastare** cere în schimb **Centru x** și **Centru y** în dialog, ca în vederea 3D.
+
+![Un dreptunghi desenat, repetat în jurul unui centru: copiile desenate în jurul cursorului înainte de clic](shots/array-polar.webp)
+
 Pentru un șir sau o rețea, **Pasul dat prin** alege cum vine pasul: tastat sau prin **clic pe două puncte într-un plan**. Cu clic: dai primul punct, apoi al doilea, pasul până la copia următoare (în rețea, până la coloana următoare). Tastează o distanță în locul celui de-al doilea clic, de pildă 100 mm, și pasul merge atât pe direcția cursorului. Într-o rețea cu mai multe rânduri, un al treilea punct dă pasul până la rândul următor, pornind din primul punct. Cât timp muți cursorul, selecția e desenată în fiecare loc pe care îl vor lua copiile.
 
 ![O rețea de stâlpi, o copie selectată](shots/array-grid.webp)

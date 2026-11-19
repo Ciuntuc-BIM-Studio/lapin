@@ -1407,6 +1407,10 @@ button.mode-chip:hover { color: var(--accent); }
 .ask-box .ask-row { display: grid; grid-template-columns: 1fr 96px auto; align-items: center; gap: 6px; margin: 3px 0; }
 .ask-box .ask-row input, .ask-box .ask-row select { width: 100%; }
 .ask-box .ask-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+/* Moved by its title (shell/dialogDrag.ts, forum 90); a field the answers fail on marked, the reason under the fields. */
+.ask-box .ask-title { cursor: move; user-select: none; touch-action: none; }
+.ask-box .ask-row.wrong :is(input, select) { border-color: var(--danger, #c0392b); }
+.ask-box .ask-problem { margin: 6px 0 0; color: var(--danger, #c0392b); line-height: 1.35; }
 
 /* Studio's steps in the inspector, the panel's whole width: each its switch, label and moves, then its number and choice. */
 .studio-steps-block { margin: 8px 0 4px; }

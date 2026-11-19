@@ -266,7 +266,7 @@ public static class Arrays
                     if (!(r.Count >= 2 && r.Count <= Most)) throw new CommandException($"An array has 2 to {Most} items, the first among them.");
                     r.Step = r.Fit is { } fit ? fit * (1.0 / (r.Count - 1)) : V3(a["step"]) ?? default;
                     if (!double.IsFinite(r.Step.X + r.Step.Y + r.Step.Z) || Math.Abs(r.Step.X) + Math.Abs(r.Step.Y) + Math.Abs(r.Step.Z) < 1e-9)
-                        throw new CommandException("An array's step cannot be nothing.");
+                        throw new CommandException("An array in a row needs its step (step x, y or z): the distance from one copy to the next. A polar array is kind \"polar\" with its angle and centre (forum 90).");
                     break;
                 }
                 case "grid":
@@ -280,15 +280,15 @@ public static class Arrays
                     r.RowStep = V3(a["rowStep"]) ?? default;
                     r.LevelStep = V3(a["levelStep"]) ?? default;
                     static bool Nothing(Vec3 v) => !double.IsFinite(v.X + v.Y + v.Z) || Math.Abs(v.X) + Math.Abs(v.Y) + Math.Abs(v.Z) < 1e-9;
-                    if (r.Count > 1 && Nothing(r.Step)) throw new CommandException("A grid's step between columns cannot be nothing.");
-                    if (r.Rows > 1 && Nothing(r.RowStep)) throw new CommandException("A grid's step between rows cannot be nothing.");
-                    if (r.Levels > 1 && Nothing(r.LevelStep)) throw new CommandException("A grid's step between levels cannot be nothing.");
+                    if (r.Count > 1 && Nothing(r.Step)) throw new CommandException("A grid of more than one column needs its step from one column to the next (step x, y or z).");
+                    if (r.Rows > 1 && Nothing(r.RowStep)) throw new CommandException("A grid of more than one row needs its step from one row to the next (row step x or y).");
+                    if (r.Levels > 1 && Nothing(r.LevelStep)) throw new CommandException("A grid of more than one level needs its height from one level to the next (level step z).");
                     break;
                 }
                 case "polar":
                     if (!(r.Count >= 2 && r.Count <= Most)) throw new CommandException($"An array has 2 to {Most} items, the first among them.");
                     r.Angle = Json.Number(a["angle"]) ?? 360;
-                    if (!double.IsFinite(r.Angle) || Math.Abs(r.Angle) < 1e-9 || Math.Abs(r.Angle) > 360) throw new CommandException("A polar array fills an angle of up to 360°.");
+                    if (!double.IsFinite(r.Angle) || Math.Abs(r.Angle) < 1e-9 || Math.Abs(r.Angle) > 360) throw new CommandException("A polar array's angle filled is up to 360°, not 0 (negative: clockwise).");
                     r.Center = Args.Point(a["center"], "centre");
                     break;
                 default:
