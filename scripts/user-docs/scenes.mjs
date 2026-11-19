@@ -472,10 +472,10 @@ export const scenes = [
       await t.fresh();
       await t.button('Architecture', { exact: true });
       await t.shot('ribbon-architecture', { of: '.topbar', pad: 0 });
-      // Drawn as a user draws: WA, a click at each corner, the next one following the mouse.
+      // Drawn as a user draws: WA, a click at each corner, the next one following the mouse (corners kept below the live-input box that opens at the top of the plan).
       await t.keys('w', 'a');
-      for (const [x, y] of [[-1, -1], [8, -1], [8, 5]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(250); }
-      const [mx, my] = await t.planPoint(2, 5);
+      for (const [x, y] of [[-1, -1], [8, -1], [8, 3]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(250); }
+      const [mx, my] = await t.planPoint(2, 3);
       await t.page.mouse.move(mx, my, { steps: 12 });
       await t.wait(300);
       await t.shot('wall-drawing');
@@ -516,6 +516,8 @@ export const scenes = [
         await t.cmd('storey.update', { id: above.id, elevation: was, keepTop: true });
       }
       await t.wait(400);
+      await t.page.locator('[data-testid=wall-top]').scrollIntoViewIfNeeded();
+      await t.wait(200);
       await t.shot('wall-top', { of: 'aside.props dl:has([data-testid=wall-top])', pad: 6 });
       await t.tool('architecture.wallTypes');
       t.expect(await t.page.locator('.dialog [data-testid=wall-legend]').count() === 1, 'the wall types show their legend');
@@ -544,7 +546,7 @@ export const scenes = [
       await swatch.click();
       await t.wait(500);
       const editor = t.page.locator('[data-testid=material-hatch-editor]');
-      t.expect(await editor.locator('tbody tr').count() === 3, 'the swatch opens the material\'s cut and elevation hatches');
+      t.expect(await editor.locator('.gfx-kind').count() === 3, 'the swatch opens the material\'s cut and elevation hatches');
       const layerMaterial = await t.page.locator('.dialog .layer-material select').first().inputValue();
       await editor.locator('[data-field=material-hatch-section]').selectOption('CROSS');
       await t.wait(800);
@@ -601,7 +603,7 @@ export const scenes = [
       t.expect(await remember.count() === 1, 'the Wall tool offers Remember reference line');
       if (!(await remember.isChecked())) await remember.check();
       await t.page.locator('[data-testid=wall-line]').selectOption('offset');
-      t.expect(await t.page.locator('[data-testid=wall-line-offset]').count() === 1, 'an offset from the core centre takes a distance');
+      t.expect(await t.page.locator('[data-field=wall-line-offset]').count() === 1, 'an offset from the core centre takes a distance');
       await t.shot('wall-reference-tool', { of: '[data-testid=command-line]', pad: 0 });
       await t.page.locator('[data-testid=wall-line]').selectOption('exterior');
       for (const [x, y] of [[0, 0], [6, 0]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(300); }
@@ -7564,7 +7566,7 @@ export const scenes = [
       await select(t, sec);
       await t.wait(800);
       const plan = `plan:${s}`;
-      const texts = async () => ((await t.call('view.drawing', { id: plan }))?.pens ?? []).flatMap((p) => p.texts ?? []).map((x) => x.text);
+      const texts = async () => ((await t.call('doc.query', { name: 'view.drawing', args: { id: plan } }))?.pens ?? []).flatMap((p) => p.texts ?? []).map((x) => x.text);
       const cell = t.page.locator('aside.props input[data-field=detailNumber]');
       t.expect(await cell.count() === 1, 'a section\'s Mark is in its properties');
       t.expect(await cell.getAttribute('placeholder') === 'Section 1', 'its placeholder is what the marker writes now, the section\'s name');
