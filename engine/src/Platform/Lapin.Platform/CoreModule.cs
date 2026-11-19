@@ -241,6 +241,29 @@ public sealed class CoreModule : ILapinModule
             return null;
         });
 
+        // The mark of elements or of types (forum topic 177, decision 731): {ids, mark}; empty clears it (an element then shows its
+        // type's, a type its name). Tags ({mark}, {type.mark}, {TypeMark}), schedules and IFC read it; a door's or window's type keeps
+        // it in its spec too, where its editor reads it.
+        r.Command("element.setMark", "Set mark", (ctx, a) =>
+        {
+            var ids = Driven.Rest(Args.Ids(a), Driven.Before(ctx, new DrivenEdit("element.setMark", Args.Ids(a), a)));
+            if (ids.Count == 0) throw new CommandException("Which element?");
+            if (a["mark"] is { } given && (given is not JsonValue gv || !gv.TryGetValue<string>(out _))) throw new CommandException("A mark is a text.");
+            var mark = ((string?)a["mark"])?.Trim() is { Length: > 0 } m ? m : null;
+            if (mark is { Length: > 80 }) throw new CommandException("A mark is 80 characters at most.");
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException("Which element?");
+                if (e.Class is IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey or IfcClass.Annotation)
+                    throw new CommandException($"{e.Class} has no mark.");
+                var attrs = e.CloneAttrs();
+                if (mark == null) attrs.Remove("mark"); else attrs["mark"] = mark;
+                if (attrs["spec"] is JsonObject spec && spec.ContainsKey("mark")) spec["mark"] = mark ?? "";
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return null;
+        });
+
         // The user's own parameters on any element, drafted shape or Studio solid: a name, a kind, a value (exported as Lapin_Parameters).
         // With `pset`, in that property set: a standard one (Pset_DoorCommon) only with its own property names, held as their kind;
         // one of the user's never „Pset_…” (StandardPsets). On a type, `instance: true` makes it an instance default (TypeDefaults).

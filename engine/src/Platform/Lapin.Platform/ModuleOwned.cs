@@ -58,6 +58,7 @@ public sealed class AbsentModules(IReadOnlySet<string> loaded) : IDrivenElements
                 return;
             case "element.update":
             case "element.rename":
+            case "element.setMark":
             case "element.setParam":
             case "element.removeParam":
             case "element.removePset":

@@ -29,6 +29,7 @@ import { TypeListActions, endsOf } from '../../shell/TypeListActions';
 import { TypeTableFiles } from './TypeTableImport';
 import { formatLengths, parseLengths } from './lintelFields';
 import { FACES, toggleFace, wrapsArg, wrapsOf, type Wrap } from './columnLayers';
+import { TypeMarkField } from '../core/MarkField';
 
 type Kind = 'column' | 'beam' | 'strip' | 'pad';
 type Shape = 'rectangle' | 'circle' | 'polygon' | 'library';
@@ -177,6 +178,8 @@ export function StructureTypesDialog() {
               {edited && <button type="button" className="btn small" onClick={fresh}>New type</button>}
             </div>
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its size)" onChange={(e) => setName(e.target.value)} /></label>
+            {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
+            <TypeMarkField typeId={editing} />
             {/* Duplicate, and the type's place in every list of its types (forum #71). */}
             <TypeListActions id={edited?.id ?? null} onDuplicated={(id) => { const t = useSession.getState().nodes.get(id); if (t) pick(t); }} {...endsOf(list, edited?.id ?? null)} />
             {(kind === 'column' || kind === 'beam') && <>

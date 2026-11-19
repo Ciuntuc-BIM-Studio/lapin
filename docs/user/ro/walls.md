@@ -80,6 +80,8 @@ Panoul de proprietăți arată peretele selectat. Sus sunt tipul și straturile 
 
 ![Proprietățile unui perete](shots/wall-properties.webp)
 
+**Marca proprie a unui perete.** Sub numele peretelui, sus în panoul de proprietăți, **Marcă** e marca lui proprie (*P1.03*), arătată estompat cu marca tipului (sau numele tipului) cât timp nu are una. Marca proprie trece înaintea celei a tipului în etichetele lui (`{mark}`) și în extrase, iar exportul IFC o scrie ca **Tag** al peretelui; golește-o ca să ia iar marca tipului. Planșeele, stâlpii, grinzile, ușile și celelalte elemente construite o au în același loc. Fiecare schimbare e un singur pas de anulare.
+
 ### Cote temporare
 
 Selectează un perete drept într-un plan și Lapin îi desenează **cote temporare**, ca pentru o ușă sau o fereastră ([Cote temporare](doors-windows.md#cote-temporare)):
@@ -202,6 +204,8 @@ Ce stă pe perete merge la partea pe care cade. Un finisaj vopsit pe fața unui 
 ## Tipurile de pereți
 
 Un tip de perete e un set de straturi, de la fața din dreapta sensului în care e desenat peretele (exteriorul, când desenezi în jurul clădirii în sens trigonometric) la fața din stânga. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**. Un strat altul decât miezul poate avea înălțimea lui: **Strat de la** și **Strat până la** spun cât de sus merge stratul peste baza peretelui (nu e înălțimea peretelui: locul gol arată *sus perete*, adică până la capătul de sus al peretelui; un placaj de faianță până la 1500, un placaj de fațadă de la 300 în sus); gol, merge pe toată înălțimea.
+
+**Marcă.** Sub numele tipului, **Marcă** e marca tipului (*P1*, *Z-24*), cum o are tipul unei uși sau ferestre; tipurile de planșee, tavane, pereți cortină, scări și rampe, stâlpi, grinzi și fundații o au în același loc. Scrie-o și apasă <kbd>Enter</kbd>: un singur pas de anulare. `{mark}` dintr-o etichetă o scrie pentru fiecare perete de tipul acesta (`{TypeMark}` și `{type.mark}` scriu doar marca tipului), extrasele o listează, iar exportul IFC o scrie ca **Reference** din *Pset_WallCommon* al pereților. Goală, tipul nu are marcă și `{mark}` scrie numele tipului, ca înainte. Marca tipului e și în proprietățile oricărui perete de tipul acela, sus în **Parametrii tipului**.
 
 **Duplicare și ordine.** Fiecare dialog de tipuri (pereți, planșee, uși și ferestre, scări și rampe, stâlpi, grinzi și fundații) are **Duplică** lângă numele tipului: face un tip nou, al lui, cu aceleași straturi și setări, numit „Nume 2” (apoi „Nume 3”…; „Cărămidă 25 (2)” când numele se termină cu un număr, ca numărul să nu pară parte din el), pus în listă imediat după original, gata de modificat fără să atingă primul. **↑** și **↓** de lângă el mută tipul în sus sau în jos în lista lui; toate listele și selectoarele acelor tipuri (tipul din panoul de proprietăți, **Element nou** al uneltei, dialogurile) le arată în ordinea aceasta, pe care o ține proiectul. Tipurile nemutate rămân în ordinea în care au fost făcute; un tip nou vine la sfârșit. Fiecare e un singur pas de anulare.
 

@@ -19,6 +19,7 @@ import { MaterialPicker } from '../core/MaterialPicker';
 import { PendingDialog } from '../core/PendingDialog';
 import { newElement, typedBy } from './NewElement';
 import { SlabThumb } from './Thumbs';
+import { TypeMarkField } from '../core/MarkField';
 
 export interface CeilingSpec {
   name: string; system: 'grid' | 'plain'; tileWidth: number; tileLength: number; thickness: number;
@@ -110,6 +111,8 @@ export function CeilingTypesDialog() {
           </ul>
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={spec.name} onChange={(e) => set({ name: e.target.value })} /></label>
+            {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
+            <TypeMarkField typeId={editing} />
             <label className="field-line"><span className="eyebrow">System</span>
               <select data-field="ceiling-system" value={spec.system} onChange={(e) => set({ system: e.target.value as CeilingSpec['system'] })}>
                 <option value="grid">Tiles on an exposed grid</option><option value="plain">Plasterboard, continuous</option>

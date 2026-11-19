@@ -7,6 +7,7 @@
  * in a box of several lines, its {fields} live; a double-click edits it.
  */
 
+import { EditStyleButton } from '../core/EditStyleButton';
 import { promptText } from '../../shell/prompts';
 import { askText } from '../../shell/AskBox';
 import { useEffect, useState } from 'react';
@@ -510,6 +511,7 @@ export function TagFields({ node }: { node: NodeDto }) {
             {!markerTypes.some((t) => t.id === tagType) && <option value={tagType} data-no-i18n>{tagType}</option>}
             {markerTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
+          <EditStyleButton tab="tag" styleId={tagType} />
           {byRules}
         </dd>
       </>}
@@ -543,7 +545,7 @@ export function TagFields({ node }: { node: NodeDto }) {
         <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}><select className="cell" value={tagType} onChange={(e) => set({ tagType: e.target.value || null })}>
           <option value="">—</option>
           {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-        </select>{byRules}</dd>
+        </select>{tagType && <EditStyleButton tab="tag" styleId={tagType} />}{byRules}</dd>
         <dt title="A line from the tag to the element; drag its grips to bend it or point it elsewhere">Leader</dt>
         <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <input type="checkbox" checked={leader} data-tag-leader-on onChange={(e) => set({ leader: e.target.checked })} />

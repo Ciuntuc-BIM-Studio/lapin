@@ -159,9 +159,11 @@ public static class DimensionKinds
             var extW = style.ExtWeightOr(Pens.Default.Hatch);
             var (lineDash, extDash) = (Standards.DashOf(c.Book, style.DimLineType), Standards.DashOf(c.Book, style.ExtLineType));
             var lineColor = orphan ? color : style.DimLineColor ?? color;
+            // The value's colour (forum topic 173): the dimension's, else its style's text colour, else its text style's, else the style's.
+            var textColor = orphan ? color : Standards.DimTextColor(Dimensions.ParamsOf(dim), style, text) ?? color;
             var mk = new ViewMark(dim.Id);
             void Label(Vec2 at, string s, double angleDeg = 0, string anchor = "middle", string baseline = "bottom") =>
-                mk.Text(new PenText(at, dim.Str("text") is { Length: > 0 } over ? over : s, text.Height, -Standards.ReadableDeg(-angleDeg), anchor, baseline, text.Bold, text.Font, text.Italic), color);
+                mk.Text(new PenText(at, dim.Str("text") is { Length: > 0 } over ? over : s, text.Height, -Standards.ReadableDeg(-angleDeg), anchor, baseline, text.Bold, text.Font, text.Italic), textColor);
             void Arrow(Vec2 tip, Vec2 dir)
             {
                 var s = style.ArrowSize * mm;

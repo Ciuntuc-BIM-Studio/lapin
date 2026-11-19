@@ -7,6 +7,7 @@
  * Lengths in the project's unit, angles in degrees, areas in m².
  */
 
+import { EditStyleButton } from '../core/EditStyleButton';
 import { ColourField } from '../../shell/ColourField';
 import { Fragment, useEffect, useState } from 'react';
 import { X } from 'lucide-react';
@@ -273,7 +274,7 @@ function TextFields({ node }: { node: NodeDto }) {
       <dt>Text</dt>
       <dd><textarea rows={2} value={body} onChange={(e) => setBody(e.target.value)} onBlur={() => { if (body.trim() && body !== text) set({ text: body }); }} /></dd>
       {/* The project's text styles by name, kept by id (forum topic 148: a name typed found no style). */}
-      <dt>Text style</dt><dd><StylePick list={styles.textStyles} value={node.props.textStyle} field="textStyle" onPick={(id) => set({ textStyle: id })} /></dd>
+      <dt>Text style</dt><dd className="pair"><StylePick list={styles.textStyles} value={node.props.textStyle} field="textStyle" onPick={(id) => set({ textStyle: id })} /><EditStyleButton tab="text" styleId={node.props.textStyle} /></dd>
       <dt title="Without a width, of its point; with one, in its box">Alignment</dt>
       <dd><select className="cell" data-field="align" value={alignOf(node.props.align)} onChange={(e) => set({ align: alignAttr(e.target.value) })}>
         {TEXT_ALIGNS.map((a) => <option key={a} value={a}>{TEXT_ALIGN_LABELS[a]}</option>)}
@@ -298,7 +299,8 @@ function DimensionFields({ node }: { node: NodeDto }) {
     <dl className="fields">
       <Row label="Kind" value={ptStrict(node.props.dir) ? 'Linear' : 'Aligned'} />
       {/* The project's dimension styles by name, kept by id (as a text's style, forum topic 148). */}
-      <dt>Dimension style</dt><dd><StylePick list={styles.dimStyles} value={node.props.dimStyle} field="dimStyle" onPick={(id) => void execute('element.update', { ids: alike(node), attrs: { dimStyle: id } })} /></dd>
+      {/* Its style edited in Manage → Drafting standards → Dimensions, opened on it (forum topic 173). */}
+      <dt>Dimension style</dt><dd className="pair"><StylePick list={styles.dimStyles} value={node.props.dimStyle} field="dimStyle" onPick={(id) => void execute('element.update', { ids: alike(node), attrs: { dimStyle: id } })} /><EditStyleButton tab="dim" styleId={node.props.dimStyle} /></dd>
       {/* Its own text height on the paper (decision 271); empty: the dimension style's. */}
       <dt title="On the paper; empty: the dimension style's">Text height</dt>
       <dd><NumberField value={typeof node.props.textHeight === 'number' ? node.props.textHeight : null} placeholder="by style" suffix="mm" min={0.5} max={50}

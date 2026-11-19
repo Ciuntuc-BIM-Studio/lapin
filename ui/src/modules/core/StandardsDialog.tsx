@@ -8,8 +8,8 @@
  */
 
 import { ColourField } from '../../shell/ColourField';
-import { clearStandardsTab, standardsTab } from './standardsTab';
-import { useEffect, useState } from 'react';
+import { clearStandardsTab, standardsFocus, standardsTab } from './standardsTab';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
@@ -55,11 +55,13 @@ const DIM_LINE_COLS: Col[] = [
   { key: 'dimLineWeight', label: 'Dimension line pen mm', title: 'The dimension line\'s pen on paper (its arrows too); empty: 0.13 mm', kind: 'mm' },
   { key: 'dimLineColor', label: 'Dimension line colour', title: "The dimension line's colour, its arrows and ticks too; empty: the style's", kind: 'color' },
   { key: 'dimLineType', label: 'Dimension line', kind: 'choice', choices: LINE_TYPES, lineType: true },
+  // The values' own colour (forum topic 173): over the text style's; empty: the text style's colour, else the style's.
+  { key: 'textColor', label: 'Text colour', title: "The values' colour; empty: the colour of its text style (Text tab), else the style's", kind: 'color' },
 ];
 /** The dimension style fields left empty to say "as before" (sent as null). */
 const NULLABLE = new Set(['textLeader', 'extFixed', 'extWeight', 'dimLineWeight']);
 /** The colours that may be cleared back to the style's. */
-const CLEARABLE = new Set(['extColor', 'dimLineColor']);
+const CLEARABLE = new Set(['extColor', 'dimLineColor', 'textColor']);
 const TABS: Tab[] = [
   { id: 'text', label: 'Text', list: 'textStyles', fresh: { name: 'Text', height: 2.5 }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'height', label: 'Height mm', kind: 'mm' }, { key: 'font', label: 'Font', kind: 'choice', choices: ['sans', 'serif', 'mono'] },
@@ -135,7 +137,12 @@ export function StandardsDialog() {
   const systems = useSystems();
   const symbols = useSymbolList();
   const [editing, setEditing] = useState<string | null>(null);
+  // The style it was opened on from an annotation's properties (forum topic 173): picked out in its row, scrolled to.
+  const [focus] = useState(() => standardsFocus());
+  const focused = useRef<HTMLTableRowElement | null>(null);
   useEffect(() => { clearStandardsTab(); }, []);
+  const ready = book != null;
+  useEffect(() => { if (ready) focused.current?.scrollIntoView?.({ block: 'nearest' }); }, [ready]);
   useEffect(() => {
     let live = true;
     void query<Book>('standards.get').then((b) => { if (live && b) setBook(b); });
@@ -160,9 +167,10 @@ export function StandardsDialog() {
     switch (c.kind) {
       case 'bool': return <input type="checkbox" checked={v === true || (c.key === 'visible' && v !== false)} onChange={(ev) => put(ev.target.checked)} />;
       // A dimension style's extension or dimension line colour (issue #66) may be cleared: the style's colour again.
+      // A dimension style's text colour shows its text style's until it has its own (forum topic 173).
       case 'color': return CLEARABLE.has(c.key)
-        ? <span className="colour-clearable" style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}><ColourField value={typeof v === 'string' ? v : String(e.color ?? '#000000')} onChange={(v) => put(v)} />
-          {typeof v === 'string' && <button type="button" className="icon" title="As the style's colour" onClick={() => put(null)}><X size={12} /></button>}</span>
+        ? <span className="colour-clearable" style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}><ColourField value={typeof v === 'string' ? v : String((c.key === 'textColor' ? book.textStyles.find((t) => t.id === String(e.textStyle ?? 'standard'))?.color : null) ?? e.color ?? '#000000')} onChange={(v) => put(v)} />
+          {typeof v === 'string' && <button type="button" className="icon" title={c.key === 'textColor' ? "As its text style's colour" : "As the style's colour"} onClick={() => put(null)}><X size={12} /></button>}</span>
         : <ColourField value={typeof v === 'string' ? v : '#18181b'} onChange={(v) => put(v)} />;
       case 'choice': {
         // A line type is chosen among Lapin's and the project's own (Line types tab).
@@ -290,7 +298,7 @@ export function StandardsDialog() {
             <thead><tr>{tab.id === 'axis' && <th title="New axes and the BIM grids use it">Default</th>}{tab.cols.map((c) => <th key={c.key} title={c.title}>{c.label}</th>)}{tab.id === 'tag' && <th />}<th /></tr></thead>
             <tbody>
               {rows.map((e) => (
-                <tr key={e.id}>
+                <tr key={e.id} className={e.id === focus ? 'lit' : undefined} data-focused={e.id === focus ? true : undefined} ref={e.id === focus ? focused : undefined}>
                   {tab.id === 'axis' && <td><input type="radio" name="default-axis" checked={book.defaultAxisStyle === e.id} onChange={() => set({ id: e.id }, { default: true })} /></td>}
                   {tab.cols.map((c) => <td key={c.key}>{cell(e, c)}</td>)}
                   {tab.id === 'tag' && <td>{e.shape === 'buildup'

@@ -23,6 +23,7 @@ import type { DrawingDto } from '../../viewport/drawing';
 import { deleteType } from '../core/deleteType';
 import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { TypeListActions, endsOf } from '../../shell/TypeListActions';
+import { TypeMarkField } from '../core/MarkField';
 
 interface Rules { set: string; riserMin: number; riserMax: number; riserTarget: number; treadMin: number; treadMax: number; treadTarget: number; stepMin: number; stepMax: number; minWidth: number; maxRisers: number; headroom: number; maxSlope: number; minRisers?: number }
 interface Spec {
@@ -180,6 +181,8 @@ export function StairTypesDialog() {
           <div className="joinery-edit">
             <div className="joinery-form">
               <label className="field-line"><span className="eyebrow">Name</span><input value={spec.name} onChange={(e) => set({ name: e.target.value })} /></label>
+              {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
+              <TypeMarkField typeId={editing} />
               {/* Duplicate, and the type's place in its list (forum #71): stairs and ramps each their own. */}
               <TypeListActions id={editing} onDuplicated={setEditing} {...endsOf(types.filter((x) => x.type === (editing ? model.nodes.get(editing)?.type : '')), editing)} />
               <div className="tabs-row small stair-tabs">

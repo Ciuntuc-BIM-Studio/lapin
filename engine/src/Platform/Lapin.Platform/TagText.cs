@@ -127,6 +127,8 @@ public static partial class TagText
         switch (key.ToLowerInvariant())
         {
             case "mark": case "tag": return Mark(m, e);
+            // Its type's own mark alone (forum topic 177, as other programs name it): empty when the type has none.
+            case "typemark": return type?.Str("mark") ?? "";
             // How many parts share its mark (decision 583).
             case "qty": return Marks.CountOf(m, e).ToString(System.Globalization.CultureInfo.InvariantCulture);
             case "name": return e.Name;

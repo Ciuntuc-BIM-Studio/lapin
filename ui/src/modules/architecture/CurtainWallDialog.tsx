@@ -23,6 +23,7 @@ import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 import { placeJson, type Place } from './memberPlace';
 import { PlaceFields } from './PlaceFields';
+import { TypeMarkField } from '../core/MarkField';
 
 interface Grid { mode: 'count' | 'spacing' | 'max' | 'offsets'; count?: number; spacing?: number; justify?: 'start' | 'center' | 'end'; offsets?: number[] }
 /** A member's size; `profile`: the library profile whose real outline its body takes (decision 417), with that size. */
@@ -161,6 +162,8 @@ export function CurtainWallDialog() {
           <div className="joinery-edit">
             <div className="joinery-form">
               <label className="field-line"><span className="eyebrow">Name</span><input value={name} onChange={(e) => setName(e.target.value)} /></label>
+              {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
+              <TypeMarkField typeId={editing} />
               <GridFields label="Along (mullions)" grid={spec.u} onChange={(u) => set({ u })} />
               <GridFields label="Up (transoms)" grid={spec.v} onChange={(v) => set({ v })} />
               <Mm label="Mullion width" value={spec.mullion.width} onChange={(v) => set({ mullion: { width: v, depth: spec.mullion.depth, place: spec.mullion.place } })} />
