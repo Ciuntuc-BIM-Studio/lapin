@@ -30,6 +30,9 @@ public class WallHatchAlignTests
         var wall = f.Wall(0, 0, 6 * Math.Cos(Math.PI / 6), 6 * Math.Sin(Math.PI / 6), type);
         // Brick in courses, as decision 325 hatched it (a cut's brick is 45° lines since decision 456).
         f.LegacyHatches();
+        // A material fixed to the view (a project's default before decision 725 aligned it with the element).
+        var brick = f.Model.OfClass(IfcClass.Material).Single(x => x.Name == "Solid brick");
+        f.Run("material.update", new JsonObject { ["id"] = brick.Id, ["section"] = new JsonObject { ["hatchAlign"] = "view" } });
         // By the material (from the view): the courses square to the plan, not to the wall at 30°.
         var before = Directions(f);
         Assert.NotEmpty(before);

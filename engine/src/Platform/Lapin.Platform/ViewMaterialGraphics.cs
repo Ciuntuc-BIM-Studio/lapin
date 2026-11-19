@@ -110,6 +110,7 @@ public sealed class ViewMaterialGraphics
     readonly string _kind;
     readonly double? _scale;
     readonly bool _paper;
+    readonly string _align;
     readonly MaterialStandard _standard;
     readonly SmallScaleCut? _small;
     readonly MaterialGraphicsSets.Set? _set;
@@ -130,6 +131,7 @@ public sealed class ViewMaterialGraphics
         _kind = kind;
         _scale = scale;
         _paper = MaterialHatchUpgrade.PaperSurfaces(m);
+        _align = MaterialHatchUpgrade.AlignDefault(m);
         // The project's material standard (decision 681): tier 7, what a material does not set itself.
         _standard = MaterialStandards.Of(m);
         // Cuts only: an elevation's surfaces keep their materials' look.
@@ -166,8 +168,8 @@ public sealed class ViewMaterialGraphics
     {
         if (_base.TryGetValue(id, out var r)) return r;
         // A material named rather than kept (a track's ballast, its rails): its look guessed from the name.
-        return _base[id] = _m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, _kind, paperSurfaces: _paper, scale: _scale, standard: _standard)
-            : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, _kind, id, _paper, _scale, _standard);
+        return _base[id] = _m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, _kind, paperSurfaces: _paper, scale: _scale, standard: _standard, alignDefault: _align)
+            : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, _kind, id, _paper, _scale, _standard, _align);
     }
 
     /// <summary>The set's entry for a material laid over its graphics (tier 3); unchanged without a set, an entry, or graphics.</summary>

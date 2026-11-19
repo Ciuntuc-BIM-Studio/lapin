@@ -95,6 +95,14 @@ public readonly record struct PathCurve(Vec2 Start, Vec2 End, double Rise)
         return o;
     }
 
+    /// <summary>The axis as a drawing's band frame (s along it, y to its left), which a batt is laid along (decision 725).</summary>
+    public Lapin.Drawing.Hatch.BandAxis BandAxis()
+    {
+        var c = this;
+        if (!IsArc) return Lapin.Drawing.Hatch.BandAxis.Straight(Start, End - Start);
+        return new Lapin.Drawing.Hatch.BandAxis(p => { var s = c.Project(p); return (s, Vec2.Dot(p - c.PointAt(s), c.TangentAt(s).Perp)); }, c.At);
+    }
+
     /// <summary>The line <paramref name="y"/> to the left of the axis from <paramref name="s0"/> to <paramref name="s1"/>.</summary>
     public List<Vec2> Line(double s0, double s1, double y) { var c = this; return Stations(s0, s1).Select(s => c.At(s, y)).ToList(); }
 

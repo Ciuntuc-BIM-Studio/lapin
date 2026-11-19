@@ -57,6 +57,19 @@ sealed class Fixture
                 Run("material.update", new JsonObject { ["id"] = m.Id, ["section"] = new JsonObject { ["hatch"] = Lapin.Drawing.MaterialGraphics.LegacyFromName(m.Name, 0) } });
     }
 
+    /// <summary>The project as a build before decision 725 saved it and opened again: its hatches fixed to the view, not turned with their elements.</summary>
+    public void ViewAlignedHatches()
+    {
+        var saved = Model.Entities.Select(e =>
+        {
+            if (e.Class != IfcClass.Project) return e;
+            var a = e.CloneAttrs();
+            a[MaterialHatchUpgrade.RevKey] = 3;
+            return e.With(attrs: a);
+        }).ToList();
+        Session.Load(saved, Model.Relations.ToList(), null);
+    }
+
     /// <summary>The plans drawing the entire model, as a project made before decision 500 drew them (a new project's plans leave out the finishes).</summary>
     public void EveryLayerInPlans() => Run("viewStyle.update", new JsonObject { ["id"] = "architectural", ["layersPlan"] = "all" });
 

@@ -1499,6 +1499,9 @@ public static partial class IfcExport
             string? Hatching(string? name, string curveName, double scale, double angleDeg, string? color, double weight)
             {
                 if (name == null || Lapin.Drawing.Hatch.HatchLibrary.Find(name, patterns) is not { Solid: false } p) return null;
+                // The batt is drawn by its own rule, no line family: written as the nearest one, INSULATION's zig-zag (as Bonsai's
+                // stylesheet draws it), its curve style named BATT, which Lapin reads back.
+                if (Lapin.Drawing.Hatch.BattHatch.Is(p) && Lapin.Drawing.Hatch.HatchLibrary.Find("INSULATION") is { } zigzag) p = zigzag;
                 // A tile pattern (stage 7) as the nearest line hatching: along its longest straight piece (0° with none), its
                 // cell's smaller side apart; the curve style named after it, which Lapin reads back.
                 double famAngle, famSpacing;

@@ -188,7 +188,7 @@ public static class DraftingResources
                     o[k] = Json.Number(v) is { } ang && double.IsFinite(ang) ? ang : throw new CommandException($"{where}: the hatch angle is in degrees.");
                     break;
                 case "hatchAlign":
-                    o[k] = (string?)v is { } al && HatchAlign.All.Contains(al) ? al : throw new CommandException($"{where}: a hatch aligns to the \"view\" or to the \"layer\".");
+                    o[k] = (string?)v is { } al && HatchAlign.All.Contains(al) ? al : throw new CommandException($"{where}: a hatch aligns to the \"element\", to the \"view\" or to the \"layer\".");
                     break;
                 // Decision 678: the hatch's own colour, weight, line type, opacity and halftone; the fill's opacity; a background hatch; the material's lines.
                 // Decision 679: the units its hatch lies in over the pattern's own (rare).
@@ -372,7 +372,8 @@ public static class DraftingResources
             mat = mat.With(attrs: attrs);
         }
         // At the sample's scale, the material's step for it (decision 680).
-        var look = MaterialGraphics.Resolve(mat, kind, paperSurfaces: MaterialHatchUpgrade.PaperSurfaces(q.Model), scale: scale, standard: MaterialStandards.Of(q.Model));
+        var look = MaterialGraphics.Resolve(mat, kind, paperSurfaces: MaterialHatchUpgrade.PaperSurfaces(q.Model), scale: scale, standard: MaterialStandards.Of(q.Model),
+            alignDefault: MaterialHatchUpgrade.AlignDefault(q.Model));
         var book = Book(q.Model);
         var project = Spatial.Project(q.Model);
         var options = new Lapin.Drawing.Views.Pens.Options(scale, Patterns: Patterns(q.Model), Table: LineStyles.ReadTable(project?.Attrs["penTable"]), LineTypes: book.LineTypes,
@@ -605,6 +606,8 @@ public static class DraftingResources
         // A project made before real-size hatches (decision 679) suggests its surfaces' paper ones.
         var paper = MaterialHatchUpgrade.PaperSurfaces(q.Model);
         var standard = MaterialStandards.Of(q.Model);
+        // What a hatch the material does not align aligns to in this project (decision 725).
+        var align = MaterialHatchUpgrade.AlignDefault(q.Model);
         return new JsonArray(q.Model.OfClass(IfcClass.Material).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).Select(mat =>
         {
             var o = new JsonObject { ["id"] = mat.Id, ["name"] = mat.Name, ["color"] = Materials.ColorOf(q.Model, mat.Id), ["inUse"] = InUse(q.Model, mat.Id), ["category"] = mat.Str("category") };
@@ -612,7 +615,7 @@ public static class DraftingResources
             o["look"] = MaterialLook.Of(mat).ToJson(mat);
             foreach (var kind in MaterialGraphics.Kinds)
             {
-                var k = MaterialGraphics.Resolve(mat, kind, paperSurfaces: paper, standard: standard).ToJson();
+                var k = MaterialGraphics.Resolve(mat, kind, paperSurfaces: paper, standard: standard, alignDefault: align).ToJson();
                 // Its steps by scale (decision 680), as saved on the kind (a plan's own; a plan takes the section's too).
                 if (mat.Attrs[kind]?["byScale"] is JsonArray steps) k["byScale"] = steps.DeepClone();
                 o[kind] = k;

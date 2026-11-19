@@ -269,6 +269,65 @@ public class BattHatchTests
         Assert.Empty(BattHatch.Segments([band], minWidth: 0.2));
     }
 
+    /// <summary>
+    /// What a batt line must do in a band of half-width h laid along <paramref name="dir"/>: every point inside the faces
+    /// (|y| ≤ h), loops on both faces (points within 2 % of h of each face), and the faces touched all along the band,
+    /// one loop on each face every 2π·0.45·h (no stretch of more than two pitches without a touch on either face).
+    /// </summary>
+    static void AssertBatt(List<HatchSegment> segs, Func<Vec2, (double S, double Y)> frame, double h, double s0, double s1, string what, double slack = 0)
+    {
+        Assert.True(segs.Count > 50, $"{what}: {segs.Count} segments");
+        var pts = segs.SelectMany(s => new[] { s.A, s.B }).Select(frame).ToList();
+        Assert.All(pts, p => Assert.True(Math.Abs(p.Y) <= h + slack + 1e-6, $"{what}: a point {p.Y:0.####} off the axis, the faces at ±{h}"));
+        Assert.All(pts, p => Assert.InRange(p.S, s0 - 1e-6, s1 + 1e-6));
+        var pitch = 2 * Math.PI * BattHatch.Pitch * h;
+        foreach (var face in new[] { -1, 1 })
+        {
+            var touches = pts.Where(p => face * p.Y >= h * 0.98 - slack).Select(p => p.S).Order().ToList();
+            Assert.True(touches.Count > 0, $"{what}: the face at {face * h} is never touched");
+            // From one end to the other, a touch at least every two pitches.
+            var gaps = touches.Zip(touches.Skip(1), (a, b) => b - a).Append(touches[0] - s0).Append(s1 - touches[^1]);
+            Assert.True(gaps.Max() <= 2 * pitch, $"{what}: the face at {face * h} goes {gaps.Max():0.###} untouched (pitch {pitch:0.###})");
+        }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(30)]
+    [InlineData(90)]
+    [InlineData(147)]
+    public void A_batt_band_at_any_angle_loops_on_both_faces_along_its_whole_length(double deg)
+    {
+        // A 100 mm layer 3 m long, at the angle, mitred at one end (45°) and with a corner piece at the other.
+        var a = deg * Math.PI / 180;
+        var d = new Vec2(Math.Cos(a), Math.Sin(a));
+        var n = d.Perp;
+        Vec2 P(double s, double y) => new Vec2(5, 2) + d * s + n * y;
+        Vec2[] band = [P(0, -0.05), P(3, -0.05), P(3.1, 0.05), P(0.1, 0.05), P(0.1, 0.04), P(0, 0.04)];
+        var segs = BattHatch.Segments([band]);
+        (double, double) Frame(Vec2 p) => (Vec2.Dot(p - P(0, 0), d), Vec2.Dot(p - P(0, 0), n));
+        AssertBatt(segs, Frame, 0.05, 0, 3.1, $"{deg}°");
+    }
+
+    [Fact]
+    public void A_batt_band_laid_along_a_curved_axis_bends_with_it_between_its_faces()
+    {
+        // A layer 100 mm thick between radii 4.95 and 5.05 round (0, 0), over 120°, laid in the arc's own frame.
+        double r = 5, from = Math.PI / 6, sweep = 2 * Math.PI / 3;
+        var outer = Chords.Arc(new Vec2(0, 0), r + 0.05, from, sweep);
+        var inner = Chords.Arc(new Vec2(0, 0), r - 0.05, from, sweep);
+        inner.Reverse();
+        var band = outer.Concat(inner).ToArray();
+        // s along the arc anticlockwise from its start, y to its left (towards the centre).
+        (double S, double Y) ToBand(Vec2 p) { var t = Math.Atan2(p.Y, p.X) - from; return (t * r, r - p.Length); }
+        Vec2 FromBand(double s, double y) { var t = from + s / r; return new Vec2(Math.Cos(t), Math.Sin(t)) * (r - y); }
+        var segs = BattHatch.Segments([band], axis: new BandAxis(ToBand, FromBand));
+        // The chords of the faces stray 1 mm at most from the arcs (Chords): the faces within 1 mm of ±h in the arc's frame.
+        AssertBatt(segs, ToBand, 0.05, 0, r * sweep, "curved", Chords.Tolerance);
+        // Without the axis, the band's longest edge (one chord) would lay a straight line across the curve: the frame matters.
+        Assert.NotEqual(segs.Count, BattHatch.Segments([band]).Count);
+    }
+
     [Fact]
     public void Insulation_materials_take_the_batt_by_name_and_the_library_knows_it()
     {

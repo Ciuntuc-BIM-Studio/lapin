@@ -87,7 +87,7 @@ public sealed record ViewGraphics(string? Hatch = null, double? HatchScale = nul
     public static ViewGraphics? From(JsonNode? n) => n is JsonObject o
         ? new ViewGraphics(o.ContainsKey("hatch") ? (string?)o["hatch"] ?? "" : null, Lapin.Model.Json.Number(o["hatchScale"]),
             o.ContainsKey("fill") ? (string?)o["fill"] ?? "" : null, Lapin.Model.Json.Number(o["hatchPen"]) is { } p ? (int)p : null,
-            Lapin.Model.Json.Number(o["hatchAngle"]), (string?)o["hatchAlign"] is { } al && al is "layer" or "view" ? al : null)
+            Lapin.Model.Json.Number(o["hatchAngle"]), (string?)o["hatchAlign"] is { } al && Lapin.Drawing.HatchAlign.All.Contains(al) ? al : null)
         {
             HatchColor = HexColor.Read(o["hatchColor"], null),
             HatchWeight = Lapin.Model.Json.Number(o["hatchWeight"]) is { } w && w > 0 ? w : null,
@@ -126,11 +126,18 @@ public sealed record ScaleStep(double? From, double? To, ViewGraphics Fields)
         ViewGraphics.From(o) is { } g ? new ScaleStep(Lapin.Model.Json.Number(o["from"]), Lapin.Model.Json.Number(o["to"]), g with { ByScale = null }) : null;
 }
 
-/// <summary>Where a material's hatch starts and turns: from the view's origin, or from each band it fills (its origin on the band's longest edge, its angle along it).</summary>
+/// <summary>
+/// Where a material's hatch starts and turns: with the element it fills (<see cref="Element"/>: along its axis in a plan, a
+/// wall's courses turning with the wall, as Revit's model patterns), from the view's origin (<see cref="View"/>: fixed to the
+/// sheet, as Revit's drafting patterns), or from each band it fills (<see cref="Layer"/>: its origin on the band's longest
+/// edge, its angle along it). A material that says nothing takes its project's default (<c>MaterialHatchUpgrade.AlignDefault</c>):
+/// <see cref="Element"/> in a project made since decision 725, <see cref="View"/> in one saved before, which keeps its drawing.
+/// An element with no axis in the view (a slab, a column, any element in a section) draws <see cref="Element"/> as <see cref="View"/>.
+/// </summary>
 public static class HatchAlign
 {
-    public const string View = "view", Layer = "layer";
-    public static readonly string[] All = [View, Layer];
+    public const string View = "view", Layer = "layer", Element = "element";
+    public static readonly string[] All = [Element, View, Layer];
 
     /// <summary>
     /// An element's own choice over its materials' (an attribute <c>hatchAlign</c>, decision 369): "material" (or none) as
@@ -141,8 +148,12 @@ public static class HatchAlign
     public static readonly string[] ElementChoices = [Material, Axis, View];
 }
 
-/// <summary>An element's hatch alignment in a drawing (<see cref="HatchAlign.ElementChoices"/>): along its axis (an angle and an origin), or from the view's origin.</summary>
-public sealed record ElementHatch(double? Angle, Vec2? Origin);
+/// <summary>
+/// An element's hatch alignment in a drawing (<see cref="HatchAlign.ElementChoices"/>): along its axis (an angle and an origin),
+/// or from the view's origin; <paramref name="Axis"/> the frame of its axis in the drawing (a wall's in a plan: straight, or its
+/// arc), along which a batt is laid (<see cref="Hatch.BattHatch"/>) whatever the alignment; null: none.
+/// </summary>
+public sealed record ElementHatch(double? Angle, Vec2? Origin, Hatch.BandAxis? Axis = null);
 
 /// <summary>A material's graphics in one kind of view, and where they came from: its own attributes ("own") or its name ("name").</summary>
 /// <param name="Joins">Whether its elements join others (forum topic 59): off, each keeps its own outline in a drawing, never merged with a neighbour's.</param>
@@ -443,7 +454,10 @@ public static class MaterialGraphics
     /// standard's for another pattern; one that sets its own background hatch, none of the standard's. No scale, no step.
     /// This is the material's tier of a view's graphics; what a view lays over it is <c>ViewMaterialGraphics</c> (Lapin.Platform).
     /// </summary>
-    public static ResolvedMaterial Resolve(Entity? material, string kind = "section", string? name = null, bool paperSurfaces = false, double? scale = null, MaterialStandard? standard = null)
+    /// <param name="alignDefault">The alignment of a hatch that neither the material nor its standard aligns: its project's
+    /// (<c>MaterialHatchUpgrade.AlignDefault</c>); null: <see cref="HatchAlign.View"/>, as before decision 725.</param>
+    public static ResolvedMaterial Resolve(Entity? material, string kind = "section", string? name = null, bool paperSurfaces = false, double? scale = null, MaterialStandard? standard = null,
+        string? alignDefault = null)
     {
         name ??= material?.Name ?? "";
         standard ??= MaterialStandard.Lapin;
@@ -470,7 +484,7 @@ public static class MaterialGraphics
         var joints = material?.Attrs["drawJoints"] is JsonValue jv && jv.TryGetValue<bool>(out var j) && j;
         // The flexible fields (decision 678): none given, none set, so a material that sets none draws as before.
         var background = g?.BackgroundHatch is { Hatch: { Length: > 0 } bh } bg ? bg with { Hatch = bh.ToUpperInvariant() } : null;
-        return new ResolvedMaterial(name, hatch, g?.HatchScale ?? 1, fill, g?.HatchPen, membrane, joints, color, hasOwn ? "own" : "name", g?.HatchAngle ?? 0, g?.HatchAlign ?? HatchAlign.View,
+        return new ResolvedMaterial(name, hatch, g?.HatchScale ?? 1, fill, g?.HatchPen, membrane, joints, color, hasOwn ? "own" : "name", g?.HatchAngle ?? 0, g?.HatchAlign ?? alignDefault ?? HatchAlign.View,
             JoinsOf(material))
         {
             HatchColor = g?.HatchColor, HatchWeight = g?.HatchWeight, HatchLineType = g?.HatchLineType, HatchOpacity = g?.HatchOpacity is { } ho && ho < 100 ? ho : null,

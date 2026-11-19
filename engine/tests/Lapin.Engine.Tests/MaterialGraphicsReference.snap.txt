@@ -1,6 +1,6 @@
 # Material graphics reference details: the model's pens of each view (decision 678). LAPIN_UPDATE_SNAPSHOTS=1 writes it again.
 composite-walls/plan 1:20
-  HATCH #000000 0.13 - - s=348 len=59.51 loops=0
+  HATCH #000000 0.13 - - s=330 len=61.76 loops=0
   HIDDEN #666666 0.18 - 1.5,1 s=5 len=0.41 loops=0
   OVERHEAD #888888 0.175 - 2,1 s=4 len=4 loops=0
   SEEN #000000 0.25 - - s=22 len=14.85 loops=0
@@ -8,7 +8,7 @@ composite-walls/plan 1:20
   CUT #000000 0.5 - - s=40 len=20.23 loops=0
   CUT #000000 0.25 - - s=24 len=33.89 loops=0
 composite-walls/plan 1:50
-  HATCH #000000 0.13 - - s=105 len=23.99 loops=0
+  HATCH #000000 0.13 - - s=92 len=26.22 loops=0
   HIDDEN #666666 0.18 - 1.5,1 s=5 len=0.41 loops=0
   OVERHEAD #888888 0.175 - 2,1 s=4 len=4 loops=0
   SEEN #000000 0.25 - - s=22 len=14.85 loops=0
@@ -16,7 +16,7 @@ composite-walls/plan 1:50
   CUT #000000 0.5 - - s=40 len=20.23 loops=0
   CUT #000000 0.25 - - s=24 len=33.89 loops=0
 composite-walls/plan 1:100
-  HATCH #000000 0.13 - - s=45 len=9.06 loops=0
+  HATCH #000000 0.13 - - s=44 len=8.95 loops=0
   HIDDEN #666666 0.18 - 1.5,1 s=5 len=0.41 loops=0
   OVERHEAD #888888 0.175 - 2,1 s=4 len=4 loops=0
   SEEN #000000 0.25 - - s=22 len=14.85 loops=0
