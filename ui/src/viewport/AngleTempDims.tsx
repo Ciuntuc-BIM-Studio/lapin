@@ -8,8 +8,9 @@
  * - A straight wall or beam selected: the smaller angle at each end where it meets another wall or beam that is not parallel.
  *   A click on the value types it (degrees, sums allowed): Enter turns the selected element about the meeting point until the
  *   angle reads it (element.transform's rotate, one undo step, its joins worked out again); Escape leaves it. The padlock makes a
- *   permanent angular dimension of the plan held on both elements (drafting.addDimension, `holds`): it follows them, and its value
- *   typed turns the selected one again. It does not lock the angle: either element can still be turned.
+ *   permanent angular dimension of the plan held on both elements (drafting.addDimension, `holds`), locked (decision 739): it
+ *   follows them and keeps the angle, the other element turned when either turns; its value typed turns the selected one
+ *   again, and its own padlock (modules/drafting/AngleLock.tsx) unlocks it.
  */
 
 import { useEffect } from 'react';
@@ -116,7 +117,7 @@ function permanentAngle(viewId: string, hostId: string, ha: Vec2, hb: Vec2, m: M
   const bis = { x: m.otherRay.x + m.hostRay.x, y: m.otherRay.y + m.hostRay.y };
   const bl = Math.hypot(bis.x, bis.y) || 1;
   return execute('drafting.addDimension', {
-    viewId, dimKind: 'angular', c: [c.x, c.y], a: on(m.otherRay), b: on(m.hostRay), at: on({ x: bis.x / bl, y: bis.y / bl }),
+    viewId, dimKind: 'angular', c: [c.x, c.y], a: on(m.otherRay), b: on(m.hostRay), at: on({ x: bis.x / bl, y: bis.y / bl }), locked: true,
     holds: [
       { element: m.other.id, way: wayAlong(m.otherRay, m.other.a, m.other.b) },
       { element: hostId, way: wayAlong(m.hostRay, ha, hb) },
