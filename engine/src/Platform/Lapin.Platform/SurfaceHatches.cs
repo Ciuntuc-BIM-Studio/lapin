@@ -71,7 +71,7 @@ public static class SurfaceHatches
         // before real-size hatches (decision 679) goes on suggesting the paper ones; a name is guessed from, as cuts do.
         // The view's filters (stage 5) lay their surface hatch and fill over the faces of the elements they take.
         var vg = VisibilityGraphics.Of(m, view);
-        var viewMaterials = new ViewMaterialGraphics(m, "elevation", options.Scale, ViewStyles.Of(m, view), vg.HasFilterGraphics ? vg : null);
+        var viewMaterials = new ViewMaterialGraphics(m, "elevation", options.Scale, ViewStyles.Of(m, view), vg.HasFilterGraphics || vg.HasElementGraphics ? vg : null);
         ResolvedMaterial? Material(string? id)
         {
             if (id == null) return null;

@@ -5,10 +5,14 @@ namespace Lapin.Drawing;
 /// <summary>A line's style: a pen (1–16), a colour, a pattern (solid, dashed, hidden, center, dotted). Absent fields come from the next level.</summary>
 public sealed record LineStyleSpec(int? Pen = null, string? Color = null, string? Pattern = null)
 {
+    /// <summary>A weight on paper (mm) in place of a pen (an element's line overridden in a view, decision 718); null: its pen's.</summary>
+    public double? Weight { get; init; }
+
     public static LineStyleSpec? From(JsonNode? n) => n is JsonObject o
-        ? new LineStyleSpec(Lapin.Model.Json.Number(o["pen"]) is { } p ? (int)p : null, (string?)o["color"], (string?)o["pattern"])
+        ? new LineStyleSpec(Lapin.Model.Json.Number(o["pen"]) is { } p ? (int)p : null, (string?)o["color"], (string?)o["pattern"] ?? (string?)o["lineType"])
+            { Weight = Lapin.Model.Json.Number(o["weight"]) is { } w && w > 0 && double.IsFinite(w) ? w : null }
         : null;
-    public bool Empty => Pen == null && Color == null && Pattern == null;
+    public bool Empty => Pen == null && Color == null && Pattern == null && Weight == null;
 }
 
 /// <summary>A line as resolved: paper width (mm), colour, dashes (paper mm; empty: solid). Null fields: the drawing's own pen.</summary>
@@ -108,7 +112,8 @@ public static class LineStyles
         "coverings", "rebar", "formwork", "scaffolds", "mep", "steelConnections", "transport", "shading"];
 
     public static LineStyleSpec Merge(LineStyleSpec into, LineStyleSpec? from) => from == null ? into
-        : new(into.Pen ?? from.Pen, into.Color ?? from.Color, into.Pattern ?? from.Pattern);
+        // A weight given over a pen given under it: the weight, as the narrower says it (and a pen over a weight, the pen).
+        : new(into.Pen ?? (into.Weight != null ? null : from.Pen), into.Color ?? from.Color, into.Pattern ?? from.Pattern) { Weight = into.Weight ?? (into.Pen != null ? null : from.Weight) };
 
     public delegate ResolvedLine? Resolver(string role, string ifcClass, string? elementId);
 
@@ -134,7 +139,7 @@ public static class LineStyles
             spec = Merge(spec, LineStyleSpec.From(element?[role]));
             if (category != null) spec = Merge(spec, LineStyleSpec.From(viewCategories[category]?["lines"]?[role]));
             if (category != null) spec = Merge(spec, LineStyleSpec.From(objectStyles[category]?[role]));
-            ResolvedLine? r = spec.Empty ? null : new ResolvedLine(spec.Pen is { } p ? PenWidth(table, p, scale) : null, spec.Color, spec.Pattern != null ? Dashes.Of(spec.Pattern, lineTypes) : null);
+            ResolvedLine? r = spec.Empty ? null : new ResolvedLine(spec.Weight ?? (spec.Pen is { } p ? PenWidth(table, p, scale) : null), spec.Color, spec.Pattern != null ? Dashes.Of(spec.Pattern, lineTypes) : null);
             cache[key] = r;
             return r;
         };

@@ -124,6 +124,7 @@ public sealed class VisibilityGraphics
         {
             Subject = ElementViews.SubjectOf(view),
             SubjectFaded = ElementViews.ContextOf(view) == "faded",
+            ElementRows = view.Attrs[ElementGraphics.Key] as JsonObject is { Count: > 0 } rows ? rows : null,
         };
     }
 
@@ -216,7 +217,7 @@ public sealed class VisibilityGraphics
 
     /// <summary>Whether anything in the view's graphics draws an element otherwise than its styles (a filter's colour or lines, a halftone, a transparency).</summary>
     public bool HasOverrides =>
-        HasLinks || (SubjectFaded && Subject != null) || (Graphics?["filters"] as JsonArray)?.OfType<JsonObject>().Any(r => r.Count > 2 || r.Any(kv => kv.Key is not ("id" or "hidden"))) == true
+        HasLinks || HasElementGraphics || (SubjectFaded && Subject != null) || (Graphics?["filters"] as JsonArray)?.OfType<JsonObject>().Any(r => r.Count > 2 || r.Any(kv => kv.Key is not ("id" or "hidden"))) == true
         || (Graphics?["categories"] as JsonObject)?.Any(c => c.Value?["halftone"] != null || c.Value?["transparency"] != null) == true;
 
     /// <summary>
@@ -266,10 +267,26 @@ public sealed class VisibilityGraphics
         public bool Gives(string field) => Row.ContainsKey(field);
     }
 
+    // Decision 718: graphics overridden per element in a view (Revit's Override Graphics in View → By Element).
+
+    /// <summary>
+    /// The view's per-element rows (<see cref="ElementGraphics"/>: the view's own <c>elementGraphics</c>, never a set's or a
+    /// style's, as Revit's by-element overrides stay with their view); null: none.
+    /// </summary>
+    public JsonObject? ElementRows { get; private init; }
+
+    /// <summary>Whether the view overrides any element's graphics (none, and no element is asked).</summary>
+    public bool HasElementGraphics => ElementRows != null;
+
+    /// <summary>The view's own row for an element (<see cref="ElementGraphics.Fields"/>), or null.</summary>
+    public JsonObject? ElementRow(string id) => ElementRows?[id] as JsonObject;
+
     /// <summary>The colour an element's lines (and its fills, paled) draw in: a filter's colour or halftone, else its category's halftone, else its link's; null: its own.</summary>
     public string? ColorOf(Entity e)
     {
         if (SubjectFaded && OutsideSubject(e)) return Links.Halftone;
+        // The element's own override in this view (decision 718): halftone over everything the view gives it.
+        if (True(ElementRow(e.Id)?["halftone"])) return Links.Halftone;
         foreach (var r in FilterRows(e))
         {
             if ((string?)r["color"] is { Length: 7 } c) return c;
