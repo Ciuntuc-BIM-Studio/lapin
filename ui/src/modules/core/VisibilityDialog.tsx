@@ -36,6 +36,8 @@ interface Graphics extends Rules {
   links?: Record<string, LinkRow>; annotations?: Record<string, { hidden?: boolean; color?: string; halftone?: boolean }>; detailLevel?: string;
   imports?: Record<string, { hidden?: boolean; halftone?: boolean; layers?: Record<string, { hidden?: boolean }> }>; filters?: FilterRow[];
   pointClouds?: Record<string, CloudRow>;
+  /** Only the view's own annotations (issue #111): the grids, levels, rooms' stamps and other views' marks left out. */
+  ownAnnotationsOnly?: boolean;
 }
 interface ImportInfo { id: string; kind: 'dxf' | 'image'; name: string; layers: string[] }
 export interface ViewFilter { id: string; name: string; match: 'all' | 'any'; rules: FilterRule[] }
@@ -93,7 +95,7 @@ export const CATEGORY_NAMES: Record<string, string> = {
   steelConnections: 'Steel connections', transport: 'Transport', shading: 'Shading',
   core: 'Core', finishes: 'Finishes', insulation: 'Insulation', membranes: 'Membranes', otherLayers: 'Other layers', reveals: 'Reveals',
   dimensions: 'Dimensions', texts: 'Texts', tags: 'Tags', roomTags: 'Room tags', grids: 'Grids', levels: 'Levels', sections: 'Section marks',
-  elevations: 'Elevation marks', callouts: 'Callouts', refPlanes: 'Reference planes', viewBoundaries: 'View boundaries', legends: 'Legends', symbols: 'Symbols',
+  elevations: 'Elevation marks', callouts: 'Callouts', refPlanes: 'Reference planes', viewBoundaries: 'View boundaries', legends: 'Legends', symbols: 'Symbols', keys: 'North arrows and scale bars',
 };
 
 /** The tab the dialog opens on next (Manage → View filters opens it on Filters). */
@@ -331,6 +333,12 @@ export function VisibilityDialog() {
           {tab === 'categories' && categoryTable()}
           {tab === 'classes' && classTable(classes)}
           {tab === 'annotations' && (
+            <>
+            <label className="check vv-own-annotations" title="Leave out the annotations that come from elsewhere: the grids, the levels' marks, the rooms' stamps, other views' section, elevation and callout marks. This view's own texts, dimensions, tags, symbols, north arrow and scale bar stay. One annotation alone: select it, right-click → Hide in view.">
+              <input type="checkbox" data-own-annotations checked={!!v.graphics?.ownAnnotationsOnly}
+                onChange={(e) => void execute('view.graphics', { id: target, ownAnnotationsOnly: e.target.checked })} />
+              <span>Only this view's own annotations</span>
+            </label>
             <table className="layer-table vv-annotations">
               <thead><tr><th>Shown</th><th>Category</th><th>Colour</th><th>Halftone</th></tr></thead>
               <tbody>
@@ -352,6 +360,7 @@ export function VisibilityDialog() {
                 })}
               </tbody>
             </table>
+            </>
           )}
           {tab === 'imports' && (
             !(v.imports ?? []).length ? <p className="muted small">Nothing is imported into this view: Import DXF…, or a PDF or an image to trace over (Insert).</p> : (

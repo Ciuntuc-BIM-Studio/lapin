@@ -382,7 +382,7 @@ function Fields({ node }: { node: NodeDto }) {
     case 'TEXT': return <TextFields node={node} />;
     case 'DIMENSION': return <DimensionFields node={node} />;
     case 'TAG': return <TagFields node={node} />;
-    case 'SHEETLEGEND': case 'SCALEBAR': return <KeyFields node={node} />;
+    case 'SHEETLEGEND': case 'SCALEBAR': case 'NORTHARROW': return <KeyFields node={node} />;
     default: return null;
   }
 }

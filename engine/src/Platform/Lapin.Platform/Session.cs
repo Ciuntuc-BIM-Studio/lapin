@@ -231,7 +231,9 @@ public sealed partial class Session
                 foreach (var purpose in SitePlans.Purposes)
                 {
                     var (attrs, name) = SitePlans.New(purpose, host.Id, null, null);
-                    edit.Add(new Entity(edit.NewId(), Views.Class, name, attrs));
+                    var siteView = new Entity(edit.NewId(), Views.Class, name, attrs);
+                    edit.Add(siteView);
+                    if (_catalog.OwnerOf(IfcClass.Annotation) != null) foreach (var key in DrawingKeys.SiteKeys(edit.NewId, siteView.Id)) edit.Add(key);
                 }
         });
         _history.Reset();

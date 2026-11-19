@@ -240,7 +240,7 @@ Selectează mai multe elemente (Shift-clic sau trage un dreptunghi), iar panoul 
 
 Un clic dreapta într-un plan, o secțiune sau o fațadă, cu ceva selectat, oferă să-l pui deoparte:
 
-- **Ascunde în vedere** ascunde selecția în această vedere de tot, ca *Hide in view* din Revit: se păstrează cu proiectul, iar planșele, PDF-ul și DXF-ul vederii o lasă și ele deoparte. Fiecare ascundere e un singur pas de anulare. Planul implicit al unui nivel devine vederea lui de plan când se ascunde ceva în el.
+- **Ascunde în vedere** ascunde selecția în această vedere de tot, ca *Hide in view* din Revit: se păstrează cu proiectul, iar planșele, PDF-ul și DXF-ul vederii o lasă și ele deoparte. Fiecare ascundere e un singur pas de anulare. Planul implicit al unui nivel devine vederea lui de plan când se ascunde ceva în el. La fel și adnotările: un text, o cotă, o etichetă, cota unui nivel, marcajul de secțiune sau de fațadă al altei vederi, o săgeată a nordului și o singură axă (doar acea axă, doar în această vedere).
 - **Ascunde temporar** (<kbd>HH</kbd>) și **Izolează temporar** (<kbd>HI</kbd>) ascund selecția, sau tot restul, doar în această vedere, până la **Resetează ascunderea/izolarea temporară** (<kbd>HR</kbd>). Nu se salvează și nu se anulează, și nu schimbă nimic la tipărire. Aceleași taste în 3D ascund și izolează în vederea 3D, ca până acum.
 - **Arată ascunsele** desenează cu magenta ce ascunde vederea, ca să poată fi luat: selectează-l și alege **Reafișează în vedere** ca să-l arăți din nou. Alege iar **Arată ascunsele** ca s-o oprești.
 

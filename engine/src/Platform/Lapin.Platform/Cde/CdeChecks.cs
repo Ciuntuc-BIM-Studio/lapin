@@ -142,7 +142,7 @@ public static class CdeChecks
                 .Select(v => new CdeFinding("viewUnplaced", CdeFinding.Warn, $"View „{v.Name}” is on no sheet.", ViewId: v.Id));
         }),
         new Rule("northArrow", "North arrow", false, c => c.Model.OfClass(Views.Class)
-            .Where(v => SitePlans.Of(v) != null && !SitePlans.NorthArrow(v))
+            .Where(v => SitePlans.Of(v) != null && !SitePlans.NorthArrow(c.Model, v))
             .Select(v => new CdeFinding("northArrow", CdeFinding.Warn, $"Site plan „{v.Name}” has no north arrow.", ViewId: v.Id))),
         new Rule("revisionUnchanged", "Revision after a change", true, c =>
         {

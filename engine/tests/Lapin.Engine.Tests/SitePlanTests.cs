@@ -21,7 +21,7 @@ public sealed class SitePlanTests
 {
     static Fixture Project()
     {
-        var f = new Fixture(new ArchitectureModule(), new CivilModule());
+        var f = new Fixture(new ArchitectureModule(), new CivilModule(), new Lapin.Drafting.DraftingModule());
         f.Session.New();
         return f;
     }
