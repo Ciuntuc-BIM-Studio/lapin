@@ -1188,7 +1188,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     // `structural`: IFC's structural analysis view (the analytical model, the load cases, actions and combinations; docs/plan-fem.md §8.7).
                     p["structural"] is JsonValue sv && sv.TryGetValue<bool>(out var structural) && structural,
                     // `typePropertiesOnOccurrences` (issue #30): the type's properties also on each of its elements, the element's own value winning.
-                    p["typePropertiesOnOccurrences"] is JsonValue tv && tv.TryGetValue<bool>(out var onOccurrences) && onOccurrences);
+                    p["typePropertiesOnOccurrences"] is JsonValue tv && tv.TryGetValue<bool>(out var onOccurrences) && onOccurrences,
+                    // `spaceBrep` (issue #28): spaces as faceted B-rep instead of extrusions.
+                    p["spaceBrep"] is JsonValue sbv && sbv.TryGetValue<bool>(out var spaceBrep) && spaceBrep);
                 if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, RefuseOverRead(HostFiles.Check(ifcPath)), options).ToJson(), null);
                 // The file made once, of its size: a hall of 33 bays is 150 MB of IFC (report #156).
                 var (ifc, _) = IfcExport.Bytes(session, "project.ifc", options);

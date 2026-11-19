@@ -259,4 +259,20 @@ public class IfcExportTests : IDisposable
         Assert.Equal(5, parts.Count(p => p.Type == "IFCMEMBER" && Equals(p[8], new StepEnum("MULLION"))));
         Assert.Single(file.OfType("IFCCURTAINWALLTYPE"));
     }
+
+    [Fact]
+    public void Spaces_can_export_as_faceted_brep()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        f.Run("architecture.addRoom", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 4, ["y2"] = 3, ["name"] = "Room", ["number"] = "1" });
+        var p = Path.Combine(_dir, "space-brep.ifc");
+        IfcExport.Write(f.Session, p, new IfcExportOptions(SpaceBrep: true));
+        var file = StepFile.Read(p);
+        var space = One(file, "IFCSPACE");
+        var shape = file.Get((StepRef)space[6]!)!;
+        var rep = file.Get((StepRef)Items(shape[2])[0]!)!;
+        Assert.Equal("Brep", rep[2] as string);
+        Assert.Single(file.OfType("IFCFACETEDBREP"));
+        Assert.Empty(file.OfType("IFCEXTRUDEDAREASOLID"));
+    }
 }
