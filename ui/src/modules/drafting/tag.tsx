@@ -46,7 +46,7 @@ interface TagPrefs { source: TagSource; field: string; tagType: string; leader: 
 export const useTagPrefs = create<TagPrefs>(() => ({ source: 'element', field: 'mark', tagType: '', leader: true, roomField: 'name', parameter: 'FireRating', buildup: '', keynote: 'code', part: '' }));
 
 /**
- * A part of the element a tag may point at instead (forum topic 178, decision 727): a window's interior or exterior sill. '' tags
+ * A part of the element a tag may point at instead (forum topic 178, decision 736): a window's interior or exterior sill. '' tags
  * the element, unless the click lands on one of its parts the engine places (a sill clicked tags the sill).
  */
 export type TagPart = '' | 'sill:inside' | 'sill:outside';
@@ -268,7 +268,7 @@ export function tagCommand(): Step {
       viewId: h.viewId, element: id, at: [at.x, at.y],
       ...(typed ? { tagType } : { field: 'field' in c ? c.field : p.field }),
       ...(text ? { text } : {}),
-      // A window's sill (decision 727): the one chosen, else the one the click landed on.
+      // A window's sill (decision 736): the one chosen, else the one the click landed on.
       ...(p.source === 'element' || p.source === 'parameter' || p.source === 'text' ? tagPartArgs(p.part, cls, click) : {}),
       ...(p.leader ? {} : { leader: false }),
       ...(elbow ? { elbow: [elbow.x, elbow.y] } : {}),
@@ -521,7 +521,7 @@ export function TagFields({ node }: { node: NodeDto }) {
   return (
     <dl className="fields" data-tag-fields>
       <dt>Tagged element</dt><dd><span className="num">{target ? `${target.name} (${target.type})` : '—'}</span></dd>
-      {/* A tag of a part of the element (decision 727): which one, the window's interior or exterior sill. */}
+      {/* A tag of a part of the element (decision 736): which one, the window's interior or exterior sill. */}
       {typeof node.props.part === 'string' && <><dt>Tagged part</dt><dd data-testid="tag-part">{TAG_PARTS.find(([k]) => k === node.props.part)?.[1] ?? <span data-no-i18n>{node.props.part}</span>}</dd></>}
       <dt title="Off: printed nowhere (sheets, PDF, exports), drawn faintly on screen only, so it can be switched on again">Shown</dt>
       <dd><input type="checkbox" checked={node.props.off !== true} data-tag-shown onChange={(e) => set({ shown: e.target.checked })} /></dd>

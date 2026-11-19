@@ -356,7 +356,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         CurtainWalls.Register(r);
         // Sunshades (report #56): canopies, fins, louvres, egg-crates, screens, awnings, pergolas, external blinds.
         Sunshades.Register(r);
-        // A window's sills as parts of their own for schedules and tags (forum topic 178, decision 727).
+        // A window's sills as parts of their own for schedules and tags (forum topic 178, decision 736).
         WindowSills.Register(r);
         Stairs.StairsModule.Register(r);
         Stairs.UnderStairs.Register(r);

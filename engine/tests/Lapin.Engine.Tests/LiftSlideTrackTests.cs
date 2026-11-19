@@ -5,7 +5,7 @@ using Lapin.Geometry;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// A lift-and-slide portal (forum topic 180, decision 725, tester LVK): the leaf on the inner track runs past the fixed pane on
+/// A lift-and-slide portal (forum topic 180, decision 734, tester LVK): the leaf on the inner track runs past the fixed pane on
 /// the outer one, so no mullion stands in its way. The mullion between them stands on the outer track only (the fixed pane's
 /// frame), the leaf reaches over it, so their meeting stiles overlap; in 3D, plan, section and the configurator's preview. A
 /// sliding window's sashes on their two tracks the same.

@@ -125,7 +125,7 @@ const structure: LapinModule = {
   hotbar: [column, beam],
   propertySections: [{ id: 'structure', label: 'Structure', classes: ['IfcColumn', 'IfcBeam', 'IfcFooting'], component: StructureSection }],
   dialogs: { structureTypes: StructureTypesDialog },
-  // Edit type… (decision 726): the dialog opened on the element's type.
+  // Edit type… (decision 735): the dialog opened on the element's type.
   editType: Object.fromEntries(['IfcColumnType', 'IfcBeamType', 'IfcFootingType'].map((c) => [c, (id: string) => openTypeDialog('structureTypes', id)])),
   // A selected column's or beam's temporary dimensions, read-only while one is placed or drawn (decision 733).
   planOverlays: [MemberDims],

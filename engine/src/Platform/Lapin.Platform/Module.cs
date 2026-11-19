@@ -534,7 +534,7 @@ public interface IScheduleSource
 public sealed record ElementPart(string Key, IReadOnlyDictionary<string, FieldValue> Fields)
 {
     /// <summary>
-    /// Where the part is in the model, when its source knows (world metres, its outline's corners; a window's sill, decision 727):
+    /// Where the part is in the model, when its source knows (world metres, its outline's corners; a window's sill, decision 736):
     /// a tag of the part (<c>part</c>) points its leader at their middle, and a click inside them in a view tags the part. Null: none.
     /// </summary>
     public IReadOnlyList<Vec3>? Points { get; init; }

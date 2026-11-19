@@ -461,7 +461,7 @@ export interface LapinModule {
   placeSources?: PlaceSourceDef[];
   /** Match Type (MA): elements of this class given another type. */
   setType?: Record<string, (ids: string[], typeId: string) => Promise<unknown>>;
-  /** Edit type… (decision 726): the types dialog opened on this type, by the type's class (else the dialog of the tool placing it). */
+  /** Edit type… (decision 735): the types dialog opened on this type, by the type's class (else the dialog of the tool placing it). */
   editType?: Record<string, (typeId: string) => void>;
   /** What a type's configurator sets, shown and edited under Type parameters on its elements, by the type's class. */
   typeFields?: Record<string, ComponentType<{ type: NodeDto; node: NodeDto }>>;

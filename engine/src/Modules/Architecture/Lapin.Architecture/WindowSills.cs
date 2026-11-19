@@ -6,7 +6,7 @@ using Lapin.Platform;
 namespace Lapin.Architecture;
 
 /// <summary>
-/// A window's sills as things of their own (forum topic 178, decision 727, tester LVK): the interior and the exterior sill a
+/// A window's sills as things of their own (forum topic 178, decision 736, tester LVK): the interior and the exterior sill a
 /// window's type sets (its detailed sills, else its plain boards), each with its side, material, length, depth across the wall,
 /// projection past the wall's face, thickness, overhang past the jambs and slope, worked out on every ask from the type and where
 /// the window stands, never stored. They stay parts of the window (its body draws them, IFC writes them inside the window, as

@@ -1846,7 +1846,7 @@ export const scenes = [
     },
   },
   {
-    // A window's sills tagged and scheduled (forum topic 178, decision 727): two windows of a type with a granite exterior sill and
+    // A window's sills tagged and scheduled (forum topic 178, decision 736): two windows of a type with a granite exterior sill and
     // a timber interior one, the others with plain boards; the ribbon's Window sill schedule (a field schedule from the shipped
     // template, a row per kind of sill); a tag on an exterior sill reading its fields.
     id: 'window-sills',

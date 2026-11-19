@@ -582,7 +582,7 @@ public static class Joinery
     }
 
     /// <summary>
-    /// The column boundary a sliding panel runs past (forum topic 180, decision 725): a lift-and-slide leaf, or a sliding window's
+    /// The column boundary a sliding panel runs past (forum topic 180, decision 734): a lift-and-slide leaf, or a sliding window's
     /// sash, towards its side, where a mullion parts it from a neighbour on the other track. That mullion stands only off the
     /// panel's track, so nothing is in its way, and the panel reaches over it (<see cref="PanelRect"/>). Null for any other panel.
     /// </summary>
@@ -843,7 +843,7 @@ public static class Joinery
         bool SpansCol(int boundary, int row) => panels.Any(p => p.Col <= boundary && p.Col + p.ColSpan - 1 > boundary && p.Row <= row && p.Row + p.RowSpan - 1 >= row);
         bool SpansRow(int boundary, int col) => panels.Any(p => p.Row <= boundary && p.Row + p.RowSpan - 1 > boundary && p.Col <= col && p.Col + p.ColSpan - 1 >= col);
         JoineryBox Box(double x0, double x1, double z0, double z1) => new("frame", new Vec3(x0, y0, z0), new Vec3(x1, y1, z1));
-        // A mullion a panel slides past (forum topic 180, decision 725): it stands off that panel's track (the inner one's, the outer one's).
+        // A mullion a panel slides past (forum topic 180, decision 734): it stands off that panel's track (the inner one's, the outer one's).
         var past = panels.Select(p => (p, b: SlidesPast(s, panels, p))).Where(x => x.b != null).ToList();
         (double A, double B) Across(int boundary, int row)
         {

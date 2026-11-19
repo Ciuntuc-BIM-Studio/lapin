@@ -106,7 +106,7 @@ export function StructureTypesDialog() {
     }
   };
   const fresh = () => { setEditing(null); setName(''); setWraps([]); };
-  // Edit type… on a column, beam or footing (decision 726): the dialog opens on its type, under its kind.
+  // Edit type… on a column, beam or footing (decision 735): the dialog opens on its type, under its kind.
   useEffect(() => {
     const id = typeToEdit('structureTypes');
     const t = id ? nodes.get(id) : undefined;

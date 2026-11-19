@@ -113,7 +113,7 @@ export function scaleImageItems(): MenuItem[] {
 }
 
 /**
- * Edit type: the types dialog of the selected element's type, opened on that type (forum topic 176, decision 726): a module's own
+ * Edit type: the types dialog of the selected element's type, opened on that type (forum topic 176, decision 735): a module's own
  * editor for the class (`editType`), else the dialog of the tool placing it (the same one Edit types… opens), the type made the
  * current one.
  */

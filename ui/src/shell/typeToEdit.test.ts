@@ -15,7 +15,7 @@ function model() {
   useSession.setState({ nodes, relations });
 }
 
-describe('Edit type… opens the types dialog on the element\'s type (forum topic 176, decision 726)', () => {
+describe('Edit type… opens the types dialog on the element\'s type (forum topic 176, decision 735)', () => {
   beforeEach(() => { useUi.setState({ dialog: null, selected: [] }); model(); });
 
   it('holds the type asked for while that dialog is open, and forgets it once it closes', () => {

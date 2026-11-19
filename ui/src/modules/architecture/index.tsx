@@ -674,7 +674,7 @@ const underStair: ToolDef = {
     else openUnderStair(picked.id);
   },
 };
-/** The window sills' schedule (forum topic 178, decision 727): each kind of sill, how many and on which windows, for their supplier. */
+/** The window sills' schedule (forum topic 178, decision 736): each kind of sill, how many and on which windows, for their supplier. */
 const windowSillSchedule: ToolDef = {
   id: 'architecture.windowSillSchedule', label: 'Window sill schedule', icon: Table2,
   run: () => void createScheduleOf('windowSills').then((r) => { if (r) notify('Window sill schedule made: it is in the project browser, under Schedules.'); }),
@@ -799,7 +799,7 @@ const architecture: LapinModule = {
     },
     [BALCONY]: (n) => { useUi.setState({ balconyStyle: styleOf(n) || null }); activate(n.props.kind === 'mezzanine' ? galleryEdge : n.props.contour ? balconyOutline : balcony); },
   },
-  // Edit type… (decision 726) on a sunshade or a gate: its own dialog on its type (the others: their placing tool's dialog).
+  // Edit type… (decision 735) on a sunshade or a gate: its own dialog on its type (the others: their placing tool's dialog).
   editType: { [SHADE_TYPE]: (id) => editShadeType(id), [GATE_TYPE]: (id) => { useGateTypesDialog.setState({ typeId: id }); useUi.setState({ dialog: 'gateTypes' }); } },
   setType: {
     IfcWall: (ids, typeId) => execute('architecture.setWallType', { ids, typeId }),

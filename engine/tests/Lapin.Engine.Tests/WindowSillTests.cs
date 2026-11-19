@@ -9,7 +9,7 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// A window's sills tagged and scheduled (forum topic 178, decision 727, tester LVK): the interior and exterior sill of a
+/// A window's sills tagged and scheduled (forum topic 178, decision 736, tester LVK): the interior and exterior sill of a
 /// window's type (its detailed sills, else its plain boards) are parts of the window with their own fields (side, material,
 /// length, depth, projection, thickness, slope); a field schedule lists them as rows (the shipped "Window sills", for the
 /// sills' supplier); a tag points at one (named, or the one clicked) and reads its fields; the window reads them too.

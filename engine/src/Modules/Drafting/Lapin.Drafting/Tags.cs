@@ -29,7 +29,7 @@ namespace Lapin.Drafting;
 /// as a template's ({mark}, {FireRating}, {storey.name}, {= area * 1.1 | 0.00}).
 /// </para>
 /// <para>
-/// A tag of a part (forum topic 178, decision 727): <c>part</c> names a part of its element a module lists as a schedule's rows
+/// A tag of a part (forum topic 178, decision 736): <c>part</c> names a part of its element a module lists as a schedule's rows
 /// (<see cref="IPartSource"/>: a window's interior or exterior sill), so the tag reads the part's fields first ({sillMaterial},
 /// {sillLength}; by default its few words, <c>partLabel</c>) and its leader points at the part. A click on the part in a view
 /// tags it (<c>pick</c>, the click's point); the element stays what the tag follows.
@@ -274,7 +274,7 @@ public static class Tags
         var at = Followed(Pt(t.Attrs["at"])) ?? default;
         var angle = AngleOf(c, t, e);
         var rad = angle * Math.PI / 180;
-        // A tag of a part (decision 727): its fields read first, its leader to the part; a part gone leaves it red as an element gone does.
+        // A tag of a part (decision 736): its fields read first, its leader to the part; a part gone leaves it red as an element gone does.
         var partKey = t.Str("part");
         var part = PartOf(c.Query, e, partKey);
         var lines = partKey != null && part == null && FreeText(t) == null ? ["?"] : LinesOf(c.Model, t, e, type, c.Book.Units, FieldsOf(part));
@@ -309,7 +309,7 @@ public static class Tags
 
     public static void Register(IModuleRegistry r)
     {
-        // A tag of an element on a view: its mark (or name, class, type, any parameter), at a point; of one of its parts (decision 727:
+        // A tag of an element on a view: its mark (or name, class, type, any parameter), at a point; of one of its parts (decision 736:
         // part, a window's sill:inside or sill:outside; or pick, the click's point in the view, the part it lands on).
         r.Command("addTag", "Tag", (ctx, a) =>
         {
@@ -325,7 +325,7 @@ public static class Tags
             var typeId = (string?)a["tagType"];
             if (typeId != null && Standards.TagTypeOf(book, typeId) == null) throw new CommandException("There is no such tag type.");
             var type = typeId != null ? Standards.TagTypeOf(book, typeId) : field == null ? Standards.TagTypeOf(book, null, e.Class) : null;
-            // A part of the element (decision 727): the one named, else the one the click (pick, in the view) landed on; its
+            // A part of the element (decision 736): the one named, else the one the click (pick, in the view) landed on; its
             // few words by default, and none of the class's own tag types (a window's marker is the window's).
             string? part = null;
             if ((string?)a["part"] is { Length: > 0 } named)

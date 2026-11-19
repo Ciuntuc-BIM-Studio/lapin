@@ -157,7 +157,7 @@ const sitework: LapinModule = {
   ],
   dialogs: { scaffoldTypes: ScaffoldDialog, formworkTypes: FormworkDialog },
   typeFields: { LapinScaffoldType: ScaffoldTypeFields, LapinFormworkType: FormworkTypeFields },
-  // Edit type… (decision 726): the dialog opened on the element's type.
+  // Edit type… (decision 735): the dialog opened on the element's type.
   editType: {
     LapinScaffoldType: (id) => { setSiteWorks({ scaffoldTypeId: id }); useUi.setState({ dialog: 'scaffoldTypes' }); },
     LapinFormworkType: (id) => {

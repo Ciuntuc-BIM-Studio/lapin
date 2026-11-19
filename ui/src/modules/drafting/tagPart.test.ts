@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TAG_PARTS, tagPartArgs } from './tag';
 
-describe('a tag of a window\'s sill (forum topic 178, decision 727)', () => {
+describe('a tag of a window\'s sill (forum topic 178, decision 736)', () => {
   it('names the sill chosen for a door or window, else sends the click so the engine finds the part it lands on', () => {
     expect(tagPartArgs('sill:outside', 'IfcWindow', { x: 1, y: 2 })).toEqual({ part: 'sill:outside' });
     expect(tagPartArgs('sill:inside', 'IfcDoor', undefined)).toEqual({ part: 'sill:inside' });

@@ -1,5 +1,5 @@
 /**
- * Edit type… (forum topic 176, decision 726): a types dialog opened on one type, the selected element's, rather than on the
+ * Edit type… (forum topic 176, decision 735): a types dialog opened on one type, the selected element's, rather than on the
  * first of its list. Whoever opens a dialog for a type says which (`openTypeDialog`); the dialog asks `typeToEdit` as it
  * mounts. The type asked for holds only while that dialog stays open: another dialog, or the same one opened again from the
  * ribbon, starts as it always did.
