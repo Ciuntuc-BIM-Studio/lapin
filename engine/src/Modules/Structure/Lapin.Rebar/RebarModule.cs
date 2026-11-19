@@ -10,11 +10,15 @@ namespace Lapin.Rebar;
 /// <summary>
 /// The project's rebar drawing settings (<c>rebarSettings</c>): colours by diameter, the text and balloon sizes (paper mm), the steel,
 /// segment lengths written on the bars, the cover, the labels' styles by kind of group (partial, over <see cref="LabelStyle.Default"/>),
-/// the stock length a bar is delivered in (12 m, or 6 m) and the lap a split bar overlaps by (null: 50Ø; decision 227).
+/// the stock length a bar is delivered in (12 m, or 6 m) and the lap a split bar overlaps by (null: 50Ø; decision 227), and how
+/// marks are written: a pattern and a prefix by shape group (decision 729, <see cref="RebarMarks"/>).
 /// </summary>
 public sealed record RebarSettings(bool ColorByDiameter = true, double TextHeight = 2.5, double Balloon = 7.5, string Steel = RebarShapes.DefaultSteel, bool SegmentLengths = false, double Cover = 0.025,
-    IReadOnlyDictionary<string, JsonObject>? Labels = null, double StockLength = 12, double? LapLength = null)
+    IReadOnlyDictionary<string, JsonObject>? Labels = null, double StockLength = 12, double? LapLength = null, string MarkPattern = RebarMarks.DefaultPattern,
+    IReadOnlyDictionary<string, string>? MarkPrefixes = null)
 {
+    public IReadOnlyDictionary<string, string> MarkPrefixes { get; init; } = MarkPrefixes ?? new Dictionary<string, string>();
+
     public const string Key = "rebarSettings";
     public const double DefaultStock = 12;
     /// <summary>The lap a bar overlaps by when the project names none: 50Ø.</summary>
@@ -32,11 +36,15 @@ public sealed record RebarSettings(bool ColorByDiameter = true, double TextHeigh
         var labels = new Dictionary<string, JsonObject>();
         if (o["labels"] is JsonObject lo)
             foreach (var (k, v) in lo) if (v is JsonObject so && LabelStyle.Kinds.Contains(k)) labels[k] = so;
+        var prefixes = new Dictionary<string, string>();
+        if (o["marks"]?["prefixes"] is JsonObject po)
+            foreach (var (k, v) in po) if (RebarMarks.Groups.Contains(k) && ((string?)v)?.Trim() is { Length: > 0 } pv) prefixes[k] = pv;
         return new RebarSettings(
             !(o["colorByDiameter"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && !cb),
             Json.Number(o["textHeight"]) ?? 2.5, Json.Number(o["balloon"]) ?? 7.5, (string?)o["steel"] ?? RebarShapes.DefaultSteel,
             o["segmentLengths"] is JsonValue sv && sv.TryGetValue<bool>(out var sl) && sl, Json.Number(o["cover"]) ?? 0.025, labels,
-            Json.Number(o["stockLength"]) is { } stock && stock > 0 ? stock : DefaultStock, Json.Number(o["lapLength"]) is { } lap && lap > 0 ? lap : null);
+            Json.Number(o["stockLength"]) is { } stock && stock > 0 ? stock : DefaultStock, Json.Number(o["lapLength"]) is { } lap && lap > 0 ? lap : null,
+            ((string?)o["marks"]?["pattern"])?.Trim() is { Length: > 0 } pattern ? pattern : RebarMarks.DefaultPattern, prefixes);
     }
 
     public JsonObject ToJson() => new()
@@ -44,6 +52,7 @@ public sealed record RebarSettings(bool ColorByDiameter = true, double TextHeigh
         ["colorByDiameter"] = ColorByDiameter, ["textHeight"] = TextHeight, ["balloon"] = Balloon, ["steel"] = Steel, ["segmentLengths"] = SegmentLengths, ["cover"] = Cover,
         ["labels"] = new JsonObject(Labels.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone()))),
         ["stockLength"] = StockLength, ["lapLength"] = LapLength,
+        ["marks"] = new JsonObject { ["pattern"] = MarkPattern, ["prefixes"] = new JsonObject(MarkPrefixes.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value))) },
     };
 
     /// <summary>The settings as the interface reads them: each kind's label style resolved whole.</summary>
@@ -127,17 +136,24 @@ public static class Rebars
         return (path, positions, text, $"{positions.Count * Count(e)}{RebarShapes.Dia(s.Diameter)}/{text}");
     }
 
-    /// <summary>The next free mark in a partition: one over the highest its bars hold (the bars drawn and those the types lay); marks start again in each partition.</summary>
-    public static int NextMark(IModelView m, string? partition = null)
+    /// <summary>
+    /// The next free mark in a partition and with a prefix (decision 729): one over the highest the bars written with that prefix
+    /// hold (the bars drawn, the sets, and those the types lay); marks start again in each partition and each prefix. With no
+    /// prefix set anywhere, every bar shares one numbering, as before.
+    /// </summary>
+    public static int NextMark(IModelView m, string? partition = null, string prefix = "") =>
+        1 + RebarMarks.Held(m, RebarSettings.Of(m), partition?.Trim() ?? "", prefix).DefaultIfEmpty(0).Max();
+
+    /// <summary>The next free mark for a bar of this shape (its group's prefix, or the one it names).</summary>
+    public static int NextMarkFor(IModelView m, string? partition, string? shape, string? ownPrefix = null)
     {
-        var p = partition?.Trim() ?? "";
-        var drawn = m.OfClass(Class).Concat(m.OfClass(RunClass)).Where(e => Partition(e) == p).Select(Mark).DefaultIfEmpty(0).Max();
-        return 1 + Math.Max(drawn, Math.Max(TypeStirrups.HighestMark(m, p), ColumnBars.HighestMark(m, p)));
+        var st = RebarSettings.Of(m);
+        return NextMark(m, partition, ownPrefix?.Trim() ?? RebarMarks.PrefixOf(st, RebarMarks.GroupOf(shape)));
     }
 
     /// <summary>The partitions the model's bars are in, sorted ("" first when some bars have none).</summary>
     public static List<string> Partitions(IModelView m) =>
-        [.. m.OfClass(Class).Concat(m.OfClass(RunClass)).Select(Partition)
+        [.. m.OfClass(Class).Concat(m.OfClass(RunClass)).Concat(m.OfClass(RebarSets.Class)).Select(Partition)
             .Concat(m.OfClass(IfcClass.BeamType).Concat(m.OfClass(IfcClass.ColumnType)).Where(t => StirrupSpec.Of(t) is { Enabled: true }).Select(t => t.Str(StirrupsPartitionKey)?.Trim() ?? ""))
             .Concat(m.OfClass(IfcClass.ColumnType).Where(t => ColumnBarsSpec.Of(t) is { Enabled: true }).Select(t => t.Str(ColumnBarsPartitionKey)?.Trim() ?? ""))
             .Distinct().Order(StringComparer.OrdinalIgnoreCase)];
@@ -157,29 +173,41 @@ public sealed class RebarSchedule : IScheduleSource
     /// the type's while the lengths are each element's (a storey's height, hooks or starter bars): one row per shape and length,
     /// not a conflict.
     /// </summary>
-    public sealed record Entry(int Mark, double Diameter, string Shape, int Count, double Length, bool Derived = false, string Partition = "");
+    public sealed record Entry(int Mark, double Diameter, string Shape, int Count, double Length, bool Derived = false, string Partition = "")
+    {
+        /// <summary>The mark as written (decision 729: R12, U3); "" when only its number is known (written as the number).</summary>
+        public string MarkText { get; init; } = "";
+        /// <summary>What the schedule writes and groups by.</summary>
+        public string Written => MarkText.Length > 0 ? MarkText : Mark.ToString(CultureInfo.InvariantCulture);
+        /// <summary>The mark's letters (its prefix and pattern without the number): what sorts R before U, then the number.</summary>
+        public string Letters => new([.. Written.Where(c => !char.IsDigit(c))]);
+    }
 
-    public static List<Entry> Entries(IModelView m) => [.. Owned(m).Select(x => x.Entry)];
+    /// <param name="geometry">The elements' bodies, which the sets are measured on (decision 730); without them the sets are left out.</param>
+    public static List<Entry> Entries(IModelView m, Func<string, ElementGeometry?>? geometry = null) => [.. Owned(m, geometry).Select(x => x.Entry)];
 
     /// <summary>The entries, each with what it is read through: the bar or distribution drawn, the beam or column a type lays its bars in.</summary>
-    public static List<(Entity Owner, Entry Entry)> Owned(IModelView m)
+    public static List<(Entity Owner, Entry Entry)> Owned(IModelView m, Func<string, ElementGeometry?>? geometry = null)
     {
         var o = new List<(Entity, Entry)>();
         // A bar is its view's annotation: one whose view is gone is drawn nowhere and not counted.
         bool Drawn(Entity e) => !e.Bool("excludeSchedule") && Views.Find(m, e.Str("viewId") ?? "") != null;
+        var st = RebarSettings.Of(m);
         foreach (var e in m.OfClass(Rebars.Class))
         {
             if (!Drawn(e)) continue;
             var s = Rebars.SpecOf(e);
-            o.Add((e, new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, Rebars.Pieces(e), RebarShapes.Length(s), Partition: Rebars.Partition(e))));
+            o.Add((e, new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, Rebars.Pieces(e), RebarShapes.Length(s), Partition: Rebars.Partition(e)) { MarkText = RebarMarks.TextOf(st, e) }));
         }
         foreach (var e in m.OfClass(Rebars.RunClass))
         {
             if (!Drawn(e)) continue;
             var s = Rebars.SpecOf(e);
             var (_, positions, _, _) = Rebars.RunOf(e, s);
-            o.Add((e, new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, positions.Count * Rebars.Count(e), RebarShapes.Length(s), Partition: Rebars.Partition(e))));
+            o.Add((e, new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, positions.Count * Rebars.Count(e), RebarShapes.Length(s), Partition: Rebars.Partition(e)) { MarkText = RebarMarks.TextOf(st, e) }));
         }
+        // The sets (decision 730): one entry per length their bars come in, under the set's mark.
+        o.AddRange(RebarSets.Owned(m, st, geometry));
         o.AddRange(TypeStirrups.Owned(m));
         o.AddRange(ColumnBars.Owned(m));
         return o;
@@ -198,7 +226,7 @@ public sealed class RebarSchedule : IScheduleSource
         public string Label => "Reinforcing bars";
         public IReadOnlyList<(string Key, string Label)> Fields =>
         [
-            ("rebarMark", "Mark"), ("rebarDiameter", "Ø (mm)"), ("rebarShape", "Shape"), ("rebarCount", "No."), ("rebarLength", "Length (m)"),
+            ("rebarMark", "Mark"), ("rebarMarkNumber", "Mark number"), ("rebarMarkLetters", "Mark prefix"), ("rebarDiameter", "Ø (mm)"), ("rebarShape", "Shape"), ("rebarCount", "No."), ("rebarLength", "Length (m)"),
             ("rebarTotal", "Total length (m)"), ("rebarMass", "Mass (kg)"), ("rebarPartition", "Partition"), ("rebarVariant", "A type's bars of one mark: shape, Ø, length"),
         ];
 
@@ -207,11 +235,11 @@ public sealed class RebarSchedule : IScheduleSource
         public IEnumerable<(Entity Owner, ElementPart Part)> LooseParts(IQueryContext q)
         {
             var keys = new Dictionary<string, int>();
-            foreach (var (owner, x) in Owned(q.Model))
+            foreach (var (owner, x) in Owned(q.Model, q.Geometry))
             {
                 var n = keys[owner.Id] = keys.GetValueOrDefault(owner.Id) + 1;
                 var variant = x.Derived ? FormattableString.Invariant($"{x.Shape}|{Math.Round(x.Diameter * 1000, 1)}|{Math.Round(x.Length, 3)}") : "";
-                yield return (owner, ElementPart.Of((n - 1).ToString(CultureInfo.InvariantCulture), ("rebarMark", (double)x.Mark), ("rebarDiameter", Math.Round(x.Diameter * 1000, 3)),
+                yield return (owner, ElementPart.Of((n - 1).ToString(CultureInfo.InvariantCulture), ("rebarMark", x.Written), ("rebarMarkNumber", (double)x.Mark), ("rebarMarkLetters", x.Letters), ("rebarDiameter", Math.Round(x.Diameter * 1000, 3)),
                     ("rebarShape", x.Shape), ("rebarCount", (double)x.Count), ("rebarLength", x.Length), ("rebarTotal", x.Count * x.Length),
                     ("rebarMass", x.Count * x.Length * RebarShapes.MassPerMetre(x.Diameter)), ("rebarPartition", x.Partition), ("rebarVariant", variant)));
             }
@@ -227,7 +255,7 @@ public sealed class RebarSchedule : IScheduleSource
     public const string TemplateFields = """
         {
           "source": "rebar", "groupBy": ["rebarPartition", "rebarMark", "rebarVariant"], "groupColumns": false, "count": false, "totals": "always",
-          "sort": ["rebarPartition", "rebarMark", "rebarLength"],
+          "sort": ["rebarPartition", "rebarMarkLetters", "rebarMarkNumber", "rebarLength"],
           "subtotals": ["rebarDiameter"],
           "columns": [
             { "field": "rebarMark", "heading": "Mark", "aggregate": "first" },
@@ -266,14 +294,14 @@ public sealed class RebarSchedule : IScheduleSource
         {
             var partMass = 0.0;
             var mine = byPartition ? list.Where(x => x.Partition == part) : list;
-        foreach (var g in mine.GroupBy(x => (x.Mark, Variant: Variant(x))).OrderBy(g => g.Key.Mark).ThenBy(g => g.First().Length))
+        foreach (var g in mine.GroupBy(x => (x.Written, Variant: Variant(x))).OrderBy(g => g.First().Letters, StringComparer.Ordinal).ThenBy(g => g.First().Mark).ThenBy(g => g.First().Length))
         {
             var first = g.First();
             var count = g.Sum(x => x.Count);
             var conflict = g.Any(x => Math.Abs(x.Diameter - first.Diameter) > 1e-9 || Math.Abs(x.Length - first.Length) > 0.0005);
             var total = g.Sum(x => x.Count * x.Length);
             var mass = g.Sum(x => x.Count * x.Length * RebarShapes.MassPerMetre(x.Diameter));
-            rows.Add(Row(part, g.Key.Mark.ToString(CultureInfo.InvariantCulture), N(first.Diameter * 1000, 3), first.Shape, count.ToString(CultureInfo.InvariantCulture), N(first.Length), N(total), N(mass), conflict ? "Ø or length differs" : ""));
+            rows.Add(Row(part, g.Key.Written, N(first.Diameter * 1000, 3), first.Shape, count.ToString(CultureInfo.InvariantCulture), N(first.Length), N(total), N(mass), conflict ? "Ø or length differs" : ""));
             var d = (int)Math.Round(first.Diameter * 1000);
             byDia[d] = byDia.TryGetValue(d, out var acc) ? (acc.Length + total, acc.Mass + mass) : (total, mass);
             totalMass += mass;
@@ -297,7 +325,7 @@ public sealed class RebarSchedule : IScheduleSource
     /// <summary>The table a schedule asks for: the partitions it lists (all when none chosen); a partition column once any bar has one.</summary>
     static ScheduleGrid Table(IQueryContext q, Entity? schedule)
     {
-        var entries = Entries(q.Model);
+        var entries = Entries(q.Model, q.Geometry);
         var byPartition = entries.Any(x => x.Partition.Length > 0);
         if (PartitionsOf(schedule) is { } only) entries = [.. entries.Where(x => only.Contains(x.Partition))];
         return new("Bar bending schedule", byPartition ? ["Partition", .. Columns] : Columns, Rows(entries, out _, byPartition));
@@ -344,6 +372,9 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         });
 
         r.Service<IViewAnnotations>(this);
+        // Rebar sets in slabs, footings and walls, with their multi-rebar tag (decision 730).
+        RebarSets.Register(r);
+        r.Service<IDeletionFollowers>(new RebarSetHosts());
         // The reinforcement's rules in the project's rule pack (docs/plan-user-extensibility.md §5.4).
         RebarRuleSection.Register(r);
         // Bars along an element's edges as the view cuts it ({viewId, at | hostId, edges?: [side…] (none: all round), cover?, diameter?, steel?, hooks?, count?}), docs/plan-user-extensibility.md §6.2.
@@ -382,7 +413,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var view = Views.Find(ctx.Model, (string?)a["viewId"] ?? "") ?? throw new CommandException("A bar is drawn on a view.");
             var shape = (string?)a["shape"] ?? "straight";
             var def = RebarShapes.Def(shape);
-            var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["at"] = Rebars.J(Args.Point(a["at"], "the bar's point")), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMark(ctx.Model, PartitionArg(a)), ["count"] = 1 };
+            var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["at"] = Rebars.J(Args.Point(a["at"], "the bar's point")), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMarkFor(ctx.Model, PartitionArg(a), shape, (string?)a[RebarMarks.PrefixKey]), ["count"] = 1 };
             if (def.FreeVertices && a["vertices"] == null) attrs["vertices"] = new JsonArray(def.Vertices(new Dictionary<string, double>()).Select(p => (JsonNode)Rebars.J(p)).ToArray());
             // The project's rules complete it: its steel, its hooks' tails, its bend radius (docs/plan-user-extensibility.md §6.5).
             a = (JsonObject)a.DeepClone();
@@ -464,7 +495,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var start = Args.Point(a["start"], "the path's start");
             var end = Args.Point(a["end"], "the path's end");
             if ((end - start).Length < 1e-6) throw new CommandException("A distribution needs two different points.");
-            var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["start"] = Rebars.J(start), ["end"] = Rebars.J(end), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMark(ctx.Model, PartitionArg(a)), ["count"] = 1, ["step"] = 0.15 };
+            var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["start"] = Rebars.J(start), ["end"] = Rebars.J(end), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMarkFor(ctx.Model, PartitionArg(a), shape, (string?)a[RebarMarks.PrefixKey]), ["count"] = 1, ["step"] = 0.15 };
             a = (JsonObject)a.DeepClone();
             RebarRuleSection.Complete(ctx.Model, a, Json.Number(a["diameter"]) ?? def.DefaultDiameter, shape);
             Write(attrs, a, run: true);
@@ -483,7 +514,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             return null;
         });
         // The project's rebar drawing settings: {colorByDiameter?, textHeight?, balloon?, steel?, segmentLengths?, cover?, labels?: {bars?, stirrups?, columnBars?, runs?: a style patch | null},
-        // stockLength?: m (1..24), lapLength?: m | null (null: 50Ø)}.
+        // stockLength?: m (1..24), lapLength?: m | null (null: 50Ø), marks?: {pattern?: live text with {n}, prefixes?: {straight|L|U|stirrup|tie|polyline|other: text | null}}}.
         r.Command("setSettings", "Rebar settings", (ctx, a) =>
         {
             var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
@@ -495,7 +526,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             if (a["labels"] is JsonObject lo)
                 foreach (var (k, v) in lo)
                 {
-                    if (!LabelStyle.Kinds.Contains(k)) throw new CommandException($"Labels are styled for bars, stirrups, columnBars and runs, not „{k}”.");
+                    if (!LabelStyle.Kinds.Contains(k)) throw new CommandException($"Labels are styled for bars, stirrups, columnBars, runs and sets, not „{k}”.");
                     if (LabelStyle.Patch(labels.GetValueOrDefault(k), v) is { } patched) labels[k] = patched; else labels.Remove(k);
                 }
             var lap = now.LapLength;
@@ -505,8 +536,10 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                 if (lap is { } l && l <= 0) lap = null;
                 if (lap is { } l2 && l2 > 5) throw new CommandException("The lap length is 5 m at most.");
             }
+            // How marks are written (decision 729): {pattern?, prefixes?: {group: text | null}}.
+            var marks = RebarMarks.Patch(now, a["marks"]);
             var next = new RebarSettings(B("colorByDiameter", now.ColorByDiameter), Nn("textHeight", now.TextHeight, 1, 10), Nn("balloon", now.Balloon, 3, 20), steel.Trim().Length > 0 ? steel.Trim() : now.Steel, B("segmentLengths", now.SegmentLengths), Nn("cover", now.Cover, 0, 0.2), labels,
-                Nn("stockLength", now.StockLength, 1, 24), lap);
+                Nn("stockLength", now.StockLength, 1, 24), lap, marks.Pattern, marks.Prefixes);
             var attrs = project.CloneAttrs();
             attrs[RebarSettings.Key] = next.ToJson();
             ctx.Replace(project.With(attrs: attrs));
@@ -515,6 +548,9 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         // A generated group's label (a type's stirrups, a column's bars, a bar seen in another view) put where the user dragged it, on the view:
         // {viewId, owner, key, at?: [x, y] | null, elbow?: [x, y] | null, offset?: mm | null} (a bar's or a distribution's own label goes through update/updateRun).
         r.Command("placeLabel", "Place label", (ctx, a) => { RebarLabels.Place(ctx, a); return null; });
+        // The marks numbered again from 1 in each partition and prefix, in their order ({partition?}: that one alone), decision 729;
+        // the types' stirrups and column bars keep theirs. Returns {changed}.
+        r.Command("renumber", "Renumber marks", (ctx, a) => new JsonObject { ["changed"] = RebarMarks.Renumber(ctx, a.ContainsKey(Rebars.PartitionKey) ? (string?)a[Rebars.PartitionKey] ?? "" : null) });
 
         // A section across an element where it was clicked, inset beside the click in the same view (docs/plan-rebar.md):
         // {viewId (the host), id (the element), point: [x, y] (host coordinates), at?: [x, y] (where the inset goes), flip?, margin?, inset?: false (the section alone)}.
@@ -642,9 +678,19 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         if (a["shapeDef"] is JsonObject def) { attrs["shapeDef"] = def.DeepClone(); attrs["shapeId"] = (string?)a["shapeId"]; }
     }
 
+    /// <summary>A bar's own mark prefix (<c>markPrefix</c>): 8 characters at most; empty takes it away (its group's prefix then).</summary>
+    internal static void WritePrefix(JsonObject attrs, JsonObject a)
+    {
+        var p = ((string?)a[RebarMarks.PrefixKey])?.Trim() ?? "";
+        if (p.Length > 8) throw new CommandException("A mark's prefix is 8 characters at most.");
+        if (p.Length > 0) attrs[RebarMarks.PrefixKey] = p; else attrs.Remove(RebarMarks.PrefixKey);
+    }
+
     static void Write(JsonObject attrs, JsonObject a, bool run)
     {
         if (a.ContainsKey(Rebars.PartitionKey)) { if (PartitionArg(a) is { Length: > 0 } pa) attrs[Rebars.PartitionKey] = pa; else attrs.Remove(Rebars.PartitionKey); }
+        // Its own mark prefix (decision 729), over its shape group's; null or "" takes it away.
+        if (a.ContainsKey(RebarMarks.PrefixKey)) WritePrefix(attrs, a);
         if ((string?)a["shape"] is { } shape)
         {
             RebarShapes.Def(shape);
@@ -809,18 +855,24 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
     {
         var st = RebarSettings.Of(c.Model);
         var hidden = (c.View.Attrs["hiddenLayers"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        // The view's Visibility / Graphics (decision 728): the Rebar category hidden takes every bar, the types' stirrups and
+        // column bars too (their marks are their beams' and columns'); a subcategory its own (longitudinal bars, stirrups, sets).
+        var vis = RebarVisibility.Of(c.Model, c.View);
+        if (vis.All) return [];
         // Every group's bars first, its label asked for; the labels drawn together at the end, so they stack in the marks' order.
         var marks = new List<ViewMark>();
         var labels = new List<LabelRequest>();
         foreach (var e in Rebars.On(c.Model, c.View.Id, Rebars.Class))
-            if (BarMark(c, st, e, hidden, labels) is { } mk) marks.Add(mk);
+            if (!vis.Hides(e) && BarMark(c, st, e, hidden, labels) is { } mk) marks.Add(mk);
         foreach (var e in Rebars.On(c.Model, c.View.Id, Rebars.RunClass))
-            if (RunMark(c, st, e, hidden, labels) is { } mk) marks.Add(mk);
+            if (!vis.Hides(e) && RunMark(c, st, e, hidden, labels) is { } mk) marks.Add(mk);
         // The stirrups the beams' and columns' types are configured with, projected as the view lies to each axis.
-        marks.AddRange(TypeStirrups.Marks(c, st, labels));
+        if (!vis.Stirrups) marks.AddRange(TypeStirrups.Marks(c, st, labels));
         // Bars drawn on other views, where they stand in space: dots where they run into this view, lines along.
-        marks.AddRange(Rebar3D.Marks(c, st, labels));
-        marks.AddRange(ColumnBars.Marks(c, st, labels));
+        marks.AddRange(Rebar3D.Marks(c, st, labels, vis.Hides));
+        if (!vis.Longitudinal) marks.AddRange(ColumnBars.Marks(c, st, labels));
+        // The rebar sets (decision 730), wherever their hosts are seen.
+        if (!vis.Sets) marks.AddRange(RebarSets.Marks(c, st, labels, vis.Hides));
         RebarLabels.Draw(c, st, labels);
         return marks;
     }
@@ -887,7 +939,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         var drawn = mk.Lines.Where(l => l.Layer == layer).Select(l => (l.A, l.B)).ToList();
         var style = LabelStyle.Resolve("bars", st, element: RebarLabels.StyleOf(e));
         var text = style.Text(RebarLabels.FactsOf(e, s, st, Rebars.Pieces(e).ToString(CultureInfo.InvariantCulture)));
-        labels.Add(new LabelRequest(mk, e.Id, "label", style, text, Rebars.Mark(e), color, drawn, view == "section" ? [at] : [], view == "section" ? null : RebarLabels.AlongOf(drawn), Rebars.LabelPlaceOf(e)) { Own = true });
+        labels.Add(new LabelRequest(mk, e.Id, "label", style, text, Rebars.Mark(e), color, drawn, view == "section" ? [at] : [], view == "section" ? null : RebarLabels.AlongOf(drawn), Rebars.LabelPlaceOf(e)) { Own = true, MarkText = RebarMarks.TextOf(st, e) });
         // What the interface drags: the shape's grips where they stand now, its point and its label.
         var grips = new JsonArray(RebarShapes.Grips(s).Select(g => (JsonNode)new JsonObject { ["key"] = g.Key, ["at"] = Rebars.J(RebarShapes.Place(s, at, g.At)) }).ToArray());
         mk.Data = new JsonObject { ["grips"] = grips, ["at"] = Rebars.J(at) };
@@ -945,7 +997,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         var text = style.Text(RebarLabels.FactsOf(e, s, st, (positions.Count * Rebars.Count(e)).ToString(CultureInfo.InvariantCulture), stepText));
         var bars = mk.Lines.Where(l => l.Layer == layer).Select(l => (l.A, l.B)).ToList();
         labels.Add(new LabelRequest(mk, e.Id, "label", style, text, Rebars.Mark(e), color, bars, [], path.TangentAt(path.Length / 2).Normalized(), Rebars.LabelPlaceOf(e))
-        { Own = true, String = new LabelString(path, positions, side - size / 2, side + size / 2) });
+        { Own = true, MarkText = RebarMarks.TextOf(st, e), String = new LabelString(path, positions, side - size / 2, side + size / 2) });
         mk.Snaps.AddRange(positions.Select(p0 => path.PointAt(p0)));
         mk.Data = new JsonObject { ["positions"] = positions.Count };
         return mk;

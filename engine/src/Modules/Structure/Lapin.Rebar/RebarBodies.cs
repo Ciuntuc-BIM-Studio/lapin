@@ -58,27 +58,32 @@ public static class RebarBodies
         {
             var ids = (a["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet();
             Func<Entity, bool>? hides = null;
+            RebarVisibility? vis = null;
             if ((string?)a["view"] is { } viewId)
             {
                 var view = viewId == GraphicsSets.View3d ? GraphicsSets.As3dView(q.Model) : q.Model.Get(viewId) is { Class: Views.Class } v ? v : throw new CommandException("Not a view.");
                 var vg = VisibilityGraphics.Of(q.Model, view);
                 if (vg.Hides(new Entity("", Rebars.Class, "Bar", new JsonObject()))) { var none = new Result([], 0, false).ToJson(); none["hidden"] = true; return none; }
-                hides = vg.Hides;
+                // Its subcategories (decision 728): longitudinal bars, stirrups, sets.
+                vis = RebarVisibility.Of(q.Model, view);
+                hides = vis.Hides;
             }
-            return Build(Chains(q.Model, q.Services, q.Geometry, RebarSettings.Of(q.Model), ids, hides)).ToJson();
+            return Build(Chains(q.Model, q.Services, q.Geometry, RebarSettings.Of(q.Model), ids, hides, vis)).ToJson();
         });
 
     /// <summary>
     /// Every bar in space as a chain on its axis: the hand-drawn bars' copies (as <see cref="Rebar3D.Bars"/> lays them,
     /// but the arcs sampled coarser), each type's stirrups bent at every station, each column's bars.
     /// </summary>
-    public static IEnumerable<Chain> Chains(IModelView m, IServices? services, Func<string, ElementGeometry?>? geometry, RebarSettings st, ISet<string>? ids = null, Func<Entity, bool>? hides = null)
+    public static IEnumerable<Chain> Chains(IModelView m, IServices? services, Func<string, ElementGeometry?>? geometry, RebarSettings st, ISet<string>? ids = null, Func<Entity, bool>? hides = null, RebarVisibility? vis = null)
     {
         string Color(double d) => st.ColorByDiameter ? RebarShapes.ColorOf(d) : "#000000";
         foreach (var e in m.OfClass(Rebars.Class))
         {
             // A bar put in section elsewhere stands for one already drawn.
             if (Rebar3D.IsCopy(e) || (ids != null && !ids.Contains(e.Id)) || hides?.Invoke(e) == true) continue;
+            // With its host when the view hides the host (decision 728).
+            if (hides != null && m.Get(e.Str("host") ?? "") is { } host && hides(host)) continue;
             var s = Rebars.SpecOf(e);
             foreach (var chain in Rebar3D.Bars(m, services, geometry, e, st, Sample, dotsAlong: true)) yield return new Chain(chain, s.Diameter, Color(s.Diameter));
         }
@@ -86,7 +91,7 @@ public static class RebarBodies
         foreach (var e in TypeStirrups.Members(m))
         {
             if ((ids != null && !ids.Contains(e.Id)) || hides?.Invoke(e) == true) continue;
-            if (TypeStirrups.Of(m, e, services) is { } laid)
+            if (vis?.Stirrups != true && TypeStirrups.Of(m, e, services) is { } laid)
             {
                 var d = laid.Spec.Diameter;
                 var spec = new RebarSpec("stirrup", new Dictionary<string, double>(), null, d, null, null);
@@ -94,9 +99,12 @@ public static class RebarBodies
                     foreach (var loop in laid.LoopsAt(station))
                         yield return new Chain(Stirrup(loop, spec), d, Color(d));
             }
-            if (ColumnBars.Of(m, e, bases, services) is { } bars)
+            if (vis?.Longitudinal != true && ColumnBars.Of(m, e, bases, services) is { } bars)
                 foreach (var bar in bars.Bars) yield return new Chain(bar, bars.Spec.Diameter, Color(bars.Spec.Diameter));
         }
+        // The rebar sets (decision 730).
+        if (vis?.Sets != true)
+            foreach (var chain in RebarSets.Chains(m, geometry, st, ids, hides)) yield return chain;
     }
 
     /// <summary>

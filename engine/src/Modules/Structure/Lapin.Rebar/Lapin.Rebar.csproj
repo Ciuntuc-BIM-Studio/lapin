@@ -16,5 +16,7 @@
     <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
     <ProjectReference Include="../../../Platform/Lapin.Drawing/Lapin.Drawing.csproj" Private="false" />
     <ProjectReference Include="../Lapin.Structure/Lapin.Structure.csproj" Private="false" />
+    <!-- A wall's openings, where a rebar set's bars stop (decision 730); the module requires architecture already. -->
+    <ProjectReference Include="../../Architecture/Lapin.Architecture/Lapin.Architecture.csproj" Private="false" />
   </ItemGroup>
 </Project>

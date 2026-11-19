@@ -237,13 +237,13 @@ public static class TypeStirrups
             if ((p1 - p0).Length > 4 * laid.Spec.Step && laid.Stations.Count > 0)
             {
                 var style = LabelStyle.Resolve("stirrups", st, laid.Spec.Label);
-                var text = style.Text(new LabelFacts(laid.CountText, d, laid.StepText, laid.BarLength(laid.LoopsAt(laid.Stations[0])[0]), laid.Spec.Mark, st.Steel));
+                var text = style.Text(new LabelFacts(laid.CountText, d, laid.StepText, laid.BarLength(laid.LoopsAt(laid.Stations[0])[0]), StirrupText(m, st, e, laid.Spec.Mark, d), st.Steel));
                 var segments = mk.Lines.Select(l => (l.A, l.B)).ToList();
                 var axis = new PathCurve(p0, p1, 0);
                 var seen = axis.Length / laid.Length;
                 var across = segments.SelectMany(s => new[] { s.A, s.B }).Select(p => Vec2.Dot(p - p0, axis.TangentAt(0).Perp)).ToList();
                 labels.Add(new LabelRequest(mk, e.Id, "stirrups", style, text, laid.Spec.Mark, color, segments, [], (p1 - p0).Normalized(), RebarLabels.PlacedOn(c.View, e.Id, "stirrups"))
-                { String = new LabelString(axis, laid.Stations.Select(s => (s - laid.S0) * seen).ToList(), across.Min(), across.Max()) });
+                { MarkText = StirrupText(m, st, e, laid.Spec.Mark, d), String = new LabelString(axis, laid.Stations.Select(s => (s - laid.S0) * seen).ToList(), across.Min(), across.Max()) });
             }
             yield return mk;
         }
@@ -259,8 +259,12 @@ public static class TypeStirrups
             if (Of(m, e) is { } laid && laid.Stations.Count > 0)
                 foreach (var loop in laid.LoopsAt(laid.Stations[0]))
                     yield return (e, new RebarSchedule.Entry(laid.MarkOf(loop.Kind), laid.Spec.Diameter, loop.Kind == 1 && laid.Spec.Pattern == "diamond" ? "Diamond stirrup" : "Stirrup", laid.Stations.Count, laid.BarLength(loop), Derived: true,
-                        Partition: m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Str(Rebars.StirrupsPartitionKey)?.Trim() ?? ""));
+                        Partition: m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Str(Rebars.StirrupsPartitionKey)?.Trim() ?? "") { MarkText = StirrupText(m, RebarSettings.Of(m), e, laid.MarkOf(loop.Kind), laid.Spec.Diameter) });
     }
+
+    /// <summary>A beam's or a column's stirrups' mark as written (decision 729): the stirrups' prefix, in its type's partition.</summary>
+    static string StirrupText(IModelView m, RebarSettings st, Entity member, int mark, double d) =>
+        RebarMarks.StirrupText(st, mark, m.RelatingOf(member.Id, IfcClass.RelDefinesByType)?.Str(Rebars.StirrupsPartitionKey)?.Trim() ?? "", d);
 
     /// <summary>The elements a type's stirrups go in: the beams and the columns (read by class, not every entity).</summary>
     public static IEnumerable<Entity> Members(IModelView m) => m.OfClass(IfcClass.Beam).Concat(m.OfClass(IfcClass.Column));
@@ -301,7 +305,7 @@ public static class TypeStirrups
         var inner = new List<int>(moved && a["mark"] == null ? [] : now.InnerMarks ?? []);
         if (enabled)
         {
-            var next = Rebars.NextMark(ctx.Model, partition);
+            var next = Rebars.NextMark(ctx.Model, partition, RebarMarks.PrefixOf(RebarSettings.Of(ctx.Model), "stirrup"));
             if (mark <= 0) mark = next++;
             var need = pattern switch { "diamond" => 1, "cross" => 2, _ => 0 };
             while (inner.Count < need) inner.Add(next++);

@@ -184,26 +184,38 @@ public static class Rebar3D
     /// The bars drawn on other views, as this view sees them (<see cref="Project"/>), each with its label and mark asked of the view's labels
     /// (the mark the bar's, keyed <c>projection</c>); a bar's own view draws it itself.
     /// </summary>
-    public static IEnumerable<ViewMark> Marks(ViewContext c, RebarSettings st, List<LabelRequest> labels)
+    /// <remarks>
+    /// A plan draws only its own storey's bars (forum topic 174, decision 728), as it draws the types' stirrups: a bar in a host
+    /// (a footing, a beam) when the host is on the plan's storey; a bar with none when some of it lies within the plan's view
+    /// range (from its depth up to its top). A bar is left out with its host when the view hides the host (its category, a
+    /// filter, Hide in view), or by its own subcategory (<paramref name="hidden"/>).
+    /// </remarks>
+    public static IEnumerable<ViewMark> Marks(ViewContext c, RebarSettings st, List<LabelRequest> labels, Func<Entity, bool>? hidden = null)
     {
         var m = c.Model;
         if (!Shows(c, out var limit, out var plan)) yield break;
-        var hidden = (c.View.Attrs["hiddenLayers"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        var hiddenLayers = (c.View.Attrs["hiddenLayers"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        var storey = c.View.Str("storeyId");
+        var range = plan ? Views.Range(m, c.View) : null;
         foreach (var e in m.OfClass(Rebars.Class))
         {
             if (e.Str("viewId") == c.View.Id || IsCopy(e)) continue;
             var s = Rebars.SpecOf(e);
             var layer = e.Str("layer") ?? RebarShapes.Def(s.Shape).Layer;
-            if (hidden.Contains(layer)) continue;
+            if (hiddenLayers.Contains(layer) || hidden?.Invoke(e) == true) continue;
+            var host = m.Get(e.Str("host") ?? "");
+            if (host != null && hidden?.Invoke(host) == true) continue;
+            if (plan && host != null && Spatial.StoreyOf(m, host.Id)?.Id != storey) continue;
             var bars = Bars(m, c.Services, c.Geometry, e, st);
             if (bars.Count == 0) continue;
+            if (plan && host == null && range != null && !bars.Any(b => b.Any(p => p.Z >= (range.Depth ?? double.NegativeInfinity) - 1e-6 && p.Z <= (range.Top ?? double.PositiveInfinity) + 1e-6))) continue;
             var (dots, lines) = Project(c, bars, limit, plan);
             if (dots.Count == 0 && lines.Count == 0) continue;
             var mk = new ViewMark($"{e.Id}:projection");
             var color = Draw(mk, c, st, dots, lines, s.Diameter, layer);
             var style = LabelStyle.Resolve("bars", st, element: RebarLabels.StyleOf(e));
             var text = style.Text(RebarLabels.FactsOf(e, s, st, Rebars.Pieces(e).ToString(CultureInfo.InvariantCulture)));
-            labels.Add(new LabelRequest(mk, e.Id, "projection", style, text, Rebars.Mark(e), color, lines, dots, RebarLabels.AlongOf(lines), RebarLabels.PlacedOn(c.View, e.Id, "projection")));
+            labels.Add(new LabelRequest(mk, e.Id, "projection", style, text, Rebars.Mark(e), color, lines, dots, RebarLabels.AlongOf(lines), RebarLabels.PlacedOn(c.View, e.Id, "projection")) { MarkText = RebarMarks.TextOf(st, e) });
             yield return mk;
         }
     }
