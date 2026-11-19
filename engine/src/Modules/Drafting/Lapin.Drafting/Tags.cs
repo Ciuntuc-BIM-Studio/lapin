@@ -122,7 +122,7 @@ public static class Tags
         // A text tag says what was typed, its element gone or not (its colour tells that).
         if (FreeText(tag) is { } free) return FreeLines(m, free, e, units, part);
         if (e == null) return ["?"];
-        var template = tag.Str("template") is { Length: > 0 } own ? own : type?.Template;
+        var template = tag.Str("template") is { Length: > 0 } own ? own : type?.Written;
         var lines = template != null ? TagText.Lines(template, m, e, part, units) : [TagText.Value(m, e, tag.Str("field") ?? "mark", part, units)];
         lines = lines.Where(l => l.Length > 0).ToList();
         return lines.Count > 0 ? lines : ["?"];
@@ -561,7 +561,7 @@ public static class Tags
                 var sample = type.Classes.SelectMany(q.Model.OfClass).FirstOrDefault();
                 var lines = sample != null
                     ? LinesOf(q.Model, new Entity("", IfcClass.Annotation, "", new JsonObject()), sample, type, book.Units)
-                    : type.Template.Split('|').Select(l => System.Text.RegularExpressions.Regex.Replace(l, @"\{([^{}]*)\}", "$1").Trim()).Where(l => l.Length > 0).DefaultIfEmpty("?").ToList();
+                    : type.Written.Split('|').Select(l => System.Text.RegularExpressions.Regex.Replace(l, @"\{([^{}]*)\}", "$1").Trim()).Where(l => l.Length > 0).DefaultIfEmpty("?").ToList();
                 mk = elbow
                     ? TagLeaders.Plain(null, lines, style, type, 1, new Vec2(8, 8), new Vec2(0, 0), true, ink).Mark
                     : Box(null, lines, style, 1, new Vec2(14 + lines.Max(l => l.Length) * style.Height * 0.31, 10), new Vec2(0, 0), null, true, ink);

@@ -921,8 +921,8 @@ public static partial class IfcExport
             var terms = type != null && joinery != null ? joinery.Type(m, type, mirrored) : null;
             // A foreign element: its class and attributes as its file wrote them.
             var src = e.Attrs[IfcSource.Key] as JsonObject;
-            // Its Tag: its own mark (IFC's identifier at the occurrence, forum topic 177), else its id as before.
-            var entity = (src != null ? Carried(src, e, place, shape) : null) ?? Product(kind, Gid(e.Id), e.Name, kind.ObjectType ?? type?.Name, place, shape, e.Str("mark") is { Length: > 0 } ownMark ? ownMark : e.Id, height, width, terms, operationOfType: type?.Str("ifcOperation"));
+            // Its Tag: its own mark (IFC's identifier at the occurrence, forum topic 177), else its category's rule's (decision 737), else its id as before.
+            var entity = (src != null ? Carried(src, e, place, shape) : null) ?? Product(kind, Gid(e.Id), e.Name, kind.ObjectType ?? type?.Name, place, shape, (e.Str("mark") ?? MarkRules.Evaluate(m, e)) is { Length: > 0 } ownMark ? ownMark : e.Id, height, width, terms, operationOfType: type?.Str("ifcOperation"));
             written[e.Id] = entity;
             if (at == null) placeOf[e.Id] = (place, z0);
             Contain(spatial, entity);
@@ -1931,8 +1931,8 @@ public static partial class IfcExport
         void Properties(Entity e, Kind kind, string entity, Entity? type, IReadOnlyList<(string Name, string Value)>? extra = null)
         {
             var common = new List<(string Name, string Value)>();
-            // Its type's reference in the project (as Pset_…Common defines it, "type 'A-1'"): the type's mark, else its name (forum topic 177).
-            if (type != null) common.Add(("Reference", Typed("IFCIDENTIFIER", S(type.Str("mark") is { Length: > 0 } typeMark ? typeMark : type.Name))));
+            // Its type's reference in the project (as Pset_…Common defines it, "type 'A-1'"): the type's mark (its own, else its category's rule's, decision 737), else its name (forum topic 177).
+            if (type != null) common.Add(("Reference", Typed("IFCIDENTIFIER", S(MarkRules.TypeMark(m, type) is { Length: > 0 } typeMark ? typeMark : type.Name))));
             if (kind.Class is IfcClass.Column or IfcClass.Beam or IfcClass.Footing) common.Add(("LoadBearing", Typed("IFCBOOLEAN", True)));
             if (e.Class is IfcClass.Door or IfcClass.Window && type?.Attrs["spec"] is JsonObject spec && spec["isExternal"] is JsonValue ext && ext.TryGetValue<bool>(out var isExternal))
                 common.Add(("IsExternal", Typed("IFCBOOLEAN", isExternal ? True : False)));

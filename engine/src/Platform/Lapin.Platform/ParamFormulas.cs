@@ -92,7 +92,7 @@ public static class ParamFormulas
         {
             case "name": return XValue.Of(e.Name);
             case "mark": return XValue.Read(TagText.Mark(m, e));
-            case "typemark": return XValue.Of(type?.Str("mark") ?? "");
+            case "typemark": return XValue.Of(MarkRules.TypeMark(m, type) ?? "");
             case "type": return XValue.Of(type?.Name ?? e.Name);
             case "class": return XValue.Of(e.Class.StartsWith("Ifc", StringComparison.Ordinal) ? e.Class[3..] : e.Class);
         }

@@ -70,6 +70,8 @@ public sealed class CoreModule : ILapinModule
         ParamFormulas.Register(r);
         // Every field a tag or a formula can read on an element, for the Parameters inspector (forum topic 84).
         FieldCatalog.Register(r);
+        // Marks the user builds per category: a prefix, a suffix and a pattern of live text, numbers kept on the elements (decision 737).
+        MarkRules.Register(r);
         // The R and U-value of layered walls, floors and roofs, worked out from their layers (issue #67, decision 717).
         Thermal.Register(r);
         r.Service<IIfcElementSets>(new ThermalIfcSets());

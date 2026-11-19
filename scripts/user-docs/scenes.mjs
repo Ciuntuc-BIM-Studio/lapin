@@ -2807,6 +2807,30 @@ export const scenes = [
     },
   },
   {
+    id: 'mark-rules',
+    touches: ['architecture', 'drafting'],
+    async run(t) {
+      // Marks built by the user (decision 737): the windows' rule {storey.code}-W{= n | 00} typed in Manage → Mark rules…, its marks
+      // previewed as it is typed, applied in one step; the doors' built-in rule left as it is.
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('element.setParam', { ids: [storey], name: 'code', kind: 'text', value: 'P' });
+      await t.tool('manage.markRules');
+      const dialog = t.page.locator('[data-testid=mark-rules-dialog]');
+      await dialog.waitFor({ timeout: 10000 });
+      await dialog.locator('input[data-field=mark-pattern-window]').fill('{storey.code}-W{= n | 00}');
+      await t.wait(1200);
+      t.expect(await dialog.locator('[data-mark-samples=window]').innerText().then((x) => x.includes('P-W01')), 'the preview shows P-W01');
+      t.expect(await dialog.locator('[data-mark-samples=door]').innerText().then((x) => x.trim() === 'D'), "the doors keep today's mark");
+      await t.shot('mark-rules', { of: '[data-testid=mark-rules-dialog]', pad: 8 });
+      await dialog.locator('[data-testid=mark-rules-apply]').click();
+      await t.wait(800);
+      const list = await t.call('doc.query', { name: 'markRules.list', args: {} });
+      const windows = list.categories.find((c) => c.id === 'window');
+      t.expect(windows.pattern === '{storey.code}-W{= n | 00}' && windows.samples.some((x) => x.mark === 'P-W01'), 'the rule applied');
+    },
+  },
+  {
     id: 'quantities',
     async run(t) {
       // Getting quantities (decision 287, the tester's report #75): Cost → Quantity takeoff, grouped by kind and

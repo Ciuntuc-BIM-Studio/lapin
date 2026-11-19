@@ -30,12 +30,21 @@ public static partial class TagText
     /// <summary>The fields every element has.</summary>
     public static readonly string[] Builtin = ["mark", "name", "class", "type"];
 
-    /// <summary>The element's mark: the project's register's (its part mark, decision 583), its own, its type's, else its type's name, else its name.</summary>
+    /// <summary>
+    /// The element's mark: the project's register's (its part mark, decision 583), its own, its category's rule's when the user
+    /// built one (decision 737, <see cref="MarkRules"/>), else the mark Lapin gives by itself (<see cref="Coded"/>).
+    /// </summary>
     public static string Mark(IModelView m, Entity e)
     {
         if (Marks.MarkOf(m, e) is { } registered) return registered;
+        return e.Str("mark") ?? MarkRules.Evaluate(m, e) ?? Coded(m, e);
+    }
+
+    /// <summary>The mark Lapin gives by itself (a rule's {mark}): its type's mark (its own, else its rule's), else its type's name, else its name.</summary>
+    public static string Coded(IModelView m, Entity e)
+    {
         var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
-        return e.Str("mark") ?? type?.Str("mark") ?? type?.Name ?? e.Name;
+        return type == null ? e.Name : MarkRules.TypeMark(m, type) ?? type.Name ?? e.Name;
     }
 
     /// <summary>A name as fields compare it: no case, no spaces, dashes or underscores ("Fire rating" = "FireRating").</summary>
@@ -128,7 +137,7 @@ public static partial class TagText
         {
             case "mark": case "tag": return Mark(m, e);
             // Its type's own mark alone (forum topic 177, as other programs name it): empty when the type has none.
-            case "typemark": return type?.Str("mark") ?? "";
+            case "typemark": return MarkRules.TypeMark(m, type) ?? "";
             // How many parts share its mark (decision 583).
             case "qty": return Marks.CountOf(m, e).ToString(System.Globalization.CultureInfo.InvariantCulture);
             case "name": return e.Name;
