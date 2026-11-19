@@ -4694,6 +4694,18 @@ export const IT: Record<string, string> = {
   "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Trascina: fin dove vede il prospetto (il suo limite lontano); Ctrl/⌘-clic: senza fine",
   "Only a section or an elevation has a depth.": "Solo una sezione o un prospetto ha una profondità.",
   "A view's depth is a length over 0.": "La profondità di una vista è una lunghezza maggiore di 0.",
+  "Core faces": "Facce del nucleo",
+  "Faces (finish)": "Facce (finitura)",
+  "Axis / centre": "Asse / centro",
+  "Temporary dimensions": "Quote temporanee",
+  "Make this the default": "Rendilo predefinito",
+  "Right click: make it the default": "Clic destro: rendilo predefinito",
+  "Click: measure from the element's axis, its near face, its far face or its core faces": "Clic: misura dall'asse dell'elemento, dalla sua faccia vicina, da quella lontana o dalle facce del nucleo",
+  "Click to type the distance: the column moves to match": "Clic per digitare la distanza: il pilastro si sposta di conseguenza",
+  "Click to type the distance: the beam moves to match": "Clic per digitare la distanza: la trave si sposta di conseguenza",
+  "Click to type the distance: the beam's end moves to match": "Clic per digitare la distanza: l'estremità della trave si sposta di conseguenza",
+  "Where temporary dimensions measure from and to: core face to core face, finish face to finish face, axis to axis, or from the element's reference line to the other's near face. Kept in Preferences → Grid and snaps.": "Da dove a dove misurano le quote temporanee: faccia del nucleo a faccia del nucleo, faccia finita a faccia finita, asse ad asse, o dalla linea di riferimento dell'elemento alla faccia vicina dell'altro. Salvato in Preferenze → Griglia e snap.",
+  "Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.": "Da dove a dove misurano le quote temporanee di muri, pilastri e travi, selezionati o mentre si disegnano: faccia del nucleo a faccia del nucleo, faccia finita a faccia finita, asse ad asse (il centro di un pilastro), o dalla linea di riferimento dell'elemento alla faccia vicina dell'altro (come prima). Anche le barre degli strumenti Muro, Pilastro e Trave lo scelgono, e un clic destro sul punto di una quota rende predefinito il suo riferimento.",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

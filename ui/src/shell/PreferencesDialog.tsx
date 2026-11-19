@@ -2,7 +2,7 @@
  * File → Preferences… (Ctrl+,; decision 445): the user's own settings, kept on this computer for every project and
  * applied at once. General: the theme (light, dark, as the system is) and the language. Grid and snaps: the 2D
  * grid adaptive or fixed (its step and every how many lines a heavier one), snapping to it, each object snap on or
- * off, polar tracking's angle. Coordinates: what the status line reads at the cursor, the project's points shown in
+ * off, polar tracking's angle, where temporary dimensions measure from (decision 733). Coordinates: what the status line reads at the cursor, the project's points shown in
  * plans and 3D, the UCS. Display: the switches of View → Graphics and the 3D view's navigation, in one place.
  * Profiles: the profile standards a new project offers and those the pickers show (decision 457). General also chooses the
  * project template File → New starts from (decision 470), and Developer extras (decision 489: the Script panel, its Python and editor).
@@ -31,6 +31,7 @@ import { refreshTemplates, useTemplates } from '../engine/templates';
 import { engineInBrowser } from '../engine/session';
 import { isDesktop } from '../engine/files';
 import { pickFolder } from '../modules/core/cde/cde';
+import { DIM_REFS, DIM_REF_LABELS, type DimRef } from '../viewport/lineDims';
 import { firmFoldersAvailable, prefsStart, setFirmFolders, useFirmFiles } from '../modules/core/firmFolders';
 
 type Page = 'general' | 'grid' | 'coords' | 'display' | 'colours' | 'profiles' | 'libraries';
@@ -199,6 +200,12 @@ export function PreferencesDialog() {
               <label className="row small">Every <select value={p.polarStep} data-field="prefs-polar" onChange={(e) => setPrefs({ polarStep: Number(e.target.value) })}>
                 {POLAR_STEPS.map((a) => <option key={a} value={a} data-no-i18n>{a}°</option>)}
               </select></label>
+              <h4>Temporary dimensions</h4>
+              <div data-testid="prefs-temp-dim-ref">
+                <Radio name="Temporary dimensions" value={p.tempDimRef} onChange={(v: DimRef) => setPrefs({ tempDimRef: v })}
+                  options={DIM_REFS.map((r) => ({ id: r, label: DIM_REF_LABELS[r] }))} />
+              </div>
+              <p className="muted small">Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.</p>
             </>}
             {page === 'coords' && <>
               <h4>Coordinates at the cursor</h4>

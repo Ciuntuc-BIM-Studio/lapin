@@ -4725,6 +4725,18 @@ export const ZH: Record<string, string> = {
   "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "拖动：立面看多远（其远剪裁）；Ctrl/⌘-单击：无限",
   "Only a section or an elevation has a depth.": "只有剖面或立面才有深度。",
   "A view's depth is a length over 0.": "视图的深度是大于 0 的长度。",
+  "Core faces": "核心层面",
+  "Faces (finish)": "面（饰面）",
+  "Axis / centre": "轴线 / 中心",
+  "Temporary dimensions": "临时尺寸",
+  "Make this the default": "设为默认",
+  "Right click: make it the default": "右键单击：设为默认",
+  "Click: measure from the element's axis, its near face, its far face or its core faces": "单击：从构件的轴线、近侧面、远侧面或核心层面开始测量",
+  "Click to type the distance: the column moves to match": "单击输入距离：柱随之移动",
+  "Click to type the distance: the beam moves to match": "单击输入距离：梁随之移动",
+  "Click to type the distance: the beam's end moves to match": "单击输入距离：梁端随之移动",
+  "Where temporary dimensions measure from and to: core face to core face, finish face to finish face, axis to axis, or from the element's reference line to the other's near face. Kept in Preferences → Grid and snaps.": "临时尺寸的测量起止位置：核心层面到核心层面、饰面到饰面、轴线到轴线，或从构件的参照线到另一构件的近侧面。保存在 首选项 → 网格和捕捉。",
+  "Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.": "墙、柱和梁（选中或绘制中）的临时尺寸的测量起止位置：核心层面到核心层面、饰面到饰面、轴线到轴线（柱的中心），或从构件的参照线到另一构件的近侧面（与以前相同）。墙、柱和梁工具的工具栏也可选择它；在尺寸端点上右键单击可将其参照设为默认。",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

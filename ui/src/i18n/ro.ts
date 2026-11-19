@@ -4687,6 +4687,18 @@ export const RO: Record<string, string> = {
   "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Trage: cât de departe vede fațada (limita ei îndepărtată); Ctrl/⌘-clic: fără capăt",
   "Only a section or an elevation has a depth.": "Doar o secțiune sau o fațadă are adâncime.",
   "A view's depth is a length over 0.": "Adâncimea unei vederi este o lungime mai mare decât 0.",
+  "Core faces": "Fețele miezului",
+  "Faces (finish)": "Fețe (finisaj)",
+  "Axis / centre": "Axă / centru",
+  "Temporary dimensions": "Cote temporare",
+  "Make this the default": "Fă-o implicită",
+  "Right click: make it the default": "Clic dreapta: fă-o implicită",
+  "Click: measure from the element's axis, its near face, its far face or its core faces": "Clic: măsoară de la axa elementului, de la fața apropiată, de la fața îndepărtată sau de la fețele miezului",
+  "Click to type the distance: the column moves to match": "Clic pentru a scrie distanța: stâlpul se mută ca să se potrivească",
+  "Click to type the distance: the beam moves to match": "Clic pentru a scrie distanța: grinda se mută ca să se potrivească",
+  "Click to type the distance: the beam's end moves to match": "Clic pentru a scrie distanța: capătul grinzii se mută ca să se potrivească",
+  "Where temporary dimensions measure from and to: core face to core face, finish face to finish face, axis to axis, or from the element's reference line to the other's near face. Kept in Preferences → Grid and snaps.": "De unde și până unde măsoară cotele temporare: de la fața miezului la fața miezului, de la fața finisată la fața finisată, de la axă la axă sau de la linia de referință a elementului la fața apropiată a celuilalt. Păstrat în Preferințe → Grilă și snap.",
+  "Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.": "De unde și până unde măsoară cotele temporare ale pereților, stâlpilor și grinzilor, selectați sau în desenare: de la fața miezului la fața miezului, de la fața finisată la fața finisată, de la axă la axă (centrul unui stâlp) sau de la linia de referință a elementului la fața apropiată a celuilalt (ca înainte). Barele uneltelor Perete, Stâlp și Grindă o aleg și ele, iar un clic dreapta pe punctul unei cote face referința ei implicită.",
 };
 
 /** Phrases with a number or a name in them. */

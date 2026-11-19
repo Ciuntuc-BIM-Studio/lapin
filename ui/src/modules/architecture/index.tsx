@@ -26,6 +26,7 @@ import { WallLayers } from './WallLayers';
 import { mirrorLine, wallGhost } from './wallLine';
 import { newWallSection } from './newWallSection';
 import { WallDims } from './WallTempDims';
+import { DimRefChoice } from '../../viewport/LineTempDims';
 import { WallTopOption, wallTopArgs } from './WallTop';
 import { JoinerySection } from './JoinerySection';
 import { SlabSection } from './SlabSection';
@@ -128,7 +129,7 @@ const wall: ToolDef = chainTool({
     const prefs = useWallPrefs.getState();
     await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, joinStyle: prefs.joinStyle, ...wallLineArgs(prefs), ...(typeId ? { typeId } : {}), ...wallTopArgs() });
   },
-  more: () => <><WallLineOption /><WallTopOption /></>,
+  more: () => <><WallLineOption /><WallTopOption /><DimRefChoice /></>,
   // The wall's body beside the line drawn, on the side it will be built (decision 692).
   body: (path) => { const { bands, left } = newWallSection(); return wallGhost(path, bands, left); },
   // Space: the line on the other side (Revit's Spacebar), before the first click or between clicks.

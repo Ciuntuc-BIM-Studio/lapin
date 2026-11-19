@@ -1,7 +1,8 @@
 /**
  * The straight piece being drawn in a plan (decision 693): the tool, the point placed and where the cursor would put the next,
  * set by the plan as the cursor moves; null when nothing is being drawn. A module's plan overlay reads it (a wall's temporary
- * dimensions to the walls beside it before the click).
+ * dimensions to the walls beside it before the click). A point tool's (a column being placed, decision 733) has `a` and `b` both
+ * where the cursor would place it.
  */
 
 import { create } from 'zustand';

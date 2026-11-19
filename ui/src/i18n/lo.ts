@@ -4787,6 +4787,18 @@ export const LO: Record<string, string> = {
   "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "ລາກ: ຮູບດ້ານເຫັນໄກເທົ່າໃດ (ຂອບເຂດໄກ); Ctrl/⌘-ຄລິກ: ບໍ່ມີທີ່ສິ້ນສຸດ",
   "Only a section or an elevation has a depth.": "ມີແຕ່ຮູບຕັດ ຫຼື ຮູບດ້ານທີ່ມີຄວາມເລິກ.",
   "A view's depth is a length over 0.": "ຄວາມເລິກຂອງມຸມມອງແມ່ນຄວາມຍາວຫຼາຍກວ່າ 0.",
+  "Core faces": "ໜ້າແກນ",
+  "Faces (finish)": "ໜ້າ (ສຳເລັດ)",
+  "Axis / centre": "ແກນ / ກາງ",
+  "Temporary dimensions": "ຂະໜາດຊົ່ວຄາວ",
+  "Make this the default": "ຕັ້ງເປັນຄ່າເລີ່ມຕົ້ນ",
+  "Right click: make it the default": "ຄລິກຂວາ: ຕັ້ງເປັນຄ່າເລີ່ມຕົ້ນ",
+  "Click: measure from the element's axis, its near face, its far face or its core faces": "ຄລິກ: ວັດແທກຈາກແກນຂອງອົງປະກອບ, ໜ້າໃກ້, ໜ້າໄກ ຫຼື ໜ້າແກນຂອງມັນ",
+  "Click to type the distance: the column moves to match": "ຄລິກເພື່ອພິມໄລຍະ: ເສົາຍ້າຍໃຫ້ກົງກັນ",
+  "Click to type the distance: the beam moves to match": "ຄລິກເພື່ອພິມໄລຍະ: ຄານຍ້າຍໃຫ້ກົງກັນ",
+  "Click to type the distance: the beam's end moves to match": "ຄລິກເພື່ອພິມໄລຍະ: ປາຍຄານຍ້າຍໃຫ້ກົງກັນ",
+  "Where temporary dimensions measure from and to: core face to core face, finish face to finish face, axis to axis, or from the element's reference line to the other's near face. Kept in Preferences → Grid and snaps.": "ຂະໜາດຊົ່ວຄາວວັດແທກຈາກໃສຫາໃສ: ໜ້າແກນຫາໜ້າແກນ, ໜ້າສຳເລັດຫາໜ້າສຳເລັດ, ແກນຫາແກນ, ຫຼື ຈາກເສັ້ນອ້າງອີງຂອງອົງປະກອບຫາໜ້າໃກ້ຂອງອີກອັນໜຶ່ງ. ເກັບໄວ້ໃນ ການຕັ້ງຄ່າ → ຕາໜ່າງ ແລະ ການຈັບຈຸດ.",
+  "Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.": "ຂະໜາດຊົ່ວຄາວຂອງຝາ, ເສົາ ແລະ ຄານ, ທີ່ເລືອກ ຫຼື ກຳລັງແຕ້ມ, ວັດແທກຈາກໃສຫາໃສ: ໜ້າແກນຫາໜ້າແກນ, ໜ້າສຳເລັດຫາໜ້າສຳເລັດ, ແກນຫາແກນ (ກາງຂອງເສົາ), ຫຼື ຈາກເສັ້ນອ້າງອີງຂອງອົງປະກອບຫາໜ້າໃກ້ຂອງອີກອັນໜຶ່ງ (ຄືເກົ່າ). ແຖບຂອງເຄື່ອງມື ຝາ, ເສົາ ແລະ ຄານ ກໍເລືອກມັນໄດ້, ແລະ ການຄລິກຂວາທີ່ຈຸດຂອງຂະໜາດຈະຕັ້ງການອ້າງອີງຂອງມັນເປັນຄ່າເລີ່ມຕົ້ນ.",
 };
 
 /** Phrases with a number or a name in them. */

@@ -11,6 +11,7 @@
 
 import { create } from 'zustand';
 import type { SnapMode } from '../viewport/cad/snaps';
+import { DIM_REFS, type DimRef } from '../viewport/lineDims';
 import { DEFAULT_NAV_STYLE, NAV_STYLE_IDS, type NavStyleId } from './navStyle';
 
 export type ThemeChoice = 'paper' | 'graphite' | 'system';
@@ -57,6 +58,12 @@ export interface Prefs {
   openingAlong: { from: 'start' | 'face' | 'core'; point: 'start' | 'centre' | 'end' };
   /** A click outside the input box takes what is typed in it, as Enter does (forum 155); off: it stays pending, as before. Esc and a right click throw it away. */
   clickOutAccepts: boolean;
+  /**
+   * Where temporary dimensions in plan measure from and to (decision 733, the old Lapin's "Wall dimension snap"): core faces,
+   * faces (finish), axis / centre, or the reference line (a wall's kept line, else its axis, to the other's near face: as before).
+   * For walls, columns and beams, selected or being drawn; a dimension's dot still cycles that one dimension.
+   */
+  tempDimRef: DimRef;
 }
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'tangent', 'nearest', 'wallAxis', 'gridAxis'];
@@ -72,6 +79,7 @@ export const DEFAULT_PREFS: Prefs = {
   developerExtras: false, pythonPath: null, externalEditor: null, navStyle: DEFAULT_NAV_STYLE, constrainWhileDrawing: true,
   openingAlong: { from: 'start', point: 'centre' },
   clickOutAccepts: false,
+  tempDimRef: 'reference',
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -108,6 +116,7 @@ export function readPrefs(stored: unknown): Prefs {
     navStyle: pick(o.navStyle, NAV_STYLE_IDS, d.navStyle),
     constrainWhileDrawing: o.constrainWhileDrawing !== false,
     clickOutAccepts: o.clickOutAccepts === true,
+    tempDimRef: pick(o.tempDimRef, DIM_REFS, d.tempDimRef),
     openingAlong: {
       from: pick((o.openingAlong as { from?: unknown } | undefined)?.from, ['start', 'face', 'core'] as const, d.openingAlong.from),
       point: pick((o.openingAlong as { point?: unknown } | undefined)?.point, ['start', 'centre', 'end'] as const, d.openingAlong.point),

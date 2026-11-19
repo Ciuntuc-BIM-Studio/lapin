@@ -4695,6 +4695,18 @@ export const FR: Record<string, string> = {
   "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Glisser : jusqu'où voit l'élévation (sa limite lointaine) ; Ctrl/⌘-clic : sans fin",
   "Only a section or an elevation has a depth.": "Seule une coupe ou une élévation a une profondeur.",
   "A view's depth is a length over 0.": "La profondeur d'une vue est une longueur supérieure à 0.",
+  "Core faces": "Faces du noyau",
+  "Faces (finish)": "Faces (finition)",
+  "Axis / centre": "Axe / centre",
+  "Temporary dimensions": "Cotes temporaires",
+  "Make this the default": "En faire la valeur par défaut",
+  "Right click: make it the default": "Clic droit : en faire la valeur par défaut",
+  "Click: measure from the element's axis, its near face, its far face or its core faces": "Clic : mesurer depuis l'axe de l'élément, sa face proche, sa face éloignée ou les faces de son noyau",
+  "Click to type the distance: the column moves to match": "Cliquez pour saisir la distance : le poteau se déplace en conséquence",
+  "Click to type the distance: the beam moves to match": "Cliquez pour saisir la distance : la poutre se déplace en conséquence",
+  "Click to type the distance: the beam's end moves to match": "Cliquez pour saisir la distance : l'extrémité de la poutre se déplace en conséquence",
+  "Where temporary dimensions measure from and to: core face to core face, finish face to finish face, axis to axis, or from the element's reference line to the other's near face. Kept in Preferences → Grid and snaps.": "D'où à où mesurent les cotes temporaires : face du noyau à face du noyau, face finie à face finie, axe à axe, ou de la ligne de référence de l'élément à la face proche de l'autre. Conservé dans Préférences → Grille et accrochages.",
+  "Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.": "D'où à où mesurent les cotes temporaires des murs, poteaux et poutres, sélectionnés ou en cours de dessin : face du noyau à face du noyau, face finie à face finie, axe à axe (le centre d'un poteau), ou de la ligne de référence de l'élément à la face proche de l'autre (comme avant). Les barres des outils Mur, Poteau et Poutre le choisissent aussi, et un clic droit sur le point d'une cote fait de sa référence la valeur par défaut.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

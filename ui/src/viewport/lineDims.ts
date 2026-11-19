@@ -1,0 +1,252 @@
+/**
+ * Temporary dimensions measured between straight lines in plan (decisions 693 and 733): the walls', columns' and beams' lines
+ * the engine gives (`view.dimLines`: each element's axis, its faces, its core faces, a wall's kept reference line, its joins)
+ * and the grid's axes. A host (the element selected, or the one being drawn or placed) measures across to the nearest parallel
+ * line on each side that runs beside it and, when it has free ends, along to the first element its line runs into beyond each.
+ * Pure: the walls', columns' and beams' overlays (WallTempDims, ColumnBeamDims) draw and commit what this works out.
+ *
+ * - Where each end of a dimension stands follows the user's dimension reference (`DimRef`, Preferences → Grid and snaps, the
+ *   tools' bars, the dot's menu): core faces (core face to core face), faces (finish), axis (the centre or insertion axis), or
+ *   reference line (from the host's reference line, a wall's kept line else its axis, to the other's near face: decision 693's
+ *   way, the default).
+ * - A click on an end's dot cycles that dimension's end only: the other's near face → far face → core faces → axis; the host's
+ *   own reference → near face → far face → core faces → axis.
+ * - A value typed moves the host square to its line (across) or its end along it (`commitAcross`, `commitEnd`: the new axis).
+ */
+
+import type { Vec2 } from '../platform/module';
+
+/** Where temporary dimensions measure from and to (decision 733). */
+export type DimRef = 'reference' | 'core' | 'faces' | 'axis';
+export const DIM_REFS: readonly DimRef[] = ['core', 'faces', 'axis', 'reference'];
+export const DIM_REF_LABELS: Record<DimRef, string> = {
+  core: 'Core faces',
+  faces: 'Faces (finish)',
+  axis: 'Axis / centre',
+  reference: 'Reference line',
+};
+
+export interface Joins { start: string[]; end: string[]; path: string[] }
+
+/** A line as the engine gives it: its axis, its faces and core faces (left of the axis), a wall's reference line, its joins. */
+export interface DimLineInfo {
+  id: string; name: string; kind?: string; part?: string; a: Vec2; b: Vec2;
+  faces: [number, number]; core?: [number, number]; reference?: number; joins?: Joins;
+}
+
+/** A grid axis: `id` the grid's id and the axis's tag (`grid#B`). */
+export interface AxisLine { id: string; name: string; a: Vec2; b: Vec2 }
+
+/** The element measured: its axis (or the line being drawn), its reference `ref` metres left of it, its faces, core faces and joins. */
+export interface Host { id?: string; a: Vec2; b: Vec2; ref: number; faces: [number, number]; core?: [number, number]; joins?: Joins }
+
+/** The user's choices for one dimension: which of the other's places (`opt`), which of the host's own (`own`). */
+export interface DimPick { opt?: number; own?: number }
+
+/**
+ * One dimension: `a` the other's place, `b` the host's own (across: metres left of the host's axis; along: metres along it
+ * from its start), `value` |b − a|; across ones stand `station` metres along the host.
+ */
+export interface LineDim {
+  key: string; kind: 'across' | 'end';
+  target: { id: string; name: string; kind: string };
+  options: { what: string; at: number }[]; opt: number;
+  ownOptions: { what: string; at: number }[]; own: number; ownWhat: string;
+  a: number; b: number; value: number; station: number;
+}
+
+const sub = (p: Vec2, q: Vec2): Vec2 => ({ x: p.x - q.x, y: p.y - q.y });
+const dot = (p: Vec2, q: Vec2) => p.x * q.x + p.y * q.y;
+const cross = (p: Vec2, q: Vec2) => p.x * q.y - p.y * q.x;
+const unit = (p: Vec2): Vec2 => { const l = Math.hypot(p.x, p.y) || 1; return { x: p.x / l, y: p.y / l }; };
+/** Lines this near parallel (the sine of the angle between them) are parallel. */
+const PARALLEL = 0.02;
+/** How far (m) beyond an end an element may be and still be the one it runs toward. */
+const REACH = 50;
+
+/** A core distinct from the faces, else none (a one-layer wall, a column without finish). */
+export const distinctCore = (faces: [number, number], core?: [number, number]): [number, number] | undefined =>
+  core && (Math.abs(core[0] - faces[0]) > 1e-6 || Math.abs(core[1] - faces[1]) > 1e-6) ? core : undefined;
+
+/** A line taken as the host, its reference `ref` metres left of its axis (else the reference line it keeps, else its axis). */
+export const hostOf = (w: DimLineInfo, ref?: number): Host => ({
+  id: w.id, a: w.a, b: w.b, ref: ref ?? w.reference ?? 0, faces: w.faces, core: w.core, joins: w.joins ?? { start: [], end: [], path: [] },
+});
+
+/** The host's frame: its start, direction, left normal and length. */
+export function frameOf(h: Host): { o: Vec2; d: Vec2; n: Vec2; length: number } {
+  const v = sub(h.b, h.a), d = unit(v);
+  return { o: h.a, d, n: { x: -d.y, y: d.x }, length: Math.hypot(v.x, v.y) };
+}
+
+/** A place in the host's frame: `t` left of its axis, `s` along it from its start. */
+export const framePoint = (h: Host, t: number, s: number): Vec2 => {
+  const f = frameOf(h);
+  return { x: f.o.x + f.n.x * t + f.d.x * s, y: f.o.y + f.n.y * t + f.d.y * s };
+};
+
+/** The other's places, ordered from the one nearest `from` outwards: near face, far face, core faces, axis. */
+function places(at: (y: number) => number, w: DimLineInfo | null, from: number): { what: string; at: number }[] {
+  if (!w) return [{ what: 'axis', at: at(0) }];
+  const byNear = (p: number[]) => [...p].sort((x, y) => Math.abs(x - from) - Math.abs(y - from));
+  const [nf, ff] = byNear(w.faces.map(at));
+  const out = [{ what: 'near face', at: nf }, { what: 'far face', at: ff }];
+  const core = distinctCore(w.faces, w.core);
+  if (core) { const [nc, fc] = byNear(core.map(at)); out.push({ what: 'near core face', at: nc }, { what: 'far core face', at: fc }); }
+  out.push({ what: 'axis', at: at(0) });
+  return out;
+}
+
+/** The host's own places on the side toward `side` (1: its left, −1: its right): its reference, near face, far face, core faces, axis. */
+function ownPlaces(h: Host, side: 1 | -1): { what: string; at: number }[] {
+  const near = (p: [number, number]) => (side > 0 ? p[1] : p[0]), far = (p: [number, number]) => (side > 0 ? p[0] : p[1]);
+  const out = [{ what: Math.abs(h.ref) > 1e-9 ? 'reference' : 'axis', at: h.ref },
+    { what: 'near face', at: near(h.faces) }, { what: 'far face', at: far(h.faces) }];
+  const core = distinctCore(h.faces, h.core);
+  if (core) out.push({ what: 'near core face', at: near(core) }, { what: 'far core face', at: far(core) });
+  if (Math.abs(h.ref) > 1e-9) out.push({ what: 'axis', at: 0 });
+  return out;
+}
+
+/** Which of the places the reference chooses: a core face where there is one (else the face), the near face, the axis. */
+function defaultIndex(opts: { what: string }[], mode: DimRef): number {
+  const find = (w: string) => opts.findIndex((o) => o.what === w);
+  if (mode === 'reference') return 0; // the host's reference line; the other's near face
+  if (mode === 'axis') { const i = find('axis'); return i >= 0 ? i : 0; }
+  if (mode === 'core') { const i = find('near core face'); if (i >= 0) return i; }
+  const i = find('near face');
+  return i >= 0 ? i : 0;
+}
+
+/**
+ * What a dimension's ends come to as the reference for every dimension (the dot's "make this the default"): the other end's
+ * place (a core face, a face, the axis); its near face measured from the host's own reference line is the reference line's way.
+ */
+export function refOfPlace(what: string, ownWhat?: string): DimRef {
+  if (what === 'near face' && ownWhat === 'reference') return 'reference';
+  return what === 'axis' ? 'axis' : what.includes('core') ? 'core' : 'faces';
+}
+
+const pickOf = (n: number, i: number) => ((i % n) + n) % n;
+
+export interface DimOptions {
+  /** Where the ends stand unless a dot was clicked (decision 733); `reference` by default, as decision 693 measured. */
+  mode?: DimRef;
+  /** Along dimensions from the host's free ends (walls, beams; not a column). */
+  along?: boolean;
+  /** Put before each dimension's key (a column's `x:`/`y:` lines). */
+  prefix?: string;
+}
+
+/** The host's dimensions: across to each side's nearest parallel neighbour, along from each free end. */
+export function lineDims(h: Host, lines: DimLineInfo[], axes: AxisLine[], picks: Record<string, DimPick>, o: DimOptions = {}): LineDim[] {
+  const mode = o.mode ?? 'reference', prefix = o.prefix ?? '';
+  const f = frameOf(h);
+  if (!(f.length > 1e-3)) return [];
+  const out: LineDim[] = [];
+  const along = (p: Vec2) => dot(sub(p, f.o), f.d);
+  const across = (p: Vec2) => dot(sub(p, f.o), f.n);
+
+  // Across: the parallel lines and axes running beside the host (their stretch along it overlapping its own).
+  type Side = { line: DimLineInfo | AxisLine; el: DimLineInfo | null; y: number; at: (yw: number) => number; lo: number; hi: number };
+  const sides: Record<'left' | 'right', Side | null> = { left: null, right: null };
+  const nearOf = (s: { el: DimLineInfo | null; at: (yw: number) => number; y: number }) =>
+    s.el ? Math.min(...s.el.faces.map((v) => Math.abs(s.at(v) - h.ref))) : Math.abs(s.y - h.ref);
+  const all: { line: DimLineInfo | AxisLine; el: DimLineInfo | null }[] = [
+    ...lines.filter((w) => w.id !== h.id).map((w) => ({ line: w, el: w })), ...axes.map((x) => ({ line: x, el: null }))];
+  for (const { line, el } of all) {
+    const dw = unit(sub(line.b, line.a));
+    if (Math.abs(cross(f.d, dw)) > PARALLEL) continue;
+    const y = across(line.a);
+    // In line with the host (or an axis on its reference): nothing to measure across.
+    if (Math.abs(y) < 1e-3 || Math.abs(y - h.ref) < 1e-3) continue;
+    const s0 = along(line.a), s1 = along(line.b);
+    const lo = Math.max(0, Math.min(s0, s1)), hi = Math.min(f.length, Math.max(s0, s1));
+    if (!(hi - lo > 1e-3)) continue;
+    // Its left is the host's left or right: a place yw left of its axis is y ± yw left of the host's.
+    const sgn = dot({ x: -dw.y, y: dw.x }, f.n) >= 0 ? 1 : -1;
+    const at = (yw: number) => y + sgn * yw;
+    if (el && Math.min(...el.faces.map(at)) < h.ref && Math.max(...el.faces.map(at)) > h.ref) continue; // across the host: not beside it
+    const side = y > h.ref ? 'left' : 'right';
+    const cur = sides[side];
+    const cand = { line, el, y, at, lo, hi };
+    if (nearOf(cand) < (cur ? nearOf(cur) : Infinity) - 1e-9) sides[side] = cand;
+  }
+  for (const side of ['left', 'right'] as const) {
+    const s = sides[side];
+    if (!s) continue;
+    const key = `${prefix}x:${side}`;
+    const options = places(s.at, s.el, h.ref);
+    const opt = pickOf(options.length, picks[key]?.opt ?? defaultIndex(options, mode));
+    const ownOptions = ownPlaces(h, side === 'left' ? 1 : -1);
+    const own = pickOf(ownOptions.length, picks[key]?.own ?? defaultIndex(ownOptions, mode));
+    const a = options[opt].at, b = ownOptions[own].at;
+    out.push({
+      key, kind: 'across', target: { id: s.line.id, name: s.line.name, kind: s.el ? s.el.kind ?? 'wall' : 'axis' },
+      options, opt, ownOptions, own, ownWhat: ownOptions[own].what, a, b, value: Math.abs(b - a), station: (s.lo + s.hi) / 2,
+    });
+  }
+
+  // Along: from each end not joined to anything, the first element across the host's line beyond it.
+  if (o.along === false || !h.joins) return out;
+  for (const end of ['start', 'end'] as const) {
+    if (h.joins[end].length) continue;
+    const sE = end === 'start' ? 0 : f.length, out1 = end === 'start' ? -1 : 1;
+    let best: { w: DimLineInfo; at: (yw: number) => number; near: number } | null = null;
+    for (const w of lines) {
+      if (w.id === h.id || h.joins[end].includes(w.id)) continue;
+      const dw = unit(sub(w.b, w.a)), c = cross(f.d, dw);
+      if (Math.abs(c) <= PARALLEL) continue;
+      const nw = { x: -dw.y, y: dw.x };
+      // Where the host's line meets the line yw left of w's axis, metres along the host.
+      const at = (yw: number) => { const p0 = { x: w.a.x + nw.x * yw, y: w.a.y + nw.y * yw }; return cross(sub(p0, f.o), dw) / c; };
+      // The host's line must reach the element itself, not its line's extension.
+      const sAxis = at(0), hit = { x: f.o.x + f.d.x * sAxis, y: f.o.y + f.d.y * sAxis };
+      const u = dot(sub(hit, w.a), dw), len = Math.hypot(w.b.x - w.a.x, w.b.y - w.a.y), half = Math.max(...w.faces.map(Math.abs));
+      if (u < -half - 1e-3 || u > len + half + 1e-3) continue;
+      const ahead = w.faces.map((v) => out1 * (at(v) - sE));
+      if (Math.min(...ahead) < 1e-3 || Math.min(...ahead) > REACH) continue;
+      const near = Math.min(...ahead);
+      if (!best || near < best.near) best = { w, at, near };
+    }
+    if (!best) continue;
+    const key = `${prefix}e:${end}`;
+    const options = places(best.at, best.w, sE);
+    // The host's end is its end whatever the reference: only the other's place follows it ('reference': its near face).
+    const opt = pickOf(options.length, picks[key]?.opt ?? defaultIndex(options, mode));
+    out.push({
+      key, kind: 'end', target: { id: best.w.id, name: best.w.name, kind: best.w.kind ?? 'wall' }, options, opt,
+      ownOptions: [{ what: 'end', at: sE }], own: 0, ownWhat: 'end',
+      a: options[opt].at, b: sE, value: Math.abs(sE - options[opt].at), station: sE,
+    });
+  }
+  return out;
+}
+
+/** How far (m) the host moves square to its line so that the dimension reads `value`; null when it already does, or cannot. */
+export function acrossShift(d: LineDim, value: number): number | null {
+  if (d.kind !== 'across' || !(value >= 0)) return null;
+  const sgn = d.b - d.a >= 0 ? 1 : -1;
+  const by = d.a + sgn * value - d.b;
+  return Math.abs(by) < 1e-9 ? null : by;
+}
+
+/** The host's axis moved square to itself so that the dimension reads `value`; null when it already does, or cannot. */
+export function commitAcross(h: Host, d: LineDim, value: number): { a: Vec2; b: Vec2 } | null {
+  const by = acrossShift(d, value);
+  if (by == null) return null;
+  const { n } = frameOf(h);
+  return { a: { x: h.a.x + n.x * by, y: h.a.y + n.y * by }, b: { x: h.b.x + n.x * by, y: h.b.y + n.y * by } };
+}
+
+/** The host's end moved along it so that the dimension reads `value`; null when it already does or it would have no length. */
+export function commitEnd(h: Host, d: LineDim, value: number): { a: Vec2; b: Vec2 } | null {
+  if (d.kind !== 'end' || !(value >= 0)) return null;
+  const f = frameOf(h);
+  const sgn = d.b - d.a >= 0 ? 1 : -1;
+  const s = d.a + sgn * value;
+  if (Math.abs(s - d.b) < 1e-9) return null;
+  const start = d.key.endsWith('e:start') ? s : 0, end = d.key.endsWith('e:end') ? s : f.length;
+  if (!(end - start > 1e-3)) return null;
+  return { a: framePoint({ ...h, ref: 0 }, 0, start), b: framePoint({ ...h, ref: 0 }, 0, end) };
+}
