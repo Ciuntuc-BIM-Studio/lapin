@@ -241,6 +241,8 @@ Cotele încăperilor au doar **Detalii** (latura, cu ancadramentele golurilor) �
 - **Notă de cod**: codul clasificării elementului (sau titlul ei), vezi [Clasificări](classifications.md).
 - **Text liber**: cuvintele tale. Dă clic pe element, apoi unde merge eticheta; o casetă cere textul (mai multe rânduri: Enter e rând nou, Ctrl/⌘+Enter sau **OK** încheie). Câmpurile **{…}** ale elementului sunt în direct: `{mark}`, `{FireRating}`, `{storey.name}`, `{= formule}`. Are aceeași linie de indicație, casetă sau umăr și aceleași stiluri ca orice etichetă (un tip de etichetă ales în bară îi dă aspectul) și își urmează elementul. **Etichetă de text** din proprietățile ei editează cuvintele; dublu clic pe etichetă în vedere le cere din nou.
 
+**Glaful sau solbancul unei ferestre.** La sursele **Element**, **Parametru** și **Text liber**, ultima listă din bară alege ce se etichetează la o ușă sau fereastră: **Elementul**, **Glaful unei ferestre** sau **Solbancul unei ferestre**. Cu **Elementul**, un clic pe un glaf sau solbanc într-un plan sau o secțiune îl etichetează oricum pe el. Eticheta lui îl spune în câteva cuvinte și îi citește câmpurile (`{sillMaterial}`, `{sillLength}`, `{sillSide}`); vezi [Uși și ferestre](doors-windows.md#poziția-tocului-și-solbancurile).
+
 **INDICAȚIE** pornește sau oprește linia de indicație. Dă clic pe element, apoi unde merge eticheta (tastează întâi **E** ca să frângi linia într-un cot). Scrise la cererea elementului, **ELEMENT**, **ROOM**, **PARAMETER**, **MATERIAL** și **KEYNOTE** aleg și ele sursa.
 
 ![Unealta Etichetă la sursa Încăpere: aria încăperii](shots/tag-sources.webp)

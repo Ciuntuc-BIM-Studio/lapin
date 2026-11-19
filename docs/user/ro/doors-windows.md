@@ -160,7 +160,7 @@ O cercevea pe rândul de jos al unei uși stă pe o **traversă inferioară**, c
 
 Presetările: **Ușă de balcon + fereastră nouă** (un canat vitrat și, alături, o cercevea oscilobatantă peste un panou plin de parapet, PVC, 4-16-4), **Ușă nouă cu lumini laterale și supralumină**, **Portal nou cu ridicare și glisare (HS)** și **Fereastră franțuzească nouă** (două cercevele cu balamale laterale până la pardoseală, fără glafuri; o fereastră).
 
-Canatele **Ridicare și glisare (HS)** și **Oscilo-glisant (PSK)** alunecă pe șina interioară a tocului, peste ochiul fix de alături, aflat pe cea exterioară; mânerul lor lung e pe montantul de care trageți. Stau pe prag, deci se pun pe rândul de jos; pragul portalului HS e la nivelul pardoselii. Simbolul lor în elevație e săgeata sensului în care alunecă, cu ridicarea (HS) sau basculare (PSK).
+Canatele **Ridicare și glisare (HS)** și **Oscilo-glisant (PSK)** alunecă pe șina interioară a tocului, peste ochiul fix de alături, aflat pe cea exterioară; mânerul lor lung e pe montantul de care trageți. Stau pe prag, deci se pun pe rândul de jos; pragul portalului HS e la nivelul pardoselii. Simbolul lor în elevație e săgeata sensului în care alunecă, cu ridicarea (HS) sau basculare (PSK). Nimic nu stă în calea canatului: montantul dintre canat și ochiul fix e tocul ochiului fix, numai pe șina exterioară, iar canatul trece peste el, așa că montanții lor de întâlnire se suprapun, cum îi desenează producătorii, în planuri, secțiuni, 3D și în previzualizarea configuratorului. Cercevelele unei ferestre glisante trec una pe lângă alta la fel: montantul dintre două cercevele de pe cele două șine rămâne în afara amândurora.
 
 ![O ușă de balcon și fereastra ei în același toc: un canat, o cercevea oscilobatantă peste un panou de parapet, geam 4-16-4](shots/joinery-balcony-door.webp)
 
@@ -279,6 +279,16 @@ Tocurile, cercevelele, sticla și mânerele sunt ale tipului, deci materialele �
 ![Configuratorul cu tocul la 50 mm în spatele finisajului exterior](shots/joinery-position.webp)
 
 **Exterior sill** (solbancul exterior) are o **Slope** (pantă) în grade (5° la început; 15° pentru un solbanc metalic). Un solbanc înclinat coboară dinspre toc și scoate din perete tot ce e deasupra lui: tencuiala, miezul și glaful sunt tăiate după fața lui înclinată, în 3D, în secțiuni și fațade și în cantități.
+
+**Etichetarea glafurilor și solbancurilor și extrasul lor.** Glaful (interior) și solbancul (exterior) unei ferestre (cele detaliate, altfel plăcile simple ale tipului) rămân parte a ferestrei și pot fi etichetate și listate separat, pentru furnizorul lor:
+
+- **Architecture → Extras de glafuri și solbancuri** face un extras de câmpuri din șablonul livrat **Glafuri și solbancuri**: un rând pentru fiecare fel de glaf sau solbanc (latura, materialul, lungimea, adâncimea de-a curmezișul peretelui, grosimea, panta), câte sunt, marcile ferestrelor, lungimea totală și aria. **Configurează…** îl schimbă ca pe orice extras de câmpuri; rândurile lui sunt piesele **Glafuri și solbancuri** (**Rânduri** în editor), fiecare cu câmpurile ei: **sillSide**, **sillMaterial**, **sillLength**, **sillDepth**, **sillProjection** (ieșirea peste fața peretelui), **sillThickness**, **sillOverhang** (depășirea peste fiecare șpalet), **sillSlope**, **sillArea**, **sillCount**.
+- **Annotate → Etichetă** pe un glaf sau solbanc: dă clic pe el într-un plan sau într-o secțiune, ori alege **Glaful unei ferestre** sau **Solbancul unei ferestre** în bara uneltei Etichetă și dă clic pe fereastră. Eticheta îl spune în câteva cuvinte (*Exterior sill 1260 × 120 · Granit*), linia ei de indicație arată spre el, iar **Arată** sau **Text** din proprietățile ei citesc câmpurile lui (`{sillMaterial}`, `{sillLength}`) și pe ale ferestrei (`{mark}`). Proprietățile ei numesc **Partea etichetată**.
+- Câmpurile ferestrei citesc și ele glaful și solbancul, pentru etichetele și extrasele ei: **sillInteriorMaterial**, **sillInteriorLength**, **sillInteriorDepth**, **sillInteriorThickness** și la fel **sillExterior…** (lungimile în milimetri).
+
+În IFC glafurile și solbancurile rămân în fereastră, ca până acum: în corpul ei, lungimile lor în cantitățile ei (SillInsideLength, SillOutsideLength) și materialul plăcii. IFC4 nu are un element făcut pentru glaful unei ferestre (felurile IfcCovering nu-l au), iar scrise ca elemente separate ar ajunge de două ori la un program care citește fișierul înapoi.
+
+![Extrasul de glafuri și solbancuri: fiecare fel, câte sunt și ferestrele lor](shots/window-sill-schedule.webp)
 
 ### Date: valoarea U, rezistența la foc, feronerie
 

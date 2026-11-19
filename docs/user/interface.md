@@ -230,7 +230,7 @@ A right click on a selected element (in a plan, a drawing or the 3D view) offers
 
 - **Select similar in this view** and **Select similar in the whole project** select the elements of the same class and the same type (those of the same class when the element has no type). In the view, only what the view shows counts, and in a plan only the level you are on.
 - **Select all with the same…** opens a list of what the element is told apart by: its type, its width, its core material, its material, its storey. Each entry shows the element's value; choosing it selects every element of the class that has the same one, whatever the rest.
-- **Edit type…** opens the types dialog of the element's type (the one **Edit types…** opens), with that type current.
+- **Edit type…** opens the types dialog of the element's type (the one **Edit types…** opens) straight on that type, made the current one: a door or window opens **Doors and windows** on its own type, not the first of the list, and so do floors, stairs and ramps, ceilings, skirtings, curtain walls, columns, beams and footings (**Structure types**), furniture, sunshades, gates, exhaust fans, scaffolds and formwork. The gear button beside **Type** in an element's properties does the same.
 - **Previous selections** lists the last ten selections, the newest first. A selection goes in the list when you clear it or pick something else; one that was taken again moves to the front, and elements that are gone drop out. Click one to select it again. The command **Select the previous selection** (<kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Z</kbd>, changeable in **Keyboard shortcuts**) takes the newest one without the menu.
 - In 3D, **Hide**, **Isolate** and **Show all** (HH, HI, HR) work as in Revit, for now.
 

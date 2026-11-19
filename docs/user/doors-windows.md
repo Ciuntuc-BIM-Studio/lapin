@@ -160,7 +160,7 @@ A sash in a door's bottom row stands on a **bottom rail**, the frame's width ove
 
 The presets: **New balcony door + window** (a glazed leaf, and beside it a tilt-and-turn sash over a solid parapet panel, PVC, 4-16-4), **New door with sidelights and transom**, **New lift-and-slide (HS) portal** and **New French window** (two side-hung sashes to the floor, no boards; a window).
 
-**Lift & slide (HS)** and **Tilt & slide (PSK)** leaves run on the frame's inner track, over the fixed pane beside them on the outer one; their long handle is on the stile you pull. They stand on the threshold, so they go in the bottom row; the HS portal's threshold is flush. Their elevation symbol is the arrow of the way they run, with the lift (HS) or the tilt (PSK).
+**Lift & slide (HS)** and **Tilt & slide (PSK)** leaves run on the frame's inner track, over the fixed pane beside them on the outer one; their long handle is on the stile you pull. They stand on the threshold, so they go in the bottom row; the HS portal's threshold is flush. Their elevation symbol is the arrow of the way they run, with the lift (HS) or the tilt (PSK). Nothing stands in the leaf's way: the mullion between the leaf and the fixed pane is the fixed pane's frame, on the outer track only, and the leaf reaches over it, so their meeting stiles overlap, as the makers draw it, in plans, sections, 3D and the configurator's preview. A sliding window's sashes pass each other the same way: the mullion between two sashes on their two tracks stays out of both tracks.
 
 ![A balcony door and its window in one frame: a leaf, a tilt-and-turn sash over a parapet panel, glazed 4-16-4](shots/joinery-balcony-door.webp)
 
@@ -279,6 +279,16 @@ In a plan the faces are cut, the seat, sill and base are drawn below the cut and
 ![The configurator with the frame 50 mm back from the exterior finish](shots/joinery-position.webp)
 
 The **Exterior sill** has a **Slope** in degrees (5° to start; 15° for a metal sill). A sloped sill falls away from the frame and takes everything over it out of the wall: the render, the core and the plaster are cut to its sloping top face, in 3D, in sections and elevations, and in the quantities.
+
+**Tagging and scheduling the sills.** A window's interior and exterior sills (its detailed sills, else its type's plain boards) stay part of the window, and can be tagged and listed on their own, for the sills' supplier:
+
+- **Architecture → Window sill schedule** makes a field schedule from the shipped **Window sills** template: a row for each kind of sill (side, material, length, depth across the wall, thickness, slope), how many there are, the windows' marks, the total length and the area. **Configure…** changes it like any field schedule; its rows are the **Window sills** parts (**Rows** in the editor), each with its fields: **sillSide**, **sillMaterial**, **sillLength**, **sillDepth**, **sillProjection** (past the wall's face), **sillThickness**, **sillOverhang** (past each jamb), **sillSlope**, **sillArea**, **sillCount**.
+- **Annotate → Tag** on a sill: click the sill in a plan or a section, or choose **A window's interior sill** or **A window's exterior sill** in the Tag tool's bar and click the window. The tag says the sill in a few words (*Exterior sill 1260 × 120 · Granite*), its leader points at the sill, and **Shows** or **Text** in its properties read the sill's fields (`{sillMaterial}`, `{sillLength}`) as well as the window's (`{mark}`). Its properties name the **Tagged part**.
+- A window's own fields read its sills too, for its tags and schedules: **sillInteriorMaterial**, **sillInteriorLength**, **sillInteriorDepth**, **sillInteriorThickness** and the same for **sillExterior…** (lengths in millimetres).
+
+In IFC the sills stay inside the window, as before: its body, their lengths in its quantities (SillInsideLength, SillOutsideLength) and its board material. IFC4 has no element meant for a window's sill (IfcCovering's kinds have none), and writing them as elements of their own would give them twice to a program reading the file back.
+
+![The window sill schedule: each kind of sill, its count and its windows](shots/window-sill-schedule.webp)
 
 ### Data: U-value, fire rating, fittings
 
