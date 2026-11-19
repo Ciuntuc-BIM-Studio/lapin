@@ -111,16 +111,16 @@ public static class Views
             case "section":
             {
                 // An element view (decision 579): its plane from the element's own frame, as it is now.
-                if (ElementViews.Is(view)) return ElementViews.Spec(m, view, parts, services, hidden);
+                if (ElementViews.Is(view)) return Seeing(m, view, ElementViews.Spec(m, view, parts, services, hidden));
                 // Across an element at a station: the plane perpendicular to its axis, the window round its section.
-                if (AcrossSections.Is(view)) return AcrossSections.Spec(m, view, parts, services, hidden);
+                if (AcrossSections.Is(view)) return Seeing(m, view, AcrossSections.Spec(m, view, parts, services, hidden));
                 // The first piece of its line; a developed section (more pieces) is drawn piece by piece (Generate).
                 var (path, _, problem) = SectionPaths.Resolve(m, services, view);
                 if (path == null) return (null, problem);
                 // Projected (a jogged line's default, report #146): its first cut, whose frame is the whole drawing's.
                 var (pieces, spanned) = SectionPaths.Cuts(view, path);
                 if (pieces.Count == 0) return (null, "A section needs two different points.");
-                return (ViewSpec.Section(pieces[0].A, pieces[0].B, view.NumOrNull("depth") ?? ViewRanges.Unlimited, hidden, spanned), null);
+                return (Seeing(m, view, ViewSpec.Section(pieces[0].A, pieces[0].B, view.NumOrNull("depth") ?? ViewRanges.Unlimited, hidden, spanned)), null);
             }
             case "elevation":
             {
@@ -134,12 +134,17 @@ public static class Views
                 // Its marker moved into the building: it starts seeing at the marker's line and cuts there, as Revit's (decision 460).
                 var look = LookOf(view);
                 var front = Front(bounds, look);
-                if (ElevationMarkers.Clip(view, front) is { } clip)
+                var clip = ElevationMarkers.Clip(view, front);
+                if (clip is { } c)
                 {
                     var f = spec.Frame;
-                    var at = f.Origin + f.Dir * (clip - (f.Origin.X * look.X + f.Origin.Y * look.Y));
+                    var at = f.Origin + f.Dir * (c - (f.Origin.X * look.X + f.Origin.Y * look.Y));
                     spec = spec with { Frame = new ViewFrame(at, f.Right, f.Up, f.Dir), Cut = true };
                 }
+                // Its depth (decision 721): how far it sees from where it starts seeing (the model's front, or its marker's line moved in).
+                var from = (clip ?? front) - (spec.Frame.Origin.X * look.X + spec.Frame.Origin.Y * look.Y);
+                if (view.NumOrNull("depth") is { } depth && depth > 0) spec = spec with { Below = from + depth };
+                spec = Seeing(m, view, spec, from);
                 // As far as its marker's line reaches (decision 456): its extent along its right, from the model's origin.
                 if (ElevationMarkers.Extent(view) is var (lo, hi))
                 {
@@ -157,6 +162,26 @@ public static class Views
         if (kind == "3d") return (View3dDrawings.Prepare(m, view, parts, services).Spec, null);
         return (null, $"„{kind}” is not a kind of view.");
     }
+
+    /// <summary>
+    /// What a section or an elevation draws beyond its cut (issue #93, decision 721), as its style and its own settings say:
+    /// everything up to its depth; the near part, what lies wholly farther than <c>nearDepth</c> from <paramref name="from"/>
+    /// (where it starts seeing, along its look from its frame's origin) in the background pen; or only what its plane cuts
+    /// (a view that cuts nothing, an elevation outside the building, draws everything).
+    /// </summary>
+    static ViewSpec Seeing(IModelView m, Entity view, ViewSpec spec, double from = 0)
+    {
+        var style = ViewStyles.Of(m, view);
+        return style.Beyond switch
+        {
+            "cut" when spec.Cut => spec with { CutOnly = true },
+            "near" => spec with { BeyondFrom = from + style.NearDepth },
+            _ => spec,
+        };
+    }
+
+    static (ViewSpec? Spec, string? Problem) Seeing(IModelView m, Entity view, (ViewSpec? Spec, string? Problem) r) =>
+        r.Spec is { } s ? (Seeing(m, view, s), r.Problem) : r;
 
     /// <summary>The plan direction a section or an elevation looks along (a section looks left of its line, drawn from start to end; a developed one, of its first piece); null for a plan or a 3D view.</summary>
     public static Vec2? Look(Entity view)
@@ -754,7 +779,7 @@ public static class Views
         var (pieces, spanned) = SectionPaths.Cuts(view, path);
         var hidden = ShowsHidden(Spatial.Project(q.Model), "section", view.Str("hiddenLines"));
         var depth = view.NumOrNull("depth") ?? ViewRanges.Unlimited;
-        foreach (var p in pieces) o.Add((ViewSpec.Section(p.A, p.B, depth, hidden, spanned), p.Station));
+        foreach (var p in pieces) o.Add((Seeing(q.Model, view, ViewSpec.Section(p.A, p.B, depth, hidden, spanned)), p.Station));
         return o;
     }
 
@@ -781,6 +806,22 @@ public static class Views
         public (Vec2 Min, Vec2 Max)? Window { get; init; }
         /// <summary>The drawing as generated, its line edits made: each cut area with its element and part key (a type's preview lights a layer up by it).</summary>
         public ViewDrawing? Generated { get; init; }
+    }
+
+    /// <summary>
+    /// A section's or an elevation's background (decision 721): the elements it draws only in the background pen (wholly
+    /// farther than its near depth) have their surface hatches greyed as their lines are; a colour of their own (a filter's,
+    /// a phase's) stays.
+    /// </summary>
+    static Pens.Options Background(ViewDrawing drawing, ViewSpec spec, Pens.Options options)
+    {
+        if (spec.Kind == "plan" || spec.BeyondFrom == null) return options;
+        var near = drawing.Lines.Where(l => l.Role != LineRole.Beyond).Select(l => l.Element).ToHashSet();
+        var far = drawing.Lines.Where(l => l.Role == LineRole.Beyond && !near.Contains(l.Element)).Select(l => l.Element).ToHashSet();
+        if (far.Count == 0) return options;
+        var colors = options.ElementColors?.ToDictionary(kv => kv.Key, kv => kv.Value) ?? [];
+        foreach (var id in far) colors.TryAdd(id, Links.Halftone);
+        return options with { ElementColors = colors };
     }
 
     /// <summary>The mark layer of construction lines (drafted shapes whose role is draft): on screen, never printed.</summary>
@@ -902,10 +943,12 @@ public static class Views
         List<SurfaceHatches.Piece> scenes = laid == null ? [PieceOf(spec, 0, drawing, 0)] : laid.Select((p, i) => PieceOf(p.Spec, p.Station, p.Drawing, i)).ToList();
         // The faces' surface hatches (SurfaceHatches): under the lines, the hatches over their fills.
         // A 3D view draws its lines alone: its parts may be a perspective's, mapped (View3dDrawings).
+        // Cut only (decision 721): no face seen beyond the cut, so none hatched or shadowed.
         var flat = spec.Kind != "3d";
-        var surfaces = flat ? SurfaceHatches.PensOf(m, view, scenes, drawnParts, penOptions, new Dictionary<string, string?>()) : [];
+        var faced = flat && !spec.CutOnly;
+        var surfaces = faced ? SurfaceHatches.PensOf(m, view, scenes, drawnParts, Background(drawing, spec, penOptions), new Dictionary<string, string?>()) : [];
         // The sun's shadows on what the view sees (ViewShadows), filled under everything it draws: over the surfaces' fills, under their hatches.
-        var shadows = flat ? ViewShadows.PenOf(m, view, scenes) : null;
+        var shadows = faced ? ViewShadows.PenOf(m, view, scenes) : null;
         pens.InsertRange(0, [.. surfaces.Where(p => p.Layer == SurfaceHatches.FillLayer), .. shadows != null ? [shadows] : Array.Empty<Pen>(), .. surfaces.Where(p => p.Layer != SurfaceHatches.FillLayer)]);
         // The view's crop region (forum topic 68): the model's lines and fills cut at its edge.
         var crop = ViewCrops.ActiveOf(m, view, scale);
@@ -1762,6 +1805,18 @@ public static class Views
             var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "section" ? x : throw new CommandException("Not a section.");
             var attrs = v.CloneAttrs();
             SectionPaths.Set(ctx.Model, ctx.Services, attrs, a, create: false);
+            ctx.Replace(v.With(attrs: attrs));
+            return null;
+        });
+
+        // A section's or an elevation's depth, its far clip (issue #93, decision 721): {id, depth: m | null}; null sees without
+        // end. A section's from its cut, an elevation's from where it starts seeing. Typed, or its far line dragged in plan; one undo step.
+        r.Command("view.setDepth", "View depth", (ctx, a) =>
+        {
+            var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") is "section" or "elevation" ? x : throw new CommandException("Only a section or an elevation has a depth.");
+            var attrs = v.CloneAttrs();
+            if (a["depth"] is null) attrs.Remove("depth");
+            else attrs["depth"] = Json.Number(a["depth"]) is { } d && d > 0 && double.IsFinite(d) ? Math.Round(d, 6) : throw new CommandException("A view's depth is a length over 0.");
             ctx.Replace(v.With(attrs: attrs));
             return null;
         });

@@ -4710,6 +4710,27 @@ export const ES: Record<string, string> = {
   "The rafter zone under the layers (timber and what fills it) is not counted.": "La zona de los cabios bajo las capas (la madera y lo que la rellena) no se cuenta.",
   "incomplete": "incompleto",
   "Lapin’s values follow EN ISO 6946 and are indicative: they are yours to check against the norm and your project’s requirements.": "Los valores de Lapin siguen la EN ISO 6946 y son indicativos: te corresponde comprobarlos con la norma y los requisitos de tu proyecto.",
+  // What a section or an elevation sees beyond its cut (issue #93, decision 721).
+  "Full depth": "Profundidad completa",
+  "Everything the view sees up to its depth, in the seen pen": "Todo lo que la vista ve hasta su profundidad, con la pluma de lo visto",
+  "Cut + near": "Corte + cercano",
+  "What lies within the near depth of the cut in the seen pen; what lies wholly farther, up to the depth, in a thin grey background pen": "Lo que está dentro de la profundidad cercana del corte, con la pluma de lo visto; lo que está entero más lejos, hasta la profundidad, con una pluma de fondo fina y gris",
+  "Cut only": "Solo el corte",
+  "Only what the section plane cuts: nothing seen beyond it (for details)": "Solo lo que corta el plano de sección: nada visto más allá (para detalles)",
+  "What the view draws beyond its cut: everything up to its depth, the near part with the rest in a thin grey background pen, or only what the plane cuts (for details)": "Lo que la vista dibuja más allá de su corte: todo hasta su profundidad, la parte cercana con el resto en una pluma de fondo fina y gris, o solo lo que corta el plano (para detalles)",
+  "Beyond the cut": "Más allá del corte",
+  "only once its marker is moved into the building": "solo cuando su marca se mueve dentro del edificio",
+  "How far from the cut elements draw in full; an element lying wholly farther goes to the background": "A qué distancia del corte los elementos se dibujan completos; un elemento entero más lejos pasa al fondo",
+  "Near depth": "Profundidad cercana",
+  "How far the elevation sees, from the model's front (or its marker's line moved into the building); empty: without end. Also its far line's grip in plan.": "Hasta dónde ve el alzado, desde el frente del modelo (o desde la línea de su marca movida dentro del edificio); vacío: sin fin. También el pinzamiento de su línea lejana en planta.",
+  "How far the section sees beyond its cut (its far clip); empty: without end. Also its far line's grip in plan.": "Hasta dónde ve la sección más allá de su corte (su recorte lejano); vacío: sin fin. También el pinzamiento de su línea lejana en planta.",
+  "What the style's sections and elevations draw beyond their cut: everything up to their depth, the near part with the rest in a grey background pen, or only the cut": "Lo que las secciones y alzados del estilo dibujan más allá de su corte: todo hasta su profundidad, la parte cercana con el resto en una pluma de fondo gris, o solo el corte",
+  "With Cut + near: how far from the cut elements draw in full before the background": "Con Corte + cercano: a qué distancia del corte los elementos se dibujan completos antes del fondo",
+  "Drag: how far the section sees (its far clip; now without end)": "Arrastrar: hasta dónde ve la sección (su recorte lejano; ahora sin fin)",
+  "Drag: how far the section sees (its far clip); Ctrl/⌘-click: without end": "Arrastrar: hasta dónde ve la sección (su recorte lejano); Ctrl/⌘-clic: sin fin",
+  "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Arrastrar: hasta dónde ve el alzado (su recorte lejano); Ctrl/⌘-clic: sin fin",
+  "Only a section or an elevation has a depth.": "Solo una sección o un alzado tiene profundidad.",
+  "A view's depth is a length over 0.": "La profundidad de una vista es una longitud mayor que 0.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

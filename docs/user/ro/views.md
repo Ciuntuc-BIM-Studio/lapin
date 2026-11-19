@@ -24,6 +24,28 @@ O secțiune nu trebuie să fie o singură linie dreaptă. **Secțiune în trepte
 
 Selectează secțiunea în navigator ca să-i setezi scara, adâncimea, disciplina și stilul în panoul de proprietăți.
 
+### Cât de departe vede o secțiune
+
+O secțiune desenează ce taie planul ei și, în spatele lui, tot ce vede până la **adâncimea** ei. Dacă adâncimea e goală, secțiunea vede fără capăt. Adâncimea se setează la **Adâncime**, în setările vederii (**Vedere → Setările vederii** sau proprietățile secțiunii). O poți și trage într-un plan: selectează secțiunea și apare o prindere pe linia ei îndepărtată, la mijloc. Trage prinderea spre tăietură sau departe de ea. O linie întreruptă arată unde secțiunea se oprește din văzut. La o secțiune fără adâncime, prinderea stă în fața liniei ei, gata de tras înăuntru. Ctrl/⌘-clic pe prindere și secțiunea vede din nou fără capăt. Fiecare schimbare e un singur pas de anulare.
+
+**Dincolo de tăietură**, în setările vederii, spune ce desenează secțiunea până la adâncimea ei:
+
+- **Toată adâncimea**: tot ce vede, cu creionul liniilor văzute. E varianta implicită și felul în care se desenau secțiunile înainte.
+- **Tăietură + aproape**: ce se află la mai puțin de **Adâncimea apropiată** de tăietură (1 m, dacă nu o setezi) se desenează ca de obicei. Un element aflat în întregime mai departe se desenează cu creionul de fundal, subțire și gri, cu hașurile suprafețelor lui tot în gri, ca zona îndepărtată marcată din ArchiCAD. Folosește-o ca tăietura să rămână ușor de citit, cu clădirea în fundal.
+- **Doar tăietura**: doar ce taie planul secțiunii, fără nimic văzut dincolo de el. Folosește-o pentru detalii. Pereții, plăcile și grinzile își păstrează hașurile de secțiune. Nimic mai îndepărtat nu se desenează: nici hașuri de suprafață, nici umbre, nici siluete, nici goluri.
+
+Un stil de vedere spune asta pentru toate vederile lui (**Gestionare → Stiluri de vedere**: coloanele **Dincolo de tăietură** și **Adâncimea apropiată**), iar o vedere își poate seta propria alegere peste stilul ei. Butonul de lângă câmp pune vederea înapoi pe stilul ei. Liniile de fundal stau pe stratul lor (*BEYOND*). **Gestionare → Stiluri de obiecte** le poate da alt creion sau altă culoare. Planșele, PDF-ul și DXF-ul tipăresc exact ce arată vederea. **Arată în 3D** taie modelul și se oprește la adâncimea secțiunii.
+
+O fațadă are aceleași setări. **Adâncimea** ei se măsoară de la fața modelului sau, după ce marcatorul e mutat în clădire, de la linia marcatorului. După ce are o adâncime, linia ei îndepărtată are și ea o prindere în plan. **Tăietură + aproape** trece în fundal ce se află mai departe decât adâncimea apropiată. **Doar tăietura** se aplică doar după ce marcatorul a fost mutat în clădire, ca fațada să taie. O fațadă din afara clădirii nu taie nimic și desenează tot.
+
+![Setările unei secțiuni: Dincolo de tăietură pe Tăietură + aproape, adâncimea apropiată și adâncimea](shots/section-depth-settings.webp)
+
+![Tăietură + aproape: pereții tăiați desenați ca de obicei, peretele de nord, la 6 m, cu creionul de fundal subțire și gri](shots/section-depth.webp)
+
+![Doar tăietura: aceeași secțiune doar cu ce taie planul ei](shots/section-cut-only.webp)
+
+![O secțiune selectată în plan: linia ei îndepărtată întreruptă, cu prinderea care îi trage adâncimea](shots/section-far-grip.webp)
+
 **Scara vederii.** În capul unui plan, al unei secțiuni sau al unei fațade, lângă zoom (cât de mare se vede pe ecran față de hârtie), alegerea scării arată scara vederii și o schimbă: una dintre scările standard ale proiectului, sau **Alta…** pentru una a ta (1:75), într-un singur pas de anulare. Pe o planșă, alege o vedere și scara ei apare acolo; schimbată, se schimbă vederea, pe fiecare planșă care o arată. **Scări implicite…** deschide **Gestionare → Standarde de desen → Proiect**: **Scări standard** sunt scările pe care le oferă alegerea, iar **Planuri noi la 1:**, **Secțiuni noi la 1:** și **Fațade noi la 1:** scara pe care o ia fiecare vedere nouă (gol: 1:100). Planul unui nivel fără vedere proprie se desenează la scara planurilor.
 
 ![Alegerea scării în capul unei secțiuni, lângă zoom](shots/view-scale.webp)

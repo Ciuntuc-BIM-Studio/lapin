@@ -157,7 +157,8 @@ public static class VoidDrawings
         else
         {
             // A section or an elevation sees a wall's opening on the face turned to it; a floor's or roof's lies inside its host.
-            if (!inWall || d0 < -eps || d0 > s.Below) return null;
+            // Cut only (decision 721): nothing seen beyond the cut.
+            if (!inWall || d0 < -eps || d0 > s.Below || s.CutOnly) return null;
             if (x1 - x0 < d1 - d0) return null;
             how = Seen.Seen;
         }

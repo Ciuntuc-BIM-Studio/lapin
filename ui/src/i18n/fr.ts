@@ -4672,6 +4672,27 @@ export const FR: Record<string, string> = {
   "The rafter zone under the layers (timber and what fills it) is not counted.": "La zone des chevrons sous les couches (le bois et son remplissage) n’est pas comptée.",
   "incomplete": "incomplet",
   "Lapin’s values follow EN ISO 6946 and are indicative: they are yours to check against the norm and your project’s requirements.": "Les valeurs de Lapin suivent l’EN ISO 6946 et sont indicatives : c’est à vous de les vérifier selon la norme et les exigences de votre projet.",
+  // What a section or an elevation sees beyond its cut (issue #93, decision 721).
+  "Full depth": "Profondeur entière",
+  "Everything the view sees up to its depth, in the seen pen": "Tout ce que la vue voit jusqu'à sa profondeur, avec le stylo des lignes vues",
+  "Cut + near": "Coupe + proche",
+  "What lies within the near depth of the cut in the seen pen; what lies wholly farther, up to the depth, in a thin grey background pen": "Ce qui se trouve dans la profondeur proche de la coupe, avec le stylo des lignes vues ; ce qui se trouve entièrement plus loin, jusqu'à la profondeur, avec un stylo d'arrière-plan fin et gris",
+  "Cut only": "Coupe seule",
+  "Only what the section plane cuts: nothing seen beyond it (for details)": "Seulement ce que coupe le plan de coupe : rien de vu au-delà (pour les détails)",
+  "What the view draws beyond its cut: everything up to its depth, the near part with the rest in a thin grey background pen, or only what the plane cuts (for details)": "Ce que la vue dessine au-delà de sa coupe : tout jusqu'à sa profondeur, la partie proche avec le reste dans un stylo d'arrière-plan fin et gris, ou seulement ce que coupe le plan (pour les détails)",
+  "Beyond the cut": "Au-delà de la coupe",
+  "only once its marker is moved into the building": "seulement une fois son repère déplacé dans le bâtiment",
+  "How far from the cut elements draw in full; an element lying wholly farther goes to the background": "À quelle distance de la coupe les éléments sont dessinés en entier ; un élément entièrement plus loin passe à l'arrière-plan",
+  "Near depth": "Profondeur proche",
+  "How far the elevation sees, from the model's front (or its marker's line moved into the building); empty: without end. Also its far line's grip in plan.": "Jusqu'où voit l'élévation, depuis l'avant du modèle (ou la ligne de son repère déplacée dans le bâtiment) ; vide : sans fin. Aussi la poignée de sa ligne lointaine en plan.",
+  "How far the section sees beyond its cut (its far clip); empty: without end. Also its far line's grip in plan.": "Jusqu'où voit la coupe au-delà de sa coupe (sa limite lointaine) ; vide : sans fin. Aussi la poignée de sa ligne lointaine en plan.",
+  "What the style's sections and elevations draw beyond their cut: everything up to their depth, the near part with the rest in a grey background pen, or only the cut": "Ce que les coupes et élévations du style dessinent au-delà de leur coupe : tout jusqu'à leur profondeur, la partie proche avec le reste dans un stylo d'arrière-plan gris, ou seulement la coupe",
+  "With Cut + near: how far from the cut elements draw in full before the background": "Avec Coupe + proche : à quelle distance de la coupe les éléments sont dessinés en entier avant l'arrière-plan",
+  "Drag: how far the section sees (its far clip; now without end)": "Glisser : jusqu'où voit la coupe (sa limite lointaine ; maintenant sans fin)",
+  "Drag: how far the section sees (its far clip); Ctrl/⌘-click: without end": "Glisser : jusqu'où voit la coupe (sa limite lointaine) ; Ctrl/⌘-clic : sans fin",
+  "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Glisser : jusqu'où voit l'élévation (sa limite lointaine) ; Ctrl/⌘-clic : sans fin",
+  "Only a section or an elevation has a depth.": "Seule une coupe ou une élévation a une profondeur.",
+  "A view's depth is a length over 0.": "La profondeur d'une vue est une longueur supérieure à 0.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

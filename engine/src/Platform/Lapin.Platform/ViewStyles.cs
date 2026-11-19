@@ -45,6 +45,10 @@ namespace Lapin.Platform;
 /// <item><c>materialGraphicsSet</c>: the material graphics set its views draw their materials with (decision 682,
 /// <see cref="MaterialGraphicsSets"/>); in a project made since, the Structural style names „Structure” and the MEP style
 /// „MEP”; none in a project made before (Î10). A view names another, or <c>none</c>, with <c>view.setStyle</c>.</item>
+/// <item><c>beyond</c>: what sections and elevations draw beyond their cut (issue #93, decision 721): <c>full</c> (everything
+/// up to the view's depth, as before; the default and a style saved before), <c>near</c> (what lies within <c>nearDepth</c>
+/// of the cut as before, what lies wholly farther in the background pen: thin and grey, ArchiCAD's marked distant area)
+/// or <c>cut</c> (only what the plane cuts: a detail); <c>nearDepth</c> in metres, 1 by default.</item>
 /// </list>
 /// A view takes its style (<c>viewStyle</c>, else its discipline's), and may
 /// set any of these itself: what it sets wins over the style.
@@ -55,7 +59,18 @@ public static class ViewStyles
     public static readonly string[] LayerModes = ["all", "noFinishes", "core", "coreLoadBearing"];
     const string LayerModesText = "all, noFinishes, core or coreLoadBearing";
     public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch", "entourage", "entourageFill", "detail",
-        "minHatchSpacing", "smallScaleCut", "materialGraphicsSet", "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection"];
+        "minHatchSpacing", "smallScaleCut", "materialGraphicsSet", "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection", "beyond", "nearDepth"];
+
+    /// <summary>What a section or an elevation draws beyond its cut (decision 721): everything, the near part with the rest in the background, or the cut alone.</summary>
+    public static readonly string[] BeyondModes = ["full", "near", "cut"];
+    /// <summary>How far from the cut a view in <c>near</c> mode draws in full before the background (m).</summary>
+    public const double DefaultNearDepth = 1.0;
+
+    static string BeyondMode(JsonNode? n) =>
+        (string?)n is { } b && BeyondModes.Contains(b) ? b : throw new CommandException($"„{n}” is not full, near or cut.");
+
+    static double NearDepthOf(JsonNode? n) =>
+        Json.Number(n) is { } d && d >= 0 && double.IsFinite(d) ? d : throw new CommandException("nearDepth is a distance in metres, 0 or more.");
 
     /// <summary>
     /// The finish layers by the kind of view (the forum's topic #30): whether plans, and whether sections and elevations, draw
@@ -83,7 +98,8 @@ public static class ViewStyles
     /// </summary>
     public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null, int Detail = PlanDetail.Lod350,
         bool WallFinishesPlan = true, bool WallFinishesSection = true, bool FloorFinishesPlan = true, bool FloorFinishesSection = true, string? LayersPlan = null, string? LayersSection = null,
-        bool FinishElements = true, double MinHatchSpacing = Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing, SmallScaleCut? SmallScaleCut = null, string? MaterialGraphicsSet = null)
+        bool FinishElements = true, double MinHatchSpacing = Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing, SmallScaleCut? SmallScaleCut = null, string? MaterialGraphicsSet = null,
+        string Beyond = "full", double NearDepth = DefaultNearDepth)
     {
         /// <summary>The partial structure display of a view of this kind (a plan, a section or an elevation, another).</summary>
         public string LayersFor(string? viewKind) => viewKind switch
@@ -126,6 +142,9 @@ public static class ViewStyles
             if (SmallScaleCut != null) o["smallScaleCut"] = SmallScaleCut.ToJson();
             // The same (decision 682).
             if (MaterialGraphicsSet != null) o["materialGraphicsSet"] = MaterialGraphicsSet;
+            // The same (decision 721): a style that draws everything beyond its cut saves as before.
+            if (Beyond != "full") o["beyond"] = Beyond;
+            if (Math.Abs(NearDepth - DefaultNearDepth) > 1e-9) o["nearDepth"] = NearDepth;
             return o;
         }
 
@@ -158,7 +177,10 @@ public static class ViewStyles
             // A style saved before the small-scale cuts (decision 680): none, today's look (Î5).
             Lapin.Platform.SmallScaleCut.Read(o["smallScaleCut"]),
             // A style saved before the material graphics sets (decision 682): none.
-            (string?)o["materialGraphicsSet"] is { Length: > 0 } mgs ? mgs : null);
+            (string?)o["materialGraphicsSet"] is { Length: > 0 } mgs ? mgs : null,
+            // A style saved before what is seen beyond the cut (decision 721): everything, as before.
+            (string?)o["beyond"] is { } bm && BeyondModes.Contains(bm) ? bm : "full",
+            Json.Number(o["nearDepth"]) is { } nd && nd >= 0 && double.IsFinite(nd) ? nd : DefaultNearDepth);
 
         /// <summary>A hatch spacing threshold (paper mm, 0 or more); null when it is not one.</summary>
         internal static double? Spacing(JsonNode? n) => Json.Number(n) is { } v && v >= 0 && double.IsFinite(v) ? v : null;
@@ -246,6 +268,9 @@ public static class ViewStyles
             SmallScaleCut = o["smallScaleCut"] is JsonObject sc ? SmallScaleCut.Read(sc, s.SmallScaleCut) : s.SmallScaleCut,
             // The view's own set (decision 682), or none ("none") over its style's.
             MaterialGraphicsSet = (string?)o["materialGraphicsSet"] is { Length: > 0 } ms ? (ms == NoSet ? null : ms) : s.MaterialGraphicsSet,
+            // What it sees beyond its cut (decision 721), its own over its style's.
+            Beyond = (string?)o["beyond"] is { } bm && BeyondModes.Contains(bm) ? bm : s.Beyond,
+            NearDepth = Json.Number(o["nearDepth"]) is { } nd && nd >= 0 && double.IsFinite(nd) ? nd : s.NearDepth,
         };
     }
 
@@ -422,6 +447,8 @@ public static class ViewStyles
         // The small-scale cuts (decision 680): fields over the style's, null back to none.
         if (a.ContainsKey("smallScaleCut")) s = s with { SmallScaleCut = a["smallScaleCut"] is null ? null : SmallScaleCut.Read(SmallScaleCut.Checked(a["smallScaleCut"]), s.SmallScaleCut) };
         if (a.ContainsKey("materialGraphicsSet")) s = s with { MaterialGraphicsSet = (string?)a["materialGraphicsSet"] is { Length: > 0 } ms && ms != NoSet ? ms : null };
+        if (a.ContainsKey("beyond")) s = s with { Beyond = a["beyond"] is null ? "full" : BeyondMode(a["beyond"]) };
+        if (a.ContainsKey("nearDepth")) s = s with { NearDepth = a["nearDepth"] is null ? DefaultNearDepth : NearDepthOf(a["nearDepth"]) };
         if (a.ContainsKey("finishElements")) s = s with { FinishElements = Own(a["finishElements"]) ?? throw new CommandException("finishElements is true or false.") };
         foreach (var f in FinishFields)
         {
@@ -589,6 +616,9 @@ public static class ViewStyles
                 else if (f == "smallScaleCut") own[f] = SmallScaleCut.Checked(value);
                 // The material graphics set (decision 682): one of the project's, or "none" over the style's.
                 else if (f == "materialGraphicsSet") own[f] = CheckedSet(ctx.Model, value, true);
+                // What a section or an elevation sees beyond its cut (decision 721): full, near or cut; the near part's depth.
+                else if (f == "beyond") own[f] = BeyondMode(value);
+                else if (f == "nearDepth") own[f] = NearDepthOf(value);
                 else own[f] = value is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException($"{f} is true or false.");
             }
             if (own.Count > 0) attrs["styleOverrides"] = own; else attrs.Remove("styleOverrides");

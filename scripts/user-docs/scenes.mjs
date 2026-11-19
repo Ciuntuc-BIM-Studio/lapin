@@ -5832,6 +5832,66 @@ export const scenes = [
     },
   },
   {
+    // What a section sees beyond its cut (issue #93, decision 721): its depth, typed or dragged in plan by its far line's grip
+    // (view.setDepth, one undo step), and Beyond the cut: Full depth, Cut + near (the far walls in the thin grey background
+    // pen) or Cut only (a detail: nothing seen beyond the plane).
+    id: 'section-depth',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      // Across the house at y = 2, looking north: the side walls and the inner wall cut, the north wall 6 m away.
+      const section = (await t.cmd('view.create', { kind: 'section', name: 'D-D', start: [-1, 2], end: [13, 2], scale: 50 })).id;
+      const layers = async () => {
+        const d = await t.call('doc.query', { name: 'view.drawing', args: { id: section } });
+        const count = (layer) => d.pens.filter((p) => p.layer === layer).reduce((n, p) => n + (p.segments?.length ?? 0), 0);
+        return { seen: count('SEEN'), beyond: count('BEYOND'), cut: count('CUT') };
+      };
+      const full = await layers();
+      t.expect(full.seen > 0 && full.beyond === 0, `Full depth draws what it sees in the seen pen (${full.seen}, ${full.beyond})`);
+      await openFromBrowser(t, 'D-D', 2500);
+      await t.page.locator('nav.browser').getByText('D-D', { exact: true }).first().click();
+      const beyond = t.page.locator('[data-testid=view-beyond]');
+      await beyond.waitFor();
+      t.expect(await beyond.inputValue() === 'full', 'a section sees its full depth by default');
+      await beyond.selectOption('near');
+      await t.wait(1200);
+      await t.cmd('view.setStyle', { id: section, nearDepth: 2 });
+      await t.wait(1200);
+      const near = await layers();
+      t.expect(near.beyond > 0 && near.seen < full.seen, `Cut + near puts the far walls in the background pen (${near.beyond})`);
+      // The three rows: Beyond the cut, Near depth and Depth, the width of the settings.
+      await t.page.locator('[data-field=view-depth]').scrollIntoViewIfNeeded();
+      await t.wait(300);
+      const panel = await t.page.locator('.view-settings').boundingBox();
+      const top = await t.page.locator('[data-testid=view-beyond]').boundingBox();
+      const bottom = await t.page.locator('[data-field=view-depth]').boundingBox();
+      t.expect(panel && top && bottom, 'the view settings show Beyond the cut, Near depth and Depth');
+      await t.shot('section-depth-settings', { clip: { x: panel.x, y: Math.max(0, top.y - 16), width: panel.width, height: bottom.y + bottom.height - top.y + 32 } });
+      await t.fit();
+      await t.wait(800);
+      await t.shot('section-depth', { of: '[data-testid=drawing]', pad: 0 });
+      await t.page.locator('[data-testid=view-beyond]').selectOption('cut');
+      await t.wait(1500);
+      const cut = await layers();
+      t.expect(cut.seen === 0 && cut.beyond === 0 && cut.cut === full.cut, `Cut only keeps the cut and drops what lies beyond (${cut.seen}, ${cut.cut})`);
+      await t.shot('section-cut-only', { of: '[data-testid=drawing]', pad: 0 });
+      // The far clip in plan: 4 m, its far line dashed and its grip at its middle; one undo step.
+      await t.cmd('view.setStyle', { id: section, beyond: null, nearDepth: null });
+      await t.cmd('view.setDepth', { id: section, depth: 4 });
+      t.expect((await t.nodes()).find((n) => n.id === section)?.props.depth === 4, 'the depth is kept on the section');
+      await openFromBrowser(t, 'Ground floor', 2000);
+      await select(t, section);
+      await t.wait(1200);
+      t.expect(await t.page.locator('[data-grip=far]').count() === 1, 'the section\'s far line has a grip in plan');
+      await t.fit();
+      await t.shot('section-far-grip', { of: '[data-testid=plan]', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/engine/session.ts')).undo());
+      await t.wait(800);
+      t.expect((await t.nodes()).find((n) => n.id === section)?.props.depth == null, 'one undo takes the depth back');
+    },
+  },
+  {
     // The X-ray visual style (report #142, decision 462): View → Visual style cycles shaded, edges, X-ray, wireframe; View → X-ray
     // switches it directly. Every surface is see-through with its edges; the selected wall stays solid.
     id: 'views-xray',

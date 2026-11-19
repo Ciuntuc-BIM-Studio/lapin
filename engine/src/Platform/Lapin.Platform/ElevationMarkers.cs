@@ -144,6 +144,13 @@ public static class ElevationMarkers
                 ["symbol"] = new JsonArray(Math.Round(centre.X, 6), Math.Round(centre.Y, 6)),
                 ["depth"] = Math.Round(depth, 6), ["along"] = Math.Round(along, 6),
             };
+            // Its far clip (decision 721): where it starts seeing and where its depth ends, along the look, for its grip.
+            if (v.NumOrNull("depth") is { } far && far > 0 && c.Query is { } q && Views.ModelFront(q, v) is { } mf)
+            {
+                var from = Clip(v, mf) ?? mf;
+                mk.Data["seeFrom"] = Math.Round(from, 6);
+                mk.Data["far"] = Math.Round(from + far, 6);
+            }
             yield return mk;
         }
     }
