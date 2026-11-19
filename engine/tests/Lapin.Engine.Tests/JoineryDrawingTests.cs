@@ -127,4 +127,33 @@ public class JoineryDrawingTests
         var plan = JoinerySymbols.Plan(spec);
         Assert.NotEmpty(plan);
     }
+
+    [Fact]
+    public void Joinery_can_be_shown_open_or_closed_in_plan_and_3d()
+    {
+        var f = Full();
+        var wall = f.Wall(0, 0, 6, 0);
+        var door = (string)f.Run("architecture.addDoor", new JsonObject { ["wallId"] = wall, ["along"] = 3 })!["id"]!;
+
+        double LeafDepth3d()
+        {
+            var g = f.Session.Geometry(door)!;
+            var leaf = g.Parts.First(p => p.Key == "leaf");
+            var ys = leaf.Solid.Vertices.Select(v => v.Y).ToList();
+            return ys.Max() - ys.Min();
+        }
+
+        // Default: closed in 3D (thin leaf across wall), open 90° in plan (leaf box + swing).
+        Assert.True(LeafDepth3d() < 0.15);
+
+        // Open: 3D leaf swings 90° into the room (> 0.5 m depth).
+        f.Run("architecture.setJoineryOpen", new JsonObject { ["ids"] = new JsonArray(door), ["mode"] = "open" });
+        Assert.True(LeafDepth3d() > 0.5);
+
+        // Closed: 3D leaf is back in the frame, and plan has no swing arc (no open leaf stroke extending past wall).
+        f.Run("architecture.setJoineryOpen", new JsonObject { ["ids"] = new JsonArray(door), ["mode"] = "closed" });
+        Assert.True(LeafDepth3d() < 0.15);
+        var closedPlan = f.Session.Geometry(door)!.Plan!;
+        Assert.All(closedPlan.Where(p => p.Kind != "hit"), p => Assert.All(p.Points, pt => Assert.True(Math.Abs(pt.Y) < 0.25)));
+    }
 }

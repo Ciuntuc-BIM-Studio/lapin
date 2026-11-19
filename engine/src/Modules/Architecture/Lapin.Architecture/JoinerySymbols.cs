@@ -157,21 +157,21 @@ public static class JoinerySymbols
     /// 200), the frame and a line for the glass, no sashes or board; coarse (LOD 100), the opening and its swing: a line
     /// across it on the frame's plane, a door's leaf as a line with its arc.
     /// </summary>
-    public static List<JStroke> Plan(JoinerySpec s, double? cutZ = null, string windowSwing = "none", int level = PlanDetail.Fine, double? sill = null)
+    public static List<JStroke> Plan(JoinerySpec s, double? cutZ = null, string windowSwing = "none", int level = PlanDetail.Fine, double? sill = null, string openMode = "auto")
     {
         var z = cutZ ?? s.Height / 2;
-        var boxes = Joinery.Boxes(s);
+        var boxes = Joinery.Boxes(s, open: openMode == "open");
         var o = new List<JStroke>();
         if (level <= PlanDetail.Coarse)
         {
             var frame = boxes.Where(b => b.Role == "frame" && b.Min.Z <= z && b.Max.Z >= z).ToList();
             var (fx0, fx1) = frame.Count > 0 ? (frame.Min(b => b.Min.X), frame.Max(b => b.Max.X)) : (-s.Width / 2, s.Width / 2);
-            if (!Joinery.Normalised(s).Any(p => Joinery.IsDoorLeaf(p.Operation))) o.Add(Line(new(fx0, s.Frame.Offset), new(fx1, s.Frame.Offset), "thin"));
+            if (openMode == "closed" || !Joinery.Normalised(s).Any(p => Joinery.IsDoorLeaf(p.Operation))) o.Add(Line(new(fx0, s.Frame.Offset), new(fx1, s.Frame.Offset), "thin"));
         }
         else
             foreach (var b in boxes.Where(b => b.Min.Z <= z && b.Max.Z >= z))
             {
-                if (b.Role is "leaf" or "handle" or "hardware" or "muntin" || b.Leaf) continue;
+                if (b.Role is "handle" or "hardware" or "muntin" || (openMode != "closed" && (b.Role == "leaf" || b.Leaf))) continue;
                 if (level <= PlanDetail.Medium && b.Role is "sash" or "board") continue;
                 // A jamb through a library profile (decision 417): its real outline.
                 if (b.Member is { Upright: true } jamb)
@@ -192,12 +192,16 @@ public static class JoinerySymbols
         // A garage door (topic #48, decision 523): its curtain at the opening, and its tracks, box or open panel dashed overhead.
         if (GarageDoors.Of(s)) { o.AddRange(GarageDoors.Plan(s, z, level)); return o; }
         var view = new JinerySpecView(s);
-        foreach (var p in Joinery.Normalised(s))
+        if (openMode != "closed")
         {
-            var r = Joinery.PanelRect(s, p);
-            if (r.Z0 > z || r.Z1 < z) continue;
-            if (Joinery.IsDoorLeaf(p.Operation)) o.AddRange(DoorLeafPlan(view, p, r, level));
-            else if (SashSwing(windowSwing, sill ?? s.SillHeight, r, p.Operation) is (true, var dashed)) o.AddRange(WindowSwingPlan(s, p, r, dashed));
+            var swingMode = openMode == "open" && windowSwing == "none" ? "solid" : windowSwing;
+            foreach (var p in Joinery.Normalised(s))
+            {
+                var r = Joinery.PanelRect(s, p);
+                if (r.Z0 > z || r.Z1 < z) continue;
+                if (Joinery.IsDoorLeaf(p.Operation)) o.AddRange(DoorLeafPlan(view, p, r, level));
+                else if (SashSwing(swingMode, sill ?? s.SillHeight, r, p.Operation) is (true, var dashed)) o.AddRange(WindowSwingPlan(s, p, r, dashed));
+            }
         }
         return o;
     }
