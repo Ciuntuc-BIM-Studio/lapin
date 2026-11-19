@@ -4742,6 +4742,18 @@ export const ES: Record<string, string> = {
   "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Arrastrar: hasta dónde ve el alzado (su recorte lejano); Ctrl/⌘-clic: sin fin",
   "Only a section or an elevation has a depth.": "Solo una sección o un alzado tiene profundidad.",
   "A view's depth is a length over 0.": "La profundidad de una vista es una longitud mayor que 0.",
+  "Core faces": "Caras del núcleo",
+  "Faces (finish)": "Caras (acabado)",
+  "Axis / centre": "Eje / centro",
+  "Temporary dimensions": "Cotas temporales",
+  "Make this the default": "Hacerlo predeterminado",
+  "Right click: make it the default": "Clic derecho: hacerlo predeterminado",
+  "Click: measure from the element's axis, its near face, its far face or its core faces": "Clic: medir desde el eje del elemento, su cara cercana, su cara lejana o las caras de su núcleo",
+  "Click to type the distance: the column moves to match": "Haga clic para escribir la distancia: el pilar se mueve para ajustarse",
+  "Click to type the distance: the beam moves to match": "Haga clic para escribir la distancia: la viga se mueve para ajustarse",
+  "Click to type the distance: the beam's end moves to match": "Haga clic para escribir la distancia: el extremo de la viga se mueve para ajustarse",
+  "Where temporary dimensions measure from and to: core face to core face, finish face to finish face, axis to axis, or from the element's reference line to the other's near face. Kept in Preferences → Grid and snaps.": "Desde dónde y hasta dónde miden las cotas temporales: cara del núcleo a cara del núcleo, cara acabada a cara acabada, eje a eje, o desde la línea de referencia del elemento hasta la cara cercana del otro. Se guarda en Preferencias → Cuadrícula y forzado.",
+  "Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.": "Desde dónde y hasta dónde miden las cotas temporales de muros, pilares y vigas, seleccionados o mientras se dibujan: cara del núcleo a cara del núcleo, cara acabada a cara acabada, eje a eje (el centro de un pilar), o desde la línea de referencia del elemento hasta la cara cercana del otro (como antes). Las barras de las herramientas Muro, Pilar y Viga también lo eligen, y un clic derecho en el punto de una cota hace de su referencia la predeterminada.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

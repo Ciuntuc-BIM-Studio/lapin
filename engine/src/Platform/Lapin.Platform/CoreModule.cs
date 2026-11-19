@@ -75,6 +75,8 @@ public sealed class CoreModule : ILapinModule
         r.Service<IIfcElementSets>(new ThermalIfcSets());
         Images.Register(r);
         Views.Register(r);
+        // Every module's elements as lines for the temporary dimensions in plan (decision 733).
+        DimLines.Register(r);
         // The type configurators' preview, drawn as the drawings are (decision 529).
         TypePreviews.Register(r);
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());

@@ -1019,10 +1019,12 @@ export function PlanView() {
     return null;
   })();
   // The straight piece being drawn, for the plan overlays (a wall's temporary dimensions before the click: decision 693).
-  const drawnTo = tool?.gesture?.kind === 'twoPoints' && pts.length === 1 && hover
-    ? (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point : null;
+  // A point tool's (a column's: decision 733) is the point the cursor would place, `a` and `b` both.
+  const pointTool = tool?.gesture?.kind === 'point';
+  const drawnTo = (tool?.gesture?.kind === 'twoPoints' && pts.length === 1) || (pointTool && pts.length === 0) ? hover
+    ? (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point : null : null;
   useEffect(() => {
-    setDrawnPath(drawnTo && tool ? { tool: tool.id, storeyId: storey?.id ?? null, a: pts[0], b: drawnTo } : null);
+    setDrawnPath(drawnTo && tool ? { tool: tool.id, storeyId: storey?.id ?? null, a: pointTool ? drawnTo : pts[0], b: drawnTo } : null);
   }, [tool, pts, drawnTo?.x, drawnTo?.y, storey?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => setDrawnPath(null), []);
 

@@ -2,7 +2,7 @@
  * Temporary dimensions as drawn over a view (decision 511): each a line with its witness lines and ticks, its value (a
  * click types it; Enter commits, Escape leaves), optional clickable ends and a padlock. Used by a door's, a window's and
  * an opening's temporary dimensions (modules/architecture/TempDimensions.tsx) and by a grid axis's (forum #78,
- * modules/drafting/GridAxisDims.tsx). `pt(t, out)` places a dimension: t along what it measures, `out` px off it.
+ * modules/drafting/GridAxisDims.tsx), and by walls', columns' and beams' (viewport/LineTempDims.tsx, decision 733). `pt(t, out)` places a dimension: t along what it measures, `out` px off it.
  */
 
 import { useState } from 'react';
@@ -36,6 +36,8 @@ export interface Shown {
   /** What a click on the value does, said on hover; the own end's click likewise. */
   valueTitle?: string;
   ownTitle?: string;
+  /** A right click on either end's dot (decision 733: the dimension reference's menu), at the window's point clicked. */
+  onMenu?: (client: Vec2) => void;
 }
 
 /** The dimensions, their ends and values, an input for the one being typed. */
@@ -81,13 +83,13 @@ export function Marks({ items, live }: { items: Shown[]; live: boolean }) {
           <g key={d.key} className={`temp-dim row${d.row}`} data-dim={d.key} {...Object.fromEntries(Object.entries(d.data).map(([k, v]) => [`data-${k}`, v]))} data-value={d.value.toFixed(4)}>
             <path className="temp-dim-line" d={`${witness(d.a)}${witness(d.b)}M${pts.map((p) => `${p.x} ${p.y}`).join('L')}${tick(d.a, A)}${tick(d.b, B)}`} />
             {live && d.cycleRef && (
-              <g {...hit} data-end="ref" onClick={d.cycleRef}>
+              <g {...hit} data-end="ref" onClick={d.cycleRef} onContextMenu={d.onMenu ? (e) => { e.preventDefault(); d.onMenu!({ x: e.clientX, y: e.clientY }); } : undefined}>
                 <circle cx={A.x} cy={A.y} r={8} className="temp-dim-hit" /><circle cx={A.x} cy={A.y} r={3} className="temp-dim-end" />
                 <title>{d.refTitle}</title>
               </g>
             )}
             {live && d.cycleOwn && (
-              <g {...hit} data-end="own" onClick={d.cycleOwn}>
+              <g {...hit} data-end="own" onClick={d.cycleOwn} onContextMenu={d.onMenu ? (e) => { e.preventDefault(); d.onMenu!({ x: e.clientX, y: e.clientY }); } : undefined}>
                 <circle cx={B.x} cy={B.y} r={8} className="temp-dim-hit" /><circle cx={B.x} cy={B.y} r={3} className="temp-dim-end own" />
                 <title>{d.ownTitle ?? t('Click: measure from the opening\'s edge or its centre')}</title>
               </g>

@@ -4737,6 +4737,18 @@ export const DA: Record<string, string> = {
   "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Træk: hvor langt facaden ser (dens fjerne afgrænsning); Ctrl/⌘-klik: uden ende",
   "Only a section or an elevation has a depth.": "Kun et snit eller en facade har en dybde.",
   "A view's depth is a length over 0.": "En visnings dybde er en længde over 0.",
+  "Core faces": "Kernesider",
+  "Faces (finish)": "Sider (finish)",
+  "Axis / centre": "Akse / centrum",
+  "Temporary dimensions": "Midlertidige mål",
+  "Make this the default": "Gør det til standard",
+  "Right click: make it the default": "Højreklik: gør det til standard",
+  "Click: measure from the element's axis, its near face, its far face or its core faces": "Klik: mål fra elementets akse, dets nære side, dets fjerne side eller dets kernesider",
+  "Click to type the distance: the column moves to match": "Klik for at skrive afstanden: søjlen flyttes, så den passer",
+  "Click to type the distance: the beam moves to match": "Klik for at skrive afstanden: bjælken flyttes, så den passer",
+  "Click to type the distance: the beam's end moves to match": "Klik for at skrive afstanden: bjælkens ende flyttes, så den passer",
+  "Where temporary dimensions measure from and to: core face to core face, finish face to finish face, axis to axis, or from the element's reference line to the other's near face. Kept in Preferences → Grid and snaps.": "Hvorfra og hvortil midlertidige mål måler: kerneside til kerneside, færdig side til færdig side, akse til akse, eller fra elementets referencelinje til den andens nære side. Gemt i Præferencer → Gitter og fang.",
+  "Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.": "Hvorfra og hvortil de midlertidige mål for vægge, søjler og bjælker måler, valgt eller under tegning: kerneside til kerneside, færdig side til færdig side, akse til akse (en søjles centrum), eller fra elementets referencelinje til den andens nære side (som før). Værktøjerne Væg, Søjle og Bjælke vælger det også i deres bjælker, og et højreklik på et måls punkt gør dets reference til standard.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

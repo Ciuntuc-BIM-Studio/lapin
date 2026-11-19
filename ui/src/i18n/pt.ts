@@ -4740,6 +4740,18 @@ export const PT: Record<string, string> = {
   "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Arrastar: até onde a elevação vê (o seu limite distante); Ctrl/⌘-clique: sem fim",
   "Only a section or an elevation has a depth.": "Só um corte ou uma elevação tem profundidade.",
   "A view's depth is a length over 0.": "A profundidade de uma vista é um comprimento maior que 0.",
+  "Core faces": "Faces do núcleo",
+  "Faces (finish)": "Faces (acabamento)",
+  "Axis / centre": "Eixo / centro",
+  "Temporary dimensions": "Cotas temporárias",
+  "Make this the default": "Tornar predefinido",
+  "Right click: make it the default": "Clique direito: tornar predefinido",
+  "Click: measure from the element's axis, its near face, its far face or its core faces": "Clique: medir a partir do eixo do elemento, da sua face próxima, da face distante ou das faces do núcleo",
+  "Click to type the distance: the column moves to match": "Clique para escrever a distância: o pilar move-se para corresponder",
+  "Click to type the distance: the beam moves to match": "Clique para escrever a distância: a viga move-se para corresponder",
+  "Click to type the distance: the beam's end moves to match": "Clique para escrever a distância: a extremidade da viga move-se para corresponder",
+  "Where temporary dimensions measure from and to: core face to core face, finish face to finish face, axis to axis, or from the element's reference line to the other's near face. Kept in Preferences → Grid and snaps.": "De onde até onde medem as cotas temporárias: face do núcleo a face do núcleo, face acabada a face acabada, eixo a eixo, ou da linha de referência do elemento até à face próxima do outro. Guardado em Preferências → Grade e snaps.",
+  "Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.": "De onde até onde medem as cotas temporárias de paredes, pilares e vigas, selecionados ou enquanto são desenhados: face do núcleo a face do núcleo, face acabada a face acabada, eixo a eixo (o centro de um pilar), ou da linha de referência do elemento até à face próxima do outro (como antes). As barras das ferramentas Parede, Pilar e Viga também o escolhem, e um clique direito no ponto de uma cota torna a sua referência predefinida.",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

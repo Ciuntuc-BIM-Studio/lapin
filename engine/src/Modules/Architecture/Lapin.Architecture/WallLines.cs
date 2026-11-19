@@ -28,31 +28,43 @@ public static class WallLines
         else storeyId = (string?)a["storeyId"] is { Length: > 0 } s ? s : throw new CommandException("Which storey (storeyId) or wall (id)?");
 
         var walls = new JsonArray();
-        foreach (var w in m.OfClass(IfcClass.Wall))
+        foreach (var l in LinesOf(m, storeyId))
         {
-            if (Spatial.StoreyOf(m, w.Id)?.Id != storeyId) continue;
-            if (PathCurve.Of(w).IsArc || Walls.Frame(w, m) is not { } g) continue;
-            var core = Walls.Section(m, w).Where(b => b.Core).ToList();
             var entry = new JsonObject
             {
-                ["id"] = w.Id, ["name"] = w.Name, ["start"] = J(g.Start), ["end"] = J(g.End),
-                ["faces"] = new JsonArray(Math.Round(g.YMin, 9), Math.Round(g.YMax, 9)),
+                ["id"] = l.Id, ["name"] = l.Name, ["start"] = J(l.Start), ["end"] = J(l.End),
+                ["faces"] = new JsonArray(Math.Round(l.FaceMin, 9), Math.Round(l.FaceMax, 9)),
             };
-            if (core.Count > 0)
-            {
-                var (c0, c1) = (core.Min(b => b.From), core.Max(b => b.To));
-                if (c0 > g.YMin + 1e-6 || c1 < g.YMax - 1e-6) entry["core"] = new JsonArray(Math.Round(c0, 9), Math.Round(c1, 9));
-            }
-            var (atStart, atEnd, along) = (new JsonArray(), new JsonArray(), new JsonArray());
-            foreach (var r in Joins.Of(m, w.Id))
-            {
-                var mine = (string?)r.Attrs?[r.Relating == w.Id ? "relatingConnection" : "relatedConnection"];
-                var other = Joins.Other(r, w.Id);
-                (mine == "ATSTART" ? atStart : mine == "ATEND" ? atEnd : along).Add((JsonNode)other);
-            }
-            entry["joins"] = new JsonObject { ["start"] = atStart, ["end"] = atEnd, ["path"] = along };
+            if (l.CoreMin > l.FaceMin + 1e-6 || l.CoreMax < l.FaceMax - 1e-6) entry["core"] = new JsonArray(Math.Round(l.CoreMin, 9), Math.Round(l.CoreMax, 9));
+            JsonArray Ids(IReadOnlyList<string>? ids) => new([.. (ids ?? []).Select(x => (JsonNode)x)]);
+            entry["joins"] = new JsonObject { ["start"] = Ids(l.JoinsStart), ["end"] = Ids(l.JoinsEnd), ["path"] = Ids(l.JoinsPath) };
             walls.Add((JsonNode)entry);
         }
         return new JsonObject { ["storeyId"] = storeyId, ["walls"] = walls };
     }
+
+    /// <summary>
+    /// The storey's straight walls as temporary-dimension lines (decision 733, <see cref="DimLines"/>): axis, faces, core faces
+    /// (the whole wall when no layer is core), the reference line it keeps, its joins. Curved walls are left out.
+    /// </summary>
+    public static IEnumerable<DimLine> LinesOf(IModelView m, string storeyId)
+    {
+        foreach (var w in m.OfClass(IfcClass.Wall))
+        {
+            if (Spatial.StoreyOf(m, w.Id)?.Id != storeyId) continue;
+            if (PathCurve.Of(w).IsArc || Walls.Frame(w, m) is not { } g) continue;
+            var bands = Walls.Section(m, w);
+            var core = bands.Where(b => b.Core).ToList();
+            var (c0, c1) = core.Count > 0 ? (core.Min(b => b.From), core.Max(b => b.To)) : (g.YMin, g.YMax);
+            var reference = WallReference.Before(m, w);
+            var (atStart, atEnd, along) = DimLines.JoinsOf(m, w.Id);
+            yield return new DimLine(w.Id, w.Name, "wall", g.Start, g.End, g.YMin, g.YMax, c0, c1, reference, null, atStart, atEnd, along);
+        }
+    }
+}
+
+/// <summary>The walls' lines for <c>view.dimLines</c> (decision 733).</summary>
+sealed class WallDimLines : IDimLineProvider
+{
+    public IEnumerable<DimLine> Lines(IModelView model, string storeyId) => WallLines.LinesOf(model, storeyId);
 }

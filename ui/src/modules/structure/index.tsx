@@ -19,6 +19,8 @@ import { StripOption, stripArgs, useStripPrefs, wallTypes } from './stripOptions
 import { withAutoJoinMenus } from '../core/autoJoin';
 import { arcAlias, chainTool, setChainMode } from '../core/chainTool';
 import { openTypeDialog } from '../../shell/typeToEdit';
+import { DimRefChoice } from '../../viewport/LineTempDims';
+import { MemberDims } from './MemberTempDims';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const StructureTypesDialog = lazyPart(() => import('./StructureTypesDialog').then((m) => m.StructureTypesDialog), { title: 'Structure types' });
@@ -26,11 +28,11 @@ const StructureTypesDialog = lazyPart(() => import('./StructureTypesDialog').the
 const column: ToolDef = {
   id: 'structure.column', label: 'Column', icon: ColumnIcon, shortcut: 'CL',
   gesture: { kind: 'point' },
-  options: () => <TypeOption kind="column" />,
+  options: () => <><TypeOption kind="column" /><DimRefChoice /></>,
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('structure.addColumn', { storeyId: ctx.storeyId, x: p.x, y: p.y, ...typeArg('column') }); },
 };
 const beam: ToolDef = chainTool({
-  id: 'structure.beam', label: 'Beam', icon: BeamIcon, shortcut: 'BM', more: () => <TypeOption kind="beam" />,
+  id: 'structure.beam', label: 'Beam', icon: BeamIcon, shortcut: 'BM', more: () => <><TypeOption kind="beam" /><DimRefChoice /></>,
   line: async (a, b, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, ...typeArg('beam') }); },
   arc: async (a, b, p, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, ...typeArg('beam') }); },
 });
@@ -125,6 +127,8 @@ const structure: LapinModule = {
   dialogs: { structureTypes: StructureTypesDialog },
   // Edit type… (decision 726): the dialog opened on the element's type.
   editType: Object.fromEntries(['IfcColumnType', 'IfcBeamType', 'IfcFootingType'].map((c) => [c, (id: string) => openTypeDialog('structureTypes', id)])),
+  // A selected column's or beam's temporary dimensions, read-only while one is placed or drawn (decision 733).
+  planOverlays: [MemberDims],
   grips: { IfcBeam: memberGrips, IfcFooting: (n) => (n.props.start ? memberGrips(n) : []), IfcColumn: pointGrip },
   references: { IfcBeam: pathRefs, IfcFooting: (n) => (n.props.start ? pathRefs(n) : []) },
   // Create similar: the element's tool with its type (a beam's or a strip's arc too; a strip with its wall when its type has one).

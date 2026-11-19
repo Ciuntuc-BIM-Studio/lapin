@@ -4700,6 +4700,18 @@ export const DE: Record<string, string> = {
   "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Ziehen: wie weit die Ansicht sieht (ihre ferne Begrenzung); Strg/⌘-Klick: ohne Ende",
   "Only a section or an elevation has a depth.": "Nur ein Schnitt oder eine Ansicht hat eine Tiefe.",
   "A view's depth is a length over 0.": "Die Tiefe einer Ansicht ist eine Länge über 0.",
+  "Core faces": "Kernflächen",
+  "Faces (finish)": "Flächen (Ausbau)",
+  "Axis / centre": "Achse / Mitte",
+  "Temporary dimensions": "Temporäre Bemaßungen",
+  "Make this the default": "Als Standard festlegen",
+  "Right click: make it the default": "Rechtsklick: als Standard festlegen",
+  "Click: measure from the element's axis, its near face, its far face or its core faces": "Klick: von der Achse des Elements, seiner nahen Seite, seiner fernen Seite oder seinen Kernflächen messen",
+  "Click to type the distance: the column moves to match": "Klicken, um den Abstand einzugeben: die Stütze rückt entsprechend",
+  "Click to type the distance: the beam moves to match": "Klicken, um den Abstand einzugeben: der Träger rückt entsprechend",
+  "Click to type the distance: the beam's end moves to match": "Klicken, um den Abstand einzugeben: das Trägerende rückt entsprechend",
+  "Where temporary dimensions measure from and to: core face to core face, finish face to finish face, axis to axis, or from the element's reference line to the other's near face. Kept in Preferences → Grid and snaps.": "Wovon bis wohin temporäre Bemaßungen messen: Kernfläche zu Kernfläche, Ausbaufläche zu Ausbaufläche, Achse zu Achse oder von der Referenzlinie des Elements zur nahen Seite des anderen. Gespeichert in Einstellungen → Raster und Fänge.",
+  "Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.": "Wovon bis wohin die temporären Bemaßungen von Wänden, Stützen und Trägern messen, ausgewählt oder beim Zeichnen: Kernfläche zu Kernfläche, Ausbaufläche zu Ausbaufläche, Achse zu Achse (die Mitte einer Stütze) oder von der Referenzlinie des Elements zur nahen Seite des anderen (wie bisher). Die Leisten der Werkzeuge Wand, Stütze und Träger wählen es auch, und ein Rechtsklick auf den Punkt einer Bemaßung macht ihre Referenz zum Standard.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

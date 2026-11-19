@@ -4743,6 +4743,18 @@ export const PL: Record<string, string> = {
   "Drag: how far the elevation sees (its far clip); Ctrl/⌘-click: without end": "Przeciągnij: jak daleko widzi elewacja (jej dalekie ograniczenie); Ctrl/⌘-klik: bez końca",
   "Only a section or an elevation has a depth.": "Tylko przekrój lub elewacja ma głębokość.",
   "A view's depth is a length over 0.": "Głębokość widoku to długość większa od 0.",
+  "Core faces": "Lica rdzenia",
+  "Faces (finish)": "Lica (wykończenie)",
+  "Axis / centre": "Oś / środek",
+  "Temporary dimensions": "Wymiary tymczasowe",
+  "Make this the default": "Ustaw jako domyślne",
+  "Right click: make it the default": "Prawy klik: ustaw jako domyślne",
+  "Click: measure from the element's axis, its near face, its far face or its core faces": "Kliknij: mierz od osi elementu, jego bliższego lica, dalszego lica lub lic rdzenia",
+  "Click to type the distance: the column moves to match": "Kliknij, aby wpisać odległość: słup przesunie się odpowiednio",
+  "Click to type the distance: the beam moves to match": "Kliknij, aby wpisać odległość: belka przesunie się odpowiednio",
+  "Click to type the distance: the beam's end moves to match": "Kliknij, aby wpisać odległość: koniec belki przesunie się odpowiednio",
+  "Where temporary dimensions measure from and to: core face to core face, finish face to finish face, axis to axis, or from the element's reference line to the other's near face. Kept in Preferences → Grid and snaps.": "Skąd i dokąd mierzą wymiary tymczasowe: od lica rdzenia do lica rdzenia, od lica wykończenia do lica wykończenia, od osi do osi albo od linii odniesienia elementu do bliższego lica drugiego. Zapisane w Preferencje → Siatka i przyciąganie.",
+  "Where the temporary dimensions of walls, columns and beams measure from and to, selected or being drawn: core face to core face, finish face to finish face, axis to axis (a column's centre), or from the element's reference line to the other's near face (as before). The Wall, Column and Beam tools' bars choose it too, and a right click on a dimension's dot makes its reference the default.": "Skąd i dokąd mierzą wymiary tymczasowe ścian, słupów i belek, zaznaczonych lub rysowanych: od lica rdzenia do lica rdzenia, od lica wykończenia do lica wykończenia, od osi do osi (środek słupa) albo od linii odniesienia elementu do bliższego lica drugiego (jak dotąd). Wybierają to też paski narzędzi Ściana, Słup i Belka, a prawy klik na punkcie wymiaru ustawia jego odniesienie jako domyślne.",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

@@ -49,6 +49,8 @@ public sealed class StructureModule : ILapinModule
         // Beams and strip foundations join as walls do.
         r.PathElement(IfcClass.Beam, Beams.Frame);
         r.PathElement(IfcClass.Footing, StripFootings.Frame);
+        // Columns and beams in the temporary dimensions in plan (decision 733).
+        r.Service<IDimLineProvider>(new MemberDimLines());
 
         // ------------------------------------------------------------ columns
         r.Command("createColumnType", "New column type", (ctx, a) =>
