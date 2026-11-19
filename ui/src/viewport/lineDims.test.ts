@@ -60,9 +60,9 @@ describe('temporary dimensions by the dimension reference (decision 733)', () =>
   });
 
   it('is kept in the preferences, the reference line by default; anything else unreadable falls back on it', () => {
-    expect(DEFAULT_PREFS.tempDimRef).toBe('reference');
-    expect(readPrefs(null).tempDimRef).toBe('reference');
+    expect(DEFAULT_PREFS.tempDimRef).toBe('core');
+    expect(readPrefs(null).tempDimRef).toBe('core');
     expect(readPrefs({ tempDimRef: 'core' }).tempDimRef).toBe('core');
-    expect(readPrefs({ tempDimRef: 'skin' }).tempDimRef).toBe('reference');
+    expect(readPrefs({ tempDimRef: 'skin' }).tempDimRef).toBe('core');
   });
 });

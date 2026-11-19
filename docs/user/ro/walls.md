@@ -97,10 +97,10 @@ Cât desenezi un perete, după primul clic, aceleași cote apar, doar de citit, 
 
 De unde și până unde stau capetele cotelor temporare e o setare a ta, păstrată pe acest calculator pentru toate proiectele: **Fișier → Preferințe… → Grilă și snap → Cote temporare**, lista **Cote temporare** din bara uneltelor Perete, Stâlp și Grindă, sau un clic dreapta pe punctul unei cote. Se aplică pereților, [stâlpilor și grinzilor](structure.md#cote-temporare), selectați sau în desenare:
 
-- **Fețele miezului**: de la fața miezului peretelui dinspre celălalt perete la fața miezului celuilalt dinspre el, fără tencuială și izolație de nicio parte. Un perete al cărui singur strat e miezul se măsoară de la fețele lui.
+- **Fețele miezului** (implicit): de la fața miezului peretelui dinspre celălalt perete la fața miezului celuilalt dinspre el, fără tencuială și izolație de nicio parte. Un perete al cărui singur strat e miezul se măsoară de la fețele lui.
 - **Fețe (finisaj)**: de la fața finisată la fața finisată.
 - **Axă / centru**: de la axă la axă (centrul unui stâlp).
-- **Linia de referință** (implicit, ca înainte): de la linia de referință a peretelui, sau de la axa lui, la fața apropiată a celuilalt.
+- **Linia de referință** (cum era înainte): de la linia de referință a peretelui, sau de la axa lui, la fața apropiată a celuilalt.
 
 Cât desenezi, linia pe care dai clic se măsoară după aceeași alegere: cu **Fețele miezului** cota pornește de la fața miezului peretelui nou dinspre vecin, calculată din tipul ales și din linia pe care e desenat (lista din bară, <kbd>Space</kbd>), ca să desenezi un perete la o distanță liberă de zidărie față de următorul. Clicul pe un punct schimbă tot doar acea cotă. Un clic dreapta pe un punct deschide **Fă-o implicită** (referința pe care o arată acum cota acelui punct) și cele patru alegeri.
 

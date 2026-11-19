@@ -79,7 +79,7 @@ export const DEFAULT_PREFS: Prefs = {
   developerExtras: false, pythonPath: null, externalEditor: null, navStyle: DEFAULT_NAV_STYLE, constrainWhileDrawing: true,
   openingAlong: { from: 'start', point: 'centre' },
   clickOutAccepts: false,
-  tempDimRef: 'reference',
+  tempDimRef: 'core',
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);

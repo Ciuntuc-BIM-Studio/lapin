@@ -99,10 +99,10 @@ While you draw a wall, after its first click, the same dimensions show, read onl
 
 Where the ends of temporary dimensions stand is a setting of yours, kept on this computer for every project: **File → Preferences… → Grid and snaps → Temporary dimensions**, the **Temporary dimensions** list in the Wall, Column and Beam tools' bars, or a right click on a dimension's dot. It applies to walls, [columns and beams](structure.md#temporary-dimensions), selected or being drawn:
 
-- **Core faces**: from the wall's core face nearest the other wall to the other's core face nearest it, the plaster and insulation left out on both sides. A wall whose only layer is its core measures from its faces.
+- **Core faces** (the default): from the wall's core face nearest the other wall to the other's core face nearest it, the plaster and insulation left out on both sides. A wall whose only layer is its core measures from its faces.
 - **Faces (finish)**: finish face to finish face.
 - **Axis / centre**: axis to axis (a column's centre).
-- **Reference line** (the default, as before): from the wall's reference line, or its axis, to the other's near face.
+- **Reference line** (as Lapin measured before): from the wall's reference line, or its axis, to the other's near face.
 
 While you draw, the line you click is measured by the same choice: with **Core faces** the dimension starts at the new wall's core face toward its neighbour, worked out from the type chosen and the line it is drawn on (the bar's list, <kbd>Space</kbd>), so you can draw a wall at a clear distance of brickwork from the next one. Clicking a dot still changes that one dimension only. A right click on a dot opens **Make this the default** (the reference that dot's dimension shows now) and the four choices.
 

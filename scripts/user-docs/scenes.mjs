@@ -639,6 +639,8 @@ export const scenes = [
     touches: ['architecture'],
     async run(t) {
       await t.fresh();
+      // Measured from the reference line (the axis here), not the default core faces (decision 733, the user's answer of 19.11.2026).
+      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'reference' }));
       const brick = (await t.cmd('architecture.createWallType', { name: 'Brick 300', layers: [{ material: 'Brick', thickness: 0.3, core: true }] })).id;
       const part = (await t.cmd('architecture.createWallType', { name: 'Partition 200', layers: [{ material: 'Brick', thickness: 0.2, core: true }] })).id;
       const storeyId = await t.storey();
@@ -729,7 +731,7 @@ export const scenes = [
       const [x1, y1] = await t.planPoint(7.5, -1.5);
       await t.shot('wall-temp-dims-core', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
       await t.keys('Escape', 'Escape');
-      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'reference' }));
+      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'core' }));
       void north;
     },
   },
@@ -780,7 +782,7 @@ export const scenes = [
       await t.wait(700);
       t.expect(await t.page.locator('[data-testid=column-dims][data-drawing=true]').count() === 1, 'a column being placed shows its distances');
       await t.keys('Escape', 'Escape');
-      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'reference' }));
+      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'core' }));
     },
   },
   {
