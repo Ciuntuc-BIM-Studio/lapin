@@ -11,13 +11,19 @@ import { NumberField } from '../../shell/cells';
 
 export interface LabelStyle { parts: string[]; balloon: boolean; direction: string; side: string; offset: number; leader: 'none' | 'one' | 'each'; line: 'none' | 'string' }
 export type LabelStylePatch = Partial<Record<keyof LabelStyle, LabelStyle[keyof LabelStyle] | null>>;
-export type LabelKind = 'bars' | 'stirrups' | 'columnBars' | 'runs';
+export type LabelKind = 'bars' | 'stirrups' | 'columnBars' | 'runs' | 'sets';
+/** The shape groups bar marks are prefixed by (decision 729). */
+export const MARK_GROUPS = ['straight', 'L', 'U', 'stirrup', 'tie', 'polyline', 'other'] as const;
+export type MarkGroup = (typeof MARK_GROUPS)[number];
+export interface MarkSettings { pattern: string; prefixes: Record<MarkGroup, string> }
 export interface RebarSettings {
   colorByDiameter: boolean; textHeight: number; balloon: number; steel: string; segmentLengths: boolean; cover: number; labels: Record<LabelKind, LabelStyle>;
   /** The length a bar is delivered in (m): 12 or 6 as a rule; a longer bar is split with a lap (decision 227). */
   stockLength: number;
   /** The lap a split bar overlaps by (m); null: 50Ø. */
   lapLength: number | null;
+  /** How marks are written: a pattern over the prefix of the bar's shape group (decision 729). */
+  marks?: MarkSettings;
 }
 
 /** The project's rebar settings as the engine resolves them (each kind's label style whole), read again after every change. */
@@ -28,7 +34,7 @@ export function useRebarSettings(): RebarSettings | null {
   return s;
 }
 
-export const TOKENS = ['count', 'diameter', 'step', 'length', 'mark', 'steel', 'text:…'];
+export const TOKENS = ['count', 'diameter', 'step', 'length', 'mark', 'steel', 'layer', 'text:…'];
 
 /** The parts typed as tokens; applied when the field is left or Enter pressed, so a half-typed token is not refused. */
 function PartsInput({ value, inherited, onChange }: { value: string; inherited: boolean; onChange: (parts: string) => void }) {
