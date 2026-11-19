@@ -107,6 +107,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     {
         // The opening symbols on elevations.
         r.Service<IViewAnnotations>(this);
+        // Unfolded roof covering plans (2D flat sheet layouts) and their element view role.
+        r.Service<IViewAnnotations>(new RoofUnfoldMarks());
+        r.Service<IElementViewRoles>(new RoofViewRoles());
         // The Wall types dialog's preview: the type in a sample wall with a T joined to it (decision 529).
         r.Service<ITypePreview>(new WallTypePreview());
         // A wall's kept reference line, told to the interface (decision 685).
@@ -846,6 +849,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             if (a["points"] != null || a["x1"] != null) RoofEdges.Downpipes(ctx, roof, next, RoofEdges.Match(Roof.Contour(roof), Roof.Contour(next)), p => p);
             return null;
         });
+
+        // A roof's unfolded 2D covering plan: {id (the roof)} → {id (the drafting view)}.
+        r.Command("unfoldRoofCovering", "Unfolded covering", (ctx, a) =>
+            new JsonObject { ["id"] = RoofUnfold.View(ctx, Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Roof)).Id });
 
         // The project's own roof styles (decision 233): the roof as the draft makes it saved under a name (a new style, or the one
         // of that name or id saved again, which its roofs take again), the roof taking it; renamed; deleted (its roofs kept as they are).

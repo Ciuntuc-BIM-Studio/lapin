@@ -150,6 +150,8 @@ public static class Views
             }
             case RefPlanes.Kind:
                 return (RefPlanes.Spec(view, hidden), null);
+            case "drafting":
+                return (DraftingSpec, null);
         }
         // A saved 3D view drawn from its camera (forum topic 91): a sheet, its PDF and the drawing pane show it.
         if (kind == "3d") return (View3dDrawings.Prepare(m, view, parts, services).Spec, null);
@@ -315,6 +317,7 @@ public static class Views
             }
             case "elevation": return ElevationPlane(view);
             case RefPlanes.Kind: return RefPlanes.Of(view);
+            case "drafting": return new WorkPlane(Vec3.Zero, new Vec3(1, 0, 0), new Vec3(0, 1, 0), Vec3.UnitZ);
         }
         return null;
     }
@@ -699,6 +702,8 @@ public static class Views
     {
         // A sheet's paper draws nothing of the model: only what is drawn on it (PaperViews).
         if (PaperViews.Is(view)) return (new ViewDrawing([], []), PaperSpec, null, [], null);
+        // A drafting view draws only its annotations and drafted linework, not the 3D model.
+        if (view.Str("kind") == "drafting") return (new ViewDrawing([], []), DraftingSpec, null, [], null);
         var silhouettes = new List<DrawSilhouette>();
         var outlines = new List<DLine>();
         var (parts, symbols, fills, texts) = Gather(q, view, silhouettes, outlines);
@@ -736,6 +741,8 @@ public static class Views
 
     /// <summary>A sheet's paper: a plan's frame at 0, y up, cutting nothing.</summary>
     static readonly ViewSpec PaperSpec = new(PaperViews.Kind, new ViewFrame(new Vec3(0, 0, 0), new Vec3(1, 0, 0), new Vec3(0, 1, 0), -Vec3.UnitZ), false, 0, Hidden: false);
+    /// <summary>A drafting view: 2D XY frame at 0, y up, cutting nothing.</summary>
+    static readonly ViewSpec DraftingSpec = new("drafting", new ViewFrame(new Vec3(0, 0, 0), new Vec3(1, 0, 0), new Vec3(0, 1, 0), -Vec3.UnitZ), false, 0, Hidden: false);
 
     /// <summary>A developed section's pieces: each straight piece's spec (seeing only between its ends) and the station it is laid at; a projected jogged section's cuts (<see cref="SectionPaths.Cuts"/>); one piece (or none) for a plain section.</summary>
     public static List<(ViewSpec Spec, double Station)> Pieces(IQueryContext q, Entity view)
