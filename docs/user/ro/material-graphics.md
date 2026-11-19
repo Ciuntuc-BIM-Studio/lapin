@@ -22,7 +22,8 @@ Ce lași nesetat vine de la standardul materialului, apoi din nume, ca până ac
 
 ## Hașura
 
-- **Model**, **Scară** și **Unghi**. **Aliniere**: *vedere* (modelul continuă de la un element la altul) sau *strat* (începe la fiecare bandă).
+- **Model**, **Scară** și **Unghi**. **Aliniere**: *Cu elementul* (într-un plan hașura se rotește cu fiecare perete: un perete la 30° are liniile la 45° ale cărămizii la 75°, asizele de-a lungul lui, iar hașurile straturilor continuă de la un strat la altul), *Fixă față de vedere* (hașura își păstrează unghiul pe planșă oricum ar fi peretele și continuă de la un element la altul) sau *Fiecare strat* (începe la fiecare bandă, de-a lungul celei mai lungi laturi). **Unghiul** o rotește în plus. Un proiect făcut din noiembrie 2026 aliniază cu elementul, dacă materialul nu spune altfel; un proiect salvat înainte își păstrează hașurile fixe față de vedere, cum le desena, până setezi un material pe *Cu elementul*. Plăcile, stâlpii și tot ce e într-o secțiune nu au axă în vedere și desenează *Cu elementul* ca *Fixă față de vedere*; hașura unui perete curb merge de-a lungul coardei lui.
+- **Izolația** (modelul BATT) e linia cu bucle a vatei minerale: o buclă pe o față a stratului, o trăsătură peste el, o buclă pe cealaltă față, din nou și din nou de-a lungul stratului. Într-un plan merge de-a lungul axei fiecărui perete, la orice unghi și în jurul unui perete curb, între fețele stratului oricum i-ar fi tăiate capetele. În IFC se scrie ca hașura cu linii cea mai apropiată, numită BATT, pe care Lapin o citește înapoi.
 - **Culoare**: automată e culoarea categoriei.
 - **Grosime, mm**: lățimea liniilor hașurii pe hârtie, din seria ISO (0,13; 0,18; 0,25; 0,35; 0,5; 0,7; 1,0) sau orice valoare de la 0,05 la 5. Are prioritate față de **Peniță**.
 - **Tip de linie**: întrerupt, punctat sau unul al tău.

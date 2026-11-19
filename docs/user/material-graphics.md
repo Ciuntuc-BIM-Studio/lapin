@@ -22,7 +22,8 @@ What you leave unset comes from the material's standard, then from its name, as 
 
 ## Hatch
 
-- **Pattern**, **Scale** and **Angle**. **Align**: *view* (the pattern runs on from one element to the next) or *layer* (it starts at each band).
+- **Pattern**, **Scale** and **Angle**. **Align**: *With the element* (in a plan the hatch turns with each wall: a wall at 30° has its 45° lines at 75°, its courses along it, and the layers' hatches run on from one layer to the next), *Fixed to the view* (the hatch keeps its angle on the sheet whatever the wall's, and runs on from one element to the next) or *Each layer* (it starts at each band, along its longest edge). The **Angle** turns it further. A project made since November 2026 aligns with the element unless a material says otherwise; a project saved before keeps its hatches fixed to the view, as it drew them, until you set a material to *With the element*. Slabs, columns and everything in a section have no axis in the view and draw *With the element* as *Fixed to the view*; a curved wall's hatch runs along its chord.
+- **Insulation** (the BATT pattern) is the looped line of mineral wool: a loop on one face of the layer, a stroke across, a loop on the other face, again and again along the layer. In a plan it runs along each wall's own axis, at any angle and round a curved wall, between the layer's faces whatever its ends are cut to. In IFC it is written as the nearest line hatching, named BATT, which Lapin reads back.
 - **Colour**: automatic is the category's colour.
 - **Weight, mm**: the hatch lines' width on paper, from the ISO series (0.13, 0.18, 0.25, 0.35, 0.5, 0.7, 1.0) or any value from 0.05 to 5. It wins over **Pen**.
 - **Line type**: dashed, dotted or one of your own.
