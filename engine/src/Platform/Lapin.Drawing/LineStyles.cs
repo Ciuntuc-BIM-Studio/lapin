@@ -163,6 +163,18 @@ public static class Dashes
     public static double[] Of(string? name, IReadOnlyList<LineTypeDef>? own) =>
         name != null && own?.FirstOrDefault(l => string.Equals(l.Name, name, StringComparison.OrdinalIgnoreCase)) is { } mine ? mine.Dashes : Of(name);
 
+    /// <summary>What Lapin's line types are for, as the Line types tab lists them (null: says itself).</summary>
+    public static string? Description(string name) => name switch
+    {
+        "dashed" => "Dashed: hidden edges, demolition",
+        "hidden" => "Hidden: short dashes",
+        "center" => "Centre: axes, centre lines",
+        "dotted" => "Dotted: overhead, outlines",
+        "dashdot" => "Dash dot: axes, symmetry",
+        "dashdotdot" => "Dash dot dot: section lines, phantom lines",
+        _ => null,
+    };
+
     public static double[] Of(string? name) => name switch
     {
         "dashed" => [3, 1.5],
@@ -170,6 +182,8 @@ public static class Dashes
         "center" => [6, 1.5, 1, 1.5],
         "dotted" => [0.3, 1],
         "dashdot" => [4, 1, 0.3, 1],
+        // A long dash and two dots (ISO 128 type 05): a section line, a phantom line (issue #89, decision 715).
+        "dashdotdot" => [6, 1, 0.3, 1, 0.3, 1],
         _ => [],
     };
 }

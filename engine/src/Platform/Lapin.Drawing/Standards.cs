@@ -280,7 +280,7 @@ public static class Standards
     public static readonly string[] LineCaps = ["round", "square"];
     public static readonly string[] Bubbles = ["circle", "square"];
     public static readonly string[] AxisEnds = ["both", "start", "end", "none"];
-    public static readonly string[] LineTypes = ["continuous", "dashed", "dotted", "dashdot"];
+    public static readonly string[] LineTypes = ["continuous", "dashed", "dotted", "dashdot", "dashdotdot"];
 
     /// <summary>The fields an annotation may override, by kind (an axis overrides its line colour as lineColor).</summary>
     public static readonly string[] TextOverrides = ["height", "font", "bold", "italic", "color"];

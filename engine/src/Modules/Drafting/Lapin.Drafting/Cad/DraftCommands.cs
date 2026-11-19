@@ -199,6 +199,18 @@ public static class DraftCommands
                     attrs["layer"] = layer;
                 }
                 if (a.ContainsKey("color")) { if ((string?)a["color"] is { } c) attrs["color"] = c; else attrs.Remove("color"); }
+                // Its own pen (paper mm) and line type, over its layer's; null: by layer again (issue #89, decision 715).
+                if (a.ContainsKey("weight"))
+                {
+                    if (a["weight"] is null) attrs.Remove("weight");
+                    else attrs["weight"] = Json.Number(a["weight"]) is { } w && w >= Drafts.MinWeight && w <= Drafts.MaxWeight ? Math.Round(w, 4) : throw new CommandException($"A pen is {Drafts.MinWeight}–{Drafts.MaxWeight} mm on paper.");
+                }
+                if (a.ContainsKey("lineType"))
+                {
+                    if (a["lineType"] is null) attrs.Remove("lineType");
+                    else attrs["lineType"] = (string?)a["lineType"] is { } lt && Lapin.Drawing.Standards.LineTypeNames(DraftingResources.Book(ctx.Model)).FirstOrDefault(n => string.Equals(n, lt.Trim(), StringComparison.OrdinalIgnoreCase)) is { } known
+                        ? known : throw new CommandException($"„{(string?)a["lineType"]}” is not a line type (Manage → Drafting standards → Line types).");
+                }
                 // A hatch's pattern, scale, angle (°) and origin (where its pattern starts, in the view), merged into what it had.
                 if (a["hatch"] is JsonObject hp && attrs["hatch"] is JsonObject had)
                 {

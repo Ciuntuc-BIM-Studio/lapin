@@ -34,7 +34,7 @@ type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagT
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[]; lineType?: boolean; labels?: Record<string, string> };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
-const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot'];
+const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot', 'dashdotdot'];
 /** How a choice reads where its value alone would not say it. */
 const CHOICE_LABELS: Record<string, string> = { project: 'as the project', across: 'perpendicular to the tag line', along: 'along the tag line', buildup: 'build-up',
   // An opening's height under a dimension line across it (report #92, decision 338).

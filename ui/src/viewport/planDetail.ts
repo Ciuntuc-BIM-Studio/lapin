@@ -14,5 +14,5 @@ export const shownAt = (it: PlanItemDto, detail: number): boolean => detail >= (
 
 /** A dash pattern's lengths on paper (mm), the engine's table (Dashes). */
 export const DASHES: Record<string, number[]> = {
-  dashed: [3, 1.5], hidden: [1.5, 1], center: [6, 1.5, 1, 1.5], dotted: [0.3, 1], dashdot: [4, 1, 0.3, 1],
+  dashed: [3, 1.5], hidden: [1.5, 1], center: [6, 1.5, 1, 1.5], dotted: [0.3, 1], dashdot: [4, 1, 0.3, 1], dashdotdot: [6, 1, 0.3, 1, 0.3, 1],
 };

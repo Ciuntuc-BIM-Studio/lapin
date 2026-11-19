@@ -56,6 +56,13 @@ public static class StandardsLibrary
         // The material graphics sets' entries (decision 682) too.
         if (attrs[MaterialGraphicsSets.Key] is JsonArray sets) RepointGraphics(sets, from, to);
         ctx.Replace(project.With(attrs: attrs));
+        // A drafted shape's own line type (decision 715): renamed with it, gone to its layer's.
+        foreach (var e in ctx.Model.OfClass(IfcClass.Annotation).Where(e => e.PredefinedType == DraftLayers.Predefined && string.Equals(e.Str("lineType"), from, StringComparison.OrdinalIgnoreCase)).ToList())
+        {
+            var ea = e.CloneAttrs();
+            if (to == null) ea.Remove("lineType"); else ea["lineType"] = to;
+            ctx.Replace(e.With(attrs: ea));
+        }
         // Materials (decision 681): their hatch's line type and their cut and separator lines', in every kind of view, its steps by scale and its background.
         foreach (var mat in ctx.Model.OfClass(IfcClass.Material).ToList())
         {
@@ -250,7 +257,7 @@ public static class StandardsLibrary
         r.Query("standards.lineTypes", (q, _) => new JsonObject
         {
             ["builtin"] = new JsonArray(Standards.LineTypes.Concat(LineStyles.Patterns).Distinct().Where(n => n is not ("continuous" or "solid"))
-                .Select(n => (JsonNode)new JsonObject { ["name"] = n, ["dashes"] = new JsonArray(Dashes.Of(n).Select(d => (JsonNode)d).ToArray()) }).ToArray()),
+                .Select(n => (JsonNode)new JsonObject { ["name"] = n, ["description"] = Dashes.Description(n), ["dashes"] = new JsonArray(Dashes.Of(n).Select(d => (JsonNode)d).ToArray()) }).ToArray()),
             ["own"] = new JsonArray((DraftingResources.Book(q.Model).LineTypes ?? []).Select(l => (JsonNode)LineTypeJson(l)).ToArray()),
         });
 

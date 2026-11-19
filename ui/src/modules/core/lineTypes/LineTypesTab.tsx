@@ -149,7 +149,7 @@ export function LineTypesTab() {
             <li><span className="small"><span>continuous</span></span></li>
             {builtin.map((b) => (
               <li key={b.name} className={b.name === selected ? 'active' : undefined}>
-                <button type="button" data-lt={b.name} onClick={() => setSelected(b.name)}><strong data-no-i18n>{b.name}</strong><LineSample dashes={b.dashes} width={120} /></button>
+                <button type="button" data-lt={b.name} onClick={() => setSelected(b.name)}><strong data-no-i18n>{b.name}</strong>{b.description && <span className="muted small">{b.description}</span>}<LineSample dashes={b.dashes} width={120} /></button>
               </li>
             ))}
           </ul>

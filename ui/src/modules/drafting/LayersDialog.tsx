@@ -11,7 +11,7 @@ import { useLayers, type DraftLayer as Layer } from '../../viewport/cad/layers';
 import { NumberField } from '../../shell/cells';
 import { useLineTypes } from '../core/lineTypes/lineTypes';
 import { lineTypeNames, withCurrent } from '../core/lineTypes/lineTypeModel';
-const TYPES = ['continuous', 'dashed', 'dotted', 'dashdot'];
+const TYPES = ['continuous', 'dashed', 'dotted', 'dashdot', 'dashdotdot'];
 
 export function LayersDialog() {
   const current = useCad((s) => s.layer);

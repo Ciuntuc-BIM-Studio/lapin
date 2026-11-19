@@ -24,7 +24,7 @@ public sealed record CadLayer(string Name, string Color = "#18181b", double Weig
     /// <summary>Whether its shapes are held from editing: by itself or its group.</summary>
     public bool Held => Locked || GroupLocked;
 
-    public static readonly string[] LineTypes = ["continuous", "dashed", "dotted", "dashdot"];
+    public static readonly string[] LineTypes = ["continuous", "dashed", "dotted", "dashdot", "dashdotdot"];
 
     /// <summary>The line type's dashes on paper (mm), Lapin's own only.</summary>
     public double[]? Dash => Dashes.Of(LineType) is { Length: > 0 } d ? d : null;
@@ -59,6 +59,15 @@ public sealed record CadLayer(string Name, string Color = "#18181b", double Weig
 public static class Drafts
 {
     public const string Predefined = "DRAFT";
+    /// <summary>What a drafted shape's own pen may be (paper mm), as a layer's.</summary>
+    public const double MinWeight = 0.05, MaxWeight = 2;
+
+    /// <summary>A drafted shape's pen (paper mm): its own (issue #89, decision 715), else its layer's.</summary>
+    public static double WeightOf(Entity e, CadLayer layer) => e.NumOrNull("weight") is double w && w > 0 ? Math.Clamp(w, MinWeight, MaxWeight) : layer.Weight;
+
+    /// <summary>A drafted shape's dashes on paper (mm): its own line type's (continuous: none), else its layer's.</summary>
+    public static double[]? DashOf(Entity e, CadLayer layer, StyleBook book) =>
+        e.Str("lineType") is { Length: > 0 } lt ? (Standards.DashOf(book, lt) is { Length: > 0 } d ? d : null) : layer.DashIn(book);
     /// <summary>The mark layer of construction lines: drawn on screen, left out of sheets, PDF and DXF.</summary>
     public const string ConstructionLayer = Views.ConstructionLayer;
 
@@ -304,8 +313,8 @@ public static class Drafts
             var cloud = e.NumOrNull("cloud") is double arc && arc > 0 && shape is Polyline { Closed: true } or Circle ? arc : 0;
             foreach (var line in Geo.Polylines(shape))
                 if (construction) mk.Polyline(line, false, ConstructionLayer, Pens.Default.Hatch, "#8f98a3", [2, 1.5]);
-                else if (cloud > 0) mk.Polyline(Cloud(line, cloud * c.Mm), false, layer.Name, layer.Weight, color, layer.DashIn(c.Book));
-                else mk.Polyline(line, false, layer.Name, layer.Weight, color, layer.DashIn(c.Book));
+                else if (cloud > 0) mk.Polyline(Cloud(line, cloud * c.Mm), false, layer.Name, WeightOf(e, layer), color, DashOf(e, layer, c.Book));
+                else mk.Polyline(line, false, layer.Name, WeightOf(e, layer), color, DashOf(e, layer, c.Book));
             if (cloud == 0 && CurveOf(shape) is { } curve) mk.Curves.Add(curve);
             var k = Geo.Keys(shape);
             mk.Snaps.AddRange([.. k.Endpoints, .. k.Midpoints, .. k.Centers, .. k.Quadrants]);

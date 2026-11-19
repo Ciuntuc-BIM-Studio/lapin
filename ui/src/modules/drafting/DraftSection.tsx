@@ -20,6 +20,8 @@ import { sideLengths, withSideLength } from '../../viewport/cad/sides';
 import { formatLength, lengthText, unitLabel, useStandards } from '../../engine/unitsStore';
 import { LengthCell, LengthField, NumberField } from '../../shell/cells';
 import { useLayers, type DraftLayer } from '../../viewport/cad/layers';
+import { useLineTypes } from '../core/lineTypes/lineTypes';
+import { lineTypeNames, withCurrent } from '../core/lineTypes/lineTypeModel';
 import { ptStrict } from '../../platform/vec';
 import { TagFields } from './tag';
 import { selectionWith } from '../../shell/params';
@@ -183,6 +185,10 @@ function Drafted({ node }: { node: NodeDto }) {
   const layerName = typeof node.props.layer === 'string' ? node.props.layer : '0';
   const layer = layers.find((l) => l.name === layerName);
   const own = typeof node.props.color === 'string' ? node.props.color : null;
+  // Its own line type and pen over its layer's (issue #89, decision 715); none: by layer.
+  const lineTypes = useLineTypes();
+  const ownType = typeof node.props.lineType === 'string' ? node.props.lineType : null;
+  const ownWeight = typeof node.props.weight === 'number' ? node.props.weight : null;
   const shape = node.props.shape && typeof node.props.shape === 'object' ? fromJson(node.props.shape as Record<string, unknown>) : null;
   const hatch = node.props.hatch && typeof node.props.hatch === 'object' ? (node.props.hatch as Record<string, unknown>) : null;
   const kind = hatch ? 'Hatch' : shape ? { line: 'Line', polyline: 'Polyline', circle: 'Circle', arc: 'Arc', ellipse: 'Ellipse' }[shape.type] : 'Shape';
@@ -205,8 +211,24 @@ function Drafted({ node }: { node: NodeDto }) {
         <option value="">none</option>
         {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
       </select></dd>
-      {layer && <Row label="Line type" value={layer.lineType} />}
-      {layer && <Row label="Pen" value={`${layer.weight} mm`} />}
+      {!hatch && <>
+        <dt>Line type</dt>
+        <dd className="pair">
+          <select data-field="draft-line-type" value={ownType ?? ''} onChange={(e) => void execute('drafting.updateDraft', { ids: drafted(node), lineType: e.target.value || null })}>
+            <option value="">by layer</option>
+            {withCurrent(lineTypeNames(lineTypes), ownType).map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          {!ownType && layer && <span className="muted small" data-no-i18n>{layer.lineType}</span>}
+        </dd>
+        <dt>Pen</dt>
+        <dd className="pair" data-field="draft-pen">
+          <NumberField value={ownWeight ?? layer?.weight ?? 0.25} suffix="mm" min={0.05} max={2}
+            onCommit={(w) => { if (w != null && w !== ownWeight) void execute('drafting.updateDraft', { ids: drafted(node), weight: w }); }} />
+          {ownWeight != null
+            ? <button type="button" className="link" onClick={() => void execute('drafting.updateDraft', { ids: drafted(node), weight: null })}>by layer</button>
+            : <span className="muted small">by layer</span>}
+        </dd>
+      </>}
       {/* A closed shape may be drawn as a revision cloud (decision 620). */}
       {!hatch && shape && (shape.type === 'circle' || (shape.type === 'polyline' && shape.closed)) && <CloudFields node={node} ids={drafted(node)} />}
       {hatch ? <HatchFields node={node} hatch={hatch} /> : shape ? <ShapeFields node={node} shape={shape} /> : null}
