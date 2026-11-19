@@ -94,7 +94,8 @@ public sealed record ViewDrawing(List<DPolygon> Cuts, List<DLine> Lines, List<DF
 
 /// <summary>
 /// How a view sees: its frame (plans look down from the cut), whether it cuts,
-/// how deep it projects (<see cref="Below"/>), from where lines are beyond, and
+/// how deep it projects (<see cref="Below"/>), from where lines are beyond (a plan's: below the cut; a section's or an
+/// elevation's: along its look from its origin, what lies wholly farther drawn in the background pen, decision 721), and
 /// for a plan how high overhead elements are drawn (<see cref="Above"/>).
 /// </summary>
 public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Below, double? BeyondFrom = null, double Above = 0, bool Hidden = true, bool Up = false)
@@ -103,6 +104,11 @@ public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Bel
     public (double Min, double Max)? Span { get; init; }
     /// <summary>How far the drawing reaches up and down (along the frame's Up, from its origin); null: without end. A section across an element sees only its window.</summary>
     public (double Min, double Max)? Rise { get; init; }
+    /// <summary>
+    /// A section that draws only what its plane cuts (issue #93, decision 721): nothing seen beyond it, no hidden lines, no
+    /// silhouettes; its depth still bounds what the drawing's annotations and the 3D section box see.
+    /// </summary>
+    public bool CutOnly { get; init; }
 
     /// <summary>
     /// A plan cut at <paramref name="cutZ"/>, looking down; or, <paramref name="up"/>, looking up
@@ -207,13 +213,29 @@ public static class Generator
         // A cut line another part's corner stands on is split there: where a core running through meets the end of one
         // stopping at it, only the shared stretch is inside the material, and only that stretch may go (MaterialDrawing).
         lines = SplitAtCorners(lines, cuts);
-        foreach (var s in seen)
+        // A section or an elevation in the background from a distance on (decision 721): a part wholly farther than it.
+        var near = new Dictionary<Solid, double>(ReferenceEqualityComparer.Instance);
+        bool Far(Solid s, double from)
         {
-            var p = primary[s.Owner];
-            var beyond = plan && v.BeyondFrom is { } bf && Z(p.Solid).Max < cutZ - bf - 1e-4;
-            lines.Add(new DLine(s.A, s.B, beyond ? LineRole.Beyond : LineRole.Projection, p.Element, p.Class));
+            if (!near.TryGetValue(s, out var d0))
+            {
+                d0 = double.PositiveInfinity;
+                foreach (var q in s.Vertices) d0 = Math.Min(d0, v.Frame.Depth(q));
+                near[s] = d0;
+            }
+            return d0 > from + 1e-4;
         }
-        foreach (var s in behind) { var p = primary[s.Owner]; lines.Add(new DLine(s.A, s.B, LineRole.Hidden, p.Element, p.Class)); }
+        // Cut only (decision 721): nothing seen beyond the plane, nor hidden behind it.
+        if (!v.CutOnly)
+        {
+            foreach (var s in seen)
+            {
+                var p = primary[s.Owner];
+                var beyond = v.BeyondFrom is { } bf && (plan ? Z(p.Solid).Max < cutZ - bf - 1e-4 : Far(p.Solid, bf));
+                lines.Add(new DLine(s.A, s.B, beyond ? LineRole.Beyond : LineRole.Projection, p.Element, p.Class));
+            }
+            foreach (var s in behind) { var p = primary[s.Owner]; lines.Add(new DLine(s.A, s.B, LineRole.Hidden, p.Element, p.Class)); }
+        }
 
         if (plan && v.Above > 0)
         {
@@ -259,7 +281,10 @@ public static class Generator
                     // Cut where the plane runs through it, overhead above a plan's cut, seen otherwise.
                     var d = pts.Select(q => Vec3.Dot(q - v.Frame.Origin, v.Frame.Dir)).ToList();
                     role = v.Cut && d.Min() <= 1e-9 && d.Max() >= -1e-9 ? LineRole.Cut : plan && pts.Min(q => q.Z) > cutZ ? LineRole.Overhead : LineRole.Projection;
+                    if (!plan && role == LineRole.Projection && v.BeyondFrom is { } sbf && d.Min() > sbf + 1e-4) role = LineRole.Beyond;
                 }
+                // Cut only: a line in space draws only where the plane cuts it.
+                if (v.CutOnly && role != LineRole.Cut) continue;
                 for (var i = 0; i + 1 < mapped.Count; i++)
                     lines.Add(new DLine(mapped[i], mapped[i + 1], role, sym.Element, sym.Class, Own: sym.Own));
             }
@@ -271,7 +296,7 @@ public static class Generator
                     lines.Add(new DLine(sym.Points[i], sym.Points[(i + 1) % n], sym.Role, sym.Element, sym.Class, Own: sym.Own));
             }
         List<DFill>? fills = null;
-        if (!plan && silhouettes is { Count: > 0 }) DrawSilhouettes(silhouettes, v, lines, ref fills);
+        if (!plan && !v.CutOnly && silhouettes is { Count: > 0 }) DrawSilhouettes(silhouettes, v, lines, ref fills);
         return new ViewDrawing(cuts, lines, fills);
     }
 
@@ -286,6 +311,8 @@ public static class Generator
         {
             var depth = Vec3.Dot(s.Shape.At - f.Origin, f.Dir);
             if (v.Cut ? depth < 0 || depth > v.Below : depth > v.Below) continue;
+            // Farther than the view's background distance (decision 721): in the background pen.
+            var role = v.BeyondFrom is { } bf && depth > bf + 1e-4 ? LineRole.Beyond : LineRole.Projection;
             var c = f.Map(s.Shape.At);
             if (v.Span is { } span && (c.X < span.Min || c.X > span.Max)) continue;
             if (v.Rise is { } rise && (c.Y > rise.Max)) continue;
@@ -305,7 +332,7 @@ public static class Generator
                 if (n < 2) continue;
                 var pts = new Vec2[n];
                 for (var i = 0; i < n; i++) pts[i] = new Vec2(c.X + sign * st.Points[i].X, c.Y + st.Points[i].Y);
-                for (var i = 0; i + 1 < n + (st.Closed ? 1 : 0); i++) lines.Add(new DLine(pts[i], pts[(i + 1) % n], LineRole.Projection, s.Element, s.Class, Own: s.Own));
+                for (var i = 0; i + 1 < n + (st.Closed ? 1 : 0); i++) lines.Add(new DLine(pts[i], pts[(i + 1) % n], role, s.Element, s.Class, Own: s.Own));
                 if (st.Closed && n >= 3 && s.Fill != null) (fills ??= []).Add(new DFill([pts], s.Element, s.Class, s.Fill));
             }
         }
