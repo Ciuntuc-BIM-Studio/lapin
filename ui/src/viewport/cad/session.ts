@@ -97,6 +97,8 @@ export interface Step {
   rect?: string;
   /** The element under the cursor is lit while the step waits for one (Match properties' targets, decision 490). */
   hover?: boolean;
+  /** A pick step that takes elements in a section or an elevation too, by their drawn lines (ALIGN), not in a plan only. */
+  pickInViews?: boolean;
   /** A pick step whose point matters (SPLITELEMENT's cut): the cursor snaps as for a point, the marker shows, and `pickElement` / `pick` get the snapped point; the element is still the one under the raw cursor. */
   snap?: boolean;
 }
@@ -243,6 +245,8 @@ function continuation(viewId: string): { p: Vec2; dir: Vec2; ref: { shape: strin
 /** Ctrl (or ⌘) held at the press: the click places its point without constraints. Read when the click is fed, not when it is run. */
 let ctrlHeld = false;
 if (typeof window !== 'undefined') window.addEventListener('pointerdown', (e) => { ctrlHeld = e.ctrlKey || e.metaKey; }, true);
+/** Whether Ctrl (⌘) was held on the last click in a view (ALIGN's several elements, as Revit's Ctrl). */
+export const ctrlWasHeld = (): boolean => ctrlHeld;
 
 /** What was typed for a point put down (a length in metres, an angle in degrees), as `draw` will want it. */
 export const typedAt = (p: Vec2): { length?: number; angle?: number } | undefined => trail.find((x) => dist(x.p, p) < 1e-7)?.typed;
@@ -1015,7 +1019,7 @@ const feed = serial(async (p: Vec2, typed: { length?: number; angle?: number } |
   useCad.setState({ lastPoint: p, snapOverride: null });
   if (s.step.want === 'pick' && s.host) {
     const hit = s.host.pickDraft(p);
-    const element = !hit && s.step.pickElement && s.host.isPlan?.() !== false ? s.host.pickAny(p) : null;
+    const element = !hit && s.step.pickElement && (s.host.isPlan?.() !== false || s.step.pickInViews) ? s.host.pickAny(p) : null;
     const at = s.step.snap && snapped ? snapped : p;
     if (element) { await advance(s.step.pickElement!(element, at)); return; }
     if (!hit) { log(s.step.pickElement ? 'Nothing to pick there.' : 'Nothing drafted there.'); return; }
