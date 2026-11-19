@@ -70,6 +70,9 @@ public sealed class CoreModule : ILapinModule
         ParamFormulas.Register(r);
         // Every field a tag or a formula can read on an element, for the Parameters inspector (forum topic 84).
         FieldCatalog.Register(r);
+        // The R and U-value of layered walls, floors and roofs, worked out from their layers (issue #67, decision 717).
+        Thermal.Register(r);
+        r.Service<IIfcElementSets>(new ThermalIfcSets());
         Images.Register(r);
         Views.Register(r);
         // The type configurators' preview, drawn as the drawings are (decision 529).

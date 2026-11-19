@@ -186,7 +186,7 @@ public class JoineryDataTests
         {
             IfcExport.Write(f.Session, path2);
             var text = File.ReadAllText(path2);
-            Assert.DoesNotContain("IFCTHERMALTRANSMITTANCEMEASURE", text);
+            Assert.DoesNotContain("IFCTHERMALTRANSMITTANCEMEASURE(0.9)", text);
             Assert.Contains("see test report", text);
         }
         finally { File.Delete(path2); }

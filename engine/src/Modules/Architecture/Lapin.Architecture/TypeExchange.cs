@@ -441,14 +441,22 @@ public sealed class TypeAssemblies : IScheduleSource
         var m = q.Model;
         var rows = new List<IReadOnlyList<string>>();
         string Mm(double v) => Math.Round(v * 1000, 1).ToString("0.#", CultureInfo.InvariantCulture);
+        // Its R and U (issue #67), worked out from its layers; a layer's λ (an asterisk: Lapin's indicative one) and R; U blank when a λ is missing.
+        string N(double? v, string format = "0.000") => v is { } x ? x.ToString(format, CultureInfo.InvariantCulture) : "";
         foreach (var (kind, t) in TypeExchange.Types(m))
         {
             var layers = LayerSets.LayersOf(m, t.Id);
             var used = m.RelatedOf(t.Id, IfcClass.RelDefinesByType).Count();
-            rows.Add([kind == "floor" ? "Floor" : "Wall", t.Name, t.Str("mark") ?? "", "", "", Mm(layers.Sum(l => l.Thickness)), "", used.ToString(CultureInfo.InvariantCulture)]);
+            var th = Thermal.Of(m, t);
+            rows.Add([kind == "floor" ? "Floor" : "Wall", t.Name, t.Str("mark") ?? "", "", "", Mm(layers.Sum(l => l.Thickness)), "", used.ToString(CultureInfo.InvariantCulture),
+                "", th is { Complete: true } ? N(th.RTotal) : "", th?.U is { } u ? N(u) : th != null ? "incomplete" : ""]);
             for (var i = 0; i < layers.Count; i++)
-                rows.Add(["", "", "", layers[i].Name is { Length: > 0 } n ? n : (i + 1).ToString(CultureInfo.InvariantCulture), m.Get(layers[i].Material)?.Name ?? "", Mm(layers[i].Thickness), layers[i].Core ? "core" : "", ""]);
+            {
+                var tl = th?.Layers.FirstOrDefault(x => x.Index == i);
+                rows.Add(["", "", "", layers[i].Name is { Length: > 0 } n ? n : (i + 1).ToString(CultureInfo.InvariantCulture), m.Get(layers[i].Material)?.Name ?? "", Mm(layers[i].Thickness), layers[i].Core ? "core" : "", "",
+                    tl?.Lambda is { } lam ? N(lam, "0.0##") + (tl.Source == "indicative" ? "*" : "") : tl?.Source == "air" ? "air" : "", tl?.Source == "skipped" ? "" : N(tl?.R), ""]);
+            }
         }
-        return new ScheduleGrid(Label, ["Kind", "Type", "Mark", "Layer", "Material", "Thickness (mm)", "Core", "Elements"], rows);
+        return new ScheduleGrid(Label, ["Kind", "Type", "Mark", "Layer", "Material", "Thickness (mm)", "Core", "Elements", "λ (W/mK)", "R (m²K/W)", "U (W/m²K)"], rows);
     }
 }

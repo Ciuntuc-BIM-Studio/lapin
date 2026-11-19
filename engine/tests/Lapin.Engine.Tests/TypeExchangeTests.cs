@@ -230,11 +230,13 @@ public sealed class TypeExchangeTests
         f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 5, ["y2"] = 0, ["typeId"] = type });
         f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 5, ["y1"] = 0, ["x2"] = 5, ["y2"] = 4, ["typeId"] = type });
         var grid = new TypeAssemblies().Grid(new Q(f));
-        Assert.Equal(["Kind", "Type", "Mark", "Layer", "Material", "Thickness (mm)", "Core", "Elements"], grid.Columns);
+        // Then each type's R and U and each layer's λ and R (issue #67).
+        Assert.Equal(["Kind", "Type", "Mark", "Layer", "Material", "Thickness (mm)", "Core", "Elements", "λ (W/mK)", "R (m²K/W)", "U (W/m²K)"], grid.Columns);
         var at = grid.Rows.ToList().FindIndex(r => r[1] == "WT1 Exterior");
-        Assert.Equal(["Wall", "WT1 Exterior", "WT1", "", "", "380", "", "2"], grid.Rows[at]);
-        Assert.Equal(["", "", "", "Thermal insulation", "EPS insulation", "100", "", ""], grid.Rows[at + 2]);
-        Assert.Equal(["", "", "", "3", "Brick", "250", "core", ""], grid.Rows[at + 3]);
+        Assert.Equal(["Wall", "WT1 Exterior", "WT1", "", "", "380", "", "2"], grid.Rows[at].Take(8));
+        Assert.Equal(["", "", "", "Thermal insulation", "EPS insulation", "100", "", ""], grid.Rows[at + 2].Take(8));
+        Assert.Equal(["0.04*", "2.500"], grid.Rows[at + 2].Skip(8).Take(2));
+        Assert.Equal(["", "", "", "3", "Brick", "250", "core", ""], grid.Rows[at + 3].Take(8));
         Assert.Contains(grid.Rows, r => r[0] == "Floor" && r[1] == "F1 Ground floor" && r[5] == "200" && r[7] == "0");
         // A schedule of this kind is made from it.
         Assert.NotNull(f.Run("architecture.createSchedule", new JsonObject { ["kind"] = "types" })!["id"]);
