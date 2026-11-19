@@ -1,6 +1,6 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs, rooms and their colours. */
 
-import { Armchair, ArrowLeftRight, ArrowRightToLine, CornerDownRight, CornerUpRight, Layers3, Link2, Scissors, Settings2, Slash, Spline, Table2 } from 'lucide-react';
+import { Armchair, PenTool, ArrowLeftRight, ArrowRightToLine, CornerDownRight, CornerUpRight, Layers3, Link2, Scissors, Settings2, Slash, Spline, Table2 } from 'lucide-react';
 import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { flipAcross, frameAt, holeGrips, holeRefs, outlineGrips, outlineRef, pathGrips, pathRef, toPairs, withEllipses } from '../../viewport/gripKit';
@@ -66,6 +66,7 @@ import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, s
 import { lazyPart } from '../../platform/lazyPart';
 import { StairRailingPanel, railingPick } from './StairRailingPanel';
 import './joineryBoard';
+import { editStairSketch, newStairSketch, sketchStairs } from './stairSketchBoard';
 const FieldScheduleDialog = lazyPart(() => import('./FieldScheduleDialog').then((m) => m.FieldScheduleDialog), { title: 'Field schedule' });
 const FieldTemplatesDialog = lazyPart(() => import('./FieldTemplatesDialog').then((m) => m.FieldTemplatesDialog), { title: 'New schedule from a template' });
 
@@ -644,6 +645,18 @@ registerCommand({ names: ['STEPS'], label: 'Entrance steps', start: () => stairC
 registerCommand({ names: ['RAMP', 'RU'], label: 'Ramp', start: () => stairCommand(undefined, true) });
 registerCommand({ names: ['ENTRANCERAMP'], label: 'Entrance ramp', start: () => stairCommand('entrance-ramp', true) });
 const stair: ToolDef = { id: 'architecture.stair', label: 'Stair', icon: StairIcon, shortcut: 'ST', typed: typedBy('IfcStairType', 'stairTypeId', 'stairTypes'), run: () => void startCommand('STAIR') };
+registerCommand({ names: ['STAIRSKETCH', 'STS'], label: 'Stair by sketch', start: () => { void newStairSketch(); return { prompt: '', want: 'none' }; } });
+/** A stair drawn by sketch (users asked for Revit's, 19.11.2026): its sides, its risers and its path on a board of its own. */
+const stairBySketch: ToolDef = { id: 'architecture.stairBySketch', label: 'Stair by sketch', icon: PenTool, run: () => void newStairSketch() };
+/** The selected stair's sketch opened again (or a sketch begun for a stair of its type's shape). */
+const editStairSketchTool: ToolDef = {
+  id: 'architecture.editStairSketch', label: 'Edit stair sketch', icon: PenTool,
+  run: () => {
+    const id = useUi.getState().selection;
+    if (!id || useSession.getState().nodes.get(id)?.type !== 'IfcStair') { notify('Select a stair first: its sketch opens on a plan of its own.'); return; }
+    void editStairSketch(id);
+  },
+};
 const entranceSteps: ToolDef = { id: 'architecture.entranceSteps', label: 'Entrance steps', icon: StairIcon, run: () => void startCommand('STEPS') };
 const ramp: ToolDef = { id: 'architecture.ramp', label: 'Ramp', icon: RampIcon, shortcut: 'RU', typed: typedBy('IfcRampType', 'rampTypeId', 'stairTypes'), run: () => void startCommand('RAMP') };
 const entranceRamp: ToolDef = { id: 'architecture.entranceRamp', label: 'Entrance ramp', icon: RampIcon, run: () => void startCommand('ENTRANCERAMP') };
@@ -682,7 +695,7 @@ const architecture: LapinModule = {
       { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
       { label: 'Joins', tools: [join], small: [mitreNew, filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
       { label: 'Room', tools: [room], small: [roomOutline, roomDividers, updateRooms, roomTag] },
-      { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp, underStair, underStairSchedule] },
+      { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [...(sketchStairs() ? [stairBySketch] : []), entranceSteps, entranceRamp, underStair, underStairSchedule] },
       // Balconies (a tester's report, #96): by a wall's face in a style, by outline, a gallery's edge; the configurator, stacking, the schedule.
       { label: 'Balconies', tools: [balcony, balconyConfigurator], small: [balconyOutline, galleryEdge, stackBalconies, balconySchedule] },
     ],
@@ -710,7 +723,7 @@ const architecture: LapinModule = {
     id: 'annotate', label: 'Annotate', order: 60,
     groups: [{ label: 'Rooms', tools: [colorLegend] }],
   }],
-  legacyTools: [curvedWall, roomDividerArc, mitre, butt, swap, trimTool, extendTool, ...openingAliases],
+  legacyTools: [curvedWall, roomDividerArc, mitre, butt, swap, trimTool, extendTool, ...openingAliases, editStairSketchTool],
   hotbar: [wall, door, window_, slab, roof],
   propertySections: [
     { id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers },

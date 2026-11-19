@@ -177,6 +177,18 @@ public static class StairPlan
                 segs.Add(new(a, end, fl.Z0 + h + u0 * h / b, fl.Z0 + fl.Risers * h, i));
                 (last, lastZ) = (end, fl.Z0 + fl.Risers * h);
             }
+            if (r.Sketch is { } sk)
+            {
+                // Through the risers' middles from half a tread in: up a step, level over a landing.
+                var w = sk.Walk;
+                for (var k = 0; k + 1 < w.Length; k++)
+                {
+                    var z0 = (k + 1) * h;
+                    var a = k == 0 ? w[0] + (w[1] - w[0]) * Math.Min(0.5, b / 2 / Math.Max((w[1] - w[0]).Length, 1e-9)) : w[k];
+                    var za = k == 0 && !sk.Landing[0] ? z0 + h * (a - w[0]).Length / Math.Max((w[1] - w[0]).Length, 1e-9) : z0;
+                    segs.Add(new(a, w[k + 1], za, sk.Landing[k] ? z0 : z0 + h, -1));
+                }
+            }
             if (r.Arc is { } arc)
             {
                 // Along the walking line, from half a tread in to the top, its height on the nosings' line.

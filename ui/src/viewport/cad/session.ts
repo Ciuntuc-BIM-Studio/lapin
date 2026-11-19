@@ -911,7 +911,7 @@ function layer(): Step {
 }
 
 /** What a drafted shape is for (Studio's operations find their parts by it); draft: construction lines, never printed. */
-export const ROLES = ['draft', 'profile', 'hole', 'path', 'rail', 'axis', 'endProfile'] as const;
+export const ROLES = ['draft', 'profile', 'hole', 'path', 'rail', 'axis', 'endProfile', 'boundary', 'riser'] as const;
 export const roleLabel = (r: string) => ({ draft: 'construction', endProfile: 'end profile' } as Record<string, string>)[r] ?? r;
 
 export type Starter = () => Step | null | void | Promise<Step | null | void>;

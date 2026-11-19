@@ -77,7 +77,7 @@ public static class Drafts
     {
         if (e.PredefinedType != Predefined) return null;
         var shape = ShapeOf(e);
-        var color = e.Str("color") ?? LayerOf(m, e.Str("layer")).Color;
+        var color = e.Str("color") ?? RoleColor(e.Str("role")) ?? LayerOf(m, e.Str("layer")).Color;
         if (e.Attrs["heights"] is JsonArray za)
         {
             var pts = shape switch { Line l => new List<Vec2> { l.A, l.B }, Polyline p => [.. p.Pts, .. p.Closed ? new[] { p.Pts[0] } : []], _ => null };
@@ -144,9 +144,12 @@ public static class Drafts
     /// <summary>
     /// What a drafted shape is for, so Studio's operations find their parts:
     /// construction lines (draft: shown, never printed), a profile, a hole, a
-    /// path, a second rail, an axis, the profile a sweep ends with.
+    /// path, a second rail, an axis, the profile a sweep ends with; a stair's sketch's sides and risers (its path is a path).
     /// </summary>
-    public static readonly string[] Roles = ["draft", "profile", "hole", "path", "rail", "axis", "endProfile"];
+    public static readonly string[] Roles = ["draft", "profile", "hole", "path", "rail", "axis", "endProfile", "boundary", "riser"];
+
+    /// <summary>The colour a shape of a stair's sketch is drawn in when it has none of its own (as Revit's: the sides green, the path blue).</summary>
+    public static string? RoleColor(string? role) => role switch { "boundary" => "#16a34a", "riser" => "#18181b", _ => null };
 
     public static string? CheckRole(JsonNode? role) => (string?)role switch
     {
@@ -226,7 +229,7 @@ public static class Drafts
         {
             var layer = layers.GetValueOrDefault(e.Str("layer") ?? "0") ?? layers["0"];
             if (!layer.Visible || hidden.Contains(layer.Name)) continue;
-            var color = e.Str("color") ?? layer.Color;
+            var color = e.Str("color") ?? RoleColor(e.Str("role")) ?? layer.Color;
             // A link's shapes: out when it is hidden, grey when it is halftone.
             if (e.Str(Links.Key) is { } linkId)
             {

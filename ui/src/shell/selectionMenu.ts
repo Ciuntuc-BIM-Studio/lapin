@@ -11,6 +11,7 @@ import { drawableElement } from '../modules/core/shopDrawing';
 import { editSelectedGroup, groupSelection, removeFromGroup, ungroupSelection } from '../modules/core/groupTools';
 import { GROUP, groupOf, membersOf } from '../platform/groups';
 import { allTools } from '../platform/modules';
+import { hasModule } from '../platform/brand';
 import { typeOf } from '../engine/model';
 import { hiddenHere, useShownHere } from '../viewport/cad/shown';
 import { describeSelection, previousSelections, reselect } from './selectionHistory';
@@ -88,7 +89,9 @@ export function editSketchItems(): MenuItem[] {
   const n = useSession.getState().nodes.get(selected[0]);
   const outline = !!n && !n.props.reference && Array.isArray(n.props.contour) && (n.type === 'IfcSlab' || n.type === 'LapinCeiling' || (n.type === 'IfcOpeningElement' && !n.props.stairId)
     || (n.type === 'IfcSpace' && n.props.auto === false) || (n.type === 'IfcEarthworksCut' && !isTrench(n)));
-  const tool = outline ? allTools().find((t) => t.id === 'studio.editSketch') : undefined;
+  // A stair (users asked for Revit's stair by sketch, 19.11.2026): its sketch on a board of its own, when the product has Studio.
+  const stair = !!n && n.type === 'IfcStair' && !n.props.reference && hasModule('studio');
+  const tool = outline ? allTools().find((t) => t.id === 'studio.editSketch') : stair ? allTools().find((t) => t.id === 'architecture.editStairSketch') : undefined;
   return tool?.run ? [{ label: 'Edit sketch', onSelect: () => tool.run!() }] : [];
 }
 

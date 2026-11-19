@@ -15,6 +15,7 @@ import { formatLength, lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { levelText } from './stairPlacement';
 import { UnderStairLinks } from './UnderStairSection';
+import { editStairSketch, sketchStairs } from './stairSketchBoard';
 
 export interface StairCheck { key: string; label: string; value: number; min: number | null; max: number | null; ok: boolean }
 export interface StairNumbers {
@@ -25,6 +26,8 @@ export interface StairNumbers {
   kind?: string; slope?: number;
   /** A turn by winders (report #109): how the type turns, the winders at each corner, the straight treads between a U's corners. */
   turn?: string; corners?: number[] | null; between?: number;
+  /** Drawn by sketch (its sides and risers; users asked for Revit's, 19.11.2026): its type's shape and the fixed numbers do not apply. */
+  sketch?: boolean;
 }
 
 /** A slope as per cent: 0.06 → 6 %. */
@@ -77,10 +80,20 @@ export function StairSection({ node }: { node: NodeDto }) {
         </select>
         <button type="button" className="link small" onClick={() => useUi.setState({ dialog: 'stairTypes' })}>{ramp ? 'Ramp types…' : 'Stair types…'}</button>
       </label>
+      {!ramp && sketchStairs() && (
+        <div className="row wrap" style={{ gap: 4 }}>
+          <button type="button" className="btn small" data-action="stair-edit-sketch" disabled={!node.editable} onClick={() => void editStairSketch(node.id)}>
+            {n?.sketch ? 'Edit sketch' : 'Draw by sketch'}
+          </button>
+          {n?.sketch && <button type="button" className="btn small" data-action="stair-remove-sketch" disabled={!node.editable} title="The stair takes its type's shape again, its foot where the sketch's first riser is"
+            onClick={() => void execute('architecture.updateStairSketch', { id: node.id, sketch: null })}>Use the type's shape</button>}
+        </div>
+      )}
+      {n?.sketch && <p className="muted small">Drawn by sketch: its sides and risers are its shape. Edit sketch to change them.</p>}
       <dl className="fields">
-        <dt>Width</dt><dd><MmInput value={num('width')} placeholder={n ? mm(n.width) : ''} onCommit={(v) => set({ width: v })} /></dd>
-        {(!ramp || n?.shape === 'l' || n?.shape === 'u') && <dt>Turn</dt>}
-        {(!ramp || n?.shape === 'l' || n?.shape === 'u') && <dd><select value={(node.props.turn as string | undefined) ?? 'left'} onChange={(e) => set({ turn: e.target.value })}><option value="left">left</option><option value="right">right</option></select></dd>}
+        {!n?.sketch && <><dt>Width</dt><dd><MmInput value={num('width')} placeholder={n ? mm(n.width) : ''} onCommit={(v) => set({ width: v })} /></dd></>}
+        {!n?.sketch && (!ramp || n?.shape === 'l' || n?.shape === 'u') && <dt>Turn</dt>}
+        {!n?.sketch && (!ramp || n?.shape === 'l' || n?.shape === 'u') && <dd><select value={(node.props.turn as string | undefined) ?? 'left'} onChange={(e) => set({ turn: e.target.value })}><option value="left">left</option><option value="right">right</option></select></dd>}
         <dt>Base offset</dt><dd><MmInput value={num('baseOffset') ?? 0} onCommit={(v) => set({ baseOffset: v ?? 0 })} /></dd>
         <dt>Rise</dt>
         <dd><MmInput value={num('rise')} placeholder={n?.ownRise != null ? mm(n.ownRise) : 'to the storey'} onCommit={(v) => set({ rise: v })} /></dd>
@@ -88,6 +101,12 @@ export function StairSection({ node }: { node: NodeDto }) {
         <dt>Height</dt><dd><span className="num">{n ? fmtMm(n.height) : '—'}</span> <span className="muted small">{topStorey ? `climbs to ${topStorey.name}` : n?.ownRise != null ? 'a rise of its own' : 'no storey above'}</span></dd>
         {n?.fromLevel != null && n.toLevel != null && <><dt>Levels</dt><dd><span className="num">{levelText(n.fromLevel)} → {levelText(n.toLevel)}</span></dd></>}
       </dl>
+      {n?.sketch ? <dl className="fields">
+        <dt>Risers</dt><dd><span className="num">{n.risers}</span> <span className="muted small">{n.winders} treads</span></dd>
+        <dt>Riser</dt><dd><span className="num">{fmtMm(n.riserHeight)}</span></dd>
+        <dt>Tread</dt><dd><span className="num">{fmtMm(n.tread)}</span></dd>
+        <dt>Run in plan</dt><dd><span className="num">{fmtMm(n.run)}</span></dd>
+      </dl> : <>
       <p className="eyebrow">Fixed</p>
       {ramp ? (
         <dl className="fields">
@@ -116,7 +135,7 @@ export function StairSection({ node }: { node: NodeDto }) {
         {n?.sweep != null && <><dt>Turns through</dt>
           <dd><NumberField testId="sweep" value={num('sweep')} placeholder={String(Math.round(n.sweep))} blank min={1} suffix="°" onCommit={(v) => set({ sweep: v })} /></dd></>}
         {n && <><dt>Run in plan</dt><dd><span className="num">{fmtMm(n.run)}</span></dd></>}
-      </dl>}
+      </dl>}</>}
       <dl className="fields">
         <dt>Railing</dt>
         <dd><select data-field="railing-sides" value={(node.props.railingSides as string | undefined) ?? ''} onChange={(e) => set({ railingSides: e.target.value === '' ? null : e.target.value })}>

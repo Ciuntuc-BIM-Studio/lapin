@@ -150,6 +150,90 @@ public static class StairsModule
         });
 
         // What the inspector changes: the type, the width, the turn, the offsets, what is fixed (null frees it), the opening.
+        // A stair by sketch (Revit's "stair by sketch", users asked for it, 19.11.2026): {storeyId, typeId? | library?, boundary,
+        // riser?, path?, flip?, topStoreyId?, baseOffset?, topOffset?} → {id}. The sketch in plan (each line [ax, ay, bx, by, rise?]):
+        // the two sides, the risers across (none: spread as the rules ask), the path saying which way it climbs (StairSketch).
+        r.Command("addSketchStair", "Stair by sketch", (ctx, a) =>
+        {
+            var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+            Spatial.Require(ctx.Model, storeyId, IfcClass.BuildingStorey);
+            var type = (string?)a["typeId"] is { } tid ? RequireType(ctx.Model, tid)
+                : (string?)a["library"] is { } key ? LibraryType(ctx, key) : DefaultType(ctx);
+            var spec = StairSpec.From(type.Attrs["spec"]) ?? StairSpec.Default();
+            if (spec.ElementClass != IfcClass.Stair) throw new CommandException("A stair by sketch takes a stair type.");
+            var attrs = new JsonObject { ["at"] = new JsonArray(0.0, 0.0), ["rotation"] = 0.0, ["turn"] = "left", ["baseOffset"] = 0.0, ["topOffset"] = 0.0 };
+            foreach (var k in new[] { "height", "rise", "topOffset", "risers" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
+            if ((string?)a["topStoreyId"] is { } top) attrs["topStoreyId"] = Spatial.Require(ctx.Model, top, IfcClass.BuildingStorey).Id;
+            var ownRise = Json.Number(a["rise"]) is { } ar && ar > 0 ? ar : spec.Rise;
+            attrs["baseOffset"] = Json.Number(a["baseOffset"]) ?? StairBuilder.DefaultBase(ownRise, spec.RiseFrom);
+            var stair = new Entity(ctx.NewId(), IfcClass.Stair, Name(ctx.Model, spec), attrs, "NOTDEFINED");
+            ctx.Add(stair);
+            Spatial.Contain(ctx, storeyId, stair.Id);
+            ctx.Relate(IfcClass.RelDefinesByType, type.Id, stair.Id);
+            var placed = WithSketch(ctx.Model, ctx.Model.Get(stair.Id)!, SketchArg(a));
+            ctx.Replace(placed);
+            StairBuilder.EnsureOpening(ctx, placed);
+            return new JsonObject { ["id"] = stair.Id };
+        });
+
+        // {id, boundary, riser?, path?, flip?}: a stair's sketch drawn again (in plan); the stair keeps its id and GlobalId. {id, sketch: null}
+        // takes the sketch away: the stair is its type's shape again, its foot where the sketch's was.
+        r.Command("updateStairSketch", "Change stair sketch", (ctx, a) =>
+        {
+            var stair = RequireStair(ctx.Model, (string?)a["id"]);
+            if (stair.Class != IfcClass.Stair) throw new CommandException("Only a stair is drawn by sketch.");
+            if (a.ContainsKey("sketch") && a["sketch"] == null)
+            {
+                var attrs = stair.CloneAttrs();
+                attrs.Remove(StairSketchData.Key);
+                var plain = stair.With(attrs: attrs, predefinedType: StairBuilder.SpecOf(ctx.Model, stair).PredefinedType);
+                ctx.Replace(plain);
+                StairBuilder.EnsureOpening(ctx, plain);
+                return null;
+            }
+            var updated = WithSketch(ctx.Model, stair, SketchArg(a));
+            ctx.Replace(updated);
+            StairBuilder.EnsureOpening(ctx, updated);
+            return null;
+        });
+
+        // {id} → {boundary, riser, path, flip}: a stair's sketch in plan, to draw it again (null: drawn by its type's shape).
+        r.Query("stairSketch", (q, a) =>
+        {
+            var stair = RequireStair(q.Model, (string?)a["id"]);
+            if (StairSketchData.From(stair.Attrs[StairSketchData.Key]) is not { } local || Spatial.StoreyOf(q.Model, stair.Id) is not { } storey) return null;
+            return StairSketch.ToWorld(local, StairBuilder.PlacementOf(stair, storey)).ToJson();
+        });
+
+        // {storeyId, typeId?, id?, boundary, riser?, path?, flip?} → {ok, error?, risers, riserHeight, tread, needed, checks}: what a sketch
+        // would make, while it is drawn (the risers drawn, how many the rules ask for the height).
+        r.Query("stairSketchCheck", (q, a) =>
+        {
+            var m = q.Model;
+            var existing = (string?)a["id"] is { } sid ? m.Get(sid) : null;
+            var storey = (existing != null ? Spatial.StoreyOf(m, existing.Id) : null)
+                ?? ((string?)a["storeyId"] is { } st ? m.Get(st) : null) ?? Spatial.Storeys(m).FirstOrDefault();
+            if (storey == null) return new JsonObject { ["ok"] = false, ["error"] = "The project has no storey." };
+            var type = existing != null ? m.RelatingOf(existing.Id, IfcClass.RelDefinesByType)
+                : (string?)a["typeId"] is { } tid ? m.Get(tid) : FirstStoreyType(m);
+            var spec = (type != null ? StairSpec.From(type.Attrs["spec"]) : null) ?? StairSpec.Default();
+            var height = existing != null ? StairBuilder.Height(m, existing, storey)
+                : spec.Rise ?? (Spatial.Storeys(m).FirstOrDefault(s => s.Num("elevation") > storey.Num("elevation") + 1e-6)?.Num("elevation") ?? storey.Num("elevation") + storey.Num("height", 3)) - storey.Num("elevation");
+            var needed = StairSolver.Resolve(spec with { Shape = "straight" }, height).Risers;
+            try
+            {
+                var sketch = SketchArg(a);
+                var r = StairSketch.Resolve(spec, height, existing != null ? StairBuilder.InputsOf(existing) : null, sketch);
+                return new JsonObject
+                {
+                    ["ok"] = true, ["risers"] = r.Risers, ["riserHeight"] = r.RiserHeight, ["tread"] = r.Tread, ["width"] = r.Width, ["height"] = height, ["needed"] = needed,
+                    ["drawn"] = sketch.Riser.Count > 0, ["landings"] = r.Landings.Count, ["rulesOk"] = r.Ok,
+                    ["checks"] = new JsonArray(r.Checks.Select(c => (JsonNode)new JsonObject { ["key"] = c.Key, ["label"] = c.Label, ["value"] = c.Value, ["min"] = c.Min, ["max"] = c.Max, ["ok"] = c.Ok }).ToArray()),
+                };
+            }
+            catch (CommandException e) { return new JsonObject { ["ok"] = false, ["error"] = e.Message, ["height"] = height, ["needed"] = needed }; }
+        });
+
         r.Command("updateStair", "Change stair", (ctx, a) =>
         {
             var stair = RequireStair(ctx.Model, (string?)a["id"]);
@@ -330,7 +414,8 @@ public static class StairsModule
             ["landing"] = r.LandingLength, ["flights"] = new JsonArray(r.Flights.Select(f => (JsonNode)f.Risers).ToArray()), ["winders"] = r.Winders.Count,
             // A turn by winders (report #109): how it turns, the winders at each corner, the straight treads between a U's.
             ["turn"] = spec.Turn, ["corners"] = r.Corners is { } cw ? new JsonArray(cw.Select(x => (JsonNode)x).ToArray()) : null, ["between"] = r.Between,
-            ["run"] = r.Flights.Sum(f => (f.Risers - 1) * r.Tread) + (r.Arc?.Steps ?? 0) * r.Tread,
+            ["run"] = r.Flights.Sum(f => (f.Risers - 1) * r.Tread) + (r.Arc?.Steps ?? 0) * r.Tread + (r.Sketch?.Length ?? 0),
+            ["sketch"] = r.Sketch != null,
             ["sweep"] = r.Arc is { } arc ? Math.Abs(arc.Step * arc.Steps) * 180 / Math.PI : null,
             ["numbers"] = new JsonArray(StairMarks.StepCentres(r).Select(x => { var p = place.World(x.At); return (JsonNode)new JsonArray(p.X, p.Y, x.Number); }).ToArray()), ["ok"] = r.Ok, ["checks"] = checks, ["outlines"] = outlines, ["risersLines"] = risers,
             ["profile"] = profile, ["top"] = new JsonArray(top.X, top.Y), ["predefinedType"] = spec.PredefinedType, ["shape"] = spec.Shape, ["kind"] = "stair",
@@ -354,6 +439,26 @@ public static class StairsModule
             ["risers"] = 0, ["riserHeight"] = 0, ["tread"] = 0, ["step"] = 0, ["winders"] = 0, ["risersLines"] = new JsonArray(), ["numbers"] = new JsonArray(),
             ["profile"] = new JsonArray(0, f0.Z0, f0.Length, f0.Z1), ["top"] = new JsonArray(top.X, top.Y), ["predefinedType"] = r.Spec.PredefinedType, ["shape"] = r.Spec.Shape,
         };
+    }
+
+    /// <summary>The sketch a command was given, in plan: <c>boundary</c>, <c>riser</c>, <c>path</c>, <c>flip</c>.</summary>
+    static StairSketchData SketchArg(JsonObject a) =>
+        StairSketchData.From(a) ?? throw new CommandException("A stair by sketch needs its boundary: the two sides, each a list of lines [ax, ay, bx, by, rise?].");
+
+    /// <summary>
+    /// The stair with a sketch drawn in plan: checked (a sketch that makes no stair is refused, saying why), its foot where the
+    /// sketch's first riser is, turned the way it climbs there, and the sketch kept in the stair's own frame.
+    /// </summary>
+    static Entity WithSketch(IModelView m, Entity stair, StairSketchData world)
+    {
+        var storey = Spatial.StoreyOf(m, stair.Id) ?? throw new CommandException("The stair stands on no storey.");
+        var spec = StairBuilder.SpecOf(m, stair);
+        var (at, dir) = StairSketch.Foot(spec, StairBuilder.Height(m, stair, storey), StairBuilder.InputsOf(stair), world);
+        var attrs = stair.CloneAttrs();
+        attrs["at"] = new JsonArray(at.X, at.Y);
+        attrs["rotation"] = Math.Atan2(dir.Y, dir.X) * 180 / Math.PI;
+        attrs[StairSketchData.Key] = StairSketch.ToLocal(world, at, dir).ToJson();
+        return stair.With(attrs: attrs, predefinedType: "NOTDEFINED");
     }
 
     /// <summary>The railing's sides with one side put on or taken off: both less one is the other, one less itself is none.</summary>

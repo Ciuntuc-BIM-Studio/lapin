@@ -126,13 +126,28 @@ public static class StairBuilder
         if (Spatial.StoreyOf(m, stair.Id) is not { } storey) return null;
         var spec = SpecOf(m, stair);
         var place = PlacementOf(stair, storey);
+        if (StairSketchData.From(stair.Attrs[StairSketchData.Key]) is { } sketch)
+        {
+            // A stair by sketch (its sides and risers): a sketch that makes none (checked when it was written) builds nothing.
+            try { return (StairSketch.Resolve(spec, Height(m, stair, storey), InputsOf(stair), sketch), place, spec); }
+            catch (CommandException) { return null; }
+        }
         return (StairSolver.Resolve(spec, Height(m, stair, storey), InputsOf(stair), place.TurnLeft), place, spec);
+    }
+
+    /// <summary>What is wrong with a stair's sketch (null when it has none, or it makes a stair).</summary>
+    public static string? SketchProblem(IModelView m, Entity stair)
+    {
+        if (StairSketchData.From(stair.Attrs[StairSketchData.Key]) is not { } sketch || Spatial.StoreyOf(m, stair.Id) is not { } storey) return null;
+        try { StairSketch.Resolve(SpecOf(m, stair), Height(m, stair, storey), InputsOf(stair), sketch); return null; }
+        catch (CommandException e) { return e.Message; }
     }
 
     // ─── Geometry ───────────────────────────────────────────────────────────
 
     public static ElementGeometry? Geometry(Entity stair, IModelView m)
     {
+        if (SketchProblem(m, stair) is { } wrong) return new ElementGeometry([], Diagnostics: [$"The stair's sketch makes no stair: {wrong}"]);
         if (Resolve(m, stair) is not var (r, place, spec)) return new ElementGeometry([], Diagnostics: ["The stair stands on no storey."]);
         var f = spec.Finish.TreadThickness;
         var waist = spec.Construction.Waist;
@@ -371,6 +386,7 @@ public static class StairBuilder
             }
             return [p];
         }
+        if (r.Sketch is { } sk) return [SketchRailing(r, sk, rail, left, inset)];
         if (r.Spec.Shape == "split")
             return r.Flights.Select(fl =>
             {
@@ -467,12 +483,67 @@ public static class StairBuilder
         {
             var d0 = (path[0].P - path[1].P).Normalized();
             var d1 = (path[^1].P - path[^2].P).Normalized();
-            var floor = r.Flights[0].Z0;
+            var floor = r.Flights.Count > 0 ? r.Flights[0].Z0 : 0;
             if (path[0].Surface > floor + 1e-9) path.Insert(0, (path[0].P, floor));
             path.Insert(0, (path[0].P + d0 * rail.Extension, floor));
             path.Add((path[^1].P + d1 * rail.Extension, path[^1].Surface));
         }
         return [path];
+    }
+
+    /// <summary>
+    /// A sketched stair's railing on one side (<see cref="StairSketch"/>): along that side, a little in, at each riser's end the
+    /// nosing's height (riser k: k risers up), between them parallel to the pitch over a step and level over a landing, up at its far
+    /// end half a tread (at most) before the next riser; half a tread on past the first nosing and the last, as every stair's.
+    /// </summary>
+    static List<(Vec2 P, double Surface)> SketchRailing(Resolved r, SketchRun sk, StairRailing rail, bool left, double inset)
+    {
+        var side = left ? sk.Left : sk.Right;
+        var at = left ? sk.LeftAt : sk.RightAt;
+        var h = r.RiserHeight;
+        // In from the side, square to it, towards the stair.
+        Vec2 In(int i)
+        {
+            var d = (side[Math.Min(i + 1, side.Length - 1)] - side[Math.Max(i - 1, 0)]).Normalized().Perp;
+            if (!left) d = d * -1;
+            return side[i] - d * inset;
+        }
+        var path = new List<(Vec2 P, double Surface)>();
+        void Add(Vec2 p, double z) { if (path.Count == 0 || (path[^1].P - p).Length > 1e-6 || Math.Abs(path[^1].Surface - z) > 1e-9) path.Add((p, z)); }
+        var footDir = sk.Across(0).Dir;
+        Add(In(at[0]) - footDir * (Math.Min(r.Tread, sk.Walk.Length > 1 ? (sk.Walk[1] - sk.Walk[0]).Length : r.Tread) / 2), h / 2);
+        for (var k = 0; k + 1 < at.Length; k++)
+        {
+            var z0 = (k + 1) * h;
+            Add(In(at[k]), z0);
+            var length = 0.0;
+            for (var i = at[k]; i < at[k + 1]; i++) length += (side[i + 1] - side[i]).Length;
+            if (sk.Landing[k])
+            {
+                // Level over the landing, then up onto the next flight's pitch half a tread before its first nosing.
+                var to = Math.Max(0, length - r.Tread / 2);
+                var run = 0.0;
+                for (var i = at[k] + 1; i < at[k + 1]; i++)
+                {
+                    run += (side[i] - side[i - 1]).Length;
+                    if (run < to) Add(In(i), z0);
+                }
+                var j = In(at[k + 1]) + (In(at[k + 1] - 1) - In(at[k + 1])).Normalized() * Math.Min(r.Tread / 2, length);
+                Add(j, z0);
+                Add(j, z0 + h / 2);
+                continue;
+            }
+            var walked = 0.0;
+            for (var i = at[k] + 1; i < at[k + 1]; i++)
+            {
+                walked += (side[i] - side[i - 1]).Length;
+                Add(In(i), z0 + h * (length > 1e-9 ? walked / length : 0));
+            }
+        }
+        var topDir = sk.Across(at.Length - 1).Dir;
+        Add(In(at[^1]), at.Length * h);
+        Add(In(at[^1]) + topDir * (r.Tread / 2), at.Length * h);
+        return path;
     }
 
     /// <summary>
@@ -624,6 +695,13 @@ public static class StairBuilder
         var railing = 0.0;
         foreach (var fl in r.Flights) railing += (fl.Risers - 1) * Math.Sqrt(r.Tread * r.Tread + r.RiserHeight * r.RiserHeight);
         if (r.Arc is { } arc) { run += arc.Steps * r.Tread; railing += arc.Steps * Math.Sqrt(r.Tread * r.Tread + r.RiserHeight * r.RiserHeight); }
+        if (r.Sketch is { } sk)
+            for (var k = 0; k + 1 < sk.Walk.Length; k++)
+            {
+                var d = (sk.Walk[k + 1] - sk.Walk[k]).Length;
+                run += d;
+                railing += sk.Landing[k] ? d : Math.Sqrt(d * d + r.RiserHeight * r.RiserHeight);
+            }
         var rail = RailingOf(stair, spec);
         var sides = rail.Sides == "both" ? 2 : rail.Sides == "none" ? 0 : 1;
         // The whole stair first (what a takeoff and the estimate read for the element), its concrete as its volume too.
@@ -899,6 +977,8 @@ public static class StairMarks
             for (var i = 1; i <= last; i++) o.Add((fl.Start + fl.Dir * ((i - 0.5) * r.Tread), N(fl.Z0) + i));
         }
         foreach (var wd in r.Winders) o.Add((Centroid(wd.Outline), N(wd.Z)));
+        // A sketched stair's last riser's number on what it climbs to, half a tread on.
+        if (r.Sketch is { } sk) { var (top, dir) = sk.Across(sk.Walk.Length - 1); o.Add((top + dir * (r.Tread / 2), r.Risers)); }
         return o;
     }
 

@@ -49,8 +49,9 @@ public sealed record StairInputs(double? Width = null, int? Risers = null, doubl
 public sealed record Resolved(
     StairSpec Spec, double Height, int Risers, double RiserHeight, double Tread, double Width, double LandingLength,
     IReadOnlyList<Flight> Flights, IReadOnlyList<Landing> Landings, IReadOnlyList<Winder> Winders, IReadOnlyList<StairCheck> Checks, ArcRun? Arc = null,
-    IReadOnlyList<int>? Corners = null, int Between = 0)
+    IReadOnlyList<int>? Corners = null, int Between = 0, SketchRun? Sketch = null)
 {
+    // Sketch: a stair drawn by sketch (its sides and risers; StairSketch), its treads as winders and landings.
     // Corners: a turn by winders (report #109), the winders asked at each corner (an L's one, a U's two); Between: the straight treads between a U's.
     public double Step => 2 * RiserHeight + Tread;
     public bool Ok => Checks.All(c => c.Ok);
@@ -60,12 +61,14 @@ public sealed record Resolved(
         get
         {
             if (Arc is { } a) { var end = a.Angle(a.Steps); return (a.At(end, a.Walk), a.Tangent(end)); }
+            if (Sketch is { } sk) return sk.Across(sk.Walk.Length - 1);
             var f = Flights[^1];
             return (f.Start + f.Dir * ((f.Risers - 1) * Tread), f.Dir);
         }
     }
     /// <summary>The foot: the middle of the first riser and the way one sets off.</summary>
     public (Vec2 At, Vec2 Dir, Vec2 Left, double Width) Foot =>
+        Sketch is { } sk ? (sk.Across(0).At, sk.Across(0).Dir, sk.Across(0).Dir.Perp, (sk.Risers[0][^1] - sk.Risers[0][0]).Length) :
         Arc is { } a ? (a.At(a.A0, a.Walk), a.Tangent(a.A0), a.Tangent(a.A0).Perp, Width) : (Flights[0].Start, Flights[0].Dir, Flights[0].Left, WidthOf(Flights[0]));
     public double WidthOf(Flight f) => f.Width ?? Width;
     /// <summary>The outline of a flight in plan.</summary>
