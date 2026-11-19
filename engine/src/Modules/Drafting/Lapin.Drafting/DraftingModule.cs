@@ -24,7 +24,9 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
              // A text's box width (its lines wrap at it), its lines' alignment, and its leader taken off (forum topic 148: the
              // properties panel sent them and the engine refused them, "Annotation has no field „width”").
              new("width", "Width", "length", Min: 0, ShowIf: Texts.OnTexts), new("align", "Alignment", "choice", Choices: Texts.Alignments, ShowIf: Texts.OnTexts),
-             new("leader", "Leader", Texts.LeaderKind, ShowIf: Texts.OnTexts)], "#555555", Kind: "annotation"));
+             new("leader", "Leader", Texts.LeaderKind, ShowIf: Texts.OnTexts),
+             // An angle held on two elements keeps its value while locked (decision 739).
+             new(AngleLocks.Key, "Locked", "bool", ShowIf: FieldDescriptor.When("dimKind", "angular"))], "#555555", Kind: "annotation"));
         // A draft with heights (a DXF's 3D lines) shows in 3D as lines; the rest have no geometry.
         r.Geometry(IfcClass.Annotation, Cad.Drafts.Geometry3d);
         r.Service<IViewAnnotations>(this);
@@ -46,6 +48,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Service<IDeletion>(new AxisDeletion());
         r.Service<IPartPlacement>(new AxisPlacement());
         r.Service<IProjectUpgrade>(new DimensionUpgrade());
+        // Locked angles kept after every command (decision 739).
+        AngleLocks.Register(r);
         // Ends held on a turned element by an older Lapin, in today's frame (forum 102).
         r.Service<IProjectUpgrade>(new DimensionFrameUpgrade());
         // Tags follow their elements (report #93).
@@ -524,7 +528,14 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             if (DimensionKinds.IsKind(dim))
             {
                 var (v, lost) = DimensionKinds.Measure(null, q.Model, dim);
-                return new JsonObject { ["value"] = double.IsInfinity(v) ? null : v, ["orphan"] = lost, ["driving"] = (dim.Str("dimKind") is "radial" or "diameter" && dim.Str("shape") != null) || (dim.Str("dimKind") == "angular" && dim.Attrs["holds"] != null), ["kind"] = dim.Str("dimKind") };
+                var info = new JsonObject { ["value"] = double.IsInfinity(v) ? null : v, ["orphan"] = lost, ["driving"] = (dim.Str("dimKind") is "radial" or "diameter" && dim.Str("shape") != null) || (dim.Str("dimKind") == "angular" && dim.Attrs["holds"] != null), ["kind"] = dim.Str("dimKind") };
+                // An angle held on two elements: where it stands now (its vertex and its arc's middle, for the padlock) and whether it is locked (decision 739).
+                if (dim.Str("dimKind") == "angular" && dim.Attrs["holds"] != null)
+                {
+                    info["locked"] = AngleLocks.IsLocked(dim);
+                    if (DimensionKinds.Held(q.Model, dim) is { } held) (info["vertex"], info["at"]) = (J(held.C), J(held.At));
+                }
+                return info;
             }
             var (drawing, spec, _) = Views.Generate(q, view);
             if (drawing == null || spec == null) return null;
