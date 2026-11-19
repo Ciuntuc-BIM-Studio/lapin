@@ -837,20 +837,15 @@ export const scenes = [
     },
   },
   {
-    // The partial structure display (decision 500, as ArchiCAD's; the forum's topic #30): a new project's views the entire
-    // model (reports #165–166, decision 713), plans without the finishes set by kind of view in Manage → View styles and per
-    // view from its corner.
+    // The partial structure display (decision 500, as ArchiCAD's; the forum's topic #30): a new project's plans without the
+    // finishes, its sections the entire model, set by kind of view in Manage → View styles and per view from its corner.
     id: 'finishes-by-view',
     async run(t) {
       await t.fresh();
       const { walls } = await house(t, { roof: false });
       const s = await t.storey();
-      const fresh = await t.call('doc.query', { name: 'view.drawing', args: { storeyId: s } });
-      t.expect(fresh.structure === 'all', `a new project's plan draws every layer (${fresh.structure})`);
-      // The classic set for architectural sheets: the style's plans without the finishes.
-      await t.cmd('viewStyle.update', { id: 'architectural', layersPlan: 'noFinishes' });
       const plan = await t.call('doc.query', { name: 'view.drawing', args: { storeyId: s } });
-      t.expect(plan.structure === 'noFinishes', `the style's plans leave out the finishes (${plan.structure})`);
+      t.expect(plan.structure === 'noFinishes', `a new project's plan leaves out the finishes (${plan.structure})`);
       t.expect(JSON.stringify(plan.hiddenSubs) === '["finishes"]', `the plan's snaps leave out the finish layers (${JSON.stringify(plan.hiddenSubs)})`);
       await t.ui({ dialog: 'viewStyles' });
       await t.wait(800);

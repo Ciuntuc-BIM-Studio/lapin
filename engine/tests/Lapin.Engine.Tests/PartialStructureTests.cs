@@ -10,8 +10,8 @@ namespace Lapin.Engine.Tests;
 /// <summary>
 /// The partial structure display (decision 500, as ArchiCAD's): one choice per view, from its view style for a view of its
 /// kind or its own, of the entire model, the model without its finishes, the cores only, or the cores of the load-bearing
-/// elements only. A new project's plans and sections draw the entire model (reports #165–166: decision 500's plans without
-/// the finishes hid a new wall type's plasters); a project made before draws as it drew. Visibility / Graphics resolves it for the drawings, the sheets
+/// elements only. A new project's plans draw without the finishes (the plasters gone, the insulation kept) and its sections
+/// the entire model; a project made before draws as it drew. Visibility / Graphics resolves it for the drawings, the sheets
 /// and the exports; quantities stay the model's.
 /// </summary>
 public sealed class PartialStructureTests
@@ -53,23 +53,20 @@ public sealed class PartialStructureTests
     static void Bears(Fixture f, string id, bool on) => f.Run("element.setParam", new JsonObject { ["id"] = id, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = on });
 
     [Fact]
-    public void A_new_projects_plans_and_sections_draw_every_layer_the_wall_type_has()
+    public void A_new_projects_plans_leave_out_the_finishes_and_its_sections_draw_the_entire_model()
     {
-        // In-app reports #165 and #166: a new project's plan drew a 230 mm wall (plaster 15, brick 200, plaster 15) with its brick
-        // alone, the plasters only in the selection's outline; its plans now draw the entire model as the type defines it.
         var (f, wall) = Insulated();
         var plan = Plan(f);
         var section = Section(f);
-        Assert.Equal(["layer:0", "layer:1", "layer:2", "layer:3"], Keys(f, plan, wall));
+        // The plan: the wool and the brick, the render and the plaster left out; the section: all four.
+        Assert.Equal(["layer:1", "layer:2"], Keys(f, plan, wall));
         Assert.Equal(["layer:0", "layer:1", "layer:2", "layer:3"], Keys(f, section, wall));
-        Assert.Equal("all", ViewStyles.Of(f.Model, Views.Find(f.Model, plan)!).Layers);
+        Assert.Equal("noFinishes", ViewStyles.Of(f.Model, Views.Find(f.Model, plan)!).Layers);
         Assert.Equal("all", ViewStyles.Of(f.Model, Views.Find(f.Model, section)!).Layers);
         // A level's default plan reads as a plan; a 3D view as the style's other views, the entire model.
-        Assert.Equal("all", ViewStyles.Of(f.Model, Views.Find(f.Model, "plan:" + f.Storey)!).Layers);
+        Assert.Equal("noFinishes", ViewStyles.Of(f.Model, Views.Find(f.Model, "plan:" + f.Storey)!).Layers);
         Assert.Equal("all", ViewStyles.Of(f.Model, GraphicsSets.As3dView(f.Model)).Layers);
-        // Without the finishes is the view's choice (its corner, beside the scale): Visibility / Graphics then leaves the plaster out.
-        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["layers"] = "noFinishes" });
-        Assert.Equal(["layer:1", "layer:2"], Keys(f, plan, wall));
+        // Visibility / Graphics says the same of each part: the drawings, sheets and exports ask it.
         var vg = VisibilityGraphics.Of(f.Model, Views.Find(f.Model, plan)!);
         Assert.Equal("noFinishes", vg.Structure);
         Assert.True(vg.HidesPart(f.Model.Get(wall)!, "layer:3"));
@@ -77,30 +74,6 @@ public sealed class PartialStructureTests
         Assert.False(VisibilityGraphics.Of(f.Model, Views.Find(f.Model, section)!).HidesPart(f.Model.Get(wall)!, "layer:3"));
         // The model is the same: the plaster's quantities as before.
         Assert.Contains(f.Session.Quantities(wall), q => q.Part == "layer:3" && q.Quantities.Single(x => x.Name == "NetVolume").Value > 0);
-    }
-
-    [Fact]
-    public void A_project_made_while_plans_left_out_the_finishes_draws_as_it_drew()
-    {
-        var (f, wall) = Insulated();
-        var plan = Plan(f);
-        // Saved by a build of decision 500's default (its mark 2, no styles of its own): its plans keep leaving out the finishes.
-        var saved = f.Model.Entities.Select(e =>
-        {
-            if (e.Class != IfcClass.Project) return e;
-            var a = e.CloneAttrs();
-            a[ViewStyles.StructureRevKey] = 2;
-            a.Remove(ViewStyles.Key);
-            return e.With(attrs: a);
-        }).ToList();
-        var (up, rels) = f.Session.Upgraded(saved, f.Model.Relations.ToList());
-        var project = up.Single(e => e.Class == IfcClass.Project);
-        Assert.Equal(ViewStyles.StructureRev, (int)project.Attrs[ViewStyles.StructureRevKey]!);
-        f.Session.Load(up, rels, null);
-        Assert.Equal("noFinishes", ViewStyles.All(f.Model).Single(s => s.Id == "architectural").LayersPlan);
-        Assert.Equal(["layer:1", "layer:2"], Keys(f, plan, wall));
-        // Its finish elements as they were (decision 502 held).
-        Assert.True(ViewStyles.All(f.Model).Single(s => s.Id == "architectural").FinishElements);
     }
 
     [Fact]
@@ -267,7 +240,7 @@ public sealed class PartialStructureTests
         }
         // A plan without the finishes leaves out the walls' finish its cut plane cuts, and sees the floor and the skirting under
         // it as they are (decision 500's rule for what a plan cuts).
-        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["layers"] = "noFinishes" });
+        Assert.Equal("noFinishes", ViewStyles.Of(f.Model, Views.Find(f.Model, plan)!).Layers);
         Assert.False(Drawn(f, plan, Part("walls")));
         Assert.True(Drawn(f, plan, Part("floor")));
         Assert.True(Drawn(f, plan, skirting));
@@ -418,7 +391,6 @@ public sealed class PartialStructureTests
         var (f, _) = Insulated();
         var plan = Plan(f);
         JsonObject Drawn() => Views.Drawing(new Q(f), Views.Find(f.Model, plan)!);
-        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["layers"] = "noFinishes" });
         Assert.Equal("noFinishes", (string)Drawn()["structure"]!);
         Assert.Equal(["finishes"], ((JsonArray)Drawn()["hiddenSubs"]!).Select(x => (string)x!));
         f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["layers"] = "core" });

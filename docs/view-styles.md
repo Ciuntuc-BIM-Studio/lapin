@@ -16,7 +16,7 @@ Un stil spune cum desenează un tip de planșă (ca afișarea parțială a struc
 
 | Stil | Disciplină | Afișarea parțială a structurii (planuri · secțiuni · 3D) | Unește materialele | Overhead |
 |---|---|---|---|---|
-| Architectural | Architecture | tot modelul (proiect nou, rapoartele #165–166, decizia 713; un proiect făcut între decizia 500 și ea: planurile fără finisaje) | da | da |
+| Architectural | Architecture | fără finisaje · tot modelul · tot modelul (proiect nou) | da | da |
 | Structural | Structure | doar miezul | da | da |
 | MEP | MEP | tot modelul | da | da |
 | Coordination | — (ales după nume) | tot modelul | da | da, cu volumele de gol desenate |

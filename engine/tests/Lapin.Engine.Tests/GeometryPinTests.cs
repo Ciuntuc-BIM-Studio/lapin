@@ -53,8 +53,6 @@ public class GeometryPinTests(ITestOutputHelper output)
         var stair = (string)f.Run("architecture.addStair", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = stairType, ["x"] = 1, ["y"] = 5, ["x2"] = 2, ["y2"] = 5, ["turn"] = "left" })!["id"]!;
         ids.Add(stair);
         ids.Add((string)f.Run("architecture.addUnderStair", new JsonObject { ["stairId"] = stair, ["style"] = "storage" })!["id"]!);
-        // The plans as the pins were taken: without the finishes (decision 500's default then, a view's choice since decision 708).
-        f.Run("viewStyle.update", new JsonObject { ["id"] = "architectural", ["layersPlan"] = "noFinishes" });
         var views = new List<string>
         {
             (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!,

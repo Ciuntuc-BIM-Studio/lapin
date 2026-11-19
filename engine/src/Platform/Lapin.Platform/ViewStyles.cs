@@ -15,9 +15,8 @@ namespace Lapin.Platform;
 /// (<c>core</c>), or the cores of the load-bearing elements only (<c>coreLoadBearing</c>, <see cref="BearsLoad"/>: the
 /// others not drawn at all). A style says it for its plans (<c>layersPlan</c>), its sections and elevations
 /// (<c>layersSection</c>) and its other views, 3D among them (<c>layers</c>, also what the first two take when unset); a
-/// view sets its own (<c>layers</c> again). A new project's styles draw the entire model in every view but the structural
-/// ones (in-app reports #165–166: decision 500's plans without the finishes hid a new wall type's plasters); a project made
-/// before keeps what it drew (<see cref="StructureUpgrade"/>);</item>
+/// view sets its own (<c>layers</c> again). A new project's Architectural style draws its plans without the finishes
+/// (decision 500); a project made before keeps what it drew (<see cref="StructureUpgrade"/>);</item>
 /// <item><c>joins</c>: whether one material goes on from one element into the
 /// next without a line (the visual joins), on by default;</item>
 /// <item><c>overhead</c>: whether a plan draws what lies above its cut, up to
@@ -174,13 +173,13 @@ public static class ViewStyles
     }
 
     /// <summary>
-    /// The styles a project without its own reads as: one per discipline; the architectural one draws the entire model in
-    /// every view, its plans among them (in-app reports #165–166: a wall type's plasters are drawn as the type defines them;
-    /// without the finishes is a view's choice, from its corner beside the scale); the structural one draws the cores alone.
+    /// The styles a project without its own reads as: one per discipline; the architectural one's plans without the finishes
+    /// (decision 500: the plasters and floor finishes left out, the insulation drawn), its sections, elevations and 3D views
+    /// the entire model; the structural one draws the cores alone.
     /// </summary>
     public static readonly IReadOnlyList<Style> Defaults =
     [
-        new("architectural", "Architectural", "Architecture", "all", true, true),
+        new("architectural", "Architectural", "Architecture", "all", true, true, LayersPlan: "noFinishes"),
         new("structural", "Structural", "Structure", "core", true, true, FinishHatch: false, SurfaceHatch: false, Detail: PlanDetail.Lod400),
         new("mep", "MEP", "MEP", "all", true, true, FinishHatch: false, SurfaceHatch: false),
         // For coordination drawings (decision 290): the openings' voids drawn, marked and sized; taken by name, no discipline's.
@@ -189,10 +188,6 @@ public static class ViewStyles
 
     /// <summary>The styles a project made before decision 500 read as when it had none of its own: every view the entire model but the structural ones.</summary>
     public static IReadOnlyList<Style> LegacyDefaults => Defaults.Select(s => s with { LayersPlan = null, LayersSection = null, FinishElements = false }).ToList();
-
-    /// <summary>The styles a project made from decision 500 to reports #165–166 read as when it had none of its own: the architectural plans without the finishes.</summary>
-    static IReadOnlyList<Style> Decision500Defaults(Entity project) =>
-        (MaterialStandards.NewLook(project) ? NewDefaults : Defaults).Select(s => s.Id == "architectural" ? s with { LayersPlan = "noFinishes" } : s).ToList();
 
     /// <summary>
     /// The styles a project made since decision 682 reads as when it has none of its own (<see cref="MaterialStandards.NewLook(Entity?)"/>):
@@ -446,8 +441,8 @@ public static class ViewStyles
     /// <summary>The project's mark that its views' structure display is read as decisions 500 and 502 have it (a project made before is upgraded).</summary>
     public const string StructureRevKey = "structureRev";
 
-    /// <summary>The mark's value now: 1 decision 500's display by kind of view, 2 the finish elements going with the finish layers (decision 502), 3 a new project's plans drawing the entire model (reports #165–166).</summary>
-    public const int StructureRev = 3;
+    /// <summary>The mark's value now: 1 decision 500's display by kind of view, 2 the finish elements going with the finish layers (decision 502).</summary>
+    public const int StructureRev = 2;
 
     /// <summary>
     /// A project made before the structure display by kind of view (decision 500) keeps what its views drew: one without
@@ -456,9 +451,7 @@ public static class ViewStyles
     /// <c>layers</c> for every view, as before), and decision 496's finish choices by kind of view stay as they were, the
     /// advanced detail of the structure display. A project made before the finish elements went with the finish layers
     /// (decision 502, a mark under 2) keeps drawing them: its styles say <c>finishElements</c> false (one without styles of
-    /// its own gets the defaults it read, so marked). A project made while a new project's plans left out the finishes (a
-    /// mark of 2, before reports #165–166) and with no styles of its own gets them written as it read them. Then the project
-    /// is marked.
+    /// its own gets the defaults it read, so marked). Then the project is marked.
     /// </summary>
     public sealed class StructureUpgrade : IProjectUpgrade
     {
@@ -468,14 +461,9 @@ public static class ViewStyles
             int? rev = Json.Number(project.Attrs[StructureRevKey]) is { } r ? (int)Math.Round(r) : null;
             if (rev >= StructureRev) return (entities, relations);
             var attrs = project.CloneAttrs();
-            if (rev is null or < 2)
-            {
-                if (rev == null && attrs[Key] is not JsonArray { Count: > 0 }) attrs[Key] = Write(LegacyDefaults);
-                if (attrs[Key] is not JsonArray { Count: > 0 } own) attrs[Key] = Write(Decision500Defaults(project).Select(s => s with { FinishElements = false }));
-                else foreach (var o in own.OfType<JsonObject>()) o["finishElements"] = false;
-            }
-            // A project made while the plans left out the finishes (reports #165–166 changed the default) keeps reading them so.
-            else if (attrs[Key] is not JsonArray { Count: > 0 }) attrs[Key] = Write(Decision500Defaults(project));
+            if (rev == null && attrs[Key] is not JsonArray { Count: > 0 }) attrs[Key] = Write(LegacyDefaults);
+            if (attrs[Key] is not JsonArray { Count: > 0 } own) attrs[Key] = Write(Defaults.Select(s => s with { FinishElements = false }));
+            else foreach (var o in own.OfType<JsonObject>()) o["finishElements"] = false;
             attrs[StructureRevKey] = StructureRev;
             var up = project.With(attrs: attrs);
             return (entities.Select(e => e.Id == project.Id ? up : e).ToList(), relations);
