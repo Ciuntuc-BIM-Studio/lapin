@@ -604,7 +604,20 @@ Densitățile sunt ale zidăriei (unitate + mortar), valori uzuale; nu le-am gă
 
 ### 11.7 Ce s-a hotărât la implementare
 
-(se completează la implementare)
+Decizia 743 (20.11.2026, ramura `feat/fem-s3`):
+
+- **Materialul zidăriei** (`Lapin.Platform/Analysis/StructuralMaterials.cs`, `Masonry`): grupa unității din nume (BCA/AAC/Ytong → `aac`; bolțar, bloc de beton → `concrete2`; GVP, Porotherm, bloc ceramic, hollow → `clay2`; brick, cărămidă → `clay1`; masonry, zidărie, block, bloc → `clay1`), valorile proprii ale materialului înainte (`Lapin_Masonry.UnitGroup/fb/fm/fk/KE`, sau `Pset_MaterialMechanical.YoungModulus`), fm limitat la min(2 fb, 20). Detecția zidăriei vine acum înaintea celei generice „concrete/beton”, ca „beton celular” (BCA) să fie zidărie. ν = 0,25 (G = 0,4 E). Sursa fiecărei valori e scrisă (ca la beton), deci și exportul SAV/JG scrie E-ul zidăriei.
+- **Rezultatele schimbate:** cu `shells: both` pereții de zidărie sunt plăci; testul S2b care cerea reazeme liniare e acum `Masonry_walls_are_shells_under_a_shell_floor` (aceeași casă 6 × 4: reacțiile la tălpile pereților, Q-A 48 kN echilibrat, greutatea pereților în sume). Restul suitei (4773 de teste înainte de S3, 4787 cu S3) a trecut neschimbat: niciun alt test nu avea pereți de zidărie portanți calculați.
+- **Peretele de zidărie în consolă** 3 × 6 m, 25 cm (cărămidă, E = 4,47 GPa): δ / (PH³/3EI + PH/κGA) = 0,9917 la plasa de 0,25 m.
+- **Solverul** (`FrameSystem`): asamblarea și factorizarea scoase din `FrameSolver.Solve` într-un sistem păstrat (rezolvă un caz, un vector de încărcări, rezultatele unei deplasări fără încărcări, K·u, diagonala), folosit de analiza modală; `FrameProblem.Links` (cuplaje prin matrice, pentru diafragmă). Rezultatele statice identice (toată suita trece).
+- **Masa** din vectorii de forțe nodale ai cazurilor (aceiași pe care îi rezolvă calculul static), deci cotele consistente ale plăcilor și jumătățile barelor; nodurile cu încărcare netă în sus n-au masă (spus).
+- **Iterația în subspațiu**: proiecțiile Kr = X̄ᵀ M X, Mr = X̄ᵀ M X̄ pe gradele cu masă, Cholesky pe Mr (vectorii dependenți scoși), Jacobi; când modurile cresc (12 → 24 → 48 …), pornește de la cele găsite. Toleranța 10⁻⁸ pe valorile proprii (spec). Reziduul modurilor înalte ~10⁻⁶–10⁻⁵ (vectorii converg mai încet decât valorile), raportat pe fiecare mod.
+- **Analiza seismică e o interogare separată** (`SeismicRun`, ținută după versiunea modelului ca `AnalysisRun`); cere calculul static întâi. Combinația seismică: valorile statice ale încărcărilor gravitaționale (rigiditatea nefisurată) ± AEd (rigiditatea fisurată), în fiecare punct și pe fiecare mărime separat (două „seturi” `seismic/+`, `seismic/-` în înfășurători); și pe plăci (valorile recuperate ale fiecărui mod, combinate în noduri). Valorile din centrele elementelor de placă (`analysis.results {shellId}`) nu au încă partea seismică.
+- **Oprirea analizei seismice:** `ag: null` (nu un obiect `null` întreg, cum spunea §11.4).
+- **Nivelurile:** înălțimea nivelului e de la cota lui la a următorului; masa unui nod merge la nivelul în care cade cota lui (placa la 2,9 m e a parterului de 3 m); deplasarea unei cote e media nodurilor celor mai apropiate de ea (sub 0,5 m: planul median al plăcii).
+- **Diafragma rigidă:** prin penalizare (α = 10⁴ × cea mai mare rigiditate axială EA/L sau E·t), un nod principal în centrul maselor nivelului; pe cadrul din ghid cu planșeu de lemn, capetele stâlpilor se mișcă împreună pe X la 10⁻³.
+- **Verificări în teste** (`ModalTests`, `SpectrumTests`, `SeismicAnalysisTests`, `ShellAnalysisTests`): clădirea cu forfecare cu trei niveluri, ω exact la 10⁻⁸; consola 0,99886 (ω1) și 0,99603 (ω2) cu 20 de mase; grinda simplu rezemată 1,00000 pe primele trei; Rayleigh 1 la 10⁻⁸; Σ M* = masa totală; spectrul P100 la T = 0, TB, TC, 1,4 s, TD (unde limita 0,2 ag dă 0,06 g în loc de 0,0583 g), spectrul EN tip 1 teren C; ρ(r = 0,9, ξ = 5 %) = 0,473028; pe cadrul din ghid masa = (G1 + 0,3 Q-A)/g la 10⁻⁴, forța tăietoare de bază = CQC al M*ₖ Sd(Tₖ), perioadele × √2 cu rigiditatea fisurată 0,5.
+- **Performanța** (de măsurat mai departe): casa de zidărie 6 × 4 cu pereții-placă (1.902 grade de libertate) cere 48 de moduri pentru 90 % (modurile locale ale pereților în afara planului au masă mică) și ~8 s în Debug, cu mașina încărcată; de grăbit (Jacobi pe tablouri plate, deplasarea spectrală / Lanczos) înainte de modele mari.
 
 ### 11.8 Surse
 
@@ -618,3 +631,6 @@ Densitățile sunt ale zidăriei (unitate + mortar), valori uzuale; nu le-am gă
 3. **q implicit** când utilizatorul nu-l dă: 1,5 (cel mai mic pentru zidăria nearmată) sau obligatoriu de dat?
 4. **ψE = φ ψ2** cu φ < 1 (EN 4.2.4: 0,5 / 0,8 pe niveluri) sau φ = 1 (acum)?
 5. **P100-1/2025** (notificat UE în decembrie 2024): când intră, trecem pe el?
+6. **Grupa unității după nume** (§11.7): potrivirea e bună pentru numele obișnuite (cărămidă, GVP, BCA); un material cu alt nume trebuie să aibă `Lapin_Masonry.UnitGroup`. Vreți o listă mai lungă sau o alegere în dialogul materialului?
+7. **Forțele pe pereții de zidărie** (forța tăietoare și momentul fiecărui perete, pentru verificarea după CR 6) rămân la S4, sau le vreți deja în tabelul nivelurilor?
+8. **Performanța modelelor mari** cu pereți-placă (multe moduri locale): acceptați ca limita implicită să rămână 60 de moduri, cu nota când 90 % nu e atins?
