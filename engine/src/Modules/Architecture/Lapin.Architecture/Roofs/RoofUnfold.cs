@@ -215,8 +215,9 @@ sealed class RoofUnfoldMarks : IViewAnnotations
 
         var mm = c.Mm;
         var text = Standards.ResolveText(c.Book, []);
-        var hLabel = text.Height * mm;
-        var hTitle = text.Height * 1.15 * mm;
+        // A text's height is in paper millimetres, as every pen text's (its place is in metres: offsets scale by mm).
+        var hLabel = text.Height;
+        var hTitle = text.Height * 1.15;
         const string ink = "#000000", holeColor = "#b5654a", dimColor = "#1f4e8c";
 
         var mk = new ViewMark(roof.Id);
