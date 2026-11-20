@@ -4916,6 +4916,12 @@ export const LO: Record<string, string> = {
   "No fck (the material's name has no class such as C25/30): not checked.": "ບໍ່ມີ fck (ຊື່ວັດສະດຸບໍ່ມີຊັ້ນເຊັ່ນ C25/30): ບໍ່ໄດ້ກວດສອບ.",
   "No strength class (C24, GL24h…) in the material's name: not checked.": "ບໍ່ມີຊັ້ນກຳລັງ (C24, GL24h…) ໃນຊື່ວັດສະດຸ: ບໍ່ໄດ້ກວດສອບ.",
   "No cut through the wall's mesh: not checked.": "ບໍ່ມີການຕັດຜ່ານຕາໜ່າງຂອງຝາ: ບໍ່ໄດ້ກວດສອບ.",
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "ຖືອັດຕະໂນມັດ: ການລາກຕາມຕົວຊີ້. ກົດເພື່ອວາງ, Tab ສຳລັບຊ່ອງຕໍ່ໄປ, Enter ເພື່ອຍອມຮັບ",
+  "Autohold": "ຖືອັດຕະໂນມັດ",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "ຖືອັດຕະໂນມັດ: ການລາກຕາມຕົວຊີ້ໂດຍບໍ່ມີປຸ່ມ. ກົດເພື່ອວາງຢູ່ບ່ອນນີ້",
+  "Elements under the pointer": "ອົງປະກອບໃຕ້ຕົວຊີ້",
+  "Rotate a copy": "ໝຸນສຳເນົາ",
 };
 
 /** Phrases with a number or a name in them. */

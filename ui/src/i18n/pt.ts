@@ -4860,6 +4860,12 @@ export const PT: Record<string, string> = {
   "No fck (the material's name has no class such as C25/30): not checked.": "Sem fck (o nome do material não tem uma classe como C25/30): não verificado.",
   "No strength class (C24, GL24h…) in the material's name: not checked.": "Sem classe de resistência (C24, GL24h…) no nome do material: não verificado.",
   "No cut through the wall's mesh: not checked.": "Nenhum corte pela malha da parede: não verificado.",
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "Retenção automática: o arrasto segue o ponteiro. Clique para soltá-lo, Tab para o campo seguinte, Enter para aceitar",
+  "Autohold": "Retenção automática",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "Retenção automática: o arrasto segue o ponteiro sem o botão. Clique para soltá-lo aqui",
+  "Elements under the pointer": "Elementos sob o ponteiro",
+  "Rotate a copy": "Girar uma cópia",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

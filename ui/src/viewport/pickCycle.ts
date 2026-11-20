@@ -28,6 +28,8 @@ export interface CycleSource {
   ids: (at: Vec2) => string[];
   /** How far (view units) the pointer may drift and still be on the same cycle. */
   tol: () => number;
+  /** Takes what the pointer has lit as a click would (a tool's pick, the selection): Tab let go after a hold (tabHold.ts). */
+  take?: () => void;
 }
 
 const dist = (a: Vec2, b: Vec2) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -69,6 +71,8 @@ export const usePickCycle = create<{ cycle: Cycle | null }>(() => ({ cycle: null
 export const clearCycle = () => { if (usePickCycle.getState().cycle) usePickCycle.setState({ cycle: null }); };
 
 let source: CycleSource | null = null;
+/** The view the pointer is over, if any. */
+export const cycleSource = (): CycleSource | null => source;
 /** The view the pointer is over offers itself; null (with its key) when the pointer leaves it. */
 export function setCycleSource(s: CycleSource | null, key?: string): void {
   if (s) source = s;

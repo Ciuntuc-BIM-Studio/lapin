@@ -923,6 +923,11 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .live-cell.typed { font-weight: 700; color: var(--accent); }
 .live-label { color: var(--ink-muted); font-size: 10px; }
 .live-unit { color: var(--ink-muted); font-size: 10px; }
+.tab-hold { position: fixed; z-index: 60; margin: 0; padding: 3px; list-style: none; min-width: 150px; max-width: 280px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); pointer-events: none; font-size: 12px; }
+/* Colour-blind friendly: the current one is a filled blue (Okabe-Ito) with a bold arrow; the others are outlined in neutral, with no fill. */
+.tab-hold li { display: flex; gap: 6px; align-items: center; padding: 3px 6px; margin: 2px 0; border: 1px solid var(--rule-strong); border-radius: 3px; color: var(--ink); background: transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab-hold li.on { background: #0072b2; border-color: #0072b2; color: #ffffff; font-weight: 700; }
+.tab-hold-mark { width: 10px; flex: none; font-size: 9px; }
 .live-hint { color: var(--ink-muted); font-size: 10px; align-self: center; }
 .live-hint.text { white-space: nowrap; }
 .live-mode { font-size: 11px; padding: 1px 6px; white-space: nowrap; }

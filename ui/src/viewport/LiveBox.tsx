@@ -8,11 +8,12 @@
  */
 
 import type { Vec2 } from '../platform/module';
-import { formatAngle, formatLength, liveCommit, liveFields, liveHintSeen, liveMeasure, liveToggleMode, useLive, type LiveField } from './liveInput';
+import { formatAngle, formatLength, liveAcceptAtCursor, liveCommit, liveFields, liveHintSeen, liveMeasure, liveToggleMode, useLive, type LiveField } from './liveInput';
 import { segmentArc } from './angleDims';
 import { unitLabel } from '../engine/unitsStore';
 import { useInterface } from '../app/interface';
 import { t } from '../i18n';
+import { autoholdOn, useAutohold } from '../app/autohold';
 
 type ToScreen = (p: Vec2) => { x: number; y: number };
 
@@ -24,6 +25,7 @@ function relAngle(live: ReturnType<typeof useLive.getState>, end: Vec2): number 
 
 export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
   const live = useLive();
+  const autohold = useAutohold((s) => s.on);
   // A move's Δx and Δy at the cursor; in the status line instead when the prompt goes there (Compact): the inline bar shows them.
   const deltaHere = useInterface((s) => s.parts.prompt !== 'commandLine') && live.delta;
   const m = live.owner ? liveMeasure(live) : null;
@@ -54,6 +56,7 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
         {rel != null && cell('rel', '∡', formatAngle(rel), '°')}
       </>}
       {live.rect && !liveHintSeen() && <span className="live-hint text" data-testid="live-hint">{live.mode === 'rect' ? t('Space: length ∠ angle') : t('Space: width × height')}</span>}
+      {autohold && <span className="live-hint text" data-testid="autohold-hint" title={t('Autohold: the drag follows the pointer without the button. Click to drop it here')}>{t('Autohold')}</span>}
       {live.rect && <span className="live-hint" title={t('Space switches length and angle with width and height')}>␣</span>}
     </div>
   );
@@ -75,7 +78,7 @@ export function LiveBar({ inline }: { inline?: boolean }) {
         onKeyDown={(e) => {
           if (e.key === ' ' && live.rect) { e.preventDefault(); liveToggleMode(); return; }
           if (e.key === ',' && live.rect && live.mode === 'rect' && f === 'len') { e.preventDefault(); useLive.setState({ focus: 'ang' }); return; }
-          if (e.key === 'Enter') { e.preventDefault(); liveCommit(); }
+          if (e.key === 'Enter') { e.preventDefault(); if (!liveCommit() && autoholdOn()) liveAcceptAtCursor(); }
           if (e.key === 'Tab') { e.preventDefault(); const fs = liveFields(live); useLive.setState({ focus: fs[(fs.indexOf(f) + 1) % fs.length] }); }
           if (e.key === 'Escape') (e.target as HTMLInputElement).blur();
         }} />

@@ -218,9 +218,19 @@ Fiecare vedere deschisă are un tab deasupra ei. Trage un tab ca să muți veder
 
 <kbd>Ctrl</kbd> <kbd>Tab</kbd> aduce în față tab-ul următor, iar <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Tab</kbd> pe cel dinainte (și <kbd>Ctrl</kbd> <kbd>Page Down</kbd> și <kbd>Page Up</kbd>), trecând de la ultimul la primul; pe Mac e tasta <kbd>Control</kbd>, fiindcă <kbd>⌘</kbd> <kbd>Tab</kbd> e a sistemului. Nu fac nimic cât scrii într-un câmp. Sunt comenzi (**Next view tab**, **Previous view tab**) pe care le poți realoca în scurtături.
 
-**Tab peste elemente suprapuse.** Într-un plan, o secțiune sau o fațadă, când sub cursor se află mai mult de un element (un perete peste o placă peste o încăpere), <kbd>Tab</kbd> luminează următorul, iar <kbd>Shift</kbd> <kbd>Tab</kbd> pe cel dinainte, în cerc; linia de stare spune care ("2 din 3: Placă Etaj 1"), iar un clic selectează elementul luminat. Mută cursorul și revine la alegerea a ceea ce e sub el. Cu niciun element sau unul singur sub cursor, <kbd>Tab</kbd> funcționează și cât o unealtă sau o comandă alege elemente (Mută, Copiază, Împarte elementul, o unealtă care alege un perete sau o placă); cât așteaptă un punct sau o valoare tastată, sau cât tragi, <kbd>Tab</kbd> își păstrează celelalte sensuri: pliază panourile, iar peste un mâner comun mai multor elemente trece prin ele. **Light the previous element under the pointer** este comanda de realocat dacă vrei altă tastă.
+**Tab peste elemente suprapuse.** Într-un plan, o secțiune sau o fațadă, când sub cursor se află mai mult de un element (un perete peste o placă peste o încăpere), <kbd>Tab</kbd> luminează următorul, iar <kbd>Shift</kbd> <kbd>Tab</kbd> pe cel dinainte, în cerc; linia de stare spune care ("2 din 3: Placă Etaj 1"), iar un clic selectează elementul luminat. Mută cursorul și revine la alegerea a ceea ce e sub el. Cu niciun element sau unul singur sub cursor, <kbd>Tab</kbd> funcționează și cât o unealtă sau o comandă alege elemente (Mută, Copiază, Împarte elementul, o unealtă care alege un perete sau o placă); cât așteaptă un punct sau o valoare tastată, <kbd>Tab</kbd> își păstrează celelalte sensuri: pliază panourile, iar peste un mâner comun mai multor elemente trece prin ele. Cât tragi, este tasta de menținere automată (mai jos). **Light the previous element under the pointer** este comanda de realocat dacă vrei altă tastă.
 
 ![Tab luminând al doilea din două elemente aflate sub cursor într-un plan](shots/tab-cycle.webp)
+
+**Ține Tab apăsat pentru listă.** O atingere de <kbd>Tab</kbd> luminează următorul element, ca mai sus. **Ține-l apăsat** un sfert de secundă și se deschide lângă cursor o listă mică cu toate elementele de sub el: elementul curent e umplut cu albastru și marcat cu o săgeată, celelalte sunt doar conturate. Rotește rotița mausului ca să mergi prin listă (rotița în jos: următorul), mută cursorul și lista îl urmează, iar când dai drumul la <kbd>Tab</kbd> elementul curent e luat ca printr-un clic: se selectează sau e dat uneltei care alege. Cu un singur element sub cursor nu există listă, iar <kbd>Tab</kbd> funcționează ca înainte. Lista ține de selectare și de alegere: cât tragi, <kbd>Tab</kbd> înseamnă menținere automată.
+
+**Tragere fără a ține butonul mausului (menținere automată).** După ce ai început o tragere (corpul unei selecții sau un mâner), apasă <kbd>Tab</kbd>: tragerea continuă ca și cum butonul ar fi încă apăsat și urmează cursorul; caseta de la cursor spune **Menținere automată**. Dă drumul butonului și mută-te mai departe.
+- Un clic stânga lasă tragerea unde e cursorul (cu agățarea lui) sau la valorile tastate.
+- <kbd>Tab</kbd> din nou trece prin câmpurile casetei de intrare directă (lungime, unghi, unghiul față de referință), ca la desenarea unui segment; tastează valorile exacte cu cursorul lăsat jos, iar previzualizarea urmează cifrele.
+- <kbd>Enter</kbd> acceptă: la valorile tastate, sau la cursor când nu s-a tastat nimic. Și un clic în afara casetelor acceptă. <kbd>Esc</kbd> anulează tragerea.
+
+Așadar <kbd>Tab</kbd> în caseta de intrare directă este câmpul următor oriunde, în afară de chiar începutul unei trageri, unde primul îl pornește pe cel de menținere automată. Tragerile făcute prin comandă (Mută, Copiază, cu cele două clicuri ale lor) n-au avut niciodată nevoie de buton; asta e pentru tragerea selecției sau a unui mâner.
+
 
 Un tab 3D își păstrează starea cât lucrezi în altă vedere: camera (de unde privește, perspectivă sau ortogonală) și **caseta de secțiune**, pornită sau oprită și unde ai lăsat-o, sunt ca atunci când te întorci dintr-un plan sau dintr-o planșă. Fiecare vedere 3D (3D-ul simplu și fiecare vedere salvată) o ține pe a ei cât timp proiectul e deschis; camera și caseta proprii ale unei vederi salvate o deschid când nu s-a păstrat încă nimic.
 
@@ -388,6 +398,8 @@ Pagina **Aliasuri de comenzi** a dialogului ține nume proprii pentru comenzi. T
 Acestea sunt scurtăturile în stil Revit, așa cum le are Lapin acum:
 
 <!-- shortcuts -->
+
+Patru combinații în plus sunt la uneltele Modifică, în ambele seturi: <kbd>Ctrl</kbd> <kbd>D</kbd> trage (Mută), <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>D</kbd> trage o copie (Copiază), <kbd>Ctrl</kbd> <kbd>E</kbd> rotește (Rotește) și <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>E</kbd> rotește o copie (**Rotește o copie**, la fel cu Copiază deja pornit). Pe Mac, <kbd>⌘</kbd> ia locul lui <kbd>Ctrl</kbd>. Le poți schimba ca pe oricare altă scurtătură.
 
 Tastele cu cifre <kbd>1</kbd>–<kbd>9</kbd> aleg uneltele rapide.
 

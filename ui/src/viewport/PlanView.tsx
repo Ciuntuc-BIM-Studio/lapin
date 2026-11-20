@@ -38,6 +38,8 @@ import { liveBegin, liveCursor, liveEnd, livePoint, liveTaken, useLive } from '.
 import { useHighlight } from '../app/highlight';
 import { markSelected, nearestOf, pickAllAt, pickAt, regionIds } from './planPick';
 import { clearCycle, cycledId, cycleOpen, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
+import { holdRefresh } from './tabHold';
+import { autoholdOn, clickEnds, releaseEnds } from '../app/autohold';
 import { markOwner } from './planPick';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
@@ -126,6 +128,8 @@ export function PlanView() {
   /** Where the cursor is, unsnapped: what a pick reads, and the side of a wall a door opens to. */
   const rawHover = useRef<Vec2 | null>(null);
   const cycleSource = useRef<CycleSource | null>(null);
+  /** The pointer's last place on screen (client pixels), for what Tab let go takes. */
+  const lastClient = useRef<{ x: number; y: number } | null>(null);
   // Space while a tool is on changes what its ghost shows.
   useToolTick((s) => s.n);
   usePlacement((s) => s.verdict); // a module's answer to whether a door or window fits where the cursor is
@@ -624,6 +628,13 @@ export function PlanView() {
       return types && !types.includes('*') ? all.filter((id) => { const n = nodes.get(id.includes('#') ? id.slice(0, id.indexOf('#')) : id); return !!n && types.includes(n.type); }) : all;
     },
     tol: () => 3 / view.scale,
+    // Tab held, then let go (tabHold.ts): what is lit is taken as the click does, at the pointer where it stands.
+    take: () => {
+      const c = lastClient.current, raw = rawHover.current;
+      if (!c || !raw) return;
+      const snapped = snapAt(c.x, c.y, pts[pts.length - 1] ?? refPt ?? useCad.getState().step?.base ?? undefined);
+      click(constrained(snapped).point, raw, false, undefined, false, { shift: false, ctrl: false, alt: false });
+    },
   };
   const cycle = usePickCycle((c) => c.cycle);
   useEffect(() => {
@@ -635,8 +646,19 @@ export function PlanView() {
   }, [cycle, cycleKey, pick]);
   useEffect(() => () => setCycleSource(null, cycleKey), [cycleKey]);
 
+  /** A body drag held by autohold (issue 86) ends at a left click: where the pointer is, its snap, or the typed values. */
+  const endHeldCarry = (e: React.PointerEvent) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d?.carry) return;
+    const a = d.base ?? snapAt(d.x, d.y).point;
+    const by = carryBy(a, snapAt(e.clientX, e.clientY, a).point);
+    carryEnd();
+    if (by) void execute('element.transform', { ids: d.carry, op: d.copy || e.ctrlKey || e.metaKey || e.altKey ? 'copy' : 'move', by });
+  };
   const onPointerDown = (e: React.PointerEvent) => {
     if (overridePress(e)) { drag.current = null; return; }
+    if (e.button === 0 && clickEnds(autoholdOn()) && carrying() && drag.current?.carry) { endHeldCarry(e); return; }
     (e.target as Element).setPointerCapture?.(e.pointerId);
     if (middleTwice.current(e)) { fitModel(); return; }
     if (editor.onPointerDown(e)) return;
@@ -655,6 +677,7 @@ export function PlanView() {
     if (peers.length) { const rect = svgRef.current!.getBoundingClientRect(); const w = toWorld(e.clientX - rect.left, e.clientY - rect.top); reportPresence({ cursor: [w.x, w.y] }); }
     if (editor.onPointerMove(e)) return;
     const d = drag.current;
+    lastClient.current = { x: e.clientX, y: e.clientY };
     if (d) {
       const dx = e.clientX - d.x, dy = e.clientY - d.y;
       if (Math.hypot(dx, dy) > 4) d.moved = true;
@@ -667,7 +690,7 @@ export function PlanView() {
         return;
       }
       // Left drag on the selection: carried as a move grip carries it (the trace from the press, the readout, snaps from the base).
-      if (d.moved && e.buttons === 1 && d.carry && d.base) {
+      if (d.moved && (e.buttons === 1 || autoholdOn()) && d.carry && d.base) {
         if (!carrying()) {
           const host = useCad.getState().host;
           const { carry: ids, base, copy } = d;
@@ -688,6 +711,7 @@ export function PlanView() {
     { const r = svgRef.current!.getBoundingClientRect(); rawHover.current = toWorld(e.clientX - r.left, e.clientY - r.top); }
     setCycleSource(cycleSource.current);
     { const c = usePickCycle.getState().cycle; if (c && !cycledId(c, cycleKey, rawHover.current!, 3 / view.scale)) clearCycle(); }
+    holdRefresh();
     if (tool?.gesture?.kind === 'pick' && tool.gesture.placing) {
       const g = tool.gesture, at = rawHover.current;
       const host = g.reach ? nearestOf(at, g.reach / view.scale, pickItems, nodes, g.types) : pick(at, g.types);
@@ -724,6 +748,8 @@ export function PlanView() {
   };
   const onPointerUp = (e: React.PointerEvent) => {
     if (editor.onPointerUp()) return;
+    // Autohold (issue 86): the button is let go, the body drag is not.
+    if (e.button === 0 && !releaseEnds(autoholdOn()) && carrying() && drag.current?.carry) return;
     spendOverride(e);
     const d = drag.current;
     drag.current = null;

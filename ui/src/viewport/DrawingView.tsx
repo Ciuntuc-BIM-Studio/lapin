@@ -46,6 +46,8 @@ import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import { clearLiveRise, inModel, setLiveRise, viewFrameAt } from './viewFrame';
 import { markIds, markOwner, markSelected } from './planPick';
 import { cycledId, cycleOpen, clearCycle, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
+import { holdRefresh } from './tabHold';
+import { autoholdOn, clickEnds, releaseEnds } from '../app/autohold';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
 import { DrawingOverlays } from './DrawingOverlays';
@@ -318,6 +320,14 @@ export function DrawingView() {
     at: () => rawHover.current,
     ids: (p) => (!cycleOpen(tool?.gesture?.kind, cadStep?.want, !!(drag.current || editor.dragging), []) ? [] : withFirst(pickDrawing(p, 6 / v.scale, drawing?.marks, nodes), pickDrawingAll(p, 6 / v.scale, drawing?.marks, nodes))),
     tol: () => 3 / v.scale,
+    // Tab held, then let go (tabHold.ts): what is lit is taken as the click does.
+    take: () => {
+      const raw = rawHover.current;
+      if (!raw) return;
+      const step = useCad.getState().step;
+      if (step) { void feedPoint(raw); return; }
+      pickByMods(pickAny(raw), { shift: false, ctrl: false, alt: false }, currentNavStyle());
+    },
   };
   const cycle = usePickCycle((c) => c.cycle);
   useEffect(() => {
@@ -389,6 +399,14 @@ export function DrawingView() {
         }}
         onPointerDown={(e) => {
           if (overridePress(e)) { drag.current = null; return; }
+          // A body drag held by autohold (issue 86) ends at a left click, where the pointer is (or where the typed values put it).
+          if (e.button === 0 && clickEnds(autoholdOn()) && carrying() && drag.current?.carry && drag.current.base) {
+            const d = drag.current;
+            drag.current = null;
+            const r = ref.current!.getBoundingClientRect();
+            carryTo(d.carry!, d.base!, aim(toWorld(e.clientX - r.left, e.clientY - r.top), d.base!, { orthoHeld: e.shiftKey }).point, !!d.copy || e.ctrlKey || e.metaKey || e.altKey);
+            return;
+          }
           if (middleTwice.current(e)) { fit(); return; }
           if (editor.onPointerDown(e)) return;
           // Pressed on what is selected, with no tool or command running: a drag carries the selection.
@@ -410,7 +428,7 @@ export function DrawingView() {
             if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4) d.moved = true;
             const step = useCad.getState().step;
             // Left drag on the selection: carried as a move grip carries it (the trace from the press, the readout, snaps from the base).
-            if (d.moved && e.buttons === 1 && d.carry && d.base) {
+            if (d.moved && (e.buttons === 1 || autoholdOn()) && d.carry && d.base) {
               const { carry: ids, base, copy } = d;
               if (!carrying()) {
                 const ghost = (drawing?.marks ?? []).filter((m) => markSelected(m.id, ids)).flatMap((m) => {
@@ -440,6 +458,7 @@ export function DrawingView() {
           rawHover.current = here.raw;
           setCycleSource(cycleSource.current);
           { const c = usePickCycle.getState().cycle; if (c && !cycledId(c, cycleKey, here.raw, 3 / v.scale)) clearCycle(); }
+          holdRefresh();
           setHover(here.aimed);
           {
             const step = useCad.getState().step;
@@ -452,6 +471,8 @@ export function DrawingView() {
         onPointerCancel={() => { drag.current = null; setBox(null); if (carrying()) { carryEnd(); clearLiveRise(); } }}
         onPointerUp={(e) => {
           if (editor.onPointerUp()) return;
+          // Autohold: the button is let go, the body drag is not.
+          if (e.button === 0 && !releaseEnds(autoholdOn()) && carrying() && drag.current?.carry) return;
           spendOverride(e);
           const d = drag.current;
           drag.current = null;

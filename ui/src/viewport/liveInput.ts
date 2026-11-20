@@ -186,6 +186,20 @@ export function liveTaken(cursor: Vec2, owners: readonly string[] = ['tool', 'ca
   return { point, typed };
 }
 
+/**
+ * Enter in a held drag (autohold, issue 86) with nothing typed: the drag is put where the cursor is (its snap, as the last move
+ * set it). True when the box had a base, a cursor and a commit to hand it to.
+ */
+export function liveAcceptAtCursor(): boolean {
+  const s = useLive.getState();
+  if (!s.commit || !s.base || !s.cursor) return false;
+  const commit = s.commit;
+  const p = livePoint(s) ?? s.cursor;
+  useLive.setState({ len: '', ang: '', rel: '' });
+  commit(p);
+  return true;
+}
+
 /** Enter: the typed point is taken (true when there was something to take). */
 export function liveCommit(): boolean {
   const s = useLive.getState();

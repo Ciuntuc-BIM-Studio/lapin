@@ -4854,6 +4854,12 @@ export const ZH: Record<string, string> = {
   "No fck (the material's name has no class such as C25/30): not checked.": "没有 fck（材料名称中没有 C25/30 这样的等级）：未验算。",
   "No strength class (C24, GL24h…) in the material's name: not checked.": "材料名称中没有强度等级（C24、GL24h…）：未验算。",
   "No cut through the wall's mesh: not checked.": "墙的网格没有截面切割：未验算。",
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "自动保持：拖动跟随指针。单击放下，Tab 切换下一个字段，Enter 接受",
+  "Autohold": "自动保持",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "自动保持：无需按住按钮，拖动跟随指针。单击在此放下",
+  "Elements under the pointer": "指针下的元素",
+  "Rotate a copy": "旋转副本",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

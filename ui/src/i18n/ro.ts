@@ -4816,6 +4816,12 @@ export const RO: Record<string, string> = {
   "No fck (the material's name has no class such as C25/30): not checked.": "Fără fck (numele materialului nu are o clasă ca C25/30): neverificat.",
   "No strength class (C24, GL24h…) in the material's name: not checked.": "Fără clasă de rezistență (C24, GL24h…) în numele materialului: neverificat.",
   "No cut through the wall's mesh: not checked.": "Nicio secțiune prin rețeaua peretelui: neverificat.",
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "Menținere automată: tragerea urmează cursorul. Clic pentru a o lăsa, Tab pentru câmpul următor, Enter pentru a accepta",
+  "Autohold": "Menținere automată",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "Menținere automată: tragerea urmează cursorul fără buton. Clic pentru a o lăsa aici",
+  "Elements under the pointer": "Elemente de sub cursor",
+  "Rotate a copy": "Rotește o copie",
 };
 
 /** Phrases with a number or a name in them. */

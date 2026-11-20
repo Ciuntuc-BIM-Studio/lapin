@@ -4857,6 +4857,12 @@ export const DA: Record<string, string> = {
   "No fck (the material's name has no class such as C25/30): not checked.": "Uden fck (materialets navn har ingen klasse som C25/30): ikke kontrolleret.",
   "No strength class (C24, GL24h…) in the material's name: not checked.": "Uden styrkeklasse (C24, GL24h…) i materialets navn: ikke kontrolleret.",
   "No cut through the wall's mesh: not checked.": "Intet snit gennem væggens net: ikke kontrolleret.",
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "Autohold: trækket følger markøren. Klik for at slippe det, Tab for næste felt, Enter for at acceptere",
+  "Autohold": "Autohold",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "Autohold: trækket følger markøren uden knappen. Klik for at slippe det her",
+  "Elements under the pointer": "Elementer under markøren",
+  "Rotate a copy": "Roter en kopi",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

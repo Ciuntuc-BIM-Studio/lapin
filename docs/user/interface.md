@@ -220,9 +220,19 @@ Each view opened has a tab above the view. Drag a tab to put the view somewhere 
 
 <kbd>Ctrl</kbd> <kbd>Tab</kbd> brings the next tab in front and <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Tab</kbd> the one before (also <kbd>Ctrl</kbd> <kbd>Page Down</kbd> and <kbd>Page Up</kbd>), going round from the last to the first; on a Mac it is the <kbd>Control</kbd> key, since <kbd>⌘</kbd> <kbd>Tab</kbd> belongs to the system. They do nothing while you type in a field. They are commands (**Next view tab**, **Previous view tab**) you can reassign in the shortcuts.
 
-**Tab over overlapping elements.** In a plan, section or elevation, when more than one element lies under the pointer (a wall over a slab over a room), <kbd>Tab</kbd> lights the next one and <kbd>Shift</kbd> <kbd>Tab</kbd> the one before, going round; the status line says which ("2 of 3: Slab Floor 1"), and a click selects the lit one. Move the pointer and it goes back to picking what is under it. With nothing or one element under the pointer, <kbd>Tab</kbd> works while a tool or a command is picking elements too (Move, Copy, Split element, a tool that picks a wall or a slab); while it waits for a point or a typed value, or while you are dragging, <kbd>Tab</kbd> keeps its other meanings: it folds the panels, and over a grip shared by several elements it goes through them. **Light the previous element under the pointer** is the command to reassign if you want another key.
+**Tab over overlapping elements.** In a plan, section or elevation, when more than one element lies under the pointer (a wall over a slab over a room), <kbd>Tab</kbd> lights the next one and <kbd>Shift</kbd> <kbd>Tab</kbd> the one before, going round; the status line says which ("2 of 3: Slab Floor 1"), and a click selects the lit one. Move the pointer and it goes back to picking what is under it. With nothing or one element under the pointer, <kbd>Tab</kbd> works while a tool or a command is picking elements too (Move, Copy, Split element, a tool that picks a wall or a slab); while it waits for a point or a typed value, <kbd>Tab</kbd> keeps its other meanings: it folds the panels, and over a grip shared by several elements it goes through them. While you are dragging it is the autohold key (below). **Light the previous element under the pointer** is the command to reassign if you want another key.
 
 ![Tab lighting the second of two elements under the pointer in a plan](shots/tab-cycle.webp)
+
+**Hold Tab for the list.** A tap of <kbd>Tab</kbd> lights the next element, as above. **Hold** it a quarter of a second instead and a small list opens beside the pointer with every element under it: the current one is filled in blue and marked with an arrow, the others are outlined. Turn the mouse wheel to move through the list (wheel down: the next), move the pointer and the list follows it, and let go of <kbd>Tab</kbd> to take the current element as a click would: it is selected, or handed to the tool that is picking. With only one element under the pointer there is no list and <kbd>Tab</kbd> works as before. The list belongs to selecting and picking: during a drag <kbd>Tab</kbd> means autohold.
+
+**Drag without holding the mouse button (autohold).** Once you have begun a drag (the body of a selection, or a grip), press <kbd>Tab</kbd>: the drag goes on as if the button were still down, and follows the pointer; the box at the pointer says **Autohold**. Let go of the button and move on.
+- A left click drops the drag where the pointer is (with its snap), or at the values you typed.
+- <kbd>Tab</kbd> again goes through the fields of the live input box (length, angle, the angle to the reference), as it does when you draw a segment; type the exact values with the pointer set down, and the preview follows the numbers.
+- <kbd>Enter</kbd> accepts: at the typed values, or at the pointer when nothing was typed. A click outside the boxes accepts too. <kbd>Esc</kbd> cancels the drag.
+
+So <kbd>Tab</kbd> in the live input box is the next field everywhere, except at the very start of a drag, where the first one switches autohold on. Drags made by command (Move, Copy, with their two clicks) never needed the button; this is for dragging the selection or a grip.
+
 
 A 3D tab keeps its state while you work in another view: the camera (where it looks from, perspective or orthographic) and the **section box**, on or off and where you left it, are as they were when you come back from a plan or a sheet. Each 3D view (the plain 3D and every saved one) keeps its own, for as long as the project is open; a saved view's own camera and box open it when nothing was kept yet.
 
@@ -392,6 +402,8 @@ These are the Revit-style shortcuts, as Lapin has them now:
 <!-- shortcuts -->
 
 The number keys <kbd>1</kbd>–<kbd>9</kbd> pick the quick tools.
+
+Four more are on the Modify tools in both presets: <kbd>Ctrl</kbd> <kbd>D</kbd> drags (Move), <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>D</kbd> drags a copy (Copy), <kbd>Ctrl</kbd> <kbd>E</kbd> rotates (Rotate) and <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>E</kbd> rotates a copy (**Rotate a copy**, the same with Copy already on). On a Mac, <kbd>⌘</kbd> takes the place of <kbd>Ctrl</kbd>. Change them like any other shortcut.
 
 ## Moving a dialog
 

@@ -36,6 +36,7 @@ import { ToolPropertiesPanel } from './shell/ToolPropertiesPanel';
 import { Ribbon } from './shell/Ribbon';
 import { StartScreen } from './shell/StartScreen';
 import { useHudFacts, ViewportHud } from './shell/ViewportHud';
+import { TabHoldList } from './viewport/TabHoldList';
 import { CadPrompt } from './viewport/cad/CommandLine';
 import { BusyOverlay } from './shell/BusyOverlay';
 import { CommandPalette } from './shell/CommandPalette';
@@ -254,6 +255,7 @@ function PaneBody({ i }: { i: number }) {
           {/* The Gantt and the estimate are tables with their own toolbar: no HUD, quick tools or selection card over them. */}
           {active && !isTableView(view) && <ViewportHud />}
           {active && !isTableView(view) && <SelectionCard />}
+          {active && !isTableView(view) && <TabHoldList />}
           {active && !isTableView(view) && overlays().map((Overlay, k) => <Overlay key={k} />)}
           {active && error && <div className="error" role="alert" onClick={() => useSession.setState({ error: null })}>{error}</div>}
           {active && <Notice />}

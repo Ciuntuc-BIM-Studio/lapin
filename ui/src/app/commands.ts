@@ -98,6 +98,7 @@ function appCommands(): CommandDef[] {
       for (const h of tabHandlers) if (h()) return;
       toggleBothPanels();
     } },
+    { id: 'app.rotateCopy', label: 'Rotate a copy', category: 'Modify', defaults: ['Ctrl+Shift+E'], run: () => void startCommand('ROTATECOPY') },
     { id: 'app.pickCycleBack', label: 'Light the previous element under the pointer', category: views, defaults: ['Shift+Tab'], run: () => void pickCycleTab(true, useSession.getState().nodes) },
     { id: 'app.propsOverlay', label: 'All properties (over the view)', category: panels, defaults: [], run: () => { if (usePanels.getState().propsOpen) return; showOverlay('props'); } },
     // The model assistant: the desktop's only (docs/plan-assistant.md); not in the web build at all.
@@ -119,6 +120,9 @@ const SAME: Record<string, string> = {
   'cad.fillet': 'FILLET', 'cad.chamfer': 'CHAMFER', 'cad.explode': 'EXPLODE', 'cad.hatch': 'HATCH', 'cad.tag': 'TAG', 'drafting.dimension': 'DIMENSION', 'architecture.stair': 'STAIR', 'architecture.ramp': 'RAMP',
 };
 
+/** Ctrl+D drags (Move), Ctrl+Shift+D drags a copy (Copy), Ctrl+E rotates (issue 86, the forum); Ctrl+Shift+E rotates a copy is `app.rotateCopy`. */
+export const MODIFY_CHORDS: Record<string, string[]> = { 'modify.move': ['Ctrl+D'], 'modify.copy': ['Ctrl+Shift+D'], 'modify.rotate': ['Ctrl+E'] };
+
 let cached: CommandDef[] | null = null;
 /** The extra tools (a script's) the cache was made with: a change makes it again. */
 let cachedRev = -1;
@@ -136,7 +140,7 @@ export function commands(): CommandDef[] {
     out.push({
       id: t.id, label: t.label, category, group,
       // Letters (WA), or a chord a tool says (Ctrl+], the draw order's).
-      defaults: t.shortcut && (/^[A-Z]{1,3}$/.test(t.shortcut) || /^(Ctrl|Alt|Shift)\+./.test(t.shortcut)) ? [t.shortcut] : [],
+      defaults: t.shortcut && (/^[A-Z]{1,3}$/.test(t.shortcut) || /^(Ctrl|Alt|Shift)\+./.test(t.shortcut)) ? [t.shortcut] : [], chords: MODIFY_CHORDS[t.id],
       fixed: t.shortcut === 'Esc' ? ['Escape'] : undefined,
       same: SAME[t.id], run: () => activate(t),
     });

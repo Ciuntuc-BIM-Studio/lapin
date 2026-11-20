@@ -4863,6 +4863,12 @@ export const PL: Record<string, string> = {
   "No fck (the material's name has no class such as C25/30): not checked.": "Bez fck (nazwa materiału nie ma klasy takiej jak C25/30): niesprawdzone.",
   "No strength class (C24, GL24h…) in the material's name: not checked.": "Bez klasy wytrzymałości (C24, GL24h…) w nazwie materiału: niesprawdzone.",
   "No cut through the wall's mesh: not checked.": "Brak przekroju przez siatkę ściany: niesprawdzone.",
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "Automatyczne przytrzymanie: przeciąganie podąża za wskaźnikiem. Kliknij, aby upuścić, Tab – następne pole, Enter – zatwierdź",
+  "Autohold": "Automatyczne przytrzymanie",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "Automatyczne przytrzymanie: przeciąganie podąża za wskaźnikiem bez przycisku. Kliknij, aby upuścić tutaj",
+  "Elements under the pointer": "Elementy pod wskaźnikiem",
+  "Rotate a copy": "Obróć kopię",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
