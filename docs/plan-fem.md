@@ -486,3 +486,135 @@ Amândouă converg spre teorie, DKMQ de deasupra (mai moale), MITC4 de dedesubt 
 **De hotărât de utilizator**: (a) planșele cu rezultatele (prin rezolvitorul de vizibilitate); (b) torsiunea grinzilor de margine cu placa monolită (la ei articulată): a lăsa așa sau o opțiune; (c) pereții de zidărie ca plăci după CR 6 (§10.12.3).
 
 **Găsit la verificare, nerezolvat aici**: `space-frame-rect` iese din toleranțe și față de PyNite (deplasările 1–40 %, forțele la capete până la 99 %) și față de ifc_structural_mechanics (reazemele 6–54 %): la fel pe ramura de dinainte de S2b (d49712f2), deci vine de la nodurile grinzilor de înălțimi diferite la stâlpi (§9.9.4, `JoinAtColumns`: grinda diagonală de 20 × 30 pe braț rigid), nu de la plăci; de cercetat (brațul în `pynite_run.py` sau în solver).
+
+## 11. S3: analiza modală și seismică (specificația)
+
+**Hotărât de utilizator (20.11.2026):** (1) norma seismică implicită e **P100-1/2013**, cu **EN 1998-1** (valorile recomandate) la alegere pe proiect; (2) **pereții de zidărie se calculează ca plăci** (varianta b), cu valorile din CR 6-2013, implicite orientative pe tipurile obișnuite de unități și mortar, schimbate de utilizator pe material; (3) **nicio diafragmă rigidă impusă** când planșeele sunt plăci (o dau ele); diafragma rigidă pe nivel doar ca opțiune pentru modelele fără planșee-placă; (4) S3 e în modulul deschis `analysis`, MIT (decizia 742).
+
+Tot codul e al lui Lapin, MIT, scris după literatura citată (Bathe, „Finite Element Procedures”, 1996/2014, §10–11; Bathe și Wilson, „Large eigenvalue problems in dynamic analysis”, J. Eng. Mech. Div. ASCE 98, 1972; Chopra, „Dynamics of Structures”, cap. 10–13; Der Kiureghian, „A response spectrum method for random vibration analysis of MDF systems”, Earthq. Eng. Struct. Dyn. 9, 1981; Wilson, Der Kiureghian și Bayo, „A replacement for the SRSS method in seismic analysis”, EESD 9, 1981). Benchmark-urile din `hse95/nodal` (MIT) au fost doar inspirație pentru cazurile de test; niciun cod de acolo. Toate valorile normelor sunt **orientative**, ale utilizatorului de schimbat; calculul semnat rămâne al inginerului.
+
+S3 are patru părți, în ordinea în care se fac: **S3-0** pereții de zidărie ca plăci (și în calculul static), **S3a** analiza modală, **S3b** spectrul de răspuns și combinația seismică, **S3c** interfața.
+
+### 11.1 S3-0: zidăria ca placă (CR 6-2013 / EN 1996-1-1)
+
+Până acum (§10.12.3, §10.13) un perete de zidărie era reazem liniar. De acum, cu opțiunea `shells` care cuprinde pereții (`both`, `walls`), **orice perete portant de zidărie devine placă** (MITC4/MITC3, ca betonul), cu un material liniar elastic, izotrop, fără limitare la întindere (spus în note: zidăria nu duce întinderi, S3 nu o modelează; neliniarul e în S5).
+
+**Ce e zidărie:** materialul de tip `masonry` din `StructuralMaterials` (numele sau categoria: brick, masonry, block, cărămidă, zidărie, bloc ceramic, BCA, AAC, Porotherm, GVP, Ytong).
+
+**Valorile** (pe material; cele ale proiectului înaintea celor implicite):
+1. **E:** `Pset_MaterialMechanical.YoungModulus` al materialului, dacă există; altfel **E = KE · fk** (EN 1996-1-1 §3.7.2, KE = 1000 valoarea recomandată; CR 6-2013 folosește aceeași relație, de confirmat valoarea lui KE din textul CR 6 — lista de la §11.9).
+2. **fk:** `Lapin_Masonry.fk` (MPa) dacă e dat; altfel **fk = K · fb^0,7 · fm^0,3** (EN 1996-1-1 ec. 3.1, mortar de uz general; fm ≤ 2 fb și fm ≤ 20 MPa), cu K după grupa unității (EN 1996-1-1 Tabelul 3.3, din memorie, de confirmat: argilă grupa 1: 0,55; grupa 2: 0,45; BCA: 0,55; beton grupa 1: 0,55; grupa 2: 0,52).
+3. **G = 0,4 E** (EN 1996-1-1 §3.7.3). Elementul de placă izotrop ia G = E / 2(1 + ν): **ν = 0,25** (G = 0,4 E exact), spus.
+4. **ρ:** densitatea materialului dacă o are; altfel cea implicită a grupei.
+5. Parametrii utilizatorului, ca parametri ai materialului (dialogul materialelor; setul propriu al lui Lapin, nu `Pset_`): `Lapin_Masonry.UnitGroup` (`clay1`, `clay2`, `aac`, `concrete1`, `concrete2`), `fb` (MPa, rezistența normalizată a unității), `fm` (MPa, a mortarului), `fk` (MPa), `KE`.
+
+Implicitele, **orientative**, după numele materialului (și grupa cea mai apropiată):
+
+| Unitate (numele) | Grupa | fb | fm | fk = K fb^0,7 fm^0,3 | E = 1000 fk | ρ (kg/m³) |
+|---|---|---|---|---|---|---|
+| cărămidă plină (brick, cărămidă, solid) | argilă grupa 1 (K 0,55) | 10 | 5 (M5) | 4,47 MPa | 4,47 GPa | 1800 |
+| bloc ceramic cu goluri (GVP, Porotherm, bloc ceramic, hollow, block) | argilă grupa 2 (K 0,45) | 10 | 10 (M10) | 4,50 MPa | 4,50 GPa | 1000 |
+| BCA (AAC, Ytong, autoclaved) | BCA (K 0,55) | 4 | 5 | 2,35 MPa | 2,35 GPa | 650 |
+| bloc de beton (concrete block) | beton grupa 2 (K 0,52) | 10 | 10 | 5,20 MPa | 5,20 GPa | 1400 |
+| zidărie fără alt nume (masonry, zidărie) | ca argila grupa 1 | 10 | 5 | 4,47 MPa | 4,47 GPa | 1800 |
+
+Densitățile sunt ale zidăriei (unitate + mortar), valori uzuale; nu le-am găsit tabelate în CR 6 (§11.9).
+
+**Ce se schimbă în rezultatele existente:** o casă cu pereți de zidărie portanți (cu `shells: both`) nu mai are reazeme liniare la capul pereților: planșeele se duc prin pereți (plăci) la fundații, pereții iau și forțele orizontale (vântul) ca diafragme verticale; reacțiile se mută la tălpile pereților. Greutatea proprie a pereților de zidărie (care până acum „mergea direct în reazeme”, în afara sumelor) intră acum în sume. Testul `Masonry_walls_stay_line_supports_under_a_shell_floor` devine `Masonry_walls_are_shells_under_a_shell_floor` (aceeași casă, reacțiile la fundații, echilibrul). Cu `shells: slabs` totul e ca înainte.
+
+**Test din teorie:** peretele de zidărie în consolă (3 × 6 m, 25 cm, E = 4,47 GPa, ν = 0,25), forța în cap în planul lui: δ = PH³/3EI + PH/(κGA) (încovoiere + forfecare, consola adâncă), la 3 %.
+
+### 11.2 S3a: analiza modală
+
+**Masa** (concentrată în noduri): din **combinația seismică a încărcărilor gravitaționale**, Σ Gk,j + Σ ψ2,i · Qk,i (P100-1/2013 §3.3 / CR 0-2012; EN 1998-1 3.2.4: ψE,i = φ · ψ2,i, cu φ = 1, spus). Fiecare caz își dă vectorul de forțe nodale pe care solverul static îl pune deja (cotele consistente ale plăcilor ∫Nᵢ dA, jumătățile barelor, încărcările concentrate), adică exact masa concentrată a acelui caz; componenta verticală în jos a fiecărui nod, ÷ g, e masa nodului, aceeași pe X, Y, Z (fără inerție de rotație: masa e doar pe translații). ψ2 al cazului e cel al combinațiilor (§8.5, schimbabil pe caz cu `psi`), cu o excepție: **zăpada cu P100 ia ψ2 = 0,4** (CR 0-2012, din memorie, de confirmat), cu EN 0 (EN 1990 Tabelul A1.1 sub 1000 m). Vântul nu are masă (ψ2 = 0). Din cazurile alternative ale zăpezii se ia doar dispunerea neaglomerată. **Masa consistentă** nu se face în S3: masa din încărcări e ce cer P100 și EN 1998, iar matricele consistente ar cere masa fiecărui fel de încărcare pe elemente (rămâne o opțiune viitoare, spusă).
+
+**Rigiditatea:** aceeași problemă ca la calculul static (barele, plăcile, reazemele), cu **rigiditatea fisurată** a betonului și a zidăriei: E × 0,5 implicit (EN 1998-1 4.3.1(7), „jumătate din rigiditatea nefisurată”; P100-1/2013 cap. 8 pentru zidărie, la fel 50 %, de confirmat numărul clauzei), pe bare și pe plăci, schimbabil (`cracked: {concrete, masonry}`). Oțelul și lemnul neschimbate.
+
+**Problema proprie:** K φ = ω² M φ, prin **iterația în subspațiu** (Bathe și Wilson 1972; Bathe §11.6) pe factorizarea Cholesky rară a lui K (`SparseCholesky`, o singură factorizare): q = min(2p, p + 8) vectori de start (diagonala lui M și vectori unitari la cele mai mari raporturi mᵢ/kᵢᵢ, Bathe), la fiecare pas K X̄ = M X, proiecția Kr = X̄ᵀ K X̄, Mr = X̄ᵀ M X̄, problema mică rezolvată prin Cholesky pe Mr și Jacobi ciclic, ortogonalizare față de M; convergența când |λᵢ⁽ᵏ⁾ − λᵢ⁽ᵏ⁻¹⁾| / λᵢ⁽ᵏ⁾ < 10⁻⁸ pe primele p. Fără dependențe; merge și în browser. Gradele de libertate fără masă rămân în K (condensate implicit de iterație). Verificarea: reziduul ‖K φ − ω² M φ‖ / ‖K φ‖ < 10⁻⁶ pe fiecare mod, raportat.
+
+**Câte moduri:** p crește (12, 24, 48, …) până când **masa modală efectivă cumulată ≥ 90 % din masa totală pe fiecare direcție orizontală** și niciun mod rămas nu ar avea peste 5 % (P100-1/2013 §4.5.3.3.1, EN 1998-1 §4.3.3.3.1; regula de 90 % / 5 % confirmată din literatură, numărul clauzei P100 de confirmat), sau până la limita utilizatorului (`modes`, implicit 60, cel mult 300). Dacă limita oprește înainte de 90 %, nota spune cât s-a atins (P100 / EN cer atunci și verificarea cu √n moduri, n numărul de niveluri: raportată, nu impusă).
+
+**Rezultatele** (pe fiecare mod k, φ normalizat la masă, φᵀ M φ = 1): ω, f, T; factorii de participare Γx,y,z = φᵀ M r (r vectorul de influență pe direcție); masa efectivă M*ₖ = Γ²ₖ, procentul și cumulul; **verificarea Rayleigh** (ω² = φᵀ K φ, raportată); Σₖ M*ₖ pe toate modurile = masa totală (test). Masa totală pe direcție și masa care cade pe reazeme (nodurile ținute) spuse separat.
+
+**Diafragma rigidă** (opțiunea `diaphragm: "rigid"`, implicit `none`): numai pentru nivelurile care **nu au planșeu-placă** (un planșeu de lemn, de exemplu); nodurile nivelului (cota planșeului, ±0,5 m) se leagă de un nod principal în centrul maselor prin constrângeri prin penalizare (ux, uy, rz ale corpului rigid în plan, α = 10⁴ × cea mai mare rigiditate de pe diagonală), nodul principal ținut pe uz, rx, ry. Un nivel cu planșeu-placă nu primește niciodată diafragmă (decizia 3), spus în note.
+
+### 11.3 S3b: spectrul de răspuns
+
+**Parametrii amplasamentului** pe IfcProject (`seismic`), ai utilizatorului (Lapin nu are harta de zonare, ca la s0,k și qb, §9.9), scriși de `analysis.setSeismic` (un pas de undo; null șterge, absent lasă), citiți cu `analysis.seismicOptions`:
+
+| Cheie | P100-1/2013 (implicit) | EN 1998-1 |
+|---|---|---|
+| `code` | `P100-1/2013` | `EN 1998-1` |
+| `ag` | ag/g pe amplasament (harta P100 Figura 3.1, IMR 225 ani) | agR/g (harta anexei naționale) |
+| `tc` | TC ∈ {0,7; 1,0; 1,6} s (harta P100 Figura 3.2) | — |
+| `ground`, `spectrum` | — | terenul A–E, tipul 1 sau 2 |
+| `importance` | clasa I–IV: γI,e 1,4 / 1,2 / 1,0 / 0,8 | clasa I–IV: γI 0,8 / 1,0 / 1,2 / 1,4 |
+| `q` | factorul de comportare (implicit 1,5; cap. 8 pentru zidărie) | idem (Tabelul 9.1 pentru zidărie) |
+| `damping` | ξ = 0,05 | idem |
+| `modal` | `cqc` (implicit) sau `srss` | idem |
+| `directions` | `30%` (implicit) sau `srss` | idem |
+| `torsion` | excentricitatea accidentală 0,05 (×L pe nivel) | idem |
+| `modes` | limita modurilor (60) | idem |
+| `cracked` | `{concrete: 0,5, masonry: 0,5}` | idem |
+| `diaphragm` | `none` / `rigid` | idem |
+| `drift` | `{sls: 0,005, uls: 0,025, nu: 0,5}` | `{sls: 0,005, nu: 0,5}` |
+
+**Spectrul P100-1/2013** (cap. 3; formele confirmate din literatura care citează norma, numerele ecuațiilor de confirmat): β0 = 2,5; TB = 0,2 TC; TD = 3 s pentru TC = 0,7 și 1,0 s, 2 s pentru TC = 1,6 s (Tabelul 3.1). β(T) = 1 + (β0 − 1) T/TB pe [0, TB], β0 pe [TB, TC], β0 TC/T pe [TC, TD], β0 TC TD/T² peste TD; Se(T) = ag β(T). **Spectrul de proiectare:** Sd(T) = ag [1 + (β0/q − 1) T/TB] pe (0, TB]; Sd(T) = ag β(T)/q peste TB, **cel puțin 0,2 ag**. Forțele: γI,e · Sd(Tk) · M*ₖ.
+
+**Spectrul EN 1998-1** (3.2.2.5, valorile recomandate): S, TB, TC, TD după teren și tip (Tabelele 3.2 și 3.3); ag = γI agR; Sd = ag S [2/3 + T/TB (2,5/q − 2/3)] pe [0, TB]; ag S 2,5/q pe [TB, TC]; ag S 2,5/q · TC/T ≥ 0,2 ag pe [TC, TD]; ag S 2,5/q · TC TD/T² ≥ 0,2 ag peste TD (ec. 3.13–3.16, β = 0,2).
+
+**Răspunsul unui mod** (pe direcția d): uₖ = Γₖ,d · Sd(Tk) · γ / ωₖ² · φₖ; din el, prin aceleași funcții ca la static (fără încărcări pe bare), eforturile pe bare și pe plăci, reacțiile, deplasările.
+
+**Combinarea modurilor:** **CQC** (Der Kiureghian 1981) cu ρij = 8ξ²(1 + r) r^1,5 / ((1 − r²)² + 4ξ² r (1 + r)²), r = Tj/Ti, ξ egal; **SRSS** la alegere. P100 și EN cer CQC când modurile nu sunt independente (EN: Tj ≤ 0,9 Ti; proiectul P100/2025 un criteriu cu ξ); Lapin ia CQC implicit (acoperă ambele cazuri: ρij → 0 pentru moduri depărtate), și spune în note câte perechi de moduri sunt apropiate (Tj > 0,9 Ti).
+
+**Torsiunea accidentală** (P100-1/2013 §4.5.2.2 / EN 1998-1 §4.3.2, e = ±0,05 L): pe fiecare nivel, forța seismică a nivelului (diferența forțelor tăietoare de nivel, combinate) × e (L latura nivelului perpendiculară pe direcție, din înfășurătoarea nodurilor nivelului) dă un moment de torsiune, pus ca forțe orizontale pe nodurile nivelului, proporționale cu masa și cu distanța la centrul maselor (ca la o rotire rigidă), un caz static pe direcție. Efectul lui (în valoare absolută) se adună la răspunsul modal (EN 1998-1 §4.3.3.3.3). Spus.
+
+**Cele două direcții:** EEdx „+” 0,3 EEdy și 0,3 EEdx „+” EEdy (P100 §4.5.3.6 / EN 4.3.3.5.1, regula de 30 %, implicit), sau √(EEdx² + EEdy²) la alegere. Componenta verticală nu se ia în S3 (spus).
+
+**Pe nivel** (nivelurile proiectului; cota fiecăruia, nodurile la ±0,5 m de ea): masa, **forța tăietoare de nivel** pe fiecare direcție (Σ forțele modale de deasupra, combinate CQC pe moduri), forța seismică a nivelului, **deplasarea relativă de nivel** dr,e (media deplasărilor nodurilor nivelului minus a celui de dedesubt, pe fiecare mod, apoi combinată CQC; și cea mai mare a unui nod), cu verificările din Anexa E a P100 (de confirmat din textul normei; aceleași ca în P100-1/2006): **SLS:** dr,SLS = ν · q · dr,e ≤ 0,005 h (ν = 0,5); **ULS:** dr,ULS = c · q · dr,e ≤ 0,025 h, c = 3 − 2,3 T1/TC, 1 ≤ c ≤ 2 (T1 perioada modului fundamental pe direcție). Cu EN: dr = q · dr,e (4.3.4), verificat ν dr ≤ 0,005 h (4.4.3.2(1)a, ν = 0,5). Și forța tăietoare de bază totală, comparată cu forța statică echivalentă Fb = γ Sd(T1) m λ (λ = 0,85 pentru T1 ≤ 2 TC și mai mult de două niveluri, altfel 1), ca verificare.
+
+**Combinația seismică** (CR 0-2012 / EN 1990 6.4.3.4): **Σ Gk,j + Σ ψ2,i Qk,i ± AEd**, cu ψ2 ca la masă; o înfășurătoare nouă, `seismic`, cu min și max în fiecare punct (static ± răspunsul combinat), în `analysis.results` și `analysis.diagram` (`envelope: "seismic"`), și **adăugată la înfășurătoarea `uls`** când parametrii seismici sunt dați (situația de proiectare seismică e una de stare limită ultimă). Cheia combinației: `seismic`.
+
+### 11.4 Interogările și comenzile
+
+- `analysis.setSeismic {code?, ag?, tc?, ground?, spectrum?, importance?, q?, damping?, modal?, directions?, torsion?, modes?, cracked?, diaphragm?, drift?}` (comandă, un pas de undo; `null` pe tot obiectul șterge parametrii; permisă și invitaților, ca `analysis.setOptions`).
+- `analysis.seismicOptions {}` → parametrii, implicitele, tabelele (TC, terenurile EN, clasele de importanță), factorii q ai zidăriei după P100 Tabelul 8.10 (orientativ).
+- `analysis.modal {}` → `{ok, modes: [{n, omega, f, T, gamma: [x, y, z], mass: [x, y, z], ratio: [x, y, z], cumulative: [x, y, z], rayleigh, residual}], totalMass: [x, y, z], supportMass, dofs, ms, notes}`.
+- `analysis.mode {mode, scale?}` → forma modului pentru animație: polilinii pe bare (ca `deformed`) și nodurile plăcilor deplasate (`shells: [{id, nodes, displaced}]`), scara, în coordonatele lumii.
+- `analysis.spectrum {}` → `{code, points: [{T, Sd, Se}], TB, TC, TD, ag, q, gamma, modes: [{n, T, Sd}]}`, ca graficul să-l deseneze.
+- `analysis.seismic {}` → `{ok, base: {x, y}, equivalent: {x, y}, storeys: [{id, name, z, h, mass, shear: [x, y], force: [x, y], drift: [x, y], driftMax: [x, y], sls: [x, y], uls: [x, y], slsOk, ulsOk}], closeModes, notes}`.
+- Calculul e o interogare, derivat, ținut în memorie după versiunea modelului ca `analysis.run`; nimic scris în `.lapin`.
+
+### 11.5 Interfața (S3c)
+
+În dialogul de rezultate, o secțiune **Seismic**: parametrii (norma, ag, TC sau terenul și tipul, clasa de importanță, q, combinarea modurilor, direcțiile, diafragma), tabelul modurilor (T, f, masele efective pe X și Y și cumulul), **graficul spectrului** (Sd și Se, cu perioadele modurilor marcate), tabelul nivelurilor (masa, forța tăietoare, deplasarea relativă, verificările SLS/ULS colorate), și **animația modului** ales în 3D (forma modului oscilând, ca deformata). Înfășurătoarea `seismic` apare printre înfășurători. Toate textele în toate limbile din `ui/src/i18n`; notele traduse ca celelalte (§9.9.6).
+
+### 11.6 Testele (cifrele din teorie)
+
+`ModalTests`, `SpectrumTests`, `SeismicAnalysisTests`, `MasonryShellTests`:
+- **Consola** (bară Euler–Bernoulli/Timoshenko subțire, 10 elemente, masa concentrată din greutate): ω1 = 1,8751² √(EI/mL⁴) (cu masa concentrată în 10 noduri, la 1,5 %); **grinda simplu rezemată**: ωn = (nπ)² √(EI/mL⁴), primele trei moduri verticale, la 1 % pe plasa fină.
+- **Clădirea cu forfecare** cu trei niveluri (masele m, rigiditățile k, stâlpi foarte rigizi la încovoiere ai grinzilor): perioadele exacte ale matricei 3 × 3 (Chopra, Ex. 10.x), la 1e-6; factorii de participare și masele efective exacte; Σ M*ₖ = masa totală.
+- **Rayleigh:** φᵀ K φ = ω² pe fiecare mod (1e-8).
+- **Spectrul P100** la TB, TC, TD, la T = 0, sub limita 0,2 ag (TC = 0,7 s, ag = 0,30 g, q = 3): valorile de mână; EN tipul 1 teren C la fel.
+- **CQC / SRSS:** două moduri cu răspunsuri cunoscute, perioade depărtate (CQC ≈ SRSS) și apropiate (CQC după formula lui Der Kiureghian, calculată de mână).
+- **Răspunsul spectral** al oscilatorului cu un grad de libertate: F = m Sd(T); forța tăietoare de bază a clădirii cu forfecare față de calculul de mână pe moduri.
+- **Peretele de zidărie** în consolă: δ = PH³/3EI + PH/(κGA), la 3 %.
+- **Cadrul din ghid**: modurile, echilibrul combinației seismice, înfășurătoarea `seismic` între min și max.
+- **Comenzile**: `analysis.setSeismic` un pas de undo, valorile refuzate în afara domeniului.
+
+### 11.7 Ce s-a hotărât la implementare
+
+(se completează la implementare)
+
+### 11.8 Surse
+
+- P100-1/2013: formele spectrului, β0 = 2,5, TB/TC/TD (Tabelul 3.1), Sd ≥ 0,2 ag și regula 90 % / 5 % citite din Savu, Romanian J. Transport Infrastructure 2020 (https://reference-global.com/download/article/10.2478/rjti-2020-0007.pdf), care citează norma; factorii q ai zidăriei (Tabelul 8.10) din teza lui Partene, UPT 2018 (https://dspace.upt.ro/jspui/bitstream/123456789/213/3/BUPT_TD_Partene.pdf). Textul normei: https://mobee.infp.ro/images/content-images/Despre-cutremure/Efectele-cutremurelor/P100-1-2013.pdf (nu l-am putut deschide: certificatul serverului nu se potrivește).
+- EN 1996-1-1 §3.7.2 (E = 1000 fk), §3.7.3 (G = 0,4 E); EN 1998-1 §4.3.1(7) (rigiditatea fisurată, jumătate); P100-1 proiectul 2025 (https://technical-regulation-information-system.ec.europa.eu/ro/notification/26527/text/D/RO) pentru criteriul de independență a modurilor și rigiditatea fisurată a zidăriei (50 %).
+
+### 11.9 De hotărât de utilizator
+
+1. **Valorile de confirmat din textul normelor** (n-am putut citi P100-1/2013 și CR 6-2013): γI,e (1,4 / 1,2 / 1,0 / 0,8), ψ2 al zăpezii în combinația seismică (0,4), formulele Anexei E (ν = 0,5, 0,005 h, c = 3 − 2,3 T1/TC, 0,025 h), numerele clauzelor; KE al CR 6 (1000?), K-urile lui fk (sau tabelele CR 6 ale lui fk după fb și mortar), αu/α1 pentru zidărie, densitățile zidăriei.
+2. **Rigiditatea fisurată a betonului** în analiza seismică: 0,5 (EN 1998-1 4.3.1(7)) ca implicit, sau 1,0?
+3. **q implicit** când utilizatorul nu-l dă: 1,5 (cel mai mic pentru zidăria nearmată) sau obligatoriu de dat?
+4. **ψE = φ ψ2** cu φ < 1 (EN 4.2.4: 0,5 / 0,8 pe niveluri) sau φ = 1 (acum)?
+5. **P100-1/2025** (notificat UE în decembrie 2024): când intră, trecem pe el?
