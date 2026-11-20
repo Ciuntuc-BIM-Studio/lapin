@@ -26,8 +26,8 @@ public sealed record ShellSummary(int Surfaces, int Elements, int Quads, int Tri
 
 /// <summary>
 /// S2b (docs/plan-fem.md §10.10): the slabs and walls of the analytical model as shells in the solver's problem. Which ones
-/// (<see cref="ShellsTaken"/>): concrete slabs and walls with an E, as the project's options say (<see cref="AnalysisSettings"/>);
-/// a slab of another material (a timber floor) keeps the 45° rule, a masonry wall stays a line support (§10.12). Their pieces
+/// (<see cref="ShellsTaken"/>): concrete slabs and walls and masonry walls with an E (§11.1), as the project's options say
+/// (<see cref="AnalysisSettings"/>); a slab of another material (a timber floor) keeps the 45° rule, a wall of another a line support. Their pieces
 /// are meshed together (<see cref="ShellMesher"/>, the bars' nodes and the pieces' rings hard points; the target size the
 /// options', smaller on a narrow piece: at least <see cref="AnalysisSettings.PerSide"/> elements across it); the bars along
 /// the mesh's edges are cut at its nodes (<see cref="SplitBars"/>), their releases kept at their own ends, their span loads
@@ -53,6 +53,8 @@ public sealed partial class StructuralProblem
     readonly List<(int Shell, Vec3[] Pts, Vec3 Normal)> _wallFaces = [];
     List<int>?[] _paths = [];
 
+    const string StructuralMasonry = "Lapin_Masonry values";
+
     /// <summary>The slabs and walls analysed as shells, each with its material; what is left as in S1 is said.</summary>
     static Dictionary<AShell, StructuralMaterial> ShellsTaken(AnalyticalModel am, AnalysisSettings settings, Func<string?, StructuralMaterial?> materialOf, List<string> notes)
     {
@@ -63,19 +65,21 @@ public sealed partial class StructuralProblem
             var wall = s.Source.Kind == "wall";
             if (wall ? !settings.Walls : !settings.Slabs) continue;
             var mat = materialOf(s.Source.MaterialId);
-            if (mat is not { Kind: "concrete" })
+            // Concrete slabs and walls, and masonry walls (§11.1: CR 6-2013 / EN 1996-1-1, linear elastic).
+            if (mat is not { Kind: "concrete" } && !(wall && mat is { Kind: "masonry" }))
             {
-                (wall ? mat?.Kind == "masonry" ? masonry : otherWalls : otherSlabs).Add(s.Source.Name);
+                (wall ? otherWalls : otherSlabs).Add(s.Source.Name);
                 continue;
             }
             if (mat.E == null) { noE.Add(s.Source.Name); continue; }
+            if (mat.Kind == "masonry") masonry.Add($"{s.Source.Name}: {mat.Grade}, E = {mat.E.Value / 1e9:0.##} GPa");
             o[s] = mat;
         }
         static string List(HashSet<string> xs) => string.Join(", ", xs.Take(6)) + (xs.Count > 6 ? "…" : "");
         if (!settings.Slabs && am.Shells.Any(s => s.Source.Kind == "slab")) notes.Add("The options leave the slabs out of the shells: their loads go to what holds them by the 45° rule (as in S1).");
         if (!settings.Walls && am.Shells.Any(s => s.Source.Kind == "wall")) notes.Add("The options leave the walls out of the shells: the load-bearing walls are line supports (as in S1).");
         if (otherSlabs.Count > 0) notes.Add($"Slabs not of concrete ({List(otherSlabs)}): not shells; their loads go to what holds them by the 45° rule.");
-        if (masonry.Count > 0) notes.Add($"Masonry walls ({List(masonry)}): line supports until their values are given (CR 6).");
+        if (masonry.Count > 0) notes.Add($"Masonry walls as shells ({List(masonry)}): linear elastic, isotropic (E = KE·fk, G = 0.4 E: EN 1996-1-1 §3.7, as CR 6-2013 takes it; indicative unless the material gives its own {StructuralMasonry}), no tension cut-off (masonry carries no tension: not modelled in S3).");
         if (otherWalls.Count > 0) notes.Add($"Walls not of concrete ({List(otherWalls)}): line supports.");
         if (noE.Count > 0) notes.Add($"No E for {List(noE)}: not shells (as in S1).");
         return o;
@@ -178,7 +182,7 @@ public sealed partial class StructuralProblem
             p.Shells.Add(new ShellElement
             {
                 Id = $"{s.Id}/{n}", Nodes = face.Nodes, E = mat.E!.Value / 1000, Nu = mat.Poisson?.Value ?? 0.2, Thickness = s.Source.Thickness,
-                Axis = axis, Group = group, SourceId = s.Source.SourceId, Name = s.Source.Name,
+                Axis = axis, Group = group, SourceId = s.Source.SourceId, Name = s.Source.Name, Material = mat.Kind,
             });
             var k = p.Shells.Count - 1;
             if (!_faces.TryGetValue(s, out var list)) _faces[s] = list = [];
@@ -436,7 +440,7 @@ public sealed partial class StructuralProblem
                     Id = $"{e.Id}~{s + 1}", Name = e.Name, SourceId = e.SourceId, I = path[s], J = path[s + 1],
                     OffI = e.OffI + (e.OffJ - e.OffI) * t0, OffJ = e.OffI + (e.OffJ - e.OffI) * t1, Local2 = e.Local2,
                     E = e.E, G = e.G, A = e.A, I22 = e.I22, I33 = e.I33, Jt = e.Jt, As2 = e.As2, As3 = e.As3,
-                    ReleaseI = s == 0 ? e.ReleaseI : new bool[6], ReleaseJ = s == path.Count - 2 ? e.ReleaseJ : new bool[6],
+                    ReleaseI = s == 0 ? e.ReleaseI : new bool[6], ReleaseJ = s == path.Count - 2 ? e.ReleaseJ : new bool[6], Material = e.Material,
                 };
                 int index;
                 if (s == 0) { p.Elements[k] = piece; index = k; }

@@ -11,7 +11,7 @@ namespace Lapin.Engine.Tests;
 /// S2b (docs/plan-fem.md §10.10): the slabs and walls of the model analysed as shells in analysis.run. The guide's frame
 /// with its floor a shell (balanced, its moments near the plate's, the beams working with it as a T), a floor on four line
 /// supports against Navier's series for the simply supported plate and its convergence with the mesh, a flat slab on four
-/// columns, the beams cut at the slab's nodes and recomposed whole, masonry walls still line supports, a timber floor still
+/// columns, the beams cut at the slab's nodes and recomposed whole, masonry walls as shells (§11.1) and a masonry wall as a deep cantilever, a timber floor still
 /// by the 45° rule, concrete walls as shells on their footings, the options (one undo step), and analysis.contours' shape.
 /// </summary>
 public class ShellAnalysisTests(ITestOutputHelper output)
@@ -153,17 +153,67 @@ public class ShellAnalysisTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void Masonry_walls_stay_line_supports_under_a_shell_floor()
+    public void Masonry_walls_are_shells_under_a_shell_floor()
     {
+        // §11.1 (20.11.2026): masonry walls are shells now (they were line supports, §10.12.3); the floor rests on them, and
+        // with nothing modelled under their foot that is held as a line support.
         var (f, _) = FloorOnWalls(shells: "both");
         var run = AnalysisRunTests.Run(f);
         Assert.True((bool)run["ok"]!, run.ToJsonString());
-        Assert.Contains(run["notes"]!.AsArray(), n => ((string)n!).StartsWith("Masonry walls ("));
-        // Only the floor is a shell; the walls hold its edge.
-        Assert.Equal(1, (int)run["shells"]!["surfaces"]!);
+        Assert.Contains(run["notes"]!.AsArray(), n => ((string)n!).StartsWith("Masonry walls as shells ("));
+        Assert.Equal(5, (int)run["shells"]!["surfaces"]!);
         var a = AnalysisRun.Of(f.Session.Reader);
-        Assert.All(a.Problem.Problem.Shells, s => Assert.Equal("slab", a.Problem.Surfaces[s.Group!].Kind));
+        var p = a.Problem.Problem;
+        var walls = p.Shells.Where(s => a.Problem.Surfaces[s.Group!].Kind == "wall").ToList();
+        Assert.NotEmpty(walls);
+        // Brick: clay units of group 1, fb 10, fm 5 (indicative): fk = 0.55 · 10^0.7 · 5^0.3, E = 1000 fk (kPa in the solver); ν = 0.25 (G = 0.4 E).
+        var fk = 0.55 * Math.Pow(10, 0.7) * Math.Pow(5, 0.3);
+        Assert.All(walls, s => { Assert.Equal(fk * 1e6, s.E, 3); Assert.Equal(0.25, s.Nu, 12); });
+        // The walls' heads are not held any more: the floor's load goes down them to their feet.
+        var z0 = walls.SelectMany(s => s.Nodes).Min(n => p.Nodes[n].Z);
+        Assert.All(walls.SelectMany(s => s.Nodes).Where(n => p.Nodes[n].Z > z0 + 0.01), n => Assert.Null(p.Held[n]));
         Assert.Equal(48, a.Solution!.Cases.Single(c => c.Id == LoadCaseTests.IdOf(f, "Q-A")).SumReactions.Z, 6);
+        Assert.All(a.Solution.Cases.Single(c => c.Id == LoadCaseTests.IdOf(f, "Q-A")).Reactions.Keys, n => Assert.True(p.Nodes[n].Z <= z0 + 0.01));
+        // Their own weight is in the sums now (ρ = 1800 kg/m³, indicative), no longer straight to the supports.
+        var g1 = run["cases"]!.AsArray().Single(c => (string?)c!["code"] == "G1")!;
+        Assert.True((bool)g1["balanced"]!, g1.ToJsonString());
+        Assert.DoesNotContain(run["notes"]!.AsArray(), n => ((string)n!).Contains("the load-bearing walls' own weight"));
+    }
+
+    [Fact]
+    public void A_masonry_wall_bends_and_shears_in_its_plane_as_a_deep_cantilever()
+    {
+        // A brick wall 3 m long, 6 m high, 25 cm, on a strip footing (fixed); a force P along its head, in its plane:
+        // δ = P H³ / 3 E I + P H / (κ G A), I = t L³ / 12, A = t L, κ = 5/6, G = 0.4 E (EN 1996-1-1 §3.7.3).
+        var f = LoadCaseTests.F();
+        var wt = WallType(f, "Brick", 0.25);
+        var w = f.Wall(0, 0, 3, 0, wt, height: 6);
+        f.Run("element.setParam", new JsonObject { ["id"] = w, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = true });
+        f.Run("structure.addStripFooting", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 3, ["y2"] = 0 });
+        f.Run("analysis.defaultCases", []);
+        f.Run("analysis.setOptions", new JsonObject { ["meshSize"] = 0.25 });
+        var a = AnalysisRun.Of(f.Session.Reader);
+        Assert.True(a.Ok, string.Join("\n", a.Notes));
+        var p = a.Problem.Problem;
+        Assert.NotEmpty(p.Shells);
+        var e = p.Shells[0].E;
+        var top = p.Shells.SelectMany(s => s.Nodes).Distinct().Where(n => p.Nodes[n].Z > p.Shells.SelectMany(s => s.Nodes).Max(x => p.Nodes[x].Z) - 0.01).OrderBy(n => p.Nodes[n].X).ToList();
+        var bottom = p.Shells.SelectMany(s => s.Nodes).Min(n => p.Nodes[n].Z);
+        var h = p.Nodes[top[0]].Z - bottom;
+        Assert.Equal(13, top.Count);
+        const double P = 100;
+        var c = new CaseLoads("push");
+        // The force along the head, consistently: half shares at its two ends.
+        for (var i = 0; i < top.Count; i++) c.AddNodal(top[i], new Vec3(P / (top.Count - 1) * (i == 0 || i == top.Count - 1 ? 0.5 : 1), 0, 0));
+        p.Cases.Clear();
+        p.Cases.Add(c);
+        var sol = FrameSolver.Solve(p);
+        Assert.True(sol.Ok);
+        var u = top.Average(n => sol.Cases[0].U[n * 6]);
+        var (t, l) = (0.25, 3.0);
+        var expected = P * h * h * h / (3 * e * t * l * l * l / 12) + P * h / (5.0 / 6 * 0.4 * e * t * l);
+        output.WriteLine($"masonry wall: E {e:0} kPa, h {h:0.###}, δ {u:0.000000} m, theory {expected:0.000000} m, ratio {u / expected:0.0000}");
+        Assert.InRange(u / expected, 0.97, 1.03);
     }
 
     static JsonObject Bar(JsonObject results, string sourceId) => results["frames"]!.AsArray().Select(x => x!.AsObject()).Single(x => (string?)x["sourceId"] == sourceId);

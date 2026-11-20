@@ -156,7 +156,7 @@ public sealed partial class StructuralProblem
                 Id = f.Id, Name = f.Source.Name, SourceId = f.Source.SourceId,
                 I = nodeIndex[f.I], J = nodeIndex[f.J], OffI = f.OffI + centroid + arm, OffJ = f.OffJ + centroid + arm, Local2 = local2,
                 E = e.Value / 1000, G = g / 1000, A = props.Area, I22 = props.I22, I33 = props.I33, Jt = props.J, As2 = av2, As3 = av3,
-                ReleaseI = rel?.I ?? new bool[6], ReleaseJ = rel?.J ?? new bool[6],
+                ReleaseI = rel?.I ?? new bool[6], ReleaseJ = rel?.J ?? new bool[6], Material = mat.Kind,
             };
             p.Elements.Add(el);
             frames.Add(f);

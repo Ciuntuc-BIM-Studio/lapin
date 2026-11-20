@@ -60,6 +60,14 @@ public sealed class ShellElement
     public string? Group { get; init; }
     public string? SourceId { get; init; }
     public string? Name { get; init; }
+    /// <summary>The material's kind (concrete, masonry), for the cracked stiffness of the seismic analysis (§11.2).</summary>
+    public string? Material { get; init; }
+
+    /// <summary>A copy with E times k (a cracked wall's or slab's stiffness, §11.2), as yet unprepared.</summary>
+    public ShellElement Scaled(double k) => new()
+    {
+        Id = Id, Nodes = Nodes, E = E * k, Nu = Nu, Thickness = Thickness, Axis = Axis, Drilling = Drilling, Group = Group, SourceId = SourceId, Name = Name, Material = Material,
+    };
 
     public double G => E / (2 * (1 + Nu));
     public int Count => Nodes.Length;

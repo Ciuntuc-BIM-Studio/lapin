@@ -104,10 +104,19 @@ public static partial class StructuralMaterials
             e ??= new(tc.Value.E * 1e9, $"{standard} {table}, {grade}: E0,mean = {tc.Value.E} GPa (parallel to the grain)");
             density ??= new(tc.Value.Rho, $"{standard} {table}, {grade}: ρmean = {tc.Value.Rho} kg/m³");
         }
+        else if (Masonry.GroupOf(lower) is { } group)
+        {
+            kind = "masonry";
+            var m0 = Masonry.Of(fields, group, sources);
+            grade = m0.Label;
+            standard = "EN 1996-1-1:2005";
+            e ??= m0.E;
+            nu ??= new(Masonry.Poisson, "EN 1996-1-1:2005 §3.7.3: G = 0.4 E, so ν = 0.25 for an isotropic shell (indicative)");
+            density ??= m0.Density;
+        }
         else if (lower.Contains("concrete") || lower.Contains("beton")) kind = "concrete";
         else if (lower.Contains("steel") || lower.Contains("oțel") || lower.Contains("otel")) kind = "steel";
         else if (lower.Contains("timber") || lower.Contains("wood") || lower.Contains("lemn") || lower.Contains("glulam") || lower.Contains("clt")) kind = "timber";
-        else if (lower.Contains("brick") || lower.Contains("masonry") || lower.Contains("cărămidă") || lower.Contains("zidărie") || lower.Contains("block")) kind = "masonry";
 
         if (density == null && kind == "steel")
             density = new(7850, "EN 1993-1-1:2005 §3.2.6: ρ = 7850 kg/m³");
@@ -146,4 +155,77 @@ public sealed record Units(string Name, string Length, string Force, string Stre
         ["length"] = Length, ["force"] = Force, ["mass"] = "kg", ["temperature"] = "C", ["stress"] = StressUnit, ["weight_density"] = WeightDensityUnit,
         ["section_area"] = Area, ["section_inertia"] = Inertia, ["section_modulus"] = Modulus, ["warping_constant"] = Warping,
     };
+}
+
+/// <summary>
+/// Masonry as a linear elastic, isotropic shell (docs/plan-fem.md §11.1): E = KE · fk (EN 1996-1-1 §3.7.2, KE = 1000
+/// recommended), fk = K · fb^0.7 · fm^0.3 (EN 1996-1-1 eq. 3.1, general purpose mortar, fm at most 2 fb and 20 MPa) with K by the
+/// unit's group (EN 1996-1-1 Table 3.3), G = 0.4 E (§3.7.3; ν = 0.25). The material's own parameters (Lapin's set
+/// <c>Lapin_Masonry</c>: UnitGroup, fb, fm, fk, KE, in MPa) come before the indicative defaults of its group, read from its name.
+/// CR 6-2013 takes the same relations; its own values are the user's to confirm (§11.9).
+/// </summary>
+public static class Masonry
+{
+    public const string Set = "Lapin_Masonry";
+    public const double Poisson = 0.25, DefaultKE = 1000;
+
+    /// <summary>A unit group: EN 1996-1-1 Table 3.3's K for general purpose mortar, and the indicative fb, fm (MPa) and density (kg/m³) of masonry of such units.</summary>
+    public sealed record Group(string Key, string Label, double K, double Fb, double Fm, double Density);
+
+    public static readonly IReadOnlyList<Group> Groups =
+    [
+        new("clay1", "clay units, group 1 (solid brick)", 0.55, 10, 5, 1800),
+        new("clay2", "clay units, group 2 (hollow blocks)", 0.45, 10, 10, 1000),
+        new("aac", "autoclaved aerated concrete units", 0.55, 4, 5, 650),
+        new("concrete1", "aggregate concrete units, group 1", 0.55, 10, 10, 2000),
+        new("concrete2", "aggregate concrete units, group 2", 0.52, 10, 10, 1400),
+    ];
+
+    public static Group? Find(string? key) => Groups.FirstOrDefault(g => string.Equals(g.Key, key, StringComparison.OrdinalIgnoreCase));
+
+    static bool Any(string s, params string[] words) => words.Any(s.Contains);
+
+    /// <summary>The group a material's name and category (lower case) say, or null when it is not masonry.</summary>
+    public static Group? GroupOf(string lower)
+    {
+        if (Any(lower, "bca", "aac", "ytong", "autoclav", "beton celular", "celular")) return Find("aac");
+        if (Any(lower, "concrete block", "bloc de beton", "blocuri de beton", "bolțar", "boltar")) return Find("concrete2");
+        if (Any(lower, "gvp", "porotherm", "hollow", "goluri", "bloc ceramic", "blocuri ceramice", "ceramic block", "clay block")) return Find("clay2");
+        if (Any(lower, "brick", "cărămidă", "caramida", "cărămizi", "caramizi")) return Find("clay1");
+        if (Any(lower, "masonry", "zidărie", "zidarie", "block", "bloc")) return Find("clay1");
+        return null;
+    }
+
+    public sealed record Values(MaterialValue E, MaterialValue Fk, MaterialValue Density, string Label);
+
+    /// <summary>The masonry's values: the material's own parameters first, the group's indicative ones otherwise, each with its source.</summary>
+    public static Values Of(MaterialFieldSet fields, Group named, List<string> notes)
+    {
+        double? Own(string key, double min, double max)
+        {
+            if (fields.Param($"{Set}.{key}") is not { } p) return null;
+            var v = Json.Number(p.Value) ?? (p.Value is JsonValue jv && jv.TryGetValue<string>(out var txt) && double.TryParse(txt.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ? x : null);
+            if (v is { } d && double.IsFinite(d) && d >= min && d <= max) return d;
+            notes.Add($"{Set}.{key} is not a value from {min.ToString(CultureInfo.InvariantCulture)} to {max.ToString(CultureInfo.InvariantCulture)}: left out");
+            return null;
+        }
+        var ownGroup = fields.Param($"{Set}.UnitGroup") is { } gp ? Find(gp.Value?.ToString()) : null;
+        var g = ownGroup ?? named;
+        var fb = Own("fb", 0.5, 100);
+        var fm = Own("fm", 0.5, 40);
+        var fkOwn = Own("fk", 0.2, 50);
+        var ke = Own("KE", 100, 3000);
+        var (fbv, fmv) = (fb ?? g.Fb, fm ?? g.Fm);
+        var fmUsed = Math.Min(fmv, Math.Min(2 * fbv, 20));
+        var fk = fkOwn ?? g.K * Math.Pow(fbv, 0.7) * Math.Pow(fmUsed, 0.3);
+        string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+        var given = fb != null || fm != null || ownGroup != null;
+        var fkSource = fkOwn != null
+            ? $"project: material „{fields.Name}”, {Set}.fk = {F(fk)} MPa"
+            : $"EN 1996-1-1:2005 eq. 3.1, {g.Label}: fk = {F(g.K)} · {F(fbv)}^0.7 · {F(fmUsed)}^0.3 = {F(fk)} MPa{(given ? "" : " (indicative: fb, fm of the group)")}";
+        var kev = ke ?? DefaultKE;
+        var eSource = $"EN 1996-1-1:2005 §3.7.2: E = KE · fk = {F(kev)} · {F(fk)} MPa = {F(kev * fk / 1000)} GPa{(ke == null ? " (KE recommended)" : "")}; {fkSource}";
+        return new(new(kev * fk * 1e6, eSource), new(fk * 1e6, fkSource),
+            new(g.Density, $"indicative: masonry of {g.Label}, ρ = {F(g.Density)} kg/m³"), $"{g.Key}, fk = {F(fk)} MPa");
+    }
 }

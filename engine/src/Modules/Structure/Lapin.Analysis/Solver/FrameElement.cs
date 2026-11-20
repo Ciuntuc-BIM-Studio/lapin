@@ -54,6 +54,15 @@ public sealed class FrameElement
     /// <summary>A name to say (its element's).</summary>
     public string? Name { get; init; }
     public string? SourceId { get; init; }
+    /// <summary>The material's kind (concrete, steel, timber, masonry, other), for the cracked stiffness of the seismic analysis (§11.2).</summary>
+    public string? Material { get; init; }
+
+    /// <summary>A copy with E and G times k (a cracked section's stiffness, §11.2), as yet unprepared.</summary>
+    public FrameElement Scaled(double k) => new()
+    {
+        Id = Id, I = I, J = J, OffI = OffI, OffJ = OffJ, Local2 = Local2, E = E * k, G = G * k, A = A, I22 = I22, I33 = I33, Jt = Jt, As2 = As2, As3 = As3,
+        ReleaseI = ReleaseI, ReleaseJ = ReleaseJ, Name = Name, SourceId = SourceId, Material = Material,
+    };
 
     // Worked out by Prepare.
     public Vec3 Pi, Pj, Ex, Ey, Ez;
