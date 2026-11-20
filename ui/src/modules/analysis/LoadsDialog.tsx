@@ -8,9 +8,10 @@ import { t, useLang } from '../../i18n';
 import { PendingDialog } from '../core/PendingDialog';
 import { openImportTable } from '../core/tables/tables';
 import { useAnalysis } from './hooks';
+import { CombinationsTab } from './CombinationsTab';
 import { runAnalysis } from './useResults';
 import {
-  ACTION_SOURCES, ACTION_SOURCE_LABEL, ACTION_TYPES, ACTION_TYPE_LABEL, combinationName, EXPOSURES, formatFactor, formatKn, imposedArgs, psiFrom,
+  ACTION_SOURCES, ACTION_SOURCE_LABEL, ACTION_TYPES, ACTION_TYPE_LABEL, EXPOSURES, formatKn, imposedArgs, psiFrom,
   snowArgs, TERRAINS, windArgs,
   type CategoryDto, type ClimateDto, type CombinationsDto, type LoadCaseDto, type LoadsDto,
 } from './loads';
@@ -42,7 +43,7 @@ export function LoadsDialog() {
           {tab === 'imposed' && <ImposedTab cats={cats} />}
           {tab === 'site' && (climate ? <SiteTab climate={climate} /> : <p className="muted">Reading the site's snow and wind…</p>)}
           {tab === 'summary' && <SummaryTab loads={loads} />}
-          {tab === 'combinations' && (combos ? <CombinationsTab data={combos} /> : <p className="muted">Reading the combinations…</p>)}
+          {tab === 'combinations' && (combos ? <CombinationsTab data={combos} cases={loads.cases} /> : <p className="muted">Reading the combinations…</p>)}
           <div className="row"><button type="button" className="btn primary" data-testid="loads-run" title="Analyse the frame under these loads and show the results" onClick={() => void runAnalysis()}><Play size={14} />Run analysis</button>
             <button type="button" className="btn" data-testid="loads-import" title="Point, line and area loads from a CSV or Excel file or pasted cells" onClick={() => openImportTable('analysis.loads', 'Import loads')}><FileUp size={14} />Import loads…</button></div>
           <p className="muted small">The values are indicative (EN 1990, EN 1991-1-1, EN 1991-1-3 and EN 1991-1-4 as recommended): set the national annex values and check them before using the results.</p>
@@ -221,39 +222,6 @@ function SiteTab({ climate }: { climate: ClimateDto }) {
       </div>
       <p className="muted small">The wind blows towards +X, -X, +Y and -Y, each in two cases: the roofs' suction (/s) and their pressure (/p). Walls and columns make the building's outline; the façades go to the beams, rails and floor edges along them, the roofs to their rafters or purlins.</p>
       <p className="muted small">Lapin does not ship the national maps: read the site's values from CR 1-1-3 and CR 1-1-4 (or the national annex you work to). The rules and coefficients are the recommended ones, indicative.</p>
-    </>
-  );
-}
-
-const GROUPS: [string, string[]][] = [['Ultimate limit state', ['uls']], ['Serviceability limit state', ['sls-characteristic', 'sls-frequent', 'sls-quasi']]];
-const KIND_LABEL: Record<string, string> = { 'sls-characteristic': 'Characteristic', 'sls-frequent': 'Frequent', 'sls-quasi': 'Quasi-permanent' };
-
-function CombinationsTab({ data }: { data: CombinationsDto }) {
-  return (
-    <>
-      {GROUPS.map(([label, kinds]) => {
-        const list = data.combinations.filter((c) => kinds.includes(c.kind));
-        return (
-          <div key={label}>
-            <span className="eyebrow">{label}</span>
-            {list.length === 0 ? <p className="muted">None: nothing carries a load yet.</p> : (
-              <table className="standards-table">
-                <thead><tr><th>{kinds.length > 1 ? 'Kind' : 'Name'}</th>{kinds.length > 1 && <th>Name</th>}<th>Factors</th></tr></thead>
-                <tbody>
-                  {list.map((c) => (
-                    <tr key={c.key}>
-                      {kinds.length > 1 && <td>{KIND_LABEL[c.kind] ?? c.kind}</td>}
-                      <td>{combinationName(c)}</td>
-                      <td>{c.factors.map((f) => `${f.code} × ${formatFactor(f.factor)}`).join(', ')}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        );
-      })}
-      {data.notes.map((n, i) => <p key={i} className="muted small">{n}</p>)}
     </>
   );
 }

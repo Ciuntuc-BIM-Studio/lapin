@@ -21,6 +21,18 @@ export const ENGINE_NOTES = [
   '„A1” is an accidental action: the accidental combination is not made yet.',
   '„Q1” has no category: its ψ are category A\'s (0.7, 0.5, 0.3).',
   'The arrangements of the snow and the directions of the wind are alternatives: each combination takes one of them (87 combinations).',
+  'Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).',
+  'Indicative: EN 1990 Annex A1, recommended values, with the project\'s own factors: γG,sup 1.4, γG,inf 1, γQ 1.5.',
+  'Indicative: CR 0-2012, with the project\'s own factors: γG,sup 1.35, γG,inf 1, γQ 1.6.',
+  'Expressions 6.10a and 6.10b (EN 1990), ξ = 0.85: the project\'s choice; CR 0-2012 itself has only its expression 6.9 (EN\'s 6.10).',
+  'Expressions 6.10a and 6.10b (EN 1990), ξ = 0.85, instead of 6.10.',
+  'Not made yet: snow with the imposed load on roofs (EN 1991-1-1 3.3.2); the seismic combination comes with the seismic parameters (its own envelope).',
+  '„Maintenance” names a load case that is gone: left out of the results until its factors are set again.',
+  '„Maintenance” names 2 load cases that are gone: left out of the results until its factors are set again.',
+  '„Quake” is a seismic combination: its factors ± AEd, in the seismic and ULS envelopes once the seismic parameters are given.',
+  '„Blast” is an accidental combination: checked as an ultimate one, with the persistent situation\'s γM (on the safe side).',
+  '1 combination switched off: left out of the results, the envelopes, the checks and the export.',
+  '4 combinations switched off: left out of the results, the envelopes, the checks and the export.',
   'Indicative: EN 1990 Annex A1, the recommended values (γG 1.35, γQ 1.5, ψ by Table A1.1, snow for sites up to 1000 m).',
   'Not made yet: expressions 6.10a and 6.10b, snow with the imposed load on roofs (EN 1991-1-1 3.3.2), CR 0-2012\'s values; the seismic combination comes with the seismic parameters (its own envelope).',
   'No bars and no shells: the slabs\' loads go straight into the load-bearing walls under them, their reactions.',
@@ -165,5 +177,12 @@ describe('the analysis\' notes and cases in every language', () => {
       .toBe('1 mod prin iterație în subspațiu pe Cholesky rar (5 pași); mase efective 61.2 % pe X, 0.4 % pe Y din masa nodurilor libere (12.5 t).');
     expect(translate('3 levels have a shell floor: no diaphragm imposed there (the slab gives it).', 'ro')).toBe('3 niveluri au planșeu-placă: nu se impune diafragmă acolo (o dă placa).');
     expect(translate('An envelope is „uls”, „sls” or „seismic”.', 'ro')).toBe('O înfășurătoare este „uls”, „sls” sau „seismic”.');
+  });
+
+  it('in Romanian, the combination notes keep the names and the counts', () => {
+    expect(translate('„Maintenance” names 2 load cases that are gone: left out of the results until its factors are set again.', 'ro'))
+      .toBe('„Maintenance” numește 2 cazuri de încărcare care nu mai există: lăsată în afara rezultatelor până când i se dau din nou coeficienții.');
+    expect(translate('4 combinations switched off: left out of the results, the envelopes, the checks and the export.', 'ro'))
+      .toBe('4 combinații oprite: lăsate în afara rezultatelor, a înfășurătoarelor, a verificărilor și a exportului.');
   });
 });

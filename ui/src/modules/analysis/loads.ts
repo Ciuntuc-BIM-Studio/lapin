@@ -25,8 +25,68 @@ export interface LoadsDto {
   notes: string[];
 }
 export interface CategoryDto { key: string; label: string; qk: number; default: number; overridden: boolean }
-export interface CombinationDto { key: string; kind: 'uls' | 'sls-characteristic' | 'sls-frequent' | 'sls-quasi'; name: string; factors: { caseId: string; code: string; factor: number }[] }
-export interface CombinationsDto { combinations: CombinationDto[]; notes: string[] }
+export type CombinationKind = 'uls' | 'sls-characteristic' | 'sls-frequent' | 'sls-quasi' | 'seismic' | 'accidental';
+export type FactorSet = 'en' | 'cr0';
+export type PsiCategory = Record<'0' | '1' | '2', number>;
+export interface CombinationDto {
+  key: string; kind: CombinationKind; name: string; factors: { caseId: string; code: string; factor: number }[];
+  formula?: string; source?: 'generated' | 'user'; enabled?: boolean;
+  /** A user combination only: its id, and the cases it names that no longer exist. */
+  id?: string; missing?: string[];
+}
+export interface CombinationSetDto { name: string; label: string; gammaGSup: number; gammaGInf: number; gammaQ: number; psi: Record<string, PsiCategory> }
+export interface CombinationOptionsDto {
+  set: FactorSet; gammaGSup: number; gammaGInf: number; gammaQ: number;
+  own: { gammaGSup: number | null; gammaGInf: number | null; gammaQ: number | null; xi: number | null; psi: Record<string, PsiCategory> };
+  psi: Record<string, PsiCategory>; expression: '6.10' | '6.10ab'; xi: number; disabled: string[];
+  sets: Record<string, CombinationSetDto>;
+}
+export interface CombinationsDto { combinations: CombinationDto[]; options?: CombinationOptionsDto; kinds?: CombinationKind[]; notes: string[] }
+
+/** The kinds a user combination can have, in the order the form lists them. */
+export const COMBINATION_KINDS: CombinationKind[] = ['uls', 'sls-characteristic', 'sls-frequent', 'sls-quasi', 'seismic', 'accidental'];
+export const COMBINATION_KIND_LABEL: Record<CombinationKind, string> = {
+  uls: 'Ultimate (ULS)', 'sls-characteristic': 'Characteristic (SLS)', 'sls-frequent': 'Frequent (SLS)', 'sls-quasi': 'Quasi-permanent (SLS)',
+  seismic: 'Seismic (with AEd)', accidental: 'Accidental',
+};
+export const FACTOR_SET_LABEL: Record<FactorSet, string> = { cr0: 'CR 0-2012 (Romania)', en: 'EN 1990 Annex A1, recommended' };
+/** The categories of the ψ table, in the engine's order. */
+export const PSI_CATEGORIES = ['A', 'A-stairs', 'A-balcony', 'B', 'C1', 'C2', 'C3', 'C4', 'C5', 'D1', 'D2', 'E1', 'F', 'G', 'H', 'snow', 'wind'] as const;
+
+/** The ultimate group holds the ULS, accidental and seismic combinations; the serviceability group the SLS ones. */
+export const isUltimate = (k: CombinationKind): boolean => k === 'uls' || k === 'accidental' || k === 'seismic';
+export function groupCombinations(list: CombinationDto[]): { ultimate: CombinationDto[]; serviceability: CombinationDto[] } {
+  return { ultimate: list.filter((c) => isUltimate(c.kind)), serviceability: list.filter((c) => !isUltimate(c.kind)) };
+}
+
+/** The factors typed for a combination (one text per case id): empty and zero fields left out; undefined when one does not read. */
+export function factorsPayload(texts: Record<string, string>): { caseId: string; factor: number }[] | undefined {
+  const out: { caseId: string; factor: number }[] = [];
+  for (const [caseId, text] of Object.entries(texts)) {
+    if (!text.trim()) continue;
+    const n = parseNumber(text);
+    if (n == null) return undefined;
+    if (n !== 0) out.push({ caseId, factor: n });
+  }
+  return out;
+}
+
+/** The texts of a combination's factors, for editing: one per case id. */
+export const factorTexts = (factors: { caseId: string; factor: number }[]): Record<string, string> => Object.fromEntries(factors.map((f) => [f.caseId, formatFactor(f.factor)]));
+
+/** A factor typed within [min, max]: null when empty (back to the set's value), undefined when it does not read or is out of range. */
+export function boundedOrNull(text: string, min: number, max: number): number | null | undefined {
+  if (!text.trim()) return null;
+  const n = parseNumber(text);
+  return n != null && n >= min && n <= max ? n : undefined;
+}
+export const GAMMA_RANGES = { gammaGSup: [1, 2], gammaGInf: [0, 1.5], gammaQ: [1, 2], xi: [0.5, 1] } as const;
+
+/** The arguments of analysis.addCombination: undefined when the name is empty or a factor does not read. */
+export function addCombinationArgs(name: string, kind: CombinationKind, texts: Record<string, string>) {
+  const factors = factorsPayload(texts);
+  return name.trim() && factors ? { name: name.trim(), kind, factors } : undefined;
+}
 
 /** A number typed (a comma allowed) that is more than nothing; null otherwise. */
 export function parsePositive(text: string): number | null {
@@ -48,7 +108,7 @@ export const formatFactor = (f: number): string => String(Math.round(f * 1000) /
 /** A load or total in kN (or kN/m², kN/m): up to two decimals. */
 export const formatKn = (v: number): string => (Math.round(v * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 0 }).replace(/,/g, '');
 
-export const combinationName = (c: CombinationDto): string => c.name || c.factors.map((f) => `${formatFactor(f.factor)} ${f.code}`).join(' + ');
+export const combinationName = (c: CombinationDto): string => c.name || c.formula || c.factors.map((f) => `${formatFactor(f.factor)} ${f.code}`).join(' + ');
 
 /** The arguments of the three load commands, `caseId` left out when none is chosen (the engine then takes Q-A). */
 export interface Pt { x: number; y: number }
