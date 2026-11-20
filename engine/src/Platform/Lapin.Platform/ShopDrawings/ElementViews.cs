@@ -34,6 +34,12 @@ public interface IElementViewRoles
 public static class ElementViews
 {
     public const string Key = "of", SubjectKey = "subject", ContextKey = "context";
+    /// <summary>
+    /// Which axes an element view is taken in (issue #114): <c>element</c> (the default: the element's own frame, its front its
+    /// front) or <c>ucs</c> (the project's UCS in plan, Z up), kept as <c>of.axes</c>.
+    /// </summary>
+    public const string AxesKey = "axes";
+    public static readonly string[] AxesModes = ["element", "ucs"];
     public static readonly string[] Ortho = ["front", "back", "top", "bottom", "left", "right"];
     public static readonly string[] SectionRoles = ["section:x", "section:y", "section:z"];
     public const string Iso = "iso";
@@ -69,9 +75,18 @@ public static class ElementViews
     public static ElementFrame? FrameOf(IModelView m, IServices? services, Entity view, IReadOnlyList<DrawPart> parts)
     {
         if (m.Get(ElementOf(view) ?? "") is not { } e) return null;
-        var body = parts.Where(p => p.Element == e.Id).SelectMany(p => p.Solid.Vertices).ToList();
-        return ElementFrames.Of(m, services, e, body);
+        return FrameOf(m, services, view, e, parts.Where(p => p.Element == e.Id).SelectMany(p => p.Solid.Vertices).ToList());
     }
+
+    /// <summary>
+    /// The frame a view of <paramref name="e"/> is taken in, its box round <paramref name="body"/>: the element's own (every view of a
+    /// drawing in that one frame), or the project's UCS when the view says <c>axes: ucs</c>.
+    /// </summary>
+    public static ElementFrame? FrameOf(IModelView m, IServices? services, Entity view, Entity e, IReadOnlyList<Vec3> body) =>
+        AxesOf(view) == "ucs" ? ElementFrames.InUcs(m, body) : ElementFrames.Of(m, services, e, body);
+
+    /// <summary>The axes an element view is taken in: <c>element</c> or <c>ucs</c>.</summary>
+    public static string AxesOf(Entity view) => Is(view) && (string?)view.Attrs[Key]![AxesKey] == "ucs" ? "ucs" : "element";
 
     /// <summary>
     /// How a role sees a frame: the drawing's right and up and the direction it looks, in the frame's axes. Front looks along +Y
@@ -220,6 +235,11 @@ public static class ElementViews
         if (a["flip"] is JsonValue fv && fv.TryGetValue<bool>(out var flip) && flip) of["flip"] = true;
         if (Json.Number(a["margin"]) is { } mg) of["margin"] = mg >= 0 && mg <= 20 ? mg : throw new CommandException("The margin is between 0 and 20 m.");
         if (Json.Number(a["depth"]) is { } dp && dp > 0) of["depth"] = dp;
+        if ((string?)a[AxesKey] is { } ax)
+        {
+            if (!AxesModes.Contains(ax)) throw new CommandException("A view is taken in the element's own axes (element) or the project's UCS (ucs).");
+            if (ax == "ucs") of[AxesKey] = ax;
+        }
         var attrs = new JsonObject { ["kind"] = role == Iso ? "3d" : "section", [Key] = of };
         var frame = ElementFrames.Of(q, element);
         if (role != Iso) attrs["scale"] = Json.Number(a["scale"]) is { } sc && sc >= 1 ? sc : AutoScale(frame is { } f ? Math.Max(f.Length, Math.Max(f.Width, f.Height)) : 1);

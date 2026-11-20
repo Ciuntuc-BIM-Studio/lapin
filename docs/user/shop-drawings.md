@@ -10,6 +10,8 @@ summary: Make an element's own sheet in one dialog: its views drawn from its own
 
 A shop drawing is the drawing of **one element**: a steel member, a Studio part, a plate. It has its own sheet with the title block, the views you ticked, drawn from the element's **own axes** (X along the part, Y across it, Z up) and not from the project's, the element's overall dimensions, and a table of its data (name, material, profile, weight and the like) above the title block.
 
+Every view is taken in that **one frame**, so the front, the top, the side and the iso always agree, however the element is turned in the building. A piece of furniture's axes are those it was placed with: X along it, its **front** the face the front view sees, Z up. An element with no axes of its own (an imported one) stands upright unless it really leans, like a rafter. To draw it as the plan sees it instead, choose **Axes → The project's UCS**.
+
 The drawing is always **live**. The views are views of the model like any other, so when you change the element the sheet changes with it; nothing is a copy.
 
 ## Make a drawing
@@ -29,6 +31,7 @@ On the right you choose how the sheet is made:
 - **Paper**: **Auto**, or A4 to A0. With **Auto** Lapin takes the smallest paper the views fit on.
 - **Projection**: **ISO E (first angle)** is the European way: the top view is drawn **under** the front view, the left view to its right. **Third angle** puts each view on the side it is seen from. The project's projection is the starting choice.
 - **Dimensions**: **Overall** gives the length, width and height of the part on the views; **None** leaves them out.
+- **Axes**: **The element's own axes** (the usual way for a part) or **The project's UCS**: X along the UCS's X axis in plan, Z up, the box round the element in those axes. With no UCS set, that is the plan's own axes.
 - **Prefer**: when both cannot be kept, whether the paper or the scale you chose wins.
 
 The **preview** under the choices is the real sheet, composed by the engine each time you change something. Under it you read the paper and the scale it took. If the views do not fit, a warning says so: choose a larger paper or a smaller scale.

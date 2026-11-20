@@ -40,6 +40,7 @@ public sealed class FurnitureModule : ILapinModule
         r.Catalog("casework", Casework.Catalog());
         r.Catalog("models", FurnitureModels.Catalog());
         r.Service<IElementPlacement>(new FurniturePlacement());
+        r.Service<IElementFrames>(new FurnitureFrames());
         r.Service<IScheduleSource>(new FurnitureSchedule());
         FurnitureSchedule.RegisterTemplate(r);
         r.Service<IScheduleSource>(new FurnitureByRoom());
@@ -593,6 +594,22 @@ public sealed class FurnitureModule : ILapinModule
             o.Add((W(-w / 2 - cd / 2 + tuck, 0), rot + 90));
         }
         return o;
+    }
+}
+
+/// <summary>
+/// A piece of furniture's own axes for its shop drawing (issue #114): from its point (<c>at</c>, at its storey's level and
+/// <c>offset</c>), X along it turned by its <c>rotation</c>, Z up, so its front (local −y) is what the front view sees and every
+/// view of it is taken in the frame it was placed in, not one leaning with its body's spread. A mirrored piece keeps its axes:
+/// its front is still its front.
+/// </summary>
+sealed class FurnitureFrames : IElementFrames
+{
+    public (Vec3 Origin, Vec3 X, Vec3 Z)? AxesOf(IModelView m, Entity e)
+    {
+        if (e.Class != FurnitureModule.Class || Args.TryPoint(e.Attrs["at"]) is not { } at) return null;
+        var r = e.Num("rotation") * Math.PI / 180;
+        return (new Vec3(at.X, at.Y, Spatial.Elevation(m, e) + e.Num("offset")), new Vec3(Math.Cos(r), Math.Sin(r), 0), Vec3.UnitZ);
     }
 }
 

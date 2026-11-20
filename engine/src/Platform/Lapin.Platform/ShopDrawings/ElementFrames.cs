@@ -91,6 +91,19 @@ public static class ElementFrames
         return Boxed(Vec3.Zero, x, y, z, body, plate ? "plate" : "body", originAtMin: true);
     }
 
+    /// <summary>
+    /// The project's UCS as a frame round <paramref name="body"/> (issue #114, a drawing's <c>axes: ucs</c>): X along the UCS's X axis
+    /// in plan, Z up, from its origin; not turned by a mark (the UCS is the project's, not the part's). No UCS: the world's axes.
+    /// </summary>
+    public static ElementFrame? InUcs(IModelView m, IReadOnlyList<Vec3> body)
+    {
+        if (body.Count == 0) return null;
+        var (o, angle) = Location.Ucs(m) ?? (default, 0);
+        var r = angle * Math.PI / 180;
+        var f = Orthonormal(new Vec3(Math.Cos(r), Math.Sin(r), 0), Vec3.UnitZ)!.Value;
+        return Boxed(new Vec3(o.X, o.Y, 0), f.X, f.Y, f.Z, body, "ucs", originAtMin: false);
+    }
+
     /// <summary>A frame from X and an approximate Z: Z made square to X, Y completing it; null when they are parallel.</summary>
     static (Vec3 X, Vec3 Y, Vec3 Z)? Orthonormal(Vec3 x, Vec3 z)
     {
@@ -148,10 +161,15 @@ public static class ElementFrames
     }
 
     /// <summary>
-    /// The axes of a body alone: upright (an axis of it within 1° of vertical), Z up and X along the long side of its box of least
-    /// area in plan; otherwise its principal axes, X the longest, Z the one nearest up. A plate: Z through its thickness (its
-    /// least principal axis), X along the long side of its box of least area on its face.
+    /// The axes of a body alone: upright (an axis of it within 1° of vertical, or Z up boxing it no larger than its principal axes
+    /// do), Z up and X along the long side of its box of least area in plan; otherwise its principal axes, X the longest, Z the one
+    /// nearest up. A plate: Z through its thickness (its least principal axis), X along the long side of its box of least area on its face.
     /// </summary>
+    /// <remarks>
+    /// Issue #114: a body uneven in height (a kitchen: base units at the front, wall units higher and further back) has principal
+    /// axes leaning a few degrees across it, and its views were drawn leaning; standing upright boxes it tighter, so it stands.
+    /// A body that truly leans (a rafter) boxes far tighter in its own axes and keeps them.
+    /// </remarks>
     public static (Vec3 X, Vec3 Y, Vec3 Z) FromBody(IReadOnlyList<Vec3> body, bool plate = false)
     {
         var pts = Distinct(body);
@@ -165,13 +183,31 @@ public static class ElementFrames
         }
         if (Math.Abs(z.Z) >= SnapCos) z = z.Z > 0 ? Vec3.UnitZ : -Vec3.UnitZ;
         if (z.Z < -1e-12 || (Math.Abs(z.Z) <= 1e-12 && Vec3.Dot(z, new Vec3(1, 1e-3, 0)) < 0)) z = -z;
-        // On the plane square to Z: the long side of the box of least area round the points.
+        var f = Around(pts, z);
+        if (!plate && Math.Abs(z.Z) < 1 - 1e-12)
+        {
+            var upright = Around(pts, Vec3.UnitZ);
+            if (Volume(pts, upright) <= Volume(pts, f) * (1 + 1e-6)) f = upright;
+        }
+        return f;
+    }
+
+    /// <summary>A frame of Z <paramref name="z"/>: X along the long side of the box of least area round the points on the plane square to it.</summary>
+    static (Vec3 X, Vec3 Y, Vec3 Z) Around(IReadOnlyList<Vec3> pts, Vec3 z)
+    {
         var (u, v) = Math.Abs(z.Z) > 1 - 1e-12 ? (new Vec3(1, 0, 0), new Vec3(0, 1, 0)) : LevelBasis(z);
         var x = LongSide(pts.Select(p => new Vec2(Vec3.Dot(p, u), Vec3.Dot(p, v))).ToList()) is { } d ? u * d.X + v * d.Y : u;
         // One way along, whatever the order of the points: towards +X of the world (then +Y, then up).
         if (Vec3.Dot(x, new Vec3(1, 1e-3, 1e-6)) < 0) x = -x;
         var f = Orthonormal(x, z)!.Value;
         return (f.X, f.Y, f.Z);
+    }
+
+    /// <summary>The volume of the box round the points in a frame's axes.</summary>
+    static double Volume(IReadOnlyList<Vec3> pts, (Vec3 X, Vec3 Y, Vec3 Z) f)
+    {
+        double Spread(Vec3 a) { double lo = double.MaxValue, hi = double.MinValue; foreach (var p in pts) { var t = Vec3.Dot(p, a); lo = Math.Min(lo, t); hi = Math.Max(hi, t); } return hi - lo; }
+        return Spread(f.X) * Spread(f.Y) * Spread(f.Z);
     }
 
     /// <summary>A basis of the plane square to <paramref name="z"/>: its first axis level (along the plane), the second completing it.</summary>

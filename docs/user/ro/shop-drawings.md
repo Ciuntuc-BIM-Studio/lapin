@@ -8,6 +8,8 @@ summary: Faci planșa proprie a unui element într-o singură fereastră: vederi
 
 Un desen de execuție e desenul **unui singur element**: un profil de oțel, o piesă Studio, o placă. Are propria planșă cu cartuș, vederile pe care le-ai bifat, desenate după **axele proprii** ale elementului (X de-a lungul piesei, Y peste ea, Z în sus) și nu după cele ale proiectului, cotele de gabarit ale elementului și un tabel cu datele lui (nume, material, profil, greutate și altele) deasupra cartușului.
 
+Toate vederile se iau în **același sistem de axe**, așa că vederea din față, cea de sus, cea laterală și izometria se potrivesc mereu, oricum ar fi rotit elementul în clădire. Axele unei piese de mobilier sunt cele cu care a fost așezată: X de-a lungul ei, **fața** ei e fața pe care o vede vederea din față, Z în sus. Un element fără axe proprii (unul importat) stă drept, în afară de cazul în care chiar e înclinat, ca un căprior. Ca să-l desenezi cum îl vede planul, alege **Axe → UCS-ul proiectului**.
+
 Desenul e mereu **viu**. Vederile sunt vederi ale modelului ca oricare altele, deci când schimbi elementul se schimbă și planșa; nimic nu e o copie.
 
 ## Fă un desen
@@ -27,6 +29,7 @@ Dedesubt, **Secțiunile** sunt tăieturi paralele cu fețele. Fiecare axă are u
 - **Format**: **Automat**, sau de la A4 la A0. Cu **Automat**, Lapin ia cel mai mic format pe care încap vederile.
 - **Proiecția**: **ISO E (prima proiecție)** e felul european: vederea de sus se desenează **sub** vederea din față, cea din stânga la dreapta ei. **A treia proiecție** pune fiecare vedere pe partea dinspre care se vede. Proiecția proiectului e alegerea de pornire.
 - **Dimensiuni**: **Total** dă lungimea, lățimea și înălțimea piesei pe vederi; **Niciunul** le lasă deoparte.
+- **Axe**: **Axele proprii ale elementului** (felul obișnuit pentru o piesă) sau **UCS-ul proiectului**: X după axa X a UCS-ului în plan, Z în sus, gabaritul elementului măsurat în aceste axe. Fără UCS, acestea sunt chiar axele planului.
 - **Preferă**: când nu se pot păstra amândouă, dacă primează formatul sau scara pe care le-ai ales.
 
 **Previzualizarea** de sub alegeri e planșa adevărată, compusă de motor la fiecare schimbare. Dedesubt citești formatul și scara alese. Dacă vederile nu încap, un avertisment o spune: alege un format mai mare sau o scară mai mică.
