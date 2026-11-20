@@ -67,7 +67,7 @@ public static class BareOpenings
     }
 
     /// <summary>
-    /// Bare openings changed, one undo step: {id | ids, width?, height?, along?, sill?, shape?, rise? (null: the kind's own),
+    /// Bare openings changed, one undo step: {id | ids, width?, height?, along?, sill?, sillFrom? (forum topic 192), shape?, rise? (null: the kind's own),
     /// reveal?, revealThickness? (null: the kind's own), revealMaterial?, lintel?}. Each is checked against its wall.
     /// </summary>
     public static void Update(ICommandContext ctx, JsonObject a)
@@ -78,7 +78,8 @@ public static class BareOpenings
         {
             var opening = Spatial.Require(ctx.Model, id, IfcClass.OpeningElement);
             if (a["width"] != null || a["height"] != null) Openings.Resize(ctx, opening, Json.Number(a["width"]), Json.Number(a["height"]));
-            if (a["along"] != null || a["sill"] != null) Openings.Move(ctx, ctx.Model.Get(id)!, Json.Number(a["along"]), Json.Number(a["sill"]));
+            if (a["along"] != null || a["sill"] != null || a["sillFrom"] != null)
+                Openings.Move(ctx, ctx.Model.Get(id)!, Json.Number(a["along"]), Json.Number(a["sill"]), OpeningSills.Parse((string?)a["sillFrom"]));
             if (a["shape"] != null || a.ContainsKey("rise")) Openings.Reshape(ctx, ctx.Model.Get(id)!, (string?)a["shape"], Json.Number(a["rise"]), a.ContainsKey("rise") && a["rise"] == null);
             if (a.ContainsKey("reveal") || a.ContainsKey("revealThickness") || a.ContainsKey("revealMaterial") || a.ContainsKey("lintel")) Finish(ctx, ctx.Model.Get(id)!, a);
         }
@@ -180,7 +181,8 @@ public static class BareOpenings
         var p = Openings.Place(ctx.Model, opening);
         var attrs = opening.CloneAttrs();
         foreach (var k in new[] { Openings.HoleWidthKey, Openings.HoleHeightKey, Openings.FillOffsetKey }) attrs.Remove(k);
-        attrs["sill"] = p.Sill;
+        // Over what its sill is measured from (forum topic 192), as it was.
+        attrs["sill"] = p.Sill - p.SillBase;
         attrs["width"] = p.Width;
         attrs["height"] = p.Height;
         // The head goes with it where an opening has the kind (a pointed or a triangular head becomes a rectangle).

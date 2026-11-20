@@ -133,6 +133,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             // Its own height, shown while it is unconnected; a wall with a top (WallTop) shows its height worked out in its Wall section.
             new("height", "Height", "length", Min: 0.01, ShowIf: FieldDescriptor.When(WallTop.Key, "")),
             new("baseOffset", "Base offset", "length"),
+            // Its own finished floor over its base (forum topic 192), over its type's; what sills over the finished floor are measured from.
+            new(OpeningSills.FinishedFloorKey, "Finished floor above base", "length", Min: 0, Max: 1),
             // Its top's offset: a length (IFC writes it so), set in the Wall section with the top (architecture.setWallTop), never here.
             new(WallTop.OffsetKey, "Top offset", "length", ShowIf: FieldDescriptor.When(WallTop.OffsetKey, "\u0001never")),
             new(PathCurve.Key, "Arc rise", "length"),
@@ -144,7 +146,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new(Joins.StartAngle, "Start cut angle", "angle", Min: -Joins.MaxEndAngle, Max: Joins.MaxEndAngle, ShowIf: FieldDescriptor.When(Joins.StartAngle, "!")),
             new(Joins.EndAngle, "End cut angle", "angle", Min: -Joins.MaxEndAngle, Max: Joins.MaxEndAngle, ShowIf: FieldDescriptor.When(Joins.EndAngle, "!")),
         ], "#b5654a"));
-        r.Class(new(IfcClass.WallType, "Wall type", [new("mark", "Mark", "text")], "#b5654a", Kind: "type"));
+        r.Class(new(IfcClass.WallType, "Wall type", [new("mark", "Mark", "text"), new(OpeningSills.FinishedFloorKey, "Finished floor above base", "length", Min: 0, Max: 1)], "#b5654a", Kind: "type"));
         r.Class(new(IfcClass.OpeningElement, "Opening", [new("width", "Width", "length", Min: 0.01), new("height", "Height", "length", Min: 0.01)], Kind: "element"));
         r.Class(new(IfcClass.Door, "Door", [], "#c8a27a"));
         r.Class(new(IfcClass.Window, "Window", [], "#9cc8e8"));
@@ -921,7 +923,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 return new JsonObject { ["id"] = Openings.AddOutlined(ctx, wall, pts, ArcOutline.RisesArg(a["arcs"], pts.Count)).Id };
             }
             var along = Json.Number(a["along"]) ?? Openings.AlongOf(wall, new Vec2(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0));
-            var opening = Openings.AddBare(ctx, wall, along, Json.Number(a["sill"]) ?? 0, Json.Number(a["width"]) ?? 0.9, Json.Number(a["height"]) ?? 2.1, (string?)a["shape"], Json.Number(a["rise"]));
+            // sillFrom (forum topic 192): "structural" | "finished", else the project's default.
+            var opening = Openings.AddBare(ctx, wall, along, Json.Number(a["sill"]) ?? 0, Json.Number(a["width"]) ?? 0.9, Json.Number(a["height"]) ?? 2.1, (string?)a["shape"], Json.Number(a["rise"]),
+                OpeningSills.Parse((string?)a["sillFrom"]) ?? OpeningSills.ProjectDefault(ctx.Model));
             return new JsonObject { ["id"] = opening.Id };
         });
         // Its size, place along the wall, sill and head, its reveal's finish and its lintel (decision 392), for one or several:
@@ -931,12 +935,30 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
 
         r.Command("moveOpening", "Move opening", (ctx, a) =>
         {
-            // Several at once (a sill for every selected window, #74), one step.
+            // Several at once (a sill for every selected window, #74), one step. sillFrom (forum topic 192): "structural" | "finished",
+            // what sill is measured from; without a sill the element stays where it stands.
             var ids = Ids(a).ToList();
             if (ids.Count == 0) throw new CommandException("Nothing to move.");
-            foreach (var id in ids) Openings.Move(ctx, ctx.Model.Get(id) ?? throw new CommandException("Nothing to move."), Json.Number(a["along"]), Json.Number(a["sill"]));
+            var sillFrom = OpeningSills.Parse((string?)a["sillFrom"]);
+            foreach (var id in ids) Openings.Move(ctx, ctx.Model.Get(id) ?? throw new CommandException("Nothing to move."), Json.Number(a["along"]), Json.Number(a["sill"]), sillFrom);
             return null;
         });
+
+        // The project's default for new doors, windows and openings (forum topic 192): {sillFrom: "structural" | "finished"}; the ones
+        // already placed keep theirs.
+        r.Command("setOpeningDefaults", "Door and window defaults", (ctx, a) =>
+        {
+            var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
+            var attrs = project.CloneAttrs();
+            if (a.ContainsKey("sillFrom"))
+            {
+                if (OpeningSills.Parse((string?)a["sillFrom"]) == OpeningSills.Finished) attrs[OpeningSills.ProjectKey] = OpeningSills.Finished;
+                else attrs.Remove(OpeningSills.ProjectKey);
+            }
+            ctx.Replace(project.With(attrs: attrs));
+            return null;
+        });
+        r.Query("openingDefaults", (q, _) => new JsonObject { ["sillFrom"] = OpeningSills.ProjectDefault(q.Model) });
 
         // Whether openings cut every wall they pass through or their own wall alone (forum topic 64): {id | ids (openings, or the doors
         // and windows filling them), on}. Off, an opening must fit its own wall again.
@@ -1131,14 +1153,31 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 attrs["params"] = ps;
                 ctx.Replace(type = type.With(attrs: attrs));
             }
+            // finishedFloor (forum topic 192): its walls' finished floor over their base, metres, for the sills measured from it.
+            if (a["finishedFloor"] is not null)
+            {
+                var attrs = type.CloneAttrs();
+                OpeningSills.SetFinishedFloor(attrs, a["finishedFloor"]);
+                ctx.Replace(type = type.With(attrs: attrs));
+            }
             return new JsonObject { ["id"] = type.Id };
         });
 
+        // finishedFloor (forum topic 192): a length, or null to clear it; the openings of its walls measured from the finished floor
+        // move with it, refused when one would no longer fit its wall.
         r.Command("updateWallType", "Change wall type", (ctx, a) =>
         {
             var type = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.WallType);
             WallTypes.Update(ctx, type, (string?)a["name"], a["layers"] is null ? null : WallTypes.ParseLayers(a["layers"]), a["zones"], a["lintels"],
                 a["sweeps"] is null ? null : WallSweepTypes.Parse(ctx, type, a["sweeps"]));
+            if (a.ContainsKey("finishedFloor"))
+            {
+                var current = ctx.Model.Get(type.Id)!;
+                var attrs = current.CloneAttrs();
+                OpeningSills.SetFinishedFloor(attrs, a["finishedFloor"]);
+                ctx.Replace(current.With(attrs: attrs));
+                OpeningSills.CheckType(ctx.Model, current);
+            }
             return null;
         });
 
@@ -1290,7 +1329,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var attrs = wall.CloneAttrs();
             foreach (var (k, v) in Walls.Attrs(Walls.Start(wall), Walls.End(wall), height, baseOffset, thickness)) attrs[k] = v?.DeepClone();
             if (rise != 0) attrs[PathCurve.Key] = rise; else attrs.Remove(PathCurve.Key);
+            // Its own finished floor over its base (forum topic 192; null: its type's again): the sills measured from it follow.
+            var floorGiven = a.ContainsKey("finishedFloor");
+            if (floorGiven) OpeningSills.SetFinishedFloor(attrs, a["finishedFloor"]);
             ctx.Replace(wall.With(attrs: attrs));
+            if (floorGiven) OpeningSills.CheckWall(ctx.Model, ctx.Model.Get(wall.Id)!);
             var moveJoined = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var keep) || keep;
             if ((start - Walls.Start(wall)).Length > 1e-12 || (end - Walls.End(wall)).Length > 1e-12)
                 Joins.MoveEnds(ctx, Paths(ctx), ctx.Model.Get(wall.Id)!, start, end, moveJoined, a["detachJoinedEnds"] is JsonValue dj && dj.TryGetValue<bool>(out var detach) && detach);
@@ -1342,7 +1385,12 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Command("setWallType", "Change type", (ctx, a) =>
         {
             var type = Spatial.Require(ctx.Model, (string?)a["typeId"], IfcClass.WallType);
-            foreach (var id in Ids(a)) Walls.SetType(ctx, Spatial.Require(ctx.Model, id, IfcClass.Wall), type);
+            foreach (var id in Ids(a))
+            {
+                Walls.SetType(ctx, Spatial.Require(ctx.Model, id, IfcClass.Wall), type);
+                // Another type, another finished floor (forum topic 192): its openings measured from it must still fit.
+                OpeningSills.CheckWall(ctx.Model, ctx.Model.Get(id)!);
+            }
             return null;
         });
 
@@ -1575,7 +1623,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             : Openings.EnsureType(ctx, kind);
         var along = Json.Number(a["along"]) ?? Openings.AlongOf(wall, new Vec2(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0));
         // Its own width and height (forum topic 140) over the type's, where given.
-        var fill = Openings.AddFill(ctx, wall, type, along, Json.Number(a["sill"]), Json.Number(a["width"]), Json.Number(a["height"]));
+        // Its sill over the structural level or the finished floor (forum topic 192): as asked, else the project's default.
+        var sillFrom = OpeningSills.Parse((string?)a["sillFrom"]) ?? OpeningSills.ProjectDefault(ctx.Model);
+        var fill = Openings.AddFill(ctx, wall, type, along, Json.Number(a["sill"]), Json.Number(a["width"]), Json.Number(a["height"]), sillFrom);
         // Placed in the hand and to the side the tool chose (Space, the cursor's side of the wall).
         if (a["flipHand"] is JsonValue hv && hv.TryGetValue<bool>(out var hand) && hand) { Openings.Flip(ctx, fill, "x"); fill = ctx.Model.Get(fill.Id)!; }
         if (a["flipSide"] is JsonValue sv && sv.TryGetValue<bool>(out var side) && side) Openings.Flip(ctx, fill, "y");
@@ -1813,6 +1863,11 @@ sealed class WallTopDeletion : IDeletion, IElementUpdate
 {
     public void Updated(ICommandContext ctx, Entity before, Entity after)
     {
+        // A wall's or a wall type's finished floor typed in the inspector (forum topic 192): the sills measured from it moved with it, and must still fit.
+        if (after.Class is IfcClass.Wall or IfcClass.WallType && before.NumOrNull(OpeningSills.FinishedFloorKey) != after.NumOrNull(OpeningSills.FinishedFloorKey))
+        {
+            if (after.Class == IfcClass.Wall) OpeningSills.CheckWall(ctx.Model, after); else OpeningSills.CheckType(ctx.Model, after);
+        }
         // Its top's mode changed by hand (the inspector's roofTop): what it lost to a deletion is no longer a problem.
         if (after.Class == IfcClass.Wall && after.Attrs[WallTops.GoneKey] != null && after.Str("roofTop") != before.Str("roofTop"))
         {

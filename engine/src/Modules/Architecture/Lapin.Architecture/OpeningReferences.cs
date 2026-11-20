@@ -55,7 +55,10 @@ public static class OpeningReferences
             {
                 ["id"] = opening.Id, ["along"] = p.Along, ["width"] = p.Width,
                 // What architecture.moveOpening's sill is for the element selected: a door's or window's own, a bare opening's.
-                ["sill"] = p.Fill != null ? p.FillSill : p.Sill,
+                // Over what it is measured from (forum topic 192): sillFrom, and finishedFloor, the finished floor's height over the base worked out now.
+                ["sill"] = p.OwnSill,
+                ["sillFrom"] = OpeningSills.FromFinished(opening) ? OpeningSills.Finished : OpeningSills.Structural,
+                ["finishedFloor"] = OpeningSills.FinishedFloor(m, wall),
                 ["bottom"] = baseZ + p.Sill, ["top"] = baseZ + p.Sill + p.Height,
             };
             if (p.Fill != null) op["fill"] = p.Fill.Id;
