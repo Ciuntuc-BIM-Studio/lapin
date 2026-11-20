@@ -128,6 +128,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 var pts = PointsOf(a);
                 if (!Tin.Spans(pts)) throw new CommandException("The terrain needs at least three points that are not in a line.");
                 attrs["points"] = Terrains.PointsJson(pts);
+                // The cage's controls that no longer stand on a point go.
+                Cage.Prune(attrs, pts);
             }
             foreach (var k in new[] { "datum", "interval", "majorEvery", "depth" })
                 if (Json.Number(a[k]) is { } v) attrs[k] = k == "interval" ? Terrains.Interval(v) : v;
