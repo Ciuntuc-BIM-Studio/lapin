@@ -634,3 +634,5 @@ Decizia 743 (20.11.2026, ramura `feat/fem-s3`):
 6. **Grupa unității după nume** (§11.7): potrivirea e bună pentru numele obișnuite (cărămidă, GVP, BCA); un material cu alt nume trebuie să aibă `Lapin_Masonry.UnitGroup`. Vreți o listă mai lungă sau o alegere în dialogul materialului?
 7. **Forțele pe pereții de zidărie** (forța tăietoare și momentul fiecărui perete, pentru verificarea după CR 6) rămân la S4, sau le vreți deja în tabelul nivelurilor?
 8. **Performanța modelelor mari** cu pereți-placă (multe moduri locale): acceptați ca limita implicită să rămână 60 de moduri, cu nota când 90 % nu e atins?
+
+**Răspunsul utilizatorului (20.11.2026, „mergem pe recomandările tale”):** (1) valorile rămân cum sunt, marcate orientative, până le confirmă utilizatorul din textul normelor; (2) betonul fisurat 0,5; (3) q implicit 1,5, cu nota că e cel mai mic; (4) φ = 1, de partea siguranței; (5) P100-1/2025 când intră în vigoare; (6) grupa după nume rămâne, cu `Lapin_Masonry.UnitGroup` pentru celelalte; alegerea în dialogul materialului mai târziu; (7) forțele pe pereții de zidărie la S4; (8) 60 de moduri, cu nota.
