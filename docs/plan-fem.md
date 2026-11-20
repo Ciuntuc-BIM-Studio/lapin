@@ -208,7 +208,7 @@ Intră în combinații doar cazurile care au ceva (greutatea proprie, o încărc
 - **SLS frecventă:** Σ Gk + ψ1,1 Qk,1 + Σ ψ2,i Qk,i, pentru fiecare principal.
 - **SLS cvasipermanentă:** Σ Gk + Σ ψ2,i Qk,i.
 - Fiecare combinație: `{key, kind: uls|sls-characteristic|sls-frequent|sls-quasi, name, factors: [{caseId, code, factor}]}`, cheia stabilă (`uls/<caseId>`, `uls/permanent`, `uls/wind-uplift`, `slsc/<caseId>`, `slsf/<caseId>`, `slsq`), numele scris din factori: `1.35 G1 + 1.35 G2 + 1.5 Q-A + 0.75 S + 0.9 W`. Fără factorii nuli.
-- Lăsat pentru mai târziu, spus în raport: 6.10a/6.10b, simultaneitatea zăpezii cu încărcarea utilă pe acoperișuri (EN 1991-1-1 3.3.2), combinația seismică (cu S3), valorile CR 0-2012 (de confirmat de utilizator).
+- Lăsat pentru mai târziu, spus în raport: 6.10a/6.10b, simultaneitatea zăpezii cu încărcarea utilă pe acoperișuri (EN 1991-1-1 3.3.2), combinația seismică (cu S3), valorile CR 0-2012 (de confirmat de utilizator). 6.10a/6.10b și CR 0-2012: făcute la §13 (20.11.2026).
 
 ### 8.6 Interogările
 
