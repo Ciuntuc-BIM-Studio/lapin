@@ -155,6 +155,13 @@ export function StandardsDialog() {
     void query<Book>('standards.get').then((b) => { if (live && b) setBook(b); });
     return () => { live = false; };
   }, [nodes]);
+  // The architecture module's project default for new openings' sills (null: not in this edition).
+  const [openingSillFrom, setOpeningSillFrom] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void query<{ sillFrom?: string }>('architecture.openingDefaults').then((d) => { if (live && d) setOpeningSillFrom(d.sillFrom === 'finished' ? 'finished' : 'structural'); }).catch(() => undefined);
+    return () => { live = false; };
+  }, []);
   if (!book) return <PendingDialog title="Drafting standards" />;
   const set = (entry: Record<string, unknown>, extra: Record<string, unknown> = {}) => void execute('standards.set', { kind: tab.id, entry, ...extra });
   const fixed = (e: Entry) => (tab.id === 'layer' ? e.id === '0' : e.id === 'standard');
@@ -239,6 +246,13 @@ export function StandardsDialog() {
       <dd><select data-field="levelZeros" value={String(book.levelZeros ?? 'project')} onChange={(e) => void execute('standards.options', { levelZeros: e.target.value })}>
         {[['project', 'as the project'], ['keep', 'keep (+3.150)'], ['suppress', 'suppress (+3.15)']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select></dd>
+      {/* Forum topic 192, decision 745: what a new door's, window's or opening's sill is measured from (the architecture module's own project setting). */}
+      {openingSillFrom != null && <>
+        <dt title="What the sill of a new door, window or wall opening is measured from: the wall's structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take">Door and window sills measured from</dt>
+        <dd><select data-field="openingSillFrom" value={openingSillFrom} onChange={(e) => { const v = e.target.value; setOpeningSillFrom(v); void execute('architecture.setOpeningDefaults', { sillFrom: v }); }}>
+          <option value="structural">Structural level</option><option value="finished">Finished floor</option>
+        </select></dd>
+      </>}
       <dt title="How lines of true weight end and meet, on screen and on paper: round, or square caps with mitred corners">Line ends</dt>
       <dd><select value={String(book.lineCap ?? 'round')} onChange={(e) => void execute('standards.options', { lineCap: e.target.value })}>
         <option value="round">round</option><option value="square">square (mitred)</option>

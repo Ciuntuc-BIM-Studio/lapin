@@ -117,7 +117,7 @@ export interface UiState extends Pane {
   /** The curtain wall type the curtain wall tool draws with; null: the project's first. */
   curtainTypeId: string | null;
   /** The size and sill the Wall opening tool cuts (metres), and its head (decision 253): its kind and rise (null: the kind's own). */
-  openingSize: { width: number; height: number; sill: number; shape: OpeningHead; rise: number | null };
+  openingSize: { width: number; height: number; sill: number; shape: OpeningHead; rise: number | null; sillFrom?: 'structural' | 'finished' };
   /** The roof the roof configurator is open on. */
   roofId: string | null;
   /** The tab the roof configurator opens on (null defaults to shape). */

@@ -14,6 +14,8 @@ import type { NodeDto } from '../../engine/protocol';
 import { LengthField } from '../../shell/cells';
 import { sameKind } from '../../shell/params';
 import { AlongField } from './AlongField';
+import { SillFromRows } from './SillFromRows';
+import { sillFromOf } from './sillFrom';
 import { JoineryDataButton } from './JoineryData';
 import type { Position } from './JoineryDialog';
 import { openTypeDialog } from '../../shell/typeToEdit';
@@ -87,6 +89,8 @@ export function JoinerySection({ node }: { node: NodeDto }) {
         {opening && node.editable && <>
           <dt>Along the wall</dt><dd><AlongField id={node.id} along={num(opening, 'along')} width={num(opening, 'width') || size.width} /></dd>
           <dt>Sill</dt><dd><LengthField metres={num(opening, 'sill')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { ids: sameKind(node, JOINERY), sill: v }); }} /></dd>
+          {/* Forum topic 192: the sill from the structural base or the finished floor; chosen alone, the element stays where it is. */}
+          <SillFromRows value={sillFromOf(opening)} wall={wall} onChange={(v) => void execute('architecture.moveOpening', { ids: sameKind(node, JOINERY), sillFrom: v })} />
         </>}
         {node.editable && !inCurtain && <>
           <dt>Frame in the wall</dt><dd>

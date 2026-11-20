@@ -9,9 +9,11 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { mm, ofClass } from '../../engine/model';
+import { mm, ofClass, relatingOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { LengthField } from '../../shell/cells';
+import { SillFromRows } from './SillFromRows';
+import { sillFromOf, type SillFrom } from './sillFrom';
 import { outline, type HeadKind, type Pt } from './openingShape';
 
 /** The opening the dialog edits, and whether it opens on its Change to part. */
@@ -32,14 +34,14 @@ export const HEAD_KINDS: { kind: HeadKind; label: string }[] = [
 export const revealThickness = (kind: RevealKind) => (kind === 'lining' ? 0.02 : 0.015);
 export const revealMaterial = (kind: RevealKind) => (kind === 'lining' ? 'Timber lining' : 'Plaster');
 
-export interface OpeningDraft { width: number; height: number; sill: number; shape: HeadKind; rise: number | null; reveal: RevealKind; revealThickness: number | null; revealMaterial: string | null; lintel: 'wall' | 'none' }
+export interface OpeningDraft { width: number; height: number; sill: number; sillFrom: SillFrom; shape: HeadKind; rise: number | null; reveal: RevealKind; revealThickness: number | null; revealMaterial: string | null; lintel: 'wall' | 'none' }
 
 const n = (v: unknown, d: number) => (typeof v === 'number' ? v : d);
 export function draftOf(node: NodeDto): OpeningDraft {
   const k = node.props.shape;
   const r = node.props.reveal;
   return {
-    width: n(node.props.width, 1), height: n(node.props.height, 2), sill: n(node.props.sill, 0),
+    width: n(node.props.width, 1), height: n(node.props.height, 2), sill: n(node.props.sill, 0), sillFrom: sillFromOf(node),
     shape: k === 'segmental' || k === 'elliptical' || k === 'round' || k === 'radiused' || k === 'circle' ? k : 'rect',
     rise: typeof node.props.rise === 'number' ? node.props.rise : null,
     reveal: r === 'plaster' || r === 'lining' ? r : 'none',
@@ -53,6 +55,7 @@ export function draftOf(node: NodeDto): OpeningDraft {
 export function changes(was: OpeningDraft, now: OpeningDraft): Record<string, unknown> {
   const o: Record<string, unknown> = {};
   for (const k of ['width', 'height', 'sill'] as const) if (Math.abs(was[k] - now[k]) > 1e-9) o[k] = now[k];
+  if (was.sillFrom !== now.sillFrom) o.sillFrom = now.sillFrom;
   if (was.shape !== now.shape || was.rise !== now.rise) { o.shape = now.shape; o.rise = now.rise; }
   if (was.reveal !== now.reveal) o.reveal = now.reveal;
   if (now.reveal !== 'none') {
@@ -121,6 +124,7 @@ export function OpeningDialog() {
             <dt>Width</dt><dd><LengthField metres={draft.width} min={0.05} onCommit={(m) => m != null && set({ width: m })} /></dd>
             <dt>Height</dt><dd><LengthField metres={draft.height} min={0.05} onCommit={(m) => m != null && set({ height: m })} /></dd>
             <dt>Sill</dt><dd><LengthField metres={draft.sill} min={0} onCommit={(m) => m != null && set({ sill: m })} /></dd>
+            <SillFromRows value={draft.sillFrom} wall={relatingOf({ nodes, relations }, node.id, 'IfcRelVoidsElement')} onChange={(v) => set({ sillFrom: v })} />
             <dt>Head</dt>
             <dd><select data-field="opening-dialog-head" value={draft.shape} onChange={(e) => set({ shape: e.target.value as HeadKind, rise: null })}>
               {HEAD_KINDS.map((h) => <option key={h.kind} value={h.kind}>{h.label}</option>)}
