@@ -11,7 +11,8 @@ namespace Lapin.Architecture;
 /// Walls, floors and roofs in the analytical model (docs/jg-structures.md): a wall on its core's centre line (its axis moved
 /// across to the core's middle; an arc as chords) from its base to its height or the top of what is over it (a roof, an
 /// attached slab: <see cref="WallTops"/>), with its doors, windows and openings, load-bearing when Pset_WallCommon.LoadBearing
-/// (on it or its type) says so; a floor's core at its mid-plane over its outline, with its openings. A roof without framing is
+/// (on it or its type) says so, or unsaid when neither says (and IFC does not call it a partition; the analytical model decides
+/// by its material and thickness); a floor's core at its mid-plane over its outline, with its openings. A roof without framing is
 /// its deck at the deck's mid-plane, a sloping shell a plane; a framed roof its timber members (rafters, purlins, ridge,
 /// plates, collars, trusses' chords and webs) as frames of its timber grade. The core's thickness and material are the section's.
 /// </summary>
@@ -54,7 +55,7 @@ public sealed class ArchitectureAnalytical : IAnalyticalElements
                 thickness, core.Material, Spatial.StoreyOf(m, w.Id)?.Id, Provisions.LoadBearing(m, w),
                 Line: line, Z0: z0, Z1: z0 + height,
                 Note: curve.IsArc ? $"curved: {line.Count - 1} planar panels on its chords" : top != null ? "its top follows the roof or slab over it" : null)
-            { Openings = openings, Top = top });
+            { Openings = openings, Top = top, Unsaid = Provisions.LoadBearingOrNull(m, w) == null && !(w.PredefinedType == "PARTITIONING" || type?.PredefinedType == "PARTITIONING") });
         }
         foreach (var s in m.OfClass(IfcClass.Slab))
         {

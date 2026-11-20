@@ -128,6 +128,28 @@ public sealed class AnalyticalModel
         public double Off(Vec3 p) => Math.Abs(Vec2.Cross(Dir, p.Xy - A));
     }
 
+    /// <summary>
+    /// The thinnest core (metres) of a wall that says nothing of its load still taken as load-bearing (docs/plan-fem.md §11.10):
+    /// a thinner one is a partition (a 7.5 cm brick, a 5 cm block).
+    /// </summary>
+    public const double PartitionThickness = 0.10;
+    const string ThinPartition = "not load-bearing: says nothing of its load and is thinner than 10 cm (a partition)";
+
+    /// <summary>
+    /// Why a wall that is not marked load-bearing stays out of the model (docs/plan-fem.md §11.10), null when it is taken: one
+    /// whose LoadBearing (on it or its type) is false, or that IFC calls a partition, is out; one that says nothing is taken
+    /// when it is of masonry or concrete with a core of <see cref="PartitionThickness"/> or more.
+    /// </summary>
+    static string? UnsaidLeftOut(IModelView m, AnalyticalShell s)
+    {
+        if (!s.Unsaid) return "not load-bearing (Pset_WallCommon.LoadBearing)";
+        var kind = s.MaterialId == null ? null
+            : StructuralMaterials.Of(m, (m.Get(s.MaterialId) is { Class: IfcClass.Material } own ? own : Materials.Find(m, s.MaterialId))
+                ?? new Entity($"lapin-material-{s.MaterialId}", IfcClass.Material, s.MaterialId, [])).Kind;
+        if (kind is not ("masonry" or "concrete")) return "not load-bearing: says nothing of its load and is not of masonry or concrete";
+        return s.Thickness < PartitionThickness - 1e-6 ? ThinPartition : null;
+    }
+
     public static AnalyticalModel Build(IModelView m, IServices services, AnalyticalOptions options)
     {
         var all = new AnalyticalContribution { Services = services };
@@ -155,15 +177,25 @@ public sealed class AnalyticalModel
             bars.Add(new Bar(f));
         }
         var plates = new List<Plate>();
+        var (treated, thin) = (new List<string>(), new List<string>());
         foreach (var s in all.Shells)
         {
             if (!options.On(s.StoreyId)) continue;
             if (!options.Keeps(s.SourceId)) { model.LeftOut.Add(new(s.SourceId, s.Name, s.IfcClass, "left out of the export")); continue; }
             var kind = s.Kind == "wall" ? AnalyticalKinds.Walls : s.IfcClass == "IfcRoof" ? AnalyticalKinds.Roofs : AnalyticalKinds.Slabs;
             if (!options.Takes(kind)) { model.LeftOut.Add(new(s.SourceId, s.Name, s.IfcClass, $"{kind} not chosen")); continue; }
-            if (s.Kind == "wall" && !s.LoadBearing && !options.AllWalls) { model.LeftOut.Add(new(s.SourceId, s.Name, s.IfcClass, "not load-bearing (Pset_WallCommon.LoadBearing)")); continue; }
+            if (s.Kind == "wall" && !s.LoadBearing && !options.AllWalls)
+            {
+                if (UnsaidLeftOut(m, s) is { } why) { model.LeftOut.Add(new(s.SourceId, s.Name, s.IfcClass, why)); if (why == ThinPartition) thin.Add(s.Name); continue; }
+                treated.Add(s.Name);
+            }
             plates.Add(new Plate(s));
         }
+        static string Names(List<string> xs) { var d = xs.Distinct().ToList(); return string.Join(", ", d.Take(6)) + (d.Count > 6 ? "…" : ""); }
+        if (treated.Count > 0)
+            model.Notes.Add($"Walls that say nothing of their load taken as load-bearing (masonry or concrete, a core of {PartitionThickness * 100:0} cm or more): {Names(treated)}. Set Pset_WallCommon.LoadBearing to false on a partition to leave it out.");
+        if (thin.Count > 0)
+            model.Notes.Add($"Walls that say nothing of their load, thinner than {PartitionThickness * 100:0} cm, taken as partitions (their weight on the floors): {Names(thin)}. Set Pset_WallCommon.LoadBearing to true on one that carries.");
         var supports = options.Takes(AnalyticalKinds.Supports) ? all.Supports.Where(s => options.Keeps(s.SourceId) && options.Keeps(s.ForFrame)).ToList() : [];
 
         JoinEnds(bars);

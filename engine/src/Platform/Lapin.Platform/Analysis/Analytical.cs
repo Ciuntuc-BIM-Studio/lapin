@@ -69,6 +69,12 @@ public sealed record AnalyticalShell(
     public IReadOnlyList<AnalyticalOpening> Openings { get; init; } = [];
     /// <summary>A wall whose top follows what is over it (a roof, an attached slab): its top from start to end, plan point and height.</summary>
     public IReadOnlyList<Vec3>? Top { get; init; }
+    /// <summary>
+    /// A wall that says nothing of its load (no LoadBearing on it or its type, no PARTITIONING): the analytical model takes it as
+    /// load-bearing when it is of masonry or concrete and its core is no thinner than <see cref="AnalyticalModel.PartitionThickness"/>
+    /// (docs/plan-fem.md §11.10). <see cref="LoadBearing"/> is false for it.
+    /// </summary>
+    public bool Unsaid { get; init; }
 }
 
 /// <summary>An opening in a wall: its centre on the wall's axis in plan, the axis' direction there, half its width, its bottom and top (absolute).</summary>

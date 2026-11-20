@@ -90,7 +90,8 @@ public sealed partial class StructuralProblem
     public static StructuralProblem Build(IModelView m, LoadsReport rep)
     {
         var am = rep.Model;
-        var notes = new List<string>();
+        // What the analytical model says of the walls it took or left (§11.10: those that say nothing of their load).
+        var notes = new List<string>(am.Notes);
         var settings = AnalysisSettings.Of(m);
         var p = new FrameProblem();
         var nodeIndex = new Dictionary<ANode, int>();

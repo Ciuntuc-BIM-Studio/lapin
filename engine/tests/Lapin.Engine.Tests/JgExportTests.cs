@@ -358,9 +358,10 @@ public class JgExportTests
         Assert.Empty(Items(doc, "shells"));
         Assert.Equal(8, Items(doc, "frames").Count());
         Assert.Contains(report["leftOut"]!.AsArray(), x => (string?)x!["id"] == t.Wall && ((string?)x["reason"])!.Contains("walls"));
-        // A wall that is not load-bearing is left out unless every wall is asked for.
+        // A wall marked not load-bearing is left out unless every wall is asked for.
         var f = F();
-        f.Wall(0, 0, 4, 0);
+        var partition = f.Wall(0, 0, 4, 0);
+        f.Run("element.setParam", new JsonObject { ["id"] = partition, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = false });
         Assert.Empty(Items(Export(f).Doc, "shells"));
         Assert.Single(Items(Export(f, more: new JsonObject { ["allWalls"] = true }).Doc, "shells"));
     }

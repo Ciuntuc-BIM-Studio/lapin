@@ -86,6 +86,9 @@ public class DerivedLoadTests
         var type = f.Type("AAC 25", ("BCA", 0.25, true));
         var wall = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 4, ["y2"] = 0, ["typeId"] = type, ["height"] = 2.5 })!["id"]!;
         Density(f, "BCA", 600);
+        // A 25 cm masonry wall that says nothing of its load bears load (§11.10): a partition is marked so.
+        Assert.Empty(Derived(f, "partitions"));
+        f.Run("element.setParam", new JsonObject { ["id"] = wall, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = false });
         var d = Assert.Single(Derived(f, "partitions"));
         Assert.Equal(wall, (string?)d["sourceId"]);
         Assert.Equal(LoadCaseTests.IdOf(f, "G2"), (string?)d["caseId"]);

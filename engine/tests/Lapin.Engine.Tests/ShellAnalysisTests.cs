@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Lapin.Analysis;
 using Lapin.Analysis.Solver;
 using Lapin.Geometry;
 using Lapin.Model;
@@ -35,6 +36,48 @@ public class ShellAnalysisTests(ITestOutputHelper output)
     {
         ["name"] = $"Wall {material} {t}", ["layers"] = new JsonArray(new JsonObject { ["material"] = material, ["thickness"] = t, ["core"] = true }),
     })!["id"]!;
+
+    [Fact]
+    public void A_masonry_or_concrete_wall_that_says_nothing_of_its_load_bears_it_unless_thinner_than_a_partition()
+    {
+        // §11.10: LoadBearing false → out; unset → in for masonry and concrete with a core of 10 cm or more, said in a note;
+        // a thinner one or one of another material stays a partition; true → in, whatever it is.
+        var f = LoadCaseTests.F();
+        f.Run("analysis.defaultCases", []);
+        var brick = WallType(f, "Brick", 0.25);
+        var unsaid = f.Wall(0, 0, 6, 0, brick);
+        var concrete = f.Wall(6, 0, 6, 4, WallType(f, Concrete, 0.2));
+        var marked = f.Wall(6, 4, 0, 4, WallType(f, "Brick", 0.24));
+        f.Run("element.setParam", new JsonObject { ["id"] = marked, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = false });
+        var thin = f.Wall(0, 4, 0, 0, WallType(f, "Brick", 0.075));
+        var board = f.Wall(3, 0, 3, 4, WallType(f, "Plasterboard", 0.125));
+        var run = AnalysisRun.Of(f.Session.Reader);
+        var am = run.Problem.Model;
+        var taken = am.Shells.Select(x => x.Source.SourceId).ToHashSet();
+        Assert.Contains(unsaid, taken);
+        Assert.Contains(concrete, taken);
+        Assert.DoesNotContain(marked, taken);
+        Assert.DoesNotContain(thin, taken);
+        Assert.DoesNotContain(board, taken);
+        string Why(string id) => am.LeftOut.Single(l => l.SourceId == id).Reason;
+        Assert.Equal("not load-bearing (Pset_WallCommon.LoadBearing)", Why(marked));
+        Assert.Contains("thinner than 10 cm", Why(thin));
+        Assert.Contains("not of masonry or concrete", Why(board));
+        string Name(string id) => f.Model.Get(id)!.Name;
+        var note = Assert.Single(run.Notes, n => n.StartsWith("Walls that say nothing of their load taken as load-bearing"));
+        Assert.Contains(Name(unsaid), note);
+        Assert.Contains(Name(concrete), note);
+        Assert.DoesNotContain(Name(marked), note);
+        Assert.Contains(run.Notes, n => n.StartsWith("Walls that say nothing of their load, thinner than 10 cm") && n.Contains(Name(thin)));
+        // Its weight: the partitions left out are loads on the floors, the walls taken are not.
+        var partitions = LoadsReport.Compute(f.Session.Reader).Derived.Where(d => d.Kind == "partitions").Select(d => d.SourceId).ToHashSet();
+        Assert.DoesNotContain(unsaid, partitions);
+        // Marked true, the thin wall bears load too, and the note no longer names it.
+        f.Run("element.setParam", new JsonObject { ["id"] = thin, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = true });
+        run = AnalysisRun.Of(f.Session.Reader);
+        Assert.Contains(run.Problem.Model.Shells, x => x.Source.SourceId == thin);
+        Assert.DoesNotContain(run.Notes, n => n.StartsWith("Walls that say nothing of their load, thinner"));
+    }
 
     /// <summary>
     /// Navier's double series for a simply supported rectangular plate a × b under a uniform q (Timoshenko and
