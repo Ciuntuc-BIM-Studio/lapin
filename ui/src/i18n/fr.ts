@@ -221,6 +221,7 @@ export const FR: Record<string, string> = {
   "Set body": "Définir le corps",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Espace bascule entre longueur et angle et largeur et hauteur', 'Width × Height': 'Largeur × Hauteur', 'Length ∠ Angle': 'Longueur ∠ Angle',
+  'Space: width × height': 'Espace : largeur × hauteur', 'Space: length ∠ angle': 'Espace : longueur ∠ angle',
   // Decision 516: mouse navigation styles
   "Mouse navigation": "Navigation à la souris",
   "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Glisser à gauche fait tourner, glisser à droite déplace, la molette zoome ; Alt + glisser à gauche sélectionne une région",

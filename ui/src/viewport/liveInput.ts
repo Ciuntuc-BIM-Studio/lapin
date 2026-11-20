@@ -109,12 +109,24 @@ export function liveEnd(owner?: string): void {
   useLive.setState({ owner: null, base: null, commit: null, len: '', ang: '', rel: '', ref: null, angles: false, delta: false, rect: null, mode: 'polar', measure: false });
 }
 
+const HINT_KEY = 'lapin.liveHintSeen';
+let hintSeen: boolean | null = null;
+/** Whether the user has switched a rectangle's box once already: the written hint ("Space: width × height") shows only until then. */
+export function liveHintSeen(): boolean {
+  if (hintSeen === null) { try { hintSeen = localStorage.getItem(HINT_KEY) === '1'; } catch { hintSeen = false; } }
+  return hintSeen;
+}
+const markHintSeen = (): void => { hintSeen = true; try { localStorage.setItem(HINT_KEY, '1'); } catch { /* private window */ } };
+/** For tests. */
+export const resetLiveHint = (): void => { hintSeen = null; };
+
 /** Space (or the button): length and angle become width and height, or back; what was typed is cleared, the first field is focused, the mode is remembered for the tool. */
 export function liveToggleMode(): void {
   const s = useLive.getState();
   if (!s.rect) return;
   const mode: LiveMode = s.mode === 'rect' ? 'polar' : 'rect';
   modes.set(s.rect, mode);
+  markHintSeen();
   useLive.setState({ mode, len: '', ang: '', rel: '', focus: 'len' });
 }
 

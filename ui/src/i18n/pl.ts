@@ -221,6 +221,7 @@ export const PL: Record<string, string> = {
   "Set body": "Ustaw bryłę",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'Spacja przełącza między długością i kątem a szerokością i wysokością', 'Width × Height': 'Szerokość × Wysokość', 'Length ∠ Angle': 'Długość ∠ Kąt',
+  'Space: width × height': 'Spacja: szerokość × wysokość', 'Space: length ∠ angle': 'Spacja: długość ∠ kąt',
   // Decision 516: mouse navigation styles
   "Mouse navigation": "Nawigacja myszą",
   "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "Przeciąganie lewym obraca, przeciąganie prawym przesuwa, kółko powiększa; Alt + przeciąganie lewym zaznacza obszar",

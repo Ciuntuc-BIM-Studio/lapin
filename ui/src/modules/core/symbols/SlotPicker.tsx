@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import type { NodeDto } from '../../../engine/protocol';
 import { execute, query, useSession } from '../../../engine/session';
@@ -48,12 +49,12 @@ export const orderForSlot = (items: SymSummary[], order: string[], category: str
 };
 
 /** Where the list opens, in window coordinates: under the button, or above it when there is more room there, never off the window. */
-export const listPlace = (r: { left: number; top: number; bottom: number }, w: number, h: number): { position: 'fixed'; left: number; top?: number; bottom?: number; maxHeight: number } => {
+export const listPlace = (r: { left: number; top: number; bottom: number }, w: number, h: number): { position: 'fixed'; left: number; top?: number | 'auto'; bottom?: number | 'auto'; maxHeight: number } => {
   const below = h - r.bottom - 8, above = r.top - 8;
   const left = Math.max(4, Math.min(r.left, w - 264));
   return below >= 220 || below >= above
-    ? { position: 'fixed', left, top: r.bottom, maxHeight: Math.max(120, Math.min(420, below)) }
-    : { position: 'fixed', left, bottom: h - r.top, maxHeight: Math.max(120, Math.min(420, above)) };
+    ? { position: 'fixed', left, top: r.bottom, bottom: 'auto', maxHeight: Math.max(120, Math.min(420, below)) }
+    : { position: 'fixed', left, top: 'auto', bottom: h - r.top, maxHeight: Math.max(120, Math.min(420, above)) };
 };
 
 /** A symbol chosen from a list drawn with previews; `noneLabel` is the choice that names no symbol. */
@@ -62,12 +63,19 @@ export function SymbolPicker({ value, onChange, list, category, noneLabel, field
 }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLSpanElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState<CSSProperties>({});
   useEffect(() => {
     if (!open) return;
-    const off = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    const off = (e: MouseEvent) => { const n = e.target as Node; if (!box.current?.contains(n) && !listRef.current?.contains(n)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    // The list is fixed to the window: a scroll or resize elsewhere would leave it behind its button.
+    const close = (e: Event) => { if (!listRef.current?.contains(e.target as Node)) setOpen(false); };
     document.addEventListener('mousedown', off);
-    return () => document.removeEventListener('mousedown', off);
+    document.addEventListener('keydown', esc);
+    window.addEventListener('resize', close);
+    window.addEventListener('scroll', close, true);
+    return () => { document.removeEventListener('mousedown', off); document.removeEventListener('keydown', esc); window.removeEventListener('resize', close); window.removeEventListener('scroll', close, true); };
   }, [open]);
   // The list is fixed to the window, not absolute in the panel: a Properties table clips what overflows it (reports #168, #169).
   const toggle = () => {
@@ -84,8 +92,8 @@ export function SymbolPicker({ value, onChange, list, category, noneLabel, field
         <span className="grow" data-no-i18n={current ? true : undefined}>{current ? (current.builtin ? tr(current.name) : current.name) : value ? value : noneLabel}</span>
         <ChevronDown size={12} />
       </button>
-      {open && (
-        <div className="slot-list" role="listbox" style={place}>
+      {open && createPortal(
+        <div className="slot-list" role="listbox" style={place} ref={listRef}>
           <button type="button" role="option" aria-selected={!value} className={`slot-row${!value ? ' on' : ''}`} data-symbol="" onClick={() => pick(null)}><span className="sy-thumb" /><span>{noneLabel}</span></button>
           {groups.map(([cat, items]) => (
             <div key={cat}>
@@ -97,7 +105,8 @@ export function SymbolPicker({ value, onChange, list, category, noneLabel, field
               ))}
             </div>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </span>
   );
@@ -134,7 +143,8 @@ export function slotsFor(node: NodeDto): string[] {
     const kind = node.props.kind;
     if (kind === 'section') return ['sectionHead', 'viewTitle'];
     if (kind === 'elevation') return ['elevationHead', 'viewTitle'];
-    if (kind === 'plan') return ['northArrow', 'viewTitle'];
+    // Only a site plan draws a north arrow (SitePlans.cs: a view with `site` set); other plans have no such slot.
+    if (kind === 'plan') return node.props.site ? ['northArrow', 'viewTitle'] : ['viewTitle'];
     return [];
   }
   return [];

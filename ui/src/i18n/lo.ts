@@ -221,6 +221,7 @@ export const LO: Record<string, string> = {
   "Set body": "ກຳນົດຕົວວັດຖຸ",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': 'ປຸ່ມຍະຫວ່າງສະລັບລະຫວ່າງຄວາມຍາວກັບມຸມ ແລະ ຄວາມກວ້າງກັບຄວາມສູງ', 'Width × Height': 'ຄວາມກວ້າງ × ຄວາມສູງ', 'Length ∠ Angle': 'ຄວາມຍາວ ∠ ມຸມ',
+  'Space: width × height': 'ປຸ່ມຍະຫວ່າງ: ຄວາມກວ້າງ × ຄວາມສູງ', 'Space: length ∠ angle': 'ປຸ່ມຍະຫວ່າງ: ຄວາມຍາວ ∠ ມຸມ',
   // Decision 516: mouse navigation styles
   "Mouse navigation": "ການນຳທາງດ້ວຍເມົາ",
   "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "ລາກດ້ວຍປຸ່ມຊ້າຍໝູນ, ລາກດ້ວຍປຸ່ມຂວາເລື່ອນ, ລໍ້ຊູມ; Alt + ລາກດ້ວຍປຸ່ມຊ້າຍເລືອກພື້ນທີ່",

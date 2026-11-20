@@ -258,7 +258,7 @@ export function SheetView() {
   const activeVp = active ? d?.viewports.find((b) => b.id === active) ?? null : null;
   return (
     <div className="view-pane">
-      <div className="view-toolbar">
+      <div className="view-toolbar sheet-toolbar">
         <span className="view-title">{String(sheet.props.number ?? '')} · {sheet.name}</span>
         <select value="" onChange={(e) => { const [viewId, boundaryId] = e.target.value.split('|'); if (viewId) void execute('sheet.addViewport', { id: sheet.id, viewId, ...(boundaryId ? { boundaryId } : {}) }); }} title="Place a view on the sheet (or one of its named boundaries)">
           <option value="">Place view…</option>

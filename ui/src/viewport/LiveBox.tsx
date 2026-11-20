@@ -8,7 +8,7 @@
  */
 
 import type { Vec2 } from '../platform/module';
-import { formatAngle, formatLength, liveCommit, liveFields, liveMeasure, liveToggleMode, useLive, type LiveField } from './liveInput';
+import { formatAngle, formatLength, liveCommit, liveFields, liveHintSeen, liveMeasure, liveToggleMode, useLive, type LiveField } from './liveInput';
 import { segmentArc } from './angleDims';
 import { unitLabel } from '../engine/unitsStore';
 import { useInterface } from '../app/interface';
@@ -53,6 +53,7 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
         {cell('ang', '∠', formatAngle(m.ang), '°')}
         {rel != null && cell('rel', '∡', formatAngle(rel), '°')}
       </>}
+      {live.rect && !liveHintSeen() && <span className="live-hint text" data-testid="live-hint">{live.mode === 'rect' ? t('Space: length ∠ angle') : t('Space: width × height')}</span>}
       {live.rect && <span className="live-hint" title={t('Space switches length and angle with width and height')}>␣</span>}
     </div>
   );

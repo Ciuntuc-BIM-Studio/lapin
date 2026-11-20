@@ -221,6 +221,7 @@ export const ZH: Record<string, string> = {
   "Set body": "设置实体",
   // Decision 524: the box by the cursor offers width and height for a rectangle
   'Space switches length and angle with width and height': '空格键在长度与角度、宽度与高度之间切换', 'Width × Height': '宽度 × 高度', 'Length ∠ Angle': '长度 ∠ 角度',
+  'Space: width × height': '空格键：宽度 × 高度', 'Space: length ∠ angle': '空格键：长度 ∠ 角度',
   // Decision 516: mouse navigation styles
   "Mouse navigation": "鼠标导航",
   "Left drag orbits, right drag pans, wheel zooms; Alt + left drag selects a region": "左键拖动旋转，右键拖动平移，滚轮缩放；Alt + 左键拖动选择区域",

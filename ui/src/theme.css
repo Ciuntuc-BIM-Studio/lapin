@@ -878,6 +878,7 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .chip.warn .link { margin-left: 6px; border: none; background: none; color: inherit; text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; }
 .schedule-body { display: flex; flex: 1; min-height: 0; }
 /* The schedule's toolbar in the pane's flow, above its drawing and its side panels, wrapping when the tools outgrow it. */
+.sheet-toolbar { position: static; max-width: none; padding: 6px 12px; justify-content: flex-end; border-bottom: 1px solid var(--rule); flex: none; }
 .schedule-pane .view-toolbar { position: static; max-width: none; padding: 6px 12px; }
 .schedule-body .schedule-svg { flex: 1; }
 .schedule-settings { width: 280px; max-width: 45%; flex: none; box-sizing: border-box; overflow: auto; overflow-wrap: break-word; padding: 8px 12px; border-left: 1px solid var(--rule); background: var(--panel); font-size: 12px; }
@@ -918,6 +919,7 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .live-label { color: var(--ink-muted); font-size: 10px; }
 .live-unit { color: var(--ink-muted); font-size: 10px; }
 .live-hint { color: var(--ink-muted); font-size: 10px; align-self: center; }
+.live-hint.text { white-space: nowrap; }
 .live-mode { font-size: 11px; padding: 1px 6px; white-space: nowrap; }
 .live-bar { position: absolute; z-index: 3; left: 50%; top: 52px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 5px 10px; background: var(--hud); border: 1px solid var(--rule); border-radius: 3px; backdrop-filter: blur(4px); font-size: 11.5px; }
 .live-field { display: flex; align-items: center; gap: 5px; color: var(--ink-muted); }
@@ -2503,7 +2505,7 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 /* Marker symbols (symbol pickers with previews) and the table import / convert dialogs. */
 .slot-picker { position: relative; display: inline-block; max-width: 100%; }
 .slot-current { display: inline-flex; align-items: center; gap: 6px; min-width: 190px; text-align: left; }
-.slot-list { position: absolute; z-index: 60; top: 100%; left: 0; min-width: 260px; max-height: 320px; overflow: auto; background: var(--panel, #fff); border: 1px solid var(--rule); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); padding: 4px; }
+.slot-list { position: absolute; z-index: 2000; top: 100%; left: 0; min-width: 260px; max-height: 320px; overflow: auto; background: var(--panel, #fff); border: 1px solid var(--rule); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); padding: 4px; }
 .slot-list .eyebrow { margin: 6px 4px 2px; }
 .slot-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 3px 4px; background: none; border: 0; text-align: left; cursor: pointer; color: inherit; font: inherit; }
 .slot-row:hover, .slot-row.on { background: var(--hover, rgba(0, 0, 0, .06)); }
