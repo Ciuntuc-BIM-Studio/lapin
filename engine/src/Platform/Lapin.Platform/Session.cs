@@ -214,6 +214,7 @@ public sealed partial class Session
                 attrs["drafting"] = new JsonObject { ["dimStyles"] = new JsonArray(new JsonObject { ["id"] = Standards.Standard, ["name"] = "Standard", ["openingHeight"] = Standards.NewProjectOpeningHeight }) };
                 // The profile standards its pickers offer: names only, no profile is copied until a type uses it.
                 if (_newProfileStandards != null) ProfileLibraries.ProfileStandards.Write(attrs, _newProfileStandards);
+                foreach (var start in _catalog.All<INewProject>()) start.Start(attrs);
                 edit.Replace(project.With(attrs: attrs));
             }
             for (var i = 0; i < storeys.Count; i++)

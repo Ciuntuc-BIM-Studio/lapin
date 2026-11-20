@@ -79,7 +79,7 @@ public sealed partial class AnalysisRun
         (ShellForces[] F, double[] W)? e = null;
         for (var i = 0; i < o.Count; i++)
         {
-            var sign = sel.Sets[i].Key switch { "seismic/+" => 1.0, "seismic/-" => -1.0, _ => 0 };
+            var sign = SeismicSign(sel.Sets[i].Key);
             if (sign == 0) continue;
             e ??= sr.ShellNodal(Keys(), g => Problem.Surfaces.TryGetValue(g, out var info) ? info.Normal : Vec3.UnitZ);
             var (f, w) = o[i];

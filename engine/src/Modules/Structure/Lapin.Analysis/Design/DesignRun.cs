@@ -78,7 +78,7 @@ public sealed class DesignRun
         var sw = Stopwatch.StartNew();
         var run = Run;
         if (!run.Ok) { Notes.Add("The analysis did not run: analysis.run says why."); return; }
-        if (run.Combinations.All(c => c.Kind != "uls")) { Notes.Add("There are no ULS combinations: nothing to check."); return; }
+        if (!run.Combinations.Any(c => UserCombinations.Ultimate(c.Kind))) { Notes.Add("There are no ULS combinations: nothing to check."); return; }
         Ok = true;
         Notes.Add("Indicative checks (docs/plan-fem.md §12): the Eurocodes' recommended values (kept by the Romanian annexes where Lapin could read them) and CR 6-2013; the signed design remains the engineer's.");
         var project = DesignSettings.Project(m);

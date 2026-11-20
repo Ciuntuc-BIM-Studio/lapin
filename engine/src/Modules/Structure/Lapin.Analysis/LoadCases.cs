@@ -18,8 +18,13 @@ public sealed record LoadCase(string Id, string Code, string Name, string Action
     public bool Wind => ActionSource == "WIND_W" || Category == Categories.Wind;
     public bool Takes(string derived) => Derives.Contains(derived);
 
-    /// <summary>The ψ factors the combinations use: the case's own, else the table's by its category, else A's (the report says so).</summary>
-    public Psi Psi => OwnPsi ?? Categories.TableOf(Category) ?? Categories.Fallback;
+    /// <summary>The project's own ψ of the case's category (plan-fem §13.1), when it gives one.</summary>
+    public Psi? GivenPsi { get; init; }
+    /// <summary>The ψ of the case's category in the project's set of factors (EN's table when read without the project).</summary>
+    public Psi? SetPsi { get; init; }
+
+    /// <summary>The ψ factors the combinations use: the case's own, else the project's for its category, else its set's by its category, else A's (the report says so).</summary>
+    public Psi Psi => OwnPsi ?? GivenPsi ?? SetPsi ?? Categories.TableOf(Category) ?? Categories.Fallback;
 }
 
 /// <summary>
@@ -50,10 +55,16 @@ public static class LoadCases
     static Psi? ReadPsi(JsonNode? n) =>
         n is JsonObject o && Json.Number(o["0"]) is { } a && Json.Number(o["1"]) is { } b && Json.Number(o["2"]) is { } c ? new Psi(a, b, c) : null;
 
-    /// <summary>The project's cases in the order they were made.</summary>
-    public static List<LoadCase> All(IModelView m) => m.OfClass(Class).Select(Read).ToList();
+    /// <summary>The project's cases in the order they were made, their ψ by the project's set of factors (§13.1).</summary>
+    public static List<LoadCase> All(IModelView m)
+    {
+        var s = CombinationSettings.Of(m);
+        return m.OfClass(Class).Select(e => WithFactors(Read(e), s)).ToList();
+    }
 
-    public static LoadCase? Find(IModelView m, string? id) => id != null && m.Get(id) is { Class: Class } e ? Read(e) : null;
+    static LoadCase WithFactors(LoadCase c, CombinationSettings s) => c with { GivenPsi = s.GivenPsi(c.Category), SetPsi = s.SetPsi(c.Category) };
+
+    public static LoadCase? Find(IModelView m, string? id) => id != null && m.Get(id) is { Class: Class } e ? WithFactors(Read(e), CombinationSettings.Of(m)) : null;
 
     /// <summary>
     /// The case taking a derived kind: the rooms' imposed loads the one of that category; the snow the one of that drift

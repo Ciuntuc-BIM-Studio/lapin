@@ -138,7 +138,7 @@ public class ClimateLoadTests
         Assert.Empty(Of(f, along));
         Assert.Contains(Report(f).Notes, n => n.StartsWith($"„{along}” is the undrifted snow here"));
         // Undrifted and drifted are alternatives: no combination holds two of them.
-        var (combos, _) = Combinations.Of(Report(f));
+        var (combos, _) = Combinations.Of(Report(f), f.Model);
         var snows = Report(f).Cases.Where(c => c.Takes("snow")).Select(c => c.Id).ToHashSet();
         Assert.All(combos, c => Assert.True(c.Factors.Count(x => snows.Contains(x.Case.Id)) <= 1, c.Name));
         Assert.Contains(combos, c => c.Key == $"uls/{LoadCaseTests.IdOf(f, across)}");

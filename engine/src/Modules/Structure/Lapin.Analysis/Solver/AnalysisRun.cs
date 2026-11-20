@@ -23,7 +23,10 @@ public sealed partial class AnalysisRun
     public required LoadsReport Report { get; init; }
     public required StructuralProblem Problem { get; init; }
     public FrameSolution? Solution { get; init; }
+    /// <summary>The active combinations but the seismic ones (§13): what results, envelopes, checks and the export take.</summary>
     public required List<Combination> Combinations { get; init; }
+    /// <summary>The user's active seismic combinations: their factors ± AEd, with the seismic analysis (§13.3).</summary>
+    public List<Combination> SeismicCombinations { get; init; } = [];
     public required List<string> Notes { get; init; }
     public double TotalMs { get; init; }
     public bool Ok => Solution is { Ok: true };
@@ -49,7 +52,9 @@ public sealed partial class AnalysisRun
     {
         var sw = Stopwatch.StartNew();
         var rep = LoadsReport.Compute(q);
-        var (combos, comboNotes) = global::Lapin.Analysis.Combinations.Of(rep);
+        var (allCombos, comboNotes) = global::Lapin.Analysis.Combinations.Of(rep, q.Model);
+        var combos = global::Lapin.Analysis.Combinations.Static(allCombos);
+        var seismicCombos = allCombos.Where(c => c.Active && c.Kind == UserCombinations.Seismic).ToList();
         var sp = StructuralProblem.Build(q.Model, rep);
         var notes = new List<string>(sp.Notes);
         FrameSolution? sol = null;
@@ -95,7 +100,7 @@ public sealed partial class AnalysisRun
             foreach (var r in sol.Cases.Where(r => r.Balance > Balanced))
                 notes.Add($"„{rep.Cases.First(x => x.Id == r.Id).Code}”: the reactions do not balance the loads (off by {r.Balance:0.###e+0} of them).");
         notes.AddRange(comboNotes);
-        return new AnalysisRun { Report = rep, Problem = sp, Solution = sol, Combinations = combos, Notes = notes, TotalMs = sw.Elapsed.TotalMilliseconds };
+        return new AnalysisRun { Report = rep, Problem = sp, Solution = sol, Combinations = combos, SeismicCombinations = seismicCombos, Notes = notes, TotalMs = sw.Elapsed.TotalMilliseconds };
     }
 
     static double R(double v, int digits = 6) => Math.Round(v, digits);
@@ -188,7 +193,10 @@ public sealed partial class AnalysisRun
         return run;
     }
 
-    /// <summary>The seismic combination's sets (+ and −), when its parameters are given and the modal analysis ran.</summary>
+    /// <summary>The sign of AEd in a set of the seismic combinations (seismic/+, seismic/&lt;id&gt;/−…); 0 for any other.</summary>
+    internal static double SeismicSign(string key) => !key.StartsWith("seismic/") ? 0 : key.EndsWith("/+") ? 1 : key.EndsWith("/-") ? -1 : 0;
+
+    /// <summary>The seismic combination's sets (+ and −), and those of the user's seismic combinations, when its parameters are given and the modal analysis ran.</summary>
     (SeismicRun Run, List<(string, string, List<(int, double)>)> Sets)? SeismicSets(bool required)
     {
         if (_seismicOf == null) { if (required) throw new CommandException("The seismic results are asked through the analysis queries."); return null; }
@@ -198,11 +206,22 @@ public sealed partial class AnalysisRun
             if (required) throw new CommandException(sr.Settings.Given ? "The seismic analysis did not run: analysis.modal says why." : "Give the seismic parameters first (analysis.setSeismic).");
             return null;
         }
-        return (sr, [("seismic/+", $"{sr.GravityName} + AEd", sr.Gravity.ToList()), ("seismic/-", $"{sr.GravityName} − AEd", sr.Gravity.ToList())]);
+        List<(string, string, List<(int, double)>)> sets = [("seismic/+", $"{sr.GravityName} + AEd", sr.Gravity.ToList()), ("seismic/-", $"{sr.GravityName} − AEd", sr.Gravity.ToList())];
+        foreach (var c in SeismicCombinations)
+        {
+            var terms = Terms(c);
+            sets.Add(($"seismic/{c.Id}/+", $"{c.Name}: {c.Formula} + AEd", terms));
+            sets.Add(($"seismic/{c.Id}/-", $"{c.Name}: {c.Formula} − AEd", terms));
+        }
+        return (sr, sets);
     }
 
     /// <summary>What a result is asked of: a case (its id or code), a combination (its key) or an envelope (uls, sls); one bar's element or piece, or all.</summary>
     public sealed record Ask(string? Case, string? Combination, string? Envelope, string? ElementId = null, string? ShellId = null);
+
+    /// <summary>A combination's factors on the solution's cases (by their index).</summary>
+    List<(int, double)> Terms(Combination c) =>
+        c.Factors.Select(f => (Solution!.Cases.FindIndex(x => x.Id == f.Case.Id), f.Value)).Where(x => x.Item1 >= 0).ToList();
 
     Selection Select(Ask ask)
     {
@@ -215,9 +234,14 @@ public sealed partial class AnalysisRun
             var c = Report.Cases.FirstOrDefault(x => x.Id == cid) ?? Report.Cases.FirstOrDefault(x => x.Code == cid) ?? throw new CommandException($"There is no load case „{cid}”.");
             return new Selection("case", c.Id, c.Code, [(c.Id, c.Code, [(CaseIndex(c.Id), 1.0)])]);
         }
-        List<(int, double)> Terms(Combination c) => c.Factors.Select(f => (CaseIndex(f.Case.Id), f.Value)).Where(x => x.Item1 >= 0).ToList();
         if (comboArg is { } key)
         {
+            if (SeismicCombinations.FirstOrDefault(x => x.Key == key) is { } sc)
+            {
+                var (sr, sets) = SeismicSets(true)!.Value;
+                // Its two bounds, ± AEd: an envelope of them.
+                return new Selection("envelope", sc.Key, sc.Name, sets.Where(x => x.Item1.StartsWith($"seismic/{sc.Id}/")).ToList()) { Seismic = sr };
+            }
             var c = Combinations.FirstOrDefault(x => x.Key == key) ?? throw new CommandException($"There is no combination „{key}”.");
             return new Selection("combination", c.Key, c.Name, [(c.Key, c.Name, Terms(c))]);
         }
@@ -230,7 +254,7 @@ public sealed partial class AnalysisRun
             }
             var list = env switch
             {
-                "uls" => Combinations.Where(c => c.Kind == "uls").ToList(),
+                "uls" => Combinations.Where(c => UserCombinations.Ultimate(c.Kind)).ToList(),
                 "sls" => Combinations.Where(c => c.Kind.StartsWith("sls")).ToList(),
                 _ => throw new CommandException("An envelope is „uls”, „sls” or „seismic”."),
             };
@@ -279,8 +303,7 @@ public sealed partial class AnalysisRun
             for (var i = 0; i < states.Count; i++)
             {
                 var key = sel.Sets[i].Key;
-                if (key == "seismic/+") { states[i].Seismic = spectral; states[i].Sign = 1; }
-                else if (key == "seismic/-") { states[i].Seismic = spectral; states[i].Sign = -1; }
+                if (SeismicSign(key) is var sign and not 0) { states[i].Seismic = spectral; states[i].Sign = sign; }
             }
         }
         return states;

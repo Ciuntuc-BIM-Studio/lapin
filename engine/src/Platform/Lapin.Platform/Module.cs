@@ -145,6 +145,16 @@ public interface IPackageTexts
 }
 
 /// <summary>Deleting what is not an entity of its own (one axis of a grid, selected as grid#tag): true when it was handled.</summary>
+/// <summary>
+/// What a module gives a new project the user starts (the start screen, <see cref="Session.New(bool, IReadOnlyList{ValueTuple{string, double, double}}?, IReadOnlyList{string}?)"/>),
+/// not one another file fills: written onto the IfcProject's attributes, so an older project, which has none of it, keeps
+/// what it gave before (the analysis module's combinations: CR 0-2012 for new projects, EN for those before, plan-fem §13.1).
+/// </summary>
+public interface INewProject
+{
+    void Start(System.Text.Json.Nodes.JsonObject projectAttrs);
+}
+
 public interface IDeletion
 {
     bool Delete(ICommandContext ctx, string id);

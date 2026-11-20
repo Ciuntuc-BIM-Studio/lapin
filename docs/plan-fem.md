@@ -810,7 +810,7 @@ Un caz șters pe care îl numește o combinație a utilizatorului: combinația r
 
 ### 13.5 Interogarea și exportul
 
-`analysis.combinations` → `{combinations: [{key, kind, name, formula, factors, source: generated|user, enabled, id?, missing?}], options: {set, gammaGSup, gammaGInf, gammaQ, psi, expression, xi, sets: {en, cr0}}, notes}`. `analysis.run` dă doar cele active. Exportul IFC SAV scrie cele active (cele ale utilizatorului cu numele lor, `Description` = kind); combinația seismică nu se scrie (AEd nu e un caz de încărcare), spus în note. Exportul JG nu scrie încărcări sau combinații (nimic de schimbat).
+`analysis.combinations` → `{combinations: [{key, kind, name, formula, factors, source: generated|user, enabled, id?, missing?}], options: {set, gammaGSup, gammaGInf, gammaQ, psi, expression, xi, sets: {en, cr0}}, notes}`. `analysis.run` dă doar cele active. Exportul IFC SAV scrie cele active (cele ale utilizatorului cu numele lor; ca la toate, `Description` = cheia, `Purpose` = kind); combinația seismică nu se scrie (AEd nu e un caz de încărcare), spus în note. Exportul JG nu scrie încărcări sau combinații (nimic de schimbat).
 
 ### 13.6 Testele
 

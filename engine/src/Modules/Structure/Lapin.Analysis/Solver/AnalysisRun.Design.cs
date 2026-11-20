@@ -109,7 +109,7 @@ public sealed partial class AnalysisRun
     public List<(string Key, string Name, List<(int Case, double Factor)> Terms)> CharacteristicTerms()
     {
         int CaseIndex(string id) => Solution!.Cases.FindIndex(c => c.Id == id);
-        return Combinations.Where(c => c.Kind == "sls-characteristic")
+        return Combinations.Where(c => c.Kind == UserCombinations.SlsCharacteristic)
             .Select(c => (c.Key, c.Name, c.Factors.Select(f => (CaseIndex(f.Case.Id), f.Value)).Where(x => x.Item1 >= 0).ToList())).ToList();
     }
 

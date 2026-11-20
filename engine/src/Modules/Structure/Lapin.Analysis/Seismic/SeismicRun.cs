@@ -100,7 +100,7 @@ public sealed class SeismicRun
             if (c.Permanent) f = 1;
             else if (!c.Variable || c.Wind) f = 0;
             else if (c.Exclusive == LoadCases.Snow || c.Category == Categories.Snow)
-                f = c.WindDirection != null ? 0 : c.OwnPsi?.Psi2 ?? Settings.SnowPsi2Used;
+                f = c.WindDirection != null ? 0 : c.OwnPsi?.Psi2 ?? c.GivenPsi?.Psi2 ?? Settings.SnowPsi2Used;
             else f = c.Psi.Psi2;
             if (f <= 0) continue;
             Gravity.Add((ci, f));

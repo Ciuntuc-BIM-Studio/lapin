@@ -38,7 +38,12 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
             new("windDirection", "Wind towards", "choice", Choices: Climate.Directions),
             new("roofCpe", "Roof coefficients", "choice", Choices: Climate.RoofSets),
         ], "#c2410c", Kind: "resource"));
+        r.Class(new(UserCombinations.Class, "Load combination",
+        [
+            new("kind", "Kind", "choice", Choices: UserCombinations.Kinds),
+        ], "#c2410c", Kind: "resource"));
         UserLoads.Register(r);
+        r.Service<INewProject>(new CombinationSettings.NewProject());
         r.Service<IElementUpdate>(this);
         r.Service<IDeletion>(this);
         r.Service<IViewAnnotations>(this);
@@ -157,12 +162,57 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
 
         r.Query("combinations", (q, _) =>
         {
-            var (combinations, notes) = Combinations.Of(LoadsReport.Compute(q));
+            var (combinations, notes) = Combinations.Of(LoadsReport.Compute(q), q.Model);
             return new JsonObject
             {
                 ["combinations"] = new JsonArray(combinations.Select(c => (JsonNode)Combinations.ToJson(c)).ToArray()),
+                ["options"] = CombinationSettings.Of(q.Model).ToJson(),
+                ["kinds"] = new JsonArray(UserCombinations.Kinds.Select(k => (JsonNode)k).ToArray()),
                 ["notes"] = new JsonArray(notes.Select(n => (JsonNode)n).ToArray()),
             };
+        });
+
+        // ── Combinations (§13) ──
+
+        // {set?: en | cr0, gammaGSup?, gammaGInf?, gammaQ?, psi?: {category: {0, 1, 2} | null}, expression?: 6.10 | 6.10ab, xi?}:
+        // the project's combination factors; null back to the set's. One undo step.
+        r.Command("setCombinationOptions", "Combination factors", (ctx, a) => { CombinationSettings.Write(ctx, a); return null; });
+
+        // {key, enabled}: a combination switched off (left out of results, envelopes, checks and export) or on again. One undo step.
+        r.Command("setCombinationEnabled", "Switch combination", (ctx, a) =>
+        {
+            var key = ((string?)a["key"])?.Trim();
+            if (string.IsNullOrEmpty(key)) throw new CommandException("Say the combination's key.");
+            if (a["enabled"] is not JsonValue v || !v.TryGetValue<bool>(out var enabled)) throw new CommandException("Say enabled: true or false.");
+            CombinationSettings.Enable(ctx, key, enabled);
+            return null;
+        });
+
+        // {name, kind, factors: [{caseId, factor}]}: a combination of the user's. One undo step.
+        r.Command("addCombination", "New combination", (ctx, a) =>
+        {
+            var (name, attrs) = UserCombinations.Write(a, ctx.Model, null);
+            var e = new Entity(ctx.NewId(), UserCombinations.Class, name, attrs);
+            ctx.Add(e);
+            return new JsonObject { ["id"] = e.Id, ["key"] = UserCombinations.KeyPrefix + e.Id };
+        });
+
+        // {id, name?, kind?, factors?}: a user's combination changed. One undo step.
+        r.Command("updateCombination", "Change combination", (ctx, a) =>
+        {
+            var e = ctx.Model.Get((string?)a["id"] ?? "") is { Class: UserCombinations.Class } x ? x : throw new CommandException("There is no such combination of yours.");
+            var (name, attrs) = UserCombinations.Write(a, ctx.Model, e);
+            ctx.Replace(e.With(name: name, attrs: attrs));
+            return null;
+        });
+
+        // {id}: a user's combination removed (and its key off the switched-off list). One undo step.
+        r.Command("removeCombination", "Remove combination", (ctx, a) =>
+        {
+            var e = ctx.Model.Get((string?)a["id"] ?? "") is { Class: UserCombinations.Class } x ? x : throw new CommandException("There is no such combination of yours.");
+            ctx.Remove(e.Id);
+            if (CombinationSettings.Of(ctx.Model).Disabled.Contains(UserCombinations.KeyPrefix + e.Id)) CombinationSettings.Enable(ctx, UserCombinations.KeyPrefix + e.Id, true);
+            return null;
         });
 
         // {caseId}: the case's loads for display, the user's and the derived, world coordinates (z absolute).
@@ -380,10 +430,11 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
     public StructuralLoadsData For(IQueryContext query, AnalyticalOptions? options = null)
     {
         var rep = LoadsReport.Compute(query, options);
-        var (combinations, _) = Combinations.Of(rep);
+        var (combinations, _) = Combinations.Of(rep, query.Model);
+        // The active ones; a seismic one is not written (AEd is no load case).
         return new StructuralLoadsData(
             rep.Cases.Select(c => new StructuralLoadCaseData(c.Id, c.Code, c.Name, c.ActionType, c.ActionSource, c.SelfWeight)).ToList(),
-            Actions(query.Model, rep), combinations.Select(Combinations.ToData).ToList());
+            Actions(query.Model, rep), Combinations.Static(combinations).Select(Combinations.ToData).ToList());
     }
 
     // ── element.update and element.delete ──
@@ -391,6 +442,11 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
     public void Updated(ICommandContext ctx, Entity before, Entity after)
     {
         if (UserLoads.Classes.Contains(after.Class)) UserLoads.Check(ctx.Model, after);
+        else if (after.Class == UserCombinations.Class)
+        {
+            var (_, attrs) = UserCombinations.Write([], ctx.Model, after);
+            if (attrs.ToJsonString() != after.Attrs.ToJsonString()) ctx.Replace(after.With(attrs: attrs));
+        }
         else if (after.Class == LoadCases.Class)
         {
             // The case's attributes checked as a command's would be (its code unique, one self weight…); a load case's attributes only.
