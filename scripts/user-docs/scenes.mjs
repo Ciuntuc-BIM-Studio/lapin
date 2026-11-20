@@ -5454,6 +5454,23 @@ export const scenes = [
       await dialog.getByRole('tab', { name: 'Combinations' }).click();
       await t.until(async () => (await dialog.locator('tbody tr').count()) > 0, 'the combinations are listed');
       await t.wait(400);
+      // The factors of the project (a new project takes CR 0-2012's), then one combination of our own and one generated combination switched off.
+      t.expect(await dialog.locator('[data-testid=combo-set]').inputValue() === 'cr0', 'a new project takes the CR 0-2012 set of factors');
+      await t.shot('loads-combination-factors', { of: '[data-testid=combo-factors]', pad: 8 });
+      await dialog.locator('[data-testid=combo-add-name]').fill('Maintenance');
+      await dialog.locator('[data-testid=combo-add-kind]').selectOption('uls');
+      await dialog.locator('[data-testid=combo-add-factor-G1]').fill('1.0');
+      await dialog.locator('[data-testid=combo-add-factor-Q-A]').fill('1.5');
+      await dialog.locator('[data-testid=combo-add]').click();
+      await t.until(async () => (await t.call('doc.query', { name: 'analysis.combinations', args: {} })).combinations.some((c) => c.source === 'user' && c.name === 'Maintenance'), 'the combination of our own is made');
+      const generated = (await t.call('doc.query', { name: 'analysis.combinations', args: {} })).combinations.find((c) => c.source === 'generated' && c.kind === 'uls' && c.enabled);
+      t.expect(!!generated, 'a generated ultimate combination to switch off');
+      await dialog.locator(`[data-testid="combo-enabled-${generated.key}"]`).uncheck();
+      await t.until(async () => (await t.call('doc.query', { name: 'analysis.combinations', args: {} })).combinations.filter((c) => c.enabled === false).length === 1, 'one combination is switched off');
+      const made = await t.call('doc.query', { name: 'analysis.combinations', args: {} });
+      const mine = made.combinations.find((c) => c.source === 'user');
+      t.expect(mine && mine.kind === 'uls' && mine.factors.length === 2, 'the combination of our own has its two factors');
+      await t.wait(400);
       await t.shot('loads-combinations', { of: '.dialog', pad: 0 });
       await t.ui({ dialog: null });
     },

@@ -1,7 +1,7 @@
 ---
 title: Loads
 order: 51
-summary: Load cases, area, line and point loads, the imposed loads of rooms, the derived loads and the EN 1990 combinations, for a structural analysis.
+summary: Load cases, area, line and point loads, the imposed loads of rooms, the derived loads and the combinations (CR 0-2012 or EN 1990, with your own factors and combinations), for a structural analysis.
 ---
 
 The **Loads** group of the **Structure** tab holds the loads a structural analysis takes: **Load cases…**, **Area load**, **Line load** and **Point load**. Values are in kN, kN/m and kN/m².
@@ -84,9 +84,36 @@ The **Summary** tab shows, for each case, the loads you drew and the total in kN
 
 ## Combinations
 
-The **Combinations** tab lists the combinations of the cases, after EN 1990 as recommended and indicative: for the ultimate limit state 1.35 on permanent actions and 1.5 on the leading variable one, the others with their ψ0; for the serviceability limit state the characteristic, frequent and quasi-permanent ones. A case that holds nothing takes no part.
+The **Combinations** tab lists the combinations of the cases, as the standard writes them, indicative: for the ultimate limit state 1.35 on permanent actions and 1.5 on the leading variable one, the others with their ψ0; for the serviceability limit state the characteristic, frequent and quasi-permanent ones. A case that holds nothing takes no part. The ultimate group also holds the accidental and seismic combinations you add.
 
 ![The Combinations tab](shots/loads-combinations.webp)
+
+### The factors
+
+The **Factors** section at the top sets the partial factors γ and the combination factors ψ the combinations use. They are yours to check: the sets Lapin ships are indicative.
+
+- **Set of factors.** A new project takes **CR 0-2012 (Romania)**; a project made before this setting keeps **EN 1990 Annex A1, recommended**, so its combinations do not change. The two differ in ψ: CR 0-2012 takes snow at 0.7, 0.5, 0.4, wind at 0.7, 0.2, 0 and roofs (category H) at ψ0 0.7, where EN has 0.5, 0.2, 0 for snow, 0.6, 0.2, 0 for wind and 0 for roofs.
+- **γG,sup, γG,inf, γQ.** Each field shows the value in force. Type your own and it is marked with **Reset**, which goes back to the set's value.
+- **Expression.** **6.10** (the default) or **6.10a and 6.10b**: two expressions, the second with ξ (0.85 recommended, 0.5 to 1) on the permanent actions. CR 0-2012 has only its expression 6.9 (EN's 6.10), so 6.10a and 6.10b stay your choice.
+- **ψ by category.** Open the table to give ψ0, ψ1 and ψ2 of a category (the imposed-load categories, snow, wind); an empty row takes the set's values. A case's own ψ (in the Cases tab) goes before the category's.
+
+![The factors of the project](shots/loads-combination-factors.webp)
+
+Each change is one undo step; run the analysis again to see its effect.
+
+### Switching a combination off
+
+The checkbox **On** at the start of a row switches a combination off or on. A combination that is off stays in the list, dimmed, but takes no part in the results, the envelopes, the checks or the export; the notes say how many are off.
+
+### Your own combinations
+
+**Add a combination** takes a name, a **kind** and a factor for each load case; an empty field leaves the case out. The kind says where the combination goes:
+
+- **Ultimate (ULS)** and **Accidental**: the ultimate envelope and the checks (an accidental one is checked with the persistent situation's γM, on the safe side).
+- **Characteristic**, **Frequent** and **Quasi-permanent (SLS)**: the serviceability envelope; the characteristic one also the deflection checks.
+- **Seismic (with AEd)**: its factors ± AEd, in the seismic and ultimate envelopes, once the seismic parameters are given.
+
+In its row you can rename it, change its kind, edit its factors (the pencil) or delete it. If a load case it names is deleted, the row shows **Names a load case that is gone**, and the combination is left out of the results until you set its factors again.
 
 ## Loads from a spreadsheet
 

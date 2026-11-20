@@ -1,7 +1,7 @@
 ---
 title: Încărcări
 order: 51
-summary: Cazuri de încărcare, încărcări pe suprafață, liniare și punctuale, încărcările utile ale încăperilor, încărcările derivate și combinațiile EN 1990, pentru un calcul structural.
+summary: Cazuri de încărcare, încărcări pe suprafață, liniare și punctuale, încărcările utile ale încăperilor, încărcările derivate și combinațiile (CR 0-2012 sau EN 1990, cu coeficienții și combinațiile tale), pentru un calcul structural.
 ---
 
 Grupul **Încărcări** din tabul **Structură** are încărcările pe care le preia un calcul structural: **Cazuri de încărcare…**, **Încărcare pe suprafață**, **Încărcare liniară** și **Încărcare punctuală**. Valorile sunt în kN, kN/m și kN/m².
@@ -84,9 +84,36 @@ Fila **Rezumat** arată, pentru fiecare caz, încărcările desenate și totalul
 
 ## Combinații
 
-Fila **Combinații** enumeră combinațiile cazurilor, după EN 1990, cele recomandate, orientative: pentru starea limită ultimă 1,35 pe acțiunile permanente și 1,5 pe cea variabilă conducătoare, celelalte cu ψ0 al lor; pentru starea limită de serviciu cele caracteristice, frecvente și cvasipermanente. Un caz care nu conține nimic nu participă.
+Fila **Combinații** enumeră combinațiile cazurilor, așa cum le scrie norma, orientative: pentru starea limită ultimă 1,35 pe acțiunile permanente și 1,5 pe cea variabilă conducătoare, celelalte cu ψ0 al lor; pentru starea limită de serviciu cele caracteristice, frecvente și cvasipermanente. Un caz care nu conține nimic nu participă. Grupul stării limită ultime cuprinde și combinațiile accidentale și seismice pe care le adaugi.
 
 ![Fila Combinații](shots/loads-combinations.webp)
+
+### Coeficienții
+
+Secțiunea **Coeficienți** din capul filei stabilește coeficienții parțiali γ și coeficienții de combinare ψ pe care îi folosesc combinațiile. Sunt ai tăi de verificat: seturile livrate de Lapin sunt orientative.
+
+- **Set de coeficienți.** Un proiect nou ia **CR 0-2012 (România)**; un proiect făcut înainte de această setare rămâne cu **EN 1990 Anexa A1, valori recomandate**, deci combinațiile lui nu se schimbă. Cele două diferă prin ψ: CR 0-2012 ia zăpada cu 0,7, 0,5, 0,4, vântul cu 0,7, 0,2, 0 și acoperișurile (categoria H) cu ψ0 0,7, acolo unde EN are 0,5, 0,2, 0 la zăpadă, 0,6, 0,2, 0 la vânt și 0 la acoperișuri.
+- **γG,sup, γG,inf, γQ.** Fiecare câmp arată valoarea în vigoare. Scrie valoarea ta și câmpul e marcat cu **Resetează**, care readuce valoarea setului.
+- **Expresia.** **6.10** (implicit) sau **6.10a și 6.10b**: două expresii, a doua cu ξ (0,85 recomandat, între 0,5 și 1) pe acțiunile permanente. CR 0-2012 are doar expresia ei 6.9 (6.10 din EN), așa că 6.10a și 6.10b rămân alegerea ta.
+- **ψ pe categorii.** Deschide tabelul ca să dai ψ0, ψ1 și ψ2 pentru o categorie (categoriile încărcărilor utile, zăpada, vântul); un rând gol ia valorile setului. ψ-ul propriu al unui caz (în fila Cazuri) are prioritate față de cel al categoriei.
+
+![Coeficienții proiectului](shots/loads-combination-factors.webp)
+
+Fiecare schimbare e un pas de undo; rulează din nou calculul ca să vezi efectul.
+
+### Oprirea unei combinații
+
+Caseta **Pornit** de la începutul unui rând oprește sau pornește o combinație. O combinație oprită rămâne în listă, estompată, dar nu participă la rezultate, la înfășurători, la verificări și la export; notele spun câte sunt oprite.
+
+### Combinațiile tale
+
+**Adaugă o combinație** cere un nume, un **fel** și un coeficient pentru fiecare caz de încărcare; un câmp gol lasă cazul deoparte. Felul spune unde merge combinația:
+
+- **Ultimă (SLU)** și **Accidentală**: înfășurătoarea ultimă și verificările (una accidentală se verifică cu γM al situației persistente, în favoarea siguranței).
+- **Caracteristică**, **Frecventă** și **Cvasipermanentă (SLS)**: înfășurătoarea de serviciu; cea caracteristică și verificările de săgeată.
+- **Seismică (cu AEd)**: coeficienții ei ± AEd, în înfășurătoarele seismică și ultimă, după ce sunt dați parametrii seismici.
+
+În rândul ei o poți redenumi, îi poți schimba felul, îi poți modifica coeficienții (creionul) sau o poți șterge. Dacă un caz de încărcare pe care îl numește a fost șters, rândul arată **Numește un caz de încărcare care nu mai există**, iar combinația rămâne în afara rezultatelor până îi dai din nou coeficienții.
 
 ## Încărcări dintr-un tabel
 
