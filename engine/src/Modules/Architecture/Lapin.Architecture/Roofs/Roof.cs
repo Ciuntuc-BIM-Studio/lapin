@@ -244,7 +244,7 @@ public static class Roof
     public static (RoofShape? Shape, string? Problem) Solve(Resolved r)
     {
         if (r.Flat) return (null, null);
-        try { return (SolveShapeOnly(r.Outline, r.Rules, r.BaseZ, r.Barrel, r.Rise, r.Mansard), null); }
+        try { return (RoofCurves.WithoutCreases(r, SolveShapeOnly(r.Outline, r.Rules, r.BaseZ, r.Barrel, r.Rise, r.Mansard)), null); }
         catch (ArgumentException e) { return (null, e.Message); }
     }
 
@@ -267,8 +267,11 @@ public static class Roof
     {
         var extents = LayerExtents.Of(r.Roof);
         if (extents.Count == 0) return null;
-        var d = LayerExtents.SlabDistances(extents, layerIndex, r.Outline.Count, x => x.Offset);
-        if (d == null) return null;
+        // An extent names the roof's own edge: a curved edge's chords all take its offset (decision 741).
+        var logical = r.EdgeOf != null ? Contour(r.Roof).Count : r.Outline.Count;
+        var dl = LayerExtents.SlabDistances(extents, layerIndex, logical, x => x.Offset);
+        if (dl == null) return null;
+        var d = Enumerable.Range(0, r.Outline.Count).Select(k => r.LogicalEdge(k) is var l && l >= 0 && l < dl.Length ? dl[l] : 0).ToArray();
         var pts = r.Outline.ToList();
         if (pts.Count > 1 && (pts[0] - pts[^1]).Length < 1e-9) pts.RemoveAt(pts.Count - 1);
         var n = pts.Count;
@@ -460,11 +463,13 @@ public static class Roof
         var gutters = RoofParts.Gutters(r, shape);
         var spec = Drainage.Spec.Of(roof);
         var outlets = Drainage.Outlets(m, r, gutters);
-        for (var gi = 0; gi < gutters.Count; gi++)
+        // A curved eave's chords are one run: each falls to the run's outlets (decision 741).
+        var runs = Drainage.RunPlaces(gutters, r, outlets.Select(x => (x.Gutter, x.Station)));
+        // A run one gutter part, however many chords it lies on, named by its first (a straight roof's gutters are runs of one, as before).
+        foreach (var run in Drainage.Runs(gutters, r))
         {
-            var stations = outlets.Where(x => x.Gutter == gi).Select(x => x.Station).ToList();
-            var body = Drainage.Gutter(gutters[gi], spec, stations, "gutter");
-            if (body.Count > 0) parts.Add(new GeometryPart(spec.Box ? "Box gutter" : "Half-round gutter", metal, Openings.Combine(body, "gutter"), null, $"gutter:{gi + 1}"));
+            var body = run.SelectMany(gi => Drainage.Gutter(gutters[gi], spec, runs[gi], "gutter")).ToList();
+            if (body.Count > 0) parts.Add(new GeometryPart(spec.Box ? "Box gutter" : "Half-round gutter", metal, Openings.Combine(body, "gutter"), null, $"gutter:{run[0] + 1}"));
         }
         var ground = Drainage.GroundAt(m, services);
         var auto = 0;
@@ -472,7 +477,7 @@ public static class Roof
         {
             if (element != null) continue;
             var g = gutters[gi];
-            var outlet = Drainage.OutletAt(g, station, outlets.Where(x => x.Gutter == gi).Select(x => x.Station).ToList(), spec);
+            var outlet = Drainage.OutletAt(g, station, runs[gi], spec);
             var chain = Drainage.Chain(outlet, g.Out, Drainage.DefaultRoute(Drainage.OutFromWall(r, g, spec)), ground, false, Drainage.DefaultDiameter / 2);
             var pipe = Drainage.PipeSolids(chain, Drainage.DefaultDiameter / 2, "downpipe");
             if (pipe.Count > 0) parts.Add(Drainage.PipePart("Downpipe", metal, Openings.Combine(pipe, "downpipe"), $"downpipe:{++auto}", chain));

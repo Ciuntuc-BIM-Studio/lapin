@@ -58,8 +58,8 @@ export function RoofSection({ node }: { node: NodeDto }) {
         <button type="button" className="icon" title="Roof configurator…" disabled={!node.editable} onClick={() => useUi.setState({ dialog: 'roof', roofId: node.id })}><Settings2 size={14} /></button>
         </span>
       </label>
-      <table className="roof-edges">
-        <thead><tr><th>Edge</th><th>Kind</th><th>°</th><th>Overhang</th><th>Arc</th></tr></thead>
+      <table className="roof-edges with-arcs">
+        <thead><tr><th title="Edge">Edge</th><th title="Kind">Kind</th><th>°</th><th title="Overhang">Overhang</th><th title="Arc">Arc</th></tr></thead>
         <tbody>
           {contour.map((p, i) => {
             const q = contour[(i + 1) % contour.length];

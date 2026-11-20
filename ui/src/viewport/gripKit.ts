@@ -125,6 +125,18 @@ export function withEllipses(grips: Grip[], ellipses: unknown, corners: number):
   return grips.map((g) => (g.offsetAll ? { ...g, offsetAll: { ...g.offsetAll, outline: { ...g.offsetAll.outline, ellipses } } } : g));
 }
 
+/**
+ * The edge a right-clicked grip stands for, when it is an edge's own grip: its diamond (an outline's `edgeMid` that can be
+ * bent or straightened), or a curved edge's round grip (then its edge's diamond, `…a<i>` → `…e<i>`); null otherwise. A
+ * right-click on it gives the edge's menu ("Make arc", "Make straight"), not the element's.
+ */
+export function edgeOfGrip(members: Grip[], all: Grip[]): Grip | null {
+  const mid = members.find((m) => m.kind === 'edgeMid' && (m.bend || m.straighten));
+  if (mid) return mid;
+  const round = members.find((m) => m.kind === 'radius')?.key.match(/^(.*)a(\d+)$/);
+  return round ? all.find((m) => m.key === `${round[1]}e${round[2]}` && (m.bend || m.straighten)) ?? null : null;
+}
+
 /** The point of a line (a polyline: an arc in steps) nearest to p, how far p is from it and how far along it is (0 to 1). */
 export function nearestOnLine(pts: Vec2[], p: Vec2): { at: Vec2; dist: number; t: number } {
   if (pts.length === 2) return nearestOnSegment(pts[0], pts[1], p);

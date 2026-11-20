@@ -26,7 +26,7 @@ import { outlinePoints } from './contour';
 import { gripsOf, gripSnapped, referencesOf } from '../platform/modules';
 import { throughInset, viaOf } from './insetMap';
 import { dropGrips, groupGrips, movers, runSteps, setHotRemove, useGripRev, type GripGroup } from './grips';
-import { nearestOnLine } from './gripKit';
+import { edgeOfGrip, nearestOnLine } from './gripKit';
 import { askLength } from '../shell/AskBox';
 import { openContextMenu, type MenuItem } from '../shell/ContextMenu';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
@@ -293,7 +293,15 @@ export function useGripEditor(o: GripEditorOptions) {
       if (corner.corner) items.push(...cornerMenu(corner.corner));
       return items;
     }
-    if (g) return [];
+    if (g) {
+      // An edge's own grip (its diamond, or a curved edge's round grip): the edge's menu, as a right-click beside it gives.
+      const edge = edgeOfGrip(g.members, grips);
+      if (!edge) return [];
+      const items: MenuItem[] = edge.insert ? [{ label: 'Add corner here', onSelect: run(edge.insert) }] : [];
+      if (edge.bend) items.push({ label: 'Make arc', onSelect: run(edge.bend) });
+      if (edge.straighten) items.push({ label: 'Make straight', onSelect: run(edge.straighten) });
+      return items;
+    }
     const p = o.raw ? o.raw(e.clientX, e.clientY) : o.aim(e.clientX, e.clientY, { x: 0, y: 0 });
     let best: { grip: Grip; dist: number } | null = null;
     for (const m of grips) {

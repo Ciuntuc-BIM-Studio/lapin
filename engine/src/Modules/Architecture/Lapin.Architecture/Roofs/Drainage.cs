@@ -80,12 +80,109 @@ public static class Drainage
             }
             return o;
         }
-        for (var gi = 0; gi < gutters.Count; gi++)
+        // One per 10 m of a run (a straight gutter, or the chords of a curved eave and the gutters it runs on into smoothly,
+        // as one): at its end when one does, else from end to end, 0.3 m in; never one per chord.
+        var placed = new List<(int Gutter, double Station, bool Curved, int Run)>();
+        var runs = Runs(gutters, r);
+        for (var ri = 0; ri < runs.Count; ri++)
         {
-            var g = gutters[gi];
-            var n = Math.Max(1, (int)Math.Ceiling(g.Length / 10));
+            var run = runs[ri];
+            var curved = run.Count > 1 || IsCurved(r, gutters[run[0]]);
+            var length = run.Sum(gi => gutters[gi].Length);
+            var n = Math.Max(1, (int)Math.Ceiling(length / 10));
             for (var k = 0; k < n; k++)
-                o.Add((gi, n == 1 ? g.Length - 0.3 : 0.3 + (g.Length - 0.6) * (n - 1 - k) / (n - 1), null));
+            {
+                var s = n == 1 ? length - 0.3 : 0.3 + (length - 0.6) * (n - 1 - k) / (n - 1);
+                var (gi, local) = OnRun(gutters, run, s);
+                placed.Add((gi, local, curved, ri));
+            }
+        }
+        // Where a curved run starts at a corner another run already drains (its end's outlet within a metre), the gutters
+        // join there and one downpipe takes both: the curved run's is left out. Straight roofs keep all theirs, as before.
+        Vec2 At((int Gutter, double Station, bool, int) x) { var g = gutters[x.Gutter]; return (g.A + (g.B - g.A) * (x.Station / Math.Max(g.Length, 1e-12))).Xy; }
+        var kept = new List<(int Gutter, double Station, bool Curved, int Run)>();
+        foreach (var x in placed.OrderBy(x => x.Curved))
+            if (!x.Curved || !kept.Any(y => y.Run != x.Run && (At(y) - At(x)).Length < 1.0)) kept.Add(x);
+        foreach (var x in placed) if (kept.Contains(x)) o.Add((x.Gutter, x.Station, null));
+        return o;
+    }
+
+    /// <summary>Whether a gutter lies on a curved edge of its roof.</summary>
+    static bool IsCurved(Roof.Resolved r, RoofParts.Gutter g) =>
+        r.EdgeOf != null && Slabs.Rises(r.Roof) is { } rises && r.LogicalEdge(g.Edge) is var l && l >= 0 && l < rises.Length && Math.Abs(rises[l]) > 1e-6;
+
+    /// <summary>A station along a run: the gutter it falls on and the station along that gutter.</summary>
+    static (int Gutter, double Station) OnRun(IReadOnlyList<RoofParts.Gutter> gutters, IReadOnlyList<int> run, double s)
+    {
+        s = Math.Max(0, s);
+        foreach (var gi in run)
+        {
+            var len = gutters[gi].Length;
+            if (s <= len + 1e-9 || gi == run[^1]) return (gi, Math.Clamp(s, 0, len));
+            s -= len;
+        }
+        return (run[^1], gutters[run[^1]].Length);
+    }
+
+    /// <summary>The largest turn (degrees) at which two gutters joined end to end run on as one (a curved eave's chords, a fillet's tangent ends).</summary>
+    public const double SmoothTurn = 20;
+
+    /// <summary>
+    /// The gutters as runs, each in order end to start: a gutter joined to the next one end to start, turning less than
+    /// <see cref="SmoothTurn"/>, runs on into it (the chords of a curved eave, and the straight eaves a fillet meets
+    /// tangentially); any other gutter is a run of its own, as every gutter of a roof with straight edges is.
+    /// </summary>
+    public static List<List<int>> Runs(IReadOnlyList<RoofParts.Gutter> gutters, Roof.Resolved r)
+    {
+        var n = gutters.Count;
+        var next = Enumerable.Repeat(-1, n).ToArray();
+        var prev = Enumerable.Repeat(-1, n).ToArray();
+        var cos = Math.Cos(SmoothTurn * Math.PI / 180);
+        // Only a curve joins gutters: straight eaves in line stay runs of their own, as they always were.
+        bool Curved(RoofParts.Gutter g) => IsCurved(r, g);
+        for (var i = 0; i < n; i++)
+        {
+            if (gutters[i].CapEnd || gutters[i].Length < 1e-9) continue;
+            var di = (gutters[i].B - gutters[i].A).Xy.Normalized();
+            for (var j = 0; j < n; j++)
+            {
+                if (j == i || prev[j] >= 0 || gutters[j].CapStart || (gutters[j].A - gutters[i].B).Length > 1e-3) continue;
+                if (!Curved(gutters[i]) && !Curved(gutters[j])) continue;
+                if (Vec2.Dot(di, (gutters[j].B - gutters[j].A).Xy.Normalized()) < cos) continue;
+                next[i] = j; prev[j] = i;
+                break;
+            }
+        }
+        var runs = new List<List<int>>();
+        var seen = new bool[n];
+        void Walk(int start)
+        {
+            var run = new List<int>();
+            for (var k = start; k >= 0 && !seen[k]; k = next[k]) { seen[k] = true; run.Add(k); }
+            runs.Add(run);
+        }
+        for (var i = 0; i < n; i++) if (prev[i] < 0) Walk(i);
+        // A closed loop of smooth joints (a round roof): it starts at its first gutter.
+        for (var i = 0; i < n; i++) if (!seen[i]) Walk(i);
+        return runs;
+    }
+
+    /// <summary>Where a gutter lies on its run: the run's length, the station its start is at, and the outlets along the run.</summary>
+    public sealed record RunPlace(double Length, double Start, List<double> Outlets);
+
+    /// <summary>Every gutter's place on its run, the outlets given as (gutter, station along it) put along their runs.</summary>
+    public static RunPlace[] RunPlaces(IReadOnlyList<RoofParts.Gutter> gutters, Roof.Resolved r, IEnumerable<(int Gutter, double Station)> outlets)
+    {
+        var o = new RunPlace[gutters.Count];
+        var byGutter = outlets.ToLookup(x => x.Gutter, x => x.Station);
+        foreach (var run in Runs(gutters, r))
+        {
+            var length = run.Sum(gi => gutters[gi].Length);
+            var at = new List<double>();
+            var start = 0.0;
+            var starts = new Dictionary<int, double>();
+            foreach (var gi in run) { starts[gi] = start; at.AddRange(byGutter[gi].Select(s => start + s)); start += gutters[gi].Length; }
+            foreach (var gi in run) o[gi] = new RunPlace(length, starts[gi], at);
         }
         return o;
     }
@@ -123,17 +220,22 @@ public static class Drainage
     }
 
     /// <summary>A gutter's body: its channel in pieces between its high and low points (falling), and its end caps.</summary>
-    public static List<Solid> Gutter(RoofParts.Gutter g, Spec spec, IReadOnlyList<double> outlets, string tag)
+    public static List<Solid> Gutter(RoofParts.Gutter g, Spec spec, IReadOnlyList<double> outlets, string tag) => Gutter(g, spec, new RunPlace(g.Length, 0, [.. outlets]), tag);
+
+    /// <summary>A gutter's body as a piece of its run (<see cref="Runs"/>): it falls to the run's outlets, not only its own.</summary>
+    public static List<Solid> Gutter(RoofParts.Gutter g, Spec spec, RunPlace run, string tag)
     {
         var o = new List<Solid>();
-        var depth = FallOf(g.Length, outlets, spec.Fall);
+        var runDepth = FallOf(run.Length, run.Outlets, spec.Fall);
+        double depth(double s) => runDepth(run.Start + s);
         var dir = (g.B - g.A) * (1 / g.Length);
         var stations = new SortedSet<double> { 0, g.Length };
-        if (spec.Fall > 0) foreach (var s in outlets) { stations.Add(Math.Clamp(s, 0, g.Length)); }
-        if (spec.Fall > 0 && outlets.Count > 0)
+        void Add(double s) { var local = s - run.Start; if (local > 0 && local < g.Length) stations.Add(local); }
+        if (spec.Fall > 0) foreach (var s in run.Outlets) Add(s);
+        if (spec.Fall > 0 && run.Outlets.Count > 0)
         {
-            var os = outlets.OrderBy(x => x).ToList();
-            for (var i = 0; i + 1 < os.Count; i++) stations.Add((os[i] + os[i + 1]) / 2);
+            var os = run.Outlets.OrderBy(x => x).ToList();
+            for (var i = 0; i + 1 < os.Count; i++) Add((os[i] + os[i + 1]) / 2);
         }
         var list = stations.ToList();
         for (var i = 0; i + 1 < list.Count; i++)
@@ -242,8 +344,7 @@ public static class Drainage
         if (g == null) return null;
         var station = Math.Clamp(pipe.Num("station"), 0, g.Length);
         var spec = Spec.Of(roof);
-        var outlets = drain.Outlets.Where(x => gutters[x.Gutter] == g).Select(x => x.Station).ToList();
-        var outlet = OutletAt(g, station, outlets, spec);
+        var outlet = OutletAt(g, station, RunPlaces(gutters, drain.R, drain.Outlets.Select(x => (x.Gutter, x.Station)))[gutters.IndexOf(g)], spec);
         var d = pipe.NumOrNull("diameter") ?? DefaultDiameter;
         var chain = Chain(outlet, g.Out, RouteOf(pipe), GroundAt(m, services), pipe.Str("shoe") != "False", d / 2);
         return new Placed(pipe, roof, g, station, outlet, chain, d);
@@ -425,10 +526,14 @@ public static class Drainage
     }
 
     /// <summary>Where a downpipe leaves its gutter: at the station, under the channel's middle, as low as the gutter's fall has it there.</summary>
-    public static Vec3 OutletAt(RoofParts.Gutter g, double station, IReadOnlyList<double> stationsOnIt, Spec spec)
+    public static Vec3 OutletAt(RoofParts.Gutter g, double station, IReadOnlyList<double> stationsOnIt, Spec spec) =>
+        OutletAt(g, station, new RunPlace(g.Length, 0, [.. stationsOnIt]), spec);
+
+    /// <summary>Where a downpipe leaves its gutter, the gutter a piece of its run: as low as the run's fall has it there.</summary>
+    public static Vec3 OutletAt(RoofParts.Gutter g, double station, RunPlace run, Spec spec)
     {
         var dir = (g.B - g.A) * (1 / g.Length);
-        return g.A + dir * station + new Vec3(g.Out.X, g.Out.Y, 0) * spec.R - new Vec3(0, 0, FallOf(g.Length, stationsOnIt, spec.Fall)(station) + spec.R);
+        return g.A + dir * station + new Vec3(g.Out.X, g.Out.Y, 0) * spec.R - new Vec3(0, 0, FallOf(run.Length, run.Outlets, spec.Fall)(run.Start + station) + spec.R);
     }
 
     /// <summary>How far an outlet stands out of the wall below it (the eave's overhang, the gutter's offset and half its width).</summary>

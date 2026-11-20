@@ -123,7 +123,7 @@ public sealed class ArchitectureAnalytical : IAnalyticalElements
                 new SectionShape("rectangle", mb.Width, mb.Depth), $"Roof „{roof.Name}”, {RoofParts.RoleLabel(mb.Role).ToLowerInvariant()} {label}");
             var vertical = Math.Abs((mb.B - mb.A).Normalized().Z) > 1 - 1e-6;
             into.Frames.Add(new AnalyticalFrame(roof.Id, $"{roof.Name}: {RoofParts.RoleLabel(mb.Role)} {k}", "IfcMember", vertical ? "column" : "beam", AnalyticalKinds.Roofs,
-                [mb.A, mb.B], vertical ? new Vec3(0, 1, 0) : Vec3.UnitZ, section, r.Grade, storey, mb.Depth, mb.Width, mb.Truss >= 0 ? $"truss:{mb.Truss + 1}:{mb.Role}" : mb.Role));
+                mb.Path ?? [mb.A, mb.B], vertical ? new Vec3(0, 1, 0) : Vec3.UnitZ, section, r.Grade, storey, mb.Depth, mb.Width, mb.Truss >= 0 ? $"truss:{mb.Truss + 1}:{mb.Role}" : mb.Role));
         }
     }
 }

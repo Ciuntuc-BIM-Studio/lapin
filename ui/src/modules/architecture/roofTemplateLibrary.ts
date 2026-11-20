@@ -1,8 +1,11 @@
 /**
  * Reusable custom roof templates kept on this computer (localStorage), shared across all projects
  * alongside the engine's built-in catalogue styles and the project's own styles (`own:...`).
- * Templates capture the roof's assembly, shape, covering, drainage and framing fields — not its
- * location (outline, eaveOffset, or per-edge overrides).
+ * Templates capture the roof's assembly, shape, covering, drainage and framing fields, its own layers
+ * and their extents, and the sections of all its timber — not its location (where its outline lies,
+ * eaveOffset). Its edges (each one's rule and arc, decision 741) are kept beside, with the number of
+ * corners they belong to: they go onto a roof with as many corners; on any other roof the template
+ * sets the roof-wide fields only. A template saved before (no `version`) applies as it always did.
  */
 
 const LIBRARY_KEY = 'lapin.roofTemplates';
@@ -46,7 +49,26 @@ export const ROOF_TEMPLATE_FIELDS = [
   'collarHeight',
   'rafterTail',
   'rafterSeat',
+  // Since version 2 (decision 741): its own layers, their extents and the other members' sections.
+  'layers',
+  'layerExtents',
+  'plateSection',
+  'ridgeSection',
+  'purlinSection',
+  'collarSection',
 ] as const;
+
+/** The fields a template saved before version 2 did not keep: applying such a template leaves them as the roof has them. */
+const SINCE_V2 = new Set<string>(['layers', 'layerExtents', 'plateSection', 'ridgeSection', 'purlinSection', 'collarSection']);
+
+/** The template format: 2 keeps layers, extents, sections and edges. */
+export const ROOF_TEMPLATE_VERSION = 2;
+
+/** A roof edge's rule as a template keeps it (as `edges[i]` on the roof). */
+type TemplateEdge = { kind?: 'eave' | 'gable'; pitch?: number; overhang?: number; gutter?: boolean } | null;
+
+/** The edges a template keeps: as many as the corners of the roof it was saved from, each one's rule and arc rise. */
+export interface RoofTemplateOutline { corners: number; edges: TemplateEdge[]; arcs: number[] }
 
 const FIELD_SET = new Set<string>(ROOF_TEMPLATE_FIELDS);
 
@@ -58,6 +80,10 @@ export interface UserRoofTemplate {
   structure?: string;
   attrs: Record<string, unknown>;
   added?: string;
+  /** 2 since layers, sections and edges were kept (decision 741); none before. */
+  version?: number;
+  /** The roof's edges, for a roof with as many corners. */
+  outline?: RoofTemplateOutline;
 }
 
 const listeners = new Set<() => void>();
@@ -143,6 +169,28 @@ function barrelSpan(contour?: readonly [number, number][]): number | null {
   return span > 1e-6 ? span : null;
 }
 
+function cleanEdge(e: unknown): TemplateEdge {
+  if (!isPlainObject(e)) return null;
+  const o: NonNullable<TemplateEdge> = {};
+  if (e.kind === 'eave' || e.kind === 'gable') o.kind = e.kind;
+  if (typeof e.pitch === 'number' && Number.isFinite(e.pitch)) o.pitch = e.pitch;
+  if (typeof e.overhang === 'number' && Number.isFinite(e.overhang)) o.overhang = e.overhang;
+  if (e.gutter === false) o.gutter = false;
+  return Object.keys(o).length ? o : null;
+}
+
+/** A roof's edges as a template keeps them (its rules and arcs, one per corner); null when it has no corners. */
+function outlineOf(corners: number, edges: unknown, arcs: unknown): RoofTemplateOutline | null {
+  if (!Number.isInteger(corners) || corners < 3) return null;
+  const es = Array.isArray(edges) ? edges : [];
+  const rs = Array.isArray(arcs) ? arcs : [];
+  return {
+    corners,
+    edges: Array.from({ length: corners }, (_, i) => cleanEdge(es[i])),
+    arcs: Array.from({ length: corners }, (_, i) => (typeof rs[i] === 'number' && Number.isFinite(rs[i]) ? (rs[i] as number) : 0)),
+  };
+}
+
 /** Build a clean template snapshot from a roof's attributes. */
 export function snapshotRoofTemplate(
   sourceAttrs: Record<string, unknown>,
@@ -171,6 +219,8 @@ export function snapshotRoofTemplate(
   const rawPitch = Number(attrs.pitch);
   const pitch = Number.isFinite(rawPitch) && rawPitch > 0 ? rawPitch : 30;
   const structure = typeof attrs.structure === 'string' && attrs.structure ? attrs.structure : undefined;
+  const corners = contour?.length ?? (Array.isArray(sourceAttrs.contour) ? sourceAttrs.contour.length : 0);
+  const outline = outlineOf(corners, sourceAttrs.edges, sourceAttrs.arcs);
   return {
     id,
     label: cleanLabel,
@@ -179,6 +229,8 @@ export function snapshotRoofTemplate(
     ...(structure ? { structure } : {}),
     attrs,
     added: new Date().toISOString().slice(0, 10),
+    version: ROOF_TEMPLATE_VERSION,
+    ...(outline ? { outline } : {}),
   };
 }
 
@@ -238,16 +290,26 @@ export function forgetRoofTemplate(id: string): void {
 
 /**
  * Build the `architecture.updateRoof` / `architecture.roofPreview` argument payload to apply a user
- * template to a roof in a single command (one undo step), clearing stale fields and per-edge rules.
+ * template to a roof in a single command (one undo step), clearing stale fields. Its edges (rules and
+ * arcs) go onto a roof with as many corners as the one it was saved from; on any other roof the
+ * per-edge rules are cleared, its arcs left as they are, and a layer's extent named by edge left out.
  */
 export function applyRoofTemplateArgs(
   roofId: string,
   template: UserRoofTemplate,
   contour?: readonly [number, number][],
-): { id: string; attrs: Record<string, unknown>; edges: [] } {
+): { id: string; attrs: Record<string, unknown>; edges: TemplateEdge[]; arcs?: number[] } {
   const attrs: Record<string, unknown> = {};
+  const v2 = (template.version ?? 1) >= 2;
   for (const key of ROOF_TEMPLATE_FIELDS) {
+    // A template saved before version 2 never kept these: the roof keeps its own.
+    if (!v2 && SINCE_V2.has(key)) continue;
     attrs[key] = key in template.attrs && template.attrs[key] !== undefined ? template.attrs[key] : null;
+  }
+  const same = !!template.outline && !!contour && contour.length === template.outline.corners;
+  if (!same && Array.isArray(attrs.layerExtents)) {
+    const kept = (attrs.layerExtents as unknown[]).filter((x) => !(isPlainObject(x) && x.edge === 'edge'));
+    attrs.layerExtents = kept.length ? kept : null;
   }
   if (template.shape === 'barrel') {
     const share = typeof template.attrs.riseShare === 'number' ? template.attrs.riseShare : undefined;
@@ -261,6 +323,9 @@ export function applyRoofTemplateArgs(
     }
   } else {
     attrs.rise = null;
+  }
+  if (same && template.outline) {
+    return { id: roofId, attrs, edges: template.outline.edges.some((e) => e) ? [...template.outline.edges] : [], arcs: [...template.outline.arcs] };
   }
   return { id: roofId, attrs, edges: [] };
 }
@@ -282,7 +347,16 @@ function sanitizeImportedTemplate(raw: unknown): UserRoofTemplate | null {
     }
   }
   const id = typeof raw.id === 'string' && raw.id.startsWith(ROOF_TEMPLATE_PREFIX) ? raw.id : '';
-  return snapshotRoofTemplate(filteredAttrs, label, id);
+  const o = isPlainObject(raw.outline) ? raw.outline : null;
+  const outline = o ? outlineOf(Number(o.corners), o.edges, o.arcs) : null;
+  const t = snapshotRoofTemplate(filteredAttrs, label, id);
+  // A file from before version 2 applies as it did; one of version 2 brings its edges.
+  const { outline: _none, version: _v, ...rest } = t;
+  return {
+    ...rest,
+    ...(typeof raw.version === 'number' && raw.version >= 2 ? { version: raw.version } : {}),
+    ...(outline ? { outline } : {}),
+  };
 }
 
 /** Parse and validate an exported roof template JSON payload (single template, wrapper object, or array). */

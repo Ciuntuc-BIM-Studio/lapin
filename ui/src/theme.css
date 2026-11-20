@@ -623,6 +623,11 @@ table.layer-edit:not(.zones):not(.material-params) > tbody > tr:not(.layer-parts
 .roof-edges th:nth-child(3), .roof-edges td:nth-child(3) { width: 3.4em; }
 .roof-edges th:nth-child(4), .roof-edges td:nth-child(4) { width: 4.2em; }
 .roof-edges th:nth-child(5), .roof-edges td:nth-child(5) { width: 1.8em; text-align: center; }
+/* A header never runs into the next one at a narrow panel: it is cut short (its title holds it whole). */
+.roof-edges th { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The inspector's edges table has an arc rise to type in its fifth column, as wide as the overhang's. */
+.roof-edges.with-arcs th:nth-child(4), .roof-edges.with-arcs td:nth-child(4),
+.roof-edges.with-arcs th:nth-child(5), .roof-edges.with-arcs td:nth-child(5) { width: 4.2em; text-align: left; }
 .roof-edges select, .roof-edges input { width: 100%; min-width: 0; box-sizing: border-box; }
 .hatch-swatch { display: block; }
 .material-views { width: 100%; border-collapse: collapse; margin: 8px 0; }

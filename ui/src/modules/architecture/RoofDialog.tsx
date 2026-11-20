@@ -53,7 +53,7 @@ interface Preview {
   downpipes?: string;
   summary?: [string, string][];
 }
-interface Draft { style?: string; templateId?: string; attrs: Record<string, unknown>; edges?: Edge[] }
+interface Draft { style?: string; templateId?: string; attrs: Record<string, unknown>; edges?: Edge[]; arcs?: number[] }
 
 const TABS = [['shape', 'Shape'], ['covering', 'Covering and drainage'], ['layers', 'Layers'], ['framing', 'Framing'], ['openings', 'Openings']] as const;
 type Tab = (typeof TABS)[number][0];
@@ -202,7 +202,7 @@ export function RoofDialog() {
   useEffect(() => {
     if (!roofId) return;
     let live = true;
-    void query<Preview>('architecture.roofPreview', { id: roofId, ...(draft.style ? { style: draft.style } : {}), attrs: draft.attrs, ...(draft.edges ? { edges: draft.edges } : {}) })
+    void query<Preview>('architecture.roofPreview', { id: roofId, ...(draft.style ? { style: draft.style } : {}), attrs: draft.attrs, ...(draft.edges ? { edges: draft.edges } : {}), ...(draft.arcs ? { arcs: draft.arcs } : {}) })
       .then((p) => { if (live) setPreview(p); });
     return () => { live = false; };
   }, [roofId, draft, node]);
@@ -221,14 +221,14 @@ export function RoofDialog() {
   const pickStyle = (id: string) => setDraft({ style: id, attrs: {} });
   const pickUserTemplate = (tpl: UserRoofTemplate) => {
     const args = applyRoofTemplateArgs(node.id, tpl, contour);
-    setDraft({ templateId: tpl.id, attrs: args.attrs, edges: args.edges });
+    setDraft({ templateId: tpl.id, attrs: args.attrs, edges: args.edges, ...(args.arcs ? { arcs: args.arcs } : {}) });
   };
   const apply = async () => {
     await execute('architecture.updateRoof', draftArgs());
     if (!useSession.getState().error) setDraft({ attrs: {} });
   };
   const current = draft.style ?? draft.templateId ?? (dirty ? undefined : (node.props.style as string | undefined));
-  const draftArgs = () => ({ id: node.id, ...(draft.style ? { style: draft.style } : {}), attrs: draft.attrs, ...(draft.edges ? { edges: draft.edges } : {}) });
+  const draftArgs = () => ({ id: node.id, ...(draft.style ? { style: draft.style } : {}), attrs: draft.attrs, ...(draft.edges ? { edges: draft.edges } : {}), ...(draft.arcs ? { arcs: draft.arcs } : {}) });
   // Saved as the project's own style: a new one under a name, or the one it has saved again (its roofs follow).
   const saveAs = async () => {
     const name = promptText(t('Name of the roof style'), node.props.style && own.some((s) => s.id === node.props.style) ? '' : `${node.name}`);

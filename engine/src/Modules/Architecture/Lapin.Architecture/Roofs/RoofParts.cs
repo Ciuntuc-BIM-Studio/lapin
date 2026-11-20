@@ -23,13 +23,21 @@ public static class RoofParts
     /// </summary>
     public sealed record Member(string Role, Vec3 A, Vec3 B, double Width, double Depth)
     {
-        public double Length => (B - A).Length;
+        public double Length => Path is { Count: > 1 } p ? p.Zip(p.Skip(1), (x, y) => (y - x).Length).Sum() : (B - A).Length;
         public double Volume => Length * Width * Depth;
         public int Truss { get; init; } = -1;
         public IReadOnlyList<Vec3>? Profile { get; init; }
         public Vec3 Side { get; init; }
-        public Solid? Body(string tag) => Profile is { } p ? Prism.Extrude(p, null, Side, tag) : Prism.SweepBox(A, B, Width, Depth, tag);
+        /// <summary>A level member along a curved edge (a wall plate, a purlin): its centre line through the chords, A to B (decision 741).</summary>
+        public IReadOnlyList<Vec3>? Path { get; init; }
+        public Solid? Body(string tag) => Profile is { } p ? Prism.Extrude(p, null, Side, tag)
+            : Path is { Count: > 2 } path ? RoofCurves.PathBody(path, Width, Depth, tag)
+            : Prism.SweepBox(A, B, Width, Depth, tag);
     }
+
+    /// <summary>A level member along a line of points (one member, however many chords).</summary>
+    static Member Level(string role, IReadOnlyList<Vec3> path, double w, double d) =>
+        path.Count == 2 ? new Member(role, path[0], path[1], w, d) : new Member(role, path[0], path[^1], w, d) { Path = path };
 
     /// <summary>The members' roles, as their parts and the schedule name them.</summary>
     public static string RoleLabel(string role) => role switch
@@ -233,13 +241,22 @@ public static class RoofParts
             var ridge = s.Lines.Where(l => l.Kind == LineKind.Ridge && l.Length > 0.1).MaxBy(l => l.Length);
             axis = ridge != null ? (ridge.B - ridge.A).Xy.Normalized() : frames.Count == 1 ? frames[0].D : null;
         }
-        bool Main(Frame f) => axis is { } ax && Math.Abs(Vec2.Dot(f.D, ax)) > Math.Cos(10 * Math.PI / 180);
+        // A curved edge's chords (decision 741): its facets take their rafters along the curve, its purlins at one height.
+        var chains = RoofCurves.Chains(r, s);
+        var chainOf = RoofCurves.ChainOf(r, s, chains);
+        var chainTop = chains.Select(c => frames.Where(f => c.Contains(f.Plane.Edge)).Select(f => f.Plane.Points.Max(q => q.Z)).DefaultIfEmpty(0).Max()).ToList();
+        var curvedPurlins = new List<(int Chain, int Row, Vec3 A, Vec3 B)>();
+        var smooth = RoofCurves.SmoothRuns(r, s);
+        var alongCurve = new bool[s.Outline.Count];
+        foreach (var (edges, _) in smooth) foreach (var j in edges) alongCurve[j] = true;
+        bool Main(Frame f) => !alongCurve[f.Plane.Edge] && axis is { } ax && Math.Abs(Vec2.Dot(f.D, ax)) > Math.Cos(10 * Math.PI / 180);
 
         foreach (var f in frames)
         {
             var a = s.Outline[f.Plane.Edge];
             var holes = HolesOn(f, openings);
-            if (!Main(f))
+            var chain = chainOf[f.Plane.Edge];
+            if (!Main(f) && !alongCurve[f.Plane.Edge])
             {
                 // Rafters: across the plane along its eave, every `spacing`, up the slope; their underside on the plane.
                 var along = f.Plan.Select(q => Vec2.Dot(q - a, f.D)).ToList();
@@ -269,14 +286,53 @@ public static class RoofParts
                 }
             }
             // Purlins: level, under the rafters, spread up the slope.
-            var top = f.Plane.Points.Max(q => q.Z);
+            var top = chain >= 0 ? chainTop[chain] : f.Plane.Points.Max(q => q.Z);
             var eaveZ = f.Z(a);
             for (int j = 1; j <= purlins; j++)
             {
                 var h = eaveZ + (top - eaveZ) * j / (purlins + 1);
                 var p = a + f.N * ((h - eaveZ) / f.Tan);
                 foreach (var (t0, t1) in Crossings(f.Plan, p, f.D))
-                    o.Add(new Member("purlin", (p + f.D * t0).At(h - pd / 2), (p + f.D * t1).At(h - pd / 2), pw, pd));
+                {
+                    var (pa, pb) = ((p + f.D * t0).At(h - pd / 2), (p + f.D * t1).At(h - pd / 2));
+                    if (chain >= 0) curvedPurlins.Add((chain, j, pa, pb));
+                    else o.Add(new Member("purlin", pa, pb, pw, pd));
+                }
+            }
+        }
+
+        // Over a curved edge: each row of purlin one member along the curve, its facets' pieces joined.
+        foreach (var row in curvedPurlins.GroupBy(x => (x.Chain, x.Row)))
+            foreach (var line in RoofCurves.Join(row.Select(x => (x.A, x.B))))
+                o.Add(Level("purlin", line, pw, pd));
+
+        // Rafters along a curved edge and the edges it runs on into smoothly: at the spacing along the curve (not two per
+        // chord, nor two where a fillet meets its straight edge), each square to the chord it stands on, from the eave up
+        // through the run's planes to where they end.
+        foreach (var (c, closed) in smooth)
+        {
+            var cf = c.Select(j => frames.FirstOrDefault(f => f.Plane.Edge == j)).ToList();
+            var n = s.Outline.Count;
+            var lens = c.Select(j => (s.Outline[(j + 1) % n] - s.Outline[j]).Length).ToList();
+            var total = lens.Sum();
+            double lo = closed ? 0 : rw / 2, hi = closed ? total : total - rw / 2;
+            int count = Math.Max(1, (int)Math.Round((hi - lo) / spacing));
+            var plans = cf.OfType<Frame>().ToList();
+            var holes = plans.SelectMany(f => HolesOn(f, openings)).ToList();
+            for (int j = 0; j <= (closed ? count - 1 : count); j++)
+            {
+                var st = hi > lo ? lo + (hi - lo) * j / count : total / 2;
+                var k = 0;
+                while (k < lens.Count - 1 && st > lens[k]) { st -= lens[k]; k++; }
+                if (cf[k] is not { } f) continue;
+                var p = s.Outline[c[k]] + f.D * Math.Clamp(st, 0, lens[k]);
+                // The run up the slope through the curve's facets (those turned little from its own): the one that starts at the eave.
+                var near = plans.Where(x => Vec2.Dot(x.N, f.N) >= Math.Cos(Drainage.SmoothTurn * Math.PI / 180));
+                var runs = Merge(near.SelectMany(x => Crossings(x.Plan, p, f.N)));
+                if (runs.Where(x => x.T0 <= 1e-6 && x.T1 > 1e-6).Cast<(double T0, double T1)?>().FirstOrDefault() is not { } run) continue;
+                var cuts = holes.SelectMany(h => Crossings(h, p, f.N)).ToList();
+                foreach (var (t0, t1) in Minus([run], cuts))
+                    o.Add(Rafter("rafter", p, f.N, t0, t1, q => f.Z(p + f.N * q), cut, t0 < 0 && t1 > 0 ? 0 : null));
             }
         }
 
@@ -284,6 +340,7 @@ public static class RoofParts
             Stations(r, s, frames, main, u, spacing, cut, openings, o);
 
         // Ridge beams under the ridges (rafters on purlins only); hip and valley rafters along hips and valleys, flush with the rafters' tops.
+        var curvedHips = new List<(string Role, Vec3 A, Vec3 B)>();
         foreach (var l in s.Lines)
         {
             if (l.Kind == LineKind.Ridge && r.Scheme == "rafters")
@@ -291,17 +348,40 @@ public static class RoofParts
             else if (l.Kind is LineKind.Hip or LineKind.Valley)
             {
                 var dz = rd / minNz - Roof.HipRafter.D / 2;
-                o.Add(new Member(l.Kind == LineKind.Hip ? "hip" : "valley", l.A with { Z = l.A.Z + dz }, l.B with { Z = l.B.Z + dz }, Roof.HipRafter.W, Roof.HipRafter.D));
+                var (role, ha, hb) = (l.Kind == LineKind.Hip ? "hip" : "valley", l.A with { Z = l.A.Z + dz }, l.B with { Z = l.B.Z + dz });
+                if (chains.Count > 0) curvedHips.Add((role, ha, hb));
+                else o.Add(new Member(role, ha, hb, Roof.HipRafter.W, Roof.HipRafter.D));
             }
         }
+        // Where a curve's facets meet a plane the hip is curved, one piece per facet: one member along them (decision 741).
+        foreach (var g in curvedHips.GroupBy(x => x.Role))
+            foreach (var line in RoofCurves.Join(g.Select(x => (x.A, x.B)), Drainage.SmoothTurn))
+                o.Add(line.Count == 2 ? new Member(g.Key, line[0], line[1], Roof.HipRafter.W, Roof.HipRafter.D)
+                    : new Member(g.Key, line[0], line[^1], Roof.HipRafter.W, Roof.HipRafter.D) { Path = line });
         // Wall plates on the eave walls: the roof rests on them.
+        // A curved eave's plate is one member along the curve (decision 741).
+        var plateZ = r.PlateZ + wpd / 2;
         for (int i = 0; i < s.Outline.Count; i++)
         {
-            if (s.Rules[i].Kind != EdgeKind.Eave) continue;
-            var z = r.PlateZ + wpd / 2;
-            o.Add(new Member("plate", s.Outline[i].At(z), s.Outline[(i + 1) % s.Outline.Count].At(z), wpw, wpd));
+            if (s.Rules[i].Kind != EdgeKind.Eave || chainOf[i] >= 0) continue;
+            o.Add(new Member("plate", s.Outline[i].At(plateZ), s.Outline[(i + 1) % s.Outline.Count].At(plateZ), wpw, wpd));
+        }
+        foreach (var c in chains)
+        {
+            if (s.Rules[c[0]].Kind != EdgeKind.Eave) continue;
+            o.Add(Level("plate", [.. c.Select(j => s.Outline[j].At(plateZ)), s.Outline[(c[^1] + 1) % s.Outline.Count].At(plateZ)], wpw, wpd));
         }
         return o.Where(m => m.Length > 0.05).ToList();
+    }
+
+    /// <summary>Intervals joined where they meet or overlap.</summary>
+    static List<(double T0, double T1)> Merge(IEnumerable<(double T0, double T1)> xs)
+    {
+        var o = new List<(double T0, double T1)>();
+        foreach (var x in xs.OrderBy(x => x.T0))
+            if (o.Count > 0 && x.T0 <= o[^1].T1 + 1e-4) o[^1] = (o[^1].T0, Math.Max(o[^1].T1, x.T1));
+            else o.Add(x);
+        return o;
     }
 
     /// <summary>

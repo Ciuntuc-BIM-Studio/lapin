@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nearestOnLine, nearestOnSegment, outlineGrips } from './gripKit';
+import { edgeOfGrip, nearestOnLine, nearestOnSegment, outlineGrips } from './gripKit';
 
 const square = [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 4 }, { x: 0, y: 4 }];
 const save = (o: { pts: { x: number; y: number }[] }) => ({ command: 'x.update', args: { points: o.pts.map((p) => [p.x, p.y]) } });
@@ -64,6 +64,21 @@ describe('curved edges and rounded corners on outlines (forum topic 97, stage 2)
     expect(v0.chamfer(0.2)).toEqual({ command: 'x.chamfer', args: { index: 0, distance: 0.2 } });
     expect(grips.find((g) => g.key === 'v1')!.corner!.straight).toBe(false);
     expect(grips.find((g) => g.key === 'v2')!.corner!.straight).toBe(false);
+  });
+
+  it('gives an edge\'s own grips (its diamond, a curved edge\'s round grip) the edge\'s menu, not the element\'s', () => {
+    const grips = outlineGrips({ pts: square, arcs: [-1, 0, 0, 0] }, saveArcs, curved);
+    const at = (key: string) => grips.find((g) => g.key === key)!;
+    // A straight edge's diamond: "Make arc".
+    expect(edgeOfGrip([at('e1')], grips)).toBe(at('e1'));
+    expect(edgeOfGrip([at('e1')], grips)!.bend).toBeDefined();
+    // A curved edge's diamond and its round grip: "Make straight".
+    expect(edgeOfGrip([at('e0')], grips)!.straighten).toBeDefined();
+    expect(edgeOfGrip([at('a0')], grips)).toBe(at('e0'));
+    // A corner is no edge; nor is an edge that cannot be bent.
+    expect(edgeOfGrip([at('v0')], grips)).toBeNull();
+    const plain = outlineGrips({ pts: square }, saveArcs);
+    expect(edgeOfGrip([plain.find((g) => g.key === 'e0')!], plain)).toBeNull();
   });
 
   it('finds the nearest point of a polyline and how far along it lies', () => {

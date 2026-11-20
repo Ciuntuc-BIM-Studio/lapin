@@ -2,7 +2,8 @@
 
 import type { NodeDto } from '../../engine/protocol';
 import type { Grip, Vec2 } from '../../platform/module';
-import { anticlockwise, fromPairs } from '../../viewport/contour';
+import { anticlockwise, arcsOf, fromPairs } from '../../viewport/contour';
+import { middle } from '../../viewport/arc';
 
 export type EdgeKind = 'eave' | 'gable';
 export type Edge = { kind?: EdgeKind; pitch?: number; overhang?: number; gutter?: boolean } | null;
@@ -155,6 +156,7 @@ export function roofSlopeGrips(node: NodeDto): Grip[] {
   const defaultPitch = typeof node.props.pitch === 'number' ? node.props.pitch : 30;
   const autoKinds = resolveRoofEdgeKinds(shape, pts, ridgeDirection, lowEdge, shedFlip);
   const inwardSign = anticlockwise(pts) ? 1 : -1;
+  const arcs = arcsOf(node.props.arcs, pts.length);
 
   const grips: Grip[] = [];
   for (let i = 0; i < pts.length; i++) {
@@ -172,7 +174,8 @@ export function roofSlopeGrips(node: NodeDto): Grip[] {
     grips.push({
       key: `slope:${i}`,
       kind: 'slope',
-      at: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+      // On a curved edge, at the arc's middle (where its tangent runs as its chord), not inside the roof at the chord's.
+      at: arcs?.[i] ? middle({ a, b, rise: arcs[i] }) : { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
       dir: { x: -uy * inwardSign + 0, y: ux * inwardSign + 0 },
       label: resolvedKind === 'eave' ? pitchText : 'G',
       slope: { kind: resolvedKind, override: overrideKind !== undefined },

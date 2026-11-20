@@ -184,4 +184,68 @@ describe('roofTemplateLibrary', () => {
     const res = saveRoofTemplate('Too Big', { shape: 'hip', pitch: 30 });
     expect(res.status).toBe('full');
   });
+  it('keeps the roof\'s layers, extents, sections and edges, and puts the edges on a roof with as many corners', () => {
+    const contour: [number, number][] = [[0, 0], [10, 0], [10, 5.5], [8.5, 7], [0, 7]];
+    const layers = [{ material: 'Mineral wool', thickness: 0.16, role: 'insulation' }, { material: 'OSB', thickness: 0.022 }];
+    const layerExtents = [{ layer: 0, edge: 'outline', offset: 0.1 }, { layer: 1, edge: 'edge', index: 2, offset: -0.2 }];
+    const saved = saveRoofTemplate('Curved hip roof', {
+      shape: 'hip', pitch: 35, overhang: 0.8, layers, layerExtents,
+      plateSection: '120x120', ridgeSection: '140x200', purlinSection: '120x160', collarSection: '60x160',
+      contour, arcs: [-1.5, 0, 0.62, 0, 0], edges: [null, { pitch: 40 }, null, { kind: 'gable', overhang: 0.3 }, { gutter: false, bogus: 1 }],
+    }, { contour });
+    expect(saved.status).toBe('kept');
+    if (saved.status !== 'kept') return;
+    const tpl = saved.template;
+    expect(tpl.version).toBe(2);
+    expect(tpl.attrs.layers).toEqual(layers);
+    expect(tpl.attrs.layerExtents).toEqual(layerExtents);
+    expect(tpl.attrs.plateSection).toBe('120x120');
+    expect(tpl.attrs.ridgeSection).toBe('140x200');
+    expect(tpl.attrs.purlinSection).toBe('120x160');
+    expect(tpl.attrs.collarSection).toBe('60x160');
+    expect(tpl.outline).toEqual({
+      corners: 5,
+      edges: [null, { pitch: 40 }, null, { kind: 'gable', overhang: 0.3 }, { gutter: false }],
+      arcs: [-1.5, 0, 0.62, 0, 0],
+    });
+
+    // A roof with five corners takes its edges and arcs too, in the same step.
+    const five: [number, number][] = [[0, 0], [12, 0], [12, 6], [10, 8], [0, 8]];
+    const onFive = applyRoofTemplateArgs('r5', tpl, five);
+    expect(onFive.arcs).toEqual([-1.5, 0, 0.62, 0, 0]);
+    expect(onFive.edges).toEqual(tpl.outline!.edges);
+    expect(onFive.attrs.layers).toEqual(layers);
+    expect(onFive.attrs.layerExtents).toEqual(layerExtents);
+
+    // A rectangle: the roof-wide fields, its own edges cleared, its arcs as they are, no extent named by an edge.
+    const onFour = applyRoofTemplateArgs('r4', tpl, [[0, 0], [8, 0], [8, 6], [0, 6]]);
+    expect(onFour.arcs).toBeUndefined();
+    expect(onFour.edges).toEqual([]);
+    expect(onFour.attrs.layers).toEqual(layers);
+    expect(onFour.attrs.layerExtents).toEqual([{ layer: 0, edge: 'outline', offset: 0.1 }]);
+    expect(onFour.attrs.pitch).toBe(35);
+
+    // Exported and imported, it keeps all of it.
+    const back = parseRoofTemplatesJson(JSON.parse(exportRoofTemplatesJson([tpl])))[0];
+    expect(back.version).toBe(2);
+    expect(back.outline).toEqual(tpl.outline);
+    expect(back.attrs.layers).toEqual(layers);
+  });
+
+  it('applies a template saved before version 2 as it always did: the roof keeps its layers and sections', () => {
+    // As an older build kept it in this computer's library: no version, no outline.
+    stored.set('lapin.roofTemplates', JSON.stringify([{ id: 'tpl:old', label: 'Old hip', shape: 'hip', pitch: 30, attrs: { shape: 'hip', pitch: 30, covering: 'clay-tiles' }, added: '2026-11-01' }]));
+    const old = libraryRoofTemplate('tpl:old')!;
+    expect(old).toBeTruthy();
+    const args = applyRoofTemplateArgs('r', old, [[0, 0], [8, 0], [8, 6], [0, 6]]);
+    expect(args.attrs.covering).toBe('clay-tiles');
+    expect(args.attrs.rafterSection).toBeNull();
+    for (const k of ['layers', 'layerExtents', 'plateSection', 'ridgeSection', 'purlinSection', 'collarSection']) expect(k in args.attrs).toBe(false);
+    expect(args.edges).toEqual([]);
+    expect(args.arcs).toBeUndefined();
+    // An old exported file (no version) imports, and applies the same way.
+    const imported = parseRoofTemplatesJson({ format: 'lapin-roof-templates', version: 1, templates: [{ label: 'Old file', attrs: { shape: 'gable', pitch: 40 } }] });
+    expect(imported).toHaveLength(1);
+    expect('layers' in applyRoofTemplateArgs('r', imported[0], [[0, 0], [8, 0], [8, 6], [0, 6]]).attrs).toBe(false);
+  });
 });

@@ -124,6 +124,15 @@ describe('roofSlopeGrips', () => {
     });
   });
 
+  it('stands a curved edge\'s indicator on its arc, not inside the roof at its chord\'s middle', () => {
+    // Edge 0 bulges 1.5 m out of the roof (below y = 0 on this anticlockwise outline).
+    const grips = roofSlopeGrips(makeRoof({ shape: 'hip', pitch: 30, contour, arcs: [-1.5, 0, 0, 0] }));
+    expect(grips[0].at.x).toBeCloseTo(4, 9);
+    expect(grips[0].at.y).toBeCloseTo(-1.5, 9);
+    expect(grips[0].dir).toEqual({ x: 0, y: 1 });
+    expect(grips[1].at).toEqual({ x: 8, y: 2 });
+  });
+
   it('keeps slope grips separate from edgeMid grips at the same point', () => {
     const grips = roofSlopeGrips(makeRoof({ shape: 'hip', pitch: 30, contour }));
     const edgeMid = { key: 'e0', kind: 'edgeMid' as const, at: grips[0].at, owner: 'roof-1' };
