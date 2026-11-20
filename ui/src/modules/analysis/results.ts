@@ -210,3 +210,14 @@ export function placeLabels(labels: readonly LabelCandidate[], charWidth = 7, he
   }
   return labels.map((_, i) => i).filter((i) => keep.has(i));
 }
+
+/** A note that asks the engineer to look (something refused, left out, unbalanced, not reached), not one that only says how the analysis was made. */
+const WARNING = /refused|does not start|do not balance|could not|find nothing|left out|did not run|mechanism|less than 90|nothing carries|in no case|holds nothing|no E for|no density|no Poisson|check that|thinner than|say nothing of their load|not assembled|no mass/i;
+
+/** The notes, each once, those that ask to be looked at first (in their order), then the rest; how many ask. */
+export function orderNotes(notes: readonly string[]): { notes: { text: string; warning: boolean }[]; warnings: number } {
+  const unique = notes.filter((n, i) => notes.indexOf(n) === i);
+  const warn = unique.filter((n) => WARNING.test(n));
+  const rest = unique.filter((n) => !WARNING.test(n));
+  return { notes: [...warn.map((text) => ({ text, warning: true })), ...rest.map((text) => ({ text, warning: false }))], warnings: warn.length };
+}

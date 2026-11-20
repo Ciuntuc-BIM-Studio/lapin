@@ -7,8 +7,9 @@ import { useUi } from '../../app/store';
 import { useAnalysis } from './hooks';
 import { animateMode, stopMode, useMode } from './useMode';
 import { formatValue } from './results';
+import { NotesList } from './NotesList';
 import {
-  CODE_LABEL, DIAPHRAGM_LABEL, DIRECTIONS_LABEL, MASONRY_KIND_TITLE, MODAL_LABEL, modeRows, readNumber, reachedMass, spectrumChart, storeyRows, formatPercent,
+  CODE_LABEL, DIAPHRAGM_LABEL, DIRECTIONS_LABEL, MASONRY_KIND_TITLE, MODAL_LABEL, modeRows, readNumber, reachedMass, spectrumChart, storeyRows, formatPercent, formatPeriod,
   type ModalDto, type SeismicDto, type SeismicOptionsDto, type SpectrumDto,
 } from './seismic';
 
@@ -138,15 +139,31 @@ export function SeismicSection() {
 }
 
 function Results({ modal, spectrum, seismic }: { modal: ModalDto | null; spectrum: SpectrumDto | null; seismic: SeismicDto | null }) {
-  const notes = [...(modal?.notes ?? []), ...(seismic?.notes ?? [])];
-  const unique = notes.filter((n, i) => notes.indexOf(n) === i);
   return (
     <>
       {modal && modal.ok && modal.modes.length > 0 && <Modes modal={modal} />}
       {spectrum && spectrum.points.length > 0 && <SpectrumChart spectrum={spectrum} />}
       {seismic && seismic.ok && <Storeys seismic={seismic} />}
-      {unique.map((n, i) => <p key={i} className="muted small">{n}</p>)}
+      <NotesList notes={[...(modal?.notes ?? []), ...(seismic?.notes ?? [])]} test="seismic-notes" />
     </>
+  );
+}
+
+/** The dialog's footer's way to a mode's shape (§11.10): the mode, and Animate, in reach without scrolling to the modes' table. */
+export function ModeAction() {
+  const o = useAnalysis<SeismicOptionsDto>('analysis.seismicOptions');
+  const modal = useAnalysis<ModalDto>('analysis.modal', !!o?.given);
+  const shown = useMode((s) => s.mode);
+  const [n, setN] = useState(1);
+  if (!o?.given || !modal?.ok || modal.modes.length === 0) return null;
+  const mode = Math.min(n, modal.modes.length);
+  return (
+    <span className="row" style={{ marginLeft: 'auto' }}>
+      <select aria-label="Mode" data-testid="results-mode" value={mode} onChange={(e) => setN(Number(e.target.value))}>
+        {modal.modes.map((m) => <option key={m.n} value={m.n} data-no-i18n>{m.n} · T = {formatPeriod(m.T)} s</option>)}
+      </select>
+      <button type="button" className={`btn${shown === mode ? ' primary' : ''}`} data-testid="results-animate" title="Show this mode's shape in the 3D view, swinging" onClick={() => { void animateMode(mode); useUi.setState({ dialog: null }); }}><Play size={12} />Animate</button>
+    </span>
   );
 }
 

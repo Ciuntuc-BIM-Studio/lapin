@@ -32,6 +32,8 @@ export const ENGINE_NOTES = [
   'The options leave the walls out of the shells: the load-bearing walls are line supports (as in S1).',
   'Slabs not of concrete (Floor C24, Deck 2): not shells; their loads go to what holds them by the 45° rule.',
   'Walls not of concrete (Wall 3): line supports.',
+  'Walls that say nothing of their load taken as load-bearing (masonry or concrete, a core of 10 cm or more): Wall 1, Brick 25. Set Pset_WallCommon.LoadBearing to false on a partition to leave it out.',
+  'Walls that say nothing of their load, thinner than 10 cm, taken as partitions (their weight on the floors): Brick 7.5. Set Pset_WallCommon.LoadBearing to true on one that carries.',
   'No E for Floor 20: not shells (as in S1).',
   '2 shell pieces with no area, not plane or not convex: left out of the mesh (3kQ#2, 3kQ#5).',
   'The shells could not be meshed (A piece turning against its normal.): the slabs and walls are taken as in S1.',

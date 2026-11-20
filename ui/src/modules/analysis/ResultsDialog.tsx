@@ -3,7 +3,8 @@
 import { Play, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { PendingDialog } from '../core/PendingDialog';
-import { SeismicSection } from './SeismicSection';
+import { ModeAction, SeismicSection } from './SeismicSection';
+import { NotesList } from './NotesList';
 import { ShellMaxima, ShellOptions } from './ShellOptions';
 import { hideDiagrams, runAnalysis, setPick, showDiagrams, useResults } from './useResults';
 import {
@@ -58,14 +59,16 @@ export function ResultsDialog() {
           <ShellOptions />
           {run.ok && <SeismicSection />}
 
-          {run.notes.map((n, i) => <p key={i} className="muted small">{n}</p>)}
+          <NotesList notes={run.notes} test="analysis-notes" />
           <p className="muted small">The results are indicative: loads, combinations and the analysis are yours to check before you rely on them.</p>
-          <div className="row">
-            <button type="button" className="btn" disabled={running} data-testid="results-rerun" onClick={() => void runAnalysis()}><Play size={14} />Run again</button>
-            {run.ok && !stale && <button type="button" className="btn primary" data-testid="results-show" onClick={() => { showDiagrams(); close(); }}>Show the diagrams</button>}
-            {run.ok && !stale && <button type="button" className="btn" onClick={() => { hideDiagrams(); close(); }}>Close without diagrams</button>}
-          </div>
         </div>
+        {/* The actions stay in reach below the scrolling body (§11.10). */}
+        <footer className="dialog-foot" data-testid="results-actions">
+          <button type="button" className="btn" disabled={running} data-testid="results-rerun" onClick={() => void runAnalysis()}><Play size={14} />Run again</button>
+          {run.ok && !stale && <button type="button" className="btn primary" data-testid="results-show" onClick={() => { showDiagrams(); close(); }}>Show the diagrams</button>}
+          {run.ok && !stale && <button type="button" className="btn" onClick={() => { hideDiagrams(); close(); }}>Close without diagrams</button>}
+          {run.ok && !stale && <ModeAction />}
+        </footer>
       </div>
     </div>
   );

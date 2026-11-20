@@ -5530,17 +5530,28 @@ export const scenes = [
       await t.until(async () => (await seismic.locator('[data-testid=seismic-spectrum-chart]').count()) > 0 && (await seismic.locator('[data-testid=seismic-storeys] tbody tr').count()) > 0, 'the spectrum and the storeys are there');
       t.expect(await seismic.locator('[data-testid=seismic-code]').inputValue() === 'P100-1/2013', 'the code is P100-1/2013');
       t.expect(await seismic.locator('[data-testid=seismic-ag]').inputValue() === '0.2', 'the site\'s ag is shown');
+      // The notes folded (Notes (n)), the actions in the dialog's footer, in reach without scrolling (§11.10).
+      t.expect(await seismic.locator('[data-testid=seismic-notes]').count() === 1 && !(await seismic.locator('[data-testid=seismic-notes]').evaluate((e) => e.open)), 'the seismic notes are folded');
+      t.expect(await t.page.locator('[data-testid=results-actions] [data-testid=results-animate]').count() === 1, 'Animate is in the dialog\'s footer');
       await t.wait(500);
-      await seismic.scrollIntoViewIfNeeded();
-      await t.shot('analysis-seismic', { of: '[data-testid=analysis-seismic]', pad: 6 });
+      // The section from its top in the dialog's scrolling body, the footer's actions below it.
+      await seismic.evaluate((e) => e.scrollIntoView({ block: 'start' }));
+      await t.wait(300);
+      await t.shot('analysis-seismic', { of: '.dialog', pad: 0 });
       await seismic.locator('[data-testid=mode-animate-1]').click();
       await t.until(async () => (await t.page.locator('[data-testid=mode-card]').count()) > 0, 'the mode card shows');
       await t.until(async () => (await t.page.locator('[data-mode]').count()) > 0, 'the mode is in the 3D view\'s scene');
+      t.expect(await t.page.locator('[data-mode-undeformed=ghost]').count() === 1, 'the model at rest is see-through behind the shape');
       await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.9, pitch: -0.45, distance: 15, target: { x: 3, y: 2, z: 2 } }, false));
+      // Still at the swing's end, so the picture shows the shape at its largest.
+      await t.page.evaluate(() => { window.matchMedia = (q) => ({ matches: q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false }); });
+      await t.page.evaluate(async () => { const m = await import('/src/modules/analysis/useMode.ts'); const s = m.useMode.getState().shape; m.useMode.setState({ shape: null }); m.useMode.setState({ shape: s }); });
       await t.wait(1000);
       await t.shot('analysis-mode', { of: '[data-testid=view3d]', pad: 0 });
       await t.page.locator('[data-testid=mode-stop]').click();
+      await t.wait(300);
       t.expect(await t.page.locator('[data-mode]').count() === 0, 'Stop takes the mode off the view');
+      t.expect(await t.page.locator('[data-testid=analysis-card]').count() === 1, 'Stop brings back the diagrams\' card');
       // A mechanism: every column's top end released in all six freedoms.
       await t.cmd('analysis.setReleases', { ids: columns, j: [true, true, true, true, true, true] });
       await t.wait(600);

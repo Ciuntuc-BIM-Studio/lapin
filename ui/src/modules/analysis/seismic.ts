@@ -165,3 +165,84 @@ export function blend(rest: ArrayLike<number>, displaced: ArrayLike<number>, k: 
 }
 /** The oscillation at a moment: sin(2πt / period), t and period in milliseconds. */
 export const oscillation = (ms: number, period = 1600): number => Math.sin((2 * Math.PI * ms) / period);
+
+/** The share of the model's size (its box's diagonal) the largest displacement of a mode is drawn at, before the card's scale (docs/plan-fem.md §11.10). */
+export const MODE_FRACTION = 0.07;
+
+/** The diagonal of the box round the shape at rest (its bars' ends and its shells' nodes), metres; 0 when there is nothing. */
+export function shapeDiagonal(shape: ModeShapeDto): number {
+  const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+  const take = (x: number, y: number, z: number) => {
+    const p = [x, y, z];
+    for (let a = 0; a < 3; a++) { lo[a] = Math.min(lo[a]!, p[a]!); hi[a] = Math.max(hi[a]!, p[a]!); }
+  };
+  for (const pl of shape.polylines) for (const p of pl.base) take(p[0]!, p[1]!, p[2]!);
+  for (const s of shape.shells) for (let i = 0; i + 2 < s.positions.length; i += 3) take(s.positions[i]!, s.positions[i + 1]!, s.positions[i + 2]!);
+  return Number.isFinite(lo[0]) ? Math.hypot(hi[0]! - lo[0]!, hi[1]! - lo[1]!, hi[2]! - lo[2]!) : 0;
+}
+
+/** The largest way any point moves from rest to the displaced shape the engine gave (its own scale), metres. */
+export function largestDisplacement(shape: ModeShapeDto): number {
+  let max = 0;
+  const step = (rest: ArrayLike<number>, moved: ArrayLike<number>) => {
+    for (let i = 0; i + 2 < rest.length; i += 3) max = Math.max(max, Math.hypot(moved[i]! - rest[i]!, moved[i + 1]! - rest[i + 1]!, moved[i + 2]! - rest[i + 2]!));
+  };
+  for (const pl of shape.polylines) step(restPoints(pl.base, pl.points.length), pl.points.flat());
+  for (const s of shape.shells) step(s.positions, s.displaced);
+  return max;
+}
+
+/**
+ * How many times the engine's displaced shape to draw it at its swing's end: its largest displacement made `fraction` of the
+ * model's diagonal, times the card's scale (`mult`). A shape that does not move is drawn as it is.
+ */
+export function modeAmplitude(shape: ModeShapeDto, mult = 1, fraction = MODE_FRACTION): number {
+  const max = largestDisplacement(shape), diag = shapeDiagonal(shape);
+  return max > 1e-12 && diag > 0 ? (fraction * diag * mult) / max : mult;
+}
+
+/** A tube's triangles round a polyline of `count` points, `sides` vertices a ring: two triangles a quad between neighbouring rings. */
+export function tubeIndex(count: number, sides: number): number[] {
+  const out: number[] = [];
+  for (let i = 0; i + 1 < count; i++)
+    for (let j = 0; j < sides; j++) {
+      const a = i * sides + j, b = i * sides + ((j + 1) % sides), c = a + sides, d = b + sides;
+      out.push(a, c, b, b, c, d);
+    }
+  return out;
+}
+
+/** Two unit vectors square to a direction and to each other (a tube's ring's axes). */
+export function ringAxes(dx: number, dy: number, dz: number): [number[], number[]] {
+  const l = Math.hypot(dx, dy, dz) || 1;
+  const d = [dx / l, dy / l, dz / l];
+  const ref = Math.abs(d[2]!) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+  const cross = (a: number[], b: number[]) => [a[1]! * b[2]! - a[2]! * b[1]!, a[2]! * b[0]! - a[0]! * b[2]!, a[0]! * b[1]! - a[1]! * b[0]!];
+  const u = cross(d, ref);
+  const lu = Math.hypot(u[0]!, u[1]!, u[2]!);
+  const un = [u[0]! / lu, u[1]! / lu, u[2]! / lu];
+  return [un, cross(d, un)];
+}
+
+/** A tube's vertices round the points (flat x, y, z): a ring of `sides` at each, on the axes given (the bar's at rest, so the rings do not twist as it swings). */
+export function tubeRings(points: ArrayLike<number>, u: number[], v: number[], radius: number, sides: number, out: Float32Array): Float32Array {
+  const count = points.length / 3;
+  for (let i = 0; i < count; i++)
+    for (let j = 0; j < sides; j++) {
+      const t = (2 * Math.PI * j) / sides, c = Math.cos(t) * radius, s = Math.sin(t) * radius;
+      const k = (i * sides + j) * 3;
+      for (let a = 0; a < 3; a++) out[k + a] = points[i * 3 + a]! + u[a]! * c + v[a]! * s;
+    }
+  return out;
+}
+
+/** How see-through the model at rest is drawn behind a mode's shape. */
+export const GHOST_OPACITY = 0.12;
+
+/** The looks the model's elements take while a mode is shown: see-through behind the shape, or hidden when the model at rest is not to be shown. */
+export function ghostLooks(ids: Iterable<string>, undeformed: boolean): Record<string, { opacity?: number; hidden?: boolean }> {
+  const look = undeformed ? { opacity: GHOST_OPACITY } : { hidden: true };
+  const out: Record<string, { opacity?: number; hidden?: boolean }> = {};
+  for (const id of ids) out[id] = look;
+  return out;
+}

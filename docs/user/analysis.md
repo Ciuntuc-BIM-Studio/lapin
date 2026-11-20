@@ -18,6 +18,7 @@ summary: Run a linear static analysis of the frame under your loads, read the di
 - **Concrete floors and slabs** are analysed as **shells**: each is divided into small elements (a mesh, 0.5 m by default) that bend and stretch, sharing their nodes with the beams, columns and walls they meet. The slab carries its loads itself to what holds it, by its stiffness and theirs. A beam under a slab keeps its own axis below it and works with the slab as a T beam.
 - **Concrete load-bearing walls** are shells too: they stand on their footings (a wall with nothing modelled under it is held along its foot) and carry the floors on them, and wind or other sideways loads in their plane.
 - **Masonry walls** are shells too, linear elastic and isotropic, with values after EN 1996-1-1 as CR 6-2013 takes it (E = KE·fk, G = 0.4 E; see [Seismic analysis](#seismic-analysis)). Walls of other materials are supports: they hold the slabs and bars on them, but are not analysed as walls.
+- **Which walls carry**: a wall's **LoadBearing** (Pset_WallCommon, on the wall or its type) decides. Ticked, the wall carries; unticked, or a wall whose IFC type is a partition (PARTITIONING), it does not, and its weight goes onto the floor under it as a partition load (see [Loads](loads.md)). A wall that **says nothing** carries when it is of masonry or concrete with a core of 10 cm or more: a note lists those walls, so you can untick **LoadBearing** on the partitions among them. Thinner ones, and walls of other materials, stay partitions, and a note lists the thin ones.
 - **Floors of other materials** (a timber floor) pass their loads to the bars and walls under them by the **45° rule**: the corners' bisectors divide the slab into the areas each side carries, and each becomes a trapezoidal or triangular load on the bar below.
 - **Framed roofs** pass the load to each rafter by its **tributary width**, half way to its neighbours; snow is taken per horizontal projection.
 - **Rods and ties** (a solid round bar that braces, a tie or cable) work axially: they are pinned at their ends and their weight goes to their ends, so they do not sag as beams. A bar's **Axial member** in its **Analysis** properties changes it: **By its section and use**, **Yes (a rod or tie)** or **No (a beam)**.
@@ -36,6 +37,8 @@ Choose **Run analysis**. The **Analysis results** dialog opens:
 - What was **left out** of the analysis, and why.
 - The **largest and smallest** forces, moments, the largest displacement and deflection (with its ratio to the span, L/300) of the case, combination or envelope you pick; below them, the largest and smallest values on the **slabs and walls**, and where.
 - **Shells**: which slabs and walls are analysed as shells (**Slabs and walls**, **Slabs only**, **Walls only**, or **None**: the slabs by the 45° rule and the walls as supports), and the **Mesh** size in metres. A smaller mesh is more exact and slower; a narrow piece always gets at least four elements across it. A change is one undo step; **Run again** takes it.
+
+**Run again**, **Show the diagrams** and **Close without diagrams** stay at the foot of the dialog, however far you scroll. The notes of the run (how it was made, and what to check) are folded under **Notes (n)**; those to check come first, in red.
 
 **Show the diagrams** closes the dialog and shows the results in the 3D view.
 
@@ -87,9 +90,11 @@ The **Seismic** section of the **Analysis results** dialog works out the modes o
 
 **The spectrum.** The chart draws the design spectrum Sd and the elastic spectrum Se against the period, with the modes' periods marked on the design spectrum and the corner periods TB, TC, TD.
 
+The notes of the modal and seismic analysis are folded under the section's own **Notes (n)**.
+
 **The storeys.** For each storey: its mass, shear force along X and Y, the elastic interstorey drift, and the serviceability (SLS) and ultimate (ULS, P100 only) drift checks against their limits, ticked or crossed (a failing one is red). The base shear is given with the seismic combination, and compared with the lateral force method as a check.
 
-**A mode in 3D.** **Animate** on a mode's row closes the dialog and shows its shape swinging in the 3D view, bars and shells together; **Stop** on the card ends it. The shape is scaled to be seen: it tells how the structure moves, not by how much. It follows the model when you change it.
+**A mode in 3D.** **Animate** on a mode's row (or the mode chosen beside **Animate** at the foot of the dialog) closes the dialog and shows its shape swinging in the 3D view: the slabs and walls as shaded surfaces and the bars as tubes, the model at rest see-through behind them. The shape is sized to be seen: its largest displacement is about 7 % of the model's size, and **Scale** on the card makes it smaller or larger (×0.25 to ×4). It tells how the structure moves, not by how much. Untick **Show undeformed** to hide the model at rest. **Stop** on the card ends it and brings back the diagrams' card as it was. It follows the model when you change it.
 
 ![A mode shape in 3D](shots/analysis-mode.webp)
 

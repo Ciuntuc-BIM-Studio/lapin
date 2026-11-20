@@ -35,7 +35,7 @@ While a tool is on, the command line's bar offers the load's **value** and the *
 You do not draw these; Lapin derives them from the model each time you ask, and they follow every change:
 
 - The **self weight** of floors, walls, columns and beams, from the densities of their materials, in the case whose source is self weight (G1).
-- The **floor finishes**, from the layers of the floors, and the **non-load-bearing walls**, as line loads, in the case that lists finishes and partitions (G2).
+- The **floor finishes**, from the layers of the floors, and the **non-load-bearing walls** (LoadBearing unticked, or a wall that says nothing and is thinner than 10 cm or not of masonry or concrete: see [Structural analysis](analysis.md)), as line loads, in the case that lists finishes and partitions (G2).
 - The **rooms**: the imposed load of a room's category over its area, in the case of that category (Q-A, Q-B…).
 - The **snow** and the **wind**, once you give the site's values (see [Snow and wind](#snow-and-wind)).
 

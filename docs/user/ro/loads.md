@@ -35,7 +35,7 @@ Cât timp o unealtă e pornită, bara liniei de comandă oferă **valoarea** în
 Pe acestea nu le desenezi; Lapin le deduce din model de fiecare dată când le ceri, și urmează orice schimbare:
 
 - **Greutatea proprie** a planșeelor, pereților, stâlpilor și grinzilor, din densitățile materialelor lor, în cazul a cărui sursă e greutatea proprie (G1).
-- **Finisajele planșeelor**, din straturile lor, și **pereții neportanți**, ca încărcări liniare, în cazul care enumeră finisajele și pereții despărțitori (G2).
+- **Finisajele planșeelor**, din straturile lor, și **pereții neportanți** (LoadBearing debifat, sau un perete care nu spune nimic și e mai subțire de 10 cm ori nu e din zidărie sau beton: vezi [Calculul structural](analysis.md)), ca încărcări liniare, în cazul care enumeră finisajele și pereții despărțitori (G2).
 - **Încăperile**: încărcarea utilă a categoriei unei încăperi pe aria ei, în cazul acelei categorii (Q-A, Q-B…).
 - **Zăpada** și **vântul**, de îndată ce dai valorile amplasamentului (vezi [Zăpadă și vânt](#zăpadă-și-vânt)).
 

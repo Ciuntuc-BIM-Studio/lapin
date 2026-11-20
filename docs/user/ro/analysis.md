@@ -16,6 +16,7 @@ summary: Rulează un calcul static liniar al cadrului sub încărcările tale, c
 - **Planșeele și plăcile de beton** sunt calculate ca **elemente de placă**: fiecare este împărțită în elemente mici (o plasă, implicit 0,5 m) care se încovoaie și se întind, cu nodurile comune cu grinzile, stâlpii și pereții pe care îi întâlnesc. Placa își duce singură încărcările la ce o susține, prin rigiditatea ei și a lor. O grindă sub o placă își păstrează axa dedesubt și lucrează cu placa ca o grindă în T.
 - **Pereții portanți de beton** sunt tot elemente de placă: stau pe fundațiile lor (un perete cu nimic modelat sub el este ținut pe toată talpa) și duc planșeele de pe ei, precum și vântul sau alte încărcări laterale în planul lor.
 - **Pereții de zidărie** sunt și ei elemente de placă, liniar elastici și izotropi, cu valori după EN 1996-1-1, cum le ia CR 6-2013 (E = KE·fk, G = 0.4 E; vezi [Calculul seismic](#calculul-seismic)). Pereții din alte materiale sunt reazeme: țin plăcile și barele de pe ei, dar nu sunt calculați ca pereți.
+- **Care pereți poartă**: hotărăște **LoadBearing** al peretelui (Pset_WallCommon, pe perete sau pe tipul lui). Bifat, peretele poartă; debifat, sau un perete al cărui tip IFC e perete despărțitor (PARTITIONING), nu poartă, iar greutatea lui trece pe planșeul de sub el ca încărcare din pereți despărțitori (vezi [Încărcări](loads.md)). Un perete care **nu spune nimic** poartă dacă e din zidărie sau beton, cu miezul de 10 cm sau mai mult: o notă îi enumeră, ca să poți debifa **LoadBearing** pe pereții despărțitori dintre ei. Cei mai subțiri și pereții din alte materiale rămân despărțitori, iar o notă îi enumeră pe cei subțiri.
 - **Planșeele din alte materiale** (un planșeu de lemn) își trec încărcările barelor și pereților de sub ele după **regula de 45°**: bisectoarele colțurilor împart placa în zonele pe care le duce fiecare latură, iar fiecare devine o încărcare trapezoidală sau triunghiulară pe bara de dedesubt.
 - **Acoperișurile cu șarpantă** trec încărcarea fiecărui căprior după **lățimea lui aferentă**, până la jumătatea distanței față de vecini; zăpada se ia pe proiecția orizontală.
 - **Tijele și tiranții** (o bară plină rotundă care contravântuiește, un tirant sau un cablu) lucrează axial: sunt articulați la capete, iar greutatea lor merge la capete, deci nu se încovoaie ca grinzile. Câmpul **Bară cu efort axial** din proprietățile **Analiză** ale unei bare le schimbă: **Din secțiune și utilizare**, **Da (tijă sau tirant)** sau **Nu (grindă)**.
@@ -34,6 +35,8 @@ Alege **Rulează calculul**. Se deschide dialogul **Rezultatele calculului**:
 - Ce a fost **lăsat în afara** calculului și de ce.
 - Valorile **cele mai mari și cele mai mici** ale eforturilor și momentelor, deplasarea și săgeata maximă (cu raportul față de deschidere, L/300) ale cazului, combinației sau înfășurătorii alese; sub ele, valorile cele mai mari și cele mai mici pe **plăci și pereți**, și unde sunt.
 - **Elemente de placă**: ce plăci și pereți sunt calculate ca plăci (**Plăci și pereți**, **Doar plăcile**, **Doar pereții** sau **Niciunul**: plăcile după regula de 45° și pereții ca reazeme) și dimensiunea **Plasei** în metri. O plasă mai mică este mai exactă și mai lentă; o piesă îngustă primește mereu cel puțin patru elemente pe lățime. O schimbare este un singur pas de anulare; **Rulează din nou** o preia.
+
+**Rulează din nou**, **Arată diagramele** și **Închide fără diagrame** stau la baza dialogului, oricât ai derula. Notele calculului (cum s-a făcut și ce e de verificat) sunt strânse sub **Note (n)**; cele de verificat vin primele, cu roșu.
 
 **Arată diagramele** închide dialogul și arată rezultatele în vederea 3D.
 
@@ -85,9 +88,11 @@ Secțiunea **Seismic** din dialogul **Rezultatele calculului** calculează modur
 
 **Spectrul.** Graficul desenează spectrul de proiectare Sd și spectrul elastic Se în funcție de perioadă, cu perioadele modurilor marcate pe spectrul de proiectare și perioadele de colț TB, TC, TD.
 
+Notele analizei modale și seismice sunt strânse sub **Note (n)** al secțiunii.
+
 **Nivelurile.** Pentru fiecare nivel: masa, forța tăietoare pe X și pe Y, deplasarea relativă de nivel elastică și verificările deplasării relative la starea limită de serviciu (SLS) și la cea ultimă (ULS, doar P100) față de limitele lor, bifate sau tăiate cu cruce (cea care nu trece e roșie). Forța tăietoare de bază apare împreună cu combinația seismică și e comparată cu metoda forțelor laterale, ca verificare.
 
-**Un mod în 3D.** **Animă** pe rândul unui mod închide dialogul și arată forma lui oscilând în vederea 3D, barele și plăcile deodată; **Stop** pe card o oprește. Forma e scalată ca să se vadă: arată cum se mișcă structura, nu cu cât. Urmărește modelul când îl schimbi.
+**Un mod în 3D.** **Animă** pe rândul unui mod (sau modul ales lângă **Animă** la baza dialogului) închide dialogul și arată forma lui oscilând în vederea 3D: plăcile și pereții ca suprafețe umbrite, barele ca tuburi, modelul în repaus transparent în spatele lor. Forma e dimensionată ca să se vadă: deplasarea ei cea mai mare e cam 7 % din mărimea modelului, iar **Scalează** pe card o micșorează sau o mărește (×0,25 până la ×4). Arată cum se mișcă structura, nu cu cât. Debifează **Arată nedeformat** ca să ascunzi modelul în repaus. **Stop** pe card o oprește și aduce înapoi cardul diagramelor cum era. Urmărește modelul când îl schimbi.
 
 ![Forma unui mod în 3D](shots/analysis-mode.webp)
 
