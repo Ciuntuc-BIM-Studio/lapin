@@ -756,3 +756,62 @@ Confirmate (citite în sursă): Tabelul 5.2; α și Tabelul 6.2; Tabelele 6.4–
 3. **k = 0,7 la barele încastrate la ambele capete rămâne**; lungimile de flambaj ale cadrelor cu noduri deplasabile le dă utilizatorul. Lapin spune în note când modelul pare necontravântuit pe o direcție: are stâlpi, dar niciun perete (de orice material) și nicio bară înclinată pe direcția X sau Y („No wall or bracing along X …”).
 
 În interfață, sub „Design values of the project”: „Steel interaction” (Anexa A / B) și „Snow on timber” (de scurtă / de durată medie), traduse în toate limbile; ghidul (ambele limbi) le spune.
+
+## 13. Combinațiile configurabile (specificația, 20.11.2026)
+
+Aprobat de utilizator (20.11.2026): coeficienții parțiali pe proiect, cu un set ales pe proiect (**CR 0-2012 implicit la proiectele noi**, EN 1990 Anexa A1 recomandat ca alternativă) și fiecare valoare schimbabilă peste set; combinațiile utilizatorului în tabul Combinations; generatele dezactivabile; 6.10a/6.10b ca opțiune. Ca tot ce ține de normă: valorile sunt ale utilizatorului, cele livrate orientative. Codul vechi rămâne implicitul, cu aceeași ieșire („extend, never break”).
+
+### 13.1 Setul de coeficienți al proiectului
+
+Pe IfcProject, `analysisCombinations`: `{set, gammaGSup, gammaGInf, gammaQ, psi: {<categorie>: {0, 1, 2}}, expression, xi, disabled: [chei]}`, fiecare cheie lipsă = valoarea setului. Schimbat de `analysis.setCombinationOptions` (un pas de undo; `null` aduce o valoare înapoi la set).
+
+| | EN 1990 A1 recomandat (`en`) | CR 0-2012 (`cr0`) | sursa CR 0 |
+|---|---|---|---|
+| γG,sup / γG,inf / γQ (STR/GEO, gruparea fundamentală) | 1,35 / 1,0 / 1,5 | 1,35 / 1,0 / 1,5 | Tabelul 7.2 |
+| A, B (rezidențial, birouri) ψ0 ψ1 ψ2 | 0,7 0,5 0,3 | 0,7 0,5 0,3 | Tabelul 7.1 |
+| C, D (adunare, comerț) | 0,7 0,7 0,6 | 0,7 0,7 0,6 | Tabelul 7.1 |
+| E1 (depozitare) | 1,0 0,9 0,8 | 1,0 0,9 0,8 | Tabelul 7.1 |
+| F (vehicule ≤ 30 kN) | 0,7 0,7 0,6 | 0,7 0,7 0,6 | Tabelul 7.1 |
+| G (vehicule 30–160 kN) | 0,7 0,5 0,3 | 0,7 0,5 0,3 | Tabelul 7.1 |
+| H (acoperișuri) | 0 0 0 | **0,7** 0 0 | Tabelul 7.1 („Acoperișuri”) |
+| zăpadă | 0,5 0,2 0 | **0,7 0,5 0,4** | Tabelul 7.1; CR 1-1-3/2012 Tabelul 4.3 (publicat) |
+| vânt | 0,6 0,2 0 | **0,7** 0,2 0 | Tabelul 7.1 |
+| 6.10a/6.10b | permise (A1.2.2) | nu există (doar 6.9) | §6.4.3.2 |
+
+Sursele: textul CR 0-2012 trimis la notificare (ugir.ro, aprilie 2012: §6.4.3.2 ec. 6.9–6.11, §6.5.3 ec. 6.13–6.15, Tabelele 7.1–7.5) și CR 1-1-3/2012 (Ordinul 1655/2012, MO 704 bis, Tabelul 4.3, ψ ai zăpezii „din CR 0”). Valorile de mai sus sunt citite din varianta de notificare; **de confirmat pe textul publicat** (Ordinul 1530/2012, MO 647 bis, cu completarea din Ordinul 2411/2013) rândurile vântului (0,7) și acoperișurilor (0,7), pe care publicul nu le-am găsit în altă sursă. Numerotarea diferă de EN: în CR 0 gruparea fundamentală e (6.9), cea accidentală (6.10), cea seismică (6.11).
+
+**Proiectele existente nu se schimbă.** Ele nu au `analysisCombinations`; un proiect fără `set` ia `en`, adică exact combinațiile de azi (CR 0 diferă numeric de EN la zăpadă, vânt și H, deci nu se putea „la fel”). Un proiect nou (ecranul de start, `Session.New`) primește `{set: "cr0"}` scris explicit, printr-un serviciu nou al platformei, `INewProject` (modulul `analysis` îl dă; platforma nu-l cunoaște). Un proiect făcut dintr-un șablon ia ce are șablonul. Nu trebuie `IProjectUpgrade`.
+
+**ψ-ul unui caz:** al lui (`psi` pe caz) > al proiectului pe categorie (`psi.<cat>`) > al setului > al categoriei A din set (fără categorie, spus). La gruparea seismică, zăpada: al cazului > al proiectului dat explicit > `snowPsi2` din parametrii seismici (ca azi; P100 0,4).
+
+### 13.2 6.10a / 6.10b
+
+`expression: "6.10"` (implicit, ca azi) sau `"6.10ab"`. Cu 6.10ab, în locul fiecărei combinații 6.10 cu principal:
+- **6.10a** (o dată pentru fiecare alegere a alternativelor): Σ γG,sup Gk + Σ γQ ψ0,i Qk,i, cheia `uls/6.10a` (+ alternativele alese, ca la §9.9);
+- **6.10b** (pentru fiecare principal): Σ ξ γG,sup Gk + γQ Qk,1 + Σ γQ ψ0,i Qk,i, ξ = 0,85 recomandat (`xi`, 0,5–1), cheia `uls/<principal>` (aceeași ca la 6.10, deci ce e dezactivat rămâne).
+`uls/permanent` (γG,sup G) și ridicarea (γG,inf G + γQ W) rămân. Cu setul `cr0`, 6.10ab rămâne la alegerea utilizatorului; nota spune că CR 0 nu le are.
+
+### 13.3 Combinațiile utilizatorului
+
+Entități `IfcStructuralLoadGroup` (Kind `resource`, ca un caz): nume, `kind` (`uls`, `sls-characteristic`, `sls-frequent`, `sls-quasi`, `seismic`, `accidental`), `factors: [{caseId, factor}]` (factorii nenuli, cazuri diferite). Cheia: `user/<id>`. Comenzile: `analysis.addCombination {name, kind, factors}`, `analysis.updateCombination {id, name?, kind?, factors?}`, `analysis.removeCombination {id}`; fiecare un pas de undo.
+
+| kind | unde intră |
+|---|---|
+| uls | înfășurătoarea SLU, verificările S4 (durata la lemn: acțiunea cea mai scurtă a cazurilor ei) |
+| accidental | la fel ca uls (situație de proiectare la SLU; γM ale situației persistente, conservativ, spus) |
+| sls-* | înfășurătoarea SLS; `sls-characteristic` și la săgețile din S4 |
+| seismic | factorii ei (partea gravitațională) ± AEd din analiza seismică: înfășurătoarea `seismic` și cea SLU, verificările (instantanee); fără parametri seismici nu intră, spus |
+
+Un caz șters pe care îl numește o combinație a utilizatorului: combinația rămâne în model, dar nu intră în rezultate; lista o arată cu `missing: [caseId]` și notele spun de ce. Un caz gol: factorul lui nu adaugă nimic (combinația intră).
+
+### 13.4 Dezactivarea celor generate
+
+`analysis.setCombinationEnabled {key, enabled}` (un pas de undo) scrie/șterge cheia în `disabled`. O combinație dezactivată rămâne în listă (`enabled: false`), dar nu intră în rezultate, înfășurători, verificări și export. O cheie dezactivată care nu se mai generează (un caz șters) rămâne scrisă și nu face nimic. Combinațiile utilizatorului se dezactivează la fel (cheia `user/<id>`).
+
+### 13.5 Interogarea și exportul
+
+`analysis.combinations` → `{combinations: [{key, kind, name, formula, factors, source: generated|user, enabled, id?, missing?}], options: {set, gammaGSup, gammaGInf, gammaQ, psi, expression, xi, sets: {en, cr0}}, notes}`. `analysis.run` dă doar cele active. Exportul IFC SAV scrie cele active (cele ale utilizatorului cu numele lor, `Description` = kind); combinația seismică nu se scrie (AEd nu e un caz de încărcare), spus în note. Exportul JG nu scrie încărcări sau combinații (nimic de schimbat).
+
+### 13.6 Testele
+
+Un proiect fără setări: combinațiile neschimbate (aur pe cadrul din ghid și pe hala de oțel cu zăpadă și vânt, fișiere JSON scrise de codul dinainte); setul `cr0`; γ schimbați; o combinație a utilizatorului în rezultate, înfășurătoare și verificări; una generată dezactivată lipsește din înfășurători; 6.10a/b pe un caz mic, cu numere de mână; undo; SAV scrie combinațiile utilizatorului; un caz șters spus.

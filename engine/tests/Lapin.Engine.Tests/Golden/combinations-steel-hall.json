@@ -1,0 +1,1589 @@
+{
+  "combinations": [
+    {
+      "key": "uls/S+W+X/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S + 0.9 W+X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 1.5
+        },
+        {
+          "code": "W+X/s",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S+W+X/p",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S + 0.9 W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 1.5
+        },
+        {
+          "code": "W+X/p",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S+W-X/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S + 0.9 W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 1.5
+        },
+        {
+          "code": "W-X/s",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S+W-X/p",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S + 0.9 W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 1.5
+        },
+        {
+          "code": "W-X/p",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S+W+Y/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S + 0.9 W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 1.5
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S+W-Y/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S + 0.9 W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 1.5
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/W+X/s+S",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S + 1.5 W+X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 0.75
+        },
+        {
+          "code": "W+X/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W+X/s+S+X",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 W+X/s + 0.75 S+X",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "W+X/s",
+          "factor": 1.5
+        },
+        {
+          "code": "S+X",
+          "factor": 0.75
+        }
+      ]
+    },
+    {
+      "key": "uls/W+X/s+S-X",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 W+X/s + 0.75 S-X",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "W+X/s",
+          "factor": 1.5
+        },
+        {
+          "code": "S-X",
+          "factor": 0.75
+        }
+      ]
+    },
+    {
+      "key": "uls/S+X+W+X/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.9 W+X/s + 1.5 S+X",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "W+X/s",
+          "factor": 0.9
+        },
+        {
+          "code": "S+X",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/S+X+W+X/p",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S+X + 0.9 W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S+X",
+          "factor": 1.5
+        },
+        {
+          "code": "W+X/p",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S+X+W-X/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S+X + 0.9 W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S+X",
+          "factor": 1.5
+        },
+        {
+          "code": "W-X/s",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S+X+W-X/p",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S+X + 0.9 W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S+X",
+          "factor": 1.5
+        },
+        {
+          "code": "W-X/p",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S+X+W+Y/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S+X + 0.9 W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S+X",
+          "factor": 1.5
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S+X+W-Y/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S+X + 0.9 W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S+X",
+          "factor": 1.5
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S-X+W+X/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.9 W+X/s + 1.5 S-X",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "W+X/s",
+          "factor": 0.9
+        },
+        {
+          "code": "S-X",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/S-X+W+X/p",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S-X + 0.9 W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S-X",
+          "factor": 1.5
+        },
+        {
+          "code": "W+X/p",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S-X+W-X/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S-X + 0.9 W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S-X",
+          "factor": 1.5
+        },
+        {
+          "code": "W-X/s",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S-X+W-X/p",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S-X + 0.9 W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S-X",
+          "factor": 1.5
+        },
+        {
+          "code": "W-X/p",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S-X+W+Y/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S-X + 0.9 W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S-X",
+          "factor": 1.5
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/S-X+W-Y/s",
+      "kind": "uls",
+      "name": "1.35 G1 + 1.5 S-X + 0.9 W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S-X",
+          "factor": 1.5
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 0.9
+        }
+      ]
+    },
+    {
+      "key": "uls/W+X/p+S",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S + 1.5 W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 0.75
+        },
+        {
+          "code": "W+X/p",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W+X/p+S+X",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S+X + 1.5 W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S+X",
+          "factor": 0.75
+        },
+        {
+          "code": "W+X/p",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W+X/p+S-X",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S-X + 1.5 W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S-X",
+          "factor": 0.75
+        },
+        {
+          "code": "W+X/p",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W-X/s+S",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S + 1.5 W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 0.75
+        },
+        {
+          "code": "W-X/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W-X/s+S+X",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S+X + 1.5 W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S+X",
+          "factor": 0.75
+        },
+        {
+          "code": "W-X/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W-X/s+S-X",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S-X + 1.5 W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S-X",
+          "factor": 0.75
+        },
+        {
+          "code": "W-X/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W-X/p+S",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S + 1.5 W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 0.75
+        },
+        {
+          "code": "W-X/p",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W-X/p+S+X",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S+X + 1.5 W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S+X",
+          "factor": 0.75
+        },
+        {
+          "code": "W-X/p",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W-X/p+S-X",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S-X + 1.5 W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S-X",
+          "factor": 0.75
+        },
+        {
+          "code": "W-X/p",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W+Y/s+S",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S + 1.5 W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 0.75
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W+Y/s+S+X",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S+X + 1.5 W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S+X",
+          "factor": 0.75
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W+Y/s+S-X",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S-X + 1.5 W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S-X",
+          "factor": 0.75
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W-Y/s+S",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S + 1.5 W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S",
+          "factor": 0.75
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W-Y/s+S+X",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S+X + 1.5 W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S+X",
+          "factor": 0.75
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/W-Y/s+S-X",
+      "kind": "uls",
+      "name": "1.35 G1 + 0.75 S-X + 1.5 W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        },
+        {
+          "code": "S-X",
+          "factor": 0.75
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/permanent",
+      "kind": "uls",
+      "name": "1.35 G1",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1.35
+        }
+      ]
+    },
+    {
+      "key": "uls/wind-uplift/W+X/s",
+      "kind": "uls",
+      "name": "G1 + 1.5 W+X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W+X/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/wind-uplift/W-X/s",
+      "kind": "uls",
+      "name": "G1 + 1.5 W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W-X/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/wind-uplift/W+Y/s",
+      "kind": "uls",
+      "name": "G1 + 1.5 W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "uls/wind-uplift/W-Y/s",
+      "kind": "uls",
+      "name": "G1 + 1.5 W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 1.5
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+W+X/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + S + 0.6 W+X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 1
+        },
+        {
+          "code": "W+X/s",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+W+X/p",
+      "kind": "sls-characteristic",
+      "name": "G1 + S + 0.6 W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 1
+        },
+        {
+          "code": "W+X/p",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+W-X/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + S + 0.6 W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 1
+        },
+        {
+          "code": "W-X/s",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+W-X/p",
+      "kind": "sls-characteristic",
+      "name": "G1 + S + 0.6 W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 1
+        },
+        {
+          "code": "W-X/p",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+W+Y/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + S + 0.6 W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 1
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+W-Y/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + S + 0.6 W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 1
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/W+X/s+S",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S + W+X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 0.5
+        },
+        {
+          "code": "W+X/s",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W+X/s+S+X",
+      "kind": "sls-characteristic",
+      "name": "G1 + W+X/s + 0.5 S+X",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W+X/s",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 0.5
+        }
+      ]
+    },
+    {
+      "key": "slsc/W+X/s+S-X",
+      "kind": "sls-characteristic",
+      "name": "G1 + W+X/s + 0.5 S-X",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W+X/s",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 0.5
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+X+W+X/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.6 W+X/s + S+X",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W+X/s",
+          "factor": 0.6
+        },
+        {
+          "code": "S+X",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+X+W+X/p",
+      "kind": "sls-characteristic",
+      "name": "G1 + S+X + 0.6 W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 1
+        },
+        {
+          "code": "W+X/p",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+X+W-X/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + S+X + 0.6 W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 1
+        },
+        {
+          "code": "W-X/s",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+X+W-X/p",
+      "kind": "sls-characteristic",
+      "name": "G1 + S+X + 0.6 W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 1
+        },
+        {
+          "code": "W-X/p",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+X+W+Y/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + S+X + 0.6 W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 1
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S+X+W-Y/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + S+X + 0.6 W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 1
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S-X+W+X/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.6 W+X/s + S-X",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W+X/s",
+          "factor": 0.6
+        },
+        {
+          "code": "S-X",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/S-X+W+X/p",
+      "kind": "sls-characteristic",
+      "name": "G1 + S-X + 0.6 W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 1
+        },
+        {
+          "code": "W+X/p",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S-X+W-X/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + S-X + 0.6 W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 1
+        },
+        {
+          "code": "W-X/s",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S-X+W-X/p",
+      "kind": "sls-characteristic",
+      "name": "G1 + S-X + 0.6 W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 1
+        },
+        {
+          "code": "W-X/p",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S-X+W+Y/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + S-X + 0.6 W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 1
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/S-X+W-Y/s",
+      "kind": "sls-characteristic",
+      "name": "G1 + S-X + 0.6 W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 1
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 0.6
+        }
+      ]
+    },
+    {
+      "key": "slsc/W+X/p+S",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S + W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 0.5
+        },
+        {
+          "code": "W+X/p",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W+X/p+S+X",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S+X + W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 0.5
+        },
+        {
+          "code": "W+X/p",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W+X/p+S-X",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S-X + W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 0.5
+        },
+        {
+          "code": "W+X/p",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W-X/s+S",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S + W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 0.5
+        },
+        {
+          "code": "W-X/s",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W-X/s+S+X",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S+X + W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 0.5
+        },
+        {
+          "code": "W-X/s",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W-X/s+S-X",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S-X + W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 0.5
+        },
+        {
+          "code": "W-X/s",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W-X/p+S",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S + W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 0.5
+        },
+        {
+          "code": "W-X/p",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W-X/p+S+X",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S+X + W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 0.5
+        },
+        {
+          "code": "W-X/p",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W-X/p+S-X",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S-X + W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 0.5
+        },
+        {
+          "code": "W-X/p",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W+Y/s+S",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S + W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 0.5
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W+Y/s+S+X",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S+X + W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 0.5
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W+Y/s+S-X",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S-X + W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 0.5
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W-Y/s+S",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S + W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 0.5
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W-Y/s+S+X",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S+X + W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 0.5
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsc/W-Y/s+S-X",
+      "kind": "sls-characteristic",
+      "name": "G1 + 0.5 S-X + W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 0.5
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "key": "slsf/S",
+      "kind": "sls-frequent",
+      "name": "G1 + 0.2 S",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S",
+          "factor": 0.2
+        }
+      ]
+    },
+    {
+      "key": "slsf/W+X/s",
+      "kind": "sls-frequent",
+      "name": "G1 + 0.2 W+X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W+X/s",
+          "factor": 0.2
+        }
+      ]
+    },
+    {
+      "key": "slsf/S+X",
+      "kind": "sls-frequent",
+      "name": "G1 + 0.2 S+X",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S+X",
+          "factor": 0.2
+        }
+      ]
+    },
+    {
+      "key": "slsf/S-X",
+      "kind": "sls-frequent",
+      "name": "G1 + 0.2 S-X",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "S-X",
+          "factor": 0.2
+        }
+      ]
+    },
+    {
+      "key": "slsf/W+X/p",
+      "kind": "sls-frequent",
+      "name": "G1 + 0.2 W+X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W+X/p",
+          "factor": 0.2
+        }
+      ]
+    },
+    {
+      "key": "slsf/W-X/s",
+      "kind": "sls-frequent",
+      "name": "G1 + 0.2 W-X/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W-X/s",
+          "factor": 0.2
+        }
+      ]
+    },
+    {
+      "key": "slsf/W-X/p",
+      "kind": "sls-frequent",
+      "name": "G1 + 0.2 W-X/p",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W-X/p",
+          "factor": 0.2
+        }
+      ]
+    },
+    {
+      "key": "slsf/W+Y/s",
+      "kind": "sls-frequent",
+      "name": "G1 + 0.2 W+Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W+Y/s",
+          "factor": 0.2
+        }
+      ]
+    },
+    {
+      "key": "slsf/W-Y/s",
+      "kind": "sls-frequent",
+      "name": "G1 + 0.2 W-Y/s",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        },
+        {
+          "code": "W-Y/s",
+          "factor": 0.2
+        }
+      ]
+    },
+    {
+      "key": "slsq",
+      "kind": "sls-quasi",
+      "name": "G1",
+      "factors": [
+        {
+          "code": "G1",
+          "factor": 1
+        }
+      ]
+    }
+  ]
+}
