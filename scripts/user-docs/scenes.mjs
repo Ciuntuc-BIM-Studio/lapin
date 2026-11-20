@@ -5512,6 +5512,28 @@ export const scenes = [
       await t.page.locator('[data-testid=analysis-pick]').selectOption({ index: 0 });
       await t.wait(700);
       await t.shot('analysis-pick', { of: '[data-testid=analysis-card]', pad: 6 });
+      // Seismic analysis (S3, docs/plan-fem.md §11): the site's values, the modes, the spectrum, the storeys, a mode swinging in 3D.
+      await t.cmd('analysis.setSeismic', { code: 'P100-1/2013', ag: 0.2, tc: 1.0, importance: 'II', q: 3 });
+      await t.wait(600);
+      await t.page.locator('[data-testid=analysis-rerun]').click();
+      await t.until(async () => (await t.page.locator('[data-testid=analysis-pick]').count()) > 0, 'the picker is back after the seismic parameters');
+      await t.ui({ dialog: 'analysisResults' });
+      const seismic = t.page.locator('[data-testid=analysis-seismic]');
+      await t.until(async () => (await seismic.locator('[data-testid=seismic-modes-table] tbody tr').count()) > 0, 'the Seismic section lists the modes');
+      await t.until(async () => (await seismic.locator('[data-testid=seismic-spectrum-chart]').count()) > 0 && (await seismic.locator('[data-testid=seismic-storeys] tbody tr').count()) > 0, 'the spectrum and the storeys are there');
+      t.expect(await seismic.locator('[data-testid=seismic-code]').inputValue() === 'P100-1/2013', 'the code is P100-1/2013');
+      t.expect(await seismic.locator('[data-testid=seismic-ag]').inputValue() === '0.2', 'the site\'s ag is shown');
+      await t.wait(500);
+      await seismic.scrollIntoViewIfNeeded();
+      await t.shot('analysis-seismic', { of: '[data-testid=analysis-seismic]', pad: 6 });
+      await seismic.locator('[data-testid=mode-animate-1]').click();
+      await t.until(async () => (await t.page.locator('[data-testid=mode-card]').count()) > 0, 'the mode card shows');
+      await t.until(async () => (await t.page.locator('[data-mode]').count()) > 0, 'the mode is in the 3D view\'s scene');
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.9, pitch: -0.45, distance: 15, target: { x: 3, y: 2, z: 2 } }, false));
+      await t.wait(1000);
+      await t.shot('analysis-mode', { of: '[data-testid=view3d]', pad: 0 });
+      await t.page.locator('[data-testid=mode-stop]').click();
+      t.expect(await t.page.locator('[data-mode]').count() === 0, 'Stop takes the mode off the view');
       // A mechanism: every column's top end released in all six freedoms.
       await t.cmd('analysis.setReleases', { ids: columns, j: [true, true, true, true, true, true] });
       await t.wait(600);

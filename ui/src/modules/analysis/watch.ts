@@ -3,10 +3,11 @@
 import { useEffect } from 'react';
 import { useSession } from '../../engine/session';
 import { markStale } from './useResults';
+import { refreshMode } from './useMode';
 
 export function useWatchNodes(): void {
   const nodes = useSession((s) => s.nodes);
-  useEffect(() => { markStale(nodes); }, [nodes]);
+  useEffect(() => { markStale(nodes); refreshMode(); }, [nodes]);
 }
 
 /** Mounted while the workspace is open (the module's background). */

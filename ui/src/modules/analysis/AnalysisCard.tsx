@@ -14,9 +14,9 @@ const TITLE: Record<Quantity, string> = {
 
 export function AnalysisCard() {
   const view = useUi((s) => s.view);
-  const { run, show, stale, pick, quantity, mult, reactions, diagram, running } = useResults();
+  const { run, show, stale, pick, quantity, mult, reactions, diagram, running, seismic } = useResults();
   if (!run || !show || view === 'sheet' || view === 'schedule') return null;
-  const choices = pickChoices(run);
+  const choices = pickChoices(run, seismic);
   const groups = ['Load cases', 'Combinations', 'Envelopes'] as const;
   return (
     <div className="sel-card analysis-card" role="region" aria-label="Analysis results" data-testid="analysis-card">

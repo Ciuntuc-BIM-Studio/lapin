@@ -1,7 +1,7 @@
 ---
 title: Structural analysis
 order: 52
-summary: Run a linear static analysis of the frame under your loads, read the diagrams of forces, moments and deformation in 3D, and set the end releases of the bars.
+summary: Run a linear static analysis of the frame under your loads, read the diagrams of forces, moments and deformation in 3D, set the end releases of the bars, and work out the modes and the earthquake's response.
 ---
 
 <!-- video structural-analysis -->
@@ -17,7 +17,7 @@ summary: Run a linear static analysis of the frame under your loads, read the di
 - **Bars** (columns, beams, steel and timber members) are analysed with their own stiffness, from their material and section. A bar whose material has no modulus of elasticity is left out and listed.
 - **Concrete floors and slabs** are analysed as **shells**: each is divided into small elements (a mesh, 0.5 m by default) that bend and stretch, sharing their nodes with the beams, columns and walls they meet. The slab carries its loads itself to what holds it, by its stiffness and theirs. A beam under a slab keeps its own axis below it and works with the slab as a T beam.
 - **Concrete load-bearing walls** are shells too: they stand on their footings (a wall with nothing modelled under it is held along its foot) and carry the floors on them, and wind or other sideways loads in their plane.
-- **Masonry walls**, and walls of other materials, are supports: they hold the slabs and bars on them, but are not analysed as walls.
+- **Masonry walls** are shells too, linear elastic and isotropic, with values after EN 1996-1-1 as CR 6-2013 takes it (E = KE·fk, G = 0.4 E; see [Seismic analysis](#seismic-analysis)). Walls of other materials are supports: they hold the slabs and bars on them, but are not analysed as walls.
 - **Floors of other materials** (a timber floor) pass their loads to the bars and walls under them by the **45° rule**: the corners' bisectors divide the slab into the areas each side carries, and each becomes a trapezoidal or triangular load on the bar below.
 - **Framed roofs** pass the load to each rafter by its **tributary width**, half way to its neighbours; snow is taken per horizontal projection.
 - **Rods and ties** (a solid round bar that braces, a tie or cable) work axially: they are pinned at their ends and their weight goes to their ends, so they do not sag as beams. A bar's **Axial member** in its **Analysis** properties changes it: **By its section and use**, **Yes (a rod or tie)** or **No (a beam)**.
@@ -69,6 +69,35 @@ The legend on the card gives each band's values and the unit:
 ![The legend of the contours](shots/analysis-legend.webp)
 
 The same bands are drawn on the floor plan of the slab's storey, for the screen; sheets do not print them yet. For an envelope, each point shows the larger in size of its least and largest value.
+
+## Seismic analysis
+
+The **Seismic** section of the **Analysis results** dialog works out the modes of vibration of the structure, the earthquake's response by a response spectrum, and the storeys' shears and drifts, with the code's checks. It needs the site's values, and until you give them it only says so.
+
+![The Seismic section](shots/analysis-seismic.webp)
+
+**The parameters.** Each change is one undo step; **Turn off** forgets them all.
+
+- **Code**: **P100-1/2013** (the default) or **EN 1998-1**, with its recommended values.
+- **ag (g)**: the site's design ground acceleration as a fraction of g, and **TC (s)** (0.7, 1.0 or 1.6 s) with P100, or the **Ground** type A to E and the **Spectrum type** 1 or 2 with EN. **These are yours**: take them from the code's seismic zoning maps; Lapin ships no map.
+- **Importance class** I to IV (its factor γ is shown) and **q**, the behaviour factor (1.5 by default). Below them, a table lists P100-1/2013 Table 8.10's factors for masonry, to be multiplied by αu/α1 of your building.
+- **Modal combination** (CQC by default, or SRSS), **Directions** (the 30 % rule by default, or SRSS) and **Diaphragm**: a rigid diaphragm is only applied on levels without a shell floor; a floor analysed as a shell already gives it. **Modes' limit** is the most modes worked out.
+
+**The modes.** The table gives each mode's period T and frequency f, its effective mass along X and Y and the sum up to it. More modes are worked out until 90 % of the mass is reached in both directions, or the limit stops them, and the dialog warns you when it does.
+
+**The spectrum.** The chart draws the design spectrum Sd and the elastic spectrum Se against the period, with the modes' periods marked on the design spectrum and the corner periods TB, TC, TD.
+
+**The storeys.** For each storey: its mass, shear force along X and Y, the elastic interstorey drift, and the serviceability (SLS) and ultimate (ULS, P100 only) drift checks against their limits, ticked or crossed (a failing one is red). The base shear is given with the seismic combination, and compared with the lateral force method as a check.
+
+**A mode in 3D.** **Animate** on a mode's row closes the dialog and shows its shape swinging in the 3D view, bars and shells together; **Stop** on the card ends it. The shape is scaled to be seen: it tells how the structure moves, not by how much. It follows the model when you change it.
+
+![A mode shape in 3D](shots/analysis-mode.webp)
+
+**The seismic combination.** With the parameters given, the picker offers **Seismic combination** among the envelopes (G + ψ2 Q ± AEd, the least and largest of each value), and the ultimate envelope includes it. Changing a parameter changes the model, so the results go out of date: **Run again**.
+
+**Masonry walls** are analysed as shells with values taken from the material's name (clay, hollow clay, aerated concrete, concrete block) and indicative. To give your own, set these parameters of the set `Lapin_Masonry` on the material: `UnitGroup` (clay1, clay2, aac, concrete1, concrete2), `fb`, `fm`, `fk` (MPa) and `KE`; or `YoungModulus` of `Pset_MaterialMechanical`. Masonry is linear in this version: no tension cut-off and no cracking.
+
+> Every value here is indicative: the site's ag and TC, q and the code's numbers are yours to check.
 
 ## End releases
 

@@ -22,7 +22,7 @@ export const ENGINE_NOTES = [
   '„Q1” has no category: its ψ are category A\'s (0.7, 0.5, 0.3).',
   'The arrangements of the snow and the directions of the wind are alternatives: each combination takes one of them (87 combinations).',
   'Indicative: EN 1990 Annex A1, the recommended values (γG 1.35, γQ 1.5, ψ by Table A1.1, snow for sites up to 1000 m).',
-  'Not made yet: expressions 6.10a and 6.10b, snow with the imposed load on roofs (EN 1991-1-1 3.3.2), the seismic combination, CR 0-2012\'s values.',
+  'Not made yet: expressions 6.10a and 6.10b, snow with the imposed load on roofs (EN 1991-1-1 3.3.2), CR 0-2012\'s values; the seismic combination comes with the seismic parameters (its own envelope).',
   'No bars and no shells: the slabs\' loads go straight into the load-bearing walls under them, their reactions.',
   'No bars, no shells and no load-bearing walls: nothing carries the loads.',
   'No shells: the bars carry everything; the slabs only carry loads to them (the 45° rule), the load-bearing walls are line supports (every node of theirs held in translation, free to turn).',
@@ -31,7 +31,6 @@ export const ENGINE_NOTES = [
   'The options leave the slabs out of the shells: their loads go to what holds them by the 45° rule (as in S1).',
   'The options leave the walls out of the shells: the load-bearing walls are line supports (as in S1).',
   'Slabs not of concrete (Floor C24, Deck 2): not shells; their loads go to what holds them by the 45° rule.',
-  'Masonry walls (Wall 1, Wall 2): line supports until their values are given (CR 6).',
   'Walls not of concrete (Wall 3): line supports.',
   'No E for Floor 20: not shells (as in S1).',
   '2 shell pieces with no area, not plane or not convex: left out of the mesh (3kQ#2, 3kQ#5).',
@@ -74,6 +73,52 @@ export const ENGINE_NOTES = [
   '1 rod or tie works axially: pinned at its own ends, its weight carried to them (no bending under it); analysisAxial on an element changes it.',
   'A mechanism at node N12 (5, 4, 2.85), uz: nothing holds it (Beam 1, Beam 2).',
   'A mechanism at node N3 (0, 0, 3), rx: nothing holds it (no bar reaches it).',
+  // Seismic and modal analysis (S3: Lapin.Analysis/Seismic, Solver/AnalysisRun, Solver/ShellProblem)
+  'Masonry walls as shells (Wall 1: Clay unit, E = 4.47 GPa, Wall 2: AAC, E = 2.35 GPa): linear elastic, isotropic (E = KE·fk, G = 0.4 E: EN 1996-1-1 §3.7, as CR 6-2013 takes it; indicative unless the material gives its own Lapin_Masonry values), no tension cut-off (masonry carries no tension: not modelled in S3).',
+  'Say what to set: code, ag, tc, ground, spectrum, importance, q, damping, modal, directions, torsion, modes, cracked, diaphragm, drift, snowPsi2.',
+  '„agg” is not a seismic parameter: code, ag, tc, ground, spectrum, importance, q, damping, modal, directions, torsion, modes, cracked, diaphragm, drift, snowPsi2.',
+  'The behaviour factor q is a number from 1 to 8.',
+  'The design ground acceleration ag (a fraction of g) is a number from 0.01 to 1.5.',
+  'The ground type is one of A, B, C, D, E.',
+  'The seismic code is one of P100-1/2013, EN 1998-1.',
+  'cracked is {concrete, masonry}.',
+  'Cracked stiffness: concrete × 0.5, masonry × 0.5 (EN 1998-1 4.3.1(7), P100-1/2013 ch. 8: half the uncracked stiffness unless worked out); steel and timber as they are.',
+  '3 nodes with an upward net gravity load: no mass there.',
+  '1 node with an upward net gravity load: no mass there.',
+  'The subspace iteration did not converge in 40 steps: the highest modes are approximate.',
+  '12 modes by subspace iteration on the sparse Cholesky (7 steps); effective masses 91.2 % along X, 90.4 % along Y of the mass on the free nodes (310.52 t).',
+  '1 mode by subspace iteration on the sparse Cholesky (5 steps); effective masses 61.2 % along X, 0.4 % along Y of the mass on the free nodes (12.5 t).',
+  'The modes\' limit (60) stops before 90 % of the mass along both directions (P100-1/2013 §4.5.3.3.1, EN 1998-1 §4.3.3.3.1): raise it, or check with √n modes as the codes allow.',
+  '12.5 t of the mass is on the supports (it does not move).',
+  'Modes combined by CQC (Der Kiureghian 1981, ξ = 0.05); 2 pairs of neighbouring modes within 10 % of each other\'s period.',
+  'Modes combined by CQC (Der Kiureghian 1981, ξ = 0.05); 1 pair of neighbouring modes within 10 % of each other\'s period.',
+  'Modes combined by SRSS; 0 pairs of neighbouring modes within 10 % of each other\'s period.',
+  'Modes combined by SRSS; 2 pairs of neighbouring modes within 10 % of each other\'s period: CQC would be right for them (EN 1998-1 4.3.3.3.2).',
+  'Seismic combination: G1 + 0.3 Q-A ± AEd (CR 0-2012, EN 1990 6.4.3.4); the static results of the gravity loads with the uncracked stiffness, the seismic action with the cracked.',
+  'Indicative: P100-1/2013; ag = 0.2 g, the site\'s values yours.',
+  'Indicative: EN 1998-1, the recommended values; ag = 0.15 g, the site\'s values yours.',
+  'Rigid diaphragm on 2 levels without a shell floor (a penalty tying each level\'s nodes in its plane).',
+  'Rigid diaphragm on 1 level without a shell floor (a penalty tying each level\'s nodes in its plane).',
+  '1 level has a shell floor: no diaphragm imposed there (the slab gives it).',
+  '3 levels have a shell floor: no diaphragm imposed there (the slab gives it).',
+  'Accidental torsion: each storey\'s seismic force times ±0.05 of its width across the direction (P100-1/2013 §4.5.2.2, EN 1998-1 §4.3.2), as a static torque on its masses; its effects added in absolute value.',
+  'There is no mode 99: 1 to 12.',
+  'Give the site\'s ag (and its TC, or its ground type) to turn the seismic analysis on: the modes, the response spectrum, the storeys\' shears and drifts, and the seismic combination.',
+  'The seismic values are indicative: the site\'s ag and TC, the behaviour factor and the code\'s values are yours to check.',
+  'of the mass along X and Y: less than 90 %. Raise the modes\' limit.',
+  'No seismic parameters: give the site\'s design ground acceleration ag (analysis.setSeismic), as the code\'s map gives it.',
+  'The static analysis did not run: analysis.run says why.',
+  'The modal model meets a mechanism: analysis.run says where.',
+  'The modal model could not be assembled.',
+  'No mass: the seismic combination\'s gravity loads are nothing.',
+  'Masonry is linear elastic in S3: no tension cut-off, no cracking; the forces are those of the design spectrum (q).',
+  'The two horizontal directions by the 30 % rule: E = max(Ex + 0.3 Ey, 0.3 Ex + Ey) (P100-1/2013 §4.5.3.6, EN 1998-1 4.3.3.5.1); no vertical component.',
+  'The two horizontal directions by SRSS: E = √(Ex² + Ey²); no vertical component.',
+  'The modal analysis did not run: analysis.modal says why.',
+  'Give the seismic parameters first (analysis.setSeismic).',
+  'The seismic results are asked through the analysis queries.',
+  'The seismic analysis did not run: analysis.modal says why.',
+  'An envelope is „uls”, „sls” or „seismic”.',
   'its section „Mine” gives no properties',
   'its material „Oak” has no E',
   'its type names no material',
@@ -102,5 +147,13 @@ describe('the analysis\' notes and cases in every language', () => {
       .toBe('„W+X/s”: 12.35 kN din vântul pe fațade se duc direct în teren (fâșia de la baza lor), în afara sumelor barelor.');
     expect(translate('Wind towards -Y, roof pressure', 'ro')).toBe('Vânt spre -Y, presiune pe acoperiș');
     expect(translate('A mechanism at node N3 (0, 0, 3), rx: nothing holds it (no bar reaches it).', 'ro')).toBe('Un mecanism la nodul N3 (0, 0, 3), rx: nimic nu-l ține (nicio bară nu ajunge la el).');
+  });
+
+  it('in Romanian, the seismic messages name their parameter and count properly', () => {
+    expect(translate('The behaviour factor q is a number from 1 to 8.', 'ro')).toBe('Factorul de comportare q este un număr de la 1 la 8.');
+    expect(translate('1 mode by subspace iteration on the sparse Cholesky (5 steps); effective masses 61.2 % along X, 0.4 % along Y of the mass on the free nodes (12.5 t).', 'ro'))
+      .toBe('1 mod prin iterație în subspațiu pe Cholesky rar (5 pași); mase efective 61.2 % pe X, 0.4 % pe Y din masa nodurilor libere (12.5 t).');
+    expect(translate('3 levels have a shell floor: no diaphragm imposed there (the slab gives it).', 'ro')).toBe('3 niveluri au planșeu-placă: nu se impune diafragmă acolo (o dă placa).');
+    expect(translate('An envelope is „uls”, „sls” or „seismic”.', 'ro')).toBe('O înfășurătoare este „uls”, „sls” sau „seismic”.');
   });
 });

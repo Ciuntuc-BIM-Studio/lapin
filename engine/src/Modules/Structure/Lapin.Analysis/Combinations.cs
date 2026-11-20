@@ -101,7 +101,7 @@ public static class Combinations
             notes.Add($"The arrangements of the snow and the directions of the wind are alternatives: each combination takes one of them ({o.Count} combinations).");
 
         notes.Add("Indicative: EN 1990 Annex A1, the recommended values (γG 1.35, γQ 1.5, ψ by Table A1.1, snow for sites up to 1000 m).");
-        notes.Add("Not made yet: expressions 6.10a and 6.10b, snow with the imposed load on roofs (EN 1991-1-1 3.3.2), the seismic combination, CR 0-2012's values.");
+        notes.Add("Not made yet: expressions 6.10a and 6.10b, snow with the imposed load on roofs (EN 1991-1-1 3.3.2), CR 0-2012's values; the seismic combination comes with the seismic parameters (its own envelope).");
         return (o, notes);
     }
 

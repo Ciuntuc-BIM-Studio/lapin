@@ -1,7 +1,7 @@
 ---
 title: Calcul structural
 order: 52
-summary: Rulează un calcul static liniar al cadrului sub încărcările tale, citește diagramele eforturilor și deformata în 3D și stabilește articulațiile capetelor barelor.
+summary: Rulează un calcul static liniar al cadrului sub încărcările tale, citește diagramele eforturilor și deformata în 3D, stabilește articulațiile capetelor barelor și calculează modurile proprii și răspunsul la cutremur.
 ---
 
 **Rulează calculul** din grupul **Încărcări** al tabului **Structură** (și din dialogul Încărcări) calculează barele, plăcile și pereții modelului sub încărcările și combinațiile din [Încărcări](loads.md) și arată eforturile din ele.
@@ -15,7 +15,7 @@ summary: Rulează un calcul static liniar al cadrului sub încărcările tale, c
 - **Barele** (stâlpi, grinzi, elemente de oțel și de lemn) intră cu rigiditatea lor, din material și secțiune. O bară al cărei material nu are modul de elasticitate este lăsată deoparte și listată.
 - **Planșeele și plăcile de beton** sunt calculate ca **elemente de placă**: fiecare este împărțită în elemente mici (o plasă, implicit 0,5 m) care se încovoaie și se întind, cu nodurile comune cu grinzile, stâlpii și pereții pe care îi întâlnesc. Placa își duce singură încărcările la ce o susține, prin rigiditatea ei și a lor. O grindă sub o placă își păstrează axa dedesubt și lucrează cu placa ca o grindă în T.
 - **Pereții portanți de beton** sunt tot elemente de placă: stau pe fundațiile lor (un perete cu nimic modelat sub el este ținut pe toată talpa) și duc planșeele de pe ei, precum și vântul sau alte încărcări laterale în planul lor.
-- **Pereții de zidărie** și cei din alte materiale sunt reazeme: țin plăcile și barele de pe ei, dar nu sunt calculați ca pereți.
+- **Pereții de zidărie** sunt și ei elemente de placă, liniar elastici și izotropi, cu valori după EN 1996-1-1, cum le ia CR 6-2013 (E = KE·fk, G = 0.4 E; vezi [Calculul seismic](#calculul-seismic)). Pereții din alte materiale sunt reazeme: țin plăcile și barele de pe ei, dar nu sunt calculați ca pereți.
 - **Planșeele din alte materiale** (un planșeu de lemn) își trec încărcările barelor și pereților de sub ele după **regula de 45°**: bisectoarele colțurilor împart placa în zonele pe care le duce fiecare latură, iar fiecare devine o încărcare trapezoidală sau triunghiulară pe bara de dedesubt.
 - **Acoperișurile cu șarpantă** trec încărcarea fiecărui căprior după **lățimea lui aferentă**, până la jumătatea distanței față de vecini; zăpada se ia pe proiecția orizontală.
 - **Tijele și tiranții** (o bară plină rotundă care contravântuiește, un tirant sau un cablu) lucrează axial: sunt articulați la capete, iar greutatea lor merge la capete, deci nu se încovoaie ca grinzile. Câmpul **Bară cu efort axial** din proprietățile **Analiză** ale unei bare le schimbă: **Din secțiune și utilizare**, **Da (tijă sau tirant)** sau **Nu (grindă)**.
@@ -67,6 +67,35 @@ Legenda de pe card arată valorile fiecărei benzi și unitatea:
 ![Legenda curbelor de nivel](shots/analysis-legend.webp)
 
 Aceleași benzi sunt desenate pe planul etajului plăcii, pentru ecran; planșele nu le tipăresc încă. Pentru o înfășurătoare, fiecare punct arată valoarea cu modulul mai mare dintre cea mai mică și cea mai mare.
+
+## Calculul seismic
+
+Secțiunea **Seismic** din dialogul **Rezultatele calculului** calculează modurile proprii de vibrație ale structurii, răspunsul la cutremur prin spectrul de răspuns, forțele tăietoare și deplasările relative de nivel, cu verificările normei. Are nevoie de valorile amplasamentului; până le dai, doar spune asta.
+
+![Secțiunea Seismic](shots/analysis-seismic.webp)
+
+**Parametrii.** Fiecare schimbare e un pas de anulare; **Dezactivează** îi șterge pe toți.
+
+- **Normă**: **P100-1/2013** (implicit) sau **EN 1998-1**, cu valorile ei recomandate.
+- **ag (g)**: accelerația terenului pentru proiectare a amplasamentului, ca fracțiune din g, și **TC (s)** (0,7, 1,0 sau 1,6 s) cu P100, sau **Tipul de teren** de la A la E și **Tipul spectrului** 1 sau 2 cu EN. **Acestea sunt ale tale**: ia-le din hărțile de zonare seismică ale normei; Lapin nu vine cu hartă.
+- **Clasa de importanță** I–IV (factorul ei γ se vede) și **q**, factorul de comportare (1,5 implicit). Sub ele, un tabel dă factorii din P100-1/2013 Tabelul 8.10 pentru zidărie, de înmulțit cu αu/α1 al clădirii tale.
+- **Combinarea modurilor** (CQC implicit, sau SRSS), **Direcțiile** (regula de 30 % implicit, sau SRSS) și **Diafragma**: o diafragmă rigidă se aplică doar nivelurilor fără planșeu-placă; un planșeu calculat ca placă o dă el singur. **Limita modurilor** e cel mai mare număr de moduri calculate.
+
+**Modurile.** Tabelul dă perioada T și frecvența f ale fiecărui mod, masa lui efectivă pe X și pe Y și suma până la el. Se calculează moduri până se atinge 90 % din masă pe ambele direcții sau până la limită; dialogul te avertizează când limita oprește mai devreme.
+
+**Spectrul.** Graficul desenează spectrul de proiectare Sd și spectrul elastic Se în funcție de perioadă, cu perioadele modurilor marcate pe spectrul de proiectare și perioadele de colț TB, TC, TD.
+
+**Nivelurile.** Pentru fiecare nivel: masa, forța tăietoare pe X și pe Y, deplasarea relativă de nivel elastică și verificările deplasării relative la starea limită de serviciu (SLS) și la cea ultimă (ULS, doar P100) față de limitele lor, bifate sau tăiate cu cruce (cea care nu trece e roșie). Forța tăietoare de bază apare împreună cu combinația seismică și e comparată cu metoda forțelor laterale, ca verificare.
+
+**Un mod în 3D.** **Animă** pe rândul unui mod închide dialogul și arată forma lui oscilând în vederea 3D, barele și plăcile deodată; **Stop** pe card o oprește. Forma e scalată ca să se vadă: arată cum se mișcă structura, nu cu cât. Urmărește modelul când îl schimbi.
+
+![Forma unui mod în 3D](shots/analysis-mode.webp)
+
+**Combinația seismică.** Cu parametrii dați, selectorul oferă **Combinația seismică** printre înfășurători (G + ψ2 Q ± AEd, cea mai mică și cea mai mare valoare în fiecare punct), iar înfășurătoarea ultimă o cuprinde. Schimbarea unui parametru schimbă modelul, deci rezultatele se învechesc: **Rulează din nou**.
+
+**Pereții de zidărie** sunt calculați ca plăci, cu valori luate după numele materialului (cărămidă, bloc ceramic, BCA, bloc de beton), orientative. Ca să dai valorile tale, pune pe material aceste parametri ai setului `Lapin_Masonry`: `UnitGroup` (clay1, clay2, aac, concrete1, concrete2), `fb`, `fm`, `fk` (MPa) și `KE`; sau `YoungModulus` din `Pset_MaterialMechanical`. Zidăria e liniară în această versiune: fără limitare la întindere, fără fisurare.
+
+> Toate valorile de aici sunt orientative: ag și TC ale amplasamentului, q și numerele normei sunt ale tale de verificat.
 
 ## Articulațiile capetelor
 

@@ -2995,3 +2995,21 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .hp-list > .row .btn { white-space: nowrap; }
 .hp-head { gap: 10px; }
 .hp-head label { display: flex; align-items: center; gap: 6px; }
+
+/* The seismic section of the analysis results (docs/plan-fem.md §11.5) */
+.seismic { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--rule); padding-top: 8px; }
+.seismic-scroll { max-height: 240px; overflow: auto; }
+.seismic-ok { color: var(--ok); }
+.seismic-shown { background: var(--accent-wash); }
+.seismic-chart { width: 100%; max-width: 560px; height: auto; background: var(--raised); border: 1px solid var(--rule); border-radius: 3px; }
+.seismic-grid { stroke: var(--rule); stroke-width: 1; }
+.seismic-frame { stroke: var(--rule-strong); stroke-width: 1; }
+.seismic-axis { fill: var(--ink-muted); font-size: 10px; }
+.seismic-sd { fill: none; stroke: var(--accent); stroke-width: 2; }
+.seismic-se { fill: none; stroke: var(--ink-muted); stroke-width: 1.5; stroke-dasharray: 5 3; }
+.seismic-mode circle { fill: var(--raised); stroke: var(--ink); stroke-width: 1.5; }
+.seismic-mode text { fill: var(--ink); font-size: 10px; }
+.seismic-legend { flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.seismic-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--accent); }
+.seismic-key.se { border-top: 2px dashed var(--ink-muted); }
+.seismic-key.mode { width: 8px; height: 8px; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--raised); }

@@ -15,6 +15,7 @@ import { runAnalysis } from './useResults';
 import { AnalysisWatch } from './watch';
 import { AnalysisCard } from './AnalysisCard';
 import { Analysis3D } from './Analysis3D';
+import { Mode3D, ModeCard } from './Mode3D';
 import { ShellContours3D } from './ShellContours3D';
 import { ShellContoursPlan } from './ShellContours';
 import { ReleasesSection } from './ReleasesSection';
@@ -75,8 +76,8 @@ const analysis: LapinModule = {
   dialogs: { analysisLoads: LoadsDialog, analysisResults: ResultsDialog },
   similar: { IfcStructuralPlanarAction: likeLoad('area', area), IfcStructuralCurveAction: likeLoad('line', line), IfcStructuralPointAction: likeLoad('point', point) },
   background: AnalysisWatch,
-  overlays: [AnalysisCard],
-  overlays3d: [Analysis3D, ShellContours3D],
+  overlays: [AnalysisCard, ModeCard],
+  overlays3d: [Analysis3D, ShellContours3D, Mode3D],
   planOverlays: [ShellContoursPlan],
   propertySections: [
     { id: 'occupancy', label: 'Imposed load', classes: ['IfcSpace'], component: OccupancySection },

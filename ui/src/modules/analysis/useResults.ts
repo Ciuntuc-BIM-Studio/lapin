@@ -26,11 +26,13 @@ export interface ResultsState {
   /** The quantity contoured on the slabs and walls analysed as shells (null: none). */
   shellQuantity: ShellQuantity | null;
   contours: ContoursDto | null;
+  /** The run was made with the seismic parameters given: the seismic envelope can be picked (S3). */
+  seismic: boolean;
 }
 
 export const useResults = create<ResultsState>(() => ({
   run: null, error: null, running: false, at: null, stale: false, show: false, pick: null, quantity: 'Mz', mult: 1, reactions: true, results: null, diagram: null,
-  shellQuantity: 'my', contours: null,
+  shellQuantity: 'my', contours: null, seismic: false,
 }));
 
 const set = useResults.setState;
@@ -68,9 +70,10 @@ export async function runAnalysis(open = true): Promise<void> {
   const at = useSession.getState().nodes;
   try {
     const run = await ask<RunDto>('analysis.run', {});
-    const pick = validPick(run, useResults.getState().pick);
+    const seismic = (await ask<{ given?: boolean }>('analysis.seismicOptions', {}).catch(() => null))?.given === true;
+    const pick = validPick(run, useResults.getState().pick, seismic);
     baseScale = null;
-    set({ run, running: false, at, stale: false, pick, mult: 1, show: run.ok, results: null, diagram: null });
+    set({ run, seismic, running: false, at, stale: false, pick, mult: 1, show: run.ok, results: null, diagram: null });
     if (open) useUi.setState({ dialog: 'analysisResults' });
     await refresh();
   } catch (e) {

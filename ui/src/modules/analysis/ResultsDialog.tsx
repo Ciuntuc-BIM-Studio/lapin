@@ -3,6 +3,7 @@
 import { Play, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { PendingDialog } from '../core/PendingDialog';
+import { SeismicSection } from './SeismicSection';
 import { ShellMaxima, ShellOptions } from './ShellOptions';
 import { hideDiagrams, runAnalysis, setPick, showDiagrams, useResults } from './useResults';
 import {
@@ -17,7 +18,7 @@ export function selectMechanism(ids: string[]): void {
 }
 
 export function ResultsDialog() {
-  const { run, error, running, pick, results, stale } = useResults();
+  const { run, error, running, pick, results, stale, seismic } = useResults();
   const close = () => useUi.setState({ dialog: null });
   if (!run) return <PendingDialog title="Analysis results" error={error ?? (running ? null : 'Nothing has been analysed yet: choose Run analysis.')} />;
   return (
@@ -46,7 +47,7 @@ export function ResultsDialog() {
                 <span className="eyebrow">Largest values of</span>
                 <select aria-label="Load case, combination or envelope" data-testid="results-pick" value={pickValue(pick)} onChange={(e) => setPick(e.target.value)}>
                   {(['Load cases', 'Combinations', 'Envelopes'] as const).map((g) => (
-                    <optgroup key={g} label={g}>{pickChoices(run).filter((c) => c.group === g).map((c) => <option key={pickValue(c.pick)} value={pickValue(c.pick)}>{c.label}</option>)}</optgroup>
+                    <optgroup key={g} label={g}>{pickChoices(run, seismic).filter((c) => c.group === g).map((c) => <option key={pickValue(c.pick)} value={pickValue(c.pick)}>{c.label}</option>)}</optgroup>
                   ))}
                 </select>
               </div>
@@ -55,6 +56,7 @@ export function ResultsDialog() {
             </>
           )}
           <ShellOptions />
+          {run.ok && <SeismicSection />}
 
           {run.notes.map((n, i) => <p key={i} className="muted small">{n}</p>)}
           <p className="muted small">The results are indicative: loads, combinations and the analysis are yours to check before you rely on them.</p>

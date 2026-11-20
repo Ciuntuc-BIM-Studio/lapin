@@ -37,7 +37,7 @@ export interface DiagramDto { kind: string; key: string; quantity: string; unit:
 
 // ── What is shown: the case, combination or envelope, and the quantity ──
 
-export type Pick = { kind: 'case' | 'combination'; key: string } | { kind: 'envelope'; key: 'uls' | 'sls' };
+export type Pick = { kind: 'case' | 'combination'; key: string } | { kind: 'envelope'; key: 'uls' | 'sls' | 'seismic' };
 export const QUANTITIES = ['N', 'Vy', 'Vz', 'T', 'My', 'Mz', 'deformed'] as const;
 export type Quantity = typeof QUANTITIES[number];
 export const QUANTITY_LABEL: Record<Quantity, string> = {
@@ -56,7 +56,7 @@ export function pickFrom(v: string): Pick | null {
   if (i < 0) return null;
   const kind = v.slice(0, i), key = v.slice(i + 1);
   if (kind === 'case' || kind === 'combination') return { kind, key };
-  if (kind === 'envelope' && (key === 'uls' || key === 'sls')) return { kind, key };
+  if (kind === 'envelope' && (key === 'uls' || key === 'sls' || key === 'seismic')) return { kind, key };
   return null;
 }
 
@@ -66,18 +66,19 @@ export function defaultPick(run: RunDto): Pick | null {
   const loaded = run.cases.find((c) => c.sumLoads.some((x) => Math.abs(x) > 1e-9)) ?? run.cases[0];
   return loaded ? { kind: 'case', key: loaded.id } : null;
 }
-/** The picker's entries in groups: the cases, then the combinations, then the envelopes. */
-export function pickChoices(run: RunDto): { group: 'Load cases' | 'Combinations' | 'Envelopes'; pick: Pick; label: string }[] {
+/** The picker's entries in groups: the cases, then the combinations, then the envelopes (the seismic one only when the seismic parameters are given, S3). */
+export function pickChoices(run: RunDto, seismic = false): { group: 'Load cases' | 'Combinations' | 'Envelopes'; pick: Pick; label: string }[] {
   const out: { group: 'Load cases' | 'Combinations' | 'Envelopes'; pick: Pick; label: string }[] = [];
   for (const c of run.cases) out.push({ group: 'Load cases', pick: { kind: 'case', key: c.id }, label: c.code });
   for (const c of run.combinations) out.push({ group: 'Combinations', pick: { kind: 'combination', key: c.key }, label: c.name || c.key });
   if (run.combinations.some((c) => c.kind === 'uls')) out.push({ group: 'Envelopes', pick: { kind: 'envelope', key: 'uls' }, label: 'Ultimate limit state (envelope)' });
   if (run.combinations.some((c) => c.kind !== 'uls')) out.push({ group: 'Envelopes', pick: { kind: 'envelope', key: 'sls' }, label: 'Serviceability limit state (envelope)' });
+  if (seismic) out.push({ group: 'Envelopes', pick: { kind: 'envelope', key: 'seismic' }, label: 'Seismic combination' });
   return out;
 }
 /** A pick that still exists in this run (a case or combination can go between two runs); else the default. */
-export function validPick(run: RunDto, p: Pick | null): Pick | null {
-  if (p && pickChoices(run).some((c) => samePick(c.pick, p))) return p;
+export function validPick(run: RunDto, p: Pick | null, seismic = false): Pick | null {
+  if (p && pickChoices(run, seismic).some((c) => samePick(c.pick, p))) return p;
   return defaultPick(run);
 }
 
