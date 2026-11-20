@@ -71,6 +71,27 @@ public sealed partial class AnalysisRun
         return (f, w);
     }
 
+    /// <summary>A selection's sets at the shells' nodes; the seismic bounds as the gravity loads' values ± AEd (§11.3).</summary>
+    List<(ShellForces[] F, double[] W)> SetsNodal(Selection sel)
+    {
+        var o = sel.Sets.Select(x => SetNodal(x.Terms)).ToList();
+        if (sel.Seismic is not { } sr) return o;
+        (ShellForces[] F, double[] W)? e = null;
+        for (var i = 0; i < o.Count; i++)
+        {
+            var sign = sel.Sets[i].Key switch { "seismic/+" => 1.0, "seismic/-" => -1.0, _ => 0 };
+            if (sign == 0) continue;
+            e ??= sr.ShellNodal(Keys(), g => Problem.Surfaces.TryGetValue(g, out var info) ? info.Normal : Vec3.UnitZ);
+            var (f, w) = o[i];
+            var (ef, ew) = e.Value;
+            var nf = new ShellForces[f.Length];
+            var nw = new double[w.Length];
+            for (var k = 0; k < f.Length; k++) { nf[k] = f[k] + ef[k] * sign; nw[k] = w[k] + ew[k] * sign; }
+            o[i] = (nf, nw);
+        }
+        return o;
+    }
+
     static double Value(string q, ShellForces f, double w) => q == "w" ? w : f[ForceIndex(q)];
 
     IEnumerable<string> SurfacesFor(string? id)
@@ -89,7 +110,7 @@ public sealed partial class AnalysisRun
     {
         var p = Problem.Problem;
         var keys = Keys();
-        var sets = sel.Sets.Select(s => SetNodal(s.Terms)).ToList();
+        var sets = SetsNodal(sel);
         var envelope = sel.Kind == "envelope";
         var o = new JsonArray();
         var best = new Dictionary<string, ((string Surface, double Value, int Node) Max, (string Surface, double Value, int Node) Min)>();
@@ -157,7 +178,7 @@ public sealed partial class AnalysisRun
 
     /// <summary>{case | combination | envelope, quantity, shellId?}: the analysis at the model's revision, its shells' contours.</summary>
     public static JsonObject Contours(IQueryContext q, JsonObject a) =>
-        Of(q).Contours(new Ask((string?)a["case"], (string?)a["combination"], (string?)a["envelope"], null, (string?)a["shellId"]), (string?)a["quantity"]);
+        For(q).Contours(new Ask((string?)a["case"], (string?)a["combination"], (string?)a["envelope"], null, (string?)a["shellId"]), (string?)a["quantity"]);
 
     /// <summary>
     /// Each surface's mesh (its nodes in world coordinates, flat [x, y, z, …]; its faces four node indices each, a triangle's
@@ -174,7 +195,7 @@ public sealed partial class AnalysisRun
         var keys = Keys();
         var at = new Dictionary<(string, int), int>();
         for (var i = 0; i < keys.Length; i++) at[keys[i]] = i;
-        var sets = sel.Sets.Select(s => SetNodal(s.Terms)).ToList();
+        var sets = SetsNodal(sel);
         var envelope = sel.Kind == "envelope";
         var digits = quantity == "w" ? 9 : 4;
         var (gMin, gMax) = (double.PositiveInfinity, double.NegativeInfinity);

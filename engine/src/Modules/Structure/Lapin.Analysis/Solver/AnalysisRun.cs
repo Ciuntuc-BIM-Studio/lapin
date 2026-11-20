@@ -6,6 +6,7 @@ using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
 using Lapin.Platform.Analysis;
+using Lapin.Analysis.Seismic;
 using Combination = Lapin.Analysis.Combinations.Combination;
 
 namespace Lapin.Analysis.Solver;
@@ -171,7 +172,34 @@ public sealed partial class AnalysisRun
     // ------------------------------------------------------------ what a result is of
 
     /// <summary>A case, a combination or an envelope's combinations, each as factors on the cases.</summary>
-    sealed record Selection(string Kind, string Key, string Name, List<(string Key, string Name, List<(int Case, double Factor)> Terms)> Sets);
+    sealed record Selection(string Kind, string Key, string Name, List<(string Key, string Name, List<(int Case, double Factor)> Terms)> Sets)
+    {
+        /// <summary>The seismic combination's two bounds (§11.3), the last two sets: G + ψ2 Q + AEd and G + ψ2 Q − AEd, AEd from this run.</summary>
+        public SeismicRun? Seismic { get; init; }
+    }
+
+    /// <summary>Where the seismic analysis comes from when a result asks for it (set by the queries; the model's revision is the run's).</summary>
+    Func<SeismicRun>? _seismicOf;
+
+    public static AnalysisRun For(IQueryContext q)
+    {
+        var run = Of(q);
+        run._seismicOf = () => SeismicRun.Of(q);
+        return run;
+    }
+
+    /// <summary>The seismic combination's sets (+ and −), when its parameters are given and the modal analysis ran.</summary>
+    (SeismicRun Run, List<(string, string, List<(int, double)>)> Sets)? SeismicSets(bool required)
+    {
+        if (_seismicOf == null) { if (required) throw new CommandException("The seismic results are asked through the analysis queries."); return null; }
+        var sr = _seismicOf();
+        if (!sr.Ok)
+        {
+            if (required) throw new CommandException(sr.Settings.Given ? "The seismic analysis did not run: analysis.modal says why." : "Give the seismic parameters first (analysis.setSeismic).");
+            return null;
+        }
+        return (sr, [("seismic/+", $"{sr.GravityName} + AEd", sr.Gravity.ToList()), ("seismic/-", $"{sr.GravityName} − AEd", sr.Gravity.ToList())]);
+    }
 
     /// <summary>What a result is asked of: a case (its id or code), a combination (its key) or an envelope (uls, sls); one bar's element or piece, or all.</summary>
     public sealed record Ask(string? Case, string? Combination, string? Envelope, string? ElementId = null, string? ShellId = null);
@@ -195,14 +223,26 @@ public sealed partial class AnalysisRun
         }
         if (envArg is { } env)
         {
+            if (env == "seismic")
+            {
+                var (sr, sets) = SeismicSets(true)!.Value;
+                return new Selection("envelope", env, "Seismic combination", sets) { Seismic = sr };
+            }
             var list = env switch
             {
                 "uls" => Combinations.Where(c => c.Kind == "uls").ToList(),
                 "sls" => Combinations.Where(c => c.Kind.StartsWith("sls")).ToList(),
-                _ => throw new CommandException("An envelope is „uls” or „sls”."),
+                _ => throw new CommandException("An envelope is „uls”, „sls” or „seismic”."),
             };
             if (list.Count == 0) throw new CommandException($"There are no {env.ToUpperInvariant()} combinations.");
-            return new Selection("envelope", env, env == "uls" ? "ULS envelope" : "SLS envelope", list.Select(c => (c.Key, c.Name, Terms(c))).ToList());
+            var all = list.Select(c => (c.Key, c.Name, Terms(c))).ToList();
+            // The seismic design situation is an ultimate one: its combination joins the ULS envelope when it is given (§11.3).
+            if (env == "uls" && SeismicSets(false) is var (srun, ssets))
+            {
+                all.AddRange(ssets);
+                return new Selection("envelope", env, "ULS envelope", all) { Seismic = srun };
+            }
+            return new Selection("envelope", env, env == "uls" ? "ULS envelope" : "SLS envelope", all);
         }
         throw new CommandException("Say a case, a combination or an envelope (uls, sls).");
     }
@@ -212,6 +252,85 @@ public sealed partial class AnalysisRun
         public required double[] U;
         public required Dictionary<int, double[]> Reactions;
         public required ElementResult[] Elements;
+        /// <summary>A bound of the seismic combination: these values ± AEd (<see cref="Sign"/>), AEd kept in <see cref="Spectral"/> for both bounds.</summary>
+        public Spectral? Seismic;
+        public double Sign;
+    }
+
+    /// <summary>AEd of a seismic run, worked out once for each node, section or deflection a result asks.</summary>
+    sealed class Spectral(SeismicRun run)
+    {
+        public SeismicRun Run { get; } = run;
+        readonly Dictionary<int, double[]> _nodes = [], _reactions = [];
+        readonly Dictionary<(int, double), double[]> _sections = [], _deflections = [];
+        public double[] Node(int n) => _nodes.TryGetValue(n, out var v) ? v : _nodes[n] = Run.NodeAt(n);
+        public double[] Reaction(int n) => _reactions.TryGetValue(n, out var v) ? v : _reactions[n] = Run.ReactionAt(n);
+        public double[] Section(int m, double x) => _sections.TryGetValue((m, x), out var v) ? v : _sections[(m, x)] = Run.SectionAt(m, x);
+        public double[] Deflection(int m, double x) => _deflections.TryGetValue((m, x), out var v) ? v : _deflections[(m, x)] = Run.DeflectionAt(m, x);
+    }
+
+    /// <summary>A selection's states: each set's combination; the seismic bounds with AEd attached.</summary>
+    List<State> States(Selection sel)
+    {
+        var states = sel.Sets.Select(x => Combine(x.Terms)).ToList();
+        if (sel.Seismic is { } sr)
+        {
+            var spectral = new Spectral(sr);
+            for (var i = 0; i < states.Count; i++)
+            {
+                var key = sel.Sets[i].Key;
+                if (key == "seismic/+") { states[i].Seismic = spectral; states[i].Sign = 1; }
+                else if (key == "seismic/-") { states[i].Seismic = spectral; states[i].Sign = -1; }
+            }
+        }
+        return states;
+    }
+
+    double NodeU(State s, int n, int d) => s.U[n * 6 + d] + (s.Seismic is { } sp ? s.Sign * sp.Node(n)[d] : 0);
+
+    double[] ReactionOf(State s, int n)
+    {
+        var r = s.Reactions.TryGetValue(n, out var x) ? (double[])x.Clone() : new double[6];
+        if (s.Seismic is { } sp && Problem.Problem.Held[n] != null) { var e = sp.Reaction(n); for (var d = 0; d < 6; d++) r[d] += s.Sign * e[d]; }
+        return r;
+    }
+
+    Section MemberAt(int member, State s, double x)
+    {
+        var b = MemberAt(member, s.Elements, x);
+        if (s.Seismic is not { } sp) return b;
+        var e = sp.Section(member, x);
+        return new Section(b.X, b.N + s.Sign * e[0], b.Vy + s.Sign * e[1], b.Vz + s.Sign * e[2], b.T + s.Sign * e[3], b.My + s.Sign * e[4], b.Mz + s.Sign * e[5]);
+    }
+
+    List<Section> MemberAlong(int member, State s)
+    {
+        if (s.Seismic == null) return MemberAlong(member, s.Elements);
+        var l = Problem.Members[member].L;
+        return Enumerable.Range(0, Stations.Count).Select(i => MemberAt(member, s, l * i / (Stations.Count - 1))).ToList();
+    }
+
+    Extreme[] MemberExtremes(int member, State s)
+    {
+        if (s.Seismic == null) return MemberExtremes(member, s.Elements);
+        // The bounds of the seismic combination: sampled at 21 points and where the gravity loads' own extremes and breaks are.
+        var l = Problem.Members[member].L;
+        var xs = Enumerable.Range(0, 21).Select(i => l * i / 20).Concat(MemberExtremes(member, s.Elements).SelectMany(x => new[] { x.XMax, x.XMin })).Distinct().ToList();
+        var secs = xs.Select(x => MemberAt(member, s, x)).ToList();
+        return Enumerable.Range(0, 6).Select(q =>
+        {
+            var hi = secs.MaxBy(x => x[q]);
+            var lo = secs.MinBy(x => x[q]);
+            return new Extreme(hi.X, hi[q], lo.X, lo[q]);
+        }).ToArray();
+    }
+
+    (double U, double V, double W) MemberDeflection(int member, State s, double x)
+    {
+        var b = MemberDeflection(member, s.Elements, x);
+        if (s.Seismic is not { } sp) return b;
+        var e = sp.Deflection(member, x);
+        return (b.U + s.Sign * e[0], b.V + s.Sign * e[1], b.W + s.Sign * e[2]);
     }
 
     State Combine(List<(int Case, double Factor)> terms)
@@ -306,7 +425,7 @@ public sealed partial class AnalysisRun
 
     /// <summary>{case | combination | envelope, elementId?}: the analysis at the model's revision, its results.</summary>
     public static JsonObject Results(IQueryContext q, JsonObject a) =>
-        Of(q).Results(new Ask((string?)a["case"], (string?)a["combination"], (string?)a["envelope"], (string?)a["elementId"], (string?)a["shellId"]));
+        For(q).Results(new Ask((string?)a["case"], (string?)a["combination"], (string?)a["envelope"], (string?)a["elementId"], (string?)a["shellId"]));
 
     public JsonObject Results(Ask ask)
     {
@@ -316,7 +435,7 @@ public sealed partial class AnalysisRun
         var onlyShell = ask.ShellId != null && ask.ElementId == null;
         var els = onlyShell ? [] : ElementsFor(ask.ElementId);
         var nodes = (onlyShell ? [] : ask.ElementId != null ? els.SelectMany(k => new[] { ms[k].I, ms[k].J }) : ms.SelectMany(e => new[] { e.I, e.J })).Distinct().OrderBy(n => n).ToList();
-        var states = sel.Sets.Select(s => Combine(s.Terms)).ToList();
+        var states = States(sel);
         var envelope = sel.Kind == "envelope";
         var o = new JsonObject
         {
@@ -330,7 +449,7 @@ public sealed partial class AnalysisRun
         (string Node, double Value)? maxDisp = null;
         foreach (var n in nodes)
         {
-            var ds = states.Select(s => Enumerable.Range(0, 6).Select(d => s.U[n * 6 + d]).ToArray()).ToList();
+            var ds = states.Select(s => Enumerable.Range(0, 6).Select(d => NodeU(s, n, d)).ToArray()).ToList();
             foreach (var d in ds)
             {
                 var v = Math.Sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
@@ -349,7 +468,7 @@ public sealed partial class AnalysisRun
         foreach (var n in states.SelectMany(s => s.Reactions.Keys).Distinct().OrderBy(n => n))
         {
             if ((ask.ElementId != null || onlyShell) && !nodeSet.Contains(n)) continue;
-            var rs = states.Select(s => s.Reactions.TryGetValue(n, out var r) ? r : new double[6]).ToList();
+            var rs = states.Select(s => ReactionOf(s, n)).ToList();
             var ro = new JsonObject { ["node"] = p.NodeIds[n], ["at"] = V3(p.Nodes[n]) };
             if (envelope) { ro["min"] = Arr(Enumerable.Range(0, 6).Select(d => rs.Min(x => x[d]))); ro["max"] = Arr(Enumerable.Range(0, 6).Select(d => rs.Max(x => x[d]))); }
             else ro["f"] = Arr(rs[0]);
@@ -366,7 +485,7 @@ public sealed partial class AnalysisRun
         {
             var e = ms[k];
             var fo = new JsonObject { ["id"] = e.Id, ["sourceId"] = e.SourceId, ["name"] = e.Name, ["length"] = R(e.L) };
-            var stations = states.Select(s => MemberAlong(k, s.Elements)).ToList();
+            var stations = states.Select(s => MemberAlong(k, s)).ToList();
             var arr = new JsonArray();
             for (var i = 0; i < Stations.Count; i++)
             {
@@ -377,7 +496,7 @@ public sealed partial class AnalysisRun
             }
             fo["stations"] = arr;
             var ext = new JsonObject();
-            var extremes = states.Select(s => MemberExtremes(k, s.Elements)).ToList();
+            var extremes = states.Select(s => MemberExtremes(k, s)).ToList();
             for (var q = 0; q < 6; q++)
             {
                 var hi = extremes.MaxBy(x => x[q].Max)![q];
@@ -393,9 +512,10 @@ public sealed partial class AnalysisRun
                 for (var i = 0; i <= 20; i++)
                 {
                     var x = e.L * i / 20;
-                    var (_, v, w) = MemberDeflection(k, s.Elements, x);
-                    var ul = MemberEnds(k, s.Elements);
-                    var (v0, w0, v1, w1) = (ul[1], ul[2], ul[7], ul[8]);
+                    var (_, v, w) = MemberDeflection(k, s, x);
+                    double v0, w0, v1, w1;
+                    if (s.Seismic == null) { var ul = MemberEnds(k, s.Elements); (v0, w0, v1, w1) = (ul[1], ul[2], ul[7], ul[8]); }
+                    else { var (_, a0, b0) = MemberDeflection(k, s, 0); var (_, a1, b1) = MemberDeflection(k, s, e.L); (v0, w0, v1, w1) = (a0, b0, a1, b1); }
                     var t = x / e.L;
                     var (rv, rw) = (v - (v0 + (v1 - v0) * t), w - (w0 + (w1 - w0) * t));
                     var d = Math.Sqrt(rv * rv + rw * rw);
@@ -432,7 +552,7 @@ public sealed partial class AnalysisRun
 
     /// <summary>{case | combination | envelope, quantity, scale?, elementId?}: the analysis at the model's revision, a diagram of it.</summary>
     public static JsonObject Diagram(IQueryContext q, JsonObject a) =>
-        Of(q).Diagram(new Ask((string?)a["case"], (string?)a["combination"], (string?)a["envelope"], (string?)a["elementId"]), (string?)a["quantity"],
+        For(q).Diagram(new Ask((string?)a["case"], (string?)a["combination"], (string?)a["envelope"], (string?)a["elementId"]), (string?)a["quantity"],
             a["scale"] is JsonNode sn && Json.Number(sn) is { } sv && double.IsFinite(sv) ? sv : null);
 
     public JsonObject Diagram(Ask ask, string? quantityArg, double? scaleArg)
@@ -442,7 +562,7 @@ public sealed partial class AnalysisRun
         if (!Quantities.Contains(quantity)) throw new CommandException($"„{quantity}” is not a quantity: one of {string.Join(", ", Quantities)}.");
         var p = Problem.Problem;
         var els = ElementsFor(ask.ElementId);
-        var states = sel.Sets.Select(s => Combine(s.Terms)).ToList();
+        var states = States(sel);
         var envelope = sel.Kind == "envelope";
         var pts = Problem.Members.SelectMany(e => new[] { e.Pi, e.Pj }).Concat(p.Shells.SelectMany(s => s.Nodes.Select(n => p.Nodes[n]))).ToList();
         var extent = pts.Count == 0 ? 1 : Math.Max((new Vec3(pts.Max(x => x.X), pts.Max(x => x.Y), pts.Max(x => x.Z)) - new Vec3(pts.Min(x => x.X), pts.Min(x => x.Y), pts.Min(x => x.Z))).Length, 1);
@@ -462,7 +582,7 @@ public sealed partial class AnalysisRun
                     for (var i = 0; i <= 20; i++)
                     {
                         var x = e.L * i / 20;
-                        var (u, v, w) = MemberDeflection(k, states[si].Elements, x);
+                        var (u, v, w) = MemberDeflection(k, states[si], x);
                         list.Add((x, u, v, w));
                         maxD = Math.Max(maxD, Math.Sqrt(u * u + v * v + w * w));
                     }
@@ -496,13 +616,13 @@ public sealed partial class AnalysisRun
             foreach (var s in states)
             {
                 foreach (var b in MemberBreaks(k, s.Elements)) { xs.Add(Math.Max(0, b - 1e-6)); xs.Add(Math.Min(e.L, b + 1e-6)); }
-                foreach (var ex in MemberExtremes(k, s.Elements)) { xs.Add(ex.XMax); xs.Add(ex.XMin); }
+                foreach (var ex in MemberExtremes(k, s)) { xs.Add(ex.XMax); xs.Add(ex.XMin); }
             }
             xs = xs.Distinct().OrderBy(x => x).ToList();
             var (lo, hi) = (new List<double>(), new List<double>());
             foreach (var x in xs)
             {
-                var vs = states.Select(s => MemberAt(k, s.Elements, x)[q]).ToList();
+                var vs = states.Select(s => MemberAt(k, s, x)[q]).ToList();
                 lo.Add(vs.Min());
                 hi.Add(vs.Max());
                 max = Math.Max(max, Math.Max(Math.Abs(vs.Min()), Math.Abs(vs.Max())));

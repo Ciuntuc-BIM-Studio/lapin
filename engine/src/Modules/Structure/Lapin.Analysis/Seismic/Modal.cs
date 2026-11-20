@@ -61,10 +61,13 @@ public static class Modal
         limit = Math.Clamp(limit, 1, 300);
         var want = Math.Min(initial, limit);
         EigenResult eig;
+        double[][]? previous = null;
         var iterations = 0;
         while (true)
         {
-            eig = Subspace.Solve(sys.SolveInPlace, mass, kd, want);
+            // Grown: from the modes found so far (Bathe's subspace, warm started), the rest new.
+            eig = Subspace.Solve(sys.SolveInPlace, mass, kd, want, start: previous);
+            previous = eig.Vectors;
             iterations += eig.Iterations;
             var cum = new double[2];
             foreach (var v in eig.Vectors)

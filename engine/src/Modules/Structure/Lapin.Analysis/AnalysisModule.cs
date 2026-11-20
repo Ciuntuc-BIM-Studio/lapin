@@ -14,7 +14,9 @@ namespace Lapin.Analysis;
 /// loads derived from the model on every ask (the self weight, the floors' finishes, the partitions, the rooms' imposed loads
 /// by their category of use), the EN 1990 combinations, and all of it for IFC's structural analysis view
 /// (<see cref="IStructuralLoads"/>). Stage S1 (§9): the linear static analysis of the bars (<see cref="AnalysisRun"/>:
-/// analysis.run, analysis.results, analysis.diagram) and their end releases (analysis.setReleases). It reads rooms, slabs and
+/// analysis.run, analysis.results, analysis.diagram) and their end releases (analysis.setReleases). Stage S2 (§10): slabs
+/// and walls as shells. Stage S3 (§11): the masonry walls as shells, the modal analysis and the response spectrum by P100-1/2013
+/// or EN 1998-1 (analysis.setSeismic, analysis.modal, analysis.mode, analysis.spectrum, analysis.seismic; the envelope „seismic”). It reads rooms, slabs and
 /// walls by their class and geometry, never through architecture or structure: without them it has less to read. Engine
 /// units: metres, kN, kN/m, kN/m².
 /// </summary>
@@ -209,6 +211,23 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
         r.Query("options", (q, _) => AnalysisSettings.Of(q.Model).ToJson());
         // {shells?: both | slabs | walls | none, meshSize?: metres}: how the analysis takes slabs and walls; null back to the default. One undo step.
         r.Command("setOptions", "Analysis options", (ctx, a) => { AnalysisSettings.Write(ctx, a); return null; });
+
+        // ── Modal and seismic analysis (S3, §11) ──
+
+        // {code?, ag?, tc?, ground?, spectrum?, importance?, q?, damping?, modal?, directions?, torsion?, modes?, cracked?, diaphragm?,
+        // drift?, snowPsi2?}: the project's seismic parameters (P100-1/2013 by default, EN 1998-1 the option; the site's ag and TC
+        // the user's); null takes one back to its default (ag null: no seismic analysis). One undo step.
+        r.Command("setSeismic", "Seismic parameters", (ctx, a) => { Seismic.SeismicSettings.Write(ctx, a); return null; });
+        r.Query("seismicOptions", (q, _) => Seismic.SeismicSettings.Of(q.Model).OptionsJson());
+        // The natural modes: periods, participation factors, effective masses (§11.2).
+        r.Query("modal", (q, _) => Seismic.SeismicRun.Of(q).ModalJson());
+        // {mode, scale?}: a mode's shape for the 3D view (bars' polylines, shells' nodes displaced).
+        r.Query("mode", (q, a) => Seismic.SeismicRun.Of(q).ModeShape(Json.Number(a["mode"]) is { } n ? (int)n : 1,
+            a["scale"] is JsonNode sn && Json.Number(sn) is { } sv && double.IsFinite(sv) ? sv : null));
+        // The design and elastic spectra, the modes on them.
+        r.Query("spectrum", (q, _) => Seismic.SeismicRun.Of(q).SpectrumJson());
+        // The storeys' masses, shears, forces and drifts with the drift checks; the base shear (§11.3).
+        r.Query("seismic", (q, _) => Seismic.SeismicRun.Of(q).SeismicJson());
 
         // {ids, axial: true | false | null}: whether the bars work axially only (a rod, a tie: pinned at their ends, their weight
         // at them) or as beams; null back to what their section and use say (FrameReleases.Axial). One undo step.
