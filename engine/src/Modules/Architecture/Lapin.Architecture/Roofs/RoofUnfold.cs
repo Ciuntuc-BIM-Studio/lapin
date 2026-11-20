@@ -253,7 +253,8 @@ sealed class RoofUnfoldMarks : IViewAnnotations
                 var rawDeg = Math.Atan2(d.Y, d.X) * 180 / Math.PI;
                 var angle = Standards.ReadableDeg(rawDeg);
                 var outward = new Vec2(d.Y, -d.X).Normalized();
-                mk.Text(new PenText(mid + outward * (1.2 * mm), $"{len.ToString("0.00", CultureInfo.InvariantCulture)} m", hLabel * 0.85, angle, Baseline: "middle", Font: text.Font), dimColor);
+                // Beside the edge, not on it: half the label's height (about 1 mm on paper) and a gap.
+                mk.Text(new PenText(mid + outward * (2.0 * mm), $"{len.ToString("0.00", CultureInfo.InvariantCulture)} m", hLabel * 0.85, angle, Baseline: "middle", Font: text.Font), dimColor);
             }
 
             // Overall width dimension line below sheet and slope-length dimension line to the left.
@@ -275,11 +276,12 @@ sealed class RoofUnfoldMarks : IViewAnnotations
             var title = s.Barrel
                 ? $"Barrel vault · {s.NetArea.ToString("0.00", CultureInfo.InvariantCulture)} m²"
                 : $"Slope {s.Index} · {s.Pitch.ToString("0.#", CultureInfo.InvariantCulture)}° · {s.NetArea.ToString("0.00", CultureInfo.InvariantCulture)} m²";
-            mk.Text(new PenText(new Vec2((s.Min.X + s.Max.X) * 0.5, s.Max.Y + 2.5 * mm), title, hTitle, Bold: true, Font: text.Font), ink);
+            // Above the top edge's length (which reaches about 3 mm over the edge).
+            mk.Text(new PenText(new Vec2((s.Min.X + s.Max.X) * 0.5, s.Max.Y + 4.5 * mm), title, hTitle, Bold: true, Font: text.Font), ink);
         }
 
         // Total covering area summary above the top row.
-        var topY = layout.Sheets.Max(s => s.Max.Y) + 7.5 * mm;
+        var topY = layout.Sheets.Max(s => s.Max.Y) + 10.0 * mm;
         var minX = layout.Sheets.Min(s => s.Min.X);
         var summary = $"Total covering area: {layout.TotalNetArea.ToString("0.00", CultureInfo.InvariantCulture)} m² ({layout.Sheets.Count} {(layout.Sheets.Count == 1 ? "sheet" : "sheets")})";
         mk.Text(new PenText(new Vec2(minX, topY), summary, hTitle * 1.1, Anchor: "start", Bold: true, Font: text.Font), ink);
