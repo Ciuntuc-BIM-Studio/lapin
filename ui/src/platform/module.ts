@@ -298,6 +298,10 @@ export interface Grip3D {
   owner?: string;
   /** What moving it `by` metres along `dir` does, as one engine command; null: nothing (refused before asking). */
   step: (by: number) => GripStep | null;
+  /** What a click on it (pressed and let go without moving it) does, as one engine command; none: nothing. */
+  click?: () => GripStep | null;
+  /** Drawn filled: one of a set the user chose (a terrain's control points). */
+  marked?: boolean;
 }
 
 /** A mark the engine drew: an annotation's points as drawn now, and what it tells of itself in `data`. */
