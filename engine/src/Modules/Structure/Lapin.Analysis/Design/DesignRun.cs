@@ -82,6 +82,7 @@ public sealed class DesignRun
         Ok = true;
         Notes.Add("Indicative checks (docs/plan-fem.md §12): the Eurocodes' recommended values (kept by the Romanian annexes where Lapin could read them) and CR 6-2013; the signed design remains the engineer's.");
         var project = DesignSettings.Project(m);
+        Run.SnowDuration = DesignSettings.Choice(project, "snowDuration", DesignSettings.SnowDurations);
         try { Bars(m, project); }
         catch (CommandException ex) { Notes.Add(ex.Message); }
         try { Shells(m, project); }
@@ -155,7 +156,8 @@ public sealed class DesignRun
                 {
                     var props = SectionProperties.Of(shape);
                     if (props == null || mm.Mat.Fy is not { } fy) { notes.Add("No fy or no section properties: not checked."); checks = []; break; }
-                    var member = new SteelMember(shape, props, fy.Value, mm.Mat.E?.Value ?? 210e9, l, lcrY, lcrZ, llt) { LengthsSource = lengths };
+                    var member = new SteelMember(shape, props, fy.Value, mm.Mat.E?.Value ?? 210e9, l, lcrY, lcrZ, llt)
+                        { LengthsSource = lengths, Method = DesignSettings.Choice(project, "steelInteraction", DesignSettings.SteelMethods) };
                     checks = SteelDesign.Check(member, sets);
                     break;
                 }
@@ -181,6 +183,8 @@ public sealed class DesignRun
                     var lef = DesignSettings.Num(own, "llt");
                     var tm = new TimberMember(shape.Width, shape.Depth, l, tc, sc, lcrY, lcrZ, restrained && lef == null ? 0 : lef) { LengthsSource = lengths, Cantilever = cantilever };
                     checks = TimberDesign.Check(tm, sets);
+                    var snow = Run.SnowDuration;
+                    checks = checks.Select(c => c.Note != null && c.Note.Contains("kmod") ? c with { Note = c.Note + $" Snow taken as a {snow}-term action (EN 1995-1-1 Table 2.2; the project's choice, analysis.setDesign snowDuration)." } : c).ToList();
                     if (restrained && lef == null) checks.RemoveAll(x => x.Key == "timber.ltb");
                     checks.Add(TimberDesign.Deflection(tm, TimberDeflections(k, TimberDesign.Kdef(sc))));
                     break;
@@ -188,7 +192,28 @@ public sealed class DesignRun
             }
             Members.Add(new MemberDesign(k, e.Id, src.SourceId, src.Name, kind, mm.Mat.Grade, src.Kind, storey, checks, need, notes));
         }
+        Sway(sp);
         if (unchecked_.Count > 0) Notes.Add($"Not checked (a material Lapin has no rules for): {string.Join(", ", unchecked_.Take(8))}{(unchecked_.Count > 8 ? "…" : "")}.");
+    }
+
+    /// <summary>
+    /// A note when the model looks unbraced along X or Y (§12.10): columns, but no wall and no diagonal bar working along that
+    /// direction. The buckling lengths assume a braced frame; a sway frame's (k > 1) are the user's to give.
+    /// </summary>
+    void Sway(StructuralProblem sp)
+    {
+        var bars = sp.Members.Select(e => (e.Pj - e.Pi).Normalized()).ToList();
+        if (!bars.Any(d => Math.Abs(d.Z) > 0.97)) return;
+        var unbraced = new List<string>();
+        foreach (var (name, ax) in new[] { ("X", new Vec3(1, 0, 0)), ("Y", new Vec3(0, 1, 0)) })
+        {
+            var walls = sp.Model.Shells.Any(s => s.Source.Kind == "wall" && s.Source.Line is { Count: >= 2 } line
+                && Math.Abs(Vec2.Dot((line[^1] - line[0]).Normalized(), new Vec2(ax.X, ax.Y))) > Math.Cos(Math.PI / 4));
+            var braces = bars.Any(d => Math.Abs(d.Z) is > 0.2 and < 0.97 && Math.Abs(Vec3.Dot(new Vec3(d.X, d.Y, 0), ax)) > 0.5);
+            if (!walls && !braces) unbraced.Add(name);
+        }
+        if (unbraced.Count > 0)
+            Notes.Add($"No wall or bracing along {string.Join(" and ", unbraced)}: the frame looks unbraced (sway) that way. The buckling lengths assume a braced frame; give the columns' own (k > 1, analysis.setDesign ky / kz or lcrY / lcrZ).");
     }
 
     static ConcreteValues Values(JsonObject? project) => new(25e6,

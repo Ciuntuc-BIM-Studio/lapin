@@ -107,9 +107,9 @@ After a run, the **Checks** section of the **Analysis results** dialog checks th
 
 **What is checked, by material**
 
-- **Steel** bars (EN 1993-1-1): the section's class, the resistance to tension, compression, bending and shear, flexural and lateral-torsional buckling, and the interaction of axial force and bending (Annex B). Class 4 sections are reported as not checked.
+- **Steel** bars (EN 1993-1-1): the section's class, the resistance to tension, compression, bending and shear, flexural and lateral-torsional buckling, and the interaction of axial force and bending (Annex A, method 1, as the Romanian national annex chooses; Annex B, method 2, if the project asks for it). The buckling lengths assume a braced frame: when the model has no wall or bracing in a direction, the notes say so, and the columns' own lengths are yours to give. Class 4 sections are reported as not checked.
 - **Concrete** beams and columns (EN 1992-1-1): bending (the required reinforcement), shear and stirrups, the minimum and maximum reinforcement, the span/depth ratio, and for columns the second-order effects with the nominal curvature. **Slabs and walls** analysed as shells get the reinforcement they need in each layer, by the Wood–Armer method.
-- **Timber** bars (EN 1995-1-1, strength class from the material's name such as C24 or GL24h): bending, tension, compression with buckling, shear and lateral-torsional buckling, with kmod for the load duration and the service class.
+- **Timber** bars (EN 1995-1-1, strength class from the material's name such as C24 or GL24h): bending, tension, compression with buckling, shear and lateral-torsional buckling, with kmod for the load duration and the service class (snow is a short-term action by default; a mountain site can take it as medium-term).
 - **Masonry** walls (EN 1996-1-1 as CR 6-2013 takes it): the axial resistance at the foot, middle and head, shear and bending in the plane, with γM 2.2 (1.65 where the code allows it). The seismic combination uses the same resistances with its own forces.
 
 **The table of members.** One row for each element (a beam made of several pieces in the analysis is one row, with its worst piece): its **utilisation** (the most loaded check divided by its resistance, as a bar and a number; more than 1 fails and is red), the **governing check** with its clause and the **governing combination**. The filters choose a **Material** or a **Storey**. A click on a row selects the element in the model. **Slabs and walls** in concrete follow with the reinforcement each layer needs, in cm²/m.
@@ -118,7 +118,7 @@ After a run, the **Checks** section of the **Analysis results** dialog checks th
 
 ![The masonry walls of a storey](shots/analysis-walls.webp)
 
-**Design values.** The project's values (concrete cover, bars' and stirrups' diameters, fyk, the masonry's fvk0 and γM, the timber's service class) are under **Design values of the project** in the Checks section; an element's own are in its properties (below). An empty field takes the default; each change is one undo step, and **Run again** checks with it.
+**Design values.** The project's values (concrete cover, bars' and stirrups' diameters, fyk, the masonry's fvk0 and γM, the timber's service class, the **steel interaction** method and the **snow on timber** duration) are under **Design values of the project** in the Checks section; an element's own are in its properties (below). An empty field takes the default; each change is one undo step, and **Run again** checks with it.
 
 **Colours by utilisation.** **Colour the model by utilisation** (here, or **Utilisation** on the card over the 3D view) colours each checked bar, slab and wall from green (0) through yellow and orange (1) to red (over 1), and grey where nothing was checked; the plans of a storey show the same colours on its slabs and bars. The diagrams give way to them while it is on.
 

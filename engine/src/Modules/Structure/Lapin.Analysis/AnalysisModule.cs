@@ -241,7 +241,7 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
         r.Query("reinforcement", (q, a) => Design.DesignRun.Of(q).ReinforcementJson((string?)a["id"]));
         r.Query("designOptions", (q, _) => Design.DesignSettings.ToJson(q.Model));
         // {ids?, ky?, kz?, lcrY?, lcrZ?, llt?, serviceClass?, system?} on elements, {serviceClass?, cover?, bar?, stirrup?, fyk?, fvk0?, gammaM?}
-        // on the project; null back to the default. One undo step.
+        // or {steelInteraction?: A | B, snowDuration?: short | medium} on the project; null back to the default. One undo step.
         r.Command("setDesign", "Design values", (ctx, a) => { Design.DesignSettings.Write(ctx, a); return null; });
 
         // {ids, axial: true | false | null}: whether the bars work axially only (a rod, a tie: pinned at their ends, their weight

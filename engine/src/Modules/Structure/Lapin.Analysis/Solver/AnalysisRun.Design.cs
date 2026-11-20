@@ -14,13 +14,16 @@ public sealed partial class AnalysisRun
     DesignSets? _uls;
 
     /// <summary>The duration class of a case's action (EN 1995-1-1 Table 2.2, §12.4): permanent, long, medium, short, instantaneous.</summary>
-    public static string DurationOf(LoadCase c) =>
+    public static string DurationOf(LoadCase c, string snow = "short") =>
         c.Permanent ? "permanent"
         : c.Wind ? "instantaneous"
         : c.ActionSource == "EARTHQUAKE_E" || !c.Variable ? "instantaneous"
-        : c.Takes(LoadCases.Snow) || c.Category == Categories.Snow || c.ActionSource == "SNOW_S" ? "short"
+        : c.Takes(LoadCases.Snow) || c.Category == Categories.Snow || c.ActionSource == "SNOW_S" ? snow
         : c.Category == "E1" ? "long"
         : "medium";
+
+    /// <summary>The snow's duration class for timber's kmod (short by default; medium for a mountain site, the project's choice). Set before the forces are first asked.</summary>
+    public string SnowDuration { get; set; } = "short";
 
     public static readonly string[] Durations = ["permanent", "long", "medium", "short", "instantaneous"];
 
@@ -43,7 +46,7 @@ public sealed partial class AnalysisRun
                 {
                     if (Math.Abs(k) < 1e-12) continue;
                     var c = Report.Cases.First(x => x.Id == Solution!.Cases[ci].Id);
-                    shortest = Math.Max(shortest, Array.IndexOf(Durations, DurationOf(c)));
+                    shortest = Math.Max(shortest, Array.IndexOf(Durations, DurationOf(c, SnowDuration)));
                 }
                 durations.Add(Durations[shortest]);
             }

@@ -105,9 +105,9 @@ După o rulare, secțiunea **Verificări** a dialogului **Rezultatele analizei**
 
 **Ce se verifică, pe materiale**
 
-- Barele de **oțel** (EN 1993-1-1): clasa secțiunii, rezistența la întindere, compresiune, încovoiere și forfecare, flambajul și flambajul lateral cu răsucire, și interacțiunea efortului axial cu încovoierea (Anexa B). Secțiunile de clasa 4 sunt spuse ca neverificate.
+- Barele de **oțel** (EN 1993-1-1): clasa secțiunii, rezistența la întindere, compresiune, încovoiere și forfecare, flambajul și flambajul lateral cu răsucire, și interacțiunea efortului axial cu încovoierea (Anexa A, metoda 1, cum alege anexa națională română; Anexa B, metoda 2, dacă proiectul o cere). Lungimile de flambaj presupun un cadru contravântuit: când modelul nu are pereți sau contravântuiri pe o direcție, notele o spun, iar lungimile stâlpilor le dai tu. Secțiunile de clasa 4 sunt spuse ca neverificate.
 - Grinzile și stâlpii de **beton** (EN 1992-1-1): încovoierea (armătura necesară), forfecarea și etrierii, armătura minimă și maximă, raportul deschidere/înălțime, iar la stâlpi efectele de ordinul 2 cu curbura nominală. **Plăcile și pereții** calculați ca plăci primesc armătura necesară pe fiecare strat, prin metoda Wood–Armer.
-- Barele de **lemn** (EN 1995-1-1, clasa de rezistență din numele materialului, ca C24 sau GL24h): încovoiere, întindere, compresiune cu flambaj, forfecare și flambaj lateral, cu kmod după durata încărcării și clasa de serviciu.
+- Barele de **lemn** (EN 1995-1-1, clasa de rezistență din numele materialului, ca C24 sau GL24h): încovoiere, întindere, compresiune cu flambaj, forfecare și flambaj lateral, cu kmod după durata încărcării și clasa de serviciu (zăpada e implicit de scurtă durată; un amplasament montan o poate lua de durată medie).
 - Pereții de **zidărie** (EN 1996-1-1 așa cum îl ia CR 6-2013): rezistența la efort axial la bază, la mijloc și la cap, forfecarea și încovoierea în plan, cu γM 2,2 (1,65 unde norma permite). Combinația seismică folosește aceleași rezistențe, cu eforturile ei.
 
 **Tabelul elementelor.** Un rând pentru fiecare element (o grindă făcută din mai multe piese în calcul e un rând, cu piesa cea mai solicitată): **gradul de utilizare** (verificarea cea mai solicitată împărțită la rezistența ei, ca bară și număr; peste 1 nu se verifică și e roșu), **verificarea determinantă** cu clauza ei și **combinația determinantă**. Filtrele aleg un **Material** sau un **Etaj**. Un clic pe rând selectează elementul în model. **Plăcile și pereții** de beton urmează, cu armătura necesară pe fiecare strat, în cm²/m.
@@ -116,7 +116,7 @@ După o rulare, secțiunea **Verificări** a dialogului **Rezultatele analizei**
 
 ![Pereții de zidărie ai unui etaj](shots/analysis-walls.webp)
 
-**Valorile de calcul.** Valorile proiectului (acoperirea cu beton, diametrele barelor și ale etrierilor, fyk, fvk0 și γM ale zidăriei, clasa de serviciu a lemnului) sunt sub **Valorile de calcul ale proiectului**, în secțiunea Verificări; cele proprii ale unui element sunt în proprietățile lui (mai jos). Un câmp gol ia valoarea implicită; fiecare schimbare este un pas de anulare, iar **Rulează din nou** verifică cu ea.
+**Valorile de calcul.** Valorile proiectului (acoperirea cu beton, diametrele barelor și ale etrierilor, fyk, fvk0 și γM ale zidăriei, clasa de serviciu a lemnului, metoda de **interacțiune la oțel** și durata **zăpezii la lemn**) sunt sub **Valorile de calcul ale proiectului**, în secțiunea Verificări; cele proprii ale unui element sunt în proprietățile lui (mai jos). Un câmp gol ia valoarea implicită; fiecare schimbare este un pas de anulare, iar **Rulează din nou** verifică cu ea.
 
 **Culori după gradul de utilizare.** **Colorează modelul după gradul de utilizare** (aici, sau **Grad de utilizare** pe cardul de peste vederea 3D) colorează fiecare bară, placă și perete verificat de la verde (0) prin galben și portocaliu (1) la roșu (peste 1), și în gri ce nu a fost verificat; planurile unui etaj arată aceleași culori pe plăcile și barele lui. Cât timp e pornit, diagramele îi cedează locul.
 

@@ -34,6 +34,20 @@ public static class DesignSettings
         new("gammaM", 1, 4, true, false, "the masonry's partial factor γM"),
     ];
     public static readonly string[] Systems = ["simple", "end", "interior", "cantilever", "flat"];
+    /// <summary>The steel members' interaction factors (6.3.3): EN 1993-1-1 Annex A (method 1, the Romanian annex's, the default) or Annex B (method 2).</summary>
+    public static readonly string[] SteelMethods = ["A", "B"];
+    /// <summary>The snow's load duration for timber's kmod (EN 1995-1-1 Table 2.2: medium or short term, as the site's climate says; short by default).</summary>
+    public static readonly string[] SnowDurations = ["short", "medium"];
+
+    /// <summary>A project's choice by name, or its default.</summary>
+    public static string Choice(JsonObject? project, string key, string[] choices) => (string?)project?[key] is { } v && choices.Contains(v) ? v : choices[0];
+
+    /// <summary>The project's choices: a key, its choices (the first the default).</summary>
+    static readonly (string Key, string[] Choices, string What)[] ProjectChoices =
+    [
+        ("steelInteraction", SteelMethods, "The steel interaction method is A (EN 1993-1-1 Annex A, method 1) or B (Annex B, method 2)."),
+        ("snowDuration", SnowDurations, "The snow's load duration for timber is short or medium."),
+    ];
 
     public static double? Num(JsonObject? o, string key) => o?[key] is JsonNode n && Json.Number(n) is { } v && double.IsFinite(v) ? v : null;
 
@@ -46,11 +60,18 @@ public static class DesignSettings
         var ids = Args.Ids(a);
         var element = ids.Count > 0;
         var keys = a.Select(x => x.Key).Where(k => k != "ids" && k != "id").ToList();
-        if (keys.Count == 0) throw new CommandException("Say a value: " + string.Join(", ", Numbers.Where(s => element ? s.Element : s.Project).Select(s => s.Name).Concat(element ? ["system"] : [])) + ".");
+        if (keys.Count == 0) throw new CommandException("Say a value: " + string.Join(", ", Numbers.Where(s => element ? s.Element : s.Project).Select(s => s.Name).Concat(element ? ["system"] : ProjectChoices.Select(x => x.Key))) + ".");
         void Apply(JsonObject own)
         {
             foreach (var k in keys)
             {
+                if (!element && ProjectChoices.FirstOrDefault(x => x.Key == k) is { Key: not null } pc)
+                {
+                    if (a[k] is null) own.Remove(k);
+                    else if ((string?)a[k] is { } s && pc.Choices.Contains(s)) own[k] = s;
+                    else throw new CommandException(pc.What);
+                    continue;
+                }
                 if (k == "system" && element)
                 {
                     if (a[k] is null) own.Remove(k);
@@ -96,8 +117,10 @@ public static class DesignSettings
         ["project"] = Project(m)?.DeepClone(),
         ["defaults"] = new JsonObject
         {
-            ["serviceClass"] = 1, ["cover"] = 0.030, ["bar"] = 0.016, ["stirrup"] = 0.008, ["fyk"] = 500e6, ["fvk0"] = 0.20e6, ["gammaM"] = 2.2,
+            ["serviceClass"] = 1, ["cover"] = 0.030, ["bar"] = 0.016, ["stirrup"] = 0.008, ["fyk"] = 500e6, ["fvk0"] = 0.20e6, ["gammaM"] = 2.2, ["steelInteraction"] = "A", ["snowDuration"] = "short",
         },
         ["systems"] = new JsonArray(Systems.Select(s => (JsonNode)s).ToArray()),
+        ["steelInteraction"] = new JsonArray(SteelMethods.Select(s => (JsonNode)s).ToArray()),
+        ["snowDuration"] = new JsonArray(SnowDurations.Select(s => (JsonNode)s).ToArray()),
     };
 }

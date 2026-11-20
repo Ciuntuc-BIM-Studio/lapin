@@ -104,7 +104,7 @@ public class DesignCheckTests
         // χy (curve b, λ̄y = 0.49874) = 0.88477, χz = 0.63642; NRk = 1835.35 kN; ny = 500/(0.88477·1835.35) = 0.30791, nz = 0.42806;
         // Cmy = 0.6 + 0.4·0 = 0.6; kyy = min(0.6(1 + (0.49874 − 0.2)·0.30791), 0.6(1 + 0.8·0.30791)) = 0.65519; kzy = 0.6 kyy = 0.39311;
         // My,Rk = 642.5·235 = 150.99 kN·m: eq. 6.61 = 0.30791 + 0.65519·30/150.99 = 0.43809; eq. 6.62 = 0.42808 + 0.39311·30/150.99 = 0.50619.
-        var m = new SteelMember(Heb200, Heb200P, 235e6, 210e9, 4, 4, 4, 0);
+        var m = new SteelMember(Heb200, Heb200P, 235e6, 210e9, 4, 4, 4, 0) { Method = "B" };
         var cs = SteelDesign.Check(m, [Set(4, _ => -500, x => 30 * (1 - x / 4), _ => -7.5)]);
         var i = Get(cs, "steel.interaction");
         Assert.Equal(0.6, V(i, "Cmy"), 6);
@@ -261,5 +261,33 @@ public class DesignCheckTests
         Assert.Equal(253.678, V(Get(cs, "masonry.bending"), "MRd"), 2);
         // A large eccentricity: e = 1.2 m > l/6, lc = 3(1.5 − 1.2) = 0.9 m.
         Assert.Equal(0.9, MasonryDesign.CompressedLength(3, 100, 120), 9);
+    }
+
+    [Fact]
+    public void Annex_A_method_1_interaction_of_the_same_HEB_200_column()
+    {
+        // EN 1993-1-1 Annex A (Tables A.1, A.2; the ECCS manual's Tables 3.13–3.15), class 1, laterally restrained (not susceptible: χLT = 1):
+        // Ncr,y = π²EIy/L² = 7378.52 kN, Ncr,z = 2594.66 kN; μy = (1 − N/Ncr,y)/(1 − χy N/Ncr,y) = 0.99169, μz = 0.92014;
+        // wy = 642.5/569.6 = 1.12798, wz = min(305.8/200.3, 1.5) = 1.5; npl = 500/1835.35 = 0.27243;
+        // Cmy,0 = 0.79 + 0.21·0 + 0.36(0 − 0.33)·500/7378.52 = 0.78195 (ψ = 0); λmax = λ̄z = 0.84105;
+        // Cyy = 1 + (wy − 1)[(2 − 1.6/wy Cmy² λmax − 1.6/wy Cmy² λmax²) npl] = 1.02291; Czy = 1 + (wy − 1)[(2 − 14 Cmy² λmax²/wy⁵) npl] = 0.95412;
+        // kyy = Cmy μy/(1 − N/Ncr,y)/Cyy = 0.81319; kzy = Cmy μz/(1 − N/Ncr,y)/Czy · 0.6√(wy/wz) = 0.42089;
+        // eq. 6.61 = 500/(0.88477·1835.35) + 0.81319·30/150.99 = 0.46948; eq. 6.62 = 500/(0.63642·1835.35) + 0.42089·30/150.99 = 0.51169.
+        var m = new SteelMember(Heb200, Heb200P, 235e6, 210e9, 4, 4, 4, 0);
+        Assert.Equal("A", m.Method);
+        var i = Get(SteelDesign.Check(m, [Set(4, _ => -500, x => 30 * (1 - x / 4), _ => -7.5)]), "steel.interaction");
+        Assert.Contains("Annex A", i.Clause);
+        Assert.Equal(0.99169, V(i, "μy"), 4);
+        Assert.Equal(0.781950, V(i, "Cmy"), 5);
+        Assert.Equal(1.02291, V(i, "Cyy"), 4);
+        Assert.Equal(0.81319, V(i, "kyy"), 4);
+        Assert.Equal(0.42089, V(i, "kzy"), 4);
+        Assert.Equal(0.46948, V(i, "eq. 6.61"), 4);
+        Assert.Equal(0.51169, i.Utilisation, 4);
+        // Table A.2: a simple span's uniform load 1 + 0.03 N/Ncr, its mid-span point load 1 − 0.18 N/Ncr.
+        var udl = MomentShape.Of(Set(4, _ => 0, x => x * (4 - x), _ => 0), 5);
+        Assert.Equal(1 + 0.03 * 0.1, SteelDesign.Cm0(udl, 0.1), 9);
+        var point = MomentShape.Of(Set(4, _ => 0, x => x <= 2 ? x : 4 - x, _ => 0), 5);
+        Assert.Equal(1 - 0.18 * 0.1, SteelDesign.Cm0(point, 0.1), 9);
     }
 }

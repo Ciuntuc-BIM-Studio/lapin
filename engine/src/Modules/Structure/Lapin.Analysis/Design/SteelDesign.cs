@@ -13,6 +13,8 @@ public sealed record SteelMember(SectionShape Shape, SectionProps P, double Fy, 
 {
     public double G => E / (2 * 1.3);
     public string LengthsSource { get; init; } = "";
+    /// <summary>The interaction factors of 6.3.3: "A" (Annex A, method 1: the default, the Romanian annex's) or "B" (Annex B, method 2).</summary>
+    public string Method { get; init; } = "A";
 }
 
 /// <summary>
@@ -313,40 +315,132 @@ public static class SteelDesign
         else if (s.Kind is "U" or "T" or "L" or "asymI" && myMax > 1e-9 && m.Llt > 1e-9)
             yield return new Check("steel.ltb", "Lateral torsional buckling", $"{Norm} 6.3.2", 0, [], $"Lateral torsional buckling of a „{s.Kind}” section is not done by Lapin: check it.", false);
 
-        // Bending and compression (6.3.3, eq. 6.61 and 6.62), Annex B (method 2).
+        // Bending and compression (6.3.3, eq. 6.61 and 6.62): Annex A (method 1) by default, Annex B (method 2) as the project says.
         if (nc > 1e-9 && (myMax > 1e-9 || mzMax > 1e-9))
         {
-            var nrk = p.Area * fy;
-            double ny = nc / (chiY * nrk / GammaM1), nz = nc / (chiZ * nrk / GammaM1);
             var shapeZ = MomentShape.Of(f, 4);
-            double cmy = Cm(shapeY), cmz = Cm(shapeZ), cmlt = Math.Max(0.4, Cm(shapeY));
-            double kyy, kzz, kyz, kzy;
-            var isI = s.Kind is "I" or "asymI" or "U" or "T";
-            if (plastic)
-            {
-                kyy = Math.Min(cmy * (1 + (lamY - 0.2) * ny), cmy * (1 + 0.8 * ny));
-                kzz = isI ? Math.Min(cmz * (1 + (2 * lamZ - 0.6) * nz), cmz * (1 + 1.4 * nz)) : Math.Min(cmz * (1 + (lamZ - 0.2) * nz), cmz * (1 + 0.8 * nz));
-                kyz = 0.6 * kzz;
-                if (susceptible)
-                {
-                    kzy = Math.Max(1 - 0.1 * lamZ / (cmlt - 0.25) * nz, 1 - 0.1 / (cmlt - 0.25) * nz);
-                    if (lamZ < 0.4) kzy = Math.Min(0.6 + lamZ, 1 - 0.1 * lamZ / (cmlt - 0.25) * nz);
-                }
-                else kzy = 0.6 * kyy;
-            }
-            else
-            {
-                kyy = Math.Min(cmy * (1 + 0.6 * lamY * ny), cmy * (1 + 0.6 * ny));
-                kzz = Math.Min(cmz * (1 + 0.6 * lamZ * nz), cmz * (1 + 0.6 * nz));
-                kyz = kzz;
-                kzy = susceptible ? Math.Max(1 - 0.05 * lamZ / (cmlt - 0.25) * nz, 1 - 0.05 / (cmlt - 0.25) * nz) : 0.8 * kyy;
-            }
-            double myrk = wy * fy, mzrk = wz * fy;
-            var u61 = ny + kyy * myMax / (chiLT * myrk / GammaM1) + kyz * mzMax / (mzrk / GammaM1);
-            var u62 = nz + kzy * myMax / (chiLT * myrk / GammaM1) + kzz * mzMax / (mzrk / GammaM1);
-            yield return new Check("steel.interaction", "Bending and compression (buckling)", $"{Norm} 6.3.3, Annex B", Math.Max(u61, u62),
-                [new("eq. 6.61", u61, ""), new("eq. 6.62", u62, ""), new("kyy", kyy, ""), new("kyz", kyz, ""), new("kzy", kzy, ""), new("kzz", kzz, ""), new("Cmy", cmy, ""), new("Cmz", cmz, ""), new("CmLT", cmlt, ""), new("χLT", chiLT, "")],
-                "Annex B (method 2); SR EN 1993-1-1/NA chooses Annex A (method 1): to be decided (plan-fem §12.9).", done);
+            if (m.Method == "B") yield return AnnexB(m, nc, myMax, mzMax, chiY, chiZ, lamY, lamZ, chiLT, susceptible, plastic, wy, wz, shapeY, shapeZ, done);
+            else yield return AnnexA(m, nc, myMax, mzMax, chiY, chiZ, lamY, lamZ, chiLT, plastic, shapeY, shapeZ, done);
         }
+    }
+
+    static Check AnnexB(SteelMember m, double nc, double myMax, double mzMax, double chiY, double chiZ, double lamY, double lamZ, double chiLT, bool susceptible, bool plastic,
+        double wy, double wz, MomentShape shapeY, MomentShape shapeZ, bool done)
+    {
+        var (s, p) = (m.Shape, m.P);
+        var fy = m.Fy / 1000;
+        var nrk = p.Area * fy;
+        double ny = nc / (chiY * nrk / GammaM1), nz = nc / (chiZ * nrk / GammaM1);
+        double cmy = Cm(shapeY), cmz = Cm(shapeZ), cmlt = Math.Max(0.4, Cm(shapeY));
+        double kyy, kzz, kyz, kzy;
+        var isI = s.Kind is "I" or "asymI" or "U" or "T";
+        if (plastic)
+        {
+            kyy = Math.Min(cmy * (1 + (lamY - 0.2) * ny), cmy * (1 + 0.8 * ny));
+            kzz = isI ? Math.Min(cmz * (1 + (2 * lamZ - 0.6) * nz), cmz * (1 + 1.4 * nz)) : Math.Min(cmz * (1 + (lamZ - 0.2) * nz), cmz * (1 + 0.8 * nz));
+            kyz = 0.6 * kzz;
+            if (susceptible)
+            {
+                kzy = Math.Max(1 - 0.1 * lamZ / (cmlt - 0.25) * nz, 1 - 0.1 / (cmlt - 0.25) * nz);
+                if (lamZ < 0.4) kzy = Math.Min(0.6 + lamZ, 1 - 0.1 * lamZ / (cmlt - 0.25) * nz);
+            }
+            else kzy = 0.6 * kyy;
+        }
+        else
+        {
+            kyy = Math.Min(cmy * (1 + 0.6 * lamY * ny), cmy * (1 + 0.6 * ny));
+            kzz = Math.Min(cmz * (1 + 0.6 * lamZ * nz), cmz * (1 + 0.6 * nz));
+            kyz = kzz;
+            kzy = susceptible ? Math.Max(1 - 0.05 * lamZ / (cmlt - 0.25) * nz, 1 - 0.05 / (cmlt - 0.25) * nz) : 0.8 * kyy;
+        }
+        double myrk = wy * fy, mzrk = wz * fy;
+        var u61 = ny + kyy * myMax / (chiLT * myrk / GammaM1) + kyz * mzMax / (mzrk / GammaM1);
+        var u62 = nz + kzy * myMax / (chiLT * myrk / GammaM1) + kzz * mzMax / (mzrk / GammaM1);
+        return new Check("steel.interaction", "Bending and compression (buckling)", $"{Norm} 6.3.3, Annex B", Math.Max(u61, u62),
+            [new("eq. 6.61", u61, ""), new("eq. 6.62", u62, ""), new("kyy", kyy, ""), new("kyz", kyz, ""), new("kzy", kzy, ""), new("kzz", kzz, ""), new("Cmy", cmy, ""), new("Cmz", cmz, ""), new("CmLT", cmlt, ""), new("χLT", chiLT, "")],
+            "Annex B (method 2), as the project chose (analysis.setDesign steelInteraction); SR EN 1993-1-1/NA's is Annex A.", done);
+    }
+
+    /// <summary>Cmi,0 of Table A.2: linear end moments 0.79 + 0.21ψ + 0.36(ψ − 0.33) N/Ncr; a simple span's uniform load 1 + 0.03 N/Ncr, its mid-span point load 1 − 0.18 N/Ncr; otherwise 1.0.</summary>
+    public static double Cm0(MomentShape m, double nOverNcr) =>
+        m.Linear || Math.Abs(m.Ms) < 1e-12 ? 0.79 + 0.21 * m.Psi + 0.36 * (m.Psi - 0.33) * nOverNcr
+        : m.SimpleSpan ? (m.Uniform ? 1 + 0.03 * nOverNcr : 1 - 0.18 * nOverNcr)
+        : 1.0;
+
+    /// <summary>
+    /// Annex A (method 1), Tables A.1 and A.2, as corrected (Corrigendum to EN 1993-1-1; the ECCS design manual, Simões da Silva et
+    /// al., Tables 3.13–3.15): μ, w, npl, aLT, λ0 (lateral torsional buckling under a uniform moment), Ncr,T, the C factors and kij.
+    /// </summary>
+    static Check AnnexA(SteelMember m, double nc, double myMax, double mzMax, double chiY, double chiZ, double lamY, double lamZ, double chiLT, bool plastic,
+        MomentShape shapeY, MomentShape shapeZ, bool done)
+    {
+        var p = m.P;
+        var fy = m.Fy / 1000;
+        var e = m.E / 1000;
+        var g = m.G / 1000;
+        double ncrY = Math.PI * Math.PI * e * p.I33 / (m.LcrY * m.LcrY), ncrZ = Math.PI * Math.PI * e * p.I22 / (m.LcrZ * m.LcrZ);
+        var lt = m.Llt > 1e-9 ? m.Llt : m.L;
+        var i0 = (p.I33 + p.I22) / p.Area;
+        var ncrT = (g * p.J + Math.PI * Math.PI * e * (p.Iw ?? 0) / (lt * lt)) / i0;
+        double ry = nc / ncrY, rz = nc / ncrZ, rt = nc / ncrT;
+        var nrk = p.Area * fy;
+        double muY = (1 - ry) / (1 - chiY * ry), muZ = (1 - rz) / (1 - chiZ * rz);
+        double wy = plastic ? Math.Min(1.5, p.Z33 / p.S33) : 1, wz = plastic ? Math.Min(1.5, p.Z22 / p.S22) : 1;
+        var npl = nc / (nrk / GammaM1);
+        var aLT = Math.Max(0, 1 - p.J / p.I33);
+        // λ0: lateral torsional buckling under a uniform moment over the unrestrained length (none when restrained).
+        var lam0 = 0.0;
+        var c1 = C1Of(shapeY).C1;
+        if (m.Shape.Kind == "I" && m.Llt > 1e-9 && p.Iw is { } iw)
+            lam0 = Math.Sqrt((plastic ? p.Z33 : p.S33) * fy / Mcr(1, m.E, m.G, p.I22, iw, p.J, m.Llt));
+        var limit = 0.2 * Math.Sqrt(c1) * Math.Pow(Math.Max(0, (1 - rz) * (1 - rt)), 0.25);
+        var torsional = !(p.J >= p.I33) && lam0 > limit;
+        double cmy0 = Cm0(shapeY, ry), cmz0 = Cm0(shapeZ, rz);
+        double cmy, cmz = cmz0, cmlt = 1;
+        if (!torsional) cmy = cmy0;
+        else
+        {
+            var epsY = myMax / nc * p.Area / p.S33;
+            var r = Math.Sqrt(epsY * aLT);
+            cmy = cmy0 + (1 - cmy0) * r / (1 + r);
+            cmlt = Math.Max(1, cmy * cmy * aLT / Math.Sqrt(Math.Max(1e-12, (1 - rz) * (1 - rt))));
+        }
+        var chiLt = torsional ? chiLT : 1.0;
+        double mplY = p.Z33 * fy / GammaM0, mplZ = p.Z22 * fy / GammaM0;
+        var lamMax = Math.Max(lamY, lamZ);
+        double kyy, kyz, kzy, kzz;
+        double cyy = 1, cyz = 1, czy = 1, czz = 1;
+        if (plastic)
+        {
+            var z4 = Math.Pow(lamZ, 4);
+            var bLT = 0.5 * aLT * lam0 * lam0 * myMax / (chiLt * mplY) * mzMax / mplZ;
+            var cLT = 10 * aLT * lam0 * lam0 / (5 + z4) * myMax / (cmy * chiLt * mplY);
+            var dLT = 2 * aLT * lam0 / (0.1 + z4) * myMax / (cmy * chiLt * mplY) * mzMax / (cmz * mplZ);
+            var eLT = 1.7 * aLT * lam0 / (0.1 + z4) * myMax / (cmy * chiLt * mplY);
+            cyy = Math.Max(p.S33 / p.Z33, 1 + (wy - 1) * ((2 - 1.6 / wy * cmy * cmy * lamMax - 1.6 / wy * cmy * cmy * lamMax * lamMax) * npl - bLT));
+            cyz = Math.Max(0.6 * Math.Sqrt(wz / wy) * p.S22 / p.Z22, 1 + (wz - 1) * ((2 - 14 * cmz * cmz * lamMax * lamMax / Math.Pow(wz, 5)) * npl - cLT));
+            czy = Math.Max(0.6 * Math.Sqrt(wy / wz) * p.S33 / p.Z33, 1 + (wy - 1) * ((2 - 14 * cmy * cmy * lamMax * lamMax / Math.Pow(wy, 5)) * npl - dLT));
+            czz = Math.Max(p.S22 / p.Z22, 1 + (wz - 1) * ((2 - 1.6 / wz * cmz * cmz * lamMax - 1.6 / wz * cmz * cmz * lamMax * lamMax - eLT) * npl));
+            kyy = cmy * cmlt * muY / (1 - ry) / cyy;
+            kyz = cmz * muY / (1 - rz) / cyz * 0.6 * Math.Sqrt(wz / wy);
+            kzy = cmy * cmlt * muZ / (1 - ry) / czy * 0.6 * Math.Sqrt(wy / wz);
+            kzz = cmz * muZ / (1 - rz) / czz;
+        }
+        else
+        {
+            kyy = cmy * cmlt * muY / (1 - ry);
+            kyz = cmz * muY / (1 - rz);
+            kzy = cmy * cmlt * muZ / (1 - ry);
+            kzz = cmz * muZ / (1 - rz);
+        }
+        double myrk = (plastic ? p.Z33 : p.S33) * fy, mzrk = (plastic ? p.Z22 : p.S22) * fy;
+        var u61 = nc / (chiY * nrk / GammaM1) + kyy * myMax / (chiLt * myrk / GammaM1) + kyz * mzMax / (mzrk / GammaM1);
+        var u62 = nc / (chiZ * nrk / GammaM1) + kzy * myMax / (chiLt * myrk / GammaM1) + kzz * mzMax / (mzrk / GammaM1);
+        var beyond = ry >= 1 || rz >= 1;
+        return new Check("steel.interaction", "Bending and compression (buckling)", $"{Norm} 6.3.3, Annex A", beyond ? 99 : Math.Max(u61, u62),
+            [new("eq. 6.61", u61, ""), new("eq. 6.62", u62, ""), new("kyy", kyy, ""), new("kyz", kyz, ""), new("kzy", kzy, ""), new("kzz", kzz, ""),
+             new("Cmy", cmy, ""), new("Cmz", cmz, ""), new("CmLT", cmlt, ""), new("μy", muY, ""), new("μz", muZ, ""), new("Cyy", cyy, ""), new("Czy", czy, ""),
+             new("npl", npl, ""), new("λ0", lam0, ""), new("Ncr,T", ncrT, "kN"), new("χLT", chiLt, "")],
+            $"Annex A (method 1, the Romanian annex's); {(torsional ? "susceptible to torsional deformations (λ0 over 0.2√C1·⁴√((1 − N/Ncr,z)(1 − N/Ncr,T)))" : "not susceptible to torsional deformations: χLT = 1")}; Cmi,0 by Table A.2.", done);
     }
 }

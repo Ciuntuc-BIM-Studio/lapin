@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Lapin.Analysis;
 using Lapin.Analysis.Design;
 using Lapin.Analysis.Solver;
 using Lapin.Geometry;
@@ -97,6 +98,13 @@ public class DesignRunTests(Xunit.Abstractions.ITestOutputHelper output)
         Assert.Throws<CommandException>(() => f.Run("analysis.setDesign", new JsonObject { ["ids"] = new JsonArray(col), ["kz"] = 50 }));
         Assert.Throws<CommandException>(() => f.Run("analysis.setDesign", new JsonObject { ["ids"] = new JsonArray(col), ["cover"] = 0.03 }));
         Assert.Throws<CommandException>(() => f.Run("analysis.setDesign", new JsonObject { ["serviceClass"] = 1.5 }));
+        // Annex A by default (the Romanian annex's), Annex B the project's choice; the column looks unbraced (no wall, no bracing).
+        Assert.Contains("Annex A", (string?)cs.Single(c => (string?)c["key"] == "steel.interaction")["clause"]);
+        Assert.Contains(Q(f, "checks")["notes"]!.AsArray(), n => ((string)n!).StartsWith("No wall or bracing along X and Y"));
+        f.Run("analysis.setDesign", new JsonObject { ["steelInteraction"] = "B" });
+        var ib = Q(f, "check", new JsonObject { ["id"] = col })["members"]!.AsArray()[0]!["checks"]!.AsArray().Select(c => c!.AsObject()).Single(c => (string?)c["key"] == "steel.interaction");
+        Assert.Contains("Annex B", (string?)ib["clause"]);
+        Assert.Throws<CommandException>(() => f.Run("analysis.setDesign", new JsonObject { ["steelInteraction"] = "C" }));
         f.Run("analysis.setDesign", new JsonObject { ["serviceClass"] = 2 });
         Assert.Equal(2, (double)Q(f, "designOptions")["project"]!["serviceClass"]!);
         f.Run("analysis.setDesign", new JsonObject { ["ids"] = new JsonArray(col), ["kz"] = null });
@@ -123,6 +131,13 @@ public class DesignRunTests(Xunit.Abstractions.ITestOutputHelper output)
         var defl = cs.Single(c => (string?)c["key"] == "timber.deflection");
         Assert.True((bool)defl["done"]!);
         Assert.StartsWith("slsc/", (string?)defl["combination"]);
+        // Snow is a short-term action by default, medium-term as the project says (EN 1995-1-1 Table 2.2).
+        var snowCase = new LoadCase("s", "S", "Snow", LoadCases.Variable, "SNOW_S", false, [LoadCases.Snow], Categories.Snow, null);
+        Assert.Equal("short", AnalysisRun.DurationOf(snowCase));
+        Assert.Equal("medium", AnalysisRun.DurationOf(snowCase, "medium"));
+        f.Run("analysis.setDesign", new JsonObject { ["snowDuration"] = "medium" });
+        Assert.Equal("medium", DesignRun.Of(f.Session.Reader).Run.SnowDuration);
+        Assert.Contains("medium-term", (string?)Q(f, "check", new JsonObject { ["id"] = t.Beams[0] })["members"]!.AsArray()[0]!["checks"]!.AsArray().Single(c => (string?)c!["key"] == "timber.section")!["note"]);
         // The slab on the beams holds them sideways: no lateral torsional buckling.
         Assert.DoesNotContain(cs, c => (string?)c["key"] == "timber.ltb");
     }

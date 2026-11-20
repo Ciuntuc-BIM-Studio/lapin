@@ -38,8 +38,8 @@ export interface WallStoreyDto { id: string; name: string; walls: WallDto[]; sum
 export interface WallsDto { ok: boolean; indicative: boolean; storeys: WallStoreyDto[]; notes: string[] }
 
 export interface DesignOptionsDto {
-  project: Record<string, number> | null;
-  defaults: { serviceClass: number; cover: number; bar: number; stirrup: number; fyk: number; fvk0: number; gammaM: number };
+  project: Record<string, number | string> | null;
+  defaults: { serviceClass: number; cover: number; bar: number; stirrup: number; fyk: number; fvk0: number; gammaM: number; steelInteraction?: string; snowDuration?: string };
   systems: string[];
 }
 

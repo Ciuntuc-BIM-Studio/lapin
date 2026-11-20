@@ -188,20 +188,36 @@ function DesignValues() {
   const o = useAnalysis<DesignOptionsDto>('analysis.designOptions');
   if (!o) return null;
   const own = o.project ?? {};
-  const set = (key: string, v: number | null) => void execute('analysis.setDesign', { [key]: v });
+  const set = (key: string, v: number | string | null) => void execute('analysis.setDesign', { [key]: v });
   return (
     <details className="small" data-testid="checks-design-values">
       <summary>Design values of the project</summary>
       <div className="row wrap">
         {PROJECT_FIELDS.map((f) => (
-          <Field key={f.key} label={f.label} title={f.title} test={`design-${f.key}`} value={projectText(own[f.key], f.scale)}
+          <Field key={f.key} label={f.label} title={f.title} test={`design-${f.key}`} value={projectText(own[f.key] as number | undefined, f.scale)}
             placeholder={projectText(o.defaults[f.key], f.scale)} onApply={(text) => { const v = projectValue(text, f.scale); if (v !== undefined) set(f.key, v); return v !== undefined; }} />
         ))}
         <label className="row small" title="The timber's service class (EN 1995-1-1 2.3.1.3): 1 dry, 2 humid, 3 outdoors; an element can have its own">
           <span>Timber service class</span>
-          <select aria-label="Timber service class" data-testid="design-serviceClass" value={own.serviceClass ?? ''} onChange={(e) => set('serviceClass', e.target.value === '' ? null : Number(e.target.value))}>
+          <select aria-label="Timber service class" data-testid="design-serviceClass" value={(own.serviceClass as number | undefined) ?? ''} onChange={(e) => set('serviceClass', e.target.value === '' ? null : Number(e.target.value))}>
             <option value="">Default</option>
             {[1, 2, 3].map((c) => <option key={c} value={c} data-no-i18n>{c}</option>)}
+          </select>
+        </label>
+        <label className="row small" title="The interaction factors of members in bending and compression (EN 1993-1-1 6.3.3): Annex A (method 1, the Romanian national annex's) or Annex B (method 2)">
+          <span>Steel interaction</span>
+          <select aria-label="Steel interaction" data-testid="design-steelInteraction" value={(own.steelInteraction as string | undefined) ?? ''} onChange={(e) => set('steelInteraction', e.target.value === '' ? null : e.target.value)}>
+            <option value="">Default (Annex A)</option>
+            <option value="A">Annex A (method 1)</option>
+            <option value="B">Annex B (method 2)</option>
+          </select>
+        </label>
+        <label className="row small" title="The snow's load duration for timber's kmod (EN 1995-1-1 Table 2.2): short-term, or medium-term for a mountain site">
+          <span>Snow on timber</span>
+          <select aria-label="Snow on timber" data-testid="design-snowDuration" value={(own.snowDuration as string | undefined) ?? ''} onChange={(e) => set('snowDuration', e.target.value === '' ? null : e.target.value)}>
+            <option value="">Default (short-term)</option>
+            <option value="short">Short-term</option>
+            <option value="medium">Medium-term</option>
           </select>
         </label>
       </div>
