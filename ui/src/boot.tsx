@@ -19,7 +19,7 @@ import { brand } from './platform/brand';
 document.title = brand.name;
 if (brand.accent) {
   const style = document.createElement('style');
-  style.textContent = `:root, [data-theme="paper"] { --accent: ${brand.accent.light}; } [data-theme="graphite"] { --accent: ${brand.accent.dark}; }`;
+  style.textContent = `:root:not([data-theme]), [data-theme="paper"] { --accent: ${brand.accent.light}; } [data-theme="graphite"] { --accent: ${brand.accent.dark}; }`;
   document.head.appendChild(style);
 }
 

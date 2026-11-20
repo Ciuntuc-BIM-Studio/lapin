@@ -6,7 +6,7 @@
  * from the shortcuts' registry.
  */
 
-import { setPrefs, usePrefs } from '../app/prefs';
+import { quickToggleTheme, setPrefs, usePrefs } from '../app/prefs';
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Moon, Redo2, Search, Sun, Undo2 } from 'lucide-react';
 import { HelpMenu } from './HelpMenu';
@@ -203,7 +203,7 @@ export function Ribbon() {
           <button type="button" className="undo-btn" disabled={!doc?.canUndo} onClick={() => void undo()} title={undoTitle('Undo', doc?.undoLabel, undoKeys)} aria-label="Undo"><Undo2 size={16} strokeWidth={1.8} /><span className="undo-text">Undo</span></button>
           <button type="button" className="undo-btn" disabled={!doc?.canRedo} onClick={() => void redo()} title={undoTitle('Redo', doc?.redoLabel, redoKeys)} aria-label="Redo"><Redo2 size={16} strokeWidth={1.8} /><span className="undo-text">Redo</span></button>
         </span>
-        <button type="button" className="icon" title="Theme" onClick={() => { const next = theme === 'paper' ? 'graphite' : 'paper'; setPrefs({ theme: next }); useUi.setState({ theme: next }); }}>{theme === 'paper' ? <Moon size={15} /> : <Sun size={15} />}</button>
+        <button type="button" className="icon" title="Theme" onClick={() => { const next = quickToggleTheme(theme, usePrefs.getState().lastLight); setPrefs({ theme: next }); useUi.setState({ theme: next }); }}>{theme !== 'graphite' ? <Moon size={15} /> : <Sun size={15} />}</button>
         <HelpMenu />
       </div>
       {tab && mode === 'large' && (tab.id === MY_TAB ? <MyToolsBand icons={false} /> : <Band tab={tab} icons={false} />)}

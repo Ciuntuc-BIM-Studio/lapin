@@ -16,7 +16,7 @@ import { NAV_STYLES, NAV_STYLE_IDS, type NavStyleId } from '../app/navStyle';
 import { MaterialStandardChoice } from './MaterialStandardChoice';
 import { POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, usePrefs, type CoordSystem, type ThemeChoice } from '../app/prefs';
 import { setDisplay, useDisplay, type Display } from '../app/display';
-import { ACCENT_3D, setHighlight, useHighlight } from '../app/highlight';
+import { themeAccent3D, setHighlight, useHighlight } from '../app/highlight';
 import { ColourField, PaletteManager } from './ColourField';
 import { setLocationShown, setUcs, surveyPoint, ucsOf, useLocation } from '../app/location';
 import { LANGUAGES, setLang, useLang } from '../i18n';
@@ -82,7 +82,7 @@ function LibrariesPage() {
     {problems.length > 0 && <p className="muted small" data-no-i18n>{problems.join(' ')}</p>}
   </>;
 }
-const THEMES: { id: ThemeChoice; label: string }[] = [{ id: 'paper', label: 'Light theme' }, { id: 'graphite', label: 'Dark theme' }, { id: 'system', label: 'As the system' }];
+const THEMES: { id: ThemeChoice; label: string }[] = [{ id: 'paper', label: 'Light theme' }, { id: 'graphite', label: 'Dark theme' }, { id: 'classic', label: 'Classic theme' }, { id: 'contrast', label: 'High contrast theme' }, { id: 'system', label: 'As the system' }];
 const DISPLAY: { key: keyof Display; label: string }[] = [
   { key: 'grid', label: 'Grid in plans and 3D (F7)' },
   { key: 'thinLines', label: 'Thin lines (TL)' },
@@ -234,8 +234,8 @@ export function PreferencesDialog() {
               <h4>Selection and preselection</h4>
               <label className="row small"><input type="checkbox" data-field="prefs-preselect" checked={hl.preselect} onChange={(e) => setHighlight({ preselect: e.target.checked })} /> Preselection highlight: light up what the cursor is over before a click, in plans, sections, sheets and 3D</label>
               <div className="pref-colours" data-testid="prefs-highlight">
-                <label className="row small"><span>Preselection colour</span> <ColourField value={hl.preselectColour ?? hl.selectColour ?? ACCENT_3D} disabled={!hl.preselect} data-field="prefs-preselect-colour" onChange={(c) => setHighlight({ preselectColour: c })} /></label>
-                <label className="row small"><span>Selection colour</span> <ColourField value={hl.selectColour ?? ACCENT_3D} data-field="prefs-select-colour" onChange={(c) => setHighlight({ selectColour: c })} /></label>
+                <label className="row small"><span>Preselection colour</span> <ColourField value={hl.preselectColour ?? hl.selectColour ?? themeAccent3D()} disabled={!hl.preselect} data-field="prefs-preselect-colour" onChange={(c) => setHighlight({ preselectColour: c })} /></label>
+                <label className="row small"><span>Selection colour</span> <ColourField value={hl.selectColour ?? themeAccent3D()} data-field="prefs-select-colour" onChange={(c) => setHighlight({ selectColour: c })} /></label>
                 <button type="button" className="btn compact" disabled={!hl.preselectColour && !hl.selectColour} onClick={() => setHighlight({ preselectColour: null, selectColour: null })}>Default colours</button>
               </div>
               <h4>Mouse navigation</h4>

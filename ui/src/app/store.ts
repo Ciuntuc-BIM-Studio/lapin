@@ -11,10 +11,10 @@
  * main window.
  */
 
-import { startTheme } from './prefs';
+import { startTheme, type ThemeName } from './prefs';
 import { create } from 'zustand';
 
-export type Theme = 'paper' | 'graphite';
+export type Theme = ThemeName;
 /**
  * The views of the panes; 'gantt' is the planning module's, 'estimate' and 'costTime' the cost module's (a module adds its
  * own through `views`, named by any string: a module outside this repository too).

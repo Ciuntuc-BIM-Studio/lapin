@@ -2585,6 +2585,8 @@ export const LO: Record<string, string> = {
   // Lapin for the browser (decision 482)
   'Light theme': 'ຮູບແບບສີອ່ອນ',
   'Dark theme': 'ຮູບແບບສີເຂັ້ມ',
+  'Classic theme': 'ຮູບແບບຄລາສສິກ',
+  'High contrast theme': 'ຮູບແບບຄວາມຄົມຊັດສູງ',
   'A Lapin project. To work on it, open this file in Lapin: File → Open.': 'ໂປຣເຈັກ Lapin. ເພື່ອເຮັດວຽກກັບມັນ, ໃຫ້ເປີດໄຟລ໌ນີ້ໃນ Lapin: ໄຟລ໌ → ເປີດ.',
   'A model exported from Lapin, to look at in a browser.': 'ແບບຈຳລອງທີ່ສົ່ງອອກຈາກ Lapin, ເພື່ອເບິ່ງໃນບຣາວເຊີ.',
   'Exported': 'ສົ່ງອອກແລ້ວ',

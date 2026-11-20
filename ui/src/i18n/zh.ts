@@ -2529,6 +2529,8 @@ export const ZH: Record<string, string> = {
   // Lapin for the browser (decision 482)
   'Light theme': '浅色主题',
   'Dark theme': '深色主题',
+  'Classic theme': '经典主题',
+  'High contrast theme': '高对比度主题',
   'A Lapin project. To work on it, open this file in Lapin: File → Open.': '一个 Lapin 项目。要继续编辑，请在 Lapin 中打开此文件：文件 → 打开。',
   'A model exported from Lapin, to look at in a browser.': '从 Lapin 导出的模型，可在浏览器中查看。',
   'Exported': '导出时间',

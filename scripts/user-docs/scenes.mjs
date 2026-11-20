@@ -5596,6 +5596,34 @@ export const scenes = [
     },
   },
   {
+    // The Classic and High contrast looks: the plan with a wall selected in each, and File → Preferences → Theme.
+    id: 'themes',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      const wall = (await t.nodes()).find((n) => n.type === 'IfcWall');
+      t.expect(!!wall, 'a wall to select');
+      await select(t, wall.id);
+      for (const id of ['classic', 'contrast']) {
+        await t.ui({ theme: id });
+        await t.wait(500);
+        t.expect(await t.page.evaluate(() => document.documentElement.dataset.theme) === id, `the ${id} theme is on`);
+        await t.shot(`theme-${id}`);
+      }
+      await t.ui({ theme: 'paper' });
+      await t.page.keyboard.press('Control+Comma');
+      await t.wait(400);
+      if (await t.page.locator('[data-testid=preferences]').count() === 0) await t.ui({ dialog: 'preferences' });
+      await t.page.waitForSelector('[data-testid=preferences]', { timeout: 10_000 });
+      t.expect(await t.page.getByRole('radio', { name: 'Classic theme' }).count() === 1 && await t.page.getByRole('radio', { name: 'High contrast theme' }).count() === 1, 'Preferences lists Classic and High contrast');
+      await t.shot('theme-list', { of: '.prefs-dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     id: 'site',
     async run(t) {
       await t.fresh();

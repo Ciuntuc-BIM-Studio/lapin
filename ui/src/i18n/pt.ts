@@ -2529,6 +2529,8 @@ export const PT: Record<string, string> = {
   // Lapin for the browser (decision 482)
   'Light theme': 'Tema claro',
   'Dark theme': 'Tema escuro',
+  'Classic theme': 'Tema clássico',
+  'High contrast theme': 'Tema de alto contraste',
   'A Lapin project. To work on it, open this file in Lapin: File → Open.': 'Um projeto Lapin. Para trabalhar nele, abra este arquivo no Lapin: Arquivo → Abrir.',
   'A model exported from Lapin, to look at in a browser.': 'Um modelo exportado do Lapin, para ver em um navegador.',
   'Exported': 'Exportado',

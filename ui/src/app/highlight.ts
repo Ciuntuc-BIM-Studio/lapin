@@ -62,8 +62,12 @@ export function setHighlight(patch: Partial<Highlight>): void {
   applyHighlight();
 }
 
+/** What 3D draws the selection in when no colour was chosen: the paper accent, or the theme's own blue in classic and contrast (the page's data-theme). */
+const THEME_3D: Record<string, string> = { classic: '#0067c0', contrast: '#003f9e' };
+export const themeAccent3D = (): string => (typeof document === 'undefined' ? ACCENT_3D : THEME_3D[document.documentElement.dataset.theme ?? ''] ?? ACCENT_3D);
+
 /** The 3D view's colours: the selection's, and the preselection's (its own, else the selection's). */
-export const selectionColour = (h: Highlight = useHighlight.getState()): string => h.selectColour ?? ACCENT_3D;
+export const selectionColour = (h: Highlight = useHighlight.getState()): string => h.selectColour ?? themeAccent3D();
 export const preselectionColour = (h: Highlight = useHighlight.getState()): string => h.preselectColour ?? selectionColour(h);
 
 applyHighlight();

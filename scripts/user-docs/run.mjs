@@ -73,7 +73,7 @@ const langs = args.includes('--lang') ? String(args[args.indexOf('--lang') + 1])
 if (!langs.every((l) => LANGS.includes(l))) { console.error(`✗ --lang: one or more of ${LANGS.join(', ')}`); process.exit(1); }
 // Another theme (report #110): its pictures beside the guide's, never in it, to look at.
 const theme = args.includes('--theme') ? args[args.indexOf('--theme') + 1] : null;
-if (theme && !['paper', 'graphite'].includes(theme)) { console.error('✗ --theme: paper or graphite'); process.exit(1); }
+if (theme && !['paper', 'graphite', 'classic', 'contrast'].includes(theme)) { console.error('✗ --theme: paper, graphite, classic or contrast'); process.exit(1); }
 /** A language's pictures: shots/ for English, shots/<id>/ for the others (shots-<theme>/ for another theme's). */
 const shotsOf = (lang) => { const base = theme ? join(out, `shots-${theme}`) : shots; return lang === 'en' ? base : join(base, lang); };
 const store = theme ? null : stateStore(root, productId.endsWith('.json') ? resolveProduct(root, productId).id : productId, args.includes('--out') ? `${out}-cache` : undefined);

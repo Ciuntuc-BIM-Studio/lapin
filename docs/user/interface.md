@@ -165,17 +165,27 @@ Click an icon on a folded panel's rail to open the panel over the view without u
 
 ![Browser and properties stacked on the left](shots/panel-layouts.webp)
 
-## Light and dark
+## Light, dark, Classic and High contrast
 
-The moon at the right end of the ribbon turns the interface dark (graphite); the sun turns it light again (paper). In the dark theme plans, sections and elevations lie on the dark background, their black pens in light ink; sheets stay paper. The configurators' small drawings (a door's or window's plan, section and elevation, a roof's, a balcony's, an elevator's, a hall's, a stair's…) and the previews of tags, title blocks and materials are drawn on a light paper card in both themes, so their lines, texts and dimensions read as on a printed drawing.
+The moon at the right end of the ribbon turns the interface dark (graphite); the sun turns it back to the light theme you used last (paper, Classic or High contrast). In the dark theme plans, sections and elevations lie on the dark background, their black pens in light ink; sheets stay paper. The configurators' small drawings (a door's or window's plan, section and elevation, a roof's, a balcony's, an elevator's, a hall's, a stair's…) and the previews of tags, title blocks and materials are drawn on a light paper card in both themes, so their lines, texts and dimensions read as on a printed drawing.
 
-The theme is kept: Lapin starts again in the one you left it in. **File → Preferences…** also offers **As the system**, which follows the computer's own light or dark setting.
+The theme is kept: Lapin starts again in the one you left it in. **File → Preferences…** lists **Light theme**, **Dark theme**, **Classic theme**, **High contrast theme** and **As the system**, which follows the computer's own light or dark setting.
+
+**Classic** is a neutral grey desktop look, and it suits users coming from other desktop BIM tools: grey ribbon, tabs and dialogs, white panels, a white plan and section canvas with black lines, a blue accent and selection, the system's own font a little smaller, square corners and plain labels.
+
+![A plan with a wall selected in the Classic theme](shots/theme-classic.webp)
+
+**High contrast** is white and black with a deep blue accent. All text and borders reach a contrast of 7:1 or more, keyboard focus is a 3 px outline, a selected element is drawn heavier in plans and in 3D, and the grid stays quiet but visible. Underlays and halftones stay readable.
+
+![The same plan in the High contrast theme](shots/theme-contrast.webp)
+
+![Preferences → General: the theme list](shots/theme-list.webp)
 
 ## Preferences
 
 **File → Preferences…** (<kbd>Ctrl</kbd>+<kbd>,</kbd>, also in **View → Interface**) holds your own settings, kept on this computer for every project and applied at once:
 
-- **General**: the theme (light, dark, or as the system), the language, and links to **Interface…** and **Keyboard shortcuts…**.
+- **General**: the theme (light, dark, Classic, High contrast, or as the system), the language, and links to **Interface…** and **Keyboard shortcuts…**.
   Under **Keyboard**, besides the letter shortcuts, **A click outside an input box accepts it** (off by default): with a value typed in the box beside the cursor (a length, an angle, a width) or on the command line, a left click elsewhere takes the value as <kbd>Enter</kbd> does, and that click is used up, so it places no point of its own; <kbd>Esc</kbd> or a right click throws the typed value away instead. In a plan or a drawing the click on the view already takes a typed length, with the click giving the direction, whichever way this is set. Fields in the Properties panel take their value when you click away, always.
 - **Grid and snaps**: the plan's grid, adaptive or fixed, snapping to it, which object snaps the cursor takes, and the polar tracking angle (see [Snaps and helpers](drafting.md#snaps-and-helpers)). Under **Temporary dimensions**, the same choices as **Annotate → Temporary dimensions…**: where the temporary dimensions of walls, columns and beams measure from and to (**Centrelines**, **Faces**, **Centre of core**, **Faces of core** or **Reference line**), and those of doors and windows (**Centrelines** or **Openings**); see [Dimension reference](walls.md#dimension-reference-core-face-to-core-face).
 - **Coordinates**: what the status line reads at the cursor, whether the project's points are shown, and the UCS (see [Real coordinates](site.md#real-coordinates)).

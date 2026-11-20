@@ -725,12 +725,21 @@ export const FAQ: Entry[] = [
     source: 'faq',
   },
   {
+    id: 'classic-contrast-theme',
+    q: ['Is there a classic grey look, like other desktop BIM tools?', 'How do I get a high contrast theme?', 'The interface is hard to read, can I make it sharper?'],
+    qRo: ['Există un aspect clasic, gri, ca în alte programe BIM de birou?', 'Cum activez tema cu contrast ridicat?', 'Interfața se citește greu, o pot face mai clară?'],
+    keywords: ['classic', 'grey', 'gray', 'theme', 'high contrast', 'contrast', 'accessibility', 'readable', 'clasic', 'gri', 'tema', 'accesibilitate', 'clasico', 'classique', 'klassisch', 'contraste', '经典'],
+    a: 'File → Preferences → Theme offers two more looks besides Light and Dark. Classic is a neutral grey desktop look: grey ribbon and dialogs, white panels and white plan and section canvas with black lines, a blue accent, the system font a little smaller, square corners; it suits users coming from other desktop BIM tools. High contrast is white and black with a deep blue accent: all text and borders at 7:1 or more, thick focus outlines, a heavier selection in plans and 3D, a quiet but visible grid. The sun/moon button at the right of the tab row switches between the dark theme and the light one you used last.',
+    aRo: 'Fișier → Preferințe → Temă mai oferă două aspecte pe lângă Luminos și Întunecat. Clasic este un aspect de program desktop, gri neutru: panglică și dialoguri gri, panouri și pânză de plan și secțiune albe, cu linii negre, accent albastru, fontul sistemului puțin mai mic, colțuri drepte; se potrivește celor care vin din alte programe BIM de birou. Contrast ridicat este alb și negru cu un accent albastru închis: tot textul și toate chenarele la 7:1 sau mai mult, contururi groase de focus, selecție mai groasă în plan și 3D, grilă discretă dar vizibilă. Butonul soare/lună din dreapta rândului de file comută între tema întunecată și ultima temă luminoasă folosită.',
+    source: 'themes',
+  },
+  {
     id: 'dark-theme',
     q: ['How do I switch to the dark theme?', 'The lines are invisible in the dark theme', 'Can I use a dark interface?'],
     qRo: ['Cum trec la tema întunecată?', 'Liniile nu se văd în tema întunecată', 'Pot folosi o interfață întunecată?'],
     keywords: ['dark', 'theme', 'night', 'graphite', 'invisible', 'contrast', 'tema', 'intunecata', 'intunecat', 'noapte', 'grafit', 'invizibile', 'oscuro', 'sombre', 'scuro', 'dunkel', 'ciemny', 'mork', 'escuro', '深色'],
-    a: 'The moon at the right of the tab row turns the interface dark (graphite); the sun turns it light again (paper). In the dark theme plans, sections and elevations lie on the dark background, their black pens in light ink; sheets stay paper. The configurators\' small plans, sections and elevations and the previews of tags, title blocks and materials are drawn on a light paper card in both themes, so their lines, texts and dimensions always read.',
-    aRo: 'Luna din dreapta rândului de file face interfața întunecată (grafit); soarele o face din nou luminoasă (hârtie). În tema întunecată planurile, secțiunile și fațadele stau pe fundalul întunecat, cu penițele negre în cerneală deschisă; planșele rămân hârtie. Planurile, secțiunile și fațadele mici din configuratoare și previzualizările etichetelor, cartușelor și materialelor se desenează pe un card de hârtie deschis în ambele teme, deci liniile, textele și cotele lor se citesc mereu.',
+    a: 'The moon at the right of the tab row turns the interface dark (graphite); the sun turns it back to the light theme you used last (paper, Classic or High contrast). In the dark theme plans, sections and elevations lie on the dark background, their black pens in light ink; sheets stay paper. The configurators\' small plans, sections and elevations and the previews of tags, title blocks and materials are drawn on a light paper card in both themes, so their lines, texts and dimensions always read.',
+    aRo: 'Luna din dreapta rândului de file face interfața întunecată (grafit); soarele o aduce la tema luminoasă folosită ultima dată (hârtie, Clasică sau Contrast ridicat). În tema întunecată planurile, secțiunile și fațadele stau pe fundalul întunecat, cu penițele negre în cerneală deschisă; planșele rămân hârtie. Planurile, secțiunile și fațadele mici din configuratoare și previzualizările etichetelor, cartușelor și materialelor se desenează pe un card de hârtie deschis în ambele teme, deci liniile, textele și cotele lor se citesc mereu.',
     source: 'report #110',
   },
   {

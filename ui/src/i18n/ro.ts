@@ -2526,6 +2526,8 @@ export const RO: Record<string, string> = {
   // Lapin for the browser (decision 482)
   'Light theme': 'Temă deschisă',
   'Dark theme': 'Temă întunecată',
+  'Classic theme': 'Temă clasică',
+  'High contrast theme': 'Temă cu contrast ridicat',
   'A Lapin project. To work on it, open this file in Lapin: File → Open.': 'Un proiect Lapin. Ca să lucrezi la el, deschide acest fișier în Lapin: Fișier → Deschide.',
   'A model exported from Lapin, to look at in a browser.': 'Un model exportat din Lapin, de privit într-un browser.',
   'Exported': 'Exportat',

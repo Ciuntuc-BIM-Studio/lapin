@@ -90,11 +90,11 @@ import { inWorld } from '../engine/instances';
 import { clampWheel, middleDouble, wheelZoom } from './zoom';
 import { orbitAbout, orbitAngles, orbitPivot, orthoZoomShift, zoomAbout, type Rig } from './navigate3d';
 
-const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
+const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19, classic: 0xffffff, contrast: 0xffffff } as const;
 /** How often the instances' copies are chosen again while the camera moves (ms). */
 const LOD_EVERY = 150;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
-const GRID = { paper: [0xb5532d, 0xd6cebf], graphite: [0xe07a4f, 0x34312c] } as const;
+const GRID = { paper: [0xb5532d, 0xd6cebf], graphite: [0xe07a4f, 0x34312c], classic: [0x0067c0, 0xd0d0d0], contrast: [0x003f9e, 0x9a9a9a] } as const;
 /** The edges' one material, shared by every element (highlights and looks change only the faces'). */
 const EDGES = new THREE.LineBasicMaterial({ color: 0x1e2a3a });
 EDGES.userData.shared = true;

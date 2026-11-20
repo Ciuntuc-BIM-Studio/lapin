@@ -40,6 +40,52 @@
 .brand-lockup.big .brand-mark { width: 46px; height: 46px; border-radius: 8px; font-size: 28px; }
 .brand-lockup.big .brand-edition { font-weight: 300; }
 :root { --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Lao", "Noto Sans Lao UI", "Lao Sangam MN", "Leelawadee UI", sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace; }
+/*
+ * Two more looks, both light: classic (a neutral grey desktop look: grey chrome, white panels and canvas, a blue accent,
+ * the system's UI font a little smaller, square corners, plain labels) and contrast (high contrast: white and black, text and
+ * borders at 7:1 or more, a deep blue accent, 3 px focus rings). Their key pairs are measured by app/themeContrast.test.ts.
+ */
+[data-theme="classic"] {
+  --bg: #ffffff; --panel: #f0f0f0; --raised: #ffffff; --wash: #e6e6e6; --rule: #c8c8c8; --rule-strong: #7f7f7f;
+  --ink: #1b1b1b; --ink-muted: #595959; --accent: #0067c0; --accent-ink: #ffffff; --accent-wash: #cce4f7;
+  --hud: rgba(240, 240, 240, 0.94); --hud-glass: rgba(240, 240, 240, 0.7); --ok: #0b6a0b; --err: #c42b1c;
+  --trace-snap: #0b6a0b; --trace-locked: #0067c0; --trace-tracking: var(--accent); --trace-free: #595959;
+  --font: "Segoe UI", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Noto Sans Lao", "Noto Sans Lao UI", "Lao Sangam MN", "Leelawadee UI", sans-serif;
+  color-scheme: light;
+}
+[data-theme="contrast"] {
+  --bg: #ffffff; --panel: #ffffff; --raised: #ffffff; --wash: #e8e8e8; --rule: #595959; --rule-strong: #1a1a1a;
+  --ink: #000000; --ink-muted: #404040; --accent: #003f9e; --accent-ink: #ffffff; --accent-wash: #cfdcf5;
+  --hud: rgba(255, 255, 255, 0.97); --hud-glass: rgba(255, 255, 255, 0.85); --ok: #004d1a; --err: #940000;
+  --trace-snap: #004d1a; --trace-locked: #003f9e; --trace-tracking: var(--accent); --trace-free: #404040;
+  color-scheme: light;
+}
+/* Classic: the browser and properties on white, the chrome (ribbon, tabs, status, dialogs) grey; compact; square; plain labels. */
+[data-theme="classic"] body { font-size: 12px; }
+[data-theme="classic"] .panel { background: #ffffff; }
+[data-theme="classic"] .topbar, [data-theme="classic"] .tabs-row { background: var(--panel); }
+[data-theme="classic"] .tab.on { background: #ffffff; border-bottom-color: var(--accent); }
+[data-theme="classic"] :is(.eyebrow, .btn, .menu-head, .group-label, .rail-label, .ifc-kind, .tree-set .set-name, .chip, .status .mods, .view-title, .layer-edit th, .scope-bar .scope-what, .loc h4, .schedule-settings h4, .mode-chip > span:first-child, .fold-bar, .studio-steps-title, .profile-picker-list li.profile-group-head, .profile-list li.profile-group-head, .doc-atom-tag, .doc-picker-list h5, .schedule-editor-head, .tb-fields h5, .sy-category, .my-cat-title, .script-palette-heading, .part-tree .part-title, .graphs-inspector .graphs-section-title, .part-params .part-param-group td, .finish-painter .part-title) { text-transform: none; letter-spacing: 0; }
+[data-theme="classic"] :is(button, input, select, textarea, .btn, .dialog, .menu, .menu-pop, .search, .recent, .template, .workspace-switch, .undo-redo, .icon, .panel-overlay, .kbd, kbd) { border-radius: 2px; }
+[data-theme="classic"] .btn { font-weight: 500; padding: 7px 12px; }
+[data-theme="classic"] .start-brand { letter-spacing: 0; }
+/* High contrast: strong focus, no faded states, grid quiet but seen, selection heavy. */
+[data-theme="contrast"] :focus-visible, [data-theme="contrast"] button:not([class]):focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+[data-theme="contrast"] body { font-size: 13.5px; }
+[data-theme="contrast"] .muted, [data-theme="contrast"] .small.muted { color: var(--ink-muted); }
+[data-theme="contrast"] :is(.btn, button:not([class])):disabled { opacity: 1; color: #595959; background: var(--wash); border-color: #595959; }
+[data-theme="contrast"] .icon:disabled, [data-theme="contrast"] .undo-btn:disabled { opacity: 0.6; }
+[data-theme="contrast"] :is(.btn, .recent, .template, .search, .undo-redo, .workspace-switch, .dialog, .menu, .menu-pop) { border-color: var(--rule-strong); }
+[data-theme="contrast"] :is(.btn:hover, .recent:hover, .template:hover:not(:disabled)) { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+[data-theme="contrast"] .tab.on { border-bottom-width: 3px; font-weight: 700; }
+[data-theme="contrast"] .plan-grid path { stroke: #b3b3b3; stroke-width: 0.6; }
+[data-theme="contrast"] .plan-grid path.major { stroke: #7a7a7a; stroke-width: 0.9; }
+[data-theme="contrast"] .plan-item.selected { stroke-width: 3; }
+[data-theme="contrast"] .plan-item.cut.closed { fill: #d9d9d9; }
+[data-theme="contrast"] .plan-hover path { stroke-width: 3; stroke-opacity: 0.8; }
+[data-theme="contrast"] .plan-grip { stroke-width: 2.4; }
+[data-theme="contrast"] .plan-item.foreign, [data-theme="contrast"] .plan-item.overhead { stroke: #404040; }
+[data-theme="contrast"] .dialog, [data-theme="contrast"] .menu, [data-theme="contrast"] .menu-pop { border-width: 2px; box-shadow: none; }
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 /* The page never scrolls nor bounces (report #25): the app fills the window, its panels scroll on their own; the wheel over a view zooms it (app/pageGuards.ts). */

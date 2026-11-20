@@ -163,17 +163,27 @@ Apasă o pictogramă de pe bara unui panou pliat ca să-l deschizi peste vedere 
 
 ![Browserul și proprietățile, unul sub altul în stânga](shots/panel-layouts.webp)
 
-## Luminos și întunecat
+## Luminos, întunecat, Clasic și Contrast ridicat
 
-Luna din capătul din dreapta al panglicii face interfața întunecată (grafit); soarele o face din nou luminoasă (hârtie). În tema întunecată planurile, secțiunile și fațadele stau pe fundalul întunecat, cu penițele negre în cerneală deschisă; planșele rămân hârtie. Desenele mici ale configuratoarelor (planul, secțiunea și fațada unei uși sau ferestre, ale unui acoperiș, balcon, lift, hale, scări…) și previzualizările etichetelor, cartușelor și materialelor se desenează pe un card de hârtie deschis în ambele teme, ca liniile, textele și cotele să se citească la fel ca pe un desen tipărit.
+Luna din capătul din dreapta al panglicii face interfața întunecată (grafit); soarele o aduce la ultima temă luminoasă folosită (hârtie, Clasică sau Contrast ridicat). În tema întunecată planurile, secțiunile și fațadele stau pe fundalul întunecat, cu penițele negre în cerneală deschisă; planșele rămân hârtie. Desenele mici ale configuratoarelor (planul, secțiunea și fațada unei uși sau ferestre, ale unui acoperiș, balcon, lift, hale, scări…) și previzualizările etichetelor, cartușelor și materialelor se desenează pe un card de hârtie deschis în ambele teme, ca liniile, textele și cotele să se citească la fel ca pe un desen tipărit.
 
-Tema se păstrează: Lapin pornește din nou în cea în care l-ai lăsat. **Fișier → Preferințe…** oferă și **Ca sistemul**, care urmează setarea de luminos sau întunecat a calculatorului.
+Tema se păstrează: Lapin pornește din nou în cea în care l-ai lăsat. **Fișier → Preferințe…** listează **Temă deschisă**, **Temă întunecată**, **Temă clasică**, **Temă cu contrast ridicat** și **Ca sistemul**, care urmează setarea de luminos sau întunecat a calculatorului.
+
+**Clasică** este un aspect de program desktop, gri neutru, potrivit celor care vin din alte programe BIM de birou: panglică, file și dialoguri gri, panouri albe, pânză albă de plan și secțiune cu linii negre, accent și selecție albastre, fontul sistemului puțin mai mic, colțuri drepte și etichete simple.
+
+![Un plan cu un perete selectat în tema Clasică](shots/theme-classic.webp)
+
+**Contrast ridicat** este alb și negru cu un accent albastru închis. Tot textul și toate chenarele ating un contrast de 7:1 sau mai mult, focusul de tastatură este un contur de 3 px, un element selectat se desenează mai gros în plan și în 3D, iar grila rămâne discretă, dar vizibilă. Fundalurile (underlay) și semitonurile rămân lizibile.
+
+![Același plan în tema Contrast ridicat](shots/theme-contrast.webp)
+
+![Preferințe → General: lista temelor](shots/theme-list.webp)
 
 ## Preferințe
 
 **Fișier → Preferințe…** (<kbd>Ctrl</kbd>+<kbd>,</kbd>, și în **Vedere → Interfață**) ține setările tale, păstrate pe acest calculator pentru toate proiectele și aplicate pe loc:
 
-- **General**: tema (luminoasă, întunecată sau ca sistemul), limba și legături spre **Interfață…** și **Scurtături de tastatură…**.
+- **General**: tema (luminoasă, întunecată, Clasică, Contrast ridicat sau ca sistemul), limba și legături spre **Interfață…** și **Scurtături de tastatură…**.
   La **Tastatură**, pe lângă scurtăturile cu litere, **Un clic în afara casetei de introducere o acceptă** (oprit implicit): cu o valoare tastată în caseta de lângă cursor (o lungime, un unghi, o lățime) sau în linia de comandă, un clic stânga în altă parte ia valoarea ca <kbd>Enter</kbd>, iar clicul este consumat, deci nu pune un punct al lui; <kbd>Esc</kbd> sau clic dreapta aruncă în schimb valoarea tastată. Într-un plan sau un desen, clicul pe vedere ia deja o lungime tastată, clicul dând direcția, oricum ar fi setat. Câmpurile din panoul Proprietăți își iau mereu valoarea când dai clic în altă parte.
 - **Grilă și snap**: grila planului, adaptivă sau fixă, snap la ea, ce snap-uri la obiecte ia cursorul și unghiul urmăririi polare (vezi [Snap și ajutoare](drafting.md#snap-și-ajutoare)). La **Cote temporare**, aceleași alegeri ca la **Adnotări → Cote temporare…**: de unde și până unde măsoară cotele temporare ale pereților, stâlpilor și grinzilor (**Axe**, **Fețe**, **Centrul miezului**, **Fețele miezului** sau **Linia de referință**) și cele ale ușilor și ferestrelor (**Axe** sau **Goluri**); vezi [Referința cotelor](walls.md#referinta-cotelor-de-la-fata-miezului-la-fata-miezului).
 - **Coordonate**: ce citește bara de stare la cursor, dacă punctele proiectului se văd și UCS-ul (vezi [Coordonate reale](site.md#coordonate-reale)).

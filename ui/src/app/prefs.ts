@@ -14,12 +14,19 @@ import type { SnapMode } from '../viewport/cad/snaps';
 import { DIM_REFS, OPENING_DIM_REFS, type DimRef, type OpeningDimRef } from '../viewport/lineDims';
 import { DEFAULT_NAV_STYLE, NAV_STYLE_IDS, type NavStyleId } from './navStyle';
 
-export type ThemeChoice = 'paper' | 'graphite' | 'system';
+/** The looks the interface wears: paper and graphite (Lapin's own), classic (a neutral grey desktop look), contrast (high contrast). */
+export type ThemeName = 'paper' | 'graphite' | 'classic' | 'contrast';
+export type LightTheme = Exclude<ThemeName, 'graphite'>;
+export const LIGHT_THEMES: readonly LightTheme[] = ['paper', 'classic', 'contrast'];
+export const THEME_NAMES: readonly ThemeName[] = ['paper', 'graphite', 'classic', 'contrast'];
+export type ThemeChoice = ThemeName | 'system';
 export type GridMode = 'adaptive' | 'fixed';
 export type CoordSystem = 'internal' | 'project' | 'survey' | 'ucs';
 
 export interface Prefs {
   theme: ThemeChoice;
+  /** The light look the sun/moon button goes back to from dark: the last light theme chosen. */
+  lastLight: LightTheme;
   gridMode: GridMode;
   /** The fixed grid's step, metres. */
   gridStep: number;
@@ -79,7 +86,7 @@ const FIRST_SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersec
 const SNAP_MODES_ON: readonly SnapMode[] = SNAP_MODES;
 export const POLAR_STEPS: readonly number[] = [5, 10, 15, 22.5, 30, 45, 90];
 export const DEFAULT_PREFS: Prefs = {
-  theme: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
+  theme: 'paper', lastLight: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
   snapModes: [...SNAP_MODES], snapModesKnown: [...SNAP_MODES], polarStep: 45, coords: 'internal',
   profileStandardsHidden: [], newProjectProfileStandards: null, defaultTemplate: null, newProjectMaterialStandard: null,
   developerExtras: false, pythonPath: null, externalEditor: null, navStyle: DEFAULT_NAV_STYLE, constrainWhileDrawing: true,
@@ -105,7 +112,8 @@ export function readPrefs(stored: unknown): Prefs {
     ? SNAP_MODES.filter((m) => (o.snapModes as unknown[]).includes(m) || (!known.includes(m) && SNAP_MODES_ON.includes(m)))
     : d.snapModes;
   return {
-    theme: pick(o.theme, ['paper', 'graphite', 'system'] as const, d.theme),
+    theme: pick(o.theme, [...THEME_NAMES, 'system'] as const, d.theme),
+    lastLight: pick(o.lastLight ?? (LIGHT_THEMES.includes(o.theme as LightTheme) ? o.theme : undefined), LIGHT_THEMES, d.lastLight),
     gridMode: pick(o.gridMode, ['adaptive', 'fixed'] as const, d.gridMode),
     gridStep: step, gridMajor: major,
     gridSnap: o.gridSnap !== false,
@@ -139,18 +147,24 @@ function read(): Prefs {
 export const usePrefs = create<Prefs>(() => read());
 
 export function setPrefs(patch: Partial<Prefs>): void {
-  usePrefs.setState(readPrefs({ ...usePrefs.getState(), ...patch }));
+  const lastLight = LIGHT_THEMES.includes(patch.theme as LightTheme) ? { lastLight: patch.theme as LightTheme } : {};
+  usePrefs.setState(readPrefs({ ...usePrefs.getState(), ...patch, ...lastLight }));
   try { localStorage.setItem(KEY, JSON.stringify(usePrefs.getState())); } catch { /* kept for this session */ }
 }
 
+/** What the sun/moon button switches to: a light theme goes to dark (the choice is kept as the last light one), dark returns to it. */
+export function quickToggleTheme(current: ThemeName, lastLight: LightTheme): ThemeName {
+  return current === 'graphite' ? lastLight : 'graphite';
+}
+
 /** The theme a choice shows now (the system's: dark when it asks for dark). */
-export function resolveTheme(choice: ThemeChoice): 'paper' | 'graphite' {
+export function resolveTheme(choice: ThemeChoice): ThemeName {
   if (choice !== 'system') return choice;
   try { return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'graphite' : 'paper'; } catch { return 'paper'; }
 }
 
 /** The theme the app starts in: the one kept (before decision 445 nothing was kept and every start was light). */
-export const startTheme = (): 'paper' | 'graphite' => resolveTheme(usePrefs.getState().theme);
+export const startTheme = (): ThemeName => resolveTheme(usePrefs.getState().theme);
 
 /** The 2D grid's step at a zoom (pixels per metre): the fixed one, or the adaptive series' first that is 12 px or more. */
 export function gridStepAt(scale: number, p: Pick<Prefs, 'gridMode' | 'gridStep'> = usePrefs.getState()): number {

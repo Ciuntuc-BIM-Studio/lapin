@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PREFS, gridSnapStep, gridStepAt, readPrefs } from './prefs';
+import { DEFAULT_PREFS, gridSnapStep, gridStepAt, quickToggleTheme, readPrefs, resolveTheme } from './prefs';
 import { fromFrame, toFrame } from './frame';
 import { dropAt, EDGE } from './tabDrag';
 import { parseCoordinateInput, applyOrtho } from '../viewport/cad/input';
@@ -96,5 +96,29 @@ describe('framing the model (decision 446)', () => {
     const site: [number, number, number, number][] = [[0, 0, 10, 10], [150, 0, 160, 10], [290, 200, 300, 210], [100, 100, 110, 110]];
     expect(coreBounds(site)?.left).toBe(0);
     expect(coreBounds([])).toBeNull();
+  });
+});
+
+describe('themes: classic and high contrast', () => {
+  it('keeps the new looks, and still loads what older builds saved', () => {
+    expect(readPrefs({ theme: 'classic' })).toMatchObject({ theme: 'classic', lastLight: 'classic' });
+    expect(readPrefs({ theme: 'contrast' })).toMatchObject({ theme: 'contrast', lastLight: 'contrast' });
+    expect(readPrefs({ theme: 'graphite' })).toMatchObject({ theme: 'graphite', lastLight: 'paper' });
+    expect(readPrefs({ theme: 'graphite', lastLight: 'contrast' })).toMatchObject({ theme: 'graphite', lastLight: 'contrast' });
+    expect(readPrefs({ theme: 'system' }).theme).toBe('system');
+    expect(readPrefs({ theme: 'paper' })).toMatchObject({ theme: 'paper', lastLight: 'paper' });
+    expect(readPrefs({ theme: 'neon', lastLight: 'graphite' })).toMatchObject({ theme: 'paper', lastLight: 'paper' });
+  });
+  it('resolves them as they are; the system still maps to paper or graphite', () => {
+    expect(resolveTheme('classic')).toBe('classic');
+    expect(resolveTheme('contrast')).toBe('contrast');
+    expect(resolveTheme('graphite')).toBe('graphite');
+    expect(['paper', 'graphite']).toContain(resolveTheme('system'));
+  });
+  it('the quick toggle goes to dark and back to the last light look', () => {
+    expect(quickToggleTheme('classic', 'classic')).toBe('graphite');
+    expect(quickToggleTheme('contrast', 'contrast')).toBe('graphite');
+    expect(quickToggleTheme('graphite', 'contrast')).toBe('contrast');
+    expect(quickToggleTheme('graphite', 'paper')).toBe('paper');
   });
 });
