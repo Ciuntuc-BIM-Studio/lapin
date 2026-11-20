@@ -506,7 +506,7 @@ public sealed class SeismicRun
         var extent = pts.Count == 0 ? 1 : Math.Max((new Vec3(pts.Max(x => x.X), pts.Max(x => x.Y), pts.Max(x => x.Z)) - new Vec3(pts.Min(x => x.X), pts.Min(x => x.Y), pts.Min(x => x.Z))).Length, 1);
         var max = 0.0;
         for (var i = 0; i < p.Nodes.Count; i++) max = Math.Max(max, Math.Sqrt(r.U[i * 6] * r.U[i * 6] + r.U[i * 6 + 1] * r.U[i * 6 + 1] + r.U[i * 6 + 2] * r.U[i * 6 + 2]));
-        var scale = scaleArg ?? (max > 1e-15 ? 0.08 * extent / max : 1);
+        var scale = scaleArg ?? (max > 1e-15 ? 0.15 * extent / max : 1);
         var lines = new JsonArray();
         for (var k = 0; k < sp.Members.Count; k++)
         {

@@ -4,6 +4,7 @@ import { Play, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { PendingDialog } from '../core/PendingDialog';
 import { SeismicSection } from './SeismicSection';
+import { ChecksSection } from './ChecksSection';
 import { ShellMaxima, ShellOptions } from './ShellOptions';
 import { hideDiagrams, runAnalysis, setPick, showDiagrams, useResults } from './useResults';
 import {
@@ -56,6 +57,7 @@ export function ResultsDialog() {
             </>
           )}
           <ShellOptions />
+          {run.ok && <ChecksSection />}
           {run.ok && <SeismicSection />}
 
           {run.notes.map((n, i) => <p key={i} className="muted small">{n}</p>)}

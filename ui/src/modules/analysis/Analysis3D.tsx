@@ -8,6 +8,7 @@ import { Fragment } from 'react';
 import * as THREE from 'three';
 import { useCamera } from '../../viewport/camera';
 import { useResults } from './useResults';
+import { useChecks } from './useChecks';
 import {
   footOnBase, formatMm, formatValue, hatchIndices, labelIndices, placeLabels, reactionLabel, reactionVector, signColour, SIGN_COLOUR,
   type LabelCandidate, type PolylineDto,
@@ -19,7 +20,9 @@ export function Analysis3D({ camera, canvas }: { camera: React.RefObject<THREE.C
   useCamera();
   const { show, stale, diagram, results, reactions } = useResults();
   const cam = camera.current, r = canvas.current?.getBoundingClientRect();
-  if (!show || stale || !diagram || !cam || !r) return null;
+  // Coloured by utilisation (the checks), the diagrams give way to it.
+  const colouring = useChecks((s) => s.colour);
+  if (colouring || !show || stale || !diagram || !cam || !r) return null;
   cam.updateMatrixWorld();
   const project = (p: number[]): Px => {
     const v = new THREE.Vector3(p[0], p[1], p[2]).project(cam);

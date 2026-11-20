@@ -161,6 +161,23 @@ async function open3d(t) {
   await t.wait(2500);
 }
 
+/**
+ * A picture of a part taller than the window (a section of a dialog): the window is made tall for the shot, the part scrolled to
+ * the top of its box so none of it is cut, then the window is put back.
+ */
+async function tallShot(t, name, selector, { height = 2600, pad = 6 } = {}) {
+  const size = t.page.viewportSize();
+  await t.page.setViewportSize({ width: size.width, height });
+  try {
+    await t.wait(700);
+    await t.page.locator(selector).first().evaluate((e) => e.scrollIntoView({ block: 'start' }));
+    await t.shot(name, { of: selector, pad });
+  } finally {
+    await t.page.setViewportSize(size);
+    await t.wait(400);
+  }
+}
+
 /** A wall's top as the engine works it out (architecture.wallTop). */
 const wallTopOf = (t, id) => t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('architecture.wallTop', { id }), id);
 
@@ -5531,16 +5548,46 @@ export const scenes = [
       t.expect(await seismic.locator('[data-testid=seismic-code]').inputValue() === 'P100-1/2013', 'the code is P100-1/2013');
       t.expect(await seismic.locator('[data-testid=seismic-ag]').inputValue() === '0.2', 'the site\'s ag is shown');
       await t.wait(500);
-      await seismic.scrollIntoViewIfNeeded();
-      await t.shot('analysis-seismic', { of: '[data-testid=analysis-seismic]', pad: 6 });
+      // The section is taller than the window: the window is made tall for the picture, so the whole section shows (it was cut at the top).
+      await tallShot(t, 'analysis-seismic', '[data-testid=analysis-seismic]');
+      // The mode is shown still at the end of its swing (reduced motion), the camera close: it was caught near its rest position, barely seen.
+      await t.page.emulateMedia({ reducedMotion: 'reduce' });
       await seismic.locator('[data-testid=mode-animate-1]').click();
       await t.until(async () => (await t.page.locator('[data-testid=mode-card]').count()) > 0, 'the mode card shows');
       await t.until(async () => (await t.page.locator('[data-mode]').count()) > 0, 'the mode is in the 3D view\'s scene');
-      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.9, pitch: -0.45, distance: 15, target: { x: 3, y: 2, z: 2 } }, false));
-      await t.wait(1000);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.9, pitch: -0.4, distance: 10.5, target: { x: 3, y: 2, z: 2.2 } }, false));
+      await t.ui({ selection: null, selected: [] });
+      await t.wait(1200);
       await t.shot('analysis-mode', { of: '[data-testid=view3d]', pad: 0 });
       await t.page.locator('[data-testid=mode-stop]').click();
+      await t.page.emulateMedia({ reducedMotion: 'no-preference' });
       t.expect(await t.page.locator('[data-mode]').count() === 0, 'Stop takes the mode off the view');
+      // Design checks (S4, docs/plan-fem.md §12): the beams' and columns' utilisation, the slab's reinforcement, the colours in 3D, a beam's checks and design values.
+      await t.ui({ dialog: 'analysisResults' });
+      const checks = t.page.locator('[data-testid=analysis-checks]');
+      await t.until(async () => (await checks.locator('[data-testid=checks-members] tbody tr').count()) >= 4, 'the Checks section lists the beams and columns');
+      t.expect(await checks.locator('[data-testid=checks-indicative]').count() === 1, 'the checks are marked indicative');
+      const found = await t.call('doc.query', { name: 'analysis.checks', args: {} });
+      t.expect(found.ok === true && found.indicative === true && found.members.length >= 4, `the engine checks the bars (${JSON.stringify(found.notes)})`);
+      await tallShot(t, 'analysis-checks', '[data-testid=analysis-checks]');
+      // The model coloured by utilisation, in 3D.
+      await checks.locator('[data-testid=checks-colour]').check();
+      await t.ui({ dialog: null });
+      await t.until(async () => (await t.page.locator('[data-testid=utilisation-overlay]').count()) > 0, 'the bars are coloured by utilisation in the 3D view');
+      await t.until(async () => (await t.page.locator('[data-testid=utilisation-legend]').count()) > 0, 'the legend of the colours shows on the card');
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.9, pitch: -0.45, distance: 15, target: { x: 3, y: 2, z: 2 } }, false));
+      await t.wait(1200);
+      await t.shot('analysis-utilisation', { of: '[data-testid=view3d]', pad: 0 });
+      // A beam's checks and its design values in its properties.
+      await select(t, beams[0]);
+      await t.until(async () => (await t.page.locator('[data-testid=element-check-lines] tbody tr').count()) > 0, 'a beam lists its checks in its properties');
+      await t.page.locator('[data-group=analysisChecks]').first().evaluate((e) => e.scrollIntoView({ block: 'start' }));
+      await t.shot('analysis-design', { of: '[data-group=analysisChecks]', pad: 6 });
+      await t.page.locator('[data-testid=design-own-llt]').fill('3');
+      await t.page.locator('[data-testid=design-own-llt]').press('Enter');
+      await t.wait(700);
+      const designed = (await t.nodes()).find((n) => n.id === beams[0]);
+      t.expect(designed?.props?.analysisDesign?.llt === 3, `the beam's unrestrained length is its own value (${JSON.stringify(designed?.props?.analysisDesign)})`);
       // A mechanism: every column's top end released in all six freedoms.
       await t.cmd('analysis.setReleases', { ids: columns, j: [true, true, true, true, true, true] });
       await t.wait(600);
@@ -5551,6 +5598,52 @@ export const scenes = [
       await t.wait(500);
       await t.shot('analysis-mechanism', { of: '.dialog', pad: 0 });
       await t.ui({ dialog: null });
+    },
+  },
+  {
+    // Structural analysis, stage S4 (docs/plan-fem.md §12): a 6 × 4 m house of load-bearing brick walls under a concrete floor: the masonry walls' table per storey, the walls coloured by utilisation.
+    id: 'analysis-masonry',
+    touches: ['core', 'architecture', 'structure', 'analysis'],
+    async run(t) {
+      await t.fresh();
+      const ground = await t.storey();
+      const first = (await t.cmd('storey.create', { name: 'First floor', elevation: 3, height: 3 })).id;
+      const concrete = 'Concrete C25/30';
+      const brick = (await t.cmd('architecture.createWallType', { name: 'Brick 250', layers: [{ material: 'Clay brick', thickness: 0.25, core: true }] })).id;
+      const slab = (await t.cmd('architecture.createSlabType', { name: 'Floor 20', layers: [{ material: concrete, thickness: 0.2, core: true }] })).id;
+      for (const name of ['Clay brick', concrete]) {
+        const mat = (await t.nodes()).find((n) => n.name === name && n.type === 'IfcMaterial');
+        if (mat) await t.cmd('material.setData', { id: mat.id, params: [{ pset: 'Pset_MaterialCommon', name: 'MassDensity', value: name === concrete ? 2500 : 1800 }] });
+      }
+      const corners = [[0, 0], [6, 0], [6, 4], [0, 4]];
+      const bearing = [];
+      for (let i = 0; i < 4; i++) { const [a, b] = [corners[i], corners[(i + 1) % 4]]; bearing.push((await t.cmd('architecture.addWall', { storeyId: ground, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: brick })).id); }
+      bearing.push((await t.cmd('architecture.addWall', { storeyId: ground, x1: 3, y1: 0, x2: 3, y2: 4, typeId: brick })).id);
+      // Load-bearing walls are the ones the analysis takes (docs/plan-fem.md §10).
+      for (const id of bearing) await t.cmd('element.setParam', { id, pset: 'Pset_WallCommon', name: 'LoadBearing', value: true });
+      await t.cmd('architecture.addSlab', { storeyId: first, points: corners, typeId: slab });
+      await t.cmd('analysis.defaultCases', {});
+      await t.cmd('analysis.addAreaLoad', { storeyId: first, points: [[0, 0], [6, 0], [6, 4], [0, 4]], value: 5 });
+      await t.wait(600);
+      await t.tool('analysis.run');
+      const dialog = t.page.locator('[aria-label="Analysis results"]');
+      await t.until(async () => (await dialog.locator('[data-testid=analysis-cases]').count()) > 0, 'the Analysis results dialog opens');
+      const run = await t.call('doc.query', { name: 'analysis.run', args: {} });
+      t.expect(run.ok === true, `the analysis ran (${JSON.stringify(run.mechanism?.message ?? run.refused ?? '')} ${JSON.stringify(run.notes)})`);
+      const checks = t.page.locator('[data-testid=analysis-checks]');
+      await t.until(async () => (await checks.locator('[data-testid=checks-wall-row]').count()) > 0, 'the Checks section lists the masonry walls');
+      const walls = await t.call('doc.query', { name: 'analysis.walls', args: {} });
+      t.expect(walls.storeys.some((s) => s.walls.length >= 5), `the five walls are in the table (${JSON.stringify(walls.notes)})`);
+      t.expect(await checks.locator('[data-testid=checks-wall-sum]').count() >= 1, 'the sums per direction are listed');
+      await tallShot(t, 'analysis-walls', '[data-testid=checks-walls-storey]');
+      // The walls coloured by utilisation.
+      await checks.locator('[data-testid=checks-colour]').check();
+      await t.ui({ dialog: null });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.7, pitch: -0.5, distance: 13, target: { x: 3, y: 2, z: 1.5 } }, false));
+      await t.until(async () => (await t.page.locator('[data-utilisation]').count()) > 0, 'the walls are coloured by utilisation in the 3D view');
+      await t.wait(1200);
+      await t.shot('analysis-utilisation-walls', { of: '[data-testid=view3d]', pad: 0 });
     },
   },
   {

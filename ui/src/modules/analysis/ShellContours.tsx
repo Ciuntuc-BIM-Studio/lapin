@@ -8,10 +8,11 @@ import { useSession } from '../../engine/session';
 import type { PlanOverlayProps } from '../../platform/module';
 import { formatValue } from './results';
 import { setShellQuantity, useResults } from './useResults';
+import { useChecks } from './useChecks';
 import { BANDS } from './ShellContours3D';
 import {
   bandColours, bandEdges, bandPieces, shownRange, shownScale, shownUnit, shownValues, signNote, triangles,
-  SHELL_QUANTITIES, SHELL_TITLE, type ContoursDto,
+  REINFORCEMENT_QUANTITIES, SHELL_QUANTITIES, SHELL_TITLE, type ContoursDto,
 } from './shells';
 
 /** The quantity buttons for the slabs and walls, and the legend of what is shown. */
@@ -27,14 +28,24 @@ export function ShellPicker() {
           <button key={x} type="button" className={`btn mini${q === x ? ' primary' : ''}`} aria-pressed={q === x} title={SHELL_TITLE[x]} data-testid={`analysis-shell-${x}`} onClick={() => setShellQuantity(q === x ? null : x)} data-no-i18n>{x}</button>
         ))}
       </div>
+      <div className="row quantities" role="group" aria-label="Reinforcement required">
+        <span className="small muted">Reinforcement</span>
+        {REINFORCEMENT_QUANTITIES.map((x) => (
+          <button key={x} type="button" className={`btn mini${q === x ? ' primary' : ''}`} aria-pressed={q === x} title={SHELL_TITLE[x]} data-testid={`analysis-shell-${x}`} onClick={() => setShellQuantity(q === x ? null : x)} data-no-i18n>{REINFORCEMENT_SYMBOL[x]}</button>
+        ))}
+      </div>
       <ContourLegend />
     </>
   );
 }
 
+/** The layers as symbols (no words to translate; the title says them): the bars' direction, bottom ▼ or top ▲. */
+const REINFORCEMENT_SYMBOL: Record<string, string> = { asxBottom: 'as,x ▼', asyBottom: 'as,y ▼', asxTop: 'as,x ▲', asyTop: 'as,y ▲' };
+
 export function ContourLegend() {
   const contours = useResults((s) => s.contours);
-  if (!contours || contours.surfaces.length === 0) return null;
+  const colouring = useChecks((s) => s.colour);
+  if (colouring || !contours || contours.surfaces.length === 0) return null;
   return <Legend c={contours} />;
 }
 
@@ -66,7 +77,8 @@ export function ShellContoursPlan({ toScreen, view }: PlanOverlayProps) {
   const stale = useResults((s) => s.stale);
   const contours = useResults((s) => s.contours);
   const nodes = useSession((s) => s.nodes);
-  if (!show || stale || !contours || !view.storeyId) return null;
+  const colouring = useChecks((s) => s.colour);
+  if (colouring || !show || stale || !contours || !view.storeyId) return null;
   const mine = contours.surfaces.filter((s) => s.kind === 'slab' && nodes.get(s.sourceId)?.storeyId === view.storeyId);
   if (mine.length === 0) return null;
   const { min, max } = shownRange(contours);
