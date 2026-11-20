@@ -1,7 +1,7 @@
 ---
 title: Structural analysis
 order: 52
-summary: Run a linear static analysis of the frame under your loads, read the diagrams of forces, moments and deformation in 3D, set the end releases of the bars, and work out the modes and the earthquake's response.
+summary: Run a linear static analysis of the frame under your loads, read the diagrams of forces, moments and deformation in 3D, set the end releases of the bars, work out the modes and the earthquake's response, and check the bars, slabs and walls against the codes.
 ---
 
 <!-- video structural-analysis -->
@@ -103,6 +103,41 @@ The notes of the modal and seismic analysis are folded under the section's own *
 **Masonry walls** are analysed as shells with values taken from the material's name (clay, hollow clay, aerated concrete, concrete block) and indicative. To give your own, set these parameters of the set `Lapin_Masonry` on the material: `UnitGroup` (clay1, clay2, aac, concrete1, concrete2), `fb`, `fm`, `fk` (MPa) and `KE`; or `YoungModulus` of `Pset_MaterialMechanical`. Masonry is linear in this version: no tension cut-off and no cracking.
 
 > Every value here is indicative: the site's ag and TC, q and the code's numbers are yours to check.
+
+## Design checks
+
+After a run, the **Checks** section of the **Analysis results** dialog checks the bars, slabs and walls against the codes, with the forces of the combinations. Every check is **indicative**: the values are the Eurocodes' recommended ones (and **CR 6-2013** for masonry), not the national annexes', and the signed design stays the engineer's.
+
+![The Checks section](shots/analysis-checks.webp)
+
+**What is checked, by material**
+
+- **Steel** bars (EN 1993-1-1): the section's class, the resistance to tension, compression, bending and shear, flexural and lateral-torsional buckling, and the interaction of axial force and bending (Annex A, method 1, as the Romanian national annex chooses; Annex B, method 2, if the project asks for it). The buckling lengths assume a braced frame: when the model has no wall or bracing in a direction, the notes say so, and the columns' own lengths are yours to give. Class 4 sections are reported as not checked.
+- **Concrete** beams and columns (EN 1992-1-1): bending (the required reinforcement), shear and stirrups, the minimum and maximum reinforcement, the span/depth ratio, and for columns the second-order effects with the nominal curvature. **Slabs and walls** analysed as shells get the reinforcement they need in each layer, by the Wood–Armer method.
+- **Timber** bars (EN 1995-1-1, strength class from the material's name such as C24 or GL24h): bending, tension, compression with buckling, shear and lateral-torsional buckling, with kmod for the load duration and the service class (snow is a short-term action by default; a mountain site can take it as medium-term).
+- **Masonry** walls (EN 1996-1-1 as CR 6-2013 takes it): the axial resistance at the foot, middle and head, shear and bending in the plane, with γM 2.2 (1.65 where the code allows it). The seismic combination uses the same resistances with its own forces.
+
+**The table of members.** One row for each element (a beam made of several pieces in the analysis is one row, with its worst piece): its **utilisation** (the most loaded check divided by its resistance, as a bar and a number; more than 1 fails and is red), the **governing check** with its clause and the **governing combination**. The filters choose a **Material** or a **Storey**. A click on a row selects the element in the model. **Slabs and walls** in concrete follow with the reinforcement each layer needs, in cm²/m.
+
+**The masonry walls' table.** For each storey, each wall with its direction (X or Y), length, thickness, the forces **N**, **V** and **M** (hover a value for the combination it comes from), the resistances **NRd**, **VRd** and **MRd**, its utilisation and its governing check. Under it, for each direction, **ΣV** against **ΣVRd**: the storey's wall system as a whole.
+
+![The masonry walls of a storey](shots/analysis-walls.webp)
+
+**Design values.** The project's values (concrete cover, bars' and stirrups' diameters, fyk, the masonry's fvk0 and γM, the timber's service class, the **steel interaction** method and the **snow on timber** duration) are under **Design values of the project** in the Checks section; an element's own are in its properties (below). An empty field takes the default; each change is one undo step, and **Run again** checks with it.
+
+**Colours by utilisation.** **Colour the model by utilisation** (here, or **Utilisation** on the card over the 3D view) colours each checked bar, slab and wall from green (0) through yellow and orange (1) to red (over 1), and grey where nothing was checked; the plans of a storey show the same colours on its slabs and bars. The diagrams give way to them while it is on.
+
+![The model coloured by utilisation](shots/analysis-utilisation.webp)
+
+![Masonry walls coloured by utilisation](shots/analysis-utilisation-walls.webp)
+
+**Reinforcement as contours.** The card's **Reinforcement** buttons (**asxBottom**, **asyBottom**, **asxTop**, **asyTop**) draw the reinforcement a slab needs in each layer, in cm²/m, on the ultimate envelope.
+
+**In the properties.** Select a bar, slab or wall: its **Design checks** section lists each check with its clause, utilisation and governing combination (open one for its intermediate values), the notes, and the reinforcement required. On a bar it also has the design values of the element: the **buckling length factors** ky and kz (or the lengths Lcr,y and Lcr,z in metres), the **laterally unrestrained length** LLT (a beam under a slab that carries it is taken as restrained), the timber **service class** and the concrete beam's **span system**.
+
+![A beam's design checks and values](shots/analysis-design.webp)
+
+> The checks are indicative. Lapin takes the Eurocodes' recommended values; the national annexes' values, the loads and the design values are yours to verify before you rely on them.
 
 ## End releases
 

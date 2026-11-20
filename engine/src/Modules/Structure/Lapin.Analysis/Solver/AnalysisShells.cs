@@ -177,8 +177,16 @@ public sealed partial class AnalysisRun
     // ------------------------------------------------------------ analysis.contours
 
     /// <summary>{case | combination | envelope, quantity, shellId?}: the analysis at the model's revision, its shells' contours.</summary>
-    public static JsonObject Contours(IQueryContext q, JsonObject a) =>
-        For(q).Contours(new Ask((string?)a["case"], (string?)a["combination"], (string?)a["envelope"], null, (string?)a["shellId"]), (string?)a["quantity"]);
+    public static JsonObject Contours(IQueryContext q, JsonObject a)
+    {
+        var run = For(q);
+        run._designOf = () => Design.DesignRun.Of(q);
+        return run.Contours(new Ask((string?)a["case"], (string?)a["combination"], (string?)a["envelope"], null, (string?)a["shellId"]), (string?)a["quantity"]);
+    }
+
+    /// <summary>The design checks' required reinforcement of the concrete surfaces (S4, §12.3), cm²/m: on the ULS envelope.</summary>
+    public static readonly string[] DesignQuantities = Design.SurfaceDesign.LayerNames;
+    Func<Design.DesignRun>? _designOf;
 
     /// <summary>
     /// Each surface's mesh (its nodes in world coordinates, flat [x, y, z, …]; its faces four node indices each, a triangle's
@@ -187,16 +195,18 @@ public sealed partial class AnalysisRun
     /// </summary>
     public JsonObject Contours(Ask ask, string? quantity)
     {
-        var sel = Select(ask);
-        if (quantity == null || !ShellQuantities.Contains(quantity)) throw new CommandException($"Say the quantity: one of {string.Join(", ", ShellQuantities)}.");
+        var design = quantity != null && DesignQuantities.Contains(quantity);
+        var sel = Select(design ? ask with { Case = null, Combination = null, Envelope = "uls" } : ask);
+        if (quantity == null || !(ShellQuantities.Contains(quantity) || design)) throw new CommandException($"Say the quantity: one of {string.Join(", ", ShellQuantities.Concat(DesignQuantities))}.");
         var p = Problem.Problem;
-        var o = new JsonObject { ["kind"] = sel.Kind, ["key"] = sel.Key, ["quantity"] = quantity, ["unit"] = ShellUnit(quantity) };
+        var dr = design ? (_designOf ?? throw new CommandException("The reinforcement is asked through analysis.contours."))() : null;
+        var o = new JsonObject { ["kind"] = sel.Kind, ["key"] = sel.Key, ["quantity"] = quantity, ["unit"] = design ? "cm²/m" : ShellUnit(quantity) };
         if (p.Shells.Count == 0) { o["surfaces"] = new JsonArray(); o["min"] = 0; o["max"] = 0; return o; }
         var keys = Keys();
         var at = new Dictionary<(string, int), int>();
         for (var i = 0; i < keys.Length; i++) at[keys[i]] = i;
-        var sets = SetsNodal(sel);
-        var envelope = sel.Kind == "envelope";
+        var sets = design ? [] : SetsNodal(sel);
+        var envelope = sel.Kind == "envelope" && !design;
         var digits = quantity == "w" ? 9 : 4;
         var (gMin, gMax) = (double.PositiveInfinity, double.NegativeInfinity);
         var surfaces = new JsonArray();
@@ -205,6 +215,7 @@ public sealed partial class AnalysisRun
         {
             var info = Problem.Surfaces[g];
             if (!bySurface.TryGetValue(g, out var shells)) continue;
+            if (dr != null && dr.Surfaces.All(x => x.Group != g)) continue;
             var local = new Dictionary<int, int>();
             var positions = new JsonArray();
             var faces = new JsonArray();
@@ -228,7 +239,7 @@ public sealed partial class AnalysisRun
             for (var j = 0; j < nodes.Count; j++)
             {
                 var i = at[(g, nodes[j])];
-                var vs = sets.Select(s => Value(quantity, s.F[i], s.W[i])).ToList();
+                var vs = dr != null ? [dr.LayerAt(g, nodes[j], quantity) ?? 0] : sets.Select(s => Value(quantity, s.F[i], s.W[i])).ToList();
                 (lo[j], hi[j]) = (vs.Min(), vs.Max());
                 gMin = Math.Min(gMin, lo[j]);
                 gMax = Math.Max(gMax, hi[j]);

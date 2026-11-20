@@ -229,6 +229,21 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
         // The storeys' masses, shears, forces and drifts with the drift checks; the base shear (§11.3).
         r.Query("seismic", (q, _) => Seismic.SeismicRun.Of(q).SeismicJson());
 
+        // ── Design checks (S4, §12) ──
+
+        // {material?, storeyId?}: every bar's, slab's and masonry wall's utilisation, its governing check and combination (indicative).
+        r.Query("checks", (q, a) => Design.DesignRun.Of(q).ChecksJson((string?)a["material"], (string?)a["storeyId"]));
+        // {id}: one element's checks in detail, each with its clause and values.
+        r.Query("check", (q, a) => Design.DesignRun.Of(q).CheckJson((string?)a["id"] ?? throw new CommandException("Say the element (id).")));
+        // The masonry walls' forces at their feet and their resistances, storey by storey (CR 6-2013).
+        r.Query("walls", (q, _) => Design.DesignRun.Of(q).WallsJson(q.Model));
+        // {id?}: the reinforcement the concrete bars and surfaces need, with what their types provide.
+        r.Query("reinforcement", (q, a) => Design.DesignRun.Of(q).ReinforcementJson((string?)a["id"]));
+        r.Query("designOptions", (q, _) => Design.DesignSettings.ToJson(q.Model));
+        // {ids?, ky?, kz?, lcrY?, lcrZ?, llt?, serviceClass?, system?} on elements, {serviceClass?, cover?, bar?, stirrup?, fyk?, fvk0?, gammaM?}
+        // or {steelInteraction?: A | B, snowDuration?: short | medium} on the project; null back to the default. One undo step.
+        r.Command("setDesign", "Design values", (ctx, a) => { Design.DesignSettings.Write(ctx, a); return null; });
+
         // {ids, axial: true | false | null}: whether the bars work axially only (a rod, a tie: pinned at their ends, their weight
         // at them) or as beams; null back to what their section and use say (FrameReleases.Axial). One undo step.
         r.Command("setAxial", "Axial member", (ctx, a) =>

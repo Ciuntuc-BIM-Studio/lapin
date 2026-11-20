@@ -3013,3 +3013,13 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .seismic-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--accent); }
 .seismic-key.se { border-top: 2px dashed var(--ink-muted); }
 .seismic-key.mode { width: 8px; height: 8px; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--raised); }
+
+/* Structural analysis S4: the design checks (docs/plan-fem.md §12.7). */
+.analysis-overlay .utilisation-bar { stroke-width: 6; fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: 0.95; }
+.util { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.util-bar { display: inline-block; width: 64px; height: 8px; border-radius: 4px; background: var(--border, #ddd); overflow: hidden; }
+.util-bar > span { display: block; height: 100%; }
+.standards-table tr.clickable { cursor: pointer; }
+.standards-table tr.clickable:hover { background: var(--hover, rgba(128, 128, 128, 0.12)); }
+.checks details > summary { cursor: pointer; }
+.check-line .values { margin: 2px 0 0 14px; }

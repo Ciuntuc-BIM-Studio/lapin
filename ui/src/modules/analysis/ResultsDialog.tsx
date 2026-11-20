@@ -5,6 +5,7 @@ import { useUi } from '../../app/store';
 import { PendingDialog } from '../core/PendingDialog';
 import { ModeAction, SeismicSection } from './SeismicSection';
 import { NotesList } from './NotesList';
+import { ChecksSection } from './ChecksSection';
 import { ShellMaxima, ShellOptions } from './ShellOptions';
 import { hideDiagrams, runAnalysis, setPick, showDiagrams, useResults } from './useResults';
 import {
@@ -57,6 +58,7 @@ export function ResultsDialog() {
             </>
           )}
           <ShellOptions />
+          {run.ok && <ChecksSection />}
           {run.ok && <SeismicSection />}
 
           <NotesList notes={run.notes} test="analysis-notes" />

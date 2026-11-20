@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import * as THREE from 'three';
 import type { Overlay3DProps } from '../../platform/module';
 import { useResults } from './useResults';
+import { useChecks } from './useChecks';
 import { bandColours, bandEdges, shownRange, shownValues, triangles, type ContoursDto } from './shells';
 
 export const BANDS = 10;
@@ -79,6 +80,7 @@ export function ShellContours3D({ canvas, scene, invalidate }: Overlay3DProps) {
   const stale = useResults((s) => s.stale);
   const contours = useResults((s) => s.contours);
   const shellQuantity = useResults((s) => s.shellQuantity);
+  const colouring = useChecks((s) => s.colour);
   // The view makes its scene after its overlays first mount (a parent's effects run after its children's): wait for it.
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -90,7 +92,7 @@ export function ShellContours3D({ canvas, scene, invalidate }: Overlay3DProps) {
   }, [scene, ready]);
   useEffect(() => {
     const s = scene?.current;
-    if (!ready || !s || !show || stale || !contours || !shellQuantity || contours.surfaces.length === 0) return;
+    if (!ready || !s || !show || colouring || stale || !contours || !shellQuantity || contours.surfaces.length === 0) return;
     const group = contourGroup(contours);
     s.add(group);
     // What the view holds, for the guide's scenes to see: the surfaces contoured.
@@ -103,6 +105,6 @@ export function ShellContours3D({ canvas, scene, invalidate }: Overlay3DProps) {
       (group.userData.dispose as () => void)();
       invalidate?.current?.();
     };
-  }, [ready, canvas, scene, invalidate, show, stale, contours, shellQuantity]);
+  }, [ready, canvas, scene, invalidate, show, colouring, stale, contours, shellQuantity]);
   return null;
 }

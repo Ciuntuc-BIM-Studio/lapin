@@ -5,7 +5,10 @@
  */
 
 export const SHELL_QUANTITIES = ['w', 'mx', 'my', 'mxy', 'nx', 'ny', 'nxy', 'vx', 'vy'] as const;
-export type ShellQuantity = typeof SHELL_QUANTITIES[number];
+/** The slabs' required reinforcement per layer (Wood–Armer, cm²/m, on the ultimate envelope; S4, docs/plan-fem.md §12): x or y bars, bottom or top. */
+export const REINFORCEMENT_QUANTITIES = ['asxBottom', 'asyBottom', 'asxTop', 'asyTop'] as const;
+export type ShellQuantity = typeof SHELL_QUANTITIES[number] | typeof REINFORCEMENT_QUANTITIES[number];
+export const isReinforcement = (q: ShellQuantity | null): boolean => q !== null && (REINFORCEMENT_QUANTITIES as readonly string[]).includes(q);
 
 export const SHELL_TITLE: Record<ShellQuantity, string> = {
   w: 'Displacement across the slab or wall',
@@ -17,6 +20,10 @@ export const SHELL_TITLE: Record<ShellQuantity, string> = {
   nxy: 'Membrane shear force nxy',
   vx: 'Transverse shear force vx',
   vy: 'Transverse shear force vy',
+  asxBottom: 'Reinforcement required along x, bottom layer (cm²/m, ultimate envelope)',
+  asyBottom: 'Reinforcement required along y, bottom layer (cm²/m, ultimate envelope)',
+  asxTop: 'Reinforcement required along x, top layer (cm²/m, ultimate envelope)',
+  asyTop: 'Reinforcement required along y, top layer (cm²/m, ultimate envelope)',
 };
 
 export interface SurfaceDto {

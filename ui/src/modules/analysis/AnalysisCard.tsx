@@ -5,6 +5,8 @@ import { useUi } from '../../app/store';
 import { hideDiagrams, runAnalysis, setMult, setPick, setQuantity, setReactions, useResults } from './useResults';
 import { formatValue, pickChoices, pickValue, QUANTITIES, type Quantity } from './results';
 import { ShellPicker } from './ShellContours';
+import { setColour, useChecks } from './useChecks';
+import { UtilisationLegend } from './Utilisation3D';
 
 const SHORT: Record<Quantity, string> = { N: 'N', Vy: 'Vy', Vz: 'Vz', T: 'T', My: 'My', Mz: 'Mz', deformed: 'Deformed' };
 const TITLE: Record<Quantity, string> = {
@@ -15,6 +17,7 @@ const TITLE: Record<Quantity, string> = {
 export function AnalysisCard() {
   const view = useUi((s) => s.view);
   const { run, show, stale, pick, quantity, mult, reactions, diagram, running, seismic } = useResults();
+  const colour = useChecks((s) => s.colour);
   if (!run || !show || view === 'sheet' || view === 'schedule') return null;
   const choices = pickChoices(run, seismic);
   const groups = ['Load cases', 'Combinations', 'Envelopes'] as const;
@@ -49,6 +52,10 @@ export function AnalysisCard() {
             <input type="range" min={-2} max={2} step={0.1} value={Math.log2(mult)} aria-label="Diagram scale" data-testid="analysis-scale" onChange={(e) => setMult(2 ** Number(e.target.value))} />
             <span data-no-i18n>×{formatValue(mult)}</span>
           </label>
+          <label className="row small" title="Colour the bars, slabs and walls by their utilisation (the design checks), from green to red; indicative">
+            <input type="checkbox" data-testid="analysis-colour" checked={colour} onChange={(e) => setColour(e.target.checked)} />Utilisation
+          </label>
+          <UtilisationLegend />
           <label className="row small"><input type="checkbox" checked={reactions} onChange={(e) => setReactions(e.target.checked)} />Reactions</label>
           {diagram && <p className="muted small">Largest value <span data-no-i18n>{formatValue(diagram.max * (diagram.unit === 'm' ? 1000 : 1))} {diagram.unit === 'm' ? 'mm' : diagram.unit}</span></p>}
           <div className="row">

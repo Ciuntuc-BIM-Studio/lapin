@@ -11,6 +11,7 @@ import { activate } from '../../platform/modules';
 import type { NodeDto } from '../../engine/protocol';
 import { OccupancySection } from './OccupancySection';
 import { BAR_CLASSES } from './results';
+import { DESIGN_CLASSES } from './checks';
 import { runAnalysis } from './useResults';
 import { AnalysisWatch } from './watch';
 import { AnalysisCard } from './AnalysisCard';
@@ -19,6 +20,9 @@ import { Mode3D, ModeCard } from './Mode3D';
 import { ShellContours3D } from './ShellContours3D';
 import { ShellContoursPlan } from './ShellContours';
 import { ReleasesSection } from './ReleasesSection';
+import { ChecksProps } from './ChecksProps';
+import { Utilisation3D } from './Utilisation3D';
+import { UtilisationPlan } from './Utilisation3D';
 
 // Fetched the first time it is opened (platform/lazyPart.tsx).
 const LoadsDialog = lazyPart(() => import('./LoadsDialog').then((m) => m.LoadsDialog), { title: 'Loads' });
@@ -77,11 +81,12 @@ const analysis: LapinModule = {
   similar: { IfcStructuralPlanarAction: likeLoad('area', area), IfcStructuralCurveAction: likeLoad('line', line), IfcStructuralPointAction: likeLoad('point', point) },
   background: AnalysisWatch,
   overlays: [AnalysisCard, ModeCard],
-  overlays3d: [Analysis3D, ShellContours3D, Mode3D],
-  planOverlays: [ShellContoursPlan],
+  overlays3d: [Analysis3D, ShellContours3D, Utilisation3D, Mode3D],
+  planOverlays: [ShellContoursPlan, UtilisationPlan],
   propertySections: [
     { id: 'occupancy', label: 'Imposed load', classes: ['IfcSpace'], component: OccupancySection },
     { id: 'analysis', label: 'Analysis', classes: [...BAR_CLASSES], component: ReleasesSection },
+    { id: 'analysisChecks', label: 'Design checks', classes: [...BAR_CLASSES, ...DESIGN_CLASSES], component: ChecksProps },
   ],
 };
 

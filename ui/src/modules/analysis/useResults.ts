@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { engine, useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
 import { pickArgs, pickFrom, validPick, type DiagramDto, type Pick, type Quantity, type ResultsDto, type RunDto } from './results';
-import type { ContoursDto, ShellQuantity } from './shells';
+import { isReinforcement, type ContoursDto, type ShellQuantity } from './shells';
 
 export interface ResultsState {
   run: RunDto | null;
@@ -53,7 +53,7 @@ export async function refresh(): Promise<void> {
     const [results, diagram, contours] = await Promise.all([
       ask<ResultsDto>('analysis.results', pickArgs(s.pick)),
       ask<DiagramDto>('analysis.diagram', { ...pickArgs(s.pick), quantity: s.quantity, ...(scale ? { scale } : {}) }),
-      shells ? ask<ContoursDto>('analysis.contours', { ...pickArgs(s.pick), quantity: s.shellQuantity }) : Promise.resolve(null),
+      shells ? ask<ContoursDto>('analysis.contours', { ...(isReinforcement(s.shellQuantity) ? { envelope: 'uls' } : pickArgs(s.pick)), quantity: s.shellQuantity }).catch((e) => { if (isReinforcement(s.shellQuantity)) return null; throw e; }) : Promise.resolve(null),
     ]);
     if (mine !== ticket || useResults.getState().stale) return;
     if (scale === undefined) baseScale = { key, scale: diagram.scale };

@@ -196,7 +196,18 @@ public static class Masonry
         return null;
     }
 
-    public sealed record Values(MaterialValue E, MaterialValue Fk, MaterialValue Density, string Label);
+    public sealed record Values(MaterialValue E, MaterialValue Fk, MaterialValue Density, string Label)
+    {
+        /// <summary>The unit's normalised strength fb (MPa) and the group, for the design checks (fvk ≤ 0.065 fb).</summary>
+        public double Fb { get; init; }
+        public Group? Of { get; init; }
+    }
+
+    /// <summary>
+    /// KE when the material gives none: CR 6-2013 4.1.2.2.1(3), E = 1000 fk for clay (and the other) units, 800 fk for
+    /// autoclaved aerated concrete units (EN 1996-1-1 §3.7.2 recommends 1000 for all).
+    /// </summary>
+    public static double KeOf(Group g) => g.Key == "aac" ? 800 : DefaultKE;
 
     /// <summary>The masonry's values: the material's own parameters first, the group's indicative ones otherwise, each with its source.</summary>
     public static Values Of(MaterialFieldSet fields, Group named, List<string> notes)
@@ -223,9 +234,9 @@ public static class Masonry
         var fkSource = fkOwn != null
             ? $"project: material „{fields.Name}”, {Set}.fk = {F(fk)} MPa"
             : $"EN 1996-1-1:2005 eq. 3.1, {g.Label}: fk = {F(g.K)} · {F(fbv)}^0.7 · {F(fmUsed)}^0.3 = {F(fk)} MPa{(given ? "" : " (indicative: fb, fm of the group)")}";
-        var kev = ke ?? DefaultKE;
-        var eSource = $"EN 1996-1-1:2005 §3.7.2: E = KE · fk = {F(kev)} · {F(fk)} MPa = {F(kev * fk / 1000)} GPa{(ke == null ? " (KE recommended)" : "")}; {fkSource}";
+        var kev = ke ?? KeOf(g);
+        var eSource = $"CR 6-2013 4.1.2.2.1(3) (EN 1996-1-1:2005 §3.7.2): E = KE · fk = {F(kev)} · {F(fk)} MPa = {F(kev * fk / 1000)} GPa{(ke == null ? " (KE of CR 6 for the unit)" : "")}; {fkSource}";
         return new(new(kev * fk * 1e6, eSource), new(fk * 1e6, fkSource),
-            new(g.Density, $"indicative: masonry of {g.Label}, ρ = {F(g.Density)} kg/m³"), $"{g.Key}, fk = {F(fk)} MPa");
+            new(g.Density, $"indicative: masonry of {g.Label}, ρ = {F(g.Density)} kg/m³"), $"{g.Key}, fk = {F(fk)} MPa") { Fb = fbv, Of = g };
     }
 }

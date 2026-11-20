@@ -1,7 +1,7 @@
 ---
 title: Calcul structural
 order: 52
-summary: Rulează un calcul static liniar al cadrului sub încărcările tale, citește diagramele eforturilor și deformata în 3D, stabilește articulațiile capetelor barelor și calculează modurile proprii și răspunsul la cutremur.
+summary: Rulează un calcul static liniar al cadrului sub încărcările tale, citește diagramele eforturilor și deformata în 3D, stabilește articulațiile capetelor barelor, calculează modurile proprii și răspunsul la cutremur și verifică barele, plăcile și pereții după norme.
 ---
 
 **Rulează calculul** din grupul **Încărcări** al tabului **Structură** (și din dialogul Încărcări) calculează barele, plăcile și pereții modelului sub încărcările și combinațiile din [Încărcări](loads.md) și arată eforturile din ele.
@@ -101,6 +101,41 @@ Notele analizei modale și seismice sunt strânse sub **Note (n)** al secțiunii
 **Pereții de zidărie** sunt calculați ca plăci, cu valori luate după numele materialului (cărămidă, bloc ceramic, BCA, bloc de beton), orientative. Ca să dai valorile tale, pune pe material aceste parametri ai setului `Lapin_Masonry`: `UnitGroup` (clay1, clay2, aac, concrete1, concrete2), `fb`, `fm`, `fk` (MPa) și `KE`; sau `YoungModulus` din `Pset_MaterialMechanical`. Zidăria e liniară în această versiune: fără limitare la întindere, fără fisurare.
 
 > Toate valorile de aici sunt orientative: ag și TC ale amplasamentului, q și numerele normei sunt ale tale de verificat.
+
+## Verificări de calcul
+
+După o rulare, secțiunea **Verificări** a dialogului **Rezultatele analizei** verifică barele, plăcile și pereții după norme, cu eforturile combinațiilor. Fiecare verificare este **orientativă**: valorile sunt cele recomandate de Eurocoduri (și **CR 6-2013** la zidărie), nu cele ale anexelor naționale, iar calculul semnat rămâne al inginerului.
+
+![Secțiunea Verificări](shots/analysis-checks.webp)
+
+**Ce se verifică, pe materiale**
+
+- Barele de **oțel** (EN 1993-1-1): clasa secțiunii, rezistența la întindere, compresiune, încovoiere și forfecare, flambajul și flambajul lateral cu răsucire, și interacțiunea efortului axial cu încovoierea (Anexa A, metoda 1, cum alege anexa națională română; Anexa B, metoda 2, dacă proiectul o cere). Lungimile de flambaj presupun un cadru contravântuit: când modelul nu are pereți sau contravântuiri pe o direcție, notele o spun, iar lungimile stâlpilor le dai tu. Secțiunile de clasa 4 sunt spuse ca neverificate.
+- Grinzile și stâlpii de **beton** (EN 1992-1-1): încovoierea (armătura necesară), forfecarea și etrierii, armătura minimă și maximă, raportul deschidere/înălțime, iar la stâlpi efectele de ordinul 2 cu curbura nominală. **Plăcile și pereții** calculați ca plăci primesc armătura necesară pe fiecare strat, prin metoda Wood–Armer.
+- Barele de **lemn** (EN 1995-1-1, clasa de rezistență din numele materialului, ca C24 sau GL24h): încovoiere, întindere, compresiune cu flambaj, forfecare și flambaj lateral, cu kmod după durata încărcării și clasa de serviciu (zăpada e implicit de scurtă durată; un amplasament montan o poate lua de durată medie).
+- Pereții de **zidărie** (EN 1996-1-1 așa cum îl ia CR 6-2013): rezistența la efort axial la bază, la mijloc și la cap, forfecarea și încovoierea în plan, cu γM 2,2 (1,65 unde norma permite). Combinația seismică folosește aceleași rezistențe, cu eforturile ei.
+
+**Tabelul elementelor.** Un rând pentru fiecare element (o grindă făcută din mai multe piese în calcul e un rând, cu piesa cea mai solicitată): **gradul de utilizare** (verificarea cea mai solicitată împărțită la rezistența ei, ca bară și număr; peste 1 nu se verifică și e roșu), **verificarea determinantă** cu clauza ei și **combinația determinantă**. Filtrele aleg un **Material** sau un **Etaj**. Un clic pe rând selectează elementul în model. **Plăcile și pereții** de beton urmează, cu armătura necesară pe fiecare strat, în cm²/m.
+
+**Tabelul pereților de zidărie.** Pe fiecare etaj, fiecare perete cu direcția (X sau Y), lungimea, grosimea, eforturile **N**, **V** și **M** (ține cursorul pe o valoare pentru combinația din care vine), rezistențele **NRd**, **VRd** și **MRd**, gradul de utilizare și verificarea determinantă. Dedesubt, pe fiecare direcție, **ΣV** față de **ΣVRd**: sistemul de pereți al etajului luat în ansamblu.
+
+![Pereții de zidărie ai unui etaj](shots/analysis-walls.webp)
+
+**Valorile de calcul.** Valorile proiectului (acoperirea cu beton, diametrele barelor și ale etrierilor, fyk, fvk0 și γM ale zidăriei, clasa de serviciu a lemnului, metoda de **interacțiune la oțel** și durata **zăpezii la lemn**) sunt sub **Valorile de calcul ale proiectului**, în secțiunea Verificări; cele proprii ale unui element sunt în proprietățile lui (mai jos). Un câmp gol ia valoarea implicită; fiecare schimbare este un pas de anulare, iar **Rulează din nou** verifică cu ea.
+
+**Culori după gradul de utilizare.** **Colorează modelul după gradul de utilizare** (aici, sau **Grad de utilizare** pe cardul de peste vederea 3D) colorează fiecare bară, placă și perete verificat de la verde (0) prin galben și portocaliu (1) la roșu (peste 1), și în gri ce nu a fost verificat; planurile unui etaj arată aceleași culori pe plăcile și barele lui. Cât timp e pornit, diagramele îi cedează locul.
+
+![Modelul colorat după gradul de utilizare](shots/analysis-utilisation.webp)
+
+![Pereți de zidărie colorați după gradul de utilizare](shots/analysis-utilisation-walls.webp)
+
+**Armătura ca izolinii.** Butoanele **Armare** ale cardului (**asxBottom**, **asyBottom**, **asxTop**, **asyTop**) desenează armătura de care are nevoie o placă pe fiecare strat, în cm²/m, pe înfășurătoarea SLU.
+
+**În proprietăți.** Selectează o bară, o placă sau un perete: secțiunea lui **Verificări de calcul** arată fiecare verificare cu clauza, gradul de utilizare și combinația determinantă (deschide una pentru valorile intermediare), notele și armătura necesară. La o bară are și valorile de calcul ale elementului: **factorii lungimii de flambaj** ky și kz (sau lungimile Lcr,y și Lcr,z în metri), **lungimea nerezemată lateral** LLT (o grindă sub o placă pe care o poartă e luată ca susținută), **clasa de serviciu** a lemnului și **schema deschiderii** grinzii de beton.
+
+![Verificările și valorile de calcul ale unei grinzi](shots/analysis-design.webp)
+
+> Verificările sunt orientative. Lapin ia valorile recomandate ale Eurocodurilor; valorile anexelor naționale, încărcările și valorile de calcul îți revine să le verifici înainte să te bazezi pe ele.
 
 ## Articulațiile capetelor
 
