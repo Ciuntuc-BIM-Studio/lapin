@@ -1215,7 +1215,14 @@ export const scenes = [
       // Interior → My furniture… opens it on the furniture.
       await t.tool('furniture.library');
       await t.page.locator('[data-dialog=placeCatalog] [data-source=furniture][aria-selected=true]').waitFor({ timeout: 10_000 });
-      await t.ui({ dialog: null });
+      // Every model is a card of its own; one clicked makes the project's type of it and starts Place furniture on it.
+      await t.page.locator('[data-field=place-search]').fill('');
+      const model = t.page.locator('[data-dialog=placeCatalog] [data-place^="furnitureModel:"]').first();
+      await model.waitFor({ timeout: 10_000 });
+      t.expect(await t.page.locator('[data-dialog=placeCatalog] [data-place^="furnitureModel:"]').count() >= 39, "Lapin's models are in the catalogue one by one");
+      await model.click();
+      await t.page.waitForFunction(async () => (await import('/src/app/store.ts')).useUi.getState().tool === 'furniture.place', null, { timeout: 10_000 });
+      await t.ui({ tool: null, dialog: null });
     },
   },
   {

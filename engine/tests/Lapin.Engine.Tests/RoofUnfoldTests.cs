@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture.Roofs;
+using Lapin.Drawing;
 using Lapin.Geometry;
 using Lapin.Platform;
 
@@ -126,5 +127,13 @@ public class RoofUnfoldTests
         Assert.Contains(marks, m => (string?)m["id"] == roofId);
         var pens = ((JsonArray)drawing["pens"]!).OfType<JsonObject>().ToList();
         Assert.NotEmpty(pens);
+
+        // Its words are as high on paper as the drafting standard's text (paper millimetres), not scaled down by the view's 1:50.
+        var texts = pens.SelectMany(p => (p["texts"] as JsonArray)?.OfType<JsonObject>() ?? []).ToList();
+        var standard = Standards.ResolveText(DraftingResources.Book(f.Session.Model), []).Height;
+        var title = texts.Single(t => ((string)t["text"]!).StartsWith("Slope 1 "));
+        Assert.Equal(standard * 1.15, (double)title["height"]!, 4);
+        Assert.Contains(texts, t => ((string)t["text"]!).StartsWith("Total covering area"));
+        Assert.All(texts, t => Assert.True((double)t["height"]! >= 1.5, $"\"{t["text"]}\" is {(double)t["height"]!} mm high on paper"));
     }
 }

@@ -158,6 +158,8 @@ Previzualizarea arată **Lista de debitare** a tipului: fiecare piesă (laterale
 
 Un model se **întinde pe zone**: pe fiecare axă are o bandă care se întinde, iar ce e înainte și după ea își păstrează mărimea. Dacă lățești o canapea, brațele și picioarele rămân cum sunt și crește șezutul, așa că o canapea de două locuri devine una de trei. Dacă faci o masă mai înaltă, cresc doar picioarele, iar blatul își păstrează grosimea. Mesele rotunde, abajururile lămpilor și plantele se scalează întregi pe orizontală. Fiecare model are o mărime minimă și una maximă; o mărime dincolo de ele rămâne la limită.
 
+Cel mai repede ajungi la unul din [catalogul de pus](interface.md#catalogul-de-pus) (**Interior → Mobilierul meu…**): fiecare model e acolo separat, cu imaginea lui, în grupa lui (canapele, fotolii, scaune, mese, lămpi, plante, covoare). Dai clic pe unul și unealta **Plasează mobilier** îl așază; prima piesă face tipul lui în proiect, iar următoarele folosesc același tip.
+
 În **Tipuri de mobilier**, alege **Dintr-un model** și un model, apoi **Tip nou**. Un tip dintr-un model are:
 
 - **galeria** de modele pe grupe (canapele, fotolii, scaune, mese, lămpi, plante, covoare): dă clic pe alt model ca să schimbi modelul tipului, iar tipul ia mărimea și materialele acelui model;
@@ -260,7 +262,7 @@ Miniatura e desenată din previzualizarea tipului. Tipul pleacă cu tot ce îi t
 
 ![Salvează în biblioteca mea: numele, categoria, etichetele, codul de articol și prețul, lângă miniatură](shots/furniture-save-library.webp)
 
-**Interior → Mobilierul meu…** deschide [catalogul de pus](interface.md#catalogul-de-pus) pe mobilier (tipurile proiectului, biblioteca și felurile Lapin, căutate împreună); butonul lui **Mobilierul meu…**, sau **Mobilierul meu…** din Tipuri de mobilier, arată biblioteca în miniaturi. O cauți după nume, etichetă, articol sau fel și o filtrezi după categorie și după etichetă. Pentru fiecare element:
+**Interior → Mobilierul meu…** deschide [catalogul de pus](interface.md#catalogul-de-pus) pe mobilier (tipurile proiectului, biblioteca, felurile Lapin și fiecare model, căutate împreună); butonul lui **Mobilierul meu…**, sau **Mobilierul meu…** din Tipuri de mobilier, arată biblioteca în miniaturi. O cauți după nume, etichetă, articol sau fel și o filtrezi după categorie și după etichetă. Pentru fiecare element:
 
 - **Inserează** pune tipul în proiectul deschis și îl alege pentru unealta lui. Un material pe care proiectul îl are deja cu acel nume e folosit așa cum e, iar celelalte se creează. Dacă proiectul are deja un tip identic, se folosește acela și nu se face o copie. Fiecare inserare e un singur pas de anulare.
 - **Așază** îl inserează și pornește unealta lui, ca următorul clic să pună o piesă. O bucătărie se desenează de-a lungul unui perete.

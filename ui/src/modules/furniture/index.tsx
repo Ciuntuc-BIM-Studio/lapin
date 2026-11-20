@@ -29,6 +29,9 @@ import { toolForKind, usePlaceKind } from './placeKind';
 // Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
 import './extensionKind';
 import { createScheduleOf } from '../../shell/fieldSchedule';
+import { useModelsCatalog } from './ModelEditor';
+import { thumbnailUrl, type FurnitureModelInfo } from './models';
+import { t, useLang } from '../../i18n';
 
 /** The bar of a kind's tool: its type, its turn when it stands free, and whether it backs onto walls. */
 function kindOptions(kind: string, placing = true) {
@@ -216,6 +219,8 @@ function useFurnitureEntries(): PlaceEntry[] {
   useEffect(() => { if (!read) void refreshLibrary(); }, [read]);
   const start = (kind: string) => { const id = toolForKind(kind); const t = findTool(id); if (t && useUi.getState().tool !== t.id) activate(t); };
   const types = [...nodes.values()].filter((n) => n.type === TYPE_CLASS && specOf(n).kind);
+  const models = useModelsCatalog()?.models ?? [];
+  useLang((s) => s.lang);
   return [
     ...types.map((t): PlaceEntry => ({ key: `furnitureType:${t.id}`, name: t.name ?? '', group: 'This project', about: KINDS.find((k) => k.kind === specOf(t).kind)?.label ?? String(specOf(t).kind),
       place: () => { const kind = String(specOf(t).kind); chooseType(kind, t.id); start(kind); } })),
@@ -223,7 +228,28 @@ function useFurnitureEntries(): PlaceEntry[] {
       thumb: e.thumbnail ? <img src={e.thumbnail} alt="" /> : undefined, place: () => takeEntry(e, true) })),
     ...KINDS.map((k): PlaceEntry => ({ key: `furnitureKind:${k.kind}`, name: k.label, group: k.category, thumb: <k.icon size={26} strokeWidth={1.3} />,
       place: () => { usePlaceKind.setState({ kind: k.kind }); if (useUi.getState().tool !== place.id) activate(place); } })),
+    // Every model on its own (Lapin's 39 and the project's), by its group: placed through the project's type of it, made the first time.
+    ...models.map((m): PlaceEntry => ({ key: `furnitureModel:${m.id}`, name: m.thumbnail ? t(m.name) : m.name, group: t(m.group), about: modelSize(m),
+      thumb: m.thumbnail ? <img src={thumbnailUrl(m)} alt="" loading="lazy" width={40} height={40} /> : <Shapes size={26} strokeWidth={1.3} />,
+      place: () => placeModel(m) })),
   ];
+}
+
+/** A model's size as it starts, in millimetres. */
+const modelSize = (m: FurnitureModelInfo) => m.size.map((x) => Math.round(x * 1000)).join(' × ') + ' mm';
+
+/** The Place tool on a model: the project's type of it (the one chosen if it is of this model), else a new one (named by the engine: the model and its size). */
+async function placeModel(m: FurnitureModelInfo) {
+  const ofModel = [...useSession.getState().nodes.values()].filter((n) => n.type === TYPE_CLASS && specOf(n).kind === 'model' && specOf(n).model === m.id);
+  let id: string | undefined = ofModel.find((n) => n.id === chosenType('model'))?.id ?? ofModel[0]?.id;
+  if (!id) {
+    const r = (await execute('furniture.createType', { kind: 'model', spec: { model: m.id } })) as { id?: string } | null;
+    id = r?.id;
+    if (!id) return;
+  }
+  chooseType('model', id);
+  usePlaceKind.setState({ kind: 'model' });
+  if (useUi.getState().tool !== place.id) activate(place);
 }
 
 const furniture: LapinModule = {

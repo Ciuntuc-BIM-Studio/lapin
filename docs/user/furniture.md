@@ -160,6 +160,8 @@ In IFC a casework piece is an IfcFurniture of its type, with its preset's predef
 
 A model is **stretched by zones**: each model has a band on each axis that stretches, while what lies before and after it keeps its size. Make a sofa wider and its arms and legs stay as they are while the seat grows, so a two-seat sofa becomes a three-seat one; make a table taller and only its legs grow, its top keeps its thickness. Round tables, lamps' shades and plants scale whole across. Each model has the least and the most it can take; a size past them is kept at the limit.
 
+The quickest way to one is the [Place catalogue](interface.md#the-place-catalogue) (**Interior → My furniture…**): every model is there on its own, with its picture, in its group (sofas, armchairs, chairs, tables, lamps, plants, rugs). Click one and **Place furniture** puts it down; its first piece makes the project's type of it, and the next ones use that type.
+
 In **Furniture types**, choose **From a model** and a model, then **New type**. A type of a model has:
 
 - the **gallery** of models by group (sofas, armchairs, chairs, tables, lamps, plants, rugs): click another to change the type's model, and it takes that model's size and materials;
@@ -262,7 +264,7 @@ Its thumbnail is drawn from the type's preview. The type goes with everything it
 
 ![Save to my library: the name, category, tags, article code and price beside the thumbnail](shots/furniture-save-library.webp)
 
-**Interior → My furniture…** opens the [Place catalogue](interface.md#the-place-catalogue) on the furniture (the project's types, the library and Lapin's kinds, searched together); its **My furniture…** button, or **My furniture…** in Furniture types, shows the library as thumbnails. Search it by name, tag, article or kind, and filter it by category and by tag. For each item:
+**Interior → My furniture…** opens the [Place catalogue](interface.md#the-place-catalogue) on the furniture (the project's types, the library, Lapin's kinds and every model, searched together); its **My furniture…** button, or **My furniture…** in Furniture types, shows the library as thumbnails. Search it by name, tag, article or kind, and filter it by category and by tag. For each item:
 
 - **Insert** puts the type into the open project and chooses it for its tool. A material the project already has by that name is used as it is, and the others are made. If the project already has an identical type, that one is used and no copy is made. Each insert is one undo step.
 - **Place** inserts it and starts its tool, so the next click puts a piece down. A kitchen is drawn along a wall.

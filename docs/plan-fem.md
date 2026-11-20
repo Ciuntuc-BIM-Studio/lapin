@@ -604,7 +604,7 @@ Densitățile sunt ale zidăriei (unitate + mortar), valori uzuale; nu le-am gă
 
 ### 11.7 Ce s-a hotărât la implementare
 
-Decizia 743 (20.11.2026, ramura `feat/fem-s3`):
+Decizia 744 (20.11.2026, ramura `feat/fem-s3`):
 
 - **Materialul zidăriei** (`Lapin.Platform/Analysis/StructuralMaterials.cs`, `Masonry`): grupa unității din nume (BCA/AAC/Ytong → `aac`; bolțar, bloc de beton → `concrete2`; GVP, Porotherm, bloc ceramic, hollow → `clay2`; brick, cărămidă → `clay1`; masonry, zidărie, block, bloc → `clay1`), valorile proprii ale materialului înainte (`Lapin_Masonry.UnitGroup/fb/fm/fk/KE`, sau `Pset_MaterialMechanical.YoungModulus`), fm limitat la min(2 fb, 20). Detecția zidăriei vine acum înaintea celei generice „concrete/beton”, ca „beton celular” (BCA) să fie zidărie. ν = 0,25 (G = 0,4 E). Sursa fiecărei valori e scrisă (ca la beton), deci și exportul SAV/JG scrie E-ul zidăriei.
 - **Rezultatele schimbate:** cu `shells: both` pereții de zidărie sunt plăci; testul S2b care cerea reazeme liniare e acum `Masonry_walls_are_shells_under_a_shell_floor` (aceeași casă 6 × 4: reacțiile la tălpile pereților, Q-A 48 kN echilibrat, greutatea pereților în sume). Restul suitei (4773 de teste înainte de S3, 4787 cu S3) a trecut neschimbat: niciun alt test nu avea pereți de zidărie portanți calculați.
