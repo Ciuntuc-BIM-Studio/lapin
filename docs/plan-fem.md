@@ -2,7 +2,9 @@
 
 Cerut de utilizator (12.11.2026): să studiem cum ar putea Lapin să aibă și un motor de calcul cu elemente finite, ținând cont de ce există open source.
 
-**Hotărât de utilizator (12.11.2026, „facem solver intern C# — începem cu S0”):** varianta C, un solver propriu în C#, MIT, în etape; exportul (JG Structures, IFC SAV) rămâne. Prima etapă e S0, specificată la §8. Întrebările 2–4 de la §7 rămân deschise.
+**Hotărât de utilizator (12.11.2026, „facem solver intern C# — începem cu S0”):** varianta C, un solver propriu în C#, MIT, în etape; exportul (JG Structures, IFC SAV) rămâne. Prima etapă e S0, specificată la §8. Întrebările 3–4 de la §7 rămân deschise.
+
+**Hotărât de utilizator (20.11.2026, „punem pe free și S4 și S5”):** toate etapele, S0–S5, sunt în modulul deschis `analysis`, MIT, gratuite: și verificările după normă (S4), și P-Δ, reazemele elastice, legăturile doar la compresiune, etapele de execuție și neliniarul (S5). Nimic din calculul structural nu merge într-un depozit premium. Răspunde la întrebarea 2 de la §7 (decizia 742). S5 nu mai e „poate niciodată”: se face cu cod propriu, ca restul (fără xara, OpenSees sau Code_Aster ca dependențe; acestea rămân doar verificări la dezvoltare).
 
 ## 1. Ce avem deja
 
@@ -65,8 +67,8 @@ Licențele verificate pe 12.11.2026 (GitHub API și fișierele LICENSE). Regula 
 | **S1. Static liniar, bare** | Bara 3D cu `end_offsets` și eliberări, rezolvitorul rar, reacțiile R = K·U − F, verificarea echilibrului; rezultatele: deplasări, N / V / M / T pe bare, reacții. Vizualizare: deformata, diagramele, valorile. Etichete pe bare. | Teste: grinda simplu rezemată, consola, cadrul portal, grinda continuă, cu soluții închise; cadrul spațial față de Pynite (dev). |
 | **S2. Plăci** | Discretizarea bucăților convexe din `ShellPieces` în quaduri (noduri comune cu barele de pe margini), elementul de placă, momente și eforturi pe plăci, izolinii. Grinda în placă cu `offset_z`. | Teste: placa simplu rezemată și încastrată (Timoshenko), peretele în consolă; convergența la rafinare. |
 | **S3. Analiză modală și seismică** | Masa din încărcări (combinația seismică), modurile proprii, spectrul de răspuns după **P100-1/2013** (și EN 1998-1), combinarea modurilor (SRSS / CQC), forțele seismice pe nivel. | Necesită S2 pentru pereții structurali. |
-| **S4. Verificări după normă** | Beton (EN 1992-1-1: încovoiere, forfecare, armătura necesară, legată de modulul `rebar`), oțel (EN 1993-1-1: rezistența secțiunii, flambajul, flambajul lateral), lemn (EN 1995-1-1). | Candidat pentru un modul premium; aici e munca mare și răspunderea. |
-| **S5. Mai târziu, poate niciodată** | P-Δ, reazeme elastice (sol), legături doar la compresiune, analiza în etape de execuție, neliniar. | Aici ar avea sens xara sau o punte către OpenSees / Code_Aster. |
+| **S4. Verificări după normă** | Beton (EN 1992-1-1: încovoiere, forfecare, armătura necesară, legată de modulul `rebar`), oțel (EN 1993-1-1: rezistența secțiunii, flambajul, flambajul lateral), lemn (EN 1995-1-1). | Deschis, MIT (decizia 742, 20.11.2026); aici e munca mare și răspunderea: rezultate orientative, verificate. |
+| **S5. Mai târziu, poate niciodată** | P-Δ, reazeme elastice (sol), legături doar la compresiune, analiza în etape de execuție, neliniar. | Deschis, MIT, cod propriu (decizia 742, 20.11.2026); xara, OpenSees, Code_Aster doar ca verificări la dezvoltare. |
 
 **Afișarea:** o vedere analitică (3D și plan) cu modelul analitic, încărcările, deformata și diagramele, prin rezolvitorul de vizibilitate (`VisibilityGraphics`), ca să le poată tipări și planșele. Rezultatele unui element apar în Proprietăți.
 
@@ -90,7 +92,7 @@ Licențele verificate pe 12.11.2026 (GitHub API și fișierele LICENSE). Regula 
 ## 7. De hotărât de utilizator
 
 1. **Varianta:** C (solver propriu, în etape) cu exportul păstrat, sau rămânem la A / B?
-2. **Deschis sau premium:** S0–S3 în modulul deschis și S4 (verificările după normă) premium, într-un depozit privat ca `planning-pro`?
+2. **Deschis sau premium:** S0–S3 în modulul deschis și S4 (verificările după normă) premium, într-un depozit privat ca `planning-pro`? **Răspuns (20.11.2026): totul deschis, S0–S5, MIT (decizia 742).**
 3. **JG Structures:** cum se împacă un solver în Lapin cu colaborarea?
 4. **Normele:** P100-1/2013 și CR 0 / CR 1-1-3 / CR 1-1-4 înaintea Eurocodurilor cu anexele naționale, sau invers?
 5. **Primul pas:** S0 (încărcările și IFC SAV) e util și fără solver. Începem cu el?
