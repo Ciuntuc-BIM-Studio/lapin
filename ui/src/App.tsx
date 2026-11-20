@@ -43,6 +43,7 @@ import { lazyPart } from './platform/lazyPart';
 import { SelectionCard } from './shell/SelectionCard';
 import { PanelFold } from './shell/PanelFold';
 import { ContextMenuHost } from './shell/ContextMenu';
+import { useViewTheme } from './app/viewTheme';
 import { PlanView } from './viewport/PlanView';
 import { Viewport3D } from './viewport/Viewport3D';
 import { DrawingView } from './viewport/DrawingView';
@@ -245,11 +246,14 @@ function PaneBody({ i }: { i: number }) {
   const view = useUi((s) => s.panes[i]?.view);
   const active = useUi((s) => s.pane === i);
   const error = useSession((s) => s.error);
+  const viewTheme = useViewTheme();
+  // The drawing areas wear the viewport theme (Preferences → General); tables (schedules, Gantt, estimate) stay with the panels.
+  const canvas = view === 'plan' || view === 'drawing' || view === 'sheet' || !view || view === '3d';
   return (
     <PaneContext.Provider value={i}>
       <div className={`pane${active ? ' on' : ''}`} onPointerDownCapture={() => focusPane(i)} data-testid={`pane-${i}`}>
         <PaneTabs i={i} />
-        <div className="view-area">
+        <div className="view-area" data-theme={canvas ? viewTheme : undefined}>
           {view === 'plan' ? <PlanView /> : view === 'drawing' ? <DrawingView /> : view === 'sheet' ? <SheetView /> : view === 'schedule' ? <ScheduleView /> : view && view !== '3d' && ModuleView(view) ? <ModuleViewBody kind={view} /> : <Viewport3D />}
           {/* The Gantt and the estimate are tables with their own toolbar: no HUD, quick tools or selection card over them. */}
           {active && !isTableView(view) && <ViewportHud />}

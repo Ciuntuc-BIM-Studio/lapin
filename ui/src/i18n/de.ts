@@ -2537,6 +2537,11 @@ export const DE: Record<string, string> = {
   // Lapin for the browser (decision 482)
   'Light theme': 'Helles Design',
   'Dark theme': 'Dunkles Design',
+  'Viewport': 'Zeichenbereich',
+  'Same as the panels': 'Wie die Bedienfelder',
+  'Paper (light)': 'Papier (hell)',
+  'Graphite (dark)': 'Graphit (dunkel)',
+  'The drawing areas (3D, plans, sections, sheets) and what sits on them. For example dark panels with a white viewport. Printing and sheets stay on paper.': 'Die Zeichenbereiche (3D, Grundrisse, Schnitte, Pläne) und was darauf liegt. Zum Beispiel dunkle Bedienfelder mit weißem Zeichenbereich. Druck und Pläne bleiben auf Papier.',
   'Classic theme': 'Klassisches Design',
   'High contrast theme': 'Design mit hohem Kontrast',
   'A Lapin project. To work on it, open this file in Lapin: File → Open.': 'Ein Lapin-Projekt. Um daran zu arbeiten, öffne diese Datei in Lapin: Datei → Öffnen.',

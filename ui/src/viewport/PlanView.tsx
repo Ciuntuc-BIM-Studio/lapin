@@ -22,6 +22,7 @@ import { drawOrderItems, isDrafted } from './drawOrder';
 import { num } from '../engine/model';
 import { useWalk, walkInto } from './walk';
 import { notify, select, setTool, useUi } from '../app/store';
+import { useViewTheme } from '../app/viewTheme';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { activeStorey, execute, query, useSession } from '../engine/session';
 import { ownPlanOf } from './storeyPlan';
@@ -157,7 +158,7 @@ export function PlanView() {
   const planViewId = usePaneField('planViewId');
   const active = usePaneActive();
   const planDrawing = useUi((s) => s.planDrawing);
-  const onDark = drawsOnDark(useUi((s) => s.theme));
+  const onDark = drawsOnDark(useViewTheme());
   // The plan view open, else the level's own (its imported DXF and drafting are on it: a tester's report #113), else its default plan.
   const ownPlan = storey ? ownPlanOf(nodes, storey.id, planViewId) : null;
   const drawing = useDrawing(storey ? ownPlan ?? `plan:${storey.id}` : null, planDrawing);

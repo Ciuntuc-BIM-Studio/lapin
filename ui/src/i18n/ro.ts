@@ -2532,6 +2532,11 @@ export const RO: Record<string, string> = {
   // Lapin for the browser (decision 482)
   'Light theme': 'Temă deschisă',
   'Dark theme': 'Temă întunecată',
+  'Viewport': 'Zonă de desen',
+  'Same as the panels': 'La fel ca panourile',
+  'Paper (light)': 'Hârtie (deschis)',
+  'Graphite (dark)': 'Grafit (închis)',
+  'The drawing areas (3D, plans, sections, sheets) and what sits on them. For example dark panels with a white viewport. Printing and sheets stay on paper.': 'Zonele de desen (3D, planuri, secțiuni, planșe) și ce stă pe ele. De exemplu panouri închise și zonă de desen albă. Tipărirea și planșele rămân pe hârtie.',
   'Classic theme': 'Temă clasică',
   'High contrast theme': 'Temă cu contrast ridicat',
   'A Lapin project. To work on it, open this file in Lapin: File → Open.': 'Un proiect Lapin. Ca să lucrezi la el, deschide acest fișier în Lapin: Fișier → Deschide.',

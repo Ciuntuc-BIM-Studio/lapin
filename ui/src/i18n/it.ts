@@ -2540,6 +2540,11 @@ export const IT: Record<string, string> = {
   // Lapin for the browser (decision 482)
   'Light theme': 'Tema chiaro',
   'Dark theme': 'Tema scuro',
+  'Viewport': 'Area di disegno',
+  'Same as the panels': 'Come i pannelli',
+  'Paper (light)': 'Carta (chiaro)',
+  'Graphite (dark)': 'Grafite (scuro)',
+  'The drawing areas (3D, plans, sections, sheets) and what sits on them. For example dark panels with a white viewport. Printing and sheets stay on paper.': 'Le aree di disegno (3D, piante, sezioni, tavole) e ciò che vi sta sopra. Ad esempio pannelli scuri con un\'area di disegno bianca. Stampa e tavole restano su carta.',
   'Classic theme': 'Tema classico',
   'High contrast theme': 'Tema ad alto contrasto',
   'A Lapin project. To work on it, open this file in Lapin: File → Open.': 'Un progetto Lapin. Per lavorarci, apri questo file in Lapin: File → Apri.',

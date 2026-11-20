@@ -14,7 +14,7 @@ import { FolderPlus, Trash2, X } from 'lucide-react';
 import { useUi } from '../app/store';
 import { NAV_STYLES, NAV_STYLE_IDS, type NavStyleId } from '../app/navStyle';
 import { MaterialStandardChoice } from './MaterialStandardChoice';
-import { POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, usePrefs, type CoordSystem, type ThemeChoice } from '../app/prefs';
+import { POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, usePrefs, type CoordSystem, type ThemeChoice, type ViewportTheme } from '../app/prefs';
 import { setDisplay, useDisplay, type Display } from '../app/display';
 import { themeAccent3D, setHighlight, useHighlight } from '../app/highlight';
 import { ColourField, PaletteManager } from './ColourField';
@@ -82,6 +82,7 @@ function LibrariesPage() {
     {problems.length > 0 && <p className="muted small" data-no-i18n>{problems.join(' ')}</p>}
   </>;
 }
+const VIEWPORT_CHOICES: { id: ViewportTheme; label: string }[] = [{ id: 'same', label: 'Same as the panels' }, { id: 'paper', label: 'Paper (light)' }, { id: 'graphite', label: 'Graphite (dark)' }];
 const THEMES: { id: ThemeChoice; label: string }[] = [{ id: 'paper', label: 'Light theme' }, { id: 'graphite', label: 'Dark theme' }, { id: 'classic', label: 'Classic theme' }, { id: 'contrast', label: 'High contrast theme' }, { id: 'system', label: 'As the system' }];
 const DISPLAY: { key: keyof Display; label: string }[] = [
   { key: 'grid', label: 'Grid in plans and 3D (F7)' },
@@ -136,6 +137,11 @@ export function PreferencesDialog() {
               <h4>Theme</h4>
               <Radio name="Theme" value={p.theme} options={THEMES} onChange={theme} />
               <p className="muted small">Kept for the next start. The moon and sun at the right of the ribbon switch it too.</p>
+              <h4>Viewport</h4>
+              <label className="row small"><select value={p.viewportTheme} data-field="prefs-viewport-theme" aria-label="Viewport" onChange={(e) => setPrefs({ viewportTheme: e.target.value as ViewportTheme })}>
+                {VIEWPORT_CHOICES.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+              </select></label>
+              <p className="muted small">The drawing areas (3D, plans, sections, sheets) and what sits on them. For example dark panels with a white viewport. Printing and sheets stay on paper.</p>
               <h4>Language</h4>
               <select value={lang} data-no-i18n onChange={(e) => void setLang(e.target.value as typeof lang)}>
                 {LANGUAGES.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}

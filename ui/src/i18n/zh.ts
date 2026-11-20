@@ -2535,6 +2535,11 @@ export const ZH: Record<string, string> = {
   // Lapin for the browser (decision 482)
   'Light theme': '浅色主题',
   'Dark theme': '深色主题',
+  'Viewport': '视图区',
+  'Same as the panels': '与面板相同',
+  'Paper (light)': '纸张（浅色）',
+  'Graphite (dark)': '石墨（深色）',
+  'The drawing areas (3D, plans, sections, sheets) and what sits on them. For example dark panels with a white viewport. Printing and sheets stay on paper.': '绘图区域（三维、平面、剖面、图纸）及其上的内容。例如深色面板配白色视图区。打印和图纸仍为纸张样式。',
   'Classic theme': '经典主题',
   'High contrast theme': '高对比度主题',
   'A Lapin project. To work on it, open this file in Lapin: File → Open.': '一个 Lapin 项目。要继续编辑，请在 Lapin 中打开此文件：文件 → 打开。',

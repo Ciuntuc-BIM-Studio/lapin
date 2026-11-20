@@ -2538,6 +2538,11 @@ export const PL: Record<string, string> = {
   // Lapin for the browser (decision 482)
   'Light theme': 'Jasny motyw',
   'Dark theme': 'Ciemny motyw',
+  'Viewport': 'Obszar rysunku',
+  'Same as the panels': 'Tak jak panele',
+  'Paper (light)': 'Papier (jasny)',
+  'Graphite (dark)': 'Grafit (ciemny)',
+  'The drawing areas (3D, plans, sections, sheets) and what sits on them. For example dark panels with a white viewport. Printing and sheets stay on paper.': 'Obszary rysunku (3D, rzuty, przekroje, arkusze) i to, co na nich leży. Na przykład ciemne panele z białym obszarem rysunku. Wydruk i arkusze pozostają na papierze.',
   'Classic theme': 'Motyw klasyczny',
   'High contrast theme': 'Motyw wysokiego kontrastu',
   'A Lapin project. To work on it, open this file in Lapin: File → Open.': 'Projekt Lapin. Aby nad nim pracować, otwórz ten plik w Lapin: Plik → Otwórz.',
