@@ -5465,8 +5465,9 @@ export const scenes = [
       await t.until(async () => (await t.call('doc.query', { name: 'analysis.combinations', args: {} })).combinations.some((c) => c.source === 'user' && c.name === 'Maintenance'), 'the combination of our own is made');
       const generated = (await t.call('doc.query', { name: 'analysis.combinations', args: {} })).combinations.find((c) => c.source === 'generated' && c.kind === 'uls' && c.enabled);
       t.expect(!!generated, 'a generated ultimate combination to switch off');
-      await dialog.locator(`[data-testid="combo-enabled-${generated.key}"]`).uncheck();
+      await dialog.locator(`[data-testid="combo-enabled-${generated.key}"]`).click();
       await t.until(async () => (await t.call('doc.query', { name: 'analysis.combinations', args: {} })).combinations.filter((c) => c.enabled === false).length === 1, 'one combination is switched off');
+      await t.until(async () => !(await dialog.locator(`[data-testid="combo-enabled-${generated.key}"]`).isChecked()), 'the switched-off combination shows unticked');
       const made = await t.call('doc.query', { name: 'analysis.combinations', args: {} });
       const mine = made.combinations.find((c) => c.source === 'user');
       t.expect(mine && mine.kind === 'uls' && mine.factors.length === 2, 'the combination of our own has its two factors');
