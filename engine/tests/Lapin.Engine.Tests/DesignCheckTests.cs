@@ -206,4 +206,60 @@ public class DesignCheckTests
         // V = 100 kN > VRd,c = 67.66 kN: Asw/s = 100/(0.4086·434 783·2.5) = 2.2516 cm²/m < the minimum 2.4.
         Assert.Equal(2.4, need.Stirrups * 1e4, 6);
     }
+
+    [Fact]
+    public void Clause_6_1_6_6_3_2_6_3_3_a_C24_beam_column_in_service_class_1()
+    {
+        // C24 (EN 338:2016: fm,k 24, fc,0,k 21, fv,k 4.0, E0,05 7400 MPa), 100 × 200, 4 m, a medium-term combination (kmod 0.80), γM 1.3:
+        // fm,d = 0.8·24/1.3 = 14.769 MPa, fc,0,d = 12.923 MPa, fv,d = 2.4615 MPa; kh = 1 at h = 200 mm.
+        // M = 5 kN·m (a uniform load, V = 5 kN at the ends), N = −20 kN: σm = 5/(0.1·0.2²/6) = 7.5 MPa, σc = 1.0 MPa.
+        var t = TimberDesign.Find("C24")!;
+        var m = new TimberMember(0.1, 0.2, 4, t, 1, 4, 4);
+        var q = 8 * 5 / 16.0;
+        var cs = TimberDesign.Check(m, [Set(4, _ => -20, x => q * x * (4 - x) / 2, x => q * (2 - x)) with { Duration = "medium" }]);
+        // 6.2.4: (σc/fc,0,d)² + σm/fm,d = (1/12.923)² + 7.5/14.769 = 0.51380.
+        Assert.Equal(Math.Pow(1 / (0.8 * 21 / 1.3), 2) + 7.5 / (0.8 * 24 / 1.3), Get(cs, "timber.section").Utilisation, 6);
+        // 6.1.7: τ = 1.5·5/(0.67·0.1·0.2) = 0.5597 MPa: 0.22738.
+        Assert.Equal(0.22738, Get(cs, "timber.shear").Utilisation, 4);
+        // 6.3.2: λz = 4/(0.1/√12) = 138.56, λrel,z = 138.56/π·√(21/7400) = 2.34960, k = 0.5[1 + 0.2(2.0496) + 2.3496²] = 3.4654, kc,z = 0.16632;
+        // λrel,y = 1.17480, kc,y = 0.56194; eq. 6.24 = 1.0/(0.16632·12.923) + 0.7·7.5/14.769 = 0.82071 (6.23: 0.64552).
+        var b = Get(cs, "timber.buckling");
+        Assert.Equal(0.16632, V(b, "kc,z"), 4);
+        Assert.Equal(0.64552, V(b, "eq. 6.23"), 4);
+        Assert.Equal(0.82071, b.Utilisation, 4);
+        // 6.3.3: lef = 0.9 L = 3.6 m (Table 6.1, a uniform load); σm,crit = 0.78·0.1²·7400/(0.2·3.6) = 80.167 MPa, λrel,m = 0.54715 ≤ 0.75: kcrit = 1.
+        var ltb = Get(cs, "timber.ltb");
+        Assert.Equal(3.6, V(ltb, "lef"), 9);
+        Assert.Equal(80.1667, V(ltb, "σm,crit"), 3);
+        Assert.Equal(1, V(ltb, "kcrit"), 9);
+        // kmod by duration and service class (Table 3.1), kdef (Table 3.2).
+        Assert.Equal(0.6, TimberDesign.Kmod(1, "permanent"));
+        Assert.Equal(0.9, TimberDesign.Kmod(2, "short"));
+        Assert.Equal(0.9, TimberDesign.Kmod(3, "instantaneous"));
+        Assert.Equal(2.0, TimberDesign.Kdef(3));
+    }
+
+    [Fact]
+    public void CR_6_checks_of_a_brick_wall_by_hand()
+    {
+        // l = 3 m, t = 25 cm, h = 3 m, ρ2 = 0.75 (hef = 2.25 m), fk = 4.47 MPa, E = 4470 MPa, fb = 10 MPa, fvk0 = 0.20 MPa, γM = 2.2: fd = 2.0318 MPa.
+        // At the foot N = 200 kN, V = 40 kN, M = 60 kN·m in plane, m = 1 kN·m/m out of plane.
+        var w = new MasonryWall(3, 0.25, 3, 0.75, 4.47, 4470, 10, 0.20, 2.2, 2.2);
+        var s = new WallSection(200, 40, 60, 1.0, 0);
+        var cs = MasonryDesign.Check(w, [new WallForceSet("uls/x", "x", false, s, s, null)]);
+        // CR 6 eq. 6.18: ea = max(t/30, hef/300, 10 mm) = 10 mm; ei = 1/(200/3) + 0.010 = 0.025 m ≥ 0.05 t; Φ = 1 − 2·0.025/0.25 = 0.8;
+        // NRd = 0.8·3·0.25·2031.8 = 1219.09 kN (eq. 6.16): 0.16406.
+        var foot = Get(cs, "masonry.vertical.foot");
+        Assert.Equal(0.8, V(foot, "Φ"), 9);
+        Assert.Equal(1219.09, V(foot, "NRd"), 1);
+        // EN 1996-1-1 Annex G: λ = 2.25/0.25·√(4.47/4470) = 0.28460; A1 = 0.8; u = (0.28460 − 0.063)/(0.73 − 1.17·0.1) = 0.36151; Φm = 0.8·e^(−u²/2) = 0.74940.
+        Assert.Equal(0.74940, V(Get(cs, "masonry.vertical.middle"), "Φm"), 4);
+        // Shear (eq. 4.4a): e = 60/200 = 0.3 ≤ l/6, lc = 3 m; σd = 0.26667 MPa, fvk = 0.20 + 0.4·0.26667 = 0.30667 ≤ 0.065·10; VRd = 0.30667/2.2·250·3000 = 104.545 kN: 0.38261.
+        Assert.Equal(1150.0 / 11, V(Get(cs, "masonry.shear"), "VRd"), 3);
+        Assert.Equal(0.38261, Get(cs, "masonry.shear").Utilisation, 4);
+        // Bending in plane: x = 200/(0.85·2031.8·0.25) = 0.46322 m; MRd = 200(3 − 0.46322)/2 = 253.678 kN·m: 0.23652.
+        Assert.Equal(253.678, V(Get(cs, "masonry.bending"), "MRd"), 2);
+        // A large eccentricity: e = 1.2 m > l/6, lc = 3(1.5 − 1.2) = 0.9 m.
+        Assert.Equal(0.9, MasonryDesign.CompressedLength(3, 100, 120), 9);
+    }
 }

@@ -58,7 +58,7 @@ public class ShellAnalysisTests(ITestOutputHelper output)
     }
 
     /// <summary>A concrete floor 6 × 4 m, 20 cm, at 3 m on four load-bearing walls (their axes its edges) of a material that is not a shell: line supports; 2 kN/m² in Q-A.</summary>
-    static (Fixture F, string Slab) FloorOnWalls(string wallMaterial = "Brick", string? shells = "slabs", double? mesh = null)
+    internal static (Fixture F, string Slab) FloorOnWalls(string wallMaterial = "Brick", string? shells = "slabs", double? mesh = null)
     {
         var f = LoadCaseTests.F();
         var first = (string)f.Run("storey.create", new JsonObject { ["name"] = "First floor", ["elevation"] = 3.0, ["height"] = 3.0 })!["id"]!;
