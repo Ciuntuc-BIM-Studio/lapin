@@ -5657,6 +5657,9 @@ export const scenes = [
       await t.until(async () => (await dialog.locator('[data-testid=stability]').count()) > 0, 'the Stability section shows');
       const run = await t.call('doc.query', { name: 'analysis.run', args: {} });
       t.expect(run.ok === true && run.nonlinear?.secondOrder === true, `the run is second order (${JSON.stringify(run.nonlinear ?? run.mechanism ?? run.refused ?? '')})`);
+      // Second order alone in a project that never said anything brings the global imperfections (±X, ±Y), and the table names the governing one.
+      await t.until(async () => (await dialog.locator('[data-testid=stability-imperfections]').count()) > 0, 'the Stability section names the global imperfections');
+      t.expect(run.nonlinear?.imperfections != null && run.nonlinear.combinations.some((c) => c.variants?.length === 4), 'the combinations are solved with their four imperfection variants');
       await dialog.locator('[data-testid=stability-find]').click();
       await t.until(async () => (await dialog.locator('[data-testid=stability-buckling] tbody tr').count()) > 0, 'the critical load factors are listed');
       await t.wait(500);
@@ -5671,6 +5674,44 @@ export const scenes = [
       await select(t, beams[0]);
       await t.wait(600);
       t.expect(await t.page.locator('[data-field=acts-in]').count() === 1, 'a beam has Acts in in its properties');
+    },
+  },
+  {
+    // Structural analysis, stage S5d (docs/plan-fem.md §14.15): a steel hall's purlins buckle on their own under the wind's uplift; the sheeting that rests on them holds them straight, and the first modes move on.
+    id: 'analysis-sheeting',
+    touches: ['core', 'structure', 'steel', 'analysis'],
+    async run(t) {
+      await t.fresh();
+      await t.cmd('steel.addHall', { storeyId: await t.storey(), attrs: { secondary: true } });
+      await t.cmd('analysis.defaultCases', {});
+      const steel = (await t.nodes()).find((n) => n.name === 'Steel' && n.type === 'IfcMaterial');
+      if (steel) await t.cmd('material.setData', { id: steel.id, params: [
+        { pset: 'Pset_MaterialMechanical', name: 'YoungModulus', value: 210e9 }, { pset: 'Pset_MaterialMechanical', name: 'PoissonRatio', value: 0.3 }, { pset: 'Pset_MaterialCommon', name: 'MassDensity', value: 7850 },
+      ] });
+      await t.cmd('analysis.setClimate', { snow: { s0k: 2 }, wind: { qb: 0.5, terrain: 'III' } });
+      await t.wait(1500);
+      await t.tool('analysis.run');
+      const dialog = t.page.locator('[aria-label="Analysis results"]');
+      await t.until(async () => (await dialog.locator('[data-testid=stability]').count()) > 0, 'the Stability section shows', 120000);
+      const find = async () => {
+        await t.until(async () => await dialog.locator('[data-testid=stability-find]').isEnabled(), 'the critical load factors can be asked for', 120000);
+        await dialog.locator('[data-testid=stability-find]').click();
+        await t.until(async () => (await dialog.locator('[data-testid=stability-buckling] tbody tr').count()) > 0, 'the critical load factors are listed', 180000);
+        await t.wait(600);
+      };
+      await find();
+      // The first mode is a purlin's own: the button offers the sheeting's hold.
+      await t.until(async () => (await dialog.locator('[data-testid=stability-sheeting]').count()) > 0, 'the sheeting button is offered with a purlin\'s own mode', 30000);
+      await tallShot(t, 'analysis-sheeting-before', '[data-testid=stability]', { height: 3200, pad: 8 });
+      await dialog.locator('[data-testid=stability-sheeting]').click();
+      await t.wait(1500);
+      // The change makes the run stale: run again, then find again.
+      await t.ui({ dialog: null });
+      await t.tool('analysis.run');
+      await t.until(async () => (await dialog.locator('[data-testid=stability-sheeting-on]').count()) > 0, 'the run says the members are braced by sheeting', 120000);
+      await find();
+      t.expect(await dialog.locator('[data-testid=stability-sheeting]').count() === 0, 'no purlin\'s own mode is left to brace');
+      await tallShot(t, 'analysis-sheeting-after', '[data-testid=stability]', { height: 3200, pad: 8 });
     },
   },
   {
