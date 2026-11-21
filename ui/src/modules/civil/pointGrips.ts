@@ -66,8 +66,9 @@ export function terrainPointGrips(n: NodeDto, centre: { x: number; y: number }, 
       title: mode === 'cage' ? 'Control point height' : 'Survey point height',
       step: (by: number) => ({ command: 'civil.moveTerrainPoint', args: { id: n.id, index: p.i, dz: by } }),
     };
+    // Controls are drawn filled in both modes that show them (every grip is one in the cage).
+    if (mode !== 'all') g.marked = controls.has(p.i);
     if (mode === 'pick') {
-      g.marked = controls.has(p.i);
       g.click = () => ({ command: 'civil.setTerrainControls', args: { id: n.id, indices: [p.i], mode: 'toggle' } });
     }
     return g;

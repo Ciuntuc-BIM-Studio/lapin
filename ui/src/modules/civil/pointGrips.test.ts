@@ -41,6 +41,12 @@ describe('a terrain\'s control cage in 3D (issue #113)', () => {
     expect(terrainPointGrips(caged(), { x: 0, y: 0 }, 0, MAX_POINT_GRIPS, 'cage')).toEqual([]);
   });
 
+  it('draws every control filled (marked) in the controls-only mode, not just the one touched', () => {
+    const g = terrainPointGrips(caged([[10, 0], [0, 10], [10, 10]]), { x: 0, y: 0 }, 0, MAX_POINT_GRIPS, 'cage');
+    expect(g).toHaveLength(3);
+    expect(g.every((x) => x.marked === true)).toBe(true);
+  });
+
   it('marks the controls among every point while choosing them, a click making a point a control or free again', () => {
     const g = terrainPointGrips(caged([[10, 0]]), { x: 0, y: 0 }, 0, MAX_POINT_GRIPS, 'pick');
     expect(g).toHaveLength(4);

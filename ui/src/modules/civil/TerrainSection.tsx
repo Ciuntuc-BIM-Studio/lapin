@@ -63,9 +63,9 @@ export function TerrainSection({ node }: { node: NodeDto }) {
           {editPoints && <> <select value={gripMode} aria-label="Grips on" onChange={(e) => showOn(e.target.value as PointGripMode)}>
             {GRIP_MODES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
           </select></>}
-          {node.editable && <div className="row small">
+          {node.editable && <div className="row small" style={{ flexWrap: 'wrap', gap: '2px 6px', width: '100%' }}>
             <button type="button" className="link small" onClick={() => void execute('civil.setTerrainControls', { id: node.id, spacing: cageStep })}>every</button>
-            <input type="number" min={0.5} step={1} value={cageStep} style={{ width: '4em' }} aria-label="Control spacing" onChange={(e) => setCageStep(Math.max(0.5, Number(e.target.value) || 10))} /> <span>m</span>
+            <input type="number" min={0.5} step={1} value={cageStep} style={{ width: '5.5em', flex: 'none' }} aria-label="Control spacing" onChange={(e) => setCageStep(Math.max(0.5, Number(e.target.value) || 10))} /> <span>m</span>
             {' · '}<button type="button" className="link small" onClick={() => void execute('civil.setTerrainControls', { id: node.id, boundary: true })}>along the boundary</button>
             {controls > 0 && <>{' · '}<button type="button" className="link small" onClick={() => void execute('civil.setTerrainControls', { id: node.id, clear: true })}>clear</button></>}
           </div>}
