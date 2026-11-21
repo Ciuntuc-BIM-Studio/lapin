@@ -29,6 +29,17 @@ public static class ViewLinework
         ctx.Replace(view.With(attrs: attrs));
     }
 
+    /// <summary>Shift every line edit on <paramref name="view"/> in its 2D coordinates (e.g. when a section's origin moves).</summary>
+    public static Entity Shift(Entity view, double dx, double dy)
+    {
+        var edits = Edits(view);
+        if (edits.Count == 0 || (Math.Abs(dx) <= 1e-9 && Math.Abs(dy) <= 1e-9)) return view;
+        var delta = new Vec2(dx, dy);
+        var attrs = view.CloneAttrs();
+        attrs["linework"] = new JsonArray(edits.Select(e => (JsonNode)(e with { A = e.A + delta, B = e.B + delta }).ToJson()).ToArray());
+        return view.With(attrs: attrs);
+    }
+
     /// <summary>The view's drawing as generated (before its edits), to pick edges in.</summary>
     static ViewDrawing Generated(ICommandContext ctx, Entity view)
     {
