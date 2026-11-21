@@ -154,6 +154,20 @@ public static class DraftingResources
         finally { _standardPatterns = null; }
     }
 
+    /// <summary>
+    /// A wall or floor type's layer graphics checked (decision 756): a material's kind of view (any of its fields and its steps by
+    /// scale, <c>byScale</c>), a null field left out (but hatch and fill, whose null is an explicit none); no reset (the layer's
+    /// whole graphics are sent again). Null when it gives nothing.
+    /// </summary>
+    public static JsonObject? CheckLayerGraphics(IModelView m, JsonObject? g, string where)
+    {
+        if (g is not { Count: > 0 }) return null;
+        if (g.ContainsKey("reset")) throw new CommandException($"{where}: a layer's graphics have no reset; send them whole.");
+        var o = new JsonObject();
+        foreach (var (k, v) in CheckGraphics(m, g, where)) if (v != null || !NullResets(k)) o[k] = v?.DeepClone();
+        return o.Count > 0 ? o : null;
+    }
+
     /// <summary>A line of a standard's pens checked as a material's line (colour, weight, line type); null when it gives none.</summary>
     internal static JsonObject? CheckStandardLine(IModelView m, JsonNode? v, string where, string what) => CheckLine(m, v, where, what);
 

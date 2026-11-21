@@ -734,6 +734,8 @@ public sealed partial class Session
         var byNode = new Dictionary<string, List<CapPart>>();
         var patterns = drawing ? DraftingResources.Patterns(_store) : null;
         var standard = MaterialStandards.Of(_store);
+        // The types' layers' own graphics (decision 756), when any gives them: each element's layers read once.
+        var layerLooks = drawing && LayerGraphics.Any(_store) ? new Dictionary<string, IReadOnlyList<LayerBand>?>() : null;
         for (var k = 0; k < caps.Length; k++)
         {
             var m = caps[k];
@@ -743,6 +745,11 @@ public sealed partial class Session
             if (!drawing) { list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges)); continue; }
             // At the drawing's scale, its step by scale (decision 680).
             var look = MaterialGraphics.Resolve(gp.Material == null ? null : _store.Get(gp.Material), "section", gp.Material != null && _store.Get(gp.Material) == null && !GlobalId.IsValid(gp.Material) ? gp.Material : null, scale: scale, standard: standard);
+            if (layerLooks != null && gp.Material != null)
+            {
+                if (!layerLooks.TryGetValue(id, out var own)) layerLooks[id] = own = LayerSets.DrawnBandsOf(_store, id);
+                look = LayerGraphics.Over(look, LayerGraphics.Of(own, gp.Key, gp.Material), scale)!;
+            }
             var (fill, hatch) = CapHatch(faces[k], look, patterns!, scale);
             list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges, fill, hatch));
         }

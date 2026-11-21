@@ -4,9 +4,9 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>A layer as a command gives it: a material by name, a thickness in metres, the core mark, its priority at joins (null: its material's), its note (how it is laid in this build-up),
-/// its category (null: its material's), whether a wall's layer extends down and up into the floors' layers ranked under it (<see cref="MaterialLayer"/>).</summary>
+/// its category (null: its material's), whether a wall's layer extends down and up into the floors' layers ranked under it, its own graphics over its material's (decision 756; <see cref="MaterialLayer"/>).</summary>
 public sealed record LayerSpec(string Material, double Thickness, bool Core = false, string? Color = null, string? Name = null, double? From = null, double? To = null, IReadOnlyList<LayerPartSpec>? Parts = null, int? Priority = null, string? Note = null,
-    string? Category = null, bool ExtendDown = false, bool ExtendUp = false);
+    string? Category = null, bool ExtendDown = false, bool ExtendUp = false, JsonObject? Graphics = null);
 
 /// <summary>A piece of a layer in its height as a command gives it (decision 264): a material by name, its height in metres.</summary>
 public sealed record LayerPartSpec(string Material, double Height, string? Name = null, string? Color = null);
@@ -17,9 +17,9 @@ public sealed record LayerPartSpec(string Material, double Height, string? Name 
 /// its occurrences lay it with their own IfcMaterialLayerSetUsage. The
 /// platform's, since several modules build on it.
 /// </summary>
-/// <summary>One layer of an element's layer set as a band across its axis: from, to, its material, its name, its place in the set, whether it is the core.</summary>
+/// <summary>One layer of an element's layer set as a band across its axis: from, to, its material, its name, its place in the set, whether it is the core; its own graphics (decision 756, <see cref="MaterialLayer.Graphics"/>).</summary>
 public readonly record struct LayerBand(double From, double To, string Material, string Name, int Index, bool Core, double? Z0 = null, double? Z1 = null, IReadOnlyList<LayerPart>? Parts = null, int Rank = 0,
-    string? Category = null, bool ExtendDown = false, bool ExtendUp = false);
+    string? Category = null, bool ExtendDown = false, bool ExtendUp = false, JsonObject? Graphics = null);
 
 public static class LayerSets
 {
@@ -64,8 +64,15 @@ public static class LayerSets
             if (l["category"] is JsonValue cv && cv.TryGetValue<string>(out var cs) && cs.Trim().Length > 0)
                 category = Materials.Categories.FirstOrDefault(x => string.Equals(x, cs.Trim(), StringComparison.OrdinalIgnoreCase))
                     ?? throw new CommandException($"„{cs.Trim()}” is not a layer's category ({string.Join(", ", Materials.Categories)}).");
+            // How it draws in this build-up over its material (decision 756): a kind of view's graphics, checked against the project as it is written (Resolve).
+            JsonObject? graphics = l["graphics"] switch
+            {
+                null => null,
+                JsonObject g => g.Count > 0 ? (JsonObject)g.DeepClone() : null,
+                _ => throw new CommandException("A layer's graphics are {cutLine?, separatorLine?, hatch?, fill?, …, byScale?}, as a material's kind of view."),
+            };
             o.Add(new LayerSpec(material, thickness.Value, l["core"] is JsonValue c && c.TryGetValue<bool>(out var core) && core, (string?)l["color"], (string?)l["name"], from, to, ParseParts(l["parts"]), priority, note,
-                category, True(l["extendDown"]), True(l["extendUp"])));
+                category, True(l["extendDown"]), True(l["extendUp"]), graphics));
         }
         Validate(o, what);
         return o;
@@ -101,15 +108,15 @@ public static class LayerSets
 
     /// <summary>The layers with their materials, made when the project has none of that name.</summary>
     public static List<MaterialLayer> Resolve(IEdit edit, IReadOnlyList<LayerSpec> layers) =>
-        layers.Select(l => new MaterialLayer(Materials.Ensure(edit, l.Material, l.Color).Id, l.Thickness, l.Core, l.Name, l.From, l.To,
+        layers.Select((l, i) => new MaterialLayer(Materials.Ensure(edit, l.Material, l.Color).Id, l.Thickness, l.Core, l.Name, l.From, l.To,
             l.Parts is { Count: > 0 } ps ? ps.Select(p => new LayerPart(Materials.Ensure(edit, p.Material, p.Color).Id, p.Height, p.Name)).ToList() : null, l.Priority, l.Note,
-            l.Category, l.ExtendDown ? true : null, l.ExtendUp ? true : null)).ToList();
+            l.Category, l.ExtendDown ? true : null, l.ExtendUp ? true : null, DraftingResources.CheckLayerGraphics(edit.Model, l.Graphics, $"Layer {i + 1}'s graphics"))).ToList();
 
     /// <summary>A stored layer as a command would give it again (materials by name), its pieces in height with it.</summary>
     public static LayerSpec SpecOf(IModelView m, MaterialLayer l) =>
         new(m.Get(l.Material)?.Name ?? "Material", l.Thickness, l.Core, Name: l.Name, From: l.From, To: l.To,
             Parts: l.Parts?.Select(p => new LayerPartSpec(m.Get(p.Material)?.Name ?? "Material", p.Height, p.Name)).ToList(), Priority: l.Priority, Note: l.Note,
-            Category: l.Category, ExtendDown: l.ExtendDown == true, ExtendUp: l.ExtendUp == true);
+            Category: l.Category, ExtendDown: l.ExtendDown == true, ExtendUp: l.ExtendUp == true, Graphics: l.Graphics?.DeepClone() as JsonObject);
 
     /// <summary>A new layer set, associated with the type.</summary>
     public static Entity Attach(IEdit edit, Entity type, IReadOnlyList<LayerSpec> layers)
@@ -166,7 +173,7 @@ public static class LayerSets
         var core = Layers.CoreIndex(layers);
         var table = CutOrder.MaterialsOf(m);
         return layers.Select((l, i) => new LayerBand(bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i, i == core, l.From, l.To, l.Parts,
-            Layers.Rank(l.Priority, table != null && Json.Number(table[l.Material]) is { } n ? (int)n : null, i == core), l.Category, l.ExtendDown == true, l.ExtendUp == true)).ToList();
+            Layers.Rank(l.Priority, table != null && Json.Number(table[l.Material]) is { } n ? (int)n : null, i == core), l.Category, l.ExtendDown == true, l.ExtendUp == true, l.Graphics)).ToList();
     }
 
     /// <summary>

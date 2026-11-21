@@ -256,6 +256,159 @@ public class HatchByScaleTests
         Assert.Null(ViewStyles.Of(f.Model, Views.Find(f.Model, plan)!).SmallScaleCut);
     }
 
+    // ---- A wall type's layer graphics (decision 756, the forum's "a set of pens for the core and for the cladding, for each
+    // scale, as in ArchiCAD"): the type's layer names its own lines (and any graphics), with steps by scale, over its material's.
+
+    /// <summary>The long cut lines of a plan of a wall along x, by their distance from the axis (mm, rounded): their width and colour.</summary>
+    static Dictionary<int, (double Width, string? Stroke)> FaceLines(IEnumerable<Pen> pens, double axis = 0)
+    {
+        var o = new Dictionary<int, (double, string?)>();
+        foreach (var p in pens.Where(p => p.Layer == PenLayer.Cut))
+            foreach (var (a, b) in p.Segments)
+                if (Math.Abs(a.Y - b.Y) < 1e-6 && Math.Abs(a.X - b.X) > 1 && Math.Abs(a.Y - axis) < 1) o[(int)Math.Round(Math.Abs(a.Y - axis) * 1000)] = (p.Width, p.Stroke);
+        return o;
+    }
+
+    /// <summary>The wall's type with its layers again, the core's and the insulation's graphics given.</summary>
+    static void SetLayerGraphics(Fixture f, string type, JsonObject? core, JsonObject? insulation)
+    {
+        JsonObject L(string m, double t, bool c, JsonObject? g)
+        {
+            var o = new JsonObject { ["material"] = m, ["thickness"] = t, ["core"] = c };
+            if (g != null) o["graphics"] = g;
+            return o;
+        }
+        f.Run("architecture.updateWallType", new JsonObject
+        {
+            ["id"] = type,
+            ["layers"] = new JsonArray(L("Gypsum plaster", 0.015, false, null), L("Concrete", 0.2, true, core), L("EPS insulation", 0.1, false, insulation)),
+        });
+    }
+
+    /// <summary>The core's lines: 0.7 mm between the layers to 1:99, 0.35 mm red from 1:100; the insulation's outline 0.13 mm, 0.09 from 1:100.</summary>
+    static (JsonObject Core, JsonObject Insulation) CladdingPens() => (
+        new JsonObject
+        {
+            ["separatorLine"] = new JsonObject { ["weight"] = 0.7 },
+            ["byScale"] = new JsonArray(new JsonObject { ["from"] = 100, ["separatorLine"] = new JsonObject { ["weight"] = 0.35, ["color"] = "#ff0000" } }),
+        },
+        new JsonObject
+        {
+            ["cutLine"] = new JsonObject { ["weight"] = 0.13 },
+            ["byScale"] = new JsonArray(new JsonObject { ["from"] = 100, ["cutLine"] = new JsonObject { ["weight"] = 0.09 } }),
+        });
+
+    static string TypeOf(Fixture f, string wall) => f.Model.RelatingOf(wall, IfcClass.RelDefinesByType)!.Id;
+
+    [Fact]
+    public void A_wall_type_s_layer_gives_its_own_pens_for_each_scale()
+    {
+        var (f, wall) = Wall();
+        var type = TypeOf(f, wall);
+        var p50 = Plan(f, 50);
+        var p100 = Plan(f, 100);
+        var before50 = FaceLines(Render(f, p50).Pens);
+        // As before: the outline 0.5, the lines between the layers the separation pen.
+        Assert.Equal((0.25, "#000000"), before50[100]);
+        Assert.Equal(0.5, before50[200].Width);
+        var (core, insulation) = CladdingPens();
+        SetLayerGraphics(f, type, core, insulation);
+
+        // 1:50: the core's lines between the layers 0.7 (both its faces), the insulation's outer face 0.13, the plaster's face as before.
+        var at50 = FaceLines(Render(f, p50).Pens);
+        Assert.Equal((0.7, "#000000"), at50[100]);
+        Assert.Equal(0.13, at50[200].Width);
+        Assert.Equal(before50[115], at50[115]);
+        // 1:100: the core's step (0.35, red), the insulation's (0.09).
+        var at100 = FaceLines(Render(f, p100).Pens);
+        Assert.Equal((0.35, "#ff0000"), at100[100]);
+        Assert.Equal(0.09, at100[200].Width);
+        // A section (a cut of the same wall) takes them too; the resolver gives the band its layer's tier.
+        var band = new ViewMaterialGraphics(f.Model, "section", 100, ViewStyles.Of(f.Model, Views.Find(f.Model, p100)!))
+            .Band(new DPolygon([], wall, "IFCWALL", "layer:1", Material(f, "Concrete")));
+        Assert.Equal(new MaterialLine("#ff0000", 0.35), band!.SeparatorLine);
+    }
+
+    [Fact]
+    public void A_layer_s_graphics_lie_over_its_material_s_and_under_the_view_s_and_another_type_of_the_material_keeps_the_material_s()
+    {
+        var (f, wall) = Wall();
+        var concrete = Material(f, "Concrete");
+        // The material's own step: separators 1.0 from 1:100, its hatch red.
+        Set(f, concrete, "section", new JsonObject { ["byScale"] = new JsonArray(new JsonObject { ["from"] = 100, ["hatchColor"] = "#ff0000", ["separatorLine"] = new JsonObject { ["weight"] = 1.0 } }) });
+        var (core, _) = CladdingPens();
+        SetLayerGraphics(f, TypeOf(f, wall), core, null);
+        var plan = Plan(f, 100);
+        var pens = Render(f, plan).Pens;
+        // The layer's step over the material's step: 0.35, the material's hatch colour kept (the layer sets none).
+        Assert.Equal(0.35, FaceLines(pens)[100].Width);
+        Assert.Contains(Hatches(pens), p => p.Stroke == "#ff0000");
+        // Another wall type of the same concrete: the material's 1.0 (its own wall, far off).
+        var other = f.Type("Bare", ("Gypsum plaster", 0.015, false), ("Concrete", 0.2, true), ("EPS insulation", 0.1, false));
+        f.Wall(0, 10, 5, 10, other);
+        pens = Render(f, plan).Pens;
+        Assert.Equal(1.0, FaceLines(pens, 10)[100].Width);
+        Assert.Equal(0.35, FaceLines(pens)[100].Width);
+        // The element's own override in the view wins over its layer's.
+        f.Run("view.elementGraphics", new JsonObject { ["id"] = plan, ["ids"] = new JsonArray(wall), ["value"] = new JsonObject { ["cutLine"] = new JsonObject { ["color"] = "#00ff00" } } });
+        var band = ViewMaterialGraphics.For(f.Model, Views.Find(f.Model, plan)!, "plan", 100).Band(new DPolygon([], wall, "IFCWALL", "layer:1", concrete));
+        Assert.Equal("#00ff00", band!.CutLine!.Color);
+        Assert.Equal(0.35, band.SeparatorLine!.Weight);
+    }
+
+    [Fact]
+    public void A_layer_s_graphics_are_checked_kept_with_the_type_one_undo_step_and_a_type_without_them_writes_as_before()
+    {
+        var (f, wall) = Wall();
+        var type = TypeOf(f, wall);
+        var set = LayerSets.Of(f.Model, type)!;
+        var before = set.Attrs.ToJsonString();
+        Assert.DoesNotContain("graphics", before);
+        // The same layers again, none given: written exactly as before.
+        SetLayerGraphics(f, type, null, null);
+        Assert.Equal(before, LayerSets.Of(f.Model, type)!.Attrs.ToJsonString());
+
+        var (core, insulation) = CladdingPens();
+        SetLayerGraphics(f, type, core, insulation);
+        var layers = LayerSets.LayersOf(f.Model, type);
+        Assert.Equal(0.7, (double?)layers[1].Graphics!["separatorLine"]!["weight"]);
+        Assert.Null(layers[0].Graphics);
+        // One undo step.
+        f.Session.Undo();
+        Assert.Equal(before, LayerSets.Of(f.Model, type)!.Attrs.ToJsonString());
+
+        void Bad(JsonObject g) => Assert.Throws<CommandException>(() => SetLayerGraphics(f, type, g, null));
+        Bad(new JsonObject { ["pen"] = 3 });
+        Bad(new JsonObject { ["cutLine"] = new JsonObject { ["weight"] = 9 } });
+        Bad(new JsonObject { ["hatch"] = "NO_SUCH_PATTERN" });
+        Bad(new JsonObject { ["byScale"] = new JsonArray(new JsonObject { ["cutLine"] = new JsonObject { ["weight"] = 0.35 } }) });
+        Bad(new JsonObject { ["reset"] = new JsonArray("hatch") });
+        Assert.Throws<CommandException>(() => f.Run("architecture.updateWallType", new JsonObject
+        {
+            ["id"] = type, ["layers"] = new JsonArray(new JsonObject { ["material"] = "Concrete", ["thickness"] = 0.2, ["core"] = true, ["graphics"] = "thick" }),
+        }));
+        // Empty graphics: none kept.
+        SetLayerGraphics(f, type, new JsonObject(), null);
+        Assert.Equal(before, LayerSets.Of(f.Model, type)!.Attrs.ToJsonString());
+    }
+
+    [Fact]
+    public void A_layer_s_graphics_travel_with_the_type_s_file()
+    {
+        var (f, wall) = Wall();
+        var type = TypeOf(f, wall);
+        var (core, insulation) = CladdingPens();
+        SetLayerGraphics(f, type, core, insulation);
+        var text = (string)f.Session.Query("architecture.exportTypes", new JsonObject { ["kinds"] = new JsonArray("wall") })!["text"]!;
+        Assert.Contains("separatorLine", text);
+        var g = new Fixture();
+        g.Run("architecture.importTypes", new JsonObject { ["text"] = text });
+        var t = g.Model.OfClass(IfcClass.WallType).First(x => x.Name == "Insulated");
+        var layers = LayerSets.LayersOf(g.Model, t.Id);
+        Assert.Equal(0.35, (double?)layers[1].Graphics!["byScale"]![0]!["separatorLine"]!["weight"]);
+        Assert.Equal(0.13, (double?)layers[2].Graphics!["cutLine"]!["weight"]);
+    }
+
     [Fact]
     public void A_legend_draws_a_material_at_its_view_s_scale()
     {
