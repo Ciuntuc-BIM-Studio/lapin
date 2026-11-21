@@ -66,7 +66,7 @@ export function SupportSection({ node }: { node: NodeDto }) {
                   <tr key={t.soil}>
                     <td>{t.soil}</td>
                     <td data-no-i18n>{formatSoilRange(t.min, t.max)}</td>
-                    <td><button type="button" className="btn mini" title="Use the middle of this range" onClick={() => set({ winkler: Math.round((t.min + t.max) / 2) })}>Use</button></td>
+                    <td><button type="button" className="btn mini" title="Use the middle of this range" onClick={() => set({ winkler: Math.round((t.min + t.max) / 2) })}>Take the middle</button></td>
                   </tr>
                 ))}
               </tbody>
