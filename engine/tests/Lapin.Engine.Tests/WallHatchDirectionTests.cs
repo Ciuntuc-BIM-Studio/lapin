@@ -26,10 +26,13 @@ public class WallHatchDirectionTests
 
     static double Dir(Vec2 a, Vec2 b) { var d = Math.Atan2(b.Y - a.Y, b.X - a.X) * 180 / Math.PI; return ((d % 180) + 180) % 180; }
 
-    /// <summary>The directions (0–180°) of the brick's hatch lines inside the box (the straight hatch pens: not the batt's).</summary>
+    /// <summary>
+    /// The directions (0–180°) of the brick's hatch lines inside the box: the hatch strokes longer than 6 cm (not the batt's,
+    /// whose pieces are at most half its 100 mm layer long).
+    /// </summary>
     static List<double> BrickLines(Views.Rendered r, double x0, double y0, double x1, double y1) =>
         r.Pens.Where(p => p.Layer == PenLayer.Hatch).SelectMany(p => p.Segments)
-            .Where(s => (s.B - s.A).Length > 0.02 && Inside(s.A, x0, y0, x1, y1) && Inside(s.B, x0, y0, x1, y1))
+            .Where(s => (s.B - s.A).Length > 0.06 && Inside(s.A, x0, y0, x1, y1) && Inside(s.B, x0, y0, x1, y1))
             .Select(s => Dir(s.A, s.B)).ToList();
 
     static bool Inside(Vec2 p, double x0, double y0, double x1, double y1) => p.X >= x0 && p.X <= x1 && p.Y >= y0 && p.Y <= y1;

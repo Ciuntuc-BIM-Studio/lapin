@@ -24,32 +24,105 @@ public sealed class BandAxis(Func<Vec2, (double S, double Y)> toBand, Func<doubl
 }
 
 /// <summary>
-/// Batt insulation: the looped line drawn along a layer, between its two faces, as draughtsmen draw mineral wool (AutoCAD's
-/// BATTING, Revit's batt insulation): a loop on one face, a stroke across, a loop on the other face, again and again along
-/// the layer. Not a .pat family (a line family cannot draw a curve): a curve laid for each band in the band's own frame,
-/// <c>s</c> along it and <c>y</c> across it, the curve s = k·t − A·sin 2t, y = h·cos t (h half the band's width, k 0.45 h,
-/// A 0.7 h: each face touched at its loops, the strokes crossing between them), clipped to the band's polygon (mitred ends,
-/// corners). The frame is the element's axis when the drawing gives one (<see cref="BandAxis"/>: a wall in a plan, so the
-/// line follows the wall at any angle and round a curved one), else the band's longest edge. The faces are where the band's
-/// sides along the frame lie (the edges that run along it), so a mitred end or a corner piece does not shift the line off
-/// the layer; a band with no side along the frame takes its whole extent across.
+/// Batt insulation (mineral wool), as draughtsmen draw it (the classic batt symbol of AutoCAD's batt routines and Revit's batt
+/// insulation): round heads against the layer's faces, alternately one face and the other, joined by straight strokes that
+/// cross between them. Not a .pat family (a line family cannot draw a curve): a construction laid for each band in the band's
+/// own frame, <c>s</c> along it and <c>y</c> across it (the mid-line y = 0, the faces at ±h), clipped to the band's polygon
+/// (mitred ends, corners).
+/// <para>
+/// The construction (<see cref="Fit"/>, <see cref="Strokes"/>): heads of radius r = <see cref="Head"/>·h, each tangent to its
+/// face (its centre at y = ±(h − r)), their centres D apart along the band, alternately against the one face and the other
+/// (heads on the same face 2D apart). D is <see cref="Spacing"/>·r (× the material's hatch scale), adjusted so a whole number n
+/// of heads fills the band: the first head touches the band's start, the last its end, L = 2r + (n − 1)·D, nothing partial at
+/// either end (L the band's length along its mid-line, so a mitred end is met half-way and two batts meet on the mitre). Each pair of neighbouring heads (one on each face) is joined by its two outer common tangents (parallel to the
+/// line of their centres, r off it), the straight strokes. Each head is drawn as its arc over its face, from the stroke that
+/// leaves it lowest on one side to the one on the other: half a turn plus 2φ, φ = atan(D / 2(h − r)) the strokes' tilt from
+/// square across the band (an end head, with a neighbour on one side only, half a turn between its pair's two strokes). The two
+/// strokes leaving a head low (one to each neighbour) cross under it, closing the head into a teardrop; the strokes of
+/// neighbouring pairs cross in X's between the heads.
+/// </para>
+/// The first head (at the band's start) lies against the face to the left of the frame (a band seen running left to right:
+/// its top face; running up the page: its left face); <c>flip</c> (a material's hatch angle of half a turn) puts it on the
+/// other. The frame is the element's axis when the drawing gives one (<see cref="BandAxis"/>: a wall in a plan, so the heads
+/// follow the wall at any angle and round a curved one, from the wall's start), else the band's longest edge run left to right
+/// (or upwards). The faces are where the band's sides along the frame lie (the edges that run along it), so a mitred end or a
+/// corner piece does not shift the line off the layer; a band with no side along the frame takes its whole extent across.
 /// </summary>
 public static class BattHatch
 {
     public const string Name = "BATT";
-    public static readonly HatchPattern Pattern = new(Name, "Batt insulation, the looped line along the layer", []);
+    public static readonly HatchPattern Pattern = new(Name, "Batt insulation: round heads on alternate faces, joined by crossing strokes", []);
 
     public static bool Is(HatchPattern? p) => p != null && p.Name.Equals(Name, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>The curve's pitch along the band (k) and the reach of its loops (A), as fractions of half the band's width.</summary>
-    public const double Pitch = 0.45, Loop = 0.7;
-    /// <summary>The steps one turn of the curve (one loop on each face) is drawn in.</summary>
-    const int StepsPerTurn = 48;
+    /// <summary>A head's radius, as a fraction of half the band's width (the heads 0.4 of the layer wide).</summary>
+    public const double Head = 0.4;
+    /// <summary>The distance between neighbouring heads (one on each face) along the band, in head radii, before the fit.</summary>
+    public const double Spacing = 1.5;
+
+    /// <summary>
+    /// The heads of a band <paramref name="length"/> long and 2·<paramref name="h"/> wide: how many, how far apart (centre to
+    /// centre along the band, neighbours on opposite faces), and their radius. <paramref name="scale"/> stretches the spacing
+    /// (held to 0.5–3); one head alone, centred, in a band too short for two.
+    /// </summary>
+    public static (int Count, double Spacing, double Radius) Fit(double length, double h, double scale = 1)
+    {
+        var r = Head * h;
+        var d = Spacing * r * Math.Clamp(double.IsFinite(scale) && scale > 0 ? scale : 1, 0.5, 3);
+        if (length <= 2 * r + d / 2) return (1, 0, Math.Min(r, length / 2));
+        var n = Math.Max(2, (int)Math.Round((length - 2 * r) / d) + 1);
+        return (n, (length - 2 * r) / (n - 1), r);
+    }
+
+    /// <summary>
+    /// The batt's strokes in the band's frame (s along, y across from the mid-line), each a polyline: the heads' arcs (by the one
+    /// rule for curves, <see cref="Chords"/>, split where they touch their face) and the straight strokes between them.
+    /// </summary>
+    public static List<List<Vec2>> Strokes(double s0, double s1, double h, double scale = 1, bool flip = false)
+    {
+        var o = new List<List<Vec2>>();
+        var (n, d, r) = Fit(s1 - s0, h, scale);
+        if (!(r > 0) || !(h > 0)) return o;
+        var first = flip ? -1 : 1;
+        if (n == 1)
+        {
+            // Too short for two: one whole head, against its face.
+            var c = new Vec2((s0 + s1) / 2, first * (h - r));
+            o.Add(Chords.Arc(c, r, Math.PI / 2, Math.PI, 2));
+            o.Add(Chords.Arc(c, r, -Math.PI / 2, Math.PI, 2));
+            return o;
+        }
+        var centres = new Vec2[n];
+        for (var j = 0; j < n; j++) centres[j] = new Vec2(s0 + r + j * d, (j % 2 == 0 ? first : -first) * (h - r));
+        // The strokes: each neighbouring pair's two outer common tangents.
+        for (var j = 0; j + 1 < n; j++)
+        {
+            var (a, b) = (centres[j], centres[j + 1]);
+            var off = (b - a).Normalized().Perp * r;
+            o.Add([a + off, b + off]);
+            o.Add([a - off, b - off]);
+        }
+        // The heads, in each head's own sense (its face up, angle 0 along +s): a right neighbour's strokes touch it at ±φ, a left
+        // one's at π ∓ φ; the arc over the face from the lowest on the one side to the lowest on the other.
+        var phi = Math.Atan2(d, 2 * (h - r));
+        for (var j = 0; j < n; j++)
+        {
+            var side = j % 2 == 0 ? first : -first;
+            double from = j == 0 ? phi : -phi, to = j == n - 1 ? Math.PI - phi : Math.PI + phi;
+            var c = centres[j];
+            foreach (var (a0, a1) in new[] { (from, Math.PI / 2), (Math.PI / 2, to) })
+                o.Add([.. Chords.Arc(new Vec2(0, 0), r, a0, a1 - a0).Select(p => new Vec2(c.X + p.X, c.Y + side * p.Y))]);
+        }
+        return o;
+    }
 
     /// <param name="loops">The region, even-odd (metres, or whatever unit the drawing is in).</param>
     /// <param name="minWidth">Bands thinner than this (same unit) get no line: too thin to read.</param>
     /// <param name="axis">The frame the band runs in (an element's axis); null: the band's longest edge.</param>
-    public static List<HatchSegment> Segments(IReadOnlyList<IReadOnlyList<Vec2>> loops, double minWidth = 0, int maxSegments = 200_000, BandAxis? axis = null)
+    /// <param name="scale">Stretches the heads' spacing along the band (the material's hatch scale; 1 as designed).</param>
+    /// <param name="flip">The first head against the band's right face instead of its left.</param>
+    public static List<HatchSegment> Segments(IReadOnlyList<IReadOnlyList<Vec2>> loops, double minWidth = 0, int maxSegments = 200_000, BandAxis? axis = null,
+        double scale = 1, bool flip = false)
     {
         var o = new List<HatchSegment>();
         foreach (var raw in loops)
@@ -64,42 +137,53 @@ public static class BattHatch
             var h = (y1 - y0) / 2;
             if (2 * h < minWidth || h <= 0 || s1 - s0 <= 0) continue;
             var mid = (y0 + y1) / 2;
-            double k = Pitch * h, amp = Loop * h;
-            // The curve's phase is the frame's (s = 0 at t = 0), so a band's line does not move when its ends do; it starts a
-            // turn before the band and runs a loop past it, the clip trimming the rest.
-            var turn = 2 * Math.PI;
-            var tStart = Math.Floor((s0 - 2 * h) / (k * turn)) * turn;
-            var tEnd = (s1 + 2 * h) / k;
-            var dt = turn / StepsPerTurn;
-            Vec2 At(double t) => frame.FromBand(k * t - amp * Math.Sin(2 * t), mid + h * Math.Cos(t));
-            var prev = At(tStart);
-            var prevIn = Inside(loops, prev);
-            for (var i = 1; tStart + i * dt <= tEnd && o.Count < maxSegments; i++)
+            // The heads fill the band's length along its mid-line (a mitred end half-way, so two batts meet on the mitre).
+            var (m0, m1) = MidSpan(pts, mid);
+            if (m1 - m0 > 1e-9 * (s1 - s0)) (s0, s1) = (m0, m1);
+            foreach (var stroke in Strokes(s0, s1, h, scale, flip))
             {
-                var cur = At(tStart + i * dt);
-                var curIn = Inside(loops, cur);
-                if (prevIn && curIn) o.Add(new HatchSegment(prev, cur));
-                else if (prevIn != curIn)
+                if (o.Count >= maxSegments) break;
+                // Straight strokes in pieces of at most half the band's width, so they bend with a curved frame and each piece
+                // crosses the region's outline at most once where it is clipped.
+                var band = new List<Vec2> { stroke[0] };
+                for (var k = 1; k < stroke.Count; k++)
                 {
-                    // One end inside: the crossing found by halving, the inside part kept.
-                    var (a, b) = (prev, cur);
-                    var aIn = prevIn;
-                    for (var j = 0; j < 12; j++)
-                    {
-                        var m = new Vec2((a.X + b.X) / 2, (a.Y + b.Y) / 2);
-                        if (Inside(loops, m) == aIn) a = m; else b = m;
-                    }
-                    o.Add(prevIn ? new HatchSegment(prev, a) : new HatchSegment(b, cur));
+                    var (a, b) = (stroke[k - 1], stroke[k]);
+                    var m = Math.Max(1, (int)Math.Ceiling((b - a).Length / h));
+                    for (var i = 1; i <= m; i++) band.Add(a + (b - a) * ((double)i / m));
                 }
-                prev = cur; prevIn = curIn;
+                var prev = frame.FromBand(band[0].X, mid + band[0].Y);
+                var prevIn = Inside(loops, prev);
+                for (var i = 1; i < band.Count && o.Count < maxSegments; i++)
+                {
+                    var cur = frame.FromBand(band[i].X, mid + band[i].Y);
+                    var curIn = Inside(loops, cur);
+                    if (prevIn && curIn) o.Add(new HatchSegment(prev, cur));
+                    else if (prevIn != curIn)
+                    {
+                        // One end inside: the crossing found by halving, the inside part kept.
+                        var (a, b) = (prev, cur);
+                        for (var j = 0; j < 20; j++)
+                        {
+                            var m = new Vec2((a.X + b.X) / 2, (a.Y + b.Y) / 2);
+                            if (Inside(loops, m) == prevIn) a = m; else b = m;
+                        }
+                        o.Add(prevIn ? new HatchSegment(prev, a) : new HatchSegment(b, cur));
+                    }
+                    prev = cur; prevIn = curIn;
+                }
             }
         }
         return o;
     }
 
+    /// <summary>Whether a material's hatch angle (degrees) flips the batt: half a turn (any angle more than a quarter turn from 0).</summary>
+    public static bool FlipsAt(double angleDeg) => double.IsFinite(angleDeg) && Math.Cos(angleDeg * Math.PI / 180) < -1e-9;
+
     /// <summary>
-    /// A band's own frame: along its longest edge, from a band's width before where the band starts along it. A band longer
-    /// across than along is drawn across (the loops run the short way, as on a wall seen in section).
+    /// A band's own frame: along its longest edge, run left to right (upwards when the edge is upright) whatever the polygon's
+    /// winding, so which face the first head touches does not depend on how the band was traced. A band longer across than along
+    /// is drawn across (the heads run the long way).
     /// </summary>
     static BandAxis? FrameOf(List<Vec2> poly)
     {
@@ -110,9 +194,9 @@ public static class BattHatch
         var nrm = dir.Perp;
         double a0 = double.MaxValue, a1 = double.MinValue, c0 = double.MaxValue, c1 = double.MinValue;
         foreach (var p in poly) { var a = Vec2.Dot(p, dir); var c = Vec2.Dot(p, nrm); a0 = Math.Min(a0, a); a1 = Math.Max(a1, a); c0 = Math.Min(c0, c); c1 = Math.Max(c1, c); }
-        if (a1 - a0 < c1 - c0) { (dir, nrm) = (nrm, dir * -1); (a0, a1, c0, c1) = (c0, c1, -a1, -a0); }
-        // Its start a band's width before the band's (the curve's phase there), as the batt was laid before decision 725.
-        return BandAxis.Straight(dir * (a0 - (c1 - c0)) + nrm * c0, dir);
+        if (a1 - a0 < c1 - c0) dir = nrm;
+        if (dir.X < -1e-9 || (Math.Abs(dir.X) <= 1e-9 && dir.Y < 0)) dir = -dir;
+        return BandAxis.Straight(new Vec2(0, 0), dir);
     }
 
     /// <summary>
@@ -140,6 +224,20 @@ public static class BattHatch
         }
         if (y1 - y0 > 0) return (y0, y1);
         return (pts.Min(p => p.Y), pts.Max(p => p.Y));
+    }
+
+    /// <summary>Where the band's mid-line (y = <paramref name="mid"/>) first and last crosses its outline, along the frame; (0, 0) when it does not.</summary>
+    static (double S0, double S1) MidSpan(List<(double S, double Y)> pts, double mid)
+    {
+        double lo = double.MaxValue, hi = double.MinValue;
+        for (var i = 0; i < pts.Count; i++)
+        {
+            var (a, b) = (pts[i], pts[(i + 1) % pts.Count]);
+            if ((a.Y - mid) * (b.Y - mid) > 0 || a.Y == b.Y) continue;
+            var s = a.S + (b.S - a.S) * (mid - a.Y) / (b.Y - a.Y);
+            lo = Math.Min(lo, s); hi = Math.Max(hi, s);
+        }
+        return hi > lo ? (lo, hi) : (0, 0);
     }
 
     /// <summary>Even-odd over all the loops: inside an odd number of them.</summary>
