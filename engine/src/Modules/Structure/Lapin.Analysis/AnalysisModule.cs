@@ -261,8 +261,10 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
         // mesh with the quantity smoothed at its nodes (S2, §10.6), world coordinates.
         r.Query("contours", (q, a) => AnalysisRun.Contours(q, a));
         r.Query("options", (q, _) => AnalysisSettings.Of(q.Model).ToJson());
-        // {shells?: both | slabs | walls | none, meshSize?: metres, secondOrder?: bool}: how the analysis takes slabs and walls, and
-        // whether its static combinations are solved to second order (P-Δ, §14.3); null back to the default. One undo step.
+        // {shells?: both | slabs | walls | none, meshSize?: metres, secondOrder?: bool, imperfections?: bool}: how the analysis takes
+        // slabs and walls, whether its static combinations are solved to second order (P-Δ, §14.3) and whether the ultimate ones take
+        // the global sway imperfections ±X, ±Y (EN 1993-1-1 5.3.2, §14.14; second order switched on brings them unless the project
+        // said otherwise); null back to the default. One undo step.
         r.Command("setOptions", "Analysis options", (ctx, a) => { AnalysisSettings.Write(ctx, a); return null; });
 
         // ── Second order, springs, one way (S5, §14) ──
@@ -288,6 +290,30 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
                 ctx.Replace(e.With(attrs: attrs));
             }
             return null;
+        });
+        // {ids?, purlins?: true, sheeting: true | null}: bars their sheeting braces (§14.15: a purlin, a wall rail held straight across in
+        // the sheeting's plane between the members it rests on); purlins: every member a framed roof names as its cladding's carrier
+        // (a steel hall's purlins). One undo step.
+        r.Command("setSheeting", "Braced by sheeting", (ctx, a) =>
+        {
+            if (!a.ContainsKey("sheeting")) throw new CommandException("Say sheeting: true (braced) or null.");
+            var on = a["sheeting"] is null ? false : a["sheeting"] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : throw new CommandException("Sheeting is true or null.");
+            var ids = Args.Ids(a).ToList();
+            if (a["purlins"] is JsonValue pv && pv.TryGetValue<bool>(out var purlins) && purlins)
+                ids.AddRange(AnalyticalModel.Build(ctx.Model, ctx.Services, LoadsReport.Options).Roofs
+                    .SelectMany(x => x.Members?.Where(kv => kv.Value == "purlin").Select(kv => kv.Key) ?? []));
+            ids = ids.Distinct().ToList();
+            if (ids.Count == 0) throw new CommandException(a.ContainsKey("purlins") ? "No framed roof names its purlins." : "Select the bars.");
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.");
+                if (UserLoads.Classes.Contains(e.Class) || e.Class == LoadCases.Class || e.Class == UserCombinations.Class) throw new CommandException("Only a bar is braced by sheeting.");
+                if (SheetingSettings.Of(e) == on) continue;
+                var attrs = e.CloneAttrs();
+                if (on) attrs[SheetingSettings.Key] = true; else attrs.Remove(SheetingSettings.Key);
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return new JsonObject { ["members"] = ids.Count };
         });
         // {combination?, modes?}: each ultimate combination's critical load factors αcr, their class by EN 1993-1-1 5.2.1(3) and the amplifier 1/(1 − 1/αcr).
         r.Query("buckling", (q, a) => AnalysisRun.For(q).BucklingJson((string?)a["combination"], Json.Number(a["modes"]) is { } m ? (int)m : 6));

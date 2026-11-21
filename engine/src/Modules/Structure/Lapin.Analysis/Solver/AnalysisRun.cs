@@ -160,6 +160,7 @@ public sealed partial class AnalysisRun
         o["combinations"] = new JsonArray(Combinations.Select(c => (JsonNode)new JsonObject { ["key"] = c.Key, ["kind"] = c.Kind, ["name"] = c.Name }).ToArray());
         if (NonlinearJson() is { } nl) o["nonlinear"] = nl;
         if (SupportsJson() is { } su) o["supports"] = su;
+        if (SheetingJson() is { } sh) o["sheeting"] = sh;
         if (Solution?.Mechanism is { } mech)
         {
             var node = p.Nodes[mech.Node];
@@ -227,7 +228,7 @@ public sealed partial class AnalysisRun
     /// <summary>What a result is asked of: a case (its id or code), a combination (its key) or an envelope (uls, sls); one bar's element or piece, or all.</summary>
     public sealed record Ask(string? Case, string? Combination, string? Envelope, string? ElementId = null, string? ShellId = null);
 
-    /// <summary>A combination's factors on the solution's cases (by their index).</summary>
+    /// <summary>A combination's factors on the solution's cases (by their index); its nonlinear result's when it has one (not its imperfection variants': <see cref="SetsOf"/>).</summary>
     List<(int, double)> Terms(Combination c) =>
         NonlinearSets.Count > 0 && NonlinearIndex().TryGetValue(c.Key, out var nl) ? [(nl, 1.0)]
         : c.Factors.Select(f => (Solution!.Cases.FindIndex(x => x.Id == f.Case.Id), f.Value)).Where(x => x.Item1 >= 0).ToList();
@@ -252,8 +253,10 @@ public sealed partial class AnalysisRun
                 return new Selection("envelope", sc.Key, sc.Name, sets.Where(x => x.Item1.StartsWith($"seismic/{sc.Id}/")).ToList()) { Seismic = sr };
             }
             var c = Combinations.FirstOrDefault(x => x.Key == key) ?? throw new CommandException($"There is no combination „{key}”.");
-            if (Failed(c.Key)) throw new CommandException($"„{c.Name}”: {NonlinearSets.First(x => x.Key == c.Key).Result.Message}");
-            return new Selection("combination", c.Key, c.Name, [(c.Key, c.Name, Terms(c))]);
+            if (Failed(c.Key)) throw new CommandException($"„{c.Name}”: {NonlinearSets.First(x => x.Base == c.Key && !x.Ok).Result.Message}");
+            // With the global imperfections (§14.14) an ultimate combination is its four variants: an envelope of them.
+            var own = SetsOf(c);
+            return new Selection(own.Count > 1 ? "envelope" : "combination", c.Key, c.Name, own);
         }
         if (envArg is { } env)
         {
@@ -269,7 +272,7 @@ public sealed partial class AnalysisRun
                 _ => throw new CommandException("An envelope is „uls”, „sls” or „seismic”."),
             };
             if (list.Count == 0) throw new CommandException($"There are no {env.ToUpperInvariant()} combinations.");
-            var all = list.Select(c => (c.Key, c.Name, Terms(c))).ToList();
+            var all = list.SelectMany(SetsOf).ToList();
             // The seismic design situation is an ultimate one: its combination joins the ULS envelope when it is given (§11.3).
             if (env == "uls" && SeismicSets(false) is var (srun, ssets))
             {

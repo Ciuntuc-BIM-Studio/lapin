@@ -101,3 +101,11 @@ public static class OneWay
 
     public static string? Of(Entity? e) => e?.Attrs[Key] is JsonValue v && v.TryGetValue<string>(out var s) && Choices.Contains(s) ? s : null;
 }
+
+/// <summary>A bar its sheeting braces (§14.15): the attribute <c>analysisSheeting</c> (true): held straight across in the sheeting's plane.</summary>
+public static class SheetingSettings
+{
+    public const string Key = "analysisSheeting";
+
+    public static bool Of(Entity? e) => e?.Attrs[Key] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
+}

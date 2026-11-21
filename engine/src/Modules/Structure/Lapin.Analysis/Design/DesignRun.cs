@@ -226,7 +226,9 @@ public sealed class DesignRun
     {
         if (Run.Problem.Settings.SecondOrder)
         {
-            Notes.Add("Second order (P-Δ) on: the steel members' forces are second order; their own buckling (EN 1993-1-1 6.3.1) stays with their buckling lengths, the global imperfections (5.3.2) are not added yet.");
+            Notes.Add(Run.Problem.Settings.Imperfections
+                ? "Second order (P-Δ) on, with the global sway imperfections (EN 1993-1-1 5.3.2, ±X and ±Y): the steel members' forces are second order; their own buckling (6.3.1) stays with their buckling lengths."
+                : "Second order (P-Δ) on: the steel members' forces are second order; their own buckling (EN 1993-1-1 6.3.1) stays with their buckling lengths; the global imperfections (5.3.2) are off (analysis.setOptions imperfections).");
             return;
         }
         (Combinations.Combination Combination, double Alpha, bool Bound)? g;

@@ -227,4 +227,38 @@ public class SeismicAnalysisTests(ITestOutputHelper output)
         Assert.True((double)m["scale"]! > 0);
         Assert.Throws<CommandException>(() => Q(f, "mode", new JsonObject { ["mode"] = 999 }));
     }
+
+    /// <summary>§14.16: θ = Ptot·dr / (Vtot·h) of every storey and direction (P100-1/2013 §4.6.2.2, EN 1998-1 4.4.2.2), dr = q·de.</summary>
+    [Fact]
+    public void Each_storey_says_its_drift_sensitivity_coefficient_theta()
+    {
+        Assert.Equal("neglect", SeismicRun.ThetaClass(0.1));
+        Assert.Equal("amplify", SeismicRun.ThetaClass(0.1001));
+        Assert.Equal("amplify", SeismicRun.ThetaClass(0.2));
+        Assert.Equal("second-order", SeismicRun.ThetaClass(0.3));
+        Assert.Equal("refused", SeismicRun.ThetaClass(0.31));
+        var t = AnalysisRunTests.Frame6x4();
+        var f = t.F;
+        f.Run("analysis.addAreaLoad", new JsonObject { ["storeyId"] = t.First, ["points"] = AnalysisRunTests.Rect(0, 0, 6, 4), ["value"] = 2 });
+        Seismic(f);
+        var seismic = Q(f, "seismic");
+        var storeys = seismic["storeys"]!.AsArray().Select(x => x!.AsObject()).ToList();
+        Assert.NotEmpty(storeys);
+        var masses = 0.0;
+        foreach (var s in Enumerable.Reverse(storeys))
+        {
+            masses += (double)s["mass"]!;
+            // One storey takes the mass on it and above: Ptot = g·Σm.
+            Assert.Equal(Spectrum.G * masses, (double)s["gravity"]!, 1);
+            for (var d = 0; d < 2; d++)
+            {
+                var shear = (double)s["shear"]![d]!;
+                var theta = (double)s["gravity"]! * 3 * Math.Abs((double)s["drift"]![d]!) / (shear * (double)s["h"]!);
+                output.WriteLine($"{s["name"]} {(d == 0 ? 'X' : 'Y')}: P {(double)s["gravity"]!:0.##} kN, dr = q·{(double)s["drift"]![d]!:0.######} m, V {shear:0.##} kN, h {(double)s["h"]!} m: θ = {theta:0.#####}");
+                Assert.Equal(theta, (double)s["theta"]![d]!, 4);
+                Assert.Equal(SeismicRun.ThetaClass((double)s["theta"]![d]!), (string)s["thetaClass"]![d]!);
+                Assert.True((double)s["theta"]![d]! > 0);
+            }
+        }
+    }
 }

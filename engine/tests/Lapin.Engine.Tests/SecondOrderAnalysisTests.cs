@@ -50,7 +50,8 @@ public class SecondOrderAnalysisTests(ITestOutputHelper output)
         var lowest = buckling["lowest"]!.AsObject();
         output.WriteLine($"guide frame: lowest αcr {(double)lowest["alpha"]!} in {(string)lowest["key"]!}");
 
-        f.Run("analysis.setOptions", new JsonObject { ["secondOrder"] = true });
+        // P-Δ alone, as S5 made it (the imperfections, §14.14, said off: ImperfectionTests has them).
+        f.Run("analysis.setOptions", new JsonObject { ["secondOrder"] = true, ["imperfections"] = false });
         Assert.True((bool)Q(f, "options")["secondOrder"]!);
         var run = Q(f, "run");
         Assert.True((bool)run["ok"]!);

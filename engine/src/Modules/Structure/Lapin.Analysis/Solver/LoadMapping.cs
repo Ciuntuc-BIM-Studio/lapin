@@ -187,6 +187,7 @@ public sealed partial class StructuralProblem
         sp.MapLoads(m, rep, densities, selfWeight);
         sp.SplitBars();
         sp.SupportSprings(m);
+        sp.Sheet(m);
         return sp;
     }
 

@@ -18,6 +18,8 @@ public sealed record SeismicStorey(string Id, string Name, double Z, double Top)
     public double[] Drift { get; } = new double[2];
     public double[] DriftMax { get; } = new double[2];
     public double[] Width { get; } = new double[2];
+    /// <summary>The seismic combination's gravity at and above the storey (kN): Ptot of the sensitivity coefficient θ (§14.16).</summary>
+    public double Gravity { get; set; }
 }
 
 /// <summary>
@@ -114,8 +116,9 @@ public sealed class SeismicRun
         double K(string? kind) => kind == "concrete" ? Settings.CrackedConcrete : kind == "masonry" ? Settings.CrackedMasonry : 1;
         p.Elements.AddRange(src.Elements.Select(e => e.Scaled(K(e.Material))));
         p.Shells.AddRange(src.Shells.Select(e => e.Scaled(K(e.Material))));
-        // The supports' springs (§14.2), uncracked: they are the ground's; every support seated, every member in (linear).
-        p.Links.AddRange(src.Links.Where(l => l.Ground));
+        // The supports' springs (§14.2), uncracked: they are the ground's; every support seated, every member in (linear). The
+        // sheeting's hold on its purlins and rails (§14.15) too.
+        p.Links.AddRange(src.Links.Where(l => l.Ground || l.Id.StartsWith(Sheeting.LinkPrefix, StringComparison.Ordinal)));
         if (src.Uplift.Count > 0 || src.Elements.Any(e => e.Only != null))
             Notes.Add("The modal problem is linear: every one-way member in, every support that may lift seated.");
         if (Settings.CrackedConcrete < 1 || Settings.CrackedMasonry < 1)
@@ -200,6 +203,10 @@ public sealed class SeismicRun
         Notes.Add(Settings.DirectionRule == "30%" ? "The two horizontal directions by the 30 % rule: E = max(Ex + 0.3 Ey, 0.3 Ex + Ey) (P100-1/2013 §4.5.3.6, EN 1998-1 4.3.3.5.1); no vertical component." : "The two horizontal directions by SRSS: E = √(Ex² + Ey²); no vertical component.");
         Notes.Add($"Seismic combination: {GravityName} ± AEd (CR 0-2012, EN 1990 6.4.3.4); the static results of the gravity loads with the uncracked stiffness, the seismic action with the cracked.");
         Notes.Add("Masonry is linear elastic in S3: no tension cut-off, no cracking; the forces are those of the design spectrum (q).");
+        // θ (§14.16): said where second order is not negligible.
+        if (Storeys.SelectMany(st => new[] { (st, d: 0), (st, d: 1) }).Select(x => (x.st, x.d, t: Theta(x.st, x.d))).MaxBy(x => x.t) is { t: > 0.1 } worst)
+            Notes.Add($"P100-1/2013 §4.6.2.2 (EN 1998-1 4.4.2.2): θ = Ptot·dr/(Vtot·h) reaches {worst.t:0.###} on „{worst.st.Name}” along {(worst.d == 0 ? "X" : "Y")}: " +
+                (worst.t <= 0.2 ? "the seismic effects × 1/(1 − θ) there (or second order)." : worst.t <= 0.3 ? "a second-order analysis is needed there." : "above 0.3, not allowed: stiffen the structure."));
         Notes.Add($"Indicative: {(Settings.IsP100 ? "P100-1/2013" : "EN 1998-1, the recommended values")}; ag = {Settings.Ag:0.###} g, the site's values yours.");
         Ms = sw.Elapsed.TotalMilliseconds;
     }
@@ -297,6 +304,7 @@ public sealed class SeismicRun
             var above = free.Where(n => p.Nodes[n].Z > s.Z + 0.01).ToList();
             var own = free.Where(n => p.Nodes[n].Z > s.Z + 0.01 && p.Nodes[n].Z <= s.Top + 0.01).ToList();
             s.Mass = own.Sum(n => NodeMass[n]);
+            s.Gravity = above.Sum(n => NodeMass[n]) * Spectrum.G;
             if (own.Count > 0)
             {
                 s.Width[0] = own.Max(n => p.Nodes[n].Y) - own.Min(n => p.Nodes[n].Y);
@@ -474,11 +482,13 @@ public sealed class SeismicRun
             {
                 var sls = new double[2];
                 var uls = new double[2];
+                var theta = new double[2];
                 for (var d = 0; d < 2; d++)
                 {
                     sls[d] = Settings.DriftNu * q * s.Drift[d];
                     var c = Math.Clamp(3 - 2.3 * T1[d] / Spectrum.TC, 1, 2);
                     uls[d] = (Settings.IsP100 ? c : 1) * q * s.Drift[d];
+                    theta[d] = Theta(s, d);
                 }
                 arr.Add((JsonNode)new JsonObject
                 {
@@ -488,6 +498,9 @@ public sealed class SeismicRun
                     ["slsLimit"] = R(Settings.DriftSls * s.H, 6), ["ulsLimit"] = Settings.IsP100 ? R(Settings.DriftUls * s.H, 6) : null,
                     ["slsOk"] = sls.All(x => x <= Settings.DriftSls * s.H + 1e-12),
                     ["ulsOk"] = Settings.IsP100 ? uls.All(x => x <= Settings.DriftUls * s.H + 1e-12) : null,
+                    ["gravity"] = R(s.Gravity, 3), ["theta"] = A(theta, 5),
+                    ["thetaClass"] = new JsonArray(theta.Select(t => (JsonNode)ThetaClass(t)).ToArray()),
+                    ["thetaAmplifier"] = new JsonArray(theta.Select(t => (JsonNode?)(t > 0.1 && t <= 0.2 ? R(1 / (1 - t), 5) : null)).ToArray()),
                 });
             }
             o["storeys"] = arr;
@@ -496,6 +509,16 @@ public sealed class SeismicRun
         o["notes"] = new JsonArray(Notes.Select(n => (JsonNode)n).ToArray());
         return o;
     }
+
+    /// <summary>
+    /// The interstorey drift sensitivity coefficient (P100-1/2013 §4.6.2.2, EN 1998-1 4.4.2.2(2); §14.16): θ = Ptot·dr / (Vtot·h),
+    /// Ptot the seismic combination's gravity at and above the storey, dr = q·de its design drift (EN 1998-1 4.3.4), Vtot its
+    /// shear, h its height; 0 where it has no shear.
+    /// </summary>
+    public double Theta(SeismicStorey s, int d) => s.Shear[d] > 1e-9 && s.H > 1e-9 ? s.Gravity * Settings.Q * Math.Abs(s.Drift[d]) / (s.Shear[d] * s.H) : 0;
+
+    /// <summary>θ ≤ 0.1: second order neglected; to 0.2: the seismic effects × 1/(1 − θ); to 0.3: a second-order analysis; above: not allowed.</summary>
+    public static string ThetaClass(double t) => t <= 0.1 ? "neglect" : t <= 0.2 ? "amplify" : t <= 0.3 ? "second-order" : "refused";
 
     /// <summary>{mode, scale?}: a mode's shape on the bars (polylines) and the shells (their nodes displaced), world coordinates.</summary>
     public JsonObject ModeShape(int n, double? scaleArg)

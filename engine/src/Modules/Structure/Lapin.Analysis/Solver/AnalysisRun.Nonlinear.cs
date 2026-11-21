@@ -6,10 +6,20 @@ using Combination = Lapin.Analysis.Combinations.Combination;
 
 namespace Lapin.Analysis.Solver;
 
-/// <summary>One static combination solved nonlinearly (§14.1): its factors on the cases, its load vector, its result.</summary>
+/// <summary>
+/// One static combination solved nonlinearly (§14.1): its factors on the cases, its load vector, its result; or one of its
+/// four variants with a global sway imperfection (§14.14: <see cref="Variant"/> +X, -X, +Y, -Y, its key the combination's
+/// with |variant, the combination's own in <see cref="Base"/>).
+/// </summary>
 public sealed record NonlinearSet(string Key, string Name, string Kind, List<(int Case, double Factor)> Terms, CaseLoads Loads, NonlinearResult Result)
 {
     public bool Ok => Result.Ok;
+    /// <summary>The combination's key (the set's own when it has no variants).</summary>
+    public required string Base { get; init; }
+    public string? Variant { get; init; }
+    public ImperfectionSet? Imperfection { get; init; }
+    /// <summary>EN 1993-1-1 5.3.2(4): the combination's horizontal loads along the variant's direction are at least 0.15 of its vertical ones.</summary>
+    public bool Neglectable { get; init; }
 }
 
 /// <summary>
@@ -81,42 +91,121 @@ public sealed partial class AnalysisRun
         return o;
     }
 
-    /// <summary>A combination left out (§14.1): unstable or a mechanism under the nonlinear solve.</summary>
-    bool Failed(string key) => NonlinearSets.Any(s => s.Key == key && !s.Ok);
+    /// <summary>A combination left out (§14.1): unstable or a mechanism under the nonlinear solve (any of its variants).</summary>
+    bool Failed(string key) => NonlinearSets.Any(s => s.Base == key && !s.Ok);
 
-    /// <summary>Whether the analysis solves its combinations nonlinearly: second order, a one-way member or a support that lifts.</summary>
-    public static bool CallsForNonlinear(StructuralProblem sp) => sp.Settings.SecondOrder || Nonlinear.HasStates(sp.Problem);
+    /// <summary>The nonlinear set a combination's buckling is worked out on: its own, or its first variant's (+X, §14.14).</summary>
+    NonlinearSet? NonlinearFor(Combination c) => NonlinearSets.FirstOrDefault(s => s.Base == c.Key);
 
-    /// <summary>Each static combination's load vector, solved nonlinearly; the notes that say what came of it.</summary>
+    /// <summary>
+    /// A combination's results as sets of factors on the results: its own, or (§14.14) its four imperfection variants', which
+    /// a result then envelopes, each named where it governs.
+    /// </summary>
+    List<(string Key, string Name, List<(int Case, double Factor)> Terms)> SetsOf(Combination c)
+    {
+        if (NonlinearSets.Count > 0)
+        {
+            var index = NonlinearIndex();
+            var vs = NonlinearSets.Where(s => s.Base == c.Key && s.Variant != null && s.Ok).ToList();
+            if (vs.Count > 0) return vs.Select(s => (s.Key, s.Name, new List<(int, double)> { (index[s.Key], 1.0) })).ToList();
+        }
+        return [(c.Key, c.Name, Terms(c))];
+    }
+
+    /// <summary>Whether the analysis solves combinations on their own: second order, imperfections, a one-way member or a support that lifts.</summary>
+    public static bool CallsForNonlinear(StructuralProblem sp) => sp.Settings.SecondOrder || sp.Settings.Imperfections || Nonlinear.HasStates(sp.Problem);
+
+    static string Signed(string variant) => variant.Replace('-', '−');
+
+    /// <summary>
+    /// Each static combination's load vector, solved nonlinearly (when second order or a state calls for it), and each ultimate
+    /// one's four imperfection variants (§14.14: the forces of the first-order axial forces added, ±X, ±Y); the notes that say
+    /// what came of it. With imperfections alone (first order, no states) only the ultimate combinations are solved.
+    /// </summary>
     static List<NonlinearSet> SolveNonlinear(StructuralProblem sp, FrameSolution sol, List<Combination> combos, List<string> notes)
     {
         var o = new List<NonlinearSet>();
+        var p = sp.Problem;
+        var every = sp.Settings.SecondOrder || Nonlinear.HasStates(p);
         var options = new NonlinearOptions(sp.Settings.SecondOrder);
+        var noColumns = false;
         foreach (var c in combos)
         {
             var terms = c.Factors.Select(f => (sol.Cases.FindIndex(x => x.Id == f.Case.Id), f.Value)).Where(x => x.Item1 >= 0).ToList();
-            var loads = new CaseLoads($"nl/{c.Key}");
-            foreach (var (ci, k) in terms)
+            CaseLoads Loads(string id)
             {
-                var src = sp.Problem.Cases[ci];
-                foreach (var (n, v) in src.Nodal) loads.AddNodal(n, v * k);
-                foreach (var (n, v) in src.Moments) loads.AddMoment(n, v * k);
-                foreach (var (e, s) in src.Span) loads.Span.Add((e, s.Scaled(k)));
-                foreach (var (s, q) in src.Surface) loads.Surface.Add((s, q * k));
+                var loads = new CaseLoads(id);
+                foreach (var (ci, k) in terms)
+                {
+                    var src = p.Cases[ci];
+                    foreach (var (n, v) in src.Nodal) loads.AddNodal(n, v * k);
+                    foreach (var (n, v) in src.Moments) loads.AddMoment(n, v * k);
+                    foreach (var (e, s) in src.Span) loads.Span.Add((e, s.Scaled(k)));
+                    foreach (var (s, q) in src.Surface) loads.Surface.Add((s, q * k));
+                }
+                return loads;
             }
-            o.Add(new NonlinearSet(c.Key, c.Name, c.Kind, terms, loads, Nonlinear.Solve(sp.Problem, loads, options)));
+            List<ImperfectionSet>? variants = null;
+            if (sp.Settings.Imperfections && UserCombinations.Ultimate(c.Kind))
+            {
+                // The first-order axial forces of the combination (the cases' superposition): NEd of its columns.
+                var axial = new double[p.Elements.Count];
+                foreach (var (ci, k) in terms)
+                {
+                    var els = sol.Cases[ci].Elements;
+                    for (var e = 0; e < axial.Length; e++) axial[e] += k * Nonlinear.AxialOf(els[e]);
+                }
+                variants = Imperfections.Variants.Select(v => Imperfections.Of(p, axial, v.Direction, $"imp/{c.Key}|{v.Name}")).ToList();
+                if (variants[0].Force <= 0) { variants = null; noColumns = true; }
+            }
+            if (variants == null)
+            {
+                if (!every) continue;
+                var loads = Loads($"nl/{c.Key}");
+                o.Add(new NonlinearSet(c.Key, c.Name, c.Kind, terms, loads, Nonlinear.Solve(p, loads, options)) { Base = c.Key });
+                continue;
+            }
+            var sum = terms.Aggregate(Vec3.Zero, (a, t) => a + sol.Cases[t.Item1].SumLoads * t.Item2);
+            for (var i = 0; i < variants.Count; i++)
+            {
+                var (vn, dir) = Imperfections.Variants[i];
+                var loads = Loads($"nl/{c.Key}|{vn}");
+                foreach (var (n, f) in variants[i].Loads.Nodal) loads.AddNodal(n, f);
+                var h = Math.Abs(Vec3.Dot(sum, dir));
+                o.Add(new NonlinearSet($"{c.Key}|{vn}", $"{c.Name} + φ({Signed(vn)})", c.Kind, terms, loads, Nonlinear.Solve(p, loads, options))
+                {
+                    Base = c.Key, Variant = vn, Imperfection = variants[i], Neglectable = Math.Abs(sum.Z) > 1e-9 && h >= 0.15 * Math.Abs(sum.Z),
+                });
+            }
         }
-        var p = sp.Problem;
         var names = new Func<IEnumerable<int>, string>(ks => string.Join(", ", ks.Select(k => p.Elements[k].Name ?? p.Elements[k].Id).Distinct().Take(6)));
         if (sp.Settings.SecondOrder)
         {
             notes.Add("Second order (P-Δ): each static combination solved with the bars' geometric stiffness of their axial forces, iterated; the cases stay first order. Along a bar the moment keeps its first-order shape between its ends: its own buckling is its check's (EN 1993-1-1 6.3).");
-            notes.Add("The global imperfections (EN 1993-1-1 5.3.2) are not added yet: give them as loads (equivalent horizontal forces φ·NEd) where the design calls for them.");
+            if (!sp.Settings.Imperfections)
+                notes.Add("The global imperfections (EN 1993-1-1 5.3.2) are off: analysis.setOptions {imperfections: true} adds them to each ultimate combination as ±X and ±Y variants, or give them as loads (equivalent horizontal forces φ·NEd).");
             if (p.Shells.Count > 0) notes.Add("The shells have no geometric stiffness: second order and buckling are the bars' only.");
             var amp = o.Where(s => s.Ok).MaxBy(s => s.Result.Amplification);
             if (amp != null && amp.Result.Amplification > 1 + 1e-6) notes.Add($"Second order amplifies the sway most in „{amp.Name}”: × {amp.Result.Amplification:0.###}.");
         }
-        else notes.Add("Each static combination solved on its own (one-way members, supports that lift): the cases stay linear, every member in, every support seated.");
+        else if (every) notes.Add("Each static combination solved on its own (one-way members, supports that lift): the cases stay linear, every member in, every support seated.");
+        if (o.Where(s => s.Imperfection != null).ToList() is { Count: > 0 } imp)
+        {
+            var first = imp[0].Imperfection!;
+            string Along(bool x)
+            {
+                var g = imp.Where(s => s.Variant!.EndsWith(x ? 'X' : 'Y')).Select(s => s.Imperfection!.Governing).MaxBy(v => v.Phi);
+                return g.Phi > 0 ? $"φ up to 1/{1 / g.Phi:0} along {(x ? "X" : "Y")}{(g.M > 0 ? $" (m = {g.M})" : "")}" : $"no column along {(x ? "X" : "Y")}";
+            }
+            notes.Add($"Global sway imperfections (EN 1993-1-1 5.3.2; the same form for concrete, EN 1992-1-1 5.2; timber by EN 1995-1-1 5.4.4): each ultimate combination solved four times, ±X and ±Y, with φ·NEd at the top and −φ·NEd at the foot of each compressed column, NEd of its first-order result; h = {first.H:0.##} m, αh = {first.AlphaH:0.###}, {Along(true)}, {Along(false)}. A combination's results are the envelope of its four.");
+            if (sp.Model.Shells.Any(x => x.Source.Kind == "wall") && p.Shells.Count > 0)
+                notes.Add("The shell walls' vertical load is not tilted: the imperfections are the bar columns' only (give the walls' as loads where they matter).");
+            var neglect = imp.Where(s => s.Neglectable).ToList();
+            if (neglect.Count > 0)
+                notes.Add($"EN 1993-1-1 5.3.2(4): in {neglect.Select(s => s.Base).Distinct().Count()} ultimate combination{(neglect.Select(s => s.Base).Distinct().Count() == 1 ? "" : "s")} the horizontal loads are at least 0.15 of the vertical ones along {(neglect.Any(s => s.Variant!.EndsWith('X')) && neglect.Any(s => s.Variant!.EndsWith('Y')) ? "X and Y" : neglect[0].Variant!.EndsWith('X') ? "X" : "Y")}: the sway imperfections could be left out there; they are kept, on the safe side.");
+        }
+        else if (sp.Settings.Imperfections && noColumns)
+            notes.Add("Global imperfections on, but no column (a bar within 10° of the vertical) is in compression: none added.");
         foreach (var s in o.Where(s => !s.Ok))
             notes.Add($"„{s.Name}”: {s.Result.Message} Left out of the envelopes and the checks.");
         foreach (var s in o.Where(s => s.Ok && !s.Result.Converged))
@@ -125,11 +214,15 @@ public sealed partial class AnalysisRun
         if (slack.Count > 0)
         {
             var all = slack.SelectMany(s => s.Result.Slack).Distinct().ToList();
-            notes.Add($"One-way members slack in {slack.Count} combination{(slack.Count == 1 ? "" : "s")}: {names(all)}{(all.Select(k => p.Elements[k].Member ?? p.Elements[k].Id).Distinct().Count() > 6 ? "…" : "")}.");
+            var count = slack.Select(s => s.Base).Distinct().Count();
+            notes.Add($"One-way members slack in {count} combination{(count == 1 ? "" : "s")}: {names(all)}{(all.Select(k => p.Elements[k].Member ?? p.Elements[k].Id).Distinct().Count() > 6 ? "…" : "")}.");
         }
         var lifted = o.Where(s => s.Ok && s.Result.Lifted.Count > 0).ToList();
         if (lifted.Count > 0)
-            notes.Add($"Supports lifted in {lifted.Count} combination{(lifted.Count == 1 ? "" : "s")}: {lifted.SelectMany(s => s.Result.Lifted).Distinct().Count()} node{(lifted.SelectMany(s => s.Result.Lifted).Distinct().Count() == 1 ? "" : "s")}.");
+        {
+            var count = lifted.Select(s => s.Base).Distinct().Count();
+            notes.Add($"Supports lifted in {count} combination{(count == 1 ? "" : "s")}: {lifted.SelectMany(s => s.Result.Lifted).Distinct().Count()} node{(lifted.SelectMany(s => s.Result.Lifted).Distinct().Count() == 1 ? "" : "s")}.");
+        }
         return o;
     }
 
@@ -139,21 +232,68 @@ public sealed partial class AnalysisRun
     {
         if (NonlinearSets.Count == 0) return null;
         var p = Problem.Problem;
+        JsonArray Slack(IEnumerable<int> ks) => new(ks.Distinct().GroupBy(k => p.Elements[k].Member ?? p.Elements[k].Id).Select(g => (JsonNode)new JsonObject
+        {
+            ["id"] = g.Key, ["sourceId"] = p.Elements[g.First()].SourceId, ["name"] = p.Elements[g.First()].Name,
+        }).ToArray());
+        JsonArray Lifted(IEnumerable<int> ns) => new(ns.Distinct().Select(n => (JsonNode)new JsonObject { ["node"] = p.NodeIds[n], ["at"] = V3(p.Nodes[n]) }).ToArray());
+        // One row a combination: its own set, or its four variants (§14.14) summed up, the worst of them, each variant listed.
+        var rows = new JsonArray();
+        foreach (var g in NonlinearSets.GroupBy(s => s.Base))
+        {
+            var sets = g.ToList();
+            var s0 = sets[0];
+            var gov = sets.Where(s => s.Ok).MaxBy(s => s.Result.Amplification) ?? s0;
+            var failed = sets.FirstOrDefault(s => !s.Ok);
+            var row = new JsonObject
+            {
+                ["key"] = g.Key, ["name"] = s0.Variant == null ? s0.Name : s0.Name[..s0.Name.LastIndexOf(" + φ(", StringComparison.Ordinal)],
+                ["ok"] = failed == null, ["iterations"] = sets.Max(s => s.Result.Iterations), ["converged"] = sets.All(s => s.Result.Converged),
+                ["amplification"] = R(gov.Result.Amplification, 6), ["unstable"] = sets.Any(s => s.Result.Unstable), ["message"] = (failed ?? sets.FirstOrDefault(s => s.Result.Message != null) ?? s0).Result.Message,
+                ["slack"] = Slack(sets.Where(s => s.Ok).SelectMany(s => s.Result.Slack)),
+                ["lifted"] = Lifted(sets.Where(s => s.Ok).SelectMany(s => s.Result.Lifted)),
+            };
+            if (s0.Variant != null)
+            {
+                row["governing"] = gov.Variant;
+                row["variants"] = new JsonArray(sets.Select(s => (JsonNode)new JsonObject
+                {
+                    ["variant"] = s.Variant, ["key"] = s.Key, ["name"] = s.Name, ["ok"] = s.Ok, ["iterations"] = s.Result.Iterations, ["converged"] = s.Result.Converged,
+                    ["amplification"] = R(s.Result.Amplification, 6), ["phi"] = R(s.Imperfection!.Governing.Phi, 9), ["m"] = s.Imperfection.Governing.M,
+                    ["force"] = R(s.Imperfection.Force, 6), ["neglectable"] = s.Neglectable, ["message"] = s.Result.Message,
+                }).ToArray());
+            }
+            rows.Add((JsonNode)row);
+        }
+        var o = new JsonObject { ["secondOrder"] = Problem.Settings.SecondOrder, ["imperfections"] = ImperfectionsJson(), ["combinations"] = rows };
+        return o;
+    }
+
+    /// <summary>The global imperfections taken (§14.14): h, αh, the largest φ along X and Y with its m, where 5.3.2(4) would let them go.</summary>
+    JsonObject? ImperfectionsJson()
+    {
+        var imp = NonlinearSets.Where(s => s.Imperfection != null).ToList();
+        if (imp.Count == 0) return null;
+        JsonObject Along(char axis)
+        {
+            var g = imp.Where(s => s.Variant!.EndsWith(axis)).Select(s => s.Imperfection!.Governing).MaxBy(v => v.Phi);
+            return new JsonObject { ["phi"] = R(g.Phi, 9), ["m"] = g.M };
+        }
+        var first = imp[0].Imperfection!;
         return new JsonObject
         {
-            ["secondOrder"] = Problem.Settings.SecondOrder,
-            ["combinations"] = new JsonArray(NonlinearSets.Select(s => (JsonNode)new JsonObject
+            ["phi0"] = Imperfections.Phi0, ["h"] = R(first.H, 6), ["alphaH"] = R(first.AlphaH, 6), ["x"] = Along('X'), ["y"] = Along('Y'),
+            ["timber"] = imp.Any(s => s.Imperfection!.Timber),
+            ["neglectable"] = new JsonArray(imp.Where(s => s.Neglectable).GroupBy(s => (s.Base, Axis: s.Variant![1])).Select(x => (JsonNode)new JsonObject
             {
-                ["key"] = s.Key, ["name"] = s.Name, ["ok"] = s.Ok, ["iterations"] = s.Result.Iterations, ["converged"] = s.Result.Converged,
-                ["amplification"] = R(s.Result.Amplification, 6), ["unstable"] = s.Result.Unstable, ["message"] = s.Result.Message,
-                ["slack"] = new JsonArray(s.Result.Slack.GroupBy(k => p.Elements[k].Member ?? p.Elements[k].Id).Select(g => (JsonNode)new JsonObject
-                {
-                    ["id"] = g.Key, ["sourceId"] = p.Elements[g.First()].SourceId, ["name"] = p.Elements[g.First()].Name,
-                }).ToArray()),
-                ["lifted"] = new JsonArray(s.Result.Lifted.Select(n => (JsonNode)new JsonObject { ["node"] = p.NodeIds[n], ["at"] = V3(p.Nodes[n]) }).ToArray()),
+                ["key"] = x.Key.Base, ["name"] = x.First().Name[..x.First().Name.LastIndexOf(" + φ(", StringComparison.Ordinal)], ["direction"] = x.Key.Axis.ToString(),
             }).ToArray()),
         };
     }
+
+    JsonObject? SheetingJson() => Problem.SheetingHold is { } s
+        ? new JsonObject { ["members"] = s.Members, ["nodes"] = s.Nodes, ["spans"] = s.Spans, ["skipped"] = new JsonArray(s.Skipped.Select(x => (JsonNode)x).ToArray()) }
+        : null;
 
     JsonObject? SupportsJson()
     {
@@ -177,7 +317,7 @@ public sealed partial class AnalysisRun
             var key = $"{c.Key}#{modes}";
             if (_buckling.TryGetValue(key, out var had)) return had;
             BucklingResult r;
-            var nl = NonlinearSets.FirstOrDefault(s => s.Key == c.Key);
+            var nl = Failed(c.Key) ? NonlinearSets.First(s => s.Base == c.Key && !s.Ok) : NonlinearFor(c);
             if (nl is { Ok: true, Result.States: { } states })
             {
                 var (sys, fail) = FrameSystem.Build(states);
@@ -207,6 +347,11 @@ public sealed partial class AnalysisRun
         var top = b.Shares[mode].Select((v, k) => (v, k)).GroupBy(x => p.Elements[x.k].SourceId ?? p.Elements[x.k].Id).Select(g => (g.Key, Share: g.Sum(x => x.v), First: g.First().k)).MaxBy(x => x.Share);
         return top.Share > 0.5 ? (top.Key, p.Elements[top.First].Name, top.Share) : null;
     }
+
+    HashSet<string>? _purlins;
+
+    /// <summary>The members the framed roofs name as their cladding's carriers (a steel hall's purlins).</summary>
+    HashSet<string> Purlins() => _purlins ??= Problem.Model.Roofs.SelectMany(r => r.Members?.Where(kv => kv.Value == "purlin").Select(kv => kv.Key) ?? []).ToHashSet();
 
     /// <summary>The frame's own buckling: the first mode no one member holds.</summary>
     (double? Alpha, int Mode) GlobalOf(BucklingResult b)
@@ -282,7 +427,12 @@ public sealed partial class AnalysisRun
                 ["key"] = c.Key, ["name"] = c.Name, ["ok"] = b.Ok, ["alpha"] = Arr(b.Alpha, 6),
                 ["modes"] = new JsonArray(b.Alpha.Select((a, i) => (JsonNode)new JsonObject
                 {
-                    ["alpha"] = R(a, 6), ["local"] = LocalOf(b, i) is { } lo ? new JsonObject { ["sourceId"] = lo.SourceId, ["name"] = lo.Name, ["share"] = R(lo.Share, 4) } : null,
+                    ["alpha"] = R(a, 6), ["local"] = LocalOf(b, i) is { } lo ? new JsonObject
+                    {
+                        ["sourceId"] = lo.SourceId, ["name"] = lo.Name, ["share"] = R(lo.Share, 4),
+                        // A roof's purlin (§14.15): its sheeting may brace it (analysis.setSheeting {purlins: true}).
+                        ["purlin"] = lo.SourceId != null && Purlins().Contains(lo.SourceId),
+                    } : null,
                 }).ToArray()),
                 ["global"] = g.Alpha is { } ga ? R(ga, 6) : null, ["globalAbove"] = g.Alpha == null && b.Alpha.Length > 0 ? R(b.Alpha[^1], 6) : null,
                 ["class"] = b.Ok ? ClassOf(judged) : "unstable",
@@ -292,6 +442,8 @@ public sealed partial class AnalysisRun
         var notes = new JsonArray(
             "Linear buckling of the bars (the shells have no geometric stiffness): (K + αcr·Kg(NEd)) φ = 0, NEd of each ultimate combination; αcr ≥ 10: first order will do, 3 to 10: second order or the sway effects × 1/(1 − 1/αcr), below 3: second order (EN 1993-1-1 5.2.1(3), 5.2.2(5B)).",
             "Only the compressed bars' geometric stiffness is taken (the tension's stiffening left out, on the safe side). A mode one member holds more than half of is that member's own buckling (its check's, EN 1993-1-1 6.3): the class is the frame's first other mode's.");
+        if (NonlinearSets.Any(s => s.Variant != null))
+            notes.Add((JsonNode)"With the global imperfections on, a combination's buckling is worked out on its +X variant (its states and axial forces): the imperfections' forces are small and horizontal.");
         if (Problem.Problem.Elements.Any(e => e.Material == "concrete"))
             notes.Add((JsonNode)"Concrete bars at their uncracked stiffness: EN 1992-1-1 5.8.2(6) asks for second-order effects over 10 %, judged with the cracked stiffness.");
         return new JsonObject
@@ -313,8 +465,8 @@ public sealed partial class AnalysisRun
         if (mode < 1 || mode > b.Alpha.Length) throw new CommandException(b.Alpha.Length == 0 ? "No buckling under that combination: no bar is in compression." : $"There is no mode {mode}: 1 to {b.Alpha.Length}.");
         var u = b.Modes[mode - 1];
         var p = Problem.Problem;
-        var r = _linear is { } sys && !NonlinearSets.Any(s => s.Key == c.Key && s.Ok) ? sys.FromDisplacements("buckling", u)
-            : FrameSystem.Build(NonlinearSets.First(s => s.Key == c.Key).Result.States!).System!.FromDisplacements("buckling", u);
+        var r = _linear is { } sys && NonlinearFor(c) is not { Ok: true } ? sys.FromDisplacements("buckling", u)
+            : FrameSystem.Build(NonlinearFor(c)!.Result.States!).System!.FromDisplacements("buckling", u);
         var pts = Problem.Members.SelectMany(e => new[] { e.Pi, e.Pj }).Concat(p.Shells.SelectMany(s => s.Nodes.Select(x => p.Nodes[x]))).ToList();
         var extent = pts.Count == 0 ? 1 : Math.Max((new Vec3(pts.Max(x => x.X), pts.Max(x => x.Y), pts.Max(x => x.Z)) - new Vec3(pts.Min(x => x.X), pts.Min(x => x.Y), pts.Min(x => x.Z))).Length, 1);
         var scale = scaleArg ?? 0.15 * extent;
