@@ -13314,6 +13314,36 @@ export const scenes = [
       t.expect(await t.page.locator('[data-tag-shown]').count() === 1 && await t.page.locator('[data-tag-marker-type]').count() === 1, 'a marker\'s properties have Shown and Tag type');
     },
   },
+  {
+    // Forum topics 204–205: the built-in Polish markers (a line from the frame's middle to a bubble with the mark, the clear
+    // opening over and under the line, a window's wall opening and sill), added from + Built-in marker…, and their Marker… editor.
+    id: 'tag-bubble-markers',
+    touches: ['core', 'architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('standards.addTagPreset', { preset: 'door-pl' });
+      await t.cmd('standards.addTagPreset', { preset: 'window-pl' });
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor plan', scale: 50 });
+      await t.ui({ planViewId: plan.id, keyPlan: false });
+      await t.cmd('architecture.tagOpenings', { viewId: plan.id, doorType: 'door-pl', windowType: 'window-pl' });
+      await t.wait(1200);
+      const tags = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'TAG');
+      t.expect(tags.some((n) => n.props.tagType === 'door-pl') && tags.some((n) => n.props.tagType === 'window-pl'), 'the doors and windows take the Polish markers');
+      await t.fit();
+      await t.shot('tag-bubble-markers', { of: '[data-testid=plan]', pad: 0 });
+      await t.tool('manage.standards');
+      const dialog = t.page.locator('.dialog');
+      await dialog.getByText('Tags', { exact: true }).first().click();
+      await t.wait(600);
+      t.expect(await dialog.locator('[data-field=tag-preset]').count() === 1, 'the Tags tab offers + Built-in marker…');
+      await dialog.locator('[data-field=tag-marker-door-pl]').click();
+      await t.wait(500);
+      t.expect(await dialog.locator('[data-field=marker-layout]').inputValue() === 'bubble', 'Marker… shows the bubble layout');
+      await t.shot('tag-marker-editor', { of: '[data-marker-editor]', pad: 6 });
+      await t.ui({ dialog: null });
+    },
+  },
   // [scenes:B1]
   {
     // Rule packs (docs/plan-user-extensibility.md §5.4): Lapin's own read only, a copy of the project's with a stricter riser, in use; the check
