@@ -159,6 +159,8 @@ public enum FactorKind { Sparse, Skyline }
 public static class FrameSolver
 {
     public const long MaxProfile = 400_000_000;
+    /// <summary>Equations past which a model's load cases are solved side by side.</summary>
+    public const int CasesApart = 2_000;
     static readonly string[] DofNames = ["ux", "uy", "uz", "rx", "ry", "rz"];
     public static string DofName(int d) => DofNames[d];
 
@@ -167,7 +169,8 @@ public static class FrameSolver
         var sw = Stopwatch.StartNew();
         var (sys, failure) = FrameSystem.Build(p, kind, sw);
         if (sys == null) return failure!;
-        var cases = p.Cases.Select(sys.SolveCase).ToList();
+        // The cases on the one factor, side by side when the model is large enough to be worth it (§14.20): each solve reads the factor only.
+        var cases = (sys.Neq >= CasesApart ? FemParallel.Map(p.Cases, sys.SolveCase) : p.Cases.Select(sys.SolveCase).ToArray()).ToList();
         return new FrameSolution { Ok = true, Dofs = sys.Neq, Profile = sys.Profile, Springs = sys.SpringNodes, Cases = cases, SolveMs = sw.Elapsed.TotalMilliseconds };
     }
 }

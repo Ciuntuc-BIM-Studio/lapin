@@ -15,7 +15,7 @@ public sealed record EigenResult(double[] Lambda, double[][] Vectors, int Iterat
 /// </summary>
 public static class Subspace
 {
-    /// <param name="solve">Solves K·x = b in place (by equation).</param>
+    /// <param name="solve">Solves K·x = b in place (by equation); called from several threads at once on a large model (each its own b).</param>
     /// <param name="mass">M's diagonal by equation (t; nought where there is none).</param>
     /// <param name="kDiag">K's diagonal by equation, to choose the starting vectors.</param>
     /// <param name="start">Vectors to start from (a smaller run's modes, when more are asked): they take the first places.</param>
@@ -55,13 +55,14 @@ public static class Subspace
             // Y = M X; X̄ = K⁻¹ Y.
             var y = new double[q][];
             var xb = new double[q][];
-            for (var j = 0; j < q; j++)
+            // Each vector its own solve on the one factor: side by side on a large model (§14.20).
+            FemParallel.For(q, n, j =>
             {
                 y[j] = new double[n];
                 for (var i = 0; i < n; i++) y[j][i] = mass[i] * x[j][i];
                 xb[j] = (double[])y[j].Clone();
                 solve(xb[j]);
-            }
+            });
             // The projections: Kr = X̄ᵀ K X̄ = X̄ᵀ Y, Mr = X̄ᵀ M X̄ (over the massive degrees of freedom only).
             var kr0 = new double[q, q];
             var mr0 = new double[q, q];

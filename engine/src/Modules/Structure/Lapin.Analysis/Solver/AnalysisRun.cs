@@ -48,6 +48,9 @@ public sealed partial class AnalysisRun
         return run;
     }
 
+    /// <summary>The analysis worked out anew, not kept (what <see cref="Of"/> keeps): to compare one way of solving with another.</summary>
+    public static AnalysisRun Fresh(IQueryContext q) => Compute(q);
+
     static AnalysisRun Compute(IQueryContext q)
     {
         var sw = Stopwatch.StartNew();
@@ -100,7 +103,7 @@ public sealed partial class AnalysisRun
             foreach (var r in sol.Cases.Where(r => r.Balance > Balanced))
                 notes.Add($"„{rep.Cases.First(x => x.Id == r.Id).Code}”: the reactions do not balance the loads (off by {r.Balance:0.###e+0} of them).");
         // S5 (§14.1): each static combination on its own when the analysis is nonlinear.
-        var nonlinear = sol is { Ok: true } && CallsForNonlinear(sp) ? SolveNonlinear(sp, sol, combos, notes) : [];
+        var nonlinear = sol is { Ok: true } && CallsForNonlinear(sp) ? SolveNonlinear(sp, sol, combos, notes, q.Cancellation) : [];
         notes.AddRange(comboNotes);
         return new AnalysisRun
         {

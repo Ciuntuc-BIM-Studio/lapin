@@ -103,13 +103,14 @@ public static class Buckling
             var y = new double[q][];
             var xb = new double[q][];
             var gy = new double[q][];
-            for (var j = 0; j < q; j++)
+            // Each vector its own solve on the one factor: side by side on a large model (§14.20).
+            FemParallel.For(q, n, j =>
             {
                 y[j] = MulG(x[j]);
                 xb[j] = (double[])y[j].Clone();
                 sys.SolveInPlace(xb[j]);
                 gy[j] = MulG(xb[j]);
-            }
+            });
             var kr0 = new double[q, q];
             var gr0 = new double[q, q];
             for (var a = 0; a < q; a++)

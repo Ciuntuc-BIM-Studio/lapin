@@ -316,7 +316,7 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
             return new JsonObject { ["members"] = ids.Count };
         });
         // {combination?, modes?}: each ultimate combination's critical load factors αcr, their class by EN 1993-1-1 5.2.1(3) and the amplifier 1/(1 − 1/αcr).
-        r.Query("buckling", (q, a) => AnalysisRun.For(q).BucklingJson((string?)a["combination"], Json.Number(a["modes"]) is { } m ? (int)m : 6));
+        r.Query("buckling", (q, a) => AnalysisRun.For(q).BucklingJson((string?)a["combination"], Json.Number(a["modes"]) is { } m ? (int)m : 6, q.Cancellation));
         // {combination, mode?, scale?}: a buckling mode's shape for the 3D view.
         r.Query("bucklingMode", (q, a) => AnalysisRun.For(q).BucklingModeJson((string?)a["combination"] ?? throw new CommandException("Say the combination."),
             Json.Number(a["mode"]) is { } n ? (int)n : 1, a["scale"] is JsonNode sn && Json.Number(sn) is { } sv && double.IsFinite(sv) ? sv : null));

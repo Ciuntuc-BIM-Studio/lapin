@@ -122,13 +122,14 @@ public sealed partial class AnalysisRun
     /// one's four imperfection variants (§14.14: the forces of the first-order axial forces added, ±X, ±Y); the notes that say
     /// what came of it. With imperfections alone (first order, no states) only the ultimate combinations are solved.
     /// </summary>
-    static List<NonlinearSet> SolveNonlinear(StructuralProblem sp, FrameSolution sol, List<Combination> combos, List<string> notes)
+    static List<NonlinearSet> SolveNonlinear(StructuralProblem sp, FrameSolution sol, List<Combination> combos, List<string> notes, CancellationToken cancel = default)
     {
-        var o = new List<NonlinearSet>();
         var p = sp.Problem;
         var every = sp.Settings.SecondOrder || Nonlinear.HasStates(p);
         var options = new NonlinearOptions(sp.Settings.SecondOrder);
         var noColumns = false;
+        // The load vectors first, in turn (each a set made once its result is known); then their solves side by side (§14.20).
+        var jobs = new List<(CaseLoads Loads, Func<NonlinearResult, NonlinearSet> Make)>();
         foreach (var c in combos)
         {
             var terms = c.Factors.Select(f => (sol.Cases.FindIndex(x => x.Id == f.Case.Id), f.Value)).Where(x => x.Item1 >= 0).ToList();
@@ -162,7 +163,7 @@ public sealed partial class AnalysisRun
             {
                 if (!every) continue;
                 var loads = Loads($"nl/{c.Key}");
-                o.Add(new NonlinearSet(c.Key, c.Name, c.Kind, terms, loads, Nonlinear.Solve(p, loads, options)) { Base = c.Key });
+                jobs.Add((loads, r => new NonlinearSet(c.Key, c.Name, c.Kind, terms, loads, r) { Base = c.Key }));
                 continue;
             }
             var sum = terms.Aggregate(Vec3.Zero, (a, t) => a + sol.Cases[t.Item1].SumLoads * t.Item2);
@@ -172,12 +173,15 @@ public sealed partial class AnalysisRun
                 var loads = Loads($"nl/{c.Key}|{vn}");
                 foreach (var (n, f) in variants[i].Loads.Nodal) loads.AddNodal(n, f);
                 var h = Math.Abs(Vec3.Dot(sum, dir));
-                o.Add(new NonlinearSet($"{c.Key}|{vn}", $"{c.Name} + φ({Signed(vn)})", c.Kind, terms, loads, Nonlinear.Solve(p, loads, options))
+                var imperfection = variants[i];
+                jobs.Add((loads, r => new NonlinearSet($"{c.Key}|{vn}", $"{c.Name} + φ({Signed(vn)})", c.Kind, terms, loads, r)
                 {
-                    Base = c.Key, Variant = vn, Imperfection = variants[i], Neglectable = Math.Abs(sum.Z) > 1e-9 && h >= 0.15 * Math.Abs(sum.Z),
-                });
+                    Base = c.Key, Variant = vn, Imperfection = imperfection, Neglectable = Math.Abs(sum.Z) > 1e-9 && h >= 0.15 * Math.Abs(sum.Z),
+                }));
             }
         }
+        var results = FemParallel.Map(jobs, j => Nonlinear.Solve(p, j.Loads, options), FemParallel.BytesFor(sol.Profile, sol.Dofs), cancel);
+        var o = jobs.Select((j, i) => j.Make(results[i])).ToList();
         var names = new Func<IEnumerable<int>, string>(ks => string.Join(", ", ks.Select(k => p.Elements[k].Name ?? p.Elements[k].Id).Distinct().Take(6)));
         if (sp.Settings.SecondOrder)
         {
@@ -316,27 +320,56 @@ public sealed partial class AnalysisRun
         {
             var key = $"{c.Key}#{modes}";
             if (_buckling.TryGetValue(key, out var had)) return had;
-            BucklingResult r;
-            var nl = Failed(c.Key) ? NonlinearSets.First(s => s.Base == c.Key && !s.Ok) : NonlinearFor(c);
-            if (nl is { Ok: true, Result.States: { } states })
+            return _buckling[key] = BucklingJob(c, modes)();
+        }
+    }
+
+    /// <summary>
+    /// The buckling of several combinations worked out side by side (§14.20) and kept, those not had yet: each its own
+    /// system (its nonlinear states') or the first-order one shared, which its solves only read.
+    /// </summary>
+    void BucklingOfAll(IEnumerable<Combination> list, int modes, CancellationToken cancel)
+    {
+        lock (_gate)
+        {
+            var missing = list.Select(c => (c, Key: $"{c.Key}#{modes}")).Where(x => !_buckling.ContainsKey(x.Key)).DistinctBy(x => x.Key).ToList();
+            if (missing.Count < 2) return;
+            var jobs = missing.Select(x => BucklingJob(x.c, modes)).ToList();
+            var results = FemParallel.Map(jobs, j => j(), FemParallel.BytesFor(Solution?.Profile ?? 0, Solution?.Dofs ?? 0), cancel);
+            for (var i = 0; i < missing.Count; i++) _buckling[missing[i].Key] = results[i];
+        }
+    }
+
+    /// <summary>
+    /// A combination's buckling as a job (under <see cref="_gate"/>: what it reads of the run is taken now, the first-order
+    /// system built once): the job then builds and solves on its own.
+    /// </summary>
+    Func<BucklingResult> BucklingJob(Combination c, int modes)
+    {
+        var nl = Failed(c.Key) ? NonlinearSets.First(s => s.Base == c.Key && !s.Ok) : NonlinearFor(c);
+        if (nl is { Ok: true, Result.States: { } states })
+        {
+            var axial = nl.Result.Axial;
+            return () =>
             {
                 var (sys, fail) = FrameSystem.Build(states);
-                r = sys == null ? new BucklingResult(false, [], [], 0, false, false, fail?.Refused ?? "A mechanism in its last states.")
-                    : Buckling.Solve(sys, nl.Result.Axial, modes, tolerance: 1e-6);
-            }
-            else if (nl is { Ok: false }) r = new BucklingResult(false, [], [], 0, false, true, nl.Result.Message);
-            else
-            {
-                if (_linear == null)
-                {
-                    var (sys, fail) = FrameSystem.Build(Problem.Problem);
-                    _linear = sys ?? throw new CommandException(fail?.Refused ?? "The analysis met a mechanism: analysis.run says where.");
-                }
-                var state = Combine(Terms(c));
-                r = Buckling.Solve(_linear, state.Elements.Select(Nonlinear.AxialOf).ToArray(), modes, tolerance: 1e-6);
-            }
-            return _buckling[key] = r;
+                return sys == null ? new BucklingResult(false, [], [], 0, false, false, fail?.Refused ?? "A mechanism in its last states.")
+                    : Buckling.Solve(sys, axial, modes, tolerance: 1e-6);
+            };
         }
+        if (nl is { Ok: false })
+        {
+            var message = nl.Result.Message;
+            return () => new BucklingResult(false, [], [], 0, false, true, message);
+        }
+        if (_linear == null)
+        {
+            var (sys, fail) = FrameSystem.Build(Problem.Problem);
+            _linear = sys ?? throw new CommandException(fail?.Refused ?? "The analysis met a mechanism: analysis.run says where.");
+        }
+        var linear = _linear;
+        var n = Combine(Terms(c)).Elements.Select(Nonlinear.AxialOf).ToArray();
+        return () => Buckling.Solve(linear, n, modes, tolerance: 1e-6);
     }
 
     /// <summary>A mode one member (its element) holds more than half of: that member's own buckling.</summary>
@@ -361,9 +394,10 @@ public sealed partial class AnalysisRun
     }
 
     /// <summary>The lowest global αcr of the ultimate static combinations (or its lower bound), with its combination: what the steel checks say (§14.3).</summary>
-    public (Combination Combination, double Alpha, bool Bound)? LowestGlobal(int modes = 6)
+    public (Combination Combination, double Alpha, bool Bound)? LowestGlobal(int modes = 6, CancellationToken cancel = default)
     {
         (Combination, double, bool)? best = null;
+        BucklingOfAll(UltimateStatic(), modes, cancel);
         foreach (var c in UltimateStatic())
         {
             var b = BucklingOf(c, modes);
@@ -406,7 +440,7 @@ public sealed partial class AnalysisRun
     List<Combination> UltimateStatic() => Combinations.Where(c => UserCombinations.Ultimate(c.Kind)).ToList();
 
     /// <summary>{combination?, modes?}: each ultimate combination's αcr (§14.3), its class and amplifier.</summary>
-    public JsonObject BucklingJson(string? combination, int modes)
+    public JsonObject BucklingJson(string? combination, int modes, CancellationToken cancel = default)
     {
         if (!Ok) throw new CommandException(Solution?.Mechanism != null ? "The analysis met a mechanism: analysis.run says where." : "The analysis did not run: analysis.run says why.");
         modes = Math.Clamp(modes, 1, 12);
@@ -414,6 +448,7 @@ public sealed partial class AnalysisRun
             : [Combinations.FirstOrDefault(c => c.Key == combination) ?? throw new CommandException($"There is no static combination „{combination}”.")];
         var arr = new JsonArray();
         (string Key, double Alpha)? lowest = null;
+        BucklingOfAll(list, modes, cancel);
         foreach (var c in list)
         {
             var b = BucklingOf(c, modes);

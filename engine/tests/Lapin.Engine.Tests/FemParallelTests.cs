@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
+using Lapin.Analysis;
 using Lapin.Analysis.Solver;
 using Lapin.Model;
 using Xunit.Abstractions;
@@ -9,8 +10,9 @@ namespace Lapin.Engine.Tests;
 /// <summary>
 /// The combinations solved in parallel (docs/plan-fem.md §14.20): the same problem's nonlinear combinations and buckling
 /// solved on many threads at once give, bit for bit, what one thread gives (its bars and shells shared between the
-/// problems, prepared once), on the guide's steel hall (P-Δ, global imperfections, tension-only X bracing) and on the
-/// guide's frame with its slab as shells (P-Δ, imperfections, footings that lift).
+/// problems, prepared once); the whole analysis with its combinations in parallel equals the sequential one, on the guide's
+/// steel hall (P-Δ, global imperfections, tension-only X bracing) and on the guide's frame with its slab as shells (P-Δ,
+/// imperfections, footings that lift).
 /// </summary>
 public class FemParallelTests(ITestOutputHelper output)
 {
@@ -132,5 +134,82 @@ public class FemParallelTests(ITestOutputHelper output)
         });
         output.WriteLine($"{model}: {jobs.Count} solves on {Environment.ProcessorCount} cores, {failures.Count} differ");
         Assert.True(failures.IsEmpty, string.Join("\n", failures.Take(10)));
+    }
+
+    /// <summary>
+    /// The whole analysis one combination at a time and side by side: the same JSON, every nonlinear set's and every
+    /// case's result bit for bit, the same buckling of every ultimate combination.
+    /// </summary>
+    [Theory]
+    [InlineData("hall")]
+    [InlineData("shells")]
+    public void The_analysis_with_its_combinations_side_by_side_is_the_sequential_one_bit_for_bit(string model)
+    {
+        var f = model == "hall" ? Hall() : ShellFrame();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        AnalysisRun one;
+        JsonObject oneBuckling;
+        using (FemParallel.Limit(1))
+        {
+            one = AnalysisRun.Fresh(f.Session.Reader);
+            oneBuckling = one.BucklingJson(null, 6);
+        }
+        var tOne = sw.ElapsedMilliseconds;
+        sw.Restart();
+        AnalysisRun many;
+        JsonObject manyBuckling;
+        using (FemParallel.Limit(8))
+        {
+            many = AnalysisRun.Fresh(f.Session.Reader);
+            manyBuckling = many.BucklingJson(null, 6);
+        }
+        var tMany = sw.ElapsedMilliseconds;
+        output.WriteLine($"{model}: {one.NonlinearSets.Count} nonlinear sets, {one.Solution!.Dofs} dofs; one at a time {tOne} ms, side by side {tMany} ms");
+        Assert.True(one.Ok);
+        Assert.NotEmpty(one.NonlinearSets);
+        Assert.Contains(one.NonlinearSets, s => s.Variant != null);
+        if (model == "shells") Assert.NotEmpty(one.Problem.Problem.Shells);
+        else Assert.Contains(one.NonlinearSets, s => s.Result.Slack.Count > 0);
+        Assert.Equal(one.NonlinearSets.Count, many.NonlinearSets.Count);
+        for (var i = 0; i < one.NonlinearSets.Count; i++)
+        {
+            Assert.Equal(one.NonlinearSets[i].Key, many.NonlinearSets[i].Key);
+            Same(one.NonlinearSets[i].Result, many.NonlinearSets[i].Result, one.NonlinearSets[i].Key);
+        }
+        for (var i = 0; i < one.Solution.Cases.Count; i++) Same(one.Solution.Cases[i], many.Solution!.Cases[i], one.Solution.Cases[i].Id);
+        static string NoTimes(JsonObject o)
+        {
+            var c = o.DeepClone().AsObject();
+            c.Remove("solveMs");
+            c.Remove("totalMs");
+            return c.ToJsonString();
+        }
+        Assert.Equal(NoTimes(one.RunJson()), NoTimes(many.RunJson()));
+        Assert.Equal(oneBuckling.ToJsonString(), manyBuckling.ToJsonString());
+        foreach (var c in one.Combinations.Where(c => UserCombinations.Ultimate(c.Kind)))
+            Same(one.BucklingOf(c, 6), many.BucklingOf(c, 6), c.Key);
+    }
+
+    [Fact]
+    public void Jobs_come_back_in_their_order_the_lowest_failure_is_thrown_and_a_stop_ends_them()
+    {
+        using (FemParallel.Limit(4))
+        {
+            var r = FemParallel.Map(Enumerable.Range(0, 100).ToList(), i => { Thread.SpinWait(1000 * (i % 7)); return i * i; });
+            Assert.Equal(Enumerable.Range(0, 100).Select(i => i * i), r);
+            var ex = Assert.Throws<InvalidOperationException>(() => FemParallel.Map(Enumerable.Range(0, 50).ToList(), i => i is 17 or 33 ? throw new InvalidOperationException($"job {i}") : i));
+            Assert.Equal("job 17", ex.Message);
+            using var stop = new CancellationTokenSource();
+            stop.Cancel();
+            Assert.ThrowsAny<OperationCanceledException>(() => FemParallel.Map(Enumerable.Range(0, 50).ToList(), i => i, cancel: stop.Token));
+        }
+        // One at a time: the same.
+        using (FemParallel.Limit(1))
+        {
+            Assert.Equal(1, FemParallel.Degree(10, 0));
+            Assert.Equal(Enumerable.Range(0, 10), FemParallel.Map(Enumerable.Range(0, 10).ToList(), i => i));
+        }
+        // The memory bound: jobs too large for a quarter of the memory go one at a time.
+        using (FemParallel.Limit(8)) Assert.Equal(1, FemParallel.Degree(10, long.MaxValue / 2));
     }
 }
