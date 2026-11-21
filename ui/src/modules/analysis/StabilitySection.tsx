@@ -36,7 +36,7 @@ export function StabilitySection() {
   const nl = run.nonlinear;
   return (
     <div className="stability" data-testid="stability">
-      <span className="eyebrow">Stability</span>
+      <p><span className="eyebrow">Stability</span></p>
       {nl && <Nonlinear nl={nl.combinations} secondOrder={nl.secondOrder} />}
       {run.supports && (
         <p className="muted small" data-testid="stability-supports">
@@ -59,7 +59,7 @@ export function StabilitySection() {
 function Nonlinear({ nl, secondOrder }: { nl: NonlinearComboDto[]; secondOrder: boolean }) {
   return (
     <>
-      <span className="muted small">{secondOrder ? 'Each combination solved on its own, second order (P-Δ)' : 'Each combination solved on its own'}</span>
+      <p className="muted small">{secondOrder ? 'Each combination solved on its own, second order (P-Δ)' : 'Each combination solved on its own'}</p>
       <div className="seismic-scroll">
         <table className="standards-table" data-testid="stability-nonlinear">
           <thead>

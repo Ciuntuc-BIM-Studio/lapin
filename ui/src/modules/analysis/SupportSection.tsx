@@ -36,7 +36,7 @@ export function SupportSection({ node }: { node: NodeDto }) {
   const support = node.props.analysisSupport;
   const springs = ownSprings(support);
   const ks = ownWinkler(support);
-  const opt = useAnalysis<SupportOptionsDto>('analysis.supportOptions', ids.length === 1);
+  const opt = useAnalysis<SupportOptionsDto>('analysis.supportOptions', ids.length === 1, { id: node.id });
   const kind = node.type === 'IfcSlab' ? 'slab' : node.type === 'IfcFooting' ? 'footing' : 'base';
   const set = (args: Record<string, unknown>) => void execute('analysis.setSupport', { ids, ...args });
   const mine = opt && opt.id === node.id ? opt : null;
@@ -59,18 +59,12 @@ export function SupportSection({ node }: { node: NodeDto }) {
           <ValueField label="ks" unit="kN/m³" test="support-winkler" value={ks} parse={parseWinkler}
             title="The modulus of subgrade reaction of the ground under it: the geotechnical engineer's value" onApply={(v) => set({ winkler: v })} />
           {mine && mine.typical.length > 0 && (
-            <table className="standards-table" data-testid="support-typical">
-              <caption className="muted small">Typical ks, indicative: the ground&apos;s value is the geotechnical engineer&apos;s</caption>
-              <tbody>
-                {mine.typical.map((t) => (
-                  <tr key={t.soil}>
-                    <td>{t.soil}</td>
-                    <td data-no-i18n>{formatSoilRange(t.min, t.max)}</td>
-                    <td><button type="button" className="btn mini" title="Use the middle of this range" onClick={() => set({ winkler: Math.round((t.min + t.max) / 2) })}>Take the middle</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div data-testid="support-typical">
+              <p className="muted small">Typical ks, indicative: the ground&apos;s value is the geotechnical engineer&apos;s</p>
+              <ul className="muted small" style={{ margin: 0, paddingLeft: 16 }}>
+                {mine.typical.map((t) => <li key={t.soil}>{t.soil}: <span data-no-i18n>{formatSoilRange(t.min, t.max)}</span></li>)}
+              </ul>
+            </div>
           )}
         </>
       )}
