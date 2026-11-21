@@ -25,25 +25,26 @@ public sealed class BandAxis(Func<Vec2, (double S, double Y)> toBand, Func<doubl
 
 /// <summary>
 /// Batt insulation (mineral wool), as draughtsmen draw it (the classic batt symbol of AutoCAD's batt routines and Revit's batt
-/// insulation): round heads against the layer's faces, alternately one face and the other, joined by straight strokes that
-/// cross between them. Not a .pat family (a line family cannot draw a curve): a construction laid for each band in the band's
-/// own frame, <c>s</c> along it and <c>y</c> across it (the mid-line y = 0, the faces at ±h), clipped to the band's polygon
-/// (mitred ends, corners).
+/// insulation): a chain of symmetric teardrops, one with its round head against the one face of the layer, the next against the
+/// other, each pointing across to the far face. Not a .pat family (a line family cannot draw a curve): a construction laid for
+/// each band in the band's own frame, <c>s</c> along it and <c>y</c> across it (the mid-line y = 0, the faces at ±h), clipped
+/// to the band's polygon (mitred ends, corners).
 /// <para>
-/// The construction (<see cref="Fit"/>, <see cref="Strokes"/>): heads of radius r = <see cref="Head"/>·h, each tangent to its
-/// face (its centre at y = ±(h − r)), their centres D apart along the band, alternately against the one face and the other
-/// (heads on the same face 2D apart). D is <see cref="Spacing"/>·r (× the material's hatch scale), adjusted so a whole number n
-/// of heads fills the band: the first head touches the band's start, the last its end, L = 2r + (n − 1)·D, nothing partial at
-/// either end (L the band's length along its mid-line, so a mitred end is met half-way and two batts meet on the mitre). Each pair of neighbouring heads (one on each face) is joined by its two outer common tangents (parallel to the
-/// line of their centres, r off it), the straight strokes. Each head is drawn as its arc over its face, from the stroke that
-/// leaves it lowest on one side to the one on the other: half a turn plus 2φ, φ = atan(D / 2(h − r)) the strokes' tilt from
-/// square across the band (an end head, with a neighbour on one side only, half a turn between its pair's two strokes). The two
-/// strokes leaving a head low (one to each neighbour) cross under it, closing the head into a teardrop; the strokes of
-/// neighbouring pairs cross in X's between the heads.
+/// The construction (<see cref="Fit"/>, <see cref="Strokes"/>): heads are circles of radius R = w/2, w the loop width, each
+/// tangent to its face (its centre at y = ±(h − R)). The heads on one face touch each other (centres w apart), those on the
+/// other face too, offset by w/2: the heads alternate faces every w/2 along the band. w is <see cref="Head"/>·2h nominally
+/// (× the material's hatch scale), adjusted so a whole number n of loops fills the band: the first head touches the band's
+/// start, the last its end, L = 2R + (n − 1)·w/2 = (n + 1)·w/2, nothing partial at either end (L the band's length along its
+/// mid-line, so a mitred end is met half-way and two batts meet on the mitre). Each loop is its head and the two straight
+/// tangents from the head to its tip, on the loop's own axis across the band at the height of the opposite heads' centres,
+/// y = ∓(h − R): exactly where the two opposite heads beside it touch. The tangents leave the head at α below its sides,
+/// sin α = R / 2(h − R), and the head is drawn as its arc over its face between them (half a turn plus 2α). A loop's side and
+/// its neighbour's facing side are parallel (the loops are half-turn copies of each other): they run side by side across the
+/// band, a zigzag of parallel pairs, none crossing.
 /// </para>
 /// The first head (at the band's start) lies against the face to the left of the frame (a band seen running left to right:
 /// its top face; running up the page: its left face); <c>flip</c> (a material's hatch angle of half a turn) puts it on the
-/// other. The frame is the element's axis when the drawing gives one (<see cref="BandAxis"/>: a wall in a plan, so the heads
+/// other. The frame is the element's axis when the drawing gives one (<see cref="BandAxis"/>: a wall in a plan, so the loops
 /// follow the wall at any angle and round a curved one, from the wall's start), else the band's longest edge run left to right
 /// (or upwards). The faces are where the band's sides along the frame lie (the edges that run along it), so a mitred end or a
 /// corner piece does not shift the line off the layer; a band with no side along the frame takes its whole extent across.
@@ -51,67 +52,60 @@ public sealed class BandAxis(Func<Vec2, (double S, double Y)> toBand, Func<doubl
 public static class BattHatch
 {
     public const string Name = "BATT";
-    public static readonly HatchPattern Pattern = new(Name, "Batt insulation: round heads on alternate faces, joined by crossing strokes", []);
+    public static readonly HatchPattern Pattern = new(Name, "Batt insulation: teardrops with round heads on alternate faces", []);
 
     public static bool Is(HatchPattern? p) => p != null && p.Name.Equals(Name, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>A head's radius, as a fraction of half the band's width (the heads 0.4 of the layer wide).</summary>
+    /// <summary>The loop width (a head's diameter) as a fraction of the band's width, before the fit: 0.4 (R = 0.4·h).</summary>
     public const double Head = 0.4;
-    /// <summary>The distance between neighbouring heads (one on each face) along the band, in head radii, before the fit.</summary>
-    public const double Spacing = 1.5;
+    /// <summary>The largest hatch scale the loops take: a head of 0.46·h, its loop's tip still well past the mid-line.</summary>
+    public const double MaxScale = 1.15;
 
     /// <summary>
-    /// The heads of a band <paramref name="length"/> long and 2·<paramref name="h"/> wide: how many, how far apart (centre to
-    /// centre along the band, neighbours on opposite faces), and their radius. <paramref name="scale"/> stretches the spacing
-    /// (held to 0.5–3); one head alone, centred, in a band too short for two.
+    /// The loops of a band <paramref name="length"/> long and 2·<paramref name="h"/> wide: how many, their width w (heads on one
+    /// face w apart, the faces alternating every w/2) and their heads' radius w/2. <paramref name="scale"/> stretches the loops
+    /// (held to 0.5–1.15, so a head stays under half of half the band and its tip beyond the mid-line); one loop alone in a band
+    /// too short for two.
     /// </summary>
-    public static (int Count, double Spacing, double Radius) Fit(double length, double h, double scale = 1)
+    public static (int Count, double Width, double Radius) Fit(double length, double h, double scale = 1)
     {
-        var r = Head * h;
-        var d = Spacing * r * Math.Clamp(double.IsFinite(scale) && scale > 0 ? scale : 1, 0.5, 3);
-        if (length <= 2 * r + d / 2) return (1, 0, Math.Min(r, length / 2));
-        var n = Math.Max(2, (int)Math.Round((length - 2 * r) / d) + 1);
-        return (n, (length - 2 * r) / (n - 1), r);
+        var w = Head * 2 * h * Math.Clamp(double.IsFinite(scale) && scale > 0 ? scale : 1, 0.5, MaxScale);
+        var n = Math.Max(1, (int)Math.Round(2 * length / w - 1));
+        w = 2 * length / (n + 1);
+        // No head larger than the largest scale gives: one loop more (the fit still whole), or a lone loop held to that size.
+        var most = 2 * Head * MaxScale * h;
+        if (w > most) { n = Math.Max(1, (int)Math.Ceiling(2 * length / most - 1)); w = 2 * length / (n + 1); }
+        if (w > most) w = most;
+        return (n, w, w / 2);
     }
 
     /// <summary>
-    /// The batt's strokes in the band's frame (s along, y across from the mid-line), each a polyline: the heads' arcs (by the one
-    /// rule for curves, <see cref="Chords"/>, split where they touch their face) and the straight strokes between them.
+    /// The batt's strokes in the band's frame (s along, y across from the mid-line), each a polyline: per loop, its head's arc (by
+    /// the one rule for curves, <see cref="Chords"/>, in two halves meeting where it touches its face) and its two sides.
     /// </summary>
     public static List<List<Vec2>> Strokes(double s0, double s1, double h, double scale = 1, bool flip = false)
     {
         var o = new List<List<Vec2>>();
-        var (n, d, r) = Fit(s1 - s0, h, scale);
-        if (!(r > 0) || !(h > 0)) return o;
+        if (!(h > 0) || !(s1 > s0)) return o;
+        var (n, w, r) = Fit(s1 - s0, h, scale);
+        var big = h - r;
+        if (!(r > 0) || !(big > 0)) return o;
         var first = flip ? -1 : 1;
-        if (n == 1)
-        {
-            // Too short for two: one whole head, against its face.
-            var c = new Vec2((s0 + s1) / 2, first * (h - r));
-            o.Add(Chords.Arc(c, r, Math.PI / 2, Math.PI, 2));
-            o.Add(Chords.Arc(c, r, -Math.PI / 2, Math.PI, 2));
-            return o;
-        }
-        var centres = new Vec2[n];
-        for (var j = 0; j < n; j++) centres[j] = new Vec2(s0 + r + j * d, (j % 2 == 0 ? first : -first) * (h - r));
-        // The strokes: each neighbouring pair's two outer common tangents.
-        for (var j = 0; j + 1 < n; j++)
-        {
-            var (a, b) = (centres[j], centres[j + 1]);
-            var off = (b - a).Normalized().Perp * r;
-            o.Add([a + off, b + off]);
-            o.Add([a - off, b - off]);
-        }
-        // The heads, in each head's own sense (its face up, angle 0 along +s): a right neighbour's strokes touch it at ±φ, a left
-        // one's at π ∓ φ; the arc over the face from the lowest on the one side to the lowest on the other.
-        var phi = Math.Atan2(d, 2 * (h - r));
+        // The tangents' angle below the head's sides: from the tip, 2(h − R) from the centre, to a circle of radius R.
+        var alpha = Math.Asin(Math.Min(1, r / (2 * big)));
+        // Loops centred along the band from its start; a lone loop at the band's middle.
+        var start = n == 1 ? (s0 + s1) / 2 : s0 + r;
         for (var j = 0; j < n; j++)
         {
             var side = j % 2 == 0 ? first : -first;
-            double from = j == 0 ? phi : -phi, to = j == n - 1 ? Math.PI - phi : Math.PI + phi;
-            var c = centres[j];
-            foreach (var (a0, a1) in new[] { (from, Math.PI / 2), (Math.PI / 2, to) })
+            var c = new Vec2(start + j * w / 2, side * big);
+            var tip = new Vec2(c.X, -side * big);
+            // In the head's own sense (its face up, angle 0 along +s).
+            Vec2 At(double a) => new(c.X + r * Math.Cos(a), c.Y + side * r * Math.Sin(a));
+            foreach (var (a0, a1) in new[] { (-alpha, Math.PI / 2), (Math.PI / 2, Math.PI + alpha) })
                 o.Add([.. Chords.Arc(new Vec2(0, 0), r, a0, a1 - a0).Select(p => new Vec2(c.X + p.X, c.Y + side * p.Y))]);
+            o.Add([At(-alpha), tip]);
+            o.Add([At(Math.PI + alpha), tip]);
         }
         return o;
     }
@@ -119,7 +113,7 @@ public static class BattHatch
     /// <param name="loops">The region, even-odd (metres, or whatever unit the drawing is in).</param>
     /// <param name="minWidth">Bands thinner than this (same unit) get no line: too thin to read.</param>
     /// <param name="axis">The frame the band runs in (an element's axis); null: the band's longest edge.</param>
-    /// <param name="scale">Stretches the heads' spacing along the band (the material's hatch scale; 1 as designed).</param>
+    /// <param name="scale">Stretches the loops along the band, their heads with them (the material's hatch scale; 1 as designed).</param>
     /// <param name="flip">The first head against the band's right face instead of its left.</param>
     public static List<HatchSegment> Segments(IReadOnlyList<IReadOnlyList<Vec2>> loops, double minWidth = 0, int maxSegments = 200_000, BandAxis? axis = null,
         double scale = 1, bool flip = false)

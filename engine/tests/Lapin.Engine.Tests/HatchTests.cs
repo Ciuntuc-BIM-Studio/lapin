@@ -273,7 +273,7 @@ public class BattHatchTests
     /// <summary>
     /// What a batt line must do in a band of half-width h laid along <paramref name="dir"/>: every point inside the faces
     /// (|y| ≤ h), heads on both faces (points within 2 % of h of each face), and the faces touched all along the band, a
-    /// head on each face every 2·1.5·0.4·h before the fit (no stretch of more than two of those without a touch on either face).
+    /// head on each face every 0.8·h before the fit (no stretch of more than two of those without a touch on either face).
     /// </summary>
     static void AssertBatt(List<HatchSegment> segs, Func<Vec2, (double S, double Y)> frame, double h, double s0, double s1, string what, double slack = 0)
     {
@@ -281,17 +281,17 @@ public class BattHatchTests
         var pts = segs.SelectMany(s => new[] { s.A, s.B }).Select(frame).ToList();
         Assert.All(pts, p => Assert.True(Math.Abs(p.Y) <= h + slack + 1e-6, $"{what}: a point {p.Y:0.####} off the axis, the faces at ±{h}"));
         Assert.All(pts, p => Assert.InRange(p.S, s0 - 1e-6, s1 + 1e-6));
-        var pitch = 2 * BattHatch.Spacing * BattHatch.Head * h;
+        var pitch = BattHatch.Head * 2 * h;
         foreach (var face in new[] { -1, 1 })
         {
             var touches = pts.Where(p => face * p.Y >= h * 0.98 - slack).Select(p => p.S).Order().ToList();
             Assert.True(touches.Count > 0, $"{what}: the face at {face * h} is never touched");
-            // Along the band a touch every pitch (within the fit); from either end, two and a half (a notch or a mitre at an
-            // end may clip a head there).
+            // Along the band a touch every pitch (within the fit); from either end, a loop and a half past a 45° mitre's run (2h:
+            // a notch or a mitre at an end may clip a head there).
             var gaps = touches.Zip(touches.Skip(1), (a, b) => b - a).Where(g => g > h * 0.1).ToList();
             Assert.True(gaps.Count == 0 || gaps.Max() <= 1.5 * pitch, $"{what}: the face at {face * h} goes {(gaps.Count == 0 ? 0 : gaps.Max()):0.###} untouched between heads (pitch {pitch:0.###})");
             var ends = Math.Max(touches[0] - s0, s1 - touches[^1]);
-            Assert.True(ends <= 2.5 * pitch, $"{what}: the face at {face * h} goes {ends:0.###} untouched from an end (pitch {pitch:0.###})");
+            Assert.True(ends <= 2 * h + 1.5 * pitch, $"{what}: the face at {face * h} goes {ends:0.###} untouched from an end (pitch {pitch:0.###})");
         }
     }
 
@@ -343,57 +343,66 @@ public class BattHatchTests
     }
 
     /// <summary>
-    /// The construction in the user's reference band, 1200 × 300 (h = 150): heads of radius 0.4·h = 60 tangent to the faces,
-    /// 13 of them 90 apart (1200 = 2·60 + 12·90: a whole number, nothing partial at either end), the first against the top
-    /// face touching the start, the last touching the end; every straight stroke tangent to the two heads it joins, two per
-    /// neighbouring pair; and the only crossings of the strokes the two low strokes of each head between the end ones, under
-    /// it, r / sin φ − (h − r) = 44.164 past the mid-line, φ = atan(90 / 180) their tilt.
+    /// The construction in the user's reference band, 1200 × 300 (h = 150): 19 loops 120 wide (1200 = 20 × 60: a whole number,
+    /// nothing partial at either end), heads of radius 60 tangent to the faces, those on one face touching (centres 120 apart),
+    /// the faces alternating every 60, the first on the top face touching the start, the last touching the end; each loop's two
+    /// sides tangent to its head and meeting at its tip on its own axis at the opposite heads' centre height (y = ∓90), exactly
+    /// where the two opposite heads beside it touch; a loop's side parallel to its neighbour's facing side; no side crossing another.
     /// </summary>
     [Fact]
-    public void The_batt_s_heads_fit_the_band_touch_its_faces_and_their_strokes_cross_under_them()
+    public void The_batt_s_teardrops_fit_the_band_touch_its_faces_and_point_to_where_the_opposite_heads_touch()
     {
-        Assert.Equal((13, 90.0, 60.0), BattHatch.Fit(1200, 150));
+        Assert.Equal((19, 120.0, 60.0), BattHatch.Fit(1200, 150));
         foreach (var len in new[] { 1000.0, 1234.5, 777, 400 })
         {
-            var (n, d, r) = BattHatch.Fit(len, 150);
-            Assert.Equal(len, 2 * r + (n - 1) * d, 9);
-            Assert.InRange(d, 0.75 * 90, 1.5 * 90);
+            var (n, w, r) = BattHatch.Fit(len, 150);
+            Assert.Equal(len, (n + 1) * w / 2, 9);
+            Assert.Equal(w / 2, r, 12);
+            Assert.InRange(w, 0.75 * 120, 1.5 * 120);
         }
-        // Too short for two heads: one, centred.
-        Assert.Equal((1, 0.0, 60.0), BattHatch.Fit(150, 150));
+        // Too short for two loops: one, as wide as the band is long.
+        Assert.Equal((1, 100.0, 50.0), BattHatch.Fit(100, 150));
 
         var strokes = BattHatch.Strokes(0, 1200, 150);
         var straight = strokes.Where(s => s.Count == 2).ToList();
         var arcs = strokes.Where(s => s.Count > 2).ToList();
-        Assert.Equal(24, straight.Count);
-        Assert.Equal(26, arcs.Count);
-        var centres = Enumerable.Range(0, 13).Select(j => new Vec2(60 + 90 * j, j % 2 == 0 ? 90 : -90)).ToList();
-        // Each head touches its face (its arc split there), the first the top one; all arcs on their heads, within the band.
+        Assert.Equal(38, straight.Count);
+        Assert.Equal(38, arcs.Count);
+        var centres = Enumerable.Range(0, 19).Select(j => new Vec2(60 + 60 * j, j % 2 == 0 ? 90 : -90)).ToList();
+        Assert.Equal(0, centres[0].X - 60, 9);
+        Assert.Equal(1200, centres[^1].X + 60, 9);
+        // Heads on one face touch: centres two radii apart.
+        Assert.Equal(120, centres[2].X - centres[0].X, 9);
+        // Each head touches its face (its arc split there), the first the top one; every arc point on its head, within the band.
         foreach (var c in centres) Assert.Contains(arcs, a => (a[^1] - new Vec2(c.X, Math.Sign(c.Y) * 150)).Length < 1e-9);
         Assert.All(arcs, a => Assert.All(a, p => Assert.Contains(centres, c => Math.Abs((p - c).Length - 60) < 1e-9)));
         var all = strokes.SelectMany(s => s).ToList();
-        Assert.Equal(0, centres[0].X - 60, 9);
-        Assert.Equal(1200, centres[^1].X + 60, 9);
         Assert.All(all, p => Assert.InRange(p.X, -1e-9, 1200 + 1e-9));
         Assert.All(all, p => Assert.InRange(p.Y, -150 - 1e-9, 150 + 1e-9));
-        // Each straight stroke tangent at both ends: on a head, square to its radius there, and the heads at its ends neighbours.
-        foreach (var s in straight)
+        // Each loop's sides: from its head, tangent there (square to the radius), to its tip, on the circles of the two opposite
+        // heads beside it (where they touch), at their centres' height.
+        for (var j = 0; j < 19; j++)
         {
-            var ends = s.Select(p => centres.FindIndex(c => Math.Abs((p - c).Length - 60) < 1e-9)).ToList();
-            Assert.DoesNotContain(-1, ends);
-            Assert.Equal(1, Math.Abs(ends[0] - ends[1]));
-            for (var k = 0; k < 2; k++) Assert.Equal(0, Vec2.Dot(s[1] - s[0], s[k] - centres[ends[k]]), 6);
+            var c = centres[j];
+            var tip = new Vec2(c.X, -c.Y);
+            var sides = straight.Where(s => (s[1] - tip).Length < 1e-9 && Math.Abs((s[0] - c).Length - 60) < 1e-9).ToList();
+            Assert.Equal(2, sides.Count);
+            Assert.All(sides, s => Assert.Equal(0, Vec2.Dot(s[1] - s[0], s[0] - c), 6));
+            // Symmetric: one on each side of the loop's axis, mirror images.
+            Assert.Equal(0, sides[0][0].X - c.X + (sides[1][0].X - c.X), 9);
+            Assert.Equal(sides[0][0].Y, sides[1][0].Y, 9);
+            foreach (var o in new[] { -60.0, 60 }) Assert.Equal(60, (tip - new Vec2(c.X + o, tip.Y)).Length, 9);
         }
-        // The crossings: under each head between the end ones, at 44.164 past the mid-line on the far side.
-        var crossings = new List<Vec2>();
+        // The sides leave the heads α below their sides, sin α = R / 2(h − R) = 1/3.
+        var alpha = Math.Asin(60.0 / 180);
+        Assert.Contains(straight, s => (s[0] - new Vec2(60 + 60 * Math.Cos(alpha), 90 - 60 * Math.Sin(alpha))).Length < 1e-9);
+        // A loop's right side and the next loop's left side are parallel (half-turn copies), and no side crosses another.
+        var right0 = straight.Single(s => (s[1] - new Vec2(60, -90)).Length < 1e-9 && s[0].X > 60);
+        var left1 = straight.Single(s => (s[1] - new Vec2(120, 90)).Length < 1e-9 && s[0].X < 120);
+        Assert.Equal(0, Vec2.Cross(right0[1] - right0[0], left1[1] - left1[0]), 6);
         for (var i = 0; i < straight.Count; i++)
             for (var k = i + 1; k < straight.Count; k++)
-                if (Crossing(straight[i][0], straight[i][1], straight[k][0], straight[k][1]) is { } x) crossings.Add(x);
-        Assert.Equal(11, crossings.Count);
-        var far = 60 / Math.Sin(Math.Atan2(90, 180)) - 90;
-        Assert.Equal(44.164, far, 3);
-        for (var j = 1; j < 12; j++)
-            Assert.Contains(crossings, x => (x - new Vec2(centres[j].X, -Math.Sign(centres[j].Y) * far)).Length < 1e-6);
+                Assert.Null(Crossing(straight[i][0], straight[i][1], straight[k][0], straight[k][1]));
     }
 
     [Fact]
@@ -408,7 +417,7 @@ public class BattHatchTests
             var top = segs.SelectMany(s => new[] { s.A, s.B }).Where(p => p.Y > 0.3 - 1e-4).Min(p => p.X);
             var bottom = segs.SelectMany(s => new[] { s.A, s.B }).Where(p => p.Y < 1e-4).Min(p => p.X);
             Assert.Equal(0.06, top, 4);
-            Assert.Equal(0.15, bottom, 4);
+            Assert.Equal(0.12, bottom, 4);
             // Flipped: the other way round.
             var flipped = BattHatch.Segments([band], flip: true);
             Assert.Equal(0.06, flipped.SelectMany(s => new[] { s.A, s.B }).Where(p => p.Y < 1e-4).Min(p => p.X), 4);
@@ -416,8 +425,11 @@ public class BattHatchTests
         // Up the page: the first head (at the bottom) on the left face.
         Vec2[] up = [new(0, 0), new(0.3, 0), new(0.3, 1.2), new(0, 1.2)];
         Assert.Equal(0.06, BattHatch.Segments([up]).SelectMany(s => new[] { s.A, s.B }).Where(p => p.X < 1e-4).Min(p => p.Y), 4);
-        // The hatch scale stretches the spacing (then fitted again): twice as far apart, 7 heads instead of 13.
-        Assert.Equal((7, 180.0, 60.0), BattHatch.Fit(1200, 150, 2));
+        // The hatch scale stretches the loops, heads with them (then fitted again; held to 0.5–1.15, the fit never past it:
+        // 1200 / 69 rounds to 16 loops 141 wide, over 138, so 17 loops 2400/18 wide).
+        Assert.Equal((17, 2400.0 / 18, 1200.0 / 18), BattHatch.Fit(1200, 150, 1.15));
+        Assert.Equal(BattHatch.Fit(1200, 150, 1.15), BattHatch.Fit(1200, 150, 2));
+        Assert.Equal((39, 60.0, 30.0), BattHatch.Fit(1200, 150, 0.5));
         // A material's hatch angle of half a turn flips the batt; a quarter turn or none does not.
         Assert.True(BattHatch.FlipsAt(180));
         Assert.True(BattHatch.FlipsAt(-180));
