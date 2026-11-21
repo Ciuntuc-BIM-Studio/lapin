@@ -9,6 +9,7 @@ import { materialName, ofClass, relatedOf, typeLayers } from '../../engine/model
 import { Cell, NumberField } from '../../shell/cells';
 import { layerRankHint } from './layerRank';
 import { flagsJson, flagsOf } from './layerFlags';
+import { graphicsOf } from './layerPens';
 import { CATEGORY_TIP, LayerCategory } from './LayerCategory';
 import { LayerThickness } from '../core/LayerThickness';
 import { MaterialHatchButton } from '../core/MaterialHatchButton';
@@ -26,7 +27,8 @@ import { TypeMarkField } from '../core/MarkField';
 import { typeToEdit } from '../../shell/typeToEdit';
 
 /** A layer as the editor holds it: the thickness in metres; its priority (null: its material's, else 50 for the core and 0 for the rest) and category (null: its material's). */
-interface Row { material: string; thickness: number; core: boolean; note?: string; priority?: number | null; category?: string | null }
+/** `graphics`: the layer's own graphics (decision 758), kept as they are when the type is saved again. */
+interface Row { material: string; thickness: number; core: boolean; note?: string; priority?: number | null; category?: string | null; graphics?: Record<string, unknown> | null }
 const blank = (): Row[] => [{ material: 'Floor finish', thickness: 0.02, core: false }, { material: 'Screed', thickness: 0.05, core: false }, { material: 'Reinforced concrete', thickness: 0.15, core: true }];
 /** What a floor layer's priority says where a wall's layer goes on into it (topic #30). */
 const PRIORITY_TIP = 'Where a wall\'s layer goes on into this floor, it passes the floor\'s layers ranked under it and stops at the first as high or higher; empty: its material\'s priority in the cut order, else 50 for the core and 0 for the rest';
@@ -60,7 +62,7 @@ export function SlabTypesDialog() {
     setName(t.name);
     setBeamBlock(beamBlockOf(t.props.beamBlock));
     setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thickness: l.thickness, core: l.core === true, note: l.note ?? '',
-      priority: typeof l.priority === 'number' ? l.priority : null, category: flagsOf(l).category })));
+      priority: typeof l.priority === 'number' ? l.priority : null, category: flagsOf(l).category, graphics: graphicsOf(l.graphics) })));
   }, [editing]);
   const set = (i: number, patch: Partial<Row>) => setRows(rows.map((r, k) => (k === i ? { ...r, ...patch } : patch.core ? { ...r, core: false } : r)));
   const move = (i: number, d: number) => setRows(moveLayer(rows, i, d));
@@ -70,7 +72,7 @@ export function SlabTypesDialog() {
   // Its priority and category kept when saved (a floor's layers were saved without the priority before).
   const shown = beamBlock ? withCoreDepth(rows, beamBlockDepth(beamBlock)) : rows;
   const layers = shown.map((r) => ({ material: r.material.trim(), thickness: r.thickness, core: r.core, ...(r.note?.trim() ? { note: r.note.trim() } : {}),
-    ...(r.priority != null ? { priority: r.priority } : {}), ...flagsJson({ category: r.category ?? null, down: false, up: false }, false) }));
+    ...(r.priority != null ? { priority: r.priority } : {}), ...flagsJson({ category: r.category ?? null, down: false, up: false }, false), ...(r.graphics ? { graphics: r.graphics } : {}) }));
   const save = async () => {
     if (editing) await execute('architecture.updateSlabType', { id: editing, name, layers, beamBlock });
     else {

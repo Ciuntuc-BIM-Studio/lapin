@@ -5106,6 +5106,8 @@ export const LO: Record<string, string> = {
   "Dock the panel": "ຕິດແຜງຄືນ",
   "Float or dock the project browser": "ເຮັດໃຫ້ຕົວທ່ອງໂຄງການລອຍ ຫຼື ຕິດຄືນ",
   "Float or dock the properties": "ເຮັດໃຫ້ຄຸນສົມບັດລອຍ ຫຼື ຕິດຄືນ",
+  // A type's layer's own pens by scale (decision 758).
+  "Scales": "ມາດຕາສ່ວນ", "All scales": "ທຸກມາດຕາສ່ວນ", "Pens by scale": "ປາກກາຕາມມາດຕາສ່ວນ", "Remove the range": "ລຶບຊ່ວງ", "Add a range of scales": "ເພີ່ມຊ່ວງມາດຕາສ່ວນ", "This layer's own lines in this type, over its material's: the cut outline and the lines between the layers, for all scales and for ranges of scales (as in ArchiCAD)": "ເສັ້ນຂອງຊັ້ນນີ້ເອງໃນປະເພດນີ້, ທັບເສັ້ນຂອງວັດສະດຸ: ເສັ້ນຂອບຕັດ ແລະ ເສັ້ນລະຫວ່າງຊັ້ນ, ສຳລັບທຸກມາດຕາສ່ວນ ແລະ ຕາມຊ່ວງມາດຕາສ່ວນ (ຄືໃນ ArchiCAD)", "The first range that holds the view's scale wins over “All scales”; empty: the material's lines (Manage → Materials).": "ຊ່ວງທຳອິດທີ່ກວມມາດຕາສ່ວນຂອງມຸມມອງຈະຊະນະ “ທຸກມາດຕາສ່ວນ”; ວ່າງ: ເສັ້ນຂອງວັດສະດຸ (ຈັດການ → ວັດສະດຸ).",
 };
 
 /** Phrases with a number or a name in them. */

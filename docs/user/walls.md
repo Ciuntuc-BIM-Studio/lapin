@@ -264,6 +264,14 @@ The **Into floors** column lets a layer go on into the floors' layers, as where 
 
 ![A layer's hatch swatch open in Wall types: the material's cut and elevation hatches](shots/layer-hatch.webp)
 
+**Pens by scale.** A layer can draw with lines of its own in this type, whatever its material: the pen button at the end of its row opens **Pens by scale** under it. **All scales** sets the layer's **Cut outline** (its edge where the wall is cut) and **Separator lines** (its lines against the next layers), each a weight in mm and a colour; **Add a range of scales** adds a row *from 1:* … *to 1:* (the project's scales offered) with the weights and colours it changes. So the core can be 0.7 mm and the cladding 0.18 at 1:50, and both thinner from 1:100, as ArchiCAD's composites do. The first range that holds the view's scale wins over *All scales*; an empty field takes the material's line (**Manage → Materials → 2D graphics**), else the view's **Layer lines** and Object styles. Where two layers meet, the heavier line is drawn. They are the type's, saved with **Save type** (one step to undo), and every wall of the type, every plan, section, sheet, PDF and DXF follows at its own scale; the type's JSON file carries them. A layer with none draws as before.
+
+![Pens by scale under the core's row in Wall types: 0.7 mm between the layers at every scale, 0.35 from 1:100](shots/wall-layer-pens.webp)
+
+![The walls in a plan at 1:50: the core's lines 0.7 mm, the render's outline 0.18](shots/wall-layer-pens-50.webp)
+
+![The same walls at 1:100: the core's lines 0.35 mm](shots/wall-layer-pens-100.webp)
+
 ![Wall types: the layers of a brick wall](shots/wall-types.webp)
 
 The legend above the layers shows the wall in plan, a section across it, the way a selected wall shows it: the dashed axis with an arrowhead the way it was drawn, **R · exterior** on top and **L · interior** at the bottom. The layers run as the rows of the table, top to bottom: layer 1 at the top, on the R face, to the last, on the L face, with the same numbers; the core, which carries the wall's line, is shaded. R is the face on the right of the drawn direction (where layer 1 goes), and it is the exterior when the wall is drawn anticlockwise round the building, as Lapin draws them; for a wall drawn the other way round, the faces swap. **Reverse layers**, beside **+ Layer**, runs the rows the other way (the layer that was on R goes to L); Lapin asks first, because once the type is saved all its walls swap faces: what was exterior becomes interior. A wall turned with **Flip** has its layers the other way round, from L to R. A message from a save that was refused goes away as soon as you change the type again.

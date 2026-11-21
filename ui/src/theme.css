@@ -1468,6 +1468,16 @@ button.mode-chip:hover { color: var(--accent); }
 .layer-edit tr.layer-parts td > * { margin-right: 8px; vertical-align: middle; }
 .layer-edit .layer-part { display: inline-flex; gap: 3px; align-items: center; }
 .layer-edit .layer-part input { width: auto; }
+/* A layer's own pens by scale (decision 758), under its row in Wall types. */
+.layer-edit .layer-pens { display: block; margin: 4px 0 6px; }
+.layer-pens-table { border-collapse: collapse; margin: 4px 0; }
+.layer-pens-table th, .layer-pens-table td { padding: 2px 6px; text-align: left; font-weight: normal; border: none; }
+.layer-pens-table thead tr:first-child th { font-weight: 600; }
+.layer-pens-table input.num { width: 84px; }
+.layer-pens-table tr.bad td { background: color-mix(in srgb, var(--remark, #c00) 12%, transparent); }
+.layer-pens .layer-pen-range { white-space: nowrap; }
+.layer-pens .layer-pen-range .gfx-scale-end { margin: 0 6px 0 2px; }
+.layer-pens .layer-pen-colour { display: inline-flex; gap: 2px; align-items: center; }
 .finish-hatch { gap: 6px; align-items: center; flex-wrap: wrap; }
 .finish-hatch > .eyebrow { white-space: nowrap; }
 .finish-hatch .cell-wrap { width: auto; flex: 0 0 auto; }

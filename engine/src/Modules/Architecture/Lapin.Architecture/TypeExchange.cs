@@ -82,6 +82,8 @@ public static class TypeExchange
             if (l.Category is { Length: > 0 } cat) o["category"] = cat;
             if (l.ExtendDown == true) o["extendDown"] = true;
             if (l.ExtendUp == true) o["extendUp"] = true;
+            // Its own graphics over its material's (decision 758): its pens by scale travel with the type.
+            if (l.Graphics is { Count: > 0 } lg) o["graphics"] = lg.DeepClone();
             if (l.Parts is { Count: > 0 } parts)
                 o["parts"] = new JsonArray(parts.Select(p => (JsonNode)new JsonObject
                 {

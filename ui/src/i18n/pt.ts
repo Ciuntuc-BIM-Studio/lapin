@@ -5050,6 +5050,8 @@ export const PT: Record<string, string> = {
   "Dock the panel": "Acoplar o painel",
   "Float or dock the project browser": "Flutuar ou acoplar o navegador de projeto",
   "Float or dock the properties": "Flutuar ou acoplar as propriedades",
+  // A type's layer's own pens by scale (decision 758).
+  "Scales": "Escalas", "All scales": "Todas as escalas", "Pens by scale": "Canetas por escala", "Remove the range": "Remover o intervalo", "Add a range of scales": "Adicionar um intervalo de escalas", "This layer's own lines in this type, over its material's: the cut outline and the lines between the layers, for all scales and for ranges of scales (as in ArchiCAD)": "As linhas próprias desta camada neste tipo, sobre as do seu material: o contorno de corte e as linhas entre as camadas, para todas as escalas e por intervalos de escalas (como no ArchiCAD)", "The first range that holds the view's scale wins over “All scales”; empty: the material's lines (Manage → Materials).": "O primeiro intervalo que contém a escala da vista prevalece sobre «Todas as escalas»; vazio: as linhas do material (Gerenciar → Materiais).",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

@@ -5014,6 +5014,8 @@ export const FR: Record<string, string> = {
   "Dock the panel": "Ancrer le panneau",
   "Float or dock the project browser": "Détacher ou ancrer le navigateur de projet",
   "Float or dock the properties": "Détacher ou ancrer les propriétés",
+  // A type's layer's own pens by scale (decision 758).
+  "Scales": "Échelles", "All scales": "Toutes les échelles", "Pens by scale": "Plumes par échelle", "Remove the range": "Supprimer la plage", "Add a range of scales": "Ajouter une plage d’échelles", "This layer's own lines in this type, over its material's: the cut outline and the lines between the layers, for all scales and for ranges of scales (as in ArchiCAD)": "Les lignes propres de cette couche dans ce type, par-dessus celles de son matériau : le contour de coupe et les lignes entre les couches, pour toutes les échelles et par plages d’échelles (comme dans ArchiCAD)", "The first range that holds the view's scale wins over “All scales”; empty: the material's lines (Manage → Materials).": "La première plage qui contient l’échelle de la vue l’emporte sur « Toutes les échelles » ; vide : les lignes du matériau (Gérer → Matériaux).",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

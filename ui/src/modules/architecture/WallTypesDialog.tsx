@@ -11,7 +11,7 @@
 
 import { confirmAction } from '../../shell/prompts';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown, Layers, Plus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Layers, PenLine, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { t } from '../../i18n';
 import { execute, useSession } from '../../engine/session';
@@ -24,6 +24,8 @@ import { takeStash } from '../core/dialogReturn';
 import { moveLayer, reverseLayers } from './reverseLayers';
 import { layerRankHint } from './layerRank';
 import { flagsJson, flagsOf, newWallFlags, type LayerFlags } from './layerFlags';
+import { graphicsOf, hasOwnPens, layerGraphicsJson, type LayerGraphics } from './layerPens';
+import { LAYER_PENS_TIP, LayerPens } from './LayerPensEditor';
 import { CATEGORY_TIP, LayerCategory } from './LayerCategory';
 import { LintelRuleEditor } from './LintelRule';
 import { WallTypeTop } from './WallTop';
@@ -45,7 +47,8 @@ import { TypeMarkField } from '../core/MarkField';
 import { typeToEdit } from '../../shell/typeToEdit';
 
 /** A layer as the editor holds it: lengths in metres; from and to null for the whole height. */
-interface Row extends LayerFlags { material: string; thickness: number; core: boolean; from: number | null; to: number | null; parts: Part[]; priority: number | null; note: string }
+/** `graphics`: the layer's own graphics in this type (decision 758: its pens by scale), null for its material's. */
+interface Row extends LayerFlags { material: string; thickness: number; core: boolean; from: number | null; to: number | null; parts: Part[]; priority: number | null; note: string; graphics: LayerGraphics | null }
 
 /** A piece of a layer in its height, from the layer's bottom up (decision 264); above the last, the layer's own material. */
 interface Part { material: string; height: number }
@@ -76,7 +79,7 @@ const fromRow = (r: ZoneRow) => ({
 });
 
 // A new type's core goes down onto the floor's structure (topic #30); a type saved before keeps what it says.
-const layer = (material: string, thickness: number, core = false): Row => ({ material, thickness, core, from: null, to: null, parts: [], priority: null, note: '', ...newWallFlags(core) });
+const layer = (material: string, thickness: number, core = false): Row => ({ material, thickness, core, from: null, to: null, parts: [], priority: null, note: '', graphics: null, ...newWallFlags(core) });
 /** What the Into floors column says (topic #30). */
 const EXTEND_TIP = 'Whether the layer goes on into the floors\' layers ranked under it, as where walls join: down from the wall\'s base to the first floor layer ranked as high or higher (the brick onto the concrete, through the finish and the screed), up to the underside of the first such layer of the floor over it';
 const blank = (): Row[] => [layer('Render', 0.02), layer('Brick', 0.25, true), layer('Plaster', 0.015)];
@@ -108,6 +111,8 @@ export function WallTypesDialog() {
   const [draft, setDraft] = useState<Param[]>(k0?.params ?? []);
   // The layer whose row the mouse is over: lit in the preview's plan, section and 3D.
   const [hover, setHover] = useState<number | null>(null);
+  // The layers whose own pens by scale are open under their row (decision 758).
+  const [pensOpen, setPensOpen] = useState<Set<number>>(new Set());
   const restoredFor = useRef<string | null | undefined>(k0 ? k0.editing : undefined);
   const info = useSession((s) => s.info);
   // The total and the heights below are written in the project's units: shown again when they change.
@@ -124,13 +129,14 @@ export function WallTypesDialog() {
     const model = modelRef.current;
     const t = editing ? model.nodes.get(editing) : undefined;
     setDraft([]);
+    setPensOpen(new Set());
     if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); setSweeps([]); setFinishedFloor(null); return; }
     setFinishedFloor(typeof t.props.finishedFloor === 'number' ? t.props.finishedFloor : null);
     setSweeps(sweepRows(t.props.sweeps, (id) => materialName(model, id)));
     setLintels((t.props.lintels as unknown as Rule | undefined) ?? DEFAULT_RULE);
     setName(t.name);
     setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thickness: l.thickness, core: l.core === true, from: l.from || null, to: l.to || null,
-      parts: (l.parts ?? []).map((p) => ({ material: materialName(model, p.material), height: p.height })), priority: typeof l.priority === 'number' ? l.priority : null, note: l.note ?? '', ...flagsOf(l) })));
+      parts: (l.parts ?? []).map((p) => ({ material: materialName(model, p.material), height: p.height })), priority: typeof l.priority === 'number' ? l.priority : null, note: l.note ?? '', graphics: graphicsOf(l.graphics), ...flagsOf(l) })));
     const stored = Array.isArray(t.props.zones) ? (t.props.zones as unknown as ZoneJson[]) : [];
     setZones(stored.map((z) => toRow(z, (id) => materialName(model, id))));
   }, [editing]);
@@ -155,6 +161,7 @@ export function WallTypesDialog() {
     ...(r.priority != null ? { priority: r.priority } : {}),
     ...(r.note.trim() ? { note: r.note.trim() } : {}),
     ...flagsJson(r, true),
+    ...(layerGraphicsJson(r.graphics) ? { graphics: layerGraphicsJson(r.graphics) } : {}),
   }));
   const setPart = (i: number, k: number, patch: Partial<Part>) => set(i, { parts: rows[i].parts.map((p, j) => (j === k ? { ...p, ...patch } : p)) });
 
@@ -233,9 +240,19 @@ export function WallTypesDialog() {
                       <button type="button" className="icon mini" title="Down" onClick={() => move(i, 1)}><ArrowDown size={12} /></button>
                       {!r.core && <button type="button" className="icon mini" data-testid="layer-part-add" title="Another material up the layer's height (tiles to 2.10 m, the layer's own above)"
                         onClick={() => set(i, { parts: [...r.parts, { material: 'Ceramic tiles', height: r.parts.length === 0 ? 2.1 : 0.5 }] })}><Layers size={12} /></button>}
+                      <button type="button" className={`icon mini${hasOwnPens(r.graphics) || pensOpen.has(i) ? ' on' : ''}`} data-testid="layer-pens-toggle" title={LAYER_PENS_TIP} aria-label="Pens by scale"
+                        onClick={() => setPensOpen((s) => { const n = new Set(s); if (n.has(i)) n.delete(i); else n.add(i); return n; })}><PenLine size={12} /></button>
                       <button type="button" className="icon mini" title="Remove" onClick={() => setRows(rows.filter((_, k) => k !== i))}><Trash2 size={12} /></button>
                     </td>
                   </tr>,
+                  pensOpen.has(i) && (
+                    <tr key={`${i}-pens`} className="layer-parts">
+                      <td colSpan={10}>
+                        <span className="eyebrow" title={LAYER_PENS_TIP}>{t('Pens by scale')} · {r.material || '—'}</span>
+                        <LayerPens id={`${editing ?? 'new'}:${i}`} graphics={r.graphics} onChange={(graphics) => set(i, { graphics })} />
+                      </td>
+                    </tr>
+                  ),
                   !r.core && r.parts.length > 0 && (
                     <tr key={`${i}-parts`} className="layer-parts">
                       <td colSpan={10} data-i18n-ctx="finish">
