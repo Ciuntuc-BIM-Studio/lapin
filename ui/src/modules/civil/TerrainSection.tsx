@@ -7,12 +7,13 @@ import { execute, query, useSession } from '../../engine/session';
 import { SURVEY, downloadLandXml, pickText } from './survey';
 import { notify, useUi } from '../../app/store';
 import { useTerrainEdit } from './prefs';
-import { MAX_POINT_GRIPS } from './pointGrips';
+import { MAX_POINT_GRIPS, terrainControls, type PointGripMode } from './pointGrips';
 
 interface Legend { kind: string; area: number; bands: { key: string; label: string; color: string; area: number }[] }
 
 const KINDS: [string, string][] = [['none', 'none'], ['slope', 'slopes'], ['cutfill', 'cut and fill'], ['elevation', 'elevations']];
-const GRID_STEPS: [number, string][] = [[0, 'off'], [2, '2 m'], [5, '5 m'], [10, '10 m']];
+const GRIP_MODES: [PointGripMode, string][] = [['all', 'all points'], ['cage', 'controls only'], ['pick', 'choose controls']];
+const GRID_STEPS: [number, string][]= [[0, 'off'], [2, '2 m'], [5, '5 m'], [10, '10 m']];
 
 export function TerrainSection({ node }: { node: NodeDto }) {
   const count = Array.isArray(node.props.points) ? node.props.points.length : 0;
@@ -29,6 +30,11 @@ export function TerrainSection({ node }: { node: NodeDto }) {
   const setEditPoints = useTerrainEdit((s) => s.setEditPoints);
   // The 3D view draws its grips when the selection changes: the same selection again shows or hides the points' grips now.
   const toggleEdit = (on: boolean) => { setEditPoints(on); useUi.setState({ selected: [...useUi.getState().selected] }); };
+  // The control cage (issue #113): which points get grips, and the spacing "every … m" takes controls at.
+  const gripMode = useTerrainEdit((s) => s.gripMode);
+  const showOn = (m: PointGripMode) => { useTerrainEdit.getState().setGripMode(m); useUi.setState({ selected: [...useUi.getState().selected] }); };
+  const controls = terrainControls(node).size;
+  const [cageStep, setCageStep] = useState(10);
   const relations = useSession((s) => s.relations);
   const nodes = useSession((s) => s.nodes);
   const pads = [...relations.values()].filter((r) => r.class === 'IfcRelVoidsElement' && r.relating === node.id).reduce((n, r) => n + r.related.length, 0);
@@ -44,9 +50,25 @@ export function TerrainSection({ node }: { node: NodeDto }) {
       <dl className="fields">
         <dt>Points</dt>
         <dd>{count} <button type="button" className="link small" onClick={() => toggleEdit(!editPoints)}>{editPoints ? 'done editing 3D' : 'edit in 3D'}</button>
-          {editPoints && <div className="muted small">{count > MAX_POINT_GRIPS
-            ? `Grips on the ${MAX_POINT_GRIPS} points nearest the 3D view's centre: move the view to reach the others.`
-            : 'Drag a point\'s grip up or down in the 3D view.'}</div>}
+          {editPoints && <div className="muted small">{gripMode === 'cage'
+            ? (controls > 0 ? 'Drag a control up or down: the free points around it follow smoothly.' : 'No controls yet: choose them, or take one every few metres or along the boundary.')
+            : gripMode === 'pick' ? 'Click a point\'s grip to make it a control, or a free point again.'
+            : count > MAX_POINT_GRIPS
+              ? `Grips on the ${MAX_POINT_GRIPS} points nearest the 3D view's centre: move the view to reach the others.`
+              : 'Drag a point\'s grip up or down in the 3D view.'}</div>}
+        </dd>
+        <dt>Control cage</dt>
+        <dd data-testid="terrain-cage">
+          <span>{controls}</span> <span>controls</span>
+          {editPoints && <> <select value={gripMode} aria-label="Grips on" onChange={(e) => showOn(e.target.value as PointGripMode)}>
+            {GRIP_MODES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+          </select></>}
+          {node.editable && <div className="row small" style={{ flexWrap: 'wrap', gap: '2px 6px', width: '100%' }}>
+            <button type="button" className="link small" onClick={() => void execute('civil.setTerrainControls', { id: node.id, spacing: cageStep })}>every</button>
+            <input type="number" min={0.5} step={1} value={cageStep} style={{ width: '5.5em', flex: 'none' }} aria-label="Control spacing" onChange={(e) => setCageStep(Math.max(0.5, Number(e.target.value) || 10))} /> <span>m</span>
+            {' · '}<button type="button" className="link small" onClick={() => void execute('civil.setTerrainControls', { id: node.id, boundary: true })}>along the boundary</button>
+            {controls > 0 && <>{' · '}<button type="button" className="link small" onClick={() => void execute('civil.setTerrainControls', { id: node.id, clear: true })}>clear</button></>}
+          </div>}
         </dd>
         <dt>Platforms, ditches, paths</dt><dd>{pads}</dd>
         <dt>Brush strokes</dt>

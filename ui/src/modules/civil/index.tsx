@@ -22,7 +22,7 @@ import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './surv
 import { TerrainSection } from './TerrainSection';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
 import { isDitch, setBrush, useBrush, useTerrainEdit, type BrushKind } from './prefs';
-import { terrainBase, terrainPointGrips } from './pointGrips';
+import { MAX_POINT_GRIPS, terrainBase, terrainPointGrips } from './pointGrips';
 import { useCamera } from '../../viewport/camera';
 import { EntourageSection, entourage, entourageRow, useEntouragePrefs } from './entourage';
 import { lazyPart } from '../../platform/lazyPart';
@@ -420,7 +420,7 @@ const civil: LapinModule = {
   grips3d: {
     // A terrain's survey points, while "edit in 3D" is on: the MAX_POINT_GRIPS nearest the view's centre (pointGrips.ts).
     IfcGeographicElement: (n: NodeDto): Grip3D[] =>
-      useTerrainEdit.getState().editPoints ? terrainPointGrips(n, useCamera.getState().target, terrainBase(n)) : [],
+      useTerrainEdit.getState().editPoints ? terrainPointGrips(n, useCamera.getState().target, terrainBase(n), MAX_POINT_GRIPS, useTerrainEdit.getState().gripMode) : [],
   },
   references: {
     IfcEarthworksCut: (n: NodeDto) => { if (isDitch(n)) return pathRefs(n); const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts, arcsOf(n.props.arcs, pts.length))] : []; },

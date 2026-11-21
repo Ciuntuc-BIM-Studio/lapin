@@ -163,6 +163,10 @@ public static class SiteCommands
             }
             var keptAttrs = Half(lc, lr);
             var otherAttrs = Half(rc, rr);
+            // Each half keeps the cage's controls inside it.
+            var allPts = Terrains.Points(t);
+            Cage.Prune(keptAttrs, allPts, lc);
+            Cage.Prune(otherAttrs, allPts, rc);
             // What is placed on the terrain (spot levels, slope tags, subregions) goes to the half it lies in.
             bool InOther(JsonNode? item) => PlacedAt(item) is { } at && !Polygon2.Contains(lc, at) && Polygon2.Contains(rc, at);
             foreach (var key in PlacedKeys)
@@ -206,6 +210,7 @@ public static class SiteCommands
             var existing = new List<Vec3>();
             var breaklines = new JsonArray();
             var sculpts = new JsonArray();
+            var cage = new List<Vec2>();
             static (long, long) Key(Vec3 p) => ((long)Math.Round(p.X * 1e6), (long)Math.Round(p.Y * 1e6));
             foreach (var tr in list)
             {
@@ -221,6 +226,7 @@ public static class SiteCommands
                 // Strokes work in model heights (a flatten's level too), which the merge keeps: they carry over as they are.
                 foreach (var sc in Sculpt.Of(tr))
                     sculpts.Add((JsonNode)sc.ToJson());
+                cage.AddRange(Cage.Of(tr));
             }
             if (!Tin.Spans(pts)) throw new CommandException("The merged points need three that are not in a line.");
             var attrs = primary.CloneAttrs();
@@ -241,6 +247,8 @@ public static class SiteCommands
             }
             if (breaklines.Count > 0) attrs["breaklines"] = breaklines; else attrs.Remove("breaklines");
             if (sculpts.Count > 0) attrs["sculpts"] = sculpts; else attrs.Remove("sculpts");
+            // Every one's controls, those still on a point of the merged survey.
+            Cage.Write(attrs, pts, Cage.IndicesOf(pts, cage));
             // Every one's spot levels, slope tags and subregions.
             foreach (var key in PlacedKeys)
             {
@@ -331,9 +339,14 @@ public static class SiteCommands
             var x = Json.Number(a["x"]) ?? p.X;
             var y = Json.Number(a["y"]) ?? p.Y;
             var z = Json.Number(a["z"]) is { } exact ? exact + datum : p.Z + (Json.Number(a["dz"]) ?? 0);
+            // A control of the terrain's cage moved up or down: the free points follow (Cage.cs); a control moved in plan stays one.
+            var wasControl = Cage.Indices(t).Contains(idx);
+            Cage.Follow(t, pts, new Dictionary<int, double> { [idx] = z - p.Z }, new HashSet<int> { idx });
             pts[idx] = new Vec3(x, y, z);
             var attrs = t.CloneAttrs();
             attrs["points"] = Terrains.PointsJson(pts);
+            if (wasControl && (x != p.X || y != p.Y))
+                Cage.Write(attrs, pts, Cage.Indices(t).Where(i => i != idx).Append(idx));
             ctx.Replace(t.With(attrs: attrs));
             return new JsonObject { ["index"] = idx, ["elevation"] = Math.Round(z - datum, 4) };
         });
@@ -348,11 +361,15 @@ public static class SiteCommands
             var datum = t.Num("datum");
             var exact = Json.Number(a["z"]);
             var dz = Json.Number(a["dz"]) ?? 0;
+            var moves = new Dictionary<int, double>();
             foreach (var i in indices)
             {
                 var p = pts[i];
                 pts[i] = p with { Z = exact is { } z ? z + datum : p.Z + dz };
+                moves[i] = pts[i].Z - p.Z;
             }
+            // Controls among them: the free points not set here follow (Cage.cs).
+            Cage.Follow(t, pts, moves, indices.ToHashSet());
             var attrs = t.CloneAttrs();
             attrs["points"] = Terrains.PointsJson(pts);
             ctx.Replace(t.With(attrs: attrs));
@@ -385,8 +402,47 @@ public static class SiteCommands
             if (!Tin.Spans(pts)) throw new CommandException("The terrain needs at least three points that are not in a line.");
             var attrs = t.CloneAttrs();
             attrs["points"] = Terrains.PointsJson(pts);
+            Cage.Prune(attrs, pts);
             ctx.Replace(t.With(attrs: attrs));
             return new JsonObject { ["points"] = pts.Count };
+        });
+
+        // Issue #113: the terrain's control cage, the survey points chosen as controls (Cage.cs). indices with mode set (the default),
+        // add, remove or toggle; spacing: one point per cell of a plan grid; boundary: the points on its outline; clear: none.
+        // reach: how far a control's move carries (0: derived). Moves no point; one undo step.
+        r.Command("setTerrainControls", "Terrain control points", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var pts = Terrains.Points(t);
+            var now = Cage.Indices(t).ToHashSet();
+            var given = (a["indices"] as JsonArray)?.Select(x => Json.Number(x) is { } n ? (int)n : -1).Where(i => i >= 0 && i < pts.Count).Distinct().ToList();
+            List<int> next;
+            if (a["clear"] is JsonValue cv && cv.TryGetValue<bool>(out var clear) && clear) next = [];
+            else if (Json.Number(a["spacing"]) is { } spacing)
+            {
+                if (spacing < 0.5) throw new CommandException("Controls on a grid need a spacing of half a metre at least.");
+                next = Cage.Grid(pts, spacing);
+            }
+            else if (a["boundary"] is JsonValue bv && bv.TryGetValue<bool>(out var rim) && rim) next = Cage.Rim(t, pts);
+            else if (given != null)
+            {
+                var mode = (string?)a["mode"] ?? "set";
+                next = mode switch
+                {
+                    "set" => given,
+                    "add" => [.. now.Union(given)],
+                    "remove" => [.. now.Except(given)],
+                    "toggle" => [.. now.Except(given).Union(given.Where(i => !now.Contains(i)))],
+                    _ => throw new CommandException("Controls are set, added, removed or toggled."),
+                };
+            }
+            else next = [.. now];
+            var attrs = t.CloneAttrs();
+            Cage.Write(attrs, pts, next);
+            if (Json.Number(a["reach"]) is { } reach) { if (reach > 0) attrs[Cage.ReachKey] = reach; else attrs.Remove(Cage.ReachKey); }
+            if (attrs[Cage.Key] == null) attrs.Remove(Cage.ReachKey);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["count"] = PointLists.Xy(attrs[Cage.Key]).Count };
         });
 
         // T4: A material sub-region on the terrain (changes surface material without modifying elevation).

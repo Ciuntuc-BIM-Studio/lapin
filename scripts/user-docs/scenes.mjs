@@ -5914,12 +5914,15 @@ export const scenes = [
       // A raised stroke and the cut/fill grid every 5 m: what the brush graded, against the survey.
       await t.cmd('civil.sculpt', { terrainId: id, kind: 'raise', x: 30, y: 8, radius: 5, amount: 1 });
       await t.cmd('civil.updateTerrain', { id, cutFillGrid: 5 });
+      // A control cage of one point every 10 m (issue #113): its count shows in the properties.
+      await t.cmd('civil.setTerrainControls', { id, spacing: 10 });
+      t.expect(((await terrain())?.props.cage ?? []).length > 0, 'the terrain has a control cage');
       await t.fit();
       await t.wait(1200);
       await t.shot('terrain-tools-plan', { of: '[data-testid=plan]', pad: 0 });
       await select(t, id);
       await t.wait(800);
-      await t.until(async () => (await t.page.locator('aside.props').innerText().catch(() => '')).includes('Graded region'), 'the terrain\'s properties show its boundary, tags, subregions and grid');
+      await t.until(async () => (await t.page.locator('aside.props').innerText().catch(() => '')).includes('Control cage'), 'the terrain\'s properties show its boundary, tags, subregions, grid and control cage');
       await t.shot('terrain-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
       await t.ui({ selection: null, selected: [], keyPlan: true });
       await open3d(t);

@@ -55,3 +55,13 @@ It had no contours, no editing, no platforms and no excavation. Those are new in
 - Their tests:
   - `corridor.test.ts`, `alignment.test.ts`, `profile.test.ts`, `landxml.test.ts`, `bridge.test.ts`;
   - in `packages/create/src/civil/`.
+
+## The control cage (issue #113, decision 751)
+
+A terrain may keep a few of its survey points as **controls** (`cage`: their places in plan, `[[x, y], …]`, a point matching within 1 mm; `cageReach`: optional). Places, not indices, so adding, removing or merging points never moves a control onto another point; the TIN and the GlobalId are untouched. `civil.setTerrainControls` sets them (indices with mode set/add/remove/toggle, `spacing`: the point nearest each node of a plan grid, `boundary`: the points on the outline, `clear`), one undo step, moving no point.
+
+Moving controls up or down (`civil.moveTerrainPoint`, `civil.setTerrainPoints`) moves the free points, in the same step, by
+
+    shift(x) = Σc Δc / |x − xc|²  /  (Σc 1 / |x − xc|² + 1 / R²)
+
+over every control c (Δc its move, 0 for one that stays): Shepard's inverse-distance weighting, power 2, with one more weight 1/R² for "stay". At a control it is that control's move exactly; between two controls it goes monotonically from one's move to the other's; far from every control it fades (one control alone lifts a smooth bump, half its move at R). R is `cageReach`, else twice the mean nearest-neighbour distance of the controls (half the survey's shorter side with one). The weights depend only on where the controls are, so the shift is linear in the moves: applying each move to the points as they are equals deriving each free point from its height when the cage was set plus the interpolated offsets since, and nothing but the controls' places is stored. Removing a point, replacing the survey and splitting drop the controls that no longer stand on a point (or lie outside a half); merging gathers them. With no controls, every point command works as before. Code: `Lapin.Civil/Cage.cs`; tests `CivilCageTests`, `pointGrips.test.ts`.

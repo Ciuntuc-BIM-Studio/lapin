@@ -549,6 +549,7 @@ table.layer-edit:not(.zones):not(.material-params) > tbody > tr:not(.layer-parts
 .grip3d { fill: var(--panel); stroke: var(--accent); stroke-width: 1.6; cursor: ns-resize; }
 .grip3d.face { cursor: move; }
 .grip3d.hot, .grip3d.on { fill: var(--accent); }
+.grip3d.marked { fill: var(--accent); stroke: var(--text); }
 .grip3d-stem { stroke: var(--accent); stroke-width: 1.2; pointer-events: none; }
 .grip3d-guide { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
 /* A door's or window's temporary dimensions (decision 511): thin accent lines, the value clicked to type, its ends to cycle. */

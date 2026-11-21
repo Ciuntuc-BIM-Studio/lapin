@@ -140,7 +140,8 @@ export function Grips3D({ camera, canvas, scene }: { camera: React.RefObject<THR
     const t0 = ray ? alongGrip(g, ray) : null;
     return t0 == null ? 0 : Math.round(t0 * 100) / 100;
   };
-  const drop3 = (g: Grip3D, by: number) => { if (Math.abs(by) > 1e-6) void runSteps([g.step(by)]); };
+  // Let go where it was taken: a click, which some grips answer (a terrain point made a control).
+  const drop3 = (g: Grip3D, by: number) => { if (Math.abs(by) > 1e-6) void runSteps([g.step(by)]); else if (g.click) void runSteps([g.click()]); };
   const down3 = (e: React.PointerEvent): boolean => {
     if (e.button !== 0) return false;
     const g = hit3(e);
@@ -182,7 +183,7 @@ export function Grips3D({ camera, canvas, scene }: { camera: React.RefObject<THR
     const [ux, uy] = r && l > 1e-6 ? [(r.x - q.x) / l, (r.y - q.y) / l] : [0, -1];
     const [nx, ny] = [-uy, ux];
     const head = (k: number) => `M${q.x + ux * 15 * k} ${q.y + uy * 15 * k}L${q.x + ux * 9 * k + nx * 4} ${q.y + uy * 9 * k + ny * 4}L${q.x + ux * 9 * k - nx * 4} ${q.y + uy * 9 * k - ny * 4}Z`;
-    const cls = `grip3d ${g.kind}${on ? ' on' : hot3 === key3(g) ? ' hot' : ''}`;
+    const cls = `grip3d ${g.kind}${g.marked ? ' marked' : ''}${on ? ' on' : hot3 === key3(g) ? ' hot' : ''}`;
     return (
       <g key={key3(g)} data-grip3d={g.key} data-owner={g.owner}>
         <line x1={q.x - ux * 10} y1={q.y - uy * 10} x2={q.x + ux * 10} y2={q.y + uy * 10} className="grip3d-stem" />
