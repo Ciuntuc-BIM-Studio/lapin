@@ -134,9 +134,21 @@ public static class BattHatch
             // The heads fill the band's length along its mid-line (a mitred end half-way, so two batts meet on the mitre).
             var (m0, m1) = MidSpan(pts, mid);
             if (m1 - m0 > 1e-9 * (s1 - s0)) (s0, s1) = (m0, m1);
-            foreach (var stroke in Strokes(s0, s1, h, scale, flip))
+            var strokes = Strokes(s0, s1, h, scale, flip);
+            var skipLoop = false;
+            for (var strokeIndex = 0; strokeIndex < strokes.Count; strokeIndex++)
             {
+                var stroke = strokes[strokeIndex];
                 if (o.Count >= maxSegments) break;
+                // A loop whose head's centre lies outside the region (a head on the short face of a mitred end, past the mitre) is
+                // left out whole: its head is clipped away, and its sides alone would show as a stray line at the corner. The
+                // loop's four strokes come together; its tip is the last point of the third, opposite the head's centre.
+                if (strokeIndex % 4 == 0)
+                {
+                    var tip = strokes[strokeIndex + 2][^1];
+                    skipLoop = !Inside(loops, frame.FromBand(tip.X, mid - tip.Y));
+                }
+                if (skipLoop) continue;
                 // Straight strokes in pieces of at most half the band's width, so they bend with a curved frame and each piece
                 // crosses the region's outline at most once where it is clipped.
                 var band = new List<Vec2> { stroke[0] };

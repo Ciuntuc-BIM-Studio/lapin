@@ -295,6 +295,48 @@ public class BattHatchTests
         }
     }
 
+    /// <summary>
+    /// At a mitred corner (two walls of one layer meeting at 90°) a loop whose head lies past the mitre is clipped away whole:
+    /// its sides alone would be a stray line at the corner.
+    /// </summary>
+    [Fact]
+    public void A_batt_loop_whose_head_is_past_the_mitre_leaves_no_stray_sides()
+    {
+        var dropped = 0;
+        foreach (var flip in new[] { false, true }) dropped += StraySides(flip);
+        Assert.True(dropped > 0, "the mitre drops a loop in one of the two orientations");
+    }
+
+    static int StraySides(bool flip)
+    {
+        // A 150 mm layer along x, its outer face (y = 0) 3.15 m long, its inner face (y = 0.15) 3 m: mitred at the right end.
+        Vec2[] band = [new(0, 0), new(3.15, 0), new(3, 0.15), new(0, 0.15)];
+        var segs = BattHatch.Segments([band], flip: flip);
+        // The loops as laid (mid-line y = 0.075, from the start to where the mid-line meets the mitre, x = 3.075).
+        var strokes = BattHatch.Strokes(0, 3.075, 0.075, 1, flip);
+        var dropped = 0;
+        for (var i = 0; i < strokes.Count; i += 4)
+        {
+            var tip = strokes[i + 2][^1];
+            var centre = new Vec2(tip.X, 0.075 - tip.Y);
+            if (Polygon2.Contains(band, centre)) continue;
+            dropped++;
+            // Its side: no drawn segment lies along it.
+            foreach (var side in new[] { strokes[i + 2], strokes[i + 3] })
+            {
+                var (a, b) = (new Vec2(side[0].X, 0.075 + side[0].Y), new Vec2(side[^1].X, 0.075 + side[^1].Y));
+                var mid = (a + b) * 0.5;
+                if (!Polygon2.Contains(band, mid)) continue;
+                Assert.DoesNotContain(segs, sg => Math.Abs(Cross(a, b, (sg.A + sg.B) * 0.5)) < 1e-6 && Vec2.Dot((sg.A + sg.B) * 0.5 - a, b - a) is > 0 && Vec2.Dot((sg.A + sg.B) * 0.5 - b, a - b) is > 0);
+            }
+        }
+        // Every segment still lies inside the band.
+        Assert.All(segs.SelectMany(s => new[] { s.A, s.B }), p => Assert.True(Polygon2.Contains(band, p) || Math.Abs(p.Y) < 1e-6 || Math.Abs(p.Y - 0.15) < 1e-6 || p.X < 1e-6 || p.X > 2.9));
+        return dropped;
+    }
+
+    static double Cross(Vec2 a, Vec2 b, Vec2 p) => ((b - a).X * (p - a).Y - (b - a).Y * (p - a).X) / (b - a).Length;
+
     [Theory]
     [InlineData(0)]
     [InlineData(30)]
