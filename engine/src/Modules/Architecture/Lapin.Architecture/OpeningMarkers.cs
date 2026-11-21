@@ -58,6 +58,14 @@ public static class OpeningMarkers
         double Reach(string key) => Math.Max(reach + (LabelParts.Of(parts, key).Ext ?? 0) * mm, -half + 0.5 * mm);
         var (a0, b0) = (interior - outward * reach, exterior + outward * reach);
         var (a, b) = (interior - outward * Reach("a"), exterior + outward * Reach("b"));
+        // A bubble marker (forum topic 205): out of the frame's middle across the wall (moved by the type's offset, + outwards)
+        // to its bubble, its interior end at the origin or past the interior face; its ends drawn out or pulled in as the other's.
+        var origin = (exterior + interior) * 0.5 + outward * ((p.Spec?.Frame.Offset ?? 0) + (type.LineOffset ?? 0));
+        if (type.Bubbled)
+        {
+            (a0, b0) = (type.LineInside is { } inside ? interior - outward * inside : origin, origin + outward * type.LineLengthOrDefault);
+            (a, b) = (a0 - outward * ((LabelParts.Of(parts, "a").Ext ?? 0) * mm), b0 + outward * ((LabelParts.Of(parts, "b").Ext ?? 0) * mm));
+        }
 
         var style = Standards.TextOf(c.Book, tag.Str("textStyle") ?? type.TextStyle);
         var color = style.Color ?? "#000000";
@@ -97,14 +105,80 @@ public static class OpeningMarkers
                 data.Add((JsonNode)LabelParts.TextData(key, at, at0, along, outward, mm, angle, angle0, rotAt, part, box));
             }
         }
-        // Its outer text, or the type's symbol there (issue #72), its texts reading the door or window as the template does.
-        if (type.Symbol is not { } symbolId || !Symbol(c, mark, data, symbolId, fill, values, b, outward, along, alongLine, parts, color))
-            Write("o", b, outward, TagText.Lines(type.Written, c.Model, fill, values, c.Book.Units));
-        Write("i", a, outward * -1, TagText.Lines(type.Inner, c.Model, fill, values, c.Book.Units));
+        IReadOnlyList<string> Lines(string? template) => string.IsNullOrEmpty(template) ? [] : TagText.Lines(template, c.Model, fill, values, c.Book.Units);
+        if (type.Bubbled)
+        {
+            // The bubble with the mark at the line's outer end, or the type's symbol there; the texts over and under the line
+            // along it, the one at the origin and the one at the interior end as the type lays its texts (across the line by default).
+            if (type.Symbol is not { } bubbleSymbol || !Symbol(c, mark, data, bubbleSymbol, fill, values, b, outward, along, alongLine, parts, color))
+                Bubble(mark, data, b, outward, along, alongLine, Lines(type.Written), type.BubbleSizeOrDefault / 2, style, color, parts, mm);
+            var (tFace, tEnd) = (Vec2.Dot(exterior - origin, outward), Vec2.Dot(b - origin, outward));
+            var tStart = tFace > 0 && tFace < tEnd - h ? tFace : 0;
+            var middle = origin + outward * ((tStart + tEnd) / 2);
+            Beside("ab", middle, outward, along, Lines(type.Above), 1, style, color, mark, data, parts, mm);
+            Beside("be", middle, outward, along, Lines(type.Below), -1, style, color, mark, data, parts, mm);
+            Write("c", origin - outward * (type.CentreOffset ?? 0), outward * -1, Lines(type.Centre));
+            Write("i", a - outward * (type.InnerOffset ?? 0), outward * -1, Lines(type.Inner));
+        }
+        else
+        {
+            // Its outer text, or the type's symbol there (issue #72), its texts reading the door or window as the template does.
+            if (type.Symbol is not { } symbolId || !Symbol(c, mark, data, symbolId, fill, values, b, outward, along, alongLine, parts, color))
+                Write("o", b, outward, TagText.Lines(type.Written, c.Model, fill, values, c.Book.Units));
+            Write("i", a, outward * -1, TagText.Lines(type.Inner, c.Model, fill, values, c.Book.Units));
+        }
         mark.Data = new JsonObject { ["of"] = fill.Id, ["marker"] = true, ["parts"] = data };
         mark.Snaps.Add(a);
         mark.Snaps.Add(b);
         return mark;
+    }
+
+    /// <summary>
+    /// A bubble marker's bubble (forum topic 205): a circle of <paramref name="r"/> (model metres) just past the line's outer end
+    /// <paramref name="b"/>, its lines (the mark) in its middle, across the line (along the wall) or along it as the type lays its
+    /// texts, upright; moved and turned on screen as one part, o0. No circle when <paramref name="r"/> is 0: the mark alone.
+    /// </summary>
+    static void Bubble(ViewMark mark, JsonArray data, Vec2 b, Vec2 outward, Vec2 along, bool alongLine, IReadOnlyList<string> lines, double r,
+        TextStyle style, string color, JsonObject? parts, double mm)
+    {
+        var h = style.Height * mm;
+        var part = LabelParts.Of(parts, "o0");
+        var angle0 = LabelParts.Upright(LabelParts.AngleOf(alongLine ? outward : along));
+        var angle = part.Rot is { } rot ? LabelParts.Upright(angle0 + rot) : angle0;
+        var widest = lines.Count == 0 ? h : lines.Max(l => LabelParts.Width(l, h));
+        var reach = r > 0 ? r : Math.Max(widest * Math.Abs(Vec2.Dot(LabelParts.Dir(angle0), outward)), h * 1.4 * Math.Max(1, lines.Count)) / 2 + 0.9 * mm;
+        var centre0 = b + outward * reach;
+        var centre = LabelParts.Moved(centre0, part, along, outward, mm);
+        if (r > 0) mark.Polyline(ViewMark.Circle(centre, r), true, "TAG", Pens.Default.Hatch, color);
+        var (u, up) = (LabelParts.Dir(angle), new Vec2(-LabelParts.Dir(angle).Y, LabelParts.Dir(angle).X));
+        for (var i = 0; i < lines.Count; i++)
+            mark.Text(new PenText(centre + up * (h * 1.4 * ((lines.Count - 1) / 2.0 - i)), lines[i], style.Height, angle, "middle", "middle", style.Bold, style.Font, style.Italic), color);
+        var (hw, hh) = r > 0 ? (r, r) : (widest / 2, h * 0.7 * Math.Max(1, lines.Count));
+        data.Add((JsonNode)LabelParts.TextData("o0", centre, centre0, along, outward, mm, angle, angle0, centre + u * (hw + 2.5 * mm), part, (centre, hw, hh, angle)));
+    }
+
+    /// <summary>
+    /// A bubble marker's texts beside its line (forum topic 205): along it, upright, centred on <paramref name="middle"/>, each line
+    /// further from it, over the line (<paramref name="side"/> 1) or under it (-1) as it reads, whichever way the door turns.
+    /// </summary>
+    static void Beside(string prefix, Vec2 middle, Vec2 outward, Vec2 along, IReadOnlyList<string> lines, int side, TextStyle style, string color,
+        ViewMark mark, JsonArray data, JsonObject? parts, double mm)
+    {
+        var h = style.Height * mm;
+        var angle0 = LabelParts.Upright(LabelParts.AngleOf(outward));
+        var up = new Vec2(-LabelParts.Dir(angle0).Y, LabelParts.Dir(angle0).X);
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var key = prefix + i;
+            var part = LabelParts.Of(parts, key);
+            var at0 = middle + up * (side * h * (0.9 + 1.4 * i));
+            var at = LabelParts.Moved(at0, part, along, outward, mm);
+            var angle = part.Rot is { } r ? LabelParts.Upright(angle0 + r) : angle0;
+            var t = new PenText(at, lines[i], style.Height, angle, "middle", "middle", style.Bold, style.Font, style.Italic);
+            mark.Text(t, color);
+            var box = LabelParts.BoxOf(t, mm);
+            data.Add((JsonNode)LabelParts.TextData(key, at, at0, along, outward, mm, angle, angle0, box.C + LabelParts.Dir(angle) * (box.Hw + h), part, box));
+        }
     }
 
     /// <summary>
