@@ -1,6 +1,6 @@
 # Studio: free-form surfaces (SubD and NURBS), the ideas worth keeping
 
-Written 21.11.2026 after reading `cekuhnen/blender-nurbs` ("NURBS Proto", a Blender add-on on NVIDIA's USD BRep kernel), its README, development notes and kernel build. The user asked for the good ideas to be noted, and for free-form surfaces in Studio to be the use. Status: **ideas only, nothing decided or built**.
+Written 21.11.2026 after reading `cekuhnen/blender-nurbs` ("NURBS Proto", a Blender add-on on NVIDIA's USD BRep kernel), its README, development notes and kernel build. The user asked for the good ideas to be noted, and for free-form surfaces in Studio to be the use. Status: §0–§6 are ideas; **§7–§9 are the plan the user approved on 21.11.2026** (decision 772: F1 SubD in C# first, then F2; the terrain keeps its TIN and gains a SubD design surface).
 
 ## 0. The rule for this document
 
@@ -109,3 +109,41 @@ Plain reading: what Lapin lacks is not smoothness (facets at a fine tolerance lo
 2. Is exactness needed in drawings of curved elements (exact section lines of a curved roof), or is the tessellation at the chord rule enough?
 3. Is fabrication data (curtain-wall panels, formwork, bent steel) something users will ask for? That is what decides F2 and F3.
 4. Do the thickness and offset of a free-form surface come before editing it (a skin of 20 cm on a curved roof is the first thing an architect asks for)?
+
+## 7. The terrain and SubD (the user's question, 21.11.2026)
+
+- **The surveyed terrain stays a TIN.** Catmull–Clark approximates: its surface does not pass through the cage points, so it would move the surveyor's heights; cut and fill are measured on the TIN's triangles, as authorities and contractors expect; breaklines, boundaries with arcs and platforms are constraints of the triangulation, which a quad cage does not follow; a survey has tens of thousands of points.
+- **Where SubD helps the ground: the designed ground.** Mounds, gentle banks, swales, a shaped garden have no measured heights to keep. A small open SubD cage edited by a few points gives a smooth form; the terrain takes it as a **design surface** (as a platform is one): inside its outline the proposed ground is the SubD surface, sampled onto the TIN, and cut and fill are measured between it and the surveyed ground, as they already are for platforms (stage F1e).
+- **Later, optional:** Loop subdivision of a sparse TIN for display (smoother contours), the breaklines as creases, always labelled as smoothed and never used for quantities.
+
+## 8. F1: SubD in Studio (C#, no dependency)
+
+### 8.1 What the user gets
+- **SubD solids** in Studio, from a cage: a box, a cylinder (n sides), a plane grid (open), or an existing Studio solid's mesh as a cage (small ones only).
+- **Edit the cage** in the 3D view: pick vertices, edges or faces (the cage drawn as a wireframe hull over the smooth body), move them with the 3D snaps and the axes (stage A of `plan-3d-modelling.md`), scale and rotate about their middle; typed distances.
+- **Shape the cage:** extrude faces, insert an edge loop across a ring of quads, delete faces (an open surface), **creases** on edges (sharpness 0 smooth … whole numbers semi-sharp … ∞ sharp), **mirror symmetry** across a plane (edit one half, the other follows).
+- **An open surface gets a thickness** (`thickness`, one side, the other or centred): a roof or facade skin of 20 cm is one property.
+- **Levels:** the display and the model use the chord rule (`Chords`): the body is subdivided until it lies within the tolerance of the limit surface, capped (default 4 levels, and a face budget); one rule for drawings, quantities and exports, as for every curve.
+- Each edit is one undo step; the body keeps its GlobalId when edited.
+
+### 8.2 The engine
+- **`Lapin.Geometry/SubD.cs`** (new, public mathematics only: Catmull & Clark 1978; creases after DeRose, Kass & Truong 1998; limit positions by the standard limit masks): a cage (points, polygons of any side count, creases), one subdivision step, limit positions, normals, the boundary rule (an open border is a crease: it stays a cubic B-spline of its border points), and the result as triangles in a closed `Solid` (or an open shell, thickened into a solid). Validity: manifold cages only (each edge in one or two faces), refused otherwise with a reason.
+- **Studio operation `subd`** (`StudioModule.Geometry.Base`, beside `primitive` and `body`): attributes `cage` {points, faces, creases}, `levels` (optional cap), `thickness`, `side`, `symmetry` (a plane or none), `at`, `rotation`. Booleans, cut priorities, features (fillet, shell, slice…), quantities and IFC export work on the body as on any Studio solid.
+- **Commands** (one undo step each; catalogue entries): `studio.subdCreate` {shape: box | cylinder | plane | fromSolid, sizes, at}, `studio.subdEdit` {id, moves: vertices, edges or faces by index with a translation, scale or rotation about their middle}, `studio.subdOp` {id, op: extrude | loop | delete | crease, …}, `studio.subdSet` {id, levels, thickness, side, symmetry}.
+- **IFC:** the body tessellated as now; the cage kept in Lapin's own property set (`Lapin_SubD`, never `Pset_`) so Lapin and BubbleBIM read it back editable.
+- **Tests** (`SubDTests`): a cube cage converges to a known limit (volume within bounds, symmetric); fully creased cube stays a cube; one face's crease keeps its edge straight; an open plane cage keeps its border curve; closed cages stay closed and manifold (Euler characteristic kept); levels by the chord rule; a thickened open grid has the thickness everywhere (to the tolerance); refused non-manifold cages; symmetry gives a mirrored body; edits keep the GlobalId.
+
+### 8.3 Stages
+- **F1a** engine core `SubD.cs` and its tests (Opus).
+- **F1b** Studio `subd` operation, commands, IFC property set, `.lapin` round trip, tests (Opus).
+- **F1c** interface: Studio → SubD (box, cylinder, plane), the cage edit mode in 3D (pick vertex/edge/face, move, scale, rotate, extrude, loop, delete, crease), the properties card (levels, thickness, side, symmetry), strings in every language, the user guide page and its scene (Sonnet, with the engine's commands).
+- **F1d** thickness and symmetry polish, from what F1c shows.
+- **F1e** the terrain's **design surface**: a SubD open surface named as the proposed ground of a terrain, sampled inside its outline, cut and fill against the surveyed ground (Civil; Opus for the engine).
+
+## 9. F2: exact surfaces for what Studio makes (after F1)
+
+- **`Lapin.Geometry/BSpline.cs`:** B-spline and NURBS curves and surfaces (evaluation, derivatives, knot insertion, degree elevation, rational weights), from *The NURBS Book*; tests on its worked examples.
+- **Exact definitions kept beside the tessellation** for what Studio builds exactly: extrusions of lines and arcs (planes, cylinders), revolutions (cones, spheres, tori, surfaces of revolution), lofts (`smooth`: a B-spline through the profiles, replacing the Catmull–Rom stations with the same look), sweeps along lines and arcs. Each face of the body knows its surface; the tessellation stays the one the model uses (`Chords`).
+- **SubD's regular faces are exact bicubic B-spline patches** (a regular 4×4 net is one uniform cubic patch): they export exactly; faces at star points export as facets (no promise of exact irregular SubD).
+- **Export:** IFC4 `IfcAdvancedBrep` (with `IfcBSplineSurfaceWithKnots`, `IfcCylindricalSurface`, …) and STEP AP214 `ADVANCED_FACE` from `Lapin.Ifc/Step.cs` (`plan-studio-parametric.md` X1), written after the public schemas.
+- **Not in F2:** trimming of free-form faces, general surface–surface intersection, fillets between curved faces. Those are F3 (a kernel), only if a case asks.
