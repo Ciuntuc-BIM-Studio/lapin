@@ -5000,6 +5000,9 @@ export const DA: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "Ingen knækning under disse laster: den geometriske stivhed afstiver kun.",
   "No buckling mode: the compressed bars are held by what is round them.": "Ingen knækform: de trykkede stænger holdes af det, der omgiver dem.",
   "A mechanism in its last states.": "En mekanisme i de sidste tilstande.",
+  "Dock the panel": "Fastgør panelet",
+  "Float or dock the project browser": "Lad projektbrowseren flyde eller fastgør den",
+  "Float or dock the properties": "Lad egenskaberne flyde eller fastgør dem",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -10638,6 +10638,37 @@ export const scenes = [
       await t.tool('view.panels.default');
       await t.wait(300);
       t.expect(await t.page.locator('.side-col.on-left .browser-side').count() === 1 && await t.page.locator('.side-col.on-right .props-side').count() === 1, 'the default layout is back');
+      // Dragging a panel by its header (decision 754): the properties onto the browser's lower half, then out over the view to float, then docked back.
+      const drag = async (from, to, { hold = false } = {}) => {
+        await t.page.mouse.move(from.x, from.y);
+        await t.page.mouse.down();
+        await t.page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+        await t.page.mouse.move(to.x, to.y, { steps: 6 });
+        if (hold) return;
+        await t.page.mouse.up();
+        await t.wait(300);
+      };
+      const headOf = async (sel) => { const b = await t.page.locator(sel).first().boundingBox(); return { x: b.x + b.width - 90, y: b.y + 10, box: b }; };
+      const props = await headOf('.props-side .panel-head, .props-side .side-tabs');
+      const browserBox = await t.page.locator('.browser-side').first().boundingBox();
+      await drag(props, { x: browserBox.x + 120, y: browserBox.y + browserBox.height - 60 }, { hold: true });
+      t.expect(await t.page.locator('[data-testid=dock-overlay][data-zone=stack]').count() === 1, 'dragging a header over the other panel shows its drop zone');
+      await t.shot('panel-drag', { clip: { x: 0, y: 0, width: 760, height: 620 } });
+      await t.keys('Escape');
+      t.expect(await t.page.locator('[data-testid=dock-overlay]').count() === 0 && await t.page.locator('.side-col.on-right .props-side').count() === 1, 'Escape cancels the drag');
+      await t.page.mouse.up();
+      const props2 = await headOf('.props-side .panel-head, .props-side .side-tabs');
+      await drag(props2, { x: browserBox.x + 120, y: browserBox.y + browserBox.height - 60 });
+      t.expect(await t.page.locator('.side-col.on-left.stacked .browser-side + .stack-sep + .props-side').count() === 1, 'dropped on the browser\'s lower half, the properties stand under it');
+      const props3 = await headOf('.props-side .panel-head, .props-side .side-tabs');
+      await drag(props3, { x: 800, y: 420 });
+      t.expect(await t.page.locator('[data-testid=float-props]').count() === 1, 'dropped over the view, the properties float');
+      await t.shot('panel-float', { clip: { x: 0, y: 0, width: 1100, height: 760 } });
+      await t.page.locator('[data-testid=float-props] .panel-fold').click();
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-testid=float-props]').count() === 0, 'the dock button puts the panel back on its side');
+      await t.tool('view.panels.default');
+      await t.wait(300);
       // The quick tools the user chooses (decision 259): slot 7 given the stair from View → Quick tools…, slot 2 emptied.
       await t.tool('app.quickTools');
       t.expect(await t.page.locator('.quick-tools-dialog').count() === 1, 'View → Quick tools… opens its dialog');

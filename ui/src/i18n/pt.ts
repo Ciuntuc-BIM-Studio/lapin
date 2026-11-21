@@ -5003,6 +5003,9 @@ export const PT: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "Sem encurvadura sob estas cargas: a rigidez geométrica só enrijece.",
   "No buckling mode: the compressed bars are held by what is round them.": "Sem modo de encurvadura: as barras comprimidas são retidas pelo que as rodeia.",
   "A mechanism in its last states.": "Um mecanismo nos seus últimos estados.",
+  "Dock the panel": "Acoplar o painel",
+  "Float or dock the project browser": "Flutuar ou acoplar o navegador de projeto",
+  "Float or dock the properties": "Flutuar ou acoplar as propriedades",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

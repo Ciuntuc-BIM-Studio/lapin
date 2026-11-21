@@ -5059,6 +5059,9 @@ export const LO: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "ບໍ່ມີການໂກ່ງງໍພາຍໃຕ້ນ້ຳໜັກເຫຼົ່ານີ້: ຄວາມແຂງເລຂາຄະນິດພຽງແຕ່ເພີ່ມຄວາມແຂງ.",
   "No buckling mode: the compressed bars are held by what is round them.": "ບໍ່ມີໂໝດການໂກ່ງງໍ: ແທ່ງທີ່ຖືກອັດຖືກຍຶດດ້ວຍສິ່ງອ້ອມຂ້າງ.",
   "A mechanism in its last states.": "ເປັນກົນໄກໃນສະຖານະສຸດທ້າຍຂອງມັນ.",
+  "Dock the panel": "ຕິດແຜງຄືນ",
+  "Float or dock the project browser": "ເຮັດໃຫ້ຕົວທ່ອງໂຄງການລອຍ ຫຼື ຕິດຄືນ",
+  "Float or dock the properties": "ເຮັດໃຫ້ຄຸນສົມບັດລອຍ ຫຼື ຕິດຄືນ",
 };
 
 /** Phrases with a number or a name in them. */

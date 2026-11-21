@@ -5006,6 +5006,9 @@ export const PL: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "Brak wyboczenia przy tych obciążeniach: sztywność geometryczna tylko usztywnia.",
   "No buckling mode: the compressed bars are held by what is round them.": "Brak postaci wyboczenia: pręty ściskane są podtrzymywane przez otoczenie.",
   "A mechanism in its last states.": "Mechanizm w ostatnich stanach.",
+  "Dock the panel": "Zadokuj panel",
+  "Float or dock the project browser": "Odepnij lub zadokuj przeglądarkę projektu",
+  "Float or dock the properties": "Odepnij lub zadokuj właściwości",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

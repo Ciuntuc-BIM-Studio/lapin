@@ -7,6 +7,7 @@
 import { useDialogLayer } from './shell/Dialog';
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AppWindow, Bot, Box, Columns2, Ruler, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
+import { beginPanelDrag, DockOverlay, FloatingPanel, useKeepFloatsInWindow } from './shell/PanelDock';
 import { closeOverlay, columns, panelsOn, setPanelWidth, setStackRatio, type PanelId, type Side, showOverlay, showPropsTab, syncToolPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
 import { assistantAvailable } from './assistant/available';
 import { useInterface } from './app/interface';
@@ -359,13 +360,13 @@ function SideColumn({ side }: { side: Side }) {
   if (!open.length) {
     return <div className={`side-col on-${side} rails`}>{ps.map((p) => <Rail key={p} panel={p} side={side} label={PANEL_NAME[p]} />)}</div>;
   }
-  const grow = (p: PanelId) => (open.length < 2 ? 1 : p === 'browser' ? st.stackRatio : 1 - st.stackRatio);
+  const grow = (p: PanelId) => (open.length < 2 ? 1 : p === open[0] ? st.stackRatio : 1 - st.stackRatio);
   return (
     <div ref={host} className={`side-col on-${side}${ps.length > 1 ? ' stacked' : ''}`}>
       {ps.map((p, i) => isOpen(p) ? (
         <Fragment key={p}>
           {i > 0 && open.length > 1 && <StackSep host={host} />}
-          <div className={`side ${p === 'browser' ? 'browser-side' : 'props-side'}`} style={{ flex: `${grow(p)} 1 0` }}>
+          <div className={`side ${p === 'browser' ? 'browser-side' : 'props-side'}`} data-panel-id={p} style={{ flex: `${grow(p)} 1 0` }} onPointerDown={(e) => beginPanelDrag(e, p)}>
             <PanelFold side={p} at={side} />{p === 'browser' ? <ProjectBrowser /> : <RightPanel />}
           </div>
         </Fragment>
@@ -451,6 +452,7 @@ function Workspace() {
   const Dialog = open ? dialog(open, shareDialogs) : null;
   const panels = usePanels();
   const ui = useInterface();
+  useKeepFloatsInWindow();
   return (
     <div className={`workspace ui-${ui.preset} rows-${ui.parts.rows}`}>
       <Ribbon />
@@ -462,6 +464,9 @@ function Workspace() {
         <SideColumn side="right" />
         <PanelOverlay />
       </div>
+      <FloatingPanel panel="browser"><ProjectBrowser /></FloatingPanel>
+      <FloatingPanel panel="props"><RightPanel /></FloatingPanel>
+      <DockOverlay />
       <StatusBar />
       <TabDragOverlay />
       {Dialog && <Dialog />}

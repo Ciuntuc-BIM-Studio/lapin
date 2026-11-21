@@ -4963,6 +4963,9 @@ export const DE: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "Kein Knicken unter diesen Lasten: Die geometrische Steifigkeit versteift nur.",
   "No buckling mode: the compressed bars are held by what is round them.": "Keine Knickeigenform: Die gedrückten Stäbe werden von ihrer Umgebung gehalten.",
   "A mechanism in its last states.": "Ein Mechanismus in den letzten Zuständen.",
+  "Dock the panel": "Bereich andocken",
+  "Float or dock the project browser": "Projektbrowser schweben lassen oder andocken",
+  "Float or dock the properties": "Eigenschaften schweben lassen oder andocken",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

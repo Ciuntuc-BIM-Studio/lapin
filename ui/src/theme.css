@@ -3033,3 +3033,13 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .standards-table tr.clickable:hover { background: var(--hover, rgba(128, 128, 128, 0.12)); }
 .checks details > summary { cursor: pointer; }
 .check-line .values { margin: 2px 0 0 14px; }
+
+/* Moving the panels (decision 754): the header is the handle; the zones show where a drop lands. */
+.side > .panel .panel-head, .side > .side-tabbed > .side-tabs, .side > .side-tabbed .panel-head { cursor: grab; touch-action: none; }
+body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-select: none; }
+.dock-overlay { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+.dock-zone { position: fixed; background: var(--accent-wash); border: 2px solid var(--accent); opacity: 0.8; }
+.dock-ghost { position: fixed; padding: 3px 8px; font-size: 11px; background: var(--panel); border: 1px solid var(--accent); color: var(--ink); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+.float-panel { position: fixed; z-index: 20; background: var(--panel); border: 1px solid var(--rule-strong); box-shadow: 0 10px 32px rgba(0, 0, 0, 0.25); }
+.float-panel > .panel-fold { right: 6px; }
+.float-resize { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize; touch-action: none; z-index: 4; background: linear-gradient(135deg, transparent 55%, var(--ink-muted) 55%, var(--ink-muted) 62%, transparent 62%, transparent 74%, var(--ink-muted) 74%, var(--ink-muted) 81%, transparent 81%); }
