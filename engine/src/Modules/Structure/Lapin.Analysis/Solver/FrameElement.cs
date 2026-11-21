@@ -94,10 +94,36 @@ public sealed class FrameElement
     /// <summary>Shear's share of the bending in each plane, Φ = 12EI/(G·As·L²): 0 for Euler–Bernoulli.</summary>
     public double PhiY, PhiZ;
 
+    readonly object _prepare = new();
+    Vec3 _atI, _atJ;
+    bool _prepared;
+
+    /// <summary>
+    /// Its axes, transform and stiffness from its nodes' places: worked out once for those places (a bar the problems of a
+    /// nonlinear solve share, §14.20, is prepared again only if its nodes moved), under a lock, so problems solved side by side
+    /// read it whole. Everything it works out depends on its own (fixed) data and its two nodes only.
+    /// </summary>
     public void Prepare(IReadOnlyList<Vec3> nodes)
     {
-        Pi = nodes[I] + OffI;
-        Pj = nodes[J] + OffJ;
+        var (a, b) = (nodes[I], nodes[J]);
+        lock (_prepare)
+        {
+            if (_prepared && Same(a, _atI) && Same(b, _atJ)) return;
+            _prepared = false;
+            Build(a, b);
+            (_atI, _atJ, _prepared) = (a, b, true);
+        }
+    }
+
+    /// <summary>The same place bit for bit (no tolerance: a node moved by anything is prepared again).</summary>
+    internal static bool Same(Vec3 a, Vec3 b) =>
+        BitConverter.DoubleToInt64Bits(a.X) == BitConverter.DoubleToInt64Bits(b.X) && BitConverter.DoubleToInt64Bits(a.Y) == BitConverter.DoubleToInt64Bits(b.Y)
+        && BitConverter.DoubleToInt64Bits(a.Z) == BitConverter.DoubleToInt64Bits(b.Z);
+
+    void Build(Vec3 nodeI, Vec3 nodeJ)
+    {
+        Pi = nodeI + OffI;
+        Pj = nodeJ + OffJ;
         var d = Pj - Pi;
         L = d.Length;
         Ex = d * (1 / L);

@@ -80,11 +80,30 @@ public sealed class ShellElement
     double[] _x = [], _y = [];
     double[] _k = [];
 
+    readonly object _prepare = new();
+    Vec3[]? _at;
+
+    /// <summary>
+    /// Its plane, axes and stiffness from its nodes' places: worked out once for those places (the problems of a nonlinear
+    /// solve share their shells, §14.20), under a lock, so problems solved side by side read it whole.
+    /// </summary>
     public void Prepare(IReadOnlyList<Vec3> nodes)
     {
         var n = Count;
         if (n is not (3 or 4)) throw new InvalidOperationException($"Shell {Id}: {n} nodes; 3 or 4 are taken.");
         var p = Nodes.Select(i => nodes[i]).ToArray();
+        lock (_prepare)
+        {
+            if (_at != null && _at.Length == n && Enumerable.Range(0, n).All(i => FrameElement.Same(_at[i], p[i]))) return;
+            _at = null;
+            Build(p);
+            _at = p;
+        }
+    }
+
+    void Build(Vec3[] p)
+    {
+        var n = Count;
         Centre = p.Aggregate(Vec3.Zero, (a, b) => a + b) * (1.0 / n);
         var normal = VecMath.NewellNormal(p);
         Ez = normal.Normalized();
