@@ -170,6 +170,11 @@ describe('the languages', () => {
     'Across edge 2 (4.00 m)',
     '38.2 % of 45 % · 3 cables',
     'Layer face: Insulation | Brick',
+    'Global sway imperfections (EN 1993-1-1 5.3.2; the same form for concrete, EN 1992-1-1 5.2; timber by EN 1995-1-1 5.4.4): each ultimate combination solved four times, ±X and ±Y, with φ·NEd at the top and −φ·NEd at the foot of each compressed column, NEd of its first-order result; h = 6.5 m, αh = 0.785, φ up to 1/231 along X (m = 4), no column along Y. A combination\'s results are the envelope of its four.',
+    'EN 1993-1-1 5.3.2(4): in 2 ultimate combinations the horizontal loads are at least 0.15 of the vertical ones along X and Y: the sway imperfections could be left out there; they are kept, on the safe side.',
+    '3 members braced by their sheeting: held straight across in the sheeting\'s plane (along their section\'s width) between the members they rest on, at 5 nodes; the sheeting ties no member to another (no stressed skin). The members\' own buckling checks keep their lengths.',
+    'Sheeting left without effect on Rafter 1: not straight, Rafter 2: not straight.',
+    'P100-1/2013 §4.6.2.2 (EN 1998-1 4.4.2.2): θ = Ptot·dr/(Vtot·h) reaches 0.152 on „Ground floor” along X: the seismic effects × 1/(1 − θ) there (or second order).',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

@@ -36,6 +36,10 @@ export function ShellOptions() {
         <input type="checkbox" data-testid="analysis-second-order" checked={o.secondOrder === true} onChange={(e) => void execute('analysis.setOptions', { secondOrder: e.target.checked ? true : null })} />
         <span>Second order (P-Δ)</span>
       </label>
+      <label className="row small" title="Each ultimate combination solved four times, ±X and ±Y, with the global sway imperfections of EN 1993-1-1 5.3.2 (φ·NEd at the top and −φ·NEd at the foot of each compressed column); a combination's results are the envelope of its four. With or without second order">
+        <input type="checkbox" data-testid="analysis-imperfections" checked={o.imperfections === true} onChange={(e) => void execute('analysis.setOptions', { imperfections: e.target.checked })} />
+        <span>Global imperfections (±X, ±Y)</span>
+      </label>
     </div>
   );
 }

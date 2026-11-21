@@ -8,6 +8,7 @@ import { useAnalysis } from './hooks';
 import { animateMode, stopMode, useMode } from './useMode';
 import { formatValue } from './results';
 import { NotesList } from './NotesList';
+import { TONE_COLOUR } from './stability';
 import {
   CODE_LABEL, DIAPHRAGM_LABEL, DIRECTIONS_LABEL, MASONRY_KIND_TITLE, MODAL_LABEL, modeRows, readNumber, reachedMass, spectrumChart, storeyRows, formatPercent, formatPeriod,
   type ModalDto, type SeismicDto, type SeismicOptionsDto, type SpectrumDto,
@@ -259,13 +260,16 @@ function Storeys({ seismic }: { seismic: SeismicDto }) {
               <th>Storey</th><th title="Storey height">h (m)</th><th>Mass (t)</th>
               <th title="Storey shear force along X">Shear X (kN)</th><th title="Storey shear force along Y">Shear Y (kN)</th>
               <th title="Elastic interstorey drift along X">Drift X (mm)</th><th title="Elastic interstorey drift along Y">Drift Y (mm)</th>
-              <th title="Serviceability check: ν · q · drift, along X · along Y, against its limit">SLS (mm)</th><th title="Ultimate check: c · q · drift, along X · along Y, against its limit (P100-1/2013 only)">ULS (mm)</th>
+              <th title="Interstorey drift sensitivity coefficient θ = Ptot·dr/(Vtot·h) along X · along Y (P100-1/2013 §4.6.2.2): up to 0.1 neglected, to 0.2 the seismic effects × 1/(1 − θ), to 0.3 second order, above 0.3 not allowed">θ</th><th title="Serviceability check: ν · q · drift, along X · along Y, against its limit">SLS (mm)</th><th title="Interstorey drift sensitivity coefficient θ = Ptot·dr/(Vtot·h) along X · along Y (P100-1/2013 §4.6.2.2): up to 0.1 neglected, to 0.2 the seismic effects × 1/(1 − θ), to 0.3 second order, above 0.3 not allowed" data-no-i18n-text>θ</th><th title="Ultimate check: c · q · drift, along X · along Y, against its limit (P100-1/2013 only)">ULS (mm)</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
                 <td data-no-i18n>{r.name}</td><td data-no-i18n>{r.h}</td><td data-no-i18n>{r.mass}</td><td data-no-i18n>{r.shearX}</td><td data-no-i18n>{r.shearY}</td><td data-no-i18n>{r.driftX}</td><td data-no-i18n>{r.driftY}</td>
+                <td data-testid="storey-theta">
+                  {r.theta.length === 0 ? '–' : r.theta.map((t, i) => <span key={i} title={t.title} data-tone={t.tone} style={{ color: TONE_COLOUR[t.tone], fontWeight: t.tone === 'ok' ? undefined : 600 }}>{i > 0 && <span className="muted" data-no-i18n> · </span>}<span data-no-i18n>{t.text}</span></span>)}
+                </td>
                 <td className={cls(r.slsOk)} title={`≤ ${r.slsTitle}`} data-no-i18n data-ok={String(r.slsOk)}>{r.sls}{mark(r.slsOk)}</td>
                 <td className={cls(r.ulsOk)} title={r.ulsTitle ? `≤ ${r.ulsTitle}` : undefined} data-no-i18n data-ok={String(r.ulsOk)}>{r.uls}{mark(r.ulsOk)}</td>
               </tr>

@@ -1,6 +1,6 @@
 /** Structural analysis, stage S1b (docs/plan-fem.md §9.6): the pure parts of the results interface: the engine's reports, the picker, the diagrams' geometry, the end releases. */
 
-import type { NonlinearDto, SupportsRunDto } from './stability';
+import type { NonlinearDto, SheetingRunDto, SupportsRunDto } from './stability';
 import type { AnalysisOptionsDto, ShellResultDto, ShellsRunDto } from './shells';
 
 export interface RunCaseDto { id: string; code: string; sumLoads: number[]; sumReactions: number[] | null; balance: number | null; balanced: boolean | null; unmapped: number }
@@ -16,7 +16,7 @@ export interface RunDto {
   /** The slabs and walls analysed as shells (S2b), and the options the run took. */
   shells?: ShellsRunDto; settings?: AnalysisOptionsDto;
   /** S5: the combinations solved one by one (second order, one-way members, supports that lift), and the supports on springs. */
-  nonlinear?: NonlinearDto; supports?: SupportsRunDto;
+  nonlinear?: NonlinearDto; supports?: SupportsRunDto; sheeting?: SheetingRunDto;
 }
 
 export interface Extreme { frame: string; x: number; value: number }

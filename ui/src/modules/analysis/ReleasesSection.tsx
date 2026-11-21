@@ -65,6 +65,11 @@ export function ReleasesSection({ node }: { node: NodeDto }) {
             {ACTS_IN.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
           </select>
         </dd>
+        <dt>Braced by sheeting</dt>
+        <dd>
+          <input type="checkbox" data-field="sheeting" aria-label="Braced by sheeting" data-testid="analysis-sheeting" title="Held straight across in its sheeting's plane between the members it rests on (a purlin, a wall rail)"
+            checked={node.props.analysisSheeting === true} onChange={(e) => void execute('analysis.setSheeting', { ids, sheeting: e.target.checked ? true : null })} />
+        </dd>
       </dl>
       <p className="muted small">A ticked freedom is released at that end. Default: what the connection says (a cleat or gusset pins), a timber roof member pinned about its strong axis, any other bar fixed.</p>
       {mine.length > 0 && results && <Extremes frames={mine} name={results.name} />}

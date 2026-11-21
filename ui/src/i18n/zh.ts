@@ -4984,13 +4984,35 @@ export const ZH: Record<string, string> = {
   "A buckling mode is 1 to 12.": "屈曲模态为 1 至 12。",
   "No buckling under that combination: no bar is in compression.": "此组合下无屈曲：没有杆件受压。",
   "Second order (P-Δ): each static combination solved with the bars' geometric stiffness of their axial forces, iterated; the cases stay first order. Along a bar the moment keeps its first-order shape between its ends: its own buckling is its check's (EN 1993-1-1 6.3).": "二阶 (P-Δ)：每个静力组合均按杆件轴力产生的几何刚度迭代求解；各工况仍为一阶。沿杆件的弯矩在两端之间保持一阶形状：杆件自身的屈曲由其验算处理 (EN 1993-1-1 6.3)。",
-  "The global imperfections (EN 1993-1-1 5.3.2) are not added yet: give them as loads (equivalent horizontal forces φ·NEd) where the design calls for them.": "整体缺陷 (EN 1993-1-1 5.3.2) 尚未添加：设计需要时，请将其作为荷载给出（等效水平力 φ·NEd）。",
+  "Global imperfections (±X, ±Y)": "整体缺陷 (±X, ±Y)",
+  "Each ultimate combination solved four times, ±X and ±Y, with the global sway imperfections of EN 1993-1-1 5.3.2 (φ·NEd at the top and −φ·NEd at the foot of each compressed column); a combination's results are the envelope of its four. With or without second order": "每个承载能力极限状态组合求解四次，±X 和 ±Y，按 EN 1993-1-1 5.3.2 加入整体侧移缺陷（每根受压柱顶部 φ·NEd，底部 −φ·NEd）；一个组合的结果取这四者的包络。无论是否开启二阶",
+  "Global imperfections": "整体缺陷",
+  "EN 1993-1-1 5.3.2(4) would allow leaving them out in": "EN 1993-1-1 5.3.2(4) 允许在以下数量的组合中略去它们：",
+  "combination(s) (they are kept)": "个组合（仍然保留）",
+  "Governing": "控制",
+  "The variant of the imperfections with the largest amplification: φ(+X), φ(−X), φ(+Y) or φ(−Y)": "放大系数最大的缺陷变体：φ(+X)、φ(−X)、φ(+Y) 或 φ(−Y)",
+  "Each combination solved on its own, with the global imperfections (±X, ±Y)": "每个组合单独求解，含整体缺陷 (±X, ±Y)",
+  "Each combination solved on its own, second order (P-Δ), with the global imperfections (±X, ±Y)": "每个组合单独求解，二阶 (P-Δ)，含整体缺陷 (±X, ±Y)",
+  "The sheeting braces the purlins": "压型板支撑檩条",
+  "Holds the purlins straight across in the roof plane, between the members they rest on (EN 1993-1-3 10.1); the next run takes it": "使檩条在屋面平面内保持笔直，位于其所搁置的构件之间 (EN 1993-1-3 10.1)；下次计算时采用",
+  "Braced by sheeting": "由压型板支撑",
+  "Held straight across in its sheeting's plane between the members it rests on (a purlin, a wall rail)": "在其压型板的平面内，位于其所搁置的构件之间保持笔直（檩条、墙梁）",
+  "Interstorey drift sensitivity coefficient θ = Ptot·dr/(Vtot·h) along X · along Y (P100-1/2013 §4.6.2.2): up to 0.1 neglected, to 0.2 the seismic effects × 1/(1 − θ), to 0.3 second order, above 0.3 not allowed": "层间位移敏感系数 θ = Ptot·dr/(Vtot·h)，沿 X · 沿 Y (P100-1/2013 §4.6.2.2)：不超过 0.1 忽略，至 0.2 地震作用 × 1/(1 − θ)，至 0.3 须二阶分析，超过 0.3 不允许",
+  "θ = Ptot·dr/(Vtot·h) up to 0.1: second-order effects neglected": "θ = Ptot·dr/(Vtot·h) 不超过 0.1：忽略二阶效应",
+  "θ = Ptot·dr/(Vtot·h) from 0.1 to 0.2: the seismic effects × 1/(1 − θ)": "θ = Ptot·dr/(Vtot·h) 在 0.1 至 0.2 之间：地震作用 × 1/(1 − θ)",
+  "θ = Ptot·dr/(Vtot·h) from 0.2 to 0.3: a second-order analysis is needed": "θ = Ptot·dr/(Vtot·h) 在 0.2 至 0.3 之间：需要二阶分析",
+  "θ = Ptot·dr/(Vtot·h) above 0.3: not allowed, stiffen the structure": "θ = Ptot·dr/(Vtot·h) 超过 0.3：不允许，请加强结构刚度",
+  "The global imperfections (EN 1993-1-1 5.3.2) are off: analysis.setOptions {imperfections: true} adds them to each ultimate combination as ±X and ±Y variants, or give them as loads (equivalent horizontal forces φ·NEd).": "整体缺陷 (EN 1993-1-1 5.3.2) 已关闭：analysis.setOptions {imperfections: true} 会将其作为 ±X 和 ±Y 变体加入每个承载能力极限状态组合，或将其作为荷载给出（等效水平力 φ·NEd）。",
+  "The shell walls' vertical load is not tilted: the imperfections are the bar columns' only (give the walls' as loads where they matter).": "壳墙的竖向荷载不倾斜：缺陷仅为杆件柱的缺陷（需要时，请将墙的缺陷作为荷载给出）。",
+  "Global imperfections on, but no column (a bar within 10° of the vertical) is in compression: none added.": "整体缺陷已开启，但没有柱（与竖向夹角在 10° 内的杆件）受压：未添加任何缺陷。",
+  "With the global imperfections on, a combination's buckling is worked out on its +X variant (its states and axial forces): the imperfections' forces are small and horizontal.": "开启整体缺陷后，组合的屈曲在其 +X 变体（其状态和轴力）上计算：缺陷产生的力很小且为水平方向。",
+  "Second order (P-Δ) on, with the global sway imperfections (EN 1993-1-1 5.3.2, ±X and ±Y): the steel members' forces are second order; their own buckling (6.3.1) stays with their buckling lengths.": "已开启二阶 (P-Δ)，并含整体侧移缺陷 (EN 1993-1-1 5.3.2，±X 和 ±Y)：钢构件的内力为二阶内力；其自身屈曲 (6.3.1) 仍按其屈曲长度处理。",
+  "Second order (P-Δ) on: the steel members' forces are second order; their own buckling (EN 1993-1-1 6.3.1) stays with their buckling lengths; the global imperfections (5.3.2) are off (analysis.setOptions imperfections).": "已开启二阶 (P-Δ)：钢构件的内力为二阶内力；其自身屈曲 (EN 1993-1-1 6.3.1) 仍按其屈曲长度处理；整体缺陷 (5.3.2) 已关闭 (analysis.setOptions imperfections)。",
   "The shells have no geometric stiffness: second order and buckling are the bars' only.": "壳单元没有几何刚度：二阶和屈曲仅针对杆件。",
   "Each static combination solved on its own (one-way members, supports that lift): the cases stay linear, every member in, every support seated.": "每个静力组合单独求解（单向杆件、会脱离的支座）：各工况保持线性，所有构件均参与，所有支座均就位。",
   "Second order: unstable, the loads are past the critical ones (αcr < 1).": "二阶：不稳定，荷载已超过临界荷载 (αcr < 1)。",
   "The one-way members and supports did not settle: they go back to states already tried.": "单向杆件和支座未收敛：它们回到了已试过的状态。",
   "The modal problem is linear: every one-way member in, every support that may lift seated.": "模态问题是线性的：所有单向杆件均参与，所有可脱离的支座均就位。",
-  "Second order (P-Δ) on: the steel members' forces are second order; their own buckling (EN 1993-1-1 6.3.1) stays with their buckling lengths, the global imperfections (5.3.2) are not added yet.": "已开启二阶 (P-Δ)：钢构件的内力为二阶内力；其自身屈曲 (EN 1993-1-1 6.3.1) 仍按其屈曲长度处理，整体缺陷 (5.3.2) 尚未添加。",
   "Linear buckling of the bars (the shells have no geometric stiffness): (K + αcr·Kg(NEd)) φ = 0, NEd of each ultimate combination; αcr ≥ 10: first order will do, 3 to 10: second order or the sway effects × 1/(1 − 1/αcr), below 3: second order (EN 1993-1-1 5.2.1(3), 5.2.2(5B)).": "杆件的线性屈曲（壳单元没有几何刚度）：(K + αcr·Kg(NEd)) φ = 0，NEd 取自各承载能力极限组合；αcr ≥ 10：一阶分析即可，3 至 10：二阶分析或侧移效应 × 1/(1 − 1/αcr)，小于 3：二阶分析 (EN 1993-1-1 5.2.1(3), 5.2.2(5B))。",
   "Only the compressed bars' geometric stiffness is taken (the tension's stiffening left out, on the safe side). A mode one member holds more than half of is that member's own buckling (its check's, EN 1993-1-1 6.3): the class is the frame's first other mode's.": "仅计入受压杆件的几何刚度（略去受拉产生的刚化，偏于安全）。某一构件占比超过一半的模态属于该构件自身的屈曲（其验算所涵盖，EN 1993-1-1 6.3）：分类取框架的第一个其他模态。",
   "Concrete bars at their uncracked stiffness: EN 1992-1-1 5.8.2(6) asks for second-order effects over 10 %, judged with the cracked stiffness.": "混凝土杆件按未开裂刚度计算：EN 1992-1-1 5.8.2(6) 要求二阶效应超过 10 % 时予以考虑，并按开裂刚度判断。",
@@ -5018,7 +5040,25 @@ function s5msg(text: string): string {
   return text;
 }
 
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ 至 1/${a[1]}，沿 ${a[2]} (m = ${a[3]})` : `φ 至 1/${a[1]}，沿 ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `沿 ${b[1]} 无柱` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "该处地震作用 × 1/(1 − θ)（或二阶分析）。",
+  'a second-order analysis is needed there.': "该处需要二阶分析。",
+  'above 0.3, not allowed: stiffen the structure.': "超过 0.3，不允许：请加强结构刚度。",
+};
 export const ZH_PATTERNS: Language['patterns'] = [
+  // S5d: global imperfections, sheeting, θ
+  [/^Global sway imperfections \(EN 1993-1-1 5\.3\.2; the same form for concrete, EN 1992-1-1 5\.2; timber by EN 1995-1-1 5\.4\.4\): each ultimate combination solved four times, ±X and ±Y, with φ·NEd at the top and −φ·NEd at the foot of each compressed column, NEd of its first-order result; h = ([\d.]+) m, αh = ([\d.]+), (.+), (.+)\. A combination's results are the envelope of its four\.$/, (m) => `整体侧移缺陷 (EN 1993-1-1 5.3.2；混凝土形式相同，EN 1992-1-1 5.2；木材按 EN 1995-1-1 5.4.4)：每个承载能力极限状态组合求解四次，±X 和 ±Y，每根受压柱顶部 φ·NEd、底部 −φ·NEd，NEd 取自其一阶结果；h = ${m[1]} m，αh = ${m[2]}，${s5dSeg(m[3])}，${s5dSeg(m[4])}。一个组合的结果取这四者的包络。`],
+  [/^EN 1993-1-1 5\.3\.2\(4\): in (\d+) ultimate combinations? the horizontal loads are at least 0\.15 of the vertical ones along (X|Y|X and Y): the sway imperfections could be left out there; they are kept, on the safe side\.$/, (m) => `EN 1993-1-1 5.3.2(4)：在 ${m[1]} 个承载能力极限状态组合中，沿 ${m[2].replace(' and ', ' 和 ')} 的水平荷载至少为竖向荷载的 0.15：此处可略去侧移缺陷；出于安全考虑仍予保留。`],
+  [/^(\d+) members? braced by (?:its|their) sheeting: held straight across in the sheeting's plane \(along (?:its|their) section's width\) between the members (?:it rests|they rest) on, at (\d+) nodes?; the sheeting ties no member to another \(no stressed skin\)\. The members' own buckling checks keep their lengths\.$/, (m) => `${m[1]} 个构件由其压型板支撑：在压型板平面内（沿其截面宽度方向），位于其所搁置的构件之间保持笔直，共 ${m[2]} 个节点；压型板不将任何构件与另一构件相连（无应力蒙皮效应）。构件自身的屈曲验算保持其长度。`],
+  [/^Sheeting left without effect on (.+)\.$/, (m) => `压型板对 ${m[1].replace(/: not straight/g, ': 不是直的')} 不起作用。`],
+  [/^P100-1\/2013 §4\.6\.2\.2 \(EN 1998-1 4\.4\.2\.2\): θ = Ptot·dr\/\(Vtot·h\) reaches ([\d.]+) on „(.+)” along (X|Y): (.+)$/, (m) => `P100-1/2013 §4.6.2.2 (EN 1998-1 4.4.2.2)：θ = Ptot·dr/(Vtot·h) 在“${m[2]}”沿 ${m[3]} 达到 ${m[1]}：${S5D_TAILS[m[4]] ?? m[4]}`],
   // S5: second order, buckling, support springs (docs/plan-fem.md §14)
   [/^Second order amplifies the sway most in „(.+)”: × ([\d.]+)\.$/, (m) => `二阶效应使„${m[1]}”的侧移放大最多：× ${m[2]}。`],
   [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `1 根构件松弛后出现机构：节点 ${m[1]} (${m[2]}) 无约束。`],

@@ -4,14 +4,14 @@ import { Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { useUi } from '../../app/store';
-import { query } from '../../engine/session';
+import { execute, query } from '../../engine/session';
 import { NotesList } from './NotesList';
 import { useResults } from './useResults';
 import { animateBucklingMode, useMode } from './useMode';
 import type { RunDto } from './results';
 import {
-  CLASS_LABEL, CLASS_TITLE, classTone, formatAmplification, formatAmplifier, globalText, modeCells, modeChoices, needsLook, slackNames, TONE_COLOUR,
-  type BucklingDto, type NonlinearComboDto,
+  CLASS_LABEL, CLASS_TITLE, classTone, formatAmplification, formatAmplifier, globalText, hasPurlinMode, imperfectionsText, modeCells, modeChoices, needsLook, slackNames, TONE_COLOUR, variantLabel, variantsTitle,
+  type BucklingDto, type ImperfectionsDto, type NonlinearComboDto,
 } from './stability';
 
 interface BucklingState { at: RunDto | null; data: BucklingDto | null; loading: boolean; failed: boolean }
@@ -37,7 +37,7 @@ export function StabilitySection() {
   return (
     <div className="stability" data-testid="stability">
       <p><span className="eyebrow">Stability</span></p>
-      {nl && <Nonlinear nl={nl.combinations} secondOrder={nl.secondOrder} />}
+      {nl && <Nonlinear nl={nl.combinations} secondOrder={nl.secondOrder} imperfections={nl.imperfections ?? null} />}
       {run.supports && (
         <p className="muted small" data-testid="stability-supports">
           <span>Supports on springs</span> <span data-no-i18n>{run.supports.supports}</span>{run.supports.slabs > 0 && <> · <span>slabs on Winkler&apos;s bed</span> <span data-no-i18n>{run.supports.slabs}</span></>}
@@ -50,21 +50,35 @@ export function StabilitySection() {
         {loading && <span className="muted small">Finding the critical load factors…</span>}
         {failed && <span className="warn-text small">The critical load factors could not be found.</span>}
       </div>
-      {mine && <Buckling data={mine} />}
+      {run.sheeting && <p className="muted small" data-testid="stability-sheeting-on"><span>Braced by sheeting</span> <span data-no-i18n>{run.sheeting.members}</span></p>}
+      {mine && <Buckling data={mine} sheeted={!!run.sheeting} />}
       <p className="muted small">Indicative: αcr is of the bars alone, at uncracked stiffness; the engineer judges whether second order is needed.</p>
     </div>
   );
 }
 
-function Nonlinear({ nl, secondOrder }: { nl: NonlinearComboDto[]; secondOrder: boolean }) {
+function Nonlinear({ nl, secondOrder, imperfections }: { nl: NonlinearComboDto[]; secondOrder: boolean; imperfections: ImperfectionsDto | null }) {
+  const variants = nl.some((c) => (c.variants?.length ?? 0) > 0);
+  const label = imperfections
+    ? (secondOrder ? 'Each combination solved on its own, second order (P-Δ), with the global imperfections (±X, ±Y)' : 'Each combination solved on its own, with the global imperfections (±X, ±Y)')
+    : (secondOrder ? 'Each combination solved on its own, second order (P-Δ)' : 'Each combination solved on its own');
   return (
     <>
-      <p className="muted small">{secondOrder ? 'Each combination solved on its own, second order (P-Δ)' : 'Each combination solved on its own'}</p>
+      <p className="muted small">{label}</p>
+      {imperfections && (
+        <p className="small" data-testid="stability-imperfections">
+          <span>Global imperfections</span> <b data-no-i18n>{imperfectionsText(imperfections)}</b>
+          {imperfections.neglectable.length > 0 && (
+            <span className="muted"> · <span>EN 1993-1-1 5.3.2(4) would allow leaving them out in</span> <span data-no-i18n>{new Set(imperfections.neglectable.map((n) => n.key)).size}</span> <span>combination(s) (they are kept)</span></span>
+          )}
+        </p>
+      )}
       <div className="seismic-scroll">
         <table className="standards-table" data-testid="stability-nonlinear">
           <thead>
             <tr>
               <th>Combination</th><th>Iterations</th><th>Settled</th>
+              {variants && <th title="The variant of the imperfections with the largest amplification: φ(+X), φ(−X), φ(+Y) or φ(−Y)">Governing</th>}
               {secondOrder && <th title="The largest horizontal displacement of the second-order solution over the first-order one">Amplification</th>}
               <th title="One-way members that went slack">Slack members</th><th title="Supports that lifted off the ground">Lifted supports</th><th />
             </tr>
@@ -75,6 +89,7 @@ function Nonlinear({ nl, secondOrder }: { nl: NonlinearComboDto[]; secondOrder: 
                 <td data-no-i18n>{c.name}</td>
                 <td data-no-i18n>{c.iterations}</td>
                 <td>{c.converged ? '✓' : '✗'}</td>
+                {variants && <td title={variantsTitle(c)} data-no-i18n data-governing={c.governing}>{c.variants?.length ? variantLabel(c.governing) : '–'}</td>}
                 {secondOrder && <td data-no-i18n>{formatAmplification(c.amplification)}</td>}
                 <td data-no-i18n>{c.slack.length > 0 ? slackNames(c).join(', ') : '–'}</td>
                 <td data-no-i18n>{c.lifted.length > 0 ? c.lifted.length : '–'}</td>
@@ -88,7 +103,7 @@ function Nonlinear({ nl, secondOrder }: { nl: NonlinearComboDto[]; secondOrder: 
   );
 }
 
-function Buckling({ data }: { data: BucklingDto }) {
+function Buckling({ data, sheeted }: { data: BucklingDto; sheeted: boolean }) {
   const shown = useMode((s) => s.buckling);
   const shownMode = useMode((s) => s.mode);
   const rows = data.combinations;
@@ -132,6 +147,12 @@ function Buckling({ data }: { data: BucklingDto }) {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+      {!sheeted && hasPurlinMode(rows) && (
+        <div className="row">
+          <button type="button" className="btn" data-testid="stability-sheeting" title="Holds the purlins straight across in the roof plane, between the members they rest on (EN 1993-1-3 10.1); the next run takes it"
+            onClick={() => void execute('analysis.setSheeting', { purlins: true, sheeting: true })}>The sheeting braces the purlins</button>
         </div>
       )}
       {rows.some((c) => c.modes?.some((x) => x.local)) && <p className="muted small">* A mode one member holds more than half of: that member&apos;s own buckling (its check&apos;s), not the frame&apos;s.</p>}

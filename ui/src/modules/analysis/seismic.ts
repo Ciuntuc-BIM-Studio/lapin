@@ -29,7 +29,10 @@ export interface SpectrumDto {
 export interface StoreyDto {
   id: string; name: string; z: number; h: number; mass: number; shear: number[]; force: number[]; drift: number[]; driftMax: number[];
   sls: number[]; uls: number[]; slsLimit: number; ulsLimit: number | null; slsOk: boolean; ulsOk: boolean | null;
+  /** The storey's gravity load Ptot (kN) and the interstorey drift sensitivity coefficient θ along X and Y, with its class (P100-1/2013 §4.6.2.2). */
+  gravity?: number; theta?: number[]; thetaClass?: ThetaClass[]; thetaAmplifier?: (number | null)[];
 }
+export type ThetaClass = 'neglect' | 'amplify' | 'second-order' | 'refused';
 export interface SeismicDto {
   ok: boolean; combination: string | null; base?: number[]; equivalent?: number[]; T1?: number[]; storeys?: StoreyDto[]; closeModes?: number; notes: string[];
 }
@@ -87,6 +90,25 @@ export const reachedMass = (m: ModalDto): [number, number] => {
 export interface StoreyRow {
   id: string; name: string; h: string; mass: string; shearX: string; shearY: string; driftX: string; driftY: string;
   sls: string; slsOk: boolean; slsTitle: string; uls: string; ulsOk: boolean | null; ulsTitle: string;
+  /** θ along X and Y as text, each with its class's tone and tooltip; empty when the engine gave none. */
+  theta: { text: string; tone: 'ok' | 'warn' | 'bad'; title: string }[];
+}
+/** θ's colour by class: neglected green, amplified amber, second order needed or refused red. */
+export const thetaTone = (c: ThetaClass | string | undefined): 'ok' | 'warn' | 'bad' => (c === 'neglect' ? 'ok' : c === 'amplify' ? 'warn' : 'bad');
+export const THETA_TITLE: Record<ThetaClass, string> = {
+  neglect: 'θ = Ptot·dr/(Vtot·h) up to 0.1: second-order effects neglected',
+  amplify: 'θ = Ptot·dr/(Vtot·h) from 0.1 to 0.2: the seismic effects × 1/(1 − θ)',
+  'second-order': 'θ = Ptot·dr/(Vtot·h) from 0.2 to 0.3: a second-order analysis is needed',
+  refused: 'θ = Ptot·dr/(Vtot·h) above 0.3: not allowed, stiffen the structure',
+};
+/** The θ cells of a storey: 0.12 (× 1.14 when the seismic effects are amplified). */
+export function thetaCells(s: StoreyDto): StoreyRow['theta'] {
+  return [0, 1].flatMap((d) => {
+    const t = s.theta?.[d], c = s.thetaClass?.[d];
+    if (t == null || !c || !Number.isFinite(t)) return [];
+    const a = s.thetaAmplifier?.[d];
+    return [{ text: `${t.toFixed(2)}${c === 'amplify' && a != null ? ` (× ${a.toFixed(2)})` : ''}`, tone: thetaTone(c), title: THETA_TITLE[c] ?? '' }];
+  });
 }
 /** The storeys table's rows: the elastic drift and the checks' values (mm) against their limits; the ULS check only with P100 (its limit is null with EN). */
 export const storeyRows = (storeys: StoreyDto[]): StoreyRow[] => storeys.map((s) => ({
@@ -94,6 +116,7 @@ export const storeyRows = (storeys: StoreyDto[]): StoreyRow[] => storeys.map((s)
   driftX: formatDriftMm(s.drift[0]!), driftY: formatDriftMm(s.drift[1]!),
   sls: `${formatDriftMm(s.sls[0]!)} · ${formatDriftMm(s.sls[1]!)}`, slsOk: s.slsOk, slsTitle: `${formatDriftMm(s.slsLimit)} mm`,
   uls: s.ulsLimit == null ? '–' : `${formatDriftMm(s.uls[0]!)} · ${formatDriftMm(s.uls[1]!)}`, ulsOk: s.ulsOk, ulsTitle: s.ulsLimit == null ? '' : `${formatDriftMm(s.ulsLimit)} mm`,
+  theta: thetaCells(s),
 }));
 
 // ── The spectrum chart ──

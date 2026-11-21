@@ -5046,13 +5046,35 @@ export const LO: Record<string, string> = {
   "A buckling mode is 1 to 12.": "ໂໝດການໂກ່ງງໍແມ່ນ 1 ຫາ 12.",
   "No buckling under that combination: no bar is in compression.": "ບໍ່ມີການໂກ່ງງໍພາຍໃຕ້ການປະສົມນັ້ນ: ບໍ່ມີແທ່ງຖືກອັດ.",
   "Second order (P-Δ): each static combination solved with the bars' geometric stiffness of their axial forces, iterated; the cases stay first order. Along a bar the moment keeps its first-order shape between its ends: its own buckling is its check's (EN 1993-1-1 6.3).": "ອັນດັບສອງ (P-Δ): ແຕ່ລະການປະສົມສະຖິດແກ້ດ້ວຍຄວາມແຂງເລຂາຄະນິດຂອງແທ່ງຈາກແຮງຕາມແກນຂອງມັນ, ເຮັດຊ້ຳ; ກໍລະນີຕ່າງໆຍັງເປັນອັນດັບໜຶ່ງ. ຕາມແທ່ງ ໂມເມັນຮັກສາຮູບຮ່າງອັນດັບໜຶ່ງລະຫວ່າງປາຍທັງສອງ: ການໂກ່ງງໍຂອງມັນເອງແມ່ນຂອງການກວດສອບຂອງມັນ (EN 1993-1-1 6.3).",
-  "The global imperfections (EN 1993-1-1 5.3.2) are not added yet: give them as loads (equivalent horizontal forces φ·NEd) where the design calls for them.": "ຄວາມບົກຜ່ອງລວມ (EN 1993-1-1 5.3.2) ຍັງບໍ່ໄດ້ເພີ່ມ: ໃຫ້ເປັນນ້ຳໜັກ (ແຮງແນວນອນທຽບເທົ່າ φ·NEd) ບ່ອນທີ່ການອອກແບບຕ້ອງການ.",
+  "Global imperfections (±X, ±Y)": "ຄວາມບົກຜ່ອງລວມ (±X, ±Y)",
+  "Each ultimate combination solved four times, ±X and ±Y, with the global sway imperfections of EN 1993-1-1 5.3.2 (φ·NEd at the top and −φ·NEd at the foot of each compressed column); a combination's results are the envelope of its four. With or without second order": "ແຕ່ລະການປະສົມຂອງສະພາບຂີດຈຳກັດສູງສຸດຖືກແກ້ສີ່ຄັ້ງ, ±X ແລະ ±Y, ດ້ວຍຄວາມບົກຜ່ອງລວມຂອງການເອນຂ້າງຕາມ EN 1993-1-1 5.3.2 (φ·NEd ທີ່ປາຍເທິງ ແລະ −φ·NEd ທີ່ຕີນຂອງເສົາທີ່ຖືກອັດແຕ່ລະຕົ້ນ); ຜົນຂອງການປະສົມແມ່ນເສັ້ນຫຸ້ມຂອງສີ່ຕົວນັ້ນ. ມີ ຫຼື ບໍ່ມີອັນດັບສອງ",
+  "Global imperfections": "ຄວາມບົກຜ່ອງລວມ",
+  "EN 1993-1-1 5.3.2(4) would allow leaving them out in": "EN 1993-1-1 5.3.2(4) ອະນຸຍາດໃຫ້ຕັດອອກໄດ້ໃນ",
+  "combination(s) (they are kept)": "ການປະສົມ (ຍັງເກັບໄວ້)",
+  "Governing": "ຄວບຄຸມ",
+  "The variant of the imperfections with the largest amplification: φ(+X), φ(−X), φ(+Y) or φ(−Y)": "ແບບຂອງຄວາມບົກຜ່ອງທີ່ມີການຂະຫຍາຍໃຫຍ່ສຸດ: φ(+X), φ(−X), φ(+Y) ຫຼື φ(−Y)",
+  "Each combination solved on its own, with the global imperfections (±X, ±Y)": "ແຕ່ລະການປະສົມແກ້ແຍກກັນ, ມີຄວາມບົກຜ່ອງລວມ (±X, ±Y)",
+  "Each combination solved on its own, second order (P-Δ), with the global imperfections (±X, ±Y)": "ແຕ່ລະການປະສົມແກ້ແຍກກັນ, ອັນດັບສອງ (P-Δ), ມີຄວາມບົກຜ່ອງລວມ (±X, ±Y)",
+  "The sheeting braces the purlins": "ແຜ່ນມຸງຄ້ຳຍັນແປ",
+  "Holds the purlins straight across in the roof plane, between the members they rest on (EN 1993-1-3 10.1); the next run takes it": "ຮັກສາແປໃຫ້ຊື່ໃນລະນາບຂອງຫຼັງຄາ, ລະຫວ່າງອົງປະກອບທີ່ມັນວາງຢູ່ (EN 1993-1-3 10.1); ການຄຳນວນຄັ້ງຕໍ່ໄປຈະນຳໄປໃຊ້",
+  "Braced by sheeting": "ຄ້ຳຍັນດ້ວຍແຜ່ນມຸງ",
+  "Held straight across in its sheeting's plane between the members it rests on (a purlin, a wall rail)": "ຖືກຮັກສາໃຫ້ຊື່ໃນລະນາບຂອງແຜ່ນມຸງຂອງມັນ ລະຫວ່າງອົງປະກອບທີ່ມັນວາງຢູ່ (ແປ, ຄານຝາ)",
+  "Interstorey drift sensitivity coefficient θ = Ptot·dr/(Vtot·h) along X · along Y (P100-1/2013 §4.6.2.2): up to 0.1 neglected, to 0.2 the seismic effects × 1/(1 − θ), to 0.3 second order, above 0.3 not allowed": "ສຳປະສິດຄວາມໄວຕໍ່ການເຄື່ອນທີ່ລະຫວ່າງຊັ້ນ θ = Ptot·dr/(Vtot·h) ຕາມ X · ຕາມ Y (P100-1/2013 §4.6.2.2): ຮອດ 0.1 ບໍ່ສົນ, ຮອດ 0.2 ຜົນແຜ່ນດິນໄຫວ × 1/(1 − θ), ຮອດ 0.3 ອັນດັບສອງ, ເກີນ 0.3 ບໍ່ອະນຸຍາດ",
+  "θ = Ptot·dr/(Vtot·h) up to 0.1: second-order effects neglected": "θ = Ptot·dr/(Vtot·h) ຮອດ 0.1: ບໍ່ສົນຜົນອັນດັບສອງ",
+  "θ = Ptot·dr/(Vtot·h) from 0.1 to 0.2: the seismic effects × 1/(1 − θ)": "θ = Ptot·dr/(Vtot·h) ຈາກ 0.1 ຮອດ 0.2: ຜົນແຜ່ນດິນໄຫວ × 1/(1 − θ)",
+  "θ = Ptot·dr/(Vtot·h) from 0.2 to 0.3: a second-order analysis is needed": "θ = Ptot·dr/(Vtot·h) ຈາກ 0.2 ຮອດ 0.3: ຕ້ອງວິເຄາະອັນດັບສອງ",
+  "θ = Ptot·dr/(Vtot·h) above 0.3: not allowed, stiffen the structure": "θ = Ptot·dr/(Vtot·h) ເກີນ 0.3: ບໍ່ອະນຸຍາດ, ເສີມຄວາມແຂງຂອງໂຄງສ້າງ",
+  "The global imperfections (EN 1993-1-1 5.3.2) are off: analysis.setOptions {imperfections: true} adds them to each ultimate combination as ±X and ±Y variants, or give them as loads (equivalent horizontal forces φ·NEd).": "ຄວາມບົກຜ່ອງລວມ (EN 1993-1-1 5.3.2) ປິດຢູ່: analysis.setOptions {imperfections: true} ເພີ່ມມັນໃສ່ແຕ່ລະການປະສົມຂອງສະພາບຂີດຈຳກັດສູງສຸດເປັນແບບ ±X ແລະ ±Y, ຫຼື ໃຫ້ເປັນນ້ຳໜັກ (ແຮງແນວນອນທຽບເທົ່າ φ·NEd).",
+  "The shell walls' vertical load is not tilted: the imperfections are the bar columns' only (give the walls' as loads where they matter).": "ນ້ຳໜັກແນວຕັ້ງຂອງຝາເປືອກບໍ່ຖືກເອນ: ຄວາມບົກຜ່ອງແມ່ນຂອງເສົາທ່ອນເທົ່ານັ້ນ (ໃຫ້ຂອງຝາເປັນນ້ຳໜັກບ່ອນທີ່ສຳຄັນ).",
+  "Global imperfections on, but no column (a bar within 10° of the vertical) is in compression: none added.": "ເປີດຄວາມບົກຜ່ອງລວມ, ແຕ່ບໍ່ມີເສົາ (ທ່ອນທີ່ຢູ່ໃນ 10° ຂອງແນວຕັ້ງ) ທີ່ຖືກອັດ: ບໍ່ໄດ້ເພີ່ມອັນໃດ.",
+  "With the global imperfections on, a combination's buckling is worked out on its +X variant (its states and axial forces): the imperfections' forces are small and horizontal.": "ເມື່ອເປີດຄວາມບົກຜ່ອງລວມ, ການໂກ່ງງໍຂອງການປະສົມຖືກຄຳນວນໃນແບບ +X ຂອງມັນ (ສະຖານະ ແລະ ແຮງຕາມແກນຂອງມັນ): ແຮງຂອງຄວາມບົກຜ່ອງນ້ອຍ ແລະ ເປັນແນວນອນ.",
+  "Second order (P-Δ) on, with the global sway imperfections (EN 1993-1-1 5.3.2, ±X and ±Y): the steel members' forces are second order; their own buckling (6.3.1) stays with their buckling lengths.": "ເປີດອັນດັບສອງ (P-Δ), ພ້ອມຄວາມບົກຜ່ອງລວມຂອງການເອນຂ້າງ (EN 1993-1-1 5.3.2, ±X ແລະ ±Y): ແຮງຂອງທ່ອນເຫຼັກເປັນອັນດັບສອງ; ການໂກ່ງງໍຂອງມັນເອງ (6.3.1) ຍັງຢູ່ກັບຄວາມຍາວການໂກ່ງງໍຂອງມັນ.",
+  "Second order (P-Δ) on: the steel members' forces are second order; their own buckling (EN 1993-1-1 6.3.1) stays with their buckling lengths; the global imperfections (5.3.2) are off (analysis.setOptions imperfections).": "ເປີດອັນດັບສອງ (P-Δ): ແຮງຂອງທ່ອນເຫຼັກເປັນອັນດັບສອງ; ການໂກ່ງງໍຂອງມັນເອງ (EN 1993-1-1 6.3.1) ຍັງຢູ່ກັບຄວາມຍາວການໂກ່ງງໍຂອງມັນ; ຄວາມບົກຜ່ອງລວມ (5.3.2) ປິດຢູ່ (analysis.setOptions imperfections).",
   "The shells have no geometric stiffness: second order and buckling are the bars' only.": "ແຜ່ນເປືອກບໍ່ມີຄວາມແຂງເລຂາຄະນິດ: ອັນດັບສອງ ແລະ ການໂກ່ງງໍເປັນຂອງແທ່ງເທົ່ານັ້ນ.",
   "Each static combination solved on its own (one-way members, supports that lift): the cases stay linear, every member in, every support seated.": "ແຕ່ລະການປະສົມສະຖິດແກ້ແຍກຕ່າງຫາກ (ທ່ອນທິດທາງດຽວ, ຈຸດຮອງຮັບທີ່ຍົກໄດ້): ກໍລະນີຍັງເປັນເສັ້ນຊື່, ທຸກທ່ອນເຂົ້າ, ທຸກຈຸດຮອງຮັບນັ່ງຢູ່.",
   "Second order: unstable, the loads are past the critical ones (αcr < 1).": "ອັນດັບສອງ: ບໍ່ໝັ້ນຄົງ, ນ້ຳໜັກເກີນຄ່າວິກິດແລ້ວ (αcr < 1).",
   "The one-way members and supports did not settle: they go back to states already tried.": "ທ່ອນທິດທາງດຽວ ແລະ ຈຸດຮອງຮັບບໍ່ລູ່ເຂົ້າ: ພວກມັນກັບໄປຫາສະຖານະທີ່ລອງແລ້ວ.",
   "The modal problem is linear: every one-way member in, every support that may lift seated.": "ບັນຫາໂໝດເປັນເສັ້ນຊື່: ທຸກທ່ອນທິດທາງດຽວເຂົ້າ, ທຸກຈຸດຮອງຮັບທີ່ອາດຍົກນັ່ງຢູ່.",
-  "Second order (P-Δ) on: the steel members' forces are second order; their own buckling (EN 1993-1-1 6.3.1) stays with their buckling lengths, the global imperfections (5.3.2) are not added yet.": "ເປີດອັນດັບສອງ (P-Δ): ແຮງຂອງທ່ອນເຫຼັກເປັນອັນດັບສອງ; ການໂກ່ງງໍຂອງມັນເອງ (EN 1993-1-1 6.3.1) ຍັງຢູ່ກັບຄວາມຍາວການໂກ່ງງໍຂອງມັນ, ຄວາມບົກຜ່ອງລວມ (5.3.2) ຍັງບໍ່ໄດ້ເພີ່ມ.",
   "Linear buckling of the bars (the shells have no geometric stiffness): (K + αcr·Kg(NEd)) φ = 0, NEd of each ultimate combination; αcr ≥ 10: first order will do, 3 to 10: second order or the sway effects × 1/(1 − 1/αcr), below 3: second order (EN 1993-1-1 5.2.1(3), 5.2.2(5B)).": "ການໂກ່ງງໍເສັ້ນຊື່ຂອງແທ່ງ (ແຜ່ນເປືອກບໍ່ມີຄວາມແຂງເລຂາຄະນິດ): (K + αcr·Kg(NEd)) φ = 0, NEd ຂອງແຕ່ລະການປະສົມສູງສຸດ; αcr ≥ 10: ອັນດັບໜຶ່ງກໍພໍ, 3 ຫາ 10: ອັນດັບສອງ ຫຼື ຜົນການເຄື່ອນຂ້າງ × 1/(1 − 1/αcr), ຕ່ຳກວ່າ 3: ອັນດັບສອງ (EN 1993-1-1 5.2.1(3), 5.2.2(5B)).",
   "Only the compressed bars' geometric stiffness is taken (the tension's stiffening left out, on the safe side). A mode one member holds more than half of is that member's own buckling (its check's, EN 1993-1-1 6.3): the class is the frame's first other mode's.": "ໃຊ້ແຕ່ຄວາມແຂງເລຂາຄະນິດຂອງແທ່ງທີ່ຖືກອັດ (ບໍ່ຄິດການເພີ່ມຄວາມແຂງຈາກແຮງດຶງ, ຢູ່ຝັ່ງປອດໄພ). ໂໝດທີ່ທ່ອນດຽວເປັນເຈົ້າຂອງເກີນເຄິ່ງແມ່ນການໂກ່ງງໍຂອງທ່ອນນັ້ນເອງ (ຂອງການກວດສອບຂອງມັນ, EN 1993-1-1 6.3): ຊັ້ນແມ່ນຂອງໂໝດອື່ນທຳອິດຂອງໂຄງ.",
   "Concrete bars at their uncracked stiffness: EN 1992-1-1 5.8.2(6) asks for second-order effects over 10 %, judged with the cracked stiffness.": "ແທ່ງຄອນກຣີດທີ່ຄວາມແຂງກ່ອນແຕກຮ້າວ: EN 1992-1-1 5.8.2(6) ຕ້ອງຄິດຜົນອັນດັບສອງເມື່ອເກີນ 10 %, ຕັດສິນດ້ວຍຄວາມແຂງຫຼັງແຕກຮ້າວ.",
@@ -5081,7 +5103,25 @@ function s5msg(text: string): string {
   return text;
 }
 
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ ຮອດ 1/${a[1]} ຕາມ ${a[2]} (m = ${a[3]})` : `φ ຮອດ 1/${a[1]} ຕາມ ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `ບໍ່ມີເສົາຕາມ ${b[1]}` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "ຜົນແຜ່ນດິນໄຫວ × 1/(1 − θ) ບ່ອນນັ້ນ (ຫຼື ອັນດັບສອງ).",
+  'a second-order analysis is needed there.': "ບ່ອນນັ້ນຕ້ອງວິເຄາະອັນດັບສອງ.",
+  'above 0.3, not allowed: stiffen the structure.': "ເກີນ 0.3, ບໍ່ອະນຸຍາດ: ເສີມຄວາມແຂງຂອງໂຄງສ້າງ.",
+};
 export const LO_PATTERNS: Language['patterns'] = [
+  // S5d: global imperfections, sheeting, θ
+  [/^Global sway imperfections \(EN 1993-1-1 5\.3\.2; the same form for concrete, EN 1992-1-1 5\.2; timber by EN 1995-1-1 5\.4\.4\): each ultimate combination solved four times, ±X and ±Y, with φ·NEd at the top and −φ·NEd at the foot of each compressed column, NEd of its first-order result; h = ([\d.]+) m, αh = ([\d.]+), (.+), (.+)\. A combination's results are the envelope of its four\.$/, (m) => `ຄວາມບົກຜ່ອງລວມຂອງການເອນຂ້າງ (EN 1993-1-1 5.3.2; ຮູບແບບດຽວກັນສຳລັບຄອນກຣີດ, EN 1992-1-1 5.2; ໄມ້ຕາມ EN 1995-1-1 5.4.4): ແຕ່ລະການປະສົມຂອງສະພາບຂີດຈຳກັດສູງສຸດຖືກແກ້ສີ່ຄັ້ງ, ±X ແລະ ±Y, ດ້ວຍ φ·NEd ທີ່ປາຍເທິງ ແລະ −φ·NEd ທີ່ຕີນຂອງເສົາທີ່ຖືກອັດແຕ່ລະຕົ້ນ, NEd ຈາກຜົນອັນດັບໜຶ່ງຂອງມັນ; h = ${m[1]} m, αh = ${m[2]}, ${s5dSeg(m[3])}, ${s5dSeg(m[4])}. ຜົນຂອງການປະສົມແມ່ນເສັ້ນຫຸ້ມຂອງສີ່ຕົວນັ້ນ.`],
+  [/^EN 1993-1-1 5\.3\.2\(4\): in (\d+) ultimate combinations? the horizontal loads are at least 0\.15 of the vertical ones along (X|Y|X and Y): the sway imperfections could be left out there; they are kept, on the safe side\.$/, (m) => `EN 1993-1-1 5.3.2(4): ໃນ ${m[1]} ການປະສົມຂອງສະພາບຂີດຈຳກັດສູງສຸດ ນ້ຳໜັກແນວນອນຢ່າງໜ້ອຍ 0.15 ຂອງແນວຕັ້ງຕາມ ${m[2].replace(' and ', ' ແລະ ')}: ຄວາມບົກຜ່ອງຂອງການເອນຂ້າງອາດຖືກຕັດອອກບ່ອນນັ້ນ; ແຕ່ຍັງເກັບໄວ້, ເພື່ອຄວາມປອດໄພ.`],
+  [/^(\d+) members? braced by (?:its|their) sheeting: held straight across in the sheeting's plane \(along (?:its|their) section's width\) between the members (?:it rests|they rest) on, at (\d+) nodes?; the sheeting ties no member to another \(no stressed skin\)\. The members' own buckling checks keep their lengths\.$/, (m) => `${m[1]} ອົງປະກອບຖືກຄ້ຳຍັນດ້ວຍແຜ່ນມຸງ: ຖືກຮັກສາໃຫ້ຊື່ໃນລະນາບຂອງແຜ່ນມຸງ, ຕາມຄວາມກວ້າງຂອງໜ້າຕັດ, ລະຫວ່າງອົງປະກອບທີ່ມັນວາງຢູ່, ທີ່ ${m[2]} ຈຸດຕໍ່; ແຜ່ນມຸງບໍ່ໄດ້ຜູກອົງປະກອບໃດກັບອີກອັນ (ບໍ່ມີຜົນເປັນແຜ່ນແຂງ). ການກວດການໂກ່ງງໍຂອງອົງປະກອບຍັງຮັກສາຄວາມຍາວຂອງມັນ.`],
+  [/^Sheeting left without effect on (.+)\.$/, (m) => `ແຜ່ນມຸງບໍ່ມີຜົນຕໍ່ ${m[1].replace(/: not straight/g, ': ບໍ່ຊື່')}.`],
+  [/^P100-1\/2013 §4\.6\.2\.2 \(EN 1998-1 4\.4\.2\.2\): θ = Ptot·dr\/\(Vtot·h\) reaches ([\d.]+) on „(.+)” along (X|Y): (.+)$/, (m) => `P100-1/2013 §4.6.2.2 (EN 1998-1 4.4.2.2): θ = Ptot·dr/(Vtot·h) ຮອດ ${m[1]} ທີ່ „${m[2]}” ຕາມ ${m[3]}: ${S5D_TAILS[m[4]] ?? m[4]}`],
   // S5: second order, buckling, support springs (docs/plan-fem.md §14)
   [/^Second order amplifies the sway most in „(.+)”: × ([\d.]+)\.$/, (m) => `ອັນດັບສອງຂະຫຍາຍການເຄື່ອນຂ້າງຫຼາຍທີ່ສຸດໃນ „${m[1]}”: × ${m[2]}.`],
   [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ 1 ທ່ອນຫຼຸດ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[1]} (${m[2]}).`],

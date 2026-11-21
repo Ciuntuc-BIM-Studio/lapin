@@ -5,15 +5,30 @@
  */
 
 /** One combination of the nonlinear solve (analysis.run → nonlinear). */
+export type Variant = '+X' | '-X' | '+Y' | '-Y';
+/** One of the four imperfection variants of an ultimate combination (§14.14). */
+export interface VariantDto {
+  variant: Variant; key: string; name: string; ok: boolean; iterations: number; converged: boolean; amplification: number | null;
+  phi: number; m: number; force: number; neglectable: boolean; message: string | null;
+}
 export interface NonlinearComboDto {
   key: string; name: string; ok: boolean; iterations: number; converged: boolean; amplification: number | null; unstable?: boolean;
   message: string | null; slack: { id: string; sourceId: string; name: string }[]; lifted: { node: string; at: number[] }[];
+  /** With the imperfections on: the variant of the largest amplification, and the four. */
+  governing?: Variant; variants?: VariantDto[];
 }
-export interface NonlinearDto { secondOrder: boolean; combinations: NonlinearComboDto[] }
+/** The global sway imperfections a run took (EN 1993-1-1 5.3.2): φ0, the height h, αh, φ and m along X and Y, and the combinations where 5.3.2(4) would let them go. */
+export interface ImperfectionsDto {
+  phi0: number; h: number; alphaH: number; x: { phi: number; m: number }; y: { phi: number; m: number }; timber?: boolean;
+  neglectable: { key: string; name: string; direction: 'X' | 'Y' }[];
+}
+export interface NonlinearDto { secondOrder: boolean; imperfections?: ImperfectionsDto | null; combinations: NonlinearComboDto[] }
+/** The members braced by their sheeting in a run (analysis.run → sheeting). */
+export interface SheetingRunDto { members: number; nodes: number; spans?: number; skipped: string[] }
 export interface SupportsRunDto { supports: number; nodes: number; winkler: number; slabs: number; slabNodes: number; compressionOnly: number }
 
 export type BucklingClass = 'first-order' | 'amplify' | 'second-order' | 'unstable' | 'none';
-export interface BucklingModeDto { alpha: number; local: { sourceId: string; name: string; share: number } | null }
+export interface BucklingModeDto { alpha: number; local: { sourceId: string; name: string; share: number; purlin?: boolean } | null }
 export interface BucklingComboDto {
   key: string; name: string; ok: boolean; alpha: number[]; modes: BucklingModeDto[]; global: number | null; globalAbove: number | null;
   class: BucklingClass; amplifier: number | null; compressed: boolean; converged: boolean; message: string | null;
@@ -72,6 +87,21 @@ export function modeCells(c: BucklingComboDto, count = 3): { alpha: string; loca
   }
   return out;
 }
+
+/** φ as the engineer writes it: 1/231 (N = 1/φ rounded); a dash when there is no column. */
+export const formatPhi = (phi: number | null | undefined): string => (phi != null && phi > 0 && Number.isFinite(phi) ? `1/${Math.round(1 / phi)}` : '–');
+/** φ and m along X and Y: "X 1/231 (m = 4) · Y 1/200 (m = 2)"; no m with timber (it has none). */
+export function imperfectionsText(i: Pick<ImperfectionsDto, 'x' | 'y' | 'h' | 'alphaH'>): string {
+  const along = (d: string, v: { phi: number; m: number }) => `${d} ${formatPhi(v.phi)}${v.phi > 0 && v.m > 0 ? ` (m = ${v.m})` : ''}`;
+  return `φ ${along('X', i.x)} · ${along('Y', i.y)} · h = ${Math.round(i.h * 100) / 100} m · αh = ${Math.round(i.alphaH * 1000) / 1000}`;
+}
+/** A variant's name as the engine writes the combination's: φ(+X), φ(−X) with the typographic minus. */
+export const variantLabel = (v: string | null | undefined): string => (v ? `φ(${v.replace('-', '−')})` : '–');
+/** The four variants' amplifications, for a row's tooltip: "φ(+X) × 1.2 · φ(−X) × 1.1 …" (the names alone when first order). */
+export const variantsTitle = (c: Pick<NonlinearComboDto, 'variants'>): string | undefined =>
+  c.variants?.length ? c.variants.map((v) => (v.amplification != null ? `${variantLabel(v.variant)} ${formatAmplifier(v.amplification)}` : variantLabel(v.variant))).join(' · ') : undefined;
+/** Whether a buckling result shows a local mode of a roof purlin: the sheeting could brace it. */
+export const hasPurlinMode = (rows: Pick<BucklingComboDto, 'modes'>[]): boolean => rows.some((c) => c.modes?.some((m) => m.local?.purlin === true));
 
 /** The slack members' names (a combination's one-way members out of work), each once. */
 export const slackNames = (c: Pick<NonlinearComboDto, 'slack'>): string[] => [...new Set(c.slack.map((s) => s.name || s.sourceId))];

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  blend, formatDriftMm, formatHz, formatPercent, formatPeriod, modeRows, niceStep, oscillation, readNumber, reachedMass, restPoints, spectrumChart, storeyRows, ticks,
+  blend, formatDriftMm, formatHz, formatPercent, formatPeriod, modeRows, niceStep, oscillation, readNumber, reachedMass, restPoints, spectrumChart, storeyRows, thetaCells, thetaTone, ticks,
   type ModalDto, type SpectrumDto, type StoreyDto,
 } from './seismic';
 import { pickChoices, pickFrom, pickValue, pickArgs, validPick, type RunDto } from './results';
@@ -50,6 +50,25 @@ describe('the storeys table', () => {
     expect(r!.uls).toBe('–');
     expect(r!.ulsOk).toBeNull();
     expect(r!.slsOk).toBe(false);
+  });
+});
+
+describe('the storeys\' θ (P100-1/2013 §4.6.2.2)', () => {
+  it('colours the class: neglected green, amplified amber, second order or refused red', () => {
+    expect(thetaTone('neglect')).toBe('ok');
+    expect(thetaTone('amplify')).toBe('warn');
+    expect(thetaTone('second-order')).toBe('bad');
+    expect(thetaTone('refused')).toBe('bad');
+  });
+  it('writes θ along X and Y, with the amplifier where the seismic effects are amplified', () => {
+    const cells = thetaCells(storey({ theta: [0.0712, 0.1534], thetaClass: ['neglect', 'amplify'], thetaAmplifier: [null, 1.1812] }));
+    expect(cells.map((c) => c.text)).toEqual(['0.07', '0.15 (× 1.18)']);
+    expect(cells.map((c) => c.tone)).toEqual(['ok', 'warn']);
+    expect(cells[1]!.title).toContain('1/(1 − θ)');
+  });
+  it('has no cells when the engine gave no θ, and reaches the table\'s rows', () => {
+    expect(thetaCells(storey())).toEqual([]);
+    expect(storeyRows([storey({ theta: [0.25, 0.35], thetaClass: ['second-order', 'refused'], thetaAmplifier: [null, null] })])[0]!.theta.map((c) => c.tone)).toEqual(['bad', 'bad']);
   });
 });
 

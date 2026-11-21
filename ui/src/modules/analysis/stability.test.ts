@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  actsIn, classTone, formatAlpha, formatAmplifier, formatSoilRange, formatStiffness, globalText, modeCells, onlyArg, ownCompressionOnly, ownSprings, ownWinkler,
+  actsIn, classTone, formatAlpha, formatAmplifier, formatPhi, hasPurlinMode, imperfectionsText, variantLabel, variantsTitle, formatSoilRange, formatStiffness, globalText, modeCells, onlyArg, ownCompressionOnly, ownSprings, ownWinkler,
   parseSpring, parseWinkler, slackNames, withSpring, type BucklingComboDto,
 } from './stability';
 import { orderNotes } from './results';
@@ -87,5 +87,34 @@ describe('the S5 notes', () => {
       'Supports lifted in 1 combination(s): 2 node(s).',
     ]);
     expect(warnings).toBe(3);
+  });
+});
+
+describe('the global imperfections', () => {
+  it('writes φ as 1/N, and a dash where there is no column', () => {
+    expect(formatPhi(1 / 231.4)).toBe('1/231');
+    expect(formatPhi(0.005)).toBe('1/200');
+    expect(formatPhi(0)).toBe('–');
+    expect(formatPhi(null)).toBe('–');
+  });
+  it('gives φ and m along X and Y with h and αh, with no m for timber', () => {
+    expect(imperfectionsText({ x: { phi: 1 / 231, m: 4 }, y: { phi: 1 / 200, m: 0 }, h: 6.5, alphaH: 0.7845 })).toBe('φ X 1/231 (m = 4) · Y 1/200 · h = 6.5 m · αh = 0.785');
+    expect(imperfectionsText({ x: { phi: 0, m: 0 }, y: { phi: 0.004, m: 2 }, h: 3, alphaH: 1 })).toBe('φ X – · Y 1/250 (m = 2) · h = 3 m · αh = 1');
+  });
+  it('names the governing variant with the typographic minus, and lists the four amplifications', () => {
+    expect(variantLabel('+X')).toBe('φ(+X)');
+    expect(variantLabel('-Y')).toBe('φ(−Y)');
+    expect(variantLabel(undefined)).toBe('–');
+    const v = (variant: '+X' | '-X', amplification: number | null) => ({ variant, key: '', name: '', ok: true, iterations: 1, converged: true, amplification, phi: 0, m: 0, force: 0, neglectable: false, message: null });
+    expect(variantsTitle({ variants: [v('+X', 1.2), v('-X', 1.1)] })).toBe('φ(+X) × 1.2 · φ(−X) × 1.1');
+    expect(variantsTitle({ variants: [v('+X', null)] })).toBe('φ(+X)');
+    expect(variantsTitle({})).toBeUndefined();
+  });
+});
+
+describe('the sheeting', () => {
+  it('offers itself when a mode is a roof purlin\'s own', () => {
+    expect(hasPurlinMode([combo()])).toBe(false);
+    expect(hasPurlinMode([combo({ modes: [{ alpha: 3, local: { sourceId: 'p1', name: 'Purlin', share: 0.9, purlin: true } }] })])).toBe(true);
   });
 });
