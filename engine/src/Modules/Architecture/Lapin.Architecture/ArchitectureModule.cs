@@ -676,6 +676,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // What the tag rules read of a door or a window: its width, height and sill (issue #72).
         TagRules.AddMeasure(IfcClass.Door, OpeningMarkers.Measure);
         TagRules.AddMeasure(IfcClass.Window, OpeningMarkers.Measure);
+        // The clear opening and the wall opening (forum topic 204) as fields every tag, label, schedule and formula reads, in mm.
+        OpeningMarkers.RegisterFields();
         // Room separation lines (forum topic 80): virtual walls rooms are bounded by.
         RoomDividerElements.Register(r);
         r.Class(new(Rooms.Class, "Room",

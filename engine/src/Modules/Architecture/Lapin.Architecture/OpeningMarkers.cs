@@ -65,13 +65,9 @@ public static class OpeningMarkers
         var mark = new ViewMark(tag.Id);
         mark.Line(a, b, "TAG", Pens.Default.Hatch, color);
 
-        var values = new Dictionary<string, string>
-        {
-            ["width"] = TagText.Length(p.Spec?.Width ?? p.Width, type.Unit, c.Book.Units),
-            ["height"] = TagText.Length(p.Spec?.Height ?? p.Height, type.Unit, c.Book.Units),
-            // Over what it is measured from (forum topic 192): the finished floor's, or the wall's base.
-            ["sill"] = TagText.Length(p.FillSill - p.SillBase, type.Unit, c.Book.Units),
-        };
+        // Its sizes in the tag type's unit (forum topic 204: the clear opening and the wall opening beside {width} and {height}).
+        var values = Sizes(c.Model, p, wall).ToDictionary(kv => kv.Key, kv => TagText.Length(kv.Value, type.Unit, c.Book.Units), StringComparer.OrdinalIgnoreCase);
+        foreach (var key in SizeKeys) values.TryAdd(key, "");
         var h = style.Height * mm;
         var data = new JsonArray();
         data.Add((JsonNode)LabelParts.EndData("a", a, a0, outward * -1, mm, LabelParts.Of(parts, "a")));
@@ -143,23 +139,78 @@ public static class OpeningMarkers
         return true;
     }
 
+    /// <summary>The sizes a door's or window's marker writes, its symbol's texts and its tag rules read (<see cref="Sizes"/>).</summary>
+    public static readonly string[] SizeKeys = ["width", "height", "sill", "openingWidth", "openingHeight", "clearWidth", "clearHeight", "sillFinished"];
+
+    /// <summary>
+    /// A door's or window's sizes, in metres, by their tokens (forum topic 204):
+    /// <list type="bullet">
+    /// <item><c>width</c>, <c>height</c>: its own size (its type's, or its own), as before;</item>
+    /// <item><c>openingWidth</c>, <c>openingHeight</c>: the wall opening, the hole in the wall it fills: its size, or the hole an
+    /// imported file cuts round it where that differs;</item>
+    /// <item><c>clearWidth</c>, <c>clearHeight</c>: the clear opening inside its frame (<see cref="Joinery.ClearOpening"/>); none for
+    /// one without a configuration (nothing says where its frame is);</item>
+    /// <item><c>sill</c>: its sill over what it is measured from (forum topic 192), as before; <c>sillFinished</c>: over the wall's
+    /// finished floor, whatever it is measured from (the structural level when the wall has none).</item>
+    /// </list>
+    /// </summary>
+    public static IReadOnlyDictionary<string, double> Sizes(IModelView m, Openings.Placed p, Entity? wall)
+    {
+        var o = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["width"] = p.Spec?.Width ?? p.Width,
+            ["height"] = p.Spec?.Height ?? p.Height,
+            ["sill"] = p.FillSill - p.SillBase,
+            ["openingWidth"] = p.Width,
+            ["openingHeight"] = p.Height,
+            ["sillFinished"] = p.FillSill - (wall is { Class: IfcClass.Wall } ? OpeningSills.FinishedFloor(m, wall) : 0),
+        };
+        if (p.Spec is { } spec) (o["clearWidth"], o["clearHeight"]) = Joinery.ClearOpening(spec);
+        return o;
+    }
+
+    /// <summary>A door's or window's sizes (<see cref="Sizes"/>); null when it stands in no opening.</summary>
+    public static IReadOnlyDictionary<string, double>? SizesOf(IModelView m, Entity fill) =>
+        Openings.OpeningOf(m, fill.Id) is { } opening ? Sizes(m, Openings.Place(m, opening), Openings.WallOf(m, opening.Id)) : null;
+
+    /// <summary>
+    /// What the tag rules' conditions read of a door or a window (issue #72), in metres: its sizes as its marker writes them
+    /// (<see cref="Sizes"/>: <c>width</c>, <c>height</c>, <c>sill</c>, <c>clearWidth</c>, <c>openingWidth</c>…); null for any
+    /// other name, or a door or window in no opening.
+    /// </summary>
+    public static double? Measure(IModelView m, Entity fill, string name)
+    {
+        var key = TagText.Squash(name);
+        if (SizeKeys.FirstOrDefault(k => TagText.Squash(k) == key) is not { } known || SizesOf(m, fill) is not { } sizes) return null;
+        return sizes.TryGetValue(known, out var v) ? v : null;
+    }
+
+    /// <summary>
+    /// The sizes beyond a door's or window's own attributes as worked-out fields (forum topic 204), in millimetres as the sills'
+    /// are: box tags, labels, schedules, the fields' pickers and formulas read them by the same tokens as the marker (which
+    /// writes them in its tag type's unit). Its <c>width</c> and <c>height</c> stay what they were.
+    /// </summary>
+    public static void RegisterFields()
+    {
+        (string Key, string Label)[] fields =
+        [
+            ("clearWidth", "Clear opening width, inside the frame (mm)"), ("clearHeight", "Clear opening height, inside the frame (mm)"),
+            ("openingWidth", "Wall opening width (mm)"), ("openingHeight", "Wall opening height (mm)"),
+            ("sillFinished", "Sill over the finished floor (mm)"),
+        ];
+        foreach (var cls in new[] { IfcClass.Door, IfcClass.Window })
+            foreach (var (key, label) in fields)
+            {
+                var k = key;
+                DerivedFields.Add(cls, new(k, label, (m, e) => SizesOf(m, e) is { } s && s.TryGetValue(k, out var v) ? DerivedFields.Number(Math.Round(v * 1000, 3)) : null));
+            }
+    }
+
     /// <summary>
     /// Markers for every door and window of a plan's storey not yet tagged in
     /// it: each with the type named for its kind, else the standards' type for
     /// its class. Returns how many were made.
     /// </summary>
-    /// <summary>
-    /// What the tag rules' conditions read of a door or a window (issue #72), in metres: its <c>width</c> and <c>height</c> (its
-    /// type's size, as its marker writes them) and its <c>sill</c>; null for any other name, or a door or window in no opening.
-    /// </summary>
-    public static double? Measure(IModelView m, Entity fill, string name)
-    {
-        var key = TagText.Squash(name);
-        if (key is not ("width" or "height" or "sill") || Openings.OpeningOf(m, fill.Id) is not { } opening) return null;
-        var p = Openings.Place(m, opening);
-        return key switch { "width" => p.Spec?.Width ?? p.Width, "height" => p.Spec?.Height ?? p.Height, _ => p.FillSill - p.SillBase };
-    }
-
     public static int TagAll(ICommandContext ctx, Entity view, string? doorType, string? windowType)
     {
         var m = ctx.Model;
