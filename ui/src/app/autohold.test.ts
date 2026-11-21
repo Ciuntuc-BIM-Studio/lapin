@@ -1,7 +1,8 @@
 /** Autohold: a drag that goes on without the button, and the Tab rule that keeps it from colliding with the live box's Tab (issue 86). */
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { autoholdOn, autoholdSet, autoholdTab, clickEnds, enterEffect, isDragOwner, releaseEnds, tabMeaning } from './autohold';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AUTOHOLD_NOTICE, NOTICE_MS, autoholdCancel, onAutoholdCancel, autoholdOn, autoholdSet, autoholdTab, clickEnds, enterEffect, isDragOwner, releaseEnds, tabMeaning } from './autohold';
+import { useUi } from './store';
 import { keyIntent, type KeyPress, type KeySnapshot } from './keys';
 import { resolveKeymap } from './shortcuts';
 import { liveAcceptAtCursor, liveBegin, liveCursor, liveEnd, useLive } from '../viewport/liveInput';
@@ -105,5 +106,66 @@ describe('the autohold state', () => {
     expect(got[1].y).toBeCloseTo(1, 9);
     liveEnd();
     expect(liveAcceptAtCursor()).toBe(false);
+  });
+});
+
+describe('Esc in autohold', () => {
+  it('cancels the drag: the views put it back, the box closes, autohold is off, the Esc is spent', () => {
+    const undone = vi.fn();
+    const off = onAutoholdCancel(undone);
+    liveBegin('grip', { x: 0, y: 0 }, () => undefined);
+    autoholdSet(true);
+    expect(autoholdCancel()).toBe(true);
+    expect(undone).toHaveBeenCalledTimes(1);
+    expect(useLive.getState().owner).toBeNull();
+    expect(autoholdOn()).toBe(false);
+    off();
+  });
+
+  it('with autohold off it does nothing (an ordinary drag has its own Esc)', () => {
+    const undone = vi.fn();
+    const off = onAutoholdCancel(undone);
+    liveBegin('drag', { x: 0, y: 0 }, () => undefined);
+    expect(autoholdCancel()).toBe(false);
+    expect(undone).not.toHaveBeenCalled();
+    expect(useLive.getState().owner).toBe('drag');
+    off();
+  });
+
+  it('a view that was removed is not asked again', () => {
+    const undone = vi.fn();
+    onAutoholdCancel(undone)();
+    liveBegin('drag', { x: 0, y: 0 }, () => undefined);
+    autoholdSet(true);
+    autoholdCancel();
+    expect(undone).not.toHaveBeenCalled();
+  });
+});
+
+describe('the Autohold toast', () => {
+  afterEach(() => { vi.useRealTimers(); useUi.setState({ notice: null }); });
+
+  it('goes with autohold, or after two seconds at the latest', () => {
+    vi.useFakeTimers();
+    liveBegin('drag', { x: 0, y: 0 }, () => undefined);
+    autoholdTab();
+    expect(useUi.getState().notice).toBe(AUTOHOLD_NOTICE);
+    vi.advanceTimersByTime(NOTICE_MS + 10);
+    expect(useUi.getState().notice).toBeNull();
+    liveEnd();
+    autoholdSet(false);
+    liveBegin('drag', { x: 0, y: 0 }, () => undefined);
+    autoholdTab();
+    expect(useUi.getState().notice).toBe(AUTOHOLD_NOTICE);
+    liveEnd('drag');
+    expect(useUi.getState().notice).toBeNull();
+  });
+
+  it('leaves another notice alone', () => {
+    liveBegin('drag', { x: 0, y: 0 }, () => undefined);
+    autoholdTab();
+    useUi.setState({ notice: 'Saved' });
+    liveEnd();
+    expect(useUi.getState().notice).toBe('Saved');
   });
 });

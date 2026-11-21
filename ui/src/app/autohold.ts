@@ -14,7 +14,8 @@
  */
 
 import { create } from 'zustand';
-import { useLive } from '../viewport/liveInput';
+import { liveEnd, useLive } from '../viewport/liveInput';
+import { notify, useUi } from './store';
 
 /** The live box's owners that are drags (the others are tools drawing a segment). */
 export const DRAG_OWNERS: readonly string[] = ['drag', 'grip'];
@@ -41,7 +42,41 @@ export function enterEffect(autohold: boolean, typed: boolean): 'typed' | 'point
 
 export const useAutohold = create<{ on: boolean }>(() => ({ on: false }));
 export const autoholdOn = (): boolean => useAutohold.getState().on;
-export const autoholdSet = (on: boolean): void => { if (useAutohold.getState().on !== on) useAutohold.setState({ on }); };
+export const autoholdSet = (on: boolean): void => {
+  if (useAutohold.getState().on === on) return;
+  useAutohold.setState({ on });
+  if (!on) noticeClear();
+};
+
+/** The toast that says what Tab did: it goes when autohold ends, or after NOTICE_MS at the latest. */
+export const AUTOHOLD_NOTICE = 'Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept';
+export const NOTICE_MS = 2000;
+let noticeTimer: ReturnType<typeof setTimeout> | null = null;
+function noticeClear(): void {
+  if (noticeTimer) { clearTimeout(noticeTimer); noticeTimer = null; }
+  if (useUi.getState().notice === AUTOHOLD_NOTICE) notify(null);
+}
+function noticeShow(): void {
+  notify(AUTOHOLD_NOTICE);
+  if (noticeTimer) clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(noticeClear, NOTICE_MS);
+}
+
+/** What ends a held drag in each view that owns one (the selection's body, a grip): put back where it was, no preview left. */
+const cancellers = new Set<() => void>();
+export function onAutoholdCancel(fn: () => void): () => void { cancellers.add(fn); return () => { cancellers.delete(fn); }; }
+
+/**
+ * Esc during autohold: the drag is cancelled (the element or grip stays where it was), the live box closes, autohold is off.
+ * True when it was on (the Esc is spent), whether the focus is on the page or in one of the box's fields.
+ */
+export function autoholdCancel(): boolean {
+  if (!autoholdOn()) return false;
+  for (const fn of [...cancellers]) fn();
+  liveEnd();
+  autoholdSet(false);
+  return true;
+}
 
 // Autohold belongs to the drag that owns the box: when the box goes (the drag was dropped, cancelled) or changes hands, it ends.
 useLive.subscribe((cur, prev) => {
@@ -53,5 +88,6 @@ export function autoholdTab(): boolean {
   const owner = useLive.getState().owner;
   if (tabMeaning(owner, autoholdOn()) !== 'autohold') return false;
   autoholdSet(true);
+  noticeShow();
   return true;
 }

@@ -29,7 +29,7 @@ import { dropGrips, groupGrips, movers, runSteps, setHotRemove, useGripRev, type
 import { edgeOfGrip, nearestOnLine } from './gripKit';
 import { askLength } from '../shell/AskBox';
 import { openContextMenu, type MenuItem } from '../shell/ContextMenu';
-import { autoholdOn, clickEnds, releaseEnds } from '../app/autohold';
+import { autoholdOn, clickEnds, onAutoholdCancel, releaseEnds } from '../app/autohold';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { traceBegin, traceEnd } from './moveTrace';
 import { frameArg, useCad } from './cad/session';
@@ -160,6 +160,8 @@ export function useGripEditor(o: GripEditorOptions) {
 
   // A view that goes while a grip is dragged takes its trace with it.
   useEffect(() => () => { traceEnd('grip'); endPreview(); }, []);
+  // Esc in autohold (issue 86): the grip goes back where it was, nothing is dropped.
+  useEffect(() => onAutoholdCancel(() => { setDrag(null); setOffsetShown(null); offsetAsk.current++; endPreview(); traceEnd('grip'); liveEnd('grip'); }), []);
   // In 2D, the drag told to what follows it (a door's temporary dimensions, decision 511).
   useEffect(() => {
     if (o.zOf) return;

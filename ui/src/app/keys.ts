@@ -15,7 +15,7 @@
  */
 
 import { useEffect } from 'react';
-import { notify, select, useUi } from './store';
+import { select, useUi } from './store';
 import { findTool, hotbarIds, useToolTick } from '../platform/modules';
 import { reach } from './hotbar';
 import { cancel, spaceStep, submit, useCad } from '../viewport/cad/session';
@@ -25,7 +25,7 @@ import { keymap, runCommand } from './commands';
 import { useKeymap } from './shortcuts';
 import { valueOwner } from './valueOwner';
 import { installClickOut } from './clickOut';
-import { autoholdOn, autoholdTab, enterEffect, tabMeaning } from './autohold';
+import { autoholdCancel, autoholdOn, autoholdTab, enterEffect, tabMeaning } from './autohold';
 import { holdCancel, holdPointer, holdWheel, tabHoldDown, tabHoldUp } from '../viewport/tabHold';
 
 /** What `keyIntent` needs to know about the key press. */
@@ -262,7 +262,7 @@ export function carryOut(intent: KeyIntent): void {
     case 'liveFocus': useLive.setState((l) => { const fs = liveFields(l); return { focus: intent.field && fs.includes(intent.field) ? intent.field : fs[(fs.indexOf(l.focus) + 1) % fs.length] }; }); break;
     case 'liveClear': useLive.setState({ len: '', ang: '', rel: '' }); break;
     case 'liveCommit': liveCommit(); break;
-    case 'autohold': if (autoholdTab()) notify('Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept'); break;
+    case 'autohold': autoholdTab(); break;
     case 'liveAccept': liveAcceptAtCursor(); break;
     case 'liveMode': liveToggleMode(); break;
   }
@@ -300,7 +300,7 @@ export function handleKeydown(e: KeyEventLike, snap: () => KeySnapshot = snapsho
 
 export function useShortcuts(): void {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') holdCancel(); handleKeydown(e); toolAtKeydown = null; };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { holdCancel(); if (autoholdCancel()) { e.preventDefault(); toolAtKeydown = null; return; } } handleKeydown(e); toolAtKeydown = null; };
     const first = () => { toolAtKeydown = useUi.getState().tool; };
     window.addEventListener('keydown', first, true);
     window.addEventListener('keydown', onKey);

@@ -39,7 +39,7 @@ import { useHighlight } from '../app/highlight';
 import { markSelected, nearestOf, pickAllAt, pickAt, regionIds } from './planPick';
 import { clearCycle, cycledId, cycleOpen, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
 import { holdRefresh } from './tabHold';
-import { autoholdOn, clickEnds, releaseEnds } from '../app/autohold';
+import { autoholdOn, clickEnds, onAutoholdCancel, releaseEnds } from '../app/autohold';
 import { markOwner } from './planPick';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
@@ -609,6 +609,8 @@ export function PlanView() {
   useEffect(() => () => liveEnd('tool'), []);
   // A plan that goes while the selection is dragged takes the drag's trace with it.
   useEffect(() => () => { if (carrying()) carryEnd(); }, []);
+  // Esc in autohold (issue 86), from any focus: the selection is not moved.
+  useEffect(() => onAutoholdCancel(() => { if (carrying()) { drag.current = null; carryEnd(); } }), []);
 
   // Direct editing: the selection's axes, outlines and grips (none while a tool or a command is busy).
   const editor = useGripEditor({

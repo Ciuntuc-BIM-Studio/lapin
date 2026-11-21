@@ -47,7 +47,7 @@ import { clearLiveRise, inModel, setLiveRise, viewFrameAt } from './viewFrame';
 import { markIds, markOwner, markSelected } from './planPick';
 import { cycledId, cycleOpen, clearCycle, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
 import { holdRefresh } from './tabHold';
-import { autoholdOn, clickEnds, releaseEnds } from '../app/autohold';
+import { autoholdOn, clickEnds, onAutoholdCancel, releaseEnds } from '../app/autohold';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
 import { DrawingOverlays } from './DrawingOverlays';
@@ -286,6 +286,8 @@ export function DrawingView() {
   useEffect(() => () => liveEnd('tool'), []);
   // A view that goes while the selection is dragged takes the drag's trace with it.
   useEffect(() => () => { if (carrying()) carryEnd(); clearLiveRise(); }, []);
+  // Esc in autohold (issue 86), from any focus: the selection is not moved.
+  useEffect(() => onAutoholdCancel(() => { if (carrying()) { drag.current = null; carryEnd(); clearLiveRise(); } }), []);
   const dragTrace = useTrace((s) => s.trace?.owner === 'drag');
 
   /**
