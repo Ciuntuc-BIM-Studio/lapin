@@ -21,6 +21,8 @@ import { ShellContours3D } from './ShellContours3D';
 import { ShellContoursPlan } from './ShellContours';
 import { ReleasesSection } from './ReleasesSection';
 import { ChecksProps } from './ChecksProps';
+import { SupportSection } from './SupportSection';
+import { SUPPORT_CLASSES } from './stability';
 import { Utilisation3D } from './Utilisation3D';
 import { UtilisationPlan } from './Utilisation3D';
 
@@ -86,6 +88,7 @@ const analysis: LapinModule = {
   propertySections: [
     { id: 'occupancy', label: 'Imposed load', classes: ['IfcSpace'], component: OccupancySection },
     { id: 'analysis', label: 'Analysis', classes: [...BAR_CLASSES], component: ReleasesSection },
+    { id: 'analysisSupport', label: 'Analysis support', classes: [...SUPPORT_CLASSES], component: SupportSection },
     { id: 'analysisChecks', label: 'Design checks', classes: [...BAR_CLASSES, ...DESIGN_CLASSES], component: ChecksProps },
   ],
 };

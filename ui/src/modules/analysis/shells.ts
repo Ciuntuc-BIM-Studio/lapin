@@ -65,7 +65,7 @@ export function shellExtremes(surfaces: ShellResultDto[], q: ShellQuantity): { m
   return max && min ? { max, min } : null;
 }
 
-export interface AnalysisOptionsDto { shells: 'both' | 'slabs' | 'walls' | 'none'; meshSize: number; perSide: number }
+export interface AnalysisOptionsDto { shells: 'both' | 'slabs' | 'walls' | 'none'; meshSize: number; perSide: number; secondOrder?: boolean }
 export const SHELL_CHOICES = ['both', 'slabs', 'walls', 'none'] as const;
 export const SHELL_CHOICE_LABEL: Record<typeof SHELL_CHOICES[number], string> = {
   both: 'Slabs and walls', slabs: 'Slabs only', walls: 'Walls only', none: 'None (slabs by the 45° rule, walls as supports)',

@@ -32,6 +32,10 @@ export function ShellOptions() {
         <input aria-label="Mesh size" data-testid="analysis-mesh" style={{ width: 52 }} value={size} onChange={(e) => setSize(e.target.value)} onBlur={apply} onKeyDown={(e) => { if (e.key === 'Enter') apply(); }} />
         <span className="muted" data-no-i18n>m</span>
       </label>
+      <label className="row small" title="Each combination solved with the bars' geometric stiffness of their axial forces (P-Δ), iterated; the cases stay first order">
+        <input type="checkbox" data-testid="analysis-second-order" checked={o.secondOrder === true} onChange={(e) => void execute('analysis.setOptions', { secondOrder: e.target.checked ? true : null })} />
+        <span>Second order (P-Δ)</span>
+      </label>
     </div>
   );
 }
