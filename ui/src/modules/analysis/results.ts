@@ -1,5 +1,6 @@
 /** Structural analysis, stage S1b (docs/plan-fem.md §9.6): the pure parts of the results interface: the engine's reports, the picker, the diagrams' geometry, the end releases. */
 
+import type { NonlinearDto, SupportsRunDto } from './stability';
 import type { AnalysisOptionsDto, ShellResultDto, ShellsRunDto } from './shells';
 
 export interface RunCaseDto { id: string; code: string; sumLoads: number[]; sumReactions: number[] | null; balance: number | null; balanced: boolean | null; unmapped: number }
@@ -14,6 +15,8 @@ export interface RunDto {
   cases: RunCaseDto[]; combinations: RunComboDto[]; mechanism?: MechanismDto; refused?: RefusedDto[]; notes: string[];
   /** The slabs and walls analysed as shells (S2b), and the options the run took. */
   shells?: ShellsRunDto; settings?: AnalysisOptionsDto;
+  /** S5: the combinations solved one by one (second order, one-way members, supports that lift), and the supports on springs. */
+  nonlinear?: NonlinearDto; supports?: SupportsRunDto;
 }
 
 export interface Extreme { frame: string; x: number; value: number }
@@ -212,7 +215,7 @@ export function placeLabels(labels: readonly LabelCandidate[], charWidth = 7, he
 }
 
 /** A note that asks the engineer to look (something refused, left out, unbalanced, not reached), not one that only says how the analysis was made. */
-const WARNING = /refused|does not start|do not balance|could not|find nothing|left out|did not run|mechanism|less than 90|nothing carries|in no case|holds nothing|no E for|no density|no Poisson|check that|thinner than|say nothing of their load|not assembled|no mass/i;
+const WARNING = /refused|does not start|do not balance|could not|find nothing|left out|did not run|mechanism|less than 90|nothing carries|in no case|holds nothing|no E for|no density|no Poisson|check that|thinner than|say nothing of their load|not assembled|no mass|must be taken|not settled|did not settle|loads are past the critical/i;
 
 /** The notes, each once, those that ask to be looked at first (in their order), then the rest; how many ask. */
 export function orderNotes(notes: readonly string[]): { notes: { text: string; warning: boolean }[]; warnings: number } {

@@ -139,6 +139,39 @@ After a run, the **Checks** section of the **Analysis results** dialog checks th
 
 > The checks are indicative. Lapin takes the Eurocodes' recommended values; the national annexes' values, the loads and the design values are yours to verify before you rely on them.
 
+## Second order and buckling
+
+Two questions decide whether a frame can be analysed to first order: how far its loads are from the critical ones, and how much its sway adds. The **Stability** section of the **Analysis results** dialog answers the first, and the **Second order (P-Δ)** tick box, beside the shell options (the analysis options), the second.
+
+![The Stability section](shots/analysis-stability.webp)
+
+**Second order (P-Δ).** With the box ticked, each static combination is solved on its own with the bars' geometric stiffness of their axial forces, and iterated until the forces stop changing. The table lists, for each combination, the iterations, whether it settled, and the **amplification**: the largest horizontal displacement over its first-order value. The load cases stay first order. Along a bar the moment keeps its first-order shape between its ends: a bar's own buckling is its check's (EN 1993-1-1 6.3). The global imperfections (EN 1993-1-1 5.3.2) are not added yet: give them as loads where the design calls for them. A combination that is unstable, or a mechanism, is left out of the envelopes and the checks, and the notes say so in red.
+
+**The critical load factors.** **Find the critical load factors** works out, for each ultimate combination, the factor αcr that brings its loads to the ones the frame buckles under. It can take a few seconds on a big model, so it runs when you ask. The table gives the first three (α1, α2, α3), the **global αcr** (the first mode that no single member holds more than half of: the frame's own; an α marked * is one member's own buckling, and a value written ≥ is a lower bound), the **class** and the **amplifier** 1/(1 − 1/αcr). The class follows EN 1993-1-1 5.2.1(3):
+
+- **αcr ≥ 10** (green): the first-order analysis will do.
+- **3 ≤ αcr < 10** (amber): second-order effects must be taken, by second order, or by multiplying the sway effects by the amplifier.
+- **1 ≤ αcr < 3** (red): a second-order analysis is required.
+- **αcr < 1** (red): the loads are past the critical ones, the structure is unstable.
+
+The lowest αcr is highlighted. Pick a combination and a mode, then **Show buckling mode** to see the shape in 3D, swinging like the natural modes (the card has the same scale and Stop). The steel checks say when αcr is below 10 and second order is off.
+
+> The values are indicative: αcr is of the bars alone (the shells have no geometric stiffness), concrete is at its uncracked stiffness, and the judgement stays the engineer's.
+
+## Supports on springs, and members that work one way
+
+Select a footing, a slab on the ground or a steel column base: its properties have an **Analysis support** section.
+
+- **Springs**: a stiffness for each of the six freedoms (kx, ky, kz in kN/m; krx, kry, krz in kN·m/rad). Empty means as the support holds it, 0 means free.
+- **Winkler's bed** (footings and slabs): the modulus of subgrade reaction **ks** (kN/m³) of the ground. A pad footing takes kz = ks·B·L and the matching rotational stiffnesses, a strip footing each node its length, a slab on the ground each node its share of the area. The list under it gives typical ks values by soil, **indicative only: ks is the geotechnical engineer's to give**.
+- **Compression only (lifts)**: a support that would pull is lifted off the ground, and the combination is solved again without it. The section lists the stiffness each node got in the last analysis.
+
+The forces in the springs are reactions. A slab takes ks only; a column base takes springs only (it has no footprint).
+
+![A footing's Analysis support](shots/analysis-support.webp)
+
+A bar's **Analysis** section has **Acts in**: **Both ways**, **Tension only** (a brace of a cross, a tie) or **Compression only** (a strut). A one-way bar that would work the other way is taken out of that combination, and the Stability table names the **slack members** and the **lifted supports** of each. The cases stay linear, with every member in and every support seated; so does the modal analysis. Each change is one undo step.
+
 ## End releases
 
 Select a column, beam or member: its properties have an **Analysis** section with the **Start (i)** and **End (j)** releases.

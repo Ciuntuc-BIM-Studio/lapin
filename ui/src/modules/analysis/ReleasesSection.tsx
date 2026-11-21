@@ -4,6 +4,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { execute } from '../../engine/session';
 import { selectionWith } from '../../shell/params';
 import { useResults } from './useResults';
+import { ACTS_IN, actsIn, onlyArg, type ActsIn } from './stability';
 import {
   BAR_CLASSES, DOFS, DOF_TITLE, formatMm, formatValue, FORCE_QUANTITIES, ownReleases, releasePreset, releaseValue, spanRatio, toggleRelease,
   type Release, type ReleasePreset,
@@ -55,6 +56,13 @@ export function ReleasesSection({ node }: { node: NodeDto }) {
             <option value="">By its section and use</option>
             <option value="true">Yes (a rod or tie)</option>
             <option value="false">No (a beam)</option>
+          </select>
+        </dd>
+        <dt>Acts in</dt>
+        <dd>
+          <select data-field="acts-in" aria-label="Acts in" title="A one-way member (a brace, a tie, a strut) is taken out of the combinations where it would work the other way: each combination is then solved on its own"
+            value={actsIn(node.props.analysisOnly)} onChange={(e) => void execute('analysis.setOnly', { ids, only: onlyArg(e.target.value as ActsIn) })}>
+            {ACTS_IN.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
           </select>
         </dd>
       </dl>

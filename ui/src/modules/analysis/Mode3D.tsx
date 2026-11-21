@@ -20,6 +20,7 @@ import {
 } from './seismic';
 import { triangles } from './shells';
 import { formatValue } from './results';
+import { formatAlpha } from './stability';
 
 const COLOUR = 0xe8590c;
 const SIDES = 8;
@@ -134,9 +135,18 @@ export function ModeCard() {
   if (!shape || view === 'sheet' || view === 'schedule') return null;
   return (
     <div className="sel-card analysis-card" role="region" aria-label="Mode shape" data-testid="mode-card">
-      <b>Mode shape</b>
-      <p className="small" data-no-i18n>{shape.mode} · T = {formatPeriod(shape.T)} s · f = {formatHz(shape.f)} Hz</p>
-      <p className="muted small"><span>Effective mass</span> <span data-no-i18n>X {formatPercent(shape.ratio[0]!)} · Y {formatPercent(shape.ratio[1]!)}</span></p>
+      <b>{shape.buckling ? 'Buckling mode' : 'Mode shape'}</b>
+      {shape.buckling ? (
+        <>
+          <p className="small" data-no-i18n>{shape.mode} · αcr = {formatAlpha(shape.buckling.alpha)} · {shape.buckling.name}</p>
+          <p className="muted small">Indicative: the shape the structure buckles in under this combination&apos;s loads; αcr is the factor that brings them to the critical ones.</p>
+        </>
+      ) : (
+        <>
+          <p className="small" data-no-i18n>{shape.mode} · T = {formatPeriod(shape.T)} s · f = {formatHz(shape.f)} Hz</p>
+          <p className="muted small"><span>Effective mass</span> <span data-no-i18n>X {formatPercent(shape.ratio[0]!)} · Y {formatPercent(shape.ratio[1]!)}</span></p>
+        </>
+      )}
       <p className="muted small">The shape is scaled to be seen: it shows how the structure moves, not by how much.</p>
       <label className="row small" title="The swing's size on the view; the model is not changed">
         <span>Scale</span>

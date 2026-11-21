@@ -16,7 +16,9 @@ namespace Lapin.Analysis;
 /// (<see cref="IStructuralLoads"/>). Stage S1 (§9): the linear static analysis of the bars (<see cref="AnalysisRun"/>:
 /// analysis.run, analysis.results, analysis.diagram) and their end releases (analysis.setReleases). Stage S2 (§10): slabs
 /// and walls as shells. Stage S3 (§11): the masonry walls as shells, the modal analysis and the response spectrum by P100-1/2013
-/// or EN 1998-1 (analysis.setSeismic, analysis.modal, analysis.mode, analysis.spectrum, analysis.seismic; the envelope „seismic”). It reads rooms, slabs and
+/// or EN 1998-1 (analysis.setSeismic, analysis.modal, analysis.mode, analysis.spectrum, analysis.seismic; the envelope „seismic”). Stage S5
+/// (§14): second order (P-Δ) and linear buckling (analysis.buckling, analysis.bucklingMode), supports on springs and Winkler's bed
+/// (analysis.setSupport), one-way members and supports that lift (analysis.setOnly). It reads rooms, slabs and
 /// walls by their class and geometry, never through architecture or structure: without them it has less to read. Engine
 /// units: metres, kN, kN/m, kN/m².
 /// </summary>
@@ -259,8 +261,39 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
         // mesh with the quantity smoothed at its nodes (S2, §10.6), world coordinates.
         r.Query("contours", (q, a) => AnalysisRun.Contours(q, a));
         r.Query("options", (q, _) => AnalysisSettings.Of(q.Model).ToJson());
-        // {shells?: both | slabs | walls | none, meshSize?: metres}: how the analysis takes slabs and walls; null back to the default. One undo step.
+        // {shells?: both | slabs | walls | none, meshSize?: metres, secondOrder?: bool}: how the analysis takes slabs and walls, and
+        // whether its static combinations are solved to second order (P-Δ, §14.3); null back to the default. One undo step.
         r.Command("setOptions", "Analysis options", (ctx, a) => { AnalysisSettings.Write(ctx, a); return null; });
+
+        // ── Second order, springs, one way (S5, §14) ──
+
+        // {ids, springs?: [kx, ky, kz, krx, kry, krz] (kN/m, kN·m/rad; null: as held, 0: free) | null, winkler?: ks (kN/m³) | null,
+        // compressionOnly?: bool | null}: a footing's, a column base's or a slab on the ground's springs (§14.2). One undo step.
+        r.Command("setSupport", "Support springs", (ctx, a) => { SupportSettings.Write(ctx, a); return null; });
+        // {id}: what a support says and what it comes to: its springs, ks, the nodes it holds and each one's stiffness; the typical ks (indicative).
+        r.Query("supportOptions", (q, a) => SupportJson(q, (string?)a["id"]));
+        // {ids, only: tension | compression | null}: bars that work one way only (§14.4: X bracing, ties, struts); null both ways. One undo step.
+        r.Command("setOnly", "Tension or compression only", (ctx, a) =>
+        {
+            var ids = Args.Ids(a);
+            if (ids.Count == 0) throw new CommandException("Select the bars.");
+            if (!a.ContainsKey("only")) throw new CommandException("Say only: tension, compression or null (both ways).");
+            var only = a["only"] is null ? null : (string?)a["only"] is { } o && OneWay.Choices.Contains(o) ? o : throw new CommandException("Only is tension, compression or null.");
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.");
+                if (UserLoads.Classes.Contains(e.Class) || e.Class == LoadCases.Class || e.Class == UserCombinations.Class) throw new CommandException("Only a bar works one way.");
+                var attrs = e.CloneAttrs();
+                if (only != null) attrs[OneWay.Key] = only; else attrs.Remove(OneWay.Key);
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return null;
+        });
+        // {combination?, modes?}: each ultimate combination's critical load factors αcr, their class by EN 1993-1-1 5.2.1(3) and the amplifier 1/(1 − 1/αcr).
+        r.Query("buckling", (q, a) => AnalysisRun.For(q).BucklingJson((string?)a["combination"], Json.Number(a["modes"]) is { } m ? (int)m : 6));
+        // {combination, mode?, scale?}: a buckling mode's shape for the 3D view.
+        r.Query("bucklingMode", (q, a) => AnalysisRun.For(q).BucklingModeJson((string?)a["combination"] ?? throw new CommandException("Say the combination."),
+            Json.Number(a["mode"]) is { } n ? (int)n : 1, a["scale"] is JsonNode sn && Json.Number(sn) is { } sv && double.IsFinite(sv) ? sv : null));
 
         // ── Modal and seismic analysis (S3, §11) ──
 
@@ -337,6 +370,35 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
             }
             return null;
         });
+    }
+
+    /// <summary>A support's settings and what they come to on its nodes (§14.2).</summary>
+    static JsonObject SupportJson(IQueryContext q, string? id)
+    {
+        var e = q.Model.Get(id ?? "") ?? throw new CommandException("Say the support (id).");
+        if (!SupportSettings.Classes.Contains(e.Class)) throw new CommandException($"„{e.Name}” is no footing, column base or slab.");
+        var st = SupportSettings.Of(e);
+        var o = new JsonObject
+        {
+            ["id"] = e.Id, ["name"] = e.Name, ["kind"] = e.Class == IfcClass.Slab ? "slab" : e.Class == IfcClass.Footing ? "footing" : "base",
+            ["own"] = st?.ToJson(), ["typical"] = SupportSettings.Typical(), ["indicative"] = true,
+        };
+        var run = AnalysisRun.Of(q);
+        var p = run.Problem.Problem;
+        var nodes = new JsonArray();
+        foreach (var l in p.Links.Where(l => l.Ground && (l.Id.StartsWith($"support:{e.Id}:") || l.Id.StartsWith($"slab:{e.Id}:"))))
+        {
+            var n = l.Nodes[0];
+            nodes.Add((JsonNode)new JsonObject
+            {
+                ["node"] = p.NodeIds[n], ["at"] = new JsonArray(R(p.Nodes[n].X), R(p.Nodes[n].Y), R(p.Nodes[n].Z)),
+                ["k"] = new JsonArray(Enumerable.Range(0, 6).Select(d => (JsonNode)R(l.K[d * 6 + d])).ToArray()),
+                ["held"] = p.Held[n] is { } h ? new JsonArray(h.Select(x => (JsonNode)x).ToArray()) : null,
+                ["compressionOnly"] = p.Uplift.Contains(n),
+            });
+        }
+        o["nodes"] = nodes;
+        return o;
     }
 
     static JsonObject Ids(IEnumerable<string> ids) => new() { ["ids"] = new JsonArray(ids.Select(i => (JsonNode)i).ToArray()) };

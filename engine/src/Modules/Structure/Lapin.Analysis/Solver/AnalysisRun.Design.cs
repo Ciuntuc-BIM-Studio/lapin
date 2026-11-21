@@ -42,7 +42,7 @@ public sealed partial class AnalysisRun
                 seismic.Add(isSeismic);
                 if (isSeismic) { durations.Add("instantaneous"); continue; }
                 var shortest = 0;
-                foreach (var (ci, k) in terms)
+                foreach (var (ci, k) in Underlying(terms))
                 {
                     if (Math.Abs(k) < 1e-12) continue;
                     var c = Report.Cases.First(x => x.Id == Solution!.Cases[ci].Id);

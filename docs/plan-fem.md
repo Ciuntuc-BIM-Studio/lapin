@@ -815,3 +815,136 @@ Un caz șters pe care îl numește o combinație a utilizatorului: combinația r
 ### 13.6 Testele
 
 Un proiect fără setări: combinațiile neschimbate (aur pe cadrul din ghid și pe hala de oțel cu zăpadă și vânt, fișiere JSON scrise de codul dinainte); setul `cr0`; γ schimbați; o combinație a utilizatorului în rezultate, înfășurătoare și verificări; una generată dezactivată lipsește din înfășurători; 6.10a/b pe un caz mic, cu numere de mână; undo; SAV scrie combinațiile utilizatorului; un caz șters spus.
+
+## 14. S5: ordinul doi, reazemele elastice și legăturile într-un singur sens (specificația, 21.11.2026)
+
+**Hotărât de utilizator (20.11.2026):** S5 e în modulul deschis `analysis`, MIT, gratuit, cu cod propriu (decizia 742). Tot ce urmează e scris pentru Lapin după literatura citată la §14.9; `hse95/nodal` (MIT) a fost doar inspirație pentru cazurile de test, niciun cod de acolo. Ca la S1–S4: rezultatele sunt **orientative**, calculul semnat rămâne al inginerului.
+
+**Regula de compatibilitate („extend, never break”):** fără opțiunile S5 (implicit toate oprite) un proiect dă **exact** rezultatele de dinainte; testul `SecondOrderGoldenTests` compară ghidul (cadrul cu planșeu, zăpadă, vânt, seism) și hala de oțel cu JSON scris de codul dinaintea S5. Nu trebuie `IProjectUpgrade`: totul e în atribute noi, absente din proiectele vechi.
+
+S5 se face în trei sub-etape, în ordinea în care se sprijină una pe alta, și lasă restul specificat (§14.7):
+
+| Sub-etapă | Ce | De ce în ordinea asta |
+|---|---|---|
+| **S5a** | Reazemele elastice: resorturi pe grade de libertate la reazemele fundațiilor și ale legăturilor; Winkler sub tălpile izolate și continue și sub plăcile pe sol | Liniar: suprapunerea rămâne; e baza pentru reazemele doar la compresiune |
+| **S5b** | Ordinul doi P-Δ (rigiditatea geometrică a barelor, iterată pe combinație) și flambajul liniar global: αcr pe fiecare combinație SLU, clasificarea EN 1993-1-1 5.2.1, forma de flambaj | Ce cer verificările S4 la oțel (5.2.1(3)); folosește solverul și iterația în subspațiu deja făcute |
+| **S5c** | Barele doar la întindere / doar la compresiune (contravântuiri, tiranți, șpraițuri) și reazemele doar la compresiune (desprinderea de pe teren), prin aceeași iterație pe combinație ca P-Δ | Neliniar prin stări; aceeași buclă ca P-Δ, deci făcute împreună |
+
+### 14.1 Neliniarul pe combinații (cadrul comun al S5b și S5c)
+
+Un calcul neliniar nu se mai poate suprapune: **fiecare combinație statică** (SLU, SLS, ale utilizatorului, cele active; §8.5, §13) se rezolvă singură, cu vectorul ei de încărcări Σ γ·ψ·Fk (aceleași forțe nodale, încărcări pe bare și pe plăci ca la cazuri, înmulțite cu factorii). **Cazurile rămân liniare** (de ordinul întâi, toate legăturile active): suprapunerea lor nu mai are sens într-un calcul neliniar, iar un caz singur e cel caracteristic; spus în note. Combinația seismică (§11.3) rămâne liniară: AEd e din analiza modală liniară, iar partea gravitațională e suprapunerea cazurilor (efectul P-Δ seismic e coeficientul θ, §14.7).
+
+Bucla neliniară e una pentru toate (Newton–Raphson modificat pe stări; Bathe, „Finite Element Procedures”, §8.4; McGuire, Gallagher și Ziemian, „Matrix Structural Analysis”, ed. 2, §9–10):
+1. Pasul 1: problema liniară a combinației (toate barele active, toate reazemele așezate, N = 0 în rigiditatea geometrică).
+2. Din rezultat: N pe fiecare bucată de bară (întinderea pozitivă, media capetelor); starea barelor într-un singur sens (o bară doar la întindere comprimată se scoate, una scoasă care s-ar lungi se pune înapoi; invers la compresiune); starea reazemelor doar la compresiune (unul care trage se ridică; unul ridicat care ar coborî în teren se așază).
+3. Problema refăcută cu noile stări și, cu P-Δ, cu rigiditatea geometrică din N; asamblată, factorizată (`FrameSystem`), rezolvată.
+4. Se oprește când nicio stare nu se mai schimbă și (cu P-Δ) |ΔN| ≤ 10⁻⁴ max|N| + 10⁻⁶ kN; cel mult **30 de iterații**; o stare care se repetă (ciclu) oprește bucla cu nota „nu s-a așezat”.
+5. O factorizare care pierde un pivot: fără rigiditatea geometrică e un **mecanism** (de pildă toate contravântuirile unei direcții scoase), spus cu nodul ca la S1; cu ea e **instabilitate** (încărcarea combinației trece de cea critică, αcr < 1), spusă. Combinația aceea **nu intră** în înfășurători și verificări, cu o notă roșie (de verificat).
+
+Rezultatul fiecărei combinații e ținut ca un rezultat în plus lângă cazuri (`AnalysisRun`, aceleași bare, plăci și noduri), deci înfășurătorile, diagramele, izoliniile, forțele pe pereți și verificările S4 îl citesc fără să știe că e neliniar. Totul e **derivat**, ținut în memorie după versiunea modelului, ca `analysis.run`. Bucla rulează doar când e nevoie de ea: `secondOrder` pornit, o bară într-un singur sens sau un reazem doar la compresiune.
+
+### 14.2 S5a: reazemele elastice
+
+**Resorturile unui reazem** (atributul `analysisSupport` pe fundație — `IfcFooting` izolată sau continuă — sau pe bara unei legături cu reazem, ca baza unui stâlp de oțel): `{springs?: [kx, ky, kz, krx, kry, krz], winkler?: ks, compressionOnly?: bool}`, axe globale, kN/m și kN·m/rad, ks în kN/m³.
+- `springs`: fiecare număr dat înlocuiește ținerea gradului acela cu un resort de rigiditatea dată (0 = liber); `null` pe o poziție îl lasă cum îl ține reazemul (încastrat sau articulat). Resortul e pus **în fiecare nod** pe care fundația îl ține (o talpă continuă sub un perete ține multe noduri: atunci resortul e pe nod, spus; pentru tălpi continue e mai potrivit Winkler).
+- `winkler` (modelul lui Winkler, 1867; Hetényi, „Beams on Elastic Foundation”, 1946): **talpa izolată** (dreptunghiul ei în plan, B × L): kz = ks·B·L, krx = ks·B·L³/12 și kry = ks·L·B³/12 (momentele de inerție ale tălpii față de axele ei prin centru, axele globale), kx, ky și krz ținute; o talpă care ține mai multe noduri le împarte în părți egale. **Talpa continuă** (linia ei, lățimea B): fiecare nod ține lungimea aferentă l (jumătate până la vecini, capetele până la capetele tălpii): kz = ks·B·l, rotirea în jurul axei tălpii k = ks·l·B³/12 (o matrice 3 × 3 de rotire în axe globale când talpa e oblică), restul ținute. Un resort dat în `springs` trece înaintea celui din ks pe același grad.
+- **Placa pe sol** (`analysisSupport: {winkler: ks, compressionOnly?}` pe o placă analizată ca placă, §10): fiecare nod al plăcii primește kz = ks·Aᵢ, Aᵢ cota consistentă a ariei elementelor (A/4 la un patrulater, A/3 la un triunghi: ∫Nᵢ dA pe un paralelogram); **ux, uy ținute** în nodurile ei (frecarea și împingerea pământului; fără ele placa ar fi un mecanism în planul ei), spus. Fără plăci (`shells: none` / `walls`), Winkler pe placă nu face nimic, spus.
+- **Reacțiile** unui nod pe resorturi sunt forțele resorturilor (R = −K_s·u), adunate cu cele ale gradelor ținute; suma reacțiilor = suma încărcărilor (echilibrul, verificat la fiecare caz, ca la S1).
+- **Modal și seismic:** problema modală ia aceleași resorturi (nefisurate: e terenul). Interacțiunea teren–structură mai departe (amortizarea radiației, resorturile dinamice) nu se face.
+- Lapin **nu calculează ks**: e al geotehnicianului (studiul geotehnic, sau NP 112-2014 / EN 1997-1); interfața dă doar valori uzuale orientative ca sugestie (Bowles, „Foundation Analysis and Design”, ed. 5, Tabelul 9-1, din memorie, de confirmat: nisip afânat 4,8–16 MN/m³, mediu 9,6–80, îndesat 64–128; argilă qu ≤ 200 kPa 12–24, 200–800 kPa 24–48, peste 800 kPa > 48), marcate orientative.
+
+Comanda: `analysis.setSupport {ids, springs?, winkler?, compressionOnly?}` (un pas de undo; `null` pe o cheie o scoate, absentă o lasă; refuzate: un element care nu e fundație, legătură cu reazem sau placă, numere negative sau nefinite, `springs` cu altă lungime decât 6, `winkler` pe o bară).
+
+### 14.3 S5b: ordinul doi P-Δ și flambajul global
+
+**Rigiditatea geometrică** a unei bare cu efortul axial N (întinderea pozitivă), matricea consistentă a barei Euler–Bernoulli (Przemieniecki, „Theory of Matrix Structural Analysis”, 1968, §15; McGuire ș.a., ec. 9.18), în fiecare plan de încovoiere:
+
+Kg = N/L · [6/5, L/10, −6/5, L/10; L/10, 2L²/15, −L/10, −L²/30; −6/5, −L/10, 6/5, −L/10; L/10, −L²/30, −L/10, 2L²/15] (v, θz, în planul x–y; cu semnele cuplajelor schimbate în planul x–z, ca la rigiditatea elastică)
+
+fără termenul de torsiune (N·Ip/A): modelul nu are rigiditatea de deplanare, iar flambajul prin torsiune și încovoiere-torsiune al unei bare e al verificărilor (EN 1993-1-1 6.3.1.4, 6.3.2), spus. La o bară cu eliberări, Kg se condensează cu aceeași transformare ca rigiditatea elastică (rotirile eliberate urmează din cele ținute): Kg′ = Tcᵀ Kg Tc, deci o bară articolată la capete (o contravântuire) dă exact rigiditatea „de coardă” N/L pe deplasările transversale. Barele Timoshenko își păstrează rigiditatea elastică cu forfecarea; Kg e cea Euler–Bernoulli (diferența e neglijabilă la barele zvelte, spusă). Plăcile nu au rigiditate geometrică în S5 (§14.7), spus când există plăci comprimate.
+
+**P-Δ** (`analysisOptions.secondOrder: true`, implicit `false`): bucla de la §14.1 cu K + Kg(N) pe fiecare combinație statică. Momentele de la capetele barelor sunt de ordinul doi (deplasarea relativă a capetelor, Δ); de-a lungul barei momentul rămâne forma de ordinul întâi între ele: efectul P-δ al barei e în verificarea ei la flambaj (EN 1993-1-1 6.3, curbura nominală la beton, 5.8.8), spus. Ce raportează fiecare combinație: iterațiile, dacă a convers, **amplificarea** = deplasarea orizontală cea mai mare de ordinul doi / cea de ordinul întâi (pasul 1).
+
+**Flambajul liniar** (`analysis.buckling`): (K + αcr Kg(N)) φ = 0 pentru fiecare combinație SLU statică, N din rezultatul ei (de ordinul întâi, sau cel neliniar când bucla rulează; atunci K e cea a stărilor finale, fără Kg). Rezolvat ca problema generalizată G φ = μ K φ, G = −Kg, K pozitiv definită: **iterația în subspațiu** (Bathe și Wilson 1972, ca la §11.2) pe factorizarea lui K, proiecțiile Gr = X̄ᵀ G X̄ și Kr = X̄ᵀ K X̄ = X̄ᵀ G X, problema mică prin Cholesky pe Kr și Jacobi; cele mai mari μ > 0 dau αcr = 1/μ, crescător. Primele 3 valori (`modes`, 1–12) și formele lor. O combinație fără nicio bară comprimată nu are αcr (spus: „nicio compresiune”).
+
+**Clasificarea** (EN 1993-1-1 5.2.1(3) și 5.2.2(5B), pentru analiza elastică): **αcr ≥ 10**: ordinul întâi e suficient; **3 ≤ αcr < 10**: efectele de ordinul doi trebuie luate: prin P-Δ, sau amplificând efectele orizontale (de deplasare laterală) cu **1/(1 − 1/αcr)** (5.2.2(5B), raportat); **1 ≤ αcr < 3**: e cerut calculul de ordinul doi (5.2.2(5B) nu se aplică); **αcr < 1**: structura e instabilă sub combinație. La beton EN 1992-1-1 5.8.2(6) dă alt criteriu (efectele globale de ordinul doi neglijabile sub 10 %, adică αcr ≥ 10 cu rigiditatea fisurată); Lapin raportează aceeași clasificare cu rigiditatea nefisurată, spus.
+
+**Legătura cu S4:** verificările oțelului (§12.2) spun αcr cel mai mic al combinațiilor SLU când e sub 10 și P-Δ e oprit („EN 1993-1-1 5.2.1(3): αcr = … < 10, efectele de ordinul doi trebuie luate: pornește P-Δ”), iar când P-Δ e pornit, că eforturile sunt de ordinul doi și că flambajul barelor (6.3.1) rămâne cu lungimile lor de flambaj. Lungimile de flambaj din αcr (Lcr = π √(EI / (αcr N))) sunt pentru mai târziu (§14.7).
+
+### 14.4 S5c: barele și reazemele într-un singur sens
+
+- **Bara doar la întindere** (`analysisOnly: "tension"`: contravântuiri în X, tiranți, cabluri drepte) sau **doar la compresiune** (`"compression"`: șpraițuri, rezemări simple de contact). Comanda `analysis.setOnly {ids, only: "tension" | "compression" | null}`, un pas de undo; de obicei împreună cu `analysis.setAxial` (bara articulată, lucrând axial). O bară scoasă nu are rigiditate (toate bucățile ei); încărcările pe ea (greutatea ei) se duc tot la capete, ca forțe de capăt; N-ul ei e zero în rezultate. Criteriul: N < −10⁻⁶ max|N| scoate o bară doar la întindere; lungirea capetelor ei (u_j − u_i)·x > 10⁻⁹ m o pune înapoi (invers la compresiune).
+- **Reazemul doar la compresiune** (`analysisSupport.compressionOnly: true`, ridicarea de pe teren): reazemul ținut pe uz care ar trage (Rz < 0) se **ridică**: nodul lui e liber pe toate gradele (o talpă desprinsă nu mai ține nimic), resorturile lui scoase; unul ridicat care ar coborî (uz < 0) se așază. Pe resorturi (Winkler), fiecare nod e un resort doar la compresiune: lucrează când uz ≤ 0, scos când uz > 0 (placa pe sol care se desprinde la colțuri). Rotirile unei tălpi pe Winkler nu se desprind parțial (talpa care se înclină pe o muchie): resorturile de rotire rămân cât lucrează cel vertical, spus.
+- **Modal și seismic:** problema modală ia toate barele active și toate reazemele așezate (liniar), spus în note când există bare într-un singur sens: contravântuirile în X dau atunci dublul rigidității unei diagonale întinse.
+
+### 14.5 Interogările și comenzile
+
+- `analysis.setOptions {secondOrder?: bool}` (pe lângă `shells`, `meshSize`; `null` înapoi la implicit; un pas de undo; permisă invitaților, ca înainte).
+- `analysis.setSupport {ids, springs?, winkler?, compressionOnly?}`, `analysis.setOnly {ids, only}`: un pas de undo fiecare; permise invitaților, ca `analysis.setReleases`.
+- `analysis.run` primește `nonlinear: {secondOrder, combinations: [{key, name, ok, iterations, converged, amplification, slack: [{id, sourceId, name}], lifted: [{node, at, name}], message?}]}` când bucla rulează, și în `supports` resorturile puse (`springs`: câte noduri, `winkler`: câte, `compressionOnly`).
+- `analysis.buckling {combination?, modes?}` → `{ok, combinations: [{key, name, alpha: [..], class: "first-order" | "amplify" | "second-order" | "unstable" | "none", amplifier, compressed}], lowest: {key, alpha}, notes}`; fără `combination`, toate cele SLU statice.
+- `analysis.bucklingMode {combination, mode?, scale?}` → forma de flambaj pentru 3D, ca `analysis.mode` (polilinii pe bare, nodurile plăcilor deplasate), αcr al ei.
+- `analysis.supportOptions {id}` → ce are reazemul (fundația, legătura sau placa): resorturile date, ks, compressionOnly, nodurile ținute și rigiditățile calculate pe fiecare (kz = ks·A …), valorile ks uzuale orientative.
+
+### 14.6 Interfața
+
+În dialogul de rezultate: în opțiunile analizei, **Second order (P-Δ)**; o secțiune **Stability**: tabelul combinațiilor SLU cu αcr (primele trei), clasa colorată (verde ≥ 10, galben 3–10, roșu < 3), amplificatorul 1/(1 − 1/αcr), amplificarea P-Δ și iterațiile când e pornit, barele scoase (care s-au destins) și reazemele ridicate pe combinație, notele; **Show buckling mode** în 3D (forma oscilând, ca modul propriu, §11.10). În Proprietăți: la o fundație (și la o placă) secțiunea **Analysis support** (resorturile pe cele șase grade, ks cu valorile uzuale orientative, „compression only”, nodurile și rigiditățile calculate); la o bară **Acts in**: both / tension only / compression only. Toate textele în toate limbile din `ui/src/i18n`; ghidul (EN și RO) și scena lui.
+
+### 14.7 Ce rămâne pentru mai târziu (specificat, nefăcut în S5)
+
+1. **Imperfecțiunile globale** (EN 1993-1-1 5.3.2: φ = φ0 αh αm, φ0 = 1/200; forțele echivalente φ·NEd la fiecare nivel, pe ±X și ±Y, adică de patru ori combinațiile SLU) — fără ele calculul de ordinul doi nu e complet pentru proiectarea la oțel (5.2.2(3)); acum spus în note când P-Δ e pornit.
+2. **Coeficientul de sensibilitate θ** la deplasarea relativă de nivel (P100-1/2013 §4.6.2.2, EN 1998-1 §4.4.2.2(2)): θ = Ptot dr / (Vtot h), ≤ 0,1 neglijat, 0,1–0,2 amplificare 1/(1 − θ), > 0,3 refuzat; din tabelul nivelurilor seismic (§11.3).
+3. **Lungimile de flambaj din αcr** pentru verificările de oțel la cadre cu noduri deplasabile (Lcr = π √(EI/(αcr NEd)), cu limitele lor), ca alternativă la k-ul dat de utilizator (§12.11, răspunsul 3).
+4. **Rigiditatea geometrică a plăcilor** (pereți și planșee comprimate în planul lor), pentru P-Δ și flambaj la clădirile cu pereți-placă.
+5. **Etapele de execuție** (construction stages): o listă de etape pe proiect (elementele și încărcările fiecăreia, din fazele modulului `phases`), rezolvate în ordine cu rigiditatea acumulată, efectele adunate; cere o comandă de etape și o legătură cu fazele.
+6. **Neliniarul material** (articulații plastice concentrate la capetele barelor de oțel, M–N), **deplasările mari** (formularea corotațională, cablurile cu săgeată), analiza modală pe starea neliniară, P-Δ în combinația seismică.
+7. Resorturi pe un nod oarecare (fără fundație: o grindă rezemată pe ceva nemodelat) — Lapin nu are noduri ca elemente; resorturile pe capetele barelor (rigiditățile îmbinărilor semi-rigide, EN 1993-1-8) ar fi locul lor.
+
+### 14.8 Testele (cifrele din teorie)
+
+`SecondOrderTests`, `BucklingTests`, `SpringSupportTests`, `OneWayTests`, `SecondOrderGoldenTests`:
+- **Euler:** stâlpul articulat–articulat (8 elemente Euler–Bernoulli) αcr·P = π²EI/L² la 10⁻⁴; consola π²EI/4L²; încastrat–încastrat 4π²EI/L²; încastrat–articulat 20,19 EI/L² (Timoshenko și Gere, „Theory of Elastic Stability”, 1961, §2.1–2.5).
+- **Cadrul portal** (stâlpi h = 4 m, grinda L = 6 m, aceeași secțiune, P pe fiecare stâlp), forma deplasabilă: cu baza articulată λ tg λ = 6 Ib h / (Ic L) (= 4: λ = 1,26459, Pcr = 0,6481 π²EI/4h²), cu baza încastrată λ ctg λ = −6 Ib h / (Ic L) (λ = 2,57043, Pcr = 0,66944 π²EI/h²), λ = h √(P/EI); grinda foarte rigidă: π²EI/4h² și π²EI/h²; la 10⁻³.
+- **P-Δ pe consolă** (H în vârf, P axial = 0,5 Pcr): săgeata exactă a barei-coloană δ = H(tg kL − kL)/(P k), k = √(P/EI), adică amplificarea 3(tg kL − kL)/(kL)³ = 1,98629 față de ordinul întâi (Timoshenko și Gere §1.11), la 5·10⁻³; aproximația 1/(1 − P/Pcr) = 2 la 1 %. Momentul la bază = H L + P δ exact din echilibru. Iterațiile ≤ 4.
+- **Resorturile:** stâlpul pe un resort vertical (δ = P/k); consola pe talpa Winkler sub o forță orizontală: δ = H h³/3EI + H h²/kθ, kθ = ks B L³/12; grinda lungă pe resorturi Winkler cu o forță la mijloc (Hetényi: w0 = Pβ/2k, M0 = P/4β, β = (k/4EI)^¼) la 1 %; placa pe sol sub o încărcare uniformă se așază uniform cu w = q/ks (la 10⁻⁶), reacțiile = încărcarea.
+- **Barele într-un singur sens:** cadrul articulat cu două diagonale în X sub H: ambele active, fiecare H/(2 cos θ); doar la întindere, cea comprimată se destinde și cea întinsă ia H/cos θ; cu H întors, invers; cazurile rămân liniare (ambele active).
+- **Reazemul doar la compresiune:** grinda pe trei reazeme cu încărcarea pe deschiderea a doua: reazemul de capăt al primei deschideri ar trage; ridicat, rezultatele sunt cele ale grinzii cu consolă (statică).
+- **Comenzile:** `setOptions {secondOrder}`, `setSupport`, `setOnly` un pas de undo fiecare; valorile greșite refuzate; analiza recalculată după fiecare.
+- **Aurul:** fără opțiuni, ghidul și hala dau exact JSON-ul dinaintea S5 (înfășurătorile SLU și SLS, un caz, modurile, forța tăietoare de bază, verificările).
+
+### 14.9 Surse
+
+Timoshenko și Gere, „Theory of Elastic Stability”, ed. 2, 1961 (cap. 1–2: bara-coloană, Euler, cadrele); Przemieniecki, „Theory of Matrix Structural Analysis”, 1968 (matricea geometrică consistentă); McGuire, Gallagher și Ziemian, „Matrix Structural Analysis”, ed. 2, 2000 (cap. 9–10, ordinul doi și flambajul); Bathe, „Finite Element Procedures”, 2014 (§8.4, §11.6); Hetényi, „Beams on Elastic Foundation”, 1946; Bowles, „Foundation Analysis and Design”, ed. 5, 1996 (Tabelul 9-1, valorile ks); SR EN 1993-1-1 §5.2 (citit: 5.2.1(3) αcr ≥ 10, 5.2.2(5B) amplificatorul pentru αcr ≥ 3); SR EN 1992-1-1 §5.8.2(6); EN 1998-1 §4.4.2.2, P100-1/2013 §4.6.2.2 (pentru θ, §14.7).
+
+### 14.10 De hotărât de utilizator
+
+1. **Cazurile rămân liniare** când bucla neliniară rulează (doar combinațiile sunt neliniare), cum fac programele comerciale. *Recomandare: da.*
+2. **Winkler pe placa pe sol ține ux, uy** în nodurile ei (frecarea), altfel placa singură ar fi un mecanism în planul ei. *Recomandare: da, spus în note; „liber orizontal” ca opțiune mai târziu dacă e cerută.*
+3. **Resorturile Winkler sunt implicit bilaterale** (trag și împing, liniar, rapid); `compressionOnly` pornește desprinderea. *Recomandare: bilaterale implicit; nota spune când un resort trage sub o combinație SLU, ca utilizatorul să pornească desprinderea.* (Nota e pentru mai târziu dacă e cerută.)
+4. **O combinație instabilă sau cu mecanism iese din înfășurători și verificări**, cu o notă roșie. *Recomandare: da (alternativa, ordinul întâi în locul ei, ar ascunde problema).*
+5. **Imperfecțiunile globale (EN 1993-1-1 5.3.2)** sunt următorul pas firesc după P-Δ. *Recomandare: le facem imediat după S5, ca S5d, cu ±X/±Y.*
+6. **Clasificarea αcr la beton** după criteriul oțelului (10 / 3) cu rigiditatea nefisurată, spus. *Recomandare: da deocamdată; criteriul EN 1992-1-1 5.8.3.3 (forța verticală totală față de rigiditatea la încovoiere a contravântuirilor) mai târziu.*
+7. **Valorile ks uzuale** (Bowles) arătate doar ca sugestie orientativă, nicio valoare implicită. *Recomandare: da; ks e al geotehnicianului.*
+
+### 14.11 Ce s-a hotărât la implementare (21.11.2026, decizia 753)
+
+- **Codul** (`Lapin.Analysis/Solver/`): `FrameElement.Geometric` / `GeometricGlobal` (Kg consistentă, condensată cu Tc), `Axial`, `Inactive`, `Only`, `Member`; `Link.Spring` (`Ground`: forța resortului e reacție, `FrameSystem.Result`); `FrameProblem.Uplift`; `Nonlinear` (bucla pe stări, §14.1); `Buckling` (iterația în subspațiu pe G φ = μ K φ); `SupportSprings` (resorturile reazemelor și ale plăcilor pe sol); `AnalysisRun.Nonlinear` (rezultatele combinațiilor neliniare lângă cazuri, `CaseAt`, `Terms`, `Underlying` pentru kmod, flambajul la cerere). `ANode.Support` (platforma) ține reazemul care ține nodul. `SupportSettings` / `OneWay` (atributele `analysisSupport`, `analysisOnly`).
+- **Flambajul ia doar barele comprimate** în G (rigidizarea din întindere lăsată deoparte, de partea siguranței): atunci G e pozitiv semidefinită și iterația găsește sigur cele mai mari μ > 0; cu întinderile incluse, la combinațiile cu vânt de ridicare modurile negative mari acopereau pe cele pozitive. P-Δ (bucla) păstrează și întinderile.
+- **Modurile locale:** un mod din care un singur element (toate bucățile lui) ține peste 50 % din φᵀ G φ e flambajul acelui element (al verificării lui, 6.3); clasa EN 1993-1-1 5.2.1 se ia după primul mod global; când toate modurile găsite (6 implicit) sunt locale, ultimul αcr e o margine de jos („≥”). La hala de oțel din ghid primul mod e al unei pane Z 200 × 65 × 2 (αcr 1,83, 57 %), primul global 2,08 (pane și contravântuiri, fără tabla care le ține lateral: §14.7). Tabla (rigidizarea laterală a panelor) rămâne pentru mai târziu.
+- **Amplificarea** raportată e deplasarea orizontală cea mai mare de ordinul doi față de cea de ordinul întâi; sub 0,1 mm deplasare orizontală de ordinul întâi e 1 (nicio deplasare laterală de amplificat). Pe cadrul ghidului (vânt pe Y): 1,0043, cu αcr = 184,7 (1/(1 − 1/αcr) = 1,0054).
+- **Talpa izolată pe Winkler:** dreptunghiul ei în plan (dx pe X, dy pe Y): kz = ks dx dy, krx = ks dx dy³/12, kry = ks dy dx³/12, ux, uy, rz ținute. **Talpa continuă:** pe lângă rotirea în jurul axei (ks l B³/12), și cea transversală ks B l³/12 a bucății aferente, ca un stâlp pe talpă să nu rămână liber la rotire.
+- **O bară într-un singur sens se scoate întreagă** (toate bucățile ei, după media N și lungirea totală). Criteriile: N < −10⁻⁶ max|N| − 10⁻⁹; lungirea > 10⁻⁹ m; un reazem trage când Rz < −10⁻⁹ × încărcarea; se așază când uz < −10⁻⁹ m.
+- **Verificările de oțel** spun αcr al combinației SLU celei mai grele (cea mai mare încărcare verticală; un singur calcul de flambaj, ~0,3 s pe hală), când e sub 10 și P-Δ e oprit; cu P-Δ pornit spun că eforturile sunt de ordinul doi.
+- **Cifrele benchmark-urilor** (raportul calculat / exact): Euler articulat (8 elemente) 1,000033; consola (16) 1,0000001; încastrat–încastrat (12) 1,00010; încastrat–articulat (12) 1,000028; cadrul portal (8 pe bară, bare inextensibile) sub 10⁻³ cu baza articulată și încastrată (cu barele extensibile αcr e cu 0,3 % mai mic: cadrul se balansează pe stâlpi, efect real, absent din formula clasică); P-Δ pe consolă la 0,5 Pcr: amplificarea 1,986288 față de 1,986288 exact (raportul 0,99999994), în 2 iterații; Hetényi la 1 %; placa pe sol w = q/ks la 10⁻⁹.
+- **Viteza** (Debug, mașina încărcată): hala de oțel cu 12 contravântuiri doar la întindere, 41 de combinații SLU+SLS neliniare: ~5 s; flambajul tuturor celor 41 de combinații SLU (6 moduri): ~10 s, de aceea interfața îl cere la buton.
+- **Aurul** (`SecondOrderGoldenTests`): fișierele scrise de codul dinaintea S5 (commit 5eee1e201) trec neschimbate după S5 (înfășurătorile SLU/SLS ale cadrului, un caz, modurile, forța tăietoare de bază, verificările; hala: maximele, reacțiile, SHA-256 al barelor, verificările).
+- **Ce nu s-a făcut din §14:** nota „un resort Winkler bilateral trage” (§14.10.3); restul e în §14.7.
+
+### 14.12 De hotărât de utilizator (în plus față de §14.10)
+
+8. **Contravântuirile din bare rotunde** (tije, `analysisAxial` implicit) ar putea fi implicit doar la întindere. *Recomandare: nu implicit (ar schimba rezultatele proiectelor existente); interfața le arată ca propunere la hală mai târziu.*
+9. **Panele fără tablă** dau moduri locale de flambaj cu αcr mic (hala din ghid: 1,8–2,1). *Recomandare: modelăm rigidizarea laterală a panelor de către tablă (un reazem lateral pe talpa comprimată) ca etapă mică după S5d.*
+
+### 14.13 Răspunsurile utilizatorului (21.11.2026)
+
+Utilizatorul a luat recomandările la toate cele 9 întrebări din §14.10 și §14.12 („la cele 9 întrebări mergem pe recomandări”): cazurile rămân liniare și doar combinațiile neliniare; placa pe Winkler ținută orizontal în noduri, cu notă; patul Winkler în ambele sensuri implicit, doar compresiune ca opțiune; combinația instabilă scoasă din înfășurători cu notă roșie; imperfecțiunile globale ±X/±Y urmează ca S5d; cadrele din beton clasificate deocamdată cu limitele 10 / 3 la rigiditate nefisurată; ks doar orientativ, fără valoare implicită (tabelul Bowles de confirmat); contravântuirile rotunde nu trec implicit la doar întindere; rigidizarea panelor de către tablă vine ca etapă mică după S5d.

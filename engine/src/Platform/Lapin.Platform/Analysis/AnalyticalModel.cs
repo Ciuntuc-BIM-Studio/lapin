@@ -13,6 +13,8 @@ public sealed class ANode(int index, Vec3 at)
     public bool[]? Restraints { get; set; }
     public string? RestraintSource { get; set; }
     public string? RestraintKind { get; set; }
+    /// <summary>The support that holds it (a footing's footprint or line, a connection's base), for what an analysis reads of it (its springs, docs/plan-fem.md §14.2).</summary>
+    public AnalyticalSupport? Support { get; set; }
 }
 
 /// <summary>
@@ -1040,7 +1042,7 @@ public sealed class AnalyticalModel
             foreach (var g in hits.GroupBy(n => (Math.Round(n.At.X / 0.05), Math.Round(n.At.Y / 0.05))))
             {
                 var low = g.Min(n => n.At.Z);
-                foreach (var n in g.Where(n => n.At.Z <= low + Tolerance && n.Restraints == null)) Hold(n, spec);
+                foreach (var n in g.Where(n => n.At.Z <= low + Tolerance && n.Restraints == null)) Hold(n, spec, sup);
             }
         }
         // A connection's support on its member's end overrides the footing's.
@@ -1049,7 +1051,7 @@ public sealed class AnalyticalModel
             var pieces = Frames.Where(f => f.Source.SourceId == sup.ForFrame).OrderBy(f => f.Piece).ToList();
             if (pieces.Count == 0) continue;
             var node = sup.AtEnd ? pieces[^1].J : pieces[0].I;
-            Hold(node, sup.Spec);
+            Hold(node, sup.Spec, sup);
         }
         foreach (var n in feet.Where(n => n.Restraints == null).OrderBy(n => n.Index))
         {
@@ -1058,8 +1060,9 @@ public sealed class AnalyticalModel
         }
     }
 
-    static void Hold(ANode n, SupportSpec spec)
+    static void Hold(ANode n, SupportSpec spec, AnalyticalSupport sup)
     {
+        n.Support = sup;
         n.Restraints = [.. spec.Dofs];
         n.RestraintKind = spec.Kind;
         n.RestraintSource = spec.Source;

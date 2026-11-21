@@ -6,6 +6,7 @@ import { PendingDialog } from '../core/PendingDialog';
 import { ModeAction, SeismicSection } from './SeismicSection';
 import { NotesList } from './NotesList';
 import { ChecksSection } from './ChecksSection';
+import { StabilitySection } from './StabilitySection';
 import { ShellMaxima, ShellOptions } from './ShellOptions';
 import { hideDiagrams, runAnalysis, setPick, showDiagrams, useResults } from './useResults';
 import {
@@ -58,6 +59,7 @@ export function ResultsDialog() {
             </>
           )}
           <ShellOptions />
+          {run.ok && <StabilitySection />}
           {run.ok && <ChecksSection />}
           {run.ok && <SeismicSection />}
 

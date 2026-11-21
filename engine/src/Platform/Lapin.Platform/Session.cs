@@ -774,7 +774,7 @@ public sealed partial class Session
             // material asks for it; else level, as the section's drawing has it.
             var (angle, origin) = Math.Abs(n.Z) >= 0.9 || look.HatchAlign == Lapin.Drawing.HatchAlign.Layer ? AlongLayer(loops) : (0.0, (Vec2?)null);
             var segs = Lapin.Drawing.Hatch.BattHatch.Is(pattern)
-                ? Lapin.Drawing.Hatch.BattHatch.Segments(loops, 1.2 * scale / 1000, 20_000)
+                ? Lapin.Drawing.Hatch.BattHatch.Segments(loops, 1.2 * scale / 1000, 20_000, scale: look.HatchScale, flip: Lapin.Drawing.Hatch.BattHatch.FlipsAt(look.HatchAngle))
                 // Paper or real size (decision 679); a real-size pattern too dense at this scale is not drawn.
                 : Lapin.Drawing.Hatch.HatchScale.Lay(pattern, scale, look.HatchScale, angle + look.HatchAngle, origin, 20_000, look.HatchUnits) is { } laid
                     ? Lapin.Drawing.Hatch.HatchFill.Segments(loops, pattern, laid).Segments : [];

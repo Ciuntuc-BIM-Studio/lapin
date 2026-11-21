@@ -315,8 +315,11 @@ public static class Pens
             var prefix = h.Background ? "hatchbg" : "hatch";
             if (BattHatch.Is(pattern))
             {
-                // The looped line along the layer (its element's axis when the drawing gives one), metres; a band under 1.2 mm on paper gets none.
-                var batt = BattHatch.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), 1.2 * o.Scale / 1000, Math.Max(0, budget), h.Axis);
+                // The batt's heads and strokes along the layer (its element's axis when the drawing gives one), metres; a band under
+                // 1.2 mm on paper gets none. The material's hatch scale stretches the heads' spacing; its angle of half a turn
+                // puts the first head on the other face (BattHatch).
+                var flip = !h.Background && h.Look is { } bl && BattHatch.FlipsAt(bl.HatchAngle);
+                var batt = BattHatch.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), 1.2 * o.Scale / 1000, Math.Max(0, budget), h.Axis, h.Scale, flip);
                 budget -= batt.Count;
                 var bw = WidthOf(h.Pen);
                 Get($"{prefix}:{color}:{bw}:{DashKey(dash)}", () => new Pen(PenLayer.Hatch, color, bw, null, dash)).Segments.AddRange(batt.Select(s => (s.A, s.B)));

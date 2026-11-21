@@ -441,6 +441,7 @@ public sealed partial class StructuralProblem
                     OffI = e.OffI + (e.OffJ - e.OffI) * t0, OffJ = e.OffI + (e.OffJ - e.OffI) * t1, Local2 = e.Local2,
                     E = e.E, G = e.G, A = e.A, I22 = e.I22, I33 = e.I33, Jt = e.Jt, As2 = e.As2, As3 = e.As3,
                     ReleaseI = s == 0 ? e.ReleaseI : new bool[6], ReleaseJ = s == path.Count - 2 ? e.ReleaseJ : new bool[6], Material = e.Material,
+                    Only = e.Only, Member = e.Member ?? e.Id,
                 };
                 int index;
                 if (s == 0) { p.Elements[k] = piece; index = k; }

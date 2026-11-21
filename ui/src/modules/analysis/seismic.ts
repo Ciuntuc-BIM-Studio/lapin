@@ -35,6 +35,8 @@ export interface SeismicDto {
 }
 export interface ModeShapeDto {
   mode: number; T: number; f: number; ratio: number[]; scale: number; max: number;
+  /** A buckling mode (analysis.bucklingMode) in the natural mode's shape: its αcr in place of T. */
+  buckling?: { combination: string; name: string; alpha: number; class: string };
   polylines: { frame: string; sourceId: string; base: number[][]; points: number[][] }[];
   shells: { id: string; sourceId: string; positions: number[]; displaced: number[]; faces: number[] }[];
 }

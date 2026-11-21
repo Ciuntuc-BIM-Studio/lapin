@@ -114,6 +114,10 @@ public sealed class SeismicRun
         double K(string? kind) => kind == "concrete" ? Settings.CrackedConcrete : kind == "masonry" ? Settings.CrackedMasonry : 1;
         p.Elements.AddRange(src.Elements.Select(e => e.Scaled(K(e.Material))));
         p.Shells.AddRange(src.Shells.Select(e => e.Scaled(K(e.Material))));
+        // The supports' springs (§14.2), uncracked: they are the ground's; every support seated, every member in (linear).
+        p.Links.AddRange(src.Links.Where(l => l.Ground));
+        if (src.Uplift.Count > 0 || src.Elements.Any(e => e.Only != null))
+            Notes.Add("The modal problem is linear: every one-way member in, every support that may lift seated.");
         if (Settings.CrackedConcrete < 1 || Settings.CrackedMasonry < 1)
             Notes.Add($"Cracked stiffness: concrete × {Settings.CrackedConcrete:0.##}, masonry × {Settings.CrackedMasonry:0.##} (EN 1998-1 4.3.1(7), P100-1/2013 ch. 8: half the uncracked stiffness unless worked out); steel and timber as they are.");
 

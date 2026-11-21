@@ -8,6 +8,8 @@ import type { ModeShapeDto } from './seismic';
 export interface ModeState {
   /** The mode animated (1-based), null: none. */
   mode: number | null;
+  /** A buckling mode of this combination is shown (S5), not a natural mode. */
+  buckling: string | null;
   shape: ModeShapeDto | null;
   /** The swing's size as a multiple of the automatic one (its largest displacement a share of the model's size). */
   mult: number;
@@ -15,7 +17,7 @@ export interface ModeState {
   undeformed: boolean;
 }
 
-export const useMode = create<ModeState>(() => ({ mode: null, shape: null, mult: 1, undeformed: true }));
+export const useMode = create<ModeState>(() => ({ mode: null, buckling: null, shape: null, mult: 1, undeformed: true }));
 
 let ticket = 0;
 /** Whether the diagrams' card was up when the animation started: Stop brings it back (null: no animation). */
@@ -25,7 +27,7 @@ let resume: boolean | null = null;
 export async function animateMode(n: number): Promise<void> {
   const mine = ++ticket;
   if (resume === null) resume = useResults.getState().show;
-  useMode.setState({ mode: n });
+  useMode.setState({ mode: n, buckling: null });
   const shape = await query<ModeShapeDto>('analysis.mode', { mode: n });
   if (mine !== ticket) return;
   if (!shape) { stopMode(); return; }
@@ -33,18 +35,38 @@ export async function animateMode(n: number): Promise<void> {
   hideDiagrams();
 }
 
+/** The engine's buckling mode (analysis.bucklingMode): the natural mode's shape format, with its αcr in place of the period. */
+interface BucklingShapeDto extends Omit<ModeShapeDto, 'T' | 'f' | 'ratio' | 'buckling'> { combination: string; name: string; alpha: number; class: string }
+export const bucklingShape = (d: BucklingShapeDto): ModeShapeDto => ({
+  mode: d.mode, T: 0, f: 0, ratio: [0, 0], scale: d.scale, max: d.max, polylines: d.polylines, shells: d.shells,
+  buckling: { combination: d.combination, name: d.name, alpha: d.alpha, class: d.class },
+});
+
+/** Asks for a combination's buckling mode n and animates it like a natural mode. */
+export async function animateBucklingMode(combination: string, n: number): Promise<void> {
+  const mine = ++ticket;
+  if (resume === null) resume = useResults.getState().show;
+  useMode.setState({ mode: n, buckling: combination });
+  const dto = await query<BucklingShapeDto>('analysis.bucklingMode', { combination, mode: n });
+  if (mine !== ticket) return;
+  if (!dto) { stopMode(); return; }
+  useMode.setState({ shape: bucklingShape(dto) });
+  hideDiagrams();
+}
+
 /** Ends the animation and puts back the diagrams' card it took off. */
 export function stopMode(): void {
   ticket++;
-  useMode.setState({ mode: null, shape: null });
+  useMode.setState({ mode: null, buckling: null, shape: null });
   if (resume) showDiagrams();
   resume = null;
 }
 
 /** The model changed: the mode shown is worked out again (it ends if the mode is gone). */
 export function refreshMode(): void {
-  const n = useMode.getState().mode;
-  if (n !== null) void animateMode(n);
+  const { mode: n, buckling } = useMode.getState();
+  if (n === null) return;
+  void (buckling ? animateBucklingMode(buckling, n) : animateMode(n));
 }
 
 export const setModeMult = (mult: number): void => useMode.setState({ mult });

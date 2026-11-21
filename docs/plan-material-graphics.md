@@ -21,7 +21,7 @@ Principiile rămân cele din CLAUDE.md:
 ## 2. Ce există (17.11.2026)
 
 - **Grafica stă pe material** (decizia 52): `section`, `plan` și `elevation` au fiecare hașură, scară, unghi, aliniere (vedere, strat, axul elementului: decizia 369), umplere (o culoare sau culoarea materialului) și peniță. Se mai dau `membrane`, `drawJoints` și `joins`. Ce nu e dat se ghicește din nume (`Guesses`, `ElevationGuesses`). Se editează din Manage → Materials și din mostra de lângă fiecare strat (decizia 493, `MaterialGraphicsTable`).
-- **Modelele de hașură:** 22 incluse ([HatchLibrary.cs](../engine/src/Platform/Lapin.Drawing/Hatch/HatchLibrary.cs)) și BATT, desenat după regula lui. Se pot importa fișiere `.pat`, ținute pe `IfcProject` (decizia 54), cu colecția „Hașurile mele” pe calculator. Hașurile intră și în `.lapinstandards` și în extensii.
+- **Modelele de hașură:** 22 incluse, plus nouă de izolație (decizia 754) ([HatchLibrary.cs](../engine/src/Platform/Lapin.Drawing/Hatch/HatchLibrary.cs)) și BATT, desenat după regula lui. Se pot importa fișiere `.pat`, ținute pe `IfcProject` (decizia 54), cu colecția „Hașurile mele” pe calculator. Hașurile intră și în `.lapinstandards` și în extensii.
 - **Tăietura** ([MaterialDrawing.cs](../engine/src/Platform/Lapin.Drawing/Views/MaterialDrawing.cs), [Pens.cs](../engine/src/Platform/Lapin.Drawing/Views/Pens.cs), `docs/view-styles.md`):
   - același material se citește ca o singură bucată peste elemente, iar `SplitAtCorners` taie liniile la colțuri;
   - liniile dintre straturi folosesc peniță de separare;

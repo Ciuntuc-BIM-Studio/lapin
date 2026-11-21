@@ -5628,6 +5628,54 @@ export const scenes = [
     },
   },
   {
+    // Structural analysis, stage S5 (docs/plan-fem.md §14): second order (P-Δ), the critical load factors αcr and their class, a footing on Winkler's bed, a brace that works in tension only.
+    id: 'analysis-stability',
+    touches: ['core', 'architecture', 'structure', 'analysis'],
+    async run(t) {
+      await t.fresh();
+      const ground = await t.storey();
+      const first = (await t.cmd('storey.create', { name: 'First floor', elevation: 3, height: 3 })).id;
+      const concrete = 'Concrete C25/30';
+      const col = (await t.cmd('structure.createColumnType', { name: 'C20x20', section: { kind: 'rectangle', width: 0.2, depth: 0.2 }, material: concrete })).id;
+      const beam = (await t.cmd('structure.createBeamType', { name: 'B25x40', section: { kind: 'rectangle', width: 0.25, depth: 0.4 }, material: concrete })).id;
+      const slab = (await t.cmd('architecture.createSlabType', { name: 'Floor 20', layers: [{ material: concrete, thickness: 0.2, core: true }] })).id;
+      const mat = (await t.nodes()).find((n) => n.name === concrete && n.type === 'IfcMaterial');
+      if (mat) await t.cmd('material.setData', { id: mat.id, params: [{ pset: 'Pset_MaterialCommon', name: 'MassDensity', value: 2500 }] });
+      const corners = [[0, 0], [6, 0], [6, 4], [0, 4]];
+      for (const [x, y] of corners) await t.cmd('structure.addColumn', { storeyId: ground, x, y, typeId: col });
+      const beams = [];
+      for (let i = 0; i < 4; i++) { const [a, b] = [corners[i], corners[(i + 1) % 4]]; beams.push((await t.cmd('structure.addBeam', { storeyId: ground, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: beam })).id); }
+      await t.cmd('architecture.addSlab', { storeyId: first, points: [[-0.15, -0.15], [6.15, -0.15], [6.15, 4.15], [-0.15, 4.15]], typeId: slab });
+      const footings = [];
+      for (const [x, y] of corners) footings.push((await t.cmd('structure.addPadFooting', { storeyId: ground, x, y })).id);
+      await t.cmd('analysis.defaultCases', {});
+      await t.cmd('analysis.addAreaLoad', { storeyId: first, points: [[0, 0], [6, 0], [6, 4], [0, 4]], value: 60 });
+      // A footing on Winkler's bed (a medium dense sand's ks is the geotechnical engineer's to give), and the second-order analysis.
+      await t.cmd('analysis.setSupport', { ids: [footings[0]], winkler: 30000 });
+      await t.cmd('analysis.setOptions', { secondOrder: true });
+      await t.wait(600);
+      await t.tool('analysis.run');
+      const dialog = t.page.locator('[aria-label="Analysis results"]');
+      await t.until(async () => (await dialog.locator('[data-testid=stability]').count()) > 0, 'the Stability section shows');
+      const run = await t.call('doc.query', { name: 'analysis.run', args: {} });
+      t.expect(run.ok === true && run.nonlinear?.secondOrder === true, `the run is second order (${JSON.stringify(run.nonlinear ?? run.mechanism ?? run.refused ?? '')})`);
+      await dialog.locator('[data-testid=stability-find]').click();
+      await t.until(async () => (await dialog.locator('[data-testid=stability-buckling] tbody tr').count()) > 0, 'the critical load factors are listed');
+      await t.wait(500);
+      await t.shot('analysis-stability', { of: '[data-testid=stability]', pad: 8 });
+      // A footing's Analysis support in its properties.
+      await t.ui({ dialog: null });
+      await select(t, footings[0]);
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=support-section]').count() === 1, 'a footing has its Analysis support in its properties');
+      await tallShot(t, 'analysis-support', '[data-testid=support-section]', { height: 1500, pad: 8 });
+      // A bar's direction.
+      await select(t, beams[0]);
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-field=acts-in]').count() === 1, 'a beam has Acts in in its properties');
+    },
+  },
+  {
     // Structural analysis, stage S4 (docs/plan-fem.md §12): a 6 × 4 m house of load-bearing brick walls under a concrete floor: the masonry walls' table per storey, the walls coloured by utilisation.
     id: 'analysis-masonry',
     touches: ['core', 'architecture', 'structure', 'analysis'],
