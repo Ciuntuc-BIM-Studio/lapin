@@ -56,12 +56,25 @@ public sealed class FrameElement
     public string? SourceId { get; init; }
     /// <summary>The material's kind (concrete, steel, timber, masonry, other), for the cracked stiffness of the seismic analysis (§11.2).</summary>
     public string? Material { get; init; }
+    /// <summary>A member working one way only (§14.4): "tension" (a brace, a tie) or "compression" (a strut); null both ways.</summary>
+    public string? Only { get; init; }
+    /// <summary>The axial force (kN, tension positive) its geometric stiffness takes (§14.3): nought in a first-order analysis.</summary>
+    public double Axial { get; init; }
+    /// <summary>Taken out (§14.4: a tension-only member under compression): no stiffness; its span loads still go to its ends.</summary>
+    public bool Inactive { get; init; }
 
     /// <summary>A copy with E and G times k (a cracked section's stiffness, §11.2), as yet unprepared.</summary>
     public FrameElement Scaled(double k) => new()
     {
         Id = Id, I = I, J = J, OffI = OffI, OffJ = OffJ, Local2 = Local2, E = E * k, G = G * k, A = A, I22 = I22, I33 = I33, Jt = Jt, As2 = As2, As3 = As3,
-        ReleaseI = ReleaseI, ReleaseJ = ReleaseJ, Name = Name, SourceId = SourceId, Material = Material,
+        ReleaseI = ReleaseI, ReleaseJ = ReleaseJ, Name = Name, SourceId = SourceId, Material = Material, Only = Only,
+    };
+
+    /// <summary>A copy with an axial force for its geometric stiffness and, or, taken out (§14.1), as yet unprepared.</summary>
+    public FrameElement With(double axial, bool inactive) => new()
+    {
+        Id = Id, I = I, J = J, OffI = OffI, OffJ = OffJ, Local2 = Local2, E = E, G = G, A = A, I22 = I22, I33 = I33, Jt = Jt, As2 = As2, As3 = As3,
+        ReleaseI = ReleaseI, ReleaseJ = ReleaseJ, Name = Name, SourceId = SourceId, Material = Material, Only = Only, Axial = axial, Inactive = inactive,
     };
 
     // Worked out by Prepare.
@@ -144,7 +157,7 @@ public sealed class FrameElement
 
         _released = Enumerable.Range(0, 6).Where(i => ReleaseI[i]).Concat(Enumerable.Range(0, 6).Where(i => ReleaseJ[i]).Select(i => i + 6)).ToArray();
         Array.Copy(k, K, 144);
-        if (_released.Length == 0) { _kccInv = null; return; }
+        if (_released.Length == 0) { _kccInv = null; AfterCondensing(); return; }
         // Static condensation: K' = K − K·R (K_RR)⁻¹ R·K, the released rows and columns then zero.
         var n = _released.Length;
         var kcc = new double[n * n];
@@ -163,6 +176,68 @@ public sealed class FrameElement
                 K[r * 12 + cc] = k[r * 12 + cc] - v;
             }
         foreach (var r in _released) for (var cc = 0; cc < 12; cc++) { K[r * 12 + cc] = 0; K[cc * 12 + r] = 0; }
+        AfterCondensing();
+    }
+
+    void AfterCondensing()
+    {
+        if (Inactive) { Array.Clear(K); return; }
+        if (Axial == 0) return;
+        var g = Geometric(Axial);
+        for (var x = 0; x < 144; x++) K[x] += g[x];
+    }
+
+    /// <summary>
+    /// The geometric stiffness of an axial force n (kN, tension positive) in local axes, condensed as the elastic one is
+    /// (§14.3): the consistent matrix of an Euler–Bernoulli bar in each bending plane (Przemieniecki 1968, §15; McGuire,
+    /// Gallagher and Ziemian, eq. 9.18) without the torsional term (no warping in the model), then Tcᵀ Kg Tc, Tc the released
+    /// ends' displacements from the held ones (a pinned brace: N/L on its ends' transverse displacements).
+    /// </summary>
+    public double[] Geometric(double n)
+    {
+        var g = new double[144];
+        if (n == 0 || L <= 0) return g;
+        void S(int r, int c, double v) { g[r * 12 + c] += v; if (r != c) g[c * 12 + r] += v; }
+        var (l, k) = (L, n / L);
+        // x–y plane: v (1, 7), θz (5, 11).
+        S(1, 1, k * 6 / 5); S(1, 5, k * l / 10); S(1, 7, -k * 6 / 5); S(1, 11, k * l / 10);
+        S(5, 5, k * 2 * l * l / 15); S(5, 7, -k * l / 10); S(5, 11, -k * l * l / 30);
+        S(7, 7, k * 6 / 5); S(7, 11, -k * l / 10); S(11, 11, k * 2 * l * l / 15);
+        // x–z plane: w (2, 8), θy (4, 10), the couplings' signs turned as in the elastic stiffness.
+        S(2, 2, k * 6 / 5); S(2, 4, -k * l / 10); S(2, 8, -k * 6 / 5); S(2, 10, -k * l / 10);
+        S(4, 4, k * 2 * l * l / 15); S(4, 8, k * l / 10); S(4, 10, -k * l * l / 30);
+        S(8, 8, k * 6 / 5); S(8, 10, k * l / 10); S(10, 10, k * 2 * l * l / 15);
+        if (_kccInv == null) return g;
+        // Tc: identity on the held; a released row u_R = −(K_RR)⁻¹ K_RH u_H.
+        var nr = _released.Length;
+        var isRel = new bool[12];
+        foreach (var r in _released) isRel[r] = true;
+        var tc = new double[144];
+        for (var r = 0; r < 12; r++) if (!isRel[r]) tc[r * 12 + r] = 1;
+        for (var a = 0; a < nr; a++)
+            for (var c = 0; c < 12; c++)
+            {
+                if (isRel[c]) continue;
+                var v = 0.0;
+                for (var b = 0; b < nr; b++) v -= _kccInv[a * nr + b] * _k0[_released[b] * 12 + c];
+                tc[_released[a] * 12 + c] = v;
+            }
+        var gt = new double[144];
+        Dense.Mul(g, tc, gt, 12);
+        var o = new double[144];
+        Dense.MulTransposedA(tc, gt, o, 12);
+        return o;
+    }
+
+    /// <summary>Tᵀ·Kg(n)·T: the geometric stiffness of an axial force n on the nodes' global degrees of freedom (§14.3).</summary>
+    public double[] GeometricGlobal(double n)
+    {
+        var g = Geometric(n);
+        var gt = new double[144];
+        Dense.Mul(g, T, gt, 12);
+        var o = new double[144];
+        Dense.MulTransposedA(T, gt, o, 12);
+        return o;
     }
 
     /// <summary>The loads in local axes.</summary>

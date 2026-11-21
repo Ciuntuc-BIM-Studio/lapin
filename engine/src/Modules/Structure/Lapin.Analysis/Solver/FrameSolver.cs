@@ -33,8 +33,10 @@ public sealed class FrameProblem
     /// <summary>Shell elements (§10): 3 or 4 nodes each, sharing the bars' nodes where they meet.</summary>
     public List<ShellElement> Shells { get; } = [];
     public List<CaseLoads> Cases { get; } = [];
-    /// <summary>Stiff couplings of nodes (§11.2: a rigid diaphragm's penalty), each its nodes and its global stiffness (6 a node, row-major).</summary>
+    /// <summary>Stiff couplings of nodes (§11.2: a rigid diaphragm's penalty), each its nodes and its global stiffness (6 a node, row-major); and springs to the ground (§14.2, <see cref="Link.Ground"/>).</summary>
     public List<Link> Links { get; } = [];
+    /// <summary>The nodes whose support works in compression only (§14.4): held or on springs while it pushes, lifted (free) when it would pull.</summary>
+    public HashSet<int> Uplift { get; } = [];
 
     public int AddNode(Vec3 at, string id, bool[]? held = null)
     {
@@ -46,7 +48,21 @@ public sealed class FrameProblem
 }
 
 /// <summary>A coupling of nodes by a stiffness matrix in global axes (6 degrees of freedom a node, row-major): no element results of its own.</summary>
-public sealed record Link(int[] Nodes, double[] K, string Id);
+public sealed record Link(int[] Nodes, double[] K, string Id)
+{
+    /// <summary>A spring from its node to the ground (§14.2): its force is a reaction.</summary>
+    public bool Ground { get; init; }
+
+    /// <summary>Springs to the ground on one node's degrees of freedom (kN/m, kN·m/rad, global): its 6 × 6 stiffness, or its diagonal.</summary>
+    public static Link Spring(int node, double[] k, string id)
+    {
+        if (k.Length == 36) return new Link([node], (double[])k.Clone(), id) { Ground = true };
+        if (k.Length != 6) throw new ArgumentException("A spring is six stiffnesses or a 6 × 6 matrix.");
+        var m = new double[36];
+        for (var d = 0; d < 6; d++) m[d * 6 + d] = k[d];
+        return new Link([node], m, id) { Ground = true };
+    }
+}
 
 /// <summary>Where the solver met a mechanism: the node, its degree of freedom (global ux…rz), the bars joined to it.</summary>
 public sealed record Mechanism(int Node, int Dof, IReadOnlyList<int> Elements)
@@ -563,14 +579,36 @@ public sealed class FrameSystem
         var results = new ElementResult[p.Elements.Count];
         var shellResults = new ShellResult[p.Shells.Count];
         var nodeForce = Internal(u, v.LocalLoads, v.Peq, v.Pc, v.Fq, (results, shellResults));
+        // The springs to the ground (§14.2): their forces are reactions, what the members push on their nodes less the loads there.
+        double[]? ground = null;
+        bool[]? onSpring = null;
+        foreach (var l in p.Links)
+        {
+            if (!l.Ground) continue;
+            ground ??= new double[nn * 6];
+            onSpring ??= new bool[nn * 6];
+            var m = 6 * l.Nodes.Length;
+            for (var r = 0; r < m; r++)
+            {
+                var t = 0.0;
+                var any = false;
+                for (var x = 0; x < m; x++) { var k = l.K[r * m + x]; if (k == 0) continue; any = true; t += k * u[l.Nodes[x / 6] * 6 + x % 6]; }
+                if (!any) continue;
+                ground[l.Nodes[r / 6] * 6 + r % 6] += t;
+                onSpring[l.Nodes[r / 6] * 6 + r % 6] = true;
+            }
+        }
         var reactions = new Dictionary<int, double[]>();
         var sumR = Vec3.Zero;
         for (var n = 0; n < nn; n++)
         {
+            var sprung = onSpring != null && Enumerable.Range(0, 6).Any(d => onSpring[n * 6 + d]);
             // A node no bar uses holds what is put on it (a wall's head under a slab's edge) when something holds it.
-            if (used[n] ? !Enumerable.Range(0, 6).Any(d => held[n * 6 + d]) : p.Held[n] == null) continue;
+            if (!sprung && (used[n] ? !Enumerable.Range(0, 6).Any(d => held[n * 6 + d]) : p.Held[n] == null)) continue;
             var r = new double[6];
-            for (var d = 0; d < 6; d++) if (held[n * 6 + d]) r[d] = nodeForce[n * 6 + d] - v.Applied[n * 6 + d];
+            for (var d = 0; d < 6; d++)
+                if (held[n * 6 + d]) r[d] = nodeForce[n * 6 + d] - (ground != null ? ground[n * 6 + d] : 0) - v.Applied[n * 6 + d];
+                else if (onSpring != null && onSpring[n * 6 + d]) r[d] = -ground![n * 6 + d];
             if (!used[n] && r.All(x => x == 0)) continue;
             reactions[n] = r;
             sumR += new Vec3(r[0], r[1], r[2]);
