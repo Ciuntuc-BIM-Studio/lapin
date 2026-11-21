@@ -1,0 +1,2758 @@
+{
+  "uls": {
+    "frames": "24D49A43E4DDEE8BE454ADCEEB1E24AAAEC3289D64F909D2B148D3FA91AF5094",
+    "reactions": [
+      {
+        "at": [
+          0,
+          0,
+          0
+        ],
+        "f": null,
+        "min": [
+          -5.877774,
+          -21.698092,
+          -42.110778,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          4.459505,
+          17.915446,
+          44.965311,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          0,
+          12,
+          0
+        ],
+        "f": null,
+        "min": [
+          -35.302459,
+          -1.205335,
+          -32.231824,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          80.286906,
+          0.430162,
+          161.805377,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          0,
+          18,
+          0
+        ],
+        "f": null,
+        "min": [
+          -35.202122,
+          -1.372973,
+          -32.58253,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          81.042461,
+          0.434729,
+          163.328276,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          0,
+          24,
+          0
+        ],
+        "f": null,
+        "min": [
+          -37.946293,
+          -2.456268,
+          -34.041544,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          82.615908,
+          2.154409,
+          164.416126,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          0,
+          30,
+          0
+        ],
+        "f": null,
+        "min": [
+          -5.774646,
+          -10.09866,
+          -7.305502,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          5.174191,
+          11.58899,
+          23.639844,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          0,
+          6,
+          0
+        ],
+        "f": null,
+        "min": [
+          -39.333306,
+          -24.855181,
+          -67.240182,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          85.871609,
+          19.742501,
+          170.292806,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          10,
+          0,
+          0
+        ],
+        "f": null,
+        "min": [
+          -0.24866,
+          -12.746844,
+          -16.403677,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0.251976,
+          17.138184,
+          46.586172,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          10,
+          30,
+          0
+        ],
+        "f": null,
+        "min": [
+          -0.548131,
+          -17.273056,
+          -6.265354,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0.579257,
+          12.820646,
+          44.842575,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          15,
+          0,
+          0
+        ],
+        "f": null,
+        "min": [
+          -0.439699,
+          -11.441201,
+          -12.724095,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0.45792,
+          16.636883,
+          50.866393,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          15,
+          30,
+          0
+        ],
+        "f": null,
+        "min": [
+          -0.956902,
+          -16.584415,
+          -12.745239,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          1.048042,
+          11.323406,
+          52.519078,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          20,
+          0,
+          0
+        ],
+        "f": null,
+        "min": [
+          -4.446798,
+          -21.579759,
+          -41.890361,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          5.760377,
+          17.91404,
+          44.844216,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          20,
+          12,
+          0
+        ],
+        "f": null,
+        "min": [
+          -80.491043,
+          -1.177139,
+          -32.084157,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          35.37673,
+          0.485784,
+          161.689837,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          20,
+          18,
+          0
+        ],
+        "f": null,
+        "min": [
+          -81.111978,
+          -1.257928,
+          -32.526649,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          35.140916,
+          0.48021,
+          163.247499,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          20,
+          24,
+          0
+        ],
+        "f": null,
+        "min": [
+          -82.873214,
+          -2.496856,
+          -34.334608,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          38.008853,
+          2.187335,
+          164.503036,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          20,
+          30,
+          0
+        ],
+        "f": null,
+        "min": [
+          -5.179326,
+          -9.995371,
+          -6.991667,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          6.023425,
+          11.566111,
+          23.338466,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          20,
+          6,
+          0
+        ],
+        "f": null,
+        "min": [
+          -85.62036,
+          -24.787938,
+          -67.402559,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          39.32899,
+          19.584229,
+          170.271845,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          5,
+          0,
+          0
+        ],
+        "f": null,
+        "min": [
+          -0.455816,
+          -11.453588,
+          -13.129714,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          0.441363,
+          16.636174,
+          50.464695,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "at": [
+          5,
+          30,
+          0
+        ],
+        "f": null,
+        "min": [
+          -0.990021,
+          -16.517129,
+          -12.328062,
+          0,
+          0,
+          0
+        ],
+        "max": [
+          1.016716,
+          11.318142,
+          51.503898,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "maxima": {
+      "displacement": {
+        "value": 0.235295121
+      },
+      "deflection": {
+        "x": 3.820108,
+        "value": 15.834616258
+      },
+      "N": {
+        "max": {
+          "x": 0.171496,
+          "value": 70.306403
+        },
+        "min": {
+          "x": 0,
+          "value": -170.702293
+        }
+      },
+      "Vy": {
+        "max": {
+          "x": 0,
+          "value": 85.62036
+        },
+        "min": {
+          "x": 0,
+          "value": -145.614303
+        }
+      },
+      "Vz": {
+        "max": {
+          "x": 0,
+          "value": 24.855181
+        },
+        "min": {
+          "x": 0,
+          "value": -19.742501
+        }
+      },
+      "T": {
+        "max": {
+          "x": 0,
+          "value": 3.421906
+        },
+        "min": {
+          "x": 0,
+          "value": -3.408541
+        }
+      },
+      "My": {
+        "max": {
+          "x": 1.370826,
+          "value": 14.772475
+        },
+        "min": {
+          "x": 0,
+          "value": -12.676081
+        }
+      },
+      "Mz": {
+        "max": {
+          "x": 0.828,
+          "value": 484.381011
+        },
+        "min": {
+          "x": 0,
+          "value": -484.589751
+        }
+      }
+    }
+  },
+  "checks": [
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Column IPE 400",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member C 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 240",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member IPE 360",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member L 50×50×5",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Z 200×65×2",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    },
+    {
+      "name": "Member Ø20",
+      "utilisation": 0
+    }
+  ]
+}
