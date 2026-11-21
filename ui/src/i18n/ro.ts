@@ -5003,6 +5003,9 @@ export const RO: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "Fără flambaj sub aceste încărcări: rigiditatea geometrică doar rigidizează.",
   "No buckling mode: the compressed bars are held by what is round them.": "Fără mod de flambaj: barele comprimate sunt ținute de ce le înconjoară.",
   "A mechanism in its last states.": "Un mecanism în ultimele stări.",
+  "Dock the panel": "Fixează panoul",
+  "Float or dock the project browser": "Plutește sau fixează browserul proiectului",
+  "Float or dock the properties": "Plutește sau fixează proprietățile",
 };
 
 /** Phrases with a number or a name in them. */

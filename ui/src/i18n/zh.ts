@@ -5041,6 +5041,9 @@ export const ZH: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "这些荷载下无屈曲：几何刚度只起刚化作用。",
   "No buckling mode: the compressed bars are held by what is round them.": "无屈曲模态：受压杆件由其周围的构件约束。",
   "A mechanism in its last states.": "在最后几个状态中出现机构。",
+  "Dock the panel": "停靠面板",
+  "Float or dock the project browser": "浮动或停靠项目浏览器",
+  "Float or dock the properties": "浮动或停靠属性",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

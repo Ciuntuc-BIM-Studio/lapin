@@ -5010,6 +5010,9 @@ export const IT: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "Nessuna instabilità sotto questi carichi: la rigidezza geometrica irrigidisce soltanto.",
   "No buckling mode: the compressed bars are held by what is round them.": "Nessun modo di instabilità: le aste compresse sono trattenute da ciò che le circonda.",
   "A mechanism in its last states.": "Un meccanismo negli ultimi stati.",
+  "Dock the panel": "Ancora il pannello",
+  "Float or dock the project browser": "Sgancia o ancora il browser di progetto",
+  "Float or dock the properties": "Sgancia o ancora le proprietà",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
