@@ -68,7 +68,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
     /// a prism, a face pushed or pulled on an element Studio does not build; a body, an element's or a mesh file's
     /// triangles made into a Studio solid), or a part placed from its type's definition (<see cref="Parts"/>).
     /// </summary>
-    public static readonly string[] Operations = ["extrude", "sweep", "revolve", "loft", "primitive", "prism", "body", "followMe", Parts.Operation];
+    public static readonly string[] Operations = ["extrude", "sweep", "revolve", "loft", "primitive", "prism", "body", "followMe", SubDOperation, Parts.Operation];
 
     public void Register(IModuleRegistry r)
     {
@@ -96,6 +96,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
                 new("radius", "Radius", "length", Min: 0),
                 new("radius2", "Second radius", "length", Min: 0),
                 new("rotation", "Rotation (°)", "number", Min: -360, Max: 360),
+                // A SubD solid's (decision 772): its subdivisions at most.
+                new("levels", "SubD levels (at most)", "number", Min: 1, Max: SubD.MaxLevels),
                 new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
                 new("exportAs", "Export as", "text"),
                 // Rings, boxes and wall strips (Thick).
@@ -110,7 +112,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
             r.Geometry(cls, Geometry);
             r.Quantities(cls, Quantities);
             // Studio solids give way to the building's elements; furniture to everything.
-            r.Cutter(cls, cls == "IfcFurnishingElement" ? 10 : 40, (e, m) => !IsVoid(e) && Geometry(e, m, null)?.Parts is [{ } only] ? only.Solid : null);
+            r.Cutter(cls, cls == "IfcFurnishingElement" ? 10 : 40, (e, m) => !IsVoid(e) && !IsOpenSurface(e) && Geometry(e, m, null)?.Parts is [{ } only] ? only.Solid : null);
         }
         // Its material: what its solids are made of when they name none of their own (forum topic 60).
         r.Class(new(TypeClass, "Solid type", [new("description", "Description", "text"), new("material", "Material", "materialRef")], "#b9b2a6", Kind: "type"));
@@ -158,6 +160,11 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         r.Command("box", "Box", (ctx, a) => CreateThick(ctx, a, Thick.Box));
         r.Command("wall", "Wall strip", (ctx, a) => CreateThick(ctx, a, Thick.Wall));
         r.Command("primitive", "Primitive", Primitive);
+        // SubD solids (decision 772): a cage made smooth; IFC keeps the cage in Lapin_SubD.
+        RegisterSubD(r);
+        var subdIfc = new SubDIfc();
+        r.Service<IIfcElementSets>(subdIfc);
+        r.Service<IIfcExportFilter>(subdIfc);
         RegisterEdits(r);
         RegisterOnFace(r);
         RegisterFollowMe(r);
@@ -456,6 +463,12 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
     {
         if (g == null || g.Parts.Count == 0) yield break;
         var cls = e.Str("exportAs") ?? e.Class;
+        // An open SubD surface holds no volume: its area only.
+        if (IsOpenSurface(e))
+        {
+            yield return new QuantitySet($"Qto_{(cls.StartsWith("Ifc") ? cls[3..] : cls)}BaseQuantities", [new("GrossSurfaceArea", g.Parts.Sum(p => Measure.SurfaceArea(p.Solid)), "AREA", "Surface area")]);
+            yield break;
+        }
         var volume = g.Parts.Sum(p => Measure.Volume(p.Solid));
         var list = new List<Quantity>
         {
@@ -512,6 +525,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         var profile = m.Get(e.Str("profile") ?? "");
         if (e.Str("operation") == "primitive")
             return (0, e.Num("height"), Math.Max(e.Num("width"), 2 * e.Num("radius")), e.Num("height"));
+        // A thickened SubD surface: its thickness is what a slab or a covering is thick.
+        if (e.Str("operation") == SubDOperation) return (0, 0, 0, e.Num("thickness"));
         var outer = profile != null ? Sketches.OutlineOf(m, profile)?.Loop : null;
         if (outer == null) return (0, 0, 0, 0);
         var holes = Sketches.Holes(m, profile!, ProfileIds(m));

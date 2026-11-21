@@ -112,6 +112,12 @@ public sealed partial class StudioModule
                 var (body, why) = PrimitiveBody(e, inner);
                 return (body, null, why);
             }
+            case SubDOperation:
+            {
+                if (inner != null) return (null, null, "a SubD solid is not hollowed: give an open one a thickness instead.");
+                var (body, why) = SubDBody(e);
+                return (body, null, why);
+            }
             case "prism":
             {
                 if (inner != null) return (null, null, "a face pushed or pulled on another element is not hollowed.");

@@ -49,11 +49,11 @@ public sealed partial class StudioModule
             return null;
         });
 
-        // Where a primitive or a body stands: {id, at: [x, y, z]} (the middle of its base), {rotation} (°).
+        // Where a primitive, a body or a SubD solid stands: {id, at: [x, y, z]} (the middle of its base), {rotation} (°).
         r.Command("place", "Place", (ctx, a) =>
         {
             var e = Solid(ctx.Model, (string?)a["id"]);
-            if (e.Str("operation") is not ("primitive" or "body")) throw new CommandException("A solid drawn from a sketch moves with its sketch.");
+            if (e.Str("operation") is not ("primitive" or "body" or SubDOperation)) throw new CommandException("A solid drawn from a sketch moves with its sketch.");
             var attrs = e.CloneAttrs();
             if (Features.P(a["at"]) is { } at) attrs["at"] = Features.J(at);
             else if (a["at"] is JsonArray { Count: 2 } xy && Features.P(e.Attrs["at"]) is { } was) attrs["at"] = Features.J(new Vec3(Json.Number(xy[0]) ?? was.X, Json.Number(xy[1]) ?? was.Y, was.Z));

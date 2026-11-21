@@ -376,6 +376,16 @@ public static partial class IfcImport
             return null;
         }
 
+        /// <summary>The cage a SubD solid's Lapin_SubD set carries (decision 772), as the JSON it was written as; null when none.</summary>
+        JsonNode? SubDCageOf(int id)
+        {
+            foreach (var sid in definitions.GetValueOrDefault(id) ?? [])
+                if (f.Entities.GetValueOrDefault(sid) is { Type: "IFCPROPERTYSET" } set && Str(set[2]) == IfcExport.SubDSetName)
+                    foreach (var p in Items(set[4]))
+                        if (p.Type == "IFCPROPERTYSINGLEVALUE" && Str(p[0]) == IfcExport.SubDCageProperty && Value(p[2]) is JsonObject cage) return cage;
+            return null;
+        }
+
         /// <summary>The provision openings of Lapin's own IFC (decision 296): their host's GlobalId and the IfcOpeningElement.</summary>
         readonly List<(string Host, StepEntity Opening)> provisions = [];
 
@@ -1071,6 +1081,8 @@ public static partial class IfcImport
             if (predefined is "NOTDEFINED" or "USERDEFINED") predefined = intent.Predefined;
             // A room's name is its LongName (its Name is its number).
             var name = e.Type == "IFCSPACE" && e.Args.Count > 7 && Str(e[7]) is { Length: > 0 } longName ? longName : Str(e[2]);
+            // A SubD solid's cage rides in a set of its own (decision 772).
+            if (SubDCageOf(e.Id) is { } cage) intent.Attrs["cage"] = cage;
             Put(edit, gid, cls, name ?? cls[3..], intent.Attrs, predefined);
             var storey = StoreyFor(e.Id);
             relations.Add(x => Contain(x, gid, storey));

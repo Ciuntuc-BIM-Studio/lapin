@@ -170,7 +170,8 @@ public static class SubDCages
     /// <summary>
     /// Faces extruded by <paramref name="distance"/> along their normal (a region's points along the mean of its faces'
     /// normals there): the region is lifted, a band of quads joins it to the faces round it (or stands on an open border).
-    /// The faces keep their indices; the band's are added after the others.
+    /// The faces keep their indices; the band's are added after the others. Creases inside the region go up with it; those on
+    /// its rim stay and are copied onto the lifted rim.
     /// </summary>
     public static (SubDCage? Cage, string? Problem) Extrude(SubDCage c, IReadOnlyCollection<int> faces, double distance)
     {
@@ -217,11 +218,14 @@ public static class SubDCages
             }
         }
         outFaces.AddRange(band);
+        // A crease inside the region goes up with it; one on its rim stays on the old rim and is given to the lifted one too.
         var creases = new List<SubDCrease>();
         foreach (var x in c.Creases)
         {
-            var inner = lifted.ContainsKey(x.A) && lifted.ContainsKey(x.B) && faceCount.GetValueOrDefault(SubD.Key(x.A, x.B)) == 2;
-            creases.Add(inner ? x with { A = lifted[x.A], B = lifted[x.B] } : x);
+            var uses = lifted.ContainsKey(x.A) && lifted.ContainsKey(x.B) ? faceCount.GetValueOrDefault(SubD.Key(x.A, x.B)) : 0;
+            if (uses == 2) { creases.Add(x with { A = lifted[x.A], B = lifted[x.B] }); continue; }
+            creases.Add(x);
+            if (uses == 1) creases.Add(x with { A = lifted[x.A], B = lifted[x.B] });
         }
         var cage = Compact(new SubDCage(pts, outFaces, creases));
         return SubD.Problem(cage) is { } p ? (null, p) : (cage, null);

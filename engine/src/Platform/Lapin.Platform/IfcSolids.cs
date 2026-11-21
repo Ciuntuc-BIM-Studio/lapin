@@ -57,6 +57,8 @@ public interface IIfcExportFilter
     bool SkipsGroup(IModelView model, Entity group) => false;
     /// <summary>The attribute keys never written.</summary>
     IEnumerable<string> PrivateKeys => [];
+    /// <summary>Whether this element's attribute is left out of its intent set (a module writes it in a set of its own: a SubD solid's cage in Lapin_SubD).</summary>
+    bool IsPrivate(Entity element, string key) => false;
 }
 
 /// <summary>A module's entities that IFC writes as systems of elements (IfcBuildingSystem).</summary>

@@ -59,7 +59,7 @@ public sealed class StudioPlacement : IElementPlacement
         Vec3 Dir(Vec3 d) { var q = t.Dir(d.Xy); return new Vec3(q.X, q.Y, d.Z); }
         switch (e.Str("operation"))
         {
-            case "primitive" or "body":
+            case "primitive" or "body" or StudioModule.SubDOperation:
                 if (Features.P(attrs["at"]) is { } at) attrs["at"] = Features.J(Pt(at));
                 attrs["rotation"] = t.Angle(e.Num("rotation") * Math.PI / 180) * 180 / Math.PI;
                 break;
@@ -136,7 +136,7 @@ public sealed class StudioStoreyShift : IStoreyShift
     /// <summary>A primitive or a body stands on a point in the world: it goes up with the storey.</summary>
     public JsonObject? Shifted(Entity e, double dz)
     {
-        if (e.Str("operation") is not ("primitive" or "body") || Features.P(e.Attrs["at"]) is not { } at) return null;
+        if (e.Str("operation") is not ("primitive" or "body" or StudioModule.SubDOperation) || Features.P(e.Attrs["at"]) is not { } at) return null;
         var attrs = e.CloneAttrs();
         attrs["at"] = Features.J(new Vec3(at.X, at.Y, at.Z + dz));
         return attrs;
