@@ -1,0 +1,3061 @@
+{
+  "dofs": 714,
+  "profile": 52164,
+  "cases": "00544D2452D02555F219EA14656209B1259DB36C6938055709DD12147BD4B465",
+  "run": "AD266C985A50F6713CD8FA20096AE8336D7D380C155E8074B3D8A71832815710",
+  "sets": [
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+0BhPihy8z5AvBJO5yggRoG|+X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "149.29504291479458",
+      "axial": "85A0D5C0464C6E19F982678393B81B3BBDEA01B5BC2ADC463DE62A96C7218D64",
+      "result": "9B6B6C852E52DABAD4CE5B163C8B456AFEC215EB1696C3DD6FBCDB0BD907193D",
+      "first": "4A5CF9CCE63A25ACBA9D8037F4CD068837505E731DE578DCF6FD5F5AA55FC218"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+0BhPihy8z5AvBJO5yggRoG|-X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "163.54840550476086",
+      "axial": "4E94EEFD87FC9D36B226B1902552A8B0C2C17861C31828438D5356787A85AEBC",
+      "result": "EB0DA2B56FD848A9DAB903BC7EFB031CC7CE00B18D12753118EFF3AAAC1A1278",
+      "first": "B88F7B48D9A4BB9B5C3D9DEDF11092C686EA528F39B720CE125DDF040070AE35"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+0BhPihy8z5AvBJO5yggRoG|+Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "152.17433321606114",
+      "axial": "9FCA77A0039C7CB50F8CC113A1C3605189A526FF9451559459A3083C1F5D2496",
+      "result": "93AC095834CF3B021F75C5369B109F2BA123ACB43584D9EBF5C10ACA11C57401",
+      "first": "47C5FDDA58390682A9E366FD9112B50AB2C730064F9FD62CC8EC854D9A9614D4"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+0BhPihy8z5AvBJO5yggRoG|-Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "160.29608153978882",
+      "axial": "5E779733A7359B6E0A04BDFB02CFE88F2C766CF95C1C5C1958E264AB70A6FFDB",
+      "result": "E18D70259DFE7926AD42721608A4BDCCB4A5B275A6883C245A8092F28A3349B1",
+      "first": "DFDAC4E4247C1C269AB45354D698E450B40603D684AD8B57172CFDEE13B657FD"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1vp$t_$zX2yvUsCILXE6uD|+X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "148.09427855369069",
+      "axial": "92294DD79E1D0A7ED647FC8CFD74D08E3BFF074FB612237C1A39742D7F6412F4",
+      "result": "D8017718F9B827DCFBC318566B967BB4D9EDEAE2BFF216872D8FFD26B121F763",
+      "first": "D7D5D6FEE19793C5747F3B321D2DCBAA4DA08AD7426BFEE316BBAF66DC2181B4"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1vp$t_$zX2yvUsCILXE6uD|-X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "162.34613523287314",
+      "axial": "13FD72A736B412E86A86001250E7E7EDEC12BEE1A5F7F8252F43E7C51B39CC90",
+      "result": "9D73DCCEFD1F4DE28EA9341ECC6D13AABD954CD4A019DE3FD073978DEFFB9986",
+      "first": "041A2B7F86569F58B4FE547038B7F7E8B6F674AA6676DB43052D0D1CA7A26CBB"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1vp$t_$zX2yvUsCILXE6uD|+Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "150.98641062605742",
+      "axial": "C3E976FE1E7291F494451A2BB6D26CE0F3209D8F544F30026076C15821A03311",
+      "result": "A38FD74B132FAF59CBCF195057801EE02A8515DDF7E4044E79DDF8AD1FF735E4",
+      "first": "9072F5A59D4A54885873333CD5C1D4C4F3168637CCBF2A421AF1B1F5EFB4F601"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1vp$t_$zX2yvUsCILXE6uD|-Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "159.07645624726422",
+      "axial": "6EE0BAE480688B09D8FC8070DA172D25A7BAA89BFD52A907FB5D53AE51A9E7CA",
+      "result": "AC786F481EC07AB9BCA9C57E3A2EF0E37ACE24E7537CF6B9AAFBA712730EA4DF",
+      "first": "C0661574BAEB75345BF63AD6819D55F9CD27C5B2B927AD079B71B1DFEE8CBFAF"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1QrIWmyCv0UQ7iSNp4FTOZ|+X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "170.4250026026299",
+      "axial": "554A817CAFE23170EBF0032A20F9832EC4709CD18B47F0A595E2F6786F2947B0",
+      "result": "3DF1908D95DBD769C622963416B3B908480B923339CE989C410767DF0E7C6326",
+      "first": "6B979B51E8F94F0532638A34F6417EC2CAE81562589EEEDA5A98E889FE7CE7DD"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1QrIWmyCv0UQ7iSNp4FTOZ|-X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "185.5649086179673",
+      "axial": "1E556089CCE8588376DC7EA2F9B52DF0EAC38A782A7E441D3312622362C3BE6A",
+      "result": "7A4224ADA2E03A872BA62E743976A22EE2C20AFCA9B79EE29D39EC685F1D3249",
+      "first": "A51B2713972865B0BC86663C3B76583B4FAA5FDD8BBFA52829F003CCC04A52EF"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1QrIWmyCv0UQ7iSNp4FTOZ|+Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "171.30212661579952",
+      "axial": "2879E177191AADEE37B00A56BD72253AF10D71755DADEBB75A0EC5AC19CFBAAB",
+      "result": "9C096ADBACC1C704E6DCBCA2704B43F255638FC23C3371CEEC95651518DF4C95",
+      "first": "C6C4A5DAE6CA05DFA7618F61FBDA41B7EC751E248123CB547BC7E25F1EF09C2C"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1QrIWmyCv0UQ7iSNp4FTOZ|-Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "184.94593797082572",
+      "axial": "85010893D47F8E196AE121584BAA033CB7DE16F3DF28085BBB271961FF07A0D2",
+      "result": "BC6F4C13FBE2E2B6B6F2513E586AFC90F3FEEEBF901460EB0584463989C9C6D0",
+      "first": "E267AB367E7FC34BF7FE5771C3AB67CCA7E46086302BEAAB73CBF36765A35591"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+3pncZb8EfBAAz5jjhU0V1t|+X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "168.53828289952816",
+      "axial": "105C2E5A6645E5201BB43BCBD55377C2D570869EEBCD15563AF7831CAA6DBC41",
+      "result": "DE3288DED87D16969A53973EF4E6FEF5FB0B919A8DF2B938BDEFBF03700656F5",
+      "first": "42E36E51CE528A219A0D62A7874ED61DDC257FDD2BF6298218376C53454278D1"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+3pncZb8EfBAAz5jjhU0V1t|-X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "183.63459251902435",
+      "axial": "6BA438B33A22914F18E74059E8123276C59DFB9666E05D92BE3802C2583FBF54",
+      "result": "053CC5878DD5D90B11066E077DE42A38B843D9C21961C58ECCBF85D1D8042F86",
+      "first": "AD4CB4251DA2C8EE76E355B5205E043082E491A54D599510BA2D3C00DCE9938A"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+3pncZb8EfBAAz5jjhU0V1t|+Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "169.40319301458524",
+      "axial": "3311E852120B68EBD255F4FB2B9B3D322F93FE3F1B505532F0C64F253FF8F817",
+      "result": "F1AC6786C5BE0DCF40A1BA61587A4761921760198A4EBDF8333F61801A16CCB7",
+      "first": "25C4AE4FB9F3979756B9C2F181F203C57F7DEF05AEA152E485A71423561F8C62"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+3pncZb8EfBAAz5jjhU0V1t|-Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "183.0298615175176",
+      "axial": "D65FCBCF3BB860A00740F44740B76323732719E5FF1DB17C5408C63C7FE6B43E",
+      "result": "CE777A598B7F6E8AA86D0AE697898C67E87235045232F319AB14C914AFF391C0",
+      "first": "A8D612224FE6C7057C005D98AF236E632EF9556BDD5643E1EFAB427ABF5D938E"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1Xpd8108zEAArpsxqowyhP|+X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "139.13416449508605",
+      "axial": "F2F9632F78856D25C21B30501233395D78BC487076FBF8AAB42A5D57A6F272B8",
+      "result": "3E0F0A3A4BA4E4D3FD6BEE0D91061C508359FD7FDF08D6F8FA9221FB26982B7C",
+      "first": "86AEDA593F2D68AC1E5F5B54B78387B9AB0710D6CDDC6C03CD41F902F6FC87CB"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1Xpd8108zEAArpsxqowyhP|-X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "148.93777324588436",
+      "axial": "A864109A3C53398BF24600A7ACB56612DE582EA28F604CF9D8BCB240123130B6",
+      "result": "D03D2CA3DDC083B39D991A6D137E8D513F2BF55672556633D043E070B6945EBD",
+      "first": "922A54E8EBD43EE6349CFD1538A7B21E59D160A3CD4F81693FF2A2CE7CCB760C"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1Xpd8108zEAArpsxqowyhP|+Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "139.74796222786478",
+      "axial": "6278368F93FED45F7A50032CA63ADEE990AD7947F38F5CCB8D79D07CF8A5E38A",
+      "result": "9B6463B96D8D58C86AAD17AC3713C249CBC87CFD88F58BFF2C19A1B6F8D6CABC",
+      "first": "24E43EC113657BF94A7F9C6489A9CA5F51166D599C8FEB127C31F9182FD8FE08"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1Xpd8108zEAArpsxqowyhP|-Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "148.44834320467382",
+      "axial": "C8B67D34AF05ACDE1A60928AADDE135C1E3BFC858139C79952C1785C183C84F0",
+      "result": "1A27E8FD94780BAC200D8D821D90FB15FEEFE0886590682822188EBFF90F7CE0",
+      "first": "C899320CDCDE4BBB45A34C98ED274DAD13D68682B72B23F37EC6BEE6AE2059D7"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+2NHrJ92Bf6Q865lPpqitsg|+X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "138.60720941058486",
+      "axial": "E344640C6BBB6F0AB7894EF395E5B4B47DAB88A9C770F8DA95ECE9A7ECA663D0",
+      "result": "7FDCCA86C3CE4BB0AD7B5BFD5AD874436054C4493CA4A950F8D0CAFA006BB45B",
+      "first": "F95C8911D9777EE4D35811ADE0789BB3827204684B73F28BCF11C3EC5AFDCD10"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+2NHrJ92Bf6Q865lPpqitsg|-X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "148.4073206649797",
+      "axial": "AC89C3851AB9EFA509BBBDCDA8C6B0265CF5DEE6B24340427517102E0CBCC514",
+      "result": "6EC640E54493A8DC16608A78905E36D6ABC807C6A0FFEF3A80A2FC5D16232C17",
+      "first": "0AFEAA70A33E5788A34CE1E148632013A0F4DD2333D14C72FBB3E36356FEF4B3"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+2NHrJ92Bf6Q865lPpqitsg|+Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "139.21641269775157",
+      "axial": "F0EFD53D23BA376DD2F01E258C53AB02F7E84459C35F9DBD05572E2AC2008B8E",
+      "result": "399D51786AEE396799C83DC2F0B188EEC76D7AB8F09F6B1938843E38AE2513AA",
+      "first": "6E9A9D6182F0EC27DECB26D3C0F2F22B78C7FEE9F69EB6DEC4738367E7D522BD"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+2NHrJ92Bf6Q865lPpqitsg|-Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "147.92363122097217",
+      "axial": "033D8335B08C83A829D572011AC01B090E835C20037CC6D499D66082468EF27E",
+      "result": "ED4F2F29FCCC2658745F15639C68E47500778B7A94BBD00C4905760C41B2BC47",
+      "first": "68DC6D2741355416FF2126B3B8DE1664C5D22AA61A0979CF7B53D57FF57A94D9"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1JfsMpb7n5K9r1ushG01JK|+X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "188.28220264902737",
+      "axial": "11ED2F1F58E3211E68BE37DDEF87D30A920E674F3B9801DE675534DC5A6653A0",
+      "result": "B66BD1B596EF57B90670908D0677B5E5110F84FD8DD497CBDB111A23856DD6A0",
+      "first": "134987EC5D9DAD3BEC79F6694AEB769527A9526790817EC72B5F78C3F487C203"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1JfsMpb7n5K9r1ushG01JK|-X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "212.14380200330436",
+      "axial": "EF1C6312B882CAD3CAFFC3B77B07E37DCFEF34EC92C8AA25842298D7D40A3365",
+      "result": "66A0AF1ADF90264C95A64C191281352ECC569D9506C2119E23524886DD957729",
+      "first": "40A5D579A621676FF8CDAEFCFD1452763543CEC7DA1D236A6810091BDF626D43"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1JfsMpb7n5K9r1ushG01JK|+Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "193.5642421911688",
+      "axial": "2874359F77A09B28CFEEA3D1473B2EA645E65C6D5FD6EE5D86A46D46A1324EA3",
+      "result": "95FF6BBAF985CB9A98C18E1BAFADAF1DCF2B3E05423A23A39A1777C38619C7A3",
+      "first": "EA6F9B1286C2630F5EFAB44776E25FB3DF58CF9FE9D1F8C56C621AA43BDE5672"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1JfsMpb7n5K9r1ushG01JK|-Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "205.8584561109387",
+      "axial": "E44D580CE1765067543CADAC4B34A85CCAD59D257EC2FFCC1E1C1ECDD2331BB3",
+      "result": "F8A80253EA76AC3E00718FBC8330C49BE7AD175062D125C928966160208AA989",
+      "first": "CD9DCFFF883F93BD862889A8A401DCAA501176495D7D9B80A9E61E00E96DBCD8"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+2FL9YIMlXCZ9I3KeusnvWN|+X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "187.55925353697415",
+      "axial": "E190BADCF24F7DB8ACEFA27C7F233A175B5A01E99BF251C6FC8CE29D40A0DFF8",
+      "result": "B5E43CE950BAE89EBDE7975AED7841410011B710A1D3AECAD44092A7EB3A348C",
+      "first": "E80842C82311944F10726B0CEACE44654F8ED2B81864F2E7CD9ED4D135E7C0B7"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+2FL9YIMlXCZ9I3KeusnvWN|-X",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "211.42590290967985",
+      "axial": "BCA0C8C606F3B84D0302E93D9B80A4F275CC455709E3CA00F6884C2EFCD72F19",
+      "result": "A7347D07782027D16A53AEB12034C331B3A8DF32E2C5414497A9C16114D95203",
+      "first": "D5DA428DC7A8691178DC74C2894DA228F30D2B0E2EF91E91CB71CE1E256C6DD9"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+2FL9YIMlXCZ9I3KeusnvWN|+Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "192.86357136793936",
+      "axial": "D9AAEE789FBC1353F32FE7BB17032D0BA681A491D8AB37C00EF912B8780F3160",
+      "result": "99915FC563B3740FC6F8698048659A4A9154D279AC941FBE5837D79D3BC16880",
+      "first": "36665B3FB9A2776308257CE5F78006CE5A5B871FA6E839CB71B4007D4927C390"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+2FL9YIMlXCZ9I3KeusnvWN|-Y",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "205.10882071074167",
+      "axial": "FD6A26E0573FA1D8B685AA860122B1167500464B311AEF42D0B540D322F37244",
+      "result": "5B957C432C05A58634DAF9870D0A395262D5B00C607B02F6005652E79BAF1080",
+      "first": "4D715E3BFBCFEC644C817039DE01FA18DA76479D03B8E97545C039E908830F74"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+0BhPihy8z5AvBJO5yggRoG|+X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "83.81089660569431",
+      "axial": "76729C5D9144299DB3C8A7B234B04D646311E135E0CAAE9D09CEA8E84F80A0D2",
+      "result": "DB752950D00DA01A598220F88C8266EC90A4BCA10B6B779EA033AC4221B7D074",
+      "first": "1F4918ED039B4C95391C2506EBC0B7222910547F0DCD850F824E297D69983B1A"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+0BhPihy8z5AvBJO5yggRoG|-X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "94.449344450772",
+      "axial": "9D31C7E2491FC3F9F460EAB0770CD97D2C1FDDC5DC32A456803903F2A4F07E1D",
+      "result": "F9F64EF178A0ACD025E3694E9200119A1490E77908657F46304CAF275268B845",
+      "first": "5FF3B957F8BAE24D253A69E87ED2FDB66B8D24DF0BD7A9CB331639B31F7CE7A5"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+0BhPihy8z5AvBJO5yggRoG|+Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "86.33433312801534",
+      "axial": "0A9EF9C567F1B4C29E650F5D7A4B0AAB4B3073D572167A29414DBB7081A72369",
+      "result": "74E4893BAE97C42A31910918F02AC44D196FDDF9A77D81CEB6D8261C7F111D0D",
+      "first": "C334D26FC6789F6876D07D46854BE2D51863CA7A649B463FBB9DF9292BC744DF"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+0BhPihy8z5AvBJO5yggRoG|-Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "91.45079308140535",
+      "axial": "458F75813354C4A72A546F460F709B689727C2FD95ECC29458BAA9B0126645D0",
+      "result": "18A70F6FED4B1BD44046E43C0941B994AC5AACE5F6CBDCB04B8B56F99555C807",
+      "first": "E652BA099BBC3FA73E4FB34C72FA0FB397E79FD9D1C0C87367ED379C8CED8919"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1vp$t_$zX2yvUsCILXE6uD|+X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "81.86629886439202",
+      "axial": "CA126C970A2A3572C2B80A6565407034A3B33FA8CBEC5B932C7784DC27C9E1DD",
+      "result": "43DABCC3EFAE318E5E595BD3A4FCDEB45687B54E13EB1A86A0DDF7E2DCFAF657",
+      "first": "89C7585E66B44D17C9E89C730739C6A66D73F3EFF1848F41DFD2D941CB0C459C"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1vp$t_$zX2yvUsCILXE6uD|-X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "92.32826199004782",
+      "axial": "24933A0D3A14A26760739B882E171C2642CDF90BFC27BAAB80C1A1CC1B045095",
+      "result": "80F4CE39BC75D6EA9E5BE91C306DD8EA6F339D85C8B4C2DB5E7386250E0F99D5",
+      "first": "20162359C7FA644DEFE949DC2708B54E38BA933625A52DA5D0F605A0ED347C76"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1vp$t_$zX2yvUsCILXE6uD|+Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "84.367111745959",
+      "axial": "B37AE855024919FD67C338570107A30B6850DF5E9668896309EABE6F0C53ACC1",
+      "result": "1A21BF111BCFCBD37153125640A6EF2479D6A147E4F5BC1C75D99CBBB1DC5890",
+      "first": "CC6EF587400ECA382D4A35EB4C005971E62E4744D342F2CF587F16F3FE394D53"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1vp$t_$zX2yvUsCILXE6uD|-Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "89.354046310715",
+      "axial": "BE30E9893138EC6709DADAEBA8C0A96AFE1A30DE12A7E3BFFBEF9E96E97881B5",
+      "result": "30E0EF16DD5F494D6F3920BAECC84C9C958D6322E4DB4D9530A01D9A6723D088",
+      "first": "20D4557F4FC70DC24280DE0009B14F61E14F0B4378599E568EF1D4968ACBFBF0"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1QrIWmyCv0UQ7iSNp4FTOZ|+X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "98.48627291781524",
+      "axial": "F60B21AFF3F335EC0720A15D8E4A9CB88B9D57469A001AFE2EBD63640931EA16",
+      "result": "15B00A218931A4586376618952AF521744A5D704DA87E555B282DC6ECD0C70CA",
+      "first": "66DC77D36966791BCBFD38CE73F6877AC00EE1E89A1F4E65B24C4CC9DA400F01"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1QrIWmyCv0UQ7iSNp4FTOZ|-X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "109.65232326037224",
+      "axial": "B9A69D2C1EF35B2323F612ADAFE0192FE66DB8A2D3EE0C9F607A5FA850353521",
+      "result": "A0404388ABA1843A45C8C61A34EA7F9A0669837CEE1ABE2ECE73D42172CA8B5A",
+      "first": "F94FDD88D1BDFEFDB2B171FE4805DFF220CDE2D85A71E8C6A73C532E563F47AF"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1QrIWmyCv0UQ7iSNp4FTOZ|+Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "98.81936385102043",
+      "axial": "21702249B5BF2E48E10672A8738E4410CF63937201202117F422EE8FF4DA29DC",
+      "result": "10518919CAB0EB64B39C3B3C0AD45DF8C54862EA2092BE73BFF67419AB84B437",
+      "first": "47C22AE575080065A5B75D4AB81B33CCEE729396896D2F652B67C3F0B2470913"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1QrIWmyCv0UQ7iSNp4FTOZ|-Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "109.78676325262688",
+      "axial": "05D35046E476F5B3CD880404D927EEB396BB39E42DC2CDF7436EE172453C478A",
+      "result": "57F0AC762518D4AD3B577AEB9D0C372E62FCB28D9B727B263BE610B65C5024C7",
+      "first": "63842303CAA311DE281C146F456C3FC3F2C46DDD99DA9EB27A49E57AB400A001"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+3pncZb8EfBAAz5jjhU0V1t|+X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "94.99572935262567",
+      "axial": "B4BBACFFE1722D4660B0D6A914204A91F58192BAC5B2D94C9BAEA7ECA490B887",
+      "result": "765E1D8DB4921CD97BACE8173E816BAA43F198281338F3FB28FFA472C0A48D50",
+      "first": "D409DD73DFEA9C75F7EFB5C707E42BDA22273D91F4E552745C014AB25DB8C272"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+3pncZb8EfBAAz5jjhU0V1t|-X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "105.83043521475138",
+      "axial": "29C7CCCE3CA2E8DE70AAB60DF22535CEA4449A2B21B2A66B7C4D379CB105E3D4",
+      "result": "3F06477D475136339F3BE066FB42B64A08944AE5ECD3223BEDFD48857A0BCBB3",
+      "first": "A5B78E644C416A9D7747939BB5CECB7A38B1F1ED802438A855CFB177E6FFFD2F"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+3pncZb8EfBAAz5jjhU0V1t|+Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "95.32543188388931",
+      "axial": "84D4912FCF2460452839270E0A54D0944A3A86DB4C7D9305FB73C73A590C1205",
+      "result": "66726C02306023C87232B35276EB46FC053BA5854C33AFF3A62B2EF8C4B588A2",
+      "first": "643DC9246B319B940053FB6B8C2CD5FE048D386E6B21863B8E165CDF66C36DA5"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+3pncZb8EfBAAz5jjhU0V1t|-Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "105.95795860401682",
+      "axial": "71670BF1AEF34397AF158E990DC069E5C9038E2B933E43787FA999C911268FBB",
+      "result": "0137C76242FDD2764D018F787A17D96C723ACD797297687869E1F16F4D9D013A",
+      "first": "F2026CF40DA237E072C787C2CC571D5725D984C50AA5F61DA1E66A322F3A3691"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1Xpd8108zEAArpsxqowyhP|+X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "76.4120424827725",
+      "axial": "19F38071567239016DEA0206EED5F4BA7E42BD7054E25750BDE9852FFFACE06C",
+      "result": "17F8A7D32C884178290B0292898BDD2D6B3DC5CEEE21DC0249672121690FB0D4",
+      "first": "8F1B0031AF14479ABADF698D2398710C35C4C2750D51A55066A7A297FB834D19"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1Xpd8108zEAArpsxqowyhP|-X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "82.60064126462954",
+      "axial": "4CAC0DF490ABC6B92582050B9169ECE600C03C29911BBD6755F679F346160001",
+      "result": "7FBF6B33E59101622A3FDD03D28520545B069715DC0F3A2A384E96FA9FD59B60",
+      "first": "B57227B9ECAEB06F45D908EFE550F07E745BAC954D524AC0D6BFCD042DF2FCCA"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1Xpd8108zEAArpsxqowyhP|+Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "76.62687613316128",
+      "axial": "9EAD3061E06450A5268A2F6645CE72E10A02F79EB7C0967972F104C426523BF3",
+      "result": "F302606F79B087EC4E7FC6DFB2B814F6ABC3E2040AA8196B0C025C0DF2B5DF7F",
+      "first": "C925C527C156FE07A67FC3F499BAB1B5B39A16B26C8C80125BEF615909726C24"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1Xpd8108zEAArpsxqowyhP|-Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "82.5580692413976",
+      "axial": "F3F62AA01E47F94C589D3AB5FEAAEBAED231447A32C68C3196FBE3B5F7194720",
+      "result": "639CE553696837B08C98818D08A26FF628F5EA1CEBB85746AC955AF2F7F7F968",
+      "first": "6B75A38D2C75C8717D3491E803182E9FE1062315F37A885D3AFFBF2B8CDB476B"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+2NHrJ92Bf6Q865lPpqitsg|+X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "75.68044916473298",
+      "axial": "5579125300F2D4CE7B3C22AFD739E525BC1FC0AA16FFAA7A31917269AF47AD1A",
+      "result": "0D7E2C505420118D0665DED7FF85D03E4744D7EFCEF5EF6DD939351245936799",
+      "first": "CEBAA38BC019C385A7927E9A7C2CC47828D5A8EAFFC9900CA9F33E21555C02E8"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+2NHrJ92Bf6Q865lPpqitsg|-X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "81.82312228553555",
+      "axial": "194AF95546ECF9A3C77E041DAB2EBC650BDFF97375394F7ACE5CE392E39D261D",
+      "result": "200CED14D57A3D1F924AB763E3217BF8CF8EB6D72758542B19CC33F079AB038D",
+      "first": "F33252FC88D1F7325AA5BA2357F3E0E6962E367D371FDC8BB1F763E4904F35B4"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+2NHrJ92Bf6Q865lPpqitsg|+Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "75.8931541360357",
+      "axial": "A09D59CDA4FF7B2B494C46E344B9A5A38A968526B64CA788C288F3791151ABB6",
+      "result": "92D9CA587429E4E0CF4DECA849E05B6AD1F9E55C02069AC3E60055B2CE5440A2",
+      "first": "B7A3B76897A50DBDE2FFF6B89CDFE2A5B55D4E715C7830EC2CEC61D9BA03D6FC"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+2NHrJ92Bf6Q865lPpqitsg|-Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "81.78270951918776",
+      "axial": "86150EDE2920E1DF8EDA1D97011B5B0B1F551A2C67597D8D94F6151766098A21",
+      "result": "44B91D3E1012A6DD44B022123BD58E481637BED723ECE0F48AFEFD545AB5AD53",
+      "first": "DB8E70781FE3FCEF44D9C11C904AAA46F2409E9F750C23A089CAFA49B07B8629"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1JfsMpb7n5K9r1ushG01JK|+X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "117.27130200473952",
+      "axial": "0C9A7E50EEF00A66682C0C6BD6B85B0C7B2ED5C189465FE137A58E60AE42CCD3",
+      "result": "8B48AE5833844554F432A325C33766C8E699D4D37CCCBCC467FCB55FDBCEB558",
+      "first": "CEFEA0FB26C92E6F9F14E32FC80368C8F6C6719DD063D4DBFCC2AFA72FAE65D1"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1JfsMpb7n5K9r1ushG01JK|-X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "140.5478222064136",
+      "axial": "1A5CEA5A48DD0230050650C32ADD4F61D3A8277905660E682799E72056DAA480",
+      "result": "5A02A8A5521E4547AFF000060D92A7898AADBE55EF79C8C71B387AAE435C50E8",
+      "first": "7783DF5817F09B1BD60B51FE249D49E90F0FAEEAABD9D3A85686E9BE1BEB0566"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1JfsMpb7n5K9r1ushG01JK|+Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "123.39630548555245",
+      "axial": "FF303F1E2A8E865286C9FBEBD9C80E265330B916194C95965131A68D4763B4F9",
+      "result": "B7FF759598DC7C02BDC21AC973900788427946F4F82297F1893707037DC70499",
+      "first": "BEC2DEC6F2CEC7D762AD3E00FB81989070F34F53BF138E8D4A32CD3A41063BBF"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1JfsMpb7n5K9r1ushG01JK|-Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "132.4573032041663",
+      "axial": "DA33F2866D2D08A1A5E4E4E6DE9BA3DC2F7E9BAB630CF3B09F141473BD45AC1B",
+      "result": "69E09266E5296F21CFD2CC5F27B4577A0ABF2B9387CF7C9CD06946C1AA7C536A",
+      "first": "69EF9DFCD78FC73BDBF9747B86878368448F4DBD2029A24D6C11F8A6E2A959A4"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+2FL9YIMlXCZ9I3KeusnvWN|+X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "115.64378777848093",
+      "axial": "81861CC661DBAE686ABA2417A444BE7EAEBE8473C915959F9E12ADE202468684",
+      "result": "43E491C9BEFDD66A16E371AD74D944D55929B7F47FD052CD2267BB35836DB651",
+      "first": "20471A0DCC36CD0700B071AA81041DFF8B346E2B3C61406960F6C16E52F045F3"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+2FL9YIMlXCZ9I3KeusnvWN|-X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "138.70934917225006",
+      "axial": "A5D7DBED0BBFE3DFA62C458F1937118076D8C4E6036B865FB5016C8C873D5C19",
+      "result": "F613D1D89F0E2682239248439E2985F67CB77A25DDEAA9E8E5FDA6F43C04DB9F",
+      "first": "8F66AAA42A5918DE3AB1DC491AC31AC1A6C6947CC9EAD3E0FA0E91A280020702"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+2FL9YIMlXCZ9I3KeusnvWN|+Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "121.74965249844817",
+      "axial": "E3BB2B7D60EB962C8E8443AB9FEBB5F441989E4419C7BA42B310C347D9DFE543",
+      "result": "54257D59A465907A19811718AF5AC8006DBF829C23DE3EBFC2DFBB840195E008",
+      "first": "6DA2C1DA78A4D2F9D620B22C08A25C8BE07FC2FFBCDDC5677280CE24AF977A72"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+2FL9YIMlXCZ9I3KeusnvWN|-Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "130.6349973765214",
+      "axial": "4ECEE71B53774C6359129A4C6DBE683365B86379C1E68DEA5E2EB9FE62B6E360",
+      "result": "73237F02C189D28A6C9D74C9A0844C86D8BB6F507F3DDE29B24B56EE4F94BC36",
+      "first": "0C4F484D48240624919D1C80148BB1007F501785CF2EBABB025072D41FD03F8D"
+    },
+    {
+      "key": "uls/0BhPihy8z5AvBJO5yggRoG|+X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "98.45074553580999",
+      "axial": "EBC69AFFAFAEE2792EB2B93F1702A79C4D70D5BBE976EF02D6F0B0C02B1CBFCE",
+      "result": "9C1C9FD8570726E0CEADECCC37D42AF1943B0DD88E9B8141D9554D243F1FCD33",
+      "first": "D2D31C69869799894711FF4E7216ABB1B3B78FB9FD058A580049A962141B5A47"
+    },
+    {
+      "key": "uls/0BhPihy8z5AvBJO5yggRoG|-X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "109.9193923418522",
+      "axial": "9E0CFB1A0C5392B9C973EAB77A8C6DA8D44AFE8F332690E2866B9B69DDA3D0DF",
+      "result": "E0EF5FB5EFE12E80ACFCCC51DA0E1726416DA42A82772D7408DE04DD73F0C28D",
+      "first": "217AFEF43542FEAC8F5DD5DB00D34E6C3D98D1EBC8C0DE312425AB54FAB3FF31"
+    },
+    {
+      "key": "uls/0BhPihy8z5AvBJO5yggRoG|+Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "101.53997764933176",
+      "axial": "83729C87DC13104C089672FAEF1443E7B4D29498FC8DB80324B50E5A6B82C65D",
+      "result": "5D5E51601E0A7C95B56C5C6867F45725356D6FB2C430DF84B6DC7F2DC749E6E0",
+      "first": "D82617C7721779CCAA3FDE99E9BC710B4FE431FA1A634CB5068035B242D5A21E"
+    },
+    {
+      "key": "uls/0BhPihy8z5AvBJO5yggRoG|-Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "106.26688610090767",
+      "axial": "6B56BDB3186384BD13DBDE917E96D304100106D84F9D6D9FB30418CBC61D368C",
+      "result": "363421C56831D1D9538918FDA4174DE50E9B6F72F9D9AD06A2C7CB0ADE664B9E",
+      "first": "1EEE2C7692BC340D26D1A4B266D6481AF6DC65FB2F889E70F7F84B90C8A0CB89"
+    },
+    {
+      "key": "uls/1vp$t_$zX2yvUsCILXE6uD|+X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "95.473818505186",
+      "axial": "5F7491ADD3514DA5FA92C0071F0D869CC76AE710609BCDCC45421413FF3EC076",
+      "result": "53597D86EF110C0C363B6811DFD14642518F7B5E012639D51F202020EDCE7F68",
+      "first": "3D60EA59E675DA9FB7B4D01BEFFA09DD80B0705B5AD13658969915A7267D50D5"
+    },
+    {
+      "key": "uls/1vp$t_$zX2yvUsCILXE6uD|-X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "106.7472912444199",
+      "axial": "F4D76D76B0E988577186BE43DA64DFFE5BA4D772AF32C39084BB6348D54A85E4",
+      "result": "D011AAA0B60251461F38AFA833715096CB4F9BFFA944719ED9CD77399010CD19",
+      "first": "62DCFC29803C18B9CD2954991D97BF9D61D21A6AA1BAA88353EEE95451913466"
+    },
+    {
+      "key": "uls/1vp$t_$zX2yvUsCILXE6uD|+Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "98.53714694328343",
+      "axial": "64F3456057D4E17779E6FC3682DA5463CCB3C27A101DC81CBDE4C797C9610ED5",
+      "result": "1E6AAD72561954C264F402F12B09860655C538A0A5AE36875F06381B049E7F65",
+      "first": "A9B37F7AB0E94364438D11BE2178054A59E49D3C46CBE6439398E0141D485FCC"
+    },
+    {
+      "key": "uls/1vp$t_$zX2yvUsCILXE6uD|-Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "103.11940918052984",
+      "axial": "CCEAD1E7554E126579D91CF73E391E886D11076700371DAF40567B4035CE98E0",
+      "result": "F7B43CE98B955B602B0D9C1A0B05BC5C8FB415438291214C8FBE54BBF9BF37FC",
+      "first": "525DE75F72E65A37E718ED1D3056244738F10599F8B200809911E70989760132"
+    },
+    {
+      "key": "uls/1QrIWmyCv0UQ7iSNp4FTOZ|+X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "130.43188586706222",
+      "axial": "A703371D78F4FC375B20653304D5B82D59F0EA86F5577F3F5068359ED878D4C6",
+      "result": "C6FB05FE61AAF9997CA1E4CA77C2B483F51860E2B24EFC79F5F27F702D42E046",
+      "first": "08A1E394271E5AB7C3537EDA5551270A0E6678B54DB6AD33D8CABAD8CC7BD029"
+    },
+    {
+      "key": "uls/1QrIWmyCv0UQ7iSNp4FTOZ|-X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "142.24827330988697",
+      "axial": "8BBE0874BD0AFBC60D947D9CE06E55D1E814E94E11BB8E10C3C6ACAC4DDCCB11",
+      "result": "3479831AEE7016AA6FC6703036462DC55CE156D15907B3790C03AADF09016B4F",
+      "first": "DB13DEDFB58A053D8AC4F6451236F314DD002FC2661B3120F7CF5255DC32853E"
+    },
+    {
+      "key": "uls/1QrIWmyCv0UQ7iSNp4FTOZ|+Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "128.9939054291286",
+      "axial": "89220B602FDC4E784B53D15A34650B961A7BA173C5D4A861B35BBF58A0013515",
+      "result": "D627F372F8DE56DEA504945DB504E65E6264323F4270A4E0B2BD68E4622B9F15",
+      "first": "40CD4EDEFD2E7E9C075909A3F97CF31FDBD620D899F4D9C98902F4C102BD7C7A"
+    },
+    {
+      "key": "uls/1QrIWmyCv0UQ7iSNp4FTOZ|-Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "145.05679284756903",
+      "axial": "D49D5CDEE6114EF815D478F07DD0F487693C620D2D85C1BE3AEBB8B97DAF9DDF",
+      "result": "EA225B1EDA0FDF9B41BF9CCFBB8A1C49A52FE8D14618680E7DAB4226456EFAFF",
+      "first": "6558F80712F99522C422B480BA675702B6B3F7271A6A147A70197FD6D0F5D86E"
+    },
+    {
+      "key": "uls/3pncZb8EfBAAz5jjhU0V1t|+X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "124.38950592548653",
+      "axial": "26DD90BFA9B05EBCB0D4E04475034DAD0B1AF23B64EF25669545CBA7A0AB01F0",
+      "result": "99C56DC41785B7863B1735C2797052F4289E4374498667C2407B082B9D58C675",
+      "first": "679BC7A234EEDC6E26CE75D56B29404666EBE767C09BC8C15190CFA5237BC1A5"
+    },
+    {
+      "key": "uls/3pncZb8EfBAAz5jjhU0V1t|-X",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "135.66870780495583",
+      "axial": "613EDC8345A08AF78E4FE510E92F15ED12F3193E69B5768E0899E7A43674E5C8",
+      "result": "115A5BB61B789FD8F1AC731B5F3237820A287F4D54149A47999BC33D9717D6E0",
+      "first": "F3CDD0E4AEDC6A010B1415F80C096DD67E37C32F70BB1218D41835D839DB9033"
+    },
+    {
+      "key": "uls/3pncZb8EfBAAz5jjhU0V1t|+Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "123.00100217604813",
+      "axial": "D7735D7F94A473DE1CE9065BDB6FBFC4B2A8AA6ADD4CEA44EE510FB76ADF4F4F",
+      "result": "E47FBE25977AB565E1713B53FB1E4F547A8C44309E1A67FDC701D2E0C6773996",
+      "first": "15D07420E757C45CA77E98AC22D5F4AC23626FA1D03C342240D5055358A1C9BB"
+    },
+    {
+      "key": "uls/3pncZb8EfBAAz5jjhU0V1t|-Y",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "138.54342332602306",
+      "axial": "794C4EE3F846AB5D7DE18C14E49842D52A4408AF2785400DC5C699C9A544EC8A",
+      "result": "02FF10412789E447AAA1AC78DC77F65D20C61F03523ED30C02AF79BBD5D9D215",
+      "first": "62EE88033284927708B5979B1E56BC1DDFB97877ACC963B9D6A40D9A8FA61B0E"
+    },
+    {
+      "key": "uls/1Xpd8108zEAArpsxqowyhP|+X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "85.75992871082008",
+      "axial": "94D7D86AD070D9305790BA81952D94E53112FCC4FE51B87877532D21F2935EE3",
+      "result": "4CC850211F01A9D5D1D2B2569D581B782D5AB01D71B6327A4A453B108B066DBF",
+      "first": "09265720CDB9CB375F80821778939F64CF43C12AD618F8E7F591536DDD4B6D58"
+    },
+    {
+      "key": "uls/1Xpd8108zEAArpsxqowyhP|-X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "90.89022401182055",
+      "axial": "FC8022F383568C945AF8538AFFC3FD13AD501CB00C3F27B692B3B84442D1731D",
+      "result": "469E3866B4060CE686F524CAACCA1D8181C06F2770670A432528FF3A7C201481",
+      "first": "C3CE92CA8B64F31AF4BC2ABE457529F093C1D7AF60C023ECEF954B5F7E18AA0C"
+    },
+    {
+      "key": "uls/1Xpd8108zEAArpsxqowyhP|+Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "85.50104132863149",
+      "axial": "80EC446BFB66BB4C491B0146B11F0E4E1B0B405DF8C626A69B4AABC677CE1156",
+      "result": "670E7171BDBCA5731CFD43056D010D7CFFD3317785A964D54E07B79712808EE3",
+      "first": "23FED3F46B7BEE281EBB39DA79874C1DD6BF8A91401DC08E4958C787A61B416E"
+    },
+    {
+      "key": "uls/1Xpd8108zEAArpsxqowyhP|-Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "91.37065724983195",
+      "axial": "6EF5B73AB7ACF5C1DA79B4F34C90A7FFA674791F46FF0F6B45A899E60CB60777",
+      "result": "EE642EC7568AE47DA20B6A1A072C26381D639C8AFEF42D58AD8ADAB6E7539583",
+      "first": "FBA199C232A1C98187EAC34F49792FA9EE102715DA86BB72ABBF1699582F4860"
+    },
+    {
+      "key": "uls/2NHrJ92Bf6Q865lPpqitsg|+X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "84.65588660238882",
+      "axial": "5FB66A3BEE9B4F2A832D133700B2CBA6521F240084C4DC3A80AB74CDC80A0402",
+      "result": "C01D44C0F9038035945583B9A934D36FF3B4216447B4CE1617E6105A0A86D34F",
+      "first": "2B0E29B6CB428928C01BD11AD3652BBD93EE194B27EE741F02F944E093033846"
+    },
+    {
+      "key": "uls/2NHrJ92Bf6Q865lPpqitsg|-X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "89.74844478607545",
+      "axial": "857EC7F61FCFEABDE18298B807A517EB46B16FF1FFC19C9BD4290D0BDF4BE4F5",
+      "result": "55DE32EE22042BF55F694B1C555B6983AAB1DCC51A926FFB15F8A56504E0FDB6",
+      "first": "2DF03B04B3A5B83D4A3F4F1457E566715C9796A186E1BACF54E26F37818D2D08"
+    },
+    {
+      "key": "uls/2NHrJ92Bf6Q865lPpqitsg|+Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "84.39787621212731",
+      "axial": "1E0BFD748E701F700F894800BE4A15C9D1B3FAAA6FA0E87F8329B85B45AAA701",
+      "result": "E5309F5DECEE1EC343B043F5B565E439139020A9B7E565404879DB14C3807C99",
+      "first": "394FE5CB9169574A111333FE91B5F825AA7ED204D53CC02F722F7388A5B1BFB3"
+    },
+    {
+      "key": "uls/2NHrJ92Bf6Q865lPpqitsg|-Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "90.22828843901779",
+      "axial": "F13C7C8302B4D81C6417DF1493BCA608039859E5A4D968888B2A14D0A586BFFC",
+      "result": "7F503A8BFD2E67BFD989C79CEB818E809BE5C01A710E6622B599381CCFA42530",
+      "first": "B79CC74FF6892C5C73F6952E447B6E3350B2F11AF174E64BC54383C6A24A400C"
+    },
+    {
+      "key": "uls/1JfsMpb7n5K9r1ushG01JK|+X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "169.3886650586901",
+      "axial": "669AB8BA925102FD17CAF0152950BF3F918A2E2B6C880F8AF765FDD8F59CDB80",
+      "result": "2FC4FF2F5BF95B0CCE98C41C35CE6040959D1B47A6154F4A0EE3307C8A6402C1",
+      "first": "45491CB727594986395D8172AD06AEECF46575813584AEE8D60213CA591EE6D0"
+    },
+    {
+      "key": "uls/1JfsMpb7n5K9r1ushG01JK|-X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "210.66422512495254",
+      "axial": "7050C9E49E59817477A21A0561AAB535B5F8B1B07E738A4AE41794EC27B0D576",
+      "result": "5DFE08936C50867B0A9F37FE2E6582568E421A9C26156C9406DBCEA60391A53F",
+      "first": "D1748EEB8944530413BDAF77FC169E7763B8458EC3985B090F03BA9AE8818155"
+    },
+    {
+      "key": "uls/1JfsMpb7n5K9r1ushG01JK|+Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "183.09052384423342",
+      "axial": "EB0C0A6F1AF93AF29E8A528CF053E297FC7DB5F42D2790B39485197CA1EC3D3D",
+      "result": "EA29C45AA81D0B3FA9F2E092618E356FA7BCDEC2C72E05C5CAE9AADAFEE6B302",
+      "first": "BAF83DE9BA4C3A7984F4C133064C4D603F65BDB93C9B7F50F220218E0DD098B9"
+    },
+    {
+      "key": "uls/1JfsMpb7n5K9r1ushG01JK|-Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "191.6857730598003",
+      "axial": "F5CFF59A9289B20D9F1C4885095DF6882B6FE236527054565F7E70260042C56D",
+      "result": "9E83B5530395C241B41EC84159AC3BE2611C9A5BEB41AB2BEA2ED128ADDE6DAF",
+      "first": "E602436A140B32B0A142A00C17213189E4F60CE2F8817E424D46FAC022326450"
+    },
+    {
+      "key": "uls/2FL9YIMlXCZ9I3KeusnvWN|+X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "166.4088239008038",
+      "axial": "10D6A11E0918C70FCCAB138E8674220BEBE9D91D7D5C35A781ED240E2F1EF81B",
+      "result": "7A35391FC17B5993D927DB1A05C28FA4710B0AEA0D6C4EB0F2D4B08611879560",
+      "first": "6DCFC4376B09DDAD5A8CD45EBCF2BAB807412790424A2BFF4472DE36E1BC49E1"
+    },
+    {
+      "key": "uls/2FL9YIMlXCZ9I3KeusnvWN|-X",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "207.30769958839488",
+      "axial": "D69162338AA8F15E275A242375E7D8E157B1F96E001178144BBC1F865308FA31",
+      "result": "A02CF710A8928C5A1DBCB982E4BC175DF0E64DFD1F7CF6134130FF05EEE01C43",
+      "first": "3E679BD3BE39FC9D6F863AD081982005FD659A83CE246F1AB2F34A7B27C38536"
+    },
+    {
+      "key": "uls/2FL9YIMlXCZ9I3KeusnvWN|+Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "180.0847933981128",
+      "axial": "2D6CDC80170172B7FDF0B8DF8AC5E6C3964C3E9289FAD1F934A59475A7BA0852",
+      "result": "23E665AF26BE1E074FA96D85362C1608AE0224584E9EE164BD3475B089E126BD",
+      "first": "9568438AF60A3BC9AA59E842E2289DBBE5568AF1EE60F33ED0412F3A132C10D8"
+    },
+    {
+      "key": "uls/2FL9YIMlXCZ9I3KeusnvWN|-Y",
+      "ok": true,
+      "iterations": 7,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "188.33880308499792",
+      "axial": "9521DC197EB56E14C5B694516AE8A778A5E85F088FD8D11193C4393384D6D1C3",
+      "result": "E739FEF0FE0E0634BEC49CDC714BA17ED389DADD2AE81A567A1D5F420DCB1F32",
+      "first": "99C84482526EFFFED709AB850C695616BBCAAD0B8562AEF663C247687B607CFB"
+    },
+    {
+      "key": "uls/permanent|+X",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1",
+      "axial": "D025526C2C03A0F684F7322FC5F61411DCEBA86EBBF93D73CC57F1230EF39E9E",
+      "result": "0A0908BAD2D2898A5C274F48ED8802A9991E58022C161B767877C74CFB59579E",
+      "first": "5335F17206ED98D1BD35E3111F2555B93E7B078661CE19E5F15C4A4BF4443082"
+    },
+    {
+      "key": "uls/permanent|-X",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1",
+      "axial": "230BDCDB4669014CFA0BF842F46E68B2F5729B49751EDD755D9C0D98D2F14E0F",
+      "result": "193982B070DDE7B4462BD2AC9DB7C9F1C96B85851C776757896CA20379F6F947",
+      "first": "BD0D64703351E2457398349E6C9C3DC84B5ADD743AC579F3E2D584EEF46FCA54"
+    },
+    {
+      "key": "uls/permanent|+Y",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1",
+      "axial": "75D701C2222AACF3D279FFEC94426DD8DE03A9D046FA3B461769DAB864BBE5AA",
+      "result": "3A18A8D6AF55DAB52852D1AD28C54C176A6DD1417122BA1D41160D65D44F1766",
+      "first": "84B533F16BB549BAE09D26FA71D97C24AE5AFC7D62B1072FAC3E36EAD85B9CE2"
+    },
+    {
+      "key": "uls/permanent|-Y",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1",
+      "axial": "1199BDB6C2B6C3F178E294363FB04F0073103DAF77492EF5A274A2D0DC138A4C",
+      "result": "78F2D46E1B18E9C2CE12031871D0055A94C82405310356F7834AEC6F61409B73",
+      "first": "4B3FBE1569DB87CC994A914645FB63916E63ACFA26D7724F080A1860BFC56DC3"
+    },
+    {
+      "key": "uls/wind-uplift/0BhPihy8z5AvBJO5yggRoG|+X",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0028180591460072",
+      "axial": "A0251707D6A6882FAE803A40C9E2C0FCCCA31B82472D58C7925DBD84D5C89BD2",
+      "result": "83C31AC532295DE477C0911FF53B9936742089BE1A98157BB331589B5862B2F7",
+      "first": "FB6FA9B26864A0BA350D55014D98105B6762403CBA5A40F794E27A0DB75F588B"
+    },
+    {
+      "key": "uls/wind-uplift/0BhPihy8z5AvBJO5yggRoG|-X",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0027265016348819",
+      "axial": "3CEB30225264B10D2F6E82F5B008985BB79D728B8F2854FF862E1640AA10EC65",
+      "result": "9D715C46E0FAAAA6BB4EC2FBFC673E31D02AD1C73055AB1325D785ABF8734542",
+      "first": "708FD949FAD46ADA534E9A5AE2DB45D7EBFE9DEA5B63FF5EA9AFE379680FDB45"
+    },
+    {
+      "key": "uls/wind-uplift/0BhPihy8z5AvBJO5yggRoG|+Y",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0027805438678916",
+      "axial": "FEBFB166B575E8A438E43520B739CEBA4B45B684C77938A6157328E7FCA26C38",
+      "result": "09EF554E58F104EC733FB58A74B01312681B6B01A7B2DC68070E1DA47967AE0D",
+      "first": "6B9FF410231C4C442812F096A79818BA8444070D0426B3494AAB080173086A79"
+    },
+    {
+      "key": "uls/wind-uplift/0BhPihy8z5AvBJO5yggRoG|-Y",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0027805438677426",
+      "axial": "55E83DE895299B473D54776BB124A13332EC7C0FE4471E492A1D5D052D824409",
+      "result": "CF2A879496367066C1F4E1367DC8F64DE42FE12E81BEAB66F15E385FF94C2203",
+      "first": "B034F41372143B1D5C76F591084C54840172E45A2D486F50FB5A464EBBE558BD"
+    },
+    {
+      "key": "uls/wind-uplift/1QrIWmyCv0UQ7iSNp4FTOZ|+X",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0027265016339515",
+      "axial": "707FC157F6487D163B9C817B98A775F6CE4457017351BB1808358F753CD0E158",
+      "result": "40BAD1A23DEE360CD8F39116EF363677FD5EC66076D4FDC93129DCAB9DCA7601",
+      "first": "70EE36F5351C5A8F990B702EEA1C1BB9D426ED463F0658AE694F3EF41591604F"
+    },
+    {
+      "key": "uls/wind-uplift/1QrIWmyCv0UQ7iSNp4FTOZ|-X",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0028180591463336",
+      "axial": "FEEBC000D36A92A448F4594D7002C5A483B2E7AE4B96BF2825799EDD7A8BBA53",
+      "result": "1C80CDA61568F92A1CEF1A99D0173D799042D6C34F77B11592DC7E92015F50FB",
+      "first": "77531C7DD0EA3DDBDDD3F0257250590F1692DBF79FD8D899F732FC887AC4655E"
+    },
+    {
+      "key": "uls/wind-uplift/1QrIWmyCv0UQ7iSNp4FTOZ|+Y",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0027805438678403",
+      "axial": "C9E60F715A7272BC96FFF158A0CB7D1FDA9C624E76176A584C33FD4E82426D0B",
+      "result": "CD3A3EA3B3E5BEE3E6AB8A89C815B9D89EC09003E2C4BE2A37A86392399CD58C",
+      "first": "5EB401BD0077608F2FE18A2BC1B9F1F37FF2E8AF079EB33CF1ACD3236D5D54A0"
+    },
+    {
+      "key": "uls/wind-uplift/1QrIWmyCv0UQ7iSNp4FTOZ|-Y",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0027805438681054",
+      "axial": "606B5A3518E31AFBA3057D21DB02ACE15DFB648A59B9714C395D0BB8A32DF8E4",
+      "result": "CAE1D6B4725C519A5B94222EDD0AC6364B09DF4A297B50C2C0A576FD216EC62C",
+      "first": "B903D73C6A7A939669F5E6DF1D1442F8F528F224379297C5F14BC3E80D94570C"
+    },
+    {
+      "key": "uls/wind-uplift/1Xpd8108zEAArpsxqowyhP|+X",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0029224532707997",
+      "axial": "C6CDB3DC087D24A66CC229EE94C2DD846169ED8EB15D83C73DBDF2E20223AEC9",
+      "result": "7109AE30D8B603DF53AE1044373D369A178554D0A9A411E1951B494A06D91EB9",
+      "first": "1461928620F3E3F86BD4E7F08A7A4D7A303DB9E9DA7431DB001A940D5E2BA446"
+    },
+    {
+      "key": "uls/wind-uplift/1Xpd8108zEAArpsxqowyhP|-X",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0029224532703218",
+      "axial": "366595E660C6C2956C52DE449FA31F6D5F632283516DF0C67844F8575CEACB0A",
+      "result": "A2411EF182983833B5DB66077E3D9E38A84FD9471747EDADF5769D0BA51C184E",
+      "first": "45798EA9FCC59DA4D0BFE7B353F3CC2A6A2BEF16B10991AB6D82E7BBAFD48A20"
+    },
+    {
+      "key": "uls/wind-uplift/1Xpd8108zEAArpsxqowyhP|+Y",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0029454854985278",
+      "axial": "E26DCCF2FC39A41AD22D0065DE4C0127940BAAC98A02E99EEBE1F388EFA8CB1C",
+      "result": "C9CE22BF74A3A67215DDD8AF72D25BC27C937DACF935935D22F9C3E11B914F09",
+      "first": "0D84F17EF6DEF68539C6DD6A5CD9779D398CDA1F2F62462403B283E8E891808F"
+    },
+    {
+      "key": "uls/wind-uplift/1Xpd8108zEAArpsxqowyhP|-Y",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.00293556983687",
+      "axial": "F288775EDAA536E8890DCEF356B8406FD2E8787C5C9CCE190B07C8F1EE0F2DDE",
+      "result": "95F13A0081143BD000D9C58844654B989EF8921484FCED336BA86663FE871354",
+      "first": "3167AF736F00636AF4249A119B90F21524746008A5F8D1DB7BE1C93471BEA4B6"
+    },
+    {
+      "key": "uls/wind-uplift/1JfsMpb7n5K9r1ushG01JK|+X",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.002922453270503",
+      "axial": "BF9EE2FF358EFAE7194E69ADD0BD02AA4CF4A538D0D9741F26B8F6753E04B6C0",
+      "result": "F0E71C20FB1DA0DB442806240AF4982D7C9EB9C8DC56E5114848065AF52DEE91",
+      "first": "70A0AD8F1FB63DAA2D22508C1F963F09CFCCE57639D69DAB23F9A02CA2A00122"
+    },
+    {
+      "key": "uls/wind-uplift/1JfsMpb7n5K9r1ushG01JK|-X",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0029224532704493",
+      "axial": "2A6B34ACE4B04F0D8D4EE8E3767E7502FFCA493B3C5570B4F4C1FB61203016FA",
+      "result": "91191F6C8C4BC59DF21DB7A5DF09CD3560923C16C12CFCB2826ACCC9414F031D",
+      "first": "DF6E03369DB86B83E9C87B88159DCAC4590202F26DA8048CCB44DA7FF431C2C5"
+    },
+    {
+      "key": "uls/wind-uplift/1JfsMpb7n5K9r1ushG01JK|+Y",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0029355698361468",
+      "axial": "A1D7CCE132A99B970FFE4FFB213982B6800A7386946B5EF73B73BB034FE10309",
+      "result": "B06AB7935582989A91EA82F27C7C50B53FCDEB43E4D6D21DB38BC21511C8937D",
+      "first": "C6B2B7367558657F666C55F96082E60957F3D7A89B45B2ECA1455D69713E790B"
+    },
+    {
+      "key": "uls/wind-uplift/1JfsMpb7n5K9r1ushG01JK|-Y",
+      "ok": true,
+      "iterations": 3,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [],
+      "amplification": "1.0029454854973066",
+      "axial": "2CB780ECE479427724386ABEC3BB4075D612F23767F7493F6AC7C0316368E1B4",
+      "result": "8932291C7659F335AB6128200F8FCC0CB29D1CEA044D821EEE84E7314EDCA201",
+      "first": "FCFB9EEEDCF5E14E2C0297FFE5B47CA0A0CA07E78C4D90033D497C35CD05D5A5"
+    },
+    {
+      "key": "slsc/0IVUrVqPP0PemIzb5r718a+0BhPihy8z5AvBJO5yggRoG",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "158.44078651987726",
+      "axial": "E804A011E4D36FEBBEABB129715E1E2873858E693B7121EC722B447837644772",
+      "result": "54906105D831C794E1B34800D3A02F684D336B1E15E4B5679587956BF37EE21B",
+      "first": "C6825DE4289D8A3A3478F9EB0871094FB779F908CFD8A321417AC123503AC391"
+    },
+    {
+      "key": "slsc/0IVUrVqPP0PemIzb5r718a+1vp$t_$zX2yvUsCILXE6uD",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "157.06059542843883",
+      "axial": "7959EBB466910CE9C127C582A6A31FAC1D02D18F4A9EF9903ABA1C3DB159EF55",
+      "result": "A88EFC3A66BB3C89024014A45214199B8FA10D94F48FCC889E39CDF8E8920503",
+      "first": "ECAEFD55905AC8D0B3EA83C10E6AAA8DB843AD6C048CD787840D64997797FE29"
+    },
+    {
+      "key": "slsc/0IVUrVqPP0PemIzb5r718a+1QrIWmyCv0UQ7iSNp4FTOZ",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "180.07377031433523",
+      "axial": "B58DF8789A766EF63A1C1516D994B64177AEC8229127254F40EAE5BC027EDC6C",
+      "result": "172422D7C8E112C97CFD2DBBAAC05FA64780A24560E003671A179D8AA1664CEA",
+      "first": "D7E40A718AE5F9389B6DA42CE97A924886ADF6B8D4C7F67FAB149F5B3DA9B04A"
+    },
+    {
+      "key": "slsc/0IVUrVqPP0PemIzb5r718a+3pncZb8EfBAAz5jjhU0V1t",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "177.81774345815307",
+      "axial": "699AE6547F958806494AF4B2F3827CED382708E3536C4D72B0017BDA5C4B2EEE",
+      "result": "31324DDFF8F2AAFF11A98AB88E9E31A27291AED480D28A7B15687B44F02BEA5F",
+      "first": "E935F6849462246E104AEBE320057D1152B28A23BFB4D5A6F6FA561880465D3D"
+    },
+    {
+      "key": "slsc/0IVUrVqPP0PemIzb5r718a+1Xpd8108zEAArpsxqowyhP",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "146.16934231354577",
+      "axial": "B19F1995E0EE7B559D0001B12AC433E6CAA9B3B54D8BEF366AC94BC5A500FF43",
+      "result": "324CFBCFB190922D6E77AF5170AEC8365E8506490F6585D3675195C83C2C7089",
+      "first": "F39DFC27B9B867FB298E93377E31C1E6F50561AA85197644514649EFB2610713"
+    },
+    {
+      "key": "slsc/0IVUrVqPP0PemIzb5r718a+2NHrJ92Bf6Q865lPpqitsg",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "145.56616303450693",
+      "axial": "A4B4F8F8B6264282E6AD9851AA1AAEB5958908444A8CFC89705CE06EB1C07039",
+      "result": "82D4BAD90D87E4FA118A221A550B218CDBA699CC6AC1731F29906BAACE58A878",
+      "first": "F402E4CFDC8B3EB366BB57E8712F47AE92455921A11C4B132CCCDFE0F356CD86"
+    },
+    {
+      "key": "slsc/0IVUrVqPP0PemIzb5r718a+1JfsMpb7n5K9r1ushG01JK",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "202.57235533143302",
+      "axial": "19CAF8F8971DD0613918D8FC4E1ABFF786D10CE54BF11D5F9C8881AB7E78E1E3",
+      "result": "D493F46D44286ECB106C67B91FD96708683651A6CE72C606E3A4AE5FA79D2650",
+      "first": "1EE43FBD6316F261463AFB04E7B3201B5C55EE8BED59103F88D31D72E9F80F6C"
+    },
+    {
+      "key": "slsc/0IVUrVqPP0PemIzb5r718a+2FL9YIMlXCZ9I3KeusnvWN",
+      "ok": true,
+      "iterations": 8,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "201.68972921414084",
+      "axial": "980224F7BB858D17FAC1979C7F49FD8E883DBFDF34C1FFE31208BEEA0B1B809A",
+      "result": "A10C38FE5F629C75D029470F7FA7FA2EC2527C4B39AD4F4CEC91881EE0AC2EF9",
+      "first": "D3E3097449C40CFE67E0A51338DC10BC055A809D33BF42B387F94B674C51D236"
+    },
+    {
+      "key": "slsc/0Ziq6bkJr4rQM$j6ceprlo+0BhPihy8z5AvBJO5yggRoG",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "70.09355154846858",
+      "axial": "7141DC8FFDBF15FF9799B5AC3FB53ED1A8A354FF05B2E2AB627D9FE65865D38A",
+      "result": "6C57C4C8CFF48939D617DF3AC80030AA2D94282C66CB0364FC6DC5A5B17A981D",
+      "first": "8F1245E6FF37161A6148830DBBE1CAB10994EFD172BF45A3C08E2B5E67995009"
+    },
+    {
+      "key": "slsc/0Ziq6bkJr4rQM$j6ceprlo+1vp$t_$zX2yvUsCILXE6uD",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "67.81004545490639",
+      "axial": "158D7B4E96DD063D3547DBF361E7E1BF3B6B4461775B3C05B66B003CCE22C27F",
+      "result": "236A6BF746EECEB55BB00CA624211E17768355588B66B797D0FB2599AB49FACE",
+      "first": "DD0D65FA7EBB9682F29FE64AA356B93BC7BDE76009DB3CDE76611803E68FC0E2"
+    },
+    {
+      "key": "slsc/0Ziq6bkJr4rQM$j6ceprlo+1QrIWmyCv0UQ7iSNp4FTOZ",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "79.45868686585573",
+      "axial": "F989870589E9DFDA2FC685FBF2069EE6BA85F9C04CD39F2BA30835036883472D",
+      "result": "5E5623237F9F42BDC90727EE753BC2465D58B7959176DC4469FEA9B7ECC71588",
+      "first": "A0F75EFAFD2CF17266E4805AF4EA38F9746587B3EEFBA437CCDADAF7F7424A17"
+    },
+    {
+      "key": "slsc/0Ziq6bkJr4rQM$j6ceprlo+3pncZb8EfBAAz5jjhU0V1t",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "75.22029228389758",
+      "axial": "C2ED3768CB9473C09F223DF8EEFAFE773B78524D9AA8E5C69947E9A68374FAA5",
+      "result": "658DF5DAE7752B3B5F16CBE54870C9A78566B19425820CE10EB88159D1582E6D",
+      "first": "62A525474FBC0CE8AB1D105A4C706DEEBC338C3B74C5D2DA58D150084CA6E95C"
+    },
+    {
+      "key": "slsc/0Ziq6bkJr4rQM$j6ceprlo+1Xpd8108zEAArpsxqowyhP",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "62.298480946244176",
+      "axial": "B333CFCAEEED079E6F121906F4F8D607F92CC06EDF9CB19CA1EF1764BFE9F0FA",
+      "result": "83D37B6E1D7840278A80F7D2BCF9DEB874B0BB8F3099A8128A562D1C5928F283",
+      "first": "203BACEFC2306F9F9CEA4A53C7FFC0F2D8CE46E8299210469721A6C69A105B43"
+    },
+    {
+      "key": "slsc/0Ziq6bkJr4rQM$j6ceprlo+2NHrJ92Bf6Q865lPpqitsg",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "61.44672101335737",
+      "axial": "5EF6EB3DC1B0EBE1AB55AD10A4DD8FE5A057766BC3FFEA453F38F5ADEA0DFDC3",
+      "result": "338736566F746C86A54E528344C80DBA0EFC56AB5673BBC727A5A21CFBED22E6",
+      "first": "E88E3FD70BEF382BC1C4D2BAA0B437AF6E6622904D7576F614C68BA2FE847131"
+    },
+    {
+      "key": "slsc/0Ziq6bkJr4rQM$j6ceprlo+1JfsMpb7n5K9r1ushG01JK",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "103.05587152714413",
+      "axial": "2CC1094D6074937FA370058C0714EBE0355F6E62C7EE16E8AE571AF9F1CCAAFC",
+      "result": "47BC65C6DCA2564CF764C34EC907B61620FD97FF8C593936C87088D56CF896FA",
+      "first": "912699004857FA2BF58352BCC7D301A3D770A421A6607248C0E8B1CCB2870FAF"
+    },
+    {
+      "key": "slsc/0Ziq6bkJr4rQM$j6ceprlo+2FL9YIMlXCZ9I3KeusnvWN",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "101.02575318629155",
+      "axial": "9A3287010ED03F002CBFFE1A5F3633222F93CD78A4E549C53D129F0FB0BB243E",
+      "result": "62EBB18583548C60C0BFE7518DDAE08A0FB6FCEADA55F9E5DFFED408DBB0D378",
+      "first": "D477935CC6F202040DDB93EE46F66B88BD8226905824D94CD9C95AD9F192B598"
+    },
+    {
+      "key": "slsc/0BhPihy8z5AvBJO5yggRoG",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "89.57608775659396",
+      "axial": "B3BD44643378E09D0561D730F5B6317DCBA4B710C611349DDEA137EC0A1B0E4A",
+      "result": "16433796FCF52D1E3ACBC4B5782D7A2B6A7974C0602EBFA1875753619E156C30",
+      "first": "86D02F2C84DCCD458DE8F83274EDD361280607EFFBF090523045627F14B86B34"
+    },
+    {
+      "key": "slsc/1vp$t_$zX2yvUsCILXE6uD",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "86.1116601327188",
+      "axial": "0CDAFFABD27C5798269EC0EEE3FE63EF03AD89EEB23F2DB3C75B2824F83FC063",
+      "result": "526F039C61B6762FB517EC8AABDF24A8324FD1C06B001071BEC31B8DCB3F33AE",
+      "first": "1063037C8E61FFCBEC65DC7E73274A3551866D47ADF203E8A52CF764767A7B20"
+    },
+    {
+      "key": "slsc/1QrIWmyCv0UQ7iSNp4FTOZ",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "114.66618079832853",
+      "axial": "982A1DE956B12EAE9DA930288CF504B018B7BA1AD51B8E5C956239D8290E762F",
+      "result": "D50E719398604057384D9423EF122410E60ECC72EBB504E45F53CDF001A6C95B",
+      "first": "E678626A22BC2DC674B4933AC92C5DC14841EBEE11C98F2E7378CCD2A4F7C976"
+    },
+    {
+      "key": "slsc/3pncZb8EfBAAz5jjhU0V1t",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "107.37006745115656",
+      "axial": "C4F49F360705756B9D71B6E57B4815A802507BE3F48E8B3080E6970E72934FA7",
+      "result": "6398E992E07BCE9ADA9FF65DAB4F2D37EEFEFEAA98787E4C787E7D7A4E60721A",
+      "first": "2D1B6335971BD02CE6E24CF46388EF149F4124D4DE25EA41FB2D05C7B356F109"
+    },
+    {
+      "key": "slsc/1Xpd8108zEAArpsxqowyhP",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "76.47214436632173",
+      "axial": "FEB6D09079A750D15B240E68D963F2DFB0C2CAD4ACC116CA943796331EB4AB2D",
+      "result": "8E7A89CDBCB892D6C5F6A71DA8FC8F68AF4066016F9F0A1310CC621ADD3FF135",
+      "first": "EE881636D29BFF03DF93D6FDA384A569A285CD042AB716DF3C57D0AD1DAC905B"
+    },
+    {
+      "key": "slsc/2NHrJ92Bf6Q865lPpqitsg",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "75.19115783951096",
+      "axial": "3ADFD2F4483B62D0DFD374C5445A9C3300B21929D5AB8A5E6D9D116715F1B902",
+      "result": "0C5B1CA5F407CF331639AF35E92E57FCA28038665A914E0B26E73D4960AC4CF9",
+      "first": "9198A8C85E27179A8E82D79C2F27928BB071502685942C1191B1B721A76E74DA"
+    },
+    {
+      "key": "slsc/1JfsMpb7n5K9r1ushG01JK",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "164.73846747062737",
+      "axial": "5172A238C570B6CEE34823322CEBB3F4786537C2F32FF0335412B518BFA8EE4F",
+      "result": "798306A452584EBF13FCDDE60E64F175400FC26F1EC20B212E9E927E494B1DA7",
+      "first": "3A8407EE9CFE3D5ED163D01C656EE8B590427F20C74DCCC0B56073FC4E2D31F5"
+    },
+    {
+      "key": "slsc/2FL9YIMlXCZ9I3KeusnvWN",
+      "ok": true,
+      "iterations": 6,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0,
+        1,
+        2
+      ],
+      "amplification": "161.03159871051636",
+      "axial": "FE98564422D3C6B6BE5A9DDD8568C7E30FCCCAA76D7A83437F0F5F5BCFE60B7D",
+      "result": "CDB69565128620BD7060DED5E759798D65EF6E484A8B0D5576CA1A34CAB24BD2",
+      "first": "EBAE89B9B5672CCDF9DC456A75DD18AE41B605C75547B05A4EE42991472F096B"
+    },
+    {
+      "key": "slsf/0IVUrVqPP0PemIzb5r718a",
+      "ok": true,
+      "iterations": 4,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0
+      ],
+      "amplification": "33.78033035085035",
+      "axial": "86E66B6009CDFA5976B61E05C23A3B2A406772FE07B7424FBCF1C6426D55B8ED",
+      "result": "7EB9B21D56332C707BDEE2B812AD7B9EEF1D734CE319AC57B24E9617AEDF2A87",
+      "first": "175C114CCB0E0F87CC4C33AA63185220DECFE921E39424EA47751D003F3D9A1F"
+    },
+    {
+      "key": "slsf/0Ziq6bkJr4rQM$j6ceprlo",
+      "ok": true,
+      "iterations": 4,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0
+      ],
+      "amplification": "19.406900450809417",
+      "axial": "21D069AC1DE7A4566D7699CD1C4278697B1C155BB2F609C3347740CD4E0985CF",
+      "result": "09FCB9EAFDF506B10AF4D964BF1E40CC60C79CD1001D3AEB69A429ECEF6297D4",
+      "first": "09C23FD47DD83BEFB7CD5A766FFA4668B09B1E1FFA09F7A44CC0F0EF6E4D35D7"
+    },
+    {
+      "key": "slsf/0BhPihy8z5AvBJO5yggRoG",
+      "ok": true,
+      "iterations": 4,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0
+      ],
+      "amplification": "18.885019584842965",
+      "axial": "D09D261B71AACD96313B312C0CE74B0120992077D66F69F5E3B3ADB5C233D71E",
+      "result": "2BD6DD800F322A5D7D826C3BCBF79C0506B61D7817E869F790AFFBC8C0D9D527",
+      "first": "A88161D895EC291EFBD1A5A5CB7DEFA21FBB71EFBBC10CE74EACF46ECF27D82C"
+    },
+    {
+      "key": "slsf/1vp$t_$zX2yvUsCILXE6uD",
+      "ok": true,
+      "iterations": 4,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0
+      ],
+      "amplification": "18.826684914065257",
+      "axial": "29550E61C277A505EE157F62A7C0BA812F8A3D8B9FB8E8D86AF972852F4007D0",
+      "result": "DB80D2E2FC234C8792B7478211AE8D02CD1C4B04C97A1D00EBA5D726B5A6A54E",
+      "first": "4F5717570B8ABD7F03E1F4F1142C04DA624B95CA3C43182EC15D4550AD181A81"
+    },
+    {
+      "key": "slsf/1QrIWmyCv0UQ7iSNp4FTOZ",
+      "ok": true,
+      "iterations": 4,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0
+      ],
+      "amplification": "22.435603287566593",
+      "axial": "23ED422DD8D80645552A5DE4E84EACE0F6114E3FB539228B6C34EF2C01688AE4",
+      "result": "70297E86B9EAD7EBBD4409C5D3DE06984D1136EE29EEBBF879A9FC61F1B28E09",
+      "first": "62376AC0CE19A61E77F061760373190715F7F586C088443172574635099CAC63"
+    },
+    {
+      "key": "slsf/3pncZb8EfBAAz5jjhU0V1t",
+      "ok": true,
+      "iterations": 4,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0
+      ],
+      "amplification": "22.27228662080177",
+      "axial": "BE65C5190B5DA171DB64751AAA662F26380C84CAABB259F6804758A97A052BCC",
+      "result": "15E3BAC46D84A8DBAC041602E0E4ECF0F4891716B2A6713CE712924D2F31D0C6",
+      "first": "A00B56850A389BF83529EA4216D60098C7BF282EF34D1AAE984C27E6B3AA3FB1"
+    },
+    {
+      "key": "slsf/1Xpd8108zEAArpsxqowyhP",
+      "ok": true,
+      "iterations": 4,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0
+      ],
+      "amplification": "17.73508545857765",
+      "axial": "2FB2D00F9186BA652F2FA6194BD541B29E38C1BE771E8892F260AB6181E2C481",
+      "result": "BF1978D5DF6797D5E564765A4E6133B64636526832C7430F5B937A9D5E9CD547",
+      "first": "059EB5F62762356A7C71724FAE7E601EA16EA41897994A8D5D82A55CE7FE7086"
+    },
+    {
+      "key": "slsf/2NHrJ92Bf6Q865lPpqitsg",
+      "ok": true,
+      "iterations": 4,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0
+      ],
+      "amplification": "17.702150641325833",
+      "axial": "C2A0EE900D08E2132BB4BEC63BD5DDD009139D832749E45B2868B8308C355013",
+      "result": "CC7BDF3385AECD562FDED4CF30EA7E0B9F71F85B14642C3858AB4DEE50ED8AAE",
+      "first": "81CA4EADAA1B18AF373090393B19FCB0DBD1910EF51A37B3B800AF656EFA8B83"
+    },
+    {
+      "key": "slsf/1JfsMpb7n5K9r1ushG01JK",
+      "ok": true,
+      "iterations": 4,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0
+      ],
+      "amplification": "24.362791025410008",
+      "axial": "EACD9245BAC4DAC6EAB4D253A3B196E27F5A16F2DF70E111F12A1105062A56BD",
+      "result": "7F96AE3F32AFE2B7F4B3D6AA5FEB97DBE84CCED023F3375E13DDAC47E467E5B1",
+      "first": "A5196D5F12EE9747DA9DE150A0A30EAF06CBE7B78FBB1498B5AD6343298B89D4"
+    },
+    {
+      "key": "slsf/2FL9YIMlXCZ9I3KeusnvWN",
+      "ok": true,
+      "iterations": 4,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0
+      ],
+      "amplification": "24.29921960121513",
+      "axial": "A4DA07F2485E00F447FF8B473632AF469DA1F3CDEAAE912739B0CBC6DF3F447C",
+      "result": "8D2CA58FCEF7EE87F947EDF49B51A9AAB7B1595192053790EE802B8AA8FFE923",
+      "first": "91CCE28AD87C660BC39DDB1FD0135FE6928098119DDC6E60636DB3AC24A190AF"
+    },
+    {
+      "key": "slsq",
+      "ok": true,
+      "iterations": 4,
+      "converged": true,
+      "unstable": false,
+      "message": null,
+      "slack": [],
+      "lifted": [
+        0
+      ],
+      "amplification": "20.427854423650608",
+      "axial": "50C703D0451A105DA6A91298137E6365ED6883096928719C56773FD00FA2EE19",
+      "result": "81347E80C30412D983D3BCC028F0C3FA939A1ABC329128AC084622BE1973847C",
+      "first": "1782751739CB356B9FE5BAA17C854532B258DE2B1649E37927890F88AA0D58EF"
+    }
+  ],
+  "buckling": [
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+0BhPihy8z5AvBJO5yggRoG",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "29.82294344690246",
+        "30.59836587678616",
+        "64.023102216206",
+        "272.3495054114362",
+        "309.240650463917",
+        "1014.0107345844065"
+      ],
+      "modes": "7306FC3F16C4A517BBCCF0336B76CAA96A4FC4F8889653E6B43BAF97434D24BE"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1vp$t_$zX2yvUsCILXE6uD",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "29.09269852612025",
+        "29.82716344997694",
+        "64.16888195293863",
+        "267.9186992613504",
+        "303.12182603625865",
+        "992.6893650783165"
+      ],
+      "modes": "03CE2D2C58226564CC46851E0AE4473FCF3035775FE6E048617EEA9B4E17F128"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1QrIWmyCv0UQ7iSNp4FTOZ",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "29.843188607601316",
+        "30.633781587830516",
+        "64.34512124217925",
+        "272.85418714402635",
+        "309.8840555575068",
+        "1015.3878928185728"
+      ],
+      "modes": "34D68E3A865FEF4E1B2E4D6529DFB76983EB8896580D4BCC10C78C5A0236CD70"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+3pncZb8EfBAAz5jjhU0V1t",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "29.134276683362778",
+        "29.87520483800068",
+        "64.72172421617483",
+        "268.86348828250283",
+        "304.0605167806171",
+        "995.1878759485407"
+      ],
+      "modes": "665F9E894974199BECF98B19D87BB887ECC7A21F591F70D70EAA9DC946278182"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1Xpd8108zEAArpsxqowyhP",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "30.514595028785966",
+        "31.39452895991573",
+        "63.7025733614778",
+        "276.1015527724774",
+        "315.4891912723009",
+        "1034.7553780459261"
+      ],
+      "modes": "49211306FE9721E4E7C608F49BB61CBCA144C6139183C8B46BCFAAF4CC206F1F"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+2NHrJ92Bf6Q865lPpqitsg",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "30.186205148500505",
+        "31.04212793304585",
+        "63.64073364842082",
+        "273.9812012054227",
+        "312.58337458947636",
+        "1024.6506203428096"
+      ],
+      "modes": "EB42200C0D49B4E26AC4BDE4A146F14F8DCEE30C800D056941B75451F349E1C8"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+1JfsMpb7n5K9r1ushG01JK",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "30.563073715243593",
+        "31.423563621643257",
+        "64.12727994537211",
+        "277.01551625959576",
+        "316.1047889625673",
+        "1036.814223622309"
+      ],
+      "modes": "89BCE03E0684F31B2F0251082DF5153C5894DB3406B87C3FE73A4F6C0639D1A2"
+    },
+    {
+      "key": "uls/0IVUrVqPP0PemIzb5r718a+2FL9YIMlXCZ9I3KeusnvWN",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "30.254275109536948",
+        "31.097104722963795",
+        "64.3306940242151",
+        "275.3460931950547",
+        "313.68654584031003",
+        "1027.8888579260529"
+      ],
+      "modes": "E165F266DAB9053134B1D5671D4A5DC3534AA95D3F59652E34D8F98B555425FD"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+0BhPihy8z5AvBJO5yggRoG",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "19.29352041153611",
+        "19.449304964244057",
+        "95.48915853990906",
+        "216.43158065652443",
+        "224.85884056052836",
+        "826.6036712896674"
+      ],
+      "modes": "137FBBFA0D17F4366407068FE02AEDD0DDB6F745E4ECBE738F61F846B9C024A0"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1vp$t_$zX2yvUsCILXE6uD",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "18.979661380060822",
+        "19.13064977580938",
+        "95.74892901421487",
+        "213.5583021682102",
+        "221.65345150301758",
+        "817.9758688917696"
+      ],
+      "modes": "4041D2CEF99C0063FB3E7AD1C8A74D496567DFDBE997568FF1306FCA0F4BFEF1"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1QrIWmyCv0UQ7iSNp4FTOZ",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "19.301214810397642",
+        "19.462930879602073",
+        "96.21630118237896",
+        "216.72098464330952",
+        "225.23260539935418",
+        "828.6438272910532"
+      ],
+      "modes": "4052C80DDE30A7B962A4E6B05BE50196185CFCA548398BF960AE9CC4CA33A44B"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+3pncZb8EfBAAz5jjhU0V1t",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "18.99534327361015",
+        "19.148996834932714",
+        "96.9627380568103",
+        "214.10069620061236",
+        "222.17651202932686",
+        "821.5202407974475"
+      ],
+      "modes": "D3FF44787A6D5062DE3B79245AFEB0281FEC711E7E717F3A662C8E998F939058"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1Xpd8108zEAArpsxqowyhP",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "19.588072975312866",
+        "19.77245354790584",
+        "94.84422327127449",
+        "218.7933614160205",
+        "228.13020758206335",
+        "833.0130888741395"
+      ],
+      "modes": "A878002AEE7D7C8F0B997CF8D6B0F5AEC0CCE29A176E464902205F32FAC495CD"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+2NHrJ92Bf6Q865lPpqitsg",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "19.450091377854292",
+        "19.63073414139416",
+        "94.69187330697721",
+        "217.45881787204337",
+        "226.6307139030998",
+        "828.6021074958765"
+      ],
+      "modes": "CC3C21A8DEB91599750379BB96303D7027E458D7BD3BDDCD9AAB1EA0D63B7716"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+1JfsMpb7n5K9r1ushG01JK",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "19.60743727871117",
+        "19.783781118204768",
+        "95.84751465097061",
+        "219.40036037161462",
+        "228.47938199337509",
+        "836.4791126858081"
+      ],
+      "modes": "9CEA7592C530F1DAC7D1D6E193F5E4E3DBAE5E63DBB996F03DB047CD87D02BCB"
+    },
+    {
+      "key": "uls/0Ziq6bkJr4rQM$j6ceprlo+2FL9YIMlXCZ9I3KeusnvWN",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "19.476802291764653",
+        "19.651444378483923",
+        "96.26818664536746",
+        "218.3224302258209",
+        "227.24497814329115",
+        "833.7628996726403"
+      ],
+      "modes": "4AA51523B8D6F5F738D9042DA98FCC304A350014BD745E351664620240A4E594"
+    },
+    {
+      "key": "uls/0BhPihy8z5AvBJO5yggRoG",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "22.556429174117046",
+        "22.782805345924817",
+        "91.5260473010015",
+        "244.08977859722967",
+        "256.97966905352104",
+        "905.6440596850152"
+      ],
+      "modes": "0437FABE18500D0B87CB09899A9B7DB32971D9C44B4B25AB3920052DB1328AE8"
+    },
+    {
+      "key": "uls/1vp$t_$zX2yvUsCILXE6uD",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "21.854486951917394",
+        "22.067104972215983",
+        "91.97808970435156",
+        "238.19374546295555",
+        "250.13145007239518",
+        "888.2130950106455"
+      ],
+      "modes": "BBB14390902DA8A21F21B4409D2CE5C65179E085316AA11B159B80472F676B00"
+    },
+    {
+      "key": "uls/1QrIWmyCv0UQ7iSNp4FTOZ",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "22.574807980833036",
+        "22.814941682186586",
+        "92.67072783996048",
+        "244.758689107088",
+        "257.80724925451386",
+        "909.6814685732669"
+      ],
+      "modes": "D3C424910A14E3EC4191360184E08F7A498C82A4605570A9302FF9449981F3D7"
+    },
+    {
+      "key": "uls/3pncZb8EfBAAz5jjhU0V1t",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "21.89051379746305",
+        "22.109116233297346",
+        "93.9026782155294",
+        "239.3978218219712",
+        "251.27053459268032",
+        "895.1885823646494"
+      ],
+      "modes": "DFDE23EBC206E926F9ADB2006591147284192BCF94DF11F4D40AD493A4B7191A"
+    },
+    {
+      "key": "uls/1Xpd8108zEAArpsxqowyhP",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "23.232832446317662",
+        "23.53073039221204",
+        "90.44740676197051",
+        "248.9624892579764",
+        "264.1005215749207",
+        "919.3320717783853"
+      ],
+      "modes": "12AD823B5C9FB443F31B1FA73668145C38937A2F58CF055CDE347E72322D8807"
+    },
+    {
+      "key": "uls/2NHrJ92Bf6Q865lPpqitsg",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "22.912304906937553",
+        "23.199109389362423",
+        "90.22919782408799",
+        "246.1382246468927",
+        "260.7844397067032",
+        "910.1585519006463"
+      ],
+      "modes": "00AD5ED6AE5D8899D08E5424832A793B8BA1189569D9900BE49E49B826D36B30"
+    },
+    {
+      "key": "uls/1JfsMpb7n5K9r1ushG01JK",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "23.281351727186898",
+        "23.55964365915619",
+        "92.06396293687152",
+        "250.39144174464138",
+        "264.94283640060394",
+        "926.2508779656436"
+      ],
+      "modes": "416A4ACFDC37AC72499A63651D147EF3A0BDC515F6B62AD7D5CAA6D585F754AB"
+    },
+    {
+      "key": "uls/2FL9YIMlXCZ9I3KeusnvWN",
+      "ok": true,
+      "iterations": 3,
+      "message": null,
+      "alpha": [
+        "22.97797546904903",
+        "23.250305723758903",
+        "92.7506195697273",
+        "248.1464084866467",
+        "262.2207846648397",
+        "920.4159113811451"
+      ],
+      "modes": "3ED4C6ADF9BBBD04CB5D116FF15A39401673E163C184AA70F8AAF3E97B159D72"
+    },
+    {
+      "key": "uls/permanent",
+      "ok": true,
+      "iterations": 7,
+      "message": null,
+      "alpha": [
+        "227.61057679282294",
+        "229.20413774799846",
+        "247.40580166450002",
+        "1774.1790945758332",
+        "1965.259595544745",
+        "1972.3243807597535"
+      ],
+      "modes": "018BBAA3E07EB9BF2942FB55191238DD5378652EB90907628CA12ACE838D8418"
+    },
+    {
+      "key": "uls/wind-uplift/0BhPihy8z5AvBJO5yggRoG",
+      "ok": true,
+      "iterations": 7,
+      "message": null,
+      "alpha": [
+        "321.8747419575606",
+        "322.5827288195892",
+        "354.1636045420524",
+        "2498.2929449873377",
+        "2724.908031809084",
+        "2753.915504514579"
+      ],
+      "modes": "60DCA10B1507D60D70F293AB338A1922F088333B53318637012E3F2584C027B0"
+    },
+    {
+      "key": "uls/wind-uplift/1QrIWmyCv0UQ7iSNp4FTOZ",
+      "ok": true,
+      "iterations": 7,
+      "message": null,
+      "alpha": [
+        "322.565864906991",
+        "322.5831505051718",
+        "353.33090315522423",
+        "2502.26711394536",
+        "2736.179625732091",
+        "2761.160991488715"
+      ],
+      "modes": "026247F89C666D65C708CFBD0957550541D7B36A19ED7E0E6FB7FD71C258D612"
+    },
+    {
+      "key": "uls/wind-uplift/1Xpd8108zEAArpsxqowyhP",
+      "ok": true,
+      "iterations": 7,
+      "message": null,
+      "alpha": [
+        "329.3150873669383",
+        "335.067244263348",
+        "365.77378613703956",
+        "2532.677260781668",
+        "2802.4462590610087",
+        "2834.4277622180675"
+      ],
+      "modes": "E64BA57E9EAD5EE91C4A690AFA25C63D2B962D4962E8B995F1D047FB010CFEC7"
+    },
+    {
+      "key": "uls/wind-uplift/1JfsMpb7n5K9r1ushG01JK",
+      "ok": true,
+      "iterations": 7,
+      "message": null,
+      "alpha": [
+        "329.31508736695196",
+        "335.06724426332755",
+        "365.7737861370572",
+        "2532.6772077500655",
+        "2802.4462656267074",
+        "2834.427759636495"
+      ],
+      "modes": "2B0268C6635133DFFC2A95C097C6B6E5F0B1A08CAC9383D0AAB4E9A947BECE63"
+    }
+  ]
+}
