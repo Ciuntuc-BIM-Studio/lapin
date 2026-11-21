@@ -193,6 +193,7 @@ public sealed class DesignRun
             Members.Add(new MemberDesign(k, e.Id, src.SourceId, src.Name, kind, mm.Mat.Grade, src.Kind, storey, checks, need, notes));
         }
         Sway(sp);
+        if (Members.Any(x => x.Material == "steel")) SecondOrderNote();
         if (unchecked_.Count > 0) Notes.Add($"Not checked (a material Lapin has no rules for): {string.Join(", ", unchecked_.Take(8))}{(unchecked_.Count > 8 ? "…" : "")}.");
     }
 
@@ -214,6 +215,25 @@ public sealed class DesignRun
         }
         if (unbraced.Count > 0)
             Notes.Add($"No wall or bracing along {string.Join(" and ", unbraced)}: the frame looks unbraced (sway) that way. The buckling lengths assume a braced frame; give the columns' own (k > 1, analysis.setDesign ky / kz or lcrY / lcrZ).");
+    }
+
+    /// <summary>
+    /// EN 1993-1-1 5.2.1(3) for the steel checks (§14.3): with second order off, αcr of the heaviest ultimate combination when
+    /// it is under 10 (second-order effects must be taken: P-Δ); with it on, that the forces are second order and the members'
+    /// own buckling stays their check's.
+    /// </summary>
+    void SecondOrderNote()
+    {
+        if (Run.Problem.Settings.SecondOrder)
+        {
+            Notes.Add("Second order (P-Δ) on: the steel members' forces are second order; their own buckling (EN 1993-1-1 6.3.1) stays with their buckling lengths, the global imperfections (5.3.2) are not added yet.");
+            return;
+        }
+        (Combinations.Combination Combination, double Alpha, bool Bound)? g;
+        try { g = Run.HeaviestGlobal(); }
+        catch (CommandException) { return; }
+        if (g is not { } x || x.Alpha >= 10) return;
+        Notes.Add($"EN 1993-1-1 5.2.1(3): αcr {(x.Bound ? "≥ " : "= ")}{x.Alpha:0.##} under „{x.Combination.Name}”, below 10: second-order effects must be taken (analysis.setOptions secondOrder, or the sway effects × 1/(1 − 1/αcr) when αcr ≥ 3); analysis.buckling gives every combination's.");
     }
 
     static ConcreteValues Values(JsonObject? project) => new(25e6,
@@ -337,12 +357,13 @@ public sealed class DesignRun
         var foot = cuts.FirstOrDefault(c => c.Where == "foot");
         var length = foot?.Length ?? 0;
         // Each case's resultants at each cut, then each combination's by its factors.
-        var cases = Run.Solution!.Cases;
-        var perCase = new WallSection[cases.Count][];
-        for (var ci = 0; ci < cases.Count; ci++)
+        // (S5: past the cases, the nonlinear combinations' results, each with its own loads.)
+        var perCase = new WallSection[Run.ResultCount][];
+        for (var ci = 0; ci < perCase.Length; ci++)
         {
-            var loads = p.Cases.FirstOrDefault(c => c.Id == cases[ci].Id)?.Surface.GroupBy(x => x.Shell).ToDictionary(x => x.Key, x => x.Aggregate(Vec3.Zero, (a, b) => a + b.Q));
-            perCase[ci] = cuts.Select(c => WallForces.Of(p, c, cases[ci].U, s => loads != null && loads.TryGetValue(s, out var q) ? q : default, s => Stiffness(p, s))).ToArray();
+            var loads = Run.LoadsOf(ci).Surface.GroupBy(x => x.Shell).ToDictionary(x => x.Key, x => x.Aggregate(Vec3.Zero, (a, b) => a + b.Q));
+            var u = Run.CaseAt(ci).U;
+            perCase[ci] = cuts.Select(c => WallForces.Of(p, c, u, s => loads.TryGetValue(s, out var q) ? q : default, s => Stiffness(p, s))).ToArray();
         }
         WallSection[]? aed = null;
         if (srun is { Problem: { } sp2 } && seismic.Any(x => x))

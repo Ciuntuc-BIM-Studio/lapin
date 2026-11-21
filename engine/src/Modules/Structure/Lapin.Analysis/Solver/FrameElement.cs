@@ -58,6 +58,8 @@ public sealed class FrameElement
     public string? Material { get; init; }
     /// <summary>A member working one way only (§14.4): "tension" (a brace, a tie) or "compression" (a strut); null both ways.</summary>
     public string? Only { get; init; }
+    /// <summary>The bar a piece is of, when a bar is cut at the shells' nodes along it (§10.4): a one-way member goes slack whole.</summary>
+    public string? Member { get; init; }
     /// <summary>The axial force (kN, tension positive) its geometric stiffness takes (§14.3): nought in a first-order analysis.</summary>
     public double Axial { get; init; }
     /// <summary>Taken out (§14.4: a tension-only member under compression): no stiffness; its span loads still go to its ends.</summary>
@@ -67,14 +69,14 @@ public sealed class FrameElement
     public FrameElement Scaled(double k) => new()
     {
         Id = Id, I = I, J = J, OffI = OffI, OffJ = OffJ, Local2 = Local2, E = E * k, G = G * k, A = A, I22 = I22, I33 = I33, Jt = Jt, As2 = As2, As3 = As3,
-        ReleaseI = ReleaseI, ReleaseJ = ReleaseJ, Name = Name, SourceId = SourceId, Material = Material, Only = Only,
+        ReleaseI = ReleaseI, ReleaseJ = ReleaseJ, Name = Name, SourceId = SourceId, Material = Material, Only = Only, Member = Member,
     };
 
     /// <summary>A copy with an axial force for its geometric stiffness and, or, taken out (§14.1), as yet unprepared.</summary>
     public FrameElement With(double axial, bool inactive) => new()
     {
         Id = Id, I = I, J = J, OffI = OffI, OffJ = OffJ, Local2 = Local2, E = E, G = G, A = A, I22 = I22, I33 = I33, Jt = Jt, As2 = As2, As3 = As3,
-        ReleaseI = ReleaseI, ReleaseJ = ReleaseJ, Name = Name, SourceId = SourceId, Material = Material, Only = Only, Axial = axial, Inactive = inactive,
+        ReleaseI = ReleaseI, ReleaseJ = ReleaseJ, Name = Name, SourceId = SourceId, Material = Material, Only = Only, Member = Member, Axial = axial, Inactive = inactive,
     };
 
     // Worked out by Prepare.

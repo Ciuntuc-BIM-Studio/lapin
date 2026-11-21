@@ -70,6 +70,7 @@ public static class Nonlinear
         var solvedActive = (bool[])active.Clone();
         var solvedLifted = new HashSet<int>();
         var seen = new HashSet<string>();
+        var groups = Enumerable.Range(0, ne).Where(k => p.Elements[k].Only != null).GroupBy(k => p.Elements[k].Member ?? p.Elements[k].Id).Select(g => g.ToList()).ToList();
         string Key() => string.Concat(active.Select(a => a ? '1' : '0')) + "|" + string.Join(",", lifted.Order());
         seen.Add(Key());
         var loadScale = Math.Max(1, loads.Sum.Length + loads.Surface.Sum(s => s.Q.Length));
@@ -103,22 +104,28 @@ public static class Nonlinear
             var changed = false;
             solvedActive = (bool[])active.Clone();
             solvedLifted = [.. lifted];
-            for (var k = 0; k < ne; k++)
+            // A one-way member goes in or out whole (all its pieces): by its pieces' mean axial force, their whole stretch.
+            foreach (var g in groups)
             {
-                var e = q.Elements[k];
-                if (e.Only == null) continue;
-                var tension = e.Only == "tension";
-                if (active[k])
+                var e0 = q.Elements[g[0]];
+                var tension = e0.Only == "tension";
+                if (active[g[0]])
                 {
-                    if (tension ? n[k] < -tolN : n[k] > tolN) { active[k] = false; changed = true; }
+                    var mean = g.Average(k => n[k]);
+                    if (tension ? mean < -tolN : mean > tolN) { foreach (var k in g) active[k] = false; changed = true; }
                     continue;
                 }
-                var un = new double[12];
-                Array.Copy(r.U, e.I * 6, un, 0, 6);
-                Array.Copy(r.U, e.J * 6, un, 6, 6);
-                var ul = e.ToLocal(un);
-                var stretch = ul[6] - ul[0];
-                if (tension ? stretch > 1e-9 : stretch < -1e-9) { active[k] = true; changed = true; }
+                var stretch = 0.0;
+                foreach (var k in g)
+                {
+                    var e = q.Elements[k];
+                    var un = new double[12];
+                    Array.Copy(r.U, e.I * 6, un, 0, 6);
+                    Array.Copy(r.U, e.J * 6, un, 6, 6);
+                    var ul = e.ToLocal(un);
+                    stretch += ul[6] - ul[0];
+                }
+                if (tension ? stretch > 1e-9 : stretch < -1e-9) { foreach (var k in g) active[k] = true; changed = true; }
             }
             foreach (var node in p.Uplift)
             {
@@ -163,7 +170,8 @@ public static class Nonlinear
             for (var i = 0; i + 1 < u.Length; i += 6) m = Math.Max(m, Math.Sqrt(u[i] * u[i] + u[i + 1] * u[i + 1]));
             return m;
         }
+        // Nothing to speak of moves sideways (under 0.1 mm): no sway to amplify.
         var a = Max(first.U);
-        return a > 1e-12 ? Max(last.U) / a : 1;
+        return a > 1e-4 ? Max(last.U) / a : 1;
     }
 }

@@ -5,11 +5,16 @@ namespace Lapin.Analysis.Solver;
 /// (global, node × 6), scaled to a largest translation of 1. <see cref="Compressed"/> is false when no bar is in compression
 /// (no buckling: <see cref="Alpha"/> empty).
 /// </summary>
-public sealed record BucklingResult(bool Ok, double[] Alpha, double[][] Modes, int Iterations, bool Converged, bool Compressed, string? Message = null);
+public sealed record BucklingResult(bool Ok, double[] Alpha, double[][] Modes, int Iterations, bool Converged, bool Compressed, string? Message = null)
+{
+    /// <summary>Each mode's share of φᵀ G φ by bar (summing to 1): a mode one member holds nearly all of is that member's own (local) buckling.</summary>
+    public double[][] Shares { get; init; } = [];
+}
 
 /// <summary>
 /// Linear buckling (docs/plan-fem.md §14.3): the generalized eigenproblem G φ = μ K φ, G = −Kg(N) the bars' geometric
-/// stiffness of their axial forces, K positive definite, by subspace iteration on K's factor (Bathe and Wilson 1972; Bathe,
+/// stiffness of the compressed bars' axial forces (the tension's stiffening left out, on the safe side: G is then positive
+/// semidefinite and every μ ≥ 0), K positive definite, by subspace iteration on K's factor (Bathe and Wilson 1972; Bathe,
 /// "Finite Element Procedures", §11.6, as <see cref="Subspace"/>): X̄ = K⁻¹ G X, the projections Gr = X̄ᵀ G X̄ and
 /// Kr = X̄ᵀ K X̄ = X̄ᵀ G X, the small problem by Kr's Cholesky factor and Jacobi rotations; the largest μ > 0 give
 /// αcr = 1/μ. Written for Lapin from those descriptions.
@@ -34,12 +39,15 @@ public static class Buckling
         var eq = sys.Eq;
         // Each bar's G = −Kg(N) on its nodes, global.
         var mats = new List<(int[] Dofs, double[] G)>();
+        var owners = new List<int>();
         var maxCompression = 0.0;
+        var tiny = 1e-9 * Math.Max(1, axial.Length == 0 ? 0 : axial.Max(Math.Abs));
         for (var k = 0; k < prob.Elements.Count; k++)
         {
             var e = prob.Elements[k];
-            if (e.Inactive || Math.Abs(axial[k]) < 1e-12) continue;
+            if (e.Inactive || axial[k] >= -tiny) continue;
             maxCompression = Math.Max(maxCompression, -axial[k]);
+            owners.Add(k);
             var g = e.GeometricGlobal(axial[k]);
             for (var t = 0; t < 144; t++) g[t] = -g[t];
             var dofs = new int[12];
@@ -208,6 +216,27 @@ public static class Buckling
             for (var i = 0; i < u.Length; i++) u[i] *= s;
             return u;
         }).ToArray();
-        return new BucklingResult(true, alpha, shapes, it, converged, true, count == 0 ? "No buckling under these loads: the geometric stiffness only stiffens." : null);
+        // Each mode's φᵀ G φ by bar.
+        var shares = vectors.Take(count).Select(v =>
+        {
+            var sh = new double[prob.Elements.Count];
+            var total = 0.0;
+            for (var mi = 0; mi < mats.Count; mi++)
+            {
+                var (ds, g) = mats[mi];
+                var t = 0.0;
+                for (var r = 0; r < 12; r++)
+                {
+                    if (ds[r] < 0) continue;
+                    for (var c = 0; c < 12; c++) if (ds[c] >= 0) t += v[ds[r]] * g[r * 12 + c] * v[ds[c]];
+                }
+                t = Math.Max(t, 0);
+                sh[owners[mi]] += t;
+                total += t;
+            }
+            if (total > 0) for (var k = 0; k < sh.Length; k++) sh[k] /= total;
+            return sh;
+        }).ToArray();
+        return new BucklingResult(true, alpha, shapes, it, converged, true, count == 0 ? "No buckling under these loads: the geometric stiffness only stiffens." : null) { Shares = shares };
     }
 }

@@ -158,6 +158,7 @@ public sealed partial class StructuralProblem
                 I = nodeIndex[f.I], J = nodeIndex[f.J], OffI = f.OffI + centroid + arm, OffJ = f.OffJ + centroid + arm, Local2 = local2,
                 E = e.Value / 1000, G = g / 1000, A = props.Area, I22 = props.I22, I33 = props.I33, Jt = props.J, As2 = av2, As3 = av3,
                 ReleaseI = rel?.I ?? new bool[6], ReleaseJ = rel?.J ?? new bool[6], Material = mat.Kind,
+                Only = OneWay.Of(m.Get(f.Source.SourceId)),
             };
             p.Elements.Add(el);
             frames.Add(f);
@@ -185,6 +186,7 @@ public sealed partial class StructuralProblem
         sp.MeshShells(shellOf, MaterialOf);
         sp.MapLoads(m, rep, densities, selfWeight);
         sp.SplitBars();
+        sp.SupportSprings(m);
         return sp;
     }
 

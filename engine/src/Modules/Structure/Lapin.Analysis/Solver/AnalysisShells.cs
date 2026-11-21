@@ -41,9 +41,9 @@ public sealed partial class AnalysisRun
         lock (_gate)
         {
             var keys = Keys();
-            _perCase ??= new ShellForces[]?[Solution!.Cases.Count];
+            _perCase ??= new ShellForces[]?[ResultCount];
             if (_perCase[ci] is { } had) return had;
-            var rec = ShellSmoothing.Recovered(Problem.Problem, Solution!.Cases[ci]);
+            var rec = ShellSmoothing.Recovered(Problem.Problem, CaseAt(ci));
             var o = new ShellForces[keys.Length];
             for (var i = 0; i < keys.Length; i++) o[i] = rec.TryGetValue(keys[i], out var f) ? f : default;
             return _perCase[ci] = o;
@@ -59,7 +59,7 @@ public sealed partial class AnalysisRun
         foreach (var (ci, k) in terms)
         {
             var c = CaseNodal(ci);
-            var u = Solution!.Cases[ci].U;
+            var u = CaseAt(ci).U;
             for (var i = 0; i < keys.Length; i++)
             {
                 f[i] += c[i] * k;
@@ -150,7 +150,7 @@ public sealed partial class AnalysisRun
                         : JsonValue.Create(R(Value(q, sets[0].F[i], sets[0].W[i]), 9)))))),
                 }).ToArray());
                 var shellStates = sel.Sets.Select(s => Enumerable.Range(0, p.Shells.Count).Where(k => p.Shells[k].Group == g)
-                    .ToDictionary(k => k, k => ShellResult.Combine(s.Terms.Select(t => (Solution!.Cases[t.Case].Shells[k], t.Factor))))).ToList();
+                    .ToDictionary(k => k, k => ShellResult.Combine(s.Terms.Select(t => (CaseAt(t.Case).Shells[k], t.Factor))))).ToList();
                 so["elements"] = new JsonArray(shellStates[0].Keys.Select(k => (JsonNode)new JsonObject
                 {
                     ["id"] = p.Shells[k].Id, ["centre"] = V3(p.Shells[k].Nodes.Aggregate(Vec3.Zero, (a, n) => a + p.Nodes[n]) * (1.0 / p.Shells[k].Count)),

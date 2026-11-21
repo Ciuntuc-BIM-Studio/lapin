@@ -99,8 +99,14 @@ public sealed partial class AnalysisRun
         if (sol is { Ok: true })
             foreach (var r in sol.Cases.Where(r => r.Balance > Balanced))
                 notes.Add($"„{rep.Cases.First(x => x.Id == r.Id).Code}”: the reactions do not balance the loads (off by {r.Balance:0.###e+0} of them).");
+        // S5 (§14.1): each static combination on its own when the analysis is nonlinear.
+        var nonlinear = sol is { Ok: true } && CallsForNonlinear(sp) ? SolveNonlinear(sp, sol, combos, notes) : [];
         notes.AddRange(comboNotes);
-        return new AnalysisRun { Report = rep, Problem = sp, Solution = sol, Combinations = combos, SeismicCombinations = seismicCombos, Notes = notes, TotalMs = sw.Elapsed.TotalMilliseconds };
+        return new AnalysisRun
+        {
+            Report = rep, Problem = sp, Solution = sol, Combinations = combos, SeismicCombinations = seismicCombos, Notes = notes, NonlinearSets = nonlinear,
+            TotalMs = sw.Elapsed.TotalMilliseconds,
+        };
     }
 
     static double R(double v, int digits = 6) => Math.Round(v, digits);
@@ -152,6 +158,8 @@ public sealed partial class AnalysisRun
                 }).ToArray()),
             };
         o["combinations"] = new JsonArray(Combinations.Select(c => (JsonNode)new JsonObject { ["key"] = c.Key, ["kind"] = c.Kind, ["name"] = c.Name }).ToArray());
+        if (NonlinearJson() is { } nl) o["nonlinear"] = nl;
+        if (SupportsJson() is { } su) o["supports"] = su;
         if (Solution?.Mechanism is { } mech)
         {
             var node = p.Nodes[mech.Node];
@@ -221,7 +229,8 @@ public sealed partial class AnalysisRun
 
     /// <summary>A combination's factors on the solution's cases (by their index).</summary>
     List<(int, double)> Terms(Combination c) =>
-        c.Factors.Select(f => (Solution!.Cases.FindIndex(x => x.Id == f.Case.Id), f.Value)).Where(x => x.Item1 >= 0).ToList();
+        NonlinearSets.Count > 0 && NonlinearIndex().TryGetValue(c.Key, out var nl) ? [(nl, 1.0)]
+        : c.Factors.Select(f => (Solution!.Cases.FindIndex(x => x.Id == f.Case.Id), f.Value)).Where(x => x.Item1 >= 0).ToList();
 
     Selection Select(Ask ask)
     {
@@ -243,6 +252,7 @@ public sealed partial class AnalysisRun
                 return new Selection("envelope", sc.Key, sc.Name, sets.Where(x => x.Item1.StartsWith($"seismic/{sc.Id}/")).ToList()) { Seismic = sr };
             }
             var c = Combinations.FirstOrDefault(x => x.Key == key) ?? throw new CommandException($"There is no combination „{key}”.");
+            if (Failed(c.Key)) throw new CommandException($"„{c.Name}”: {NonlinearSets.First(x => x.Key == c.Key).Result.Message}");
             return new Selection("combination", c.Key, c.Name, [(c.Key, c.Name, Terms(c))]);
         }
         if (envArg is { } env)
@@ -254,8 +264,8 @@ public sealed partial class AnalysisRun
             }
             var list = env switch
             {
-                "uls" => Combinations.Where(c => UserCombinations.Ultimate(c.Kind)).ToList(),
-                "sls" => Combinations.Where(c => c.Kind.StartsWith("sls")).ToList(),
+                "uls" => Combinations.Where(c => UserCombinations.Ultimate(c.Kind) && !Failed(c.Key)).ToList(),
+                "sls" => Combinations.Where(c => c.Kind.StartsWith("sls") && !Failed(c.Key)).ToList(),
                 _ => throw new CommandException("An envelope is „uls”, „sls” or „seismic”."),
             };
             if (list.Count == 0) throw new CommandException($"There are no {env.ToUpperInvariant()} combinations.");
@@ -358,13 +368,12 @@ public sealed partial class AnalysisRun
 
     State Combine(List<(int Case, double Factor)> terms)
     {
-        var cases = Solution!.Cases;
         var p = Problem.Problem;
         var u = new double[p.Nodes.Count * 6];
         var reactions = new Dictionary<int, double[]>();
         foreach (var (ci, k) in terms)
         {
-            var c = cases[ci];
+            var c = CaseAt(ci);
             for (var i = 0; i < u.Length; i++) u[i] += c.U[i] * k;
             foreach (var (n, r) in c.Reactions)
             {
@@ -373,7 +382,7 @@ public sealed partial class AnalysisRun
             }
         }
         var els = new ElementResult[p.Elements.Count];
-        for (var e = 0; e < els.Length; e++) els[e] = ElementResult.Combine(terms.Select(t => (cases[t.Case].Elements[e], t.Factor)));
+        for (var e = 0; e < els.Length; e++) els[e] = ElementResult.Combine(terms.Select(t => (CaseAt(t.Case).Elements[e], t.Factor)));
         return new State { U = u, Reactions = reactions, Elements = els };
     }
 
