@@ -137,6 +137,39 @@ După o rulare, secțiunea **Verificări** a dialogului **Rezultatele analizei**
 
 > Verificările sunt orientative. Lapin ia valorile recomandate ale Eurocodurilor; valorile anexelor naționale, încărcările și valorile de calcul îți revine să le verifici înainte să te bazezi pe ele.
 
+## Ordinul doi și flambajul
+
+Două întrebări hotărăsc dacă un cadru poate fi calculat în ordinul întâi: cât de departe sunt încărcările lui de cele critice și cât adaugă deplasarea lui laterală. Secțiunea **Stabilitate** din dialogul **Rezultatele calculului** răspunde la prima, iar caseta **Ordinul doi (P-Δ)**, de lângă opțiunile plăcilor (opțiunile calculului), la a doua.
+
+![Secțiunea Stabilitate](shots/analysis-stability.webp)
+
+**Ordinul doi (P-Δ).** Cu caseta bifată, fiecare combinație statică se rezolvă separat, cu rigiditatea geometrică a barelor din eforturile lor axiale, iterat până când eforturile nu se mai schimbă. Tabelul arată, pentru fiecare combinație, iterațiile, dacă a convergit și **amplificarea**: cea mai mare deplasare orizontală față de valoarea ei de ordinul întâi. Cazurile de încărcare rămân de ordinul întâi. Pe lungimea unei bare momentul își păstrează forma de ordinul întâi între capete: flambajul propriu al barei e al verificării ei (EN 1993-1-1 6.3). Imperfecțiunile globale (EN 1993-1-1 5.3.2) nu sunt adăugate încă: dați-le ca încărcări acolo unde proiectul le cere. O combinație instabilă sau un mecanism rămâne în afara înfășurătoarelor și a verificărilor, iar notele spun asta cu roșu.
+
+**Încărcările critice.** **Află încărcările critice** calculează, pentru fiecare combinație ultimă, factorul αcr care aduce încărcările ei la cele sub care cadrul flambează. Poate dura câteva secunde pe un model mare, de aceea rulează la cerere. Tabelul arată primii trei (α1, α2, α3), **αcr global** (primul mod pe care nicio bară singură nu îl ține în mai mult de jumătate: al cadrului; un α marcat * e flambajul propriu al unei bare, iar o valoare scrisă ≥ e o limită inferioară), **clasa** și **amplificatorul** 1/(1 − 1/αcr). Clasa urmează EN 1993-1-1 5.2.1(3):
+
+- **αcr ≥ 10** (verde): ajunge calculul de ordinul întâi.
+- **3 ≤ αcr < 10** (galben): efectele de ordinul doi trebuie luate, prin calcul de ordinul doi sau înmulțind efectele deplasării laterale cu amplificatorul.
+- **1 ≤ αcr < 3** (roșu): e cerut calculul de ordinul doi.
+- **αcr < 1** (roșu): încărcările depășesc pe cele critice, structura e instabilă.
+
+Cel mai mic αcr e evidențiat. Alegeți o combinație și un mod, apoi **Arată modul de flambaj** ca să vedeți forma în 3D, oscilând ca modurile proprii (cardul are aceeași scară și Stop). Verificările oțelului spun când αcr e sub 10 și ordinul doi e oprit.
+
+> Valorile sunt orientative: αcr e al barelor singure (plăcile nu au rigiditate geometrică), betonul e la rigiditatea nefisurată, iar judecata rămâne a inginerului.
+
+## Reazeme elastice și bare care lucrează într-un singur sens
+
+Selectați o fundație, o placă pe sol sau baza unui stâlp de oțel: proprietățile lor au o secțiune **Reazem de analiză**.
+
+- **Arcuri**: o rigiditate pentru fiecare din cele șase grade de libertate (kx, ky, kz în kN/m; krx, kry, krz în kN·m/rad). Gol înseamnă cum îl ține reazemul, 0 înseamnă liber.
+- **Mediu Winkler** (fundații și plăci): coeficientul de pat **ks** (kN/m³) al terenului. O fundație izolată ia kz = ks·B·L și rigiditățile de rotire corespunzătoare, o fundație continuă fiecare nod pe lungimea lui, o placă pe sol fiecare nod pe cota lui de arie. Lista de dedesubt dă valori tipice ale lui ks pe tipuri de teren, **doar orientative: ks e al geotehnicianului**.
+- **Numai compresiune (se dezlipește)**: un reazem care ar trage se ridică de pe teren, iar combinația se rezolvă din nou fără el. Secțiunea arată rigiditatea primită de fiecare nod în ultima analiză.
+
+Forțele din arcuri sunt reacțiuni. O placă ia doar ks, baza unui stâlp doar arcuri (nu are talpă).
+
+![Reazemul de analiză al unei fundații](shots/analysis-support.webp)
+
+Secțiunea **Calcul** a unei bare are **Lucrează în**: **Ambele sensuri**, **Numai întindere** (o contravântuire dintr-un X, un tirant) sau **Numai compresiune** (o șprais). O bară cu un singur sens care ar lucra invers e scoasă din combinația respectivă, iar tabelul Stabilitate numește **barele destinse** și **reazemele dezlipite** pe fiecare. Cazurile rămân liniare, cu toate barele și toate reazemele; la fel analiza modală. Fiecare schimbare e un pas de anulare.
+
 ## Articulațiile capetelor
 
 Selectează un stâlp, o grindă sau un element: în proprietățile lui este o secțiune **Calcul** cu articulațiile **Început (i)** și **Sfârșit (j)**.
