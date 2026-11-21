@@ -1028,3 +1028,7 @@ P100-1/2013 §4.6.2.2 și SR EN 1998-1 4.4.2.2(2): θ = Ptot·dr / (Vtot·h) pe 
 6. **Pornirea tablei: pe bară**, cu butonul „toate panele acoperișurilor”; riglele de perete se bifează pe bară. *Recomandare: da; „toate riglele halei” ca al doilea buton dacă e cerut.*
 7. **θ: dr = q·de** (EN 1998-1 4.3.4), fără factorul c al P100 de la deplasarea SLU. *Recomandare: da; de confirmat din P100-1/2013 §4.6.2.2 (textul nu l-am avut la îndemână).*
 8. **Timpul** halei cu P-Δ și imperfecțiuni (~40 s în Debug). *Recomandare: paralelizarea combinațiilor (copii ale elementelor pe fir) ca pas următor mic.*
+
+### 14.19 Răspunsurile utilizatorului (21.11.2026)
+
+Utilizatorul a luat recomandările la toate cele 8 întrebări din §14.18: imperfecțiunile pornesc cu ordinul doi dacă proiectul nu a spus altfel; se aplică mereu, cu nota despre 5.3.2(4); m numărat pe șir de stâlpi; cele patru variante ca o singură înfășurătoare cu varianta dimensionantă numită; tabla ca legătură laterală relativă, fără șaibă; activare pe bară plus butonul pentru panele acoperișurilor; θ cu dr = q·de (de confirmat cu textul P100-1/2013 §4.6.2.2); combinațiile calculate în paralel ca pas următor.
