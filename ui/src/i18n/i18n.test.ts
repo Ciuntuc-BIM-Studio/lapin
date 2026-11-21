@@ -185,6 +185,9 @@ describe('the languages', () => {
     'Already on sheets A-101 · Plans, A-102 · Sections.',
     'Placed on sheet A-103 · Details.',
     'Open sheet A-101 · Plans',
+    '3 task(s) moved; the schedule finishes on 2026-11-10 (4 working days later).',
+    '2 task(s) moved; the schedule finishes on 2026-11-10 (4 working days later). Asking for more than a resource has, not moved: Placă etaj 2.',
+    'Formwork as a resource: 3 formwork(s) on 2 task(s).',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

@@ -16,6 +16,7 @@ summary: Der Bauzeitenplan als Gantt-Diagramm: Vorgänge in einem PSP, Meilenste
 - **Zu Vorgang hinzufügen…** (TA) und **Elemente ohne Vorgang**: die Elemente des Modells in den Vorgängen (unten).
 - **Simulieren**, **Bauabschnittsplan…**, **Gantt auf Plan** und **Video exportieren…**: die 4D-Simulation, das Modell, wie der Bauzeitenplan es an einem Tag hat (unten).
 - **Als fertig markieren** (MD), **Als begonnen markieren** (MS), **Als nicht begonnen markieren**, **Basisplan speichern**, **Basisplan löschen** und **Fortschritt importieren…**: der Fortschritt und der Basisplan (unten).
+- **Ressourcen**: **Ressourcen…** (die Kolonnen, die Geräte, die Schalungssätze und auf welchen Vorgängen sie sind), **Ressourcen abgleichen** und das **Histogramm**.
 - **MS Project importieren…**, **MS Project exportieren…**, **XLSX exportieren** und **IFC exportieren…**: der Terminplan zu und von anderen Programmen (unten).
 
 Ein Projekt hat einen Terminplan. Er wird beim ersten Hinzufügen eines Vorgangs angelegt und beginnt am nächsten Montag. Den Beginn ändern Sie in der Leiste des Gantt.
@@ -264,6 +265,32 @@ Mit einem Basisplan vergleicht die Simulation: ein Element, das an einem Tag nic
 - **IFC** schreibt sie in die IfcTaskTime jedes Vorgangs (die Statuszeit, den tatsächlichen Anfang und das tatsächliche Ende, die Restzeit, den Fertigstellungsgrad) und den Basisplan als zweiten IfcWorkSchedule vom Typ BASELINE; Lapins eigene Felder (der eingegebene Prozentsatz, die Markierungen) stehen in `Lapin_Task`. Beides kommt auf dieselben Termine zurück.
 - **Verwalten → Versionen → Vergleichen** sagt neben den Elementen, was sich im Terminplan geändert hat: das Ende, die Arbeitstage, das Statusdatum und die Vorgänge, die hinzukamen, gelöscht oder verschoben wurden (um wie viele Arbeitstage) oder deren Dauer oder Fortschritt sich geändert hat.
 
+## Ressourcen
+
+![Die Ressourcen und ihre Vorgänge](shots/planning-resources.webp)
+
+Eine Ressource ist eine **Kolonne** (Arbeiter), ein **Gerät** (ein Kran, eine Betonpumpe) oder ein **Schalungssatz**. Jede hat eine Anzahl verfügbarer Einheiten pro Tag, ihre Einheit und die Kosten einer Einheit pro Tag.
+
+1. Wählen Sie die Vorgänge im Gantt-Diagramm aus.
+2. Geben Sie in **Ressourcen…** die Einheiten ein und klicken Sie in der Zeile der Ressource auf **+ ausgewählte Vorgänge**. Eine Ressource auf einem Sammelvorgang geht auf alle Vorgänge darunter.
+3. Bei Schalungen ist **Danach gehalten** die Zahl der Arbeitstage, die ein Satz nach seinem Vorgang noch auf der Baustelle bleibt, bis ausgeschalt wird.
+
+**Schalung aus der Baustelleneinrichtung** macht aus den Schalungen, die Sie in der Baustelleneinrichtung verlegt haben, eine Schalungsressource: ein Satz je Schalung, gehalten von dem Vorgang, der ihr Bauteil betoniert, bis zum Ausschalen. Geben Sie an, wie viele Sätze Sie haben, und gleichen Sie dann ab.
+
+Die Tabelle zeigt die Spitze jeder Ressource und die Tage, an denen sie fehlt. Die Ressourcen eines Vorgangs stehen auch in den Eigenschaften.
+
+## Histogramm und Kapazitätsabgleich
+
+![Eine Kolonne, von der mehr verlangt wird, als sie hat: die fehlenden Tage in Rot](shots/planning-histogram.webp)
+
+Das **Histogramm** zeigt für jede Ressource, wie viele Einheiten an jedem Tag von ihr verlangt werden. Die Grenze ist die gestrichelte Linie, die Tage darüber sind rot.
+
+**Ressourcen abgleichen** verschiebt die noch nicht begonnenen Vorgänge so, dass von keiner Ressource mehr verlangt wird, als sie hat. Die Vorgänge werden der Reihe nach behandelt: zuerst der, der am frühesten beginnen kann, dann der mit weniger Puffer. Jeder Vorgang kommt auf den ersten Tag, den seine Verknüpfungen erlauben und an dem jede Ressource, die er braucht, frei ist – an allen seinen Tagen und an den Tagen, die ein Schalungssatz danach bleibt. Begonnene, fertige oder an ein festes Datum gebundene Vorgänge bleiben, wo sie sind.
+
+![Dieselbe Kolonne nach dem Abgleich](shots/planning-histogram-levelled.webp)
+
+Ein verschobener Vorgang behält seinen Anfang als Abgleichsanfang. Seine Verknüpfungen können ihn trotzdem noch später schieben. **Abgleich entfernen** setzt die Vorgänge zurück. Verlangt ein Vorgang von einer Ressource mehr, als es überhaupt gibt, wird er nicht verschoben: Er wird nur nach seinen Verknüpfungen eingeplant, und die Meldung nennt ihn. Der Abgleich ist ein einziger Schritt, Rückgängig nimmt ihn also zurück.
+
 ## Die Kosten der Vorgänge
 
 ![Das Gantt mit der Spalte Kosten](shots/planning-cost.webp)
@@ -293,4 +320,4 @@ Lapins eigene Felder, für die andere Programme keinen Platz haben (die Einschr�
 
 ## Was als Nächstes kommt
 
-Die Kosten im Zeitverlauf stehen in [Kostenberechnung](cost.md). Kapazitätsabgleich, Earned Value, monatliche Abschlagsrechnungen und mehrere Basispläne und Szenarien gehören zur Premium-Edition.
+Die Kosten im Zeitverlauf stehen in [Kostenberechnung](cost.md). Earned Value, monatliche Abschlagsrechnungen, mehrere Basispläne und Szenarien, das Bautagebuch und Primavera P6 gehören zur Premium-Edition.

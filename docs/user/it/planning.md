@@ -16,6 +16,7 @@ summary: Il programma dei lavori in un diagramma di Gantt: attività in una WBS,
 - **Aggiungi all'attività…** (TA) ed **Elementi senza attività**: gli elementi del modello nelle attività (più avanti).
 - **Simula**, **Tavola delle tappe…**, **Gantt su tavola** ed **Esporta video…**: la simulazione 4D, il modello come lo ha il programma in un giorno (più avanti).
 - **Segna completato** (MD), **Segna iniziato** (MS), **Segna non iniziato**, **Salva la baseline**, **Cancella la baseline** e **Importa l’avanzamento…**: l’avanzamento e la baseline (sotto).
+- **Risorse**: **Risorse…** (le squadre, i mezzi, i set di casseri e le attività a cui sono assegnati), **Livella le risorse** e l’**Istogramma**.
 - **Importa MS Project…**, **Esporta MS Project…**, **Esporta XLSX** e **Esporta IFC…**: il programma da e verso altri programmi (più sotto).
 
 Un progetto ha un solo programma. Si crea la prima volta che aggiungi un'attività e inizia il lunedì successivo. Cambia il suo inizio nella barra del Gantt.
@@ -264,6 +265,32 @@ Con una baseline, la simulazione confronta: un elemento non costruito (o non ini
 - **IFC** li scrive nell’IfcTaskTime di ogni attività (l’ora di stato, l’inizio e la fine effettivi, il tempo rimanente, il grado di completamento), e la baseline come un secondo IfcWorkSchedule di tipo BASELINE; i campi propri di Lapin (la percentuale scritta, i segni) vanno in `Lapin_Task`. Entrambi tornano alle stesse date.
 - **Gestisci → Versioni → Confronta** dice, oltre agli elementi, cosa è cambiato nel cronoprogramma: la fine, i giorni lavorativi, la data di stato, e le attività aggiunte, eliminate, spostate (di quanti giorni lavorativi), con la durata o l’avanzamento cambiati.
 
+## Le risorse
+
+![Le risorse e le loro attività](shots/planning-resources.webp)
+
+Una risorsa è una **squadra** (operai), un **mezzo** (una gru, una pompa per calcestruzzo) o un set di **casseri**. Ognuna ha quante unità sono disponibili al giorno, la sua unità e quanto costa un’unità al giorno.
+
+1. Seleziona le attività nel Gantt.
+2. In **Risorse…**, imposta le unità, poi fai clic su **+ attività selezionate** nella riga della risorsa. Una risorsa assegnata a un’attività di riepilogo va su tutte le attività sotto di essa.
+3. Per i casseri, **Tenuto dopo** è il numero di giorni lavorativi in cui un set resta in cantiere dopo la sua attività, fino al disarmo.
+
+**Casseri dalle opere provvisionali** crea una risorsa di casseri dai casseri posati in Opere provvisionali: un set per ogni cassero, tenuto dall’attività che getta il suo elemento fino al disarmo. Imposta quanti set hai, poi livella.
+
+La tabella mostra il picco di ogni risorsa e i giorni in cui manca. Le risorse di un’attività compaiono anche in Proprietà.
+
+## L’istogramma e il livellamento
+
+![Una squadra a cui si chiede più di quanto ha: i giorni in difetto in rosso](shots/planning-histogram.webp)
+
+L’**Istogramma** mostra, per ogni risorsa, le unità richieste ogni giorno. Il limite è la linea tratteggiata, e i giorni che lo superano sono rossi.
+
+**Livella le risorse** sposta le attività non ancora iniziate in modo che a nessuna risorsa si chieda più di quanto ha. Prende le attività in ordine: prima quella che può iniziare per prima, poi quella con meno margine. Ogni attività viene messa nel primo giorno permesso dai suoi legami in cui ogni risorsa che usa è libera, per tutti i suoi giorni e per i giorni in cui un set di casseri resta dopo. Le attività già iniziate, finite o che devono iniziare in una data restano dove sono.
+
+![La stessa squadra dopo il livellamento](shots/planning-histogram-levelled.webp)
+
+Un’attività spostata conserva il suo inizio come inizio di livellamento. I suoi legami possono ancora spingerla più avanti. **Annulla livellamento** rimette le attività al loro posto. Se un’attività chiede a una risorsa più di quanto ne esista in tutto, non viene spostata: è posizionata solo dai suoi legami, e il messaggio la nomina. Il livellamento è un solo passo, quindi Annulla lo toglie.
+
 ## Il costo delle attività
 
 ![Il Gantt con la colonna Costo](shots/planning-cost.webp)
@@ -293,4 +320,4 @@ I campi propri di Lapin per cui gli altri programmi non hanno posto (il vincolo 
 
 ## Cosa viene dopo
 
-Il costo nel tempo è in [Preventivo](cost.md). Il livellamento delle risorse, il valore guadagnato, gli stati di avanzamento mensili e più linee di base e scenari sono dell'edizione premium.
+Il costo nel tempo è in [Preventivo](cost.md). Il valore guadagnato, gli stati di avanzamento mensili, più linee di base e scenari, il giornale di cantiere e Primavera P6 sono dell'edizione premium.

@@ -1,7 +1,7 @@
 ---
 title: Planificare
 order: 97
-summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, jaloane, legături cu decalaje, drumul critic calculat pe un calendar cu sărbătorile legale din România; simularea 4D a clădirii care crește zi de zi, pe vederi, pe planșe și ca video; progresul marcat pe șantier, și de pe telefon, față de o linie de bază; schimb cu MS Project, IFC și Excel.
+summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, jaloane, legături cu decalaje, drumul critic calculat pe un calendar cu sărbătorile legale din România; simularea 4D a clădirii care crește zi de zi, pe vederi, pe planșe și ca video; progresul marcat pe șantier, și de pe telefon, față de o linie de bază; echipe, utilaje și seturi de cofraj pe sarcini, histograma resurselor și nivelarea; schimb cu MS Project, IFC și Excel.
 ---
 
 ## Tabul Execuție
@@ -16,6 +16,7 @@ summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, ja
 - **Adaugă la sarcină…** (TA) și **Elemente fără sarcină**: elementele modelului în sarcini (mai jos).
 - **Simulează**, **Planșa de etape…**, **Gantt pe planșă** și **Exportă video…**: simularea 4D, modelul așa cum îl are programul într-o zi (mai jos).
 - **Marchează realizat** (MD), **Marchează început** (MS), **Marchează neînceput**, **Salvează linia de bază**, **Șterge linia de bază** și **Importă progresul…**: progresul și linia de bază (mai jos).
+- **Resurse**: **Resurse…** (echipele, utilajele, seturile de cofraj și sarcinile pe care sunt), **Nivelează resursele** și **Histograma**.
 - **Importă MS Project…**, **Exportă MS Project…**, **Export XLSX** și **Exportă IFC…**: programul spre și dinspre alte programe (mai jos).
 
 Un proiect are un singur program. Se face prima oară când adaugi o sarcină și începe lunea următoare. Data de start se schimbă din bara Gantt-ului.
@@ -292,6 +293,32 @@ Cu o linie de bază, simularea compară: un element neconstruit (sau neînceput)
 - **IFC** le scrie în IfcTaskTime-ul fiecărei sarcini (timpul de stare, începutul și finalul real, timpul rămas, gradul de realizare), iar linia de bază ca al doilea IfcWorkSchedule, de tip BASELINE; câmpurile proprii ale lui Lapin (procentul scris, marcajele) merg în `Lapin_Task`. Amândouă revin la aceleași date.
 - **Gestionare → Versiuni → Compară** spune, pe lângă elemente, ce s-a schimbat în program: finalul, zilele lucrătoare, data de stare și sarcinile adăugate, șterse, mutate (cu câte zile lucrătoare), cele cu durata sau progresul schimbat.
 
+## Resursele
+
+![Resursele și sarcinile lor](shots/planning-resources.webp)
+
+O resursă e o **echipă** (muncitori), un **utilaj** (o macara, o pompă de beton) sau un set de **cofraje**. Fiecare are câte unități sunt disponibile pe zi, unitatea ei și cât costă o unitate pe zi.
+
+1. Selectează sarcinile în Gantt.
+2. În **Resurse…**, setează unitățile, apoi apasă **+ sarcinile selectate** pe rândul resursei. O resursă pusă pe o sarcină rezumat intră pe toate sarcinile de sub ea.
+3. La cofraje, **Ținut după** înseamnă câte zile lucrătoare rămâne un set pe șantier după sarcina lui, până la decofrare.
+
+**Cofraje din organizarea de șantier** face o resursă de cofraj din cofrajele puse în Organizare de șantier: câte un set pentru fiecare cofraj, ținut de sarcina care toarnă elementul până la decofrare. Setează câte seturi ai, apoi nivelează.
+
+Tabelul arată vârful fiecărei resurse și zilele în care e în deficit. Resursele unei sarcini apar și în Proprietăți.
+
+## Histograma și nivelarea
+
+![O echipă căreia i se cere mai mult decât are: zilele în deficit cu roșu](shots/planning-histogram.webp)
+
+**Histograma** arată, pentru fiecare resursă, câte unități i se cer în fiecare zi. Limita e linia întreruptă, iar zilele peste ea sunt roșii.
+
+**Nivelează resursele** mută sarcinile neîncepute astfel încât niciunei resurse să nu i se ceară mai mult decât are. Ia sarcinile pe rând: întâi cea care poate începe prima, apoi cea cu mai puțină rezervă. Fiecare sarcină e așezată în prima zi permisă de legăturile ei în care fiecare resursă pe care o folosește e liberă, pe toate zilele ei și pe zilele în care un set de cofraj rămâne după ea. Sarcinile începute, terminate sau care trebuie să înceapă la o dată rămân unde sunt.
+
+![Aceeași echipă după nivelare](shots/planning-histogram-levelled.webp)
+
+O sarcină mutată își păstrează începutul ca început de nivelare. Legăturile ei o pot împinge și mai târziu. **Șterge nivelarea** pune sarcinile înapoi. Dacă o sarcină cere dintr-o resursă mai mult decât există cu totul, nu e mutată: e așezată doar după legăturile ei, iar mesajul o numește. Nivelarea e un singur pas, deci Undo o anulează.
+
 ## Costul sarcinilor
 
 ![Gantt-ul cu coloana Cost](shots/planning-cost.webp)
@@ -321,4 +348,4 @@ Câmpurile proprii ale lui Lapin pentru care alte programe n-au loc (constrânge
 
 ## Ce urmează
 
-Costul în timp e în [Devizul](cost.md). Nivelarea resurselor, valoarea câștigată, situațiile de lucrări lunare și mai multe linii de bază și scenarii sunt pentru ediția premium.
+Costul în timp e în [Devizul](cost.md). Valoarea câștigată, situațiile de lucrări lunare, mai multe linii de bază și scenarii, jurnalul de șantier și Primavera P6 sunt pentru ediția premium.

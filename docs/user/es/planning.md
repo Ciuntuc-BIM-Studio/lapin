@@ -16,6 +16,7 @@ summary: El cronograma de obra en un diagrama de Gantt: tareas en una EDT, hitos
 - **Añadir a la tarea…** (TA) y **Elementos sin tarea**: los elementos del modelo en las tareas (más abajo).
 - **Simular**, **Lámina de etapas…**, **Gantt en lámina** y **Exportar vídeo…**: la simulación 4D, el modelo como lo tiene el cronograma en un día (más abajo).
 - **Marcar terminado** (MD), **Marcar iniciado** (MS), **Marcar no iniciado**, **Guardar línea base**, **Borrar línea base** e **Importar avance…**: el avance y la línea base (abajo).
+- **Recursos**: **Recursos…** (las cuadrillas, la maquinaria, los juegos de encofrado y las tareas en las que están), **Nivelar recursos** y el **Histograma**.
 - **Importar MS Project…**, **Exportar MS Project…**, **Exportar XLSX** y **Exportar IFC…**: el cronograma hacia y desde otros programas (más abajo).
 
 Un proyecto tiene un solo cronograma. Se crea la primera vez que añades una tarea y empieza el lunes siguiente. Cambia su inicio en la barra del Gantt.
@@ -264,6 +265,32 @@ Con una línea base, la simulación compara: un elemento sin construir (o sin em
 - **IFC** los escribe en el IfcTaskTime de cada tarea (la hora de estado, el comienzo y el fin reales, el tiempo restante, el grado de avance), y la línea base como un segundo IfcWorkSchedule de tipo BASELINE; los campos propios de Lapin (el porcentaje escrito, las marcas) van en `Lapin_Task`. Ambos vuelven a las mismas fechas.
 - **Gestionar → Versiones → Comparar** dice, además de los elementos, qué cambió en el cronograma: el fin, los días laborables, la fecha de estado, y las tareas añadidas, eliminadas, movidas (cuántos días laborables), con la duración o el avance cambiados.
 
+## Recursos
+
+![Los recursos y sus tareas](shots/planning-resources.webp)
+
+Un recurso es una **cuadrilla** (operarios), **maquinaria** (una grúa, una bomba de hormigón) o un juego de **encofrado**. Cada uno tiene cuántas unidades hay disponibles al día, su unidad y lo que cuesta una unidad al día.
+
+1. Selecciona las tareas en el Gantt.
+2. En **Recursos…**, indica las unidades y pulsa **+ tareas seleccionadas** en la fila del recurso. Un recurso asignado a una tarea resumen pasa a todas las tareas que tiene debajo.
+3. En los encofrados, **Retenido después** es el número de días laborables que un juego sigue en obra después de su tarea, hasta que se desencofra.
+
+**Encofrados de las obras auxiliares** crea un recurso de encofrado a partir de los encofrados que colocaste en Medios auxiliares: un juego por cada encofrado, retenido por la tarea que hormigona su elemento hasta el desencofrado. Indica cuántos juegos tienes y luego nivela.
+
+La tabla muestra el pico de cada recurso y los días en que falta. Los recursos de una tarea también aparecen en Propiedades.
+
+## El histograma y la nivelación
+
+![Una cuadrilla a la que se pide más de lo que tiene: los días en falta, en rojo](shots/planning-histogram.webp)
+
+El **Histograma** muestra, para cada recurso, las unidades que se le piden cada día. El límite es la línea discontinua, y los días que lo superan salen en rojo.
+
+**Nivelar recursos** mueve las tareas que no han empezado para que a ningún recurso se le pida más de lo que tiene. Recorre las tareas en orden. Primero va la que puede empezar antes, luego la que tiene menos holgura. Cada tarea se coloca en el primer día que permiten sus vínculos en el que todos los recursos que usa están libres, durante todos sus días y durante los días que un juego de encofrado se queda después. Las tareas ya empezadas, terminadas o que deben empezar en una fecha se quedan donde están.
+
+![La misma cuadrilla después de nivelar](shots/planning-histogram-levelled.webp)
+
+Una tarea movida guarda su inicio como inicio de nivelación. Sus vínculos aún pueden retrasarla. **Quitar la nivelación** devuelve las tareas a su sitio. Si una tarea pide de un recurso más de lo que hay en total, no se mueve: se coloca solo por sus vínculos, y el mensaje la nombra. Nivelar es un solo paso, así que Deshacer lo anula.
+
 ## El coste de las tareas
 
 ![El Gantt con la columna Coste](shots/planning-cost.webp)
@@ -293,4 +320,4 @@ Los campos propios de Lapin para los que otros programas no tienen sitio (la res
 
 ## Lo que viene
 
-El coste en el tiempo está en [Presupuesto](cost.md). La nivelación de recursos, el valor ganado, las certificaciones mensuales y varias líneas base y escenarios son de la edición premium.
+El coste en el tiempo está en [Presupuesto](cost.md). El valor ganado, las certificaciones mensuales, varias líneas base y escenarios, el diario de obra y Primavera P6 son de la edición premium.

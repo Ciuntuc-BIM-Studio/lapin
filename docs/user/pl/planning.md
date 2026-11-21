@@ -16,6 +16,7 @@ summary: Harmonogram robót na wykresie Gantta: zadania w strukturze WBS, kamien
 - **Dodaj do zadania…** (TA) i **Elementy bez zadania**: elementy modelu w zadaniach (poniżej).
 - **Symuluj**, **Arkusz etapów…**, **Gantt na arkuszu** i **Eksportuj wideo…**: symulacja 4D, model taki, jaki ma go harmonogram danego dnia (poniżej).
 - **Oznacz jako wykonane** (MD), **Oznacz jako rozpoczęte** (MS), **Oznacz jako nierozpoczęte**, **Zapisz plan bazowy**, **Usuń plan bazowy** i **Importuj postęp…**: postęp i plan bazowy (poniżej).
+- **Zasoby**: **Zasoby…** (brygady, sprzęt, komplety szalunku i zadania, do których są przypisane), **Bilansuj zasoby** i **Histogram**.
 - **Importuj MS Project…**, **Eksportuj MS Project…**, **Eksportuj XLSX** i **Eksportuj IFC…**: harmonogram do i z innych programów (poniżej).
 
 Projekt ma jeden harmonogram. Powstaje przy pierwszym dodaniu zadania i zaczyna się w następny poniedziałek. Jego początek zmienisz na pasku Gantta.
@@ -264,6 +265,32 @@ Z planem bazowym symulacja porównuje: element niezbudowany (lub nierozpoczęty)
 - **IFC** zapisuje je w IfcTaskTime każdego zadania (czas stanu, rzeczywisty początek i koniec, pozostały czas, stopień wykonania), a plan bazowy jako drugi IfcWorkSchedule typu BASELINE; własne pola Lapin (wpisany procent, oznaczenia) trafiają do `Lapin_Task`. Oba wracają do tych samych dat.
 - **Zarządzaj → Wersje → Porównaj** mówi, obok elementów, co zmieniło się w harmonogramie: koniec, dni robocze, data stanu oraz zadania dodane, usunięte, przesunięte (o ile dni roboczych), ze zmienionym czasem trwania lub postępem.
 
+## Zasoby
+
+![Zasoby i ich zadania](shots/planning-resources.webp)
+
+Zasób to **brygada** (robotnicy), **sprzęt** (dźwig, pompa do betonu) albo komplet **szalunku**. Każdy ma liczbę jednostek dostępnych dziennie, swoją jednostkę i dzienny koszt jednostki.
+
+1. Zaznacz zadania na wykresie Gantta.
+2. W oknie **Zasoby…** ustaw jednostki, a potem kliknij **+ zaznaczone zadania** w wierszu zasobu. Zasób przypisany do zadania sumarycznego trafia do wszystkich zadań pod nim.
+3. Przy szalunkach **Zajęty po** to liczba dni roboczych, przez które komplet zostaje na budowie po swoim zadaniu, aż do rozszalowania.
+
+**Szalunki z robót budowlanych** tworzy zasób szalunku z szalunków ułożonych w Robotach pomocniczych: jeden komplet na każdy szalunek, zajęty przez zadanie, które betonuje jego element, aż do rozszalowania. Ustaw, ile masz kompletów, a potem zbilansuj.
+
+Tabela pokazuje szczyt każdego zasobu i dni, w których go brakuje. Zasoby zadania widać też we Właściwościach.
+
+## Histogram i bilansowanie
+
+![Brygada, od której wymaga się więcej, niż ma: dni z brakiem na czerwono](shots/planning-histogram.webp)
+
+**Histogram** pokazuje dla każdego zasobu, ile jednostek jest od niego wymaganych każdego dnia. Limit to linia przerywana, a dni powyżej niej są czerwone.
+
+**Bilansuj zasoby** przesuwa zadania, które się jeszcze nie zaczęły, tak aby od żadnego zasobu nie wymagać więcej, niż ma. Zadania są brane po kolei: najpierw to, które może zacząć się najwcześniej, potem to z mniejszym zapasem. Każde zadanie trafia na pierwszy dzień dozwolony przez jego powiązania, w którym każdy używany przez nie zasób jest wolny – przez wszystkie jego dni i przez dni, w których komplet szalunku zostaje po nim. Zadania rozpoczęte, zakończone lub takie, które muszą zacząć się w określonym dniu, zostają na miejscu.
+
+![Ta sama brygada po bilansowaniu](shots/planning-histogram-levelled.webp)
+
+Przesunięte zadanie zachowuje swój początek jako początek bilansowania. Jego powiązania mogą je nadal przesunąć później. **Usuń bilansowanie** przywraca zadania na miejsce. Jeśli zadanie wymaga od zasobu więcej, niż w ogóle go jest, nie jest przesuwane: zostaje ustawione tylko według powiązań, a komunikat je wymienia. Bilansowanie to jeden krok, więc Cofnij je wycofuje.
+
 ## Koszt zadań
 
 ![Gantt z kolumną Koszt](shots/planning-cost.webp)
@@ -293,4 +320,4 @@ Własne pola Lapin, dla których inne programy nie mają miejsca (ograniczenie z
 
 ## Co dalej
 
-Koszt w czasie jest w [Kosztorys](cost.md). Bilansowanie zasobów, wartość wypracowana, miesięczne rozliczenia robót oraz wiele planów bazowych i scenariuszy należą do edycji premium.
+Koszt w czasie jest w [Kosztorys](cost.md). Wartość wypracowana, miesięczne rozliczenia robót, wiele planów bazowych i scenariuszy, dziennik budowy i Primavera P6 należą do edycji premium.

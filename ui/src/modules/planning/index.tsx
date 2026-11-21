@@ -8,10 +8,11 @@
  * simulation (stage 4): the model as the schedule has it on a day, played from the Gantt's date line, State at date on
  * views and sheets, the stages sheet, the Gantt on sheets, the video; progress (stage 5): the status date, the elements
  * marked done or started in 3D or in a plan (from a phone too, as a guest of the shared session), the percentages and
- * actual dates, the baseline and its variances, the progress read back from a workbook.
+ * actual dates, the baseline and its variances, the progress read back from a workbook; resources (decision 772): crews,
+ * machines and formwork sets on the tasks, the daily histogram and the serial levelling.
  */
 
-import { RefreshCw, CalendarDays, ChartGantt, CheckCheck, CircleOff, CirclePlay, Clapperboard, Diamond, FileVideo, Flag, FlagOff, LayoutPanelTop, Sheet, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, SearchX, Unlink2, Wand2 } from 'lucide-react';
+import { BarChart3, RefreshCw, CalendarDays, ChartGantt, CheckCheck, CircleOff, CirclePlay, Clapperboard, Diamond, FileVideo, Flag, FlagOff, LayoutPanelTop, Sheet, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, Scale, SearchX, Unlink2, Users, Wand2 } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { exportIfc } from '../../engine/files';
@@ -21,6 +22,8 @@ import { ElementTasksSection, inSomeTask, TaskLinksSection } from './TaskLinksSe
 import { ganttOnSheet, SimulationCard, SimulationLooks, toggleSimulation, ViewDateSection } from './SimulationView';
 import { addTask, assignSelection, clearBaseline, exportMsp, exportXlsx, importMsp, importProgress, retimeFromFields, indent, linkSelected, markSelection, openGantt, outdent, saveBaseline, selectUnlinked, taskElementsOf, unlinkSelected } from './schedule';
 import { lazyPart } from '../../platform/lazyPart';
+import { TaskResourcesSection } from './TaskResourcesSection';
+import { level, openHistogram, openResources } from './resources';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const StagesDialog = lazyPart(() => import('./SimulationDialogs').then((m) => m.StagesDialog), { title: 'Stages sheet' });
@@ -29,6 +32,8 @@ const CalendarDialog = lazyPart(() => import('./CalendarDialog').then((m) => m.C
 const GenerateDialog = lazyPart(() => import('./GenerateDialog').then((m) => m.GenerateDialog), { title: 'Generate schedule' });
 const GanttView = lazyPart(() => import('./GanttView').then((m) => m.GanttView), { inline: true });
 const AssignDialog = lazyPart(() => import('./AssignDialog').then((m) => m.AssignDialog), { title: 'Add to task' });
+const ResourcesDialog = lazyPart(() => import('./ResourcesDialog').then((m) => m.ResourcesDialog), { title: 'Resources' });
+const HistogramView = lazyPart(() => import('./HistogramView').then((m) => m.HistogramView), { inline: true });
 
 const planning: LapinModule = {
   id: 'planning',
@@ -81,6 +86,14 @@ const planning: LapinModule = {
         ],
       },
       {
+        // Resources and their levelling (decision 772: free, formerly Planning Pro's).
+        label: 'Resources', tools: [
+          { id: 'planning.resources', label: 'Resources…', icon: Users, run: openResources },
+          { id: 'planning.level', label: 'Level resources', icon: Scale, run: () => void level() },
+        ],
+        small: [{ id: 'planning.histogram', label: 'Histogram', icon: BarChart3, run: openHistogram }],
+      },
+      {
         label: '4D simulation', tools: [
           { id: 'planning.simulate', label: 'Simulate', icon: Clapperboard, run: () => void toggleSimulation() },
           { id: 'planning.stages', label: 'Stages sheet…', icon: LayoutPanelTop, run: () => useUi.setState({ dialog: 'planning.stages' }) },
@@ -102,12 +115,13 @@ const planning: LapinModule = {
       },
     ],
   }],
-  views: { gantt: { label: 'Gantt', component: GanttView } },
-  dialogs: { 'planning.calendar': CalendarDialog, 'planning.assign': AssignDialog, 'planning.generate': GenerateDialog, 'planning.stages': StagesDialog, 'planning.video': VideoDialog },
+  views: { gantt: { label: 'Gantt', component: GanttView }, resourceHistogram: { label: 'Histogram', component: HistogramView } },
+  dialogs: { 'planning.calendar': CalendarDialog, 'planning.assign': AssignDialog, 'planning.generate': GenerateDialog, 'planning.stages': StagesDialog, 'planning.video': VideoDialog, 'planning.resources': ResourcesDialog },
   background: SimulationLooks,
   propertySections: [
     { id: 'task', label: 'Task', classes: ['IfcTask'], component: TaskSection, replacesFields: () => true },
     { id: 'task-elements', label: 'Elements', classes: ['IfcTask'], component: TaskLinksSection },
+    { id: 'task-resources', label: 'Resources', classes: ['IfcTask'], component: TaskResourcesSection },
     { id: 'element-tasks', label: 'Work schedule', classes: ['*'], shows: inSomeTask, component: ElementTasksSection },
     { id: 'view-date', label: '4D simulation', classes: ['LapinView'], shows: (n) => ['plan', 'section', 'elevation', '3d'].includes(String(n.props.kind)), component: ViewDateSection },
   ],

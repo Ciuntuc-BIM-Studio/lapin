@@ -16,6 +16,7 @@ summary: Arbejdsplanen i et Gantt-diagram: opgaver i en WBS, milepæle, kæder m
 - **Føj til opgave…** (TA) og **Elementer uden opgave**: modellens elementer i opgaverne (nedenfor).
 - **Simulér**, **Etapeark…**, **Gantt på ark** og **Eksportér video…**: 4D-simuleringen, modellen som tidsplanen har den på en dag (nedenfor).
 - **Markér færdig** (MD), **Markér påbegyndt** (MS), **Markér ikke påbegyndt**, **Gem basisplan**, **Ryd basisplan** og **Importér fremdrift…**: fremdriften og basisplanen (nedenfor).
+- **Ressourcer**: **Ressourcer…** (sjakkene, materiellet, forskallingssættene og hvilke opgaver de er på), **Udjævn ressourcer** og **Histogram**.
 - **Importér MS Project…**, **Eksportér MS Project…**, **Eksportér XLSX** og **Eksportér IFC…**: tidsplanen til og fra andre programmer (nedenfor).
 
 Et projekt har én tidsplan. Den oprettes første gang, du tilføjer en opgave, og starter den næste mandag. Ret starten i Gantts værktøjslinje.
@@ -264,6 +265,32 @@ Med en basisplan sammenligner simuleringen: et element, der ikke er bygget (elle
 - **IFC** skriver dem i hver opgaves IfcTaskTime (statustiden, faktisk start og slut, den resterende tid, færdiggørelsesgraden) og basisplanen som et andet IfcWorkSchedule af typen BASELINE; Lapins egne felter (den skrevne procentdel, markeringerne) står i `Lapin_Task`. Begge kommer tilbage til de samme datoer.
 - **Administrer → Versioner → Sammenlign** siger ud over elementerne, hvad der ændrede sig i tidsplanen: slutningen, arbejdsdagene, statusdatoen og de opgaver, der kom til, blev slettet, flyttet (hvor mange arbejdsdage), eller hvis varighed eller fremdrift ændrede sig.
 
+## Ressourcer
+
+![Ressourcerne og deres opgaver](shots/planning-resources.webp)
+
+En ressource er et **sjak** (håndværkere), **materiel** (en kran, en betonpumpe) eller et sæt **forskalling**. Hver har et antal enheder til rådighed om dagen, sin enhed og hvad en enhed koster om dagen.
+
+1. Vælg opgaverne i Gantt-diagrammet.
+2. Angiv enhederne i **Ressourcer…**, og klik så på **+ valgte opgaver** i ressourcens række. En ressource, der sættes på en sammenfatningsopgave, kommer på alle opgaverne under den.
+3. For forskalling er **Holdt efter** antallet af arbejdsdage, et sæt bliver på pladsen efter sin opgave, indtil det rives.
+
+**Forskalling fra byggepladsarbejder** laver en forskallingsressource ud fra den forskalling, du har lagt i Byggepladsindretning: ét sæt pr. forskalling, holdt af den opgave, der støber dens element, indtil det rives. Angiv, hvor mange sæt du har, og udjævn så.
+
+Tabellen viser hver ressources spidsbelastning og de dage, hvor den mangler. En opgaves ressourcer vises også i Egenskaber.
+
+## Histogrammet og udjævningen
+
+![Et sjak, der bliver bedt om mere, end det har: dagene med mangel i rødt](shots/planning-histogram.webp)
+
+**Histogram** viser for hver ressource, hvor mange enheder den bliver bedt om hver dag. Grænsen er den stiplede linje, og dagene over den er røde.
+
+**Udjævn ressourcer** flytter de opgaver, der ikke er startet, så ingen ressource bliver bedt om mere, end den har. Opgaverne tages i rækkefølge: først den, der kan starte tidligst, så den med mindst flydetid. Hver opgave lægges på den første dag, dens afhængigheder tillader, hvor alle de ressourcer, den bruger, er ledige – i alle dens dage og i de dage, et forskallingssæt bliver efter den. Opgaver, der er startet, færdige eller skal starte på en bestemt dato, bliver, hvor de er.
+
+![Det samme sjak efter udjævning](shots/planning-histogram-levelled.webp)
+
+En flyttet opgave beholder sin start som udjævningsstart. Dens afhængigheder kan stadig skubbe den senere. **Fjern udjævning** sætter opgaverne tilbage. Hvis en opgave beder om mere af en ressource, end der overhovedet findes, flyttes den ikke: den placeres kun efter sine afhængigheder, og meddelelsen nævner den. Udjævning er ét trin, så Fortryd tager den tilbage.
+
 ## Opgavernes omkostninger
 
 ![Gantt-diagrammet med kolonnen Omkostning](shots/planning-cost.webp)
@@ -293,4 +320,4 @@ Lapins egne felter, som andre programmer ikke har plads til (en opgaves begræns
 
 ## Hvad der kommer
 
-Omkostninger over tid står i [Overslag](cost.md). Ressourceudjævning, optjent værdi, månedlige acontoopgørelser og flere basisplaner og scenarier hører til premiumudgaven.
+Omkostninger over tid står i [Overslag](cost.md). Optjent værdi, månedlige acontoopgørelser, flere basisplaner og scenarier, byggedagbogen og Primavera P6 hører til premiumudgaven.
