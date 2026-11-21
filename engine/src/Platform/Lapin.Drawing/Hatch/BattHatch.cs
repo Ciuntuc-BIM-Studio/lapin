@@ -34,8 +34,9 @@ public sealed class BandAxis(Func<Vec2, (double S, double Y)> toBand, Func<doubl
 /// tangent to its face (its centre at y = ±(h − R)). The heads on one face touch each other (centres w apart), those on the
 /// other face too, offset by w/2: the heads alternate faces every w/2 along the band. w is <see cref="Head"/>·2h nominally
 /// (× the material's hatch scale), adjusted so a whole number n of loops fills the band: the first head touches the band's
-/// start, the last its end, L = 2R + (n − 1)·w/2 = (n + 1)·w/2, nothing partial at either end (L the band's length along its
-/// mid-line, so a mitred end is met half-way and two batts meet on the mitre). Each loop is its head and the two straight
+/// start, the last its end, L = 2R + (n − 1)·w/2 = (n + 1)·w/2, nothing partial at either end. In a drawn band
+/// (<see cref="Segments"/>) the ends are where whole loops fit: at a mitre, a corner or a cut the chain ends on a whole loop
+/// on its own side (two batts meet on the mitre), never a clipped one. Each loop is its head and the two straight
 /// tangents from the head to its tip, on the loop's own axis across the band at the height of the opposite heads' centres,
 /// y = ∓(h − R): exactly where the two opposite heads beside it touch. The tangents leave the head at α below its sides,
 /// sin α = R / 2(h − R), and the head is drawn as its arc over its face between them (half a turn plus 2α). A loop's side and
@@ -88,26 +89,205 @@ public static class BattHatch
         var o = new List<List<Vec2>>();
         if (!(h > 0) || !(s1 > s0)) return o;
         var (n, w, r) = Fit(s1 - s0, h, scale);
-        var big = h - r;
-        if (!(r > 0) || !(big > 0)) return o;
-        var first = flip ? -1 : 1;
-        // The tangents' angle below the head's sides: from the tip, 2(h − R) from the centre, to a circle of radius R.
-        var alpha = Math.Asin(Math.Min(1, r / (2 * big)));
+        if (!(r > 0) || !(h - r > 0)) return o;
         // Loops centred along the band from its start; a lone loop at the band's middle.
         var start = n == 1 ? (s0 + s1) / 2 : s0 + r;
-        for (var j = 0; j < n; j++)
-        {
-            var side = j % 2 == 0 ? first : -first;
-            var c = new Vec2(start + j * w / 2, side * big);
-            var tip = new Vec2(c.X, -side * big);
-            // In the head's own sense (its face up, angle 0 along +s).
-            Vec2 At(double a) => new(c.X + r * Math.Cos(a), c.Y + side * r * Math.Sin(a));
-            foreach (var (a0, a1) in new[] { (-alpha, Math.PI / 2), (Math.PI / 2, Math.PI + alpha) })
-                o.Add([.. Chords.Arc(new Vec2(0, 0), r, a0, a1 - a0).Select(p => new Vec2(c.X + p.X, c.Y + side * p.Y))]);
-            o.Add([At(-alpha), tip]);
-            o.Add([At(Math.PI + alpha), tip]);
-        }
+        for (var j = 0; j < n; j++) o.AddRange(Loop(start + j * w / 2, Side(j, flip ? -1 : 1), r, h));
         return o;
+    }
+
+    /// <summary>The face the j-th loop's head lies against (+1 the left, −1 the right), the first's being <paramref name="first"/>.</summary>
+    static int Side(int j, int first) => j % 2 == 0 ? first : -first;
+
+    /// <summary>One loop's four strokes: its head centred at s = <paramref name="c"/> against the face <paramref name="side"/>.</summary>
+    static List<List<Vec2>> Loop(double c, int side, double r, double h)
+    {
+        var big = h - r;
+        // The tangents' angle below the head's sides: from the tip, 2(h − R) from the centre, to a circle of radius R.
+        var alpha = Math.Asin(Math.Min(1, r / (2 * big)));
+        var tip = new Vec2(c, -side * big);
+        // In the head's own sense (its face up, angle 0 along +s).
+        Vec2 At(double a) => new(c + r * Math.Cos(a), side * big + side * r * Math.Sin(a));
+        var o = new List<List<Vec2>>(4);
+        foreach (var (a0, a1) in new[] { (-alpha, Math.PI / 2), (Math.PI / 2, Math.PI + alpha) })
+            o.Add([.. Chords.Arc(new Vec2(0, 0), r, a0, a1 - a0).Select(p => new Vec2(c + p.X, side * big + side * p.Y))]);
+        o.Add([At(-alpha), tip]);
+        o.Add([At(Math.PI + alpha), tip]);
+        return o;
+    }
+
+    /// <summary>
+    /// A loop's outline as a closed polygon, through every point its strokes are drawn by (its head's two arcs over its face,
+    /// then its tip), its sides cut in eight so a point on each stands for it when the loop is tested against the band.
+    /// </summary>
+    static List<Vec2> Outline(double c, int side, double r, double h)
+    {
+        var s = Loop(c, side, r, h);
+        var o = new List<Vec2>(s[0]);
+        o.AddRange(s[1].Skip(1));
+        var (from, tip, to) = (o[^1], s[3][^1], o[0]);
+        for (var i = 1; i < 8; i++) o.Add(from + (tip - from) * (i / 8.0));
+        o.Add(tip);
+        for (var i = 1; i < 8; i++) o.Add(tip + (to - tip) * (i / 8.0));
+        return o;
+    }
+
+    /// <summary>
+    /// Whether a whole loop fits the band: every point of its outline inside the band (in the band's frame, within
+    /// <paramref name="tol"/>, so a head touching a face fits) and no corner of the band inside the loop (a notch). The band's
+    /// other loops (holes, even-odd) are tested in the drawing by <paramref name="free"/>.
+    /// </summary>
+    static bool Fits(List<Vec2> band, double c, List<Vec2> shape, double tol, Func<Vec2, bool>? free)
+    {
+        var at = new Vec2(c, 0);
+        foreach (var q in shape)
+        {
+            var p = q + at;
+            if (!(Polygon2.Contains(band, p) || Polygon2.Contains(band, p, tol)) || (free != null && !free(p))) return false;
+        }
+        foreach (var v in band) if (Polygon2.Contains(shape, v - at) && LoopDistance(shape, v - at) > tol) return false;
+        return true;
+    }
+
+    static double LoopDistance(List<Vec2> loop, Vec2 p)
+    {
+        var d = double.MaxValue;
+        for (var i = 0; i < loop.Count; i++) d = Math.Min(d, Polyline2.SegmentDistance(p, loop[i], loop[(i + 1) % loop.Count]));
+        return d;
+    }
+
+    /// <summary>
+    /// The nearest position to <paramref name="from"/>, going towards <paramref name="to"/>, that <paramref name="fits"/>, the
+    /// positions past it fitting too (an end's shape only gets in the way nearer the end): searched by <paramref name="step"/>,
+    /// or about <paramref name="hint"/> (the answer for a loop a hair larger or smaller), then halved down to the tolerance,
+    /// kept on the side that fits; null when none fits before <paramref name="to"/>.
+    /// </summary>
+    static double? Nearest(double from, double to, double step, double tol, Func<double, bool> fits, double? hint = null)
+    {
+        var dir = Math.Sign(to - from);
+        double good, bad;
+        if (hint is { } at && dir * (at - from) > 0 && dir * (to - at) > 0)
+        {
+            // Bracketed about the hint, the bracket doubled until it holds the answer.
+            var d = tol * 16;
+            if (fits(at))
+            {
+                good = at; bad = at - dir * d;
+                while (dir * (bad - from) > 0 && fits(bad)) { good = bad; d *= 2; bad = good - dir * d; }
+                if (dir * (bad - from) <= 0) { if (fits(from)) return from; bad = from; }
+            }
+            else
+            {
+                bad = at; good = at + dir * d;
+                while (dir * (to - good) > 0 && !fits(good)) { bad = good; d *= 2; good = bad + dir * d; }
+                if (dir * (to - good) <= 0) { if (!fits(to)) return null; good = to; }
+            }
+        }
+        else
+        {
+            if (fits(from)) return from;
+            if (dir == 0) return null;
+            // Steps doubling from the first, the last not past the far end.
+            bad = from; good = double.NaN;
+            for (var d = step; ; d *= 2)
+            {
+                var c = dir * (to - (bad + dir * d)) > 0 ? bad + dir * d : to;
+                if (fits(c)) { good = c; break; }
+                if (c == to) break;
+                bad = c;
+            }
+            if (double.IsNaN(good)) return null;
+        }
+        for (var k = 0; k < 80 && Math.Abs(good - bad) > tol; k++)
+        {
+            var m = (good + bad) / 2;
+            if (fits(m)) good = m; else bad = m;
+        }
+        return good;
+    }
+
+    /// <summary>
+    /// How the loops are laid in a band (its outline <paramref name="band"/> in its frame, s along and y from the mid-line, its
+    /// faces at ±h): the first head's centre, how many loops, their width. The first loop's head lies against the face
+    /// <paramref name="first"/> and as near the band's start as a whole loop fits; the last as near its end as a whole loop fits,
+    /// on whichever face gives a chain of loops closest to their nominal width (within 15 %) reaching furthest; the loops in
+    /// between evenly spread (the width stretched, never a gap). Square ends: the heads touch them, as <see cref="Fit"/> lays them.
+    /// Returns the first head's centre, the count, the heads' radius and the step from one loop to the next (w/2, to a hair).
+    /// </summary>
+    static (double C0, int N, double R, double Step)? Lay(List<Vec2> band, double s0, double s1, double h, double scale, int first, double tol, Func<Vec2, bool>? free,
+        Func<int, double, List<Vec2>> shape)
+    {
+        var w0 = Head * 2 * h * Math.Clamp(double.IsFinite(scale) && scale > 0 ? scale : 1, 0.5, MaxScale);
+        var most = 2 * Head * MaxScale * h;
+        var half = (s0 + s1) / 2;
+        // How far each end's shape (a mitre, a notch) runs into the band: its corners off the faces' straight runs.
+        double d0 = 0, d1 = 0;
+        for (var i = 0; i < band.Count; i++)
+        {
+            Vec2 p = band[(i + band.Count - 1) % band.Count], v = band[i], q = band[(i + 1) % band.Count];
+            bool OnFace(Vec2 x) => Math.Abs(Math.Abs(x.Y) - h) <= tol && Math.Sign(x.Y) == Math.Sign(v.Y);
+            if (OnFace(v) && OnFace(p) && OnFace(q)) continue;
+            if (v.X < half) d0 = Math.Max(d0, v.X - s0); else d1 = Math.Max(d1, s1 - v.X);
+        }
+        // The loops at an end, from the end loop inwards (w/2 apart, alternating faces) as far as the end's shape reaches,
+        // never into the other end's: all whole, so none beside the end loop is cut.
+        bool EndFits(double c, int side, double r, int dir)
+        {
+            // Past this a loop is clear of the end's shape (along the faces' straight runs).
+            var clear = dir > 0 ? s0 + d0 : s1 - d1;
+            // Up to where the other end's shape starts (the loops there are that end's to fit).
+            var far = dir > 0 ? Math.Max(s1 - d1, half) : Math.Min(s0 + d0, half);
+            for (var j = 0; ; j++)
+            {
+                var cj = c + dir * j * r;
+                if (j > 0 && (dir * (cj - dir * r - clear) >= 0 || dir * (cj + dir * r - far) > 0)) return true;
+                if (!Fits(band, cj, shape(j % 2 == 0 ? side : -side, r), tol, free)) return false;
+            }
+        }
+        double Start(double r, double? hint = null) => Nearest(s0 + r, s1 - r, r / 4, tol, c => EndFits(c, first, r, 1), hint + r) is { } c ? c - r : double.NaN;
+        double End(int side, double r, double from, double? hint = null) => Nearest(s1 - r, from + r, r / 4, tol, c => EndFits(c, side, r, -1), hint - r) is { } c ? c + r : double.NaN;
+        var w = Math.Min(w0, s1 - s0);
+        var a = Start(w / 2);
+        if (double.IsNaN(a)) return null;
+        // The count and the last loop's face: of the chains whose width is within 15 % of the nominal one, the one reaching
+        // furthest, then the nearest that width (as Fit rounds); else the nearest that width.
+        int n = 0; var best = (Ok: false, Reach: double.MinValue, Off: double.MaxValue);
+        foreach (var side in new[] { first, -first })
+        {
+            var b = End(side, w / 2, a);
+            if (double.IsNaN(b) || b - a <= 0) continue;
+            var len = b - a;
+            for (var k = 1; k <= Math.Max(1, (int)Math.Ceiling(4 * len / w0)) + 1; k++)
+            {
+                if (Side(k - 1, first) != side) continue;
+                var wk = 2 * len / (k + 1);
+                if (wk > most * (1 + 1e-9) && k > 1) continue;
+                var ok = Math.Abs(wk / w0 - 1) <= 0.15;
+                var off = Math.Abs(2 * len / w0 - 1 - k);
+                var reach = ok ? Math.Round(b / tol) * tol : 0;
+                if ((ok, reach, -off).CompareTo((best.Ok, best.Reach, -best.Off)) > 0) { best = (ok, reach, off); n = k; }
+            }
+        }
+        if (n == 0) return null;
+        var last = Side(n - 1, first);
+        // The width and the ends found again for it, until they agree (the ends of a mitre depend on the heads' size); the
+        // loops then laid at the size the ends were found for, from the first head to the last.
+        var (ra, aa, bb) = (w / 2, a, End(last, w / 2, a));
+        if (double.IsNaN(bb)) return null;
+        for (var it = 0; it < 30; it++)
+        {
+            var nw = 2 * (bb - aa) / (n + 1);
+            if (Math.Abs(nw - 2 * ra) <= tol || nw <= 0) break;
+            var r = nw / 2;
+            var na = Start(r, aa);
+            if (double.IsNaN(na)) break;
+            var nb = End(last, r, na, bb);
+            if (double.IsNaN(nb) || nb <= na) break;
+            (ra, aa, bb) = (r, na, nb);
+        }
+        // A lone loop no larger than the largest scale gives, at the middle of where it may lie.
+        if (n == 1) { var lone = Math.Min(bb - aa, most) / 2; return ((aa + bb) / 2, 1, Math.Min(ra, lone), 0); }
+        return (aa + ra, n, ra, (bb - aa - 2 * ra) / (n - 1));
     }
 
     /// <param name="loops">The region, even-odd (metres, or whatever unit the drawing is in).</param>
@@ -115,13 +295,19 @@ public static class BattHatch
     /// <param name="axis">The frame the band runs in (an element's axis); null: the band's longest edge.</param>
     /// <param name="scale">Stretches the loops along the band, their heads with them (the material's hatch scale; 1 as designed).</param>
     /// <param name="flip">The first head against the band's right face instead of its left.</param>
+    /// <remarks>
+    /// Only whole loops are drawn (as ArchiCAD's and Revit's batt insulation): at a mitre, a corner, a cut by an opening or a
+    /// free end the chain ends on a whole loop, the loops spread evenly over the length they fit in (<see cref="Lay"/>), and any
+    /// loop the band's outline would cut (a notch, a hole) is left out whole, never clipped to a stub; a corner may keep a little
+    /// empty space. Each band's loops stay on its side of a mitre, so two batts meet on it.
+    /// </remarks>
     public static List<HatchSegment> Segments(IReadOnlyList<IReadOnlyList<Vec2>> loops, double minWidth = 0, int maxSegments = 200_000, BandAxis? axis = null,
         double scale = 1, bool flip = false)
     {
         var o = new List<HatchSegment>();
-        foreach (var raw in loops)
+        for (var li = 0; li < loops.Count; li++)
         {
-            var poly = Clean(raw);
+            var poly = Clean(loops[li]);
             if (poly.Count < 3 || Math.Abs(Polygon2.SignedArea(poly)) < 1e-12) continue;
             var frame = axis ?? FrameOf(poly);
             if (frame == null) continue;
@@ -131,39 +317,45 @@ public static class BattHatch
             var h = (y1 - y0) / 2;
             if (2 * h < minWidth || h <= 0 || s1 - s0 <= 0) continue;
             var mid = (y0 + y1) / 2;
-            // The heads fill the band's length along its mid-line (a mitred end half-way, so two batts meet on the mitre).
-            var (m0, m1) = MidSpan(pts, mid);
-            if (m1 - m0 > 1e-9 * (s1 - s0)) (s0, s1) = (m0, m1);
-            var strokes = Strokes(s0, s1, h, scale, flip);
-            var skipLoop = false;
-            for (var strokeIndex = 0; strokeIndex < strokes.Count; strokeIndex++)
+            // The band in its own frame, y from the mid-line: its faces straight lines at ±h even round a curved axis.
+            var band = pts.Select(p => new Vec2(p.S, p.Y - mid)).ToList();
+            var tol = 1e-7 * h;
+            // The region's other loops (holes): a loop's point must be inside an even number of them.
+            var others = Enumerable.Range(0, loops.Count).Where(k => k != li).Select(k => loops[k]).ToList();
+            Func<Vec2, bool>? free = others.Count == 0 ? null : p => others.Count(l => Polygon2.Contains(l, frame.FromBand(p.X, mid + p.Y))) % 2 == 0;
+            var first = flip ? -1 : 1;
+            // A loop's outline at s = 0 for each face and size tried (the same at any s, moved along).
+            var shapes = new Dictionary<(int, double), List<Vec2>>();
+            List<Vec2> Shape(int side, double r) => shapes.TryGetValue((side, r), out var l) ? l : shapes[(side, r)] = Outline(0, side, r, h);
+            if (Lay(band, s0, s1, h, scale, first, tol, free, Shape) is not var (c0, n, r, step)) continue;
+            if (!(r > 0) || !(h - r > 0)) continue;
+            for (var j = 0; j < n && o.Count < maxSegments; j++)
             {
-                var stroke = strokes[strokeIndex];
-                if (o.Count >= maxSegments) break;
-                // A loop whose head's centre lies outside the region (a head on the short face of a mitred end, past the mitre) is
-                // left out whole: its head is clipped away, and its sides alone would show as a stray line at the corner. The
-                // loop's four strokes come together; its tip is the last point of the third, opposite the head's centre.
-                if (strokeIndex % 4 == 0)
-                {
-                    var tip = strokes[strokeIndex + 2][^1];
-                    skipLoop = !Inside(loops, frame.FromBand(tip.X, mid - tip.Y));
-                }
-                if (skipLoop) continue;
-                // Straight strokes in pieces of at most half the band's width, so they bend with a curved frame and each piece
-                // crosses the region's outline at most once where it is clipped.
-                var band = new List<Vec2> { stroke[0] };
+                var c = c0 + j * step;
+                var side = Side(j, first);
+                // A loop the outline would cut (a notch, a hole; the ends are laid to fit) is left out whole. A little more
+                // tolerance than the ends were found with: the loops beside an end sit a hair off where they were tried.
+                if (j > 0 && j < n - 1 && !Fits(band, c, Shape(side, r), 10 * tol, free)) continue;
+                foreach (var stroke in Loop(c, side, r, h)) Add(stroke);
+            }
+
+            void Add(List<Vec2> stroke)
+            {
+                // Straight strokes in pieces of at most half the band's width, so they bend with a curved frame. Clipped to the
+                // region only where a chord of a curved face cuts a hair off a head (the loops themselves fit the band).
+                var pieces = new List<Vec2> { stroke[0] };
                 for (var k = 1; k < stroke.Count; k++)
                 {
                     var (a, b) = (stroke[k - 1], stroke[k]);
                     var m = Math.Max(1, (int)Math.Ceiling((b - a).Length / h));
-                    for (var i = 1; i <= m; i++) band.Add(a + (b - a) * ((double)i / m));
+                    for (var i = 1; i <= m; i++) pieces.Add(a + (b - a) * ((double)i / m));
                 }
-                var prev = frame.FromBand(band[0].X, mid + band[0].Y);
-                var prevIn = Inside(loops, prev);
-                for (var i = 1; i < band.Count && o.Count < maxSegments; i++)
+                var prev = frame.FromBand(pieces[0].X, mid + pieces[0].Y);
+                var prevIn = In(prev);
+                for (var i = 1; i < pieces.Count && o.Count < maxSegments; i++)
                 {
-                    var cur = frame.FromBand(band[i].X, mid + band[i].Y);
-                    var curIn = Inside(loops, cur);
+                    var cur = frame.FromBand(pieces[i].X, mid + pieces[i].Y);
+                    var curIn = In(cur);
                     if (prevIn && curIn) o.Add(new HatchSegment(prev, cur));
                     else if (prevIn != curIn)
                     {
@@ -172,13 +364,16 @@ public static class BattHatch
                         for (var j = 0; j < 20; j++)
                         {
                             var m = new Vec2((a.X + b.X) / 2, (a.Y + b.Y) / 2);
-                            if (Inside(loops, m) == prevIn) a = m; else b = m;
+                            if (In(m) == prevIn) a = m; else b = m;
                         }
                         o.Add(prevIn ? new HatchSegment(prev, a) : new HatchSegment(b, cur));
                     }
                     prev = cur; prevIn = curIn;
                 }
             }
+
+            // Inside the region, or on its own outline (a head touching a face, a loop touching a mitre).
+            bool In(Vec2 p) => Inside(loops, p) || (Polygon2.Contains(poly, p, 1e-6 * h) && (others.Count == 0 || others.Count(l => Polygon2.Contains(l, p)) % 2 == 0));
         }
         return o;
     }

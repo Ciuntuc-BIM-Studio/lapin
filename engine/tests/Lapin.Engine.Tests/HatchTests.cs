@@ -296,46 +296,135 @@ public class BattHatchTests
     }
 
     /// <summary>
-    /// At a mitred corner (two walls of one layer meeting at 90°) a loop whose head lies past the mitre is clipped away whole:
-    /// its sides alone would be a stray line at the corner.
+    /// The batt's loops as drawn: the segments chained end to end into closed outlines (a whole loop is one: its head's arc,
+    /// its two sides, its tip). A loop cut short by the outline would leave open ends (a stub, a half head): none may, so every
+    /// point is met by an even number of segments (two; four where heads touch at a point their arcs share). Returns the
+    /// outlines' points, loops touching that way counted as one.
+    /// </summary>
+    static List<List<Vec2>> WholeLoops(List<HatchSegment> segs, string what)
+    {
+        var key = new Dictionary<(long, long), int>();
+        var pts = new List<Vec2>();
+        int Id(Vec2 p)
+        {
+            var k = ((long)Math.Round(p.X * 1e8), (long)Math.Round(p.Y * 1e8));
+            if (!key.TryGetValue(k, out var i)) { i = pts.Count; key[k] = i; pts.Add(p); }
+            return i;
+        }
+        var adj = new Dictionary<int, List<int>>();
+        foreach (var s in segs)
+        {
+            var (a, b) = (Id(s.A), Id(s.B));
+            if (a == b) continue;
+            (adj.TryGetValue(a, out var la) ? la : adj[a] = []).Add(b);
+            (adj.TryGetValue(b, out var lb) ? lb : adj[b] = []).Add(a);
+        }
+        var open = adj.Where(e => e.Value.Count % 2 != 0).ToList();
+        Assert.True(open.Count == 0, $"{what}: {open.Count} open ends (a partial loop or a stub), the first at ({(open.Count > 0 ? pts[open[0].Key].X : 0):0.####}, {(open.Count > 0 ? pts[open[0].Key].Y : 0):0.####}), degrees {string.Join(",", open.Take(12).Select(e => e.Value.Count))}");
+        var seen = new HashSet<int>();
+        var loops = new List<List<Vec2>>();
+        foreach (var v in adj.Keys)
+        {
+            if (!seen.Add(v)) continue;
+            var loop = new List<Vec2> { pts[v] };
+            var stack = new Stack<int>([v]);
+            while (stack.Count > 0) foreach (var u in adj[stack.Pop()]) if (seen.Add(u)) { loop.Add(pts[u]); stack.Push(u); }
+            loops.Add(loop);
+        }
+        return loops;
+    }
+
+    /// <summary>
+    /// For random bands (lengths, thicknesses, angles; each end square, mitred either way at 30°–60°, or a T's square end), in
+    /// either orientation and at any hatch scale: every stroke belongs to a whole loop, every point of every loop inside the
+    /// band within 1e-6; at a square end the chain reaches the end (to its heads' chords), at a mitred one it stops within a pitch of where the
+    /// mid-line meets the mitre, plus the mitre's run across the half band; the loops evenly spread, their width within 15 % of
+    /// the nominal one when there are enough of them to choose from.
     /// </summary>
     [Fact]
-    public void A_batt_loop_whose_head_is_past_the_mitre_leaves_no_stray_sides()
+    public void Every_batt_stroke_belongs_to_a_whole_loop_inside_the_band_and_the_chain_reaches_both_ends()
     {
-        var dropped = 0;
-        foreach (var flip in new[] { false, true }) dropped += StraySides(flip);
-        Assert.True(dropped > 0, "the mitre drops a loop in one of the two orientations");
+        var rnd = new Random(754);
+        for (var t = 0; t < 400; t++)
+        {
+            var len = 0.3 + rnd.NextDouble() * 5.7;
+            var h = (0.04 + rnd.NextDouble() * 0.26) / 2;
+            var scale = rnd.Next(3) == 0 ? 0.6 + rnd.NextDouble() * 0.5 : 1;
+            var flip = rnd.Next(2) == 0;
+            var a = rnd.NextDouble() * 2 * Math.PI;
+            var d = new Vec2(Math.Cos(a), Math.Sin(a));
+            var n = d.Perp;
+            var o = new Vec2(rnd.NextDouble() * 20 - 10, rnd.NextDouble() * 20 - 10);
+            Vec2 P(double s, double y) => o + d * s + n * y;
+            // Each end's run: how far the face at +h goes past the mid-line's end (negative: falls short); 0 a square end.
+            double Run() => rnd.Next(3) switch { 0 => 0, 1 => h * Math.Tan((30 + rnd.NextDouble() * 30) * Math.PI / 180), _ => -h * Math.Tan((30 + rnd.NextDouble() * 30) * Math.PI / 180) };
+            var (r0, r1) = (Run(), Run());
+            len = Math.Max(len, 2 * (Math.Abs(r0) + Math.Abs(r1)) + 0.2);
+            Vec2[] band = [P(r0, h), P(-r0, -h), P(len - r1, -h), P(len + r1, h)];
+            var what = $"band {t}: {len:0.###} × {2 * h:0.###}, runs {r0:0.###} / {r1:0.###}, scale {scale:0.##}{(flip ? ", flipped" : "")}";
+            var segs = BattHatch.Segments([band], scale: scale, flip: flip);
+            Assert.True(segs.Count > 0, what);
+            Assert.All(segs.SelectMany(s => new[] { s.A, s.B }), p => Assert.True(Polygon2.Contains(band, p, 1e-6), $"{what}: a point outside the band"));
+            var loops = WholeLoops(segs, what);
+            (double S, double Y) F(Vec2 p) => (Vec2.Dot(p - o, d), Vec2.Dot(p - o, n));
+            var all = loops.SelectMany(l => l).Select(F).ToList();
+            double lo = all.Min(p => p.S), hi = all.Max(p => p.S);
+            var w0 = BattHatch.Head * 2 * h * scale;
+            Assert.True(lo - 0 <= (r0 == 0 ? Chords.Tolerance : w0 + Math.Abs(r0)), $"{what}: the chain starts {lo:0.####} in");
+            Assert.True(len - hi <= (r1 == 0 ? Chords.Tolerance : w0 + Math.Abs(r1)), $"{what}: the chain stops {len - hi:0.####} short");
+            // The loops' width from the chain's length, (n + 1)·w/2, n the heads (where each touches its face).
+            var heads = segs.SelectMany(s => new[] { s.A, s.B }).Select(F).Where(p => Math.Abs(p.Y) >= h - 1e-9).Select(p => Math.Round(p.S * 1e7)).Distinct().Count();
+            var w = 2 * (hi - lo) / (heads + 1);
+            // Evenly spread: the heads alternate faces every w/2, none left out between (a gap of w or more).
+            var touch = segs.SelectMany(s => new[] { s.A, s.B }).Select(F).Where(p => Math.Abs(p.Y) >= h - 1e-9).Select(p => p.S).Distinct().Order().ToList();
+            var gap = touch.Zip(touch.Skip(1), (x, y) => y - x).DefaultIfEmpty(0).Max();
+            Assert.True(gap <= 0.75 * w, $"{what}: a gap of {gap:0.####} between heads, the loops {w:0.####} wide");
+            if (heads >= 8) Assert.True(w / w0 is >= 0.85 and <= 1.15, $"{what}: {heads} loops {w / w0:0.###} of the nominal width");
+        }
     }
 
-    static int StraySides(bool flip)
+    /// <summary>
+    /// The user's case: two walls of a 150 mm wool layer meeting at an L, mitred on the corner's diagonal. Each wall's batt
+    /// ends on a whole loop on its side of the mitre (no cut teardrop, no loose stub, nothing over the mitre), both close to it.
+    /// </summary>
+    [Fact]
+    public void At_an_L_corner_each_walls_batt_ends_on_a_whole_loop_short_of_the_mitre()
     {
-        // A 150 mm layer along x, its outer face (y = 0) 3.15 m long, its inner face (y = 0.15) 3 m: mitred at the right end.
-        Vec2[] band = [new(0, 0), new(3.15, 0), new(3, 0.15), new(0, 0.15)];
-        var segs = BattHatch.Segments([band], flip: flip);
-        // The loops as laid (mid-line y = 0.075, from the start to where the mid-line meets the mitre, x = 3.075).
-        var strokes = BattHatch.Strokes(0, 3.075, 0.075, 1, flip);
-        var dropped = 0;
-        for (var i = 0; i < strokes.Count; i += 4)
+        // The outer corner at (3.15, 0), the inner at (3, 0.15): one band along x, the other up y.
+        Vec2[] along = [new(0, 0), new(3.15, 0), new(3, 0.15), new(0, 0.15)];
+        Vec2[] up = [new(3.15, 0), new(3.15, 3), new(3, 3), new(3, 0.15)];
+        foreach (var flip in new[] { false, true })
         {
-            var tip = strokes[i + 2][^1];
-            var centre = new Vec2(tip.X, 0.075 - tip.Y);
-            if (Polygon2.Contains(band, centre)) continue;
-            dropped++;
-            // Its side: no drawn segment lies along it.
-            foreach (var side in new[] { strokes[i + 2], strokes[i + 3] })
+            foreach (var (band, name) in new[] { (along, "along"), (up, "up") })
             {
-                var (a, b) = (new Vec2(side[0].X, 0.075 + side[0].Y), new Vec2(side[^1].X, 0.075 + side[^1].Y));
-                var mid = (a + b) * 0.5;
-                if (!Polygon2.Contains(band, mid)) continue;
-                Assert.DoesNotContain(segs, sg => Math.Abs(Cross(a, b, (sg.A + sg.B) * 0.5)) < 1e-6 && Vec2.Dot((sg.A + sg.B) * 0.5 - a, b - a) is > 0 && Vec2.Dot((sg.A + sg.B) * 0.5 - b, a - b) is > 0);
+                var segs = BattHatch.Segments([band], flip: flip);
+                var loops = WholeLoops(segs, name);
+                var heads = segs.SelectMany(s => new[] { s.A, s.B }).Where(p => name == "along" ? p.Y is < 1e-9 or > 0.15 - 1e-9 : p.X is < 3 + 1e-9 or > 3.15 - 1e-9).Distinct().Count();
+                Assert.True(heads > 40, $"{name}: {heads} loops");
+                // On its own side of the mitre (x − 3.15 = −y for the band along x, the other side for the one up y).
+                Assert.All(loops.SelectMany(l => l), p => Assert.True(name == "along" ? p.X + p.Y <= 3.15 + 1e-6 : p.X + p.Y >= 3.15 - 1e-6, name));
+                // Close to it: within a loop and the mitre's run of the mid-line's end (3.075 along either wall).
+                var far = name == "along" ? loops.SelectMany(l => l).Max(p => p.X) : loops.SelectMany(l => l).Min(p => p.Y);
+                Assert.True(name == "along" ? 3.075 - far <= 0.06 + 0.075 : far - 0.075 <= 0.06 + 0.075, $"{name}: ends at {far:0.###}");
             }
         }
-        // Every segment still lies inside the band.
-        Assert.All(segs.SelectMany(s => new[] { s.A, s.B }), p => Assert.True(Polygon2.Contains(band, p) || Math.Abs(p.Y) < 1e-6 || Math.Abs(p.Y - 0.15) < 1e-6 || p.X < 1e-6 || p.X > 2.9));
-        return dropped;
     }
 
-    static double Cross(Vec2 a, Vec2 b, Vec2 p) => ((b - a).X * (p - a).Y - (b - a).Y * (p - a).X) / (b - a).Length;
+    /// <summary>A layer cut by an opening (two pieces, square at the opening's reveals) and a T's square end: whole loops touching each end.</summary>
+    [Fact]
+    public void A_batt_cut_by_an_opening_or_ending_square_ends_on_whole_loops_touching_the_cut()
+    {
+        Vec2[] left = [new(0, 0), new(1.37, 0), new(1.37, 0.1), new(0, 0.1)];
+        Vec2[] right = [new(2.27, 0), new(4.05, 0), new(4.05, 0.1), new(2.27, 0.1)];
+        var segs = BattHatch.Segments([left]).Concat(BattHatch.Segments([right])).ToList();
+        var loops = WholeLoops(segs, "opening");
+        var xs = loops.SelectMany(l => l).Select(p => p.X).ToList();
+        // Each piece's chain from end to end (its heads touch the ends, to the chords of their arcs), nothing in the opening.
+        Assert.InRange(xs.Min(), 0, Chords.Tolerance);
+        Assert.InRange(xs.Max(), 4.05 - Chords.Tolerance, 4.05);
+        Assert.InRange(xs.Where(x => x < 2).Max(), 1.37 - Chords.Tolerance, 1.37);
+        Assert.InRange(xs.Where(x => x > 2).Min(), 2.27, 2.27 + Chords.Tolerance);
+    }
 
     [Theory]
     [InlineData(0)]
