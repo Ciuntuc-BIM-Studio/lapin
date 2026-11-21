@@ -175,6 +175,9 @@ describe('the languages', () => {
     '3 members braced by their sheeting: held straight across in the sheeting\'s plane (along their section\'s width) between the members they rest on, at 5 nodes; the sheeting ties no member to another (no stressed skin). The members\' own buckling checks keep their lengths.',
     'Sheeting left without effect on Rafter 1: not straight, Rafter 2: not straight.',
     'P100-1/2013 §4.6.2.2 (EN 1998-1 4.4.2.2): θ = Ptot·dr/(Vtot·h) reaches 0.152 on „Ground floor” along X: the seismic effects × 1/(1 − θ) there (or second order).',
+    '3 task(s) moved; the schedule finishes on 2026-11-10 (4 working days later).',
+    '2 task(s) moved; the schedule finishes on 2026-11-10 (4 working days later). Asking for more than a resource has, not moved: Placă etaj 2.',
+    'Formwork as a resource: 3 formwork(s) on 2 task(s).',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

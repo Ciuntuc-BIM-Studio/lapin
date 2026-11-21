@@ -16,6 +16,7 @@ summary: O cronograma da obra em um gráfico de Gantt: tarefas em uma EAP, marco
 - **Adicionar à tarefa…** (TA) e **Elementos sem tarefa**: os elementos do modelo nas tarefas (abaixo).
 - **Simular**, **Prancha de etapas…**, **Gantt na prancha** e **Exportar vídeo…**: a simulação 4D, o modelo como o cronograma o tem em um dia (abaixo).
 - **Marcar concluído** (MD), **Marcar iniciado** (MS), **Marcar não iniciado**, **Salvar linha de base**, **Limpar linha de base** e **Importar progresso…**: o progresso e a linha de base (abaixo).
+- **Recursos**: **Recursos…** (as equipes, os equipamentos, os jogos de cofragem e as tarefas em que estão), **Nivelar recursos** e o **Histograma**.
 - **Importar MS Project…**, **Exportar MS Project…**, **Exportar XLSX** e **Exportar IFC…**: o cronograma para e de outros programas (abaixo).
 
 Um projeto tem um cronograma. Ele é criado na primeira vez que você adiciona uma tarefa e começa na segunda-feira seguinte. Mude o início na barra do Gantt.
@@ -264,6 +265,32 @@ Com uma linha de base, a simulação compara: um elemento não construído (ou n
 - **IFC** escreve-os no IfcTaskTime de cada tarefa (a hora de status, o início e o fim reais, o tempo restante, o grau de conclusão), e a linha de base como um segundo IfcWorkSchedule do tipo BASELINE; os campos próprios do Lapin (a porcentagem escrita, as marcas) vão em `Lapin_Task`. Ambos voltam às mesmas datas.
 - **Gerenciar → Versões → Comparar** diz, além dos elementos, o que mudou no cronograma: o fim, os dias úteis, a data de status, e as tarefas acrescentadas, removidas, movidas (quantos dias úteis), com a duração ou o progresso alterados.
 
+## Recursos
+
+![Os recursos e as suas tarefas](shots/planning-resources.webp)
+
+Um recurso é uma **equipe** (trabalhadores), um **equipamento** (uma grua, uma bomba de concreto) ou um jogo de **cofragem**. Cada um tem quantas unidades estão disponíveis por dia, a sua unidade e quanto custa uma unidade por dia.
+
+1. Selecione as tarefas no Gantt.
+2. Em **Recursos…**, defina as unidades e clique em **+ tarefas selecionadas** na linha do recurso. Um recurso colocado numa tarefa resumo vai para todas as tarefas abaixo dela.
+3. Na cofragem, **Retido depois** é o número de dias úteis que um jogo fica na obra depois da sua tarefa, até ser descofrado.
+
+**Cofragens dos trabalhos de obra** cria um recurso de cofragem a partir das cofragens que você colocou em Canteiro de obras: um jogo para cada cofragem, retido pela tarefa que concreta o seu elemento até a descofragem. Defina quantos jogos você tem e depois nivele.
+
+A tabela mostra o pico de cada recurso e os dias em que ele falta. Os recursos de uma tarefa também aparecem em Propriedades.
+
+## O histograma e o nivelamento
+
+![Uma equipe a quem se pede mais do que tem: os dias em falta em vermelho](shots/planning-histogram.webp)
+
+O **Histograma** mostra, para cada recurso, as unidades pedidas a cada dia. O limite é a linha tracejada, e os dias acima dela ficam em vermelho.
+
+**Nivelar recursos** move as tarefas que ainda não começaram para que nenhum recurso seja pedido além do que tem. As tarefas são tratadas em ordem: primeiro a que pode começar mais cedo, depois a que tem menos folga. Cada tarefa é colocada no primeiro dia que os seus vínculos permitem em que todos os recursos que usa estão livres, durante todos os seus dias e durante os dias em que um jogo de cofragem fica depois dela. As tarefas já iniciadas, concluídas ou que devem começar numa data ficam onde estão.
+
+![A mesma equipe depois do nivelamento](shots/planning-histogram-levelled.webp)
+
+Uma tarefa movida guarda o seu início como início de nivelamento. Os seus vínculos ainda podem empurrá-la para mais tarde. **Limpar nivelamento** devolve as tarefas ao lugar. Se uma tarefa pede de um recurso mais do que existe no total, ela não é movida: é posicionada só pelos seus vínculos, e a mensagem a nomeia. Nivelar é um único passo, então Desfazer o anula.
+
 ## O custo das tarefas
 
 ![O Gantt com a coluna Custo](shots/planning-cost.webp)
@@ -293,4 +320,4 @@ Os campos próprios do Lapin para os quais outros programas não têm lugar (a r
 
 ## O que vem a seguir
 
-O custo no tempo está em [Orçamento](cost.md). O nivelamento de recursos, o valor agregado, as medições mensais e várias linhas de base e cenários são da edição premium.
+O custo no tempo está em [Orçamento](cost.md). O valor agregado, as medições mensais, várias linhas de base e cenários, o diário de obra e o Primavera P6 são da edição premium.

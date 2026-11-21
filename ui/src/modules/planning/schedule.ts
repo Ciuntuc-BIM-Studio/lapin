@@ -46,21 +46,24 @@ export function selectedTasks(): string[] {
   return useUi.getState().selected.filter((id) => nodes.get(id)?.type === 'IfcTask');
 }
 
-/** The Gantt in a pane of its own under the view (the second pane, the screen split in two rows), or brought in front. */
-export function openGantt(): void {
+/** A view in a pane of its own under the view (the second pane, the screen split in two rows), or brought in front where it is. */
+export function openUnder(view: string): void {
   const s = useUi.getState();
-  const at = s.panes.findIndex((p) => p.view === 'gantt');
+  const at = s.panes.findIndex((p) => p.view === view);
   if (at >= 0) { focusPane(at); return; }
   if (s.panes.length < 2) {
-    // The first pane keeps its view (the 3D, a plan); the Gantt goes under it.
+    // The first pane keeps its view (the 3D, a plan); the new one goes under it.
     const first = s.panes[0];
-    useUi.setState({ panes: [first, { ...first, view: 'gantt' }], split: 'column', pane: 1 });
-    useUi.setState({ view: 'gantt' });
+    useUi.setState({ panes: [first, { ...first, view }], split: 'column', pane: 1 });
+    useUi.setState({ view });
     return;
   }
   focusPane(1);
-  useUi.setState({ view: 'gantt' });
+  useUi.setState({ view });
 }
+
+/** The Gantt in a pane of its own under the view, or brought in front. */
+export function openGantt(): void { openUnder('gantt'); }
 
 /** A new task (or milestone) before the one selected, or at the end; it becomes the selection. */
 export async function addTask(milestone = false, before?: string | null): Promise<string | null> {

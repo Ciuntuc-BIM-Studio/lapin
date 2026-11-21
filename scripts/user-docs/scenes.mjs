@@ -4302,6 +4302,69 @@ export const scenes = [
     },
   },
   {
+    // Resources and their levelling (decision 772, free; the pictures Planning Pro's guide took before): a house's schedule,
+    // a crew of six masons asked for more than there are in the first weeks, a concrete pump and the slab's formwork held
+    // seven working days after the slab; the Resources dialog, the histogram with the days short red, then levelled.
+    id: 'planning-resources',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 250 plastered', layers: [
+        { material: 'Lime plaster', thickness: 0.02 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Lime plaster', thickness: 0.02 },
+      ] })).id;
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: type });
+      }
+      await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
+      await t.cmd('planning.updateSchedule', { name: 'House', start: '2027-03-01' });
+      const add = async (name, duration, extra = {}) => {
+        const id = (await t.cmd('planning.addTask', { name, duration })).id;
+        if (Object.keys(extra).length) await t.cmd('planning.updateTask', { id, ...extra });
+        return id;
+      };
+      const setup = await add('Site setup', 4);
+      const slab = await add('Floor slab', 6, { rule: { classes: ['IfcSlab'] }, wet: true });
+      const masonry = await add('Masonry', 15, { rule: { classes: ['IfcWall'] }, part: 'core' });
+      const plaster = await add('Plaster', 12, { rule: { classes: ['IfcWall'] }, part: 'finishes', wet: true });
+      await t.cmd('planning.link', { from: slab, to: masonry });
+      await t.cmd('planning.link', { from: masonry, to: plaster });
+      const crew = (await t.cmd('planning.addResource', { name: 'Masons', kind: 'labour', capacity: 6, rate: 320 })).id;
+      const pump = (await t.cmd('planning.addResource', { name: 'Concrete pump', kind: 'equipment', capacity: 1, rate: 1500 })).id;
+      const forms = (await t.cmd('planning.addResource', { name: 'Slab formwork', kind: 'formwork', capacity: 1 })).id;
+      await t.cmd('planning.assignResource', { resource: crew, tasks: [setup, slab], units: 4 });
+      await t.cmd('planning.assignResource', { resource: crew, tasks: [masonry], units: 6 });
+      await t.cmd('planning.assignResource', { resource: crew, tasks: [plaster], units: 3 });
+      await t.cmd('planning.assignResource', { resource: pump, tasks: [slab], units: 1 });
+      await t.cmd('planning.assignResource', { resource: forms, tasks: [slab], units: 1, hold: 7 });
+      await open3d(t);
+      await t.button('Construction', { exact: true });
+      await t.page.addStyleTag({ content: '.notice-status { display: none !important }' });
+      await t.ui({ selected: [masonry], selection: masonry });
+      await t.tool('planning.resources');
+      await t.page.locator('[data-testid=resources-dialog]').waitFor({ timeout: 10_000 });
+      await t.wait(800);
+      const q = () => t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.resources'));
+      const before = await q();
+      t.expect(before.resources.length === 3 && before.resources[0].over > 0, 'the masons are asked for more than there are');
+      t.expect(await t.page.locator('[data-testid=resource-row]').count() === 3, 'the three resources in the dialog');
+      await t.shot('planning-resources', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      await t.tool('planning.histogram');
+      await t.page.locator('[data-testid=resource-histogram]').waitFor({ timeout: 10_000 });
+      await t.wait(1200);
+      t.expect(await t.page.locator('.res-bar-over').count() > 0, 'the days short drawn red');
+      await t.shot('planning-histogram', { of: '[data-testid=resource-histogram]', pad: 0 });
+      await t.tool('planning.level');
+      await t.wait(1500);
+      const after = await q();
+      t.expect(after.resources.every((r) => r.over === 0) && after.levelled > 0, 'levelled: no resource short');
+      t.expect(await t.page.locator('.res-bar-over').count() === 0, 'no day red after levelling');
+      await t.shot('planning-histogram-levelled', { of: '[data-testid=resource-histogram]', pad: 0 });
+    },
+  },
+  {
     id: 'stairs',
     async run(t) {
       await t.fresh();

@@ -10,7 +10,7 @@ namespace Lapin.Planning;
 /// whether it is wet (it keeps the calendar's winter break); and its elements (stage 2): the rule they are found by, those
 /// added and taken off by hand (ids), and the part of them it takes (<see cref="TaskParts"/>); its progress (stage 5): the
 /// actual start and finish and the percentage typed on it, its elements marked started or done, and its baseline; the start
-/// a resource levelling gave it (<c>levelStart</c>: no earlier than that day while it has not started; another module levels,
+/// a resource levelling gave it (<c>levelStart</c>: no earlier than that day while it has not started; <see cref="Levelling"/> writes it,
 /// MS Project's leveling delay as a date), cleared when its start is set by hand.
 /// </summary>
 public sealed record PlanTask(string Id, string Name, string? Parent, double Order, int Duration, bool Milestone, string? Constraint, DateOnly? ConstraintDate, bool Wet, string? Kind, string? Notes,

@@ -1829,6 +1829,15 @@ dl.fields label.check input { width: auto; margin: 0; }
 .cost-chart .tick { fill: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .cost-chart .bar-planned { fill: #c9d9ec; }
 .cost-chart .bar-done { fill: #8fc9a8; }
+/* Resources and their levelling (decision 772): the Resources dialog and the histogram. */
+.res-dialog { width: min(1020px, 96vw); }
+.res-over td { background: color-mix(in srgb, var(--err) 8%, transparent); }
+.res-chip { display: inline-flex; align-items: center; gap: 2px; margin: 0 6px 2px 0; padding: 0 4px; border-radius: 4px; background: var(--accent-wash); }
+.res-histogram { height: 120px; }
+.res-histogram .res-off { fill: var(--gantt-off); }
+.res-histogram .res-bar-over { fill: var(--err); }
+.res-histogram .res-limit { stroke: var(--err); stroke-width: 1; stroke-dasharray: 4 3; }
+.res-resource { margin-bottom: 8px; }
 .cost-chart path { fill: none; stroke-linejoin: round; }
 .cost-chart .curve-planned { stroke: #2f6db3; stroke-width: 2; }
 .cost-chart .curve-baseline { stroke: #8a949e; stroke-width: 1.5; stroke-dasharray: 6 3; }

@@ -1,7 +1,7 @@
 ---
 title: Planning
 order: 97
-summary: The work schedule in a Gantt chart: generated from the model or made by hand, tasks in a WBS, milestones, links with lags, the critical path worked out on a calendar with Romania's legal holidays; the 4D simulation of the building growing day by day, on views and sheets and as a video; progress marked on site, from a phone too, against a baseline; to and from MS Project, IFC and Excel.
+summary: The work schedule in a Gantt chart: generated from the model or made by hand, tasks in a WBS, milestones, links with lags, the critical path worked out on a calendar with Romania's legal holidays; the 4D simulation of the building growing day by day, on views and sheets and as a video; progress marked on site, from a phone too, against a baseline; crews, machines and formwork sets on the tasks, the resource histogram and levelling; to and from MS Project, IFC and Excel.
 ---
 
 ## The Construction tab
@@ -16,6 +16,7 @@ summary: The work schedule in a Gantt chart: generated from the model or made by
 - **Add to task…** (TA) and **Elements without a task**: the model's elements in the tasks (below).
 - **Simulate**, **Stages sheet…**, **Gantt on sheet** and **Export video…**: the 4D simulation, the model as the schedule has it on a day (below).
 - **Mark done** (MD), **Mark started** (MS), **Mark not started**, **Save baseline**, **Clear baseline** and **Import progress…**: progress and the baseline (below).
+- **Resources**: **Resources…** (the crews, the machines, the formwork sets, and which tasks they are on), **Level resources**, and the **Histogram**.
 - **Import MS Project…**, **Export MS Project…**, **Export XLSX** and **Export IFC…**: the schedule to and from other programs (below).
 
 A project has one schedule. It is made the first time you add a task or generate one, and starts the next Monday. Change its start in the Gantt's toolbar.
@@ -292,6 +293,32 @@ With a baseline, the simulation compares: an element not built (or not started) 
 - **IFC** writes them in each task's IfcTaskTime (the status time, the actual start and finish, the time left, the completion), and the baseline as a second IfcWorkSchedule of type BASELINE; Lapin's own fields (the percentage typed, the marks) go in `Lapin_Task`. Both come back to the same dates.
 - **Manage → Versions → Compare** says, beside the elements, what changed in the schedule: the finish, the working days, the status date, and the tasks added, removed, moved (by how many working days), whose duration changed or whose progress changed.
 
+## Resources
+
+![The resources and their tasks](shots/planning-resources.webp)
+
+A resource is a **crew** (workers), **equipment** (a crane, a concrete pump) or a set of **formwork**. Each has how many units are available a day, its unit and what a unit costs a day.
+
+1. Select the tasks in the Gantt.
+2. In **Resources…**, set the units, then click **+ selected tasks** on the resource's row. A resource put on a summary task goes on every task under it.
+3. For formwork, **Kept after** is the number of working days a set stays on site after its task, until it is struck.
+
+**Formwork from site works** makes a formwork resource from the formwork you laid in Site works: one set for each formwork, held by the task that casts its host until it is struck. Set the number of sets you have, then level.
+
+The table shows each resource's peak and the days it is short. A task's resources also show in Properties.
+
+## The histogram and levelling
+
+![A crew asked for more than it has: the days short in red](shots/planning-histogram.webp)
+
+The **Histogram** shows, for each resource, the units it is asked for each day. The limit is the dashed line, and the days over it are red.
+
+**Level resources** moves the tasks that have not started so that no resource is asked for more than it has. It goes through the tasks in order. The task that can start first goes first, then the one with less float. Each task is placed on the first day its links allow on which every resource it takes is free, for all its days, and for the days a formwork set stays after. Tasks already started, or done, or that must start on a date, stay where they are.
+
+![The same crew after levelling](shots/planning-histogram-levelled.webp)
+
+A task that is moved keeps its start as a levelling start. Its links can still push it later. **Clear levelling** puts the tasks back. If a task asks for more of a resource than there is at all, it is not moved: it is placed by its links alone, and the message names it. Levelling is one step, so Undo takes it back.
+
 ## The cost of the tasks
 
 ![The Gantt with the Cost column](shots/planning-cost.webp)
@@ -321,4 +348,4 @@ Lapin's own fields that other programs have no place for (a task's constraint, w
 
 ## What comes next
 
-The cost over time is in [Cost estimate](cost.md). Resource levelling, earned value, monthly progress billing and several baselines and scenarios are for the premium edition.
+The cost over time is in [Cost estimate](cost.md). Earned value, monthly progress billing, several baselines and scenarios, the site diary and Primavera P6 are for the premium edition.

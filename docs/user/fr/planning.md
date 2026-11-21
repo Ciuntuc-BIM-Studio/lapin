@@ -16,6 +16,7 @@ summary: Le planning des travaux dans un diagramme de Gantt : tâches dans une W
 - **Ajouter à la tâche…** (TA) et **Éléments sans tâche** : les éléments du modèle dans les tâches (plus bas).
 - **Simuler**, **Feuille des étapes…**, **Gantt sur feuille** et **Exporter la vidéo…** : la simulation 4D, le modèle tel que le planning l'a un jour donné (plus bas).
 - **Marquer terminé** (MD), **Marquer commencé** (MS), **Marquer non commencé**, **Enregistrer la planification initiale**, **Effacer la planification initiale** et **Importer l’avancement…** : l’avancement et la planification initiale (plus bas).
+- **Ressources** : **Ressources…** (les équipes, le matériel, les jeux de coffrage et les tâches où ils sont affectés), **Niveler les ressources** et l’**Histogramme**.
 - **Importer MS Project…**, **Exporter MS Project…**, **Exporter XLSX** et **Exporter IFC…** : le planning vers et depuis d'autres programmes (ci-dessous).
 
 Un projet a un seul planning. Il est créé la première fois que vous ajoutez une tâche et commence le lundi suivant. Changez son début dans la barre du Gantt.
@@ -264,6 +265,32 @@ Avec une planification initiale, la simulation compare : un élément non constr
 - **IFC** les écrit dans l’IfcTaskTime de chaque tâche (l’heure d’état, le début et la fin réels, le temps restant, le degré d’achèvement), et la planification initiale comme un second IfcWorkSchedule de type BASELINE ; les champs propres à Lapin (le pourcentage saisi, les marques) vont dans `Lapin_Task`. Les deux reviennent aux mêmes dates.
 - **Gérer → Versions → Comparer** dit, à côté des éléments, ce qui a changé dans le planning : la fin, les jours ouvrés, la date d’état, et les tâches ajoutées, supprimées, déplacées (de combien de jours ouvrés), dont la durée ou l’avancement a changé.
 
+## Les ressources
+
+![Les ressources et leurs tâches](shots/planning-resources.webp)
+
+Une ressource est une **équipe** (des ouvriers), du **matériel** (une grue, une pompe à béton) ou un jeu de **coffrage**. Chacune a un nombre d’unités disponibles par jour, son unité et le coût d’une unité par jour.
+
+1. Sélectionnez les tâches dans le Gantt.
+2. Dans **Ressources…**, saisissez les unités, puis cliquez sur **+ tâches sélectionnées** sur la ligne de la ressource. Une ressource placée sur une tâche récapitulative va sur toutes les tâches qui sont dessous.
+3. Pour les coffrages, **Gardé après** est le nombre de jours ouvrés pendant lesquels un jeu reste sur le chantier après sa tâche, jusqu’au décoffrage.
+
+**Coffrages des travaux de chantier** crée une ressource de coffrage à partir des coffrages posés dans Installations de chantier : un jeu par coffrage, tenu par la tâche qui coule son élément jusqu’au décoffrage. Indiquez combien de jeux vous avez, puis nivelez.
+
+Le tableau montre la pointe de chaque ressource et les jours où elle manque. Les ressources d’une tâche apparaissent aussi dans Propriétés.
+
+## L’histogramme et le nivellement
+
+![Une équipe à qui l’on demande plus qu’elle n’a : les jours en manque en rouge](shots/planning-histogram.webp)
+
+L’**Histogramme** montre, pour chaque ressource, les unités qui lui sont demandées chaque jour. La limite est la ligne pointillée, et les jours qui la dépassent sont en rouge.
+
+**Niveler les ressources** déplace les tâches non commencées pour qu’aucune ressource ne soit sollicitée plus qu’elle n’a. Les tâches sont traitées dans l’ordre : d’abord celle qui peut commencer le plus tôt, puis celle qui a le moins de marge. Chaque tâche est placée au premier jour permis par ses liens où chaque ressource qu’elle utilise est libre, pendant tous ses jours et pendant les jours où un jeu de coffrage reste après elle. Les tâches commencées, terminées ou qui doivent commencer à une date restent où elles sont.
+
+![La même équipe après le nivellement](shots/planning-histogram-levelled.webp)
+
+Une tâche déplacée garde son début comme début de nivellement. Ses liens peuvent encore la repousser. **Effacer le nivellement** remet les tâches en place. Si une tâche demande à une ressource plus qu’il n’en existe au total, elle n’est pas déplacée : elle est placée par ses liens seuls, et le message la nomme. Le nivellement est une seule étape, donc Annuler le défait.
+
 ## Le coût des tâches
 
 ![Le Gantt avec la colonne Coût](shots/planning-cost.webp)
@@ -293,4 +320,4 @@ Les champs propres à Lapin pour lesquels les autres programmes n'ont pas de pla
 
 ## La suite
 
-Le coût dans le temps est dans [Devis](cost.md). Le nivellement des ressources, la valeur acquise, les situations de travaux mensuelles et plusieurs références et scénarios sont pour l'édition premium.
+Le coût dans le temps est dans [Devis](cost.md). La valeur acquise, les situations de travaux mensuelles, plusieurs références et scénarios, le journal de chantier et Primavera P6 sont pour l'édition premium.

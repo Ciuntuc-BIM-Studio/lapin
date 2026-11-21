@@ -544,6 +544,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         RegisterGenerator(r);
         RegisterSimulation(r);
         RegisterProgress(r);
+        RegisterResources(r);
         r.Service<IVersionCompare>(new ScheduleCompare());
         // The schedule read by others (stage 7: the cost module lays its estimate on it).
         r.Service<IWorkSchedules>(new ScheduleTimesOf());
