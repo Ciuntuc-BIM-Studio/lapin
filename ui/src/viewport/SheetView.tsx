@@ -18,7 +18,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FileDown, Maximize, MessageSquare, PenLine, Pin, PinOff, Printer } from 'lucide-react';
+import { AlignHorizontalJustifyStart, FileDown, Maximize, MessageSquare, PenLine, Pin, PinOff, Printer } from 'lucide-react';
 import { notify, select, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, query, useSession } from '../engine/session';
@@ -34,6 +34,7 @@ import { openContextMenu } from '../shell/ContextMenu';
 import { useStandards } from '../engine/unitsStore';
 import { otherScales, partOf, placeAgainLabel } from './placeAtScale';
 import { openPlaced } from './sheetOpen';
+import { alignDelta, featureAt, type Feature, type Hit } from './sheetAlign';
 import { openPaper } from './paperView';
 import { listSymbols, placeSymbol, previewSymbol, rememberSymbol, type SymList } from '../modules/core/symbols/symbols';
 import { boxOnPaper, pickSymbol, previewArgs, previewKey, symbolsOn, type SheetSymbol } from './sheetSymbols';
@@ -98,6 +99,9 @@ export function SheetView() {
   const [part, setPart] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   const scales = useStandards((x) => x.scales);
   const [dropping, setDropping] = useState(false);
+  // Aligning views by what they draw (forum topic 210): a corner or a line in one view, then the one in another that must line up with it.
+  const [aligning, setAligning] = useState<{ ref: Hit | null } | null>(null);
+  const [alignHover, setAlignHover] = useState<Hit | null>(null);
   // A symbol of the user's own, placed by the next click on the paper (docs/plan-user-extensibility.md §3).
   const [symbols, setSymbols] = useState<SymList>({ items: [], categories: [] });
   const [placingSymbol, setPlacingSymbol] = useState<{ id: string; name: string } | null>(null);
@@ -136,6 +140,30 @@ export function SheetView() {
     if (!sheet) return;
     void execute('sheet.updateViewport', { id: sheet.id, viewportId: vp.id, x: (vp.x0 + vp.x1) / 2 + dx, y: (vp.y0 + vp.y1) / 2 + dy }).then(() => notify(null));
   }, [sheet]);
+
+  const startAlign = () => {
+    setAligning({ ref: null });
+    setAlignHover(null);
+    ref.current?.focus();
+    notify('Align: click a corner or a straight line in the view to line up with (Esc cancels).');
+  };
+  /** The two clicks of Align: the reference's corner or line, then the one that moves its view to meet it. */
+  const alignClick = (p: { x: number; y: number }) => {
+    if (!aligning || !d) return;
+    const hit = featureAt(d.pens, p, 8 / v.k);
+    if (!hit) return;
+    if (!aligning.ref) { setAligning({ ref: hit }); setAlignHover(null); notify('Now click the corner or line, in another view, that must line up with it (Esc cancels).'); return; }
+    if (hit.viewport === aligning.ref.viewport) { notify('Pick it in another view.'); return; }
+    const vp = d.viewports.find((b) => b.id === hit.viewport);
+    if (!vp) return;
+    if (vp.pinned) { notify('That view is pinned: unpin it to move it, or pick the other way round.'); return; }
+    const to = alignDelta(aligning.ref.feature, hit.feature);
+    if (!to) { notify('A horizontal line cannot line up with a vertical one: pick two of a kind, or a corner.'); return; }
+    if (Math.hypot(to.dx, to.dy) > 0.005) moveTo(vp, to.dx, to.dy);
+    setAligning(null);
+    setAlignHover(null);
+    notify(null);
+  };
 
   const placedSymbols = id ? symbolsOn(nodes, id) : [];
   const symbolKeys = placedSymbols.map(previewKey).join('|');
@@ -272,6 +300,9 @@ export function SheetView() {
         {placingSymbol && <span className="chip" data-no-i18n>{placingSymbol.name} <button type="button" className="link" onClick={() => setPlacingSymbol(null)}>×</button></span>}
         <button type="button" className="icon" data-testid="sheet-annotate" title="Draw on the sheet itself: texts, leader notes, lines, clouds, hatches, symbols, a legend, a scale bar (in paper mm)"
           onClick={() => useUi.setState(openPaper(sheet.id))}><PenLine size={14} /><span className="small">Annotate</span></button>
+        <button type="button" className={`icon${aligning ? ' on' : ''}`} data-testid="sheet-align" disabled={!d || d.viewports.filter((b) => !b.content).length < 2}
+          title="Align views by what they draw: click a corner or a straight line in one view, then the one in another that must line up with it; the second view moves (Esc cancels)"
+          onClick={() => (aligning ? (setAligning(null), setAlignHover(null), notify(null)) : startAlign())}><AlignHorizontalJustifyStart size={14} /><span className="small">Align</span></button>
         <button type="button" className="icon" title="Export PDF" onClick={() => void exportAs('pdf')}><FileDown size={14} /><span className="small">PDF</span></button>
         <button type="button" className="icon" title="Export DXF" onClick={() => void exportAs('dxf')}><FileDown size={14} /><span className="small">DXF</span></button>
         <button type="button" className="icon" title="Print the sheet (a plotter at its paper size, 1:1)" data-testid="sheet-print" disabled={!d}
@@ -310,6 +341,7 @@ export function SheetView() {
         }}
         onKeyDown={(e) => {
           if (e.key === 'Escape' && placingSymbol) { setPlacingSymbol(null); e.stopPropagation(); }
+          if (e.key === 'Escape' && aligning) { setAligning(null); setAlignHover(null); notify(null); e.stopPropagation(); }
           if (e.key === 'Escape' && placing) { setPlacing(null); setPart(null); notify(null); e.stopPropagation(); }
         }}
         onContextMenu={(e) => {
@@ -336,6 +368,7 @@ export function SheetView() {
         onPointerDown={(e) => {
           if (middleTwice.current(e)) { fit(); return; }
           const p = paperAt(e);
+          if (aligning && e.button === 0) { alignClick(p); return; }
           if (placingSymbol && e.button === 0) { void placeSymbol({ sheetId: sheet.id, symbolId: placingSymbol.id, at: [Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100] }).then((r) => { if (r?.id) { setActive(null); setAlso([]); select(r.id); } }); return; }
           if (placing && e.button === 0) { drag.current = { kind: 'part', x: e.clientX, y: e.clientY, vp: placing.vp, from: p }; (e.target as Element).setPointerCapture?.(e.pointerId); return; }
           // A placed symbol lies over the views: a click selects it, a drag moves it (one undo step), Delete deletes it (forum topic 106).
@@ -360,6 +393,7 @@ export function SheetView() {
         onPointerMove={(e) => {
           const g = drag.current;
           if (!g) {
+            if (aligning) { const h = featureAt(d?.pens ?? [], paperAt(e), 8 / v.k); setAlignHover(h && h.viewport === aligning.ref?.viewport ? null : h); return; }
             const h = pickSymbol(symbolBoxes, paperAt(e))?.id ?? null;
             setHoverSym((cur) => (cur === h ? cur : h));
             return;
@@ -436,6 +470,7 @@ export function SheetView() {
                 </>
               );
             })() : <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} minText={1} screen={size} />}
+            {aligning && [aligning.ref, alignHover].map((h, i) => h && <AlignMark key={i} f={h.feature} toScreen={toScreen} ref0={i === 0} />)}
             {d.viewports.map((b) => {
               const box = cropped?.id === b.id ? cropped : b;
               const a = toScreen({ x: box.x0, y: box.y0 });
@@ -495,4 +530,13 @@ export function SheetView() {
       {showRemarks && <RemarkCard sheetId={sheet.id} />}
     </div>
   );
+}
+
+/** The corner or line picked to align by: a square, or the line across its length, in the accent colour (the reference solid, the hover dashed). */
+function AlignMark({ f, toScreen, ref0 }: { f: Feature; toScreen: (p: { x: number; y: number }) => { x: number; y: number }; ref0: boolean }) {
+  const common = { className: 'sheet-align-mark', pointerEvents: 'none' as const, strokeDasharray: ref0 ? undefined : '5 3' };
+  if (f.kind === 'point') { const a = toScreen(f); return <rect {...common} x={a.x - 5} y={a.y - 5} width={10} height={10} />; }
+  if (f.kind === 'h') { const a = toScreen({ x: f.x0, y: f.y }), b = toScreen({ x: f.x1, y: f.y }); return <line {...common} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />; }
+  const a = toScreen({ x: f.x, y: f.y0 }), b = toScreen({ x: f.x, y: f.y1 });
+  return <line {...common} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
 }

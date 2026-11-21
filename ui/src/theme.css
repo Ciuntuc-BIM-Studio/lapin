@@ -878,6 +878,7 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .sheet-handle, .sheet-viewport rect.sheet-handle { fill: var(--panel); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: none; cursor: ew-resize; }
 /* A pinned view: picked, never dragged; its tools stay in sight while it is active. */
 .sheet-viewport.pinned rect:first-child { cursor: default; }
+.sheet-align-mark { fill: none; stroke: var(--hl-select, var(--accent)); stroke-width: 2; }
 .sheet-viewport.pinned.active rect:first-child { stroke: var(--muted, #8a8378); stroke-dasharray: 2 2; }
 .sheet-viewport.active foreignObject { opacity: 1; }
 .sheet-vp-tools select.mini { height: 18px; font-size: 11px; max-width: 128px; padding: 0 2px; }

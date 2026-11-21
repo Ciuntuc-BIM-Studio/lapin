@@ -1054,7 +1054,7 @@ export const ZH: Record<string, string> = {
   // Schedules, sheets, views
   'Rows': '行', 'On each card': '每张卡片上', 'Interior view': '内侧视图', 'Exterior view': '外侧视图', 'Tables': '表格', 'Table': '表格',
   'To check': '待检查', 'reviewed': '已审核', 'Back to the default rows': '恢复默认行', 'doors and windows': '门窗', 'doors': '门', 'windows': '窗',
-  'inside and outside': '内外', 'outside': '外侧', 'inside': '内侧', 'Row': '行', 'Place view…': '放置视图…', 'Fit': '适合窗口',
+  'inside and outside': '内外', 'outside': '外侧', 'inside': '内侧', 'Row': '行', 'Place view…': '放置视图…', 'Align views by what they draw: click a corner or a straight line in one view, then the one in another that must line up with it; the second view moves (Esc cancels)': '按视图所绘内容对齐：先点击一个视图中的角点或直线，再点击另一视图中要与之对齐的角点或直线；第二个视图会移动（Esc 取消）', 'Align: click a corner or a straight line in the view to line up with (Esc cancels).': '对齐：点击作为基准的视图中的角点或直线（Esc 取消）。', 'Now click the corner or line, in another view, that must line up with it (Esc cancels).': '现在点击另一视图中要与之对齐的角点或直线（Esc 取消）。', 'Pick it in another view.': '请在另一个视图中选取。', 'That view is pinned: unpin it to move it, or pick the other way round.': '该视图已固定：取消固定后才能移动，或反过来选取。', 'A horizontal line cannot line up with a vertical one: pick two of a kind, or a corner.': '水平线不能与垂直线对齐：请选两条同向的线，或一个角点。', 'Fit': '适合窗口',
   'Fit everything': '全部适合窗口', 'Export PDF': '导出 PDF', 'Export DXF': '导出 DXF', 'Export CSV': '导出 CSV', 'Command': '命令',
   'Object snap (F3)': '对象捕捉（F3）', 'Ortho (F8; hold Shift)': '正交（F8；按住 Shift）', 'Polar tracking every 45° (F10)': '每 45° 极轴追踪（F10）',
   'The layer new shapes go on': '新图形所在的图层', 'Mode': '模式', 'Snap': '捕捉',
