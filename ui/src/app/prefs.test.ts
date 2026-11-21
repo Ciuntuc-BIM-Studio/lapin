@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PREFS, gridSnapStep, gridStepAt, quickToggleTheme, readPrefs, resolveTheme } from './prefs';
+import { DEFAULT_PREFS, gridSnapStep, gridStepAt, quickToggleTheme, readPrefs, resolveTheme, resolveViewTheme } from './prefs';
 import { fromFrame, toFrame } from './frame';
 import { dropAt, EDGE } from './tabDrag';
 import { parseCoordinateInput, applyOrtho } from '../viewport/cad/input';
@@ -120,5 +120,19 @@ describe('themes: classic and high contrast', () => {
     expect(quickToggleTheme('contrast', 'contrast')).toBe('graphite');
     expect(quickToggleTheme('graphite', 'contrast')).toBe('contrast');
     expect(quickToggleTheme('graphite', 'paper')).toBe('paper');
+  });
+  it('keeps the viewport theme only if known, and defaults to following the panels', () => {
+    expect(readPrefs(null).viewportTheme).toBe('same');
+    expect(readPrefs({ viewportTheme: 'paper' }).viewportTheme).toBe('paper');
+    expect(readPrefs({ viewportTheme: 'graphite' }).viewportTheme).toBe('graphite');
+    expect(readPrefs({ viewportTheme: 'neon' }).viewportTheme).toBe('same');
+    expect(readPrefs({ viewportTheme: 3 }).viewportTheme).toBe('same');
+  });
+  it('resolves the viewport theme from the panels and the choice', () => {
+    expect(resolveViewTheme('graphite', 'same')).toBe('graphite');
+    expect(resolveViewTheme('classic', 'same')).toBe('classic');
+    expect(resolveViewTheme('graphite', 'paper')).toBe('paper');
+    expect(resolveViewTheme('paper', 'graphite')).toBe('graphite');
+    expect(resolveViewTheme('contrast', 'paper')).toBe('paper');
   });
 });

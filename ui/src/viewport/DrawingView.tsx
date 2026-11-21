@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, Maximize } from 'lucide-react';
 import { select, setTool, useUi } from '../app/store';
+import { useViewTheme } from '../app/viewTheme';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, useSession } from '../engine/session';
 import type { Vec2 } from '../platform/module';
@@ -74,7 +75,7 @@ export function DrawingView() {
   // A group selected draws its members selected (drafted lines grouped, report #98).
   const shown = useMemo(() => [...shownSelection(selected, nodes, relations)], [selected, nodes, relations]);
   // The dark theme: the drawing on the theme's background, its black pens in the theme's ink, as a plan (report #90).
-  const onDark = drawsOnDark(useUi((s) => s.theme));
+  const onDark = drawsOnDark(useViewTheme());
   const drawing = useDrawing(id);
   // What this section or elevation hides (its clicks take only its drawing's marks), for Properties' note on an element selected from a list (decision 498).
   const render = useSession((s) => s.render);

@@ -24,6 +24,7 @@ import { chipText, cutZ, settingOf } from './storeys3d';
 import { showAllStoreys3d } from './storeys3dActions';
 import { everyLayerPatch, layers3dOf, layersChip, shownIn } from './layers3d';
 import { setTool, useUi } from '../app/store';
+import { currentViewTheme, useViewTheme } from '../app/viewTheme';
 import { useDisplay } from '../app/display';
 import { usePaneField } from '../app/pane';
 import { findTool, overlays3d, subSelectionTag } from '../platform/modules';
@@ -702,7 +703,7 @@ export function Viewport3D() {
     // integrated chip a webview is often given by default could barely turn the view.
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setClearColor(CLEAR[useUi.getState().theme]);
+    renderer.setClearColor(CLEAR[currentViewTheme()]);
     rendererRef.current = renderer;
     // The room metals and glossy faces reflect (materialLook.ts), made once.
     reflections(renderer);
@@ -944,7 +945,7 @@ export function Viewport3D() {
     const unprofile = useRenderProfile.subscribe(applyProfile);
     const unsunlight = useSunlight.subscribe(aimSun);
     applyProfile();
-    s.add(groundGrid(useUi.getState().theme, elevationRef.current));
+    s.add(groundGrid(currentViewTheme(), elevationRef.current));
     const layer = new InstanceLayer(EDGES);
     s.add(layer.group);
     instances.current = layer;
@@ -1603,7 +1604,7 @@ export function Viewport3D() {
   }, []);
 
   // The view clears to the theme's paper or graphite; the grid lies on the active storey, shown or hidden by View → Grid (F7) as in plans.
-  const theme = useUi((st) => st.theme);
+  const theme = useViewTheme();
   const gridShown = useDisplay((st) => st.grid);
   const elevation = elevationRef.current;
   const gridFixed = usePrefs((st) => (st.gridMode === 'fixed' ? st.gridStep : 0));

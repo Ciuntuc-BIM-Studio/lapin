@@ -20,11 +20,16 @@ export type LightTheme = Exclude<ThemeName, 'graphite'>;
 export const LIGHT_THEMES: readonly LightTheme[] = ['paper', 'classic', 'contrast'];
 export const THEME_NAMES: readonly ThemeName[] = ['paper', 'graphite', 'classic', 'contrast'];
 export type ThemeChoice = ThemeName | 'system';
+/** The look of the drawing areas (3D, plans, sections, sheets) apart from the panels: as the panels (the default), or paper or graphite whatever they wear. */
+export type ViewportTheme = 'same' | 'paper' | 'graphite';
+export const VIEWPORT_THEMES: readonly ViewportTheme[] = ['same', 'paper', 'graphite'];
 export type GridMode = 'adaptive' | 'fixed';
 export type CoordSystem = 'internal' | 'project' | 'survey' | 'ucs';
 
 export interface Prefs {
   theme: ThemeChoice;
+  /** The drawing areas' own look (forum request): `same` follows the panels' theme. */
+  viewportTheme: ViewportTheme;
   /** The light look the sun/moon button goes back to from dark: the last light theme chosen. */
   lastLight: LightTheme;
   gridMode: GridMode;
@@ -86,7 +91,7 @@ const FIRST_SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersec
 const SNAP_MODES_ON: readonly SnapMode[] = SNAP_MODES;
 export const POLAR_STEPS: readonly number[] = [5, 10, 15, 22.5, 30, 45, 90];
 export const DEFAULT_PREFS: Prefs = {
-  theme: 'paper', lastLight: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
+  theme: 'paper', viewportTheme: 'same', lastLight: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
   snapModes: [...SNAP_MODES], snapModesKnown: [...SNAP_MODES], polarStep: 45, coords: 'internal',
   profileStandardsHidden: [], newProjectProfileStandards: null, defaultTemplate: null, newProjectMaterialStandard: null,
   developerExtras: false, pythonPath: null, externalEditor: null, navStyle: DEFAULT_NAV_STYLE, constrainWhileDrawing: true,
@@ -113,6 +118,7 @@ export function readPrefs(stored: unknown): Prefs {
     : d.snapModes;
   return {
     theme: pick(o.theme, [...THEME_NAMES, 'system'] as const, d.theme),
+    viewportTheme: pick(o.viewportTheme, VIEWPORT_THEMES, d.viewportTheme),
     lastLight: pick(o.lastLight ?? (LIGHT_THEMES.includes(o.theme as LightTheme) ? o.theme : undefined), LIGHT_THEMES, d.lastLight),
     gridMode: pick(o.gridMode, ['adaptive', 'fixed'] as const, d.gridMode),
     gridStep: step, gridMajor: major,
@@ -161,6 +167,11 @@ export function quickToggleTheme(current: ThemeName, lastLight: LightTheme): The
 export function resolveTheme(choice: ThemeChoice): ThemeName {
   if (choice !== 'system') return choice;
   try { return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'graphite' : 'paper'; } catch { return 'paper'; }
+}
+
+/** The look the drawing areas wear: the panels' theme, or the viewport's own choice over it. */
+export function resolveViewTheme(panel: ThemeName, choice: ViewportTheme): ThemeName {
+  return choice === 'same' ? panel : choice;
 }
 
 /** The theme the app starts in: the one kept (before decision 445 nothing was kept and every start was light). */

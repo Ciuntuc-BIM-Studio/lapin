@@ -2532,6 +2532,11 @@ export const DA: Record<string, string> = {
   // Lapin for the browser (decision 482)
   'Light theme': 'Lyst tema',
   'Dark theme': 'Mørkt tema',
+  'Viewport': 'Tegneområde',
+  'Same as the panels': 'Som panelerne',
+  'Paper (light)': 'Papir (lys)',
+  'Graphite (dark)': 'Grafit (mørk)',
+  'The drawing areas (3D, plans, sections, sheets) and what sits on them. For example dark panels with a white viewport. Printing and sheets stay on paper.': 'Tegneområderne (3D, planer, snit, ark) og det, der ligger oven på dem. For eksempel mørke paneler med et hvidt tegneområde. Udskrift og ark forbliver på papir.',
   'Classic theme': 'Klassisk tema',
   'High contrast theme': 'Tema med høj kontrast',
   'A Lapin project. To work on it, open this file in Lapin: File → Open.': 'Et Lapin-projekt. Åbn denne fil i Lapin for at arbejde på det: Filer → Åbn.',

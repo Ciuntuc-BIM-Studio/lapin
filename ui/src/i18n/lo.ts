@@ -2591,6 +2591,11 @@ export const LO: Record<string, string> = {
   // Lapin for the browser (decision 482)
   'Light theme': 'ຮູບແບບສີອ່ອນ',
   'Dark theme': 'ຮູບແບບສີເຂັ້ມ',
+  'Viewport': 'ພື້ນທີ່ແຕ້ມ',
+  'Same as the panels': 'ຄືກັບແຜງ',
+  'Paper (light)': 'ເຈ້ຍ (ສີອ່ອນ)',
+  'Graphite (dark)': 'ແກຣຟາຍ (ສີເຂັ້ມ)',
+  'The drawing areas (3D, plans, sections, sheets) and what sits on them. For example dark panels with a white viewport. Printing and sheets stay on paper.': 'ພື້ນທີ່ແຕ້ມ (3D, ແປນ, ຕັດ, ແຜ່ນ) ແລະ ສິ່ງທີ່ຢູ່ເທິງມັນ. ຕົວຢ່າງ: ແຜງສີເຂັ້ມກັບພື້ນທີ່ແຕ້ມສີຂາວ. ການພິມ ແລະ ແຜ່ນຍັງຢູ່ເທິງເຈ້ຍ.',
   'Classic theme': 'ຮູບແບບຄລາສສິກ',
   'High contrast theme': 'ຮູບແບບຄວາມຄົມຊັດສູງ',
   'A Lapin project. To work on it, open this file in Lapin: File → Open.': 'ໂປຣເຈັກ Lapin. ເພື່ອເຮັດວຽກກັບມັນ, ໃຫ້ເປີດໄຟລ໌ນີ້ໃນ Lapin: ໄຟລ໌ → ເປີດ.',

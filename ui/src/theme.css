@@ -78,13 +78,13 @@
 [data-theme="contrast"] :is(.btn, .recent, .template, .search, .undo-redo, .workspace-switch, .dialog, .menu, .menu-pop) { border-color: var(--rule-strong); }
 [data-theme="contrast"] :is(.btn:hover, .recent:hover, .template:hover:not(:disabled)) { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 [data-theme="contrast"] .tab.on { border-bottom-width: 3px; font-weight: 700; }
-[data-theme="contrast"] .plan-grid path { stroke: #b3b3b3; stroke-width: 0.6; }
-[data-theme="contrast"] .plan-grid path.major { stroke: #7a7a7a; stroke-width: 0.9; }
-[data-theme="contrast"] .plan-item.selected { stroke-width: 3; }
-[data-theme="contrast"] .plan-item.cut.closed { fill: #d9d9d9; }
-[data-theme="contrast"] .plan-hover path { stroke-width: 3; stroke-opacity: 0.8; }
-[data-theme="contrast"] .plan-grip { stroke-width: 2.4; }
-[data-theme="contrast"] .plan-item.foreign, [data-theme="contrast"] .plan-item.overhead { stroke: #404040; }
+.view-area[data-theme="contrast"] .plan-grid path { stroke: #b3b3b3; stroke-width: 0.6; }
+.view-area[data-theme="contrast"] .plan-grid path.major { stroke: #7a7a7a; stroke-width: 0.9; }
+.view-area[data-theme="contrast"] .plan-item.selected { stroke-width: 3; }
+.view-area[data-theme="contrast"] .plan-item.cut.closed { fill: #d9d9d9; }
+.view-area[data-theme="contrast"] .plan-hover path { stroke-width: 3; stroke-opacity: 0.8; }
+.view-area[data-theme="contrast"] .plan-grip { stroke-width: 2.4; }
+.view-area[data-theme="contrast"] .plan-item.foreign, .view-area[data-theme="contrast"] .plan-item.overhead { stroke: #404040; }
 [data-theme="contrast"] .dialog, [data-theme="contrast"] .menu, [data-theme="contrast"] .menu-pop { border-width: 2px; box-shadow: none; }
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
@@ -292,6 +292,8 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .view-tab { display: flex; align-items: center; gap: 8px; padding: 5px 12px; border: 1px solid var(--rule); border-bottom: 0; border-radius: 3px 3px 0 0; background: var(--wash); cursor: pointer; color: var(--ink-muted); }
 .view-tab.on { background: var(--panel); color: var(--ink); font-weight: 600; }
 .view-area { position: relative; flex: 1; min-height: 0; }
+/* The drawing areas wear the viewport theme (Preferences → Viewport), which may differ from the panels': its tokens are set again here, so the canvas, the HUD and the grips follow it. */
+.view-area[data-theme] { background: var(--bg); color: var(--ink); }
 .viewport { position: absolute; inset: 0; }
 .viewport.picking { cursor: crosshair; }
 /* The selection's grips over the 3D scene: only the grips themselves take the pointer, the rest goes on to the scene. */
@@ -501,8 +503,8 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 /* A rebar's anchor (decision 226): orange, the configurator's, standing the cover outside the bar for the formwork's face. */
 .plan-grip.anchor { fill: #f59e0b; stroke: #b45309; stroke-width: 1.4; stroke-linejoin: round; cursor: move; }
 .plan-grip.anchor.hot { fill: #fbbf24; stroke: #92400e; }
-[data-theme="graphite"] .plan-grip.anchor { fill: #f59e0b; stroke: #fde68a; }
-[data-theme="graphite"] .plan-grip.anchor.hot { fill: #fbbf24; stroke: #fef3c7; }
+.view-area[data-theme="graphite"] .plan-grip.anchor { fill: #f59e0b; stroke: #fde68a; }
+.view-area[data-theme="graphite"] .plan-grip.anchor.hot { fill: #fbbf24; stroke: #fef3c7; }
 /* A flip arrow: click to flip the element that way. */
 .plan-grip.flip { fill: var(--accent); stroke: var(--accent); stroke-width: 1.4; stroke-linejoin: round; cursor: pointer; }
 .plan-grip.flip.hot { fill: var(--panel); }
@@ -691,7 +693,7 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .scope-bar .scope-what { display: flex; gap: 0.4em; text-transform: uppercase; }
 .drawing-svg .paper { fill: var(--paper, #fbfaf7); }
 /* A section or an elevation in the dark theme lies on the theme's background like a plan (report #90); its black pens in the theme's ink (DrawingLayer's onDark). */
-[data-theme="graphite"] .drawing-svg .paper { fill: var(--bg); }
+.view-area[data-theme="graphite"] .drawing-svg .paper { fill: var(--bg); }
 .view-problem { position: absolute; top: 48px; left: 16px; }
 .tree-row { display: flex; align-items: center; }
 .tree-row .tree-item { flex: 1; }
