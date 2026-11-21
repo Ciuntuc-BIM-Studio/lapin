@@ -736,13 +736,11 @@ public sealed partial class Session
         var standard = MaterialStandards.Of(_store);
         // The types' layers' own graphics (decision 758), when any gives them: each element's layers read once.
         var layerLooks = drawing && LayerGraphics.Any(_store) ? new Dictionary<string, IReadOnlyList<LayerBand>?>() : null;
-        for (var k = 0; k < caps.Length; k++)
+        var looks = new ResolvedMaterial?[caps.Length];
+        for (var k = 0; k < caps.Length && drawing; k++)
         {
-            var m = caps[k];
-            if (m.Indices.Length == 0) continue;
-            var (id, part, gp) = owners[k];
-            if (!byNode.TryGetValue(id, out var list)) { byNode[id] = list = []; result.Add(new CapItem(id, list)); }
-            if (!drawing) { list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges)); continue; }
+            if (caps[k].Indices.Length == 0) continue;
+            var (id, _, gp) = owners[k];
             // At the drawing's scale, its step by scale (decision 680).
             var look = MaterialGraphics.Resolve(gp.Material == null ? null : _store.Get(gp.Material), "section", gp.Material != null && _store.Get(gp.Material) == null && !GlobalId.IsValid(gp.Material) ? gp.Material : null, scale: scale, standard: standard);
             if (layerLooks != null && gp.Material != null)
@@ -750,7 +748,18 @@ public sealed partial class Session
                 if (!layerLooks.TryGetValue(id, out var own)) layerLooks[id] = own = LayerSets.DrawnBandsOf(_store, id);
                 look = LayerGraphics.Over(look, LayerGraphics.Of(own, gp.Key, gp.Material), scale)!;
             }
-            var (fill, hatch) = CapHatch(faces[k], look, patterns!, scale);
+            looks[k] = look;
+        }
+        // The batts of caps on one plane laid together, so one material's batt turns the corners its caps share (as the drawings').
+        var batts = drawing ? CapBatts(faces, looks, owners.Select(x => x.Id).ToList(), seamKeys, patterns!, scale) : null;
+        for (var k = 0; k < caps.Length; k++)
+        {
+            var m = caps[k];
+            if (m.Indices.Length == 0) continue;
+            var (id, part, gp) = owners[k];
+            if (!byNode.TryGetValue(id, out var list)) { byNode[id] = list = []; result.Add(new CapItem(id, list)); }
+            if (!drawing) { list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges)); continue; }
+            var (fill, hatch) = CapHatch(faces[k], looks[k]!, patterns!, scale, batts!, k);
             list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges, fill, hatch));
         }
         return result;
@@ -762,7 +771,8 @@ public sealed partial class Session
     /// face's plane through the world's origin, so neighbouring caps on one plane hatch as one; on an upright
     /// plane its X runs level, its Y up, as the section's drawing has them.
     /// </summary>
-    static (string Fill, float[] Hatch) CapHatch(List<CapFace> faces, Lapin.Drawing.ResolvedMaterial look, IReadOnlyList<Lapin.Drawing.Hatch.HatchPattern> patterns, double scale)
+    static (string Fill, float[] Hatch) CapHatch(List<CapFace> faces, Lapin.Drawing.ResolvedMaterial look, IReadOnlyList<Lapin.Drawing.Hatch.HatchPattern> patterns, double scale,
+        Dictionary<(int Cap, int Face), List<Lapin.Drawing.Hatch.HatchSegment>> batts, int cap)
     {
         var fill = look.Fill ?? "#ffffff";
         var pattern = look.Hatch is { } h ? Lapin.Drawing.Hatch.HatchLibrary.Find(h, patterns) : null;
@@ -770,8 +780,9 @@ public sealed partial class Session
         if (pattern == null) return (fill, []);
         // A solid pattern fills the cap in the material's fill colour, else dark (forum topic 88).
         if (pattern.Solid) return (look.Fill ?? "#2b2b2b", []);
-        foreach (var f in faces)
+        for (var fi = 0; fi < faces.Count; fi++)
         {
+            var f = faces[fi];
             var n = f.Normal;
             var u = Math.Abs(n.Z) < 0.9 ? Vec3.Cross(n, Vec3.UnitZ).Normalized() : new Vec3(1, 0, 0);
             var v = Math.Abs(n.Z) < 0.9 ? Vec3.Cross(u, n).Normalized() : Vec3.Cross(n, u).Normalized();
@@ -781,7 +792,7 @@ public sealed partial class Session
             // material asks for it; else level, as the section's drawing has it.
             var (angle, origin) = Math.Abs(n.Z) >= 0.9 || look.HatchAlign == Lapin.Drawing.HatchAlign.Layer ? AlongLayer(loops) : (0.0, (Vec2?)null);
             var segs = Lapin.Drawing.Hatch.BattHatch.Is(pattern)
-                ? Lapin.Drawing.Hatch.BattHatch.Segments(loops, 1.2 * scale / 1000, 20_000, scale: look.HatchScale, flip: Lapin.Drawing.Hatch.BattHatch.FlipsAt(look.HatchAngle))
+                ? batts.GetValueOrDefault((cap, fi)) ?? []
                 // Paper or real size (decision 679); a real-size pattern too dense at this scale is not drawn.
                 : Lapin.Drawing.Hatch.HatchScale.Lay(pattern, scale, look.HatchScale, angle + look.HatchAngle, origin, 20_000, look.HatchUnits) is { } laid
                     ? Lapin.Drawing.Hatch.HatchFill.Segments(loops, pattern, laid).Segments : [];
@@ -793,6 +804,42 @@ public sealed partial class Session
                 }
         }
         return (fill, [.. hatch]);
+    }
+
+    /// <summary>
+    /// The batts of the caps' faces that take one, by cap and face, in the face's plane axes (as <see cref="CapHatch"/> lays
+    /// them): the faces on one plane of one material laid together, two caps of two elements going on into one another, so
+    /// the chain turns the corners they share (<see cref="Lapin.Drawing.Hatch.BattHatch"/>), as the drawings do.
+    /// </summary>
+    static Dictionary<(int Cap, int Face), List<Lapin.Drawing.Hatch.HatchSegment>> CapBatts(List<CapFace>[] faces, ResolvedMaterial?[] looks, List<string> owners,
+        List<string?> keys, IReadOnlyList<Lapin.Drawing.Hatch.HatchPattern> patterns, double scale)
+    {
+        var o = new Dictionary<(int, int), List<Lapin.Drawing.Hatch.HatchSegment>>();
+        var items = new List<(int Cap, int Face, object Group, List<IReadOnlyList<Vec2>> Loops, double Scale, bool Flip)>();
+        for (var k = 0; k < looks.Length; k++)
+        {
+            if (looks[k] is not { Hatch: { } h } look || !Lapin.Drawing.Hatch.BattHatch.Is(Lapin.Drawing.Hatch.HatchLibrary.Find(h, patterns))) continue;
+            var flip = Lapin.Drawing.Hatch.BattHatch.FlipsAt(look.HatchAngle);
+            for (var fi = 0; fi < faces[k].Count; fi++)
+            {
+                var f = faces[k][fi];
+                var n = f.Normal;
+                var u = Math.Abs(n.Z) < 0.9 ? Vec3.Cross(n, Vec3.UnitZ).Normalized() : new Vec3(1, 0, 0);
+                var v = Math.Abs(n.Z) < 0.9 ? Vec3.Cross(u, n).Normalized() : Vec3.Cross(n, u).Normalized();
+                var loops = f.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(p => { var w = f.At(p); return new Vec2(Vec3.Dot(w, u), Vec3.Dot(w, v)); }).ToList()).ToList();
+                // One plane (its normal and offset, to a tenth of a millimetre), one material, one hatch scale and flip.
+                var group = (Math.Round(n.X, 4), Math.Round(n.Y, 4), Math.Round(n.Z, 4), Math.Round(Vec3.Dot(f.Origin, n), 4), keys[k] ?? "\u0000" + k, look.HatchScale, flip);
+                items.Add((k, fi, group, loops, look.HatchScale, flip));
+            }
+        }
+        foreach (var g in items.GroupBy(x => x.Group))
+        {
+            var list = g.ToList();
+            var laid = Lapin.Drawing.Hatch.BattHatch.Segments(list.Select(x => new Lapin.Drawing.Hatch.BattHatch.BattBand(x.Loops, null, x.Scale, x.Flip)).ToList(), 1.2 * scale / 1000, 20_000,
+                (a, b) => owners[list[a].Cap] != owners[list[b].Cap]);
+            for (var i = 0; i < list.Count; i++) o[(list[i].Cap, list[i].Face)] = laid[i];
+        }
+        return o;
     }
 
     /// <summary>

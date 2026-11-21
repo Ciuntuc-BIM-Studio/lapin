@@ -257,6 +257,27 @@ public static class Pens
     /// <summary>A colour washed out towards white (a cut filled with a phase's colour stays readable under its hatch).</summary>
     static string Pale(string css) => HexColor.Mix(css, 0.6);
 
+    /// <summary>
+    /// The batts of the hatches that take one (<see cref="BattHatch"/>), by hatch: those of one material whose bands go on
+    /// into one another (<see cref="MaterialHatch.Joins"/>) laid together, so the chain turns the corners they share; a band
+    /// under 1.2 mm on paper gets none; the material's hatch scale stretches the heads' spacing, its angle of half a turn
+    /// puts the first head on the other face.
+    /// </summary>
+    static Dictionary<int, List<HatchSegment>> Batts(List<MaterialHatch> hatches, Options o, int budget)
+    {
+        var batts = new Dictionary<int, List<HatchSegment>>();
+        var mine = Enumerable.Range(0, hatches.Count).Where(i => BattHatch.Is(HatchLibrary.Find(hatches[i].Pattern, o.Patterns))).ToList();
+        bool Flip(MaterialHatch h) => !h.Background && h.Look is { } bl && BattHatch.FlipsAt(bl.HatchAngle);
+        foreach (var group in mine.GroupBy(i => (hatches[i].Background, hatches[i].Scale, Flip(hatches[i]), hatches[i].Join?.Key)))
+        {
+            var ids = group.ToList();
+            var bands = ids.Select(i => new BattHatch.BattBand(hatches[i].Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), hatches[i].Axis, hatches[i].Scale, Flip(hatches[i]))).ToList();
+            var laid = BattHatch.Segments(bands, 1.2 * o.Scale / 1000, Math.Max(0, budget), (a, b) => hatches[ids[a]].Joins(hatches[ids[b]]));
+            for (var k = 0; k < ids.Count; k++) { batts[ids[k]] = laid[k]; budget -= laid[k].Count; }
+        }
+        return batts;
+    }
+
     public static List<Pen> Of(ViewDrawing d, MaterialDrawingResult? m, Options o)
     {
         var pens = new Dictionary<string, Pen>();
@@ -300,8 +321,10 @@ public static class Pens
                     hatches.Add(new MaterialHatch(d.Cuts[i].Loops, ch, 1, null, d.Cuts[i].Class));
         }
         var budget = o.MaxHatchSegments;
-        foreach (var h in hatches)
+        var batts = Batts(hatches, o, budget);
+        for (var hi = 0; hi < hatches.Count; hi++)
         {
+            var h = hatches[hi];
             var pattern = HatchLibrary.Find(h.Pattern, o.Patterns);
             if (pattern == null) continue;
             var category = Cat(h.Class)?.LineColor ?? "#000000";
@@ -318,8 +341,9 @@ public static class Pens
                 // The batt's heads and strokes along the layer (its element's axis when the drawing gives one), metres; a band under
                 // 1.2 mm on paper gets none. The material's hatch scale stretches the heads' spacing; its angle of half a turn
                 // puts the first head on the other face (BattHatch).
-                var flip = !h.Background && h.Look is { } bl && BattHatch.FlipsAt(bl.HatchAngle);
-                var batt = BattHatch.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), 1.2 * o.Scale / 1000, Math.Max(0, budget), h.Axis, h.Scale, flip);
+                // Laid with the other bands of its material it goes on into (Batts), so it turns the corners they share.
+                var batt = batts[hi];
+                if (batt.Count > Math.Max(0, budget)) batt = batt.GetRange(0, Math.Max(0, budget));
                 budget -= batt.Count;
                 var bw = WidthOf(h.Pen);
                 Get($"{prefix}:{color}:{bw}:{DashKey(dash)}", () => new Pen(PenLayer.Hatch, color, bw, null, dash)).Segments.AddRange(batt.Select(s => (s.A, s.B)));

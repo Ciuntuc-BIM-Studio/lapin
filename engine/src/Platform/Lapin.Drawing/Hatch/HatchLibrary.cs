@@ -76,6 +76,7 @@ public static class HatchLibrary
 ;; Insulation (drawn by Lapin from simple geometry; BATT, the batt's heads along the layer, is drawn by its own rule)
 *FOAMBOARD, Foam board insulation: a grid of circles 2.4 mm
 ;%LAPIN-TILE=2.4,2.4
+;%LAPIN-WHOLE
 ;%LAPIN-ARC=1.2,1.2,0.9,0,360
 
 *REFLECTIVE, Reflective insulation: rows of zigzags
@@ -104,6 +105,7 @@ public static class HatchLibrary
 
 *RIGIDFOAM, Rigid foam insulation: rounded squares with small diamonds at their corners
 ;%LAPIN-TILE=3,3
+;%LAPIN-WHOLE
 ;%LAPIN-LINE=0.9,0.5,2.1,0.5
 ;%LAPIN-LINE=2.5,0.9,2.5,2.1
 ;%LAPIN-LINE=2.1,2.5,0.9,2.5
