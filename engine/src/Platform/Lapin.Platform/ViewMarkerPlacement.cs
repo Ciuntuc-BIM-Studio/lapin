@@ -46,7 +46,12 @@ public sealed class ViewMarkerPlacement : IElementPlacement
 {
     public bool Handles(Entity e) => e.Class == Views.Class && e.Str("kind") is "section" or "elevation";
 
-    public void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving) => ctx.Replace(Carried(ctx, e, t));
+    public void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving)
+    {
+        var moved = Carried(ctx, e, t);
+        if (moved.Str("kind") == "section") moved = SectionViewAnchor.KeepOnModel(ctx, e, moved);
+        ctx.Replace(moved);
+    }
 
     public string? Copy(ICommandContext ctx, Entity e, Placement2D t)
     {
@@ -82,5 +87,37 @@ public sealed class ViewMarkerPlacement : IElementPlacement
         foreach (var (k, off) in new[] { ("headA", ha), ("headB", hb) })
             if (off.Length > 1e-9) attrs[k] = J(t.Dir(off)); else attrs.Remove(k);
         return e.With(attrs: attrs);
+    }
+}
+
+/// <summary>
+/// Keeps a section view's 2D annotations and linework anchored to the 3D model when the section line is moved or
+/// extended in plan without changing its direction (forum topic 198).
+/// </summary>
+public static class SectionViewAnchor
+{
+    public static Entity KeepOnModel(ICommandContext ctx, Entity oldView, Entity newView)
+    {
+        if (oldView.Str("kind") != "section" || newView.Str("kind") != "section") return newView;
+        if (ElementViews.Is(oldView) || AcrossSections.Is(oldView)) return newView;
+        var (oldPath, _, _) = SectionPaths.Resolve(ctx.Model, ctx.Services, oldView);
+        var (newPath, _, _) = SectionPaths.Resolve(ctx.Model, ctx.Services, newView);
+        if (oldPath == null || newPath == null) return newView;
+        var (oldPieces, _) = SectionPaths.Cuts(oldView, oldPath);
+        var (newPieces, _) = SectionPaths.Cuts(newView, newPath);
+        if (oldPieces.Count == 0 || newPieces.Count == 0) return newView;
+        var oldAlong = (oldPieces[0].B - oldPieces[0].A).Normalized();
+        var newAlong = (newPieces[0].B - newPieces[0].A).Normalized();
+        if (Vec2.Dot(oldAlong, newAlong) < 1 - 1e-6) return newView;
+        var dx = Vec2.Dot(oldPieces[0].A - newPieces[0].A, newAlong);
+        if (Math.Abs(dx) <= 1e-9) return newView;
+
+        newView = ViewLinework.Shift(newView, dx, 0);
+        var t = new Placement2D(p => new Vec2(p.X + dx, p.Y), 0, false);
+        var placements = ctx.Services.All<IElementPlacement>().ToList();
+        var moving = ctx.Model.Entities.Select(x => x.Id).ToHashSet();
+        foreach (var item in ctx.Model.Entities.Where(x => x.Str("viewId") == newView.Id).ToList())
+            placements.FirstOrDefault(p => p.Handles(item))?.Transform(ctx, item, t, moving);
+        return newView;
     }
 }

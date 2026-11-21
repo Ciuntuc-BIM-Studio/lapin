@@ -1826,7 +1826,8 @@ public static class Views
             var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "section" ? x : throw new CommandException("Not a section.");
             var attrs = v.CloneAttrs();
             SectionPaths.Set(ctx.Model, ctx.Services, attrs, a, create: false);
-            ctx.Replace(v.With(attrs: attrs));
+            var next = SectionViewAnchor.KeepOnModel(ctx, v, v.With(attrs: attrs));
+            ctx.Replace(next);
             return null;
         });
 

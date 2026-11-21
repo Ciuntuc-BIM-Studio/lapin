@@ -108,4 +108,38 @@ public sealed class ViewMarkerMoveTests
         Assert.Throws<CommandException>(() => f.Run("view.moveHead", new JsonObject { ["id"] = a, ["end"] = "b", ["offset"] = new JsonArray(1, 1) }));
         Assert.Throws<CommandException>(() => Move(f, a, 1, 0));
     }
+
+    [Fact]
+    public void SectionMoveKeepsAnnotationsAndLineworkAnchored()
+    {
+        var f = F();
+        var (a, _, _) = House(f);
+        // Wall (0,0)-(10,0) is cut at x = 2 in section (6,-2)->(6,10); its bottom edge passes through (2, 0).
+        var textId = (string)f.Run("drafting.addText", new JsonObject { ["viewId"] = a, ["at"] = new JsonArray(2.0, 1.5), ["text"] = "Wall note" })!["id"]!;
+        f.Run("view.linework", new JsonObject { ["id"] = a, ["at"] = new JsonArray(2.0, 0.0), ["action"] = "hide" });
+
+        // Extend/move the section start back by 3m along the line: (6, -2) -> (6, -5).
+        f.Run("view.setLine", new JsonObject { ["id"] = a, ["start"] = new JsonArray(6, -5), ["end"] = new JsonArray(6, 10) });
+
+        // The 2D annotation must shift by +3 in x so it stays at the exact same 3D location on the wall.
+        var at1 = (JsonArray)f.Model.Get(textId)!.Attrs["at"]!;
+        Assert.Equal(5.0, (double)at1[0]!, 6);
+        Assert.Equal(1.5, (double)at1[1]!, 6);
+        // Linework must still match the wall edge with zero orphans.
+        var d1 = Drawing(f, a);
+        Assert.Null(d1["lineworkOrphans"]);
+
+        // Move the whole section line in plan by (1, 2): +2 along the section direction, so view x shifts by -2.
+        Move(f, a, 1, 2);
+        var at2 = (JsonArray)f.Model.Get(textId)!.Attrs["at"]!;
+        Assert.Equal(3.0, (double)at2[0]!, 6);
+        Assert.Equal(1.5, (double)at2[1]!, 6);
+        var d2 = Drawing(f, a);
+        Assert.Null(d2["lineworkOrphans"]);
+
+        // Undo restores both the section and the annotation/linework coordinates.
+        f.Session.Undo();
+        var atUndo = (JsonArray)f.Model.Get(textId)!.Attrs["at"]!;
+        Assert.Equal(5.0, (double)atUndo[0]!, 6);
+    }
 }
