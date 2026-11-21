@@ -944,3 +944,7 @@ Timoshenko și Gere, „Theory of Elastic Stability”, ed. 2, 1961 (cap. 1–2:
 
 8. **Contravântuirile din bare rotunde** (tije, `analysisAxial` implicit) ar putea fi implicit doar la întindere. *Recomandare: nu implicit (ar schimba rezultatele proiectelor existente); interfața le arată ca propunere la hală mai târziu.*
 9. **Panele fără tablă** dau moduri locale de flambaj cu αcr mic (hala din ghid: 1,8–2,1). *Recomandare: modelăm rigidizarea laterală a panelor de către tablă (un reazem lateral pe talpa comprimată) ca etapă mică după S5d.*
+
+### 14.13 Răspunsurile utilizatorului (21.11.2026)
+
+Utilizatorul a luat recomandările la toate cele 9 întrebări din §14.10 și §14.12 („la cele 9 întrebări mergem pe recomandări”): cazurile rămân liniare și doar combinațiile neliniare; placa pe Winkler ținută orizontal în noduri, cu notă; patul Winkler în ambele sensuri implicit, doar compresiune ca opțiune; combinația instabilă scoasă din înfășurători cu notă roșie; imperfecțiunile globale ±X/±Y urmează ca S5d; cadrele din beton clasificate deocamdată cu limitele 10 / 3 la rigiditate nefisurată; ks doar orientativ, fără valoare implicită (tabelul Bowles de confirmat); contravântuirile rotunde nu trec implicit la doar întindere; rigidizarea panelor de către tablă vine ca etapă mică după S5d.
