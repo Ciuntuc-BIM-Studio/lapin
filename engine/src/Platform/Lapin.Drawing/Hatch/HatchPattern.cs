@@ -53,8 +53,15 @@ public readonly record struct TileArc(Vec2 C, double R, double Start, double Swe
 /// </summary>
 public sealed record HatchTile(double Width, double Height, IReadOnlyList<TileLine> Lines, IReadOnlyList<TileArc> Arcs)
 {
-    public bool Equals(HatchTile? o) => o is not null && Width == o.Width && Height == o.Height && Lines.SequenceEqual(o.Lines) && Arcs.SequenceEqual(o.Arcs);
-    public override int GetHashCode() => HashCode.Combine(Width, Height, Lines.Count, Arcs.Count);
+    /// <summary>
+    /// Its closed motifs (a circle, a rounded square: pieces of one cell that close on themselves, clear of their copies in the
+    /// cells around) drawn whole or not at all, never cut to a part where the region ends (decision 754: foam boards' circles,
+    /// as a batt's loops); its other pieces clipped as any pattern's. <c>;%LAPIN-WHOLE</c> after its tile header.
+    /// </summary>
+    public bool Whole { get; init; }
+
+    public bool Equals(HatchTile? o) => o is not null && Width == o.Width && Height == o.Height && Whole == o.Whole && Lines.SequenceEqual(o.Lines) && Arcs.SequenceEqual(o.Arcs);
+    public override int GetHashCode() => HashCode.Combine(Width, Height, Lines.Count, Arcs.Count, Whole);
 }
 
 /// <summary>
@@ -70,7 +77,8 @@ public sealed record HatchTile(double Width, double Height, IReadOnlyList<TileLi
 /// The writer writes <c>;%TYPE=MODEL</c> after a model pattern's header; paper patterns as before.
 /// A tile pattern (stage 7, <see cref="HatchTile"/>) is written in Lapin's own comment headers, which other readers skip:
 /// <c>;%LAPIN-TILE=width,height</c>, then a <c>;%LAPIN-LINE=x1,y1,x2,y2</c> per straight piece or dot and a
-/// <c>;%LAPIN-ARC=cx,cy,r,start,sweep</c> per arc (degrees), after its header; <see cref="Serialize"/> with
+/// <c>;%LAPIN-ARC=cx,cy,r,start,sweep</c> per arc (degrees), after its header, and <c>;%LAPIN-WHOLE</c> when its closed motifs
+/// are drawn whole (<see cref="HatchTile.Whole"/>); <see cref="Serialize"/> with
 /// <c>tiles: false</c> leaves tile patterns out (a <c>.pat</c> for another program: <see cref="External"/>).
 /// </summary>
 public static class Pat
@@ -81,10 +89,10 @@ public static class Pat
         var errors = new List<string>();
         (string Name, string Description, List<HatchLineFamily> Families, HatchUnits Units)? current = null;
         // A tile pattern's cell and pieces (Lapin's own comment headers).
-        (double W, double H, List<TileLine> Lines, List<TileArc> Arcs)? tile = null;
+        (double W, double H, List<TileLine> Lines, List<TileArc> Arcs, bool Whole)? tile = null;
         void Finish()
         {
-            if (current is { } c) patterns.Add(new HatchPattern(c.Name, c.Description, c.Families, c.Units) { Tile = tile is { } t ? new HatchTile(t.W, t.H, t.Lines, t.Arcs) : null });
+            if (current is { } c) patterns.Add(new HatchPattern(c.Name, c.Description, c.Families, c.Units) { Tile = tile is { } t ? new HatchTile(t.W, t.H, t.Lines, t.Arcs) { Whole = t.Whole } : null });
             tile = null;
         }
         static double[]? Numbers(string v, int n)
@@ -116,9 +124,10 @@ public static class Pat
                     if (current is { } c0 && c0.Families.Count == 0) current = c0 with { Units = u };
                     else pending = u;
                 }
-                else if (key == "LAPIN-TILE" && current != null && Numbers(value, 2) is [var tw, var th] && tw > 0 && th > 0) tile = (tw * unit, th * unit, [], []);
+                else if (key == "LAPIN-TILE" && current != null && Numbers(value, 2) is [var tw, var th] && tw > 0 && th > 0) tile = (tw * unit, th * unit, [], [], false);
                 else if (key == "LAPIN-LINE" && tile is { } tl && Numbers(value, 4) is [var x1, var y1, var x2, var y2]) tl.Lines.Add(new TileLine(new Vec2(x1, y1) * unit, new Vec2(x2, y2) * unit));
                 else if (key == "LAPIN-ARC" && tile is { } ta && Numbers(value, 5) is [var cx, var cy, var r, var a0, var sw] && r > 0) ta.Arcs.Add(new TileArc(new Vec2(cx, cy) * unit, r * unit, a0, sw));
+                else if (key == "LAPIN-WHOLE" && tile is { } tw0) tile = tw0 with { Whole = true };
                 else if (key == "UNITS" && value is "INCH" or "INCHES") unit = 25.4;
                 else if (key == "UNITS" && value is "MM" or "MILLIMETERS" or "MILLIMETRES") unit = 1;
                 continue;
@@ -174,6 +183,7 @@ public static class Pat
             if (p.Tile is { } t)
             {
                 sb.Append($";%LAPIN-TILE={Fmt(t.Width)},{Fmt(t.Height)}\n");
+                if (t.Whole) sb.Append(";%LAPIN-WHOLE\n");
                 foreach (var l in t.Lines) sb.Append($";%LAPIN-LINE={Fmt(l.A.X)},{Fmt(l.A.Y)},{Fmt(l.B.X)},{Fmt(l.B.Y)}\n");
                 foreach (var a in t.Arcs) sb.Append($";%LAPIN-ARC={Fmt(a.C.X)},{Fmt(a.C.Y)},{Fmt(a.R)},{Fmt(a.Start)},{Fmt(a.Sweep)}\n");
             }

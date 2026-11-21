@@ -16,6 +16,17 @@ public sealed record MaterialHatch(IReadOnlyList<Vec2[]> Loops, string Pattern, 
     /// <summary>The frame of its element's axis in the drawing (a wall's in a plan), which a batt is laid along; null: the band's own.</summary>
     public Lapin.Drawing.Hatch.BandAxis? Axis { get; init; }
 
+    /// <summary>
+    /// What its band joins by (<see cref="MaterialDrawing"/>'s key: its material, or its element's kind), its element, and
+    /// whether one element's bands join each other too: two hatches of one key, of two elements (or of one when it does),
+    /// go on into one another, so a batt goes round the corner they share (<see cref="Lapin.Drawing.Hatch.BattHatch"/>); null:
+    /// it joins nothing.
+    /// </summary>
+    public (string Key, string Element, bool Own)? Join { get; init; }
+
+    /// <summary>Whether this hatch's band goes on into <paramref name="other"/>'s (the drawing draws no line between them).</summary>
+    public bool Joins(MaterialHatch other) => Join is { } a && other.Join is { } b && a.Key == b.Key && (a.Own || a.Element != b.Element);
+
     /// <summary>A hatch aligned to the band it fills: its origin at the start of the band's longest edge, its angle along that edge (plus the material's own).</summary>
     public static MaterialHatch Aligned(IReadOnlyList<Vec2[]> loops, string pattern, double scale, int? pen, string cls, double angle, string align)
     {
@@ -238,6 +249,7 @@ public static class MaterialDrawing
             // The fill at its opacity (decision 678); a material that gives none is its fill as before.
             o.Fills[i] = MaterialGraphics.FillInk(g);
             var axis = elementAxis?.Invoke(p.Element);
+            var join = Key(p, g) is { } jk ? (jk, p.Element, mergeOwn) : ((string, string, bool)?)null;
             // The element's own alignment over its material's; a material aligned with the element takes its axis (one angle
             // and origin for all its bands, so courses run on from one layer to the next), an element with none the view's.
             var mine = elementHatch?.Invoke(p.Element) ?? (g.HatchAlign == HatchAlign.Element ? axis : null);
@@ -248,13 +260,13 @@ public static class MaterialDrawing
                 var bgAngle = bg.HatchAngle ?? 0;
                 o.Hatches.Add((mine is { } bo
                     ? new MaterialHatch(p.Loops, bh, bgScale, null, p.Class, (bo.Angle ?? 0) + bgAngle, bo.Origin)
-                    : MaterialHatch.Aligned(p.Loops, bh, bgScale, null, p.Class, bgAngle, g.HatchAlign)) with { Fill = g.Fill, Look = g, Background = true, Axis = axis?.Axis });
+                    : MaterialHatch.Aligned(p.Loops, bh, bgScale, null, p.Class, bgAngle, g.HatchAlign)) with { Fill = g.Fill, Look = g, Background = true, Axis = axis?.Axis, Join = join });
             }
             if (g.Hatch == null) continue;
             var look = g.Flex ? g : null;
             if (mine is { } own)
-                o.Hatches.Add(new MaterialHatch(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, (own.Angle ?? 0) + g.HatchAngle, own.Origin, g.Fill, look, Units: g.HatchUnits) { Axis = axis?.Axis });
-            else o.Hatches.Add(MaterialHatch.Aligned(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, g.HatchAngle, g.HatchAlign) with { Fill = g.Fill, Look = look, Units = g.HatchUnits, Axis = axis?.Axis });
+                o.Hatches.Add(new MaterialHatch(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, (own.Angle ?? 0) + g.HatchAngle, own.Origin, g.Fill, look, Units: g.HatchUnits) { Axis = axis?.Axis, Join = join });
+            else o.Hatches.Add(MaterialHatch.Aligned(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, g.HatchAngle, g.HatchAlign) with { Fill = g.Fill, Look = look, Units = g.HatchUnits, Axis = axis?.Axis, Join = join });
         }
 
         // Edges of every band, by join key.

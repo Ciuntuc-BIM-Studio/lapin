@@ -611,4 +611,282 @@ public class BattHatchTests
         static bool InBox(Vec2 v) => v.X >= -1e-6 && v.X <= 20 + 1e-6 && v.Y >= -1e-6 && v.Y <= 20 + 1e-6;
         Assert.NotEqual(name, Lapin.Drawing.MaterialGraphics.FromName("Mineral wool").Hatch);
     }
+
+    /// <summary>
+    /// Two bands meeting at a corner, the inner corner at <paramref name="i"/>: the first along <paramref name="a0"/> (radians)
+    /// into it, the second turned by <paramref name="turnDeg"/> out of it, <paramref name="t1"/> and <paramref name="t2"/>
+    /// thick, the outer faces on the outside of the turn; <paramref name="kind"/> 0 mitred, 1 the first running through (the
+    /// second butting against it), 2 the second running through. Each with its axis along its middle from its start.
+    /// </summary>
+    internal static (Vec2[] A, Vec2[] B, BandAxis AxA, BandAxis AxB, Vec2 I, Vec2 O) Corner(Vec2 i, double a0, double turnDeg, double t1, double t2, double la, double lb, int kind)
+    {
+        var t = turnDeg * Math.PI / 180;
+        var ta = new Vec2(Math.Cos(a0), Math.Sin(a0));
+        var tb = new Vec2(Math.Cos(a0 + t), Math.Sin(a0 + t));
+        var sg = Math.Sign(t);
+        var outA = ta.Perp * -sg; var outB = tb.Perp * -sg;
+        var o = Polyline2.LineIntersection(i + outA * t1, ta, i + outB * t2, tb)!.Value;
+        var s = i - ta * la; var e = i + tb * lb;
+        Vec2[] a, b;
+        if (kind == 0) { a = [s, i, o, s + outA * t1]; b = [i, e, e + outB * t2, o]; }
+        else if (kind == 1)
+        {
+            var x = Polyline2.LineIntersection(i, ta, i + outB * t2, tb)!.Value;
+            a = [s, x, o, s + outA * t1]; b = [i, e, e + outB * t2, x];
+        }
+        else
+        {
+            var y = Polyline2.LineIntersection(i, tb, i + outA * t1, ta)!.Value;
+            a = [s, i, y, s + outA * t1]; b = [y, e, e + outB * t2, o];
+        }
+        return (a, b, BandAxis.Straight(s + outA * (t1 / 2), ta), BandAxis.Straight(i + outB * (t2 / 2), tb), i, o);
+    }
+
+    static double Distance(List<HatchSegment> segs, Vec2 p) => segs.Min(s => Polyline2.SegmentDistance(p, s.A, s.B));
+
+    /// <summary>Whether two drawings hold the same segments (either way round), their ends within <paramref name="tol"/>.</summary>
+    static bool Same(IEnumerable<HatchSegment> x, IEnumerable<HatchSegment> y, double tol = 1e-7)
+    {
+        var (a, b) = (x.ToList(), y.ToList());
+        if (a.Count != b.Count) return false;
+        var cell = 10 * tol;
+        (long, long) K(Vec2 p) => ((long)Math.Floor(p.X / cell), (long)Math.Floor(p.Y / cell));
+        var grid = new Dictionary<(long, long), List<int>>();
+        for (var i = 0; i < b.Count; i++) { var k = K(b[i].A); (grid.TryGetValue(k, out var l) ? l : grid[k] = []).Add(i); k = K(b[i].B); (grid.TryGetValue(k, out l) ? l : grid[k] = []).Add(i); }
+        var used = new bool[b.Count];
+        bool Near(Vec2 p, Vec2 q) => (p - q).Length <= tol;
+        foreach (var s in a)
+        {
+            var (kx, ky) = K(s.A);
+            var found = false;
+            for (var dx = -1; dx <= 1 && !found; dx++)
+                for (var dy = -1; dy <= 1 && !found; dy++)
+                    if (grid.TryGetValue((kx + dx, ky + dy), out var l))
+                        foreach (var i in l)
+                            if (!used[i] && ((Near(s.A, b[i].A) && Near(s.B, b[i].B)) || (Near(s.A, b[i].B) && Near(s.B, b[i].A)))) { used[i] = true; found = true; break; }
+            if (!found) return false;
+        }
+        return true;
+    }
+
+    static List<(long, long, long, long)> Keys(IEnumerable<HatchSegment> segs, Func<Vec2, Vec2>? map = null)
+    {
+        map ??= p => p;
+        (long, long) K(Vec2 p) { var q = map(p); return ((long)Math.Round(q.X * 1e6), (long)Math.Round(q.Y * 1e6)); }
+        return [.. segs.Select(s => { var (a, b) = (K(s.A), K(s.B)); return a.CompareTo(b) <= 0 ? (a.Item1, a.Item2, b.Item1, b.Item2) : (b.Item1, b.Item2, a.Item1, a.Item2); }).Order()];
+    }
+
+    /// <summary>
+    /// For random corners (turning 20°–135° either way, mitred or butted either way, 40–300 mm, any direction, either flip,
+    /// at any hatch scale), two bands drawn together: every stroke belongs to a whole loop inside the two bands; along the
+    /// joined mid-line, round the corner too, never more than a loop width from a stroke; the outer corner within a loop
+    /// width of a stroke (corners sharper than about 60° within reach of the largest head the fan draws, 1.7 times the
+    /// chain's, tangent to both faces); the same drawn
+    /// mirrored (the flip mirrored with it) and with the bands given the other way round; and of two thicknesses, the
+    /// two drawn as each alone.
+    /// </summary>
+    [Fact]
+    public void At_a_corner_two_bands_batts_go_round_it_as_one_in_whole_loops()
+    {
+        var rnd = new Random(7541);
+        var (equal, apart) = (0, new List<string>());
+        for (var n = 0; n < 400; n++)
+        {
+            var thick = 0.04 + rnd.NextDouble() * 0.26;
+            var turn = (20 + rnd.NextDouble() * 115) * (rnd.Next(2) == 0 ? 1 : -1);
+            var kind = Math.Abs(turn) is > 45 and < 120 ? rnd.Next(3) : 0;
+            var a0 = rnd.NextDouble() * 2 * Math.PI;
+            var i = new Vec2(rnd.NextDouble() * 20 - 10, rnd.NextDouble() * 20 - 10);
+            double la = 0.6 + rnd.NextDouble() * 3, lb = 0.6 + rnd.NextDouble() * 3;
+            var scale = rnd.Next(3) == 0 ? 0.7 + rnd.NextDouble() * 0.4 : 1;
+            var flip = rnd.Next(2) == 0;
+            var unequal = rnd.Next(8) == 0;
+            var t2 = unequal ? thick * (rnd.Next(2) == 0 ? 0.6 : 1.5) : thick;
+            var what = $"corner {n}: turn {turn:0.#}°, {(kind == 0 ? "mitred" : kind == 1 ? "first through" : "second through")}, {thick:0.###}/{t2:0.###}, scale {scale:0.##}{(flip ? ", flipped" : "")}";
+            var (a, b, ax, bx, ic, oc) = Corner(i, a0, turn, thick, t2, la, lb, kind);
+            var drawn = BattHatch.Segments([new BattHatch.BattBand([a], ax, scale, flip), new BattHatch.BattBand([b], bx, scale, flip)]);
+            var segs = drawn.SelectMany(x => x).ToList();
+            if (unequal)
+            {
+                // Two thicknesses: each ends on whole loops, as alone.
+                Assert.Equal(Keys(BattHatch.Segments([a], axis: ax, scale: scale, flip: flip)), Keys(drawn[0]));
+                Assert.Equal(Keys(BattHatch.Segments([b], axis: bx, scale: scale, flip: flip)), Keys(drawn[1]));
+                continue;
+            }
+            // Turned (not laid as two ends): the two drawn otherwise than each alone.
+            equal++;
+            if (Same(segs, BattHatch.Segments([a], axis: ax, scale: scale, flip: flip).Concat(BattHatch.Segments([b], axis: bx, scale: scale, flip: flip)))) apart.Add(what);
+            WholeLoops(segs, what);
+            Assert.All(segs.SelectMany(s => new[] { s.A, s.B }), p => Assert.True(Polygon2.Contains(a, p, 1e-6) || Polygon2.Contains(b, p, 1e-6), $"{what}: a point outside the bands"));
+            var h = thick / 2;
+            var w0 = BattHatch.Head * 2 * h * scale;
+            // Along the joined mid-line: from a loop width in from each free end, through the corner of the mid-lines.
+            var t = turn * Math.PI / 180;
+            var ta = new Vec2(Math.Cos(a0), Math.Sin(a0));
+            var tb = new Vec2(Math.Cos(a0 + t), Math.Sin(a0 + t));
+            var sg = Math.Sign(t);
+            var cm = Polyline2.LineIntersection(ic + ta.Perp * (-sg * h), ta, ic + tb.Perp * (-sg * h), tb)!.Value;
+            var start = ic - ta * la + ta.Perp * (-sg * h) + ta * (w0 + 2 * h);
+            var end = ic + tb * lb + tb.Perp * (-sg * h) - tb * (w0 + 2 * h);
+            // Every half loop width (a gap of a loop width cannot hide between two samples): a stroke within a loop width, looked
+            // up in a grid of the strokes' points (every quarter loop width along each).
+            var grid = new HashSet<(long, long)>();
+            foreach (var x in segs)
+            {
+                var m = Math.Max(1, (int)Math.Ceiling((x.B - x.A).Length / (w0 / 4)));
+                for (var k = 0; k <= m; k++) { var pt = x.A + (x.B - x.A) * ((double)k / m); grid.Add(((long)Math.Floor(pt.X / (w0 / 4)), (long)Math.Floor(pt.Y / (w0 / 4)))); }
+            }
+            bool Covered(Vec2 x)
+            {
+                var (cx, cy) = ((long)Math.Floor(x.X / (w0 / 4)), (long)Math.Floor(x.Y / (w0 / 4)));
+                for (var dx = -3; dx <= 3; dx++) for (var dy = -3; dy <= 3; dy++) if (grid.Contains((cx + dx, cy + dy))) return true;
+                return false;
+            }
+            foreach (var (p, q) in new[] { (start, cm), (cm, end) })
+            {
+                var steps = Math.Max(1, (int)Math.Ceiling((q - p).Length / (w0 / 2)));
+                for (var k = 0; k <= steps; k++)
+                {
+                    var x = p + (q - p) * ((double)k / steps);
+                    Assert.True(Covered(x), $"{what}: no stroke within a loop width ({w0:0.####}) of the mid-line at {k}/{steps}");
+                }
+            }
+            // The outer corner: within a loop width of a stroke, or of the head that fits it (tangent to both faces).
+            var interior = Math.PI - Math.Abs(t);
+            var reach = Math.Max(w0, 1.7 * w0 / 2 * (1 / Math.Sin(interior / 2) - 1)) * 1.1;
+            Assert.True(Distance(segs, oc) <= reach, $"{what}: the outer corner {Distance(segs, oc):0.####} from a stroke (reach {reach:0.####})");
+            // Mirrored (the flip with it): the same drawing mirrored.
+            Vec2 M(Vec2 p) => new(2 * i.X - p.X, p.Y);
+            var (ma, mb) = (a.Select(M).ToArray(), b.Select(M).ToArray());
+            BandAxis Mirror(Vec2 origin, Vec2 dir) => BandAxis.Straight(M(origin), new Vec2(-dir.X, dir.Y));
+            var axo = ax.FromBand(0, 0); var axd = ax.FromBand(1, 0) - axo;
+            var bxo = bx.FromBand(0, 0); var bxd = bx.FromBand(1, 0) - bxo;
+            var mirrored = BattHatch.Segments([new BattHatch.BattBand([ma], Mirror(axo, axd), scale, !flip), new BattHatch.BattBand([mb], Mirror(bxo, bxd), scale, !flip)]).SelectMany(x => x);
+            Assert.True(Same(segs.Select(x => new HatchSegment(M(x.A), M(x.B))), mirrored, 1e-6), $"{what}: mirrored, drawn otherwise");
+            // The bands the other way round: the same strokes.
+            var swapped = BattHatch.Segments([new BattHatch.BattBand([b], bx, scale, flip), new BattHatch.BattBand([a], ax, scale, flip)]).SelectMany(x => x);
+            Assert.True(Same(segs, swapped, 1e-6), $"{what}: given the other way round, drawn otherwise");
+        }
+        // Every corner of one thickness turned.
+        Assert.True(apart.Count == 0, $"{apart.Count} of {equal} corners laid as two ends: {string.Join("; ", apart.Take(8))}");
+    }
+
+    /// <summary>
+    /// The user's corner (two walls of a 150 mm wool layer, mitred at a right angle): the chain goes round it, a fan of
+    /// loops in the corner square with a head tangent to both outer faces, every loop whole; drawn alone each band keeps
+    /// its own whole loops as before. Bands that may not join (another material), a T (the through band runs past the
+    /// other's outer face) and a band with a hole draw as alone.
+    /// </summary>
+    [Fact]
+    public void An_L_of_one_wool_layer_draws_one_batt_round_the_corner_and_a_T_two()
+    {
+        Vec2[] along = [new(0, 0), new(3.15, 0), new(3, 0.15), new(0, 0.15)];
+        Vec2[] up = [new(3.15, 0), new(3.15, 3), new(3, 3), new(3, 0.15)];
+        var ax = BandAxis.Straight(new Vec2(0, 0.075), new Vec2(1, 0));
+        var ux = BandAxis.Straight(new Vec2(3.075, 0), new Vec2(0, 1));
+        var drawn = BattHatch.Segments([new BattHatch.BattBand([along], ax), new BattHatch.BattBand([up], ux)]);
+        var all = drawn.SelectMany(x => x).ToList();
+        WholeLoops(all, "L");
+        // The corner square (3–3.15 × 0–0.15) holds strokes, one of them the head in the outer corner: tangent to both faces.
+        var inCorner = all.SelectMany(s => new[] { s.A, s.B }).Where(p => p.X > 3 + 1e-6 && p.Y < 0.15 - 1e-6).ToList();
+        Assert.True(inCorner.Count > 20, $"{inCorner.Count} points in the corner square");
+        Assert.True(Distance(all, new Vec2(3.15, 0)) < 0.03 * Math.Sqrt(2), $"outer corner {Distance(all, new Vec2(3.15, 0)):0.####} from a stroke");
+        // Not joined (another material): each as alone.
+        var apart = BattHatch.Segments([new BattHatch.BattBand([along], ax), new BattHatch.BattBand([up], ux)], joins: (_, _) => false);
+        Assert.Equal(Keys(BattHatch.Segments([along], axis: ax)), Keys(apart[0]));
+        Assert.Equal(Keys(BattHatch.Segments([up], axis: ux)), Keys(apart[1]));
+        // A T: the through band runs on past the joining one; each as alone.
+        Vec2[] through = [new(0, 0), new(6, 0), new(6, 0.15), new(0, 0.15)];
+        Vec2[] stem = [new(3, 0.15), new(3.15, 0.15), new(3.15, 3), new(3, 3)];
+        var tx = BandAxis.Straight(new Vec2(0, 0.075), new Vec2(1, 0));
+        var sx = BandAxis.Straight(new Vec2(3.075, 0.15), new Vec2(0, 1));
+        var t = BattHatch.Segments([new BattHatch.BattBand([through], tx), new BattHatch.BattBand([stem], sx)]);
+        Assert.Equal(Keys(BattHatch.Segments([through], axis: tx)), Keys(t[0]));
+        Assert.Equal(Keys(BattHatch.Segments([stem], axis: sx)), Keys(t[1]));
+        // A band alone is laid as before, square ends and all.
+        Vec2[] box = [new(0, 0), new(2, 0), new(2, 0.1), new(0, 0.1)];
+        Assert.Equal(Keys(BattHatch.Segments([box])), Keys(BattHatch.Segments([new BattHatch.BattBand([box])])[0]));
+    }
+
+    /// <summary>
+    /// A closed ring of four walls (a 150 mm layer round a 4 × 3 m room, mitred): every corner turned, the loops whole, and
+    /// nowhere along the ring's mid-line more than a loop width from a stroke.
+    /// </summary>
+    [Fact]
+    public void A_closed_ring_of_four_walls_turns_every_corner()
+    {
+        double w = 4, hh = 3, d = 0.15;
+        Vec2[] inner = [new(0, 0), new(w, 0), new(w, hh), new(0, hh)];
+        Vec2[] outer = [new(-d, -d), new(w + d, -d), new(w + d, hh + d), new(-d, hh + d)];
+        var bands = new List<BattHatch.BattBand>();
+        for (var k = 0; k < 4; k++)
+        {
+            Vec2[] q = [inner[k], outer[k], outer[(k + 1) % 4], inner[(k + 1) % 4]];
+            var dir = (inner[(k + 1) % 4] - inner[k]).Normalized();
+            bands.Add(new BattHatch.BattBand([q], BandAxis.Straight(inner[k] + dir.Perp * (-d / 2), dir)));
+        }
+        var all = BattHatch.Segments(bands).SelectMany(x => x).ToList();
+        WholeLoops(all, "ring");
+        var w0 = BattHatch.Head * d;
+        Vec2[] mid = [new(-d / 2, -d / 2), new(w + d / 2, -d / 2), new(w + d / 2, hh + d / 2), new(-d / 2, hh + d / 2)];
+        for (var k = 0; k < 4; k++)
+            for (var j = 0; j <= 100; j++)
+            {
+                var p = mid[k] + (mid[(k + 1) % 4] - mid[k]) * (j / 100.0);
+                Assert.True(Distance(all, p) <= w0, $"side {k}, {j}/100: {Distance(all, p):0.####} from a stroke");
+            }
+        foreach (var o in outer) Assert.True(Distance(all, o) < w0, $"outer corner {o}");
+    }
+
+    /// <summary>
+    /// Foam board's circles and rigid foam's rounded squares and diamonds are drawn whole or not at all where a layer ends
+    /// (a mitre, a cut), never cut to a "C" (every stroke in a closed outline, inside the band); a lattice tile (one whose
+    /// motifs touch their copies) and line patterns are clipped as before; the flag goes through the .pat text.
+    /// </summary>
+    [Fact]
+    public void Closed_tile_motifs_are_drawn_whole_where_a_layer_ends()
+    {
+        // A 15 × 4.3 mm band (paper mm at scale 1), mitred at one end.
+        Vec2[] band = [new(0, 0), new(15, 0), new(10.7, 4.3), new(0, 4.3)];
+        foreach (var name in new[] { "FOAMBOARD", "RIGIDFOAM" })
+        {
+            var p = HatchLibrary.Find(name)!;
+            Assert.True(p.Tile!.Whole, name);
+            foreach (var (angle, origin) in new[] { (0.0, new Vec2(0, 0)), (17.0, new Vec2(0.37, 0.91)), (90.0, new Vec2(-1.3, 2.2)) })
+            {
+                var (segs, _) = HatchFill.Segments([band], p, new HatchOptions(1, angle, origin));
+                Assert.True(segs.Count > 12, $"{name} {angle}: {segs.Count}");
+                Assert.All(segs.SelectMany(x => new[] { x.A, x.B }), q => Assert.True(Polygon2.Contains(band, q, 1e-9), $"{name} {angle}: a point outside"));
+                // Rigid foam's diamonds sit on the cells' corners, apart from its squares: each its own closed outline too.
+                WholeLoops(segs, $"{name} {angle}");
+            }
+        }
+        // Clipped as before: a lattice of lozenges (each touching its neighbours) leaves its cut pieces at the edge.
+        var lattice = new HatchPattern("LOZ", "", []) { Tile = new HatchTile(4, 2, [new(new(0, 1), new(2, 0)), new(new(2, 0), new(4, 1)), new(new(4, 1), new(2, 2)), new(new(2, 2), new(0, 1))], []) { Whole = true } };
+        var (cut, _) = HatchFill.Segments([band], lattice, new HatchOptions(1, 0, new Vec2(0.3, 0.2)));
+        Assert.Contains(cut, x => Math.Abs(x.A.X) < 1e-9 || Math.Abs(x.B.X) < 1e-9);
+        // The flag goes through the .pat text, and a user's tile has it off.
+        var back = Pat.Parse(Pat.Serialize([HatchLibrary.Find("FOAMBOARD")!])).Patterns.Single();
+        Assert.True(back.Tile!.Whole);
+        Assert.Equal(HatchLibrary.Find("FOAMBOARD")!.Tile, back.Tile);
+        Assert.False(TileFit.Make("CIRCLES", "", HatchUnits.Paper, 2, 2, [], [new TileArc(new Vec2(1, 1), 0.6, 0, 360)]).Tile!.Whole);
+    }
+
+    /// <summary>Drawing a mitred L together costs no more than about twice drawing its two bands alone.</summary>
+    [Fact]
+    public void Turning_a_corner_costs_about_what_laying_the_bands_does()
+    {
+        Vec2[] along = [new(0, 0), new(3.15, 0), new(3, 0.15), new(0, 0.15)];
+        Vec2[] up = [new(3.15, 0), new(3.15, 3), new(3, 3), new(3, 0.15)];
+        var ax = BandAxis.Straight(new Vec2(0, 0.075), new Vec2(1, 0));
+        var ux = BandAxis.Straight(new Vec2(3.075, 0), new Vec2(0, 1));
+        for (var k = 0; k < 5; k++) { BattHatch.Segments([along], axis: ax); BattHatch.Segments([new BattHatch.BattBand([along], ax), new BattHatch.BattBand([up], ux)]); }
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        for (var k = 0; k < 40; k++) { BattHatch.Segments([along], axis: ax); BattHatch.Segments([up], axis: ux); }
+        var alone = sw.Elapsed.TotalMilliseconds;
+        sw.Restart();
+        for (var k = 0; k < 40; k++) BattHatch.Segments([new BattHatch.BattBand([along], ax), new BattHatch.BattBand([up], ux)]);
+        var together = sw.Elapsed.TotalMilliseconds;
+        Assert.True(together <= 2.5 * alone + 20, $"together {together:0.#} ms, alone {alone:0.#} ms (40 runs)");
+    }
 }

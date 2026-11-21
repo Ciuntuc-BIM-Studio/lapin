@@ -163,6 +163,9 @@ public static class HatchFill
         if ((double)(i1 - i0 + 1) * (j1 - j0 + 1) * pieces.Count > (double)em.Max * 20 + 10000) { em.Truncated = true; return; }
         var edges = new List<(Vec2 A, Vec2 B)>();
         foreach (var l in region) for (int k = 0, m = l.Length - 1; k < l.Length; m = k++) if (l[m] != l[k]) edges.Add((l[m], l[k]));
+        // A tile whose closed motifs are drawn whole (HatchTile.Whole): those motifs' pieces, kept or left out together.
+        var motifs = tile.Whole ? Motifs(pieces, w, h) : [];
+        var inMotif = new HashSet<int>(motifs.SelectMany(x => x));
         var ts = new List<double>();
         for (var j = j0; j <= j1; j++)
             for (var i = i0; i <= i1; i++)
@@ -170,8 +173,16 @@ public static class HatchFill
                 var shift = new Vec2(i * w, j * h);
                 // A cell whose pieces' box misses the region's: nothing.
                 if (pMaxX + shift.X < minX || pMinX + shift.X > maxX || pMaxY + shift.Y < minY || pMinY + shift.Y > maxY) continue;
-                foreach (var (pa, pb) in pieces)
+                foreach (var motif in motifs)
                 {
+                    // Whole: every piece inside, none crossing the outline.
+                    if (!motif.All(pi => { var (a, b) = (pieces[pi].A + shift, pieces[pi].B + shift); return Inside(region, a) && Inside(region, b) && !edges.Any(e => Cross(a, b - a, e.A, e.B) != null); })) continue;
+                    foreach (var pi in motif) { Emit(pieces[pi].A + shift, pieces[pi].B + shift); if (em.Truncated) return; }
+                }
+                for (var pi = 0; pi < pieces.Count; pi++)
+                {
+                    if (inMotif.Contains(pi)) continue;
+                    var (pa, pb) = pieces[pi];
                     var (a, b) = (pa + shift, pb + shift);
                     if (Math.Max(a.X, b.X) < minX || Math.Min(a.X, b.X) > maxX || Math.Max(a.Y, b.Y) < minY || Math.Min(a.Y, b.Y) > maxY) continue;
                     var d = b - a;
@@ -206,6 +217,35 @@ public static class HatchFill
             if (em.Out.Count >= em.Max) { em.Truncated = true; return; }
             em.Out.Add(new HatchSegment(FromGrid(a), FromGrid(b)));
         }
+    }
+
+    /// <summary>
+    /// A tile's closed motifs: the pieces of one cell that join end to end into closed outlines (every end met by another
+    /// piece's), each clear of its copies in the cells around (its box and theirs apart), by piece index.
+    /// </summary>
+    static List<List<int>> Motifs(List<(Vec2 A, Vec2 B)> pieces, double w, double h)
+    {
+        var eps = 1e-9 * Math.Max(w, h);
+        var parent = Enumerable.Range(0, pieces.Count).ToArray();
+        int Find(int i) => parent[i] == i ? i : parent[i] = Find(parent[i]);
+        bool Near(Vec2 p, Vec2 q) => (p - q).Length <= eps;
+        for (var i = 0; i < pieces.Count; i++)
+            for (var j = i + 1; j < pieces.Count; j++)
+                if (Near(pieces[i].A, pieces[j].A) || Near(pieces[i].A, pieces[j].B) || Near(pieces[i].B, pieces[j].A) || Near(pieces[i].B, pieces[j].B))
+                    parent[Find(i)] = Find(j);
+        var o = new List<List<int>>();
+        foreach (var g in Enumerable.Range(0, pieces.Count).GroupBy(Find))
+        {
+            var ids = g.ToList();
+            // Closed: each end of each piece met by an end of another (a lone dot or a loose stroke is no motif).
+            var ends = ids.SelectMany(i => new[] { pieces[i].A, pieces[i].B }).ToList();
+            if (ids.Any(i => (pieces[i].A - pieces[i].B).Length <= eps) || ends.Any(p => ends.Count(q => Near(p, q)) < 2)) continue;
+            double x0 = ends.Min(p => p.X), x1 = ends.Max(p => p.X), y0 = ends.Min(p => p.Y), y1 = ends.Max(p => p.Y);
+            // Apart from its copies one cell over (a lattice's motifs touch theirs: those stay clipped).
+            if (x1 - x0 >= w - eps || y1 - y0 >= h - eps) continue;
+            o.Add(ids);
+        }
+        return o;
     }
 
     /// <summary>Where the segment a + t·d (0 &lt; t &lt; 1) crosses the edge e0–e1; null when it does not, or runs along it.</summary>
