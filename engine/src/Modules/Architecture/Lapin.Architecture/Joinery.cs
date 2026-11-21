@@ -478,6 +478,23 @@ public static class Joinery
         return new CellRect(-s.Width / 2 + f, s.Width / 2 - f, bottom, top);
     }
 
+    /// <summary>
+    /// The clear opening (forum topic 204: the Polish „w świetle ościeżnicy”, the Czech door 800/1970): the size inside the outer
+    /// frame, what a door's or window's tags write as <c>{clearWidth}</c> and <c>{clearHeight}</c>. Its width is the type's width less
+    /// the frame's face width on both jambs; its height the head's inside (an arched or headed type's at its middle, its inner
+    /// apex) less the bottom: a door's threshold (it has no bottom member), a window's bottom frame member, the frame's face
+    /// width. A round window's is the ring's inside both ways; frameless glass's is the opening less its gaps. Never below 0.
+    /// </summary>
+    public static (double Width, double Height) ClearOpening(JoinerySpec s)
+    {
+        if (s.Frameless != null) { var r = Frameless.Inner(s); return (Math.Max(0, r.X1 - r.X0), Math.Max(0, r.Z1 - r.Z0)); }
+        var f = s.Frame.Width;
+        if (JoineryShapes.Round(s)) return (Math.Max(0, s.Width - 2 * f), Math.Max(0, s.Height - 2 * f));
+        var bottom = s.IsDoor ? Math.Max(0, s.Threshold) : f;
+        var top = JoineryShapes.Headed(s) ? JoineryShapes.Top(s, 0, f) : s.Height - f;
+        return (Math.Max(0, s.Width - 2 * f), Math.Max(0, top - bottom));
+    }
+
     static List<(double A, double B)> Splits(double[] weights, double from, double to, double[] bars)
     {
         var total = weights.Sum(w => Math.Max(w, 0));

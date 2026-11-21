@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Drawing;
@@ -798,6 +799,30 @@ public static class DraftingResources
                 raw["tagRules"] = new JsonArray(rules.Where(x => (string?)x?["tagType"] != id).Select(x => x?.DeepClone()).ToArray());
             Write(ctx, raw);
             return null;
+        });
+
+        // The ready-made door and window markers after national conventions (forum topic 205) a project may add to its tag types.
+        r.Query("standards.tagPresets", (q, _) => new JsonArray([.. Standards.TagTypePresets.Select(t =>
+        {
+            var o = (JsonObject)JsonSerializer.SerializeToNode(t, DrawingJson.Default.TagType)!;
+            o["added"] = Book(q.Model).TagTypes.Any(x => x.Id == t.Id);
+            return (JsonNode)o;
+        })]));
+
+        // One of them added to the project's tag types, as its own to change ({preset}); again: a copy beside it. Returns its id.
+        r.Command("standards.addTagPreset", "Add tag type", (ctx, a) =>
+        {
+            var preset = Standards.TagTypePresets.FirstOrDefault(t => t.Id == (string?)a["preset"]) ?? throw new CommandException("There is no such built-in tag type.");
+            var raw = Standards.ToJson(Book(ctx.Model));
+            var list = raw["tagTypes"] as JsonArray ?? [];
+            var taken = list.Select(x => (string?)x?["id"]).ToHashSet();
+            var (id, name, n) = (preset.Id, preset.Name, 1);
+            while (taken.Contains(id)) { n++; id = $"{preset.Id}-{n}"; name = $"{preset.Name} {n}"; }
+            var entry = (JsonObject)JsonSerializer.SerializeToNode(preset with { Id = id, Name = name }, DrawingJson.Default.TagType)!;
+            list.Add((JsonNode)entry);
+            raw["tagTypes"] = list;
+            Write(ctx, raw);
+            return new JsonObject { ["id"] = id };
         });
 
         // An entry moved to another place in its list (index from 0, clamped): the tag rules' order is the order they are tried in (issue #72).

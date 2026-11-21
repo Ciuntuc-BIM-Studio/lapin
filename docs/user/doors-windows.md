@@ -340,6 +340,33 @@ Plans draw a sunshade over the cut dashed, one crossing it cut (fins, a screen) 
 
 **Annotate → Door & window tags** puts a marker on each door and window of a plan: a line across the wall, the mark outside, and the size and sill inside. To change how the tags look, go to **Manage → Drafting standards → Tags**.
 
+### Sizes a tag can write
+
+A marker's texts (**Text (outside)**, **Inside**) read these sizes of the door or window, in the tag type's unit:
+
+- `{width}`, `{height}`: the door's or window's size, as before.
+- `{openingWidth}`, `{openingHeight}`: the wall opening, the hole the door or window fills (the hole an imported file cuts round it, where that differs).
+- `{clearWidth}`, `{clearHeight}`: the clear opening inside the frame, as Polish and Czech drawings give it (door 800/1970). The width is the width less the frame's face on both jambs; the height is the height less the head's frame and, at the bottom, a door's threshold or a window's bottom frame. For an arched head the height runs to the inner top in the middle; a round window takes the ring's inside. A 900 × 2100 door with a 60 mm frame and a 20 mm threshold is 780 × 2020 clear.
+- `{sill}`: the sill over what it is measured from; `{sillFinished}`: over the wall's finished floor, whatever the sill is measured from.
+
+A symbol drawn as the marker reads them too. Tag rules read them in metres (`clearWidth < 0.8`). Elsewhere (box tags, labels, schedules, formulas) `clearWidth`, `clearHeight`, `openingWidth`, `openingHeight` and `sillFinished` are worked-out fields in millimetres, listed in the field pickers.
+
+### Built-in markers and the bubble layout
+
+In **Manage → Drafting standards → Tags**, **+ Built-in marker…** adds a ready-made marker after a national convention, as a tag type of your own to change:
+
+- **Door marker (Polish: bubble, clear opening)**: a line from the middle of the frame, 60 cm out, to a 30 cm bubble holding the mark. The clear width goes over the line and the clear height under it, the width always on top whichever way the door turns. The fire rating (`{FireRating}`) goes at the middle of the frame, only on doors that have one.
+- **Window marker (Polish: bubble, wall opening, sill)**: the same line, also running into the room to 10 cm past the wall's interior face. The wall opening's width goes over the line and its height under it, and the sill over the finished floor sits at the line's interior end.
+- **Door marker (Czech: clear opening 800/1970)**: the usual marker, its mark outside and the clear size in millimetres inside.
+
+Choose the type in **Annotate → Door & window tags**, or by a tag rule. Adding one again makes a numbered copy. The markers a project starts with stay as they were.
+
+![Polish door and window markers: lines from the frames to bubbles with the marks, the clear and wall opening sizes over and under them, the sills inside](shots/tag-bubble-markers.webp)
+
+**Marker…** beside an opening's tag type sets its layout: **line across the wall** (the usual one) or **line to a bubble**. For a bubble, it sets the text **Over the line**, **Under the line** and **At the origin**, and the lengths in the building's centimetres (the drawing scales them): **Line length**, **Line origin offset** (out of the building +, into it −), **Line inside past the wall** (empty: the line starts at its origin), **Bubble diameter** (0: the mark alone), **Origin text offset** and **Inner text offset**. **Text (outside)** goes in the bubble and **Inside** at the line's interior end. Every text keeps its grips in the plan.
+
+![Marker… for the Polish door marker: the bubble layout, its texts and lengths](shots/tag-marker-editor.webp)
+
 ### Editing a marker on screen
 
 Each marker can be laid out by hand, part by part. Click its line or one of its texts to select it: every text then has a square grip (drag it to move the text) and a round one past its end (drag it to turn the text), and each end of the line has a grip (drag it to lengthen or shorten the line; the text at that end goes with it). Ctrl/⌘-click a grip to put that part back as it was. Each drag is one step to undo. With several markers of the same plan selected, a part dragged on one changes the same part of all of them.

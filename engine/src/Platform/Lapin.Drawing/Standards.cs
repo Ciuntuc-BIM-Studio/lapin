@@ -112,12 +112,16 @@ public sealed record AxisStyle(string Id, string Name, string TextStyle, string 
 public sealed record TagType(string Id, string Name, string Template, IReadOnlyList<string> Classes,
     string Shape = "box", string Inner = "", string Unit = "cm", double Reach = 6, string TextStyle = Standards.Standard, string TextOrientation = "across",
     string? Header = null, string? Footer = null, string? Order = null, bool? ZeroLayers = null, string? Leaders = null, string? Bullet = null, double? Width = null,
-    string? LeaderShape = null, string? Underline = null, double? Extension = null, string? Symbol = null, string? Prefix = null, string? Suffix = null)
+    string? LeaderShape = null, string? Underline = null, double? Extension = null, string? Symbol = null, string? Prefix = null, string? Suffix = null,
+    string? Layout = null, string? Above = null, string? Below = null, string? Centre = null, double? LineLength = null, double? LineOffset = null,
+    double? LineInside = null, double? BubbleSize = null, double? CentreOffset = null, double? InnerOffset = null)
 {
     public bool Equals(TagType? o) => o is not null && Id == o.Id && Name == o.Name && Template == o.Template && Classes.SequenceEqual(o.Classes)
         && Shape == o.Shape && Inner == o.Inner && Unit == o.Unit && Reach == o.Reach && TextStyle == o.TextStyle && TextOrientation == o.TextOrientation
         && Header == o.Header && Footer == o.Footer && Order == o.Order && ZeroLayers == o.ZeroLayers && Leaders == o.Leaders && Bullet == o.Bullet && Width == o.Width
-        && LeaderShape == o.LeaderShape && Underline == o.Underline && Extension == o.Extension && Symbol == o.Symbol && Prefix == o.Prefix && Suffix == o.Suffix;
+        && LeaderShape == o.LeaderShape && Underline == o.Underline && Extension == o.Extension && Symbol == o.Symbol && Prefix == o.Prefix && Suffix == o.Suffix
+        && Layout == o.Layout && Above == o.Above && Below == o.Below && Centre == o.Centre && LineLength == o.LineLength && LineOffset == o.LineOffset
+        && LineInside == o.LineInside && BubbleSize == o.BubbleSize && CentreOffset == o.CentreOffset && InnerOffset == o.InnerOffset;
     public override int GetHashCode() => HashCode.Combine(Id, Name, Template, Shape, Inner, Header, Footer, Order);
 
     /// <summary>
@@ -142,6 +146,13 @@ public sealed record TagType(string Id, string Name, string Template, IReadOnlyL
     [JsonIgnore] public string UnderlineOrDefault => Underline ?? "first";
     /// <summary>How much further (paper mm) an elbow leader's shoulder reaches out from the text towards its knee.</summary>
     [JsonIgnore] public double ExtensionOrDefault => Extension is > 0 ? Extension.Value : 0;
+
+    /// <summary>A marker drawn as a line out of the opening's middle to a bubble (forum topic 205, <see cref="Layout"/> "bubble").</summary>
+    [JsonIgnore] public bool Bubbled => Shape == "opening" && Layout == "bubble";
+    /// <summary>A bubble marker's line from its origin to the bubble, model metres (60 cm by default).</summary>
+    [JsonIgnore] public double LineLengthOrDefault => LineLength is > 0 ? LineLength.Value : Standards.BubbleLine;
+    /// <summary>A bubble marker's bubble across, model metres (30 cm by default; 0: no circle, the mark alone).</summary>
+    [JsonIgnore] public double BubbleSizeOrDefault => BubbleSize is >= 0 ? BubbleSize.Value : Standards.BubbleSize;
 }
 
 /// <summary>
@@ -356,8 +367,15 @@ public static class Standards
             Lapin.Model.Json.Number(v["width"]) is { } w && double.IsFinite(w) && w > 0 ? Math.Clamp(w, 10, 1000) : null,
             Choice("leaderShape", LeaderShapes), Choice("underline", Underlines),
             Lapin.Model.Json.Number(v["extension"]) is { } ext && double.IsFinite(ext) && ext >= 0 ? Math.Min(ext, 100) : null,
-            Text("symbol"), Text("prefix"), Text("suffix"));
+            Text("symbol"), Text("prefix"), Text("suffix"),
+            Choice("layout", MarkerLayouts) is "bubble" ? "bubble" : null, Text("above"), Text("below"), Text("centre"),
+            Metres(v["lineLength"], 0.01, MaxMarkerReach), Metres(v["lineOffset"], -MaxMarkerReach, MaxMarkerReach), Metres(v["lineInside"], -MaxMarkerReach, MaxMarkerReach),
+            Metres(v["bubbleSize"], 0, MaxMarkerReach), Metres(v["centreOffset"], -MaxMarkerReach, MaxMarkerReach), Metres(v["innerOffset"], -MaxMarkerReach, MaxMarkerReach));
     }
+
+    /// <summary>A bubble marker's length (model metres) within its bounds, to the tenth of a millimetre; null when not a number.</summary>
+    static double? Metres(JsonNode? v, double min, double max) =>
+        Lapin.Model.Json.Number(v) is { } n && double.IsFinite(n) ? Math.Round(Math.Clamp(n, min, max), 4) : null;
 
     /// <summary>A tag rule as a file or a command gives it: a class, a condition and a tag type, each not empty; null when it is not one.</summary>
     static TagRule? ReadTagRule(JsonObject v)
@@ -392,6 +410,37 @@ public static class Standards
     public static readonly TagType DefaultBuildupTag = new("buildup", "Build-up (exterior → interior)", "{description}[, λ = {λ} W/mK]: {thickness} mm",
         ["IfcWall", "IfcSlab", "IfcRoof", "IfcCovering", "LapinRoomFinish"], "buildup", Unit: "mm", Header: "EXTERIOR", Footer: "INTERIOR",
         Order: "out-in", ZeroLayers: true, Leaders: "one", Bullet: "bullet", Width: BuildupWidth);
+    /// <summary>
+    /// How a door's or window's marker is laid (forum topic 205): "line", across the wall past both faces with its texts at the
+    /// ends (as every marker was), or "bubble", a line out of the opening's middle to a bubble holding the mark, texts over and
+    /// under the line, at its origin and at its interior end.
+    /// </summary>
+    public static readonly string[] MarkerLayouts = ["line", "bubble"];
+    /// <summary>A bubble marker's line and bubble by default (model metres): the Polish drawings' 60 cm and 30 cm.</summary>
+    public const double BubbleLine = 0.6, BubbleSize = 0.3;
+    /// <summary>How far a bubble marker's lengths and offsets reach at most (model metres).</summary>
+    public const double MaxMarkerReach = 10;
+
+    /// <summary>
+    /// Ready-made door and window markers after national conventions (forum topic 205), a project adds from Drafting standards →
+    /// Tags (standards.addTagPreset) and changes as its own; never in a new project's list, so a project starts as before.
+    /// <list type="bullet">
+    /// <item>Polish door: a line from the frame's middle 60 cm out to a 30 cm bubble with the mark, the clear width over the line
+    /// and the clear height under it, the fire rating (when the door has one) at the frame's middle;</item>
+    /// <item>Polish window: the same line, run inside to 10 cm past the wall's interior face, the wall opening's width over and
+    /// height under it, the sill over the finished floor at the line's interior end;</item>
+    /// <item>Czech door: the classic marker, its mark outside and the clear size in mm inside (800/1970).</item>
+    /// </list>
+    /// </summary>
+    public static readonly IReadOnlyList<TagType> TagTypePresets =
+    [
+        new("door-pl", "Door marker (Polish: bubble, clear opening)", "{mark}", ["IfcDoor"], "opening", "", "cm", TextOrientation: "across",
+            Layout: "bubble", Above: "{clearWidth}", Below: "{clearHeight}", Centre: "{FireRating}", LineLength: BubbleLine, LineOffset: 0, BubbleSize: BubbleSize, CentreOffset: 0),
+        new("window-pl", "Window marker (Polish: bubble, wall opening, sill)", "{mark}", ["IfcWindow"], "opening", "{sillFinished}", "cm", TextOrientation: "across",
+            Layout: "bubble", Above: "{openingWidth}", Below: "{openingHeight}", LineLength: BubbleLine, LineOffset: 0, LineInside: 0.1, BubbleSize: BubbleSize, InnerOffset: 0),
+        new("door-cz", "Door marker (Czech: clear opening 800/1970)", "{mark}", ["IfcDoor"], "opening", "{clearWidth}/{clearHeight}", "mm"),
+    ];
+
     /// <summary>How a marker's texts lie to its line: across it (along the wall), or along it.</summary>
     public static readonly string[] TagOrientations = ["across", "along"];
     /// <summary>The unit a tag writes sizes in.</summary>
@@ -683,4 +732,5 @@ public static class Standards
 [System.Text.Json.Serialization.JsonSerializable(typeof(DimStyle))]
 [System.Text.Json.Serialization.JsonSerializable(typeof(AxisStyle))]
 [System.Text.Json.Serialization.JsonSerializable(typeof(DraftLayer))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(TagType))]
 public partial class DrawingJson : System.Text.Json.Serialization.JsonSerializerContext;

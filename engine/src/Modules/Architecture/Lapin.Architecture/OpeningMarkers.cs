@@ -58,6 +58,14 @@ public static class OpeningMarkers
         double Reach(string key) => Math.Max(reach + (LabelParts.Of(parts, key).Ext ?? 0) * mm, -half + 0.5 * mm);
         var (a0, b0) = (interior - outward * reach, exterior + outward * reach);
         var (a, b) = (interior - outward * Reach("a"), exterior + outward * Reach("b"));
+        // A bubble marker (forum topic 205): out of the frame's middle across the wall (moved by the type's offset, + outwards)
+        // to its bubble, its interior end at the origin or past the interior face; its ends drawn out or pulled in as the other's.
+        var origin = (exterior + interior) * 0.5 + outward * ((p.Spec?.Frame.Offset ?? 0) + (type.LineOffset ?? 0));
+        if (type.Bubbled)
+        {
+            (a0, b0) = (type.LineInside is { } inside ? interior - outward * inside : origin, origin + outward * type.LineLengthOrDefault);
+            (a, b) = (a0 - outward * ((LabelParts.Of(parts, "a").Ext ?? 0) * mm), b0 + outward * ((LabelParts.Of(parts, "b").Ext ?? 0) * mm));
+        }
 
         var style = Standards.TextOf(c.Book, tag.Str("textStyle") ?? type.TextStyle);
         var color = style.Color ?? "#000000";
@@ -65,13 +73,9 @@ public static class OpeningMarkers
         var mark = new ViewMark(tag.Id);
         mark.Line(a, b, "TAG", Pens.Default.Hatch, color);
 
-        var values = new Dictionary<string, string>
-        {
-            ["width"] = TagText.Length(p.Spec?.Width ?? p.Width, type.Unit, c.Book.Units),
-            ["height"] = TagText.Length(p.Spec?.Height ?? p.Height, type.Unit, c.Book.Units),
-            // Over what it is measured from (forum topic 192): the finished floor's, or the wall's base.
-            ["sill"] = TagText.Length(p.FillSill - p.SillBase, type.Unit, c.Book.Units),
-        };
+        // Its sizes in the tag type's unit (forum topic 204: the clear opening and the wall opening beside {width} and {height}).
+        var values = Sizes(c.Model, p, wall).ToDictionary(kv => kv.Key, kv => TagText.Length(kv.Value, type.Unit, c.Book.Units), StringComparer.OrdinalIgnoreCase);
+        foreach (var key in SizeKeys) values.TryAdd(key, "");
         var h = style.Height * mm;
         var data = new JsonArray();
         data.Add((JsonNode)LabelParts.EndData("a", a, a0, outward * -1, mm, LabelParts.Of(parts, "a")));
@@ -101,14 +105,80 @@ public static class OpeningMarkers
                 data.Add((JsonNode)LabelParts.TextData(key, at, at0, along, outward, mm, angle, angle0, rotAt, part, box));
             }
         }
-        // Its outer text, or the type's symbol there (issue #72), its texts reading the door or window as the template does.
-        if (type.Symbol is not { } symbolId || !Symbol(c, mark, data, symbolId, fill, values, b, outward, along, alongLine, parts, color))
-            Write("o", b, outward, TagText.Lines(type.Written, c.Model, fill, values, c.Book.Units));
-        Write("i", a, outward * -1, TagText.Lines(type.Inner, c.Model, fill, values, c.Book.Units));
+        IReadOnlyList<string> Lines(string? template) => string.IsNullOrEmpty(template) ? [] : TagText.Lines(template, c.Model, fill, values, c.Book.Units);
+        if (type.Bubbled)
+        {
+            // The bubble with the mark at the line's outer end, or the type's symbol there; the texts over and under the line
+            // along it, the one at the origin and the one at the interior end as the type lays its texts (across the line by default).
+            if (type.Symbol is not { } bubbleSymbol || !Symbol(c, mark, data, bubbleSymbol, fill, values, b, outward, along, alongLine, parts, color))
+                Bubble(mark, data, b, outward, along, alongLine, Lines(type.Written), type.BubbleSizeOrDefault / 2, style, color, parts, mm);
+            var (tFace, tEnd) = (Vec2.Dot(exterior - origin, outward), Vec2.Dot(b - origin, outward));
+            var tStart = tFace > 0 && tFace < tEnd - h ? tFace : 0;
+            var middle = origin + outward * ((tStart + tEnd) / 2);
+            Beside("ab", middle, outward, along, Lines(type.Above), 1, style, color, mark, data, parts, mm);
+            Beside("be", middle, outward, along, Lines(type.Below), -1, style, color, mark, data, parts, mm);
+            Write("c", origin - outward * (type.CentreOffset ?? 0), outward * -1, Lines(type.Centre));
+            Write("i", a - outward * (type.InnerOffset ?? 0), outward * -1, Lines(type.Inner));
+        }
+        else
+        {
+            // Its outer text, or the type's symbol there (issue #72), its texts reading the door or window as the template does.
+            if (type.Symbol is not { } symbolId || !Symbol(c, mark, data, symbolId, fill, values, b, outward, along, alongLine, parts, color))
+                Write("o", b, outward, TagText.Lines(type.Written, c.Model, fill, values, c.Book.Units));
+            Write("i", a, outward * -1, TagText.Lines(type.Inner, c.Model, fill, values, c.Book.Units));
+        }
         mark.Data = new JsonObject { ["of"] = fill.Id, ["marker"] = true, ["parts"] = data };
         mark.Snaps.Add(a);
         mark.Snaps.Add(b);
         return mark;
+    }
+
+    /// <summary>
+    /// A bubble marker's bubble (forum topic 205): a circle of <paramref name="r"/> (model metres) just past the line's outer end
+    /// <paramref name="b"/>, its lines (the mark) in its middle, across the line (along the wall) or along it as the type lays its
+    /// texts, upright; moved and turned on screen as one part, o0. No circle when <paramref name="r"/> is 0: the mark alone.
+    /// </summary>
+    static void Bubble(ViewMark mark, JsonArray data, Vec2 b, Vec2 outward, Vec2 along, bool alongLine, IReadOnlyList<string> lines, double r,
+        TextStyle style, string color, JsonObject? parts, double mm)
+    {
+        var h = style.Height * mm;
+        var part = LabelParts.Of(parts, "o0");
+        var angle0 = LabelParts.Upright(LabelParts.AngleOf(alongLine ? outward : along));
+        var angle = part.Rot is { } rot ? LabelParts.Upright(angle0 + rot) : angle0;
+        var widest = lines.Count == 0 ? h : lines.Max(l => LabelParts.Width(l, h));
+        var reach = r > 0 ? r : Math.Max(widest * Math.Abs(Vec2.Dot(LabelParts.Dir(angle0), outward)), h * 1.4 * Math.Max(1, lines.Count)) / 2 + 0.9 * mm;
+        var centre0 = b + outward * reach;
+        var centre = LabelParts.Moved(centre0, part, along, outward, mm);
+        if (r > 0) mark.Polyline(ViewMark.Circle(centre, r), true, "TAG", Pens.Default.Hatch, color);
+        var (u, up) = (LabelParts.Dir(angle), new Vec2(-LabelParts.Dir(angle).Y, LabelParts.Dir(angle).X));
+        for (var i = 0; i < lines.Count; i++)
+            mark.Text(new PenText(centre + up * (h * 1.4 * ((lines.Count - 1) / 2.0 - i)), lines[i], style.Height, angle, "middle", "middle", style.Bold, style.Font, style.Italic), color);
+        var (hw, hh) = r > 0 ? (r, r) : (widest / 2, h * 0.7 * Math.Max(1, lines.Count));
+        data.Add((JsonNode)LabelParts.TextData("o0", centre, centre0, along, outward, mm, angle, angle0, centre + u * (hw + 2.5 * mm), part, (centre, hw, hh, angle)));
+    }
+
+    /// <summary>
+    /// A bubble marker's texts beside its line (forum topic 205): along it, upright, centred on <paramref name="middle"/>, each line
+    /// further from it, over the line (<paramref name="side"/> 1) or under it (-1) as it reads, whichever way the door turns.
+    /// </summary>
+    static void Beside(string prefix, Vec2 middle, Vec2 outward, Vec2 along, IReadOnlyList<string> lines, int side, TextStyle style, string color,
+        ViewMark mark, JsonArray data, JsonObject? parts, double mm)
+    {
+        var h = style.Height * mm;
+        var angle0 = LabelParts.Upright(LabelParts.AngleOf(outward));
+        var up = new Vec2(-LabelParts.Dir(angle0).Y, LabelParts.Dir(angle0).X);
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var key = prefix + i;
+            var part = LabelParts.Of(parts, key);
+            var at0 = middle + up * (side * h * (0.9 + 1.4 * i));
+            var at = LabelParts.Moved(at0, part, along, outward, mm);
+            var angle = part.Rot is { } r ? LabelParts.Upright(angle0 + r) : angle0;
+            var t = new PenText(at, lines[i], style.Height, angle, "middle", "middle", style.Bold, style.Font, style.Italic);
+            mark.Text(t, color);
+            var box = LabelParts.BoxOf(t, mm);
+            data.Add((JsonNode)LabelParts.TextData(key, at, at0, along, outward, mm, angle, angle0, box.C + LabelParts.Dir(angle) * (box.Hw + h), part, box));
+        }
     }
 
     /// <summary>
@@ -143,23 +213,78 @@ public static class OpeningMarkers
         return true;
     }
 
+    /// <summary>The sizes a door's or window's marker writes, its symbol's texts and its tag rules read (<see cref="Sizes"/>).</summary>
+    public static readonly string[] SizeKeys = ["width", "height", "sill", "openingWidth", "openingHeight", "clearWidth", "clearHeight", "sillFinished"];
+
+    /// <summary>
+    /// A door's or window's sizes, in metres, by their tokens (forum topic 204):
+    /// <list type="bullet">
+    /// <item><c>width</c>, <c>height</c>: its own size (its type's, or its own), as before;</item>
+    /// <item><c>openingWidth</c>, <c>openingHeight</c>: the wall opening, the hole in the wall it fills: its size, or the hole an
+    /// imported file cuts round it where that differs;</item>
+    /// <item><c>clearWidth</c>, <c>clearHeight</c>: the clear opening inside its frame (<see cref="Joinery.ClearOpening"/>); none for
+    /// one without a configuration (nothing says where its frame is);</item>
+    /// <item><c>sill</c>: its sill over what it is measured from (forum topic 192), as before; <c>sillFinished</c>: over the wall's
+    /// finished floor, whatever it is measured from (the structural level when the wall has none).</item>
+    /// </list>
+    /// </summary>
+    public static IReadOnlyDictionary<string, double> Sizes(IModelView m, Openings.Placed p, Entity? wall)
+    {
+        var o = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["width"] = p.Spec?.Width ?? p.Width,
+            ["height"] = p.Spec?.Height ?? p.Height,
+            ["sill"] = p.FillSill - p.SillBase,
+            ["openingWidth"] = p.Width,
+            ["openingHeight"] = p.Height,
+            ["sillFinished"] = p.FillSill - (wall is { Class: IfcClass.Wall } ? OpeningSills.FinishedFloor(m, wall) : 0),
+        };
+        if (p.Spec is { } spec) (o["clearWidth"], o["clearHeight"]) = Joinery.ClearOpening(spec);
+        return o;
+    }
+
+    /// <summary>A door's or window's sizes (<see cref="Sizes"/>); null when it stands in no opening.</summary>
+    public static IReadOnlyDictionary<string, double>? SizesOf(IModelView m, Entity fill) =>
+        Openings.OpeningOf(m, fill.Id) is { } opening ? Sizes(m, Openings.Place(m, opening), Openings.WallOf(m, opening.Id)) : null;
+
+    /// <summary>
+    /// What the tag rules' conditions read of a door or a window (issue #72), in metres: its sizes as its marker writes them
+    /// (<see cref="Sizes"/>: <c>width</c>, <c>height</c>, <c>sill</c>, <c>clearWidth</c>, <c>openingWidth</c>…); null for any
+    /// other name, or a door or window in no opening.
+    /// </summary>
+    public static double? Measure(IModelView m, Entity fill, string name)
+    {
+        var key = TagText.Squash(name);
+        if (SizeKeys.FirstOrDefault(k => TagText.Squash(k) == key) is not { } known || SizesOf(m, fill) is not { } sizes) return null;
+        return sizes.TryGetValue(known, out var v) ? v : null;
+    }
+
+    /// <summary>
+    /// The sizes beyond a door's or window's own attributes as worked-out fields (forum topic 204), in millimetres as the sills'
+    /// are: box tags, labels, schedules, the fields' pickers and formulas read them by the same tokens as the marker (which
+    /// writes them in its tag type's unit). Its <c>width</c> and <c>height</c> stay what they were.
+    /// </summary>
+    public static void RegisterFields()
+    {
+        (string Key, string Label)[] fields =
+        [
+            ("clearWidth", "Clear opening width, inside the frame (mm)"), ("clearHeight", "Clear opening height, inside the frame (mm)"),
+            ("openingWidth", "Wall opening width (mm)"), ("openingHeight", "Wall opening height (mm)"),
+            ("sillFinished", "Sill over the finished floor (mm)"),
+        ];
+        foreach (var cls in new[] { IfcClass.Door, IfcClass.Window })
+            foreach (var (key, label) in fields)
+            {
+                var k = key;
+                DerivedFields.Add(cls, new(k, label, (m, e) => SizesOf(m, e) is { } s && s.TryGetValue(k, out var v) ? DerivedFields.Number(Math.Round(v * 1000, 3)) : null));
+            }
+    }
+
     /// <summary>
     /// Markers for every door and window of a plan's storey not yet tagged in
     /// it: each with the type named for its kind, else the standards' type for
     /// its class. Returns how many were made.
     /// </summary>
-    /// <summary>
-    /// What the tag rules' conditions read of a door or a window (issue #72), in metres: its <c>width</c> and <c>height</c> (its
-    /// type's size, as its marker writes them) and its <c>sill</c>; null for any other name, or a door or window in no opening.
-    /// </summary>
-    public static double? Measure(IModelView m, Entity fill, string name)
-    {
-        var key = TagText.Squash(name);
-        if (key is not ("width" or "height" or "sill") || Openings.OpeningOf(m, fill.Id) is not { } opening) return null;
-        var p = Openings.Place(m, opening);
-        return key switch { "width" => p.Spec?.Width ?? p.Width, "height" => p.Spec?.Height ?? p.Height, _ => p.FillSill - p.SillBase };
-    }
-
     public static int TagAll(ICommandContext ctx, Entity view, string? doorType, string? windowType)
     {
         var m = ctx.Model;

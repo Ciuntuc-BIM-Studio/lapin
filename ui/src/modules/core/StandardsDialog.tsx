@@ -24,6 +24,7 @@ import { classificationFields } from './classifications/classModel';
 import { StandardsFirmFolders, StandardsImportPanel, StandardsLibraryButtons, type PackRead } from './StandardsLibrary';
 import { BuildupEditor } from './BuildupEditor';
 import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
+import { MarkerEditor, type MarkerEntry } from './MarkerEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 import { EXT_SUPPRESS, EXT_SUPPRESS_LABELS } from './dimensionLines';
 import { TagRulesEditor } from './TagRulesEditor';
@@ -144,6 +145,10 @@ export function StandardsDialog() {
   const systems = useSystems();
   const symbols = useSymbolList();
   const [editing, setEditing] = useState<string | null>(null);
+  // A door's or window's marker opened for its layout (forum topic 205).
+  const [marker, setMarker] = useState<string | null>(null);
+  // The ready-made markers after national conventions (forum topic 205), offered beside New.
+  const [presets, setPresets] = useState<{ id: string; name: string }[]>([]);
   // The style it was opened on from an annotation's properties (forum topic 173): picked out in its row, scrolled to.
   const [focus] = useState(() => standardsFocus());
   const focused = useRef<HTMLTableRowElement | null>(null);
@@ -160,6 +165,11 @@ export function StandardsDialog() {
   useEffect(() => {
     let live = true;
     void query<{ sillFrom?: string }>('architecture.openingDefaults').then((d) => { if (live && d) setOpeningSillFrom(d.sillFrom === 'finished' ? 'finished' : 'structural'); }).catch(() => undefined);
+    return () => { live = false; };
+  }, []);
+  useEffect(() => {
+    let live = true;
+    void query<{ id: string; name: string }[]>('standards.tagPresets').then((p) => { if (live && Array.isArray(p)) setPresets(p); }).catch(() => undefined);
     return () => { live = false; };
   }, []);
   if (!book) return <PendingDialog title="Drafting standards" />;
@@ -310,7 +320,9 @@ export function StandardsDialog() {
             <span className="grow" />
             <StandardsLibraryButtons onRead={setPack} />
           </div>
-          {pack ? <StandardsImportPanel read={pack} onDone={() => setPack(null)} /> : lines ? <LineTypesTab /> : tables ? <TableStylesTab styles={book.tableStyles ?? []} /> : project ? options : tab.id === 'tag' && rows.some((r) => r.id === editing && r.shape === 'buildup')
+          {pack ? <StandardsImportPanel read={pack} onDone={() => setPack(null)} /> : lines ? <LineTypesTab /> : tables ? <TableStylesTab styles={book.tableStyles ?? []} /> : project ? options : tab.id === 'tag' && rows.some((r) => r.id === marker)
+            ? <MarkerEditor entry={rows.find((r) => r.id === marker) as unknown as MarkerEntry} onClose={() => setMarker(null)} />
+            : tab.id === 'tag' && rows.some((r) => r.id === editing && r.shape === 'buildup')
             ? <BuildupEditor entry={rows.find((r) => r.id === editing) as unknown as BuildupEntry} onClose={() => setEditing(null)} />
             : tab.id === 'tag' && rows.some((r) => r.id === editing)
             ? <LeaderEditor entry={rows.find((r) => r.id === editing) as unknown as LeaderEntry} onClose={() => setEditing(null)} />
@@ -324,7 +336,9 @@ export function StandardsDialog() {
                   {tab.cols.map((c) => <td key={c.key}>{cell(e, c)}</td>)}
                   {tab.id === 'tag' && <td>{e.shape === 'buildup'
                     ? <button type="button" className={`btn mini${editing === e.id ? ' on' : ''}`} data-field="tag-shape-buildup" title="Its header, line per layer, footer, order, leaders and width, with a preview" onClick={() => setEditing(editing === e.id ? null : e.id)}>Build-up…</button>
-                    : <><button type="button" className="btn mini" data-field="tag-leader" title="Its leader: straight from a box, or an elbow under the text, with a preview" onClick={() => setEditing(e.id)}>Leader…</button>
+                    : <>{e.shape === 'opening'
+                      ? <button type="button" className="btn mini" data-field={`tag-marker-${e.id}`} title="Its layout: the line across the wall, or a line from the frame's middle to a bubble with the mark, texts over and under it" onClick={() => setMarker(e.id)}>Marker…</button>
+                      : <button type="button" className="btn mini" data-field="tag-leader" title="Its leader: straight from a box, or an elbow under the text, with a preview" onClick={() => setEditing(e.id)}>Leader…</button>}
                       {/* A door's or window's marker too (issue #72): the symbol at its line's exterior end, instead of its outer text. */}
                       <span title={e.shape === 'opening'
                         ? "A symbol of your own drawn at the marker's exterior end instead of its outer text: its texts' {fields} read the door or window ({mark}, {width}, {height}, {sill}), as the template's do (Manage → Symbols… to draw one)"
@@ -356,6 +370,14 @@ export function StandardsDialog() {
           {tab.id === 'tag' && systems.length > 0 && <p className="muted small">{'A tag may also read the classification: {classification.code}, {classification.title} or a system\'s own code, {classification.<System>}; the + Classification… list adds one.'}</p>}
           <div className="row">
             <button type="button" className="btn" onClick={() => set({ ...tab.fresh, name: `${tab.fresh.name} ${rows.length + 1}` })}><Plus size={14} />New</button>
+            {/* A ready-made door or window marker after a national convention (forum topic 205), added as the project's own. */}
+            {tab.id === 'tag' && presets.length > 0 && (
+              <select className="mini" value="" data-field="tag-preset" title="Add a ready-made door or window marker after a national convention, as your own to change"
+                onChange={(ev) => { if (ev.target.value) void execute('standards.addTagPreset', { preset: ev.target.value }); }}>
+                <option value="">+ Built-in marker…</option>
+                {presets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            )}
             {tab.id === 'layer' && (
               <>
                 <span className="grow" />
