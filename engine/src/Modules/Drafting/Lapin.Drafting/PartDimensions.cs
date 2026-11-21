@@ -38,7 +38,7 @@ public static class PartDimensions
         if ((string?)c.View.Attrs[ElementViews.Key]?["dims"] is not { } dims || dims == "none") return null;
         if (c.Model.Get(ElementViews.ElementOf(c.View) ?? "") is not { } e || c.Geometry?.Invoke(e.Id) is not { } g) return null;
         var body = g.Parts.Select(p => p.Solid).ToList();
-        if (ElementFrames.Of(c.Model, c.Services, e, body.SelectMany(s => s.Vertices).ToList()) is not { } f) return null;
+        if (ElementViews.FrameOf(c.Model, c.Services, c.View, e, body.SelectMany(s => s.Vertices).ToList()) is not { } f) return null;
         var corners = new[] { f.Min.X, f.Max.X }.SelectMany(x => new[] { f.Min.Y, f.Max.Y }.SelectMany(y => new[] { f.Min.Z, f.Max.Z }.Select(z => c.Frame.Map(f.World(new Vec3(x, y, z)))))).ToList();
         return new Part(e, f, new Vec2(corners.Min(p => p.X), corners.Min(p => p.Y)), new Vec2(corners.Max(p => p.X), corners.Max(p => p.Y)), dims, body);
     }

@@ -13,7 +13,7 @@ const rules: RulesDto = {
 describe('the shop drawing dialog', () => {
   it('takes its defaults from the rule and the project projection, so Create can be pressed at once', () => {
     const c = defaultChoices(rules);
-    expect(c).toMatchObject({ rule: 'steel-member', views: ['front', 'top'], iso: true, scale: null, paper: null, projection: 'iso-e', dims: 'overall', prefer: 'paper' });
+    expect(c).toMatchObject({ rule: 'steel-member', views: ['front', 'top'], iso: true, scale: null, paper: null, projection: 'iso-e', dims: 'overall', prefer: 'paper', axes: 'element' });
     expect(c.sections).toEqual([{ role: 'section:x', station: 3 }]);
   });
 
@@ -34,12 +34,14 @@ describe('the shop drawing dialog', () => {
     const c = { ...defaultChoices(rules), views: ['top', 'front'] as ('top' | 'front')[] };
     expect(drawingArgs('e1', c)).toEqual({
       element: 'e1', rule: 'steel-member', views: ['front', 'top'], sections: [{ role: 'section:x', station: 3 }],
-      iso: true, scale: null, paper: null, projection: 'iso-e', dims: 'overall', prefer: 'paper', atFeatures: false,
+      iso: true, scale: null, paper: null, projection: 'iso-e', dims: 'overall', prefer: 'paper', atFeatures: false, axes: 'element',
     });
     // A rule that dimensions the features and cuts through the notches starts so.
     const steel = { ...rules, rules: rules.rules.map((r) => ({ ...r, dims: 'features', atFeatures: true })) };
     expect(defaultChoices(steel)).toMatchObject({ dims: 'features', atFeatures: true });
     expect(drawingArgs('e1', c, 'd1').id).toBe('d1');
+    // A drawing made in the project's UCS opens with that choice (issue #114).
+    expect(defaultChoices({ ...rules, axes: 'ucs' }).axes).toBe('ucs');
   });
 
   it('writes lengths in millimetres and notices an empty choice', () => {

@@ -15,6 +15,8 @@ export const PAPERS = ['A4', 'A3', 'A2', 'A1', 'A0'] as const;
 export type Projection = 'iso-e' | 'third-angle';
 export type Dims = 'overall' | 'features' | 'none';
 export type Prefer = 'paper' | 'scale';
+/** The axes the views are taken in (issue #114): the element's own (its front its front), or the project's UCS. */
+export type Axes = 'element' | 'ucs';
 
 export interface SectionChoice { role: SectionRole; station: number }
 
@@ -23,6 +25,8 @@ export interface RuleDto { id: string; name: string; views: string[]; iso: boole
 /** What `drawing.rules` answers. The frame's min and max are in the element's own frame (metres). */
 export interface RulesDto {
   rule: string; rules: RuleDto[]; drawing: string | null; projection: Projection;
+  /** The axes the element's drawing was made in, when it has one. */
+  axes?: Axes;
   frame?: { length: number; width: number; height: number; min: [number, number, number]; max: [number, number, number] } | null;
 }
 export type Frame = NonNullable<RulesDto['frame']>;
@@ -33,6 +37,7 @@ export interface Choices {
   scale: number | null;
   paper: string | null;
   projection: Projection; dims: Dims; prefer: Prefer;
+  axes: Axes;
   /** A section through each notch the part has (the engine finds them). */
   atFeatures: boolean;
 }
@@ -63,7 +68,7 @@ export function clampStation(frame: Frame | null | undefined, role: SectionRole,
 export const newSection = (frame: Frame | null | undefined, role: SectionRole): SectionChoice => ({ role, station: clampStation(frame, role, (axisRange(frame, role)[0] + axisRange(frame, role)[1]) / 2) });
 
 /** The choices a rule makes (its views, its iso, its dimensions, its sections), the project's projection, paper and scale left to the engine. */
-export function defaultChoices(r: RulesDto, ruleId: string = r.rule, previous?: Pick<Choices, 'scale' | 'paper' | 'projection' | 'dims' | 'prefer'>): Choices {
+export function defaultChoices(r: RulesDto, ruleId: string = r.rule, previous?: Pick<Choices, 'scale' | 'paper' | 'projection' | 'dims' | 'prefer'> & Partial<Pick<Choices, 'axes'>>): Choices {
   const rule = r.rules.find((x) => x.id === ruleId) ?? r.rules[0];
   const sections = (rule?.sections ?? []).filter((s): s is { role: SectionRole; station: number } => isRole(s.role))
     .map((s) => ({ role: s.role, station: clampStation(r.frame, s.role, s.station) }));
@@ -78,6 +83,7 @@ export function defaultChoices(r: RulesDto, ruleId: string = r.rule, previous?: 
     dims: previous?.dims ?? (rule?.dims === 'none' || rule?.dims === 'features' ? rule.dims : 'overall'),
     atFeatures: rule?.atFeatures ?? false,
     prefer: previous?.prefer ?? 'paper',
+    axes: previous?.axes ?? (r.axes === 'ucs' ? 'ucs' : 'element'),
   };
 }
 
@@ -87,7 +93,7 @@ export function drawingArgs(element: string, c: Choices, existing?: string | nul
     element, rule: c.rule,
     views: FACES.filter((f) => c.views.includes(f)),
     sections: c.sections.map((s) => ({ role: s.role, station: s.station })),
-    iso: c.iso, scale: c.scale, paper: c.paper, projection: c.projection, dims: c.dims, prefer: c.prefer, atFeatures: c.atFeatures,
+    iso: c.iso, scale: c.scale, paper: c.paper, projection: c.projection, dims: c.dims, prefer: c.prefer, atFeatures: c.atFeatures, axes: c.axes,
   };
   if (existing) args.id = existing;
   return args;

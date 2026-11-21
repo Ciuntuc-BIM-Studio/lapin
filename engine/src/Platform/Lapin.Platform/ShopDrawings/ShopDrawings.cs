@@ -66,7 +66,7 @@ public static class ShopDrawings
 
     /// <summary>What a drawing is made with: the rule's choices and the user's over them.</summary>
     public sealed record Options(List<string> Views, List<(string Role, double? Station)> Sections, bool Iso, double? Scale, string? Paper,
-        string Projection, string Dims, string Prefer, string Rule, bool AtFeatures = false)
+        string Projection, string Dims, string Prefer, string Rule, bool AtFeatures = false, string Axes = "element")
     {
         /// <summary>The sections at the part's features (a notch's middle), worked out when the drawing is made: key and station along x.</summary>
         public List<(string Key, double Station)> FeatureSections { get; init; } = [];
@@ -79,6 +79,7 @@ public static class ShopDrawings
                 ["sections"] = new JsonArray(Sections.Select(s => (JsonNode)new JsonObject { ["role"] = s.Role, ["station"] = s.Station is { } st ? Math.Round(st, 6) : null }).ToArray()),
                 ["iso"] = Iso, ["projection"] = Projection, ["dims"] = Dims, ["prefer"] = Prefer, ["atFeatures"] = AtFeatures,
             };
+            if (Axes != "element") o[ElementViews.AxesKey] = Axes;
             if (Scale is { } sc) o["scale"] = sc;
             if (Paper != null) o["paper"] = Paper;
             return o;
@@ -109,7 +110,10 @@ public static class ShopDrawings
         var projection = (string?)Arg("projection") is { } pr && Projections.Contains(pr) ? pr : ProjectionOf(m);
         var dims = (string?)Arg("dims") is { } d && DimensionModes.Contains(d) ? d : rule.Dimensions;
         var prefer = (string?)Arg("prefer") is "scale" or "paper" ? (string)Arg("prefer")! : rule.Prefer;
-        return new Options(views, sections, Flag(Arg("iso")) ?? rule.Iso, scale, paper, projection, dims, prefer, rule.Id, Flag(Arg("atFeatures")) ?? rule.AtFeatures);
+        // The views' axes (issue #114): the element's own unless the project's UCS is asked for.
+        var axes = (string?)Arg(ElementViews.AxesKey) ?? "element";
+        if (!ElementViews.AxesModes.Contains(axes)) throw new CommandException("A drawing is taken in the element's own axes (element) or the project's UCS (ucs).");
+        return new Options(views, sections, Flag(Arg("iso")) ?? rule.Iso, scale, paper, projection, dims, prefer, rule.Id, Flag(Arg("atFeatures")) ?? rule.AtFeatures, axes);
     }
 
     // ------------------------------------------------------------ the layout
@@ -359,11 +363,13 @@ public static class ShopDrawings
         existing ??= Existing(m, e.Id, rule.Id);
         var opts = OptionsFrom(m, rule, a, existing?.Attrs["options"] as JsonObject);
         var frame = ElementFrames.Of(q, e) ?? throw new CommandException($"„{e.Name}” has nothing to draw.");
+        // The frame the views are laid out in: the element's own, or the project's UCS round its body.
+        var layout = opts.Axes == "ucs" ? ElementFrames.InUcs(m, q.Geometry(e.Id)?.Parts.SelectMany(p => p.Solid.Vertices).ToList() ?? [])! : frame;
         // Sections at the features (decision 582): through the middle of each notch.
         if (opts.AtFeatures)
             opts = opts with
             {
-                FeatureSections = [.. ElementFeatures.Of(m, q.Services, e, frame, q.Geometry(e.Id)?.Parts.Select(p => p.Solid).ToList() ?? [])
+                FeatureSections = [.. ElementFeatures.Of(m, q.Services, e, layout, q.Geometry(e.Id)?.Parts.Select(p => p.Solid).ToList() ?? [])
                     .Where(x => x.Kind == "notch").Select(x => (x.Key, Math.Round(x.At.X + x.Size.X / 2, 6)))],
             };
         var keptViews = existing?.Attrs["views"] as JsonObject ?? [];
@@ -383,12 +389,12 @@ public static class ShopDrawings
         names[ElementViews.Iso] = $"{e.Name} · {ElementViews.Title(ElementViews.Iso)}";
         foreach (var key in names.Keys.ToList())
             if ((string?)keptViews[key] is { } kid && m.Get(kid) is { Class: Views.Class } kv) names[key] = kv.Name;
-        var arr = Arrange(m, sheetProto, frame, opts, rule.PaperList, rows, key => names.GetValueOrDefault(key, key));
+        var arr = Arrange(m, sheetProto, layout, opts, rule.PaperList, rows, key => names.GetValueOrDefault(key, key));
         var views = new List<Entity>();
         var byKey = new JsonObject();
         foreach (var slot in arr.Slots)
         {
-            var args = new JsonObject { ["scale"] = slot.Scale };
+            var args = new JsonObject { ["scale"] = slot.Scale, [ElementViews.AxesKey] = opts.Axes };
             if (slot.Station is { } st) args["station"] = st;
             var fresh = ElementViews.Attrs(q, e, slot.Role, args);
             if (opts.Dims != "none" && slot.Role != ElementViews.Iso) ((JsonObject)fresh[ElementViews.Key]!)["dims"] = opts.Dims;
@@ -577,6 +583,8 @@ public static class ShopDrawings
                 }).ToArray()),
                 ["drawing"] = q.Model.OfClass(Class).FirstOrDefault(d => d.Str("element") == e.Id)?.Id,
                 ["projection"] = ProjectionOf(q.Model),
+                // The axes its drawing was made in (issue #114): the element's own unless the project's UCS was chosen.
+                ["axes"] = (string?)q.Model.OfClass(Class).FirstOrDefault(d => d.Str("element") == e.Id)?.Attrs["options"]?[ElementViews.AxesKey] ?? "element",
                 ["frame"] = ElementFrames.Of(q, e)?.ToJson(),
             };
         });

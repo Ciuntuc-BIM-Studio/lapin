@@ -141,6 +141,10 @@ export function ShopDrawingDialog() {
                   <option value="features">Features (holes, notches)</option>
                   <option value="none">None</option>
                 </select></label>
+                <label>Axes<select data-testid="shop-axes" value={c.axes} onChange={(e) => set({ axes: e.target.value as Choices['axes'] })}>
+                  <option value="element">The element's own axes</option>
+                  <option value="ucs">The project's UCS</option>
+                </select></label>
                 <label>Prefer<select value={c.prefer} onChange={(e) => set({ prefer: e.target.value as Choices['prefer'] })}>
                   <option value="paper">The paper</option>
                   <option value="scale">The scale</option>
