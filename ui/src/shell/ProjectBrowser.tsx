@@ -206,7 +206,16 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
         </div>
         {!closed && <>
           <Kind id={`${id}:plans`} icon={<Square size={13} />} label="Floor plans" list={of('plan')}
-            plus={set && active && <button type="button" className="icon mini" title="A foundation plan of this level" onClick={() => void execute('view.create', { kind: 'plan', storeyId: active.id, foundation: true, name: `${active.name} – foundations`, discipline }).then((r) => { const n = made(r); if (n) showPlan(active.id, n); })}><Plus size={12} /></button>}>
+            plus={set && levels.length > 0 && <button type="button" className="icon mini" title="A foundation plan: choose its level" data-new-plan-level
+              onClick={(e) => {
+                // The plan's level is fixed when it is made (forum topic 208), so the "+" asks for it instead of taking the active one.
+                const r = e.currentTarget.getBoundingClientRect();
+                openContextMenu(r.left, r.bottom, levels.map((s) => ({
+                  label: `${s.name} · ${level(num(s, 'elevation'))}${active?.id === s.id ? ' (active)' : ''}`,
+                  icon: <Square size={13} />,
+                  onSelect: () => void execute('view.create', { kind: 'plan', storeyId: s.id, foundation: true, name: `${s.name} – foundations`, discipline }).then((res) => { const n = made(res); if (n) showPlan(s.id, n); }),
+                })));
+              }}><Plus size={12} /></button>}>
             {(item) => <Row item={item} on={isPlanOn(item)} open={() => showPlan(item.storeyId ?? '', item.node ? item.id : null)}><Dup item={item} /></Row>}
           </Kind>
           <Kind id={`${id}:sections`} icon={<Scissors size={13} />} label="Sections" list={of('section')}
