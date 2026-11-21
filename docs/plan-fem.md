@@ -1032,3 +1032,34 @@ P100-1/2013 §4.6.2.2 și SR EN 1998-1 4.4.2.2(2): θ = Ptot·dr / (Vtot·h) pe 
 ### 14.19 Răspunsurile utilizatorului (21.11.2026)
 
 Utilizatorul a luat recomandările la toate cele 8 întrebări din §14.18: imperfecțiunile pornesc cu ordinul doi dacă proiectul nu a spus altfel; se aplică mereu, cu nota despre 5.3.2(4); m numărat pe șir de stâlpi; cele patru variante ca o singură înfășurătoare cu varianta dimensionantă numită; tabla ca legătură laterală relativă, fără șaibă; activare pe bară plus butonul pentru panele acoperișurilor; θ cu dr = q·de (de confirmat cu textul P100-1/2013 §4.6.2.2); combinațiile calculate în paralel ca pas următor.
+
+### 14.20 Combinațiile calculate în paralel (21.11.2026, decizia 760; §14.18 întrebarea 8)
+
+**Ce era.** Combinațiile neliniare (P-Δ, barele și reazemele într-un singur sens, imperfecțiunile cu cele patru variante ale lor) și flambajul fiecărei combinații SLU se rezolvau una după alta. Nu se puteau rezolva împreună: problemele unei bucle (fiecare iterație, fiecare combinație, stările finale pentru flambaj) împart aceleași obiecte `FrameElement` și `ShellElement`, iar `Prepare` le rescria transformarea și rigiditatea pe loc la fiecare `FrameSystem.Build`. Testul de stres nou (`FemParallelTests`) o arată pe codul vechi: pe mai multe fire, rezultate greșite și „A bar's releases leave it no stiffness”.
+
+**Ce s-a făcut.**
+- **Elementele pregătite o dată.** `Prepare` lucrează sub un lacăt al elementului și nu mai refac nimic când nodurile lui sunt în aceleași locuri (comparate bit cu bit; un nod mutat îl pregătește din nou). Ce calculează depinde doar de datele lui (fixe: `init`) și de cele două (trei, patru) noduri, deci valorile sunt exact cele de dinainte. Un fir care îl găsește pregătit trece prin același lacăt, deci îl vede întreg. Câștig și pe un singur fir: plăcile nu-și mai refac rigiditatea la fiecare iterație.
+- **`FemParallel`** (`Solver/FemParallel.cs`): rulează joburi independente, rezultatele în ordinea joburilor; dacă mai multe aruncă, se aruncă excepția celui cu indicele cel mai mic (ca secvențial); oprirea cerută (`cancel.long`, `IQueryContext.Cancellation`) se respectă între joburi.
+  - **Câte deodată:** nucleele minus unul (`LAPIN_FEM_THREADS` schimbă numărul; 1 = unul după altul), cel mult câte joburi sunt, și cel mult cât încape în **un sfert din memoria procesului** la mărimea estimată a unui job: 3 × 8 octeți × intrările factorului (factorul, structura asamblării, al doilea factor la un mecanism) + vectorii nodurilor. Pe hală (80 000 de intrări) limita e numărul de nuclee; o placă de 400 de milioane de intrări (limita solverului) ar lua ~10 GB pe job, deci 1–2 deodată pe o mașină de 64 GB.
+  - **Fără fire în browser:** în motorul WebAssembly (`OperatingSystem.IsBrowser()`) totul rulează unul după altul, pe aceeași cale de cod.
+  - **Fără două niveluri:** în interiorul unui job, ce ar rula în paralel (cazurile, vectorii subspațiului) rulează secvențial; factorizarea rară își păstrează paralelismul ei intern pe supernodurile mari (§10.6), cum era.
+- **Unde e folosit:** `SolveNonlinear` construiește întâi toți vectorii de încărcare (secvențial, ieftin) și apoi îi rezolvă prin `FemParallel.Map`; `analysis.buckling` și αcr cel mai mic calculează combinațiile lipsă împreună (`BucklingOfAll`: sistemul de ordinul întâi construit o dată și împărțit, doar citit; cel al stărilor neliniare al fiecăruia). Pe modelele mari (≥ 2 000 de ecuații) cazurile de încărcare pe același factor, iar de la 20 000 de ecuații vectorii iterației în subspațiu (modal, §11.2, și flambaj) se rezolvă și ei împreună: fiecare rezolvare citește factorul și își scrie doar vectorul ei.
+- **Rezultatele sunt identice bit cu bit** cu calea secvențială (nu doar la 10⁻¹²): fiecare job face exact aceleași operații în aceeași ordine, iar sumele dintre joburi (notele, înfășurătorile) se fac după, în ordinea combinațiilor. Testat pe hala din ghid (P-Δ, imperfecțiuni, contravântuiri doar la întindere, tablă) și pe cadrul din ghid cu placa ca elemente de placă (P-Δ, imperfecțiuni, tălpi pe Winkler care se ridică): JSON-ul `analysis.run`, fiecare rezultat neliniar și de caz (deplasări, reacții, bare, plăci) și flambajul fiecărei combinații SLU, bit cu bit; testul de stres rezolvă aceleași combinații de trei ori pe toate nucleele deodată.
+
+**Cifrele** (Release, Apple M1 Max, 10 nuclee, 9 fire, colectorul server ca gazda desktop; `FemParallelBenchmark`, `LAPIN_FEM_BENCH=1`):
+
+| Modelul | Înainte (codul dinainte) | După, un fir | După, 9 fire |
+|---|---|---|---|
+| Hala din ghid, liniar (1 902 ecuații) | 0,37 s | 0,44 s | 0,23 s |
+| Hala, P-Δ (87 de combinații) | 2,8 s | 2,8 s | 1,3 s |
+| Hala, P-Δ + imperfecțiuni (210 seturi) | 6,8 s | 8–10 s* | 1,4 s |
+| Hala, P-Δ + imperfecțiuni + tablă, cu flambajul tuturor combinațiilor SLU | 9,4 s | 9–28 s* | 2,9 s |
+| Hala de 30 m, P-Δ + imperfecțiuni (3 558 ecuații) | 20–22 s | 22 s | 5,4 s |
+| Cadru cu 3 niveluri, plăci la 0,5 m (13 986 ecuații), P-Δ + imperfecțiuni + flambaj | 67–70 s | 53 s | 11,3 s |
+| Același, plăci la 0,25 m (53 874 de ecuații, 10,3 milioane de intrări) | 242 s | 189 s | 42,5 s |
+
+\* Mașina încărcată de alte sesiuni în timpul măsurării: pe un fir cifrele au variat mult; „înainte” și „9 fire” s-au repetat stabil. Câștigul pe un fir la modelele cu plăci (242 → 189 s) vine din elementele pregătite o dată.
+
+**Memoria:** setul de lucru cel mai mare crește cu ce țin joburile simultan (factorii lor și rezultatele): hala 2,4 GB (cât pe un fir), cadrul cu plăci la 0,5 m 3,4 → 4,2 GB, la 0,25 m 6,2 → 8,4 GB (setul de lucru al întregului proces de test). Alocările totale sunt aceleași (aceleași calcule). Testul gazdei de teste folosește colectorul pe stație de lucru, cu care câștigul e mai mic (hala cu imperfecțiuni ×1,3–1,9): fluxul de alocări al buclei (~10 MB pe iterație pe hală) e atunci partajat; gazda desktop (`Lapin.Host`) are `ServerGarbageCollection` pornit.
+
+**Rămase:** alocările buclei (copiile `With` ale barelor își refac transformarea și condensarea, `FrameSystem.Build` refac ordinea RCM, numerotarea și structura simbolică la fiecare iterație, deși ele nu se schimbă cât nu se ridică un reazem) — partajarea lor ar scădea timpul și pe un singur fir; analiza seismică modală e o singură problemă (doar vectorii subspațiului, pe modelele mari). Nicio setare în interfață: `LAPIN_FEM_THREADS` ajunge pentru cazurile rare.
