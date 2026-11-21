@@ -163,7 +163,13 @@ Click an icon on a folded panel's rail to open the panel over the view without u
 
 **View → Panels** puts the project browser and the properties panel where you want them, as in Revit: **Browser left, Properties right** (the default), **Browser right, Properties left**, **Both panels on the left** or **Both panels on the right**. With both on one side they stand one under the other; drag the divider between them to share the height (double-click it to halve), and drag the side's edge to make it wider. Each panel still folds, on its own: a folded one is a thin bar in the stack, or a rail when both are folded. The assistant tab (desktop) stays with the properties. Lapin remembers the arrangement on this computer. The same four choices are in **View → Interface…**, under **Panel sides**, beside the other parts of the interface.
 
+**Moving a panel with the mouse.** Drag a panel by its header (the empty part of the title bar or of the tab row): zones light up where it can land. Over the other panel, its upper half puts the dragged panel above it and its lower half below it; at the left or right end of the view, the panel docks on that side (above or below what already stands there); anywhere else over the view, it floats. Release to drop; <kbd>Esc</kbd> cancels. A **floating panel** is a window over the view: drag its header to move it, its lower-right corner to resize it, and press its dock button (or drag it onto a zone) to put it back on a side. It takes no room from the view, and Lapin keeps it inside the window when you resize that. Lapin remembers where every panel stands, and the four layouts above are presets that put things back in order. Without a mouse, **View → Panels → Float or dock the project browser** (and **…the properties**) does the floating, and the four layouts do the rest.
+
 ![Browser and properties stacked on the left](shots/panel-layouts.webp)
+
+![Dragging the properties by its header: the lower half of the browser lights up](shots/panel-drag.webp)
+
+![The properties floating over the view](shots/panel-float.webp)
 
 ## Light, dark, Classic and High contrast
 

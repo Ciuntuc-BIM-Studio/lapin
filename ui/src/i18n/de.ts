@@ -5029,6 +5029,11 @@ export const DE: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "Kein Knicken unter diesen Lasten: Die geometrische Steifigkeit versteift nur.",
   "No buckling mode: the compressed bars are held by what is round them.": "Keine Knickeigenform: Die gedrückten Stäbe werden von ihrer Umgebung gehalten.",
   "A mechanism in its last states.": "Ein Mechanismus in den letzten Zuständen.",
+  "Dock the panel": "Bereich andocken",
+  "Float or dock the project browser": "Projektbrowser schweben lassen oder andocken",
+  "Float or dock the properties": "Eigenschaften schweben lassen oder andocken",
+  // A type's layer's own pens by scale (decision 758).
+  "Scales": "Maßstäbe", "All scales": "Alle Maßstäbe", "Pens by scale": "Stifte nach Maßstab", "Remove the range": "Bereich entfernen", "Add a range of scales": "Einen Maßstabsbereich hinzufügen", "This layer's own lines in this type, over its material's: the cut outline and the lines between the layers, for all scales and for ranges of scales (as in ArchiCAD)": "Die eigenen Linien dieser Schicht in diesem Typ, über denen ihres Materials: die Schnittkontur und die Linien zwischen den Schichten, für alle Maßstäbe und für Maßstabsbereiche (wie in ArchiCAD)", "The first range that holds the view's scale wins over “All scales”; empty: the material's lines (Manage → Materials).": "Der erste Bereich, der den Maßstab der Ansicht enthält, gewinnt über „Alle Maßstäbe“; leer: die Linien des Materials (Verwalten → Materialien).",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -78,7 +78,7 @@ Un model în mărime reală își începe rândurile la baza elementului, deci c
 
 ## După scară
 
-Un desen la 1:200 nu trebuie să arate ca unul la 1:20. **După scară**, la baza grafică, ține pași; fiecare e un interval (*de la 1:*, *până la 1:*) și câmpurile pe care le schimbă. Primul pas care acoperă scara vederii câștigă și schimbă doar câmpurile pe care le setează. **Simplifică la scări mici** adaugă doi pași (umplere gri simplă de la 1:100, plin de la 1:200) pe care îi poți edita. Ochiul de la un pas arată previzualizarea la scara lui.
+Un desen la 1:200 nu trebuie să arate ca unul la 1:20. **După scară**, la baza grafică, ține pași; fiecare e un interval (*de la 1:*, *până la 1:*) și câmpurile pe care le schimbă. Primul pas care acoperă scara vederii câștigă și schimbă doar câmpurile pe care le setează. **Simplifică la scări mici** adaugă doi pași (umplere gri simplă de la 1:100, plin de la 1:200) pe care îi poți edita. Ochiul de la un pas arată previzualizarea la scara lui. Pentru liniile miezului și ale placajului unui tip de perete, separat, oricare le-ar fi materialele, stratul tipului are propriile **Penițe după scară** în [Tipuri de pereți](walls.md#tipurile-de-pereti).
 
 ![Pași după scară](shots/material-graphics-steps.webp)
 
@@ -143,7 +143,7 @@ Fiecare intrare potrivește un material, o expresie de nume sau o categorie și 
 
 ![Un filtru care schimbă hașura și umplutura](shots/vg-filter-hatch.webp)
 
-Câștigă cel mai puternic: ce are elementul însuși, filtrele vederii, subcategoria, setul de grafică al vederii, tăietura la scară mică, pasul materialului, materialul, apoi standardul.
+Câștigă cel mai puternic: ce are elementul însuși, filtrele vederii, subcategoria, setul de grafică al vederii, tăietura la scară mică, stratul tipului de perete sau de placă ([penițele lui după scară](walls.md#tipurile-de-pereti)), pasul materialului, materialul, apoi standardul.
 
 Ca să schimbi hașura unui singur element într-o singură vedere (scara hașurii unei fundații continue, hașura scoasă dintr-o fațadă), selectează-l și folosește **Graphics in this view…** (clic dreapta sau Properties → **Graphics in view**): e cel mai puternic nivel dintre toate. Vezi [Grafică în această vedere](views.md#grafică-în-această-vedere).
 

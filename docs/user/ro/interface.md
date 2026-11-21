@@ -161,7 +161,13 @@ Apasă o pictogramă de pe bara unui panou pliat ca să-l deschizi peste vedere 
 
 **View → Panels** pune browserul de proiect și panoul de proprietăți unde vrei, ca în Revit: **Browser în stânga, Proprietăți în dreapta** (implicit), **Browser în dreapta, Proprietăți în stânga**, **Ambele panouri în stânga** sau **Ambele panouri în dreapta**. Când sunt amândouă pe o parte, stau unul sub altul; trage separatorul dintre ele ca să împarți înălțimea (dublu clic îl pune la jumătate) și trage marginea părții ca să o lărgești. Fiecare panou se pliază în continuare singur: unul pliat e o bară subțire în coloană, sau o bandă laterală când sunt pliate ambele. Fila asistentului (desktop) rămâne cu proprietățile. Lapin ține minte aranjarea pe acest calculator. Aceleași patru alegeri sunt în **View → Interface…**, la **Părțile panourilor**, lângă celelalte părți ale interfeței.
 
+**Mutarea unui panou cu mouse-ul.** Trage un panou de antet (partea goală a barei de titlu sau a rândului de file): se luminează zonele în care poate ateriza. Peste celălalt panou, jumătatea de sus pune panoul tras deasupra lui, cea de jos dedesubt; la capătul din stânga sau din dreapta al vederii, panoul se fixează pe acea parte (deasupra sau dedesubtul celui care e deja acolo); oriunde altundeva peste vedere, plutește. Eliberează ca să-l lași; <kbd>Esc</kbd> anulează. Un **panou plutitor** e o fereastră peste vedere: trage-l de antet ca să-l muți, de colțul din dreapta jos ca să-l redimensionezi, și apasă butonul lui de fixare (sau trage-l pe o zonă) ca să-l pui la loc pe o parte. Nu ia loc din vedere, iar Lapin îl ține în fereastră când o redimensionezi. Lapin ține minte unde stă fiecare panou, iar cele patru aranjări de mai sus sunt prestabilite care pun totul la loc. Fără mouse, **View → Panels → Float or dock the project browser** (și **…the properties**) face plutirea, iar cele patru aranjări restul.
+
 ![Browserul și proprietățile, unul sub altul în stânga](shots/panel-layouts.webp)
+
+![Tragi proprietățile de antet: jumătatea de jos a browserului se luminează](shots/panel-drag.webp)
+
+![Proprietățile plutind peste vedere](shots/panel-float.webp)
 
 ## Luminos, întunecat, Clasic și Contrast ridicat
 

@@ -1004,6 +1004,61 @@ export const scenes = [
     },
   },
   {
+    // A wall type's layer's own pens by scale (decision 758; the forum: "for each scale, a set of pens for the core and for the
+    // cladding, as in ArchiCAD"): set under the core's and the render's rows in Wall types, saved, and the same wall drawn at
+    // 1:50 and 1:100 with the core's lines heavier at 1:50.
+    id: 'wall-layer-pens',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.cmd('viewStyle.update', { id: 'architectural', layersPlan: 'all' });
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 250 rendered', layers: [
+        { material: 'Render', thickness: 0.02 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 }] })).id;
+      await t.cmd('architecture.addWall', { storeyId: s, typeId: type, x1: 0, y1: 0, x2: 3, y2: 0, height: 2.8 });
+      await t.cmd('architecture.addWall', { storeyId: s, typeId: type, x1: 0, y1: 0, x2: 0, y2: 2, height: 2.8 });
+      await t.ui({ wallTypeId: type });
+      await t.tool('architecture.wallTypes');
+      await t.wait(700);
+      const dialog = t.page.locator('.dialog');
+      const toggles = dialog.locator('[data-testid=layer-pens-toggle]');
+      t.expect(await toggles.count() === 3, `every layer has its pens by scale (${await toggles.count()})`);
+      const commit = async (field, value) => { await field.fill(value); await field.press('Enter'); await t.wait(250); };
+      // The render: a fine outline at every scale.
+      await toggles.nth(0).click();
+      await t.wait(300);
+      await commit(dialog.locator('[data-testid=layer-pens]').nth(0).locator('[data-testid=layer-pen-all] [data-field=cutLine-weight]'), '0.18');
+      // The core: 0.7 between the layers, 0.35 from 1:100.
+      await toggles.nth(1).click();
+      await t.wait(300);
+      const core = dialog.locator('[data-testid=layer-pens]').nth(1);
+      await commit(core.locator('[data-testid=layer-pen-all] [data-field=separatorLine-weight]'), '0.7');
+      await core.locator('[data-testid=layer-pen-add]').click();
+      await t.wait(300);
+      t.expect(await core.locator('[data-testid=layer-pen-from]').inputValue() === '100', 'a new range starts at the next standard scale (1:100)');
+      await commit(core.locator('[data-testid=layer-pen-step] [data-field=separatorLine-weight]'), '0.35');
+      await core.scrollIntoViewIfNeeded();
+      await t.shot('wall-layer-pens', { of: '.dialog table.layer-edit', pad: 4 });
+      await dialog.getByRole('button', { name: 'Save type' }).click();
+      await t.wait(1200);
+      await t.ui({ dialog: null });
+      // The same walls at 1:50 and 1:100: the engine draws the core's lines 0.7 at 1:50, 0.35 at 1:100.
+      const widths = async (id) => (await t.call('doc.query', { name: 'view.drawing', args: { id } })).pens.filter((p) => p.layer === 'CUT').map((p) => p.width);
+      for (const scale of [50, 100]) {
+        const name = `Pens 1:${scale}`;
+        const id = (await t.cmd('view.create', { kind: 'plan', storeyId: s, name, scale })).id;
+        const w = await widths(id);
+        t.expect(scale === 50 ? w.includes(0.7) && w.includes(0.18) : w.includes(0.35) && !w.includes(0.7), `at 1:${scale} the core's lines follow its pens (${[...new Set(w)].join(', ')})`);
+        await openFromBrowser(t, name, 1500);
+        await t.ui({ keyPlan: false });
+        await t.fit();
+        await t.wait(800);
+        await t.shot(`wall-layer-pens-${scale}`, { of: '[data-testid=plan]', pad: 0 });
+        await t.ui({ keyPlan: true });
+      }
+    },
+  },
+  {
     // Layer extents (forum topic 89, docs/plan-layer-extents.md): a floor drawn to a wall's face whose finish goes on 5 cm into
     // the wall and cuts it, set in the floor's properties (Layer extents); the section shows the finish past the floor's edge.
     // Edit layers (stage 2): the floor's layers' edges as grips in the plan, one dragged out (one undo step), and in the section.
@@ -10681,6 +10736,37 @@ export const scenes = [
       await t.tool('view.panels.default');
       await t.wait(300);
       t.expect(await t.page.locator('.side-col.on-left .browser-side').count() === 1 && await t.page.locator('.side-col.on-right .props-side').count() === 1, 'the default layout is back');
+      // Dragging a panel by its header (decision 755): the properties onto the browser's lower half, then out over the view to float, then docked back.
+      const drag = async (from, to, { hold = false } = {}) => {
+        await t.page.mouse.move(from.x, from.y);
+        await t.page.mouse.down();
+        await t.page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+        await t.page.mouse.move(to.x, to.y, { steps: 6 });
+        if (hold) return;
+        await t.page.mouse.up();
+        await t.wait(300);
+      };
+      const headOf = async (sel) => { const b = await t.page.locator(sel).first().boundingBox(); return { x: b.x + b.width - 90, y: b.y + 10, box: b }; };
+      const props = await headOf('.props-side .panel-head, .props-side .side-tabs');
+      const browserBox = await t.page.locator('.browser-side').first().boundingBox();
+      await drag(props, { x: browserBox.x + 120, y: browserBox.y + browserBox.height - 60 }, { hold: true });
+      t.expect(await t.page.locator('[data-testid=dock-overlay][data-zone=stack]').count() === 1, 'dragging a header over the other panel shows its drop zone');
+      await t.shot('panel-drag', { clip: { x: 0, y: 0, width: 760, height: 620 } });
+      await t.keys('Escape');
+      t.expect(await t.page.locator('[data-testid=dock-overlay]').count() === 0 && await t.page.locator('.side-col.on-right .props-side').count() === 1, 'Escape cancels the drag');
+      await t.page.mouse.up();
+      const props2 = await headOf('.props-side .panel-head, .props-side .side-tabs');
+      await drag(props2, { x: browserBox.x + 120, y: browserBox.y + browserBox.height - 60 });
+      t.expect(await t.page.locator('.side-col.on-left.stacked .browser-side + .stack-sep + .props-side').count() === 1, 'dropped on the browser\'s lower half, the properties stand under it');
+      const props3 = await headOf('.props-side .panel-head, .props-side .side-tabs');
+      await drag(props3, { x: 800, y: 420 });
+      t.expect(await t.page.locator('[data-testid=float-props]').count() === 1, 'dropped over the view, the properties float');
+      await t.shot('panel-float', { clip: { x: 0, y: 0, width: 1100, height: 760 } });
+      await t.page.locator('[data-testid=float-props] .panel-fold').click();
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-testid=float-props]').count() === 0, 'the dock button puts the panel back on its side');
+      await t.tool('view.panels.default');
+      await t.wait(300);
       // The quick tools the user chooses (decision 259): slot 7 given the stair from View → Quick tools…, slot 2 emptied.
       await t.tool('app.quickTools');
       t.expect(await t.page.locator('.quick-tools-dialog').count() === 1, 'View → Quick tools… opens its dialog');

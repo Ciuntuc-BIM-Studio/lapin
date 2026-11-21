@@ -262,6 +262,14 @@ Coloana **În plăci** lasă un strat să continue în straturile plăcilor, ca 
 
 ![Mostra hașurii unui strat, deschisă în Tipuri de pereți: hașurile de secțiune și de fațadă ale materialului](shots/layer-hatch.webp)
 
+**Penițe după scară.** Un strat poate desena cu linii proprii în acest tip, oricare i-ar fi materialul: butonul cu peniță de la capătul rândului deschide sub el **Penițe după scară**. **Toate scările** setează **Conturul tăieturii** (marginea lui unde e secționat peretele) și **Liniile de separare** (liniile lui spre straturile vecine), fiecare cu grosimea în mm și culoarea; **Adaugă un interval de scări** adaugă un rând *de la 1:* … *până la 1:* (cu scările proiectului propuse) cu grosimile și culorile pe care le schimbă. Așa miezul poate avea 0,7 mm și placajul 0,18 la 1:50, iar amândouă mai subțiri de la 1:100, ca la structurile compuse din ArchiCAD. Primul interval care cuprinde scara vederii câștigă în fața lui *Toate scările*; un câmp gol ia linia materialului (**Gestionare → Materiale → Grafică 2D**), altfel **Liniile între straturi** ale vederii și Stilurile de obiecte. Unde se întâlnesc două straturi, se desenează linia mai groasă. Sunt ale tipului, salvate cu **Salvează tipul** (un pas de anulare), iar fiecare perete al tipului, fiecare plan, secțiune, planșă, PDF și DXF le urmează la scara lui; fișierul JSON al tipului le duce cu el. Un strat fără ele se desenează ca înainte.
+
+![Penițe după scară sub rândul miezului în Tipuri de pereți: 0,7 mm între straturi la orice scară, 0,35 de la 1:100](shots/wall-layer-pens.webp)
+
+![Pereții într-un plan la 1:50: liniile miezului de 0,7 mm, conturul tencuielii exterioare de 0,18](shots/wall-layer-pens-50.webp)
+
+![Aceiași pereți la 1:100: liniile miezului de 0,35 mm](shots/wall-layer-pens-100.webp)
+
 ![Tipuri de pereți: straturile unui perete de cărămidă](shots/wall-types.webp)
 
 Legenda de deasupra straturilor arată peretele în plan, într-o secțiune prin el, așa cum îl arată un perete selectat: axa întreruptă cu o săgeată în sensul în care a fost desenat, **D · exterior** sus și **S · interior** jos. Straturile merg ca rândurile tabelului, de sus în jos: stratul 1 sus, pe fața D, până la ultimul, pe fața S, cu aceleași numere; miezul, pe care merge linia peretelui, e evidențiat. D e fața din dreapta sensului de desenare (unde merge stratul 1) și e exteriorul când peretele e desenat în sens trigonometric în jurul clădirii, cum desenează Lapin; la un perete desenat invers, fețele se schimbă. **Inversează straturile**, lângă **+ Strat**, pune rândurile în ordine inversă (stratul de pe D trece pe S); Lapin te întreabă mai întâi, fiindcă după salvarea tipului toți pereții lui își schimbă fețele: ce era exterior devine interior. Un perete întors cu **Întoarce** are straturile invers, de la S la D. Mesajul unei salvări refuzate dispare imediat ce schimbi din nou tipul.

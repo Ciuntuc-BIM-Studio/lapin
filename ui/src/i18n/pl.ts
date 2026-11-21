@@ -5072,6 +5072,11 @@ export const PL: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "Brak wyboczenia przy tych obciążeniach: sztywność geometryczna tylko usztywnia.",
   "No buckling mode: the compressed bars are held by what is round them.": "Brak postaci wyboczenia: pręty ściskane są podtrzymywane przez otoczenie.",
   "A mechanism in its last states.": "Mechanizm w ostatnich stanach.",
+  "Dock the panel": "Zadokuj panel",
+  "Float or dock the project browser": "Odepnij lub zadokuj przeglądarkę projektu",
+  "Float or dock the properties": "Odepnij lub zadokuj właściwości",
+  // A type's layer's own pens by scale (decision 758).
+  "Scales": "Skale", "All scales": "Wszystkie skale", "Pens by scale": "Pióra według skali", "Remove the range": "Usuń zakres", "Add a range of scales": "Dodaj zakres skal", "This layer's own lines in this type, over its material's: the cut outline and the lines between the layers, for all scales and for ranges of scales (as in ArchiCAD)": "Własne linie tej warstwy w tym typie, nad liniami jej materiału: kontur przekroju i linie między warstwami, dla wszystkich skal i dla zakresów skal (jak w ArchiCAD)", "The first range that holds the view's scale wins over “All scales”; empty: the material's lines (Manage → Materials).": "Pierwszy zakres, który obejmuje skalę widoku, ma pierwszeństwo przed „Wszystkie skale”; puste: linie materiału (Zarządzaj → Materiały).",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

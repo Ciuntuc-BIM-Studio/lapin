@@ -21,9 +21,12 @@ namespace Lapin.Model;
 /// <see cref="ExtendDown"/> and <see cref="ExtendUp"/> (a wall's layer; topic #30, as Revit's layer functions): whether the layer
 /// goes on down, through the layers of the floor the wall stands on ranked under it, to the top of the first ranked as high
 /// or higher, and up, through the floor above's lower layers, to the underside of the first as high. Null: no (as before).
+/// Its <see cref="Graphics"/> (decision 758; the forum: "for each scale, a set of pens for the core and for the cladding, as in
+/// ArchiCAD"): how the layer draws where it is cut in this build-up, over its material's graphics, as a material's kind of view
+/// holds them (its cut outline, its separator lines, hatch, fill… and their steps by scale, <c>byScale</c>). Null: its material's alone (as before).
 /// </summary>
 public sealed record MaterialLayer(string Material, double Thickness, bool Core = false, string? Name = null, double? From = null, double? To = null, List<LayerPart>? Parts = null, int? Priority = null, string? Note = null,
-    string? Category = null, bool? ExtendDown = null, bool? ExtendUp = null);
+    string? Category = null, bool? ExtendDown = null, bool? ExtendUp = null, JsonObject? Graphics = null);
 
 /// <summary>A piece of a layer in its height (decision 264): its material (an IfcMaterial id), how high it is, its own name.</summary>
 public sealed record LayerPart(string Material, double Height, string? Name = null);

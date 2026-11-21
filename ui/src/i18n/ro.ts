@@ -5025,6 +5025,11 @@ export const RO: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "Fără flambaj sub aceste încărcări: rigiditatea geometrică doar rigidizează.",
   "No buckling mode: the compressed bars are held by what is round them.": "Fără mod de flambaj: barele comprimate sunt ținute de ce le înconjoară.",
   "A mechanism in its last states.": "Un mecanism în ultimele stări.",
+  "Dock the panel": "Fixează panoul",
+  "Float or dock the project browser": "Plutește sau fixează browserul proiectului",
+  "Float or dock the properties": "Plutește sau fixează proprietățile",
+  // A type's layer's own pens by scale (decision 758).
+  "Scales": "Scări", "All scales": "Toate scările", "Pens by scale": "Penițe după scară", "Remove the range": "Șterge intervalul", "Add a range of scales": "Adaugă un interval de scări", "This layer's own lines in this type, over its material's: the cut outline and the lines between the layers, for all scales and for ranges of scales (as in ArchiCAD)": "Liniile proprii ale acestui strat în acest tip, peste ale materialului: conturul tăieturii și liniile dintre straturi, pentru toate scările și pe intervale de scări (ca în ArchiCAD)", "The first range that holds the view's scale wins over “All scales”; empty: the material's lines (Manage → Materials).": "Primul interval care cuprinde scara vederii câștigă în fața lui „Toate scările”; gol: liniile materialului (Gestionare → Materiale).",
 };
 
 /** Phrases with a number or a name in them. */

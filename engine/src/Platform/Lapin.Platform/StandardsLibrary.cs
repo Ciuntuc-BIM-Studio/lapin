@@ -69,6 +69,12 @@ public static class StandardsLibrary
             var ma = mat.CloneAttrs();
             if (RepointGraphics(ma, from, to)) ctx.Replace(mat.With(attrs: ma));
         }
+        // The types' layers' own graphics (decision 758).
+        foreach (var set in ctx.Model.OfClass(IfcClass.MaterialLayerSet).Where(s => s.Attrs.ToJsonString().Contains("\"graphics\"", StringComparison.Ordinal)).ToList())
+        {
+            var sa = set.CloneAttrs();
+            if (RepointGraphics(sa, from, to)) ctx.Replace(set.With(attrs: sa));
+        }
     }
 
     /// <summary>
