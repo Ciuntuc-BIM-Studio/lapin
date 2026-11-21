@@ -1063,3 +1063,7 @@ Utilizatorul a luat recomandările la toate cele 8 întrebări din §14.18: impe
 **Memoria:** setul de lucru cel mai mare crește cu ce țin joburile simultan (factorii lor și rezultatele): hala 2,4 GB (cât pe un fir), cadrul cu plăci la 0,5 m 3,4 → 4,2 GB, la 0,25 m 6,2 → 8,4 GB (setul de lucru al întregului proces de test). Alocările totale sunt aceleași (aceleași calcule). Testul gazdei de teste folosește colectorul pe stație de lucru, cu care câștigul e mai mic (hala cu imperfecțiuni ×1,3–1,9): fluxul de alocări al buclei (~10 MB pe iterație pe hală) e atunci partajat; gazda desktop (`Lapin.Host`) are `ServerGarbageCollection` pornit.
 
 **Rămase:** alocările buclei (copiile `With` ale barelor își refac transformarea și condensarea, `FrameSystem.Build` refac ordinea RCM, numerotarea și structura simbolică la fiecare iterație, deși ele nu se schimbă cât nu se ridică un reazem) — partajarea lor ar scădea timpul și pe un singur fir; analiza seismică modală e o singură problemă (doar vectorii subspațiului, pe modelele mari). Nicio setare în interfață: `LAPIN_FEM_THREADS` ajunge pentru cazurile rare.
+
+#### Răspunsurile utilizatorului (21.11.2026)
+
+Utilizatorul a luat recomandările: fără setare în interfață pentru numărul de fire (ajunge `LAPIN_FEM_THREADS`); pasul următor mic este refolosirea factorizării simbolice și a transformărilor barelor între iterații; butonul Stop la analiză doar dacă utilizatorii ajung la calcule lungi.
