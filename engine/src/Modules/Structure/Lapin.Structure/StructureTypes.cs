@@ -7,7 +7,8 @@ namespace Lapin.Structure;
 /// <summary>
 /// A structure type changed after it was made (report #42: a size typed
 /// wrong): a column's or a beam's section and height, a strip foundation's
-/// stem, footing, core and bottom, a pad footing's steps and bottom, the name.
+/// stem, footing, core and bottom, a pad footing's steps and bottom, the name,
+/// the material.
 /// The elements of the type follow it. A type still named after its size
 /// takes the new size's name, unless a name is given; elements named as
 /// their type are renamed with it.
@@ -25,6 +26,9 @@ public static class StructureTypes
         IfcClass.FootingType when PadFootings.IsPad(type) => PadFootings.Steps(type) is { Count: > 0 } steps ? $"PF {steps[0].Length * 100:0}×{steps[0].Width * 100:0}" : null,
         _ => null,
     };
+
+    /// <summary>The material named in the arguments, or <paramref name="fallback"/> when none (or an empty one) is.</summary>
+    public static string MaterialOr(string? material, string fallback) => !string.IsNullOrWhiteSpace(material) ? material.Trim() : fallback;
 
     public static void Update(ICommandContext edit, Entity type, JsonObject a)
     {
@@ -89,6 +93,10 @@ public static class StructureTypes
             default:
                 throw new CommandException($"„{type.Name}” is not a column, beam or footing type.");
         }
+        // Its material by name (forum topic 190: a beam of timber or steel, not concrete), made in the project when it is new:
+        // a column's or beam's body, a footing's concrete (a strip's footing; its stem keeps its layers). Left out or empty: kept.
+        if ((string?)a["material"] is { } material && !string.IsNullOrWhiteSpace(material))
+            attrs[type.Class == IfcClass.FootingType ? "concrete" : "material"] = Materials.Ensure(edit, material.Trim()).Id;
         edit.Replace(type.With(attrs: attrs));
 
         // A strip foundation's core: the stem's concrete layer, the others kept.
