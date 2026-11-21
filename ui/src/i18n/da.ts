@@ -5000,6 +5000,8 @@ export const DA: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "Ingen knækning under disse laster: den geometriske stivhed afstiver kun.",
   "No buckling mode: the compressed bars are held by what is round them.": "Ingen knækform: de trykkede stænger holdes af det, der omgiver dem.",
   "A mechanism in its last states.": "En mekanisme i de sidste tilstande.",
+  // A type's layer's own pens by scale (decision 756).
+  "Scales": "Målestokke", "All scales": "Alle målestokke", "Pens by scale": "Penne efter målestok", "Remove the range": "Fjern intervallet", "Add a range of scales": "Tilføj et målestoksinterval", "This layer's own lines in this type, over its material's: the cut outline and the lines between the layers, for all scales and for ranges of scales (as in ArchiCAD)": "Lagets egne linjer i denne type, over materialets: snitkonturen og linjerne mellem lagene, for alle målestokke og for intervaller af målestokke (som i ArchiCAD)", "The first range that holds the view's scale wins over “All scales”; empty: the material's lines (Manage → Materials).": "Det første interval, der rummer visningens målestok, går forud for „Alle målestokke“; tom: materialets linjer (Administrer → Materialer).",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

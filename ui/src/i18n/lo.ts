@@ -5059,6 +5059,8 @@ export const LO: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "ບໍ່ມີການໂກ່ງງໍພາຍໃຕ້ນ້ຳໜັກເຫຼົ່ານີ້: ຄວາມແຂງເລຂາຄະນິດພຽງແຕ່ເພີ່ມຄວາມແຂງ.",
   "No buckling mode: the compressed bars are held by what is round them.": "ບໍ່ມີໂໝດການໂກ່ງງໍ: ແທ່ງທີ່ຖືກອັດຖືກຍຶດດ້ວຍສິ່ງອ້ອມຂ້າງ.",
   "A mechanism in its last states.": "ເປັນກົນໄກໃນສະຖານະສຸດທ້າຍຂອງມັນ.",
+  // A type's layer's own pens by scale (decision 756).
+  "Scales": "ມາດຕາສ່ວນ", "All scales": "ທຸກມາດຕາສ່ວນ", "Pens by scale": "ປາກກາຕາມມາດຕາສ່ວນ", "Remove the range": "ລຶບຊ່ວງ", "Add a range of scales": "ເພີ່ມຊ່ວງມາດຕາສ່ວນ", "This layer's own lines in this type, over its material's: the cut outline and the lines between the layers, for all scales and for ranges of scales (as in ArchiCAD)": "ເສັ້ນຂອງຊັ້ນນີ້ເອງໃນປະເພດນີ້, ທັບເສັ້ນຂອງວັດສະດຸ: ເສັ້ນຂອບຕັດ ແລະ ເສັ້ນລະຫວ່າງຊັ້ນ, ສຳລັບທຸກມາດຕາສ່ວນ ແລະ ຕາມຊ່ວງມາດຕາສ່ວນ (ຄືໃນ ArchiCAD)", "The first range that holds the view's scale wins over “All scales”; empty: the material's lines (Manage → Materials).": "ຊ່ວງທຳອິດທີ່ກວມມາດຕາສ່ວນຂອງມຸມມອງຈະຊະນະ “ທຸກມາດຕາສ່ວນ”; ວ່າງ: ເສັ້ນຂອງວັດສະດຸ (ຈັດການ → ວັດສະດຸ).",
 };
 
 /** Phrases with a number or a name in them. */

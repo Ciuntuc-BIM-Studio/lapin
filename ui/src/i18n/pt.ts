@@ -5003,6 +5003,8 @@ export const PT: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "Sem encurvadura sob estas cargas: a rigidez geométrica só enrijece.",
   "No buckling mode: the compressed bars are held by what is round them.": "Sem modo de encurvadura: as barras comprimidas são retidas pelo que as rodeia.",
   "A mechanism in its last states.": "Um mecanismo nos seus últimos estados.",
+  // A type's layer's own pens by scale (decision 756).
+  "Scales": "Escalas", "All scales": "Todas as escalas", "Pens by scale": "Canetas por escala", "Remove the range": "Remover o intervalo", "Add a range of scales": "Adicionar um intervalo de escalas", "This layer's own lines in this type, over its material's: the cut outline and the lines between the layers, for all scales and for ranges of scales (as in ArchiCAD)": "As linhas próprias desta camada neste tipo, sobre as do seu material: o contorno de corte e as linhas entre as camadas, para todas as escalas e por intervalos de escalas (como no ArchiCAD)", "The first range that holds the view's scale wins over “All scales”; empty: the material's lines (Manage → Materials).": "O primeiro intervalo que contém a escala da vista prevalece sobre «Todas as escalas»; vazio: as linhas do material (Gerenciar → Materiais).",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

@@ -4997,6 +4997,8 @@ export const ZH: Record<string, string> = {
   "No buckling under these loads: the geometric stiffness only stiffens.": "这些荷载下无屈曲：几何刚度只起刚化作用。",
   "No buckling mode: the compressed bars are held by what is round them.": "无屈曲模态：受压杆件由其周围的构件约束。",
   "A mechanism in its last states.": "在最后几个状态中出现机构。",
+  // A type's layer's own pens by scale (decision 756).
+  "Scales": "比例", "All scales": "所有比例", "Pens by scale": "按比例的笔", "Remove the range": "删除该范围", "Add a range of scales": "添加比例范围", "This layer's own lines in this type, over its material's: the cut outline and the lines between the layers, for all scales and for ranges of scales (as in ArchiCAD)": "此层在此类型中自己的线条，覆盖其材料的线条：剖切轮廓和层间线，适用于所有比例及各比例范围（如 ArchiCAD）", "The first range that holds the view's scale wins over “All scales”; empty: the material's lines (Manage → Materials).": "包含视图比例的第一个范围优先于“所有比例”；留空：使用材料的线条（管理 → 材料）。",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
