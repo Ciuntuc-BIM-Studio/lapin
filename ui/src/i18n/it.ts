@@ -4871,6 +4871,12 @@ export const IT: Record<string, string> = {
   'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'La quota superiore del pavimento finito sopra la base di questo muro (da 0 a 1 m), da cui parte il davanzale di una finestra o porta misurato dal pavimento finito. Vuoto: quello del suo tipo di muro, altrimenti 0.',
   'Door and window sills measured from': 'Davanzali di porte e finestre misurati da',
   'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'Da cosa si misura il davanzale di una nuova porta, finestra o apertura nel muro: la base strutturale del muro o il pavimento finito sopra di essa (impostato sul muro o sul suo tipo di muro). Ogni apertura mantiene il proprio; questo è ciò che prendono le nuove',
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "Mantenimento automatico: il trascinamento segue il puntatore. Clic per rilasciarlo, Tab per il campo successivo, Invio per accettare",
+  "Autohold": "Mantenimento automatico",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "Mantenimento automatico: il trascinamento segue il puntatore senza il pulsante. Clic per rilasciarlo qui",
+  "Elements under the pointer": "Elementi sotto il puntatore",
+  "Rotate a copy": "Ruota una copia",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

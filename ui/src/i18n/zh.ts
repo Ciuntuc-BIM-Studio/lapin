@@ -4902,6 +4902,12 @@ export const ZH: Record<string, string> = {
   'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': '此墙基以上面层地面的顶面（0 至 1 米），即按面层地面测量的窗台或门槛的起点。留空：取其墙类型的值，否则为 0。',
   'Door and window sills measured from': '门窗窗台高度测量自',
   'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': '新门、新窗或新墙洞的窗台从何处量起：墙的结构底部，或其上的面层地面（在墙或其墙类型上设置）。每个洞口保留各自的设置；新洞口采用此处的设置',
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "自动保持：拖动跟随指针。单击放下，Tab 切换下一个字段，Enter 接受",
+  "Autohold": "自动保持",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "自动保持：无需按住按钮，拖动跟随指针。单击在此放下",
+  "Elements under the pointer": "指针下的元素",
+  "Rotate a copy": "旋转副本",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

@@ -4864,6 +4864,12 @@ export const RO: Record<string, string> = {
   'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'Fața de sus a pardoselii finite peste baza acestui perete (0 până la 1 m), de unde începe parapetul unei ferestre sau al unei uși măsurat de la pardoseala finită. Gol: cea a tipului de perete, altfel 0.',
   'Door and window sills measured from': 'Parapetele ușilor și ferestrelor măsurate de la',
   'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'De la ce se măsoară parapetul unei uși, ferestre sau al unui gol nou în perete: baza structurală a peretelui sau pardoseala finită de deasupra ei (setată pe perete sau pe tipul lui de perete). Fiecare gol o păstrează pe a lui; aceasta este valoarea pentru cele noi',
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "Menținere automată: tragerea urmează cursorul. Clic pentru a o lăsa, Tab pentru câmpul următor, Enter pentru a accepta",
+  "Autohold": "Menținere automată",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "Menținere automată: tragerea urmează cursorul fără buton. Clic pentru a o lăsa aici",
+  "Elements under the pointer": "Elemente de sub cursor",
+  "Rotate a copy": "Rotește o copie",
 };
 
 /** Phrases with a number or a name in them. */

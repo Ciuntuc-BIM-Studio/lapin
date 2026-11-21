@@ -4911,6 +4911,12 @@ export const PL: Record<string, string> = {
   'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'Wierzch posadzki wykończonej nad podstawą tej ściany (0 do 1 m), od którego zaczyna się parapet okna lub drzwi mierzony od posadzki wykończonej. Puste: z typu ściany, w przeciwnym razie 0.',
   'Door and window sills measured from': 'Parapety drzwi i okien mierzone od',
   'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'Od czego mierzy się parapet nowych drzwi, okna lub otworu w ścianie: od konstrukcyjnej podstawy ściany czy od posadzki wykończonej nad nią (ustawionej na ścianie lub jej typie ściany). Każdy otwór zachowuje własny; nowe przyjmują tę wartość',
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "Automatyczne przytrzymanie: przeciąganie podąża za wskaźnikiem. Kliknij, aby upuścić, Tab – następne pole, Enter – zatwierdź",
+  "Autohold": "Automatyczne przytrzymanie",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "Automatyczne przytrzymanie: przeciąganie podąża za wskaźnikiem bez przycisku. Kliknij, aby upuścić tutaj",
+  "Elements under the pointer": "Elementy pod wskaźnikiem",
+  "Rotate a copy": "Obróć kopię",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

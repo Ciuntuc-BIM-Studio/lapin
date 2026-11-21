@@ -19,12 +19,14 @@ import { select, useUi } from './store';
 import { findTool, hotbarIds, useToolTick } from '../platform/modules';
 import { reach } from './hotbar';
 import { cancel, spaceStep, submit, useCad } from '../viewport/cad/session';
-import { liveCommit, liveFields, liveToggleMode, useLive } from '../viewport/liveInput';
+import { liveAcceptAtCursor, liveCommit, liveFields, liveToggleMode, useLive } from '../viewport/liveInput';
 import { chordOf, isBareKey, matchSequence, PendingSequence, type Keymap } from './shortcuts';
 import { keymap, runCommand } from './commands';
 import { useKeymap } from './shortcuts';
 import { valueOwner } from './valueOwner';
 import { installClickOut } from './clickOut';
+import { autoholdCancel, autoholdOn, autoholdTab, enterEffect, tabMeaning } from './autohold';
+import { holdCancel, holdPointer, holdWheel, tabHoldDown, tabHoldUp } from '../viewport/tabHold';
 
 /** What `keyIntent` needs to know about the key press. */
 export interface KeyPress {
@@ -67,7 +69,7 @@ export interface KeySnapshot {
   /** The command line takes all typing (the ` key). */
   takeAll?: boolean;
   /** A segment being drawn from a base: its length and angle can be typed (the focused field's text). */
-  live?: { active: boolean; text: string; typed: boolean; /** A rectangle tool: Space switches length/angle with width/height. */ rect?: boolean; mode?: 'polar' | 'rect' };
+  live?: { active: boolean; /** Who owns the box: "drag" and "grip" are drags (autohold, issue 86). */ owner?: string | null; /** A drag is held by autohold. */ autohold?: boolean; text: string; typed: boolean; /** A rectangle tool: Space switches length/angle with width/height. */ rect?: boolean; mode?: 'polar' | 'rect' };
   /** A 3D tool waits for a typed value (valueOwner.ts): what is typed so far. */
   value?: { text: string } | null;
 }
@@ -82,6 +84,8 @@ export type KeyIntent =
   | { kind: 'closeDialog' } | { kind: 'deselect' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'stepSpace' } | { kind: 'backspace' }
   | { kind: 'type'; buffer: string }
   | { kind: 'valueType'; key: string } | { kind: 'valueBack' } | { kind: 'valueEnter' }
+  /** Tab in a drag: autohold on (issue 86); the box's next field comes with the next Tab. */
+  | { kind: 'autohold' } | { kind: 'liveAccept' }
   | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' | 'rel' } | { kind: 'liveClear' } | { kind: 'liveCommit' } | { kind: 'liveMode' };
 
 /** The units a typed length may end in (parseLength reads them). */
@@ -143,12 +147,14 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   }
   // Drawing a segment, nothing on the command line: its length and angle are typed at the cursor.
   if (s.live?.active && !s.buffer && !all) {
-    if (e.key === 'Tab') return { kind: 'liveFocus' };
+    if (e.key === 'Tab') return tabMeaning(s.live.owner, !!s.live.autohold) === 'autohold' ? { kind: 'autohold' } : { kind: 'liveFocus' };
     if (e.key === '<') return { kind: 'liveFocus', field: 'ang' };
     // A rectangle: Space switches length/angle with width/height; in width/height a comma goes on to the height.
     if (e.key === ' ' && s.live.rect) return { kind: 'liveMode' };
     if (e.key === ',' && s.live.rect && s.live.mode === 'rect') return { kind: 'liveFocus', field: 'ang' };
     if (e.key === 'Enter' && s.live.typed) return { kind: 'liveCommit' };
+    // A drag held by autohold, nothing typed: Enter drops it where the pointer is.
+    if (e.key === 'Enter' && enterEffect(!!s.live.autohold, s.live.typed) === 'pointer') return { kind: 'liveAccept' };
     if (e.key === 'Escape' && s.live.typed) return { kind: 'liveClear' };
     if (e.key === 'Backspace' && s.live.text) return { kind: 'liveBack' };
     if (/^[0-9.,+]$/.test(e.key) || (e.key === '-' && (s.live.text || (s.live.rect && s.live.mode === 'rect')))) return { kind: 'liveType', key: e.key };
@@ -190,6 +196,9 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   return { kind: 'type', buffer };
 }
 
+/** The command Tab runs (commands.ts): the one a tap of Tab keeps. */
+export const TAB_COMMAND = 'app.togglePanels';
+
 /** The tool at the start of a key press, before a view's own Esc handler ends it: that Esc ends the tool and does no more. */
 let toolAtKeydown: string | null = null;
 
@@ -200,7 +209,7 @@ function snapshot(): KeySnapshot {
     screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool ?? toolAtKeydown, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want, space: !!cad.step.space } : null, hasLast: !!cad.last,
     hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll,
-    live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang || l.rel), rect: !!l.rect, mode: l.mode }; })(),
+    live: (() => { const l = useLive.getState(); return { active: !!l.owner, owner: l.owner, autohold: autoholdOn(), text: l[l.focus], typed: !!(l.len || l.ang || l.rel), rect: !!l.rect, mode: l.mode }; })(),
     value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
   };
 }
@@ -253,6 +262,8 @@ export function carryOut(intent: KeyIntent): void {
     case 'liveFocus': useLive.setState((l) => { const fs = liveFields(l); return { focus: intent.field && fs.includes(intent.field) ? intent.field : fs[(fs.indexOf(l.focus) + 1) % fs.length] }; }); break;
     case 'liveClear': useLive.setState({ len: '', ang: '', rel: '' }); break;
     case 'liveCommit': liveCommit(); break;
+    case 'autohold': autoholdTab(); break;
+    case 'liveAccept': liveAcceptAtCursor(); break;
     case 'liveMode': liveToggleMode(); break;
   }
 }
@@ -273,6 +284,11 @@ export function handleKeydown(e: KeyEventLike, snap: () => KeySnapshot = snapsho
   };
   const cur = snap();
   const intent = keyIntent(press, cur);
+  // Tab held over several elements opens their list (issue 110); a tap runs the Tab command when it comes up (keyup, below).
+  if (e.key === 'Tab' && !e.shiftKey && intent?.kind === 'command' && intent.id === TAB_COMMAND && tabHoldDown(!!(e as { repeat?: boolean }).repeat) === 'swallow') {
+    e.preventDefault();
+    return;
+  }
   if (!intent) {
     // Outside fields and dialogs, Tab never wanders through the workspace UI buttons (forum #125).
     if (e.key === 'Tab' && cur.screen === 'workspace' && !press.inField && !press.inDialog && !cur.dialog) e.preventDefault();
@@ -284,11 +300,19 @@ export function handleKeydown(e: KeyEventLike, snap: () => KeySnapshot = snapsho
 
 export function useShortcuts(): void {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { handleKeydown(e); toolAtKeydown = null; };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { holdCancel(); if (autoholdCancel()) { e.preventDefault(); toolAtKeydown = null; return; } } handleKeydown(e); toolAtKeydown = null; };
     const first = () => { toolAtKeydown = useUi.getState().tool; };
     window.addEventListener('keydown', first, true);
     window.addEventListener('keydown', onKey);
+    // Holding Tab (issue 110): a tap acts when the key comes up; a hold's list takes what is lit then. The wheel moves through the list.
+    const onUp = (e: KeyboardEvent) => { if (e.key === 'Tab' && tabHoldUp() === 'tap') runCommand(TAB_COMMAND); };
+    const onWheel = (e: WheelEvent) => { if (holdWheel(e.deltaY)) { e.preventDefault(); e.stopPropagation(); } };
+    const onMove = (e: PointerEvent) => holdPointer(e.clientX, e.clientY);
+    window.addEventListener('keyup', onUp);
+    window.addEventListener('blur', holdCancel);
+    window.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    window.addEventListener('pointermove', onMove, true);
     const offClickOut = installClickOut();
-    return () => { window.removeEventListener('keydown', first, true); window.removeEventListener('keydown', onKey); offClickOut(); };
+    return () => { window.removeEventListener('keydown', first, true); window.removeEventListener('keydown', onKey); window.removeEventListener('keyup', onUp); window.removeEventListener('blur', holdCancel); window.removeEventListener('wheel', onWheel, true); window.removeEventListener('pointermove', onMove, true); offClickOut(); };
   }, []);
 }

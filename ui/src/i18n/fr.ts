@@ -4872,6 +4872,12 @@ export const FR: Record<string, string> = {
   'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'Le dessus du sol fini au-dessus de la base de ce mur (0 à 1 m), d\'où part l\'allège d\'une fenêtre ou d\'une porte mesurée depuis le sol fini. Vide : celui de son type de mur, sinon 0.',
   'Door and window sills measured from': 'Allèges des portes et fenêtres mesurées depuis',
   'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'Depuis quoi l\'allège d\'une nouvelle porte, fenêtre ou ouverture de mur est mesurée : la base structurelle du mur ou le sol fini au-dessus (réglé sur le mur ou son type de mur). Chaque ouverture garde la sienne ; c\'est ce que prennent les nouvelles',
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "Maintien automatique : le glissement suit le pointeur. Clic pour le déposer, Tab pour le champ suivant, Entrée pour accepter",
+  "Autohold": "Maintien automatique",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "Maintien automatique : le glissement suit le pointeur sans le bouton. Clic pour le déposer ici",
+  "Elements under the pointer": "Éléments sous le pointeur",
+  "Rotate a copy": "Faire pivoter une copie",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

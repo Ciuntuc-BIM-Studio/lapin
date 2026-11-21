@@ -4964,6 +4964,12 @@ export const LO: Record<string, string> = {
   'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'ດ້ານເທິງຂອງພື້ນສຳເລັດເໜືອຖານຂອງຝານີ້ (0 ເຖິງ 1 ມ) ບ່ອນທີ່ຂອບລຸ່ມຂອງປ່ອງຢ້ຽມ ຫຼື ປະຕູທີ່ວັດຈາກພື້ນສຳເລັດເລີ່ມຕົ້ນ. ຫວ່າງ: ຂອງປະເພດຝາ, ບໍ່ດັ່ງນັ້ນ 0.',
   'Door and window sills measured from': 'ຂອບລຸ່ມຂອງປະຕູ ແລະ ປ່ອງຢ້ຽມວັດແທກຈາກ',
   'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'ຂອບລຸ່ມຂອງປະຕູ, ປ່ອງຢ້ຽມ ຫຼື ຊ່ອງເປີດໃນຝາໃໝ່ວັດແທກຈາກຫຍັງ: ຖານໂຄງສ້າງຂອງຝາ ຫຼື ພື້ນສຳເລັດທີ່ຢູ່ເໜືອມັນ (ກຳນົດໃນຝາ ຫຼື ປະເພດຝາຂອງມັນ). ແຕ່ລະຊ່ອງເປີດຮັກສາຂອງຕົນເອງ; ນີ້ແມ່ນສິ່ງທີ່ຊ່ອງໃໝ່ໃຊ້',
+  // Hold Tab: the list of what lies under the pointer (issue 110); autohold, a drag without the button (issue 86); Ctrl+Shift+E
+  "Autohold: the drag follows the pointer. Click to drop it, Tab for the next field, Enter to accept": "ຖືອັດຕະໂນມັດ: ການລາກຕາມຕົວຊີ້. ກົດເພື່ອວາງ, Tab ສຳລັບຊ່ອງຕໍ່ໄປ, Enter ເພື່ອຍອມຮັບ",
+  "Autohold": "ຖືອັດຕະໂນມັດ",
+  "Autohold: the drag follows the pointer without the button. Click to drop it here": "ຖືອັດຕະໂນມັດ: ການລາກຕາມຕົວຊີ້ໂດຍບໍ່ມີປຸ່ມ. ກົດເພື່ອວາງຢູ່ບ່ອນນີ້",
+  "Elements under the pointer": "ອົງປະກອບໃຕ້ຕົວຊີ້",
+  "Rotate a copy": "ໝຸນສຳເນົາ",
 };
 
 /** Phrases with a number or a name in them. */

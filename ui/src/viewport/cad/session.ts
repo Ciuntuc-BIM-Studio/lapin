@@ -545,8 +545,8 @@ const ucsDegrees = (): number => (useCad.getState().host?.isPlan?.() ? ucsOf(use
  * then a point (or a typed angle) giving the new one; the turn is the difference. Copy turns a copy and leaves the
  * originals. Either way the selection turns in the preview and the angle shows at the cursor.
  */
-function rotate(startWith: 'angle' | 'reference' = 'angle'): Step | null | void | Promise<Step | null | void> {
-  let copy = false;
+function rotate(startWith: 'angle' | 'reference' = 'angle', copyFirst = false): Step | null | void | Promise<Step | null | void> {
+  let copy = copyFirst;
   return withSelection((ids) => ({
     prompt: 'Base point', want: 'point',
     point: (c) => {
@@ -945,6 +945,8 @@ export const COMMANDS: CommandDef[] = [
   { names: ['ROTATE', 'RO'], label: 'Rotate', start: () => rotate() },
   // The ribbon's Rotate: the same command, starting in the Reference flow (hinge, reference point, target point).
   { names: ['ROTATEREF'], label: 'Rotate', start: () => rotate('reference') },
+  // Rotate a copy: the ribbon's Rotate (ROTATEREF) with its Copy keyword already on (Ctrl+Shift+E).
+  { names: ['ROTATECOPY'], label: 'Rotate a copy', start: () => rotate('reference', true) },
   { names: ['MIRROR', 'MI', 'MM'], label: 'Mirror', start: mirror },
   { names: ['SCALE', 'SC'], label: 'Scale', start: scale },
   { names: ['ERASE', 'E', 'DELETE'], label: 'Erase', start: erase },

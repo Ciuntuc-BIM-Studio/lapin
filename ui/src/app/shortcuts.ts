@@ -39,6 +39,8 @@ export interface CommandDef {
   group?: string;
   /** The bindings of Lapin classic (the module's own letters, the app's chords). */
   defaults?: Binding[];
+  /** Chords every preset keeps beside its own bindings (Ctrl+D for Move: a preset's letters replace `defaults`, not these). */
+  chords?: Binding[];
   /** The command-line command this is the same as (MOVE): its names never make the command's own sequence wait. */
   same?: string;
   /** Bindings that are part of the interface's own handling, shown, not changed (Escape cancels). */
@@ -194,7 +196,7 @@ export const DEFAULT_PRESET: PresetId = 'revit';
 export function presetBindings(commands: readonly CommandDef[], preset: PresetId): Record<string, Binding[]> {
   const patch = PRESETS[preset]?.patch ?? {};
   const out: Record<string, Binding[]> = {};
-  for (const c of commands) out[c.id] = [...(patch[c.id] ?? c.defaults ?? [])];
+  for (const c of commands) out[c.id] = [...(patch[c.id] ?? c.defaults ?? []), ...(c.chords ?? [])];
   return out;
 }
 
