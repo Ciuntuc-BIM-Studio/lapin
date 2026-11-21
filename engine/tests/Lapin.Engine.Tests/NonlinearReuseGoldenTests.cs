@@ -14,7 +14,8 @@ namespace Lapin.Engine.Tests;
 /// result; every case's; the analysis JSON; every ultimate combination's buckling. On the guide's hall (P-Δ, imperfections,
 /// tension-only bracing, sheeting), the same without sheeting (unstable variants: the mechanism path), its bracing alone
 /// (states, first order), and the guide's frame with its slab as shells on footings that lift. Golden/ holds what the code
-/// before §14.21 wrote (LAPIN_WRITE_GOLDEN=1 writes them again).
+/// before §14.21 wrote (LAPIN_WRITE_GOLDEN=1 writes them again); the fixtures' ids come from a seed (<see cref="Fixture.Seeded"/>),
+/// so the model, its order and its bits are the same at every run.
 /// </summary>
 public class NonlinearReuseGoldenTests
 {
@@ -113,16 +114,22 @@ public class NonlinearReuseGoldenTests
         using (FemParallel.Limit(1)) return Digest(AnalysisRun.Fresh(f.Session.Reader), buckling);
     }
 
+    /// <summary>A fixture with ids from a seed (random ids would order the model differently at every run, and so its last bits).</summary>
+    static Fixture Seeded(Func<Fixture> make)
+    {
+        using (Fixture.Seeded(760)) return make();
+    }
+
     [Fact]
     public void The_halls_nonlinear_combinations_and_buckling_keep_their_bits()
     {
-        Golden("nonlinear-reuse-hall", Of(FemParallelTests.Hall(), buckling: true));
+        Golden("nonlinear-reuse-hall", Of(Seeded(FemParallelTests.Hall), buckling: true));
     }
 
     [Fact]
     public void The_hall_without_sheeting_keeps_its_unstable_variants_and_results()
     {
-        var f = AnalysisRunTests.Hall();
+        var f = Seeded(AnalysisRunTests.Hall);
         f.Run("analysis.setClimate", new JsonObject { ["snow"] = new JsonObject { ["s0k"] = 2.0 }, ["wind"] = new JsonObject { ["qb"] = 0.5, ["terrain"] = "III" } });
         var braces = f.Model.Entities.Where(e => e.PredefinedType == "BRACE" && e.Str("objectType") is not "Fly brace" && !(e.Name ?? "").Contains("Fly", StringComparison.OrdinalIgnoreCase)).Select(e => e.Id).ToList();
         f.Run("analysis.setOnly", new JsonObject { ["ids"] = new JsonArray(braces.Select(x => (JsonNode)x).ToArray()), ["only"] = "tension" });
@@ -135,7 +142,7 @@ public class NonlinearReuseGoldenTests
     [Fact]
     public void The_halls_tension_only_bracing_alone_keeps_its_states_and_results()
     {
-        var f = FemParallelTests.Hall();
+        var f = Seeded(FemParallelTests.Hall);
         f.Run("analysis.setOptions", new JsonObject { ["secondOrder"] = false, ["imperfections"] = false });
         var d = Of(f, buckling: true);
         Assert.Contains(d["sets"]!.AsArray(), s => s!["slack"]!.AsArray().Count > 0);
@@ -145,7 +152,7 @@ public class NonlinearReuseGoldenTests
     [Fact]
     public void The_shell_frame_on_lifting_footings_keeps_its_bits()
     {
-        var f = FemParallelTests.ShellFrame();
+        var f = Seeded(FemParallelTests.ShellFrame);
         // A corner pulled up (in Q-A, the area load's case) so that its footing lifts in the combinations that take it.
         var storey = f.Model.OfClass(Lapin.Model.IfcClass.BuildingStorey).Single(s => s.Name == "First floor").Id;
         f.Run("analysis.addPointLoad", new JsonObject { ["storeyId"] = storey, ["at"] = new JsonArray(0.0, 0.0), ["value"] = 250, ["direction"] = "up" });
