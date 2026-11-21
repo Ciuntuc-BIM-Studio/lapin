@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { clampFloat, columns, dockPanel, dropChange, dropZone, layoutName, panelsOn, setFloatRect, setLayout, setPanelWidth, toggleFloat, usePanels } from './panels';
+import { clampFloat, columns, dockPanel, dropChange, dropZone, layoutName, panelsOn, setFloatRect, setLayout, setPanelWidth, toggleFloat, togglePanel, usePanels } from './panels';
 
-describe('dragging a panel by its header (decision 754)', () => {
+describe('dragging a panel by its header (decision 755)', () => {
   beforeEach(() => usePanels.setState({ browserSide: 'left', propsSide: 'right', propsFirst: false, browserFloat: null, propsFloat: null, stackRatio: 0.5, browserWidth: 250, propsWidth: 300, browserOpen: true, propsOpen: true, railsHidden: false, overlay: null }));
   const views = { left: 250, top: 100, right: 1300, bottom: 900 };
   const panels = { browser: { left: 0, top: 100, right: 250, bottom: 900 }, props: { left: 1300, top: 100, right: 1600, bottom: 900 } };
@@ -23,7 +23,7 @@ describe('dragging a panel by its header (decision 754)', () => {
     expect(panelsOn(usePanels.getState(), 'right')).toEqual(['browser', 'props']);
     dockPanel('browser', { kind: 'stack', target: 'props', where: 'below' }, at);
     expect(panelsOn(usePanels.getState(), 'right')).toEqual(['props', 'browser']);
-    expect(layoutName(usePanels.getState())).toBe('bothRight');
+    expect(layoutName(usePanels.getState())).toBe('custom'); // the properties above the browser is no preset
   });
 
   it('docks to a side above or below what stands there, and the menu layouts reset everything', () => {
@@ -65,6 +65,20 @@ describe('dragging a panel by its header (decision 754)', () => {
     expect(usePanels.getState().propsFloat).toEqual({ x: 700, y: 500, w: 300, h: 300 });
     expect(JSON.parse(store.get('lapin.panels')!).propsFloat).toEqual({ x: 700, y: 500, w: 300, h: 300 });
     vi.unstubAllGlobals();
+  });
+
+  it('reads as custom with a float or a reversed stack, and a floating panel is never folded', () => {
+    expect(layoutName(usePanels.getState())).toBe('default');
+    dockPanel('props', { kind: 'float' }, at);
+    expect(layoutName(usePanels.getState())).toBe('custom');
+    togglePanel('props');
+    expect(usePanels.getState().propsOpen).toBe(true);
+    setLayout('bothLeft');
+    expect(layoutName(usePanels.getState())).toBe('bothLeft');
+    usePanels.setState({ propsFirst: true });
+    expect(layoutName(usePanels.getState())).toBe('custom');
+    usePanels.setState({ propsFirst: true, propsSide: 'right' });
+    expect(layoutName(usePanels.getState())).toBe('default');
   });
 
   it('dropChange alone does not touch the store', () => {

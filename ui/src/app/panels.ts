@@ -28,7 +28,7 @@ export interface PanelsState {
   propsSide: Side;
   /** With both panels on one side: the browser's share of its height. */
   stackRatio: number;
-  /** With both panels on one side: the properties above the browser (dragging a panel's header, decision 754). */
+  /** With both panels on one side: the properties above the browser (dragging a panel's header, decision 755). */
   propsFirst?: boolean;
   /** A panel floating over the view (stage 2): its place and size; null or absent: docked on its side. */
   browserFloat?: FloatRect | null;
@@ -119,8 +119,9 @@ export function setLayout(name: LayoutName): void {
   save();
 }
 
-/** Which named arrangement the panels are in. */
-export function layoutName(s: Pick<PanelsState, 'browserSide' | 'propsSide'>): LayoutName {
+/** Which named arrangement the panels are in: 'custom' once one floats or a stacked pair is in reverse order (dragging). */
+export function layoutName(s: Pick<PanelsState, 'browserSide' | 'propsSide' | 'propsFirst' | 'browserFloat' | 'propsFloat'>): LayoutName | 'custom' {
+  if (s.browserFloat || s.propsFloat || (s.propsFirst && s.browserSide === s.propsSide)) return 'custom';
   return (Object.keys(LAYOUTS) as LayoutName[]).find((k) => LAYOUTS[k].browser === s.browserSide && LAYOUTS[k].props === s.propsSide) ?? 'default';
 }
 
@@ -204,6 +205,8 @@ export function toggleFloat(panel: PanelId, win: { w: number; h: number }): void
 
 export function togglePanel(side: 'browser' | 'props'): void {
   const s = usePanels.getState();
+  // A floating panel is never folded (it would be lost, with no rail): it stays until docked back.
+  if (side === 'browser' ? s.browserFloat : s.propsFloat) return;
   usePanels.setState({ ...(side === 'browser' ? { browserOpen: !s.browserOpen } : { propsOpen: !s.propsOpen }), overlay: null });
   save();
 }

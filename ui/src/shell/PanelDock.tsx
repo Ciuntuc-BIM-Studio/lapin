@@ -1,5 +1,5 @@
 /**
- * Moving the side panels with the mouse or a finger (decision 754, a forum request): drag a panel by its header; the
+ * Moving the side panels with the mouse or a finger (decision 755, a forum request): drag a panel by its header; the
  * zones show where it would land (docked on a side of the views, above or below the other panel, or floating over the
  * view), the drop commits it and Escape cancels. A floating panel is a window: dragged by its header, resized from
  * its corner, and docked back with its button. The pure rules are in app/panels.ts (`dropZone`, `dropChange`,
@@ -85,8 +85,7 @@ export function DockOverlay() {
 /** A panel floating over the view: moved by its header, resized from its corner, docked back with its button. */
 export function FloatingPanel({ panel, children }: { panel: PanelId; children: ReactNode }) {
   const rect = usePanels((s) => (panel === 'browser' ? s.browserFloat : s.propsFloat));
-  const open = usePanels((s) => (panel === 'browser' ? s.browserOpen : s.propsOpen));
-  if (!rect || !open) return null;
+  if (!rect) return null;
   const resize = (e: React.PointerEvent) => {
     e.stopPropagation(); e.preventDefault();
     const x0 = e.clientX, y0 = e.clientY;

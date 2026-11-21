@@ -386,7 +386,7 @@ const core: LapinModule = {
         { id: 'view.panels.swapped', label: 'Browser right, Properties left', icon: PanelsTopLeft, run: () => { setLayout('swapped'); notify('The project browser stands on the right and the properties on the left.'); } },
         { id: 'view.panels.bothLeft', label: 'Both panels on the left', icon: PanelsTopLeft, run: () => { setLayout('bothLeft'); notify('The project browser and the properties are stacked on the left; drag the divider between them.'); } },
         { id: 'view.panels.bothRight', label: 'Both panels on the right', icon: PanelsTopLeft, run: () => { setLayout('bothRight'); notify('The project browser and the properties are stacked on the right; drag the divider between them.'); } },
-        // Dragging a header moves a panel (decision 754); these are the keyboard way to float a panel or dock it back.
+        // Dragging a header moves a panel (decision 755); these are the keyboard way to float a panel or dock it back.
         { id: 'view.panels.floatBrowser', label: 'Float or dock the project browser', icon: PanelsTopLeft, run: () => toggleFloat('browser', { w: window.innerWidth, h: window.innerHeight }) },
         { id: 'view.panels.floatProps', label: 'Float or dock the properties', icon: PanelsTopLeft, run: () => toggleFloat('props', { w: window.innerWidth, h: window.innerHeight }) },
       ] },

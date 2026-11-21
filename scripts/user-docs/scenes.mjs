@@ -10638,7 +10638,7 @@ export const scenes = [
       await t.tool('view.panels.default');
       await t.wait(300);
       t.expect(await t.page.locator('.side-col.on-left .browser-side').count() === 1 && await t.page.locator('.side-col.on-right .props-side').count() === 1, 'the default layout is back');
-      // Dragging a panel by its header (decision 754): the properties onto the browser's lower half, then out over the view to float, then docked back.
+      // Dragging a panel by its header (decision 755): the properties onto the browser's lower half, then out over the view to float, then docked back.
       const drag = async (from, to, { hold = false } = {}) => {
         await t.page.mouse.move(from.x, from.y);
         await t.page.mouse.down();

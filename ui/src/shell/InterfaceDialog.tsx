@@ -81,6 +81,7 @@ export function InterfaceDialog() {
                 {(Object.keys(LAYOUTS) as LayoutName[]).map((v) => (
                   <button type="button" key={v} role="radio" aria-checked={sides === v} className={`seg-item${sides === v ? ' on' : ''}`} onClick={() => setLayout(v)}>{SIDE_LABELS[v]}</button>
                 ))}
+                {sides === 'custom' && <button type="button" role="radio" aria-checked className="seg-item on" disabled>Custom</button>}
               </div>
             </div>
           </div>
