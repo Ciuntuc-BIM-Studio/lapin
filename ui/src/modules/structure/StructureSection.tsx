@@ -10,6 +10,7 @@ import { sameKind } from '../../shell/params';
 import { LengthField } from '../../shell/cells';
 import type { PadLevel } from './padLevel';
 import { openTypeDialog } from '../../shell/typeToEdit';
+import { typeMaterialName } from './typeMaterial';
 
 const TYPE_CLASS: Record<string, string> = { IfcColumn: 'IfcColumnType', IfcBeam: 'IfcBeamType', IfcFooting: 'IfcFootingType' };
 
@@ -32,6 +33,14 @@ export function StructureSection({ node }: { node: NodeDto }) {
         </span>
       </label>
       <p className="muted small">{describeType(type)}</p>
+      {/* Its type's material (forum topic 190), changed in the type: shown here so it is found. */}
+      {type && typeMaterialName(type, nodes) && (
+        <p className="small row" data-testid="structure-material">
+          <span className="eyebrow">{type.props.kind === 'strip' && !type.props.profile ? 'Footing material' : 'Material'}</span>
+          <span data-no-i18n>{typeMaterialName(type, nodes)}</span>
+          <button type="button" className="btn small" title="The material is the type's: change it in Structure types, and every element of the type follows" onClick={() => openTypeDialog('structureTypes', type.id)}>Change in type…</button>
+        </p>
+      )}
       {pad && <PadLevelFields node={node} />}
     </div>
   );

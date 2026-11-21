@@ -370,7 +370,10 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
               );
             })()}
             {elevation && <>
-              <dt title="The level's elevation and this offset from it: the figure below follows it">Offset from level</dt>
+              {/* A beam's offset is from its level's top, not its base (forum topic 190): said in the label. */}
+              {elevation.key === 'topOffset' && node.type === 'IfcBeam'
+                ? <dt title="The beam's top stands at the top of its level (the level's Top level, where the level above starts) plus this offset: 0 puts its top there, a negative offset lowers it. The Top elevation below follows it">Top offset (from the level above)</dt>
+                : <dt title="The level's elevation and this offset from it: the figure below follows it">Offset from level</dt>}
               <dd><LengthCell metres={elevation.offset} onCommit={(v) => void execute('element.update', { ids: sameKind(node), attrs: { [elevation.key]: v } })} /></dd>
               <dt title={elevation.of === 'top' ? 'The top of the element, above ±0.00: type it to move the element there' : elevation.of === 'bottom' ? 'The bottom of the element, above ±0.00: type it to move the element there' : 'The base of the element, above ±0.00: type it to move the element there'}>{elevation.of === 'top' ? 'Top elevation' : elevation.of === 'bottom' ? 'Bottom elevation' : 'Base elevation'}</dt>
               <dd><LengthCell metres={elevation.absolute} onCommit={(v) => { if (v != null) void toElevation(node, v, cls?.fields.map((f) => f.key) ?? []); }} /></dd>

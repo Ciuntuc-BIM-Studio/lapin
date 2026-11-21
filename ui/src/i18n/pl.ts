@@ -4917,6 +4917,13 @@ export const PL: Record<string, string> = {
   "Autohold: the drag follows the pointer without the button. Click to drop it here": "Automatyczne przytrzymanie: przeciąganie podąża za wskaźnikiem bez przycisku. Kliknij, aby upuścić tutaj",
   "Elements under the pointer": "Elementy pod wskaźnikiem",
   "Rotate a copy": "Obróć kopię",
+  // Forum topic 190: a structure type's material, a beam's top offset.
+  'Footing material': 'Materiał fundamentu',
+  'What its elements are made of: their colour, hatch, quantities and the IFC export follow it': 'Z czego są jego elementy: kolor, kreskowanie, ilości i eksport IFC podążają za nim',
+  'Top offset (from the level above)': 'Przesunięcie góry (od poziomu powyżej)',
+  'The beam\'s top stands at the top of its level (the level\'s Top level, where the level above starts) plus this offset: 0 puts its top there, a negative offset lowers it. The Top elevation below follows it': 'Góra belki leży na górze jej poziomu (górnym poziomie kondygnacji, gdzie zaczyna się poziom powyżej) plus to przesunięcie: 0 kładzie tam jej górę, ujemne przesunięcie ją obniża. Rzędna góry poniżej podąża za nim',
+  'Change in type…': 'Zmień w typie…',
+  'The material is the type\'s: change it in Structure types, and every element of the type follows': 'Materiał należy do typu: zmień go w Typach konstrukcyjnych, a wszystkie elementy typu podążą za nim',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

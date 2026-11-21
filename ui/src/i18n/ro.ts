@@ -4870,6 +4870,13 @@ export const RO: Record<string, string> = {
   "Autohold: the drag follows the pointer without the button. Click to drop it here": "Menținere automată: tragerea urmează cursorul fără buton. Clic pentru a o lăsa aici",
   "Elements under the pointer": "Elemente de sub cursor",
   "Rotate a copy": "Rotește o copie",
+  // Forum topic 190: a structure type's material, a beam's top offset.
+  'Footing material': 'Materialul tălpii',
+  'What its elements are made of: their colour, hatch, quantities and the IFC export follow it': 'Din ce sunt făcute elementele lui: culoarea, hașura, cantitățile și exportul IFC îl urmează',
+  'Top offset (from the level above)': 'Decalaj sus (de la nivelul de deasupra)',
+  'The beam\'s top stands at the top of its level (the level\'s Top level, where the level above starts) plus this offset: 0 puts its top there, a negative offset lowers it. The Top elevation below follows it': 'Fața de sus a grinzii stă la partea de sus a nivelului ei (cota superioară a nivelului, unde începe nivelul de deasupra) plus acest decalaj: 0 îi pune fața de sus acolo, un decalaj negativ o coboară. Cota superioară de mai jos îl urmează',
+  'Change in type…': 'Schimbă în tip…',
+  'The material is the type\'s: change it in Structure types, and every element of the type follows': 'Materialul este al tipului: schimbă-l în Tipuri structurale, și toate elementele tipului îl urmează',
 };
 
 /** Phrases with a number or a name in them. */

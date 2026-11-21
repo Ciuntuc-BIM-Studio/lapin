@@ -4,7 +4,8 @@
  * steps, bottom up). A strip foundation is the standard stem on a footing, or any
  * profile of the project swept along its axis (decision 297). A new type is made here, and a type clicked in the list
  * is changed here (report #42), its elements following it; the inspector
- * gives an element another one.
+ * gives an element another one. Each type has its material (forum topic 190):
+ * concrete, or a library profile's own, until another is chosen.
  */
 
 import { useEffect, useState } from 'react';
@@ -31,6 +32,8 @@ import { typeToEdit } from '../../shell/typeToEdit';
 import { formatLengths, parseLengths } from './lintelFields';
 import { FACES, toggleFace, wrapsArg, wrapsOf, type Wrap } from './columnLayers';
 import { TypeMarkField } from '../core/MarkField';
+import { MaterialPicker } from '../core/MaterialPicker';
+import { CONCRETE, defaultTypeMaterial, libraryMaterialName, typeMaterialName } from './typeMaterial';
 
 type Kind = 'column' | 'beam' | 'strip' | 'pad';
 type Shape = 'rectangle' | 'circle' | 'polygon' | 'library';
@@ -73,6 +76,9 @@ export function StructureTypesDialog() {
   const [lengths, setLengths] = useState<number[]>([]);
   // A column's finish layers round its core (decision 719), outward.
   const [wraps, setWraps] = useState<Wrap[]>([]);
+  // The type's material by name; until one is chosen it follows the section (a library profile's own, concrete otherwise).
+  const [material, setMaterial] = useState(CONCRETE);
+  const [materialChosen, setMaterialChosen] = useState(false);
   const [steps, setSteps] = useState<Step[]>([{ length: 1.8, width: 1.8, height: 0.5 }, { length: 1, width: 1, height: 0.4 }]);
   const list = kind === 'column' ? ofClass(model, 'IfcColumnType') : kind === 'beam' ? ofClass(model, 'IfcBeamType')
     : ofClass(model, 'IfcFootingType').filter((t) => t.props.kind === kind);
@@ -89,6 +95,11 @@ export function StructureTypesDialog() {
       if (sec.kind === 'polygon') setSides(num(sec.sides, 8));
     }
     setWraps(t.type === 'IfcColumnType' ? wrapsOf(t, nodes) : []);
+    // None (a type read from an IFC without one): left empty, so saving its size does not give it one.
+    const own = typeMaterialName(t, nodes);
+    setMaterial(own);
+    // A type still in its section's default material follows a new section's, as a new one does.
+    setMaterialChosen((own || CONCRETE) !== defaultTypeMaterial(!!sec?.kind && !['rectangle', 'circle', 'polygon'].includes(sec.kind)));
     setMark(typeof t.props.mark === 'string' ? t.props.mark : '');
     setBearing(typeof t.props.bearing === 'number' ? t.props.bearing : null);
     setLengths(Array.isArray(t.props.lengths) ? (t.props.lengths as number[]) : []);
@@ -105,7 +116,13 @@ export function StructureTypesDialog() {
       setSteps((t.props.steps as Step[] | undefined) ?? []);
     }
   };
-  const fresh = () => { setEditing(null); setName(''); setWraps([]); };
+  const fresh = (k: Kind = kind) => {
+    setEditing(null); setName(''); setWraps([]); setMaterialChosen(false);
+    setMaterial(defaultTypeMaterial((k === 'column' || k === 'beam') && shape === 'library', lib.picked?.profile.material));
+  };
+  /** A section's shape or a library profile changed: the material follows it until one is chosen. */
+  const changeShape = (next: Shape) => { setShape(next); if (!materialChosen) setMaterial(defaultTypeMaterial(next === 'library', lib.picked?.profile.material)); };
+  const pickProfile: typeof lib.pick = (profile, library) => { lib.pick(profile, library); if (!materialChosen) setMaterial(libraryMaterialName(profile.material)); };
   // Edit type… on a column, beam or footing (decision 735): the dialog opens on its type, under its kind.
   useEffect(() => {
     const id = typeToEdit('structureTypes');
@@ -115,7 +132,7 @@ export function StructureTypesDialog() {
     pick(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const switchKind = (k: Kind) => { setKind(k); fresh(); };
+  const switchKind = (k: Kind) => { setKind(k); fresh(k); };
 
   const sectionOf = () => shape === 'polygon' ? { kind: shape, width: w, depth: w, sides } : { kind: shape, width: w, depth: shape === 'circle' ? w : d };
 
@@ -130,6 +147,8 @@ export function StructureTypesDialog() {
     else if (kind === 'strip' && stripShape === 'profile') Object.assign(args, { bottom, ...(profileId ? { profileId } : {}) });
     else if (kind === 'strip') Object.assign(args, { stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom, ...(edited.props.profile ? { profile: null } : { core }) });
     else Object.assign(args, { bottom, steps });
+    // Its material, when another is chosen: its elements follow.
+    if (material.trim() && material.trim() !== typeMaterialName(edited, nodes)) args.material = material.trim();
     // The name as it was: left to the engine, which renames a type still named after its size.
     if (name.trim() === edited.name) delete args.name;
     await execute('structure.updateType', args);
@@ -139,24 +158,32 @@ export function StructureTypesDialog() {
     const section = sectionOf();
     if ((kind === 'column' || kind === 'beam') && shape === 'library') {
       if (!lib.picked) return;
-      await execute(kind === 'column' ? 'structure.createColumnType' : 'structure.createBeamType', { name, profile: lib.picked.profile, library: lib.picked.library });
-    } else if (kind === 'column') await execute('structure.createColumnType', { name, section, ...(wrapsArg(wraps).length ? { finishLayers: wrapsArg(wraps) } : {}) });
-    else if (kind === 'beam') await execute('structure.createBeamType', { name, section });
+      await execute(kind === 'column' ? 'structure.createColumnType' : 'structure.createBeamType', { name, profile: lib.picked.profile, library: lib.picked.library, material });
+    } else if (kind === 'column') await execute('structure.createColumnType', { name, section, material, ...(wrapsArg(wraps).length ? { finishLayers: wrapsArg(wraps) } : {}) });
+    else if (kind === 'beam') await execute('structure.createBeamType', { name, section, material });
     else if (kind === 'strip' && stripShape === 'profile') {
       if (!profileId) return;
-      await execute('structure.createStripType', { name, bottom, profileId });
+      await execute('structure.createStripType', { name, bottom, profileId, material });
     } else if (kind === 'strip') {
       await execute('structure.createStripType', {
-        name, stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom,
+        name, stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom, material,
         layers: [
           { material: 'Protection board', thickness: 0.02 }, { material: 'XPS insulation', thickness: 0.1 },
           { material: 'Waterproofing', thickness: 0.005 }, { material: 'Reinforced concrete', thickness: core, core: true },
         ],
       });
     } else {
-      await execute('structure.createPadType', { name, bottom, steps });
+      await execute('structure.createPadType', { name, bottom, steps, material });
     }
   };
+
+  // What the body is made of (forum topic 190): its colour, hatch, joins, quantities and the IFC follow it. A standard strip's stem keeps its layers.
+  const materialField = (
+    <label className="field-line" data-testid="structure-type-material" title="What its elements are made of: their colour, hatch, quantities and the IFC export follow it">
+      <span className="eyebrow">{kind === 'strip' && stripShape === 'standard' ? 'Footing material' : 'Material'}</span>
+      <MaterialPicker value={material} onChange={(m) => { setMaterial(m); setMaterialChosen(true); }} />
+    </label>
+  );
 
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Structure types">
@@ -185,7 +212,7 @@ export function StructureTypesDialog() {
             <div className="row">
               <p className="eyebrow grow">{edited ? <span data-no-i18n>{edited.name}</span> : `New ${kind} type`}</p>
               {edited && <SaveTypeToLibrary ids={[edited.id]} />}
-              {edited && <button type="button" className="btn small" onClick={fresh}>New type</button>}
+              {edited && <button type="button" className="btn small" onClick={() => fresh()}>New type</button>}
             </div>
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its size)" onChange={(e) => setName(e.target.value)} /></label>
             {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
@@ -194,12 +221,12 @@ export function StructureTypesDialog() {
             <TypeListActions id={edited?.id ?? null} onDuplicated={(id) => { const t = useSession.getState().nodes.get(id); if (t) pick(t); }} {...endsOf(list, edited?.id ?? null)} />
             {(kind === 'column' || kind === 'beam') && <>
               <label className="field-line"><span className="eyebrow">Section</span>
-                <select value={shape} onChange={(e) => setShape(e.target.value as Shape)}><option value="rectangle">Rectangle</option><option value="circle">Circle</option>
+                <select value={shape} onChange={(e) => changeShape(e.target.value as Shape)}><option value="rectangle">Rectangle</option><option value="circle">Circle</option>
                   {(kind === 'column' || shape === 'polygon') && <option value="polygon">Polygon</option>}<option value="library">From a profile library…</option></select>
               </label>
               {shape === 'library' && <>
                 <label className="field-line"><span className="eyebrow">Library profile</span>
-                  <ProfilePickerField testId="structure-library-profile" value={lib.picked?.profile.name ?? (edited?.props.section as { name?: string } | undefined)?.name} onPick={lib.pick} /></label>
+                  <ProfilePickerField testId="structure-library-profile" value={lib.picked?.profile.name ?? (edited?.props.section as { name?: string } | undefined)?.name} onPick={pickProfile} /></label>
                 {lib.section && <div className="row" style={{ gap: 10, alignItems: 'center' }}><SectionGlyph section={lib.section} size={56} />
                   <span className="small" data-no-i18n>{`${lib.picked?.profile.name ?? ''}${lib.mass != null ? ` · ${lib.mass.toFixed(1)} kg/m` : ''}`}</span></div>}
               </>}
@@ -208,6 +235,7 @@ export function StructureTypesDialog() {
                 <NumberField min={3} max={64} integer value={sides} onCommit={(v) => { if (v != null) setSides(v); }} /></label>}
               {shape === 'rectangle' && <Len label={kind === 'beam' ? 'Depth' : 'Length'} value={d} min={0.01} onChange={setD} />}
             </>}
+            {(kind === 'column' || kind === 'beam') && materialField}
             {edited && (kind === 'column' || kind === 'beam') && <label className="field-line"><span className="eyebrow">Mark</span><input data-field="type-mark" value={mark} onChange={(e) => setMark(e.target.value)} /></label>}
             {edited && kind === 'beam' && <>
               <p className="muted small">As a lintel (a door's or window's precast product): the bearing its lintels take unless the rule says its own, and the lengths it is made in (none: cut to length).</p>
@@ -238,6 +266,7 @@ export function StructureTypesDialog() {
             {kind === 'pad' && <label className="field-line"><span className="eyebrow">Steps L × W × H</span>
               <Cell value={formatSteps(steps, units)} title="Each step length × width × height, bottom up; a semicolon between steps"
                 onCommit={(t) => { const s = parseSteps(t, units); if (!s?.length) return false; setSteps(s); }} /></label>}
+            {(kind === 'strip' || kind === 'pad') && materialField}
             {(kind === 'strip' || kind === 'pad') && <Len label="Bottom" value={bottom} onChange={setBottom} />}
             <div className="row"><span className="grow" />{edited
               ? <button type="button" className="btn primary" title="Its elements follow the type" onClick={() => void save()}>Save type</button>

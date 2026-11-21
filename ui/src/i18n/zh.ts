@@ -4908,6 +4908,13 @@ export const ZH: Record<string, string> = {
   "Autohold: the drag follows the pointer without the button. Click to drop it here": "自动保持：无需按住按钮，拖动跟随指针。单击在此放下",
   "Elements under the pointer": "指针下的元素",
   "Rotate a copy": "旋转副本",
+  // Forum topic 190: a structure type's material, a beam's top offset.
+  'Footing material': '基础材料',
+  'What its elements are made of: their colour, hatch, quantities and the IFC export follow it': '其构件的材料：颜色、填充图案、工程量和 IFC 导出都随之变化',
+  'Top offset (from the level above)': '顶部偏移（自上一标高）',
+  'The beam\'s top stands at the top of its level (the level\'s Top level, where the level above starts) plus this offset: 0 puts its top there, a negative offset lowers it. The Top elevation below follows it': '梁顶位于其楼层的顶部（该楼层的顶标高，即上一楼层开始处）加上此偏移：0 使梁顶位于该处，负偏移使其降低。下方的顶部标高随之变化',
+  'Change in type…': '在类型中更改…',
+  'The material is the type\'s: change it in Structure types, and every element of the type follows': '材料属于类型：在结构类型中更改，该类型的所有构件都随之变化',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

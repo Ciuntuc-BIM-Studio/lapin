@@ -4877,6 +4877,13 @@ export const IT: Record<string, string> = {
   "Autohold: the drag follows the pointer without the button. Click to drop it here": "Mantenimento automatico: il trascinamento segue il puntatore senza il pulsante. Clic per rilasciarlo qui",
   "Elements under the pointer": "Elementi sotto il puntatore",
   "Rotate a copy": "Ruota una copia",
+  // Forum topic 190: a structure type's material, a beam's top offset.
+  'Footing material': 'Materiale della fondazione',
+  'What its elements are made of: their colour, hatch, quantities and the IFC export follow it': 'Di che cosa sono fatti i suoi elementi: colore, retino, quantità ed esportazione IFC lo seguono',
+  'Top offset (from the level above)': 'Offset superiore (dal livello sopra)',
+  'The beam\'s top stands at the top of its level (the level\'s Top level, where the level above starts) plus this offset: 0 puts its top there, a negative offset lowers it. The Top elevation below follows it': 'L’estradosso della trave sta alla sommità del suo livello (il livello superiore del livello, dove comincia il livello sopra) più questo offset: 0 vi porta l’estradosso, un offset negativo lo abbassa. La quota superiore sotto lo segue',
+  'Change in type…': 'Cambia nel tipo…',
+  'The material is the type\'s: change it in Structure types, and every element of the type follows': 'Il materiale è del tipo: cambialo in Tipi strutturali, e tutti gli elementi del tipo lo seguono',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
