@@ -4889,6 +4889,16 @@ export const DA: Record<string, string> = {
   "A factor on each case it takes; an empty field leaves the case out. Ultimate and accidental combinations go to the ultimate envelope and the checks, serviceability ones to their envelopes (the characteristic one also to the deflection checks), a seismic one is its factors ± AEd once the seismic parameters are given.": "En faktor for hvert lasttilfælde, den tager; et tomt felt udelader lasttilfældet. Brud- og ulykkeskombinationer går til brudgrænsens envelope og kontrollerne, anvendelseskombinationer til deres envelopes (den karakteristiske også til nedbøjningskontrollerne); en seismisk er dens faktorer ± AEd, når de seismiske parametre er givet.",
   "Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).": "Vejledende: CR 0-2012 (γG 1.35, γQ 1.5 efter dens tabel 7.2, ψ efter dens tabel 7.1: sne 0.7, 0.5, 0.4; vind 0.7, 0.2, 0).",
   "Not made yet: snow with the imposed load on roofs (EN 1991-1-1 3.3.2); the seismic combination comes with the seismic parameters (its own envelope).": "Ikke lavet endnu: sne med nyttelasten på tage (EN 1991-1-1 3.3.2); den seismiske kombination kommer med de seismiske parametre (sin egen envelope).",
+  // Sills measured from the finished floor (forum topic 192, decision 749)
+  'Sill measured from': 'Brystning målt fra',
+  'Structural level': 'Konstruktionsniveau',
+  'Finished floor': 'Færdigt gulv',
+  'Finished floor above base': 'Færdigt gulv over basen',
+  'What the sill height is measured from: the wall\'s structural base, or the finished floor above it. Changing it keeps the opening where it is and reads the number from the new reference.': 'Hvad brystningshøjden måles fra: murens konstruktive base eller det færdige gulv over den. Ændres det, bliver åbningen, hvor den er, og tallet læses fra den nye reference.',
+  'The finished floor is 0 until "Finished floor above base" is set on the wall or its wall type.': 'Det færdige gulv er 0, indtil „Færdigt gulv over basen“ er angivet på muren eller dens murtype.',
+  'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'Overkanten af det færdige gulv over denne murs base (0 til 1 m), hvorfra et vindues eller en dørs brystning målt fra det færdige gulv starter. Tom: murtypens, ellers 0.',
+  'Door and window sills measured from': 'Døres og vinduers brystninger målt fra',
+  'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'Hvad brystningen af en ny dør, et nyt vindue eller en ny muråbning måles fra: murens konstruktive base eller det færdige gulv over den (angivet på muren eller dens murtype). Hver åbning beholder sin egen; det er dette, nye åbninger får',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

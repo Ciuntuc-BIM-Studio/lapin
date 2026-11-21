@@ -4848,6 +4848,16 @@ export const RO: Record<string, string> = {
   "A factor on each case it takes; an empty field leaves the case out. Ultimate and accidental combinations go to the ultimate envelope and the checks, serviceability ones to their envelopes (the characteristic one also to the deflection checks), a seismic one is its factors ± AEd once the seismic parameters are given.": "Un coeficient pentru fiecare caz pe care îl ia; un câmp gol lasă cazul deoparte. Combinațiile ultime și accidentale merg în înfășurătoarea SLU și în verificări, cele de serviciu în înfășurătoarele lor (cea caracteristică și în verificările de săgeată); una seismică înseamnă coeficienții ei ± AEd, după ce sunt dați parametrii seismici.",
   "Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).": "Orientativ: CR 0-2012 (γG 1.35, γQ 1.5 după Tabelul 7.2, ψ după Tabelul 7.1: zăpada 0.7, 0.5, 0.4; vântul 0.7, 0.2, 0).",
   "Not made yet: snow with the imposed load on roofs (EN 1991-1-1 3.3.2); the seismic combination comes with the seismic parameters (its own envelope).": "Încă nefăcute: zăpada cu încărcarea utilă pe acoperișuri (EN 1991-1-1 3.3.2); combinația seismică vine cu parametrii seismici (are propria înfășurătoare).",
+  // Sills measured from the finished floor (forum topic 192, decision 749)
+  'Sill measured from': 'Parapet măsurat de la',
+  'Structural level': 'Nivelul structural',
+  'Finished floor': 'Pardoseala finită',
+  'Finished floor above base': 'Pardoseala finită deasupra bazei',
+  'What the sill height is measured from: the wall\'s structural base, or the finished floor above it. Changing it keeps the opening where it is and reads the number from the new reference.': 'De la ce se măsoară înălțimea parapetului: baza structurală a peretelui sau pardoseala finită de deasupra ei. Schimbarea lasă golul unde este și citește numărul față de noua referință.',
+  'The finished floor is 0 until "Finished floor above base" is set on the wall or its wall type.': 'Pardoseala finită este 0 până când „Pardoseala finită deasupra bazei” se setează pe perete sau pe tipul lui de perete.',
+  'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'Fața de sus a pardoselii finite peste baza acestui perete (0 până la 1 m), de unde începe parapetul unei ferestre sau al unei uși măsurat de la pardoseala finită. Gol: cea a tipului de perete, altfel 0.',
+  'Door and window sills measured from': 'Parapetele ușilor și ferestrelor măsurate de la',
+  'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'De la ce se măsoară parapetul unei uși, ferestre sau al unui gol nou în perete: baza structurală a peretelui sau pardoseala finită de deasupra ei (setată pe perete sau pe tipul lui de perete). Fiecare gol o păstrează pe a lui; aceasta este valoarea pentru cele noi',
 };
 
 /** Phrases with a number or a name in them. */

@@ -4886,6 +4886,16 @@ export const ZH: Record<string, string> = {
   "A factor on each case it takes; an empty field leaves the case out. Ultimate and accidental combinations go to the ultimate envelope and the checks, serviceability ones to their envelopes (the characteristic one also to the deflection checks), a seismic one is its factors ± AEd once the seismic parameters are given.": "每个所取工况填一个系数；留空的栏表示不取该工况。承载能力和偶然组合进入承载能力包络和验算，正常使用组合进入各自的包络（标准组合还进入挠度验算）；地震组合为其系数 ± AEd，需先给出地震参数。",
   "Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).": "仅供参考：CR 0-2012（γG 1.35、γQ 1.5，依其表 7.2；ψ 依其表 7.1：雪 0.7、0.5、0.4；风 0.7、0.2、0）.",
   "Not made yet: snow with the imposed load on roofs (EN 1991-1-1 3.3.2); the seismic combination comes with the seismic parameters (its own envelope).": "尚未实现：屋面雪荷载与可变荷载的组合 (EN 1991-1-1 3.3.2)；地震组合随地震参数提供（有其自己的包络）.",
+  // Sills measured from the finished floor (forum topic 192, decision 749)
+  'Sill measured from': '窗台高度测量自',
+  'Structural level': '结构标高',
+  'Finished floor': '面层地面',
+  'Finished floor above base': '墙基以上的面层地面',
+  'What the sill height is measured from: the wall\'s structural base, or the finished floor above it. Changing it keeps the opening where it is and reads the number from the new reference.': '窗台高度从何处量起：墙的结构底部，或其上的面层地面。更改后洞口保持原位，数值按新的基准重新读取。',
+  'The finished floor is 0 until "Finished floor above base" is set on the wall or its wall type.': '在墙或其墙类型上设置“墙基以上的面层地面”之前，面层地面为 0。',
+  'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': '此墙基以上面层地面的顶面（0 至 1 米），即按面层地面测量的窗台或门槛的起点。留空：取其墙类型的值，否则为 0。',
+  'Door and window sills measured from': '门窗窗台高度测量自',
+  'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': '新门、新窗或新墙洞的窗台从何处量起：墙的结构底部，或其上的面层地面（在墙或其墙类型上设置）。每个洞口保留各自的设置；新洞口采用此处的设置',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

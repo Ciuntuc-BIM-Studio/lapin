@@ -4895,6 +4895,16 @@ export const PL: Record<string, string> = {
   "A factor on each case it takes; an empty field leaves the case out. Ultimate and accidental combinations go to the ultimate envelope and the checks, serviceability ones to their envelopes (the characteristic one also to the deflection checks), a seismic one is its factors ± AEd once the seismic parameters are given.": "Jeden współczynnik dla każdego przypadku, który bierze; puste pole pomija przypadek. Kombinacje stanu granicznego nośności i wyjątkowe trafiają do obwiedni SGN i do sprawdzeń, kombinacje użytkowalności do swoich obwiedni (charakterystyczna także do sprawdzeń ugięć); kombinacja sejsmiczna to jej współczynniki ± AEd, gdy podane są parametry sejsmiczne.",
   "Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).": "Orientacyjnie: CR 0-2012 (γG 1.35, γQ 1.5 według jego tabeli 7.2, ψ według jego tabeli 7.1: śnieg 0.7, 0.5, 0.4; wiatr 0.7, 0.2, 0).",
   "Not made yet: snow with the imposed load on roofs (EN 1991-1-1 3.3.2); the seismic combination comes with the seismic parameters (its own envelope).": "Jeszcze nie zrobione: śnieg z obciążeniem użytkowym na dachach (EN 1991-1-1 3.3.2); kombinacja sejsmiczna pojawia się wraz z parametrami sejsmicznymi (własna obwiednia).",
+  // Sills measured from the finished floor (forum topic 192, decision 749)
+  'Sill measured from': 'Parapet mierzony od',
+  'Structural level': 'Poziom konstrukcyjny',
+  'Finished floor': 'Posadzka wykończona',
+  'Finished floor above base': 'Posadzka wykończona nad podstawą',
+  'What the sill height is measured from: the wall\'s structural base, or the finished floor above it. Changing it keeps the opening where it is and reads the number from the new reference.': 'Od czego mierzy się wysokość parapetu: od konstrukcyjnej podstawy ściany czy od posadzki wykończonej nad nią. Zmiana zostawia otwór tam, gdzie jest, a liczba jest odczytywana od nowego odniesienia.',
+  'The finished floor is 0 until "Finished floor above base" is set on the wall or its wall type.': 'Posadzka wykończona wynosi 0, dopóki „Posadzka wykończona nad podstawą” nie zostanie ustawiona na ścianie lub jej typie ściany.',
+  'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'Wierzch posadzki wykończonej nad podstawą tej ściany (0 do 1 m), od którego zaczyna się parapet okna lub drzwi mierzony od posadzki wykończonej. Puste: z typu ściany, w przeciwnym razie 0.',
+  'Door and window sills measured from': 'Parapety drzwi i okien mierzone od',
+  'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'Od czego mierzy się parapet nowych drzwi, okna lub otworu w ścianie: od konstrukcyjnej podstawy ściany czy od posadzki wykończonej nad nią (ustawionej na ścianie lub jej typie ściany). Każdy otwór zachowuje własny; nowe przyjmują tę wartość',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

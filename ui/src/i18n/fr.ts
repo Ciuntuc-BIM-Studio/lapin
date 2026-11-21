@@ -4856,6 +4856,16 @@ export const FR: Record<string, string> = {
   "A factor on each case it takes; an empty field leaves the case out. Ultimate and accidental combinations go to the ultimate envelope and the checks, serviceability ones to their envelopes (the characteristic one also to the deflection checks), a seismic one is its factors ± AEd once the seismic parameters are given.": "Un coefficient pour chaque cas qu'elle prend ; un champ vide laisse le cas de côté. Les combinaisons ultimes et accidentelles vont dans l'enveloppe ELU et les vérifications, celles de service dans leurs enveloppes (la caractéristique aussi dans les vérifications de flèche) ; une combinaison sismique est ses coefficients ± AEd une fois les paramètres sismiques donnés.",
   "Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).": "Indicatif : CR 0-2012 (γG 1.35, γQ 1.5 selon son Tableau 7.2, ψ selon son Tableau 7.1 : neige 0.7, 0.5, 0.4 ; vent 0.7, 0.2, 0).",
   "Not made yet: snow with the imposed load on roofs (EN 1991-1-1 3.3.2); the seismic combination comes with the seismic parameters (its own envelope).": "Pas encore fait : la neige avec la charge d'exploitation sur les toitures (EN 1991-1-1 3.3.2) ; la combinaison sismique vient avec les paramètres sismiques (son enveloppe propre).",
+  // Sills measured from the finished floor (forum topic 192, decision 749)
+  'Sill measured from': 'Allège mesurée depuis',
+  'Structural level': 'Niveau structurel',
+  'Finished floor': 'Sol fini',
+  'Finished floor above base': 'Sol fini au-dessus de la base',
+  'What the sill height is measured from: the wall\'s structural base, or the finished floor above it. Changing it keeps the opening where it is and reads the number from the new reference.': 'Depuis quoi la hauteur d\'allège est mesurée : la base structurelle du mur ou le sol fini au-dessus. Le changer laisse l\'ouverture où elle est et relit le nombre depuis la nouvelle référence.',
+  'The finished floor is 0 until "Finished floor above base" is set on the wall or its wall type.': 'Le sol fini vaut 0 tant que « Sol fini au-dessus de la base » n\'est pas réglé sur le mur ou son type de mur.',
+  'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'Le dessus du sol fini au-dessus de la base de ce mur (0 à 1 m), d\'où part l\'allège d\'une fenêtre ou d\'une porte mesurée depuis le sol fini. Vide : celui de son type de mur, sinon 0.',
+  'Door and window sills measured from': 'Allèges des portes et fenêtres mesurées depuis',
+  'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'Depuis quoi l\'allège d\'une nouvelle porte, fenêtre ou ouverture de mur est mesurée : la base structurelle du mur ou le sol fini au-dessus (réglé sur le mur ou son type de mur). Chaque ouverture garde la sienne ; c\'est ce que prennent les nouvelles',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

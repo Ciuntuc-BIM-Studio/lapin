@@ -4894,6 +4894,16 @@ export const ES: Record<string, string> = {
   "A factor on each case it takes; an empty field leaves the case out. Ultimate and accidental combinations go to the ultimate envelope and the checks, serviceability ones to their envelopes (the characteristic one also to the deflection checks), a seismic one is its factors ± AEd once the seismic parameters are given.": "Un coeficiente para cada hipótesis que toma; un campo vacío deja fuera la hipótesis. Las combinaciones de estado límite último y accidentales van a la envolvente ELU y a las comprobaciones, las de servicio a sus envolventes (la característica también a las comprobaciones de flecha); una sísmica es sus coeficientes ± AEd cuando se dan los parámetros sísmicos.",
   "Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).": "Orientativo: CR 0-2012 (γG 1.35, γQ 1.5 según su Tabla 7.2, ψ según su Tabla 7.1: nieve 0.7, 0.5, 0.4; viento 0.7, 0.2, 0).",
   "Not made yet: snow with the imposed load on roofs (EN 1991-1-1 3.3.2); the seismic combination comes with the seismic parameters (its own envelope).": "Aún no implementado: la nieve con la sobrecarga de uso en cubiertas (EN 1991-1-1 3.3.2); la combinación sísmica llega con los parámetros sísmicos (su propia envolvente).",
+  // Sills measured from the finished floor (forum topic 192, decision 749)
+  'Sill measured from': 'Antepecho medido desde',
+  'Structural level': 'Nivel estructural',
+  'Finished floor': 'Suelo acabado',
+  'Finished floor above base': 'Suelo acabado sobre la base',
+  'What the sill height is measured from: the wall\'s structural base, or the finished floor above it. Changing it keeps the opening where it is and reads the number from the new reference.': 'Desde dónde se mide la altura del antepecho: la base estructural del muro o el suelo acabado sobre ella. Al cambiarlo, el hueco se queda donde está y el número se lee desde la nueva referencia.',
+  'The finished floor is 0 until "Finished floor above base" is set on the wall or its wall type.': 'El suelo acabado es 0 hasta que se indique «Suelo acabado sobre la base» en el muro o en su tipo de muro.',
+  'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'La cota superior del suelo acabado sobre la base de este muro (0 a 1 m), desde donde empieza el antepecho de una ventana o puerta medido desde el suelo acabado. Vacío: el de su tipo de muro; si no, 0.',
+  'Door and window sills measured from': 'Antepechos de puertas y ventanas medidos desde',
+  'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'Desde dónde se mide el antepecho de una puerta, ventana o hueco de muro nuevo: la base estructural del muro o el suelo acabado sobre ella (indicado en el muro o en su tipo de muro). Cada hueco conserva el suyo; este es el que toman los nuevos',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

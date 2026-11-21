@@ -4852,6 +4852,16 @@ export const DE: Record<string, string> = {
   "A factor on each case it takes; an empty field leaves the case out. Ultimate and accidental combinations go to the ultimate envelope and the checks, serviceability ones to their envelopes (the characteristic one also to the deflection checks), a seismic one is its factors ± AEd once the seismic parameters are given.": "Ein Faktor für jeden Lastfall, den sie nimmt; ein leeres Feld lässt den Lastfall weg. Kombinationen der Tragfähigkeit und außergewöhnliche gehen in die Hüllkurve der Tragfähigkeit und in die Nachweise, die der Gebrauchstauglichkeit in ihre Hüllkurven (die charakteristische auch in die Durchbiegungsnachweise); eine seismische ist ihre Faktoren ± AEd, sobald die seismischen Parameter gegeben sind.",
   "Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).": "Richtwerte: CR 0-2012 (γG 1.35, γQ 1.5 nach seiner Tabelle 7.2, ψ nach seiner Tabelle 7.1: Schnee 0.7, 0.5, 0.4; Wind 0.7, 0.2, 0).",
   "Not made yet: snow with the imposed load on roofs (EN 1991-1-1 3.3.2); the seismic combination comes with the seismic parameters (its own envelope).": "Noch nicht umgesetzt: Schnee mit der Nutzlast auf Dächern (EN 1991-1-1 3.3.2); die seismische Kombination kommt mit den seismischen Parametern (eigene Hüllkurve).",
+  // Sills measured from the finished floor (forum topic 192, decision 749)
+  'Sill measured from': 'Brüstung gemessen ab',
+  'Structural level': 'Rohbauhöhe',
+  'Finished floor': 'Fertigfußboden',
+  'Finished floor above base': 'Fertigfußboden über Basis',
+  'What the sill height is measured from: the wall\'s structural base, or the finished floor above it. Changing it keeps the opening where it is and reads the number from the new reference.': 'Wovon die Brüstungshöhe gemessen wird: der Rohbaubasis der Wand oder dem Fertigfußboden darüber. Beim Ändern bleibt die Öffnung, wo sie ist, und die Zahl wird ab der neuen Bezugshöhe gelesen.',
+  'The finished floor is 0 until "Finished floor above base" is set on the wall or its wall type.': 'Der Fertigfußboden ist 0, bis „Fertigfußboden über Basis“ an der Wand oder ihrem Wandtyp gesetzt ist.',
+  'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'Oberkante des Fertigfußbodens über der Basis dieser Wand (0 bis 1 m), ab der die Brüstung eines Fensters oder einer Tür gemessen wird, die ab Fertigfußboden gemessen ist. Leer: der ihres Wandtyps, sonst 0.',
+  'Door and window sills measured from': 'Brüstungen von Türen und Fenstern gemessen ab',
+  'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'Wovon die Brüstung einer neuen Tür, eines neuen Fensters oder einer neuen Wandöffnung gemessen wird: der Rohbaubasis der Wand oder dem Fertigfußboden darüber (an der Wand oder ihrem Wandtyp gesetzt). Jede Öffnung behält ihre eigene; neue übernehmen diese Einstellung',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

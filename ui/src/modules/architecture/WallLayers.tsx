@@ -16,6 +16,9 @@ import { openWallProfile } from './wallProfileBoard';
 import { WallReferenceField } from './WallReferenceField';
 import { openTypeDialog } from '../../shell/typeToEdit';
 
+/** The finished floor field's tip, one phrase for the translations. */
+export const FLOOR_TIP = 'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.';
+
 const THICKNESS_TIP = 'The wall\'s thickness comes from its type\'s layers. Type a new one and the selected walls take the type with the same build-up and that thickness (the core resized, the finishes kept): the project\'s, or a new one named after their type, e.g. Partition wall 150mm.';
 
 /** A straight wall's end moved along its axis so the wall is `length` long. */
@@ -81,6 +84,11 @@ export function WallLayers({ node }: { node: NodeDto }) {
           ? <dd><LengthField metres={layers.length ? total : typeof node.props.thickness === 'number' ? node.props.thickness : null} min={1e-3} testId="wall-thickness" title={THICKNESS_TIP}
               onCommit={(t) => { if (t != null) void execute('architecture.setWallThickness', { ids: sameKind(node), thickness: t }); }} /></dd>
           : <dd className="num">{lengthText(total)}</dd>}
+        {/* Forum topic 192: the finished floor over the wall's base, which a sill measured from it starts at; empty: its type's. */}
+        <dt title={FLOOR_TIP}>Finished floor above base</dt>
+        <dd><LengthField metres={typeof node.props.finishedFloor === 'number' ? node.props.finishedFloor : null} min={0} max={1} blank testId="wall-finished-floor" readOnly={!node.editable}
+          placeholder={typeof type?.props.finishedFloor === 'number' ? lengthText(type.props.finishedFloor) : undefined} title={FLOOR_TIP}
+          onCommit={(m) => void execute('architecture.updateWall', { id: node.id, finishedFloor: m })} /></dd>
         <dt>Layers run</dt><dd>{usage ? (usage.negative ? 'flipped' : 'as drawn') : '—'}</dd>
         {/* The line it keeps besides its axis (forum topic 159, decision 685). */}
         <WallReferenceField node={node} layers={layers} name={(l) => l.name ?? materialName(model, l.material)} />

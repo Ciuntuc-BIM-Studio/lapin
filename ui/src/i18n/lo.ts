@@ -4948,6 +4948,16 @@ export const LO: Record<string, string> = {
   "A factor on each case it takes; an empty field leaves the case out. Ultimate and accidental combinations go to the ultimate envelope and the checks, serviceability ones to their envelopes (the characteristic one also to the deflection checks), a seismic one is its factors ± AEd once the seismic parameters are given.": "ສຳປະສິດໜຶ່ງຄ່າຕໍ່ແຕ່ລະກໍລະນີທີ່ມັນໃຊ້; ຊ່ອງວ່າງແມ່ນບໍ່ເອົາກໍລະນີນັ້ນ. ການປະສົມຂີດຈຳກັດສູງສຸດ ແລະ ອຸບັດຕິເຫດໄປຫາເສັ້ນຫຸ້ມ ULS ແລະ ການກວດ, ການປະສົມການໃຊ້ງານໄປຫາເສັ້ນຫຸ້ມຂອງມັນ (ແບບລັກສະນະໄປຫາການກວດການແອ່ນນຳ); ການປະສົມແຜ່ນດິນໄຫວແມ່ນສຳປະສິດຂອງມັນ ± AEd ເມື່ອໃຫ້ພາຣາມິເຕີແຜ່ນດິນໄຫວແລ້ວ.",
   "Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).": "ເປັນຄ່າແນະນຳ: CR 0-2012 (γG 1.35, γQ 1.5 ຕາມຕາຕະລາງ 7.2 ຂອງມັນ, ψ ຕາມຕາຕະລາງ 7.1: ຫິມະ 0.7, 0.5, 0.4; ລົມ 0.7, 0.2, 0).",
   "Not made yet: snow with the imposed load on roofs (EN 1991-1-1 3.3.2); the seismic combination comes with the seismic parameters (its own envelope).": "ຍັງບໍ່ໄດ້ເຮັດ: ຫິມະພ້ອມນ້ຳໜັກໃຊ້ງານເທິງຫຼັງຄາ (EN 1991-1-1 3.3.2); ການປະສົມແຮງແຜ່ນດິນໄຫວມາພ້ອມກັບພາຣາມິເຕີແຜ່ນດິນໄຫວ (ມີເສັ້ນຫຸ້ມຂອງຕົນເອງ).",
+  // Sills measured from the finished floor (forum topic 192, decision 749)
+  'Sill measured from': 'ຂອບລຸ່ມປ່ອງວັດແທກຈາກ',
+  'Structural level': 'ລະດັບໂຄງສ້າງ',
+  'Finished floor': 'ພື້ນສຳເລັດ',
+  'Finished floor above base': 'ພື້ນສຳເລັດຢູ່ເໜືອຖານ',
+  'What the sill height is measured from: the wall\'s structural base, or the finished floor above it. Changing it keeps the opening where it is and reads the number from the new reference.': 'ຄວາມສູງຂອບລຸ່ມປ່ອງວັດແທກຈາກຫຍັງ: ຖານໂຄງສ້າງຂອງຝາ ຫຼື ພື້ນສຳເລັດທີ່ຢູ່ເໜືອມັນ. ການປ່ຽນຈະຄົງຊ່ອງເປີດໄວ້ບ່ອນເດີມ ແລະ ອ່ານຕົວເລກຈາກຈຸດອ້າງອີງໃໝ່.',
+  'The finished floor is 0 until "Finished floor above base" is set on the wall or its wall type.': 'ພື້ນສຳເລັດເປັນ 0 ຈົນກວ່າຈະກຳນົດ “ພື້ນສຳເລັດຢູ່ເໜືອຖານ” ໃນຝາ ຫຼື ປະເພດຝາຂອງມັນ.',
+  'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'ດ້ານເທິງຂອງພື້ນສຳເລັດເໜືອຖານຂອງຝານີ້ (0 ເຖິງ 1 ມ) ບ່ອນທີ່ຂອບລຸ່ມຂອງປ່ອງຢ້ຽມ ຫຼື ປະຕູທີ່ວັດຈາກພື້ນສຳເລັດເລີ່ມຕົ້ນ. ຫວ່າງ: ຂອງປະເພດຝາ, ບໍ່ດັ່ງນັ້ນ 0.',
+  'Door and window sills measured from': 'ຂອບລຸ່ມຂອງປະຕູ ແລະ ປ່ອງຢ້ຽມວັດແທກຈາກ',
+  'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'ຂອບລຸ່ມຂອງປະຕູ, ປ່ອງຢ້ຽມ ຫຼື ຊ່ອງເປີດໃນຝາໃໝ່ວັດແທກຈາກຫຍັງ: ຖານໂຄງສ້າງຂອງຝາ ຫຼື ພື້ນສຳເລັດທີ່ຢູ່ເໜືອມັນ (ກຳນົດໃນຝາ ຫຼື ປະເພດຝາຂອງມັນ). ແຕ່ລະຊ່ອງເປີດຮັກສາຂອງຕົນເອງ; ນີ້ແມ່ນສິ່ງທີ່ຊ່ອງໃໝ່ໃຊ້',
 };
 
 /** Phrases with a number or a name in them. */

@@ -4892,6 +4892,16 @@ export const PT: Record<string, string> = {
   "A factor on each case it takes; an empty field leaves the case out. Ultimate and accidental combinations go to the ultimate envelope and the checks, serviceability ones to their envelopes (the characteristic one also to the deflection checks), a seismic one is its factors ± AEd once the seismic parameters are given.": "Um coeficiente para cada caso que toma; um campo vazio deixa o caso de fora. As combinações de estado limite último e acidentais vão para a envoltória ELU e para as verificações, as de serviço para as suas envoltórias (a característica também para as verificações de flecha); uma combinação sísmica é os seus coeficientes ± AEd quando os parâmetros sísmicos são dados.",
   "Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).": "Indicativo: CR 0-2012 (γG 1.35, γQ 1.5 segundo a sua Tabela 7.2, ψ segundo a sua Tabela 7.1: neve 0.7, 0.5, 0.4; vento 0.7, 0.2, 0).",
   "Not made yet: snow with the imposed load on roofs (EN 1991-1-1 3.3.2); the seismic combination comes with the seismic parameters (its own envelope).": "Ainda não feito: a neve com a sobrecarga nas coberturas (EN 1991-1-1 3.3.2); a combinação sísmica vem com os parâmetros sísmicos (a sua própria envoltória).",
+  // Sills measured from the finished floor (forum topic 192, decision 749)
+  'Sill measured from': 'Peitoril medido a partir de',
+  'Structural level': 'Nível estrutural',
+  'Finished floor': 'Piso acabado',
+  'Finished floor above base': 'Piso acabado acima da base',
+  'What the sill height is measured from: the wall\'s structural base, or the finished floor above it. Changing it keeps the opening where it is and reads the number from the new reference.': 'A partir do que a altura do peitoril é medida: a base estrutural da parede ou o piso acabado acima dela. Mudar isso deixa a abertura onde está e lê o número a partir da nova referência.',
+  'The finished floor is 0 until "Finished floor above base" is set on the wall or its wall type.': 'O piso acabado é 0 até que «Piso acabado acima da base» seja definido na parede ou no seu tipo de parede.',
+  'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'O topo do piso acabado acima da base desta parede (0 a 1 m), de onde começa o peitoril de uma janela ou porta medido a partir do piso acabado. Vazio: o do seu tipo de parede; senão, 0.',
+  'Door and window sills measured from': 'Peitoris de portas e janelas medidos a partir de',
+  'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'A partir do que o peitoril de uma nova porta, janela ou abertura de parede é medido: a base estrutural da parede ou o piso acabado acima dela (definido na parede ou no seu tipo de parede). Cada abertura mantém o seu; é isto que as novas recebem',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

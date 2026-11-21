@@ -69,7 +69,8 @@ public static class OpeningMarkers
         {
             ["width"] = TagText.Length(p.Spec?.Width ?? p.Width, type.Unit, c.Book.Units),
             ["height"] = TagText.Length(p.Spec?.Height ?? p.Height, type.Unit, c.Book.Units),
-            ["sill"] = TagText.Length(p.FillSill, type.Unit, c.Book.Units),
+            // Over what it is measured from (forum topic 192): the finished floor's, or the wall's base.
+            ["sill"] = TagText.Length(p.FillSill - p.SillBase, type.Unit, c.Book.Units),
         };
         var h = style.Height * mm;
         var data = new JsonArray();
@@ -156,7 +157,7 @@ public static class OpeningMarkers
         var key = TagText.Squash(name);
         if (key is not ("width" or "height" or "sill") || Openings.OpeningOf(m, fill.Id) is not { } opening) return null;
         var p = Openings.Place(m, opening);
-        return key switch { "width" => p.Spec?.Width ?? p.Width, "height" => p.Spec?.Height ?? p.Height, _ => p.FillSill };
+        return key switch { "width" => p.Spec?.Width ?? p.Width, "height" => p.Spec?.Height ?? p.Height, _ => p.FillSill - p.SillBase };
     }
 
     public static int TagAll(ICommandContext ctx, Entity view, string? doorType, string? windowType)

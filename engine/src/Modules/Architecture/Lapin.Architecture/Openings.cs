@@ -13,7 +13,7 @@ namespace Lapin.Architecture;
 /// <para>
 /// An opening keeps its place on its wall: <c>along</c>, its centre's
 /// distance from the wall's start along the axis, and <c>sill</c>, its bottom
-/// above the wall's base. Its width and height are its fill's: the element's
+/// above the wall's base, or above the finished floor when it is measured from it (<see cref="OpeningSills"/>). Its width and height are its fill's: the element's
 /// own size where it has one (forum topic 140), else its type's (a changed type
 /// refits every opening it fills); an opening with no fill keeps its own. So an
 /// opening follows its wall through any edit.
@@ -30,10 +30,17 @@ public static class Openings
     /// (<see cref="HoleWidthKey"/>, <see cref="HoleHeightKey"/>); the fill stands centred on it, <see cref="FillOffset"/> over its
     /// bottom (<see cref="FillOffsetKey"/>: a door on the finished floor in a hole the file cuts down to the slab), at <see cref="FillSill"/>.
     /// </remarks>
-    public readonly record struct Placed(Entity Opening, Entity? Fill, JoinerySpec? Spec, double Along, double Sill, double Width, double Height, JoineryShape? Shape = null, double FillOffset = 0)
+    /// <remarks>
+    /// Sill is over the wall's base whatever the opening's sill is measured from (forum topic 192, <see cref="OpeningSills"/>):
+    /// <see cref="SillBase"/> is the finished floor's height over the base for one measured from it, else 0.
+    /// </remarks>
+    public readonly record struct Placed(Entity Opening, Entity? Fill, JoinerySpec? Spec, double Along, double Sill, double Width, double Height, JoineryShape? Shape = null, double FillOffset = 0, double SillBase = 0)
     {
         /// <summary>Where the door or window stands, over the wall's base: the hole's sill, raised by its offset.</summary>
         public double FillSill => Sill + FillOffset;
+
+        /// <summary>The door's or window's sill (a bare opening's) over what it is measured from: what architecture.moveOpening's sill is.</summary>
+        public double OwnSill => (Fill != null ? FillSill : Sill) - SillBase;
     }
 
     public static IEnumerable<Entity> Of(IModelView m, string wallId) => m.RelatedOf(wallId, IfcClass.RelVoidsElement).Where(o => o.Class == IfcClass.OpeningElement);
@@ -130,8 +137,11 @@ public static class Openings
         var spec = fill == null ? null : SpecOf(m, fill.Id);
         var (width, height) = spec == null ? (opening.Num("width", 1), opening.Num("height", 2))
             : (opening.NumOrNull(HoleWidthKey) ?? spec.Width, opening.NumOrNull(HoleHeightKey) ?? spec.Height);
-        return new Placed(opening, fill, spec, opening.Num("along"), opening.Num("sill"), width, height, fill == null ? BareShape(opening) : spec?.Shape,
-            spec == null ? 0 : opening.Num(FillOffsetKey));
+        // Over the finished floor (forum topic 192): raised by the floor's height over the wall's base, worked out now.
+        var sillBase = OpeningSills.BaseOf(m, opening);
+        var sill = OpeningSills.FromFinished(opening) ? opening.Num("sill") + sillBase : opening.Num("sill");
+        return new Placed(opening, fill, spec, opening.Num("along"), sill, width, height, fill == null ? BareShape(opening) : spec?.Shape,
+            spec == null ? 0 : opening.Num(FillOffsetKey), sillBase);
     }
 
     /// <summary>The head kinds a bare opening takes (decision 253): "round" is the semicircle.</summary>
@@ -312,7 +322,7 @@ public static class Openings
                 // One of its own size keeps it (forum topic 140), checked with the type's construction at that size.
                 var sized = Sized(spec, fill);
                 if (!ReferenceEquals(sized, spec) && Joinery.Problem(sized) is { } atSize) throw new CommandException($"„{fill.Name}”, {sized.Width * 1000:0} × {sized.Height * 1000:0}: {atSize}");
-                CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), sized.Width, sized.Height, opening.Id);
+                CheckFits(edit.Model, wall, opening.Num("along"), OpeningSills.StructuralSill(edit.Model, opening, wall), sized.Width, sized.Height, opening.Id);
             }
             // A curtain wall's door: still in its cell (report #133).
             else CurtainCells.CheckDoor(edit.Model, fill);
@@ -325,7 +335,8 @@ public static class Openings
     /// itself (filling it) of the type, on the wall's storey. Refused when it
     /// does not fit.
     /// </summary>
-    public static Entity AddFill(IEdit edit, Entity wall, Entity type, double along, double? sill, double? width = null, double? height = null)
+    /// <remarks><paramref name="sillFrom"/> (forum topic 192): what <paramref name="sill"/> (else the type's) is measured from; null: the wall's base.</remarks>
+    public static Entity AddFill(IEdit edit, Entity wall, Entity type, double along, double? sill, double? width = null, double? height = null, string? sillFrom = null)
     {
         var spec = JoinerySpec.From(type.Attrs["spec"]) ?? throw new CommandException($"„{type.Name}” has no configuration.");
         var s = sill ?? spec.SillHeight;
@@ -336,8 +347,10 @@ public static class Openings
         var sized = spec with { Width = width ?? spec.Width, Height = height ?? spec.Height };
         if (!(sized.Width > 0 && sized.Height > 0) || !double.IsFinite(sized.Width) || !double.IsFinite(sized.Height)) throw new CommandException("A door or window needs a width and a height.");
         if ((width != null || height != null) && Joinery.Problem(sized) is { } problem) throw new CommandException($"At {sized.Width * 1000:0} × {sized.Height * 1000:0}: {problem}");
-        CheckFits(edit.Model, wall, along, s, sized.Width, sized.Height);
-        var opening = new Entity(edit.NewId(), IfcClass.OpeningElement, "Opening", new JsonObject { ["along"] = along, ["sill"] = s }, "OPENING");
+        CheckFits(edit.Model, wall, along, sillFrom == OpeningSills.Finished ? s + OpeningSills.FinishedFloor(edit.Model, wall) : s, sized.Width, sized.Height);
+        var openingAttrs = new JsonObject { ["along"] = along, ["sill"] = s };
+        OpeningSills.Write(openingAttrs, sillFrom);
+        var opening = new Entity(edit.NewId(), IfcClass.OpeningElement, "Opening", openingAttrs, "OPENING");
         edit.Add(opening);
         edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelVoidsElement, wall.Id, [opening.Id]));
         var cls = spec.IsDoor ? IfcClass.Door : IfcClass.Window;
@@ -355,10 +368,11 @@ public static class Openings
     /// sill, with nothing filling it (a passage, a hatch, a niche's place); an IfcOpeningElement voiding the wall, as a
     /// door's is. Refused when it does not fit.
     /// </summary>
-    public static Entity AddBare(IEdit edit, Entity wall, double along, double sill, double width, double height, string? shape = null, double? rise = null)
+    public static Entity AddBare(IEdit edit, Entity wall, double along, double sill, double width, double height, string? shape = null, double? rise = null, string? sillFrom = null)
     {
-        CheckFits(edit.Model, wall, along, sill, width, height);
+        CheckFits(edit.Model, wall, along, sillFrom == OpeningSills.Finished ? sill + OpeningSills.FinishedFloor(edit.Model, wall) : sill, width, height);
         var attrs = new JsonObject { ["along"] = along, ["sill"] = sill, ["width"] = width, ["height"] = height };
+        OpeningSills.Write(attrs, sillFrom);
         SetShape(attrs, shape ?? "rect", rise);
         var opening = new Entity(edit.NewId(), IfcClass.OpeningElement, "Opening", attrs, "OPENING");
         edit.Add(opening);
@@ -410,19 +424,29 @@ public static class Openings
         if (rise is { } v && kind != "round") attrs["rise"] = v;
     }
 
-    /// <summary>Moves a door's, a window's (or a bare opening's) opening along its wall or up it.</summary>
-    public static void Move(IEdit edit, Entity fillOrOpening, double? along, double? sill)
+    /// <summary>
+    /// Moves a door's, a window's (or a bare opening's) opening along its wall or up it. <paramref name="sill"/> is over what the
+    /// sill is measured from, <paramref name="sillFrom"/> (forum topic 192; null: as it is). Another reference with no sill given
+    /// leaves the element standing where it stands, its sill read from the other one; the same one keeps its sill over it.
+    /// </summary>
+    public static void Move(IEdit edit, Entity fillOrOpening, double? along, double? sill, string? sillFrom = null)
     {
         var opening = fillOrOpening.Class == IfcClass.OpeningElement ? fillOrOpening : OpeningOf(edit.Model, fillOrOpening.Id) ?? throw new CommandException("It fills no opening.");
         var wall = WallOf(edit.Model, opening.Id) ?? throw new CommandException("The opening is in no wall.");
         var placed = Place(edit.Model, opening);
         var a = along ?? placed.Along;
+        var wasFinished = OpeningSills.FromFinished(opening);
+        var finished = sillFrom == null ? wasFinished : sillFrom == OpeningSills.Finished;
+        // The wall's finished floor (its own, else its type's).
+        var floor = finished && wall.Class == IfcClass.Wall ? OpeningSills.FinishedFloor(edit.Model, wall) : 0;
         // A door's or window's sill is its own: its opening's lies its offset under it (Openings.FillOffsetKey).
-        var s = sill is { } given ? given - (fillOrOpening.Class == IfcClass.OpeningElement ? 0 : placed.FillOffset) : placed.Sill;
+        var s = sill is { } given ? given - (fillOrOpening.Class == IfcClass.OpeningElement ? 0 : placed.FillOffset) + (finished ? floor : 0)
+            : finished && wasFinished ? opening.Num("sill") + floor : placed.Sill;
         CheckFits(edit.Model, wall, a, s, placed.Width, placed.Height, opening.Id);
         var attrs = opening.CloneAttrs();
         attrs["along"] = a;
-        attrs["sill"] = s;
+        attrs["sill"] = finished ? s - floor : s;
+        if (finished != wasFinished) OpeningSills.Write(attrs, finished ? OpeningSills.Finished : null);
         edit.Replace(opening.With(attrs: attrs));
     }
 
@@ -442,7 +466,7 @@ public static class Openings
         var sized = Sized(spec, fill);
         if (!ReferenceEquals(sized, spec) && Joinery.Problem(sized) is { } problem) throw new CommandException($"„{fill.Name}”, {sized.Width * 1000:0} × {sized.Height * 1000:0}: {problem}");
         if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
-            CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), sized.Width, sized.Height, opening.Id);
+            CheckFits(edit.Model, wall, opening.Num("along"), OpeningSills.StructuralSill(edit.Model, opening, wall), sized.Width, sized.Height, opening.Id);
         // Another type: its opening is the door's or window's size again, the file's own hole (an imported one's) left behind.
         if (OpeningOf(edit.Model, fill.Id) is { } own) ClearOwnHole(edit, own);
         edit.Relate(IfcClass.RelDefinesByType, type.Id, fill.Id);

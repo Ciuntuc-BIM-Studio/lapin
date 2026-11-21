@@ -289,7 +289,7 @@ public static class RoomOpenings
                 Openings.SetType(ctx, fill, type);
                 fill = m.Get(fill.Id)!;
             }
-            if (Openings.OpeningOf(m, fill.Id) is { } own && (Math.Abs(Openings.Place(m, own).Along - along) > 1e-6 || (sill is { } s && Math.Abs(Openings.Place(m, own).Sill + Openings.Place(m, own).FillOffset - s) > 1e-6)))
+            if (Openings.OpeningOf(m, fill.Id) is { } own && (Math.Abs(Openings.Place(m, own).Along - along) > 1e-6 || (sill is { } s && Math.Abs(Openings.Place(m, own).OwnSill - s) > 1e-6)))
             {
                 Openings.Move(ctx, fill, along, sill);
                 fill = m.Get(fill.Id)!;
@@ -373,7 +373,8 @@ public static class RoomOpenings
         entry["hand"] = J(hand);
         entry["face"] = J(face);
         if (m.RelatingOf(fill.Id, IfcClass.RelDefinesByType) is { } type) entry["type"] = type.Id;
-        var sill = place.Sill + place.FillOffset;
+        // Over what it is measured from (forum topic 192), as architecture.moveOpening takes it.
+        var sill = place.FillSill - place.SillBase;
         var given = Json.Number(entry["sill"]) ?? Openings.SpecOf(m, fill.Id)?.SillHeight;
         if (given is not { } g || Math.Abs(g - sill) > 1e-6) entry["sill"] = sill;
         if (entry.ToJsonString() != was) ctx.Replace(found.Room.With(attrs: attrs));

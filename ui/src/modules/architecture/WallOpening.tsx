@@ -14,6 +14,8 @@ import { relatedOf, relatingOf } from '../../engine/model';
 import { AlongField } from './AlongField';
 import { LengthField } from '../../shell/cells';
 import { sameKind } from '../../shell/params';
+import { SillFromRows, SILL_FROM_TIP } from './SillFromRows';
+import { sillFromOf } from './sillFrom';
 import { draftOf, openOpeningDialog, revealMaterial, revealThickness, REVEALS } from './OpeningDialog';
 
 const HEADS: { kind: OpeningHead; label: string }[] = [
@@ -53,6 +55,10 @@ function NewOpening() {
       <dt>Width</dt><dd><LengthField metres={size.width} min={0.05} onCommit={(m) => m != null && set({ width: m })} /></dd>
       <dt>Height</dt><dd><LengthField metres={size.height} min={0.05} onCommit={(m) => m != null && set({ height: m })} /></dd>
       <dt>Sill</dt><dd><LengthField metres={size.sill} min={0} onCommit={(m) => m != null && set({ sill: m })} /></dd>
+      <dt title={SILL_FROM_TIP}>Sill measured from</dt>
+      <dd><select data-field="new-opening-sill-from" value={size.sillFrom ?? ''} title={SILL_FROM_TIP} onChange={(e) => set({ sillFrom: e.target.value === 'finished' || e.target.value === 'structural' ? e.target.value : undefined })}>
+        <option value="">Project default</option><option value="structural">Structural level</option><option value="finished">Finished floor</option>
+      </select></dd>
       <HeadFields kind={size.shape} rise={size.rise} width={size.width} onChange={set} />
     </dl>
   );
@@ -63,8 +69,8 @@ export const wallOpening: ToolDef = {
   gesture: { kind: 'pick', types: ['IfcWall'] },
   complete: async ({ points: [p], entity }, ctx) => {
     if (!entity) return;
-    const { width, height, sill, shape, rise } = useUi.getState().openingSize;
-    await ctx.execute('architecture.addWallOpening', { wallId: entity.id, x: p.x, y: p.y, width, height, sill, shape, ...(rise != null && { rise }) });
+    const { width, height, sill, shape, rise, sillFrom } = useUi.getState().openingSize;
+    await ctx.execute('architecture.addWallOpening', { wallId: entity.id, x: p.x, y: p.y, width, height, sill, shape, ...(rise != null && { rise }), ...(sillFrom && { sillFrom }) });
   },
 };
 
@@ -95,6 +101,7 @@ const openingsWith = (node: NodeDto): string[] => {
  */
 export function WallOpeningSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
+  const relations = useSession((s) => s.relations);
   const set = (patch: Record<string, number | string | null>) => void execute('architecture.updateWallOpening', { ids: openingsWith(node), ...patch });
   const d = draftOf(node);
   const t = d.reveal === 'none' ? 0 : d.revealThickness ?? revealThickness(d.reveal);
@@ -107,6 +114,7 @@ export function WallOpeningSection({ node }: { node: NodeDto }) {
         <dt>Height</dt><dd><LengthField metres={num(node, 'height', 2)} min={0.05} onCommit={(m) => m != null && set({ height: m })} /></dd>
         <dt>Along the wall</dt><dd><AlongField id={node.id} along={num(node, 'along', 0)} width={num(node, 'width', 1)} /></dd>
         <dt>Sill</dt><dd><LengthField metres={num(node, 'sill', 0)} min={0} onCommit={(m) => m != null && set({ sill: m })} /></dd>
+        <SillFromRows value={sillFromOf(node)} wall={relatingOf({ nodes, relations }, node.id, 'IfcRelVoidsElement')} disabled={node.editable === false} onChange={(v) => set({ sillFrom: v })} />
         <HeadFields kind={headOf(node)} rise={typeof node.props.rise === 'number' ? node.props.rise : null} width={num(node, 'width', 1)} onChange={set} />
         <dt>Reveal finish</dt>
         <dd><select data-field="opening-reveal" value={d.reveal} onChange={(e) => set({ reveal: e.target.value })}>

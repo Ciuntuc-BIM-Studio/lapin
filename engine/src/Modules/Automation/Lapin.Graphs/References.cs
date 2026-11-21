@@ -93,7 +93,10 @@ public static class References
             var curve = PathCurve.Of(wall);
             var along = Math.Clamp(opening.Num("along"), 0, curve.Length);
             var t = curve.TangentAt(along);
-            return [At(curve.PointAt(along), Base(c, wall) + opening.Num("sill")), Math.Atan2(t.Y, t.X) * 180 / Math.PI];
+            // A sill over the finished floor (forum topic 192): the height over the wall's base as the architecture module works it out.
+            var sill = opening.Str("sillFrom") == "finished" && c.Query?.Services.Get<IWallOpenings>()?.Openings(c.Model).FirstOrDefault(o => o.OpeningId == opening.Id) is { } wo
+                ? wo.Sill - wall.Num("baseOffset") : opening.Num("sill");
+            return [At(curve.PointAt(along), Base(c, wall) + sill), Math.Atan2(t.Y, t.X) * 180 / Math.PI];
         }
         throw new CommandException($"„{e.Name}” ({e.Class}) is not placed at a point: columns, pad footings, furniture, doors and windows are (a wall: Axis; any element: Bounding box).");
     }

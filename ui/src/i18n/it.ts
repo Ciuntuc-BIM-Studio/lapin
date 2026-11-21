@@ -4855,6 +4855,16 @@ export const IT: Record<string, string> = {
   "A factor on each case it takes; an empty field leaves the case out. Ultimate and accidental combinations go to the ultimate envelope and the checks, serviceability ones to their envelopes (the characteristic one also to the deflection checks), a seismic one is its factors ± AEd once the seismic parameters are given.": "Un coefficiente per ogni caso che prende; un campo vuoto esclude il caso. Le combinazioni allo stato limite ultimo e accidentali vanno nell'inviluppo SLU e nelle verifiche, quelle di esercizio nei loro inviluppi (la caratteristica anche nelle verifiche di deformabilità); una combinazione sismica sono i suoi coefficienti ± AEd una volta dati i parametri sismici.",
   "Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).": "Indicativo: CR 0-2012 (γG 1.35, γQ 1.5 secondo la sua Tabella 7.2, ψ secondo la sua Tabella 7.1: neve 0.7, 0.5, 0.4; vento 0.7, 0.2, 0).",
   "Not made yet: snow with the imposed load on roofs (EN 1991-1-1 3.3.2); the seismic combination comes with the seismic parameters (its own envelope).": "Non ancora realizzato: la neve con il carico variabile sulle coperture (EN 1991-1-1 3.3.2); la combinazione sismica arriva con i parametri sismici (con il suo inviluppo).",
+  // Sills measured from the finished floor (forum topic 192, decision 749)
+  'Sill measured from': 'Davanzale misurato da',
+  'Structural level': 'Quota strutturale',
+  'Finished floor': 'Pavimento finito',
+  'Finished floor above base': 'Pavimento finito sopra la base',
+  'What the sill height is measured from: the wall\'s structural base, or the finished floor above it. Changing it keeps the opening where it is and reads the number from the new reference.': 'Da cosa si misura l\'altezza del davanzale: la base strutturale del muro o il pavimento finito sopra di essa. Cambiarlo lascia l\'apertura dov\'è e rilegge il numero rispetto al nuovo riferimento.',
+  'The finished floor is 0 until "Finished floor above base" is set on the wall or its wall type.': 'Il pavimento finito è 0 finché «Pavimento finito sopra la base» non è impostato sul muro o sul suo tipo di muro.',
+  'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.': 'La quota superiore del pavimento finito sopra la base di questo muro (da 0 a 1 m), da cui parte il davanzale di una finestra o porta misurato dal pavimento finito. Vuoto: quello del suo tipo di muro, altrimenti 0.',
+  'Door and window sills measured from': 'Davanzali di porte e finestre misurati da',
+  'What the sill of a new door, window or wall opening is measured from: the wall\'s structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take': 'Da cosa si misura il davanzale di una nuova porta, finestra o apertura nel muro: la base strutturale del muro o il pavimento finito sopra di essa (impostato sul muro o sul suo tipo di muro). Ogni apertura mantiene il proprio; questo è ciò che prendono le nuove',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
