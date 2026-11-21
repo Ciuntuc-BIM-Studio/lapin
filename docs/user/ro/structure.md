@@ -12,6 +12,7 @@ Tabul **Structură** are cadrele și fundațiile.
 
 - **Stâlp** (<kbd>CL</kbd>): un clic unde stă. Un stâlp merge de la nivelul lui la nivelul de deasupra.
 - **Grindă** (<kbd>BM</kbd>): un clic la fiecare capăt; cu **Arc** în bara liniei de comandă (**Linie** / **Arc**), dai clic pe cele două capete, apoi pe un punct prin care trece arcul. **Grindă curbă** (<kbd>BC</kbd>) pornește unealta Grindă deja pe **Arc**.
+  O grindă atârnă de nivelul de deasupra: fața ei de sus e la partea de sus a nivelului ei (**Cota superioară** a nivelului, unde începe nivelul de deasupra). **Proprietăți → Amplasare → Decalaj sus (de la nivelul de deasupra)** o mută de acolo: 0 îi ține fața de sus pe nivelul de deasupra, −50 o coboară cu 50 mm; **Cota superioară** arată unde e fața ei de sus față de ±0,00 și o poți scrie pe aceea. Dacă o grindă nu e unde te aștepți, verifică întâi înălțimile nivelurilor ([Niveluri](levels.md)).
 - **Stâlpi pe axe** pune câte un stâlp la fiecare intersecție a axelor. Axele le desenezi cu **Adnotări → Axă** (<kbd>GR</kbd>).
 
 ## Cote temporare
@@ -54,6 +55,8 @@ Grinzile și fundațiile continue se taie și se mută cu aceleași unelte ca pe
 ## Tipuri și colțuri
 
 **Tipuri structurale** setează secțiunile stâlpilor, grinzilor și fundațiilor: secțiuni de beton și profile metalice. **Secțiunea** unui stâlp e un **Dreptunghi**, un **Cerc** sau un **Poligon**, unul regulat, dat de **Laturi** și **Diametru** (prin colțuri) (un stâlpișor octogonal, cum îl poate avea un IFC importat). Dă clic pe un tip din listă ca să-i schimbi dimensiunea sau numele, apoi **Salvează tipul**: toate elementele de acel tip îl urmează; **Tip nou** te întoarce la crearea unui tip.
+
+**Material** e din ce sunt făcute elementele tipului: beton armat pentru un tip nou, sau materialul profilului pentru unul dintr-o bibliotecă de profile (oțel, lemn, aluminiu), până alegi altul. Alege unul dintre materialele proiectului, sau **Material nou…** ca să faci unul. Culoarea, hașura, îmbinările, cantitățile și exportul IFC ale elementelor îl urmează. La un tip de fundație continuă e **Materialul tălpii** (elevația își păstrează straturile); la o fundație izolată e al treptelor. **Proprietăți** arată materialul unui stâlp, al unei grinzi sau al unei fundații sub tipul lui; **Schimbă în tip…** deschide tipul aici.
 
 **Duplică** de lângă nume copiază tipul ca „Nume 2” („IPE 300 (2)” când numele se termină cu un număr), iar **↑** **↓** îl mută în sus și în jos în listele tipurilor lui, ca la [Tipurile de pereți](walls.md#tipurile-de-pereți).
 

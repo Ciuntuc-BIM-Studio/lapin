@@ -73,6 +73,67 @@ public static class HatchLibrary
 60, 0,0, -2.309401,4, 4.618802,-4.618802
 120, 4.618802,0, 2.309401,4, 4.618802,-4.618802
 
+;; Insulation (drawn by Lapin from simple geometry; BATT, the batt's heads along the layer, is drawn by its own rule)
+*FOAMBOARD, Foam board insulation: a grid of circles 2.4 mm
+;%LAPIN-TILE=2.4,2.4
+;%LAPIN-ARC=1.2,1.2,0.9,0,360
+
+*REFLECTIVE, Reflective insulation: rows of zigzags
+;%LAPIN-TILE=2,1.6
+;%LAPIN-LINE=0,0.3,1,1.3
+;%LAPIN-LINE=1,1.3,2,0.3
+
+*BLANKET, Blanket insulation: a close diamond lattice at 60 degrees
+60, 0,0, 0,1.2
+120, 0,0, 0,1.2
+
+*FIBERGLASS, Fibreglass insulation: rows of overlapping scales
+;%LAPIN-TILE=4,4
+;%LAPIN-ARC=2,0,2,0,180
+;%LAPIN-ARC=0,2,2,0,180
+
+*BLOWNIN, Blown-in insulation: a honeycomb of hexagons 1 mm a side
+;%LAPIN-TILE=3,1.7320508075688772
+;%LAPIN-LINE=0,0.8660254037844386,0.5,0.8660254037844386
+;%LAPIN-LINE=0.5,0.8660254037844386,1,0
+;%LAPIN-LINE=1,0,2,0
+;%LAPIN-LINE=2,0,2.5,0.8660254037844386
+;%LAPIN-LINE=2.5,0.8660254037844386,3,0.8660254037844386
+;%LAPIN-LINE=0.5,0.8660254037844386,1,1.7320508075688772
+;%LAPIN-LINE=2.5,0.8660254037844386,2,1.7320508075688772
+
+*RIGIDFOAM, Rigid foam insulation: rounded squares with small diamonds at their corners
+;%LAPIN-TILE=3,3
+;%LAPIN-LINE=0.9,0.5,2.1,0.5
+;%LAPIN-LINE=2.5,0.9,2.5,2.1
+;%LAPIN-LINE=2.1,2.5,0.9,2.5
+;%LAPIN-LINE=0.5,2.1,0.5,0.9
+;%LAPIN-LINE=0.25,0,0,0.25
+;%LAPIN-LINE=0,0.25,-0.25,0
+;%LAPIN-LINE=-0.25,0,0,-0.25
+;%LAPIN-LINE=0,-0.25,0.25,0
+;%LAPIN-ARC=2.1,0.9,0.4,270,90
+;%LAPIN-ARC=2.1,2.1,0.4,0,90
+;%LAPIN-ARC=0.9,2.1,0.4,90,90
+;%LAPIN-ARC=0.9,0.9,0.4,180,90
+
+*ACOUSTIC, Acoustic insulation: interlocking rows of pointed ovals
+;%LAPIN-TILE=4,2.4
+;%LAPIN-ARC=2,-1.2333333333333334,2.433333333333333,48.887,82.226
+;%LAPIN-ARC=2,2.433333333333333,2.433333333333333,228.887,82.226
+;%LAPIN-ARC=0,-0.03333333333333344,2.433333333333333,48.887,82.226
+;%LAPIN-ARC=0,3.6333333333333333,2.433333333333333,228.887,82.226
+
+*RIGIDFIBER, Rigid fibre board: bands of lines crossing at shallow angles
+0, 0,0, 0,3
+18, 0,0, 0,1.5
+162, 0,0, 0,1.5
+
+*COTTONFIBER, Cotton fibre insulation: a lattice of long lenses
+;%LAPIN-TILE=3,1
+;%LAPIN-ARC=1.5,-2,2.5,53.13010235415598,73.73979529168804
+;%LAPIN-ARC=1.5,3,2.5,233.13010235415598,73.73979529168804
+
 *EARTH, Groups of short strokes (earth)
 0, 0,0, 6,6, 4,-8
 0, 0,0.8, 6,6, 4,-8

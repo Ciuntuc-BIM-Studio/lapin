@@ -4676,6 +4676,8 @@ export const scenes = [
       await t.wait(600);
       t.expect(await dialog.locator('input[data-field=type-mark]').inputValue() === 'P7', 'the type shows its mark');
       t.expect(await dialog.locator('[data-action=structure-types-import]').count() === 1, 'the types can be imported');
+      // Forum topic 190: the type's material, to change.
+      t.expect(await dialog.locator('[data-testid=structure-type-material] select').inputValue() === 'Precast concrete', 'the type shows its material');
       await t.shot('structure-types-lintel', { of: '.dialog', pad: 0 });
       await t.ui({ dialog: null });
       const kp7 = (await t.nodes()).find((n) => n.type === 'IfcBeamType' && n.name === 'KP 7');
@@ -13401,6 +13403,36 @@ export const scenes = [
       await t.ui({ selection: tag.id, selected: [tag.id] });
       await t.wait(700);
       t.expect(await t.page.locator('[data-tag-shown]').count() === 1 && await t.page.locator('[data-tag-marker-type]').count() === 1, 'a marker\'s properties have Shown and Tag type');
+    },
+  },
+  {
+    // Forum topics 204–205: the built-in Polish markers (a line from the frame's middle to a bubble with the mark, the clear
+    // opening over and under the line, a window's wall opening and sill), added from + Built-in marker…, and their Marker… editor.
+    id: 'tag-bubble-markers',
+    touches: ['core', 'architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('standards.addTagPreset', { preset: 'door-pl' });
+      await t.cmd('standards.addTagPreset', { preset: 'window-pl' });
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor plan', scale: 50 });
+      await t.ui({ planViewId: plan.id, keyPlan: false });
+      await t.cmd('architecture.tagOpenings', { viewId: plan.id, doorType: 'door-pl', windowType: 'window-pl' });
+      await t.wait(1200);
+      const tags = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'TAG');
+      t.expect(tags.some((n) => n.props.tagType === 'door-pl') && tags.some((n) => n.props.tagType === 'window-pl'), 'the doors and windows take the Polish markers');
+      await t.fit();
+      await t.shot('tag-bubble-markers', { of: '[data-testid=plan]', pad: 0 });
+      await t.tool('manage.standards');
+      const dialog = t.page.locator('.dialog');
+      await dialog.getByText('Tags', { exact: true }).first().click();
+      await t.wait(600);
+      t.expect(await dialog.locator('[data-field=tag-preset]').count() === 1, 'the Tags tab offers + Built-in marker…');
+      await dialog.locator('[data-field=tag-marker-door-pl]').click();
+      await t.wait(500);
+      t.expect(await dialog.locator('[data-field=marker-layout]').inputValue() === 'bubble', 'Marker… shows the bubble layout');
+      await t.shot('tag-marker-editor', { of: '[data-marker-editor]', pad: 6 });
+      await t.ui({ dialog: null });
     },
   },
   // [scenes:B1]

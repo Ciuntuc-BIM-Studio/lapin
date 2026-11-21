@@ -340,6 +340,33 @@ Planurile desenează un parasolar de deasupra secțiunii punctat, unul care o tr
 
 **Adnotări → Etichete uși și ferestre** pune un marcaj pe fiecare ușă și fereastră dintr-un plan: o linie peste perete, marca în afară, dimensiunile și parapetul înăuntru. Cum arată etichetele se setează în **Gestionare → Standarde de desen → Etichete**.
 
+### Dimensiunile pe care le poate scrie o etichetă
+
+Textele unui marcaj (**Text (exterior)**, **Interior**) citesc aceste dimensiuni ale ușii sau ferestrei, în unitatea tipului de etichetă:
+
+- `{width}`, `{height}`: dimensiunea ușii sau a ferestrei, ca înainte.
+- `{openingWidth}`, `{openingHeight}`: golul din perete pe care îl umple ușa sau fereastra (golul pe care un fișier importat îl taie în jurul ei, acolo unde diferă).
+- `{clearWidth}`, `{clearHeight}`: lumina tocului, cum o dau desenele poloneze și cehe (ușă 800/1970). Lățimea este lățimea minus fața tocului pe ambele laturi; înălțimea este înălțimea minus tocul de sus și, jos, pragul unei uși sau tocul de jos al unei ferestre. La un cap în arc, înălțimea merge până la vârful interior, la mijloc; o fereastră rotundă ia interiorul inelului. O ușă de 900 × 2100 cu toc de 60 mm și prag de 20 mm are lumina 780 × 2020.
+- `{sill}`: parapetul față de reperul de la care se măsoară; `{sillFinished}`: față de pardoseala finită a peretelui, oricare ar fi reperul.
+
+Un simbol desenat ca marcaj le citește și el. Regulile de etichetare le citesc în metri (`clearWidth < 0.8`). În rest (etichete cu chenar, etichete de text, extrase, formule) `clearWidth`, `clearHeight`, `openingWidth`, `openingHeight` și `sillFinished` sunt câmpuri calculate, în milimetri, oferite în listele de câmpuri.
+
+### Marcaje gata făcute și marcajul cu bulă
+
+În **Gestionare → Standarde de desen → Etichete**, **+ Marcaj încorporat…** adaugă un marcaj după o convenție națională, ca tip de etichetă al tău, de modificat:
+
+- **Marcaj de ușă (polonez: bulă, lumina tocului)**: o linie din mijlocul tocului, 60 cm spre exterior, până la o bulă de 30 cm cu marca. Lățimea luminii stă deasupra liniei și înălțimea dedesubt, lățimea mereu sus, oricum s-ar roti ușa. Clasa de rezistență la foc (`{FireRating}`) stă la mijlocul tocului, doar la ușile care au una.
+- **Marcaj de fereastră (polonez: bulă, gol în perete, parapet)**: aceeași linie, care intră și în cameră, până la 10 cm dincolo de fața interioară a peretelui. Lățimea golului stă deasupra liniei și înălțimea dedesubt, iar parapetul față de pardoseala finită, la capătul interior al liniei.
+- **Marcaj de ușă (ceh: lumina tocului 800/1970)**: marcajul obișnuit, cu marca în afară și lumina în milimetri înăuntru.
+
+Alege tipul în **Adnotări → Etichete uși și ferestre** sau printr-o regulă de etichetare. Adăugat din nou, se face o copie numerotată. Marcajele cu care pornește un proiect rămân cum erau.
+
+![Marcaje poloneze de uși și ferestre: linii din tocuri până la bule cu mărcile, lumina tocului și golul din perete deasupra și dedesubt, parapetele înăuntru](shots/tag-bubble-markers.webp)
+
+**Marcaj…**, lângă tipul de etichetă al unei uși sau ferestre, alege așezarea: **linie peste perete** (cea obișnuită) sau **linie la o bulă**. Pentru bulă alege textul **Deasupra liniei**, **Sub linie** și **La origine**, apoi lungimile, în centimetrii clădirii (desenul le scalează): **Lungimea liniei**, **Decalajul originii liniei** (spre exterior +, spre interior −), **Linie în interior peste perete** (gol: linia pornește din origine), **Diametrul bulei** (0: doar marca), **Decalajul textului de la origine** și **Decalajul textului interior**. **Text (exterior)** intră în bulă, iar **Interior** stă la capătul interior al liniei. Fiecare text își păstrează mânerele în plan.
+
+![Marcaj… pentru marcajul polonez de ușă: așezarea cu bulă, textele și lungimile ei](shots/tag-marker-editor.webp)
+
 ### Marcajul modificat pe ecran
 
 Fiecare marcaj se poate aranja de mână, parte cu parte. Dă clic pe linia lui sau pe unul dintre texte ca să-l selectezi: fiecare text are atunci un mâner pătrat (trage-l ca să muți textul) și unul rotund după capătul lui (trage-l ca să rotești textul), iar fiecare capăt al liniei are un mâner (trage-l ca să lungești sau să scurtezi linia; textul de la acel capăt merge cu el). Ctrl/⌘-clic pe un mâner pune acea parte cum era. Fiecare tragere e un pas de anulare. Cu mai multe marcaje din același plan selectate, o parte trasă la unul schimbă aceeași parte la toate.
