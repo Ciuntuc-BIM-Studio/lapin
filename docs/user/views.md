@@ -4,7 +4,7 @@ order: 70
 summary: Make sections and elevations, open 3D views, and set what each view shows and how.
 ---
 
-All the views are in the project browser, filed under their discipline: Architecture, Structure or MEP. Double-click a view to open it in a tab.
+All the views are in the project browser, filed under their discipline: Architecture, Structure or MEP. Double-click a view to open it in a tab. A small blue square before a view's name says it is placed on a sheet (hover it for which). In a long browser, right-click in an open view or on its tab and choose **Find in project browser**: the browser unfolds, opens the view's group, scrolls to it and lights it. **Place on sheet…** in the same menu puts the view on a sheet you pick, or on a new one (see Sheets). A view on a sheet cannot be deleted until it is taken off the sheet.
 
 ![The project browser with a section and an elevation](shots/browser.webp)
 

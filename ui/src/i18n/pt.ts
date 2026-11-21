@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // Find in project browser, Place on sheet… (forum topic 207)
+  "Find in project browser": "Localizar no navegador de projeto", "Search the sheets (number or name)": "Pesquisar as pranchas (número ou nome)", "New sheet…": "Nova prancha…", "New sheet with this view on it, named after it": "Uma nova prancha com esta vista, com o nome dela", "Open the sheet after placing": "Abrir a prancha depois de colocar a vista", "Open the sheet": "Abrir a prancha", "No sheet matches.": "Nenhuma prancha corresponde.", "A view goes on one sheet: take it off that sheet to place it on another.": "Uma vista vai numa só prancha: retire-a dessa prancha para colocá-la em outra.", "This view is not listed in the project browser.": "Esta vista não está listada no navegador de projeto.", "This view cannot go on a sheet.": "Esta vista não pode ir para uma prancha.",
   "Show undeformed": "Mostrar indeformada",
   "to check:": "a verificar:",
   "Mode shape scale": "Escala da forma modal",
@@ -5514,4 +5516,14 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^„(.+)” is an accidental combination: checked as an ultimate one, with the persistent situation's γM \(on the safe side\)\.$/, (m) => `“${m[1]}” é uma combinação acidental: verificada como uma combinação última, com o γM da situação persistente (do lado da segurança).`],
   [/^1 combination switched off: left out of the results, the envelopes, the checks and the export\.$/, () => `1 combinação desativada: deixada fora dos resultados, das envoltórias, das verificações e da exportação.`],
   [/^(\d+) combinations switched off: left out of the results, the envelopes, the checks and the export\.$/, (m) => `${m[1]} combinações desativadas: deixadas fora dos resultados, das envoltórias, das verificações e da exportação.`],
+  // Views on sheets (forum topic 207)
+  [/^„(.+)” is on sheets (.+): remove it from the sheets first, then delete it\.$/, (m) => `„${m[1]}” está nas pranchas ${m[2]}: retire-a primeiro das pranchas e depois exclua-a.`],
+  [/^„(.+)” is on sheet (.+): remove it from the sheet first, then delete it\.$/, (m) => `„${m[1]}” está na prancha ${m[2]}: retire-a primeiro da prancha e depois exclua-a.`],
+  [/^(\d+) views are on sheets \((.+)\): remove them from the sheets first, then delete them\. Nothing was deleted\.$/, (m) => `${m[1]} vistas estão em pranchas (${m[2]}): retire-as primeiro das pranchas e depois exclua-as. Nada foi excluído.`],
+  [/^On sheets (.+)$/, (m) => `Nas pranchas ${m[1]}`],
+  [/^On sheet (.+)$/, (m) => `Na prancha ${m[1]}`],
+  [/^Already on sheets (.+)\.$/, (m) => `Já nas pranchas ${m[1]}.`],
+  [/^Already on sheet (.+)\.$/, (m) => `Já na prancha ${m[1]}.`],
+  [/^Placed on sheet (.+)\.$/, (m) => `Colocada na prancha ${m[1]}.`],
+  [/^Open sheet (.+)$/, (m) => `Abrir a prancha ${m[1]}`],
 ];

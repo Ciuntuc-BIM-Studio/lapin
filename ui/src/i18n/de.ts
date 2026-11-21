@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Find in project browser, Place on sheet… (forum topic 207)
+  "Find in project browser": "Im Projektbrowser suchen", "Search the sheets (number or name)": "Pläne suchen (Nummer oder Name)", "New sheet…": "Neuer Plan…", "New sheet with this view on it, named after it": "Ein neuer Plan mit dieser Ansicht darauf, nach ihr benannt", "Open the sheet after placing": "Plan nach dem Platzieren öffnen", "Open the sheet": "Plan öffnen", "No sheet matches.": "Kein Plan passt.", "A view goes on one sheet: take it off that sheet to place it on another.": "Eine Ansicht liegt auf einem einzigen Plan: Nehmen Sie sie von diesem Plan, um sie auf einen anderen zu setzen.", "This view is not listed in the project browser.": "Diese Ansicht steht nicht im Projektbrowser.", "This view cannot go on a sheet.": "Diese Ansicht kann nicht auf einen Plan gesetzt werden.",
   "Show undeformed": "Unverformt zeigen",
   "to check:": "zu prüfen:",
   "Mode shape scale": "Maßstab der Eigenform",
@@ -5475,4 +5477,14 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^„(.+)” is an accidental combination: checked as an ultimate one, with the persistent situation's γM \(on the safe side\)\.$/, (m) => `„${m[1]}“ ist eine außergewöhnliche Kombination: nachgewiesen wie eine der Tragfähigkeit, mit dem γM der ständigen Bemessungssituation (auf der sicheren Seite).`],
   [/^1 combination switched off: left out of the results, the envelopes, the checks and the export\.$/, () => `1 Kombination ausgeschaltet: bleibt bei den Ergebnissen, den Hüllkurven, den Nachweisen und dem Export unberücksichtigt.`],
   [/^(\d+) combinations switched off: left out of the results, the envelopes, the checks and the export\.$/, (m) => `${m[1]} Kombinationen ausgeschaltet: bleiben bei den Ergebnissen, den Hüllkurven, den Nachweisen und dem Export unberücksichtigt.`],
+  // Views on sheets (forum topic 207)
+  [/^„(.+)” is on sheets (.+): remove it from the sheets first, then delete it\.$/, (m) => `„${m[1]}” liegt auf den Plänen ${m[2]}: Nehmen Sie sie zuerst von den Plänen und löschen Sie sie dann.`],
+  [/^„(.+)” is on sheet (.+): remove it from the sheet first, then delete it\.$/, (m) => `„${m[1]}” liegt auf Plan ${m[2]}: Nehmen Sie sie zuerst vom Plan und löschen Sie sie dann.`],
+  [/^(\d+) views are on sheets \((.+)\): remove them from the sheets first, then delete them\. Nothing was deleted\.$/, (m) => `${m[1]} Ansichten liegen auf Plänen (${m[2]}): Nehmen Sie sie zuerst von den Plänen und löschen Sie sie dann. Es wurde nichts gelöscht.`],
+  [/^On sheets (.+)$/, (m) => `Auf den Plänen ${m[1]}`],
+  [/^On sheet (.+)$/, (m) => `Auf Plan ${m[1]}`],
+  [/^Already on sheets (.+)\.$/, (m) => `Bereits auf den Plänen ${m[1]}.`],
+  [/^Already on sheet (.+)\.$/, (m) => `Bereits auf Plan ${m[1]}.`],
+  [/^Placed on sheet (.+)\.$/, (m) => `Auf Plan ${m[1]} gesetzt.`],
+  [/^Open sheet (.+)$/, (m) => `Plan ${m[1]} öffnen`],
 ];

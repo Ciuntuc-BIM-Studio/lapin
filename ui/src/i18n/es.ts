@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // Find in project browser, Place on sheet… (forum topic 207)
+  "Find in project browser": "Buscar en el navegador del proyecto", "Search the sheets (number or name)": "Buscar las láminas (número o nombre)", "New sheet…": "Lámina nueva…", "New sheet with this view on it, named after it": "Una lámina nueva con esta vista, con su nombre", "Open the sheet after placing": "Abrir la lámina después de colocar la vista", "Open the sheet": "Abrir la lámina", "No sheet matches.": "Ninguna lámina coincide.", "A view goes on one sheet: take it off that sheet to place it on another.": "Una vista va en una sola lámina: quítela de esa lámina para colocarla en otra.", "This view is not listed in the project browser.": "Esta vista no figura en el navegador del proyecto.", "This view cannot go on a sheet.": "Esta vista no se puede colocar en una lámina.",
   "Show undeformed": "Mostrar sin deformar",
   "to check:": "a revisar:",
   "Mode shape scale": "Escala de la forma modal",
@@ -5517,4 +5519,14 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^„(.+)” is an accidental combination: checked as an ultimate one, with the persistent situation's γM \(on the safe side\)\.$/, (m) => `«${m[1]}» es una combinación accidental: se comprueba como una de estado límite último, con el γM de la situación persistente (del lado de la seguridad).`],
   [/^1 combination switched off: left out of the results, the envelopes, the checks and the export\.$/, () => `1 combinación desactivada: se deja fuera de los resultados, las envolventes, las comprobaciones y la exportación.`],
   [/^(\d+) combinations switched off: left out of the results, the envelopes, the checks and the export\.$/, (m) => `${m[1]} combinaciones desactivadas: se dejan fuera de los resultados, las envolventes, las comprobaciones y la exportación.`],
+  // Views on sheets (forum topic 207)
+  [/^„(.+)” is on sheets (.+): remove it from the sheets first, then delete it\.$/, (m) => `„${m[1]}” está en las láminas ${m[2]}: quítela primero de las láminas y luego elimínela.`],
+  [/^„(.+)” is on sheet (.+): remove it from the sheet first, then delete it\.$/, (m) => `„${m[1]}” está en la lámina ${m[2]}: quítela primero de la lámina y luego elimínela.`],
+  [/^(\d+) views are on sheets \((.+)\): remove them from the sheets first, then delete them\. Nothing was deleted\.$/, (m) => `${m[1]} vistas están en láminas (${m[2]}): quítelas primero de las láminas y luego elimínelas. No se ha eliminado nada.`],
+  [/^On sheets (.+)$/, (m) => `En las láminas ${m[1]}`],
+  [/^On sheet (.+)$/, (m) => `En la lámina ${m[1]}`],
+  [/^Already on sheets (.+)\.$/, (m) => `Ya está en las láminas ${m[1]}.`],
+  [/^Already on sheet (.+)\.$/, (m) => `Ya está en la lámina ${m[1]}.`],
+  [/^Placed on sheet (.+)\.$/, (m) => `Colocada en la lámina ${m[1]}.`],
+  [/^Open sheet (.+)$/, (m) => `Abrir la lámina ${m[1]}`],
 ];

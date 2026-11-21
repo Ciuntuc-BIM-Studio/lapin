@@ -55,6 +55,21 @@ import { GuestBar, JoinDialog, JoinGate, PresenceReporter, ShareDialog } from '.
 import { isGuest } from './engine/share';
 import { connect } from './engine/session';
 import { AskBox } from './shell/AskBox';
+import { setBrowserFindHooks, useBrowserFind, viewIdOfTab, viewSheetItems } from './shell/browserFind';
+import { openPlaceOnSheet, PlaceOnSheetDialog } from './shell/PlaceOnSheetDialog';
+
+// Find in project browser (forum topic 207): the browser unfolded (a floating one is always open), the view selected, and
+// the browser asked to show its row; Place on sheet… opens its picker.
+setBrowserFindHooks({
+  find: (id) => {
+    const p = usePanels.getState();
+    if (!p.browserFloat && !p.browserOpen) togglePanel('browser');
+    else if (p.overlay) closeOverlay();
+    if (useSession.getState().nodes.has(id)) useUi.setState({ selection: id, selected: [id] });
+    useBrowserFind.setState((s) => ({ id, n: s.n + 1 }));
+  },
+  place: openPlaceOnSheet,
+});
 
 /**
  * The model assistant's panel (docs/plan-assistant.md): loaded when first
@@ -169,6 +184,8 @@ function PaneTabs({ i }: { i: number }) {
         items.push({ label: 'Split: open below', onSelect: () => { splitPane('column'); openTab(1, t); } });
       } else items.push({ label: 'Open in the other pane', onSelect: () => openTab(i === 0 ? 1 : 0, t) });
     }
+    // The view or sheet in the project browser, and Place on sheet… (forum topic 207).
+    items.push(...viewSheetItems(viewIdOfTab(t, nodes), nodes));
     items.push({ label: 'Close', onSelect: () => closeTab(tabKey(t)) });
     if (tabs.length > 1) items.push({ label: 'Close the others', onSelect: () => { for (const o of useUi.getState().viewTabs) if (tabKey(o) !== tabKey(t)) closeTab(tabKey(o)); } });
     openContextMenu(x, y, items);
@@ -445,7 +462,7 @@ const SaveTemplateDialog = lazyPart(() => import('./shell/ProjectTemplatesDialog
 // Lapin Extensions (docs/plan-extensions.md): File → Extensions….
 const ExtensionsDialog = lazyPart(() => import('./shell/ExtensionsDialog').then((m) => m.ExtensionsDialog), { title: 'Extensions' });
 const MyToolsDialog = lazyPart(() => import('./shell/MyToolsDialog').then((m) => m.MyToolsDialog), { title: 'Customize My tools' });
-const shareDialogs: Record<string, React.ComponentType> = { myTools: MyToolsDialog, share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, preferences: PreferencesDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog, projectTemplates: ProjectTemplatesDialog, saveTemplate: SaveTemplateDialog, extensions: ExtensionsDialog };
+const shareDialogs: Record<string, React.ComponentType> = { myTools: MyToolsDialog, share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, preferences: PreferencesDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog, projectTemplates: ProjectTemplatesDialog, saveTemplate: SaveTemplateDialog, extensions: ExtensionsDialog, placeOnSheet: PlaceOnSheetDialog };
 
 function Workspace() {
   const open = useUi((s) => s.dialog);

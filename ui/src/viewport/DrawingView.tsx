@@ -29,6 +29,7 @@ import { openContextMenu } from '../shell/ContextMenu';
 import { useHighlight } from '../app/highlight';
 import { groupItems } from '../shell/selectionMenu';
 import { viewHideItems } from '../shell/viewHideMenu';
+import { viewSheetItems } from '../shell/browserFind';
 import { dimensionItems } from '../modules/drafting/dimensionMenu';
 import { symbolMenuItems } from '../modules/core/symbols/symbolTools';
 import { membersOf, pickTarget, shownSelection } from '../platform/groups';
@@ -505,7 +506,7 @@ export function DrawingView() {
             const target = under ? pickTarget(under) : null;
             let sel = useUi.getState().selected;
             if (under && target && isDrafted(nodes.get(under)) && !sel.includes(target)) { select(target); sel = [target]; }
-            openContextMenu(e.clientX, e.clientY, [...editor.cornerItems(e), ...drawOrderItems(sel.flatMap((id) => [id, ...membersOf(id)]), nodes), ...symbolMenuItems(sel, nodes), ...dimensionItems(), ...groupItems(), ...viewHideItems(id)]);
+            openContextMenu(e.clientX, e.clientY, [...editor.cornerItems(e), ...drawOrderItems(sel.flatMap((id) => [id, ...membersOf(id)]), nodes), ...symbolMenuItems(sel, nodes), ...dimensionItems(), ...groupItems(), ...viewHideItems(id), ...viewSheetItems(sheetOfPaper(id) ?? id, nodes)]);
             return;
           }
           if (!d || d.moved || e.button !== 0) return;

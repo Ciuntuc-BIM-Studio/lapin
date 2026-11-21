@@ -605,7 +605,7 @@
     {"name":"sheet.addNorthArrow","module":"core","label":"North arrow","args":[{"name":"at"}]},
     {"name":"sheet.addScaleBar","module":"core","label":"Scale bar","args":[{"name":"at"}]},
     {"name":"sheet.addViewport","module":"core","label":"Place view","args":[{"name":"id","type":"str"},{"name":"viewId","type":"str"},{"name":"page","type":"float"},{"name":"boundaryId","type":"str"},{"name":"x","type":"float"},{"name":"y","type":"float"}]},
-    {"name":"sheet.create","module":"core","label":"New sheet","args":[{"name":"paper","type":"str"},{"name":"number","type":"str"},{"name":"name","type":"str"},{"name":"orientation","type":"str"},{"name":"discipline","type":"str"}]},
+    {"name":"sheet.create","module":"core","label":"New sheet","args":[{"name":"paper","type":"str"},{"name":"number","type":"str"},{"name":"name","type":"str"},{"name":"orientation","type":"str"},{"name":"discipline","type":"str"},{"name":"viewId","type":"str"},{"name":"page","type":"float"},{"name":"boundaryId","type":"str"},{"name":"x","type":"float"},{"name":"y","type":"float"}]},
     {"name":"sheet.cropViewport","module":"core","label":"Crop view","args":[{"name":"id","type":"str"},{"name":"viewportId","type":"str"},{"name":"x0","type":"float"},{"name":"y0","type":"float"},{"name":"x1","type":"float"},{"name":"y1","type":"float"}]},
     {"name":"sheet.duplicate","module":"core","label":"Duplicate sheet","args":[{"name":"id","type":"str"},{"name":"name","type":"str"}]},
     {"name":"sheet.panViewport","module":"core","label":"Pan view","args":[{"name":"id","type":"str"},{"name":"viewportId","type":"str"},{"name":"dx","type":"float"},{"name":"dy","type":"float"}]},

@@ -17,6 +17,7 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { X } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems, temporaryItems } from '../shell/selectionMenu';
+import { viewSheetItems } from '../shell/browserFind';
 import type { CapItem, NodeDto, RenderItem } from '../engine/protocol';
 import { activeStorey, engine, engineInBrowser, execute, query, useSession } from '../engine/session';
 import { num, storeys as storeysOf } from '../engine/model';
@@ -1432,7 +1433,8 @@ export function Viewport3D() {
         const { nodes, relations } = useSession.getState();
         if (id && pickable(nodes.get(id)) && !shownSelection(selected, nodes, relations).has(id)) pickByMods(id, modsOf(e), currentNavStyle());
       }
-      openContextMenu(e.clientX, e.clientY, [...selectionItems(), ...temporaryItems()]);
+      const ui = useUi.getState();
+      openContextMenu(e.clientX, e.clientY, [...selectionItems(), ...temporaryItems(), ...viewSheetItems(ui.view === '3d' ? ui.view3dId ?? '3d' : null, useSession.getState().nodes)]);
     };
     renderer.domElement.addEventListener('pointerdown', onRightDown);
     renderer.domElement.addEventListener('contextmenu', onMenu);

@@ -30,6 +30,7 @@ import { carrying } from '../viewport/moveTrace';
 import { useMove3d } from '../viewport/moveIn3d';
 import { cancel as cancelStep } from '../viewport/cad/session';
 import { notify } from './store';
+import { canPlace, findInBrowser, placeOnSheet, viewIdOfTab } from '../shell/browserFind';
 
 /**
  * Undo and redo while a gesture is under way (audit U11): a CAD step is cancelled first; a body drag or a 3D move is not
@@ -42,6 +43,8 @@ export function gestureFree(): boolean {
 }
 
 const dialog = (id: string) => () => useUi.setState({ dialog: id });
+/** The view, sheet or schedule the active pane shows. */
+const shownViewId = () => viewIdOfTab(useUi.getState(), useSession.getState().nodes);
 const zoom = (f: (h: NonNullable<ReturnType<typeof zoomHost>>) => void) => () => { const h = zoomHost(); if (h) f(h); };
 
 /** The app's own commands, with Lapin's classic bindings. */
@@ -79,6 +82,12 @@ function appCommands(): CommandDef[] {
     // Ctrl (Control on a Mac too: Cmd+Tab is the system's) with Tab or Page Down/Up: the next and previous view tab (forum topic 63).
     { id: 'app.nextTab', label: 'Next view tab', category: views, defaults: ['Ctrl+Tab', 'Ctrl+PageDown'], run: () => cycleTab(1) },
     { id: 'app.previousTab', label: 'Previous view tab', category: views, defaults: ['Ctrl+Shift+Tab', 'Ctrl+PageUp'], run: () => cycleTab(-1) },
+    // The view or sheet in front, found in the project browser, or placed on a sheet (forum topic 207); no keys by default.
+    { id: 'app.findInBrowser', label: 'Find in project browser', category: views, defaults: [], run: () => { const id = shownViewId(); if (id) findInBrowser(id); } },
+    { id: 'app.placeOnSheet', label: 'Place on sheet…', category: views, defaults: [], run: () => {
+      const id = shownViewId();
+      if (id && canPlace(id, useSession.getState().nodes)) placeOnSheet(id); else notify('This view cannot go on a sheet.');
+    } },
     { id: 'app.osnap', label: 'Object snap', category: draw, defaults: ['F3'], run: () => useCad.setState((s) => ({ osnap: !s.osnap })) },
     { id: 'app.ortho', label: 'Ortho', category: draw, defaults: ['F8'], run: () => useCad.setState((s) => ({ ortho: !s.ortho })) },
     { id: 'app.grid', label: 'Grid', category: draw, defaults: ['F7'], run: toggleGrid },

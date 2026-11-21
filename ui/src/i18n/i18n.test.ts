@@ -175,6 +175,16 @@ describe('the languages', () => {
     '3 members braced by their sheeting: held straight across in the sheeting\'s plane (along their section\'s width) between the members they rest on, at 5 nodes; the sheeting ties no member to another (no stressed skin). The members\' own buckling checks keep their lengths.',
     'Sheeting left without effect on Rafter 1: not straight, Rafter 2: not straight.',
     'P100-1/2013 §4.6.2.2 (EN 1998-1 4.4.2.2): θ = Ptot·dr/(Vtot·h) reaches 0.152 on „Ground floor” along X: the seismic effects × 1/(1 − θ) there (or second order).',
+    // Views on sheets (forum topic 207): the engine's refused deletion, the browser's marker, Place on sheet….
+    '„Section 1” is on sheet A-101 · Sections: remove it from the sheet first, then delete it.',
+    '„Section 1” is on sheets A-101 · One, A-102 · Two: remove it from the sheets first, then delete it.',
+    '2 views are on sheets (A-101, A-102): remove them from the sheets first, then delete them. Nothing was deleted.',
+    'On sheet A-101 · Plans',
+    'On sheets A-101 · Plans, A-102 · Sections',
+    'Already on sheet A-101 · Plans.',
+    'Already on sheets A-101 · Plans, A-102 · Sections.',
+    'Placed on sheet A-103 · Details.',
+    'Open sheet A-101 · Plans',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

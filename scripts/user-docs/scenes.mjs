@@ -8975,6 +8975,87 @@ export const scenes = [
     },
   },
   {
+    // Find in project browser, Place on sheet… and the on-sheet marker (forum topic 207): a long, folded browser, a view found
+    // from its right-click, another placed on a sheet from its own, and a view on a sheet refused when deleted.
+    id: 'sheets-browser',
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      const storeyId = await t.storey();
+      for (let i = 1; i <= 24; i++) await t.cmd('view.create', { kind: 'plan', storeyId, name: `Option ${String(i).padStart(2, '0')}`, scale: 100 });
+      const target = await t.cmd('view.create', { kind: 'plan', storeyId, name: 'Ground floor plan', scale: 100 });
+      const other = await t.cmd('view.create', { kind: 'plan', storeyId, name: 'Furniture plan', scale: 50 });
+      const section = await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [6, -2], end: [6, 10], depth: 0.5, scale: 100 });
+      const a101 = await t.cmd('sheet.create', { name: 'Plans', number: 'A-101', paper: 'A3' });
+      const a102 = await t.cmd('sheet.create', { name: 'Sections', number: 'A-102', paper: 'A3' });
+      await t.cmd('sheet.create', { name: 'Details', number: 'A-501', paper: 'A3' });
+      await t.cmd('sheet.addViewport', { id: a101.id, viewId: target.id });
+      await t.cmd('sheet.addViewport', { id: a102.id, viewId: section.id });
+      await t.wait(800);
+      t.expect(await t.page.locator(`nav.browser [data-browser-row="${target.id}"] [data-testid=on-sheet-mark]`).count() === 1, 'a view on a sheet has its marker in the browser');
+      t.expect(await t.page.locator(`nav.browser [data-browser-row="${other.id}"] [data-testid=on-sheet-mark]`).count() === 0, 'a view on no sheet has none');
+      // The plan shown, its set folded in the browser, the browser folded too.
+      await t.ui({ view: 'plan', storeyId, planViewId: target.id, selection: null, selected: [] });
+      await t.page.locator('nav.browser .tree-set .tree-label.set .fold').first().click();
+      await t.page.evaluate(async () => { const { usePanels } = await import('/src/app/panels.ts'); usePanels.setState({ browserOpen: false }); });
+      await t.wait(600);
+      t.expect(await t.page.locator(`nav.browser [data-browser-row="${target.id}"]`).count() === 0, 'folded, the browser shows no row of the plan');
+      // Empty paper left of the house, clear of the key plan in the corner (the pane narrows once the browser unfolds).
+      const spot = async () => { const p = await t.page.locator('[data-testid=plan]').first().boundingBox(); return { x: p.x + 180, y: p.y + p.height - 260 }; };
+      let at = await spot();
+      await t.page.mouse.click(at.x, at.y, { button: 'right' });
+      await t.wait(400);
+      const find = t.page.getByRole('menuitem').filter({ hasText: /Find in project browser|Găsește în browserul proiectului/ }).first();
+      t.expect(await find.count() === 1, 'a plan\'s right-click offers Find in project browser');
+      t.expect(await t.page.getByRole('menuitem').filter({ hasText: /Place on sheet…|Pune pe planșă…/ }).count() === 1, 'and Place on sheet…');
+      await find.click();
+      await t.wait(900);
+      const row = t.page.locator(`nav.browser [data-browser-row="${target.id}"]`).first();
+      t.expect(await row.count() === 1 && await row.isVisible(), 'the browser unfolds, its set opened, and shows the plan\'s row');
+      t.expect(await row.evaluate((el) => el.classList.contains('found')), 'the row is lit');
+      { const nav = await t.page.locator('nav.browser').boundingBox(); const r = await row.boundingBox();
+        t.expect(r && r.y >= nav.y && r.y + r.height <= nav.y + nav.height, 'the row is scrolled into sight'); }
+      t.expect((await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selection)) === target.id, 'the view is selected');
+      await row.hover();
+      await t.wait(200);
+      await t.shot('browser-on-sheet', { of: 'nav.browser', pad: 0, maxHeight: 640 });
+      // Place on sheet… from another plan's right-click: the sheets searched, A-102 picked; the sheet opens with it.
+      await t.ui({ view: 'plan', storeyId, planViewId: other.id });
+      await t.wait(800);
+      at = await spot();
+      await t.page.mouse.click(at.x, at.y, { button: 'right' });
+      await t.wait(400);
+      await t.page.getByRole('menuitem').filter({ hasText: /Place on sheet…|Pune pe planșă…/ }).first().click();
+      await t.page.waitForSelector('[data-testid=place-on-sheet]', { timeout: 5000 });
+      await t.page.locator('[data-testid=place-sheet-search]').fill('a-10');
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-testid=place-on-sheet] [data-sheet-id]').count() === 2, 'typing a-10 leaves the two sheets it matches');
+      await t.shot('place-on-sheet', { of: '.dialog', pad: 0 });
+      await t.page.locator(`[data-testid=place-on-sheet] [data-sheet-id="${a102.id}"]`).click();
+      await t.wait(1200);
+      const placed = (await t.nodes()).find((n) => n.id === a102.id)?.props?.viewports?.some((v) => v.viewId === other.id);
+      t.expect(placed, 'the plan is placed on A-102');
+      t.expect((await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().sheetId)) === a102.id, 'and A-102 opens');
+      // Already on a sheet: the picker says where and opens it.
+      await t.ui({ view: 'plan', storeyId, planViewId: target.id });
+      await t.wait(800);
+      at = await spot();
+      await t.page.mouse.click(at.x, at.y, { button: 'right' });
+      await t.wait(400);
+      await t.page.getByRole('menuitem').filter({ hasText: /Place on sheet…|Pune pe planșă…/ }).first().click();
+      await t.page.waitForSelector('[data-testid=place-open-sheet]', { timeout: 5000 });
+      t.expect(await t.page.locator('[data-testid=place-on-sheet]').getByText(/A-101/).count() > 0, 'a view on a sheet says which');
+      await t.page.keyboard.press('Escape');
+      await t.wait(300);
+      // Deleted from the browser while on a sheet: refused, the sheet named.
+      await row.hover();
+      await t.page.locator(`nav.browser [data-browser-row="${target.id}"] button[title="Delete the view"], nav.browser [data-browser-row="${target.id}"] button[title="Șterge vederea"]`).first().click();
+      await t.wait(800);
+      t.expect((await t.nodes()).some((n) => n.id === target.id), 'the view on a sheet is not deleted');
+      t.expect(/A-101/.test(await t.page.locator('.view-area .error').first().textContent() ?? ''), 'and the message names its sheet');
+    },
+  },
+  {
     id: 'sheets',
     async run(t) {
       await t.fresh();

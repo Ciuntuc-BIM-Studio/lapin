@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Find in project browser, Place on sheet… (forum topic 207)
+  "Find in project browser": "Find i projektbrowseren", "Search the sheets (number or name)": "Søg i arkene (nummer eller navn)", "New sheet…": "Nyt tegningsark…", "New sheet with this view on it, named after it": "Et nyt tegningsark med denne visning på, opkaldt efter den", "Open the sheet after placing": "Åbn arket efter placering", "Open the sheet": "Åbn arket", "No sheet matches.": "Intet ark passer.", "A view goes on one sheet: take it off that sheet to place it on another.": "En visning ligger på ét ark: tag den af det ark for at placere den på et andet.", "This view is not listed in the project browser.": "Denne visning står ikke i projektbrowseren.", "This view cannot go on a sheet.": "Denne visning kan ikke placeres på et ark.",
   "Show undeformed": "Vis udeformeret",
   "to check:": "skal tjekkes:",
   "Mode shape scale": "Skala for egenformen",
@@ -5512,4 +5514,14 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^„(.+)” is an accidental combination: checked as an ultimate one, with the persistent situation's γM \(on the safe side\)\.$/, (m) => `»${m[1]}« er en ulykkeskombination: kontrolleret som en brudgrænsekombination, med den blivende situations γM (på den sikre side).`],
   [/^1 combination switched off: left out of the results, the envelopes, the checks and the export\.$/, () => `1 kombination slået fra: udeladt af resultaterne, envelopes, kontrollerne og eksporten.`],
   [/^(\d+) combinations switched off: left out of the results, the envelopes, the checks and the export\.$/, (m) => `${m[1]} kombinationer slået fra: udeladt af resultaterne, envelopes, kontrollerne og eksporten.`],
+  // Views on sheets (forum topic 207)
+  [/^„(.+)” is on sheets (.+): remove it from the sheets first, then delete it\.$/, (m) => `„${m[1]}” er på arkene ${m[2]}: tag den først af arkene, og slet den så.`],
+  [/^„(.+)” is on sheet (.+): remove it from the sheet first, then delete it\.$/, (m) => `„${m[1]}” er på ark ${m[2]}: tag den først af arket, og slet den så.`],
+  [/^(\d+) views are on sheets \((.+)\): remove them from the sheets first, then delete them\. Nothing was deleted\.$/, (m) => `${m[1]} visninger er på ark (${m[2]}): tag dem først af arkene, og slet dem så. Intet blev slettet.`],
+  [/^On sheets (.+)$/, (m) => `På arkene ${m[1]}`],
+  [/^On sheet (.+)$/, (m) => `På ark ${m[1]}`],
+  [/^Already on sheets (.+)\.$/, (m) => `Allerede på arkene ${m[1]}.`],
+  [/^Already on sheet (.+)\.$/, (m) => `Allerede på ark ${m[1]}.`],
+  [/^Placed on sheet (.+)\.$/, (m) => `Placeret på ark ${m[1]}.`],
+  [/^Open sheet (.+)$/, (m) => `Åbn ark ${m[1]}`],
 ];
