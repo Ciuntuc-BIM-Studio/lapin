@@ -57,7 +57,7 @@ describe('the layer pens\' strings', async () => {
   await loadAllLanguages();
   const { LAYER_PENS_TIP } = await import('./LayerPensEditor');
   const strings = ['Scales', 'All scales', 'Pens by scale', 'Remove the range', 'Add a range of scales', LAYER_PENS_TIP,
-    'The first range that holds the view\'s scale wins over “All scales”; empty: the material\'s lines (Manage → Materials).', 'Cut outline', 'Separator lines', 'Weight, mm', 'as the material'];
+    'The first range that holds the view\'s scale wins over “All scales”; empty: the material\'s lines (Manage → Materials).', 'Cut outline', 'Separator lines', 'Weight, mm', 'material\'s'];
   for (const lang of LANGUAGES.map((l) => l.id).filter((l) => l !== 'en')) {
     it(`are translated in ${lang}`, () => {
       for (const s of strings) expect(translate(s, lang), s).not.toBeNull();

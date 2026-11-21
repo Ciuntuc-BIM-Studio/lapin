@@ -38,7 +38,7 @@ export function LayerPens({ id, graphics, onChange }: { id: string; graphics: La
     const base = step === null ? undefined : penOf(graphics, null, line, 'weight') as number | undefined;
     return [
       <td key={`${line}w`} className="num">
-        <NumberInput id={`${key}${line}w`} field={`${line}-weight`} value={w} placeholder={base != null ? localNumber(base) : 'as the material'} list="layer-pen-weights" parse={parseWeight}
+        <NumberInput id={`${key}${line}w`} field={`${line}-weight`} value={w} placeholder={base != null ? localNumber(base) : 'material\'s'} list="layer-pen-weights" parse={parseWeight}
           onCommit={(v) => onChange(setPen(graphics, step, line, 'weight', v))} />
       </td>,
       <td key={`${line}c`}>

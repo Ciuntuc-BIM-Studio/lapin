@@ -77,7 +77,7 @@ In a plan, an elevation or a section, a selected element also shows a **hatch or
 
 ## By scale
 
-A drawing at 1:200 should not look like one at 1:20. **By scale** at the bottom of the graphics holds steps; each is a range (*from 1:*, *to 1:*) and the fields it changes. The first step that covers the view's scale wins and changes only the fields it sets. **Simplify at small scales** adds two steps (plain grey fill from 1:100, solid from 1:200) to edit. The eye on a step shows the preview at its scale.
+A drawing at 1:200 should not look like one at 1:20. **By scale** at the bottom of the graphics holds steps; each is a range (*from 1:*, *to 1:*) and the fields it changes. The first step that covers the view's scale wins and changes only the fields it sets. **Simplify at small scales** adds two steps (plain grey fill from 1:100, solid from 1:200) to edit. The eye on a step shows the preview at its scale. For the core's and the cladding's lines of one wall type apart, whatever their materials, a type's layer has its own **Pens by scale** in [Wall types](walls.md#wall-types).
 
 ![Steps by scale](shots/material-graphics-steps.webp)
 
@@ -142,7 +142,7 @@ On the **Filters** tab a filter also sets **Cut hatch**, **Cut fill**, **Hatch c
 
 ![A filter that changes hatch and fill](shots/vg-filter-hatch.webp)
 
-The strongest wins: an element's own, the view's filters, the subcategory, the view's graphics set, the small-scale cut, the material's step, the material, then the standard.
+The strongest wins: an element's own, the view's filters, the subcategory, the view's graphics set, the small-scale cut, the wall or floor type's layer (its [pens by scale](walls.md#wall-types)), the material's step, the material, then the standard.
 
 To change one element's hatch in one view only (a strip foundation's hatch scale, an elevation's hatching removed), select it and use **Graphics in this view…** (right-click, or Properties → **Graphics in view**): it is the strongest level of all. See [Graphics in this view](views.md#graphics-in-this-view).
 

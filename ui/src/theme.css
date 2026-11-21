@@ -1473,7 +1473,7 @@ button.mode-chip:hover { color: var(--accent); }
 .layer-pens-table { border-collapse: collapse; margin: 4px 0; }
 .layer-pens-table th, .layer-pens-table td { padding: 2px 6px; text-align: left; font-weight: normal; border: none; }
 .layer-pens-table thead tr:first-child th { font-weight: 600; }
-.layer-pens-table input.num { width: 56px; }
+.layer-pens-table input.num { width: 84px; }
 .layer-pens-table tr.bad td { background: color-mix(in srgb, var(--remark, #c00) 12%, transparent); }
 .layer-pens .layer-pen-range { white-space: nowrap; }
 .layer-pens .layer-pen-range .gfx-scale-end { margin: 0 6px 0 2px; }
