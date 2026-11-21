@@ -588,6 +588,87 @@ public static class Sheets
         return sheet;
     }
 
+    /// <summary>
+    /// A view (or a sheet content: a schedule) placed on a sheet: <c>{viewId, page?, boundaryId?, x?, y?}</c> (no point: the middle
+    /// of the paper left of the title block, a schedule's top-left in the frame's). A view goes on one sheet, once per page and
+    /// named boundary (decision 236).
+    /// </summary>
+    public static SheetViewport AddViewport(ICommandContext ctx, JsonObject a, Entity sheet)
+    {
+        var viewId = (string?)a["viewId"] ?? throw new CommandException("Which view?");
+        var page = (int)(Json.Number(a["page"]) ?? 1);
+        var isContent = ctx.Model.Get(viewId) is { } ent && ctx.Services.All<ISheetContent>().Any(c => c.Handles(ent));
+        if (Views.Find(ctx.Model, viewId) == null && !isContent) throw new CommandException("There is no such view.");
+        if (PaperViews.SheetIdOf(viewId) != null) throw new CommandException("A sheet's paper is not a view to place.");
+        // A named boundary of the view (decision 236): the view may go on as many sheets as it has boundaries, once each.
+        var boundary = (string?)a["boundaryId"] is { Length: > 0 } bid
+            ? ctx.Model.Get(bid) is { Class: ViewBoundaries.Class } be && be.Str("viewId") == viewId ? bid : throw new CommandException("The view has no such boundary.")
+            : null;
+        if (ctx.Model.OfClass(Class).FirstOrDefault(s => Viewports(s).Any(v => v.ViewId == viewId && v.Page == page && v.Boundary == boundary)) is { } on)
+            throw new CommandException(boundary != null ? $"That boundary of the view is on sheet {on.Str("number")} already." : $"The view is on sheet {on.Str("number")} already.");
+        var (W, H) = PaperOf(sheet);
+        var vps = Viewports(sheet);
+        var block = TitleBlocks.Layout(ctx.Model, sheet).Block;
+        var (x, y) = (Json.Number(a["x"]) ?? (W - (block.X1 - block.X0)) / 2, Json.Number(a["y"]) ?? H / 2);
+        // A schedule placed with no point (decision 287): its top-left corner in the frame's, where a table is read from, not
+        // its middle in the paper's (a wide table ran past the frame on the left).
+        if (isContent && a["x"] is null && a["y"] is null && ctx.Services.All<ISheetContent>().First(c => c.Handles(ctx.Model.Get(viewId)!)) is var content
+            && content.Pages(ctx.Query, ctx.Model.Get(viewId)!, FrameSize(ctx.Model, sheet).W, FrameSize(ctx.Model, sheet).H) is { } pages && page - 1 < pages.Count)
+            (x, y) = (TitleBlocks.Layout(ctx.Model, sheet).Frame.X0 + 4 + pages[page - 1].W / 2, TitleBlocks.Layout(ctx.Model, sheet).Frame.Y0 + 4 + pages[page - 1].H / 2);
+        var vp = new SheetViewport(ctx.NewId(), viewId, x, y, Page: page, Boundary: boundary);
+        vps.Add(vp);
+        Write(ctx, sheet, vps);
+        return vp;
+    }
+
+    /// <summary>A sheet as a message names it: its number and name (A-101 · Plans).</summary>
+    public static string Label(Entity sheet) => sheet.Str("number") is { Length: > 0 } n ? $"{n} · {sheet.Name}" : sheet.Name;
+
+    /// <summary>
+    /// The sheets each view or schedule is placed on (its id, or a level's default plan's <c>plan:&lt;storey&gt;</c>), in the
+    /// sheets' order; <paramref name="except"/>: sheets left out (those going in the same deletion).
+    /// </summary>
+    public static Dictionary<string, List<Entity>> PlacedOn(IModelView m, IReadOnlySet<string>? except = null)
+    {
+        var on = new Dictionary<string, List<Entity>>();
+        foreach (var s in m.OfClass(Class))
+        {
+            if (except?.Contains(s.Id) == true) continue;
+            foreach (var v in Viewports(s).Select(v => v.ViewId).Distinct())
+                (on.TryGetValue(v, out var l) ? l : on[v] = []).Add(s);
+        }
+        return on;
+    }
+
+    /// <summary>
+    /// A view placed on a sheet is not deleted (forum topic 207, as Revit): it comes off the sheet first, so no sheet is left with
+    /// a hole where a drawing was. The whole deletion is refused, naming the views and their sheets, when any of
+    /// <paramref name="deleting"/> is one (a level whose default plan is on a sheet too); a sheet deleted with its views takes them
+    /// along. Deleting the sheet, or removing the view from it (sheet.removeViewport), stays allowed.
+    /// </summary>
+    public static void RefuseDeletingPlaced(IModelView m, IReadOnlySet<string> deleting)
+    {
+        var on = PlacedOn(m, deleting);
+        if (on.Count == 0) return;
+        var hit = new List<(string Name, List<Entity> Sheets)>();
+        foreach (var id in deleting)
+        {
+            if (m.Get(id) is not { } e) continue;
+            if (on.TryGetValue(id, out var sheets) || (e.Class == IfcClass.BuildingStorey && on.TryGetValue("plan:" + id, out sheets)))
+                hit.Add((e.Name, sheets));
+        }
+        if (hit.Count == 0) return;
+        if (hit.Count == 1)
+        {
+            var (name, sheets) = hit[0];
+            throw new CommandException(sheets.Count == 1
+                ? $"„{name}” is on sheet {Label(sheets[0])}: remove it from the sheet first, then delete it."
+                : $"„{name}” is on sheets {string.Join(", ", sheets.Select(Label))}: remove it from the sheets first, then delete it.");
+        }
+        var numbers = hit.SelectMany(h => h.Sheets).DistinctBy(s => s.Id).Select(s => s.Str("number") is { Length: > 0 } n ? n : s.Name);
+        throw new CommandException($"{hit.Count} views are on sheets ({string.Join(", ", numbers)}): remove them from the sheets first, then delete them. Nothing was deleted.");
+    }
+
     /// <summary>The next sheet number after the last one: A-101 → A-102.</summary>
     public static string NextNumber(IModelView m)
     {
@@ -621,6 +702,9 @@ public static class Sheets
             if ((string?)a["discipline"] is { Length: > 0 } discipline) sheet.Attrs["discipline"] = discipline;
             if (paper == Custom) CustomSize(sheet.Attrs, a);
             ctx.Add(sheet);
+            // With {viewId}: the view placed on the new sheet in the same step (Place on sheet… → New sheet, forum topic 207), one undo.
+            if ((string?)a["viewId"] is { Length: > 0 })
+                return new JsonObject { ["id"] = sheet.Id, ["viewportId"] = Sheets.AddViewport(ctx, a, ctx.Model.Get(sheet.Id)!).Id };
             return new JsonObject { ["id"] = sheet.Id };
         });
 
@@ -655,30 +739,7 @@ public static class Sheets
         r.Command("sheet.addViewport", "Place view", (ctx, a) =>
         {
             var sheet = Require(ctx.Model, (string?)a["id"]);
-            var viewId = (string?)a["viewId"] ?? throw new CommandException("Which view?");
-            var page = (int)(Json.Number(a["page"]) ?? 1);
-            var isContent = ctx.Model.Get(viewId) is { } ent && ctx.Services.All<ISheetContent>().Any(c => c.Handles(ent));
-            if (Views.Find(ctx.Model, viewId) == null && !isContent) throw new CommandException("There is no such view.");
-            if (PaperViews.SheetIdOf(viewId) != null) throw new CommandException("A sheet's paper is not a view to place.");
-            // A named boundary of the view (decision 236): the view may go on as many sheets as it has boundaries, once each.
-            var boundary = (string?)a["boundaryId"] is { Length: > 0 } bid
-                ? ctx.Model.Get(bid) is { Class: ViewBoundaries.Class } be && be.Str("viewId") == viewId ? bid : throw new CommandException("The view has no such boundary.")
-                : null;
-            if (ctx.Model.OfClass(Class).FirstOrDefault(s => Viewports(s).Any(v => v.ViewId == viewId && v.Page == page && v.Boundary == boundary)) is { } on)
-                throw new CommandException(boundary != null ? $"That boundary of the view is on sheet {on.Str("number")} already." : $"The view is on sheet {on.Str("number")} already.");
-            var (W, H) = PaperOf(sheet);
-            var vps = Viewports(sheet);
-            var block = TitleBlocks.Layout(ctx.Model, sheet).Block;
-            var (x, y) = (Json.Number(a["x"]) ?? (W - (block.X1 - block.X0)) / 2, Json.Number(a["y"]) ?? H / 2);
-            // A schedule placed with no point (decision 287): its top-left corner in the frame's, where a table is read from, not
-            // its middle in the paper's (a wide table ran past the frame on the left).
-            if (isContent && a["x"] is null && a["y"] is null && ctx.Services.All<ISheetContent>().First(c => c.Handles(ctx.Model.Get(viewId)!)) is var content
-                && content.Pages(ctx.Query, ctx.Model.Get(viewId)!, FrameSize(ctx.Model, sheet).W, FrameSize(ctx.Model, sheet).H) is { } pages && page - 1 < pages.Count)
-                (x, y) = (TitleBlocks.Layout(ctx.Model, sheet).Frame.X0 + 4 + pages[page - 1].W / 2, TitleBlocks.Layout(ctx.Model, sheet).Frame.Y0 + 4 + pages[page - 1].H / 2);
-            var vp = new SheetViewport(ctx.NewId(), viewId, x, y, Page: page, Boundary: boundary);
-            vps.Add(vp);
-            Write(ctx, sheet, vps);
-            return new JsonObject { ["viewportId"] = vp.Id };
+            return new JsonObject { ["viewportId"] = Sheets.AddViewport(ctx, a, sheet).Id };
         });
 
         r.Command("sheet.updateViewport", "Move view", (ctx, a) =>

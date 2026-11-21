@@ -700,6 +700,26 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .tree-row .tree-item { flex: 1; }
 .tree-row .icon.mini { opacity: 0; }
 .tree-row:hover .icon.mini { opacity: 1; }
+/*
+ * A view placed on a sheet (forum topic 207): Revit's small blue square before its name, in the row's left padding so the
+ * names stay aligned; its own blue in each theme (a deep one, 7:1 on white, in high contrast, with a black edge).
+ */
+:root, [data-theme="paper"] { --on-sheet: #2f6db5; }
+[data-theme="graphite"] { --on-sheet: #79aef0; }
+[data-theme="classic"] { --on-sheet: #0067c0; }
+[data-theme="contrast"] { --on-sheet: #003f9e; }
+.on-sheet-mark { display: inline-block; width: 7px; height: 7px; margin: 0 6px 1px -13px; background: var(--on-sheet); vertical-align: middle; }
+[data-theme="contrast"] .on-sheet-mark { width: 8px; height: 8px; margin-left: -14px; box-shadow: 0 0 0 1px #000; }
+/* Found in the project browser: the row lit a moment, then as it was. */
+.tree-row.found .tree-item { animation: browser-found 2.4s ease-out; box-shadow: inset 2px 0 var(--accent), inset 0 0 0 1px var(--accent); }
+[data-theme="contrast"] .tree-row.found .tree-item { box-shadow: inset 0 0 0 3px var(--accent); }
+@keyframes browser-found { 0%, 50% { background: var(--accent-wash); } 100% { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .tree-row.found .tree-item { animation: none; background: var(--accent-wash); } }
+/* Place on sheet… (forum topic 207): the search, then the sheets in a list that scrolls. */
+.place-on-sheet { width: 380px; max-width: calc(100vw - 32px); }
+.place-on-sheet input[type="search"] { width: 100%; margin-bottom: 8px; }
+.place-sheet-list { max-height: 320px; overflow-y: auto; border: 1px solid var(--rule); margin-bottom: 8px; }
+.place-sheet-list .tree-item { display: flex; align-items: center; gap: 6px; padding: 5px 10px; }
 .icon.on { color: var(--accent); }
 .plan-mark.selected { stroke: var(--hl-select, var(--accent)); stroke-width: 2; fill: none; }
 /* What a tag tags (report #130): the element, lit while its tag is hovered or selected or the TAG command hovers it. */

@@ -4,7 +4,7 @@ order: 70
 summary: Faci secțiuni și fațade, deschizi vederi 3D și setezi ce arată fiecare vedere și cum.
 ---
 
-Toate vederile sunt în navigatorul proiectului, puse sub disciplina lor: Arhitectură, Structură sau Instalații. Dublu clic pe o vedere o deschide într-un tab.
+Toate vederile sunt în navigatorul proiectului, puse sub disciplina lor: Arhitectură, Structură sau Instalații. Dublu clic pe o vedere o deschide într-un tab. Un pătrățel albastru înaintea numelui unei vederi arată că e pusă pe o planșă (ține mouse-ul pe el ca să vezi pe care). Într-un browser lung, clic dreapta într-o vedere deschisă sau pe tabul ei și alegi **Găsește în browserul proiectului**: browserul se desface, deschide grupul vederii, ajunge la ea și o luminează. **Pune pe planșă…** din același meniu pune vederea pe o planșă pe care o alegi, sau pe una nouă (vezi Planșe). O vedere de pe o planșă nu se poate șterge până nu e scoasă de pe planșă.
 
 ![Navigatorul proiectului cu o secțiune și o fațadă](shots/browser.webp)
 

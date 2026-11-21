@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Find in project browser, Place on sheet… (forum topic 207)
+  "Find in project browser": "在项目浏览器中查找", "Search the sheets (number or name)": "搜索图纸（编号或名称）", "New sheet…": "新建图纸…", "New sheet with this view on it, named after it": "新建图纸并放上此视图，以视图命名", "Open the sheet after placing": "放置视图后打开图纸", "Open the sheet": "打开图纸", "No sheet matches.": "没有匹配的图纸。", "A view goes on one sheet: take it off that sheet to place it on another.": "一个视图只放在一张图纸上：先从那张图纸上取下，才能放到另一张上。", "This view is not listed in the project browser.": "项目浏览器中没有列出此视图。", "This view cannot go on a sheet.": "此视图不能放到图纸上。",
   "Show undeformed": "显示未变形",
   "to check:": "待检查:",
   "Mode shape scale": "振型形状比例",
@@ -5506,4 +5508,14 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^„(.+)” is an accidental combination: checked as an ultimate one, with the persistent situation's γM \(on the safe side\)\.$/, (m) => `“${m[1]}”是偶然组合：按承载能力组合验算，采用持久设计状况的 γM（偏安全）.`],
   [/^1 combination switched off: left out of the results, the envelopes, the checks and the export\.$/, () => `已关闭 1 个组合：不计入结果、包络、验算和导出.`],
   [/^(\d+) combinations switched off: left out of the results, the envelopes, the checks and the export\.$/, (m) => `已关闭 ${m[1]} 个组合：不计入结果、包络、验算和导出.`],
+  // Views on sheets (forum topic 207)
+  [/^„(.+)” is on sheets (.+): remove it from the sheets first, then delete it\.$/, (m) => `„${m[1]}”在图纸 ${m[2]} 上：请先从图纸上移除，再删除。`],
+  [/^„(.+)” is on sheet (.+): remove it from the sheet first, then delete it\.$/, (m) => `„${m[1]}”在图纸 ${m[2]} 上：请先从图纸上移除，再删除。`],
+  [/^(\d+) views are on sheets \((.+)\): remove them from the sheets first, then delete them\. Nothing was deleted\.$/, (m) => `${m[1]} 个视图在图纸上（${m[2]}）：请先从图纸上移除，再删除。未删除任何内容。`],
+  [/^On sheets (.+)$/, (m) => `在图纸 ${m[1]} 上`],
+  [/^On sheet (.+)$/, (m) => `在图纸 ${m[1]} 上`],
+  [/^Already on sheets (.+)\.$/, (m) => `已在图纸 ${m[1]} 上。`],
+  [/^Already on sheet (.+)\.$/, (m) => `已在图纸 ${m[1]} 上。`],
+  [/^Placed on sheet (.+)\.$/, (m) => `已放置到图纸 ${m[1]}。`],
+  [/^Open sheet (.+)$/, (m) => `打开图纸 ${m[1]}`],
 ];

@@ -15,6 +15,7 @@ import { Compass, FileDown, Footprints, Layers, Maximize, MousePointer2, PenLine
 import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems } from '../shell/selectionMenu';
 import { viewHideItems } from '../shell/viewHideMenu';
+import { viewSheetItems } from '../shell/browserFind';
 import { dimensionItems } from '../modules/drafting/dimensionMenu';
 import { noteAxisClick } from '../modules/drafting/gridDims';
 import { symbolMenuItems } from '../modules/core/symbols/symbolTools';
@@ -830,7 +831,7 @@ export function PlanView() {
       { label: 'Walk in 3D', icon: <Footprints size={13} />, onSelect: () => walkIntoRoom(room, item, num(storey ?? undefined, 'elevation')) },
       { label: 'Select', icon: <MousePointer2 size={13} />, onSelect: () => select(room.id) },
     ] : [];
-    openContextMenu(x, y, [...editor.cornerItems({ clientX: x, clientY: y }), ...order, ...symbolMenuItems(selected, nodes), ...rooms, ...dimensionItems(), ...selectionItems(), ...viewHideItems(storey ? ownPlan ?? `plan:${storey.id}` : null)]);
+    openContextMenu(x, y, [...editor.cornerItems({ clientX: x, clientY: y }), ...order, ...symbolMenuItems(selected, nodes), ...rooms, ...dimensionItems(), ...selectionItems(), ...viewHideItems(storey ? ownPlan ?? `plan:${storey.id}` : null), ...viewSheetItems(storey ? ownPlan ?? `plan:${storey.id}` : null, nodes)]);
   };
   /** What a selection box or lasso takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: SelectDrag, e: React.PointerEvent): 'click' | 'done' => {

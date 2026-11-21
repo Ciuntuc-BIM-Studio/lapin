@@ -1,6 +1,8 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Find in project browser, Place on sheet… (forum topic 207)
+  "Find in project browser": "Găsește în browserul proiectului", "Search the sheets (number or name)": "Caută planșele (număr sau nume)", "New sheet…": "Planșă nouă…", "New sheet with this view on it, named after it": "O planșă nouă cu această vedere pe ea, numită după ea", "Open the sheet after placing": "Deschide planșa după ce pui vederea", "Open the sheet": "Deschide planșa", "No sheet matches.": "Nicio planșă nu se potrivește.", "A view goes on one sheet: take it off that sheet to place it on another.": "O vedere stă pe o singură planșă: scoate-o de pe acea planșă ca s-o pui pe alta.", "This view is not listed in the project browser.": "Această vedere nu e listată în browserul proiectului.", "This view cannot go on a sheet.": "Această vedere nu poate fi pusă pe o planșă.",
   "Show undeformed": "Arată nedeformat",
   "to check:": "de verificat:",
   "Mode shape scale": "Scara formei modului",
@@ -5469,4 +5471,14 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^„(.+)” is an accidental combination: checked as an ultimate one, with the persistent situation's γM \(on the safe side\)\.$/, (m) => `„${m[1]}” este o combinație accidentală: verificată ca una ultimă, cu γM al situației persistente (în favoarea siguranței).`],
   [/^1 combination switched off: left out of the results, the envelopes, the checks and the export\.$/, () => `1 combinație oprită: lăsată în afara rezultatelor, a înfășurătoarelor, a verificărilor și a exportului.`],
   [/^(\d+) combinations switched off: left out of the results, the envelopes, the checks and the export\.$/, (m) => `${m[1]} combinații oprite: lăsate în afara rezultatelor, a înfășurătoarelor, a verificărilor și a exportului.`],
+  // Views on sheets (forum topic 207)
+  [/^„(.+)” is on sheets (.+): remove it from the sheets first, then delete it\.$/, (m) => `„${m[1]}” e pe planșele ${m[2]}: scoate-o întâi de pe planșe, apoi șterge-o.`],
+  [/^„(.+)” is on sheet (.+): remove it from the sheet first, then delete it\.$/, (m) => `„${m[1]}” e pe planșa ${m[2]}: scoate-o întâi de pe planșă, apoi șterge-o.`],
+  [/^(\d+) views are on sheets \((.+)\): remove them from the sheets first, then delete them\. Nothing was deleted\.$/, (m) => `${m[1]} vederi sunt pe planșe (${m[2]}): scoate-le întâi de pe planșe, apoi șterge-le. Nu s-a șters nimic.`],
+  [/^On sheets (.+)$/, (m) => `Pe planșele ${m[1]}`],
+  [/^On sheet (.+)$/, (m) => `Pe planșa ${m[1]}`],
+  [/^Already on sheets (.+)\.$/, (m) => `Deja pe planșele ${m[1]}.`],
+  [/^Already on sheet (.+)\.$/, (m) => `Deja pe planșa ${m[1]}.`],
+  [/^Placed on sheet (.+)\.$/, (m) => `Pusă pe planșa ${m[1]}.`],
+  [/^Open sheet (.+)$/, (m) => `Deschide planșa ${m[1]}`],
 ];

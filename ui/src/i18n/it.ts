@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // Find in project browser, Place on sheet… (forum topic 207)
+  "Find in project browser": "Trova nel browser del progetto", "Search the sheets (number or name)": "Cerca le tavole (numero o nome)", "New sheet…": "Nuova tavola…", "New sheet with this view on it, named after it": "Una nuova tavola con questa vista sopra, chiamata come lei", "Open the sheet after placing": "Apri la tavola dopo aver messo la vista", "Open the sheet": "Apri la tavola", "No sheet matches.": "Nessuna tavola corrisponde.", "A view goes on one sheet: take it off that sheet to place it on another.": "Una vista va su una sola tavola: toglila da quella tavola per metterla su un'altra.", "This view is not listed in the project browser.": "Questa vista non è elencata nel browser del progetto.", "This view cannot go on a sheet.": "Questa vista non può andare su una tavola.",
   "Show undeformed": "Mostra indeformata",
   "to check:": "da verificare:",
   "Mode shape scale": "Scala della forma modale",
@@ -5477,4 +5479,14 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^„(.+)” is an accidental combination: checked as an ultimate one, with the persistent situation's γM \(on the safe side\)\.$/, (m) => `«${m[1]}» è una combinazione accidentale: verificata come una combinazione ultima, con il γM della situazione persistente (a favore di sicurezza).`],
   [/^1 combination switched off: left out of the results, the envelopes, the checks and the export\.$/, () => `1 combinazione disattivata: esclusa dai risultati, dagli inviluppi, dalle verifiche e dall'esportazione.`],
   [/^(\d+) combinations switched off: left out of the results, the envelopes, the checks and the export\.$/, (m) => `${m[1]} combinazioni disattivate: escluse dai risultati, dagli inviluppi, dalle verifiche e dall'esportazione.`],
+  // Views on sheets (forum topic 207)
+  [/^„(.+)” is on sheets (.+): remove it from the sheets first, then delete it\.$/, (m) => `„${m[1]}” è sulle tavole ${m[2]}: toglila prima dalle tavole, poi eliminala.`],
+  [/^„(.+)” is on sheet (.+): remove it from the sheet first, then delete it\.$/, (m) => `„${m[1]}” è sulla tavola ${m[2]}: toglila prima dalla tavola, poi eliminala.`],
+  [/^(\d+) views are on sheets \((.+)\): remove them from the sheets first, then delete them\. Nothing was deleted\.$/, (m) => `${m[1]} viste sono su tavole (${m[2]}): toglile prima dalle tavole, poi eliminale. Non è stato eliminato nulla.`],
+  [/^On sheets (.+)$/, (m) => `Sulle tavole ${m[1]}`],
+  [/^On sheet (.+)$/, (m) => `Sulla tavola ${m[1]}`],
+  [/^Already on sheets (.+)\.$/, (m) => `Già sulle tavole ${m[1]}.`],
+  [/^Already on sheet (.+)\.$/, (m) => `Già sulla tavola ${m[1]}.`],
+  [/^Placed on sheet (.+)\.$/, (m) => `Messa sulla tavola ${m[1]}.`],
+  [/^Open sheet (.+)$/, (m) => `Apri la tavola ${m[1]}`],
 ];

@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Find in project browser, Place on sheet… (forum topic 207)
+  "Find in project browser": "Znajdź w przeglądarce projektu", "Search the sheets (number or name)": "Szukaj arkuszy (numer lub nazwa)", "New sheet…": "Nowy arkusz…", "New sheet with this view on it, named after it": "Nowy arkusz z tym widokiem, nazwany jak on", "Open the sheet after placing": "Otwórz arkusz po umieszczeniu widoku", "Open the sheet": "Otwórz arkusz", "No sheet matches.": "Żaden arkusz nie pasuje.", "A view goes on one sheet: take it off that sheet to place it on another.": "Widok trafia na jeden arkusz: zdejmij go z tamtego arkusza, aby umieścić go na innym.", "This view is not listed in the project browser.": "Tego widoku nie ma w przeglądarce projektu.", "This view cannot go on a sheet.": "Tego widoku nie można umieścić na arkuszu.",
   "Show undeformed": "Pokaż nieodkształcony",
   "to check:": "do sprawdzenia:",
   "Mode shape scale": "Skala postaci drgań",
@@ -5523,4 +5525,14 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^„(.+)” is an accidental combination: checked as an ultimate one, with the persistent situation's γM \(on the safe side\)\.$/, (m) => `„${m[1]}” jest kombinacją wyjątkową: sprawdzana jak kombinacja nośności, z γM sytuacji trwałej (po stronie bezpiecznej).`],
   [/^1 combination switched off: left out of the results, the envelopes, the checks and the export\.$/, () => `1 kombinacja wyłączona: pominięta w wynikach, obwiedniach, sprawdzeniach i eksporcie.`],
   [/^(\d+) combinations switched off: left out of the results, the envelopes, the checks and the export\.$/, (m) => `Liczba wyłączonych kombinacji: ${m[1]}. Pominięte w wynikach, obwiedniach, sprawdzeniach i eksporcie.`],
+  // Views on sheets (forum topic 207)
+  [/^„(.+)” is on sheets (.+): remove it from the sheets first, then delete it\.$/, (m) => `„${m[1]}” jest na arkuszach ${m[2]}: najpierw zdejmij go z arkuszy, potem usuń.`],
+  [/^„(.+)” is on sheet (.+): remove it from the sheet first, then delete it\.$/, (m) => `„${m[1]}” jest na arkuszu ${m[2]}: najpierw zdejmij go z arkusza, potem usuń.`],
+  [/^(\d+) views are on sheets \((.+)\): remove them from the sheets first, then delete them\. Nothing was deleted\.$/, (m) => `Widoki na arkuszach: ${m[1]} (${m[2]}). Najpierw zdejmij je z arkuszy, potem usuń. Nic nie zostało usunięte.`],
+  [/^On sheets (.+)$/, (m) => `Na arkuszach ${m[1]}`],
+  [/^On sheet (.+)$/, (m) => `Na arkuszu ${m[1]}`],
+  [/^Already on sheets (.+)\.$/, (m) => `Już na arkuszach ${m[1]}.`],
+  [/^Already on sheet (.+)\.$/, (m) => `Już na arkuszu ${m[1]}.`],
+  [/^Placed on sheet (.+)\.$/, (m) => `Umieszczono na arkuszu ${m[1]}.`],
+  [/^Open sheet (.+)$/, (m) => `Otwórz arkusz ${m[1]}`],
 ];

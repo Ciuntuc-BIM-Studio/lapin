@@ -503,6 +503,8 @@ public sealed class CoreModule : ILapinModule
             var groupsTouched = groups.Concat(ids.Select(id => Groups.Of(ctx.Model, id)?.Id).OfType<string>()).Distinct().ToList();
             // What a module's elements still use stays (an entourage kind with figures, its picture), whatever the order asked.
             var deleting = ids.ToHashSet();
+            // A view on a sheet stays until it is taken off the sheet (forum topic 207): the whole deletion is refused, one step.
+            Sheets.RefuseDeletingPlaced(ctx.Model, deleting);
             foreach (var id in deleting)
                 if (ctx.Model.Get(id) is { } x) foreach (var d in ctx.Services.All<IDeletion>()) d.Check(ctx.Model, x, deleting);
             // What names the elements going (a room's finish, a bar's host) is put right while they are all still there.

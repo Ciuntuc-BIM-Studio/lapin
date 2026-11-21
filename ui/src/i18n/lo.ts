@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Find in project browser, Place on sheet… (forum topic 207)
+  "Find in project browser": "ຊອກຫາໃນແຜງຈັດການໂຄງການ", "Search the sheets (number or name)": "ຊອກຫາແຜ່ນແບບ (ເລກ ຫຼື ຊື່)", "New sheet…": "ແຜ່ນແບບໃໝ່…", "New sheet with this view on it, named after it": "ແຜ່ນແບບໃໝ່ທີ່ມີມຸມມອງນີ້ຢູ່, ຕັ້ງຊື່ຕາມມັນ", "Open the sheet after placing": "ເປີດແຜ່ນແບບຫຼັງຈາກວາງມຸມມອງ", "Open the sheet": "ເປີດແຜ່ນແບບ", "No sheet matches.": "ບໍ່ມີແຜ່ນແບບທີ່ກົງກັນ.", "A view goes on one sheet: take it off that sheet to place it on another.": "ມຸມມອງໜຶ່ງຢູ່ໃນແຜ່ນແບບດຽວ: ເອົາມັນອອກຈາກແຜ່ນແບບນັ້ນກ່ອນ ເພື່ອວາງໃນແຜ່ນອື່ນ.", "This view is not listed in the project browser.": "ມຸມມອງນີ້ບໍ່ມີໃນລາຍການຂອງແຜງຈັດການໂຄງການ.", "This view cannot go on a sheet.": "ມຸມມອງນີ້ບໍ່ສາມາດວາງໃນແຜ່ນແບບໄດ້.",
   "Show undeformed": "ສະແດງຮູບທີ່ບໍ່ຜິດຮູບ",
   "to check:": "ຕ້ອງກວດ:",
   "Mode shape scale": "ມາດຕາສ່ວນຂອງຮູບແບບໂໝດ",
@@ -5569,4 +5571,14 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^„(.+)” is an accidental combination: checked as an ultimate one, with the persistent situation's γM \(on the safe side\)\.$/, (m) => `“${m[1]}” ແມ່ນການປະສົມອຸບັດຕິເຫດ: ກວດຄືການປະສົມຂີດຈຳກັດສູງສຸດ, ດ້ວຍ γM ຂອງສະຖານະການຖາວອນ (ຝັ່ງປອດໄພ).`],
   [/^1 combination switched off: left out of the results, the envelopes, the checks and the export\.$/, () => `ປິດການປະສົມ 1 ອັນ: ບໍ່ນັບໃນຜົນ, ເສັ້ນຫຸ້ມ, ການກວດ ແລະ ການສົ່ງອອກ.`],
   [/^(\d+) combinations switched off: left out of the results, the envelopes, the checks and the export\.$/, (m) => `ປິດການປະສົມ ${m[1]} ອັນ: ບໍ່ນັບໃນຜົນ, ເສັ້ນຫຸ້ມ, ການກວດ ແລະ ການສົ່ງອອກ.`],
+  // Views on sheets (forum topic 207)
+  [/^„(.+)” is on sheets (.+): remove it from the sheets first, then delete it\.$/, (m) => `„${m[1]}” ຢູ່ໃນແຜ່ນແບບ ${m[2]}: ເອົາມັນອອກຈາກແຜ່ນແບບກ່ອນ, ແລ້ວຈຶ່ງລຶບ.`],
+  [/^„(.+)” is on sheet (.+): remove it from the sheet first, then delete it\.$/, (m) => `„${m[1]}” ຢູ່ໃນແຜ່ນແບບ ${m[2]}: ເອົາມັນອອກຈາກແຜ່ນແບບກ່ອນ, ແລ້ວຈຶ່ງລຶບ.`],
+  [/^(\d+) views are on sheets \((.+)\): remove them from the sheets first, then delete them\. Nothing was deleted\.$/, (m) => `ມຸມມອງ ${m[1]} ອັນຢູ່ໃນແຜ່ນແບບ (${m[2]}): ເອົາພວກມັນອອກຈາກແຜ່ນແບບກ່ອນ, ແລ້ວຈຶ່ງລຶບ. ບໍ່ໄດ້ລຶບຫຍັງເລີຍ.`],
+  [/^On sheets (.+)$/, (m) => `ຢູ່ໃນແຜ່ນແບບ ${m[1]}`],
+  [/^On sheet (.+)$/, (m) => `ຢູ່ໃນແຜ່ນແບບ ${m[1]}`],
+  [/^Already on sheets (.+)\.$/, (m) => `ຢູ່ໃນແຜ່ນແບບ ${m[1]} ແລ້ວ.`],
+  [/^Already on sheet (.+)\.$/, (m) => `ຢູ່ໃນແຜ່ນແບບ ${m[1]} ແລ້ວ.`],
+  [/^Placed on sheet (.+)\.$/, (m) => `ວາງໃນແຜ່ນແບບ ${m[1]} ແລ້ວ.`],
+  [/^Open sheet (.+)$/, (m) => `ເປີດແຜ່ນແບບ ${m[1]}`],
 ];

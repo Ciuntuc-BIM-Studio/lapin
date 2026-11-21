@@ -8,7 +8,7 @@
  */
 
 import { hasModule } from '../platform/brand';
-import { useState, type DragEvent } from 'react';
+import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, ListPlus, Frame, Layers, Map as MapIcon, Plus, ScanSearch, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { execute, activeStorey, useSession } from '../engine/session';
@@ -30,6 +30,7 @@ import { formatLevel, useStandards } from '../engine/unitsStore';
 import { openDocuments, useDocumentsDialog } from '../modules/core/documents/documents';
 import { otherScales, placeAgainLabel, sheetOfView } from '../viewport/placeAtScale';
 import { createScheduleOf } from './fieldSchedule';
+import { canPlace, foldsFor, onSheetTitle, placedOn, placeOnSheet, sheetLabel, unfold, useBrowserFind } from './browserFind';
 
 const TAB_KEY = 'lapin.browser.tab';
 
@@ -83,6 +84,34 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   // The site's drawings are the Site's, not the sets'.
   const siteItems = items.filter((i) => i.kind === 'site');
   const groups = groupItems(sets, items.filter((i) => i.kind !== 'site'));
+  // Where each view is placed (the marker before it, forum topic 207).
+  const onSheets = placedOn(nodes);
+
+  // Find in project browser (forum topic 207): the project tab, every level of the tree that holds the row unfolded, the row
+  // scrolled into the middle and lit a moment. The request is taken once, by the browser that is on the screen.
+  const navRef = useRef<HTMLElement>(null);
+  const find = useBrowserFind((s) => s.n);
+  const [found, setFound] = useState<string | null>(null);
+  useEffect(() => {
+    const id = useBrowserFind.getState().id;
+    if (!id || !navRef.current?.isConnected) return;
+    useBrowserFind.setState({ id: null });
+    const folds = foldsFor(groups, siteItems, id);
+    if (!folds) { notify('This view is not listed in the project browser.'); return; }
+    setShown(undefined);
+    if (kept !== 'project') pickTab('project');
+    const next = unfold(collapsed, folds);
+    if (next) { setCollapsed(next); try { localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...next])); } catch { /* a convenience only */ } }
+    setFound(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [find]);
+  useEffect(() => {
+    if (!found) return;
+    const row = navRef.current?.querySelector<HTMLElement>(`[data-browser-row="${CSS.escape(found)}"]`);
+    row?.scrollIntoView({ block: 'center' });
+    const t = window.setTimeout(() => setFound(null), 2400);
+    return () => window.clearTimeout(t);
+  }, [found]);
 
   // A plan's own view is selected too, so its properties (discipline, style, range, storeys shown, reference level) come to the panel; a level's default plan has no entity to select.
   const showPlan = (id: string, planViewId: string | null = null) => useUi.setState({ view: 'plan', storeyId: id, planViewId, selection: planViewId, selected: planViewId ? [planViewId] : [] });
@@ -136,9 +165,17 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   };
   // A view's right-click: a section or an elevation opens, or shows in 3D (the model cut by it, its drawing on the cut; again:
   // stop); a view on a sheet is placed again there at another scale.
+  // A view that can go on a sheet: Place on sheet…, or the sheet it is on opened (forum topic 207).
+  const sheetItems = (item: BrowserItem) => {
+    if (!canPlace(item.id, nodes)) return [];
+    const on = onSheets.get(item.id);
+    return on
+      ? on.map((s) => ({ label: `Open sheet ${sheetLabel(s)}`, icon: <FileText size={13} />, onSelect: () => showSheet(s.id) }))
+      : [{ label: 'Place on sheet…', icon: <FileText size={13} />, onSelect: () => placeOnSheet(item.id) }];
+  };
   const viewMenu = (item: BrowserItem) => {
     const drawing = item.kind === 'section' || item.kind === 'elevation';
-    const again = placeAgainItems(item);
+    const again = [...sheetItems(item), ...placeAgainItems(item)];
     if (!drawing && again.length === 0) return undefined;
     return (e: React.MouseEvent) => {
       e.preventDefault();
@@ -162,9 +199,13 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   };
   const Row = ({ item, on, open, children }: { item: BrowserItem; on: boolean; open: () => void; children?: React.ReactNode }) => (
     // The drag handle is the row, not the button: Firefox does not start a drag from a <button> (forum topic 206).
-    <span className="tree-row"
+    <span className={`tree-row${found === item.id ? ' found' : ''}`} data-browser-row={item.id}
       {...(SHEETABLE.has(item.kind) ? { draggable: true, onDragStart: (e: DragEvent) => { e.dataTransfer.setData(VIEW_DRAG, item.id); e.dataTransfer.effectAllowed = 'copy'; }, title: 'Drag onto an open sheet to place it there' } : {})}>
-      <button type="button" className={`tree-item${on ? ' on' : ''}`} onClick={open} onContextMenu={viewMenu(item)}>{item.kind === 'sheet' ? `${String(item.node?.props.number ?? '')} · ${item.name}` : item.name}</button>
+      <button type="button" className={`tree-item${on ? ' on' : ''}`} onClick={open} onContextMenu={viewMenu(item)}>
+        {/* On a sheet: Revit's small square before the name, the sheets in its tooltip (forum topic 207). */}
+        {onSheets.has(item.id) && <span className="on-sheet-mark" data-testid="on-sheet-mark" title={onSheetTitle(onSheets.get(item.id)!)} aria-label={onSheetTitle(onSheets.get(item.id)!)} />}
+        {item.kind === 'sheet' ? `${String(item.node?.props.number ?? '')} · ${item.name}` : item.name}
+      </button>
       {item.kind === 'sheet' && countOpen(nodes, item.id) > 0 && <span className="count remarks" title="Remarks read from PDFs, still open" data-testid="sheet-remark-count">{countOpen(nodes, item.id)}</span>}
       {children}
       {item.node && <button type="button" className="icon mini" title={item.kind === 'sheet' ? 'Delete the sheet' : item.kind === 'schedule' ? 'Delete the schedule' : 'Delete the view'} onClick={() => remove(item.id)}><Trash2 size={11} /></button>}
@@ -269,7 +310,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   };
 
   return (
-    <nav className="panel browser" aria-label="Project browser">
+    <nav ref={navRef} className="panel browser" aria-label="Project browser">
       <div className="panel-head">
         <span className="eyebrow">Project</span>
         <span className="panel-title">{projectTitle(doc?.path)}{doc?.dirty ? ' •' : ''}</span>
