@@ -4911,6 +4911,13 @@ export const DA: Record<string, string> = {
   "Autohold: the drag follows the pointer without the button. Click to drop it here": "Autohold: trækket følger markøren uden knappen. Klik for at slippe det her",
   "Elements under the pointer": "Elementer under markøren",
   "Rotate a copy": "Roter en kopi",
+  // Forum topic 190: a structure type's material, a beam's top offset.
+  'Footing material': 'Fundamentets materiale',
+  'What its elements are made of: their colour, hatch, quantities and the IFC export follow it': 'Hvad dens elementer er lavet af: farve, skravering, mængder og IFC-eksporten følger det',
+  'Top offset (from the level above)': 'Forskydning top (fra etagen ovenover)',
+  'The beam\'s top stands at the top of its level (the level\'s Top level, where the level above starts) plus this offset: 0 puts its top there, a negative offset lowers it. The Top elevation below follows it': 'Bjælkens top ligger ved toppen af dens etage (etagens topniveau, hvor etagen ovenover begynder) plus denne forskydning: 0 lægger toppen der, en negativ forskydning sænker den. Topkoten nedenfor følger den',
+  'Change in type…': 'Skift i typen…',
+  'The material is the type\'s: change it in Structure types, and every element of the type follows': 'Materialet hører til typen: skift det i Konstruktionstyper, og alle typens elementer følger med',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

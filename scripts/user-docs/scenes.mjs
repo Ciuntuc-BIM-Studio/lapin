@@ -4676,6 +4676,8 @@ export const scenes = [
       await t.wait(600);
       t.expect(await dialog.locator('input[data-field=type-mark]').inputValue() === 'P7', 'the type shows its mark');
       t.expect(await dialog.locator('[data-action=structure-types-import]').count() === 1, 'the types can be imported');
+      // Forum topic 190: the type's material, to change.
+      t.expect(await dialog.locator('[data-testid=structure-type-material] select').inputValue() === 'Precast concrete', 'the type shows its material');
       await t.shot('structure-types-lintel', { of: '.dialog', pad: 0 });
       await t.ui({ dialog: null });
       const kp7 = (await t.nodes()).find((n) => n.type === 'IfcBeamType' && n.name === 'KP 7');

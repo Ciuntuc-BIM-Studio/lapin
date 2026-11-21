@@ -4878,6 +4878,13 @@ export const FR: Record<string, string> = {
   "Autohold: the drag follows the pointer without the button. Click to drop it here": "Maintien automatique : le glissement suit le pointeur sans le bouton. Clic pour le déposer ici",
   "Elements under the pointer": "Éléments sous le pointeur",
   "Rotate a copy": "Faire pivoter une copie",
+  // Forum topic 190: a structure type's material, a beam's top offset.
+  'Footing material': 'Matériau de la semelle',
+  'What its elements are made of: their colour, hatch, quantities and the IFC export follow it': 'Ce dont ses éléments sont faits : leur couleur, leur hachure, les quantités et l’export IFC le suivent',
+  'Top offset (from the level above)': 'Décalage haut (depuis le niveau au-dessus)',
+  'The beam\'s top stands at the top of its level (the level\'s Top level, where the level above starts) plus this offset: 0 puts its top there, a negative offset lowers it. The Top elevation below follows it': 'Le dessus de la poutre se place en haut de son niveau (le niveau supérieur du niveau, là où commence le niveau au-dessus) plus ce décalage : 0 y met son dessus, un décalage négatif l’abaisse. La cote supérieure ci-dessous le suit',
+  'Change in type…': 'Changer dans le type…',
+  'The material is the type\'s: change it in Structure types, and every element of the type follows': 'Le matériau est celui du type : changez-le dans Types structurels, et tous les éléments du type suivent',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

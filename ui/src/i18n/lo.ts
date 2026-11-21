@@ -4970,6 +4970,13 @@ export const LO: Record<string, string> = {
   "Autohold: the drag follows the pointer without the button. Click to drop it here": "ຖືອັດຕະໂນມັດ: ການລາກຕາມຕົວຊີ້ໂດຍບໍ່ມີປຸ່ມ. ກົດເພື່ອວາງຢູ່ບ່ອນນີ້",
   "Elements under the pointer": "ອົງປະກອບໃຕ້ຕົວຊີ້",
   "Rotate a copy": "ໝຸນສຳເນົາ",
+  // Forum topic 190: a structure type's material, a beam's top offset.
+  'Footing material': 'ວັດສະດຸຖານຮາກ',
+  'What its elements are made of: their colour, hatch, quantities and the IFC export follow it': 'ອົງປະກອບຂອງມັນເຮັດດ້ວຍຫຍັງ: ສີ, ລາຍຂີດ, ປະລິມານ ແລະ ການສົ່ງອອກ IFC ປະຕິບັດຕາມ',
+  'Top offset (from the level above)': 'ໄລຍະເລື່ອນດ້ານເທິງ (ຈາກລະດັບຂ້າງເທິງ)',
+  'The beam\'s top stands at the top of its level (the level\'s Top level, where the level above starts) plus this offset: 0 puts its top there, a negative offset lowers it. The Top elevation below follows it': 'ດ້ານເທິງຂອງຄານຢູ່ທີ່ດ້ານເທິງຂອງລະດັບຂອງມັນ (ລະດັບເທິງຂອງຊັ້ນ, ບ່ອນທີ່ລະດັບຂ້າງເທິງເລີ່ມຕົ້ນ) ບວກກັບໄລຍະເລື່ອນນີ້: 0 ວາງດ້ານເທິງໄວ້ທີ່ນັ້ນ, ໄລຍະເລື່ອນລົບເຮັດໃຫ້ມັນຕ່ຳລົງ. ລະດັບດ້ານເທິງຂ້າງລຸ່ມປະຕິບັດຕາມ',
+  'Change in type…': 'ປ່ຽນໃນປະເພດ…',
+  'The material is the type\'s: change it in Structure types, and every element of the type follows': 'ວັດສະດຸເປັນຂອງປະເພດ: ປ່ຽນມັນໃນປະເພດໂຄງສ້າງ, ແລະ ທຸກອົງປະກອບຂອງປະເພດປະຕິບັດຕາມ',
 };
 
 /** Phrases with a number or a name in them. */

@@ -12,6 +12,7 @@ The **Structure** tab holds the frame and the foundations.
 
 - **Column** (<kbd>CL</kbd>): click where it stands. A column runs from its level to the level above.
 - **Beam** (<kbd>BM</kbd>): click its two ends; with **Arc** in the command line's bar (**Line** / **Arc**), click its two ends, then a point the arc passes through. **Curved beam** (<kbd>BC</kbd>) starts the Beam tool already set to **Arc**.
+  A beam hangs from the level above: its top is at the top of its level (the level's **Top level**, where the level above starts). **Properties → Placement → Top offset (from the level above)** moves it from there: 0 keeps its top on the level above, −50 lowers it 50 mm; **Top elevation** shows where its top is above ±0.00, and you can type that instead. If a beam is not where you expect, check the heights of the levels first ([Levels](levels.md)).
 - **Columns at grid** places a column at every crossing of the grid axes. To draw the axes, use **Annotate → Grid axis** (<kbd>GR</kbd>).
 
 ## Temporary dimensions
@@ -54,6 +55,8 @@ Beams and strip footings are cut and moved with the same tools as walls (see [Tr
 ## Types and corners
 
 **Structure types** sets the sections of columns, beams and footings: concrete sections and steel profiles. A column's **Section** is a **Rectangle**, a **Circle** or a **Polygon**, a regular one given by its **Sides** and its **Diameter** across the corners (an octagonal post, as an imported IFC may have it). Click a type in the list to change its size or its name, then **Save type**: every element of that type follows; **New type** goes back to making one.
+
+**Material** is what the type's elements are made of: reinforced concrete for a new type, or the profile's own material for one from a profile library (steel, timber, aluminium), until you choose another. Pick one of the project's materials, or **New material…** to make one. Their colour, hatch, joins, quantities and IFC export follow it. A strip type's is the **Footing material** (its stem keeps its layers); a pad footing's is its steps'. **Properties** shows a column's, beam's or footing's material under its type; **Change in type…** opens the type here.
 
 **Duplicate** beside the name copies the type as „Name 2” („IPE 300 (2)” when the name ends in a number), and **↑** **↓** move it up and down the lists of its types, as in [Wall types](walls.md#wall-types).
 
