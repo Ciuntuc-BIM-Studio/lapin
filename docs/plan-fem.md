@@ -892,8 +892,8 @@ fără termenul de torsiune (N·Ip/A): modelul nu are rigiditatea de deplanare, 
 
 ### 14.7 Ce rămâne pentru mai târziu (specificat, nefăcut în S5)
 
-1. **Imperfecțiunile globale** (EN 1993-1-1 5.3.2: φ = φ0 αh αm, φ0 = 1/200; forțele echivalente φ·NEd la fiecare nivel, pe ±X și ±Y, adică de patru ori combinațiile SLU) — fără ele calculul de ordinul doi nu e complet pentru proiectarea la oțel (5.2.2(3)); acum spus în note când P-Δ e pornit.
-2. **Coeficientul de sensibilitate θ** la deplasarea relativă de nivel (P100-1/2013 §4.6.2.2, EN 1998-1 §4.4.2.2(2)): θ = Ptot dr / (Vtot h), ≤ 0,1 neglijat, 0,1–0,2 amplificare 1/(1 − θ), > 0,3 refuzat; din tabelul nivelurilor seismic (§11.3).
+1. *(Făcut în S5d, §14.14.)* **Imperfecțiunile globale** (EN 1993-1-1 5.3.2: φ = φ0 αh αm, φ0 = 1/200; forțele echivalente φ·NEd la fiecare nivel, pe ±X și ±Y, adică de patru ori combinațiile SLU) — fără ele calculul de ordinul doi nu e complet pentru proiectarea la oțel (5.2.2(3)); acum spus în note când P-Δ e pornit.
+2. *(Raportat în tabelul nivelurilor, §14.16.)* **Coeficientul de sensibilitate θ** la deplasarea relativă de nivel (P100-1/2013 §4.6.2.2, EN 1998-1 §4.4.2.2(2)): θ = Ptot dr / (Vtot h), ≤ 0,1 neglijat, 0,1–0,2 amplificare 1/(1 − θ), > 0,3 refuzat; din tabelul nivelurilor seismic (§11.3).
 3. **Lungimile de flambaj din αcr** pentru verificările de oțel la cadre cu noduri deplasabile (Lcr = π √(EI/(αcr NEd)), cu limitele lor), ca alternativă la k-ul dat de utilizator (§12.11, răspunsul 3).
 4. **Rigiditatea geometrică a plăcilor** (pereți și planșee comprimate în planul lor), pentru P-Δ și flambaj la clădirile cu pereți-placă.
 5. **Etapele de execuție** (construction stages): o listă de etape pe proiect (elementele și încărcările fiecăreia, din fazele modulului `phases`), rezolvate în ordine cu rigiditatea acumulată, efectele adunate; cere o comandă de etape și o legătură cu fazele.
@@ -995,3 +995,36 @@ Interogări: `analysis.run` primește `nonlinear.imperfections: {phi0, h, alphaH
 - **Static**: o grindă simplu rezemată (axa X, adâncimea Z) cu o forță laterală (pe Y) la mijloc: ținută de tablă, săgeata laterală a mijlocului față de coardă e zero (la 10⁻⁶ din cea fără tablă), reacțiile sunt aceleași (echilibrul).
 - **Deschiderile**: o pană pe trei rigle (două deschideri): nodul rigiei din mijloc rupe deschiderea (deplasarea lui după d nu e legată de capete); o contrafișă nu o rupe.
 - **Hala din ghid**: cu `purlins: true` modurile locale ale panelor dispar din primele șase ale combinației cu αcr 1,83; αcr cel mai mic și primul global după, raportate (§14.17); comanda un pas de undo; fără ea aurul neschimbat.
+
+### 14.16 Coeficientul de sensibilitate θ în tabelul nivelurilor seismic (specificația, 21.11.2026; §14.7 punctul 2)
+
+P100-1/2013 §4.6.2.2 și SR EN 1998-1 4.4.2.2(2): θ = Ptot·dr / (Vtot·h) pe fiecare nivel și direcție, Ptot încărcarea gravitațională a combinației seismice la nivel și deasupra (masele nodurilor libere de deasupra bazei nivelului × g), dr = q·de deplasarea relativă de nivel de proiectare (EN 1998-1 4.3.4: ds = qd·de; de deplasarea relativă din analiza modală, cea din tabel), Vtot forța tăietoare a nivelului, h înălțimea lui. Clasele: θ ≤ 0,1 efectele de ordinul doi se neglijează; 0,1 < θ ≤ 0,2 efectele seismice × 1/(1 − θ) (raportat); 0,2 < θ ≤ 0,3 e nevoie de un calcul de ordinul doi; θ > 0,3 nu e permis. `analysis.seismic` dă la fiecare nivel `gravity`, `theta: [x, y]`, `thetaClass` (`neglect`, `amplify`, `second-order`, `refused`) și `thetaAmplifier`; o notă când θ > 0,1 undeva. Doar raportat: amplificarea nu e aplicată rezultatelor seismice (P-Δ în combinația seismică rămâne la §14.7.6).
+
+**Testele:** clasele la limite (0,1 / 0,2 / 0,3); pe cadrul din ghid (un nivel, ag = 0,30 g, q = 3): Ptot = g·m, θ = Ptot·q·de/(V·h) din valorile tabelului (X: 218,43 kN · 3 · 0,003051 m / (54,59 kN · 3 m) = 0,0122).
+
+### 14.17 Ce s-a hotărât la implementare (21.11.2026)
+
+- **Codul:** `Solver/Imperfections.cs` (φ, αh, αm, φ lemn, stâlpii, liniile și șirurile, forțele, `ImperfectionSet`); `NonlinearSet.Base` / `Variant` / `Imperfection` / `Neglectable`, `AnalysisRun.SetsOf` (o combinație = setul ei sau cele patru variante), `NonlinearFor` (varianta +X pentru flambaj); `AnalysisSettings.Imperfections` / `ImperfectionsSaid`; `Solver/Sheeting.cs` (`Sheeting.Restrain`, legături cu trei noduri `sheeting:…`, `StructuralProblem.SheetingHold`), `SheetingSettings` (`analysisSheeting`), comanda `analysis.setSheeting`; `SeismicRun.Theta` / `ThetaClass`, `SeismicStorey.Gravity`.
+- **Variantele** au cheia combinației cu `|+X` etc. și numele „… + φ(+X)”; un rând pe combinație în `nonlinear.combinations` (cu `variants` și `governing`); `analysis.results {combination}` dă pentru ea o înfășurătoare (`kind: "envelope"`), ca la combinația seismică ±AEd. O variantă instabilă scoate toată combinația din înfășurători (regula §14.1).
+- **Doar cu imperfecțiunile** (fără P-Δ, fără stări) se rezolvă doar combinațiile SLU (câte un calcul liniar pe variantă); SLS rămâne suprapunerea cazurilor (testat: înfășurătoarea SLS identică).
+- **h** e al tuturor stâlpilor (și al celor întinși), ca φ să nu sară la combinațiile de vânt de ridicare; **m** numără doar liniile comprimate ale șirului.
+- **Suma forțelor** raportată (`force`) e ce ia cadrul lateral: forțele pe nodurile neținute pe direcția aceea (ΣφN la bazele liniilor); forțele de la baze intră direct în reazeme.
+- **Tabla:** penalizarea 10⁴ × EA/L cea mai mare a barei; legăturile intră și în problema modală (alături de resorturi). Rotirea după axa locală 2 e legată și ea (altfel o singură bucată între două noduri ținute flambează cu rotirile libere). O bară dintr-o singură bucată nu are noduri interioare: nu primește nimic (oricum nu are mod local cu capetele articulate).
+- **Cifrele** (Debug, mașina încărcată):
+  - φ la mână: h = 6, m = 2 → 1/282,84 (0,00353553), exact; cadrul portal articulat, P = 500 kN: forțele 1,76777 kN, deplasarea variantei = cea sub H = φP la fiecare cap la 10⁻⁹, momentul la cap φPh = 10,6066 kN·m, ΣRx = 0; P-Δ: amplificarea 2,2864 față de 1/(1 − 1/αcr) = 2,2979 (αcr = 1,7705).
+  - Cadrul din ghid: h = 2,9 m (stâlpii de la fundație la grindă), αh = 1, m = 2, φ = 1/230,9 (0,00433013) pe X și Y.
+  - Hala din ghid (P-Δ + imperfecțiuni): h = 7,68 m, αh = 0,722; φ = 1/320 (m = 2) la combinațiile gravitaționale, cel mai mare 1/277 (m = 1, combinațiile cu ridicare); 22 de combinații SLU în care 5.3.2(4) ar permite neglijarea. **Fără tablă**, opt variante (două combinații cu vânt pe fronton, toate patru variantele) sunt instabile: forțele de imperfecțiune pe ±Y trec prin panele-montant ale contravântuirii, comprimându-le peste αcr-ul lor local (1,83); cu tabla pornită toate combinațiile stau, amplificarea cea mai mare 1,33.
+  - Flambajul halei, combinația „1.35 G1 + 1.5 S-X + 0.9 W-Y/s”: înainte α = 1,826 (pana Z 200, 57 %), 2,080 (global), 2,457; cu tabla pe pane: 4,515 (global), 5,436, 6,262 …; modurile locale rămase sunt ale riglelor de perete C 200 (tabla de perete pe ele le-ar ține la fel). Cu scena ghidului (alt vânt): cel mai mic αcr 1,74* → 3,01.
+  - Timpul halei: liniar ~1 s; P-Δ (87 de combinații) ~13 s; P-Δ + imperfecțiuni ~34–42 s (de 4 ori combinațiile SLU); verificările ~3–5 s. Rezolvările combinațiilor sunt secvențiale: elementele împărțite între probleme își refac matricele la `Prepare`, deci paralelizarea cere copii; lăsată pentru mai târziu.
+- **Aurul** (`SecondOrderGoldenTests`) trece neschimbat; testul S5 de ordinul doi spune acum explicit `imperfections: false` (P-Δ singur, exact ca în S5).
+
+### 14.18 De hotărât de utilizator
+
+1. **Imperfecțiunile vin cu ordinul doi**: `secondOrder: true` le pornește într-un proiect care n-a spus nimic despre ele; oprite explicit rămân oprite. *Recomandare: da (calculul de ordinul doi e complet doar cu ele; proiectele vechi nu se schimbă, au nevoie de o comandă).*
+2. **5.3.2(4)** (HEd ≥ 0,15 VEd): imperfecțiunile se pun mereu, nota spune unde s-ar putea neglija. *Recomandare: da, mereu (de partea siguranței, costul e același); o opțiune „aplică 5.3.2(4)” mai târziu dacă e cerută.*
+3. **m pe șiruri** (lectura literală, φ mai mare) și nu pe tot nivelul. *Recomandare: pe șiruri.*
+4. **Variantele afișate ca înfășurătoare** sub numele combinației, varianta guvernantă numită în verificări și în tabelul Stability. *Recomandare: da (cel mai puțin zgomot).*
+5. **Tabla pe pane: reținere relativă simplă** (nu diafragmă, nu rigiditate de forfecare S din BB.2.1). *Recomandare: da; diafragma (stressed skin, EN 1993-1-3 10.3) separat, la cerere.*
+6. **Pornirea tablei: pe bară**, cu butonul „toate panele acoperișurilor”; riglele de perete se bifează pe bară. *Recomandare: da; „toate riglele halei” ca al doilea buton dacă e cerut.*
+7. **θ: dr = q·de** (EN 1998-1 4.3.4), fără factorul c al P100 de la deplasarea SLU. *Recomandare: da; de confirmat din P100-1/2013 §4.6.2.2 (textul nu l-am avut la îndemână).*
+8. **Timpul** halei cu P-Δ și imperfecțiuni (~40 s în Debug). *Recomandare: paralelizarea combinațiilor (copii ale elementelor pe fir) ca pas următor mic.*
