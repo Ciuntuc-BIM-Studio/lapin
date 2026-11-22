@@ -72,23 +72,48 @@ public sealed class FrameElement
         ReleaseI = ReleaseI, ReleaseJ = ReleaseJ, Name = Name, SourceId = SourceId, Material = Material, Only = Only, Member = Member,
     };
 
-    /// <summary>A copy with an axial force for its geometric stiffness and, or, taken out (§14.1), as yet unprepared.</summary>
-    public FrameElement With(double axial, bool inactive) => new()
+    /// <summary>
+    /// A copy with an axial force for its geometric stiffness and, or, taken out (§14.1). When this bar is prepared, the copy
+    /// takes its axes, transform and condensation as they are (§14.21: they do not depend on the axial force or the state;
+    /// shared, never written again) and works out only its own stiffness, so it is prepared for the same node places;
+    /// otherwise it is as yet unprepared.
+    /// </summary>
+    public FrameElement With(double axial, bool inactive)
     {
-        Id = Id, I = I, J = J, OffI = OffI, OffJ = OffJ, Local2 = Local2, E = E, G = G, A = A, I22 = I22, I33 = I33, Jt = Jt, As2 = As2, As3 = As3,
-        ReleaseI = ReleaseI, ReleaseJ = ReleaseJ, Name = Name, SourceId = SourceId, Material = Material, Only = Only, Member = Member, Axial = axial, Inactive = inactive,
-    };
+        var o = new FrameElement
+        {
+            Id = Id, I = I, J = J, OffI = OffI, OffJ = OffJ, Local2 = Local2, E = E, G = G, A = A, I22 = I22, I33 = I33, Jt = Jt, As2 = As2, As3 = As3,
+            ReleaseI = ReleaseI, ReleaseJ = ReleaseJ, Name = Name, SourceId = SourceId, Material = Material, Only = Only, Member = Member, Axial = axial, Inactive = inactive,
+        };
+        lock (_prepare)
+        {
+            if (!_prepared) return o;
+            (o.Pi, o.Pj, o.Ex, o.Ey, o.Ez, o.L, o.PhiY, o.PhiZ) = (Pi, Pj, Ex, Ey, Ez, L, PhiY, PhiZ);
+            (o.T, o._k0, o._released, o._kccInv, o._tc, o._kElastic) = (T, _k0, _released, _kccInv, _tc, _kElastic);
+            (o._atI, o._atJ) = (_atI, _atJ);
+        }
+        o.K = o.Finish(o._kElastic);
+        o._prepared = true;
+        return o;
+    }
 
     // Worked out by Prepare.
     public Vec3 Pi, Pj, Ex, Ey, Ez;
     public double L;
     /// <summary>Local end displacements from the nodes' global ones (12 × 12): the rotation onto local axes after the rigid arms.</summary>
-    public double[] T = new double[144];
+    /// <remarks>Each array Prepare makes is new and never written again (copies by <see cref="With"/> share them).</remarks>
+    public double[] T = [];
     /// <summary>The local stiffness with the releases condensed out (12 × 12), and what condensing a load vector needs.</summary>
-    public double[] K = new double[144];
-    double[] _k0 = new double[144];
+    public double[] K = [];
+    double[] _k0 = [];
     int[] _released = [];
     double[]? _kccInv;
+    /// <summary>The released ends' displacements from the held ones (12 × 12, §14.3), with releases.</summary>
+    double[]? _tc;
+    /// <summary>The condensed elastic stiffness, before the state and the axial force (<see cref="Finish"/>).</summary>
+    double[] _kElastic = [];
+    /// <summary>Tᵀ·K·T, worked out once (<see cref="Global"/>).</summary>
+    double[]? _global;
 
     public bool HasReleases => _released.Length > 0;
     /// <summary>Shear's share of the bending in each plane, Φ = 12EI/(G·As·L²): 0 for Euler–Bernoulli.</summary>
@@ -132,12 +157,13 @@ public sealed class FrameElement
         Ez = Vec3.Cross(Ex, Ey);
         BuildTransform();
         BuildStiffness();
+        _global = null;
     }
 
     void BuildTransform()
     {
         // u_end = u_node + θ × off = u_node − S(off)·θ, then each 3-vector onto (Ex, Ey, Ez).
-        Array.Clear(T);
+        T = new double[144];
         double[] lam = [Ex.X, Ex.Y, Ex.Z, Ey.X, Ey.Y, Ey.Z, Ez.X, Ez.Y, Ez.Z];
         for (var b = 0; b < 4; b++)
             for (var r = 0; r < 3; r++)
@@ -163,8 +189,7 @@ public sealed class FrameElement
 
     void BuildStiffness()
     {
-        var k = _k0;
-        Array.Clear(k);
+        var k = _k0 = new double[144];
         void S(int r, int c, double v) { k[r * 12 + c] += v; if (r != c) k[c * 12 + r] += v; }
         var (l, l2, l3) = (L, L * L, L * L * L);
         var ea = E * A / l;
@@ -184,8 +209,9 @@ public sealed class FrameElement
         S(8, 8, 12 * c); S(8, 10, 6 * l * c); S(10, 10, (4 + phiZ) * l2 * c);
 
         _released = Enumerable.Range(0, 6).Where(i => ReleaseI[i]).Concat(Enumerable.Range(0, 6).Where(i => ReleaseJ[i]).Select(i => i + 6)).ToArray();
-        Array.Copy(k, K, 144);
-        if (_released.Length == 0) { _kccInv = null; AfterCondensing(); return; }
+        var K = (double[])k.Clone();
+        _tc = null;
+        if (_released.Length == 0) { _kccInv = null; _kElastic = K; this.K = Finish(K); return; }
         // Static condensation: K' = K − K·R (K_RR)⁻¹ R·K, the released rows and columns then zero.
         var n = _released.Length;
         var kcc = new double[n * n];
@@ -204,39 +230,26 @@ public sealed class FrameElement
                 K[r * 12 + cc] = k[r * 12 + cc] - v;
             }
         foreach (var r in _released) for (var cc = 0; cc < 12; cc++) { K[r * 12 + cc] = 0; K[cc * 12 + r] = 0; }
-        AfterCondensing();
+        _kElastic = K;
+        _tc = Condensing();
+        this.K = Finish(K);
     }
 
-    void AfterCondensing()
+    /// <summary>The stiffness in its state: nought taken out; the elastic one itself with no axial force; else the elastic plus the geometric (a new array).</summary>
+    double[] Finish(double[] elastic)
     {
-        if (Inactive) { Array.Clear(K); return; }
-        if (Axial == 0) return;
-        var g = Geometric(Axial);
-        for (var x = 0; x < 144; x++) K[x] += g[x];
+        if (Inactive) return new double[144];
+        if (Axial == 0) return elastic;
+        var k = new double[144];
+        Span<double> g = stackalloc double[144];
+        Geometric(Axial, g);
+        for (var x = 0; x < 144; x++) k[x] = elastic[x] + g[x];
+        return k;
     }
 
-    /// <summary>
-    /// The geometric stiffness of an axial force n (kN, tension positive) in local axes, condensed as the elastic one is
-    /// (§14.3): the consistent matrix of an Euler–Bernoulli bar in each bending plane (Przemieniecki 1968, §15; McGuire,
-    /// Gallagher and Ziemian, eq. 9.18) without the torsional term (no warping in the model), then Tcᵀ Kg Tc, Tc the released
-    /// ends' displacements from the held ones (a pinned brace: N/L on its ends' transverse displacements).
-    /// </summary>
-    public double[] Geometric(double n)
+    /// <summary>Tc: identity on the held; a released row u_R = −(K_RR)⁻¹ K_RH u_H.</summary>
+    double[] Condensing()
     {
-        var g = new double[144];
-        if (n == 0 || L <= 0) return g;
-        void S(int r, int c, double v) { g[r * 12 + c] += v; if (r != c) g[c * 12 + r] += v; }
-        var (l, k) = (L, n / L);
-        // x–y plane: v (1, 7), θz (5, 11).
-        S(1, 1, k * 6 / 5); S(1, 5, k * l / 10); S(1, 7, -k * 6 / 5); S(1, 11, k * l / 10);
-        S(5, 5, k * 2 * l * l / 15); S(5, 7, -k * l / 10); S(5, 11, -k * l * l / 30);
-        S(7, 7, k * 6 / 5); S(7, 11, -k * l / 10); S(11, 11, k * 2 * l * l / 15);
-        // x–z plane: w (2, 8), θy (4, 10), the couplings' signs turned as in the elastic stiffness.
-        S(2, 2, k * 6 / 5); S(2, 4, -k * l / 10); S(2, 8, -k * 6 / 5); S(2, 10, -k * l / 10);
-        S(4, 4, k * 2 * l * l / 15); S(4, 8, k * l / 10); S(4, 10, -k * l * l / 30);
-        S(8, 8, k * 6 / 5); S(8, 10, k * l / 10); S(10, 10, k * 2 * l * l / 15);
-        if (_kccInv == null) return g;
-        // Tc: identity on the held; a released row u_R = −(K_RR)⁻¹ K_RH u_H.
         var nr = _released.Length;
         var isRel = new bool[12];
         foreach (var r in _released) isRel[r] = true;
@@ -247,14 +260,46 @@ public sealed class FrameElement
             {
                 if (isRel[c]) continue;
                 var v = 0.0;
-                for (var b = 0; b < nr; b++) v -= _kccInv[a * nr + b] * _k0[_released[b] * 12 + c];
+                for (var b = 0; b < nr; b++) v -= _kccInv![a * nr + b] * _k0[_released[b] * 12 + c];
                 tc[_released[a] * 12 + c] = v;
             }
-        var gt = new double[144];
-        Dense.Mul(g, tc, gt, 12);
+        return tc;
+    }
+
+    /// <summary>
+    /// The geometric stiffness of an axial force n (kN, tension positive) in local axes, condensed as the elastic one is
+    /// (§14.3): the consistent matrix of an Euler–Bernoulli bar in each bending plane (Przemieniecki 1968, §15; McGuire,
+    /// Gallagher and Ziemian, eq. 9.18) without the torsional term (no warping in the model), then Tcᵀ Kg Tc, Tc the released
+    /// ends' displacements from the held ones (a pinned brace: N/L on its ends' transverse displacements).
+    /// </summary>
+    public double[] Geometric(double n)
+    {
         var o = new double[144];
-        Dense.MulTransposedA(tc, gt, o, 12);
+        Geometric(n, o);
         return o;
+    }
+
+    /// <summary><see cref="Geometric(double)"/> written into <paramref name="o"/> (144; §14.21: no arrays made).</summary>
+    internal void Geometric(double n, Span<double> o)
+    {
+        Span<double> g = _kccInv == null ? o : stackalloc double[144];
+        g.Clear();
+        if (n == 0 || L <= 0) { o.Clear(); return; }
+        static void S(Span<double> g, int r, int c, double v) { g[r * 12 + c] += v; if (r != c) g[c * 12 + r] += v; }
+        var (l, k) = (L, n / L);
+        // x–y plane: v (1, 7), θz (5, 11).
+        S(g, 1, 1, k * 6 / 5); S(g, 1, 5, k * l / 10); S(g, 1, 7, -k * 6 / 5); S(g, 1, 11, k * l / 10);
+        S(g, 5, 5, k * 2 * l * l / 15); S(g, 5, 7, -k * l / 10); S(g, 5, 11, -k * l * l / 30);
+        S(g, 7, 7, k * 6 / 5); S(g, 7, 11, -k * l / 10); S(g, 11, 11, k * 2 * l * l / 15);
+        // x–z plane: w (2, 8), θy (4, 10), the couplings' signs turned as in the elastic stiffness.
+        S(g, 2, 2, k * 6 / 5); S(g, 2, 4, -k * l / 10); S(g, 2, 8, -k * 6 / 5); S(g, 2, 10, -k * l / 10);
+        S(g, 4, 4, k * 2 * l * l / 15); S(g, 4, 8, k * l / 10); S(g, 4, 10, -k * l * l / 30);
+        S(g, 8, 8, k * 6 / 5); S(g, 8, 10, k * l / 10); S(g, 10, 10, k * 2 * l * l / 15);
+        if (_kccInv == null) return;
+        var tc = _tc!;
+        Span<double> gt = stackalloc double[144];
+        Dense.Mul(g, tc, gt, 12);
+        Dense.MulTransposedA(tc, gt, o, 12);
     }
 
     /// <summary>Tᵀ·Kg(n)·T: the geometric stiffness of an axial force n on the nodes' global degrees of freedom (§14.3).</summary>
@@ -337,12 +382,15 @@ public sealed class FrameElement
     }
 
     /// <summary>The released end displacements worked out from the held ones and the loads (the bar's own ends then turn as its span bends): u_R = (K_RR)⁻¹ (P_R − K_RH u_H).</summary>
-    public void Recover(double[] uLocal, double[] pLocal)
+    public void Recover(double[] uLocal, double[] pLocal) => Recover(uLocal.AsSpan(), pLocal);
+
+    /// <summary><see cref="Recover(double[], double[])"/> on spans (§14.21: no arrays made).</summary>
+    internal void Recover(Span<double> uLocal, ReadOnlySpan<double> pLocal)
     {
         if (_kccInv == null) return;
         var n = _released.Length;
-        var rhs = new double[n];
-        var isRel = new bool[12];
+        Span<double> rhs = stackalloc double[n];
+        Span<bool> isRel = stackalloc bool[12];
         foreach (var r in _released) isRel[r] = true;
         for (var a = 0; a < n; a++)
         {
@@ -358,10 +406,16 @@ public sealed class FrameElement
         }
     }
 
+    /// <summary>Tᵀ·K·T worked out once for its node places (under its lock; the array shared, never written): what the systems assemble.</summary>
+    internal double[] Global()
+    {
+        lock (_prepare) return _global ??= GlobalStiffness();
+    }
+
     /// <summary>Tᵀ·M·T: a local 12 × 12 matrix on the nodes' global degrees of freedom.</summary>
     public double[] GlobalStiffness()
     {
-        var kt = new double[144];
+        Span<double> kt = stackalloc double[144];
         Dense.Mul(K, T, kt, 12);
         var o = new double[144];
         Dense.MulTransposedA(T, kt, o, 12);
@@ -372,46 +426,62 @@ public sealed class FrameElement
     public double[] ToNodes(double[] local)
     {
         var o = new double[12];
+        ToNodes(local, o);
+        return o;
+    }
+
+    /// <summary>Tᵀ·v added into <paramref name="o"/> (nought to start with for Tᵀ·v itself).</summary>
+    internal void ToNodes(ReadOnlySpan<double> local, Span<double> o)
+    {
         for (var r = 0; r < 12; r++)
         {
             var v = local[r];
             if (v == 0) continue;
             for (var c = 0; c < 12; c++) o[c] += T[r * 12 + c] * v;
         }
-        return o;
     }
 
     /// <summary>T·u: the nodes' global displacements as the bar's own ends' local ones.</summary>
     public double[] ToLocal(double[] nodes12)
     {
         var o = new double[12];
+        ToLocal(nodes12, o);
+        return o;
+    }
+
+    internal void ToLocal(ReadOnlySpan<double> nodes12, Span<double> o)
+    {
         for (var r = 0; r < 12; r++)
         {
             var v = 0.0;
             for (var c = 0; c < 12; c++) v += T[r * 12 + c] * nodes12[c];
             o[r] = v;
         }
-        return o;
     }
 
     /// <summary>The end forces on the bar, local: K'·u − P'.</summary>
     public double[] EndForces(double[] uLocal, double[] pCondensed)
     {
         var o = new double[12];
+        EndForces(uLocal, pCondensed, o);
+        return o;
+    }
+
+    internal void EndForces(ReadOnlySpan<double> uLocal, ReadOnlySpan<double> pCondensed, Span<double> o)
+    {
         for (var r = 0; r < 12; r++)
         {
             var v = -pCondensed[r];
             for (var c = 0; c < 12; c++) v += K[r * 12 + c] * uLocal[c];
             o[r] = v;
         }
-        return o;
     }
 }
 
 /// <summary>Small dense matrices, row-major.</summary>
 static class Dense
 {
-    public static void Mul(double[] a, double[] b, double[] o, int n)
+    public static void Mul(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> o, int n)
     {
         for (var i = 0; i < n; i++)
             for (var j = 0; j < n; j++)
@@ -423,7 +493,7 @@ static class Dense
     }
 
     /// <summary>o = aᵀ·b.</summary>
-    public static void MulTransposedA(double[] a, double[] b, double[] o, int n)
+    public static void MulTransposedA(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> o, int n)
     {
         for (var i = 0; i < n; i++)
             for (var j = 0; j < n; j++)
