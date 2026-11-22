@@ -9,6 +9,8 @@ public sealed record BucklingResult(bool Ok, double[] Alpha, double[][] Modes, i
 {
     /// <summary>Each mode's share of φᵀ G φ by bar (summing to 1): a mode one member holds nearly all of is that member's own (local) buckling.</summary>
     public double[][] Shares { get; init; } = [];
+    /// <summary>Each bar's axial force the buckling was worked out for (kN, tension positive): what αcr multiplies (§14.23).</summary>
+    public double[] Axial { get; init; } = [];
 }
 
 /// <summary>
@@ -238,6 +240,6 @@ public static class Buckling
             if (total > 0) for (var k = 0; k < sh.Length; k++) sh[k] /= total;
             return sh;
         }).ToArray();
-        return new BucklingResult(true, alpha, shapes, it, converged, true, count == 0 ? "No buckling under these loads: the geometric stiffness only stiffens." : null) { Shares = shares };
+        return new BucklingResult(true, alpha, shapes, it, converged, true, count == 0 ? "No buckling under these loads: the geometric stiffness only stiffens." : null) { Shares = shares, Axial = axial };
     }
 }

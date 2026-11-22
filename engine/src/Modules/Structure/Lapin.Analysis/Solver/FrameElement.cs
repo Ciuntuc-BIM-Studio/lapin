@@ -302,6 +302,33 @@ public sealed class FrameElement
         Dense.MulTransposedA(tc, gt, o, 12);
     }
 
+    /// <summary>
+    /// The bar's squared slopes ∫v′² dx and ∫w′² dx (m) under its nodes' global displacements (12: i then j), in each bending
+    /// plane (§14.23): v along local 2 (bending about local 3, EN 1993's y-y), w along local 3 (about local 2, z-z). The
+    /// consistent geometric stiffness of a unit tension (exact for the cubic shape) on the bar's own end displacements, the
+    /// released ends' worked out from the held ones (Tc: the elastic stiffness couples no plane to the other).
+    /// </summary>
+    public (double Y, double Z) Slopes(ReadOnlySpan<double> nodes12)
+    {
+        var l = L;
+        if (l <= 0) return (0, 0);
+        Span<double> local = stackalloc double[12];
+        ToLocal(nodes12, local);
+        Span<double> u = stackalloc double[12];
+        if (_tc is { } tc)
+            for (var r = 0; r < 12; r++)
+            {
+                var v = 0.0;
+                for (var c = 0; c < 12; c++) v += tc[r * 12 + c] * local[c];
+                u[r] = v;
+            }
+        else local.CopyTo(u);
+        // x–y plane: v (1, 7), θz (5, 11); x–z plane: w (2, 8), θy (4, 10), its couplings' signs turned.
+        static double Form(double a, double ta, double b, double tb, double l, double s) =>
+            (6.0 / 5 * (a - b) * (a - b) + s * l / 5 * (a - b) * (ta + tb) + 2 * l * l / 15 * (ta * ta + tb * tb) - l * l / 15 * ta * tb) / l;
+        return (Form(u[1], u[5], u[7], u[11], l, 1), Form(u[2], u[4], u[8], u[10], l, -1));
+    }
+
     /// <summary>Tᵀ·Kg(n)·T: the geometric stiffness of an axial force n on the nodes' global degrees of freedom (§14.3).</summary>
     public double[] GeometricGlobal(double n)
     {

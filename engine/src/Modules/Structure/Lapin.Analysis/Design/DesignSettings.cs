@@ -38,6 +38,12 @@ public static class DesignSettings
     public static readonly string[] SteelMethods = ["A", "B"];
     /// <summary>The snow's load duration for timber's kmod (EN 1995-1-1 Table 2.2: medium or short term, as the site's climate says; short by default).</summary>
     public static readonly string[] SnowDurations = ["short", "medium"];
+    /// <summary>
+    /// The buckling lengths of the steel and timber checks (§14.23): "k", the user's k·L (or the ends', or the lengths given: the
+    /// default, as before), or "alpha", from the structure's elastic critical load (Lcr = π √(EI/(αcr NEd)), with their bounds).
+    /// The project's, and a member's own over it.
+    /// </summary>
+    public static readonly string[] BucklingLengths = ["k", "alpha"];
 
     /// <summary>A project's choice by name, or its default.</summary>
     public static string Choice(JsonObject? project, string key, string[] choices) => (string?)project?[key] is { } v && choices.Contains(v) ? v : choices[0];
@@ -47,7 +53,19 @@ public static class DesignSettings
     [
         ("steelInteraction", SteelMethods, "The steel interaction method is A (EN 1993-1-1 Annex A, method 1) or B (Annex B, method 2)."),
         ("snowDuration", SnowDurations, "The snow's load duration for timber is short or medium."),
+        ("bucklingLengths", BucklingLengths, "The buckling lengths are k (the user's k·L) or alpha (from αcr)."),
     ];
+
+    /// <summary>An element's choices (null: the project's).</summary>
+    static readonly (string Key, string[] Choices, string What)[] ElementChoices =
+    [
+        ("system", Systems, $"The system is one of {string.Join(", ", Systems)}."),
+        ("bucklingLengths", BucklingLengths, "The buckling lengths are k (the user's k·L) or alpha (from αcr)."),
+    ];
+
+    /// <summary>Whether a member's checks take the lengths from αcr (§14.23): its own choice, else the project's.</summary>
+    public static bool FromAlpha(JsonObject? project, JsonObject? own) =>
+        ((string?)own?["bucklingLengths"] is { } o && BucklingLengths.Contains(o) ? o : Choice(project, "bucklingLengths", BucklingLengths)) == "alpha";
 
     public static double? Num(JsonObject? o, string key) => o?[key] is JsonNode n && Json.Number(n) is { } v && double.IsFinite(v) ? v : null;
 
@@ -60,23 +78,16 @@ public static class DesignSettings
         var ids = Args.Ids(a);
         var element = ids.Count > 0;
         var keys = a.Select(x => x.Key).Where(k => k != "ids" && k != "id").ToList();
-        if (keys.Count == 0) throw new CommandException("Say a value: " + string.Join(", ", Numbers.Where(s => element ? s.Element : s.Project).Select(s => s.Name).Concat(element ? ["system"] : ProjectChoices.Select(x => x.Key))) + ".");
+        if (keys.Count == 0) throw new CommandException("Say a value: " + string.Join(", ", Numbers.Where(s => element ? s.Element : s.Project).Select(s => s.Name).Concat((element ? ElementChoices : ProjectChoices).Select(x => x.Key))) + ".");
         void Apply(JsonObject own)
         {
             foreach (var k in keys)
             {
-                if (!element && ProjectChoices.FirstOrDefault(x => x.Key == k) is { Key: not null } pc)
+                if ((element ? ElementChoices : ProjectChoices).FirstOrDefault(x => x.Key == k) is { Key: not null } pc)
                 {
                     if (a[k] is null) own.Remove(k);
-                    else if ((string?)a[k] is { } s && pc.Choices.Contains(s)) own[k] = s;
+                    else if (a[k] is JsonValue jv && jv.TryGetValue<string>(out var s) && pc.Choices.Contains(s)) own[k] = s;
                     else throw new CommandException(pc.What);
-                    continue;
-                }
-                if (k == "system" && element)
-                {
-                    if (a[k] is null) own.Remove(k);
-                    else if ((string?)a[k] is { } s && Systems.Contains(s)) own[k] = s;
-                    else throw new CommandException($"The system is one of {string.Join(", ", Systems)}.");
                     continue;
                 }
                 var spec = Numbers.FirstOrDefault(s => s.Name == k && (element ? s.Element : s.Project))
@@ -117,10 +128,11 @@ public static class DesignSettings
         ["project"] = Project(m)?.DeepClone(),
         ["defaults"] = new JsonObject
         {
-            ["serviceClass"] = 1, ["cover"] = 0.030, ["bar"] = 0.016, ["stirrup"] = 0.008, ["fyk"] = 500e6, ["fvk0"] = 0.20e6, ["gammaM"] = 2.2, ["steelInteraction"] = "A", ["snowDuration"] = "short",
+            ["serviceClass"] = 1, ["cover"] = 0.030, ["bar"] = 0.016, ["stirrup"] = 0.008, ["fyk"] = 500e6, ["fvk0"] = 0.20e6, ["gammaM"] = 2.2, ["steelInteraction"] = "A", ["snowDuration"] = "short", ["bucklingLengths"] = "k",
         },
         ["systems"] = new JsonArray(Systems.Select(s => (JsonNode)s).ToArray()),
         ["steelInteraction"] = new JsonArray(SteelMethods.Select(s => (JsonNode)s).ToArray()),
         ["snowDuration"] = new JsonArray(SnowDurations.Select(s => (JsonNode)s).ToArray()),
+        ["bucklingLengths"] = new JsonArray(BucklingLengths.Select(s => (JsonNode)s).ToArray()),
     };
 }
