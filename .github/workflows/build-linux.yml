@@ -1,6 +1,6 @@
 name: Build Linux
 
-# The Linux desktop app (.deb and .AppImage) of one product, built on
+# The Linux desktop app (.deb, .rpm and .AppImage) of one product, built on
 # GitHub's Ubuntu: run it by hand (Actions → Build Linux → Run workflow) or
 # push a tag v*. The packages are the run's artifacts. Ubuntu 22.04, so the
 # app needs glibc 2.35 or newer (Ubuntu 22.04, Debian 12, Fedora 36 and later).
@@ -63,5 +63,6 @@ jobs:
           name: ${{ env.PRODUCT }}-linux-x64
           path: |
             build/${{ env.PRODUCT }}/bundle/deb/*.deb
+            build/${{ env.PRODUCT }}/bundle/rpm/*.rpm
             build/${{ env.PRODUCT }}/bundle/appimage/*.AppImage
           if-no-files-found: error

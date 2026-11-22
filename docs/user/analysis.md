@@ -139,6 +139,16 @@ After a run, the **Checks** section of the **Analysis results** dialog checks th
 
 > The checks are indicative. Lapin takes the Eurocodes' recommended values; the national annexes' values, the loads and the design values are yours to verify before you rely on them.
 
+**Buckling lengths from αcr.** By default the flexural buckling and the bending-and-compression checks of steel and timber bars use the lengths you give: k·L, with the factors ky and kz (or Lcr,y and Lcr,z) of the bar. **Buckling lengths** under **Design values of the project** can take them instead **From αcr**; a bar can choose its own in its properties (empty follows the project). The length about an axis is then Lcr = π√(EI/(αcr·NEd)), with αcr of the lowest buckling mode that bends the bar about that axis (the strong axis y-y, the weak axis z-z), found for the combination that governs. It is never shorter than k·L, and with **Second order (P-Δ)** on every bar keeps its k·L: the sway is then in the forces (EN 1993-1-1 5.2.2(3)b). Concrete bars only show it (EN 1992-1-1 5.8.3.2): the check keeps its l0. The checks table has a column **Lcr,y / Lcr,z** with the lengths used and their source (k, αcr, or given); hover it for both values, αcr and the mode. A bar's properties list, for each axis, k·L, the length from αcr and the one used. Run again after changing the option.
+
+![The table with k·L](shots/analysis-lcr-k.webp)
+
+![The same table with the lengths from αcr: the columns' utilisation rises](shots/analysis-lcr-alpha.webp)
+
+![A column's buckling lengths in its properties](shots/analysis-lcr-props.webp)
+
+> The lengths from αcr can be much longer than k·L (here the columns' weak-axis length goes from 3.27 m to 4.09 m and the strong-axis one to 7.71 m, the utilisation from 0.23 to 0.27; in the steel hall of this guide the rafters' in-plane length grows to about 38 m and their utilisation doubles). For steel halls the better path is second order (P-Δ) with the imperfections, which needs no buckling length for the sway.
+
 ## Second order and buckling
 
 Two questions decide whether a frame can be analysed to first order: how far its loads are from the critical ones, and how much its sway adds. The **Stability** section of the **Analysis results** dialog answers the first, and the **Second order (P-Δ)** tick box, beside the shell options (the analysis options), the second.

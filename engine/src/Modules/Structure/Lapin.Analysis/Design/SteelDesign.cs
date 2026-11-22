@@ -15,6 +15,16 @@ public sealed record SteelMember(SectionShape Shape, SectionProps P, double Fy, 
     public string LengthsSource { get; init; } = "";
     /// <summary>The interaction factors of 6.3.3: "A" (Annex A, method 1: the default, the Romanian annex's) or "B" (Annex B, method 2).</summary>
     public string Method { get; init; } = "A";
+    /// <summary>The lengths by design set's key when they come from αcr (§14.24): each set's own; null, the lengths above for every set.</summary>
+    public IReadOnlyDictionary<string, SetLengths>? BySet { get; init; }
+    /// <summary>The length about y-y (z-z) is a sway mode's (from αcr): Annex B's Cmy (Cmz) is then 0.9 (Table B.3's footnote).</summary>
+    public bool SwayY { get; init; }
+    public bool SwayZ { get; init; }
+
+    /// <summary>The member with a design set's own lengths (§14.24), or itself.</summary>
+    public SteelMember ForSet(string key) => BySet != null && BySet.TryGetValue(key, out var x)
+        ? this with { LcrY = x.Y.Lcr, LcrZ = x.Z.Lcr, LengthsSource = x.Text, SwayY = x.Y.Source == "alpha", SwayZ = x.Z.Source == "alpha", BySet = null }
+        : this;
 }
 
 /// <summary>
@@ -173,7 +183,7 @@ public static class SteelDesign
         var s = m.Shape;
         if (!Covers(s.Kind))
             return [new Check("steel.shape", "Steel section", Norm, 0, [], $"The section „{s.Kind}” has no rules in Lapin's checks (cold-formed and arbitrary sections: EN 1993-1-3): not verified.", false)];
-        return Worst(sets, f => Set(m, f));
+        return Worst(sets, f => Set(m.ForSet(f.Key), f));
     }
 
     static IEnumerable<Check> Set(SteelMember m, ForceSet f)
@@ -332,6 +342,9 @@ public static class SteelDesign
         var nrk = p.Area * fy;
         double ny = nc / (chiY * nrk / GammaM1), nz = nc / (chiZ * nrk / GammaM1);
         double cmy = Cm(shapeY), cmz = Cm(shapeZ), cmlt = Math.Max(0.4, Cm(shapeY));
+        // A sway buckling mode's length (from αcr, §14.24): Cm = 0.9 about that axis (Table B.3, its footnote).
+        if (m.SwayY) cmy = 0.9;
+        if (m.SwayZ) cmz = 0.9;
         double kyy, kzz, kyz, kzy;
         var isI = s.Kind is "I" or "asymI" or "U" or "T";
         if (plastic)
@@ -358,7 +371,7 @@ public static class SteelDesign
         var u62 = nz + kzy * myMax / (chiLT * myrk / GammaM1) + kzz * mzMax / (mzrk / GammaM1);
         return new Check("steel.interaction", "Bending and compression (buckling)", $"{Norm} 6.3.3, Annex B", Math.Max(u61, u62),
             [new("eq. 6.61", u61, ""), new("eq. 6.62", u62, ""), new("kyy", kyy, ""), new("kyz", kyz, ""), new("kzy", kzy, ""), new("kzz", kzz, ""), new("Cmy", cmy, ""), new("Cmz", cmz, ""), new("CmLT", cmlt, ""), new("χLT", chiLT, "")],
-            "Annex B (method 2), as the project chose (analysis.setDesign steelInteraction); SR EN 1993-1-1/NA's is Annex A.", done);
+            "Annex B (method 2), as the project chose (analysis.setDesign steelInteraction); SR EN 1993-1-1/NA's is Annex A." + (m.SwayY || m.SwayZ ? $" A sway mode's length about {(m.SwayY && m.SwayZ ? "both axes" : m.SwayY ? "y-y" : "z-z")}: Cm = 0.9 there (Table B.3)." : ""), done);
     }
 
     /// <summary>Cmi,0 of Table A.2: linear end moments 0.79 + 0.21ψ + 0.36(ψ − 0.33) N/Ncr; a simple span's uniform load 1 + 0.03 N/Ncr, its mid-span point load 1 − 0.18 N/Ncr; otherwise 1.0.</summary>
