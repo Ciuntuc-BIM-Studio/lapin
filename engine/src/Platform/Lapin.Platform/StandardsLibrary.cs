@@ -165,13 +165,24 @@ public static class StandardsLibrary
     /// <summary>A line type of a .lin file as the import preview shows it: a name the project has with other dashes is the same line type, updated by default.</summary>
     static List<LibraryMerge.Row> LinRows(IModelView m, string text)
     {
-        var own = DraftingResources.Book(m).LineTypes ?? [];
-        return [.. LinFile.Parse(text, 1).Select(l =>
-        {
-            var name = OwnName(l.Name);
-            var have = own.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
-            return new LibraryMerge.Row(l.Name, "lineType", name, have is null ? LibraryMerge.Match.New : have.Dashes.SequenceEqual(l.Dashes) ? LibraryMerge.Match.Same : LibraryMerge.Match.Id, ["dashes"]);
-        })];
+        var own = OwnDashes(DraftingResources.Book(m).LineTypes);
+        return [.. LinFile.Parse(text, 1).Select(l => LinRow(l, own) with { Differs = ["dashes"] })];
+    }
+
+    /// <summary>The dashes of the project's line type of a name (case aside); null when it has none.</summary>
+    static Func<string, double[]?> OwnDashes(IReadOnlyList<LineTypeDef>? own) =>
+        name => own?.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase))?.Dashes;
+
+    /// <summary>
+    /// One line type of a .lin file against the project's, the one reading the preview, the read and the import share: the name it
+    /// comes in under (<see cref="OwnName"/>: „DASHED (file)” beside Lapin's own), and whether the project has it, with the same dashes.
+    /// </summary>
+    static LibraryMerge.Row LinRow(LinFile.Read l, Func<string, double[]?> dashesOf)
+    {
+        var name = OwnName(l.Name);
+        var have = dashesOf(name);
+        var match = have is null ? LibraryMerge.Match.New : have.Length == l.Dashes.Length && have.Zip(l.Dashes).All(p => Math.Abs(p.First - p.Second) < 1e-9) ? LibraryMerge.Match.Same : LibraryMerge.Match.Id;
+        return new LibraryMerge.Row(l.Name, "lineType", name, match);
     }
 
     /// <summary>Lapin's own line type names stay Lapin's: a file's comes in beside them.</summary>
@@ -309,16 +320,16 @@ public static class StandardsLibrary
         {
             var skipped = new List<string>();
             var read = LinFile.Parse((string?)a["text"] ?? "", Unit(a), skipped);
-            var own = DraftingResources.Book(q.Model).LineTypes ?? [];
+            var own = OwnDashes(DraftingResources.Book(q.Model).LineTypes);
             return new JsonObject
             {
                 ["lineTypes"] = new JsonArray(read.Select(l =>
                 {
-                    var have = own.FirstOrDefault(x => string.Equals(x.Name, l.Name, StringComparison.OrdinalIgnoreCase));
+                    var row = LinRow(l, own);
                     return (JsonNode)new JsonObject
                     {
-                        ["name"] = l.Name, ["description"] = l.Description, ["complex"] = l.Complex, ["builtin"] = Standards.LineTypes.Contains(l.Name, StringComparer.OrdinalIgnoreCase) || LineStyles.Patterns.Contains(l.Name, StringComparer.OrdinalIgnoreCase),
-                        ["dashes"] = new JsonArray(l.Dashes.Select(d => (JsonNode)d).ToArray()), ["exists"] = have != null, ["same"] = have != null && have.Dashes.SequenceEqual(l.Dashes),
+                        ["name"] = l.Name, ["as"] = row.Name, ["description"] = l.Description, ["complex"] = l.Complex, ["builtin"] = row.Name != l.Name,
+                        ["dashes"] = new JsonArray(l.Dashes.Select(d => (JsonNode)d).ToArray()), ["exists"] = row.Match != LibraryMerge.Match.New, ["same"] = row.Match == LibraryMerge.Match.Same,
                     };
                 }).ToArray()),
                 ["skipped"] = new JsonArray(skipped.Select(s => (JsonNode)s).ToArray()),
@@ -403,10 +414,11 @@ public static class StandardsLibrary
         foreach (var l in read)
         {
             if (only != null && !only.Contains(l.Name)) continue;
-            var name = OwnName(l.Name);
-            var at = list.OfType<JsonObject>().FirstOrDefault(x => string.Equals((string?)x["name"], name, StringComparison.OrdinalIgnoreCase));
+            JsonObject? At(string n) => list.OfType<JsonObject>().FirstOrDefault(x => string.Equals((string?)x["name"], n, StringComparison.OrdinalIgnoreCase));
+            var row = LinRow(l, n => At(n) is { } x ? (x["dashes"] as JsonArray)?.Select(d => Json.Number(d) ?? double.NaN).ToArray() ?? [] : null);
+            var name = row.Name;
+            var at = At(name);
             var entry = LineTypeJson(new LineTypeDef(name, name, l.Dashes, l.Description));
-            var row = new LibraryMerge.Row(l.Name, "lineType", name, at is null ? LibraryMerge.Match.New : JsonNode.DeepEquals(at["dashes"], entry["dashes"]) ? LibraryMerge.Match.Same : LibraryMerge.Match.Id);
             switch (LibraryMerge.Decide(row, choices, all))
             {
                 case LibraryMerge.Add: list.Add((JsonNode)entry); tally.Added++; break;

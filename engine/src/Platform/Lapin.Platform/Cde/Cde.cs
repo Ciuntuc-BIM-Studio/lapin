@@ -61,10 +61,13 @@ public static class Cde
         return naming.ForDocument(type, Math.Max(n, 1));
     }
 
+    /// <summary>The naming an issue writes by: the project's, as an edition's hook makes it (<see cref="CdeHooks.Naming"/>).</summary>
+    public static CdeNaming Naming(IModelView m) => CdeHooks.Naming?.Invoke(CdeNaming.Of(m)) ?? CdeNaming.Of(m);
+
     /// <summary>The names an issue would write, for the sheets asked (all by default), the documents asked (all by default), the model, the set and the transmittal.</summary>
     public static JsonObject Names(IModelView m, JsonObject a)
     {
-        var naming = CdeHooks.Naming?.Invoke(CdeNaming.Of(m)) ?? CdeNaming.Of(m);
+        var naming = Naming(m);
         var revision = (string?)a["revision"] is { Length: > 0 } r ? r : CdeRevisions.Next(CdeIssues.LastRevision(m));
         var status = (string?)a["status"] is { Length: > 0 } s ? s : "S2";
         var n = CdeIssues.NextNumber(m);
@@ -172,7 +175,8 @@ public static class Cde
                 ["folder"] = folder, ["exists"] = Exists(folder),
                 ["containers"] = new JsonArray(CdeRevisions.Containers.Select(c => (JsonNode)c).ToArray()),
                 ["naming"] = naming.ToJson(),
-                ["example"] = naming.ForModel(),
+                // As an issue would write it: through the edition's hook.
+                ["example"] = Naming(m).ForModel(),
                 ["requiredProps"] = new JsonArray(CdeChecks.Required(m).Select(x => (JsonNode)x.Name).ToArray()),
                 ["roles"] = new JsonArray(CdeNaming.Roles.Select(x => (JsonNode)new JsonObject { ["code"] = x.Code, ["label"] = x.Label }).ToArray()),
                 ["statuses"] = new JsonArray(CdeRevisions.Statuses.Select(x => (JsonNode)new JsonObject { ["code"] = x.Code, ["label"] = x.Label, ["container"] = CdeRevisions.ContainerFor(x.Code) }).ToArray()),

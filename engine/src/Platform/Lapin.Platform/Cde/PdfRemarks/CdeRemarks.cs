@@ -72,7 +72,7 @@ public static class CdeRemarks
             }
         }
         // The convention: the sheet whose name the naming gives, or failing the whole stem, the one with the same number field.
-        var naming = CdeHooks.Naming?.Invoke(CdeNaming.Of(m)) ?? CdeNaming.Of(m);
+        var naming = Cde.Naming(m);
         if (naming.Parse(name) is { } parsed)
         {
             var stem = Path.GetFileNameWithoutExtension(name).Split('_')[0];

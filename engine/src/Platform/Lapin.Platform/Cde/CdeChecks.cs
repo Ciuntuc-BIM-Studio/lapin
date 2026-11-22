@@ -242,7 +242,7 @@ public static class CdeChecks
     /// <summary>Runs every rule over the sheets in scope (all when none given); the findings, blocking first.</summary>
     public static List<CdeFinding> Run(IQueryContext q, IReadOnlyList<Entity>? sheets = null, string? revision = null)
     {
-        var naming = CdeHooks.Naming?.Invoke(CdeNaming.Of(q.Model)) ?? CdeNaming.Of(q.Model);
+        var naming = Cde.Naming(q.Model);
         var c = new CdeCheckContext(q, sheets ?? q.Model.OfClass(Sheets.Class).ToList(), revision, naming);
         return Rules(q).SelectMany(r => r.Run(c)).OrderBy(f => f.Blocking ? 0 : 1).ToList();
     }
