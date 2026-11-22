@@ -15,8 +15,10 @@ const KINDS: { id: LabelKind; label: string }[] = [{ id: 'bars', label: 'Bars' }
 function StockAndLapFields({ s, set }: { s: Settings; set: (patch: Partial<Settings>) => void }) {
   const stock = s.stockLength ?? 12;
   const standard = stock === 6 || stock === 12;
-  const [custom, setCustom] = useState(!standard);
-  const stockChoice = custom || !standard ? 'custom' : String(stock);
+  // "Another length" is picked on purpose (a state), but a stock length that is not 6 or 12 (set, or brought back by an undo) is always shown as one.
+  const [pickedCustom, setCustom] = useState(false);
+  useEffect(() => setCustom(!standard), [stock]); // eslint-disable-line react-hooks/exhaustive-deps
+  const stockChoice = pickedCustom || !standard ? 'custom' : String(stock);
   return (
     <div data-field="rebar-stock">
       <label className="field-line"><span className="eyebrow">Stock length</span>

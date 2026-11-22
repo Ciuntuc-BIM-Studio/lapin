@@ -19,6 +19,7 @@ import { setSiteWorks, useSiteWorks } from './prefs';
 import { FormworkTypeFields, ScaffoldTypeFields } from './TypeFields';
 import { activate } from '../../platform/modules';
 import { typeOf } from '../../engine/model';
+import { executeSteps } from '../executeSteps';
 import { rememberedType } from './typeChoice';
 import { lazyPart } from '../../platform/lazyPart';
 import { createScheduleOf } from '../../shell/fieldSchedule';
@@ -68,13 +69,12 @@ const formworkOnSelection: ToolDef = {
     const groups: ['slab' | 'beam' | 'upright', string[]][] = [['slab', selectedOf('IfcSlab')], ['beam', selectedOf('IfcBeam')], ['upright', selectedOf('IfcWall', 'IfcColumn', 'IfcFooting')]];
     if (groups.every(([, ids]) => ids.length === 0)) { notify('Select the floors, beams, walls, columns or footings to form, then press Formwork; or use Formwork on face.'); return; }
     void (async () => {
-      let r: unknown = null;
-      for (const [kind, hostIds] of groups) {
-        if (!hostIds.length) continue;
+      // One command per host group, one undo step for all of them.
+      const steps = groups.filter(([, hostIds]) => hostIds.length).map(([kind, hostIds]) => {
         const typeId = formworkType(kind);
-        r = await execute('sitework.addFormwork', { hostIds, ...(typeId ? { typeId } : {}) }) ?? r;
-      }
-      placed(r, 'Formwork');
+        return { command: 'sitework.addFormwork', args: { hostIds, ...(typeId ? { typeId } : {}) } };
+      });
+      placed(await executeSteps(steps), 'Formwork');
     })();
   },
 };
@@ -170,8 +170,8 @@ const sitework: LapinModule = {
     LapinFormwork: (n) => { setSiteWorks({ formworkTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(formworkOnFace); },
   },
   setType: {
-    LapinScaffold: async (ids, typeId) => { for (const id of ids) await execute('sitework.updateScaffold', { id, typeId }); },
-    LapinFormwork: async (ids, typeId) => { for (const id of ids) await execute('sitework.updateFormwork', { id, typeId }); },
+    LapinScaffold: async (ids, typeId) => { await executeSteps(ids.map((id) => ({ command: 'sitework.updateScaffold', args: { id, typeId } }))); },
+    LapinFormwork: async (ids, typeId) => { await executeSteps(ids.map((id) => ({ command: 'sitework.updateFormwork', args: { id, typeId } }))); },
   },
 };
 

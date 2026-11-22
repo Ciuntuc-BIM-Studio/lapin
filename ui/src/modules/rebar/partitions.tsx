@@ -25,7 +25,7 @@ export const partitionArg = (): { partition?: string } => { const p = useRebarPa
 export function useRebarPartitions(): string[] {
   const version = useSession((s) => s.version);
   const [list, setList] = useState<string[]>([]);
-  useEffect(() => { void query<string[]>('rebar.partitions').then((r) => setList(r ?? [])); }, [version]);
+  useEffect(() => { let live = true; void query<string[]>('rebar.partitions').then((r) => { if (live) setList(r ?? []); }); return () => { live = false; }; }, [version]);
   return list;
 }
 

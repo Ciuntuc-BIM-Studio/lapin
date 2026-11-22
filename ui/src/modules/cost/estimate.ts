@@ -64,7 +64,20 @@ export function useEstimateData(): EstimateDto | null {
 /** A sum of money as the estimate shows it: two decimals, thin spaces between the thousands. */
 export function money(v: number): string {
   const [whole, dec] = Math.abs(v).toFixed(2).split('.');
-  return `${v < 0 ? '−' : ''}${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}.${dec}`;
+  // A value that rounds to nothing has no sign ("−0.00" would read as a loss).
+  const sign = v < 0 && (Number(whole) !== 0 || Number(dec) !== 0) ? '−' : '';
+  return `${sign}${whole.replace(/\B(?=(\d{3})+(?!\d))/g, '\u2009')}.${dec}`;
+}
+
+/** Today's date as yyyy-mm-dd in the user's own time zone (toISOString is UTC: the day before between 00:00 and the offset). */
+export function localDate(now = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
+}
+
+/** The value in the other currency, as the engine works it out (`Costing.InOther`), rounded to cents. */
+export function inOther(v: number, s: { currency: string; eurRate: number }): number {
+  return Math.round((s.currency === 'RON' ? v / s.eurRate : v * s.eurRate) * 100) / 100;
 }
 
 export const qty = (v: number): string => (Math.round(v * 1000) / 1000).toFixed(3);
@@ -84,10 +97,20 @@ export function unpricedCount(data: EstimateDto | null): { types: number; elemen
   return { types: u.length, elements: u.reduce((s, x) => s + x.count, 0) };
 }
 
-/** A typed rate (a percentage, the RON for one EUR): a decimal comma taken, null when it is not a number. */
-export function parseRate(text: string): number | null {
+/** What a rate may be: `min` is allowed (`above`: only what is greater than it), `max` too. */
+export interface RateBounds { min?: number; max?: number; above?: boolean }
+/** A percentage: 0 to 100. */
+export const PERCENT: RateBounds = { min: 0, max: 100 };
+/** An exchange rate: more than nothing (a rate of 0 would divide by it). */
+export const EXCHANGE: RateBounds = { min: 0, above: true };
+
+/** A typed rate (a percentage, the RON for one EUR): a decimal comma taken, null when it is not a number or is out of its bounds. */
+export function parseRate(text: string, bounds: RateBounds = {}): number | null {
   const n = Number(text.trim().replace(/\s/g, '').replace(',', '.'));
-  return text.trim() !== '' && Number.isFinite(n) ? n : null;
+  if (text.trim() === '' || !Number.isFinite(n)) return null;
+  if (bounds.min !== undefined && (bounds.above ? n <= bounds.min : n < bounds.min)) return null;
+  if (bounds.max !== undefined && n > bounds.max) return null;
+  return n;
 }
 
 /** The project's estimate, opened in a pane under the view (made when there is none). */
@@ -137,9 +160,10 @@ export async function formOnSheet(form: string): Promise<void> {
   const label = FORMS.find((f) => f.id === form)?.label ?? 'Estimate';
   const r = await execute('architecture.createSchedule', { kind, name: label }) as { id?: string } | null;
   if (!r?.id) return;
-  const sheet = await execute('sheet.create', { name: label, paper: 'A3' }) as { id?: string } | null;
-  if (!sheet?.id) return;
-  if (await execute('sheet.addViewport', { id: sheet.id, viewId: r.id })) useUi.setState({ view: 'sheet', sheetId: sheet.id });
+  // The new sheet takes the schedule in its own command (`viewId`). The schedule's id is only known once it is made, so
+  // these are two undo steps until the engine can make a schedule and its sheet in one (architecture.createSchedule {onSheet}).
+  const sheet = await execute('sheet.create', { name: label, paper: 'A3', viewId: r.id }) as { id?: string } | null;
+  if (sheet?.id) useUi.setState({ view: 'sheet', sheetId: sheet.id });
 }
 
 // ── This computer's library ─────────────────────────────────────────────────

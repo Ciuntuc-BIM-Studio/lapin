@@ -11,6 +11,7 @@ import { execute, query, useSession } from '../../engine/session';
 import { PendingDialog } from '../core/PendingDialog';
 import { showDate, type CalendarException } from './gantt';
 import { useSchedule } from './schedule';
+import { lastDay, parseYear, toggleDay } from './calendarRules';
 
 const WEEK = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [7, 'Sun']] as const;
 
@@ -20,8 +21,15 @@ export function CalendarDialog() {
   const data = useSchedule();
   const error = useSession((s) => s.error);
   const [year, setYear] = useState(() => new Date().getFullYear());
+  // The year is typed freely and taken on blur or Enter (a query for each of 2, 20, 202 would be nonsense).
+  const [yearText, setYearText] = useState(String(year));
   const [holidays, setHolidays] = useState<{ date: string; name: string }[]>([]);
-  useEffect(() => { void query<{ date: string; name: string }[]>('planning.holidays', { year }).then((h) => setHolidays(h ?? [])); }, [year]);
+  useEffect(() => {
+    let live = true;
+    void query<{ date: string; name: string }[]>('planning.holidays', { year }).then((h) => { if (live) setHolidays(h ?? []); });
+    return () => { live = false; };
+  }, [year]);
+  const takeYear = () => { const y = parseYear(yearText); if (y === null) setYearText(String(year)); else { setYear(y); setYearText(String(y)); } };
   if (!data) return <PendingDialog title="Work calendar" />;
   const c = data.calendar;
   const exceptions = c.exceptions;
@@ -42,7 +50,8 @@ export function CalendarDialog() {
             <dd className="calendar-days">
               {WEEK.map(([d, label]) => (
                 <label key={d}><input type="checkbox" checked={c.days.includes(d)}
-                  onChange={(e) => set({ days: e.target.checked ? [...c.days, d].sort() : c.days.filter((x) => x !== d) })} />{label}</label>
+                  disabled={c.days.length === 1 && c.days.includes(d)} title={c.days.length === 1 && c.days.includes(d) ? 'A calendar needs at least one working day' : undefined}
+                  onChange={(e) => { const next = toggleDay(c.days, d, e.target.checked); if (next) set({ days: next }); }} />{label}</label>
               ))}
             </dd>
             <dt>Day starts at</dt>
@@ -70,7 +79,7 @@ export function CalendarDialog() {
               {exceptions.map((x, i) => (
                 <tr key={`${x.from}-${i}`}>
                   <td><input type="date" value={x.from} onChange={(e) => e.target.value && putExceptions(exceptions.map((y, j) => (j === i ? { ...y, from: e.target.value, to: y.to < e.target.value ? e.target.value : y.to } : y)))} /></td>
-                  <td><input type="date" value={x.to} onChange={(e) => e.target.value && putExceptions(exceptions.map((y, j) => (j === i ? { ...y, to: e.target.value } : y)))} /></td>
+                  <td><input type="date" value={x.to} onChange={(e) => e.target.value && putExceptions(exceptions.map((y, j) => (j === i ? { ...y, to: lastDay(y.from, e.target.value) } : y)))} min={x.from} /></td>
                   <td><input type="checkbox" checked={x.working} title="A day worked that would not be (a Saturday); unticked: a day off" onChange={(e) => putExceptions(exceptions.map((y, j) => (j === i ? { ...y, working: e.target.checked } : y)))} /></td>
                   <td><input key={x.name} defaultValue={x.name} data-no-i18n onBlur={(e) => e.target.value !== x.name && putExceptions(exceptions.map((y, j) => (j === i ? { ...y, name: e.target.value } : y)))} /></td>
                   <td className="row-tools"><button type="button" className="icon mini" title="Remove" onClick={() => putExceptions(exceptions.filter((_, j) => j !== i))}><Trash2 size={12} /></button></td>
@@ -80,7 +89,7 @@ export function CalendarDialog() {
           </table>
           <button type="button" className="btn" onClick={() => { const d = data.start; putExceptions([...exceptions, { from: d, to: d, working: false, name: '' }]); }}><Plus size={14} />Add an exception</button>
           {c.holidays === 'ro' && <>
-            <h4 className="eyebrow">Legal holidays in <input type="number" value={year} min={1900} max={2099} style={{ width: '5em' }} onChange={(e) => setYear(Number(e.target.value) || year)} /></h4>
+            <h4 className="eyebrow">Legal holidays in <input inputMode="numeric" value={yearText} maxLength={4} style={{ width: '5em' }} data-testid="calendar-year" onChange={(e) => setYearText(e.target.value)} onBlur={takeYear} onKeyDown={(e) => { if (e.key === 'Enter') takeYear(); }} /></h4>
             <ul className="small" data-testid="calendar-holiday-list">
               {holidays.map((h) => <li key={h.date}>{showDate(h.date)} · <span data-no-i18n>{h.name}</span></li>)}
             </ul>

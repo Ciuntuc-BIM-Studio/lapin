@@ -73,7 +73,9 @@ export async function runAnalysis(open = true): Promise<void> {
     const seismic = (await ask<{ given?: boolean }>('analysis.seismicOptions', {}).catch(() => null))?.given === true;
     const pick = validPick(run, useResults.getState().pick, seismic);
     baseScale = null;
-    set({ run, seismic, running: false, at, stale: false, pick, mult: 1, show: run.ok, results: null, diagram: null });
+    // The model may have changed while the run was going: what it worked out is then stale from the start.
+    const stale = useSession.getState().nodes !== at;
+    set({ run, seismic, running: false, at, stale, pick, mult: 1, show: run.ok, results: null, diagram: null });
     if (open) useUi.setState({ dialog: 'analysisResults' });
     await refresh();
   } catch (e) {

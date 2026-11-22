@@ -409,7 +409,7 @@ export function GanttView() {
             <svg className={`gantt-head-time${simOn ? ' scrub' : ''}`} style={{ left: TABLE_W, width: viewW, height: HEAD_H }} aria-hidden data-testid="gantt-time"
               onPointerDown={(e) => { if (e.button !== 0) return; scrubbing.current = true; (e.target as Element).setPointerCapture?.(e.pointerId); useSimulation.setState({ playing: false }); setDay(dayAtX(e.clientX)); }}
               onPointerMove={(e) => { if (scrubbing.current) setDay(dayAtX(e.clientX)); }}
-              onPointerUp={() => { scrubbing.current = false; }}>
+              onPointerUp={() => { scrubbing.current = false; }} onPointerCancel={() => { scrubbing.current = false; }}>
               <g transform={`translate(${-scroll.left},0)`}>
                 {scale.top.map((k) => <g key={`t${k.from}`}><line x1={xOf(k.from)} x2={xOf(k.from)} y1={0} y2={HEAD_H} className="gantt-tick major" /><text x={Math.max(xOf(k.from), scroll.left) + 4} y={14} className="gantt-tick-label">{k.label}</text></g>)}
                 {scale.bottom.map((k) => (k.to - k.from) * ppd >= 14 && <g key={`b${k.from}`}><line x1={xOf(k.from)} x2={xOf(k.from)} y1={20} y2={HEAD_H} className="gantt-tick" /><text x={xOf(k.from) + 3} y={34} className="gantt-tick-label minor">{k.label}</text></g>)}
@@ -419,7 +419,7 @@ export function GanttView() {
             </svg>
             {/* The chart */}
             <svg className="gantt-chart" style={{ left: TABLE_W, top: HEAD_H, width: viewW, height: viewH }}
-              onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={() => !drag && setHover(null)}
+              onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={() => setDrag(null)} onPointerLeave={() => !drag && setHover(null)}
               onDoubleClick={() => { const t = first >= 0 ? rows[first] : null; if (t) showTaskElements(t); }}
               onDragOver={(e) => { if (!e.dataTransfer.types.includes(DRAG_TYPE)) return; e.preventDefault(); e.dataTransfer.dropEffect = e.shiftKey ? 'move' : 'copy'; setDropRow(rows[rowAt(at(e).y)]?.id ?? null); }}
               onDragLeave={() => setDropRow(null)}
@@ -530,7 +530,8 @@ export function GanttView() {
 function LinkEditor({ link, x, y, onClose, names }: { link: LinkDto; x: number; y: number; onClose: () => void; names: (id: string) => string }) {
   const [type, setType] = useState<LinkType>(link.type);
   const [lag, setLag] = useState(String(link.lag));
-  const apply = () => { const n = Math.round(Number(lag.replace(',', '.'))); void execute('planning.updateLink', { id: link.id, type, lag: Number.isFinite(n) ? n : 0 }).then(onClose); };
+  const apply = () => { const n = Math.round(Number(lag.replace(',', '.'))); void execute('planning.updateLink', { id: link.id, type, lag: Number.isFinite(n) ? n : 0 })
+    .then((r) => { if (r !== null || !useSession.getState().error) onClose(); }); };
   return (
     <div className="gantt-link-editor" style={{ left: Math.max(4, x - 120), top: y + 10 }} onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') apply(); if (e.key === 'Escape') onClose(); }} data-testid="gantt-link-editor">
       <div className="gantt-link-title"><span data-no-i18n>{names(link.from)} → {names(link.to)}</span><button type="button" className="icon mini" title="Close" onClick={onClose}><X size={12} /></button></div>

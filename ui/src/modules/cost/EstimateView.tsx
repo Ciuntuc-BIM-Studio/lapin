@@ -10,14 +10,14 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ChevronDown, ChevronRight, FileSpreadsheet, FileText, ListChecks, Plus, Sheet, Tags, Trash2 } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
-import { FORMS, exportPdf, exportXlsx, formOnSheet, linesHolding, money, parseRate, qty, unpricedCount, useEstimate, useEstimateData, type FormDto, type LineDto } from './estimate';
+import { FORMS, exportPdf, exportXlsx, formOnSheet, linesHolding, inOther, money, parseRate, qty, EXCHANGE, PERCENT, type RateBounds, unpricedCount, useEstimate, useEstimateData, type FormDto, type LineDto } from './estimate';
 
 /** A rate typed in the toolbar, sent when it is left or Enter is pressed. */
-function RateInput({ label, value, field, title, unit = '%', testId }: { label: string; value: number; field: string; title: string; unit?: string; testId: string }) {
+function RateInput({ label, value, field, title, unit = '%', testId, bounds = PERCENT }: { label: string; value: number; field: string; title: string; unit?: string; testId: string; bounds?: RateBounds }) {
   const [text, setText] = useState(String(value));
   useEffect(() => setText(String(value)), [value]);
   const send = () => {
-    const n = parseRate(text);
+    const n = parseRate(text, bounds);
     if (n == null || n === value) { setText(String(value)); return; }
     void execute('cost.updateEstimate', { [field]: n });
   };
@@ -50,7 +50,7 @@ function spans(cells: string[], style: string, numeric: Set<number>): { text: st
 function FormTable({ form }: { form: string }) {
   const version = useSession((s) => s.version);
   const [data, setData] = useState<FormDto | null>(null);
-  useEffect(() => { void query<FormDto>('cost.form', { form }).then((d) => setData(d ?? null)); }, [form, version]);
+  useEffect(() => { let live = true; void query<FormDto>('cost.form', { form }).then((d) => { if (live) setData(d ?? null); }); return () => { live = false; }; }, [form, version]);
   if (!data) return <p className="muted estimate-empty">Reading the estimate…</p>;
   const numeric = new Set(data.numeric);
   return (
@@ -100,9 +100,9 @@ export function EstimateView() {
     if (numeric && v == null) return;
     void execute('cost.updateLine', { line, [field]: v });
   };
-  const total = (label: string, v: number, strong = false, testId?: string, rate?: number) => (
+  const total = (label: string, v: number, strong = false, testId?: string, rate?: number, otherValue?: number) => (
     <tr className={strong ? 'row-total' : 'row-subtotal'} data-testid={testId}>
-      <td colSpan={10}>{label}{rate != null && <span data-no-i18n>{` ${rate} %`}</span>}</td><td className="num" data-no-i18n>{money(v)}</td>{other && <td className="num" data-no-i18n>{money(v / (s.currency === 'RON' ? s.eurRate : 1 / s.eurRate))}</td>}
+      <td colSpan={10}>{label}{rate != null && <span data-no-i18n>{` ${rate} %`}</span>}</td><td className="num" data-no-i18n>{money(v)}</td>{other && <td className="num" data-no-i18n>{money(otherValue ?? inOther(v, s))}</td>}
     </tr>
   );
   return (
@@ -123,7 +123,7 @@ export function EstimateView() {
         <span className="chips" role="radiogroup" aria-label="Currency">
           {(['RON', 'EUR'] as const).map((c) => <button type="button" key={c} className={`chip${s.currency === c ? ' on' : ''}`} onClick={() => void execute('cost.updateEstimate', { currency: c })} data-testid={`estimate-currency-${c}`} data-no-i18n>{c}</button>)}
         </span>
-        <RateInput label="1 EUR =" value={s.eurRate} field="eurRate" unit=" RON" title="The project's exchange rate: how many RON one EUR is" testId="estimate-rate" />
+        <RateInput label="1 EUR =" value={s.eurRate} field="eurRate" unit=" RON" title="The project's exchange rate: how many RON one EUR is" testId="estimate-rate" bounds={EXCHANGE} />
         <label className="estimate-rate" title={s.other === 'EUR' ? 'Show every value in EUR too' : 'Show every value in RON too'}><input type="checkbox" checked={s.equivalent} onChange={(e) => void execute('cost.updateEstimate', { equivalent: e.target.checked })} data-testid="estimate-equivalent" />{s.other}</label>
         <span className="group-rule" aria-hidden />
         <RateInput label="CAM" value={s.labourTax} field="labourTax" title="The contributions on labour (contribuția asiguratorie pentru muncă), on the labour's value" testId="estimate-cam" />
@@ -189,7 +189,7 @@ export function EstimateView() {
               {total('Profit', data.totals.profit, false, undefined, s.profit)}
               {total('Total without VAT', data.totals.net, true)}
               {total('VAT', data.totals.vat, false, undefined, s.vat)}
-              {total('Total with VAT', data.totals.total, true, 'estimate-total')}
+              {total('Total with VAT', data.totals.total, true, 'estimate-total', undefined, data.totals.other)}
             </tbody>
           </table>
         </div>

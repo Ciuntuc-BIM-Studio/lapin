@@ -6,15 +6,16 @@
  * sent out as BCF remarks or a CSV list.
  */
 
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Cloud, Download, FileCode, FileText, Images, MessageSquareText, Play, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { useSession } from '../../engine/session';
+import { isGuest } from '../../engine/share';
 import { projectTitle, saveFile } from '../../engine/files';
 import { useCamera } from '../../viewport/camera';
 import { useSectionBox } from '../../viewport/sectionBox';
 import { isolateIds, resetTemporary } from '../../viewport/temporary';
-import { Cell } from '../../shell/cells';
+import { Cell, LengthField } from '../../shell/cells';
 import { DraftGroupEditor } from '../../shell/ConditionGroupEditor';
 import { fromClashGroup, toClashGroup, type UGroup } from '../../shell/conditionGroup';
 import { author, exportBcf } from '../core/remarks/remarks';
@@ -67,14 +68,26 @@ export function ClashDialog() {
   const close = () => useUi.setState({ dialog: null });
 
   // The tests and sets, read again as the model changes; a project with none gets the starting ones (one undo step).
+  // A guest never writes on opening (the host's project is the host's to seed), and a seed in flight is not asked twice.
+  const seeding = useRef(false);
   useEffect(() => {
+    let live = true;
     void loadClashes().then(async (l) => {
-      if (l && l.tests.length === 0 && l.sets.length === 0 && version >= 0) { await seedClashes(); return; }
+      if (!live) return;
+      if (l && l.tests.length === 0 && l.sets.length === 0) {
+        if (!isGuest() && !seeding.current) { seeding.current = true; try { await seedClashes(); } finally { seeding.current = false; } return; }
+        if (seeding.current) return;
+      }
       setList(l);
       if (l && !l.tests.some((t) => t.id === testId)) setTestId(l.tests[0]?.id ?? null);
     });
+    return () => { live = false; };
   }, [version]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (testId) void loadResults(testId, groupBy).then((r) => setClashes(r?.clashes ?? [])); else setClashes([]); }, [testId, version, groupBy]);
+  useEffect(() => {
+    let live = true;
+    if (testId) void loadResults(testId, groupBy).then((r) => { if (live) setClashes(r?.clashes ?? []); }); else setClashes([]);
+    return () => { live = false; };
+  }, [testId, version, groupBy]);
 
   const test = list?.tests.find((t) => t.id === testId) ?? null;
   const shown = useMemo(() => clashes.filter((c) => showResolved || c.status !== 'resolved'), [clashes, showResolved]);
@@ -263,11 +276,6 @@ function ClashList({ test, clashes, current, picked, setPicked, go, status, head
 }
 
 function TestForm({ test, sets, onDelete }: { test: ClashTest; sets: SearchSet[]; onDelete: () => void }) {
-  const [tolerance, setTolerance] = useState(mm(test.tolerance));
-  const keepTolerance = () => {
-    const v = Number(tolerance.replace(',', '.'));
-    if (Number.isFinite(v) && v >= 0 && v <= 2000 && Math.abs(v / 1000 - test.tolerance) > 1e-9) void saveTest({ id: test.id, tolerance: v / 1000 });
-  };
   return (
     <dl className="fields clash-test-form" data-testid="clash-test-form">
       <dt>Name</dt><dd><Cell value={test.name} onCommit={(t) => { if (t.trim() && t !== test.name) void saveTest({ id: test.id, name: t.trim() }); }} /></dd>
@@ -281,7 +289,7 @@ function TestForm({ test, sets, onDelete }: { test: ClashTest; sets: SearchSet[]
       </select></dd>
       </>}
       <dt>Kind</dt>
-      <dd><select value={test.kind} onChange={(e) => { const kind = e.target.value as ClashTest['kind']; void saveTest({ id: test.id, kind, tolerance: kind === 'clearance' ? 0.05 : 0.005, ...(kind !== 'openings' && !test.setA ? { setA: sets[0]?.id } : {}) }); setTolerance(kind === 'clearance' ? '50' : '5'); }}>
+      <dd><select value={test.kind} onChange={(e) => { const kind = e.target.value as ClashTest['kind']; void saveTest({ id: test.id, kind, tolerance: kind === 'clearance' ? 0.05 : 0.005, ...(kind !== 'openings' && !test.setA ? { setA: sets[0]?.id } : {}) }); }}>
         <option value="hard">Hard: elements crossing</option>
         <option value="clearance">Clearance: closer than a distance</option>
         <option value="openings">Openings for MEP: runs through walls, floors and roofs without an opening</option>
@@ -291,8 +299,9 @@ function TestForm({ test, sets, onDelete }: { test: ClashTest; sets: SearchSet[]
         <dd><p className="muted small">The check of the Openings for MEP tab: each MEP run through a wall, floor or roof must lie inside an opening, with its clearance. Its depth is how far it is short. Openings are made there.</p>
           <button type="button" className="link" onClick={() => useClashMode.setState({ mode: 'openings' })}>Openings for MEP</button></dd>
       </> : <>
-      <dt title={test.kind === 'hard' ? 'A crossing this deep or less is not a clash' : 'Elements closer than this clash'}>{test.kind === 'hard' ? 'Tolerance (mm)' : 'Distance (mm)'}</dt>
-      <dd><input inputMode="decimal" value={tolerance} onChange={(e) => setTolerance(e.target.value)} onBlur={keepTolerance} /></dd>
+      <dt title={test.kind === 'hard' ? 'A crossing this deep or less is not a clash' : 'Elements closer than this clash'}>{test.kind === 'hard' ? 'Tolerance' : 'Distance'}</dt>
+      {/* In the project's unit; the engine's own limit is 2 m (it says so when it is passed). */}
+      <dd><LengthField metres={test.tolerance} min={0} max={2} testId="clash-tolerance" onCommit={(m) => { if (m != null) void saveTest({ id: test.id, tolerance: m }); }} /></dd>
       </>}
       <dt>Run all</dt>
       <dd><label><input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={test.enabled} onChange={(e) => void saveTest({ id: test.id, enabled: e.target.checked })} /> takes this test</label></dd>

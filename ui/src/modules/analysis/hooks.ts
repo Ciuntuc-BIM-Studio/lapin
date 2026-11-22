@@ -7,11 +7,13 @@ export function useAnalysis<T>(name: string, enabled = true, args: Record<string
   const key = JSON.stringify(args);
   const nodes = useSession((s) => s.nodes);
   const [r, setR] = useState<T | null>(null);
+  // What another report (or a switched-off one) answered is never shown for this one.
+  useEffect(() => { setR(null); }, [name, enabled, key]);
   useEffect(() => {
     if (!enabled) return;
     let live = true;
-    void query<T>(name, JSON.parse(key) as Record<string, unknown>).then((x) => { if (live && x) setR(x); });
+    void query<T>(name, JSON.parse(key) as Record<string, unknown>).then((x) => { if (live) setR(x ?? null); });
     return () => { live = false; };
   }, [nodes, name, enabled, key]);
-  return r;
+  return enabled ? r : null;
 }

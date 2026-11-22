@@ -153,7 +153,7 @@ function LongSectionPlot({ d, station, onStation, onPvis }: { d: CorridorData; s
 /**
  * A number with its unit beside it (stations and sizes in metres, a crossfall
  * in %): the shared field, one commit on Enter or blur, empty restores.
- * `step` is kept for the callers (the railway's too) and no longer used.
+ * `step` is accepted only for the private railway module's callers (lapin-rail passes it) and ignored; nothing here does.
  */
 export function Num({ value, onCommit, min, unit, width = 70 }: { value: number; onCommit: (v: number) => void; step?: number; min?: number; unit?: string; width?: number }) {
   return <NumberField value={value} min={min} suffix={unit} style={{ width }} onCommit={(n) => { if (n != null) onCommit(n); }} />;
@@ -166,11 +166,11 @@ function SideEditor({ label, side, onChange }: { label: string; side: SideProps;
     <fieldset className="corridor-side">
       <legend>{label}</legend>
       <label className="row"><input type="checkbox" checked={!!side.gutter} onChange={(e) => onChange({ gutter: e.target.checked })} /> Gutter</label>
-      {side.gutter && <div className="row small">width <Num value={side.gutterWidth ?? 0.5} step={0.05} min={0.1} unit="m" width={60} onCommit={(v) => onChange({ gutterWidth: v })} /> depth <Num value={side.gutterDepth ?? 0.05} step={0.01} min={0} unit="m" width={60} onCommit={(v) => onChange({ gutterDepth: v })} /></div>}
+      {side.gutter && <div className="row small">width <Num value={side.gutterWidth ?? 0.5} min={0.1} unit="m" width={60} onCommit={(v) => onChange({ gutterWidth: v })} /> depth <Num value={side.gutterDepth ?? 0.05} min={0} unit="m" width={60} onCommit={(v) => onChange({ gutterDepth: v })} /></div>}
       <label className="row"><input type="checkbox" checked={!!side.kerb || !!side.sidewalk} disabled={!!side.sidewalk} onChange={(e) => onChange({ kerb: e.target.checked })} /> Kerb</label>
-      {(side.kerb || side.sidewalk) && <div className="row small">width <Num value={side.kerbWidth ?? 0.15} step={0.01} min={0.02} unit="m" width={60} onCommit={(v) => onChange({ kerbWidth: v })} /> up <Num value={side.kerbHeight ?? 0.12} step={0.01} min={0} unit="m" width={60} onCommit={(v) => onChange({ kerbHeight: v })} /></div>}
+      {(side.kerb || side.sidewalk) && <div className="row small">width <Num value={side.kerbWidth ?? 0.15} min={0.02} unit="m" width={60} onCommit={(v) => onChange({ kerbWidth: v })} /> up <Num value={side.kerbHeight ?? 0.12} min={0} unit="m" width={60} onCommit={(v) => onChange({ kerbHeight: v })} /></div>}
       <label className="row"><input type="checkbox" checked={!!side.sidewalk} onChange={(e) => onChange({ sidewalk: e.target.checked })} /> Sidewalk</label>
-      {side.sidewalk && <div className="row small">width <Num value={side.sidewalkWidth ?? 1.5} step={0.1} min={0.3} unit="m" width={60} onCommit={(v) => onChange({ sidewalkWidth: v })} /></div>}
+      {side.sidewalk && <div className="row small">width <Num value={side.sidewalkWidth ?? 1.5} min={0.3} unit="m" width={60} onCommit={(v) => onChange({ sidewalkWidth: v })} /></div>}
     </fieldset>
   );
 }
@@ -186,12 +186,12 @@ function TemplateEditor({ node }: { node: NodeDto }) {
       <div className="corridor-form">
         <dl className="fields">
           <dt>Section</dt><dd><select value={road ? 'road' : 'alley'} onChange={(e) => set({ template: e.target.value, ...(e.target.value === 'road' ? { crossfall: 2.5, fall: 'crown' } : {}) })}><option value="alley">alley or path</option><option value="road">road, two lanes</option></select></dd>
-          {road ? <><dt>Lane width</dt><dd><Num value={num('laneWidth', 3)} step={0.25} min={1} unit="m" onCommit={(v) => set({ laneWidth: v })} /></dd></>
-            : <><dt>Width</dt><dd><Num value={num('width', 1.5)} step={0.1} min={0.2} unit="m" onCommit={(v) => set({ width: v })} /></dd></>}
-          <dt>Crossfall</dt><dd><Num value={num('crossfall', road ? 2.5 : 0)} step={0.5} min={0} unit="%" onCommit={(v) => set({ crossfall: v })} />{' '}
+          {road ? <><dt>Lane width</dt><dd><Num value={num('laneWidth', 3)} min={1} unit="m" onCommit={(v) => set({ laneWidth: v })} /></dd></>
+            : <><dt>Width</dt><dd><Num value={num('width', 1.5)} min={0.2} unit="m" onCommit={(v) => set({ width: v })} /></dd></>}
+          <dt>Crossfall</dt><dd><Num value={num('crossfall', road ? 2.5 : 0)} min={0} unit="%" onCommit={(v) => set({ crossfall: v })} />{' '}
             <select value={(p.fall as string | undefined) ?? (road ? 'crown' : 'right')} onChange={(e) => set({ fall: e.target.value })}><option value="crown">from a crown</option><option value="right">to the right</option><option value="left">to the left</option></select></dd>
-          <dt>Surface course</dt><dd><Num value={num('surfaceThickness', 0.06)} step={0.01} min={0} unit="m" onCommit={(v) => set({ surfaceThickness: v })} /></dd>
-          <dt>Base course</dt><dd><Num value={num('baseThickness', 0.2)} step={0.05} min={0} unit="m" onCommit={(v) => set({ baseThickness: v })} /></dd>
+          <dt>Surface course</dt><dd><Num value={num('surfaceThickness', 0.06)} min={0} unit="m" onCommit={(v) => set({ surfaceThickness: v })} /></dd>
+          <dt>Base course</dt><dd><Num value={num('baseThickness', 0.2)} min={0} unit="m" onCommit={(v) => set({ baseThickness: v })} /></dd>
         </dl>
         <div className="corridor-sides">
           <SideEditor label="Left side" side={side('left')} onChange={(patch) => set({ left: { ...side('left'), ...patch }, kerb: false })} />
@@ -211,19 +211,19 @@ function TemplateEditor({ node }: { node: NodeDto }) {
   if (node.type === 'LapinRetainingWall') {
     return (
       <dl className="fields corridor-form">
-        <dt>Stem thickness</dt><dd><Num value={num('thickness', 0.3)} step={0.05} min={0.1} unit="m" onCommit={(v) => set({ thickness: v })} /></dd>
-        <dt>Height over the high ground</dt><dd><Num value={num('height', 1)} step={0.1} min={0} unit="m" onCommit={(v) => set({ height: v })} /></dd>
+        <dt>Stem thickness</dt><dd><Num value={num('thickness', 0.3)} min={0.1} unit="m" onCommit={(v) => set({ thickness: v })} /></dd>
+        <dt>Height over the high ground</dt><dd><Num value={num('height', 1)} min={0} unit="m" onCommit={(v) => set({ height: v })} /></dd>
         <dt>High ground on the</dt><dd><select value={(p.side as string | undefined) ?? 'left'} onChange={(e) => set({ side: e.target.value })}><option value="left">left</option><option value="right">right</option></select></dd>
-        <dt>Embedment</dt><dd><Num value={num('embed', 0.3)} step={0.05} min={0} unit="m" onCommit={(v) => set({ embed: v })} /></dd>
-        <dt>Footing</dt><dd><Num value={num('footingWidth', 0.8)} step={0.05} min={0.1} unit="m" width={60} onCommit={(v) => set({ footingWidth: v })} /> × <Num value={num('footingThickness', 0.3)} step={0.05} min={0} unit="m" width={60} onCommit={(v) => set({ footingThickness: v })} /></dd>
+        <dt>Embedment</dt><dd><Num value={num('embed', 0.3)} min={0} unit="m" onCommit={(v) => set({ embed: v })} /></dd>
+        <dt>Footing</dt><dd><Num value={num('footingWidth', 0.8)} min={0.1} unit="m" width={60} onCommit={(v) => set({ footingWidth: v })} /> × <Num value={num('footingThickness', 0.3)} min={0} unit="m" width={60} onCommit={(v) => set({ footingThickness: v })} /></dd>
       </dl>
     );
   }
   return (
     <dl className="fields corridor-form">
-      <dt>Depth under the ground</dt><dd><Num value={num('depth', 0.5)} step={0.05} min={0.05} unit="m" onCommit={(v) => set({ depth: v })} /> <span className="muted small">when it follows the ground</span></dd>
-      <dt>Bottom width</dt><dd><Num value={num('bottomWidth', 0.4)} step={0.05} min={0.05} unit="m" onCommit={(v) => set({ bottomWidth: v })} /></dd>
-      <dt>Side slope</dt><dd>1 : <Num value={num('slope', 1)} step={0.25} min={0} onCommit={(v) => set({ slope: v })} /></dd>
+      <dt>Depth under the ground</dt><dd><Num value={num('depth', 0.5)} min={0.05} unit="m" onCommit={(v) => set({ depth: v })} /> <span className="muted small">when it follows the ground</span></dd>
+      <dt>Bottom width</dt><dd><Num value={num('bottomWidth', 0.4)} min={0.05} unit="m" onCommit={(v) => set({ bottomWidth: v })} /></dd>
+      <dt>Side slope</dt><dd>1 : <Num value={num('slope', 1)} min={0} onCommit={(v) => set({ slope: v })} /></dd>
     </dl>
   );
 }
@@ -242,7 +242,7 @@ function CurvesEditor({ node, d, onSave }: { node: NodeDto; d: CorridorData; onS
   const curves: Curve[] = pts.map((_, i) => d.spec.curves?.[i] ?? [0, 0, 0]);
   const any = curves.some((c) => c.some((x) => x > 0));
   const put = (i: number, k: number, v: number) => onSave(curves.map((c, j) => (j === i ? c.map((x, m) => (m === k ? Math.max(0, v) : x)) as Curve : c)));
-  const cell = (i: number, k: number, step: number) => (generated ? <span className="num">{curves[i][k] || '—'}</span> : <Num value={curves[i][k]} step={step} min={0} width={76} onCommit={(v) => put(i, k, v)} />);
+  const cell = (i: number, k: number) => (generated ? <span className="num">{curves[i][k] || '—'}</span> : <Num value={curves[i][k]} min={0} width={76} onCommit={(v) => put(i, k, v)} />);
   return (
     <div className="corridor-form">
       {generated
@@ -257,7 +257,7 @@ function CurvesEditor({ node, d, onSave }: { node: NodeDto; d: CorridorData; onS
               <tr key={i}>
                 <td>{i + 1}</td>
                 <td className="num">{d.vertices[i] != null ? stationLabel(d.vertices[i]) : ''}</td>
-                {end ? <td colSpan={3} className="muted small">an end has no curve</td> : <><td>{cell(i, 0, 50)}</td><td>{cell(i, 1, 10)}</td><td>{cell(i, 2, 10)}</td></>}
+                {end ? <td colSpan={3} className="muted small">an end has no curve</td> : <><td>{cell(i, 0)}</td><td>{cell(i, 1)}</td><td>{cell(i, 2)}</td></>}
               </tr>
             );
           })}
@@ -396,9 +396,9 @@ export function CorridorDialog() {
                         const put = (k: number, v: number) => setCorridor({ profile: { mode: 'design', pvis: pvis.map((q, j) => (j === i ? q.map((x, m) => (m === k ? v : x)) : q)) } });
                         return (
                           <tr key={i}>
-                            <td><Num value={p[0]} step={1} width={72} onCommit={(v) => put(0, v)} /></td>
-                            <td><Num value={p[1]} step={0.01} width={72} onCommit={(v) => put(1, v)} /></td>
-                            <td>{i > 0 && i < pvis.length - 1 ? <Num value={p[2]} step={1} min={0} width={56} onCommit={(v) => put(2, v)} /> : <span className="muted">—</span>}</td>
+                            <td><Num value={p[0]} width={72} onCommit={(v) => put(0, v)} /></td>
+                            <td><Num value={p[1]} width={72} onCommit={(v) => put(1, v)} /></td>
+                            <td>{i > 0 && i < pvis.length - 1 ? <Num value={p[2]} min={0} width={56} onCommit={(v) => put(2, v)} /> : <span className="muted">—</span>}</td>
                             <td><button type="button" className="icon" title="Remove" disabled={pvis.length <= 2} onClick={() => setCorridor({ profile: { mode: 'design', pvis: pvis.filter((_, j) => j !== i) } })}><Trash2 size={13} /></button></td>
                           </tr>
                         );
@@ -428,9 +428,9 @@ export function CorridorDialog() {
             <div className="corridor-grid even">
               <div className="corridor-form">
                 <dl className="fields">
-                  <dt>Start station</dt><dd><Num value={spec.stationStart} step={1} unit="m" onCommit={(v) => setCorridor({ stationStart: v })} /> <span className="muted small">{stationLabel(spec.stationStart)}</span></dd>
-                  <dt>Stations every</dt><dd><Num value={spec.interval} step={1} min={0.5} unit="m" onCommit={(v) => setCorridor({ interval: v })} /> <span className="muted small">{data.stations.length} stations</span></dd>
-                  <dt>Joints every</dt><dd><Num value={spec.joints.every} step={1} min={0} unit="m" onCommit={(v) => setCorridor({ joints: { every: v } })} /> <span className="muted small">0: unbroken</span></dd>
+                  <dt>Start station</dt><dd><Num value={spec.stationStart} unit="m" onCommit={(v) => setCorridor({ stationStart: v })} /> <span className="muted small">{stationLabel(spec.stationStart)}</span></dd>
+                  <dt>Stations every</dt><dd><Num value={spec.interval} min={0.5} unit="m" onCommit={(v) => setCorridor({ interval: v })} /> <span className="muted small">{data.stations.length} stations</span></dd>
+                  <dt>Joints every</dt><dd><Num value={spec.joints.every} min={0} unit="m" onCommit={(v) => setCorridor({ joints: { every: v } })} /> <span className="muted small">0: unbroken</span></dd>
                   <dt>Joint width</dt><dd><LengthField metres={spec.joints.width} min={0.001} style={{ width: 70 }} onCommit={(v) => { if (v != null) setCorridor({ joints: { width: v } }); }} /></dd>
                   <dt>Joints at</dt><dd><Cell value={spec.joints.at.join(', ')} placeholder="stations, comma between" onCommit={(t) => setCorridor({ joints: { at: parseStationList(t) } })} /></dd>
                 </dl>

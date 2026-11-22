@@ -3,6 +3,7 @@
  * and §3.3, stage P1): the rows grouped, which cell of a row is editable and with what, a typed cell read as a value or a formula,
  * what flex has changed and what Keep sends. Tested in partParamModel.test.ts.
  */
+import { wordsOf } from '../../i18n';
 
 export type ParamKind = 'length' | 'number' | 'angle' | 'bool' | 'text' | 'integer';
 export const PARAM_KINDS: ParamKind[] = ['length', 'number', 'angle', 'bool', 'text', 'integer'];
@@ -62,8 +63,9 @@ export function parseCell(text: string, kind: ParamKind, length: (t: string) => 
   if (kind === 'text') return { value: text };
   if (!t) return { clear: true };
   if (kind === 'bool') {
-    if (/^(yes|true|1|da)$/i.test(t)) return { value: 1 };
-    if (/^(no|false|0|nu)$/i.test(t)) return { value: 0 };
+    const w = t.toLowerCase();
+    if (['yes', 'true', '1', 'da', ...wordsOf('yes'), ...wordsOf('true')].includes(w)) return { value: 1 };
+    if (['no', 'false', '0', 'nu', ...wordsOf('no'), ...wordsOf('false')].includes(w)) return { value: 0 };
     return 'bad';
   }
   if (kind === 'length') { const n = length(t); return n != null && Number.isFinite(n) ? { value: n } : 'bad'; }

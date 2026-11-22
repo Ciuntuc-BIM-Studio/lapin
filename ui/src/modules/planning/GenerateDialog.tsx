@@ -49,13 +49,15 @@ export function GenerateDialog() {
 
   // The options follow the model (a style saved, norms imported, an undo); the draft is set once, from the last spec or the suggested template.
   useEffect(() => {
+    let live = true;
     void query<GeneratorOptions>('planning.generatorOptions').then((o) => {
-      if (!o) return;
+      if (!live || !o) return;
       setOptions(o);
       setSpec((cur) => cur ?? (o.generated ? o.spec : translateNames(o.spec, (s) => t(s))));
       setStart((cur) => cur ?? o.start);
     });
-    void query<{ classes: ClassOption[] }>('planning.ruleOptions').then((o) => o && setClasses(o.classes));
+    void query<{ classes: ClassOption[] }>('planning.ruleOptions').then((o) => { if (live && o) setClasses(o.classes); });
+    return () => { live = false; };
   }, [version]);
 
   // The language changed before anything was touched: the catalogue's step names follow it (the tasks are named in it).
