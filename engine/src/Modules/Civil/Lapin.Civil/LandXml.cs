@@ -7,8 +7,9 @@ namespace Lapin.Civil;
 
 /// <summary>
 /// LandXML 1.2: surfaces (TIN) — each Surface's points (Pnts/P, written
-/// northing, easting, elevation) and its faces; Lapin keeps the points and
-/// triangulates them again, the faces only count what was there — and
+/// northing, easting, elevation) and its faces (Faces/F, by point id; those
+/// marked invisible, i="1", left out), which Lapin keeps as the terrain's
+/// triangles, so its holes and concave edge stay as the file has them — and
 /// alignments (docs/plan-rail.md, R4): each horizontal segment as a Line, a
 /// Curve or a Spiral, the vertical as a ProfAlign of PVIs, the cant as a Cant
 /// with a CantStation at every segment's start (its applied cant, the speed in
@@ -223,7 +224,8 @@ public static class LandXml
         sb.Append("    </Alignment>\n");
     }
 
-    public sealed record Surface(string Name, List<Vec3> Points, int Faces);
+    /// <summary>A surface read: its points, how many faces the file has (invisible ones too), and its visible triangles by index into the points (none: the file has no faces, the points are triangulated).</summary>
+    public sealed record Surface(string Name, List<Vec3> Points, int Faces, IReadOnlyList<(int A, int B, int C)> Triangles);
 
     /// <summary>
     /// Metres in the file's length unit (<c>Units/*/@linearUnit</c>): a Civil
@@ -242,6 +244,9 @@ public static class LandXml
             _ => 1,
         };
 
+    static double[] Numbers(string text) => text.Split([' ', '\t', '\n', '\r', ','], StringSplitOptions.RemoveEmptyEntries)
+        .Select(x => double.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : double.NaN).ToArray();
+
     public static List<Surface> Surfaces(string xml)
     {
         XDocument doc;
@@ -252,15 +257,38 @@ public static class LandXml
         foreach (var s in doc.Descendants().Where(e => e.Name.LocalName == "Surface"))
         {
             var pts = new List<Vec3>();
+            // Faces name their points by id (the P's id, else its place in the list, from 1).
+            var byId = new Dictionary<string, int>();
             foreach (var p in s.Descendants().Where(e => e.Name.LocalName == "P"))
             {
-                var f = p.Value.Split([' ', '\t', '\n', '\r', ','], StringSplitOptions.RemoveEmptyEntries)
-                    .Select(x => double.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : double.NaN).ToArray();
-                if (f.Length >= 3 && f.Take(3).All(double.IsFinite)) pts.Add(new Vec3(f[1] * unit, f[0] * unit, f[2] * unit));
+                var f = Numbers(p.Value);
+                var id = (string?)p.Attribute("id") ?? (byId.Count + 1).ToString(CultureInfo.InvariantCulture);
+                if (f.Length < 3 || !f.Take(3).All(double.IsFinite)) { byId.TryAdd(id, -1); continue; }
+                byId.TryAdd(id, pts.Count);
+                pts.Add(new Vec3(f[1] * unit, f[0] * unit, f[2] * unit));
             }
             if (pts.Count < 3) continue;
-            var faces = s.Descendants().Count(e => e.Name.LocalName == "F");
-            o.Add(new Surface((string?)s.Attribute("name") ?? "Surface", pts, faces));
+            var faces = s.Descendants().Where(e => e.Name.LocalName == "F").ToList();
+            var tris = new List<(int, int, int)>();
+            foreach (var face in faces)
+            {
+                if ((string?)face.Attribute("i") == "1") continue;
+                var ids = face.Value.Split([' ', '\t', '\n', '\r', ','], StringSplitOptions.RemoveEmptyEntries);
+                if (ids.Length < 3) continue;
+                var v = ids.Take(3).Select(x => byId.TryGetValue(x, out var k) ? k : -1).ToArray();
+                if (v.All(k => k >= 0) && v.Distinct().Count() == 3) tris.Add((v[0], v[1], v[2]));
+            }
+            // With faces, the surface is its triangles: a point on none is not on it (the others keep their order).
+            var on = tris.SelectMany(t => new[] { t.Item1, t.Item2, t.Item3 }).ToHashSet();
+            if (tris.Count > 0 && on.Count < pts.Count)
+            {
+                var index = new int[pts.Count];
+                var kept = new List<Vec3>();
+                for (var i = 0; i < pts.Count; i++) { index[i] = on.Contains(i) ? kept.Count : -1; if (index[i] >= 0) kept.Add(pts[i]); }
+                tris = tris.Select(t => (index[t.Item1], index[t.Item2], index[t.Item3])).ToList();
+                pts = kept;
+            }
+            o.Add(new Surface((string?)s.Attribute("name") ?? "Surface", pts, faces.Count, tris));
         }
         return o;
     }

@@ -157,9 +157,10 @@ public static class ArcOutline
     /// <summary>
     /// An outline as a command gives it: repeated corners dropped (the edge that leaves a corner keeps its arc), at least three
     /// corners, each rise a number not past ten times its chord, made counter-clockwise (its rises turned with it); refused
-    /// when it encloses nothing. <paramref name="what"/> names it in a refusal ("A floor").
+    /// when it encloses nothing. <paramref name="what"/> names it in a refusal ("A floor"). An arc that makes it cross itself is
+    /// refused; with <paramref name="simple"/>, a straight edge that does too (a terrain's outlines).
     /// </summary>
-    public static (List<Vec2> Corners, double[]? Rises) Check(IReadOnlyList<Vec2> pts, IReadOnlyList<double>? rises, string what = "A floor")
+    public static (List<Vec2> Corners, double[]? Rises) Check(IReadOnlyList<Vec2> pts, IReadOnlyList<double>? rises, string what = "A floor", bool simple = false)
     {
         var clean = new List<Vec2>();
         var r = new List<double>();
@@ -177,11 +178,15 @@ public static class ArcOutline
         double[]? kept = r.Any(x => x != 0) ? [.. r] : null;
         var area = SignedArea(clean, kept);
         if (Math.Abs(area) < 1e-6) throw new CommandException($"The outline of {Lower(what)} encloses nothing.");
+        if (simple && !Simple(clean)) throw new CommandException(Crossing(what));
         if (kept != null && !Simple(Points(clean, kept))) throw new CommandException("An arc makes the outline cross itself: a smaller rise.");
         if (area > 0) return (clean, kept);
         clean.Reverse();
         return (clean, Reversed(kept));
     }
+
+    /// <summary>What a refusal says of an outline of <paramref name="what"/> ("A platform") whose edges cross.</summary>
+    public static string Crossing(string what) => $"The outline of {Lower(what)} crosses itself: its edges must not cross.";
 
     static string Lower(string what) => what.Length > 0 ? char.ToLowerInvariant(what[0]) + what[1..] : what;
 
