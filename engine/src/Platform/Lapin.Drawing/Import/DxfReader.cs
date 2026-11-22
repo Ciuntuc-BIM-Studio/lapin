@@ -85,6 +85,8 @@ public sealed class DxfDocument
     public string Version { get; init; } = "";
     /// <summary>How many sections the file had (HEADER, TABLES, BLOCKS, ENTITIES…): none, and it was no DXF.</summary>
     public int Sections { get; init; }
+    /// <summary>Whether it ends as a DXF does (0 / EOF): an empty drawing, still a DXF.</summary>
+    public bool Ended { get; init; }
     /// <summary>$INSUNITS: 0 unitless, 1 in, 2 ft, 4 mm, 5 cm, 6 m…</summary>
     public int Units { get; init; }
     public Dictionary<string, DxfLayer> Layers { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -218,7 +220,7 @@ public static class DxfReader
             }
             i = end;
         }
-        var d = new DxfDocument { Version = version, Units = units, Sections = sections };
+        var d = new DxfDocument { Version = version, Units = units, Sections = sections, Ended = pairs.Any(p => p.Code == 0 && p.Value == "EOF") };
         foreach (var l in layers) d.Layers.TryAdd(l.Name, l);
         foreach (var (k, v) in ltypes) d.LineTypes.TryAdd(k, v);
         foreach (var b in blocks) d.Blocks.TryAdd(b.Name, b);

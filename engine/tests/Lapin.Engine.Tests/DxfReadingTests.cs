@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
@@ -100,6 +99,8 @@ public class DxfReadingTests
         var dwg = Encoding.ASCII.GetBytes("AC1032").Concat(new byte[] { 0, 0, 0, 0, 0, 0x29, 0x1f, 0x9c }).ToArray();
         Assert.Contains("DWG", Assert.Throws<CommandException>(() => Info(f, plan, dwg)).Message);
         Assert.Contains("no DXF sections", Assert.Throws<CommandException>(() => Info(f, plan, Encoding.UTF8.GetBytes("<html>not a drawing</html>"))).Message);
+        // An empty drawing that ends as a DXF does is still a DXF.
+        Assert.NotNull(Info(f, plan, Encoding.UTF8.GetBytes("0\nEOF\n")));
         // The import says the same (it reads the file again).
         Assert.Throws<CommandException>(() => f.Run("drafting.importDxf", new JsonObject { ["viewId"] = plan, ["name"] = "b.dxf", ["data"] = Convert.ToBase64String(binary) }));
     }
@@ -115,19 +116,21 @@ public class DxfReadingTests
     }
 
     [Fact]
-    public void Blocks_that_unfold_into_millions_are_refused_in_seconds_naming_the_block()
+    public void Blocks_that_unfold_into_millions_are_refused_before_they_are_placed_naming_the_block()
     {
         var f = F();
         var plan = Plan(f);
-        // Each block inserts the one before twice: 2^30 lines from 30 blocks; and an array insert of 3,000 × 3,000.
+        // Each block inserts the one before twice: 2^60 lines from 60 blocks, which no walk would finish; refused by counting
+        // the blocks' sizes first (one pass a block), so the test ends at once. And an array insert of 3,000 × 3,000.
         var nest = new StringBuilder(Block("L0", Line(0, 0, 1, 0)));
-        for (var i = 1; i < 30; i++) nest.Append(Block($"L{i}", Line(0, 0, 1, 0) + Insert($"L{i - 1}") + Insert($"L{i - 1}", 1, 0)));
-        var sw = Stopwatch.StartNew();
-        var e = Assert.Throws<CommandException>(() => Info(f, plan, Encoding.UTF8.GetBytes(AutoCad("AC1032", Insert("L29"), nest.ToString()))));
-        Assert.Contains("„L29”", e.Message);
+        for (var i = 1; i < 60; i++) nest.Append(Block($"L{i}", Line(0, 0, 1, 0) + Insert($"L{i - 1}") + Insert($"L{i - 1}", 1, 0)));
+        var e = Assert.Throws<CommandException>(() => Info(f, plan, Encoding.UTF8.GetBytes(AutoCad("AC1032", Insert("L59"), nest.ToString()))));
+        Assert.Contains("„L59”", e.Message);
+        Assert.Contains("2,000,000", e.Message);
         var m = Assert.Throws<CommandException>(() => Info(f, plan, Encoding.UTF8.GetBytes(AutoCad("AC1032", Insert("TILE", 0, 0, 3000, 3000), Block("TILE", Line(0, 0, 1, 0)))))).Message;
         Assert.Contains("„TILE”", m);
-        Assert.True(sw.Elapsed.TotalSeconds < 30, $"{sw.Elapsed.TotalSeconds:0.0} s");
+        // The import is refused the same way.
+        Assert.Throws<CommandException>(() => f.Run("drafting.importDxf", new JsonObject { ["viewId"] = plan, ["name"] = "n.dxf", ["data"] = Convert.ToBase64String(Encoding.UTF8.GetBytes(AutoCad("AC1032", Insert("L59"), nest.ToString()))) }));
         // A big array within the limit is read.
         var ok = Info(f, plan, Encoding.UTF8.GetBytes(AutoCad("AC1032", Insert("TILE", 0, 0, 100, 100), Block("TILE", Line(0, 0, 1, 0)))));
         Assert.Equal(10_000, (int)ok["counts"]!["lines"]!);
