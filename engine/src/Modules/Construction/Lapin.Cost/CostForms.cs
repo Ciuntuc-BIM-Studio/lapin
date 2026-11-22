@@ -60,7 +60,7 @@ public static class CostForms
     /// <summary>A number as the table shows it (two or three decimals), or as a workbook takes it (a plain number).</summary>
     sealed class Fmt(bool raw)
     {
-        public string Money(double v) => raw ? Math.Round(v, 2).ToString(CultureInfo.InvariantCulture) : v.ToString("0.00", CultureInfo.InvariantCulture);
+        public string Money(double v) => MoneyText.Plain(v, raw);
         public string Qty(double v) => raw ? Math.Round(v, 3).ToString(CultureInfo.InvariantCulture) : v.ToString("0.000", CultureInfo.InvariantCulture);
         public string Hours(double v) => raw ? Math.Round(v, 2).ToString(CultureInfo.InvariantCulture) : v.ToString("0.00", CultureInfo.InvariantCulture);
     }

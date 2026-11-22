@@ -17,7 +17,7 @@ public sealed class CostCompare : IVersionCompare
     /// <summary>Without the quantities there is no estimate to compare.</summary>
     public VersionDiffSection? Compare(IModelView a, IModelView b) => null;
 
-    static string M(double v) => v.ToString("N2", CultureInfo.InvariantCulture).Replace(",", " ");
+    static string M(double v) => MoneyText.Grouped(v);
 
     static string Signed(double v) => (v > 0 ? "+" : v < 0 ? "−" : "") + M(Math.Abs(v));
 

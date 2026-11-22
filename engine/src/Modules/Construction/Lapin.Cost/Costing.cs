@@ -98,6 +98,17 @@ public static class Money
         double.IsFinite(v) && Math.Abs(v) < 1e15 ? (double)Math.Round((decimal)v, 2, MidpointRounding.AwayFromZero) : Math.Round(v, 2, MidpointRounding.AwayFromZero);
 }
 
+/// <summary>Money as text, the one way the cost module writes it: for people, or as a workbook takes it.</summary>
+public static class MoneyText
+{
+    /// <summary>Two decimals, thousands grouped by a space („1 234.50”), as reports and the S-curve's labels show it.</summary>
+    public static string Grouped(double v) => v.ToString("N2", System.Globalization.CultureInfo.InvariantCulture).Replace(",", " ");
+
+    /// <summary>Two decimals („1234.50”), or (raw) the value rounded to cents as a plain number („1234.5”) for a workbook's cell.</summary>
+    public static string Plain(double v, bool raw = false) =>
+        raw ? Money.Round(v).ToString(System.Globalization.CultureInfo.InvariantCulture) : v.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+}
+
 /// <summary>A chapter's or the whole estimate's sums by kind of cost.</summary>
 public sealed record Sums(double M, double L, double E, double T)
 {

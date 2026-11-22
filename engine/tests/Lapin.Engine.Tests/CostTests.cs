@@ -285,6 +285,16 @@ public class CostTests
     }
 
     [Fact]
+    public void Money_is_written_one_way_for_people_and_one_for_workbooks()
+    {
+        Assert.Equal("1 234 567.50", MoneyText.Grouped(1234567.5));
+        Assert.Equal("1234.50", MoneyText.Plain(1234.5));
+        Assert.Equal("1234.5", MoneyText.Plain(1234.5, raw: true));
+        // Raw values round to cents as Money.Round does, half away from zero.
+        Assert.Equal("0.13", MoneyText.Plain(0.125, raw: true));
+    }
+
+    [Fact]
     public void The_object_estimate_shares_the_value_by_chapter_and_its_rows_add_up_to_the_totals()
     {
         var (f, _, _, _) = House();
