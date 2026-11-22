@@ -1,0 +1,8 @@
+{
+  "members": 8,
+  "checks": "D82823765071C390DB46FD93B74D9071313AE34B0858A268B0D861085BCD8ED6",
+  "notes": [
+    "Indicative checks (docs/plan-fem.md §12): the Eurocodes' recommended values (kept by the Romanian annexes where Lapin could read them) and CR 6-2013; the signed design remains the engineer's.",
+    "No wall or bracing along X and Y: the frame looks unbraced (sway) that way. The buckling lengths assume a braced frame; give the columns' own (k > 1, analysis.setDesign ky / kz or lcrY / lcrZ)."
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "members": 562,
+  "checks": "2A476C1E5D8FF3DB1E83F416ACAF4A3B6C35215D13E7912018B8B62734DB9098",
+  "notes": [
+    "Indicative checks (docs/plan-fem.md §12): the Eurocodes' recommended values (kept by the Romanian annexes where Lapin could read them) and CR 6-2013; the signed design remains the engineer's.",
+    "No wall or bracing along X: the frame looks unbraced (sway) that way. The buckling lengths assume a braced frame; give the columns' own (k > 1, analysis.setDesign ky / kz or lcrY / lcrZ).",
+    "EN 1993-1-1 5.2.1(3): αcr = 2.33 under „1.35 G1 + 1.5 S + 0.9 W+X/p”, below 10: second-order effects must be taken (analysis.setOptions secondOrder, or the sway effects × 1/(1 − 1/αcr) when αcr ≥ 3); analysis.buckling gives every combination's."
+  ]
+}
