@@ -6,6 +6,7 @@
  */
 
 import { useLang } from '../../i18n';
+import { parseDecimal } from '../../shell/parseDecimal';
 import { splitAlpha, withOpacity } from '../../viewport/drawing';
 
 export type MaterialKind = 'section' | 'plan' | 'elevation';
@@ -44,8 +45,7 @@ export function localNumber(v: number): string {
 
 /** A number as a person types it (a comma too); NaN for anything else. */
 export function parseNumber(text: string): number {
-  const s = text.trim().replace(',', '.');
-  return s === '' ? NaN : Number(s);
+  return parseDecimal(text) ?? NaN;
 }
 
 /** A weight in 0.05–5 mm, or null when the text is not one. */

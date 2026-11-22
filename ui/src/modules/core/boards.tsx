@@ -6,6 +6,7 @@
  * Cancel drops the board. The old editors stay for an edition without drafting or Studio's sketch bar.
  */
 
+import { parseDecimal } from '../../shell/parseDecimal';
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, FlipHorizontal2, FlipVertical2, Image as ImageIcon, Plus, RotateCw, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -222,7 +223,7 @@ function TitleBlockPanel({ board }: { board: Board }) {
   if (!of) return null;
   const t = of.template;
   const set = (args: Record<string, unknown>) => void run('drafting.setTitleBlockBoard', { viewId, ...args });
-  const num = (v: string) => { const n = Number(v.replace(',', '.')); return Number.isFinite(n) ? n : undefined; };
+  const num = (v: string) => parseDecimal(v) ?? undefined;
   const copy = (token: string) => {
     void navigator.clipboard?.writeText(token).catch(() => undefined);
     notify('Field copied: paste it into a text.');

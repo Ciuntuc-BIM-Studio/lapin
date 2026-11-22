@@ -6,6 +6,7 @@
  */
 
 import { ColourField } from '../../../shell/ColourField';
+import { parseDecimal } from '../../../shell/parseDecimal';
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, RotateCcw, Trash2 } from 'lucide-react';
 import { notify } from '../../../app/store';
@@ -63,14 +64,14 @@ export function StyleForm({ style, onChange, disabled }: { style: DocStyle; onCh
 
   const put = <K extends keyof DocStyle>(key: K, value: DocStyle[K] | undefined) => onChange(setField(style, key, value));
   const commitSize = () => {
-    const v = Number(size.replace(',', '.'));
+    const v = parseDecimal(size, { min: 6, max: 24 });
     if (!size.trim()) put('size', undefined);
-    else if (Number.isFinite(v) && v >= 6 && v <= 24) { if (v !== style.size) put('size', v); }
+    else if (v !== null) { if (v !== style.size) put('size', v); }
     else { notify('The text size is between 6 and 24 pt.'); setSize(style.size != null ? String(style.size) : ''); }
   };
   const commitWidth = () => {
-    const v = Number(width.replace(',', '.'));
-    if (style.logo && Number.isFinite(v) && v > 0 && v <= 120) { if (v !== style.logo.w) put('logo', { ...style.logo, w: v }); }
+    const v = parseDecimal(width, { min: 0, max: 120 });
+    if (style.logo && v !== null && v > 0) { if (v !== style.logo.w) put('logo', { ...style.logo, w: v }); }
     else setWidth(String(style.logo?.w ?? 30));
   };
   const pickLogo = async () => {

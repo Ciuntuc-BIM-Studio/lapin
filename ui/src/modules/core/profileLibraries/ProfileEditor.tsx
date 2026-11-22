@@ -6,6 +6,7 @@
  * centres the section), it goes to the libraries as any other: copied into the project, assigned to members, updated from here.
  */
 
+import { parseDecimal } from '../../../shell/parseDecimal';
 import { useMemo, useRef, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { notify } from '../../../app/store';
@@ -47,11 +48,11 @@ export function ProfileEditor({ start, onCancel, onDone }: { start: EditorStart;
       if (profile) onDone(profile, library.trim() || 'My profiles');
     } catch (e) { notify(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   };
-  const num = (v: string) => { const n = Number(v.trim().replace(',', '.')); return Number.isFinite(n) ? n : null; };
+  const num = (v: string) => parseDecimal(v);
   const size = (key: keyof Sizes, label: string) => (
     <label className="field-line small"><span className="eyebrow">{label}</span>
       <input className="num mini" style={{ width: 60 }} defaultValue={sizes[key]} key={`${key}${sizes[key]}`} data-field={`editor-${key}`}
-        onBlur={(e) => { const n = num(e.target.value); if (n && n > 0) setSizes({ ...sizes, [key]: n }); }} /> <span className="muted">mm</span></label>
+        onBlur={(e) => { const n = num(e.target.value); if (n && n > 0) setSizes({ ...sizes, [key]: n }); else e.target.value = String(sizes[key]); }} /> <span className="muted">mm</span></label>
   );
   return (
     <div className="profile-editor" data-testid="profile-editor">

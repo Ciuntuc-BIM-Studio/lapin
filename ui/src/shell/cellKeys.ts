@@ -2,6 +2,7 @@
 
 import type React from 'react';
 import { parseAngle } from '../viewport/liveInput';
+import { parseDecimal } from './parseDecimal';
 
 /** The panel's editable cells, in order (inputs that take text, and selects). */
 const cells = (from: Element) => [...(from.closest('.props')?.querySelectorAll<HTMLElement>('.fields input:not([type=checkbox]):not([type=color]):not([disabled]), .fields select:not([disabled])') ?? [])];
@@ -27,6 +28,6 @@ export function panelFocus(e: React.FocusEvent): void {
   if (t instanceof HTMLInputElement && t.closest('.fields') && t.type !== 'checkbox' && t.type !== 'color') requestAnimationFrame(() => t.select());
 }
 
-/** A number typed in a cell: a sum or difference allowed. */
-export const parseNumber = (text: string): number | null => parseAngle(text);
+/** A number typed in a cell (a comma or a point, a true minus; a sum or difference allowed), or null. */
+export const parseNumber = (text: string): number | null => parseDecimal(text) ?? parseAngle(text);
 

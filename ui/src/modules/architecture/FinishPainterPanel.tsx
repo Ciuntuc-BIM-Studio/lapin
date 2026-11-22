@@ -4,6 +4,7 @@
  * with a thickness. Shown over the view while the painter's edit mode is on.
  */
 
+import { parseDecimal } from '../../shell/parseDecimal';
 import { useEffect, useState } from 'react';
 import { ChevronDown, ChevronRight, CircleCheckBig } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -46,8 +47,8 @@ export function FinishPainterPanel() {
   ];
   const toggleGroup = (title: string) => setCollapsed((c) => ({ ...c, [title]: !c[title] }));
   const own = () => {
-    const t = Number(thickness.replace(',', '.'));
-    if (!material.trim() || !Number.isFinite(t) || t < 0) return;
+    const t = parseDecimal(thickness, { min: 0 });
+    if (!material.trim() || t === null) return;
     usePainter.setState({ finish: { name: `${material.trim()} ${t} mm`, layers: [{ material: material.trim(), thickness: t / 1000 }] } });
     activate(paintBrush);
   };
