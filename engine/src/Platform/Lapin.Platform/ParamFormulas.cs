@@ -67,11 +67,17 @@ public static class ParamFormulas
         }
         // The office's own name for a field (FieldAliases): the first of its sources the element has.
         if (FieldAliases.TryResolve(m, name, s => Read(m, e, type, more, s), v => v is { } x && (x.Number != null || x.Text is { Length: > 0 }), out var aliased)) return aliased;
-        var key = TagText.Squash(name.Contains('.') ? name[(name.LastIndexOf('.') + 1)..] : name);
+        var dot = name.LastIndexOf('.');
+        var key = TagText.Squash(dot >= 0 ? name[(dot + 1)..] : name);
+        // Named with its set (B.Code): that set's parameter, else one of the user's own; never another set's of the same name,
+        // which the first one found used to be (audit 22.11.2026, G15).
+        var set = dot > 0 ? TagText.Squash(name[..dot]) : null;
+        bool InSet(JsonObject y) => Params.SetOf(y) is { } s ? TagText.Squash(s) == set : set == TagText.Squash(StandardPsets.Own);
         foreach (var x in new[] { e, type })
         {
             if (x?.Attrs["params"] is not JsonArray list) continue;
-            var p = list.OfType<JsonObject>().FirstOrDefault(y => TagText.Squash((string?)y["name"] ?? "") == key);
+            var named = list.OfType<JsonObject>().Where(y => TagText.Squash((string?)y["name"] ?? "") == key).ToList();
+            var p = set == null ? named.FirstOrDefault() : named.FirstOrDefault(InSet) ?? named.FirstOrDefault(y => Params.SetOf(y) == null);
             if (p == null) continue;
             if (IsFormula(p)) return EvaluateValue(m, e, type, p, more).Value;
             if (p["value"] is JsonValue v)

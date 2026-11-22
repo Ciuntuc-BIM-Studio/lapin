@@ -182,4 +182,18 @@ public sealed class ParamScopeTests : IDisposable
         Assert.Single(wallParams);
         Assert.Equal("Note", (string?)wallParams[0]["name"]);
     }
+    [Fact]
+    public void A_field_named_with_its_set_reads_that_sets_parameter_not_the_first_of_that_name()
+    {
+        // Audit 22.11.2026 G15: B.Code read the first „Code” of any set.
+        var f = F();
+        var wall = f.Wall(0, 0, 5, 0);
+        Set(f, wall, "Code", new JsonObject { ["pset"] = "Firm_A", ["kind"] = "number", ["value"] = 1 });
+        Set(f, wall, "Code", new JsonObject { ["pset"] = "Firm_B", ["kind"] = "number", ["value"] = 2 });
+        var e = f.Model.Get(wall)!;
+        Assert.Equal(1, ParamFormulas.Read(f.Model, e, null, null, "Firm_A.Code")?.Number);
+        Assert.Equal(2, ParamFormulas.Read(f.Model, e, null, null, "Firm_B.Code")?.Number);
+        Assert.Equal(1, ParamFormulas.Read(f.Model, e, null, null, "Code")?.Number);   // no set named: the first, as before
+        Assert.Null(ParamFormulas.Read(f.Model, e, null, null, "Firm_C.Code")?.Number);
+    }
 }
