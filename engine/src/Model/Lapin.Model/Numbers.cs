@@ -54,6 +54,9 @@ public static class Numbers
         }
     }
 
+    /// <summary>Two numbers the same within a billionth of the larger (or of 1), as filters compare them.</summary>
+    public static bool Near(double a, double b) => Math.Abs(a - b) <= 1e-9 * Math.Max(1, Math.Max(Math.Abs(a), Math.Abs(b)));
+
     /// <summary>The number <paramref name="text"/> starts with (groups allowed, after any spaces) and the text after it; null when it starts with none.</summary>
     public static double? ParseLeading(string text, out string rest)
     {

@@ -166,7 +166,8 @@ public class ClashEngineTests
     public void Numbers_are_read_as_people_write_them()
     {
         Assert.True(SearchSets.TryNumber("600 mm", out var a) && a == 600);
-        Assert.True(SearchSets.TryNumber("1,200", out var b) && b == 1200);
+        Assert.True(SearchSets.TryNumber("1,200", out var b) && b == 1.2);
+        Assert.True(SearchSets.TryNumber("1 200", out var g) && g == 1200);
         Assert.True(SearchSets.TryNumber("2,5", out var c) && c == 2.5);
         Assert.True(SearchSets.TryNumber("DN −3", out var d) && d == -3);
         Assert.False(SearchSets.TryNumber("none", out _));

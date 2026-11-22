@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Lapin.Model;
 
 namespace Lapin.Platform;
 
@@ -24,8 +25,8 @@ public readonly record struct XValue(double? Number, string? Text)
 
     public bool IsText => Text != null;
 
-    /// <summary>Whether its text is a number and nothing else („1.50”, „-3”).</summary>
-    public bool IsNumericText => Text is { } t && double.TryParse(t.Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out _);
+    /// <summary>Whether its text is a number and nothing else („1.50”, „-3”, „−3”; never „NaN”), by the one reader (<see cref="Numbers.Parse"/>).</summary>
+    public bool IsNumericText => Numbers.Parse(Text, NumberMode.Strict) != null;
 
     /// <summary>As a text: its own, else its number with up to three decimals.</summary>
     public string AsText => Text ?? (Number is { } n ? Expr.Format(n, null) : "");
@@ -137,7 +138,7 @@ public static class Expr
     public static string Format(XValue v, string? format)
     {
         if (v.Text is { } t)
-            return v.IsNumericText && double.TryParse(t.Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var n) ? Format(n, format) : t;
+            return Numbers.Parse(t, NumberMode.Strict) is { } n ? Format(n, format) : t;
         return v.Number is { } x ? Format(x, format) : "";
     }
 

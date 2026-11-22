@@ -189,7 +189,8 @@ public class FilterCharacterizationTests : IDisposable
     // - type: a reference's file type counts (RW1 is of WT-EXT, so it has a type);
     // - storey: a door left off every storey is on its wall's (DB on Ground; nothing is on none);
     // - class: the name without Ifc and the label are the class too (Door takes the doors);
-    // - numbers in a text are read as people write them, „1,200” is 1200 (audit D2), not 1.2;
+    // - numbers in a text are read by the one reader (Numbers.Parse): a lone mark is decimal, „1,200” is 1.2, as `=` on a
+    //   field reads it, for every operator (audit 2026-11-22: `=` took 1.2 and `between` 1200);
     // - phase: an element left unphased is created in the default phase, by its id or name. A saved rule asking whether the
     //   phase has a value is turned into one on the stored attribute by ViewFilterUpgrade, so it keeps taking what it took.
     const string ViewFiltersToday = """
@@ -213,10 +214,10 @@ public class FilterCharacterizationTests : IDisposable
         FireRating = REI 90 => RW1
         height > 3 => B
         height 3..3.5 => A B
-        Code = 1200 => A
-        Code = 1.2 => 
-        Code > 1000 => A
-        Code < 1000 => C
+        Code = 1200 => 
+        Code = 1.2 => A
+        Code > 1000 => 
+        Code < 1000 => A C
         phase = existing => B
         phase = new-construction => A Block C DA DB RD RW1 RW2
         phase = New construction => A Block C DA DB RD RW1 RW2
@@ -405,9 +406,9 @@ public class FilterCharacterizationTests : IDisposable
         class one of IfcWall => A B C RW1 RW2
         Fire rating contains REI => A RW1
         height at least 3 => A B
-        Code at least 1000 => A
-        Code at most 1000 => C
-        Code between 1000 1300 => A
+        Code at least 1000 => 
+        Code at most 1000 => A C
+        Code between 1000 1300 => 
         link is own => A B Block C DA DB RD RW1 RW2
         not type Brick 300 => B Block C DA DB RD RW1 RW2
         any: door, all(brick, ground) => A C DA DB RD
@@ -497,7 +498,9 @@ public class FilterCharacterizationTests : IDisposable
         Assert.Equal("RW1", Takes(Conditions(Cond("@type", "=", "wt-ext"))));
         Assert.Equal("DA DB RD", Takes(new JsonObject { ["classes"] = new JsonArray("IfcDoor"), ["conditions"] = new JsonArray(Cond("@storey", "=", "Ground")) }));
         Assert.Equal("B RW1 RW2", Takes(new JsonObject { ["classes"] = new JsonArray("Wall"), ["conditions"] = new JsonArray(Cond("@material", "≠", "Brick")) }));
-        Assert.Equal("A C", Takes(Conditions(new JsonObject { ["field"] = "@text:Code", ["op"] = "between", ["values"] = new JsonArray("800", "1300") })));
+        Assert.Equal("C", Takes(Conditions(new JsonObject { ["field"] = "@text:Code", ["op"] = "between", ["values"] = new JsonArray("800", "1300") })));
+        // „1,200” is 1.2 for a range as for `=`.
+        Assert.Equal("A", Takes(Conditions(new JsonObject { ["field"] = "@text:Code", ["op"] = "between", ["values"] = new JsonArray("1", "2") })));
         // Any of a group: walls of Partition 100, or anything with a fire rating starting REI.
         Assert.Equal("A B RW1", Takes(new JsonObject
         {

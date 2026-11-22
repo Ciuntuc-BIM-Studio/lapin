@@ -47,21 +47,24 @@ public sealed record FieldCondition(string Field, string Op, string? Value, IRea
     /// <summary>What it compares with: its list, else its value (none for exists and missing).</summary>
     public IReadOnlyList<string> Wanted => Values ?? (Value != null ? [Value] : []);
 
+    /// <summary>The first number in a text, by the one reader (<see cref="Numbers.Parse"/>: „H=600” 600, „1,200” 1.2, „−3” −3).</summary>
+    static double? First(string? text) => Numbers.Parse(text, NumberMode.First);
+
     /// <summary>The two ends of a range (either null: open): its list, or a value written "min..max".</summary>
     public (double? Lo, double? Hi) Range()
     {
-        if (Values is { } v) return (v.Count > 0 ? FilterNumbers.First(v[0]) : null, v.Count > 1 ? FilterNumbers.First(v[1]) : null);
+        if (Values is { } v) return (v.Count > 0 ? First(v[0]) : null, v.Count > 1 ? First(v[1]) : null);
         var s = Value ?? "";
         var k = s.IndexOf("..", StringComparison.Ordinal);
-        if (k < 0) return (FilterNumbers.First(s), FilterNumbers.First(s));
-        return (FilterNumbers.First(s[..k]), FilterNumbers.First(s[(k + 2)..]));
+        if (k < 0) return (First(s), First(s));
+        return (First(s[..k]), First(s[(k + 2)..]));
     }
 
     static bool InRange(double n, (double? Lo, double? Hi) r)
     {
         if (r.Lo == null && r.Hi == null) return false;
         var (lo, hi) = r.Lo is { } a && r.Hi is { } b && a > b ? (r.Hi, r.Lo) : r;
-        return (lo is not { } l || n > l || FilterNumbers.Near(n, l)) && (hi is not { } h || n < h || FilterNumbers.Near(n, h));
+        return (lo is not { } l || n > l || Numbers.Near(n, l)) && (hi is not { } h || n < h || Numbers.Near(n, h));
     }
 
     /// <summary>Whether it holds on one value of a field (<see cref="ElementFields"/>).</summary>
@@ -86,7 +89,7 @@ public sealed record FieldCondition(string Field, string Op, string? Value, IRea
         }
         int c;
         if (v.Number is { } n && FieldValue.StrictNumber(want) is { } w)
-            c = FilterNumbers.Near(n, w) ? 0 : n.CompareTo(w);
+            c = Numbers.Near(n, w) ? 0 : n.CompareTo(w);
         else
             c = Op is "=" or "≠" ? (string.Equals(shown.Trim(), want.Trim(), StringComparison.OrdinalIgnoreCase) ? 0 : 1)
                 : string.Compare(shown, want, CultureInfo.InvariantCulture, CompareOptions.IgnoreCase | CompareOptions.NumericOrdering);
@@ -115,16 +118,16 @@ public sealed record FieldCondition(string Field, string Op, string? Value, IRea
             case "=" or "one of": return Wanted.Any(w => EqualTexts(t, w));
             case "contains": return Wanted.Any(w => Compare.IndexOf(t, w, CompareOptions.IgnoreCase) >= 0);
             case "starts with": return Wanted.Any(w => Compare.IsPrefix(t.TrimStart(), w.TrimStart(), CompareOptions.IgnoreCase));
-            case "between": return FilterNumbers.First(t) is { } x && InRange(x, Range());
+            case "between": return First(t) is { } x && InRange(x, Range());
         }
-        if (FilterNumbers.First(t) is not { } a || FilterNumbers.First(Value) is not { } b) return false;
-        var c = FilterNumbers.Near(a, b) ? 0 : a.CompareTo(b);
+        if (First(t) is not { } a || First(Value) is not { } b) return false;
+        var c = Numbers.Near(a, b) ? 0 : a.CompareTo(b);
         return Op switch { "<" => c < 0, "≤" => c <= 0, ">" => c > 0, "≥" => c >= 0, _ => false };
     }
 
     static bool EqualTexts(string t, string w) =>
         string.Equals(t.Trim(), w.Trim(), StringComparison.OrdinalIgnoreCase)
-        || FilterNumbers.Leading(t) is { } a && FilterNumbers.Leading(w) is { } b && FilterNumbers.Near(a, b);
+        || Numbers.Parse(t, NumberMode.Leading) is { } a && Numbers.Parse(w, NumberMode.Leading) is { } b && Numbers.Near(a, b);
 
     public JsonObject ToJson()
     {
@@ -523,67 +526,4 @@ public sealed class ModelQuery(IModelView m, IServices? services = null, Func<st
     public ElementGeometry? Geometry(string entityId) => null;
     public IReadOnlyList<QuantitySet> Quantities(string id) => [];
     public ClassDescriptor? Describe(string ifcClass) => describe?.Invoke(ifcClass);
-}
-
-/// <summary>
-/// The numbers a filter reads in a text. Kept here until the one number parser (<c>Lapin.Model.Numbers.Parse</c>, audit D2)
-/// takes over: the first number in a text as people write it ("600 mm" 600, "H=600" 600, "1,200" 1200, "2,5" 2.5, "−3" −3;
-/// BimGo's RuleNumbers, the clash search sets' rule).
-/// </summary>
-public static class FilterNumbers
-{
-    /// <summary>Two numbers the same within a billionth of the larger (or of 1).</summary>
-    public static bool Near(double a, double b) => Math.Abs(a - b) <= 1e-9 * Math.Max(1, Math.Max(Math.Abs(a), Math.Abs(b)));
-
-    /// <summary>The number a text starts with (a unit may follow: "3000 mm"); none when it starts with something else ("Wall 1").</summary>
-    public static double? Leading(string? text)
-    {
-        var t = text?.TrimStart();
-        if (string.IsNullOrEmpty(t)) return null;
-        var c = t[0];
-        return char.IsDigit(c) || (c is '-' or '−' or '+' or '.') && t.Length > 1 && (char.IsDigit(t[1]) || t[1] == '.') ? First(t) : null;
-    }
-
-    /// <summary>The first number in a text; none when it has none.</summary>
-    public static double? First(string? text) => TryNumber(text, out var v) ? v : null;
-
-    static bool TryNumber(string? text, out double value)
-    {
-        value = 0;
-        if (string.IsNullOrEmpty(text)) return false;
-        var i = 0;
-        while (i < text.Length && !char.IsDigit(text[i])) i++;
-        if (i >= text.Length) return false;
-        var negative = i > 0 && (text[i - 1] == '-' || text[i - 1] == '−') && (i < 2 || !char.IsDigit(text[i - 2]));
-        if (i > 0 && text[i - 1] == '.') i--;
-        var digits = new System.Text.StringBuilder();
-        var dot = false;
-        static bool GroupFollows(string s, int at)
-        {
-            var n = 0;
-            while (at + n < s.Length && char.IsDigit(s[at + n])) n++;
-            return n == 3;
-        }
-        for (; i < text.Length; i++)
-        {
-            var c = text[i];
-            if (char.IsDigit(c)) { digits.Append(c); continue; }
-            var nextDigit = i + 1 < text.Length && char.IsDigit(text[i + 1]);
-            if (!nextDigit) break;
-            if ((c == ' ' || c == ' ' || c == ' ' || c == '\'') && digits.Length > 0 && !dot && GroupFollows(text, i + 1)) continue;
-            if (c == '.' && !dot) { dot = true; digits.Append('.'); continue; }
-            if (c == ',' && !dot)
-            {
-                if (GroupFollows(text, i + 1)) continue;
-                dot = true;
-                digits.Append('.');
-                continue;
-            }
-            break;
-        }
-        if (digits.Length == 0 || digits.ToString() == ".") return false;
-        if (!double.TryParse(digits.ToString(), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out value)) return false;
-        if (negative) value = -value;
-        return double.IsFinite(value);
-    }
 }
