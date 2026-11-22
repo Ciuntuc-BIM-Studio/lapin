@@ -12,6 +12,8 @@
  * A drag still turns the view.
  */
 
+import { screenPath } from './screenPath';
+import { keyIsForField } from './overlayKeys';
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { setTool, useUi } from '../app/store';
@@ -147,7 +149,7 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
       if (s) placeRef.current({ x: s.point.x, y: s.point.y }, undefined, s);
     };
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable]') && !(e.target as HTMLElement).closest('[data-place3d]')) return;
+      if (keyIsForField(e, '[data-place3d]')) return;
       const s = state.current;
       if (e.key === 'Escape') {
         e.preventDefault(); e.stopImmediatePropagation();
@@ -185,7 +187,7 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
   const aim = typed ?? (cur2 ? constrained(g, pts, cur2) : null);
   const shape = previewOf(g, pts, aim);
   const screen = shape.pts.map((p) => project(w(p)));
-  const path = screen.length >= 2 && screen.every((p) => p) ? screen.map((p, i) => `${i ? 'L' : 'M'}${p!.x.toFixed(1)} ${p!.y.toFixed(1)}`).join('') + (shape.closed ? 'Z' : '') : null;
+  const path = screenPath(screen, !!shape.closed);
   const cur = at ? project(at.point) : null;
   // A point snapped off the level (a beam's end, a slab's top above it): a plumb line down to where the tool takes it.
   const foot = at && Math.abs(at.point.z - z) > 1e-3 ? project({ x: at.point.x, y: at.point.y, z }) : null;

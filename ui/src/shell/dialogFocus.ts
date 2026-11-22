@@ -11,3 +11,24 @@ export function useDialogFocus<T extends HTMLElement>() {
   }, []);
   return ref;
 }
+
+/** Whether an Escape belongs to a field (a text being typed, a select) and not to the dialog around it. */
+export const escapeIsForField = (e: Pick<KeyboardEvent, 'target'>): boolean => !!(e.target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable]');
+
+/**
+ * Escape closes a dialog of its own (not the store's): not while a field is being typed in (the written reply is not
+ * lost), not when something took the key first (`defaultPrevented`), and the key goes no further, so it does not also
+ * cancel the tool behind the dialog.
+ */
+export function useEscapeClose(onClose: () => void): void {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || e.isComposing || escapeIsForField(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [onClose]);
+}

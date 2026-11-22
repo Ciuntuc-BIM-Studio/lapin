@@ -10,6 +10,9 @@
  * sketch); a line left open (Enter, Esc) stays a sketch on the face.
  */
 
+import { SNAP_REACH_PX } from './snap3d';
+import { screenPath } from './screenPath';
+import { keyIsForField } from './overlayKeys';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { X } from 'lucide-react';
@@ -46,7 +49,6 @@ export const SKETCHUP_KEYS: Record<string, string> = {
   L: 'studio.sketch.line', R: 'studio.sketch.rect', C: 'studio.sketch.circle', A: 'studio.sketch.arc', P: 'studio.pushPull',
   F: 'studio.sketch.offset', T: 'studio.sketch.tape', M: 'cad:MOVE', E: 'cad:ERASE', ' ': 'select',
 };
-const SNAP_PX = 10;
 const TOOL_NAME = { line: 'Line', rect: 'Rectangle', circle: 'Circle', arc: '2-point arc', offset: 'Offset', tape: 'Tape measure' } as const;
 const HINT = {
   line: 'Click the points · back on the first closes it · Enter or Esc leaves it open',
@@ -211,7 +213,7 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
       const base = s0.pts.length ? s0.pts[s0.pts.length - 1] : null;
       const inferred = infer({
         raw, base, edges: edgesOf(plane, s0.pts, s0.locked), points: [...s0.pts.slice(0, 1), ...(s0.locked ? others(plane).points : [])],
-        axes: axesInPlane(plane.frame.right, plane.frame.up), lock: s0.lock, tol: SNAP_PX / ppm(plane.frame, raw),
+        axes: axesInPlane(plane.frame.right, plane.frame.up), lock: s0.lock, tol: SNAP_REACH_PX / ppm(plane.frame, raw),
       });
       useDirect.setState({ plane, inferred });
     };
@@ -264,7 +266,7 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
         return;
       }
       if (e.key === 'Shift' && !s0.lock && s0.inferred) { const l = holdLock(s0.inferred); if (l) useDirect.setState({ lock: l, shiftLock: true }); return; }
-      if (el !== input.current && el?.closest?.('input, textarea, select, [contenteditable]')) return;
+      if (el !== input.current && keyIsForField(e)) return;
       if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); enter(); }
       else if (e.key === 'Escape') {
         e.preventDefault(); e.stopPropagation();
@@ -307,11 +309,7 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
           : tape?.kind === 'guidePoint' ? { pts: [tape.from, tape.at], closed: false }
             : st.tool === 'offset' || st.tool === 'tape' ? { pts: [], closed: false } : preview(st.tool, st.pts, cursor);
   const w = (p: Vec2) => (f ? toWorld(f, p) : { x: 0, y: 0, z: 0 });
-  const pathOf = (list: Vec3[], close: boolean) => {
-    const s = list.map(toScreen);
-    if (s.length < 2 || s.some((p) => !p)) return null;
-    return s.map((p, i) => `${i ? 'L' : 'M'}${p!.x.toFixed(1)} ${p!.y.toFixed(1)}`).join('') + (close ? 'Z' : '');
-  };
+  const pathOf = (list: Vec3[], close: boolean) => screenPath(list.map(toScreen), close);
   const facePath = plane?.outline ? pathOf(plane.outline, true) : null;
   const shapePath = f ? pathOf(shown.pts.map(w), shown.closed) : null;
   const cur = f && cursor ? toScreen(w(cursor)) : null;
