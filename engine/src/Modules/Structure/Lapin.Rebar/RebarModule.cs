@@ -418,7 +418,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             // The project's rules complete it: its steel, its hooks' tails, its bend radius (docs/plan-user-extensibility.md §6.5).
             a = (JsonObject)a.DeepClone();
             RebarRuleSection.Complete(ctx.Model, a, Json.Number(a["diameter"]) ?? def.DefaultDiameter, shape);
-            Write(attrs, a, run: false);
+            Write(attrs, a, ctx.Model, run: false);
             // Drawn inside an element's cut (a beam in its longitudinal section): the bar lies in that element, one across its width unless told more.
             if (a["host"] == null && Rebar3D.HostAt(ctx, view, Rebars.At(new Entity("", Rebars.Class, "", attrs))) is { } host)
             {
@@ -435,7 +435,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             a = UserShape(ctx.Model, a);
             var e = Require(ctx.Model, (string?)a["id"], Rebars.Class);
             var attrs = e.CloneAttrs();
-            Write(attrs, a, run: false);
+            Write(attrs, a, ctx.Model, run: false);
             ctx.Replace(e.With(attrs: attrs));
             return null;
         });
@@ -498,7 +498,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["start"] = Rebars.J(start), ["end"] = Rebars.J(end), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMarkFor(ctx.Model, PartitionArg(a), shape, (string?)a[RebarMarks.PrefixKey]), ["count"] = 1, ["step"] = 0.15 };
             a = (JsonObject)a.DeepClone();
             RebarRuleSection.Complete(ctx.Model, a, Json.Number(a["diameter"]) ?? def.DefaultDiameter, shape);
-            Write(attrs, a, run: true);
+            Write(attrs, a, ctx.Model, run: true);
             KeepShape(attrs, a);
             var e = new Entity(ctx.NewId(), Rebars.RunClass, $"{def.Label}s {Rebars.Mark(new Entity("", Rebars.RunClass, "", attrs))}", attrs);
             ctx.Add(e);
@@ -509,7 +509,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             a = UserShape(ctx.Model, a);
             var e = Require(ctx.Model, (string?)a["id"], Rebars.RunClass);
             var attrs = e.CloneAttrs();
-            Write(attrs, a, run: true);
+            Write(attrs, a, ctx.Model, run: true);
             ctx.Replace(e.With(attrs: attrs));
             return null;
         });
@@ -605,7 +605,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var o = new JsonObject
             {
                 ["length"] = Math.Round(length, 4), ["trueLength"] = Math.Round(RebarShapes.TrueLength(s), 4), ["massPerMetre"] = Math.Round(RebarShapes.MassPerMetre(s.Diameter), 4),
-                ["bendRadius"] = RebarShapes.RadiusOf(s), ["mandrel"] = RebarShapes.Mandrel(s.Diameter),
+                ["bendRadius"] = RebarShapes.RadiusOf(s), ["mandrel"] = RebarShapes.MandrelOf(s),
             };
             var (start, end) = RebarShapes.HooksOf(s);
             if (start != null) o["hookStart"] = start.ToJson();
@@ -686,7 +686,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         if (p.Length > 0) attrs[RebarMarks.PrefixKey] = p; else attrs.Remove(RebarMarks.PrefixKey);
     }
 
-    static void Write(JsonObject attrs, JsonObject a, bool run)
+    static void Write(JsonObject attrs, JsonObject a, IModelView m, bool run)
     {
         if (a.ContainsKey(Rebars.PartitionKey)) { if (PartitionArg(a) is { Length: > 0 } pa) attrs[Rebars.PartitionKey] = pa; else attrs.Remove(Rebars.PartitionKey); }
         // Its own mark prefix (decision 729), over its shape group's; null or "" takes it away.
@@ -746,7 +746,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                     {
                         var angle = Json.Number(h["angle"]) ?? 90;
                         if (angle is not (>= 10 and <= 180)) throw new CommandException("A hook turns between 10° and 180°.");
-                        var length = Json.Number(h["length"]) ?? RebarShapes.HookLength(Json.Number(attrs["diameter"]) ?? def.DefaultDiameter, angle);
+                        var length = Json.Number(h["length"]) ?? RebarRuleSection.HookLength(m, Json.Number(attrs["diameter"]) ?? def.DefaultDiameter, angle);
                         hooks[end] = new Hook(angle, Math.Max(0, length), h["flip"] is JsonValue fv && fv.TryGetValue<bool>(out var f) && f).ToJson();
                     }
                     else if (ho.ContainsKey(end) && ho[end] == null) hooks[end] = new JsonObject { ["angle"] = 0 }; // none, over the shape's own

@@ -25,11 +25,13 @@ public class RebarTests
     [Fact]
     public void A_bend_follows_the_Eurocode_mandrel_and_a_hook_its_practice_length()
     {
-        // SR EN 1992-1-1 table 8.1N: a mandrel of 4Ø up to Ø16, 7Ø over; the radius on the axis is half of it.
-        Assert.Equal(0.024, RebarShapes.BendRadius(0.012), 9);
-        Assert.Equal(0.032, RebarShapes.BendRadius(0.016), 9);
-        Assert.Equal(0.063, RebarShapes.BendRadius(0.018), 9);
-        Assert.Equal(0.070, RebarShapes.BendRadius(0.020), 9);
+        // SR EN 1992-1-1 table 8.1N: a mandrel of 4Ø up to Ø16, 7Ø over; the radius on the bar's axis is the mandrel's and half the bar,
+        // (mandrel + Ø)/2: Ø12 (48 + 12)/2 = 30 mm, Ø16 (64 + 16)/2 = 40, Ø18 (126 + 18)/2 = 72, Ø20 (140 + 20)/2 = 80.
+        Assert.Equal(0.030, RebarShapes.BendRadius(0.012), 9);
+        Assert.Equal(0.040, RebarShapes.BendRadius(0.016), 9);
+        Assert.Equal(0.072, RebarShapes.BendRadius(0.018), 9);
+        Assert.Equal(0.080, RebarShapes.BendRadius(0.020), 9);
+        Assert.Equal(0.048, RebarShapes.MandrelOf(Straight(1, 0.012)), 9);
         // 12Ø up to 90°, 10Ø up to 135°, 5Ø beyond, and 50 mm at least.
         Assert.Equal(0.096, RebarShapes.HookLength(0.008, 90), 9);
         Assert.Equal(0.080, RebarShapes.HookLength(0.008, 135), 9);
@@ -58,17 +60,19 @@ public class RebarTests
         var s = new RebarSpec("stirrup", new Dictionary<string, double> { ["a"] = 0.4, ["b"] = 0.6 }, null, 0.008, null, null);
         Assert.Equal(2.16, RebarShapes.Length(s), 9);
         var segs = RebarShapes.Segments(s);
-        // Three corners and, at the fourth, each end's 135° wrap round it, all at r = 16 mm; the two tails parallel at 45° into the inside, a mandrel (2r) apart.
+        // Three corners and, at the fourth, each end's 135° wrap round it, all at r = (32 + 8)/2 = 20 mm on the axis; the two tails parallel at 45°
+        // into the inside, 2r = 40 mm apart (the mandrel and a bar: they touch).
         Assert.Equal(5, segs.Count(x => x is SegArc));
-        Assert.All(segs.OfType<SegArc>(), a => Assert.Equal(0.016, a.R, 9));
+        Assert.All(segs.OfType<SegArc>(), a => Assert.Equal(0.020, a.R, 9));
         Assert.Equal(2, segs.OfType<SegArc>().Count(a => Math.Abs(Math.Abs(a.Sweep) - 3 * Math.PI / 4) < 1e-9));
         var tails = new[] { (SegLine)segs[0], (SegLine)segs[^1] };
         Assert.All(tails, t => Assert.Equal(0.08, t.Length, 9));
         Assert.All(tails, t => Assert.Equal(-Math.PI / 4, Math.Atan2(Math.Abs(t.B.Y - t.A.Y) * -1, Math.Abs(t.B.X - t.A.X)), 9));
         var n = new Vec2(1, 1) * (1 / Math.Sqrt(2));
-        Assert.Equal(0.032, Math.Abs(Vec2.Dot(tails[0].A - tails[1].A, n)), 9);
-        // Wrapping the corner twice makes the bar a little longer than its nominal measure.
-        Assert.Equal(2.183, RebarShapes.TrueLength(s), 3);
+        Assert.Equal(0.040, Math.Abs(Vec2.Dot(tails[0].A - tails[1].A, n)), 9);
+        // Wrapping the corner twice makes the bar a little longer than its nominal measure: 2.16 + 1.42478·r, linear in r
+        // (2.1828 at the old 16 mm), 2.16 + 1.42478·0.020 = 2.1885 m.
+        Assert.Equal(2.1885, RebarShapes.TrueLength(s), 4);
         // Both tails run into the inside of the stirrup, towards its bottom right.
         var nominal = RebarShapes.Nominal(s);
         Assert.Equal(7, nominal.Count);

@@ -27,6 +27,36 @@ public class RebarAuditTests
     }
 
     [Fact]
+    public void A_packs_hook_tails_reach_the_type_stirrups_the_column_bars_and_a_new_stirrup()
+    {
+        var f = F();
+        var column = Column(f, f.Storey, 0.8, 0.8, out var type);
+        f.Run("rebar.setTypeStirrups", new JsonObject { ["id"] = type, ["enabled"] = true });
+        f.Run("rebar.setColumnBars", new JsonObject { ["id"] = type, ["enabled"] = true, ["perFace"] = 3, ["diameter"] = 0.02, ["top"] = "hooks" });
+        var before = ColumnBars.Of(f.Model, f.Model.Get(column)!)!;
+        var stirrups = TypeStirrups.Of(f.Model, f.Model.Get(column)!)!;
+        // Lapin's own: a stirrup Ø8's 135° tail 10Ø = 80 mm, a column bar Ø20's 90° tail 12Ø = 240 mm.
+        Assert.Equal(0.080, stirrups.HookTail, 9);
+        var id = (string)f.Run("rules.create", new JsonObject { ["from"] = Lapin.Platform.RulePacks.Builtin, ["name"] = "Hooks", ["activate"] = true })!["id"]!;
+        f.Run("rules.update", new JsonObject
+        {
+            ["id"] = id, ["section"] = "rebar",
+            ["values"] = new JsonObject { ["hooks"] = new JsonArray(new JsonObject { ["upTo"] = 90, ["factor"] = 15 }, new JsonObject { ["upTo"] = 135, ["factor"] = 12 }, new JsonObject { ["factor"] = 6 }), ["minHook"] = 60 },
+        });
+        // The pack's: 12Ø = 96 mm at 135°, 15Ø = 300 mm at 90° (the 800 mm column's faces let it run its whole length).
+        var laid = TypeStirrups.Of(f.Model, f.Model.Get(column)!)!;
+        Assert.Equal(0.096, laid.HookTail, 9);
+        var loop = laid.LoopsAt(laid.Stations[0])[0];
+        Assert.Equal(2 * (loop.A + loop.B) + 2 * 0.096, laid.BarLength(loop), 9);
+        var after = ColumnBars.Of(f.Model, f.Model.Get(column)!)!;
+        Assert.All(after.Lengths.Zip(before.Lengths), x => Assert.Equal(0.300 - 0.240, x.First - x.Second, 9));
+        // A new stirrup bar, born with two 135° hooks: their tails the pack's, 2·(0.4 + 0.6) + 2·0.096 = 2.192 m.
+        var view = Section(f);
+        var bar = (string)f.Run("rebar.add", new JsonObject { ["viewId"] = view, ["shape"] = "stirrup", ["at"] = new JsonArray(0, 0), ["diameter"] = 0.008 })!["id"]!;
+        Assert.Equal(2.192, RebarShapes.Length(Rebars.SpecOf(f.Model.Get(bar)!)), 9);
+    }
+
+    [Fact]
     public void Bars_on_a_deleted_view_go_with_it()
     {
         var f = F();

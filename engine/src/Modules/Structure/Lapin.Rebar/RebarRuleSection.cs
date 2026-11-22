@@ -78,8 +78,8 @@ public sealed class RebarRuleSection : IRuleSection, IRuleCheck
         return Json.Number(steps.OfType<JsonObject>().Last()["factor"]) ?? 1;
     }
 
-    /// <summary>The bend's radius on the bar's axis (m) the project's rules give a diameter (m): half the mandrel.</summary>
-    public static double BendRadius(IModelView m, double d) => Factor((JsonArray)Rules(m)["mandrel"]!, d * 1000) * d / 2;
+    /// <summary>The bend's radius on the bar's axis (m) the project's rules give a diameter (m): (mandrel + Ø)/2.</summary>
+    public static double BendRadius(IModelView m, double d) => (Factor((JsonArray)Rules(m)["mandrel"]!, d * 1000) * d + d) / 2;
 
     /// <summary>A hook's straight tail (m) the project's rules give.</summary>
     public static double HookLength(IModelView m, double d, double angle)
@@ -103,6 +103,21 @@ public sealed class RebarRuleSection : IRuleSection, IRuleCheck
         if (a["hooks"] is JsonObject ho)
             foreach (var end in new[] { "start", "end" })
                 if (ho[end] is JsonObject h && h["length"] == null && Json.Number(h["angle"]) is { } angle && angle > 0) h["length"] = Math.Round(HookLength(m, diameter, angle), 6);
+        // The hooks its shape is born with (a stirrup's two 135°, a project shape's) and the bar does not give: their tails the rules'.
+        if (RebarShapes.IsShape(shape) && RebarShapes.Def(shape).BornHooks?.Invoke(diameter) is { } born)
+        {
+            var hooks = a["hooks"] as JsonObject ?? new JsonObject();
+            var any = false;
+            foreach (var (end, hook) in new[] { ("start", born.Start), ("end", born.End) })
+            {
+                if (hook == null || hooks.ContainsKey(end)) continue;
+                var tail = HookLength(m, diameter, hook.Angle);
+                if (Math.Abs(tail - hook.Length) < 1e-9) continue;
+                hooks[end] = (hook with { Length = Math.Round(tail, 6) }).ToJson();
+                any = true;
+            }
+            if (any) a["hooks"] = hooks;
+        }
         if (shape != "polyline" && a["bendRadius"] == null && !LapinMandrel(m)) a["bendRadius"] = Math.Round(BendRadius(m, diameter), 6);
     }
 
