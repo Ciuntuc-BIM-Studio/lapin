@@ -183,6 +183,23 @@ public class TerrainMergeBoundaryTests
         Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(text, "'Lapin_EarthworkQuantities'").Count);
     }
 
+    [Theory]
+    [InlineData(2, 28, true)]     // the parcel on the larger (kept) half
+    [InlineData(30, 38, false)]   // the parcel on the smaller half, which becomes the second terrain
+    public void Splitting_a_terrain_keeps_its_parcel_whole_on_the_half_that_holds_it(double x0, double x1, bool onKept)
+    {
+        // Audit 22.11.2026 G1: the split dropped the parcel from both halves.
+        var f = F();
+        var t = Slope(f);
+        f.Run("civil.setParcel", new JsonObject { ["terrainId"] = t, ["points"] = Json((x0, 5), (x1, 5), (x1, 25), (x0, 25)) });
+        var ids = ((JsonObject)f.Run("civil.splitTerrain", new JsonObject { ["id"] = t, ["x1"] = 29, ["y1"] = -5, ["x2"] = 29, ["y2"] = 45 })!)["ids"]!.AsArray().Select(x => (string)x!).ToList();
+        var (holder, other) = onKept ? (ids[0], ids[1]) : (ids[1], ids[0]);
+        var corners = ArcOutline.CornersOf(f.Model.Get(holder)!, "parcel");
+        Assert.True(SameLoop([new(x0, 5), new(x1, 5), new(x1, 25), new(x0, 25)], corners) || SameLoop([new(x0, 25), new(x1, 25), new(x1, 5), new(x0, 5)], corners), string.Join(" ", corners));
+        Assert.Null(f.Model.Get(other)!.Attrs["parcel"]);
+        Assert.Equal((x1 - x0) * 20, f.Session.Quantities(holder).Single(q => q.Name == "Lapin_TerrainQuantities").Quantities.Single(x => x.Name == "ParcelArea").Value, 6);
+    }
+
     static double TerrainQ(Fixture f, string t, string name) =>
         f.Session.Quantities(t).Single(q => q.Name == "Lapin_TerrainQuantities").Quantities.Single(x => x.Name == name).Value;
 }

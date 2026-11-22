@@ -153,16 +153,20 @@ public static class SiteCommands
             var (rc, rr) = ArcOutline.Check(right.Corners, right.Rises, "A terrain boundary");
             // The larger half keeps the terrain.
             if (Math.Abs(Polygon2.SignedArea(rc)) > Math.Abs(Polygon2.SignedArea(lc))) (lc, lr, rc, rr) = (rc, rr, lc, lr);
-            JsonObject Half(IReadOnlyList<Vec2> bc, double[]? br)
+            // The parcel (the property line, not the ground) stays whole, on the half that holds its centre; it was
+            // dropped from both halves (audit 22.11.2026, G1).
+            var parcel = ArcOutline.CornersOf(t, "parcel");
+            var parcelInOther = parcel.Count >= 3 && Polygon2.Centroid(parcel) is var pc && !Polygon2.Contains(lc, pc) && Polygon2.Contains(rc, pc);
+            JsonObject Half(IReadOnlyList<Vec2> bc, double[]? br, bool other)
             {
                 var na = t.CloneAttrs();
-                na.Remove("parcel"); na.Remove(Terrains.ParcelArcs);
+                if (parcel.Count < 3 || parcelInOther != other) { na.Remove("parcel"); na.Remove(Terrains.ParcelArcs); }
                 na[Terrains.BoundaryKey] = Terrains.ContourJson(bc);
                 ArcOutline.Write(na, br, Terrains.BoundaryArcs);
                 return na;
             }
-            var keptAttrs = Half(lc, lr);
-            var otherAttrs = Half(rc, rr);
+            var keptAttrs = Half(lc, lr, false);
+            var otherAttrs = Half(rc, rr, true);
             // Each half keeps the cage's controls inside it.
             var allPts = Terrains.Points(t);
             Cage.Prune(keptAttrs, allPts, lc);
