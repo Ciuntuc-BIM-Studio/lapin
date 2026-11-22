@@ -141,10 +141,7 @@ public static partial class KitchenLayouts
         for (var i = 0; i < n; i++)
         {
             double ua = fa + i * uw + 0.0015, ub = fa + (i + 1) * uw - 0.0015;
-            f.Block(b, "fronts", ua, ub, 0.022, 0.04, top - wt - 0.16, top - wt - 0.003, 0.002);
-            f.Block(b, "fronts", ua, ub, 0.022, 0.04, pl + 0.003, top - wt - 0.163, 0.002);
-            var mid = (ua + ub) / 2;
-            f.Block(b, hr, mid - 0.07, mid + 0.07, 0.0, 0.022, top - wt - 0.05, top - wt - 0.038);
+            DrawerOverDoor(b, f, ua, ub, top, wt, pl, hr);
             if (i > 0) f.Line(b, "symbol", ua - 0.0015, 0, ua - 0.0015, 0.04);
         }
         f.Block(b, "top", a, e, 0, Math.Max(d, run.TopDepth), top - wt, top, 0.003);
