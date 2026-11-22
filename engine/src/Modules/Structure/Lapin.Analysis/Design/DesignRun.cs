@@ -169,7 +169,7 @@ public sealed class DesignRun
                     var column = src.Kind == "column" || vertical;
                     var (sys, sk) = SystemOf(own, k, e, cantilever, members);
                     var cm = new ConcreteMember(shape.Width, shape.Depth, l, column, c, lcrY, lcrZ, sk, sys) { LengthsSource = lengths };
-                    var (pst, pbars) = Provided(m, src.SourceId);
+                    var (pst, pbars) = Provided(m, src.SourceId, l);
                     cm = cm with { ProvidedStirrups = pst, ProvidedBars = column ? pbars : null };
                     (checks, need) = ConcreteMembers.Check(cm, sets);
                     break;
@@ -259,21 +259,19 @@ public sealed class DesignRun
         };
     }
 
-    /// <summary>What the element's type provides (the rebar module's settings on it): the stirrups' Asw/s and a column's bars.</summary>
-    static (double? Stirrups, double? Bars) Provided(IModelView m, string sourceId)
+    /// <summary>
+    /// What the element's type provides (the rebar module's settings on it, read as it lays them): the stirrups' Asw/s zone by zone
+    /// over the bar's length <paramref name="l"/>, and a column's bars.
+    /// </summary>
+    static (IReadOnlyList<StirrupZone>? Stirrups, double? Bars) Provided(IModelView m, string sourceId, double l)
     {
         if (m.RelatingOf(sourceId, IfcClass.RelDefinesByType) is not { } type) return (null, null);
-        double? st = null, bars = null;
-        if (type.Attrs["stirrups"] is JsonObject s && s["enabled"] is JsonValue ev && ev.TryGetValue<bool>(out var on) && on
-            && Json.Number(s["diameter"]) is { } d && Json.Number(s["step"]) is { } step && step > 0)
-        {
-            var loops = (string?)s["pattern"] switch { "diamond" => 2, "cross" => 3, _ => 1 };
-            st = 2 * loops * Math.PI * d * d / 4 / step;
-        }
-        if (type.Attrs["bars"] is JsonObject b && b["enabled"] is JsonValue bv && bv.TryGetValue<bool>(out var bon) && bon
-            && Json.Number(b["diameter"]) is { } bd && Json.Number(b["perFace"]) is { } pf)
-            bars = 4 * (Math.Max(2, pf) - 1) * Math.PI * bd * bd / 4;
-        return (st, bars);
+        IReadOnlyList<StirrupZone>? st = null;
+        double? bars = null;
+        if (type.Attrs[StirrupLayout.Key] is JsonObject s && StirrupLayout.From(s) is { Enabled: true } sl)
+            st = sl.Along(l).Where(z => z.Step > 0).Select(z => new StirrupZone(z.From, z.To, sl.AswS(z.Step))).ToList();
+        if (type.Attrs[ColumnBarLayout.Key] is JsonObject b && ColumnBarLayout.From(b) is { Enabled: true } bl) bars = bl.Area;
+        return (st is { Count: > 0 } ? st : null, bars);
     }
 
     /// <summary>Timber's deflections in each characteristic combination: winst, and wfin with kdef on the quasi-permanent part (2.3.2.2).</summary>

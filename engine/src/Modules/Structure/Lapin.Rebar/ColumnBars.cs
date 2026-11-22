@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
+using Lapin.Platform.Analysis;
 using Lapin.Structure;
 
 namespace Lapin.Rebar;
@@ -21,15 +22,14 @@ public sealed record ColumnBarsSpec(bool Enabled, int PerFace, double Diameter, 
     /// <summary>The type's own label style, partial, over the project's (<see cref="LabelStyle"/>).</summary>
     public JsonObject? Label { get; init; } = Label;
 
-    public static ColumnBarsSpec Default() => new(false, 3, 0.016, 1.0, 0);
+    public static ColumnBarsSpec Default() { var d = ColumnBarLayout.Default(); return new(d.Enabled, d.PerFace, d.Diameter, 1.0, 0); }
 
     public static ColumnBarsSpec? Of(Entity type) => type.Attrs[Key] is JsonObject o ? From(o) : null;
 
     public static ColumnBarsSpec From(JsonObject o)
     {
-        var d = Default();
-        return new ColumnBarsSpec(o["enabled"] is JsonValue ev && ev.TryGetValue<bool>(out var en) && en, (int)Math.Max(2, Json.Number(o["perFace"]) ?? d.PerFace),
-            Json.Number(o["diameter"]) ?? d.Diameter, Json.Number(o["lap"]) ?? d.Lap, (int)(Json.Number(o["mark"]) ?? 0), o[LabelStyle.Key] as JsonObject,
+        var (d, l) = (Default(), ColumnBarLayout.From(o));
+        return new ColumnBarsSpec(l.Enabled, l.PerFace, l.Diameter, Json.Number(o["lap"]) ?? d.Lap, (int)(Json.Number(o["mark"]) ?? 0), o[LabelStyle.Key] as JsonObject,
             (string?)o["top"] is { } top && Tops.Contains(top) ? top : d.Top);
     }
 
@@ -114,7 +114,7 @@ public static class ColumnBars
         // The top storey's bars: up to the cover under the top, then a 90° hook (12Ø) inwards, across the face the bar stands on
         // (a corner's along the width), never past the opposite bars.
         var top = height - inset;
-        var hook = RebarShapes.HookLength(spec.Diameter, 90);
+        var hook = RebarRuleSection.HookLength(m, spec.Diameter, 90);
         var tails = places.Select(p =>
         {
             var alongX = Math.Abs(p.X) / hx >= Math.Abs(p.Y) / hy - 1e-9;

@@ -1,3 +1,4 @@
+using Lapin.Analysis.Solver;
 using static Lapin.Analysis.Design.Checks;
 
 namespace Lapin.Analysis.Design;
@@ -6,15 +7,18 @@ namespace Lapin.Analysis.Design;
 /// A reinforced concrete bar for its checks (§12.3): its rectangle (<see cref="B"/> along local 3, <see cref="H"/> along local
 /// 2, the depth), its length, a beam or a column, the buckling lengths (a column's l0 about each axis: <see cref="L0Y"/> for
 /// bending about its strong axis), the span/depth system's K (Table 7.4N), and what its type provides: the stirrups' Asw/s
-/// (m²/m) and a column's bars (m²), each null when the rebar module's type settings give none.
+/// (m²/m) zone by zone along it and a column's bars (m²), each null when the rebar module's type settings give none.
 /// </summary>
 public sealed record ConcreteMember(double B, double H, double L, bool Column, ConcreteValues C, double L0Y, double L0Z, double SystemK = 1.0, string System = "simply supported")
 {
-    public double? ProvidedStirrups { get; init; }
+    public IReadOnlyList<StirrupZone>? ProvidedStirrups { get; init; }
     public double? ProvidedBars { get; init; }
     public string LengthsSource { get; init; } = "";
     public double Ac => B * H;
 }
+
+/// <summary>A stretch of a bar (m from its i end) and the Asw/s (m²/m) its type's stirrups give there.</summary>
+public sealed record StirrupZone(double From, double To, double AswS);
 
 /// <summary>What a concrete member needs: bottom and top bars (beams), the bars all round (columns), the stirrups (m², m²/m).</summary>
 public sealed record Required(double Bottom, double Top, double Total, double Stirrups, double Side = 0);
@@ -40,14 +44,66 @@ public static class ConcreteMembers
             checks.Add(new Check("concrete.deflection", "Deflection (span/depth)", $"{N} 7.4.2, eq. 7.16", actual / limit,
                 [new("L/d", actual, ""), new("limit", limit, ""), new("K", m.SystemK, ""), new("ρ", rho * 100, "%"), new("ρ0", Math.Sqrt(c.FckMpa) * 0.1, "%")],
                 $"{m.System} (Table 7.4N); without the 310/σs and long-span factors (7.17)."));
-            if (m.ProvidedStirrups is { } ps)
-                checks.Add(new Check("concrete.stirrupsProvided", "Stirrups provided", $"{N} 6.2.3", need[3] / ps, [new("Asw/s required", Cm2(need[3]), "cm²/m"), new("Asw/s provided", Cm2(ps), "cm²/m")],
-                    "From the type's stirrups (the rebar module's settings)."));
+            if (m.ProvidedStirrups is { Count: > 0 } ps) checks.Add(StirrupsProvided(m, sets, ps));
         }
         else if (m.ProvidedBars is { } pb)
             checks.Add(new Check("concrete.barsProvided", "Bars provided", $"{N} 6.1, 5.8.8", need[2] / pb, [new("As required", Cm2(need[2]), "cm²"), new("As provided", Cm2(pb), "cm²")],
                 "From the type's bars (the rebar module's settings)."));
         return (checks, new Required(need[0], need[1], need[2], need[3], need[4]));
+    }
+
+    /// <summary>
+    /// The type's stirrups against what the shear needs where each zone lies: in each zone the largest Asw/s its sections ask for
+    /// (its ends' and the stations' inside it) in any combination over the zone's own Asw/s.
+    /// </summary>
+    static Check StirrupsProvided(ConcreteMember m, IReadOnlyList<ForceSet> sets, IReadOnlyList<StirrupZone> zones)
+    {
+        var req = new double[zones.Count];
+        var gov = new ForceSet?[zones.Count];
+        foreach (var f in sets)
+        {
+            var (bottom, top) = BeamBars(m, f);
+            for (var z = 0; z < zones.Count; z++)
+            {
+                var (a, b) = (zones[z].From, zones[z].To);
+                var at = f.Sections.Where(s => s.X > a && s.X < b).Append(f.At(a)).Append(f.At(b));
+                var r = at.Max(s => StirrupNeed(m, s, bottom, top));
+                if (r > req[z] || gov[z] == null) (req[z], gov[z]) = (r, f);
+            }
+        }
+        var u = zones.Select((z, i) => z.AswS > 0 ? req[i] / z.AswS : 99).ToArray();
+        var w = Array.IndexOf(u, u.Max());
+        var values = new List<Shown>();
+        for (var i = 0; i < zones.Count; i++)
+        {
+            var label = zones.Count == 1 ? "" : $" ({F(zones[i].From, "0.##")}–{F(zones[i].To, "0.##")} m)";
+            values.Add(new($"Asw/s required{label}", double.IsFinite(req[i]) ? Cm2(req[i]) : 0, "cm²/m"));
+            values.Add(new($"Asw/s provided{label}", Cm2(zones[i].AswS), "cm²/m"));
+        }
+        return new Check("concrete.stirrupsProvided", "Stirrups provided", $"{N} 6.2.3", u[w], values,
+            "From the type's stirrups (the rebar module's settings), each zone against the shear where it lies; the zones taken over the bar's analytical length.")
+            { Combination = gov[w]?.Key, CombinationName = gov[w]?.Name, X = (zones[w].From + zones[w].To) / 2 };
+    }
+
+    /// <summary>A beam's bottom and top bars in one combination: the bending's, at least As,min.</summary>
+    static (double Bottom, double Top) BeamBars(ConcreteMember m, ForceSet f)
+    {
+        var c = m.C;
+        var d = m.H - c.Edge;
+        var asMin = ConcreteDesign.MinAs(m.B, d, c);
+        var sag = ConcreteDesign.Bending(Math.Max(0, f.Sections.Max(s => s.Mz)), m.B, d, c.Edge, c);
+        var hog = ConcreteDesign.Bending(Math.Max(0, -f.Sections.Min(s => s.Mz)), m.B, d, c.Edge, c);
+        return (Math.Max(asMin, Math.Max(sag.As, hog.As2)), Math.Max(asMin, Math.Max(hog.As, sag.As2)));
+    }
+
+    /// <summary>The stirrups (m²/m) a beam's section needs for its Vy (6.2): the minimum where VEd ≤ VRd,c; infinite past VRd,max.</summary>
+    static double StirrupNeed(ConcreteMember m, Section s, double bottom, double top)
+    {
+        var c = m.C;
+        var d = m.H - c.Edge;
+        var vEd = Math.Abs(s.Vy);
+        var (vrdc, _, _) = ConcreteDesign.VRdc(m.B, d, s.Mz >= 0 ? bottom : top, c);
+        return ConcreteDesign.Stirrups(vEd, m.B, d, c) is { } st ? (vEd <= vrdc ? st.AswSMin : st.AswS) : double.PositiveInfinity;
     }
 
     static IEnumerable<Check> Beam(ConcreteMember m, ForceSet f, double[] need)
@@ -67,9 +123,9 @@ public static class ConcreteMembers
         need[2] = Math.Max(need[2], bottom + top);
         var gov = asB >= asT ? (sag, asB, as2B, kB, zB, "bottom") : (hog, asT, as2T, kT, zT, "top");
         yield return new Check("concrete.bending", "Bending reinforcement", $"{N} 6.1, 9.2.1.1", (bottom + top) / asMax,
-            [new("MEd", gov.Item1.Mz, "kN·m"), new("K", gov.Item4, ""), new("K'", ConcreteDesign.KPrime, ""), new("z", gov.Item5, "m"), new("As bottom", Cm2(bottom), "cm²"), new("As top", Cm2(top), "cm²"),
+            [new("MEd", gov.Item1.Mz, "kN·m"), new("K", gov.Item4, ""), new("K'", c.KPrime, ""), new("z", gov.Item5, "m"), new("As bottom", Cm2(bottom), "cm²"), new("As top", Cm2(top), "cm²"),
              new("As,min", Cm2(asMin), "cm²"), new("As,max", Cm2(asMax), "cm²")],
-            (kB > ConcreteDesign.KPrime || kT > ConcreteDesign.KPrime ? "Doubly reinforced (K > K'). " : "") + "Utilisation: the bars needed over As,max = 0.04 Ac.") { X = gov.Item1.X };
+            (kB > c.KPrime || kT > c.KPrime ? "Doubly reinforced (K > K'). " : "") + "Utilisation: the bars needed over As,max = 0.04 Ac.") { X = gov.Item1.X };
         // About the weak axis (My), the same rule across the width.
         var myMax = f.MaxAbs(4);
         if (myMax > 1e-6)
@@ -87,8 +143,7 @@ public static class ConcreteMembers
         var asl = vs.Mz >= 0 ? bottom : top;
         var (vrdc, k, vmin) = ConcreteDesign.VRdc(m.B, d, asl, c);
         var st = ConcreteDesign.Stirrups(vEd, m.B, d, c);
-        var nu1 = 0.6 * (1 - c.FckMpa / 250);
-        var vMax1 = m.B * 0.9 * d * nu1 * c.Fcd / 2;
+        var vMax1 = ConcreteDesign.VRdMax(m.B, d, 1, c);
         if (st is { } s1)
         {
             var asws = vEd <= vrdc ? s1.AswSMin : s1.AswS;
@@ -167,8 +222,7 @@ public static class ConcreteMembers
         // Shear in a column: the larger of the two directions with the minimum stirrups.
         var vEd = Math.Max(f.MaxAbs(1), f.MaxAbs(2));
         var d = m.H - c.Edge;
-        var nu1 = 0.6 * (1 - c.FckMpa / 250);
-        var vMax1 = Math.Min(m.B, m.H) * 0.9 * d * nu1 * c.Fcd / 2;
+        var vMax1 = ConcreteDesign.VRdMax(Math.Min(m.B, m.H), d, 1, c);
         if (ConcreteDesign.Stirrups(vEd, Math.Min(m.B, m.H), d, c) is { } st)
         {
             need[3] = Math.Max(need[3], st.AswS);

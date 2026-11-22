@@ -19,12 +19,30 @@ public sealed record ConcreteValues(double Fck, double Fyk = 500e6, double Cover
     /// <summary>The distance from a face to the bars' axis (m): cover + stirrup + half a bar.</summary>
     public double Edge => Cover + Stirrup + Bar / 2;
     /// <summary>εyd = fyd/Es, Es = 200 GPa (3.2.7(4)).</summary>
-    public double EpsYd => Fyd / 200e6;
+    public double EpsYd => Fyd / Es;
+    /// <summary>The reinforcement's modulus Es (kN/m²), 200 GPa (3.2.7(4)).</summary>
+    public const double Es = 200e6;
+    /// <summary>The rectangular stress block's depth factor λ (3.1.7(3), eq. 3.19–3.20): 0.8 up to C50/60.</summary>
+    public double Lambda => FckMpa <= 50 ? 0.8 : 0.8 - (FckMpa - 50) / 400;
+    /// <summary>The rectangular stress block's strength factor η (3.1.7(3), eq. 3.21–3.22): 1.0 up to C50/60.</summary>
+    public double Eta => FckMpa <= 50 ? 1.0 : 1.0 - (FckMpa - 50) / 200;
+    /// <summary>The block's stress over fck: η αcc / γc (0.567 for αcc 0.85, 0.667 for αcc 1.0 with γc 1.5).</summary>
+    public double BlockRatio => Eta * AlphaCc / GammaC;
+    /// <summary>The ductility limit of a section without redistribution, xu/d ≤ 0.45 up to C50/60 (5.5(4) with δ = 1, k1 = 0.44, k2 = 1.25·(0.6 + 0.0014/εcu2)).</summary>
+    public const double XuMax = 0.45;
+    /// <summary>
+    /// K' = M/(b d² fck) at x = 0.45 d: the block λ x deep at η αcc fck/γc, its arm d − λ x/2 (0.167 with αcc 0.85 as the UK
+    /// annex has it, 0.197 with αcc 1.0).
+    /// </summary>
+    public double KPrime => BlockRatio * Lambda * XuMax * (1 - Lambda * XuMax / 2);
+    /// <summary>The lever arm z (m) at K (≤ K'), the same block: z = d [0.5 + √(0.25 − K/(2 η αcc/γc))], at most 0.95 d.</summary>
+    public double LeverArm(double k, double d) => Math.Min(0.95 * d, d * (0.5 + Math.Sqrt(Math.Max(0, 0.25 - k / (2 * BlockRatio)))));
 }
 
 /// <summary>
 /// Reinforced concrete sections after SR EN 1992-1-1 (§12.3), indicative, in the engine's units (m, kN, kN·m; areas m²):
-/// a rectangle's bending reinforcement by the rectangular stress block (singly or doubly reinforced, K' = 0.167), shear
+/// a rectangle's bending reinforcement by the rectangular stress block (singly or doubly reinforced, K' at xu/d = 0.45 from the
+/// project's αcc, γc and the block's λ, η: one concrete strength for bending, shear and columns), shear
 /// (VRd,c, the stirrups for a variable strut 1 ≤ cot θ ≤ 2.5), the minimum and maximum areas, the span/depth ratio for
 /// deflection, a column's N with biaxial bending by strain compatibility (5.39) with its minimum eccentricity and the
 /// nominal curvature's second-order moment (5.8.8), and Wood–Armer's moments for slabs.
@@ -32,7 +50,6 @@ public sealed record ConcreteValues(double Fck, double Fyk = 500e6, double Cover
 public static class ConcreteDesign
 {
     public const string Norm = "SR EN 1992-1-1";
-    public const double KPrime = 0.167;
 
     /// <summary>Bending reinforcement of a rectangle b × (d) for M ≥ 0 (kN·m): As in tension, As2 in compression (m²), K, z (m).</summary>
     public static (double As, double As2, double K, double Z) Bending(double m, double b, double d, double d2, ConcreteValues c)
@@ -41,14 +58,15 @@ public static class ConcreteDesign
         var fck = c.Fck / 1000;
         var k = m / (b * d * d * fck);
         var fyd = c.Fyd;
-        if (k <= KPrime)
+        var kp = c.KPrime;
+        if (k <= kp)
         {
-            var z = Math.Min(0.95 * d, d * (0.5 + Math.Sqrt(0.25 - k / 1.134)));
+            var z = c.LeverArm(k, d);
             return (m / (fyd * z), 0, k, z);
         }
-        var zp = d * (0.5 + Math.Sqrt(0.25 - KPrime / 1.134));
-        var as2 = (k - KPrime) * fck * b * d * d / (fyd * (d - d2));
-        return (KPrime * fck * b * d * d / (fyd * zp) + as2, as2, k, zp);
+        var zp = c.LeverArm(kp, d);
+        var as2 = (k - kp) * fck * b * d * d / (fyd * (d - d2));
+        return (kp * fck * b * d * d / (fyd * zp) + as2, as2, k, zp);
     }
 
     /// <summary>EN 1992-1-1 9.2.1.1(1), eq. 9.1N: As,min = 0.26 fctm/fyk bt d ≥ 0.0013 bt d.</summary>
@@ -73,8 +91,7 @@ public static class ConcreteDesign
     public static (double AswS, double CotTheta, double VRdMax, double AswSMin)? Stirrups(double vEd, double bw, double d, ConcreteValues c)
     {
         var z = 0.9 * d;
-        var nu1 = 0.6 * (1 - c.FckMpa / 250);
-        double VMax(double cot) => bw * z * nu1 * c.Fcd / (cot + 1 / cot);
+        double VMax(double cot) => VRdMax(bw, d, cot, c);
         var min = 0.08 * Math.Sqrt(c.FckMpa) / c.FykMpa * bw;
         if (vEd > VMax(1)) return null;
         double cotT;
@@ -82,13 +99,19 @@ public static class ConcreteDesign
         else
         {
             // VRd,max falls as cot θ grows past 1: the cot θ where VRd,max = VEd, 1/(cot + tan) = VEd/(bw z ν1 fcd).
-            var r = bw * z * nu1 * c.Fcd / vEd;
+            var r = VRdMax(bw, d, 1, c) * 2 / vEd;
             cotT = (r + Math.Sqrt(Math.Max(0, r * r - 4))) / 2;
             cotT = Math.Clamp(cotT, 1, 2.5);
         }
         var fywd = c.Fyd;
         return (Math.Max(min, vEd / (z * fywd * cotT)), cotT, VMax(cotT), min);
     }
+
+    /// <summary>ν1 = 0.6 (1 − fck/250), the strength reduction of concrete cracked in shear (6.2.3(3), eq. 6.6N).</summary>
+    public static double Nu1(ConcreteValues c) => 0.6 * (1 - c.FckMpa / 250);
+
+    /// <summary>VRd,max (kN), 6.2.3(3) eq. 6.9 with αcw = 1 and z = 0.9 d: bw z ν1 fcd / (cot θ + tan θ).</summary>
+    public static double VRdMax(double bw, double d, double cotTheta, ConcreteValues c) => bw * 0.9 * d * Nu1(c) * c.Fcd / (cotTheta + 1 / cotTheta);
 
     /// <summary>The limiting span/effective depth (7.4.2, eq. 7.16a/b) for ρ, ρ′ (ratios) and the structural system's K (Table 7.4N).</summary>
     public static double SpanDepth(double rho, double rho2, double fckMpa, double k)
@@ -104,19 +127,19 @@ public static class ConcreteDesign
     /// <summary>
     /// A rectangle b × h (bending about the axis along b, so h the lever's direction) with As/2 at each face d2 from it: the
     /// moment of resistance (kN·m) at the axial force n (kN, compression positive) by strain compatibility (εcu3 = 3.5 ‰ with
-    /// the rectangular block λ = 0.8, η = 1; above x = h the pivot εc2 = 2 ‰ at 3h/7, 6.1(5)), the steel elastic–plastic.
+    /// the rectangular block λ, η of 3.1.7(3), 0.8 and 1 up to C50/60; above x = h the pivot εc2 = 2 ‰ at 3h/7, 6.1(5)), the steel elastic–plastic.
     /// Null when n is beyond the section's axial resistance either way.
     /// </summary>
     public static double? MomentResistance(double n, double b, double h, double d2, double asTotal, ConcreteValues c)
     {
         var (fcd, fyd) = (c.Fcd, c.Fyd);
-        var es = 200e6; // kN/m²
+        var es = ConcreteValues.Es;
         var half = asTotal / 2;
         (double N, double M) At(double x)
         {
             double Eps(double y) => x <= h ? 0.0035 * (x - y) / x : 0.002 * (x - y) / (x - 3 * h / 7);
-            var block = Math.Min(0.8 * x, h);
-            var nc = block * b * fcd;
+            var block = Math.Min(c.Lambda * x, h);
+            var nc = block * b * c.Eta * fcd;
             double Sig(double e) => Math.Clamp(e * es, -fyd, fyd);
             var (s1, s2) = (Sig(Eps(d2)), Sig(Eps(h - d2)));
             var nn = nc + half * s1 + half * s2;
