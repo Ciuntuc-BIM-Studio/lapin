@@ -25,7 +25,7 @@
 // what the updater installs. scripts/publish-update.mjs signs the packages and
 // puts them there.
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveProduct } from './product.mjs';
@@ -150,7 +150,9 @@ writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   // Relative to desktop/src-tauri, with forward slashes: Tauri reads an absolute Windows path ("D:\\a\\…") as a URL with the
   // scheme "d:", embeds nothing and the installed app opens on "File not found".
   build: { frontendDist: relative(tauriDir, join(out, 'ui')).split(sep).join('/') },
-  app: { windows: [{ label: 'main', title: product.name, width: 1440, height: 900, minWidth: 1000, minHeight: 640, center: true }] },
+  // tauri.conf.json's main window with the edition's title: Tauri replaces an array whole when it merges this file, so a
+  // window written out here lost dragDropEnabled: false and Windows' window swallowed a view dragged onto a sheet (forum 206).
+  app: { windows: [{ ...JSON.parse(readFileSync(join(tauriDir, 'tauri.conf.json'), 'utf8')).app.windows[0], label: 'main', title: product.name }] },
   bundle: {
     externalBin: ['binaries/lapin-host'], resources: ['resources/**/*'],
     // An edition under its own brand carries its icons (brand.icons: a folder from the repository, with Tauri's five files), Lapin its own (tauri.conf.json's).
