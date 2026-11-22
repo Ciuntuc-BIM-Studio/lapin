@@ -23,7 +23,11 @@ function refresh(): void {
   pending = setTimeout(() => {
     pending = null;
     if (!useSession.getState().connected) return;
-    void query<LocationDto>('project.location').then((r) => useLocation.setState({ loc: r ?? {} })).catch(() => { /* no project yet */ });
+    void query<LocationDto>('project.location').then((r) => {
+      // No answer keeps the last location (the UCS must not vanish on a failed read); an equal one changes nothing.
+      if (!r || JSON.stringify(r) === JSON.stringify(useLocation.getState().loc)) return;
+      useLocation.setState({ loc: r });
+    }).catch(() => { /* no project yet */ });
   }, 30);
 }
 let watching = false;

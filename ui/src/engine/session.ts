@@ -73,7 +73,8 @@ export function applyDiff(d: Diff): void {
     for (const m of d.meshes ?? []) meshes.set(m.id, m);
   }
   useSession.setState({ nodes, relations, render, meshes, doc: d.state, version: d.version });
-  void refreshStandards();
+  // The standards live on the project node: asked again only when the diff brings it (or everything), not on every drag step.
+  if (d.reset || d.nodes.some((n) => n.type === 'IfcProject')) void refreshStandards();
   // A selection the edit took away goes too.
   const { selection: sel, selected } = useUi.getState();
   // A grid axis is selected as grid#tag: it stays while its grid does.
@@ -133,8 +134,19 @@ export async function query<T = unknown>(name: string, args: Record<string, unkn
   try { return await engine.call<T>('doc.query', { name, args }); } catch { return null; }
 }
 
-export const undo = () => engine.call('doc.undo').catch(() => undefined);
-export const redo = () => engine.call('doc.redo').catch(() => undefined);
+/** Undo or redo one step: a failure is said the way an edit's is (the session's `error`), never swallowed. */
+async function step(method: 'doc.undo' | 'doc.redo'): Promise<unknown> {
+  try {
+    const result = await engine.call(method);
+    useSession.setState({ error: null });
+    return result;
+  } catch (e) {
+    useSession.setState({ error: e instanceof Error ? e.message : String(e) });
+    return undefined;
+  }
+}
+export const undo = () => step('doc.undo');
+export const redo = () => step('doc.redo');
 
 /** The storey the plan shows and new elements go on: the chosen one, else the lowest. */
 export function activeStorey(s: SessionState = useSession.getState()): NodeDto | null {
@@ -155,6 +167,8 @@ export async function ensureStorey(): Promise<string | null> {
 /** How long the engine may be unreachable before the window says so. */
 const LOST_NOTICE_MS = 10_000;
 const LOST_NOTICE = 'The engine stopped; restarting…';
+/** Said when the transport does not retry (the engine in a worker): nothing is restarting. */
+const STOPPED_NOTICE = 'The engine stopped: reload the page to start it again.';
 /** An edit past the usual wait: the engine still works on it, and its result shows when it lands. */
 export const STILL_WORKING = 'Still working on the last edit…';
 
@@ -166,9 +180,12 @@ export async function connect(): Promise<void> {
   engine.onEvent('ended', (d) => useShare.setState({ ended: String(d) }));
   setPresenceSender((p) => engine.notify('presence.update', p as Record<string, unknown>));
   // An edit is waited for while the engine is connected (it finishes it whatever the window does): past the usual wait, said so.
+  // Slow edits can overlap: the notice goes only when the last of them has landed.
+  let slowCalls = 0;
   engine.onSlow((_method, slow) => {
+    slowCalls = Math.max(0, slowCalls + (slow ? 1 : -1));
     if (slow) notify(STILL_WORKING);
-    else if (useUi.getState().notice === STILL_WORKING) notify(null);
+    else if (slowCalls === 0 && useUi.getState().notice === STILL_WORKING) notify(null);
   });
   let lost: ReturnType<typeof setTimeout> | undefined;
   engine.onStatus((connected) => {
@@ -180,11 +197,17 @@ export async function connect(): Promise<void> {
       if (!guestOf && useUi.getState().windowRole === 'main') engine.notify('presence.hello', { name: savedName() });
       void resync();
     } else {
-      lost = setTimeout(() => { if (!useSession.getState().engineProblem) useSession.setState({ engineProblem: LOST_NOTICE }); }, LOST_NOTICE_MS);
+      lost = setTimeout(() => { if (!useSession.getState().engineProblem) useSession.setState({ engineProblem: engine.retries ? LOST_NOTICE : STOPPED_NOTICE }); }, LOST_NOTICE_MS);
     }
   });
   void watchDesktopEngine();
-  await engine.start();
+  try {
+    await engine.start();
+  } catch (e) {
+    // A start that cannot be retried (the engine in a worker) fails for good: the real reason is shown, not "restarting…".
+    clearTimeout(lost);
+    useSession.setState({ engineProblem: e instanceof Error ? e.message : String(e) });
+  }
 }
 
 /** In the desktop app the shell restarts a stopped engine and says how it went. */
