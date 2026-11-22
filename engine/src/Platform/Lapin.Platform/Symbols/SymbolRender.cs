@@ -20,13 +20,13 @@ public sealed record SymText(Vec2 At, string Text, double Height, double Angle, 
 /// <summary>A symbol drawn in its own mm, its texts filled: what an instance lays where it stands.</summary>
 public sealed record SymbolDrawing(List<SymStroke> Strokes, List<SymFill> Fills, List<SymHatch> Hatches, List<SymText> Texts)
 {
-    /// <summary>The box of what it draws (mm), texts by their anchors and an estimate of their width.</summary>
+    /// <summary>The box of what it draws (mm), texts by their anchors and their measured width (TextMeasure).</summary>
     public (Vec2 Min, Vec2 Max) Bounds()
     {
         var pts = Strokes.SelectMany(s => s.Pts).Concat(Fills.SelectMany(f => f.Loops.SelectMany(l => l))).Concat(Hatches.SelectMany(h => h.Loops.SelectMany(l => l))).ToList();
         foreach (var t in Texts)
         {
-            var w = t.Text.Length * t.Height * 0.6;
+            var w = TextMeasure.Width(t.Text, t.Height, t.Font, t.Bold, t.Italic);
             var a = t.Angle * Math.PI / 180;
             var (u, n) = (new Vec2(Math.Cos(a), Math.Sin(a)), new Vec2(-Math.Sin(a), Math.Cos(a)));
             var x0 = t.Anchor == "end" ? -w : t.Anchor == "middle" ? -w / 2 : 0;
@@ -168,7 +168,8 @@ public static class SymbolRender
                     if (fields != null) raw = fields(raw);
                     var value = LiveText.Fill(raw, resolve, unknown);
                     var style = (string?)item["style"] is { Length: > 0 } sid ? Standards.TextOf(book, sid) : null;
-                    var height = Json.Number(item["h"]) ?? style?.Height ?? 2.5;
+                    // No style and no height of its own: the project's Standard text style's (2.5 mm unless the project changed it).
+                    var height = Json.Number(item["h"]) ?? style?.Height ?? Standards.TextOf(book, Standards.Standard).Height;
                     var bold = item["bold"] is JsonValue b ? b.TryGetValue<bool>(out var bb) && bb : style?.Bold ?? false;
                     var italic = item["italic"] is JsonValue it ? it.TryGetValue<bool>(out var ii) && ii : style?.Italic ?? false;
                     var font = (string?)item["font"] ?? style?.Font ?? "sans";
@@ -180,7 +181,7 @@ public static class SymbolRender
                     var down = new Vec2(Math.Sin(a), -Math.Cos(a));
                     for (var r = 0; r < rows.Length; r++)
                         if (rows[r].Length > 0)
-                            o.Texts.Add(new SymText(P(item["at"]) + down * (r * height * 1.4), rows[r], height, angle, anchor, baseline, bold, font, italic, (string?)item["color"] ?? style?.Color, alpha));
+                            o.Texts.Add(new SymText(P(item["at"]) + down * (r * height * TextMeasure.LinePitch), rows[r], height, angle, anchor, baseline, bold, font, italic, (string?)item["color"] ?? style?.Color, alpha));
                     break;
                 }
             }
@@ -245,7 +246,7 @@ public static class SymbolRender
             var (at, angle, anchor, height) = LayText(t, x);
             mk.Text(new PenText(at, t.Text, height, angle, anchor, t.Baseline, t.Bold, t.Font, t.Italic), Seen(t.Color ?? color, t.Alpha));
             // What a click on the text hits: its box (never drawn).
-            var w = Math.Max(1, t.Text.Length) * height * 0.6 * paperMm;
+            var w = Math.Max(TextMeasure.Width(t.Text, height, t.Font, t.Bold, t.Italic), TextMeasure.Width("x", height)) * paperMm;
             var hh = height * paperMm;
             var r = angle * Math.PI / 180;
             var (u, n) = (new Vec2(Math.Cos(r), Math.Sin(r)), new Vec2(-Math.Sin(r), Math.Cos(r)));

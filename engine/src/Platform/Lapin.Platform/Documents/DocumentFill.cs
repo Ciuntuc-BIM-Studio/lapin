@@ -28,7 +28,7 @@ public static class DocumentFill
     public static DocFormat FormatOf(IModelView m, Entity doc)
     {
         var book = DraftingResources.Book(m);
-        return new((string?)doc.Str("lang") is { Length: > 0 } l ? l : "ro", book.Units, book.AreaRounding);
+        return new((string?)doc.Str("lang") is { Length: > 0 } l ? l : "ro", book.Units, book.AreaRounding) { DateFormat = book.DateFormat, Book = book };
     }
 
     /// <summary>Every field the product's modules give, by key (the first module to give one wins), with its label.</summary>

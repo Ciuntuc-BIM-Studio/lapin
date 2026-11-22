@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
+using Lapin.Drawing;
 using Lapin.Drawing.Export;
 using Lapin.Drawing.Views;
 using Lapin.Model;
@@ -295,7 +296,7 @@ public static class Sheets
             var rule = new Pen("TITLE", "#000000", RulePen, null, null) { Viewport = pl.Viewport.Id };
             var name = pl.Boundary != null ? $"{pl.View.Name} · {pl.Boundary.Name}" : pl.View.Name;
             title.Texts.Add(new PenText(new Vec2(pl.X0, y), name, 3.5, Anchor: "start", Bold: true));
-            var nameWidth = PdfWriter.Advance(name, true) * 3.5 / 0.718;
+            var nameWidth = TextMeasure.Width(name, 3.5, bold: true);
             rule.Segments.Add((new(pl.X0, y + 1.5), new(pl.X0 + Math.Max(nameWidth, 30) + 4, y + 1.5)));
             title.Texts.Add(new PenText(new Vec2(pl.X0 + nameWidth + 4, y), $"1:{pl.Drawing.Scale:0}", 2.5, Anchor: "start"));
             pens.AddRange([rule, title]);
@@ -338,7 +339,7 @@ public static class Sheets
         {
             ("NUMBER", sheet.Str("number") ?? ""),
             ("SCALE", scales.Count == 0 ? "—" : string.Join(", ", scales)),
-            ("DATE", Field("date", DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture))),
+            ("DATE", Field("date", DrawingDates.Format(DraftingResources.Book(q.Model), DateTime.Now))),
             // Who drew and checked it: the sheet's own, else the project's information (Manage → Project information…).
             ("DRAWN BY", Field("drawnBy", Documents.ProjectInfo.Get(q.Model, "author") ?? "")),
             ("CHECKED BY", Field("checkedBy", Documents.ProjectInfo.Get(q.Model, "checkedBy") ?? "")),
@@ -356,13 +357,13 @@ public static class Sheets
         return new PaperPage(W, H, pens, sheet.Name, DraftingResources.Book(q.Model).LineCap);
     }
 
-    /// <summary>The issues a sheet went out in, oldest first, with the one being made: revision, date (dd.MM.yyyy), status, the issue's name.</summary>
+    /// <summary>The issues a sheet went out in, oldest first, with the one being made: revision, date (the project's format, DrawingDates), status, the issue's name.</summary>
     public static List<(string Revision, string Date, string Status, string Name)> RevisionRows(IModelView m, Entity sheet, Issuing? issuing)
     {
         var issues = Cde.CdeIssues.OfSheet(m, sheet.Id).Select(i => (i.Revision, i.At, i.Status, i.Name)).ToList();
         if (issuing != null) issues.Add((issuing.Revision, issuing.At, issuing.Status, issuing.Name));
         return [.. issues.Select(it => (it.Revision,
-            DateTime.TryParse(it.At, CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out var d) ? d.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture) : it.At,
+            DateTime.TryParse(it.At, CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out var d) ? DrawingDates.Format(DraftingResources.Book(m), d) : it.At,
             it.Status, it.Name))];
     }
 

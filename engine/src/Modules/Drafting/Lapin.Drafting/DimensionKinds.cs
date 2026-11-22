@@ -31,10 +31,14 @@ public static class DimensionKinds
     public static readonly string[] Kinds = ["angular", "radial", "diameter", "arc", "slope", "level", "ordinate", "coordinate"];
     public static readonly string[] CoordinateSystems = ["map", "project", "internal"];
 
-    /// <summary>A spot coordinate's two lines (metres, three decimals): E and N on the map, X and Y from the base point or the plan's origin.</summary>
-    public static (string First, string Second) CoordinateText(IModelView m, Vec2 p, string? system)
+    /// <summary>
+    /// A spot coordinate's two lines: E and N on the map, X and Y from the base point or the plan's origin. In the style's
+    /// <paramref name="unit"/> when it is imperial (feet and inches, or inches, to 1/16"); else in metres with three decimals,
+    /// as a survey writes coordinates whatever unit the lengths are dimensioned in.
+    /// </summary>
+    public static (string First, string Second) CoordinateText(IModelView m, Vec2 p, string? system, string unit = "m")
     {
-        static string F(double v) => v.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture);
+        string F(double v) => Standards.IsImperial(unit) ? Standards.FormatImperial(v, unit == "ft-in", 2) : v.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture);
         switch (system)
         {
             case "map" when Location.Survey(m) != null:
@@ -166,18 +170,27 @@ public static class DimensionKinds
         return Standards.FormatLevel(value, decimals, zeros);
     }
 
-    /// <summary>A slope as written: 12.5 %, 30.0°, 1:8.</summary>
-    public static string FormatSlope(double ratio, string format)
+    /// <summary>
+    /// A slope as written: 12.5 %, 30.0°, 1:8; with the style's <paramref name="precision"/> (0–6 decimals) when it gives one,
+    /// else (−1) one decimal for a percentage and an angle, up to one for a ratio, as before.
+    /// </summary>
+    public static string FormatSlope(double ratio, string format, int precision = -1)
     {
         if (double.IsInfinity(ratio)) return "∞";
         var f = format == "auto" ? (ratio < 0.15 ? "%" : "deg") : format;
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        string N(double v, string usual) => v.ToString(precision >= 0 ? "F" + Math.Min(precision, 6) : usual, inv);
         return f switch
         {
-            "deg" => $"{Math.Atan(ratio) * 180 / Math.PI:0.0}°",
-            "ratio" => ratio < 1e-9 ? "0" : $"1:{1 / ratio:0.#}",
-            _ => $"{ratio * 100:0.0} %",
+            "deg" => $"{N(Math.Atan(ratio) * 180 / Math.PI, "0.0")}°",
+            "ratio" => ratio < 1e-9 ? "0" : $"1:{N(1 / ratio, "0.#")}",
+            _ => $"{N(ratio * 100, "0.0")} %",
         };
     }
+
+    /// <summary>An angle as written: the style's <paramref name="precision"/> (0–6 decimals) when it gives one, else (−1) up to one decimal, as before.</summary>
+    public static string FormatAngle(double degrees, int precision = -1) =>
+        degrees.ToString(precision >= 0 ? "F" + Math.Min(precision, 6) : "0.#", System.Globalization.CultureInfo.InvariantCulture) + "°";
 
     public static IEnumerable<ViewMark> Marks(ViewContext c)
     {
@@ -199,17 +212,8 @@ public static class DimensionKinds
             var mk = new ViewMark(dim.Id);
             void Label(Vec2 at, string s, double angleDeg = 0, string anchor = "middle", string baseline = "bottom") =>
                 mk.Text(new PenText(at, dim.Str("text") is { Length: > 0 } over ? over : s, text.Height, -Standards.ReadableDeg(-angleDeg), anchor, baseline, text.Bold, text.Font, text.Italic), textColor);
-            void Arrow(Vec2 tip, Vec2 dir)
-            {
-                var s = style.ArrowSize * mm;
-                var n = dir.Perp;
-                switch (style.Arrow)
-                {
-                    case "tick": { var t = (dir + n).Normalized() * (s / 2); mk.Line(tip - t, tip + t, "DIMENSION", Pens.Default.Seen, lineColor); break; }
-                    case "dot": mk.Polyline(ViewMark.Circle(tip, s / 4, 12), true, "DIMENSION", Pens.Default.Seen, lineColor); break;
-                    default: mk.Line(tip, tip - dir * s + n * (s * 0.3), "DIMENSION", w, lineColor).Line(tip, tip - dir * s - n * (s * 0.3), "DIMENSION", w, lineColor); break;
-                }
-            }
+            // The terminator pointing along dir at its tip (a string's own, DimArrow): its barbs back along it, its tick leaning 45°; "none" draws none.
+            void Arrow(Vec2 tip, Vec2 dir) => DimArrow.Draw(mk, style, mm, tip, -dir, -dir.Perp, w, lineColor);
             // Where a radial extension line starts: from the gap (<paramref name="gapStart"/>), or a fixed length back from the
             // dimension line at <paramref name="reach"/> along the ray, never nearer the centre than the gap (issue #66).
             Vec2 Fixed(Vec2 centre, Vec2 ray, double reach, Vec2 gapStart, double from) =>
@@ -227,7 +231,8 @@ public static class DimensionKinds
                     // Run from the ray that makes the measured sector counter-clockwise.
                     var ccwFromU = (((a1 - a0) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
                     var start = Math.Abs(ccwFromU - sweep) < 1e-6 ? a0 : a1;
-                    var n = Math.Max(8, (int)Math.Ceiling(sweep / (Math.PI / 36)));
+                    // By the one chord rule (Lapin.Geometry/Chords), at least 8 pieces.
+                    var n = Chords.Count(r, sweep, 8);
                     var pts = Enumerable.Range(0, n + 1).Select(i => cc + new Vec2(Math.Cos(start + sweep * i / n), Math.Sin(start + sweep * i / n)) * r).ToList();
                     mk.Polyline(pts, false, "DIMENSION", w, lineColor, lineDash);
                     // Extension lines along the rays out to the arc (from the gap, or a fixed length back from the arc), unless left out.
@@ -238,7 +243,7 @@ public static class DimensionKinds
                     Arrow(pts[^1], (pts[^1] - pts[^2]).Normalized());
                     var mid = start + sweep / 2;
                     var tat = cc + new Vec2(Math.Cos(mid), Math.Sin(mid)) * (r + style.TextGap * mm);
-                    Label(tat, $"{value:0.#}°", mid * 180 / Math.PI - 90);
+                    Label(tat, FormatAngle(value, style.Precision), mid * 180 / Math.PI - 90);
                     mk.Snaps.AddRange([cc, pts[0], pts[^1]]);
                     break;
                 }
@@ -268,7 +273,7 @@ public static class DimensionKinds
                     var (centre, r, s0, sw) = round is { Arc: { } arc } ? (arc.C, arc.R, arc.Start, arc.Sweep) : (cc, dim.Num("r"), dim.Num("start"), dim.Num("sweep"));
                     if (r < 1e-9 || Math.Abs(sw) < 1e-9) break;
                     var off = Math.Max((at - centre).Length, r + 4 * mm);
-                    var n = Math.Max(8, (int)Math.Ceiling(Math.Abs(sw) / (Math.PI / 36)));
+                    var n = Chords.Count(off, sw, 8);
                     var pts = Enumerable.Range(0, n + 1).Select(i => centre + new Vec2(Math.Cos(s0 + sw * i / n), Math.Sin(s0 + sw * i / n)) * off).ToList();
                     mk.Polyline(pts, false, "DIMENSION", w, lineColor, lineDash);
                     foreach (var (k, t) in new[] { (0, s0), (1, s0 + sw) })
@@ -296,7 +301,7 @@ public static class DimensionKinds
                     var (p, q) = (mid - down * (len / 2) + lift, mid + down * (len / 2) + lift);
                     mk.Line(p, q, "DIMENSION", w, lineColor);
                     Arrow(q, down);
-                    Label(mid + lift + n * (style.TextGap * mm), FormatSlope(value, dim.Str("format") ?? "auto"), Math.Atan2(u.Y, u.X) * 180 / Math.PI);
+                    Label(mid + lift + n * (style.TextGap * mm), FormatSlope(value, dim.Str("format") ?? "auto", style.Precision), Math.Atan2(u.Y, u.X) * 180 / Math.PI);
                     mk.Snaps.AddRange([a, b]);
                     break;
                 }
@@ -318,9 +323,9 @@ public static class DimensionKinds
                     var r0 = 1.2 * mm;
                     mk.Polyline(ViewMark.Circle(a, r0, 16), true, "DIMENSION", w, lineColor);
                     mk.Line(a - new Vec2(r0 * 1.6, 0), a + new Vec2(r0 * 1.6, 0), "DIMENSION", w, lineColor).Line(a - new Vec2(0, r0 * 1.6), a + new Vec2(0, r0 * 1.6), "DIMENSION", w, lineColor);
-                    var (l1, l2) = CoordinateText(c.Model, a, dim.Str("system"));
+                    var (l1, l2) = CoordinateText(c.Model, a, dim.Str("system"), style.Unit);
                     var side = at.X >= a.X ? 1 : -1;
-                    var shoulder = Math.Max(l1.Length, l2.Length) * text.Height * 0.62 * mm;
+                    var shoulder = Math.Max(TextMeasure.Width(l1, text), TextMeasure.Width(l2, text)) * mm;
                     var dir = at - a;
                     if (dir.Length > r0) mk.Line(a + dir.Normalized() * r0, at, "DIMENSION", w, lineColor);
                     var end = at + new Vec2(side * shoulder, 0);

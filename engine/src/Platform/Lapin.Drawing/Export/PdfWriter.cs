@@ -130,11 +130,12 @@ public static class PdfWriter
     static void Text(StringBuilder c, PenText t, Func<double, string> X, Func<double, string> Y)
     {
         // The cap height is the text's height (paper mm): Helvetica's is 0.718 em.
-        var size = t.Height / 0.718;
+        var size = t.Height / TextMeasure.CapHeight;
         var times = t.Font == "times";
         // Greek letters (λ, μ, ρ of a build-up tag) are the Symbol font's: the text in runs, each in its font.
         var runs = Runs(t.Text);
-        var width = runs.Sum(r => r.Greek ? r.Text.Sum(ch => GreekWidth(ch)) : times ? Documents.TimesMetrics.Advance(r.Text, t.Bold) : Advance(r.Text, t.Bold)) * size;
+        // Centred and end-anchored texts placed by the one measure every box, column and wrap uses (Lapin.Drawing.TextMeasure).
+        var width = TextMeasure.Width(t.Text, t.Height, t.Font, t.Bold, t.Italic);
         var rad = t.Angle * Math.PI / 180;   // counter-clockwise on paper
         double cos = Math.Cos(rad), sin = Math.Sin(rad);
         var ox = t.Anchor switch { "middle" => -width / 2, "end" => -width, _ => 0 };
@@ -156,19 +157,6 @@ public static class PdfWriter
         c.Append(" ET\n");
     }
 
-    /// <summary>Helvetica's advance widths (em) for the common letters, an average for the rest.</summary>
-    public static double Advance(string s, bool bold)
-    {
-        double w = 0;
-        foreach (var ch in s)
-            w += ch switch
-            {
-                ' ' => 0.278, '.' or ',' or ':' or ';' or '!' or 'i' or 'j' or 'l' or 'I' or '|' => 0.24, 'f' or 't' or 'r' => 0.32,
-                'm' or 'M' or 'W' or 'w' => 0.85, >= '0' and <= '9' => 0.556, >= 'A' and <= 'Z' => 0.68, '-' or '−' => 0.333, _ => 0.53,
-            };
-        return w * (bold ? 1.06 : 1);
-    }
-
     /// <summary>Text in WinAnsi, the Romanian letters it lacks put in its unused codes (the font's /Differences names their glyphs).</summary>
     static readonly Dictionary<char, int> Extra = new()
     {
@@ -186,7 +174,8 @@ public static class PdfWriter
         ['Δ'] = ('D', 0.612), ['Σ'] = ('S', 0.592), ['Φ'] = ('F', 0.763), ['Ω'] = ('W', 0.768),
     };
 
-    static double GreekWidth(char ch) => Greek.TryGetValue(ch, out var g) ? g.Width : 0.55;
+    /// <summary>A Greek letter's width (em) in the Symbol font the PDF prints it in; null for any other letter.</summary>
+    internal static double? GreekWidth(char ch) => Greek.TryGetValue(ch, out var g) ? g.Width : null;
 
     /// <summary>A text in runs: those the text font prints, and those of Greek letters the Symbol font prints.</summary>
     static List<(string Text, bool Greek)> Runs(string s)

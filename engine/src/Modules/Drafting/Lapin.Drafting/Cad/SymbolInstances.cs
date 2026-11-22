@@ -311,7 +311,7 @@ public static class SymbolInstances
         {
             var (p, a, anchor, height) = SymbolRender.LayText(t, x);
             // A drafted text hangs from its start, on its baseline: an end or a middle one moved back along it.
-            var w = t.Text.Length * height * 0.6 * mm;
+            var w = TextMeasure.Width(t.Text, height, t.Font, t.Bold, t.Italic) * mm;
             var r = a * Math.PI / 180;
             var u = new Vec2(Math.Cos(r), Math.Sin(r));
             var n = new Vec2(-Math.Sin(r), Math.Cos(r));

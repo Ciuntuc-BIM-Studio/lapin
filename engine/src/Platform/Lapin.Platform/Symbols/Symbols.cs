@@ -118,7 +118,7 @@ public static class Symbols
                 case "system":
                     return k switch
                     {
-                        "printDate" => (true, DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)),
+                        "printDate" => (true, DrawingDates.Format(DraftingResources.Book(m), DateTime.Now)),
                         "app" => (true, "Lapin"),
                         _ => (false, null),
                     };
@@ -232,7 +232,7 @@ public static class Symbols
         {
             var pens = SheetPensOf(q, e);
             var pts = pens.SelectMany(p => p.Segments.SelectMany(s => new[] { s.A, s.B }).Concat(p.Loops.SelectMany(l => l))).ToList();
-            foreach (var t in pens.SelectMany(p => p.Texts)) { var w = t.Text.Length * t.Height * 0.6; pts.AddRange([t.At - new Vec2(w, t.Height), t.At + new Vec2(w, t.Height)]); }
+            foreach (var t in pens.SelectMany(p => p.Texts)) { var w = TextMeasure.Width(t.Text, t.Height, t.Font, t.Bold, t.Italic); pts.AddRange([t.At - new Vec2(w, t.Height), t.At + new Vec2(w, t.Height)]); }
             var (at, _, _, _, _) = Pose(e);
             pts.Add(at);
             var (x0, y0, x1, y1) = (pts.Min(p => p.X), pts.Min(p => p.Y), pts.Max(p => p.X), pts.Max(p => p.Y));
@@ -255,7 +255,7 @@ public static class Symbols
         var pts = pens.SelectMany(p => p.Segments.SelectMany(s => new[] { s.A, s.B }).Concat(p.Loops.SelectMany(l => l))).ToList();
         foreach (var t in pens.SelectMany(p => p.Texts))
         {
-            var w = t.Text.Length * t.Height * 0.6;
+            var w = TextMeasure.Width(t.Text, t.Height, t.Font, t.Bold, t.Italic);
             pts.AddRange([t.At - new Vec2(w, t.Height), t.At + new Vec2(w, t.Height)]);
         }
         pts.Add(default);

@@ -899,7 +899,7 @@ public static class DraftingResources
             return null;
         });
 
-        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), whether values that do not fit are moved clear of their neighbours (dimAutoText) and past how many paper mm they take a leader (dimTextLeader), the decimals and trailing zeros levels are written with (levelDecimals 0–4, levelZeros project, keep or suppress), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both).
+        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), whether values that do not fit are moved clear of their neighbours (dimAutoText) and past how many paper mm they take a leader (dimTextLeader), the decimals and trailing zeros levels are written with (levelDecimals 0–4, levelZeros project, keep or suppress), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both), how dates are written (dateFormat).
         r.Command("standards.options", "Change drafting standards", (ctx, a) =>
         {
             var raw = Standards.ToJson(Book(ctx.Model));
@@ -934,6 +934,12 @@ public static class DraftingResources
             {
                 if (a["levelZeros"] is null) raw.Remove("levelZeros");
                 else raw["levelZeros"] = (string?)a["levelZeros"] is { } lz && Standards.ZeroChoices.Contains(lz) ? lz : throw new CommandException("A level's trailing zeros are as the project's, kept or suppressed (project, keep, suppress).");
+            }
+            // How drawings and documents write a date (audit 22.11.2026): dd.MM.yyyy, yyyy-MM-dd, dd/MM/yyyy, MM/dd/yyyy; null: dd.MM.yyyy (documents by their language).
+            if (a.ContainsKey("dateFormat"))
+            {
+                if (a["dateFormat"] is null) raw.Remove("dateFormat");
+                else raw["dateFormat"] = DrawingDates.Of(a["dateFormat"]) ?? throw new CommandException($"A date is written {string.Join(", ", DrawingDates.Formats)}.");
             }
             // The section and elevation markers' symbol size and text height (paper mm, decision 455); null: the defaults.
             void Mark(string key, double min, double max, string what)

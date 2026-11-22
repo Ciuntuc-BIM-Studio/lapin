@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
+using Lapin.Drawing;
 using Lapin.Drawing.Hatch;
 using Lapin.Geometry;
 using Lapin.Model;
@@ -194,12 +195,13 @@ public static class ItemBoards
 
     /// <summary>
     /// Where a text item's drafted text starts (a drafted text hangs from its start, on its baseline): an item's middle or end
-    /// anchor moved back along it, by the width its characters take (0.6 of the height each, as a placed symbol's explode reckons).
+    /// anchor moved back along it, by its measured width (<see cref="TextMeasure"/>, as a placed symbol's explode reckons; the drafted
+    /// text is the Standard style's, upright and not bold).
     /// </summary>
     static Vec2 TextStart(JsonObject item, string text, double h, double angle)
     {
         var (u, n) = Axes(angle);
-        var w = text.Length * h * 0.6 * Mm;
+        var w = TextMeasure.Width(text, h) * Mm;
         var at = P(item["at"]);
         return at - u * ((string?)item["align"] switch { "end" => w, "middle" => w / 2, _ => 0 }) - n * ((string?)item["valign"] == "middle" ? h * Mm / 2 : 0);
     }
@@ -295,7 +297,7 @@ public static class ItemBoards
             var h = e.NumOrNull("textHeight") ?? Json.Number(item["h"]) ?? TextHeight;
             var angle = e.Num("angle");
             var (u, n) = Axes(angle);
-            var w = text.Length * h * 0.6 * Mm;
+            var w = TextMeasure.Width(text, h) * Mm;
             var start = Args.PointOf(e.Attrs["at"]);
             var at = start + u * ((string?)item["align"] switch { "end" => w, "middle" => w / 2, _ => 0 }) + n * ((string?)item["valign"] == "middle" ? h * Mm / 2 : 0);
             o["at"] = Pt(at); o["text"] = text; o["angle"] = Math.Round(angle, 6);

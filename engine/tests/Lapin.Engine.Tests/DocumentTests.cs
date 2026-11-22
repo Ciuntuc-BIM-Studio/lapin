@@ -119,7 +119,8 @@ public sealed class DocumentTests : IDisposable
         Assert.Equal("8,45 m", DocNumbers.Length(8.449, Ro));
         Assert.Equal("±0,00", DocNumbers.Level(0, Ro));
         Assert.Equal("+3,00", DocNumbers.Level(3, Ro));
-        Assert.Equal("-1.50", DocNumbers.Level(-1.5, En));
+        // As the drawings write it (Standards.FormatLevel, audit 22.11.2026): a true minus; only the decimal separator is the language's.
+        Assert.Equal("\u22121.50", DocNumbers.Level(-1.5, En));
         Assert.Equal("25 cm", DocNumbers.Thickness(0.25, Ro));
         Assert.Equal("2,5 cm", DocNumbers.Thickness(0.025, Ro));
         Assert.Equal("8 mm", DocNumbers.Thickness(0.008, Ro));
@@ -187,7 +188,8 @@ public sealed class DocumentTests : IDisposable
 
         // The storeys repeated bottom up, each with its rooms (where: the storey's id), numbered in the repeat.
         var headings = d.Blocks.OfType<DocHeading>().Where(h => h.Level == 2).Select(h => Text(h.Runs)).ToList();
-        Assert.Equal(["Subsol (-3,00)", "Parter (±0,00)", "Etaj 1 (+3,00)", "Mansardă (+6,00)"], headings);
+        // Their levels as the drawings write them: a true minus (audit 22.11.2026).
+        Assert.Equal(["Subsol (\u22123,00)", "Parter (±0,00)", "Etaj 1 (+3,00)", "Mansardă (+6,00)"], headings);
         var afterGround = d.Blocks.SkipWhile(b => b is not DocHeading { Level: 2 } h || !Text(h.Runs).StartsWith("Parter")).Skip(1).TakeWhile(b => b is DocParagraph).Select(b => Text(((DocParagraph)b).Runs)).ToList();
         Assert.Equal(2, afterGround.Count);
         Assert.StartsWith("1. ", afterGround[0]);

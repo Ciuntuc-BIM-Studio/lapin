@@ -127,7 +127,7 @@ public static class CdeIssue
 
         // The transmittal and the manifest, named as an information exchange of this issue's number.
         var naming = CdeHooks.Naming?.Invoke(CdeNaming.Of(m)) ?? CdeNaming.Of(m);
-        var header = new CdeTransmittal.Header(Sheets.ProjectName(q), name, number, DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), revision, status, container, note, naming.Originator);
+        var header = new CdeTransmittal.Header(Sheets.ProjectName(q), name, number, Lapin.Drawing.DrawingDates.Format(DraftingResources.Book(m), DateTime.Now), revision, status, container, note, naming.Originator);
         var exchange = naming.ForTransmittal(number);
         var transmittalPdf = CdeNaming.WithRevision(exchange, status, revision, "pdf");
         Write(transmittalPdf, CdeTransmittal.Pdf(header, rows), "pdf");

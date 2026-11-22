@@ -33,18 +33,27 @@ public static class DocNumbers
     /// <summary>A thickness (m) as a build-up names it: whole centimetres (half ones kept), millimetres under a centimetre.</summary>
     public static string Thickness(double m, DocFormat f)
     {
-        if (Imperial(f)) return Number(m / 0.0254, f, 1).TrimEnd('0').TrimEnd(',', '.') + " in";
+        // Its trailing zeros dropped (2.0 → 2), but a thickness under 0.05 in is "0", not nothing.
+        if (Imperial(f)) return (Number(m / 0.0254, f, 1).TrimEnd('0').TrimEnd(',', '.') is { Length: > 0 } inches ? inches : "0") + " in";
         var cm = m * 100;
         if (cm < 1 - 1e-9) return Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture) + " mm";
         return (Math.Abs(cm - Math.Round(cm)) < 1e-6 ? Number(cm, f, 0) : Number(cm, f, 1)) + " cm";
     }
 
-    /// <summary>A level from ±0.00, signed: ±0,00, +3,00, -1,50 (m).</summary>
-    public static string Level(double z, DocFormat f) => Math.Abs(z) < 0.005 ? "±" + Number(0, f) : (z > 0 ? "+" : "") + Number(z, f);
+    /// <summary>
+    /// A level as the drawings write it (<see cref="Lapin.Drawing.Standards.FormatLevel(double, Lapin.Drawing.StyleBook, bool)"/>:
+    /// the project's decimals and zeros, a true minus, feet and inches in an imperial project), its decimal point the document's
+    /// language's: ±0,00, +3,00, −1,50 (m) in Romanian.
+    /// </summary>
+    public static string Level(double z, DocFormat f)
+    {
+        var text = f.Book is { } book ? Lapin.Drawing.Standards.FormatLevel(z, book) : Lapin.Drawing.Standards.FormatLevel(z, f.Units);
+        return text.Contains('"') ? text : text.Replace(".", FormatOf(f).NumberDecimalSeparator);
+    }
 
-    /// <summary>A date: 05.11.2026 in Romanian, 2026-11-05 otherwise.</summary>
+    /// <summary>A date in the project's format as its title blocks write it (<see cref="Lapin.Drawing.DrawingDates"/>); without one, 05.11.2026 in Romanian, 2026-11-05 otherwise.</summary>
     public static string Date(DateTime d, DocFormat f) =>
-        f.Lang.StartsWith("ro", StringComparison.OrdinalIgnoreCase) ? d.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture) : d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        d.ToString(f.DateFormat ?? (f.Lang.StartsWith("ro", StringComparison.OrdinalIgnoreCase) ? Lapin.Drawing.DrawingDates.Default : "yyyy-MM-dd"), CultureInfo.InvariantCulture);
 
     /// <summary>Yes or no in the document's language.</summary>
     public static string YesNo(bool b, DocFormat f) => f.Lang.StartsWith("ro", StringComparison.OrdinalIgnoreCase) ? (b ? "da" : "nu") : (b ? "yes" : "no");

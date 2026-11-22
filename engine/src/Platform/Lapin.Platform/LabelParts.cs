@@ -1,3 +1,4 @@
+using Lapin.Drawing;
 using System.Text.Json.Nodes;
 using Lapin.Drawing.Views;
 using Lapin.Geometry;
@@ -94,8 +95,9 @@ public static class LabelParts
     /// <summary>The unit vector at <paramref name="deg"/> degrees.</summary>
     public static Vec2 Dir(double deg) => new(Math.Cos(deg * Math.PI / 180), Math.Sin(deg * Math.PI / 180));
 
-    /// <summary>A text's rough width (the tags' measure: 0.62 of its height a character).</summary>
-    public static double Width(string text, double h) => Math.Max(1, text.Length) * h * 0.62;
+    /// <summary>A text's printed width at height <paramref name="h"/> (<see cref="TextMeasure"/>); an empty one as wide as an "x".</summary>
+    public static double Width(string text, double h, string? font = null, bool bold = false, bool italic = false) =>
+        TextMeasure.Width(text.Length == 0 ? "x" : text, h, font, bold, italic);
 
     static JsonArray J(Vec2 p) => new(Math.Round(p.X, 6), Math.Round(p.Y, 6));
 
@@ -158,7 +160,7 @@ public static class LabelParts
     public static (Vec2 C, double Hw, double Hh, double Deg) BoxOf(PenText t, double mm)
     {
         var h = t.Height * mm;
-        var w = Width(t.Text, h);
+        var w = Width(t.Text, h, t.Font, t.Bold, t.Italic);
         var u = Dir(t.Angle);
         var v = new Vec2(-u.Y, u.X);
         var c = t.At + u * (t.Anchor switch { "start" => w / 2, "end" => -w / 2, _ => 0 })

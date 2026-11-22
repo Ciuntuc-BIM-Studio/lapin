@@ -202,6 +202,8 @@ public static class DxfReader
         var layers = new List<DxfLayer>(); var ltypes = new Dictionary<string, double[]>(StringComparer.OrdinalIgnoreCase);
         var blocks = new List<DxfBlock>(); var entities = new List<DxfEntity>();
         var sections = 0;
+        // The blocks and entities read once the header has said the units (their hatches' arcs are made into chords by them).
+        var deferred = new List<(string Name, List<Pair> Body)>();
         // Sections, each read by its own walker.
         for (var i = 0; i < pairs.Count; i++)
         {
@@ -215,11 +217,14 @@ public static class DxfReader
             {
                 case "HEADER": (version, units) = Header(body); break;
                 case "TABLES": Tables(body, layers, ltypes); break;
-                case "BLOCKS": blocks.AddRange(Blocks(body)); break;
-                case "ENTITIES": entities.AddRange(Entities(Rawn(body))); break;
+                case "BLOCKS" or "ENTITIES": deferred.Add((name, body)); break;
             }
             i = end;
         }
+        // Metres per unit for the chords of hatch boundaries' arcs (Lapin.Geometry/Chords); a file that does not say: metres, the finest.
+        var f = DxfUnits.Factor(units) ?? 1;
+        foreach (var (name, body) in deferred)
+            if (name == "BLOCKS") blocks.AddRange(Blocks(body, f)); else entities.AddRange(Entities(Rawn(body), f));
         var d = new DxfDocument { Version = version, Units = units, Sections = sections, Ended = pairs.Any(p => p.Code == 0 && p.Value == "EOF") };
         foreach (var l in layers) d.Layers.TryAdd(l.Name, l);
         foreach (var (k, v) in ltypes) d.LineTypes.TryAdd(k, v);
@@ -315,7 +320,7 @@ public static class DxfReader
         }
     }
 
-    static List<DxfBlock> Blocks(List<Pair> body)
+    static List<DxfBlock> Blocks(List<Pair> body, double f)
     {
         var o = new List<DxfBlock>();
         var raws = Rawn(body);
@@ -326,7 +331,7 @@ public static class DxfReader
             var j = i + 1;
             while (j < raws.Count && raws[j].Type != "ENDBLK") j++;
             var name = Str(head, 2) ?? "";
-            o.Add(new DxfBlock(name, new Vec2(Num(head, 10) ?? 0, Num(head, 20) ?? 0), Entities(raws.GetRange(i + 1, j - i - 1))));
+            o.Add(new DxfBlock(name, new Vec2(Num(head, 10) ?? 0, Num(head, 20) ?? 0), Entities(raws.GetRange(i + 1, j - i - 1), f)));
             i = j;
         }
         return o;
@@ -340,7 +345,7 @@ public static class DxfReader
     static Vec2 Pt(Raw r, int xCode) => new(Num(r, xCode) ?? 0, Num(r, xCode + 10) ?? 0);
     static bool Mirrored(Raw r) => Num(r, 230) is { } z && z < -0.5;
 
-    static List<DxfEntity> Entities(List<Raw> raws)
+    static List<DxfEntity> Entities(List<Raw> raws, double f)
     {
         var o = new List<DxfEntity>();
         for (var i = 0; i < raws.Count; i++)
@@ -432,7 +437,7 @@ public static class DxfReader
                     o.AddRange(MText(r));
                     break;
                 case "HATCH":
-                    if (Hatch(r) is { } h) o.Add(h);
+                    if (Hatch(r, f) is { } h) o.Add(h);
                     break;
                 case "INSERT":
                 {
@@ -577,7 +582,8 @@ public static class DxfReader
 
     // ------------------------------------------------------------ hatches
 
-    static DxfHatch? Hatch(Raw r)
+    /// <summary>A HATCH: its boundary loops as points (arcs by the chord rule at <paramref name="f"/> metres a unit), its pattern.</summary>
+    static DxfHatch? Hatch(Raw r, double f)
     {
         var ps = r.Pairs;
         var name = Str(r, 2) ?? "SOLID";
@@ -614,7 +620,7 @@ public static class DxfReader
                     var b = hasBulge ? N(ref k, 42) : 0;
                     verts.Add((p, b));
                 }
-                pts = DxfCurves.Polyline(verts, true);
+                pts = DxfCurves.Polyline(verts, true, f);
                 _ = closed;
             }
             else
@@ -630,7 +636,10 @@ public static class DxfReader
                         case 2:
                         {
                             var c = P(ref k, 10); var rad = N(ref k, 40); var s = N(ref k, 50); var en = N(ref k, 51, 360); var ccw = (int)N(ref k, 73, 1) != 0;
-                            var arc = DxfCurves.Arc(c, rad, s, en);
+                            // A clockwise edge stores its angles as their complements (360 − angle; not in the DXF reference, as
+                            // ezdxf reads it): it runs clockwise from 360 − start to 360 − end, the counter-clockwise arc from
+                            // 360 − end to 360 − start reversed.
+                            var arc = ccw ? DxfCurves.Arc(c, rad, s, en, f) : DxfCurves.Arc(c, rad, 360 - en, 360 - s, f);
                             if (!ccw) arc.Reverse();
                             Append(pts, arc);
                             break;
@@ -638,7 +647,9 @@ public static class DxfReader
                         case 3:
                         {
                             var c = P(ref k, 10); var major = P(ref k, 11); var ratio = N(ref k, 40, 1); var s = N(ref k, 50); var en = N(ref k, 51, 360); var ccw = (int)N(ref k, 73, 1) != 0;
-                            var arc = DxfCurves.Ellipse(c, major, ratio, s * Math.PI / 180, en * Math.PI / 180);
+                            // A clockwise edge's parameters are complements too (as an arc's).
+                            var arc = ccw ? DxfCurves.Ellipse(c, major, ratio, s * Math.PI / 180, en * Math.PI / 180, f)
+                                : DxfCurves.Ellipse(c, major, ratio, (360 - en) * Math.PI / 180, (360 - s) * Math.PI / 180, f);
                             if (!ccw) arc.Reverse();
                             Append(pts, arc);
                             break;
@@ -692,13 +703,15 @@ public static class DxfReader
     }
 }
 
-/// <summary>Curves as points: bulged polylines, arcs, ellipses, splines (drawing units, arcs every 5°).</summary>
+/// <summary>
+/// Curves as points: bulged polylines, arcs, ellipses, splines (drawing units). Arcs and ellipses by the one chord rule
+/// (Lapin.Geometry/Chords: 1 mm off the curve at most) at <c>f</c> metres a drawing unit (1 when unknown: the finest); they
+/// were every 5°, 48 mm off a 50 m arc.
+/// </summary>
 public static class DxfCurves
 {
-    public const double Step = Math.PI / 36;
-
     /// <summary>A polyline with bulges as points; a closed one ends where it starts (its last vertex's bulge spans back to the first).</summary>
-    public static List<Vec2> Polyline(IReadOnlyList<(Vec2 P, double Bulge)> verts, bool closed)
+    public static List<Vec2> Polyline(IReadOnlyList<(Vec2 P, double Bulge)> verts, bool closed, double f = 1)
     {
         var o = new List<Vec2>();
         var n = verts.Count;
@@ -710,7 +723,7 @@ public static class DxfCurves
             var (a, b) = (verts[i], verts[(i + 1) % n]);
             if (Math.Abs(a.Bulge) < 1e-12 || (b.P - a.P).Length < 1e-12) { o.Add(b.P); continue; }
             var arc = BulgeArc(a.P, b.P, a.Bulge);
-            var pts = Arc(arc.C, arc.R, arc.StartDeg, arc.EndDeg);
+            var pts = Arc(arc.C, arc.R, arc.StartDeg, arc.EndDeg, f);
             if (a.Bulge < 0) pts.Reverse();
             for (var j = 1; j < pts.Count; j++) o.Add(pts[j]);
         }
@@ -732,11 +745,11 @@ public static class DxfCurves
     }
 
     /// <summary>An arc counter-clockwise from start to end (°) as points.</summary>
-    public static List<Vec2> Arc(Vec2 c, double r, double startDeg, double endDeg)
+    public static List<Vec2> Arc(Vec2 c, double r, double startDeg, double endDeg, double f = 1)
     {
         var s = startDeg * Math.PI / 180; var e = endDeg * Math.PI / 180;
         var sweep = Sweep(e - s);
-        var n = Math.Max(2, (int)Math.Ceiling(sweep / Step));
+        var n = Chords.Count(Math.Abs(r) * f, sweep, 2);
         return Enumerable.Range(0, n + 1).Select(i => c + new Vec2(Math.Cos(s + sweep * i / n), Math.Sin(s + sweep * i / n)) * r).ToList();
     }
 
@@ -754,11 +767,11 @@ public static class DxfCurves
     }
 
     /// <summary>An ellipse arc (parameters in radians) as points.</summary>
-    public static List<Vec2> Ellipse(Vec2 c, Vec2 major, double ratio, double start, double end)
+    public static List<Vec2> Ellipse(Vec2 c, Vec2 major, double ratio, double start, double end, double f = 1)
     {
         var minor = major.Perp * ratio;
         var sweep = Sweep(end - start);
-        var n = Math.Max(4, (int)Math.Ceiling(sweep / Step));
+        var n = Chords.Ellipse(major.Length * f, minor.Length * f, sweep, 4);
         return Enumerable.Range(0, n + 1).Select(i => { var t = start + sweep * i / n; return c + major * Math.Cos(t) + minor * Math.Sin(t); }).ToList();
     }
 

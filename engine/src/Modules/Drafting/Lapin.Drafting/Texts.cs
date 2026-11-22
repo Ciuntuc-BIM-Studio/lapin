@@ -44,13 +44,14 @@ public static class Texts
             var body = PaperViews.Fill(c, t.Str("text") ?? "");
             var angle = t.Num("angle");
             var h = style.Height * c.Mm;
-            var charW = Math.Max(1e-6, h * 0.6);
+            // Wrapped and boxed by the lines' printed widths (TextMeasure, the PDF's own).
+            double Width(string l) => TextMeasure.Width(l, h, style.Font, style.Bold, style.Italic);
             var maxW = t.NumOrNull("width") is { } mw && mw > 0 ? mw : (double?)null;
-            var lines = WrapLines(body, charW, maxW);
+            var lines = TextWrap.Lines(body, Width, maxW);
             var (u, n) = (new Vec2(Math.Cos(angle * Math.PI / 180), Math.Sin(angle * Math.PI / 180)), new Vec2(-Math.Sin(angle * Math.PI / 180), Math.Cos(angle * Math.PI / 180)));
-            var lineStep = h * 1.35;
+            var lineStep = h * TextMeasure.LinePitch;
             var mk = new ViewMark(t.Id);
-            var w = maxW ?? Math.Max(1, lines.Max(l => l.Length)) * charW;
+            var w = maxW ?? Math.Max(Width("x"), lines.Max(Width));
             // Its box's left side: its point, or (no width of its own) moved back so that the point is the lines' middle or end.
             var (share, anchor) = AlignOf(t);
             var left = maxW != null ? at : at - u * (share * w);

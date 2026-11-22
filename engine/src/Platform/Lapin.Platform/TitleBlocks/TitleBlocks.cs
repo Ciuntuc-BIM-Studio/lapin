@@ -121,7 +121,7 @@ public static partial class TitleBlocks
                 case "system":
                     return k switch
                     {
-                        "printDate" => (true, DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)),
+                        "printDate" => (true, DrawingDates.Format(DraftingResources.Book(m), DateTime.Now)),
                         "printTime" => (true, DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture)),
                         "file" => (true, q.Title is { Length: > 0 } t ? t + ".lapin" : ""),
                         "app" => (true, "Lapin"),
@@ -150,7 +150,7 @@ public static partial class TitleBlocks
                 case "paper": return (true, sheet?.Str("paper") ?? "A1");
                 case "size": { var (w, h) = sheet != null ? Sheets.PaperOf(sheet) : (841, 594); return (true, $"{w:0} × {h:0} mm"); }
                 case "orientation": return (true, sheet?.Str("orientation") ?? "landscape");
-                case "date": return (true, Own("date") ?? DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture));
+                case "date": return (true, Own("date") ?? DrawingDates.Format(DraftingResources.Book(m), DateTime.Now));
                 case "drawnBy": return (true, Own("drawnBy") ?? Documents.ProjectInfo.Get(m, "author"));
                 case "checkedBy": return (true, Own("checkedBy") ?? Documents.ProjectInfo.Get(m, "checkedBy"));
                 case "approvedBy": return (true, Own("approvedBy") ?? Documents.ProjectInfo.Get(m, "approvedBy"));
@@ -366,14 +366,16 @@ public static partial class TitleBlocks
                     var tokens = Tokens(raw);
                     var value = Fill(raw, resolve, unknown);
                     var style = (string?)item["style"] is { Length: > 0 } sid ? Standards.TextOf(book, sid) : null;
-                    var height = Json.Number(item["h"]) ?? style?.Height ?? 2.5;
+                    // No style and no height of its own: the project's Standard text style's (2.5 mm unless the project changed it).
+                    var height = Json.Number(item["h"]) ?? style?.Height ?? Standards.TextOf(book, Standards.Standard).Height;
                     var bold = item["bold"] is JsonValue b ? b.TryGetValue<bool>(out var bb) && bb : style?.Bold ?? false;
                     var italic = item["italic"] is JsonValue it ? it.TryGetValue<bool>(out var ii) && ii : style?.Italic ?? false;
                     var font = (string?)item["font"] ?? style?.Font ?? "sans";
                     // Shrunk to its width when it would run over it (a long project name in its cell).
+                    // Its widest row decides, in the row's own font (the rows are drawn one under the other).
                     if (Json.Number(item["fit"]) is > 0 and var fit && value.Length > 0)
                     {
-                        var width = PdfWriter.Advance(value, bold) * height / 0.718;
+                        var width = TextMeasure.Widest(value, height, font, bold, italic);
                         if (width > fit) height *= fit / width;
                     }
                     var anchor = (string?)item["align"] is "middle" or "end" ? (string)item["align"]! : "start";
@@ -383,7 +385,7 @@ public static partial class TitleBlocks
                     var rows = value.Split('\n');
                     for (var r = 0; r < rows.Length; r++)
                     {
-                        var at = Pt(item["at"]) + new Vec2(0, r * height * 1.4);
+                        var at = Pt(item["at"]) + new Vec2(0, r * height * TextMeasure.LinePitch);
                         pen.Texts.Add(new PenText(at, rows[r], height, Json.Number(item["angle"]) ?? 0, anchor, baseline, bold, font, italic)
                         {
                             Tag = tokens.Count > 0 ? ((string?)item["tag"] is { Length: > 0 } tag ? tag : tokens[0].Replace('.', '_')) + (rows.Length > 1 ? $"_{r + 1}" : "") : null,
@@ -449,7 +451,7 @@ public static partial class TitleBlocks
     public static (double W, double H, List<Pen> Pens) Preview(IQueryContext q, TitleBlockTemplate t, Entity? sheet)
     {
         var resolve = Resolver(q, sheet);
-        var revisions = sheet != null ? Sheets.RevisionRows(q.Model, sheet, null) : [("P01", DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), "S2", "For information")];
+        var revisions = sheet != null ? Sheets.RevisionRows(q.Model, sheet, null) : [("P01", DrawingDates.Format(DraftingResources.Book(q.Model), DateTime.Now), "S2", "For information")];
         return (t.W, t.H, DrawItems(q.Model, t, 0, t.H, resolve, revisions));
     }
 }
