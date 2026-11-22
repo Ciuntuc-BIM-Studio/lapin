@@ -42,9 +42,9 @@ public static class DocNumbers
     /// <summary>A level from ±0.00, signed: ±0,00, +3,00, -1,50 (m).</summary>
     public static string Level(double z, DocFormat f) => Math.Abs(z) < 0.005 ? "±" + Number(0, f) : (z > 0 ? "+" : "") + Number(z, f);
 
-    /// <summary>A date: 05.11.2026 in Romanian, 2026-11-05 otherwise.</summary>
+    /// <summary>A date in the project's format as its title blocks write it (<see cref="Lapin.Drawing.DrawingDates"/>); without one, 05.11.2026 in Romanian, 2026-11-05 otherwise.</summary>
     public static string Date(DateTime d, DocFormat f) =>
-        f.Lang.StartsWith("ro", StringComparison.OrdinalIgnoreCase) ? d.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture) : d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        d.ToString(f.DateFormat ?? (f.Lang.StartsWith("ro", StringComparison.OrdinalIgnoreCase) ? Lapin.Drawing.DrawingDates.Default : "yyyy-MM-dd"), CultureInfo.InvariantCulture);
 
     /// <summary>Yes or no in the document's language.</summary>
     public static string YesNo(bool b, DocFormat f) => f.Lang.StartsWith("ro", StringComparison.OrdinalIgnoreCase) ? (b ? "da" : "nu") : (b ? "yes" : "no");

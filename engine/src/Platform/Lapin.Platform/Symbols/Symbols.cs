@@ -118,7 +118,7 @@ public static class Symbols
                 case "system":
                     return k switch
                     {
-                        "printDate" => (true, DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)),
+                        "printDate" => (true, DrawingDates.Format(DraftingResources.Book(m), DateTime.Now)),
                         "app" => (true, "Lapin"),
                         _ => (false, null),
                     };

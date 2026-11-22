@@ -231,6 +231,8 @@ public sealed record StyleBook(
     public FrameLine? CalloutLine { get; init; }
     /// <inheritdoc cref="CalloutLine"/>
     public FrameLine? InsetFrame { get; init; }
+    /// <summary>How title blocks, sheets, symbols and documents write a date (<see cref="DrawingDates"/>): one of <see cref="DrawingDates.Formats"/>; null: dd.MM.yyyy (documents: by their language).</summary>
+    public string? DateFormat { get; init; }
 }
 
 public static class Standards
@@ -504,7 +506,7 @@ public static class Standards
         list.Any(s => id(s) == key) ? list : [standard, .. list];
 
     /// <summary>The standards from a project's JSON, tolerantly: a malformed field falls back to the Standard style's, an unreadable entry is dropped, the Standard entries are always there.</summary>
-    public static StyleBook Read(JsonNode? raw) => FrameLines.With(ReadBook(raw), raw as JsonObject);
+    public static StyleBook Read(JsonNode? raw) => FrameLines.With(ReadBook(raw), raw as JsonObject) with { DateFormat = DrawingDates.Of(raw?["dateFormat"]) };
 
     static StyleBook ReadBook(JsonNode? raw)
     {

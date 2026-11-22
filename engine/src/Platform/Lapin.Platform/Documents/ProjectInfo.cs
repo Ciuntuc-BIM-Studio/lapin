@@ -86,16 +86,19 @@ public static class ProjectInfo
             return o;
         }
 
-        /// <summary>The value as a title block or a document prints it: a date as dd.MM.yyyy.</summary>
+        /// <summary>The project's date format (<see cref="Lapin.Drawing.StyleBook.DateFormat"/>), as <see cref="Customs"/> reads it.</summary>
+        public Lapin.Drawing.StyleBook? Book { get; init; }
+
+        /// <summary>The value as a title block or a document prints it: a date in the project's format (<see cref="Lapin.Drawing.DrawingDates"/>; dd.MM.yyyy by default).</summary>
         public string? Printed => Type == "date" && Value is { } v && DateTime.TryParseExact(v, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d)
-            ? d.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture) : Value;
+            ? Lapin.Drawing.DrawingDates.Format(Book, d) : Value;
     }
 
     /// <summary>The user's own parameters, in order.</summary>
     public static List<Custom> Customs(IModelView m) =>
         (Of(m)[CustomKey] as JsonArray)?.OfType<JsonObject>().Select(o => (string?)o["key"] is { Length: > 0 } k
             ? new Custom(k, (string?)o["label"] is { Length: > 0 } l ? l : k, (string?)o["type"] is { } t && CustomTypes.Contains(t) ? t : "text",
-                (string?)o["group"] is { Length: > 0 } g ? g : "other", (string?)o["value"] is { Length: > 0 } v ? v : null)
+                (string?)o["group"] is { Length: > 0 } g ? g : "other", (string?)o["value"] is { Length: > 0 } v ? v : null) { Book = DraftingResources.Book(m) }
             : null).OfType<Custom>().ToList() ?? [];
 
     /// <summary>A key a parameter of the user's may take: a letter, then letters, digits or _; not a field's, the name's or another parameter's (but <paramref name="except"/>).</summary>

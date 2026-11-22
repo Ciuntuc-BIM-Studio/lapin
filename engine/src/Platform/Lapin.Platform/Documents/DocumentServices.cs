@@ -8,6 +8,11 @@ namespace Lapin.Platform.Documents;
 /// </summary>
 public sealed record DocFormat(string Lang, string Units, double? AreaStep = null)
 {
+    /// <summary>The project's date format (<see cref="Lapin.Drawing.StyleBook.DateFormat"/>), which title blocks write too; null: the language's.</summary>
+    public string? DateFormat { get; init; }
+    /// <summary>The project's standards, for its levels (<see cref="Lapin.Drawing.Standards.FormatLevel(double, Lapin.Drawing.StyleBook, bool)"/>); null: two decimals in metres, or the units' imperial.</summary>
+    public Lapin.Drawing.StyleBook? Book { get; init; }
+
     public static DocFormat Ro => new("ro", "metric");
 }
 

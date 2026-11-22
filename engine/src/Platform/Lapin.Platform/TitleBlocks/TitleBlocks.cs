@@ -121,7 +121,7 @@ public static partial class TitleBlocks
                 case "system":
                     return k switch
                     {
-                        "printDate" => (true, DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)),
+                        "printDate" => (true, DrawingDates.Format(DraftingResources.Book(m), DateTime.Now)),
                         "printTime" => (true, DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture)),
                         "file" => (true, q.Title is { Length: > 0 } t ? t + ".lapin" : ""),
                         "app" => (true, "Lapin"),
@@ -150,7 +150,7 @@ public static partial class TitleBlocks
                 case "paper": return (true, sheet?.Str("paper") ?? "A1");
                 case "size": { var (w, h) = sheet != null ? Sheets.PaperOf(sheet) : (841, 594); return (true, $"{w:0} × {h:0} mm"); }
                 case "orientation": return (true, sheet?.Str("orientation") ?? "landscape");
-                case "date": return (true, Own("date") ?? DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture));
+                case "date": return (true, Own("date") ?? DrawingDates.Format(DraftingResources.Book(m), DateTime.Now));
                 case "drawnBy": return (true, Own("drawnBy") ?? Documents.ProjectInfo.Get(m, "author"));
                 case "checkedBy": return (true, Own("checkedBy") ?? Documents.ProjectInfo.Get(m, "checkedBy"));
                 case "approvedBy": return (true, Own("approvedBy") ?? Documents.ProjectInfo.Get(m, "approvedBy"));
@@ -451,7 +451,7 @@ public static partial class TitleBlocks
     public static (double W, double H, List<Pen> Pens) Preview(IQueryContext q, TitleBlockTemplate t, Entity? sheet)
     {
         var resolve = Resolver(q, sheet);
-        var revisions = sheet != null ? Sheets.RevisionRows(q.Model, sheet, null) : [("P01", DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), "S2", "For information")];
+        var revisions = sheet != null ? Sheets.RevisionRows(q.Model, sheet, null) : [("P01", DrawingDates.Format(DraftingResources.Book(q.Model), DateTime.Now), "S2", "For information")];
         return (t.W, t.H, DrawItems(q.Model, t, 0, t.H, resolve, revisions));
     }
 }
