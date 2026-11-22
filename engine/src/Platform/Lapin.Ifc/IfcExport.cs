@@ -94,6 +94,9 @@ public static partial class IfcExport
     const string MirrorKey = "#mirrored";
     /// <summary>An apartment type's instance: its type's name and id, where it stands (docs/plan-units.md).</summary>
     public const string UnitSetName = "Lapin_Unit";
+    /// <summary>A SubD solid's cage (decision 780): its points, faces and creases as JSON in <see cref="SubDCageProperty"/>, read back into its <c>cage</c>.</summary>
+    public const string SubDSetName = "Lapin_SubD";
+    public const string SubDCageProperty = "Cage";
     const string IntentKey = "Pset_Lapin_Intent", PhaseKey = "Pset_Lapin_Phase", ParamsKey = "Pset_Lapin_Parameters";
     public const string Version = "1";
 
@@ -2222,7 +2225,7 @@ public static partial class IfcExport
             foreach (var (key, v) in e.Attrs)
             {
                 // A stored body (a reference from IFC) is written as geometry, not as text; the project's standards stay in .lapin.
-                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || StoredBodies.ExportOnly.Contains(key) || key == Plan2d.Key || key == IfcSource.Key || key == ReferenceQuantities.Key || key == ReferenceLayers.AxisKey || key == ReferenceLayers.PartOfKey || privateKeys.Contains(key) || (only != null && !only.Contains(key))) continue;
+                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || StoredBodies.ExportOnly.Contains(key) || key == Plan2d.Key || key == IfcSource.Key || key == ReferenceQuantities.Key || key == ReferenceLayers.AxisKey || key == ReferenceLayers.PartOfKey || privateKeys.Contains(key) || (only != null && !only.Contains(key)) || filters.Any(x => x.IsPrivate(e, key))) continue;
                 // A foreign element's properties go as the sets its file had, not as text.
                 if (key == "properties" && e.Attrs[IfcSource.Key] != null) continue;
                 var field = fields.GetValueOrDefault(key);

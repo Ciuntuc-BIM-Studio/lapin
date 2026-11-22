@@ -157,6 +157,36 @@ The properties of a Studio solid list its steps in order. Each step can be switc
 
 A polyline's properties list its sides. Type a side's length, and its end moves along it. The sides after it follow, up to the next side that runs the same way, so a rectangle stays a rectangle. A solid drawn on it follows too.
 
+## SubD solids
+
+A **SubD solid** is a smooth, free-form body shaped from a coarse **cage** of points, edges and faces (Catmull–Clark subdivision). Pull a few points of the cage, and the whole body follows in a smooth curve. It is a Studio solid like the others: it takes booleans, fillets, quantities and IFC export, and it keeps its identity when you edit it.
+
+*Inspiration:* the free-form tools in Studio owe ideas to [blender-nurbs](https://github.com/cekuhnen/blender-nurbs) by cekuhnen, a NURBS modelling add-on for Blender. Lapin's code is its own: only the ideas were taken, not the code.
+
+**Studio → Solids → SubD** offers **SubD box**, **SubD cylinder** and **SubD plane** (an open surface, 4 × 4 quads): click on the plan or on the ground in 3D to place one. **SubD from solid** turns the faces of the selected Studio solid into the cage of a new SubD solid (the source stays; small bodies only).
+
+### Editing the cage
+
+Select a SubD solid in 3D and press **Tab**, double-click it, or click **Edit cage** on its card. The cage is drawn over the smooth body as a wireframe: its points, its edges, creased edges thicker and coloured (orange for semi-sharp, red for sharp), the border of an open surface dashed.
+
+- Choose what you pick with the **Vertex**, **Edge** and **Face** buttons on the bar, or the keys **1**, **2** and **3**.
+- Click to pick, **Shift**-click to add or take off. A click on empty space lets go.
+- Drag what is picked: it snaps to the endpoints, midpoints and edges of the model and to the other cage points, and the arrows lock an axis (right for red, left for green, up for blue), exactly as in Move 3D. Type a distance, or `dx,dy,dz`, and press Enter. Letting go is one undo step; the smooth body is redrawn then. After you let go, a distance typed and Enter change that move along the same direction (still one undo step); a click elsewhere or Esc keeps it as it is. <kbd>Tab</kbd> during the drag is autohold: the points follow the pointer without the button, and a click or Enter puts them down.
+- **Scale** and **Turn (°)** on the bar work on the picked points about their middle: type a value and press Enter.
+- **Extrude** pushes the picked faces out by the distance beside it (negative: in). **Insert loop** cuts an edge loop across the ring of quads the picked edge starts. **Delete faces** opens the cage there. **Crease** gives the picked edges a sharpness: Smooth takes a crease off, Semi-sharp 1 to 3 rounds it off after that many subdivisions, Sharp stays sharp.
+- **Esc** or **Done** leaves the mode. Leaving is not an undo step.
+
+![A SubD plane in 3D with its cage drawn over it and a point picked](shots/studio-subd-cage.webp)
+
+### Its card
+
+The SubD card lists the cage's points and faces and whether it is open or closed, the **Level** the body is made at and its **Deviation** from the limit surface (the body is subdivided until it lies within the tolerance, at most **SubD levels (at most)**, set in the Studio fields), and:
+
+- **Thickness** and **Side** (Out, In, Centre): an open surface becomes a solid of that thickness. A closed cage is already a solid, so these only matter for open surfaces.
+- **Symmetry** (None, x, y, z): edit one half, and the other follows. If a face crosses the plane, Lapin says so: insert a loop, or make the cage with more segments, and try again.
+
+![The card of a SubD solid](shots/studio-subd-properties.webp)
+
 ## Meshes from other programs
 
 **File → Import mesh (OBJ, STL, glTF)…** brings in a mesh as references you can see and snap to. An OBJ or STL file does not say its unit or which way is up, so Lapin asks. A reference moves, turns, mirrors and is copied as it is, like any element. To change its shape, select it and click **Make Studio solid**. It then takes push/pull, fillets, booleans and the other steps. The same tool works on walls, slabs and elements from IFC files.

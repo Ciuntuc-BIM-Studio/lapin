@@ -37,6 +37,10 @@ import { SketchChip } from './SketchChip';
 import { constraintTool, DIMENSIONS, GEOMETRIC } from './constraintTools';
 import { SketchBar2D } from './SketchBar';
 import { Board3D } from './Board3D';
+import { SubDCard } from './SubDCard';
+import { SubDEdit3D } from './SubDEdit3D';
+import { enterCage, registerSubDEditMode } from './subdStore';
+import { isSubD } from './subdModel';
 import './boards';
 import { COMMAND, DEFAULT_JUSTIFY, JUSTIFY, frontViewId, makesNative, nativeArgs, convertArgs, shapeFits, solidArgs, threePoints, viewOf, type ThickChoice, type ThickOp } from './thick';
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
@@ -767,6 +771,36 @@ const primitive = (shape: string, label: string, icon: ToolDef['icon']): ToolDef
   },
 });
 
+
+/** A SubD solid placed with a click (in plan or on the ground in 3D), on the active storey: a box, a cylinder (8 sides) or an open plane grid; its cage is edited in 3D (Tab). */
+const subdShape = (shape: 'box' | 'cylinder' | 'plane', label: string, icon: ToolDef['icon']): ToolDef => ({
+  id: `studio.subd.${shape}`, label, icon,
+  gesture: { kind: 'point' },
+  complete: async ({ points }, ctx) => {
+    const at = points[0];
+    if (!at) return;
+    const r = await ctx.execute('studio.subdCreate', { shape, at: [at.x, at.y], storeyId: ctx.storeyId || activeStorey()?.id }) as { id?: string } | null;
+    if (r?.id) { useUi.setState({ tool: null, selection: r.id, selected: [r.id] }); notify('Select it and press Tab (or Edit cage on its card) to shape the cage in 3D.'); }
+  },
+});
+
+/** The selected Studio solid's body as a SubD cage (it stays; the cage is a new solid beside it): small ones only. */
+const subdFromSolid: ToolDef = {
+  id: 'studio.subd.fromSolid', label: 'SubD from solid', icon: Blocks,
+  run: () => {
+    const nodes = useSession.getState().nodes;
+    const id = useUi.getState().selected.find((i) => isSolid(nodes.get(i)));
+    if (!id) { notify('Select a Studio solid first: its faces become the cage of a SubD solid.'); return; }
+    void execute('studio.subdCreate', { shape: 'fromSolid', sourceId: id }).then((r) => {
+      const made = (r as { id?: string } | null)?.id;
+      if (made) { useUi.setState({ selection: made, selected: [made] }); notify('A SubD solid made of its faces: Tab shapes the cage in 3D.'); } else if (useSession.getState().error) notify(useSession.getState().error!);
+    });
+  },
+};
+
+/** Edit cage: the selected SubD solid's cage in 3D (Tab, or a double click on it). */
+const editCageTool: ToolDef = { id: 'studio.subd.edit', label: 'Edit cage', icon: Spline, run: () => { enterCage(); } };
+
 /** Parts of the user's own (docs/plan-user-extensibility.md §5.6, audit S6; families were parts): the place tool, the manager dialog, and one made from drafted outlines. */
 // The catalogue on the parts (S15); its Parts… button opens the manager.
 const partsDialogTool: ToolDef = { id: 'studio.parts', label: 'Parts…', icon: Boxes, run: () => openPlaceCatalog('parts') };
@@ -801,6 +835,7 @@ const addToPart: ToolDef = {
   },
 };
 
+registerSubDEditMode();
 registerEditMode();
 const editPartTool: ToolDef = { id: 'studio.editPart', label: 'Edit part', icon: PencilRuler, run: () => { useUi.setState({ view: '3d' }); editPart(); } };
 const finishPartTool: ToolDef = { id: 'studio.finishPart', label: 'Finish part', icon: CircleCheckBig, run: () => void finishPart() };
@@ -843,7 +878,8 @@ const studio: LapinModule = {
         small: [{ id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() },
           pulldownTool('studio.more.thick', 'Thick', Container, [cmd('ring', 'Ring', Cylinder, 'RING'), cmd('box', 'Box', Container, 'BOX'), cmd('wallStrip', 'Wall strip', BrickWall, 'TWALL')]),
           pulldownTool('studio.more.primitives', 'Primitives', Cone, [primitive('box', 'Cuboid', Box), primitive('cylinder', 'Cylinder', Cylinder), primitive('sphere', 'Sphere', CircleDot), primitive('cone', 'Cone', Cone),
-            primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)])],
+            primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)]),
+          pulldownTool('studio.more.subd', 'SubD', Spline, [subdShape('box', 'SubD box', Box), subdShape('cylinder', 'SubD cylinder', Cylinder), subdShape('plane', 'SubD plane', Grid3x3), subdFromSolid, editCageTool])],
       },
       { label: 'Parts', tools: [placeFamilyTool, partsDialogTool, addToPart, editPartTool, finishPartTool], small: [partFromSketch] },
       {
@@ -874,6 +910,7 @@ const studio: LapinModule = {
     { id: 'studioPartMember', label: 'Part', classes: ['*'], shows: (n) => typeof n.props.partKey === 'string', component: PartMemberSection },
     { id: 'studioParams', label: 'Parameters', classes: SOLID_CLASSES, shows: isPlacedPart, component: PublishedParamsSection },
     { id: 'studioEditPart', label: 'Part', classes: SOLID_CLASSES, shows: isEditable, component: EditPartSection },
+    { id: 'studioSubD', label: 'SubD', classes: SOLID_CLASSES, shows: isSubD, component: SubDCard },
     { id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard, fieldKeys: featureFieldKeys },
     { id: 'studioRefPlane', label: 'Reference plane', classes: ['LapinView'], component: RefPlaneSection },
     // Any element some solid cuts, unites or intersects: those solids listed, selectable even when never drawn.
@@ -882,7 +919,7 @@ const studio: LapinModule = {
   overlays: [PartTreePanel, PartParamsPanel, SketchChip, SketchBar2D],
   planOverlays: [ConstraintOverlay],
   drawingOverlays: [ConstraintOverlay],
-  overlays3d: [PartPlane3D, PartFlex3D, PartSketch3D, Board3D],
+  overlays3d: [PartPlane3D, PartFlex3D, PartSketch3D, Board3D, SubDEdit3D],
   // Create similar: a placed part's Part tool with its part, values, turn and hand; a primitive's tool of its shape.
   placeSources: [{ id: 'parts', label: 'Parts', order: 40, useEntries: usePartEntries, manage: { label: 'Parts…', run: () => useUi.setState({ dialog: 'parts' }) } }],
   similarFor: (n) => {

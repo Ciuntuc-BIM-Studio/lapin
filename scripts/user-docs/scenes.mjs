@@ -8309,6 +8309,34 @@ export const scenes = [
     },
   },
   {
+    // SubD solids (docs/plan-studio-freeform.md §8, F1c): a SubD plane in 3D, its cage edit mode with a point picked, and its card.
+    id: 'studio-subd',
+    touches: ['studio'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const made = await t.cmd('studio.subdCreate', { shape: 'plane', at: [4, 3], storeyId: storey, width: 3, length: 3, segments: 4 });
+      t.expect(made?.id, 'a SubD plane is made');
+      await t.ui({ keyPlan: true });
+      await open3d(t);
+      await select(t, made.id);
+      await t.wait(800);
+      await t.shot('studio-subd-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
+      // Tab enters the cage edit mode; one cage point is lifted as a drag lets go (one subdEdit), then picked to show the mode.
+      await t.keys('Tab');
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-sketch-bar=subd]').count() === 1, 'Tab opens the cage edit mode with its bar');
+      await t.cmd('studio.subdEdit', { id: made.id, vertices: [12], translate: [0, 0, 0.8] });
+      await t.wait(800);
+      const cage = await t.call('doc.query', { name: 'studio.subdCage', args: { id: made.id } });
+      t.expect(cage?.points?.[12]?.[2] > 0.5, 'the lifted cage point stands above the others');
+      t.expect(await t.page.locator('[data-subd=cage] .subd-edge').count() > 0, 'the cage is drawn over the body');
+      await t.shot('studio-subd-cage', { of: '[data-testid=view3d]', pad: 0 });
+      await t.keys('Escape');
+      t.expect(await t.page.locator('[data-sketch-bar=subd]').count() === 0, 'Esc leaves the cage edit mode');
+    },
+  },
+  {
     id: 'materials',
     async run(t) {
       await t.fresh();
