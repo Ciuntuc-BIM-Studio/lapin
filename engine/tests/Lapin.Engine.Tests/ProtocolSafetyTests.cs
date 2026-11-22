@@ -157,4 +157,24 @@ public sealed class ProtocolSafetyTests : IDisposable
         Assert.Null(Call(d, "project.exportIfc", new JsonObject { ["path"] = mine })["error"]);
         Assert.True(File.Exists(mine));
     }
+
+    [Fact]
+    public void No_export_to_a_path_writes_over_a_file_the_project_links()
+    {
+        // Audit 22.11.2026 G2: only project.exportIfc refused; the other exports to a path, and file.write, went round it.
+        var f = new Fixture();
+        f.Wall(0, 0, 5, 0);
+        var ifc = At("Site.ifc");
+        File.WriteAllText(ifc, "ISO-10303-21; the neighbour's model");
+        f.Session.Edit("Link", edit => Links.Create(edit, "ifc", "Site.ifc", ifc));
+        var d = new EngineDispatcher(f.Session, PackageFiles.Create());
+
+        Assert.Contains("never writes over it", (string?)Call(d, "file.write", new JsonObject { ["path"] = ifc, ["data"] = Convert.ToBase64String(new byte[] { 1, 2, 3 }) })["error"] ?? "no error");
+        Assert.Contains("never writes over it", (string?)Call(d, "project.exportStep", new JsonObject { ["path"] = ifc })["error"] ?? "no error");
+        Assert.Equal("ISO-10303-21; the neighbour's model", File.ReadAllText(ifc));
+
+        var other = At("Other.bin");
+        Assert.Null(Call(d, "file.write", new JsonObject { ["path"] = other, ["data"] = Convert.ToBase64String(new byte[] { 1, 2, 3 }) })["error"]);
+        Assert.Equal(3, File.ReadAllBytes(other).Length);
+    }
 }
