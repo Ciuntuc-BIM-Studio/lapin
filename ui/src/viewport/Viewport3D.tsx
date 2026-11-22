@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { partLook, useLooks, type Look } from '../platform/looks';
 import { useSunlight } from '../platform/sunlight';
-import { doubleClickHandlers, pickable } from '../platform/scope';
+import { doubleClickHandlers, pickable, pickHandlers } from '../platform/scope';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
@@ -679,6 +679,7 @@ export function Viewport3D() {
     const g = tool?.gesture;
     // A member of a group picks the group (docs/groups.md); drilling, a part its wholes first (platform/assemblies.ts).
     if (!g) {
+      for (const h of pickHandlers) if (h(nodeId ?? null)) return;
       const node = nodeId ? useSession.getState().nodes.get(nodeId) : undefined;
       // A part its module selects on its own (a stair's railing, forum topic 102): owner#tag, as a grid's axis.
       const tag = node && part ? subSelectionTag(node, part) : null;
