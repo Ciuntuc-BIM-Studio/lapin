@@ -14,6 +14,11 @@ public interface ISymmetricFactor
     /// <summary>The first equation whose pivot is not positive, or −1; with <c>hold</c>, a spring added there instead.</summary>
     int Factor(Func<int, double>? hold = null);
     void Solve(double[] b);
+    /// <summary>
+    /// A new, empty matrix on the same structure (§14.21): the structure (numbering, ordering, elimination tree, supernodes,
+    /// pattern) shared and only read, the values its own. This one's values are not touched.
+    /// </summary>
+    ISymmetricFactor Fresh();
 }
 
 /// <summary>
@@ -216,6 +221,15 @@ public sealed class SparseCholesky : ISymmetricFactor
         _stored = stored;
         Flops = flops;
     }
+
+    /// <summary>The same structure, its arrays shared (never written after the constructor), with values of its own.</summary>
+    SparseCholesky(SparseCholesky s)
+    {
+        (_n, _perm, _iperm, _ns, _first, _rows, _of, _stored) = (s._n, s._perm, s._iperm, s._ns, s._first, s._rows, s._of, s._stored);
+        (Flops, Ordering) = (s.Flops, s.Ordering);
+    }
+
+    public ISymmetricFactor Fresh() => new SparseCholesky(this);
 
     /// <summary>Which ordering the structure took.</summary>
     public string Ordering { get; } = "";

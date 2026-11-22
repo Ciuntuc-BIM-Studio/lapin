@@ -46,6 +46,15 @@ public class FemParallelTests(ITestOutputHelper output)
         return f;
     }
 
+    /// <summary>The shell frame with a corner pulled up (in Q-A) so that its footing lifts in the combinations that take it: problems of several layouts at once (§14.21).</summary>
+    internal static Fixture LiftingFrame()
+    {
+        var f = ShellFrame();
+        var storey = f.Model.OfClass(IfcClass.BuildingStorey).Single(s => s.Name == "First floor").Id;
+        f.Run("analysis.addPointLoad", new JsonObject { ["storeyId"] = storey, ["at"] = new JsonArray(0.0, 0.0), ["value"] = 250, ["direction"] = "up" });
+        return f;
+    }
+
     static void Same(double[] a, double[] b, string what)
     {
         Assert.Equal(a.Length, b.Length);
@@ -104,15 +113,18 @@ public class FemParallelTests(ITestOutputHelper output)
     [Theory]
     [InlineData("hall")]
     [InlineData("shells")]
+    [InlineData("lifting")]
     public void Many_threads_solving_one_problems_combinations_at_once_give_the_one_threads_results(string model)
     {
-        var f = model == "hall" ? Hall() : ShellFrame();
+        var f = model == "hall" ? Hall() : model == "lifting" ? LiftingFrame() : ShellFrame();
         var run = AnalysisRun.Of(f.Session.Reader);
         Assert.True(run.Ok);
         var p = run.Problem.Problem;
         var options = new NonlinearOptions(true);
-        var sets = run.NonlinearSets.Take(model == "hall" ? 12 : 24).ToList();
+        // With supports that lift, the sets that lift some first: their iterations take layouts of their own, shared (§14.21).
+        var sets = (model == "lifting" ? run.NonlinearSets.OrderByDescending(s => s.Result.Lifted.Count > 0) : run.NonlinearSets.AsEnumerable()).Take(model == "hall" ? 12 : 24).ToList();
         Assert.NotEmpty(sets);
+        if (model == "lifting") Assert.Contains(sets, s => s.Result.Lifted.Count > 0);
         if (model == "shells") Assert.NotEmpty(p.Shells);
         var reference = sets.Select(s => Nonlinear.Solve(p, s.Loads, options)).ToList();
         var buckling = sets.Where(s => s.Result.States != null).Take(4).ToList();
@@ -132,7 +144,8 @@ public class FemParallelTests(ITestOutputHelper output)
             }
             catch (Exception ex) { failures.Add($"{i}: {ex.GetType().Name}: {ex.Message}"); }
         });
-        output.WriteLine($"{model}: {jobs.Count} solves on {Environment.ProcessorCount} cores, {failures.Count} differ");
+        output.WriteLine($"{model}: {jobs.Count} solves on {Environment.ProcessorCount} cores, {failures.Count} differ, {p.Layouts.Count} layouts kept");
+        Assert.InRange(p.Layouts.Count, 1, FrameLayouts.Kept);
         Assert.True(failures.IsEmpty, string.Join("\n", failures.Take(10)));
     }
 

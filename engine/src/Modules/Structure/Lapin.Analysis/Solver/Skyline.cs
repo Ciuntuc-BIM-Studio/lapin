@@ -30,6 +30,15 @@ public sealed class Skyline : ISymmetricFactor
         _a = new double[_ptr[_n]];
     }
 
+    /// <summary>The same profile, its arrays shared (never written after the constructor), with values of its own.</summary>
+    Skyline(Skyline s)
+    {
+        (_n, _first, _ptr) = (s._n, s._first, s._ptr);
+        _a = new double[_ptr[_n]];
+    }
+
+    public ISymmetricFactor Fresh() => new Skyline(this);
+
     long Index(int i, int j) => _ptr[j] + (i - _first[j]);
 
     /// <summary>Adds to the entry (i, j), either triangle.</summary>

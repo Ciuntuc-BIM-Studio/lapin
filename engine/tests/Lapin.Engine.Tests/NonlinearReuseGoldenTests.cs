@@ -152,10 +152,7 @@ public class NonlinearReuseGoldenTests
     [Fact]
     public void The_shell_frame_on_lifting_footings_keeps_its_bits()
     {
-        var f = Seeded(FemParallelTests.ShellFrame);
-        // A corner pulled up (in Q-A, the area load's case) so that its footing lifts in the combinations that take it.
-        var storey = f.Model.OfClass(Lapin.Model.IfcClass.BuildingStorey).Single(s => s.Name == "First floor").Id;
-        f.Run("analysis.addPointLoad", new JsonObject { ["storeyId"] = storey, ["at"] = new JsonArray(0.0, 0.0), ["value"] = 250, ["direction"] = "up" });
+        var f = Seeded(FemParallelTests.LiftingFrame);
         var d = Of(f, buckling: true);
         Assert.Contains(d["sets"]!.AsArray(), s => s!["lifted"]!.AsArray().Count > 0);
         Golden("nonlinear-reuse-shells", d);
