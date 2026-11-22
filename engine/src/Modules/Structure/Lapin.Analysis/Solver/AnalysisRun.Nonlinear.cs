@@ -394,6 +394,9 @@ public sealed partial class AnalysisRun
         return (null, 0);
     }
 
+    /// <summary>The αcr a combination is classed by: its global mode's, or when every mode found is one member's, the last of them (a bound from below).</summary>
+    (double? Alpha, int Mode) Judged(BucklingResult b) => GlobalOf(b) is { Alpha: not null } g ? g : (b.Alpha.Length > 0 ? b.Alpha[^1] : null, 0);
+
     /// <summary>The lowest global αcr of the ultimate static combinations (or its lower bound), with its combination: what the steel checks say (§14.3).</summary>
     public (Combination Combination, double Alpha, bool Bound)? LowestGlobal(int modes = 6, CancellationToken cancel = default)
     {
@@ -454,9 +457,8 @@ public sealed partial class AnalysisRun
         {
             var b = BucklingOf(c, modes);
             var g = GlobalOf(b);
-            double? a1 = b.Alpha.Length > 0 ? b.Alpha[0] : null;
             // The class by the frame's own (global) buckling; when every mode found is one member's, the last of them bounds it from below.
-            var judged = g.Alpha ?? (b.Alpha.Length > 0 ? b.Alpha[^1] : null);
+            var judged = Judged(b).Alpha;
             if (judged is { } v && (lowest == null || v < lowest.Value.Alpha)) lowest = (c.Key, v);
             arr.Add((JsonNode)new JsonObject
             {
@@ -534,7 +536,7 @@ public sealed partial class AnalysisRun
         }
         return new JsonObject
         {
-            ["combination"] = c.Key, ["name"] = c.Name, ["mode"] = mode, ["alpha"] = R(b.Alpha[mode - 1], 6), ["class"] = ClassOf(b.Alpha[0]),
+            ["combination"] = c.Key, ["name"] = c.Name, ["mode"] = mode, ["alpha"] = R(b.Alpha[mode - 1], 6), ["class"] = ClassOf(Judged(b).Alpha),
             ["scale"] = scale, ["max"] = 1, ["polylines"] = lines, ["shells"] = shells,
         };
     }

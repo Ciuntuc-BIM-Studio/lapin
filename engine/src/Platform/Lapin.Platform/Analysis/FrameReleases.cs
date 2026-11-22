@@ -12,6 +12,8 @@ public sealed record EndReleases(bool[] I, bool[] J, string Source)
     public bool Any => I.Any(x => x) || J.Any(x => x);
     /// <summary>A member that works in tension and compression only (a rod, a tie): pinned at its own ends, its weight at them.</summary>
     public bool Axial { get; init; }
+    /// <summary>Why the releases leave the bar free to slide or swing (<see cref="FrameReleases.Unstable"/>); null when they hold it.</summary>
+    public string? Unstable { get; init; }
 }
 
 /// <summary>
@@ -84,6 +86,20 @@ public static class FrameReleases
 
     public static JsonArray ToJson(bool[] r) => new(r.Select(x => (JsonNode)x).ToArray());
 
+    /// <summary>
+    /// Why a bar's end releases make it a mechanism, or null: a translation (ux, uy, uz) released at both ends (it slides), or a
+    /// shear's translation released at one end with its bending rotation at both (uy with rz, uz with ry: it swings about the
+    /// other end). The torsion's (rx at both) is held at i by <see cref="Of"/> already.
+    /// </summary>
+    public static string? Unstable(bool[] i, bool[] j)
+    {
+        var why = new List<string>();
+        for (var d = 0; d < 3; d++) if (i[d] && j[d]) why.Add($"{Dofs[d]} released at both ends");
+        foreach (var (t, r) in new[] { (1, 5), (2, 4) })
+            if ((i[t] ^ j[t]) && i[r] && j[r]) why.Add($"{Dofs[t]} released with {Dofs[r]} at both ends");
+        return why.Count == 0 ? null : $"its releases leave it free to move ({string.Join("; ", why)}): hold that degree of freedom at one end at least";
+    }
+
     /// <summary>The element's own releases, each end null when it says none.</summary>
     public static (bool[]? I, bool[]? J) Own(Entity? e) =>
         e?.Attrs[Key] is JsonObject o ? (Parse(o["i"]), Parse(o["j"])) : (null, null);
@@ -128,11 +144,12 @@ public static class FrameReleases
             if (i[4] && i[5] && j[4] && j[5] && !i[3]) j[3] = true;
             if (i[3] && j[3]) i[3] = false;
             if (!i.Any(x => x) && !j.Any(x => x)) continue;
+            var unstable = Unstable(i, j);
             var first = pieces[0];
             var last = pieces[^1];
-            if (first == last) { o[first] = new EndReleases(i, j, source) { Axial = axial }; continue; }
-            o[first] = new EndReleases(i, Fixed, source) { Axial = axial };
-            o[last] = new EndReleases(Fixed, j, source) { Axial = axial };
+            if (first == last) { o[first] = new EndReleases(i, j, source) { Axial = axial, Unstable = unstable }; continue; }
+            o[first] = new EndReleases(i, Fixed, source) { Axial = axial, Unstable = unstable };
+            o[last] = new EndReleases(Fixed, j, source) { Axial = axial, Unstable = unstable };
         }
         return o;
     }

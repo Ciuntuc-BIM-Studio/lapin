@@ -201,6 +201,26 @@ public class AnalysisRunTests
     }
 
     [Fact]
+    public void Releases_that_leave_a_bar_free_to_slide_or_swing_are_refused_naming_it()
+    {
+        // ux at both ends: nothing holds the bar along its axis (its axial stiffness condenses to zero, a singular element).
+        Assert.Equal("its releases leave it free to move (ux released at both ends): hold that degree of freedom at one end at least",
+            FrameReleases.Unstable([true, false, false, false, false, false], [true, false, false, false, false, false]));
+        // uy at one end with rz at both: it swings about the other end. uy at i with rz at j only: a sliding end on a pin, held.
+        Assert.Contains("uy released with rz at both ends", FrameReleases.Unstable([false, true, false, false, false, true], [false, false, false, false, false, true]));
+        Assert.Null(FrameReleases.Unstable([false, true, false, false, false, false], [false, false, false, false, false, true]));
+        Assert.Null(FrameReleases.Unstable(FrameReleases.Pinned, FrameReleases.Pinned));
+        var t = Frame6x4();
+        var f = t.F;
+        var name = f.Model.Get(t.Beams[0])!.Name;
+        var ex = Assert.Throws<CommandException>(() => f.Run("analysis.setReleases", new JsonObject
+            { ["ids"] = new JsonArray(t.Beams[0]), ["i"] = new JsonArray(true, false, false, false, false, false), ["j"] = new JsonArray(true, false, false, false, false, false) }));
+        Assert.Contains($"„{name}”", ex.Message);
+        Assert.Contains("ux released at both ends", ex.Message);
+        Assert.Null(f.Model.Get(t.Beams[0])!.Attrs[FrameReleases.Key]);
+    }
+
+    [Fact]
     public void A_bar_whose_material_has_no_E_is_refused_and_the_analysis_does_not_start()
     {
         var t = Frame6x4(beamMaterial: "Mystery");

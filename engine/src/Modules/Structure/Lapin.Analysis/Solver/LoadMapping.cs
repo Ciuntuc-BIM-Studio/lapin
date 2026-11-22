@@ -100,9 +100,7 @@ public sealed partial class StructuralProblem
         {
             if (id == null) return null;
             if (materials.TryGetValue(id, out var had)) return had;
-            var e = (m.Get(id) is { Class: IfcClass.Material } own ? own : Materials.Find(m, id))
-                ?? new Entity($"lapin-material-{id}", IfcClass.Material, id, []);
-            return materials[id] = StructuralMaterials.Of(m, e);
+            return materials[id] = StructuralMaterials.Of(m, StructuralMaterials.EntityOf(m, id));
         }
         // Which slabs and walls are shells (§10.10): concrete ones with an E, as the options say; the others as in S1.
         var shellOf = ShellsTaken(am, settings, MaterialOf, notes);
@@ -130,10 +128,9 @@ public sealed partial class StructuralProblem
             if (props is not { Area: > 0 }) { refused.Add(new(f, $"its section „{f.Source.Section.Name}” gives no properties")); continue; }
             var mat = MaterialOf(f.Source.MaterialId);
             if (mat?.E is not { } e) { refused.Add(new(f, f.Source.MaterialId == null ? "its type names no material" : $"its material „{mat?.Name ?? f.Source.MaterialId}” has no E")); continue; }
-            double g;
-            if (mat.Poisson is { } nu) g = e.Value / (2 * (1 + nu.Value));
-            else if (mat.Kind == "timber") { g = e.Value / 16; timberG.Add(mat.Name); }
-            else { g = e.Value / (2 * 1.3); assumedNu.Add(mat.Name); }
+            var g = StructuralMaterials.ShearModulus(mat, e.Value, out var basis);
+            if (basis == "timber") timberG.Add(mat.Name);
+            else if (basis == "assumed") assumedNu.Add(mat.Name);
             var (pi, pj) = (f.I.At + f.OffI, f.J.At + f.OffJ);
             var u = (pj - pi).Normalized();
             var rotation = f.RotationDeg;
@@ -148,6 +145,8 @@ public sealed partial class StructuralProblem
             if (centroid.Length > 1e-9) offCentre++;
             if (props.Av2 is not { } av2 || props.Av3 is not { } av3) { (av2, av3) = (0, 0); noShear.Add(f.Source.Section.Name); }
             var rel = releases.GetValueOrDefault(f);
+            // Releases that leave it a mechanism (an axial or shear release at both ends): refused by name, not a singular solve.
+            if (rel?.Unstable is { } loose) { refused.Add(new(f, loose)); continue; }
             // A beam laid in the slab it carries (decision 357) keeps its own axis under a meshed slab by rigid arms (§10.4):
             // the slab and the beam work together as a T.
             var arm = Math.Abs(f.OffsetZ) > 1e-9 && slabNodes.Contains(f.I) && slabNodes.Contains(f.J) ? new Vec3(0, 0, f.OffsetZ) : Vec3.Zero;

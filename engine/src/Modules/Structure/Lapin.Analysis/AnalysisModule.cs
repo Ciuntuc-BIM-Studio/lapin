@@ -390,6 +390,8 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
                 var own = attrs[FrameReleases.Key] as JsonObject is { } had ? (JsonObject)had.DeepClone() : new JsonObject();
                 if (a.ContainsKey("i")) { if (ri == null) own.Remove("i"); else own["i"] = FrameReleases.ToJson(ri); }
                 if (a.ContainsKey("j")) { if (rj == null) own.Remove("j"); else own["j"] = FrameReleases.ToJson(rj); }
+                if (FrameReleases.Unstable(FrameReleases.Parse(own["i"]) ?? FrameReleases.Fixed, FrameReleases.Parse(own["j"]) ?? FrameReleases.Fixed) is { } why)
+                    throw new CommandException($"„{e.Name}”: {why}.");
                 attrs.Remove(FrameReleases.Key);
                 if (own.Count > 0) attrs[FrameReleases.Key] = own;
                 ctx.Replace(e.With(attrs: attrs));

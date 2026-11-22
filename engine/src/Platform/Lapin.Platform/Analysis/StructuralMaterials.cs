@@ -51,6 +51,22 @@ public static partial class StructuralMaterials
     [GeneratedRegex(@"\bC\s?(\d{2})\s?/\s?(\d{2,3})\b", RegexOptions.IgnoreCase)] private static partial Regex ConcreteClass();
     [GeneratedRegex(@"\bS\s?(235|275|355|420|450|460)", RegexOptions.IgnoreCase)] private static partial Regex SteelGrade();
 
+    /// <summary>The material an element names (its id, or a name): the model's own, the library's by name, else a bare one of that name (its values read from the name).</summary>
+    public static Entity EntityOf(IModelView m, string id) =>
+        (m.Get(id) is { Class: IfcClass.Material } own ? own : Materials.Find(m, id)) ?? new Entity($"lapin-material-{id}", IfcClass.Material, id, []);
+
+    /// <summary>
+    /// The shear modulus G (Pa) the analysis and the checks take: E/(2(1 + ν)) with the material's ν; timber's E0,mean/16 (EN 338's
+    /// tables, no ν for an orthotropic material); ν = 0.3 assumed otherwise. <paramref name="basis"/>: "nu", "timber" or "assumed".
+    /// </summary>
+    public static double ShearModulus(StructuralMaterial mat, double e, out string basis)
+    {
+        if (mat.Poisson is { } nu) { basis = "nu"; return e / (2 * (1 + nu.Value)); }
+        if (mat.Kind == "timber") { basis = "timber"; return e / 16; }
+        basis = "assumed";
+        return e / (2 * 1.3);
+    }
+
     public static StructuralMaterial Of(IModelView m, Entity material)
     {
         var name = material.Name;
