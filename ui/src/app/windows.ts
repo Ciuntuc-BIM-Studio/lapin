@@ -31,7 +31,9 @@ export async function openViewWindow(pane: Pane, title = 'View', at?: { x: numbe
   const label = `view-${Date.now().toString(36)}-${++windows}`;
   // A tab dragged out of the window (decision 445) opens where it was dropped: its title bar under the pointer.
   const place = at ? { x: Math.max(0, Math.round(at.x - 160)), y: Math.max(0, Math.round(at.y - 16)) } : {};
-  const w = new WebviewWindow(label, { url: `index.html?pane=${encodeURIComponent(JSON.stringify(pane))}`, title: `${brand.name} · ${title}`, width: 1100, height: 760, ...place });
+  const w = new WebviewWindow(label, { url: `index.html?pane=${encodeURIComponent(JSON.stringify(pane))}`, title: `${brand.name} · ${title}`, width: 1100, height: 760, ...place,
+    // As the main window (tauri.conf.json): HTML5 drag and drop left to the page, so a view drops onto a sheet here too (forum 206).
+    dragDropEnabled: false });
   await new Promise<void>((resolve) => {
     void w.once('tauri://created', () => resolve());
     void w.once('tauri://error', (e) => { useUi.setState({ notice: `The window could not open: ${String(e.payload)}` }); resolve(); });

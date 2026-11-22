@@ -61,7 +61,22 @@ public static class Nonlinear
         return q;
     }
 
-    public static NonlinearResult Solve(FrameProblem p, CaseLoads loads, NonlinearOptions o)
+    /// <summary>
+    /// The nonlinear solve of one load vector. Its iterations' systems are its own (§14.22): each one's factor values go to
+    /// <paramref name="store"/> (its own when none is given; a worker's, given to its solves one after another) once its
+    /// result is taken, and the next iteration's system takes them. Nothing it returns holds them: the results, the axial
+    /// forces and the states are arrays and problems of their own.
+    /// </summary>
+    public static NonlinearResult Solve(FrameProblem p, CaseLoads loads, NonlinearOptions o, FactorStore? store = null)
+    {
+        store ??= new FactorStore();
+        FrameSystem? held = null;
+        try { return Solve(p, loads, o, store, ref held); }
+        // The last system, given up when the solve ends however it ends: nothing reads it after.
+        finally { held?.Retire(store); }
+    }
+
+    static NonlinearResult Solve(FrameProblem p, CaseLoads loads, NonlinearOptions o, FactorStore store, ref FrameSystem? held)
     {
         var ne = p.Elements.Count;
         var active = Enumerable.Repeat(true, ne).ToArray();
@@ -81,12 +96,20 @@ public static class Nonlinear
         {
             var withKg = o.SecondOrder && axial != null;
             var q = InStates(p, active, lifted, withKg ? axial : null);
-            var (sys, fail) = FrameSystem.Build(q, layout: layout);
+            // The last iteration's system is done with (its result taken: arrays of its own): its values go to the next one.
+            held?.Retire(store);
+            held = null;
+            var (sys, fail) = FrameSystem.Build(q, layout: layout, store: store);
             if (sys == null)
             {
                 if (fail?.Mechanism == null) return new NonlinearResult { Ok = false, Iterations = it, Message = fail?.Refused ?? "The problem could not be assembled." };
                 // Unstable when the same states without the axial forces stand.
-                var unstable = withKg && FrameSystem.Build(InStates(p, active, lifted, null), layout: layout).System != null;
+                var unstable = false;
+                if (withKg && FrameSystem.Build(InStates(p, active, lifted, null), layout: layout, store: store).System is { } standing)
+                {
+                    unstable = true;
+                    standing.Retire(store);
+                }
                 var slackNow = Enumerable.Range(0, ne).Where(k => !active[k]).ToList();
                 return new NonlinearResult
                 {
@@ -99,6 +122,7 @@ public static class Nonlinear
                 };
             }
             layout = sys.Layout;
+            held = sys;
             var r = sys.SolveCase(loads);
             first ??= r;
             var n = new double[ne];

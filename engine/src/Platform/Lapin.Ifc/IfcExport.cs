@@ -23,8 +23,11 @@ namespace Lapin.Ifc;
 /// <summary><paramref name="Exclude"/>: elements left out (the kinds and storeys not chosen, what the 3D view hides: <see cref="ModelSurvey.Excluded"/>).</summary>
 /// <summary><paramref name="Voids"/>: the openings also as solid voids (IfcBuildingElementProxy PROVISIONFORVOID, decision 289), of the kinds asked, their sides moved by the offset; off by default.</summary>
 public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null,
-    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false, bool TypePropertiesOnOccurrences = false, bool SpaceBrep = false)
+    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false, bool TypePropertiesOnOccurrences = false, bool SpaceBrep = false,
+    bool AdvancedBrep = false)
 {
+    // AdvancedBrep (docs/plan-studio-freeform.md §9, F2c): a body known exactly (IIfcExactBodies: a Studio cylinder, a revolution, a smooth
+    // loft, a SubD's regular patches) written as an IfcAdvancedBrep on its exact surfaces instead of its facets. Off: every body as it was.
     // TypePropertiesOnOccurrences (issue #30, decision 667): the type's own properties (its property sets, not its instance defaults) also
     // on each of its elements, in the sets of the same names, for readers that look at the occurrence only; the element's own value of a
     // property wins over its type's. Off: the type's properties on the type only, as IFC has them (IfcRelDefinesByType).
@@ -94,6 +97,9 @@ public static partial class IfcExport
     const string MirrorKey = "#mirrored";
     /// <summary>An apartment type's instance: its type's name and id, where it stands (docs/plan-units.md).</summary>
     public const string UnitSetName = "Lapin_Unit";
+    /// <summary>A SubD solid's cage (decision 780): its points, faces and creases as JSON in <see cref="SubDCageProperty"/>, read back into its <c>cage</c>.</summary>
+    public const string SubDSetName = "Lapin_SubD";
+    public const string SubDCageProperty = "Cage";
     const string IntentKey = "Pset_Lapin_Intent", PhaseKey = "Pset_Lapin_Phase", ParamsKey = "Pset_Lapin_Parameters";
     public const string Version = "1";
 
@@ -326,6 +332,7 @@ public static partial class IfcExport
             // The alignments before the elements: an element of the railway is placed along its alignment's curve (IfcLinearPlacement).
             Alignments();
             WriteElements();
+            if (ExactBodies > 0) Notes.Add($"{ExactBodies} bod{(ExactBodies == 1 ? "y" : "ies")} written exactly, as IfcAdvancedBrep.");
             ProvisionVoids();
             Assemblies();
             CurtainWallParts();
@@ -937,6 +944,8 @@ public static partial class IfcExport
             // A part's (decision 520 P3): the type's map when it is built with its type's values, else its own body.
             else if (!grouped && at == null && railPart == null && geo!.Instance is { } inst && (inst.Local == null || (typeMap != null && maps.GetValueOrDefault(inst.Body) == typeMap))
                 && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
+            else if (!grouped && at == null && railPart == null && o.AdvancedBrep && parts.Count == 1 && ExactOf(e, parts[0].Solid) is { } exact)
+                reps.Add(AdvancedRep(exact, StyleKey(parts[0]), fr));
             else if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, StyleKey(p), v => Local(jp2, v)) : Brep(p.Solid, StyleKey(p), fr))));
             // A wall over its parts (a layer, a lintel, a zone) keeps a body of its own too (issue #29): readers that colour or measure the
             // wall find faces on it. Its items are its parts' own (each written once, the parts placed where the wall is), a part of many
@@ -1105,6 +1114,29 @@ public static partial class IfcExport
             foreach (var src in s.Catalog.All<IIfcRecesses>())
                 if (src.RecessOf(m, s.Catalog, e) is { } b) return b;
             return null;
+        }
+
+        /// <summary>The element's body as it is exactly, from the first module that knows it (<see cref="IIfcExactBodies"/>), checked against its geometry's body.</summary>
+        ExactBody? ExactOf(Entity e, Solid solid)
+        {
+            foreach (var src in s.Catalog.All<IIfcExactBodies>())
+            {
+                try { if (src.ExactOf(m, s.Catalog, e, solid) is { } b) return b; }
+                catch (Exception ex) when (ex is ArgumentException or InvalidOperationException) { Notes.Add($"„{e.Name}” was written as its facets: {ex.Message}"); }
+            }
+            return null;
+        }
+
+        ExactWriter? exactWriter;
+        public int ExactBodies;
+
+        /// <summary>An exact body as an IfcAdvancedBrep in the placement's frame, in its colour: an "AdvancedBrep" representation.</summary>
+        string AdvancedRep(ExactBody b, string? hex, Frame fr)
+        {
+            var item = (exactWriter ??= new ExactWriter(f, ifc: true)).Brep(b.Moved(fr.Local, fr.Turn));
+            if (hex != null) f.Add("IFCSTYLEDITEM", item, L(new[] { Style(hex) }), Null);
+            ExactBodies++;
+            return f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("AdvancedBrep"), L(new[] { item }));
         }
 
         /// <summary>The element's body as constructive solids, from the first module that gives one (<see cref="IIfcSweptBodies"/>).</summary>
@@ -2222,7 +2254,7 @@ public static partial class IfcExport
             foreach (var (key, v) in e.Attrs)
             {
                 // A stored body (a reference from IFC) is written as geometry, not as text; the project's standards stay in .lapin.
-                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || StoredBodies.ExportOnly.Contains(key) || key == Plan2d.Key || key == IfcSource.Key || key == ReferenceQuantities.Key || key == ReferenceLayers.AxisKey || key == ReferenceLayers.PartOfKey || privateKeys.Contains(key) || (only != null && !only.Contains(key))) continue;
+                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || StoredBodies.ExportOnly.Contains(key) || key == Plan2d.Key || key == IfcSource.Key || key == ReferenceQuantities.Key || key == ReferenceLayers.AxisKey || key == ReferenceLayers.PartOfKey || privateKeys.Contains(key) || (only != null && !only.Contains(key)) || filters.Any(x => x.IsPrivate(e, key))) continue;
                 // A foreign element's properties go as the sets its file had, not as text.
                 if (key == "properties" && e.Attrs[IfcSource.Key] != null) continue;
                 var field = fields.GetValueOrDefault(key);

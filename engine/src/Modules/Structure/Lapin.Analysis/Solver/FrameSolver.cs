@@ -221,9 +221,12 @@ public sealed class FrameSystem
     /// <summary>
     /// The system assembled and factored, or the solution that says why it could not be (too large, a mechanism). Its
     /// numbering, ordering and symbolic factorization are the layout's (<paramref name="layout"/> when the problem has its
-    /// shape, else the problem's kept one, else made now: §14.21); only the values are worked out here.
+    /// shape, else the problem's kept one, else made now: §14.21); only the values are worked out here. With
+    /// <paramref name="store"/> (§14.22), its factors' values are those given up there on the same structures, and what it
+    /// works with and drops (the rotations' factor, a mechanism's) goes back there; the system's own factor is its own until
+    /// its owner gives it up (<see cref="Retire"/>).
     /// </summary>
-    public static (FrameSystem? System, FrameSolution? Failure) Build(FrameProblem p, FactorKind kind = FactorKind.Sparse, Stopwatch? sw = null, FrameLayout? layout = null)
+    public static (FrameSystem? System, FrameSolution? Failure) Build(FrameProblem p, FactorKind kind = FactorKind.Sparse, Stopwatch? sw = null, FrameLayout? layout = null, FactorStore? store = null)
     {
         sw ??= Stopwatch.StartNew();
         var s = new FrameSystem(p);
@@ -288,7 +291,7 @@ public sealed class FrameSystem
         if (rot.Count > 0)
         {
             var dofOfEq = lay.RotDofOfEq;
-            var kr = Assemble(lay.RotStructure!.Fresh(), rot.DofsOf);
+            var kr = Assemble(lay.RotStructure!.Fresh(store), rot.DofsOf);
             kr.Factor(j =>
             {
                 var dof = dofOfEq[j];
@@ -296,25 +299,29 @@ public sealed class FrameSystem
                 springs[dof] = k;
                 return k;
             });
+            // Only its springs are kept: nothing reads it again.
+            if (store != null) kr.Release(store);
         }
 
         var eq = all.Eq;
         s.Eq = eq;
-        var k0 = Assemble(lay.Structure.Fresh(), all.DofsOf);
+        var k0 = Assemble(lay.Structure.Fresh(store), all.DofsOf);
         foreach (var (dof, k) in springs) k0.Add(eq[dof], eq[dof], k);
         var bad = k0.Factor();
         if (bad >= 0)
         {
             var at = Array.IndexOf(eq, bad);
             var node = at / 6;
+            if (store != null) k0.Release(store);
             // The mechanism's shape: the model held at that pivot (and any later one), pushed there; what moves most is the mechanism.
-            var k1 = Assemble(lay.Structure.Fresh(), all.DofsOf);
+            var k1 = Assemble(lay.Structure.Fresh(store), all.DofsOf);
             foreach (var (dof, k) in springs) k1.Add(eq[dof], eq[dof], k);
             var scale = reference[node] > 0 ? reference[node] : 1;
             k1.Factor(_ => scale);
             var x = new double[neq];
             x[bad] = scale;
             k1.Solve(x);
+            if (store != null) k1.Release(store);
             var moves = new List<(int Node, double D)>();
             for (var n = 0; n < nn; n++)
             {
@@ -339,6 +346,13 @@ public sealed class FrameSystem
         s._k = k0;
         return (s, null);
     }
+
+    /// <summary>
+    /// Gives its factor's values up to <paramref name="store"/> (§14.22), for the next system its owner builds on the same
+    /// structure. Only the one who built it with that store calls it, once nothing reads this system any more (nothing it
+    /// returned holds them: a case's results are arrays of their own); a solve on it throws afterwards.
+    /// </summary>
+    public void Retire(FactorStore store) => _k.Release(store);
 
     /// <summary>The diagonal of K by equation (the springs' included).</summary>
     public double[] Diagonal()

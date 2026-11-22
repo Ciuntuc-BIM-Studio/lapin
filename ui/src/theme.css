@@ -3091,3 +3091,22 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 .float-panel { position: fixed; z-index: 20; background: var(--panel); border: 1px solid var(--rule-strong); box-shadow: 0 10px 32px rgba(0, 0, 0, 0.25); }
 .float-panel > .panel-fold { right: 6px; }
 .float-resize { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize; touch-action: none; z-index: 4; background: linear-gradient(135deg, transparent 55%, var(--ink-muted) 55%, var(--ink-muted) 62%, transparent 62%, transparent 74%, var(--ink-muted) 74%, var(--ink-muted) 81%, transparent 81%); }
+
+/* SubD cage edit mode (modules/studio/SubDEdit3D.tsx) */
+.subd-cage .subd-edge { fill: none; stroke: var(--accent); stroke-width: 1; opacity: 0.75; stroke-linecap: round; }
+.subd-cage .subd-edge.border { stroke-dasharray: 5 3; }
+.subd-cage .subd-edge.crease { stroke-width: 2.4; opacity: 1; }
+.subd-cage .subd-edge.crease.semi { stroke: #c9892b; }
+.subd-cage .subd-edge.crease.sharp { stroke: #d33a2c; }
+.subd-cage .subd-edge.hot { stroke-width: 2.6; opacity: 1; }
+.subd-cage .subd-edge.on { stroke: #f08a00; stroke-width: 3; opacity: 1; }
+.subd-cage .subd-face { stroke: none; }
+.subd-cage .subd-face.hot { fill: var(--accent); fill-opacity: 0.18; }
+.subd-cage .subd-face.on { fill: #f08a00; fill-opacity: 0.32; }
+.subd-cage .subd-point { fill: var(--panel); stroke: var(--accent); stroke-width: 1.4; }
+.subd-cage .subd-point.dim { fill: var(--accent); stroke: none; opacity: 0.6; }
+.subd-cage .subd-point.hot { fill: var(--accent); }
+.subd-cage .subd-point.on { fill: #f08a00; stroke: var(--text); }
+.subd-cage .subd-guide { stroke-width: 1.5; stroke-dasharray: 6 4; fill: none; }
+.subd-cage .subd-guide.red { stroke: #d33a2c; } .subd-cage .subd-guide.green { stroke: #2b9a3b; } .subd-cage .subd-guide.blue { stroke: #2f62d8; }
+.subd-bar .cell { width: auto; }
