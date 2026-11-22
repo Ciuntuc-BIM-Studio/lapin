@@ -27,6 +27,9 @@ public static class Roof
     public static readonly (double W, double D) WallPlate = (0.14, 0.14), RidgeBeam = (0.14, 0.20), HipRafter = (0.10, 0.20), Purlin = (0.14, 0.16);
     /// <summary>Battens and counter-battens between the rafters and the covering.</summary>
     public const double Battens = 0.04;
+
+    /// <summary>The pitch (degrees) a roof takes when it says none.</summary>
+    public const double DefaultPitch = 30;
     /// <summary>A roof without a structure: a solid deck under the covering, this thick unless the roof says (<c>deckThickness</c>).</summary>
     public const double Deck = 0.16;
     /// <summary>Rafter and chord sections: the old ones in cm, the Nordic ones in mm (said so).</summary>
@@ -63,7 +66,7 @@ public static class Roof
         /// <summary>A mansard's upper tier: from where the steep eaves have come in by the inset, at the upper pitch.</summary>
         public Mansard? Mansard => Roof.Str("shape") != "mansard" ? null : new Mansard(
             Roof.NumOrNull("upperPitch") ?? 30,
-            (Roof.NumOrNull("mansardInset") ?? 1.0) * Math.Tan((Roof.NumOrNull("pitch") ?? 30) * Math.PI / 180));
+            (Roof.NumOrNull("mansardInset") ?? 1.0) * Math.Tan((Roof.NumOrNull("pitch") ?? DefaultPitch) * Math.PI / 180));
         /// <summary>Whether it has a timber structure (rafters on plates); otherwise a deck under the covering (a vault is always a deck).</summary>
         public bool Framed => !Flat && !Barrel && Roof.Str("structure") != "none";
         /// <summary>The framing system: rafters (on purlins, with a ridge beam), collar (couples with collar ties) or trusses.</summary>
@@ -117,7 +120,7 @@ public static class Roof
         var corners = Contour(roof);
         if (corners.Count < 3) return null;
         var storey = Spatial.StoreyOf(m, roof.Id);
-        var plateZ = (storey?.Num("elevation") ?? 0) + (storey?.Num("height", 3) ?? 3) + roof.Num("eaveOffset");
+        var plateZ = (storey?.Num("elevation") ?? 0) + WallTop.StoreyHeight(storey) + roof.Num("eaveOffset");
         var logicalRules = Rules(roof, corners);
         if (Slabs.Rises(roof) is not { } rises)
             return new Resolved(roof, corners, logicalRules, plateZ);
@@ -132,7 +135,7 @@ public static class Roof
     {
         var n = outline.Count;
         var shape = roof.Str("shape") ?? "hip";
-        var pitch = roof.NumOrNull("pitch") ?? 30;
+        var pitch = roof.NumOrNull("pitch") ?? DefaultPitch;
         var overhang = roof.NumOrNull("overhang") ?? 0.5;
         var rake = roof.NumOrNull("gableOverhang") ?? 0.3;
         var kinds = Kinds(shape, outline, roof.Str("ridgeDirection") ?? "auto", (int)(roof.NumOrNull("lowEdge") ?? -1), roof.Bool("shedFlip"));

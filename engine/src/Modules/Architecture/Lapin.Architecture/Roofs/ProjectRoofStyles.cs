@@ -41,7 +41,7 @@ public static class ProjectRoofStyles
             attrs["riseShare"] = Math.Round(rise / span, 4);
         return new JsonObject
         {
-            ["id"] = id, ["label"] = label, ["shape"] = roof.Str("shape") ?? "hip", ["pitch"] = roof.NumOrNull("pitch") ?? 30,
+            ["id"] = id, ["label"] = label, ["shape"] = roof.Str("shape") ?? "hip", ["pitch"] = roof.NumOrNull("pitch") ?? Roof.DefaultPitch,
             ["structure"] = roof.Str("structure") ?? "rafters", ["attrs"] = attrs,
         };
     }

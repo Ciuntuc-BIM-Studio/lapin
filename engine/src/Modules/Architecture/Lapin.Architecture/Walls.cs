@@ -1548,10 +1548,7 @@ public static class Walls
         {
             var band = bands[i];
             if (band.Core || band.To - band.From > 1e-9) continue;
-            var step = i < core ? 1 : -1;
-            var on = -1;
-            for (var j = i + step; j >= 0 && j < bands.Count; j += step)
-                if (bands[j].To - bands[j].From > 1e-9) { on = j; break; }
+            var on = LayerExtents.ZeroLayerSupport(bands.Count, i, core, j => bands[j].To - bands[j].From);
             if (on < 0) continue;
             var o = bands[on];
             // The core of a zoned wall is measured by its zones.

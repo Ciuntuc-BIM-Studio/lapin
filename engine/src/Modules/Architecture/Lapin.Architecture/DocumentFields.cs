@@ -217,7 +217,7 @@ public sealed partial class DocumentFields : IDocumentFields
                 return m.OfClass(IfcClass.Roof).Select(r => (IReadOnlyDictionary<string, string>)new Dictionary<string, string>
                 {
                     ["id"] = r.Id, ["name"] = r.Name, ["storey"] = Spatial.StoreyOf(m, r.Id)?.Name ?? "", ["shape"] = r.Str("shape") ?? "hip",
-                    ["pitch"] = r.Str("shape") == "flat" ? "" : DocNumbers.Number(r.NumOrNull("pitch") ?? 30, f, 0) + "°",
+                    ["pitch"] = r.Str("shape") == "flat" ? "" : DocNumbers.Number(r.NumOrNull("pitch") ?? Roofs.Roof.DefaultPitch, f, 0) + "°",
                     ["covering"] = Roofs.RoofCatalog.CoveringOf(r.Str("covering")).Id,
                 }).ToList();
             case "materials":

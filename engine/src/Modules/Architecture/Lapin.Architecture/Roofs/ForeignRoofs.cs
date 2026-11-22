@@ -48,7 +48,7 @@ public static class ForeignRoofs
         attrs["coveringThickness"] = Math.Round(covering.Thickness, 4);
         attrs[RoofCoverings.DeckKey] = deckName;
         attrs["deckThickness"] = Math.Round(deckThickness, 4);
-        attrs["eaveOffset"] = Math.Round(deck.Bottom - (storey.Num("elevation") + storey.Num("height", 3)), 6);
+        attrs["eaveOffset"] = Math.Round(deck.Bottom - (storey.Num("elevation") + WallTop.StoreyHeight(storey)), 6);
         attrs.Remove("style");
         if (under.Count > 1) ctx.Notes.Add("a foreign roof's layers under its covering came in as one deck, of the thickest one's material");
         var id = GlobalId.IsValid(e.GlobalId) && edit.Model.Get(e.GlobalId) == null ? e.GlobalId : edit.NewId();

@@ -302,7 +302,7 @@ public static class Ceilings
         var spec = SpecOf(m, c);
         var storey = Spatial.StoreyOf(m, c.Id);
         var z = (storey?.Num("elevation") ?? 0) + c.Num("height", 2.7);
-        var top = (storey?.Num("elevation") ?? 0) + (storey?.Num("height", 3) ?? 3);
+        var top = (storey?.Num("elevation") ?? 0) + WallTop.StoreyHeight(storey);
         var tileMat = Materials.Find(m, spec.TileMaterial)?.Id;
         var gridMat = Materials.Find(m, spec.GridMaterial)?.Id;
         var parts = new List<GeometryPart>();

@@ -912,28 +912,12 @@ public static class CurtainWalls
         if (p.Count < 3) return null;
         if (Polygon2.SignedArea(p) < 0) p.Reverse();
         var n = p.Count;
-        // Each side moved in along its left normal (counter-clockwise: the inside).
-        var lines = Enumerable.Range(0, n).Select(k =>
-        {
-            var (a, b) = (p[k], p[(k + 1) % n]);
-            var dir = (b - a).Normalized();
-            var left = new Vec2(-dir.Y, dir.X);
-            return (A: a + left * by, Dir: dir);
-        }).ToList();
-        var o = new List<Vec2>();
-        for (var k = 0; k < n; k++)
-        {
-            var (l0, l1) = (lines[(k + n - 1) % n], lines[k]);
-            var cross = l0.Dir.X * l1.Dir.Y - l0.Dir.Y * l1.Dir.X;
-            if (Math.Abs(cross) < 1e-9) { o.Add(l1.A); continue; }
-            var w = l1.A - l0.A;
-            var t = (w.X * l1.Dir.Y - w.Y * l1.Dir.X) / cross;
-            o.Add(l0.A + l0.Dir * t);
-        }
+        // Each side moved in (the shared mitred offset, Polygon2.Offset), the corners where the moved sides meet.
+        var o = Polygon2.Offset(p, [-by]).ToList();
         // Closed up: the inner outline turned over, or a side of it running backwards.
         if (Polygon2.SignedArea(o) < 1e-4) return null;
         for (var k = 0; k < n; k++)
-            if (Vec2.Dot(o[(k + 1) % n] - o[k], lines[k].Dir) < -1e-9) return null;
+            if (Vec2.Dot(o[(k + 1) % n] - o[k], p[(k + 1) % n] - p[k]) < -1e-9) return null;
         return o;
     }
 

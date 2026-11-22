@@ -134,11 +134,14 @@ public static class Openings
     /// </summary>
     public const string HoleWidthKey = "holeWidth", HoleHeightKey = "holeHeight", FillOffsetKey = "fillOffset";
 
+    /// <summary>A bare opening's size when none is said (a door's: 900 × 2100).</summary>
+    public const double BareWidth = 0.9, BareHeight = 2.1;
+
     public static Placed Place(IModelView m, Entity opening)
     {
         var fill = FillOf(m, opening.Id);
         var spec = fill == null ? null : SpecOf(m, fill.Id);
-        var (width, height) = spec == null ? (opening.Num("width", 1), opening.Num("height", 2))
+        var (width, height) = spec == null ? (opening.Num("width", BareWidth), opening.Num("height", BareHeight))
             : (opening.NumOrNull(HoleWidthKey) ?? spec.Width, opening.NumOrNull(HoleHeightKey) ?? spec.Height);
         // Over the finished floor (forum topic 192): raised by the floor's height over the wall's base, worked out now.
         var sillBase = OpeningSills.BaseOf(m, opening);

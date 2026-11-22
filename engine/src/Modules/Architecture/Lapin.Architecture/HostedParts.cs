@@ -119,16 +119,9 @@ public sealed class HostedParts : ISplitFollower
             var pts = arr.Select(Uv).OfType<Vec2>().ToList();
             if (s.Bool("closed") && pts.Count >= 3) pts.Add(pts[0]);
             for (var i = 0; i + 1 < pts.Count; i++)
-                if (Crosses(a, b, pts[i], pts[i + 1])) return true;
+                if (Polyline2.Crosses(a, b, pts[i], pts[i + 1])) return true;
         }
         return false;
-    }
-
-    static bool Crosses(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
-    {
-        double O(Vec2 p, Vec2 q, Vec2 r) => Vec2.Cross(q - p, r - p);
-        var (d1, d2, d3, d4) = (O(c, d, a), O(c, d, b), O(a, b, c), O(a, b, d));
-        return d1 * d2 < 0 && d3 * d4 < 0;
     }
 
     static Vec2 Closest(Vec2 a, Vec2 b, Vec2 p)

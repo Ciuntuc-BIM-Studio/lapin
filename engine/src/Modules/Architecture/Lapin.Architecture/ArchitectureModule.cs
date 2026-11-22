@@ -928,7 +928,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             }
             var along = Json.Number(a["along"]) ?? Openings.AlongOf(wall, new Vec2(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0));
             // sillFrom (forum topic 192): "structural" | "finished", else the project's default.
-            var opening = Openings.AddBare(ctx, wall, along, Json.Number(a["sill"]) ?? 0, Json.Number(a["width"]) ?? 0.9, Json.Number(a["height"]) ?? 2.1, (string?)a["shape"], Json.Number(a["rise"]),
+            var opening = Openings.AddBare(ctx, wall, along, Json.Number(a["sill"]) ?? 0, Json.Number(a["width"]) ?? Openings.BareWidth, Json.Number(a["height"]) ?? Openings.BareHeight, (string?)a["shape"], Json.Number(a["rise"]),
                 OpeningSills.Parse((string?)a["sillFrom"]) ?? OpeningSills.ProjectDefault(ctx.Model));
             return new JsonObject { ["id"] = opening.Id };
         });
