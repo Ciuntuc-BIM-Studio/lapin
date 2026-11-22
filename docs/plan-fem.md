@@ -1130,3 +1130,7 @@ Utilizatorul a luat recomandările: pasul următor mic este refolosirea memoriei
 Pe 9 fire se alocă puțin mai mult decât pe unul: fiecare lucrător își face primul set. Pe un fir setul de lucru cel mai mare al cadrului la 0,25 m rămâne ~5,8–5,9 GB (cât ține procesul de test, nu bucla). Pe modelele mici câștigul e mic (factorul e mic față de restul iterației); timpul pe un fir nu se schimbă dincolo de zgomot, pe 9 fire scade cu 20–30 % pe modelele cu plăci (mai puțin lucru pentru colector).
 
 **Rămase:** ce se alocă acum pe iterație e mai ales restul: copiile `With` ale barelor și problema `InStates`, vectorii unui caz (`Loads`, `rhs`, `u`, reziduurile rafinării), rezultatele barelor și plăcilor (păstrate doar ale ultimei iterații, dar făcute la fiecare). Ar putea fi refolosite tot de buclă (rezultatele iterațiilor intermediare nu ies din ea), cu aceeași regulă: ce se returnează e al apelantului. Nu s-a făcut: câștigul e mai mic, iar rezultatele ar trebui copiate la sfârșit.
+
+#### Răspunsurile utilizatorului (22.11.2026)
+
+Utilizatorul a luat recomandările: vectorii și rezultatele intermediare ale iterațiilor nu se reciclează deocamdată; `FactorStore` și `FrameSystem.Retire` rămân publice și documentate; depozitul păstrează cel mult 3 seturi de valori.
