@@ -1,6 +1,6 @@
 # Studio: free-form surfaces (SubD and NURBS), the ideas worth keeping
 
-Written 21.11.2026 after reading `cekuhnen/blender-nurbs` ("NURBS Proto", a Blender add-on on NVIDIA's USD BRep kernel), its README, development notes and kernel build. The user asked for the good ideas to be noted, and for free-form surfaces in Studio to be the use. Status: §0–§6 are ideas; **§7–§9 are the plan the user approved on 21.11.2026** (decision 775: F1 SubD in C# first, then F2; the terrain keeps its TIN and gains a SubD design surface).
+Written 21.11.2026 after reading [`cekuhnen/blender-nurbs`](https://github.com/cekuhnen/blender-nurbs), credited as the inspiration in the user guide (Studio → SubD solids); ideas and behaviours only, no code ("NURBS Proto", a Blender add-on on NVIDIA's USD BRep kernel), its README, development notes and kernel build. The user asked for the good ideas to be noted, and for free-form surfaces in Studio to be the use. Status: §0–§6 are ideas; **§7–§9 are the plan the user approved on 21.11.2026** (decision 775: F1 SubD in C# first, then F2; the terrain keeps its TIN and gains a SubD design surface).
 
 ## 0. The rule for this document
 

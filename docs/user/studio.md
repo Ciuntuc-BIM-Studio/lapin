@@ -161,6 +161,8 @@ A polyline's properties list its sides. Type a side's length, and its end moves 
 
 A **SubD solid** is a smooth, free-form body shaped from a coarse **cage** of points, edges and faces (Catmull–Clark subdivision). Pull a few points of the cage, and the whole body follows in a smooth curve. It is a Studio solid like the others: it takes booleans, fillets, quantities and IFC export, and it keeps its identity when you edit it.
 
+*Inspiration:* the free-form tools in Studio owe ideas to [blender-nurbs](https://github.com/cekuhnen/blender-nurbs) by cekuhnen, a NURBS modelling add-on for Blender. Lapin's code is its own: only the ideas were taken, not the code.
+
 **Studio → Solids → SubD** offers **SubD box**, **SubD cylinder** and **SubD plane** (an open surface, 4 × 4 quads): click on the plan or on the ground in 3D to place one. **SubD from solid** turns the faces of the selected Studio solid into the cage of a new SubD solid (the source stays; small bodies only).
 
 ### Editing the cage
