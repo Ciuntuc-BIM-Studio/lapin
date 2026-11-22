@@ -127,6 +127,25 @@ if (existsSync(textureRegister)) {
   licences.add('CC0-1.0 (textures)');
 }
 
+// Intel Open Image Denoise (docs/plan-render.md, S4), shipped beside the engine: its register's licence and its bundled
+// parts' allowed, each platform's release pinned by its SHA-256; a fetched copy holds the licence and nothing of the GPU
+// runtimes left out (SYCL, CUDA, HIP), whose terms are not the core's.
+const oidnRegister = join(root, 'engine/native/oidn.json');
+if (existsSync(oidnRegister)) {
+  const reg = JSON.parse(readFileSync(oidnRegister, 'utf8'));
+  if (!ok(reg.licence ?? '')) bad.push(`OIDN: ${reg.licence ?? 'no licence'}`);
+  for (const [part, l] of Object.entries(reg.bundled ?? {})) if (!ok(l)) bad.push(`OIDN's ${part}: ${l}`);
+  for (const [rid, a] of Object.entries(reg.assets ?? {})) {
+    if (!/^[0-9a-f]{64}$/.test(a.sha256 ?? '')) bad.push(`OIDN for ${rid}: no SHA-256 pinned`);
+    const dir = join(root, 'engine/native', rid, 'oidn');
+    if (!existsSync(dir)) continue;
+    if (!existsSync(join(dir, 'doc', 'LICENSE.txt'))) bad.push(`OIDN for ${rid}: its LICENSE.txt is missing`);
+    for (const d of ['bin', 'lib']) if (existsSync(join(dir, d))) for (const f of readdirSync(join(dir, d))) if (/sycl|cuda|hip/i.test(f)) bad.push(`OIDN for ${rid}: ${d}/${f} is a GPU runtime left out of what Lapin ships`);
+    count++;
+  }
+  licences.add(`${reg.licence} (OIDN)`);
+}
+
 if (bad.length) {
   console.error(`✗ ${bad.length} production dependencies are not under a permissive licence:\n  ${bad.join('\n  ')}`);
   process.exit(1);

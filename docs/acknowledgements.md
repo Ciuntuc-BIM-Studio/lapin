@@ -85,6 +85,10 @@ The trees stay Lapin's own plantings (decision 234).
 
 The texture sets a material can take in its Appearance tab (docs/plan-render.md, S1; decision 777) are from [ambientCG](https://ambientcg.com) by Lennart Demes and its contributors, released under Creative Commons CC0 1.0, so nothing is owed. We credit them anyway. The sets are Bricks085, Concrete034, PaintedPlaster017, WoodFloor043, Tiles107, PavingStones150, Metal009 and Fabric061, each brought down to 512 px for the app. Their register, with each file's hash, is `ui/src/viewport/texture-library.json`; `pnpm check:licenses` checks it.
 
+## The path tracer
+
+The 3D view's **Render** (docs/plan-render.md, S4) traces light with [three-gpu-pathtracer](https://github.com/gkjohnson/three-gpu-pathtracer) by Garrett Johnson (MIT) over his [three-mesh-bvh](https://github.com/gkjohnson/three-mesh-bvh) (MIT), both npm dependencies of the interface. Still images on the desktop are denoised by [Intel Open Image Denoise](https://github.com/RenderKit/oidn) (Apache-2.0, with oneTBB, Apache-2.0): its own `oidnDenoise` program from the official release, run beside the engine, never linked into Lapin; `scripts/fetch-oidn.mjs` fetches it, checked against the SHA-256 in `engine/native/oidn.json`, and keeps only its CPU (and, on macOS, Metal) device. The denoiser in the view and in the browser is Lapin's own (`ui/src/viewport/denoise.ts`), after the edge-avoiding à-trous filter of H. Dammertz, D. Sewtz, J. Hanika and H. Lensch, "Edge-Avoiding À-Trous Wavelet Transform for fast Global Illumination Filtering" (HPG 2010).
+
 ## blender-nurbs
 
 [blender-nurbs](https://github.com/cekuhnen/blender-nurbs) ("NURBS Proto") by cekuhnen is a NURBS surface-modelling add-on for Blender, built on NVIDIA's USD BRep kernel. Reading it, its development notes and the way it treats surfaces, gave Studio's free-form tools many of their ideas (docs/plan-studio-freeform.md §0–6): a smooth body edited through a coarse cage, creases, mirror symmetry, thickness, and exact surfaces carried out to IFC and STEP. We credit it as the inspiration.

@@ -4,12 +4,14 @@ import { LibraryImportHost } from '../../platform/ImportPreview';
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { AlignStartVertical, ArrowLeftRight, CornerDownRight, CopyPlus, Slash, Scale, Braces, Tags, Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
+import { Aperture, AlignStartVertical, ArrowLeftRight, CornerDownRight, CopyPlus, Slash, Scale, Braces, Tags, Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { openTempDimProperties, TEMP_DIM_DIALOG } from '../../viewport/tempDimProps';
 import { AngleDims } from '../../viewport/AngleTempDims';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { notify } from '../../app/store';
+import { useRenderProfile } from '../../viewport/render3d';
+import { toggleRendering } from '../../viewport/renderMode';
 import { nextVisualStyle, XRAY_NOTICE } from '../../app/visualStyle';
 import { ribbonTabs, similarFor } from '../../platform/modules';
 import { openPulldown } from '../../shell/pulldown';
@@ -122,6 +124,7 @@ const SaveSymbolDialog = lazyPart(() => import('./symbols/SaveSymbolDialog').the
 const TitleBlocksDialog = lazyPart(() => import('./titleBlocks/TitleBlocksDialog').then((m) => m.TitleBlocksDialog), { title: 'Title blocks' });
 const TempDimPropertiesDialog = lazyPart(() => import('./TempDimPropertiesDialog').then((m) => m.TempDimPropertiesDialog), { title: 'Temporary dimension properties' });
 const DisplayQualityDialog = lazyPart(() => import('./DisplayQualityDialog').then((m) => m.DisplayQualityDialog), { title: 'Display quality' });
+const RenderDialog = lazyPart(() => import('./RenderDialog').then((m) => m.RenderDialog), { title: 'Render' });
 const SunDialog = lazyPart(() => import('./SunDialog').then((m) => m.SunDialog), { title: 'Sun and shadows' });
 const ProfilesDialog = lazyPart(() => import('./ProfilesDialog').then((m) => m.ProfilesDialog), { title: 'Profiles' });
 const SectionsDialog = lazyPart(() => import('./SectionsDialog').then((m) => m.SectionsDialog), { title: 'Section markers' });
@@ -378,6 +381,13 @@ const core: LapinModule = {
         // The clash report's open clashes as red clouds with their numbers in the plan, section or elevation in front (decision 293), on the screen only.
         { id: 'view.clashMarks', label: 'Clash marks', icon: Cloud, run: () => void toggleClashMarks().then((on) => { if (on == null) notify('Open a plan, section or elevation to mark the clashes in.'); }) },
         { id: 'view.displayQuality', label: 'Display quality', icon: Gauge, run: () => useUi.setState({ dialog: 'displayQuality' }) },
+        // The 3D view rendered by path tracing, and its image saved (docs/plan-render.md, S4): the medium and realistic views.
+        { id: 'view.render', label: 'Render', icon: Aperture, run: () => {
+          if (useRenderProfile.getState().profile === 'drawing') { notify('Rendering needs the medium or realistic view: View → Display quality.'); return; }
+          if (useUi.getState().view !== '3d') useUi.setState({ view: '3d' });
+          toggleRendering();
+        } },
+        { id: 'view.renderSettings', label: 'Render settings', icon: Aperture, run: () => useUi.setState({ dialog: 'render' }) },
         // The project's sun on a day and an hour, lighting the 3D view with its shadows (docs/plan-visualisation.md).
         { id: 'view.sun', label: 'Sun and shadows', icon: SunMedium, run: () => useUi.setState({ dialog: 'sun' }) },
       ] },
@@ -429,7 +439,7 @@ const core: LapinModule = {
   },
   references: { LapinView: (n) => [...sectionRefs(n), ...sectionFarLine(n)] },
   placeSources: corePlaceSources,
-  dialogs: { insetPick: InsetPickDialog, placeCatalog: PlaceCatalogDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, materialStandards: MaterialStandardsDialog, materialGraphicsSets: MaterialGraphicsSetsDialog, hatchPatterns: HatchPatternsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, newLevels: NewLevelsDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, markRules: MarkRulesDialog, typePacks: TypePacksDialog, projectTypes: ProjectTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, saveHatch: SaveHatchDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, [TEMP_DIM_DIALOG]: TempDimPropertiesDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog, elementGraphics: ElementGraphicsDialog, thermalSettings: ThermalSettingsDialog },
+  dialogs: { insetPick: InsetPickDialog, placeCatalog: PlaceCatalogDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, materialStandards: MaterialStandardsDialog, materialGraphicsSets: MaterialGraphicsSetsDialog, hatchPatterns: HatchPatternsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, newLevels: NewLevelsDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, markRules: MarkRulesDialog, typePacks: TypePacksDialog, projectTypes: ProjectTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, saveHatch: SaveHatchDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, render: RenderDialog, [TEMP_DIM_DIALOG]: TempDimPropertiesDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog, elementGraphics: ElementGraphicsDialog, thermalSettings: ThermalSettingsDialog },
   background: CoreBackground,
   // Angular temporary dimensions (decision 738): the angle a straight wall or beam selected makes where it meets another, and the segment's while one is drawn.
   planOverlays: [AngleDims],

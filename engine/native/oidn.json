@@ -1,0 +1,17 @@
+{
+  "name": "Intel Open Image Denoise",
+  "source": "https://github.com/RenderKit/oidn/releases",
+  "licence": "Apache-2.0",
+  "bundled": { "oneTBB": "Apache-2.0" },
+  "verified": "2026-11-22",
+  "use": "The path tracer's denoiser for still images on the desktop (docs/plan-render.md, S4): bin/oidnDenoise run by Lapin.Host/Denoiser.cs. Fetched by scripts/fetch-oidn.mjs, never committed.",
+  "version": "2.5.1",
+  "assets": {
+    "osx-arm64": { "file": "oidn-2.5.1.arm64.macos.tar.gz", "sha256": "98e0aca8e7ab69e9f4f0191582a500fd8b0d9085d68662f18ab6469e934a6efd" },
+    "osx-x64": { "file": "oidn-2.5.1.x86_64.macos.tar.gz", "sha256": "a4341639005a33ce0d944bd7c771ce34de1465be7eb3189b7c3b5b0064429832" },
+    "linux-x64": { "file": "oidn-2.5.1.x86_64.linux.tar.gz", "sha256": "743c3e2aff8c220d5d70fe6cb970fb3d36f2702d2693c61d1d148e404cf37cd6" },
+    "win-x64": { "file": "oidn-2.5.1.x64.windows.zip", "sha256": "f11f91bc072a5e3a564515724cb72ab8fcfbc445c84a84c197ff9b16cc01396f" }
+  },
+  "keep": ["^oidnDenoise(\\.exe)?$", "OpenImageDenoise", "tbb"],
+  "drop": ["sycl", "cuda", "hip", "tbbmalloc", "\\.lib$", "\\.pdb$", "cmake"]
+}

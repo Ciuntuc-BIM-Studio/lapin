@@ -243,7 +243,7 @@ Set an hour after sunset in View → **Sun and shadows** and the view shows the 
 
 View → **Display quality** has, for the Medium and Realistic views, the camera's **Exposure** (stops brighter or darker than the automatic exposure) and its **White balance** (automatic: daylight by day and 4000 K at night, so warm lamps stay warm; or a colour temperature of your own). Both are kept on this computer.
 
-The view draws the lights nearest to you and to what you look at first, a few of them with shadows, the others without, and none farther than 30 m (Medium) or 60 m (Realistic); its lower right corner says how many (*12 / 48 lights, 4 with shadows*). A light drawn without shadows lights through walls, and light does not bounce off walls yet: a ceiling above downlights stays dark. A rendered image (to come) takes every light.
+The view draws the lights nearest to you and to what you look at first, a few of them with shadows, the others without, and none farther than 30 m (Medium) or 60 m (Realistic); its lower right corner says how many (*12 / 48 lights, 4 with shadows*). A light drawn without shadows lights through walls, and in the live view light does not bounce off walls: a ceiling above downlights stays dark. A [render](render.md) takes every light, each with its shadow, and the light bouncing off the walls and the ceiling.
 
 ## Modelling in 3D
 

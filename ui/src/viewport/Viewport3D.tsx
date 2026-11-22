@@ -14,7 +14,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import { Lightbulb, X } from 'lucide-react';
+import { Aperture, Lightbulb, X } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems, temporaryItems } from '../shell/selectionMenu';
 import { viewSheetItems } from '../shell/browserFind';
@@ -35,8 +35,12 @@ import { boxUv, boxUvSized, hasRelief, imageOf, imageTexture, orthophotos, ortho
 import { lookOf } from './look';
 import { xrayLooks } from './xray';
 import { glassThrough, reflections, standardMaterial } from './materialLook';
-import { nightOf, Realism, sunColour, useCameraLook, useRenderProfile } from './render3d';
-import { LightRig, useLightBudget, type LightProfileDto, type LightSourceDto } from './lights3d';
+import { nightOf, Realism, sunColour, useCameraLook, useRenderProfile, whiteBalanceKelvin } from './render3d';
+import { buildTraceScene, exposureFactor, resolutionOf, TraceMaterials, type TraceInput } from './pathTrace';
+import type { PathTraceView, TraceLook, TraceSky } from './pathTraceView';
+import { finished, progressOf, readout, setRenderSettings, setRendering, toggleRendering, useRenderApi, useRenderMode, useRenderSettings } from './renderMode';
+import { projectTitle, safeFileName, saveFile } from '../engine/files';
+import { LightRig, useLightBudget, whiteBalanceGains, type LightProfileDto, type LightSourceDto } from './lights3d';
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
@@ -61,7 +65,7 @@ import { coreBounds, type Bounds } from './zoom';
 import { gridStepAt, usePrefs } from '../app/prefs';
 import { ucsOf, useLocation } from '../app/location';
 import { planePoint, refPlanesGroup, refPlanesKey, refPlanesOf } from './refPlanes';
-import { useRebar3d } from './rebar3d';
+import { REBAR_GROUP, useRebar3d } from './rebar3d';
 import { useVoids3d, VOIDS_GROUP } from './voids3d';
 import { boxPlanes, modelBounds, planesKey, toggleSectionBoxHidden, useSectionBox, type SectionBox } from './sectionBox';
 import { alignSectionBox, commitBox, cutAtPlan, fitSectionBox } from './sectionBoxTools';
@@ -622,6 +626,9 @@ export function Viewport3D() {
   const cloudKeyRef = useRef('[]');
   /** The model's box (the sun's shadows are fitted in it) forgotten: the elements changed. */
   const boxDirty = useRef<() => void>(() => undefined);
+  /** What the path tracer renders changed (the elements, their looks, the cut, the lights): its scene is built again (docs/plan-render.md, S4). */
+  const traceDirty = useRef<() => void>(() => undefined);
+  const repaintTrace = useRef<() => void>(() => undefined);
   /** The cut elements' caps, by element (a section or the section box shown). */
   const caps = useRef(new Map<string, THREE.Group>());
   /** The caps' meshes as the engine sent them, for the walker to collide with. */
@@ -651,6 +658,7 @@ export function Viewport3D() {
   const applyClip = () => {
     const all = [...sectionClip.current, ...storeyClip.current];
     if (rendererRef.current) rendererRef.current.clippingPlanes = all;
+    traceDirty.current();
     useClip3d.setState({ planes: all.map((p) => ({ normal: [p.normal.x, p.normal.y, p.normal.z], constant: p.constant })) });
   };
   useUi((s) => s.storeyId);
@@ -736,6 +744,7 @@ export function Viewport3D() {
         lightSources = list;
         rig.setProfile(useRenderProfile.getState().profile, list, lightProfiles);
         rig.markDirty();
+        traceDirty.current();
         invalidate.current();
       }, 120);
     };
@@ -909,7 +918,8 @@ export function Viewport3D() {
       const meadowOn = spec.ground && !terrain;
       shadowGround.material = meadowOn ? meadow : shadowOnly;
       shadowGround.visible = meadowOn || (!!dir && dir[2] > 0.005);
-      shadowGround.position.z = (meadowOn ? 0 : elevationRef.current) - 0.002;
+      // The meadow 3 cm under the ground floor's slabs (2 mm z-fought with a floor's top seen from inside: it showed over the parquet).
+      shadowGround.position.z = meadowOn ? -0.03 : elevationRef.current - 0.002;
       const grid = s.getObjectByName('ground-grid');
       if (grid) grid.visible = !spec.ground;
     };
@@ -965,6 +975,7 @@ export function Viewport3D() {
       sun.shadow.bias = -0.0005;
       sun.shadow.normalBias = 0.02;
       fitShadow();
+      traceDirty.current();
       invalidate.current();
     };
     // A profile chosen: its passes, glass letting light through or not, the sun's light and shadows again.
@@ -976,9 +987,10 @@ export function Viewport3D() {
       surfaceMaps(s, profile !== 'drawing');
       aimSun();
       fetchLights();
+      traceDirty.current();
     };
     const unprofile = useRenderProfile.subscribe(applyProfile);
-    const unlook = useCameraLook.subscribe(() => { realism.applyLook(); invalidate.current(); });
+    const unlook = useCameraLook.subscribe(() => { realism.applyLook(); repaintTrace.current(); invalidate.current(); });
     const unsunlight = useSunlight.subscribe(aimSun);
     applyProfile();
     s.add(groundGrid(currentViewTheme(), elevationRef.current));
@@ -1031,7 +1043,237 @@ export function Viewport3D() {
       const b = useLightBudget.getState();
       if (b.total !== c.total || b.drawn !== c.drawn || b.shadowed !== c.shadowed) useLightBudget.setState({ total: c.total, drawn: c.drawn, shadowed: c.shadowed });
     };
-    const draw = () => { relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); fitShadow(); placeLights(); realism.render(cam, controls.target.distanceTo(cam.position)); if (host.current) host.current.dataset.cloudPoints = String(clouds.drawn()); };
+    // ─── Rendering: the path tracer (docs/plan-render.md, S4; pathTrace.ts, pathTraceView.ts, renderMode.ts) ───
+    // Built from what this view draws now; refines while the camera rests, starts over when it moves, the live view
+    // shown until its first sample. Loaded the first time Render is pressed.
+    let tracer: PathTraceView | null = null;
+    let tracerLoad: Promise<void> | null = null;
+    let tracerScene: THREE.Scene | null = null;
+    const traceMaterials = new TraceMaterials();
+    let traceDirtyAt = 0;
+    let traceKey = '';
+    let traceT0 = performance.now();
+    let traceShownAt = 0;
+    let presented = -1;
+    let stillBusy = false;
+    let stillCancel = false;
+    // Room volumes, openings, drafted shapes and grids are the screen's aids, not what a photograph shows.
+    const UNTRACED = new Set(['IfcSpace', 'IfcOpeningElement', 'IfcAnnotation', 'IfcGrid']);
+    const plainGround = new THREE.MeshStandardMaterial({ color: CLEAR[currentViewTheme()], roughness: 1, metalness: 0 });
+    const traceInput = (): TraceInput => {
+      const roots: THREE.Object3D[] = [];
+      for (const { item, object } of items.current.values()) if (object.visible && !UNTRACED.has(item.type)) roots.push(object);
+      for (const g of caps.current.values()) if (g.visible) roots.push(g);
+      const bars = s.getObjectByName(REBAR_GROUP);
+      if (bars?.visible) roots.push(bars);
+      boxOfModel();
+      const spec = realism.spec;
+      return {
+        roots,
+        instances: layer.traceInstances(useLooks.getState().looks),
+        planes: renderer.clippingPlanes,
+        lights: lightSources.filter((x) => items.current.get(x.id)?.object.visible !== false),
+        profiles: lightProfiles,
+        ground: terrain ? null : spec.ground ? { z: 0, material: meadow } : { z: elevationRef.current, material: plainGround },
+      };
+    };
+    const traceSky = (): TraceSky => {
+      const t = realism.traceSky();
+      const towards = sun.position.clone().sub(sun.target.position).normalize();
+      const up = sun.intensity > 0 && towards.z > 0.005;
+      return { ...t, backdropColour: new THREE.Color(CLEAR[currentViewTheme()]), sun: up ? { dir: towards, light: sun.color.clone().multiplyScalar(sun.intensity) } : null };
+    };
+    const traceLook = (): TraceLook => {
+      const st = useRenderSettings.getState(), look = useCameraLook.getState();
+      const wb = st.wb === 'view' ? look.wb : st.wb;
+      const spec = realism.spec;
+      return { exposure: exposureFactor(spec.exposure, realism.gain, st.ev ?? look.ev), gains: whiteBalanceGains(whiteBalanceKelvin(wb, realism.night)), toneMapping: spec.toneMapping };
+    };
+    const dofOf = () => { const st = useRenderSettings.getState(); return st.dof ? { fStop: st.fStop, focus: st.focus } : null; };
+    const disposeOwned = (sc: THREE.Scene | null) => sc?.traverse((o) => { const g = (o as THREE.Mesh).geometry; if (g?.userData.traceOwned) g.dispose(); });
+    /** A short key of what a built scene holds, so a change that leaves it the same (a selection) does not start the picture over. */
+    const keyOf = (sc: THREE.Scene) => {
+      let h = 0;
+      const add = (t: string) => { for (let i = 0; i < t.length; i++) h = (Math.imul(h, 31) + t.charCodeAt(i)) | 0; };
+      for (const o of sc.children) {
+        const m = o as THREE.Mesh;
+        if (m.isMesh) add(`${m.geometry.uuid}${Array.isArray(m.material) ? m.material.map((x) => x.uuid).join() : m.material.uuid}${m.matrix.elements.join()}`);
+        else if ((o as THREE.Light).isLight) add(`${o.userData.source}${(o as THREE.Light).intensity}${o.position.toArray().join()}${(o as THREE.Light).color.getHex()}`);
+      }
+      return `${sc.children.length}:${h}`;
+    };
+    const rebuildTrace = () => {
+      if (!tracer) return;
+      const t0 = performance.now();
+      const { scene: next, stats } = buildTraceScene(traceInput(), traceMaterials);
+      const key = keyOf(next);
+      tracer.setSky(traceSky());
+      if (tracerScene && key === traceKey) { disposeOwned(next); return; }
+      const bvh = tracer.setScene(next, cam);
+      disposeOwned(tracerScene);
+      tracerScene = next;
+      traceKey = key;
+      traceT0 = performance.now();
+      presented = -1;
+      useRenderMode.setState({ stats, buildMs: Math.round(performance.now() - t0), phase: 'tracing' });
+      if (host.current) { host.current.dataset.traceTriangles = String(stats.triangles); host.current.dataset.traceBvhMs = String(Math.round(bvh)); }
+    };
+    traceDirty.current = () => { if (useRenderMode.getState().on) { traceDirtyAt = performance.now(); invalidate.current(); } };
+    /** One frame of the render mode; false when the live view is to be drawn instead (moving, building, before the first sample). */
+    const traceFrame = (): boolean => {
+      const mode = useRenderMode.getState();
+      if (!mode.on) return false;
+      if (stillBusy) return true;
+      if (realism.profile === 'drawing') { setRendering(false); return false; }
+      if (!tracer) {
+        tracerLoad ??= import('./pathTraceView').then(({ PathTraceView }) => {
+          tracer = new PathTraceView(renderer);
+          traceDirtyAt = 1;
+          void import('./oidn').then((m) => m.oidnAvailable()).then((ok) => useRenderApi.setState({ denoiser: ok ? 'oidn' : 'shader' }));
+          useRenderApi.setState({ api: renderApi });
+          invalidate.current();
+        }).catch((e: unknown) => { useRenderMode.setState({ on: false, phase: 'off', error: e instanceof Error ? e.message : String(e) }); });
+        return false;
+      }
+      const now = performance.now();
+      if (traceDirtyAt) {
+        // A moment after the last change (an edit dragged changes the model every frame).
+        if (tracerScene && now - traceDirtyAt < 250) { window.setTimeout(() => invalidate.current(), 260); return false; }
+        traceDirtyAt = 0;
+        useRenderMode.setState({ phase: 'building' });
+        rebuildTrace();
+      }
+      if (!tracerScene) return false;
+      const moved = tracer.syncCamera(cam, dofOf());
+      if (moved) { tracer.reset(); traceT0 = now; presented = -1; }
+      const st = useRenderSettings.getState();
+      const seconds = (now - traceT0) / 1000;
+      const samples = tracer.samples;
+      const done = finished(st, samples, seconds);
+      if (!moved && !done) tracer.step();
+      const publish = (force = false) => {
+        if (!force && now - traceShownAt < 250) return;
+        traceShownAt = now;
+        useRenderMode.setState({ phase: tracer!.compiling ? 'loading' : done ? 'done' : 'tracing', samples: Math.floor(tracer!.samples), seconds: done ? useRenderMode.getState().seconds : seconds });
+        if (host.current) host.current.dataset.traceSamples = String(Math.floor(tracer!.samples));
+      };
+      if (!done) invalidate.current();
+      if (tracer.samples < 1) { publish(); return false; }
+      const whole = Math.floor(tracer.samples);
+      if (whole !== presented || done) {
+        if (whole !== presented) tracer.present(traceLook(), st.denoise);
+        presented = whole;
+      }
+      publish(done);
+      return true;
+    };
+    const repaint = () => { presented = -1; invalidate.current(); };
+    repaintTrace.current = repaint;
+    /** The still image (the dialog's Save image): rendered at its size, denoised, written to a PNG and saved. */
+    const saveImage = async (): Promise<string | null> => {
+      if (!useRenderMode.getState().on) setRendering(true);
+      invalidate.current();
+      // The tracer loaded and its scene built (the first time Render is pressed it compiles its shaders).
+      for (let i = 0; i < 600 && (!tracer || !tracerScene || traceDirtyAt || tracer.compiling); i++) await new Promise((r) => setTimeout(r, 100));
+      const t = tracer;
+      if (!t || !tracerScene) return null;
+      const st = useRenderSettings.getState();
+      const dpr = renderer.getPixelRatio();
+      const view = { width: Math.round(el.clientWidth * dpr), height: Math.round(el.clientHeight * dpr) };
+      let size = resolutionOf(st.resolution, view, { width: st.width, height: st.height });
+      const max = Math.min(8192, renderer.capabilities.maxTextureSize);
+      if (size.width > max || size.height > max) { const k = max / Math.max(size.width, size.height); size = { width: Math.floor(size.width * k), height: Math.floor(size.height * k) }; }
+      const target = t.pt.target as THREE.WebGLRenderTarget;
+      const reuse = target.width === size.width && target.height === size.height && finished(st, t.samples, (performance.now() - traceT0) / 1000);
+      stillBusy = true;
+      stillCancel = false;
+      controls.enabled = false;
+      useRenderMode.setState({ phase: 'still', still: { ...size, progress: 0 } });
+      try {
+        if (!reuse) {
+          t.setSize(size);
+          t.setTiles(Math.max(2, Math.ceil(Math.sqrt((size.width * size.height) / 500_000))));
+          t.syncCamera(cam, dofOf(), size.width / size.height);
+          t.reset();
+          const t0 = performance.now();
+          await new Promise<void>((resolve, reject) => {
+            const tick = () => {
+              if (stillCancel) { reject(new Error('cancelled')); return; }
+              // One tile a frame: the GPU's work is not the script's time, and piling tiles into one frame can outlast the
+              // operating system's patience with the GPU (the context is lost).
+              t.step();
+              const secs = (performance.now() - t0) / 1000;
+              useRenderMode.setState({ still: { ...size, progress: progressOf(st, t.samples, secs) }, samples: Math.floor(t.samples), seconds: secs });
+              if (t.samples >= 1) t.present(traceLook(), false);
+              if (finished(st, t.samples, secs)) resolve(); else requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+          });
+        }
+        useRenderMode.setState({ phase: 'denoising' });
+        await new Promise((r) => requestAnimationFrame(r));
+        const color = st.denoise ? await denoiseElsewhere(t) : undefined;
+        const rt = new THREE.WebGLRenderTarget(size.width, size.height);
+        t.present(traceLook(), st.denoise && !color, rt, color);
+        const px = new Uint8Array(size.width * size.height * 4);
+        renderer.readRenderTargetPixels(rt, 0, 0, size.width, size.height, px);
+        rt.dispose();
+        color?.dispose();
+        const canvas = document.createElement('canvas');
+        canvas.width = size.width; canvas.height = size.height;
+        const ctx = canvas.getContext('2d')!;
+        const img = ctx.createImageData(size.width, size.height);
+        const row = size.width * 4;
+        for (let y = 0; y < size.height; y++) img.data.set(px.subarray((size.height - 1 - y) * row, (size.height - y) * row), y * row);
+        ctx.putImageData(img, 0, 0);
+        const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'));
+        if (!blob) return null;
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        lastStill = bytes;
+        if (host.current) host.current.dataset.stillBytes = String(bytes.length);
+        if (stillToMemory) return 'memory';
+        return await saveFile(bytes, `${safeFileName(`${projectTitle(useSession.getState().doc?.path)} render`)}.png`, 'image/png');
+      } catch (e) {
+        if (e instanceof Error && e.message === 'cancelled') return null;
+        throw e;
+      } finally {
+        if (!reuse) { t.setSize(null); t.setTiles(2); t.syncCamera(cam, dofOf()); t.reset(); traceT0 = performance.now(); }
+        stillBusy = false;
+        controls.enabled = true;
+        presented = -1;
+        useRenderMode.setState({ phase: 'tracing', still: null });
+        invalidate.current();
+      }
+    };
+    // The guide's scenes (scripts/user-docs) take the still without a save dialog.
+    let lastStill: Uint8Array | null = null;
+    let stillToMemory = false;
+    const renderApi = {
+      saveImage,
+      cancel: () => { stillCancel = true; },
+      still: async () => { stillToMemory = true; try { await saveImage(); return lastStill; } finally { stillToMemory = false; } },
+    };
+    /** Intel Open Image Denoise beside the engine (the desktop's): the light, albedo and normals sent, the light back; undefined where there is none. */
+    const denoiseElsewhere = async (t: PathTraceView): Promise<THREE.Texture | undefined> => {
+      if (useRenderApi.getState().denoiser !== 'oidn') return undefined;
+      try {
+        const { oidnDenoise } = await import('./oidn');
+        return await oidnDenoise(t.readForDenoise());
+      } catch { return undefined; }
+    };
+    const unrender = useRenderMode.subscribe((st, before) => {
+      if (st.on !== before.on) { if (st.on) { traceDirtyAt = 1; presented = -1; } invalidate.current(); }
+    });
+    const unrenderSettings = useRenderSettings.subscribe((st, before) => {
+      // The depth of field changes the picture (it starts over); the rest only how it is shown or when it is done.
+      if (st.dof !== before.dof || st.fStop !== before.fStop || st.focus !== before.focus) { tracer?.reset(); traceT0 = performance.now(); }
+      repaint();
+    });
+    const draw = () => {
+      relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); fitShadow(); placeLights();
+      if (!traceFrame()) realism.render(cam, controls.target.distanceTo(cam.position));
+      if (host.current) host.current.dataset.cloudPoints = String(clouds.drawn());
+    };
     invalidate.current = () => {
       if (!frame) frame = requestAnimationFrame(() => { frame = 0; draw(); });
     };
@@ -1097,8 +1339,17 @@ export function Viewport3D() {
       down = null;
       if (!start || e.button !== 0 || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4) return;
       const r = renderer.domElement.getBoundingClientRect();
-      ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), cam);
+      const ndc = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, cam);
       const hit = pickAt();
+      // The Render dialog's focus picked: the distance to what was clicked, along the camera's axis; nothing selected.
+      if (useRenderMode.getState().pickingFocus) {
+        const along = (d: number) => d * ray.ray.direction.dot(new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion));
+        const d = tracer?.distanceAt(ndc) ?? (hit ? along(hit.distance) : null);
+        useRenderMode.setState({ pickingFocus: false });
+        if (d != null && d > 0) setRenderSettings({ dof: true, focus: Math.round(d * 100) / 100 });
+        return;
+      }
       const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -elevationRef.current);
       const g = ray.ray.intersectPlane(plane, new THREE.Vector3());
       clickRef.current({
@@ -1583,6 +1834,16 @@ export function Viewport3D() {
       unprofile();
       unlook();
       unlights();
+      unrender();
+      unrenderSettings();
+      stillCancel = true;
+      tracer?.dispose();
+      disposeOwned(tracerScene);
+      traceMaterials.dispose();
+      plainGround.dispose();
+      if (useRenderApi.getState().api === renderApi) useRenderApi.setState({ api: null });
+      traceDirty.current = () => undefined;
+      repaintTrace.current = () => undefined;
       clearTimeout(lightTimer);
       rig.dispose();
       useLightBudget.setState({ total: 0, drawn: 0, shadowed: 0 });
@@ -1713,6 +1974,8 @@ export function Viewport3D() {
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);
   const lightBudget = useLightBudget();
+  const renderMode = useRenderMode();
+  const renderProfile = useRenderProfile((st) => st.profile);
   const meshes = useSession((st) => st.meshes);
 
   // The reference planes (docs/plan-studio-thick.md): a translucent quad each, as large as the model on it, with its name;
@@ -1836,6 +2099,7 @@ export function Viewport3D() {
     const layer = instances.current;
     if (layer) { layer.sync(render, meshes); layer.restyle(seen, [...shown], visualStyle, layers); }
     boxDirty.current();
+    traceDirty.current();
     invalidate.current();
   }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown, drafts3d, fineBodies.on, fineBodies.version, selColour]);
 
@@ -1963,6 +2227,7 @@ export function Viewport3D() {
       walkApi.current.changed();
       for (const it of items) { const g = capsOf(it); s.add(g); caps.current.set(it.nodeId, g); }
       setCapsShown((v) => v + 1);
+      traceDirty.current();
       invalidate.current();
     };
     if (!capPlanes.length) { put([]); return; }
@@ -2028,9 +2293,28 @@ export function Viewport3D() {
           <Lightbulb size={12} /><span>{`${lightBudget.drawn} / ${lightBudget.total} lights, ${lightBudget.shadowed} with shadows`}</span>
         </div>
       )}
+      {renderProfile !== 'drawing' && !walkStart && !renderMode.on && (
+        <button type="button" className="render-button" data-testid="render-button" onClick={() => setRendering(true)}
+          title="Render this view as a photograph: light traced as it bounces, refining while the camera rests">
+          <Aperture size={13} /><span>Render</span>
+        </button>
+      )}
       {regionDrag &&<svg className="region-3d">{<SelectRegion d={regionDrag} />}</svg>}
-      {(sectionId || walkStart || box || storeysChip || layersText || regionOn || hiding) && (
+      {(sectionId || walkStart || box || storeysChip || layersText || regionOn || hiding || renderMode.on) && (
         <div className="view3d-modes">
+          {renderMode.on && (
+            <span className="mode-chip render" data-testid="render-chip">
+              <span>Render</span>
+              <span className="mode-hint">{renderMode.phase === 'loading' ? 'Preparing the renderer…' : renderMode.phase === 'building' ? 'Building the scene…'
+                : renderMode.phase === 'still' && renderMode.still ? `Image ${renderMode.still.width} × ${renderMode.still.height}: ${Math.round(renderMode.still.progress * 100)} %`
+                : renderMode.phase === 'denoising' ? 'Denoising…' : readout(renderMode.samples, renderMode.seconds)}</span>
+              {renderMode.pickingFocus && <span className="mode-hint">Click what should be in focus</span>}
+              {renderMode.phase === 'still'
+                ? <button type="button" onClick={() => useRenderApi.getState().api?.cancel()} title="Stop the image">Stop</button>
+                : <button type="button" onClick={() => useUi.setState({ dialog: 'render' })} title="Resolution, samples, denoising, depth of field, exposure; save the image">Settings…</button>}
+              <button type="button" className="mode-close" title="Back to the live view" aria-label="Back to the live view" onClick={toggleRendering}><X size={12} /></button>
+            </span>
+          )}
           {regionOn && (
             <span className="mode-chip select-region">
               <span>Select region</span>

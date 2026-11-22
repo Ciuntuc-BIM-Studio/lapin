@@ -21,7 +21,9 @@ const SkyShader = {
 		// Lapin's night (docs/plan-render.md, S2): the day's sky scaled, a night blue and the stars added; 1, 0, 0 draw the r182 sky as it was.
 		'skyGain': { value: 1 },
 		'nightAdd': { value: new Vector3() },
-		'starLevel': { value: 0 }
+		'starLevel': { value: 0 },
+		// Lapin's path tracer (docs/plan-render.md, S4) draws the sky without its sun's disc and lays its own sun in, of a known size and light.
+		'sunDisc': { value: 1 }
 	},
 
 	vertexShader: /* glsl */`
@@ -112,6 +114,7 @@ const SkyShader = {
 		uniform float skyGain;
 		uniform vec3 nightAdd;
 		uniform float starLevel;
+		uniform float sunDisc;
 
 		// constants for atmospheric scattering
 		const float pi = 3.141592653589793238462643383279502884197169;
@@ -174,7 +177,7 @@ const SkyShader = {
 
 			// composition + solar disc
 			float sundisk = smoothstep( sunAngularDiameterCos, sunAngularDiameterCos + 0.00002, cosTheta );
-			L0 += ( vSunE * 19000.0 * Fex ) * sundisk;
+			L0 += ( vSunE * 19000.0 * Fex ) * sundisk * sunDisc;
 
 			vec3 texColor = ( Lin + L0 ) * 0.04 + vec3( 0.0, 0.0003, 0.00075 );
 

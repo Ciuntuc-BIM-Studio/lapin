@@ -24,6 +24,7 @@ import { copyArrays, levelFor, pixelsPerMetre, type DisplayQuality, type LodCame
 import { useSession } from '../engine/session';
 import { lookOf } from './look';
 import { standardMaterial } from './materialLook';
+import type { TraceInstance } from './pathTrace';
 import { boxUvSized, hasRelief, imageOf, imageTexture, reliefOf, sizeOf, withRelief, type OwnImage, type Relief } from './textures';
 
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0).elements;
@@ -212,6 +213,23 @@ class Batch {
     return changed;
   }
 
+  /**
+   * Each instance shown, for the path tracer (docs/plan-render.md, S4): the part itself (never a coarser copy), its look's
+   * colour (not the selection's), the see-through material when its look fades it.
+   */
+  trace(looks: Record<string, Look | undefined>, out: TraceInstance[]) {
+    for (let i = 0; i < this.ids.length; i++) {
+      const l = looks[this.ids[i]];
+      if (l?.hidden) continue;
+      const opacity = l?.opacity ?? 1;
+      const at = new THREE.Matrix4().fromArray(elements(this.raw[i]));
+      for (const p of this.parts) {
+        if (!p.solid.visible) continue;
+        out.push({ geometry: p.solid.geometry, material: (opacity < 1 ? p.faded : p.solid).material as THREE.Material, matrix: at, colour: new THREE.Color(l?.color ?? p.colour) });
+      }
+    }
+  }
+
   /** Faces, edges or both; the parts a layers mode leaves out, hidden. */
   show(style: VisualStyle, layers: string) {
     for (const p of this.parts.flatMap(variants)) {
@@ -296,6 +314,14 @@ export class InstanceLayer {
 
   constructor(readonly edgeMaterial: THREE.Material) {
     this.group.name = 'instances';
+  }
+
+  /** Every instance shown, one by one, for the path tracer (Batch.trace). */
+  traceInstances(looks: Record<string, Look | undefined>): TraceInstance[] {
+    const out: TraceInstance[] = [];
+    if (!this.group.visible) return out;
+    for (const b of this.batches.values()) b.trace(looks, out);
+    return out;
   }
 
   /** The instances `render` holds now: new ones added, moved ones placed again, gone ones taken out; a mesh changed, its batch made again. */

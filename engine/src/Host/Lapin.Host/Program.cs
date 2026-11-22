@@ -33,6 +33,7 @@ using var recovery = new Recovery(userDir, session);
 
 var hub = new EngineHub(session, PackageFiles.Create(), recovery, userDir);
 // The lapinbim package the Script panel's Python runs (docs/plan-python-scripting.md): named, else beside the modules (the app's resources/python), else the checkout's python/.
+hub.ModulesDir = Arg("--modules-dir");
 hub.Scripts.PackageDir = Arg("--python-dir", "") is { Length: > 0 } pythonDir ? pythonDir : ScriptHost.FindPackage(Arg("--modules-dir"));
 
 // The server on one port; built again for the next when another program took the port first (EnginePort.StartAsync).
