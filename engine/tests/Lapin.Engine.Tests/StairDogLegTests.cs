@@ -308,4 +308,22 @@ public class StairDogLegTests
             Assert.Equal("balustrade", kind);
         }
     }
+
+    [Fact]
+    public void The_railing_length_is_the_3D_length_of_the_railings_built_landing_turn_and_extensions_included()
+    {
+        // Audit 22.11.2026 §3.6: the quantity summed the flights' pitch only, 2.4 m or more short at a landing.
+        var (f, id, _) = DogLeg();
+        var stair = f.Model.Get(id)!;
+        var r = Solved(f, id);
+        var built = 0.0;
+        foreach (var side in new[] { "left", "right" })
+            foreach (var line in StairBuilder.RailingLines(f.Model, stair, side))
+                for (var k = 0; k + 1 < line.Count; k++)
+                    built += Math.Sqrt((line[k + 1].P - line[k].P).Length * (line[k + 1].P - line[k].P).Length + (line[k + 1].Z - line[k].Z) * (line[k + 1].Z - line[k].Z));
+        var pitchOnly = 2 * r.Flights.Sum(fl => (fl.Risers - 1) * Math.Sqrt(r.Tread * r.Tread + r.RiserHeight * r.RiserHeight));
+        var q = f.Session.Quantities(id).Single(s => s.Name == "Lapin_StairQuantities").Quantities.Single(x => x.Name == "RailingLength").Value;
+        Assert.Equal(built, q, 9);
+        Assert.True(q > pitchOnly + 2 * r.Tread, $"{q} vs the pitch alone {pitchOnly}");
+    }
 }

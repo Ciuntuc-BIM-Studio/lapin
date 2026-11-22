@@ -692,18 +692,18 @@ public static class StairBuilder
         var landingArea = r.Landings.Sum(l => Math.Abs(Polygon2.SignedArea(l.Outline)));
         var winderArea = r.Winders.Sum(x => Math.Abs(Polygon2.SignedArea(x.Outline)));
         var concrete = g.Parts.Where(p => p.Key != null && (p.Key.StartsWith("flight:", StringComparison.Ordinal) || p.Key == "winders" || p.Key == "footing" || p.Key.StartsWith("landing:", StringComparison.Ordinal))).Sum(p => Measure.Volume(p.Solid));
-        var railing = 0.0;
-        foreach (var fl in r.Flights) railing += (fl.Risers - 1) * Math.Sqrt(r.Tread * r.Tread + r.RiserHeight * r.RiserHeight);
-        if (r.Arc is { } arc) { run += arc.Steps * r.Tread; railing += arc.Steps * Math.Sqrt(r.Tread * r.Tread + r.RiserHeight * r.RiserHeight); }
+        if (r.Arc is { } arc) run += arc.Steps * r.Tread;
         if (r.Sketch is { } sk)
-            for (var k = 0; k + 1 < sk.Walk.Length; k++)
-            {
-                var d = (sk.Walk[k + 1] - sk.Walk[k]).Length;
-                run += d;
-                railing += sk.Landing[k] ? d : Math.Sqrt(d * d + r.RiserHeight * r.RiserHeight);
-            }
-        var rail = RailingOf(stair, spec);
-        var sides = rail.Sides == "both" ? 2 : rail.Sides == "none" ? 0 : 1;
+            for (var k = 0; k + 1 < sk.Walk.Length; k++) run += (sk.Walk[k + 1] - sk.Walk[k]).Length;
+        // The railings as built (audit 22.11.2026): each side's lines in 3D, over the landings, round the turns and out past the ends.
+        var railing = 0.0;
+        foreach (var side in new[] { "left", "right" })
+            foreach (var line in RailingLines(m, stair, side))
+                for (var k = 0; k + 1 < line.Count; k++)
+                {
+                    var (d, dz) = ((line[k + 1].P - line[k].P).Length, line[k + 1].Z - line[k].Z);
+                    railing += Math.Sqrt(d * d + dz * dz);
+                }
         // The whole stair first (what a takeoff and the estimate read for the element), its concrete as its volume too.
         yield return new QuantitySet("Lapin_StairQuantities",
         [
@@ -712,7 +712,7 @@ public static class StairBuilder
             new("ConcreteVolume", concrete, "VOLUME", "Concrete"), new("GrossVolume", concrete, "VOLUME"), new("NetVolume", concrete, "VOLUME"),
             new("FormworkArea", soffit + r.Risers * r.RiserHeight * w + landingArea + winderArea, "AREA", "Formwork"),
             new("FinishArea", treads + landingArea + winderArea, "AREA", "Tread finish"),
-            new("RailingLength", railing * sides, "LENGTH", "Railing"),
+            new("RailingLength", railing, "LENGTH", "Railing"),
         ]);
         foreach (var x in flights) yield return x;
     }
