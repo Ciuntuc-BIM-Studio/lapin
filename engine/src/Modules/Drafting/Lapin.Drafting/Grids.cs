@@ -311,18 +311,35 @@ public static class Grids
         return count;
     }
 
+    /// <summary>
+    /// The style params a grid names (audit 22.11.2026: every grid was drawn in the project's default axis style): its own
+    /// axis style (<c>axisStyle</c>), else the project's default, and its overrides (<c>overrides</c>: bubble, ends, size,
+    /// lineType, lineColor; height, font, bold, italic, color of its labels) as o.* keys.
+    /// </summary>
+    public static JsonObject ParamsOf(StyleBook book, Entity grid)
+    {
+        var p = new JsonObject { ["axisStyle"] = grid.Str("axisStyle") is { Length: > 0 } s ? s : book.DefaultAxisStyle };
+        if (grid.Attrs["overrides"] is JsonObject o) foreach (var (k, v) in o) p["o." + k] = v?.DeepClone();
+        return p;
+    }
+
+    /// <summary>A grid's axis style, its overrides applied.</summary>
+    public static AxisStyle StyleOf(StyleBook book, Entity grid) => Standards.ResolveAxis(book, ParamsOf(book, grid));
+
     public static IEnumerable<ViewMark> Marks(ViewContext c)
     {
-        var axisStyle = Standards.ResolveAxis(c.Book, new JsonObject { ["axisStyle"] = c.Book.DefaultAxisStyle });
-        var text = Standards.ResolveText(c.Book, new JsonObject { ["axisStyle"] = c.Book.DefaultAxisStyle });
-        var color = axisStyle.Color ?? "#000000";
-        var dash = Standards.DashOf(c.Book, axisStyle.LineType);
-        var r = axisStyle.Size * c.Mm / 2;
         // Sections and elevations run the axes over what they draw, else over the storeys.
         var storeys = Spatial.Storeys(c.Model).ToList();
         (double Y0, double Y1) span = c.Drawing.Bounds is { } drawn ? (drawn.Min.Y, drawn.Max.Y)
             : storeys.Count > 0 ? (storeys.Min(x => x.Num("elevation")), storeys.Max(x => x.Num("elevation") + x.Num("height", 3))) : (0, 3);
         foreach (var grid in c.Model.OfClass(IfcClass.Grid))
+        {
+            var p = ParamsOf(c.Book, grid);
+            var axisStyle = Standards.ResolveAxis(c.Book, p);
+            var text = Standards.ResolveText(c.Book, p);
+            var color = axisStyle.Color ?? "#000000";
+            var dash = Standards.DashOf(c.Book, axisStyle.LineType);
+            var r = axisStyle.Size * c.Mm / 2;
             foreach (var axis in Axes(grid))
             {
                 Vec2 a, b;
@@ -373,5 +390,6 @@ public static class Grids
                 mk.Snaps.AddRange([a, b]);
                 yield return mk;
             }
+        }
     }
 }

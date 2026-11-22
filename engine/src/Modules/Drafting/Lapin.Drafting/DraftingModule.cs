@@ -15,7 +15,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
 
     public void Register(IModuleRegistry r)
     {
-        r.Class(new(IfcClass.Grid, "Grid", [], "#555555", Kind: "annotation"));
+        // A grid's own axis style (audit 22.11.2026; none: the project's default, as grids were drawn before).
+        r.Class(new(IfcClass.Grid, "Grid", [new("axisStyle", "Axis style", "text")], "#555555", Kind: "annotation"));
         r.Class(new(IfcClass.Annotation, "Annotation",
             [new("text", "Text", "text"), new("textStyle", "Text style", "text"), new("dimStyle", "Dimension style", "text"), new("angle", "Angle", "angle"),
              new("format", "Slope written as", "choice", Choices: DimensionKinds.SlopeFormats), new("z", "Level written", "length"), new("textHeight", "Text height", "number", Min: 0.5, Max: 50),
@@ -66,10 +67,10 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         {
             var (p, q) = (new Vec2(Json.Number(a["x1"]) ?? 0, Json.Number(a["y1"]) ?? 0), new Vec2(Json.Number(a["x2"]) ?? 0, Json.Number(a["y2"]) ?? 0));
             if ((q - p).Length < 1e-3) throw new CommandException("An axis needs two different points.");
-            var grid = Grids.Ensure(ctx);
+            var grid = WithStyle(ctx, Grids.Ensure(ctx), a);
             var axes = Grids.Axes(grid);
             var book = DraftingResources.Book(ctx.Model);
-            var tag = ((string?)a["tag"])?.Trim() is { Length: > 0 } t ? t : Grids.NextTag(axes, (q - p).Normalized(), Standards.AxisOf(book, book.DefaultAxisStyle).FirstLabel);
+            var tag = ((string?)a["tag"])?.Trim() is { Length: > 0 } t ? t : Grids.NextTag(axes, (q - p).Normalized(), Grids.StyleOf(book, grid).FirstLabel);
             if (axes.Any(x => x.Tag == tag)) throw new CommandException($"The grid has an axis {tag} already.");
             axes.Add(new Axis(tag, p, q));
             Write(ctx, grid, axes);
@@ -145,7 +146,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             if (!(extend >= 0)) throw new CommandException("The axes run past the grid by a length of zero or more.");
             var turn = (Json.Number(a["angle"]) ?? 0) * Math.PI / 180;
             var (u, v) = (new Vec2(Math.Cos(turn), Math.Sin(turn)), new Vec2(-Math.Sin(turn), Math.Cos(turn)));
-            var grid = Grids.Ensure(ctx);
+            var grid = WithStyle(ctx, Grids.Ensure(ctx), a);
             var axes = a["replace"] is JsonValue rv && rv.TryGetValue<bool>(out var replace) && replace ? [] : Grids.Axes(grid);
             var (width, depth) = (xs.Sum(), ys.Sum());
             if (Math.Min(xs.Count > 0 ? depth : double.MaxValue, ys.Count > 0 ? width : double.MaxValue) + 2 * extend < 1e-3) throw new CommandException("The axes need a length: give spacings both ways, or let them run past the grid.");
@@ -636,6 +637,23 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         return o;
     }
 
+    /// <summary>A grid given the axis style a command names (<c>axisStyle</c>: one of the project's; "" or null: back to the default); unchanged without one.</summary>
+    static Entity WithStyle(ICommandContext ctx, Entity grid, JsonObject a)
+    {
+        if (!a.ContainsKey("axisStyle")) return grid;
+        var attrs = grid.CloneAttrs();
+        if ((string?)a["axisStyle"] is { Length: > 0 } id)
+        {
+            var book = DraftingResources.Book(ctx.Model);
+            if (!book.AxisStyles.Any(s => s.Id == id)) throw new CommandException($"The project has no axis style „{id}”.");
+            attrs["axisStyle"] = id;
+        }
+        else attrs.Remove("axisStyle");
+        var styled = grid.With(attrs: attrs);
+        ctx.Replace(styled);
+        return styled;
+    }
+
     static void Write(ICommandContext ctx, Entity grid, List<Axis> axes)
     {
         var attrs = grid.CloneAttrs();
@@ -750,7 +768,7 @@ sealed class AxisPlacement : IPartPlacement
         if (copy)
         {
             var book = DraftingResources.Book(ctx.Model);
-            var newTag = Grids.NextTag(axes, moved.Dir, Standards.AxisOf(book, book.DefaultAxisStyle).FirstLabel);
+            var newTag = Grids.NextTag(axes, moved.Dir, Grids.StyleOf(book, grid).FirstLabel);
             while (axes.Any(x => x.Tag == newTag)) newTag = Grids.Next(newTag);
             moved = moved with { Tag = newTag };
             axes.Add(moved);
