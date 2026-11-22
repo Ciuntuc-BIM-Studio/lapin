@@ -18,7 +18,8 @@ describe('the hold model', () => {
     expect(downVerdict('idle', false, 2)).toBe('swallow');
     expect(downVerdict('idle', false, 1)).toBe('pass');
     expect(downVerdict('idle', false, 0)).toBe('pass');
-    expect(downVerdict('idle', true, 3)).toBe('pass');
+    expect(downVerdict('idle', true, 3)).toBe('swallow');
+    expect(downVerdict('idle', true, 0)).toBe('swallow');
     expect(downVerdict('pending', true, 3)).toBe('swallow');
     expect(downVerdict('open', true, 0)).toBe('swallow');
   });
@@ -144,5 +145,89 @@ describe('the Tab key in the router (issue 110)', () => {
     setCycleSource({ key: 'v', at: () => ({ x: 0, y: 0 }), ids: () => ['a'], tol: () => 1 });
     expect(down().acts).toEqual([{ kind: 'command', id: 'app.togglePanels' }]);
     expect(holdPhase()).toBe('idle');
+  });
+});
+
+/** Real key sequences: the OS autorepeat of a held Tab (forum topic 215). Windows repeats after ~500 ms every 33 ms, macOS after ~400 ms every 33 ms. */
+describe('Tab autorepeat (forum topic 215)', () => {
+  const KEYMAP = resolveKeymap([{ id: 'app.togglePanels', label: 't', category: 'x', defaults: ['Tab'], run: () => undefined }], { 'app.togglePanels': ['Tab'] });
+  let live: KeySnapshot['live'];
+  const snap = (): KeySnapshot => ({ screen: 'workspace', dialog: null, tool: null, selected: [], buffer: '', step: null, hasLast: false, hotbar: 5, keymap: KEYMAP, live });
+  let acts: { kind: string }[];
+  const key = (repeat: boolean) => handleKeydown({ key: 'Tab', code: 'Tab', ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, repeat, defaultPrevented: false, target: null, preventDefault: () => undefined } as never, snap, (i) => acts.push(i as { kind: string }));
+  /** What the window's keyup does (keys.ts): a tap runs the Tab command now. */
+  const up = () => { if (tabHoldUp() === 'tap') acts.push({ kind: 'command' }); };
+  /** Holds Tab for `ms`: a first keydown, repeats from `delay` every 33 ms, a keyup. */
+  const press = (ms: number, delay: number) => {
+    key(false);
+    let t = 0;
+    while (t < ms) {
+      const step = t < delay ? Math.min(delay, ms) - t : Math.min(33, ms - t);
+      vi.advanceTimersByTime(step);
+      t += step;
+      if (t >= delay && t < ms) key(true);
+    }
+    up();
+  };
+  beforeEach(() => {
+    vi.useFakeTimers();
+    acts = []; live = undefined;
+    holdPointer(10, 10);
+    setCycleSource({ key: 'v', at: () => ({ x: 0, y: 0 }), ids: () => ['a', 'b', 'c'], tol: () => 1, take: () => acts.push({ kind: 'take' }) });
+  });
+  afterEach(() => { holdCancel(); setCycleSource(null); vi.useRealTimers(); });
+
+  for (const [os, delay] of [['Windows', 500], ['macOS', 400]] as const) {
+    it(`${os}: a tap runs the Tab command once, when the key comes up`, () => {
+      press(120, delay);
+      expect(acts).toEqual([{ kind: 'command' }]);
+    });
+
+    it(`${os}: a hold opens the list once, the repeats cycle nothing, letting go takes the lit element`, () => {
+      key(false);
+      vi.advanceTimersByTime(HOLD_MS + 1);
+      expect(useTabHold.getState()).toMatchObject({ open: true, index: 0 });
+      vi.advanceTimersByTime(delay - HOLD_MS - 1);
+      for (let i = 0; i < 30; i++) { key(true); vi.advanceTimersByTime(33); }
+      expect(useTabHold.getState()).toMatchObject({ open: true, index: 0, ids: ['a', 'b', 'c'] });
+      expect(usePickCycle.getState().cycle?.index).toBe(0);
+      up();
+      expect(acts).toEqual([{ kind: 'take' }]);
+      expect(useTabHold.getState().open).toBe(false);
+    });
+  }
+
+  it('a repeat before the threshold neither cycles nor opens a second hold', () => {
+    key(false);
+    vi.advanceTimersByTime(100);
+    key(true); key(true);
+    expect(acts).toEqual([]);
+    expect(holdPhase()).toBe('pending');
+    vi.advanceTimersByTime(HOLD_MS - 99);
+    expect(useTabHold.getState().open).toBe(true);
+  });
+
+  it('over one element a held Tab runs the command once, not on every repeat', () => {
+    setCycleSource({ key: 'v', at: () => ({ x: 0, y: 0 }), ids: () => ['a'], tol: () => 1 });
+    press(1000, 500);
+    expect(acts).toEqual([{ kind: 'command', id: 'app.togglePanels' }]);
+  });
+
+  it('a hold whose pointer left the elements does not turn into repeated Tabs', () => {
+    key(false);
+    setCycleSource({ key: 'v', at: () => ({ x: 0, y: 0 }), ids: () => ['a'], tol: () => 1 });
+    vi.advanceTimersByTime(HOLD_MS + 1);
+    for (let i = 0; i < 20; i++) { key(true); vi.advanceTimersByTime(33); }
+    up();
+    expect(acts).toEqual([]);
+  });
+
+  it('with autohold: the first Tab switches it on, the repeats do not step through the box\'s fields', () => {
+    live = { active: true, owner: 'drag', autohold: false, typed: false, text: '' } as never;
+    setCycleSource({ key: 'v', at: () => ({ x: 0, y: 0 }), ids: () => [], tol: () => 1 });
+    key(false);
+    for (let i = 0; i < 20; i++) { key(true); vi.advanceTimersByTime(33); }
+    up();
+    expect(acts).toEqual([{ kind: 'autohold' }]);
   });
 });

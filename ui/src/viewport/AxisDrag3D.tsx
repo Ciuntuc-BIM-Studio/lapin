@@ -215,7 +215,7 @@ export function AxisDrag3D({ camera, canvas }: { camera: React.RefObject<THREE.C
             onKeyDown={(e) => {
               if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); commitTyped(); }
               else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); cancelAxisDrag(); }
-              else if (e.key === 'Tab' && spec.axes.length > 1) { e.preventDefault(); useAxisDrag.setState((s) => ({ axis: (s.axis + 1) % spec.axes.length, distance: 0 })); }
+              else if (e.key === 'Tab' && spec.axes.length > 1) { e.preventDefault(); if (e.repeat) return; useAxisDrag.setState((s) => ({ axis: (s.axis + 1) % spec.axes.length, distance: 0 })); }
             }} />
           {spec.axes[axis]?.name && <span className="axis-drag-axis" style={{ color: spec.axes[axis].color }}>{spec.axes[axis].name}</span>}
         </div>

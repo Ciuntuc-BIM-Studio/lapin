@@ -283,6 +283,11 @@ export function handleKeydown(e: KeyEventLike, snap: () => KeySnapshot = snapsho
     composing: !!(e as { isComposing?: boolean }).isComposing,
   };
   const cur = snap();
+  // The OS autorepeat of a held Tab is not a new press (forum topic 215): it never cycles, folds panels or steps through fields.
+  if (e.key === 'Tab' && (e as { repeat?: boolean }).repeat && cur.screen === 'workspace' && !press.inField && !press.inDialog && !cur.dialog) {
+    e.preventDefault();
+    return;
+  }
   const intent = keyIntent(press, cur);
   // Tab held over several elements opens their list (issue 110); a tap runs the Tab command when it comes up (keyup, below).
   if (e.key === 'Tab' && !e.shiftKey && intent?.kind === 'command' && intent.id === TAB_COMMAND && tabHoldDown(!!(e as { repeat?: boolean }).repeat) === 'swallow') {

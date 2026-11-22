@@ -180,6 +180,7 @@ export function useGripEditor(o: GripEditorOptions) {
       if ((e.target as HTMLElement)?.closest('input, select, textarea')) return;
       e.preventDefault();
       e.stopPropagation();
+      if (e.repeat) return;
       setPick((p) => ({ ...p, [hover.key]: ((p[hover.key] ?? hover.members.length) + 1) % (hover.members.length + 1) }));
     };
     window.addEventListener('keydown', onKey, true);

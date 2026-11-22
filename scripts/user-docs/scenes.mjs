@@ -14547,6 +14547,67 @@ export const scenes = [
     },
   },
   {
+    // Issue #110 and forum topic 215: HOLDING Tab (with the operating system's key autorepeat, as Windows sends it) opens the list once
+    // and cycles nothing; letting go takes the lit element; a short press still lights the next one.
+    id: 'tab-hold',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ view: 'plan' });
+      await t.fit();
+      const [px, py] = await t.planPoint(5.5, 0);
+      await t.page.mouse.move(px - 20, py + 20, { steps: 4 });
+      await t.page.mouse.move(px, py, { steps: 4 });
+      await t.wait(400);
+      const state = () => t.page.evaluate(async () => {
+        const c = (await import('/src/viewport/pickCycle.ts')).usePickCycle.getState().cycle;
+        const h = (await import('/src/viewport/tabHold.ts')).useTabHold.getState();
+        const u = (await import('/src/app/panels.ts')).usePanels.getState();
+        return { index: c ? c.index : null, open: h.open, n: h.ids.length, panels: `${u.browserOpen}|${u.propsOpen}` };
+      });
+      // A real hold: key down, the autorepeat (Playwright's second down is a repeat), 800 ms, key up.
+      await t.page.keyboard.down('Tab');
+      await t.wait(500);
+      for (let i = 0; i < 10; i++) { await t.page.keyboard.down('Tab'); await t.wait(33); }
+      const held = await state();
+      t.expect(held.open && held.n >= 2 && held.index === 0, `a held Tab opens the list on its first element, and the repeats leave it there (${JSON.stringify(held)})`);
+      t.expect(await t.page.locator('[data-testid=tab-hold]').count() === 1, 'one list is on the screen');
+      await t.shot('tab-hold');
+      await t.page.keyboard.up('Tab');
+      await t.wait(300);
+      const after = await state();
+      t.expect(!after.open, 'letting go closes the list');
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selected.length) === 1, 'letting go takes the lit element');
+      // The same with repeats dispatched as Windows sends them (repeat: true, every 33 ms, from 500 ms).
+      await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.setState({ selected: [] }));
+      await t.page.keyboard.down('Tab');
+      await t.page.evaluate(() => new Promise((done) => {
+        let n = 0;
+        const id = setInterval(() => { document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', code: 'Tab', repeat: true, bubbles: true, cancelable: true })); if (++n >= 25) { clearInterval(id); done(null); } }, 33);
+      }));
+      const win = await state();
+      t.expect(win.open && win.index === 0, `repeated Tab keydowns as Windows sends them leave the list on its first element (${JSON.stringify(win)})`);
+      await t.page.keyboard.up('Tab');
+      await t.wait(300);
+      // A short press lights the next element, as before.
+      await t.page.keyboard.press('Tab');
+      await t.wait(300);
+      t.expect((await state()).index === 1, 'a short press lights the second element');
+      // A held Tab with nothing to list does not fold and unfold the panels on every repeat.
+      await t.page.mouse.move(px, py + 200, { steps: 4 });
+      await t.wait(300);
+      const before = (await state()).panels;
+      await t.page.keyboard.down('Tab');
+      await t.wait(500);
+      for (let i = 0; i < 10; i++) { await t.page.keyboard.down('Tab'); await t.wait(33); }
+      await t.page.keyboard.up('Tab');
+      await t.wait(300);
+      t.expect((await state()).panels !== before, 'a held Tab with nothing under the pointer folds the panels once, not on every repeat');
+      await t.page.keyboard.press('Tab');
+    },
+  },
+  {
     // Issues #32 and #30 (a CYPECAD MEP user): a new wall type made with IsExternal ticked, its walls having it from the start;
     // the IFC export's option that writes a type's properties on each occurrence too.
     id: 'type-params-ifc',
