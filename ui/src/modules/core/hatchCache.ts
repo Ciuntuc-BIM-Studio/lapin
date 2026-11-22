@@ -7,6 +7,8 @@
 
 import { create } from 'zustand';
 import { useSession } from '../../engine/session';
+import { useEngineQuery } from '../../engine/useEngineQuery';
+import type { PatternInfo } from './hatchUnits';
 
 export type HatchPreview = { solid: boolean; segments: number[] };
 
@@ -25,3 +27,10 @@ export function forgetHatchPreviews(): void {
 useSession.subscribe((s, prev) => {
   if (s.doc?.path !== prev.doc?.path || s.version < prev.version) forgetHatchPreviews();
 });
+
+/** The hatch patterns the engine lists (`hatch.list`), asked again when patterns are imported or another project opens; [] until they land. */
+export function useHatchNames(): PatternInfo[] {
+  const epoch = useHatchEpoch((s) => s.epoch);
+  return useEngineQuery<PatternInfo[]>('hatch.list', {}, [epoch]) ?? EMPTY;
+}
+const EMPTY: PatternInfo[] = [];

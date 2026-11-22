@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Layers, Library, PaintBucket, Plus, Settings2, Trash2, X } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { useUi } from '../../app/store';
-import { execute, query, useSession } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
 import { ofClass } from '../../engine/model';
 import { formatLength } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
@@ -20,7 +20,8 @@ import { hatchOf, withHatch, type FinishHatch, type FinishHatchMode, type HatchP
 import { MaterialPicker } from '../core/MaterialPicker';
 import { PendingDialog } from '../core/PendingDialog';
 import { openPainter } from './finishPainter';
-import { PatternOptions, type PatternInfo } from '../core/hatchUnits';
+import { PatternOptions } from '../core/hatchUnits';
+import { useHatchNames } from '../core/hatchCache';
 
 interface FinishPart { material: string; height: number; thickness?: number | null }
 interface FinishLayer { material: string; thickness: number; parts?: FinishPart[] | null }
@@ -85,8 +86,8 @@ function LayersTable({ layers, onChange, pieces, testId }: { layers: FinishLayer
 
 /** How plans hatch a finish's floor (or a reflected ceiling plan its ceiling): from its material, a pattern of its own, or not at all. */
 function PlanHatchRow({ spec, part, onChange }: { spec: RoomFinishSpec; part: HatchPart; onChange: (patch: Partial<RoomFinishSpec>) => void }) {
-  const [patterns, setPatterns] = useState<PatternInfo[]>([]);
-  useEffect(() => { void query<PatternInfo[]>('hatch.list').then((r) => r && setPatterns(r.filter((h) => h.name !== 'SOLID'))); }, []);
+  const allPatterns = useHatchNames();
+  const patterns = useMemo(() => allPatterns.filter((h) => h.name !== 'SOLID'), [allPatterns]);
   const h = hatchOf(spec, part);
   const set = (patch: Partial<FinishHatch>) => onChange(withHatch(spec, part, patch));
   return (

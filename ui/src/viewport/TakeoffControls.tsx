@@ -4,22 +4,23 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { execute, query, useSession } from '../engine/session';
+import { execute, useSession } from '../engine/session';
+import { useEngineQuery } from '../engine/useEngineQuery';
 import { TAKEOFF_GROUPINGS, groupingOf } from '../modules/cost/schedules';
 import { FieldPicker } from '../shell/FieldPicker';
 
 interface TakeoffClass { class: string; label: string; count: number }
+const NO_CLASSES: TakeoffClass[] = [];
 
 export function TakeoffControls({ id, groupBy, classes }: { id: string; groupBy: unknown; classes: unknown }) {
   const version = useSession((s) => s.version);
-  const [all, setAll] = useState<TakeoffClass[]>([]);
+  const all = useEngineQuery<TakeoffClass[]>('schedule.takeoffClasses', {}, [id], [version]) ?? NO_CLASSES;
   const [open, setOpen] = useState(false);
   const [picking, setPicking] = useState(false);
   // A grouping by any other field than the built-in ones (kind, type, storey, material), as the takeoff keeps it.
   const list = Array.isArray(groupBy) ? groupBy.map(String) : [];
   const other = list.length && !TAKEOFF_GROUPINGS.some((g) => g.id === list.join(',')) ? list : null;
   const box = useRef<HTMLDivElement>(null);
-  useEffect(() => { void query<TakeoffClass[]>('schedule.takeoffClasses').then((r) => setAll(r ?? [])); }, [version]);
   useEffect(() => {
     if (!open) return;
     const away = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };

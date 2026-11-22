@@ -1,17 +1,16 @@
 /** Manage → Components (docs/components.md): the project's components, how many instances each has, renamed, their instances selected. */
 
 import { backdropClose } from '../../shell/Dialog';
-import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { select, useUi } from '../../app/store';
-import { execute, query, useSession } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
+import { useEngineQuery } from '../../engine/useEngineQuery';
 
 interface Row { id: string; name: string; kind?: string | null; instances: string[]; members: number }
 
 export function ComponentsDialog() {
   const version = useSession((s) => s.nodes);
-  const [rows, setRows] = useState<Row[]>([]);
-  useEffect(() => { void query<Row[]>('component.list').then((r) => setRows(r ?? [])); }, [version]);
+  const rows = useEngineQuery<Row[]>('component.list', {}, [], [version]) ?? [];
   const close = () => useUi.setState({ dialog: null });
   return (
     <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>

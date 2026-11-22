@@ -11,6 +11,7 @@
  */
 
 import { backdropClose } from '../../shell/Dialog';
+import { parseDecimal } from '../../shell/parseDecimal';
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
@@ -56,15 +57,18 @@ export function ExchangeExportDialog() {
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
+    let live = true;
     void engine.call<Survey>('project.exportSurvey', {}).then((s) => {
+      if (!live) return;
       setSurvey(s);
       // What is left out unless chosen (entourage) starts unticked.
       setOffKinds(new Set(s.groups.flatMap((g) => g.kinds.filter((k) => k.off).map((k) => k.key))));
-    }).catch(() => setSurvey(null));
+    }).catch(() => { if (live) setSurvey(null); });
+    return () => { live = false; };
   }, []);
   const choice = useMemo(() => (survey ? choiceOf(survey, offKinds, offStoreys) : { kinds: null, storeys: null }), [survey, offKinds, offStoreys]);
-  const mm = Number(tolerance.replace(',', '.'));
-  const valid = format !== 'ifc' || !simplify || (Number.isFinite(mm) && mm > 0 && mm <= 100);
+  const mm = parseDecimal(tolerance, { min: 0, max: 100 }) ?? NaN;
+  const valid = format !== 'ifc' || !simplify || (Number.isFinite(mm) && mm > 0);
   const run = async () => {
     setBusy(true);
     const common = {

@@ -13,7 +13,7 @@ import { activate } from '../../platform/modules';
 import type { ToolDef } from '../../platform/module';
 import { outlineFor, room, roomOutline } from './roomTools';
 import { useUi } from '../../app/store';
-import { execute, query, useSession } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { Cell, LengthCell, NumberField } from '../../shell/cells';
 import { HatchSwatch } from '../core/HatchSwatch';
@@ -21,7 +21,8 @@ import { useSchemes } from './rooms';
 import { RoomFinishField } from './RoomFinishes';
 import { RoomOpeningsField } from './RoomOpenings';
 import { sameKind } from '../../shell/params';
-import { PatternOptions, type PatternInfo } from '../core/hatchUnits';
+import { PatternOptions } from '../core/hatchUnits';
+import { useHatchNames } from '../core/hatchCache';
 
 /** A text field with suggestions (an HTML datalist): commits on blur or Enter. */
 function Suggest({ value, options, onCommit, id, placeholder }: { value: string; options: string[]; onCommit: (v: string) => void; id: string; placeholder?: string }) {
@@ -46,8 +47,7 @@ export function RoomSection({ node }: { node: NodeDto }) {
   const [s] = useSchemes();
   const finish = useSession((x) => (typeof node.props.finishType === 'string' ? x.nodes.get(node.props.finishType) : undefined));
   const inherited = finishFloorOf(finish);
-  const [hatches, setHatches] = useState<PatternInfo[]>([]);
-  useEffect(() => { void query<PatternInfo[]>('hatch.list').then((r) => r && setHatches(r)); }, []);
+  const hatches = useHatchNames();
   const str = (k: string) => (typeof node.props[k] === 'string' ? (node.props[k] as string) : '');
   // With several rooms selected, each takes it (topic #29), but its number, which is its own.
   const update = (k: string, v: unknown) => void execute('element.update', { ids: k === 'number' ? [node.id] : sameKind(node), attrs: { [k]: v === '' ? null : v } });

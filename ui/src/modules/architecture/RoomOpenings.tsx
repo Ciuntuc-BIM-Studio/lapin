@@ -4,9 +4,9 @@
  * sides. Every change is sent whole, as one undo step.
  */
 
-import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { execute, query, useSession } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
+import { useEngineQueryState } from '../../engine/useEngineQuery';
 import { formatLength } from '../../engine/unitsStore';
 import type { NodeDto } from '../../engine/protocol';
 import { LengthCell } from '../../shell/cells';
@@ -56,8 +56,8 @@ function SidesPlan({ data }: { data: Data }) {
 
 export function RoomOpeningsField({ node }: { node: NodeDto }) {
   const nodes = useSession((x) => x.nodes);
-  const [data, setData] = useState<Data | null>(null);
-  useEffect(() => { void query<Data>('architecture.roomOpenings', { id: node.id }).then((d) => d && setData(d)); }, [nodes, node.id]);
+  // Null from the moment the room changes until its own answer lands: room B never shows room A's openings (audit G18).
+  const [data, setData] = useEngineQueryState<Data>('architecture.roomOpenings', { id: node.id }, [node.id], [nodes]);
   if (!data) return null;
   const types = (kind: Item['kind']) => [...nodes.values()].filter((n) => n.type === (kind === 'door' ? 'IfcDoorType' : 'IfcWindowType'));
   const send = (items: Item[], on = data.on) => { setData({ ...data, on, items }); void send0(items, on); };
