@@ -51,6 +51,7 @@ public static class SdnfExport
     {
         var o = options ?? new SdnfExportOptions();
         var m = q.Model;
+        var clearances = BoltRuleSection.Clearances(m);
         var skipped = new JsonArray();
         bool Wanted(Entity e) => (o.Hidden == null || !o.Hidden.Contains(e.Id)) && (o.Kinds == null || o.Kinds.Contains(e.Class)) && (o.Storeys == null || Spatial.StoreyOf(m, e.Id) is { } s && o.Storeys.Contains(s.Id));
         void Skip(Entity e, string why) => skipped.Add((JsonNode)new JsonObject { ["id"] = e.Id, ["name"] = e.Name, ["reason"] = why });
@@ -152,10 +153,10 @@ public static class SdnfExport
                 var grade = part.Properties?.FirstOrDefault(p => p.Name == "Grade").Value ?? "S235";
                 plates.Add(new SdnfPlate(n, 0, "Plate", part.Name, grade, loops.Thickness, 0, Closed(loops.Top), Closed(loops.Bottom)));
                 comments.Add($"Lapin plate {n} {tag}");
-                // The holes its bolts and anchors go through: round, as wide as the connection's rule (2 or 3 mm over the bolt).
+                // The holes its bolts and anchors go through: round, as wide as the connection's rule (EN 1090-2's clearance, or the rule pack's).
                 var k = 0;
                 foreach (var (top, bottom, d) in BoltHoles(loops.Top, loops.Bottom, bolts))
-                    holes.Add(new SdnfHole(HoleNumber(null, $"hole:{tag}:{k++}"), n, 2, loops.Thickness, [(top, NodeSpec.Hole(d) / 2)], [(bottom, NodeSpec.Hole(d) / 2)]));
+                    holes.Add(new SdnfHole(HoleNumber(null, $"hole:{tag}:{k++}"), n, 2, loops.Thickness, [(top, NodeSpec.Hole(d, clearances) / 2)], [(bottom, NodeSpec.Hole(d, clearances) / 2)]));
             }
         }
 
