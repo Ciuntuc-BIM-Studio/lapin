@@ -23,7 +23,7 @@ import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { MaterialGraphicsTable, type HatchPattern as Hatch, type MaterialRow as Material } from './MaterialGraphicsTable';
 import { copyArgs } from './materialGraphicsModel';
-import { OwnImage, ReliefMaps } from './OwnImage';
+import { OwnImage, ReliefMaps, TextureSets } from './OwnImage';
 import { MaterialPreview } from './MaterialPreview';
 import { openHatchPatterns } from './hatchEditorOpen';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
@@ -49,7 +49,7 @@ const SLIDERS: { key: LookKey; label: string; step: number; title: string }[] = 
   { key: 'transmission', label: 'Glass (transmission)', step: 0.01, title: 'Light through the body, as glass and water let it: renderers refract it.' },
 ];
 /** Every look field, to take them all back to the name's. */
-const LOOK_KEYS = ['roughness', 'metalness', 'transparency', 'transmission', 'ior', 'emissive', 'emissiveStrength', 'textureRotation', 'normalStrength', 'bumpStrength'];
+const LOOK_KEYS = ['roughness', 'metalness', 'transparency', 'transmission', 'ior', 'emissive', 'emissiveStrength', 'textureRotation', 'normalStrength', 'bumpStrength', 'aoStrength'];
 
 export function MaterialsDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -310,6 +310,7 @@ export function MaterialsDialog() {
                       <label className="small" title="The texture's turn on the faces, degrees">Rotation <input className="num" data-field="material-rotation" key={`${m.id}r${look.textureRotation}`} defaultValue={look.textureRotation}
                         onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v) && v >= -360 && v <= 360 && v !== look.textureRotation) update({ textureRotation: v }); }} />°</label>
                     </div>
+                    <TextureSets materialId={m.id} />
                     <OwnImage materialId={m.id} />
                     <ReliefMaps materialId={m.id} strengths={look} />
                     {SLIDERS.map(({ key, label, step, title }) => (

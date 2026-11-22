@@ -662,6 +662,7 @@ public static partial class IfcImport
                 {
                     var attrs = intent.Attrs;
                     if (attrs["color"] == null && Colour(mat.Id) is { } c) attrs["color"] = c;
+                    MaterialMaps(edit, mat.Id, attrs);
                     id = Put(edit, lapinId, IfcClass.Material, name, attrs, null, counts: false).Id;
                 }
                 else
@@ -691,6 +692,47 @@ public static partial class IfcImport
                 }
                 materialIds[mat.Id] = id;
             }
+        }
+
+        /// <summary>
+        /// A Lapin material's maps back from its file (docs/plan-render.md, S1): each image its attributes name (textureImage,
+        /// normalImage… with the ids they had) made again, under that id, from the IfcBlobTexture of its surface style whose Mode
+        /// says that map (IfcExport.TextureModes); an image the file does not hold is taken off the material.
+        /// </summary>
+        void MaterialMaps(IEdit edit, int material, JsonObject attrs)
+        {
+            Dictionary<string, StepEntity>? blobs = null;
+            foreach (var (map, key) in Lapin.Platform.Images.MapKeys)
+            {
+                if ((string?)(attrs[key] as JsonValue) is not { Length: > 0 } imageId) continue;
+                if (edit.Model.Get(imageId) is { Class: Lapin.Platform.Images.Class }) { seen.Add(imageId); continue; }
+                blobs ??= Blobs(material);
+                if (blobs.TryGetValue(IfcExport.TextureModes[map], out var blob) && Str(blob[5]) is { } format && blob[6] is string code && code.Length > 1)
+                {
+                    try
+                    {
+                        var bytes = Convert.FromHexString(code[1..]);
+                        var mime = Lapin.Platform.Images.Sniff(bytes) ?? (format.Equals("PNG", StringComparison.OrdinalIgnoreCase) ? "image/png" : "image/jpeg");
+                        Put(edit, imageId, Lapin.Platform.Images.Class, $"{map}.{(mime == "image/png" ? "png" : "jpg")}", new JsonObject { ["mime"] = mime, ["data"] = Convert.ToBase64String(bytes) }, null, counts: false);
+                        continue;
+                    }
+                    catch (FormatException) { }
+                }
+                attrs.Remove(key);
+            }
+        }
+
+        /// <summary>A material's IfcBlobTextures by their Mode, from the surface styles of its representation.</summary>
+        Dictionary<string, StepEntity> Blobs(int material)
+        {
+            var o = new Dictionary<string, StepEntity>(StringComparer.OrdinalIgnoreCase);
+            foreach (var rep in Rels.RepresentationsOf[material])
+                foreach (var styled in Items(rep[2]).SelectMany(r => Items(r[3])).Where(i => i.Type == "IFCSTYLEDITEM"))
+                    foreach (var style in Items(styled[1]).Where(x => x.Type == "IFCSURFACESTYLE"))
+                        foreach (var item in Items(style[2]).Where(x => x.Type == "IFCSURFACESTYLEWITHTEXTURES"))
+                            foreach (var tex in Items(item[0]).Where(x => x.Type == "IFCBLOBTEXTURE"))
+                                if (Str(tex[2]) is { Length: > 0 } mode) o.TryAdd(mode, tex);
+            return o;
         }
 
         /// <summary>The measures of a material's properties a project may give a unit of its own (IfcUnitEnum, IfcDerivedUnitEnum): read in SI.</summary>

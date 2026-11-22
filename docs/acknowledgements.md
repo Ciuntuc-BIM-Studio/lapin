@@ -81,6 +81,10 @@ BimGo draws these as pictures that turn to the camera. Lapin builds them as bodi
 
 The trees stay Lapin's own plantings (decision 234).
 
+## ambientCG
+
+The texture sets a material can take in its Appearance tab (docs/plan-render.md, S1; decision 777) are from [ambientCG](https://ambientcg.com) by Lennart Demes and its contributors, released under Creative Commons CC0 1.0, so nothing is owed. We credit them anyway. The sets are Bricks085, Concrete034, PaintedPlaster017, WoodFloor043, Tiles107, PavingStones150, Metal009 and Fabric061, each brought down to 512 px for the app. Their register, with each file's hash, is `ui/src/viewport/texture-library.json`; `pnpm check:licenses` checks it.
+
 ## Published methods
 
 The methods below are credited the way BimGo credits them:

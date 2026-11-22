@@ -212,6 +212,12 @@ Soarele e al proiectului: unde stă pentru locul proiectului (Gestionare → **A
 
 ![Soare și umbre](shots/sun-dialog.webp)
 
+Un material cu un **set de texturi** sau cu hărți proprii (Gestionare → **Materiale** → Aspect, vezi [Seturi de texturi](materials.md#seturi-de-texturi)) își arată relieful, părțile lucioase și mate și umbra din rosturi în vederile Mediu și Realist. Un soare jos de-a lungul unui zid le arată cel mai bine: rosturile intră în umbră, iar cărămizile prind lumina. Același zid, întâi cu textura de cărămidă pe care Lapin o desenează singur, apoi cu setul **Cărămidă roșie**:
+
+![Un zid de cărămidă sub un soare jos de seară, cu textura de cărămidă desenată de Lapin](shots/texture-wall-before.webp)
+
+![Același zid cu setul Cărămidă roșie: relief, rugozitate și umbră în rosturi](shots/texture-wall-after.webp)
+
 Vederea realistă își ia câteva cifre (umbra din colțuri, calitatea umbrelor, culoarea soarelui) din [BimGo](https://github.com/aussieBIMguru/BimGo), de Aussie BIM Guru (MIT-0).
 
 ## Modelare în 3D

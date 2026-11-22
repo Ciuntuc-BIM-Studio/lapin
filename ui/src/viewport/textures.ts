@@ -223,8 +223,8 @@ export function splitByFace(positions: Float32Array, indices: Uint32Array): Reco
 /** A material's own image: its id, its file as a data URL, and how large it lies on the model (metres). */
 export interface OwnImage { id: string; url: string; width: number; height: number }
 
-/** The attributes a material names its images by: its own texture, its normal map, its bump map (Images.MaterialKeys). */
-export type ImageKey = 'textureImage' | 'normalImage' | 'bumpImage';
+/** The attributes a material names its images by: its own texture, its normal map, its bump map, its roughness and occlusion maps (Images.MaterialKeys). */
+export type ImageKey = 'textureImage' | 'normalImage' | 'bumpImage' | 'roughnessImage' | 'aoImage';
 
 /** The image a material brings (by default its own texture), or null (then its drawn texture, or its colour). */
 export function imageOf(material: NodeDto | undefined, nodes: Map<string, NodeDto>, key: ImageKey = 'textureImage'): OwnImage | null {
@@ -238,11 +238,47 @@ export function imageOf(material: NodeDto | undefined, nodes: Map<string, NodeDt
   return { id, url: `data:${mime};base64,${data}`, width: w, height: h };
 }
 
-/** A material's relief: its normal map and its bump map, each laid on as its own image is (its size in metres, its turn). */
-export interface Relief { normal: OwnImage | null; bump: OwnImage | null }
+/**
+ * A material's relief and surface maps: its normal map and its bump map, its roughness map and its ambient occlusion map
+ * (docs/plan-render.md, S1), each laid on as its own image is (its size in metres, its turn).
+ */
+export interface Relief { normal: OwnImage | null; bump: OwnImage | null; roughness?: OwnImage | null; ao?: OwnImage | null }
 
 export function reliefOf(material: NodeDto | undefined, nodes: Map<string, NodeDto>): Relief {
-  return { normal: imageOf(material, nodes, 'normalImage'), bump: imageOf(material, nodes, 'bumpImage') };
+  return {
+    normal: imageOf(material, nodes, 'normalImage'), bump: imageOf(material, nodes, 'bumpImage'),
+    roughness: imageOf(material, nodes, 'roughnessImage'), ao: imageOf(material, nodes, 'aoImage'),
+  };
+}
+
+/** Whether a relief has any map (its faces then need texture coordinates). */
+export const hasRelief = (r: Relief): boolean => !!(r.normal || r.bump || r.roughness || r.ao);
+
+/**
+ * Whether the surface maps (roughness, occlusion) show (docs/plan-render.md, S1): in the medium and realistic views, not in the
+ * drawing one, which keeps its flat light; switched in place on the materials (surfaceMaps), as glass is.
+ */
+let surfaceOn = false;
+
+/** A material's roughness and occlusion maps put on or taken off, by the view's profile. */
+function applySurface(m: THREE.MeshStandardMaterial, on: boolean): void {
+  const s = m.userData.surface as { roughness?: THREE.Texture; ao?: THREE.Texture; aoStrength: number } | undefined;
+  if (!s) return;
+  const roughness = on ? s.roughness ?? null : null, ao = on ? s.ao ?? null : null;
+  if (m.roughnessMap === roughness && m.aoMap === ao) return;
+  m.roughnessMap = roughness;
+  m.aoMap = ao;
+  m.aoMapIntensity = s.aoStrength;
+  m.needsUpdate = true;
+}
+
+/** The surface maps on (medium, realistic) or off (drawing), through the scene and for the materials made from now on. */
+export function surfaceMaps(root: THREE.Object3D, on: boolean): void {
+  surfaceOn = on;
+  root.traverse((o) => {
+    const mat = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+    for (const m of Array.isArray(mat) ? mat : mat ? [mat] : []) if (m.userData.surface) applySurface(m as THREE.MeshStandardMaterial, on);
+  });
 }
 
 /**
@@ -264,7 +300,14 @@ export function sizeOf(material: NodeDto | undefined): [number, number] {
  * A material given its relief (report #76): the normal map tilting its shading at its strength, the bump map raising
  * its white at its own; read as data (no colour space), repeated as its texture is. The face needs its uv.
  */
-export function withRelief<M extends THREE.MeshStandardMaterial>(m: M, relief: Relief, normalStrength: number, bumpStrength: number, copy?: (t: THREE.Texture) => THREE.Texture): M {
+export function withRelief<M extends THREE.MeshStandardMaterial>(m: M, relief: Relief, normalStrength: number, bumpStrength: number, copy?: (t: THREE.Texture) => THREE.Texture, aoStrength = 1, surface: boolean = surfaceOn): M {
+  // The roughness map (its roughness multiplies it, as glTF's factor) and the occlusion map: data, kept on the material and
+  // shown by the profile (surfaceMaps); a preview passes its own `surface`.
+  if (relief.roughness || relief.ao) {
+    const tex = (img: OwnImage) => { const t = imageTexture(img, THREE.RepeatWrapping, true); return copy ? copy(t) : t; };
+    m.userData.surface = { roughness: relief.roughness ? tex(relief.roughness) : undefined, ao: relief.ao ? tex(relief.ao) : undefined, aoStrength };
+    applySurface(m, surface);
+  }
   if (relief.normal) {
     const t = imageTexture(relief.normal, THREE.RepeatWrapping, true);
     m.normalMap = copy ? copy(t) : t;

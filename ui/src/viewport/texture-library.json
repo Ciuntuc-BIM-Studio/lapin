@@ -1,0 +1,313 @@
+{
+  "about": "The texture sets Lapin ships (docs/plan-render.md, S1): physically based maps for a material's Appearance tab, under ui/public/textures/<source>/<id>/. Each set is the source's 1K-JPG download brought down to 512 px on its longer side (JPEG quality 78, macOS sips), its NormalGL as Normal.jpg (OpenGL's green up, as three.js and glTF take it), AmbientOcclusion as AO.jpg, Displacement as Height.jpg. size is the tile's width and height on the model in metres (the source's stated dimensions; where it states none, the image's proportion at 1 m high). Chosen, a set's maps are copied into the project as its images (material.textures), so a project keeps them on any computer and in every export. Hashes written by node scripts/texture-assets.mjs and checked by pnpm check:licenses: every file listed, its hash as shipped, its source's licence in the allowed list, no file shipped that is not listed.",
+  "sources": {
+    "ambientcg": {
+      "name": "ambientCG",
+      "url": "https://ambientcg.com",
+      "author": "Lennart Demes and contributors (ambientCG)",
+      "licence": "CC0-1.0",
+      "licenceUrl": "https://docs.ambientcg.com/license/",
+      "verified": "2026-11-22: docs.ambientcg.com/license states that the materials, models and other assets are licensed under the Creative Commons CC0 1.0 Universal License; no credit required (Lapin credits it in docs/acknowledgements.md).",
+      "fetched": "2026-11-22"
+    }
+  },
+  "sets": [
+    {
+      "id": "Bricks085",
+      "source": "ambientcg",
+      "name": "Red brick",
+      "kind": "brick",
+      "size": [
+        2.4,
+        1.2
+      ],
+      "roughness": 1,
+      "metalness": 0,
+      "files": {
+        "color": {
+          "file": "ui/public/textures/ambientcg/Bricks085/Color.jpg",
+          "bytes": 60658,
+          "sha256": "916385e3abcaee052ccc9b0d01ea3c59d5bedbfaa4cb696cf069c508d53b9d26"
+        },
+        "normal": {
+          "file": "ui/public/textures/ambientcg/Bricks085/Normal.jpg",
+          "bytes": 41570,
+          "sha256": "5ecb6e23a91cbaffcfb76d8be8adb53e8fc32fbe16df38600830190719459a67"
+        },
+        "roughness": {
+          "file": "ui/public/textures/ambientcg/Bricks085/Roughness.jpg",
+          "bytes": 40611,
+          "sha256": "82d73812e8a88b05270f5b7c24ec8ac36a5cf830650ce311c35ab9e650e3da8d"
+        },
+        "ao": {
+          "file": "ui/public/textures/ambientcg/Bricks085/AO.jpg",
+          "bytes": 50914,
+          "sha256": "0dde84b5c43ee00604fe9d3e35ed86af06d62b5ba6cb803efd0025e861e0085b"
+        },
+        "height": {
+          "file": "ui/public/textures/ambientcg/Bricks085/Height.jpg",
+          "bytes": 30579,
+          "sha256": "95e2d292c55ee0e657cdedb3fe784cf8418f375e378f4c70e7048d6fea01a926"
+        }
+      }
+    },
+    {
+      "id": "Concrete034",
+      "source": "ambientcg",
+      "name": "Concrete",
+      "kind": "concrete",
+      "size": [
+        1.1,
+        0.55
+      ],
+      "roughness": 1,
+      "metalness": 0,
+      "files": {
+        "color": {
+          "file": "ui/public/textures/ambientcg/Concrete034/Color.jpg",
+          "bytes": 25270,
+          "sha256": "a409d218f0a501b294fb52793b1099f815d1f519467a670501d2c4a41e71f171"
+        },
+        "normal": {
+          "file": "ui/public/textures/ambientcg/Concrete034/Normal.jpg",
+          "bytes": 36721,
+          "sha256": "cf78ac8fb8b1e56a1335f201107b8bef0f06dffbd8796a35ef001c8997ba2015"
+        },
+        "roughness": {
+          "file": "ui/public/textures/ambientcg/Concrete034/Roughness.jpg",
+          "bytes": 30355,
+          "sha256": "4aaa23176dad78add61c198762617500df8046e723bddcf0dbd7a8f193ad5f36"
+        },
+        "height": {
+          "file": "ui/public/textures/ambientcg/Concrete034/Height.jpg",
+          "bytes": 28533,
+          "sha256": "c3b82f37619483a1b13a3a347591970981593eaff84b7ebbd615fc01e97f24de"
+        }
+      }
+    },
+    {
+      "id": "PaintedPlaster017",
+      "source": "ambientcg",
+      "name": "Plaster",
+      "kind": "plaster",
+      "size": [
+        2,
+        1
+      ],
+      "roughness": 1,
+      "metalness": 0,
+      "files": {
+        "color": {
+          "file": "ui/public/textures/ambientcg/PaintedPlaster017/Color.jpg",
+          "bytes": 19569,
+          "sha256": "83c6fa02494ced8016b1eb98f49eb769ee24074fba812723d56219384483a662"
+        },
+        "normal": {
+          "file": "ui/public/textures/ambientcg/PaintedPlaster017/Normal.jpg",
+          "bytes": 62256,
+          "sha256": "98634de27ec955f3e1a476e4bfef5adf1a321ef8c39cdfd5c3255a715c14efd2"
+        },
+        "roughness": {
+          "file": "ui/public/textures/ambientcg/PaintedPlaster017/Roughness.jpg",
+          "bytes": 18460,
+          "sha256": "32bee2f23730193b501ae813945f831f6eab785db5f40598e005e9dc99a4197a"
+        },
+        "height": {
+          "file": "ui/public/textures/ambientcg/PaintedPlaster017/Height.jpg",
+          "bytes": 72974,
+          "sha256": "d984b135b43f0d179f5072728946e103aa9024304a5c803426bfbcd47759c33c"
+        }
+      }
+    },
+    {
+      "id": "WoodFloor043",
+      "source": "ambientcg",
+      "name": "Wood floor",
+      "kind": "wood",
+      "size": [
+        1.3,
+        0.65
+      ],
+      "roughness": 1,
+      "metalness": 0,
+      "files": {
+        "color": {
+          "file": "ui/public/textures/ambientcg/WoodFloor043/Color.jpg",
+          "bytes": 37732,
+          "sha256": "13a1715ea99be063e8036da26e32081e431be10891123d9c27fd1ef04edfaf6b"
+        },
+        "normal": {
+          "file": "ui/public/textures/ambientcg/WoodFloor043/Normal.jpg",
+          "bytes": 15348,
+          "sha256": "b0fa76998a0432eee9d5a647c3ace3f7104ca1d4859ba0f3436ab64586b558d2"
+        },
+        "roughness": {
+          "file": "ui/public/textures/ambientcg/WoodFloor043/Roughness.jpg",
+          "bytes": 28990,
+          "sha256": "ab673e50e1c296d8aced767c12f275c91b5a7613d513de4a9a2e4bd6068c274b"
+        },
+        "ao": {
+          "file": "ui/public/textures/ambientcg/WoodFloor043/AO.jpg",
+          "bytes": 17033,
+          "sha256": "bc382a62ce9483351f503c8a8d5717a2e7d2fe2dee17f1d744740427ce9c1d0a"
+        },
+        "height": {
+          "file": "ui/public/textures/ambientcg/WoodFloor043/Height.jpg",
+          "bytes": 25781,
+          "sha256": "dc9f5d2156c4de9ab316a4feae2091093da9fd6a27507753860b87c806e91717"
+        }
+      }
+    },
+    {
+      "id": "Tiles107",
+      "source": "ambientcg",
+      "name": "White tiles",
+      "kind": "tiles",
+      "size": [
+        1,
+        1
+      ],
+      "roughness": 1,
+      "metalness": 0,
+      "files": {
+        "color": {
+          "file": "ui/public/textures/ambientcg/Tiles107/Color.jpg",
+          "bytes": 37978,
+          "sha256": "da35fe4d67146b2e535ad457389a54dd5fe743965749d6c126810a5a9c634204"
+        },
+        "normal": {
+          "file": "ui/public/textures/ambientcg/Tiles107/Normal.jpg",
+          "bytes": 42204,
+          "sha256": "97a1e69b3d560f1b69691aeaea1936611c7f990241ba17e7e6de97b9da206a86"
+        },
+        "roughness": {
+          "file": "ui/public/textures/ambientcg/Tiles107/Roughness.jpg",
+          "bytes": 47451,
+          "sha256": "96ca0e6b07ef3a60313c02ea3596bef80e2e8cfd934805db11ccee0420ac871c"
+        },
+        "ao": {
+          "file": "ui/public/textures/ambientcg/Tiles107/AO.jpg",
+          "bytes": 28509,
+          "sha256": "499092d7d7738f0e3ecef4b9c45a49368b0ac81de2e71c47653518fde6d5fed9"
+        },
+        "height": {
+          "file": "ui/public/textures/ambientcg/Tiles107/Height.jpg",
+          "bytes": 49392,
+          "sha256": "d07a4dfa321970f86f60dd283c4b962546a2cbedb09707d0e1e6b8cc053b4fea"
+        }
+      }
+    },
+    {
+      "id": "PavingStones150",
+      "source": "ambientcg",
+      "name": "Stone setts",
+      "kind": "stone",
+      "size": [
+        1.8,
+        0.9
+      ],
+      "roughness": 1,
+      "metalness": 0,
+      "files": {
+        "color": {
+          "file": "ui/public/textures/ambientcg/PavingStones150/Color.jpg",
+          "bytes": 56375,
+          "sha256": "b3d6bd317660efa1a24ae8e608b2b53cd30147f4369308e193473345eab0ed10"
+        },
+        "normal": {
+          "file": "ui/public/textures/ambientcg/PavingStones150/Normal.jpg",
+          "bytes": 67297,
+          "sha256": "5772f088cebcf8c1e2c8a454420a25bc73d094f3484cf022a998aa2efda41bda"
+        },
+        "roughness": {
+          "file": "ui/public/textures/ambientcg/PavingStones150/Roughness.jpg",
+          "bytes": 55188,
+          "sha256": "4fae04a7de01de0d08a0149c72ea6beb0c138e095551f36e5ee7407c27537224"
+        },
+        "ao": {
+          "file": "ui/public/textures/ambientcg/PavingStones150/AO.jpg",
+          "bytes": 71447,
+          "sha256": "04d9c360c7ee8f584d48c92fe77b2a8c4a9250620869162255ff75d50b0ec9b3"
+        },
+        "height": {
+          "file": "ui/public/textures/ambientcg/PavingStones150/Height.jpg",
+          "bytes": 51746,
+          "sha256": "65d87d7c63bc093bd831313f2ee5ec58799eb31a24039204b548e5fc4d2857c1"
+        }
+      }
+    },
+    {
+      "id": "Metal009",
+      "source": "ambientcg",
+      "name": "Brushed steel",
+      "kind": "metal",
+      "size": [
+        1,
+        1
+      ],
+      "roughness": 1,
+      "metalness": 1,
+      "files": {
+        "color": {
+          "file": "ui/public/textures/ambientcg/Metal009/Color.jpg",
+          "bytes": 40676,
+          "sha256": "d114979b41de0e8b561b7937da15beaf9839bc4a675f478f24bb8d09e46be7e7"
+        },
+        "normal": {
+          "file": "ui/public/textures/ambientcg/Metal009/Normal.jpg",
+          "bytes": 21910,
+          "sha256": "ff1544133485d8250788ec60d01ec40819a3ba8edb563557d9f903e8bcc8bd31"
+        },
+        "roughness": {
+          "file": "ui/public/textures/ambientcg/Metal009/Roughness.jpg",
+          "bytes": 61127,
+          "sha256": "881e69518fca1e2c97f15019ca4ddb74bede0bba33c53cc8424bcc8079a3c3c7"
+        },
+        "height": {
+          "file": "ui/public/textures/ambientcg/Metal009/Height.jpg",
+          "bytes": 97223,
+          "sha256": "11ad008be702306c5dad269db6c747dedce57ee5ca9c48e511702b39fed325b0"
+        }
+      }
+    },
+    {
+      "id": "Fabric061",
+      "source": "ambientcg",
+      "name": "Fabric",
+      "kind": "fabric",
+      "size": [
+        0.4,
+        0.4
+      ],
+      "roughness": 1,
+      "metalness": 0,
+      "files": {
+        "color": {
+          "file": "ui/public/textures/ambientcg/Fabric061/Color.jpg",
+          "bytes": 135066,
+          "sha256": "824072bfdb1af657d344423195d9298dff37f1644b59a0b7c31a3a519fb74c3a"
+        },
+        "normal": {
+          "file": "ui/public/textures/ambientcg/Fabric061/Normal.jpg",
+          "bytes": 101765,
+          "sha256": "8b4bb2c2e306f66f6fb5abd684e84c53cf8291cbed111330c71a6b17a63b95cd"
+        },
+        "roughness": {
+          "file": "ui/public/textures/ambientcg/Fabric061/Roughness.jpg",
+          "bytes": 63000,
+          "sha256": "0e54eeb16e08e1e348ca364b170168404df1c8fe7d950017a636e4317f3c4acc"
+        },
+        "ao": {
+          "file": "ui/public/textures/ambientcg/Fabric061/AO.jpg",
+          "bytes": 90121,
+          "sha256": "3f7ccbe63c314322f6beec242ed8697b11f518d5c704b5edd3ca65bbc59c34bb"
+        },
+        "height": {
+          "file": "ui/public/textures/ambientcg/Fabric061/Height.jpg",
+          "bytes": 121128,
+          "sha256": "fcc4c5bbff2be3eb70a228327bd19d3ce4e6dd6df8eed40d4c75022e4164e302"
+        }
+      }
+    }
+  ]
+}

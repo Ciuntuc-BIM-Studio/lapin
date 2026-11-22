@@ -27,11 +27,18 @@ public sealed record MaterialLook(double Roughness, double Metalness, double Tra
     /// <summary>How high the bump map's white stands over its black (three.js's bumpScale, MTL's -bm): 1 as the image says.</summary>
     public double BumpStrength { get; init; } = 1;
 
+    /// <summary>
+    /// How much its ambient occlusion map darkens the light from round about (glTF's occlusionTexture strength, three.js's
+    /// aoMapIntensity): 1 as the image says, 0 none. Its roughness map (<c>roughnessImage</c>) needs no strength of its own:
+    /// <see cref="Roughness"/> multiplies it, as glTF's roughnessFactor does (docs/plan-render.md, S1).
+    /// </summary>
+    public double AoStrength { get; init; } = 1;
+
     /// <summary>The attributes of an IfcMaterial that hold its look, with their ranges.</summary>
     public static readonly (string Key, double Min, double Max)[] Numbers =
     [
         ("roughness", 0, 1), ("metalness", 0, 1), ("transparency", 0, 1), ("transmission", 0, 1), ("ior", 1, 3),
-        ("emissiveStrength", 0, 100), ("textureRotation", -360, 360), ("normalStrength", 0, 10), ("bumpStrength", 0, 10),
+        ("emissiveStrength", 0, 100), ("textureRotation", -360, 360), ("normalStrength", 0, 10), ("bumpStrength", 0, 10), ("aoStrength", 0, 1),
     ];
 
     public static readonly MaterialLook Plain = new(0.85, 0, 0, 0, 1.5, null, 1, 0);
@@ -77,7 +84,7 @@ public sealed record MaterialLook(double Roughness, double Metalness, double Tra
         return new MaterialLook(V("roughness", g.Roughness), V("metalness", g.Metalness), V("transparency", g.Transparency), V("transmission", g.Transmission), V("ior", g.Ior),
             emissive is { Length: 7 } ? emissive : null, V("emissiveStrength", g.EmissiveStrength), V("textureRotation", g.TextureRotation))
         {
-            NormalStrength = V("normalStrength", g.NormalStrength), BumpStrength = V("bumpStrength", g.BumpStrength),
+            NormalStrength = V("normalStrength", g.NormalStrength), BumpStrength = V("bumpStrength", g.BumpStrength), AoStrength = V("aoStrength", g.AoStrength),
         };
     }
 
@@ -88,7 +95,7 @@ public sealed record MaterialLook(double Roughness, double Metalness, double Tra
         {
             ["roughness"] = Roughness, ["metalness"] = Metalness, ["transparency"] = Transparency, ["transmission"] = Transmission, ["ior"] = Ior,
             ["emissive"] = Emissive, ["emissiveStrength"] = EmissiveStrength, ["textureRotation"] = TextureRotation,
-            ["normalStrength"] = NormalStrength, ["bumpStrength"] = BumpStrength,
+            ["normalStrength"] = NormalStrength, ["bumpStrength"] = BumpStrength, ["aoStrength"] = AoStrength,
         };
         o["own"] = new JsonArray(Numbers.Select(n => n.Key).Append("emissive").Where(k => material?.Attrs.ContainsKey(k) == true).Select(k => (JsonNode)k).ToArray());
         return o;
@@ -118,7 +125,7 @@ public sealed record MaterialLook(double Roughness, double Metalness, double Tra
     static string Label(string key) => key switch
     {
         "ior" => "The index of refraction", "emissiveStrength" => "The emissive strength", "textureRotation" => "The texture's rotation",
-        "normalStrength" => "The normal map's strength", "bumpStrength" => "The bump map's strength",
+        "normalStrength" => "The normal map's strength", "bumpStrength" => "The bump map's strength", "aoStrength" => "The occlusion map's strength",
         _ => char.ToUpperInvariant(key[0]) + key[1..],
     };
 
