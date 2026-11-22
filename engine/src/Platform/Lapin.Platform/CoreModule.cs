@@ -56,7 +56,8 @@ public sealed class CoreModule : ILapinModule
         if (Lapin.Booleans.ManifoldBooleans.Available) r.Service<Lapin.Geometry.ISolidBooleans>(new Lapin.Booleans.ManifoldBooleans());
 
         r.Class(new(IfcClass.BuildingStorey, "Storey",
-            [new("elevation", "Elevation", "length"), new("height", "Height", "length", Min: 0.1)], "#6c5ce7", Kind: "spatial"));
+            // The bounds storey.update keeps, declared so element.update (scripts, MCP, the assistant) keeps them too (audit 22.11.2026, G16).
+            [new("elevation", "Elevation", "length", Min: -10_000, Max: 10_000), new("height", "Height", "length", Min: 0.1, Max: MaxStoreyHeight)], "#6c5ce7", Kind: "spatial"));
         r.Class(new(IfcClass.Material, "Material", [new("color", "Colour", "color"), new("category", "Category", "text")], Kind: "resource"));
         DraftingResources.Register(r);
         // Line types of the project's own and the standards as a library (docs/plan-user-extensibility.md §3.6–3.7).

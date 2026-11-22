@@ -37,7 +37,9 @@ public sealed class StairRuleSection : IRuleSection, IRuleCheck
             N("treadMin", d.TreadMin, 0.1, 0.6, "The least tread"), N("treadMax", d.TreadMax, 0.1, 0.6, "The most tread"), N("treadTarget", d.TreadTarget, 0.1, 0.6, "The tread aimed at"),
             N("stepMin", d.StepMin, 0.4, 0.8, "The least step (2 risers + a tread)"), N("stepMax", d.StepMax, 0.4, 0.8, "The most step"),
             N("minWidth", d.MinWidth, 0.5, 5, "The least width"), (int)N("maxRisers", d.MaxRisers, 1, 60, "The most risers in a flight"),
-            N("headroom", d.Headroom, 1.5, 4, "The headroom"), N("maxSlope", d.MaxSlope, 0, 0.5, "The most slope"), (int)N("minRisers", d.MinRisers, 1, 20, "The least risers"));
+            N("headroom", d.Headroom, 1.5, 4, "The headroom"), N("maxSlope", d.MaxSlope, 0, 0.5, "The most slope"), (int)N("minRisers", d.MinRisers, 1, 20, "The least risers"),
+            // Whether the tread aims at its target is the set's, not the pack's to change.
+            AimTread: d.AimTread);
         if (r.RiserMin > r.RiserMax || r.TreadMin > r.TreadMax || r.StepMin > r.StepMax) throw new CommandException($"{set}: a least value is above its most.");
         return r;
     }
@@ -80,7 +82,8 @@ public sealed class StairRuleSection : IRuleSection, IRuleCheck
         var ja = Json(a);
         var jb = Json(b);
         foreach (var (k, v) in jb)
-            if (!JsonNode.DeepEquals(ja[k], v)) yield return $"{k} {ja[k]} (rules {v})";
+            // A type made before the tread aimed (no aimTread) is not out of step with the rules for it.
+            if (k != "aimTread" && !JsonNode.DeepEquals(ja[k], v)) yield return $"{k} {ja[k]} (rules {v})";
     }
 
     public static void Register(IModuleRegistry r)
@@ -101,7 +104,8 @@ public sealed class StairRuleSection : IRuleSection, IRuleCheck
             {
                 if (only != null && !only.Contains(t.Id)) continue;
                 if (StairSpec.From(t.Attrs["spec"]) is not { } spec) continue;
-                var rules = For(ctx.Model, ctx.Services, spec.Rules.Set);
+                // The type keeps how its tread is found (a stair drawn before the tread aimed keeps its treads).
+                var rules = For(ctx.Model, ctx.Services, spec.Rules.Set) with { AimTread = spec.Rules.AimTread };
                 if (rules == spec.Rules) continue;
                 var attrs = t.CloneAttrs();
                 attrs["spec"] = (spec with { Rules = rules }).ToJson();

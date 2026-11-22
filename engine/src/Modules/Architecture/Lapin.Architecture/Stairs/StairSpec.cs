@@ -9,14 +9,21 @@ namespace Lapin.Architecture.Stairs;
 /// public buildings (STAS 2965, NP 063, P118), editable on the type. Metres;
 /// the step rule is 2h + b. A third set is for the steps outside an entrance:
 /// lower risers, deeper treads, and a single riser allowed (a porch's step).
+/// <para><see cref="AimTread"/> (audit 22.11.2026, G10; the user's choice): the tread aims at <see cref="TreadTarget"/> while
+/// 2h + b stays within the step's bounds, else the step rule's middle. Types made before it carry no such key and keep the
+/// step rule's middle, so a stair already drawn keeps its treads; the built-in sets, from which new types are made, aim.</para>
 /// </summary>
 public sealed record StairRules(
     string Set, double RiserMin, double RiserMax, double RiserTarget, double TreadMin, double TreadMax, double TreadTarget,
-    double StepMin, double StepMax, double MinWidth, int MaxRisers, double Headroom, double MaxSlope, int MinRisers = 3)
+    double StepMin, double StepMax, double MinWidth, int MaxRisers, double Headroom, double MaxSlope, int MinRisers = 3, bool AimTread = false)
 {
-    public static readonly StairRules Residential = new("residential", 0.15, 0.18, 0.17, 0.26, 0.32, 0.28, 0.60, 0.64, 0.90, 18, 2.00, 0.08);
-    public static readonly StairRules Public = new("public", 0.13, 0.16, 0.16, 0.28, 0.34, 0.30, 0.60, 0.64, 1.20, 16, 2.10, 0.06);
-    public static readonly StairRules Entrance = new("entrance", 0.12, 0.17, 0.15, 0.30, 0.40, 0.33, 0.60, 0.70, 1.20, 10, 2.10, 0.06, MinRisers: 1);
+    public static readonly StairRules Residential = new("residential", 0.15, 0.18, 0.17, 0.26, 0.32, 0.28, 0.60, 0.64, 0.90, 18, 2.00, 0.08, AimTread: true);
+    public static readonly StairRules Public = new("public", 0.13, 0.16, 0.16, 0.28, 0.34, 0.30, 0.60, 0.64, 1.20, 16, 2.10, 0.06, AimTread: true);
+    public static readonly StairRules Entrance = new("entrance", 0.12, 0.17, 0.15, 0.30, 0.40, 0.35, 0.60, 0.70, 1.20, 10, 2.10, 0.06, MinRisers: 1, AimTread: true);
+
+    /// <summary>The tread for a riser <paramref name="h"/> before rounding: the target when it keeps the step within its bounds and the rules aim, else the step rule's middle.</summary>
+    public double TreadFor(double h) =>
+        AimTread && 2 * h + TreadTarget >= StepMin - 1e-9 && 2 * h + TreadTarget <= StepMax + 1e-9 ? TreadTarget : (StepMin + StepMax) / 2 - 2 * h;
     /// <summary>A ramp's (decision 252): what counts is the slope (at most 8 %), the width (1.20 m) and the headroom; the steps' bounds are not used.</summary>
     public static readonly StairRules Ramp = Public with { Set = "ramp", MinWidth = 1.20, MaxSlope = 0.08 };
     public static StairRules Of(string? set) => set switch { "public" => Public, "entrance" => Entrance, "ramp" => Ramp, _ => Residential };

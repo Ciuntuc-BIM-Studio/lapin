@@ -115,9 +115,9 @@ public static class StairSolver
         // Never more risers than a stair of the highest climb has (a typed count too): each is a solid of its own.
         n = Math.Min(n, MaxRisers);
         var h = height / n;
-        // The tread: as fixed, else from the step rule, to the half centimetre, within the bounds.
+        // The tread: as fixed, else the target or the step rule's middle (StairRules.TreadFor), to the half centimetre, within the bounds.
         var b = inputs.Tread is { } fixedB && fixedB > 0.05 ? fixedB
-            : Math.Clamp(Math.Round(((r.StepMin + r.StepMax) / 2 - 2 * h) / 0.005) * 0.005, r.TreadMin, r.TreadMax);
+            : Math.Clamp(Math.Round(r.TreadFor(h) / 0.005) * 0.005, r.TreadMin, r.TreadMax);
 
         if (spec.Round) return ResolveRound(spec, height, n, h, b, width, inputs.Sweep ?? spec.Sweep, turnLeft);
 
