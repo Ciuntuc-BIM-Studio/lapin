@@ -76,14 +76,15 @@ public static class ClashEngine
         var threads = job.Threads > 0 ? job.Threads : Math.Max(1, Environment.ProcessorCount - 1);
         Parallel.For(0, pairs.Count, new ParallelOptions { MaxDegreeOfParallelism = threads }, () => new Scratch(), (index, state, s) =>
         {
-            if (cancel.IsCancellationRequested || Volatile.Read(ref hits) >= job.MaxClashes) { state.Stop(); return s; }
+            // One hit past the limit is looked for, so that a run of exactly the limit is not called truncated.
+            if (cancel.IsCancellationRequested || Volatile.Read(ref hits) > job.MaxClashes) { state.Stop(); return s; }
             var (a, b) = pairs[index];
             try
             {
                 if (TestPair(context, s, a, b, job.Clearance, tolerance, job.Contained, out var hit))
                 {
                     found.Add(hit);
-                    if (Interlocked.Increment(ref hits) >= job.MaxClashes) truncated = true;
+                    Interlocked.Increment(ref hits);
                 }
             }
             catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IndexOutOfRangeException)
@@ -170,9 +171,11 @@ public static class ClashEngine
         var qb = clearance ? overlapB : Grow(overlapB.Min, overlapB.Max, tolerance);
         if (s.A.Count > 0) context.Gather(b, qb, centre, s.B);
         // No faces near each other: one may still lie wholly inside the other (the slab's faces far from the pipe in it).
-        if (s.A.Count == 0 || s.B.Count == 0) return contained && Inside(context, a, b, tolerance, out hit);
+        // A clearance test's tolerance is a distance, not a depth to forgive: any body inside another is a clash.
+        var inside = clearance ? 0 : tolerance;
+        if (s.A.Count == 0 || s.B.Count == 0) return contained && Inside(context, a, b, inside, out hit);
         if (clearance ? TestClearance(s, a, b, tolerance, centre, out hit) : TestHard(context, s, a, b, tolerance, centre, out hit)) return true;
-        return contained && Inside(context, a, b, tolerance, out hit);
+        return contained && Inside(context, a, b, inside, out hit);
     }
 
     /// <summary>One body wholly inside the other, no face crossing: its box within the other's and a corner of it inside the other.</summary>

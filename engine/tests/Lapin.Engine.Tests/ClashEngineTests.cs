@@ -160,6 +160,21 @@ public class ClashEngineTests
         var run = ClashEngine.Run(new ClashJob(bodies, [0], [1, 2, 3, 4, 5, 6], MaxClashes: 3, Threads: 1));
         Assert.True(run.Truncated);
         Assert.Equal(3, run.Hits.Count);
+        // Exactly as many clashes as the limit: nothing was refused, so the run is whole.
+        var exact = ClashEngine.Run(new ClashJob(bodies, [0], [1, 2, 3, 4, 5, 6], MaxClashes: 6, Threads: 1));
+        Assert.False(exact.Truncated);
+        Assert.Equal(6, exact.Hits.Count);
+    }
+
+    [Fact]
+    public void A_clearance_test_finds_a_thin_pipe_wholly_inside_a_slab_as_the_hard_test_does()
+    {
+        // A 32 mm pipe inside a 300 mm slab, its faces 134 mm from the slab's: the clearance of 50 mm is no tolerance for the inside test.
+        ClashBody[] bodies = [Body("slab", Vec3.Zero, new(4, 4, 0.3)), Body("pipe", new(0.5, 1, 0.134), new(3.5, 1.032, 0.166))];
+        Assert.Equal(0.032, Assert.Single(Run(bodies, [0], [1]).Hits).Distance, 6);
+        var clear = Assert.Single(Run(bodies, [0], [1], true, 0.05).Hits);
+        Assert.True(clear.Crossing);
+        Assert.Equal(0.032, clear.Distance, 6);
     }
 
     [Fact]
