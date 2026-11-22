@@ -173,7 +173,7 @@ public sealed class FrameLayout
 
     /// <summary>A layout for a problem: the hint when the problem has its shape, else the problem's kept one (<see cref="FrameLayouts"/>), else a new one.</summary>
     public static FrameLayout For(FrameProblem p, FactorKind kind, FrameLayout? hint = null) =>
-        hint != null && hint.Fits(p, kind) ? hint : p.Layouts.For(p, kind);
+        FemReuse.Off ? Make(p, kind) : hint != null && hint.Fits(p, kind) ? hint : p.Layouts.For(p, kind);
 
     internal static FrameLayout Make(FrameProblem p, FactorKind kind) => new(p, kind);
 }
@@ -206,5 +206,31 @@ public sealed class FrameLayouts
             if (_kept.Count > Kept) _kept.RemoveAt(_kept.Count - 1);
             return layout;
         }
+    }
+}
+
+/// <summary>
+/// Solves with nothing kept from one system to the next (§14.21, §14.22), within a flow of calls (a test's): every system
+/// gets a layout made for it and new arrays for its factor's values, as before the reuse. The reuse is bit for bit the same,
+/// which tests compare in one process (on one machine, one JIT), the goldens' portable half (§14.23).
+/// </summary>
+public static class FemReuse
+{
+    static readonly AsyncLocal<bool> Disabled = new();
+
+    /// <summary>Whether this flow of calls solves without reuse.</summary>
+    public static bool Off => Disabled.Value;
+
+    /// <summary>No layouts or factor values kept until disposed.</summary>
+    public static IDisposable Without()
+    {
+        var had = Disabled.Value;
+        Disabled.Value = true;
+        return new Restore(had);
+    }
+
+    sealed class Restore(bool had) : IDisposable
+    {
+        public void Dispose() => Disabled.Value = had;
     }
 }

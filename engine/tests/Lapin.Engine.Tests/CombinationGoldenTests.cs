@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Lapin.Engine.Tests;
@@ -7,12 +5,11 @@ namespace Lapin.Engine.Tests;
 /// <summary>
 /// A project without combination settings keeps exactly the combinations it had before they became configurable
 /// (docs/plan-fem.md §13.1, "extend, never break"): the guide's floor and the steel hall, with the site's snow and wind,
-/// compared with JSON written by the code before §13 (Golden/). LAPIN_WRITE_GOLDEN=1 writes them again.
+/// compared with JSON written by the code before §13 (Golden/), the numbers within the arch noise (<see cref="GoldenFile"/>,
+/// §14.23). LAPIN_WRITE_GOLDEN=1 writes them again.
 /// </summary>
 public class CombinationGoldenTests
 {
-    static string Dir([CallerFilePath] string here = "") => Path.Combine(Path.GetDirectoryName(here)!, "Golden");
-
     static JsonObject Combos(Fixture f)
     {
         var r = f.Session.Query("analysis.combinations", [])!.AsObject();
@@ -41,14 +38,7 @@ public class CombinationGoldenTests
         return n;
     }
 
-    static void Golden(string name, JsonObject actual)
-    {
-        var path = Path.Combine(Dir(), name + ".json");
-        var text = actual.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
-        if (Environment.GetEnvironmentVariable("LAPIN_WRITE_GOLDEN") == "1") { Directory.CreateDirectory(Dir()); File.WriteAllText(path, text); return; }
-        Assert.True(File.Exists(path), $"{path} is missing: LAPIN_WRITE_GOLDEN=1 writes it.");
-        Assert.Equal(File.ReadAllText(path), text);
-    }
+    static void Golden(string name, JsonObject actual) => GoldenFile.Check(name, actual);
 
     static void Climate(Fixture f) =>
         f.Run("analysis.setClimate", new JsonObject { ["snow"] = new JsonObject { ["s0k"] = 2.0 }, ["wind"] = new JsonObject { ["qb"] = 0.5, ["terrain"] = "III" } });

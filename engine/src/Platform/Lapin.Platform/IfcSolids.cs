@@ -86,6 +86,17 @@ public interface IIfcSweptBodies
 }
 
 /// <summary>
+/// A module's elements whose bodies are known exactly (docs/plan-studio-freeform.md §9): faces on planes, cylinders, cones, spheres, tori
+/// and B-spline surfaces, written to IFC4 as IfcAdvancedBrep (when the export asks) and to STEP as MANIFOLD_SOLID_BREP. Given the element's
+/// body as its geometry has it (<paramref name="body"/>, in the world), the exact body that is that body, or null (then it is written as its
+/// facets).
+/// </summary>
+public interface IIfcExactBodies
+{
+    ExactBody? ExactOf(IModelView model, IServices services, Entity element, Solid body);
+}
+
+/// <summary>
 /// A connection between two elements an element realizes (a steel connection between a column and a rafter, decision 273):
 /// written as IfcRelConnectsWithRealizingElements, <see cref="Realizing"/> the element (an assembly of plates and bolts)
 /// that makes it, <see cref="Type"/> its ConnectionType.

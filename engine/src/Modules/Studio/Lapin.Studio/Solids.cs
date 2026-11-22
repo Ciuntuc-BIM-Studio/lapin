@@ -435,11 +435,15 @@ public static class Solids
 
     /// <summary>
     /// A loft through profiles in space (each on its own plane), their points matched; capped at both ends.
-    /// <paramref name="smooth"/>: through them on a smooth curve (Catmull-Rom) rather than straight from one to the
-    /// next; <paramref name="rail"/>: bent the way a guide line bends (how far the line strays from the straight line
-    /// between its ends, added along the loft), so two profiles can follow an arch or a swan neck.
+    /// <paramref name="smooth"/>: through them on a smooth surface rather than straight from one to the next (with three
+    /// profiles or more: the B-spline surface skinned through them, <see cref="SmoothLoftSurface"/>, its exact definition
+    /// kept for export; with a guide, the older Catmull–Rom stations); <paramref name="rail"/>: bent the way a guide line
+    /// bends (how far the line strays from the straight line between its ends, added along the loft), so two profiles can
+    /// follow an arch or a swan neck. <paramref name="exact"/>: the profiles as drawn (lines and arcs, the view's
+    /// coordinates), for the smooth surface; their polygons when not given.
     /// </summary>
-    public static SweepResult LoftThrough(IReadOnlyList<IReadOnlyList<Vec2>> profiles2D, IReadOnlyList<Func<Vec2, Vec3>> world, IReadOnlyList<Vec3>? rail = null, bool smooth = false)
+    public static SweepResult LoftThrough(IReadOnlyList<IReadOnlyList<Vec2>> profiles2D, IReadOnlyList<Func<Vec2, Vec3>> world, IReadOnlyList<Vec3>? rail = null, bool smooth = false,
+        IReadOnlyList<IReadOnlyList<ExactSeg>>? exact = null)
     {
         if (profiles2D.Count < 2) return new(null, "A loft needs two profiles at least.");
         var m = Matched(profiles2D);
@@ -449,6 +453,11 @@ public static class Solids
         for (var i = 0; i + 1 < mids.Count; i++)
             if ((mids[i + 1] - mids[i]).Length < 1e-6) return new(null, "Two profiles of the loft lie in the same place: draw them on different views or levels.");
         if (rail is { Count: < 2 }) rail = null;
+        if (rail == null && smooth && rings.Count > 2 && SmoothLoftSurface(exact ?? [.. profiles2D.Select(ExactProfiles.FromPolygon)], world) is { } surface)
+        {
+            var skinned = SkinnedBody(surface);
+            return new(skinned, skinned == null ? "The loft could not be built." : null);
+        }
         if (rail != null || (smooth && rings.Count > 2))
         {
             const int k = 12;
@@ -481,6 +490,37 @@ public static class Solids
         }
         var solid = Loft(OrientAll(rings, (mids[1] - mids[0]).Normalized()), false, (mids[1] - mids[0]).Normalized(), (mids[^1] - mids[^2]).Normalized());
         return new(solid, solid == null ? "The loft could not be built." : null);
+    }
+
+    /// <summary>
+    /// The smooth loft's surface (docs/plan-studio-freeform.md §9, F2b): each profile anticlockwise from where the ray east of its middle
+    /// crosses it (<see cref="ExactProfiles.Normalized"/>, as <see cref="Matched"/> lines them up), made one NURBS curve of its lines and arcs
+    /// (each on its share of the length), the curves made compatible and skinned by a cubic across (<see cref="BSplineSurface.Skin"/>): u round
+    /// each profile, v from the first to the last. It passes through every profile exactly. Null when the profiles cannot be skinned.
+    /// </summary>
+    public static BSplineSurface? SmoothLoftSurface(IReadOnlyList<IReadOnlyList<ExactSeg>> profiles, IReadOnlyList<Func<Vec2, Vec3>> world)
+    {
+        try
+        {
+            var curves = profiles.Select((p, i) => BSplineCurve.Join([.. ExactProfiles.Placed(ExactProfiles.Normalized(p), world[i]).Select(s => s.Curve())])).ToList();
+            return BSplineSurface.Skin(BSplineCurve.Compatible(curves), 3);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException) { return null; }
+    }
+
+    /// <summary>
+    /// A skinned surface as the body the model uses: its grid by the chord rule (<see cref="BSplineSurface.Grid"/>, every profile's corner a
+    /// column of it), each row a ring, capped at both ends by the first and last profile.
+    /// </summary>
+    static Solid? SkinnedBody(BSplineSurface s)
+    {
+        var (us, vs) = s.Grid();
+        var around = us.Take(us.Count - 1).ToList();
+        var stations = vs.Select(v => around.Select(u => s.At(u, v)).ToList()).ToList();
+        Vec3 Mid(List<Vec3> r) => new(r.Average(p => p.X), r.Average(p => p.Y), r.Average(p => p.Z));
+        var sm = stations.Select(Mid).ToList();
+        var (d0, d1) = ((sm[1] - sm[0]).Normalized(), (sm[^1] - sm[^2]).Normalized());
+        return Loft(OrientAll(stations, d0), false, d0, d1);
     }
 
     /// <summary>The centripetal-free (uniform) Catmull-Rom point between b and c.</summary>

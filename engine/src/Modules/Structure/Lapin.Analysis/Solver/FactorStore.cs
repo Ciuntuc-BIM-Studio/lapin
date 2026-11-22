@@ -22,6 +22,7 @@ public sealed class FactorStore
     /// <summary>A set of values given up on this structure (<paramref name="shape"/>, compared by reference), taken out; or null.</summary>
     internal object? Take(object shape)
     {
+        if (FemReuse.Off) return null;
         for (var i = 0; i < _kept.Count; i++)
         {
             if (!ReferenceEquals(_kept[i].Shape, shape)) continue;
@@ -35,6 +36,7 @@ public sealed class FactorStore
     /// <summary>A factor's values, given up by it, kept for the next one on its structure; the oldest dropped past <see cref="Kept"/>.</summary>
     internal void Put(object shape, object values)
     {
+        if (FemReuse.Off) return;
         _kept.Insert(0, (shape, values));
         if (_kept.Count > Kept) _kept.RemoveAt(_kept.Count - 1);
     }

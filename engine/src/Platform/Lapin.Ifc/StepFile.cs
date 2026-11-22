@@ -86,6 +86,17 @@ public sealed class StepFile
         }
     }
 
+    /// <summary>
+    /// A complex instance's partial records (<c>#5=(A(…)B(…));</c>), each its entity name and its own attributes, in the file's order; null
+    /// when the entity is not a complex one. (<see cref="Entities"/> reads it as an entity of no type and no attributes.)
+    /// </summary>
+    public List<(string Type, List<object?> Args)>? Partials(int id)
+    {
+        if (!_index.TryGet(id, out var offset, out var type) || type != Complex) return null;
+        try { return new Parser(_bytes, offset, _bytes.Length, _scratch ??= new Scratch()).ComplexParts(); }
+        catch (FormatException) { return null; }
+    }
+
     /// <summary>A header entry's arguments (FILE_NAME, FILE_DESCRIPTION), or null.</summary>
     public List<object?>? Header(string keyword)
     {
@@ -382,19 +393,31 @@ public sealed class StepFile
             }
         }
 
-        /// <summary>A complex instance's partial records, each a keyword and its attributes: checked and passed over.</summary>
-        void Partials()
+        /// <summary>A complex instance's partial records, each a keyword and its attributes: checked and passed over (or kept, when asked).</summary>
+        List<(string, List<object?>)> Partials()
         {
+            var o = new List<(string, List<object?>)>();
             Expect('(');
             while (true)
             {
                 Skip();
-                if (At() == ')') { _i++; return; }
+                if (At() == ')') { _i++; return o; }
                 if (!Letter(At())) throw new FormatException($"a partial record expected at byte {_i}.");
-                Keyword();
+                var name = Keyword();
                 Skip();
-                if (Value(1) is not List<object?>) throw new FormatException("a partial record's attributes are not a list.");
+                if (Value(1) is not List<object?> args) throw new FormatException("a partial record's attributes are not a list.");
+                o.Add((name, args));
             }
+        }
+
+        /// <summary>The complex instance at the parser's start: its partial records.</summary>
+        public List<(string, List<object?>)> ComplexParts()
+        {
+            Skip();
+            Expect('#');
+            Id();
+            Skip(); Expect('='); Skip();
+            return Partials();
         }
 
         void Expect(char c)
