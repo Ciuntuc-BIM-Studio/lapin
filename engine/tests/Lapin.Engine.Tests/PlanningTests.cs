@@ -169,6 +169,65 @@ public class PlanningTests
     }
 
     [Fact]
+    public void Romanian_link_codes_read_by_their_words_and_a_lag_too_long_is_refused_with_a_message()
+    {
+        // Î început, T terminare, S sfârșit; the predecessor's first: ÎÎ is start to start, never finish to finish.
+        Assert.Equal([(1, "SS", 0), (2, "SS", 0), (3, "SF", 1), (4, "SF", 0), (5, "FF", -2), (6, "FS", 0), (7, "FS", 0), (8, "SF", 0), (9, "SS", 0)],
+            PlanningModule.ParsePredecessors("1ÎÎ, 2II, 3ÎS+1, 4IS, 5TT-2z, 6TÎ, 7SÎ, 8ÎT, 9îî"));
+        Assert.Equal([(1, "SS", 0)], PlanningModule.ParsePredecessors("1SS"));
+        var ex = Assert.Throws<CommandException>(() => PlanningModule.ParsePredecessors("1FS+99999999999"));
+        Assert.Contains("too long", ex.Message);
+        Assert.Throws<CommandException>(() => PlanningModule.ParsePredecessors("99999999999"));
+    }
+
+    [Fact]
+    public void A_calendar_takes_Romanias_holidays_or_none_and_refuses_a_code_it_does_not_know()
+    {
+        Assert.Equal(WorkCalendar.Romania, WorkCalendar.Read(new JsonObject()).Holidays);
+        Assert.Equal(WorkCalendar.Romania, WorkCalendar.Read(new JsonObject { ["holidays"] = "RO" }).Holidays);
+        Assert.Equal(WorkCalendar.NoHolidays, WorkCalendar.Read(new JsonObject { ["holidays"] = "none" }).Holidays);
+        // A code Lapin does not know (another country's) adds no holidays rather than Romania's.
+        Assert.Equal(WorkCalendar.NoHolidays, WorkCalendar.Read(new JsonObject { ["holidays"] = "de" }).Holidays);
+        var f = F();
+        Start(f, "2027-03-01");
+        var ex = Assert.Throws<CommandException>(() => f.Run("planning.setCalendar", new JsonObject { ["holidays"] = "de" }));
+        Assert.Contains("\"de\" is not known", ex.Message);
+        f.Run("planning.setCalendar", new JsonObject { ["holidays"] = "none" });
+        Assert.Equal(WorkCalendar.NoHolidays, Plan.Read(f.Model).Calendar.Holidays);
+    }
+
+    [Fact]
+    public void A_start_link_with_a_negative_lag_reads_a_latest_start_past_the_weekend_forward()
+    {
+        // From Friday 5.03.2027 (no holiday that month): B (10 d) is critical, its latest start Friday 5; A (1 d) SS−1 B may
+        // start as late as Monday 8 (B may start a working day before A), so A has a day of float and is not critical.
+        var f = F();
+        Start(f, "2027-03-05");
+        var a = Task(f, "A", 1);
+        var b = Task(f, "B", 10);
+        Link(f, a, b, "SS", -1);
+        var s = Schedule(f);
+        Assert.Equal("2027-03-05", (string)Row(s, b)["lateStart"]!);
+        Assert.Equal(("2027-03-08", 1, false), ((string)Row(s, a)["lateStart"]!, (int)Row(s, a)["totalFloat"]!, (bool)Row(s, a)["critical"]!));
+    }
+
+    [Fact]
+    public void A_summarys_free_float_is_its_open_tasks_and_ignores_what_is_done()
+    {
+        // March 2027: L (10 d) sets the finish; under S, D (2 d) is done and O (2 d) has eight days to the finish.
+        var f = F();
+        Start(f, "2027-03-01");
+        Task(f, "L", 10);
+        var sum = Task(f, "S", 1);
+        var d = Task(f, "D", 2, sum);
+        var o = Task(f, "O", 2, sum);
+        f.Run("planning.setProgress", new JsonObject { ["id"] = d, ["actualStart"] = "2027-03-01", ["complete"] = 100 });
+        var s = Schedule(f);
+        Assert.Equal(8, (int)Row(s, o)["freeFloat"]!);
+        Assert.Equal(8, (int)Row(s, sum)["freeFloat"]!);
+    }
+
+    [Fact]
     public void A_negative_lag_overlaps_and_the_calendar_moves_work_past_holidays()
     {
         // Five-day weeks with Romania's holidays: Masonry (8 d) from Monday 16.11.2026 ends Wednesday 25.11; Plaster FS−2 starts
