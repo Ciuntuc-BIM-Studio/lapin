@@ -366,13 +366,14 @@ public static partial class TitleBlocks
                     var tokens = Tokens(raw);
                     var value = Fill(raw, resolve, unknown);
                     var style = (string?)item["style"] is { Length: > 0 } sid ? Standards.TextOf(book, sid) : null;
-                    var height = Json.Number(item["h"]) ?? style?.Height ?? 2.5;
+                    // No style and no height of its own: the project's Standard text style's (2.5 mm unless the project changed it).
+                    var height = Json.Number(item["h"]) ?? style?.Height ?? Standards.TextOf(book, Standards.Standard).Height;
                     var bold = item["bold"] is JsonValue b ? b.TryGetValue<bool>(out var bb) && bb : style?.Bold ?? false;
                     var italic = item["italic"] is JsonValue it ? it.TryGetValue<bool>(out var ii) && ii : style?.Italic ?? false;
                     var font = (string?)item["font"] ?? style?.Font ?? "sans";
                     // Shrunk to its width when it would run over it (a long project name in its cell).
-                    if (Json.Number(item["fit"]) is > 0 and var fit && value.Length > 0)
                     // Its widest row decides, in the row's own font (the rows are drawn one under the other).
+                    if (Json.Number(item["fit"]) is > 0 and var fit && value.Length > 0)
                     {
                         var width = TextMeasure.Widest(value, height, font, bold, italic);
                         if (width > fit) height *= fit / width;

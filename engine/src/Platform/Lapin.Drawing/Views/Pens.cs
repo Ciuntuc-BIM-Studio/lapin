@@ -252,7 +252,7 @@ public static class Pens
     public sealed record Options(double Scale = 100, bool HiddenLines = true, LineStyles.Resolver? LineStyle = null,
         IReadOnlyDictionary<string, CategoryGraphics>? Categories = null, IReadOnlyList<HatchPattern>? Patterns = null, int MaxHatchSegments = 60_000,
         IReadOnlyDictionary<string, string>? ElementColors = null, LineStyles.PenTable? Table = null, IReadOnlyList<LineTypeDef>? LineTypes = null,
-        double MinHatchSpacing = HatchScale.DefaultMinSpacing);
+        double MinHatchSpacing = HatchScale.DefaultMinSpacing, double TextHeight = 2.5);
 
     /// <summary>A colour washed out towards white (a cut filled with a phase's colour stays readable under its hatch).</summary>
     static string Pale(string css) => HexColor.Mix(css, 0.6);
@@ -426,12 +426,13 @@ public static class Pens
             }
             pen.Segments.Add((l.A, l.B));
         }
-        // The texts of elements' own 2D: their height on the model as paper millimetres at the view's scale (2.5 mm without one).
+        // The texts of elements' own 2D: their height on the model as paper millimetres at the view's scale (without one, the
+        // project's Standard text style's height, o.TextHeight: 2.5 mm unless the project changed it).
         foreach (var t in d.Texts ?? [])
         {
             if (Cat(t.Class)?.Hidden == true) continue;
             var c = o.ElementColors?.GetValueOrDefault(t.Element) ?? Cat(t.Class)?.LineColor ?? t.Color ?? "#000000";
-            var mm = t.Height is { } h && h > 0 ? h * 1000 / o.Scale : 2.5;
+            var mm = t.Height is { } h && h > 0 ? h * 1000 / o.Scale : o.TextHeight;
             Get("text:" + c, () => new Pen("TEXT", c, 0, null, null)).Texts.Add(new PenText(t.At, t.Text, Math.Round(mm, 3), t.Angle, "start", "bottom"));
         }
         if (m != null && m.Membranes.Count > 0)

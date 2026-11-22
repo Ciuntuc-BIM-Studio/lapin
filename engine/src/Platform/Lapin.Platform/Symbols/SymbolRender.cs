@@ -168,7 +168,8 @@ public static class SymbolRender
                     if (fields != null) raw = fields(raw);
                     var value = LiveText.Fill(raw, resolve, unknown);
                     var style = (string?)item["style"] is { Length: > 0 } sid ? Standards.TextOf(book, sid) : null;
-                    var height = Json.Number(item["h"]) ?? style?.Height ?? 2.5;
+                    // No style and no height of its own: the project's Standard text style's (2.5 mm unless the project changed it).
+                    var height = Json.Number(item["h"]) ?? style?.Height ?? Standards.TextOf(book, Standards.Standard).Height;
                     var bold = item["bold"] is JsonValue b ? b.TryGetValue<bool>(out var bb) && bb : style?.Bold ?? false;
                     var italic = item["italic"] is JsonValue it ? it.TryGetValue<bool>(out var ii) && ii : style?.Italic ?? false;
                     var font = (string?)item["font"] ?? style?.Font ?? "sans";

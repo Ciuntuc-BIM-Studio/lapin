@@ -941,7 +941,7 @@ public static class Views
         var lineTypes = DraftingResources.Book(m).LineTypes;
         var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, elementLines, table, scale, lineTypes);
         var penOptions = new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table, LineTypes: lineTypes,
-            MinHatchSpacing: ViewStyles.Of(m, view).MinHatchSpacing);
+            MinHatchSpacing: ViewStyles.Of(m, view).MinHatchSpacing, TextHeight: Standards.TextOf(DraftingResources.Book(m), Standards.Standard).Height);
         var pens = Pens.Of(drawing, materials, penOptions);
         // The faces the drawing sees, worked out once for its shadows and its surface hatches: a developed section's on each
         // piece (its own cut areas hiding what is behind them), the parts' faces gathered once for all of them.
