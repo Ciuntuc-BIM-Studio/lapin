@@ -60,6 +60,17 @@ public static class ArrowTables
     /// <summary>A key present with a JSON null, in a JSON column (absent is the column's null).</summary>
     const string PresentNull = "null";
 
+    /// <summary>
+    /// A column's value kind; one this build does not know is a newer Lapin's (audit 22.11.2026: it was an internal error),
+    /// refused with the words the manifest's newer format uses.
+    /// </summary>
+    static Kind KindOf(string? text, string column)
+    {
+        if (text == null) return Kind.Json;
+        if (text.Length > 0 && !char.IsDigit(text[0]) && Enum.TryParse<Kind>(text, ignoreCase: false, out var kind) && Enum.IsDefined(kind)) return kind;
+        throw new InvalidDataException($"The project was saved by a newer Lapin (column {column} holds values of kind „{text}”); update Lapin to open it.");
+    }
+
     public static List<(Entity Entity, int Order)> ReadEntities(byte[] bytes)
     {
         var o = new List<(Entity, int)>();
@@ -73,7 +84,7 @@ public static class ArrowTables
             var attrs = batch.Schema.FieldsList
                 .Select((f, i) => (f, i))
                 .Where(x => x.f.Name.StartsWith(AttrPrefix, StringComparison.Ordinal))
-                .Select(x => (Key: x.f.Name[AttrPrefix.Length..], Kind: Enum.Parse<Kind>(x.f.Metadata?.GetValueOrDefault(KindKey) ?? nameof(Kind.Json)), Array: batch.Column(x.i)))
+                .Select(x => (Key: x.f.Name[AttrPrefix.Length..], Kind: KindOf(x.f.Metadata?.GetValueOrDefault(KindKey), x.f.Name), Array: batch.Column(x.i)))
                 .ToList();
             for (var r = 0; r < batch.Length; r++)
             {

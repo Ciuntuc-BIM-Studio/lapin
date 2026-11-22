@@ -113,7 +113,7 @@ public sealed class PackageVersions
             foreach (var p in LapinPackage.ReadManifest(zip).Parts)
             {
                 if (live.Contains(p.Sha256) || !blobs.Add(p.Sha256)) continue;
-                var bytes = LapinPackage.Bytes(zip, p.Path);
+                var bytes = LapinPackage.Bytes(zip, p.Path, p.Size);
                 if (LapinPackage.Hash(bytes) == p.Sha256) entries.Add((LapinPackage.BlobsPrefix + p.Sha256, bytes));
             }
         }

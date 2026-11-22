@@ -1,3 +1,4 @@
+using Lapin.Model;
 using System.IO.Compression;
 
 namespace Lapin.Package;
@@ -115,7 +116,7 @@ public sealed class PackageIssues
             {
                 if (zip.GetEntry(Prefix + sha) is not { } entry) { lost.Add($"{sha[..12]}… is not in the file"); continue; }
                 string hash;
-                using (var check = entry.Open()) hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(check));
+                using (var check = entry.Open()) hash = Hashes.Sha256Hex(check);
                 if (hash != sha) { lost.Add($"{sha[..12]}… is damaged"); continue; }
                 using var s = entry.Open();
                 writing = true;

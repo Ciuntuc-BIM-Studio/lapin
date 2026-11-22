@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Security.Cryptography;
+using Lapin.Model;
 
 namespace Lapin.Package;
 
@@ -171,6 +171,6 @@ public static class PackageBases
     static string HashFile(string path)
     {
         using var s = File.OpenRead(path);
-        return Convert.ToHexStringLower(SHA256.HashData(s));
+        return Hashes.Sha256Hex(s);
     }
 }

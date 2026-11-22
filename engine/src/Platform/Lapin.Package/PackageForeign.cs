@@ -1,3 +1,4 @@
+using Lapin.Model;
 using System.IO.Compression;
 
 namespace Lapin.Package;
@@ -85,10 +86,9 @@ public sealed class PackageForeign
                 if (e.FullName.EndsWith('/') || !seen.Add(e.FullName)) continue;
                 var mine = own.TryGetValue(e.FullName, out var module);
                 if (mine ? module == null || !LapinPackage.IsTextPath(e.FullName) : !Keeps(e.FullName)) continue;
-                using var s = e.Open();
-                using var ms = new MemoryStream();
-                s.CopyTo(ms);
-                (mine ? moduleParts : parts).Add(new ForeignPart(e.FullName, ms.ToArray(), e.LastWriteTime, module));
+                byte[] bytes;
+                using (var s = e.Open()) bytes = BoundedRead.Exactly(s, e.Length, $"The entry {e.FullName}");
+                (mine ? moduleParts : parts).Add(new ForeignPart(e.FullName, bytes, e.LastWriteTime, module));
             }
             return parts.Count == 0 && moduleParts.Count == 0 ? None
                 : new PackageForeign(parts.OrderBy(p => p.Path, StringComparer.Ordinal).ToList(), moduleParts.OrderBy(p => p.Path, StringComparer.Ordinal).ToList());
