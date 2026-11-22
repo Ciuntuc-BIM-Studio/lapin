@@ -73,7 +73,7 @@ public static class DxfImport
         DxfDocument doc;
         try { doc = DxfReader.Read(bytes); }
         catch (InvalidDataException e) { throw new CommandException(e.Message); }
-        if (doc.Sections == 0) throw new CommandException("This file is not a DXF Lapin can read: it has no DXF sections (HEADER, ENTITIES…).");
+        if (doc.Sections == 0 && !doc.Ended) throw new CommandException("This file is not a DXF Lapin can read: it has no DXF sections (HEADER, ENTITIES…).");
         return doc;
     }
 
@@ -131,7 +131,12 @@ public static class DxfImport
 
     static IEnumerable<Placed> Walk(DxfDocument doc, List<DxfEntity> entities, Affine frame, string? blockLayer, string? blockColor, Stack<string> stack, Budget? budget = null)
     {
-        budget ??= new Budget();
+        if (budget == null)
+        {
+            // Counted first, from the blocks' sizes (each block once), so a drawing past the limit is refused at once, not after placing millions.
+            Precount(doc, entities, stack);
+            budget = new Budget();
+        }
         foreach (var e in entities)
         {
             var layer = e.Layer == "0" && blockLayer != null ? blockLayer : e.Layer;
@@ -157,10 +162,51 @@ public static class DxfImport
         }
     }
 
+    /// <summary>How many entities these unfold into, past <see cref="MaxPlaced"/> refused naming the insert that took it there.</summary>
+    static void Precount(DxfDocument doc, List<DxfEntity> entities, Stack<string> stack)
+    {
+        var memo = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+        var visiting = new HashSet<string>(stack, StringComparer.OrdinalIgnoreCase);
+        long Of(List<DxfEntity> list)
+        {
+            long n = 0;
+            foreach (var e in list)
+            {
+                n = Math.Min(n + (e is DxfInsert i ? Insert(i) : 1), MaxPlaced + 1L);
+                if (n > MaxPlaced) break;
+            }
+            return n;
+        }
+        long Insert(DxfInsert ins)
+        {
+            long n = ins.Attribs.Count;
+            if (!doc.Blocks.TryGetValue(ins.Block, out var block) || visiting.Contains(ins.Block)) return n;
+            if (!memo.TryGetValue(ins.Block, out var inside))
+            {
+                visiting.Add(ins.Block);
+                inside = Of(block.Entities);
+                visiting.Remove(ins.Block);
+                memo[ins.Block] = inside;
+            }
+            var copies = (long)ins.Rows * ins.Cols;
+            return inside == 0 ? n : Math.Min(n + (copies > (MaxPlaced + 1L) / inside ? MaxPlaced + 1L : copies * inside), MaxPlaced + 1L);
+        }
+        long total = 0;
+        foreach (var e in entities)
+        {
+            total += e is DxfInsert i ? Insert(i) : 1;
+            if (total > MaxPlaced) Refuse(e is DxfInsert big ? big.Block : stack.Count > 0 ? stack.ToArray()[^1] : null);
+        }
+    }
+
     static void Spend(Budget budget, Stack<string> stack, string? block)
     {
         if (--budget.Left >= 0) return;
-        var name = block ?? (stack.Count > 0 ? stack.ToArray()[^1] : null);
+        Refuse(block ?? (stack.Count > 0 ? stack.ToArray()[^1] : null));
+    }
+
+    static void Refuse(string? name)
+    {
         throw new CommandException(name != null
             ? $"The drawing unfolds into more than 2,000,000 entities through its block „{name}” (blocks inserted inside blocks, or an array insert), more than Lapin brings in at once. Purge or explode what is not needed in the CAD program, then import it again."
             : $"The drawing has more than 2,000,000 entities, more than Lapin brings in at once. Split it, or purge what is not needed in the CAD program, then import it again.");
