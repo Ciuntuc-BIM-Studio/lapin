@@ -723,7 +723,7 @@ export function Viewport3D() {
     camRef.current = cam;
     // A wheel step held to about a notch before the orbit controls read it (zoom.ts): macOS's accelerated flicks and a 3D mouse's emulated wheel zoom in steps, not in one jump.
     renderer.domElement.addEventListener('wheel', clampWheel, { capture: true, passive: false });
-    const controls = new OrbitControls(persp, renderer.domElement);
+    const controls = new OrbitControls<THREE.PerspectiveCamera | THREE.OrthographicCamera>(persp, renderer.domElement);
     controls.target.set(4, 3, 0);
     controls.update();
 
@@ -848,7 +848,7 @@ export function Viewport3D() {
     s.add(sun.target);
     // A module's sun (the sun study): aimed from its direction over the model, casting shadows; none: the fixed light back.
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap; // three folded PCFSoftShadowMap into it (0.182 already fell back to it with a warning)
     // The ground the shadows fall on where there is no terrain: invisible but for them.
     const shadowOnly = new THREE.ShadowMaterial({ opacity: 0.28 });
     // The realistic view's ground where the model has no terrain: a dry meadow's colour, rough, taking the shadows.

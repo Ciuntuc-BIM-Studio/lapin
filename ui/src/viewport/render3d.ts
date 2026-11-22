@@ -6,7 +6,7 @@
  * through). The viewer's choice, kept on this computer, not in the project:
  * a slower machine draws a colleague's project as well as it can.
  *
- * The passes are three's own (examples/jsm, MIT): GTAOPass, Sky; no other
+ * The passes are three's own (examples/jsm, MIT): GTAOPass, and its r182 Sky (sky.ts); no other
  * dependency. BimGo's numbers set them where they apply (an occlusion radius
  * of about 0.6 m, shadow maps by quality). A glow round lights waits for a
  * pass that blooms only what glows (BimGo writes the emissive colour to its
@@ -19,7 +19,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
-import { Sky } from 'three/examples/jsm/objects/Sky.js';
+import { Sky } from './sky';
 
 export type RenderProfile = 'drawing' | 'medium' | 'realistic';
 export const PROFILES: readonly RenderProfile[] = ['drawing', 'medium', 'realistic'];
