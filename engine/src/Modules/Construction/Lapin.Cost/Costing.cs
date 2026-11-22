@@ -442,13 +442,13 @@ public static class Costing
         material == null ? null : rules.FirstOrDefault(r => r.Material == material) ?? rules.FirstOrDefault(r => r.Material == null && r.Matches(m, material));
 
     /// <summary>
-    /// Each chapter's share of the value without VAT, of the VAT and of the total, as the object estimate lists them: in
-    /// proportion to its direct costs, rounded, the last taking what rounding left so the rows add up to the totals.
+    /// Each chapter's value without VAT, VAT and total, as the object estimate lists them: its own totals after the same
+    /// rules as the estimate's (the CAM on its own labour, the overheads and profit on its own costs), the last taking what
+    /// rounding left so the rows add up to the totals.
     /// </summary>
     public static List<(EstimateChapter Chapter, double Net, double Vat, double Total)> Shares(EstimateResult r)
     {
         var o = new List<(EstimateChapter, double, double, double)>();
-        var direct = r.Totals.Direct.Direct;
         double net = 0, vat = 0;
         for (var i = 0; i < r.Chapters.Count; i++)
         {
@@ -457,8 +457,8 @@ public static class Costing
             if (i == r.Chapters.Count - 1) { n = Money.Round(r.Totals.Net - net); v = Money.Round(r.Totals.Vat - vat); }
             else
             {
-                var share = direct > 0 ? c.Sums.Direct / direct : 0;
-                n = Money.Round(r.Totals.Net * share); v = Money.Round(r.Totals.Vat * share);
+                var own = Totals.Of(c.Sums, r.Settings);
+                n = own.Net; v = own.Vat;
             }
             net += n; vat += v;
             o.Add((c, n, v, Money.Round(n + v)));
