@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
+using Lapin.Drawing;
 using Lapin.Drawing.Export;
 using Lapin.Drawing.Views;
 using Lapin.Geometry;
@@ -200,7 +201,7 @@ public static class ShopDrawings
         var dims = o.Dims != "none";
         var items = new List<Item>();
         double TitleW(string key, double sc) => titles?.Invoke(key) is { } t
-            ? PdfWriter.Advance(t, true) * 3.5 / 0.718 + 4 + PdfWriter.Advance($"1:{sc:0}", false) * 2.5 / 0.718 + 2 : 0;
+            ? TextMeasure.Width(t, 3.5, bold: true) + 4 + TextMeasure.Width($"1:{sc:0}", 2.5) + 2 : 0;
         double Own(double w, double h) => Math.Min(scale, ElementViews.AutoScale(Math.Max(w, h), Detail));
         foreach (var v in o.Views)
         {

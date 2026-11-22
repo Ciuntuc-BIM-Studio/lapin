@@ -185,7 +185,9 @@ public sealed class TitleBlockTests : IDisposable
         f.ViewAlignedHatches();
         var expected = new Dictionary<string, (string Pens, string Dxf)>
         {
-            ["A3"] = ("a8343dd727de72b2bc6e13ea06b0e072f88e44f422587874a610fb2bbe3e3859", "80112a7edcd9cf7d84b75b975bd26b64a004d5bccb5c8a033030ddc9c59028dd"),
+            // The A3's viewport title: its rule as long as the name prints, measured by the one text measure (TextMeasure,
+            // audit 22.11.2026), not the PDF writer's rough table. The title block itself draws as it did (the A1's hashes hold).
+            ["A3"] = ("badac0f7a1155e195f93c1cb33c6a10b090ff26f40d2c8a0201b517c72abd463", "a39dde3b9f2ac40cc262b0c3d757c7862db91fe8cf0a248215592f73bb8cbbd8"),
             ["A1"] = ("42d3135f508e15da7ad7e08c41e4eaddc8bc223e50834de6d341d70c1a8374ad", "42688974fba3e13118b845bdb4d8e2ab8630e95ce6e36311b70db297eed94478"),
         };
         foreach (var paper in new[] { "A3", "A1" })

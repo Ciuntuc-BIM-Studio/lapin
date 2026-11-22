@@ -372,8 +372,9 @@ public static partial class TitleBlocks
                     var font = (string?)item["font"] ?? style?.Font ?? "sans";
                     // Shrunk to its width when it would run over it (a long project name in its cell).
                     if (Json.Number(item["fit"]) is > 0 and var fit && value.Length > 0)
+                    // Its widest row decides, in the row's own font (the rows are drawn one under the other).
                     {
-                        var width = PdfWriter.Advance(value, bold) * height / 0.718;
+                        var width = TextMeasure.Widest(value, height, font, bold, italic);
                         if (width > fit) height *= fit / width;
                     }
                     var anchor = (string?)item["align"] is "middle" or "end" ? (string)item["align"]! : "start";
@@ -383,7 +384,7 @@ public static partial class TitleBlocks
                     var rows = value.Split('\n');
                     for (var r = 0; r < rows.Length; r++)
                     {
-                        var at = Pt(item["at"]) + new Vec2(0, r * height * 1.4);
+                        var at = Pt(item["at"]) + new Vec2(0, r * height * TextMeasure.LinePitch);
                         pen.Texts.Add(new PenText(at, rows[r], height, Json.Number(item["angle"]) ?? 0, anchor, baseline, bold, font, italic)
                         {
                             Tag = tokens.Count > 0 ? ((string?)item["tag"] is { Length: > 0 } tag ? tag : tokens[0].Replace('.', '_')) + (rows.Length > 1 ? $"_{r + 1}" : "") : null,

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
+using Lapin.Drawing;
 using Lapin.Drawing.Export;
 using Lapin.Drawing.Views;
 using Lapin.Model;
@@ -295,7 +296,7 @@ public static class Sheets
             var rule = new Pen("TITLE", "#000000", RulePen, null, null) { Viewport = pl.Viewport.Id };
             var name = pl.Boundary != null ? $"{pl.View.Name} · {pl.Boundary.Name}" : pl.View.Name;
             title.Texts.Add(new PenText(new Vec2(pl.X0, y), name, 3.5, Anchor: "start", Bold: true));
-            var nameWidth = PdfWriter.Advance(name, true) * 3.5 / 0.718;
+            var nameWidth = TextMeasure.Width(name, 3.5, bold: true);
             rule.Segments.Add((new(pl.X0, y + 1.5), new(pl.X0 + Math.Max(nameWidth, 30) + 4, y + 1.5)));
             title.Texts.Add(new PenText(new Vec2(pl.X0 + nameWidth + 4, y), $"1:{pl.Drawing.Scale:0}", 2.5, Anchor: "start"));
             pens.AddRange([rule, title]);

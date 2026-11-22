@@ -320,7 +320,7 @@ public static class DimensionKinds
                     mk.Line(a - new Vec2(r0 * 1.6, 0), a + new Vec2(r0 * 1.6, 0), "DIMENSION", w, lineColor).Line(a - new Vec2(0, r0 * 1.6), a + new Vec2(0, r0 * 1.6), "DIMENSION", w, lineColor);
                     var (l1, l2) = CoordinateText(c.Model, a, dim.Str("system"));
                     var side = at.X >= a.X ? 1 : -1;
-                    var shoulder = Math.Max(l1.Length, l2.Length) * text.Height * 0.62 * mm;
+                    var shoulder = Math.Max(TextMeasure.Width(l1, text), TextMeasure.Width(l2, text)) * mm;
                     var dir = at - a;
                     if (dir.Length > r0) mk.Line(a + dir.Normalized() * r0, at, "DIMENSION", w, lineColor);
                     var end = at + new Vec2(side * shoulder, 0);

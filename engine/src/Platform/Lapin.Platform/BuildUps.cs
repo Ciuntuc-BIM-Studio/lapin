@@ -214,8 +214,8 @@ public static class BuildupText
         return new BuildupContent(BuildupTemplate.Lines(t.Header ?? "", Element), entries, BuildupTemplate.Lines(t.Footer ?? "", Element), b.Stack);
     }
 
-    /// <summary>A text's width on paper (mm) at a cap height of <paramref name="h"/> mm: Helvetica's, as the PDF prints it.</summary>
-    public static double Measure(string s, double h, bool bold) => HelveticaMetrics.Advance(s, bold) * h / 0.718;
+    /// <summary>A text's width on paper (mm) at a cap height of <paramref name="h"/> mm: Helvetica's, as the PDF prints it (<see cref="TextMeasure"/>).</summary>
+    public static double Measure(string s, double h, bool bold) => TextMeasure.Width(s, h, null, bold);
 
     /// <summary>A value's unit after it ("0.035 W/mK:", "150 mm"): letters, a slash, a degree or a power, short, maybe a stop after it.</summary>
     static bool IsUnit(string w) => w.Length <= 8 && System.Text.RegularExpressions.Regex.IsMatch(w, @"^[A-Za-z°/·%²³µμ]+[.,:;)]*$");

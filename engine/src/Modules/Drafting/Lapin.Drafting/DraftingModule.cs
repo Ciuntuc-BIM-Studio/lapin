@@ -630,7 +630,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             if (mk.Owner is not { } id) continue;
             foreach (var l in mk.Lines) { Add(id, l.A); Add(id, l.B); }
             foreach (var (loops, _) in mk.Fills) foreach (var loop in loops) foreach (var p in loop) Add(id, p);
-            foreach (var (t, _) in mk.Texts) { var w = t.Text.Length * t.Height * 0.6 * mm; Add(id, t.At - new Vec2(w, 0)); Add(id, t.At + new Vec2(w, t.Height * mm)); }
+            foreach (var (t, _) in mk.Texts) { var w = TextMeasure.Width(t.Text, t.Height, t.Font, t.Bold, t.Italic) * mm; Add(id, t.At - new Vec2(w, 0)); Add(id, t.At + new Vec2(w, t.Height * mm)); }
             foreach (var img in mk.Images) foreach (var p in img.Corners) Add(id, p);
         }
         return o;

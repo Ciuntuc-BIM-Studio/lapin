@@ -156,7 +156,7 @@ public static class Tags
         var h = style.Height * mm;
         // One line: a box twice the text's height; more: each 1.5 heights apart.
         var halfH = (lines.Count * 1.5 * h + 0.5 * h) / 2;
-        var halfW = (Math.Max(1, lines.Max(l => l.Length)) * h * 0.62 + h) / 2;
+        var halfW = (Math.Max(TextMeasure.Width("x", style, h), TextMeasure.Widest(lines, h, style.Font, style.Bold, style.Italic)) + h) / 2;
         var mk = new ViewMark(id);
         Vec2[] box = [at + new Vec2(-halfW, -halfH), at + new Vec2(halfW, -halfH), at + new Vec2(halfW, halfH), at + new Vec2(-halfW, halfH)];
         mk.Polyline(box.Select(turn.P).ToArray(), true, "TAG", Pens.Default.Hatch, color);
@@ -564,7 +564,7 @@ public static class Tags
                     : type.Written.Split('|').Select(l => System.Text.RegularExpressions.Regex.Replace(l, @"\{([^{}]*)\}", "$1").Trim()).Where(l => l.Length > 0).DefaultIfEmpty("?").ToList();
                 mk = elbow
                     ? TagLeaders.Plain(null, lines, style, type, 1, new Vec2(8, 8), new Vec2(0, 0), true, ink).Mark
-                    : Box(null, lines, style, 1, new Vec2(14 + lines.Max(l => l.Length) * style.Height * 0.31, 10), new Vec2(0, 0), null, true, ink);
+                    : Box(null, lines, style, 1, new Vec2(14 + TextMeasure.Widest(lines, style.Height, style.Font, style.Bold, style.Italic) / 2, 10), new Vec2(0, 0), null, true, ink);
             }
             var segments = new JsonArray(mk.Lines.Where(l => l.Layer != "PICK").Select(l => (JsonNode)new JsonArray(
                 Math.Round(l.A.X, 3), Math.Round(-l.A.Y, 3), Math.Round(l.B.X, 3), Math.Round(-l.B.Y, 3))).ToArray());
@@ -577,7 +577,7 @@ public static class Tags
             foreach (var l in mk.Lines) { xs.AddRange([l.A.X, l.B.X]); ys.AddRange([-l.A.Y, -l.B.Y]); }
             foreach (var x in mk.Texts)
             {
-                var w = BuildupText.Measure(x.Text.Text, style.Height, style.Bold);
+                var w = TextMeasure.Width(x.Text.Text, style);
                 var x0 = x.Text.Anchor switch { "end" => x.Text.At.X - w, "middle" => x.Text.At.X - w / 2, _ => x.Text.At.X };
                 xs.AddRange([x0, x0 + w]); ys.AddRange([-x.Text.At.Y - style.Height * 1.2, -x.Text.At.Y + style.Height * 0.4]);
             }

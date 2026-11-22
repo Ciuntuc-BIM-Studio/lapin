@@ -191,14 +191,15 @@ public class DraftingTableTests
         var id = Add(f, Plan(f), 2, 2, cells: Rows(["A long heading here", "x"], ["one two three four five six", "y"]));
         var info = Info(f, id);
         Assert.Equal(25, (double)info["colW"]![0]!);
-        // 2.5 mm text in a 25 mm column (23 mm inside its padding, 15 characters of 1.5 mm): the long cells wrap to two lines;
-        // their rows fit: 2.5 + 3.375 + 2 × 1 = 7.875 mm, over the 7 mm they had.
-        Assert.Equal(7.875, (double)info["rowH"]![0]!, 6);
-        Assert.Equal(7.875, (double)info["rowH"]![1]!, 6);
-        // Column A fit to its text: its widest line (27 characters) and its padding; column B at a width of its own.
+        // 2.5 mm text in a 25 mm column (23 mm inside its padding), wrapped by the lines' printed widths (TextMeasure, audit
+        // 22.11.2026; it was 15 characters of 1.5 mm): "A long" / "heading here", "one two three" (21.1 mm) / "four five six".
+        // Their rows fit: 2.5 + 1.4 × 2.5 (the one line pitch, it was 1.35) + 2 × 1 = 8 mm, over the 7 mm they had.
+        Assert.Equal(8, (double)info["rowH"]![0]!, 6);
+        Assert.Equal(8, (double)info["rowH"]![1]!, 6);
+        // Column A fit to its text: its widest line as printed (it was 27 characters of 1.5 mm) and its padding; column B at a width of its own.
         Edit(f, id, Op("fit", ("range", "A1:A2"), ("axis", "cols")), Op("colWidth", ("range", "B1"), ("w", 12)));
         info = Info(f, id);
-        Assert.Equal(27 * 1.5 + 2, (double)info["colW"]![0]!, 6);
+        Assert.Equal(TextMeasure.Width("one two three four five six", 2.5) + 2, (double)info["colW"]![0]!, 3);
         Assert.Equal(12, (double)info["colW"]![1]!);
         Assert.Equal(7, (double)info["rowH"]![1]!, 6);
         // A max holds it: then it wraps again.
@@ -515,14 +516,15 @@ public class DraftingTableTests
         var id = Add(f, Plan(f), 2, 2, cells: Rows(["Ground floor", "x"], ["a", "b"]));
         Edit(f, id, Op("style", ("range", "A1"), ("style", new JsonObject { ["rot"] = 90 })), Op("fit", ("range", "A1"), ("axis", "cols")));
         var info = Info(f, id);
-        // 12 characters of 1.5 mm and its padding: the row is 20 mm; the column as wide as one line, 2.5 + 2 mm.
-        Assert.Equal(12 * 1.5 + 2, (double)info["rowH"]![0]!, 6);
+        // Its printed length (TextMeasure; it was 12 characters of 1.5 mm) and its padding: the row; the column as wide as one line, 2.5 + 2 mm.
+        var length = TextMeasure.Width("Ground floor", 2.5);
+        Assert.Equal(length + 2, (double)info["rowH"]![0]!, 3);
         Assert.Equal(4.5, (double)info["colW"]![0]!, 6);
         var t = Mark(f, Plan(f), id).Texts.Single(x => x.Text.Text == "Ground floor").Text;
         Assert.Equal(90, t.Angle, 6);
         // Bottom to top from the cell's bottom-left corner: its baseline 1 + 2.5 mm right of the table's left (1 m at 1:100: 0.35 m), its start 1 mm above the row's bottom.
         Assert.Equal(1 + 0.35, t.At.X, 9);
-        Assert.Equal(5 - 1.9, t.At.Y, 9);
+        Assert.Equal(5 - (length + 1) * 0.1, t.At.Y, 9);
         Assert.Equal("start", t.Anchor);
         // 270: top to bottom, from the cell's top-right corner.
         Edit(f, id, Op("style", ("range", "A1"), ("style", new JsonObject { ["rot"] = 270 })));
@@ -544,7 +546,7 @@ public class DraftingTableTests
         var f = F();
         var id = Add(f, Plan(f), 2, 1, cells: Rows(["abcd"], ["ab"]));
         Edit(f, id, Op("fit", ("range", "A1:A2"), ("axis", "cols")), Op("style", ("range", "A1"), ("style", new JsonObject { ["pad"] = 3 })));
-        Assert.Equal(4 * 1.5 + 6, (double)Info(f, id)["colW"]![0]!, 6);
+        Assert.Equal(TextMeasure.Width("abcd", 2.5) + 6, (double)Info(f, id)["colW"]![0]!, 3);
         Assert.Equal(1 + 0.3, Mark(f, Plan(f), id).Texts.Single(x => x.Text.Text == "abcd").Text.At.X, 9);
         Assert.Equal(1 + 0.1, Mark(f, Plan(f), id).Texts.Single(x => x.Text.Text == "ab").Text.At.X, 9);
     }

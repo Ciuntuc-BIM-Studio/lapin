@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
 using Lapin.Drafting.Cad;
+using Lapin.Drawing;
 using Lapin.Drawing.Views;
 using Lapin.Geometry;
 using Lapin.Model;
@@ -459,10 +460,11 @@ public class DraftingTableModelTests
         var mb = r.Marks.Single(m => m.Owner == big);
         Assert.Contains(ms.Texts, t => t.Text.Text == "WC");
         Assert.Contains(mb.Texts, t => t.Text.Text == "24.46 m²");
-        // Each copy as wide as its own texts: the living room's first column 11 characters, the WC's 2 (fit, with padding).
+        // Each copy as wide as its own texts, as printed (TextMeasure; they were 1.5 mm a character), fit with padding.
+        double W(string t) => TextMeasure.Width(t, 2.5);
         double Width(ViewMark mk) => mk.Lines.Where(l => l.Layer != "PICK").Max(l => Math.Max(l.A.X, l.B.X)) - mk.Lines.Where(l => l.Layer != "PICK").Min(l => Math.Min(l.A.X, l.B.X));
-        Assert.Equal((11 * 1.5 + 2 + 8 * 1.5 + 2) * 0.1, Width(mb) - 0, 6);
-        Assert.Equal((2 * 1.5 + 2 + 7 * 1.5 + 2) * 0.1, Width(ms), 6);
+        Assert.Equal((W("Living room") + 2 + W("24.46 m²") + 2) * 0.1, Width(mb) - 0, 6);
+        Assert.Equal((W("WC") + 2 + W("3.50 m²") + 2) * 0.1, Width(ms), 6);
         // A tag's fields come first in its cells (a tag symbol's {number}), as in its texts.
         var d = SymbolDef.Parse(def);
         var sd = SymbolRender.Render(f.Model, d with { Items = J(TableItem(["{number}", "{= attr.area * 2}"])) }, k => k == "attr.area" ? (true, "2") : (false, null), 0.001, null, raw => raw.Replace("{number}", "7"));

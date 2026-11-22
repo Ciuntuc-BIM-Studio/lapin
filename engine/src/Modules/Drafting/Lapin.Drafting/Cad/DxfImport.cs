@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
+using Lapin.Drawing;
 using Lapin.Drawing.Hatch;
 using Lapin.Drawing.Import;
 using Lapin.Model;
@@ -49,7 +50,8 @@ public sealed record DxfImportOptions(string ViewId, double? UnitFactor = null, 
 /// </summary>
 public static class DxfImport
 {
-    const double TextWidthPerHeight = 0.6;
+    /// <summary>A DXF text's width as Lapin prints it (Helvetica, <see cref="TextMeasure"/>): where its aligned point puts its start.</summary>
+    static double TextWidth(string value, double h) => TextMeasure.Width(value.Length == 0 ? "x" : value, h);
 
     static readonly Dictionary<string, string> KnownPatterns = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -815,7 +817,7 @@ public static class DxfImport
     {
         var u = new Vec2(Math.Cos(t.RotationDeg * Math.PI / 180), Math.Sin(t.RotationDeg * Math.PI / 180));
         var n = u.Perp;
-        var w = Math.Max(1, t.Value.Length) * t.Height * TextWidthPerHeight;
+        var w = TextWidth(t.Value, t.Height);
         var start = t.At - u * (t.HAlign == 1 ? w / 2 : t.HAlign == 2 ? w : 0) - n * (t.VAlign == 2 ? t.Height / 2 : t.VAlign == 3 ? t.Height : 0);
         var centre = f.Apply(start + u * (w / 2) + n * (t.Height / 2));
         var u2 = f.Linear(u);
@@ -823,7 +825,7 @@ public static class DxfImport
         if (angle > 90 + 1e-9 || angle <= -90 + 1e-9) angle += angle > 0 ? -180 : 180;
         var h = t.Height * f.Factor;
         var dir = new Vec2(Math.Cos(angle * Math.PI / 180), Math.Sin(angle * Math.PI / 180));
-        var at = centre - dir * (Math.Max(1, t.Value.Length) * h * TextWidthPerHeight / 2) - dir.Perp * (h / 2);
+        var at = centre - dir * (TextWidth(t.Value, h) / 2) - dir.Perp * (h / 2);
         run.AddText(at, t.Value, h / scaleMm, angle, layer, color);
     }
 

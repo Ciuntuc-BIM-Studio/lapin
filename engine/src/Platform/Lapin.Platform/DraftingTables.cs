@@ -31,10 +31,8 @@ public static partial class DraftingTables
     public const int MaxCols = 100;
     /// <summary>The longest text a cell holds.</summary>
     public const int MaxText = 10_000;
-    /// <summary>How tall a line of text is, for its height (as a text note's lines).</summary>
-    public const double LineStep = 1.35;
-    /// <summary>A character's width for its height (as a text note's box), to fit a column and wrap its lines.</summary>
-    public const double CharWidth = 0.6;
+    /// <summary>How tall a line of text is, for its height: every drawing's line pitch (<see cref="TextMeasure.LinePitch"/>, as a text note's lines).</summary>
+    public const double LineStep = TextMeasure.LinePitch;
 
     /// <summary>The ready-made looks of a new table: every line, a header row, lines under the header only, none.</summary>
     public static readonly string[] Presets = ["header", "grid", "minimal", "none"];
@@ -285,7 +283,7 @@ public static partial class DraftingTables
     /// A cell's text laid: its lines, height and the style it is drawn in; <see cref="Rot"/> 0, 90 (read bottom to top) or 270
     /// (top to bottom), the text then laid along the row's height (stage 3); <see cref="Pad"/> its padding (mm).
     /// </summary>
-    public sealed record CellText(List<string> Lines, double Size, bool Bold, bool Italic, string Color, string Align, string VAlign, int Rot = 0, double Pad = 1);
+    public sealed record CellText(List<string> Lines, double Size, bool Bold, bool Italic, string Color, string Align, string VAlign, int Rot = 0, double Pad = 1, string Font = "sans");
 
     /// <summary>A table laid out in paper mm: each column's width and row's height (fit to their text where asked), each master cell's text.</summary>
     public sealed record Layout(double[] ColW, double[] RowH, CellText?[,] Texts)
@@ -314,21 +312,21 @@ public static partial class DraftingTables
     {
         var size = SizeOf(g, cell);
         var pad = PadOf(g, cell);
-        var maxW = width is { } w ? Math.Max(size * CharWidth, w - 2 * pad) : (double?)null;
-        var lines = shown.Length == 0 ? [] : TextWrap.Lines(shown, size * CharWidth, maxW);
-        return new CellText(lines, size, cell.Bool("bold") ?? bold, cell.Bool("italic") ?? italic, cell.Str("color") ?? (string?)g.Style["color"] ?? color,
+        var (b, i) = (cell.Bool("bold") ?? bold, cell.Bool("italic") ?? italic);
+        // Wrapped by the lines' printed widths (TextMeasure), at least an "x" wide.
+        double Width(string l) => TextMeasure.Width(l, size, font, b, i);
+        var maxW = width is { } w ? Math.Max(Width("x"), w - 2 * pad) : (double?)null;
+        var lines = shown.Length == 0 ? [] : TextWrap.Lines(shown, Width, maxW);
+        return new CellText(lines, size, b, i, cell.Str("color") ?? (string?)g.Style["color"] ?? color,
             Pick(cell.Str("align") ?? (string?)g.Style["align"], Aligns, "left"), Pick(cell.Str("valign") ?? (string?)g.Style["valign"], VAligns, "middle"),
-            RotOf(cell), pad);
+            RotOf(cell), pad, font);
     }
 
     /// <summary>How tall a cell's text stands (mm): its first line, then a line step for each next.</summary>
     public static double TextHeight(CellText t) => t.Lines.Count == 0 ? 0 : t.Size + (t.Lines.Count - 1) * t.Size * LineStep;
 
     /// <summary>How long a cell's longest line runs (mm).</summary>
-    public static double TextLength(CellText t) => t.Lines.Count == 0 ? 0 : t.Lines.Max(l => l.Length) * t.Size * CharWidth;
-
-    static double TextWidth(string shown, double size) =>
-        shown.Length == 0 ? 0 : shown.Replace("\r\n", "\n").Split('\n').Max(l => l.Length) * size * CharWidth;
+    public static double TextLength(CellText t) => TextMeasure.Widest(t.Lines, t.Size, t.Font, t.Bold, t.Italic);
 
     /// <summary>
     /// The table laid out: a column that fits its text is as wide as its widest single-column cell (padding both sides), within
@@ -362,7 +360,7 @@ public static partial class DraftingTables
                     var t = Style(g, cell, v.Shown(r, c), Fixed(r, cell.RowSpan), text.Font, text.Bold, text.Italic, text.Color);
                     need = Math.Max(need, TextHeight(t) + 2 * pad);
                 }
-                else need = Math.Max(need, TextWidth(v.Shown(r, c), SizeOf(g, cell)) + 2 * pad);
+                else need = Math.Max(need, TextMeasure.Widest(v.Shown(r, c), SizeOf(g, cell), text.Font, cell.Bool("bold") ?? text.Bold, cell.Bool("italic") ?? text.Italic) + 2 * pad);
             }
             colW[c] = Math.Clamp(need > 0 ? need : col.W, col.Min ?? 2, Math.Max(col.Min ?? 2, col.Max ?? 1000));
         }
