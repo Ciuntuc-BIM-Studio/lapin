@@ -386,7 +386,9 @@ public sealed class TrackingContext(IEdit edit, ModuleCatalog catalog, IQueryCon
 /// <summary>A query's context over a model that is not the session's (the preview's copy, or the bake's edit): geometry built as asked, by the modules' producers.</summary>
 public sealed class ModelQuery(IModelView model, ModuleCatalog catalog) : IQueryContext
 {
-    readonly Dictionary<string, (long Version, ElementGeometry? Geometry)> _built = [];
+    // Kept while the model stands still: an element's geometry follows others (its type's layers, an opening cut in it,
+    // the walls it joins), which a command may change without touching the element itself.
+    readonly Dictionary<string, (long Revision, long Version, ElementGeometry? Geometry)> _built = [];
 
     public IModelView Model => model;
     public IServices Services => catalog;
@@ -395,9 +397,9 @@ public sealed class ModelQuery(IModelView model, ModuleCatalog catalog) : IQuery
     public ElementGeometry? Geometry(string entityId)
     {
         if (model.Get(entityId) is not { } e) return null;
-        if (_built.TryGetValue(entityId, out var b) && b.Version == e.Version) return b.Geometry;
+        if (_built.TryGetValue(entityId, out var b) && b.Revision == model.Revision && b.Version == e.Version) return b.Geometry;
         var g = Build(e, model, catalog);
-        _built[entityId] = (e.Version, g);
+        _built[entityId] = (model.Revision, e.Version, g);
         return g;
     }
 
