@@ -254,6 +254,11 @@ public class SiteWorksTests
                 var inside = p.X > -0.15 && p.X < 10.15 && p.Y > -0.15 && (p.Y < 6 || (p - new Vec2(5, 8 - 7.25)).Length < 7.25 + 0.15);
                 Assert.False(inside, $"{p} is inside the walls");
             }
+        // A type of short bays (2.07 m at most) follows the same arc in chords no longer than its bays: six, not four of 3 m.
+        var shortBays = (string)f.Run("sitework.createScaffoldType", new JsonObject { ["name"] = "Short bays", ["spec"] = new JsonObject { ["bays"] = new JsonArray(2.07, 1.57) } })!["id"]!;
+        var r2 = f.Run("sitework.scaffoldFromWalls", new JsonObject { ["wallIds"] = new JsonArray(walls.Select(w => w!.DeepClone()).ToArray()), ["typeId"] = shortBays })!;
+        var short2 = Scaffolds.LayoutOf(f.Model.Get((string)r2["id"]!)!, f.Model, f.Session.Catalog)!;
+        Assert.Equal(6, short2.Runs.Count(x => x.Length < 5));
     }
 
     [Fact]

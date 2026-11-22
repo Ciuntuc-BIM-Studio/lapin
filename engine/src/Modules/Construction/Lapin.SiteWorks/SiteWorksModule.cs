@@ -78,7 +78,9 @@ public sealed class SiteWorksModule : ILapinModule
         {
             var walls = Ids(a, "wallIds").Select(id => ctx.Model.Get(id)).Where(w => w?.Class == IfcClass.Wall).Cast<Entity>().ToList();
             if (walls.Count == 0) throw new CommandException("Select the walls the scaffold goes along.");
-            if (Scaffolds.FromWalls(walls, ctx.Model, ctx.Services) is not { } line) throw new CommandException("The walls have no faces to follow (curved walls are not followed yet).");
+            var type = Type(ctx, Scaffolds.TypeClass, null, (string?)a["typeId"]);
+            var chord = Scaffolds.ChordOf(Scaffolds.Read(type.Attrs["spec"] as JsonObject));
+            if (Scaffolds.FromWalls(walls, ctx.Model, ctx.Services, chord) is not { } line) throw new CommandException("The walls have no faces to follow (curved walls are not followed yet).");
             var storey = walls.Select(w => Spatial.StoreyOf(ctx.Model, w.Id)).OfType<Entity>().MinBy(s => s.Num("elevation"));
             var attrs = new JsonObject
             {
@@ -86,7 +88,7 @@ public sealed class SiteWorksModule : ILapinModule
             };
             if (line.Closed) attrs["closed"] = true;
             if (Json.Number(a["top"]) is { } top) attrs["top"] = top;
-            var e = Place(ctx, Scaffolds.Class, "Scaffold", attrs, "SCAFFOLD", storey?.Id ?? AnyStorey(ctx), Type(ctx, Scaffolds.TypeClass, null, (string?)a["typeId"]));
+            var e = Place(ctx, Scaffolds.Class, "Scaffold", attrs, "SCAFFOLD", storey?.Id ?? AnyStorey(ctx), type);
             return new JsonObject { ["id"] = e.Id, ["closed"] = line.Closed };
         });
 
