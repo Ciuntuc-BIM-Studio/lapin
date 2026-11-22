@@ -131,19 +131,24 @@ public class FemParallelTests(ITestOutputHelper output)
         var bReference = buckling.Select(s => Buckling.Solve(FrameSystem.Build(s.Result.States!).System!, s.Result.Axial, 6, tolerance: 1e-6)).ToList();
         var jobs = Enumerable.Range(0, 3).SelectMany(_ => Enumerable.Range(0, sets.Count + buckling.Count)).ToList();
         var failures = new ConcurrentBag<string>();
-        Parallel.ForEach(jobs, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(4, Environment.ProcessorCount) }, i =>
+        // Each worker hands its solves' factor values on, one to the next (§14.22), as the analysis does; half the jobs keep their own.
+        Parallel.ForEach(jobs, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(4, Environment.ProcessorCount) }, () => new FactorStore(), (i, _, j, store) =>
         {
             try
             {
-                if (i < sets.Count) Same(reference[i], Nonlinear.Solve(p, sets[i].Loads, options), sets[i].Key);
+                if (i < sets.Count) Same(reference[i], Nonlinear.Solve(p, sets[i].Loads, options, j % 2 == 0 ? store : null), sets[i].Key);
                 else
                 {
                     var s = buckling[i - sets.Count];
                     Same(bReference[i - sets.Count], Buckling.Solve(FrameSystem.Build(s.Result.States!).System!, s.Result.Axial, 6, tolerance: 1e-6), s.Key);
                 }
+                if (store.Count > FactorStore.Kept) failures.Add($"{i}: the store holds {store.Count} sets");
             }
             catch (Exception ex) { failures.Add($"{i}: {ex.GetType().Name}: {ex.Message}"); }
-        });
+            return store;
+        }, _ => { });
+        // The first results are untouched by all the solves after them (none holds a value array handed on).
+        for (var i = 0; i < sets.Count; i++) Same(sets[i].Result, reference[i], $"{sets[i].Key} (the analysis')");
         output.WriteLine($"{model}: {jobs.Count} solves on {Environment.ProcessorCount} cores, {failures.Count} differ, {p.Layouts.Count} layouts kept");
         Assert.InRange(p.Layouts.Count, 1, FrameLayouts.Kept);
         Assert.True(failures.IsEmpty, string.Join("\n", failures.Take(10)));
@@ -222,6 +227,22 @@ public class FemParallelTests(ITestOutputHelper output)
             Assert.Equal(1, FemParallel.Degree(10, 0));
             Assert.Equal(Enumerable.Range(0, 10), FemParallel.Map(Enumerable.Range(0, 10).ToList(), i => i));
         }
+        // Each worker's own: never two jobs on it at once, and no more of them than jobs ran at once.
+        foreach (var degree in new[] { 1, 4 })
+            using (FemParallel.Limit(degree))
+            {
+                var made = 0;
+                var r = FemParallel.Map(Enumerable.Range(0, 200).ToList(), () => { Interlocked.Increment(ref made); return new int[1]; }, (i, mine) =>
+                {
+                    if (Interlocked.Increment(ref mine[0]) != 1) throw new InvalidOperationException("two jobs on one worker's own");
+                    Thread.SpinWait(500 * (i % 5));
+                    Interlocked.Decrement(ref mine[0]);
+                    return -i;
+                });
+                Assert.Equal(Enumerable.Range(0, 200).Select(i => -i), r);
+                if (degree == 1) Assert.Equal(1, made);
+                else Assert.InRange(made, 1, 200);
+            }
         // The memory bound: jobs too large for a quarter of the memory go one at a time.
         using (FemParallel.Limit(8)) Assert.Equal(1, FemParallel.Degree(10, long.MaxValue / 2));
     }
