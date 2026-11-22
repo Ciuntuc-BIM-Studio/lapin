@@ -17,7 +17,11 @@ const SkyShader = {
 		'mieCoefficient': { value: 0.005 },
 		'mieDirectionalG': { value: 0.8 },
 		'sunPosition': { value: new Vector3() },
-		'up': { value: new Vector3( 0, 1, 0 ) }
+		'up': { value: new Vector3( 0, 1, 0 ) },
+		// Lapin's night (docs/plan-render.md, S2): the day's sky scaled, a night blue and the stars added; 1, 0, 0 draw the r182 sky as it was.
+		'skyGain': { value: 1 },
+		'nightAdd': { value: new Vector3() },
+		'starLevel': { value: 0 }
 	},
 
 	vertexShader: /* glsl */`
@@ -26,6 +30,9 @@ const SkyShader = {
 		uniform float turbidity;
 		uniform float mieCoefficient;
 		uniform vec3 up;
+		uniform float skyGain;
+		uniform vec3 nightAdd;
+		uniform float starLevel;
 
 		varying vec3 vWorldPosition;
 		varying vec3 vSunDirection;
@@ -102,6 +109,9 @@ const SkyShader = {
 
 		uniform float mieDirectionalG;
 		uniform vec3 up;
+		uniform float skyGain;
+		uniform vec3 nightAdd;
+		uniform float starLevel;
 
 		// constants for atmospheric scattering
 		const float pi = 3.141592653589793238462643383279502884197169;
@@ -169,6 +179,14 @@ const SkyShader = {
 			vec3 texColor = ( Lin + L0 ) * 0.04 + vec3( 0.0, 0.0003, 0.00075 );
 
 			vec3 retColor = pow( texColor, vec3( 1.0 / ( 1.2 + ( 1.2 * vSunfade ) ) ) );
+
+			// Lapin: the night's sky (its stars a hash of the direction, above the horizon only).
+			retColor = retColor * skyGain + nightAdd;
+			if ( starLevel > 0.0 && dot( up, direction ) > 0.02 ) {
+				vec3 q = floor( direction * 420.0 );
+				float h = fract( sin( dot( q, vec3( 12.9898, 78.233, 45.164 ) ) ) * 43758.5453 );
+				retColor += vec3( starLevel * smoothstep( 0.9975, 1.0, h ) );
+			}
 
 			gl_FragColor = vec4( retColor, 1.0 );
 

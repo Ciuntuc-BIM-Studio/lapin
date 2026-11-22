@@ -41,6 +41,7 @@ import { pinSelection } from './pinTools';
 import { MatchOptions, matchProperties } from './matchTool';
 import { arraySelection } from './arrayTool';
 import { GroupSection } from './GroupSection';
+import { isLightish, LightSection } from './LightSection';
 import { ArraySection, arrayOf } from './ArraySection';
 import { AutoJoinSection } from './AutoJoinSection';
 import { isPathElement } from './autoJoin';
@@ -434,6 +435,8 @@ const core: LapinModule = {
   planOverlays: [AngleDims],
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },
+    // What a light fixture, a lamp or a glowing element gives off (docs/plan-render.md, S2).
+    { id: 'light', label: 'Light', classes: ['*'], shows: isLightish, component: LightSection },
     // U-value and R from the layers (EN ISO 6946; issue #67).
     { id: 'thermal', label: 'Thermal', classes: THERMAL_CLASSES, component: ThermalSection },
     { id: 'array', label: 'Array', classes: ['*'], shows: (n) => arrayOf(n, useSession.getState().nodes) !== null, component: ArraySection },

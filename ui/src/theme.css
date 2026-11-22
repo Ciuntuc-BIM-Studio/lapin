@@ -1222,6 +1222,8 @@ input.invalid { outline: 1px solid var(--err); }
 
 /* A section shown in 3D, a walk: what is on, and how to leave it (Viewport3D). */
 .view3d-modes { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); display: flex; gap: 8px; z-index: 6; pointer-events: none; }
+/* The lights drawn now (docs/plan-render.md, S2): a small count in the 3D view's lower right corner. */
+.lights-budget { position: absolute; right: 12px; bottom: 44px; z-index: 6; display: flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 10px; background: var(--hud); border: 1px solid var(--line, transparent); color: var(--ink); font-size: 11px; backdrop-filter: blur(4px); pointer-events: auto; }
 .mode-chip { pointer-events: auto; display: inline-flex; align-items: center; gap: 8px; padding: 5px 8px 5px 12px; background: var(--hud); border: 1px solid var(--accent); border-radius: 999px; color: var(--ink); font: inherit; font-weight: 600; backdrop-filter: blur(4px); white-space: nowrap; }
 button.mode-chip { cursor: pointer; }
 button.mode-chip:hover { color: var(--accent); }

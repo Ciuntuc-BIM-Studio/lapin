@@ -951,6 +951,8 @@ public static partial class IfcExport
             if (ArcFootprint(e) is { } fp) reps.Add(fp);
             else if (ArcAxis(e) is { } aa) reps.Add(aa);
             reps.AddRange(Plan2dOf(e));
+            // A light fixture's light as IFC's light source (docs/plan-render.md, S2).
+            if (LightRep(e, geo, fr) is { } light) reps.Add(light);
             var shape = reps.Count > 0 ? f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(reps)) : Null;
             var (height, width) = Overall(e, type);
             // Its type in IFC's terms (the mirrored type for an element that is its type's mirror image), which the element repeats.
@@ -1429,6 +1431,7 @@ public static partial class IfcExport
                 // The type's parameters, which every element of the type has.
                 var sets = new List<string> { intent };
                 if (ParamsOf(type, Gid(key, ParamsKey)) is { } ps) sets.Add(ps);
+                if (LightSet(type, Gid(key, LightSetName)) is { } lightSet) sets.Add(lightSet);
                 // A door's or window's own terms IFC cannot say (forum topic 34) join the user's Lapin_Joinery set, or make it.
                 var joinery = (terms?.Properties ?? []).Select(p => (p.Name, Value: Typed("IFCLABEL", S(p.Value)))).ToList();
                 foreach (var (setName, props) in NamedParams(type))
@@ -1506,6 +1509,16 @@ public static partial class IfcExport
             materials[id] = r;
             // Its Lapin id and attributes, so an import gives the material the same id and what refers to it (a column type, a zone) still finds it.
             if (mat != null) f.Add("IFCMATERIALPROPERTIES", S(IntentSetName), Null, L(IntentProperties(mat, null, [("LapinId", mat.Id)])), r);
+            // A material that glows as a light (docs/plan-render.md, S2): its light data in words.
+            if (mat?.Attrs[Lapin.Platform.Lighting.Lights.Key] is JsonObject glow)
+            {
+                var spec = Lapin.Platform.Lighting.LightSpec.Read(glow);
+                f.Add("IFCMATERIALPROPERTIES", S(LightSetName), Null, L(new[]
+                {
+                    Single("Lumens", Typed("IFCLUMINOUSFLUXMEASURE", R(spec.Lumens))), Single("ColourTemperature", Typed("IFCTHERMODYNAMICTEMPERATUREMEASURE", R(spec.Kelvin))),
+                    Single("On", Typed("IFCBOOLEAN", spec.On ? True : False)),
+                }), r);
+            }
             // Its parameters: the standard ones in IFC's own sets (Pset_MaterialThermal.ThermalConductivity, typed as IFC types them), the user's in Lapin_Material.
             var sets = mat != null ? MaterialSets(mat) : [];
             // With the structural analysis view, the values its analysis takes that the material does not state (E and ν by its
@@ -2012,6 +2025,7 @@ public static partial class IfcExport
             // Created and struck in one phase (formwork, a scaffold): temporary, as IFC's Status says it.
             if (e.Str("phaseCreated") is { } c0 && c0 == e.Str("phaseDemolished")) phase.Add(Single("Status", Typed("IFCLABEL", S("TEMPORARY"))));
             if (phase.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, PhaseKey), Null, S(PhaseSetName), Null, L(phase)), Gid(e.Id, "phase-rel"));
+            if (LightSet(e, Gid(e.Id, LightSetName)) is { } lightSet) Define(entity, lightSet, Gid(e.Id, "light-rel"));
             // The user's own parameters (those of its type are on the type, which IFC readers pass on to it; also here when asked, WorkedOut).
             var own = ParamsOf(e, Gid(e.Id, ParamsKey));
             if (own != null) Define(entity, own, Gid(e.Id, "params-rel"));

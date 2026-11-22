@@ -76,6 +76,8 @@ public sealed class CoreModule : ILapinModule
         Thermal.Register(r);
         r.Service<IIfcElementSets>(new ThermalIfcSets());
         Images.Register(r);
+        // Light fixtures, lamps and glowing materials as lights (docs/plan-render.md, S2).
+        Lighting.Lights.Register(r);
         Views.Register(r);
         // Every module's elements as lines for the temporary dimensions in plan (decision 733).
         DimLines.Register(r);

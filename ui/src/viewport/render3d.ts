@@ -19,7 +19,9 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { Sky } from './sky';
+import { whiteBalanceGains } from './lights3d';
 
 export type RenderProfile = 'drawing' | 'medium' | 'realistic';
 export const PROFILES: readonly RenderProfile[] = ['drawing', 'medium', 'realistic'];
@@ -64,6 +66,47 @@ export const SPECS: Record<RenderProfile, ProfileSpec> = {
   medium: { sun: true, shadowMap: 2048, ao: true, sky: false, skyLight: 0.55, ground: false, glass: false, toneMapping: THREE.NeutralToneMapping, exposure: 1 },
   realistic: { sun: true, shadowMap: 4096, ao: true, sky: true, skyLight: 0.5, ground: true, glass: true, toneMapping: THREE.AgXToneMapping, exposure: 0.85 },
 };
+
+/**
+ * The camera's look in the medium and realistic views (docs/plan-render.md, S2), kept on this computer as the profile is:
+ * an exposure compensation (EV stops over the automatic exposure, which opens up after sunset) and a white balance
+ * (automatic: daylight by day, 4000 K by night, so warm lamps stay warm without turning orange; or a temperature).
+ */
+export interface CameraLook { ev: number; wb: 'auto' | number }
+const LOOK_KEY = 'lapin.render3d.look';
+
+function storedLook(): CameraLook {
+  try {
+    const v = JSON.parse(localStorage.getItem(LOOK_KEY) ?? 'null') as Partial<CameraLook> | null;
+    const ev = typeof v?.ev === 'number' && Number.isFinite(v.ev) ? Math.max(-4, Math.min(4, v.ev)) : 0;
+    const wb = typeof v?.wb === 'number' && v.wb >= 2000 && v.wb <= 12000 ? v.wb : 'auto';
+    return { ev, wb };
+  } catch { return { ev: 0, wb: 'auto' }; }
+}
+
+export const useCameraLook = create<CameraLook>(() => storedLook());
+
+export function setCameraLook(patch: Partial<CameraLook>): void {
+  useCameraLook.setState(patch);
+  try { localStorage.setItem(LOOK_KEY, JSON.stringify(useCameraLook.getState())); } catch { /* kept for the session */ }
+}
+
+/** How far into the night the sun's height (degrees) is: 0 by day (2° up and higher), 1 from nautical dusk (−10°) on, smooth between. */
+export function nightOf(altitude: number | null): number {
+  if (altitude == null || !Number.isFinite(altitude)) return 0;
+  const t = Math.min(1, Math.max(0, (2 - altitude) / 12));
+  return t * t * (3 - 2 * t);
+}
+
+/** The automatic exposure's gain over the day's: 1 by day, NIGHT_GAIN at night (about nine and a half stops, a room under lamps instead of the sun), in stops between. */
+export const NIGHT_GAIN = 768;
+export const exposureGain = (night: number): number => Math.pow(NIGHT_GAIN, Math.min(1, Math.max(0, night)));
+
+/** The white balance's temperature: the user's, else daylight by day and 4000 K at night. */
+export function whiteBalanceKelvin(wb: CameraLook['wb'], night: number): number {
+  if (typeof wb === 'number') return wb;
+  return 6504 + (4000 - 6504) * Math.min(1, Math.max(0, night));
+}
 
 /** The sun's light by its height (degrees): warm and low at sunrise and sunset, white at noon (BimGo's two ends). */
 export function sunColour(altitude: number, out = new THREE.Color()): THREE.Color {
@@ -126,6 +169,7 @@ export class Realism {
   private composer: EffectComposer | null = null;
   private renderPass: RenderPass | null = null;
   private occlusion: GTAOPass | null = null;
+  private balance: ShaderPass | null = null;
   private size = new THREE.Vector2(1, 1);
   private envSky = new Sky();
   private envScene = new THREE.Scene();
@@ -159,10 +203,40 @@ export class Realism {
     this.profile = profile;
     const spec = this.spec;
     this.renderer.toneMapping = spec.toneMapping;
-    this.renderer.toneMappingExposure = spec.exposure;
     if (profile !== 'drawing' && !this.composer) this.build();
     if (this.occlusion) this.occlusion.enabled = spec.ao;
+    this.applyLook();
     this.applyEnvironment();
+  }
+
+  /** How far into the night it is (nightOf): the exposure opens, the sky and its light fade, the stars come out. */
+  night = 0;
+
+  setNight(night: number): void {
+    this.night = this.profile === 'drawing' ? 0 : night;
+    this.applyLook();
+    this.applyEnvironment();
+  }
+
+  /** The exposure's gain over the day's now (the automatic exposure's, before the user's compensation). */
+  get gain(): number { return exposureGain(this.night); }
+
+  /** The camera's look: the exposure (the profile's, the night's gain, the user's stops), the white balance, the night sky. */
+  applyLook(): void {
+    const spec = this.spec;
+    const look = useCameraLook.getState();
+    const drawing = this.profile === 'drawing';
+    this.renderer.toneMappingExposure = drawing ? spec.exposure : spec.exposure * this.gain * Math.pow(2, look.ev);
+    if (this.balance) {
+      const [r, g, b] = whiteBalanceGains(whiteBalanceKelvin(look.wb, this.night));
+      this.balance.uniforms.gains.value.set(r, g, b);
+      this.balance.enabled = Math.abs(r - 1) + Math.abs(g - 1) + Math.abs(b - 1) > 1e-3;
+    }
+    const n = this.night, gain = this.gain;
+    const u = this.sky.material.uniforms;
+    u.skyGain.value = 1 / gain;
+    u.nightAdd.value.set(0.006, 0.009, 0.022).multiplyScalar(n / gain);
+    u.starLevel.value = n > 0.6 ? (0.5 * (n - 0.6)) / 0.4 / gain : 0;
   }
 
   /** The sun the sky and its light are made for (towards it, z up), or none (the sky's light goes). */
@@ -184,7 +258,8 @@ export class Realism {
       this.envKey = key;
     }
     this.scene.environment = this.env.texture;
-    this.scene.environmentIntensity = spec.skyLight;
+    // At night the sky's light fades with it to a moonless glow (its own radiance falls too, the exposure brings it up).
+    this.scene.environmentIntensity = spec.skyLight * ((1 - this.night) + (this.night * 0.15) / this.gain);
   }
 
   private build(): void {
@@ -199,6 +274,15 @@ export class Realism {
     this.occlusion.blendIntensity = 0.9;
     composer.addPass(this.renderPass);
     composer.addPass(this.occlusion);
+    // The white balance, on the linear picture before its tone mapping (off while its gains are 1).
+    this.balance = new ShaderPass({
+      name: 'WhiteBalance',
+      uniforms: { tDiffuse: { value: null }, gains: { value: new THREE.Vector3(1, 1, 1) } },
+      vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: 'uniform sampler2D tDiffuse; uniform vec3 gains; varying vec2 vUv; void main() { vec4 c = texture2D(tDiffuse, vUv); gl_FragColor = vec4(c.rgb * gains, c.a); }',
+    });
+    this.balance.enabled = false;
+    composer.addPass(this.balance);
     composer.addPass(new OutputPass());
     this.composer = composer;
     this.resize(w, h);

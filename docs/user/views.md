@@ -222,6 +222,29 @@ A material with a **texture set** or maps of its own (Manage → **Materials** �
 
 The realistic view takes some of its numbers (the shade in corners, the shadows' quality, the sun's colour) from [BimGo](https://github.com/aussieBIMguru/BimGo), by Aussie BIM Guru (MIT-0).
 
+### Lights and the night
+
+In the Medium and Realistic views the light fixtures light the model: an MEP **light** (see [MEP](mep.md#nodes)), a lamp from the furniture library once you give it light data, and anything made of a material that **Lights** (Manage → **Materials** → Appearance, next to **Glows**). Select one and its **Light** section in the properties says what it gives off:
+
+- **Kind**: a **point** that lights every way (a bare lamp), a **spot** with its **Beam angle** (full light inside it) and **Field angle** (no light past it), or a **panel** that lights out of its face, its size its own or the fixture's.
+- **Luminous flux** in lumens, as the maker states it, and **Colour temperature** in kelvin (2700 K a warm lamp, 4000 K neutral, 6500 K daylight); the swatch shows the colour.
+- **Distribution**: the kind's own, one of Lapin's five (narrow and medium downlights, a wide flood, a wall washer, a pendant that lights up and down), or a maker's **IES file** (LM-63, type C) brought in with the button beside it; the file is kept in the project.
+- **From** (under the fixture, its middle, near its top as in a lamp shade) and **Aimed** (down or up), and **On**.
+
+On a fixture with a type the data are the type's, so every fixture of the type lights alike; **On** is each fixture's own. A light placed from the MEP tab starts at 1000 lm and 3500 K; fixtures placed in older projects, and anything without data, give no light until you give them some (**Make it a light**). IFC exports carry the data as **Lapin_Light** and as IFC light sources.
+
+![A light's Light section](shots/light-properties.webp)
+
+Set an hour after sunset in View → **Sun and shadows** and the view shows the night: the sky turns dark blue with its stars, the sun goes out and the exposure opens, so the rooms are lit by their lamps. By day the same lamps are faint beside the daylight, as they are.
+
+![A living room at night, lit by two ceiling lights, a pendant and a spot on the far corner](shots/lights-night.webp)
+
+![The same room at 13:00](shots/lights-day.webp)
+
+View → **Display quality** has, for the Medium and Realistic views, the camera's **Exposure** (stops brighter or darker than the automatic exposure) and its **White balance** (automatic: daylight by day and 4000 K at night, so warm lamps stay warm; or a colour temperature of your own). Both are kept on this computer.
+
+The view draws the lights nearest to you and to what you look at first, a few of them with shadows, the others without, and none farther than 30 m (Medium) or 60 m (Realistic); its lower right corner says how many (*12 / 48 lights, 4 with shadows*). A light drawn without shadows lights through walls, and light does not bounce off walls yet: a ceiling above downlights stays dark. A rendered image (to come) takes every light.
+
 ## Modelling in 3D
 
 The 3D view is a place to model in, not only to look: elements are moved and copied there as in a plan, snapped to the other elements' corners, edges and faces.

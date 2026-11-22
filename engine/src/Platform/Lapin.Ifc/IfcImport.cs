@@ -758,7 +758,7 @@ public static partial class IfcImport
             foreach (var props in Rels.PropertiesOf[mat.Id])
             {
                 var setName = Str(props[0]);
-                if (setName is not { Length: > 0 } || IfcExport.IsIntentSet(setName)) continue;
+                if (setName is not { Length: > 0 } || IfcExport.IsIntentSet(setName) || setName == IfcExport.LightSetName) continue;
                 string? pset = setName == StandardPsets.MaterialOwn || setName == StandardPsets.Own ? null : setName;
                 foreach (var p in Items(props[2]))
                 {

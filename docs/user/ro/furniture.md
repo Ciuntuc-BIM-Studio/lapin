@@ -169,6 +169,8 @@ Cel mai repede ajungi la unul din [catalogul de pus](interface.md#catalogul-de-p
 
 În plan o piesă dintr-un model e corpul ei văzut de sus, desenat de motor fără liniile ascunse; o canapea își arată și locurile, la 1:50 și mai fin. O lampă agățată mai sus de 1,2 m se desenează ca element de deasupra planului de secțiune. Mesele, scaunele, covoarele și lămpile de sine stătătoare stau unde dai clic; canapelele, fotoliile și măsuțele laterale se lipesc de cel mai apropiat perete, ca restul mobilierului.
 
+O lampă luminează vederile 3D Mediu și Realist după ce are date de lumină: selecteaz-o și alege **Fă-l sursă de lumină** în secțiunea ei **Corp de iluminat** (pe tipul ei, deci toate lămpile tipului luminează), apoi lumenii și temperatura de culoare, iar la **De la** aproape de vârf, pentru un abajur. Vezi [Lumini și noaptea](views.md#lumini-și-noaptea).
+
 ![Dialogul Tipuri de mobilier cu o canapea dintr-un model: galeria, mărimea, stilurile și culorile, lângă previzualizarea motorului](shots/furniture-models-types.webp)
 
 ![O cameră de zi mobilată din modele: o canapea întinsă la 2,6 m, fotolii, o măsuță de cafea pe un covor, o lampă de podea și plante](shots/furniture-models-3d.webp)
