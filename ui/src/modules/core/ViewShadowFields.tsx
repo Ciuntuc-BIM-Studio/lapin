@@ -6,6 +6,7 @@
  */
 
 import { ColourField } from '../../shell/ColourField';
+import { parseDecimal } from '../../shell/parseDecimal';
 import { useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute } from '../../engine/session';
@@ -37,7 +38,7 @@ export function ViewShadowFields({ view }: { view: NodeDto }) {
     setHour(hourText(num('shadowHour', 14)));
   }, [view.id, view.props.shadowAzimuth, view.props.shadowAltitude, view.props.shadowHour]); // eslint-disable-line react-hooks/exhaustive-deps
   const set = (patch: Record<string, unknown>) => void execute('view.setShadows', { id: view.id, ...patch });
-  const parse = (s: string) => { const v = Number(s.replace(',', '.')); return Number.isFinite(v) ? v : null; };
+  const parse = (s: string) => parseDecimal(s);
   const parseHour = (s: string) => {
     const m = /^(\d{1,2})(?::(\d{2}))?$/.exec(s.trim());
     return m ? Number(m[1]) + (m[2] ? Number(m[2]) / 60 : 0) : parse(s);

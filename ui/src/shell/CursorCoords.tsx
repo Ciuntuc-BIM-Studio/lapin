@@ -25,7 +25,7 @@ export const SNAP_LABELS: Record<SnapMode, string> = {
   tangent: 'Tangent', wallAxis: 'Wall axis', gridAxis: 'Grid axis',
 };
 
-const fixed3 = (v: number) => v.toFixed(3);
+export const fixed3 = (v: number) => v.toFixed(3);
 
 export function CursorCoords() {
   const view = useUi((s) => s.view);

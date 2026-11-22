@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Vec2 } from '../../platform/module';
 import type { DrawingDto } from '../drawing';
 import { SnapIndex, findSnap, isLineSnap, modesFor, snapsOn, type SnapMode } from './snaps';
-import { usePrefs } from '../../app/prefs';
+import { DEFAULT_PREFS, usePrefs } from '../../app/prefs';
 import { fromFrame, isIdentity, toFrame, ucsOf, useLocation, type Frame } from '../../app/location';
 import { fromJson, intersectPrims, keyPoints, nearestOnShape, prims, type Shape } from './shapes';
 import { applyOrtho } from './input';
@@ -66,7 +66,7 @@ export function resolveAim(raw: Vec2, c: AimInput): Aimed {
     const t = trackOnOrtho(applyOrtho(base, raw), base, pool, tol);
     if (t) return { point: t.point, kind: 'point', guides: t.guides, lock: 'ortho' };
   } else {
-    const t = track(raw, pool, tol, { base, polarStep: c.polar ? c.polarStep ?? 45 : null });
+    const t = track(raw, pool, tol, { base, polarStep: c.polar ? c.polarStep ?? DEFAULT_PREFS.polarStep : null });
     if (t) return { point: t.point, kind: 'point', guides: t.guides, lock: t.guides.some((g) => g.kind === 'polar') ? 'polar' : 'tracking' };
   }
   if (s) {

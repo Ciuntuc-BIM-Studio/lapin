@@ -12,6 +12,7 @@ import { execute, useSession } from '../../engine/session';
 import { LengthField } from '../../shell/cells';
 import { reliefArgs } from '../../viewport/textures';
 import { fetchBytes, mapUrl, setArgs, setBytes, setKey, setOf, TEXTURE_SETS, type TextureSet } from '../../viewport/textureLibrary';
+import { commitDecimalField } from '../../shell/parseDecimal';
 
 const MAX = 2048;
 
@@ -167,7 +168,7 @@ export function ReliefMaps({ materialId, strengths }: { materialId: string; stre
             <button type="button" className="btn compact" onClick={() => choose(key)}><ImagePlus size={13} />{image ? 'Replace…' : 'Import image…'}</button>
             {image && <>
               {strength && <label className="small" title="How strongly it shows: 1 as the image says, 0 flat">Strength <input className="num" data-field={`material-${strength}`} key={`${materialId}${strength}${strengths[strength]}`} defaultValue={strengths[strength]}
-                onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v) && v >= 0 && v <= max && v !== strengths[strength]) set({ [strength]: v }); }} /></label>}
+                onBlur={(e) => commitDecimalField(e.target, strengths[strength], { min: 0, max }, (v) => set({ [strength]: v }))} /></label>}
               <button type="button" className="icon" title="Take the image off" onClick={() => set({ [key]: null })}><Trash2 size={13} /></button>
             </>}
           </div>

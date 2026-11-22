@@ -10,7 +10,6 @@ export type Face = (typeof FACES)[number];
 export const SECTION_ROLES = ['section:x', 'section:y', 'section:z'] as const;
 export type SectionRole = (typeof SECTION_ROLES)[number];
 
-export const SCALES = [1, 2, 5, 10, 15, 20, 25, 50, 100] as const;
 export const PAPERS = ['A4', 'A3', 'A2', 'A1', 'A0'] as const;
 export type Projection = 'iso-e' | 'third-angle';
 export type Dims = 'overall' | 'features' | 'none';

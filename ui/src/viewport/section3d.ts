@@ -9,6 +9,7 @@
  * (x, y) is origin + right·x + up·y, and `dir` looks into the scene.
  */
 
+import { PX_PER_MM } from './zoom';
 import { create } from 'zustand';
 import type { CameraPose, Vec3 } from './camera';
 import type { PenDto } from './drawing';
@@ -207,9 +208,6 @@ export function cssColor(s: string | null | undefined): { hex: string; opacity: 
   if (/^#[0-9a-f]{8}$/i.test(s)) return { hex: s.slice(0, 7), opacity: parseInt(s.slice(7), 16) / 255 };
   return { hex: s, opacity: 1 };
 }
-
-/** CSS pixels per paper millimetre: a pen drawn on the cut as wide as on a sheet at 100 %. */
-const PX_PER_MM = 96 / 25.4;
 
 /** A pen's width on the screen, in CSS pixels (a hairline still one pixel). */
 export const penPixels = (mm: number): number => Math.max(1, (mm || 0) * PX_PER_MM);

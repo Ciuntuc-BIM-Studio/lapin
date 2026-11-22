@@ -13,7 +13,7 @@ import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, Paintbrush, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
-import { execute, query, useSession } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { HatchSwatch } from '../core/HatchSwatch';
 import { PendingDialog } from '../core/PendingDialog';
@@ -23,7 +23,8 @@ import { useSchemes, type SchemeEntry } from './rooms';
 import { colorLegend } from './roomTools';
 import { withOpacity } from '../../viewport/drawing';
 import { areaText as area, useStandards } from '../../engine/unitsStore';
-import { PatternOptions, type PatternInfo } from '../core/hatchUnits';
+import { PatternOptions } from '../core/hatchUnits';
+import { useHatchNames } from '../core/hatchCache';
 
 
 export function RoomColorsDialog() {
@@ -37,11 +38,10 @@ export function RoomColorsDialog() {
   useStandards((x) => x.units);
   const [picked, setPicked] = useState<string | null>(null);
   const [all, setAll] = useState(false);
-  const [hatches, setHatches] = useState<PatternInfo[]>([]);
+  const hatches = useHatchNames();
   const close = () => useUi.setState({ dialog: null });
 
   useEffect(() => { if (uiView === 'plan') void frontView().then(setViewId); }, [uiView]);
-  useEffect(() => { void query<PatternInfo[]>('hatch.list').then((r) => r && setHatches(r)); }, []);
 
   const view = viewId ? nodes.get(viewId) : undefined;
   const scheme = s?.schemes.find((x) => x.id === (picked ?? s.viewScheme ?? s.schemes[0]?.id)) ?? null;

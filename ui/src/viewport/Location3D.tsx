@@ -6,13 +6,13 @@
  * size at any zoom and never hide behind the model.
  */
 
+import { fixed3 } from '../shell/CursorCoords';
 import * as THREE from 'three';
 import { useCamera, type Vec3 } from './camera';
 import { basePoint, surveyPoint, useLocation } from '../app/location';
 import { formatLevel } from '../engine/unitsStore';
 import { t } from '../i18n';
 
-const fixed3 = (v: number) => v.toFixed(3);
 
 export function Location3D({ camera, canvas }: { camera: React.RefObject<THREE.Camera | null>; canvas: React.RefObject<HTMLElement | null> }) {
   useCamera();

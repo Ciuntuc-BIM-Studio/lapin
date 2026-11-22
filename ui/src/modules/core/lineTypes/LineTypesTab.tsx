@@ -5,6 +5,7 @@
  * and chosen, a name the project has with other dashes asking update / keep both / skip) and Export .lin….
  */
 
+import { parseDecimal } from '../../../shell/parseDecimal';
 import { useEffect, useState } from 'react';
 import { Copy, FileDown, FileUp, Plus, Trash2, X } from 'lucide-react';
 import { notify } from '../../../app/store';
@@ -198,7 +199,7 @@ function LineTypeEditor({ cur, taken, onSelect, onCopy }: {
               {([d, g] as number[]).map((v, part) => (
                 <td key={part}>
                   <input className="num" disabled={!o} data-lt-value={`${i}-${part}`} key={`${i}${part}${v}`} defaultValue={String(v)}
-                    onBlur={(e) => { const n = Number(e.target.value.replace(',', '.')); if (Number.isFinite(n) && n !== v) commit(setPairValue(pairs, i, part as 0 | 1, n)); else e.target.value = String(v); }} />
+                    onBlur={(e) => { const n = parseDecimal(e.target.value); if (n !== null && n !== v) commit(setPairValue(pairs, i, part as 0 | 1, n)); else e.target.value = String(v); }} />
                 </td>
               ))}
               <td>{o && pairs.length > 1 && <button type="button" className="icon mini" title="Remove this dash and gap" onClick={() => commit(removePair(pairs, i))}><X size={11} /></button>}</td>

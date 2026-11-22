@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { pictureUv } from './textures';
+import { imageSignature, pictureUv } from './textures';
 
 describe('an entourage picture', () => {
   it.each([
@@ -23,5 +23,15 @@ describe('an entourage picture', () => {
     });
     expect(Array.from(geometry.getAttribute('position').array)).toEqual(Array.from(new Float32Array(positions)));
     geometry.dispose();
+  });
+});
+
+describe('an image texture\'s signature', () => {
+  it('tells a replaced picture from the old one under the same id', () => {
+    const a = `data:image/png;base64,${'A'.repeat(500)}`;
+    const b = `data:image/png;base64,${'A'.repeat(250)}B${'A'.repeat(249)}`;
+    expect(imageSignature(a)).toBe(imageSignature(a));
+    expect(imageSignature(a)).not.toBe(imageSignature(`${a}A`));
+    expect(imageSignature(a)).not.toBe(imageSignature(b));
   });
 });

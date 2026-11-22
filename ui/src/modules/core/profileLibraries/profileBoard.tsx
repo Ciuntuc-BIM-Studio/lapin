@@ -8,6 +8,7 @@
  * libraries to keep it, as the editor did; Cancel goes back to them. A product without Studio keeps the editor in the dialog.
  */
 
+import { parseDecimal } from '../../../shell/parseDecimal';
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { create } from 'zustand';
@@ -69,7 +70,7 @@ async function cancel(viewId: string): Promise<void> {
 
 const toMm = (rings: Pt[][]): MmRing[] => rings.map((r) => r.map(([x, y]): Pt => [Math.round(x * 1e6) / 1e3, Math.round(y * 1e6) / 1e3]));
 const toM = (rings: MmRing[]): Pt[][] => rings.map((r) => r.map(([x, y]): Pt => [x / 1000, y / 1000]));
-const num = (v: string) => { const n = Number(v.trim().replace(',', '.')); return Number.isFinite(n) ? n : null; };
+const num = (v: string) => parseDecimal(v);
 
 /** The side form: name, material, library; the shapes to start from; a chamber; the size; a ring's points (mm). */
 function ProfilePanel({ board }: { board: Board }) {

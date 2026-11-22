@@ -9,6 +9,7 @@
  * refitted to its new size.
  */
 
+import { parseDecimal } from '../../shell/parseDecimal';
 import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
@@ -635,7 +636,7 @@ function SizeRow({ label, sizes, field, onCommit }: { label: string; sizes: numb
       <span className="row wrap" style={{ gap: 4 }}>
         {sizes.map((v, i) => (
           <input key={`${i}:${v}`} data-field={`${field}-${i}`} className="num mini" defaultValue={String(v)} title={i === sizes.length - 1 ? 'The last one takes up the rest' : 'mm'} style={{ width: 64 }}
-            onBlur={(e) => { const n = Number(e.target.value.replace(',', '.')); if (n > 0 && Math.abs(n - v) > 0.05) onCommit(i, n); }}
+            onBlur={(e) => { const n = parseDecimal(e.target.value, { min: 0 }); if (n === null || n <= 0) e.target.value = String(v); else if (Math.abs(n - v) > 0.05) onCommit(i, n); }}
             onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
         ))}
         <span className="muted small">mm</span>
@@ -689,7 +690,7 @@ function PaneEditor({ spec, preview, pane, operations, onPick, onPanels, onGrid,
   const infill = cur.infill ?? (spec.kind === 'door' && !['fixed'].includes(cur.operation) && !(catalogWindowOps.has(cur.operation)) ? (cur.glazed ? 'glass' : 'solid') : 'glass');
   const doSplit = (axis: 'col' | 'row') => {
     const total = axis === 'col' ? width : height;
-    const value = Number((axis === 'col' ? at.col : at.row).replace(',', '.')) || total / 2;
+    const value = parseDecimal(axis === 'col' ? at.col : at.row) || total / 2;
     const r = split(g, axis === 'col' ? colSizes : rowSizes, cur, axis, value);
     if (!r) { notify('Each part must keep 50 mm at least.'); return; }
     onGrid(r.spec as unknown as GridSpec);

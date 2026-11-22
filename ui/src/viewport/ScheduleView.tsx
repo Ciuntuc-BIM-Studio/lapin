@@ -198,7 +198,7 @@ export function ScheduleView() {
         }}
         onPointerDown={(e) => { if (middleTwice.current(e)) { fit(); return; } drag.current = { x: e.clientX, y: e.clientY, start: v }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
         onPointerMove={(e) => { const g = drag.current; if (g) setZ({ ...g.start, ox: g.start.ox + e.clientX - g.x, oy: g.start.oy + e.clientY - g.y }); }}
-        onPointerUp={() => { drag.current = null; }}>
+        onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }} onLostPointerCapture={() => { drag.current = null; }}>
         {d && <><rect x={v.ox - 5 * v.k} y={v.oy - 5 * v.k} width={(d.w + 10) * v.k} height={(d.h + 10) * v.k} className="paper-sheet" />
           <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} minText={1} /></>}
       </svg>

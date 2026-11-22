@@ -1,5 +1,6 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
+import { runSteps } from '../../viewport/grips';
 import { LibraryImportHost } from '../../platform/ImportPreview';
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
@@ -8,7 +9,7 @@ import { AlignStartVertical, ArrowLeftRight, CornerDownRight, CopyPlus, Slash, S
 import { openTempDimProperties, TEMP_DIM_DIALOG } from '../../viewport/tempDimProps';
 import { AngleDims } from '../../viewport/AngleTempDims';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
-import { execute, useSession } from '../../engine/session';
+import { useSession } from '../../engine/session';
 import { notify } from '../../app/store';
 import { nextVisualStyle, XRAY_NOTICE } from '../../app/visualStyle';
 import { ribbonTabs, similarFor } from '../../platform/modules';
@@ -177,7 +178,8 @@ function restyleJoins(args: Record<string, unknown>) {
   const selected = useUi.getState().selected;
   const calls = JOIN_OWNERS.map((o) => ({ o, ids: selected.filter((id) => o.classes.includes(nodes.get(id)?.type ?? '')) })).filter((c) => c.ids.length);
   if (!calls.length) { notify('Select the walls, beams or strip footings whose corners to change.'); return; }
-  for (const c of calls) void execute(c.o.command, { ids: c.ids, ...args });
+  // Walls and beams together are one action: one undo step.
+  void runSteps(calls.map((c) => ({ command: c.o.command, args: { ids: c.ids, ...args } })));
 }
 const joinTool = (label: string, id: string, icon: ToolDef['icon'], args: Record<string, unknown>): ToolDef => ({ id, label, icon, run: () => restyleJoins(args) });
 
@@ -323,7 +325,8 @@ const core: LapinModule = {
           } },
         ...sectionTools,
         { id: 'view.elevations', label: 'Elevations', icon: ElevationIcon, run: () => void (async () => {
-          for (const direction of ['south', 'east', 'north', 'west']) await execute('view.create', { kind: 'elevation', direction, discipline: frontDiscipline() });
+          const discipline = frontDiscipline();
+          await runSteps(['south', 'east', 'north', 'west'].map((direction) => ({ command: 'view.create', args: { kind: 'elevation', direction, discipline } })));
         })() },
         // Another view drawn in this one, live, at its own scale (decision 576): for details, as rebar's sections across.
         insetTool,

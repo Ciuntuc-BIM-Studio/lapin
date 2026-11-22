@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import type { NodeDto } from '../engine/protocol';
 import { rotateUv } from './look';
+import { useSession } from '../engine/session';
 
 export type TextureKind = 'brick' | 'brick-end' | 'concrete' | 'wood' | 'wood-end' | 'plaster' | 'stone' | 'metal' | 'insulation' | 'earth' | 'tiles';
 /** Which face of a part a texture is for: along it, its ends (cut across), its top and bottom. */
@@ -370,12 +371,43 @@ export function whenImagesLoad(f: () => void): () => void {
   return () => { listeners.delete(f); };
 }
 
+/** The image's length and a sample of its bytes: what tells one picture from another under one id. */
+export function imageSignature(url: string): string {
+  let h = 0;
+  const step = Math.max(1, Math.floor(url.length / 64));
+  for (let i = 0; i < url.length; i += step) h = (Math.imul(h, 31) + url.charCodeAt(i)) | 0;
+  return `${url.length}.${(h >>> 0).toString(36)}`;
+}
+
+/** Free the image textures whose image id `keep` refuses. */
+export function dropImageTextures(keep: (id: string) => boolean): void {
+  for (const [k, t] of images) {
+    if (keep(k.slice(0, k.indexOf('@')))) continue;
+    t.dispose();
+    images.delete(k);
+  }
+}
+
+// An image whose node is gone (the project closed, the image deleted) frees its texture.
+let lastNodes: unknown = null;
+if (typeof useSession?.subscribe === 'function') {
+  useSession.subscribe((st) => {
+    if (st.nodes === lastNodes) return;
+    lastNodes = st.nodes;
+    if (images.size) dropImageTextures((id) => st.nodes.has(id));
+  });
+}
+
 /** The texture of an image (loaded once per image and wrap), repeated; shared by every mesh, so never freed with one. */
 export function imageTexture(img: OwnImage, wrap: THREE.Wrapping = THREE.RepeatWrapping, data = false): THREE.Texture {
   // A relief map is data, not a colour: loaded on its own, with no colour space.
-  const key = (wrap === THREE.RepeatWrapping ? img.id : `${img.id}:${wrap}`) + (data ? ':data' : '');
+  // Keyed by the image's id and its content, so a picture replaced under the same id is loaded again, not shown as it was.
+  const sig = `${img.id}@${imageSignature(img.url)}`;
+  const key = sig + (wrap === THREE.RepeatWrapping ? '' : `:${wrap}`) + (data ? ':data' : '');
   let t = images.get(key);
   if (!t) {
+    // What an older version of this image left behind is freed.
+    for (const [k, old] of images) if (k.startsWith(`${img.id}@`) && !k.startsWith(`${sig}:`) && k !== sig) { old.dispose(); images.delete(k); }
     t = new THREE.TextureLoader().load(img.url, () => { for (const f of listeners) f(); });
     t.wrapS = t.wrapT = wrap;
     t.colorSpace = data ? THREE.NoColorSpace : THREE.SRGBColorSpace;

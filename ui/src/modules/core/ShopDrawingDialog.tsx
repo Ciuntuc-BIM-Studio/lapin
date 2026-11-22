@@ -6,6 +6,8 @@
  * Create makes the drawing in one undo step (made again, it updates the same one) and opens its sheet.
  */
 
+import { useStandards } from '../../engine/unitsStore';
+import { scaleOptions } from '../../viewport/viewScale';
 import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
@@ -15,7 +17,7 @@ import { DrawingLayer } from '../../viewport/DrawingLayer';
 import { drawsOnDark, type DrawingDto } from '../../viewport/drawing';
 import { fitBounds } from './typePreviewState';
 import {
-  FACES, PAPERS, SCALES, SECTION_ROLES, axisRange, clampStation, defaultChoices, drawableElement, drawingArgs, mm, newSection, nothingChosen,
+  FACES, PAPERS, SECTION_ROLES, axisRange, clampStation, defaultChoices, drawableElement, drawingArgs, mm, newSection, nothingChosen,
   type Choices, type Face, type RulesDto, type SectionRole,
 } from './shopDrawing';
 
@@ -30,6 +32,7 @@ const AXIS_COLOUR = { x: '#d6372b', y: '#2f9e44', z: '#1c6ed5' };
 const AXIS_LABEL: Record<SectionRole, string> = { 'section:x': 'X · along the part', 'section:y': 'Y · across', 'section:z': 'Z · up' };
 
 export function ShopDrawingDialog() {
+  const projectScales = useStandards((s) => s.scales);
   const selected = useUi((s) => s.selected);
   const nodes = useSession((s) => s.nodes);
   const element = useMemo(() => drawableElement(selected, nodes), [selected, nodes]);
@@ -126,7 +129,7 @@ export function ShopDrawingDialog() {
                 </select></label>
                 <label>Scale<select data-testid="shop-scale" value={c.scale ?? ''} onChange={(e) => set({ scale: e.target.value ? Number(e.target.value) : null })}>
                   <option value="">Auto</option>
-                  {SCALES.map((s) => <option key={s} value={s}>1:{s}</option>)}
+                  {scaleOptions(projectScales.filter((x) => x <= 100), c.scale ?? 0).filter(Boolean).map((s) => <option key={s} value={s}>1:{s}</option>)}
                 </select></label>
                 <label>Paper<select data-testid="shop-paper" value={c.paper ?? ''} onChange={(e) => set({ paper: e.target.value || null })}>
                   <option value="">Auto</option>

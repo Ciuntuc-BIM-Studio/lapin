@@ -8,6 +8,8 @@
  * and move the view.
  */
 
+import { SNAP_REACH_PX } from './snap3d';
+import { screenPath } from './screenPath';
 import { keyIsForField } from './overlayKeys';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
@@ -21,7 +23,6 @@ import { formatLength, parseLength } from './liveInput';
 import { claimValue } from '../app/valueOwner';
 
 type Pt = { x: number; y: number };
-const SNAP_PX = 10;
 
 export function FaceSketch3D({ camera, canvas }: { camera: React.RefObject<THREE.Camera | null>; canvas: React.RefObject<HTMLElement | null> }) {
   useCamera();
@@ -69,7 +70,7 @@ export function FaceSketch3D({ camera, canvas }: { camera: React.RefObject<THREE
       const st = useFaceSketch.getState();
       const near = [...snapPoints(spec.outline), ...(st.pts.length >= 3 && spec.shape === 'polygon' ? [{ at: st.pts[0], what: 'Close the shape' }] : [])]
         .map((s) => ({ ...s, px: toScreen(s.at) }))
-        .filter((s) => s.px && Math.hypot(s.px.x - sx, s.px.y - sy) < SNAP_PX)
+        .filter((s) => s.px && Math.hypot(s.px.x - sx, s.px.y - sy) < SNAP_REACH_PX)
         .sort((a, b) => Math.hypot(a.px!.x - sx, a.px!.y - sy) - Math.hypot(b.px!.x - sx, b.px!.y - sy))[0];
       return near ? { at: near.at, what: near.what } : { at: roundOnFace(spec.frame, hit, e.shiftKey ? 0.1 : 0.01), what: null };
     };
@@ -129,11 +130,7 @@ export function FaceSketch3D({ camera, canvas }: { camera: React.RefObject<THREE
     if (next && last) label = formatLength(distance3(last, next));
   }
 
-  const pathOf = (list: Vec3[], close: boolean) => {
-    const s = list.map(toScreen);
-    if (s.length < 2 || s.some((p) => !p)) return null;
-    return s.map((p, i) => `${i ? 'L' : 'M'}${p!.x.toFixed(1)} ${p!.y.toFixed(1)}`).join('') + (close ? 'Z' : '');
-  };
+  const pathOf = (list: Vec3[], close: boolean) => screenPath(list.map(toScreen), close);
   const facePath = pathOf(spec.outline, true);
   const shapePath = pathOf(shape, spec.shape !== 'polygon' || shape.length >= 3);
   const cur = cursor && toScreen(cursor);

@@ -33,7 +33,7 @@ export function useStandardProps(cls: string): [string, string, string][] {
   const [list, setList] = useState<[string, string, string][]>([]);
   useEffect(() => {
     let live = true;
-    void (table ??= query<StandardTable>('params.standardSets')).then((t) => {
+    void (table ??= query<StandardTable>('params.standardSets').then((t) => { if (!t) table = null; return t; })).then((t) => {
       if (!live || !t) return;
       setList(t.sets.filter((s) => s.classes.some((c) => c === cls || `${c}Type` === cls))
         .flatMap((s) => Object.entries(s.properties).map(([n, k]) => [s.name, n, k] as [string, string, string])));

@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useLang } from '../i18n';
-import { useDialogFocus } from './dialogFocus';
+import { useDialogFocus, useEscapeClose } from './dialogFocus';
 import {
   adoptCode, forgetMe, markSeen, refresh, sendMessage, setActive, setNickname, unreadOf, useReplies, validSecret,
   type InboxReport,
@@ -24,11 +24,7 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const focus = useDialogFocus<HTMLDivElement>();
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  useEscapeClose(onClose);
   // Opened: read the inbox now (a choice of the user's, so even when replies are stopped).
   useEffect(() => {
     if (!settings) return;

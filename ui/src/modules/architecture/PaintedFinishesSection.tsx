@@ -3,6 +3,7 @@
  * zones on the element and lets the user clear them per face or all at once (forum #124).
  */
 
+import { runSteps } from '../../viewport/grips';
 import { Eraser } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
@@ -23,9 +24,8 @@ export function PaintedFinishesSection({ node }: { node: NodeDto }) {
   if (zones.length === 0) return null;
   const faces = [...new Set(zones.map((z) => String(z.props.face ?? '')))].filter(Boolean);
   const clearFace = (face: string) => void execute('architecture.clearFinish', { hostId: node.id, face, all: true });
-  const clearAll = async () => {
-    for (const face of faces) await execute('architecture.clearFinish', { hostId: node.id, face, all: true });
-  };
+  // One undo step for all the faces.
+  const clearAll = () => runSteps(faces.map((face) => ({ command: 'architecture.clearFinish', args: { hostId: node.id, face, all: true } })));
   return (
     <div className="painted-finishes" data-testid="painted-finishes-section">
       <ul className="part-list">

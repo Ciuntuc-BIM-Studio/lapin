@@ -34,6 +34,7 @@ import { lookOf, LOOK_RANGES, type Look } from '../../viewport/look';
 import { LengthField } from '../../shell/cells';
 import { MaterialDataTab } from './MaterialDataTab';
 import { dropStash, returnToDialog } from './dialogReturn';
+import { commitDecimalField } from '../../shell/parseDecimal';
 
 /** IfcMaterial.Category as the interface offers it (Materials.Categories in the engine). */
 const MATERIAL_CATEGORIES = ['Structure', 'Finish', 'Insulation', 'Membrane', 'Other'];
@@ -310,7 +311,7 @@ export function MaterialsDialog() {
                         </>
                       )}
                       <label className="small" title="The texture's turn on the faces, degrees">Rotation <input className="num" data-field="material-rotation" key={`${m.id}r${look.textureRotation}`} defaultValue={look.textureRotation}
-                        onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v) && v >= -360 && v <= 360 && v !== look.textureRotation) update({ textureRotation: v }); }} />°</label>
+                        onBlur={(e) => commitDecimalField(e.target, look.textureRotation, { min: -360, max: 360 }, (v) => update({ textureRotation: v }))} />°</label>
                     </div>
                     <TextureSets materialId={m.id} />
                     <OwnImage materialId={m.id} />
@@ -326,17 +327,17 @@ export function MaterialsDialog() {
                     ))}
                     <div className="row">
                       <label className="small" title="Index of refraction: glass 1.52, water 1.33, diamond 2.42">IOR <input className="num" data-field="material-ior" key={`${m.id}i${look.ior}`} defaultValue={look.ior}
-                        onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (v >= 1 && v <= 3 && v !== look.ior) update({ ior: v }); }} /></label>
+                        onBlur={(e) => commitDecimalField(e.target, look.ior, { min: 1, max: 3 }, (v) => update({ ior: v }))} /></label>
                       <label className="check" title="The light it gives off, as a lamp's diffuser"><input type="checkbox" checked={look.emissive != null} onChange={(e) => update({ emissive: e.target.checked ? '#fff4e0' : '' })} /> Glows</label>
                       {look.emissive && <>
                         <ColourField value={look.emissive} onChange={(v) => update({ emissive: v })} />
                         <label className="small">Strength <input className="num" key={`${m.id}e${look.emissiveStrength}`} defaultValue={look.emissiveStrength}
-                          onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (v >= 0 && v <= 100 && v !== look.emissiveStrength) update({ emissiveStrength: v }); }} /></label>
+                          onBlur={(e) => commitDecimalField(e.target, look.emissiveStrength, { min: 0, max: 100 }, (v) => update({ emissiveStrength: v }))} /></label>
                         {/* A glowing material as a light (docs/plan-render.md, S2): what is made of it lights the medium and realistic views. */}
                         <label className="check" title="What is made of it lights the medium and realistic views as a lamp does"><input type="checkbox" data-field="material-light" checked={!!matLight(m.id)}
                           onChange={(e) => void execute('light.set', e.target.checked ? { ids: [m.id], kind: 'area', lumens: 1000, kelvin: 3500, at: 'centre' } : { ids: [m.id], clear: true })} /> Lights</label>
                         {!!matLight(m.id) && <label className="small">lm <input className="num" key={`${m.id}l${String(matLight(m.id)?.lumens)}`} defaultValue={matLight(m.id)?.lumens ?? 1000}
-                          onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (v >= 0 && v <= 1e6) void execute('light.set', { ids: [m.id], lumens: v }); }} /></label>}
+                          onBlur={(e) => commitDecimalField(e.target, matLight(m.id)?.lumens ?? 1000, { min: 0, max: 1e6 }, (v) => void execute('light.set', { ids: [m.id], lumens: v }))} /></label>}
                       </>}
                     </div>
                     <p className="muted small">What is not set comes from the name: glass is clear, a metal metallic, a tile glossy. The 3D exports name each material as here, with these values.</p>

@@ -30,6 +30,7 @@ import { EXT_SUPPRESS, EXT_SUPPRESS_LABELS } from './dimensionLines';
 import { TagRulesEditor } from './TagRulesEditor';
 import type { TagRuleDto } from './tagRules';
 import { FieldPicker } from '../../shell/FieldPicker';
+import { parseDecimal } from '../../shell/parseDecimal';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
 type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[]; tableStyles?: { id: string; name: string; cells?: boolean; table?: { rows?: unknown[]; cols?: unknown[] } }[] };
@@ -209,7 +210,13 @@ export function StandardsDialog() {
       // Decimals: empty is the unit's usual (none in mm, one in cm, two in m, 1/16" in imperial), kept as −1.
       case 'decimals': return <input className="num" key={`${e.id}${c.key}${v}`} defaultValue={typeof v === 'number' && v >= 0 ? String(v) : ''} placeholder="auto"
         title="Empty: the unit's usual (none in mm, one in cm, two in m; 1/16&quot; in feet and inches, where 1 is 1/8&quot; and 3 is 1/32&quot;)"
-        onBlur={(ev) => { const t = ev.target.value.trim(); const n = t === '' ? -1 : Math.round(Number(t.replace(',', '.'))); if (Number.isFinite(n) && n >= -1 && n !== (typeof v === 'number' ? v : -1)) put(n); }} />;
+        onBlur={(ev) => {
+          const t = ev.target.value.trim();
+          const n = t === '' ? -1 : parseDecimal(t, { min: -1, integer: true });
+          const stored = typeof v === 'number' ? v : -1;
+          if (n === null) ev.target.value = stored >= 0 ? String(stored) : '';
+          else if (n !== stored) put(n);
+        }} />;
       default: {
         const numeric = c.kind === 'mm' || c.kind === 'number';
         return <input className={numeric ? 'num' : undefined} key={`${e.id}${c.key}${v}`} defaultValue={v == null ? '' : String(v)}
@@ -218,7 +225,7 @@ export function StandardsDialog() {
             if (t === String(v ?? '')) return;
             // A style's leader distance left empty: the project's (forum #78).
             if (NULLABLE.has(c.key) && t === '') { put(null); return; }
-            if (numeric) { const n = Number(t.replace(',', '.')); if (Number.isFinite(n) && n >= 0) put(n); }
+            if (numeric) { const n = parseDecimal(t, { min: 0 }); if (n === null) ev.target.value = v == null ? '' : String(v); else put(n); }
             else if (t || c.key === 'inner' || c.key === 'classes') put(t);
           }} />;
       }
@@ -226,11 +233,12 @@ export function StandardsDialog() {
   };
 
   // A marker size typed in the Project tab: empty clears it (the default), a number within its range sets it.
-  const markOption = (key: MarkKey, text: string, was: number | undefined, min: number, max: number) => {
-    const t = text.trim();
+  const markOption = (input: HTMLInputElement, key: MarkKey, was: number | undefined, min: number, max: number) => {
+    const t = input.value.trim();
     if (t === '') { if (was != null) void execute('standards.options', { [key]: null }); return; }
-    const n = Number(t.replace(',', '.'));
-    if (Number.isFinite(n) && n >= min && n <= max && n !== was) void execute('standards.options', { [key]: n });
+    const n = parseDecimal(t, { min, max });
+    if (n === null) input.value = was == null ? '' : String(was);
+    else if (n !== was) void execute('standards.options', { [key]: n });
   };
   const rows = book[tab.list] as Entry[];
   const options = (
@@ -282,8 +290,9 @@ export function StandardsDialog() {
             onBlur={(e) => {
               const t = e.target.value.trim().replace(/^1[:/]/, '');
               if (t === '') { if (was != null) void execute('standards.options', { [row.key]: null }); return; }
-              const n = Number(t.replace(',', '.'));
-              if (Number.isFinite(n) && n >= 1 && n <= 10000 && n !== was) void execute('standards.options', { [row.key]: n });
+              const n = parseDecimal(t, { min: 1, max: 10000 });
+              if (n === null) e.target.value = was == null ? '' : String(was);
+              else if (n !== was) void execute('standards.options', { [row.key]: n });
             }} /></dd>,
         ];
       })}
@@ -294,7 +303,7 @@ export function StandardsDialog() {
         return [
           <dt key={`${row.key}t`} title={row.title}>{row.label}</dt>,
           <dd key={`${row.key}d`}><input className="num" data-field={row.field} key={`${row.key}${was ?? ''}`} defaultValue={was == null ? '' : String(was)} placeholder={row.size ? '10' : String(standard)}
-            onBlur={(e) => markOption(row.key, e.target.value, was, row.size ? 1 : 0.5, row.size ? 50 : 20)} /> mm</dd>,
+            onBlur={(e) => markOption(e.target, row.key, was, row.size ? 1 : 0.5, row.size ? 50 : 20)} /> mm</dd>,
         ];
       })}
       <MarkerSymbolsStandards />

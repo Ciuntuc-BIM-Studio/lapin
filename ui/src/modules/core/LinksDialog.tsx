@@ -110,7 +110,12 @@ export function LinksDialog() {
   }, [cloudIds]);
   // Linked projects whose files changed since they were read (docs/links.md, Hotlinks).
   const [changed, setChanged] = useState<string[]>([]);
-  useEffect(() => { if (links.some((l) => l.props.kind === 'lapin')) void engine.call<string[]>('project.linksChanged', {}).then(setChanged).catch(() => setChanged([])); }, [nodes]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!links.some((l) => l.props.kind === 'lapin')) return;
+    let live = true;
+    void engine.call<string[]>('project.linksChanged', {}).then((c) => { if (live) setChanged(c); }).catch(() => { if (live) setChanged([]); });
+    return () => { live = false; };
+  }, [nodes]); // eslint-disable-line react-hooks/exhaustive-deps
   const counts = new Map<string, number>();
   for (const n of nodes.values()) if (typeof n.props.linkId === 'string' && n.storeyId) counts.set(n.props.linkId, (counts.get(n.props.linkId) ?? 0) + 1);
   const run = async (id: string, what: () => Promise<unknown>) => {

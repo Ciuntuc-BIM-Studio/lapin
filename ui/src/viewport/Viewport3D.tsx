@@ -58,7 +58,7 @@ import { changed3d, key3d, recall3d, remember3d } from './viewState3d';
 import { RefPlanes3D, useRefPlaneDrag } from './RefPlanes3D';
 import { Location3D } from './Location3D';
 import { coreBounds, type Bounds } from './zoom';
-import { gridStepAt, usePrefs } from '../app/prefs';
+import { usePrefs } from '../app/prefs';
 import { ucsOf, useLocation } from '../app/location';
 import { planePoint, refPlanesGroup, refPlanesKey, refPlanesOf } from './refPlanes';
 import { useRebar3d } from './rebar3d';
@@ -1452,12 +1452,15 @@ export function Viewport3D() {
     renderer.domElement.addEventListener('pointerdown', onWalkDown);
     renderer.domElement.addEventListener('pointermove', onWalkMove);
     renderer.domElement.addEventListener('pointerup', onWalkUp);
+    // A drag the system takes away (a touch turned into a scroll, a lost capture) must not stay hooked to the cursor.
+    renderer.domElement.addEventListener('pointercancel', onWalkUp);
+    renderer.domElement.addEventListener('lostpointercapture', onWalkUp);
     renderer.domElement.addEventListener('wheel', onWalkWheel, { passive: false });
     window.addEventListener('keydown', onWalkKey, true);
     window.addEventListener('keyup', onWalkKey, true);
     window.addEventListener('blur', onWalkBlur);
 
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { if (!(e.target as HTMLElement)?.closest('input, select, textarea')) setTool(null); } };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) { if (!(e.target as HTMLElement)?.closest('input, select, textarea, [role="dialog"]')) setTool(null); } };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
     // A right-click that did not turn or move the view: the selection's menu (copy to storeys, move to storey).
@@ -1567,6 +1570,8 @@ export function Viewport3D() {
       const next = regionSelection(useUi.getState().selected, ids, regionMode(currentNavStyle(), modsOf(e)));
       useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
     };
+    /** A region the system took away (cancel, lost capture) is dropped, not selected. */
+    const onRegionCancel = () => { regionFrom = null; if (useRegion3d.getState().drag) useRegion3d.setState({ drag: null }); };
     const onRegionKey = (e: KeyboardEvent) => {
       if (e.key !== ' ' || e.repeat || !useRegion3d.getState().drag) return;
       e.preventDefault();
@@ -1576,6 +1581,8 @@ export function Viewport3D() {
     renderer.domElement.addEventListener('pointerdown', onRegionDown);
     renderer.domElement.addEventListener('pointermove', onRegionMove);
     renderer.domElement.addEventListener('pointerup', onRegionUp);
+    renderer.domElement.addEventListener('pointercancel', onRegionCancel);
+    renderer.domElement.addEventListener('lostpointercapture', onRegionCancel);
     window.addEventListener('keydown', onRegionKey, true);
     window.addEventListener('keydown', onKey);
     return () => {
@@ -1613,6 +1620,8 @@ export function Viewport3D() {
       renderer.domElement.removeEventListener('pointerdown', onRegionDown);
       renderer.domElement.removeEventListener('pointermove', onRegionMove);
       renderer.domElement.removeEventListener('pointerup', onRegionUp);
+      renderer.domElement.removeEventListener('pointercancel', onRegionCancel);
+      renderer.domElement.removeEventListener('lostpointercapture', onRegionCancel);
       window.removeEventListener('keydown', onRegionKey, true);
       unregion();
       unstyle();
@@ -1630,6 +1639,8 @@ export function Viewport3D() {
       renderer.domElement.removeEventListener('pointerdown', onWalkDown);
       renderer.domElement.removeEventListener('pointermove', onWalkMove);
       renderer.domElement.removeEventListener('pointerup', onWalkUp);
+      renderer.domElement.removeEventListener('pointercancel', onWalkUp);
+      renderer.domElement.removeEventListener('lostpointercapture', onWalkUp);
       renderer.domElement.removeEventListener('wheel', onWalkWheel);
       renderer.domElement.removeEventListener('wheel', clampWheel, { capture: true });
       window.removeEventListener('keydown', onWalkKey, true);
@@ -1667,7 +1678,7 @@ export function Viewport3D() {
     if (!s) return;
     if (old) { s.remove(old); dispose(old); }
     const u = ucsOf(useLocation.getState().loc);
-    const grid = groundGrid(theme, elevation, gridFixed ? gridStepAt(0, { gridMode: 'fixed', gridStep: gridFixed }) : 1, u ? { x: u.origin.x, y: u.origin.y, angle: u.angle } : null);
+    const grid = groundGrid(theme, elevation, gridFixed || 1, u ? { x: u.origin.x, y: u.origin.y, angle: u.angle } : null);
     grid.visible = gridShown;
     s.add(grid);
     invalidate.current();

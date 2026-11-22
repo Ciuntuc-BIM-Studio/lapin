@@ -24,10 +24,10 @@ export interface CallOptions {
   timeoutMs?: number | null;
 }
 
-/** The default wait for an answer; a stall beyond it is reported, not sat out. */
 /** One who hears each call as it is sent (EngineClient.onCall): what it gives back is told the call's answer. */
 export type CallListener = (method: string, params: Record<string, unknown>) => ((outcome: { result?: unknown; error?: Error }) => void) | void;
 
+/** The default wait for an answer; a stall beyond it is reported, not sat out. */
 export const DEFAULT_TIMEOUT_MS = 30_000;
 /** The calls that change the model: never given up on while the engine is connected (it finishes them whatever we do). */
 export const EDIT_METHODS: ReadonlySet<string> = new Set(['doc.execute', 'doc.undo', 'doc.redo']);
@@ -82,6 +82,9 @@ export class EngineClient {
   constructor(source: (() => Promise<string>) | EngineTransport, private readonly retryMs = 700) {
     this.transport = typeof source === 'function' ? webSocketTransport(source) : source;
   }
+
+  /** Whether a lost or failed connection is tried again (false: the engine in a worker). */
+  get retries(): boolean { return this.transport.retries !== false; }
 
   async start(): Promise<void> {
     this.closed = false;

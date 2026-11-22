@@ -6,7 +6,7 @@
 
 import { promptText } from '../../shell/prompts';
 import { backdropClose } from '../../shell/Dialog';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, FileDown, FileUp, HardDriveDownload, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, query } from '../../engine/session';
@@ -24,9 +24,11 @@ export function FieldAliasesDialog() {
   const [rows, setRows] = useState<FieldAlias[]>([]);
   const [kept, setKept] = useState<ComputerFile[]>([]);
   const version = useLibraryFiles((s) => s.version);
-  const load = useCallback(() => { void aliases().then((a) => setRows(a.map((x) => ({ ...x, sources: [...x.sources] })))); }, []);
+  // Only the newest read lands (an import's read must not be overwritten by the opening one coming late).
+  const ticket = useRef(0);
+  const load = useCallback(() => { const mine = ++ticket.current; void aliases().then((a) => { if (mine === ticket.current) setRows(a.map((x) => ({ ...x, sources: [...x.sources] }))); }); }, []);
   useEffect(load, [load]);
-  useEffect(() => { void keptAliasesFiles().then(setKept); }, [version]);
+  useEffect(() => { let live = true; void keptAliasesFiles().then((k) => { if (live) setKept(k); }); return () => { live = false; }; }, [version]);
   const close = () => useUi.setState({ dialog: null });
   const set = (i: number, patch: Partial<FieldAlias>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const names = rows.map((r) => r.name.trim().toLowerCase());

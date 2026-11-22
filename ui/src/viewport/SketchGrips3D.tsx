@@ -7,6 +7,8 @@
  * made from the sketch follows it.
  */
 
+import { SNAP_REACH_PX } from './snap3d';
+import { screenPath } from './screenPath';
 import { useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { Vec2 } from '../platform/module';
@@ -85,7 +87,7 @@ export function SketchGrips3D({ camera, canvas, scene }: { camera: React.RefObje
   const grips = gripPoints(drag?.shape ?? shape);
   const path = (s: Shape) => flat(s).map((pl) => {
     const q = pl.map(toScreen);
-    return q.some((x) => !x) ? '' : q.map((x, i) => `${i ? 'L' : 'M'}${x!.x.toFixed(1)} ${x!.y.toFixed(1)}`).join('');
+    return q.some((x) => !x) ? '' : screenPath(q, false) ?? '';
   }).join('');
   const inf = drag?.inferred;
   const infAt = inf ? toScreen(inf.point) : null;
@@ -106,7 +108,7 @@ export function SketchGrips3D({ camera, canvas, scene }: { camera: React.RefObje
                 if (!raw) return;
                 const o = snapLines();
                 const pts = gripPoints(shape);
-                const i2 = infer({ raw, base: pts[drag.i === 0 ? 1 : drag.i - 1] ?? null, edges: o.edges, points: [...o.points, ...pts.filter((_, k) => k !== drag.i)], axes: axesInPlane(frame.right, frame.up), tol: 10 / ppm(raw) });
+                const i2 = infer({ raw, base: pts[drag.i === 0 ? 1 : drag.i - 1] ?? null, edges: o.edges, points: [...o.points, ...pts.filter((_, k) => k !== drag.i)], axes: axesInPlane(frame.right, frame.up), tol: SNAP_REACH_PX / ppm(raw) });
                 const next = moveGrip(shape, drag.i, i2.point);
                 if (next) setDrag({ i: drag.i, shape: next, inferred: i2 });
               }}

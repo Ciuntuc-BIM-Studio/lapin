@@ -14,7 +14,7 @@ import { useSession } from '../engine/session';
 import { RECENT, openForumTopic, openLink, reportParams, sendReport } from './support';
 import { contactFor, useReplies } from './replies';
 import { MessagesDialog } from './MessagesDialog';
-import { useDialogFocus } from './dialogFocus';
+import { useDialogFocus, useEscapeClose } from './dialogFocus';
 import { isGuest } from '../engine/share';
 import { isDesktop } from '../engine/files';
 import { checkForUpdates } from '../app/updates';
@@ -194,11 +194,7 @@ function Replaced({ overrides }: { overrides?: { kind: string; name: string; mod
 
 function AboutDialog({ version, overrides, onClose }: { version?: string; overrides?: { kind: string; name: string; module: string }[]; onClose: () => void }) {
   const focus = useDialogFocus<HTMLDivElement>();
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  useEscapeClose(onClose);
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="About Lapin" tabIndex={-1} ref={focus}>
       <div className="dialog about">

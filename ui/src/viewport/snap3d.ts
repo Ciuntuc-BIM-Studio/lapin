@@ -15,6 +15,9 @@
 
 import type { Vec3 } from './camera';
 
+/** How far from the cursor, in screen pixels, a 3D overlay's snap and inference reach. */
+export const SNAP_REACH_PX = 10;
+
 export interface Pt { x: number; y: number }
 export interface Seg3 { a: Vec3; b: Vec3 }
 /** A ray: its origin and unit direction. */
@@ -94,7 +97,7 @@ export const onLine = (at: Vec3, dir: Vec3, p: Vec3): Vec3 => add(at, dir, dot(s
 
 /** What the cursor infers (see the file's comment for the order). */
 export function snap3(o: Snap3Input): Snapped3 | null {
-  const tol = o.tol ?? 10;
+  const tol = o.tol ?? SNAP_REACH_PX;
   const faceDepth = o.face ? depthOf(o.ray, o.face) : Infinity;
   // A point farther than the face under the cursor is behind it: hidden.
   const seen = (p: Vec3) => depthOf(o.ray, p) > 0 && depthOf(o.ray, p) <= faceDepth + Math.max(0.02, faceDepth * 0.002);
