@@ -269,12 +269,16 @@ public sealed partial class StudioModule
             {
                 var loops = new List<IReadOnlyList<Vec2>>();
                 var worlds = new List<Func<Vec2, Vec3>>();
+                // The profiles as drawn (lines and arcs), for the smooth loft's surface; an inset one by its polygon.
+                var exact = new List<IReadOnlyList<ExactSeg>>();
                 foreach (var id in (e.Attrs["profiles"] as JsonArray)?.Select(x => (string?)x).OfType<string>() ?? [])
                 {
-                    if (m.Get(id) is not { } d || Sketches.OutlineOf(m, d)?.Loop is not { } loop) return (null, null, "A profile of the loft is missing or no longer closed.");
+                    if (m.Get(id) is not { } d || Sketches.OutlineOf(m, d) is not { } drawn) return (null, null, "A profile of the loft is missing or no longer closed.");
+                    var loop = drawn.Loop;
                     if (PlaneOfSketch(m, services, d).Plane is not { } pl) return (null, null, "A profile's view is gone, or lies on no plane.");
                     if (inner != null) { if (Solids.Inset(loop, inner.By) is not { } il) return (null, null, "the walls are too thick for a profile."); loop = il; }
                     loops.Add(loop);
+                    exact.Add((inner == null ? ExactProfiles.Of(m, drawn) : null) ?? ExactProfiles.FromPolygon(loop));
                     worlds.Add(q => pl.World(q) + shift);
                 }
                 if (inner != null && worlds.Count >= 2)
@@ -295,7 +299,7 @@ public sealed partial class StudioModule
                         return (null, null, "The loft's guide is missing: draw it again to rebuild.");
                     guide = Geo.Polylines(rs)[0].Select(p => rp.World(p)).ToList();
                 }
-                var lofted = Solids.LoftThrough(loops, worlds, guide, Flag(e.Attrs["smooth"]));
+                var lofted = Solids.LoftThrough(loops, worlds, guide, Flag(e.Attrs["smooth"]), exact);
                 return (lofted.Solid, null, lofted.Problem);
             }
             case "revolve":

@@ -5238,6 +5238,10 @@ const S5D_TAILS: Record<string, string> = {
   'the seismic effects × 1/(1 − θ) there (or second order).': "ຜົນແຜ່ນດິນໄຫວ × 1/(1 − θ) ບ່ອນນັ້ນ (ຫຼື ອັນດັບສອງ).",
   'a second-order analysis is needed there.': "ບ່ອນນັ້ນຕ້ອງວິເຄາະອັນດັບສອງ.",
   'above 0.3, not allowed: stiffen the structure.': "ເກີນ 0.3, ບໍ່ອະນຸຍາດ: ເສີມຄວາມແຂງຂອງໂຄງສ້າງ.",
+  "Exact surfaces": "ພື້ນຜິວທີ່ແນ່ນອນ",
+  "Studio solids as advanced B-rep on their exact surfaces": "ຮູບທຣົງຕັນຂອງ Studio ເປັນ B-rep ຂັ້ນສູງເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນ",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "ຮູບທຣົງຕັນຂອງ Studio ທີ່ Lapin ຮູ້ຢ່າງແນ່ນອນ (ຮູບພື້ນຖານ, ການດຶງອອກຈາກເສັ້ນ ແລະ ເສັ້ນໂຄ້ງ, ການໝູນ, loft ລຽບ, SubD ປິດ) ຂຽນເປັນ IfcAdvancedBrep ເທິງລະນາບ, ທໍ່ກົມ, ກວຍ, ຮູບກົມ, ຮູບວົງແຫວນ ແລະ ພື້ນຜິວ B-spline ແທນເຫຼີ່ຍມ; ສ່ວນທີ່ເຫຼືອຄືເກົ່າ",
+  "solids for CAD programs, on their exact surfaces where known": "ຮູບທຣົງຕັນສຳລັບໂປຣແກຣມ CAD, ເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນບ່ອນທີ່ຮູ້",
 };
 export const LO_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ

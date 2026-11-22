@@ -13,6 +13,9 @@ namespace Lapin.Ifc;
 /// </summary>
 public sealed partial class IfcModel
 {
+    /// <summary>A representation item of the file (a B-rep, an extrusion…) as triangles in its own coordinates (no placement), or null when it is not one Lapin reads.</summary>
+    public MeshBuilder? ItemMesh(int id) => File.Get(new StepRef(id)) is { } s ? Solid(s) : null;
+
     MeshBuilder AdvancedFaces(IEnumerable<StepEntity> faces)
     {
         var m = new MeshBuilder();
@@ -33,7 +36,8 @@ public sealed partial class IfcModel
             var face = surface.Type switch
             {
                 "IFCBSPLINESURFACEWITHKNOTS" or "IFCRATIONALBSPLINESURFACEWITHKNOTS" when loops.Count <= 1 => SplineGrid(surface),
-                "IFCCYLINDRICALSURFACE" or "IFCCONICALSURFACE" or "IFCSPHERICALSURFACE" or "IFCTOROIDALSURFACE" or "IFCSURFACEOFREVOLUTION" => Unrolled(loops, Axis2(surface[0])),
+                "IFCSPHERICALSURFACE" or "IFCTOROIDALSURFACE" => Doubly(loops, surface),
+                "IFCCYLINDRICALSURFACE" or "IFCCONICALSURFACE" or "IFCSURFACEOFREVOLUTION" => Unrolled(loops, Axis2(surface[0])),
                 _ => Planar(loops),
             };
             if (!sameSense) face.T.ReverseInPlace();
@@ -98,6 +102,87 @@ public sealed partial class IfcModel
             var at = m.V.Count - plane.Count; // this strip's points in the mesh
             foreach (var (a, b, c) in Triangulator.Face(plane, [.. idx[0].Select(i => i - at)], [.. idx.Skip(1).Select(h => h.Select(i => i - at).ToArray())], new Vec3(0, 0, 1)))
                 m.T.Add((a + at, b + at, c + at));
+        }
+        return m;
+    }
+
+    /// <summary>
+    /// A face on a sphere or a torus (curved both ways, so a strip of it is not flat as a cylinder's is): its loops mapped to their two angles
+    /// (round the axis, and up the sphere or round the tube; each carried on along the loop, a point on the axis taking the angles of the
+    /// points beside it), scaled to lengths, cut into cells by the chord rule both ways, each cell's piece triangulated there and its new
+    /// points put back on the surface itself. The loop's own points stay where its edges put them, so the faces beside meet it.
+    /// </summary>
+    MeshBuilder Doubly(List<List<Vec3>> loops, StepEntity surface)
+    {
+        var m = new MeshBuilder();
+        if (loops.Count == 0) return m;
+        var frame = Axis2(surface[0]);
+        var sphere = surface.Type == "IFCSPHERICALSURFACE";
+        double major = Num(surface[1]) * _len, minor = sphere ? major : Num(surface[2]) * _len;
+        if (!(major > 1e-9) || !(minor > 1e-9)) return Planar(loops);
+        double reach = sphere ? major : major + minor;
+        double Around(Vec3 p) { var d = p - frame.O; return Math.Atan2(Vec3.Dot(d, frame.Y), Vec3.Dot(d, frame.X)); }
+        double Across(Vec3 p)
+        {
+            var d = p - frame.O;
+            var z = Vec3.Dot(d, frame.Z);
+            var rho = Radial(p, frame).Length;
+            return sphere ? Math.Atan2(z, rho) : Math.Atan2(z, rho - major);
+        }
+        static double Near(double a, double prev) { while (a - prev > Math.PI) a -= 2 * Math.PI; while (a - prev < -Math.PI) a += 2 * Math.PI; return a; }
+        Vec3 Back(double u, double v)
+        {
+            var (t, f) = (u / reach, v / minor);
+            var r = sphere ? major * Math.Cos(f) : major + minor * Math.Cos(f);
+            return frame.O + (frame.X * Math.Cos(t) + frame.Y * Math.Sin(t)) * r + frame.Z * (minor * Math.Sin(f));
+        }
+        var flat = loops.Select(l =>
+        {
+            var o = new List<Flat>();
+            double? lastU = null, lastV = null;
+            for (var i = 0; i < l.Count; i++)
+            {
+                var p = l[i];
+                var onAxis = Radial(p, frame).Length < 1e-9 * Math.Max(1, reach);
+                var v = Across(p);
+                if (lastV is { } pv) v = Near(v, pv);
+                lastV = v;
+                if (onAxis)
+                {
+                    // A pole: the angle round it of the point before, then of the point after.
+                    var before = lastU ?? Around(l[(i + 1) % l.Count]);
+                    var after = Near(Around(l[(i + 1) % l.Count]), before);
+                    o.Add(new Flat(before * reach, v * minor, 0, p));
+                    if (Math.Abs(after - before) > 1e-9) o.Add(new Flat(after * reach, v * minor, 0, p));
+                    lastU = after;
+                    continue;
+                }
+                var u = Around(p);
+                if (lastU is { } pu) u = Near(u, pu);
+                lastU = u;
+                o.Add(new Flat(u * reach, v * minor, 0, p));
+            }
+            return o;
+        }).ToList();
+        double umin = flat.SelectMany(l => l).Min(f => f.U), umax = flat.SelectMany(l => l).Max(f => f.U);
+        double vmin = flat.SelectMany(l => l).Min(f => f.V), vmax = flat.SelectMany(l => l).Max(f => f.V);
+        var (su, sv) = (reach * Chords.Step(reach), minor * Chords.Step(minor));
+        Flat Lerp(Flat a, Flat b, double t) => new(a.U + (b.U - a.U) * t, a.V + (b.V - a.V) * t, 0, null);
+        for (var u0 = umin; u0 < umax - 1e-9; u0 += su)
+        {
+            var u1 = Math.Min(u0 + su, umax);
+            for (var v0 = vmin; v0 < vmax - 1e-9; v0 += sv)
+            {
+                var v1 = Math.Min(v0 + sv, vmax);
+                var (a, b, c, d) = (u0, u1, v0, v1);
+                var pieces = flat.Select(l => Polygon2.ClipHalf(Polygon2.ClipHalf(Polygon2.ClipHalf(Polygon2.ClipHalf(l, f => f.U - a, Lerp), f => b - f.U, Lerp), f => f.V - c, Lerp), f => d - f.V, Lerp)).ToList();
+                if (pieces[0].Count < 3) continue;
+                var plane = new List<Vec3>();
+                var idx = pieces.Where(l => l.Count >= 3).Select(l => l.Select(f => { plane.Add(new Vec3(f.U, f.V, 0)); return m.Add(f.At ?? Back(f.U, f.V)); }).ToArray()).ToList();
+                var at = m.V.Count - plane.Count;
+                foreach (var (x, y, z) in Triangulator.Face(plane, [.. idx[0].Select(i => i - at)], [.. idx.Skip(1).Select(h => h.Select(i => i - at).ToArray())], new Vec3(0, 0, 1)))
+                    m.T.Add((x + at, y + at, z + at));
+            }
         }
         return m;
     }

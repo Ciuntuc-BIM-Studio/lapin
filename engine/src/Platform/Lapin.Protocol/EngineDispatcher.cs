@@ -730,7 +730,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         {
             case "session.info" or "session.catalogue" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "view.fine" or "pointcloud.tiles"
                 or "project.versions" or "project.compareVersions"
-                or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh" or "project.exportSurvey" or "project.exportHtml" or "project.htmlPlan":
+                or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportStep" or "project.exportMesh" or "project.exportSurvey" or "project.exportHtml" or "project.htmlPlan":
                 return null;
             case "doc.execute":
                 // A project's scripts are the host's (docs/plan-python-scripting.md §7): a guest never puts one in, alone or in a batch.
@@ -1191,11 +1191,31 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     // `typePropertiesOnOccurrences` (issue #30): the type's properties also on each of its elements, the element's own value winning.
                     p["typePropertiesOnOccurrences"] is JsonValue tv && tv.TryGetValue<bool>(out var onOccurrences) && onOccurrences,
                     // `spaceBrep` (issue #28): spaces as faceted B-rep instead of extrusions.
-                    p["spaceBrep"] is JsonValue sbv && sbv.TryGetValue<bool>(out var spaceBrep) && spaceBrep);
+                    p["spaceBrep"] is JsonValue sbv && sbv.TryGetValue<bool>(out var spaceBrep) && spaceBrep,
+                    // `advancedBrep` (docs/plan-studio-freeform.md §9): bodies known exactly (Studio's) as IfcAdvancedBrep on their exact surfaces.
+                    p["advancedBrep"] is JsonValue abv && abv.TryGetValue<bool>(out var advanced) && advanced);
                 if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, RefuseOverRead(HostFiles.Check(ifcPath)), options).ToJson(), null);
                 // The file made once, of its size: a hall of 33 bays is 150 MB of IFC (report #156).
                 var (ifc, _) = IfcExport.Bytes(session, "project.ifc", options);
                 return (Deliver(ifc, "project.ifc"), null);
+            }
+            case "project.exportStep":
+            {
+                // The bodies as STEP AP214 solids (docs/plan-studio-freeform.md §9): `ids` (or every element with a body), less the kinds,
+                // storeys and hidden left out (ModelSurvey); exact surfaces where a module knows them, the facets' planes else.
+                var exclude = Lapin.Ifc.ModelSurvey.Excluded(session, p);
+                var ids = (p["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList();
+                var stepName = $"{(session.Path is { } sp ? Path.GetFileNameWithoutExtension(sp) : "project")}.step";
+                var (step, stepResult) = Lapin.Ifc.StepExport.Bytes(session, stepName, new Lapin.Ifc.StepExportOptions(ids, exclude.Count > 0 ? exclude : null));
+                if ((string?)p["path"] is { Length: > 0 } stepPath)
+                {
+                    var target = RefuseOverRead(HostFiles.Check(stepPath));
+                    File.WriteAllBytes(target, step);
+                    return ((stepResult with { Path = target }).ToJson(), null);
+                }
+                var delivered = Deliver(step, stepName);
+                foreach (var (k, v) in stepResult.ToJson()) if (k != "path") delivered[k] = v?.DeepClone();
+                return (delivered, null);
             }
             case "project.exportMesh": return ExportMesh(p, Deliver);
             // Lapin for the browser (decision 482): the project as one .html, a viewer and the package; what its dialog shows first.

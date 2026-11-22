@@ -5138,6 +5138,10 @@ const S5D_TAILS: Record<string, string> = {
   'the seismic effects × 1/(1 − θ) there (or second order).': "efectele seismice × 1/(1 − θ) acolo (sau ordinul doi).",
   'a second-order analysis is needed there.': "acolo este nevoie de o analiză de ordinul doi.",
   'above 0.3, not allowed: stiffen the structure.': "peste 0.3, nepermis: rigidizează structura.",
+  "Exact surfaces": "Suprafețe exacte",
+  "Studio solids as advanced B-rep on their exact surfaces": "Solidele Studio ca B-rep avansat pe suprafețele lor exacte",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Solidele Studio pe care Lapin le știe exact (primitive, extrudări din linii și arce, revoluții, loft-uri netede, SubD închise) scrise ca IfcAdvancedBrep pe plane, cilindri, conuri, sfere, tori și suprafețe B-spline în loc de fațete; restul ca înainte",
+  "solids for CAD programs, on their exact surfaces where known": "solide pentru programe CAD, pe suprafețele lor exacte unde sunt știute",
 };
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // S5d: global imperfections, sheeting, θ

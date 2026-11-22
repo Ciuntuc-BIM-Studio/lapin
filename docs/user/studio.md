@@ -28,7 +28,7 @@ You can sketch on four kinds of view:
 
 - **Extrude** (EXTRUDE) pushes the outline straight out. Type S for both ways from the sketch, T for a taper that leans the sides in, and Cut to make it cut the elements you selected before. To run it up to another element's face, use **Up to → a face…** in its properties, or **Extrude up to face**. The depth, the heights and the thicknesses are typed in the project's unit, as the prompt says (`Depth (mm)`: `2000` is 2 m).
 - **Sweep** (SWEEP) runs a profile along a path. TWist turns the section on the way, SCale grows it, and RIse lifts it. A circle that rises becomes a helix, going round TUrns times.
-- **Loft** (LOFT) joins profiles drawn on different views. Type S to make it smooth through them. A line selected with the role *rail* bends it as a guide.
+- **Loft** (LOFT) joins profiles drawn on different views. Type S to make it smooth through them: through three profiles or more it is one B-spline surface passing exactly through each, its arcs kept as arcs, which an IFC or STEP export can write as it is ([Exact surfaces](import-export.md#ifc-and-fragments)). A line selected with the role *rail* bends it as a guide.
 - **Revolve** (REVOLVE) turns a profile about an axis line.
 - **Primitives** place a box, cylinder, sphere, cone, torus, wedge or pyramid with one click. Change their sizes and position in their properties.
 

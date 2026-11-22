@@ -5186,6 +5186,10 @@ const S5D_TAILS: Record<string, string> = {
   'the seismic effects × 1/(1 − θ) there (or second order).': "los efectos sísmicos × 1/(1 − θ) ahí (o segundo orden).",
   'a second-order analysis is needed there.': "ahí hace falta un análisis de segundo orden.",
   'above 0.3, not allowed: stiffen the structure.': "por encima de 0.3, no se admite: rigidiza la estructura.",
+  "Exact surfaces": "Superficies exactas",
+  "Studio solids as advanced B-rep on their exact surfaces": "Sólidos de Studio como B-rep avanzado sobre sus superficies exactas",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Los sólidos de Studio que Lapin conoce exactamente (primitivas, extrusiones de líneas y arcos, revoluciones, solevados suaves, SubD cerrados) escritos como IfcAdvancedBrep sobre planos, cilindros, conos, esferas, toros y superficies B-spline en lugar de facetas; el resto como antes",
+  "solids for CAD programs, on their exact surfaces where known": "sólidos para programas CAD, sobre sus superficies exactas donde se conocen",
 };
 export const ES_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ
