@@ -59,6 +59,16 @@ public class DesignRunTests(Xunit.Abstractions.ITestOutputHelper output)
         // Kept for the model's revision.
         var run = DesignRun.Of(f.Session.Reader);
         Assert.Same(run, DesignRun.Of(f.Session.Reader));
+
+        // The project's αcc (1.0 by default) reaches the bending: at 0.85 K' = 0.5667·0.8·0.45·0.82 = 0.16728 (1.0: 0.1968).
+        JsonObject Bending() => Q(f, "check", new JsonObject { ["id"] = t.Beams[0] })["members"]!.AsArray()[0]!["checks"]!.AsArray().Select(c => c!.AsObject()).Single(c => (string?)c["key"] == "concrete.bending");
+        double Kp() => (double)Bending()["values"]!.AsArray().Single(v => (string?)v!["name"] == "K'")!["value"]!;
+        Assert.Equal(0.1968, Kp(), 4);
+        f.Run("analysis.setDesign", new JsonObject { ["alphaCc"] = 0.85 });
+        Assert.Equal(0.1673, Kp(), 4);
+        // γc 1.5 → 1.0 takes the block to 0.85 fck: K' = 0.85·0.8·0.45·0.82 = 0.25092.
+        f.Run("analysis.setDesign", new JsonObject { ["gammaC"] = 1.0 });
+        Assert.Equal(0.2509, Kp(), 4);
     }
 
     [Fact]
@@ -111,6 +121,15 @@ public class DesignRunTests(Xunit.Abstractions.ITestOutputHelper output)
         var b3 = Q(f, "check", new JsonObject { ["id"] = col })["members"]!.AsArray()[0]!["checks"]!.AsArray().Select(c => c!.AsObject()).Single(c => (string?)c["key"] == "steel.buckling");
         Assert.Equal(2 * h, Val(b3, "Lcr,z"), 3);
         _ = props;
+        // The project's γM1 (EN 1993-1-1 6.1(1), 1.0 by default): Nb,Rd = χ A fy/γM1, so 1.1 takes the buckling's utilisation × 1.1.
+        var u1 = (double)b3["utilisation"]!;
+        f.Run("analysis.setDesign", new JsonObject { ["gammaM1"] = 1.1 });
+        var b4 = Q(f, "check", new JsonObject { ["id"] = col })["members"]!.AsArray()[0]!["checks"]!.AsArray().Select(c => c!.AsObject()).Single(c => (string?)c["key"] == "steel.buckling");
+        Assert.Equal(u1 * 1.1, (double)b4["utilisation"]!, 3);
+        var opts = Q(f, "designOptions");
+        Assert.True((bool)opts["indicative"]!);
+        Assert.Equal(1.25, (double)opts["defaults"]!["gammaM2"]!, 9);
+        Assert.Throws<CommandException>(() => f.Run("analysis.setDesign", new JsonObject { ["gammaM0"] = 2 }));
     }
 
     [Fact]
@@ -140,6 +159,16 @@ public class DesignRunTests(Xunit.Abstractions.ITestOutputHelper output)
         Assert.Contains("medium-term", (string?)Q(f, "check", new JsonObject { ["id"] = t.Beams[0] })["members"]!.AsArray()[0]!["checks"]!.AsArray().Single(c => (string?)c!["key"] == "timber.section")!["note"]);
         // The slab on the beams holds them sideways: no lateral torsional buckling.
         Assert.DoesNotContain(cs, c => (string?)c["key"] == "timber.ltb");
+
+        // The deflection limits: L/300 and L/250 by default; the project's L/500 final halves the final limit, an element's own over it.
+        double Lim(JsonObject c, string n) => (double)c["values"]!.AsArray().Single(v => (string?)v!["name"] == n)!["value"]!;
+        JsonObject Defl() => Q(f, "check", new JsonObject { ["id"] = t.Beams[0] })["members"]!.AsArray()[0]!["checks"]!.AsArray().Select(c => c!.AsObject()).Single(c => (string?)c["key"] == "timber.deflection");
+        var fin = Lim(Defl(), "limit fin");
+        f.Run("analysis.setDesign", new JsonObject { ["timberFin"] = 500 });
+        Assert.Equal(fin / 2, Lim(Defl(), "limit fin"), 6);
+        f.Run("analysis.setDesign", new JsonObject { ["ids"] = new JsonArray(t.Beams[0]), ["timberFin"] = 125 });
+        Assert.Equal(fin * 2, Lim(Defl(), "limit fin"), 6);
+        Assert.Contains("L/125", (string?)Defl()["note"]);
     }
 
     [Fact]

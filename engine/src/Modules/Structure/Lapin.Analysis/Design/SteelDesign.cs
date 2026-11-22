@@ -11,14 +11,20 @@ namespace Lapin.Analysis.Design;
 /// </summary>
 public sealed record SteelMember(SectionShape Shape, SectionProps P, double Fy, double E, double L, double LcrY, double LcrZ, double Llt)
 {
-    public double G => E / (2 * 1.3);
+    /// <summary>The shear modulus (Pa): the analysis' (the material's ν, <see cref="StructuralMaterials.ShearModulus"/>); ν = 0.3 when made without one.</summary>
+    public double G { get; init; } = E / (2 * 1.3);
+    /// <summary>The partial factors (EN 1993-1-1 6.1(1), the recommended values, indicative; the project's by analysis.setDesign).</summary>
+    public double GammaM0 { get; init; } = SteelDesign.GammaM0;
+    public double GammaM1 { get; init; } = SteelDesign.GammaM1;
+    /// <summary>γM2 (net sections, bolts and welds: EN 1993-1-8 Table 2.1): kept for the connections' checks, none of the member checks takes it.</summary>
+    public double GammaM2 { get; init; } = SteelDesign.GammaM2;
     public string LengthsSource { get; init; } = "";
     /// <summary>The interaction factors of 6.3.3: "A" (Annex A, method 1: the default, the Romanian annex's) or "B" (Annex B, method 2).</summary>
     public string Method { get; init; } = "A";
 }
 
 /// <summary>
-/// Steel members after SR EN 1993-1-1 (docs/plan-fem.md §12.2), the recommended partial factors (γM0 = γM1 = 1.0), indicative:
+/// Steel members after SR EN 1993-1-1 (docs/plan-fem.md §12.2), the recommended partial factors (γM0 = γM1 = 1.0, the project's when it gives them), indicative:
 /// the section's class (Table 5.2), its resistance to N, V and M about both axes and their interaction (6.2.9.1 for I/H, RHS
 /// and CHS of classes 1–2; the linear 6.2.1(7) otherwise), flexural buckling (6.3.1), lateral torsional buckling of I/H
 /// sections (6.3.2.3 for rolled sections, 6.3.2.2 for the others; Mcr by NCCI SN003, C1 by the moment's shape) and the
@@ -27,7 +33,8 @@ public sealed record SteelMember(SectionShape Shape, SectionProps P, double Fy, 
 /// </summary>
 public static class SteelDesign
 {
-    public const double GammaM0 = 1.0, GammaM1 = 1.0;
+    /// <summary>The built-in partial factors (EN 1993-1-1's recommended values; SteelMember carries the project's).</summary>
+    public const double GammaM0 = 1.0, GammaM1 = 1.0, GammaM2 = 1.25;
     public const string Norm = "SR EN 1993-1-1";
 
     static readonly (double Psi, double C1)[] C1Table = [(-1, 2.55), (-0.75, 2.57), (-0.5, 2.33), (-0.25, 2.05), (0, 1.77), (0.25, 1.52), (0.5, 1.31), (0.75, 1.14), (1, 1.0)];
@@ -180,14 +187,14 @@ public static class SteelDesign
     {
         var (s, p) = (m.Shape, m.P);
         var fy = m.Fy / 1000; // kN/m²
-        double npl = p.Area * fy / GammaM0;
+        double npl = p.Area * fy / m.GammaM0;
         var nc = f.Compression;
         var myMax = f.MaxAbs(5); // EN My: Lapin Mz
         var mzMax = f.MaxAbs(4);
         var (cls, part, ratio, lim) = Classify(s, p, m.Fy, nc, myMax);
         var plastic = cls <= 2;
         var (wy, wz) = plastic ? (p.Z33, p.Z22) : (p.S33, p.S22);
-        double mrdY = wy * fy / GammaM0, mrdZ = wz * fy / GammaM0;
+        double mrdY = wy * fy / m.GammaM0, mrdZ = wz * fy / m.GammaM0;
         var classNote = cls == 4 ? "Class 4: effective widths (EN 1993-1-5) not done; the elastic section's utilisation shown as an orientation only." : null;
         var done = cls < 4;
         yield return new Check("steel.class", $"Section class {cls}", $"{Norm} Table 5.2", cls == 4 ? ratio / lim[2] : 0,
@@ -195,7 +202,7 @@ public static class SteelDesign
 
         // Shear (6.2.6): Vpl,Rd = Av (fy/√3)/γM0 along the depth (Lapin's Vy) and across it (Vz).
         double av2 = p.Av2 ?? p.Area, av3 = p.Av3 ?? p.Area;
-        double vplZ = av2 * fy / Math.Sqrt(3) / GammaM0, vplY = av3 * fy / Math.Sqrt(3) / GammaM0;
+        double vplZ = av2 * fy / Math.Sqrt(3) / m.GammaM0, vplY = av3 * fy / Math.Sqrt(3) / m.GammaM0;
         var vMaxZ = f.MaxAbs(1);
         var vMaxY = f.MaxAbs(2);
         var vAt = f.Sections.MaxBy(x => Math.Max(Math.Abs(x.Vy) / vplZ, Math.Abs(x.Vz) / vplY));
@@ -214,7 +221,7 @@ public static class SteelDesign
             var rhoZ = Math.Abs(sec.Vy) > 0.5 * vplZ ? Math.Pow(2 * Math.Abs(sec.Vy) / vplZ - 1, 2) : 0;
             var rhoY = Math.Abs(sec.Vz) > 0.5 * vplY ? Math.Pow(2 * Math.Abs(sec.Vz) / vplY - 1, 2) : 0;
             double mry = mrdY, mrz = mrdZ;
-            if (rhoZ > 0) mry = s.Kind == "I" && plastic ? Math.Min(mry, (p.Z33 - rhoZ * Math.Pow((s.Depth - 2 * s.Flange) * s.Web, 2) / (4 * s.Web)) * fy / GammaM0) : mry * (1 - rhoZ);
+            if (rhoZ > 0) mry = s.Kind == "I" && plastic ? Math.Min(mry, (p.Z33 - rhoZ * Math.Pow((s.Depth - 2 * s.Flange) * s.Web, 2) / (4 * s.Web)) * fy / m.GammaM0) : mry * (1 - rhoZ);
             if (rhoY > 0) mrz *= 1 - rhoY;
             double u;
             string how;
@@ -275,7 +282,7 @@ public static class SteelDesign
             lamZ = Math.Sqrt(p.Area * fy / ncrZ);
             chiY = lamY <= 0.2 ? 1 : Chi(lamY, Alpha[cy]);
             chiZ = lamZ <= 0.2 ? 1 : Chi(lamZ, Alpha[cz]);
-            var nbRd = Math.Min(chiY, chiZ) * p.Area * fy / GammaM1;
+            var nbRd = Math.Min(chiY, chiZ) * p.Area * fy / m.GammaM1;
             yield return new Check("steel.buckling", "Flexural buckling", $"{Norm} 6.3.1", nc / nbRd,
                 [new("NEd", nc, "kN"), new("Lcr,y", m.LcrY, "m"), new("Lcr,z", m.LcrZ, "m"), new("λ̄y", lamY, ""), new("λ̄z", lamZ, ""), new($"χy (curve {cy})", chiY, ""), new($"χz (curve {cz})", chiZ, ""), new("Nb,Rd", nbRd, "kN")],
                 (s.Kind is "U" or "T" or "L" ? "Torsional and flexural-torsional buckling (6.3.1.4) not checked. " : "") + m.LengthsSource, done);
@@ -307,7 +314,7 @@ public static class SteelDesign
                 curve = hb <= 2 ? "c" : "d";
                 chiLT = lamLT <= 0.2 ? 1 : Chi(lamLT, Alpha[curve]);
             }
-            var mbRd = chiLT * wy * fy / GammaM1;
+            var mbRd = chiLT * wy * fy / m.GammaM1;
             yield return new Check("steel.ltb", "Lateral torsional buckling", $"{Norm} {(rolled ? "6.3.2.3" : "6.3.2.2")}", myMax / mbRd,
                 [new("My,Ed", myMax, "kN·m"), new("L (unrestrained)", m.Llt, "m"), new("C1", c1, ""), new("Mcr", mcr, "kN·m"), new("λ̄LT", lamLT, ""), new($"χLT (curve {curve})", chiLT, ""), new("f", f1, ""), new("Mb,Rd", mbRd, "kN·m")],
                 $"C1: {c1How}; Mcr by NCCI SN003, the load at the shear centre.", done);
@@ -330,7 +337,7 @@ public static class SteelDesign
         var (s, p) = (m.Shape, m.P);
         var fy = m.Fy / 1000;
         var nrk = p.Area * fy;
-        double ny = nc / (chiY * nrk / GammaM1), nz = nc / (chiZ * nrk / GammaM1);
+        double ny = nc / (chiY * nrk / m.GammaM1), nz = nc / (chiZ * nrk / m.GammaM1);
         double cmy = Cm(shapeY), cmz = Cm(shapeZ), cmlt = Math.Max(0.4, Cm(shapeY));
         double kyy, kzz, kyz, kzy;
         var isI = s.Kind is "I" or "asymI" or "U" or "T";
@@ -354,8 +361,8 @@ public static class SteelDesign
             kzy = susceptible ? Math.Max(1 - 0.05 * lamZ / (cmlt - 0.25) * nz, 1 - 0.05 / (cmlt - 0.25) * nz) : 0.8 * kyy;
         }
         double myrk = wy * fy, mzrk = wz * fy;
-        var u61 = ny + kyy * myMax / (chiLT * myrk / GammaM1) + kyz * mzMax / (mzrk / GammaM1);
-        var u62 = nz + kzy * myMax / (chiLT * myrk / GammaM1) + kzz * mzMax / (mzrk / GammaM1);
+        var u61 = ny + kyy * myMax / (chiLT * myrk / m.GammaM1) + kyz * mzMax / (mzrk / m.GammaM1);
+        var u62 = nz + kzy * myMax / (chiLT * myrk / m.GammaM1) + kzz * mzMax / (mzrk / m.GammaM1);
         return new Check("steel.interaction", "Bending and compression (buckling)", $"{Norm} 6.3.3, Annex B", Math.Max(u61, u62),
             [new("eq. 6.61", u61, ""), new("eq. 6.62", u62, ""), new("kyy", kyy, ""), new("kyz", kyz, ""), new("kzy", kzy, ""), new("kzz", kzz, ""), new("Cmy", cmy, ""), new("Cmz", cmz, ""), new("CmLT", cmlt, ""), new("χLT", chiLT, "")],
             "Annex B (method 2), as the project chose (analysis.setDesign steelInteraction); SR EN 1993-1-1/NA's is Annex A.", done);
@@ -386,7 +393,7 @@ public static class SteelDesign
         var nrk = p.Area * fy;
         double muY = (1 - ry) / (1 - chiY * ry), muZ = (1 - rz) / (1 - chiZ * rz);
         double wy = plastic ? Math.Min(1.5, p.Z33 / p.S33) : 1, wz = plastic ? Math.Min(1.5, p.Z22 / p.S22) : 1;
-        var npl = nc / (nrk / GammaM1);
+        var npl = nc / (nrk / m.GammaM1);
         var aLT = Math.Max(0, 1 - p.J / p.I33);
         // λ0: lateral torsional buckling under a uniform moment over the unrestrained length (none when restrained).
         var lam0 = 0.0;
@@ -406,7 +413,7 @@ public static class SteelDesign
             cmlt = Math.Max(1, cmy * cmy * aLT / Math.Sqrt(Math.Max(1e-12, (1 - rz) * (1 - rt))));
         }
         var chiLt = torsional ? chiLT : 1.0;
-        double mplY = p.Z33 * fy / GammaM0, mplZ = p.Z22 * fy / GammaM0;
+        double mplY = p.Z33 * fy / m.GammaM0, mplZ = p.Z22 * fy / m.GammaM0;
         var lamMax = Math.Max(lamY, lamZ);
         double kyy, kyz, kzy, kzz;
         double cyy = 1, cyz = 1, czy = 1, czz = 1;
@@ -434,8 +441,8 @@ public static class SteelDesign
             kzz = cmz * muZ / (1 - rz);
         }
         double myrk = (plastic ? p.Z33 : p.S33) * fy, mzrk = (plastic ? p.Z22 : p.S22) * fy;
-        var u61 = nc / (chiY * nrk / GammaM1) + kyy * myMax / (chiLt * myrk / GammaM1) + kyz * mzMax / (mzrk / GammaM1);
-        var u62 = nc / (chiZ * nrk / GammaM1) + kzy * myMax / (chiLt * myrk / GammaM1) + kzz * mzMax / (mzrk / GammaM1);
+        var u61 = nc / (chiY * nrk / m.GammaM1) + kyy * myMax / (chiLt * myrk / m.GammaM1) + kyz * mzMax / (mzrk / m.GammaM1);
+        var u62 = nc / (chiZ * nrk / m.GammaM1) + kzy * myMax / (chiLt * myrk / m.GammaM1) + kzz * mzMax / (mzrk / m.GammaM1);
         var beyond = ry >= 1 || rz >= 1;
         return new Check("steel.interaction", "Bending and compression (buckling)", $"{Norm} 6.3.3, Annex A", beyond ? 99 : Math.Max(u61, u62),
             [new("eq. 6.61", u61, ""), new("eq. 6.62", u62, ""), new("kyy", kyy, ""), new("kyz", kyz, ""), new("kzy", kzy, ""), new("kzz", kzz, ""),
