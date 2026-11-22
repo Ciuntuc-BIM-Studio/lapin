@@ -45,8 +45,12 @@ public sealed record TextStyle(string Id, string Name, double Height, string Fon
 public sealed record DimStyle(string Id, string Name, string TextStyle, string Arrow, double ArrowSize, double ExtGap, double ExtOver, string Placement, double TextGap, int Precision, string Unit, string? Color = null, string OpeningHeight = "off", string Zeros = "project",
     string AutoText = "project", double? TextLeader = null,
     string? ExtSuppress = null, double? ExtFixed = null, double? ExtWeight = null, string? ExtColor = null, string? ExtLineType = null,
-    double? DimLineWeight = null, string? DimLineColor = null, string? DimLineType = null, string? TextColor = null)
+    double? DimLineWeight = null, string? DimLineColor = null, string? DimLineType = null, string? TextColor = null, double? TickWeight = null)
 {
+    /// <summary>The pen a tick or a dot is drawn with (paper mm, audit 22.11.2026 §5.3): the style's own, else 0.25 mm as always.</summary>
+    public const double DefaultTickWeight = 0.25;
+    public double TickWeightOr() => TickWeight is > 0 and var w ? w : DefaultTickWeight;
+
     /// <summary>Whether the extension line at point <paramref name="index"/> of a string of <paramref name="count"/> points is left out: the first, the last, or both.</summary>
     public bool SuppressesExtension(int index, int count) => ExtSuppress switch
     {
@@ -308,7 +312,9 @@ public static class Standards
 
     /// <summary>The fields an annotation may override, by kind (an axis overrides its line colour as lineColor).</summary>
     public static readonly string[] TextOverrides = ["height", "font", "bold", "italic", "color"];
-    public static readonly string[] DimOverrides = ["arrow", "arrowSize", "placement", "textGap", "precision", "unit", "color", "openingHeight", "zeros", "autoText", "textLeader", "extSuppress", "extFixed"];
+    // The extension lines' and the dimension line's pens of issue #66, and the ticks' (audit 22.11.2026), may be overridden too.
+    public static readonly string[] DimOverrides = ["arrow", "arrowSize", "placement", "textGap", "precision", "unit", "color", "openingHeight", "zeros", "autoText", "textLeader", "extSuppress", "extFixed",
+        "extWeight", "extColor", "extLineType", "dimLineWeight", "dimLineColor", "dimLineType", "tickWeight"];
     public static readonly string[] AxisOverrides = ["bubble", "ends", "size", "lineType"];
 
     static string Str(JsonNode? v, string fallback) => v is JsonValue j && j.TryGetValue<string>(out var s) && s.Length > 0 ? s : fallback;
@@ -335,7 +341,7 @@ public static class Standards
             v["precision"] is JsonValue pv && Lapin.Model.Json.Number(pv) is { } pn && double.IsFinite(pn) ? Math.Max(-1, (int)Math.Round(pn)) : d.Precision, OneOf(v["unit"], Units, d.Unit), Color(v["color"]), OneOf(v["openingHeight"], OpeningHeights, d.OpeningHeight),
             OneOf(v["zeros"], ZeroChoices, d.Zeros), OneOf(v["autoText"], AutoTextChoices, d.AutoText), TextLeaderOf(v["textLeader"]),
             ExtSuppressOf(v["extSuppress"]), Within(v["extFixed"], MaxExtFixed), Within(v["extWeight"], MaxDimPen), Color(v["extColor"]), LineType(v["extLineType"]),
-            Within(v["dimLineWeight"], MaxDimPen), Color(v["dimLineColor"]), LineType(v["dimLineType"]), Color(v["textColor"]));
+            Within(v["dimLineWeight"], MaxDimPen), Color(v["dimLineColor"]), LineType(v["dimLineType"]), Color(v["textColor"]), Within(v["tickWeight"], MaxDimPen));
     }
 
     static AxisStyle ReadAxis(JsonObject v) => ReadAxis(v, LineTypes);

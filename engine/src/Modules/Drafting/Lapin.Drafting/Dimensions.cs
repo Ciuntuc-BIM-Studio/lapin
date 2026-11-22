@@ -213,11 +213,8 @@ public static class Dimensions
                     var across = along is { } u ? Math.Abs(Vec2.Cross((b - a).Normalized(), u)) : 0;
                     if (best == null || dist < best.Value.Dist - 1e-6 || (dist <= best.Value.Dist + 1e-6 && across > best.Value.Across + 1e-9)) best = (poly, a, b, dist, across);
                 }
-        if (best is { } hit && Middle(d, hit.Poly.Element) is { } mid)
-        {
-            var dir = (hit.B - hit.A).Normalized();
+        if (best is { } hit && Middle(d, hit.Poly.Element) is { })
             return HoldOn(m, viewKind, d, hit.Poly.Element, p, hit.B - hit.A);
-        }
         if (viewKind != "plan") return null;
         foreach (var grid in m.OfClass(IfcClass.Grid))
             foreach (var ax in Grids.Axes(grid))
@@ -640,7 +637,6 @@ public static class Dimensions
         // One dimension line, from the first point to the last as they lie along it.
         var ts = line.Select(q => Vec2.Dot(q - line[0], u)).ToList();
         mk.Line(line[0] + u * ts.Min(), line[0] + u * ts.Max(), "DIMENSION", lineW, lineColor, lineDash);
-        var s = style.ArrowSize * mm;
         // Each point once: its extension line (a gap from the measured point, or a fixed length back from the dimension line;
         // past it by the overshoot; none where the style or the dimension leaves it out), its tick or dot.
         for (var i = 0; i < pts.Count; i++)
@@ -648,11 +644,7 @@ public static class Dimensions
             var (p, q, off) = (pts[i], line[i], offs[i]);
             var side = off >= 0 ? 1 : -1;
             if (!style.SuppressesExtension(i, pts.Count) && style.Extension(p, q, n * side, Math.Abs(off), mm) is { } ext) mk.Line(ext.A, ext.B, "DIMENSION", extW, extColor, extDash);
-            switch (style.Arrow)
-            {
-                case "tick": { var t = (u + n).Normalized() * (s / 2); mk.Line(q - t, q + t, "DIMENSION", Pens.Default.Seen, lineColor); break; }
-                case "dot": mk.Polyline(ViewMark.Circle(q, s / 4, 12), true, "DIMENSION", Pens.Default.Seen, lineColor); break;
-            }
+            if (style.Arrow != "arrow") DimArrow.Draw(mk, style, mm, q, u, n, lineW, lineColor);
         }
         // The values as the style places them (in the style's unit, or the text written over it, reading left to right or
         // bottom to top, above, on or below the line), then those that do not fit moved clear (forum topic 78): of the
@@ -674,7 +666,7 @@ public static class Dimensions
             // Arrows: each segment's, at both its ends, pointing in.
             if (style.Arrow == "arrow")
                 foreach (var (q, inward) in new[] { (qa, su), (qb, -su) })
-                    mk.Line(q, q + inward * s + n * (s * 0.3), "DIMENSION", lineW, lineColor).Line(q, q + inward * s - n * (s * 0.3), "DIMENSION", lineW, lineColor);
+                    DimArrow.Draw(mk, style, mm, q, inward, n, lineW, lineColor);
             var (value, readable, up, mid, tat, baseline) = (v.Text, v.Readable, v.Up, v.Mid, v.At, v.Baseline);
             // Moved by hand (close values kept clear of one another): a leader back to its segment once it stands off it.
             if (moved[i] is { } by)

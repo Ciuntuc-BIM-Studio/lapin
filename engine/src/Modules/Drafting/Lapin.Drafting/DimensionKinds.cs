@@ -170,18 +170,27 @@ public static class DimensionKinds
         return Standards.FormatLevel(value, decimals, zeros);
     }
 
-    /// <summary>A slope as written: 12.5 %, 30.0°, 1:8.</summary>
-    public static string FormatSlope(double ratio, string format)
+    /// <summary>
+    /// A slope as written: 12.5 %, 30.0°, 1:8; with the style's <paramref name="precision"/> (0–6 decimals) when it gives one,
+    /// else (−1) one decimal for a percentage and an angle, up to one for a ratio, as before.
+    /// </summary>
+    public static string FormatSlope(double ratio, string format, int precision = -1)
     {
         if (double.IsInfinity(ratio)) return "∞";
         var f = format == "auto" ? (ratio < 0.15 ? "%" : "deg") : format;
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        string N(double v, string usual) => v.ToString(precision >= 0 ? "F" + Math.Min(precision, 6) : usual, inv);
         return f switch
         {
-            "deg" => $"{Math.Atan(ratio) * 180 / Math.PI:0.0}°",
-            "ratio" => ratio < 1e-9 ? "0" : $"1:{1 / ratio:0.#}",
-            _ => $"{ratio * 100:0.0} %",
+            "deg" => $"{N(Math.Atan(ratio) * 180 / Math.PI, "0.0")}°",
+            "ratio" => ratio < 1e-9 ? "0" : $"1:{N(1 / ratio, "0.#")}",
+            _ => $"{N(ratio * 100, "0.0")} %",
         };
     }
+
+    /// <summary>An angle as written: the style's <paramref name="precision"/> (0–6 decimals) when it gives one, else (−1) up to one decimal, as before.</summary>
+    public static string FormatAngle(double degrees, int precision = -1) =>
+        degrees.ToString(precision >= 0 ? "F" + Math.Min(precision, 6) : "0.#", System.Globalization.CultureInfo.InvariantCulture) + "°";
 
     public static IEnumerable<ViewMark> Marks(ViewContext c)
     {
@@ -203,17 +212,8 @@ public static class DimensionKinds
             var mk = new ViewMark(dim.Id);
             void Label(Vec2 at, string s, double angleDeg = 0, string anchor = "middle", string baseline = "bottom") =>
                 mk.Text(new PenText(at, dim.Str("text") is { Length: > 0 } over ? over : s, text.Height, -Standards.ReadableDeg(-angleDeg), anchor, baseline, text.Bold, text.Font, text.Italic), textColor);
-            void Arrow(Vec2 tip, Vec2 dir)
-            {
-                var s = style.ArrowSize * mm;
-                var n = dir.Perp;
-                switch (style.Arrow)
-                {
-                    case "tick": { var t = (dir + n).Normalized() * (s / 2); mk.Line(tip - t, tip + t, "DIMENSION", Pens.Default.Seen, lineColor); break; }
-                    case "dot": mk.Polyline(ViewMark.Circle(tip, s / 4, 12), true, "DIMENSION", Pens.Default.Seen, lineColor); break;
-                    default: mk.Line(tip, tip - dir * s + n * (s * 0.3), "DIMENSION", w, lineColor).Line(tip, tip - dir * s - n * (s * 0.3), "DIMENSION", w, lineColor); break;
-                }
-            }
+            // The terminator pointing along dir at its tip (a string's own, DimArrow): its barbs back along it, its tick leaning 45°; "none" draws none.
+            void Arrow(Vec2 tip, Vec2 dir) => DimArrow.Draw(mk, style, mm, tip, -dir, -dir.Perp, w, lineColor);
             // Where a radial extension line starts: from the gap (<paramref name="gapStart"/>), or a fixed length back from the
             // dimension line at <paramref name="reach"/> along the ray, never nearer the centre than the gap (issue #66).
             Vec2 Fixed(Vec2 centre, Vec2 ray, double reach, Vec2 gapStart, double from) =>
@@ -242,7 +242,7 @@ public static class DimensionKinds
                     Arrow(pts[^1], (pts[^1] - pts[^2]).Normalized());
                     var mid = start + sweep / 2;
                     var tat = cc + new Vec2(Math.Cos(mid), Math.Sin(mid)) * (r + style.TextGap * mm);
-                    Label(tat, $"{value:0.#}°", mid * 180 / Math.PI - 90);
+                    Label(tat, FormatAngle(value, style.Precision), mid * 180 / Math.PI - 90);
                     mk.Snaps.AddRange([cc, pts[0], pts[^1]]);
                     break;
                 }
@@ -300,7 +300,7 @@ public static class DimensionKinds
                     var (p, q) = (mid - down * (len / 2) + lift, mid + down * (len / 2) + lift);
                     mk.Line(p, q, "DIMENSION", w, lineColor);
                     Arrow(q, down);
-                    Label(mid + lift + n * (style.TextGap * mm), FormatSlope(value, dim.Str("format") ?? "auto"), Math.Atan2(u.Y, u.X) * 180 / Math.PI);
+                    Label(mid + lift + n * (style.TextGap * mm), FormatSlope(value, dim.Str("format") ?? "auto", style.Precision), Math.Atan2(u.Y, u.X) * 180 / Math.PI);
                     mk.Snaps.AddRange([a, b]);
                     break;
                 }
