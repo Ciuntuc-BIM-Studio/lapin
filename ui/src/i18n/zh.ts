@@ -5157,6 +5157,10 @@ const S5D_TAILS: Record<string, string> = {
   'the seismic effects × 1/(1 − θ) there (or second order).': "该处地震作用 × 1/(1 − θ)（或二阶分析）。",
   'a second-order analysis is needed there.': "该处需要二阶分析。",
   'above 0.3, not allowed: stiffen the structure.': "超过 0.3，不允许：请加强结构刚度。",
+  "Exact surfaces": "精确曲面",
+  "Studio solids as advanced B-rep on their exact surfaces": "Studio 实体以高级 B-rep 写在其精确曲面上",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Lapin 精确知道的 Studio 实体（基本体、由直线和圆弧拉伸、旋转、平滑放样、闭合 SubD）以 IfcAdvancedBrep 写在平面、圆柱面、圆锥面、球面、圆环面和 B 样条曲面上，而不是写成小平面；其余照旧",
+  "solids for CAD programs, on their exact surfaces where known": "供 CAD 程序使用的实体，已知处写在其精确曲面上",
 };
 export const ZH_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ

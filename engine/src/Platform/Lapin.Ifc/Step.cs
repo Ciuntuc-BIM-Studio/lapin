@@ -38,6 +38,17 @@ public sealed class Step
         return id;
     }
 
+    /// <summary>
+    /// Adds a complex entity instance (ISO 10303-21 §11.2.5.3, the external mapping): its partial records, each an entity name and its own
+    /// attributes, given in alphabetical order as the standard asks (<c>#7=(A()B(1.)C('x'));</c>). Returns its reference.
+    /// </summary>
+    public string AddComplex(params (string Entity, string[] Args)[] parts)
+    {
+        var id = $"#{_next++}";
+        Append(string.Concat(id, "=(", string.Concat(parts.Select(p => string.Concat(p.Entity, "(", string.Join(',', p.Args), ")"))), ");\n"));
+        return id;
+    }
+
     void Append(string line)
     {
         var n = Encoding.UTF8.GetByteCount(line);

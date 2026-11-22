@@ -448,7 +448,7 @@ export async function guardWindowClose(): Promise<void> {
  * An export from the engine (PDF, DXF): to the path the save dialog gives on
  * the desktop, else handed back and downloaded by the browser.
  */
-const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step', glb: 'model/gltf-binary', gltf: 'model/gltf+json', usdz: 'model/vnd.usdz+zip', usda: 'model/vnd.usda', dae: 'model/vnd.collada+xml', frag: 'application/octet-stream', bcfzip: 'application/zip', bcf: 'application/zip', zip: 'application/zip', csv: 'text/csv', json: 'application/json', html: 'text/html' };
+const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step', step: 'application/step', glb: 'model/gltf-binary', gltf: 'model/gltf+json', usdz: 'model/vnd.usdz+zip', usda: 'model/vnd.usda', dae: 'model/vnd.collada+xml', frag: 'application/octet-stream', bcfzip: 'application/zip', bcf: 'application/zip', zip: 'application/zip', csv: 'text/csv', json: 'application/json', html: 'text/html' };
 
 export async function exportFile(method: string, args: Record<string, unknown>, name: string, ext: string): Promise<boolean> {
   let target: SaveTarget | null = null;

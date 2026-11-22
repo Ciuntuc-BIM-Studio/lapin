@@ -6,6 +6,8 @@
  * within a tolerance where a body is meshed (Simplifier in the engine); Fragments from the project base point, the
  * internal origin or the survey point. A type's properties may go on each occurrence too (issue #30). On the desktop, an IFC can take Bonsai's drawing styles beside it (a stylesheet and its hatch patterns, decision 495). SDNF 3.0 (docs/sdnf.md, decision 463) where the product has the steel module: the columns, beams
  * and steel members of the storeys and kinds chosen, their connections' plates, the grids, for steel detailing programs.
+ * STEP (AP214, docs/plan-studio-freeform.md §9): the bodies as solids for CAD programs, on their exact surfaces where Lapin knows them
+ * (Studio's); an IFC may write those exactly too (IfcAdvancedBrep, off by default).
  */
 
 import { backdropClose } from '../../shell/Dialog';
@@ -25,7 +27,7 @@ import { ORIGINS, usePhaseList } from './format';
 export function ExchangeExportDialog() {
   const path = useSession((s) => s.doc?.path ?? null);
   const view3dId = useUi((s) => s.view3dId);
-  const [format, setFormat] = useState<ExchangeFormat | 'sdnf'>('ifc');
+  const [format, setFormat] = useState<ExchangeFormat | 'sdnf' | 'step'>('ifc');
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [offKinds, setOffKinds] = useState<Set<string>>(new Set());
   const [offStoreys, setOffStoreys] = useState<Set<string>>(new Set());
@@ -49,6 +51,8 @@ export function ExchangeExportDialog() {
   // A type's properties also on each of its elements (issue #30), for programs that read only the element: off, the export is as it was.
   const [typeProps, setTypeProps] = useState(false);
   const [spaceBrep, setSpaceBrep] = useState(false);
+  // Studio solids known exactly as IfcAdvancedBrep (docs/plan-studio-freeform.md §9): off, every body is written as its facets, as before.
+  const [advancedBrep, setAdvancedBrep] = useState(false);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
@@ -77,7 +81,11 @@ export function ExchangeExportDialog() {
       } catch (e) {
         notify(e instanceof Error ? e.message : String(e));
       }
-    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(typeProps ? { typePropertiesOnOccurrences: true } : {}), ...(spaceBrep ? { spaceBrep: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
+    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(typeProps ? { typePropertiesOnOccurrences: true } : {}), ...(spaceBrep ? { spaceBrep: true } : {}), ...(advancedBrep ? { advancedBrep: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
+    else if (format === 'step') {
+      const { phase: _phase, voids: _voids, ...chosen } = common as Record<string, unknown>;
+      await exportFile('project.exportStep', { ...chosen, entourage: true }, `${projectTitle(path)}.step`, 'step');
+    }
     else await exportFile('project.exportMesh', { ...common, format, origin, ...(onlyShown ? { viewId: view3dId ?? '3d' } : {}) }, `${projectTitle(path)}.${format}`, format);
     setBusy(false);
     close();
@@ -94,6 +102,7 @@ export function ExchangeExportDialog() {
             <label className="check-line"><input type="radio" name="exchange-format" checked={format === 'ifc'} onChange={() => setFormat('ifc')} /> <strong>IFC</strong> <span className="muted small">the model for every BIM program</span></label>
             <label className="check-line"><input type="radio" name="exchange-format" checked={format === 'frag'} onChange={() => setFormat('frag')} /> <strong>Fragments</strong> <span className="muted small">That Open's format, for BIM web viewers</span></label>
             <label className="check-line"><input type="radio" name="exchange-format" checked={format === 'bos'} onChange={() => setFormat('bos')} /> <strong>BIM Open Schema</strong> <span className="muted small">Parquet tables, for data analysis and viewers</span></label>
+            <label className="check-line"><input type="radio" name="exchange-format" data-testid="export-step" checked={format === 'step'} onChange={() => setFormat('step')} /> <strong>STEP</strong> <span className="muted small">solids for CAD programs, on their exact surfaces where known</span></label>
             {hasModule('steel') && <label className="check-line"><input type="radio" name="exchange-format" data-testid="export-sdnf" checked={format === 'sdnf'} onChange={() => setFormat('sdnf')} /> <strong>SDNF</strong> <span className="muted small">columns, beams, steel members and plates, for steel detailing programs</span></label>}
           </div>
         </div>
@@ -103,7 +112,7 @@ export function ExchangeExportDialog() {
         </div>
         <div className="dialog-body exchange-options">
           <dl className="fields">
-            {phases.length > 0 && format !== 'sdnf' && (
+            {phases.length > 0 && format !== 'sdnf' && format !== 'step' && (
               <>
                 <dt title="The elements that stand at the end of this phase">Phase</dt>
                 <dd><select value={phase} onChange={(e) => setPhase(e.target.value)}><option value="">every phase</option>{phases.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></dd>
@@ -115,13 +124,13 @@ export function ExchangeExportDialog() {
                 <dd><label><input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={onlyShown} onChange={(e) => setOnlyShown(e.target.checked)} /> only what it shows</label></dd>
               </>
             )}
-            {format !== 'sdnf' && (
+            {format !== 'sdnf' && format !== 'step' && (
               <>
                 <dt title="Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP">Opening voids</dt>
                 <dd><label><input type="checkbox" data-testid="export-voids" style={{ width: 'auto', marginRight: 6 }} checked={voids} onChange={(e) => setVoids(e.target.checked)} /> as solids, for clash tools</label></dd>
               </>
             )}
-            {format === 'sdnf' ? null : format === 'ifc' ? (
+            {format === 'sdnf' || format === 'step' ? null : format === 'ifc' ? (
               <>
                 <dt>Schema</dt>
                 <dd><select value={schema} onChange={(e) => setSchema(e.target.value)}>
@@ -147,6 +156,8 @@ export function ExchangeExportDialog() {
                 <dd><label><input type="checkbox" data-testid="export-structural" style={{ width: 'auto', marginRight: 6 }} checked={structural} onChange={(e) => setStructural(e.target.checked)} /> Structural analysis view (analytical model and loads)</label></dd>
                 <dt title="Export IfcSpace geometry as faceted B-rep (or face set) instead of SweptSolid extrusions, for IFC readers such as CYPECAD MEP that fail on extruded space profiles">Spaces</dt>
                 <dd><label><input type="checkbox" data-testid="export-space-brep" style={{ width: 'auto', marginRight: 6 }} checked={spaceBrep} onChange={(e) => setSpaceBrep(e.target.checked)} /> export as faceted B-rep (instead of SweptSolid)</label></dd>
+                <dt title="Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before">Exact surfaces</dt>
+                <dd><label><input type="checkbox" data-testid="export-advanced-brep" style={{ width: 'auto', marginRight: 6 }} checked={advancedBrep} onChange={(e) => setAdvancedBrep(e.target.checked)} /> Studio solids as advanced B-rep on their exact surfaces</label></dd>
                 <dt>Simplify</dt>
                 <dd><label><input type="checkbox" className="export-simplify" style={{ width: 'auto', marginRight: 6 }} checked={simplify} onChange={(e) => setSimplify(e.target.checked)} /> fewer triangles where a body is meshed, never further from it than the tolerance</label></dd>
                 {simplify && (
