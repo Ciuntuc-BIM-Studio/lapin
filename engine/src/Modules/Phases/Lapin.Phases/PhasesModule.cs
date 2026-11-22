@@ -143,14 +143,13 @@ public sealed class PhasesModule : ILapinModule, IViewElementFilter
             if (asked.Count == 0) throw new CommandException("Nothing to assign a phase to.");
             var ids = WithFollowers(ctx.Model, ctx.Services.All<IPhaseFollowers>(), asked);
             string? Check(string? id) => id == null || s.Phases.Any(p => p.Id == id) ? id : throw new CommandException($"There is no phase „{id}”.");
-            int Index(string? id) => s.Phases.ToList().FindIndex(p => p.Id == id);
             foreach (var id in ids)
             {
                 var e = ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.");
                 var attrs = e.CloneAttrs();
                 if (a.ContainsKey("created")) { if (Check((string?)a["created"]) is { } c) attrs["phaseCreated"] = c; else attrs.Remove("phaseCreated"); }
                 if (a.ContainsKey("demolished")) { if (Check((string?)a["demolished"]) is { } d) attrs["phaseDemolished"] = d; else attrs.Remove("phaseDemolished"); }
-                var (ci, di) = (Index((string?)attrs["phaseCreated"] ?? s.DefaultCreated?.Id), Index((string?)attrs["phaseDemolished"]));
+                var (ci, di) = (s.IndexOf((string?)attrs["phaseCreated"] ?? s.DefaultCreated?.Id), s.IndexOf((string?)attrs["phaseDemolished"]));
                 if (di >= 0 && di < ci) throw new CommandException($"„{e.Name}” cannot be demolished before it is built.");
                 ctx.Replace(e.With(attrs: attrs));
             }
