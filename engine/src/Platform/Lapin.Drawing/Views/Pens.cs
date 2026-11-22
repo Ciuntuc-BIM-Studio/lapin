@@ -398,7 +398,7 @@ public static class Pens
             {
                 case LineRole.Hidden:
                 {
-                    var c = color ?? "#666666"; var w = styled?.WidthMm ?? Default.Hidden; var dash = styled?.Dash ?? [1.5, 1];
+                    var c = color ?? "#666666"; var w = styled?.WidthMm ?? Default.Hidden; var dash = styled?.Dash ?? Dashes.Of("hidden");
                     pen = Get($"hidden:{c}:{w}:{DashKey(dash)}", () => new Pen(PenLayer.Hidden, c, w, null, dash));
                     break;
                 }
@@ -436,7 +436,7 @@ public static class Pens
             Get("text:" + c, () => new Pen("TEXT", c, 0, null, null)).Texts.Add(new PenText(t.At, t.Text, Math.Round(mm, 3), t.Angle, "start", "bottom"));
         }
         if (m != null && m.Membranes.Count > 0)
-            Get("membrane", () => new Pen(PenLayer.Membrane, "#000000", Default.Membrane, null, [3, 1.5])).Segments.AddRange(m.Membranes);
+            Get("membrane", () => new Pen(PenLayer.Membrane, "#000000", Default.Membrane, null, Dashes.Of("dashed"))).Segments.AddRange(m.Membranes);
         return Ordered(pens);
     }
 
