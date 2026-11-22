@@ -520,10 +520,11 @@ public sealed class CoreModule : ILapinModule
                     continue;
                 }
                 if (e.Class is IfcClass.Project or IfcClass.Site or IfcClass.Building) throw new CommandException($"The {e.Class} cannot be deleted.");
-                if (e.Class == IfcClass.BuildingStorey && ctx.Model.RelatedOf(e.Id, IfcClass.RelContainedInSpatialStructure).Any())
+                // A storey with elements on it stays, unless they go in the same call (whatever the order asked).
+                if (e.Class == IfcClass.BuildingStorey && ctx.Model.RelatedOf(e.Id, IfcClass.RelContainedInSpatialStructure).Any(x => !deleting.Contains(x.Id)))
                     throw new CommandException($"„{e.Name}” still has elements on it.");
                 // A type in use stays: the elements built with it would be left without one.
-                if (ctx.Describe(e.Class)?.Kind == "type" && ctx.Model.RelatedOf(e.Id, IfcClass.RelDefinesByType).Where(x => !ids.Contains(x.Id)).Count() is var n and > 0)
+                if (ctx.Describe(e.Class)?.Kind == "type" && ctx.Model.RelatedOf(e.Id, IfcClass.RelDefinesByType).Count(x => !deleting.Contains(x.Id)) is var n and > 0)
                     throw new CommandException($"„{e.Name}” is used by {n} element(s): give them another type first.");
                 // A module may take its own element down with what hangs on it (a stair with the opening it asked of the floor above).
                 if (ctx.Services.All<IDeletion>().Any(d => d.Delete(ctx, id))) continue;
@@ -533,8 +534,12 @@ public sealed class CoreModule : ILapinModule
             // A shared body its last instance left goes with it (docs/plan-instancing.md).
             if (bodies.Count > 0)
             {
-                foreach (var e in ctx.Model.Entities)
+                // In any order: what is still built from each body is all that is asked, not the creation order.
+                foreach (var e in ctx.Model.AnyOrder)
+                {
                     if ((string?)e.Attrs[StoredBodies.BodyOf] is { } body) bodies.Remove(body);
+                    if (bodies.Count == 0) break;
+                }
                 foreach (var body in bodies) ctx.Remove(body);
             }
             foreach (var g in groups) if (ctx.Model.Get(g) is { } x && !Groups.KeptForAbsent(ctx, x)) ctx.Remove(g);
@@ -857,6 +862,10 @@ public static class Spatial
         return storey;
     }
 
+    /// <summary>The storey a project with none starts with: the product's first, else a ground floor at ±0.00, 3 m high.</summary>
+    public static (string Name, double Elevation, double Height) DefaultStorey(ProductManifest? product) =>
+        product?.Storeys is { Length: > 0 } own ? (own[0].Name, own[0].Elevation, own[0].Height) : ("Ground floor", 0.0, 3.0);
+
     /// <summary>
     /// The lowest storey, made when the model has none (an import into an empty project): the product's first storey,
     /// as the session starts one (Session.StartEmpty), else a ground floor.
@@ -865,7 +874,7 @@ public static class Spatial
     {
         if (Storeys(edit.Model).FirstOrDefault() is { } s) return s;
         var building = EnsureBuilding(edit);
-        var (name, elevation, height) = product?.Storeys is { Length: > 0 } own ? (own[0].Name, own[0].Elevation, own[0].Height) : ("Ground floor", 0.0, 3.0);
+        var (name, elevation, height) = DefaultStorey(product);
         var storey = new Entity(edit.NewId(), IfcClass.BuildingStorey, name, new JsonObject { ["elevation"] = elevation, ["height"] = height });
         edit.Add(storey);
         edit.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
