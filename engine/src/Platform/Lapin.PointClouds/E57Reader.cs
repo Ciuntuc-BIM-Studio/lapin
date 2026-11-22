@@ -87,8 +87,14 @@ public sealed partial class E57Reader : IPointReader
             static double FieldMax(Field? f) => f == null ? 1 : f.Kind == Kind.Scaled ? f.Max * f.Scale + f.Offset : f.Kind == Kind.Integer ? f.Max : 1;
             double imin = il != null ? Num(Child(il, "intensityMinimum"), FieldMin(fi)) : FieldMin(fi), imax = il != null ? Num(Child(il, "intensityMaximum"), FieldMax(fi)) : FieldMax(fi);
             double cmin = cl != null ? Num(Child(cl, "colorRedMinimum"), FieldMin(fc)) : FieldMin(fc), cmax = cl != null ? Num(Child(cl, "colorRedMaximum"), FieldMax(fc)) : FieldMax(fc);
-            _scans.Add(new Scan((string?)Child(scan, "name") ?? $"scan {_scans.Count + 1}", long.Parse((string)points.Attribute("fileOffset")!, CultureInfo.InvariantCulture),
-                long.Parse((string)points.Attribute("recordCount")!, CultureInfo.InvariantCulture), fields, q, t, imin, imax, cmin, cmax));
+            var scanName = (string?)Child(scan, "name") ?? $"scan {_scans.Count + 1}";
+            // Where its points are and how many: both required (E57 8.4.2); a scan without them, or past the file, is refused by name.
+            long Required(string attribute) =>
+                long.TryParse((string?)points.Attribute(attribute), NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) && v >= 0 ? v
+                    : throw new PointCloudException($"{source.Name}: the points of {scanName} have no {attribute} (or not a number).");
+            var fileOffset = Required("fileOffset");
+            if (fileOffset >= source.Length) throw new PointCloudException($"{source.Name}: the points of {scanName} are past the end of the file.");
+            _scans.Add(new Scan(scanName, fileOffset, Required("recordCount"), fields, q, t, imin, imax, cmin, cmax));
         }
         if (_scans.Count == 0) throw new PointCloudException($"{source.Name} holds no scans with points.");
         var meta = (string?)Child(root, "coordinateMetadata") ?? "";
@@ -220,7 +226,9 @@ public sealed partial class E57Reader : IPointReader
             var head = new byte[32];
             paged.Read(Logical(scan.Offset), head);
             if (head[0] != 1) throw new PointCloudException($"{_source.Name}: the points of {scan.Name} are not where its XML says.");
-            var at = Logical((long)BinaryPrimitives.ReadUInt64LittleEndian(head.AsSpan(16)));
+            var packets = BinaryPrimitives.ReadUInt64LittleEndian(head.AsSpan(16));
+            if (packets >= (ulong)_source.Length) throw new PointCloudException($"{_source.Name}: the data packets of {scan.Name} are past the end of the file.");
+            var at = Logical((long)packets);
             var streams = scan.Fields.Select(f => new Bits(f)).ToArray();
             int Idx(string n) => Array.FindIndex(streams, x => x.Field.Name == n);
             int ix = Idx("cartesianX"), iy = Idx("cartesianY"), iz = Idx("cartesianZ"), ir = Idx("sphericalRange"), ia = Idx("sphericalAzimuth"), ie = Idx("sphericalElevation");
@@ -250,12 +258,14 @@ public sealed partial class E57Reader : IPointReader
                 {
                     var count = BinaryPrimitives.ReadUInt16LittleEndian(ph.AsSpan(4));
                     if (count != streams.Length) throw new PointCloudException($"{_source.Name}: a data packet of {scan.Name} has {count} bytestreams, its prototype {streams.Length}.");
+                    var o = 6 + 2 * count;
+                    if (length < o) throw new PointCloudException($"{_source.Name}: a data packet of {scan.Name} is shorter than its header.");
                     var packet = new byte[length];
                     paged.Read(at, packet);
-                    var o = 6 + 2 * count;
                     for (var k = 0; k < count; k++)
                     {
                         var n = BinaryPrimitives.ReadUInt16LittleEndian(packet.AsSpan(6 + 2 * k));
+                        if (o + n > length) throw new PointCloudException($"{_source.Name}: a bytestream of {scan.Name} runs past its data packet.");
                         streams[k].Append(packet.AsSpan(o, n));
                         o += n;
                     }
