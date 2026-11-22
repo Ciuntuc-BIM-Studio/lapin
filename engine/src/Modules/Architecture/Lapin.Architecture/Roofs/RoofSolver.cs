@@ -225,13 +225,13 @@ public static class RoofSolver
     /// <summary>
     /// A barrel vault: a circular arc across the span between the two eaves,
     /// <paramref name="rise"/> high at the crown (a quarter of the span when
-    /// not said), in planar strips of at most <paramref name="stepDeg"/> each,
+    /// not said), in planar strips as <see cref="Chords"/> makes any arc (or of at most <paramref name="stepDeg"/> each, when said),
     /// the crown and both plate lines on strip boundaries. An eave's overhang
     /// goes on round the circle, so past the wall it dips under the plate; a
     /// gable's rake lengthens the vault at that end. Throws <see cref="ArgumentException"/>
     /// with <see cref="BarrelProblem"/>'s message.
     /// </summary>
-    public static RoofShape SolveBarrel(IReadOnlyList<Vec2> outline, IReadOnlyList<EdgeRule> rules, double? rise, double stepDeg = 7.5)
+    public static RoofShape SolveBarrel(IReadOnlyList<Vec2> outline, IReadOnlyList<EdgeRule> rules, double? rise, double? stepDeg = null)
     {
         if (BarrelProblem(outline, rules, rise) is { } problem) throw new ArgumentException(problem);
         var (pts, rs) = Orient(outline, rules);
@@ -248,7 +248,7 @@ public static class RoofSolver
         var sHi = Math.Min(span + rs[i1 % 4].Overhang, arc.SMid + R - 1e-6);
         double Ang(double s) => Math.Asin(Math.Clamp((s - arc.SMid) / R, -1, 1));
         // Strip boundaries across: equal angles between the marks (the eave edges, the plate lines, the crown).
-        var step = stepDeg * Math.PI / 180;
+        var step = stepDeg is { } deg ? deg * Math.PI / 180 : Chords.Step(R);
         var ss = new List<double>();
         void Fill(double from, double to)
         {

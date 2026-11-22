@@ -218,7 +218,7 @@ public static class StairsModule
                 : (string?)a["typeId"] is { } tid ? m.Get(tid) : FirstStoreyType(m);
             var spec = (type != null ? StairSpec.From(type.Attrs["spec"]) : null) ?? StairSpec.Default();
             var height = existing != null ? StairBuilder.Height(m, existing, storey)
-                : spec.Rise ?? (Spatial.Storeys(m).FirstOrDefault(s => s.Num("elevation") > storey.Num("elevation") + 1e-6)?.Num("elevation") ?? storey.Num("elevation") + storey.Num("height", 3)) - storey.Num("elevation");
+                : spec.Rise ?? (Spatial.Storeys(m).FirstOrDefault(s => s.Num("elevation") > storey.Num("elevation") + 1e-6)?.Num("elevation") ?? storey.Num("elevation") + WallTop.StoreyHeight(storey)) - storey.Num("elevation");
             var needed = StairSolver.Resolve(spec with { Shape = "straight" }, height).Risers;
             try
             {
@@ -297,7 +297,7 @@ public static class StairsModule
         r.Query("stairPreview", (q, a) =>
         {
             var spec = StairSpec.From(a["spec"]) ?? throw new CommandException("The stair type's specification cannot be read.");
-            var height = spec.Rise ?? Json.Number(a["height"]) ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Num("height", 3) ?? 3;
+            var height = spec.Rise ?? Json.Number(a["height"]) ?? WallTop.StoreyHeight(Spatial.Storeys(q.Model).FirstOrDefault());
             var place = new StairPlacement(new Vec2(0, 0), new Vec2(1, 0), (string?)a["turn"] != "right", 0);
             if (spec.IsRamp) return DescribeRamp(RampSolver.Resolve(spec, height, new RampInputs(Json.Number(a["width"])), place.TurnLeft), place);
             var r = StairSolver.Resolve(spec, height, new StairInputs(Json.Number(a["width"])), place.TurnLeft);
@@ -316,7 +316,7 @@ public static class StairsModule
             var spec = (type != null ? StairSpec.From(type.Attrs["spec"]) : null)
                 ?? (key != null && StairSpec.Library.TryGetValue(key, out var make) ? make() : StairSpec.Default());
             var above = Spatial.Storeys(q.Model).FirstOrDefault(s => s.Num("elevation") > storey.Num("elevation") + 1e-6);
-            var height = spec.Rise ?? (above?.Num("elevation") ?? storey.Num("elevation") + storey.Num("height", 3)) - storey.Num("elevation");
+            var height = spec.Rise ?? (above?.Num("elevation") ?? storey.Num("elevation") + WallTop.StoreyHeight(storey)) - storey.Num("elevation");
             var left = (string?)a["turn"] != "right";
             if (spec.IsRamp) return DescribeRamp(RampSolver.Resolve(spec, height, new RampInputs(Json.Number(a["width"])), left), new StairPlacement(new Vec2(0, 0), new Vec2(1, 0), left, 0));
             var r = StairSolver.Resolve(spec, height, new StairInputs(Json.Number(a["width"])), left);
@@ -329,7 +329,7 @@ public static class StairsModule
         {
             var spec = StairSpec.From(a["spec"]) ?? throw new CommandException("The stair type's specification cannot be read.");
             // Entrance steps (a rise of their own) are drawn standing on the ground, with no floor above to open.
-            var height = spec.Rise ?? Math.Max(0.3, Json.Number(a["height"]) ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Num("height", 3) ?? 3);
+            var height = spec.Rise ?? Math.Max(0.3, Json.Number(a["height"]) ?? WallTop.StoreyHeight(Spatial.Storeys(q.Model).FirstOrDefault()));
             var turn = (string?)a["turn"] == "right" ? "right" : "left";
             var scale = Json.Number(a["scale"]) ?? 50;
             var catalog = q.Services as ModuleCatalog ?? throw new CommandException("No modules to draw with.");

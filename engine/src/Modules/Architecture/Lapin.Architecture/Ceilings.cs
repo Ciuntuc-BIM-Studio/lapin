@@ -215,7 +215,7 @@ public static class Ceilings
     /// <summary>
     /// A ceiling's grid: cells of the tile's size in the grid's own frame (turned by the type's rotation
     /// about the origin), from the origin (the instance's, else the outline's middle less half a cell, so
-    /// the cut tiles at the edges come out even); which cells lie whole inside the outline.
+    /// the cut tiles at the edges come out even); which cells lie whole inside the outline and clear of its holes.
     /// </summary>
     public sealed class Grid
     {
@@ -224,9 +224,10 @@ public static class Ceilings
         public readonly double W, L;
         public readonly IReadOnlyList<Vec2> Outline;
         readonly IReadOnlyList<Vec2> _local;
+        readonly List<List<Vec2>> _holes;
         public readonly int I0, I1, J0, J1;
 
-        public Grid(IReadOnlyList<Vec2> outline, CeilingSpec spec, Vec2? origin, double turn = 0)
+        public Grid(IReadOnlyList<Vec2> outline, CeilingSpec spec, Vec2? origin, double turn = 0, IReadOnlyList<IReadOnlyList<Vec2>>? holes = null)
         {
             Outline = outline;
             (W, L) = (spec.TileWidth, spec.TileLength);
@@ -236,6 +237,7 @@ public static class Ceilings
             var mid = new Vec2(outline.Average(p => p.X), outline.Average(p => p.Y));
             Origin = origin ?? mid - U * (W / 2) - V * (L / 2);
             _local = outline.Select(Local).ToList();
+            _holes = (holes ?? []).Select(h => h.Select(Local).ToList()).ToList();
             I0 = (int)Math.Floor(_local.Min(p => p.X) / W); I1 = (int)Math.Ceiling(_local.Max(p => p.X) / W);
             J0 = (int)Math.Floor(_local.Min(p => p.Y) / L); J1 = (int)Math.Ceiling(_local.Max(p => p.Y) / L);
         }
@@ -245,13 +247,17 @@ public static class Ceilings
         public (int I, int J) CellAt(Vec2 p) { var q = Local(p); return ((int)Math.Floor(q.X / W), (int)Math.Floor(q.Y / L)); }
         public CellRect Cell(int i, int j) => new(i * W, (i + 1) * W, j * L, (j + 1) * L);
 
-        /// <summary>Whether the cell lies wholly inside the outline: its corners inside and no edge of the outline through it.</summary>
+        /// <summary>
+        /// Whether the cell lies wholly inside the outline: its corners inside, no edge of the outline through it, and no
+        /// hole in it or over it (audit 22.11.2026 G11: a hole sharing only its edge leaves the cell whole).
+        /// </summary>
         public bool Whole(int i, int j)
         {
             var c = Cell(i, j);
             Vec2[] corners = [new(c.X0, c.Z0), new(c.X1, c.Z0), new(c.X1, c.Z1), new(c.X0, c.Z1)];
             if (!corners.All(p => Polygon2.Contains(_local, p))) return false;
-            return !_local.Any(p => p.X > c.X0 + 1e-9 && p.X < c.X1 - 1e-9 && p.Y > c.Z0 + 1e-9 && p.Y < c.Z1 - 1e-9);
+            if (_local.Any(p => p.X > c.X0 + 1e-9 && p.X < c.X1 - 1e-9 && p.Y > c.Z0 + 1e-9 && p.Y < c.Z1 - 1e-9)) return false;
+            return !_holes.Any(h => Math.Abs(Polygon2.SignedArea(Polygon2.ClipBox(h, c.X0, c.Z0, c.X1, c.Z1))) > 1e-9);
         }
 
         public IEnumerable<(int I, int J)> WholeCells()
@@ -283,7 +289,7 @@ public static class Ceilings
         }
     }
 
-    public static Grid GridOf(IModelView m, Entity c) => new(Slabs.Contour(c), SpecOf(m, c), OriginOf(c), c.Num(TurnKey));
+    public static Grid GridOf(IModelView m, Entity c) => new(Slabs.Contour(c), SpecOf(m, c), OriginOf(c), c.Num(TurnKey), OutlineHoles.Built(c));
 
     /// <summary>The instance's own grid origin, if it has one.</summary>
     public static Vec2? OriginOf(Entity c) =>
@@ -296,7 +302,7 @@ public static class Ceilings
         var spec = SpecOf(m, c);
         var storey = Spatial.StoreyOf(m, c.Id);
         var z = (storey?.Num("elevation") ?? 0) + c.Num("height", 2.7);
-        var top = (storey?.Num("elevation") ?? 0) + (storey?.Num("height", 3) ?? 3);
+        var top = (storey?.Num("elevation") ?? 0) + WallTop.StoreyHeight(storey);
         var tileMat = Materials.Find(m, spec.TileMaterial)?.Id;
         var gridMat = Materials.Find(m, spec.GridMaterial)?.Id;
         var parts = new List<GeometryPart>();
@@ -310,7 +316,7 @@ public static class Ceilings
             if (Prism.ExtrudeFootprint(ccw, holes, z, spec.Thickness, "board") is { } board)
                 parts.Add(new GeometryPart("Board", spec.TileColor, board, tileMat, "tiles"));
         }
-        var grid = new Grid(ccw, spec, OriginOf(c), c.Num(TurnKey));
+        var grid = new Grid(ccw, spec, OriginOf(c), c.Num(TurnKey), holes);
         var fixtures = Fixtures(c).Where(f => grid.Whole(f.I, f.J)).GroupBy(f => (f.I, f.J)).Select(g => g.Last()).ToList();
         var taken = fixtures.Select(f => (f.I, f.J)).ToHashSet();
         if (spec.System == "grid")
@@ -390,7 +396,6 @@ public static class Ceilings
         var fixtures = Fixtures(c).Where(f => grid.Whole(f.I, f.J)).ToList();
         var spec = SpecOf(m, c);
         // Exactly, its arcs as arcs (forum topic 97).
-        var (corners, rises) = (Slabs.Corners(c), Slabs.Rises(c));
         var area = Slabs.Area(c) - OutlineHoles.Area(c);
         var perimeter = Slabs.Perimeter(c);
         yield return new QuantitySet("Qto_CoveringBaseQuantities", [new("Width", spec.Thickness, "LENGTH"), new("GrossArea", area, "AREA"), new("NetArea", area, "AREA")]);

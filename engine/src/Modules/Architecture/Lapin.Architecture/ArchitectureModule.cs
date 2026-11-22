@@ -198,6 +198,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Geometry(IfcClass.Window, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Geometry(IfcClass.OpeningElement, (opening, model, services) => Openings.BareGeometry(opening, model, services));
+        // A plan cut at its own height draws the doors', windows' and sunshades' symbols at it (audit 22.11.2026).
+        r.Service<IPlanAtCut>(new JoineryPlanAtCut());
         r.Quantities(IfcClass.Door, (fill, _, model) => FillQuantities(fill, model, "Qto_DoorBaseQuantities"));
         r.Quantities(IfcClass.Window, (fill, _, model) => FillQuantities(fill, model, "Qto_WindowBaseQuantities"));
         r.Catalog("joinery", new JsonObject
@@ -926,7 +928,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             }
             var along = Json.Number(a["along"]) ?? Openings.AlongOf(wall, new Vec2(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0));
             // sillFrom (forum topic 192): "structural" | "finished", else the project's default.
-            var opening = Openings.AddBare(ctx, wall, along, Json.Number(a["sill"]) ?? 0, Json.Number(a["width"]) ?? 0.9, Json.Number(a["height"]) ?? 2.1, (string?)a["shape"], Json.Number(a["rise"]),
+            var opening = Openings.AddBare(ctx, wall, along, Json.Number(a["sill"]) ?? 0, Json.Number(a["width"]) ?? Openings.BareWidth, Json.Number(a["height"]) ?? Openings.BareHeight, (string?)a["shape"], Json.Number(a["rise"]),
                 OpeningSills.Parse((string?)a["sillFrom"]) ?? OpeningSills.ProjectDefault(ctx.Model));
             return new JsonObject { ["id"] = opening.Id };
         });
@@ -1890,4 +1892,13 @@ sealed class WallTopDeletion : IDeletion, IElementUpdate
         if (ctx.Model.Get(id) is { Class: IfcClass.BuildingStorey } storey) WallTop.Release(ctx, storey);
         return false;
     }
+}
+
+/// <summary>The doors', windows' and sunshades' plan symbols at a plan's own cut height (audit 22.11.2026).</summary>
+sealed class JoineryPlanAtCut : IPlanAtCut
+{
+    public bool Handles(Entity e) => e.Class is IfcClass.Door or IfcClass.Window or Sunshades.Class;
+
+    public IReadOnlyList<PlanItem>? PlanAt(IModelView m, Entity e, double cut) =>
+        e.Class == Sunshades.Class ? Sunshades.PlanAt(e, m, cut) : Openings.FillPlanAt(e, m, cut);
 }

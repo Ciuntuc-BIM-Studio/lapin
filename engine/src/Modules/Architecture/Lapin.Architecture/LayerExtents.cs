@@ -18,6 +18,19 @@ namespace Lapin.Architecture;
 /// </summary>
 public static class LayerExtents
 {
+    /// <summary>
+    /// The layer a layer of no thickness (a membrane, paint; decision 291) lies on: the next one with a thickness from it towards
+    /// the core at <paramref name="core"/> (positions in the build-up of <paramref name="count"/>); -1 when there is none. A wall's
+    /// and a floor's zero layers are measured by the area of that one.
+    /// </summary>
+    public static int ZeroLayerSupport(int count, int i, int core, Func<int, double> thickness)
+    {
+        var step = i < core ? 1 : -1;
+        for (var j = i + step; j >= 0 && j < count; j += step)
+            if (thickness(j) > 1e-9) return j;
+        return -1;
+    }
+
     public const string Key = LayerExtentReads.AttrKey;
     public const string Start = "start", End = "end", Bottom = "bottom", Top = "top", Outline = "outline", Edge = "edge";
     public static readonly string[] WallEdges = [Start, End, Bottom, Top];
@@ -141,16 +154,9 @@ public static class LayerExtents
             for (var j = i + 1; j < n; j++)
             {
                 if (j == i + 1 || (i == 0 && j == n - 1)) continue;
-                if (SegmentsMeet(p[i], p[(i + 1) % n], p[j], p[(j + 1) % n])) return false;
+                if (Polyline2.Crosses(p[i], p[(i + 1) % n], p[j], p[(j + 1) % n])) return false;
             }
         return true;
-    }
-
-    static bool SegmentsMeet(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
-    {
-        double O(Vec2 p, Vec2 q, Vec2 r) => Vec2.Cross(q - p, r - p);
-        var (d1, d2, d3, d4) = (O(c, d, a), O(c, d, b), O(a, b, c), O(a, b, d));
-        return ((d1 > 1e-12 && d2 < -1e-12) || (d1 < -1e-12 && d2 > 1e-12)) && ((d3 > 1e-12 && d4 < -1e-12) || (d3 < -1e-12 && d4 > 1e-12));
     }
 
     /// <summary>

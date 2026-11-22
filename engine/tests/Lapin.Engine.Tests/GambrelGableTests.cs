@@ -45,4 +45,27 @@ public class GambrelGableTests
         }
         Assert.True(Top(east) > 6.5);
     }
+
+    [Fact]
+    public void A_gable_wall_s_gross_values_follow_what_is_built_up_to_the_roof_as_the_net_values_do()
+    {
+        // Audit 22.11.2026 §3.6: the gross values were the axis length × the eave height while the net counted the gable.
+        var f = new Fixture(new ArchitectureModule());
+        (double, double, double, double)[] rect = [(0, 0, 10, 0), (10, 0, 10, 6), (10, 6, 0, 6), (0, 6, 0, 0)];
+        var walls = rect.Select(w => f.Wall(w.Item1, w.Item2, w.Item3, w.Item4)).ToList();
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(10, 0), new JsonArray(10, 6), new JsonArray(0, 6)) })!["id"]!;
+        f.Run("architecture.updateRoof", new JsonObject
+        {
+            ["id"] = roof, ["edges"] = new JsonArray(new JsonObject(), new JsonObject { ["kind"] = "gable" }, new JsonObject(), new JsonObject { ["kind"] = "gable" }),
+        });
+        Dictionary<string, double> Q(string id) => f.Session.Quantities(id).Single(s => s.Name == "Qto_WallBaseQuantities").Quantities.ToDictionary(x => x.Name, x => x.Value);
+        var gable = Q(walls[1]);
+        Assert.True(gable["GrossSideArea"] > gable["Length"] * gable["Height"] + 1, $"the gable counts: {gable["GrossSideArea"]}");
+        // Built as measured: the gross is the gable's too, the net as near it as an eave wall's is (only the corners' layers
+        // wrapping round the joins, a few litres, lie past the axis's length).
+        var eave = Q(walls[0]);
+        Assert.Equal(gable["GrossVolume"], gable["NetVolume"], 0.01);
+        Assert.Equal(eave["GrossVolume"], eave["NetVolume"], 0.01);
+        Assert.Equal(gable["GrossSideArea"], gable["NetSideArea"], 0.05);
+    }
 }

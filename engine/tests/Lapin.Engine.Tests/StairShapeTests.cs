@@ -44,6 +44,8 @@ public class StairShapeTests
         Assert.Equal(0, (r.Foot.At - new Vec2(0, 0)).Length, 9);
         Assert.Equal(arc.Walk, (r.Top.At - arc.Centre).Length, 9);
         Assert.Contains(r.Checks, c => c.Key == "headroom");
+        // Each tread's arcs in the pieces Chords makes of the outer one (audit 22.11.2026), both sides alike.
+        Assert.All(r.Winders, w => Assert.Equal(2 * (Chords.Count(arc.Outer, arc.Step, 2) + 1), w.Outline.Length));
         var f = TwoStoreys();
         var id = Place(f, spec);
         var g = f.Session.Geometry(id)!;

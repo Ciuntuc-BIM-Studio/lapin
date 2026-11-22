@@ -56,6 +56,12 @@ public static class WallTop
         return level + wall.Num(OffsetKey);
     }
 
+    /// <summary>The height a storey that says none is taken to have.</summary>
+    public const double DefaultStoreyHeight = 3.0;
+
+    /// <summary>A storey's height, <see cref="DefaultStoreyHeight"/> when it (or the storey) is not there.</summary>
+    public static double StoreyHeight(Entity? storey) => storey?.Num("height", DefaultStoreyHeight) ?? DefaultStoreyHeight;
+
     /// <summary>The wall's own height, what it stands to unconnected.</summary>
     public static double Stored(Entity wall) => wall.Num("height", Walls.DefaultHeight);
 

@@ -270,9 +270,9 @@ public static class StairSolver
         var treads = new List<Winder>();
         for (var k = 0; k < steps; k++)
         {
-            // Each tread: the wedge between two risers, its arcs sampled every few degrees.
+            // Each tread: the wedge between two risers, its arcs in the pieces Chords makes the outer one of (both alike, so the risers stay straight).
             var (t0, t1) = (arc.Angle(k), arc.Angle(k + 1));
-            var m = Math.Max(2, (int)Math.Ceiling(Math.Abs(t1 - t0) / (Math.PI / 36)));
+            var m = Chords.Count(arc.Outer, t1 - t0, 2);
             var outer = Enumerable.Range(0, m + 1).Select(i => arc.At(t0 + (t1 - t0) * i / m, arc.Outer));
             var innerPts = Enumerable.Range(0, m + 1).Select(i => arc.At(t1 - (t1 - t0) * i / m, arc.Inner));
             treads.Add(new Winder([.. outer, .. innerPts], (k + 1) * h, k + 1));

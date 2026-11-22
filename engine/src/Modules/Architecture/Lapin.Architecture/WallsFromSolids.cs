@@ -736,9 +736,6 @@ public static class WallsFromSolids
         return new JsonObject { ["shown"] = shown };
     }
 
-    /// <summary>How many solids a wall keeps hidden behind it.</summary>
-    public static int HiddenBehind(IModelView m, string wallId) => m.Entities.Count(e => e.Str(Superseded.Key) == wallId);
-
     // ─── The answer ─────────────────────────────────────────────────────────
 
     static JsonObject Json(Found f) => new()

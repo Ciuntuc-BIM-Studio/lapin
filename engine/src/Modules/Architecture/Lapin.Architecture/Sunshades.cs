@@ -616,14 +616,24 @@ public static class Sunshades
             parts.Add(new GeometryPart(RoleNames[role], color, Openings.Combine(solids, "sunshade:" + role), mat?.Id, "sunshade:" + role));
         }
         if (parts.Count == 0) return new ElementGeometry([], Diagnostics: ["The sunshade has no body: make it longer or higher."]);
-        return new ElementGeometry(parts, Plan(b, f), [f.At(0, 0, 0).Xy, f.At(f.Length, 0, 0).Xy], b.Notes.Count > 0 ? ["The perforation is drawn coarser than it is (too many holes to draw)."] : null);
+        return new ElementGeometry(parts, Plan(b, f, Openings.PlanCut), [f.At(0, 0, 0).Xy, f.At(f.Length, 0, 0).Xy], b.Notes.Count > 0 ? ["The perforation is drawn coarser than it is (too many holes to draw)."] : null);
     }
 
-    /// <summary>Each solid's outline in plan (identical ones once), by where it stands against the plan's cut (1.2 m over its storey's floor).</summary>
-    static List<PlanItem> Plan(Builder b, ShadeFrame f)
+    /// <summary>A sunshade's plan with the plan cut at <paramref name="cut"/> over its storey's level (a plan's own cut height, audit 22.11.2026); null when it has no frame.</summary>
+    public static IReadOnlyList<PlanItem>? PlanAt(Entity e, IModelView m, double cut)
+    {
+        var s = SpecOf(m, e);
+        if (FrameOf(e, m, s) is not { } f) return null;
+        var b = new Builder(f);
+        Build(b, s, Projection(e, s));
+        return Plan(b, f, cut);
+    }
+
+    /// <summary>Each solid's outline in plan (identical ones once), by where it stands against the plan's cut (<paramref name="cutHeight"/> over its storey's floor).</summary>
+    static List<PlanItem> Plan(Builder b, ShadeFrame f, double cutHeight)
     {
         var o = new List<PlanItem>();
-        var cut = f.ZFloor + Openings.PlanCut;
+        var cut = f.ZFloor + cutHeight;
         var seen = new HashSet<string>();
         var all = new List<Vec2>();
         // What the cut crosses (fins, posts, a screen) is drawn piece by piece; what is over or under it as one outline per part.

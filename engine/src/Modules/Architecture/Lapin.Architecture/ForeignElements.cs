@@ -87,7 +87,7 @@ public sealed class ForeignElements : IIfcRecognizer
             attrs["function"] = fn;
         if (Property(e, (null, "Department")) is { } department) attrs["department"] = department;
         if (Property(e, ("Pset_SpaceCoveringRequirements", "FloorCovering"), ("Pset_SpaceCommon", "FloorCovering"), (null, "Floor Finish"), (null, "FloorFinish")) is { } floor) attrs["finishFloor"] = floor;
-        if (height is { } h && h > 0.1 && Math.Abs(h - storey.Num("height", 3)) > 1e-3) attrs["height"] = Math.Round(h, 6);
+        if (height is { } h && h > 0.1 && Math.Abs(h - WallTop.StoreyHeight(storey)) > 1e-3) attrs["height"] = Math.Round(h, 6);
         if (baseZ is { } z && Math.Round(z - storey.Num("elevation"), 6) is var offset && Math.Abs(offset) > 1e-3) attrs["baseOffset"] = offset;
         var id = GlobalId.IsValid(e.GlobalId) && edit.Model.Get(e.GlobalId) == null ? e.GlobalId : edit.NewId();
         edit.Add(new Entity(id, Rooms.Class, name, attrs));

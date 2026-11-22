@@ -119,4 +119,21 @@ public sealed class RulePackTests
         f.Run("rules.update", new JsonObject { ["id"] = id, ["section"] = "bolts", ["values"] = new JsonObject { ["grades"] = new JsonArray("A325", "A490") } });
         Assert.Equal(["A325", "A490"], f.Session.Query("steel.boltGrades", [])!["grades"]!.AsArray().Select(x => (string)x!).ToArray());
     }
+
+    [Fact]
+    public void A_type_of_a_set_the_project_s_rules_lack_keeps_its_own_and_the_check_says_so()
+    {
+        // Audit 22.11.2026 §3.6: a set missing from the pack silently became the residential one.
+        var f = F();
+        var own = StairRules.Residential with { Set = "loft", RiserMax = 0.22 };
+        var stairType = (string)f.Run("architecture.createStairType", new JsonObject { ["spec"] = (StairSpec.Default() with { Rules = own }).ToJson() })!["id"]!;
+        OwnPack(f);
+        var findings = f.Session.Query("rules.check", [])!["findings"]!.AsArray().OfType<JsonObject>().ToList();
+        Assert.Contains(findings, x => (string?)x["element"] == stairType && ((string)x["message"]!).Contains("no set „loft”"));
+        var r = f.Run("architecture.applyStairRules", [])!;
+        Assert.Equal(1, (int)r["skipped"]!);
+        var kept = StairSpec.From(f.Model.Get(stairType)!.Attrs["spec"])!.Rules;
+        Assert.Equal("loft", kept.Set);
+        Assert.Equal(0.22, kept.RiserMax, 9);
+    }
 }

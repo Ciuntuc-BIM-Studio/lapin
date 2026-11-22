@@ -574,6 +574,9 @@ public static class Views
         double? cutZ = plan && !site && style.Ifc2d && m.Get(storey ?? "") is { Class: IfcClass.BuildingStorey } ? Range(m, view).Cut : null;
         // Elements standing on several storeys (a lift's shaft): drawn by the plans of each storey they reach.
         IReadOnlyList<IStoreySpans> spans = plan ? q.Services.All<IStoreySpans>() : [];
+        // A plan cut at another height than the geometry's symbols are drawn at asks the modules for them at its own (audit 22.11.2026).
+        var planCut = view.NumOrNull("cutHeight") ?? DefaultCut;
+        IReadOnlyList<IPlanAtCut> atCut = plan && !site && Math.Abs(planCut - DefaultCut) > 1e-9 ? q.Services.All<IPlanAtCut>() : [];
         var planStorey = plan && storey != null && m.Get(storey) is { Class: IfcClass.BuildingStorey } ps ? ps : null;
         // In a plan the partial structure display and the finishes by kind of view rule what the cut plane cuts (decision 500):
         // a floor seen under it, a soffit over it, shows as it is, so a plan without the finishes still sees its floors.
@@ -636,6 +639,7 @@ public static class Views
                 foreach (var sh in g.Silhouettes!)
                     if (sh.Mode == null || sh.Mode == entourage) silhouettes.Add(new DrawSilhouette(sh, e.Id, e.Class, style.EntourageFill, thin));
             var symbolsHere = spanned ? span!.PlanOn(m, e, planStorey!) ?? g.Plan : Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey ? g.Plan : null;
+            if (symbolsHere != null && !spanned && atCut.FirstOrDefault(x => x.Handles(e)) is { } hook && hook.PlanAt(m, e, planCut) is { } cutHere) symbolsHere = cutHere;
             if (view.Str("kind") == "plan" && !stored && Generator.SymbolicInPlan.Contains(e.Class) && symbolsHere != null)
                 foreach (var item in symbolsHere)
                 {

@@ -86,4 +86,28 @@ public class CeilingTests
         }
         finally { File.Delete(path); }
     }
+
+    [Fact]
+    public void Cells_in_or_touched_by_a_hole_take_no_fixture_and_are_not_counted()
+    {
+        // Audit 22.11.2026 G11: the ceiling's holes were ignored by the layout and the counts.
+        var f = new Fixture();
+        static JsonArray Sq(double x0, double y0, double x1, double y1) => new(new JsonArray(x0, y0), new JsonArray(x1, y0), new JsonArray(x1, y1), new JsonArray(x0, y1));
+        var id = (string)f.Run("architecture.addCeiling", new JsonObject
+        {
+            ["storeyId"] = f.Storey, ["points"] = Sq(0, 0, 3.6, 4.8), ["height"] = 2.6,
+            // One hole exactly on the cell (0, 0) (its neighbours only share its edges), one inside the corner cell (-2, -3).
+            ["holes"] = new JsonArray(Sq(1.5, 2.1, 2.1, 2.7), Sq(0.4, 0.4, 0.8, 0.8)),
+        })!["id"]!;
+        var grid = Ceilings.GridOf(f.Model, f.Model.Get(id)!);
+        Assert.Equal(35 - 2, grid.WholeCells().Count());
+        Assert.False(grid.Whole(0, 0));
+        Assert.False(grid.Whole(-2, -3));
+        Assert.True(grid.Whole(1, 0));
+        Assert.Throws<CommandException>(() => f.Run("architecture.ceilingFixture", new JsonObject { ["id"] = id, ["kind"] = "light", ["x"] = 1.8, ["y"] = 2.4 }));
+        f.Run("architecture.ceilingLayout", new JsonObject { ["id"] = id, ["kind"] = "light", ["every"] = 1, ["offset"] = 0 });
+        var q = f.Session.Quantities(id).Single(s => s.Name == "Lapin_CeilingQuantities").Quantities.ToDictionary(x => x.Name, x => x.Value);
+        Assert.Equal(33, q["LightPanels"]);
+        Assert.Equal(0, q["WholeTiles"]);
+    }
 }

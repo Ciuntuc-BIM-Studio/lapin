@@ -131,4 +131,26 @@ public class WindowDressingTests
         Assert.True(Count(spec, "plan") > Count(plain, "plan"));
         Assert.Equal(Count(spec, "elevation"), Count(plain, "elevation")); // from inside, an outside grille is behind the glass
     }
+
+    [Fact]
+    public void A_plan_cut_at_its_own_height_draws_the_dressings_as_that_cut_finds_them()
+    {
+        // Audit 22.11.2026 §3.6: the dressings' plan was drawn at 1.2 m whatever the plan's cut height.
+        var (w, _, _, _) = Window(new JoineryDetails(Shutters: new JoineryShutters(true, Open: true)));
+        var f = Current;
+        var window = f.Model.Get(w)!;
+        var own = f.Session.Geometry(w)!.Plan!;
+        // At the default cut, the same symbols as the geometry's.
+        var atDefault = Openings.FillPlanAt(window, f.Model, Views.DefaultCut)!;
+        Assert.Equal(own.Select(i => (i.Kind, i.Points.Count)), atDefault.Select(i => (i.Kind, i.Points.Count)));
+        Assert.Contains(atDefault, i => i.Kind == "heavy" && i.Points.Count == 4);
+        // Cut under the sill, the shutters are over the cut: overhead, none cut.
+        var low = Openings.FillPlanAt(window, f.Model, 0.3)!;
+        Assert.Equal(own.Count, low.Count);
+        Assert.True(low.Count(i => i.Kind == "overhead") > atDefault.Count(i => i.Kind == "overhead"));
+        Assert.True(low.Count(i => i.Kind == "heavy") < atDefault.Count(i => i.Kind == "heavy"));
+        // The plans ask the architecture module for them.
+        var hook = Assert.Single(f.Session.Reader.Services.All<IPlanAtCut>(), h => h.Handles(window));
+        Assert.Equal(low.Count, hook.PlanAt(f.Model, window, 0.3)!.Count);
+    }
 }

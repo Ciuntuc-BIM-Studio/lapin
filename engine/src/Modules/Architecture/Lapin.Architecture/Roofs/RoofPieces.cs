@@ -57,7 +57,7 @@ sealed class RoofPieces : IOutlinePieces
             for (var y = y0 + step / 2; y < y1; y += step)
             {
                 var p = new Vec2(x, y);
-                if (!Polygon2.Contains(corners, p) || Edges(corners).Min(s => Distance(s.A, s.B, p)) < 0.05) continue;
+                if (!Polygon2.Contains(corners, p) || Edges(corners).Min(s => Polyline2.SegmentDistance(p, s.A, s.B)) < 0.05) continue;
                 if (old.HeightAt(p) is not { } z0 || shape.HeightAt(p) is not { } z1) continue;
                 if (Math.Abs(z0 - z1) > 1e-3)
                     throw new CommandException($"Cut there, „{e.Name}” would change its slopes (each part keeps its edges' rules): cut it where its planes allow, as across a gable roof's ridge.");
@@ -71,14 +71,6 @@ sealed class RoofPieces : IOutlinePieces
     }
 
     static IEnumerable<(Vec2 A, Vec2 B)> Edges(IReadOnlyList<Vec2> c) => c.Select((p, i) => (p, c[(i + 1) % c.Count]));
-
-    static double Distance(Vec2 a, Vec2 b, Vec2 p)
-    {
-        var ab = b - a;
-        var l2 = Vec2.Dot(ab, ab);
-        var t = l2 < 1e-18 ? 0 : Math.Clamp(Vec2.Dot(p - a, ab) / l2, 0, 1);
-        return (a + ab * t - p).Length;
-    }
 
     public void Rehost(ICommandContext ctx, Entity e, Entity? second, Func<Vec2, bool> onFirst)
     {

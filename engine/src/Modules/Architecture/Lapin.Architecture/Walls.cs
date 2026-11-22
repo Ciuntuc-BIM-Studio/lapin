@@ -1238,6 +1238,8 @@ public static class Walls
         var gaps = openings.Where(o => o.Sill < cutAt && o.Sill + o.Height > cutAt).Select(o => (From: o.Along - o.Width / 2, To: o.Along + o.Width / 2)).OrderBy(g => g.From).ToList();
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
+        // Each cut piece says its layer's subcategory (finishes, core…), as a straight wall's does (audit 22.11.2026).
+        var layered = LayerSets.BandsOf(m, wall.Id);
         foreach (var band in bands)
         {
             if (!(band.To - band.From > 1e-9)) continue;
@@ -1274,7 +1276,7 @@ public static class Walls
                 var lo = at;
                 double Lo(double y) => Math.Max(From(y) - f0, lo);
                 double Hi(double y) => Math.Min(To(y) + f1, g.From);
-                if (Hi(band.From) - Lo(band.From) > 1e-9 && Hi(band.To) - Lo(band.To) > 1e-9) plan.Add(new PlanItem("cut", true, c.Band(Lo, Hi, band.From, band.To)));
+                if (Hi(band.From) - Lo(band.From) > 1e-9 && Hi(band.To) - Lo(band.To) > 1e-9) plan.Add(new PlanItem("cut", true, c.Band(Lo, Hi, band.From, band.To), Sub: layered != null && band.Index < layered.Count ? LayerSets.SubOf(m, layered[band.Index]) : null));
                 at = Math.Max(at, g.To);
             }
         }
@@ -1445,14 +1447,16 @@ public static class Walls
         // A layer interrupted by a wall crossing it is several parts of one key: measured together.
         var volumes = geometry.Parts.GroupBy(p => p.Key ?? p.Name).ToDictionary(g => g.Key, g => g.Sum(p => Measure.Volume(p.Solid)));
         var net = volumes.Values.Sum();
+        // Gross as built (audit 22.11.2026): up to the top the roofs give it (a gable included), not the eave height alone.
+        var grossSide = length * MeanTop(m, wall, height, width);
         yield return new QuantitySet("Qto_WallBaseQuantities",
         [
             new("Length", length, "LENGTH"),
             new("Width", width, "LENGTH"),
             new("Height", height, "LENGTH"),
-            new("GrossSideArea", length * height, "AREA", "Gross side area"),
+            new("GrossSideArea", grossSide, "AREA", "Gross side area"),
             new("NetSideArea", width > 0 ? net / width : 0, "AREA", "Net side area"),
-            new("GrossVolume", length * height * width, "VOLUME", "Gross volume"),
+            new("GrossVolume", grossSide * width, "VOLUME", "Gross volume"),
             new("NetVolume", net, "VOLUME", "Net volume"),
         ]);
         var core = bands.FirstOrDefault(b => b.Core);
@@ -1497,6 +1501,41 @@ public static class Walls
     }
 
     /// <summary>
+    /// The wall's mean top over its base along its axis, as it is built: its height where nothing over it changes it, else the
+    /// top its roofs (and its own <c>topProfile</c>) give it, a gable up to the roof's underside, linear between the profile's
+    /// points and on past its ends as the build's cut runs. Bodies it is attached to besides roofs need the services the
+    /// quantities do not have: there it keeps its height.
+    /// </summary>
+    static double MeanTop(IModelView m, Entity wall, double height, double width)
+    {
+        var (a, b) = (Start(wall), End(wall));
+        var chord = (b - a).Length;
+        if (chord < 1e-9) return height;
+        var profile = WallTops.Profile(wall, new RoofTop.WallAxis(a, (b - a) * (1 / chord), chord, Spatial.Base(m, wall), height, width), m, null);
+        if (profile == null || profile.Count == 0) return height;
+        if (profile.Count == 1) return Math.Max(0, profile[0].V);
+        var built = Math.Max(height, profile.Max(p => p.V));
+        (double U, double V) P(int i) => profile[i];
+        var cuts = new List<double> { 0, chord };
+        cuts.AddRange(profile.Select(p => p.U).Where(u => u > 0 && u < chord));
+        cuts.Sort();
+        var area = 0.0;
+        for (var i = 0; i + 1 < cuts.Count; i++)
+        {
+            var (u0, u1) = (cuts[i], cuts[i + 1]);
+            if (u1 - u0 < 1e-12) continue;
+            // Both ends from the segment under the interval's middle (a step, two points at one u, falls between intervals).
+            var mid = (u0 + u1) / 2;
+            var k = 0;
+            while (k + 2 < profile.Count && (mid > P(k + 1).U || P(k + 1).U - P(k).U < 1e-12)) k++;
+            var (p, q) = (P(k), P(k + 1));
+            double V(double u) => q.U - p.U < 1e-12 ? q.V : Math.Clamp(p.V + (q.V - p.V) * (u - p.U) / (q.U - p.U), 0, built);
+            area += (V(u0) + V(u1)) / 2 * (u1 - u0);
+        }
+        return area / chord;
+    }
+
+    /// <summary>
     /// The layers of no thickness (a membrane, paint; decision 291), measured by the area they cover: the side of the layer
     /// they lie on (the next one with a thickness towards the core) as it is built, net of openings and joins, within their
     /// own height and pieces; width and volume 0.
@@ -1509,10 +1548,7 @@ public static class Walls
         {
             var band = bands[i];
             if (band.Core || band.To - band.From > 1e-9) continue;
-            var step = i < core ? 1 : -1;
-            var on = -1;
-            for (var j = i + step; j >= 0 && j < bands.Count; j += step)
-                if (bands[j].To - bands[j].From > 1e-9) { on = j; break; }
+            var on = LayerExtents.ZeroLayerSupport(bands.Count, i, core, j => bands[j].To - bands[j].From);
             if (on < 0) continue;
             var o = bands[on];
             // The core of a zoned wall is measured by its zones.

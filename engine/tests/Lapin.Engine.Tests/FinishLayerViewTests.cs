@@ -157,6 +157,17 @@ public sealed class FinishLayerViewTests : IDisposable
     }
 
     [Fact]
+    public void A_curved_wall_s_cut_pieces_say_their_layers_roles_as_a_straight_one_s()
+    {
+        // Audit 22.11.2026 §3.6: a curved wall's plan pieces carried no layer subcategory.
+        var f = new Fixture();
+        var type = f.Type("Plastered brick", ("Plaster", 0.015, false), ("Brick", 0.25, true), ("Plaster", 0.015, false));
+        var wall = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 5, ["y1"] = 0, ["x2"] = -5, ["y2"] = 0, ["x3"] = 0, ["y3"] = 5, ["typeId"] = type })!["id"]!;
+        Assert.True(PathCurve.Of(f.Model.Get(wall)!).IsArc);
+        Assert.Equal(["core", "finishes", "finishes"], f.Session.Geometry(wall)!.Plan!.Where(p => p.Kind == "cut").Select(p => p.Sub ?? "").Order().ToList());
+    }
+
+    [Fact]
     public void The_interface_snaps_only_to_what_the_plan_draws()
     {
         var (f, wall, _) = Room();
