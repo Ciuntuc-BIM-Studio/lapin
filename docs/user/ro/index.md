@@ -13,7 +13,9 @@ Lapin merge în două locuri:
 - **Pe calculatorul tău.** Aplicația desktop pentru Windows, macOS și Linux e cea mai rapidă. Se actualizează singură.
 - **În browser.** [lapinbim.com/app](https://lapinbim.com/app/) rulează aceeași aplicație fără să instalezi nimic. E puțin mai lentă.
 
-Aplicația desktop se descarcă de pe [lapinbim.com/ro/download](https://lapinbim.com/ro/download/); aceleași fișiere sunt și pe [GitHub Releases](https://github.com/Ciuntuc-BIM-Studio/lapin/releases). Pe Linux, pachetul `.deb` pune Lapin în meniul de aplicații (la Grafică), cu o iconiță pe care tema ta de iconițe o poate înlocui, și deschide proiectele `.lapin` cu dublu clic. AppImage-ul are aceeași intrare de meniu, pentru programele care pun AppImage-urile în meniu (AppImageLauncher, Gear Lever).
+Aplicația desktop se descarcă de pe [lapinbim.com/ro/download](https://lapinbim.com/ro/download/); aceleași fișiere sunt și pe [GitHub Releases](https://github.com/Ciuntuc-BIM-Studio/lapin/releases). Pe Linux, pachetul `.deb` pune Lapin în meniul de aplicații (la Grafică), cu o iconiță pe care tema ta de iconițe o poate înlocui, și deschide proiectele `.lapin` cu dublu clic. Pachetul `.rpm` face la fel pe Fedora, RHEL și openSUSE. AppImage-ul are aceeași intrare de meniu, pentru programele care pun AppImage-urile în meniu (AppImageLauncher, Gear Lever).
+
+Ce pachet de Linux să alegi: Fedora, RHEL, openSUSE și derivatele lor, `.rpm`; Ubuntu, Debian, Linux Mint și derivatele lor, `.deb`; orice altceva, AppImage. Pachetele `.deb` și `.rpm` folosesc WebKitGTK-ul sistemului, mai nou și actualizat odată cu sistemul; AppImage-ul poartă un WebKitGTK mai vechi, al lui, iar vederea 3D poate fi mai lentă cu el, mai ales pe plăci NVIDIA sub Wayland. Pachetele `.deb` și `.rpm` cer parola administratorului când Lapin se actualizează; AppImage-ul se actualizează fără ea.
 
 ![Fereastra Lapin cu o casă mică în planul parterului](shots/workspace.webp)
 
