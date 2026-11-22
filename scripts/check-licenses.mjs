@@ -99,6 +99,34 @@ if (existsSync(registerPath)) {
   licences.add('CC0-1.0 (assets)');
 }
 
+// The texture sets shipped (docs/plan-render.md, S1): every map in ui/src/viewport/texture-library.json with its hash as
+// shipped, its source's licence in ASSET_ALLOWED and verified; no file under ui/public/textures that the register does not list.
+const textureRegister = join(root, 'ui/src/viewport/texture-library.json');
+if (existsSync(textureRegister)) {
+  const reg = JSON.parse(readFileSync(textureRegister, 'utf8'));
+  const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
+  const listed = new Set();
+  for (const [id, src] of Object.entries(reg.sources ?? {}))
+    if (!ASSET_ALLOWED.has(src.licence) || !src.verified) bad.push(`texture source ${id}: ${src.licence ?? 'no licence'}${src.verified ? '' : ', not verified'}`);
+  for (const set of reg.sets ?? []) {
+    if (!reg.sources?.[set.source]) bad.push(`texture set ${set.id}: its source ${set.source} is not in the register`);
+    for (const f of Object.values(set.files ?? {})) {
+      assets++;
+      const p = join(root, f.file);
+      listed.add(p);
+      if (!existsSync(p)) bad.push(`texture set ${set.id}: ${f.file} is listed but missing`);
+      else if (sha(p) !== f.sha256) bad.push(`texture set ${set.id}: ${f.file} is not the file registered (its hash differs)`);
+    }
+  }
+  const dir = join(root, 'ui/public/textures');
+  if (existsSync(dir))
+    for (const f of readdirSync(dir, { recursive: true }).map(String)) {
+      const p = join(dir, f);
+      if (f.endsWith('.jpg') || f.endsWith('.png')) if (!listed.has(p)) bad.push(`ui/public/textures/${f}: shipped but not in the texture register`);
+    }
+  licences.add('CC0-1.0 (textures)');
+}
+
 if (bad.length) {
   console.error(`✗ ${bad.length} production dependencies are not under a permissive licence:\n  ${bad.join('\n  ')}`);
   process.exit(1);

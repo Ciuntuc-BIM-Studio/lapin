@@ -31,7 +31,7 @@ import { usePaneField } from '../app/pane';
 import { findTool, overlays3d, subSelectionTag } from '../platform/modules';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { completeTool } from './tools';
-import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, pictureOf, pictureUv, reliefOf, sizeOf, splitByFace, textureFor, textureOf, tileOf, whenImagesLoad, withRelief, type Face, type TextureKind } from './textures';
+import { boxUv, boxUvSized, hasRelief, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, pictureOf, pictureUv, reliefOf, sizeOf, splitByFace, surfaceMaps, textureFor, textureOf, tileOf, whenImagesLoad, withRelief, type Face, type TextureKind } from './textures';
 import { lookOf } from './look';
 import { xrayLooks } from './xray';
 import { glassThrough, reflections, standardMaterial } from './materialLook';
@@ -177,7 +177,7 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
       const own = imageOf(mat, nodes);
       // Its relief (a normal map, a bump map), on the faces' coordinates as its own image lies.
       const relief = reliefOf(mat, nodes);
-      const relieved = !!(relief.normal || relief.bump);
+      const relieved = hasRelief(relief);
       if (own) {
         const g = new THREE.BufferGeometry();
         g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -185,7 +185,7 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         else g.computeVertexNormals();
         g.setIndex(new THREE.BufferAttribute(new Uint32Array(indices.buffer, indices.byteOffset, indices.length), 1));
         boxUvSized(g, own.width, own.height, lk.textureRotation);
-        const mesh = new THREE.Mesh(g, withRelief(standardMaterial(0xffffff, imageTexture(own), lk), relief, lk.normalStrength, lk.bumpStrength));
+        const mesh = new THREE.Mesh(g, withRelief(standardMaterial(0xffffff, imageTexture(own), lk), relief, lk.normalStrength, lk.bumpStrength, undefined, lk.aoStrength));
         mesh.userData.nodeId = nodeId;
         mesh.castShadow = mesh.receiveShadow = true;
         group.add(mesh);
@@ -206,7 +206,7 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         if (kind) boxUv(g, kind, tileOf(mat), lk.textureRotation);
         else if (relieved) { const [w, h] = sizeOf(mat); boxUvSized(g, w, h, lk.textureRotation); }
         const base = standardMaterial(kind ? 0xffffff : new THREE.Color(color), kind ? textureFor(kind, color) : null, lk);
-        const mesh = new THREE.Mesh(g, relieved ? withRelief(base, relief, lk.normalStrength, lk.bumpStrength) : base);
+        const mesh = new THREE.Mesh(g, relieved ? withRelief(base, relief, lk.normalStrength, lk.bumpStrength, undefined, lk.aoStrength) : base);
         mesh.userData.nodeId = nodeId;
         // What is seen through casts no shadow (glass lets the sun in).
         mesh.castShadow = lk.transparency <= 0;
@@ -941,6 +941,8 @@ export function Viewport3D() {
       const { profile } = useRenderProfile.getState();
       realism.setProfile(profile);
       glassThrough(s, realism.spec.glass);
+      // The roughness and occlusion maps in the medium and realistic views; the drawing keeps its flat look (docs/plan-render.md, S1).
+      surfaceMaps(s, profile !== 'drawing');
       aimSun();
     };
     const unprofile = useRenderProfile.subscribe(applyProfile);

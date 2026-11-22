@@ -214,6 +214,12 @@ The sun is the project’s: where it stands for the project’s place (Manage �
 
 ![Sun and shadows](shots/sun-dialog.webp)
 
+A material with a **texture set** or maps of its own (Manage → **Materials** → Appearance, see [Texture sets](materials.md#texture-sets)) shows its relief, its glossy and matt parts and the shade in its joints in the Medium and Realistic views. A low sun along a wall shows it best: the mortar joints fall into shade and the bricks catch the light. The same wall, first with the brick texture Lapin draws by itself, then with the **Red brick** set:
+
+![A brick wall under a low evening sun, with Lapin's drawn brick texture](shots/texture-wall-before.webp)
+
+![The same wall with the Red brick texture set: relief, roughness and shade in the joints](shots/texture-wall-after.webp)
+
 The realistic view takes some of its numbers (the shade in corners, the shadows' quality, the sun's colour) from [BimGo](https://github.com/aussieBIMguru/BimGo), by Aussie BIM Guru (MIT-0).
 
 ## Modelling in 3D

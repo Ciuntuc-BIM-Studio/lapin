@@ -8536,6 +8536,54 @@ export const scenes = [
     },
   },
   {
+    // Texture sets (docs/plan-render.md, S1): a brick wall under a low morning sun in the realistic view, first as Lapin draws
+    // brick by itself (its drawn texture, flat), then with ambientCG's Red brick set chosen in Materials → Appearance (colour,
+    // relief, roughness and occlusion maps, 2.4 × 1.2 m a tile): the joints in shade, the bricks catching the light.
+    id: 'materials-texture-sets',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const storeyId = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Facing brick 250', layers: [{ material: 'Brick', thickness: 0.25, core: true }] })).id;
+      await t.cmd('architecture.addWall', { storeyId, x1: 0, y1: 0, x2: 8, y2: 0, typeId: type });
+      await t.cmd('architecture.addWall', { storeyId, x1: 8, y1: 0, x2: 8, y2: 4, typeId: type });
+      const profile = (p) => t.page.evaluate(async (v) => (await import('/src/viewport/render3d.ts')).setRenderProfile(v), p);
+      const look = () => t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.45, pitch: -0.06, distance: 2.4, target: { x: 3.5, y: 0, z: 1.3 } }, false));
+      try {
+        await t.ui({ view: '3d', keyPlan: false });
+        await t.page.waitForSelector('[data-testid=view3d] canvas');
+        // An equinox morning: the sun low in the east-south-east, slanting along the south face.
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ date: '2026-03-20', hour: 9.5 }));
+        await profile('realistic');
+        await look();
+        await t.wait(2500);
+        await t.shot('texture-wall-before', { of: '[data-testid=view3d]', pad: 0 });
+        await t.tool('manage.materials');
+        const dialog = t.page.locator('.dialog');
+        await dialog.locator('[data-material="Brick"]').first().click();
+        await t.wait(500);
+        t.expect(await dialog.locator('[data-testid=texture-sets] [data-set]').count() === 8, 'eight texture sets are offered');
+        await dialog.locator('[data-testid=texture-sets] [data-set=Bricks085]').click();
+        await t.page.waitForFunction(async () => {
+          const { useSession } = await import('/src/engine/session.ts');
+          return [...useSession.getState().nodes.values()].some((n) => n.type === 'IfcMaterial' && n.name === 'Brick' && n.props.textureSet === 'ambientcg/Bricks085');
+        }, null, { timeout: 20_000 });
+        await t.wait(1500);
+        const brick = (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === 'Brick');
+        t.expect(['textureImage', 'normalImage', 'roughnessImage', 'aoImage', 'bumpImage'].every((k) => typeof brick?.props?.[k] === 'string'), 'the set gives the brick its five maps');
+        t.expect(JSON.stringify(brick?.props?.textureSize) === '[2.4,1.2]', 'at the set\'s real size');
+        await t.shot('texture-sets', { of: '.dialog', pad: 0 });
+        await dialog.locator('button[title="Close"]').first().click();
+        await t.wait(300);
+        await look();
+        await t.wait(3000);
+        await t.shot('texture-wall-after', { of: '[data-testid=view3d]', pad: 0 });
+      } finally {
+        await profile('drawing');
+      }
+    },
+  },
+  {
     // A door or window's frame position in the wall and its data as free text (a tester's report #76): in the configurator the
     // frame set back 50 mm from the exterior finish, the Data box with its U-value, fire rating and a parameter of the user's
     // own; then a window selected, with its own fire rating over the type's.

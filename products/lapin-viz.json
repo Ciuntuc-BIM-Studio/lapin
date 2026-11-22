@@ -1,0 +1,5 @@
+{
+  "id": "lapin-viz",
+  "name": "Lapin Viz",
+  "modules": ["architecture", "furniture", "civil", "sitework", "mep", "studio", "drafting"]
+}

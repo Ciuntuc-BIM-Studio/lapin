@@ -83,6 +83,8 @@ public static class ObjWriter
                 if (!bump) mtl.Append($"map_Bump -bm {F(Math.Round(l.NormalStrength, 4))} {normalPath}\n");
             }
             if (bump) mtl.Append($"map_Bump -bm {F(Math.Round(l.BumpStrength, 4))} {bumpPath}\n");
+            // Its roughness map (the PBR extension's map_Pr; docs/plan-render.md, S1); MTL has no occlusion map.
+            if (fileOf.TryGetValue((i, "roughness"), out var roughPath)) mtl.Append($"map_Pr {roughPath}\n");
         }
 
         var obj = new StringBuilder();

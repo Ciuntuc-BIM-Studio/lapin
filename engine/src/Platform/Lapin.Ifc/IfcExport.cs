@@ -65,6 +65,15 @@ public static partial class IfcExport
     // Lapin's own sets: no "Pset_" prefix, which IFC keeps for the sets its specification declares (IfcPropertySet).
     public const string IntentSetName = "Lapin_Intent";
 
+    /// <summary>
+    /// The Mode an IfcSurfaceTexture is written with for each of a material's maps (docs/plan-render.md, S1): the colour as X3D's
+    /// MODULATE (multiplied by the surface's colour, as most readers take an unnamed texture), the others by what they are for.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> TextureModes = new Dictionary<string, string>
+    {
+        ["color"] = "MODULATE", ["normal"] = "NORMAL", ["bump"] = "BUMP", ["roughness"] = "ROUGHNESS", ["ao"] = "OCCLUSION",
+    };
+
     /// <summary>The names of a material's IfcFillAreaStyle for each kind of view (decision 678), which the import reads back.</summary>
     public static readonly IReadOnlyDictionary<string, string> FillAreaStyleNames = new Dictionary<string, string> { ["section"] = "Section hatch", ["plan"] = "Plan hatch", ["elevation"] = "Elevation hatch" };
     /// <summary>A provision opening's set (decision 293): the run that cut it, its shape and size.</summary>
@@ -386,7 +395,35 @@ public static partial class IfcExport
             var rendering = f.Add("IFCSURFACESTYLERENDERING", colour, R(Math.Clamp(look.Transparency, 0, 1)), Typed("IFCNORMALISEDRATIOMEASURE", R(1)),
                 look.Transmission > 0 ? Typed("IFCNORMALISEDRATIOMEASURE", R(Math.Round(look.Transmission, 4))) : Null, Null, Null,
                 Typed("IFCNORMALISEDRATIOMEASURE", R(Math.Round(0.04 + 0.96 * look.Metalness, 4))), Typed("IFCSPECULARROUGHNESS", R(Math.Round(look.Roughness, 4))), E(method));
-            return f.Add("IFCSURFACESTYLE", S(mat?.Name ?? id), E("BOTH"), L(new[] { rendering }));
+            var textures = mat != null ? SurfaceTextures(mat, look) : null;
+            return f.Add("IFCSURFACESTYLE", S(mat?.Name ?? id), E("BOTH"), L(textures != null ? new[] { rendering, textures } : new[] { rendering }));
+        }
+
+        /// <summary>
+        /// A material's maps as IFC's textures (docs/plan-render.md, S1): an IfcSurfaceStyleWithTextures holding one IfcBlobTexture
+        /// per map, the image inside the file (its format and bytes), repeated, its Mode saying what it is for
+        /// (<see cref="TextureModes"/>: MODULATE for the colour, NORMAL, BUMP, ROUGHNESS, OCCLUSION), its transform the tile it
+        /// lies on (metres wide and high, turned by the texture's rotation); null when the material has no map.
+        /// </summary>
+        string? SurfaceTextures(Entity mat, MaterialLook look)
+        {
+            var size = Images.SizeOf(mat);
+            var a = look.TextureRotation * Math.PI / 180;
+            var list = new List<string>();
+            foreach (var (map, key) in Images.MapKeys)
+            {
+                if (Images.Of(m, mat, key) is not { } image) continue;
+                byte[] bytes;
+                try { bytes = Images.Bytes(image); }
+                catch (FormatException) { continue; }
+                var transform = f.Add("IFCCARTESIANTRANSFORMATIONOPERATOR2DNONUNIFORM",
+                    f.Add("IFCDIRECTION", L(new[] { R(Math.Round(Math.Cos(a), 9)), R(Math.Round(Math.Sin(a), 9)) })),
+                    f.Add("IFCDIRECTION", L(new[] { R(Math.Round(-Math.Sin(a), 9)), R(Math.Round(Math.Cos(a), 9)) })),
+                    f.Add("IFCCARTESIANPOINT", L(new[] { R(0), R(0) })), R(size[0]), R(size[1]));
+                list.Add(f.Add("IFCBLOBTEXTURE", True, True, S(TextureModes[map]), transform, Null,
+                    S(image.Str("mime") == "image/jpeg" ? "JPG" : "PNG"), "\"0" + Convert.ToHexString(bytes) + "\""));
+            }
+            return list.Count == 0 ? null : f.Add("IFCSURFACESTYLEWITHTEXTURES", L(list));
         }
 
         /// <summary>A solid as a faceted B-rep, its vertices relative to the placement's height, in its colour.</summary>

@@ -1179,6 +1179,12 @@ input.invalid { outline: 1px solid var(--err); }
 .own-image .row { gap: 8px; align-items: center; flex-wrap: wrap; }
 .own-image-thumb { width: 48px; height: 48px; object-fit: cover; border: 1px solid var(--rule); border-radius: 2px; display: inline-grid; place-items: center; }
 .own-image input.num { width: 64px; }
+/* The texture sets Lapin ships (docs/plan-render.md, S1): a picture of each, the chosen one ringed. */
+.texture-set-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 4px; }
+.texture-set { display: grid; gap: 2px; padding: 2px; border: 1px solid var(--rule); border-radius: 2px; background: none; cursor: pointer; text-align: center; }
+.texture-set img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.texture-set.on { outline: 2px solid var(--accent); outline-offset: -1px; }
+.texture-set span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .my-patterns { display: grid; gap: 4px; margin-top: 10px; }
 .my-patterns ul { max-height: 120px; overflow-y: auto; }
 /* Room colours: the scheme's settings on one line, the values' table compact. */

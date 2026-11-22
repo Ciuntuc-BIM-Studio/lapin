@@ -30,7 +30,7 @@ Azi `Viewport3D.tsx` are o lumină de emisferă, un soare fix, o singură hartă
 - **Profilele de randare**: View → Display quality capătă, lângă precizie, **Desen** (azi), **Mediu** (soare, umbre, AO, lumina cerului) și **Realist** (cer, teren, sticlă cu transmisie), păstrate **pe calculator**, nu în proiect (un calculator slab desenează proiectul unui coleg cum poate); randarea rămâne la cerere (`invalidate()`). Profilele Mediu și Realist au mereu soare: ziua și ora din View → Sun and shadows (`ui/src/modules/core/sun.ts`, interogarea `sun.at` din platformă), implicit azi la 14:00.
 - Browserul primește tot (WebGL2); un calculator slab coboară singur un profil dacă cadrul trece de 50 ms.
 
-**Etapa 2, texturi și reflexii:**
+**Etapa 2, texturi și reflexii** (preluată de `docs/plan-render.md`, S1 și S3; texturile CC0 au intrat ca seturi copiate în proiect, nu legate după nume):
 
 - **Texturi reale CC0** de la ambientCG, ca la BimGo (21 de hărți de culoare, 512 px; lista lui în `THIRD-PARTY-NOTICES.txt`), plus hărțile de normală și de rugozitate, pe care BimGo nu le are. Se leagă de materiale ca azi texturile desenate (`textures.ts`): după categoria materialului și după nume (alias-urile lui `ProxyCatalog.Suggest`, cu mărimea reală a repetiției: cărămida la 0,215 m etc.), cu desenul procedural ca rezervă. Livrate cu aplicația, nu în fișierul `.lapin`; `check:licenses` capătă o listă pentru resurse.
 - **Sonde de reflexie** pe camere, după BimGo: una pe `IfcSpace` care are o suprafață reflectantă, la 1,70 m peste pardoseală, o grilă la 8 m în camerele lungi, proiecția pe cutia camerei (parallax), amestecate pe aproximativ 1 m la granițe; coapte câte două fețe pe cadru, cele mai apropiate întâi, refăcute când se mută soarele sau se schimbă modelul.
@@ -49,7 +49,7 @@ Lapin e nativ IFC, așa că anturajul e **element**, nu decor:
 - **Așezare**: un clic, sau **de-a lungul unei linii** la un pas (aliniamente de copaci, parcări), sau **împrăștiat într-un contur** (o pădure, un grup de arbuști), cu densitate. Copacii stau pe teren (`civil`) când există.
 - Extrasul de vegetație (specii, număr, înălțimi) prin `IScheduleSource`.
 
-## 3. Fotografii, panorame, video
+## 3. Fotografii, panorame, video (preluate de `docs/plan-render.md`, S5 și S7)
 
 - **Fotografii la rezoluție mare** prin **plăci** (`camera.setViewOffset`): orice mărime, fără limita plăcii video care o oprește pe a lui BimGo (randarea unică la 1–4× fereastra); expunere, profilul realist forțat.
 - **Panorame 360°**: șase vederi de 90° (BimGo: 96°, cu suprapunere) cusute într-o imagine echirectangulară de 4K sau 8K, JPEG cu metadatele GPano, ca să se deschidă ca panoramă.
@@ -57,7 +57,7 @@ Lapin e nativ IFC, așa că anturajul e **element**, nu decor:
 - **Video**: cadru cu cadru, determinist (nu captura în timp real de azi din simularea 4D), prin **WebCodecs** (`VideoEncoder` H.264, în WKWebView, WebView2 și Chrome) și un **multiplexor MP4 scris de Lapin** (ISO BMFF: ftyp, moov, mdat), fără dependențe, cum sunt scrise glTF, USD și Fragments; unde WebCodecs lipsește (WebKitGTK pe Linux), cadrele ca ZIP sau `MediaRecorder` ca azi. 1080p sau 4K, 30 sau 60 fps.
 - **Time-lapse cu soarele**: de la răsărit la apus, cu umbrele și cerul care se schimbă; aceeași mașinărie ca video-ul.
 
-## 4. Lumina artificială și noaptea (etapa 5)
+## 4. Lumina artificială și noaptea (preluată de `docs/plan-render.md`, S2)
 
 - Corpurile de iluminat (`IfcLightFixture` din `mep`, plus orice element cu un material emisiv marcat ca sursă) devin lumini: fluxul în lumeni și temperatura de culoare pe tip (`Lapin_Light`, nu `Pset_`), implicit 1000 lm și 3500 K, ca la BimGo.
 - **Profile IES** (LM-63): cititorul lui BimGo (`Core/Scene/LightProfiles.cs`, tip C, 1986–2002) portat în engine, plus cele cinci profile generate din formule (spoturi înguste și medii, reflector larg, iluminare de perete, pendul); `IESSpotLight` și `IESLoader` din three le desenează. Nicio fotometrie de producător livrată.
@@ -134,9 +134,9 @@ Verificarea de goluri de azi devine un **tip de test** în același dialog (Mana
 3. Coliziunile, partea B: stări între rulări, grupare, rapoartele HTML, XML, CSV și PDF, norii în desene, verificarea de goluri ca tip de test.
 4. Anturajul: elementele, tipurile, cele 15 desene portate, simbolurile din plan, așezarea pe linie și în contur, IFC.
 5. Studiile de lumină: orele de soare, apoi DF și luxul, țintele, harta pe plan, extrasul de camere, CSV.
-6. Fotografii pe plăci, panorame, trasee de cameră, video MP4, time-lapse.
-7. Texturile CC0 și sondele de reflexie.
-8. Lumina artificială cu IES și noaptea.
+6. Fotografii pe plăci, panorame, trasee de cameră, video MP4, time-lapse. **Preluată de `docs/plan-render.md`** (22.11.2026, decizia 777): imaginile pe plăci și coada de randare în S5, panoramele și video-ul în S7.
+7. Texturile CC0 și sondele de reflexie. **Preluată de `docs/plan-render.md`**: texturile în S1 (făcută), sondele și reflexiile plane în S3.
+8. Lumina artificială cu IES și noaptea. **Preluată de `docs/plan-render.md`**: S2 (cu lumenii și kelvinii pe tip, luminile de suprafață, bugetul live, expunerea și balansul de alb).
 
 Fiecare etapă cu testele ei (în BimGo, `ClashTests`, `DaylightTests`, `SunHoursAndCommentsTests`, `SolarPositionTests` au cazurile și numerele, portate ca specificație: conducta prin grindă dă adâncimea dimensiunii mai mici, o suprapunere de 3 mm a pereților nu contează la 5 mm, o țeavă îngropată 40 mm într-o placă dă 40 mm), pagina din ghid în toate limbile și scena ei.
 
