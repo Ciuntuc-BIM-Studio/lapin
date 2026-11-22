@@ -112,6 +112,17 @@ public static class ViewFilters
     /// <summary>Whether an element passes a filter: all its rules (or any); a filter without rules takes nothing.</summary>
     public static bool Matches(IModelView m, Entity e, Filter f) => new Matcher(new ModelQuery(m)).Matches(e, f);
 
+    /// <summary>
+    /// The elements on storeys a filter takes, read as a view reads them (no geometry): what the editor counts
+    /// (<c>viewFilter.count</c>) and a drawing's <c>{filter.X.count}</c> reads; none for a filter without rules.
+    /// </summary>
+    public static List<Entity> Taken(IModelView m, Filter f)
+    {
+        if (f.Rules.Count == 0) return [];
+        var matcher = new Matcher(new ModelQuery(m));
+        return [.. m.Entities.Where(e => OnStorey(m, e) && matcher.Matches(e, f))];
+    }
+
     /// <summary>The elements a filter or Quick select looks at: those on a storey (a door or a window on its wall's), not the openings.</summary>
     public static bool OnStorey(IModelView m, Entity e) => e.Class != IfcClass.OpeningElement && Spatial.StoreyOf(m, e, followHost: true) != null;
 
@@ -132,8 +143,7 @@ public static class ViewFilters
         {
             var f = All(q.Model).FirstOrDefault(x => x.Id == (string?)a["id"]) ?? throw new CommandException("There is no such filter.");
             // Read as a view reads it (no geometry), so the count is what the views show.
-            var matcher = new Matcher(new ModelQuery(q.Model));
-            return q.Model.Entities.Count(e => OnStorey(q.Model, e) && matcher.Matches(e, f));
+            return Taken(q.Model, f).Count;
         });
 
         r.Command("viewFilter.create", "New view filter", (ctx, a) =>

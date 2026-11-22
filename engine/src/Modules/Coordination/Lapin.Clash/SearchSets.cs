@@ -185,10 +185,10 @@ public static class SearchSets
     /// <summary>A parameter's value: the element's attribute of that name, or one of that name in an object of its attributes (its properties).</summary>
     public static string? ParameterValue(Entity e, string name) => ElementFacets.StoredValue(e, name);
 
-    /// <summary>The first number in a text ("600 mm" 600, "1,200" 1200, "2,5" 2.5, "−3" −3); false when it has none (BimGo's RuleNumbers).</summary>
+    /// <summary>The first number in a text by the one reader ("600 mm" 600, "1,200" 1.2, "2,5" 2.5, "−3" −3); false when it has none.</summary>
     public static bool TryNumber(string? text, out double value)
     {
-        var n = FilterNumbers.First(text);
+        var n = Numbers.Parse(text, NumberMode.First);
         value = n ?? 0;
         return n != null;
     }

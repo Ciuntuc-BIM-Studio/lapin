@@ -28,6 +28,19 @@ public static class Pins
         if (entities.FirstOrDefault(Is) is { } pinned) throw new CommandException(Message(pinned));
     }
 
+    /// <summary>Whether an element is a reference from a file: its body stored as the file gave it, or marked a reference.</summary>
+    public static bool IsReference(Entity e) => StoredBodies.Has(e) || e.Attrs["reference"] != null;
+
+    /// <summary>
+    /// What an edit of an element's own outline or axis asks first (a split, a trim, an offset): refused when it is a reference
+    /// from a file (<see cref="IsReference"/>, or <paramref name="reference"/>: the caller's own reason to treat it as one), or pinned.
+    /// </summary>
+    public static void RefuseEdit(Entity e, bool reference = false)
+    {
+        if (reference || IsReference(e)) throw new CommandException($"„{e.Name}” is a reference from a file: convert it to native first.");
+        Refuse([e]);
+    }
+
     /// <summary>Refused when the element is pinned and the change moves it (one of <see cref="PlaceKeys"/>).</summary>
     public static void RefuseMove(Entity e, IEnumerable<string> keys)
     {

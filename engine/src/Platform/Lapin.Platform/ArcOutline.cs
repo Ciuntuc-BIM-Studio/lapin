@@ -146,40 +146,54 @@ public static class ArcOutline
     }
 
     /// <summary>The rises of the outline run the other way round: each edge's own, the other side of it.</summary>
-    public static double[]? Reversed(IReadOnlyList<double>? rises)
+    public static double[]? Reversed(IReadOnlyList<double>? rises) => rises == null ? null : RunBack(rises, r => -r);
+
+    /// <summary>
+    /// The edge of an outline of <paramref name="n"/> corners that edge <paramref name="j"/> of it run the other way round was:
+    /// corners reversed, edge j of the new outline (corner n-1-j to n-2-j) is edge n-2-j of the old, run back.
+    /// </summary>
+    public static int BackEdge(int n, int j) => ((n - 2 - j) % n + n) % n;
+
+    /// <summary>Data kept by edge (one per corner) in the order of the outline run the other way round, each item turned by <paramref name="turn"/>.</summary>
+    public static T[] RunBack<T>(IReadOnlyList<T> edges, Func<T, T>? turn = null)
     {
-        if (rises == null) return null;
-        var n = rises.Count;
-        // Corners reversed: edge j of the new outline (corner n-1-j to n-2-j) is edge n-2-j of the old, run back.
-        return [.. Enumerable.Range(0, n).Select(j => -rises[((n - 2 - j) % n + n) % n])];
+        var n = edges.Count;
+        return [.. Enumerable.Range(0, n).Select(j => turn == null ? edges[BackEdge(n, j)] : turn(edges[BackEdge(n, j)]))];
     }
 
     /// <summary>
     /// An outline as a command gives it: repeated corners dropped (the edge that leaves a corner keeps its arc), at least three
     /// corners, each rise a number not past ten times its chord, made counter-clockwise (its rises turned with it); refused
-    /// when it encloses nothing. <paramref name="what"/> names it in a refusal ("A floor"). An arc that makes it cross itself is
-    /// refused; with <paramref name="simple"/>, a straight edge that does too (a terrain's outlines).
+    /// when it encloses nothing. <paramref name="what"/> names it in a refusal ("A floor"). Its elliptical edges
+    /// (<paramref name="ellipses"/>, one per corner given) count in what it encloses and which way it runs, so a half ellipse
+    /// on three corners in a line is an outline; the caller fits them to the corners checked (<see cref="EllipseEdge.Fit"/>).
+    /// An arc or an ellipse that makes it cross itself is refused; with <paramref name="simple"/>, a straight edge that does too
+    /// (a terrain's outlines).
     /// </summary>
-    public static (List<Vec2> Corners, double[]? Rises) Check(IReadOnlyList<Vec2> pts, IReadOnlyList<double>? rises, string what = "A floor", bool simple = false)
+    public static (List<Vec2> Corners, double[]? Rises) Check(IReadOnlyList<Vec2> pts, IReadOnlyList<double>? rises, string what = "A floor", IReadOnlyList<EllipseEdge?>? ellipses = null, bool simple = false)
     {
         var clean = new List<Vec2>();
         var r = new List<double>();
+        var el = new List<EllipseEdge?>();
         for (var i = 0; i < pts.Count; i++)
         {
             var rise = At(rises, i);
+            var e = ellipses != null && i < ellipses.Count ? ellipses[i] : null;
             if (!double.IsFinite(rise)) throw new CommandException("An edge's arc must be a number.");
-            if (clean.Count > 0 && (pts[i] - clean[^1]).Length <= 1e-6) { r[^1] = rise; continue; }
+            if (clean.Count > 0 && (pts[i] - clean[^1]).Length <= 1e-6) { r[^1] = rise; el[^1] = e; continue; }
             clean.Add(pts[i]);
             r.Add(rise);
+            el.Add(e);
         }
-        if (clean.Count > 1 && (clean[0] - clean[^1]).Length <= 1e-6) { clean.RemoveAt(clean.Count - 1); r.RemoveAt(r.Count - 1); }
+        if (clean.Count > 1 && (clean[0] - clean[^1]).Length <= 1e-6) { clean.RemoveAt(clean.Count - 1); r.RemoveAt(r.Count - 1); el.RemoveAt(el.Count - 1); }
         if (clean.Count < 3) throw new CommandException($"{what} needs at least three corners.");
-        for (var i = 0; i < clean.Count; i++) r[i] = PathCurve.CheckRise(r[i], (clean[(i + 1) % clean.Count] - clean[i]).Length);
+        for (var i = 0; i < clean.Count; i++) r[i] = el[i] != null ? 0 : PathCurve.CheckRise(r[i], (clean[(i + 1) % clean.Count] - clean[i]).Length);
         double[]? kept = r.Any(x => x != 0) ? [.. r] : null;
-        var area = SignedArea(clean, kept);
+        EllipseEdge?[]? curved = el.Any(x => x != null) ? [.. el] : null;
+        var area = SignedArea(clean, kept, curved);
         if (Math.Abs(area) < 1e-6) throw new CommandException($"The outline of {Lower(what)} encloses nothing.");
         if (simple && !Simple(clean)) throw new CommandException(Crossing(what));
-        if (kept != null && !Simple(Points(clean, kept))) throw new CommandException("An arc makes the outline cross itself: a smaller rise.");
+        if ((kept != null || curved != null) && !Simple(Points(clean, kept, null, curved))) throw new CommandException("An arc makes the outline cross itself: a smaller rise.");
         if (area > 0) return (clean, kept);
         clean.Reverse();
         return (clean, Reversed(kept));
@@ -465,34 +479,11 @@ public static class ArcOutline
         return k >= -1e-9 && k <= 1 + 1e-9;
     }
 
-    /// <summary>Where two offset edges' lines or circles cross.</summary>
+    /// <summary>Where two offset edges' lines or circles cross (<see cref="PathEdits.Cross"/>).</summary>
     static IEnumerable<Vec2> Crossings(Shifted a, Shifted b)
     {
-        if (a.Arc && b.Arc) return CircleCircle(a.Centre, a.Radius, b.Centre, b.Radius);
-        var (line, circle) = a.Arc ? (b, a) : (a, b);
-        return LineCircle(line.Start, line.End, circle.Centre, circle.Radius);
-    }
-
-    static List<Vec2> LineCircle(Vec2 s, Vec2 e, Vec2 c, double r)
-    {
-        var u = (e - s).Normalized();
-        var foot = s + u * Vec2.Dot(c - s, u);
-        var h2 = r * r - Vec2.Dot(foot - c, foot - c);
-        if (h2 < -1e-12) return [];
-        var h = Math.Sqrt(Math.Max(0, h2));
-        return h > 1e-12 ? [foot + u * h, foot - u * h] : [foot];
-    }
-
-    static List<Vec2> CircleCircle(Vec2 c1, double r1, Vec2 c2, double r2)
-    {
-        var v = c2 - c1;
-        var dd = v.Length;
-        if (dd < 1e-12 || dd > r1 + r2 + 1e-12 || dd < Math.Abs(r1 - r2) - 1e-12) return [];
-        var a = (r1 * r1 - r2 * r2 + dd * dd) / (2 * dd);
-        var h = Math.Sqrt(Math.Max(0, r1 * r1 - a * a));
-        var u = v * (1 / dd);
-        var foot = c1 + u * a;
-        return h > 1e-12 ? [foot + u.Perp * h, foot - u.Perp * h] : [foot];
+        static PathEdits.Curve Of(Shifted e) => e.Arc ? PathEdits.Curve.Round(e.Centre, e.Radius) : PathEdits.Curve.Line(e.Start, e.End);
+        return PathEdits.Cross(Of(a), Of(b));
     }
 
     /// <summary>A circle as an outline: four corners a quarter turn apart, each edge a quarter of it (counter-clockwise).</summary>

@@ -78,6 +78,18 @@ public sealed partial class Session
 
     readonly List<string> _warnings = [];
 
+    /// <summary>
+    /// A batt hatch's band thinner than this on paper (mm) gets no heads and strokes: the one figure the 3D caps, the drawings'
+    /// bands (Lapin.Drawing's Pens) and the drafted hatches (Drafts) share, written there as 1.2 still.
+    /// </summary>
+    public const double MinBattBandMm = 1.2;
+
+    /// <summary>Notes what went wrong beside a call that still goes through, for the reply to tell (<see cref="TakeWarnings"/>).</summary>
+    public void Warn(string message)
+    {
+        lock (_warnings) _warnings.Add(message);
+    }
+
     /// <summary>What went wrong beside a call that still went through (the recovery journal not written), for the reply to tell; emptied when taken.</summary>
     public IReadOnlyList<string> TakeWarnings()
     {
@@ -161,9 +173,9 @@ public sealed partial class Session
     /// </summary>
     public Diff New(SpatialSeed seed)
     {
-        var first = _product.Storeys is { Length: > 0 } own ? own[0] : null;
+        var first = Spatial.DefaultStorey(_product);
         IReadOnlyList<SpatialSeed.Level> storeys = seed.Storeys.Count > 0 ? seed.Storeys
-            : [new SpatialSeed.Level(null, first?.Name ?? "Ground floor", first?.Elevation ?? 0, first?.Height ?? 3)];
+            : [new SpatialSeed.Level(null, first.Name, first.Elevation, first.Height)];
         StartEmpty([.. storeys.Select(x => (x.Name, x.Elevation, x.Height))], fresh: true, seed with { Storeys = storeys });
         Path = null;
         Emit("start");
@@ -192,7 +204,7 @@ public sealed partial class Session
     IReadOnlyList<string>? _newProfileStandards;
 
     /// <summary>The session as it starts, before a project is made or opened: one ground floor.</summary>
-    void StartEmpty() => StartEmpty(_product.Storeys is { Length: > 0 } own ? [(own[0].Name, own[0].Elevation, own[0].Height)] : [("Ground floor", 0.0, 3.0)]);
+    void StartEmpty() => StartEmpty([Spatial.DefaultStorey(_product)]);
 
     /// <param name="fresh">A new project the user starts (not one another file fills): it takes what new projects start with
     /// where an older project keeps what it had (an opening's height under a dimension, decision 338).</param>
@@ -778,8 +790,8 @@ public sealed partial class Session
         var pattern = look.Hatch is { } h ? Lapin.Drawing.Hatch.HatchLibrary.Find(h, patterns) : null;
         var hatch = new List<float>();
         if (pattern == null) return (fill, []);
-        // A solid pattern fills the cap in the material's fill colour, else dark (forum topic 88).
-        if (pattern.Solid) return (look.Fill ?? "#2b2b2b", []);
+        // A solid pattern fills the cap as the drawings fill the cut (forum topic 88): its fill colour, else ink (SolidFill).
+        if (pattern.Solid) return (SolidFill.Of(look, look.Fill), []);
         for (var fi = 0; fi < faces.Count; fi++)
         {
             var f = faces[fi];
@@ -835,7 +847,7 @@ public sealed partial class Session
         foreach (var g in items.GroupBy(x => x.Group))
         {
             var list = g.ToList();
-            var laid = Lapin.Drawing.Hatch.BattHatch.Segments(list.Select(x => new Lapin.Drawing.Hatch.BattHatch.BattBand(x.Loops, null, x.Scale, x.Flip)).ToList(), 1.2 * scale / 1000, 20_000,
+            var laid = Lapin.Drawing.Hatch.BattHatch.Segments(list.Select(x => new Lapin.Drawing.Hatch.BattHatch.BattBand(x.Loops, null, x.Scale, x.Flip)).ToList(), MinBattBandMm * scale / 1000, 20_000,
                 (a, b) => owners[list[a].Cap] != owners[list[b].Cap]);
             for (var i = 0; i < list.Count; i++) o[(list[i].Cap, list[i].Face)] = laid[i];
         }
@@ -1429,6 +1441,7 @@ public sealed partial class Session
         public IDeliveries Deliveries => s.Deliveries;
         public Action<string, int, int>? Progress => s.Progress;
         public CancellationToken Cancellation => s.Cancellation;
+        public void Warn(string message) => s.Warn(message);
     }
 }
 

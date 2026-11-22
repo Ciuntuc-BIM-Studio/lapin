@@ -88,15 +88,32 @@ public interface IOpeningMaker
 /// <summary>The provision openings of every module, cut out of their hosts and offered as voids.</summary>
 public static class Provisions
 {
-    /// <summary>Every provision (held ones too) in a host, or in every host.</summary>
-    public static List<ProvisionOpening> Of(IModelView m, IServices services, Entity? host = null, double offset = 0)
+    /// <summary>
+    /// Every provision (held ones too) in a host, or in every host. A module's provider that fails part way keeps what it gave
+    /// before the failure, and the failure is said in <paramref name="problems"/> (a host's build puts it in its diagnostics).
+    /// </summary>
+    public static List<ProvisionOpening> Of(IModelView m, IServices services, Entity? host = null, double offset = 0, List<string>? problems = null)
     {
         var o = new List<ProvisionOpening>();
+        static bool Expected(Exception ex) => ex is ModelException or InvalidOperationException or ArgumentException or CommandException;
         foreach (var p in services.All<IProvisionOpenings>())
-            try { o.AddRange(p.Of(m, services, host, offset)); }
-            catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException) { }
+        {
+            IEnumerator<ProvisionOpening> items;
+            try { items = p.Of(m, services, host, offset).GetEnumerator(); }
+            catch (Exception ex) when (Expected(ex)) { problems?.Add(Failed(p, ex)); continue; }
+            using (items)
+                while (true)
+                {
+                    // Item by item: one that fails ends what this provider gives, those before it stay.
+                    try { if (!items.MoveNext()) break; }
+                    catch (Exception ex) when (Expected(ex)) { problems?.Add(Failed(p, ex)); break; }
+                    o.Add(items.Current);
+                }
+        }
         return o;
     }
+
+    static string Failed(IProvisionOpenings p, Exception ex) => $"Provision openings of {p.GetType().Name} could not all be worked out: {ex.Message}";
 
     /// <summary>The model under a geometry build's tracking view, read without noting what is read (what a host's provisions filter runs by).</summary>
     public static IModelView Untracked(IModelView m) => m is TrackingView tv ? tv.Inner : m;
@@ -137,8 +154,9 @@ public static class Provisions
         {
             if (entity.Class is not (IfcClass.Wall or IfcClass.Slab or IfcClass.Roof) || geometry.Parts.Count == 0) return null;
             if (services.Get<GeometryOptions>()?.CutOpenings == false) return null;
-            var cutters = Of(model, services, entity).Where(p => p.Cuts).Select(p => p.Cutter).ToList();
-            if (cutters.Count == 0) return null;
+            var problems = new List<string>();
+            var cutters = Of(model, services, entity, 0, problems).Where(p => p.Cuts).Select(p => p.Cutter).ToList();
+            if (cutters.Count == 0) return problems.Count == 0 ? null : geometry with { Diagnostics = [.. geometry.Diagnostics ?? [], .. problems] };
             if (services.Get<ISolidBooleans>() is not { } booleans)
                 return geometry with { Diagnostics = [.. geometry.Diagnostics ?? [], "Provision openings need the boolean library (manifold), missing here."] };
             var parts = new List<GeometryPart>();
@@ -147,10 +165,11 @@ public static class Provisions
                 var b = Measure.Bounds(part.Solid);
                 var near = cutters.Where(c => b is { } pb && Measure.Bounds(c) is { } cb && pb.Min.X <= cb.Max.X && cb.Min.X <= pb.Max.X && pb.Min.Y <= cb.Max.Y && cb.Min.Y <= pb.Max.Y && pb.Min.Z <= cb.Max.Z && cb.Min.Z <= pb.Max.Z).ToList();
                 if (near.Count == 0) { parts.Add(part); continue; }
+                // A boolean that fails leaves the part uncut, and says so (nothing left of it: the part goes).
                 try { if (booleans.Difference(part.Solid, near, part.Solid.Tag) is { } cut) parts.Add(part with { Solid = cut }); }
-                catch (InvalidOperationException) { parts.Add(part); }
+                catch (InvalidOperationException ex) { parts.Add(part); problems.Add($"Provision openings were not cut out of a part: {ex.Message}"); }
             }
-            return geometry with { Parts = parts };
+            return problems.Count == 0 ? geometry with { Parts = parts } : geometry with { Parts = parts, Diagnostics = [.. geometry.Diagnostics ?? [], .. problems.Distinct()] };
         }
     }
 

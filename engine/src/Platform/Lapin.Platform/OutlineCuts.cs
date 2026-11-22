@@ -70,6 +70,16 @@ public static class OutlineCuts
                 r.Add(i == to ? 0 : nodes[i].Rise);
                 if (i == to) break;
             }
+            // A line crossing one arc twice leaves a cap of two corners (the arc, then the cut back): a corner at the arc's
+            // middle makes it an outline of three, each half on the same circle.
+            if (c.Count == 2 && Math.Abs(r[0]) > 1e-9)
+            {
+                var arc = new PathCurve(c[0], c[1], r[0]);
+                var (len, mid) = (arc.Length, arc.PointAt(arc.Length / 2));
+                c.Insert(1, mid);
+                r[0] = PathCurve.RiseThrough(c[0], mid, arc.PointAt(len / 4));
+                r.Insert(1, PathCurve.RiseThrough(mid, c[2], arc.PointAt(len * 3 / 4)));
+            }
             return new Piece(c, r.Any(x => Math.Abs(x) > 1e-9) ? [.. r] : null);
         }
         var (one, two) = (Walk(cuts[0], cuts[1]), Walk(cuts[1], cuts[0]));

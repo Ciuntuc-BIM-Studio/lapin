@@ -181,8 +181,7 @@ public static class Placement
             if (EllipseEdge.Read(a[EllipseEdge.Key], pts.Count) is { } el)
             {
                 var moved = el.Select(x => x == null ? null : t.Mirrored ? new EllipseEdge(t.Point(x.C), t.Dir(x.M) * -1, x.Ratio, x.Ccw) : x with { C = t.Point(x.C), M = t.Dir(x.M) }).ToArray();
-                var n = moved.Length;
-                EllipseEdge.Write(a, t.Mirrored ? [.. Enumerable.Range(0, n).Select(j => moved[((n - 2 - j) % n + n) % n])] : moved);
+                EllipseEdge.Write(a, t.Mirrored ? ArcOutline.RunBack(moved) : moved);
             }
         }
         // The points a room's doors and windows are found again by (docs/rooms.md).
@@ -202,8 +201,7 @@ public static class Placement
                 var moved = h.Ellipses?.Select(x => x == null ? null : t.Mirrored ? new EllipseEdge(t.Point(x.C), t.Dir(x.M) * -1, x.Ratio, x.Ccw) : x with { C = t.Point(x.C), M = t.Dir(x.M) }).ToArray();
                 if (!t.Mirrored) return new OutlineHoles.Hole(q, h.Rises, moved);
                 q.Reverse();
-                var n = q.Count;
-                return new OutlineHoles.Hole(q, ArcOutline.Reversed(h.Rises)?.Select(r => -r).ToArray(), moved == null ? null : [.. Enumerable.Range(0, n).Select(j => moved[((n - 2 - j) % n + n) % n])]);
+                return new OutlineHoles.Hole(q, ArcOutline.Reversed(h.Rises)?.Select(r => -r).ToArray(), moved == null ? null : ArcOutline.RunBack(moved));
             })]);
         // A room's islands (the columns inside it), loops as its contour is.
         if (a["islands"] is JsonArray isl)

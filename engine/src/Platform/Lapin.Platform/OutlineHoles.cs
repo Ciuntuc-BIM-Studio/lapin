@@ -85,13 +85,12 @@ public static class OutlineHoles
     /// <summary>A hole checked (<see cref="ArcOutline.Check"/>: counter-clockwise), its elliptical edges fitted to its corners as they then run.</summary>
     public static Hole Checked(IReadOnlyList<Vec2> pts, double[]? rises, IReadOnlyList<EllipseEdge?>? ellipses)
     {
-        var (c, r) = ArcOutline.Check(pts, rises, "A hole");
+        var (c, r) = ArcOutline.Check(pts, rises, "A hole", ellipses);
         // Given clockwise, the check runs it back: its edges taken in that order, each run back (an edge's corners alone cannot
         // tell, when every edge is a piece of one ellipse).
         if (ellipses != null && ellipses.Count == pts.Count && ellipses.Any(x => x != null) && ArcOutline.SignedArea(pts, rises, ellipses) < 0)
         {
-            var n = ellipses.Count;
-            ellipses = [.. Enumerable.Range(0, n).Select(j => ellipses[((n - 2 - j) % n + n) % n]?.Reversed)];
+            ellipses = ArcOutline.RunBack(ellipses, x => x?.Reversed);
         }
         return new Hole(c, r, EllipseEdge.Fit(c, ellipses));
     }
@@ -133,7 +132,10 @@ public static class OutlineHoles
         if (holes.Count > 0)
         {
             var corners = Args.StoredPoints(attrs[key]);
-            var outer = ArcOutline.Rises(attrs[arcsKey], corners.Count) is { } r ? ArcOutline.Points(corners, r) : corners;
+            // The outline as built: its arcs and, for a contour, its elliptical edges.
+            var rises = ArcOutline.Rises(attrs[arcsKey], corners.Count);
+            var el = key == "contour" ? EllipseEdge.Read(attrs[EllipseEdge.Key], corners.Count) : null;
+            var outer = rises != null || el != null ? ArcOutline.Points(corners, rises, null, el) : corners;
             Fits(outer, holes);
         }
         Write(attrs, holes);

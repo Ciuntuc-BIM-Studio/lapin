@@ -671,12 +671,29 @@ public static class Sheets
     }
 
     /// <summary>The next sheet number after the last one: A-101 → A-102.</summary>
+    /// <summary>
+    /// The number a new sheet takes: in the series of the sheet made last (its prefix, „A-” of „A-102”), one past the highest number
+    /// any sheet of that series has, never one already taken; „A-101” for the first sheet.
+    /// </summary>
     public static string NextNumber(IModelView m)
     {
-        var last = m.OfClass(Class).Select(s => s.Str("number")).OfType<string>().LastOrDefault();
-        if (last == null) return "A-101";
-        var match = System.Text.RegularExpressions.Regex.Match(last, @"^(.*?)(\d+)$");
-        return match.Success ? match.Groups[1].Value + (long.Parse(match.Groups[2].Value) + 1).ToString().PadLeft(match.Groups[2].Value.Length, '0') : last + "-2";
+        var numbers = m.OfClass(Class).Select(s => s.Str("number")).OfType<string>().ToList();
+        if (numbers.Count == 0) return "A-101";
+        var taken = numbers.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var last = numbers[^1];
+        static (string Prefix, string Digits)? Split(string n) =>
+            System.Text.RegularExpressions.Regex.Match(n, @"^(.*?)(\d+)$") is { Success: true } x ? (x.Groups[1].Value, x.Groups[2].Value) : null;
+        if (Split(last) is var (prefix, digits))
+        {
+            long? high = null;
+            foreach (var n in numbers)
+                if (Split(n) is var (p, d) && p == prefix && long.TryParse(d, out var k) && (high == null || k > high)) high = k;
+            if (high is { } h && h < long.MaxValue)
+                for (var k = h + 1; k < long.MaxValue; k++)
+                    if (prefix + k.ToString(System.Globalization.CultureInfo.InvariantCulture).PadLeft(digits.Length, '0') is var next && !taken.Contains(next)) return next;
+        }
+        for (var k = 2; ; k++)
+            if (!taken.Contains($"{last}-{k}")) return $"{last}-{k}";
     }
 
     public static void Register(IModuleRegistry r)

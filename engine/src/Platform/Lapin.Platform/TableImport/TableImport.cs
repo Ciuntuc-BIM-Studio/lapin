@@ -129,24 +129,7 @@ public static class TableUnits
     }
 
     /// <summary>A number as people write it: a dot or a comma for decimals, spaces or the other mark grouping thousands, a minus of any kind.</summary>
-    public static double? Parse(string text)
-    {
-        var t = text.Trim().Replace('−', '-').Replace(" ", "").Replace(" ", "").Replace(" ", "").Replace("'", "");
-        if (t.Length == 0) return null;
-        var (dot, comma) = (t.LastIndexOf('.'), t.LastIndexOf(','));
-        if (dot >= 0 && comma >= 0)
-        {
-            // The last mark is the decimal one, the other groups thousands.
-            t = dot > comma ? t.Replace(",", "") : t.Replace(".", "").Replace(',', '.');
-        }
-        else if (comma >= 0)
-        {
-            // One comma with three digits after it and more than one before could be thousands (1,250); taken as decimals only
-            // when it cannot be: a lone comma is a decimal comma (2,5) unless there are several (1,250,000).
-            t = t.Count(c => c == ',') > 1 ? t.Replace(",", "") : t.Replace(',', '.');
-        }
-        return double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out var n) && double.IsFinite(n) ? n : null;
-    }
+    public static double? Parse(string text) => Numbers.Parse(text, NumberMode.Grouped);
 }
 
 /// <summary>

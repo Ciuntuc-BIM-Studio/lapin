@@ -66,8 +66,9 @@ public static class CdeIssues
     /// <summary>The next issue number.</summary>
     public static int NextNumber(IModelView m) => All(m).Select(i => i.Number).DefaultIfEmpty(0).Max() + 1;
 
-    /// <summary>The last revision issued in the project (any sheet), for the next issue to go on from.</summary>
-    public static string? LastRevision(IModelView m) => All(m).LastOrDefault()?.Revision;
+    /// <summary>The highest revision issued in the project (any sheet; P before C, then by number), for the next issue to go on from.</summary>
+    public static string? LastRevision(IModelView m) =>
+        All(m).Select(i => i.Revision).Where(r => r.Length > 0).Aggregate((string?)null, (best, r) => best == null || CdeRevisions.Compare(r, best) > 0 ? r : best);
 
     /// <summary>
     /// Records an issue: the entity, and each printed sheet's title block given

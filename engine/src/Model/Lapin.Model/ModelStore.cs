@@ -7,6 +7,8 @@ public interface IModelView
     Relation? GetRelation(string id);
     /// <summary>Every entity, in creation order.</summary>
     IEnumerable<Entity> Entities { get; }
+    /// <summary>Every entity in no particular order: for a question whose answer does not depend on it, without sorting them all.</summary>
+    IEnumerable<Entity> AnyOrder => Entities;
     IEnumerable<Relation> Relations { get; }
     IEnumerable<Entity> OfClass(string @class);
     /// <summary>The relationships <paramref name="id"/> takes part in, relating or related, in creation order.</summary>
@@ -127,6 +129,7 @@ public sealed class ModelStore : IModelView
     public Entity? Get(string id) => _entities.GetValueOrDefault(id);
     public Relation? GetRelation(string id) => _relations.GetValueOrDefault(id);
     public IEnumerable<Entity> Entities => _entities.Values.OrderBy(e => _order[e.Id]);
+    public IEnumerable<Entity> AnyOrder => _entities.Values;
     public IEnumerable<Relation> Relations => _relations.Values.OrderBy(r => _order[r.Id]);
     public int EntityCount => _entities.Count;
     void Stamp(string cls, Entity e, int sign)

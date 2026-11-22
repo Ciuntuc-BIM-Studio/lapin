@@ -177,11 +177,11 @@ public static class SurfaceHatches
 
                 void Stroke(HatchPattern pattern, bool background, string color, double? weight, double[]? dash, double scale, double angle)
                 {
-                    // A solid pattern is the face's fill: in its fill colour, else in ink (forum topic 88); an element's override colour over both;
-                    // the material's own hatch colour over its fill (decision 678).
+                    // A solid pattern is the face's fill: in its fill colour, else in ink (forum topic 88), by the drawings' one rule
+                    // (SolidFill); an element's override colour over both.
                     if (pattern.Solid)
                     {
-                        var solid = elementColor ?? (g.HatchColor != null || (background && g.Background?.HatchColor != null) ? color : g.Fill ?? color);
+                        var solid = elementColor ?? SolidFill.Of(g, g.Fill, category, background);
                         Get((background ? "solidbg:" : "solid:") + solid, () => new Pen(Layer, null, 0, solid, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
                         return;
                     }
