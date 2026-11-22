@@ -1095,3 +1095,7 @@ Utilizatorul a luat recomandările: fără setare în interfață pentru număru
 Calculul liniar nu se schimbă (un singur sistem). Setul de lucru cel mai mare scade puțin (hala 2,4 → 2,2 GB, plăcile la 0,25 m 8,6–9,2 → 7,1–7,7 GB).
 
 **Rămase:** pe modelele cu plăci, ce se alocă acum e mai ales factorul numeric însuși (10,3 milioane de intrări × 8 octeți ≈ 82 MB pe iterație la 0,25 m): l-ar putea refolosi iterația următoare a aceleiași bucle (tabloul golit și reumplut), dar asta cere ca nimic să nu mai citească sistemul vechi; lăsat pentru un pas următor. Refactorizarea doar a părților schimbate (o bară scoasă atinge doar supernodurile de deasupra ei) nu s-a făcut: cu P-Δ se schimbă toate barele la fiecare iterație, deci câștigul ar fi doar la stările fără P-Δ.
+
+#### Răspunsurile utilizatorului (22.11.2026)
+
+Utilizatorul a luat recomandările: pasul următor mic este refolosirea memoriei factorizării numerice între iterații (deținută doar de `Nonlinear.Solve`); fără refactorizare parțială pe supernodurile atinse de o bară care iese din lucru; limita de 8 structuri păstrate pe problemă rămâne.
