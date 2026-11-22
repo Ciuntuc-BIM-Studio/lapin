@@ -212,8 +212,14 @@ public static class Slabs
                 var section = Section(m, slab);
                 var (z0, z1) = (top + section.Min(b => b.From) - 0.05, top + section.Max(b => b.To) + 0.05);
                 var cutters = holes.Select(h => Prism.ExtrudeFootprint(h, z0, z1 - z0, "opening")).OfType<Solid>().ToList();
-                parts = parts.Select(p => booleans.Difference(p.Solid, cutters, p.Solid.Tag) is { } cut ? p with { Solid = cut } : null).OfType<GeometryPart>().ToList();
-                pieces = pieces.Select(p => booleans.Difference(p.Solid, cutters, p.Solid.Tag) is { } cut ? p with { Solid = cut } : null).OfType<LayerExtents.Piece>().ToList();
+                // One the library refuses leaves that part uncut and says so (audit 22.11.2026), as a wall's opening does.
+                Solid? Cut(Solid solid, string name)
+                {
+                    try { return booleans.Difference(solid, cutters, solid.Tag); }
+                    catch (InvalidOperationException ex) { problems.Add($"{name}: an opening could not be cut ({ex.Message})."); return solid; }
+                }
+                parts = parts.Select(p => Cut(p.Solid, p.Name) is { } cut ? p with { Solid = cut } : null).OfType<GeometryPart>().ToList();
+                pieces = pieces.Select(p => Cut(p.Solid, p.Name) is { } cut ? p with { Solid = cut } : null).OfType<LayerExtents.Piece>().ToList();
             }
             else problems.Add("Openings in floors need the boolean library (manifold), missing here.");
         }
@@ -393,9 +399,10 @@ public static class Slabs
                     yield return new QuantitySet("Lapin_SlabLayerQuantities", [new("Width", 0, "LENGTH"), new("NetArea", za, "AREA", "Net area"), new("NetVolume", 0, "VOLUME", "Net volume")], $"layer:{index}", name, material);
                 continue;
             }
-            var part = g.Parts.FirstOrDefault(p => p.Key == $"layer:{index}");
-            if (part == null) continue;
-            var v = Measure.Volume(part.Solid);
+            // Every part of the layer (a piece past the outline is one more of its key: LayerExtents.AddJoined).
+            var layerParts = g.Parts.Where(p => p.Key == $"layer:{index}").ToList();
+            if (layerParts.Count == 0) continue;
+            var v = layerParts.Sum(p => Measure.Volume(p.Solid));
             yield return new QuantitySet("Lapin_SlabLayerQuantities",
             [
                 new("Width", to - from, "LENGTH"),

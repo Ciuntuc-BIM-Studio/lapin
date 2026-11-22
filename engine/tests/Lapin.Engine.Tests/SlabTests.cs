@@ -91,4 +91,44 @@ public class SlabTests
         f.Run("element.update", new JsonObject { ["id"] = slab, ["attrs"] = new JsonObject { ["cutPriority"] = 40 } });
         Assert.Equal(full, Vol(f, wall), 6);
     }
+
+    /// <summary>The session's services with a boolean library that refuses every cut by a cutter tagged <paramref name="tag"/>, as manifold refuses a bad solid.</summary>
+    sealed class RefusingCuts(IServices inner, string tag) : IServices, ISolidBooleans
+    {
+        ISolidBooleans Real => inner.Get<ISolidBooleans>()!;
+        public Solid? Difference(Solid a, IReadOnlyList<Solid> cutters, string? t = null) =>
+            cutters.Any(c => c.Tag == tag) ? throw new InvalidOperationException("manifold: error 1 (the solid is not closed and orientable).") : Real.Difference(a, cutters, t);
+        public Solid? Union(IReadOnlyList<Solid> solids, string? t = null) => Real.Union(solids, t);
+        public Solid? Intersection(Solid a, Solid b, string? t = null) => Real.Intersection(a, b, t);
+        public T? Get<T>() where T : class => typeof(T) == typeof(ISolidBooleans) ? this as T : inner.Get<T>();
+        public IReadOnlyList<T> All<T>() where T : class => typeof(T) == typeof(ISolidBooleans) ? [(this as T)!] : inner.All<T>();
+    }
+
+    [Fact]
+    public void An_opening_the_boolean_library_refuses_leaves_the_floor_uncut_and_says_so()
+    {
+        // Audit 22.11.2026 §3.6: the refusal threw out of the floor's geometry, losing the whole floor.
+        var f = new Fixture();
+        var slab = Slab(f, f.Storey, 0, 0, 6, 4);
+        f.Run("architecture.addSlabOpening", new JsonObject { ["slabId"] = slab, ["x1"] = 1, ["y1"] = 1, ["x2"] = 3, ["y2"] = 2 });
+        var g = Slabs.Geometry(f.Model.Get(slab)!, f.Model, new RefusingCuts(f.Session.Reader.Services, "opening"))!;
+        Assert.Equal(3, g.Parts.Count);
+        Assert.Equal(24 * 0.22, g.Parts.Sum(p => Measure.Volume(p.Solid)), 6);
+        Assert.Contains(g.Diagnostics!, d => d.Contains("opening could not be cut"));
+    }
+
+    [Fact]
+    public void A_layer_of_several_parts_is_measured_whole()
+    {
+        // Audit 22.11.2026 §3.6: a layer's set took the first part of its key alone (a piece past the outline is another part of it).
+        var f = new Fixture();
+        var slab = f.Model.Get(Slab(f, f.Storey, 0, 0, 6, 4))!;
+        var g = f.Session.Geometry(slab.Id)!;
+        var core = g.Parts.Single(p => p.Name == "Reinforced concrete");
+        var extra = core with { Solid = Prism.ExtrudeFootprint([new(6, 0), new(7, 0), new(7, 4), new(6, 4)], -0.22, 0.15, "piece")! };
+        var two = g with { Parts = [.. g.Parts, extra] };
+        var set = Slabs.Quantities(slab, two, f.Model).Single(q => q.Name == "Lapin_SlabLayerQuantities" && q.Part == core.Key);
+        Assert.Equal(0.15 * (24 + 4), set.Quantities.Single(x => x.Name == "NetVolume").Value, 6);
+        Assert.Equal(24 + 4, set.Quantities.Single(x => x.Name == "NetArea").Value, 6);
+    }
 }
