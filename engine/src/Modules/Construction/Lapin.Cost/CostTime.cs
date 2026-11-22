@@ -58,8 +58,10 @@ public sealed class CostOverTime
         foreach (var d in days) into[d] = into.GetValueOrDefault(d) + each;
     }
 
-    public static CostOverTime Of(EstimateResult est, ScheduleTimes times)
+    /// <param name="today">The day the work done may reach at most when the schedule has no status date (the local today when null).</param>
+    public static CostOverTime Of(EstimateResult est, ScheduleTimes times, DateOnly? today = null)
     {
+        var now = today ?? DateOnly.FromDateTime(DateTime.Now);
         var o = new CostOverTime { Estimate = est, Times = times };
         var leaves = times.Tasks.Where(t => !t.Summary).ToDictionary(t => t.Id);
         var kids = times.Tasks.Where(t => t.Parent != null).GroupBy(t => t.Parent!).ToDictionary(g => g.Key, g => g.Select(t => t.Id).ToList());
@@ -114,7 +116,16 @@ public sealed class CostOverTime
             if (done > 0)
             {
                 var from = t.ActualStart ?? t.Start;
-                var to = t.ActualFinish ?? times.DataDate ?? t.Finish;
+                // Done: to its actual finish, or the finish the schedule gives it when only its percentage says so. Under way:
+                // up to the status date (or today, with none), never past its finish; the work done is never in the future.
+                DateOnly to;
+                if (t.ActualFinish is { } af) to = af;
+                else if (t.Complete >= 100) to = t.Finish;
+                else
+                {
+                    var cap = times.DataDate ?? now;
+                    to = cap < t.Finish ? cap : t.Finish;
+                }
                 if (to < from) to = from;
                 var dd = times.WorkedDays(from, to, t.Wet);
                 if (dd.Count == 0) dd = [to];
