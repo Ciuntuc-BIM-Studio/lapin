@@ -304,7 +304,7 @@ public sealed class FrameElement
 
     /// <summary>
     /// The bar's squared slopes ∫v′² dx and ∫w′² dx (m) under its nodes' global displacements (12: i then j), in each bending
-    /// plane (§14.23): v along local 2 (bending about local 3, EN 1993's y-y), w along local 3 (about local 2, z-z). The
+    /// plane (§14.24): v along local 2 (bending about local 3, EN 1993's y-y), w along local 3 (about local 2, z-z). The
     /// consistent geometric stiffness of a unit tension (exact for the cubic shape) on the bar's own end displacements, the
     /// released ends' worked out from the held ones (Tc: the elastic stiffness couples no plane to the other).
     /// </summary>

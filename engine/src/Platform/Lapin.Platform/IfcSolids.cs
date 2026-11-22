@@ -57,6 +57,8 @@ public interface IIfcExportFilter
     bool SkipsGroup(IModelView model, Entity group) => false;
     /// <summary>The attribute keys never written.</summary>
     IEnumerable<string> PrivateKeys => [];
+    /// <summary>Whether this element's attribute is left out of its intent set (a module writes it in a set of its own: a SubD solid's cage in Lapin_SubD).</summary>
+    bool IsPrivate(Entity element, string key) => false;
 }
 
 /// <summary>A module's entities that IFC writes as systems of elements (IfcBuildingSystem).</summary>
@@ -81,6 +83,17 @@ public interface IIfcSweptBodies
     IfcSweptBody? BodyOf(IModelView model, Entity element);
     /// <summary>The same with the session's services at hand: what reads other elements' bodies (a column's top attached to a slab's soffit) needs them.</summary>
     IfcSweptBody? BodyOf(IModelView model, IServices services, Entity element) => BodyOf(model, element);
+}
+
+/// <summary>
+/// A module's elements whose bodies are known exactly (docs/plan-studio-freeform.md §9): faces on planes, cylinders, cones, spheres, tori
+/// and B-spline surfaces, written to IFC4 as IfcAdvancedBrep (when the export asks) and to STEP as MANIFOLD_SOLID_BREP. Given the element's
+/// body as its geometry has it (<paramref name="body"/>, in the world), the exact body that is that body, or null (then it is written as its
+/// facets).
+/// </summary>
+public interface IIfcExactBodies
+{
+    ExactBody? ExactOf(IModelView model, IServices services, Entity element, Solid body);
 }
 
 /// <summary>

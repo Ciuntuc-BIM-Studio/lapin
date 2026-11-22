@@ -13,14 +13,14 @@ namespace Lapin.Analysis.Design;
 /// <summary>A bar's checks: its piece (the analytical model's member), element, name, material and kind, its checks and what reinforcement it needs.</summary>
 public sealed record MemberDesign(int Index, string Id, string SourceId, string Name, string Material, string? Grade, string Kind, string? StoreyId, List<Check> Checks, Required? Need, List<string> Notes)
 {
-    /// <summary>Its buckling lengths as the checks took them (§14.23): k·L, the αcr ones when asked, which is used.</summary>
+    /// <summary>Its buckling lengths as the checks took them (§14.24): k·L, the αcr ones when asked, which is used.</summary>
     public LengthsInfo? Lengths { get; init; }
     public Check? Governing => Checks.Where(c => c.Done).MaxBy(c => c.Utilisation) ?? Checks.MaxBy(c => c.Utilisation);
     public double Utilisation => Governing?.Utilisation ?? 0;
 }
 
 /// <summary>
-/// A member's buckling lengths as shown (§14.23): its k·L about each axis (or the lengths given), whether the αcr lengths were
+/// A member's buckling lengths as shown (§14.24): its k·L about each axis (or the lengths given), whether the αcr lengths were
 /// asked (and, for concrete, only shown), and the lengths of the design set that governs its buckling check (or its most
 /// compressed one): about each axis the one used, where it came from and the αcr one.
 /// </summary>
@@ -231,11 +231,11 @@ public sealed class DesignRun
     bool _prepared;
     Dictionary<string, double>? _whole;
 
-    /// <summary>A concrete member's αcr length beside the k·L it keeps (shown only, §14.23).</summary>
+    /// <summary>A concrete member's αcr length beside the k·L it keeps (shown only, §14.24).</summary>
     static UsedLength Informed(UsedLength u, double kL) => new(kL, "k", "EN 1992-1-1 5.8.3.2: l0 by its own rules; the αcr one shown only", u.FromAlpha, u.Alpha, u.Mode);
 
     /// <summary>
-    /// A member's lengths in each design set from the structure's buckling (§14.23, <see cref="BucklingLengthRule"/>): the set's
+    /// A member's lengths in each design set from the structure's buckling (§14.24, <see cref="BucklingLengthRule"/>): the set's
     /// combination's αcr lengths (its +X variant's for the imperfections' variants; none for the seismic bounds).
     /// </summary>
     /// <param name="whole">The element's whole length (all its pieces between nodes): what an αcr length is compared with.</param>
@@ -253,13 +253,13 @@ public sealed class DesignRun
             var why = f.Seismic ? "the seismic bounds have no buckling of their own" : ml == null ? "the combination has no buckling of its own" : ml.Why;
             var y = BucklingLengthRule.Choose(whole, ky * l, givenY, ml?.Y, second, why);
             var z = BucklingLengthRule.Choose(whole, kz * l, givenZ, ml?.Z, second, why);
-            var text = $"Buckling lengths (from αcr asked, docs/plan-fem.md §14.23): strong axis {Checks.F(y.Lcr, "0.##")} m ({Said(y)}), weak axis {Checks.F(z.Lcr, "0.##")} m ({Said(z)}); k·L {Checks.F(ky * l, "0.##")} m ({hy}) and {Checks.F(kz * l, "0.##")} m ({hz}).";
+            var text = $"Buckling lengths (from αcr asked, docs/plan-fem.md §14.24): strong axis {Checks.F(y.Lcr, "0.##")} m ({Said(y)}), weak axis {Checks.F(z.Lcr, "0.##")} m ({Said(z)}); k·L {Checks.F(ky * l, "0.##")} m ({hy}) and {Checks.F(kz * l, "0.##")} m ({hz}).";
             o[f.Key] = new SetLengths(y, z, text);
         }
         return o;
     }
 
-    /// <summary>What the lengths from αcr are, and how they sit with second order (§14.23).</summary>
+    /// <summary>What the lengths from αcr are, and how they sit with second order (§14.24).</summary>
     void AlphaNote(int count)
     {
         var st = Run.Problem.Settings;
@@ -289,7 +289,7 @@ public sealed class DesignRun
         }
         if (unbraced.Count > 0)
             Notes.Add(Members.Any(x => x.Lengths?.FromAlpha == true && !x.Lengths.Informative)
-                ? $"No wall or bracing along {string.Join(" and ", unbraced)}: the frame looks unbraced (sway) that way; the members with their lengths from αcr take the sway modes (§14.23), the others assume a braced frame (k > 1 theirs to give, analysis.setDesign)."
+                ? $"No wall or bracing along {string.Join(" and ", unbraced)}: the frame looks unbraced (sway) that way; the members with their lengths from αcr take the sway modes (§14.24), the others assume a braced frame (k > 1 theirs to give, analysis.setDesign)."
                 : $"No wall or bracing along {string.Join(" and ", unbraced)}: the frame looks unbraced (sway) that way. The buckling lengths assume a braced frame; give the columns' own (k > 1, analysis.setDesign ky / kz or lcrY / lcrZ).");
     }
 
@@ -617,7 +617,7 @@ public sealed class DesignRun
     }
 
     /// <summary>
-    /// A member's buckling lengths (§14.23): {fromAlpha, informative, combination, combinationName, y, z}, each axis {used,
+    /// A member's buckling lengths (§14.24): {fromAlpha, informative, combination, combinationName, y, z}, each axis {used,
     /// source: given | k | alpha, how, kL, alpha (the αcr length), alphaCr, mode}.
     /// </summary>
     static JsonObject? LengthsJson(LengthsInfo? x)

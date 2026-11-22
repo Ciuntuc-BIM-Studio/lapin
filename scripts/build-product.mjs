@@ -25,7 +25,7 @@
 // what the updater installs. scripts/publish-update.mjs signs the packages and
 // puts them there.
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveProduct } from './product.mjs';
@@ -130,17 +130,18 @@ if (cross) {
 const identity = mac ? process.env.LAPIN_SIGNING_IDENTITY
   ?? spawnSync('security', ['find-identity', '-v', '-p', 'codesigning'], { encoding: 'utf8' }).stdout?.match(/"(Developer ID Application: [^"]+)"/)?.[1] : undefined;
 if (mac) console.log(identity ? `▸ signing as ${identity}` : '▸ no Developer ID Application certificate in the keychain: the app is built unsigned');
-// Linux (issue #23): the .deb and the AppImage carry a desktop entry made from linux/app.desktop.hbs (name, comment,
+// Linux (issue #23): the .deb, the .rpm and the AppImage carry a desktop entry made from linux/app.desktop.hbs (name, comment,
 // Exec with the file opened, the icon by the binary's name, which icon themes look up, Categories=Graphics;Engineering;,
 // the .lapin MIME type, StartupWMClass), and the .lapin MIME type itself (linux/lapin-project.xml) for the MIME
-// database. The AppImage's entry comes from the same template (Tauri builds its AppDir from the .deb's data).
+// database. The AppImage's entry comes from the same template (Tauri builds its AppDir from the .deb's data). The .rpm
+// (Fedora, RHEL, openSUSE) uses the system's WebKitGTK like the .deb, not the older one the AppImage carries.
 // Only here: on macOS and Windows a file association would register .lapin before the app handles a file opened so.
 const mimeXml = { [`/usr/share/mime/packages/${id}.xml`]: 'linux/lapin-project.xml' };
 const linuxBundle = {
-  targets: ['deb', 'appimage'],
+  targets: ['deb', 'rpm', 'appimage'],
   shortDescription: product.description ?? 'BIM modeller on the IFC schema',
   fileAssociations: [{ ext: ['lapin'], name: 'Lapin project', description: 'Lapin project', mimeType: 'application/x-lapin-project', role: 'Editor' }],
-  linux: { deb: { desktopTemplate: 'linux/app.desktop.hbs', files: mimeXml }, appimage: { files: mimeXml } },
+  linux: { deb: { desktopTemplate: 'linux/app.desktop.hbs', files: mimeXml }, rpm: { desktopTemplate: 'linux/app.desktop.hbs', files: mimeXml }, appimage: { files: mimeXml } },
 };
 writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   productName: product.name,
@@ -150,7 +151,9 @@ writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   // Relative to desktop/src-tauri, with forward slashes: Tauri reads an absolute Windows path ("D:\\a\\…") as a URL with the
   // scheme "d:", embeds nothing and the installed app opens on "File not found".
   build: { frontendDist: relative(tauriDir, join(out, 'ui')).split(sep).join('/') },
-  app: { windows: [{ label: 'main', title: product.name, width: 1440, height: 900, minWidth: 1000, minHeight: 640, center: true }] },
+  // tauri.conf.json's main window with the edition's title: Tauri replaces an array whole when it merges this file, so a
+  // window written out here lost dragDropEnabled: false and Windows' window swallowed a view dragged onto a sheet (forum 206).
+  app: { windows: [{ ...JSON.parse(readFileSync(join(tauriDir, 'tauri.conf.json'), 'utf8')).app.windows[0], label: 'main', title: product.name }] },
   bundle: {
     externalBin: ['binaries/lapin-host'], resources: ['resources/**/*'],
     // An edition under its own brand carries its icons (brand.icons: a folder from the repository, with Tauri's five files), Lapin its own (tauri.conf.json's).

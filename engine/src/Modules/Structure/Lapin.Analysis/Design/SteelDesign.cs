@@ -15,13 +15,13 @@ public sealed record SteelMember(SectionShape Shape, SectionProps P, double Fy, 
     public string LengthsSource { get; init; } = "";
     /// <summary>The interaction factors of 6.3.3: "A" (Annex A, method 1: the default, the Romanian annex's) or "B" (Annex B, method 2).</summary>
     public string Method { get; init; } = "A";
-    /// <summary>The lengths by design set's key when they come from αcr (§14.23): each set's own; null, the lengths above for every set.</summary>
+    /// <summary>The lengths by design set's key when they come from αcr (§14.24): each set's own; null, the lengths above for every set.</summary>
     public IReadOnlyDictionary<string, SetLengths>? BySet { get; init; }
     /// <summary>The length about y-y (z-z) is a sway mode's (from αcr): Annex B's Cmy (Cmz) is then 0.9 (Table B.3's footnote).</summary>
     public bool SwayY { get; init; }
     public bool SwayZ { get; init; }
 
-    /// <summary>The member with a design set's own lengths (§14.23), or itself.</summary>
+    /// <summary>The member with a design set's own lengths (§14.24), or itself.</summary>
     public SteelMember ForSet(string key) => BySet != null && BySet.TryGetValue(key, out var x)
         ? this with { LcrY = x.Y.Lcr, LcrZ = x.Z.Lcr, LengthsSource = x.Text, SwayY = x.Y.Source == "alpha", SwayZ = x.Z.Source == "alpha", BySet = null }
         : this;
@@ -342,7 +342,7 @@ public static class SteelDesign
         var nrk = p.Area * fy;
         double ny = nc / (chiY * nrk / GammaM1), nz = nc / (chiZ * nrk / GammaM1);
         double cmy = Cm(shapeY), cmz = Cm(shapeZ), cmlt = Math.Max(0.4, Cm(shapeY));
-        // A sway buckling mode's length (from αcr, §14.23): Cm = 0.9 about that axis (Table B.3, its footnote).
+        // A sway buckling mode's length (from αcr, §14.24): Cm = 0.9 about that axis (Table B.3, its footnote).
         if (m.SwayY) cmy = 0.9;
         if (m.SwayZ) cmz = 0.9;
         double kyy, kzz, kyz, kzy;

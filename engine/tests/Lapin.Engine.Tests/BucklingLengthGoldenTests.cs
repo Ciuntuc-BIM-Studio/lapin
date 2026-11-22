@@ -1,31 +1,17 @@
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// A project that says nothing of the buckling lengths from αcr (docs/plan-fem.md §14.23: the user's k by default) keeps every
+/// A project that says nothing of the buckling lengths from αcr (docs/plan-fem.md §14.24: the user's k by default) keeps every
 /// member check it had before them ("extend, never break"): every check of every member of the steel hall and of the guide's
-/// floor (keys, utilisations, combinations, values, notes) and the checks' notes, hashed, compared with the files written by the
-/// code before §14.23 (Golden/). LAPIN_WRITE_GOLDEN=1 writes them again.
+/// floor (keys, utilisations, combinations, values, notes) and the checks' notes, compared with the files written by the code
+/// before §14.24 (Golden/) within the floating-point noise between machines (§14.23). LAPIN_WRITE_GOLDEN=1 writes them again.
 /// </summary>
 public class BucklingLengthGoldenTests
 {
-    static string Dir([CallerFilePath] string here = "") => Path.Combine(Path.GetDirectoryName(here)!, "Golden");
-
-    static void Golden(string name, JsonObject actual)
-    {
-        var path = Path.Combine(Dir(), name + ".json");
-        var text = actual.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
-        if (Environment.GetEnvironmentVariable("LAPIN_WRITE_GOLDEN") == "1") { Directory.CreateDirectory(Dir()); File.WriteAllText(path, text); return; }
-        Assert.True(File.Exists(path), $"{path} is missing: LAPIN_WRITE_GOLDEN=1 writes it.");
-        Assert.Equal(File.ReadAllText(path), text);
-    }
-
-    static string Hash(string s) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(s)));
+    static void Golden(string name, JsonObject actual) => GoldenFile.Check(name, actual, indented: false);
 
     /// <summary>A check without its combination's key (made of the cases' ids, new at every run).</summary>
     static JsonNode Plain(JsonNode c)
@@ -35,11 +21,14 @@ public class BucklingLengthGoldenTests
         return o;
     }
 
-    /// <summary>Every member's checks in detail, in order of name and content, hashed; the members' count and the notes as they are.</summary>
+    /// <summary>
+    /// Every member's checks in detail, in order of name (then utilisation, then content), and the checks' notes as they are;
+    /// compared within the machine's floating-point noise (<see cref="GoldenFile"/>, docs/plan-fem.md §14.23).
+    /// </summary>
     internal static JsonObject Digest(Fixture f)
     {
         var all = f.Session.Query("analysis.checks", [])!.AsObject();
-        var rows = new List<string>();
+        var rows = new List<JsonObject>();
         foreach (var sourceId in all["members"]!.AsArray().Select(m => (string)m!["sourceId"]!).Distinct())
         {
             var d = f.Session.Query("analysis.check", new JsonObject { ["id"] = sourceId })!.AsObject();
@@ -48,12 +37,16 @@ public class BucklingLengthGoldenTests
                 {
                     ["name"] = (string?)m["name"], ["utilisation"] = (double)m["utilisation"]!,
                     ["checks"] = new JsonArray(m["checks"]!.AsArray().Select(c => Plain(c!)).ToArray()), ["notes"] = m["notes"]!.DeepClone(),
-                }.ToJsonString());
+                });
         }
-        rows.Sort(StringComparer.Ordinal);
+        var ordered = rows
+            .OrderBy(r => (string?)r["name"], StringComparer.Ordinal)
+            .ThenBy(r => Math.Round((double)r["utilisation"]!, 4))
+            .ThenBy(r => r.ToJsonString(), StringComparer.Ordinal)
+            .Select(r => (JsonNode)r).ToArray();
         return new JsonObject
         {
-            ["members"] = rows.Count, ["checks"] = Hash(string.Join("\n", rows)),
+            ["members"] = rows.Count, ["rows"] = new JsonArray(ordered),
             ["notes"] = all["notes"]!.DeepClone(),
         };
     }

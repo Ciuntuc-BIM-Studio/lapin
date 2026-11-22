@@ -5,7 +5,7 @@
  */
 
 export interface GoverningDto { key: string; name: string; clause: string; combination: string; combinationName: string; utilisation: number }
-/** One axis' buckling length (docs/plan-fem.md §14.23): the one used (m), where it came from, and both candidates. */
+/** One axis' buckling length (docs/plan-fem.md §14.24): the one used (m), where it came from, and both candidates. */
 export interface LengthAxisDto { used: number; source: 'given' | 'k' | 'alpha' | string; how: string; kL: number; alpha?: number | null; alphaCr?: number | null; mode?: number | null }
 export interface LengthsDto { fromAlpha: boolean; informative: boolean; combination?: string; combinationName?: string; y: LengthAxisDto; z: LengthAxisDto }
 export interface CheckedDto {

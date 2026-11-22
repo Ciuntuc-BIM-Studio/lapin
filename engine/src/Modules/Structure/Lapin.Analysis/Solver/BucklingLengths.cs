@@ -1,21 +1,21 @@
 namespace Lapin.Analysis.Solver;
 
 /// <summary>
-/// A member's buckling length about one axis from a buckling mode of the structure (§14.23): Lcr = π √(EI / (αcr |NEd|)), the
+/// A member's buckling length about one axis from a buckling mode of the structure (§14.24): Lcr = π √(EI / (αcr |NEd|)), the
 /// mode's αcr and number (1-based), and the member's participation in it about that axis (its mean squared slope in that
 /// plane over the compression-weighted mean of every compressed member's, both planes).
 /// </summary>
 public sealed record AxisLength(double Lcr, double Alpha, int Mode, double Participation);
 
 /// <summary>
-/// A member's buckling lengths from the structure's buckling (§14.23): its axial force (kN, tension positive, the length-weighted
+/// A member's buckling lengths from the structure's buckling (§14.24): its axial force (kN, tension positive, the length-weighted
 /// mean of its pieces'), about the strong axis (<see cref="Y"/>: bending about local 3, EN 1993's y-y) and the weak one
 /// (<see cref="Z"/>: local 2, z-z), each null when no mode found bends it that way; <see cref="Why"/> says why there is none.
 /// </summary>
 public sealed record MemberLength(double N, AxisLength? Y, AxisLength? Z, string? Why = null);
 
 /// <summary>
-/// The buckling lengths of the compressed members from the elastic critical load of the structure (docs/plan-fem.md §14.23;
+/// The buckling lengths of the compressed members from the elastic critical load of the structure (docs/plan-fem.md §14.24;
 /// EN 1993-1-1 5.2.2(8), 6.3.1.2: Ncr,i = αcr NEd,i, Lcr,i = π √(EI / Ncr,i)). For each axis of a member, the lowest mode
 /// found (the structure's or the member's own: its own mode is its buckling with the restraint the structure really gives its
 /// ends) that bends it about that axis: its mean squared slope in that plane, ∫v′²dx / L, at least <see cref="Participation"/>

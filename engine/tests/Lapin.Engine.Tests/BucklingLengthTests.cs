@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// The buckling lengths from αcr (docs/plan-fem.md §14.23) against closed forms: the portal frame's columns with pinned and
+/// The buckling lengths from αcr (docs/plan-fem.md §14.24) against closed forms: the portal frame's columns with pinned and
 /// fixed bases (λ tan λ = 6 Ib h/(Ic L), λ cot λ = −6 Ib h/(Ic L): Timoshenko and Gere §2.8), a cantilever column (2 L), a
 /// braced frame's columns (about their own length), a two-storey frame against the sway alignment chart (Julian and Lawrence;
 /// AISC 360-16 Commentary eq. C-A-7-2), a beam with no compression and the participation's threshold; and the rule that

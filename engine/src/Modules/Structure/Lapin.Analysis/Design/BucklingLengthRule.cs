@@ -11,7 +11,7 @@ public sealed record SetLengths(UsedLength Y, UsedLength Z, string Text);
 
 /// <summary>
 /// Which buckling length a member's check takes about an axis when the project (or the member) asks for the lengths from αcr
-/// (docs/plan-fem.md §14.23):
+/// (docs/plan-fem.md §14.24):
 /// <list type="number">
 /// <item>a length the user gave (lcrY, lcrZ) is taken as it is;</item>
 /// <item>with second order on (P-Δ), the non-sway length k·L: the sway effects are in the forces (EN 1993-1-1 5.2.2(3)b), an

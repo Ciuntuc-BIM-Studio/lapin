@@ -53,3 +53,6 @@ export function pickable(node: NodeDto | null | undefined): boolean {
  */
 export const tabHandlers = new Set<() => boolean>();
 export const doubleClickHandlers = new Set<(id: string | null) => boolean>();
+
+/** A plain click on the 3D view, before it picks: a handler returns true when it took the click (an edit mode that owns the picking, as the SubD cage's). */
+export const pickHandlers = new Set<(nodeId: string | null) => boolean>();

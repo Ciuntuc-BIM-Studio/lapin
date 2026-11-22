@@ -28,7 +28,7 @@ Poți schița pe patru feluri de vederi:
 
 - **Extrudare** (EXTRUDE) împinge conturul drept în afară. Scrie S pentru ambele sensuri față de schiță, T pentru o înclinare care strânge laturile spre interior, și Cut ca să taie elementele selectate înainte. Ca să meargă până la fața altui element, folosește **Până la → o față…** din proprietățile lui, sau **Extrudează până la față**. Adâncimea, înălțimile și grosimile se scriu în unitatea proiectului, cum spune mesajul (`Depth (mm)`: `2000` înseamnă 2 m).
 - **Măturare** (SWEEP) duce un profil de-a lungul unui traseu. TWist rotește secțiunea pe drum, SCale o crește, iar RIse o ridică. Un cerc care urcă devine elice și face TUrns ture.
-- **Loft** (LOFT) unește profile desenate pe vederi diferite. Scrie S ca să treacă neted prin ele. O linie selectată cu rolul *al doilea traseu* îl îndoaie, ca ghidaj.
+- **Loft** (LOFT) unește profile desenate pe vederi diferite. Scrie S ca să treacă neted prin ele: prin trei profile sau mai multe e o singură suprafață B-spline care trece exact prin fiecare, cu arcele păstrate ca arce, pe care un export IFC sau STEP o poate scrie cum e ([Suprafețe exacte](import-export.md#ifc-și-fragments)). O linie selectată cu rolul *al doilea traseu* îl îndoaie, ca ghidaj.
 - **Revoluție** (REVOLVE) rotește un profil în jurul unei linii-axă.
 - **Primitivele** așază cu un clic un cub, un cilindru, o sferă, un con, un tor, o pană sau o piramidă. Dimensiunile și poziția lor le schimbi în proprietăți.
 
@@ -156,6 +156,36 @@ Proprietățile unui solid Studio îi arată pașii în ordine. Fiecare pas poat
 ![Un cilindru golit într-o țeavă și repetat de trei ori: cei doi pași ai lui în proprietăți](shots/studio-steps.webp)
 
 Proprietățile unei polilinii îi arată laturile. Scrie lungimea unei laturi, și capătul ei se mută de-a lungul ei. Laturile de după o urmează, până la următoarea latură paralelă cu ea, așa că un dreptunghi rămâne dreptunghi. Un solid desenat pe ea urmează și el.
+
+## Solide SubD
+
+Un **solid SubD** este un corp neted, liber, modelat dintr-o **cușcă** grosieră de puncte, muchii și fețe (subdivizare Catmull–Clark). Trageți câteva puncte ale cuștii și tot corpul le urmează într-o curbă netedă. Este un solid Studio ca celelalte: primește booleene, rotunjiri, cantități și export IFC și își păstrează identitatea când îl editați.
+
+*Inspirație:* instrumentele de forme libere din Studio datorează idei add-on-ului [blender-nurbs](https://github.com/cekuhnen/blender-nurbs), creat de cekuhnen pentru modelare NURBS în Blender. Codul Lapin este propriu: au fost preluate doar ideile, nu și codul.
+
+**Studio → Solide → SubD** oferă **Cutie SubD**, **Cilindru SubD** și **Plan SubD** (o suprafață deschisă, 4 × 4 patrulatere): faceți clic în plan sau pe sol în 3D pentru a-l plasa. **SubD din solid** transformă fețele solidului Studio selectat în cușca unui solid SubD nou (sursa rămâne; doar corpuri mici).
+
+### Editarea cuștii
+
+Selectați un solid SubD în 3D și apăsați **Tab**, faceți dublu clic pe el sau apăsați **Editează cușca** în fișa lui. Cușca este desenată peste corpul neted ca o structură de linii: punctele, muchiile, muchiile pliate mai groase și colorate (portocaliu pentru semi-ascuțit, roșu pentru ascuțit), marginea unei suprafețe deschise întreruptă.
+
+- Alegeți ce selectați cu butoanele **Vârf**, **Muchie** și **Față** din bară sau cu tastele **1**, **2** și **3**.
+- Clic alege, **Shift**-clic adaugă sau scoate. Un clic în gol renunță la alegere.
+- Trageți ce este ales: se fixează pe capetele, mijloacele și muchiile modelului și pe celelalte puncte ale cuștii, iar săgețile blochează o axă (dreapta pentru roșu, stânga pentru verde, sus pentru albastru), exact ca la Mută 3D. Tastați o distanță sau `dx,dy,dz` și apăsați Enter. Eliberarea este un singur pas de anulare; corpul neted se redesenează atunci. După eliberare, o distanță tastată și Enter schimbă mutarea pe aceeași direcție (tot un singur pas de anulare); un click în altă parte sau Esc o lasă cum e. <kbd>Tab</kbd> în timpul tragerii pornește menținerea automată: punctele urmează cursorul fără buton, iar un click sau Enter le pune jos.
+- **Scară** și **Rotire (°)** din bară lucrează asupra punctelor alese, față de mijlocul lor: tastați o valoare și apăsați Enter.
+- **Extrudează** împinge fețele alese cu distanța de lângă (negativă: spre interior). **Inserează buclă** taie o buclă de muchii peste inelul de patrulatere pe care îl începe muchia aleasă. **Șterge fețele** deschide cușca acolo. **Pliu** dă muchiilor alese o ascuțime: Neted scoate pliul, Semi-ascuțit 1–3 îl rotunjește după atâtea subdiviziuni, Ascuțit rămâne ascuțit.
+- **Esc** sau **Gata** părăsește modul. Părăsirea nu este un pas de anulare.
+
+![Un plan SubD în 3D cu cușca desenată peste el și un punct ales](shots/studio-subd-cage.webp)
+
+### Fișa lui
+
+Fișa SubD arată punctele și fețele cuștii și dacă este deschisă sau închisă, **Nivelul** la care e făcut corpul și **Abaterea** lui față de suprafața limită (corpul se subdivizează până se află în toleranță, cel mult **Niveluri SubD (cel mult)**, din câmpurile Studio), precum și:
+
+- **Grosime** și **Latură** (Spre exterior, Spre interior, Centrat): o suprafață deschisă devine un solid de acea grosime. O cușcă închisă este deja solid, deci acestea contează doar la suprafețele deschise.
+- **Simetrie** (Niciuna, x, y, z): editați o jumătate, iar cealaltă o urmează. Dacă o față taie planul, Lapin spune asta: inserați o buclă sau faceți cușca cu mai multe segmente și încercați din nou.
+
+![Fișa unui solid SubD](shots/studio-subd-properties.webp)
 
 ## Rețele din alte programe
 

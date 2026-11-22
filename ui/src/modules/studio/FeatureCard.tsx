@@ -17,7 +17,7 @@ let offered: Promise<Offered[] | null> | null = null;
 /** What the card calls each operation. */
 const OPS: Record<string, string> = {
   extrude: 'Extrude', sweep: 'Sweep', revolve: 'Revolve', loft: 'Loft', primitive: 'Primitive', prism: 'Push/pull', body: 'Body',
-  ring: 'Ring', box: 'Box', wall: 'Wall strip', boxSlab: 'Box bottom or top',
+  subd: 'SubD', ring: 'Ring', box: 'Box', wall: 'Wall strip', boxSlab: 'Box bottom or top',
 };
 
 /** The selected Studio solids (a change goes to all of them). */
@@ -42,6 +42,7 @@ export function featureFieldKeys(node: NodeDto): string[] | null {
       };
       return ['shape', ...(sizes[String(node.props.shape)] ?? []), 'rotation', ...common];
     }
+    case 'subd': return ['levels', 'rotation', ...common];
     case 'prism': return common;
     case 'body': return ['rotation', ...common];
     // Rings, boxes, wall strips and a box's bottom or top (thick.ts).
@@ -216,7 +217,7 @@ export function FeatureCard({ node }: { node: NodeDto }) {
           </dd>
         </>
       )}
-      {(f.operation === 'primitive' || f.operation === 'body') && <Place node={node} />}
+      {(f.operation === 'primitive' || f.operation === 'body' || f.operation === 'subd') && <Place node={node} />}
       {f.operation === 'prism' && <Pushed node={node} />}
       {f.problems?.length ? <><dt>Problems</dt><dd className="error-text small">{f.problems.join(' ')}</dd></> : null}
       {sketched && <>

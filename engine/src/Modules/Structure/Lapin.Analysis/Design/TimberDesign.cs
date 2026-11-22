@@ -15,10 +15,10 @@ public sealed record TimberMember(double B, double H, double L, TimberClass T, i
     public string LengthsSource { get; init; } = "";
     /// <summary>The span's deflection limits (EN 1995-1-1 Table 7.2's ranges, the lower ends): instantaneous L/300, final L/250 (a cantilever's twice the span).</summary>
     public bool Cantilever { get; init; }
-    /// <summary>The lengths by design set's key when they come from αcr (§14.23); null, the lengths above for every set.</summary>
+    /// <summary>The lengths by design set's key when they come from αcr (§14.24); null, the lengths above for every set.</summary>
     public IReadOnlyDictionary<string, SetLengths>? BySet { get; init; }
 
-    /// <summary>The member with a design set's own lengths (§14.23), or itself.</summary>
+    /// <summary>The member with a design set's own lengths (§14.24), or itself.</summary>
     public TimberMember ForSet(string key) => BySet != null && BySet.TryGetValue(key, out var x) ? this with { LcrY = x.Y.Lcr, LcrZ = x.Z.Lcr, LengthsSource = x.Text, BySet = null } : this;
 }
 

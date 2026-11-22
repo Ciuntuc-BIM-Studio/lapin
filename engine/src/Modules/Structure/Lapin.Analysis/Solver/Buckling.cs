@@ -9,7 +9,7 @@ public sealed record BucklingResult(bool Ok, double[] Alpha, double[][] Modes, i
 {
     /// <summary>Each mode's share of φᵀ G φ by bar (summing to 1): a mode one member holds nearly all of is that member's own (local) buckling.</summary>
     public double[][] Shares { get; init; } = [];
-    /// <summary>Each bar's axial force the buckling was worked out for (kN, tension positive): what αcr multiplies (§14.23).</summary>
+    /// <summary>Each bar's axial force the buckling was worked out for (kN, tension positive): what αcr multiplies (§14.24).</summary>
     public double[] Axial { get; init; } = [];
 }
 

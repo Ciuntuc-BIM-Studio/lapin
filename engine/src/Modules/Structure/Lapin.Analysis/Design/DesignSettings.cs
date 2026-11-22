@@ -39,7 +39,7 @@ public static class DesignSettings
     /// <summary>The snow's load duration for timber's kmod (EN 1995-1-1 Table 2.2: medium or short term, as the site's climate says; short by default).</summary>
     public static readonly string[] SnowDurations = ["short", "medium"];
     /// <summary>
-    /// The buckling lengths of the steel and timber checks (§14.23): "k", the user's k·L (or the ends', or the lengths given: the
+    /// The buckling lengths of the steel and timber checks (§14.24): "k", the user's k·L (or the ends', or the lengths given: the
     /// default, as before), or "alpha", from the structure's elastic critical load (Lcr = π √(EI/(αcr NEd)), with their bounds).
     /// The project's, and a member's own over it.
     /// </summary>
@@ -63,7 +63,7 @@ public static class DesignSettings
         ("bucklingLengths", BucklingLengths, "The buckling lengths are k (the user's k·L) or alpha (from αcr)."),
     ];
 
-    /// <summary>Whether a member's checks take the lengths from αcr (§14.23): its own choice, else the project's.</summary>
+    /// <summary>Whether a member's checks take the lengths from αcr (§14.24): its own choice, else the project's.</summary>
     public static bool FromAlpha(JsonObject? project, JsonObject? own) =>
         ((string?)own?["bucklingLengths"] is { } o && BucklingLengths.Contains(o) ? o : Choice(project, "bucklingLengths", BucklingLengths)) == "alpha";
 

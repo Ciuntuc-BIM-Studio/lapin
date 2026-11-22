@@ -9,7 +9,7 @@
 //   node scripts/publish-update.mjs <product> <file or folder>… [--notes "what changed"] [--update-only]
 // e.g. node scripts/publish-update.mjs lapin build/lapin/bundle build/lapin-linux "windows builds"
 // What a folder holds is found by its names (Tauri's): <name>_<version>_….dmg and
-// .app.tar.gz (macOS), -setup.exe and -portable.zip (Windows), .AppImage and .deb (Linux).
+// .app.tar.gz (macOS), -setup.exe and -portable.zip (Windows), .AppImage, .deb and .rpm (Linux).
 //
 // Each update package is signed here with the update key (~/.tauri/lapin-updater.key,
 // or LAPIN_UPDATER_KEY; its password from the macOS keychain item "lapin-updater",
@@ -54,6 +54,7 @@ const KINDS = [
   { test: /-portable\.zip$/, download: `${prefix}-Windows-x64-portable.zip` },
   { test: /\.AppImage$/, download: `${prefix}-Linux-x64.AppImage`, target: 'linux-x86_64-appimage' },
   { test: /\.deb$/, download: `${prefix}-Linux-x64.deb`, target: 'linux-x86_64-deb' },
+  { test: /\.rpm$/, download: `${prefix}-Linux-x64.rpm`, target: 'linux-x86_64-rpm' },
 ];
 const walk = (p) => (statSync(p).isDirectory() ? readdirSync(p).flatMap((f) => walk(join(p, f))) : [p]);
 const files = inputs.flatMap((i) => walk(resolve(i))).filter((f) => KINDS.some((k) => k.test.test(f) && (!updateOnly || k.target)) && !basename(f).startsWith('.'));
@@ -96,7 +97,7 @@ const downloads = [];
 const updates = [];
 for (const file of files) {
   const kind = KINDS.find((k) => k.test.test(file));
-  const version = basename(file).match(/_(\d+\.\d+\.\d+)_/)?.[1];
+  const version = basename(file).match(/_(\d+\.\d+\.\d+)_/)?.[1] ?? basename(file).match(/-(\d+\.\d+\.\d+)-\d+\.[\w]+\.rpm$/)?.[1];
   if (kind.download && !updateOnly) downloads.push(`${file}=${kind.download}`);
   if (!kind.target) continue;
   if (!version) { console.error(`${basename(file)}: no version in its name.`); process.exit(1); }
@@ -129,7 +130,7 @@ const archive = join(site, 'deploy/archive-builds.sh');
 if (existsSync(archive) && process.env.LAPIN_NO_ARCHIVE !== '1') {
   const byVersion = new Map();
   for (const file of files) {
-    const version = basename(file).match(/_(\d+\.\d+\.\d+)_/)?.[1];
+    const version = basename(file).match(/_(\d+\.\d+\.\d+)_/)?.[1] ?? basename(file).match(/-(\d+\.\d+\.\d+)-\d+\.[\w]+\.rpm$/)?.[1];
     if (!version) continue;
     const list = byVersion.get(version) ?? [];
     list.push(file, ...(existsSync(`${file}.sig`) ? [`${file}.sig`] : []));

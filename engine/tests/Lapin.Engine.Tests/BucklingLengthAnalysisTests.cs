@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// The buckling lengths from αcr in the model (docs/plan-fem.md §14.23): a steel portal frame on fixed footings (its columns'
+/// The buckling lengths from αcr in the model (docs/plan-fem.md §14.24): a steel portal frame on fixed footings (its columns'
 /// in-plane lengths those of λ cot λ = −6 Ib h/(Ic L), out of its plane a cantilever's 2 h), a cantilever column (k·L = 2 h
 /// kept, the αcr one beside it), the project's option and a member's own over it (one undo step each), second order taking the
 /// non-sway lengths back, concrete showing its l0 only, and the steel hall of the guide (k·L against αcr, member by member).

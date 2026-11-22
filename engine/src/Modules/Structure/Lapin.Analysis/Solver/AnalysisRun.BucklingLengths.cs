@@ -1,7 +1,7 @@
 namespace Lapin.Analysis.Solver;
 
 /// <summary>
-/// The members' buckling lengths from αcr (docs/plan-fem.md §14.23), for the design checks that ask for them: each ultimate
+/// The members' buckling lengths from αcr (docs/plan-fem.md §14.24), for the design checks that ask for them: each ultimate
 /// static combination's buckling (6 modes, as the checks' αcr, §14.11), the lengths of every member from its modes,
 /// derived on asking and kept with the run (never stored).
 /// </summary>
