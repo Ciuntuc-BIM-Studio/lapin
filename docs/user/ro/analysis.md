@@ -137,6 +137,16 @@ După o rulare, secțiunea **Verificări** a dialogului **Rezultatele analizei**
 
 > Verificările sunt orientative. Lapin ia valorile recomandate ale Eurocodurilor; valorile anexelor naționale, încărcările și valorile de calcul îți revine să le verifici înainte să te bazezi pe ele.
 
+**Lungimi de flambaj din αcr.** Implicit, verificările la flambaj prin încovoiere și la încovoiere cu compresiune ale barelor din oțel și lemn folosesc lungimile date de tine: k·L, cu factorii ky și kz (sau Lcr,y și Lcr,z) ai barei. **Lungimi de flambaj**, la **Valorile de calcul ale proiectului**, le poate lua în schimb **Din αcr**; o bară își poate alege propria opțiune în proprietăți (gol urmează proiectul). Lungimea pe o axă este atunci Lcr = π√(EI/(αcr·NEd)), cu αcr al celui mai de jos mod de flambaj care încovoaie bara în jurul acelei axe (axa tare y-y, axa slabă z-z), aflat pentru combinația determinantă. Nu e niciodată mai scurtă decât k·L, iar cu **Ordinul doi (P-Δ)** pornit fiecare bară își păstrează k·L: deplasarea laterală e atunci în eforturi (EN 1993-1-1 5.2.2(3)b). Barele din beton doar o arată (EN 1992-1-1 5.8.3.2): verificarea își păstrează l0. Tabelul de verificări are o coloană **Lcr,y / Lcr,z** cu lungimile folosite și sursa lor (k, αcr sau dată); treci cu mouse-ul peste ea pentru ambele valori, αcr și mod. Proprietățile unei bare arată, pentru fiecare axă, k·L, lungimea din αcr și pe cea folosită. Rulează din nou după ce schimbi opțiunea.
+
+![Tabelul cu k·L](shots/analysis-lcr-k.webp)
+
+![Același tabel cu lungimile din αcr: utilizarea stâlpilor crește](shots/analysis-lcr-alpha.webp)
+
+![Lungimile de flambaj ale unui stâlp în proprietăți](shots/analysis-lcr-props.webp)
+
+> Lungimile din αcr pot fi mult mai mari decât k·L (aici lungimea stâlpilor pe axa slabă crește de la 3,27 m la 4,09 m, iar pe axa tare la 7,71 m, utilizarea de la 0,23 la 0,27; la hala din oțel a acestui ghid lungimea riglelor în planul cadrului ajunge la circa 38 m și utilizarea lor se dublează). Pentru halele din oțel calea mai bună este ordinul doi (P-Δ) cu imperfecțiunile, care nu cere lungime de flambaj pentru deplasarea laterală.
+
 ## Ordinul doi și flambajul
 
 Două întrebări hotărăsc dacă un cadru poate fi calculat în ordinul întâi: cât de departe sunt încărcările lui de cele critice și cât adaugă deplasarea lui laterală. Secțiunea **Stabilitate** din dialogul **Rezultatele calculului** răspunde la prima, iar caseta **Ordinul doi (P-Δ)**, de lângă opțiunile plăcilor (opțiunile calculului), la a doua.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  barReinforcementText, filterRows, formatArea, formatUtilisation, groupBySource, ownDesign, parseDesignValue, projectText, projectValue, storeysOf, summary,
+  barReinforcementText, filterRows, formatArea, formatLength, lengthAxisText, lengthSource, lengthsTitle, formatUtilisation, groupBySource, ownDesign, parseDesignValue, projectText, projectValue, storeysOf, summary,
   surfaceRows, utilisationBySource, utilisationColour, valuesText, wallRows, wallSums,
   type CheckedDto, type ChecksDto, type SurfaceCheckedDto, type WallStoreyDto,
 } from './checks';
@@ -122,5 +122,32 @@ describe('an element\'s checks and design values', () => {
     expect(projectValue('', 1000)).toBeNull();
     expect(projectValue('x', 1000)).toBeUndefined();
     expect(projectText(undefined, 1000)).toBe('');
+  });
+});
+
+describe('the buckling lengths', () => {
+  const axis = { used: 7.71, source: 'alpha', how: 'From αcr', kL: 4, alpha: 7.71, alphaCr: 1.23, mode: 2 };
+  it('writes a length in metres and marks where it came from', () => {
+    expect(formatLength(4.1)).toBe('4.10');
+    expect(formatLength(null)).toBe('–');
+    expect(lengthSource({ source: 'alpha' })).toBe('αcr');
+    expect(lengthSource({ source: 'k' })).toBe('k');
+    expect(lengthSource({ source: 'given' })).toBe('given');
+  });
+  it('tells both candidates in the tooltip', () => {
+    const t = lengthAxisText('y-y', axis);
+    expect(t).toContain('k·L = 4.00 m');
+    expect(t).toContain('7.71 m (αcr = 1.23, mode 2)');
+    expect(t).toContain('From αcr');
+    expect(lengthAxisText('z-z', { ...axis, alpha: null })).toContain('αcr –');
+    expect(lengthsTitle({ fromAlpha: true, informative: false, y: axis, z: axis }).split('y-y').length).toBe(2);
+  });
+  it('keeps the lengths of the worst piece in an element row', () => {
+    const l = { fromAlpha: true, informative: false, y: axis, z: axis };
+    const rows = groupBySource([
+      { id: 'a', sourceId: 's', name: 'N', material: 'steel', kind: 'column', utilisation: 0.2, ok: true },
+      { id: 'b', sourceId: 's', name: 'N', material: 'steel', kind: 'column', utilisation: 0.3, ok: true, lengths: l },
+    ]);
+    expect(rows[0].lengths).toBe(l);
   });
 });
