@@ -380,7 +380,8 @@ public sealed class DxfWriter(double patternScale)
     /// Pages of pens (paper mm, y down) as one DXF each, y up, at 1:1 in mm. Pens of a block (a title block, decision 340) are
     /// written as that block's definition, inserted at 0,0, their live texts (a tag) as its attributes.
     /// </summary>
-    public static byte[] Page(PaperPage page, string comment, int units = 4)
+    /// <param name="warnings">Where what could not be written as drawn is reported (a fill that would not triangulate, written as its outline).</param>
+    public static byte[] Page(PaperPage page, string comment, int units = 4, List<string>? warnings = null)
     {
         var w = new DxfWriter { Units = units };
         Vec2 P(Vec2 p) => new(p.X, page.H - p.Y);
@@ -389,7 +390,11 @@ public sealed class DxfWriter(double patternScale)
             if (pen.Fill != null && pen.Loops.Count > 0)
             {
                 var layer = w.Layer(pen.Layer, pen.Fill, 0, null);
-                foreach (var (a, b, c) in Triangles(pen.Loops)) w.Solid(P(a), P(b), P(c), layer, pen.Fill);
+                var failed = new List<Vec2[]>();
+                foreach (var (a, b, c) in Triangles(pen.Loops, failed)) w.Solid(P(a), P(b), P(c), layer, pen.Fill);
+                // A fill that would not triangulate: its outline and holes, in its colour, rather than nothing.
+                foreach (var loop in failed) w.Polyline(loop.Select(P).ToList(), layer, true, pen.Fill);
+                if (failed.Count > 0) warnings?.Add($"A fill on layer {pen.Layer} could not be filled in the DXF: its outline ({failed.Count} loop{(failed.Count == 1 ? "" : "s")}) is written instead.");
             }
             if (pen.Stroke != null && pen.Segments.Count > 0)
             {
@@ -424,8 +429,10 @@ public sealed class DxfWriter(double patternScale)
             foreach (var pen in group)
                 foreach (var t in pen.Texts.Where(t => t.Tag != null))
                 {
-                    var tag = Safe(t.Tag!).ToUpperInvariant().Replace(' ', '_');
-                    for (var n = 2; !tags.Add(tag); n++) tag = $"{Safe(t.Tag!).ToUpperInvariant()}_{n}";
+                    // A tag has no spaces (a DXF attribute's tag may not); a second of one name numbered from the cleaned one.
+                    var clean = Safe(t.Tag!).ToUpperInvariant().Replace(' ', '_');
+                    var tag = clean;
+                    for (var n = 2; !tags.Add(tag); n++) tag = $"{clean}_{n}";
                     var (at, align) = Placed(t);
                     attributes.Add((tag, t.Text.Replace("\r", " ").Replace("\n", " ").Trim(), at, t.Height, t.Angle, align, w.Layer("TEXT", pen.Stroke ?? "#000000", 0.18, null)));
                 }
@@ -443,7 +450,8 @@ public sealed class DxfWriter(double patternScale)
     /// (abutting walls of a material) put one's vertices on the other's boundary, which made it a hole of it and lost
     /// both fills. Only the loops whose bounds hold that point are tested.
     /// </summary>
-    public static IEnumerable<(Vec2, Vec2, Vec2)> Triangles(List<IReadOnlyList<Vec2>> loops)
+    /// <param name="failed">Where the loops of an area that would not triangulate go (its outer loop, then its holes); null: dropped.</param>
+    public static IEnumerable<(Vec2, Vec2, Vec2)> Triangles(List<IReadOnlyList<Vec2>> loops, List<Vec2[]>? failed = null)
     {
         var ls = loops.Where(l => l.Count >= 3).Select(l => l.ToArray()).ToList();
         var box = ls.Select(l => (X0: l.Min(p => p.X), Y0: l.Min(p => p.Y), X1: l.Max(p => p.X), Y1: l.Max(p => p.Y))).ToArray();
@@ -461,7 +469,7 @@ public sealed class DxfWriter(double patternScale)
             var hs = holes.Select(j => Add(ls[j])).ToArray();
             IEnumerable<(int, int, int)> tris;
             try { tris = Triangulator.Face(pts, outer, hs, new Vec3(0, 0, 1)).ToList(); }
-            catch (Exception) { continue; }
+            catch (Exception) { failed?.Add(ls[i]); failed?.AddRange(holes.Select(j => ls[j])); continue; }
             foreach (var (a, b, c) in tris) yield return (new Vec2(pts[a].X, pts[a].Y), new Vec2(pts[b].X, pts[b].Y), new Vec2(pts[c].X, pts[c].Y));
         }
     }
