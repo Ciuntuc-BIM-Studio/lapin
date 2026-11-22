@@ -454,6 +454,29 @@ async function toolbarClear(t) {
   });
 }
 
+/**
+ * The 3D view's frame time now (LAPIN_S3_MEASURE=1, docs/plan-render.md §5): the view drawn 60 times, each waited for by
+ * a pixel read, in milliseconds; with LAPIN_S3_SHOTS=<folder>, written there with the view as a PNG. A developer's measure.
+ */
+async function measure(t, label) {
+  const ms = await t.page.evaluate(async () => {
+    const api = (await import('/src/viewport/camera.ts')).useCamera.getState().api;
+    const canvas = api?.canvas?.();
+    const gl = canvas?.getContext('webgl2');
+    if (!gl) return null;
+    const px = new Uint8Array(4);
+    const once = () => { api.canvas(); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); };
+    for (let i = 0; i < 10; i++) once();
+    const t0 = performance.now();
+    for (let i = 0; i < 60; i++) once();
+    return { ms: (performance.now() - t0) / 60, w: canvas.width, h: canvas.height };
+  });
+  const probes = await t.page.evaluate(() => document.querySelector('[data-testid=view3d]')?.dataset.probes);
+  if (!process.env.LAPIN_S3_SHOTS) { console.log(`  ${label}: ${JSON.stringify(ms)}, probes ${probes}`); return; }
+  (await import('node:fs')).appendFileSync(`${process.env.LAPIN_S3_SHOTS}/measure.txt`, `${t.lang} ${label}: ${JSON.stringify(ms)} probes ${probes}\n`);
+  await t.page.locator('[data-testid=view3d]').screenshot({ path: `${process.env.LAPIN_S3_SHOTS}/${t.lang}-${label}.png` });
+}
+
 export const scenes = [
   {
     id: 'start',
@@ -8825,6 +8848,97 @@ export const scenes = [
         t.expect(lights === 4, `the render takes every light (${lights})`);
         await t.shot('render-interior', { of: '[data-testid=view3d]', pad: 0 });
         await t.page.locator('[data-testid=render-chip] .mode-close').click();
+      } finally {
+        await profile('drawing');
+      }
+    },
+  },
+  {
+    // Reflections (docs/plan-render.md, S3): a living room of 6 × 4.5 m with two windows and a lacquered oak floor, its room
+    // placed (the probes stand on rooms), in the realistic view. First the floor matt as the oak set leaves it, then glossy
+    // (roughness 0.15): the room's probe bakes and the floor reflects the room, its windows and furniture where they are
+    // (the box projection), not the sky; then the same room at dusk under its lamps.
+    id: 'reflections',
+    touches: ['architecture', 'mep', 'furniture'],
+    async run(t) {
+      const profile = (p) => t.page.evaluate(async (v) => (await import('/src/viewport/render3d.ts')).setRenderProfile(v), p);
+      const sun = (v) => t.page.evaluate(async (v) => (await import('/src/modules/core/sun.ts')).setSun(v), v);
+      const set = (material, id) => t.page.evaluate(async ([material, id]) => {
+        const { useSession, execute } = await import('/src/engine/session.ts');
+        const lib = await import('/src/viewport/textureLibrary.ts');
+        const m = [...useSession.getState().nodes.values()].find((n) => n.type === 'IfcMaterial' && n.name === material);
+        if (m) await execute('material.textures', await lib.setArgs(lib.setOf(`ambientcg/${id}`), [m.id], lib.fetchBytes));
+        return m?.id ?? null;
+      }, [material, id]);
+      // The probes as the view counts them: baked / in slots / placed / waiting to be baked (again).
+      const probes = () => t.page.evaluate(() => (document.querySelector('[data-testid=view3d]')?.dataset.probes ?? '0/0/0/0').split('/').map(Number));
+      const baked = async (what) => {
+        await t.wait(400);
+        await t.until(async () => { const [b, s, , w] = await probes(); return s > 0 && b === s && w === 0; }, what, 30_000);
+        await t.wait(1500);
+      };
+      // From the room's north-east corner at eye height, looking down across the floor to the two windows.
+      const look = () => t.page.evaluate(async () => {
+        const c = await import('/src/viewport/camera.ts');
+        c.useCamera.getState().api?.orbitTo(c.poseOf({ x: 5.7, y: 4.25, z: 1.5 }, { x: 1.9, y: 1.1, z: 0.05 }), false);
+      });
+      try {
+        await t.fresh();
+        const g = await t.storey();
+        const plaster = (await t.cmd('architecture.createWallType', { name: 'Plastered 250', layers: [{ material: 'Plaster', thickness: 0.25, core: true }] })).id;
+        const room = [[0, 0], [6, 0], [6, 4.5], [0, 4.5]];
+        const sides = [];
+        for (let i = 0; i < 4; i++) sides.push((await t.cmd('architecture.addWall', { storeyId: g, x1: room[i][0], y1: room[i][1], x2: room[(i + 1) % 4][0], y2: room[(i + 1) % 4][1], typeId: plaster })).id);
+        await t.cmd('architecture.addWindow', { wallId: sides[0], x: 2.2, y: 0 });
+        await t.cmd('architecture.addWindow', { wallId: sides[3], x: 0, y: 2.6 });
+        await t.cmd('architecture.addSlab', { storeyId: g, points: room });
+        const storeys = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').sort((a, b) => (a.props.elevation ?? 0) - (b.props.elevation ?? 0));
+        const above = storeys.find((x) => (x.props.elevation ?? 0) > 0.5);
+        if (above) await t.cmd('architecture.addSlab', { storeyId: above.id, points: room });
+        await t.cmd('architecture.addRoom', { storeyId: g, x: 3, y: 2.2 });
+        const furnish = (kind, x, y, extra = {}) => t.cmd('furniture.place', { storeyId: g, kind, x, y, against: false, ...extra });
+        await furnish('sofa', 3.4, 4.0, { rotation: 180 });
+        await furnish('coffeeTable', 3.4, 2.9);
+        await furnish('armchair', 5.3, 2.6, { rotation: 270 });
+        await furnish('sideboard', 5.75, 0.9, { rotation: 90 });
+        const system = (await t.cmd('mep.placeSystem', { service: 'electrical', storeyId: g, x: 0.4, y: 4.2, to: [0.3, 1.2] })).id;
+        const lamp = async (x, y) => (await t.cmd('mep.placeNode', { systemId: system, role: 'light', storeyId: g, x, y })).id;
+        const downlights = [await lamp(1.6, 2.2), await lamp(4.4, 2.2)];
+        const pendant = await lamp(3.4, 2.9);
+        await t.cmd('light.set', { ids: downlights, kind: 'spot', profile: 'builtin:downlight-medium', lumens: 900, kelvin: 3000 });
+        await t.cmd('light.set', { ids: [pendant], profile: 'builtin:pendant', lumens: 1200, kelvin: 2700, at: 'centre' });
+        const floor = await set('Floor finish', 'WoodFloor043');
+        t.expect(floor, 'the floor takes the oak set');
+        await set('Plaster', 'PaintedPlaster017');
+        await t.wait(1200);
+        t.expect((await t.nodes()).some((n) => n.type === 'IfcSpace'), 'the living room is a room');
+        await t.ui({ view: '3d', keyPlan: false });
+        await t.page.waitForSelector('[data-testid=view3d] canvas');
+        // An October afternoon, the sun low in the south-west, through both windows.
+        await sun({ date: '2026-10-15', hour: 15 });
+        await profile('realistic');
+        await look();
+        await t.wait(3000);
+        const [, , before] = await probes();
+        console.log(`  probes before the floor is glossy: ${before}`);
+        await t.shot('reflections-before', { of: '[data-testid=view3d]', pad: 0 });
+        if (process.env.LAPIN_S3_MEASURE) await measure(t, 'matt');
+        // Lacquered: the oak glossy (its roughness map times 0.15).
+        await t.cmd('material.update', { id: floor, roughness: 0.15 });
+        await t.wait(800);
+        await look();
+        await baked('the room\'s probe is baked');
+        const [b, slots, placed] = await probes();
+        t.expect(placed === 1 && slots === 1 && b === 1, `one probe for the one room (${b}/${slots}/${placed})`);
+        await t.shot('reflections-after', { of: '[data-testid=view3d]', pad: 0 });
+        if (process.env.LAPIN_S3_MEASURE) await measure(t, 'day');
+        // Dusk going on night: the lamps on, the probe baked again with them.
+        await sun({ hour: 19.5 });
+        await look();
+        await t.wait(500);
+        await baked('the probe is baked again at dusk');
+        await t.shot('reflections-dusk', { of: '[data-testid=view3d]', pad: 0 });
+        if (process.env.LAPIN_S3_MEASURE) await measure(t, 'dusk');
       } finally {
         await profile('drawing');
       }

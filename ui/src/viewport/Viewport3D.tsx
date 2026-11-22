@@ -41,6 +41,8 @@ import type { PathTraceView, TraceLook, TraceSky } from './pathTraceView';
 import { finished, progressOf, readout, setRenderSettings, setRendering, toggleRendering, useRenderApi, useRenderMode, useRenderSettings } from './renderMode';
 import { projectTitle, safeFileName, saveFile } from '../engine/files';
 import { LightRig, useLightBudget, whiteBalanceGains, type LightProfileDto, type LightSourceDto } from './lights3d';
+import { onVoxels, placeProbes, probeBudget, weakGpu, type Vec3 as ProbeVec3 } from './probes';
+import { glossySamples, ReflectionProbes, roomOfObject } from './probes3d';
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
@@ -628,6 +630,8 @@ export function Viewport3D() {
   const boxDirty = useRef<() => void>(() => undefined);
   /** What the path tracer renders changed (the elements, their looks, the cut, the lights): its scene is built again (docs/plan-render.md, S4). */
   const traceDirty = useRef<() => void>(() => undefined);
+  /** The model changed (not the selection): the rooms' reflection probes placed and baked again (docs/plan-render.md, S3). */
+  const probesDirty = useRef<() => void>(() => undefined);
   const repaintTrace = useRef<() => void>(() => undefined);
   /** The cut elements' caps, by element (a section or the section box shown). */
   const caps = useRef(new Map<string, THREE.Group>());
@@ -727,6 +731,50 @@ export function Viewport3D() {
     // The light fixtures, lamps and glowing materials as lights in the medium and realistic views (lights3d.ts, docs/plan-render.md S2).
     const rig = new LightRig();
     s.add(rig.group);
+    // The rooms' reflection probes in the medium and realistic views (probes.ts, probes3d.ts, docs/plan-render.md S3): placed
+    // on the rooms from the glossy faces drawn, baked a few faces a frame, nearest first; a weak chip gets fewer and smaller.
+    const probes = new ReflectionProbes(renderer, s, reflections(renderer));
+    const weak = (() => {
+      try {
+        const gl = renderer.getContext();
+        const info = gl.getExtension('WEBGL_debug_renderer_info');
+        return weakGpu(String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) ?? ''), renderer.capabilities.maxTextureSize);
+      } catch { return false; }
+    })();
+    // Room volumes, openings, drafted shapes and grids: aids of the screen, neither reflected nor reflecting.
+    const PROBE_SKIP = new Set(['IfcSpace', 'IfcOpeningElement', 'IfcAnnotation', 'IfcGrid']);
+    let probeTimer = 0;
+    const placeProbesNow = () => {
+      if (!probes.on) return;
+      const rooms = [];
+      const shiny: ProbeVec3[] = [];
+      for (const { item, object } of items.current.values()) {
+        if (item.type === 'IfcSpace') { const r = roomOfObject(item.nodeId, object); if (r) rooms.push(r); continue; }
+        if (object.visible && !PROBE_SKIP.has(item.type)) glossySamples(object, shiny);
+      }
+      probes.place(placeProbes(rooms, onVoxels(shiny, 0.5)));
+    };
+    const placeProbesSoon = () => {
+      clearTimeout(probeTimer);
+      probeTimer = window.setTimeout(() => { placeProbesNow(); invalidate.current(); }, 250);
+    };
+    probesDirty.current = () => { probes.patchAll(s); placeProbesSoon(); };
+    /** What a probe's capture leaves out (lines, room volumes, the grids) and the realistic sky round the probe: the restore. */
+    const prepareCapture = (at: ProbeVec3) => {
+      const hidden: THREE.Object3D[] = [];
+      const hide = (o: THREE.Object3D | undefined) => { if (o?.visible) { o.visible = false; hidden.push(o); } };
+      for (const { item, object } of items.current.values()) if (PROBE_SKIP.has(item.type)) hide(object);
+      hide(s.getObjectByName('ref-planes'));
+      hide(s.getObjectByName('ground-grid'));
+      s.traverseVisible((o) => {
+        const x = o as THREE.Object3D & { isLine?: boolean; isPoints?: boolean; isSprite?: boolean; isLineSegments2?: boolean; material?: { isLineMaterial?: boolean } };
+        if (x.isLine || x.isPoints || x.isSprite || x.isLineSegments2 || x.material?.isLineMaterial) hide(o);
+      });
+      const sky = realism.sky, shown = sky.visible, where = sky.position.clone();
+      sky.visible = realism.spec.sky;
+      sky.position.set(at[0], at[1], at[2]);
+      return () => { for (const o of hidden) o.visible = true; sky.visible = shown; sky.position.copy(where); };
+    };
     let lightSources: LightSourceDto[] = [];
     const lightProfiles = new Map<string, LightProfileDto>();
     let lightsAsked = 0;
@@ -744,6 +792,7 @@ export function Viewport3D() {
         lightSources = list;
         rig.setProfile(useRenderProfile.getState().profile, list, lightProfiles);
         rig.markDirty();
+        probes.stale();
         traceDirty.current();
         invalidate.current();
       }, 120);
@@ -949,6 +998,7 @@ export function Viewport3D() {
       const night = dir ? nightOf((Math.asin(Math.max(-1, Math.min(1, dir[2]))) * 180) / Math.PI) : 0;
       realism.setNight(night);
       realism.setSun(dir);
+      probes.stale();
       placeGround();
       fitted = '';
       if (!dir) {
@@ -982,6 +1032,8 @@ export function Viewport3D() {
     const applyProfile = () => {
       const { profile } = useRenderProfile.getState();
       realism.setProfile(profile);
+      probes.configure(probeBudget(profile, weak));
+      placeProbesSoon();
       glassThrough(s, realism.spec.glass);
       // The roughness and occlusion maps in the medium and realistic views; the drawing keeps its flat look (docs/plan-render.md, S1).
       surfaceMaps(s, profile !== 'drawing');
@@ -1271,8 +1323,16 @@ export function Viewport3D() {
     });
     const draw = () => {
       relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); fitShadow(); placeLights();
+      // A few faces of the rooms' probes, before the frame that reads them (not while the path tracer draws).
+      const eye = (cam as THREE.PerspectiveCamera).isPerspectiveCamera ? cam.position : controls.target;
+      const baking = probes.on && !useRenderMode.getState().on && probes.step([eye.x, eye.y, eye.z], prepareCapture);
       if (!traceFrame()) realism.render(cam, controls.target.distanceTo(cam.position));
-      if (host.current) host.current.dataset.cloudPoints = String(clouds.drawn());
+      if (host.current) {
+        host.current.dataset.cloudPoints = String(clouds.drawn());
+        const p = probes.stats();
+        host.current.dataset.probes = `${p.baked}/${p.slots}/${p.probes}/${p.waiting}`;
+      }
+      if (baking) invalidate.current();
     };
     invalidate.current = () => {
       if (!frame) frame = requestAnimationFrame(() => { frame = 0; draw(); });
@@ -1846,6 +1906,9 @@ export function Viewport3D() {
       repaintTrace.current = () => undefined;
       clearTimeout(lightTimer);
       rig.dispose();
+      clearTimeout(probeTimer);
+      probesDirty.current = () => undefined;
+      probes.dispose();
       useLightBudget.setState({ total: 0, drawn: 0, shadowed: 0 });
       realism.dispose();
       cancelAnimationFrame(frame);
@@ -2102,6 +2165,8 @@ export function Viewport3D() {
     traceDirty.current();
     invalidate.current();
   }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown, drafts3d, fineBodies.on, fineBodies.version, selColour]);
+  // The rooms' reflection probes again when the model or its looks change, not the selection (docs/plan-render.md, S3).
+  useEffect(() => { probesDirty.current(); }, [render, meshes, layers, expansion, looks, visualStyle, capsShown, drafts3d, fineBodies.on, fineBodies.version]);
 
   // The element a command waiting for one would take (Match properties' targets, decision 490), lit as the selection is
   // while the cursor is on it; its own look back when the cursor leaves (an instanced one is not lit).

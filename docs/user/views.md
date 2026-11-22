@@ -245,6 +245,20 @@ View → **Display quality** has, for the Medium and Realistic views, the camera
 
 The view draws the lights nearest to you and to what you look at first, a few of them with shadows, the others without, and none farther than 30 m (Medium) or 60 m (Realistic); its lower right corner says how many (*12 / 48 lights, 4 with shadows*). A light drawn without shadows lights through walls, and in the live view light does not bounce off walls: a ceiling above downlights stays dark. A [render](render.md) takes every light, each with its shadow, and the light bouncing off the walls and the ceiling.
 
+### Reflections
+
+In the Medium and Realistic views a glossy floor, a polished worktop or a metal reflects the room it is in: its windows where the windows are, the furniture, the light patches of the sun, the lamps at night. What counts as glossy is a material whose **Roughness** is under 0.3, or whose **Metalness** is over 0.3 (Manage → **Materials** → Appearance); with a texture set the roughness multiplies the set's own map, so a lacquered oak floor is the oak set with a roughness of about 0.15. Glass keeps its own look. A project whose materials are all matt looks as it always did.
+
+The reflection comes from the project's [rooms](rooms.md): each room that holds something glossy gets a *probe*, the room seen from 1.70 m over its floor, and a room longer than 12 m one every 8 m. Reflections are fitted to the room's box, so a window is reflected in the floor in front of it rather than somewhere in the sky, and they blend across a wall or a doorway into the next room's over about a metre. A glossy face outside every room (a terrace, a model without rooms) reflects a soft studio, as before. The probes are made from the model as it is, never saved: a few frames after you open the view, change the model, move the sun or switch a light, the reflections are drawn again, the nearest room first; until then the old ones stay.
+
+![The living room with its oak floor matt](shots/reflections-before.webp)
+
+![The same floor lacquered (roughness 0.15): it reflects the room, the sun patches shine](shots/reflections-after.webp)
+
+![The same room at dusk under its lamps, its probe made again for the night](shots/reflections-dusk.webp)
+
+Each probe is drawn with the view's own lights, sun and sky, and holds up to 10 rooms near you at a time (6 in Medium; fewer and smaller on a weak graphics chip). They are live approximations: a reflection is exact only on the room's walls, and a glossy face does not reflect the other glossy faces. A [render](render.md) traces every reflection exactly, mirrors and glass included.
+
 ## Modelling in 3D
 
 The 3D view is a place to model in, not only to look: elements are moved and copied there as in a plan, snapped to the other elements' corners, edges and faces.
