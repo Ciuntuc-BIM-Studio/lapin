@@ -53,14 +53,27 @@ public sealed class StairRuleSection : IRuleSection, IRuleCheck
         return o;
     }
 
-    /// <summary>The project's rules for a set (Lapin's when the edition has no rule packs or the set is unknown).</summary>
+    /// <summary>The project's rules for a set (Lapin's when the edition has no rule packs or the set is unknown): what a new type starts from.</summary>
     public static StairRules For(IModelView m, IServices? s, string? set)
     {
         var name = set ?? "residential";
-        var builtin = StairRules.Of(name);
-        if (RulePacks.TrySection(m, s, SectionKey)?[name] is JsonObject o)
-            try { return Read(name, o, builtin with { Set = name }); } catch (CommandException) { }
-        return builtin;
+        return Lookup(m, s, name).Rules ?? StairRules.Of(name) with { Set = name };
+    }
+
+    /// <summary>
+    /// The project's rules for a set, or why there are none (audit 22.11.2026): a set the pack lacks and Lapin has not built in,
+    /// or one the pack holds but that does not read. A type of such a set keeps its own rules and the check says so, rather than
+    /// taking the residential ones silently.
+    /// </summary>
+    static (StairRules? Rules, string? Problem) Lookup(IModelView m, IServices? s, string set)
+    {
+        var builtin = Builtins.FirstOrDefault(b => b.Set == set);
+        if (RulePacks.TrySection(m, s, SectionKey)?[set] is JsonObject o)
+        {
+            try { return (Read(set, o, (builtin ?? StairRules.Residential) with { Set = set }), null); }
+            catch (CommandException ex) { return (null, $"the project's set „{set}” cannot be read ({ex.Message})"); }
+        }
+        return builtin != null ? (builtin, null) : (null, $"the project's rules have no set „{set}”");
     }
 
     public IEnumerable<RuleFinding> Check(IQueryContext q)
@@ -68,7 +81,12 @@ public sealed class StairRuleSection : IRuleSection, IRuleCheck
         foreach (var t in StairsModule.Types(q.Model))
         {
             if (StairSpec.From(t.Attrs["spec"]) is not { } spec) continue;
-            var pack = For(q.Model, q.Services, spec.Rules.Set);
+            var (pack, problem) = Lookup(q.Model, q.Services, spec.Rules.Set);
+            if (pack == null)
+            {
+                yield return new RuleFinding("architecture", t.Id, "warning", $"„{t.Name}” ({spec.Rules.Set}): {problem}; it keeps its own rules.");
+                continue;
+            }
             var differs = Diff(spec.Rules, pack).ToList();
             if (differs.Count > 0)
                 yield return new RuleFinding("architecture", t.Id, "warning", $"„{t.Name}” ({spec.Rules.Set}): {string.Join(", ", differs)} differ from the project's rules.");
@@ -92,23 +110,24 @@ public sealed class StairRuleSection : IRuleSection, IRuleCheck
         // The project's rules for a stair set ({set}), for a new type.
         r.Query("stairRules", (q, a) => Json(For(q.Model, q.Services, (string?)a["set"])));
 
-        // The project's rules copied into stair types ({typeIds?}: all), each keeping its set; one undo step.
+        // The project's rules copied into stair types ({typeIds?}: all), each keeping its set; one undo step. A type whose set the
+        // project's rules lack (or cannot read) keeps its own (skipped), as the check reports.
         r.Command("applyStairRules", "Apply rules to stair types", (ctx, a) =>
         {
             var only = a["typeIds"] is JsonArray ids ? ids.Select(x => (string?)x).OfType<string>().ToHashSet() : null;
-            var changed = 0;
+            var (changed, skipped) = (0, 0);
             foreach (var t in StairsModule.Types(ctx.Model).ToList())
             {
                 if (only != null && !only.Contains(t.Id)) continue;
                 if (StairSpec.From(t.Attrs["spec"]) is not { } spec) continue;
-                var rules = For(ctx.Model, ctx.Services, spec.Rules.Set);
+                if (Lookup(ctx.Model, ctx.Services, spec.Rules.Set).Rules is not { } rules) { skipped++; continue; }
                 if (rules == spec.Rules) continue;
                 var attrs = t.CloneAttrs();
                 attrs["spec"] = (spec with { Rules = rules }).ToJson();
                 ctx.Replace(t.With(attrs: attrs));
                 changed++;
             }
-            return new JsonObject { ["changed"] = changed };
+            return new JsonObject { ["changed"] = changed, ["skipped"] = skipped };
         });
     }
 }
