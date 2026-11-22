@@ -449,7 +449,7 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
         ((string?)p["sha256"])?.Trim().ToLowerInvariant() is { } s && Hex64.IsMatch(s) ? s : throw new CommandException("A script's SHA-256 is 64 hexadecimal digits.");
 
     /// <summary>A script's code as its hash (UTF-8, lowercase hex): what trust is kept by.</summary>
-    public static string HashOf(string code) => Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(code)));
+    public static string HashOf(string code) => Lapin.Model.Hashes.Script(code);
 
     HashSet<string> Trusted()
     {
@@ -464,13 +464,13 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
         return set;
     }
 
-    async Task WriteTrusted(HashSet<string> set)
+    Task WriteTrusted(HashSet<string> set)
     {
         var f = TrustFile ?? throw new CommandException("Trust is kept by the desktop app.");
         Directory.CreateDirectory(Path.GetDirectoryName(f)!);
         var json = new JsonObject { ["trusted"] = new JsonArray(set.Order(StringComparer.Ordinal).Select(s => (JsonNode)s).ToArray()) };
-        await File.WriteAllTextAsync(f + ".saving", json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), new UTF8Encoding(false));
-        File.Move(f + ".saving", f, overwrite: true);
+        AtomicFile.WriteText(f, json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        return Task.CompletedTask;
     }
 
     // ------------------------------------------------------------ a script's tools and questions (stage 4)

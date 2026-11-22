@@ -6,6 +6,8 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
 
+using Lapin.Platform;
+
 namespace Lapin.Ifc;
 
 /// <summary>
@@ -121,7 +123,7 @@ public static class IfcOptimize
     public static string? CleanSuffix(string? suffix)
     {
         var s = (suffix ?? DefaultSuffix).Trim();
-        foreach (var c in Path.GetInvalidFileNameChars().Concat(['/', '\\', ':'])) s = s.Replace(c.ToString(), "");
+        s = string.Concat(s.Where(c => !Lapin.Model.FileNames.IsRefused(c)));
         if (s.EndsWith(".ifc", StringComparison.OrdinalIgnoreCase)) s = s[..^4];
         return s.Length == 0 ? null : s;
     }
@@ -134,16 +136,10 @@ public static class IfcOptimize
     {
         if (SamePath(source, target)) throw new InvalidOperationException("The copy would overwrite the original: choose another ending or folder.");
         var bytes = ReadSource(source);
-        var temp = target + ".part";
-        try
-        {
-            IfcOptimizeReport report;
-            using (var output = File.Create(temp)) report = Run(bytes, output, o, progress, ct, Path.GetFileName(source));
-            File.Move(temp, target, overwrite: true);
-            report.BytesAfter = new FileInfo(target).Length;
-            return report;
-        }
-        finally { if (File.Exists(temp)) File.Delete(temp); }
+        IfcOptimizeReport? report = null;
+        AtomicFile.Write(target, output => report = Run(bytes, output, o, progress, ct, Path.GetFileName(source)));
+        report!.BytesAfter = new FileInfo(target).Length;
+        return report;
     }
 
     /// <summary>An .ifc file's bytes, or the .ifc inside an .ifczip.</summary>

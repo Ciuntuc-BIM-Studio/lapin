@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -44,7 +43,7 @@ public sealed class ScriptingModule : ILapinModule, IPackageTexts, IDrivenElemen
     static readonly Regex NamePattern = new(@"^[^/\\:*?""<>|\x00-\x1f.][^/\\:*?""<>|\x00-\x1f]{0,118}\.py$", RegexOptions.CultureInvariant);
 
     /// <summary>The SHA-256 of a script's code (UTF-8, lowercase hex).</summary>
-    public static string HashOf(string code) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(code)));
+    public static string HashOf(string code) => Lapin.Model.Hashes.Script(code);
 
     public void Register(IModuleRegistry r)
     {

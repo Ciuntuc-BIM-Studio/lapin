@@ -138,9 +138,7 @@ public sealed class ConnectedSites
         if (_file == null) return;
         var json = new JsonObject { ["version"] = 1, ["sites"] = new JsonArray(_sites.Select(s => (JsonNode)s.ToJson()).ToArray()) };
         Directory.CreateDirectory(Path.GetDirectoryName(_file)!);
-        var tmp = _file + ".tmp";
-        File.WriteAllText(tmp, json.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
-        File.Move(tmp, _file, overwrite: true);
+        AtomicFile.WriteText(_file, json.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
     }
 }
 

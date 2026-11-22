@@ -139,9 +139,7 @@ public sealed class FurnitureLibrary(string folder)
         var id = (string)e["id"]!;
         Directory.CreateDirectory(Folder);
         var path = PathOf(id);
-        var temp = path + ".part";
-        File.WriteAllText(temp, e.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-        File.Move(temp, path, overwrite: true);
+        AtomicFile.WriteText(path, e.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         return id;
     }
 

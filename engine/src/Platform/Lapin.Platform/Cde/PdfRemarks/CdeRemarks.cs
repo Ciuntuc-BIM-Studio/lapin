@@ -53,7 +53,7 @@ public static class CdeRemarks
             foreach (var issue in CdeIssues.All(m).AsEnumerable().Reverse())
             {
                 var file = issue.Files.FirstOrDefault(f => f.Kind == "pdf" && f.Size > 0 && f.Size <= pdf.LongLength && f.Sha256.Length == 64
-                    && Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(pdf.AsSpan(0, (int)f.Size))) == f.Sha256);
+                    && Lapin.Model.Hashes.Sha256Hex(pdf.AsSpan(0, (int)f.Size)) == f.Sha256);
                 if (file == null) continue;
                 if (file.SheetId != null) return new SheetMatch(All(file.SheetId), issue.Revision, issue.Id, "issue");
                 // The transmittal (named as its manifest) prints no sheet.

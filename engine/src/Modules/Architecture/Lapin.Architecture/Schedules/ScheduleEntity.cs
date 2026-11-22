@@ -730,8 +730,7 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
             var s = Require(q.Model, (string?)a["id"]);
             if (s.Str("kind") != FieldSchedule.KindId) throw new CommandException("Only a field schedule is kept as a template.");
             var t = FieldSchedule.Template(q.Model, s);
-            var file = string.Concat(s.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) || c is '/' or '\\' or ':' ? '_' : c)).Trim();
-            return new JsonObject { ["text"] = FieldSchedule.TemplateText(t), ["file"] = (file.Length > 0 ? file : "schedule") + ".lapinschedule", ["template"] = t };
+            return new JsonObject { ["text"] = FieldSchedule.TemplateText(t), ["file"] = Lapin.Model.FileNames.Of(s.Name, "lapinschedule", "schedule"), ["template"] = t };
         });
 
         r.Query("schedule.csv", (q, a) =>

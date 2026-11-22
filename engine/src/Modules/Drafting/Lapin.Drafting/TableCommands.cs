@@ -125,7 +125,7 @@ public static class TableCommands
             var e = Require(q.Model, (string?)a["id"]);
             var typed = a["typed"] is JsonValue tv && tv.TryGetValue<bool>(out var tb) && tb;
             var rows = Texts(q, e, typed);
-            var name = string.Concat(e.Name.Where(ch => !Path.GetInvalidFileNameChars().Contains(ch))) is { Length: > 0 } n ? n : "table";
+            var name = Lapin.Model.FileNames.Stem(e.Name, "table", replacement: "");
             if ((string?)a["format"] == "xlsx")
                 return new JsonObject { ["data"] = Convert.ToBase64String(Lapin.Drawing.Export.XlsxWriter.Write([(name, (IReadOnlyList<IReadOnlyList<string>>)rows.Select(r => (IReadOnlyList<string>)r).ToList())])), ["file"] = name + ".xlsx" };
             return new JsonObject { ["text"] = string.Join("\r\n", rows.Select(r => CsvText.Line(r))) + "\r\n", ["file"] = name + ".csv" };

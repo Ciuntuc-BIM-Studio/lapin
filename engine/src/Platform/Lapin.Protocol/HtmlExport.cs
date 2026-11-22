@@ -404,10 +404,5 @@ public static class HtmlExport
     public static string FileName(Session session) =>
         $"{(session.Path is { } p ? Path.GetFileNameWithoutExtension(p) : SafeName(Title(session)))}{HtmlPackage.Suffix}";
 
-    static string SafeName(string s)
-    {
-        var bad = Path.GetInvalidFileNameChars().Concat(['/', '\\', ':', '*', '?', '"', '<', '>', '|']).ToHashSet();
-        var o = new string([.. s.Select(c => bad.Contains(c) ? '_' : c)]).Trim();
-        return o.Length > 0 ? o : "project";
-    }
+    static string SafeName(string s) => Lapin.Model.FileNames.Stem(s, "project");
 }

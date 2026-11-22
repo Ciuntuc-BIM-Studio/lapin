@@ -16,6 +16,10 @@ public sealed class Step
     /// <summary>The application named in the header (the product: Lapin, or an edition under its own name).</summary>
     public string Application { get; set; } = "Lapin";
 
+    /// <summary>FILE_NAME's author and organization (ISO 10303-21, 8.2.2): who wrote it and for whom; empty when not known.</summary>
+    public string? Author { get; set; }
+    public string? Organization { get; set; }
+
     /// <summary>
     /// The data section as UTF-8, in chunks of a megabyte or more, each holding whole lines (report #156): a 33-bay steel hall
     /// is 150 MB of IFC, which as text (two bytes a character) in one growing builder took twice that and more, where the
@@ -119,11 +123,8 @@ public sealed class Step
     }
 
     /// <param name="schema">IFC4, or IFC4X3_ADD2 (IFC 4.3: alignments, infrastructure).</param>
-    public void Write(string path, string name, string description, string schema = "IFC4")
-    {
-        using var file = File.Create(path);
-        Write(file, name, description, schema);
-    }
+    public void Write(string path, string name, string description, string schema = "IFC4") =>
+        Lapin.Platform.AtomicFile.Write(path, file => Write(file, name, description, schema));
 
     /// <summary>The file into a stream.</summary>
     public void Write(Stream output, string name, string description, string schema = "IFC4")
@@ -156,7 +157,7 @@ public sealed class Step
         return Encoding.UTF8.GetBytes(
             "ISO-10303-21;\nHEADER;\n" +
             $"FILE_DESCRIPTION(({S(description)}),'2;1');\n" +
-            $"FILE_NAME({S(name)},'{now}',(''),(''),{S(Application)},{S(Application)},'');\n" +
+            $"FILE_NAME({S(name)},'{now}',({S(Author ?? "")}),({S(Organization ?? "")}),{S(Application)},{S(Application)},'');\n" +
             $"FILE_SCHEMA(('{schema}'));\nENDSEC;\nDATA;\n");
     }
 }

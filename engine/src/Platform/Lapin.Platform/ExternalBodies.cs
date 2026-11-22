@@ -134,7 +134,7 @@ public static class ExternalBodies
     static (string Id, string Hash) SharedFor(ICommandContext ctx, Body body)
     {
         var stored = StoredBodies.Write(body.Parts.Select(p => (p.Name, p.Color, (IReadOnlyList<Vec3>)p.Vertices, (IReadOnlyList<(int, int, int)>)p.Triangles)));
-        var hash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(stored.ToJsonString())));
+        var hash = Lapin.Model.Hashes.Sha256Hex(stored.ToJsonString());
         if (ctx.Model.OfClass(StoredBodies.SharedClass).FirstOrDefault(x => x.Str(HashKey) == hash) is { } found) return (found.Id, hash);
         var shared = new Entity(ctx.NewId(), StoredBodies.SharedClass, "Script body (shared)", new JsonObject { [StoredBodies.Key] = stored, [HashKey] = hash, ["source"] = "script" });
         ctx.Add(shared);
