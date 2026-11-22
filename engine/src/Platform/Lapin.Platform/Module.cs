@@ -133,6 +133,17 @@ public interface IStoreySpans
 }
 
 /// <summary>
+/// An element's plan symbols at a plan's own cut height (audit 22.11.2026): its geometry's are drawn at
+/// <see cref="Views.DefaultCut"/>; a plan cut elsewhere draws these instead (a window's shutters cut or seen, a sunshade).
+/// </summary>
+public interface IPlanAtCut
+{
+    bool Handles(Entity e);
+    /// <summary>Its plan symbols with the plan cut <paramref name="cut"/> over its storey's level; null: its geometry's own.</summary>
+    IReadOnlyList<PlanItem>? PlanAt(IModelView m, Entity e, double cut);
+}
+
+/// <summary>
 /// Texts a module writes into the .lapin beside the model, for whoever opens the zip without Lapin: copies of what its
 /// entities hold (a project's scripts as <c>scripts/&lt;name&gt;.py</c>, decision 489). The entities stay what Lapin reads;
 /// the paths are in the package's text folders (Lapin.Package's <c>LapinPackage.TextFolders</c>).

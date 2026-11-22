@@ -224,4 +224,24 @@ public sealed class InstanceJoinerySizeTests : IDisposable
         var sizes = g.Model.OfClass(IfcClass.Window).Select(e => Openings.SpecOf(g.Model, e.Id)!).Select(s => (Math.Round(s.Width, 4), Math.Round(s.Height, 4))).OrderBy(x => x).ToList();
         Assert.Equal([(0.9, 1.5), (1.2, 1.2)], sizes);
     }
+
+    [Fact]
+    public void Another_type_is_checked_where_the_window_stands_its_hole_s_offset_counted()
+    {
+        // Audit 22.11.2026 §3.6: the fit was checked at the hole's sill, before the type's change moved it up by the offset.
+        var (f, wall, type) = Setup();
+        var w = Window(f, wall, type, 3);
+        var opening = Openings.OpeningOf(f.Model, w)!;
+        // An imported file's hole: down to 0.5 m, the window 1.0 m over its bottom (so standing at 1.5 m as before).
+        f.Session.Edit("hole", e =>
+        {
+            var a = opening.CloneAttrs();
+            a["sill"] = 0.5; a[Openings.FillOffsetKey] = 1.0; a[Openings.HoleHeightKey] = 2.2;
+            e.Replace(opening.With(attrs: a));
+        });
+        Assert.Equal(1.5, Openings.Place(f.Model, f.Model.Get(opening.Id)!).FillSill, 9);
+        // 1.6 m high: from the hole's sill (0.5) it would fit the 3 m wall, from where it stands (1.5) it does not.
+        var tall = (string)f.Run("architecture.createJoineryType", new JsonObject { ["spec"] = (JoinerySpec.DefaultWindow("Tall") with { Width = 1.2, Height = 1.6 }).ToJson() })!["id"]!;
+        Assert.Throws<CommandException>(() => f.Run("architecture.setJoineryType", new JsonObject { ["ids"] = new JsonArray(w), ["typeId"] = tall }));
+    }
 }

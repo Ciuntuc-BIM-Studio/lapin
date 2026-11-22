@@ -227,7 +227,7 @@ public static class CurtainWalls
 {
     public const string Class = "IfcCurtainWall";
     public const string TypeClass = "IfcCurtainWallType";
-    const double PlanCut = 1.2;
+    const double PlanCut = Openings.PlanCut;
 
     public static void Register(IModuleRegistry r)
     {

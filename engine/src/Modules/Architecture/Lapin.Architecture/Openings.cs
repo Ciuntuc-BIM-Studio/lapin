@@ -21,8 +21,11 @@ namespace Lapin.Architecture;
 /// </summary>
 public static class Openings
 {
-    /// <summary>The height above the storey the plan cuts at (a plan's view range comes with the drawings, M5).</summary>
-    public const double PlanCut = 1.2;
+    /// <summary>
+    /// The height above the storey a door's or window's geometry draws its plan symbols at (a plan's default cut); a plan cut
+    /// elsewhere asks for them at its own height (<see cref="FillPlanAt"/>, <see cref="IPlanAtCut"/>).
+    /// </summary>
+    public const double PlanCut = Views.DefaultCut;
 
     /// <summary>An opening's place and size on its wall; <paramref name="Shape"/>: its outline, the fill's type's or a bare opening's own (null: a rectangle).</summary>
     /// <remarks>
@@ -465,8 +468,9 @@ public static class Openings
         // An element of its own size keeps it in the new type (forum topic 140), until reset.
         var sized = Sized(spec, fill);
         if (!ReferenceEquals(sized, spec) && Joinery.Problem(sized) is { } problem) throw new CommandException($"„{fill.Name}”, {sized.Width * 1000:0} × {sized.Height * 1000:0}: {problem}");
-        if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
-            CheckFits(edit.Model, wall, opening.Num("along"), OpeningSills.StructuralSill(edit.Model, opening, wall), sized.Width, sized.Height, opening.Id);
+        // Where it will stand: its hole's sill raised by the offset the hole's clearing below folds into it (as SetSize checks).
+        if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall && Place(edit.Model, opening) is var placed)
+            CheckFits(edit.Model, wall, placed.Along, placed.FillSill, sized.Width, sized.Height, opening.Id);
         // Another type: its opening is the door's or window's size again, the file's own hole (an imported one's) left behind.
         if (OpeningOf(edit.Model, fill.Id) is { } own) ClearOwnHole(edit, own);
         edit.Relate(IfcClass.RelDefinesByType, type.Id, fill.Id);
@@ -649,7 +653,27 @@ public static class Openings
         var openMode = fill.Str("openMode") ?? "auto";
         parts.AddRange(BodyParts(m, spec, Joinery.Boxes(spec, open: openMode == "open").Where(b => dressing?.Replaces(b) != true), Map));
         if (dressing != null) parts.AddRange(dressing.Parts());
-        return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null, Joinery.WindowSwing(m), openMode), [f.At(p.Along, f.Centre, 0).Xy]);
+        return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null, Joinery.WindowSwing(m), openMode, CutOverSill(wall, p, PlanCut)), [f.At(p.Along, f.Centre, 0).Xy]);
+    }
+
+    /// <summary>A plan's cut (over the storey's level) over a door's or window's bottom, its wall's base offset counted.</summary>
+    static double CutOverSill(Entity wall, Placed p, double cut) => cut - wall.Num("baseOffset") - p.FillSill;
+
+    /// <summary>
+    /// A door's or window's plan symbols with the plan cut at <paramref name="cut"/> over its storey's level (audit 22.11.2026):
+    /// its dressings and a bay's faces cut or seen as that plan has them; null when nothing of it depends on the cut.
+    /// </summary>
+    public static IReadOnlyList<PlanItem>? FillPlanAt(Entity fill, IModelView m, double cut)
+    {
+        if (CurtainCells.SeatOf(m, fill) != null || SpecOf(m, fill.Id) is not { } spec || OpeningOf(m, fill.Id) is not { } opening || WallOf(m, opening.Id) is not { } wall) return null;
+        var p = Place(m, opening);
+        var f = FrameOf(m, wall, p.Along);
+        var (sx, sy) = (fill.Bool("flipHand") ? -1 : 1, fill.Bool("flipSide") ? -1 : 1);
+        var below = CutOverSill(wall, p, cut);
+        if (BayWindows.Projecting(spec)) return BayPlan(spec, wall, f, p, sx, sy, below);
+        // No dressings (or a curved wall, which takes none): nothing of its symbol depends on the cut.
+        if (PathCurve.Of(wall) is { IsArc: true } || !DressingPlan(spec, f.YMax - f.YMin, below).Any()) return null;
+        return Symbol(spec, f, p, sx, sy, true, Joinery.WindowSwing(m), fill.Str("openMode") ?? "auto", below);
     }
 
     /// <summary>The joinery's boxes as parts, one per role, each in its material (by name, report #76) or the type's colour for the part.</summary>
@@ -676,7 +700,7 @@ public static class Openings
         var sy = fill.Bool("flipSide") ? -1 : 1;
         Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.FillSill + z);
         var openMode = fill.Str("openMode") ?? "auto";
-        return new ElementGeometry([.. BodyParts(m, spec, Joinery.Boxes(spec, open: openMode == "open"), Map)], Symbol(spec, f, p, sx, sy, false, Joinery.WindowSwing(m), openMode), [f.At(p.Along, f.Centre, 0).Xy]);
+        return new ElementGeometry([.. BodyParts(m, spec, Joinery.Boxes(spec, open: openMode == "open"), Map)], Symbol(spec, f, p, sx, sy, false, Joinery.WindowSwing(m), openMode, PlanCut - p.FillSill), [f.At(p.Along, f.Centre, 0).Xy]);
     }
 
     /// <summary>The colour of a part of a door's or window's body by its role: its material's, else the type's for the part.</summary>
@@ -718,6 +742,16 @@ public static class Openings
         }
         if (dressing != null) parts.AddRange(dressing.Parts());
         Vec2 P(double x, double y) => f.Start + f.Dir * (p.Along + sx * x) + f.Left * (f.Centre - sy * y);
+        var line = BayWindows.Line(spec, t / 2);
+        return new ElementGeometry(parts, BayPlan(spec, wall, f, p, sx, sy, CutOverSill(wall, p, PlanCut)), [f.At(p.Along, f.Centre, 0).Xy, .. line.Select(q => P(q.X, q.Y))]);
+    }
+
+    /// <summary>A bay window's plan: its hit areas, its jambs across the wall and its faces as the cut (<paramref name="cutOverSill"/> over its bottom) finds them.</summary>
+    static List<PlanItem> BayPlan(JoinerySpec spec, Entity wall, WallFrame f, Placed p, int sx, int sy, double cutOverSill)
+    {
+        var t = f.YMax - f.YMin;
+        var zFloor = -(p.FillSill + wall.Num("baseOffset"));
+        Vec2 P(double x, double y) => f.Start + f.Dir * (p.Along + sx * x) + f.Left * (f.Centre - sy * y);
         var o = new List<PlanItem>();
         var half = spec.Width / 2;
         o.Add(new PlanItem("hit", true, [P(-half, -t / 2), P(half, -t / 2), P(half, t / 2), P(-half, t / 2)]));
@@ -725,9 +759,9 @@ public static class Openings
         o.Add(new PlanItem("hit", true, [.. line.Select(q => P(q.X, q.Y))]));
         o.Add(new PlanItem("symbol", false, [P(-half, -t / 2), P(-half, t / 2)]));
         o.Add(new PlanItem("symbol", false, [P(half, -t / 2), P(half, t / 2)]));
-        foreach (var (kind, closed, pts) in BayWindows.Plan(spec, t, zFloor, PlanCut - p.FillSill))
+        foreach (var (kind, closed, pts) in BayWindows.Plan(spec, t, zFloor, cutOverSill))
             o.Add(new PlanItem(kind, closed, [.. pts.Select(q => P(q.X, q.Y))]));
-        return new ElementGeometry(parts, o, [f.At(p.Along, f.Centre, 0).Xy, .. line.Select(q => P(q.X, q.Y))]);
+        return o;
     }
 
     /// <summary>
@@ -1060,7 +1094,7 @@ public static class Openings
     /// leaves open at 90° with their arcs), in the wall's frame, mirrored with
     /// the occurrence.
     /// </summary>
-    static List<PlanItem> Symbol(JoinerySpec spec, WallFrame f, Placed p, int sx, int sy, bool dressed, string windowSwing = "none", string openMode = "auto")
+    static List<PlanItem> Symbol(JoinerySpec spec, WallFrame f, Placed p, int sx, int sy, bool dressed, string windowSwing, string openMode, double cutOverSill)
     {
         var o = new List<PlanItem>();
         Vec2 P(double x, double y) => f.Start + f.Dir * (p.Along + sx * x) + f.Left * (f.Centre - sy * y);
@@ -1077,7 +1111,7 @@ public static class Openings
                 o.Add(new PlanItem(st.Weight == "cut" ? "heavy" : st.Dashed ? "dashed" : "symbol", st.Closed, st.Pts.Select(q => P(q.X, q.Y)).ToList(), level, level));
         // The dressings seen in plan: what crosses the cut (shutters, a grille) cut, a window box below it seen, a canopy above it overhead.
         if (dressed)
-            foreach (var (kind, x0, x1, y0, y1) in DressingPlan(spec, depth, PlanCut - p.FillSill))
+            foreach (var (kind, x0, x1, y0, y1) in DressingPlan(spec, depth, cutOverSill))
             o.Add(new PlanItem(kind, true, [P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1)], PlanDetail.Fine));
         return o;
     }
