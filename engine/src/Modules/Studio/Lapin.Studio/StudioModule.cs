@@ -96,7 +96,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
                 new("radius", "Radius", "length", Min: 0),
                 new("radius2", "Second radius", "length", Min: 0),
                 new("rotation", "Rotation (°)", "number", Min: -360, Max: 360),
-                // A SubD solid's (decision 772): its subdivisions at most.
+                // A SubD solid's (decision 775): its subdivisions at most.
                 new("levels", "SubD levels (at most)", "number", Min: 1, Max: SubD.MaxLevels),
                 new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
                 new("exportAs", "Export as", "text"),
@@ -160,7 +160,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         r.Command("box", "Box", (ctx, a) => CreateThick(ctx, a, Thick.Box));
         r.Command("wall", "Wall strip", (ctx, a) => CreateThick(ctx, a, Thick.Wall));
         r.Command("primitive", "Primitive", Primitive);
-        // SubD solids (decision 772): a cage made smooth; IFC keeps the cage in Lapin_SubD.
+        // SubD solids (decision 775): a cage made smooth; IFC keeps the cage in Lapin_SubD.
         RegisterSubD(r);
         var subdIfc = new SubDIfc();
         r.Service<IIfcElementSets>(subdIfc);

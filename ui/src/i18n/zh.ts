@@ -5,7 +5,7 @@ import type { Language } from './index';
 export const ZH: Record<string, string> = {
   // Find in project browser, Place on sheet… (forum topic 207)
   "Find in project browser": "在项目浏览器中查找", "Search the sheets (number or name)": "搜索图纸（编号或名称）", "New sheet…": "新建图纸…", "New sheet with this view on it, named after it": "新建图纸并放上此视图，以视图命名", "Open the sheet after placing": "放置视图后打开图纸", "Open the sheet": "打开图纸", "No sheet matches.": "没有匹配的图纸。", "A view goes on one sheet: take it off that sheet to place it on another.": "一个视图只放在一张图纸上：先从那张图纸上取下，才能放到另一张上。", "This view is not listed in the project browser.": "项目浏览器中没有列出此视图。", "This view cannot go on a sheet.": "此视图不能放到图纸上。",
-  // SubD solids: the cage edit mode (decision 772, F1c)
+  // SubD solids: the cage edit mode (decision 775, F1c)
   "SubD": "SubD",
   "SubD box": "SubD 长方体",
   "SubD cylinder": "SubD 圆柱体",

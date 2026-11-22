@@ -5,7 +5,7 @@ import type { Language } from './index';
 export const LO: Record<string, string> = {
   // Find in project browser, Place on sheet… (forum topic 207)
   "Find in project browser": "ຊອກຫາໃນແຜງຈັດການໂຄງການ", "Search the sheets (number or name)": "ຊອກຫາແຜ່ນແບບ (ເລກ ຫຼື ຊື່)", "New sheet…": "ແຜ່ນແບບໃໝ່…", "New sheet with this view on it, named after it": "ແຜ່ນແບບໃໝ່ທີ່ມີມຸມມອງນີ້ຢູ່, ຕັ້ງຊື່ຕາມມັນ", "Open the sheet after placing": "ເປີດແຜ່ນແບບຫຼັງຈາກວາງມຸມມອງ", "Open the sheet": "ເປີດແຜ່ນແບບ", "No sheet matches.": "ບໍ່ມີແຜ່ນແບບທີ່ກົງກັນ.", "A view goes on one sheet: take it off that sheet to place it on another.": "ມຸມມອງໜຶ່ງຢູ່ໃນແຜ່ນແບບດຽວ: ເອົາມັນອອກຈາກແຜ່ນແບບນັ້ນກ່ອນ ເພື່ອວາງໃນແຜ່ນອື່ນ.", "This view is not listed in the project browser.": "ມຸມມອງນີ້ບໍ່ມີໃນລາຍການຂອງແຜງຈັດການໂຄງການ.", "This view cannot go on a sheet.": "ມຸມມອງນີ້ບໍ່ສາມາດວາງໃນແຜ່ນແບບໄດ້.",
-  // SubD solids: the cage edit mode (decision 772, F1c)
+  // SubD solids: the cage edit mode (decision 775, F1c)
   "SubD": "SubD",
   "SubD box": "ກ່ອງ SubD",
   "SubD cylinder": "ກະບອກ SubD",

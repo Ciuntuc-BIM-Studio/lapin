@@ -5,7 +5,7 @@ import type { Language } from './index';
 export const DA: Record<string, string> = {
   // Find in project browser, Place on sheet… (forum topic 207)
   "Find in project browser": "Find i projektbrowseren", "Search the sheets (number or name)": "Søg i arkene (nummer eller navn)", "New sheet…": "Nyt tegningsark…", "New sheet with this view on it, named after it": "Et nyt tegningsark med denne visning på, opkaldt efter den", "Open the sheet after placing": "Åbn arket efter placering", "Open the sheet": "Åbn arket", "No sheet matches.": "Intet ark passer.", "A view goes on one sheet: take it off that sheet to place it on another.": "En visning ligger på ét ark: tag den af det ark for at placere den på et andet.", "This view is not listed in the project browser.": "Denne visning står ikke i projektbrowseren.", "This view cannot go on a sheet.": "Denne visning kan ikke placeres på et ark.",
-  // SubD solids: the cage edit mode (decision 772, F1c)
+  // SubD solids: the cage edit mode (decision 775, F1c)
   "SubD": "SubD",
   "SubD box": "SubD-kasse",
   "SubD cylinder": "SubD-cylinder",

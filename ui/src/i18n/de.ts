@@ -5,7 +5,7 @@ import type { Language } from './index';
 export const DE: Record<string, string> = {
   // Find in project browser, Place on sheet… (forum topic 207)
   "Find in project browser": "Im Projektbrowser suchen", "Search the sheets (number or name)": "Pläne suchen (Nummer oder Name)", "New sheet…": "Neuer Plan…", "New sheet with this view on it, named after it": "Ein neuer Plan mit dieser Ansicht darauf, nach ihr benannt", "Open the sheet after placing": "Plan nach dem Platzieren öffnen", "Open the sheet": "Plan öffnen", "No sheet matches.": "Kein Plan passt.", "A view goes on one sheet: take it off that sheet to place it on another.": "Eine Ansicht liegt auf einem einzigen Plan: Nehmen Sie sie von diesem Plan, um sie auf einen anderen zu setzen.", "This view is not listed in the project browser.": "Diese Ansicht steht nicht im Projektbrowser.", "This view cannot go on a sheet.": "Diese Ansicht kann nicht auf einen Plan gesetzt werden.",
-  // SubD solids: the cage edit mode (decision 772, F1c)
+  // SubD solids: the cage edit mode (decision 775, F1c)
   "SubD": "SubD",
   "SubD box": "SubD-Quader",
   "SubD cylinder": "SubD-Zylinder",

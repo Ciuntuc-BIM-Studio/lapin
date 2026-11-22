@@ -5,7 +5,7 @@ import type { Language } from './index';
 export const IT: Record<string, string> = {
   // Find in project browser, Place on sheet… (forum topic 207)
   "Find in project browser": "Trova nel browser del progetto", "Search the sheets (number or name)": "Cerca le tavole (numero o nome)", "New sheet…": "Nuova tavola…", "New sheet with this view on it, named after it": "Una nuova tavola con questa vista sopra, chiamata come lei", "Open the sheet after placing": "Apri la tavola dopo aver messo la vista", "Open the sheet": "Apri la tavola", "No sheet matches.": "Nessuna tavola corrisponde.", "A view goes on one sheet: take it off that sheet to place it on another.": "Una vista va su una sola tavola: toglila da quella tavola per metterla su un'altra.", "This view is not listed in the project browser.": "Questa vista non è elencata nel browser del progetto.", "This view cannot go on a sheet.": "Questa vista non può andare su una tavola.",
-  // SubD solids: the cage edit mode (decision 772, F1c)
+  // SubD solids: the cage edit mode (decision 775, F1c)
   "SubD": "SubD",
   "SubD box": "Scatola SubD",
   "SubD cylinder": "Cilindro SubD",

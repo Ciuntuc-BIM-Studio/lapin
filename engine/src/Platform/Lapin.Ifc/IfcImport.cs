@@ -376,7 +376,7 @@ public static partial class IfcImport
             return null;
         }
 
-        /// <summary>The cage a SubD solid's Lapin_SubD set carries (decision 772), as the JSON it was written as; null when none.</summary>
+        /// <summary>The cage a SubD solid's Lapin_SubD set carries (decision 775), as the JSON it was written as; null when none.</summary>
         JsonNode? SubDCageOf(int id)
         {
             foreach (var sid in definitions.GetValueOrDefault(id) ?? [])
@@ -1081,7 +1081,7 @@ public static partial class IfcImport
             if (predefined is "NOTDEFINED" or "USERDEFINED") predefined = intent.Predefined;
             // A room's name is its LongName (its Name is its number).
             var name = e.Type == "IFCSPACE" && e.Args.Count > 7 && Str(e[7]) is { Length: > 0 } longName ? longName : Str(e[2]);
-            // A SubD solid's cage rides in a set of its own (decision 772).
+            // A SubD solid's cage rides in a set of its own (decision 775).
             if (SubDCageOf(e.Id) is { } cage) intent.Attrs["cage"] = cage;
             Put(edit, gid, cls, name ?? cls[3..], intent.Attrs, predefined);
             var storey = StoreyFor(e.Id);

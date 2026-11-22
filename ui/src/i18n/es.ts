@@ -5,7 +5,7 @@ import type { Language } from './index';
 export const ES: Record<string, string> = {
   // Find in project browser, Place on sheet… (forum topic 207)
   "Find in project browser": "Buscar en el navegador del proyecto", "Search the sheets (number or name)": "Buscar las láminas (número o nombre)", "New sheet…": "Lámina nueva…", "New sheet with this view on it, named after it": "Una lámina nueva con esta vista, con su nombre", "Open the sheet after placing": "Abrir la lámina después de colocar la vista", "Open the sheet": "Abrir la lámina", "No sheet matches.": "Ninguna lámina coincide.", "A view goes on one sheet: take it off that sheet to place it on another.": "Una vista va en una sola lámina: quítela de esa lámina para colocarla en otra.", "This view is not listed in the project browser.": "Esta vista no figura en el navegador del proyecto.", "This view cannot go on a sheet.": "Esta vista no se puede colocar en una lámina.",
-  // SubD solids: the cage edit mode (decision 772, F1c)
+  // SubD solids: the cage edit mode (decision 775, F1c)
   "SubD": "SubD",
   "SubD box": "Caja SubD",
   "SubD cylinder": "Cilindro SubD",

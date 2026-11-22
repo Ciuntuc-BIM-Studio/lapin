@@ -85,7 +85,7 @@ public static partial class IfcExport
     const string MirrorKey = "#mirrored";
     /// <summary>An apartment type's instance: its type's name and id, where it stands (docs/plan-units.md).</summary>
     public const string UnitSetName = "Lapin_Unit";
-    /// <summary>A SubD solid's cage (decision 772): its points, faces and creases as JSON in <see cref="SubDCageProperty"/>, read back into its <c>cage</c>.</summary>
+    /// <summary>A SubD solid's cage (decision 775): its points, faces and creases as JSON in <see cref="SubDCageProperty"/>, read back into its <c>cage</c>.</summary>
     public const string SubDSetName = "Lapin_SubD";
     public const string SubDCageProperty = "Cage";
     const string IntentKey = "Pset_Lapin_Intent", PhaseKey = "Pset_Lapin_Phase", ParamsKey = "Pset_Lapin_Parameters";

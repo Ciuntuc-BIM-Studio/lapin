@@ -5,7 +5,7 @@ import type { Language } from './index';
 export const PT: Record<string, string> = {
   // Find in project browser, Place on sheet… (forum topic 207)
   "Find in project browser": "Localizar no navegador de projeto", "Search the sheets (number or name)": "Pesquisar as pranchas (número ou nome)", "New sheet…": "Nova prancha…", "New sheet with this view on it, named after it": "Uma nova prancha com esta vista, com o nome dela", "Open the sheet after placing": "Abrir a prancha depois de colocar a vista", "Open the sheet": "Abrir a prancha", "No sheet matches.": "Nenhuma prancha corresponde.", "A view goes on one sheet: take it off that sheet to place it on another.": "Uma vista vai numa só prancha: retire-a dessa prancha para colocá-la em outra.", "This view is not listed in the project browser.": "Esta vista não está listada no navegador de projeto.", "This view cannot go on a sheet.": "Esta vista não pode ir para uma prancha.",
-  // SubD solids: the cage edit mode (decision 772, F1c)
+  // SubD solids: the cage edit mode (decision 775, F1c)
   "SubD": "SubD",
   "SubD box": "Caixa SubD",
   "SubD cylinder": "Cilindro SubD",

@@ -13,7 +13,7 @@ using Lapin.Studio;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// SubD solids in Studio (docs/plan-studio-freeform.md §8, decision 772, stage F1b): made from a box, a cylinder, a sheet or a
+/// SubD solids in Studio (docs/plan-studio-freeform.md §8, decision 775, stage F1b): made from a box, a cylinder, a sheet or a
 /// solid's faces; their cage edited, shaped and set, each one undo step keeping the GlobalId; the cage read in the world for the
 /// edit mode; booleans and steps on the body; quantities; IFC and .lapin keeping the cage.
 /// </summary>

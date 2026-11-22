@@ -3,7 +3,7 @@
 export const RO: Record<string, string> = {
   // Find in project browser, Place on sheet… (forum topic 207)
   "Find in project browser": "Găsește în browserul proiectului", "Search the sheets (number or name)": "Caută planșele (număr sau nume)", "New sheet…": "Planșă nouă…", "New sheet with this view on it, named after it": "O planșă nouă cu această vedere pe ea, numită după ea", "Open the sheet after placing": "Deschide planșa după ce pui vederea", "Open the sheet": "Deschide planșa", "No sheet matches.": "Nicio planșă nu se potrivește.", "A view goes on one sheet: take it off that sheet to place it on another.": "O vedere stă pe o singură planșă: scoate-o de pe acea planșă ca s-o pui pe alta.", "This view is not listed in the project browser.": "Această vedere nu e listată în browserul proiectului.", "This view cannot go on a sheet.": "Această vedere nu poate fi pusă pe o planșă.",
-  // SubD solids: the cage edit mode (decision 772, F1c)
+  // SubD solids: the cage edit mode (decision 775, F1c)
   "SubD": "SubD",
   "SubD box": "Cutie SubD",
   "SubD cylinder": "Cilindru SubD",
