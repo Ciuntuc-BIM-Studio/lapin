@@ -1189,3 +1189,7 @@ Utilizatorul a luat recomandările: vectorii și rezultatele intermediare ale it
 5. **Betonul doar arătat** (l0 din αcr nefolosit). *Recomandare: da; l0 după 5.8.3.2 (k1, k2 din rigiditățile capetelor) ca pas separat.*
 6. **Combinația seismică** n-are flambaj al ei: verificările ei rămân cu k · L. *Recomandare: da (P-Δ seismic e la §14.7.6).*
 7. **Modurile proprii ale barelor** dau și ele lungimi (cu podeaua k · L), nu doar modurile globale. *Recomandare: da: un stâlp pe care modelul nu-l ține în afara planului își ia astfel consola, pe care k din capete (0,85) n-o vede.*
+
+#### Răspunsurile utilizatorului (22.11.2026)
+
+Utilizatorul a luat recomandările la toate cele 7 întrebări din §14.24: k·L rămâne limita de jos; pragurile (0,1 participare, 5 % din efort) fixe, spuse în note; riglele și grinzile iau și ele lungimi din αcr, cu ghidul trimițând halele spre P-Δ cu imperfecțiuni (opțiunea „doar stâlpi” dacă e cerută); Cm după Anexa A Tabelul A.2 până la confirmarea textului; l0 din αcr la beton doar informativ, l0 după 5.8.3.2 ca pas separat; combinația seismică păstrează k·L; modurile proprii ale barelor contează, cu limita k·L.
