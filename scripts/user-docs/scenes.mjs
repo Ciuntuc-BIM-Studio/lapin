@@ -2791,6 +2791,69 @@ export const scenes = [
     },
   },
   {
+    // The arrow keys nudge the selection (forum topic 212): a step that follows the zoom, ten times as far with Shift, along the UCS's axes when one is set.
+    id: 'nudge',
+    touches: ['architecture', 'core'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const wall = (await t.cmd('architecture.addWall', { storeyId: storey, x1: 0, y1: 0, x2: 6, y2: 0 })).id;
+      const win = (await t.cmd('architecture.addWindow', { wallId: wall, x: 2, y: 0 })).id;
+      await t.cmd('architecture.addWall', { storeyId: storey, x1: 6, y1: 0, x2: 6, y2: 4 });
+      await t.fit();
+      await t.wait(600);
+      const node = async (id) => (await t.nodes()).find((n) => n.id === id);
+      const start = async () => (await node(wall)).props.start;
+      const blur = () => t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      const press = async (key) => { await blur(); await t.page.keyboard.press(key); await t.wait(500); };
+      await select(t, wall);
+      await t.wait(400);
+      // An arrow: one small step on the screen's axes; Shift: ten times as far.
+      const a = await start();
+      await press('ArrowRight');
+      const b = await start();
+      const step = b[0] - a[0];
+      t.expect(step > 0 && Math.abs(b[1] - a[1]) < 1e-9, `ArrowRight nudges the wall along x (by ${step} m)`);
+      await press('Shift+ArrowUp');
+      const c = await start();
+      t.expect(Math.abs(c[1] - b[1] - step * 10) < 1e-6 && Math.abs(c[0] - b[0]) < 1e-9, `Shift+ArrowUp goes ten times as far up (${c[1] - b[1]} m)`);
+      // Each press is one undo step.
+      await t.page.evaluate(async () => (await import('/src/engine/session.ts')).undo());
+      await t.wait(400);
+      const d = await start();
+      t.expect(Math.abs(d[0] - b[0]) < 1e-9 && Math.abs(d[1] - b[1]) < 1e-9, 'undo takes back one nudge');
+      // With a UCS turned 30°, the arrows follow its axes.
+      await t.page.evaluate(async () => (await import('/src/app/location.ts')).setUcs({ origin: { x: 0, y: 0 }, angle: 30 }));
+      await t.wait(600);
+      await select(t, wall);
+      await press('ArrowRight');
+      const e = await start();
+      const dx = e[0] - b[0], dy = e[1] - b[1];
+      t.expect(Math.abs(Math.atan2(dy, dx) - Math.PI / 6) < 1e-3 && Math.abs(Math.hypot(dx, dy) - step) < 1e-4, `in a UCS turned 30° ArrowRight goes along its X axis (${dx}, ${dy})`);
+      await t.page.mouse.move(5, 5);
+      await t.wait(300);
+      await t.shot('nudge-ucs', { of: '.plan-svg', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/app/location.ts')).setUcs(null));
+      await t.wait(400);
+      // A window slides along its wall; across the wall nothing moves.
+      await select(t, win);
+      const along = () => t.page.evaluate(() => [...document.querySelectorAll('aside.props input')].map((i) => i.value).join('|'));
+      const w0 = await along();
+      await press('ArrowDown');
+      t.expect(await along() === w0, `a window does not leave its wall: ArrowDown across it moves nothing (${w0})`);
+      await press('ArrowRight');
+      t.expect(await along() !== w0, `ArrowRight slides the window along its wall (${w0} to ${await along()})`);
+      // A pinned wall stays where it is.
+      await select(t, wall);
+      await t.cmd('element.pin', { ids: [wall], pinned: true });
+      const before = await start();
+      await press('ArrowRight');
+      t.expect(JSON.stringify(await start()) === JSON.stringify(before), 'a pinned wall is not nudged');
+      await t.cmd('element.pin', { ids: [wall], pinned: false });
+    },
+  },
+  {
     // Modify → Split element on a floor with a curved edge: two points of the line.
     id: 'floors-split',
     touches: ['architecture'],

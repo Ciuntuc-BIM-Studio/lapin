@@ -82,6 +82,8 @@ export interface Prefs {
    * Properties' "Doors and windows"): its edges (openings) or its centre (centrelines); a dot still switches one dimension.
    */
   tempDimOpeningRef: OpeningDimRef;
+  /** The arrow keys' nudge step, metres (forum topic 212): 0 follows the zoom (about four pixels), else this one; Shift is ten times as far. */
+  nudgeStep: number;
 }
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'tangent', 'nearest', 'wallAxis', 'gridAxis'];
@@ -99,6 +101,7 @@ export const DEFAULT_PREFS: Prefs = {
   clickOutAccepts: false,
   tempDimRef: 'core',
   tempDimOpeningRef: 'openings',
+  nudgeStep: 0,
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -139,6 +142,7 @@ export function readPrefs(stored: unknown): Prefs {
     clickOutAccepts: o.clickOutAccepts === true,
     tempDimRef: pick(o.tempDimRef, DIM_REFS, d.tempDimRef),
     tempDimOpeningRef: pick(o.tempDimOpeningRef, OPENING_DIM_REFS, d.tempDimOpeningRef),
+    nudgeStep: typeof o.nudgeStep === 'number' && Number.isFinite(o.nudgeStep) && o.nudgeStep > 0 ? Math.min(1, Math.max(0.001, o.nudgeStep)) : 0,
     openingAlong: {
       from: pick((o.openingAlong as { from?: unknown } | undefined)?.from, ['start', 'face', 'core'] as const, d.openingAlong.from),
       point: pick((o.openingAlong as { point?: unknown } | undefined)?.point, ['start', 'centre', 'end'] as const, d.openingAlong.point),
