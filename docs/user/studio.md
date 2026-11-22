@@ -169,7 +169,7 @@ Select a SubD solid in 3D and press **Tab**, double-click it, or click **Edit ca
 
 - Choose what you pick with the **Vertex**, **Edge** and **Face** buttons on the bar, or the keys **1**, **2** and **3**.
 - Click to pick, **Shift**-click to add or take off. A click on empty space lets go.
-- Drag what is picked: it snaps to the endpoints, midpoints and edges of the model and to the other cage points, and the arrows lock an axis (right for red, left for green, up for blue), exactly as in Move 3D. Type a distance, or `dx,dy,dz`, and press Enter. Letting go is one undo step; the smooth body is redrawn then.
+- Drag what is picked: it snaps to the endpoints, midpoints and edges of the model and to the other cage points, and the arrows lock an axis (right for red, left for green, up for blue), exactly as in Move 3D. Type a distance, or `dx,dy,dz`, and press Enter. Letting go is one undo step; the smooth body is redrawn then. After you let go, a distance typed and Enter change that move along the same direction (still one undo step); a click elsewhere or Esc keeps it as it is. <kbd>Tab</kbd> during the drag is autohold: the points follow the pointer without the button, and a click or Enter puts them down.
 - **Scale** and **Turn (°)** on the bar work on the picked points about their middle: type a value and press Enter.
 - **Extrude** pushes the picked faces out by the distance beside it (negative: in). **Insert loop** cuts an edge loop across the ring of quads the picked edge starts. **Delete faces** opens the cage there. **Crease** gives the picked edges a sharpness: Smooth takes a crease off, Semi-sharp 1 to 3 rounds it off after that many subdivisions, Sharp stays sharp.
 - **Esc** or **Done** leaves the mode. Leaving is not an undo step.

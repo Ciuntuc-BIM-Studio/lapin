@@ -23,6 +23,7 @@ export const RO: Record<string, string> = {
   "Edge (2)": "Muchie (2)",
   "Face (3)": "Față (3)",
   "Pick on the cage": "Alegeți pe cușcă",
+  "Type a distance to change it": "Tastați o distanță ca s-o schimbați",
   "Distance (negative: in); Enter extrudes the picked faces": "Distanța (negativă: spre interior); Enter extrudează fețele alese",
   "Extrude the picked faces by the distance": "Extrudează fețele alese cu distanța dată",
   "Insert loop": "Inserează buclă",

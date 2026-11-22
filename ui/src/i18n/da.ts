@@ -25,6 +25,7 @@ export const DA: Record<string, string> = {
   "Edge (2)": "Kant (2)",
   "Face (3)": "Flade (3)",
   "Pick on the cage": "Vælg på buret",
+  "Type a distance to change it": "Skriv en afstand for at ændre den",
   "Distance (negative: in); Enter extrudes the picked faces": "Afstand (negativ: indad); Enter ekstruderer de valgte flader",
   "Extrude the picked faces by the distance": "Ekstruderer de valgte flader med afstanden",
   "Insert loop": "Indsæt løkke",

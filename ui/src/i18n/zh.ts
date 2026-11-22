@@ -25,6 +25,7 @@ export const ZH: Record<string, string> = {
   "Edge (2)": "边 (2)",
   "Face (3)": "面 (3)",
   "Pick on the cage": "在控制网上选取",
+  "Type a distance to change it": "输入距离以更改",
   "Distance (negative: in); Enter extrudes the picked faces": "距离（负值：向内）；回车拉伸所选面",
   "Extrude the picked faces by the distance": "按距离拉伸所选面",
   "Insert loop": "插入环线",

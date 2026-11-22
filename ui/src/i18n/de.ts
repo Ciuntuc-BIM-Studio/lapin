@@ -25,6 +25,7 @@ export const DE: Record<string, string> = {
   "Edge (2)": "Kante (2)",
   "Face (3)": "Fläche (3)",
   "Pick on the cage": "Auf dem Käfig wählen",
+  "Type a distance to change it": "Abstand eingeben, um ihn zu ändern",
   "Distance (negative: in); Enter extrudes the picked faces": "Abstand (negativ: nach innen); Enter extrudiert die gewählten Flächen",
   "Extrude the picked faces by the distance": "Extrudiert die gewählten Flächen um den Abstand",
   "Insert loop": "Schleife einfügen",

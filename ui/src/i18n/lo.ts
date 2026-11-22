@@ -25,6 +25,7 @@ export const LO: Record<string, string> = {
   "Edge (2)": "ເສັ້ນຂອບ (2)",
   "Face (3)": "ໜ້າ (3)",
   "Pick on the cage": "ເລືອກເທິງກົງ",
+  "Type a distance to change it": "ພິມໄລຍະເພື່ອປ່ຽນມັນ",
   "Distance (negative: in); Enter extrudes the picked faces": "ໄລຍະ (ລົບ: ເຂົ້າໃນ); Enter ດຶງໜ້າທີ່ເລືອກອອກ",
   "Extrude the picked faces by the distance": "ດຶງໜ້າທີ່ເລືອກອອກຕາມໄລຍະ",
   "Insert loop": "ແຊກວົງ",
