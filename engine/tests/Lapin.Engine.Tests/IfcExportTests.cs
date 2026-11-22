@@ -33,6 +33,21 @@ public class IfcExportTests : IDisposable
         return path;
     }
 
+    [Fact]
+    public void The_header_names_the_projects_author_and_designer_and_the_file_is_written_whole()
+    {
+        // Audit 22.11.2026: FILE_NAME's author and organization were always empty though the project information has them.
+        var f = new Fixture();
+        var bare = File.ReadAllText(Export(f, "bare.ifc"));
+        Assert.Contains("FILE_NAME('bare.ifc',", bare);
+        Assert.Contains(",(''),(''),", bare);
+        f.Run("project.setInfo", new JsonObject { ["author"] = "A. Author", ["designer"] = "Studio X" });
+        var path = Export(f, "named.ifc");
+        Assert.Contains(",('A. Author'),('Studio X'),", File.ReadAllText(path));
+        // Written beside and moved over: nothing temporary is left in the folder.
+        Assert.Equal("bare.ifc,named.ifc", string.Join(",", Directory.GetFiles(_dir).Select(Path.GetFileName).Order()));
+    }
+
     static List<StepEntity> RepresentationsOf(StepFile f, StepEntity product) =>
         product[6] == null ? [] : Items(f.Get(product[6])![2]).Select(r => f.Get(r)!).ToList();
 

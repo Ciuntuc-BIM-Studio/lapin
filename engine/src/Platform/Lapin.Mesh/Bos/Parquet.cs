@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Text;
+using Lapin.Model;
 
 namespace Lapin.Mesh.Bos;
 
@@ -42,7 +43,25 @@ public static class Parquet
     const int Plain = 0, PlainDictionary = 2, Rle = 3, BitPacked = 4, DeltaBinaryPacked = 5, RleDictionary = 8;
     public const int Uncompressed = 0, Snappy = 1, Gzip = 2, Brotli = 4;
 
+    /// <summary>
+    /// The file's columns. Every count and length the file states is held to the bytes it has (audit 22.11.2026, G19: a
+    /// 200-byte file asked for 8 GB): a value stored in its own bytes is refused when they are not there; one a run-length or
+    /// a dictionary expands is held to <see cref="ValuesPerByte"/> per byte of the file. A damaged file throws
+    /// <see cref="InvalidDataException"/>.
+    /// </summary>
     public static List<ParquetColumn> Read(byte[] file)
+    {
+        try { return ReadColumns(file); }
+        catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentException or OverflowException or NullReferenceException or InvalidCastException)
+        {
+            throw new InvalidDataException("it is damaged (a page or its metadata does not hold what it says)");
+        }
+    }
+
+    /// <summary>How many values a run-length or dictionary encoding may expand one byte of the file into, at most.</summary>
+    public const long ValuesPerByte = 1024;
+
+    static List<ParquetColumn> ReadColumns(byte[] file)
     {
         if (file.Length < 12 || !file.AsSpan(0, 4).SequenceEqual(Magic) || !file.AsSpan(file.Length - 4).SequenceEqual(Magic))
             throw new InvalidDataException("not a Parquet file");
@@ -60,6 +79,7 @@ public static class Parquet
         for (var c = 0; c < leaves.Count; c++)
             columns[c].Byte = leaves[c].Sub(10)?.Sub(10) is { } it && it.Long(1) == 8 || leaves[c].Int(6, -1) is 11 or 15;
 
+        var budget = Math.Min(Array.MaxLength, Math.Max(1L << 20, file.LongLength * ValuesPerByte));
         foreach (var rg in meta.Items(4).OfType<Thrift.Fields>())
         {
             var chunks = rg.Items(1).OfType<Thrift.Fields>().ToList();
@@ -67,7 +87,7 @@ public static class Parquet
             {
                 var md = chunks[c].Sub(3) ?? throw new InvalidDataException("a column chunk has no metadata");
                 var optional = leaves[c].Int(3) == 1;
-                parts[c].Add(ReadChunk(file, md, optional));
+                parts[c].Add(ReadChunk(file, md, optional, budget));
             }
         }
         for (var c = 0; c < columns.Count; c++) Assign(columns[c], leaves[c].Int(1), parts[c]);
@@ -90,12 +110,14 @@ public static class Parquet
     }
 
     /// <summary>A column chunk's values (nulls where an optional row has none), its pages decoded one after the other.</summary>
-    static Array ReadChunk(byte[] file, Thrift.Fields md, bool optional)
+    static Array ReadChunk(byte[] file, Thrift.Fields md, bool optional, long budget)
     {
         var type = md.Int(1);
         var codec = md.Int(4);
         var total = md.Long(5);
+        if (total < 0 || total > budget) throw new InvalidDataException($"a column chunk claims {total} values, more than the file can hold");
         var start = md.TryGetValue(11, out var d) && d is long dict && dict > 0 ? dict : md.Long(9);
+        if (start < 4 || start >= file.Length - 8) throw new InvalidDataException("a column chunk starts outside the file");
         var pos = (int)start;
         Array? dictionary = null;
         var values = new List<Array>();
@@ -105,32 +127,34 @@ public static class Parquet
             var header = new Thrift.Reader(file, pos);
             var ph = header.ReadStruct();
             pos = header.Position;
-            var compressed = ph.Int(3);
-            var uncompressedSize = ph.Int(2);
-            if (compressed < 0 || pos + compressed > file.Length) throw new InvalidDataException("a page runs past the end of the file");
-            var raw = file.AsSpan(pos, compressed);
-            pos += compressed;
+            var compressed = ph.Long(3);
+            var uncompressedSize = ph.Long(2);
+            if (compressed < 0 || compressed > file.Length - pos) throw new InvalidDataException("a page runs past the end of the file");
+            if (uncompressedSize < 0 || uncompressedSize > Array.MaxLength) throw new InvalidDataException("a page claims an impossible size");
+            var raw = file.AsSpan(pos, (int)compressed);
+            pos += (int)compressed;
             switch (ph.Int(1))
             {
                 case 2: // dictionary page
                 {
-                    var dh = ph.Sub(7)!;
-                    var data = Decompress(raw, codec, uncompressedSize);
+                    var dh = ph.Sub(7) ?? throw new InvalidDataException("a dictionary page has no header");
+                    var data = Decompress(raw, codec, (int)uncompressedSize);
                     var at = 0;
                     dictionary = PlainValues(data, ref at, type, dh.Int(1));
                     break;
                 }
                 case 0: // data page v1: [repetition levels][definition levels][values], all compressed together
                 {
-                    var dh = ph.Sub(5)!;
-                    var n = dh.Int(1);
-                    var data = Decompress(raw, codec, uncompressedSize);
+                    var dh = ph.Sub(5) ?? throw new InvalidDataException("a data page has no header");
+                    var n = Rows(dh.Long(1), total - read);
+                    var data = Decompress(raw, codec, (int)uncompressedSize);
                     var at = 0;
                     bool[]? defined = null;
                     if (optional)
                     {
                         var len = BinaryPrimitives.ReadInt32LittleEndian(data.AsSpan(at));
                         at += 4;
+                        if (len < 0 || len > data.Length - at) throw new InvalidDataException("a page's definition levels run past it");
                         defined = Hybrid(data.AsSpan(at, len), 1, n).Select(v => v == 1).ToArray();
                         at += len;
                     }
@@ -140,14 +164,15 @@ public static class Parquet
                 }
                 case 3: // data page v2: levels uncompressed ahead of the (maybe compressed) values
                 {
-                    var dh = ph.Sub(8)!;
-                    var n = dh.Int(1);
+                    var dh = ph.Sub(8) ?? throw new InvalidDataException("a data page has no header");
+                    var n = Rows(dh.Long(1), total - read);
                     var defLen = dh.Int(5);
                     var repLen = dh.Int(6);
+                    if (defLen < 0 || repLen < 0 || (long)defLen + repLen > raw.Length) throw new InvalidDataException("a page's levels run past it");
                     var levels = raw[..(repLen + defLen)];
                     bool[]? defined = optional && defLen > 0 ? Hybrid(levels.Slice(repLen, defLen), 1, n).Select(v => v == 1).ToArray() : null;
                     var body = raw[(repLen + defLen)..];
-                    var data = dh.Bool(7, true) ? Decompress(body, codec, uncompressedSize - repLen - defLen) : body.ToArray();
+                    var data = dh.Bool(7, true) ? Decompress(body, codec, (int)Math.Max(0, uncompressedSize - repLen - defLen)) : body.ToArray();
                     values.Add(Page(data, 0, dh.Int(4), type, n, defined, dictionary));
                     read += n;
                     break;
@@ -156,6 +181,13 @@ public static class Parquet
             }
         }
         return Concat(type, values);
+    }
+
+    /// <summary>A page's row count: at most what its chunk has left to read (itself held to the file's size).</summary>
+    static int Rows(long n, long left)
+    {
+        if (n < 0 || n > left) throw new InvalidDataException($"a page claims {n} values, more than its column chunk has left ({left})");
+        return (int)n;
     }
 
     static Array Concat(int type, List<Array> parts) => type switch
@@ -180,6 +212,7 @@ public static class Parquet
             case PlainDictionary or RleDictionary:
             {
                 if (dictionary == null) throw new InvalidDataException("a dictionary-encoded page has no dictionary");
+                if (at >= data.Length) throw new InvalidDataException("a dictionary-encoded page is empty");
                 var width = data[at];
                 var idx = Hybrid(data.AsSpan(at + 1), width, present);
                 dense = Array.CreateInstance(dictionary.GetType().GetElementType()!, present);
@@ -190,6 +223,7 @@ public static class Parquet
             {
                 // Booleans run-length encoded: a length, then the hybrid at one bit.
                 var len = BinaryPrimitives.ReadInt32LittleEndian(data.AsSpan(at));
+                if (len < 0 || len > data.Length - at - 4) throw new InvalidDataException("a page's booleans run past it");
                 dense = Hybrid(data.AsSpan(at + 4, len), 1, present).Select(x => x == 1).ToArray();
                 break;
             }
@@ -209,6 +243,10 @@ public static class Parquet
 
     static Array PlainValues(byte[] data, ref int at, int type, int n)
     {
+        // Each value takes its bytes (a string four at least, its length): a count the page cannot hold is refused before anything is made.
+        long width = type switch { Int32 or Float or ByteArray => 4, Int64 or Double => 8, _ => 0 };
+        long need = type == Boolean ? ((long)n + 7) / 8 : n * width;
+        if (n < 0 || need > data.Length - at) throw new InvalidDataException($"a page claims {n} values, more than its {data.Length - at} bytes hold");
         switch (type)
         {
             case Int32: { var o = new int[n]; for (var i = 0; i < n; i++, at += 4) o[i] = BinaryPrimitives.ReadInt32LittleEndian(data.AsSpan(at)); return o; }
@@ -236,6 +274,7 @@ public static class Parquet
     /// <summary>The RLE / bit-packing hybrid: <paramref name="n"/> values of <paramref name="width"/> bits.</summary>
     static int[] Hybrid(ReadOnlySpan<byte> data, int width, int n)
     {
+        if (width is < 0 or > 32) throw new InvalidDataException($"a page's values are {width} bits wide");
         var o = new int[n];
         var k = 0;
         var at = 0;
@@ -246,6 +285,7 @@ public static class Parquet
             for (var shift = 0; ; shift += 7) { var b = data[at++]; header |= (ulong)(b & 0x7F) << shift; if ((b & 0x80) == 0) break; }
             if ((header & 1) == 1)
             {
+                if ((header >> 1) > (ulong)(data.Length - at)) throw new InvalidDataException("a bit-packed run is longer than its page");
                 var groups = (int)(header >> 1);
                 var count = groups * 8;
                 long bit = 0;
@@ -259,7 +299,7 @@ public static class Parquet
             }
             else
             {
-                var run = (int)(header >> 1);
+                var run = (int)Math.Min(header >> 1, (ulong)(n - k));
                 var v = 0;
                 for (var b = 0; b < bytes; b++) v |= data[at + b] << (8 * b);
                 at += bytes;
@@ -273,29 +313,33 @@ public static class Parquet
     {
         ulong Varint(ref int p) { ulong v = 0; for (var s = 0; ; s += 7) { var b = data[p++]; v |= (ulong)(b & 0x7F) << s; if ((b & 0x80) == 0) return v; } }
         long Zig(ref int p) { var u = Varint(ref p); return (long)(u >> 1) ^ -(long)(u & 1); }
-        var blockSize = (int)Varint(ref at);
-        var miniblocks = (int)Varint(ref at);
-        var count = (int)Varint(ref at);
+        var blockSize = Varint(ref at);
+        var miniblocksCount = Varint(ref at);
+        var count = Math.Min(Varint(ref at), (ulong)Math.Max(n, 0));
+        if (blockSize == 0 || blockSize > 1 << 20 || miniblocksCount == 0 || miniblocksCount > blockSize || blockSize % miniblocksCount != 0)
+            throw new InvalidDataException("a DELTA_BINARY_PACKED page has a damaged header");
+        var miniblocks = (int)miniblocksCount;
         var o = new long[Math.Max(n, 0)];
         if (count == 0 || n == 0) return o;
         var prev = Zig(ref at);
         o[0] = prev;
         var k = 1;
-        var per = blockSize / Math.Max(1, miniblocks);
-        while (k < count && k < n)
+        var per = (int)blockSize / miniblocks;
+        while ((ulong)k < count && k < n)
         {
             var minDelta = Zig(ref at);
             var widths = data.AsSpan(at, miniblocks).ToArray();
             at += miniblocks;
-            for (var m = 0; m < miniblocks && k < count; m++)
+            for (var m = 0; m < miniblocks && (ulong)k < count; m++)
             {
                 var w = widths[m];
+                if (w > 64) throw new InvalidDataException("a DELTA_BINARY_PACKED miniblock is wider than 64 bits");
                 long bit = 0;
-                for (var i = 0; i < per; i++)
+                for (var i = 0; i < per && (ulong)k < count && k < n; i++)
                 {
                     ulong v = 0;
                     for (var b = 0; b < w; b++, bit++) if ((data[at + (int)(bit >> 3)] >> (int)(bit & 7) & 1) == 1) v |= 1UL << b;
-                    if (k < count && k < n) { prev += minDelta + (long)v; o[k++] = prev; }
+                    prev += minDelta + (long)v; o[k++] = prev;
                 }
                 at += per * w / 8;
             }
@@ -308,23 +352,27 @@ public static class Parquet
         switch (codec)
         {
             case Uncompressed: return raw.ToArray();
-            case Snappy: return SnappyCodec.Decompress(raw);
+            case Snappy:
+            {
+                var o = SnappyCodec.Decompress(raw);
+                if (o.Length != size) throw new InvalidDataException("a Snappy page is not the size it says");
+                return o;
+            }
             case Gzip:
             {
+                // Never more than the page says it holds: memory grows with what really inflates, not with the stated size.
                 using var gz = new GZipStream(new MemoryStream(raw.ToArray()), CompressionMode.Decompress);
-                using var ms = new MemoryStream(Math.Max(size, 0));
-                gz.CopyTo(ms);
-                return ms.ToArray();
+                return BoundedRead.Exactly(gz, size, "a GZIP page");
             }
             case Brotli:
             {
-                var o = new byte[Math.Max(size, 0)];
                 try
                 {
-                    if (BrotliDecoder.TryDecompress(raw, o, out var written) && written == o.Length) return o;
+                    using var br = new BrotliStream(new MemoryStream(raw.ToArray()), CompressionMode.Decompress);
+                    return BoundedRead.Exactly(br, size, "a Brotli page");
                 }
                 catch (PlatformNotSupportedException) { throw new InvalidDataException("its pages are Brotli-compressed, which this build of Lapin cannot read (the desktop app can)"); }
-                throw new InvalidDataException("a Brotli page is damaged");
+                catch (Exception ex) when (ex is IOException or InvalidOperationException and not ObjectDisposedException) { throw new InvalidDataException("a Brotli page is damaged"); }
             }
             default:
                 throw new InvalidDataException(codec switch { 6 => "its pages are ZSTD-compressed, which Lapin does not read", 5 or 7 => "its pages are LZ4-compressed, which Lapin does not read", _ => $"a compression ({codec}) Lapin does not read" });
@@ -484,7 +532,8 @@ public static class SnappyCodec
         var at = 0;
         ulong length = 0;
         for (var shift = 0; ; shift += 7) { var b = src[at++]; length |= (ulong)(b & 0x7F) << shift; if ((b & 0x80) == 0) break; }
-        if (length > int.MaxValue) throw new InvalidDataException("a Snappy block is too large");
+        // A copy of 64 bytes takes 3 at least: a block cannot be more than about 22 times its compressed size.
+        if (length > (ulong)src.Length * 22 + 64) throw new InvalidDataException("a Snappy block claims more than it can hold");
         var o = new byte[length];
         var k = 0;
         while (at < src.Length)

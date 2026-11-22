@@ -239,7 +239,7 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         var path = (string?)source["import"] ?? throw new InvalidDataException("An import without its file.");
         if (!File.Exists(path)) throw new CommandException($"The file that was imported is gone: {path}.");
         var bytes = File.ReadAllBytes(path);
-        var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes));
+        var hash = Hashes.Sha256Hex(bytes);
         if ((string?)source["sha256"] is { } sha && sha != hash) throw new CommandException($"{System.IO.Path.GetFileName(path)} changed since it was imported: the unsaved work cannot be brought back.");
         var mode = (string?)source["mode"] ?? "auto";
         IReadOnlySet<string>? Chosen(JsonNode? n) => n is JsonArray a ? a.Select(x => (string?)x ?? "").ToHashSet() : null;

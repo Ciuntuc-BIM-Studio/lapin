@@ -1,5 +1,4 @@
 using System.IO.Compression;
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lapin.Model;
@@ -260,16 +259,19 @@ public static class LapinPackage
     {
         using var zip = new ZipArchive(input, ZipArchiveMode.Read, leaveOpen: true);
         var manifest = ReadManifest(zip);
-        return Content(manifest, part => Bytes(zip, part.Path));
+        return Content(manifest, part => Bytes(zip, part.Path, part.Size));
     }
 
-    internal static byte[] Bytes(ZipArchive zip, string name)
+    /// <summary>
+    /// An entry's bytes, never more than its declared size (audit 22.11.2026, G19: a crafted entry inflating past it was a
+    /// zip bomb); with <paramref name="size"/> (the manifest's), an entry of another size is refused before it is opened.
+    /// </summary>
+    internal static byte[] Bytes(ZipArchive zip, string name, long? size = null)
     {
         var entry = zip.GetEntry(name) ?? throw new InvalidDataException($"The project has no {name}.");
+        if (size is { } expected && entry.Length != expected) throw new InvalidDataException($"The project is damaged: {name} is not what was saved.");
         using var s = entry.Open();
-        using var ms = new MemoryStream();
-        s.CopyTo(ms);
-        return ms.ToArray();
+        return BoundedRead.Exactly(s, entry.Length, $"The project's {name}");
     }
 
     internal static PackageManifest ReadManifest(ZipArchive zip)
@@ -279,6 +281,10 @@ public static class LapinPackage
         if (manifest.Format != Format) throw new InvalidDataException($"Not a Lapin project ({manifest.Format}).");
         if (manifest.Version > Version) throw new InvalidDataException($"The project was saved by a newer Lapin (format {manifest.Version}); update Lapin to open it.");
         if (manifest.Version < Version) throw new InvalidDataException($"Projects of format {manifest.Version} (the old Lapin) open from milestone M6 on.");
+        if (manifest.Parts is null) throw new InvalidDataException("The project is damaged: its manifest lists no parts.");
+        // A part listed twice (audit 22.11.2026: an internal error where its path was looked up) is a damaged manifest.
+        if (manifest.Parts.GroupBy(p => p.Path, StringComparer.Ordinal).FirstOrDefault(g => g.Count() > 1) is { } twice)
+            throw new InvalidDataException($"The project is damaged: its manifest lists {twice.Key} twice.");
         return manifest;
     }
 
@@ -303,10 +309,14 @@ public static class LapinPackage
             manifest.Classes, document, manifest);
     }
 
-    internal static string Hash(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
+    internal static string Hash(byte[] bytes) => Hashes.Sha256Hex(bytes);
 
-    /// <summary>A path segment: GlobalIds may hold '$', which zip and file systems keep, but never '/'.</summary>
-    static string Safe(string s) => s.Replace('/', '_').Replace('\\', '_');
+    /// <summary>
+    /// A path segment: GlobalIds may hold '$', which zip and file systems keep, but never '/'. Escaped one to one (audit
+    /// 22.11.2026: mapping both slashes to '_' made storeys „a/b” and „a_b” one entry, and the project unreadable): '%', '/'
+    /// and the backslash as %25, %2F and %5C, every other character as it is, so the names of the files written before stay.
+    /// </summary>
+    static string Safe(string s) => s.IndexOfAny(['%', '/', '\\']) < 0 ? s : s.Replace("%", "%25").Replace("/", "%2F").Replace("\\", "%5C");
 }
 
 /// <summary>The package's JSON contracts, generated at build time with the engine's options (web names, numbers read from strings, nulls left out).</summary>

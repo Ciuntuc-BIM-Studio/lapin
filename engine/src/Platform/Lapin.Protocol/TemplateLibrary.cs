@@ -93,8 +93,7 @@ public sealed class TemplateLibrary(string folder)
     /// <summary>A template's name as its file's: what the systems accept (no slashes, colons, quotes…), at most 80 characters.</summary>
     public static string IdOf(string name)
     {
-        var bad = Path.GetInvalidFileNameChars().Concat(['/', '\\', ':', '*', '?', '"', '<', '>', '|']).ToHashSet();
-        var s = new string(name.Trim().Select(c => bad.Contains(c) || char.IsControl(c) ? '_' : c).ToArray()).Trim().TrimStart('.');
+        var s = FileNames.Stem(name, "").TrimStart('.');
         if (s.Length > 80) s = s[..80].Trim();
         return s.Length == 0 ? throw new CommandException("Give the template a name.") : s;
     }
@@ -130,9 +129,7 @@ public sealed class TemplateLibrary(string folder)
         var path = PathOf(id);
         if (File.Exists(path) && !overwrite) return null;
         Directory.CreateDirectory(Folder);
-        var temp = path + ".part";
-        File.WriteAllBytes(temp, bytes);
-        File.Move(temp, path, overwrite: true);
+        AtomicFile.Write(path, bytes);
         return id;
     }
 

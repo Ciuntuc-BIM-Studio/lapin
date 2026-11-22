@@ -162,6 +162,19 @@ public class ExtensionFetchTests
     }
 
     [Fact]
+    public void The_interfaces_package_limit_is_the_engines()
+    {
+        // One source (audit 22.11.2026): ExtensionFetch.MaxBytes; the interface's MAX_PACKAGE must say the same.
+        var ts = File.ReadAllText(Path.Combine(RepoRoot(), "ui", "src", "platform", "extensions", "manifest.ts"));
+        var m = System.Text.RegularExpressions.Regex.Match(ts, @"export const MAX_PACKAGE = ([\d\s*]+);");
+        Assert.True(m.Success, "manifest.ts no longer names MAX_PACKAGE as a product of numbers");
+        var value = m.Groups[1].Value.Split('*', StringSplitOptions.TrimEntries).Aggregate(1L, (a, x) => a * long.Parse(x, System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Equal(ExtensionFetch.MaxBytes, value);
+    }
+
+    static string RepoRoot([System.Runtime.CompilerServices.CallerFilePath] string here = "") => Path.GetFullPath(Path.Combine(Path.GetDirectoryName(here)!, "..", "..", ".."));
+
+    [Fact]
     public void An_extensions_page_is_opened_only_at_an_https_address()
     {
         Assert.Equal("https://forum.lapinbim.com/t/mobilier/42", Support.LinkUrl("extensionPage", new JsonObject { ["url"] = "https://forum.lapinbim.com/t/mobilier/42" }));

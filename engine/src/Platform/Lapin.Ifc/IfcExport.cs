@@ -105,17 +105,17 @@ public static partial class IfcExport
 
     public static IfcExportResult Write(Session session, string path, IfcExportOptions? options = null)
     {
-        // Built in memory first: a failed export leaves no file behind.
+        // Built in memory first, then written whole or not at all (AtomicFile): a failed export leaves no file behind, nor half of one.
         var (bytes, result) = Bytes(session, System.IO.Path.GetFileName(path), options);
-        File.WriteAllBytes(path, bytes);
+        AtomicFile.Write(path, bytes);
         // Bonsai's drawing styles beside it, under the names the file gives them (BBIM_Documentation).
         if (options?.BonsaiStyles == true)
         {
             var sheet = BonsaiStyles.Of(session.Model);
             var (css, patterns) = BonsaiStyles.FileNames(path);
             var dir = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(path)) ?? ".";
-            File.WriteAllText(System.IO.Path.Combine(dir, css), sheet.Css);
-            File.WriteAllText(System.IO.Path.Combine(dir, patterns), sheet.Patterns);
+            AtomicFile.WriteText(System.IO.Path.Combine(dir, css), sheet.Css);
+            AtomicFile.WriteText(System.IO.Path.Combine(dir, patterns), sheet.Patterns);
             result = result with { Notes = [.. result.Notes, $"Bonsai drawing styles: {css} and {patterns} beside it."] };
         }
         return result with { Path = path };
@@ -251,8 +251,14 @@ public static partial class IfcExport
 
     sealed partial class Writer(Session s, IfcExportOptions o)
     {
-        // The application that wrote it: the product (Lapin, or an edition under its own name).
-        public readonly Step File = new() { Application = s.Product.Name };
+        // The application that wrote it: the product (Lapin, or an edition under its own name); its author and organization
+        // the project information's (drawn by, the designer), as on the sheets' title blocks.
+        public readonly Step File = new()
+        {
+            Application = s.Product.Name,
+            Author = Lapin.Platform.Documents.ProjectInfo.Get(s.Model, "author"),
+            Organization = Lapin.Platform.Documents.ProjectInfo.Get(s.Model, "designer"),
+        };
         public IfcExportOptions O => o;
         /// <summary>The file's name, which names the drawing styles written beside it.</summary>
         public string IfcName { get; init; } = "project.ifc";

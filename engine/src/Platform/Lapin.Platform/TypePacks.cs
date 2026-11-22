@@ -576,7 +576,7 @@ public static class TypePacks
             var ids = (a["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() ?? [];
             var name = (string?)a["name"];
             var text = Export(q, ids, name).ToJsonString(new JsonSerializerOptions { WriteIndented = true });
-            var file = (name?.Trim() is { Length: > 0 } n ? string.Concat(n.Split(Path.GetInvalidFileNameChars())) : "Types") + "." + Extension;
+            var file = Lapin.Model.FileNames.Of(name, Extension, "Types", replacement: "");
             return new JsonObject { ["text"] = text, ["file"] = file };
         });
         // {text} → {name, types: [{ref, class, label, name, exists, differs?}], materials: [{name, differs}]}: what a pack holds, before

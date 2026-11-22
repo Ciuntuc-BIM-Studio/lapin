@@ -98,7 +98,7 @@ sealed class BrowserSupportDesk : ISupportDesk
 {
     public System.Text.Json.Nodes.JsonObject Report(System.Text.Json.Nodes.JsonObject p) => new()
     {
-        ["send"] = SupportReport.Body(p, typeof(Engine).Assembly.GetName().Version?.ToString() ?? "0", "browser", (string?)p["userAgent"] ?? "browser"),
+        ["send"] = SupportReport.Body(p, Session.AppVersion, "browser", (string?)p["userAgent"] ?? "browser"),
     };
 
     public System.Text.Json.Nodes.JsonObject Messages(System.Text.Json.Nodes.JsonObject p)

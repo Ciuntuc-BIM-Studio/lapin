@@ -62,18 +62,20 @@ public sealed class BosData
         var d = new BosData();
         foreach (var e in zip.Entries)
         {
-            using var s = e.Open();
-            using var ms = new MemoryStream();
-            s.CopyTo(ms);
             var name = Path.GetFileNameWithoutExtension(e.Name);
-            if (e.Name.EndsWith(".parquet", StringComparison.OrdinalIgnoreCase))
+            var parquet = e.Name.EndsWith(".parquet", StringComparison.OrdinalIgnoreCase);
+            if (!parquet && !e.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
+            // Never more than the entry says it holds (audit 22.11.2026, G19).
+            byte[] content;
+            using (var s = e.Open()) content = Lapin.Model.BoundedRead.Exactly(s, e.Length, e.Name);
+            if (parquet)
             {
-                try { tables[name] = Parquet.Read(ms.ToArray()); }
+                try { tables[name] = Parquet.Read(content); }
                 catch (InvalidDataException ex) { throw new InvalidDataException($"{e.Name}: {ex.Message}"); }
             }
-            else if (e.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            else
             {
-                try { d.Generator = JsonNode.Parse(ms.ToArray()) is JsonObject m ? (string?)m["GeneratorApplication"] ?? (string?)m["generatorApplication"] : null; }
+                try { d.Generator = JsonNode.Parse(content) is JsonObject m ? (string?)m["GeneratorApplication"] ?? (string?)m["generatorApplication"] : null; }
                 catch (JsonException) { }
             }
         }

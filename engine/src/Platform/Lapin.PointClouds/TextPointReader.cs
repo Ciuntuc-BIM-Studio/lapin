@@ -32,7 +32,12 @@ public sealed class TextPointReader : IPointReader
         var first = 0;
         long? count = null;
         // PTS: its first line is the number of points.
-        if (sample[0].All(char.IsDigit) && sample.Count > 1) { count = long.Parse(sample[0], CultureInfo.InvariantCulture); first = 1; }
+        if (sample[0].All(char.IsDigit) && sample.Count > 1)
+        {
+            count = long.TryParse(sample[0], NumberStyles.None, CultureInfo.InvariantCulture, out var c) ? c
+                : throw new PointCloudException($"{source.Name}: its first line ({sample[0][..Math.Min(sample[0].Length, 24)]}…) is too large a number of points.");
+            first = 1;
+        }
         var probe = sample.Skip(first).Take(50).ToList();
         _separators = probe.Any(l => l.Contains(';')) ? [';'] : probe.Any(l => l.Contains('\t')) ? ['\t'] : probe.Any(l => l.Contains(',')) && !ext.Equals(".pts") ? [','] : [' '];
         _decimalComma = _separators[0] is ';' or '\t' && probe.Any(l => l.Contains(','));
@@ -68,6 +73,9 @@ public sealed class TextPointReader : IPointReader
             }
         }
         if (_r < 0 || _g < 0 || _b < 0) _r = _g = _b = -1;
+        // A heading naming more columns than the lines have: said, not an index past the line (audit 22.11.2026).
+        if (names != null && Math.Max(Math.Max(_x, _y), Math.Max(_z, Math.Max(_r, Math.Max(_i, _c)))) is var widest && widest >= cols)
+            throw new PointCloudException($"{source.Name}: its heading names {names.Length} columns ({names[widest]} is column {widest + 1}), its lines have {cols}.");
         // Intensity and colour ranges from the sample.
         var nums = probe.Select(l => Split(l).Select(t => double.TryParse(Fix(t), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : 0).ToArray()).Where(a => a.Length >= cols).ToList();
         if (_i >= 0 && nums.Count > 0)

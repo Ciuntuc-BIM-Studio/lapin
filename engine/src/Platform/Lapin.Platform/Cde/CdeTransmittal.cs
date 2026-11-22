@@ -20,7 +20,7 @@ public static class CdeTransmittal
 {
     public sealed record Header(string Project, string Issue, int Number, string Date, string Revision, string Status, string Container, string? Note, string Originator);
 
-    public static string Sha256(byte[] bytes) => Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+    public static string Sha256(byte[] bytes) => Lapin.Model.Hashes.Sha256Hex(bytes);
     public static string Sha256(string text) => Sha256(Encoding.UTF8.GetBytes(text));
 
     static readonly string[] Columns = ["File", "Kind", "Sheet", "Title", "Revision", "Status", "SHA-256", "Size"];

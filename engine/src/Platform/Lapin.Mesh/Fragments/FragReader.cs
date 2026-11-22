@@ -115,22 +115,27 @@ public sealed record FragModel(string? Metadata, string[] Guids, uint[] GuidsIte
 /// <summary>Reads a <c>.frag</c> (zlib or raw) into a <see cref="FragModel"/>: the mirror of <see cref="FragWriter"/>, sharing <see cref="FragSchema"/>.</summary>
 public static class FragReader
 {
-    /// <summary>The FlatBuffer itself: a file written compressed starts with zlib's 0x78.</summary>
+    /// <summary>
+    /// The FlatBuffer itself: a file written compressed starts with zlib's 0x78. Inflated no further than deflate can
+    /// expand its bytes (<see cref="MaxInflation"/> to one; audit 22.11.2026, G19): past that it is not zlib, and read as it is.
+    /// </summary>
     public static byte[] Decompress(byte[] data)
     {
         if (data.Length > 1 && data[0] == 0x78)
         {
+            var max = Math.Min(Array.MaxLength, data.LongLength * MaxInflation + 1024);
             try
             {
                 using var z = new ZLibStream(new MemoryStream(data), CompressionMode.Decompress);
-                using var ms = new MemoryStream();
-                z.CopyTo(ms);
-                return ms.ToArray();
+                return Lapin.Model.BoundedRead.ToEnd(z, max, "The Fragments model");
             }
-            catch (InvalidDataException) { }
+            catch (InvalidDataException) { } // not zlib after all (or past what deflate can make): read as it is
         }
         return data;
     }
+
+    /// <summary>Deflate's largest expansion: 258 bytes from two bits at best, about 1032 to one.</summary>
+    public const long MaxInflation = 1032;
 
     public static FragModel Read(byte[] data)
     {

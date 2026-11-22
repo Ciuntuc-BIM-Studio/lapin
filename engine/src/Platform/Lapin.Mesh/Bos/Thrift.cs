@@ -47,6 +47,13 @@ public static class Thrift
 
         long Zigzag() { var u = Varint(); return (long)(u >> 1) ^ -(long)(u & 1); }
 
+        /// <summary>A length or a count read from the buffer, refused when larger than the bytes left (each element takes one at least).</summary>
+        int Count(ulong n, string what)
+        {
+            if (n > (ulong)(data.Length - Position)) throw new InvalidDataException($"A Thrift {what} runs past the end.");
+            return (int)n;
+        }
+
         public Fields ReadStruct(int depth = 0)
         {
             if (depth > 32) throw new InvalidDataException("The Thrift structure nests too deeply.");
@@ -66,6 +73,7 @@ public static class Thrift
 
         object Value(byte type, int depth)
         {
+            if (depth > 32) throw new InvalidDataException("The Thrift structure nests too deeply.");
             switch (type)
             {
                 case TTrue: return true;
@@ -81,8 +89,7 @@ public static class Thrift
                 }
                 case TBinary:
                 {
-                    var n = (int)Varint();
-                    if (n < 0 || Position + n > data.Length) throw new InvalidDataException("A Thrift binary runs past the end.");
+                    var n = Count(Varint(), "binary");
                     var b = data.AsSpan(Position, n).ToArray();
                     Position += n;
                     return b;
@@ -90,27 +97,30 @@ public static class Thrift
                 case TList or TSet:
                 {
                     var head = Next();
-                    var size = head >> 4;
                     var element = (byte)(head & 0x0F);
-                    if (size == 15) size = (int)Varint();
-                    if (size < 0 || size > data.Length) throw new InvalidDataException("A Thrift list is too long.");
+                    var size = head >> 4 == 15 ? Count(Varint(), "list") : Count((ulong)(head >> 4), "list");
                     var list = new List<object>(size);
-                    for (var i = 0; i < size; i++) list.Add(element is TTrue or TFalse ? Next() == TTrue : Value(element, depth + 1));
+                    for (var i = 0; i < size; i++) list.Add(Element(element, depth + 1));
                     return list;
                 }
                 case TMap:
                 {
-                    var size = (int)Varint();
+                    // Each entry takes two bytes at least: booleans in a map are a byte each, as in a list.
+                    var size = Count(Varint(), "map");
                     if (size == 0) return new List<object>();
                     var kinds = Next();
+                    if ((ulong)size * 2 > (ulong)(data.Length - Position)) throw new InvalidDataException("A Thrift map runs past the end.");
                     var list = new List<object>(size * 2);
-                    for (var i = 0; i < size; i++) { list.Add(Value((byte)(kinds >> 4), depth + 1)); list.Add(Value((byte)(kinds & 0x0F), depth + 1)); }
+                    for (var i = 0; i < size; i++) { list.Add(Element((byte)(kinds >> 4), depth + 1)); list.Add(Element((byte)(kinds & 0x0F), depth + 1)); }
                     return list;
                 }
                 case TStruct: return ReadStruct(depth + 1);
                 default: throw new InvalidDataException($"An unknown Thrift type {type}.");
             }
         }
+
+        /// <summary>A list's or a map's element: a boolean there is a byte of its own, not a field header's type.</summary>
+        object Element(byte type, int depth) => type is TTrue or TFalse ? Next() == TTrue : Value(type, depth);
     }
 
     /// <summary>Writes compact-protocol structs: fields in increasing id order.</summary>

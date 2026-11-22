@@ -701,6 +701,31 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     public byte[] DiffFrame(Diff diff, string author) => author == History.Me ? DiffFrame(diff) : DiffFrame(diff with { State = session.StateFor(author) });
 
     /// <summary>
+    /// The largest file a reply carries as base64 (report #156): JSON takes a string of at most 166 666 666 characters, the
+    /// base64 of 125 MB. A larger one is written to a path, or sent as binary in the frame (<see cref="FrameBytes"/>).
+    /// </summary>
+    public const int MaxBase64Bytes = 120_000_000;
+
+    /// <summary>The most elements quantities.many answers in one call (the assistant asks in parts of 2000).</summary>
+    public const int MaxQuantityIds = 5000;
+
+    /// <summary>The library files a firm's folder may hold (docs/plan-user-extensibility.md §4.2), by extension.</summary>
+    public static readonly string[] LibraryKinds = ["lapinsymbols", "lapintypes", "lapinstandards", "lapinrules", "lapinbarshapes", "lapinparams", "lapinmapping", "lapinfamily", "lapinpart", "lapinlib", "lapintitleblock", "lapinprofiles", "lapinprices", "lapinschedule", "lapinaliases", "pat", "lin"];
+
+    /// <summary>
+    /// Bytes written into a folder of their own in the temporary folder, to be opened from there (a version in another
+    /// instance, an issued file in its program): {path, bytes}. The name is made safe first (no folder of its own).
+    /// </summary>
+    static JsonObject CopyToOpen(string folder, string name, byte[] bytes)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), folder);
+        Directory.CreateDirectory(dir);
+        var path = Path.Combine(dir, FileNames.Stem(Path.GetFileName(name), "file"));
+        AtomicFile.Write(path, bytes);
+        return new JsonObject { ["path"] = path, ["bytes"] = bytes.Length };
+    }
+
+    /// <summary>
     /// What a guest may call (null), else why not. A list of what is let
     /// through, not of what is kept out: a method added later is refused from
     /// the network until it is named here. Nothing that reads or writes a
@@ -708,15 +733,6 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// the host (reports, links opened, the recovery journal); exports come
     /// back as bytes, imports bring theirs. A viewer looks; an editor edits.
     /// </summary>
-    /// <summary>
-    /// The largest file a reply carries as base64 (report #156): JSON takes a string of at most 166 666 666 characters, the
-    /// base64 of 125 MB. A larger one is written to a path, or sent as binary in the frame (<see cref="FrameBytes"/>).
-    /// </summary>
-    public const int MaxBase64Bytes = 120_000_000;
-
-    /// <summary>The library files a firm's folder may hold (docs/plan-user-extensibility.md §4.2), by extension.</summary>
-    public static readonly string[] LibraryKinds = ["lapinsymbols", "lapintypes", "lapinstandards", "lapinrules", "lapinbarshapes", "lapinparams", "lapinmapping", "lapinfamily", "lapinpart", "lapinlib", "lapintitleblock", "lapinprofiles", "lapinprices", "lapinschedule", "lapinaliases", "pat", "lin"];
-
     public static string? AllowedRemote(string method, JsonObject p, string role)
     {
         // Anywhere in the call (a query's args, a batch's steps, an attribute set): a file or folder named by its path.
@@ -899,9 +915,11 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 return (PointCloudLinks.Tiles(session.Model, Links.Require(session.Model, (string?)p["id"]), (p["nodes"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>()), null);
             case "quantities.of": return (session.Quantities((string?)p["id"] ?? throw new CommandException("Which element?")), null);
             // Several elements' quantity sets in one call (the model assistant's lists and sums): id → sets; an id the model lacks is left out.
+            // At most MaxQuantityIds a call: more is refused with the number, never cut without a word (audit 22.11.2026).
             case "quantities.many":
             {
-                var ids = (p["ids"] as JsonArray ?? throw new CommandException("Which elements?")).Select(x => (string?)x).OfType<string>().Distinct().Take(5000);
+                var ids = (p["ids"] as JsonArray ?? throw new CommandException("Which elements?")).Select(x => (string?)x).OfType<string>().Distinct().ToList();
+                if (ids.Count > MaxQuantityIds) throw new CommandException($"{ids.Count} elements asked: quantities.many answers at most {MaxQuantityIds} a call; ask in parts.");
                 return (ids.Where(id => session.Model.Get(id) != null).ToDictionary(id => id, id => session.Quantities(id)), null);
             }
             // A new project with the default storeys; `plain`: one ground floor, for a file that fills it (an IFC opened as a project).
@@ -1045,14 +1063,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             {
                 // To the path asked for; to a file of its own in the temporary folder (`temp`: to open it in another instance); else handed back as bytes.
                 var (name, bytes) = files.ExportVersion(session, Number(), (int?)p["revision"]);
-                if (p["temp"]?.GetValue<bool>() == true)
-                {
-                    var dir = Path.Combine(Path.GetTempPath(), "lapin-versions");
-                    Directory.CreateDirectory(dir);
-                    var tempPath = Path.Combine(dir, name);
-                    File.WriteAllBytes(tempPath, bytes);
-                    return (new JsonObject { ["path"] = tempPath, ["bytes"] = bytes.Length }, null);
-                }
+                if (p["temp"]?.GetValue<bool>() == true) return (CopyToOpen("lapin-versions", name, bytes), null);
                 return (Deliver(bytes, name), null);
             }
             case "project.compareVersions": return (files.CompareVersions(session, p["a"], p["b"]), null);
@@ -1107,13 +1118,10 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 var text = (string?)p["text"] ?? throw new CommandException("Nothing to write.");
                 if (!Directory.Exists(folder)) throw new CommandException($"The folder {folder} cannot be reached.");
                 var name = (string?)p["name"] ?? "library";
-                var safe = string.Concat(name.Select(c => Path.GetInvalidFileNameChars().Contains(c) || c is '/' or '\\' or ':' ? '_' : c)).Trim();
-                var target = Path.Combine(folder, $"{(safe.Length > 0 ? safe : "library")}.{kind}");
+                var target = Path.Combine(folder, FileNames.Of(name, kind, "library"));
                 try
                 {
-                    var temp = target + ".tmp";
-                    File.WriteAllText(temp, text);
-                    File.Move(temp, target, true);
+                    AtomicFile.WriteText(target, text);
                 }
                 catch (Exception e) when (e is IOException or UnauthorizedAccessException) { throw new CommandException($"The file could not be written there: {e.Message}"); }
                 return (new JsonObject { ["file"] = target }, null);
@@ -1157,13 +1165,10 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 var folder = HostFiles.Check((string?)p["path"] ?? throw new CommandException("The folder's path is missing."));
                 var lib = Lapin.Platform.ProfileLibraries.ProfileLibrary.From(p["library"]) ?? throw new CommandException("No library was sent.");
                 if (!Directory.Exists(folder)) throw new CommandException($"The folder {folder} cannot be reached.");
-                var safe = string.Concat(lib.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) || c is '/' or '\\' or ':' ? '_' : c)).Trim();
-                var target = Path.Combine(folder, $"{(safe.Length > 0 ? safe : "profiles")}.{Lapin.Platform.ProfileLibraries.ProfileLibrary.Extension}");
+                var target = Path.Combine(folder, FileNames.Of(lib.Name, Lapin.Platform.ProfileLibraries.ProfileLibrary.Extension, "profiles"));
                 try
                 {
-                    var temp = target + ".tmp";
-                    File.WriteAllText(temp, LibraryFile.Text(LibraryFile.Write(LibraryFile.Of(Lapin.Platform.ProfileLibraries.ProfileLibrary.Format), lib.ToJson(), (string?)p["source"])));
-                    File.Move(temp, target, true);
+                    AtomicFile.WriteText(target, LibraryFile.Text(LibraryFile.Write(LibraryFile.Of(Lapin.Platform.ProfileLibraries.ProfileLibrary.Format), lib.ToJson(), (string?)p["source"])));
                 }
                 catch (Exception e) when (e is IOException or UnauthorizedAccessException) { throw new CommandException($"The library could not be written there: {e.Message}"); }
                 return (new JsonObject { ["file"] = target }, null);
@@ -1211,7 +1216,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 if ((string?)p["path"] is { Length: > 0 } stepPath)
                 {
                     var target = RefuseOverRead(HostFiles.Check(stepPath));
-                    File.WriteAllBytes(target, step);
+                    AtomicFile.Write(target, step);
                     return ((stepResult with { Path = target }).ToJson(), null);
                 }
                 var delivered = Deliver(step, stepName);
@@ -1268,7 +1273,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 var (bytes, name, _, key) = IfcBytes(p);
                 ReportProgress("Indexing the file", 0, 0);
                 var file = StepFile.Read(bytes);
-                _surveyed = (key, bytes, file, Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)));
+                _surveyed = (key, bytes, file, Hashes.Sha256Hex(bytes));
                 return (IfcSurvey.Of(file, name, bytes.Length), null);
             }
             case "project.importIfc":
@@ -1306,7 +1311,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 {
                     // From a file on this computer: the journal records the import by the file (its hash), its choices and the seed of its ids, not by its every entity.
                     var seed = Random.Shared.NextInt64();
-                    var hash = surveyed?.Hash ?? Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes));
+                    var hash = surveyed?.Hash ?? Hashes.Sha256Hex(bytes);
                     session.EditSource = new JsonObject { ["import"] = path, ["sha256"] = hash, ["mode"] = modeName, ["seed"] = seed, ["group"] = group };
                     if (kinds != null) session.EditSource["kinds"] = new JsonArray(kinds.Select(k => (JsonNode)k).ToArray());
                     if (storeys != null) session.EditSource["storeys"] = new JsonArray(storeys.Select(k => (JsonNode)k).ToArray());
@@ -1482,14 +1487,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "cde.issueFile":
             {
                 var (name, bytes) = CdeDeliverables.File(session.Model, files.Issues(session), (string?)p["id"], (string?)p["name"]);
-                if (p["temp"]?.GetValue<bool>() == true)
-                {
-                    var dir = Path.Combine(Path.GetTempPath(), "lapin-issues");
-                    Directory.CreateDirectory(dir);
-                    var tempPath = Path.Combine(dir, name);
-                    File.WriteAllBytes(tempPath, bytes);
-                    return (new JsonObject { ["path"] = tempPath, ["bytes"] = bytes.Length }, null);
-                }
+                if (p["temp"]?.GetValue<bool>() == true) return (CopyToOpen("lapin-issues", name, bytes), null);
                 return (Deliver(bytes, name), null);
             }
             case "cde.issueZip":

@@ -91,15 +91,7 @@ public static class DocumentExport
     };
 
     /// <summary>A file name from the document's name: what a file system refuses replaced, spaces kept, never empty.</summary>
-    public static string FileName(string name, string ext)
-    {
-        var bad = new HashSet<char>(Path.GetInvalidFileNameChars().Concat(['<', '>', ':', '"', '/', '\\', '|', '?', '*']));
-        var sb = new StringBuilder();
-        foreach (var c in name.Trim()) sb.Append(bad.Contains(c) || char.IsControl(c) ? '_' : c);
-        var stem = sb.ToString().Trim().TrimEnd('.');
-        if (stem.Length > 120) stem = stem[..120].TrimEnd();
-        return (stem.Length == 0 ? "Document" : stem) + "." + ext;
-    }
+    public static string FileName(string name, string ext) => Lapin.Model.FileNames.Of(name, ext, "Document");
 
     /// <summary>The pictures the interface made of a document's images: {key: {svg?, png? (base64)}}.</summary>
     public static Dictionary<string, DocPicture>? Pictures(JsonNode? images)

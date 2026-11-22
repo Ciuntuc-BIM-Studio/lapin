@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json.Nodes;
 using Lapin.Host;
+using Lapin.Protocol;
 using Lapin.Platform;
 
 namespace Lapin.Engine.Tests;
@@ -37,6 +38,50 @@ public class SupportTests
             Assert.Throws<CommandException>(() => Support.Open("http://example.com"));
         }
         finally { Environment.SetEnvironmentVariable("LAPIN_FEEDBACK_URL", null); }
+    }
+
+    [Fact]
+    public async Task A_report_waiting_on_a_slow_server_holds_up_no_other_call()
+    {
+        // Audit 22.11.2026: support.report ran inside the hub's gate, so a slow server held every window up to 30 s.
+        var port = Random.Shared.Next(49000, 59000);
+        using var listener = new HttpListener();
+        listener.Prefixes.Add($"http://127.0.0.1:{port}/api/feedback/");
+        listener.Start();
+        var release = new TaskCompletionSource();
+        var server = Task.Run(async () =>
+        {
+            var ctx = await listener.GetContextAsync();
+            await release.Task;
+            ctx.Response.StatusCode = 201;
+            await ctx.Response.OutputStream.WriteAsync("{\"number\":7}"u8.ToArray());
+            ctx.Response.Close();
+        });
+        Environment.SetEnvironmentVariable("LAPIN_FEEDBACK_URL", $"http://127.0.0.1:{port}/api/feedback/");
+        try
+        {
+            var hub = new EngineHub(new Fixture().Session, PackageFiles.Create());
+            var report = hub.Handle(new JsonObject { ["id"] = 1, ["method"] = "support.report", ["params"] = new JsonObject { ["kind"] = "bug", ["title"] = "t", ["description"] = "d" } }.ToJsonString());
+            var other = hub.Handle("""{"id":2,"method":"doc.snapshot","params":{}}""");
+            var first = await Task.WhenAny(other, Task.Delay(TimeSpan.FromSeconds(10)));
+            Assert.Same(other, first);
+            Assert.False(report.IsCompleted);
+            release.SetResult();
+            var answer = Lapin.Protocol.BinaryFrame.Decode((await report)!).Header.RootElement;
+            Assert.Equal(7, answer.GetProperty("result").GetProperty("number").GetDouble());
+            await server;
+            var guest = new Guest { Caller = new Caller("guest-1", "editor") };
+            var refused = Lapin.Protocol.BinaryFrame.Decode((await hub.Handle("""{"id":3,"method":"support.messages","params":{}}""", guest))!).Header.RootElement;
+            Assert.Equal("Only the host can do that.", refused.GetProperty("error").GetString());
+        }
+        finally { Environment.SetEnvironmentVariable("LAPIN_FEEDBACK_URL", null); }
+    }
+
+    sealed class Guest : EngineHub.Client
+    {
+        public override Task SendBinary(byte[] frame) => Task.CompletedTask;
+        public override Task SendText(string text) => Task.CompletedTask;
+        protected override void Drop() { }
     }
 
     [Fact]
