@@ -80,15 +80,23 @@ public sealed record MeshMaterial(string Name, float R, float G, float B, float 
     /// <summary>Its bump map (a height image, white high), laid on as its texture is; null for none.</summary>
     public MeshTexture? BumpMap { get; init; }
 
-    /// <summary>Whether its faces need texture coordinates: an image of any kind.</summary>
-    public bool Mapped => Texture != null || NormalMap != null || BumpMap != null;
+    /// <summary>Its roughness map (grey: white rough), which its roughness multiplies, laid on as its texture is; null for none.</summary>
+    public MeshTexture? RoughnessMap { get; init; }
 
-    /// <summary>Its images by what they are for (color, normal, bump), those it has.</summary>
+    /// <summary>Its ambient occlusion map (grey: white open, black shut in), laid on as its texture is; null for none.</summary>
+    public MeshTexture? OcclusionMap { get; init; }
+
+    /// <summary>Whether its faces need texture coordinates: an image of any kind.</summary>
+    public bool Mapped => Texture != null || NormalMap != null || BumpMap != null || RoughnessMap != null || OcclusionMap != null;
+
+    /// <summary>Its images by what they are for (color, normal, bump, roughness, ao), those it has.</summary>
     public IEnumerable<(string Kind, MeshTexture Texture)> Maps()
     {
         if (Texture != null) yield return ("color", Texture);
         if (NormalMap != null) yield return ("normal", NormalMap);
         if (BumpMap != null) yield return ("bump", BumpMap);
+        if (RoughnessMap != null) yield return ("roughness", RoughnessMap);
+        if (OcclusionMap != null) yield return ("ao", OcclusionMap);
     }
 }
 
@@ -191,6 +199,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             materials.Add(new MeshMaterial(mat?.Name ?? "Colour " + p.Color.TrimStart('#'), r, g, b, (float)alpha, mat?.Str("category"), texture, look)
             {
                 NormalMap = ImageOf("normalImage", "normal map"), BumpMap = ImageOf("bumpImage", "bump map"),
+                RoughnessMap = ImageOf("roughnessImage", "roughness map"), OcclusionMap = ImageOf("aoImage", "occlusion map"),
             });
             return materialIndex[key] = materials.Count - 1;
         }

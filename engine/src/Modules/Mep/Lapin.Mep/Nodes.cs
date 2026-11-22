@@ -348,6 +348,8 @@ public static class Nodes
         // A buried tank lies under the ground, its top 0.6 m down, unless an elevation is given.
         if ((string?)attrs["placement"] == "buried" && attrs["elevation"] == null) attrs["elevation"] = -(Json.Number(a["height"]) ?? role.Size.Z) - 0.6;
         if (role.ObjectType != null) attrs["objectType"] = role.ObjectType;
+        // A light placed lights (docs/plan-render.md, S2): 1000 lm at 3500 K from under its body; those placed before stay dark until given data.
+        if (role.IfcClass == "IfcLightFixture") attrs[Platform.Lighting.Lights.Key] = Platform.Lighting.LightSpec.Default.ToJson();
         if ((string?)a["toStoreyId"] is { } to) attrs["toStoreyId"] = Spatial.Require(ctx.Model, to, IfcClass.BuildingStorey).Id;
         if ((string?)a["name"] is { Length: > 0 } nm) attrs["name"] = nm;
         var count = Of(ctx.Model, system.Id).Count(n => n.Str("role") == role.Id) + 1;

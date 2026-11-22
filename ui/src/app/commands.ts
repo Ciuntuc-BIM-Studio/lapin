@@ -27,6 +27,8 @@ import { takeHotRemove } from '../viewport/grips';
 import { pickCycleTab } from '../viewport/pickCycle';
 import { takeSheetDelete } from '../viewport/sheetDelete';
 import { carrying } from '../viewport/moveTrace';
+import { NUDGES } from './nudge';
+import { nudgeSelection } from '../viewport/nudge';
 import { useMove3d } from '../viewport/moveIn3d';
 import { cancel as cancelStep } from '../viewport/cad/session';
 import { notify } from './store';
@@ -108,6 +110,8 @@ function appCommands(): CommandDef[] {
       toggleBothPanels();
     } },
     { id: 'app.rotateCopy', label: 'Rotate a copy', category: 'Modify', defaults: ['Ctrl+Shift+E'], run: () => void startCommand('ROTATECOPY') },
+    // The arrow keys nudge the selection (forum topic 212): an arrow, Shift+arrow ten times as far; Ctrl (⌘) with them too. Only when the selection is the arrows' (keys.ts gates them).
+    ...NUDGES.map((n) => ({ id: n.id, label: n.label, category: 'Modify', defaults: [n.big ? `Shift+${n.key}` : n.key, `${n.big ? 'Ctrl+Shift+' : 'Ctrl+'}${n.key}`], run: () => { nudgeSelection(n.dir, n.big); } })),
     { id: 'app.pickCycleBack', label: 'Light the previous element under the pointer', category: views, defaults: ['Shift+Tab'], run: () => void pickCycleTab(true, useSession.getState().nodes) },
     { id: 'app.propsOverlay', label: 'All properties (over the view)', category: panels, defaults: [], run: () => { if (usePanels.getState().propsOpen) return; showOverlay('props'); } },
     // The model assistant: the desktop's only (docs/plan-assistant.md); not in the web build at all.

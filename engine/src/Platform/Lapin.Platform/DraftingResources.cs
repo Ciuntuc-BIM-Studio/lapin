@@ -314,6 +314,14 @@ public static class DraftingResources
             else attrs.Remove(key);
             if (had != null && had != (string?)attrs[key] && !Images.MaterialKeys.Any(k => (string?)attrs[k] == had)) Images.DropIfUnused(ctx, had, mat.Id);
         }
+        // Where its maps came from (docs/plan-render.md, S1): a texture set of the library Lapin ships ("ambientcg/Bricks085"), for its
+        // credit and to show which one is chosen; text only, the maps themselves are the project's images.
+        if (a.ContainsKey("textureSet"))
+        {
+            if ((string?)a["textureSet"] is { Length: > 0 } set)
+                attrs["textureSet"] = set.Length <= 120 && System.Text.RegularExpressions.Regex.IsMatch(set, "^[A-Za-z0-9][A-Za-z0-9_.-]*(/[A-Za-z0-9][A-Za-z0-9_.-]*)*$") ? set : throw new CommandException("A texture set is named like ambientcg/Bricks085.");
+            else attrs.Remove("textureSet");
+        }
         if (a.ContainsKey("textureSize"))
         {
             if (a["textureSize"] is JsonArray { Count: 2 } ts && Json.Number(ts[0]) is { } tw && Json.Number(ts[1]) is { } th)
@@ -555,6 +563,40 @@ public static class DraftingResources
                 return new JsonObject { ["changed"] = ids.Count };
             }
             Update(ctx, Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Material), a);
+            return null;
+        });
+
+        // A material's maps in one step (docs/plan-render.md, S1): {id | ids, set?, size?: [w, h] m, maps: {color?, normal?, bump?,
+        // roughness?, ao?: {name, mime, data}}, and any look field (roughness, metalness, normalStrength, aoStrength…)}. The maps
+        // given become the project's images (one with the same bytes already there is shared), the five map attributes are replaced
+        // all together (a map not given is taken off), the set named or taken off. maps {} with no set: the material's maps all go.
+        r.Command("material.textures", "Change material textures", (ctx, a) =>
+        {
+            var ids = a["ids"] is JsonArray many ? many.Select(x => (string?)x).Distinct().ToList() : [(string?)a["id"]];
+            if (ids.Count == 0) throw new CommandException("No material to change.");
+            var maps = a["maps"] as JsonObject ?? new JsonObject();
+            var unknown = maps.Select(p => p.Key).Where(k => !Images.MapKeys.Any(x => x.Map == k)).ToList();
+            if (unknown.Count > 0) throw new CommandException($"„{unknown[0]}” is not a map: {string.Join(", ", Images.MapKeys.Select(x => x.Map))}.");
+            var args = new JsonObject();
+            foreach (var (key, value) in a)
+                if (key is not ("id" or "ids" or "maps" or "set" or "size")) args[key] = value?.DeepClone();
+            foreach (var (map, key) in Images.MapKeys)
+            {
+                if (maps[map] is not JsonObject file) { args[key] = null; continue; }
+                var mime = (string?)file["mime"];
+                var data = Images.Checked(mime, (string?)file["data"]);
+                var image = Images.Same(ctx.Model, mime!, data);
+                if (image == null)
+                {
+                    var name = ((string?)file["name"])?.Trim() is { Length: > 0 } n ? n : map;
+                    image = new Entity(ctx.NewId(), Images.Class, name, new JsonObject { ["mime"] = mime, ["data"] = data });
+                    ctx.Add(image);
+                }
+                args[key] = image.Id;
+            }
+            args["textureSet"] = a["set"]?.DeepClone();
+            if (a.ContainsKey("size")) args["textureSize"] = a["size"]?.DeepClone();
+            foreach (var id in ids) Update(ctx, Spatial.Require(ctx.Model, id, IfcClass.Material), (JsonObject)args.DeepClone());
             return null;
         });
 

@@ -1100,7 +1100,7 @@ Calculul liniar nu se schimbă (un singur sistem). Setul de lucru cel mai mare s
 
 Utilizatorul a luat recomandările: pasul următor mic este refolosirea memoriei factorizării numerice între iterații (deținută doar de `Nonlinear.Solve`); fără refactorizare parțială pe supernodurile atinse de o bară care iese din lucru; limita de 8 structuri păstrate pe problemă rămâne.
 
-### 14.22 Memoria factorizării numerice refolosită între iterații (22.11.2026, decizia 776; §14.21 „Rămase”)
+### 14.22 Memoria factorizării numerice refolosită între iterații (22.11.2026, decizia 779; §14.21 „Rămase”)
 
 **Ce era.** După §14.21 fiecare iterație a buclei neliniare păstra structura simbolică, dar își lua un tablou nou pentru valorile factorului (pe cadrul cu plăci la 0,25 m: 10,3 milioane de intrări × 8 octeți ≈ 82 MB pe iterație), unul pentru factorul rotirilor și tablourile de lucru ale factorizării și ale fiecărei rezolvări (diagonala inițială, listele supernodurilor, vectorul de lucru: câte 0,2–0,4 MB, deci pe heap-ul obiectelor mari). Sistemul vechi devenea gunoi abia la colectare, deci pe mai multe fire trăiau deodată mai mulți factori morți.
 

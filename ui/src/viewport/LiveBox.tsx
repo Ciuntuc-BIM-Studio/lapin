@@ -88,7 +88,7 @@ export function LiveBar({ inline }: { inline?: boolean }) {
           if (e.key === ' ' && live.rect) { e.preventDefault(); liveToggleMode(); return; }
           if (e.key === ',' && live.rect && live.mode === 'rect' && f === 'len') { e.preventDefault(); useLive.setState({ focus: 'ang' }); return; }
           if (e.key === 'Enter') { e.preventDefault(); if (!liveCommit() && autoholdOn()) liveAcceptAtCursor(); }
-          if (e.key === 'Tab') { e.preventDefault(); const fs = liveFields(live); useLive.setState({ focus: fs[(fs.indexOf(f) + 1) % fs.length] }); }
+          if (e.key === 'Tab') { e.preventDefault(); if (e.repeat) return; const fs = liveFields(live); useLive.setState({ focus: fs[(fs.indexOf(f) + 1) % fs.length] }); }
           if (e.key === 'Escape') (e.target as HTMLInputElement).blur();
         }} />
     </label>

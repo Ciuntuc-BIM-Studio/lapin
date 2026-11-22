@@ -23,10 +23,13 @@ export type DownVerdict = 'pass' | 'swallow';
 /** What a key-up of Tab does: a tap runs the Tab command now; a take selects the current element; none: nothing. */
 export type UpVerdict = 'tap' | 'take' | 'none';
 
-/** Tab went down: whether it starts (or belongs to) a hold. A repeat with nothing pending is the browser's key repeat: it passes. */
+/**
+ * Tab went down: whether it starts (or belongs to) a hold. A repeat is the OS key autorepeat of a key still held (Windows starts
+ * it after about 250-500 ms, then every ~30 ms; forum topic 215): it is never a new press, so it is always swallowed and
+ * never cycles or runs the Tab command; only the first keydown decides.
+ */
 export function downVerdict(phase: HoldPhase, repeat: boolean, candidates: number): DownVerdict {
-  if (phase !== 'idle') return 'swallow';
-  if (repeat) return 'pass';
+  if (phase !== 'idle' || repeat) return 'swallow';
   return candidates >= 2 ? 'swallow' : 'pass';
 }
 
@@ -102,7 +105,7 @@ export function tabHoldDown(repeat: boolean): DownVerdict {
   const s = cycleSource();
   const at = s?.at();
   const v = downVerdict(phase, repeat, phase === 'idle' && s && at ? s.ids(at).length : 0);
-  if (v === 'swallow' && phase === 'idle') {
+  if (v === 'swallow' && phase === 'idle' && !repeat) {
     phase = 'pending';
     timer = setTimeout(openList, HOLD_MS);
   }

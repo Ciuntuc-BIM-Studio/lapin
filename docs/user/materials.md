@@ -82,6 +82,26 @@ Hatch colour, weight, line type, opacity and halftone, the background and second
 - **Draw joints.** By default, a material runs on from one element into the next without a line, like two walls in line or render over two storeys. Tick it to draw the joint.
 - **Joins with other elements.** On by default: elements of this material join where they meet others. Walls join at their corners and beams into columns, the cut order lets one element cut another (a column through a beam, a beam into a wall's head), and a drawing merges the cuts of touching elements of the same material into one area. Untick it for members that must keep their shape, such as steel girders or timber trusses. Their elements are then not joined automatically, nothing cuts them and they cut nothing, and plans and sections draw each one's own outline. A beam stops at the faces of the columns its ends stand in, but runs whole through a column it passes. Unticking it takes off the joins of the walls, beams and strip footings mainly of this material; ticking it again joins them to what they meet. You can undo either in one step. The library's steel and timber materials join by default, as before.
 
+## Texture sets
+
+The Appearance tab offers eight **texture sets**: photographed materials with their relief, from [ambientCG](https://ambientcg.com) (CC0, free for any use). They are red brick, concrete, plaster, a wood floor, white tiles, stone setts, brushed steel and fabric.
+
+Click a picture to lay that set on the material. In one step, and one undo, the material takes five maps:
+
+- its colour picture;
+- its **normal map** (the relief);
+- its **roughness map** (where it is glossy, where it is matt);
+- its **occlusion map** (the shade in its joints and hollows);
+- its height map, kept as the **bump map**.
+
+They lie at the set's real size: the brick is 2.4 × 1.2 m a tile, so the bricks come out the size of real bricks. **Roughness** below is set to 1, since it multiplies the roughness map.
+
+![Materials → Appearance: the texture sets, Red brick chosen](shots/texture-sets.webp)
+
+The set's pictures are copied into the project, a few hundred kilobytes each. The project then looks the same on another computer and in the browser, and the 3D exports and IFC carry them. Two materials with the same set share one copy. **Take the maps off** removes all five maps, and the material's colour and drawn texture show again.
+
+The maps show in the **Medium** and **Realistic** views (View → Display quality). The **Drawing** view keeps its flat look: the colour picture and the relief, without the roughness and the shade. See [Realistic, with the sun](views.md#realistic-with-the-sun) for a brick wall under a low sun.
+
 ## Your own image on a material
 
 A material can carry a picture of your own: a photo of the real brick, timber or stone.
@@ -97,21 +117,24 @@ The picture shows in the 3D view and is saved inside the project file. It also g
 
 Pictures larger than 2048 pixels are reduced to that size when you import them. The trash button removes the picture from the material.
 
-## Normal and bump maps
+## Normal, bump, roughness and occlusion maps
 
-Under the own image, a material can take two relief maps, each a PNG or JPEG of your own:
+Under the own image, a material can take four maps, each a PNG or JPEG of your own (a texture set gives all of them at once):
 
 - **Normal map**: the purple-blue picture renderers and texture sites give with a material (tangent space, green up, as glTF reads it). The faces shade as if they had its relief: a brick's mortar joints, a timber's grain, a stone's roughness.
 - **Bump map**: a grey picture, white high and black low. The faces shade as if raised where it is light.
+- **Roughness map**: a grey picture, white rough and black glossy. **Roughness** multiplies it, as glTF does: at 1 the picture is taken as it is.
+- **Occlusion map**: a grey picture, white open and black shut in. The light from round about reaches its dark parts less, as in a joint between bricks.
 
-Click **Import image…** beside one and choose the file. Both lie on the model as the own image does, at **W** × **H** and turned by **Rotation**; a first relief map on a material without a size gives it one 1 m wide, as high as the picture's proportion. **Strength** sets how strongly the relief shows: 1 as the picture says, 0 flat, up to 10. The preview sphere and the 3D view show both, and the trash button takes one off.
+Click **Import image…** beside one and choose the file. They all lie on the model as the own image does, at **W** × **H** and turned by **Rotation**; a first map on a material without a size gives it one 1 m wide, as high as the picture's proportion. **Strength** sets how strongly the normal and bump maps show (1 as the picture says, 0 flat, up to 10) and how much the occlusion map darkens (0 to 1). The preview sphere and the 3D view show them, and the trash button takes one off. The roughness and occlusion maps show in the Medium and Realistic views only.
 
 In the exports:
 
-- **GLB** and **glTF** carry the normal map as the material's normal texture, at its strength.
-- **USDZ** packs the normal map beside the model and connects it to the surface's normal.
-- **OBJ + MTL** writes the normal map as `norm` and the bump map as `map_Bump` with its strength (`-bm`). A material with a normal map and no bump map writes the normal map as `map_Bump` too, where Blender and most renderers read it.
-- glTF has no bump map, so GLB, glTF and USD leave it out; **DAE** and **USDA** carry no pictures at all, so neither map goes there.
+- **GLB** and **glTF** carry the normal map as the material's normal texture, at its strength, and the occlusion map as its occlusion texture. The roughness map goes as its metallic-roughness texture when the material is not a metal. A grey picture would make a metal's metalness follow its roughness, so a metal leaves it out.
+- **USDZ** packs the maps beside the model and connects the normal, roughness and occlusion maps to the surface.
+- **OBJ + MTL** writes the normal map as `norm`, the bump map as `map_Bump` with its strength (`-bm`) and the roughness map as `map_Pr`. A material with a normal map and no bump map writes the normal map as `map_Bump` too, where Blender and most renderers read it.
+- glTF has no bump map, so GLB, glTF and USD leave it out; **DAE** and **USDA** carry no pictures at all, so no map goes there.
+- **IFC** carries every map inside the file, as the material's surface style's textures (`IfcSurfaceStyleWithTextures`, one `IfcBlobTexture` a map, at the tile's size). A project exported to IFC and opened again in Lapin gets its maps back.
 
 ## Your own hatch patterns (.pat)
 

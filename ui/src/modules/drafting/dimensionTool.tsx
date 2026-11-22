@@ -84,6 +84,7 @@ if (typeof window !== 'undefined') {
     if ((e.target as HTMLElement | null)?.closest?.('input, select, textarea')) return;
     e.preventDefault();
     e.stopPropagation();
+    if (e.repeat) return;
     flipOrient();
   }, true);
 }
