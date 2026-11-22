@@ -5,9 +5,12 @@
  */
 
 export interface GoverningDto { key: string; name: string; clause: string; combination: string; combinationName: string; utilisation: number }
+/** One axis' buckling length (docs/plan-fem.md §14.23): the one used (m), where it came from, and both candidates. */
+export interface LengthAxisDto { used: number; source: 'given' | 'k' | 'alpha' | string; how: string; kL: number; alpha?: number | null; alphaCr?: number | null; mode?: number | null }
+export interface LengthsDto { fromAlpha: boolean; informative: boolean; combination?: string; combinationName?: string; y: LengthAxisDto; z: LengthAxisDto }
 export interface CheckedDto {
   id: string; sourceId: string; name: string; material: string; grade?: string; kind: string; storeyId?: string | null;
-  utilisation: number | null; ok: boolean; done?: boolean; governing?: GoverningDto | null;
+  utilisation: number | null; ok: boolean; done?: boolean; governing?: GoverningDto | null; lengths?: LengthsDto | null;
 }
 export interface ReinforcementLayersDto { asxBottom: number; asyBottom: number; asxTop: number; asyTop: number }
 export interface SurfaceCheckedDto extends CheckedDto { reinforcement?: ReinforcementLayersDto | null }
@@ -39,9 +42,32 @@ export interface WallsDto { ok: boolean; indicative: boolean; storeys: WallStore
 
 export interface DesignOptionsDto {
   project: Record<string, number | string> | null;
-  defaults: { serviceClass: number; cover: number; bar: number; stirrup: number; fyk: number; fvk0: number; gammaM: number; steelInteraction?: string; snowDuration?: string };
+  defaults: { serviceClass: number; cover: number; bar: number; stirrup: number; fyk: number; fvk0: number; gammaM: number; steelInteraction?: string; snowDuration?: string; bucklingLengths?: string };
   systems: string[];
+  bucklingLengths?: string[];
 }
+
+// ── The buckling lengths (k·L or from αcr) ──
+
+/** A length in metres, two decimals; nothing → "–". */
+export function formatLength(v: number | null | undefined): string {
+  return v == null || !Number.isFinite(v) ? '–' : v.toFixed(2);
+}
+
+/** The small marker of where a used length came from: "αcr", "k" or "given". */
+export function lengthSource(a: Pick<LengthAxisDto, 'source'>): string {
+  return a.source === 'alpha' ? 'αcr' : a.source === 'given' ? 'given' : 'k';
+}
+
+/** One axis as the tooltip tells it: k·L, the αcr one (with αcr and the mode), the one used and why. */
+export function lengthAxisText(name: string, a: LengthAxisDto): string {
+  const alpha = a.alpha != null && Number.isFinite(a.alpha)
+    ? `${formatLength(a.alpha)} m (αcr = ${a.alphaCr != null ? +a.alphaCr.toFixed(2) : '–'}${a.mode != null ? `, mode ${a.mode}` : ''})` : '–';
+  return `${name}: k·L = ${formatLength(a.kL)} m · αcr ${alpha} · used ${formatLength(a.used)} m (${lengthSource(a)})${a.how ? `\n${a.how}` : ''}`;
+}
+
+/** The tooltip of a lengths cell: both axes. */
+export const lengthsTitle = (l: LengthsDto): string => `${lengthAxisText('y-y', l.y)}\n${lengthAxisText('z-z', l.z)}`;
 
 // ── The utilisation: its text and its colour ──
 
@@ -69,7 +95,7 @@ export const isChecked = (c: Pick<CheckedDto, 'utilisation' | 'done'>): boolean 
 
 export interface ElementRow {
   sourceId: string; name: string; material: string; grade: string; kind: string; storeyId: string | null; pieces: number;
-  utilisation: number | null; ok: boolean; governing: GoverningDto | null;
+  utilisation: number | null; ok: boolean; governing: GoverningDto | null; lengths: LengthsDto | null;
 }
 
 /** Pieces of the analytical model share their element's id (sourceId): one row an element, its worst piece's utilisation, the worst first, the unchecked last. */
@@ -79,12 +105,13 @@ export function groupBySource(members: readonly CheckedDto[]): ElementRow[] {
     const u = isChecked(m) ? m.utilisation : null;
     const row = by.get(m.sourceId);
     if (!row) {
-      by.set(m.sourceId, { sourceId: m.sourceId, name: m.name, material: m.material, grade: m.grade ?? '', kind: m.kind, storeyId: m.storeyId ?? null, pieces: 1, utilisation: u, ok: m.ok, governing: m.governing ?? null });
+      by.set(m.sourceId, { sourceId: m.sourceId, name: m.name, material: m.material, grade: m.grade ?? '', kind: m.kind, storeyId: m.storeyId ?? null, pieces: 1, utilisation: u, ok: m.ok, governing: m.governing ?? null, lengths: m.lengths ?? null });
       continue;
     }
     row.pieces++;
     row.ok = row.ok && m.ok;
-    if (u !== null && (row.utilisation === null || u > row.utilisation)) { row.utilisation = u; row.governing = m.governing ?? row.governing; }
+    if (u !== null && (row.utilisation === null || u > row.utilisation)) { row.utilisation = u; row.governing = m.governing ?? row.governing; row.lengths = m.lengths ?? row.lengths; }
+    else if (!row.lengths && m.lengths) row.lengths = m.lengths;
   }
   return [...by.values()].sort((a, b) => (b.utilisation ?? -1) - (a.utilisation ?? -1) || a.name.localeCompare(b.name));
 }
@@ -206,14 +233,14 @@ export function barReinforcementText(r: BarReinforcementDto): { label: string; v
 
 // ── The design values ──
 
-export interface OwnDesign { ky?: number; kz?: number; lcrY?: number; lcrZ?: number; llt?: number; serviceClass?: number; system?: string }
+export interface OwnDesign { ky?: number; kz?: number; lcrY?: number; lcrZ?: number; llt?: number; serviceClass?: number; system?: string; bucklingLengths?: string }
 
 /** The element's own design values as the attribute holds them (anything else dropped). */
 export function ownDesign(attr: unknown): OwnDesign {
   if (!attr || typeof attr !== 'object') return {};
   const a = attr as Record<string, unknown>;
   const n = (k: string): number | undefined => (typeof a[k] === 'number' && Number.isFinite(a[k]) ? (a[k] as number) : undefined);
-  return { ky: n('ky'), kz: n('kz'), lcrY: n('lcrY'), lcrZ: n('lcrZ'), llt: n('llt'), serviceClass: n('serviceClass'), system: typeof a.system === 'string' ? a.system : undefined };
+  return { ky: n('ky'), kz: n('kz'), lcrY: n('lcrY'), lcrZ: n('lcrZ'), llt: n('llt'), serviceClass: n('serviceClass'), system: typeof a.system === 'string' ? a.system : undefined, bucklingLengths: typeof a.bucklingLengths === 'string' ? a.bucklingLengths : undefined };
 }
 
 /** A number typed: empty is null (the default again), a number as typed (a comma too), anything else undefined (not applied). */

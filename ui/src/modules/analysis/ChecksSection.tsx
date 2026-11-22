@@ -6,7 +6,7 @@ import { useUi } from '../../app/store';
 import { useResults } from './useResults';
 import { ensureChecks, setColour, useChecks } from './useChecks';
 import {
-  filterRows, formatArea, formatUtilisation, groupBySource, LAYERS, LAYER_LABEL, MATERIAL_LABEL, MATERIALS, PROJECT_FIELDS, projectText, projectValue,
+  filterRows, formatArea, formatUtilisation, groupBySource, formatLength, lengthSource, lengthsTitle, LAYERS, LAYER_LABEL, MATERIAL_LABEL, MATERIALS, PROJECT_FIELDS, projectText, projectValue,
   storeysOf, summary, surfaceRows, utilisationColour, wallRows, wallSums, type DesignOptionsDto, type ElementRow, type SurfaceRow,
 } from './checks';
 import { useAnalysis } from './hooks';
@@ -76,13 +76,16 @@ export function ChecksSection() {
           {shownMembers.length > 0 ? (
             <div className="seismic-scroll">
               <table className="standards-table" data-testid="checks-members">
-                <thead><tr><th>Element</th><th>Material</th><th title="The most loaded check divided by its resistance: more than 1 fails">Utilisation</th><th>Governing check</th><th>Clause</th><th title="The combination that gives the governing check">Governing combination</th></tr></thead>
+                <thead><tr><th>Element</th><th>Material</th><th title="The most loaded check divided by its resistance: more than 1 fails">Utilisation</th><th title="The buckling lengths used about the strong and the weak axis, in metres; hover for k·L, the length from αcr and why">Lcr,y / Lcr,z (m)</th><th>Governing check</th><th>Clause</th><th title="The combination that gives the governing check">Governing combination</th></tr></thead>
                 <tbody>
                   {shownMembers.map((r) => (
                     <tr key={r.sourceId} className="clickable" data-testid="checks-member-row" data-id={r.sourceId} onClick={() => select(r.sourceId)}>
                       <td data-no-i18n>{r.name}{r.pieces > 1 ? ` ×${r.pieces}` : ''}</td>
                       <td title={MATERIAL_LABEL[r.material] ?? r.material}><span data-no-i18n>{r.grade || r.material}</span></td>
                       <td><UtilisationBar u={r.utilisation} /></td>
+                      <td title={r.lengths ? lengthsTitle(r.lengths) : undefined} data-testid="checks-lcr" data-source={r.lengths ? `${r.lengths.y.source}/${r.lengths.z.source}` : ''} data-no-i18n>
+                        {r.lengths ? <>{formatLength(r.lengths.y.used)} <small className="muted">{lengthSource(r.lengths.y)}</small> / {formatLength(r.lengths.z.used)} <small className="muted">{lengthSource(r.lengths.z)}</small></> : '–'}
+                      </td>
                       <td>{governing(r) === '–' ? '–' : <span data-no-i18n>{governing(r)}</span>}</td>
                       <td data-no-i18n>{r.governing?.clause ?? ''}</td>
                       <td data-no-i18n>{r.governing?.combinationName ?? ''}</td>
@@ -210,6 +213,14 @@ function DesignValues() {
             <option value="">Default (Annex A)</option>
             <option value="A">Annex A (method 1)</option>
             <option value="B">Annex B (method 2)</option>
+          </select>
+        </label>
+        <label className="row small" title="Where the design checks take the buckling lengths of steel and timber bars from: the k·L you give, or the lowest buckling mode of the model (αcr, EN 1993-1-1 5.2.2), never shorter than k·L; an element can have its own">
+          <span>Buckling lengths</span>
+          <select aria-label="Buckling lengths" data-testid="design-bucklingLengths" value={(own.bucklingLengths as string | undefined) ?? ''} onChange={(e) => set('bucklingLengths', e.target.value === '' ? null : e.target.value)}>
+            <option value="">Default (k from the user)</option>
+            <option value="k">k from the user</option>
+            <option value="alpha">From αcr</option>
           </select>
         </label>
         <label className="row small" title="The snow's load duration for timber's kmod (EN 1995-1-1 Table 2.2): short-term, or medium-term for a mountain site">
