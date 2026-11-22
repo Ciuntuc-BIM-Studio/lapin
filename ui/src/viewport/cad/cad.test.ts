@@ -38,6 +38,27 @@ describe('SnapIndex', () => {
     expect(snap?.mode).toBe('endpoint');
     nearPt(snap!.point, P(11, 20));
   });
+
+  // Forum topic 222: a plan holding only a point cloud's slice snaps to thousands of points of no size; the cell fell to a
+  // micrometre and one move of the mouse swept a hundred billion cells (the plan frozen).
+  it('stays quick over points alone, a point cloud slice\'s snaps', () => {
+    const shapes: Shape[] = [];
+    for (let i = 0; i < 20000; i++) { const q = P(-10 + (i % 200) * 0.1, -7.5 + Math.floor(i / 200) * 0.15); shapes.push({ type: 'line', a: q, b: q }); }
+    const t = performance.now();
+    const idx = new SnapIndex(shapes);
+    const near = idx.query(P(0.02, 0.02), P(0.28, 0.28));
+    const all = idx.query(P(-1e6, -1e6), P(1e6, 1e6));
+    const snap = findSnap(P(0.31, 0.29), shapes, idx, { tolerance: 0.2, modes: ALL_MODES });
+    expect(performance.now() - t).toBeLessThan(1000);
+    expect(near.map((i) => shapes[i]).some((s) => s.type === 'line' && Math.abs(s.a.x - 0.2) < 1e-9 && Math.abs(s.a.y - 0.15) < 1e-9)).toBe(true);
+    expect(all.length).toBe(20000);
+    expect(snap?.mode).toBe('endpoint');
+    nearPt(snap!.point, P(0.3, 0.3));
+    // A query with no finite box, and points mixed with a few walls' lines.
+    expect(idx.query(P(Number.NEGATIVE_INFINITY, 0), P(Number.POSITIVE_INFINITY, 1)).length).toBeGreaterThan(0);
+    const mixed = new SnapIndex([...shapes, { type: 'line', a: P(-10, -7.5), b: P(10, -7.5) }]);
+    expect(mixed.query(P(4.9, -7.6), P(5.1, -7.4))).toContain(20000);
+  });
 });
 
 describe('findSnap', () => {

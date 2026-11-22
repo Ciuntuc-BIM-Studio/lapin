@@ -128,9 +128,13 @@ public sealed class PointStore : IDisposable
                 SourceLength = (long?)o["sourceLength"] ?? 0, SourceKey = (string?)o["sourceKey"] ?? "",
             };
             foreach (var n in nodes) s._byName[n.Name] = n;
+            // An index cut short or damaged (its points file shorter than its nodes say, no root, its cube not three numbers): none, made again.
+            var length = new FileInfo(Path.Combine(dir, "points.bin")).Length;
+            if (s.Get("r") == null || s.Min.Length != 3 || s.Step.Length != 3 || s.Bounds.Length != 6 || !(s.Size > 0)
+                || nodes.Any(n => n.Count < 0 || n.Offset < 0 || n.Offset + (long)n.Count * BytesPerPoint > length)) return null;
             return s;
         }
-        catch (Exception e) when (e is JsonException or InvalidOperationException or FormatException or NullReferenceException or IOException)
+        catch (Exception e) when (e is JsonException or InvalidOperationException or FormatException or NullReferenceException or IOException or ArgumentException or OverflowException or UnauthorizedAccessException)
         {
             return null;
         }

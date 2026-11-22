@@ -16,27 +16,42 @@ import { angleInArc, bounds, dist, ellipseWhole, intersectShapes, keyPoints, nea
 export type SnapMode = 'endpoint' | 'midpoint' | 'center' | 'quadrant' | 'intersection' | 'perpendicular' | 'nearest' | 'tangent' | 'wallAxis' | 'gridAxis';
 export const ALL_MODES: ReadonlySet<SnapMode> = new Set<SnapMode>(['endpoint', 'midpoint', 'center', 'quadrant', 'intersection', 'perpendicular', 'nearest', 'tangent', 'wallAxis', 'gridAxis']);
 
-/** A broad phase: each shape's box in the cells of a grid. */
+/**
+ * A broad phase: each shape's box in the cells of a grid. The cell is twice the shapes' average size, and never finer than
+ * a 1024th of what they all span: a point cloud's slice in a plan gives thousands of snap points, shapes of no size, and
+ * with little else drawn the average fell to nothing, the cell to a micrometre, and a query a few centimetres wide swept
+ * billions of cells on every move of the mouse (forum topic 222, the plan frozen). A query wider than the cells there are
+ * walks those cells instead of the grid.
+ */
 export class SnapIndex {
-  private readonly cells = new Map<string, number[]>();
+  private readonly cells = new Map<string, { x: number; y: number; ids: number[] }>();
   private readonly big: number[] = [];
   private readonly cell: number;
 
   constructor(shapes: readonly Shape[], cell?: number) {
     const boxes = shapes.map(bounds);
     if (cell == null) {
-      const sizes = boxes.map((b) => Math.max(b.max.x - b.min.x, b.max.y - b.min.y));
+      const sizes = boxes.map((b) => Math.max(b.max.x - b.min.x, b.max.y - b.min.y)).filter(Number.isFinite);
       const avg = sizes.length ? sizes.reduce((s, x) => s + x, 0) / sizes.length : 1;
-      cell = Math.max(avg * 2, 1e-6);
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const b of boxes) {
+        if (Number.isFinite(b.min.x)) x0 = Math.min(x0, b.min.x);
+        if (Number.isFinite(b.min.y)) y0 = Math.min(y0, b.min.y);
+        if (Number.isFinite(b.max.x)) x1 = Math.max(x1, b.max.x);
+        if (Number.isFinite(b.max.y)) y1 = Math.max(y1, b.max.y);
+      }
+      const span = x1 >= x0 && y1 >= y0 ? Math.max(x1 - x0, y1 - y0) : 0;
+      cell = Math.max(avg * 2, span / 1024, 1e-6);
     }
     this.cell = cell;
     boxes.forEach((b, i) => {
       const [x0, x1, y0, y1] = [this.c(b.min.x), this.c(b.max.x), this.c(b.min.y), this.c(b.max.y)];
-      if ((x1 - x0 + 1) * (y1 - y0 + 1) > 4096) { this.big.push(i); return; }
+      // A shape whose box is not finite is kept apart, offered to every query.
+      if (![x0, x1, y0, y1].every(Number.isFinite) || (x1 - x0 + 1) * (y1 - y0 + 1) > 4096) { this.big.push(i); return; }
       for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
         const k = `${x},${y}`;
         const l = this.cells.get(k);
-        if (l) l.push(i); else this.cells.set(k, [i]);
+        if (l) l.ids.push(i); else this.cells.set(k, { x, y, ids: [i] });
       }
     });
   }
@@ -46,8 +61,14 @@ export class SnapIndex {
   /** The shapes whose box may meet the query box, sorted. */
   query(min: Vec2, max: Vec2): number[] {
     const out = new Set<number>(this.big);
-    for (let x = this.c(min.x); x <= this.c(max.x); x++) for (let y = this.c(min.y); y <= this.c(max.y); y++)
-      for (const i of this.cells.get(`${x},${y}`) ?? []) out.add(i);
+    const [x0, x1, y0, y1] = [this.c(min.x), this.c(max.x), this.c(min.y), this.c(max.y)];
+    if (![x0, x1, y0, y1].every(Number.isFinite) || (x1 - x0 + 1) * (y1 - y0 + 1) > this.cells.size) {
+      // Wider than the cells there are (or not a box): those cells walked, the ones inside it taken.
+      for (const c of this.cells.values()) if (c.x >= x0 && c.x <= x1 && c.y >= y0 && c.y <= y1) for (const i of c.ids) out.add(i);
+    } else {
+      for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++)
+        for (const i of this.cells.get(`${x},${y}`)?.ids ?? []) out.add(i);
+    }
     return [...out].sort((a, b) => a - b);
   }
 }
