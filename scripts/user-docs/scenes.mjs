@@ -5860,6 +5860,50 @@ export const scenes = [
     },
   },
   {
+    // Structural analysis, docs/plan-fem.md §14.23: the buckling lengths of the design checks from αcr, beside the user's k·L: a steel portal frame.
+    id: 'analysis-buckling-lengths',
+    touches: ['core', 'structure', 'analysis'],
+    async run(t) {
+      await t.fresh();
+      const ground = await t.storey();
+      await t.cmd('storey.update', { id: ground, height: 4 });
+      await t.cmd('storey.create', { name: 'Roof', elevation: 4, height: 3 });
+      const col = (await t.cmd('structure.createColumnType', { section: 'HEB 200', material: 'S235' })).id;
+      const beam = (await t.cmd('structure.createBeamType', { section: 'IPE 300', material: 'S235' })).id;
+      const left = (await t.cmd('structure.addColumn', { storeyId: ground, x: 0, y: 0, typeId: col })).id;
+      await t.cmd('structure.addColumn', { storeyId: ground, x: 6, y: 0, typeId: col });
+      await t.cmd('structure.addBeam', { storeyId: ground, x1: 0, y1: 0, x2: 6, y2: 0, typeId: beam });
+      for (const x of [0, 6]) await t.cmd('structure.addPadFooting', { storeyId: ground, x, y: 0 });
+      await t.cmd('analysis.defaultCases', {});
+      const qa = (await t.call('doc.query', { name: 'analysis.loads', args: {} })).cases.find((c) => c.code === 'Q-A');
+      for (const x of [0, 6]) await t.cmd('analysis.addPointLoad', { storeyId: ground, at: [x, 0], z: 3.85, value: 200, caseId: qa.id });
+      await t.wait(600);
+      await t.tool('analysis.run');
+      const dialog = t.page.locator('[aria-label="Analysis results"]');
+      const checks = t.page.locator('[data-testid=analysis-checks]');
+      await t.until(async () => (await checks.locator('[data-testid=checks-members] tbody tr').count()) >= 3, 'the Checks section lists the bars', 120000);
+      const rowOf = async () => (await t.call('doc.query', { name: 'analysis.checks', args: {} })).members.find((m) => m.sourceId === left);
+      const k = await rowOf();
+      t.expect(k.lengths && k.lengths.fromAlpha === false && k.lengths.z.source === 'k', `the lengths are k·L by default (${JSON.stringify(k.lengths?.z)})`);
+      await tallShot(t, 'analysis-lcr-k', '[data-testid=checks-members]');
+      // From αcr, for the whole project: the columns' lengths come from the lowest modes that bend them.
+      await t.cmd('analysis.setDesign', { bucklingLengths: 'alpha' });
+      await t.wait(600);
+      await t.tool('analysis.run');
+      await t.until(async () => (await checks.locator('[data-testid=checks-lcr][data-source*=alpha]').count()) > 0, 'the table shows lengths from αcr', 120000);
+      const a = await rowOf();
+      t.expect(a.lengths.fromAlpha === true && a.lengths.z.source === 'alpha' && a.lengths.z.used >= a.lengths.z.kL, `the left column's weak-axis length is from αcr (${JSON.stringify(a.lengths?.z)})`);
+      t.expect(a.utilisation > k.utilisation, `the utilisation rises with the longer length (${k.utilisation} → ${a.utilisation})`);
+      await tallShot(t, 'analysis-lcr-alpha', '[data-testid=checks-members]');
+      // The column's own properties: k·L, the αcr length and which one is used.
+      await t.ui({ dialog: null });
+      await select(t, left);
+      await t.until(async () => (await t.page.locator('[data-testid=design-lengths]').count()) > 0, 'a column shows its buckling lengths in its properties');
+      t.expect(await t.page.locator('[data-testid=design-own-bucklingLengths]').count() === 1, 'a column can choose its own source');
+      await tallShot(t, 'analysis-lcr-props', '[data-testid=design-lengths]', { height: 2600, pad: 8 });
+    },
+  },
+  {
     // Structural analysis, stage S5d (docs/plan-fem.md §14.15): a steel hall's purlins buckle on their own under the wind's uplift; the sheeting that rests on them holds them straight, and the first modes move on.
     id: 'analysis-sheeting',
     touches: ['core', 'structure', 'steel', 'analysis'],
