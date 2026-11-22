@@ -63,13 +63,18 @@ export function SubDEdit3D({ camera, canvas, scene, invalidate }: Overlay3DProps
     if (!s.drag) return null;
     return moveTarget(s.drag.base, s.drag.at, s.drag.text, s.drag.lock, false, (x) => parseLength(x));
   };
+  // A typed distance and Enter, then the button let go, both finish the drag: the second must not move the points again.
+  const finishing = useRef(false);
   const finish = async () => {
     const s = useSubD.getState();
-    if (!s.drag) return;
-    const to = targetOf();
-    const by = to ? dragBy(s.drag.base, to) : { x: 0, y: 0, z: 0 };
-    if (moves(by)) await applyMove(by);
-    useSubD.setState({ drag: null });
+    if (!s.drag || finishing.current) return;
+    finishing.current = true;
+    try {
+      const to = targetOf();
+      const by = to ? dragBy(s.drag.base, to) : { x: 0, y: 0, z: 0 };
+      if (moves(by)) await applyMove(by);
+      useSubD.setState({ drag: null });
+    } finally { finishing.current = false; }
   };
   const finishRef = useRef(finish);
   finishRef.current = finish;
