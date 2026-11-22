@@ -93,6 +93,11 @@ export function setLang(lang: Lang): Promise<void> {
   });
 }
 
+/** What every language loaded so far calls a phrase (lower case, English not included): for typed words that any language may give. */
+export function wordsOf(text: string): string[] {
+  return Object.values(TABLES).map((tb) => tb?.dict[text]?.trim().toLowerCase()).filter((w): w is string => !!w);
+}
+
 /** A phrase in a language, the one chosen unless given (null: it stays as it is); `ctx` picks a meaning (`ctx|phrase`) first. */
 export function translate(text: string, lang: Lang = useLang.getState().lang, ctx?: string | null): string | null {
   if (lang === 'en') return null;

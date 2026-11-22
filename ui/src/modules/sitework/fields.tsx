@@ -21,6 +21,6 @@ export function MmList({ value, onCommit }: { value: number[]; onCommit: (v: num
 }
 
 /** A plain number, committed on Enter or blur. */
-export function Num({ value, onCommit, min }: { value: number; onCommit: (v: number) => void; step?: number; min?: number }) {
+export function Num({ value, onCommit, min }: { value: number; onCommit: (v: number) => void; min?: number }) {
   return <NumberField value={value} min={min} onCommit={(n) => { if (n != null) onCommit(n); }} />;
 }

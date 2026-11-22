@@ -14,6 +14,7 @@ import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { Cell } from '../../shell/cells';
 import { formatLength, parseLength, unitLabel } from '../../engine/unitsStore';
+import { loadAllLanguages } from '../../i18n';
 import { useCamera } from '../../viewport/camera';
 import { runSteps } from '../../viewport/grips';
 import { useScope } from '../../platform/scope';
@@ -161,6 +162,8 @@ function ParamRowView({ id, p, params, flex }: { id: string; p: ParamDto; params
 
 /** The part's parameters in the table beside the tree. */
 export function PartParamsPanel() {
+  // A bool typed as yes or no in any of the interface's languages (the others are fetched once, here).
+  useEffect(() => { void loadAllLanguages(); }, []);
   const scope = useScope((s) => s.scope);
   const id = editedPartId(scope);
   const open = useParamsUi((s) => s.open);

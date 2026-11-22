@@ -46,6 +46,18 @@ function lowest(text: string): number | null {
   return Number.isFinite(min) ? Math.floor(min) : null;
 }
 
+/**
+ * The datum typed: empty takes the default, a value that does not read is refused (null) rather than replaced by a guess.
+ * Both survey imports go through it.
+ */
+export function datumOf(answer: string, dflt: number): number | null {
+  if (answer.trim() === '') return dflt;
+  const v = parseLevel(answer);
+  return v != null && Number.isFinite(v) ? v : null;
+}
+
+const refuseDatum = () => notify('That elevation does not read: type a number in the project\'s unit (empty: the suggested one).');
+
 /** A terrain from a survey file: its points, and the surveyed elevation of the project's ±0.00. */
 const terrainFromFile: ToolDef = {
   id: 'civil.terrain', label: 'Terrain from points', icon: TerrainIcon, shortcut: 'TP',
@@ -55,9 +67,10 @@ const terrainFromFile: ToolDef = {
     if (low == null) { notify('No points found: one per line, x y z or number northing easting elevation.'); return; }
     const answer = promptText('The surveyed elevation of the project\'s ±0.00 ({unit}):', formatLength(low, levelUnit()), { unit: unitName(levelUnit()) });
     if (answer == null) return;
-    const datum = answer.trim() === '' ? low : parseLevel(answer) ?? NaN;
+    const datum = datumOf(answer, low);
+    if (datum === null) { refuseDatum(); return; }
     const storeyId = useUi.getState().storeyId;
-    const r = await execute('civil.addTerrain', { text: file.text, name: file.name, datum: Number.isFinite(datum) ? datum : low, ...(storeyId ? { storeyId } : {}) });
+    const r = await execute('civil.addTerrain', { text: file.text, name: file.name, datum, ...(storeyId ? { storeyId } : {}) });
     if (r) notify(`Terrain created from ${(r as { points: number }).points} points.`);
   }),
 };
@@ -69,8 +82,10 @@ const terrainFromLandXml: ToolDef = {
     if (!file) return;
     const answer = promptText('The surveyed elevation of the project\'s ±0.00 ({unit}):', '0', { unit: unitName(levelUnit()) });
     if (answer == null) return;
+    const datum = datumOf(answer, 0);
+    if (datum === null) { refuseDatum(); return; }
     const storeyId = useUi.getState().storeyId;
-    const r = await execute('civil.importLandXml', { text: file.text, datum: parseLevel(answer) ?? 0, ...(storeyId ? { storeyId } : {}) }) as { ids: string[] } | null;
+    const r = await execute('civil.importLandXml', { text: file.text, datum, ...(storeyId ? { storeyId } : {}) }) as { ids: string[] } | null;
     if (r) notify(`${r.ids.length} terrain(s) from ${file.name}.`);
   }),
 };

@@ -130,7 +130,7 @@ export function ScaffoldDialog() {
               <Line label="Anchors every"><Mm value={spec.anchorSpacing} min={500} onCommit={(v) => v && set({ anchorSpacing: v })} /></Line>
               <Line label="on every n-th lift"><Num value={spec.anchorEveryLifts} min={1} onCommit={(v) => set({ anchorEveryLifts: Math.round(v) })} /></Line>
               <Line label="Base jacks take"><Mm value={spec.jack} min={0} onCommit={(v) => v != null && set({ jack: v })} /></Line>
-              <Line label="An access bay every"><Num value={spec.accessEvery} step={5} min={0} onCommit={(v) => set({ accessEvery: v })} /> <span className="muted small">m (0: none)</span></Line>
+              <Line label="An access bay every"><Num value={spec.accessEvery} min={0} onCommit={(v) => set({ accessEvery: v })} /> <span className="muted small">m (0: none)</span></Line>
               <Line label="Protective net"><input type="checkbox" checked={spec.net} onChange={(e) => set({ net: e.target.checked })} /></Line>
             </div>
             <div className="joinery-preview">
@@ -143,8 +143,8 @@ export function ScaffoldDialog() {
                 {(preview?.anchors ?? []).map(([x, z], i) => <circle key={`a${i}`} cx={ex(x)} cy={ez(z)} r={2.5} fill="#d0a020" />)}
               </svg>
               <div className="row">
-                <Line label="Preview length"><Num value={size.length} step={0.5} min={0.5} onCommit={(v) => setSize({ ...size, length: v })} /> <span className="muted small">m</span></Line>
-                <Line label="work top"><Num value={size.height} step={0.5} min={1} onCommit={(v) => setSize({ ...size, height: v })} /> <span className="muted small">m</span></Line>
+                <Line label="Preview length"><Num value={size.length} min={0.5} onCommit={(v) => setSize({ ...size, length: v })} /> <span className="muted small">m</span></Line>
+                <Line label="work top"><Num value={size.height} min={1} onCommit={(v) => setSize({ ...size, height: v })} /> <span className="muted small">m</span></Line>
               </div>
               <p className="muted small">
                 {(preview?.bays ?? []).map((b) => Math.round(b * 100) / 100).join(' + ')} m · {preview?.lifts ?? 0} lift(s) · {Math.round((preview?.area ?? 0) * 10) / 10} m²

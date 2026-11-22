@@ -5,7 +5,9 @@
  * (a window and a door, every member). Two presets: the Nordic practice and the Romanian. Saving is one command.
  */
 
-import { NumberField } from '../../shell/cells';
+import { LengthField, NumberField } from '../../shell/cells';
+import { formatLength } from '../../engine/unitsStore';
+import { parseLengths } from '../core/format';
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -110,13 +112,11 @@ export const ROLE_FILL: Record<string, string> = {
   plate: '#b48650', end: '#c99a64', stud: '#d4a970', king: '#c08a50', jack: '#cf9a5c', header: '#a87a46', sill: '#a87a46', cripple: '#dcb27c', noggin: '#c99a64',
 };
 
-/** A length in mm, kept as text while typing. */
-function Mm({ label, value, onChange, title }: { label: string; value: number; onChange: (m: number) => void; title?: string }) {
-  const [text, setText] = useState(String(Math.round(value * 1000)));
-  useEffect(() => setText(String(Math.round(value * 1000))), [value]);
+/** A length in the project's unit (the shared length field); `min` (metres) is what 0 would break, raised to when less is typed. */
+function Mm({ label, value, onChange, title, min = 0 }: { label: string; value: number; onChange: (m: number) => void; title?: string; min?: number }) {
   return (
     <label className="field-line wood-field" title={title}><span className="eyebrow">{label}</span>
-      <input className="num" value={text} onChange={(e) => setText(e.target.value)} onBlur={() => { const v = Number(text.replace(',', '.')); if (Number.isFinite(v) && v >= 0) onChange(v / 1000); else setText(String(Math.round(value * 1000))); }} />
+      <LengthField metres={value} min={min} onCommit={(v) => { if (v != null) onChange(v); }} />
     </label>
   );
 }
@@ -170,7 +170,7 @@ export function FrameDialog() {
   const setOn = (v: boolean) => setMode(v ? 'frame' : 'layers');
   const [cltPreview, setCltPreview] = useState<CltPreview | null>(null);
   useEffect(() => { let live = true; void query<CltPreview>('wood.cltPreview', { spec: clt }).then((p) => { if (live) setCltPreview(p); }); return () => { live = false; }; }, [clt]);
-  const [pliesText, setPliesText] = useState(clt.plies.join(' '));
+  const [pliesText, setPliesText] = useState(clt.plies.map((x) => formatLength(x / 1000)).join('; '));
   useEffect(() => setPliesText(clt.plies.join(' ')), [clt.plies]);
   const [preview, setPreview] = useState<Framed | null>(null);
   const [layers, setLayers] = useState<{ index: number; name: string; thickness: number; core: boolean }[]>([]);
@@ -203,7 +203,7 @@ export function FrameDialog() {
     else void execute(stored?.construction === 'clt' ? 'wood.setClt' : (stored?.construction as string) === 'joists' ? 'wood.setFloorJoists' : 'wood.setWallFrame', { id: editing, spec: null });
   };
   const setC = (patch: Partial<CltSpec>) => setClt((c) => ({ ...c, ...patch }));
-  const [nogginText, setNogginText] = useState(spec.noggins.map((n) => Math.round(n * 1000)).join(' '));
+  const [nogginText, setNogginText] = useState(spec.noggins.map((n) => formatLength(n)).join('; '));
   useEffect(() => setNogginText(spec.noggins.map((n) => Math.round(n * 1000)).join(' ')), [spec.noggins]);
 
   return (
@@ -242,7 +242,7 @@ export function FrameDialog() {
                     <label className="field-line wood-field"><span className="eyebrow">Joists</span>
                       <select value={joists.section} onChange={(e) => setJ({ section: e.target.value })}>{SECTIONS.map((s) => <option key={s}>{s}</option>)}</select>
                     </label>
-                    <Mm label="Spacing" value={joists.spacing} onChange={(v) => setJ({ spacing: v })} />
+                    <Mm label="Spacing" min={0.05} value={joists.spacing} onChange={(v) => setJ({ spacing: v })} />
                     <label className="field-line wood-field"><span className="eyebrow">Grade</span>
                       <select value={joists.grade} onChange={(e) => setJ({ grade: e.target.value })}>{GRADES.map((g) => <option key={g}>{g}</option>)}</select>
                     </label>
@@ -258,20 +258,20 @@ export function FrameDialog() {
                 )}
                 {mode === 'clt' && (
                   <>
-                    <label className="field-line wood-field" title="Each ply's thickness, outside to outside, in mm: 3, 5, 7 or 9 of them"><span className="eyebrow">Plies (mm)</span>
-                      <input value={pliesText} onChange={(e) => setPliesText(e.target.value)} onBlur={() => setC({ plies: pliesText.split(/[ ,;/]+/).map(Number).filter((x) => x > 0) })} />
+                    <label className="field-line wood-field" title="Each ply's thickness, outside to outside, in the project's unit: 3, 5, 7 or 9 of them"><span className="eyebrow">Plies</span>
+                      <input value={pliesText} onChange={(e) => setPliesText(e.target.value)} onBlur={() => { const l = parseLengths(pliesText); if (l) setC({ plies: l.filter((x) => x > 0).map((x) => Math.round(x * 1e6) / 1000) }); else setPliesText(clt.plies.map((x) => formatLength(x / 1000)).join('; ')); }} />
                     </label>
                     <label className="field-line wood-field"><span className="eyebrow">Grade</span>
                       <select value={clt.grade} onChange={(e) => setC({ grade: e.target.value })}>{[...GRADES, 'T14', 'T22'].map((g) => <option key={g}>{g}</option>)}</select>
                     </label>
-                    <Mm label="Longest panel" value={clt.maxLength} onChange={(v) => setC({ maxLength: v })} />
-                    <Mm label={isSlab ? 'Widest panel' : 'Highest panel'} value={clt.maxWidth} onChange={(v) => setC({ maxWidth: v })} />
+                    <Mm label="Longest panel" min={0.1} value={clt.maxLength} onChange={(v) => setC({ maxLength: v })} />
+                    <Mm label={isSlab ? 'Widest panel' : 'Highest panel'} min={0.1} value={clt.maxWidth} onChange={(v) => setC({ maxWidth: v })} />
                     <label className="field-line wood-field"><span className="eyebrow">Joint</span>
                       <select value={clt.joint} onChange={(e) => setC({ joint: e.target.value })}><option value="butt">butt</option><option value="halfLap">half lap</option><option value="spline">spline</option></select>
                     </label>
-                    {clt.joint === 'halfLap' && <Mm label="Lap" value={clt.lapWidth ?? 0.1} onChange={(v) => setC({ lapWidth: v })} title="How far the two halves overlap" />}
-                    {clt.joint === 'spline' && <Mm label="Spline width" value={clt.splineWidth ?? 0.12} onChange={(v) => setC({ splineWidth: v })} title="The plywood strip let into a rebate across the joint" />}
-                    {clt.joint === 'spline' && <Mm label="Spline depth" value={clt.splineDepth ?? 0.027} onChange={(v) => setC({ splineDepth: v })} />}
+                    {clt.joint === 'halfLap' && <Mm label="Lap" min={0.001} value={clt.lapWidth ?? 0.1} onChange={(v) => setC({ lapWidth: v })} title="How far the two halves overlap" />}
+                    {clt.joint === 'spline' && <Mm label="Spline width" min={0.001} value={clt.splineWidth ?? 0.12} onChange={(v) => setC({ splineWidth: v })} title="The plywood strip let into a rebate across the joint" />}
+                    {clt.joint === 'spline' && <Mm label="Spline depth" min={0.001} value={clt.splineDepth ?? 0.027} onChange={(v) => setC({ splineDepth: v })} />}
                     {!isSlab && (
                       <label className="field-line wood-field" title="A router cannot cut a square inside corner: it leaves its radius, or overcuts so a square frame still fits"><span className="eyebrow">Opening corners</span>
                         <select data-testid="clt-corners" value={clt.corners ?? 'square'} onChange={(e) => setC({ corners: e.target.value as CltSpec['corners'] })}>
@@ -300,15 +300,15 @@ export function FrameDialog() {
                       <input list="wood-stud-sections" value={spec.studSection} onChange={(e) => set({ studSection: e.target.value })} placeholder="45x145 mm" />
                       <datalist id="wood-stud-sections">{SECTIONS.map((s) => <option key={s} value={s} />)}</datalist>
                     </label>
-                    <Mm label="Spacing" value={spec.spacing} onChange={(v) => set({ spacing: v })} />
+                    <Mm label="Spacing" min={0.05} value={spec.spacing} onChange={(v) => set({ spacing: v })} />
                     <label className="field-line wood-field"><span className="eyebrow">Grade</span>
                       <select value={spec.grade} onChange={(e) => set({ grade: e.target.value })}>{GRADES.map((g) => <option key={g}>{g}</option>)}</select>
                     </label>
                     <Count label="Bottom plates" value={spec.bottomPlates} min={1} max={3} onChange={(n) => set({ bottomPlates: n })} />
                     <Count label="Top plates" value={spec.topPlates} min={1} max={3} onChange={(n) => set({ topPlates: n })} />
                     <Count label="End studs" value={spec.endStuds} min={1} max={3} onChange={(n) => set({ endStuds: n })} />
-                    <label className="field-line wood-field" title="Heights over the wall's base, in mm, e.g. 1250"><span className="eyebrow">Noggin rows (mm)</span>
-                      <input value={nogginText} onChange={(e) => setNogginText(e.target.value)} onBlur={() => set({ noggins: nogginText.split(/[ ,;]+/).map(Number).filter((x) => x > 0).map((x) => x / 1000) })} />
+                    <label className="field-line wood-field" title="Heights over the wall's base, separated by semicolons"><span className="eyebrow">Noggin rows</span>
+                      <input value={nogginText} onChange={(e) => setNogginText(e.target.value)} onBlur={() => { const l = parseLengths(nogginText); if (l) set({ noggins: l.filter((x) => x > 0) }); else setNogginText(spec.noggins.map((n) => formatLength(n)).join('; ')); }} />
                     </label>
                     <label className="field-line wood-field"><span className="eyebrow">Module from</span>
                       <select value={spec.layoutFrom} onChange={(e) => set({ layoutFrom: e.target.value as Spec['layoutFrom'] })}>
@@ -330,8 +330,8 @@ export function FrameDialog() {
                     </label>
                     {(spec.panelMax ?? 0) > 0 && (
                       <>
-                        <Mm label="Longest panel" value={spec.panelMax!} onChange={(v) => set({ panelMax: v })} title="As long as the shop's table and the truck allow" />
-                        <Mm label="Shortest panel" value={spec.panelMin ?? 0.6} onChange={(v) => set({ panelMin: v })} />
+                        <Mm label="Longest panel" min={0.1} value={spec.panelMax!} onChange={(v) => set({ panelMax: v })} title="As long as the shop's table and the truck allow" />
+                        <Mm label="Shortest panel" min={0.05} value={spec.panelMin ?? 0.6} onChange={(v) => set({ panelMin: v })} />
                       </>
                     )}
                     <label className="field-line wood-field" title="A partition carries nothing: a flat member over its openings"><span className="eyebrow">Load-bearing</span>
@@ -345,11 +345,11 @@ export function FrameDialog() {
                         : [...(spec.boards ?? []).filter((x) => x.layer !== l.index), { layer: l.index, width: b?.width ?? 1.2, height: b?.height ?? 2.7, ...patch }] });
                       return (
                         <div key={l.index} className="row wood-board" title="Laid as sheets: upright, their joints on the studs' module, cut at the rough openings">
-                          <label className="row"><input type="checkbox" checked={Boolean(b)} onChange={(e) => setBoard(e.target.checked ? {} : null)} /> {l.name} <span className="muted small">{Math.round(l.thickness * 10000) / 10} mm</span></label>
+                          <label className="row"><input type="checkbox" checked={Boolean(b)} onChange={(e) => setBoard(e.target.checked ? {} : null)} /> {l.name} <span className="muted small">{formatLength(l.thickness)}</span></label>
                           {b && <>
-                            <input className="num" defaultValue={Math.round(b.width * 1000)} key={`bw${l.index}${b.width}`} title="Sheet width (mm)" onBlur={(e) => setBoard({ width: Number(e.target.value) / 1000 })} />
+                            <LengthField metres={b.width} min={0.1} title="Sheet width" onCommit={(v) => { if (v != null) setBoard({ width: v }); }} />
                             <span>×</span>
-                            <input className="num" defaultValue={Math.round(b.height * 1000)} key={`bh${l.index}${b.height}`} title="Sheet height (mm)" onBlur={(e) => setBoard({ height: Number(e.target.value) / 1000 })} />
+                            <LengthField metres={b.height} min={0.1} title="Sheet height" onCommit={(v) => { if (v != null) setBoard({ height: v }); }} />
                           </>}
                         </div>
                       );
@@ -360,12 +360,12 @@ export function FrameDialog() {
                     <Mm label="Gap under a window" value={spec.gapBottom} onChange={(v) => set({ gapBottom: v })} />
                     <Mm label="Narrowest pier" value={spec.minPier} onChange={(v) => set({ minPier: v })} title="Two openings closer than this share one header" />
                     <table className="wood-rules">
-                      <thead><tr><th title="The rough opening's width, up to">≤ mm</th><th title="King studs a side">K</th><th title="Jack studs a side">J</th><th>Header</th><th>Section</th><th title="Plies">×</th><th title="Sill plies">S</th><th /></tr></thead>
+                      <thead><tr><th title="The rough opening's width, up to">≤</th><th title="King studs a side">K</th><th title="Jack studs a side">J</th><th>Header</th><th>Section</th><th title="Plies">×</th><th title="Sill plies">S</th><th /></tr></thead>
                       <tbody>
                         {spec.openings.map((r, i) => (
                           <tr key={i}>
-                            <td><input className="num" defaultValue={r.maxWidth >= 98 ? '' : Math.round(r.maxWidth * 1000)} key={`w${i}${r.maxWidth}`} placeholder="any"
-                              onBlur={(e) => setRule(i, { maxWidth: e.target.value.trim() === '' ? 99 : Number(e.target.value) / 1000 })} /></td>
+                            <td><LengthField metres={r.maxWidth >= 98 ? null : r.maxWidth} min={0.05} blank placeholder="any" noUnit
+                              onCommit={(v) => setRule(i, { maxWidth: v == null ? 99 : v })} /></td>
                             <td><NumberField min={0} max={4} integer value={r.kings} onCommit={(v) => { if (v != null) setRule(i, { kings: v }); }} /></td>
                             <td><NumberField min={0} max={4} integer value={r.jacks} onCommit={(v) => { if (v != null) setRule(i, { jacks: v }); }} /></td>
                             <td><select value={r.header.kind} onChange={(e) => setHeader(i, { kind: e.target.value })}>{HEADERS.map((h) => <option key={h}>{h}</option>)}</select></td>

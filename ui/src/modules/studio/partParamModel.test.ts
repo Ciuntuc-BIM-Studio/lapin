@@ -29,6 +29,8 @@ describe('the parameter table', () => {
     expect(parseCell('yes', 'bool', len)).toEqual({ value: 1 });
     expect(parseCell('No', 'bool', len)).toEqual({ value: 0 });
     expect(parseCell('maybe', 'bool', len)).toBe('bad');
+    expect(parseCell('da', 'bool', len)).toEqual({ value: 1 });
+    expect(parseCell('nu', 'bool', len)).toEqual({ value: 0 });
     expect(parseCell(' oak ', 'text', len)).toEqual({ value: ' oak ' });
     expect(parseCell('', 'number', len)).toEqual({ clear: true });
   });
@@ -88,5 +90,16 @@ describe('the published parameters in Properties', () => {
     ]);
     expect(rows.map((r) => [r.key, r.mode])).toEqual([['W', 'own'], ['D', 'own'], ['H', 'type'], ['Shelf', 'own'], ['Dx', 'derived']]);
     expect(rows.find((r) => r.key === 'Dx')).toMatchObject({ formula: 'W*2', problem: 'cycle' });
+  });
+});
+
+describe('a bool in the words of every language', () => {
+  it('takes what the loaded languages call yes and no', async () => {
+    const { loadAllLanguages } = await import('../../i18n');
+    await loadAllLanguages();
+    expect(parseCell('Ja', 'bool', (t) => Number(t))).toEqual({ value: 1 });
+    expect(parseCell('nein', 'bool', (t) => Number(t))).toEqual({ value: 0 });
+    expect(parseCell('oui', 'bool', (t) => Number(t))).toEqual({ value: 1 });
+    expect(parseCell('nie', 'bool', (t) => Number(t))).toEqual({ value: 0 });
   });
 });
