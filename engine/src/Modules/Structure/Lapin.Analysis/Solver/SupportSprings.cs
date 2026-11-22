@@ -67,11 +67,13 @@ public sealed partial class StructuralProblem
                 {
                     if (sup.Region is { Count: >= 3 } region)
                     {
-                        var (dx, dy) = (region.Max(q => q.X) - region.Min(q => q.X), region.Max(q => q.Y) - region.Min(q => q.Y));
+                        var pad = Footprint(region);
                         var share = 1.0 / nodes.Count;
-                        k[2 * 6 + 2] = ks * dx * dy * share;
-                        k[3 * 6 + 3] = ks * dx * dy * dy * dy / 12 * share;
-                        k[4 * 6 + 4] = ks * dy * dx * dx * dx / 12 * share;
+                        // A turn θx sinks the soil by y·θx, a turn θy by −x·θy (about the footprint's centroid): ks [∫y², −∫xy; −∫xy, ∫x²].
+                        k[2 * 6 + 2] = ks * pad.Area * share;
+                        k[3 * 6 + 3] = ks * pad.Ixx * share;
+                        k[4 * 6 + 4] = ks * pad.Iyy * share;
+                        k[3 * 6 + 4] = k[4 * 6 + 3] = -ks * pad.Ixy * share;
                         held[2] = held[3] = held[4] = false;
                         winkler++;
                     }
@@ -143,6 +145,33 @@ public sealed partial class StructuralProblem
         if (slabs > 0) Notes.Add($"{slabs} slab{(slabs == 1 ? "" : "s")} on the ground on Winkler's bed: {slabNodes} nodes, kz = ks × each node's share of the area; ux and uy held there (the ground's friction).");
         if (lifting > 0) Notes.Add($"{lifting} support node{(lifting == 1 ? "" : "s")} in compression only: each combination solved again where one would pull, lifted (free).");
         if (noFootprint.Count > 0) Notes.Add($"Winkler's ks on {string.Join(", ", noFootprint.Take(6))}: no footprint to take it on (a column base); give its springs instead.");
+    }
+
+    /// <summary>
+    /// A footprint's area and second moments about its centroid in global axes (m², m⁴): Ixx = ∫(y − yc)², Iyy = ∫(x − xc)²,
+    /// Ixy = ∫(x − xc)(y − yc), by Green's theorem over its outline (either way round).
+    /// </summary>
+    public static (double Area, double Ixx, double Iyy, double Ixy) Footprint(IReadOnlyList<Vec2> outline)
+    {
+        double a = 0, sx = 0, sy = 0, ixx = 0, iyy = 0, ixy = 0;
+        var o = outline[0];
+        for (var i = 0; i < outline.Count; i++)
+        {
+            var (p, q) = (outline[i] - o, outline[(i + 1) % outline.Count] - o);
+            var c = p.X * q.Y - q.X * p.Y;
+            a += c;
+            sx += (p.X + q.X) * c;
+            sy += (p.Y + q.Y) * c;
+            ixx += (p.Y * p.Y + p.Y * q.Y + q.Y * q.Y) * c;
+            iyy += (p.X * p.X + p.X * q.X + q.X * q.X) * c;
+            ixy += (p.X * q.Y + 2 * p.X * p.Y + 2 * q.X * q.Y + q.X * p.Y) * c;
+        }
+        a /= 2;
+        if (Math.Abs(a) < 1e-15) return (0, 0, 0, 0);
+        var (xc, yc) = (sx / (6 * a), sy / (6 * a));
+        // About the origin (the first vertex), then moved to the centroid (parallel axes); the signs follow the outline's turn, as the area's.
+        var (jxx, jyy, jxy) = (ixx / 12, iyy / 12, ixy / 24);
+        return (Math.Abs(a), Math.Abs(jxx - a * yc * yc), Math.Abs(jyy - a * xc * xc), Math.Sign(a) * (jxy - a * xc * yc));
     }
 
     /// <summary>Whether a support's footprint or strip is under a point (as the analytical model finds the feet it holds).</summary>
