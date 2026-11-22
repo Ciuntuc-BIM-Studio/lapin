@@ -428,7 +428,7 @@ public class GeometryPinTests(ITestOutputHelper output)
         ["14.IfcStair.q.Lapin_StairQuantities..Length"] = 4.760000000000001,
         ["14.IfcStair.q.Lapin_StairQuantities..NetVolume"] = 1.2019859979650334,
         ["14.IfcStair.q.Lapin_StairQuantities..NumberOfRiser"] = 18,
-        ["14.IfcStair.q.Lapin_StairQuantities..RailingLength"] = 5.539438399131972,
+        ["14.IfcStair.q.Lapin_StairQuantities..RailingLength"] = 5.842363057929971,
         ["14.IfcStair.q.Lapin_StairQuantities..RiserHeight"] = 0.16666666666666666,
         ["14.IfcStair.q.Lapin_StairQuantities..TreadLength"] = 0.28,
         ["14.IfcStair.q.Lapin_StairQuantities..Width"] = 1,
