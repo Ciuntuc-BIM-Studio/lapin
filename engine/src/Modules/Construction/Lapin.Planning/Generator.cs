@@ -298,18 +298,8 @@ public static class Generator
     /// </summary>
     public sealed record Outcome(Entity Schedule, List<Entity> Tasks, List<Relation> Links, List<Made> Made, HashSet<string> Removed, GenSpec Spec, List<string> Notes);
 
-    static readonly string[] Volume = ["NetVolume", "Volume", "GrossVolume"];
-    static readonly string[] Area = ["NetSideArea", "NetArea", "NetFloorArea", "NetSurfaceArea", "GrossSideArea", "GrossArea", "GrossFloorArea", "GrossSurfaceArea", "Area"];
-    static readonly string[] Length = ["Length"];
-    static readonly string[] Weight = ["NetWeight", "GrossWeight", "Weight"];
-
-    static string[] NamesOf(string basis) => basis switch { "volume" => Volume, "area" => Area, "length" => Length, "weight" => Weight, _ => [] };
-
-    static double? Pick(IReadOnlyList<Quantity> qs, string[] names)
-    {
-        foreach (var n in names) if (qs.FirstOrDefault(x => x.Name == n) is { } hit) return hit.Value;
-        return null;
-    }
+    // The quantity names are the estimate's (MeasureQuantities), so a task's duration reads what its cost does.
+    static double? Pick(IReadOnlyList<Quantity> qs, string basis) => MeasureQuantities.Pick(qs, basis);
 
     /// <summary>
     /// What an element measures in a kind of quantity, for the layers a task takes of it: the whole element's set when it
@@ -319,11 +309,10 @@ public static class Generator
     {
         if (mask == 0) return 0;
         if (basis == "count") return 1;
-        var names = NamesOf(basis);
         if ((mask & f.All) == f.All || f.Layers.Count <= 1)
         {
-            foreach (var s in sets.Where(s => s.Part == null)) if (Pick(s.Quantities, names) is { } v) return v;
-            return sets.Where(s => s.Part != null).Sum(s => Pick(s.Quantities, names) ?? 0);
+            foreach (var s in sets.Where(s => s.Part == null)) if (Pick(s.Quantities, basis) is { } v) return v;
+            return sets.Where(s => s.Part != null).Sum(s => Pick(s.Quantities, basis) ?? 0);
         }
         double sum = 0;
         var found = new HashSet<int>();
@@ -332,16 +321,16 @@ public static class Generator
             // A layer's own set: layer:<n>, or a part a layer is drawn as (a roof's deck or covering, decision 332).
             if (s.Part is not { } part || part.StartsWith("zone:", StringComparison.Ordinal) || TaskParts.LayerOf(f, part) is not { } i || i >= 64 || (mask & (1UL << i)) == 0) continue;
             found.Add(i);
-            sum += Pick(s.Quantities, names) ?? 0;
+            sum += Pick(s.Quantities, basis) ?? 0;
         }
         var core = f.Layers.FirstOrDefault(l => l.Core);
         if (core != null && core.Index < 64 && (mask & (1UL << core.Index)) != 0 && !found.Contains(core.Index))
-            sum += sets.Where(s => s.Part?.StartsWith("zone:", StringComparison.Ordinal) == true).Sum(s => Pick(s.Quantities, names) ?? 0);
+            sum += sets.Where(s => s.Part?.StartsWith("zone:", StringComparison.Ordinal) == true).Sum(s => Pick(s.Quantities, basis) ?? 0);
         // A layer drawn as parts of its own but measured by no set (a roof's rafters, a covering of no material): the element's own measure.
         double? whole = null;
         foreach (var l in f.Layers)
             if (l.Keys is { Count: > 0 } && l.Index < 64 && (mask & (1UL << l.Index)) != 0 && !found.Contains(l.Index))
-                sum += whole ??= sets.Where(s => s.Part == null).Select(s => Pick(s.Quantities, names)).FirstOrDefault(v => v != null) ?? 0;
+                sum += whole ??= sets.Where(s => s.Part == null).Select(s => Pick(s.Quantities, basis)).FirstOrDefault(v => v != null) ?? 0;
         return sum;
     }
 
