@@ -143,7 +143,7 @@ public sealed record EllipseEdge(Vec2 C, Vec2 M, double Ratio, bool Ccw)
             var same = given.ToArray();
             if (Fits(same)) return same;
             // Turned round by the check: edge j of the new outline is edge n-2-j of the old, run back.
-            var back = Enumerable.Range(0, n).Select(j => given[((n - 2 - j) % n + n) % n]?.Reversed).ToArray();
+            var back = ArcOutline.RunBack(given, x => x?.Reversed);
             if (Fits(back)) return back;
         }
         throw new CommandException("An elliptical edge's corners must lie on its ellipse.");
