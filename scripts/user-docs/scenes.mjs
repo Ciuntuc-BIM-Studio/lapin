@@ -5860,6 +5860,50 @@ export const scenes = [
     },
   },
   {
+    // Structural analysis, docs/plan-fem.md §14.23: the buckling lengths of the design checks from αcr, beside the user's k·L: a steel portal frame.
+    id: 'analysis-buckling-lengths',
+    touches: ['core', 'structure', 'analysis'],
+    async run(t) {
+      await t.fresh();
+      const ground = await t.storey();
+      await t.cmd('storey.update', { id: ground, height: 4 });
+      await t.cmd('storey.create', { name: 'Roof', elevation: 4, height: 3 });
+      const col = (await t.cmd('structure.createColumnType', { section: 'HEB 200', material: 'S235' })).id;
+      const beam = (await t.cmd('structure.createBeamType', { section: 'IPE 300', material: 'S235' })).id;
+      const left = (await t.cmd('structure.addColumn', { storeyId: ground, x: 0, y: 0, typeId: col })).id;
+      await t.cmd('structure.addColumn', { storeyId: ground, x: 6, y: 0, typeId: col });
+      await t.cmd('structure.addBeam', { storeyId: ground, x1: 0, y1: 0, x2: 6, y2: 0, typeId: beam });
+      for (const x of [0, 6]) await t.cmd('structure.addPadFooting', { storeyId: ground, x, y: 0 });
+      await t.cmd('analysis.defaultCases', {});
+      const qa = (await t.call('doc.query', { name: 'analysis.loads', args: {} })).cases.find((c) => c.code === 'Q-A');
+      for (const x of [0, 6]) await t.cmd('analysis.addPointLoad', { storeyId: ground, at: [x, 0], z: 3.85, value: 200, caseId: qa.id });
+      await t.wait(600);
+      await t.tool('analysis.run');
+      const dialog = t.page.locator('[aria-label="Analysis results"]');
+      const checks = t.page.locator('[data-testid=analysis-checks]');
+      await t.until(async () => (await checks.locator('[data-testid=checks-members] tbody tr').count()) >= 3, 'the Checks section lists the bars', 120000);
+      const rowOf = async () => (await t.call('doc.query', { name: 'analysis.checks', args: {} })).members.find((m) => m.sourceId === left);
+      const k = await rowOf();
+      t.expect(k.lengths && k.lengths.fromAlpha === false && k.lengths.z.source === 'k', `the lengths are k·L by default (${JSON.stringify(k.lengths?.z)})`);
+      await tallShot(t, 'analysis-lcr-k', '[data-testid=checks-members]');
+      // From αcr, for the whole project: the columns' lengths come from the lowest modes that bend them.
+      await t.cmd('analysis.setDesign', { bucklingLengths: 'alpha' });
+      await t.wait(600);
+      await t.tool('analysis.run');
+      await t.until(async () => (await checks.locator('[data-testid=checks-lcr][data-source*=alpha]').count()) > 0, 'the table shows lengths from αcr', 120000);
+      const a = await rowOf();
+      t.expect(a.lengths.fromAlpha === true && a.lengths.z.source === 'alpha' && a.lengths.z.used >= a.lengths.z.kL, `the left column's weak-axis length is from αcr (${JSON.stringify(a.lengths?.z)})`);
+      t.expect(a.utilisation > k.utilisation, `the utilisation rises with the longer length (${k.utilisation} → ${a.utilisation})`);
+      await tallShot(t, 'analysis-lcr-alpha', '[data-testid=checks-members]');
+      // The column's own properties: k·L, the αcr length and which one is used.
+      await t.ui({ dialog: null });
+      await select(t, left);
+      await t.until(async () => (await t.page.locator('[data-testid=design-lengths]').count()) > 0, 'a column shows its buckling lengths in its properties');
+      t.expect(await t.page.locator('[data-testid=design-own-bucklingLengths]').count() === 1, 'a column can choose its own source');
+      await tallShot(t, 'analysis-lcr-props', '[data-testid=design-lengths]', { height: 2600, pad: 8 });
+    },
+  },
+  {
     // Structural analysis, stage S5d (docs/plan-fem.md §14.15): a steel hall's purlins buckle on their own under the wind's uplift; the sheeting that rests on them holds them straight, and the first modes move on.
     id: 'analysis-sheeting',
     touches: ['core', 'structure', 'steel', 'analysis'],
@@ -8659,6 +8703,128 @@ export const scenes = [
         await t.wait(800);
         t.expect(await t.page.locator('[data-testid=light-section]').count() === 1, 'a light shows its Light section');
         await t.shot('light-properties', { of: '[data-testid=light-section]', pad: 8 });
+      } finally {
+        await profile('drawing');
+      }
+    },
+  },
+  {
+    // Rendering (docs/plan-render.md, S4): the 3D view path-traced. A brick house at noon in the realistic view, rendered
+    // (the sky's light, the sun's soft shadows, the brick's relief); the Render dialog; a living room at dusk lit by its
+    // lamps, the light bouncing off the walls and the ceiling. The house's roof sits on its walls
+    // (its lowest point the walls' top), checked.
+    id: 'render',
+    touches: ['architecture', 'mep'],
+    async run(t) {
+      const profile = (p) => t.page.evaluate(async (v) => (await import('/src/viewport/render3d.ts')).setRenderProfile(v), p);
+      const settings = (patch) => t.page.evaluate(async (v) => (await import('/src/viewport/renderMode.ts')).setRenderSettings(v), patch);
+      const pose = (p) => t.page.evaluate(async (v) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo(v, false), p);
+      const set = (material, id) => t.page.evaluate(async ([material, id]) => {
+        const { useSession, execute } = await import('/src/engine/session.ts');
+        const lib = await import('/src/viewport/textureLibrary.ts');
+        const m = [...useSession.getState().nodes.values()].find((n) => n.type === 'IfcMaterial' && n.name === material);
+        if (m) await execute('material.textures', await lib.setArgs(lib.setOf(`ambientcg/${id}`), [m.id], lib.fetchBytes));
+        return !!m;
+      }, [material, id]);
+      // Rendered until done: its samples in the view's corner, then a moment for the last frame.
+      const rendered = async (samples) => {
+        await t.page.locator('[data-testid=render-button]').click();
+        await t.page.waitForFunction((n) => Number(document.querySelector('[data-testid=view3d]')?.dataset.traceSamples ?? 0) >= n, samples, { timeout: 600_000, polling: 500 });
+        await t.wait(600);
+      };
+      // The lowest and highest points of a class's faces above a height (a roof's downpipes reach the ground: left out).
+      const zs = (type, above = -Infinity) => t.page.evaluate(async ([ty, above]) => {
+        const { useSession } = await import('/src/engine/session.ts');
+        let lo = Infinity, hi = -Infinity;
+        for (const it of useSession.getState().render.values()) {
+          if (it.type !== ty) continue;
+          const all = [it.positions, ...(it.parts ?? []).map((p) => p.positions)];
+          for (const pos of all) for (let i = 2; i < (pos?.length ?? 0); i += 3) if (pos[i] > above) { lo = Math.min(lo, pos[i]); hi = Math.max(hi, pos[i]); }
+        }
+        return [lo, hi];
+      }, [type, above]);
+      try {
+        // The house: brick walls, a door and windows, a gabled roof on the ground floor's walls.
+        await t.fresh();
+        const s = await t.storey();
+        const brick = (await t.cmd('architecture.createWallType', { name: 'Facing brick 300', layers: [{ material: 'Brick', thickness: 0.3, core: true }] })).id;
+        const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+        const walls = [];
+        for (let i = 0; i < 4; i++) walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: outline[i][0], y1: outline[i][1], x2: outline[(i + 1) % 4][0], y2: outline[(i + 1) % 4][1], typeId: brick })).id);
+        await t.cmd('architecture.addWall', { storeyId: s, x1: 7, y1: 0, x2: 7, y2: 8 });
+        await t.cmd('architecture.addDoor', { wallId: walls[0], x: 3, y: 0 });
+        for (const x of [5.5, 9.5]) await t.cmd('architecture.addWindow', { wallId: walls[0], x, y: 0 });
+        await t.cmd('architecture.addWindow', { wallId: walls[3], x: 0, y: 4 });
+        await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
+        const roof = await t.cmd('architecture.addRoof', { storeyId: s, points: outline });
+        await t.cmd('architecture.roofStyle', { id: roof.id, style: 'ro_saxon' });
+        t.expect(await set('Brick', 'Bricks085'), 'the brick takes the Red brick set');
+        await t.wait(1200);
+        await t.ui({ view: '3d', keyPlan: false });
+        await t.page.waitForSelector('[data-testid=view3d] canvas');
+        await t.wait(1500);
+        // The roof on the ground floor's walls, not a storey above them: its eaves (its lowest point but the downpipes) at the
+        // walls' top along them, the storey's top, less the overhang's drop at 45°.
+        const ground = (await t.nodes()).find((n) => n.id === s);
+        const wallTop = (ground.props.elevation ?? 0) + (ground.props.height ?? 3);
+        const [eaves] = await zs('IfcRoof', 1);
+        t.expect(eaves > wallTop - 0.45 && eaves < wallTop + 0.05, `the roof sits on the walls (its eaves at ${eaves.toFixed(2)} m, the walls' top at ${wallTop.toFixed(2)} m)`);
+        // Noon at midsummer, seen from the south-west.
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ date: '2026-06-21', hour: 12 }));
+        await profile('realistic');
+        await settings({ samples: 128, limit: 'samples', denoise: true, dof: false, ev: null, wb: 'view', resolution: '1080p' });
+        await pose({ azimuth: 1.05, pitch: -0.12, distance: 21, target: { x: 6, y: 4, z: 2.2 } });
+        await t.wait(2500);
+        t.expect(await t.page.locator('[data-testid=render-button]').count() === 1, 'the realistic view offers Render');
+        await rendered(128);
+        t.expect(await t.page.locator('[data-testid=render-chip]').count() === 1, 'the view says how far the render has got');
+        const tris = await t.page.evaluate(() => Number(document.querySelector('[data-testid=view3d]')?.dataset.traceTriangles ?? 0));
+        t.expect(tris > 1000, `the render takes the view's own triangles (${tris})`);
+        await t.shot('render-exterior', { of: '[data-testid=view3d]', pad: 0 });
+        await t.page.locator('[data-testid=render-chip] button', { hasText: 'Settings…' }).click();
+        await t.page.waitForSelector('[data-testid=render-dialog]');
+        await t.wait(500);
+        await t.shot('render-dialog', { of: '[data-testid=render-dialog]', pad: 0 });
+        await t.page.locator('[data-testid=render-dialog] button[title="Close"]').click();
+        await t.page.locator('[data-testid=render-chip] .mode-close').click();
+        await t.wait(400);
+
+        // The living room at dusk: plastered walls, an oak floor, two downlights, a pendant and a spot, the window to the west sky.
+        await t.fresh();
+        const g = await t.storey();
+        const plaster = (await t.cmd('architecture.createWallType', { name: 'Plastered 250', layers: [{ material: 'Plaster', thickness: 0.25, core: true }] })).id;
+        const room = [[0, 0], [5, 0], [5, 4], [0, 4]];
+        const sides = [];
+        for (let i = 0; i < 4; i++) sides.push((await t.cmd('architecture.addWall', { storeyId: g, x1: room[i][0], y1: room[i][1], x2: room[(i + 1) % 4][0], y2: room[(i + 1) % 4][1], typeId: plaster })).id);
+        await t.cmd('architecture.addWindow', { wallId: sides[3], x: 0, y: 2 });
+        await t.cmd('architecture.addSlab', { storeyId: g, points: room });
+        const storeys = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').sort((a, b) => (a.props.elevation ?? 0) - (b.props.elevation ?? 0));
+        const above = storeys.find((x) => (x.props.elevation ?? 0) > 0.5);
+        if (above) await t.cmd('architecture.addSlab', { storeyId: above.id, points: room });
+        const system = (await t.cmd('mep.placeSystem', { service: 'electrical', storeyId: g, x: 0.4, y: 3.7, to: [0.3, 1.2] })).id;
+        const place = async (x, y) => (await t.cmd('mep.placeNode', { systemId: system, role: 'light', storeyId: g, x, y })).id;
+        const downlights = [await place(1.4, 2), await place(3.6, 2)];
+        const pendant = await place(2.5, 2.4);
+        const spot = await place(4.4, 3.4);
+        await t.cmd('light.set', { ids: downlights, kind: 'spot', profile: 'builtin:downlight-medium', lumens: 900, kelvin: 3000 });
+        await t.cmd('light.set', { ids: [pendant], profile: 'builtin:pendant', lumens: 1200, kelvin: 2700, at: 'centre' });
+        await t.cmd('light.set', { ids: [spot], kind: 'spot', lumens: 500, kelvin: 3500, beam: 30, field: 50 });
+        t.expect(await set('Floor finish', 'WoodFloor043'), 'the floor takes the oak set');
+        await set('Plaster', 'PaintedPlaster017');
+        await t.wait(1200);
+        await t.ui({ view: '3d', keyPlan: false });
+        await t.page.waitForSelector('[data-testid=view3d] canvas');
+        // Mid-October, at dusk going on night (an hour and a half after sunset): the lamps on, the exposure open.
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ date: '2026-10-15', hour: 20 }));
+        await profile('realistic');
+        await settings({ samples: 160 });
+        await pose({ azimuth: 0.69, pitch: -0.1, distance: 4.4, target: { x: 3.8, y: 3.2, z: 1.3 } });
+        await t.wait(2500);
+        await rendered(160);
+        const lights = await t.page.evaluate(async () => (await import('/src/viewport/renderMode.ts')).useRenderMode.getState().stats?.lights ?? 0);
+        t.expect(lights === 4, `the render takes every light (${lights})`);
+        await t.shot('render-interior', { of: '[data-testid=view3d]', pad: 0 });
+        await t.page.locator('[data-testid=render-chip] .mode-close').click();
       } finally {
         await profile('drawing');
       }

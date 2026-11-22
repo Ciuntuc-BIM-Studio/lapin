@@ -67,6 +67,8 @@ export const ZH: Record<string, string> = {
   "The partitions the schedule lists": "明细表所列的分区",
   "Partition: bars in one are numbered, scheduled and filtered apart": "分区：同一分区内的钢筋单独编号、列表和筛选",
   "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "新钢筋所属的分区：在其中从 1 开始编号，单独列表和筛选（留空：无）",
+  // Rendering: the path tracer (docs/plan-render.md, S4)
+  "Render": "渲染", "Render settings": "渲染设置", "Render this view as a photograph: light traced as it bounces, refining while the camera rests": "将此视图渲染为照片：追踪光线的多次反射，相机静止时图像不断细化", "Preparing the renderer…": "正在准备渲染器…", "Building the scene…": "正在构建场景…", "Denoising…": "正在降噪…", "Click what should be in focus": "点击需要对焦的位置", "Stop the image": "停止图像", "Resolution, samples, denoising, depth of field, exposure; save the image": "分辨率、采样数、降噪、景深、曝光；保存图像", "Settings…": "设置…", "Back to the live view": "返回实时视图", "Rendering needs the medium or realistic view: View → Display quality.": "渲染需要中等或写实视图：视图 → 显示质量。", "Open a 3D view to render it.": "打开 3D 视图以进行渲染。", "The window": "窗口", "1080p (1920 wide)": "1080p（宽 1920）", "4K (3840 wide)": "4K（宽 3840）", "px": "px", "The picture refines sample by sample: it is done after so many, or after so long": "图像逐个采样细化：达到一定采样数或经过一定时间后完成", "Done after": "完成条件", "Samples": "采样数", "Seconds": "秒", "s": "s", "Clears the last grain from the picture, guided by its colours, normals and depth": "借助图像的颜色、法线和深度，清除最后的噪点", "Denoise": "降噪", "Intel Open Image Denoise for the saved image; Lapin’s own in the view.": "Intel Open Image Denoise 用于保存的图像；视图中使用 Lapin 自带的降噪。", "Lapin’s own denoiser.": "Lapin 自带的降噪器。", "Camera": "相机", "Near and far go soft, as through a camera's lens: what is at the focus distance stays sharp": "近处和远处会变得柔和，如同通过相机镜头：位于对焦距离的物体保持清晰", "Depth of field": "景深", "Aperture": "光圈", "The aperture: a smaller f-number blurs more": "光圈：f 值越小，虚化越强", "Focus distance": "对焦距离", "m": "m", "Click in the 3D view what should be sharp": "在 3D 视图中点击需要保持清晰的位置", "Pick in the view": "在视图中拾取", "Stops over the view's automatic exposure (View → Display quality)": "在视图自动曝光基础上调整的挡数（视图 → 显示质量）", "The view’s": "视图的", "Its own": "自定义", "Exposure compensation": "曝光补偿", "The light that comes out white": "呈现为白色的光", "The sky and the sun are the view’s: the project’s place, day and hour (View → Sun and shadows). After sunset the light fixtures light the rooms.": "天空和太阳取自视图：项目的位置、日期和时间（视图 → 太阳和阴影）。日落后，灯具为房间照明。", "Save image…": "保存图像…",
   // Artificial light and the night (docs/plan-render.md, S2)
   "Beam angle": "光束角", "Field angle": "场角", "It gives no light in the medium and realistic views.": "在中等和写实视图中不发光。", "Make it a light": "设为光源", "The light's data are its type's: every element of the type lights so.": "灯光数据属于其类型：该类型的每个元素都这样发光。", "Point (every way)": "点光源（各个方向）", "Spot (a cone)": "聚光灯（锥形）", "Panel (out of its face)": "面板（从其表面发光）", "Luminous flux": "光通量", "The light it gives, as its maker states it": "它发出的光，按制造商的标称", "Colour temperature": "色温", "1000–12000 K: 2700 K a warm lamp, 4000 K neutral, 6500 K daylight": "1000–12000 K：2700 K 暖光灯，4000 K 中性，6500 K 日光", "Full light inside this angle": "此角度内为全光", "No light past this angle": "超出此角度无光", "Empty: the fixture's": "留空：取灯具的", "How the light spreads: a built-in distribution, or a maker's IES file (LM-63, type C) brought into the project": "光的分布方式：内置配光，或导入项目的制造商 IES 文件（LM-63，C 型）", "The kind's own": "该种类自带", "Import an IES file…": "导入 IES 文件…", "Under the fixture": "灯具下方", "The fixture's middle": "灯具中部", "Near the fixture's top (a shade)": "靠近灯具顶部（灯罩）", "Aimed": "朝向", "No light": "无灯光", "Downlight, narrow (25°)": "筒灯，窄（25°）", "Downlight, medium (40°)": "筒灯，中（40°）", "Wide flood (120°)": "宽泛光（120°）", "Wall washer (C 0° towards the wall)": "洗墙灯（C 0° 朝墙）", "Pendant (up and down)": "吊灯（上下发光）", "The lights drawn now: the nearest and brightest first, a few with shadows; a rendered image takes them all": "当前绘制的灯光：最近、最亮的优先，少数带阴影；渲染图像会使用全部", "Exposure": "曝光", "Stops over the automatic exposure, which opens up after sunset so the lamps light the rooms": "相对自动曝光的档数；日落后自动曝光会提高，使灯具照亮房间", "White balance": "白平衡", "The light that comes out white: automatic is daylight by day and 4000 K at night, so warm lamps stay warm": "显示为白色的光：自动时白天为日光，夜间为 4000 K，使暖色灯保持温暖", "below the horizon (dusk)": "地平线以下（黄昏）", "below the horizon (night)": "地平线以下（夜晚）", "After sunset they show the night: the sky darkens, the exposure opens and the light fixtures light the rooms.": "日落后显示夜晚：天空变暗，曝光提高，灯具照亮房间。", "Lights": "发光", "What is made of it lights the medium and realistic views as a lamp does": "由它制成的物体在中等和写实视图中像灯一样发光",
   // Find in project browser, Place on sheet… (forum topic 207)
@@ -4977,6 +4979,17 @@ export const ZH: Record<string, string> = {
   "Default (Annex A)": "默认（附录 A）",
   "Annex A (method 1)": "附录 A（方法 1）",
   "Annex B (method 2)": "附录 B（方法 2）",
+  "Buckling lengths": "屈曲长度",
+  "Default (k from the user)": "默认（用户给定的 k）",
+  "k from the user": "用户给定的 k",
+  "From αcr": "来自 αcr",
+  "Where the design checks take the buckling lengths of steel and timber bars from: the k·L you give, or the lowest buckling mode of the model (αcr, EN 1993-1-1 5.2.2), never shorter than k·L; an element can have its own": "设计验算从何处取钢杆件和木杆件的屈曲长度：您给定的 k·L，或模型的最低屈曲模态（αcr，EN 1993-1-1 5.2.2），绝不小于 k·L；单个构件可以有自己的选择",
+  "The buckling lengths used about the strong and the weak axis, in metres; hover for k·L, the length from αcr and why": "绕强轴和弱轴所用的屈曲长度，单位米；悬停可查看 k·L、来自 αcr 的长度及原因",
+  "Where the buckling lengths come from: the k·L above, or the lowest buckling mode of the model (αcr), never shorter than k·L; empty: the project's": "屈曲长度的来源：上面的 k·L，或模型的最低屈曲模态（αcr），绝不小于 k·L；留空：采用项目的设置",
+  "Strong axis (y-y)": "强轴 (y-y)",
+  "Weak axis (z-z)": "弱轴 (z-z)",
+  "Used": "采用",
+  "Shown only (concrete: EN 1992-1-1 5.8.3.2)": "仅显示（混凝土：EN 1992-1-1 5.8.3.2）",
   "Snow on timber": "木结构的雪荷载",
   "Default (short-term)": "默认（短期）",
   "Short-term": "短期",
@@ -5685,4 +5698,8 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^The drawing unfolds into more than 2,000,000 entities through its block „(.+)” \(blocks inserted inside blocks, or an array insert\), more than Lapin brings in at once\. Purge or explode what is not needed in the CAD program, then import it again\.$/, (m) => `图纸通过其块“${m[1]}”展开为超过 2,000,000 个对象（块中嵌套块，或阵列插入），超出 Lapin 一次能导入的数量。请在 CAD 程序中清理或分解不需要的内容，然后重新导入。`],
   // The 3D view's lights drawn now (docs/plan-render.md, S2)
   [/^(\d+) \/ (\d+) lights, (\d+) with shadows$/, (m) => `${m[1]} / ${m[2]} 盏灯，${m[3]} 盏带阴影`],
+  // The render's readouts (docs/plan-render.md, S4)
+  [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} 个采样 · ${m[2]}:${m[3]}`],
+  [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `图像 ${m[1]} × ${m[2]}：${m[3]} %`],
+  [/^The image could not be made: (.+)$/, (m) => `无法生成图像：${m[1]}`],
 ];

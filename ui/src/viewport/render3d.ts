@@ -246,6 +246,26 @@ export class Realism {
     this.applyEnvironment(dir ? d : null);
   }
 
+  /**
+   * The sky as the path tracer takes it (pathTraceView.ts, docs/plan-render.md S4): the light-giving sky's and the backdrop's
+   * uniforms as they are now (the backdrop only where the profile shows the sky), and the sky light's strength.
+   */
+  traceSky(): { light: Record<string, unknown>; backdrop: Record<string, unknown> | null; intensity: number } {
+    const values = (s: Sky) => {
+      const out: Record<string, unknown> = {};
+      for (const [k, u] of Object.entries(s.material.uniforms)) {
+        const v = u.value as { clone?: () => unknown } | number;
+        out[k] = typeof v === 'object' && v && typeof v.clone === 'function' ? v.clone() : v;
+      }
+      return out;
+    };
+    return {
+      light: values(this.envSky),
+      backdrop: this.spec.sky ? values(this.sky) : null,
+      intensity: this.scene.environment ? this.scene.environmentIntensity : 0,
+    };
+  }
+
   private applyEnvironment(dir?: readonly [number, number, number] | null): void {
     const spec = this.spec;
     if (!spec.skyLight) { this.scene.environment = null; return; }

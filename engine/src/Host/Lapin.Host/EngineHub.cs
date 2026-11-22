@@ -236,6 +236,9 @@ public sealed class EngineHub
     /// <summary>The port the engine listens on (0 before it does).</summary>
     public int Port { get; set; }
 
+    /// <summary>The modules' folder the host was started with (the app's resources hold OIDN beside it: Denoiser.Find).</summary>
+    public string? ModulesDir { get; set; }
+
     /// <summary>
     /// Who this is, for a program looking for Lapin on this computer (docs/python.md, How a program finds Lapin): the
     /// <c>engine.hello</c> call's answer and /health's. <c>engine</c> is always "lapin", so another program listening on
@@ -421,7 +424,7 @@ public sealed class EngineHub
     }
 
     /// <summary>The families of the host's own calls, answered at once, past the queue of calls (a cancel stops the one running).</summary>
-    static readonly string[] OwnPrefixes = ["share.", "presence.", "cancel.", "extensions.", "script.", "measure.", "pair.", "sites.", "support.report", "support.messages"];
+    static readonly string[] OwnPrefixes = ["share.", "presence.", "cancel.", "extensions.", "script.", "measure.", "pair.", "sites.", "support.report", "support.messages", "render."];
 
     /// <summary>A share.*, presence.*, cancel.*, extensions.*, script.*, measure.*, pair.*, sites.*, support.report, support.messages or engine.hello call, parsed; null for any other.</summary>
     static JsonObject? Own(string text)
@@ -519,6 +522,19 @@ public sealed class EngineHub
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     result = await Support.Messages(p);
                     break;
+                // The path tracer's denoiser (docs/plan-render.md, S4): Intel Open Image Denoise beside the engine, where there is one.
+                // Past the queue of calls (a 4K picture takes seconds; no edit waits for it). This computer's own interface only.
+                case "render.denoiser":
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    result = new JsonObject { ["oidn"] = Denoiser.Find(ModulesDir) != null };
+                    break;
+                case "render.denoise":
+                {
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    var dir = Denoiser.Find(ModulesDir) ?? throw new CommandException("Open Image Denoise is not beside this engine (node scripts/fetch-oidn.mjs).");
+                    result = await Task.Run(() => Denoiser.Run(dir, p));
+                    break;
+                }
                 case "extensions.source":
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     result = new JsonObject { ["index"] = ExtensionFetch.IndexFromEnvironment };

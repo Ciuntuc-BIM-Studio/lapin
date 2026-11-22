@@ -3110,3 +3110,13 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 .subd-cage .subd-guide { stroke-width: 1.5; stroke-dasharray: 6 4; fill: none; }
 .subd-cage .subd-guide.red { stroke: #d33a2c; } .subd-cage .subd-guide.green { stroke: #2b9a3b; } .subd-cage .subd-guide.blue { stroke: #2f62d8; }
 .subd-bar .cell { width: auto; }
+/* The 3D view's Render button (docs/plan-render.md, S4), above the lights' readout. */
+.render-button { position: absolute; right: 12px; bottom: 72px; z-index: 6; display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 12px; background: var(--hud); border: 1px solid var(--line, transparent); color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; backdrop-filter: blur(4px); cursor: pointer; }
+.render-button:hover { border-color: var(--accent); color: var(--accent); }
+.mode-chip.render .mode-hint { font-variant-numeric: tabular-nums; }
+.render-dialog { width: min(540px, calc(100vw - 32px)); }
+.render-dialog .num { white-space: nowrap; }
+.render-dialog dd.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.render-dialog dd.row select { flex: 1 1 auto; min-width: 0; }
+.render-dialog label.row { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.render-dialog input[type=checkbox] { width: auto; flex: none; margin: 0; }

@@ -13,9 +13,18 @@ namespace Lapin.Analysis.Design;
 /// <summary>A bar's checks: its piece (the analytical model's member), element, name, material and kind, its checks and what reinforcement it needs.</summary>
 public sealed record MemberDesign(int Index, string Id, string SourceId, string Name, string Material, string? Grade, string Kind, string? StoreyId, List<Check> Checks, Required? Need, List<string> Notes)
 {
+    /// <summary>Its buckling lengths as the checks took them (§14.24): k·L, the αcr ones when asked, which is used.</summary>
+    public LengthsInfo? Lengths { get; init; }
     public Check? Governing => Checks.Where(c => c.Done).MaxBy(c => c.Utilisation) ?? Checks.MaxBy(c => c.Utilisation);
     public double Utilisation => Governing?.Utilisation ?? 0;
 }
+
+/// <summary>
+/// A member's buckling lengths as shown (§14.24): its k·L about each axis (or the lengths given), whether the αcr lengths were
+/// asked (and, for concrete, only shown), and the lengths of the design set that governs its buckling check (or its most
+/// compressed one): about each axis the one used, where it came from and the αcr one.
+/// </summary>
+public sealed record LengthsInfo(double KLy, double KLz, string HowY, string HowZ, bool FromAlpha, bool Informative, SetLengths? Set, string? Combination, string? CombinationName);
 
 /// <summary>A concrete slab's or wall's reinforcement (m²/m at each node, four layers) and its checks.</summary>
 public sealed record SurfaceDesign(string Group, string SourceId, string Name, string Kind, string Material, string? StoreyId, int[] Nodes, double[][] Layers, List<Check> Checks, List<string> Notes)
@@ -107,6 +116,7 @@ public sealed class DesignRun
         var serviceDefault = (int)(DesignSettings.Num(project, "serviceClass") ?? 1);
         var cv = Values(project);
         var unchecked_ = new HashSet<string>();
+        var alphaMembers = 0;
         for (var k = 0; k < members.Count && k < sp.Frames.Count; k++)
         {
             var e = members[k];
@@ -146,6 +156,15 @@ public sealed class DesignRun
             var restrained = !vertical && slabNodes.Contains(f.I) && slabNodes.Contains(f.J);
             var llt = DesignSettings.Num(own, "llt") ?? (restrained ? 0 : l);
             var lengths = $"Buckling lengths: strong axis {Checks.F(lcrY, "0.##")} m ({hy}), weak axis {Checks.F(lcrZ, "0.##")} m ({hz}); a braced frame assumed (a sway frame's k > 1 is the user's to give).";
+            var fromAlpha = DesignSettings.FromAlpha(project, own);
+            IReadOnlyDictionary<string, SetLengths>? bySet = null;
+            if (fromAlpha && kind is "steel" or "timber" or "concrete")
+            {
+                if (!_prepared) { Run.PrepareLengths(); _prepared = true; }
+                _whole ??= members.Select((x, i) => (x, i)).GroupBy(t => sp.Frames[t.i].Source.SourceId).ToDictionary(g => g.Key, g => g.Sum(t => t.x.L));
+                bySet = AlphaLengths(k, e, l, _whole.GetValueOrDefault(src.SourceId, l), ky, kz, hy, hz, own, sets);
+                alphaMembers++;
+            }
             if (restrained && DesignSettings.Num(own, "llt") == null) notes.Add("Laterally restrained by the slab it carries: no lateral torsional buckling.");
             var shape = src.Section.Shape;
             List<Check> checks;
@@ -161,7 +180,7 @@ public sealed class DesignRun
                     {
                         G = StructuralMaterials.ShearModulus(mm.Mat, es.Value, out _), LengthsSource = lengths, Method = DesignSettings.Choice(project, "steelInteraction", DesignSettings.SteelMethods),
                         GammaM0 = DesignSettings.Num(project, "gammaM0") ?? SteelDesign.GammaM0, GammaM1 = DesignSettings.Num(project, "gammaM1") ?? SteelDesign.GammaM1,
-                        GammaM2 = DesignSettings.Num(project, "gammaM2") ?? SteelDesign.GammaM2,
+                        GammaM2 = DesignSettings.Num(project, "gammaM2") ?? SteelDesign.GammaM2, BySet = bySet,
                     };
                     checks = SteelDesign.Check(member, sets);
                     break;
@@ -188,7 +207,7 @@ public sealed class DesignRun
                     var lef = DesignSettings.Num(own, "llt");
                     var tm = new TimberMember(shape.Width, shape.Depth, l, tc, sc, lcrY, lcrZ, restrained && lef == null ? 0 : lef)
                     {
-                        LengthsSource = lengths, Cantilever = cantilever,
+                        LengthsSource = lengths, Cantilever = cantilever, BySet = bySet,
                         InstLimit = DesignSettings.Num(own, "timberInst") ?? DesignSettings.Num(project, "timberInst") ?? TimberDesign.InstLimit,
                         FinLimit = DesignSettings.Num(own, "timberFin") ?? DesignSettings.Num(project, "timberFin") ?? TimberDesign.FinLimit,
                     };
@@ -200,11 +219,66 @@ public sealed class DesignRun
                     break;
                 }
             }
-            Members.Add(new MemberDesign(k, e.Id, src.SourceId, src.Name, kind, mm.Mat.Grade, src.Kind, storey, checks, need, notes));
+            var informative = kind == "concrete";
+            var shownKey = checks.FirstOrDefault(c => c.Key is "steel.buckling" or "timber.buckling")?.Combination
+                ?? (sets.Count > 0 ? sets.Where(x => !x.Seismic).DefaultIfEmpty(sets[0]).MaxBy(x => x!.Compression)!.Key : null);
+            SetLengths? shown = bySet != null && shownKey != null && bySet.TryGetValue(shownKey, out var sl) ? sl : null;
+            if (informative && shown != null && (shown.Y.FromAlpha != null || shown.Z.FromAlpha != null))
+                notes.Add($"From αcr (shown only, not used): l0 {(shown.Y.FromAlpha is { } ay ? Checks.F(ay, "0.##") + " m" : "–")} about the strong axis, {(shown.Z.FromAlpha is { } az ? Checks.F(az, "0.##") + " m" : "–")} about the weak one, under „{sets.First(x => x.Key == shownKey).Name}”: the analysis' EI is uncracked, and EN 1992-1-1 5.8.3.2 gives l0 by its own formulae (the checks keep k·L).");
+            Members.Add(new MemberDesign(k, e.Id, src.SourceId, src.Name, kind, mm.Mat.Grade, src.Kind, storey, checks, need, notes)
+            {
+                Lengths = new LengthsInfo(lcrY, lcrZ, DesignSettings.Num(own, "lcrY") != null ? "given" : hy, DesignSettings.Num(own, "lcrZ") != null ? "given" : hz, bySet != null, informative && bySet != null,
+                    informative ? (shown == null ? null : new SetLengths(Informed(shown.Y, lcrY), Informed(shown.Z, lcrZ), shown.Text)) : shown,
+                    shown != null ? shownKey : null, shown != null ? sets.First(x => x.Key == shownKey).Name : null),
+            });
         }
         Sway(sp);
+        if (alphaMembers > 0) AlphaNote(alphaMembers);
         if (Members.Any(x => x.Material == "steel")) SecondOrderNote();
         if (unchecked_.Count > 0) Notes.Add($"Not checked (a material Lapin has no rules for): {string.Join(", ", unchecked_.Take(8))}{(unchecked_.Count > 8 ? "…" : "")}.");
+    }
+
+    bool _prepared;
+    Dictionary<string, double>? _whole;
+
+    /// <summary>A concrete member's αcr length beside the k·L it keeps (shown only, §14.24).</summary>
+    static UsedLength Informed(UsedLength u, double kL) => new(kL, "k", "EN 1992-1-1 5.8.3.2: l0 by its own rules; the αcr one shown only", u.FromAlpha, u.Alpha, u.Mode);
+
+    /// <summary>
+    /// A member's lengths in each design set from the structure's buckling (§14.24, <see cref="BucklingLengthRule"/>): the set's
+    /// combination's αcr lengths (its +X variant's for the imperfections' variants; none for the seismic bounds).
+    /// </summary>
+    /// <param name="whole">The element's whole length (all its pieces between nodes): what an αcr length is compared with.</param>
+    Dictionary<string, SetLengths> AlphaLengths(int k, FrameElement e, double l, double whole, double ky, double kz, string hy, string hz, JsonObject? own, List<ForceSet> sets)
+    {
+        var givenY = DesignSettings.Num(own, "lcrY");
+        var givenZ = DesignSettings.Num(own, "lcrZ");
+        var second = Run.Problem.Settings.SecondOrder;
+        var o = new Dictionary<string, SetLengths>();
+        static string Said(UsedLength u) => u.Source switch { "alpha" => u.How, "given" => "given", _ => $"k·L: {u.How}" };
+        foreach (var f in sets)
+        {
+            var all = f.Seismic ? null : Run.MemberLengths(f.Key);
+            var ml = all != null && k < all.Length ? all[k] : null;
+            var why = f.Seismic ? "the seismic bounds have no buckling of their own" : ml == null ? "the combination has no buckling of its own" : ml.Why;
+            var y = BucklingLengthRule.Choose(whole, ky * l, givenY, ml?.Y, second, why);
+            var z = BucklingLengthRule.Choose(whole, kz * l, givenZ, ml?.Z, second, why);
+            var text = $"Buckling lengths (from αcr asked, docs/plan-fem.md §14.24): strong axis {Checks.F(y.Lcr, "0.##")} m ({Said(y)}), weak axis {Checks.F(z.Lcr, "0.##")} m ({Said(z)}); k·L {Checks.F(ky * l, "0.##")} m ({hy}) and {Checks.F(kz * l, "0.##")} m ({hz}).";
+            o[f.Key] = new SetLengths(y, z, text);
+        }
+        return o;
+    }
+
+    /// <summary>What the lengths from αcr are, and how they sit with second order (§14.24).</summary>
+    void AlphaNote(int count)
+    {
+        var st = Run.Problem.Settings;
+        if (st.SecondOrder)
+        {
+            Notes.Add($"Buckling lengths from αcr asked ({count} member{(count == 1 ? "" : "s")}), but second order (P-Δ) is on: the sway effects are in the forces, so the members keep their non-sway lengths k·L (EN 1993-1-1 5.2.2(3)b){(st.Imperfections ? "" : "; turn the global imperfections on (analysis.setOptions imperfections) for 5.2.2(3)b to hold")}.");
+            return;
+        }
+        Notes.Add($"Buckling lengths from αcr ({count} member{(count == 1 ? "" : "s")}; EN 1993-1-1 5.2.2(3)c, 5.2.2(8)): Lcr = π √(EI/(αcr NEd)) of each ultimate combination's lowest global buckling mode that bends the member about that axis (its mean squared slope at least {Checks.F(BucklingLengths.Participation, "0.##")} of the frame's, its compression at least {Checks.F(BucklingLengths.MinForce, "0.##")} of the most compressed member's that the mode bends), never under k·L; the sway effects are in the members' checks, the forces stay first order: the beams' and the connections' sway moments are not amplified by them (5.2.2(5B) or P-Δ for that). Concrete members show theirs only.");
     }
 
     /// <summary>
@@ -224,7 +298,9 @@ public sealed class DesignRun
             if (!walls && !braces) unbraced.Add(name);
         }
         if (unbraced.Count > 0)
-            Notes.Add($"No wall or bracing along {string.Join(" and ", unbraced)}: the frame looks unbraced (sway) that way. The buckling lengths assume a braced frame; give the columns' own (k > 1, analysis.setDesign ky / kz or lcrY / lcrZ).");
+            Notes.Add(Members.Any(x => x.Lengths?.FromAlpha == true && !x.Lengths.Informative)
+                ? $"No wall or bracing along {string.Join(" and ", unbraced)}: the frame looks unbraced (sway) that way; the members with their lengths from αcr take the sway modes (§14.24), the others assume a braced frame (k > 1 theirs to give, analysis.setDesign)."
+                : $"No wall or bracing along {string.Join(" and ", unbraced)}: the frame looks unbraced (sway) that way. The buckling lengths assume a braced frame; give the columns' own (k > 1, analysis.setDesign ky / kz or lcrY / lcrZ).");
     }
 
     /// <summary>
@@ -516,6 +592,7 @@ public sealed class DesignRun
         {
             ["id"] = x.Id, ["sourceId"] = x.SourceId, ["name"] = x.Name, ["material"] = x.Material, ["grade"] = x.Grade, ["kind"] = x.Kind, ["storeyId"] = x.StoreyId,
             ["utilisation"] = Math.Round(x.Utilisation, 4), ["ok"] = x.Utilisation <= 1 + 1e-9, ["done"] = x.Checks.Any(c => c.Done), ["governing"] = Gov(x.Governing),
+            ["lengths"] = LengthsJson(x.Lengths),
         }).ToArray());
         o["surfaces"] = new JsonArray(Surfaces.Where(x => Takes(x.Material, x.StoreyId)).Select(x => (JsonNode)new JsonObject
         {
@@ -546,7 +623,7 @@ public sealed class DesignRun
             {
                 ["id"] = x.Id, ["name"] = x.Name, ["material"] = x.Material, ["grade"] = x.Grade, ["kind"] = x.Kind, ["utilisation"] = Math.Round(x.Utilisation, 4), ["governing"] = Gov(x.Governing),
                 ["checks"] = new JsonArray(x.Checks.Select(c => (JsonNode)c.ToJson()).ToArray()), ["notes"] = Strings(x.Notes),
-                ["reinforcement"] = x.Need is { } n ? NeedJson(n) : null,
+                ["reinforcement"] = x.Need is { } n ? NeedJson(n) : null, ["lengths"] = LengthsJson(x.Lengths),
             }).ToArray()),
             ["surfaces"] = new JsonArray(ss.Select(x => (JsonNode)new JsonObject
             {
@@ -554,6 +631,27 @@ public sealed class DesignRun
                 ["checks"] = new JsonArray(x.Checks.Select(c => (JsonNode)c.ToJson()).ToArray()),
             }).ToArray()),
             ["walls"] = new JsonArray(ws.Select(x => (JsonNode)WallJson(x, true)).ToArray()),
+        };
+    }
+
+    /// <summary>
+    /// A member's buckling lengths (§14.24): {fromAlpha, informative, combination, combinationName, y, z}, each axis {used,
+    /// source: given | k | alpha, how, kL, alpha (the αcr length), alphaCr, mode}.
+    /// </summary>
+    static JsonObject? LengthsJson(LengthsInfo? x)
+    {
+        if (x == null) return null;
+        static double? R3(double? v) => v is { } d && double.IsFinite(d) ? Math.Round(d, 3) : null;
+        JsonObject Axis(double kL, string how, UsedLength? u) => u == null
+            ? new JsonObject { ["used"] = R3(kL), ["source"] = how == "given" ? "given" : "k", ["how"] = how, ["kL"] = R3(kL) }
+            : new JsonObject
+            {
+                ["used"] = R3(u.Lcr), ["source"] = u.Source, ["how"] = u.How, ["kL"] = R3(kL), ["alpha"] = R3(u.FromAlpha), ["alphaCr"] = R3(u.Alpha), ["mode"] = u.Mode,
+            };
+        return new JsonObject
+        {
+            ["fromAlpha"] = x.FromAlpha, ["informative"] = x.Informative, ["combination"] = x.Combination, ["combinationName"] = x.CombinationName,
+            ["y"] = Axis(x.KLy, x.HowY, x.Set?.Y), ["z"] = Axis(x.KLz, x.HowZ, x.Set?.Z),
         };
     }
 

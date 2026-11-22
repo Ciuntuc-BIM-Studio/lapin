@@ -13,7 +13,9 @@ Lapin runs in two places:
 - **On your computer.** The desktop app for Windows, macOS and Linux is the fastest. It updates itself.
 - **In the browser.** [lapinbim.com/app](https://lapinbim.com/app/) runs the same app without installing anything. It is a little slower.
 
-The desktop app is downloaded from [lapinbim.com/download](https://lapinbim.com/download/); the same files are on [GitHub Releases](https://github.com/Ciuntuc-BIM-Studio/lapin/releases). On Linux, the `.deb` puts Lapin in the applications menu (under Graphics), with an icon your icon theme can replace, and opens `.lapin` projects with a double-click. The AppImage carries the same menu entry for the tools that add AppImages to the menu (AppImageLauncher, Gear Lever).
+The desktop app is downloaded from [lapinbim.com/download](https://lapinbim.com/download/); the same files are on [GitHub Releases](https://github.com/Ciuntuc-BIM-Studio/lapin/releases). On Linux, the `.deb` puts Lapin in the applications menu (under Graphics), with an icon your icon theme can replace, and opens `.lapin` projects with a double-click. The `.rpm` does the same on Fedora, RHEL and openSUSE. The AppImage carries the same menu entry for the tools that add AppImages to the menu (AppImageLauncher, Gear Lever).
+
+Which Linux package to pick: Fedora, RHEL, openSUSE and their relatives, the `.rpm`; Ubuntu, Debian, Linux Mint and their relatives, the `.deb`; anything else, the AppImage. The `.deb` and the `.rpm` use the system's own WebKitGTK, which is newer and updated with the system; the AppImage carries an older WebKitGTK of its own, and the 3D view can be slower with it, notably on NVIDIA graphics under Wayland. The `.deb` and the `.rpm` ask for the administrator's password when Lapin updates itself; the AppImage updates itself without it.
 
 ![Lapin's workspace with a small house on the ground floor plan](shots/workspace.webp)
 

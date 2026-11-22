@@ -18,6 +18,12 @@ public sealed record TimberMember(double B, double H, double L, TimberClass T, i
     /// <summary>The span's deflection limits as L over these (EN 1995-1-1 Table 7.2's ranges, the lower ends by default): instantaneous L/300, final L/250; the project's or the element's by analysis.setDesign.</summary>
     public double InstLimit { get; init; } = TimberDesign.InstLimit;
     public double FinLimit { get; init; } = TimberDesign.FinLimit;
+
+    /// <summary>The lengths by design set's key when they come from αcr (§14.24); null, the lengths above for every set.</summary>
+    public IReadOnlyDictionary<string, SetLengths>? BySet { get; init; }
+
+    /// <summary>The member with a design set's own lengths (§14.24), or itself.</summary>
+    public TimberMember ForSet(string key) => BySet != null && BySet.TryGetValue(key, out var x) ? this with { LcrY = x.Y.Lcr, LcrZ = x.Z.Lcr, LengthsSource = x.Text, BySet = null } : this;
 }
 
 /// <summary>
@@ -88,7 +94,7 @@ public static class TimberDesign
     /// <summary>Every check of a timber member, the worst over the sets; with the deflections when the cases' are given.</summary>
     public static List<Check> Check(TimberMember m, IReadOnlyList<ForceSet> sets)
     {
-        var checks = Worst(sets, f => Set(m, f));
+        var checks = Worst(sets, f => Set(m.ForSet(f.Key), f));
         return checks;
     }
 

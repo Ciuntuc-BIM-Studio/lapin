@@ -241,7 +241,7 @@ Pune o oră după apus în Vedere → **Soare și umbre** și vederea arată noa
 
 Vedere → **Calitate afișare** are, pentru Mediu și Realist, **Expunerea** camerei (trepte mai luminos sau mai întunecat decât expunerea automată) și **Balansul de alb** (automat: lumina zilei ziua și 4000 K noaptea, ca lămpile calde să rămână calde; sau o temperatură aleasă de tine). Amândouă se păstrează pe acest calculator.
 
-Vederea desenează întâi luminile cele mai apropiate de tine și de ce privești, câteva cu umbre, celelalte fără, și niciuna mai departe de 30 m (Mediu) sau 60 m (Realist); colțul din dreapta jos spune câte (*12 / 48 lumini, 4 cu umbre*). O lumină desenată fără umbre trece prin pereți, iar lumina nu se reflectă încă din pereți: un tavan deasupra spoturilor rămâne întunecat. O imagine randată (va veni) le ia pe toate.
+Vederea desenează întâi luminile cele mai apropiate de tine și de ce privești, câteva cu umbre, celelalte fără, și niciuna mai departe de 30 m (Mediu) sau 60 m (Realist); colțul din dreapta jos spune câte (*12 / 48 lumini, 4 cu umbre*). O lumină desenată fără umbre trece prin pereți, iar în vederea live lumina nu se reflectă din pereți: un tavan deasupra spoturilor rămâne întunecat. O [randare](render.md) le ia pe toate, fiecare cu umbra ei, și lumina reflectată de pereți și de tavan.
 
 ## Modelare în 3D
 

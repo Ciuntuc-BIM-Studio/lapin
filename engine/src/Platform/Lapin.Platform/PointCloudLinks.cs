@@ -145,6 +145,12 @@ public static class PointCloudLinks
         return new JsonObject { ["state"] = "missing", ["error"] = link.Str("path") is { } p ? $"The file is gone: {p}." : "The cloud was linked from a browser in another session: link it again." };
     }
 
+    /// <summary>A key's failed indexing forgotten, so that linking or reloading its file tries it again.</summary>
+    static void ForgetFailed(string key)
+    {
+        if (_jobs.TryGetValue(key, out var job) && job.Error != null) _jobs.TryRemove(new KeyValuePair<string, Job>(key, job));
+    }
+
     /// <summary>Indexing started for a link (once a key): in the background where there are threads, at once in a browser.</summary>
     static void Start(Entity link, IPointSource source, string key, IDeliveries? deliveries)
     {
@@ -169,10 +175,14 @@ public static class PointCloudLinks
                         ctx.Replace(l.With(attrs: attrs));
                     }, [linkId]);
             }
-            catch (Exception e) when (e is PointCloudException or IOException or InvalidDataException or UnauthorizedAccessException or EndOfStreamException or OverflowException or IndexOutOfRangeException or ArgumentException)
+            // Whatever stops it, the job ends failed and says why: one left "indexing" for good would keep its key from being
+            // indexed again in this session (forum topic 222). A failed one is tried again when the cloud is linked or reloaded.
+            catch (Exception e)
             {
                 job.Error = e is PointCloudException ? e.Message : $"The cloud could not be indexed: {e.Message}";
                 job.Finished = true;
+                if (e is not (PointCloudException or IOException or InvalidDataException or UnauthorizedAccessException or EndOfStreamException))
+                    Console.Error.WriteLine($"[engine] Indexing {source.Name} failed: {e}");
             }
         }
         if (OperatingSystem.IsBrowser()) Work();
@@ -396,6 +406,7 @@ public static class PointCloudLinks
         };
         var named = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? Path.GetFileNameWithoutExtension(nm) : link.Name;
         ctx.Replace(link.With(name: named, attrs: attrs));
+        ForgetFailed(key);
         var status = Status(ctx.Model.Get(link.Id)!, ctx.Deliveries);
         var notes = new JsonArray(header.Notes.Select(n => (JsonNode)n).ToArray());
         if (UnitWarning(header.Bounds, (string?)placement["units"] ?? "m", header.Units) is { } w) notes.Add((JsonNode)w);
@@ -525,7 +536,8 @@ public static class PointCloudLinks
             var path = HostFiles.Check(link.Str("path") ?? throw new CommandException("This cloud has no file to read again (it was linked from a browser)."));
             if (!File.Exists(path)) throw new CommandException($"The file is gone: {path}.");
             var key = KeyOfPath(path);
-            if (key == link.Str("key")) return new JsonObject { ["changed"] = false };
+            ForgetFailed(key);
+            if (key == link.Str("key")) { Status(link, ctx.Deliveries); return new JsonObject { ["changed"] = false }; }
             var attrs = link.CloneAttrs();
             attrs["key"] = key;
             ctx.Replace(link.With(attrs: attrs));

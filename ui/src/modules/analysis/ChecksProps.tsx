@@ -8,8 +8,8 @@ import { useResults } from './useResults';
 import { useAnalysis } from './hooks';
 import { Field, UtilisationBar } from './ChecksSection';
 import {
-  barReinforcementText, formatArea, LAYERS, LAYER_LABEL, ownDesign, parseDesignValue, SYSTEM_LABEL, valuesText,
-  type BarReinforcementDto, type DesignOptionsDto, type ElementCheckDto, type ElementChecksDto, type ReinforcementLayersDto,
+  barReinforcementText, formatArea, formatLength, lengthSource, LAYERS, LAYER_LABEL, ownDesign, parseDesignValue, SYSTEM_LABEL, valuesText,
+  type BarReinforcementDto, type DesignOptionsDto, type ElementCheckDto, type ElementChecksDto, type LengthAxisDto, type LengthsDto, type ReinforcementLayersDto,
 } from './checks';
 import { BAR_CLASSES } from './results';
 
@@ -119,6 +119,14 @@ function DesignFields({ node }: { node: NodeDto }) {
         {num('llt', 'LLT (m)', 'The laterally unrestrained length of a beam, in metres (0: restrained); empty: what the slab it carries gives')}
         {num('timberInst', 'Timber deflection inst. L/', "The timber bar's instantaneous deflection limit as the span over this number (100 to 1000; a cantilever's span is twice its length); empty: the project's")}
         {num('timberFin', 'Timber deflection final L/', "The timber bar's final deflection limit as the span over this number (100 to 1000; a cantilever's span is twice its length); empty: the project's")}
+        <label className="row small" title="Where the buckling lengths come from: the k·L above, or the lowest buckling mode of the model (αcr), never shorter than k·L; empty: the project's">
+          <span>Buckling lengths</span>
+          <select aria-label="Buckling lengths" data-testid="design-own-bucklingLengths" value={own.bucklingLengths ?? ''} onChange={(e) => set('bucklingLengths', e.target.value === '' ? null : e.target.value)}>
+            <option value="">The project&apos;s</option>
+            <option value="k">k from the user</option>
+            <option value="alpha">From αcr</option>
+          </select>
+        </label>
         <label className="row small" title="The timber's service class (EN 1995-1-1 2.3.1.3): 1 dry, 2 humid, 3 outdoors; empty: the project's">
           <span>Service class</span>
           <select aria-label="Service class" data-testid="design-own-serviceClass" value={own.serviceClass ?? ''} onChange={(e) => set('serviceClass', e.target.value === '' ? null : Number(e.target.value))}>
@@ -135,6 +143,39 @@ function DesignFields({ node }: { node: NodeDto }) {
         </label>
       </div>
       <p className="muted small">An empty field takes the default. Each change is one undo step; run the analysis again to check with it.</p>
+      <BucklingLengths node={node} />
     </>
+  );
+}
+
+/** What analysis.check says of the bar's buckling lengths: k·L, the one from αcr and which is used. */
+function BucklingLengths({ node }: { node: NodeDto }) {
+  const run = useResults((s) => s.run);
+  const stale = useResults((s) => s.stale);
+  const { data } = useElementChecks(node.id);
+  const l = data?.members.find((m) => m.lengths)?.lengths;
+  if (!run?.ok || stale || !l) return null;
+  return (
+    <div className="small" data-testid="design-lengths" data-source={`${l.y.source}/${l.z.source}`}>
+      <span className="eyebrow">Buckling lengths</span>
+      <AxisLengths name="Strong axis (y-y)" a={l.y} l={l} />
+      <AxisLengths name="Weak axis (z-z)" a={l.z} l={l} />
+      {l.informative && <p className="muted">Shown only (concrete: EN 1992-1-1 5.8.3.2)</p>}
+    </div>
+  );
+}
+
+function AxisLengths({ name, a, l }: { name: string; a: LengthAxisDto; l: LengthsDto }) {
+  const hasAlpha = a.alpha != null && Number.isFinite(a.alpha);
+  return (
+    <div data-testid="design-lengths-axis">
+      <b>{name}</b>
+      <dl className="fields">
+        <dt>k·L</dt><dd data-no-i18n>{formatLength(a.kL)} m</dd>
+        <dt>From αcr</dt><dd data-no-i18n>{hasAlpha ? `${formatLength(a.alpha)} m (αcr = ${a.alphaCr != null ? +a.alphaCr.toFixed(2) : '–'}${a.mode != null ? `, mode ${a.mode}` : ''})` : '–'}</dd>
+        <dt>Used</dt><dd data-no-i18n>{l.informative ? '–' : `${formatLength(a.used)} m (${lengthSource(a)})`}</dd>
+      </dl>
+      {a.how && <p className="muted" data-no-i18n>{a.how}</p>}
+    </div>
   );
 }
