@@ -231,7 +231,8 @@ public static class DimensionKinds
                     // Run from the ray that makes the measured sector counter-clockwise.
                     var ccwFromU = (((a1 - a0) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
                     var start = Math.Abs(ccwFromU - sweep) < 1e-6 ? a0 : a1;
-                    var n = Math.Max(8, (int)Math.Ceiling(sweep / (Math.PI / 36)));
+                    // By the one chord rule (Lapin.Geometry/Chords), at least 8 pieces.
+                    var n = Chords.Count(r, sweep, 8);
                     var pts = Enumerable.Range(0, n + 1).Select(i => cc + new Vec2(Math.Cos(start + sweep * i / n), Math.Sin(start + sweep * i / n)) * r).ToList();
                     mk.Polyline(pts, false, "DIMENSION", w, lineColor, lineDash);
                     // Extension lines along the rays out to the arc (from the gap, or a fixed length back from the arc), unless left out.
@@ -272,7 +273,7 @@ public static class DimensionKinds
                     var (centre, r, s0, sw) = round is { Arc: { } arc } ? (arc.C, arc.R, arc.Start, arc.Sweep) : (cc, dim.Num("r"), dim.Num("start"), dim.Num("sweep"));
                     if (r < 1e-9 || Math.Abs(sw) < 1e-9) break;
                     var off = Math.Max((at - centre).Length, r + 4 * mm);
-                    var n = Math.Max(8, (int)Math.Ceiling(Math.Abs(sw) / (Math.PI / 36)));
+                    var n = Chords.Count(off, sw, 8);
                     var pts = Enumerable.Range(0, n + 1).Select(i => centre + new Vec2(Math.Cos(s0 + sw * i / n), Math.Sin(s0 + sw * i / n)) * off).ToList();
                     mk.Polyline(pts, false, "DIMENSION", w, lineColor, lineDash);
                     foreach (var (k, t) in new[] { (0, s0), (1, s0 + sw) })
