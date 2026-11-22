@@ -44,6 +44,9 @@ export function GridDialog() {
   const [around, setAround] = useState({ prefixX: '', suffixX: '', prefixY: '', suffixY: '' });
   const [replace, setReplace] = useState(existing > 0);
   const [styles, setStyles] = useState<{ list: AxisStyle[]; current: string }>({ list: [], current: 'standard' });
+  // Picked here, the axis type is set only when the grid is made; Cancel leaves the project as it was (audit 22.11.2026, G17:
+  // it was set at once, as an undo step of its own).
+  const [picked, setPicked] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
     void query<{ axisStyles?: AxisStyle[]; defaultAxisStyle?: string }>('standards.get').then((b) => { if (live && b) setStyles({ list: b.axisStyles ?? [], current: b.defaultAxisStyle ?? 'standard' }); });
@@ -57,11 +60,18 @@ export function GridDialog() {
   const close = () => useUi.setState({ dialog: null });
   const make = async () => {
     if (!ok) return;
-    const r = await execute('drafting.makeGrid', { x: x!, y: y!, origin: [origin.x, origin.y], angle, extend, firstX, firstY, replace,
+    const args = { x: x!, y: y!, origin: [origin.x, origin.y], angle, extend, firstX, firstY, replace,
       // Only a prefix or suffix typed is sent (issue #83).
       ...Object.fromEntries(Object.entries(around).filter(([, v]) => v)),
       // The default order sends no flag, as before.
-      ...(reverseX ? { reverseX } : {}), ...(reverseY ? { reverseY } : {}), ...(descendingX ? { descendingX } : {}), ...(descendingY ? { descendingY } : {}) });
+      ...(reverseX ? { reverseX } : {}), ...(reverseY ? { reverseY } : {}), ...(descendingX ? { descendingX } : {}), ...(descendingY ? { descendingY } : {}) };
+    // The axis type picked becomes the project's default with the grid, in one undo step.
+    const r = picked && picked !== styles.current
+      ? await execute('edit.batch', { label: 'Axis grid', steps: [
+        { command: 'standards.set', args: { kind: 'axis', entry: { id: picked }, default: true } },
+        { command: 'drafting.makeGrid', args },
+      ] })
+      : await execute('drafting.makeGrid', args);
     if (r) { notify('The grid is made: select an axis to set it.'); close(); }
   };
   // The preview: the axes in a box, y up.
@@ -111,7 +121,7 @@ export function GridDialog() {
             </dd>
             <dt title="How axes are drawn: bubbles, ends, size, line type (Drafting standards → Grid axes)">Axis type</dt>
             <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <select value={styles.current} onChange={(e) => void execute('standards.set', { kind: 'axis', entry: { id: e.target.value }, default: true })}>
+              <select data-grid-axis-style value={picked ?? styles.current} onChange={(e) => setPicked(e.target.value)}>
                 {styles.list.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
               <button type="button" className="icon" title="Axis styles…" onClick={() => openStandards('axis')}><Settings2 size={14} /></button>
