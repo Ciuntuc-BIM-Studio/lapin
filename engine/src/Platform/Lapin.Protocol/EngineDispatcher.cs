@@ -864,7 +864,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             if ((string?)p["path"] is { Length: > 0 } path)
             {
                 // Every export to a path, not only the project's IFC, keeps off the files the project reads (audit 22.11.2026, G2).
-                File.WriteAllBytes(RefuseOverRead(HostFiles.Check(path)), bytes.AsSpan());
+                Lapin.Platform.AtomicFile.Write(RefuseOverRead(HostFiles.Check(path)), bytes);
                 return new JsonObject { ["path"] = path, ["bytes"] = bytes.Count };
             }
             if (p["binary"] is JsonValue bin && bin.TryGetValue<bool>(out var binary) && binary)
@@ -1452,7 +1452,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 byte[] bytes;
                 try { bytes = Convert.FromBase64String(data); }
                 catch (FormatException) { throw new CommandException("The file's content is not base64."); }
-                File.WriteAllBytes(RefuseOverRead(path), bytes);
+                Lapin.Platform.AtomicFile.Write(RefuseOverRead(path), bytes);
                 return (new JsonObject { ["path"] = path, ["bytes"] = bytes.Length }, null);
             }
             // An issue (docs/plan-cde.md): the files made and hashed, kept in the project's file (and written into the project folder's container
