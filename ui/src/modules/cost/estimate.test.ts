@@ -115,3 +115,29 @@ describe('Map articles', () => {
     expect(Object.keys(remembered())).toHaveLength(2);
   });
 });
+
+describe('money, rates and dates (audit 22.11)', () => {
+  it('drops the sign of a value that rounds to nothing', () => {
+    expect(money(-0.001)).toBe('0.00');
+    expect(money(-0.004)).toBe('0.00');
+    expect(money(-0.005)).toBe('−0.01');
+  });
+  it('keeps a rate inside its bounds', async () => {
+    const { EXCHANGE, PERCENT } = await import('./estimate');
+    expect(parseRate('0', EXCHANGE)).toBeNull();
+    expect(parseRate('-4', EXCHANGE)).toBeNull();
+    expect(parseRate('4,9765', EXCHANGE)).toBe(4.9765);
+    expect(parseRate('-50', PERCENT)).toBeNull();
+    expect(parseRate('900', PERCENT)).toBeNull();
+    expect(parseRate('0', PERCENT)).toBe(0);
+    expect(parseRate('19', PERCENT)).toBe(19);
+    expect(parseRate('0')).toBe(0);
+  });
+  it('writes today by the local calendar, not UTC', async () => {
+    const { localDate, inOther } = await import('./estimate');
+    expect(localDate(new Date(2026, 10, 5, 0, 30))).toBe('2026-11-05');
+    expect(localDate(new Date(2026, 0, 1, 23, 59))).toBe('2026-01-01');
+    expect(inOther(497.65, { currency: 'RON', eurRate: 4.9765 })).toBe(100);
+    expect(inOther(100, { currency: 'EUR', eurRate: 4.9765 })).toBe(497.65);
+  });
+});
