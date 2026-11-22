@@ -1099,3 +1099,34 @@ Calculul liniar nu se schimbă (un singur sistem). Setul de lucru cel mai mare s
 #### Răspunsurile utilizatorului (22.11.2026)
 
 Utilizatorul a luat recomandările: pasul următor mic este refolosirea memoriei factorizării numerice între iterații (deținută doar de `Nonlinear.Solve`); fără refactorizare parțială pe supernodurile atinse de o bară care iese din lucru; limita de 8 structuri păstrate pe problemă rămâne.
+
+### 14.22 Memoria factorizării numerice refolosită între iterații (22.11.2026, decizia 776; §14.21 „Rămase”)
+
+**Ce era.** După §14.21 fiecare iterație a buclei neliniare păstra structura simbolică, dar își lua un tablou nou pentru valorile factorului (pe cadrul cu plăci la 0,25 m: 10,3 milioane de intrări × 8 octeți ≈ 82 MB pe iterație), unul pentru factorul rotirilor și tablourile de lucru ale factorizării și ale fiecărei rezolvări (diagonala inițială, listele supernodurilor, vectorul de lucru: câte 0,2–0,4 MB, deci pe heap-ul obiectelor mari). Sistemul vechi devenea gunoi abia la colectare, deci pe mai multe fire trăiau deodată mai mulți factori morți.
+
+**Ce s-a făcut.**
+- **`FactorStore`** (`Solver/FactorStore.cs`): valorile factorilor de care bucla nu mai are nevoie, ținute pentru următorul factor pe aceeași structură (cheia: tablourile structurii, comparate ca referință). Cel mult 3 seturi (factorul unui layout, al rotirilor lui și unul pentru un reazem ridicat), cel mai recent primul; nu se împarte între fire.
+- **`ISymmetricFactor.Release(store)`** dă valorile; factorul care le-a dat nu mai poate fi folosit (`Add`, `Factor`, `Solve` aruncă), deci o citire greșită ar fi o excepție, nu o cifră greșită. **`Fresh(store)`** le ia înapoi golite (`Array.Clear`): aceeași matrice ca pe un tablou nou, bit cu bit. Pentru `SparseCholesky` (tablourile supernodurilor) și `Skyline` (profilul).
+- **Cine le dă:** doar cine a construit sistemul cu magazinul. `FrameSystem.Build(…, store)` dă înapoi ce folosește doar în interior (factorul rotirilor, după ce a găsit arcurile; cei doi ai unui mecanism); factorul sistemului e al lui până când proprietarul îl retrage (`FrameSystem.Retire`). `Nonlinear.Solve` retrage sistemul iterației anterioare abia înainte de a-l construi pe următorul (rezultatul lui e deja luat), iar pe ultimul în `finally`, oricum s-ar termina.
+- **Ce iese din buclă nu atinge valorile:** rezultatul, rezultatul de ordinul întâi, forțele axiale (tablouri proprii, făcute de `SolveCase`), stările pentru flambaj (o problemă; flambajul își construiește sistemul lui, fără magazin), sistemul de ordinul întâi împărțit de flambaj (`_linear`, construit fără magazin) — niciunul nu ține un tablou de valori.
+- **Între combinații, pe același fir:** `FemParallel.Map` are o variantă cu un obiect al fiecărui lucrător (`Parallel.For` cu `localInit`), dat joburilor lui unul după altul și niciunui altul, aruncat când lucrătorul se termină; `SolveNonlinear` dă fiecărui lucrător un `FactorStore`. Combinațiile aceleiași probleme împart layout-urile (§14.21), deci a doua combinație pe un fir găsește valorile primei. Câte magazine trăiesc deodată: cel mult câte joburi rulează (limita de memorie a §14.20 rămâne).
+- **Tablourile de lucru** ale factorizării și ale rezolvării (diagonala inițială, listele, `rel`, vectorul `y`) vin din `ArrayPool.Shared`: fiecare apel le ia pe ale lui (rezolvările în paralel pe un factor rămân sigure) și le inițializează cum ar fi fost cele noi.
+- **De ce nu `ArrayPool` și pentru valori:** sunt mii de tablouri ale supernodurilor, de mărimi exacte; găleți rotunjite la puteri ale lui 2 ar ține până la dublul memoriei, iar pool-ul comun le poate arunca oricând. Magazinul propriu le ține exact, are un singur proprietar și se termină cu bucla.
+
+**Rezultatele sunt identice bit cu bit:** `NonlinearReuseGoldenTests` (SHA-256 din §14.21) trece neschimbat. Teste noi (`FactorStoreTests`): un factor pe valori date înapoi e bit cu bit cel pe un tablou nou (`SparseCholesky` și `Skyline`), cel care le-a dat aruncă, altă structură nu le ia, magazinul ține cel mult 3; rezultatele unor soluții pe un magazin nu se schimbă cât același magazin trece prin toate celelalte combinații de două ori (hala și cadrul cu tălpi care se ridică), și sunt cele ale unei soluții fără magazin; un sistem retras aruncă. Testul de stres (`FemParallelTests`) folosește un magazin al fiecărui fir pentru jumătate din joburi și verifică la sfârșit că rezultatele analizei au rămas cele de la început; `FemParallel.Map` cu obiectul lucrătorului: niciodată două joburi deodată pe el.
+
+**Cifrele** (Release, Apple M1 Max, 10 nuclee, colectorul server; `FemParallelBenchmark`; „înainte” rulat din nou lângă „după” pe mașina încărcată de alte sesiuni, deci timpii variază cu ±20 %; alocările sunt exacte):
+
+| Modelul | Înainte, 1 fir / 9 fire | După, 1 fir / 9 fire | Alocat înainte → după (1 fir / 9 fire) | Setul de lucru cel mai mare, 9 fire |
+|---|---|---|---|---|
+| Hala din ghid, liniar (1 902 ecuații) | 0,46 / 0,26 s | 0,72 / 0,27 s | 415 → 415 MB | 1,12 → 1,16 GB |
+| Hala, P-Δ (87 de combinații) | 1,9 / 0,52 s | 1,8 / 0,47 s | 1,66 → 1,32 / 1,33 GB | 1,67 → 1,60 GB |
+| Hala, P-Δ + imperfecțiuni (210 seturi) | 4,6 / 1,32 s | 4,4 / 0,92 s | 3,61 → 2,74 / 2,75 GB | 2,23 → 1,99 GB |
+| Hala, P-Δ + imperfecțiuni + tablă, cu flambajul combinațiilor SLU | 7,8 / 1,71 s | 8,4 / 1,31 s | 3,97 → 3,09 / 3,10 GB | 2,33 → 2,03 GB |
+| Hala de 30 m, P-Δ + imperfecțiuni (3 558 ecuații) | 13,6 / 3,6 s | 14,0 / 3,7 s | 9,65 → 6,95 / 6,99 GB | 2,64 → 2,65 GB |
+| Cadru cu 3 niveluri, plăci la 0,5 m (13 986 ecuații), P-Δ + imperfecțiuni + flambaj | 83,9 / 17,9 s | 73,1 / 13,3 s | 17,5 → 9,8 / 10,4 GB | 3,44 → 3,43 GB |
+| Același, plăci la 0,25 m (53 874 de ecuații) | 205 / 59 s | 173 / 48 s | 67,3 → 29,1 / 32,6 GB | 7,2–7,4 → 6,5–6,8 GB |
+
+Pe 9 fire se alocă puțin mai mult decât pe unul: fiecare lucrător își face primul set. Pe un fir setul de lucru cel mai mare al cadrului la 0,25 m rămâne ~5,8–5,9 GB (cât ține procesul de test, nu bucla). Pe modelele mici câștigul e mic (factorul e mic față de restul iterației); timpul pe un fir nu se schimbă dincolo de zgomot, pe 9 fire scade cu 20–30 % pe modelele cu plăci (mai puțin lucru pentru colector).
+
+**Rămase:** ce se alocă acum pe iterație e mai ales restul: copiile `With` ale barelor și problema `InStates`, vectorii unui caz (`Loads`, `rhs`, `u`, reziduurile rafinării), rezultatele barelor și plăcilor (păstrate doar ale ultimei iterații, dar făcute la fiecare). Ar putea fi refolosite tot de buclă (rezultatele iterațiilor intermediare nu ies din ea), cu aceeași regulă: ce se returnează e al apelantului. Nu s-a făcut: câștigul e mai mic, iar rezultatele ar trebui copiate la sfârșit.
