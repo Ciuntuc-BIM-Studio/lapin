@@ -1067,3 +1067,31 @@ Utilizatorul a luat recomandările la toate cele 8 întrebări din §14.18: impe
 #### Răspunsurile utilizatorului (21.11.2026)
 
 Utilizatorul a luat recomandările: fără setare în interfață pentru numărul de fire (ajunge `LAPIN_FEM_THREADS`); pasul următor mic este refolosirea factorizării simbolice și a transformărilor barelor între iterații; butonul Stop la analiză doar dacă utilizatorii ajung la calcule lungi.
+
+### 14.21 Structura sistemului refolosită între iterații și combinații (22.11.2026, decizia 774; §14.20 „Rămase”)
+
+**Ce era.** Fiecare iterație a buclei neliniare (P-Δ, barele și reazemele într-un singur sens, variantele cu imperfecțiuni) refăcea tot sistemul: copiile `With` ale barelor își refăceau axele, transformarea și condensarea, iar `FrameSystem.Build` refăcea adiacența, ordinea RCM, numerotarea ecuațiilor, ordonarea (grad minim sau disecție îmbricată), arborele de eliminare, supernodurile și structura factorului, plus matricele globale ale fiecărui element. Pe hala din ghid: ~12 MB alocați pe iterație, 4,5–10,7 GB pe un calcul; pe cadrul cu plăci la 0,25 m, 160 GB.
+
+**Ce s-a făcut.**
+- **`FrameLayout`** (`Solver/FrameLayout.cs`): tot ce depinde doar de forma problemei — nodurile folosite, gradele de libertate ținute, ordinea RCM, numerotarea, ecuațiile fiecărui element, structura simbolică a sistemului întreg și a rotirilor singure (`ISymmetricFactor.Fresh`: aceeași structură, doar citită, cu valorile ei). Nu citește nicio rigiditate, deci o bară scoasă (rigiditate nulă: valorile ei zero, structura aceeași — ca înainte, când intrările nule nu se adunau) sau o forță axială nu-l schimbă. Un reazem care se ridică își face gradele de libertate ecuații: altă numerotare, deci alt `FrameLayout`, făcut atunci; când se așază la loc, se ia iar primul. Am ales refacerea, nu păstrarea ecuațiilor cu o penalizare: penalizarea ar schimba cifrele, refacerea le păstrează bit cu bit.
+- **Unde stă:** `FrameProblem.Layouts` ține ultimele 8 (cel mai recent folosit întâi), împărțite cu problemele făcute din ea (`Nonlinear.InStates`: iterațiile, combinațiile, stările pe care se face flambajul). Fiecare e verificat întreg față de problemă (`Fits`: aceleași noduri, elemente pe aceleași noduri, aceleași grade ținute), deci o problemă schimbată după un calcul primește unul nou. Bucla mai ține și layout-ul ultimei iterații (îl încearcă întâi). Unul lipsă se face sub lacăt: firele care îl cer împreună îl fac o dată.
+- **Barele:** o copie `With` a unei bare pregătite ia axele, transformarea `T`, condensarea și `Tc` ale ei (tablouri noi la fiecare `Prepare`, apoi doar citite) și își calculează doar rigiditatea (elastică + geometrică, sau zero). Barele și plăcile își țin matricea globală (`Global`), calculată o dată pentru locurile nodurilor. Forțele de la capete în rafinarea iterativă nu mai fac tablouri temporare.
+- **Ce se reface la fiecare iterație:** doar valorile: asamblarea, factorizarea numerică (și cea a rotirilor, care găsește rotirile libere), rezolvarea.
+
+**Rezultatele sunt identice bit cu bit** cu codul dinainte, nu doar la 10⁻¹²: aceeași structură simbolică (aceleași funcții deterministe pe aceleași date), aceleași operații în aceeași ordine. Testul `NonlinearReuseGoldenTests` compară SHA-256 al biților fiecărui rezultat neliniar (deplasări, reacții, bare, plăci, forțe axiale, primul ordin), al cazurilor, al JSON-ului `analysis.run` și al flambajului fiecărei combinații SLU cu fișierele scrise de codul dinainte (`Golden/nonlinear-reuse-*.json`), pe patru modele: hala (P-Δ, imperfecțiuni, contravântuiri doar la întindere, tablă), hala fără tablă (variante instabile: calea mecanismului), contravântuirile singure (stări, ordinul întâi) și cadrul cu placa ca elemente de placă pe tălpi Winkler care se ridică (131 de seturi cu reazeme ridicate). Ca biții să fie aceiași de la o rulare la alta, fixturile lor iau id-urile dintr-o sămânță (`Fixture.Seeded`): cu id-uri aleatoare, ordinea modelului (și deci ultimii biți) diferă la fiecare rulare, și la codul vechi. `FrameLayoutTests`: o bară scoasă sau o forță axială păstrează layout-ul, un reazem ridicat ia altul, o problemă schimbată ia altul, copia unei bare e bit cu bit cea pregătită de la zero. Testul de stres (`FemParallelTests`) are și cadrul cu tălpi care se ridică (mai multe layout-uri folosite deodată pe toate nucleele).
+
+**Cifrele** (Release, Apple M1 Max, 10 nuclee, colectorul server; `FemParallelBenchmark`; „înainte” rulat din nou lângă „după”, mașina încărcată de alte sesiuni, deci timpii variază cu ±20 %; alocările sunt exacte):
+
+| Modelul | Înainte, 1 fir / 9 fire | După, 1 fir / 9 fire | Alocat înainte → după |
+|---|---|---|---|
+| Hala din ghid, liniar (1 902 ecuații) | 0,72 / 0,25 s | 0,76 / 0,39 s | 427 → 420 MB |
+| Hala, P-Δ (87 de combinații) | 2,6 / 0,64 s | 1,7 / 0,38 s | 4,45 → 1,66 GB |
+| Hala, P-Δ + imperfecțiuni (210 seturi) | 6,3 / 1,24 s | 3,9 / 0,75 s | 10,7 → 3,6 GB |
+| Hala, P-Δ + imperfecțiuni + tablă, cu flambajul combinațiilor SLU | 9,0 / 1,56 s | 6,7 / 1,18 s | 10,0 → 4,0 GB |
+| Hala de 30 m, P-Δ + imperfecțiuni (3 558 ecuații) | 19,9 / 4,1 s | 11,0 / 3,8 s | 29,5 → 9,7 GB |
+| Cadru cu 3 niveluri, plăci la 0,5 m (13 986 ecuații), P-Δ + imperfecțiuni + flambaj | 51,9 / 10,4 s | 41,1 / 8,1 s | 43,1 → 17,5 GB |
+| Același, plăci la 0,25 m (53 874 de ecuații) | 187 / 42 s | 143 / 32 s | 160,7 → 67,6 GB |
+
+Calculul liniar nu se schimbă (un singur sistem). Setul de lucru cel mai mare scade puțin (hala 2,4 → 2,2 GB, plăcile la 0,25 m 8,6–9,2 → 7,1–7,7 GB).
+
+**Rămase:** pe modelele cu plăci, ce se alocă acum e mai ales factorul numeric însuși (10,3 milioane de intrări × 8 octeți ≈ 82 MB pe iterație la 0,25 m): l-ar putea refolosi iterația următoare a aceleiași bucle (tabloul golit și reumplut), dar asta cere ca nimic să nu mai citească sistemul vechi; lăsat pentru un pas următor. Refactorizarea doar a părților schimbate (o bară scoasă atinge doar supernodurile de deasupra ei) nu s-a făcut: cu P-Δ se schimbă toate barele la fiecare iterație, deci câștigul ar fi doar la stările fără P-Δ.
