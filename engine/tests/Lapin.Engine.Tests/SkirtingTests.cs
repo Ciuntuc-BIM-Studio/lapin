@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
+using Lapin.Architecture.Stairs;
 using Lapin.Geometry;
 using Lapin.Ifc;
 using Lapin.Model;
@@ -115,6 +116,18 @@ public class SkirtingTests
         Assert.Equal(0.08 * 0.008, Skirtings.Area(SkirtingSpec.Library.Single(s => s.Profile == "flush")), 12);
         var cove = SkirtingSpec.Library.Single(s => s.Profile == "cove");
         Assert.True(Skirtings.Area(cove) < cove.Height * cove.Thickness * 0.4);
+        // Curves as Chords makes every curve (audit 22.11.2026): the pencil's half-round in its pieces.
+        var pencil = SkirtingSpec.Library.Single(s => s.Profile == "pencil");
+        var top = Skirtings.Profile(pencil).Count(q => q.Y > pencil.Height - pencil.Thickness / 2 + 1e-9);
+        Assert.Equal(Chords.Count(pencil.Thickness / 2, Math.PI, 2) - 1, top);
+    }
+
+    [Fact]
+    public void A_round_bar_has_the_sides_Chords_gives_a_thin_bar()
+    {
+        var bar = StairBuilder.RoundBar(new Vec3(0, 0, 0), new Vec3(0, 0, 1), 0.04, "rail")!;
+        Assert.Equal(Chords.Count(0.02, 2 * Math.PI, 8, Math.PI / 4) + 2, bar.Faces.Length);
+        Assert.True(bar.Faces.Length - 2 > 8, "finer than the octagon it was");
     }
 
     [Fact]

@@ -255,8 +255,10 @@ public static class Skirtings
     {
         double t = s.Thickness, h = s.Height;
         var o = new List<Vec2> { new(0, 0), new(t, 0) };
-        void Arc(Vec2 c, double r, double from, double to, int n)
+        // Each arc in the pieces Chords makes of it, as every curve (audit 22.11.2026), at least min.
+        void Arc(Vec2 c, double r, double from, double to, int min)
         {
+            var n = Chords.Count(r, (to - from) * Math.PI / 180, min);
             for (var i = 1; i <= n; i++)
             {
                 var a = (from + (to - from) * i / n) * Math.PI / 180;
@@ -291,19 +293,19 @@ public static class Skirtings
                 // A thin plate at the back, its foot curving out to the floor.
                 var plate = Math.Max(0.0015, t * 0.15);
                 var r = t - plate;
-                Arc(new Vec2(t, r), r, 270, 180, 8);
+                Arc(new Vec2(t, r), r, 270, 180, 2);
                 o.Add(new Vec2(plate, h));
                 break;
             }
             case "pencil":
                 // A half-round top.
                 o.Add(new Vec2(t, h - t / 2));
-                Arc(new Vec2(t / 2, h - t / 2), t / 2, 0, 180, 10);
+                Arc(new Vec2(t / 2, h - t / 2), t / 2, 0, 180, 2);
                 return o;
             case "bullnose":
                 // The top front edge rounded to the full thickness.
                 o.Add(new Vec2(t, h - t));
-                Arc(new Vec2(0, h - t), t, 0, 90, 8);
+                Arc(new Vec2(0, h - t), t, 0, 90, 2);
                 o.RemoveAt(o.Count - 1);
                 break;
             default:

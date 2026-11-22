@@ -194,7 +194,7 @@ public static class StairPlan
                 // Along the walking line, from half a tread in to the top, its height on the nosings' line.
                 var a0 = arc.A0 + arc.Step / 2;
                 var a1 = arc.Angle(arc.Steps);
-                var m = Math.Max(4, (int)Math.Ceiling(Math.Abs(a1 - a0) / (Math.PI / 36)));
+                var m = Chords.Count(arc.Walk, a1 - a0, 4);
                 double Z(double ang) => h + (ang - arc.A0) / arc.Step * h;
                 for (var j = 0; j < m; j++)
                 {

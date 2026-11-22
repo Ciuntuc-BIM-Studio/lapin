@@ -104,7 +104,7 @@ public static class StairBuilder
     public static double Climb(IModelView m, Entity stair, Entity storey)
     {
         if (OwnRise(m, stair) is { } rise) return rise;
-        var top = TopStorey(m, stair, storey)?.Num("elevation") ?? storey.Num("elevation") + (stair.NumOrNull("height") ?? storey.Num("height", 3));
+        var top = TopStorey(m, stair, storey)?.Num("elevation") ?? storey.Num("elevation") + (stair.NumOrNull("height") ?? WallTop.StoreyHeight(storey));
         return top + stair.Num("topOffset") - (storey.Num("elevation") + stair.Num("baseOffset"));
     }
 
@@ -598,8 +598,11 @@ public static class StairBuilder
         return best;
     }
 
-    /// <summary>A round bar from a to b (an octagon swept along), <paramref name="d"/> across.</summary>
-    internal static Solid? RoundBar(Vec3 a, Vec3 b, double d, string tag)
+    /// <summary>
+    /// A round bar from a to b, <paramref name="d"/> across: its section a ring of the sides Chords gives a thin bar (as IFC's round
+    /// bars are, at most 45° a side, at least 8; audit 22.11.2026), swept along.
+    /// </summary>
+    public static Solid? RoundBar(Vec3 a, Vec3 b, double d, string tag)
     {
         var axis = b - a;
         if (axis.Length < 1e-6) return null;
@@ -607,7 +610,8 @@ public static class StairBuilder
         var x = Math.Abs(u.Z) < 0.9 ? Vec3.Cross(u, new Vec3(0, 0, 1)) : Vec3.Cross(u, new Vec3(1, 0, 0));
         x = x * (1 / x.Length);
         var y = Vec3.Cross(u, x);
-        var ring = Enumerable.Range(0, 8).Select(i => { var t = Math.PI * (i + 0.5) / 4; return a + x * (Math.Cos(t) * d / 2) + y * (Math.Sin(t) * d / 2); }).ToList();
+        var n = Chords.Count(d / 2, 2 * Math.PI, 8, Math.PI / 4);
+        var ring = Enumerable.Range(0, n).Select(i => { var t = 2 * Math.PI * (i + 0.5) / n; return a + x * (Math.Cos(t) * d / 2) + y * (Math.Sin(t) * d / 2); }).ToList();
         return Prism.Extrude(ring, null, axis, tag);
     }
 

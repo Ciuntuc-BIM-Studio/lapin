@@ -453,9 +453,13 @@ public class RoofTests
         Assert.Equal(1.5, s.Lines.Single(l => l.Kind == LineKind.Ridge).A.Z, 9);
         Assert.Equal(0, s.HeightAt(new Vec2(5, 0))!.Value, 6);
         Assert.Equal(1.5, s.HeightAt(new Vec2(5, 3))!.Value, 9);
-        // Between, the vault in facets: a chord within a centimetre of the circle, never above it.
-        var arc = -2.25 + Math.Sqrt(3.75 * 3.75 - 1.5 * 1.5);
-        Assert.InRange(s.HeightAt(new Vec2(5, 1.5))!.Value, arc - 0.01, arc + 1e-9);
+        // Between, the vault in facets as every curve is (Chords, audit 22.11.2026): within a millimetre of the circle (measured
+        // to its centre, 2.25 m under the plates), never outside it.
+        for (var y = 0.05; y < 6; y += 0.05)
+        {
+            var off = new Vec2(y - 3, s.HeightAt(new Vec2(5, y))!.Value + 2.25).Length;
+            Assert.InRange(off, 3.75 - Chords.Tolerance - 1e-9, 3.75 + 1e-9);
+        }
         Assert.All(s.Planes, p => Assert.Equal(4, p.Points.Count));
         Assert.True(s.Planes.Count >= 12);
         Assert.Equal(0, Len(s, LineKind.Hip) + Len(s, LineKind.Break), 9);
