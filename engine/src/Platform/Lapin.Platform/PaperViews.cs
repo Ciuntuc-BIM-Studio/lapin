@@ -135,7 +135,12 @@ public static class PaperViews
         var o = new List<ViewMark>();
         foreach (var source in q.Services.All<IViewAnnotations>())
             try { o.AddRange(source.Marks(c).Where(Mine)); }
-            catch (Exception) { /* a module that cannot draw on paper draws nothing there */ }
+            catch (Exception ex) when (ex is not (OutOfMemoryException or OperationCanceledException))
+            {
+                // A module that cannot draw on paper draws nothing there, and the user is told.
+                Console.Error.WriteLine($"[engine] {source.GetType().Name} could not draw on the sheet: {ex}");
+                q.Warn($"Part of what is drawn on the sheet is missing: {source.GetType().Name} failed ({ex.Message}).");
+            }
         o.AddRange(DrawingKeys.Marks(c));
         // The sheet's own symbols (placed with Place symbol…, in paper mm): picked here too, drawn by the sheet under the paper.
         if (SheetOf(m, c.View) is { } sheet) o.AddRange(Symbols.PaperPickMarks(q, sheet));
