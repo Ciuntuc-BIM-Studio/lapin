@@ -63,9 +63,16 @@ public static class ClashTests
         public bool IsSelf => SetB == null || SetB == SetA;
     }
 
-    public static Test Read(Entity e) => new(e.Id, e.Name ?? "", (string?)e.Attrs["kind"] is Clearance or Openings ? (string)e.Attrs["kind"]! : Hard, e.Str("setA") ?? "", e.Str("setB") is { Length: > 0 } b ? b : null,
-        Json.Number(e.Attrs["tolerance"]) ?? ClashEngine.HardTolerance, e.Attrs["enabled"] is not JsonValue v || !v.TryGetValue<bool>(out var on) || on,
+    /// <summary>The tolerance a test of this kind has when none is given: the clearance distance, or the hard tolerance.</summary>
+    public static double DefaultTolerance(string kind) => kind == Clearance ? ClashEngine.ClearanceDistance : ClashEngine.HardTolerance;
+
+    public static Test Read(Entity e)
+    {
+        var kind = (string?)e.Attrs["kind"] is Clearance or Openings ? (string)e.Attrs["kind"]! : Hard;
+        return new(e.Id, e.Name ?? "", kind, e.Str("setA") ?? "", e.Str("setB") is { Length: > 0 } b ? b : null,
+        Json.Number(e.Attrs["tolerance"]) ?? DefaultTolerance(kind), e.Attrs["enabled"] is not JsonValue v || !v.TryGetValue<bool>(out var on) || on,
         (e.Attrs["clashes"] as JsonArray ?? []).Select(ClashRecord.From).OfType<ClashRecord>().ToList(), (e.Attrs["runs"] as JsonArray)?.LastOrDefault() as JsonObject);
+    }
 
     public static string KeyOf(string a, string b) => string.CompareOrdinal(a, b) <= 0 ? $"{a}|{b}" : $"{b}|{a}";
 
