@@ -214,14 +214,27 @@ public static partial class DraftingTables
                 XValue? whole = null;
                 if (text.Contains("{=", StringComparison.Ordinal))
                 {
-                    // A cell that is one formula and nothing else keeps its value as a number, not as the text it is written as.
+                    // A cell that is one formula and nothing else keeps its value as a number, not as the text it is written as;
+                    // worked out once (its value and its text), so what it reads and what goes wrong are read and said once.
                     var t = text.Trim();
                     if (t.StartsWith("{=", StringComparison.Ordinal) && LiveText.CloseOf(t, 2) == t.Length - 1)
                     {
                         var (formula, format) = LiveText.SplitFormat(t[2..^1]);
-                        if (format == null && Expr.TryEvalValue(formula, Name, Range) is ({ } x, null)) whole = x;
+                        var (value, error) = Expr.TryEvalValue(formula, Name, Range);
+                        var lead = text[..(text.Length - text.TrimStart().Length)];
+                        var trail = text[text.TrimEnd().Length..];
+                        if (value is { } x)
+                        {
+                            if (format == null) whole = x;
+                            text = lead + Expr.Format(x, format) + trail;
+                        }
+                        else
+                        {
+                            unknown.Add("= " + formula.Trim() + (error != null ? $" ({error})" : ""));
+                            text = lead + "<" + formula.Trim() + ">" + trail;
+                        }
                     }
-                    text = LiveText.Formulas(text, Name, unknown, Range);
+                    else text = LiveText.Formulas(text, Name, unknown, Range);
                 }
                 if ((outer != null || scope != null || model != null) && text.Contains('{')) text = TitleBlocks.Fill(text, Token, unknown);
                 foreach (var u in unknown) Errors.Add($"{Address(r, c)}: {u}");

@@ -424,6 +424,33 @@ public class DraftingTableModelTests
         Assert.StartsWith("<", Shown(f, t, 0, 2));
     }
 
+    [Fact]
+    public void A_cell_counts_what_the_filter_editor_counts()
+    {
+        var f = F();
+        f.Wall(0, 0, 5, 0);
+        f.Wall(0, 3, 3, 3);
+        // A filter without rules takes nothing; one on the class takes the walls on storeys, as the editor counts.
+        var empty = (string)f.Run("viewFilter.create", new JsonObject { ["name"] = "Empty", ["rules"] = new JsonArray() })!["id"]!;
+        var walls = (string)f.Run("viewFilter.create", new JsonObject { ["name"] = "Walls", ["rules"] = J(new JsonObject { ["field"] = "class", ["op"] = "equals", ["value"] = "IfcWall" }) })!["id"]!;
+        var t = Table(f, Rows(["{= filter.Empty.count}", "{= filter.Walls.count}"]), 1, 2);
+        Assert.Equal(0, (int)f.Session.Query("viewFilter.count", new JsonObject { ["id"] = empty })!);
+        Assert.Equal("0", Shown(f, t, 0, 0));
+        Assert.Equal(2, (int)f.Session.Query("viewFilter.count", new JsonObject { ["id"] = walls })!);
+        Assert.Equal("2", Shown(f, t, 0, 1));
+    }
+
+    [Fact]
+    public void A_cell_that_is_one_formula_is_worked_out_once()
+    {
+        var f = F();
+        var t = Table(f, Rows(["{= A1 + 1}", "{= 2 * 3}", " {= 1 / 4 | 0.00} "]), 1, 3);
+        Assert.Equal("<A1 + 1>", Shown(f, t, 0, 0));
+        Assert.Single(Errors(f, t), e => e.Contains("reads itself"));
+        Assert.Equal("6", Shown(f, t, 0, 1));
+        Assert.Equal("0.25", Shown(f, t, 0, 2).Trim());
+    }
+
     // ------------------------------------------------------------ tables in symbols
 
     static JsonObject TableItem(params string[][] rows) => new()

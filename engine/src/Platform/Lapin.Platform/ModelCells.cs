@@ -10,7 +10,7 @@ namespace Lapin.Platform;
 /// text a tag writes, a formula reads the number in SI); <c>schedule.&lt;name&gt;.…</c>, a schedule of the project as it is laid
 /// out (<c>count</c>, <c>total.&lt;column&gt;</c>, <c>sum|average|min|max.&lt;column&gt;</c>, a cell <c>B3</c> with its headings
 /// as row 1); <c>filter.&lt;name&gt;.count</c> and <c>filter.&lt;name&gt;.sum|average|min|max.&lt;field&gt;</c> over the elements
-/// one of the project's view filters takes, through the one <see cref="ElementFilter"/>. One reader per drawing: what it reads
+/// on storeys one of the project's view filters takes, as the filter editor counts them (<see cref="ViewFilters.Taken"/>). One reader per drawing: what it reads
 /// (an element's fields, a schedule's grid, a filter's elements) is read once.
 /// </summary>
 public sealed class ModelCells(IQueryContext q)
@@ -122,7 +122,7 @@ public sealed class ModelCells(IQueryContext q)
         var hit = ViewFilters.All(q.Model).Where(f => f.Id == key || Squash(f.Name) == Squash(key)).ToList();
         if (hit.Count != 1) { errors.Add(hit.Count == 0 ? $"{at}: there is no filter „{key}”." : $"{at}: {hit.Count} filters are called „{key}”: rename one."); return Unknown; }
         var f = hit[0];
-        if (!filtered.TryGetValue(f.Id, out var els)) filtered[f.Id] = els = ElementFilter.Elements(q, ViewFilters.ToFilter(f.Rules, f.Any));
+        if (!filtered.TryGetValue(f.Id, out var els)) filtered[f.Id] = els = ViewFilters.Taken(q.Model, f);
         var what = parts[1].ToLowerInvariant();
         if (what == "count" && parts.Length == 2) return Number(els.Count);
         if (parts.Length < 3 || !Aggregates.Contains(what)) { errors.Add($"{at}: filter.{rest}: count, or sum|average|min|max.<field>."); return Unknown; }
