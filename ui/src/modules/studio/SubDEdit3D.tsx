@@ -17,7 +17,7 @@ import { poseKey, useCamera, type Vec3 } from '../../viewport/camera';
 import { formatLength, parseLength } from '../../viewport/liveInput';
 import { moveTarget } from '../../viewport/moveIn3d';
 import { insideView, projector, snapAt, rayAt, type ViewRefs } from '../../viewport/scene3d';
-import { arrowLock3, segNearRay } from '../../viewport/snap3d';
+import { arrowLock3, segNearRay, type Snapped3 } from '../../viewport/snap3d';
 import {
   anchorOf, dragBy, edgeClasses, edgeKey, edgeOf, moves, opProblem, pick, pickAt, pointsOf, previewPoints, SHARPNESS, type Lens, type Picked, type PickMode,
 } from './subdModel';
@@ -61,7 +61,12 @@ export function SubDEdit3D({ camera, canvas, scene, invalidate }: Overlay3DProps
   const targetOf = (): Vec3 | null => {
     const s = useSubD.getState();
     if (!s.drag) return null;
-    return moveTarget(s.drag.base, s.drag.at, s.drag.text, s.drag.lock, false, (x) => parseLength(x));
+    const { base, at, text, lock } = s.drag;
+    // A distance typed with an axis held goes along that axis even when the cursor's inferred point lies on the base (the drag is
+    // then a zero length, and the typed value would have no direction and move nothing).
+    const flat = !at || Math.hypot(at.point.x - base.x, at.point.y - base.y, at.point.z - base.z) < 1e-9;
+    const along = lock && text && flat ? { point: { x: base.x + (lock.axis === 'red' ? 1 : 0), y: base.y + (lock.axis === 'green' ? 1 : 0), z: base.z + (lock.axis === 'blue' ? 1 : 0) }, kind: at?.kind ?? 'axis' } as unknown as Snapped3 : at;
+    return moveTarget(base, along, text, lock, false, (x) => parseLength(x));
   };
   // A typed distance and Enter, then the button let go, both finish the drag: the second must not move the points again.
   const finishing = useRef(false);
@@ -72,7 +77,7 @@ export function SubDEdit3D({ camera, canvas, scene, invalidate }: Overlay3DProps
     try {
       const to = targetOf();
       const by = to ? dragBy(s.drag.base, to) : { x: 0, y: 0, z: 0 };
-      if (moves(by)) await applyMove(by);
+        if (moves(by)) await applyMove(by);
       useSubD.setState({ drag: null });
     } finally { finishing.current = false; }
   };
