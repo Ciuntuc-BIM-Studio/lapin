@@ -54,6 +54,18 @@ public sealed class GraphTests : IDisposable
     static double[] Numbers(JsonNode? n) => n!.AsArray().Select(x => (double)x!).ToArray();
 
     [Fact]
+    public void A_text_input_reads_as_a_number_as_everywhere_else_in_Lapin()
+    {
+        Assert.Equal(2.5, Values.Number("2,5", "x"));
+        Assert.Equal(-3, Values.Number("−3", "x"));
+        Assert.Equal(1000, Values.Number("1e3", "x"));
+        // What Numbers.Parse refuses, a graph does not take either: no NaN, infinity, nor thousands groups.
+        Assert.Throws<CommandException>(() => Values.Number("NaN", "x"));
+        Assert.Throws<CommandException>(() => Values.Number("Infinity", "x"));
+        Assert.Throws<CommandException>(() => Values.Number("1,234.5", "x"));
+    }
+
+    [Fact]
     public void Nodes_run_in_the_order_their_wires_give_and_lists_map_by_the_longest()
     {
         var f = Project();
