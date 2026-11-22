@@ -75,28 +75,39 @@ public static class FemParallel
     /// for (<paramref name="cancel"/>) ends it before the next job; when jobs throw, the lowest one's is thrown, as one at a
     /// time would.
     /// </summary>
-    public static TOut[] Map<TIn, TOut>(IReadOnlyList<TIn> items, Func<TIn, TOut> f, long bytesPerJob = 0, CancellationToken cancel = default)
+    public static TOut[] Map<TIn, TOut>(IReadOnlyList<TIn> items, Func<TIn, TOut> f, long bytesPerJob = 0, CancellationToken cancel = default) =>
+        Map(items, static () => 0, (item, _) => f(item), bytesPerJob, cancel);
+
+    /// <summary>
+    /// <see cref="Map{TIn, TOut}(IReadOnlyList{TIn}, Func{TIn, TOut}, long, CancellationToken)"/> with something of each
+    /// worker's own (<paramref name="local"/>, made when a worker starts), handed to the jobs it runs one after another and
+    /// to no other: what a nonlinear solve's systems give up for the next one (§14.22, <see cref="FactorStore"/>). Dropped
+    /// when the worker ends, so no more are alive than jobs run at once.
+    /// </summary>
+    public static TOut[] Map<TIn, TLocal, TOut>(IReadOnlyList<TIn> items, Func<TLocal> local, Func<TIn, TLocal, TOut> f, long bytesPerJob = 0, CancellationToken cancel = default)
     {
         var o = new TOut[items.Count];
         var degree = Degree(items.Count, bytesPerJob);
         if (degree <= 1)
         {
+            var mine = local();
             for (var i = 0; i < items.Count; i++)
             {
                 cancel.ThrowIfCancellationRequested();
-                o[i] = f(items[i]);
+                o[i] = f(items[i], mine);
             }
             return o;
         }
         var errors = new ExceptionDispatchInfo?[items.Count];
-        Parallel.For(0, items.Count, new ParallelOptions { MaxDegreeOfParallelism = degree, CancellationToken = cancel }, i =>
+        Parallel.For(0, items.Count, new ParallelOptions { MaxDegreeOfParallelism = degree, CancellationToken = cancel }, local, (i, _, mine) =>
         {
             var was = _inWorker;
             _inWorker = true;
-            try { o[i] = f(items[i]); }
+            try { o[i] = f(items[i], mine); }
             catch (Exception ex) { errors[i] = ExceptionDispatchInfo.Capture(ex); }
             finally { _inWorker = was; }
-        });
+            return mine;
+        }, static _ => { });
         foreach (var e in errors) e?.Throw();
         return o;
     }

@@ -40,6 +40,8 @@ export interface CadHost {
   isPlan?(): boolean;
   /** Pixels per metre of the view, so a step can tell a click on the same spot from one near it. */
   pxPerMetre?(): number;
+  /** How far the view is turned on screen (radians, as PlanView's `rot`: orientation, true north up); 0 when it is not. The arrow keys' nudge reads it. */
+  screenTurn?(): number;
   /** The drafted shape under a point, with its exact geometry. */
   pickDraft(p: Vec2): { id: string; shape: Shape } | null;
   /** Every drafted shape within a click's reach of a point, nearest first (a corner two shapes share has both). */

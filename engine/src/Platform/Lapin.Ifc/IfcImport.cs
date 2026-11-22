@@ -376,7 +376,7 @@ public static partial class IfcImport
             return null;
         }
 
-        /// <summary>The cage a SubD solid's Lapin_SubD set carries (decision 775), as the JSON it was written as; null when none.</summary>
+        /// <summary>The cage a SubD solid's Lapin_SubD set carries (decision 780), as the JSON it was written as; null when none.</summary>
         JsonNode? SubDCageOf(int id)
         {
             foreach (var sid in definitions.GetValueOrDefault(id) ?? [])
@@ -672,6 +672,7 @@ public static partial class IfcImport
                 {
                     var attrs = intent.Attrs;
                     if (attrs["color"] == null && Colour(mat.Id) is { } c) attrs["color"] = c;
+                    MaterialMaps(edit, mat.Id, attrs);
                     id = Put(edit, lapinId, IfcClass.Material, name, attrs, null, counts: false).Id;
                 }
                 else
@@ -703,6 +704,47 @@ public static partial class IfcImport
             }
         }
 
+        /// <summary>
+        /// A Lapin material's maps back from its file (docs/plan-render.md, S1): each image its attributes name (textureImage,
+        /// normalImage… with the ids they had) made again, under that id, from the IfcBlobTexture of its surface style whose Mode
+        /// says that map (IfcExport.TextureModes); an image the file does not hold is taken off the material.
+        /// </summary>
+        void MaterialMaps(IEdit edit, int material, JsonObject attrs)
+        {
+            Dictionary<string, StepEntity>? blobs = null;
+            foreach (var (map, key) in Lapin.Platform.Images.MapKeys)
+            {
+                if ((string?)(attrs[key] as JsonValue) is not { Length: > 0 } imageId) continue;
+                if (edit.Model.Get(imageId) is { Class: Lapin.Platform.Images.Class }) { seen.Add(imageId); continue; }
+                blobs ??= Blobs(material);
+                if (blobs.TryGetValue(IfcExport.TextureModes[map], out var blob) && Str(blob[5]) is { } format && blob[6] is string code && code.Length > 1)
+                {
+                    try
+                    {
+                        var bytes = Convert.FromHexString(code[1..]);
+                        var mime = Lapin.Platform.Images.Sniff(bytes) ?? (format.Equals("PNG", StringComparison.OrdinalIgnoreCase) ? "image/png" : "image/jpeg");
+                        Put(edit, imageId, Lapin.Platform.Images.Class, $"{map}.{(mime == "image/png" ? "png" : "jpg")}", new JsonObject { ["mime"] = mime, ["data"] = Convert.ToBase64String(bytes) }, null, counts: false);
+                        continue;
+                    }
+                    catch (FormatException) { }
+                }
+                attrs.Remove(key);
+            }
+        }
+
+        /// <summary>A material's IfcBlobTextures by their Mode, from the surface styles of its representation.</summary>
+        Dictionary<string, StepEntity> Blobs(int material)
+        {
+            var o = new Dictionary<string, StepEntity>(StringComparer.OrdinalIgnoreCase);
+            foreach (var rep in Rels.RepresentationsOf[material])
+                foreach (var styled in Items(rep[2]).SelectMany(r => Items(r[3])).Where(i => i.Type == "IFCSTYLEDITEM"))
+                    foreach (var style in Items(styled[1]).Where(x => x.Type == "IFCSURFACESTYLE"))
+                        foreach (var item in Items(style[2]).Where(x => x.Type == "IFCSURFACESTYLEWITHTEXTURES"))
+                            foreach (var tex in Items(item[0]).Where(x => x.Type == "IFCBLOBTEXTURE"))
+                                if (Str(tex[2]) is { Length: > 0 } mode) o.TryAdd(mode, tex);
+            return o;
+        }
+
         /// <summary>The measures of a material's properties a project may give a unit of its own (IfcUnitEnum, IfcDerivedUnitEnum): read in SI.</summary>
         static readonly Dictionary<string, string> MeasureUnits = new()
         {
@@ -726,7 +768,7 @@ public static partial class IfcImport
             foreach (var props in Rels.PropertiesOf[mat.Id])
             {
                 var setName = Str(props[0]);
-                if (setName is not { Length: > 0 } || IfcExport.IsIntentSet(setName)) continue;
+                if (setName is not { Length: > 0 } || IfcExport.IsIntentSet(setName) || setName == IfcExport.LightSetName) continue;
                 string? pset = setName == StandardPsets.MaterialOwn || setName == StandardPsets.Own ? null : setName;
                 foreach (var p in Items(props[2]))
                 {
@@ -1081,7 +1123,7 @@ public static partial class IfcImport
             if (predefined is "NOTDEFINED" or "USERDEFINED") predefined = intent.Predefined;
             // A room's name is its LongName (its Name is its number).
             var name = e.Type == "IFCSPACE" && e.Args.Count > 7 && Str(e[7]) is { Length: > 0 } longName ? longName : Str(e[2]);
-            // A SubD solid's cage rides in a set of its own (decision 775).
+            // A SubD solid's cage rides in a set of its own (decision 780).
             if (SubDCageOf(e.Id) is { } cage) intent.Attrs["cage"] = cage;
             Put(edit, gid, cls, name ?? cls[3..], intent.Attrs, predefined);
             var storey = StoreyFor(e.Id);

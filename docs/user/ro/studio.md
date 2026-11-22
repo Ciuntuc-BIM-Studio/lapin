@@ -161,6 +161,8 @@ Proprietățile unei polilinii îi arată laturile. Scrie lungimea unei laturi, 
 
 Un **solid SubD** este un corp neted, liber, modelat dintr-o **cușcă** grosieră de puncte, muchii și fețe (subdivizare Catmull–Clark). Trageți câteva puncte ale cuștii și tot corpul le urmează într-o curbă netedă. Este un solid Studio ca celelalte: primește booleene, rotunjiri, cantități și export IFC și își păstrează identitatea când îl editați.
 
+*Inspirație:* instrumentele de forme libere din Studio datorează idei add-on-ului [blender-nurbs](https://github.com/cekuhnen/blender-nurbs), creat de cekuhnen pentru modelare NURBS în Blender. Codul Lapin este propriu: au fost preluate doar ideile, nu și codul.
+
 **Studio → Solide → SubD** oferă **Cutie SubD**, **Cilindru SubD** și **Plan SubD** (o suprafață deschisă, 4 × 4 patrulatere): faceți clic în plan sau pe sol în 3D pentru a-l plasa. **SubD din solid** transformă fețele solidului Studio selectat în cușca unui solid SubD nou (sursa rămâne; doar corpuri mici).
 
 ### Editarea cuștii
@@ -169,7 +171,7 @@ Selectați un solid SubD în 3D și apăsați **Tab**, faceți dublu clic pe el 
 
 - Alegeți ce selectați cu butoanele **Vârf**, **Muchie** și **Față** din bară sau cu tastele **1**, **2** și **3**.
 - Clic alege, **Shift**-clic adaugă sau scoate. Un clic în gol renunță la alegere.
-- Trageți ce este ales: se fixează pe capetele, mijloacele și muchiile modelului și pe celelalte puncte ale cuștii, iar săgețile blochează o axă (dreapta pentru roșu, stânga pentru verde, sus pentru albastru), exact ca la Mută 3D. Tastați o distanță sau `dx,dy,dz` și apăsați Enter. Eliberarea este un singur pas de anulare; corpul neted se redesenează atunci.
+- Trageți ce este ales: se fixează pe capetele, mijloacele și muchiile modelului și pe celelalte puncte ale cuștii, iar săgețile blochează o axă (dreapta pentru roșu, stânga pentru verde, sus pentru albastru), exact ca la Mută 3D. Tastați o distanță sau `dx,dy,dz` și apăsați Enter. Eliberarea este un singur pas de anulare; corpul neted se redesenează atunci. După eliberare, o distanță tastată și Enter schimbă mutarea pe aceeași direcție (tot un singur pas de anulare); un click în altă parte sau Esc o lasă cum e. <kbd>Tab</kbd> în timpul tragerii pornește menținerea automată: punctele urmează cursorul fără buton, iar un click sau Enter le pune jos.
 - **Scară** și **Rotire (°)** din bară lucrează asupra punctelor alese, față de mijlocul lor: tastați o valoare și apăsați Enter.
 - **Extrudează** împinge fețele alese cu distanța de lângă (negativă: spre interior). **Inserează buclă** taie o buclă de muchii peste inelul de patrulatere pe care îl începe muchia aleasă. **Șterge fețele** deschide cușca acolo. **Pliu** dă muchiilor alese o ascuțime: Neted scoate pliul, Semi-ascuțit 1–3 îl rotunjește după atâtea subdiviziuni, Ascuțit rămâne ascuțit.
 - **Esc** sau **Gata** părăsește modul. Părăsirea nu este un pas de anulare.

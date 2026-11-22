@@ -35,13 +35,13 @@ export function SunFields() {
         </dd>
         <dt>Hour</dt>
         <dd className="row">
-          <input type="range" min={5} max={21} step={0.25} value={st.hour} onChange={(e) => setSun({ hour: Number(e.target.value) })} style={{ flex: 1 }} aria-label="Hour" />
+          <input type="range" min={0} max={23.75} step={0.25} value={st.hour} onChange={(e) => setSun({ hour: Number(e.target.value) })} style={{ flex: 1 }} aria-label="Hour" />
           <span className="num" style={{ width: 48 }}>{hourText(st.hour)}</span>
           <button type="button" className="icon" title={st.playing ? 'Stop' : 'Play the day'} onClick={() => setSun({ playing: !st.playing, on: true })}>{st.playing ? <Pause size={14} /> : <Play size={14} />}</button>
         </dd>
         {info && <>
           <dt>The sun</dt>
-          <dd>{info.altitude > 0 ? `${info.altitude.toFixed(1)}° above the horizon, ${info.azimuth.toFixed(0)}° from north` : 'below the horizon'}</dd>
+          <dd>{info.altitude > 0 ? `${info.altitude.toFixed(1)}° above the horizon, ${info.azimuth.toFixed(0)}° from north` : info.altitude > -6 ? 'below the horizon (dusk)' : 'below the horizon (night)'}</dd>
           <dt>Place</dt>
           <dd>{`${info.lat.toFixed(4)}° N, ${info.lon.toFixed(4)}° E`}{!info.placeKnown && <span className="error-text" style={{ display: 'block' }}>Bucharest: the project has no coordinate system and survey point (Manage → Location)</span>}</dd>
           <dt>Time zone</dt>
@@ -62,6 +62,7 @@ export function SunDialog() {
         <div className="dialog-body">
           <SunFields />
           <p className="muted small">The medium and realistic views (View → Display quality) always have a sun: this day and hour.</p>
+          <p className="muted small">After sunset they show the night: the sky darkens, the exposure opens and the light fixtures light the rooms.</p>
         </div>
         <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>

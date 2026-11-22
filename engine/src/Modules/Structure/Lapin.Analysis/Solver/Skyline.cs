@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Numerics;
 
 namespace Lapin.Analysis.Solver;
@@ -15,11 +16,11 @@ public sealed class Skyline : ISymmetricFactor
     readonly int _n;
     readonly int[] _first;
     readonly long[] _ptr;
-    readonly double[] _a;
-    double[] _diag0 = [];
+    double[] _a;
+    bool _released;
 
     public int Size => _n;
-    public long Stored => _a.LongLength;
+    public long Stored => _ptr[_n];
 
     public Skyline(int[] first)
     {
@@ -30,6 +31,35 @@ public sealed class Skyline : ISymmetricFactor
         _a = new double[_ptr[_n]];
     }
 
+    /// <summary>The same profile, its arrays shared (never written after the constructor), with values of its own.</summary>
+    Skyline(Skyline s)
+    {
+        (_n, _first, _ptr) = (s._n, s._first, s._ptr);
+        _a = new double[_ptr[_n]];
+    }
+
+    public ISymmetricFactor Fresh() => new Skyline(this);
+
+    /// <summary>The same profile with values given up on it (§14.22), zeroed.</summary>
+    Skyline(Skyline s, double[] a)
+    {
+        (_n, _first, _ptr) = (s._n, s._first, s._ptr);
+        Array.Clear(a);
+        _a = a;
+    }
+
+    public ISymmetricFactor Fresh(FactorStore? store) => store?.Take(_ptr) is double[] a ? new Skyline(this, a) : new Skyline(this);
+
+    public void Release(FactorStore store)
+    {
+        if (_released) return;
+        var a = _a;
+        (_a, _released) = (null!, true);
+        store.Put(_ptr, a);
+    }
+
+    double[] A => _released ? throw new InvalidOperationException("This factor gave its values up (§14.22): it can no longer be used.") : _a;
+
     long Index(int i, int j) => _ptr[j] + (i - _first[j]);
 
     /// <summary>Adds to the entry (i, j), either triangle.</summary>
@@ -37,10 +67,10 @@ public sealed class Skyline : ISymmetricFactor
     {
         if (i > j) (i, j) = (j, i);
         if (i < _first[j]) throw new InvalidOperationException("An entry outside the profile.");
-        _a[Index(i, j)] += v;
+        A[Index(i, j)] += v;
     }
 
-    public double Diagonal(int j) => _a[Index(j, j)];
+    public double Diagonal(int j) => A[Index(j, j)];
 
     /// <summary>
     /// Factors in place; the first equation whose pivot is not positive, or −1. With <paramref name="hold"/>, such an
@@ -48,9 +78,17 @@ public sealed class Skyline : ISymmetricFactor
     /// </summary>
     public int Factor(Func<int, double>? hold = null)
     {
-        _diag0 = new double[_n];
-        for (var j = 0; j < _n; j++) _diag0[j] = _a[Index(j, j)];
-        var a = _a.AsSpan();
+        var all = A;
+        // The pivots' first values, from the shared pool (§14.22): every one written before it is read.
+        var diag0 = ArrayPool<double>.Shared.Rent(_n);
+        try { return Factor(all, diag0, hold); }
+        finally { ArrayPool<double>.Shared.Return(diag0); }
+    }
+
+    int Factor(double[] all, double[] diag0, Func<int, double>? hold)
+    {
+        for (var j = 0; j < _n; j++) diag0[j] = all[Index(j, j)];
+        var a = all.AsSpan();
         for (var j = 0; j < _n; j++)
         {
             var fj = _first[j];
@@ -63,7 +101,7 @@ public sealed class Skyline : ISymmetricFactor
                 if (len <= 0) continue;
                 var si = _ptr[i] + (k0 - _first[i]);
                 var sj = colJ + (k0 - fj);
-                a[(int)(colJ + (i - fj))] -= Dot(_a, si, sj, len);
+                a[(int)(colJ + (i - fj))] -= Dot(all, si, sj, len);
             }
             // l_ij = g_ij / d_i;  d_j = a_jj − Σ l_ij g_ij.
             var d = a[(int)(colJ + (j - fj))];
@@ -76,7 +114,7 @@ public sealed class Skyline : ISymmetricFactor
                 d -= l * g;
                 a[at] = l;
             }
-            var scale = Math.Abs(_diag0[j]);
+            var scale = Math.Abs(diag0[j]);
             if (!(d > PivotTolerance * scale) || scale == 0)
             {
                 if (hold == null) { a[(int)(colJ + (j - fj))] = d; return j; }
@@ -107,27 +145,28 @@ public sealed class Skyline : ISymmetricFactor
     /// <summary>Solves L·D·Lᵀ x = b in place (after <see cref="Factor"/>).</summary>
     public void Solve(double[] b)
     {
+        var a = A;
         for (var j = 0; j < _n; j++)
         {
             var fj = _first[j];
             var len = j - fj;
-            if (len > 0) b[j] -= DotWith(_ptr[j], b, fj, len);
+            if (len > 0) b[j] -= DotWith(a, _ptr[j], b, fj, len);
         }
-        for (var j = 0; j < _n; j++) b[j] /= _a[Index(j, j)];
+        for (var j = 0; j < _n; j++) b[j] /= a[Index(j, j)];
         for (var j = _n - 1; j >= 0; j--)
         {
             var fj = _first[j];
             var xj = b[j];
             if (xj == 0) continue;
             var col = _ptr[j];
-            for (var i = fj; i < j; i++) b[i] -= _a[col + (i - fj)] * xj;
+            for (var i = fj; i < j; i++) b[i] -= a[col + (i - fj)] * xj;
         }
     }
 
-    double DotWith(long start, double[] b, int from, int len)
+    static double DotWith(double[] a, long start, double[] b, int from, int len)
     {
         var s = 0.0;
-        for (var k = 0; k < len; k++) s += _a[start + k] * b[from + k];
+        for (var k = 0; k < len; k++) s += a[start + k] * b[from + k];
         return s;
     }
 }

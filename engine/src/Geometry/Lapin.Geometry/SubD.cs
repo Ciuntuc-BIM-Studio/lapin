@@ -85,7 +85,7 @@ public sealed record SubDResult(Solid? Solid, int Level, double Deviation, bool 
 
 /// <summary>
 /// Catmull–Clark subdivision surfaces (Catmull &amp; Clark 1978) with semi-sharp creases (DeRose, Kass &amp; Truong 1998), written
-/// from the published rules (docs/plan-studio-freeform.md §8, decision 775):
+/// from the published rules (docs/plan-studio-freeform.md §8, decision 780):
 /// <list type="bullet">
 /// <item>A step makes a face point at each face's centroid, an edge point on each edge, and moves each old point; each n-sided
 /// face becomes n quads.</item>

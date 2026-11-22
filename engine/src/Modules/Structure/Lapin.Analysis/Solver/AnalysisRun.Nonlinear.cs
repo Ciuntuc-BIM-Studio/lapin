@@ -180,7 +180,8 @@ public sealed partial class AnalysisRun
                 }));
             }
         }
-        var results = FemParallel.Map(jobs, j => Nonlinear.Solve(p, j.Loads, options), FemParallel.BytesFor(sol.Profile, sol.Dofs), cancel);
+        // Each worker's solves hand their factors' values on, one to the next (§14.22): its combinations share the problem's layouts.
+        var results = FemParallel.Map(jobs, static () => new FactorStore(), (j, store) => Nonlinear.Solve(p, j.Loads, options, store), FemParallel.BytesFor(sol.Profile, sol.Dofs), cancel);
         var o = jobs.Select((j, i) => j.Make(results[i])).ToList();
         var names = new Func<IEnumerable<int>, string>(ks => string.Join(", ", ks.Select(k => p.Elements[k].Name ?? p.Elements[k].Id).Distinct().Take(6)));
         if (sp.Settings.SecondOrder)

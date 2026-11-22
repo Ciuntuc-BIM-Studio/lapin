@@ -6,15 +6,21 @@
 
 import { create } from 'zustand';
 import type { NodeDto } from '../../engine/protocol';
-import { execute, query, useSession } from '../../engine/session';
+import { execute, query, undo, useSession } from '../../engine/session';
 import { notify, useUi } from '../../app/store';
 import { doubleClickHandlers, pickHandlers, tabHandlers } from '../../platform/scope';
 import type { Vec3 } from '../../viewport/camera';
 import type { Lock3, Snapped3 } from '../../viewport/snap3d';
 import { isSubD, moveArgs, none, opArgs, transformArgs, withMode, type Cage, type Op, type Picked, type PickMode, type Transform } from './subdModel';
 
-/** A drag of the picked points: where it began, where the cursor infers it now, the axis held and the distance typed. */
-export interface SubDDrag { base: Vec3; at: Snapped3 | null; lock: Lock3; text: string; moved: boolean }
+/**
+ * A drag of the picked points: where it began, where the cursor infers it now, the axis held and the distance typed. `held`: the
+ * drag outlives the button (Tab, or a digit typed, during it), so a click or Enter ends it, not the release.
+ */
+export interface SubDDrag { base: Vec3; at: Snapped3 | null; lock: Lock3; text: string; moved: boolean; held?: boolean }
+
+/** A drag dropped by letting go: its translation, where the base went, the text typed since, and the model's version it left. */
+export interface SubDAfter { by: Vec3; at: Vec3; text: string; version: number }
 
 export interface SubDEditState {
   /** The SubD solid being edited; null: the mode is off. */
@@ -25,13 +31,15 @@ export interface SubDEditState {
   /** The thing under the cursor, lit before a click. */
   hover: { mode: PickMode; key: string } | null;
   drag: SubDDrag | null;
+  /** The move just dropped, which a distance typed after the release changes (as in SketchUp); null once anything else is done. */
+  after: SubDAfter | null;
   /** The distance the extrude asks, in metres; and the typed scale and turn. */
   extrude: number;
   scale: number;
   turn: number;
 }
 
-const idle: SubDEditState = { id: null, cage: null, mode: 'vertex', picked: none('vertex'), hover: null, drag: null, extrude: 0.3, scale: 1, turn: 15 };
+const idle: SubDEditState = { id: null, cage: null, mode: 'vertex', picked: none('vertex'), hover: null, drag: null, after: null, extrude: 0.3, scale: 1, turn: 15 };
 export const useSubD = create<SubDEditState>(() => ({ ...idle }));
 
 /** The engine's refusal (a symmetry a face crosses, a crease on nothing…), shown. */
@@ -64,7 +72,7 @@ export const editingCage = (): string | null => useSubD.getState().id;
 
 /** The filter changed: what was picked of another kind is let go. */
 export function setMode(mode: PickMode): void {
-  useSubD.setState((s) => ({ mode, picked: withMode(s.picked, mode), hover: null }));
+  useSubD.setState((s) => ({ mode, picked: withMode(s.picked, mode), hover: null, after: null }));
 }
 
 /** A drag let go: ONE subdEdit with the translation. Returns whether the engine took it. */
@@ -78,8 +86,21 @@ export async function applyMove(by: Vec3): Promise<boolean> {
   return r !== null;
 }
 
+/**
+ * The move just dropped, made `to` instead (a distance typed after the release): the drop is undone and `to` applied, so the
+ * two stay ONE undo step; when the model changed in between, only the difference is applied.
+ */
+export async function redoMoveAs(to: Vec3): Promise<boolean> {
+  const a = useSubD.getState().after;
+  if (!a) return false;
+  useSubD.setState({ after: null });
+  if (useSession.getState().version === a.version) { await undo(); return applyMove(to); }
+  return applyMove({ x: to.x - a.by.x, y: to.y - a.by.y, z: to.z - a.by.z });
+}
+
 /** A typed scale and turn about the picked middle: ONE subdEdit. */
 export async function applyTransform(t: Transform): Promise<boolean> {
+  useSubD.setState({ after: null });
   const { id, picked } = useSubD.getState();
   const args = id ? transformArgs(id, picked, t) : null;
   if (!args) return false;
@@ -91,6 +112,7 @@ export async function applyTransform(t: Transform): Promise<boolean> {
 
 /** A shaping op on what is picked: ONE subdOp. The points and faces are numbered anew, so the pick is let go and the cage asked again. */
 export async function applyOp(op: Op): Promise<boolean> {
+  useSubD.setState({ after: null });
   const { id, picked, mode } = useSubD.getState();
   const args = id ? opArgs(id, picked, op) : null;
   if (!args) return false;

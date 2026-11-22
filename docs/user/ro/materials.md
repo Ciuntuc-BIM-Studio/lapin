@@ -82,6 +82,26 @@ Culoarea, grosimea, tipul de linie, opacitatea și halftone-ul hașurii, fundalu
 - **Desenează rosturile.** Implicit, un material trece de la un element la următorul fără linie, ca doi pereți în prelungire sau o tencuială peste două etaje. Bifează ca să se deseneze rostul.
 - **Se îmbină cu alte elemente.** Bifat implicit: elementele din acest material se îmbină unde întâlnesc altele. Pereții se îmbină la colțuri și grinzile în stâlpi, ordinea de tăiere lasă un element să taie altul (un stâlp printr-o grindă, o grindă în capul unui perete), iar un desen unește într-o singură suprafață tăieturile elementelor alăturate din același material. Debifează pentru elementele care trebuie să-și păstreze forma, ca grinzile de oțel sau fermele de lemn. Elementele lor nu se mai îmbină automat, nimic nu le taie și nu taie nimic, iar planurile și secțiunile desenează conturul fiecăruia. O grindă se oprește la fețele stâlpilor în care stau capetele ei, dar trece întreagă printr-un stâlp pe care îl traversează. Debifarea scoate îmbinările pereților, grinzilor și fundațiilor continue făcute în principal din acest material; bifarea din nou le îmbină cu ce întâlnesc. Le poți anula pe oricare într-un singur pas. Materialele de oțel și lemn din bibliotecă se îmbină implicit, ca până acum.
 
+## Seturi de texturi
+
+Fila Aspect oferă opt **seturi de texturi**: materiale fotografiate, cu relieful lor, de la [ambientCG](https://ambientcg.com) (CC0, libere pentru orice folosință). Sunt cărămidă roșie, beton, tencuială, o pardoseală de lemn, plăci albe, pavele de piatră, oțel periat și textil.
+
+Apasă pe o imagine ca să pui setul pe material. Într-un singur pas, anulat la fel, materialul primește cinci hărți:
+
+- imaginea lui de culoare;
+- **harta de normale** (relieful);
+- **harta de rugozitate** (unde e lucios, unde e mat);
+- **harta de ocluzie** (umbra din rosturi și adâncituri);
+- harta de înălțime, păstrată ca **hartă de relief**.
+
+Stau la mărimea reală a setului: cărămida are 2,4 × 1,2 m pe placă, deci cărămizile ies cât cele adevărate. **Rugozitatea** de mai jos se pune la 1, pentru că ea înmulțește harta de rugozitate.
+
+![Materiale → Aspect: seturile de texturi, cu Cărămidă roșie aleasă](shots/texture-sets.webp)
+
+Imaginile setului se copiază în proiect, câteva sute de kilobytes fiecare. Proiectul arată atunci la fel pe alt calculator și în browser, iar exporturile 3D și IFC le duc cu ele. Două materiale cu același set împart o singură copie. **Scoate hărțile** le ia pe toate cinci, iar culoarea și textura desenată a materialului se văd din nou.
+
+Hărțile se văd în vederile **Mediu** și **Realist** (Vedere → **Calitate afișare**). Vederea **Desen** își păstrează aspectul plat: imaginea de culoare și relieful, fără rugozitate și fără umbre. Vezi [Realist, cu soarele](views.md#realist-cu-soarele) pentru un zid de cărămidă sub un soare jos.
+
 ## O imagine proprie pe un material
 
 Un material poate purta o imagine a ta: o fotografie a cărămizii, a lemnului sau a pietrei adevărate.
@@ -97,21 +117,24 @@ Imaginea se vede în vederea 3D și e salvată în fișierul proiectului. Merge 
 
 Imaginile mai mari de 2048 de pixeli se micșorează la această mărime când le imporți. Butonul cu coș de gunoi scoate imaginea de pe material.
 
-## Hărți de normale și de relief
+## Hărți de normale, de relief, de rugozitate și de ocluzie
 
-Sub imaginea proprie, un material poate primi două hărți de relief, fiecare un PNG sau JPEG al tău:
+Sub imaginea proprie, un material poate primi patru hărți, fiecare un PNG sau JPEG al tău (un set de texturi le dă pe toate odată):
 
 - **Hartă de normale**: imaginea mov-albăstruie pe care programele de randare și site-urile de texturi o dau cu un material (spațiul tangent, verde în sus, cum o citește glTF). Fețele se umbresc ca și cum ar avea relieful ei: rosturile unei cărămizi, fibra unui lemn, asperitățile unei pietre.
 - **Hartă de relief**: o imagine gri, albul sus și negrul jos. Fețele se umbresc ca și cum ar fi ridicate unde e deschisă.
+- **Hartă de rugozitate**: o imagine gri, albul aspru și negrul lucios. **Rugozitatea** o înmulțește, ca în glTF: la 1 imaginea se ia cum e.
+- **Hartă de ocluzie**: o imagine gri, albul deschis și negrul închis. Lumina din jur ajunge mai puțin în părțile ei întunecate, ca într-un rost dintre cărămizi.
 
-Apasă **Importă o imagine…** lângă una și alege fișierul. Amândouă stau pe model ca imaginea proprie, la **W** × **H** și rotite cu **Rotire**; prima hartă de relief pe un material fără mărime îi dă una de 1 m lățime, înaltă cât proporția imaginii. **Intensitate** spune cât de tare se vede relieful: 1 cum spune imaginea, 0 plat, până la 10. Sfera de previzualizare și vederea 3D le arată pe amândouă, iar butonul cu coș de gunoi scoate una.
+Apasă **Importă o imagine…** lângă una și alege fișierul. Toate stau pe model ca imaginea proprie, la **W** × **H** și rotite cu **Rotire**; prima hartă pe un material fără mărime îi dă una de 1 m lățime, înaltă cât proporția imaginii. **Intensitate** spune cât de tare se văd harta de normale și cea de relief (1 cum spune imaginea, 0 plat, până la 10) și cât întunecă harta de ocluzie (de la 0 la 1). Sfera de previzualizare și vederea 3D le arată, iar butonul cu coș de gunoi scoate una. Hărțile de rugozitate și de ocluzie se văd doar în vederile Mediu și Realist.
 
 În exporturi:
 
-- **GLB** și **glTF** duc harta de normale ca textura de normale a materialului, la intensitatea ei.
-- **USDZ** împachetează harta de normale lângă model și o leagă de normala suprafeței.
-- **OBJ + MTL** scrie harta de normale ca `norm` și harta de relief ca `map_Bump` cu intensitatea ei (`-bm`). Un material cu hartă de normale și fără hartă de relief scrie harta de normale și ca `map_Bump`, unde o citesc Blender și majoritatea programelor de randare.
-- glTF nu are hartă de relief, așa că GLB, glTF și USD o lasă afară; **DAE** și **USDA** nu duc deloc imagini, așa că acolo nu merge niciuna.
+- **GLB** și **glTF** duc harta de normale ca textura de normale a materialului, la intensitatea ei, și harta de ocluzie ca textura lui de ocluzie. Harta de rugozitate merge ca textura metalic-rugozitate când materialul nu e un metal. O imagine gri ar face metalicitatea unui metal să urmeze rugozitatea, așa că un metal o lasă afară.
+- **USDZ** împachetează hărțile lângă model și leagă hărțile de normale, de rugozitate și de ocluzie de suprafață.
+- **OBJ + MTL** scrie harta de normale ca `norm`, harta de relief ca `map_Bump` cu intensitatea ei (`-bm`) și harta de rugozitate ca `map_Pr`. Un material cu hartă de normale și fără hartă de relief scrie harta de normale și ca `map_Bump`, unde o citesc Blender și majoritatea programelor de randare.
+- glTF nu are hartă de relief, așa că GLB, glTF și USD o lasă afară; **DAE** și **USDA** nu duc deloc imagini, așa că acolo nu merge nicio hartă.
+- **IFC** duce toate hărțile în fișier, ca texturile stilului de suprafață al materialului (`IfcSurfaceStyleWithTextures`, câte un `IfcBlobTexture` pe hartă, la mărimea plăcii). Un proiect exportat în IFC și deschis din nou în Lapin își primește hărțile înapoi.
 
 ## Hașurile tale (.pat)
 

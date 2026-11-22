@@ -94,6 +94,8 @@ export function MaterialPreview({ material, size = 168 }: { material: NodeDto; s
       if (old.map) old.map.dispose();
       if (old.normalMap) old.normalMap.dispose();
       if (old.bumpMap) old.bumpMap.dispose();
+      if (old.roughnessMap) old.roughnessMap.dispose();
+      if (old.aoMap) old.aoMap.dispose();
       old.dispose();
       // Its relief on the sphere, repeated as its images lie on the model (its own size, else 1 × 1 m) and turned alike.
       const [rw, rh] = own ? [own.width, own.height] : sizeOf(material);
@@ -107,7 +109,7 @@ export function MaterialPreview({ material, size = 168 }: { material: NodeDto; s
         c.needsUpdate = true;
         return c;
       };
-      s.sphere.material = withRelief(previewMaterial(map ? 0xffffff : color, map, look, s.env), reliefOf(material, nodes), look.normalStrength, look.bumpStrength, copy);
+      s.sphere.material = withRelief(previewMaterial(map ? 0xffffff : color, map, look, s.env), reliefOf(material, nodes), look.normalStrength, look.bumpStrength, copy, look.aoStrength, true);
       s.renderer.render(s.scene, s.camera);
     };
     draw();

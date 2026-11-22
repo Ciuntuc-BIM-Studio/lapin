@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Catmull–Clark subdivision with creases (docs/plan-studio-freeform.md §8.2, decision 775): the limits worked out by hand
+/// Catmull–Clark subdivision with creases (docs/plan-studio-freeform.md §8.2, decision 780): the limits worked out by hand
 /// from the published masks, the sharp rules, borders, levels by the chord rule, thickness, symmetry and refused cages.
 /// </summary>
 public class SubDTests(ITestOutputHelper output)

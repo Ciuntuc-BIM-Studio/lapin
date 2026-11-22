@@ -14,7 +14,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import { X } from 'lucide-react';
+import { Lightbulb, X } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems, temporaryItems } from '../shell/selectionMenu';
 import { viewSheetItems } from '../shell/browserFind';
@@ -31,11 +31,12 @@ import { usePaneField } from '../app/pane';
 import { findTool, overlays3d, subSelectionTag } from '../platform/modules';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { completeTool } from './tools';
-import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, pictureOf, pictureUv, reliefOf, sizeOf, splitByFace, textureFor, textureOf, tileOf, whenImagesLoad, withRelief, type Face, type TextureKind } from './textures';
+import { boxUv, boxUvSized, hasRelief, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, pictureOf, pictureUv, reliefOf, sizeOf, splitByFace, surfaceMaps, textureFor, textureOf, tileOf, whenImagesLoad, withRelief, type Face, type TextureKind } from './textures';
 import { lookOf } from './look';
 import { xrayLooks } from './xray';
 import { glassThrough, reflections, standardMaterial } from './materialLook';
-import { Realism, sunColour, useRenderProfile } from './render3d';
+import { nightOf, Realism, sunColour, useCameraLook, useRenderProfile } from './render3d';
+import { LightRig, useLightBudget, type LightProfileDto, type LightSourceDto } from './lights3d';
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
@@ -177,7 +178,7 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
       const own = imageOf(mat, nodes);
       // Its relief (a normal map, a bump map), on the faces' coordinates as its own image lies.
       const relief = reliefOf(mat, nodes);
-      const relieved = !!(relief.normal || relief.bump);
+      const relieved = hasRelief(relief);
       if (own) {
         const g = new THREE.BufferGeometry();
         g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -185,7 +186,7 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         else g.computeVertexNormals();
         g.setIndex(new THREE.BufferAttribute(new Uint32Array(indices.buffer, indices.byteOffset, indices.length), 1));
         boxUvSized(g, own.width, own.height, lk.textureRotation);
-        const mesh = new THREE.Mesh(g, withRelief(standardMaterial(0xffffff, imageTexture(own), lk), relief, lk.normalStrength, lk.bumpStrength));
+        const mesh = new THREE.Mesh(g, withRelief(standardMaterial(0xffffff, imageTexture(own), lk), relief, lk.normalStrength, lk.bumpStrength, undefined, lk.aoStrength));
         mesh.userData.nodeId = nodeId;
         mesh.castShadow = mesh.receiveShadow = true;
         group.add(mesh);
@@ -206,7 +207,7 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         if (kind) boxUv(g, kind, tileOf(mat), lk.textureRotation);
         else if (relieved) { const [w, h] = sizeOf(mat); boxUvSized(g, w, h, lk.textureRotation); }
         const base = standardMaterial(kind ? 0xffffff : new THREE.Color(color), kind ? textureFor(kind, color) : null, lk);
-        const mesh = new THREE.Mesh(g, relieved ? withRelief(base, relief, lk.normalStrength, lk.bumpStrength) : base);
+        const mesh = new THREE.Mesh(g, relieved ? withRelief(base, relief, lk.normalStrength, lk.bumpStrength, undefined, lk.aoStrength) : base);
         mesh.userData.nodeId = nodeId;
         // What is seen through casts no shadow (glass lets the sun in).
         mesh.castShadow = lk.transparency <= 0;
@@ -715,6 +716,30 @@ export function Viewport3D() {
     scene.current = s;
     // How the view renders: as a drawing, medium or realistic (render3d.ts), the passes made once.
     const realism = new Realism(renderer, s);
+    // The light fixtures, lamps and glowing materials as lights in the medium and realistic views (lights3d.ts, docs/plan-render.md S2).
+    const rig = new LightRig();
+    s.add(rig.group);
+    let lightSources: LightSourceDto[] = [];
+    const lightProfiles = new Map<string, LightProfileDto>();
+    let lightsAsked = 0;
+    let lightTimer = 0;
+    const fetchLights = () => {
+      clearTimeout(lightTimer);
+      lightTimer = window.setTimeout(async () => {
+        const n = ++lightsAsked;
+        if (useRenderProfile.getState().profile === 'drawing') { lightSources = []; rig.setProfile('drawing', []); useLightBudget.setState({ total: 0, drawn: 0, shadowed: 0 }); invalidate.current(); return; }
+        const list = await query<LightSourceDto[]>('light.sources', {}).catch(() => null);
+        if (n !== lightsAsked || !list) return;
+        for (const key of new Set(list.map((x) => x.profile).filter((k): k is string => !!k)))
+          if (!lightProfiles.has(key)) { const p = await query<LightProfileDto | null>('light.profile', { key }).catch(() => null); if (p) lightProfiles.set(key, p); }
+        if (n !== lightsAsked) return;
+        lightSources = list;
+        rig.setProfile(useRenderProfile.getState().profile, list, lightProfiles);
+        rig.markDirty();
+        invalidate.current();
+      }, 120);
+    };
+    const unlights = useSession.subscribe((st, before) => { if (st.nodes !== before.nodes) fetchLights(); });
     const persp = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
     persp.up.set(0, 0, 1);
     persp.position.set(18, -22, 16);
@@ -724,7 +749,7 @@ export function Viewport3D() {
     camRef.current = cam;
     // A wheel step held to about a notch before the orbit controls read it (zoom.ts): macOS's accelerated flicks and a 3D mouse's emulated wheel zoom in steps, not in one jump.
     renderer.domElement.addEventListener('wheel', clampWheel, { capture: true, passive: false });
-    const controls = new OrbitControls(persp, renderer.domElement);
+    const controls = new OrbitControls<THREE.PerspectiveCamera | THREE.OrthographicCamera>(persp, renderer.domElement);
     controls.target.set(4, 3, 0);
     controls.update();
 
@@ -849,7 +874,7 @@ export function Viewport3D() {
     s.add(sun.target);
     // A module's sun (the sun study): aimed from its direction over the model, casting shadows; none: the fixed light back.
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap; // three folded PCFSoftShadowMap into it (0.182 already fell back to it with a warning)
     // The ground the shadows fall on where there is no terrain: invisible but for them.
     const shadowOnly = new THREE.ShadowMaterial({ opacity: 0.28 });
     // The realistic view's ground where the model has no terrain: a dry meadow's colour, rough, taking the shadows.
@@ -910,6 +935,9 @@ export function Viewport3D() {
     const aimSun = () => {
       const { dir } = useSunlight.getState();
       const spec = realism.spec;
+      // After sunset (medium and realistic): the exposure opens, the sky's light fades, the lamps light the rooms (render3d.ts, nightOf).
+      const night = dir ? nightOf((Math.asin(Math.max(-1, Math.min(1, dir[2]))) * 180) / Math.PI) : 0;
+      realism.setNight(night);
       realism.setSun(dir);
       placeGround();
       fitted = '';
@@ -925,6 +953,8 @@ export function Viewport3D() {
       // The drawing keeps its even light under the sun; the others take most of theirs from the sky (render3d.ts).
       sun.intensity = up ? (spec.skyLight ? 3.2 : 2.6) : 0;
       hemi.intensity = spec.skyLight ? (up ? 0.25 : 0.4) : up ? 1.1 : 0.6;
+      // The night's sky light: what is left of it under the opened exposure, a faint glow (the drawing keeps its even light).
+      if (realism.night > 0) hemi.intensity *= (1 - realism.night) + (realism.night * 0.04) / realism.gain;
       sunColour(altitude, sun.color);
       sun.castShadow = up;
       if (sun.shadow.mapSize.x !== spec.shadowMap) {
@@ -942,9 +972,13 @@ export function Viewport3D() {
       const { profile } = useRenderProfile.getState();
       realism.setProfile(profile);
       glassThrough(s, realism.spec.glass);
+      // The roughness and occlusion maps in the medium and realistic views; the drawing keeps its flat look (docs/plan-render.md, S1).
+      surfaceMaps(s, profile !== 'drawing');
       aimSun();
+      fetchLights();
     };
     const unprofile = useRenderProfile.subscribe(applyProfile);
+    const unlook = useCameraLook.subscribe(() => { realism.applyLook(); invalidate.current(); });
     const unsunlight = useSunlight.subscribe(aimSun);
     applyProfile();
     s.add(groundGrid(currentViewTheme(), elevationRef.current));
@@ -988,7 +1022,16 @@ export function Viewport3D() {
       else if (!trailing) trailing = window.setTimeout(() => { trailing = 0; invalidate.current(); }, LOD_EVERY);
     };
     let frame = 0;
-    const draw = () => { relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); fitShadow(); realism.render(cam, controls.target.distanceTo(cam.position)); if (host.current) host.current.dataset.cloudPoints = String(clouds.drawn()); };
+    // The lights drawn this frame (the budget, from the eye), their fixtures' own bodies casting no shadow over them.
+    const placeLights = () => {
+      if (!rig.active) return;
+      const shown = lightSources.filter((x) => items.current.get(x.id)?.object.visible !== false);
+      for (const x of shown) items.current.get(x.id)?.object.traverse((o) => { if (o.castShadow) o.castShadow = false; });
+      const c = rig.update(shown, lightProfiles, [cam.position.x, cam.position.y, cam.position.z], [controls.target.x, controls.target.y, controls.target.z]);
+      const b = useLightBudget.getState();
+      if (b.total !== c.total || b.drawn !== c.drawn || b.shadowed !== c.shadowed) useLightBudget.setState({ total: c.total, drawn: c.drawn, shadowed: c.shadowed });
+    };
+    const draw = () => { relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); fitShadow(); placeLights(); realism.render(cam, controls.target.distanceTo(cam.position)); if (host.current) host.current.dataset.cloudPoints = String(clouds.drawn()); };
     invalidate.current = () => {
       if (!frame) frame = requestAnimationFrame(() => { frame = 0; draw(); });
     };
@@ -1538,6 +1581,11 @@ export function Viewport3D() {
     return () => {
       unsunlight();
       unprofile();
+      unlook();
+      unlights();
+      clearTimeout(lightTimer);
+      rig.dispose();
+      useLightBudget.setState({ total: 0, drawn: 0, shadowed: 0 });
       realism.dispose();
       cancelAnimationFrame(frame);
       clearTimeout(trailing);
@@ -1664,6 +1712,7 @@ export function Viewport3D() {
 
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);
+  const lightBudget = useLightBudget();
   const meshes = useSession((st) => st.meshes);
 
   // The reference planes (docs/plan-studio-thick.md): a translucent quad each, as large as the model on it, with its name;
@@ -1974,7 +2023,12 @@ export function Viewport3D() {
   return (
     <>
       <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />
-      {regionDrag && <svg className="region-3d">{<SelectRegion d={regionDrag} />}</svg>}
+      {lightBudget.total > 0 && (
+        <div className="lights-budget" data-testid="lights-budget" title="The lights drawn now: the nearest and brightest first, a few with shadows; a rendered image takes them all">
+          <Lightbulb size={12} /><span>{`${lightBudget.drawn} / ${lightBudget.total} lights, ${lightBudget.shadowed} with shadows`}</span>
+        </div>
+      )}
+      {regionDrag &&<svg className="region-3d">{<SelectRegion d={regionDrag} />}</svg>}
       {(sectionId || walkStart || box || storeysChip || layersText || regionOn || hiding) && (
         <div className="view3d-modes">
           {regionOn && (

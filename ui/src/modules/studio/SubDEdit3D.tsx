@@ -17,12 +17,13 @@ import { poseKey, useCamera, type Vec3 } from '../../viewport/camera';
 import { formatLength, parseLength } from '../../viewport/liveInput';
 import { moveTarget } from '../../viewport/moveIn3d';
 import { insideView, projector, snapAt, rayAt, type ViewRefs } from '../../viewport/scene3d';
-import { arrowLock3, segNearRay } from '../../viewport/snap3d';
+import { arrowLock3, segNearRay, type Snapped3 } from '../../viewport/snap3d';
 import {
   anchorOf, dragBy, edgeClasses, edgeKey, edgeOf, moves, opProblem, pick, pickAt, pointsOf, previewPoints, SHARPNESS, type Lens, type Picked, type PickMode,
 } from './subdModel';
-import { applyMove, applyOp, applyTransform, editingCage, leaveCage, refreshCage, setMode, useSubD } from './subdStore';
+import { applyMove, applyOp, applyTransform, editingCage, leaveCage, redoMoveAs, refreshCage, setMode, useSubD } from './subdStore';
 import { notify } from '../../app/store';
+import { AUTOHOLD_NOTICE } from '../../app/autohold';
 
 /** Dragged less than this (px) is a click. */
 const CLICK_PX = 4;
@@ -54,6 +55,8 @@ export function SubDEdit3D({ camera, canvas, scene, invalidate }: Overlay3DProps
   }, [st.id, view, selected, nodes]);
   // The cage asked again when the model changes (an undo, another edit).
   useEffect(() => { if (st.id) void refreshCage(); }, [st.id, version]);
+  // The model changed after a drop (an undo, another edit): a typed distance no longer changes that move.
+  useEffect(() => { const a = useSubD.getState().after; if (a && a.version !== version) useSubD.setState({ after: null }); }, [version]);
   useEffect(() => { invalidate?.current?.(); }, [st.id, invalidate]);
 
   const dragging = !!st.drag?.moved;
@@ -61,15 +64,29 @@ export function SubDEdit3D({ camera, canvas, scene, invalidate }: Overlay3DProps
   const targetOf = (): Vec3 | null => {
     const s = useSubD.getState();
     if (!s.drag) return null;
-    return moveTarget(s.drag.base, s.drag.at, s.drag.text, s.drag.lock, false, (x) => parseLength(x));
+    const { base, at, text, lock } = s.drag;
+    // A distance typed with an axis held goes along that axis even when the cursor's inferred point lies on the base (the drag is
+    // then a zero length, and the typed value would have no direction and move nothing).
+    const flat = !at || Math.hypot(at.point.x - base.x, at.point.y - base.y, at.point.z - base.z) < 1e-9;
+    const along = lock && text && flat ? { point: { x: base.x + (lock.axis === 'red' ? 1 : 0), y: base.y + (lock.axis === 'green' ? 1 : 0), z: base.z + (lock.axis === 'blue' ? 1 : 0) }, kind: at?.kind ?? 'axis' } as unknown as Snapped3 : at;
+    return moveTarget(base, along, text, lock, false, (x) => parseLength(x));
   };
+  // A typed distance and Enter, then the button let go, both finish the drag: the second must not move the points again.
+  const finishing = useRef(false);
   const finish = async () => {
     const s = useSubD.getState();
-    if (!s.drag) return;
-    const to = targetOf();
-    const by = to ? dragBy(s.drag.base, to) : { x: 0, y: 0, z: 0 };
-    if (moves(by)) await applyMove(by);
-    useSubD.setState({ drag: null });
+    if (!s.drag || finishing.current) return;
+    finishing.current = true;
+    try {
+      const to = targetOf();
+      const by = to ? dragBy(s.drag.base, to) : { x: 0, y: 0, z: 0 };
+      const typed = !!s.drag.text.trim();
+      const base = s.drag.base;
+      useSubD.setState({ drag: null, after: null });
+      // Dropped where the pointer was (nothing typed): a distance typed next changes this move, along its direction.
+      if (moves(by) && (await applyMove(by)) && !typed)
+        useSubD.setState({ after: { by, at: { x: base.x + by.x, y: base.y + by.y, z: base.z + by.z }, text: '', version: useSession.getState().version } });
+    } finally { finishing.current = false; }
   };
   const finishRef = useRef(finish);
   finishRef.current = finish;
@@ -79,10 +96,28 @@ export function SubDEdit3D({ camera, canvas, scene, invalidate }: Overlay3DProps
     if (!dragging) return;
     return claimValue({
       text: () => useSubD.getState().drag?.text ?? '',
-      set: (text) => useSubD.setState((s) => (s.drag ? { drag: { ...s.drag, text } } : {})),
-      enter: () => { if ((useSubD.getState().drag?.text ?? '').trim()) void finishRef.current(); },
+      // Something typed holds the drag: letting go of the button then leaves it on, waiting for Enter or a click.
+      set: (text) => useSubD.setState((s) => (s.drag ? { drag: { ...s.drag, text, held: s.drag.held || !!text.trim() } } : {})),
+      enter: () => { const d = useSubD.getState().drag; if (d && ((d.text ?? '').trim() || d.held)) void finishRef.current(); },
     });
   }, [dragging]);
+
+  // After a drop: the typed distance (or dx,dy,dz) redoes the move along the same direction, Enter applies it (one undo step).
+  const afterOn = !!st.after && !dragging;
+  useEffect(() => {
+    if (!afterOn) return;
+    return claimValue({
+      text: () => useSubD.getState().after?.text ?? '',
+      set: (text) => useSubD.setState((s) => (s.after ? { after: { ...s.after, text } } : {})),
+      enter: () => {
+        const a = useSubD.getState().after;
+        if (!a?.text.trim()) return;
+        const along = { point: a.by, kind: 'axis' } as unknown as Snapped3;
+        const to = moveTarget({ x: 0, y: 0, z: 0 }, along, a.text, null, false, (x) => parseLength(x));
+        if (to && moves(to)) void redoMoveAs(to);
+      },
+    });
+  }, [afterOn]);
 
   useEffect(() => {
     if (!active) return;
@@ -116,7 +151,10 @@ export function SubDEdit3D({ camera, canvas, scene, invalidate }: Overlay3DProps
 
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0 || !insideView(canvas.current, e.clientX, e.clientY) || onUi(e) || useUi.getState().tool) return;
+      if (useSubD.getState().after) useSubD.setState({ after: null });
       const s = useSubD.getState();
+      // A held drag: the click ends it where the pointer (or the typed distance) puts it.
+      if (s.drag?.held) { e.stopPropagation(); e.preventDefault(); void finishRef.current(); return; }
       if (s.drag || !s.cage) return;
       const item = hitAt(e);
       // Not on the cage: the press goes on (the view turns); a click that follows lets go of the pick (subdStore's pickHandlers).
@@ -158,7 +196,8 @@ export function SubDEdit3D({ camera, canvas, scene, invalidate }: Overlay3DProps
       const p = press;
       press = null;
       e.stopPropagation();
-      if (p.moved) { void finishRef.current(); return; }
+      // Held (Tab, or a distance typed): the drag goes on after the release; the points follow the pointer until a click or Enter.
+      if (p.moved) { if (!useSubD.getState().drag?.held) void finishRef.current(); return; }
       // A click on what was picked, with no drag: that alone (or off it with Shift).
       if (p.was) {
         const s = useSubD.getState();
@@ -170,11 +209,19 @@ export function SubDEdit3D({ camera, canvas, scene, invalidate }: Overlay3DProps
       if (e.target && (e.target as HTMLElement).closest?.('input, textarea, select, [contenteditable], [role="dialog"]')) return;
       if (e.key === 'Escape') {
         e.preventDefault(); e.stopImmediatePropagation();
+        if (s.after) { useSubD.setState({ after: null }); return; }
         if (s.drag) { press = null; if (s.drag.text) useSubD.setState({ drag: { ...s.drag, text: '' } }); else useSubD.setState({ drag: null }); } else leaveCage();
         return;
       }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (s.drag) {
+        // Tab: autohold, the drag no longer needs the button (as for grips and the selection's body).
+        if (e.key === 'Tab' && !s.drag.held) {
+          e.preventDefault(); e.stopImmediatePropagation();
+          useSubD.setState({ drag: { ...s.drag, held: true } });
+          notify(AUTOHOLD_NOTICE);
+          return;
+        }
         const l = arrowLock3(e.key, s.drag.lock);
         if (l !== undefined) { e.preventDefault(); e.stopImmediatePropagation(); useSubD.setState({ drag: { ...s.drag, lock: l } }); if (!frame && last) frame = requestAnimationFrame(follow); }
         return;
@@ -219,6 +266,7 @@ export function SubDEdit3D({ camera, canvas, scene, invalidate }: Overlay3DProps
   const len = Math.hypot(by.x, by.y, by.z);
   const baseAt = st.drag ? project(st.drag.base) : null;
   const sharp = classes.crease;
+  const afterAt = st.after && !dragging ? project(st.after.at) : null;
   return (
     <>
       <svg className="grip-overlay subd-cage" data-subd="cage" style={{ pointerEvents: 'none' }}>
@@ -244,7 +292,10 @@ export function SubDEdit3D({ camera, canvas, scene, invalidate }: Overlay3DProps
         {tag && <circle cx={tag.x} cy={tag.y} r={4} className="face-sketch-cursor" data-subd="mark" />}
       </svg>
       {tag && st.drag?.at && <div className={`face-sketch-snap-name ${st.drag.at.color ?? ''}`} style={{ left: tag.x + 10, top: tag.y + 8 }} data-subd="inference">
-        {st.drag.at.kind}{len > 1e-6 || dragText ? ` · ${dragText || formatLength(len)}` : ''}
+        {st.drag.held && <><span data-subd="held">Autohold</span>{' · '}</>}{st.drag.at.kind}{len > 1e-6 || dragText ? ` · ${dragText || formatLength(len)}` : ''}
+      </div>}
+      {afterAt && st.after && <div className="face-sketch-snap-name" style={{ left: afterAt.x + 10, top: afterAt.y + 8 }} data-subd="after">
+        {st.after.text ? st.after.text : <><span>Type a distance to change it</span> · {formatLength(Math.hypot(st.after.by.x, st.after.by.y, st.after.by.z))}</>}
       </div>}
       <SubDBar />
     </>

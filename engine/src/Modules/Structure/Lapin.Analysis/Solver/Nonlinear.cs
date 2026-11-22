@@ -47,7 +47,8 @@ public static class Nonlinear
     /// <summary>The problem in the given states: its lifted supports free, their springs off; its bars out or with their axial forces.</summary>
     public static FrameProblem InStates(FrameProblem p, bool[] active, IReadOnlySet<int> lifted, double[]? axial)
     {
-        var q = new FrameProblem();
+        // Its layouts are the problem's (§14.21): the states' systems share a numbering and a symbolic factorization while no support lifts.
+        var q = new FrameProblem { Layouts = p.Layouts };
         for (var n = 0; n < p.Nodes.Count; n++) q.AddNode(p.Nodes[n], p.NodeIds[n], lifted.Contains(n) ? null : p.Held[n]);
         for (var k = 0; k < p.Elements.Count; k++)
         {
@@ -60,7 +61,22 @@ public static class Nonlinear
         return q;
     }
 
-    public static NonlinearResult Solve(FrameProblem p, CaseLoads loads, NonlinearOptions o)
+    /// <summary>
+    /// The nonlinear solve of one load vector. Its iterations' systems are its own (§14.22): each one's factor values go to
+    /// <paramref name="store"/> (its own when none is given; a worker's, given to its solves one after another) once its
+    /// result is taken, and the next iteration's system takes them. Nothing it returns holds them: the results, the axial
+    /// forces and the states are arrays and problems of their own.
+    /// </summary>
+    public static NonlinearResult Solve(FrameProblem p, CaseLoads loads, NonlinearOptions o, FactorStore? store = null)
+    {
+        store ??= new FactorStore();
+        FrameSystem? held = null;
+        try { return Solve(p, loads, o, store, ref held); }
+        // The last system, given up when the solve ends however it ends: nothing reads it after.
+        finally { held?.Retire(store); }
+    }
+
+    static NonlinearResult Solve(FrameProblem p, CaseLoads loads, NonlinearOptions o, FactorStore store, ref FrameSystem? held)
     {
         var ne = p.Elements.Count;
         var active = Enumerable.Repeat(true, ne).ToArray();
@@ -74,16 +90,26 @@ public static class Nonlinear
         string Key() => string.Concat(active.Select(a => a ? '1' : '0')) + "|" + string.Join(",", lifted.Order());
         seen.Add(Key());
         var loadScale = Math.Max(1, loads.Sum.Length + loads.Surface.Sum(s => s.Q.Length));
+        // The last iteration's layout (§14.21): the next one takes it as long as no support lifts or settles.
+        FrameLayout? layout = null;
         for (var it = 1; it <= o.MaxIterations; it++)
         {
             var withKg = o.SecondOrder && axial != null;
             var q = InStates(p, active, lifted, withKg ? axial : null);
-            var (sys, fail) = FrameSystem.Build(q);
+            // The last iteration's system is done with (its result taken: arrays of its own): its values go to the next one.
+            held?.Retire(store);
+            held = null;
+            var (sys, fail) = FrameSystem.Build(q, layout: layout, store: store);
             if (sys == null)
             {
                 if (fail?.Mechanism == null) return new NonlinearResult { Ok = false, Iterations = it, Message = fail?.Refused ?? "The problem could not be assembled." };
                 // Unstable when the same states without the axial forces stand.
-                var unstable = withKg && FrameSystem.Build(InStates(p, active, lifted, null)).System != null;
+                var unstable = false;
+                if (withKg && FrameSystem.Build(InStates(p, active, lifted, null), layout: layout, store: store).System is { } standing)
+                {
+                    unstable = true;
+                    standing.Retire(store);
+                }
                 var slackNow = Enumerable.Range(0, ne).Where(k => !active[k]).ToList();
                 return new NonlinearResult
                 {
@@ -95,6 +121,8 @@ public static class Nonlinear
                             : $"A mechanism at node {q.NodeIds[fail.Mechanism.Node]} ({FrameSolver.DofName(fail.Mechanism.Dof)}).",
                 };
             }
+            layout = sys.Layout;
+            held = sys;
             var r = sys.SolveCase(loads);
             first ??= r;
             var n = new double[ne];

@@ -15,7 +15,24 @@ sealed class Fixture
     {
         ILapinModule[] use = modules.Length == 0 ? [new ArchitectureModule()] : modules;
         Session = new Session(ModuleCatalog.Create(use), new ProductManifest("test", "Test", ["core", .. use.Select(m => m.Id)]));
+        // Seeded (a golden that compares bits across runs): the project made again with ids from the seed, and every edit's after it.
+        if (SeedValue.Value is { } seed)
+        {
+            Session.SeededIds(seed);
+            Session.New(plain: true);
+        }
     }
+
+    static readonly AsyncLocal<long?> SeedValue = new();
+
+    /// <summary>Fixtures made until disposed take their ids from <paramref name="seed"/>, one after the other: the same model, ids and order at every run.</summary>
+    public static IDisposable Seeded(long seed)
+    {
+        SeedValue.Value = seed;
+        return new Unseed();
+    }
+
+    sealed class Unseed : IDisposable { public void Dispose() => SeedValue.Value = null; }
 
     public IModelView Model => Session.Model;
     public string Storey => Spatial.Storeys(Model).First().Id;

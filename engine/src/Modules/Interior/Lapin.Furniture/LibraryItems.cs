@@ -26,7 +26,7 @@ public static class LibraryItems
     static readonly string[] ByReference = Images.MaterialKeys;
 
     /// <summary>Where an item carries each of a material's images: its texture as <c>image</c>, its relief maps under their own keys.</summary>
-    static readonly (string Attr, string Item)[] Carried = [("textureImage", "image"), ("normalImage", "normalMap"), ("bumpImage", "bumpMap")];
+    static readonly (string Attr, string Item)[] Carried = [("textureImage", "image"), ("normalImage", "normalMap"), ("bumpImage", "bumpMap"), ("roughnessImage", "roughnessMap"), ("aoImage", "aoMap")];
 
     /// <summary>A furniture type as a library item: {class, name, predefinedType, spec, materials: [{name, attrs, image?}]}.</summary>
     public static JsonObject Of(IModelView m, Entity type)

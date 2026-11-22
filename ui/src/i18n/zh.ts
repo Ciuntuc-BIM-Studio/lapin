@@ -3,9 +3,11 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Artificial light and the night (docs/plan-render.md, S2)
+  "Beam angle": "光束角", "Field angle": "场角", "It gives no light in the medium and realistic views.": "在中等和写实视图中不发光。", "Make it a light": "设为光源", "The light's data are its type's: every element of the type lights so.": "灯光数据属于其类型：该类型的每个元素都这样发光。", "Point (every way)": "点光源（各个方向）", "Spot (a cone)": "聚光灯（锥形）", "Panel (out of its face)": "面板（从其表面发光）", "Luminous flux": "光通量", "The light it gives, as its maker states it": "它发出的光，按制造商的标称", "Colour temperature": "色温", "1000–12000 K: 2700 K a warm lamp, 4000 K neutral, 6500 K daylight": "1000–12000 K：2700 K 暖光灯，4000 K 中性，6500 K 日光", "Full light inside this angle": "此角度内为全光", "No light past this angle": "超出此角度无光", "Empty: the fixture's": "留空：取灯具的", "How the light spreads: a built-in distribution, or a maker's IES file (LM-63, type C) brought into the project": "光的分布方式：内置配光，或导入项目的制造商 IES 文件（LM-63，C 型）", "The kind's own": "该种类自带", "Import an IES file…": "导入 IES 文件…", "Under the fixture": "灯具下方", "The fixture's middle": "灯具中部", "Near the fixture's top (a shade)": "靠近灯具顶部（灯罩）", "Aimed": "朝向", "No light": "无灯光", "Downlight, narrow (25°)": "筒灯，窄（25°）", "Downlight, medium (40°)": "筒灯，中（40°）", "Wide flood (120°)": "宽泛光（120°）", "Wall washer (C 0° towards the wall)": "洗墙灯（C 0° 朝墙）", "Pendant (up and down)": "吊灯（上下发光）", "The lights drawn now: the nearest and brightest first, a few with shadows; a rendered image takes them all": "当前绘制的灯光：最近、最亮的优先，少数带阴影；渲染图像会使用全部", "Exposure": "曝光", "Stops over the automatic exposure, which opens up after sunset so the lamps light the rooms": "相对自动曝光的档数；日落后自动曝光会提高，使灯具照亮房间", "White balance": "白平衡", "The light that comes out white: automatic is daylight by day and 4000 K at night, so warm lamps stay warm": "显示为白色的光：自动时白天为日光，夜间为 4000 K，使暖色灯保持温暖", "below the horizon (dusk)": "地平线以下（黄昏）", "below the horizon (night)": "地平线以下（夜晚）", "After sunset they show the night: the sky darkens, the exposure opens and the light fixtures light the rooms.": "日落后显示夜晚：天空变暗，曝光提高，灯具照亮房间。", "Lights": "发光", "What is made of it lights the medium and realistic views as a lamp does": "由它制成的物体在中等和写实视图中像灯一样发光",
   // Find in project browser, Place on sheet… (forum topic 207)
   "Find in project browser": "在项目浏览器中查找", "Search the sheets (number or name)": "搜索图纸（编号或名称）", "New sheet…": "新建图纸…", "New sheet with this view on it, named after it": "新建图纸并放上此视图，以视图命名", "Open the sheet after placing": "放置视图后打开图纸", "Open the sheet": "打开图纸", "No sheet matches.": "没有匹配的图纸。", "A view goes on one sheet: take it off that sheet to place it on another.": "一个视图只放在一张图纸上：先从那张图纸上取下，才能放到另一张上。", "This view is not listed in the project browser.": "项目浏览器中没有列出此视图。", "This view cannot go on a sheet.": "此视图不能放到图纸上。",
-  // SubD solids: the cage edit mode (decision 775, F1c)
+  // SubD solids: the cage edit mode (decision 780, F1c)
   "SubD": "SubD",
   "SubD box": "SubD 长方体",
   "SubD cylinder": "SubD 圆柱体",
@@ -25,6 +27,7 @@ export const ZH: Record<string, string> = {
   "Edge (2)": "边 (2)",
   "Face (3)": "面 (3)",
   "Pick on the cage": "在控制网上选取",
+  "Type a distance to change it": "输入距离以更改",
   "Distance (negative: in); Enter extrudes the picked faces": "距离（负值：向内）；回车拉伸所选面",
   "Extrude the picked faces by the distance": "按距离拉伸所选面",
   "Insert loop": "插入环线",
@@ -916,6 +919,19 @@ export const ZH: Record<string, string> = {
   'Press the keys, or type letters and Enter · Esc cancels': '按下按键，或输入字母后按 Enter · Esc 取消', 'Back to the preset\'s shortcuts': '恢复预设的快捷键',
   'Your own changes to the shortcuts go, and the preset’s come. Go on?': '您对快捷键所做的更改将被清除，并恢复预设的快捷键。继续吗？', 'That is not a Lapin shortcuts file.': '这不是 Lapin 快捷键文件。', 'The shortcuts were read from the file.': '已从文件读取快捷键。',
   'Lapin classic': 'Lapin 经典', 'Revit-style': 'Revit 风格', 'General': '常规', 'Drawing aids': '绘图辅助',
+  // Nudging with the arrow keys (forum topic 212)
+  'Nudge left': '向左微移',
+  'Nudge right': '向右微移',
+  'Nudge up': '向上微移',
+  'Nudge down': '向下微移',
+  'Nudge left, ten times as far': '向左微移，距离为十倍',
+  'Nudge right, ten times as far': '向右微移，距离为十倍',
+  'Nudge up, ten times as far': '向上微移，距离为十倍',
+  'Nudge down, ten times as far': '向下微移，距离为十倍',
+  'Nudge': '微移',
+  'Arrow keys move the selection by': '方向键移动所选对象的距离为',
+  'a step that follows the zoom': '随缩放变化的步长',
+  'Select elements in a plan, section, elevation, drawing or the 3D view and press an arrow key; Shift moves them ten times as far. The step is the zoom\'s (about four pixels) or the one chosen here. In a plan with a UCS set, and in 3D, the arrows follow the UCS\'s axes.': '在平面、剖面、立面、图纸或三维视图中选中构件后按方向键；按住 Shift 则移动十倍距离。步长随缩放变化（约四个像素），或使用此处选定的值。在设有 UCS 的平面和三维视图中，方向键沿 UCS 的轴移动。',
   'Delete the selection': '删除所选内容', 'Object snap': '对象捕捉', 'Ortho': '正交', 'Polar tracking': '极轴追踪', 'Zoom to fit': '缩放至全部', 'Zoom region': '窗口缩放',
   'Project browser: fold or unfold': '项目浏览器：折叠或展开', 'Properties: fold or unfold': '属性：折叠或展开', 'Both panels: fold or unfold': '两个面板：折叠或展开', 'All properties (over the view)': '全部属性（覆盖在视图上）',
   'Type a command': '输入命令', 'No command by that name.': '没有该名称的命令。', 'Commands': '命令', 'All properties…': '全部属性…',
@@ -1220,6 +1236,8 @@ export const ZH: Record<string, string> = {
   'Ends, cut across (3D)': '端面，横向剖切（三维）', 'Top and bottom (3D)': '顶面和底面（三维）', 'Zones in height': '高度分区',
   'Base level': '底部标高', 'Top level': '顶部标高', 'No underlay': '无底图', 'Ask Lapin…': '询问 Lapin…',
   'Own image (3D, exports)': '自定义图像（三维、导出）', 'Membrane (a dashed line, not a band)': '膜层（虚线，而非带状）', 'Look': '外观',
+  // Texture sets and surface maps (docs/plan-render.md, S1)
+  "Texture sets (3D, exports)": "纹理集（三维、导出）", "Photographed materials with their relief, roughness and occlusion (ambientCG, CC0): a click lays one on this material at its real size, copied into the project": "带浮雕、粗糙度和遮蔽的实拍材质（ambientCG，CC0）：点击即可按真实尺寸铺到此材质上，并复制到项目中", "Take the maps off": "移除贴图", "Take the set's maps off this material (its colour and drawn texture show again)": "从此材质移除该纹理集的贴图（重新显示其颜色和绘制纹理）", "Roughness map": "粗糙度贴图", "Occlusion map": "遮蔽贴图", "A roughness map (white rough, black glossy): Roughness below multiplies it, as glTF does. Shown in the Medium and Realistic views; carried by GLB, glTF, USD/USDZ, OBJ and IFC.": "粗糙度贴图（白色粗糙，黑色光亮）：下方的粗糙度与其相乘，与 glTF 相同。在中等和真实视图中显示；随 GLB、glTF、USD/USDZ、OBJ 和 IFC 导出。", "An ambient occlusion map (white open, black shut in): the light from round about reaches its dark parts less, as in a joint between bricks. Shown in the Medium and Realistic views; carried by GLB, glTF, USD/USDZ and IFC.": "环境光遮蔽贴图（白色开敞，黑色闭合）：周围的光较少到达其暗部，如砖缝处。在中等和真实视图中显示；随 GLB、glTF、USD/USDZ 和 IFC 导出。", "Red brick": "红砖", "Wood floor": "木地板", "White tiles": "白色瓷砖", "Stone setts": "石材铺块", "Brushed steel": "拉丝钢",
   'Normal map': '法线贴图', 'Bump map': '凹凸贴图', 'How strongly it shows: 1 as the image says, 0 flat': '强度：1 按图像，0 为平面', 'A normal map (tangent space, green up, as glTF): the faces shade as if they had its relief. Kept in the project; carried by GLB, glTF, USD/USDZ and OBJ.': '法线贴图（切线空间，绿色向上，同 glTF）：表面按其凹凸着色。保存在项目中；随 GLB、glTF、USD/USDZ 和 OBJ 导出。', 'A bump map (white high, black low): the faces shade as if raised where it is light. Kept in the project; carried by OBJ (map_Bump).': '凹凸贴图（白高黑低）：表面在亮处按凸起着色。保存在项目中；随 OBJ（map_Bump）导出。',
   'from the name': '按名称', 'From the name': '按名称', 'none (default)': '无（默认）', 'Cut (section)': '剖切（剖面）', 'Cut (plan)': '剖切（平面）',
   'guessed': '推测', 'as the faces (brick: its holes)': '同面（砖：其孔洞）', 'as the ends': '同端面',
@@ -1884,7 +1902,7 @@ export const ZH: Record<string, string> = {
   'It comes in as one group: Move, Rotate and Scale take it whole; double-click it to work on its parts.': '它作为一个组导入：移动、旋转和缩放将其作为整体处理；双击它可处理其各部分。', 'Image to trace': '描图用图片', 'Paper width (mm)': '纸张宽度 (mm)', 'Paper height (mm)': '纸张高度 (mm)',
   'custom': '自定义', 'Select the image to scale first.': '请先选择要缩放的图片。', 'Their true distance apart (m)': '两者的实际间距 (m)', 'Placed. Scale image (two points and their true distance) sets its size exactly.': '已放置。缩放图片（两点及其实际距离）可精确设定其大小。',
   'Then scale it to a known distance': '然后按已知距离缩放', 'Two points on it a known distance apart, then their true distance (Esc skips)': '在其上取两个已知距离的点，再输入它们的实际距离（Esc 跳过）', 'Scale to a known distance: click two points a known distance apart and type their true distance (Esc skips).': '按已知距离缩放：点击两个已知距离的点，并输入它们的实际距离（Esc 跳过）.', 'Scale to a known distance…': '按已知距离缩放…', 'Two points on it a known distance apart, then their true distance: it grows or shrinks about the first': '在其上取两个已知距离的点，再输入它们的实际距离：围绕第一个点放大或缩小', 'Measured': '实测', 'True distance': '实际距离',
-  'Open a plan, a section or an elevation to import into.': '请打开要导入到的平面图、剖面或立面。', 'The scale the PDF\'s drawing was made to: a paper millimetre is that many millimetres here': 'PDF 图纸绘制所采用的比例：纸上一毫米在此处对应的毫米数', 'How wide it lies; its height follows its pixels. Scale image sets it exactly afterwards.': '它的宽度；高度随其像素而定。之后可用缩放图片精确设定。', '0.05 (faint) to 1 (solid)': '0.05（极淡）至 1（实心）',
+  'Lapin could not read this DXF file.': 'Lapin 无法读取此 DXF 文件。', 'This is a binary DXF; Lapin reads DXF files saved as text (ASCII). Save it again as DXF without the Binary option (in AutoCAD: Save As → Tools → Options → DXF Options), then import it.': '这是二进制 DXF；Lapin 读取以文本（ASCII）保存的 DXF 文件。请重新另存为 DXF，不勾选 Binary 选项（AutoCAD 中：Save As → Tools → Options → DXF Options），然后再导入。', 'This is a DWG file, not a DXF. Save it as DXF (in AutoCAD: Save As → AutoCAD DXF), then import it.': '这是 DWG 文件，不是 DXF。请将其另存为 DXF（AutoCAD 中：Save As → AutoCAD DXF），然后再导入。', 'This file is not a DXF Lapin can read: it has no DXF sections (HEADER, ENTITIES…).': '此文件不是 Lapin 能读取的 DXF：它没有 DXF 段（HEADER、ENTITIES…）。', 'The drawing has more than 2,000,000 entities, more than Lapin brings in at once. Split it, or purge what is not needed in the CAD program, then import it again.': '图纸中的对象超过 2,000,000 个，超出 Lapin 一次能导入的数量。请在 CAD 程序中拆分或清理不需要的内容，然后重新导入。', 'Open a plan, a section or an elevation to import into.': '请打开要导入到的平面图、剖面或立面。', 'The scale the PDF\'s drawing was made to: a paper millimetre is that many millimetres here': 'PDF 图纸绘制所采用的比例：纸上一毫米在此处对应的毫米数', 'How wide it lies; its height follows its pixels. Scale image sets it exactly afterwards.': '它的宽度；高度随其像素而定。之后可用缩放图片精确设定。', '0.05 (faint) to 1 (solid)': '0.05（极淡）至 1（实心）',
   // Doors and windows: panes and profiles (decision 370)
   'profiles|Timber': '木材',
   'Profile system': '型材系统', 'Simple (plain profiles)': '简单（平直型材）', 'PVC': 'PVC', 'Aluminium': '铝', 'Steel (slim)': '钢（窄框）', 'Rebate': '企口',
@@ -5580,4 +5598,8 @@ export const ZH_PATTERNS: Language['patterns'] = [
   // Resources and their levelling (decision 772)
   [/^(\d+) task\(s\) moved; the schedule finishes on ([\d-]+) \((\d+) working days later\)\.(?: Asking for more than a resource has, not moved: (.+)\.)?$/, (m) => `已移动 ${m[1]} 个任务；进度计划于 ${m[2]} 完成（推迟 ${m[3]} 个工作日）。${m[4] ? `需求超过资源可用量、未移动：${m[4]}。` : ''}`],
   [/^Formwork as a resource: (\d+) formwork\(s\) on (\d+) task\(s\)\.$/, (m) => `模板作为资源：${m[2]} 个任务上的 ${m[1]} 个模板。`],
+  // A DXF whose blocks unfold into too much (forum topic 217)
+  [/^The drawing unfolds into more than 2,000,000 entities through its block „(.+)” \(blocks inserted inside blocks, or an array insert\), more than Lapin brings in at once\. Purge or explode what is not needed in the CAD program, then import it again\.$/, (m) => `图纸通过其块“${m[1]}”展开为超过 2,000,000 个对象（块中嵌套块，或阵列插入），超出 Lapin 一次能导入的数量。请在 CAD 程序中清理或分解不需要的内容，然后重新导入。`],
+  // The 3D view's lights drawn now (docs/plan-render.md, S2)
+  [/^(\d+) \/ (\d+) lights, (\d+) with shadows$/, (m) => `${m[1]} / ${m[2]} 盏灯，${m[3]} 盏带阴影`],
 ];

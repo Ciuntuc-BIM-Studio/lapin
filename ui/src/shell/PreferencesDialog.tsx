@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { FolderPlus, Trash2, X } from 'lucide-react';
 import { useUi } from '../app/store';
 import { NAV_STYLES, NAV_STYLE_IDS, type NavStyleId } from '../app/navStyle';
+import { NUDGE_STEPS } from '../app/nudge';
 import { MaterialStandardChoice } from './MaterialStandardChoice';
 import { POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, usePrefs, type CoordSystem, type ThemeChoice, type ViewportTheme } from '../app/prefs';
 import { setDisplay, useDisplay, type Display } from '../app/display';
@@ -212,6 +213,11 @@ export function PreferencesDialog() {
                   onChange={(v) => setPrefs({ tempDimRef: v.walls, tempDimOpeningRef: v.openings })} />
               </div>
               <p className="muted small">Where temporary dimensions measure from, as Revit's Temporary Dimension Properties: walls, columns and beams from their centrelines, their finish faces, the centre of their core, their core's faces, or from the element's reference line to the other's near face (as before); doors and windows from their centre or their edges. The same as Annotate → Temporary dimensions…, the Wall, Column and Beam tools' bars, and a right click on a dimension's dot.</p>
+              <h4>Nudge</h4>
+              <label className="row small">Arrow keys move the selection by <select value={p.nudgeStep} data-field="prefs-nudge" onChange={(e) => setPrefs({ nudgeStep: Number(e.target.value) })}>
+                {NUDGE_STEPS.map((m) => <option key={m} value={m} data-no-i18n={m ? true : undefined}>{m ? `${Math.round(m * 1000)} mm` : 'a step that follows the zoom'}</option>)}
+              </select></label>
+              <p className="muted small">Select elements in a plan, section, elevation, drawing or the 3D view and press an arrow key; Shift moves them ten times as far. The step is the zoom's (about four pixels) or the one chosen here. In a plan with a UCS set, and in 3D, the arrows follow the UCS's axes.</p>
             </>}
             {page === 'coords' && <>
               <h4>Coordinates at the cursor</h4>

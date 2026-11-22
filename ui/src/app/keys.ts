@@ -26,6 +26,8 @@ import { useKeymap } from './shortcuts';
 import { valueOwner } from './valueOwner';
 import { installClickOut } from './clickOut';
 import { autoholdCancel, autoholdOn, autoholdTab, enterEffect, tabMeaning } from './autohold';
+import { isNudgeCommand, nudgeReady, OWN_KEYS } from './nudge';
+import { nudgeState } from '../viewport/nudge';
 import { holdCancel, holdPointer, holdWheel, tabHoldDown, tabHoldUp } from '../viewport/tabHold';
 
 /** What `keyIntent` needs to know about the key press. */
@@ -40,6 +42,8 @@ export interface KeyPress {
   inField: boolean;
   /** The target sits inside an element with role="dialog". */
   inDialog: boolean;
+  /** The target is a tree, a list, a menu, a slider… (app/nudge.ts OWN_KEYS): the arrows are its own. */
+  inWidget?: boolean;
   /** An input method is composing text: its Escape is the method's. */
   composing?: boolean;
 }
@@ -72,6 +76,8 @@ export interface KeySnapshot {
   live?: { active: boolean; /** Who owns the box: "drag" and "grip" are drags (autohold, issue 86). */ owner?: string | null; /** A drag is held by autohold. */ autohold?: boolean; text: string; typed: boolean; /** A rectangle tool: Space switches length/angle with width/height. */ rect?: boolean; mode?: 'polar' | 'rect' };
   /** A 3D tool waits for a typed value (valueOwner.ts): what is typed so far. */
   value?: { text: string } | null;
+  /** The arrow keys are the nudge's now (app/nudge.ts nudgeReady): a selection in a view that moves it, nothing else asking for the keys. */
+  nudge?: boolean;
 }
 
 export type KeyIntent =
@@ -134,6 +140,8 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
     if (e.key === 'Escape') return s.dialog ? { kind: 'closeDialog' } : null;
     return bound && IN_DIALOG.has(bound) ? { kind: 'command', id: bound } : null;
   }
+  // The nudge's arrows (and their Ctrl and Shift forms) are the nudge's only while it is ready: else the key is nobody's here.
+  if (isNudgeCommand(bound)) return s.nudge && !e.inWidget && !e.composing && !e.altKey ? { kind: 'command', id: bound! } : null;
   // Chords with Ctrl, Alt or Cmd, and the function keys: whatever is typed.
   if (mod || /^(Shift\+)?F\d+$/.test(chord)) return bound ? { kind: 'command', id: bound } : null;
   // The command line's key: it takes all typing (and gives it back), whatever is typed.
@@ -211,6 +219,7 @@ function snapshot(): KeySnapshot {
     hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll,
     live: (() => { const l = useLive.getState(); return { active: !!l.owner, owner: l.owner, autohold: autoholdOn(), text: l[l.focus], typed: !!(l.len || l.ang || l.rel), rect: !!l.rect, mode: l.mode }; })(),
     value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
+    nudge: nudgeReady(nudgeState()),
   };
 }
 
@@ -280,9 +289,15 @@ export function handleKeydown(e: KeyEventLike, snap: () => KeySnapshot = snapsho
     key: e.key, code: e.code, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, altKey: e.altKey,
     inField: !!target?.closest?.('input, select, textarea'),
     inDialog: !!target?.closest?.('[role="dialog"]'),
+    inWidget: !!target?.closest?.(OWN_KEYS),
     composing: !!(e as { isComposing?: boolean }).isComposing,
   };
   const cur = snap();
+  // The OS autorepeat of a held Tab is not a new press (forum topic 215): it never cycles, folds panels or steps through fields.
+  if (e.key === 'Tab' && (e as { repeat?: boolean }).repeat && cur.screen === 'workspace' && !press.inField && !press.inDialog && !cur.dialog) {
+    e.preventDefault();
+    return;
+  }
   const intent = keyIntent(press, cur);
   // Tab held over several elements opens their list (issue 110); a tap runs the Tab command when it comes up (keyup, below).
   if (e.key === 'Tab' && !e.shiftKey && intent?.kind === 'command' && intent.id === TAB_COMMAND && tabHoldDown(!!(e as { repeat?: boolean }).repeat) === 'swallow') {

@@ -413,7 +413,7 @@ export function PlanView() {
   }, [items]);
   const { aim, acquire } = useCadCanvas({
     viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, outlines,
-    inRegion: (takes) => regionIds(takes, pickItems, nodes, scope ? undefined : drawing?.marks), axes,
+    inRegion: (takes) => regionIds(takes, pickItems, nodes, scope ? undefined : drawing?.marks), axes, turn: rot,
     wallAxes: snapWallAxes, gridAxes: snapGridAxes, curves: snapCurves,
   });
   const cadStep = useCad((s) => s.step);

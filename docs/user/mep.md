@@ -46,6 +46,8 @@ Each node has a **role**: a boiler, a radiator, a manifold, a water meter, a bas
 
 In the properties panel a node shows its system, its role and its ports (open or connected); a run shows its two ends. Both take the system's defaults unless you set a value on them: size, elevation, the plane they run in (floor, ceiling, wall), paired or single, material, slope.
 
+A **light** placed now lights the Medium and Realistic 3D views, 1000 lm at 3500 K out of its underside; its **Light** section sets its lumens, colour temperature, kind (point, spot, panel) and distribution, an IES file among them. See [Lights and the night](views.md#lights-and-the-night).
+
 ## Systems
 
 **Systems…** lists the systems of the project and the defaults of the current one: the size, the plane and the elevations of each plane, the slope (drainage), whether runs are drawn as a pair (heating: supply and return) and how far apart, the material and the insulation. Change a default and every node and run without a value of its own follows.
