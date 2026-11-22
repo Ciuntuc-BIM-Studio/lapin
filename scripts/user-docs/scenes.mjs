@@ -2791,6 +2791,69 @@ export const scenes = [
     },
   },
   {
+    // The arrow keys nudge the selection (forum topic 212): a step that follows the zoom, ten times as far with Shift, along the UCS's axes when one is set.
+    id: 'nudge',
+    touches: ['architecture', 'core'],
+    async run(t) {
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      const wall = (await t.cmd('architecture.addWall', { storeyId: storey, x1: 0, y1: 0, x2: 6, y2: 0 })).id;
+      const win = (await t.cmd('architecture.addWindow', { wallId: wall, x: 2, y: 0 })).id;
+      await t.cmd('architecture.addWall', { storeyId: storey, x1: 6, y1: 0, x2: 6, y2: 4 });
+      await t.fit();
+      await t.wait(600);
+      const node = async (id) => (await t.nodes()).find((n) => n.id === id);
+      const start = async () => (await node(wall)).props.start;
+      const blur = () => t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      const press = async (key) => { await blur(); await t.page.keyboard.press(key); await t.wait(500); };
+      await select(t, wall);
+      await t.wait(400);
+      // An arrow: one small step on the screen's axes; Shift: ten times as far.
+      const a = await start();
+      await press('ArrowRight');
+      const b = await start();
+      const step = b[0] - a[0];
+      t.expect(step > 0 && Math.abs(b[1] - a[1]) < 1e-9, `ArrowRight nudges the wall along x (by ${step} m)`);
+      await press('Shift+ArrowUp');
+      const c = await start();
+      t.expect(Math.abs(c[1] - b[1] - step * 10) < 1e-6 && Math.abs(c[0] - b[0]) < 1e-9, `Shift+ArrowUp goes ten times as far up (${c[1] - b[1]} m)`);
+      // Each press is one undo step.
+      await t.page.evaluate(async () => (await import('/src/engine/session.ts')).undo());
+      await t.wait(400);
+      const d = await start();
+      t.expect(Math.abs(d[0] - b[0]) < 1e-9 && Math.abs(d[1] - b[1]) < 1e-9, 'undo takes back one nudge');
+      // With a UCS turned 30°, the arrows follow its axes.
+      await t.page.evaluate(async () => (await import('/src/app/location.ts')).setUcs({ origin: { x: 0, y: 0 }, angle: 30 }));
+      await t.wait(600);
+      await select(t, wall);
+      await press('ArrowRight');
+      const e = await start();
+      const dx = e[0] - b[0], dy = e[1] - b[1];
+      t.expect(Math.abs(Math.atan2(dy, dx) - Math.PI / 6) < 1e-3 && Math.abs(Math.hypot(dx, dy) - step) < 1e-4, `in a UCS turned 30° ArrowRight goes along its X axis (${dx}, ${dy})`);
+      await t.page.mouse.move(5, 5);
+      await t.wait(300);
+      await t.shot('nudge-ucs', { of: '.plan-svg', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/app/location.ts')).setUcs(null));
+      await t.wait(400);
+      // A window slides along its wall; across the wall nothing moves.
+      await select(t, win);
+      const along = () => t.page.evaluate(() => [...document.querySelectorAll('aside.props input')].map((i) => i.value).join('|'));
+      const w0 = await along();
+      await press('ArrowDown');
+      t.expect(await along() === w0, `a window does not leave its wall: ArrowDown across it moves nothing (${w0})`);
+      await press('ArrowRight');
+      t.expect(await along() !== w0, `ArrowRight slides the window along its wall (${w0} to ${await along()})`);
+      // A pinned wall stays where it is.
+      await select(t, wall);
+      await t.cmd('element.pin', { ids: [wall], pinned: true });
+      const before = await start();
+      await press('ArrowRight');
+      t.expect(JSON.stringify(await start()) === JSON.stringify(before), 'a pinned wall is not nudged');
+      await t.cmd('element.pin', { ids: [wall], pinned: false });
+    },
+  },
+  {
     // Modify → Split element on a floor with a curved edge: two points of the line.
     id: 'floors-split',
     touches: ['architecture'],
@@ -8498,6 +8561,107 @@ export const scenes = [
       await t.cmd('architecture.joineryMaterials', { kind: 'door', frame: 'Aluminium RAL 7016 anthracite' });
       await open3d(t);
       await t.shot('materials-render-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
+    // Texture sets (docs/plan-render.md, S1): a brick wall under a low morning sun in the realistic view, first as Lapin draws
+    // brick by itself (its drawn texture, flat), then with ambientCG's Red brick set chosen in Materials → Appearance (colour,
+    // relief, roughness and occlusion maps, 2.4 × 1.2 m a tile): the joints in shade, the bricks catching the light.
+    id: 'materials-texture-sets',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const storeyId = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Facing brick 250', layers: [{ material: 'Brick', thickness: 0.25, core: true }] })).id;
+      await t.cmd('architecture.addWall', { storeyId, x1: 0, y1: 0, x2: 8, y2: 0, typeId: type });
+      await t.cmd('architecture.addWall', { storeyId, x1: 8, y1: 0, x2: 8, y2: 4, typeId: type });
+      const profile = (p) => t.page.evaluate(async (v) => (await import('/src/viewport/render3d.ts')).setRenderProfile(v), p);
+      const look = () => t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.45, pitch: -0.06, distance: 2.4, target: { x: 3.5, y: 0, z: 1.3 } }, false));
+      try {
+        await t.ui({ view: '3d', keyPlan: false });
+        await t.page.waitForSelector('[data-testid=view3d] canvas');
+        // An equinox morning: the sun low in the east-south-east, slanting along the south face.
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ date: '2026-03-20', hour: 9.5 }));
+        await profile('realistic');
+        await look();
+        await t.wait(2500);
+        await t.shot('texture-wall-before', { of: '[data-testid=view3d]', pad: 0 });
+        await t.tool('manage.materials');
+        const dialog = t.page.locator('.dialog');
+        await dialog.locator('[data-material="Brick"]').first().click();
+        await t.wait(500);
+        t.expect(await dialog.locator('[data-testid=texture-sets] [data-set]').count() === 8, 'eight texture sets are offered');
+        await dialog.locator('[data-testid=texture-sets] [data-set=Bricks085]').click();
+        await t.page.waitForFunction(async () => {
+          const { useSession } = await import('/src/engine/session.ts');
+          return [...useSession.getState().nodes.values()].some((n) => n.type === 'IfcMaterial' && n.name === 'Brick' && n.props.textureSet === 'ambientcg/Bricks085');
+        }, null, { timeout: 20_000 });
+        await t.wait(1500);
+        const brick = (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === 'Brick');
+        t.expect(['textureImage', 'normalImage', 'roughnessImage', 'aoImage', 'bumpImage'].every((k) => typeof brick?.props?.[k] === 'string'), 'the set gives the brick its five maps');
+        t.expect(JSON.stringify(brick?.props?.textureSize) === '[2.4,1.2]', 'at the set\'s real size');
+        await t.shot('texture-sets', { of: '.dialog', pad: 0 });
+        await dialog.locator('button[title="Close"]').first().click();
+        await t.wait(300);
+        await look();
+        await t.wait(3000);
+        await t.shot('texture-wall-after', { of: '[data-testid=view3d]', pad: 0 });
+      } finally {
+        await profile('drawing');
+      }
+    },
+  },
+  {
+    // Artificial light (docs/plan-render.md, S2): a living room of 5 × 4 m with a window, lit by two ceiling lights, a pendant
+    // over where a table would stand and a spot washing the far corner, in the realistic view; at 22:00 (the night: the sky
+    // dark, the exposure open, the lamps lighting the room) and at 13:00 (the same room by day, the lamps faint beside the
+    // window's light). A light selected shows its Light section.
+    id: 'lights-night',
+    touches: ['architecture', 'mep'],
+    async run(t) {
+      await t.fresh();
+      const storeyId = await t.storey();
+      const room = [[0, 0], [5, 0], [5, 4], [0, 4]];
+      const walls = [];
+      for (let i = 0; i < 4; i++) walls.push((await t.cmd('architecture.addWall', { storeyId, x1: room[i][0], y1: room[i][1], x2: room[(i + 1) % 4][0], y2: room[(i + 1) % 4][1] })).id);
+      await t.cmd('architecture.addWindow', { wallId: walls[0], x: 2.5, y: 0 });
+      await t.cmd('architecture.addSlab', { storeyId, points: room });
+      // The ceiling: the floor above.
+      const storeys = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').sort((a, b) => (a.props.elevation ?? 0) - (b.props.elevation ?? 0));
+      const above = storeys.find((s) => (s.props.elevation ?? 0) > 0.5);
+      if (above) await t.cmd('architecture.addSlab', { storeyId: above.id, points: room });
+      const system = (await t.cmd('mep.placeSystem', { service: 'electrical', storeyId, x: 0.4, y: 3.7, to: [0.3, 1.2] })).id;
+      const place = async (x, y) => (await t.cmd('mep.placeNode', { systemId: system, role: 'light', storeyId, x, y })).id;
+      const ceiling = [await place(1.4, 2), await place(3.6, 2)];
+      const pendant = await place(2.5, 2.6);
+      const spot = await place(4.4, 3.4);
+      await t.cmd('light.set', { ids: ceiling, kind: 'spot', profile: 'builtin:downlight-medium', lumens: 900, kelvin: 3000 });
+      await t.cmd('light.set', { ids: [pendant], profile: 'builtin:pendant', lumens: 1200, kelvin: 2700, at: 'centre' });
+      await t.cmd('light.set', { ids: [spot], kind: 'spot', lumens: 500, kelvin: 3500, beam: 30, field: 50 });
+      const profile = (p) => t.page.evaluate(async (v) => (await import('/src/viewport/render3d.ts')).setRenderProfile(v), p);
+      const look = () => t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.69, pitch: -0.1, distance: 4.4, target: { x: 3.8, y: 3.2, z: 1.3 } }, false));
+      try {
+        await t.ui({ view: '3d', keyPlan: false });
+        await t.page.waitForSelector('[data-testid=view3d] canvas');
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ date: '2026-10-15', hour: 22 }));
+        await profile('realistic');
+        await look();
+        await t.wait(3500);
+        const lights = await t.page.evaluate(async () => (await import('/src/viewport/lights3d.ts')).useLightBudget.getState());
+        t.expect(lights.total === 4 && lights.drawn === 4, `the four lights are drawn (${JSON.stringify(lights)})`);
+        t.expect(await t.page.locator('[data-testid=lights-budget]').count() === 1, 'the view counts its lights');
+        await t.shot('lights-night', { of: '[data-testid=view3d]', pad: 0 });
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ hour: 13 }));
+        await look();
+        await t.wait(3000);
+        await t.shot('lights-day', { of: '[data-testid=view3d]', pad: 0 });
+        await t.page.evaluate(async (id) => (await import('/src/app/store.ts')).useUi.setState({ selected: [id], selection: id }), spot);
+        await t.wait(800);
+        t.expect(await t.page.locator('[data-testid=light-section]').count() === 1, 'a light shows its Light section');
+        await t.shot('light-properties', { of: '[data-testid=light-section]', pad: 8 });
+      } finally {
+        await profile('drawing');
+      }
     },
   },
   {
@@ -14571,6 +14735,67 @@ export const scenes = [
       await t.page.keyboard.press('Tab');
       await t.wait(400);
       t.expect(await panels() !== before, 'Tab with nothing to cycle keeps its meaning: it folds the panels');
+      await t.page.keyboard.press('Tab');
+    },
+  },
+  {
+    // Issue #110 and forum topic 215: HOLDING Tab (with the operating system's key autorepeat, as Windows sends it) opens the list once
+    // and cycles nothing; letting go takes the lit element; a short press still lights the next one.
+    id: 'tab-hold',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ view: 'plan' });
+      await t.fit();
+      const [px, py] = await t.planPoint(5.5, 0);
+      await t.page.mouse.move(px - 20, py + 20, { steps: 4 });
+      await t.page.mouse.move(px, py, { steps: 4 });
+      await t.wait(400);
+      const state = () => t.page.evaluate(async () => {
+        const c = (await import('/src/viewport/pickCycle.ts')).usePickCycle.getState().cycle;
+        const h = (await import('/src/viewport/tabHold.ts')).useTabHold.getState();
+        const u = (await import('/src/app/panels.ts')).usePanels.getState();
+        return { index: c ? c.index : null, open: h.open, n: h.ids.length, panels: `${u.browserOpen}|${u.propsOpen}` };
+      });
+      // A real hold: key down, the autorepeat (Playwright's second down is a repeat), 800 ms, key up.
+      await t.page.keyboard.down('Tab');
+      await t.wait(500);
+      for (let i = 0; i < 10; i++) { await t.page.keyboard.down('Tab'); await t.wait(33); }
+      const held = await state();
+      t.expect(held.open && held.n >= 2 && held.index === 0, `a held Tab opens the list on its first element, and the repeats leave it there (${JSON.stringify(held)})`);
+      t.expect(await t.page.locator('[data-testid=tab-hold]').count() === 1, 'one list is on the screen');
+      await t.shot('tab-hold');
+      await t.page.keyboard.up('Tab');
+      await t.wait(300);
+      const after = await state();
+      t.expect(!after.open, 'letting go closes the list');
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selected.length) === 1, 'letting go takes the lit element');
+      // The same with repeats dispatched as Windows sends them (repeat: true, every 33 ms, from 500 ms).
+      await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.setState({ selected: [] }));
+      await t.page.keyboard.down('Tab');
+      await t.page.evaluate(() => new Promise((done) => {
+        let n = 0;
+        const id = setInterval(() => { document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', code: 'Tab', repeat: true, bubbles: true, cancelable: true })); if (++n >= 25) { clearInterval(id); done(null); } }, 33);
+      }));
+      const win = await state();
+      t.expect(win.open && win.index === 0, `repeated Tab keydowns as Windows sends them leave the list on its first element (${JSON.stringify(win)})`);
+      await t.page.keyboard.up('Tab');
+      await t.wait(300);
+      // A short press lights the next element, as before.
+      await t.page.keyboard.press('Tab');
+      await t.wait(300);
+      t.expect((await state()).index === 1, 'a short press lights the second element');
+      // A held Tab with nothing to list does not fold and unfold the panels on every repeat.
+      await t.page.mouse.move(px, py + 200, { steps: 4 });
+      await t.wait(300);
+      const before = (await state()).panels;
+      await t.page.keyboard.down('Tab');
+      await t.wait(500);
+      for (let i = 0; i < 10; i++) { await t.page.keyboard.down('Tab'); await t.wait(33); }
+      await t.page.keyboard.up('Tab');
+      await t.wait(300);
+      t.expect((await state()).panels !== before, 'a held Tab with nothing under the pointer folds the panels once, not on every repeat');
       await t.page.keyboard.press('Tab');
     },
   },

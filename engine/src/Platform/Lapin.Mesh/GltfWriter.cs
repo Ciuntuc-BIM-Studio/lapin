@@ -143,10 +143,18 @@ public static class GltfWriter
             imageViews.Add(binary ? buffers.Raw(t.Bytes) : -1);
             return textured.Count - 1;
         }
+        // Its roughness map as the metallicRoughnessTexture (glTF reads roughness from green, metalness from blue): a grey image has
+        // both alike, right for a dielectric, whose metallicFactor of 0 keeps it so; a metal's goes out without it (docs/plan-render.md, S1).
+        // Its occlusion map as the occlusionTexture (red), at its strength.
+        var roughnessOf = new Dictionary<int, int>();
+        var occlusionOf = new Dictionary<int, int>();
         for (var i = 0; i < scene.Materials.Count; i++)
         {
-            if (scene.Materials[i].Texture is { } t) textureOf[i] = Image(t);
-            if (scene.Materials[i].NormalMap is { } nm) normalOf[i] = Image(nm);
+            var mm = scene.Materials[i];
+            if (mm.Texture is { } t) textureOf[i] = Image(t);
+            if (mm.NormalMap is { } nm) normalOf[i] = Image(nm);
+            if (mm.RoughnessMap is { } rm && mm.Pbr.Metalness == 0) roughnessOf[i] = Image(rm);
+            if (mm.OcclusionMap is { } om) occlusionOf[i] = Image(om);
         }
 
         using var json = new MemoryStream();
@@ -283,8 +291,10 @@ public static class GltfWriter
                 var mat = scene.Materials[mi];
                 // Textured, the image carries the colour: the factor stays white.
                 int? normal = normalOf.TryGetValue(mi, out var nt) ? nt : null;
-                if (textureOf.TryGetValue(mi, out var tex)) Material(w, mat.Name, 1, 1, 1, mat.Alpha, mat.Category, tex, mat.Pbr, normal);
-                else Material(w, mat.Name, Linear(mat.R), Linear(mat.G), Linear(mat.B), mat.Alpha, mat.Category, null, mat.Pbr, normal);
+                int? rough = roughnessOf.TryGetValue(mi, out var rt) ? rt : null;
+                int? occlusion = occlusionOf.TryGetValue(mi, out var ot) ? ot : null;
+                if (textureOf.TryGetValue(mi, out var tex)) Material(w, mat.Name, 1, 1, 1, mat.Alpha, mat.Category, tex, mat.Pbr, normal, rough, occlusion);
+                else Material(w, mat.Name, Linear(mat.R), Linear(mat.G), Linear(mat.B), mat.Alpha, mat.Category, null, mat.Pbr, normal, rough, occlusion);
             }
             if (anyEdges) Material(w, "Edges", 0, 0, 0, 1, null);
             w.WriteEndArray();
@@ -349,7 +359,7 @@ public static class GltfWriter
     /// opacity, metallic and roughness from its look; glass with KHR_materials_transmission (and its alpha, for readers without it),
     /// its index of refraction (KHR_materials_ior), a light's emissive colour.
     /// </summary>
-    static void Material(Utf8JsonWriter w, string name, float r, float g, float b, float a, string? category, int? texture = null, MaterialLook? look = null, int? normal = null)
+    static void Material(Utf8JsonWriter w, string name, float r, float g, float b, float a, string? category, int? texture = null, MaterialLook? look = null, int? normal = null, int? roughness = null, int? occlusion = null)
     {
         var l = look ?? MaterialLook.Plain;
         w.WriteStartObject();
@@ -358,9 +368,11 @@ public static class GltfWriter
         w.WriteStartArray("baseColorFactor"); w.WriteNumberValue(r); w.WriteNumberValue(g); w.WriteNumberValue(b); w.WriteNumberValue(a); w.WriteEndArray();
         if (texture is { } t) { w.WriteStartObject("baseColorTexture"); w.WriteNumber("index", t); w.WriteEndObject(); }
         w.WriteNumber("metallicFactor", Math.Round(l.Metalness, 4)); w.WriteNumber("roughnessFactor", Math.Round(l.Roughness, 4));
+        if (roughness is { } rt) { w.WriteStartObject("metallicRoughnessTexture"); w.WriteNumber("index", rt); w.WriteEndObject(); }
         w.WriteEndObject();
         // Its normal map, at its strength (the scale glTF multiplies the map's x and y by).
         if (normal is { } n) { w.WriteStartObject("normalTexture"); w.WriteNumber("index", n); w.WriteNumber("scale", Math.Round(l.NormalStrength, 4)); w.WriteEndObject(); }
+        if (occlusion is { } oc) { w.WriteStartObject("occlusionTexture"); w.WriteNumber("index", oc); w.WriteNumber("strength", Math.Round(l.AoStrength, 4)); w.WriteEndObject(); }
         if (l.Emissive != null)
         {
             var (er, eg, eb) = MeshScene.Rgb(l.Emissive);

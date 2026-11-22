@@ -38,6 +38,17 @@ public sealed class FrameProblem
     /// <summary>The nodes whose support works in compression only (§14.4): held or on springs while it pushes, lifted (free) when it would pull.</summary>
     public HashSet<int> Uplift { get; } = [];
 
+    FrameLayouts? _layouts;
+    /// <summary>
+    /// The layouts its systems have had (§14.21: numbering, ordering, symbolic factorization), shared with the problems made
+    /// from it (<see cref="Nonlinear.InStates"/>); each is checked against the problem's shape before it is used.
+    /// </summary>
+    public FrameLayouts Layouts
+    {
+        get => LazyInitializer.EnsureInitialized(ref _layouts);
+        init => _layouts = value;
+    }
+
     public int AddNode(Vec3 at, string id, bool[]? held = null)
     {
         Nodes.Add(at);
@@ -204,8 +215,18 @@ public sealed class FrameSystem
 
     int[] NodesOf(int k) => k < _nb ? [P.Elements[k].I, P.Elements[k].J] : k < _nb + _ns ? P.Shells[k - _nb].Nodes : P.Links[k - _nb - _ns].Nodes;
 
-    /// <summary>The system assembled and factored, or the solution that says why it could not be (too large, a mechanism).</summary>
-    public static (FrameSystem? System, FrameSolution? Failure) Build(FrameProblem p, FactorKind kind = FactorKind.Sparse, Stopwatch? sw = null)
+    /// <summary>The layout it was built on (§14.21): what it shares with the systems of the same shape.</summary>
+    public FrameLayout Layout { get; private set; } = null!;
+
+    /// <summary>
+    /// The system assembled and factored, or the solution that says why it could not be (too large, a mechanism). Its
+    /// numbering, ordering and symbolic factorization are the layout's (<paramref name="layout"/> when the problem has its
+    /// shape, else the problem's kept one, else made now: §14.21); only the values are worked out here. With
+    /// <paramref name="store"/> (§14.22), its factors' values are those given up there on the same structures, and what it
+    /// works with and drops (the rotations' factor, a mechanism's) goes back there; the system's own factor is its own until
+    /// its owner gives it up (<see cref="Retire"/>).
+    /// </summary>
+    public static (FrameSystem? System, FrameSolution? Failure) Build(FrameProblem p, FactorKind kind = FactorKind.Sparse, Stopwatch? sw = null, FrameLayout? layout = null, FactorStore? store = null)
     {
         sw ??= Stopwatch.StartNew();
         var s = new FrameSystem(p);
@@ -213,47 +234,15 @@ public sealed class FrameSystem
         foreach (var e in p.Elements) e.Prepare(p.Nodes);
         foreach (var e in p.Shells) e.Prepare(p.Nodes);
         var members = s._members;
-        var used = new bool[nn];
-        var adjacent = new List<int>[nn];
-        for (var i = 0; i < nn; i++) adjacent[i] = [];
-        var touching = new List<int>[nn];
-        for (var i = 0; i < nn; i++) touching[i] = [];
-        for (var k = 0; k < p.Elements.Count; k++)
-        {
-            var e = p.Elements[k];
-            used[e.I] = used[e.J] = true;
-            touching[e.I].Add(k);
-            touching[e.J].Add(k);
-            if (e.I != e.J) { adjacent[e.I].Add(e.J); adjacent[e.J].Add(e.I); }
-        }
-        var touchingShells = new List<int>[nn];
-        for (var i = 0; i < nn; i++) touchingShells[i] = [];
-        for (var k = 0; k < p.Shells.Count; k++)
-        {
-            var ns = p.Shells[k].Nodes;
-            foreach (var a in ns)
-            {
-                used[a] = true;
-                touchingShells[a].Add(k);
-                foreach (var b in ns) if (a != b) adjacent[a].Add(b);
-            }
-        }
-        foreach (var l in p.Links)
-            foreach (var a in l.Nodes)
-            {
-                used[a] = true;
-                foreach (var b in l.Nodes) if (a != b) adjacent[a].Add(b);
-            }
+        var lay = s.Layout = FrameLayout.For(p, kind, layout);
+        var (used, held, touching, touchingShells, all) = (lay.Used, lay.Held, lay.Touching, lay.TouchingShells, lay.All);
         s.Used = used;
-        s._globals = p.Elements.Select(e => e.GlobalStiffness()).Concat(p.Shells.Select(e => e.GlobalStiffness())).Concat(p.Links.Select(l => l.K)).ToArray();
-
-        // Held degrees of freedom.
-        var held = new bool[nn * 6];
-        for (var n = 0; n < nn; n++)
-        {
-            if (!used[n]) { for (var d = 0; d < 6; d++) held[n * 6 + d] = true; continue; }
-            if (p.Held[n] is { } h) for (var d = 0; d < 6; d++) held[n * 6 + d] = h[d];
-        }
+        // Each member's stiffness on its nodes, worked out once by the member for its places (shared, only read).
+        var globals = new double[members][];
+        for (var k = 0; k < s._nb; k++) globals[k] = p.Elements[k].Global();
+        for (var k = 0; k < s._ns; k++) globals[s._nb + k] = p.Shells[k].Global();
+        for (var k = 0; k < p.Links.Count; k++) globals[s._nb + s._ns + k] = p.Links[k].K;
+        s._globals = globals;
         s.Held = held;
         // A bar's own rotational stiffness (E·I/L, G·J/L) is what holding a free rotation takes at its nodes.
         var reference = new double[nn];
@@ -270,47 +259,12 @@ public sealed class FrameSystem
             var own = e.E * e.Thickness * e.Thickness * e.Thickness / (12 * (1 - e.Nu * e.Nu));
             foreach (var a in e.Nodes) reference[a] = Math.Max(reference[a], own);
         }
-        var order = Rcm.Order(nn, adjacent.Select(a => (IReadOnlyList<int>)a.Distinct().ToList()).ToArray());
 
-        // The equations of a set of degrees of freedom in RCM order, and their profile.
-        (int[] Eq, int Count, int[] First, int[][] DofsOf, long Profile) Number(Func<int, int, bool> takes)
+        ISymmetricFactor Assemble(ISymmetricFactor sk, int[][] dofsOf)
         {
-            var eq = new int[nn * 6];
-            Array.Fill(eq, -1);
-            var count = 0;
-            foreach (var n in order)
-                for (var d = 0; d < 6; d++)
-                    if (!held[n * 6 + d] && takes(n, d)) eq[n * 6 + d] = count++;
-            var first = new int[count];
-            for (var j = 0; j < count; j++) first[j] = j;
-            var dofsOf = new int[members][];
             for (var k = 0; k < members; k++)
             {
-                var ns = s.NodesOf(k);
-                var ds = new int[6 * ns.Length];
-                for (var x = 0; x < ns.Length; x++) for (var d = 0; d < 6; d++) ds[6 * x + d] = eq[ns[x] * 6 + d];
-                dofsOf[k] = ds;
-                var min = int.MaxValue;
-                foreach (var x in ds) if (x >= 0 && x < min) min = x;
-                foreach (var x in ds) if (x >= 0 && min < first[x]) first[x] = min;
-            }
-            long profile = 0;
-            for (var j = 0; j < count; j++) profile += j - first[j] + 1;
-            return (eq, count, first, dofsOf, profile);
-        }
-        ISymmetricFactor Structure(int count, int[] first, int[][] dofsOf, int[] eqs)
-        {
-            if (kind == FactorKind.Skyline) return new Skyline(first);
-            var group = new int[count];
-            for (var i = 0; i < eqs.Length; i++) if (eqs[i] >= 0) group[eqs[i]] = i / 6;
-            return new SparseCholesky(count, dofsOf, group);
-        }
-        ISymmetricFactor Assemble(int count, int[] first, int[][] dofsOf, int[] eqs, ISymmetricFactor? structure = null)
-        {
-            var sk = structure ?? Structure(count, first, dofsOf, eqs);
-            for (var k = 0; k < members; k++)
-            {
-                var (ds, g) = (dofsOf[k], s._globals[k]);
+                var (ds, g) = (dofsOf[k], globals[k]);
                 var m = ds.Length;
                 for (var r = 0; r < m; r++)
                 {
@@ -322,11 +276,9 @@ public sealed class FrameSystem
             return sk;
         }
 
-        var all = Number((_, _) => true);
         var neq = all.Count;
         s.Neq = neq;
-        var k0 = Structure(all.Count, all.First, all.DofsOf, all.Eq);
-        var profile = kind == FactorKind.Skyline ? all.Profile : k0.Stored;
+        var profile = lay.Profile;
         s.Profile = profile;
         if (profile > FrameSolver.MaxProfile)
             return (null, new FrameSolution { Ok = false, Dofs = neq, Profile = profile, Refused = $"The model is too large for this solver: {neq} degrees of freedom, a profile of {profile:N0} entries.", SolveMs = sw.Elapsed.TotalMilliseconds });
@@ -334,14 +286,12 @@ public sealed class FrameSystem
         // First the rotations alone, the translations held: a pivot lost there is a turning that moves no node and strains no
         // bar (only pinned ends meet, a pinned member's pieces twisting together). It carries nothing; a spring holds it, and
         // takes no force (its node's moment balances), so the results are those of the model as it is.
-        // (A shell's node is left out: its plate bending and drilling hold all three turnings.)
-        var rot = Number((n, d) => d >= 3 && touchingShells[n].Count == 0);
+        var rot = lay.Rot!;
         var springs = s._springs;
         if (rot.Count > 0)
         {
-            var dofOfEq = new int[rot.Count];
-            for (var i = 0; i < nn * 6; i++) if (rot.Eq[i] >= 0) dofOfEq[rot.Eq[i]] = i;
-            var kr = Assemble(rot.Count, rot.First, rot.DofsOf, rot.Eq);
+            var dofOfEq = lay.RotDofOfEq;
+            var kr = Assemble(lay.RotStructure!.Fresh(store), rot.DofsOf);
             kr.Factor(j =>
             {
                 var dof = dofOfEq[j];
@@ -349,25 +299,29 @@ public sealed class FrameSystem
                 springs[dof] = k;
                 return k;
             });
+            // Only its springs are kept: nothing reads it again.
+            if (store != null) kr.Release(store);
         }
 
         var eq = all.Eq;
         s.Eq = eq;
-        Assemble(all.Count, all.First, all.DofsOf, all.Eq, k0);
+        var k0 = Assemble(lay.Structure.Fresh(store), all.DofsOf);
         foreach (var (dof, k) in springs) k0.Add(eq[dof], eq[dof], k);
         var bad = k0.Factor();
         if (bad >= 0)
         {
             var at = Array.IndexOf(eq, bad);
             var node = at / 6;
+            if (store != null) k0.Release(store);
             // The mechanism's shape: the model held at that pivot (and any later one), pushed there; what moves most is the mechanism.
-            var k1 = Assemble(all.Count, all.First, all.DofsOf, all.Eq);
+            var k1 = Assemble(lay.Structure.Fresh(store), all.DofsOf);
             foreach (var (dof, k) in springs) k1.Add(eq[dof], eq[dof], k);
             var scale = reference[node] > 0 ? reference[node] : 1;
             k1.Factor(_ => scale);
             var x = new double[neq];
             x[bad] = scale;
             k1.Solve(x);
+            if (store != null) k1.Release(store);
             var moves = new List<(int Node, double D)>();
             for (var n = 0; n < nn; n++)
             {
@@ -381,10 +335,10 @@ public sealed class FrameSystem
             return (null, new FrameSolution
             {
                 Ok = false, Dofs = neq, Profile = profile, Springs = s.SpringNodes,
-                Mechanism = new Mechanism(node, at % 6, touching[node])
+                Mechanism = new Mechanism(node, at % 6, touching[node].ToList())
                 {
                     Moving = moving, MovingElements = moving.SelectMany(n => touching[n]).Distinct().ToList(),
-                    Shells = touchingShells[node], MovingShells = moving.SelectMany(n => touchingShells[n]).Distinct().ToList(),
+                    Shells = touchingShells[node].ToList(), MovingShells = moving.SelectMany(n => touchingShells[n]).Distinct().ToList(),
                 },
                 SolveMs = sw.Elapsed.TotalMilliseconds,
             });
@@ -392,6 +346,13 @@ public sealed class FrameSystem
         s._k = k0;
         return (s, null);
     }
+
+    /// <summary>
+    /// Gives its factor's values up to <paramref name="store"/> (§14.22), for the next system its owner builds on the same
+    /// structure. Only the one who built it with that store calls it, once nothing reads this system any more (nothing it
+    /// returned holds them: a case's results are arrays of their own); a solve on it throws afterwards.
+    /// </summary>
+    public void Retire(FactorStore store) => _k.Release(store);
 
     /// <summary>The diagonal of K by equation (the springs' included).</summary>
     public double[] Diagonal()
@@ -449,7 +410,7 @@ public sealed class FrameSystem
         for (var k = 0; k < p.Elements.Count; k++)
         {
             var e = p.Elements[k];
-            if (localLoads[k].Count == 0) { peq[k] = new double[12]; pc[k] = peq[k]; continue; }
+            if (localLoads[k].Count == 0) { peq[k] = Zero12; pc[k] = Zero12; continue; }
             peq[k] = e.Equivalent(localLoads[k]);
             pc[k] = e.Condense(peq[k]);
             var g = e.ToNodes(pc[k]);
@@ -475,32 +436,41 @@ public sealed class FrameSystem
         return new CaseVectors(f, applied, localLoads, peq, pc, fq, sumQ);
     }
 
+    static readonly double[] Zero12 = new double[12];
+
     /// <summary>What the members push back on the nodes: K·u − (their own loads), and their results.</summary>
     double[] Internal(double[] u, List<LocalLoad>[]? localLoads, double[][]? peq, double[][]? pc, double[]?[]? fq, (ElementResult[] Bars, ShellResult[] Shells)? results)
     {
         var p = P;
         var nodeForce = new double[_nn * 6];
+        // Scratch for what is not kept (§14.21: the refinement's residuals make no arrays); a result's own are new.
+        Span<double> un = stackalloc double[12], gn = stackalloc double[12], ulTmp = stackalloc double[12], feTmp = stackalloc double[12];
         for (var k = 0; k < p.Elements.Count; k++)
         {
             var e = p.Elements[k];
-            var un = new double[12];
-            Array.Copy(u, e.I * 6, un, 0, 6);
-            Array.Copy(u, e.J * 6, un, 6, 6);
-            var ul = e.ToLocal(un);
-            var pe = peq?[k] ?? new double[12];
+            u.AsSpan(e.I * 6, 6).CopyTo(un);
+            u.AsSpan(e.J * 6, 6).CopyTo(un[6..]);
+            double[]? keptU = null, keptF = null;
+            if (results != null) (keptU, keptF) = (new double[12], new double[12]);
+            var ul = keptU ?? ulTmp;
+            var fe = keptF ?? feTmp;
+            e.ToLocal(un, ul);
+            var pe = peq?[k] ?? Zero12;
             e.Recover(ul, pe);
-            var fe = e.EndForces(ul, pc?[k] ?? pe);
-            if (results is { } r) r.Bars[k] = new ElementResult(ul, fe, localLoads?[k] ?? []);
-            var g = e.ToNodes(fe);
-            for (var d = 0; d < 6; d++) { nodeForce[e.I * 6 + d] += g[d]; nodeForce[e.J * 6 + d] += g[6 + d]; }
+            e.EndForces(ul, pc?[k] ?? pe, fe);
+            if (results is { } r) r.Bars[k] = new ElementResult(keptU!, keptF!, localLoads?[k] ?? []);
+            gn.Clear();
+            e.ToNodes(fe, gn);
+            for (var d = 0; d < 6; d++) { nodeForce[e.I * 6 + d] += gn[d]; nodeForce[e.J * 6 + d] += gn[6 + d]; }
         }
+        Span<double> ug = stackalloc double[24];
         for (var k = 0; k < p.Shells.Count; k++)
         {
             var e = p.Shells[k];
             var ns = e.Nodes;
             var m = e.Size;
-            var ug = new double[m];
-            for (var x = 0; x < ns.Length; x++) Array.Copy(u, ns[x] * 6, ug, 6 * x, 6);
+            if (ug.Length < m) ug = new double[m];
+            for (var x = 0; x < ns.Length; x++) u.AsSpan(ns[x] * 6, 6).CopyTo(ug[(6 * x)..]);
             var kg = _globals[_nb + k];
             for (var r = 0; r < m; r++)
             {
@@ -511,7 +481,7 @@ public sealed class FrameSystem
             }
             if (results is { } rs)
             {
-                var ul = e.ToLocal(ug);
+                var ul = e.ToLocal(ug[..m]);
                 var (centre, corners) = e.Resultants(ul);
                 rs.Shells[k] = new ShellResult(ul, centre, corners);
             }
@@ -520,12 +490,12 @@ public sealed class FrameSystem
         {
             var l = p.Links[k];
             var m = 6 * l.Nodes.Length;
-            var ug = new double[m];
-            for (var x = 0; x < l.Nodes.Length; x++) Array.Copy(u, l.Nodes[x] * 6, ug, 6 * x, 6);
+            var ul = m <= 24 ? ug[..m] : new double[m];
+            for (var x = 0; x < l.Nodes.Length; x++) u.AsSpan(l.Nodes[x] * 6, 6).CopyTo(ul[(6 * x)..]);
             for (var r = 0; r < m; r++)
             {
                 var t = 0.0;
-                for (var x = 0; x < m; x++) t += l.K[r * m + x] * ug[x];
+                for (var x = 0; x < m; x++) t += l.K[r * m + x] * ul[x];
                 nodeForce[l.Nodes[r / 6] * 6 + r % 6] += t;
             }
         }

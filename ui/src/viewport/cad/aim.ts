@@ -185,6 +185,8 @@ export function useCadCanvas(o: {
   inRegion?: (takes: RegionTest) => string[];
   /** The axes ortho, polar tracking and the grid follow where no UCS is set: a turned plan's screen axes (decision 526). */
   axes?: Frame | null;
+  /** How far the view is turned on screen (radians; PlanView's `rot`): the arrow keys nudge along the screen's axes. */
+  turn?: number;
   /** The shown walls' axes, for the Wall axis snap (forum topic 151). */
   wallAxes?: Shape[];
   /** The shown grid's axes, for the Grid axis snap and "Grid only". */
@@ -194,6 +196,8 @@ export function useCadCanvas(o: {
 }) {
   const axesRef = useRef(o.axes ?? null);
   axesRef.current = o.axes ?? null;
+  const turnRef = useRef(o.turn ?? 0);
+  turnRef.current = o.turn ?? 0;
   // A section's or an elevation's frame: its moves are also given in the model (a wall sweep moved up its wall).
   const frameRef = useRef(o.drawing ?? null);
   frameRef.current = o.drawing ?? null;
@@ -229,6 +233,7 @@ export function useCadCanvas(o: {
       viewId: o.viewId,
       isPlan: () => planRef.current,
       pxPerMetre: () => scaleRef.current,
+      screenTurn: () => turnRef.current,
       pickDraft: (p) => {
         const tol = 8 / scaleRef.current;
         let best: { id: string; shape: Shape; d: number } | null = null;

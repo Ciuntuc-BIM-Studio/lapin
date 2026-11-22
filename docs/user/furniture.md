@@ -171,6 +171,8 @@ In **Furniture types**, choose **From a model** and a model, then **New type**. 
 
 In plan a piece of a model is its body seen from above, drawn by the engine with the hidden lines removed; a sofa also shows its seats at 1:50 and finer. A lamp hung above 1.2 m is drawn overhead. Tables, chairs, rugs and free-standing lamps stand where you click; sofas, armchairs and side tables back onto the nearest wall like the other furniture.
 
+A lamp lights the Medium and Realistic 3D views once it has light data: select it and choose **Make it a light** in its **Light** section (on its type, so every lamp of the type lights), then set its lumens and colour temperature, and **From** near its top for a lamp shade. See [Lights and the night](views.md#lights-and-the-night).
+
 ![The Furniture types dialog with a sofa from a model: the gallery, its size, the looks and colours, beside the engine's preview](shots/furniture-models-types.webp)
 
 ![A living room furnished from models: a sofa stretched to 2.6 m, armchairs, a coffee table on a rug, a floor lamp and plants](shots/furniture-models-3d.webp)

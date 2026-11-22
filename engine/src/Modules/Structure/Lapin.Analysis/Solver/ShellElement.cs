@@ -79,6 +79,8 @@ public sealed class ShellElement
     public double Area, Warp;
     double[] _x = [], _y = [];
     double[] _k = [];
+    /// <summary>The stiffness in global axes, worked out once for its node places (<see cref="Global"/>).</summary>
+    double[]? _global;
 
     readonly object _prepare = new();
     Vec3[]? _at;
@@ -120,6 +122,7 @@ public sealed class ShellElement
         Area /= 2;
         if (!(Area > 0)) throw new InvalidOperationException($"Shell {Id} has no area.");
         _k = LocalStiffness();
+        _global = null;
     }
 
     /// <summary>The nodes' coordinates in the element's own axes (metres, from its centre).</summary>
@@ -322,6 +325,12 @@ public sealed class ShellElement
                 k[rb * size + sb] += kb[r, s];
             }
         return k;
+    }
+
+    /// <summary>The stiffness in global axes worked out once for its node places (under its lock; shared, never written): what the systems assemble (§14.21).</summary>
+    internal double[] Global()
+    {
+        lock (_prepare) return _global ??= GlobalStiffness();
     }
 
     /// <summary>The stiffness in global axes (row-major, <see cref="Size"/>²), each node's [ux, uy, uz, rx, ry, rz].</summary>

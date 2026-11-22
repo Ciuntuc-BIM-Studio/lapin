@@ -6,7 +6,7 @@ using Lapin.Platform;
 namespace Lapin.Studio;
 
 /// <summary>
-/// SubD solids (docs/plan-studio-freeform.md §8, decision 775, stage F1b): the operation <c>subd</c>, a cage of points, faces and
+/// SubD solids (docs/plan-studio-freeform.md §8, decision 780, stage F1b): the operation <c>subd</c>, a cage of points, faces and
 /// creases (<see cref="SubD"/>) in the solid's own frame (from <c>at</c>, turned by <c>rotation</c> about the upright, as a
 /// primitive or a body), made into its body by the chord rule; <c>levels</c> caps its subdivisions, an open cage takes a
 /// <c>thickness</c> on its <c>side</c> (out, in, centre), and <c>symmetry</c> (a plane in its own frame) keeps it mirrored: every
@@ -454,7 +454,7 @@ public sealed partial class StudioModule
 }
 
 /// <summary>
-/// A SubD solid in IFC (decision 775): its body tessellated as any Studio solid's, its cage in Lapin's own set
+/// A SubD solid in IFC (decision 780): its body tessellated as any Studio solid's, its cage in Lapin's own set
 /// <see cref="SetName"/> (property <c>Cage</c>, the JSON the solid keeps) rather than in its intent set, so Lapin and BubbleBIM
 /// read it back editable.
 /// </summary>

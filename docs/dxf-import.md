@@ -53,7 +53,13 @@ Desenul importat e desen al proiectului: se salvează în `.lapin` cu straturile
 
 `plan fundatii.dxf` (ArchiCAD, AC1021, 4 MB, 4127 entități: 2818 polilinii, 1014 hașuri, 285 texte, 3 blocuri; declară mm, e în metri): 185 ms importul, 10 straturi, desenul în plan corect (`DxfImportSvgTests`, cu `LAPIN_DXF_SAMPLE` și `LAPIN_DXF_SVG_DIR`).
 
+## Fișiere pe care nu le citește (forumul, subiectul 217)
+
+Dialogul de import întreabă motorul `drafting.dxfInfo` și arată fie rezumatul, fie de ce nu îl are (`ui/src/modules/drafting/dxfInfo.ts`); nu rămâne niciodată pe „Reading the file…”. Așteaptă cât un import (10 minute), cu secundele scurse arătate după 3 s. Motorul refuză cu o frază: un DXF binar (santinela `AutoCAD Binary DXF`: de salvat ca text), un DWG redenumit `.dxf`, un fișier fără nicio secțiune DXF, și un desen ale cărui blocuri se desfac în peste 2.000.000 de entități (`DxfImport.MaxPlaced`: blocuri în blocuri sau un MINSERT de mii de rânduri și coloane; numește blocul). Un BOM UTF-8 la început e ignorat (ascundea antetul: versiunea și unitățile); unghiurile absurde ale unui arc (1e17°) nu mai țin bucla de normalizare la nesfârșit (`DxfCurves.Sweep`). Teste: `DxfReadingTests`, `dxfInfo.test.ts`.
+
 ## Rămase
+
+- DXF binar citit direct (acum: refuzat cu motivul).
 
 - DIMENSION unghiulare, radiale, ordonate ca cote native (acum: geometria din blocul lor).
 - Tipul de linie și grosimea pe entitate (acum ale stratului).

@@ -104,7 +104,8 @@ public static class UsdWriter
         var materialPaths = new List<string>();
         o.Append("\n    def Scope \"Materials\"\n    {\n");
         var files = TextureFiles(scene).ToDictionary(t => t.Material, t => t.Path);
-        var normals = MapFiles(scene).Where(t => t.Kind == "normal").ToDictionary(t => t.Material, t => t.Path);
+        var mapFiles = MapFiles(scene);
+        var normals = mapFiles.Where(t => t.Kind == "normal").ToDictionary(t => t.Material, t => t.Path);
         for (var mi = 0; mi < scene.Materials.Count; mi++)
         {
             var m = scene.Materials[mi];
@@ -130,11 +131,41 @@ public static class UsdWriter
             if (Math.Abs(look.Ior - 1.5) > 1e-6) o.Append($"                float inputs:ior = {F((float)look.Ior)}\n");
             o.Append($"                float inputs:metallic = {F((float)look.Metalness)}\n");
             if (m.Alpha < 1) o.Append($"                float inputs:opacity = {F(m.Alpha)}\n");
-            o.Append($"                float inputs:roughness = {F((float)look.Roughness)}\n");
+            // Its roughness map (raw, scaled by its roughness) and its occlusion map (docs/plan-render.md, S1).
+            string? roughFile = mapFiles.Where(t => t.Material == mi && t.Kind == "roughness").Select(t => t.Path).FirstOrDefault();
+            string? aoFile = mapFiles.Where(t => t.Material == mi && t.Kind == "ao").Select(t => t.Path).FirstOrDefault();
+            if (roughFile != null) o.Append($"                float inputs:roughness.connect = <{path}/Roughness.outputs:r>\n");
+            else o.Append($"                float inputs:roughness = {F((float)look.Roughness)}\n");
+            if (aoFile != null) o.Append($"                float inputs:occlusion.connect = <{path}/Occlusion.outputs:r>\n");
             // Its normal map: read raw, from 0–1 to −1–1, its x and y by its strength (UsdPreviewSurface's normal input, tangent space).
             if (normals.ContainsKey(mi)) o.Append($"                normal3f inputs:normal.connect = <{path}/Normal.outputs:rgb>\n");
             o.Append("                token outputs:surface\n");
             o.Append("            }\n");
+            foreach (var (shader, mapFile, scale) in new[] { ("Roughness", roughFile, (float)look.Roughness), ("Occlusion", aoFile, 1f) })
+            {
+                if (mapFile == null) continue;
+                var bias = shader == "Occlusion" ? 1 - (float)look.AoStrength : 0f;
+                var k = shader == "Occlusion" ? (float)look.AoStrength : scale;
+                o.Append($"\n            def Shader \"{shader}\"\n            {{\n");
+                o.Append("                uniform token info:id = \"UsdUVTexture\"\n");
+                o.Append($"                asset inputs:file = @{mapFile}@\n");
+                o.Append("                token inputs:sourceColorSpace = \"raw\"\n");
+                o.Append($"                float4 inputs:scale = ({F(k)}, {F(k)}, {F(k)}, 1)\n");
+                if (bias != 0) o.Append($"                float4 inputs:bias = ({F(bias)}, {F(bias)}, {F(bias)}, 0)\n");
+                o.Append($"                float2 inputs:st.connect = <{path}/St.outputs:result>\n");
+                o.Append("                token inputs:wrapS = \"repeat\"\n                token inputs:wrapT = \"repeat\"\n");
+                o.Append("                float outputs:r\n");
+                o.Append("            }\n");
+            }
+            // The coordinates' reader, when only these maps need it (an image or a normal map writes its own).
+            if ((roughFile != null || aoFile != null) && !files.ContainsKey(mi) && !normals.ContainsKey(mi))
+            {
+                o.Append("\n            def Shader \"St\"\n            {\n");
+                o.Append("                uniform token info:id = \"UsdPrimvarReader_float2\"\n");
+                o.Append("                string inputs:varname = \"st\"\n");
+                o.Append("                float2 outputs:result\n");
+                o.Append("            }\n");
+            }
             if (normals.TryGetValue(mi, out var normalFile))
             {
                 var k = (float)look.NormalStrength;

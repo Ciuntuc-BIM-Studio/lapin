@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -14,6 +15,21 @@ public interface ISymmetricFactor
     /// <summary>The first equation whose pivot is not positive, or −1; with <c>hold</c>, a spring added there instead.</summary>
     int Factor(Func<int, double>? hold = null);
     void Solve(double[] b);
+    /// <summary>
+    /// A new, empty matrix on the same structure (§14.21): the structure (numbering, ordering, elimination tree, supernodes,
+    /// pattern) shared and only read, the values its own. This one's values are not touched.
+    /// </summary>
+    ISymmetricFactor Fresh();
+    /// <summary>
+    /// <see cref="Fresh()"/> taking its values from <paramref name="store"/> when it holds a set given up on this structure
+    /// (§14.22), zeroed: the same matrix a new array would hold, bit for bit. Without one, a new array.
+    /// </summary>
+    ISymmetricFactor Fresh(FactorStore? store);
+    /// <summary>
+    /// Gives its values up to <paramref name="store"/> (§14.22), for the next <see cref="Fresh(FactorStore?)"/> on the same
+    /// structure. Called by their owner once nothing reads this factor any more: it can never be used again (it throws).
+    /// </summary>
+    void Release(FactorStore store);
 }
 
 /// <summary>
@@ -40,6 +56,7 @@ public sealed class SparseCholesky : ISymmetricFactor
     readonly int[][] _rows; // a supernode's rows (new equations): its own columns, then the rows below, rising
     readonly int[] _of;     // new equation → its supernode
     double[][]? _val;       // row-major, rows × columns
+    bool _released;         // its values given up (§14.22): it can no longer be used
     readonly long _stored;
     /// <summary>Floating-point operations the numeric factorization takes (multiplications and additions).</summary>
     public double Flops { get; }
@@ -217,6 +234,33 @@ public sealed class SparseCholesky : ISymmetricFactor
         Flops = flops;
     }
 
+    /// <summary>The same structure, its arrays shared (never written after the constructor), with values of its own.</summary>
+    SparseCholesky(SparseCholesky s)
+    {
+        (_n, _perm, _iperm, _ns, _first, _rows, _of, _stored) = (s._n, s._perm, s._iperm, s._ns, s._first, s._rows, s._of, s._stored);
+        (Flops, Ordering) = (s.Flops, s.Ordering);
+    }
+
+    public ISymmetricFactor Fresh() => new SparseCholesky(this);
+
+    public ISymmetricFactor Fresh(FactorStore? store)
+    {
+        var f = new SparseCholesky(this);
+        if (store?.Take(_rows) is double[][] val)
+        {
+            foreach (var v in val) Array.Clear(v);
+            f._val = val;
+        }
+        return f;
+    }
+
+    public void Release(FactorStore store)
+    {
+        var val = _val;
+        (_val, _released) = (null, true);
+        if (val != null) store.Put(_rows, val);
+    }
+
     /// <summary>Which ordering the structure took.</summary>
     public string Ordering { get; } = "";
 
@@ -301,6 +345,7 @@ public sealed class SparseCholesky : ISymmetricFactor
     double[][] Values()
     {
         if (_val != null) return _val;
+        if (_released) throw new InvalidOperationException("This factor gave its values up (§14.22): it can no longer be used.");
         _val = new double[_ns][];
         for (var s = 0; s < _ns; s++) _val[s] = new double[(long)_rows[s].Length * Columns(s)];
         return _val;
@@ -332,17 +377,35 @@ public sealed class SparseCholesky : ISymmetricFactor
     public int Factor(Func<int, double>? hold = null)
     {
         var val = Values();
-        var diag0 = new double[_n];
+        // Its work arrays from the shared pool (§14.22), set as new ones would be: every pivot's diagonal written, the lists empty, nought elsewhere.
+        var (doubles, ints) = (ArrayPool<double>.Shared, ArrayPool<int>.Shared);
+        double[] diag0 = doubles.Rent(_n);
+        int[] head = ints.Rent(_ns), link = ints.Rent(_ns), ptr = ints.Rent(_ns), rel = ints.Rent(_n);
+        try
+        {
+            Array.Clear(link, 0, _ns);
+            Array.Clear(ptr, 0, _ns);
+            Array.Clear(rel, 0, _n);
+            Array.Fill(head, -1, 0, _ns);
+            return Factor(val, hold, diag0, head, link, ptr, rel);
+        }
+        finally
+        {
+            doubles.Return(diag0);
+            ints.Return(head);
+            ints.Return(link);
+            ints.Return(ptr);
+            ints.Return(rel);
+        }
+    }
+
+    int Factor(double[][] val, Func<int, double>? hold, double[] diag0, int[] head, int[] link, int[] ptr, int[] rel)
+    {
         for (var s = 0; s < _ns; s++)
         {
             var nc = Columns(s);
             for (var j = 0; j < nc; j++) diag0[_first[s] + j] = val[s][j * nc + j];
         }
-        var head = new int[_ns];
-        var link = new int[_ns];
-        var ptr = new int[_ns];
-        Array.Fill(head, -1);
-        var rel = new int[_n];
         for (var s = 0; s < _ns; s++)
         {
             int f = _first[s], nc = Columns(s);
@@ -509,7 +572,14 @@ public sealed class SparseCholesky : ISymmetricFactor
     public void Solve(double[] b)
     {
         var val = Values();
-        var y = new double[_n];
+        // Its work vector from the shared pool (§14.22): each solve its own, every entry written before it is read.
+        var y = ArrayPool<double>.Shared.Rent(_n);
+        try { Solve(val, b, y); }
+        finally { ArrayPool<double>.Shared.Return(y); }
+    }
+
+    void Solve(double[][] val, double[] b, double[] y)
+    {
         for (var i = 0; i < _n; i++) y[i] = b[_perm[i]];
         // L·z = y.
         for (var s = 0; s < _ns; s++)

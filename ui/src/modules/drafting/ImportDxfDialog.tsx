@@ -13,7 +13,8 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { dxfFile } from '../../engine/files';
-import { execute, query, useSession } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
+import { readDxfInfo } from './dxfInfo';
 import { frontView } from '../../viewport/frontView';
 import { zoomHost } from '../../viewport/zoom';
 import { openConvertLayers } from './convert/convert';
@@ -42,6 +43,7 @@ export function ImportDxfDialog() {
   const [viewId, setViewId] = useState<string | null>(null);
   const [info, setInfo] = useState<Info | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [detail, setDetail] = useState<string | null>(null);
   const [units, setUnits] = useState('auto');
   const [at, setAt] = useState({ x: '0', y: '0' });
   const [rotation, setRotation] = useState('0');
@@ -67,15 +69,25 @@ export function ImportDxfDialog() {
       if (!alive) return;
       if (!id || id === '3d') { setProblem('Open a plan, a section or an elevation to import into.'); return; }
       setViewId(id);
-      try {
-        const r = await query<Info>('drafting.dxfInfo', { ...file, viewId: id });
-        if (alive && r) { setInfo(r); if (r.map?.likely && r.view?.kind === 'plan') setPlace('map'); }
-      } catch (e) {
-        if (alive) setProblem(e instanceof Error ? e.message : String(e));
-      }
-    })();
+      // Its answer or why there is none: never left on "Reading the file…" (forum topic 217).
+      const r = await readDxfInfo<Info>(file, id);
+      if (!alive) return;
+      if ('problem' in r) { setProblem(r.problem); setDetail(r.detail ?? null); return; }
+      setInfo(r.info);
+      if (r.info.map?.likely && r.info.view?.kind === 'plan') setPlace('map');
+    })().catch((e: unknown) => { if (alive) setProblem(e instanceof Error ? e.message : String(e)); });
     return () => { alive = false; };
   }, [file]);
+
+  // How long the reading has gone on, past a few seconds: a big drawing takes a while, and should not look stuck.
+  const [seconds, setSeconds] = useState(0);
+  const reading = Boolean(file) && !problem && !info;
+  useEffect(() => {
+    if (!reading) return;
+    const started = Date.now();
+    const timer = setInterval(() => setSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => { clearInterval(timer); setSeconds(0); };
+  }, [reading]);
 
   if (!file) return null;
   const view = viewId ? nodes.get(viewId) : undefined;
@@ -117,8 +129,9 @@ export function ImportDxfDialog() {
       <div className="dialog" role="dialog" aria-label="Import DXF" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Import DXF · {file.name}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
-          {problem && <p className="muted">{problem}</p>}
-          {!problem && !info && <p className="muted">Reading the file…</p>}
+          {problem && <p className="muted" role="alert" data-field="dxf-problem">{problem}</p>}
+          {problem && detail && <p className="muted small" data-field="dxf-problem-detail">{detail}</p>}
+          {reading && <p className="muted" data-field="dxf-reading"><span>Reading the file…</span>{seconds >= 3 && <span className="small"> {seconds} s</span>}</p>}
           {info && (
             <>
               <dl className="fields">

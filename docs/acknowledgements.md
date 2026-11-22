@@ -81,6 +81,16 @@ BimGo draws these as pictures that turn to the camera. Lapin builds them as bodi
 
 The trees stay Lapin's own plantings (decision 234).
 
+## ambientCG
+
+The texture sets a material can take in its Appearance tab (docs/plan-render.md, S1; decision 777) are from [ambientCG](https://ambientcg.com) by Lennart Demes and its contributors, released under Creative Commons CC0 1.0, so nothing is owed. We credit them anyway. The sets are Bricks085, Concrete034, PaintedPlaster017, WoodFloor043, Tiles107, PavingStones150, Metal009 and Fabric061, each brought down to 512 px for the app. Their register, with each file's hash, is `ui/src/viewport/texture-library.json`; `pnpm check:licenses` checks it.
+
+## blender-nurbs
+
+[blender-nurbs](https://github.com/cekuhnen/blender-nurbs) ("NURBS Proto") by cekuhnen is a NURBS surface-modelling add-on for Blender, built on NVIDIA's USD BRep kernel. Reading it, its development notes and the way it treats surfaces, gave Studio's free-form tools many of their ideas (docs/plan-studio-freeform.md §0–6): a smooth body edited through a coarse cage, creases, mirror symmetry, thickness, and exact surfaces carried out to IFC and STEP. We credit it as the inspiration.
+
+No code, data or files from it are used. Lapin's SubD solids (decision 780: `engine/src/Geometry/Lapin.Geometry/SubD.cs`, `StudioModule.SubD.cs`, the cage edit mode in `ui/src/modules/studio/`) and the exact surfaces that follow them are written from the published methods (Catmull–Clark with DeRose's semi-sharp creases; Piegl and Tiller's *The NURBS Book* for B-splines).
+
 ## Published methods
 
 The methods below are credited the way BimGo credits them:
@@ -89,7 +99,9 @@ The methods below are credited the way BimGo credits them:
 - C. Ericson, "Real-Time Collision Detection" (2005), ch. 5;
 - NOAA Global Monitoring Laboratory, "General Solar Position Calculations";
 - the CIE overcast and clear skies;
-- BRE's split-flux formula.
+- BRE's split-flux formula;
+- E. Catmull and J. Clark, "Recursively generated B-spline surfaces on arbitrary topological meshes" (1978), and T. DeRose, M. Kass and T. Truong, "Subdivision Surfaces in Character Animation" (1998), for SubD solids;
+- L. Piegl and W. Tiller, "The NURBS Book" (1997), for B-splines.
 
 ## Graphisoft Archicad
 

@@ -46,6 +46,8 @@ Fiecare nod are un **rol**: centrală, radiator, distribuitor, apometru, lavoar,
 
 În panoul de proprietăți un nod arată sistemul, rolul și porturile lui (libere sau conectate); un traseu arată cele două capete. Amândouă iau valorile implicite ale sistemului dacă nu le dai o valoare proprie: dimensiune, cotă, planul în care merg (pardoseală, tavan, perete), pereche sau simplu, material, pantă.
 
+Un **corp de iluminat** pus de acum luminează vederile 3D Mediu și Realist, 1000 lm la 3500 K de sub el; secțiunea lui **Corp de iluminat** îi stabilește lumenii, temperatura de culoare, felul (punct, spot, panou) și distribuția, inclusiv un fișier IES. Vezi [Lumini și noaptea](views.md#lumini-și-noaptea).
+
 ## Sisteme
 
 **Sisteme…** arată sistemele proiectului și valorile implicite ale celui curent: dimensiunea, planul și cota fiecărui plan, panta (canalizare), dacă traseele se desenează în pereche (încălzire: tur și retur) și la ce distanță, materialul și izolația. Schimbă o valoare implicită și fiecare nod și traseu fără o valoare proprie urmează.

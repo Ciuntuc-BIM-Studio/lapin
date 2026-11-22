@@ -46,6 +46,15 @@ public class FemParallelTests(ITestOutputHelper output)
         return f;
     }
 
+    /// <summary>The shell frame with a corner pulled up (in Q-A) so that its footing lifts in the combinations that take it: problems of several layouts at once (§14.21).</summary>
+    internal static Fixture LiftingFrame()
+    {
+        var f = ShellFrame();
+        var storey = f.Model.OfClass(IfcClass.BuildingStorey).Single(s => s.Name == "First floor").Id;
+        f.Run("analysis.addPointLoad", new JsonObject { ["storeyId"] = storey, ["at"] = new JsonArray(0.0, 0.0), ["value"] = 250, ["direction"] = "up" });
+        return f;
+    }
+
     static void Same(double[] a, double[] b, string what)
     {
         Assert.Equal(a.Length, b.Length);
@@ -104,35 +113,44 @@ public class FemParallelTests(ITestOutputHelper output)
     [Theory]
     [InlineData("hall")]
     [InlineData("shells")]
+    [InlineData("lifting")]
     public void Many_threads_solving_one_problems_combinations_at_once_give_the_one_threads_results(string model)
     {
-        var f = model == "hall" ? Hall() : ShellFrame();
+        var f = model == "hall" ? Hall() : model == "lifting" ? LiftingFrame() : ShellFrame();
         var run = AnalysisRun.Of(f.Session.Reader);
         Assert.True(run.Ok);
         var p = run.Problem.Problem;
         var options = new NonlinearOptions(true);
-        var sets = run.NonlinearSets.Take(model == "hall" ? 12 : 24).ToList();
+        // With supports that lift, the sets that lift some first: their iterations take layouts of their own, shared (§14.21).
+        var sets = (model == "lifting" ? run.NonlinearSets.OrderByDescending(s => s.Result.Lifted.Count > 0) : run.NonlinearSets.AsEnumerable()).Take(model == "hall" ? 12 : 24).ToList();
         Assert.NotEmpty(sets);
+        if (model == "lifting") Assert.Contains(sets, s => s.Result.Lifted.Count > 0);
         if (model == "shells") Assert.NotEmpty(p.Shells);
         var reference = sets.Select(s => Nonlinear.Solve(p, s.Loads, options)).ToList();
         var buckling = sets.Where(s => s.Result.States != null).Take(4).ToList();
         var bReference = buckling.Select(s => Buckling.Solve(FrameSystem.Build(s.Result.States!).System!, s.Result.Axial, 6, tolerance: 1e-6)).ToList();
         var jobs = Enumerable.Range(0, 3).SelectMany(_ => Enumerable.Range(0, sets.Count + buckling.Count)).ToList();
         var failures = new ConcurrentBag<string>();
-        Parallel.ForEach(jobs, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(4, Environment.ProcessorCount) }, i =>
+        // Each worker hands its solves' factor values on, one to the next (§14.22), as the analysis does; half the jobs keep their own.
+        Parallel.ForEach(jobs, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(4, Environment.ProcessorCount) }, () => new FactorStore(), (i, _, j, store) =>
         {
             try
             {
-                if (i < sets.Count) Same(reference[i], Nonlinear.Solve(p, sets[i].Loads, options), sets[i].Key);
+                if (i < sets.Count) Same(reference[i], Nonlinear.Solve(p, sets[i].Loads, options, j % 2 == 0 ? store : null), sets[i].Key);
                 else
                 {
                     var s = buckling[i - sets.Count];
                     Same(bReference[i - sets.Count], Buckling.Solve(FrameSystem.Build(s.Result.States!).System!, s.Result.Axial, 6, tolerance: 1e-6), s.Key);
                 }
+                if (store.Count > FactorStore.Kept) failures.Add($"{i}: the store holds {store.Count} sets");
             }
             catch (Exception ex) { failures.Add($"{i}: {ex.GetType().Name}: {ex.Message}"); }
-        });
-        output.WriteLine($"{model}: {jobs.Count} solves on {Environment.ProcessorCount} cores, {failures.Count} differ");
+            return store;
+        }, _ => { });
+        // The first results are untouched by all the solves after them (none holds a value array handed on).
+        for (var i = 0; i < sets.Count; i++) Same(sets[i].Result, reference[i], $"{sets[i].Key} (the analysis')");
+        output.WriteLine($"{model}: {jobs.Count} solves on {Environment.ProcessorCount} cores, {failures.Count} differ, {p.Layouts.Count} layouts kept");
+        Assert.InRange(p.Layouts.Count, 1, FrameLayouts.Kept);
         Assert.True(failures.IsEmpty, string.Join("\n", failures.Take(10)));
     }
 
@@ -209,6 +227,22 @@ public class FemParallelTests(ITestOutputHelper output)
             Assert.Equal(1, FemParallel.Degree(10, 0));
             Assert.Equal(Enumerable.Range(0, 10), FemParallel.Map(Enumerable.Range(0, 10).ToList(), i => i));
         }
+        // Each worker's own: never two jobs on it at once, and no more of them than jobs ran at once.
+        foreach (var degree in new[] { 1, 4 })
+            using (FemParallel.Limit(degree))
+            {
+                var made = 0;
+                var r = FemParallel.Map(Enumerable.Range(0, 200).ToList(), () => { Interlocked.Increment(ref made); return new int[1]; }, (i, mine) =>
+                {
+                    if (Interlocked.Increment(ref mine[0]) != 1) throw new InvalidOperationException("two jobs on one worker's own");
+                    Thread.SpinWait(500 * (i % 5));
+                    Interlocked.Decrement(ref mine[0]);
+                    return -i;
+                });
+                Assert.Equal(Enumerable.Range(0, 200).Select(i => -i), r);
+                if (degree == 1) Assert.Equal(1, made);
+                else Assert.InRange(made, 1, 200);
+            }
         // The memory bound: jobs too large for a quarter of the memory go one at a time.
         using (FemParallel.Limit(8)) Assert.Equal(1, FemParallel.Degree(10, long.MaxValue / 2));
     }

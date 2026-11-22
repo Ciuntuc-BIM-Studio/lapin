@@ -235,6 +235,8 @@ public sealed class TitleBlockTests : IDisposable
         Assert.Contains("Arkkitehdit Oy", content);
         Assert.Contains("A-101", content);
 
+        // Code page 1252 needs the code pages provider, registered here rather than by whichever test ran before.
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         var dxf = Encoding.GetEncoding(1252).GetString(Sheets.Dxf(f.Session.Reader, f.Model.Get(s)!));
         var lines = dxf.Split('\n').Select(x => x.Trim()).ToList();
         int Count(string kind) => lines.Where((x, i) => i > 0 && lines[i - 1] == "0" && x == kind).Count();

@@ -24,6 +24,7 @@ import { copyArrays, levelFor, pixelsPerMetre, type DisplayQuality, type LodCame
 import { useSession } from '../engine/session';
 import { lookOf } from './look';
 import { standardMaterial } from './materialLook';
+import { boxUvSized, hasRelief, imageOf, imageTexture, reliefOf, sizeOf, withRelief, type OwnImage, type Relief } from './textures';
 
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0).elements;
 const FIRST = 64;
@@ -80,7 +81,7 @@ class Batch {
     this.capacity = capacity;
     const make = (part: RenderPart, prev: PartBatch | undefined): PartBatch => {
       const geometry = prev?.solid.geometry ?? geometryOf(part);
-      const colour = new THREE.Color(part.color);
+      const colour = partColour(part);
       const solid = new THREE.InstancedMesh(geometry, prev?.solid.material ?? material(part, 1), capacity);
       const faded = new THREE.InstancedMesh(geometry, prev?.faded.material ?? material(part, 0.35), capacity);
       for (const m of [solid, faded]) {
@@ -245,23 +246,46 @@ class Batch {
   }
 }
 
+/**
+ * A part's maps (docs/plan-render.md, S1): its material's own image and its relief and surface maps, and the size they lie
+ * at; null when it has none (then no texture coordinates are needed).
+ */
+function mapsOf(part: RenderPart): { own: OwnImage | null; relief: Relief; size: [number, number]; rotation: number } | null {
+  const nodes = useSession.getState().nodes;
+  const mat = part.material ? nodes.get(part.material) : undefined;
+  if (!mat) return null;
+  const own = imageOf(mat, nodes);
+  const relief = reliefOf(mat, nodes);
+  if (!own && !hasRelief(relief)) return null;
+  return { own, relief, size: own ? [own.width, own.height] : sizeOf(mat), rotation: lookOf(mat).textureRotation };
+}
+
 function geometryOf(part: RenderPart): THREE.BufferGeometry {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(part.positions, 3));
   if (part.normals.length === part.positions.length) g.setAttribute('normal', new THREE.BufferAttribute(part.normals, 3));
   else g.computeVertexNormals();
   g.setIndex(new THREE.BufferAttribute(new Uint32Array(part.indices.buffer, part.indices.byteOffset, part.indices.length), 1));
+  // Its maps laid on in metres of the shared mesh (they go round with each copy, as the copy's own faces do).
+  const maps = mapsOf(part);
+  if (maps) boxUvSized(g, maps.size[0], maps.size[1], maps.rotation);
   return g;
 }
 
 /**
  * A part's material in its look (rough or glossy, metal, glass, glowing: look.ts), white so each instance's colour
- * is its own (instanceColor multiplies it); the faded one as see-through as a phase shows it.
+ * is its own (instanceColor multiplies it); the faded one as see-through as a phase shows it. Its own image and its
+ * relief and surface maps on it (an instance with its own image is drawn white: the image carries its colour).
  */
 function material(part: RenderPart, opacity: number): THREE.MeshStandardMaterial {
   const look = lookOf(part.material ? useSession.getState().nodes.get(part.material) : undefined);
-  return standardMaterial(0xffffff, null, opacity < 1 ? { ...look, transparency: 1 - opacity, transmission: 0 } : look);
+  const maps = mapsOf(part);
+  const m = standardMaterial(0xffffff, maps?.own ? imageTexture(maps.own) : null, opacity < 1 ? { ...look, transparency: 1 - opacity, transmission: 0 } : look);
+  return maps && hasRelief(maps.relief) ? withRelief(m, maps.relief, look.normalStrength, look.bumpStrength, undefined, look.aoStrength) : m;
 }
+
+/** The colour a part's instances start from: white under its own image, else its own. */
+const partColour = (part: RenderPart): THREE.Color => new THREE.Color(mapsOf(part)?.own ? '#ffffff' : part.color);
 
 /** Every instance in the 3D view, by shared mesh. */
 export class InstanceLayer {
