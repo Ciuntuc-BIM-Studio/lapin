@@ -31,10 +31,14 @@ public static class DimensionKinds
     public static readonly string[] Kinds = ["angular", "radial", "diameter", "arc", "slope", "level", "ordinate", "coordinate"];
     public static readonly string[] CoordinateSystems = ["map", "project", "internal"];
 
-    /// <summary>A spot coordinate's two lines (metres, three decimals): E and N on the map, X and Y from the base point or the plan's origin.</summary>
-    public static (string First, string Second) CoordinateText(IModelView m, Vec2 p, string? system)
+    /// <summary>
+    /// A spot coordinate's two lines: E and N on the map, X and Y from the base point or the plan's origin. In the style's
+    /// <paramref name="unit"/> when it is imperial (feet and inches, or inches, to 1/16"); else in metres with three decimals,
+    /// as a survey writes coordinates whatever unit the lengths are dimensioned in.
+    /// </summary>
+    public static (string First, string Second) CoordinateText(IModelView m, Vec2 p, string? system, string unit = "m")
     {
-        static string F(double v) => v.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture);
+        string F(double v) => Standards.IsImperial(unit) ? Standards.FormatImperial(v, unit == "ft-in", 2) : v.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture);
         switch (system)
         {
             case "map" when Location.Survey(m) != null:
@@ -318,7 +322,7 @@ public static class DimensionKinds
                     var r0 = 1.2 * mm;
                     mk.Polyline(ViewMark.Circle(a, r0, 16), true, "DIMENSION", w, lineColor);
                     mk.Line(a - new Vec2(r0 * 1.6, 0), a + new Vec2(r0 * 1.6, 0), "DIMENSION", w, lineColor).Line(a - new Vec2(0, r0 * 1.6), a + new Vec2(0, r0 * 1.6), "DIMENSION", w, lineColor);
-                    var (l1, l2) = CoordinateText(c.Model, a, dim.Str("system"));
+                    var (l1, l2) = CoordinateText(c.Model, a, dim.Str("system"), style.Unit);
                     var side = at.X >= a.X ? 1 : -1;
                     var shoulder = Math.Max(TextMeasure.Width(l1, text), TextMeasure.Width(l2, text)) * mm;
                     var dir = at - a;
