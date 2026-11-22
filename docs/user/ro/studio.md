@@ -28,7 +28,7 @@ Poți schița pe patru feluri de vederi:
 
 - **Extrudare** (EXTRUDE) împinge conturul drept în afară. Scrie S pentru ambele sensuri față de schiță, T pentru o înclinare care strânge laturile spre interior, și Cut ca să taie elementele selectate înainte. Ca să meargă până la fața altui element, folosește **Până la → o față…** din proprietățile lui, sau **Extrudează până la față**. Adâncimea, înălțimile și grosimile se scriu în unitatea proiectului, cum spune mesajul (`Depth (mm)`: `2000` înseamnă 2 m).
 - **Măturare** (SWEEP) duce un profil de-a lungul unui traseu. TWist rotește secțiunea pe drum, SCale o crește, iar RIse o ridică. Un cerc care urcă devine elice și face TUrns ture.
-- **Loft** (LOFT) unește profile desenate pe vederi diferite. Scrie S ca să treacă neted prin ele. O linie selectată cu rolul *al doilea traseu* îl îndoaie, ca ghidaj.
+- **Loft** (LOFT) unește profile desenate pe vederi diferite. Scrie S ca să treacă neted prin ele: prin trei profile sau mai multe e o singură suprafață B-spline care trece exact prin fiecare, cu arcele păstrate ca arce, pe care un export IFC sau STEP o poate scrie cum e ([Suprafețe exacte](import-export.md#ifc-și-fragments)). O linie selectată cu rolul *al doilea traseu* îl îndoaie, ca ghidaj.
 - **Revoluție** (REVOLVE) rotește un profil în jurul unei linii-axă.
 - **Primitivele** așază cu un clic un cub, un cilindru, o sferă, un con, un tor, o pană sau o piramidă. Dimensiunile și poziția lor le schimbi în proprietăți.
 
