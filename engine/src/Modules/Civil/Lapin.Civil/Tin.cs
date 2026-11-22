@@ -6,6 +6,12 @@ namespace Lapin.Civil;
 /// <summary>A triangulated irregular network: points (x, y in plan, z the elevation) and counter-clockwise triangles.</summary>
 public sealed record Tin(IReadOnlyList<Vec3> Points, IReadOnlyList<(int A, int B, int C)> Triangles)
 {
+    /// <summary>Points the triangulations made on this thread have inserted, counted from its start: how much work a build took.</summary>
+    [ThreadStatic] static long _inserted;
+
+    /// <summary>Points the triangulations made on this thread have inserted (a measure of work, for tests and timing).</summary>
+    public static long Inserted => _inserted;
+
     /// <summary>
     /// Delaunay in plan (Bowyer–Watson): points that coincide in plan (to 6
     /// decimals) count once, the first one kept; the triangles cover the convex
@@ -13,115 +19,210 @@ public sealed record Tin(IReadOnlyList<Vec3> Points, IReadOnlyList<(int A, int B
     /// (pairs of input indices: a breakline's segments) are kept as edges
     /// exactly, split where a point lies on them; the rest stays Delaunay.
     /// </summary>
-    public static Tin Delaunay(IReadOnlyList<Vec3> input, IReadOnlyList<(int A, int B)>? constraints = null)
+    public static Tin Delaunay(IReadOnlyList<Vec3> input, IReadOnlyList<(int A, int B)>? constraints = null) => Delaunay(input, constraints, null);
+
+    /// <summary>
+    /// <see cref="Delaunay(IReadOnlyList{Vec3}, IReadOnlyList{ValueTuple{int, int}}?)"/> clipped to <paramref name="boundary"/>
+    /// in the same triangulation: its corners take the height the TIN of the points has there (outside it, the nearest
+    /// point's), they are inserted after the points and its edges are constraints; the triangles outside it go, and the
+    /// points no triangle uses. Kept whole when nothing would be left.
+    /// </summary>
+    public static Tin Delaunay(IReadOnlyList<Vec3> input, IReadOnlyList<(int A, int B)>? constraints, IReadOnlyList<Vec2>? boundary)
     {
         var seen = new Dictionary<(long, long), int>();
         var pts = new List<Vec3>();
         var map = new int[input.Count];
+        static (long, long) Key(double x, double y) => ((long)Math.Round(x * 1e6), (long)Math.Round(y * 1e6));
         for (var k = 0; k < input.Count; k++)
         {
             var p = input[k];
             map[k] = -1;
             if (!(double.IsFinite(p.X) && double.IsFinite(p.Y) && double.IsFinite(p.Z))) continue;
-            var key = ((long)Math.Round(p.X * 1e6), (long)Math.Round(p.Y * 1e6));
+            var key = Key(p.X, p.Y);
             if (!seen.TryGetValue(key, out var at)) { seen[key] = at = pts.Count; pts.Add(p); }
             map[k] = at;
         }
         var n = pts.Count;
         if (n < 3) return new Tin(pts, []);
-        double minX = pts.Min(p => p.X), minY = pts.Min(p => p.Y), maxX = pts.Max(p => p.X), maxY = pts.Max(p => p.Y);
-        var span = Math.Max(Math.Max(maxX - minX, maxY - minY), 1e-9) * 20;
-        var (cx, cy) = ((minX + maxX) / 2, (minY + maxY) / 2);
-        // Measured from the middle: a survey's coordinates (hundreds of km) would round the circles of small triangles away.
-        var xy = pts.Select(p => (X: p.X - cx, Y: p.Y - cy)).ToList();
-        xy.Add((-span, -span)); xy.Add((span, -span)); xy.Add((0, span));
+        var constraintList = constraints is { Count: > 0 }
+            ? constraints.Where(c => c.A >= 0 && c.B >= 0 && c.A < map.Length && c.B < map.Length)
+                .Select(c => (map[c.A], map[c.B])).Where(c => c.Item1 >= 0 && c.Item2 >= 0 && c.Item1 != c.Item2).ToList()
+            : [];
+        // The boundary's corners: a point already there is that point; the others come after the survey's.
+        var clip = boundary is { Count: >= 3 } && boundary.All(v => double.IsFinite(v.X) && double.IsFinite(v.Y));
+        var corner = new int[clip ? boundary!.Count : 0];
+        if (clip)
+            for (var i = 0; i < boundary!.Count; i++)
+            {
+                var key = Key(boundary[i].X, boundary[i].Y);
+                if (!seen.TryGetValue(key, out var at)) { seen[key] = at = pts.Count; pts.Add(new Vec3(boundary[i].X, boundary[i].Y, double.NaN)); }
+                corner[i] = at;
+            }
+        var total = pts.Count;
+        var bw = new BowyerWatson(pts);
+        bw.Insert(Enumerable.Range(0, n));
+        var result = bw.Triangles();
+        if (!clip)
+        {
+            if (constraintList.Count > 0) result = Constrained.Apply(pts, result, constraintList);
+            return new Tin(pts, result);
+        }
+        // The heights of the new corners: the ground the points make there, breaklines held.
+        if (total > n)
+        {
+            var survey = pts.GetRange(0, n);
+            var baseTin = new Tin(survey, constraintList.Count > 0 ? Constrained.Apply(survey, result, constraintList) : result);
+            if (baseTin.Triangles.Count == 0) return baseTin;
+            var ground = new Terrain(baseTin);
+            for (var i = n; i < total; i++)
+            {
+                var v = pts[i];
+                var z = ground.ElevationAt(v.X, v.Y) ?? survey.MinBy(p => (p.X - v.X) * (p.X - v.X) + (p.Y - v.Y) * (p.Y - v.Y)).Z;
+                pts[i] = v with { Z = z };
+            }
+            bw.Insert(Enumerable.Range(n, total - n));
+            result = bw.Triangles();
+        }
+        else if (result.Count == 0) return new Tin(pts, result);
+        var all = new List<(int, int)>(constraintList);
+        for (var i = 0; i < corner.Length; i++) if (corner[i] != corner[(i + 1) % corner.Length]) all.Add((corner[i], corner[(i + 1) % corner.Length]));
+        var constrained = Constrained.Apply(pts, result, all);
+        var kept = new List<(int A, int B, int C)>();
+        foreach (var (a, b, c) in constrained)
+        {
+            var (pa, pb, pc) = (pts[a], pts[b], pts[c]);
+            if (Polygon2.Contains(boundary!, new Vec2((pa.X + pb.X + pc.X) / 3, (pa.Y + pb.Y + pc.Y) / 3))) kept.Add((a, b, c));
+        }
+        return kept.Count == 0 ? new Tin(pts, constrained) : Compact(pts, kept);
+    }
 
-        // Each triangle with its circumcircle, and who owns each directed edge (the neighbour across a–b owns b–a).
-        var tris = new List<(int A, int B, int C, double X, double Y, double R2, bool Alive)>();
-        var owner = new Dictionary<(int, int), int>();
+    /// <summary>A TIN of only the points its triangles use, in the order they first come.</summary>
+    public static Tin Compact(IReadOnlyList<Vec3> points, IEnumerable<(int A, int B, int C)> triangles)
+    {
+        var remap = new Dictionary<int, int>();
+        var compact = new List<Vec3>();
+        int Map(int idx)
+        {
+            if (!remap.TryGetValue(idx, out var n)) { n = compact.Count; remap[idx] = n; compact.Add(points[idx]); }
+            return n;
+        }
+        var tris = triangles.Select(t => (Map(t.A), Map(t.B), Map(t.C))).ToList();
+        return new Tin(compact, tris);
+    }
+
+    /// <summary>
+    /// Bowyer–Watson over points given in batches (each batch inserted in plan order, x then y), measured from the
+    /// middle of them all inside a super triangle twenty times their span.
+    /// </summary>
+    sealed class BowyerWatson
+    {
+        readonly int _n;
+        readonly List<(double X, double Y)> _xy;
+        readonly List<(int A, int B, int C, double X, double Y, double R2, bool Alive)> _tris = [];
+        // Who owns each directed edge (the neighbour across a–b owns b–a).
+        readonly Dictionary<(int, int), int> _owner = [];
         // Triangles of three points in a line: their circle holds every point, so the next insertion takes them away wherever it is.
-        var flat = new List<int>();
+        readonly List<int> _flat = [];
+
+        public BowyerWatson(IReadOnlyList<Vec3> pts)
+        {
+            _n = pts.Count;
+            double minX = pts.Min(p => p.X), minY = pts.Min(p => p.Y), maxX = pts.Max(p => p.X), maxY = pts.Max(p => p.Y);
+            var span = Math.Max(Math.Max(maxX - minX, maxY - minY), 1e-9) * 20;
+            var (cx, cy) = ((minX + maxX) / 2, (minY + maxY) / 2);
+            // Measured from the middle: a survey's coordinates (hundreds of km) would round the circles of small triangles away.
+            _xy = pts.Select(p => (X: p.X - cx, Y: p.Y - cy)).ToList();
+            _xy.Add((-span, -span)); _xy.Add((span, -span)); _xy.Add((0, span));
+            Add(_n, _n + 1, _n + 2);
+        }
+
         void Add(int a, int b, int c)
         {
-            var (ax, ay) = xy[a]; var (bx, by) = xy[b]; var (qx, qy) = xy[c];
+            var (ax, ay) = _xy[a]; var (bx, by) = _xy[b]; var (qx, qy) = _xy[c];
             if ((bx - ax) * (qy - ay) - (by - ay) * (qx - ax) < 0) (b, c) = (c, b);
-            (ax, ay) = xy[a]; (bx, by) = xy[b]; (qx, qy) = xy[c];
-            var t = tris.Count;
-            owner[(a, b)] = t; owner[(b, c)] = t; owner[(c, a)] = t;
+            (ax, ay) = _xy[a]; (bx, by) = _xy[b]; (qx, qy) = _xy[c];
+            var t = _tris.Count;
+            _owner[(a, b)] = t; _owner[(b, c)] = t; _owner[(c, a)] = t;
             var d = 2 * (ax * (by - qy) + bx * (qy - ay) + qx * (ay - by));
-            if (Math.Abs(d) < 1e-300) { tris.Add((a, b, c, 0, 0, double.PositiveInfinity, true)); flat.Add(t); return; }
+            if (Math.Abs(d) < 1e-300) { _tris.Add((a, b, c, 0, 0, double.PositiveInfinity, true)); _flat.Add(t); return; }
             double a2 = ax * ax + ay * ay, b2 = bx * bx + by * by, c2 = qx * qx + qy * qy;
             var ox = (a2 * (by - qy) + b2 * (qy - ay) + c2 * (ay - by)) / d;
             var oy = (a2 * (qx - bx) + b2 * (ax - qx) + c2 * (bx - ax)) / d;
-            tris.Add((a, b, c, ox, oy, (ax - ox) * (ax - ox) + (ay - oy) * (ay - oy), true));
+            _tris.Add((a, b, c, ox, oy, (ax - ox) * (ax - ox) + (ay - oy) * (ay - oy), true));
         }
+
         bool InCircle(int t, double px, double py)
         {
-            var tr = tris[t];
+            var tr = _tris[t];
             var dx = px - tr.X; var dy = py - tr.Y;
             return !(dx * dx + dy * dy > tr.R2 * (1 + 1e-12));
         }
-        double Side(int a, int b, double px, double py) => (xy[b].X - xy[a].X) * (py - xy[a].Y) - (xy[b].Y - xy[a].Y) * (px - xy[a].X);
+
+        double Side(int a, int b, double px, double py) => (_xy[b].X - _xy[a].X) * (py - _xy[a].Y) - (_xy[b].Y - _xy[a].Y) * (px - _xy[a].X);
+
         // The triangle the point is in, walked to from the last one made; -1 when the walk gets lost.
         int Locate(double px, double py)
         {
-            var t = tris.Count - 1;
-            for (var steps = 0; steps <= tris.Count; steps++)
+            var t = _tris.Count - 1;
+            for (var steps = 0; steps <= _tris.Count; steps++)
             {
-                var tr = tris[t];
+                var tr = _tris[t];
                 var next = -1;
                 foreach (var (a, b) in new[] { (tr.A, tr.B), (tr.B, tr.C), (tr.C, tr.A) })
-                    if (Side(a, b, px, py) < 0 && owner.TryGetValue((b, a), out var nb)) { next = nb; break; }
+                    if (Side(a, b, px, py) < 0 && _owner.TryGetValue((b, a), out var nb)) { next = nb; break; }
                 if (next < 0) return t;
                 t = next;
             }
             return -1;
         }
-        Add(n, n + 1, n + 2);
-        var cavity = new List<int>();
-        var queued = new HashSet<int>();
-        var stack = new Stack<int>();
-        foreach (var i in Enumerable.Range(0, n).OrderBy(i => xy[i].X).ThenBy(i => xy[i].Y))
+
+        public void Insert(IEnumerable<int> batch)
         {
-            var (px, py) = xy[i];
-            // The triangles whose circle holds the point: from the one it is in, across their edges (a star around it), and those in a line.
-            cavity.Clear(); queued.Clear(); stack.Clear();
-            // The one it is in always goes, even when the rounding of its circle (far from the origin) says the point is just outside.
-            var seed = Locate(px, py);
-            if (seed < 0) for (var t = 0; t < tris.Count; t++) if (tris[t].Alive && InCircle(t, px, py)) { seed = t; break; }
-            if (seed >= 0) { stack.Push(seed); queued.Add(seed); }
-            foreach (var t in flat) if (tris[t].Alive && queued.Add(t)) stack.Push(t);
-            while (stack.TryPop(out var t))
+            var cavity = new List<int>();
+            var queued = new HashSet<int>();
+            var stack = new Stack<int>();
+            foreach (var i in batch.OrderBy(i => _xy[i].X).ThenBy(i => _xy[i].Y))
             {
-                if (t != seed && !InCircle(t, px, py)) continue;
-                cavity.Add(t);
-                var tr = tris[t];
-                foreach (var (a, b) in new[] { (tr.A, tr.B), (tr.B, tr.C), (tr.C, tr.A) })
-                    if (owner.TryGetValue((b, a), out var nb) && tris[nb].Alive && queued.Add(nb)) stack.Push(nb);
-            }
-            // In the order they were made, so the triangles come out as a scan of them all would make them.
-            cavity.Sort();
-            var edges = new Dictionary<(int, int), int>();
-            foreach (var t in cavity)
-            {
-                var tr = tris[t];
-                tris[t] = tr with { Alive = false };
-                foreach (var (a, b) in new[] { (tr.A, tr.B), (tr.B, tr.C), (tr.C, tr.A) })
+                _inserted++;
+                var (px, py) = _xy[i];
+                // The triangles whose circle holds the point: from the one it is in, across their edges (a star around it), and those in a line.
+                cavity.Clear(); queued.Clear(); stack.Clear();
+                // The one it is in always goes, even when the rounding of its circle (far from the origin) says the point is just outside.
+                var seed = Locate(px, py);
+                if (seed < 0) for (var t = 0; t < _tris.Count; t++) if (_tris[t].Alive && InCircle(t, px, py)) { seed = t; break; }
+                if (seed >= 0) { stack.Push(seed); queued.Add(seed); }
+                foreach (var t in _flat) if (_tris[t].Alive && queued.Add(t)) stack.Push(t);
+                while (stack.TryPop(out var t))
                 {
-                    if (owner.TryGetValue((a, b), out var o) && o == t) owner.Remove((a, b));
-                    var k = a < b ? (a, b) : (b, a);
-                    edges[k] = edges.GetValueOrDefault(k) + 1;
+                    if (t != seed && !InCircle(t, px, py)) continue;
+                    cavity.Add(t);
+                    var tr = _tris[t];
+                    foreach (var (a, b) in new[] { (tr.A, tr.B), (tr.B, tr.C), (tr.C, tr.A) })
+                        if (_owner.TryGetValue((b, a), out var nb) && _tris[nb].Alive && queued.Add(nb)) stack.Push(nb);
                 }
+                // In the order they were made, so the triangles come out as a scan of them all would make them.
+                cavity.Sort();
+                var edges = new Dictionary<(int, int), int>();
+                foreach (var t in cavity)
+                {
+                    var tr = _tris[t];
+                    _tris[t] = tr with { Alive = false };
+                    foreach (var (a, b) in new[] { (tr.A, tr.B), (tr.B, tr.C), (tr.C, tr.A) })
+                    {
+                        if (_owner.TryGetValue((a, b), out var o) && o == t) _owner.Remove((a, b));
+                        var k = a < b ? (a, b) : (b, a);
+                        edges[k] = edges.GetValueOrDefault(k) + 1;
+                    }
+                }
+                _flat.RemoveAll(t => !_tris[t].Alive);
+                // The cavity's boundary: edges only one removed triangle had.
+                foreach (var ((a, b), count) in edges) if (count == 1) Add(a, b, i);
             }
-            flat.RemoveAll(t => !tris[t].Alive);
-            // The cavity's boundary: edges only one removed triangle had.
-            foreach (var ((a, b), count) in edges) if (count == 1) Add(a, b, i);
         }
-        var result = tris.Where(t => t.Alive && t.A < n && t.B < n && t.C < n).Select(t => (t.A, t.B, t.C)).ToList();
-        if (constraints is { Count: > 0 })
-            result = Constrained.Apply(pts, result, constraints.Where(c => c.A >= 0 && c.B >= 0 && c.A < map.Length && c.B < map.Length)
-                .Select(c => (map[c.A], map[c.B])).Where(c => c.Item1 >= 0 && c.Item2 >= 0 && c.Item1 != c.Item2).ToList());
-        return new Tin(pts, result);
+
+        /// <summary>The live triangles between the points (none on the super triangle's corners).</summary>
+        public List<(int A, int B, int C)> Triangles() =>
+            _tris.Where(t => t.Alive && t.A < _n && t.B < _n && t.C < _n).Select(t => (t.A, t.B, t.C)).ToList();
     }
 
     /// <summary>
@@ -228,9 +329,12 @@ public sealed class Terrain
     int Cy(double y) => Math.Clamp((int)Math.Floor((y - _minY) / _cell), 0, _ny - 1);
 
     /// <summary>The ground's elevation at a point in plan, or null outside the TIN.</summary>
-    public double? ElevationAt(double x, double y)
+    public double? ElevationAt(double x, double y) => TriangleAt(x, y).Z;
+
+    /// <summary>The triangle a point in plan is in (its index, −1 outside the TIN) and the ground's elevation there.</summary>
+    public (int Triangle, double? Z) TriangleAt(double x, double y)
     {
-        if (Tin.Triangles.Count == 0 || x < Bounds.Min.X - 1e-9 || x > Bounds.Max.X + 1e-9 || y < Bounds.Min.Y - 1e-9 || y > Bounds.Max.Y + 1e-9) return null;
+        if (Tin.Triangles.Count == 0 || x < Bounds.Min.X - 1e-9 || x > Bounds.Max.X + 1e-9 || y < Bounds.Min.Y - 1e-9 || y > Bounds.Max.Y + 1e-9) return (-1, null);
         var p = Tin.Points;
         foreach (var t in _cells[Cy(y) * _nx + Cx(x)] ?? [])
         {
@@ -242,9 +346,39 @@ public sealed class Terrain
             var l2 = ((c.Y - a.Y) * (x - c.X) + (a.X - c.X) * (y - c.Y)) / d;
             var l3 = 1 - l1 - l2;
             const double e = -1e-9;
-            if (l1 >= e && l2 >= e && l3 >= e) return l1 * a.Z + l2 * b.Z + l3 * c.Z;
+            if (l1 >= e && l2 >= e && l3 >= e) return (t, l1 * a.Z + l2 * b.Z + l3 * c.Z);
         }
-        return null;
+        return (-1, null);
+    }
+
+    /// <summary>The triangles whose box in plan meets the box from <paramref name="min"/> to <paramref name="max"/> (from the grid: each once).</summary>
+    public IEnumerable<int> TrianglesIn(Vec2 min, Vec2 max)
+    {
+        if (Tin.Triangles.Count == 0 || max.X < Bounds.Min.X || min.X > Bounds.Max.X || max.Y < Bounds.Min.Y || min.Y > Bounds.Max.Y) yield break;
+        var seen = new HashSet<int>();
+        var p = Tin.Points;
+        for (var i = Cx(min.X); i <= Cx(max.X); i++)
+            for (var j = Cy(min.Y); j <= Cy(max.Y); j++)
+                foreach (var t in _cells[j * _nx + i] ?? [])
+                {
+                    if (!seen.Add(t)) continue;
+                    var (a, b, c) = Tin.Triangles[t];
+                    if (Math.Max(p[a].X, Math.Max(p[b].X, p[c].X)) < min.X || Math.Min(p[a].X, Math.Min(p[b].X, p[c].X)) > max.X
+                        || Math.Max(p[a].Y, Math.Max(p[b].Y, p[c].Y)) < min.Y || Math.Min(p[a].Y, Math.Min(p[b].Y, p[c].Y)) > max.Y) continue;
+                    yield return t;
+                }
+    }
+
+    /// <summary>The lowest and the highest corner of the triangles meeting a box in plan (what the ground there reaches, at most); null when none does.</summary>
+    public (double Min, double Max)? HeightsIn(Vec2 min, Vec2 max)
+    {
+        double lo = double.PositiveInfinity, hi = double.NegativeInfinity;
+        foreach (var t in TrianglesIn(min, max))
+        {
+            var (a, b, c) = Tin.Triangles[t];
+            foreach (var v in new[] { a, b, c }) { lo = Math.Min(lo, Tin.Points[v].Z); hi = Math.Max(hi, Tin.Points[v].Z); }
+        }
+        return lo <= hi ? (lo, hi) : null;
     }
 
     /// <summary>Where a line from <paramref name="origin"/> along <paramref name="dir"/> (its plan run at most <paramref name="maxRun"/>) first meets the ground; null when it leaves the TIN or never does.</summary>
@@ -321,16 +455,62 @@ public sealed class Terrain
 /// <summary>
 /// Constraint edges forced into a triangulation by flipping the edges that
 /// cross them (Sloan, 1993), then Lawson's flips to bring back the Delaunay
-/// condition everywhere but across a constraint.
+/// condition everywhere but across a constraint. The points and the triangles
+/// are kept in a plan grid, so a segment looks only at the cells it passes
+/// through (a flip keeps its two triangles inside the four points it turns).
 /// </summary>
 static class Constrained
 {
     public static List<(int A, int B, int C)> Apply(IReadOnlyList<Vec3> pts, List<(int A, int B, int C)> input, IReadOnlyList<(int A, int B)> constraints)
     {
         var tris = input.Select(t => new[] { t.A, t.B, t.C }).ToList();
+        if (constraints.Count == 0 || tris.Count == 0) return input;
         var owner = new Dictionary<(int, int), int>();
         void Own(int t) { var x = tris[t]; owner[(x[0], x[1])] = t; owner[(x[1], x[2])] = t; owner[(x[2], x[0])] = t; }
         for (var t = 0; t < tris.Count; t++) Own(t);
+
+        // The grid: over the points the triangles use, about two triangles a cell.
+        double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
+        foreach (var x in tris) foreach (var v in x) { minX = Math.Min(minX, pts[v].X); maxX = Math.Max(maxX, pts[v].X); minY = Math.Min(minY, pts[v].Y); maxY = Math.Max(maxY, pts[v].Y); }
+        var cell = Math.Max(Math.Sqrt(Math.Max((maxX - minX) * (maxY - minY), 1e-12) / Math.Max(tris.Count, 1)) * 1.5, 1e-6);
+        var nx = Math.Clamp((int)Math.Ceiling((maxX - minX) / cell) + 1, 1, 4096);
+        var ny = Math.Clamp((int)Math.Ceiling((maxY - minY) / cell) + 1, 1, 4096);
+        double cw = Math.Max((maxX - minX) / Math.Max(nx - 1, 1), 1e-9), ch = Math.Max((maxY - minY) / Math.Max(ny - 1, 1), 1e-9);
+        int Cx(double x) => Math.Clamp((int)Math.Floor((x - minX) / cw), 0, nx - 1);
+        int Cy(double y) => Math.Clamp((int)Math.Floor((y - minY) / ch), 0, ny - 1);
+        var triCells = new List<int>?[nx * ny];
+        var pointCells = new List<int>?[nx * ny];
+        void Register(int t, int a, int b, int c, int d = -1)
+        {
+            var xs = d >= 0 ? new[] { pts[a].X, pts[b].X, pts[c].X, pts[d].X } : [pts[a].X, pts[b].X, pts[c].X];
+            var ys = d >= 0 ? new[] { pts[a].Y, pts[b].Y, pts[c].Y, pts[d].Y } : [pts[a].Y, pts[b].Y, pts[c].Y];
+            for (int i = Cx(xs.Min()), i1 = Cx(xs.Max()); i <= i1; i++)
+                for (int j = Cy(ys.Min()), j1 = Cy(ys.Max()); j <= j1; j++)
+                    (triCells[j * nx + i] ??= []).Add(t);
+        }
+        for (var t = 0; t < tris.Count; t++) Register(t, tris[t][0], tris[t][1], tris[t][2]);
+        var used = new HashSet<int>(tris.SelectMany(x => x));
+        foreach (var p in used) (pointCells[Cy(pts[p].Y) * nx + Cx(pts[p].X)] ??= []).Add(p);
+        // The cells a segment passes through: in each row of cells, those between where it enters and leaves the row.
+        IEnumerable<int> Along(int a, int b)
+        {
+            var (p, q) = (pts[a], pts[b]);
+            for (int j = Cy(Math.Min(p.Y, q.Y)), j1 = Cy(Math.Max(p.Y, q.Y)); j <= j1; j++)
+            {
+                double x0, x1;
+                if (Math.Abs(q.Y - p.Y) < 1e-12) (x0, x1) = (Math.Min(p.X, q.X), Math.Max(p.X, q.X));
+                else
+                {
+                    var (ya, yb) = (Math.Max(Math.Min(p.Y, q.Y), minY + j * ch), Math.Min(Math.Max(p.Y, q.Y), minY + (j + 1) * ch));
+                    if (j == 0) ya = Math.Min(p.Y, q.Y);
+                    if (j == ny - 1) yb = Math.Max(p.Y, q.Y);
+                    var (xa, xb) = (p.X + (q.X - p.X) * (ya - p.Y) / (q.Y - p.Y), p.X + (q.X - p.X) * (yb - p.Y) / (q.Y - p.Y));
+                    (x0, x1) = (Math.Min(xa, xb), Math.Max(xa, xb));
+                }
+                for (int i = Cx(x0 - 1e-9), i1 = Cx(x1 + 1e-9); i <= i1; i++) yield return j * nx + i;
+            }
+        }
+
         var fixedEdges = new HashSet<(int, int)>();
         static (int, int) Key(int a, int b) => a < b ? (a, b) : (b, a);
         double Orient(int a, int b, int c) => (pts[b].X - pts[a].X) * (pts[c].Y - pts[a].Y) - (pts[b].Y - pts[a].Y) * (pts[c].X - pts[a].X);
@@ -349,20 +529,34 @@ static class Constrained
             tris[t1] = [u, w2, w1];
             tris[t2] = [w2, v, w1];
             Own(t1); Own(t2);
+            Register(t1, u, v, w1, w2);
+            Register(t2, u, v, w1, w2);
             return (w1, w2);
         }
         var touched = new List<(int, int)>();
+        var candidates = new HashSet<int>();
         void Insert(int a, int b, int depth)
         {
             if (Exists(a, b)) { fixedEdges.Add(Key(a, b)); return; }
             // A point on the segment splits it.
             var ab = new Vec2(pts[b].X - pts[a].X, pts[b].Y - pts[a].Y);
             var len2 = ab.X * ab.X + ab.Y * ab.Y;
-            var on = Enumerable.Range(0, pts.Count).Where(p => p != a && p != b && Math.Abs(Orient(a, b, p)) <= 1e-9 * len2)
+            var on = Along(a, b).SelectMany(c => pointCells[c] ?? []).Where(p => p != a && p != b && Math.Abs(Orient(a, b, p)) <= 1e-9 * len2)
                 .Select(p => (p, s: ((pts[p].X - pts[a].X) * ab.X + (pts[p].Y - pts[a].Y) * ab.Y) / len2)).Where(x => x.s > 1e-9 && x.s < 1 - 1e-9)
                 .OrderBy(x => x.s).Select(x => x.p).FirstOrDefault(-1);
             if (on >= 0 && depth < 1000) { Insert(a, on, depth + 1); Insert(on, b, depth + 1); return; }
-            var queue = new Queue<(int, int)>(owner.Keys.Where(e => e.Item1 < e.Item2 || !owner.ContainsKey((e.Item2, e.Item1))).Where(e => Crosses(e.Item1, e.Item2, a, b)));
+            // The edges that cross it, from the triangles in the cells it passes through.
+            candidates.Clear();
+            foreach (var c in Along(a, b)) foreach (var t in triCells[c] ?? []) candidates.Add(t);
+            var crossing = new List<(int, int)>();
+            var listed = new HashSet<(int, int)>();
+            foreach (var t in candidates.Order())
+            {
+                var x = tris[t];
+                foreach (var e in new[] { (x[0], x[1]), (x[1], x[2]), (x[2], x[0]) })
+                    if ((e.Item1 < e.Item2 || !owner.ContainsKey((e.Item2, e.Item1))) && Crosses(e.Item1, e.Item2, a, b) && listed.Add(Key(e.Item1, e.Item2))) crossing.Add(e);
+            }
+            var queue = new Queue<(int, int)>(crossing);
             var guard = 0;
             while (queue.Count > 0 && guard++ < 100000)
             {

@@ -195,7 +195,10 @@ public class CivilTests
     {
         // A 3 × 3 TIN, step 20, z = 0.1 x, as LandXML writes it: northing first.
         var pts = string.Join("", from i in Enumerable.Range(0, 3) from j in Enumerable.Range(0, 3) select $"<P id=\"{i * 3 + j + 1}\">{j * 20} {i * 20} {0.1 * i * 20}</P>");
-        var xml = $"<LandXML xmlns=\"http://www.landxml.org/schema/LandXML-1.2\"><Surfaces><Surface name=\"Existing ground\"><Definition surfType=\"TIN\"><Pnts>{pts}</Pnts><Faces><F>1 2 4</F></Faces></Definition></Surface></Surfaces></LandXML>";
+        // Its eight faces, by point id (the terrain is the file's triangles, audit G9).
+        var faces = string.Concat(from i in Enumerable.Range(0, 2) from j in Enumerable.Range(0, 2) let a = i * 3 + j + 1
+                                  select $"<F>{a} {a + 3} {a + 4}</F><F>{a} {a + 4} {a + 1}</F>");
+        var xml = $"<LandXML xmlns=\"http://www.landxml.org/schema/LandXML-1.2\"><Surfaces><Surface name=\"Existing ground\"><Definition surfType=\"TIN\"><Pnts>{pts}</Pnts><Faces>{faces}</Faces></Definition></Surface></Surfaces></LandXML>";
         var s = LandXml.Surfaces(xml).Single();
         Assert.Equal(9, s.Points.Count);
         Assert.Equal(new Vec3(40, 0, 4), s.Points[6]);

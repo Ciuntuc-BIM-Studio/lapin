@@ -165,12 +165,8 @@ public static class GeoImportCommands
             ctx.Replace(t0.With(attrs: attrs));
             return new JsonObject { ["id"] = t0.Id, ["points"] = pts.Count };
         }
-        var earth = Materials.Ensure(ctx, "Earth", Terrains.Color);
         var datum = Datum(ctx, a, pts.Select(p => p.Z));
-        var e = new Entity(ctx.NewId(), IfcClass.GeographicElement, name, new JsonObject
-        {
-            ["points"] = Terrains.PointsJson(pts), ["datum"] = datum, ["interval"] = 0.5, ["majorEvery"] = 5, ["depth"] = 2, ["material"] = earth.Id,
-        }, Terrains.Predefined);
+        var e = new Entity(ctx.NewId(), IfcClass.GeographicElement, name, Terrains.NewAttrs(ctx, pts, datum), Terrains.Predefined);
         ctx.Add(e);
         Spatial.Contain(ctx, Storey(ctx, a), e.Id);
         return new JsonObject { ["id"] = e.Id, ["points"] = pts.Count, ["datum"] = datum };

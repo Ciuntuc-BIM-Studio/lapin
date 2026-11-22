@@ -17,17 +17,13 @@ public static class SiteCommands
             var (p, q) = (Args.Point(a, "x1", "y1"), Args.Point(a, "x2", "y2"));
             if (Math.Abs(q.X - p.X) < 0.5 || Math.Abs(q.Y - p.Y) < 0.5) throw new CommandException("A flat terrain needs a rectangle of half a metre at least.");
             var z = Json.Number(a["elevation"]) ?? 0;
-            var earth = Materials.Ensure(ctx, "Earth", Terrains.Color);
             double x0 = Math.Min(p.X, q.X), x1 = Math.Max(p.X, q.X), y0 = Math.Min(p.Y, q.Y), y1 = Math.Max(p.Y, q.Y);
             // A point every few metres, so the brush has something to work on.
             var pts = new List<Vec3>();
             var step = Math.Max(2, Math.Min(x1 - x0, y1 - y0) / 8);
             for (var x = x0; x <= x1 + 1e-9; x += step) for (var y = y0; y <= y1 + 1e-9; y += step) pts.Add(new Vec3(Math.Min(x, x1), Math.Min(y, y1), z));
             foreach (var cx in new[] { x0, x1 }) foreach (var cy in new[] { y0, y1 }) pts.Add(new Vec3(cx, cy, z));
-            var attrs = new JsonObject
-            {
-                ["points"] = Terrains.PointsJson(pts), ["datum"] = 0.0, ["interval"] = Terrains.Interval(Json.Number(a["interval"])) ?? 0.5, ["majorEvery"] = 5, ["depth"] = Json.Number(a["depth"]) ?? 2, ["material"] = earth.Id,
-            };
+            var attrs = Terrains.NewAttrs(ctx, pts, 0.0, Json.Number(a["interval"]), depth: Json.Number(a["depth"]));
             var t = new Entity(ctx.NewId(), IfcClass.GeographicElement, ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : "Terrain", attrs, Terrains.Predefined);
             ctx.Add(t);
             Spatial.Contain(ctx, storeyId, t.Id);
@@ -149,8 +145,8 @@ public static class SiteCommands
             if (corners.Count < 3) corners = Terrains.BoundaryLoop(Terrains.Of(t));
             if (corners.Count < 3) throw new CommandException("The terrain has no boundary to split.");
             var (left, right) = OutlineCuts.Split(corners, rises, p, q);
-            var (lc, lr) = ArcOutline.Check(left.Corners, left.Rises, "A terrain boundary");
-            var (rc, rr) = ArcOutline.Check(right.Corners, right.Rises, "A terrain boundary");
+            var (lc, lr) = ArcOutline.Check(left.Corners, left.Rises, "A terrain boundary", simple: true);
+            var (rc, rr) = ArcOutline.Check(right.Corners, right.Rises, "A terrain boundary", simple: true);
             // The larger half keeps the terrain.
             if (Math.Abs(Polygon2.SignedArea(rc)) > Math.Abs(Polygon2.SignedArea(lc))) (lc, lr, rc, rr) = (rc, rr, lc, lr);
             // The parcel (the property line, not the ground) stays whole, on the half that holds its centre; it was
@@ -215,13 +211,21 @@ public static class SiteCommands
             var breaklines = new JsonArray();
             var sculpts = new JsonArray();
             var cage = new List<Vec2>();
+            // The files' triangles, when every one has its own: each one's renumbered onto the merged points.
+            var faces = list.All(tr => Terrains.FacesOf(tr).Count > 0) ? new List<(int, int, int)>() : null;
+            var at = new Dictionary<(long, long), int>();
             static (long, long) Key(Vec3 p) => ((long)Math.Round(p.X * 1e6), (long)Math.Round(p.Y * 1e6));
             foreach (var tr in list)
             {
                 // Heights are kept as model heights: a survey height z read from datum d is z - d + datum here.
                 var d = tr.Num("datum");
+                var mine = new List<int>();
                 foreach (var p in Terrains.Points(tr))
-                    if (seen.Add(Key(p))) pts.Add(new Vec3(p.X, p.Y, p.Z - d + datum));
+                {
+                    if (seen.Add(Key(p))) { at[Key(p)] = pts.Count; pts.Add(new Vec3(p.X, p.Y, p.Z - d + datum)); }
+                    mine.Add(at[Key(p)]);
+                }
+                faces?.AddRange(Terrains.FacesOf(tr).Select(f => (mine[f.A], mine[f.B], mine[f.C])));
                 // Each one's existing surface: its snapshot, else its survey (what its own cut and fill were measured against).
                 foreach (var p in Terrains.ExistingPoints(tr))
                     if (seenExisting.Add(Key(p))) existing.Add(new Vec3(p.X, p.Y, p.Z - d + datum));
@@ -248,6 +252,17 @@ public static class SiteCommands
                     ArcOutline.Write(attrs, outline.Rises, Terrains.BoundaryArcs);
                 }
                 else problems.Add((JsonNode)MergedBoundaryProblem);
+            }
+            if (faces is { Count: > 0 }) attrs["faces"] = Terrains.FacesJson(faces.Distinct()); else attrs.Remove("faces");
+            attrs.Remove("existingFaces");
+            // The parcel: the one there is; of several, the first terrain's that has one, and the result says so.
+            var parcels = list.Where(tr => ArcOutline.CornersOf(tr, "parcel").Count >= 3).ToList();
+            attrs.Remove("parcel"); attrs.Remove(Terrains.ParcelArcs);
+            if (parcels.Count > 0)
+            {
+                attrs["parcel"] = parcels[0].Attrs["parcel"]!.DeepClone();
+                if (parcels[0].Attrs[Terrains.ParcelArcs] is { } pa) attrs[Terrains.ParcelArcs] = pa.DeepClone();
+                if (parcels.Count > 1) problems.Add((JsonNode)$"The terrains had {parcels.Count} parcels and a terrain keeps one: the merged terrain keeps {parcels[0].Name}'s. Draw the parcel again (Parcel) if it is another.");
             }
             if (breaklines.Count > 0) attrs["breaklines"] = breaklines; else attrs.Remove("breaklines");
             if (sculpts.Count > 0) attrs["sculpts"] = sculpts; else attrs.Remove("sculpts");
@@ -320,12 +335,15 @@ public static class SiteCommands
             if (a["reset"] is JsonValue rv && rv.TryGetValue<bool>(out var reset) && reset)
             {
                 attrs.Remove("existingPoints");
+                attrs.Remove("existingFaces");
             }
             else
             {
                 var datum = t.Num("datum");
-                var current = Terrains.Of(t).Tin.Points.Select(p => new Vec3(p.X, p.Y, p.Z + datum)).ToList();
-                attrs["existingPoints"] = Terrains.PointsJson(current);
+                var tin = Terrains.Of(t).Tin;
+                attrs["existingPoints"] = Terrains.PointsJson(tin.Points.Select(p => new Vec3(p.X, p.Y, p.Z + datum)));
+                // Its triangles too: the existing ground is this surface exactly, not the points triangulated again.
+                attrs["existingFaces"] = Terrains.FacesJson(tin.Triangles);
             }
             ctx.Replace(t.With(attrs: attrs));
             return null;
@@ -387,7 +405,9 @@ public static class SiteCommands
             var t = TerrainAt(ctx.Model, a, xy);
             var pts = Terrains.Points(t);
             var datum = t.Num("datum");
-            var z = Json.Number(a["z"]) is { } exact ? exact + datum : (Terrains.Of(t).ElevationAt(xy.X, xy.Y) ?? 0) + datum;
+            // Without its height it takes the ground's there; off the ground there is none to take.
+            var z = Json.Number(a["z"]) is { } exact ? exact + datum
+                : (Terrains.Of(t).ElevationAt(xy.X, xy.Y) ?? throw new CommandException("The point is outside the terrain: give its elevation.")) + datum;
             pts.Add(new Vec3(xy.X, xy.Y, z));
             var attrs = t.CloneAttrs();
             attrs["points"] = Terrains.PointsJson(pts);
@@ -406,6 +426,13 @@ public static class SiteCommands
             if (!Tin.Spans(pts)) throw new CommandException("The terrain needs at least three points that are not in a line.");
             var attrs = t.CloneAttrs();
             attrs["points"] = Terrains.PointsJson(pts);
+            // The file's triangles: those on the point go, the others renumbered.
+            if (Terrains.FacesOf(t) is { Count: > 0 } faces)
+            {
+                int N(int i) => i > idx ? i - 1 : i;
+                var kept = faces.Where(f => f.A != idx && f.B != idx && f.C != idx).Select(f => (N(f.A), N(f.B), N(f.C))).ToList();
+                if (kept.Count > 0) attrs["faces"] = Terrains.FacesJson(kept); else attrs.Remove("faces");
+            }
             Cage.Prune(attrs, pts);
             ctx.Replace(t.With(attrs: attrs));
             return new JsonObject { ["points"] = pts.Count };
@@ -499,7 +526,7 @@ public static class SiteCommands
         r.Query("landXml", (q, a) =>
         {
             var ids = a["ids"] is JsonArray arr ? arr.Select(x => (string?)x).OfType<string>().ToHashSet() : null;
-            var terrains = q.Model.OfClass(IfcClass.GeographicElement).Where(t => t.PredefinedType == Terrains.Predefined && (ids == null || ids.Contains(t.Id))).ToList();
+            var terrains = Terrains.All(q.Model).Where(t => ids == null || ids.Contains(t.Id)).ToList();
             var alignments = LandXml.AlignmentSources.SelectMany(s => s(q.Model)).Where(x => ids == null || ids.Contains(x.Id)).ToList();
             if (terrains.Count == 0 && alignments.Count == 0) throw new CommandException("The project has no terrain or alignment to export.");
             var text = LandXml.Write(terrains.Select(t => (t.Name, Terrains.Of(t).Tin, t.Num("datum"))).ToList(), alignments);
@@ -584,7 +611,7 @@ public static class SiteCommands
             string name;
             if (a["points"] != null)
             {
-                var contour = Terrains.CheckOutline(Args.Points(a));
+                var contour = Terrains.CheckOutline(Args.Points(a), "A planting zone");
                 attrs["contour"] = Terrains.ContourJson(contour);
                 attrs["density"] = Plantings.Density(Json.Number(a["density"]) ?? 3);
                 name = $"Planting {ctx.Model.OfClass(Plantings.Class).Count(x => Plantings.IsZone(x)) + 1}";
@@ -606,7 +633,7 @@ public static class SiteCommands
         {
             var e = Spatial.Require(ctx.Model, (string?)a["id"], Plantings.Class);
             var attrs = e.CloneAttrs();
-            if (a["points"] != null) attrs["contour"] = Terrains.ContourJson(Terrains.CheckOutline(Args.Points(a)));
+            if (a["points"] != null) attrs["contour"] = Terrains.ContourJson(Terrains.CheckOutline(Args.Points(a), "A planting zone"));
             if (a.ContainsKey("x") && a.ContainsKey("y")) { var at = Args.Point(a, "x", "y"); attrs["at"] = new JsonArray(at.X, at.Y); }
             foreach (var k in new[] { "density", "seed" }) if (Json.Number(a[k]) is { } v) attrs[k] = k == "density" ? Plantings.Density(v) : v;
             if (a["species"] is JsonArray arr) attrs["species"] = Plantings.SpeciesJson(arr.Select(Plantings.Parse).OfType<Species>());
@@ -637,7 +664,7 @@ public static class SiteCommands
         if (OutlineUnion.Of(loops)?.Single is not { } one) return null;
         try
         {
-            var (c, r) = ArcOutline.Check(one.Corners, one.Rises, "A terrain boundary");
+            var (c, r) = ArcOutline.Check(one.Corners, one.Rises, "A terrain boundary", simple: true);
             return new OutlineUnion.Loop(c, r);
         }
         catch (CommandException) { return null; }
@@ -672,15 +699,13 @@ public static class SiteCommands
         return path[^1];
     }
 
-    static Entity Terrain(IModelView m, string? id) =>
-        m.Get(id ?? "") is { Class: IfcClass.GeographicElement } t && t.PredefinedType == Terrains.Predefined ? t : throw new CommandException("There is no such terrain.");
+    static Entity Terrain(IModelView m, string? id) => Terrains.Require(m, id);
 
     /// <summary>The terrain named, else the one under the point, else the project's first.</summary>
     static Entity TerrainAt(IModelView m, JsonObject a, Vec2 at)
     {
         if ((string?)a["terrainId"] is { } id) return Terrain(m, id);
-        var terrains = m.OfClass(IfcClass.GeographicElement).Where(t => t.PredefinedType == Terrains.Predefined).ToList();
-        return terrains.FirstOrDefault(t => Terrains.Of(t).ElevationAt(at.X, at.Y) != null) ?? terrains.FirstOrDefault() ?? throw new CommandException("The project has no terrain.");
+        return Terrains.Under(m, at) ?? Terrains.All(m).FirstOrDefault() ?? throw new CommandException("The project has no terrain.");
     }
 
     static IReadOnlyList<Vec2> Polyline(JsonObject a)
@@ -695,7 +720,7 @@ public static class SiteCommands
     {
         var path = Polyline(a);
         var storeyId = StoreyId(ctx.Model, a);
-        var terrain = ctx.Model.OfClass(IfcClass.GeographicElement).FirstOrDefault(t => t.PredefinedType == Terrains.Predefined && Terrains.Of(t).ElevationAt(path[0].X, path[0].Y) != null);
+        var terrain = Terrains.Under(ctx.Model, path[0]);
         var c = new Paths.Courses(Json.Number(a["width"]) ?? 1.5, Json.Number(a["surfaceThickness"]) ?? 0.06, Json.Number(a["baseThickness"]) ?? 0.2,
             a["kerb"] is JsonValue kv && kv.TryGetValue<bool>(out var kerb) && kerb, Json.Number(a["kerbHeight"]) ?? 0.1, Json.Number(a["kerbWidth"]) ?? 0.1);
         var surface = Materials.Ensure(ctx, (string?)a["surfaceMaterial"] ?? "Paving stone", Paths.Color);

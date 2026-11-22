@@ -38,12 +38,31 @@ public static class Ditches
         return [new("ditch", [new(-bottom / 2, zb), new(bottom / 2, zb), new(top, zt), new(-top, zt)])];
     }
 
-    static Func<double, double?>? DesignOf(IModelView? m, Entity e, Chain c)
+    public static Func<double, double>? DesignOf(IModelView? m, Entity e, Chain c)
     {
         var spec = CorridorSpec.Of(e);
         if (spec.Mode != "design" || m == null) return null;
-        var red = Corridors.RedLine(m, e, c);
-        return s => red(s);
+        return Corridors.RedLine(m, e, c);
+    }
+
+    /// <summary>
+    /// The ground as the ditch leaves it at <paramref name="p"/>, the ground being <paramref name="g"/> there: its section
+    /// at the nearest station, as <see cref="Cutters"/> cuts it (the bottom at the red line <paramref name="design"/>, else
+    /// a depth under the ground on the axis, the slopes rising 1 : n from it), where that is under the ground; null where
+    /// it leaves the ground as it is (beside it, past its ends).
+    /// </summary>
+    public static double? DesignedAt(Entity e, Chain c, Func<double, double>? design, Terrain t, Vec2 p, double g)
+    {
+        if (c.Segments == 0) return null;
+        var (s, off) = c.Project(p);
+        var axis = c.PointAt(s);
+        // Past an end the nearest station is the end, the point not square to it.
+        if ((p - axis).Length > Math.Abs(off) + 1e-6) return null;
+        var (depth, bottom, slope) = Section(e);
+        var zb = design?.Invoke(s) ?? (t.ElevationAt(axis.X, axis.Y) ?? g) - depth;
+        var across = Math.Abs(off) - bottom / 2;
+        var h = across <= 0 ? zb : slope > 0 ? zb + across / slope : double.PositiveInfinity;
+        return h < g ? h : null;
     }
 
     /// <summary>The ditch's section at a station, cut at the ground (what the configurator shows).</summary>

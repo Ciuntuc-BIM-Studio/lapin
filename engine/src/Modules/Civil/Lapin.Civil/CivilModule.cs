@@ -100,13 +100,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             if (pts.Count < 3) throw new CommandException("The terrain needs at least three points.");
             if (!Tin.Spans(pts)) throw new CommandException("The terrain needs at least three points that are not in a line.");
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : "Terrain";
-            var earth = Materials.Ensure(ctx, "Earth", Terrains.Color);
-            var attrs = new JsonObject
-            {
-                ["points"] = Terrains.PointsJson(pts), ["datum"] = Json.Number(a["datum"]) ?? 0,
-                ["interval"] = Terrains.Interval(Json.Number(a["interval"])) ?? 0.5, ["majorEvery"] = Json.Number(a["majorEvery"]) ?? 5,
-                ["depth"] = Json.Number(a["depth"]) ?? 2, ["material"] = earth.Id,
-            };
+            var attrs = Terrains.NewAttrs(ctx, pts, Json.Number(a["datum"]) ?? 0, Json.Number(a["interval"]), Json.Number(a["majorEvery"]), Json.Number(a["depth"]));
             if (a["boundary"] is JsonArray bArr && bArr.Count >= 3)
             {
                 var (bPts, bArcs) = Terrains.OutlineArg(new JsonObject { ["points"] = bArr.DeepClone(), ["arcs"] = a["arcs"]?.DeepClone() }, null, "A terrain boundary");
@@ -128,6 +122,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 var pts = PointsOf(a);
                 if (!Tin.Spans(pts)) throw new CommandException("The terrain needs at least three points that are not in a line.");
                 attrs["points"] = Terrains.PointsJson(pts);
+                // New points: the file's triangles no longer fit them.
+                attrs.Remove("faces");
                 // The cage's controls that no longer stand on a point go.
                 Cage.Prune(attrs, pts);
             }
@@ -153,15 +149,14 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
             var surfaces = LandXml.Surfaces((string?)a["text"] ?? throw new CommandException("Which file?"));
             if (surfaces.Count == 0) throw new CommandException("The file has no surface with points.");
-            var earth = Materials.Ensure(ctx, "Earth", Terrains.Color);
             var ids = new JsonArray();
             foreach (var s in surfaces)
             {
                 if (!Tin.Spans(s.Points)) continue;
-                var t = new Entity(ctx.NewId(), IfcClass.GeographicElement, s.Name, new JsonObject
-                {
-                    ["points"] = Terrains.PointsJson(s.Points), ["datum"] = Json.Number(a["datum"]) ?? 0, ["interval"] = 0.5, ["majorEvery"] = 5, ["depth"] = 2, ["material"] = earth.Id,
-                }, Terrains.Predefined);
+                var attrs = Terrains.NewAttrs(ctx, s.Points, Json.Number(a["datum"]) ?? 0);
+                // The file's triangles, so the terrain is its TIN, holes and concave edge kept (audit G9).
+                if (s.Triangles.Count > 0) attrs["faces"] = Terrains.FacesJson(s.Triangles);
+                var t = new Entity(ctx.NewId(), IfcClass.GeographicElement, s.Name, attrs, Terrains.Predefined);
                 ctx.Add(t);
                 Spatial.Contain(ctx, storeyId, t.Id);
                 ids.Add((JsonNode)t.Id);
@@ -190,7 +185,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         // A platform: its outline in plan, levelled at its elevation (model height).
         r.Command("addPlatform", "Platform", (ctx, a) =>
         {
-            var t = Terrain(ctx.Model, (string?)a["terrainId"] ?? ctx.Model.OfClass(IfcClass.GeographicElement).FirstOrDefault()?.Id);
+            var t = Terrain(ctx.Model, (string?)a["terrainId"] ?? Terrains.All(ctx.Model).FirstOrDefault()?.Id);
             var (outline, arcs) = Terrains.OutlineArg(a, null);
             var z = Json.Number(a["elevation"]) ?? Terrains.Of(t).ElevationAt(outline.Average(p => p.X), outline.Average(p => p.Y)) ?? 0;
             var n = Terrains.Pads(ctx.Model, t.Id).Count() + 1;
@@ -270,13 +265,12 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         // The ground's height at a point (model height), for tools that place on it.
         r.Query("civil.elevationAt", (q, a) =>
         {
-            var t = Terrain(q.Model, (string?)a["id"] ?? q.Model.OfClass(IfcClass.GeographicElement).FirstOrDefault()?.Id);
+            var t = Terrain(q.Model, (string?)a["id"] ?? Terrains.All(q.Model).FirstOrDefault()?.Id);
             return Terrains.Of(t).ElevationAt(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0) is { } z ? JsonValue.Create(z) : null;
         });
     }
 
-    static Entity Terrain(IModelView m, string? id) =>
-        m.Get(id ?? "") is { Class: IfcClass.GeographicElement } t ? t : throw new CommandException("There is no such terrain.");
+    static Entity Terrain(IModelView m, string? id) => Terrains.Require(m, id);
 
     static List<Vec3> PointsOf(JsonObject a)
     {
@@ -305,7 +299,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
     static void ReplaceOutline(ICommandContext ctx, Entity e, string key, string arcsKey, IReadOnlyList<Vec2> corners, IReadOnlyList<double>? rises)
     {
         if (key.StartsWith("hole:", StringComparison.Ordinal)) { ctx.Replace(e.With(attrs: OutlineHoles.Replaced(e, int.Parse(key[5..], System.Globalization.CultureInfo.InvariantCulture), corners, rises))); return; }
-        var (c, r) = ArcOutline.Check(corners, rises, key == "parcel" ? "A parcel" : "A platform");
+        var (c, r) = ArcOutline.Check(corners, rises, key == "parcel" ? "A parcel" : "A platform", simple: true);
         var attrs = e.CloneAttrs();
         attrs[key] = Terrains.ContourJson(c);
         ArcOutline.Write(attrs, r, arcsKey);
@@ -333,10 +327,13 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             // A site plan shows every terrain; any other plan its own storey's.
             var site = SitePlans.Of(c.View);
             if (site == null && Spatial.StoreyOf(c.Model, e.Id)?.Id != storey) continue;
+            if (!Terrains.IsTerrain(e)) continue;
             var t = Terrains.Of(e);
-            var interval = e.NumOrNull("interval") ?? 0.5;
-            var major = Math.Max(1, (int)Math.Round(e.NumOrNull("majorEvery") ?? 5));
-            if (interval <= 0 || (t.Bounds.Max.Z - t.Bounds.Min.Z) / interval > 2000) continue;
+            // Coarser than asked when the asked one would draw too many (the terrain says so).
+            var interval = Terrains.DrawnInterval(e, t);
+            var major = Math.Max(1, (int)Math.Round(e.NumOrNull("majorEvery") ?? Terrains.Defaults.MajorEvery));
+            if (interval <= 0) continue;
+            var designed = new Analysis.Designed(c.Model, e, t);
             var mk = new ViewMark(e.Id);
             var padAreas = Terrains.Pads(c.Model, e.Id)
                 .Select(p => (Outer: ArcOutline.BuiltOf(p), Holes: (IReadOnlyList<IReadOnlyList<Vec2>>)OutlineHoles.Built(p)))
@@ -364,7 +361,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             var r = 1.2 * c.Mm;
             foreach (var p in Terrains.Spots(e))
             {
-                if (Analysis.Proposed(c.Model, e, t, p) is not { } z) continue;
+                if (designed.At(p) is not { } z) continue;
                 mk.Line(p - new Vec2(r, 0), p + new Vec2(r, 0), "LEVELS", Pens.Default.Seen, "#000000");
                 mk.Line(p - new Vec2(0, r), p + new Vec2(0, r), "LEVELS", Pens.Default.Seen, "#000000");
                 mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), Standards.FormatLevel(z, c.Book), text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#000000");
@@ -376,13 +373,13 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 if (s.Length == 2)
                 {
                     var p = new Vec2(s[0], s[1]);
-                    if (Analysis.Proposed(c.Model, e, t, p) is not { } z0) continue;
+                    if (designed.At(p) is not { } z0) continue;
                     var h = Math.Max(0.25, Math.Min(t.Bounds.Max.X - t.Bounds.Min.X, t.Bounds.Max.Y - t.Bounds.Min.Y) / 100);
-                    var zx1 = Analysis.Proposed(c.Model, e, t, new Vec2(p.X + h, p.Y)) ?? z0;
-                    var zx0 = Analysis.Proposed(c.Model, e, t, new Vec2(p.X - h, p.Y)) ?? z0;
-                    var zy1 = Analysis.Proposed(c.Model, e, t, new Vec2(p.X, p.Y + h)) ?? z0;
-                    var zy0 = Analysis.Proposed(c.Model, e, t, new Vec2(p.X, p.Y - h)) ?? z0;
-                    var grad = new Vec2((zx1 - zx0) / (2 * h), (zy1 - zy0) / (2 * h));
+                    // At the terrain's edge, over the half span that is there.
+                    double Fall(double? up, double? down) =>
+                        up is { } u && down is { } d ? (u - d) / (2 * h) : up is { } u1 ? (u1 - z0) / h : down is { } d1 ? (z0 - d1) / h : 0;
+                    var grad = new Vec2(Fall(designed.At(new Vec2(p.X + h, p.Y)), designed.At(new Vec2(p.X - h, p.Y))),
+                        Fall(designed.At(new Vec2(p.X, p.Y + h)), designed.At(new Vec2(p.X, p.Y - h))));
                     var pct = grad.Length * 100;
                     var dir = grad.Length > 1e-6 ? (-grad).Normalized() : new Vec2(1, 0);
                     var len = 3.0 * c.Mm;
@@ -395,7 +392,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 {
                     var (p1, p2) = (new Vec2(s[0], s[1]), new Vec2(s[2], s[3]));
                     var run = (p2 - p1).Length;
-                    if (run < 1e-6 || Analysis.Proposed(c.Model, e, t, p1) is not { } z1 || Analysis.Proposed(c.Model, e, t, p2) is not { } z2) continue;
+                    if (run < 1e-6 || designed.At(p1) is not { } z1 || designed.At(p2) is not { } z2) continue;
                     var (hi, lo) = z1 >= z2 ? (p1, p2) : (p2, p1);
                     var dz = Math.Abs(z1 - z2);
                     var pct = dz / run * 100;
@@ -405,30 +402,25 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 }
             }
             // Cut/fill grid labels in plan (T5).
-            if (e.NumOrNull("cutFillGrid") is { } grid && grid >= 0.5)
+            // Coarser than asked when the asked one would write too many values (the terrain says so).
+            if (Terrains.DrawnGrid(e, t) is { } grid)
             {
                 var existing = Terrains.Existing(e);
                 var (min, max) = t.Bounds;
-                var nx = (int)Math.Ceiling((max.X - min.X) / grid);
-                var ny = (int)Math.Ceiling((max.Y - min.Y) / grid);
-                if ((long)nx * ny <= 2500)
-                {
-                    var x0 = Math.Ceiling(min.X / grid) * grid;
-                    var y0 = Math.Ceiling(min.Y / grid) * grid;
-                    var cr = 0.6 * c.Mm;
-                    for (var gx = x0; gx <= max.X + 1e-9; gx += grid)
-                        for (var gy = y0; gy <= max.Y + 1e-9; gy += grid)
-                        {
-                            var gp = new Vec2(gx, gy);
-                            if (Analysis.Proposed(c.Model, e, t, gp) is not { } zp || existing.ElevationAt(gx, gy) is not { } ze) continue;
-                            var dz = zp - ze;
-                            var col = dz > 0.01 ? "#2166ac" : dz < -0.01 ? "#c0392b" : "#666666";
-                            mk.Line(gp - new Vec2(cr, 0), gp + new Vec2(cr, 0), "LEVELS", Pens.Default.Seen, col);
-                            mk.Line(gp - new Vec2(0, cr), gp + new Vec2(0, cr), "LEVELS", Pens.Default.Seen, col);
-                            var txt = dz >= 0 ? $"+{dz:0.00}" : $"{dz:0.00}";
-                            mk.Text(new PenText(gp + new Vec2(cr * 1.2, 0), txt, text.Height * 0.7, 0, "start", "middle", false, text.Font), col);
-                        }
-                }
+                var x0 = Math.Ceiling(min.X / grid - 1e-9) * grid;
+                var y0 = Math.Ceiling(min.Y / grid - 1e-9) * grid;
+                var cr = 0.6 * c.Mm;
+                for (var gx = x0; gx <= max.X + 1e-9; gx += grid)
+                    for (var gy = y0; gy <= max.Y + 1e-9; gy += grid)
+                    {
+                        var gp = new Vec2(gx, gy);
+                        if (existing.ElevationAt(gx, gy) is null || designed.CutFill(gp, existing) is not { } dz) continue;
+                        var col = dz > 0.01 ? "#2166ac" : dz < -0.01 ? "#c0392b" : "#666666";
+                        mk.Line(gp - new Vec2(cr, 0), gp + new Vec2(cr, 0), "LEVELS", Pens.Default.Seen, col);
+                        mk.Line(gp - new Vec2(0, cr), gp + new Vec2(0, cr), "LEVELS", Pens.Default.Seen, col);
+                        var txt = dz >= 0 ? $"+{dz:0.00}" : $"{dz:0.00}";
+                        mk.Text(new PenText(gp + new Vec2(cr * 1.2, 0), txt, text.Height * 0.7, 0, "start", "middle", false, text.Font), col);
+                    }
             }
             // The parcel: its boundary, dash-dotted, and its area.
             if (ArcOutline.BuiltOf(e, "parcel", Terrains.ParcelArcs) is { Count: >= 3 } parcel)
@@ -498,9 +490,7 @@ sealed class Ground : IGround
 {
     public double? ElevationAt(IModelView model, double x, double y)
     {
-        foreach (var t in model.OfClass(IfcClass.GeographicElement))
-            if (t.PredefinedType == Terrains.Predefined && Terrains.Of(t).ElevationAt(x, y) is { } z) return z;
-        return null;
+        return Terrains.Under(model, new Vec2(x, y)) is { } t ? Terrains.Of(t).ElevationAt(x, y) : null;
     }
 }
 

@@ -50,30 +50,51 @@ public static class Analysis
 
     public static Band BandOf(IReadOnlyList<Band> bands, double v) => bands.FirstOrDefault(b => v <= b.UpTo + 1e-9) ?? bands[^1];
 
-    /// <summary>The ground as designed at a point: a platform's level inside it, a ditch's bottom along it, else the worked TIN.</summary>
-    public static double? Proposed(IModelView m, Entity terrain, Terrain t, Vec2 p)
+    /// <summary>
+    /// The ground as designed (the worked TIN, then what the platforms and the ditches make of it), read as the terrain's
+    /// solid is built: a platform's level inside it and its cut and fill slopes round it (<see cref="Terrains.PadShape"/>),
+    /// a ditch's trapezoid under its axis, its bottom on the red line of a designed profile. What the maps, the spot
+    /// levels, the slope tags and the cut/fill grid read, so they agree with the 3D body and the volumes.
+    /// </summary>
+    public sealed class Designed
     {
-        if (t.ElevationAt(p.X, p.Y) is not { } z) return null;
-        foreach (var pad in Terrains.Pads(m, terrain.Id))
+        readonly Terrain _t;
+        readonly List<Terrains.PadShape> _pads;
+        readonly List<(Entity Ditch, Chain Chain, Func<double, double>? Red)> _ditches;
+
+        public Designed(IModelView m, Entity terrain, Terrain t)
         {
-            var o = ArcOutline.BuiltOf(pad);
-            if (o.Count >= 3 && Polygon2.Contains(o, p) && !OutlineHoles.Built(pad).Any(h => Polygon2.Contains(h, p))) return pad.Num("elevation");
+            _t = t;
+            _pads = Terrains.PadShapes(m, terrain, t, Terrains.BaseZ(terrain));
+            _ditches = [.. Terrains.DitchesOf(m, terrain.Id).Select(d => (d, Corridors.ChainOf(d), Ditches.DesignOf(m, d, Corridors.ChainOf(d)))).Where(x => x.Item2.Segments > 0)];
         }
-        foreach (var d in Terrains.DitchesOf(m, terrain.Id))
+
+        /// <summary>The designed ground at a point, or null outside the terrain.</summary>
+        public double? At(Vec2 p)
         {
-            var path = Ditches.Path(d);
-            var half = Ditches.TopWidth(d) / 2;
-            var (depth, bottom, _) = Ditches.Section(d);
-            for (var i = 0; i + 1 < path.Count; i++)
-            {
-                var dist = Polyline2.SegmentDistance(p, path[i], path[i + 1]);
-                if (dist > half) continue;
-                // The trapezoid: flat over the bottom, sloping up to the ground at the edge.
-                var inner = bottom / 2;
-                return z - (dist <= inner ? depth : depth * (1 - (dist - inner) / Math.Max(half - inner, 1e-9)));
-            }
+            if (_t.ElevationAt(p.X, p.Y) is not { } g) return null;
+            foreach (var pad in _pads) if (pad.DesignedAt(p, g) is { } z) return z;
+            foreach (var (d, c, red) in _ditches) if (Ditches.DesignedAt(d, c, red, _t, p, g) is { } z) return z;
+            return g;
         }
-        return z;
+
+        /// <summary>The designed ground less the existing one at a point (+ fill, − cut), or null outside the terrain.</summary>
+        public double? CutFill(Vec2 p, Terrain existing) => At(p) is { } z ? z - (existing.ElevationAt(p.X, p.Y) ?? z) : null;
+    }
+
+    /// <summary>The ground as designed at a point (<see cref="Designed"/>).</summary>
+    public static double? Proposed(IModelView m, Entity terrain, Terrain t, Vec2 p) => new Designed(m, terrain, t).At(p);
+
+    /// <summary>
+    /// The cells a terrain is sampled in, from the lowest corner of its box: their corner and their middle, every
+    /// <paramref name="cell"/>. The one grid the analysis and the brush's measured volumes read the ground on.
+    /// </summary>
+    public static IEnumerable<(Vec2 Min, Vec2 Mid)> Cells(Terrain t, double cell)
+    {
+        var (min, max) = t.Bounds;
+        for (var x = min.X; x < max.X; x += cell)
+            for (var y = min.Y; y < max.Y; y += cell)
+                yield return (new Vec2(x, y), new Vec2(x + cell / 2, y + cell / 2));
     }
 
     /// <summary>The terrain sampled for a kind of analysis: cells of about a sixtieth of its longer side, those over the ground.</summary>
@@ -83,32 +104,34 @@ public static class Analysis
         var t = Terrains.Of(terrain);
         if (t.Tin.Triangles.Count == 0) return null;
         var existing = kind == "cutfill" ? Terrains.Existing(terrain) : null;
+        var designed = new Designed(m, terrain, t);
         var bands = Bands(kind, t);
         var (min, max) = t.Bounds;
         var span = Math.Max(max.X - min.X, max.Y - min.Y);
         var cell = Math.Max(span / 60, 0.25);
         var cells = new List<Cell>();
-        for (var x = min.X; x < max.X; x += cell)
-            for (var y = min.Y; y < max.Y; y += cell)
+        foreach (var (corner, c) in Cells(t, cell))
+        {
+            if (designed.At(c) is not { } z) continue;
+            double value;
+            switch (kind)
             {
-                var c = new Vec2(x + cell / 2, y + cell / 2);
-                if (Proposed(m, terrain, t, c) is not { } z) continue;
-                double value;
-                switch (kind)
+                case "slope":
                 {
-                    case "slope":
-                    {
-                        var h = cell / 2;
-                        var zx1 = t.ElevationAt(c.X + h, c.Y) ?? z; var zx0 = t.ElevationAt(c.X - h, c.Y) ?? z;
-                        var zy1 = t.ElevationAt(c.X, c.Y + h) ?? z; var zy0 = t.ElevationAt(c.X, c.Y - h) ?? z;
-                        value = Math.Sqrt(Math.Pow((zx1 - zx0) / (2 * h), 2) + Math.Pow((zy1 - zy0) / (2 * h), 2)) * 100;
-                        break;
-                    }
-                    case "cutfill": value = z - (existing!.ElevationAt(c.X, c.Y) ?? z); break;
-                    default: value = z; break;
+                    // On the designed ground (a platform is flat); at the terrain's edge, over the half span that is there.
+                    var h = cell / 2;
+                    double Fall(double? up, double? down) =>
+                        up is { } a && down is { } b ? (a - b) / (2 * h) : up is { } a1 ? (a1 - z) / h : down is { } b1 ? (z - b1) / h : 0;
+                    var gx = Fall(designed.At(new Vec2(c.X + h, c.Y)), designed.At(new Vec2(c.X - h, c.Y)));
+                    var gy = Fall(designed.At(new Vec2(c.X, c.Y + h)), designed.At(new Vec2(c.X, c.Y - h)));
+                    value = Math.Sqrt(gx * gx + gy * gy) * 100;
+                    break;
                 }
-                cells.Add(new Cell(new Vec2(x, y), new Vec2(x + cell, y + cell), value, z, BandOf(bands, value)));
+                case "cutfill": value = z - (existing!.ElevationAt(c.X, c.Y) ?? z); break;
+                default: value = z; break;
             }
+            cells.Add(new Cell(corner, new Vec2(corner.X + cell, corner.Y + cell), value, z, BandOf(bands, value)));
+        }
         return new Result(kind, bands, cells, cell * cell);
     }
 
