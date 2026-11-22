@@ -44,19 +44,10 @@ public static class MasonryDesign
         return e <= l / 6 ? l : Math.Max(0, 3 * (l / 2 - e));
     }
 
-    public static List<Check> Check(MasonryWall w, IReadOnlyList<WallForceSet> sets)
-    {
-        var best = new Dictionary<string, Check>();
-        var order = new List<string>();
-        foreach (var s in sets)
-            foreach (var c in Set(w, s))
-            {
-                var c2 = c with { Combination = s.Key, CombinationName = s.Name };
-                if (!best.TryGetValue(c.Key, out var had)) { best[c.Key] = c2; order.Add(c.Key); }
-                else if (c.Utilisation > had.Utilisation) best[c.Key] = c2;
-            }
-        return order.Select(k => best[k]).ToList();
-    }
+    /// <summary>The seismic γM CR 6 2.4.2.3.1(2) gives where ag ≤ 0.12 g (indicative, the built-in default; analysis.setDesign gammaMSeismic).</summary>
+    public const double GammaMSeismic = 1.65;
+
+    public static List<Check> Check(MasonryWall w, IReadOnlyList<WallForceSet> sets) => Worst(sets, s => s.Key, s => s.Name, s => Set(w, s));
 
     /// <summary>
     /// The note when the elastic shells' moment gives an eccentricity past 0.4 t: a masonry joint carries no tension, so the

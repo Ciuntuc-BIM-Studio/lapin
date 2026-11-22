@@ -9,7 +9,7 @@ namespace Lapin.Analysis.Seismic;
 /// </summary>
 public sealed record Spectrum(string Code, double Ag, double S, double TB, double TC, double TD, double Q, double Factor, double Beta0 = 2.5, double Lower = 0.2)
 {
-    public const double G = 9.80665;
+    public const double G = Lapin.Platform.Analysis.Units.G;
 
     /// <summary>EN 1998-1 Table 3.2 (Type 1) and 3.3 (Type 2): S, TB, TC, TD by ground type.</summary>
     public static readonly IReadOnlyDictionary<(int, string), (double S, double TB, double TC, double TD)> EnTable = new Dictionary<(int, string), (double, double, double, double)>

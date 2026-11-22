@@ -73,7 +73,7 @@ public static class SteelNodes
         // A secondary connection's bolts are chosen by what is fixed (a purlin, a brace), not by what it is fixed to.
         var bolted = SecondaryKinds.Contains(kind) ? js.Skip(1).FirstOrDefault() : Bolted(js);
         var section = bolted is { } j && m.Get(j.Id) is { } e && MemberAxes.Of(m, e) is { } ax ? ax.Section : Section.Catalogue["IPE 300"];
-        return NodeSpec.Resolve(kind, section, ParamsOf(node));
+        return NodeSpec.Resolve(kind, section, ParamsOf(node), BoltRuleSection.Clearances(m));
     }
 
     /// <summary>A new connection, its members' ends set back as it needs; contained in its first member's storey.</summary>

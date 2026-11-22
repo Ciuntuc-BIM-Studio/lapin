@@ -64,7 +64,7 @@ public sealed partial class AnalysisRun
         {
             var s = u.States[i];
             var xs = Enumerable.Range(0, 21).Select(k => l * k / 20).ToList();
-            foreach (var ex in MemberExtremes(member, s.Seismic == null ? s.Elements : s.Elements)) { xs.Add(ex.XMax); xs.Add(ex.XMin); }
+            foreach (var ex in MemberExtremes(member, s.Elements)) { xs.Add(ex.XMax); xs.Add(ex.XMin); }
             var secs = xs.Select(x => Math.Clamp(x, 0, l)).Distinct().Order().Select(x => MemberAt(member, s, x)).ToList();
             o.Add(new ForceSet(u.Sets[i].Key, u.Sets[i].Name, secs, l) { Duration = u.Durations[i], Seismic = u.Seismic[i] });
         }

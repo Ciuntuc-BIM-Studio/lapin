@@ -13,8 +13,11 @@ public sealed record TimberClass(string Name, double Fmk, double Ft0k, double Fc
 public sealed record TimberMember(double B, double H, double L, TimberClass T, int ServiceClass, double LcrY, double LcrZ, double? Lef = null)
 {
     public string LengthsSource { get; init; } = "";
-    /// <summary>The span's deflection limits (EN 1995-1-1 Table 7.2's ranges, the lower ends): instantaneous L/300, final L/250 (a cantilever's twice the span).</summary>
+    /// <summary>A cantilever: its deflection limits on twice its span.</summary>
     public bool Cantilever { get; init; }
+    /// <summary>The span's deflection limits as L over these (EN 1995-1-1 Table 7.2's ranges, the lower ends by default): instantaneous L/300, final L/250; the project's or the element's by analysis.setDesign.</summary>
+    public double InstLimit { get; init; } = TimberDesign.InstLimit;
+    public double FinLimit { get; init; } = TimberDesign.FinLimit;
 }
 
 /// <summary>
@@ -26,6 +29,8 @@ public sealed record TimberMember(double B, double H, double L, TimberClass T, i
 public static class TimberDesign
 {
     public const string Norm = "SR EN 1995-1-1";
+    /// <summary>The built-in deflection limits, L/300 instantaneous and L/250 final (Table 7.2's ranges' lower ends, indicative).</summary>
+    public const double InstLimit = 300, FinLimit = 250;
 
     /// <summary>EN 338:2016 Table 1 (C16–C30) and EN 14080:2013 Table 5 (GL, through a secondary source).</summary>
     public static readonly TimberClass[] Classes =
@@ -163,21 +168,22 @@ public static class TimberDesign
 
     /// <summary>
     /// The final deflection (2.3.2.2, eq. 2.2–2.3 with ψ2): wfin = Σ winst,G (1 + kdef) + winst,Q1 (1 + ψ2,1 kdef) + Σ winst,Qi (ψ0,i + ψ2,i kdef),
-    /// the worst over the characteristic combinations, against L/250 (a cantilever's 2L/250); and winst against L/300.
+    /// the worst over the characteristic combinations, against L/250 (a cantilever's 2L/250); and winst against L/300 (the member's limits).
     /// </summary>
     public static Check Deflection(TimberMember m, IReadOnlyList<(string Key, string Name, double[] Inst, double[] Fin)> combos)
     {
         Check? worst = null;
         var span = m.Cantilever ? 2 * m.L : m.L;
+        var (li, lf) = (m.InstLimit, m.FinLimit);
         foreach (var (key, name, inst, fin) in combos)
         {
             var wi = inst.Max(Math.Abs);
             var wf = fin.Max(Math.Abs);
-            var u = Math.Max(wi / (span / 300), wf / (span / 250));
+            var u = Math.Max(wi / (span / li), wf / (span / lf));
             if (worst == null || u > worst.Utilisation)
                 worst = new Check("timber.deflection", "Deflection (SLS)", $"{Norm} 2.3.2.2, 7.2", u,
-                    [new("winst", wi * 1000, "mm"), new("limit inst", span / 300 * 1000, "mm"), new("wfin", wf * 1000, "mm"), new("limit fin", span / 250 * 1000, "mm"), new("kdef", Kdef(m.ServiceClass), "")],
-                    "Limits L/300 and L/250 (Table 7.2's ranges, indicative; the designer's to set); E0,mean, shear deformation included as the analysis has it.")
+                    [new("winst", wi * 1000, "mm"), new("limit inst", span / li * 1000, "mm"), new("wfin", wf * 1000, "mm"), new("limit fin", span / lf * 1000, "mm"), new("kdef", Kdef(m.ServiceClass), "")],
+                    $"Limits L/{F(li, "0.#")} and L/{F(lf, "0.#")} (Table 7.2's ranges, indicative; the designer's to set: analysis.setDesign timberInst / timberFin); E0,mean, shear deformation included as the analysis has it.")
                 { Combination = key, CombinationName = name };
         }
         return worst ?? new Check("timber.deflection", "Deflection (SLS)", $"{Norm} 7.2", 0, [], "No characteristic combination.", false);

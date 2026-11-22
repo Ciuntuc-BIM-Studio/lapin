@@ -4,6 +4,7 @@ using Lapin.Geometry;
 using Lapin.Drawing.Views;
 using Lapin.Model;
 using Lapin.Platform;
+using Lapin.Platform.Analysis;
 using Lapin.Structure;
 
 namespace Lapin.Rebar;
@@ -21,21 +22,19 @@ public sealed record StirrupSpec(bool Enabled, double Diameter, double Cover, st
     public const string Key = "stirrups";
     /// <summary>The type's own label style, partial, over the project's (<see cref="LabelStyle"/>).</summary>
     public JsonObject? Label { get; init; } = Label;
-    public static readonly string[] Modes = ["uniform", "zones"];
-    public static readonly string[] Patterns = ["single", "diamond", "cross"];
+    public static readonly string[] Modes = StirrupLayout.Modes;
+    public static readonly string[] Patterns = StirrupLayout.Patterns;
 
-    public static StirrupSpec Default() => new(false, 0.008, 0.025, "uniform", 0.15, [(1.0 / 3, 0.1), (1.0 / 3, 0.2), (1.0 / 3, 0.1)], 0);
+    public static StirrupSpec Default() { var d = StirrupLayout.Default(); return new(d.Enabled, d.Diameter, d.Cover, d.Mode, d.Step, d.Zones, 0); }
 
     public static StirrupSpec? Of(Entity type) => type.Attrs[Key] is JsonObject o ? From(o) : null;
 
+    /// <summary>The type's stirrups as the platform reads them (<see cref="StirrupLayout"/>, the design checks' too), with their marks and label.</summary>
     public static StirrupSpec From(JsonObject o)
     {
-        var d = Default();
-        var zones = (o["zones"] as JsonArray)?.OfType<JsonObject>().Select(z => (Json.Number(z["share"]) ?? 1.0 / 3, Json.Number(z["step"]) ?? d.Step)).ToList();
+        var l = StirrupLayout.From(o);
         var inner = (o["innerMarks"] as JsonArray)?.Select(x => (int)(Json.Number(x) ?? 0)).ToList();
-        return new StirrupSpec(o["enabled"] is JsonValue ev && ev.TryGetValue<bool>(out var en) && en, Json.Number(o["diameter"]) ?? d.Diameter, Json.Number(o["cover"]) ?? d.Cover,
-            (string?)o["mode"] is { } md && Modes.Contains(md) ? md : d.Mode, Json.Number(o["step"]) ?? d.Step, zones is { Count: > 0 } ? zones : d.Zones, (int)(Json.Number(o["mark"]) ?? 0),
-            (string?)o["pattern"] is { } pt && Patterns.Contains(pt) ? pt : "single", inner, o[LabelStyle.Key] as JsonObject);
+        return new StirrupSpec(l.Enabled, l.Diameter, l.Cover, l.Mode, l.Step, l.Zones, (int)(Json.Number(o["mark"]) ?? 0), l.Pattern, inner, o[LabelStyle.Key] as JsonObject);
     }
 
     public JsonObject ToJson()
@@ -82,8 +81,12 @@ public static class TypeStirrups
     public sealed record Laid(Entity Element, StirrupSpec Spec, List<double> Stations, Func<double, List<Loop>> LoopsAt, Vec3 Start, Vec3 Dir, double Length, double A, double B,
         double S0 = 0, double? Piece = null)
     {
+        /// <summary>The 135° hooks' tail (m): the project's rules' (Lapin's 10Ø, 50 mm at least, by default).</summary>
+        public double HookTail { get; init; } = RebarShapes.HookLength(Spec.Diameter, 135);
+        /// <summary>The bend's radius on the bar's axis (m): the project's rules' (Lapin's mandrel by default).</summary>
+        public double Radius { get; init; } = RebarShapes.BendRadius(Spec.Diameter);
         /// <summary>The schedule's length of a loop: its sides on the bar's axis and its two 135° hooks.</summary>
-        public double BarLength(Loop l) => 2 * (l.A + l.B) + 2 * RebarShapes.HookLength(Spec.Diameter, 135);
+        public double BarLength(Loop l) => 2 * (l.A + l.B) + 2 * HookTail;
         public string StepText => Runs.StepText(Piece ?? Length, Spec.Step, Spec.RunZones(Piece ?? Length));
         /// <summary>How many stirrups the label counts: the stations, "2×" them when two loops stand at each.</summary>
         public string CountText => Spec.LoopsPerStation > 1 ? $"{Spec.LoopsPerStation}×{Stations.Count}" : Stations.Count.ToString(CultureInfo.InvariantCulture);
@@ -121,7 +124,7 @@ public static class TypeStirrups
                 return [new Loop([new Vec3(p.X - n.X, p.Y - n.Y, zc - b / 2), new Vec3(p.X + n.X, p.Y + n.Y, zc - b / 2), new Vec3(p.X + n.X, p.Y + n.Y, zc + b / 2), new Vec3(p.X - n.X, p.Y - n.Y, zc + b / 2)], a, b, 0)];
             }
             var (start, t0) = (span.Start, c.TangentAt(span.S0));
-            return new Laid(e, spec, stations, Loops, new Vec3(start.X, start.Y, zc), new Vec3(t0.X, t0.Y, 0), span.S1 - span.S0, a, b, span.S0, pieces.Count > 0 ? pieces[0].B - pieces[0].A : null);
+            return new Laid(e, spec, stations, Loops, new Vec3(start.X, start.Y, zc), new Vec3(t0.X, t0.Y, 0), span.S1 - span.S0, a, b, span.S0, pieces.Count > 0 ? pieces[0].B - pieces[0].A : null) { HookTail = Tail(m, spec), Radius = RebarRuleSection.BendRadius(m, spec.Diameter) };
         }
         if (e.Class == IfcClass.Column)
         {
@@ -160,10 +163,12 @@ public static class TypeStirrups
                 }
                 return loops;
             }
-            return new Laid(e, spec, stations, Loops, at.At(baseZ), Vec3.UnitZ, height, a, b);
+            return new Laid(e, spec, stations, Loops, at.At(baseZ), Vec3.UnitZ, height, a, b) { HookTail = Tail(m, spec), Radius = RebarRuleSection.BendRadius(m, spec.Diameter) };
         }
         return null;
     }
+
+    static double Tail(IModelView m, StirrupSpec s) => RebarRuleSection.HookLength(m, s.Diameter, 135);
 
     /// <summary>The stirrup's axis rectangle inside the section: the cover and half the bar off each face.</summary>
     static (double A, double B) Inside(double width, double depth, StirrupSpec s) => (width - 2 * s.Cover - s.Diameter, depth - 2 * s.Cover - s.Diameter);
@@ -211,7 +216,7 @@ public static class TypeStirrups
                         drawn.Add(key);
                         var (a, b) = ((along - q0).Length, (up - q0).Length);
                         var (u, v) = ((along - q0) * (1 / a), (up - q0) * (1 / b));
-                        var spec = new RebarSpec("stirrup", new Dictionary<string, double> { ["a"] = a, ["b"] = b }, null, d, null, null);
+                        var spec = new RebarSpec("stirrup", new Dictionary<string, double> { ["a"] = a, ["b"] = b }, null, d, new Hook(135, laid.HookTail, true), new Hook(135, laid.HookTail, true), BendRadius: laid.Radius);
                         var chain = RebarShapes.Chain(RebarShapes.Segments(spec)).Select(q => q0 + u * q.X + v * q.Y).ToList();
                         mk.Polyline(chain, false, RebarShapes.StirrupLayer, width, color);
                         mk.Snaps.AddRange([q0, along, up, along + (up - q0)]);

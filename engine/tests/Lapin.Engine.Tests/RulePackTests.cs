@@ -75,7 +75,8 @@ public sealed class RulePackTests
         var bar = (string)f.Run("rebar.add", new JsonObject { ["viewId"] = section, ["shape"] = "L", ["at"] = new JsonArray(0, 0), ["diameter"] = 0.020 })!["id"]!;
         var e = f.Model.Get(bar)!;
         Assert.Equal("B500B", e.Str("steel"));
-        Assert.Equal(7.5 * 0.020 / 2, e.Num("bendRadius"), 9);
+        // On the bar's axis: (mandrel + Ø)/2 = (7.5·20 + 20)/2 = 85 mm.
+        Assert.Equal((7.5 * 0.020 + 0.020) / 2, e.Num("bendRadius"), 9);
         var odd = (string)f.Run("rebar.add", new JsonObject { ["viewId"] = section, ["shape"] = "straight", ["at"] = new JsonArray(0, 1), ["diameter"] = 0.018, ["steel"] = "PC52" })!["id"]!;
         var barFindings = f.Session.Query("rules.check", [])!["findings"]!.AsArray().OfType<JsonObject>().Where(x => (string?)x["element"] == odd).ToList();
         Assert.Equal(2, barFindings.Count);

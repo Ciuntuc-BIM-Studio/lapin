@@ -113,6 +113,8 @@ public class SecondOrderAnalysisTests(ITestOutputHelper output)
         output.WriteLine(b["combinations"]!.AsArray().Single(c => (string)c!["key"]! == low)!.ToJsonString());
         var mode = Q(f, "bucklingMode", new JsonObject { ["combination"] = low });
         Assert.Equal(1, (int)mode["mode"]!);
+        // A mode's class is its combination's, by the frame's first global mode (not mode 1's, which may be one member's).
+        Assert.Equal((string)b["combinations"]!.AsArray().Single(c => (string)c!["key"]! == low)!["class"]!, (string)mode["class"]!);
         Assert.NotEmpty(mode["polylines"]!.AsArray());
         Assert.Throws<CommandException>(() => Q(f, "bucklingMode", new JsonObject { ["combination"] = low, ["mode"] = 99 }));
     }

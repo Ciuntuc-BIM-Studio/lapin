@@ -110,14 +110,17 @@ public static class Checks
     /// The worst of each check over the sets: <paramref name="each"/> gives a set's checks (null: none), the largest utilisation
     /// of each key kept with its set's key and name.
     /// </summary>
-    public static List<Check> Worst(IEnumerable<ForceSet> sets, Func<ForceSet, IEnumerable<Check>> each)
+    public static List<Check> Worst(IEnumerable<ForceSet> sets, Func<ForceSet, IEnumerable<Check>> each) => Worst(sets, s => s.Key, s => s.Name, each);
+
+    /// <summary>The worst of each check over any sets, each set's key and name as <paramref name="key"/> and <paramref name="name"/> say.</summary>
+    public static List<Check> Worst<T>(IEnumerable<T> sets, Func<T, string> key, Func<T, string> name, Func<T, IEnumerable<Check>> each)
     {
         var best = new Dictionary<string, Check>();
         var order = new List<string>();
         foreach (var s in sets)
             foreach (var c in each(s))
             {
-                var c2 = c with { Combination = s.Key, CombinationName = s.Name };
+                var c2 = c with { Combination = key(s), CombinationName = name(s) };
                 if (!best.TryGetValue(c.Key, out var had)) { best[c.Key] = c2; order.Add(c.Key); }
                 else if (c.Utilisation > had.Utilisation) best[c.Key] = c2;
             }

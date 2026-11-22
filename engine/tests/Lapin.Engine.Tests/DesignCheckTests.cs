@@ -119,18 +119,42 @@ public class DesignCheckTests
     [Fact]
     public void Clause_6_1_bending_reinforcement_of_a_300_by_500_beam_for_150_kNm()
     {
-        // d = 500 − 30 − 8 − 8 = 454 mm; K = 150·10⁶/(300·454²·25) = 0.097033 ≤ K' = 0.167; z = d(0.5 + √(0.25 − K/1.134)) = 0.41110 m (≤ 0.95 d);
-        // As = 150/(434 783·0.41110) = 8.392 cm². As,min (9.1N) = 0.26·2.565/500·300·454 = 1.817 cm² (fctm = 0.30·25^(2/3) = 2.565 MPa).
+        // The block at η αcc fck/γc = 1·1.0/1.5 = 0.6667 fck (3.1.7(3)): z = d[0.5 + √(0.25 − K/(2·0.6667))] = d[0.5 + √(0.25 − K/1.3333)].
+        // d = 500 − 30 − 8 − 8 = 454 mm; K = 150·10⁶/(300·454²·25) = 0.097033 ≤ K' = 0.6667·0.8·0.45·(1 − 0.8·0.45/2) = 0.1968;
+        // z = 0.454·(0.5 + √(0.25 − 0.072775)) = 0.454·0.920981 = 0.41813 m (≤ 0.95 d = 0.4313); As = 150/(434 783·0.41813) = 8.2511 cm².
+        // As,min (9.1N) = 0.26·2.565/500·300·454 = 1.817 cm² (fctm = 0.30·25^(2/3) = 2.565 MPa).
         var d = 0.5 - C25.Edge;
         Assert.Equal(0.454, d, 9);
+        Assert.Equal(0.1968, C25.KPrime, 9);
         var (asT, as2, k, z) = ConcreteDesign.Bending(150, 0.3, d, C25.Edge, C25);
         Assert.Equal(0.097033, k, 5);
-        Assert.Equal(0.41110, z, 4);
-        Assert.Equal(8.3921, asT * 1e4, 3);
+        Assert.Equal(0.41813, z, 4);
+        Assert.Equal(8.2511, asT * 1e4, 3);
         Assert.Equal(0, as2);
         Assert.Equal(1.8166, ConcreteDesign.MinAs(0.3, d, C25) * 1e4, 3);
-        // Doubly reinforced past K': for 300 kN·m, K = 0.194: As2 = (0.194 − 0.167)·25·300·454²/(434.78·(454 − 46)) > 0.
-        Assert.True(ConcreteDesign.Bending(300, 0.3, d, C25.Edge, C25).As2 > 0);
+        // Doubly reinforced past K': for 330 kN·m, K = 330/(0.3·0.454²·25 000) = 0.21347 > 0.1968: As2 = (0.21347 − 0.1968)·25 000·0.3·0.454²/(434 783·(0.454 − 0.046)) > 0.
+        Assert.True(ConcreteDesign.Bending(330, 0.3, d, C25.Edge, C25).As2 > 0);
+    }
+
+    [Fact]
+    public void Bending_takes_the_projects_alpha_cc_not_the_UK_annex_constants()
+    {
+        // C25, b = 0.30, d = 0.45, M = 280 kN·m: K = 280/(0.3·0.45²·25 000) = 0.18436. The UK constants (αcc 0.85: K' = 0.167, z with 1.134)
+        // asked for compression bars; with αcc = 1.0, K' = 0.1968 > K: none. z = 0.45·(0.5 + √(0.25 − 0.18436/1.3333)) = 0.45·0.834258 = 0.37542 m,
+        // As = 280/(434 783·0.37542) = 17.154 cm² (x/d = 2(1 − 0.834258)/0.8 = 0.414 ≤ 0.45).
+        var (asT, as2, k, z) = ConcreteDesign.Bending(280, 0.30, 0.45, C25.Edge, C25);
+        Assert.Equal(0.18436, k, 5);
+        Assert.Equal(0, as2);
+        Assert.Equal(0.37542, z, 4);
+        Assert.Equal(17.154, asT * 1e4, 2);
+        // The same section at αcc = 0.85 (the UK annex's): K' = 0.5667·0.8·0.45·0.82 = 0.16728 < K, so compression bars, and below K' the
+        // lever arm the UK's: M = 150, K = 0.098765, z = 0.45·(0.5 + √(0.25 − 0.098765/1.1333)) = 0.40660 m (As = 8.4850 cm²).
+        var uk = C25 with { AlphaCc = 0.85 };
+        Assert.Equal(0.16728, uk.KPrime, 5);
+        Assert.True(ConcreteDesign.Bending(280, 0.30, 0.45, uk.Edge, uk).As2 > 0);
+        Assert.Equal(0.40660, ConcreteDesign.Bending(150, 0.30, 0.45, uk.Edge, uk).Z, 4);
+        // Below K' with αcc = 1.0: M = 150, z = 0.45·(0.5 + √(0.25 − 0.098765/1.3333)) = 0.41375 m, As = 150/(434 783·0.41375) = 8.3385 cm².
+        Assert.Equal(8.3385, ConcreteDesign.Bending(150, 0.30, 0.45, C25.Edge, C25).As * 1e4, 3);
     }
 
     [Fact]
@@ -198,13 +222,50 @@ public class DesignCheckTests
         var q = 8 * 150 / 36.0;
         var m = new ConcreteMember(0.3, 0.5, 6, false, C25, 6, 6);
         var (cs, need) = ConcreteMembers.Check(m, [Set(6, _ => 0, x => q * x * (6 - x) / 2, x => q * (3 - x))]);
-        Assert.Equal(8.3921, need.Bottom * 1e4, 3);
+        // As = 8.2511 cm² (the 150 kN·m of the 6.1 test above, αcc = 1.0).
+        Assert.Equal(8.2511, need.Bottom * 1e4, 3);
         Assert.Equal(1.8166, need.Top * 1e4, 3);
         Assert.Equal((need.Bottom + need.Top) / (0.04 * 0.15), Get(cs, "concrete.bending").Utilisation, 6);
-        // L/d = 6/0.454 = 13.216 against 17.086.
-        Assert.Equal(6 / 0.454 / 17.0860, Get(cs, "concrete.deflection").Utilisation, 4);
+        // L/d = 6/0.454 = 13.216 against 7.16a with ρ = 8.2511/(300·454) = 0.0060580 > ρ0 = 0.005: 11 + 1.5·5·0.005/0.0060580 = 17.1902.
+        Assert.Equal(6 / 0.454 / 17.1902, Get(cs, "concrete.deflection").Utilisation, 4);
         // V = 100 kN > VRd,c = 67.66 kN: Asw/s = 100/(0.4086·434 783·2.5) = 2.2516 cm²/m < the minimum 2.4.
         Assert.Equal(2.4, need.Stirrups * 1e4, 6);
+    }
+
+    [Fact]
+    public void Stirrups_in_zones_are_checked_where_each_zone_lies()
+    {
+        // The 300 × 500 C25 beam over 6 m with q = 90 kN/m: V = 270 kN at the ends, 90 kN at 2 m and 4 m.
+        // The type's stirrups: Ø8 in zones of a third each at 100/200/100 mm (uniform step 150 mm, unused in zones).
+        // Asw/s given: 2·π·8²/4/100 = 10.053 cm²/m at the ends, 5.0265 cm²/m in the middle.
+        // Needed at the ends: VEd = 270 kN ≤ VRd,max(2.5) = 380.42 kN, so cot θ = 2.5: 270/(0.4086·434 783·2.5) = 6.0794 cm²/m: 6.0794/10.053 = 0.60474.
+        // In the middle: VEd ≤ 90 kN ≤ VRd,c = 96.67 kN (ρl = 24.476/(300·454) = 1.797 %: 0.12·1.6637·(100·0.01797·25)^(1/3) = 0.70976 MPa):
+        // the minimum 2.4 cm²/m: 2.4/5.0265 = 0.47747. The ends govern: 0.60474. Read at the uniform 150 mm it was 6.0794/6.7021 = 0.907.
+        var type = new System.Text.Json.Nodes.JsonObject
+        {
+            ["enabled"] = true, ["diameter"] = 0.008, ["mode"] = "zones", ["step"] = 0.15,
+            ["zones"] = new System.Text.Json.Nodes.JsonArray(
+                new System.Text.Json.Nodes.JsonObject { ["share"] = 1.0 / 3, ["step"] = 0.1 },
+                new System.Text.Json.Nodes.JsonObject { ["share"] = 1.0 / 3, ["step"] = 0.2 },
+                new System.Text.Json.Nodes.JsonObject { ["share"] = 1.0 / 3, ["step"] = 0.1 }),
+        };
+        var layout = StirrupLayout.From(type);
+        var zones = layout.Along(6).Select(z => new StirrupZone(z.From, z.To, layout.AswS(z.Step))).ToList();
+        Assert.Equal(3, zones.Count);
+        Assert.Equal(2, zones[0].To, 9);
+        Assert.Equal(10.053, zones[0].AswS * 1e4, 3);
+        Assert.Equal(2 * Math.PI * 0.008 * 0.008 / 4 / 0.2, zones[1].AswS, 12);
+        var q = 90.0;
+        var m = new ConcreteMember(0.3, 0.5, 6, false, C25, 6, 6) { ProvidedStirrups = zones };
+        var (cs, _) = ConcreteMembers.Check(m, [Set(6, _ => 0, x => q * x * (6 - x) / 2, x => q * (3 - x))]);
+        var pc = Get(cs, "concrete.stirrupsProvided");
+        Assert.Equal(0.60474, pc.Utilisation, 4);
+        Assert.Equal(6.0794, V(pc, "Asw/s required (0–2 m)"), 3);
+        Assert.Equal(2.4, V(pc, "Asw/s required (2–4 m)"), 6);
+        // A missing perFace takes the spec's default 3: 4·(3 − 1) = 8 bars Ø16 = 16.085 cm².
+        var bars = ColumnBarLayout.From(new System.Text.Json.Nodes.JsonObject { ["enabled"] = true, ["diameter"] = 0.016 });
+        Assert.Equal(8, bars.Count);
+        Assert.Equal(16.085, bars.Area * 1e4, 3);
     }
 
     [Fact]

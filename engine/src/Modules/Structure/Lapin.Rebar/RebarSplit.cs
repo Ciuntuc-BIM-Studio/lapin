@@ -139,7 +139,8 @@ public static class RebarSplit
             var second = s with { Params = new Dictionary<string, double>(s.Params) { ["length"] = Math.Round(length - startSecond, 6) }, Start = new Hook(0, 0) };
             return (first, second, new Vec2(startSecond, 0));
         }
-        var radius = s.Shape == "polyline" ? s["bendRadius"] : RebarShapes.BendRadius(s.Diameter);
+        // The bar's own bend radius (its own, a pack's, or the Eurocode's), kept by the polyline pieces.
+        var radius = RebarShapes.RadiusOf(s);
         var p = new Dictionary<string, double> { ["bendRadius"] = Math.Round(radius, 6) };
         var a = Between(pts, 0, endFirst);
         var b = Between(pts, startSecond, length);

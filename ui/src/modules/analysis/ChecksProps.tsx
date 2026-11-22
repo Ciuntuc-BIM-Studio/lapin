@@ -102,7 +102,7 @@ function DesignFields({ node }: { node: NodeDto }) {
   const ids = selectionWith(node, (n) => (BAR_CLASSES as readonly string[]).includes(n.type));
   const o = useAnalysis<DesignOptionsDto>('analysis.designOptions');
   const set = (key: string, v: number | string | null) => void execute('analysis.setDesign', { ids, [key]: v });
-  const num = (key: 'ky' | 'kz' | 'lcrY' | 'lcrZ' | 'llt', label: string, title: string) => (
+  const num = (key: 'ky' | 'kz' | 'lcrY' | 'lcrZ' | 'llt' | 'timberInst' | 'timberFin', label: string, title: string) => (
     <Field key={key} label={label} title={title} test={`design-own-${key}`} value={own[key] === undefined ? '' : String(own[key])}
       onApply={(text) => { const v = parseDesignValue(text); if (v === undefined) return false; set(key, v); return true; }} />
   );
@@ -117,6 +117,8 @@ function DesignFields({ node }: { node: NodeDto }) {
         {num('lcrY', 'Lcr,y (m)', 'The buckling length about the strong axis, in metres: instead of the factor')}
         {num('lcrZ', 'Lcr,z (m)', 'The buckling length about the weak axis, in metres: instead of the factor')}
         {num('llt', 'LLT (m)', 'The laterally unrestrained length of a beam, in metres (0: restrained); empty: what the slab it carries gives')}
+        {num('timberInst', 'Timber deflection inst. L/', "The timber bar's instantaneous deflection limit as the span over this number (100 to 1000; a cantilever's span is twice its length); empty: the project's")}
+        {num('timberFin', 'Timber deflection final L/', "The timber bar's final deflection limit as the span over this number (100 to 1000; a cantilever's span is twice its length); empty: the project's")}
         <label className="row small" title="The timber's service class (EN 1995-1-1 2.3.1.3): 1 dry, 2 humid, 3 outdoors; empty: the project's">
           <span>Service class</span>
           <select aria-label="Service class" data-testid="design-own-serviceClass" value={own.serviceClass ?? ''} onChange={(e) => set('serviceClass', e.target.value === '' ? null : Number(e.target.value))}>

@@ -39,7 +39,7 @@ export interface WallsDto { ok: boolean; indicative: boolean; storeys: WallStore
 
 export interface DesignOptionsDto {
   project: Record<string, number | string> | null;
-  defaults: { serviceClass: number; cover: number; bar: number; stirrup: number; fyk: number; fvk0: number; gammaM: number; steelInteraction?: string; snowDuration?: string };
+  defaults: { serviceClass: number; cover: number; bar: number; stirrup: number; fyk: number; fvk0: number; gammaM: number; gammaC: number; gammaS: number; alphaCc: number; gammaM0: number; gammaM1: number; gammaM2: number; gammaMSeismic: number; timberInst: number; timberFin: number; steelInteraction?: string; snowDuration?: string };
   systems: string[];
 }
 
@@ -206,14 +206,14 @@ export function barReinforcementText(r: BarReinforcementDto): { label: string; v
 
 // ── The design values ──
 
-export interface OwnDesign { ky?: number; kz?: number; lcrY?: number; lcrZ?: number; llt?: number; serviceClass?: number; system?: string }
+export interface OwnDesign { ky?: number; kz?: number; lcrY?: number; lcrZ?: number; llt?: number; serviceClass?: number; system?: string; timberInst?: number; timberFin?: number }
 
 /** The element's own design values as the attribute holds them (anything else dropped). */
 export function ownDesign(attr: unknown): OwnDesign {
   if (!attr || typeof attr !== 'object') return {};
   const a = attr as Record<string, unknown>;
   const n = (k: string): number | undefined => (typeof a[k] === 'number' && Number.isFinite(a[k]) ? (a[k] as number) : undefined);
-  return { ky: n('ky'), kz: n('kz'), lcrY: n('lcrY'), lcrZ: n('lcrZ'), llt: n('llt'), serviceClass: n('serviceClass'), system: typeof a.system === 'string' ? a.system : undefined };
+  return { ky: n('ky'), kz: n('kz'), lcrY: n('lcrY'), lcrZ: n('lcrZ'), llt: n('llt'), serviceClass: n('serviceClass'), system: typeof a.system === 'string' ? a.system : undefined, timberInst: n('timberInst'), timberFin: n('timberFin') };
 }
 
 /** A number typed: empty is null (the default again), a number as typed (a comma too), anything else undefined (not applied). */
@@ -237,6 +237,15 @@ export const PROJECT_FIELDS = [
   { key: 'fyk', label: 'fyk (MPa)', scale: 1e-6, title: 'The reinforcement\'s characteristic yield strength' },
   { key: 'fvk0', label: 'fvk0 (MPa)', scale: 1e-6, title: 'The masonry\'s initial shear strength (CR 6 Table 4.5, by the mortar)' },
   { key: 'gammaM', label: 'γM (masonry)', scale: 1, title: 'The masonry\'s partial factor' },
+  { key: 'gammaC', label: 'γc (concrete)', scale: 1, title: "The concrete's partial factor γc (1 to 2); indicative" },
+  { key: 'gammaS', label: 'γs (reinforcement)', scale: 1, title: "The reinforcement's partial factor γs (1 to 1.5); indicative" },
+  { key: 'alphaCc', label: 'αcc', scale: 1, title: "The concrete's long-term coefficient αcc (0.8 to 1); indicative" },
+  { key: 'gammaM0', label: 'γM0 (steel)', scale: 1, title: "The steel's partial factor γM0, for cross-section resistance (1 to 1.5); indicative" },
+  { key: 'gammaM1', label: 'γM1 (steel)', scale: 1, title: "The steel's partial factor γM1, for member buckling resistance (1 to 1.5); indicative" },
+  { key: 'gammaM2', label: 'γM2 (steel)', scale: 1, title: "The steel's partial factor γM2, for net sections and connections (1 to 1.5); indicative" },
+  { key: 'gammaMSeismic', label: 'γM seismic (masonry)', scale: 1, title: "The masonry's partial factor γM in seismic design situations where ag is at most 0.12 g (CR 6 2.4.2.3.1(2)) (1 to 4); indicative" },
+  { key: 'timberInst', label: 'Timber deflection inst. L/', scale: 1, title: "The timber's instantaneous deflection limit as the span over this number (100 to 1000; a cantilever's span is twice its length); indicative" },
+  { key: 'timberFin', label: 'Timber deflection final L/', scale: 1, title: "The timber's final deflection limit as the span over this number (100 to 1000; a cantilever's span is twice its length); indicative" },
 ] as const;
 export type ProjectKey = typeof PROJECT_FIELDS[number]['key'];
 

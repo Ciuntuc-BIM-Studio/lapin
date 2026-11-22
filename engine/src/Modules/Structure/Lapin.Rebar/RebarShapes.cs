@@ -78,8 +78,10 @@ public static class RebarShapes
 
     /// <summary>The mandrel's diameter (m): 4Ø up to Ø16, 7Ø over (SR EN 1992-1-1 table 8.1N).</summary>
     public static double Mandrel(double d) => d <= 0.016 + 1e-9 ? 4 * d : 7 * d;
-    /// <summary>The bend's radius on the bar's axis (m): half the mandrel.</summary>
-    public static double BendRadius(double d) => Mandrel(d) / 2;
+    /// <summary>The bend's radius on the bar's axis (m): the mandrel's radius and half the bar, (mandrel + Ø)/2.</summary>
+    public static double BendRadius(double d) => (Mandrel(d) + d) / 2;
+    /// <summary>The mandrel's diameter a bar is bent on (m) for its radius on the axis: 2r − Ø.</summary>
+    public static double MandrelOf(RebarSpec s) => Math.Max(0, 2 * RadiusOf(s) - s.Diameter);
     /// <summary>A hook's straight tail as practice has it (m): 12Ø up to 90°, 10Ø up to 135°, 5Ø beyond, never under 50 mm.</summary>
     public static double HookLength(double d, double angle) => Math.Max(0.05, angle <= 90 + 1e-9 ? 12 * d : angle <= 135 + 1e-9 ? 10 * d : 5 * d);
     /// <summary>kg per metre of a bar of diameter <paramref name="d"/> (m).</summary>

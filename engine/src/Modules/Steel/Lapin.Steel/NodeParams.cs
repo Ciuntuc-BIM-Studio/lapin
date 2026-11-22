@@ -94,7 +94,7 @@ public sealed record NodeParams(
 /// <summary>
 /// A connection's parameters resolved: what was given, the rest chosen by the profiles it joins (<see cref="Resolve"/>),
 /// as a steel detailer's first guess: bolts from M16 to M27 by the depth of the member bolted, an end plate as thick as
-/// its bolts, holes 2 mm wider than the bolt, edges 1.5 and pitches 3 holes, a base plate 20–40 mm, anchors from M20 to
+/// its bolts, holes with EN 1090-2 Table 11's clearance (1 mm to M14, 2 mm M16–M24, 3 mm past; the rule pack's when it says), edges 1.5 and pitches 3 holes, a base plate 20–40 mm, anchors from M20 to
 /// M30, 30 diameters into the concrete (25 hooked, 20 with an anchor plate).
 /// </summary>
 public sealed record NodeSpec(
@@ -105,15 +105,25 @@ public sealed record NodeSpec(
     static double Up10(double m) => Math.Ceiling(m * 100 - 1e-9) / 100;
     static double Up50(double m) => Math.Ceiling(m * 20 - 1e-9) / 20;
 
-    /// <summary>A bolt's hole: 2 mm wider than the bolt, 3 mm past M24.</summary>
-    public static double Hole(double bolt) => bolt + (bolt > 0.024 ? 0.003 : 0.002);
+    /// <summary>EN 1090-2 Table 11's normal round holes (indicative, the built-in default): the clearance (mm) up to a bolt's diameter (mm), the last beyond.</summary>
+    public static readonly (double? UpTo, double Clearance)[] Clearances = [(14, 1), (24, 2), (null, 3)];
+
+    /// <summary>A bolt's hole (m): the bolt and its clearance, by <paramref name="clearances"/> (the rule pack's) or EN 1090-2 Table 11's: 1 mm to M14, 2 mm M16–M24, 3 mm past.</summary>
+    public static double Hole(double bolt, IReadOnlyList<(double? UpTo, double Clearance)>? clearances = null)
+    {
+        var mm = bolt * 1000;
+        foreach (var (up, c) in clearances ?? Clearances)
+            if (up is not { } u || mm <= u + 1e-9) return bolt + c / 1000;
+        return bolt + (clearances ?? Clearances)[^1].Clearance / 1000;
+    }
 
     /// <summary>
     /// The parameters of a connection of <paramref name="kind"/> resolved over the section it bolts
     /// (<paramref name="bolted"/>: the column at a base, the rafter at an eaves, the rafters at an apex or a splice, the
     /// post under a gable rafter).
     /// </summary>
-    public static NodeSpec Resolve(string kind, Section bolted, NodeParams p)
+    /// <param name="clearances">The holes' clearances by bolt (the project's rule pack); null: EN 1090-2's.</param>
+    public static NodeSpec Resolve(string kind, Section bolted, NodeParams p, IReadOnlyList<(double? UpTo, double Clearance)>? clearances = null)
     {
         var h = bolted.Depth;
         var basePlate = kind == "base";
@@ -125,7 +135,7 @@ public sealed record NodeSpec(
             : kind == "gusset" ? (h < 0.07 ? 0.012 : 0.016)
             : kind == "fly" ? 0.012
             : h < 0.3 ? 0.016 : h < 0.45 ? 0.02 : h < 0.6 ? 0.024 : 0.027);
-        var hole = Hole(bolt);
+        var hole = Hole(bolt, clearances);
         var edge = p.Edge ?? Up5(1.5 * hole);
         var pitch = p.Pitch ?? Up5(Math.Max(3 * hole, 0.06));
         var plate = p.Plate ?? (basePlate ? (fixedBase ? (h < 0.5 ? 0.03 : 0.04) : (h < 0.4 ? 0.02 : 0.025))

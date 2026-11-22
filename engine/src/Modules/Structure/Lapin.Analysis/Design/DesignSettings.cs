@@ -7,9 +7,10 @@ namespace Lapin.Analysis.Design;
 
 /// <summary>
 /// The design checks' own values (docs/plan-fem.md §12.6): the project's on the IfcProject (<c>analysisDesign</c>: the timber's
-/// service class, the concrete cover, the bars' and stirrups' diameters, fyk, the masonry's mortar and γM), and an element's on
-/// it (<c>analysisDesign</c>: the buckling length factors or lengths about each axis, the laterally unrestrained length, the
-/// service class, the span/depth system), set by <c>analysis.setDesign</c> (one undo step; null back to the default).
+/// service class, the concrete cover, the bars' and stirrups' diameters, fyk, γc, γs, αcc, the steel's γM0, γM1, γM2, the masonry's
+/// mortar and γM, its seismic γM, the timber's deflection limits), and an element's on it (<c>analysisDesign</c>: the buckling length
+/// factors or lengths about each axis, the laterally unrestrained length, the service class, the span/depth system, the timber's
+/// deflection limits), set by <c>analysis.setDesign</c> (one undo step; null back to the default).
 /// </summary>
 public static class DesignSettings
 {
@@ -32,6 +33,15 @@ public static class DesignSettings
         new("fyk", 200e6, 700e6, true, false, "the reinforcement's characteristic yield strength (Pa)"),
         new("fvk0", 0.01e6, 1e6, true, false, "the masonry's initial shear strength fvk0 (Pa)"),
         new("gammaM", 1, 4, true, false, "the masonry's partial factor γM"),
+        new("gammaMSeismic", 1, 4, true, false, "the masonry's γM in the seismic design situation where ag ≤ 0.12 g (CR 6 2.4.2.3.1(2))"),
+        new("gammaC", 1, 2, true, false, "the concrete's partial factor γc"),
+        new("gammaS", 1, 1.5, true, false, "the reinforcement's partial factor γs"),
+        new("alphaCc", 0.8, 1, true, false, "the concrete's long-term coefficient αcc"),
+        new("gammaM0", 1, 1.5, true, false, "the steel's partial factor γM0 (cross-sections)"),
+        new("gammaM1", 1, 1.5, true, false, "the steel's partial factor γM1 (members' buckling)"),
+        new("gammaM2", 1, 1.5, true, false, "the steel's partial factor γM2 (net sections, connections)"),
+        new("timberInst", 100, 1000, true, true, "the timber's instantaneous deflection limit, the span over it"),
+        new("timberFin", 100, 1000, true, true, "the timber's final deflection limit, the span over it"),
     ];
     public static readonly string[] Systems = ["simple", "end", "interior", "cantilever", "flat"];
     /// <summary>The steel members' interaction factors (6.3.3): EN 1993-1-1 Annex A (method 1, the Romanian annex's, the default) or Annex B (method 2).</summary>
@@ -114,10 +124,13 @@ public static class DesignSettings
 
     public static JsonObject ToJson(IModelView m) => new()
     {
-        ["project"] = Project(m)?.DeepClone(),
+        ["project"] = Project(m)?.DeepClone(), ["indicative"] = true,
         ["defaults"] = new JsonObject
         {
             ["serviceClass"] = 1, ["cover"] = 0.030, ["bar"] = 0.016, ["stirrup"] = 0.008, ["fyk"] = 500e6, ["fvk0"] = 0.20e6, ["gammaM"] = 2.2, ["steelInteraction"] = "A", ["snowDuration"] = "short",
+            ["gammaMSeismic"] = MasonryDesign.GammaMSeismic, ["gammaC"] = 1.5, ["gammaS"] = 1.15, ["alphaCc"] = 1.0,
+            ["gammaM0"] = SteelDesign.GammaM0, ["gammaM1"] = SteelDesign.GammaM1, ["gammaM2"] = SteelDesign.GammaM2,
+            ["timberInst"] = TimberDesign.InstLimit, ["timberFin"] = TimberDesign.FinLimit,
         },
         ["systems"] = new JsonArray(Systems.Select(s => (JsonNode)s).ToArray()),
         ["steelInteraction"] = new JsonArray(SteelMethods.Select(s => (JsonNode)s).ToArray()),

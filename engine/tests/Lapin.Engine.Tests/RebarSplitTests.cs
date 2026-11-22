@@ -114,8 +114,9 @@ public class RebarSplitTests
         Assert.Equal("polyline", l1.Str("shape"));
         Assert.Equal([(0, 0), (4.4, 0)], V(l1));
         Assert.Equal([(0, 0), (4.4, 0), (4.4, 1)], V(l2));
-        Assert.Equal(0.032, (double)l2.Attrs["params"]!["bendRadius"]!, 9);
-        Assert.Equal(0.032, RebarShapes.RadiusOf(Rebars.SpecOf(l2)), 9);
+        // Ø16 on a 4Ø mandrel: the radius on the bar's axis (64 + 16)/2 = 40 mm.
+        Assert.Equal(0.040, (double)l2.Attrs["params"]!["bendRadius"]!, 9);
+        Assert.Equal(0.040, RebarShapes.RadiusOf(Rebars.SpecOf(l2)), 9);
         Assert.StartsWith("Polyline bar", l1.Name);
     }
 

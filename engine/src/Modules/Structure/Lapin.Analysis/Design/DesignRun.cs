@@ -69,7 +69,7 @@ public sealed class DesignRun
     {
         if (id == null) return null;
         if (_materials.TryGetValue(id, out var had)) return had;
-        var e = (m.Get(id) is { Class: IfcClass.Material } own ? own : Materials.Find(m, id)) ?? new Entity($"lapin-material-{id}", IfcClass.Material, id, []);
+        var e = StructuralMaterials.EntityOf(m, id);
         return _materials[id] = (StructuralMaterials.Of(m, e), e);
     }
 
@@ -155,9 +155,14 @@ public sealed class DesignRun
                 case "steel":
                 {
                     var props = SectionProperties.Of(shape);
-                    if (props == null || mm.Mat.Fy is not { } fy) { notes.Add("No fy or no section properties: not checked."); checks = []; break; }
-                    var member = new SteelMember(shape, props, fy.Value, mm.Mat.E?.Value ?? 210e9, l, lcrY, lcrZ, llt)
-                        { LengthsSource = lengths, Method = DesignSettings.Choice(project, "steelInteraction", DesignSettings.SteelMethods) };
+                    // The analysis refuses a bar without E, so E is there; G is the analysis' own (the material's ν).
+                    if (props == null || mm.Mat.Fy is not { } fy || mm.Mat.E is not { } es) { notes.Add("No fy or no section properties: not checked."); checks = []; break; }
+                    var member = new SteelMember(shape, props, fy.Value, es.Value, l, lcrY, lcrZ, llt)
+                    {
+                        G = StructuralMaterials.ShearModulus(mm.Mat, es.Value, out _), LengthsSource = lengths, Method = DesignSettings.Choice(project, "steelInteraction", DesignSettings.SteelMethods),
+                        GammaM0 = DesignSettings.Num(project, "gammaM0") ?? SteelDesign.GammaM0, GammaM1 = DesignSettings.Num(project, "gammaM1") ?? SteelDesign.GammaM1,
+                        GammaM2 = DesignSettings.Num(project, "gammaM2") ?? SteelDesign.GammaM2,
+                    };
                     checks = SteelDesign.Check(member, sets);
                     break;
                 }
@@ -169,7 +174,7 @@ public sealed class DesignRun
                     var column = src.Kind == "column" || vertical;
                     var (sys, sk) = SystemOf(own, k, e, cantilever, members);
                     var cm = new ConcreteMember(shape.Width, shape.Depth, l, column, c, lcrY, lcrZ, sk, sys) { LengthsSource = lengths };
-                    var (pst, pbars) = Provided(m, src.SourceId);
+                    var (pst, pbars) = Provided(m, src.SourceId, l);
                     cm = cm with { ProvidedStirrups = pst, ProvidedBars = column ? pbars : null };
                     (checks, need) = ConcreteMembers.Check(cm, sets);
                     break;
@@ -181,7 +186,12 @@ public sealed class DesignRun
                     if (tc == null) { notes.Add("No strength class (C24, GL24h…) in the material's name: not checked."); checks = []; break; }
                     var sc = (int)(DesignSettings.Num(own, "serviceClass") ?? serviceDefault);
                     var lef = DesignSettings.Num(own, "llt");
-                    var tm = new TimberMember(shape.Width, shape.Depth, l, tc, sc, lcrY, lcrZ, restrained && lef == null ? 0 : lef) { LengthsSource = lengths, Cantilever = cantilever };
+                    var tm = new TimberMember(shape.Width, shape.Depth, l, tc, sc, lcrY, lcrZ, restrained && lef == null ? 0 : lef)
+                    {
+                        LengthsSource = lengths, Cantilever = cantilever,
+                        InstLimit = DesignSettings.Num(own, "timberInst") ?? DesignSettings.Num(project, "timberInst") ?? TimberDesign.InstLimit,
+                        FinLimit = DesignSettings.Num(own, "timberFin") ?? DesignSettings.Num(project, "timberFin") ?? TimberDesign.FinLimit,
+                    };
                     checks = TimberDesign.Check(tm, sets);
                     var snow = Run.SnowDuration;
                     checks = checks.Select(c => c.Note != null && c.Note.Contains("kmod") ? c with { Note = c.Note + $" Snow taken as a {snow}-term action (EN 1995-1-1 Table 2.2; the project's choice, analysis.setDesign snowDuration)." } : c).ToList();
@@ -238,8 +248,17 @@ public sealed class DesignRun
         Notes.Add($"EN 1993-1-1 5.2.1(3): αcr {(x.Bound ? "≥ " : "= ")}{x.Alpha:0.##} under „{x.Combination.Name}”, below 10: second-order effects must be taken (analysis.setOptions secondOrder, or the sway effects × 1/(1 − 1/αcr) when αcr ≥ 3); analysis.buckling gives every combination's.");
     }
 
-    static ConcreteValues Values(JsonObject? project) => new(25e6,
-        DesignSettings.Num(project, "fyk") ?? 500e6, DesignSettings.Num(project, "cover") ?? 0.030, DesignSettings.Num(project, "bar") ?? 0.016, DesignSettings.Num(project, "stirrup") ?? 0.008);
+    /// <summary>The project's concrete values (analysis.setDesign): fyk, the cover and diameters, γc, γs and αcc; the defaults EN 1992-1-1's recommended ones.</summary>
+    static ConcreteValues Values(JsonObject? project)
+    {
+        var d = new ConcreteValues(25e6);
+        return d with
+        {
+            Fyk = DesignSettings.Num(project, "fyk") ?? d.Fyk, Cover = DesignSettings.Num(project, "cover") ?? d.Cover, Bar = DesignSettings.Num(project, "bar") ?? d.Bar,
+            Stirrup = DesignSettings.Num(project, "stirrup") ?? d.Stirrup, GammaC = DesignSettings.Num(project, "gammaC") ?? d.GammaC,
+            GammaS = DesignSettings.Num(project, "gammaS") ?? d.GammaS, AlphaCc = DesignSettings.Num(project, "alphaCc") ?? d.AlphaCc,
+        };
+    }
 
     /// <summary>The span/depth system (Table 7.4N): given, or from its ends (a free end a cantilever; an end continuing into another beam in line).</summary>
     static (string Name, double K) SystemOf(JsonObject? own, int k, FrameElement e, bool cantilever, List<FrameElement> members)
@@ -259,21 +278,19 @@ public sealed class DesignRun
         };
     }
 
-    /// <summary>What the element's type provides (the rebar module's settings on it): the stirrups' Asw/s and a column's bars.</summary>
-    static (double? Stirrups, double? Bars) Provided(IModelView m, string sourceId)
+    /// <summary>
+    /// What the element's type provides (the rebar module's settings on it, read as it lays them): the stirrups' Asw/s zone by zone
+    /// over the bar's length <paramref name="l"/>, and a column's bars.
+    /// </summary>
+    static (IReadOnlyList<StirrupZone>? Stirrups, double? Bars) Provided(IModelView m, string sourceId, double l)
     {
         if (m.RelatingOf(sourceId, IfcClass.RelDefinesByType) is not { } type) return (null, null);
-        double? st = null, bars = null;
-        if (type.Attrs["stirrups"] is JsonObject s && s["enabled"] is JsonValue ev && ev.TryGetValue<bool>(out var on) && on
-            && Json.Number(s["diameter"]) is { } d && Json.Number(s["step"]) is { } step && step > 0)
-        {
-            var loops = (string?)s["pattern"] switch { "diamond" => 2, "cross" => 3, _ => 1 };
-            st = 2 * loops * Math.PI * d * d / 4 / step;
-        }
-        if (type.Attrs["bars"] is JsonObject b && b["enabled"] is JsonValue bv && bv.TryGetValue<bool>(out var bon) && bon
-            && Json.Number(b["diameter"]) is { } bd && Json.Number(b["perFace"]) is { } pf)
-            bars = 4 * (Math.Max(2, pf) - 1) * Math.PI * bd * bd / 4;
-        return (st, bars);
+        IReadOnlyList<StirrupZone>? st = null;
+        double? bars = null;
+        if (type.Attrs[StirrupLayout.Key] is JsonObject s && StirrupLayout.From(s) is { Enabled: true } sl)
+            st = sl.Along(l).Where(z => z.Step > 0).Select(z => new StirrupZone(z.From, z.To, sl.AswS(z.Step))).ToList();
+        if (type.Attrs[ColumnBarLayout.Key] is JsonObject b && ColumnBarLayout.From(b) is { Enabled: true } bl) bars = bl.Area;
+        return (st is { Count: > 0 } ? st : null, bars);
     }
 
     /// <summary>Timber's deflections in each characteristic combination: winst, and wfin with kdef on the quasi-permanent part (2.3.2.2).</summary>
@@ -399,13 +416,14 @@ public sealed class DesignRun
             var fm = gr.Fm;
             var fvk0 = DesignSettings.Num(project, "fvk0") is { } own ? own / 1e6 : gr.Key == "aac" ? 0.15 : fm >= 10 ? 0.30 : 0.20;
             var gm = DesignSettings.Num(project, "gammaM") ?? 2.2;
-            var gms = settings.Ag is { } ag && ag <= 0.12 ? Math.Min(gm, 1.65) : gm;
+            // CR 6 2.4.2.3.1(2): in the seismic design situation where ag ≤ 0.12 g, γM 1.65 (the project's when it says), never above the persistent one.
+            var gms = settings.Ag is { } ag && ag <= 0.12 ? Math.Min(gm, DesignSettings.Num(project, "gammaMSeismic") ?? MasonryDesign.GammaMSeismic) : gm;
             var headNodes = cuts.FirstOrDefault(c => c.Where == "head")?.Nodes ?? [];
             var rho2 = headNodes.Any(slabTop.Contains) ? 0.75 : 1.0;
             var t = e0.Thickness;
             wall = new MasonryWall(length, t, height, rho2, vals.Fk.Value / 1e6, vals.E.Value / 1e6, vals.Fb, fvk0, gm, gms);
             checks = MasonryDesign.Check(wall, fsets);
-            notes.Add($"fk = {Checks.F(wall.Fk, "0.##")} MPa, E = {Checks.F(wall.E, "0")} MPa, fvk0 = {Checks.F(fvk0, "0.##")} MPa (CR 6 Table 4.5, indicative), γM = {Checks.F(gm, "0.##")}{(gms != gm ? $" ({Checks.F(gms, "0.##")} seismic, ag ≤ 0.12 g: CR 6 2.4.2.3.1(2))" : "")}.");
+            notes.Add($"fk = {Checks.F(wall.Fk, "0.##")} MPa, E = {Checks.F(wall.E, "0")} MPa, fvk0 = {Checks.F(fvk0, "0.##")} MPa (CR 6 Table 4.5, indicative), γM = {Checks.F(gm, "0.##")}{(gms != gm ? $" ({Checks.F(gms, "0.##")} seismic, ag ≤ 0.12 g: CR 6 2.4.2.3.1(2), analysis.setDesign gammaMSeismic)" : "")}.");
         }
         else if (mm.Mat.Kind == "masonry") notes.Add("No cut through the wall's mesh: not checked.");
         // Keep the governing combinations' forces only: the largest N, |V|, |M| at the foot.

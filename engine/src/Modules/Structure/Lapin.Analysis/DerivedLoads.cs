@@ -195,9 +195,9 @@ public sealed class LoadsReport
         {
             if (id == null) return null;
             if (cache.TryGetValue(id, out var d)) return d;
-            var e = m.Get(id) is { Class: IfcClass.Material } own ? own : Materials.Find(m, id);
-            double? rho = e != null ? MaterialMeasure.DensityOf(e) : null;
-            rho ??= StructuralMaterials.Of(m, e ?? new Entity($"lapin-material-{id}", IfcClass.Material, id, [])).Density?.Value;
+            // A bare material (no entity of that name) has no attributes, so its density is read from its name only.
+            var e = StructuralMaterials.EntityOf(m, id);
+            var rho = MaterialMeasure.DensityOf(e) ?? StructuralMaterials.Of(m, e).Density?.Value;
             return cache[id] = rho is > 0 ? rho : null;
         }
     }

@@ -134,7 +134,7 @@ public static class RebarLinework
         if (LineworkConversion.Num(o, "count") is { } n && n >= 1) args["count"] = Math.Round(n);
         if ((string?)o["hooks"] is "90" or "135" or "180" && double.TryParse((string?)o["hooks"], System.Globalization.CultureInfo.InvariantCulture, out var angle))
         {
-            var hook = new JsonObject { ["angle"] = angle, ["length"] = RebarShapes.HookLength(d, angle) };
+            var hook = new JsonObject { ["angle"] = angle, ["length"] = RebarRuleSection.HookLength(q.Model, d, angle) };
             args["hooks"] = new JsonObject { ["start"] = hook.DeepClone(), ["end"] = hook.DeepClone() };
         }
         return [new("rebar.add", args, $"A {(string)args["shape"]!} bar Ø{Math.Round(d * 1000)} on {view.Name}")];

@@ -77,7 +77,7 @@ public static class RebarBvbs
           .Append('e').Append(D(weight)).Append('@')
           .Append('d').Append(I(s.Diameter * 1000)).Append('@')
           .Append('g').Append(Clean(steel)).Append('@')
-          .Append('s').Append(I(RebarShapes.RadiusOf(s) * 2 * 1000)).Append('@')
+          .Append('s').Append(I(RebarShapes.MandrelOf(s) * 1000)).Append('@')
           .Append("v@");
         sb.Append('G');
         foreach (var (len, turn) in Legs(s)) sb.Append('l').Append(I(len)).Append("@w").Append(D(turn, "0.##")).Append('@');
