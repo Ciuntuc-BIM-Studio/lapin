@@ -150,6 +150,14 @@ Plain reading: what Lapin lacks is not smoothness (facets at a fine tolerance lo
 - **IFC:** `Lapin_SubD.Cage` (IFCTEXT, the cage's JSON); the intent set leaves `cage` out (`IIfcExportFilter.IsPrivate`, new); the import puts it back (`IfcImport.SubDCageOf`). The body is the tessellation, as for every Studio solid.
 - **Left for F1c/F1d:** the interface (no UI strings were added; the engine field label "SubD levels (at most)" needs its translations), mirroring by a plan move (`Placement2D.Mirrored` is not applied to the cage, as for primitives and bodies), hollow closed SubDs, the self-intersection of a thickness larger than the surface's radius of curvature (not checked).
 
+### 8.5 What F1c did (22.11.2026)
+- **Create:** Studio → Solids → **SubD** pulldown: SubD box, cylinder, plane (a click, plan or ground in 3D, `studio.subdCreate`), **SubD from solid**, **Edit cage**.
+- **Cage edit mode** (`modules/studio/SubDEdit3D.tsx`, `subdStore.ts`, pure rules and tests in `subdModel.ts`/`subdModel.test.ts`): Tab, a double click or the card's button enter it; Esc, Tab, Done or another selection leave it. The cage is an SVG overlay over the body (creases thicker, semi-sharp orange and sharp red, borders dashed); filter Vertex/Edge/Face (1/2/3); click picks, Shift adds; a drag takes `snap3d.ts`'s snaps (plus the cage's other points) and the arrow locks, a typed distance or dx,dy,dz (Enter), shows the wireframe moved (partners of a symmetric cage by the mirrored move), and letting go is ONE `studio.subdEdit` with `translate`. Scale and Turn typed on the bar; Extrude (distance), Insert loop, Delete faces, Crease (Smooth, Semi-sharp 1-3, Sharp) by `studio.subdOp`, the cage asked again after each. A plain click in the mode is taken by the new `pickHandlers` hook (`platform/scope.ts`, called from `Viewport3D`'s click) so it only lets go of the pick.
+- **Card** (`SubDCard.tsx`): counts, open or closed, level and deviation, thickness and side (open surfaces only: said so, disabled on a closed cage), symmetry x/y/z/none with the engine's refusal shown; the cap "SubD levels (at most)" is the generic field.
+- **Strings** in all ten languages; the guide's Studio page (EN, RO) and the scene `studio-subd` (not run).
+- **Left:** the body is redrawn only after the release (the live preview is the wireframe); the keep-negative-half option of `subdSet` has no control; the interface was typechecked and unit-tested but not yet looked at on screen.
+
+
 ## 9. F2: exact surfaces for what Studio makes (after F1)
 
 - **`Lapin.Geometry/BSpline.cs`:** B-spline and NURBS curves and surfaces (evaluation, derivatives, knot insertion, degree elevation, rational weights), from *The NURBS Book*; tests on its worked examples.
