@@ -184,8 +184,7 @@ public static class PolylineEdits
 
     static Entity Check(ICommandContext ctx, Entity e, IPolylinePieces h)
     {
-        if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException($"„{e.Name}” is a reference from a file: convert it to native first.");
-        Pins.Refuse([e]);
+        Pins.RefuseEdit(e);
         if (h.Refuse(ctx.Model, e) is { } why) throw new CommandException(why);
         return e;
     }
@@ -250,7 +249,7 @@ public static class PolylineEdits
 
     public static JsonObject Offset(ICommandContext ctx, JsonObject a, Entity e, IPolylinePieces h)
     {
-        if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException($"„{e.Name}” is a reference from a file: convert it to native first.");
+        if (Pins.IsReference(e)) Pins.RefuseEdit(e);
         var line = LineOf(h, e);
         var side = Args.TryPoint(a["side"]) ?? throw new CommandException("Which side? A point on it.");
         var foot = line.Along(side);

@@ -59,8 +59,7 @@ public static class OutlineSplits
         var e = m.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
         var h = ctx.Services.All<IOutlinePieces>().FirstOrDefault(x => x.Handles(e))
             ?? throw new CommandException($"„{e.Name}” is not cut by a line: floors, ceilings, roofs, drawn rooms, platforms and parcels are.");
-        if (StoredBodies.Has(e) || e.Attrs["reference"] != null) throw new CommandException($"„{e.Name}” is a reference from a file: convert it to native first.");
-        Pins.Refuse([e]);
+        Pins.RefuseEdit(e);
         if (h.Refuse(m, e, split) is { } why) throw new CommandException(why);
         var corners = Args.StoredPoints(e.Attrs[h.Key]);
         if (corners.Count < 3) throw new CommandException($"„{e.Name}” has no outline.");

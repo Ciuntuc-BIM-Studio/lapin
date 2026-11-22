@@ -102,13 +102,14 @@ public static class StoreyCopy
             var skipped = new JsonArray();
             foreach (var target in targets)
             {
-                var already = m.RelatedOf(target.Id, IfcClass.RelContainedInSpatialStructure).ToList();
+                // What stands on the target already, by what a copy must share with it (class, predefined type, type).
+                var already = m.RelatedOf(target.Id, IfcClass.RelContainedInSpatialStructure).GroupBy(x => LikeKey(m, x)).ToDictionary(g => g.Key, g => g.ToList());
                 var use = new List<Entity>();
                 foreach (var e in top)
                 {
                     // A storey's own elements are not copied onto it.
                     if (Spatial.StoreyOf(m, e.Id) is not { } from || from.Id == target.Id) continue;
-                    if (skipDuplicates && already.FirstOrDefault(x => Same(ctx, e, x, from, target, keep)) != null)
+                    if (skipDuplicates && already.TryGetValue(LikeKey(m, e), out var like) && Duplicate(ctx, e, like, from, target, keep))
                     {
                         skipped.Add((JsonNode)new JsonObject { ["storeyId"] = target.Id, ["id"] = e.Id, ["name"] = e.Name });
                         continue;
@@ -312,14 +313,19 @@ public static class StoreyCopy
         return named.Count > 0 && named.All(copied.Contains);
     }
 
-    /// <summary>Whether <paramref name="x"/>, on the target storey, is <paramref name="e"/> as its copy would stand there: its class, type and attributes.</summary>
-    static bool Same(ICommandContext ctx, Entity e, Entity x, Entity from, Entity target, string keep)
+    /// <summary>What an element and its copy share before their attributes are compared: its class, predefined type and type.</summary>
+    static (string Class, string? Predefined, string? Type) LikeKey(IModelView m, Entity e) =>
+        (e.Class, e.PredefinedType, m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Id);
+
+    /// <summary>
+    /// Whether one of <paramref name="like"/> (on the target storey, of <paramref name="e"/>'s class, predefined type and type) is
+    /// <paramref name="e"/> as its copy would stand there: the copy's attributes worked out once, not once per element there.
+    /// </summary>
+    static bool Duplicate(ICommandContext ctx, Entity e, List<Entity> like, Entity from, Entity target, string keep)
     {
-        var m = ctx.Model;
-        if (x.Id == e.Id || x.Class != e.Class || x.PredefinedType != e.PredefinedType) return false;
-        if (m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Id != m.RelatingOf(x.Id, IfcClass.RelDefinesByType)?.Id) return false;
+        if (like.All(x => x.Id == e.Id)) return false;
         var expected = StoreyMove.Rehomed(ctx, e, from, target, keep) ?? e.Attrs;
-        return Alike(m, expected, x.Attrs);
+        return like.Any(x => x.Id != e.Id && Alike(ctx.Model, expected, x.Attrs));
     }
 
     /// <summary>Two attribute trees alike: numbers within a tenth of a millimetre, names of elements of the same class.</summary>

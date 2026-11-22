@@ -1124,7 +1124,10 @@ public sealed class AnalyticalModel
     /// <summary>Node ids N1… in order of height, then y, then x (a model exported twice names its nodes alike).</summary>
     void NameNodes()
     {
-        var used = Nodes.Where(n => Frames.Any(f => f.I == n || f.J == n) || Shells.Any(s => s.Nodes.Contains(n))).ToHashSet();
+        // The nodes a bar or a shell uses, gathered in one pass over them (not every bar and shell asked for each node).
+        var used = new HashSet<ANode>();
+        foreach (var f in Frames) { used.Add(f.I); used.Add(f.J); }
+        foreach (var sh in Shells) used.UnionWith(sh.Nodes);
         var k = 0;
         foreach (var n in Nodes.Where(used.Contains).OrderBy(n => Math.Round(n.At.Z, 4)).ThenBy(n => Math.Round(n.At.Y, 4)).ThenBy(n => Math.Round(n.At.X, 4)))
             n.Id = $"N{++k}";

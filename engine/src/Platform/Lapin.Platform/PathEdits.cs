@@ -182,9 +182,7 @@ public static class PathEdits
         var e = m.Get(id ?? "") ?? throw new CommandException("The element is not in the project.");
         var paths = ctx.Services.Get<IPathElements>();
         if (paths?.IsPath(e.Class) != true) throw new CommandException($"„{e.Name}” has no axis to cut: walls, beams and strip footings do.");
-        if (e.Attrs["start"] is not JsonArray || e.Attrs["end"] is not JsonArray || StoredBodies.Has(e) || e.Attrs["reference"] != null)
-            throw new CommandException($"„{e.Name}” is a reference from a file: convert it to native first.");
-        Pins.Refuse([e]);
+        Pins.RefuseEdit(e, reference: e.Attrs["start"] is not JsonArray || e.Attrs["end"] is not JsonArray);
         foreach (var h in Hooks(ctx, e))
             if (h.Refuse(m, e) is { } why) throw new CommandException(why);
         return e;
