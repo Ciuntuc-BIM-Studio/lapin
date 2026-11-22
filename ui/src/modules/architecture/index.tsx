@@ -432,6 +432,13 @@ function FillPlacingHint() {
   const flipped = useFillHand((s) => s.flipped);
   return <button type="button" className="btn small" data-action="fill-hand" aria-pressed={flipped} title="The side of the wall the cursor is on is the side it opens to" onClick={flipFillHand}>{flipped ? 'Other hand (Space)' : 'Hand (Space)'}</button>;
 }
+/** The door or window type a tool places: the one chosen (`wanted`, in the configurator), else the project's first. */
+function resolveFillType(kind: 'door' | 'window') {
+  const s = useSession.getState();
+  const wanted = (kind === 'door' ? useUi.getState().doorTypeId : useUi.getState().windowTypeId) ?? null;
+  const type = (wanted ? s.nodes.get(wanted) : undefined) ?? ofClass(s, kind === 'door' ? 'IfcDoorType' : 'IfcWindowType')[0];
+  return { wanted, type, s };
+}
 /** A door or window: click a wall where it goes (the type: the one picked in the configurator, else the project's first). */
 const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'], shortcut: string): ToolDef => ({
   id: `architecture.${kind}`, label, icon, shortcut,
@@ -444,17 +451,12 @@ const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'],
     kind: 'pick', types: ['IfcWall'], reach: 40,
     // What a module that drives a wall is asked, as the cursor moves: whether this fits there.
     placing: (_wall, _at) => {
-      const s = useSession.getState();
-      const wanted = kind === 'door' ? useUi.getState().doorTypeId : useUi.getState().windowTypeId;
-      const type = (wanted ? s.nodes.get(wanted) : undefined) ?? ofClass(s, kind === 'door' ? 'IfcDoorType' : 'IfcWindowType')[0];
+      const { type } = resolveFillType(kind);
       const width = (type?.props.spec as { width?: number } | undefined)?.width ?? (kind === 'door' ? 0.9 : 1.2);
       return { kind, width, typeId: type?.id ?? null };
     },
     ghost: (wall, at) => {
-      const s = useSession.getState();
-      const wanted = kind === 'door' ? useUi.getState().doorTypeId : useUi.getState().windowTypeId;
-      const cls = kind === 'door' ? 'IfcDoorType' : 'IfcWindowType';
-      const type = (wanted ? s.nodes.get(wanted) : undefined) ?? ofClass(s, cls)[0];
+      const { type, s } = resolveFillType(kind);
       const spec = type?.props.spec as { width?: number; columns?: number[]; panels?: PanelLike[] } | undefined;
       const shape = spec?.width ? { width: spec.width, columns: spec.columns, panels: spec.panels }
         : kind === 'door' ? { width: 0.9, panels: [{ operation: 'swing-left' }] } : { width: 1.2, panels: [{ operation: 'fixed' }] };
@@ -465,7 +467,7 @@ const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'],
   },
   complete: async ({ points: [p], entity }, ctx) => {
     if (!entity) return;
-    const typeId = kind === 'door' ? useUi.getState().doorTypeId : useUi.getState().windowTypeId;
+    const typeId = resolveFillType(kind).wanted;
     await ctx.execute(kind === 'door' ? 'architecture.addDoor' : 'architecture.addWindow', {
       wallId: entity.id, x: p.x, y: p.y, ...fillFlips(arcOf(entity.props), p, useFillHand.getState().flipped), ...(typeId ? { typeId } : {}),
     });

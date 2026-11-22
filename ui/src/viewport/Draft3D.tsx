@@ -8,6 +8,8 @@
  * middle buttons still turn and move the view.
  */
 
+import { SNAP_REACH_PX } from './snap3d';
+import { screenPath } from './screenPath';
 import { keyIsForField } from './overlayKeys';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
@@ -149,7 +151,7 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
     const inferOver = (a: Aimed, raw: Vec2, base: Vec2 | null): Aimed => {
       if (a.kind === 'point' || a.lock) { setInferred(null); return a; }
       const edges = faceLinesRef.current.map((l) => (l.type === 'line' ? { a: l.a, b: l.b } : null)).filter((x): x is { a: Vec2; b: Vec2 } => !!x);
-      const i = infer({ raw, base, edges, axes: axesInPlane(frame.right, frame.up), tol: 10 / scaleRef.current });
+      const i = infer({ raw, base, edges, axes: axesInPlane(frame.right, frame.up), tol: SNAP_REACH_PX / scaleRef.current });
       if (i.kind === 'On face') { setInferred(null); return a; }
       setInferred(i);
       return { ...a, point: i.point, kind: 'point' };
@@ -234,8 +236,7 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
   const sketchFace = (() => {
     const o = sketch?.planeId === work?.id ? sketch?.outline : undefined;
     if (!o || dragging) return null;
-    const s = o.map((q) => project(new THREE.Vector3(q.x, q.y, q.z)));
-    return s.some((p) => !p) ? null : s.map((p, i) => `${i ? 'L' : 'M'}${p!.x.toFixed(1)} ${p!.y.toFixed(1)}`).join('') + 'Z';
+    return screenPath(o.map((q) => project(new THREE.Vector3(q.x, q.y, q.z))), true);
   })();
   // A board's own bar is drawn by its module (Studio's Board3D); this chip is for a plane no board claims.
   const sketchChip = sketch && !dragging && !board ? (

@@ -10,7 +10,6 @@ import type { DrawingDto } from '../../viewport/drawing';
 export type PreviewDetail = 'coarse' | 'medium' | 'fine';
 export type PreviewPane = 'plan' | 'section' | '3d';
 
-export const PREVIEW_SCALES = [20, 50, 100] as const;
 export const PREVIEW_DETAILS: PreviewDetail[] = ['coarse', 'medium', 'fine'];
 export const PREVIEW_PANES: PreviewPane[] = ['plan', 'section', '3d'];
 

@@ -85,15 +85,7 @@ export interface OptimizeReport {
   source?: string; target?: string; name?: string; data?: string;
 }
 
-/** A size as people read it: bytes, kB, MB, GB. */
-export function sizeText(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  const units = ['kB', 'MB', 'GB'];
-  let v = bytes / 1024;
-  let i = 0;
-  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
-  return `${v >= 100 ? v.toFixed(0) : v.toFixed(1)} ${units[i]}`;
-}
+export { sizeText } from './bytes';
 
 /** Before → after, with the change as a share: "2.8 MB → 2.2 MB (−20 %)". */
 export function change(before: number, after: number, text: (n: number) => string = (n) => n.toLocaleString('en-US')): string {

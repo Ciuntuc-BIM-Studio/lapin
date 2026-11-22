@@ -8,6 +8,8 @@
  * the callout points at a view that is there (a drafting view, another detail) and makes none.
  */
 
+import { useStandards } from '../../engine/unitsStore';
+import { scaleOptions } from '../../viewport/viewScale';
 import { CircleDashed, ExternalLink, Pentagon, ScanSearch } from 'lucide-react';
 import { create } from 'zustand';
 import type { NodeDto } from '../../engine/protocol';
@@ -26,9 +28,6 @@ export type CalloutShape = 'rect' | 'circle' | 'polygon';
 
 /** What the tool makes: the detail's scale (null: 1:20 or the project's next standard scale under the parent's) and, for a reference callout, the view it calls. */
 export const useCalloutTool = create<{ scale: number | null; reference: string | null }>(() => ({ scale: null, reference: null }));
-
-/** The scales the tool's bar offers a detail. */
-const DETAIL_SCALES = [50, 25, 20, 10, 5, 2, 1];
 
 const TOOL_IDS: Record<CalloutShape, string> = { rect: 'view.callout', circle: 'view.calloutCircle', polygon: 'view.calloutPolygon' };
 
@@ -104,6 +103,7 @@ export function referableViews(nodes: Map<string, NodeDto>, hostId: string | nul
 
 /** The tool's bar: the boundary's shape, the detail's scale, and a view to refer to instead of making one. */
 function CalloutOptions() {
+  const projectScales = useStandards((s) => s.scales);
   const tool = useUi((s) => s.tool);
   const { scale, reference } = useCalloutTool();
   const nodes = useSession((s) => s.nodes);
@@ -121,7 +121,7 @@ function CalloutOptions() {
       <select className={`cad-layer${scale ? ' on' : ''}`} data-testid="callout-scale" value={scale ?? ''} disabled={!!reference}
         title="The detail view's scale; auto: 1:20, or the project's next standard scale under this view's" onChange={(e) => useCalloutTool.setState({ scale: Number(e.target.value) || null })}>
         <option value="">auto scale</option>
-        {DETAIL_SCALES.map((s) => <option key={s} value={s} data-no-i18n>1:{s}</option>)}
+        {scaleOptions(projectScales.filter((x) => x <= 100), scale ?? 0).filter(Boolean).reverse().map((s) => <option key={s} value={s} data-no-i18n>1:{s}</option>)}
       </select>
       <select className={`cad-layer${reference ? ' on' : ''}`} data-testid="callout-reference" value={reference ?? ''}
         title="A view that is there already (a drafting view, another detail): the callout points at it and makes none" onChange={(e) => useCalloutTool.setState({ reference: e.target.value || null })}>

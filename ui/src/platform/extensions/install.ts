@@ -175,4 +175,4 @@ export function countByKind(list: Manifest[]): Partial<Record<ExtensionKind, num
 }
 
 /** A size as people read it. */
-export const sizeText = (bytes: number) => (bytes < 1024 ? `${bytes} B` : bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`);
+export { sizeText } from '../../engine/bytes';

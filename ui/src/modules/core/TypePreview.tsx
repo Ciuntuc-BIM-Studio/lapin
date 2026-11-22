@@ -7,6 +7,8 @@
  * in all three. Asked again a moment after the last edit; the last answer stays while the next is on its way.
  */
 
+import { useStandards } from '../../engine/unitsStore';
+import { scaleOptions } from '../../viewport/viewScale';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -20,7 +22,7 @@ import { faceLetters } from '../../viewport/faceMarks';
 import { lookOf } from '../../viewport/look';
 import { reflections, standardMaterial } from '../../viewport/materialLook';
 import {
-  PREVIEW_DETAILS, PREVIEW_PANES, PREVIEW_SCALES, fitBounds, keyMatches, previewArgs, shownPanes, useTypePreview,
+  PREVIEW_DETAILS, PREVIEW_PANES, fitBounds, keyMatches, previewArgs, shownPanes, useTypePreview,
   type PreviewDrawing, type PreviewMeshPart, type PreviewPane, type TypePreviewDto,
 } from './typePreviewState';
 
@@ -33,6 +35,7 @@ const PANE_LABEL: Record<PreviewPane, string> = { plan: 'Plan', section: 'Sectio
  */
 export function TypePreview({ typeClass, type, highlight = null, faces = false }: { typeClass: string; type: Record<string, unknown>; highlight?: number | null; faces?: boolean }) {
   const prefs = useTypePreview();
+  const projectScales = useStandards((s) => s.scales);
   const lang = useLang((s) => s.lang);
   const root = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(720);
@@ -77,7 +80,7 @@ export function TypePreview({ typeClass, type, highlight = null, faces = false }
         )}
         <span className="grow" />
         <label title="View scale"><select data-testid="type-preview-scale" value={prefs.scale} onChange={(e) => set({ scale: Number(e.target.value) })}>
-          {PREVIEW_SCALES.map((s) => <option key={s} value={s}>1:{s}</option>)}
+          {scaleOptions(projectScales.filter((x) => x <= 200), prefs.scale).map((s) => <option key={s} value={s}>1:{s}</option>)}
         </select></label>
         <label title="Detail level"><select data-testid="type-preview-detail" value={prefs.detail} onChange={(e) => set({ detail: e.target.value as typeof prefs.detail })}>
           {PREVIEW_DETAILS.map((d) => <option key={d} value={d}>{d}</option>)}

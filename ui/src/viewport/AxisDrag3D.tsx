@@ -12,6 +12,7 @@
  * 10 cm. The right and middle buttons still turn and move the view.
  */
 
+import { screenPath } from './screenPath';
 import { keyIsForField } from './overlayKeys';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
@@ -134,11 +135,7 @@ export function AxisDrag3D({ camera, canvas }: { camera: React.RefObject<THREE.C
   const d = typedValue ?? distance;
   const along = spec.axes[axis].dir;
   const by = add({ x: 0, y: 0, z: 0 }, along, d);
-  const pathOf = (pts: Vec3[], close = true) => {
-    const s = pts.map(toScreen);
-    if (s.some((p) => !p)) return null;
-    return s.map((p, i) => `${i ? 'L' : 'M'}${p!.x.toFixed(1)} ${p!.y.toFixed(1)}`).join('') + (close ? 'Z' : '');
-  };
+  const pathOf = (pts: Vec3[], close = true) => screenPath(pts.map(toScreen), close);
 
   // What it will make, on the model.
   const ghost: React.ReactNode[] = [];
