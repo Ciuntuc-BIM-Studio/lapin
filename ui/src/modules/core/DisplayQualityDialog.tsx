@@ -10,7 +10,7 @@ import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { displayQualityOf, type DisplayQuality } from '../../viewport/lod';
-import { setRenderProfile, useRenderProfile, type RenderProfile } from '../../viewport/render3d';
+import { setCameraLook, setRenderProfile, useCameraLook, useRenderProfile, type RenderProfile } from '../../viewport/render3d';
 
 const RENDERING: { id: RenderProfile; label: string; note: string }[] = [
   { id: 'drawing', label: 'Drawing', note: 'The sheet’s palette and an even light: quick on any computer.' },
@@ -27,6 +27,7 @@ const CHOICES: { id: DisplayQuality; label: string; note: string }[] = [
 export function DisplayQualityDialog() {
   const quality = useSession((s) => displayQualityOf(s.nodes));
   const profile = useRenderProfile((s) => s.profile);
+  const look = useCameraLook();
   const close = () => useUi.setState({ dialog: null });
   return (
     <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
@@ -41,6 +42,26 @@ export function DisplayQualityDialog() {
             </label>
           ))}
           <p className="muted small">Kept on this computer. The sun is the project’s, on the day and hour of View → Sun and shadows.</p>
+          {profile !== 'drawing' && (
+            <dl className="fields" data-testid="camera-look">
+              <dt title="Stops over the automatic exposure, which opens up after sunset so the lamps light the rooms">Exposure</dt>
+              <dd className="row">
+                <input type="range" min={-4} max={4} step={0.5} value={look.ev} onChange={(e) => setCameraLook({ ev: Number(e.target.value) })} style={{ flex: 1 }} aria-label="Exposure" />
+                <span className="num" style={{ width: 48 }}>{`${look.ev > 0 ? '+' : ''}${look.ev} EV`}</span>
+              </dd>
+              <dt title="The light that comes out white: automatic is daylight by day and 4000 K at night, so warm lamps stay warm">White balance</dt>
+              <dd className="row">
+                <select value={look.wb === 'auto' ? 'auto' : 'fixed'} onChange={(e) => setCameraLook({ wb: e.target.value === 'auto' ? 'auto' : 5000 })} aria-label="White balance">
+                  <option value="auto">Automatic</option>
+                  <option value="fixed">Colour temperature</option>
+                </select>
+                {look.wb !== 'auto' && <>
+                  <input type="range" min={2000} max={10000} step={100} value={look.wb} onChange={(e) => setCameraLook({ wb: Number(e.target.value) })} style={{ flex: 1 }} aria-label="Colour temperature" />
+                  <span className="num" style={{ width: 56 }}>{`${look.wb} K`}</span>
+                </>}
+              </dd>
+            </dl>
+          )}
           <h4 className="eyebrow" style={{ marginTop: 12 }}>Precision</h4>
           <p className="muted small">How the 3D view draws parts of many triangles (an imported plant, furniture, pipes) when they are far away. The model, its drawings, exports and quantities keep their full precision.</p>
           {CHOICES.map((c) => (

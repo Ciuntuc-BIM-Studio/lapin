@@ -220,6 +220,29 @@ Un material cu un **set de texturi** sau cu hărți proprii (Gestionare → **Ma
 
 Vederea realistă își ia câteva cifre (umbra din colțuri, calitatea umbrelor, culoarea soarelui) din [BimGo](https://github.com/aussieBIMguru/BimGo), de Aussie BIM Guru (MIT-0).
 
+### Lumini și noaptea
+
+În vederile Mediu și Realist corpurile de iluminat luminează modelul: o **lumină** MEP (vezi [MEP](mep.md#noduri)), o lampă din biblioteca de mobilier după ce îi dai date de lumină, și tot ce e făcut dintr-un material care **Luminează** (Gestionare → **Materiale** → Aspect, lângă **Strălucește**). Selectează unul și secțiunea lui **Corp de iluminat** din proprietăți spune ce lumină dă:
+
+- **Fel**: un **punct** care luminează în toate direcțiile (un bec gol), un **spot** cu **Unghiul fasciculului** (lumină plină înăuntru) și **Unghiul câmpului** (nicio lumină dincolo), sau un **panou** care luminează din fața lui, de mărimea lui sau a corpului.
+- **Flux luminos** în lumeni, cum îl dă producătorul, și **Temp. de culoare** în kelvini (2700 K o lampă caldă, 4000 K neutru, 6500 K lumina zilei); cercul arată culoarea.
+- **Distribuție**: a felului ales, una din cele cinci ale Lapin (spot încastrat îngust și mediu, proiector larg, iluminare de perete, pendul care luminează în sus și în jos), sau **fișierul IES** al unui producător (LM-63, tip C) adus cu butonul de lângă; fișierul rămâne în proiect.
+- **De la** (sub corp, mijlocul lui, aproape de vârf ca într-un abajur), **Îndreptat** (jos sau sus) și **Pornit**.
+
+Pe un corp cu tip, datele sunt ale tipului, deci toate corpurile tipului luminează la fel; **Pornit** e al fiecărui corp. O lumină pusă din fila MEP pornește cu 1000 lm și 3500 K; corpurile puse în proiecte mai vechi și orice element fără date nu luminează până nu le dai date (**Fă-l sursă de lumină**). Exportul IFC duce datele ca **Lapin_Light** și ca surse de lumină IFC.
+
+![Secțiunea Corp de iluminat a unei lumini](shots/light-properties.webp)
+
+Pune o oră după apus în Vedere → **Soare și umbre** și vederea arată noaptea: cerul devine albastru închis, cu stele, soarele se stinge și expunerea se deschide, deci camerele sunt luminate de lămpile lor. Ziua, aceleași lămpi abia se văd lângă lumina zilei, cum e și în realitate.
+
+![O sufragerie noaptea, luminată de două spoturi în tavan, un pendul și un spot pe colțul din fund](shots/lights-night.webp)
+
+![Aceeași cameră la ora 13:00](shots/lights-day.webp)
+
+Vedere → **Calitate afișare** are, pentru Mediu și Realist, **Expunerea** camerei (trepte mai luminos sau mai întunecat decât expunerea automată) și **Balansul de alb** (automat: lumina zilei ziua și 4000 K noaptea, ca lămpile calde să rămână calde; sau o temperatură aleasă de tine). Amândouă se păstrează pe acest calculator.
+
+Vederea desenează întâi luminile cele mai apropiate de tine și de ce privești, câteva cu umbre, celelalte fără, și niciuna mai departe de 30 m (Mediu) sau 60 m (Realist); colțul din dreapta jos spune câte (*12 / 48 lumini, 4 cu umbre*). O lumină desenată fără umbre trece prin pereți, iar lumina nu se reflectă încă din pereți: un tavan deasupra spoturilor rămâne întunecat. O imagine randată (va veni) le ia pe toate.
+
 ## Modelare în 3D
 
 Vederea 3D e un loc în care modelezi, nu doar privești: elementele se mută și se copiază acolo ca în plan, prinse de colțurile, muchiile și fețele celorlalte elemente.

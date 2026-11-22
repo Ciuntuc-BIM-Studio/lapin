@@ -8584,6 +8584,59 @@ export const scenes = [
     },
   },
   {
+    // Artificial light (docs/plan-render.md, S2): a living room of 5 × 4 m with a window, lit by two ceiling lights, a pendant
+    // over where a table would stand and a spot washing the far corner, in the realistic view; at 22:00 (the night: the sky
+    // dark, the exposure open, the lamps lighting the room) and at 13:00 (the same room by day, the lamps faint beside the
+    // window's light). A light selected shows its Light section.
+    id: 'lights-night',
+    touches: ['architecture', 'mep'],
+    async run(t) {
+      await t.fresh();
+      const storeyId = await t.storey();
+      const room = [[0, 0], [5, 0], [5, 4], [0, 4]];
+      const walls = [];
+      for (let i = 0; i < 4; i++) walls.push((await t.cmd('architecture.addWall', { storeyId, x1: room[i][0], y1: room[i][1], x2: room[(i + 1) % 4][0], y2: room[(i + 1) % 4][1] })).id);
+      await t.cmd('architecture.addWindow', { wallId: walls[0], x: 2.5, y: 0 });
+      await t.cmd('architecture.addSlab', { storeyId, points: room });
+      // The ceiling: the floor above.
+      const storeys = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').sort((a, b) => (a.props.elevation ?? 0) - (b.props.elevation ?? 0));
+      const above = storeys.find((s) => (s.props.elevation ?? 0) > 0.5);
+      if (above) await t.cmd('architecture.addSlab', { storeyId: above.id, points: room });
+      const system = (await t.cmd('mep.placeSystem', { service: 'electrical', storeyId, x: 0.4, y: 3.7, to: [0.3, 1.2] })).id;
+      const place = async (x, y) => (await t.cmd('mep.placeNode', { systemId: system, role: 'light', storeyId, x, y })).id;
+      const ceiling = [await place(1.4, 2), await place(3.6, 2)];
+      const pendant = await place(2.5, 2.6);
+      const spot = await place(4.4, 3.4);
+      await t.cmd('light.set', { ids: ceiling, kind: 'spot', profile: 'builtin:downlight-medium', lumens: 900, kelvin: 3000 });
+      await t.cmd('light.set', { ids: [pendant], profile: 'builtin:pendant', lumens: 1200, kelvin: 2700, at: 'centre' });
+      await t.cmd('light.set', { ids: [spot], kind: 'spot', lumens: 500, kelvin: 3500, beam: 30, field: 50 });
+      const profile = (p) => t.page.evaluate(async (v) => (await import('/src/viewport/render3d.ts')).setRenderProfile(v), p);
+      const look = () => t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.69, pitch: -0.1, distance: 4.4, target: { x: 3.8, y: 3.2, z: 1.3 } }, false));
+      try {
+        await t.ui({ view: '3d', keyPlan: false });
+        await t.page.waitForSelector('[data-testid=view3d] canvas');
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ date: '2026-10-15', hour: 22 }));
+        await profile('realistic');
+        await look();
+        await t.wait(3500);
+        const lights = await t.page.evaluate(async () => (await import('/src/viewport/lights3d.ts')).useLightBudget.getState());
+        t.expect(lights.total === 4 && lights.drawn === 4, `the four lights are drawn (${JSON.stringify(lights)})`);
+        t.expect(await t.page.locator('[data-testid=lights-budget]').count() === 1, 'the view counts its lights');
+        await t.shot('lights-night', { of: '[data-testid=view3d]', pad: 0 });
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ hour: 13 }));
+        await look();
+        await t.wait(3000);
+        await t.shot('lights-day', { of: '[data-testid=view3d]', pad: 0 });
+        await t.page.evaluate(async (id) => (await import('/src/app/store.ts')).useUi.setState({ selected: [id], selection: id }), spot);
+        await t.wait(800);
+        t.expect(await t.page.locator('[data-testid=light-section]').count() === 1, 'a light shows its Light section');
+        await t.shot('light-properties', { of: '[data-testid=light-section]', pad: 8 });
+      } finally {
+        await profile('drawing');
+      }
+    },
+  },
+  {
     // A door or window's frame position in the wall and its data as free text (a tester's report #76): in the configurator the
     // frame set back 50 mm from the exterior finish, the Data box with its U-value, fire rating and a parameter of the user's
     // own; then a window selected, with its own fire rating over the type's.
