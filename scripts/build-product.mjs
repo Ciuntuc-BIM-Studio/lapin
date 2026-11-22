@@ -130,17 +130,18 @@ if (cross) {
 const identity = mac ? process.env.LAPIN_SIGNING_IDENTITY
   ?? spawnSync('security', ['find-identity', '-v', '-p', 'codesigning'], { encoding: 'utf8' }).stdout?.match(/"(Developer ID Application: [^"]+)"/)?.[1] : undefined;
 if (mac) console.log(identity ? `▸ signing as ${identity}` : '▸ no Developer ID Application certificate in the keychain: the app is built unsigned');
-// Linux (issue #23): the .deb and the AppImage carry a desktop entry made from linux/app.desktop.hbs (name, comment,
+// Linux (issue #23): the .deb, the .rpm and the AppImage carry a desktop entry made from linux/app.desktop.hbs (name, comment,
 // Exec with the file opened, the icon by the binary's name, which icon themes look up, Categories=Graphics;Engineering;,
 // the .lapin MIME type, StartupWMClass), and the .lapin MIME type itself (linux/lapin-project.xml) for the MIME
-// database. The AppImage's entry comes from the same template (Tauri builds its AppDir from the .deb's data).
+// database. The AppImage's entry comes from the same template (Tauri builds its AppDir from the .deb's data). The .rpm
+// (Fedora, RHEL, openSUSE) uses the system's WebKitGTK like the .deb, not the older one the AppImage carries.
 // Only here: on macOS and Windows a file association would register .lapin before the app handles a file opened so.
 const mimeXml = { [`/usr/share/mime/packages/${id}.xml`]: 'linux/lapin-project.xml' };
 const linuxBundle = {
-  targets: ['deb', 'appimage'],
+  targets: ['deb', 'rpm', 'appimage'],
   shortDescription: product.description ?? 'BIM modeller on the IFC schema',
   fileAssociations: [{ ext: ['lapin'], name: 'Lapin project', description: 'Lapin project', mimeType: 'application/x-lapin-project', role: 'Editor' }],
-  linux: { deb: { desktopTemplate: 'linux/app.desktop.hbs', files: mimeXml }, appimage: { files: mimeXml } },
+  linux: { deb: { desktopTemplate: 'linux/app.desktop.hbs', files: mimeXml }, rpm: { desktopTemplate: 'linux/app.desktop.hbs', files: mimeXml }, appimage: { files: mimeXml } },
 };
 writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   productName: product.name,

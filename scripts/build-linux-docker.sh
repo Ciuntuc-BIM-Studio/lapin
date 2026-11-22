@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# The Linux desktop app (.deb and .AppImage) of one product, built on this
+# The Linux desktop app (.deb, .rpm and .AppImage) of one product, built on this
 # machine in an Ubuntu 22.04 x64 container: the same steps as the Build Linux
 # workflow, for when Actions is not available. Needs Docker (OrbStack, Docker
 # Desktop or Colima); on Apple Silicon the container runs x64 under emulation,
@@ -21,6 +21,8 @@ out="${root}/build/${product}-linux"
 command -v docker >/dev/null || { echo "no docker: install OrbStack (brew install --cask orbstack), Docker Desktop or Colima" >&2; exit 1; }
 git -C "${root}" fetch -q origin || true
 commit="$(git -C "${root}" rev-parse "${ref}")"
+# The repository itself (in a linked worktree, .git is a file pointing to it).
+gitdir="$(cd "${root}" && cd "$(git rev-parse --git-common-dir)" && pwd)"
 
 docker build --platform linux/amd64 -t "${image}" - <<'DOCKERFILE'
 FROM ubuntu:22.04
@@ -41,7 +43,7 @@ DOCKERFILE
 
 mkdir -p "${out}"
 docker run --rm --platform linux/amd64 \
-  -v "${root}/.git:/repo.git:ro" \
+  -v "${gitdir}:/repo.git:ro" \
   -v "${out}:/out" \
   -v lapin-linux-cargo:/root/.cargo/registry \
   -v lapin-linux-target:/target \
@@ -61,8 +63,8 @@ docker run --rm --platform linux/amd64 \
     dotnet build engine/Lapin.slnx -v q -nologo
     dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo
     pnpm build:product "$PRODUCT"
-    rm -f /out/*.deb /out/*.AppImage
-    cp build/"$PRODUCT"/bundle/deb/*.deb build/"$PRODUCT"/bundle/appimage/*.AppImage /out/
+    rm -f /out/*.deb /out/*.rpm /out/*.AppImage
+    cp build/"$PRODUCT"/bundle/deb/*.deb build/"$PRODUCT"/bundle/rpm/*.rpm build/"$PRODUCT"/bundle/appimage/*.AppImage /out/
     ls -la /out
   '
 echo "✓ ${out}"
