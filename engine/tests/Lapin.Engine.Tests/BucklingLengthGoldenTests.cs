@@ -13,11 +13,17 @@ public class BucklingLengthGoldenTests
 {
     static void Golden(string name, JsonObject actual) => GoldenFile.Check(name, actual, indented: false);
 
-    /// <summary>A check without its combination's key (made of the cases' ids, new at every run).</summary>
+    /// <summary>
+    /// A check without what a tie decides: its combination's key (made of the cases' ids, new at every run), the governing
+    /// combination's name, where along the member it governs, and the values that go with that combination. On a symmetric
+    /// model twin combinations (wind +X and −X) give a member the same utilisation, and the machine's floating-point noise
+    /// picks either (CI's x64 picked the other one on the guide floor); the utilisation, the verdict, the clause and the note
+    /// stay compared.
+    /// </summary>
     static JsonNode Plain(JsonNode c)
     {
         var o = c.DeepClone().AsObject();
-        o.Remove("combination");
+        foreach (var k in new[] { "combination", "combinationName", "x", "values" }) o.Remove(k);
         return o;
     }
 
