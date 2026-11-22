@@ -83,6 +83,8 @@ public sealed record DxfOther(string Type) : DxfEntity;
 public sealed class DxfDocument
 {
     public string Version { get; init; } = "";
+    /// <summary>How many sections the file had (HEADER, TABLES, BLOCKS, ENTITIES…): none, and it was no DXF.</summary>
+    public int Sections { get; init; }
     /// <summary>$INSUNITS: 0 unitless, 1 in, 2 ft, 4 mm, 5 cm, 6 m…</summary>
     public int Units { get; init; }
     public Dictionary<string, DxfLayer> Layers { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -167,7 +169,28 @@ public static class DxfReader
     sealed record Pair(int Code, string Value);
     sealed record Raw(string Type, List<Pair> Pairs);
 
-    public static DxfDocument Read(byte[] bytes) => Read(Decode(bytes));
+    /// <summary>
+    /// A file's bytes read as a DXF. A binary DXF, or a DWG named .dxf, is refused with a sentence that says
+    /// so (an <see cref="InvalidDataException"/>, which the engine hands the user), not read as nothing.
+    /// </summary>
+    public static DxfDocument Read(byte[] bytes)
+    {
+        if (Kind(bytes) is { } refused) throw new InvalidDataException(refused);
+        return Read(Decode(bytes));
+    }
+
+    static readonly byte[] BinarySentinel = "AutoCAD Binary DXF"u8.ToArray();
+
+    /// <summary>Why these bytes are not a text DXF (a binary DXF, a DWG), or null when they may be one.</summary>
+    public static string? Kind(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.StartsWith(BinarySentinel))
+            return "This is a binary DXF; Lapin reads DXF files saved as text (ASCII). Save it again as DXF without the Binary option (in AutoCAD: Save As → Tools → Options → DXF Options), then import it.";
+        // A DWG begins with its version, AC1015, AC1032…, then bytes no text DXF has.
+        if (bytes.Length >= 6 && bytes[..4].SequenceEqual("AC10"u8) && bytes[4] is >= (byte)'0' and <= (byte)'9' && bytes[5] is >= (byte)'0' and <= (byte)'9')
+            return "This is a DWG file, not a DXF. Save it as DXF (in AutoCAD: Save As → AutoCAD DXF), then import it.";
+        return null;
+    }
 
     public static DxfDocument Read(string text)
     {
@@ -176,6 +199,7 @@ public static class DxfReader
         var doc = new DxfDocument();
         var layers = new List<DxfLayer>(); var ltypes = new Dictionary<string, double[]>(StringComparer.OrdinalIgnoreCase);
         var blocks = new List<DxfBlock>(); var entities = new List<DxfEntity>();
+        var sections = 0;
         // Sections, each read by its own walker.
         for (var i = 0; i < pairs.Count; i++)
         {
@@ -184,6 +208,7 @@ public static class DxfReader
             var end = i + 2;
             while (end < pairs.Count && !(pairs[end].Code == 0 && pairs[end].Value == "ENDSEC")) end++;
             var body = pairs.GetRange(Math.Min(i + 2, pairs.Count), Math.Max(0, end - i - 2));
+            sections++;
             switch (name)
             {
                 case "HEADER": (version, units) = Header(body); break;
@@ -193,7 +218,7 @@ public static class DxfReader
             }
             i = end;
         }
-        var d = new DxfDocument { Version = version, Units = units };
+        var d = new DxfDocument { Version = version, Units = units, Sections = sections };
         foreach (var l in layers) d.Layers.TryAdd(l.Name, l);
         foreach (var (k, v) in ltypes) d.LineTypes.TryAdd(k, v);
         foreach (var b in blocks) d.Blocks.TryAdd(b.Name, b);
@@ -206,6 +231,8 @@ public static class DxfReader
     /// <summary>The bytes as text: UTF-8 when they are valid UTF-8 (R2007 and later), else the header's code page (windows-1252 by default).</summary>
     public static string Decode(byte[] bytes)
     {
+        // A byte order mark (an editor saved the file again) is no part of the first group code: kept, it hid the header.
+        if (bytes.AsSpan().StartsWith((ReadOnlySpan<byte>)[0xEF, 0xBB, 0xBF])) bytes = bytes[3..];
         try { return new UTF8Encoding(false, true).GetString(bytes); }
         catch (DecoderFallbackException) { }
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -219,7 +246,7 @@ public static class DxfReader
 
     static List<Pair> Pairs(string text)
     {
-        var lines = text.Split('\n');
+        var lines = text.TrimStart('\uFEFF').Split('\n');
         var o = new List<Pair>(lines.Length / 2);
         for (var i = 0; i + 1 < lines.Length; i += 2)
         {
@@ -706,20 +733,29 @@ public static class DxfCurves
     public static List<Vec2> Arc(Vec2 c, double r, double startDeg, double endDeg)
     {
         var s = startDeg * Math.PI / 180; var e = endDeg * Math.PI / 180;
-        var sweep = e - s;
-        while (sweep <= 1e-12) sweep += 2 * Math.PI;
-        while (sweep > 2 * Math.PI + 1e-9) sweep -= 2 * Math.PI;
+        var sweep = Sweep(e - s);
         var n = Math.Max(2, (int)Math.Ceiling(sweep / Step));
         return Enumerable.Range(0, n + 1).Select(i => c + new Vec2(Math.Cos(s + sweep * i / n), Math.Sin(s + sweep * i / n)) * r).ToList();
+    }
+
+    /// <summary>
+    /// A counter-clockwise sweep in (0, 2π] (radians). By remainder, not by adding turns one at a time: an angle of
+    /// 1e17 from a broken file stays the same after adding 2π, and the loop never ended. Not finite: a whole turn.
+    /// </summary>
+    public static double Sweep(double sweep)
+    {
+        if (!double.IsFinite(sweep)) return 2 * Math.PI;
+        if (sweep > 1e-12 && sweep <= 2 * Math.PI + 1e-9) return sweep;
+        var r = sweep % (2 * Math.PI);
+        if (r <= 1e-12) r += 2 * Math.PI;
+        return r;
     }
 
     /// <summary>An ellipse arc (parameters in radians) as points.</summary>
     public static List<Vec2> Ellipse(Vec2 c, Vec2 major, double ratio, double start, double end)
     {
         var minor = major.Perp * ratio;
-        var sweep = end - start;
-        while (sweep <= 1e-12) sweep += 2 * Math.PI;
-        while (sweep > 2 * Math.PI + 1e-9) sweep -= 2 * Math.PI;
+        var sweep = Sweep(end - start);
         var n = Math.Max(4, (int)Math.Ceiling(sweep / Step));
         return Enumerable.Range(0, n + 1).Select(i => { var t = start + sweep * i / n; return c + major * Math.Cos(t) + minor * Math.Sin(t); }).ToList();
     }
