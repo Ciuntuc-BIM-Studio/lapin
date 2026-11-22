@@ -12,7 +12,10 @@ namespace Lapin.Host;
 /// </summary>
 public static class ExtensionFetch
 {
-    /// <summary>The biggest file an extension may be (the interface's <c>MAX_PACKAGE</c>).</summary>
+    /// <summary>
+    /// The biggest file an extension may be: the one source. The interface's <c>MAX_PACKAGE</c>
+    /// (ui/src/platform/extensions/manifest.ts, which checks a manifest without the engine) says the same, and a test holds it so.
+    /// </summary>
     public const long MaxBytes = 64L * 1024 * 1024;
 
     /// <summary>The catalogue to read when the interface names none: LAPIN_EXTENSIONS_INDEX (a local index while developing), else none.</summary>
@@ -51,6 +54,12 @@ public static class ExtensionFetch
         if (!res.IsSuccessStatusCode) throw new CommandException($"{uri.Host} answered {(int)res.StatusCode} for {uri.AbsolutePath}.");
         if (res.Content.Headers.ContentLength is { } len && len > max) throw new CommandException($"The file is bigger than an extension may be ({Size(max)}).");
         await using var stream = await res.Content.ReadAsStreamAsync(ct);
+        return await ReadCapped(stream, max, ct);
+    }
+
+    /// <summary>A body read to its end, refused as soon as it passes <paramref name="max"/> (a server's length may be absent or wrong).</summary>
+    static async Task<byte[]> ReadCapped(Stream stream, long max, CancellationToken ct)
+    {
         using var ms = new MemoryStream();
         var buffer = new byte[81920];
         int n;
@@ -82,15 +91,7 @@ public static class ExtensionFetch
             using var res = await PostHttp.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
             if (res.Content.Headers.ContentLength is { } len && len > max) throw new CommandException($"The file is bigger than an extension may be ({Size(max)}).");
             await using var stream = await res.Content.ReadAsStreamAsync(ct);
-            using var ms = new MemoryStream();
-            var buffer = new byte[81920];
-            int n;
-            while ((n = await stream.ReadAsync(buffer, ct)) > 0)
-            {
-                if (ms.Length + n > max) throw new CommandException($"The file is bigger than an extension may be ({Size(max)}).");
-                ms.Write(buffer, 0, n);
-            }
-            return ((int)res.StatusCode, res.Content.Headers.ContentType?.MediaType, ms.ToArray());
+            return ((int)res.StatusCode, res.Content.Headers.ContentType?.MediaType, await ReadCapped(stream, max, ct));
         }
         catch (TaskCanceledException) when (!ct.IsCancellationRequested) { throw new CommandException($"{uri.Host} did not answer in time."); }
         catch (HttpRequestException ex) { throw new CommandException($"{uri.Host} could not be reached: {ex.Message}"); }

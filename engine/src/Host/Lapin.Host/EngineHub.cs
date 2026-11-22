@@ -421,9 +421,9 @@ public sealed class EngineHub
     }
 
     /// <summary>The families of the host's own calls, answered at once, past the queue of calls (a cancel stops the one running).</summary>
-    static readonly string[] OwnPrefixes = ["share.", "presence.", "cancel.", "extensions.", "script.", "measure.", "pair.", "sites."];
+    static readonly string[] OwnPrefixes = ["share.", "presence.", "cancel.", "extensions.", "script.", "measure.", "pair.", "sites.", "support.report", "support.messages"];
 
-    /// <summary>A share.*, presence.*, cancel.*, extensions.*, script.*, measure.*, pair.*, sites.* or engine.hello call, parsed; null for any other.</summary>
+    /// <summary>A share.*, presence.*, cancel.*, extensions.*, script.*, measure.*, pair.*, sites.*, support.report, support.messages or engine.hello call, parsed; null for any other.</summary>
     static JsonObject? Own(string text)
     {
         // Cheap test first: every other call goes on untouched.
@@ -509,6 +509,16 @@ public sealed class EngineHub
                     result = new JsonObject { ["status"] = status, ["type"] = type, ["data"] = Convert.ToBase64String(body) };
                     break;
                 }
+                // A report and its replies (Help → Report an issue, Messages): posted to the Lapin server past the queue of calls and
+                // outside the gate (audit 22.11.2026: a slow server held every window up to 30 s). Never a guest's.
+                case "support.report":
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    result = await Support.Report(p, Session.AppVersion);
+                    break;
+                case "support.messages":
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    result = await Support.Messages(p);
+                    break;
                 case "extensions.source":
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     result = new JsonObject { ["index"] = ExtensionFetch.IndexFromEnvironment };
@@ -659,7 +669,7 @@ public sealed class EngineHub
             finally { _gate.Release(); }
             var stem = name.EndsWith(".py", StringComparison.OrdinalIgnoreCase) ? name[..^3] : name;
             // Never an untrusted project's code (decision 489, §7): the user runs it once from the Script panel and trusts it.
-            if (!Scripts.IsTrusted(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(code)))))
+            if (!Scripts.IsTrusted(ScriptHost.HashOf(code)))
             {
                 await ScriptNote("err", $"„{name}” was not run again: it is not trusted on this computer. Run it once from the Script panel and choose Trust.");
                 return;
@@ -731,7 +741,10 @@ public sealed class EngineHub
         return Task.CompletedTask;
     }
 
-    /// <summary>The help menu's reports and links, sent and opened from this computer.</summary>
+    /// <summary>
+    /// The help menu's reports and links, sent and opened from this computer. The hub answers support.report and
+    /// support.messages itself, outside the gate (<see cref="HandleOwn"/>); these stay for a dispatcher driven on its own.
+    /// </summary>
     sealed class SupportDesk : ISupportDesk
     {
         public JsonObject Report(JsonObject p) => Support.Report(p, Session.AppVersion).GetAwaiter().GetResult();
