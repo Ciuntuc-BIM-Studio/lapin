@@ -55,7 +55,9 @@ public static class Preview
                         var ctx = new TrackingContext(edit, catalog, query);
                         var e = new Evaluator(doc, edit.Model, catalog, ctx, query, GraphLimits.PreviewTime) { Storey = storey }.RunAll();
                         // What a command settles after it in a session (types' defaults, components), as the bake will have it.
-                        try { TypeDefaults.Settle(edit); Components.Settle(ctx, edit); } catch (Exception) { }
+                        // When that fails the bake will refuse: said on the commands that ran, so the ghost never shows unwarned what cannot be baked.
+                        try { TypeDefaults.Settle(edit); Components.Settle(ctx, edit); }
+                        catch (Exception ex) when (ex is not GiveBack) { Warn(e, $"What the graph makes does not settle as baking will ({ex.Message}): baking it may fail."); }
                         result = Result(e, edit, catalog);
                         throw new GiveBack();
                     });
@@ -67,11 +69,19 @@ public static class Preview
         return result;
     }
 
+    /// <summary>A warning on every command node that ran, after any of its own.</summary>
+    static void Warn(Evaluator e, string message)
+    {
+        foreach (var r in e.Results.Values.Where(r => r.IsCommand && r.Error == null))
+            r.Warning = r.Warning == null ? message : $"{r.Warning} {message}";
+    }
+
     static JsonObject Result(Evaluator e, IEdit? edit, ModuleCatalog catalog)
     {
+        // The ghost first: what it cannot draw warns the nodes.
+        var ghost = Ghost(e, edit, catalog);
         var nodes = new JsonObject();
         foreach (var (id, r) in e.Results) nodes[id] = r.ToJson();
-        var ghost = Ghost(e, edit, catalog);
         return new JsonObject { ["nodes"] = nodes, ["ghost"] = ghost, ["calls"] = e.Calls };
     }
 
@@ -82,6 +92,7 @@ public static class Preview
         var plan = new JsonArray();
         var used = 0;
         var cut = false;
+        var broken = 0;
         if (edit != null)
         {
             foreach (var change in edit.EntityChanges)
@@ -93,7 +104,7 @@ public static class Preview
                 foreach (var p in g.Parts)
                 {
                     Lapin.Geometry.TriMesh m;
-                    try { m = p.Tessellate(); } catch (Exception) { continue; }
+                    try { m = p.Tessellate(); } catch (Exception) { broken++; continue; }
                     if (m.Positions.Length == 0) continue;
                     used += m.Positions.Length + m.Edges.Length;
                     parts.Add((JsonNode)new JsonObject
@@ -127,6 +138,11 @@ public static class Preview
             }).ToArray()),
         };
         if (cut) o["cut"] = true;
+        if (broken > 0)
+        {
+            o["broken"] = broken;
+            Warn(e, broken == 1 ? "One body it makes cannot be drawn: check it after baking." : $"{broken} bodies it makes cannot be drawn: check them after baking.");
+        }
         return o;
     }
 

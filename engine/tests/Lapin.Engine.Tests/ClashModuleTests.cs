@@ -189,6 +189,14 @@ public class ClashModuleTests
         Assert.Throws<CommandException>(() => f.Run("clash.deleteSet", new JsonObject { ["id"] = f.SetId("Services") }));
         f.Run("clash.setTest", new JsonObject { ["id"] = test, ["kind"] = "clearance", ["tolerance"] = 0.05 });
         Assert.Empty(f.Clashes(test));
+        double Tolerance(string id) => (double)f.List()["tests"]!.AsArray().OfType<JsonObject>().Single(t => (string?)t["id"] == id)["tolerance"]!;
+        // A kind changed without a tolerance takes the new kind's default; a clearance test made or stored without one reads 50 mm.
+        f.Run("clash.setTest", new JsonObject { ["id"] = test, ["kind"] = "hard" });
+        Assert.Equal(0.005, Tolerance(test));
+        f.Run("clash.setTest", new JsonObject { ["id"] = test, ["kind"] = "clearance" });
+        Assert.Equal(0.05, Tolerance(test));
+        f.Session.Edit("strip", e => { var t = e.Model.Get(test)!; var a = t.CloneAttrs(); a.Remove("tolerance"); e.Replace(t.With(attrs: a)); });
+        Assert.Equal(0.05, Tolerance(test));
         // Run all takes every test that is on.
         var all = (JsonArray)f.Run("clash.run", new JsonObject())!;
         Assert.Equal(4, all.Count);

@@ -441,7 +441,7 @@ public static class ExhaustFans
         var box = Math.Max(fw * 0.6, d + 0.08);
         var plate = s.Square
             ? (IReadOnlyList<(double X, double Y)>)[(-fw / 2, -fw / 2), (fw / 2, -fw / 2), (fw / 2, fw / 2), (-fw / 2, fw / 2)]
-            : [.. Enumerable.Range(0, 28).Select(i => { var a = 2 * Math.PI * i / 28; return (fw / 2 * Math.Cos(a), fw / 2 * Math.Sin(a)); })];
+            : [.. Chords.Ring(new Vec2(0, 0), fw / 2).Select(p => (p.X, p.Y))];
         b.Prism("grille", [.. plate.Select(p => (p.X, p.Y, h - 0.015))], (0, 0, 0.015));
         b.Front.Add(("grille", [(-fw / 2, h - 0.015), (fw / 2, h - 0.015), (fw / 2, h), (-fw / 2, h)], -fw / 2));
         // The pattern: slots or louvres across it, rings round it; plain: none.
@@ -452,12 +452,12 @@ public static class ExhaustFans
                 for (var k = -3; k <= 3; k++) b.Prism("housing", [(-inner, k * inner / 3.5 - 0.004, h - 0.02), (inner, k * inner / 3.5 - 0.004, h - 0.02), (inner, k * inner / 3.5 + 0.004, h - 0.02), (-inner, k * inner / 3.5 + 0.004, h - 0.02)], (0, 0, 0.005));
                 break;
             case "rings":
-                b.CylinderZ("housing", 0, 0, inner, h - 0.02, h - 0.015, 24);
+                b.CylinderZ("housing", 0, 0, inner, h - 0.02, h - 0.015, 0);
                 break;
         }
         if (s.HasLight)
         {
-            b.CylinderZ("light", 0, 0, fw * 0.32, h - 0.03, h - 0.015, 24);
+            b.CylinderZ("light", 0, 0, fw * 0.32, h - 0.03, h - 0.015, 0);
             b.Circle("symbol", 0, 0, fw * 0.32);
             b.Line("symbol", (-fw * 0.22, -fw * 0.22), (fw * 0.22, fw * 0.22));
             b.Line("symbol", (-fw * 0.22, fw * 0.22), (fw * 0.22, -fw * 0.22));
@@ -481,7 +481,7 @@ public static class ExhaustFans
         var half = size / 2;
         IReadOnlyList<(double X, double Z)> outline = s.Square
             ? [(c.X - half, c.Z - half), (c.X + half, c.Z - half), (c.X + half, c.Z + half), (c.X - half, c.Z + half)]
-            : [.. Enumerable.Range(0, 28).Select(i => { var a = 2 * Math.PI * i / 28; return (c.X + half * Math.Cos(a), c.Z + half * Math.Sin(a)); })];
+            : [.. Chords.Ring(new Vec2(c.X, c.Z), half).Select(p => (p.X, p.Y))];
         b.Slab("grille", outline, -depth, 0);
         Pattern(b, s.Str("pattern"), c, size * 0.38, -depth);
     }
@@ -499,7 +499,7 @@ public static class ExhaustFans
                 break;
             case "rings":
             {
-                IReadOnlyList<(double, double)> Ring(double rr) => [.. Enumerable.Range(0, 24).Select(i => { var a = 2 * Math.PI * i / 24; return (c.X + rr * Math.Cos(a), c.Z + rr * Math.Sin(a)); })];
+                IReadOnlyList<(double, double)> Ring(double rr) => [.. Chords.Ring(new Vec2(c.X, c.Z), rr).Select(p => (p.X, p.Y))];
                 b.Slab("grille", Ring(inner), y0 - 0.006, y0, [Ring(inner - 0.008)]);
                 b.Slab("grille", Ring(inner * 0.6), y0 - 0.006, y0, [Ring(inner * 0.6 - 0.008)]);
                 break;

@@ -183,6 +183,36 @@ public sealed class CostTimeTests : IDisposable
     }
 
     [Fact]
+    public void A_task_done_by_its_percentage_spreads_its_cost_over_its_own_days_not_to_the_status_date()
+    {
+        // Masonry 100 %, no actual finish, status date Friday 7.05: its 3637.50 over its own five days (727.50 a day), 26–29.04
+        // and Tuesday 4.05 past Good Friday and Easter Monday, not over the eight days to the status date.
+        var (f, _, _, t) = House();
+        f.Run("planning.updateSchedule", new JsonObject { ["dataDate"] = "2027-05-07" });
+        f.Run("planning.setProgress", new JsonObject { ["id"] = t["masonry"], ["actualStart"] = "2027-04-26", ["complete"] = 100 });
+        var o = OverTime(f);
+        Assert.Equal(727.5, At(o, "done", "2027-04-26"));
+        Assert.Equal(2910, At(o, "done", "2027-04-29"));
+        Assert.Equal(3637.5, At(o, "done", "2027-05-04"));
+        Assert.Equal(3637.5, At(o, "done", "2027-05-07"));
+    }
+
+    [Fact]
+    public void Without_a_status_date_the_work_done_stops_at_today_never_in_the_future()
+    {
+        // Masonry started 26.04.2027 at 60 %, no status date, today Wednesday 28.04: the 2182.50 done over 26–28.04.
+        var (f, _, _, t) = House();
+        f.Run("planning.setProgress", new JsonObject { ["id"] = t["masonry"], ["actualStart"] = "2027-04-26", ["complete"] = 60 });
+        var q = f.Session.Reader;
+        var times = q.Services.Get<IWorkSchedules>()!.Times(q)!;
+        var est = Costing.Compute(q, Costing.EstimateOf(f.Model)!);
+        var o = CostOverTime.Of(est, times, new DateOnly(2027, 4, 28));
+        var done = o.DoneByDay.Values.SelectMany(d => d).GroupBy(x => x.Key).ToDictionary(g => g.Key, g => g.Sum(x => x.Value));
+        Assert.Equal([new DateOnly(2027, 4, 26), new DateOnly(2027, 4, 27), new DateOnly(2027, 4, 28)], done.Keys.Order());
+        Assert.Equal(2182.5, done.Values.Sum(), 6);
+    }
+
+    [Fact]
     public void Versions_compared_by_cost_say_the_total_the_chapters_and_the_lines_added_removed_and_changed()
     {
         var (f, wall, type, _) = House();

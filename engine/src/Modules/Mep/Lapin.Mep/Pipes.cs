@@ -10,15 +10,11 @@ public static class Pipes
     {
         var d = b - a;
         if (d.Length < 1e-6 || radius < 1e-6) return null;
-        if (sides <= 0) sides = Chords.Circle(radius);
         var (u, v) = VecMath.PlaneBasis(d);
-        var profile = new List<Vec3>(sides);
-        for (var i = 0; i < sides; i++)
-        {
-            var t = 2 * Math.PI * i / sides;
-            profile.Add(a + u * (radius * Math.Cos(t)) + v * (radius * Math.Sin(t)));
-        }
-        return Prism.Extrude(profile, null, d, tag);
+        var ring = sides > 0
+            ? Enumerable.Range(0, sides).Select(i => { var t = 2 * Math.PI * i / sides; return new Vec2(radius * Math.Cos(t), radius * Math.Sin(t)); }).ToList()
+            : Chords.Ring(new Vec2(0, 0), radius);
+        return Prism.Extrude([.. ring.Select(p => a + u * p.X + v * p.Y)], null, d, tag);
     }
 
     /// <summary>A box of a rectangular duct from a to b, <paramref name="width"/> across and <paramref name="height"/> up.</summary>

@@ -535,13 +535,17 @@ public static partial class KitchenLayouts
             f.Line(b, Sym, t0, d, t1, 0);
             if (label != null) Letters(b, f, label, (t0 + t1) / 2, d * 0.25, 0.1);
         }
-        void DrawerOverDoor()
-        {
-            f.Block(b, "fronts", ua, ub, 0.022, 0.04, top - wt - 0.16, top - wt - 0.003, 0.002);
-            f.Block(b, "fronts", ua, ub, 0.022, 0.04, pl + 0.003, top - wt - 0.163, 0.002);
-            var mid = (ua + ub) / 2;
-            f.Block(b, hr, mid - Math.Min(0.07, w / 4), mid + Math.Min(0.07, w / 4), 0.0, 0.022, top - wt - 0.05, top - wt - 0.038);
-        }
+        void DrawerOverDoor() => KitchenLayouts.DrawerOverDoor(b, f, ua, ub, top, wt, pl, hr);
+    }
+
+    /// <summary>A base unit's fronts over ua…ub: a drawer 160 mm under the worktop over a door, the handle on the drawer (a unit's own and a run split evenly alike).</summary>
+    static void DrawerOverDoor(Builder b, Frame f, double ua, double ub, double top, double wt, double pl, string hr)
+    {
+        f.Block(b, "fronts", ua, ub, 0.022, 0.04, top - wt - 0.16, top - wt - 0.003, 0.002);
+        f.Block(b, "fronts", ua, ub, 0.022, 0.04, pl + 0.003, top - wt - 0.163, 0.002);
+        var mid = (ua + ub) / 2;
+        var half = Math.Min(0.07, (ub - ua + 0.003) / 4);
+        f.Block(b, hr, mid - half, mid + half, 0.0, 0.022, top - wt - 0.05, top - wt - 0.038);
     }
 
     /// <summary>One door or a pair over ua…ub, z0…z1, each with its handle by the edge it opens at; a base or tall unit's swing drawn in plan at the finest detail.</summary>

@@ -79,25 +79,11 @@ public static class Norms
         else ctx.Add(new Entity(ctx.NewId(), Class, "Productivity norms", attrs));
     }
 
-    /// <summary>A quantity's kind for a norm's unit (m3, m², mp, ml, buc, pcs, kg, t…) and what the model's SI value is multiplied by to be in it; null when Lapin cannot measure it.</summary>
-    public static (string Basis, double Factor)? BasisOf(string? unit)
-    {
-        var u = (unit ?? "").Trim().ToLowerInvariant().Replace(" ", "").Replace(".", "");
-        return u switch
-        {
-            "m3" or "m³" or "mc" or "cum" or "cbm" => ("volume", 1),
-            "m2" or "m²" or "mp" or "sqm" => ("area", 1),
-            "100m2" or "100mp" => ("area", 0.01),
-            "m" or "ml" or "lm" or "rm" => ("length", 1),
-            "buc" or "pcs" or "pc" or "nr" or "no" or "u" or "ea" or "each" or "stk" or "szt" or "un" or "pz" or "pièce" or "piece" => ("count", 1),
-            "kg" => ("weight", 1),
-            "t" or "to" or "tonne" or "tona" => ("weight", 0.001),
-            _ => null,
-        };
-    }
+    /// <summary>A quantity's kind for a norm's unit and what the model's SI value is multiplied by to be in it; null when Lapin cannot measure it (<see cref="MeasureUnits.BasisOf"/>, shared with cost).</summary>
+    public static (string Basis, double Factor)? BasisOf(string? unit) => MeasureUnits.BasisOf(unit);
 
     /// <summary>The unit a quantity's kind is shown in.</summary>
-    public static string UnitOf(string basis) => basis switch { "volume" => "m³", "area" => "m²", "length" => "m", "weight" => "kg", _ => "pcs" };
+    public static string UnitOf(string basis) => MeasureUnits.UnitOf(basis);
 
     // ------------------------------------------------------------------ import
 

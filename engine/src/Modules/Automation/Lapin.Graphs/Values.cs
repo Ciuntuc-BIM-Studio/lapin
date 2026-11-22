@@ -74,7 +74,7 @@ public static class Values
         double d => d,
         int i => i,
         bool b => b ? 1 : 0,
-        string s when double.TryParse(s.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var p) => p,
+        string s when Lapin.Model.Numbers.Parse(s, Lapin.Model.NumberMode.Strict) is { } p => p,
         JsonNode n when Json.Number(n) is { } d => d,
         null => throw new CommandException($"{what}: a number is missing."),
         _ => throw new CommandException($"{what}: {Describe(v)} is not a number."),

@@ -52,17 +52,19 @@ public sealed class LocalBuilder(Vec2 at, double z, double rotationDeg, bool mir
         Slab(role, [(x0, z0), (x1, z0), (x1, z1), (x0, z1)], y0, y1);
     }
 
-    static IEnumerable<(double A, double B)> Ring(double ca, double cb, double r, int sides) =>
-        Enumerable.Range(0, sides).Select(i => { var a = 2 * Math.PI * i / sides; return (ca + r * Math.Cos(a), cb + r * Math.Sin(a)); });
+    /// <summary>A ring of <paramref name="sides"/> corners (0: as <see cref="Chords"/> makes it, the model's rule for every curve).</summary>
+    static IEnumerable<(double A, double B)> Ring(double ca, double cb, double r, int sides) => sides > 0
+        ? Enumerable.Range(0, sides).Select(i => { var a = 2 * Math.PI * i / sides; return (ca + r * Math.Cos(a), cb + r * Math.Sin(a)); })
+        : Chords.Ring(new Vec2(ca, cb), r).Select(p => (p.X, p.Y));
 
-    /// <summary>A cylinder about the local y axis through (cx, cz), from y0 to y1: a fan's sleeve through its wall.</summary>
+    /// <summary>A cylinder about the local y axis through (cx, cz), from y0 to y1: a fan's sleeve through its wall (<paramref name="sides"/> 0: by <see cref="Chords"/>).</summary>
     public void CylinderY(string role, double cx, double cz, double r, double y0, double y1, int sides = 16)
     {
         if (r < 1e-4 || Math.Abs(y1 - y0) < 1e-5) return;
         Slab(role, [.. Ring(cx, cz, r, sides)], y0, y1);
     }
 
-    /// <summary>A cylinder about the local x axis through (cy, cz), from x0 to x1: an inline fan's body, a gate's rail.</summary>
+    /// <summary>A cylinder about the local x axis through (cy, cz), from x0 to x1: an inline fan's body, a gate's rail (<paramref name="sides"/> 0: by <see cref="Chords"/>).</summary>
     public void CylinderX(string role, double cy, double cz, double r, double x0, double x1, int sides = 16)
     {
         if (r < 1e-4 || Math.Abs(x1 - x0) < 1e-5) return;
@@ -70,7 +72,7 @@ public sealed class LocalBuilder(Vec2 at, double z, double rotationDeg, bool mir
         Prism(role, [.. Ring(cy, cz, r, sides).Select(p => (x0, p.A, p.B))], (x1 - x0, 0, 0));
     }
 
-    /// <summary>An upright cylinder about (cx, cy), from z0 to z1.</summary>
+    /// <summary>An upright cylinder about (cx, cy), from z0 to z1 (<paramref name="sides"/> 0: by <see cref="Chords"/>).</summary>
     public void CylinderZ(string role, double cx, double cy, double r, double z0, double z1, int sides = 16)
     {
         if (r < 1e-4 || z1 - z0 < 1e-5) return;
@@ -102,7 +104,7 @@ public sealed class LocalBuilder(Vec2 at, double z, double rotationDeg, bool mir
     public void Rect(string kind, double x0, double x1, double y0, double y1) => Loop(kind, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]);
     /// <summary>A circle in plan, of <paramref name="sides"/> sides (0: as <see cref="Chords"/> makes it).</summary>
     public void Circle(string kind, double cx, double cy, double r, int sides = 0) =>
-        Loop(kind, sides > 0 ? Ring(cx, cy, r, sides) : Chords.Ring(new Vec2(cx, cy), r).Select(p => (p.X, p.Y)));
+        Loop(kind, Ring(cx, cy, r, sides));
     /// <summary>An arc about (cx, cy) from a0 to a1 (degrees, local, anticlockwise from +x), in <paramref name="steps"/> pieces (0: as <see cref="Chords"/> makes it).</summary>
     public void Arc(string kind, double cx, double cy, double r, double a0, double a1, int steps = 0) =>
         Line(kind, [.. (steps > 0

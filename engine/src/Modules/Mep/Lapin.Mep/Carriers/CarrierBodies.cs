@@ -203,8 +203,7 @@ public static class CarrierBodies
         {
             case "conduit":
                 var r = s.Diameter / 2;
-                var n = Chords.Circle(r);
-                return [([.. Enumerable.Range(0, n).Select(i => new Vec2(r * Math.Cos(2 * Math.PI * i / n), r * Math.Sin(2 * Math.PI * i / n)))], false)];
+                return [(Chords.Ring(new Vec2(0, 0), r), false)];
             case "ladder":
                 return [(Rect(-w, -w + t, -h, h), false), (Rect(w - t, w, -h, h), false)];
             case "trunking":

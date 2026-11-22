@@ -207,11 +207,13 @@ public static class Cpm
             ls[id] = cal.Offset(end, -d, wet);
         }
 
-        // A latest start as the latest finish it allows: the start moved back onto a working day, then the duration on.
+        // A latest start as the latest finish it allows: the start moved onto a working day, then the duration on. A start
+        // link with a negative lag gives the day after a working day (an exclusive end, a Saturday after a Friday): starting
+        // then is starting on the next working day, so the day moves forward (a latest start already on a working day stays).
         DateOnly Fwd(DateOnly latestStart, int d, bool wet)
         {
             if (d == 0) return latestStart;
-            var s = cal.PrevWorking(latestStart, wet);
+            var s = cal.NextWorking(latestStart, wet);
             return cal.Offset(s, d, wet);
         }
 
@@ -272,7 +274,7 @@ public static class Cpm
             var tf = open.Count > 0 ? open.Min(x => times[x].TotalFloat) : 0;
             var st = under.All(x => times[x].Status == "done") ? "done" : under.Any(x => times[x].Status != "planned") ? "started" : "planned";
             times[t.Id] = new TaskTimes(s, f, under.Min(x => times[x].LateStart), under.Max(x => times[x].LateFinish), tf,
-                under.Min(x => times[x].FreeFloat), open.Count > 0 && tf <= 0, cal.WorkingDays(s, f), st, open.Count > 0 ? open.Max(x => times[x].Remaining) : 0);
+                open.Count > 0 ? open.Min(x => times[x].FreeFloat) : 0, open.Count > 0 && tf <= 0, cal.WorkingDays(s, f), st, open.Count > 0 ? open.Max(x => times[x].Remaining) : 0);
         }
         return new CpmResult(times, finish, criticalLinks);
     }

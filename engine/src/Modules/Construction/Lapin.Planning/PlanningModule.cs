@@ -128,18 +128,23 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
 
     /// <summary>
     /// The predecessors column as MS Project reads it: rows separated by commas or semicolons, each a row number, a type
-    /// (FS when none) and a lag in working days ("3", "5SS", "7FF+2", "2FS-1d").
+    /// (FS when none) and a lag in working days ("3", "5SS", "7FF+2", "2FS-1d"). Romanian codes read too, by their words
+    /// (Î început, T terminare, S sfârșit; the first the predecessor's, with or without the diacritic): TÎ / SÎ = FS,
+    /// ÎÎ = SS, TT = FF, ÎT / ÎS = SF ("SS" is always English start-to-start).
     /// </summary>
     public static List<(int Row, string Type, int Lag)> ParsePredecessors(string text)
     {
         var o = new List<(int, string, int)>();
         foreach (var raw in text.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            var m = Regex.Match(raw, @"^(\d+)\s*(FS|SS|FF|SF|IS|IÎ|ÎS|ÎÎ)?\s*(?:([+-])\s*(\d+)\s*(?:d|days?|z|zile|zi)?)?$", RegexOptions.IgnoreCase);
+            var m = Regex.Match(raw, @"^(\d+)\s*(FS|SS|FF|SF|[IÎ][IÎ]|[TS][IÎ]|TT|[IÎ][TS])?\s*(?:([+-])\s*(\d+)\s*(?:d|days?|z|zile|zi)?)?$", RegexOptions.IgnoreCase);
             if (!m.Success) throw new CommandException($"„{raw}” is not a predecessor: a row number, maybe a type and a lag (5SS+2).");
-            var type = m.Groups[2].Success ? m.Groups[2].Value.ToUpperInvariant() switch { "IS" or "ÎS" => "SF", "IÎ" => "SS", "ÎÎ" => "FF", var t => t } : "FS";
-            var lag = m.Groups[4].Success ? int.Parse(m.Groups[4].Value) * (m.Groups[3].Value == "-" ? -1 : 1) : 0;
-            o.Add((int.Parse(m.Groups[1].Value), type, lag));
+            var code = m.Groups[2].Value.ToUpperInvariant().Replace('Î', 'I');
+            var type = !m.Groups[2].Success ? "FS" : code switch { "FS" or "SS" or "FF" or "SF" => code, "II" => "SS", "TI" or "SI" => "FS", "TT" => "FF", _ => "SF" };
+            if (!int.TryParse(m.Groups[1].Value, out var row)) throw new CommandException($"„{raw}”: there is no row {m.Groups[1].Value}.");
+            var lag = 0;
+            if (m.Groups[4].Success && !int.TryParse(m.Groups[4].Value, out lag)) throw new CommandException($"„{raw}”: a lag of {m.Groups[4].Value} days is too long.");
+            o.Add((row, type, m.Groups[3].Value == "-" ? -lag : lag));
         }
         return o;
     }
@@ -469,6 +474,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             }
             if (o["days"] is JsonArray days && !days.Any(d => Json.Number(d) is >= 1 and <= 7)) throw new CommandException("The calendar works on one weekday at least.");
             if (a.ContainsKey("hours") && Json.Number(a["hours"]) is not (> 0 and <= 24)) throw new CommandException("A working day has between 0 and 24 hours.");
+            if (a.ContainsKey("holidays") && WorkCalendar.HolidayCode(a["holidays"] is JsonValue hv && hv.TryGetValue<string>(out var hs) ? hs : null) == null)
+                throw new CommandException($"The holidays are \"{WorkCalendar.Romania}\" (Romania's legal holidays) or \"{WorkCalendar.NoHolidays}\": \"{a["holidays"]}\" is not known.");
             var parsed = WorkCalendar.Read(o);
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : cal.Name;
             ctx.Replace(cal.With(name: name, attrs: parsed.ToJson()));

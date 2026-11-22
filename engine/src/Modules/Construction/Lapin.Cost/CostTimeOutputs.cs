@@ -14,7 +14,7 @@ namespace Lapin.Cost;
 /// </summary>
 public static class CostTimeOutputs
 {
-    static string Money2(double v, bool raw) => raw ? Math.Round(v, 2).ToString(CultureInfo.InvariantCulture) : v.ToString("0.00", CultureInfo.InvariantCulture);
+    static string Money2(double v, bool raw) => MoneyText.Plain(v, raw);
 
     static string Month(DateOnly m) => m.ToString("MM.yyyy", CultureInfo.InvariantCulture);
 
@@ -126,7 +126,7 @@ public sealed class CostCurveSheet : ISheetContent
         : Math.Abs(v) >= 1e3 ? (v / 1e3).ToString("0.##", CultureInfo.InvariantCulture) + " k"
         : v.ToString("0.##", CultureInfo.InvariantCulture);
 
-    static string Money(double v) => v.ToString("N2", CultureInfo.InvariantCulture).Replace(",", " ");
+    static string Money(double v) => MoneyText.Grouped(v);
 
     public static List<Pen> Draw(CostOverTime o, double w, double h, double ox, double oy, string project)
     {

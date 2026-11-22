@@ -7,26 +7,11 @@ namespace Lapin.Cost;
 /// <summary>What a price list's unit measures and how the model's SI value turns into it.</summary>
 public static class Units
 {
-    /// <summary>A unit's measure (volume, area, length, count, weight) and the factor the model's SI value is multiplied by to be in it; null when Lapin cannot measure it.</summary>
-    public static (string Basis, double Factor)? BasisOf(string? unit)
-    {
-        var u = (unit ?? "").Trim().ToLowerInvariant().Replace(" ", "").Replace(".", "");
-        return u switch
-        {
-            "m3" or "m³" or "mc" or "cum" or "cbm" => ("volume", 1),
-            "m2" or "m²" or "mp" or "sqm" => ("area", 1),
-            "100m2" or "100mp" or "100m²" => ("area", 0.01),
-            "m" or "ml" or "lm" or "rm" => ("length", 1),
-            "100m" or "100ml" => ("length", 0.01),
-            "buc" or "pcs" or "pc" or "nr" or "no" or "u" or "ea" or "each" or "stk" or "szt" or "un" or "pz" or "piece" or "pièce" or "set" => ("count", 1),
-            "kg" => ("weight", 1),
-            "t" or "to" or "tonne" or "tona" or "tone" => ("weight", 0.001),
-            _ => null,
-        };
-    }
+    /// <summary>A unit's measure and the factor the model's SI value is multiplied by to be in it (<see cref="MeasureUnits.BasisOf"/>, shared with planning).</summary>
+    public static (string Basis, double Factor)? BasisOf(string? unit) => MeasureUnits.BasisOf(unit);
 
     /// <summary>The unit a measure is shown in when the article's price has none.</summary>
-    public static string UnitOf(string basis) => basis switch { "volume" or "grossVolume" => "m³", "area" or "grossArea" => "m²", "length" => "m", "weight" => "kg", _ => "pcs" };
+    public static string UnitOf(string basis) => MeasureUnits.UnitOf(basis);
 
     /// <summary>IFC's kind of quantity for a measure.</summary>
     public static string KindOf(string basis) => basis switch
@@ -194,16 +179,6 @@ public static class Parts
 /// <summary>Reading an article's quantity off an element's sets.</summary>
 public static class Measures
 {
-    static readonly Dictionary<string, string[]> Names = new()
-    {
-        ["volume"] = ["NetVolume", "Volume", "GrossVolume"],
-        ["grossVolume"] = ["GrossVolume", "NetVolume", "Volume"],
-        ["area"] = ["NetSideArea", "NetArea", "NetFloorArea", "NetSurfaceArea", "ContactArea", "Area", "GrossSideArea", "GrossArea", "GrossFloorArea", "GrossSurfaceArea", "OuterSurfaceArea"],
-        ["grossArea"] = ["GrossSideArea", "GrossArea", "GrossFloorArea", "GrossSurfaceArea", "ContactArea", "Area", "NetSideArea", "NetArea", "NetFloorArea", "NetSurfaceArea"],
-        ["length"] = ["Length", "Perimeter", "FormedLength"],
-        ["weight"] = ["NetWeight", "GrossWeight", "Weight"],
-    };
-
     /// <summary>The measure an article reads: its own, else (auto) the price's unit's, else a count.</summary>
     public static string BasisFor(ArticleRef a, PriceRow? price) =>
         a.Basis != "auto" ? a.Basis : Units.BasisOf(price?.Unit)?.Basis ?? "count";
@@ -212,9 +187,7 @@ public static class Measures
     public static double? Of(QuantitySet s, string basis)
     {
         if (basis == "count") return 1;
-        var names = Names.TryGetValue(basis, out var n) ? n : [basis];
-        foreach (var name in names) if (s.Quantities.FirstOrDefault(q => q.Name == name) is { } hit) return hit.Value;
-        return null;
+        return MeasureQuantities.Pick(s.Quantities, basis);
     }
 
     /// <summary>

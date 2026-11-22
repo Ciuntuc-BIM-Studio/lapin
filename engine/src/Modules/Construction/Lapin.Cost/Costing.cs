@@ -98,6 +98,17 @@ public static class Money
         double.IsFinite(v) && Math.Abs(v) < 1e15 ? (double)Math.Round((decimal)v, 2, MidpointRounding.AwayFromZero) : Math.Round(v, 2, MidpointRounding.AwayFromZero);
 }
 
+/// <summary>Money as text, the one way the cost module writes it: for people, or as a workbook takes it.</summary>
+public static class MoneyText
+{
+    /// <summary>Two decimals, thousands grouped by a space („1 234.50”), as reports and the S-curve's labels show it.</summary>
+    public static string Grouped(double v) => v.ToString("N2", System.Globalization.CultureInfo.InvariantCulture).Replace(",", " ");
+
+    /// <summary>Two decimals („1234.50”), or (raw) the value rounded to cents as a plain number („1234.5”) for a workbook's cell.</summary>
+    public static string Plain(double v, bool raw = false) =>
+        raw ? Money.Round(v).ToString(System.Globalization.CultureInfo.InvariantCulture) : v.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+}
+
 /// <summary>A chapter's or the whole estimate's sums by kind of cost.</summary>
 public sealed record Sums(double M, double L, double E, double T)
 {
@@ -442,13 +453,13 @@ public static class Costing
         material == null ? null : rules.FirstOrDefault(r => r.Material == material) ?? rules.FirstOrDefault(r => r.Material == null && r.Matches(m, material));
 
     /// <summary>
-    /// Each chapter's share of the value without VAT, of the VAT and of the total, as the object estimate lists them: in
-    /// proportion to its direct costs, rounded, the last taking what rounding left so the rows add up to the totals.
+    /// Each chapter's value without VAT, VAT and total, as the object estimate lists them: its own totals after the same
+    /// rules as the estimate's (the CAM on its own labour, the overheads and profit on its own costs), the last taking what
+    /// rounding left so the rows add up to the totals.
     /// </summary>
     public static List<(EstimateChapter Chapter, double Net, double Vat, double Total)> Shares(EstimateResult r)
     {
         var o = new List<(EstimateChapter, double, double, double)>();
-        var direct = r.Totals.Direct.Direct;
         double net = 0, vat = 0;
         for (var i = 0; i < r.Chapters.Count; i++)
         {
@@ -457,8 +468,8 @@ public static class Costing
             if (i == r.Chapters.Count - 1) { n = Money.Round(r.Totals.Net - net); v = Money.Round(r.Totals.Vat - vat); }
             else
             {
-                var share = direct > 0 ? c.Sums.Direct / direct : 0;
-                n = Money.Round(r.Totals.Net * share); v = Money.Round(r.Totals.Vat * share);
+                var own = Totals.Of(c.Sums, r.Settings);
+                n = own.Net; v = own.Vat;
             }
             net += n; vat += v;
             o.Add((c, n, v, Money.Round(n + v)));

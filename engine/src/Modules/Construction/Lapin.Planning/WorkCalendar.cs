@@ -21,6 +21,11 @@ public sealed record WorkCalendar(
 {
     public const string Class = "IfcWorkCalendar";
     public const string Romania = "ro", NoHolidays = "none";
+    /// <summary>The holiday rules a calendar may take: Romania's legal holidays, or none.</summary>
+    public static readonly string[] HolidayCodes = [Romania, NoHolidays];
+
+    /// <summary>A holiday code as given (trimmed, any case), or null when it is none Lapin knows.</summary>
+    public static string? HolidayCode(string? code) => code?.Trim().ToLowerInvariant() is { } c && HolidayCodes.Contains(c) ? c : null;
 
     /// <summary>Five days of eight hours from 08:00, Romania's legal holidays; the winter break there but off (the user's answer 6).</summary>
     public static WorkCalendar Default => new([1, 2, 3, 4, 5], "08:00", 8, Romania, []);
@@ -220,7 +225,8 @@ public sealed record WorkCalendar(
         var days = a["days"] is JsonArray da ? da.Select(x => (int)(Json.Number(x) ?? 0)).Where(x => x is >= 1 and <= 7).Distinct().Order().ToList() : d.Days.ToList();
         var start = (string?)a["dayStart"] is { } s && TimeOnly.TryParseExact(s, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _) ? s : d.DayStart;
         var hours = Json.Number(a["hours"]) is { } h && h > 0 && h <= 24 ? h : d.Hours;
-        var holidays = (string?)a["holidays"] is NoHolidays ? NoHolidays : Romania;
+        // Missing: the default (Romania). A code Lapin does not know adds no holidays rather than Romania's.
+        var holidays = a["holidays"] is not JsonValue hv ? d.Holidays : HolidayCode(hv.TryGetValue<string>(out var hs) ? hs : null) ?? NoHolidays;
         var exceptions = new List<CalendarException>();
         if (a["exceptions"] is JsonArray xa)
             foreach (var x in xa.OfType<JsonObject>())

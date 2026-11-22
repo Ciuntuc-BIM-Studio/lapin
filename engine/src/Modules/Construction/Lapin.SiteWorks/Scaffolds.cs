@@ -73,7 +73,7 @@ public static class Scaffolds
     public static Line? FacadeOf(Entity e, IModelView m, IServices services)
     {
         var walls = WallsOf(m, e);
-        if (walls.Count > 0 && FromWalls(walls, m, services) is { } fromWalls) return fromWalls;
+        if (walls.Count > 0 && FromWalls(walls, m, services, ChordOf(SpecOf(m, e))) is { } fromWalls) return fromWalls;
         var path = Path(e).ToList();
         if (path.Count < 2) return null;
         var closed = e.Bool("closed") && path.Count >= 3;
@@ -84,11 +84,11 @@ public static class Scaffolds
     /// <summary>
     /// The walls' outer faces as one line: each wall's face that looks away
     /// from the middle of all the project's walls (a curved wall's in chords of
-    /// at most <see cref="Chord"/>), oriented with the outside on its left,
+    /// at most <paramref name="chord"/>, the type's longest bay), oriented with the outside on its left,
     /// chained end to start (the nearest next), the corners where the faces'
     /// lines meet; closed when the last comes back to the first.
     /// </summary>
-    public static Line? FromWalls(IReadOnlyList<Entity> walls, IModelView m, IServices services)
+    public static Line? FromWalls(IReadOnlyList<Entity> walls, IModelView m, IServices services, double chord = Chord)
     {
         var all = m.OfClass(IfcClass.Wall).Select(w => ElementFaces.Of(services, w, m)).Where(f => f.Count > 0).ToList();
         if (all.Count == 0) return null;
@@ -103,7 +103,7 @@ public static class Scaffolds
             var outer = faces.MaxBy(f => Vec2.Dot(new Vec2(f.Normal.X, f.Normal.Y), f.Centre.Xy - middle))!;
             var n = new Vec2(outer.Normal.X, outer.Normal.Y);
             List<Vec2> line;
-            if (outer.Curve) line = Rechord(outer.Outline.Select(p => p.Xy).ToList(), Chord);
+            if (outer.Curve) line = Rechord(outer.Outline.Select(p => p.Xy).ToList(), chord > 0 ? chord : Chord);
             else { var bottom = outer.Outline.OrderBy(p => p.Z).Take(2).Select(p => p.Xy).ToList(); line = [bottom[0], bottom[1]]; }
             // The outside on the left: judged at the middle of the line.
             var k = line.Count / 2 - (line.Count % 2 == 0 ? 1 : 0);
@@ -136,8 +136,11 @@ public static class Scaffolds
         return new(pts, closed);
     }
 
-    /// <summary>The longest a chord of a curved facade may be: a curved wall is followed in straight runs no longer.</summary>
+    /// <summary>The longest a chord of a curved facade may be when no type says (a curved wall is followed in straight runs no longer).</summary>
     public const double Chord = 3.0;
+
+    /// <summary>The chords a type's scaffold follows a curved facade in: no longer than its longest bay, so each run takes whole bays.</summary>
+    public static double ChordOf(Spec s) => s.Bays.Length > 0 ? s.Bays.Max() : Chord;
 
     /// <summary>A curve as the fewest equal chords of at most <paramref name="max"/>, from its start to its end.</summary>
     static List<Vec2> Rechord(List<Vec2> curve, double max)

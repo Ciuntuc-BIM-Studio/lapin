@@ -462,4 +462,20 @@ public class PlanningGeneratorTests
         Generate(f, new JsonObject { ["spec"] = spec });
         Assert.Equal([unit], ElementsOf(f, "Installations · Ground floor"));
     }
+
+    [Fact]
+    public void A_norm_reads_the_units_and_quantities_a_price_list_does()
+    {
+        // One table of units for norms and prices: „100 m”, „100 ml”, „100 m²”, „set”, „tone” were the estimate's alone.
+        foreach (var u in new[] { "100 m", "100ml", "100 m²", "set", "tone", "mc", "mp", "buc", "kg", "t", "bags" })
+            Assert.Equal(Lapin.Cost.Units.BasisOf(u), Norms.BasisOf(u));
+        Assert.Equal(("length", 0.01), Norms.BasisOf("100 ml"));
+        Assert.Equal(("weight", 0.001), Norms.BasisOf("tone"));
+        Assert.Equal(("count", 1.0), Norms.BasisOf("set"));
+        // And one list of names: a footing's contact area, a ring beam's perimeter, a formwork's formed length.
+        Assert.Equal(3.5, MeasureQuantities.Pick([new Quantity("ContactArea", 3.5, "AREA")], "area"));
+        Assert.Equal(12.0, MeasureQuantities.Pick([new Quantity("Perimeter", 12, "LENGTH")], "length"));
+        Assert.Equal(7.0, MeasureQuantities.Pick([new Quantity("FormedLength", 7, "LENGTH")], "length"));
+        Assert.Equal(2.0, MeasureQuantities.Pick([new Quantity("OuterSurfaceArea", 2, "AREA")], "area"));
+    }
 }

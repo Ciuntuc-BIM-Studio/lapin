@@ -300,7 +300,7 @@ public sealed partial class ElevatorLayout
             // The jack: a ram from the pit floor up to the car's floor.
             var (jx, jy) = ((wx0 + wx1) / 2, (wy0 + wy1) / 2);
             var c = W(jx, jy);
-            Add(weight, Prism.Cylinder(c, ZPit, 0.08, zb - ZPit + 0.4, 12, "jack"));
+            Add(weight, Prism.Cylinder(c, ZPit, 0.08, zb - ZPit + 0.4, tag: "jack"));
         }
         else
         {

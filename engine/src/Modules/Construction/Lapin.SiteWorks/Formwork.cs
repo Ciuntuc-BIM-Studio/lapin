@@ -629,7 +629,7 @@ public static class Formwork
     static void PropSolid(Parts parts, Prop p)
     {
         if (p.Length <= 0.01) return;
-        parts.Add("props", "Props", PropColor, Prism.Cylinder(p.At, p.Bottom, 0.03, p.Length, 8));
+        parts.Add("props", "Props", PropColor, Prism.Cylinder(p.At, p.Bottom, 0.03, p.Length));
         parts.Add("props", "Props", PropColor, Prism.ExtrudeFootprint(Sq(p.At, 0.15), p.Bottom, 0.01));
         parts.Add("props", "Props", PropColor, Prism.ExtrudeFootprint(Sq(p.At, 0.12), p.Top - 0.01, 0.01));
     }

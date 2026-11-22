@@ -54,6 +54,37 @@ public sealed class GraphTests : IDisposable
     static double[] Numbers(JsonNode? n) => n!.AsArray().Select(x => (double)x!).ToArray();
 
     [Fact]
+    public void A_graphs_geometry_follows_a_change_to_what_an_element_hangs_on_within_one_run()
+    {
+        // The storey raised in the run, the wall untouched: its geometry is built again, not the one kept from before.
+        var f = Project();
+        var wall = f.Wall(0, 0, 4, 0, height: 2.5);
+        var storey = f.Model.Get(f.Storey)!;
+        f.Session.Edit("raise", e =>
+        {
+            var q = new Lapin.Graphs.ModelQuery(e.Model, f.Session.Catalog);
+            double Low() => q.Geometry(wall)!.Parts.Min(p => Lapin.Geometry.Measure.Bounds(p.Solid)!.Value.Min.Z);
+            var before = Low();
+            var a = storey.CloneAttrs();
+            a["elevation"] = storey.Num("elevation") + 3;
+            e.Replace(storey.With(attrs: a));
+            Assert.Equal(before + 3, Low(), 6);
+        });
+    }
+
+    [Fact]
+    public void A_text_input_reads_as_a_number_as_everywhere_else_in_Lapin()
+    {
+        Assert.Equal(2.5, Values.Number("2,5", "x"));
+        Assert.Equal(-3, Values.Number("−3", "x"));
+        Assert.Equal(1000, Values.Number("1e3", "x"));
+        // What Numbers.Parse refuses, a graph does not take either: no NaN, infinity, nor thousands groups.
+        Assert.Throws<CommandException>(() => Values.Number("NaN", "x"));
+        Assert.Throws<CommandException>(() => Values.Number("Infinity", "x"));
+        Assert.Throws<CommandException>(() => Values.Number("1,234.5", "x"));
+    }
+
+    [Fact]
     public void Nodes_run_in_the_order_their_wires_give_and_lists_map_by_the_longest()
     {
         var f = Project();
