@@ -61,10 +61,20 @@ public static class DxfImport
     public static (DxfDocument Doc, string Name) Load(JsonObject a)
     {
         if ((string?)a["data"] is { Length: > 0 } data)
-            return (DxfReader.Read(Convert.FromBase64String(data)), (string?)a["name"] ?? "drawing.dxf");
+            return (Read(Convert.FromBase64String(data)), (string?)a["name"] ?? "drawing.dxf");
         var path = HostFiles.Check((string?)a["path"] ?? throw new CommandException("Which DXF file?"));
         if (!File.Exists(path)) throw new CommandException($"There is no file at {path}.");
-        return (DxfReader.Read(File.ReadAllBytes(path)), Path.GetFileName(path));
+        return (Read(File.ReadAllBytes(path)), Path.GetFileName(path));
+    }
+
+    /// <summary>The bytes as a DXF, or a sentence saying why not (a binary DXF, a DWG, a file with no DXF sections): never an empty drawing in silence.</summary>
+    static DxfDocument Read(byte[] bytes)
+    {
+        DxfDocument doc;
+        try { doc = DxfReader.Read(bytes); }
+        catch (InvalidDataException e) { throw new CommandException(e.Message); }
+        if (doc.Sections == 0) throw new CommandException("This file is not a DXF Lapin can read: it has no DXF sections (HEADER, ENTITIES…).");
+        return doc;
     }
 
     public static DxfImportOptions Options(JsonObject a)
@@ -108,15 +118,27 @@ public static class DxfImport
         return Walk(doc, doc.Entities, root, null, null, stack);
     }
 
-    static IEnumerable<Placed> Walk(DxfDocument doc, List<DxfEntity> entities, Affine frame, string? blockLayer, string? blockColor, Stack<string> stack)
+    /// <summary>
+    /// The most entities a file's blocks may unfold into (forum topic 217): blocks inserting blocks, or an array
+    /// insert (MINSERT) of thousands of rows and columns, multiply what the file holds, and an exponential nest
+    /// would keep the reader at it for hours, the dialog on "Reading the file…". Past it the import is refused,
+    /// saying which block, rather than left running. 440,000 lines import in about half a minute.
+    /// </summary>
+    public const int MaxPlaced = 2_000_000;
+
+    /// <summary>What is left of <see cref="MaxPlaced"/> for one walk (and the walks it starts).</summary>
+    sealed class Budget { public int Left = MaxPlaced; }
+
+    static IEnumerable<Placed> Walk(DxfDocument doc, List<DxfEntity> entities, Affine frame, string? blockLayer, string? blockColor, Stack<string> stack, Budget? budget = null)
     {
+        budget ??= new Budget();
         foreach (var e in entities)
         {
             var layer = e.Layer == "0" && blockLayer != null ? blockLayer : e.Layer;
             var color = e.ByBlock ? blockColor : e.Color;
             if (e is DxfInsert ins)
             {
-                foreach (var t in ins.Attribs) yield return new Placed(t, frame, t.Layer == "0" && blockLayer != null ? blockLayer : t.Layer, t.ByBlock ? color : t.Color);
+                foreach (var t in ins.Attribs) { Spend(budget, stack, ins.Block); yield return new Placed(t, frame, t.Layer == "0" && blockLayer != null ? blockLayer : t.Layer, t.ByBlock ? color : t.Color); }
                 if (!doc.Blocks.TryGetValue(ins.Block, out var block) || stack.Contains(ins.Block) || stack.Count > 32) continue;
                 stack.Push(ins.Block);
                 var turn = Affine.Rotate(ins.RotationDeg);
@@ -125,13 +147,23 @@ public static class DxfImport
                     {
                         var at = ins.At + turn.Linear(new Vec2(c * ins.ColSpacing, r * ins.RowSpacing));
                         var local = Affine.Translate(-block.Base).Then(Affine.Scale(ins.Sx, ins.Sy)).Then(turn).Then(Affine.Translate(at)).Then(frame);
-                        foreach (var p in Walk(doc, block.Entities, local, layer, color, stack)) yield return p;
+                        foreach (var p in Walk(doc, block.Entities, local, layer, color, stack, budget)) yield return p;
                     }
                 stack.Pop();
                 continue;
             }
+            Spend(budget, stack, null);
             yield return new Placed(e, frame, layer, color);
         }
+    }
+
+    static void Spend(Budget budget, Stack<string> stack, string? block)
+    {
+        if (--budget.Left >= 0) return;
+        var name = block ?? (stack.Count > 0 ? stack.ToArray()[^1] : null);
+        throw new CommandException(name != null
+            ? $"The drawing unfolds into more than 2,000,000 entities through its block „{name}” (blocks inserted inside blocks, or an array insert), more than Lapin brings in at once. Purge or explode what is not needed in the CAD program, then import it again."
+            : $"The drawing has more than 2,000,000 entities, more than Lapin brings in at once. Split it, or purge what is not needed in the CAD program, then import it again.");
     }
 
     /// <summary>The points an entity reaches (drawing frame), for extents.</summary>
@@ -170,9 +202,10 @@ public static class DxfImport
     /// that says millimetres but is a few dozen units across (ArchiCAD writes
     /// metres under $INSUNITS = 4) is read by the guess too.
     /// </summary>
-    public static (double Factor, bool Guessed) Units(DxfDocument doc)
+    public static (double Factor, bool Guessed) Units(DxfDocument doc) => Units(doc, Extents(doc));
+
+    static (double Factor, bool Guessed) Units(DxfDocument doc, (Vec2 Min, Vec2 Max)? ext)
     {
-        var ext = Extents(doc);
         var size = ext is { } e ? Math.Max(e.Max.X - e.Min.X, e.Max.Y - e.Min.Y) : 0;
         var guess = DxfUnits.Guess(size);
         if (doc.UnitFactor is not { } f) return (guess, true);
@@ -190,9 +223,11 @@ public static class DxfImport
     /// coordinates are a cadastral plan's (ArchiCAD writes metres under $INSUNITS = 4); never a drawing that would be bigger
     /// than a site in that unit.
     /// </summary>
-    public static double? MapUnits(DxfDocument doc)
+    public static double? MapUnits(DxfDocument doc) => MapUnits(doc, Extents(doc));
+
+    static double? MapUnits(DxfDocument doc, (Vec2 Min, Vec2 Max)? ext)
     {
-        if (Extents(doc) is not { } e) return null;
+        if (ext is not { } e) return null;
         var size = Math.Max(e.Max.X - e.Min.X, e.Max.Y - e.Min.Y);
         bool Map(double f) => size * f <= MapSize && GeoRef.LooksLikeMap([(e.Min.X * f, e.Min.Y * f)]);
         if (doc.UnitFactor is { } declared && Map(declared)) return declared;
@@ -203,7 +238,10 @@ public static class DxfImport
 
     public static JsonObject Info(IModelView m, DxfDocument doc, string? viewId)
     {
-        var (factor, guessed) = Units(doc);
+        // The extents once (a big drawing's walk takes seconds), for the units, the summary and the map's test.
+        var ext = Extents(doc);
+        var (factor, guessed) = Units(doc, ext);
+        var mapUnits = MapUnits(doc, ext);
         var counts = new Dictionary<string, int>();
         var other = new Dictionary<string, int>();
         var perLayer = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -224,7 +262,6 @@ public static class DxfImport
             var l = doc.Layers.GetValueOrDefault(name);
             layers.Add((JsonNode)new JsonObject { ["name"] = name, ["color"] = l?.Color ?? "#18181b", ["visible"] = l?.Visible ?? true, ["locked"] = l?.Locked ?? false, ["count"] = perLayer.GetValueOrDefault(name), ["lineType"] = DxfCurves.LineType(l?.LineType, l != null ? doc.LineTypes.GetValueOrDefault(l.LineType) : null) });
         }
-        var ext = Extents(doc);
         var view = viewId != null ? Views.Find(m, viewId) : null;
         return new JsonObject
         {
@@ -239,8 +276,8 @@ public static class DxfImport
             // Whether it is in map coordinates (a cadastral plan): its corner far from zero, as metres; and whether the project is tied to the map.
             ["map"] = new JsonObject
             {
-                ["likely"] = MapUnits(doc) != null,
-                ["units"] = DxfUnits.Name(MapUnits(doc) ?? 1),
+                ["likely"] = mapUnits != null,
+                ["units"] = DxfUnits.Name(mapUnits ?? 1),
                 ["georeferenced"] = GeoRef.Georeferenced(m), ["crs"] = Location.Crs(m),
             },
         };
