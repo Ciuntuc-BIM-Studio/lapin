@@ -137,6 +137,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         // A box's walls with its bottom and top: an assembly (IfcElementAssembly) of separate elements, without a body of its own.
         r.Class(new(Boxes.AssemblyClass, "Assembly", [], "#b9b2a6"));
         r.Service<IGeometryFilter>(this);
+        // What its solids are exactly, for the IFC (advanced B-rep) and STEP exports (docs/plan-studio-freeform.md §9).
+        r.Service<IIfcExactBodies>(new StudioExactBodies());
         r.Service<IProjectUpgrade>(new RampSolidUpgrade());
         r.Service<IElementPlacement>(new StudioPlacement());
         // A placed part's own axes for its drawings (decision 579).

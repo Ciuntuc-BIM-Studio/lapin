@@ -570,6 +570,34 @@ public sealed class BSplineCurve
     }
 
     /// <summary>
+    /// Pieces that meet end to start joined into one clamped curve (of the highest degree among them), each on its share of [0, 1] by its
+    /// length, the joins knots of full multiplicity (corners stay corners). A rational piece's weights are scaled so it meets the last one's.
+    /// </summary>
+    public static BSplineCurve Join(IReadOnlyList<BSplineCurve> pieces)
+    {
+        if (pieces.Count == 0) throw new ArgumentException("Nothing to join.");
+        var p = pieces.Max(c => c.Degree);
+        var cs = pieces.Select(c => c.ElevateDegree(p - c.Degree)).ToList();
+        var lengths = cs.Select(c => { var l = c.Polyline(); var s = 0.0; for (var i = 0; i + 1 < l.Count; i++) s += (l[i + 1] - l[i]).Length; return Math.Max(s, 1e-12); }).ToList();
+        var total = lengths.Sum();
+        var knots = new List<double>(Enumerable.Repeat(0.0, p + 1));
+        var pts = new List<Vec3>();
+        var ws = new List<double>();
+        var at = 0.0;
+        for (var k = 0; k < cs.Count; k++)
+        {
+            var end = k == cs.Count - 1 ? 1 : at + lengths[k] / total;
+            var c = cs[k].Reparametrised(at, end);
+            var scale = ws.Count > 0 ? ws[^1] / c.Weight(0) : 1;
+            for (var i = ws.Count > 0 ? 1 : 0; i < c.Points.Length; i++) { pts.Add(c.Points[i]); ws.Add(c.Weight(i) * scale); }
+            knots.AddRange(c.Knots.Skip(p + 1).Take(c.Knots.Length - 2 * (p + 1)));
+            knots.AddRange(Enumerable.Repeat(end, k == cs.Count - 1 ? p + 1 : p));
+            at = end;
+        }
+        return new BSplineCurve(p, knots, pts, ws);
+    }
+
+    /// <summary>
     /// Curves made compatible (<i>The NURBS Book</i> §10.3): the same degree (the highest, by <see cref="ElevateDegree"/>), the same domain
     /// [0, 1] and the same knots (each one's knots inserted into the others): ready to be skinned or blended control point by control point.
     /// </summary>
