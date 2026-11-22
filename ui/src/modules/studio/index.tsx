@@ -22,6 +22,7 @@ import { openPlaceCatalog } from '../../shell/placeCatalogStore';
 import { ellipseWhole, fromJson, polylines } from '../../viewport/cad/shapes';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
+import { executeSteps } from '../executeSteps';
 import { ask, choiceField, lengthField, numberField } from '../../shell/AskBox';
 import { formatLength, lengthText, unitName } from '../../engine/unitsStore';
 import { editSketch } from './sketch';
@@ -681,8 +682,10 @@ const array: ToolDef = {
       if (!r) return;
       const rows = Math.max(1, Math.round(Number(r.rows)));
       const step = [r.dx, r.dy, r.dz], rowStep = [r.rx, r.ry, 0];
-      if (solids.length) await execute('studio.addFeature', { ids: solids, feature: { op: 'array', count: r.count, step, ...(rows > 1 ? { rows, rowStep } : {}) } });
-      if (others.length) await execute('element.array', rows > 1 ? { ids: others, kind: 'grid', count: r.count, step, rows, rowStep } : { ids: others, count: r.count, step });
+      await executeSteps([
+        ...(solids.length ? [{ command: 'studio.addFeature', args: { ids: solids, feature: { op: 'array', count: r.count, step, ...(rows > 1 ? { rows, rowStep } : {}) } } }] : []),
+        ...(others.length ? [{ command: 'element.array', args: rows > 1 ? { ids: others, kind: 'grid', count: r.count, step, rows, rowStep } : { ids: others, count: r.count, step } }] : []),
+      ]);
     })();
   },
 };
@@ -695,8 +698,10 @@ const polarArray: ToolDef = {
     void (async () => {
       const r = await ask('Array round an upright', [numberField('count', 'Copies (with the first)', 6), numberField('angle', 'Angle filled (°)', 360), lengthField('cx', 'Centre x', 0), lengthField('cy', 'Centre y', 0)]);
       if (!r) return;
-      if (solids.length) await execute('studio.addFeature', { ids: solids, feature: { op: 'array', kind: 'polar', count: r.count, angle: r.angle, centre: [r.cx, r.cy, 0], axis: [0, 0, 1] } });
-      if (others.length) await execute('element.array', { ids: others, kind: 'polar', count: r.count, angle: r.angle, center: [r.cx, r.cy] });
+      await executeSteps([
+        ...(solids.length ? [{ command: 'studio.addFeature', args: { ids: solids, feature: { op: 'array', kind: 'polar', count: r.count, angle: r.angle, centre: [r.cx, r.cy, 0], axis: [0, 0, 1] } } }] : []),
+        ...(others.length ? [{ command: 'element.array', args: { ids: others, kind: 'polar', count: r.count, angle: r.angle, center: [r.cx, r.cy] } }] : []),
+      ]);
     })();
   },
 };
@@ -713,8 +718,10 @@ const move3d: ToolDef = {
     const ids = [...solids, ...others];
     if (!ids.length) { notify('Select what to move first, then Move 3D.'); return; }
     const move = async (by: number[]) => {
-      if (solids.length) await execute('studio.addFeature', { ids: solids, feature: { op: 'move', by } });
-      if (others.length) await execute('element.transform', { ids: others, op: 'move', by: [by[0], by[1]], up: by[2] });
+      await executeSteps([
+        ...(solids.length ? [{ command: 'studio.addFeature', args: { ids: solids, feature: { op: 'move', by } } }] : []),
+        ...(others.length ? [{ command: 'element.transform', args: { ids: others, op: 'move', by: [by[0], by[1]], up: by[2] } }] : []),
+      ]);
     };
     void (async () => {
       const box = useUi.getState().view === '3d' ? useCamera.getState().api?.boxOf?.(ids) : null;

@@ -72,14 +72,14 @@ export function sheetsFor(scheduleId: string) {
 
 /** A schedule placed on a sheet (a new A3 one when none is given), and the sheet opened. */
 export async function placeOnSheet(scheduleId: string, sheetId: string | null): Promise<void> {
-  let id = sheetId;
-  if (!id) {
-    const name = useSession.getState().nodes.get(scheduleId)?.name ?? 'Schedule';
-    const r = await execute('sheet.create', { name, paper: 'A3' }) as { id?: string } | null;
-    id = r?.id ?? null;
-  }
-  if (!id) return;
   // In the middle of the paper's free area; the user moves it on the sheet.
-  const r = await execute('sheet.addViewport', { id, viewId: scheduleId });
-  if (r) useUi.setState({ view: 'sheet', sheetId: id });
+  if (!sheetId) {
+    // A new sheet takes the view in the same command (`viewId`): one undo step.
+    const name = useSession.getState().nodes.get(scheduleId)?.name ?? 'Schedule';
+    const r = await execute('sheet.create', { name, paper: 'A3', viewId: scheduleId }) as { id?: string } | null;
+    if (r?.id) useUi.setState({ view: 'sheet', sheetId: r.id });
+    return;
+  }
+  const r = await execute('sheet.addViewport', { id: sheetId, viewId: scheduleId });
+  if (r) useUi.setState({ view: 'sheet', sheetId });
 }
