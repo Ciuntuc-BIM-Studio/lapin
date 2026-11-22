@@ -165,7 +165,9 @@ function Editor() {
     if (kind === GROUP && node) return groupSpec(node, (k, n) => specOf(k, n));
     return specs?.get(kind) ?? unknownSpec(node ?? graph.nodes.find((n) => n.kind === kind) ?? { id: '', kind, x: 0, y: 0 }, graph);
   };
-  const commit = (g: GraphJson) => { setDraft(g); void saveGraph(g).finally(() => setDraft(null)); };
+  // Two quick saves: the draft stays until the last one settles (the first's end must not drop the second's change).
+  const saving = useRef(0);
+  const commit = (g: GraphJson) => { setDraft(g); saving.current++; void saveGraph(g).finally(() => { if (--saving.current === 0) setDraft(null); }); };
 
   const toGraph = (e: { clientX: number; clientY: number }) => {
     const r = host.current!.getBoundingClientRect();

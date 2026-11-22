@@ -108,7 +108,9 @@ export async function newGraphFromExample(id: string): Promise<void> {
 export function openGraph(id: string | null): void {
   // The graph open already keeps its evaluation (opened again by a link or the guide, nothing changes).
   if (id === useGraphs.getState().graphId) return;
-  useGraphs.setState({ graphId: id, result: null, focus: null });
+  // An evaluation of the graph left (or its ghost) still on its way must not land in this one.
+  asked++;
+  useGraphs.setState({ graphId: id, result: null, focus: null, busy: false });
   graphLog.replace(EVALUATION, []);
   shareGhost(null);
 }
@@ -127,14 +129,18 @@ export async function deleteGraph(): Promise<void> {
 
 let asked = 0;
 
+/** The one question every evaluation asks: the graph, with the values a palette's fields give; nothing for a guest. */
+export const askEvaluation = (id: string, values?: Record<string, unknown>): Promise<Evaluation | null> =>
+  isGuest() ? Promise.resolve(null) : query<Evaluation>('graphs.evaluate', { id, ...(values ? { values } : {}), storey: activeStorey()?.id });
+
 /** The open graph evaluated by the engine (its values, and its ghost when the preview is on): the model untouched. */
 export async function evaluate(): Promise<void> {
   const { graphId } = useGraphs.getState();
   if (!graphId || isGuest()) return;
   const mine = ++asked;
   useGraphs.setState({ busy: true });
-  const r = await query<Evaluation>('graphs.evaluate', { id: graphId, storey: activeStorey()?.id });
-  if (mine !== asked) return;
+  const r = await askEvaluation(graphId);
+  if (mine !== asked || useGraphs.getState().graphId !== graphId) return;
   useGraphs.setState({ result: r, busy: false });
   if (r) graphLog.replace(EVALUATION, evaluationMessages(r, currentGraph(), kindLabel));
   shareGhost(useGraphs.getState().preview ? r?.ghost ?? null : null);

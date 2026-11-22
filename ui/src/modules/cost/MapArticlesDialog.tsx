@@ -32,8 +32,8 @@ export function MapArticlesDialog() {
   const [data, setData] = useState<MappingDto | null>(null);
   const [prices, setPrices] = useState<PriceRow[]>([]);
   const [rows, setRows] = useState<Record<string, Row>>({});
-  useEffect(() => { void query<MappingDto>('cost.mapping').then((d) => setData(d ?? null)); }, [version]);
-  useEffect(() => { void query<PriceRow[]>('cost.priceRows', { limit: 5000 }).then((r) => setPrices(r ?? [])); }, [version]);
+  useEffect(() => { let live = true; void query<MappingDto>('cost.mapping').then((d) => { if (live) setData(d ?? null); }); return () => { live = false; }; }, [version]);
+  useEffect(() => { let live = true; void query<PriceRow[]>('cost.priceRows', { limit: 5000 }).then((r) => { if (live) setPrices(r ?? []); }); return () => { live = false; }; }, [version]);
   const codes = useMemo(() => new Set(prices.map((p) => p.code.toLowerCase())), [prices]);
   useEffect(() => {
     if (!data) return;

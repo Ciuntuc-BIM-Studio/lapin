@@ -13,7 +13,7 @@ import { execute, query, useSession } from '../../engine/session';
 import { pickFile, saveFile, toBase64 } from '../../engine/files';
 import { readPriceList, writePriceList } from '../../platform/extensions/packs';
 import { FirmFolderFiles } from '../core/FirmFolderFiles';
-import { forgetFromLibrary, keepInLibrary, library, type LibraryList, type PriceRowDto } from './estimate';
+import { forgetFromLibrary, keepInLibrary, library, localDate, type LibraryList, type PriceRowDto } from './estimate';
 
 /** A list of this computer's library as a .lapinprices: the file a price list extension is (docs/plan-extensions.md), marked indicative. */
 async function exportList(l: LibraryList) {
@@ -51,7 +51,7 @@ function Matching({ file, read, onDone }: { file: { name: string; bytes: Uint8Ar
   const go = async () => {
     const r = await execute('cost.importPrices', { data: toBase64(file.bytes), name: file.name, header, map, currency }) as { name: string; count: number; resources: number; skipped: number; notes: string[]; rows: PriceRowDto[] } | null;
     if (!r) return;
-    if (keep && !keepInLibrary({ name: r.name, currency, rows: r.rows, added: new Date().toISOString().slice(0, 10) })) notify('The list is in the project; this computer\'s library is full, so it was not kept there.');
+    if (keep && !keepInLibrary({ name: r.name, currency, rows: r.rows, added: localDate() })) notify('The list is in the project; this computer\'s library is full, so it was not kept there.');
     notify(`Price list imported: ${r.count} article(s), ${r.skipped} row(s) skipped.`);
     if (r.notes.length) console.info(r.notes.join(' '));
     onDone();
@@ -92,7 +92,7 @@ export function PriceListsDialog() {
   const [lists, setLists] = useState<ListDto[]>([]);
   const [lib, setLib] = useState<LibraryList[]>(library());
   const [file, setFile] = useState<{ name: string; bytes: Uint8Array; read: ReadDto } | null>(null);
-  useEffect(() => { void query<ListDto[]>('cost.priceLists').then((r) => setLists(r ?? [])); }, [version]);
+  useEffect(() => { let live = true; void query<ListDto[]>('cost.priceLists').then((r) => { if (live) setLists(r ?? []); }); return () => { live = false; }; }, [version]);
   const close = () => useUi.setState({ dialog: null });
   const pick = async () => {
     const f = await pickFile('Price list (CSV, XLSX)', ['csv', 'xlsx', 'txt']);

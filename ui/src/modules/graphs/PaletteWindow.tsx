@@ -17,7 +17,7 @@
 import { setCapped } from '../../shell/keptStorage';
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { Flame, PencilRuler, RotateCcw, Save, Workflow, X } from 'lucide-react';
-import { activeStorey, execute, query, useSession } from '../../engine/session';
+import { activeStorey, execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { isGuest } from '../../engine/share';
@@ -28,7 +28,7 @@ import { scriptIcon } from '../../shell/toolIcons';
 import { graphOf } from './graph';
 import { changedValues, clampAt, paletteOf, shown, stateOf, toolOf, valueOf, type Palette } from './palette';
 import { fittingOwn, keepOwn, paletteValuesOf, readOwn, withOwn } from './ownValues';
-import { openGraph, openPanel, panelGhost, showGhost, useGraphs, type Evaluation } from './store';
+import { askEvaluation, openGraph, openPanel, panelGhost, showGhost, useGraphs, type Evaluation } from './store';
 import { togglePalette, usePalettes } from './tools';
 
 const memoryKey = (id: string) => `lapin.graphPalette.${id}`;
@@ -114,7 +114,7 @@ function GraphPaletteWindow({ graphId, place }: { graphId: string; place: number
     const t = setTimeout(() => {
       const mine = ++asked.current;
       setBusy(true);
-      void query<Evaluation>('graphs.evaluate', { id: graphId, values: JSON.parse(valuesKey), storey: activeStorey()?.id }).then((r) => {
+      void askEvaluation(graphId, JSON.parse(valuesKey) as Record<string, unknown>).then((r) => {
         if (mine !== asked.current) return;
         setBusy(false);
         setResult(r);

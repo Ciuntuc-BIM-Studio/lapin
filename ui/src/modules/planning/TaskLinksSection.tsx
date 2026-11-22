@@ -22,7 +22,7 @@ type Options = Record<RuleKey, Option[]> & { categories: string[] };
 function useRuleOptions(): Options | null {
   const version = useSession((s) => s.version);
   const [o, setO] = useState<Options | null>(null);
-  useEffect(() => { void query<Options>('planning.ruleOptions').then((x) => x && setO(x)); }, [version]);
+  useEffect(() => { let live = true; void query<Options>('planning.ruleOptions').then((x) => { if (live && x) setO(x); }); return () => { live = false; }; }, [version]);
   return o;
 }
 
