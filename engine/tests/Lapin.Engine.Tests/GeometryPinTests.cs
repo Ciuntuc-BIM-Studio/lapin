@@ -127,7 +127,9 @@ public class GeometryPinTests(ITestOutputHelper output)
         Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 
-    // Taken on origin/main fab28778, before the consolidation (the lintels' ids, made afresh each run, as #).
+    // Taken on origin/main fab28778, before the consolidation (the lintels' ids, made afresh each run, as #). The stair's and
+    // what follows it (under-stair, skirtings, the lines it hides) retaken 22.11.2026: a new stair type's tread aims at its
+    // target (0.28, audit G10), where the step rule's middle gave 0.285.
     static readonly Dictionary<string, double> Before = new()
     {
         ["00.IfcWall.parts"] = 4,
