@@ -3,13 +3,26 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // Lapin on the web in front of a CDE server, W2: a project cloned to work on in the browser and saved to the server (shell/CdeStart.tsx).
+  "Clone to work on": "Clona per lavorare",
+  "The project with its history, to work on in this browser and save to the server": "Il progetto con la sua cronologia, per lavorare in questo browser e salvare sul server",
+  "Open latest, read-only": "Apri l'ultima versione, in sola lettura",
+  "The latest commit, read-only: nothing goes back to the server": "L'ultimo commit, in sola lettura: nulla torna al server",
+  "Cloned in this browser.": "Clonato in questo browser.",
+  "Cloned from the server. Your role is Viewer: you can look and keep a copy, but not save to the server.": "Clonato dal server. Il tuo ruolo è Lettore: puoi guardare e tenere una copia, ma non salvare sul server.",
+  "Cloned from the server to work on. This browser holds the copy: File → Save to server sends your work (closing the tab loses what is not saved there); Get latest brings the others' work.": "Clonato dal server per lavorare. Questo browser tiene la copia: File → Salva sul server invia il tuo lavoro (chiudere la scheda perde ciò che non vi è salvato); Ottieni l’ultima versione dal server porta il lavoro degli altri.",
+  "Clone a project to work on it here: the browser holds the copy and its history until you save to the server (File → Save to server); Get latest brings the others' work. Open read-only to look at a commit: nothing goes back to the server.": "Clona un progetto per lavorarci qui: il browser tiene la copia e la sua cronologia finché non salvi sul server (File → Salva sul server); Ottieni l’ultima versione dal server porta il lavoro degli altri. Apri in sola lettura per guardare un commit: nulla torna al server.",
+  "Working on": "Stai lavorando su",
+  "Not saved to the server": "Non salvato sul server",
+  "Saved to the server": "Salvato sul server",
+  "This browser holds work the server has not got: Save to server sends it. Closing the tab loses it.": "Questo browser tiene lavoro che il server non ha: Salva sul server lo invia. Chiudere la scheda lo perde.",
+  "The server has everything this browser holds.": "Il server ha tutto ciò che tiene questo browser.",
   // Lapin on the web in front of a CDE server: the start screen's sign-in, projects, history and members (shell/CdeStart.tsx).
   "Common data environment": "Ambiente di condivisione dei dati",
   "Account": "Account",
   "Back to the open project": "Torna al progetto aperto",
   "Work offline…": "Lavora offline…",
   "New projects and projects from this computer, on the usual start screen. File → Server projects… comes back here.": "Progetti nuovi e progetti da questo computer, nella solita schermata iniziale. File → Progetti del server… riporta qui.",
-  "Projects open read-only from the server, as a copy in this browser: saving keeps a copy on this computer. Saving to the server, getting the latest and working together come to the browser later; the desktop app has them now.": "I progetti si aprono dal server in sola lettura, come copia in questo browser: salvare conserva una copia su questo computer. Salvare sul server, prendere l'ultima versione e lavorare insieme arriveranno nel browser più avanti; l'app desktop li ha già.",
   "Sign in with the account the server's administrator made for you.": "Accedi con l'account che l'amministratore del server ha creato per te.",
   "E-mail address": "Indirizzo e-mail",
   "Opened from the server, read-only: changes stay in this browser and never reach the server. Save keeps a copy on this computer.": "Aperto dal server, in sola lettura: le modifiche restano in questo browser e non raggiungono mai il server. Salvare conserva una copia su questo computer.",
@@ -22,7 +35,6 @@ export const IT: Record<string, string> = {
   "Open this commit, read-only": "Apri questo commit, in sola lettura",
   "Download the .lapin": "Scarica il .lapin",
   "Download the IFC copy": "Scarica la copia IFC",
-  "Open latest": "Apri l'ultima versione",
   "Working…": "In corso…",
   "History of main": "Cronologia di main",
   "Nothing saved to this project yet.": "Ancora nulla salvato in questo progetto.",

@@ -16,7 +16,7 @@ public sealed class RemotePasswordTests
 {
     const string Root = "http://127.0.0.1:5999";
 
-    sealed class FakeAtrium : HttpMessageHandler
+    internal sealed class FakeAtrium : HttpMessageHandler
     {
         public string Access = "old-access";
         public string Password = "temporary1";

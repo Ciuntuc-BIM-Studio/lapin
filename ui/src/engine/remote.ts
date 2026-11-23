@@ -3,7 +3,8 @@
  * remote.* calls with what the interface adds to each, the author (this installation's `local:` id, or the signed-in account's) and a
  * server's tokens. Tokens are never written into a project: the access token lives in memory only; the refresh token, on the desktop,
  * in the shell's store of sign-ins (remote_secret_get/set, readable by the user alone; the system's keychain from S2); in the browser,
- * in this tab's memory only, so a reload signs out.
+ * in this tab's memory only, so a reload signs out; in front of a CDE server (engine/cdeServer.ts, W2) the server's sign-in is the
+ * start screen's, one for the interface and the engine (access token in memory, refresh token in sessionStorage).
  */
 
 import { engine, engineInBrowser } from './session';
@@ -11,6 +12,7 @@ import { isDesktop, keepProjectFile, reportWarnings, saveProject } from './files
 import { LONG_TIMEOUT_MS } from './client';
 import { useSession } from './session';
 import { notify, useUi } from '../app/store';
+import { cdeTokens, isCdeServer, keepCdeTokens, signIn as cdeSignIn, signOut as cdeSignOut, useCde } from './cdeServer';
 
 export interface RemoteInfo { name: string; kind: 'folder' | 'server'; url: string; project: string; ahead: number; behind: number; fetchedAt: string | null; remoteHead: string | null }
 export interface CommitInfo { id: string; message: string; at: string; author: { id: string; name: string }; entities: number | null; parents: string[]; tags: string[]; pushed?: boolean }
@@ -47,6 +49,9 @@ export const setAuthorName = (name: string) => storage()?.setItem(NAME_KEY, name
 
 /** The author of what this installation does on a remote: the account's public id when signed in to that server, else local. */
 export function authorFor(server: string | null): Author {
+  // The CDE's sign-in: the account's name (Foundation names the account by its e-mail, which never goes into a commit).
+  const cde = isCdeServer(server) ? useCde.getState().user : null;
+  if (cde?.name) return { id: `local:${installationId()}`, name: cde.name };
   if (server) {
     const raw = storage()?.getItem(ACCOUNT_KEY + server);
     if (raw) {
@@ -83,12 +88,17 @@ async function tokensOf(server: string): Promise<Tokens> {
 }
 
 export async function signedIn(server: string): Promise<boolean> {
+  if (isCdeServer(server)) return Boolean(useCde.getState().user);
   const t = await tokensOf(server);
   return Boolean(t.access || t.refresh);
 }
 
 /** A sign-in with the account's e-mail and password (OAuth2 password grant, client lapin-desktop or lapin-web); the password goes no further. */
 export async function signIn(server: string, username: string, password: string): Promise<Author | null> {
+  if (isCdeServer(server)) {
+    await cdeSignIn(username, password);
+    return authorFor(server);
+  }
   const r = await engine.call<{ accessToken: string; refreshToken: string | null; user?: { id?: string; name?: string } }>('remote.signIn', {
     url: server, username, password, clientId: engineInBrowser ? 'lapin-web' : 'lapin-desktop',
   }, { timeoutMs: 60_000 });
@@ -105,6 +115,7 @@ export async function signIn(server: string, username: string, password: string)
 }
 
 export async function signOut(server: string): Promise<void> {
+  if (isCdeServer(server)) { cdeSignOut(); return; }
   tokens.delete(server);
   storage()?.removeItem(ACCOUNT_KEY + server);
   await keepRefresh(server, null);
@@ -123,18 +134,37 @@ export async function changePassword(server: string, currentPassword: string, ne
 /** One call of the history or the remote: the author and, for a server, its tokens added; tokens a refresh replaced kept at once. */
 export async function remoteCall<T>(method: string, args: Record<string, unknown> = {}, server: string | null = null): Promise<T> {
   const extra: Record<string, unknown> = { author: authorFor(server) };
+  const cde = isCdeServer(server);
   if (server) {
-    const t = await tokensOf(server);
+    const t = cde ? await cdeTokens() : await tokensOf(server);
     if (t.access) extra.token = t.access;
     if (t.refresh) extra.refreshToken = t.refresh;
   }
   const r = await engine.call<T & { tokens?: { accessToken: string | null; refreshToken: string | null } }>(method, { ...args, ...extra }, { timeoutMs: LONG_TIMEOUT_MS });
   if (server && r && typeof r === 'object' && r.tokens) {
-    tokens.set(server, { access: r.tokens.accessToken, refresh: r.tokens.refreshToken });
-    await keepRefresh(server, r.tokens.refreshToken);
+    if (cde) keepCdeTokens(r.tokens.accessToken, r.tokens.refreshToken);
+    else {
+      tokens.set(server, { access: r.tokens.accessToken, refresh: r.tokens.refreshToken });
+      await keepRefresh(server, r.tokens.refreshToken);
+    }
   }
+  noteStatus(r);
   reportWarnings(r);
   return r;
+}
+
+/**
+ * What the browser holds that the CDE server does not, from the status a history or remote call answers (W2): commits not pushed,
+ * changes not committed. Only for a project whose remote is the CDE server; any other project clears it.
+ */
+export function noteStatus(r: unknown): void {
+  if (!useCde.getState().server || !r || typeof r !== 'object') return;
+  // A status as the answer itself (history.status, remote.add, remote.remove) or beside it (a commit, a push, a pull, a clone).
+  const s = ((r as { status?: unknown }).status ?? (Array.isArray((r as HistoryStatus).remotes) ? r : undefined)) as HistoryStatus | undefined;
+  if (!s || !Array.isArray(s.remotes)) return;
+  const remote = s.remotes[0];
+  const linked = Boolean(remote && isCdeServer(remote.url));
+  useCde.setState({ linked, unpushed: linked && (remote.ahead > 0 || s.uncommitted) ? { ahead: remote.ahead, uncommitted: s.uncommitted } : null });
 }
 
 /** The remote's server address, when the project's remote is a server. */
@@ -150,6 +180,10 @@ export const historyLog = (limit = 50) => remoteCall<CommitInfo[]>('history.log'
 export async function writingCall<T extends object>(method: string, args: Record<string, unknown>, server: string | null): Promise<T | null> {
   if (engineInBrowser) {
     const r = await remoteCall<T & { name?: string; data?: string }>(method, { ...args, bytes: true }, server);
+    // A project whose remote is the CDE server keeps its file in the browser's engine (its history with it): the server is where it
+    // is saved (Save to server), so no download each time; Save still keeps a copy on this computer.
+    const status = (r as { status?: HistoryStatus }).status ?? (r as unknown as HistoryStatus);
+    if (isCdeServer(status?.remotes?.[0]?.url)) return r;
     if (r.data && r.name && !await keepProjectFile({ name: r.name, data: r.data })) return null;
     return r;
   }

@@ -3,13 +3,26 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Lapin on the web in front of a CDE server, W2: a project cloned to work on in the browser and saved to the server (shell/CdeStart.tsx).
+  "Clone to work on": "Cloner pour travailler",
+  "The project with its history, to work on in this browser and save to the server": "Le projet avec son historique, pour travailler dans ce navigateur et enregistrer sur le serveur",
+  "Open latest, read-only": "Ouvrir la dernière version, en lecture seule",
+  "The latest commit, read-only: nothing goes back to the server": "Le dernier commit, en lecture seule : rien ne retourne au serveur",
+  "Cloned in this browser.": "Cloné dans ce navigateur.",
+  "Cloned from the server. Your role is Viewer: you can look and keep a copy, but not save to the server.": "Cloné depuis le serveur. Votre rôle est Lecteur : vous pouvez regarder et garder une copie, mais pas enregistrer sur le serveur.",
+  "Cloned from the server to work on. This browser holds the copy: File → Save to server sends your work (closing the tab loses what is not saved there); Get latest brings the others' work.": "Cloné depuis le serveur pour travailler. Ce navigateur garde la copie : Fichier → Enregistrer sur le serveur envoie votre travail (fermer l'onglet perd ce qui n'y est pas enregistré) ; Récupérer la dernière version du serveur apporte le travail des autres.",
+  "Clone a project to work on it here: the browser holds the copy and its history until you save to the server (File → Save to server); Get latest brings the others' work. Open read-only to look at a commit: nothing goes back to the server.": "Clonez un projet pour y travailler ici : le navigateur garde la copie et son historique jusqu'à ce que vous enregistriez sur le serveur (Fichier → Enregistrer sur le serveur) ; Récupérer la dernière version du serveur apporte le travail des autres. Ouvrez en lecture seule pour regarder un commit : rien ne retourne au serveur.",
+  "Working on": "Vous travaillez sur",
+  "Not saved to the server": "Non enregistré sur le serveur",
+  "Saved to the server": "Enregistré sur le serveur",
+  "This browser holds work the server has not got: Save to server sends it. Closing the tab loses it.": "Ce navigateur garde du travail que le serveur n'a pas : Enregistrer sur le serveur l'envoie. Fermer l'onglet le perd.",
+  "The server has everything this browser holds.": "Le serveur a tout ce que garde ce navigateur.",
   // Lapin on the web in front of a CDE server: the start screen's sign-in, projects, history and members (shell/CdeStart.tsx).
   "Common data environment": "Environnement commun de données",
   "Account": "Compte",
   "Back to the open project": "Retour au projet ouvert",
   "Work offline…": "Travailler hors ligne…",
   "New projects and projects from this computer, on the usual start screen. File → Server projects… comes back here.": "Nouveaux projets et projets de cet ordinateur, sur l'écran d'accueil habituel. Fichier → Projets du serveur… revient ici.",
-  "Projects open read-only from the server, as a copy in this browser: saving keeps a copy on this computer. Saving to the server, getting the latest and working together come to the browser later; the desktop app has them now.": "Les projets s'ouvrent depuis le serveur en lecture seule, comme une copie dans ce navigateur : enregistrer garde une copie sur cet ordinateur. Enregistrer sur le serveur, récupérer la dernière version et travailler ensemble arriveront plus tard dans le navigateur ; l'application de bureau les a déjà.",
   "Sign in with the account the server's administrator made for you.": "Connectez-vous avec le compte que l'administrateur du serveur a créé pour vous.",
   "E-mail address": "Adresse e-mail",
   "Opened from the server, read-only: changes stay in this browser and never reach the server. Save keeps a copy on this computer.": "Ouvert depuis le serveur, en lecture seule : les modifications restent dans ce navigateur et n'atteignent jamais le serveur. Enregistrer garde une copie sur cet ordinateur.",
@@ -22,7 +35,6 @@ export const FR: Record<string, string> = {
   "Open this commit, read-only": "Ouvrir ce commit, en lecture seule",
   "Download the .lapin": "Télécharger le .lapin",
   "Download the IFC copy": "Télécharger la copie IFC",
-  "Open latest": "Ouvrir la dernière version",
   "Working…": "En cours…",
   "History of main": "Historique de main",
   "Nothing saved to this project yet.": "Rien n'a encore été enregistré dans ce projet.",

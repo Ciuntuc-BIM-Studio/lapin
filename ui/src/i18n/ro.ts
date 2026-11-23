@@ -1,13 +1,26 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Lapin on the web in front of a CDE server, W2: a project cloned to work on in the browser and saved to the server (shell/CdeStart.tsx).
+  "Clone to work on": "Clonează pentru lucru",
+  "The project with its history, to work on in this browser and save to the server": "Proiectul cu istoricul lui, pentru lucru în acest browser și salvare pe server",
+  "Open latest, read-only": "Deschide ultima versiune, doar pentru citire",
+  "The latest commit, read-only: nothing goes back to the server": "Ultimul commit, doar pentru citire: nimic nu se întoarce pe server",
+  "Cloned in this browser.": "Clonat în acest browser.",
+  "Cloned from the server. Your role is Viewer: you can look and keep a copy, but not save to the server.": "Clonat de pe server. Rolul tău este Cititor: poți privi și păstra o copie, dar nu poți salva pe server.",
+  "Cloned from the server to work on. This browser holds the copy: File → Save to server sends your work (closing the tab loses what is not saved there); Get latest brings the others' work.": "Clonat de pe server pentru lucru. Acest browser ține copia: Fișier → Salvează pe server îți trimite lucrul (închiderea filei pierde ce nu e salvat acolo); Ia ultima versiune de pe server aduce lucrul celorlalți.",
+  "Clone a project to work on it here: the browser holds the copy and its history until you save to the server (File → Save to server); Get latest brings the others' work. Open read-only to look at a commit: nothing goes back to the server.": "Clonează un proiect ca să lucrezi aici la el: browserul ține copia și istoricul ei până salvezi pe server (Fișier → Salvează pe server); Ia ultima versiune de pe server aduce lucrul celorlalți. Deschide doar pentru citire ca să privești un commit: nimic nu se întoarce pe server.",
+  "Working on": "Lucrezi la",
+  "Not saved to the server": "Nesalvat pe server",
+  "Saved to the server": "Salvat pe server",
+  "This browser holds work the server has not got: Save to server sends it. Closing the tab loses it.": "Acest browser ține lucru pe care serverul nu îl are: Salvează pe server îl trimite. Închiderea filei îl pierde.",
+  "The server has everything this browser holds.": "Serverul are tot ce ține acest browser.",
   // Lapin on the web in front of a CDE server: the start screen's sign-in, projects, history and members (shell/CdeStart.tsx).
   "Common data environment": "Mediu comun de date",
   "Account": "Cont",
   "Back to the open project": "Înapoi la proiectul deschis",
   "Work offline…": "Lucrează offline…",
   "New projects and projects from this computer, on the usual start screen. File → Server projects… comes back here.": "Proiecte noi și proiecte de pe acest calculator, pe ecranul de start obișnuit. Fișier → Proiecte pe server… te aduce înapoi aici.",
-  "Projects open read-only from the server, as a copy in this browser: saving keeps a copy on this computer. Saving to the server, getting the latest and working together come to the browser later; the desktop app has them now.": "Proiectele se deschid de pe server doar pentru citire, ca o copie în acest browser: salvarea păstrează o copie pe acest calculator. Salvarea pe server, luarea ultimei versiuni și lucrul împreună vin în browser mai târziu; aplicația desktop le are acum.",
   "Sign in with the account the server's administrator made for you.": "Autentifică-te cu contul pe care ți l-a făcut administratorul serverului.",
   "E-mail address": "Adresa de e-mail",
   "Opened from the server, read-only: changes stay in this browser and never reach the server. Save keeps a copy on this computer.": "Deschis de pe server, doar pentru citire: modificările rămân în acest browser și nu ajung niciodată pe server. Salvarea păstrează o copie pe acest calculator.",
@@ -20,7 +33,6 @@ export const RO: Record<string, string> = {
   "Open this commit, read-only": "Deschide acest commit, doar pentru citire",
   "Download the .lapin": "Descarcă fișierul .lapin",
   "Download the IFC copy": "Descarcă copia IFC",
-  "Open latest": "Deschide ultima versiune",
   "Working…": "Se lucrează…",
   "History of main": "Istoricul ramurii main",
   "Nothing saved to this project yet.": "Încă nu s-a salvat nimic în acest proiect.",

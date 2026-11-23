@@ -3,13 +3,26 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // Lapin on the web in front of a CDE server, W2: a project cloned to work on in the browser and saved to the server (shell/CdeStart.tsx).
+  "Clone to work on": "Clonar para trabalhar",
+  "The project with its history, to work on in this browser and save to the server": "O projeto com o seu histórico, para trabalhar neste navegador e guardar no servidor",
+  "Open latest, read-only": "Abrir a mais recente, só de leitura",
+  "The latest commit, read-only: nothing goes back to the server": "O último commit, só de leitura: nada volta ao servidor",
+  "Cloned in this browser.": "Clonado neste navegador.",
+  "Cloned from the server. Your role is Viewer: you can look and keep a copy, but not save to the server.": "Clonado do servidor. A sua função é Leitor: pode ver e guardar uma cópia, mas não guardar no servidor.",
+  "Cloned from the server to work on. This browser holds the copy: File → Save to server sends your work (closing the tab loses what is not saved there); Get latest brings the others' work.": "Clonado do servidor para trabalhar. Este navegador guarda a cópia: Ficheiro → Guardar no servidor envia o seu trabalho (fechar o separador perde o que lá não estiver guardado); Obter o mais recente do servidor traz o trabalho dos outros.",
+  "Clone a project to work on it here: the browser holds the copy and its history until you save to the server (File → Save to server); Get latest brings the others' work. Open read-only to look at a commit: nothing goes back to the server.": "Clone um projeto para trabalhar nele aqui: o navegador guarda a cópia e o seu histórico até guardar no servidor (Ficheiro → Guardar no servidor); Obter o mais recente do servidor traz o trabalho dos outros. Abra só de leitura para ver um commit: nada volta ao servidor.",
+  "Working on": "A trabalhar em",
+  "Not saved to the server": "Não guardado no servidor",
+  "Saved to the server": "Guardado no servidor",
+  "This browser holds work the server has not got: Save to server sends it. Closing the tab loses it.": "Este navegador tem trabalho que o servidor não tem: Guardar no servidor envia-o. Fechar o separador perde-o.",
+  "The server has everything this browser holds.": "O servidor tem tudo o que este navegador tem.",
   // Lapin on the web in front of a CDE server: the start screen's sign-in, projects, history and members (shell/CdeStart.tsx).
   "Common data environment": "Ambiente comum de dados",
   "Account": "Conta",
   "Back to the open project": "Voltar ao projeto aberto",
   "Work offline…": "Trabalhar offline…",
   "New projects and projects from this computer, on the usual start screen. File → Server projects… comes back here.": "Projetos novos e projetos deste computador, na tela inicial de sempre. Arquivo → Projetos do servidor… volta para cá.",
-  "Projects open read-only from the server, as a copy in this browser: saving keeps a copy on this computer. Saving to the server, getting the latest and working together come to the browser later; the desktop app has them now.": "Os projetos abrem do servidor somente para leitura, como uma cópia neste navegador: salvar guarda uma cópia neste computador. Salvar no servidor, obter a versão mais recente e trabalhar juntos chegam ao navegador depois; o aplicativo de desktop já os tem.",
   "Sign in with the account the server's administrator made for you.": "Entre com a conta que o administrador do servidor criou para você.",
   "E-mail address": "Endereço de e-mail",
   "Opened from the server, read-only: changes stay in this browser and never reach the server. Save keeps a copy on this computer.": "Aberto do servidor, somente leitura: as alterações ficam neste navegador e nunca chegam ao servidor. Salvar guarda uma cópia neste computador.",
@@ -22,7 +35,6 @@ export const PT: Record<string, string> = {
   "Open this commit, read-only": "Abrir este commit, somente leitura",
   "Download the .lapin": "Baixar o .lapin",
   "Download the IFC copy": "Baixar a cópia IFC",
-  "Open latest": "Abrir a mais recente",
   "Working…": "Trabalhando…",
   "History of main": "Histórico de main",
   "Nothing saved to this project yet.": "Nada salvo neste projeto ainda.",

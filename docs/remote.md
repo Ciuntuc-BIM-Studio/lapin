@@ -11,7 +11,7 @@ For developers. The protocol is `docs/spec-lapin-remote.md` (normative) with its
 | The history inside the `.lapin` (`history/HEAD`, `refs.json`, `index.json`, `commits/`, `objects/`, `remotes.json`), the once rule, fsck | `Remote/PackageHistory.cs` |
 | One interface for both remotes | `Remote/IRemote.cs` |
 | The folder remote: layout, gzip objects, append-only ref logs, fork resolution, the lock, compare-and-swap | `Remote/FolderRemote.cs` |
-| The HTTP remote: discovery, password sign-in, refresh on 401, refs with ETag, `refs/update`, `objects/missing`, PUT, resumable uploads, packs, the commits walk, viewer records | `Remote/HttpRemote.cs` |
+| The HTTP remote: discovery, password sign-in, refresh on 401, refs with ETag, `refs/update`, `objects/missing`, PUT, resumable uploads, packs, the commits walk, viewer records; asynchronous (`SendAsync`), the same code on the desktop and in the browser's engine | `Remote/HttpRemote.cs` |
 | Push, fetch, clone, where a pull stands (§8) | `Remote/RemoteOps.cs` |
 | The engine's calls `history.*` and `remote.*`, the viewer IFC, pull as one undo step | `engine/src/Platform/Lapin.Protocol/EngineDispatcher.Remote.cs`, `ProjectFiles.History.cs` |
 | File → Server and collaboration: Collaborate…, Save to server…, Get latest from server, Open from server… (also on the start screen) | `ui/src/modules/core/RemoteDialog.tsx` (`RemoteDialog`, `SaveToServerDialog`, `OpenFromServerDialog`), `ui/src/engine/remote.ts` (`getLatest`), `ui/src/shell/fileActions.ts` |
@@ -87,7 +87,7 @@ Never in a project, a commit, a ref entry or a folder remote. The engine gets th
 
 ## What S1 does not do yet
 
-- The browser's engine: the HTTP remote is synchronous (`HttpClient.Send`), which the WebAssembly engine cannot do; remote calls work on the desktop. The browser needs an async path in the worker (Atrium's `docs/plan-cde-web.md`, W2). Until then the browser hides Collaborate, Save to server and Get latest, and in front of a CDE server reads it without the engine (below).
+- The browser's engine reaches only the CDE server it is served by (W2, below): the page's CSP allows no other origin, so a stock web build without a CDE server still hides Collaborate, Save to server and Get latest.
 - Versions as `refs/tags/v/<n>` tags and issues as `refs/tags/issue/*` (the client pushes and fetches tags, but Save version and Issue do not make them yet).
 - The status bar's `↑2 ↓1`, the History tab in Manage → Versions, fetch on open and every 5 minutes, Clean up (folder GC).
 - An `atrium:` author id: Foundation's `current-user` gives the e-mail address as the id, which never goes into a commit, so commits on a server are signed `local:<installation>` with the account's name until the server tells the public id (the server's ref log names the account by its `atrium:` id all the same).
@@ -107,3 +107,24 @@ Atrium's `docs/plan-cde-web.md`, stage W1: Lapin's browser build served at `http
 Tokens: the access token in the tab's memory, the refresh token (single use, rotated) in `sessionStorage` (a reload keeps the sign-in, closing the tab ends it); never `localStorage`, no cookie.
 
 To try it locally: run Atrium Server on `127.0.0.1:5280` (above), `node scripts/build-web.mjs lapin --cde`, and serve `build/lapin/web-cde` with the four API prefixes proxied to the server (any static server with a proxy; `/lapin-remote/1.0/capabilities` must answer JSON on the page's origin).
+
+## Working from the browser (W2)
+
+Atrium's `docs/plan-cde-web.md`, stage W2 (§2.1, option A): the engine's remote is asynchronous, so the browser's engine (WebAssembly in a Web Worker, where `HttpClient` is the page's `fetch` and nothing may block) runs the same client as the desktop's. Hashing, the closure, compare-and-swap and the conflict handling are written once and tested by the vectors.
+
+| What | Where |
+|---|---|
+| `IRemote`, `HttpRemote`, `RemoteOps` asynchronous (`PushAsync`, `FetchAsync`, `CloneAsync`; `ReadyAsync` reads a server's capabilities first). The folder remote stays synchronous underneath (a disk) and answers the same calls at once; the desktop's only | `engine/src/Platform/Lapin.Package/Remote/` |
+| The dispatcher's async lane: `HandleAsync` awaits the `history.*` and `remote.*` calls and ends at once for every other; `Handle` waits for it (tests, scripts). A server out of reach or a timeout is said, not an engine error | `EngineDispatcher.cs`, `EngineDispatcher.Remote.cs` |
+| The desktop host awaits `HandleAsync` inside its gate: a push or a pull holds the queue of calls, so the session never changes under it | `engine/src/Host/Lapin.Host/EngineHub.cs` |
+| The browser host's `CallAsync` (`[JSExport]`, a `Task`): its diff and reply go to the page through `frame` when it ends. The worker answers calls one at a time; a remote call is awaited and the calls that come meanwhile wait in its queue | `engine/src/Host/Lapin.Browser/Program.cs`, `ui/src/engine/worker/engine.worker.ts` |
+| One sign-in: in front of a CDE server the engine's remote calls carry the start screen's tokens (an access token got first after a reload) and the pair a refresh in the engine replaced goes back to `sessionStorage` at once (the refresh token is single use). Commits are signed with the account's name and this installation's `local:` id | `ui/src/engine/cdeServer.ts` (`cdeTokens`, `keepCdeTokens`, `isCdeServer`), `ui/src/engine/remote.ts` |
+| **Clone to work on** on a project's page: `remote.clone` against the page's server, the project opened from the server's latest with its history; File → Collaborate…, **Save to server…** and **Get latest from server** are in the browser's File menu in front of a CDE server | `ui/src/shell/CdeStart.tsx`, `ui/src/shell/fileActions.ts` |
+| The copy lives in the browser: the `.lapin` with its history is held by the engine (a commit writes it in memory, no download each time; File → Save still keeps a copy on this computer). For any project whose remote is the CDE server (cloned, or connected in Collaborate) the status bar says **Not saved to the server** while the browser holds changes or commits the server has not got (a click opens Save to server), else **Saved to the server**; the tab asks before closing while there is something not saved there | `CdeServerStatus` in `CdeStart.tsx`, `noteStatus` in `remote.ts`, `guardWindowClose` in `files.ts` |
+| A Save to server the server refused (someone saved first) opens Collaborate on the choices: **Keep my work as a branch** or Discard my commits | `SaveToServerDialog`, `RemoteDialog` in `RemoteDialog.tsx` |
+
+What the user does at `https://cde.lapinbim.com/`: sign in → the project → **Clone to work on** → edit → File → **Save to server…** (a note, then Save: commit and push in one step). Someone else's newer work: File → **Get latest from server**. When both saved, the second is told the server moved; File → Collaborate… → **Keep my work as a branch** pushes it as `wip/<name>/<date>` and brings the project to the server's.
+
+`System.Net.Http` is one of the browser engine's lazy parts: fetched the first time a remote call runs. Same origin, so the CSP's `connect-src 'self'` covers every request and no CORS is involved.
+
+To try it locally: Atrium Server on a free loopback port, `node scripts/build-web.mjs lapin --cde`, and the build served on another loopback port with the four API prefixes proxied to the server (as for W1). The proxy must pass the page's `Host` header on, as nginx does (`proxy_set_header Host $host`): the server names its API bases (`/foundation/versions`) after the host it was asked by, and the engine follows them, so a proxy that rewrites the host sends the engine to another origin, which the CSP refuses. Clone as one account, edit, Save to server; clone or Get latest as the other (a second browser profile, or a private window: the sign-in is per tab); save from both to see the conflict and keep the work as a branch. A new project goes onto an empty server project from File → Collaborate… (the server is filled in) → Projects on the remote → Use this project, then Save to server.

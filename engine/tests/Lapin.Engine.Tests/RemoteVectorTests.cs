@@ -195,7 +195,7 @@ public sealed class RemoteVectorTests : IDisposable
     static readonly RemoteAuthor Mihai = new("local:9f2b6c1d0e8a4b7c", "Mihai Ionescu");
 
     [Fact]
-    public void Folder_layout_after_the_push_session_is_the_vectors()
+    public async Task Folder_layout_after_the_push_session_is_the_vectors()
     {
         var v = (JsonObject)JsonNode.Parse(File.ReadAllText(Path.Combine(Vectors, "folder", "layout.json")))!;
         var folder = Path.Combine(_dir, "remote");
@@ -206,10 +206,10 @@ public sealed class RemoteVectorTests : IDisposable
         using (var remote = FolderRemote.Open(folder, Project, Mihai, () => now))
         {
             h.Refs[RefNames.Main] = Id("c1");
-            Assert.True(RemoteOps.Push(remote, h, "origin", [(RefNames.Main, RefNames.Main)], now).Pushed);
+            Assert.True((await RemoteOps.PushAsync(remote, h, "origin", [(RefNames.Main, RefNames.Main)], now)).Pushed);
             h.Refs[RefNames.Main] = Id("c2");
             h.Refs["refs/tags/issue/1-P01"] = Id("tag-issue");
-            var second = RemoteOps.Push(remote, h, "origin", [(RefNames.Main, RefNames.Main), ("refs/tags/issue/1-P01", "refs/tags/issue/1-P01")], now);
+            var second = await RemoteOps.PushAsync(remote, h, "origin", [(RefNames.Main, RefNames.Main), ("refs/tags/issue/1-P01", "refs/tags/issue/1-P01")], now);
             Assert.True(second.Pushed);
             // Only what the folder lacked: c2, T2, the two new parts, the tag and its file.
             Assert.Equal(6, second.Uploaded.Count);
@@ -229,7 +229,7 @@ public sealed class RemoteVectorTests : IDisposable
     }
 
     [Fact]
-    public void Folder_compare_and_swap_refuses_a_stale_old_and_the_loser_keeps_its_work_as_a_branch()
+    public async Task Folder_compare_and_swap_refuses_a_stale_old_and_the_loser_keeps_its_work_as_a_branch()
     {
         var folder = Path.Combine(_dir, "remote");
         FolderRemote.Create(folder, "Bloc P+4", DateTime.UtcNow, Project);
@@ -240,28 +240,28 @@ public sealed class RemoteVectorTests : IDisposable
         using (var r = FolderRemote.Open(folder, Project, Mihai, () => now))
         {
             mihai.Refs[RefNames.Main] = Id("c1");
-            Assert.True(RemoteOps.Push(r, mihai, "origin", [(RefNames.Main, RefNames.Main)], now).Pushed);
+            Assert.True((await RemoteOps.PushAsync(r, mihai, "origin", [(RefNames.Main, RefNames.Main)], now)).Pushed);
         }
         using (var r = FolderRemote.Open(folder, Project, anaId, () => now))
         {
             ana.Refs[RefNames.Main] = Id("c1");
-            RemoteOps.Fetch(r, ana, "origin", anaId, now);
+            await RemoteOps.FetchAsync(r, ana, "origin", anaId, now);
         }
         using (var r = FolderRemote.Open(folder, Project, Mihai, () => now))
         {
             mihai.Refs[RefNames.Main] = Id("c2");
-            Assert.True(RemoteOps.Push(r, mihai, "origin", [(RefNames.Main, RefNames.Main)], now).Pushed);
+            Assert.True((await RemoteOps.PushAsync(r, mihai, "origin", [(RefNames.Main, RefNames.Main)], now)).Pushed);
         }
         using (var r = FolderRemote.Open(folder, Project, anaId, () => now))
         {
             ana.Refs[RefNames.Main] = Id("c3");
             // Ana pushes without fetching (her last-seen main is c1): the compare-and-swap refuses, nothing moves.
-            var refused = RemoteOps.Push(r, ana, "origin", [(RefNames.Main, RefNames.Main)], now, fetchRefs: false);
+            var refused = await RemoteOps.PushAsync(r, ana, "origin", [(RefNames.Main, RefNames.Main)], now, fetchRefs: false);
             Assert.False(refused.Pushed);
             Assert.Equal(Id("c2"), refused.Current);
             Assert.Equal(Id("c2"), r.Refs(null).Refs.Single(x => x.Name == RefNames.Main).Target);
             // Pushing with the refs fetched first stops before uploading: the remote moved, pull first.
-            var behind = RemoteOps.Push(r, ana, "origin", [(RefNames.Main, RefNames.Main)], now);
+            var behind = await RemoteOps.PushAsync(r, ana, "origin", [(RefNames.Main, RefNames.Main)], now);
             Assert.True(behind.Behind);
         }
         // A synced folder let both entries in (the lock is not atomic between computers): the earlier wins, the later is detached,
@@ -271,18 +271,18 @@ public sealed class RemoteVectorTests : IDisposable
         File.WriteAllBytes(Path.Combine(dir, FolderRemote.EntryName(2, Id("c3"), anaId)), FolderRemote.EntryBytes(RefNames.Main, 2, Id("c1"), Id("c3"), anaId, late));
         using (var r = FolderRemote.Open(folder, Project, anaId, () => now))
         {
-            var f = RemoteOps.Fetch(r, ana, "origin", anaId, now);
+            var f = await RemoteOps.FetchAsync(r, ana, "origin", anaId, now);
             Assert.Contains(f.Notes, n => n.Contains("wip/ana-popescu/2026-11-23-1046", StringComparison.Ordinal));
             Assert.Equal(Id("c3"), r.Refs(null).Refs.Single(x => x.Name == "refs/heads/wip/ana-popescu/2026-11-23-1046").Target);
             Assert.Single(ana.Seen["origin"].SeenDetached);
             ana.Seen["origin"].Etag = null;
-            var again = RemoteOps.Fetch(r, ana, "origin", anaId, now);
+            var again = await RemoteOps.FetchAsync(r, ana, "origin", anaId, now);
             Assert.DoesNotContain(again.Notes, n => n.Contains("wip/", StringComparison.Ordinal));
         }
     }
 
     [Fact]
-    public void A_stale_folder_lock_is_broken_and_said()
+    public async Task A_stale_folder_lock_is_broken_and_said()
     {
         var folder = Path.Combine(_dir, "remote");
         FolderRemote.Create(folder, "P", DateTime.UtcNow, Project);
@@ -291,7 +291,7 @@ public sealed class RemoteVectorTests : IDisposable
         var h = Story("document.json", "relations.arrow", "T1", "c1");
         h.Refs[RefNames.Main] = Id("c1");
         using var r = FolderRemote.Open(folder, Project, Mihai, () => now);
-        var o = RemoteOps.Push(r, h, "origin", [(RefNames.Main, RefNames.Main)], now);
+        var o = await RemoteOps.PushAsync(r, h, "origin", [(RefNames.Main, RefNames.Main)], now);
         Assert.True(o.Pushed);
         Assert.Contains(o.Notes, n => n.Contains("older than 10 minutes", StringComparison.Ordinal) && n.Contains("Ana", StringComparison.Ordinal));
     }
@@ -299,7 +299,7 @@ public sealed class RemoteVectorTests : IDisposable
     // ------------------------------------------------------------ sessions against a fake server
 
     [Fact]
-    public void Push_session_sends_what_the_vectors_say()
+    public async Task Push_session_sends_what_the_vectors_say()
     {
         var server = VectorServer.Of("push");
         // Step 7 (a PUT of an object the server holds) is the server's case: a client uploads only what missing lists.
@@ -316,9 +316,9 @@ public sealed class RemoteVectorTests : IDisposable
             UseUpload = (id, _) => id == Id("walls.arrow"),
             FirstPatchLimit = 100,
         };
-        Assert.Equal("1.0", remote.Capabilities().Version);
-        Assert.Equal("owner", remote.Project().Role);
-        var o = RemoteOps.Push(remote, h, "origin", [(RefNames.Main, RefNames.Main), ("refs/tags/issue/1-P01", "refs/tags/issue/1-P01")], DateTime.UtcNow);
+        Assert.Equal("1.0", (await remote.CapabilitiesAsync()).Version);
+        Assert.Equal("owner", (await remote.ProjectAsync()).Role);
+        var o = await RemoteOps.PushAsync(remote, h, "origin", [(RefNames.Main, RefNames.Main), ("refs/tags/issue/1-P01", "refs/tags/issue/1-P01")], DateTime.UtcNow);
         Assert.True(o.Pushed);
         server.AssertDone();
         Assert.Equal([Id("c2"), Id("T2"), Id("walls.arrow"), Id("hello.py"), Id("tag-issue")], o.Uploaded);
@@ -329,7 +329,7 @@ public sealed class RemoteVectorTests : IDisposable
     }
 
     [Fact]
-    public void Fetch_session_takes_what_the_vectors_say()
+    public async Task Fetch_session_takes_what_the_vectors_say()
     {
         var server = VectorServer.Of("fetch");
         server.Add(VectorServer.Load("push", 1));
@@ -343,17 +343,17 @@ public sealed class RemoteVectorTests : IDisposable
         using var http = new HttpClient(server);
         var remote = new HttpRemote(http, "http://cde.test", "http://cde.test/lapin-remote/1.0", Project, new RemoteTokens { Access = "test-access-token-viewer" });
         var me = new RemoteAuthor("atrium:viewer", "Viewer");
-        var f = RemoteOps.Fetch(remote, h, "origin", me, DateTime.UtcNow);
+        var f = await RemoteOps.FetchAsync(remote, h, "origin", me, DateTime.UtcNow);
         Assert.False(f.Unchanged);
         Assert.Equal((1, 1, 3, 1), (f.Commits, f.Trees, f.Blobs, f.Tags));
         // A fetch changes no local ref; the last-seen ones are the remote's.
         Assert.Equal(Id("c1"), h.Refs[RefNames.Main]);
         Assert.Equal(Id("c2"), h.Seen["origin"].Refs[RefNames.Main]);
         Assert.Equal((PullKind.FastForward, Id("c1"), Id("c2")), RemoteOps.Stand(h, "origin"));
-        var again = RemoteOps.Fetch(remote, h, "origin", me, DateTime.UtcNow);
+        var again = await RemoteOps.FetchAsync(remote, h, "origin", me, DateTime.UtcNow);
         Assert.True(again.Unchanged);
-        Assert.Equal(Bytes("hello.py"), remote.Get(Id("hello.py")));
-        Assert.Null(remote.Get(Id("missing.py")));
+        Assert.Equal(Bytes("hello.py"), await remote.GetAsync(Id("hello.py")));
+        Assert.Null(await remote.GetAsync(Id("missing.py")));
         server.AssertDone();
         Assert.Equal(server.PackVector, server.Packed);
         // Everything T2 names and the tag's file are held now.
@@ -363,7 +363,7 @@ public sealed class RemoteVectorTests : IDisposable
     }
 
     [Fact]
-    public void Push_conflict_session_stops_at_409_and_keeps_the_work_as_a_branch()
+    public async Task Push_conflict_session_stops_at_409_and_keeps_the_work_as_a_branch()
     {
         var server = VectorServer.Of("push-conflict");
         server.Add(VectorServer.Load("push", 1));
@@ -377,7 +377,7 @@ public sealed class RemoteVectorTests : IDisposable
         using var http = new HttpClient(server);
         var remote = new HttpRemote(http, "http://cde.test", "/lapin-remote/1.0", Project, new RemoteTokens { Access = "test-access-token-ana" });
         var held = new HashSet<string>(StringComparer.Ordinal);
-        var o = RemoteOps.Push(remote, h, "origin", [(RefNames.Main, RefNames.Main)], DateTime.UtcNow, uploaded: held);
+        var o = await RemoteOps.PushAsync(remote, h, "origin", [(RefNames.Main, RefNames.Main)], DateTime.UtcNow, uploaded: held);
         Assert.False(o.Pushed);
         Assert.Equal(RefNames.Main, o.Moved);
         Assert.Equal(Id("c2"), o.Current);
@@ -386,7 +386,7 @@ public sealed class RemoteVectorTests : IDisposable
         // Keep my work as a branch: a new ref, old null, on wip/<me>/<date>; nothing uploaded again.
         var wip = RefNames.Wip("Ana Popescu", new DateTime(2026, 11, 23, 10, 46, 0, DateTimeKind.Utc), _ => false);
         h.Refs[wip] = Id("c3");
-        var kept = RemoteOps.Push(remote, h, "origin", [(wip, wip)], DateTime.UtcNow, fetchRefs: false, uploaded: held);
+        var kept = await RemoteOps.PushAsync(remote, h, "origin", [(wip, wip)], DateTime.UtcNow, fetchRefs: false, uploaded: held);
         Assert.True(kept.Pushed);
         Assert.Empty(kept.Uploaded);
         server.AssertDone();
@@ -394,32 +394,32 @@ public sealed class RemoteVectorTests : IDisposable
     }
 
     [Fact]
-    public void Error_session_codes_reach_the_client()
+    public async Task Error_session_codes_reach_the_client()
     {
         var server = VectorServer.Of("errors");
         server.Add(VectorServer.Load("push", 1));
         foreach (var n in new[] { 2, 3, 8, 9, 10, 11, 12, 100 }) server.MayStayUnused(n);
         using var http = new HttpClient(server);
         HttpRemote As(string? who) => new(http, "http://cde.test", "/lapin-remote/1.0", Project, new RemoteTokens { Access = who == null ? null : $"test-access-token-{who}" });
-        var bad = Assert.Throws<RemoteException>(() => As("mihai").Put(Id("hello.py"), Bytes("hello.txt"), ObjectKind.Blob));
+        var bad = await Assert.ThrowsAsync<RemoteException>(() => As("mihai").PutAsync(Id("hello.py"), Bytes("hello.txt"), ObjectKind.Blob));
         Assert.Equal((400, "hash_mismatch"), (bad.Status, bad.Code));
         Assert.Equal(Id("hello.txt"), (string)bad.Body["actual"]!);
-        var missing = Assert.Throws<RemoteException>(() => As("mihai").UpdateRefs([new RefUpdate(RefNames.Main, Id("c2"), Id("c4"))]));
+        var missing = await Assert.ThrowsAsync<RemoteException>(() => As("mihai").UpdateRefsAsync([new RefUpdate(RefNames.Main, Id("c2"), Id("c4"))]));
         Assert.Equal((422, "object_missing"), (missing.Status, missing.Code));
         Assert.Equal(Id("missing.py"), (string)missing.Body["missing"]![0]!["id"]!);
-        var viewer = Assert.Throws<RemoteException>(() => As("viewer").UpdateRefs([new RefUpdate(RefNames.Main, Id("c2"), Id("c4"))]));
+        var viewer = await Assert.ThrowsAsync<RemoteException>(() => As("viewer").UpdateRefsAsync([new RefUpdate(RefNames.Main, Id("c2"), Id("c4"))]));
         Assert.Equal((403, "forbidden"), (viewer.Status, viewer.Code));
-        var none = Assert.Throws<RemoteException>(() => As(null).Refs(null));
+        var none = await Assert.ThrowsAsync<RemoteException>(() => As(null).RefsAsync(null));
         Assert.Equal((401, "unauthorized"), (none.Status, none.Code));
-        var stranger = Assert.Throws<RemoteException>(() => As("stranger").Refs(null));
+        var stranger = await Assert.ThrowsAsync<RemoteException>(() => As("stranger").RefsAsync(null));
         Assert.Equal((404, "not_found"), (stranger.Status, stranger.Code));
-        var tag = Assert.Throws<RemoteException>(() => As("mihai").UpdateRefs([new RefUpdate("refs/tags/issue/1-P01", Id("tag-issue"), Id("tag-version"))]));
+        var tag = await Assert.ThrowsAsync<RemoteException>(() => As("mihai").UpdateRefsAsync([new RefUpdate("refs/tags/issue/1-P01", Id("tag-issue"), Id("tag-version"))]));
         Assert.Equal((422, "tag_immutable"), (tag.Status, tag.Code));
         server.AssertDone();
     }
 
     [Fact]
-    public void A_401_refreshes_the_tokens_once_and_repeats_the_request()
+    public async Task A_401_refreshes_the_tokens_once_and_repeats_the_request()
     {
         var server = new VectorServer([]);
         server.Add(VectorServer.Load("push", 1));
@@ -430,7 +430,7 @@ public sealed class RemoteVectorTests : IDisposable
         using var http = new HttpClient(server);
         var tokens = new RemoteTokens { Access = "old-token", Refresh = "refresh-1" };
         var remote = new HttpRemote(http, "http://cde.test", "/lapin-remote/1.0", Project, tokens);
-        Assert.Empty(remote.Refs(null).Refs);
+        Assert.Empty((await remote.RefsAsync(null)).Refs);
         Assert.True(tokens.Changed);
         Assert.Equal(("new-token", "refresh-2"), (tokens.Access, tokens.Refresh));
         Assert.Contains("refresh_token=refresh-1", Encoding.UTF8.GetString(server.Requests.Single(r => r.Path.EndsWith("/token", StringComparison.Ordinal)).Body));

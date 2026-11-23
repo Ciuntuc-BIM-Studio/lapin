@@ -17,6 +17,7 @@ public sealed record FolderRefState(string? Value, int Seq, IReadOnlyList<Folder
 /// <c>lapin-remote.json</c> and one folder per project, its objects gzipped under <c>objects/&lt;ab&gt;/&lt;id&gt;.gz</c>, its commits
 /// and tags under <c>commits/&lt;id&gt;.json</c>, each ref an append-only log of entries under <c>refs/&lt;name&gt;/</c>, compare-and-swap
 /// under an exclusive lock. Files are written to a temporary name and renamed. Anyone who can write the folder is its owner.
+/// Synchronous (a disk), seen through <see cref="IRemote"/>'s asynchronous calls by the operations; the desktop's only.
 /// </summary>
 public sealed class FolderRemote : IRemote
 {
@@ -467,6 +468,18 @@ public sealed class FolderRemote : IRemote
         };
         WriteReplacing(Path.Combine(_dir, "viewers", commit + ".json"), Jcs.Canonicalize(record));
     }
+
+    // The operations' asynchronous face (IRemote): a folder answers at once, from the calls above.
+    Task IRemote.ReadyAsync() => Task.CompletedTask;
+    Task<RemoteProject> IRemote.ProjectAsync() => Task.FromResult(Project());
+    Task<RefsResult> IRemote.RefsAsync(string? etag) => Task.FromResult(Refs(etag));
+    Task<RefsResult> IRemote.UpdateRefsAsync(IReadOnlyList<RefUpdate> updates) => Task.FromResult(UpdateRefs(updates));
+    Task<IReadOnlyList<string>> IRemote.MissingAsync(IReadOnlyList<string> ids) => Task.FromResult(Missing(ids));
+    Task IRemote.PutAsync(string id, byte[] bytes, ObjectKind kind) { Put(id, bytes, kind); return Task.CompletedTask; }
+    Task<byte[]?> IRemote.GetAsync(string id) => Task.FromResult(Get(id));
+    Task<IReadOnlyDictionary<string, byte[]>> IRemote.GetManyAsync(IReadOnlyList<string> ids) => Task.FromResult(GetMany(ids));
+    Task<IReadOnlyList<(string Id, byte[] Bytes)>> IRemote.CommitsAsync(string from, IReadOnlyList<string> stop) => Task.FromResult(Commits(from, stop));
+    Task IRemote.PutViewerAsync(string commit, string ifc, long size, string schema) { PutViewer(commit, ifc, size, schema); return Task.CompletedTask; }
 
     public void Dispose() { }
 }

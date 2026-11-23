@@ -1,16 +1,18 @@
 /**
- * The start screen of Lapin on the web in front of a CDE server (engine/cdeServer.ts; Atrium docs/plan-cde-web.md, W1): sign in
- * with the account the server's administrator made, the projects the account sees, and a project's page: its history on main
- * (author, date, message, its versions and issues), the branches in progress, activity and members. A commit opens read-only
- * (its package, in the browser's engine: nothing goes back to the server) or downloads as a .lapin or as its IFC copy. "Work
- * offline" goes to the ordinary start screen; File → Server projects… comes back.
+ * The start screen of Lapin on the web in front of a CDE server (engine/cdeServer.ts; Atrium docs/plan-cde-web.md, W1 and W2): sign
+ * in with the account the server's administrator made, the projects the account sees, and a project's page: its history on main
+ * (author, date, message, its versions and issues), the branches in progress, activity and members. A project is cloned to work on
+ * (W2: the browser's engine holds it with its history; File → Save to server sends the work, Get latest brings the others'), a
+ * commit opens read-only (its package: nothing goes back to the server) or downloads as a .lapin or as its IFC copy. "Work offline"
+ * goes to the ordinary start screen; File → Server projects… comes back.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Download, FolderOpen, KeyRound, LogIn, LogOut, RefreshCw, Trash2, UserPlus, WifiOff } from 'lucide-react';
+import { ArrowLeft, ArrowUp, CloudDownload, Download, FolderOpen, KeyRound, LogIn, LogOut, RefreshCw, Trash2, UserPlus, WifiOff } from 'lucide-react';
 import { BrandName } from './BrandMark';
 import { confirmAction } from './prompts';
-import { download, openProjectBytes, safeFileName } from '../engine/files';
+import { confirmDiscard, download, enter, openProjectBytes, safeFileName } from '../engine/files';
+import { remoteCall } from '../engine/remote';
 import { useSession } from '../engine/session';
 import { notify, useUi } from '../app/store';
 import { when } from '../modules/core/format';
@@ -40,6 +42,25 @@ async function openCommit(project: ServerProject, commit: string): Promise<void>
   if (!await openProjectBytes(safeFileName(`${project.name} ${short(commit)}.lapin`), data)) return;
   useCde.setState({ opened: { project: project.name, commit } });
   useUi.setState({ notice: 'Opened from the server, read-only: changes stay in this browser and never reach the server. Save keeps a copy on this computer.', noticeStays: true });
+}
+
+/**
+ * The project cloned to work on (W2): the engine's remote.clone against this server (the same client as the desktop's), the
+ * project opened from the server's latest with its history, kept in the browser's engine; File → Save to server sends the work.
+ */
+async function cloneProject(project: ServerProject): Promise<void> {
+  if (!(await confirmDiscard('The project has unsaved changes. Open another anyway?'))) return;
+  const server = useCde.getState().server;
+  if (!server) return;
+  await remoteCall('remote.clone', { kind: 'server', url: server, project: project.id }, server);
+  enter();
+  useCde.setState({ cloned: { project: project.id, name: project.name }, linked: true });
+  useUi.setState({
+    notice: project.role === 'viewer'
+      ? 'Cloned from the server. Your role is Viewer: you can look and keep a copy, but not save to the server.'
+      : 'Cloned from the server to work on. This browser holds the copy: File → Save to server sends your work (closing the tab loses what is not saved there); Get latest brings the others\' work.',
+    noticeStays: true,
+  });
 }
 
 async function downloadLapin(project: ServerProject, commit: string): Promise<void> {
@@ -75,12 +96,13 @@ export function CdeStart() {
           </div>
           {changing && <ChangePassword onDone={() => setChanging(false)} />}
         </>}
+        <ClonedNote />
         {doc && (doc.path || doc.canUndo) && <button type="button" className="btn big" onClick={() => useUi.setState({ screen: 'workspace' })}>Back to the open project</button>}
         <button type="button" className="btn big" data-start="cde-offline" onClick={() => useCde.setState({ offline: true })}><WifiOff size={18} />Work offline…</button>
         <p className="muted small">New projects and projects from this computer, on the usual start screen. File → Server projects… comes back here.</p>
         {!connected && <p className="muted small">Starting the engine…</p>}
         <p className="eyebrow">In the browser</p>
-        <p className="muted small">Projects open read-only from the server, as a copy in this browser: saving keeps a copy on this computer. Saving to the server, getting the latest and working together come to the browser later; the desktop app has them now.</p>
+        <p className="muted small">Clone a project to work on it here: the browser holds the copy and its history until you save to the server (File → Save to server); Get latest brings the others' work. Open read-only to look at a commit: nothing goes back to the server.</p>
       </section>
       <section className="start-right">
         {!user && <p className="muted small">Sign in with the account the server's administrator made for you.</p>}
@@ -199,6 +221,7 @@ function ProjectPage({ project, back, connected }: { project: ServerProject; bac
     try { await what(); } catch (e) { notify(message(e)); } finally { if (!gone.current) setBusy(false); }
   };
   const head = data?.refs.main?.target ?? null;
+  const cloned = useCde((s) => s.cloned);
   const actions = (commit: string) => (
     <span className="cde-row-actions">
       <button type="button" className="btn" disabled={busy || !connected} title="Open this commit, read-only" onClick={() => void run(() => openCommit(project, commit))}><FolderOpen size={13} />Open</button>
@@ -211,7 +234,11 @@ function ProjectPage({ project, back, connected }: { project: ServerProject; bac
       <p className="eyebrow"><button type="button" className="link" onClick={back}><ArrowLeft size={12} /> Projects</button></p>
       <h2 className="cde-title"><span data-no-i18n>{project.name}</span> <span className="chip">{roleLabel(project.role)}</span>
         <button type="button" className="icon" title="Refresh" onClick={() => { setData(null); void load(); }}><RefreshCw size={13} /></button></h2>
-      {head && <div className="cde-actions"><button type="button" className="btn primary" data-cde="open-latest" disabled={busy || !connected} onClick={() => void run(() => openCommit(project, head))}><FolderOpen size={14} />Open latest</button></div>}
+      {head && <div className="cde-actions">
+        <button type="button" className="btn primary" data-cde="clone" disabled={busy || !connected} title="The project with its history, to work on in this browser and save to the server" onClick={() => void run(() => cloneProject(project))}><CloudDownload size={14} />Clone to work on</button>
+        <button type="button" className="btn" data-cde="open-latest" disabled={busy || !connected} title="The latest commit, read-only: nothing goes back to the server" onClick={() => void run(() => openCommit(project, head))}><FolderOpen size={14} />Open latest, read-only</button>
+      </div>}
+      {cloned?.project === project.id && <p className="muted small"><span>Cloned in this browser.</span> <button type="button" className="link" onClick={() => useUi.setState({ screen: 'workspace' })}>Back to the open project</button></p>}
       {busy && <p className="muted small">Working…</p>}
       {!data && <p className="muted small">Loading…</p>}
       {data && <>
@@ -318,5 +345,38 @@ function Members({ project }: { project: ServerProject }) {
         </form>
       )}
     </>
+  );
+}
+
+/** The project cloned in this browser, on the start screen: what is not on the server yet. */
+function ClonedNote() {
+  const cloned = useCde((s) => s.cloned);
+  const unpushed = useCde((s) => s.unpushed);
+  const dirty = useSession((s) => s.doc?.dirty ?? false);
+  if (!cloned) return null;
+  return (
+    <p className="small cde-cloned">
+      <span>Working on</span> <strong data-no-i18n>{cloned.name}</strong>{' '}
+      {unpushed || dirty ? <span className="badge">Not saved to the server</span> : <span className="muted">Saved to the server</span>}
+    </p>
+  );
+}
+
+/**
+ * The status bar's word on a project whose remote is the CDE server (W2): what this browser holds that the server has not got
+ * (changes, commits not pushed), and Save to server at a click. Nothing for any other project.
+ */
+export function CdeServerStatus() {
+  const linked = useCde((s) => s.linked || Boolean(s.cloned));
+  const unpushed = useCde((s) => s.unpushed);
+  const dirty = useSession((s) => s.doc?.dirty ?? false);
+  if (!linked && !unpushed) return null;
+  const pending = dirty || Boolean(unpushed);
+  return (
+    <button type="button" className={`status-link${pending ? ' status-warn' : ''}`} data-cde-status={pending ? 'pending' : 'saved'}
+      title={pending ? 'This browser holds work the server has not got: Save to server sends it. Closing the tab loses it.' : 'The server has everything this browser holds.'}
+      onClick={() => useUi.setState({ dialog: 'remoteSave' })}>
+      <ArrowUp size={11} /> {pending ? 'Not saved to the server' : 'Saved to the server'}
+    </button>
   );
 }

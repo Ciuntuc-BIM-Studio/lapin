@@ -19,6 +19,7 @@ import { usePrefs } from '../app/prefs';
 import { applyNewProjectStandard } from './newProjectStandard';
 import { fitAfterImport, poseKey } from '../viewport/camera';
 import { flushUserSettings } from '../app/userSettings';
+import { useCde } from './cdeServer';
 
 const FILTERS = [{ name: 'Lapin project', extensions: ['lapin'] }];
 /** What File → Open takes: a project, or a page Lapin exported for the browser with its project inside (decision 482). */
@@ -191,7 +192,7 @@ export async function pickPath(mode: 'open' | 'save', defaultName?: string, filt
   return p?.trim() || null;
 }
 
-async function confirmDiscard(question: string): Promise<boolean> {
+export async function confirmDiscard(question: string): Promise<boolean> {
   if (!useSession.getState().doc?.dirty) return true;
   if (isDesktop()) {
     const dialog = await import('@tauri-apps/plugin-dialog');
@@ -219,6 +220,9 @@ function remember(path: string): void {
 /** Into the project: the ground floor's plan in front, the 3D open in a tab beside it. */
 export function enter(): void {
   select(null);
+  // Another project: what the CDE start screen said of the last one (opened read-only, cloned, not saved to the server) goes.
+  const cde = useCde.getState();
+  if (cde.opened || cde.cloned || cde.unpushed || cde.linked) useCde.setState({ opened: null, cloned: null, unpushed: null, linked: false });
   forget3d();
   const plan = emptyPane('plan');
   useUi.setState({ screen: 'workspace', storeyId: null, tool: null, panes: [plan], pane: 0, ...plan });
@@ -437,7 +441,8 @@ export const discardWork = (file: string) => engine.call('recovery.discard', { p
 export async function guardWindowClose(): Promise<void> {
   if (!isDesktop()) {
     // A browser tab: the browser asks before leaving unsaved work (the journal keeps it besides).
-    window.addEventListener('beforeunload', (e) => { if (useSession.getState().doc?.dirty) e.preventDefault(); });
+    // In front of a CDE server, also while the browser holds commits the server has not got (W2: the copy here is lost with the tab).
+    window.addEventListener('beforeunload', (e) => { if (useSession.getState().doc?.dirty || useCde.getState().unpushed) e.preventDefault(); });
     return;
   }
   const { getCurrentWindow } = await import('@tauri-apps/api/window');

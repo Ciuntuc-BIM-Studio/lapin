@@ -3,13 +3,26 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Lapin on the web in front of a CDE server, W2: a project cloned to work on in the browser and saved to the server (shell/CdeStart.tsx).
+  "Clone to work on": "Zum Bearbeiten klonen",
+  "The project with its history, to work on in this browser and save to the server": "Das Projekt mit seinem Verlauf, zum Bearbeiten in diesem Browser und Speichern auf dem Server",
+  "Open latest, read-only": "Neuesten Stand öffnen, schreibgeschützt",
+  "The latest commit, read-only: nothing goes back to the server": "Der letzte Commit, schreibgeschützt: nichts geht zurück auf den Server",
+  "Cloned in this browser.": "In diesem Browser geklont.",
+  "Cloned from the server. Your role is Viewer: you can look and keep a copy, but not save to the server.": "Vom Server geklont. Ihre Rolle ist Betrachter: Sie können ansehen und eine Kopie behalten, aber nicht auf dem Server speichern.",
+  "Cloned from the server to work on. This browser holds the copy: File → Save to server sends your work (closing the tab loses what is not saved there); Get latest brings the others' work.": "Zum Bearbeiten vom Server geklont. Dieser Browser hält die Kopie: Datei → Auf dem Server speichern sendet Ihre Arbeit (Schließen des Tabs verliert, was dort nicht gespeichert ist); Neueste Version vom Server holen bringt die Arbeit der anderen.",
+  "Clone a project to work on it here: the browser holds the copy and its history until you save to the server (File → Save to server); Get latest brings the others' work. Open read-only to look at a commit: nothing goes back to the server.": "Klonen Sie ein Projekt, um hier daran zu arbeiten: Der Browser hält die Kopie und ihren Verlauf, bis Sie auf dem Server speichern (Datei → Auf dem Server speichern); Neueste Version vom Server holen bringt die Arbeit der anderen. Schreibgeschützt öffnen, um einen Commit anzusehen: nichts geht zurück auf den Server.",
+  "Working on": "Sie arbeiten an",
+  "Not saved to the server": "Nicht auf dem Server gespeichert",
+  "Saved to the server": "Auf dem Server gespeichert",
+  "This browser holds work the server has not got: Save to server sends it. Closing the tab loses it.": "Dieser Browser hält Arbeit, die der Server nicht hat: Auf dem Server speichern sendet sie. Schließen des Tabs verliert sie.",
+  "The server has everything this browser holds.": "Der Server hat alles, was dieser Browser hält.",
   // Lapin on the web in front of a CDE server: the start screen's sign-in, projects, history and members (shell/CdeStart.tsx).
   "Common data environment": "Gemeinsame Datenumgebung",
   "Account": "Konto",
   "Back to the open project": "Zurück zum geöffneten Projekt",
   "Work offline…": "Offline arbeiten…",
   "New projects and projects from this computer, on the usual start screen. File → Server projects… comes back here.": "Neue Projekte und Projekte von diesem Computer, auf dem üblichen Startbildschirm. Datei → Serverprojekte… führt hierher zurück.",
-  "Projects open read-only from the server, as a copy in this browser: saving keeps a copy on this computer. Saving to the server, getting the latest and working together come to the browser later; the desktop app has them now.": "Projekte öffnen sich vom Server schreibgeschützt, als Kopie in diesem Browser: Speichern behält eine Kopie auf diesem Computer. Auf dem Server speichern, das Neueste holen und Zusammenarbeit kommen später in den Browser; die Desktop-App hat sie jetzt.",
   "Sign in with the account the server's administrator made for you.": "Melden Sie sich mit dem Konto an, das der Administrator des Servers für Sie angelegt hat.",
   "E-mail address": "E-Mail-Adresse",
   "Opened from the server, read-only: changes stay in this browser and never reach the server. Save keeps a copy on this computer.": "Vom Server geöffnet, schreibgeschützt: Änderungen bleiben in diesem Browser und erreichen nie den Server. Speichern behält eine Kopie auf diesem Computer.",
@@ -22,7 +35,6 @@ export const DE: Record<string, string> = {
   "Open this commit, read-only": "Diesen Commit schreibgeschützt öffnen",
   "Download the .lapin": "Die .lapin herunterladen",
   "Download the IFC copy": "Die IFC-Kopie herunterladen",
-  "Open latest": "Neuesten Stand öffnen",
   "Working…": "Wird bearbeitet…",
   "History of main": "Verlauf von main",
   "Nothing saved to this project yet.": "In diesem Projekt ist noch nichts gespeichert.",

@@ -3,13 +3,26 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Lapin on the web in front of a CDE server, W2: a project cloned to work on in the browser and saved to the server (shell/CdeStart.tsx).
+  "Clone to work on": "Klon for at arbejde",
+  "The project with its history, to work on in this browser and save to the server": "Projektet med dets historik, til at arbejde på i denne browser og gemme på serveren",
+  "Open latest, read-only": "Åbn seneste, skrivebeskyttet",
+  "The latest commit, read-only: nothing goes back to the server": "Den seneste commit, skrivebeskyttet: intet går tilbage til serveren",
+  "Cloned in this browser.": "Klonet i denne browser.",
+  "Cloned from the server. Your role is Viewer: you can look and keep a copy, but not save to the server.": "Klonet fra serveren. Din rolle er Læser: du kan se og beholde en kopi, men ikke gemme på serveren.",
+  "Cloned from the server to work on. This browser holds the copy: File → Save to server sends your work (closing the tab loses what is not saved there); Get latest brings the others' work.": "Klonet fra serveren for at arbejde. Denne browser holder kopien: Fil → Gem på serverenen sender dit arbejde (lukkes fanen, mistes det, der ikke er gemt der); Hent det nyeste fra serveren bringer de andres arbejde.",
+  "Clone a project to work on it here: the browser holds the copy and its history until you save to the server (File → Save to server); Get latest brings the others' work. Open read-only to look at a commit: nothing goes back to the server.": "Klon et projekt for at arbejde på det her: browseren holder kopien og dens historik, indtil du gemmer på serveren (Fil → Gem på serveren); Hent det nyeste fra serveren bringer de andres arbejde. Åbn skrivebeskyttet for at se en commit: intet går tilbage til serveren.",
+  "Working on": "Arbejder på",
+  "Not saved to the server": "Ikke gemt på serveren",
+  "Saved to the server": "Gemt på serveren",
+  "This browser holds work the server has not got: Save to server sends it. Closing the tab loses it.": "Denne browser holder arbejde, som serveren ikke har: Gem på serveren sender det. Lukkes fanen, mistes det.",
+  "The server has everything this browser holds.": "Serveren har alt, hvad denne browser holder.",
   // Lapin on the web in front of a CDE server: the start screen's sign-in, projects, history and members (shell/CdeStart.tsx).
   "Common data environment": "Fælles datamiljø",
   "Account": "Konto",
   "Back to the open project": "Tilbage til det åbne projekt",
   "Work offline…": "Arbejd offline…",
   "New projects and projects from this computer, on the usual start screen. File → Server projects… comes back here.": "Nye projekter og projekter fra denne computer, på den sædvanlige startskærm. Filer → Serverprojekter… fører tilbage hertil.",
-  "Projects open read-only from the server, as a copy in this browser: saving keeps a copy on this computer. Saving to the server, getting the latest and working together come to the browser later; the desktop app has them now.": "Projekter åbnes fra serveren skrivebeskyttet, som en kopi i denne browser: gem beholder en kopi på denne computer. Gem på serveren, hent det seneste og samarbejde kommer til browseren senere; skrivebordsappen har dem nu.",
   "Sign in with the account the server's administrator made for you.": "Log ind med den konto, serverens administrator har oprettet til dig.",
   "E-mail address": "E-mailadresse",
   "Opened from the server, read-only: changes stay in this browser and never reach the server. Save keeps a copy on this computer.": "Åbnet fra serveren, skrivebeskyttet: ændringer bliver i denne browser og når aldrig serveren. Gem beholder en kopi på denne computer.",
@@ -22,7 +35,6 @@ export const DA: Record<string, string> = {
   "Open this commit, read-only": "Åbn dette commit, skrivebeskyttet",
   "Download the .lapin": "Download .lapin-filen",
   "Download the IFC copy": "Download IFC-kopien",
-  "Open latest": "Åbn det seneste",
   "Working…": "Arbejder…",
   "History of main": "Historik for main",
   "Nothing saved to this project yet.": "Intet gemt i dette projekt endnu.",

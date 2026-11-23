@@ -3,13 +3,26 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Lapin on the web in front of a CDE server, W2: a project cloned to work on in the browser and saved to the server (shell/CdeStart.tsx).
+  "Clone to work on": "克隆以便工作",
+  "The project with its history, to work on in this browser and save to the server": "项目及其历史，在此浏览器中工作并保存到服务器",
+  "Open latest, read-only": "打开最新版本，只读",
+  "The latest commit, read-only: nothing goes back to the server": "最新提交，只读：不会有任何内容返回服务器",
+  "Cloned in this browser.": "已在此浏览器中克隆。",
+  "Cloned from the server. Your role is Viewer: you can look and keep a copy, but not save to the server.": "已从服务器克隆。您的角色是查看者：您可以查看并保留副本，但不能保存到服务器。",
+  "Cloned from the server to work on. This browser holds the copy: File → Save to server sends your work (closing the tab loses what is not saved there); Get latest brings the others' work.": "已从服务器克隆以便工作。此浏览器保存副本：文件 → 保存到服务器 会发送您的工作（关闭标签页会丢失未保存在那里的内容）；从服务器获取最新 会带来其他人的工作。",
+  "Clone a project to work on it here: the browser holds the copy and its history until you save to the server (File → Save to server); Get latest brings the others' work. Open read-only to look at a commit: nothing goes back to the server.": "克隆项目以便在此工作：浏览器保存副本及其历史，直到您保存到服务器（文件 → 保存到服务器）；从服务器获取最新 会带来其他人的工作。以只读方式打开以查看提交：不会有任何内容返回服务器。",
+  "Working on": "正在处理",
+  "Not saved to the server": "未保存到服务器",
+  "Saved to the server": "已保存到服务器",
+  "This browser holds work the server has not got: Save to server sends it. Closing the tab loses it.": "此浏览器保存着服务器没有的工作：保存到服务器 会发送它。关闭标签页会丢失它。",
+  "The server has everything this browser holds.": "服务器拥有此浏览器保存的所有内容。",
   // Lapin on the web in front of a CDE server: the start screen's sign-in, projects, history and members (shell/CdeStart.tsx).
   "Common data environment": "公共数据环境",
   "Account": "账户",
   "Back to the open project": "返回已打开的项目",
   "Work offline…": "离线工作…",
   "New projects and projects from this computer, on the usual start screen. File → Server projects… comes back here.": "新项目和本机上的项目，在常规开始界面。文件 → 服务器项目… 返回此处。",
-  "Projects open read-only from the server, as a copy in this browser: saving keeps a copy on this computer. Saving to the server, getting the latest and working together come to the browser later; the desktop app has them now.": "项目从服务器以只读方式打开，作为此浏览器中的副本：保存会在本机保留一份副本。保存到服务器、获取最新版本和协同工作稍后会进入浏览器；桌面应用现在已具备。",
   "Sign in with the account the server's administrator made for you.": "使用服务器管理员为您创建的账户登录。",
   "E-mail address": "电子邮件地址",
   "Opened from the server, read-only: changes stay in this browser and never reach the server. Save keeps a copy on this computer.": "已从服务器打开，只读：更改保留在此浏览器中，绝不会到达服务器。保存会在本机保留一份副本。",
@@ -22,7 +35,6 @@ export const ZH: Record<string, string> = {
   "Open this commit, read-only": "以只读方式打开此提交",
   "Download the .lapin": "下载 .lapin",
   "Download the IFC copy": "下载 IFC 副本",
-  "Open latest": "打开最新版本",
   "Working…": "处理中…",
   "History of main": "main 的历史",
   "Nothing saved to this project yet.": "此项目中尚未保存任何内容。",

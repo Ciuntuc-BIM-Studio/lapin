@@ -20,11 +20,15 @@ import {
   type CommitInfo, type HistoryStatus,
 } from '../../engine/remote';
 import { when } from './format';
+import { useCde } from '../../engine/cdeServer';
 
 type Kind = 'folder' | 'server';
 interface Outcome { pushed?: boolean; pulled?: boolean; kind?: string; message?: string; notes?: string[]; branch?: string; uploaded?: number; status?: HistoryStatus }
 
 const short = (id: string | null | undefined) => (id ? id.slice(0, 8) : '—');
+
+/** Why a Save to server was refused (someone saved first): Collaborate opens on the choices, keep my work as a branch or discard. */
+let refusedOnOpen: string | null = null;
 
 export function RemoteDialog() {
   const path = useSession((s) => s.doc?.path ?? null);
@@ -32,7 +36,7 @@ export function RemoteDialog() {
   const [log, setLog] = useState<CommitInfo[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const [diverged, setDiverged] = useState<string | null>(null);
+  const [diverged, setDiverged] = useState<string | null>(() => { const why = refusedOnOpen; refusedOnOpen = null; return why; });
   const [account, setAccount] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   const gone = useRef(false);
@@ -235,7 +239,8 @@ function ChangePassword({ server, onDone }: { server: string; onDone: () => void
 /** A remote added: a folder (a new project made in it, or one it holds) or a server (signed in, its project picked or made). */
 function AddRemote({ busy, setBusy, onAdded }: { busy: boolean; setBusy: (b: boolean) => void; onAdded: () => void }) {
   const [kind, setKind] = useState<Kind>(isDesktop() ? 'folder' : 'server');
-  const [url, setUrl] = useState('');
+  // In the browser in front of a CDE server, that server (the page reaches no other).
+  const [url, setUrl] = useState(isDesktop() ? '' : useCde.getState().server || '');
   const [projects, setProjects] = useState<{ id: string; name: string; role?: string }[] | null>(null);
   const [project, setProject] = useState('');
   const [name, setName] = useState(authorName() === 'Lapin' ? '' : authorName());
@@ -331,7 +336,12 @@ export function SaveToServerDialog() {
       if (status.uncommitted && !await writingCall('history.commit', { message: message.trim() }, server)) return;
       const o = await remoteCall<Outcome>('remote.push', {}, server);
       for (const n of o.notes ?? []) notify(n);
-      if (o.pushed === false) { notify(o.message ?? 'The server did not take it.'); useUi.setState({ dialog: 'remote' }); return; }
+      if (o.pushed === false) {
+        notify(o.message ?? 'The server did not take it.');
+        refusedOnOpen = o.message ?? 'The server did not take it.';
+        useUi.setState({ dialog: 'remote' });
+        return;
+      }
       notify('Saved to the server.');
       close();
     } catch (e) { notify(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }

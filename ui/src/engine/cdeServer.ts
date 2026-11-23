@@ -1,10 +1,11 @@
 /**
- * Lapin on the web in front of a CDE server (Atrium Server, its plan: Atrium docs/plan-cde-web.md, stage W1): the interface
- * served from the server's own origin talks to its APIs on that origin (/foundation, /lapin-remote/1.0, /atrium/1.0), so no
- * token ever crosses origins. W1 is read-only: sign in, the projects, a project's history, branches, versions and issues,
- * activity and members, the account's password; a commit opens through its package (`…/commits/{c}/package`, an ordinary
- * .lapin) in the browser's engine, which never writes back. Saving to the server from the browser waits for the engine's
- * asynchronous remote path (W2): the engine's HttpRemote is synchronous, which the browser's WebAssembly cannot run.
+ * Lapin on the web in front of a CDE server (Atrium Server, its plan: Atrium docs/plan-cde-web.md, stages W1 and W2): the
+ * interface served from the server's own origin talks to its APIs on that origin (/foundation, /lapin-remote/1.0, /atrium/1.0),
+ * so no token ever crosses origins. W1: sign in, the projects, a project's history, branches, versions and issues, activity and
+ * members, the account's password; a commit opens read-only through its package (`…/commits/{c}/package`, an ordinary .lapin).
+ * W2: a project is cloned to work on by the browser's engine (its asynchronous remote, the same client as the desktop's), saved
+ * to the server and brought up to date from it (engine/remote.ts), with the one sign-in kept here: the engine gets these tokens
+ * with each call and hands back those a refresh replaced (`cdeTokens`, `keepCdeTokens`).
  *
  * Tokens: the access token lives in this tab's memory only; the refresh token (single use, rotated at each refresh) in
  * sessionStorage, so a reload keeps the sign-in and closing the tab ends it. Never localStorage, never a cookie.
@@ -22,9 +23,18 @@ export interface CdeState {
   offline: boolean;
   /** The commit last opened from the server (read-only). */
   opened: { project: string; commit: string } | null;
+  /** The project cloned from the server to work on in this browser (W2): its id and name. */
+  cloned: { project: string; name: string } | null;
+  /**
+   * What the browser holds that the server does not (W2): commits not pushed, or changes not committed. Kept from every status the
+   * engine's history answers; the tab asks before closing while it is true.
+   */
+  unpushed: { ahead: number; uncommitted: boolean } | null;
+  /** The open project's remote is this server (cloned from it, or connected to it in Collaborate). */
+  linked: boolean;
 }
 
-export const useCde = create<CdeState>(() => ({ server: '', user: null, offline: false, opened: null }));
+export const useCde = create<CdeState>(() => ({ server: '', user: null, offline: false, opened: null, cloned: null, unpushed: null, linked: false }));
 
 /** True when the interface is in front of a CDE server. */
 export const cdeActive = () => Boolean(useCde.getState().server);
@@ -56,6 +66,29 @@ function keep(pair: { access_token: string; refresh_token?: string | null }): vo
 function forget(): void {
   access = null;
   try { tabStorage()?.removeItem(REFRESH_KEY); } catch { /* nothing kept */ }
+}
+
+/** Whether `url` is the CDE server this interface is in front of (the engine's remote names it by its root, no trailing slash). */
+export function isCdeServer(url: string | null | undefined): boolean {
+  const server = useCde.getState().server;
+  return Boolean(server && url && url.replace(/\/+$/, '') === server.replace(/\/+$/, ''));
+}
+
+/**
+ * The sign-in's tokens for a call of the engine's remote (W2): an access token got first when only the refresh token is kept, so the
+ * engine starts with a live one (it refreshes by itself on a 401 and hands the new pair back).
+ */
+export async function cdeTokens(): Promise<{ access: string | null; refresh: string | null }> {
+  if (!access) await refresh();
+  let kept: string | null = null;
+  try { kept = tabStorage()?.getItem(REFRESH_KEY) ?? null; } catch { kept = null; }
+  return { access, refresh: kept };
+}
+
+/** Tokens the engine's refresh replaced (the refresh token is single use): kept at once, as a refresh here keeps them. None: signed out. */
+export function keepCdeTokens(accessToken: string | null, refreshToken: string | null): void {
+  if (!accessToken) { forget(); useCde.setState({ user: null }); return; }
+  keep({ access_token: accessToken, refresh_token: refreshToken });
 }
 
 /** A server's error body read into a CdeError (lapin-remote's and Atrium's {code, message}; OAuth2's {error, error_description}). */
@@ -321,5 +354,5 @@ export function chipsByCommit(tags: TagObject[]): Map<string, string[]> {
 /** The test hook: the module's memory as it is at a page load. */
 export function resetCdeForTests(): void {
   access = null; refreshing = null; detecting = null;
-  useCde.setState({ server: '', user: null, offline: false, opened: null });
+  useCde.setState({ server: '', user: null, offline: false, opened: null, cloned: null, unpushed: null, linked: false });
 }

@@ -57,11 +57,11 @@ export function baseFileActions(): FileAction[] {
     // Lapin Extensions (docs/plan-extensions.md): content packs from the catalogue, into Lapin's own libraries.
     { id: 'file.extensions', label: 'Extensions…', menu: 'extensions', run: dialog('extensions') },
     // Server and collaboration (docs/remote.md): the project's history and its remote, a server or a folder.
-    // In the browser the engine cannot reach a server yet (its HttpRemote is synchronous; Atrium docs/plan-cde-web.md, W2): these
-    // stay in the desktop app. In front of a CDE server the browser opens its projects read-only (Server projects…, engine/cdeServer.ts).
-    { id: 'file.collaborate', label: 'Collaborate…', shown: () => !engineInBrowser, run: dialog('remote') },
-    { id: 'file.saveServer', label: 'Save to server…', shown: () => !engineInBrowser, run: dialog('remoteSave') },
-    { id: 'file.getLatest', label: 'Get latest from server', shown: () => !engineInBrowser, run: () => getLatest() },
+    // In the browser they reach the CDE server the page is served by (its engine's remote is asynchronous, the same client as the
+    // desktop's: Atrium docs/plan-cde-web.md, W2; same origin, so no other server); without one they stay in the desktop app.
+    { id: 'file.collaborate', label: 'Collaborate…', shown: () => !engineInBrowser || cdeActive(), run: dialog('remote') },
+    { id: 'file.saveServer', label: 'Save to server…', shown: () => !engineInBrowser || cdeActive(), run: dialog('remoteSave') },
+    { id: 'file.getLatest', label: 'Get latest from server', shown: () => !engineInBrowser || cdeActive(), run: () => getLatest() },
     { id: 'file.cdeProjects', label: 'Server projects…', menu: 'cde-projects', shown: () => cdeActive(), run: () => { useCde.setState({ offline: false }); useUi.setState({ screen: 'start' }); } },
     { id: 'file.openServer', label: 'Open from server…', shown: () => isDesktop(), run: dialog('remoteClone') },
     { id: 'file.share', label: 'Share session…', shown: () => !engineInBrowser, run: dialog('share') },

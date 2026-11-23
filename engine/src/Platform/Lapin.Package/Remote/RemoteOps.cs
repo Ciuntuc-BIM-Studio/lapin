@@ -21,7 +21,8 @@ public enum PullKind { UpToDate, FastForward, Ahead, Diverged }
 /// The client's algorithms of lapin-remote 1.0 (docs/spec-lapin-remote.md §8) over a <see cref="PackageHistory"/> and an
 /// <see cref="IRemote"/>: push (negotiate what is missing, upload only that, compare-and-swap the refs), fetch (the refs with their
 /// ETag, the commits walked back to what is held, the objects lacked), clone, and where a pull stands. They change the history
-/// they are given (a clone of the open one) and never the model.
+/// they are given (a clone of the open one) and never the model. Asynchronous, as <see cref="IRemote"/> is: the same code on the desktop
+/// and in the browser's engine.
 /// </summary>
 public static class RemoteOps
 {
@@ -43,10 +44,10 @@ public static class RemoteOps
     }
 
     /// <summary>The remote's refs read (with the ETag of the last time) into its last-seen refs; whether they had changed.</summary>
-    public static bool FetchRefs(IRemote remote, PackageHistory h, string name, DateTime now)
+    public static async Task<bool> FetchRefsAsync(IRemote remote, PackageHistory h, string name, DateTime now)
     {
         var seen = SeenOf(h, name);
-        var refs = remote.Refs(seen.Refs.Count > 0 ? seen.Etag : null);
+        var refs = await remote.RefsAsync(seen.Refs.Count > 0 ? seen.Etag : null);
         TakeRefs(seen, refs, now);
         return !refs.NotModified;
     }
@@ -112,11 +113,12 @@ public static class RemoteOps
     /// a 422 <c>object_missing</c> uploads what it lists and tries once more. <paramref name="viewer"/> makes the IFC viewer copy of a
     /// commit (§12.2), attached after the push to every branch head and tag pushed; it never fails the push.
     /// </summary>
-    public static PushOutcome Push(IRemote remote, PackageHistory h, string remoteName, IReadOnlyList<(string Local, string Remote)> refs, DateTime now,
+    public static async Task<PushOutcome> PushAsync(IRemote remote, PackageHistory h, string remoteName, IReadOnlyList<(string Local, string Remote)> refs, DateTime now,
         Func<string, (byte[] Ifc, string Schema)?>? viewer = null, bool fetchRefs = true, ISet<string>? uploaded = null)
     {
         uploaded ??= new HashSet<string>(StringComparer.Ordinal);
-        if (fetchRefs) FetchRefs(remote, h, remoteName, now);
+        await remote.ReadyAsync();
+        if (fetchRefs) await FetchRefsAsync(remote, h, remoteName, now);
         var seen = SeenOf(h, remoteName);
         var updates = new List<RefUpdate>();
         foreach (var (local, name) in refs)
@@ -133,14 +135,14 @@ public static class RemoteOps
         var asked = send.Where(s => !uploaded.Contains(s.Id)).ToList();
         var missing = new List<string>();
         for (var i = 0; i < asked.Count; i += remote.MaxBatch)
-            missing.AddRange(remote.Missing(asked.Skip(i).Take(remote.MaxBatch).Select(s => s.Id).ToList()));
+            missing.AddRange(await remote.MissingAsync(asked.Skip(i).Take(remote.MaxBatch).Select(s => s.Id).ToList()));
         // What the remote said it holds is not asked again by a push that follows in the same operation (keep my work as a branch).
         var lacking = missing.ToHashSet(StringComparer.Ordinal);
         foreach (var a in asked) if (!lacking.Contains(a.Id)) uploaded.Add(a.Id);
         var kinds = send.ToDictionary(s => s.Id, s => s.Kind, StringComparer.Ordinal);
-        Upload(remote, h, missing, kinds, uploaded);
+        await Upload(remote, h, missing, kinds, uploaded);
         RefsResult after;
-        try { after = remote.UpdateRefs(updates); }
+        try { after = await remote.UpdateRefsAsync(updates); }
         catch (RemoteException ex) when (ex is { Status: 409, Code: "ref_moved" })
         {
             var first = (ex.Body["refs"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault();
@@ -151,18 +153,18 @@ public static class RemoteOps
         {
             var more = (ex.Body["missing"] as JsonArray ?? []).OfType<JsonObject>().Select(m => (string?)m["id"]).OfType<string>().Where(ObjectIds.Valid).ToList();
             foreach (var m in more) kinds.TryAdd(m, ObjectKind.Blob);
-            Upload(remote, h, more, kinds, uploaded);
+            await Upload(remote, h, more, kinds, uploaded);
             missing.AddRange(more);
-            after = remote.UpdateRefs(updates);
+            after = await remote.UpdateRefsAsync(updates);
         }
         TakeRefs(seen, after, now);
         var outcome = new PushOutcome(true, [.. missing], [.. asked.Select(a => a.Id)]);
-        if (viewer != null && remote.Viewers) AttachViewers(remote, h, updates, viewer, outcome.Notes);
+        if (viewer != null && remote.Viewers) await AttachViewers(remote, h, updates, viewer, outcome.Notes);
         outcome.Notes.AddRange(remote.Notes);
         return outcome;
     }
 
-    static void Upload(IRemote remote, PackageHistory h, IReadOnlyList<string> ids, IReadOnlyDictionary<string, ObjectKind> kinds, ISet<string> uploaded)
+    static async Task Upload(IRemote remote, PackageHistory h, IReadOnlyList<string> ids, IReadOnlyDictionary<string, ObjectKind> kinds, ISet<string> uploaded)
     {
         // Blobs, then trees, then tags and commits: a ref names nothing the remote is still waiting for.
         static int Rank(ObjectKind k) => k switch { ObjectKind.Blob => 0, ObjectKind.Tree => 1, ObjectKind.Tag => 2, _ => 3 };
@@ -176,12 +178,12 @@ public static class RemoteOps
                 ObjectKind.Tree => h.TreeBytes(id),
                 _ => blobs.Get(id),
             } ?? throw new InvalidDataException($"The project's file lacks {kind.ToString().ToLowerInvariant()} {id[..12]}…: it cannot be pushed (fetch it first).");
-            remote.Put(id, bytes, kind);
+            await remote.PutAsync(id, bytes, kind);
             uploaded.Add(id);
         }
     }
 
-    static void AttachViewers(IRemote remote, PackageHistory h, IReadOnlyList<RefUpdate> updates, Func<string, (byte[] Ifc, string Schema)?> viewer, List<string> notes)
+    static async Task AttachViewers(IRemote remote, PackageHistory h, IReadOnlyList<RefUpdate> updates, Func<string, (byte[] Ifc, string Schema)?> viewer, List<string> notes)
     {
         var commits = new List<string>();
         foreach (var u in updates.Where(u => u.New != null))
@@ -192,8 +194,8 @@ public static class RemoteOps
             {
                 if (viewer(commit) is not { } copy) continue;
                 var id = ObjectIds.Of(copy.Ifc);
-                if (remote.Missing([id]).Count > 0) remote.Put(id, copy.Ifc, ObjectKind.Blob);
-                remote.PutViewer(commit, id, copy.Ifc.LongLength, copy.Schema);
+                if ((await remote.MissingAsync([id])).Count > 0) await remote.PutAsync(id, copy.Ifc, ObjectKind.Blob);
+                await remote.PutViewerAsync(commit, id, copy.Ifc.LongLength, copy.Schema);
             }
             catch (Exception ex) when (ex is InvalidDataException or IOException or HttpRequestException or InvalidOperationException)
             {
@@ -208,10 +210,11 @@ public static class RemoteOps
     /// in memory until the next save, and the last-seen refs set. A fetch never changes the model or a local ref; on a folder remote,
     /// a detached entry of this installation's (§7.3) is kept as a wip branch, once, and said.
     /// </summary>
-    public static FetchOutcome Fetch(IRemote remote, PackageHistory h, string remoteName, RemoteAuthor me, DateTime now)
+    public static async Task<FetchOutcome> FetchAsync(IRemote remote, PackageHistory h, string remoteName, RemoteAuthor me, DateTime now)
     {
+        await remote.ReadyAsync();
         var seen = SeenOf(h, remoteName);
-        var refs = remote.Refs(seen.Refs.Count > 0 ? seen.Etag : null);
+        var refs = await remote.RefsAsync(seen.Refs.Count > 0 ? seen.Etag : null);
         // Unchanged since the last look, but that look (a push's) may not have brought the objects: fetched from the refs last seen.
         if (refs.NotModified && seen.Refs.Values.Any(v => !h.HasCommit(v)))
             refs = new RefsResult(false, [.. seen.Refs.Select(kv => new RemoteRef(kv.Key, kv.Value))], refs.Etag ?? seen.Etag);
@@ -219,7 +222,7 @@ public static class RemoteOps
         {
             seen.FetchedAt = RemoteObjects.Stamp(now);
             var same = new FetchOutcome(true, 0, 0, 0, 0);
-            Detached(remote, h, seen, me, now, same.Notes);
+            await Detached(remote, h, seen, me, now, same.Notes);
             same.Notes.AddRange(remote.Notes);
             return same;
         }
@@ -229,13 +232,13 @@ public static class RemoteOps
         var wanted = refs.Refs.Where(r => RefNames.IsBranch(r.Name)).Select(r => r.Target).ToList();
         foreach (var t in refs.Refs.Where(r => RefNames.IsTag(r.Name) && h.HasCommit(r.Target))) wanted.Add(h.Tag(t.Target).Commit);
         var newCommits = new List<CommitObject>();
-        void Walk(IEnumerable<string> heads)
+        async Task Walk(IEnumerable<string> heads)
         {
             foreach (var head in heads.Distinct(StringComparer.Ordinal).ToList())
             {
                 if (h.HasCommit(head)) continue;
                 var stop = h.Refs.Values.Concat(seen.Refs.Values).Where(h.HasCommit).Distinct(StringComparer.Ordinal).Take(100).ToList();
-                foreach (var (id, bytes) in remote.Commits(head, stop))
+                foreach (var (id, bytes) in await remote.CommitsAsync(head, stop))
                 {
                     if (h.HasCommit(id)) continue;
                     h.Add(id, bytes, ObjectKind.Commit);
@@ -244,11 +247,11 @@ public static class RemoteOps
                 }
             }
         }
-        Walk(wanted);
+        await Walk(wanted);
         // The tags and the trees of the new commits, in one batch.
         var first = tagIds.Concat(newCommits.Select(c => c.Tree).Where(t => !h.HasTree(t))).Distinct(StringComparer.Ordinal).ToList();
         var newTags = new List<TagObject>();
-        foreach (var (id, bytes) in GetAll(remote, first))
+        foreach (var (id, bytes) in await GetAll(remote, first))
         {
             var kind = RemoteObjects.KindOf(bytes);
             if (kind == ObjectKind.Tag) { h.Add(id, bytes, ObjectKind.Tag); newTags.Add(RemoteObjects.ReadTag(bytes, id)); tagCount++; }
@@ -260,9 +263,9 @@ public static class RemoteOps
         if (tagCommits.Count > 0)
         {
             var before = newCommits.Count;
-            Walk(tagCommits);
+            await Walk(tagCommits);
             var moreTrees = newCommits.Skip(before).Select(c => c.Tree).Where(t => !h.HasTree(t)).Distinct(StringComparer.Ordinal).ToList();
-            foreach (var (id, bytes) in GetAll(remote, moreTrees)) { h.Add(id, bytes, ObjectKind.Tree); trees++; }
+            foreach (var (id, bytes) in await GetAll(remote, moreTrees)) { h.Add(id, bytes, ObjectKind.Tree); trees++; }
         }
         // The parts of the new trees and the tags' files the file does not hold anywhere (§6.4).
         var needed = new List<string>();
@@ -275,23 +278,25 @@ public static class RemoteOps
                 foreach (var f in t.Files)
                     if (!blobs.Contains(f.Sha256)) needed.Add(f.Sha256);
         }
-        foreach (var (id, bytes) in GetAll(remote, needed.Distinct(StringComparer.Ordinal).ToList())) { h.Add(id, bytes, ObjectKind.Blob); blobsCount++; }
+        foreach (var (id, bytes) in await GetAll(remote, needed.Distinct(StringComparer.Ordinal).ToList())) { h.Add(id, bytes, ObjectKind.Blob); blobsCount++; }
         TakeRefs(seen, refs, now);
         var outcome = new FetchOutcome(false, commits, trees, blobsCount, tagCount);
-        Detached(remote, h, seen, me, now, outcome.Notes);
+        await Detached(remote, h, seen, me, now, outcome.Notes);
         outcome.Notes.AddRange(remote.Notes);
         return outcome;
     }
 
-    static IEnumerable<(string Id, byte[] Bytes)> GetAll(IRemote remote, IReadOnlyList<string> ids)
+    static async Task<List<(string Id, byte[] Bytes)>> GetAll(IRemote remote, IReadOnlyList<string> ids)
     {
+        var o = new List<(string, byte[])>();
         for (var i = 0; i < ids.Count; i += remote.MaxBatch)
-            foreach (var (id, bytes) in remote.GetMany(ids.Skip(i).Take(remote.MaxBatch).ToList()))
-                yield return (id, bytes);
+            foreach (var (id, bytes) in await remote.GetManyAsync(ids.Skip(i).Take(remote.MaxBatch).ToList()))
+                o.Add((id, bytes));
+        return o;
     }
 
     /// <summary>A folder's detached entries of this installation (§7.3): a branch's kept as <c>refs/heads/wip/&lt;me&gt;/&lt;name&gt;</c>, a tag's said; each once.</summary>
-    static void Detached(IRemote remote, PackageHistory h, RemoteSeen seen, RemoteAuthor me, DateTime now, List<string> notes)
+    static async Task Detached(IRemote remote, PackageHistory h, RemoteSeen seen, RemoteAuthor me, DateTime now, List<string> notes)
     {
         foreach (var d in remote.Detached())
         {
@@ -301,7 +306,7 @@ public static class RemoteOps
                 var name = RefNames.Wip(me.Name, now, n => seen.Refs.ContainsKey(n));
                 try
                 {
-                    var after = remote.UpdateRefs([new RefUpdate(name, null, d.New)]);
+                    var after = await remote.UpdateRefsAsync([new RefUpdate(name, null, d.New)]);
                     TakeRefs(seen, after, now);
                     notes.Add($"The remote had moved: your work is kept as branch {name["refs/heads/".Length..]}; pull to go on from the remote's.");
                 }
@@ -316,12 +321,13 @@ public static class RemoteOps
     /// A clone (§8.3) into an empty history: the project, every ref fetched, the local main set to the remote's default ref (HEAD on
     /// it), the remote recorded. Gives back the tree to open as the project; null when the remote's project has no commit yet.
     /// </summary>
-    public static string? Clone(IRemote remote, PackageHistory h, RemoteEntry entry, RemoteAuthor me, DateTime now)
+    public static async Task<string?> CloneAsync(IRemote remote, PackageHistory h, RemoteEntry entry, RemoteAuthor me, DateTime now)
     {
-        var project = remote.Project();
+        await remote.ReadyAsync();
+        var project = await remote.ProjectAsync();
         h.Remotes.Clear();
         h.Remotes.Add(entry);
-        Fetch(remote, h, entry.Name, me, now);
+        await FetchAsync(remote, h, entry.Name, me, now);
         var head = SeenOf(h, entry.Name).Refs.GetValueOrDefault(project.DefaultRef);
         h.Head = RefNames.Main;
         if (head == null) return null;

@@ -3,13 +3,26 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Lapin on the web in front of a CDE server, W2: a project cloned to work on in the browser and saved to the server (shell/CdeStart.tsx).
+  "Clone to work on": "ໂຄລນເພື່ອເຮັດວຽກ",
+  "The project with its history, to work on in this browser and save to the server": "ໂຄງການພ້ອມປະຫວັດຂອງມັນ, ເພື່ອເຮັດວຽກໃນບຣາວເຊີນີ້ ແລະ ບັນທຶກໃສ່ເຊີເວີ",
+  "Open latest, read-only": "ເປີດສະບັບລ່າສຸດ, ອ່ານຢ່າງດຽວ",
+  "The latest commit, read-only: nothing goes back to the server": "commit ລ່າສຸດ, ອ່ານຢ່າງດຽວ: ບໍ່ມີຫຍັງກັບຄືນໄປເຊີເວີ",
+  "Cloned in this browser.": "ໂຄລນໃນບຣາວເຊີນີ້ແລ້ວ.",
+  "Cloned from the server. Your role is Viewer: you can look and keep a copy, but not save to the server.": "ໂຄລນຈາກເຊີເວີແລ້ວ. ບົດບາດຂອງທ່ານແມ່ນຜູ້ເບິ່ງ: ທ່ານສາມາດເບິ່ງ ແລະ ເກັບສຳເນົາໄວ້, ແຕ່ບໍ່ສາມາດບັນທຶກໃສ່ເຊີເວີ.",
+  "Cloned from the server to work on. This browser holds the copy: File → Save to server sends your work (closing the tab loses what is not saved there); Get latest brings the others' work.": "ໂຄລນຈາກເຊີເວີເພື່ອເຮັດວຽກແລ້ວ. ບຣາວເຊີນີ້ເກັບສຳເນົາໄວ້: ໄຟລ໌ → ບັນທຶກໄປເຊີເວີ ສົ່ງວຽກຂອງທ່ານ (ການປິດແຖບຈະເສຍສິ່ງທີ່ບໍ່ໄດ້ບັນທຶກໄວ້ທີ່ນັ້ນ); ເອົາຫຼ້າສຸດຈາກເຊີເວີ ນຳວຽກຂອງຄົນອື່ນມາ.",
+  "Clone a project to work on it here: the browser holds the copy and its history until you save to the server (File → Save to server); Get latest brings the others' work. Open read-only to look at a commit: nothing goes back to the server.": "ໂຄລນໂຄງການເພື່ອເຮັດວຽກຢູ່ທີ່ນີ້: ບຣາວເຊີເກັບສຳເນົາ ແລະ ປະຫວັດຂອງມັນໄວ້ຈົນກວ່າທ່ານຈະບັນທຶກໃສ່ເຊີເວີ (ໄຟລ໌ → ບັນທຶກໄປເຊີເວີ); ເອົາຫຼ້າສຸດຈາກເຊີເວີ ນຳວຽກຂອງຄົນອື່ນມາ. ເປີດແບບອ່ານຢ່າງດຽວເພື່ອເບິ່ງ commit: ບໍ່ມີຫຍັງກັບຄືນໄປເຊີເວີ.",
+  "Working on": "ກຳລັງເຮັດວຽກໃນ",
+  "Not saved to the server": "ບໍ່ໄດ້ບັນທຶກໃສ່ເຊີເວີ",
+  "Saved to the server": "ບັນທຶກໃສ່ເຊີເວີແລ້ວ",
+  "This browser holds work the server has not got: Save to server sends it. Closing the tab loses it.": "ບຣາວເຊີນີ້ມີວຽກທີ່ເຊີເວີບໍ່ມີ: ບັນທຶກໄປເຊີເວີ ຈະສົ່ງມັນ. ການປິດແຖບຈະເສຍມັນ.",
+  "The server has everything this browser holds.": "ເຊີເວີມີທຸກຢ່າງທີ່ບຣາວເຊີນີ້ມີ.",
   // Lapin on the web in front of a CDE server: the start screen's sign-in, projects, history and members (shell/CdeStart.tsx).
   "Common data environment": "ສະພາບແວດລ້ອມຂໍ້ມູນຮ່ວມ",
   "Account": "ບັນຊີ",
   "Back to the open project": "ກັບໄປຫາໂຄງການທີ່ເປີດຢູ່",
   "Work offline…": "ເຮັດວຽກແບບອອບໄລນ໌…",
   "New projects and projects from this computer, on the usual start screen. File → Server projects… comes back here.": "ໂຄງການໃໝ່ ແລະ ໂຄງການຈາກຄອມພິວເຕີນີ້, ຢູ່ໜ້າເລີ່ມຕົ້ນປົກກະຕິ. ໄຟລ໌ → ໂຄງການໃນເຊີເວີ… ກັບມາທີ່ນີ້.",
-  "Projects open read-only from the server, as a copy in this browser: saving keeps a copy on this computer. Saving to the server, getting the latest and working together come to the browser later; the desktop app has them now.": "ໂຄງການເປີດຈາກເຊີເວີແບບອ່ານຢ່າງດຽວ, ເປັນສຳເນົາໃນບຣາວເຊີນີ້: ການບັນທຶກເກັບສຳເນົາໄວ້ໃນຄອມພິວເຕີນີ້. ການບັນທຶກໃສ່ເຊີເວີ, ການເອົາສະບັບລ່າສຸດ ແລະ ການເຮັດວຽກຮ່ວມກັນຈະມາຮອດບຣາວເຊີພາຍຫຼັງ; ແອັບເດັສທັອບມີແລ້ວ.",
   "Sign in with the account the server's administrator made for you.": "ເຂົ້າສູ່ລະບົບດ້ວຍບັນຊີທີ່ຜູ້ດູແລເຊີເວີສ້າງໃຫ້ທ່ານ.",
   "E-mail address": "ທີ່ຢູ່ອີເມວ",
   "Opened from the server, read-only: changes stay in this browser and never reach the server. Save keeps a copy on this computer.": "ເປີດຈາກເຊີເວີ, ອ່ານຢ່າງດຽວ: ການປ່ຽນແປງຢູ່ໃນບຣາວເຊີນີ້ ແລະ ບໍ່ເຄີຍໄປຮອດເຊີເວີ. ການບັນທຶກເກັບສຳເນົາໄວ້ໃນຄອມພິວເຕີນີ້.",
@@ -22,7 +35,6 @@ export const LO: Record<string, string> = {
   "Open this commit, read-only": "ເປີດ commit ນີ້, ອ່ານຢ່າງດຽວ",
   "Download the .lapin": "ດາວໂຫຼດ .lapin",
   "Download the IFC copy": "ດາວໂຫຼດສຳເນົາ IFC",
-  "Open latest": "ເປີດສະບັບລ່າສຸດ",
   "Working…": "ກຳລັງເຮັດວຽກ…",
   "History of main": "ປະຫວັດຂອງ main",
   "Nothing saved to this project yet.": "ຍັງບໍ່ມີຫຍັງບັນທຶກໃນໂຄງການນີ້.",

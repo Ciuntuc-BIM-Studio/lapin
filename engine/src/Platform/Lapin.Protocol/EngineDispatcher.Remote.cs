@@ -39,10 +39,10 @@ public sealed partial class EngineDispatcher
     static bool Flag(JsonObject p, string key) => p[key] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
 
     /// <summary>A remote of the project opened: a folder (as its folder path), or a server (its lapin-remote base read from Foundation).</summary>
-    IRemote OpenRemote(RemoteEntry e, RemoteAuthor me, RemoteTokens tokens) => e.Kind switch
+    async Task<IRemote> OpenRemote(RemoteEntry e, RemoteAuthor me, RemoteTokens tokens) => e.Kind switch
     {
         "folder" => FolderRemote.Open(FolderRemote.PathOf(e.Url), e.Project, me, RemoteNow),
-        "server" => new HttpRemote(Http, e.Url, HttpRemote.Discover(Http, e.Url), e.Project, tokens),
+        "server" => await HttpRemote.OpenAsync(Http, e.Url, e.Project, tokens),
         _ => throw new CommandException($"A remote of kind „{e.Kind}” is not known to this Lapin."),
     };
 
@@ -57,7 +57,12 @@ public sealed partial class EngineDispatcher
         if (tokens.Changed) result["tokens"] = new JsonObject { ["accessToken"] = tokens.Access, ["refreshToken"] = tokens.Refresh };
     }
 
-    (object? Result, Diff? Diff) RemoteCall(string method, JsonObject p)
+    /// <summary>
+    /// The history and remote calls (asynchronous: a server is reached with <see cref="HttpClient.SendAsync(HttpRequestMessage)"/>, which
+    /// the browser's engine needs). The host awaits them as one call of its queue (<see cref="HandleAsync(string, Caller)"/>): the session does
+    /// not change under a push or a pull.
+    /// </summary>
+    async Task<(object? Result, Diff? Diff)> RemoteCallAsync(string method, JsonObject p)
     {
         session.RefuseDuringStep(ownerToo: true);
         var me = AuthorOf(p);
@@ -84,9 +89,9 @@ public sealed partial class EngineDispatcher
             case "remote.signIn":
             {
                 var url = (string?)p["url"] ?? throw new CommandException("Which server?");
-                var t = HttpRemote.SignIn(Http, url, (string?)p["username"] ?? throw new CommandException("Whose account?"), (string?)p["password"] ?? throw new CommandException("The password is missing."), (string?)p["clientId"] ?? HttpRemote.ClientId);
+                var t = await HttpRemote.SignInAsync(Http, url, (string?)p["username"] ?? throw new CommandException("Whose account?"), (string?)p["password"] ?? throw new CommandException("The password is missing."), (string?)p["clientId"] ?? HttpRemote.ClientId);
                 var o = new JsonObject { ["accessToken"] = t.Access, ["refreshToken"] = t.Refresh };
-                if (CurrentUser(url, t) is { } user) o["user"] = user;
+                if (await CurrentUser(url, t) is { } user) o["user"] = user;
                 return (o, null);
             }
             case "remote.changePassword":
@@ -98,7 +103,7 @@ public sealed partial class EngineDispatcher
                 var next = (string?)p["newPassword"] ?? throw new CommandException("The new password is missing.");
                 if (next.Length < 8) throw new CommandException("The new password needs at least 8 characters.");
                 var o = new JsonObject();
-                try { HttpRemote.ChangePassword(Http, url, tokens, current, next); o["changed"] = true; }
+                try { await HttpRemote.ChangePasswordAsync(Http, url, tokens, current, next); o["changed"] = true; }
                 catch (RemoteException e) { o["changed"] = false; o["code"] = e.Code; o["message"] = e.Message; }
                 Tokens(o, tokens);
                 return (o, null);
@@ -117,8 +122,8 @@ public sealed partial class EngineDispatcher
                 }
                 else
                 {
-                    var remote = new HttpRemote(Http, url, HttpRemote.Discover(Http, url), "-", tokens);
-                    list = new JsonArray([.. remote.Projects().Select(x => (JsonNode)new JsonObject { ["id"] = x.Id, ["name"] = x.Name, ["role"] = x.Role })]);
+                    var remote = new HttpRemote(Http, url, await HttpRemote.DiscoverAsync(Http, url), "-", tokens);
+                    list = new JsonArray([.. (await remote.ProjectsAsync()).Select(x => (JsonNode)new JsonObject { ["id"] = x.Id, ["name"] = x.Name, ["role"] = x.Role })]);
                 }
                 var o = new JsonObject { ["projects"] = list };
                 Tokens(o, tokens);
@@ -148,7 +153,7 @@ public sealed partial class EngineDispatcher
                     if (project == null)
                     {
                         if (!Flag(p, "create")) throw new CommandException("Which project on the server?");
-                        project = HttpRemote.CreateProject(Http, normal, HttpRemote.Discover(Http, normal), tokens, title).Id;
+                        project = (await HttpRemote.CreateProjectAsync(Http, normal, await HttpRemote.DiscoverAsync(Http, normal), tokens, title)).Id;
                     }
                 }
                 else throw new CommandException("A remote is a folder or a server.");
@@ -169,8 +174,8 @@ public sealed partial class EngineDispatcher
             {
                 var h = files.History(session).Clone();
                 var e = TheRemote(h, p);
-                using var remote = OpenRemote(e, me, tokens);
-                var f = RemoteOps.Fetch(remote, h, e.Name, me, now);
+                using var remote = await OpenRemote(e, me, tokens);
+                var f = await RemoteOps.FetchAsync(remote, h, e.Name, me, now);
                 files.KeepHistory(session, h);
                 var o = new JsonObject
                 {
@@ -180,9 +185,9 @@ public sealed partial class EngineDispatcher
                 Tokens(o, tokens);
                 return (o, null);
             }
-            case "remote.push": return Push(p, me, tokens, now);
-            case "remote.pull": return Pull(p, me, tokens, now, asBytes);
-            case "remote.clone": return Clone(p, me, tokens, now);
+            case "remote.push": return await Push(p, me, tokens, now);
+            case "remote.pull": return await Pull(p, me, tokens, now, asBytes);
+            case "remote.clone": return await Clone(p, me, tokens, now);
             default: throw new CommandException($"Unknown method „{method}”.");
         }
     }
@@ -202,15 +207,11 @@ public sealed partial class EngineDispatcher
     }
 
     /// <summary>Foundation's current user (OpenCDE 1.1), for the <c>atrium:</c> author id; null when the server does not say.</summary>
-    JsonObject? CurrentUser(string url, RemoteTokens t)
+    async Task<JsonObject?> CurrentUser(string url, RemoteTokens t)
     {
         try
         {
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(HttpRemote.CheckRoot(url), "foundation/1.1/current-user"));
-            req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", t.Access);
-            using var res = Http.Send(req);
-            if (!res.IsSuccessStatusCode) return null;
-            var o = JsonNode.Parse(res.Content.ReadAsStringAsync().GetAwaiter().GetResult()) as JsonObject;
+            var o = await HttpRemote.CurrentUserAsync(Http, url, t.Access);
             if (o == null) return null;
             // Only a public id (a UUID) becomes the author's id; Foundation's id may be the e-mail address, which never goes into a commit (§4.3).
             var user = new JsonObject { ["name"] = (string?)o["name"] ?? (string?)o["display_name"] };
@@ -278,14 +279,14 @@ public sealed partial class EngineDispatcher
         return (bytes, "IFC4");
     };
 
-    (object? Result, Diff? Diff) Push(JsonObject p, RemoteAuthor me, RemoteTokens tokens, DateTime now)
+    async Task<(object? Result, Diff? Diff)> Push(JsonObject p, RemoteAuthor me, RemoteTokens tokens, DateTime now)
     {
         var h = files.History(session).Clone();
         var e = TheRemote(h, p);
         if (h.HeadCommit == null) throw new CommandException("There is nothing to push: commit first.");
-        using var remote = OpenRemote(e, me, tokens);
+        using var remote = await OpenRemote(e, me, tokens);
         ReportProgress("Pushing", 0, 0);
-        var outcome = RemoteOps.Push(remote, h, e.Name, [(h.Head, h.Head)], now, Flag(p, "noViewer") ? null : Viewer(h));
+        var outcome = await RemoteOps.PushAsync(remote, h, e.Name, [(h.Head, h.Head)], now, Flag(p, "noViewer") ? null : Viewer(h));
         files.KeepHistory(session, h);
         var o = new JsonObject
         {
@@ -311,14 +312,14 @@ public sealed partial class EngineDispatcher
     /// refused, unless <c>resolve</c> says what to do: <c>branch</c> (my commits pushed as <c>wip/&lt;me&gt;/&lt;date&gt;</c>, then the
     /// branch to the remote's) or <c>discard</c> (my commits kept in the file on a local wip branch, the branch to the remote's).
     /// </summary>
-    (object? Result, Diff? Diff) Pull(JsonObject p, RemoteAuthor me, RemoteTokens tokens, DateTime now, bool asBytes)
+    async Task<(object? Result, Diff? Diff)> Pull(JsonObject p, RemoteAuthor me, RemoteTokens tokens, DateTime now, bool asBytes)
     {
         var h = files.History(session).Clone();
         var e = TheRemote(h, p);
         if (h.HeadCommit != null && h.Uncommitted(ProjectPackage.Build(session).Manifest))
             throw new CommandException("The project has changes that are not committed: commit first, then pull.");
-        using var remote = OpenRemote(e, me, tokens);
-        var fetched = RemoteOps.Fetch(remote, h, e.Name, me, now);
+        using var remote = await OpenRemote(e, me, tokens);
+        var fetched = await RemoteOps.FetchAsync(remote, h, e.Name, me, now);
         var (kind, local, theirs) = RemoteOps.Stand(h, e.Name);
         var o = new JsonObject { ["notes"] = new JsonArray([.. fetched.Notes.Select(n => (JsonNode)n)]) };
         Tokens(o, tokens);
@@ -347,7 +348,7 @@ public sealed partial class EngineDispatcher
                 if (resolve == "branch")
                 {
                     h.Refs[wip] = local!;
-                    var pushed = RemoteOps.Push(remote, h, e.Name, [(wip, wip)], now, fetchRefs: false);
+                    var pushed = await RemoteOps.PushAsync(remote, h, e.Name, [(wip, wip)], now, fetchRefs: false);
                     if (!pushed.Pushed) throw new CommandException($"Your work could not be kept as a branch on the remote: {pushed.Moved} moved.");
                     h.Refs.Remove(wip);
                     o["branch"] = wip["refs/heads/".Length..];
@@ -381,7 +382,7 @@ public sealed partial class EngineDispatcher
     static Diff Merge(Diff edit, Diff saved) => edit with { Version = saved.Version, State = saved.State };
 
     /// <summary>A clone (§8.3): the remote's project opened as a new one, its history the remote's, written to <c>path</c> (the desktop) or kept for its first save.</summary>
-    (object? Result, Diff? Diff) Clone(JsonObject p, RemoteAuthor me, RemoteTokens tokens, DateTime now)
+    async Task<(object? Result, Diff? Diff)> Clone(JsonObject p, RemoteAuthor me, RemoteTokens tokens, DateTime now)
     {
         var kind = (string?)p["kind"] ?? throw new CommandException("A folder or a server?");
         var url = (string?)p["url"] ?? throw new CommandException("Which remote?");
@@ -391,7 +392,7 @@ public sealed partial class EngineDispatcher
         if (path != null && File.Exists(path)) throw new CommandException($"{Path.GetFileName(path)} exists already: a clone goes into a new file.");
         var h = PackageHistory.Empty();
         string? tree;
-        using (var remote = OpenRemote(entry, me, tokens)) tree = RemoteOps.Clone(remote, h, entry, me, now);
+        using (var remote = await OpenRemote(entry, me, tokens)) tree = await RemoteOps.CloneAsync(remote, h, entry, me, now);
         if (tree == null) throw new CommandException("The remote's project has no commit yet: nothing to clone.");
         // The commit as a package of exactly its parts (§12.1), opened as any package is (§8.3), then given the history and saved.
         byte[] package;

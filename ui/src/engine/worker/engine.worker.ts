@@ -19,9 +19,13 @@
  * DXF's code pages). The engine asks for one the first time it needs it
  * (`part`), and the worker fetches it there and then, synchronously (a worker
  * may), telling the page `{ part, state: 'loading' | 'loaded' | 'failed' }`.
+ *
+ * Calls are answered one at a time, in the order they came. The history's and the remote's (`history.*`, `remote.*`: a server
+ * reached through fetch, Atrium docs/plan-cde-web.md §2.1 A) are awaited (`CallAsync`, which posts its frames itself); the calls
+ * that come meanwhile wait in the queue, so the project does not change under a push or a pull.
  */
 
-interface Exports { Start(): string; Call(message: string): Uint8Array }
+interface Exports { Start(): string; Call(message: string): Uint8Array; CallAsync(message: string): Promise<void> }
 interface Journal { lines: string[]; at: number }
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
@@ -168,5 +172,27 @@ scope.onmessage = async (ev: MessageEvent<{ start?: string; call?: string }>) =>
     }
     return;
   }
-  if (ev.data.call && engine) post(engine.Call(ev.data.call));
+  if (ev.data.call && engine) enqueue(ev.data.call);
 };
+
+/** A call that may wait for the network: the history's and the remote's (client.ts writes `{"id":…,"method":…` first). */
+const awaitsNetwork = (text: string) => /^\{(?:"id":[^,]*,)?"method":"(?:remote|history)\./.test(text);
+
+let calls: Promise<void> = Promise.resolve();
+let waiting = 0;
+
+/** A call answered after those before it: at once while none waits, else in the queue behind the one awaited. */
+function enqueue(text: string): void {
+  const e = engine;
+  if (!e) return;
+  if (waiting === 0 && !awaitsNetwork(text)) { post(e.Call(text)); return; }
+  waiting++;
+  calls = calls.then(async () => {
+    try {
+      if (awaitsNetwork(text)) await e.CallAsync(text);
+      else post(e.Call(text));
+    } catch (err) {
+      console.error('[lapin] call failed:', err);
+    } finally { waiting--; }
+  });
+}
