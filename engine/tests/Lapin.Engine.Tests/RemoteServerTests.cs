@@ -80,4 +80,34 @@ public sealed class RemoteServerTests : IDisposable
         Assert.True((bool)kept["pulled"]!, kept.ToJsonString());
         Assert.False(ModelCompare.Compare(mihai.F.Session.Model.Entities.ToList(), mihai.F.Session.Model.Relations.ToList(), ana.F.Session.Model.Entities.ToList(), ana.F.Session.Model.Relations.ToList()).Any);
     }
+
+    /// <summary>
+    /// The account's password changed through the engine and changed back, against a running Atrium Server: only with
+    /// <c>LAPIN_REMOTE_PASSWORD_ACCOUNT</c> (a throwaway account of a test server, never a real one) and <c>LAPIN_REMOTE_PASSWORD</c>.
+    /// </summary>
+    [Fact]
+    public void Password_changed_and_back_against_a_running_server()
+    {
+        var server = Environment.GetEnvironmentVariable("LAPIN_REMOTE_SERVER");
+        var account = Environment.GetEnvironmentVariable("LAPIN_REMOTE_PASSWORD_ACCOUNT");
+        if (string.IsNullOrEmpty(server) || string.IsNullOrEmpty(account)) return;
+        var password = Environment.GetEnvironmentVariable("LAPIN_REMOTE_PASSWORD")!;
+        const string Other = "changed-by-the-engine-tests";
+
+        var me = new Client(new Fixture());
+        me.SignIn(server, account, password, "Test");
+        var wrong = me.Call("remote.changePassword", new JsonObject { ["url"] = server, ["currentPassword"] = "not-the-password", ["newPassword"] = Other })!;
+        Assert.False((bool)wrong["changed"]!);
+        Assert.Equal("wrong_password", (string?)wrong["code"]);
+
+        var old = me.Auth["token"]!.GetValue<string>();
+        var changed = me.Call("remote.changePassword", new JsonObject { ["url"] = server, ["currentPassword"] = password, ["newPassword"] = Other })!;
+        Assert.True((bool)changed["changed"]!, changed.ToJsonString());
+        Assert.NotEqual(old, me.Auth["token"]!.GetValue<string>());
+        Assert.Throws<InvalidOperationException>(() => new Client(new Fixture()).SignIn(server, account, password, "Test"));
+
+        var back = me.Call("remote.changePassword", new JsonObject { ["url"] = server, ["currentPassword"] = Other, ["newPassword"] = password })!;
+        Assert.True((bool)back["changed"]!, back.ToJsonString());
+        new Client(new Fixture()).SignIn(server, account, password, "Test");
+    }
 }

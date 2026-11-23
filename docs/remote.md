@@ -33,6 +33,7 @@ All take `author` (`{id, name}`: `local:<installation id>`, or `atrium:<public i
 | `history.commit` `{message}` | the project as it is committed and the file written (refused when nothing changed); `bytes: true` in the browser |
 | `remote.add` `{kind, url, project? , create?, projectName?}` | a folder (a project made in it when none is given) or a server project; one remote per project in S1 |
 | `remote.remove`, `remote.projects` `{kind, url}`, `remote.signIn` `{url, username, password}` | |
+| `remote.changePassword` `{url, currentPassword, newPassword}` | Atrium Server's own `POST /atrium/1.0/account/password` (not lapin-remote; Atrium's `docs/atrium-server.md`): the server ends every sign-in of the account and hands back a fresh pair (`tokens`, kept as a refresh's are). A refusal is an answer, not an error (`changed: false`, `code`: `wrong_password`, `weak_password`, `too_many_attempts`, `not_supported` on a server without it, `unauthorized`; `message`), so that tokens a refresh replaced on the way still reach the interface. In the interface: File → Collaborate…, signed in, **Change password…** |
 | `remote.fetch` | refs (with the ETag), commits walked, objects lacked; never changes the model; objects enter the file at the next save |
 | `remote.pull` `{resolve?: "branch" \| "discard"}` | fast-forward only; refused with uncommitted changes; histories that diverged are reported (`kind: "diverged"`) until `resolve` says what to do |
 | `remote.push` `{noViewer?}` | the current branch; a 409 or a remote that moved says so (`pushed: false`, `message`); attaches the IFC4 viewer copy of the head when the project is that commit |
@@ -75,6 +76,8 @@ LAPIN_REMOTE_SERVER=http://127.0.0.1:5280 LAPIN_REMOTE_PROJECT=<id of a project 
 LAPIN_REMOTE_MIHAI=mihai@example.com LAPIN_REMOTE_ANA=ana@example.com LAPIN_REMOTE_PASSWORD='choose-a-password' \
 dotnet test engine/tests/Lapin.Engine.Tests --filter RemoteServerTests
 ```
+
+With `LAPIN_REMOTE_PASSWORD_ACCOUNT=<a throwaway account of the test server>` too, the account's password is changed through the engine and changed back (never name a real account).
 
 `curl -s http://127.0.0.1:5280/lapin-remote/1.0/capabilities` checks the server answers; `GET /lapin-remote/1.0/projects/<id>/refs/log` (with a bearer token) shows who moved what.
 

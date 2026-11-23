@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, FolderOpen, GitCommitHorizontal, LogIn, LogOut, RefreshCw, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, FolderOpen, GitCommitHorizontal, KeyRound, LogIn, LogOut, RefreshCw, Trash2, X } from 'lucide-react';
 import { backdropClose } from '../../shell/Dialog';
 import { confirmAction } from '../../shell/prompts';
 import { notify, useUi } from '../../app/store';
@@ -16,7 +16,7 @@ import { useSession } from '../../engine/session';
 import { enter, isDesktop, pickPath, projectTitle } from '../../engine/files';
 import { pickFolder } from './cde/cde';
 import {
-  authorFor, historyLog, historyStatus, remoteCall, serverOf, setAuthorName, authorName, signedIn, signIn, signOut, writingCall,
+  authorFor, changePassword, historyLog, historyStatus, remoteCall, serverOf, setAuthorName, authorName, signedIn, signIn, signOut, writingCall,
   type CommitInfo, type HistoryStatus,
 } from '../../engine/remote';
 import { when } from './format';
@@ -171,12 +171,17 @@ function Account({ server, signedIn: inNow, onChange }: { server: string; signed
       onChange();
     } catch (e) { notify(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   };
+  const [changing, setChanging] = useState(false);
   if (inNow) {
     return (
-      <div className="version-save">
-        <span className="muted">Signed in as</span> <span data-no-i18n>{authorFor(server).name}</span>
-        <button type="button" onClick={() => void signOut(server).then(onChange)}><LogOut size={13} /> Sign out</button>
-      </div>
+      <>
+        <div className="version-save">
+          <span className="muted">Signed in as</span> <span data-no-i18n>{authorFor(server).name}</span>
+          <button type="button" onClick={() => void signOut(server).then(onChange)}><LogOut size={13} /> Sign out</button>
+          {!changing && <button type="button" onClick={() => setChanging(true)} title="A new password for this account on the server"><KeyRound size={13} /> Change password…</button>}
+        </div>
+        {changing && <ChangePassword server={server} onDone={() => { setChanging(false); onChange(); }} />}
+      </>
     );
   }
   return (
@@ -184,6 +189,45 @@ function Account({ server, signedIn: inNow, onChange }: { server: string; signed
       <input placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="E-mail" autoComplete="username" />
       <input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} aria-label="Password" autoComplete="current-password" onKeyDown={(e) => { if (e.key === 'Enter') void go(); }} />
       <button type="button" className="btn primary" disabled={busy || !email || !password} onClick={() => void go()}><LogIn size={13} /> Sign in</button>
+    </div>
+  );
+}
+
+/**
+ * The signed-in account's password changed (current, new, repeated). The passwords live in this form's state only, are cleared after
+ * each try and are never logged or kept; the server ends the account's other sign-ins and the fresh tokens are kept as a sign-in's.
+ */
+function ChangePassword({ server, onDone }: { server: string; onDone: () => void }) {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [again, setAgain] = useState('');
+  const [busy, setBusy] = useState(false);
+  const go = async () => {
+    if (busy) return;
+    if (next.length < 8) { notify('The new password needs at least 8 characters.'); return; }
+    if (next !== again) { notify('The two new passwords differ.'); return; }
+    setBusy(true);
+    try {
+      const r = await changePassword(server, current, next);
+      setCurrent('');
+      if (r.changed) {
+        setNext(''); setAgain('');
+        notify('Password changed. Your other sign-ins to this server have ended.');
+        onDone();
+      } else {
+        notify(r.message ?? 'The current password is wrong.');
+        if (r.code === 'unauthorized' || r.code === 'not_supported') { setNext(''); setAgain(''); onDone(); }
+      }
+    } catch (e) { setCurrent(''); notify(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
+  };
+  const onEnter = (e: { key: string }) => { if (e.key === 'Enter' && current && next && again) void go(); };
+  return (
+    <div className="version-save">
+      <input type="password" autoFocus placeholder="Current password" value={current} onChange={(e) => setCurrent(e.target.value)} aria-label="Current password" autoComplete="current-password" onKeyDown={onEnter} />
+      <input type="password" placeholder="New password (at least 8 characters)" value={next} onChange={(e) => setNext(e.target.value)} aria-label="New password (at least 8 characters)" autoComplete="new-password" onKeyDown={onEnter} />
+      <input type="password" placeholder="The new password again" value={again} onChange={(e) => setAgain(e.target.value)} aria-label="The new password again" autoComplete="new-password" onKeyDown={onEnter} />
+      <button type="button" className="btn primary" disabled={busy || !current || !next || !again} onClick={() => void go()}><KeyRound size={13} /> Change password</button>
+      <button type="button" disabled={busy} onClick={onDone}>Cancel</button>
     </div>
   );
 }

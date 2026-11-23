@@ -117,6 +117,49 @@ public sealed class HttpRemote : IRemote
         return Token(http, new Uri(uri, url), [new("grant_type", "password"), new("username", username), new("password", password), new("client_id", clientId)]);
     }
 
+    /// <summary>Atrium Server's own endpoint for the signed-in account's password, relative to the server's root (not part of lapin-remote).</summary>
+    public const string PasswordPath = "atrium/1.0/account/password";
+
+    /// <summary>
+    /// The signed-in account's password changed on an Atrium Server (<c>POST /atrium/1.0/account/password</c>, Atrium's
+    /// docs/atrium-server.md): the current and the new password, with the bearer token (refreshed once on a 401). The server ends
+    /// every sign-in of the account and answers a fresh pair, put into <paramref name="tokens"/> (<see cref="RemoteTokens.Changed"/>).
+    /// A refusal is a <see cref="RemoteException"/> with the server's code (<c>wrong_password</c>, <c>weak_password</c>,
+    /// <c>too_many_attempts</c>) and a message to show; <c>not_supported</c> when the server has no such endpoint. The passwords go no
+    /// further than this request.
+    /// </summary>
+    public static void ChangePassword(HttpClient http, string root, RemoteTokens tokens, string current, string next)
+    {
+        var uri = CheckRoot(root);
+        var r = new HttpRemote(http, uri.ToString(), Discover(http, uri.ToString()), "-", tokens);
+        using var res = r.Call(() => new HttpRequestMessage(HttpMethod.Post, new Uri(uri, PasswordPath))
+        {
+            Content = JsonBody(new JsonObject { ["currentPassword"] = current, ["newPassword"] = next }),
+        });
+        var text = res.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+        JsonObject o;
+        try { o = JsonNode.Parse(text) as JsonObject ?? []; }
+        catch (JsonException) { o = []; }
+        if (!res.IsSuccessStatusCode)
+        {
+            var status = (int)res.StatusCode;
+            var code = (string?)o["code"] ?? (status == 404 || status == 405 ? "not_supported" : "error");
+            var message = code switch
+            {
+                "not_supported" => "This server does not let you change your password here: ask its administrator.",
+                "unauthorized" => "Sign in to the server again.",
+                "wrong_password" => "The current password is wrong.",
+                "too_many_attempts" => "Too many wrong passwords: try again later.",
+                _ => (string?)o["message"] ?? $"The server answered {status}.",
+            };
+            if (status == 401) code = "unauthorized";
+            throw new RemoteException(status, code, message, o);
+        }
+        tokens.Access = (string?)o["access_token"] ?? throw new InvalidDataException("The server gave no new token.");
+        tokens.Refresh = (string?)o["refresh_token"];
+        tokens.Changed = true;
+    }
+
     static RemoteTokens Token(HttpClient http, Uri url, List<KeyValuePair<string, string>> form)
     {
         using var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = new FormUrlEncodedContent(form) };

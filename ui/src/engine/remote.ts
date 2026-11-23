@@ -110,6 +110,16 @@ export async function signOut(server: string): Promise<void> {
   await keepRefresh(server, null);
 }
 
+/**
+ * The signed-in account's password changed on the server (Atrium Server's POST /atrium/1.0/account/password, through the engine as the
+ * sign-in goes). The server ends every sign-in of the account and hands back a fresh pair, kept as a refresh's are; the passwords go no
+ * further than the request and are never kept. A refusal comes back with its code (wrong_password, weak_password, too_many_attempts,
+ * not_supported, unauthorized) and a message to show.
+ */
+export async function changePassword(server: string, currentPassword: string, newPassword: string): Promise<{ changed: boolean; code?: string; message?: string }> {
+  return remoteCall<{ changed: boolean; code?: string; message?: string }>('remote.changePassword', { url: server, currentPassword, newPassword }, server);
+}
+
 /** One call of the history or the remote: the author and, for a server, its tokens added; tokens a refresh replaced kept at once. */
 export async function remoteCall<T>(method: string, args: Record<string, unknown> = {}, server: string | null = null): Promise<T> {
   const extra: Record<string, unknown> = { author: authorFor(server) };

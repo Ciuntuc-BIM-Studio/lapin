@@ -8,7 +8,7 @@ namespace Lapin.Protocol;
 
 /// <summary>
 /// The project's history and its remote (lapin-remote 1.0, docs/spec-lapin-remote.md; decision 793, stage S1): <c>history.*</c>
-/// (status, log, commit) and <c>remote.*</c> (add, remove, list, projects, signIn, fetch, pull, push, clone). None is a guest's
+/// (status, log, commit) and <c>remote.*</c> (add, remove, list, projects, signIn, changePassword, fetch, pull, push, clone). None is a guest's
 /// (<see cref="AllowedRemote"/> lets none through): only the host speaks to the remote. A server's tokens come with each call
 /// (<c>token</c>, <c>refreshToken</c>) and go back when a refresh replaced them (<c>tokens</c>); the engine never keeps them.
 /// The author is the caller's <c>author</c> ({id, name}: <c>local:&lt;installation&gt;</c>, or <c>atrium:&lt;user&gt;</c> when signed in).
@@ -87,6 +87,20 @@ public sealed partial class EngineDispatcher
                 var t = HttpRemote.SignIn(Http, url, (string?)p["username"] ?? throw new CommandException("Whose account?"), (string?)p["password"] ?? throw new CommandException("The password is missing."), (string?)p["clientId"] ?? HttpRemote.ClientId);
                 var o = new JsonObject { ["accessToken"] = t.Access, ["refreshToken"] = t.Refresh };
                 if (CurrentUser(url, t) is { } user) o["user"] = user;
+                return (o, null);
+            }
+            case "remote.changePassword":
+            {
+                // Atrium Server's own call (not lapin-remote): the server ends every sign-in and hands back a fresh pair. A refusal is
+                // an answer, not an error, so that tokens a refresh replaced on the way still reach the interface.
+                var url = (string?)p["url"] ?? throw new CommandException("Which server?");
+                var current = (string?)p["currentPassword"] ?? throw new CommandException("The current password is missing.");
+                var next = (string?)p["newPassword"] ?? throw new CommandException("The new password is missing.");
+                if (next.Length < 8) throw new CommandException("The new password needs at least 8 characters.");
+                var o = new JsonObject();
+                try { HttpRemote.ChangePassword(Http, url, tokens, current, next); o["changed"] = true; }
+                catch (RemoteException e) { o["changed"] = false; o["code"] = e.Code; o["message"] = e.Message; }
+                Tokens(o, tokens);
                 return (o, null);
             }
             case "remote.projects":
