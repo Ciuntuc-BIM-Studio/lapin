@@ -108,3 +108,16 @@ public interface IIfcConnections
 {
     IEnumerable<IfcConnection> Connections(IModelView model);
 }
+
+/// <summary>
+/// An element with no body written as an IfcAnnotation (a feature line on the site, docs/plan-site-grading.md §4): its curves in
+/// space (model metres, z the model's height), its IFC 4.3 PredefinedType and its ObjectType. Lapin_Intent goes with it, so an
+/// import makes the element again.
+/// </summary>
+public sealed record IfcAnnotationCurve(IReadOnlyList<IReadOnlyList<Vec3>> Curves, string Predefined, string? ObjectType);
+
+/// <summary>The module's elements written as IfcAnnotation with a 3D curve (<see cref="IfcAnnotationCurve"/>); null for the others.</summary>
+public interface IIfcAnnotationCurves
+{
+    IfcAnnotationCurve? CurveOf(IModelView model, Entity element);
+}

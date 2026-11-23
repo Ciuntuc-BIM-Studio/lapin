@@ -109,6 +109,45 @@ A terrain clipped by a **Terrain boundary** keeps its outline's heights as the g
 
 ![A gravel subregion on the terrain in 3D](shots/terrain-subregion-3d.webp)
 
+## Feature lines and contours
+
+A **feature line** is a polyline in space that belongs to a terrain: a kerb, a ditch, a ridge, a swale, the foot of a slope. It has corners (straight or arcs), and each corner a height. The terrain is built to pass **exactly** through it: the surface is triangulated along the line, so a cut, a bank or a crease shows exactly where you drew it, and the survey points lying within its **tolerance** of the line (5 cm by default) are left out of the surface, so a survey point never spoils it. Feature lines are in the **Grading** group of the **Site** tab.
+
+**Draw a feature line.** **Feature line** (<kbd>FL</kbd>) takes clicks along the line, as the outline tools do: **Arcs** (or <kbd>Space</kbd>) makes the next edges arcs going on tangent from the edge before, **Closed line** closes it back to its first corner, <kbd>Enter</kbd> (or a second click on the last corner) finishes. The bar chooses how its corners take their heights:
+
+- **At heights**: after the last click a question asks for the corners' heights in order, separated by `;` (`0.5; ; ; 2.4`), in the project's level unit with ±0.00 = 0. A corner left empty takes the ground's height there.
+- **On the ground**: every corner is laid on the ground of the terrain under it, and the line keeps following it.
+
+The line goes on the terrain under its corners. A corner with no height of its own and no terrain under it is refused, with a message naming it: nothing is put at zero in silence.
+
+![A feature line drawn with an arc, its corners' heights typed, the terrain passing through it](shots/feature-line-3d.webp)
+
+In plan a feature line has its own line style (dash-dot-dot, in a rust colour), so it reads against the terrain's contours, which bend round it.
+
+![The plan with a feature line and the contours bent round it](shots/feature-line-plan.webp)
+
+**Edit it in plan.** Select it for its grips: drag a corner to move it (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>-click takes it out); drag the diamond in the middle of a segment, or <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-click it, to put a corner there (the line keeps its shape: the new corner takes the line's height at that place); drag the round grip in the middle of an arc to bend it. A right-click offers **Make arc** and **Make straight** on a segment, and **Set elevation…** and **On the ground** on a corner. Every edit is one undo step.
+
+**Edit it in 3D.** Each corner has a height grip: drag it up or down (or type the distance), or click it without dragging and type the corner's elevation (absolute, ±0.00 = 0).
+
+**Elevations and grades.** The properties of a feature line list its corners with their elevations. A height the corner has of its own is shown plainly; one taken from the ground or from a grade is grey. Type an elevation in a field to give the corner one of its own; **to ground** puts the corner back on the ground. Between two corners the **grade** is shown, and it takes a typed grade: `2 %`, `1:50` or `-1,5 %`; the other end of the segment follows. **A typed grade keeps** says which end stays where it is: **its start** (the end follows) or **its end**. A grade cannot be typed on a contour (all its corners are level) nor on the closing segment of a closed line. The properties also hold **Tolerance**, **On the ground**, **Closed line**, and **Contour elevation**.
+
+![A feature line's properties: its terrain, tolerance and corners with their elevations and grades](shots/feature-line-properties.webp)
+
+A feature line moves, rotates and mirrors like any element (a move in space also raises the heights of its own); *Lapin_FeatureLineQuantities* gives its length in plan, its length along the slope and its lowest and highest elevation to schedules. If two feature lines of a terrain cross at different heights, the terrain says so in its geometry diagnostics, which also count the survey points left out.
+
+**A contour drawn at an elevation.** **Contour at elevation** (<kbd>CV</kbd>) draws a feature line all at one height: type the elevation in its bar (empty: it is asked when you finish), click the points, <kbd>Enter</kbd>. The terrain is triangulated along it, so the contour passes exactly where you drew it, and the ground between this contour and its neighbours is interpolated again. It is named *Contour 1.10*; the same options, **Arcs** and **Closed line**, are in the bar. Typing an elevation in the properties of any feature line makes it a contour; emptying it gives the corners back their own heights.
+
+![A contour drawn at 1.10 across the north of the site](shots/feature-line-contour.webp)
+
+**Dragging a contour.** **Drag contour** (<kbd>DG</kbd>) moves a contour of the terrain with the mouse: as the cursor comes near one (within 2 m) it lights up; press on it, drag, and let go. The part of the contour within the **Reach** of the point you pressed becomes a contour feature line, moved by the drag; the move fades with the distance from the grab (all of it at the grab point, half at half the reach, nothing at the reach), and the survey points within the reach follow it, so the neighbouring contours bend smoothly and nothing beyond the reach moves. Type the reach in the bar with its unit (`9 m`); empty, it is the larger of 2 m and three times the drag, and it must be longer than the drag. While the button is down the dragged contour is previewed; <kbd>Esc</kbd> drops the drag. A contour you drew yourself with **Contour at elevation** is moved as it is, as one line. One undo step.
+
+![A contour lit up under the cursor before the drag](shots/feature-line-drag-before.webp)
+
+![The contour dragged: the neighbouring contours follow with it, fading with the distance](shots/feature-line-drag-after.webp)
+
+Two things follow from how a terrain keeps its points. **Replacing a terrain's survey points wholesale** (**Replace the points…**, or *Change terrain* with new points) drops the rule that the outline is its points, and the heights its arcs' vertices had of their own: the new points are the terrain's points as they come. And **an arc vertex moved in plan through the API** (not by the outline's grips) becomes an ordinary point of the terrain with a height of its own. Feature lines are not touched by either: they stay on the terrain and keep shaping it.
+
 ## Site plans and location plans
 
 The project browser has a **Site** under the levels: the site's own drawings, which belong to no storey. A new project starts with two:

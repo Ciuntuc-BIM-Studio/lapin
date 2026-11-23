@@ -107,6 +107,45 @@ Un teren decupat cu **Limita terenului** își păstrează cotele conturului aș
 
 ![O subregiune de pietriș pe teren, în 3D](shots/terrain-subregion-3d.webp)
 
+## Linii caracteristice și curbe de nivel
+
+O **linie caracteristică** este o polilinie în spațiu care ține de un teren: o bordură, un șanț, o creastă, o rigolă, piciorul unui taluz. Are colțuri (drepte sau arce), iar fiecare colț o cotă. Terenul e construit ca să treacă **exact** prin ea: suprafața e triangulată de-a lungul liniei, așa că o săpătură, un val sau o muchie apar exact unde le-ai desenat, iar punctele topografice aflate la mai puțin de **toleranța** ei de linie (5 cm, implicit) sunt lăsate în afara suprafeței, ca niciun punct ridicat să n-o strice. Liniile caracteristice sunt în grupul **Sistematizare** al filei **Teren** (*Site*).
+
+**Desenează o linie caracteristică.** **Linie caracteristică** (<kbd>FL</kbd>) primește clicuri de-a lungul liniei, ca uneltele de contur: **Arce** (sau <kbd>Space</kbd>) face următoarele laturi arce care continuă tangent latura dinainte, **Linie închisă** o închide înapoi la primul colț, <kbd>Enter</kbd> (sau un al doilea clic pe ultimul colț) o termină. Bara alege cum își iau colțurile cotele:
+
+- **La cote**: după ultimul clic o întrebare cere cotele colțurilor în ordine, separate prin `;` (`0.5; ; ; 2.4`), în unitatea de cotă a proiectului cu ±0.00 = 0. Un colț lăsat gol ia cota terenului de acolo.
+- **Pe teren**: fiecare colț e așezat pe terenul de sub el, iar linia îl urmează în continuare.
+
+Linia merge pe terenul de sub colțurile ei. Un colț fără cotă proprie și fără teren sub el e refuzat, cu un mesaj care îl numește: nimic nu se pune la zero pe tăcute.
+
+![O linie caracteristică desenată cu un arc, cotele colțurilor scrise, terenul trecând prin ea](shots/feature-line-3d.webp)
+
+În plan, o linie caracteristică are stilul ei de linie (linie-punct-punct, în culoarea ruginie), ca să se citească pe lângă curbele de nivel ale terenului, care se îndoaie în jurul ei.
+
+![Planul cu o linie caracteristică și curbele de nivel îndoite în jurul ei](shots/feature-line-plan.webp)
+
+**Editeaz-o în plan.** Selecteaz-o ca să-i vezi mânerele: trage un colț ca să-l muți (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>-clic îl scoate); trage rombul din mijlocul unei laturi, sau dă <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-clic pe el, ca să pui un colț acolo (linia își păstrează forma: colțul nou ia cota liniei din acel loc); trage mânerul rotund din mijlocul unui arc ca să-l îndoi. Un clic dreapta oferă **Fă arc** și **Fă dreaptă** pe o latură, iar **Setează cota…** și **Pe teren** pe un colț. Fiecare modificare e un pas de anulare.
+
+**Editeaz-o în 3D.** Fiecare colț are un mâner de cotă: trage-l în sus sau în jos (ori scrie distanța), sau dă clic pe el fără să-l tragi și scrie cota colțului (absolută, ±0.00 = 0).
+
+**Cote și pante.** Proprietățile unei linii caracteristice înșiră colțurile cu cotele lor. O cotă pe care colțul o are de la sine e arătată simplu; una luată de la teren sau dintr-o pantă e gri. Scrie o cotă într-un câmp ca să-i dai colțului una proprie; **pe teren** pune colțul înapoi pe teren. Între două colțuri se arată **panta**, care primește o pantă scrisă: `2 %`, `1:50` sau `-1,5 %`; celălalt capăt al laturii o urmează. **O pantă scrisă păstrează** spune ce capăt rămâne pe loc: **începutul ei** (sfârșitul o urmează) sau **sfârșitul ei**. O pantă nu se poate scrie pe o curbă de nivel (toate colțurile ei sunt la aceeași cotă) și nici pe latura de închidere a unei linii închise. Proprietățile mai cuprind **Toleranță**, **Pe teren**, **Linie închisă** și **Cota curbei de nivel**.
+
+![Proprietățile unei linii caracteristice: terenul ei, toleranța și colțurile cu cotele și pantele lor](shots/feature-line-properties.webp)
+
+O linie caracteristică se mută, se rotește și se oglindește ca orice element (o mutare în spațiu ridică și cotele proprii); *Lapin_FeatureLineQuantities* dă listelor lungimea ei în plan, lungimea pe pantă și cota cea mai joasă și cea mai înaltă. Dacă două linii caracteristice ale unui teren se încrucișează la cote diferite, terenul spune asta în diagnosticul geometriei, care numără și punctele topografice lăsate deoparte.
+
+**O curbă de nivel desenată la o cotă.** **Curbă de nivel la cotă** (<kbd>CV</kbd>) desenează o linie caracteristică toată la aceeași cotă: scrie cota în bara ei (gol: e cerută când termini), dă clic pe puncte, <kbd>Enter</kbd>. Terenul e triangulat de-a lungul ei, așa că curba trece exact pe unde ai desenat-o, iar terenul dintre această curbă și vecinele ei e interpolat din nou. Se numește *Contour 1.10*; aceleași opțiuni, **Arce** și **Linie închisă**, sunt în bară. Scrierea unei cote în proprietățile oricărei linii caracteristice o face curbă de nivel; golirea ei dă colțurilor înapoi cotele lor proprii.
+
+![O curbă de nivel desenată la 1.10 prin nordul amplasamentului](shots/feature-line-contour.webp)
+
+**Tragerea unei curbe de nivel.** **Trage curba de nivel** (<kbd>DG</kbd>) mută cu mouse-ul o curbă de nivel a terenului: când cursorul se apropie de una (la 2 m) ea se luminează; apasă pe ea, trage și dă drumul. Partea curbei aflată în **Raza de acțiune** a punctului apăsat devine o linie caracteristică de nivel, mutată cu tragerea; mutarea scade cu distanța de la punctul apucat (toată la el, jumătate la jumătatea razei, nimic la rază), iar punctele topografice din rază o urmează, așa că curbele vecine se îndoaie lin și nimic dincolo de rază nu se mișcă. Scrie raza în bară cu unitatea ei (`9 m`); gol, e cea mai mare dintre 2 m și de trei ori tragerea, și trebuie să fie mai lungă decât tragerea. Cât timp butonul e apăsat, curba trasă se previzualizează; <kbd>Esc</kbd> renunță la tragere. O curbă desenată de tine cu **Curbă de nivel la cotă** se mută așa cum e, ca o singură linie. Un pas de anulare.
+
+![O curbă de nivel luminată sub cursor, înainte de tragere](shots/feature-line-drag-before.webp)
+
+![Curba de nivel trasă: curbele vecine o urmează, scăzând cu distanța](shots/feature-line-drag-after.webp)
+
+Două lucruri decurg din felul în care un teren își ține punctele. **Înlocuirea punctelor topografice ale unui teren pe de-a-ntregul** (**Înlocuiește punctele…**, sau *Change terrain* cu puncte noi) renunță la regula „conturul e punctele lui” și la cotele proprii pe care le aveau vârfurile arcelor lui: punctele noi sunt punctele terenului așa cum vin. Iar **un vârf de arc mutat în plan prin API** (nu prin mânerele conturului) devine un punct obișnuit al terenului, cu o cotă proprie. Liniile caracteristice nu sunt atinse de niciuna: rămân pe teren și continuă să-l modeleze.
+
 ## Planul de situație și planul de încadrare
 
 Browserul proiectului are, sub niveluri, **Terenul** (*Site*): desenele amplasamentului, care nu țin de niciun etaj. Un proiect nou pornește cu două:

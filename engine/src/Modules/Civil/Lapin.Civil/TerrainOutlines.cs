@@ -82,7 +82,8 @@ public static class TerrainOutlines
             var verts = Vertices(corners, rises);
             // The ground under a point: the first terrain there (model heights), as surveyed or as worked.
             double? Under(Vec2 p) => Terrains.Under(m, p) is { } t ? Terrains.Of(t).ElevationAt(p.X, p.Y) : null;
-            var cz = corners.Select((c, i) => cornerZ[i] ?? (ground ? Under(c) : null) ?? elevation).ToList();
+            // On the ground, a corner with no terrain under it and no height of its own is refused, named (Î6): never put at 0.
+            var cz = corners.Select((c, i) => cornerZ[i] ?? (ground ? Under(c) ?? throw new CommandException(FeatureLines.Off(i, c)) : elevation)).ToList();
             var zs = AlongEdges(verts, cz);
             // On the ground, a vertex along an edge without heights of its own reads the ground too.
             if (ground)

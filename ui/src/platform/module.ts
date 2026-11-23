@@ -17,7 +17,11 @@ export interface Vec2 { x: number; y: number }
 export type Gesture =
   | { kind: 'twoPoints'; /** Chained: the end of one is the start of the next (walls). */ repeat?: boolean;
     /** Measuring (Scale image, forum 143): the second point is the cursor's, and a length typed is the true distance between the two (the tool's `typed`). */ measure?: boolean;
-    /** What the path drawn would build, as lines on the plan (metres), drawn with it as the cursor moves (a wall's body on the side of the line it goes, decision 692). */ body?: (path: { a: Vec2; b: Vec2; rise: number }) => Vec2[][] }
+    /** What the path drawn would build, as lines on the plan (metres), drawn with it as the cursor moves (a wall's body on the side of the line it goes, decision 692). */ body?: (path: { a: Vec2; b: Vec2; rise: number }) => Vec2[][];
+    /** In a plan, the gesture is a drag: pressed at the first point, let go at the second (a contour dragged, site grading T2); `body` previews it while the button is down. */
+    drag?: boolean;
+    /** Before the first point (with `drag`): what the press would take, as lines on the plan (metres), drawn as the cursor moves; `redraw` asks for the plan to be drawn again once the answer is in. */
+    hover?: (at: Vec2, redraw: () => void) => Vec2[][] }
   /** `ghost`: what the click would put there, as lines on the plan (metres), redrawn as the cursor moves (a family's outline, turned and mirrored). */
   | { kind: 'point'; ghost?: (at: Vec2) => Vec2[][] }
   | { kind: 'rectangle' }
@@ -34,7 +38,9 @@ export type Gesture =
   /** `shapes` (forum topic 97): in a plan, its bar's shape (viewport/outlineShape: polygon with arcs, rectangle, circle, inside walls) is drawn. */
   | { kind: 'polygon'; shapes?: boolean }
   /** `constrain`: where the next point may go, given the points placed (a pipe of copper turns only by 45°): the aimed point moved onto what is allowed. */
-  | { kind: 'polyline'; constrain?: (placed: Vec2[], aimed: Vec2) => Vec2 }
+  | { kind: 'polyline'; constrain?: (placed: Vec2[], aimed: Vec2) => Vec2;
+    /** In a plan, the edges may be arcs (the bar's Arcs, Space: viewport/outlineShape), each going on tangent from the edge before; the tool gets their rises as `arcs`, one per edge (n − 1). */
+    arcs?: boolean }
   | {
     kind: 'pick'; /** IFC classes it can be used on. */ types: string[];
     /** How near (screen px) the nearest of them is taken, so the cursor can stand beside it (a door's side of a thin wall); else under the cursor only. */

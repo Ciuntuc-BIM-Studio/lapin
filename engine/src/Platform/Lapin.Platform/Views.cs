@@ -620,7 +620,8 @@ public static class Views
                         if (!item.At(detail) || !item.In(entourage)) continue;
                         if (SymbolFill(item, e) is { } sf) { fills.Add(sf); continue; }
                         var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" or "heavy" => LineRole.Cut, _ => null };
-                        if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, item.Mode != null ? item.Style ?? thin : null));
+                        // A symbol with a line style of its own keeps it here as in a plan (a feature line, T2).
+                        if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, item.Mode != null ? item.Style ?? thin : item.Style));
                     }
                 continue;
             }

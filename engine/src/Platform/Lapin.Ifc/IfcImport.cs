@@ -1021,6 +1021,7 @@ public static partial class IfcImport
                 Reference(edit, e, booleans);
             }
             Spaces(edit);
+            Annotations(edit);
             FinishRecognition(edit);
             RuleNotes();
             UnreadableNotes();
@@ -1105,6 +1106,20 @@ public static partial class IfcImport
             // Where to find them: a room is air, drawn in plans only.
             if (rooms > 0)
                 notes.Add($"{rooms} room(s) from the file's spaces, each on its storey: its plan shows their stamps (View → Room colours fills them; a Rooms schedule, + under Schedules in the browser, lists them); the 3D view leaves rooms out until its Visibility/Graphics shows them.");
+        }
+
+        /// <summary>
+        /// The file's annotations Lapin wrote for an element of its own (a feature line, T2: an IfcAnnotation whose Lapin_Intent names a
+        /// class the product has): made again from their intent. Any other annotation is left as before.
+        /// </summary>
+        void Annotations(IEdit edit)
+        {
+            if (o.ReferenceOnly) return;
+            foreach (var e in f.OfType("IFCANNOTATION").OrderBy(x => x.Id))
+            {
+                if (e[0] is not string { Length: 22 } || !Takes(e)) continue;
+                if (IntentOf(e.Id) is { Class: { } cls } intent && cls != IfcClass.Annotation && s.Catalog.Class(cls) != null) Native(edit, e, intent);
+            }
         }
 
         /// <summary>Where what has no storey of its own goes: the storey at ±0.00 or the lowest above it, else the lowest.</summary>

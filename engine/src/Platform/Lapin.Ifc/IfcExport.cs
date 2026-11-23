@@ -910,6 +910,8 @@ public static partial class IfcExport
             {
                 if (hostedBy != null) return;
                 if (RoomDividers.Is(e) && geo?.Plan is { Count: > 0 } lines) { Virtual(e, lines); return; }
+                // A feature line on the site (docs/plan-site-grading.md §4): an IfcAnnotation, its line in space as its axis.
+                if (s.Catalog.All<IIfcAnnotationCurves>().Select(x => x.CurveOf(m, e)).FirstOrDefault(x => x != null) is { } curve) { Annotation(e, curve); return; }
                 if (geo?.Diagnostics is { Count: > 0 } d) Notes.Add($"„{e.Name}” has no body and was not exported: {d[0]}");
                 return;
             }
@@ -1091,6 +1093,28 @@ public static partial class IfcExport
             }
             var list = f.Add("IFCCARTESIANPOINTLIST2D", L(pts.Select(p => L(new[] { R(p.X), R(p.Y) }))), Null);
             return f.Add("IFCSHAPEREPRESENTATION", axis, S("Axis"), S("Curve2D"), L(new[] { f.Add("IFCINDEXEDPOLYCURVE", list, L(segments), False) }));
+        }
+
+        /// <summary>
+        /// An element with no body that is a curve in space (a feature line, T2): an IfcAnnotation in its storey, its curves as the Axis
+        /// representation (Curve3D, storey-local metres), IFC 4.3's PredefinedType (CONTOURLINE, USERDEFINED with its object type; IFC4
+        /// has none) and its Lapin_Intent, so Lapin reads it back as the element it was.
+        /// </summary>
+        void Annotation(Entity e, IfcAnnotationCurve curve)
+        {
+            var storey = Spatial.StoreyOf(m, e.Id);
+            var (spatial, relTo, z0) = storey != null && storeyRef.TryGetValue(storey.Id, out var sr) ? (sr, storeyPlace[storey.Id], storeyZ[storey.Id]) : (siteRef, sitePlace, 0.0);
+            var curves = curve.Curves.Where(c => c.Count >= 2)
+                .Select(c => f.Add("IFCPOLYLINE", L(c.Select(p => f.Add("IFCCARTESIANPOINT", L(new[] { R(p.X), R(p.Y), R(p.Z - z0) }))).ToArray()))).ToArray();
+            if (curves.Length == 0) return;
+            var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { f.Add("IFCSHAPEREPRESENTATION", axis, S("Axis"), S("Curve3D"), L(curves)) }));
+            var objectType = !o.Ifc43 || curve.Predefined == "USERDEFINED" ? curve.ObjectType : null;
+            string[] common = [Gid(e.Id), Null, S(e.Name), Null, S(objectType), Place(relTo, 0), shape];
+            var entity = f.Add("IFCANNOTATION", o.Ifc43 ? [.. common, E(curve.Predefined)] : common);
+            written[e.Id] = entity;
+            Contain(spatial, entity);
+            Elements++;
+            Define(entity, IntentOf(e, Gid(e.Id, IntentKey), new Kind(IfcClass.Annotation, "", objectType)), Gid(e.Id, "intent-rel"));
         }
 
         /// <summary>

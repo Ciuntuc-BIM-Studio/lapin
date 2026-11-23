@@ -20,6 +20,8 @@ import { execute, query, useSession } from '../../engine/session';
 import { formatLength, levelUnit, parseLevel, unitName } from '../../engine/unitsStore';
 import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './survey';
 import { TerrainSection } from './TerrainSection';
+import { FeatureLineSection } from './FeatureLineSection';
+import { contourAt, dragContour, featureLine, featureLineGrips, featureLineGrips3d, featureLineRefs } from './featureLineTools';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
 import { isDitch, setBrush, useBrush, useTerrainEdit, type BrushKind } from './prefs';
 import { MAX_POINT_GRIPS, decorateCornerGrips, terrainBase, terrainPlanPointGrips, terrainPointGrips } from './pointGrips';
@@ -467,6 +469,7 @@ const civil: LapinModule = {
     IfcEarthworksCut: (n) => activate(n.props.contour ? platform : ditch),
     IfcPavement: (n) => { usePathKind.setState({ kind: n.props.template === 'road' ? 'road' : 'path' }); if (useUi.getState().tool !== path.id) activate(path); },
     LapinRetainingWall: () => activate(retainingWall),
+    LapinFeatureLine: (n) => { if (useUi.getState().tool !== (n.props.elevation != null ? contourAt : featureLine).id) activate(n.props.elevation != null ? contourAt : featureLine); },
     LapinPlanting: (n) => activate(n.props.contour ? plantingZone : plant),
     LapinEntourage: (n) => { if (typeof n.props.kind === 'string') useEntouragePrefs.setState({ kind: n.props.kind as never }); if (useUi.getState().tool !== entourage.id) activate(entourage); },
   },
@@ -474,6 +477,7 @@ const civil: LapinModule = {
     id: 'site', label: 'Site', order: 40, include: ['modify'],
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, terrainOnOutline, parcel], small: [terrainOnPicked, terrainBoundary, splitTerrain, mergeTerrains, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
+      { label: 'Grading', tools: [featureLine, contourAt, dragContour], small: [] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, subregion, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
@@ -501,6 +505,7 @@ const civil: LapinModule = {
         ...(edit && view?.view ? terrainPlanPointGrips(n, useCamera.getState().target, askPointElevation) : []),
       ];
     },
+    LapinFeatureLine: featureLineGrips,
     IfcPavement: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updatePath', args: { id: n.id, points: toPairs(pts) } })),
     LapinRetainingWall: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateRetainingWall', args: { id: n.id, points: toPairs(pts) } })),
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? outlineGrips({ pts }, (o) => ({ command: 'civil.updatePlanting', args: { id: n.id, points: toPairs(o.pts) } })) : []; },
@@ -509,15 +514,19 @@ const civil: LapinModule = {
     // A terrain's survey points, while "edit in 3D" is on: the MAX_POINT_GRIPS nearest the view's centre (pointGrips.ts).
     IfcGeographicElement: (n: NodeDto): Grip3D[] =>
       useTerrainEdit.getState().editPoints ? terrainPointGrips(n, useCamera.getState().target, terrainBase(n), MAX_POINT_GRIPS, useTerrainEdit.getState().gripMode) : [],
+    // A feature line's corners: a height grip on each.
+    LapinFeatureLine: featureLineGrips3d,
   },
   references: {
     IfcEarthworksCut: (n: NodeDto) => { if (isDitch(n)) return pathRefs(n); const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts, arcsOf(n.props.arcs, pts.length))] : []; },
+    LapinFeatureLine: featureLineRefs,
     IfcPavement: pathRefs,
     LapinRetainingWall: pathRefs,
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts)] : []; },
   },
   propertySections: [
     { id: 'terrain', label: 'Terrain', classes: ['IfcGeographicElement'], component: TerrainSection },
+    { id: 'featureLine', label: 'Feature line', classes: ['LapinFeatureLine'], component: FeatureLineSection, replacesFields: () => true },
     { id: 'earthwork', label: 'Earthwork', classes: ['IfcEarthworksCut'], component: EarthworkSection, replacesFields: () => true },
     { id: 'path', label: 'Path', classes: ['IfcPavement'], component: PathSection, replacesFields: () => true },
     { id: 'retainingWall', label: 'Retaining wall', classes: ['LapinRetainingWall'], component: RetainingWallSection, replacesFields: () => true },
