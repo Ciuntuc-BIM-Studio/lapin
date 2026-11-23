@@ -11078,6 +11078,25 @@ export const scenes = [
     },
   },
   {
+    // File → Speckle → Send… (docs/plan-speckle.md, S1): the account asked for the first time. The guide's runs have no Speckle
+    // server, so the picture is the sign-in; what follows a sign-in is checked against a server by SpeckleTests and by hand.
+    id: 'speckle',
+    touches: ['speckle'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      t.expect((await t.call('doc.query', { name: 'speckle.accounts', args: {} }))?.length === 0, 'no account is held before one signs in');
+      await t.button('File', { exact: true });
+      await t.page.locator('[data-menu=speckle-send]').click();
+      const dialog = t.page.locator('[aria-label="Send to Speckle"]');
+      await dialog.locator('input.speckle-token').waitFor({ timeout: 20_000 });
+      t.expect(await dialog.locator('input.speckle-server').inputValue() === 'https://app.speckle.systems', 'the server is Speckle\'s own unless another is given');
+      t.expect(await dialog.locator('input.speckle-token').getAttribute('type') === 'password', 'the token is typed hidden');
+      await t.shot('speckle-sign-in', { of: '[aria-label="Send to Speckle"]', pad: 0 });
+      await dialog.getByRole('button', { name: 'Cancel' }).click();
+    },
+  },
+  {
     // Lapin for the browser (decision 482, docs/html-export.md): the project as one .html file, opened from its file in the
     // browser with no server (the 3D model, a plan, the estimate, a click selecting across them), then opened again in Lapin.
     id: 'html-export',

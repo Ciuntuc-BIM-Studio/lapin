@@ -195,6 +195,34 @@ Un nor nu se exportă cu modelul: IFC și Fragments duc modelul, nu scanarea, ia
 
 Alegi ce exporți, ce fază și originea. **Ce** este **tot**, sau modelul **cum îl arată vederea**: vederea 3D din față, fără elementele și categoriile ei ascunse și fără etajele pe care nu le arată, cu straturile pe care le arată (fără finisaje sau doar miezurile). Când vederea e tăiată (tăietura de deasupra etajelor afișate, o secțiune arătată în 3D, cutia de secțiune), **Tăietură** taie și exportul acolo și închide fiecare tăietură în materialele ei, ca fișierul să arate ca ecranul. O vedere 3D care lasă ceva deoparte se exportă cum o arată, dacă nu alegi altfel. Fiecare element își păstrează clasa IFC, tipul și GlobalId-ul. Ca să schimbi modelul în sine, nu suprafețele lui, folosește **Exportă IFC**.
 
+## Speckle
+
+**Fișier → Speckle → Trimite…** trimite modelul la un server [Speckle](https://speckle.systems), de unde îl iau Revit, Rhino și Grasshopper, Power BI, Blender și vizualizatorul web al Speckle, fără IFC între ele. E în aplicația desktop, nu în Lapin pentru browser.
+
+![Trimite în Speckle: contul](shots/speckle-sign-in.webp)
+
+Prima dată, Lapin îți cere contul:
+
+- **Server**: cel al Speckle, `https://app.speckle.systems`, sau cel găzduit de firma ta.
+- **Token**: un token personal de acces pe care îl faci în Speckle, în profilul tău: **Developer settings → Access tokens → New token**, cu drepturile `streams:read`, `streams:write` și `profile:read`.
+- **Ține minte**: tokenul e păstrat în spațiul securizat al calculatorului (Keychain pe macOS, Credential Manager pe Windows, Secret Service, adică GNOME Keyring sau KWallet, pe Linux), ca Lapin să te conecteze singur data viitoare. Nu e scris niciodată în proiect, în setările Lapin sau într-un raport. **Deconectează-te** îl uită.
+
+Conectat, alegi **Proiect** (unul dintre ale tale de pe acel server), **Model** (cel în care trimiți) sau **un model nou…** cu numele lui, un **Mesaj** pentru versiune și **Ce** pleacă:
+
+- **tot modelul**;
+- **cum o arată vederea 3D**: vederea 3D din față, fără elementele, categoriile și etajele ei ascunse, tăiată cum e tăiată, cum o ia **Export 3D**;
+- **selecția**.
+
+**Trimite** arată cât a ajuns (convertește modelul, îl încarcă, face versiunea); **Renunță** îl oprește. La final, **Deschide versiunea în Speckle** o deschide în browser.
+
+Ce ajunge e un arbore Proiect → Clădire → Etaj → clasă IFC, cu elementele sitului lângă clădire. Fiecare element e un obiect Speckle cu:
+
+- **GlobalId**-ul lui ca id în Speckle, așa că următoarea trimitere face o versiune nouă a *acelorași* obiecte (Speckle arată ce s-a schimbat între ele);
+- suprafețele lui, aceleași pe care le scrie **Export 3D**, în metri, în culorile și transparența materialelor lui;
+- proprietățile lui: clasa IFC, numele, tipul, etajul, faza, materialele și straturile (fiecare cu grosimea lui), seturile de proprietăți și cantitățile, fiecare cu unitatea ei.
+
+Etajele pleacă drept niveluri Speckle, așa că Revit primește elementele pe nivelurile lor. Imaginile materialelor (texturile) și muchiile elementelor nu se trimit; o copie (un șir de scaune la fel) pleacă cu suprafețele ei proprii. Primirea unui model din Speckle în Lapin vine într-o versiune următoare.
+
 ## Lapin pentru browser
 
 **Fișier → Lapin pentru browser (.html)…** scrie proiectul ca o pagină web, un singur fișier .html pe care îl poți trimite oricui. Se deschide cu dublu clic în orice browser (Chrome, Edge, Safari, Firefox), pe orice calculator, fără internet și fără nimic de instalat:
