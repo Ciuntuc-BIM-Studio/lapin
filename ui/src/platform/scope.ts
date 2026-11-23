@@ -6,6 +6,7 @@
  * the module may finish its work then (resolve fittings, check).
  */
 
+import type { ComponentType } from 'react';
 import { create } from 'zustand';
 import type { NodeDto } from '../engine/protocol';
 import { useUi } from '../app/store';
@@ -21,6 +22,8 @@ export interface Scope {
   includes: (node: NodeDto) => boolean;
   /** True while the module takes Esc itself (a sketch edited inside the scope): the shell's Esc does not leave the scope then. */
   holdsEsc?: () => boolean;
+  /** The module's own part of the scope's bar, before Done (an MEP system's open ends). */
+  bar?: ComponentType;
   /** Called on Done, before the scope closes. */
   onDone?: () => void | Promise<void>;
 }

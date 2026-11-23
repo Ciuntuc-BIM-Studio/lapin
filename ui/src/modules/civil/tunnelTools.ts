@@ -7,6 +7,7 @@ import { Route, Spline } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute } from '../../engine/session';
 import type { ToolDef } from '../../platform/module';
+import { activate } from '../../platform/modules';
 import { specOut } from './portal';
 import { useTunnelDialog } from './tunnel';
 
@@ -37,6 +38,32 @@ export const drawTunnelAxis: ToolDef = {
     if (r?.id) { useUi.setState({ selection: r.id }); useTunnelDialog.setState({ id: r.id }); }
   },
 };
+
+/** The lining the next „Link to an axis” pick links. */
+let linking: string | null = null;
+
+/** A lining linked to an axis picked: where it starts on it, then where it ends; it follows that element from then on. */
+export const linkTunnelToAxis: ToolDef = {
+  id: 'civil.linkTunnelToAxis', label: 'Link the lining to an axis', icon: Route,
+  gesture: { kind: 'pickThenPoint', types: TUNNEL_AXES, hint: 'Click the axis where the lining starts, then where it ends' },
+  complete: async ({ entity, points }, ctx) => {
+    if (!entity || points.length < 2 || !linking) return;
+    const [a, b] = [points[0], points[points.length - 1]];
+    await ctx.execute('civil.updateTunnelLining', { id: linking, axis: { id: entity.id, from: [a.x, a.y], to: [b.x, b.y] } });
+    useUi.setState({ selection: linking });
+  },
+};
+
+/** Picks the axis a lining is linked to (the tool above). */
+export function linkToAxis(id: string) {
+  linking = id;
+  activate(linkTunnelToAxis);
+}
+
+/** A lining unlinked from its source (a copy of its axis as it is), or linked again to the same element between the same stations. */
+export const unlinkTunnel = (id: string) => execute('civil.unlinkTunnelLining', { id });
+export const relinkTunnel = (id: string, source: { id: string; from: number; to: number }) =>
+  execute('civil.updateTunnelLining', { id, axis: { id: source.id, from: source.from, to: source.to } });
 
 /** Opens the configurator: on a lining made before (its spec), or on a new one. */
 export function openTunnel(node?: { id: string; props: Record<string, unknown> }) {

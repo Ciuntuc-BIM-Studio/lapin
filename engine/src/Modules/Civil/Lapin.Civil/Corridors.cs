@@ -272,6 +272,7 @@ public static class SectionLooks
     public static (string? Material, string? Hatch) Of(IModelView m, Entity e, string key)
     {
         var mat = CorridorKinds.Of(e) is { } kind ? kind.MaterialOf(e, key)
+            : e.Class == IfcClass.Pavement && PathTypes.LayerMaterial(m, e, key) is { } layer ? layer
             : e.Class == IfcClass.Pavement ? key switch { "surface" or "kerb" or "sidewalk" or "gutter" => e.Str("surfaceMaterial"), "base" => e.Str("baseMaterial"), _ => null }
             : null;
         if (mat == null) return (null, null);
@@ -451,7 +452,7 @@ public static class Corridors
     {
         var c = ChainOf(e);
         var seg = c.SegmentAt(station);
-        if (e.Class == IfcClass.Pavement) { var t = Paths.TemplateOf(e); var red = RedLine(m, e, c); return (Paths.SectionAt(t, red(station)), t.Left, -t.Right); }
+        if (e.Class == IfcClass.Pavement) { var t = Paths.TemplateOf(e, m); var red = RedLine(m, e, c); return (Paths.SectionAt(t, red(station)), t.Left, -t.Right); }
         if (e.Class == RetainingWalls.Class && RetainingWalls.ProfileOf(m, e) is { } ring)
         {
             var parts = RetainingWalls.ProfileSectionAt(m, e, ring, station, seg);

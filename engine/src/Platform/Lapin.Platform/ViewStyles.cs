@@ -59,7 +59,7 @@ public static class ViewStyles
     public static readonly string[] LayerModes = ["all", "noFinishes", "core", "coreLoadBearing"];
     const string LayerModesText = "all, noFinishes, core or coreLoadBearing";
     public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch", "entourage", "entourageFill", "detail",
-        "minHatchSpacing", "smallScaleCut", "materialGraphicsSet", "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection", "beyond", "nearDepth"];
+        "minHatchSpacing", "smallScaleCut", "materialGraphicsSet", "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection", "beyond", "nearDepth", "halftoneOthers"];
 
     /// <summary>What a section or an elevation draws beyond its cut (decision 721): everything, the near part with the rest in the background, or the cut alone.</summary>
     public static readonly string[] BeyondModes = ["full", "near", "cut"];
@@ -99,8 +99,14 @@ public static class ViewStyles
     public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null, int Detail = PlanDetail.Lod350,
         bool WallFinishesPlan = true, bool WallFinishesSection = true, bool FloorFinishesPlan = true, bool FloorFinishesSection = true, string? LayersPlan = null, string? LayersSection = null,
         bool FinishElements = true, double MinHatchSpacing = Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing, SmallScaleCut? SmallScaleCut = null, string? MaterialGraphicsSet = null,
-        string Beyond = "full", double NearDepth = DefaultNearDepth)
+        string Beyond = "full", double NearDepth = DefaultNearDepth, bool? HalftoneOthers = null)
     {
+        /// <summary>
+        /// Whether its plans, sections and elevations draw what is not of its discipline halftone (an MEP plan's walls, doors and
+        /// furniture grey under the services): its own choice, else on for the MEP discipline's styles, off for the others.
+        /// </summary>
+        public bool HalftonesOthers => HalftoneOthers ?? string.Equals(Discipline, "MEP", StringComparison.OrdinalIgnoreCase);
+
         /// <summary>The partial structure display of a view of this kind (a plan, a section or an elevation, another).</summary>
         public string LayersFor(string? viewKind) => viewKind switch
         {
@@ -145,6 +151,8 @@ public static class ViewStyles
             // The same (decision 721): a style that draws everything beyond its cut saves as before.
             if (Beyond != "full") o["beyond"] = Beyond;
             if (Math.Abs(NearDepth - DefaultNearDepth) > 1e-9) o["nearDepth"] = NearDepth;
+            // The same: a style that leaves it to its discipline saves as before.
+            if (HalftoneOthers is { } ho) o["halftoneOthers"] = ho;
             return o;
         }
 
@@ -180,7 +188,9 @@ public static class ViewStyles
             (string?)o["materialGraphicsSet"] is { Length: > 0 } mgs ? mgs : null,
             // A style saved before what is seen beyond the cut (decision 721): everything, as before.
             (string?)o["beyond"] is { } bm && BeyondModes.Contains(bm) ? bm : "full",
-            Json.Number(o["nearDepth"]) is { } nd && nd >= 0 && double.IsFinite(nd) ? nd : DefaultNearDepth);
+            Json.Number(o["nearDepth"]) is { } nd && nd >= 0 && double.IsFinite(nd) ? nd : DefaultNearDepth,
+            // A style saved before the other disciplines' halftone: as its discipline says (on for MEP).
+            Own(o["halftoneOthers"]));
 
         /// <summary>A hatch spacing threshold (paper mm, 0 or more); null when it is not one.</summary>
         internal static double? Spacing(JsonNode? n) => Json.Number(n) is { } v && v >= 0 && double.IsFinite(v) ? v : null;
@@ -271,6 +281,7 @@ public static class ViewStyles
             // What it sees beyond its cut (decision 721), its own over its style's.
             Beyond = (string?)o["beyond"] is { } bm && BeyondModes.Contains(bm) ? bm : s.Beyond,
             NearDepth = Json.Number(o["nearDepth"]) is { } nd && nd >= 0 && double.IsFinite(nd) ? nd : s.NearDepth,
+            HalftoneOthers = Own(o["halftoneOthers"]) ?? s.HalftoneOthers,
         };
     }
 
@@ -414,6 +425,14 @@ public static class ViewStyles
         return BearingUnlessSaid.Contains(e.Class);
     }
 
+    /// <summary>A style as the interface reads it: as saved, with whether it draws the other disciplines halftone (its own choice or its discipline's).</summary>
+    static JsonObject WithHalftone(Style s)
+    {
+        var o = s.ToJson();
+        o["halftonesOthers"] = s.HalftonesOthers;
+        return o;
+    }
+
     static JsonArray Write(IEnumerable<Style> styles) => new(styles.Select(s => (JsonNode)s.ToJson()).ToArray());
 
     static void Save(ICommandContext ctx, IEnumerable<Style> styles)
@@ -449,6 +468,8 @@ public static class ViewStyles
         if (a.ContainsKey("materialGraphicsSet")) s = s with { MaterialGraphicsSet = (string?)a["materialGraphicsSet"] is { Length: > 0 } ms && ms != NoSet ? ms : null };
         if (a.ContainsKey("beyond")) s = s with { Beyond = a["beyond"] is null ? "full" : BeyondMode(a["beyond"]) };
         if (a.ContainsKey("nearDepth")) s = s with { NearDepth = a["nearDepth"] is null ? DefaultNearDepth : NearDepthOf(a["nearDepth"]) };
+        // The other disciplines halftone (true, false; null: as the discipline says).
+        if (a.ContainsKey("halftoneOthers")) s = s with { HalftoneOthers = a["halftoneOthers"] is null ? null : Own(a["halftoneOthers"]) ?? throw new CommandException("halftoneOthers is true, false or null.") };
         if (a.ContainsKey("finishElements")) s = s with { FinishElements = Own(a["finishElements"]) ?? throw new CommandException("finishElements is true or false.") };
         foreach (var f in FinishFields)
         {
@@ -522,7 +543,7 @@ public static class ViewStyles
 
     public static void Register(IModuleRegistry r)
     {
-        r.Query("viewStyle.list", (q, _) => Write(All(q.Model)));
+        r.Query("viewStyle.list", (q, _) => new JsonArray(All(q.Model).Select(s => (JsonNode)WithHalftone(s)).ToArray()));
 
         // A view's settings as it draws, and where each comes from (its style, or itself).
         r.Query("view.style", (q, a) =>
@@ -533,7 +554,7 @@ public static class ViewStyles
             return new JsonObject
             {
                 ["style"] = style.ToJson(), ["named"] = v.Str("viewStyle") != null,
-                ["resolved"] = Of(q.Model, v).ToJson(),
+                ["resolved"] = Of(q.Model, v) is var resolved ? WithHalftone(resolved) : null,
                 ["overrides"] = new JsonArray(Fields.Where(own.ContainsKey).Select(f => (JsonNode)f).ToArray()),
             };
         });

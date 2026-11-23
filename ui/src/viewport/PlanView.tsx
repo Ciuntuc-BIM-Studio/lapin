@@ -448,7 +448,10 @@ export function PlanView() {
     const g = tool?.gesture;
     if ((g?.kind !== 'polyline' && g?.kind !== 'threePoints') || !g.constrain || pts.length === 0) return a;
     const p = g.constrain(pts, a.point);
-    return p.x === a.point.x && p.y === a.point.y ? a : { ...a, point: p, kind: 'free', guides: [], lock: undefined };
+    if (p.x === a.point.x && p.y === a.point.y) return a;
+    // The live box measures the leg as the tool lays it (a run kept square), not as the snap aimed it.
+    liveCursor(p);
+    return { ...a, point: p, kind: 'free', guides: [], lock: undefined };
   };
 
   /** The start of the piece a chain tool drew last (its next piece's angle is measured from it); none when the chain starts again. */

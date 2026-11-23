@@ -307,53 +307,60 @@ public static class Tags
         return mk;
     }
 
+    /// <summary>
+    /// A tag of an element on a view, as <c>drafting.addTag</c> makes it (its arguments: viewId, element, at, field, tagType,
+    /// part or pick, text, leader, elbow, leaderShape, rotation, align): held where its element stands, so it follows it.
+    /// Other modules tag through it (the MEP module's Tag system), one step with their command.
+    /// </summary>
+    public static Entity Add(ICommandContext ctx, JsonObject a)
+    {
+        var viewId = (string?)a["viewId"] ?? throw new CommandException("A tag is put on a view.");
+        if (Views.Find(ctx.Model, viewId) == null) throw new CommandException("There is no such view.");
+        var e = ctx.Model.Get((string?)a["element"] ?? "") ?? throw new CommandException("Tag what? Pick an element.");
+        if (e.Class == IfcClass.Annotation) throw new CommandException("Tags are for the model's elements.");
+        var field = CleanField((string?)a["field"]);
+        if (a["field"] != null && field == null) throw new CommandException("Which field does the tag show? A mark, a name, a class, a type or a parameter's name.");
+        var at = a["at"] is JsonArray p && p.Count >= 2 ? new JsonArray(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0) : throw new CommandException("Where does the tag go?");
+        // Its type: the one named, else (no field asked for) the standards' type for the element's class (a door's marker), else none.
+        var book = DraftingResources.Book(ctx.Model);
+        var typeId = (string?)a["tagType"];
+        if (typeId != null && Standards.TagTypeOf(book, typeId) == null) throw new CommandException("There is no such tag type.");
+        var type = typeId != null ? Standards.TagTypeOf(book, typeId) : field == null ? Standards.TagTypeOf(book, null, e.Class) : null;
+        // A part of the element (decision 736): the one named, else the one the click (pick, in the view) landed on; its
+        // few words by default, and none of the class's own tag types (a window's marker is the window's).
+        string? part = null;
+        if ((string?)a["part"] is { Length: > 0 } named)
+            part = PartOf(ctx.Query, e, named) != null ? named : throw new CommandException("The element has no such part.");
+        else if (Pt(a["pick"]) is { } pick && Views.Find(ctx.Model, viewId) is { } pv
+            && ctx.Query.Services.All<IPartSource>().Any(s => s.PartsOf(ctx.Query, e).Any(x => x.Points != null))
+            && (Views.Spec(ctx.Model, pv, [], ctx.Query.Services).Spec ?? Views.Generate(ctx.Query, pv).Spec) is { } vs)
+            part = PartAt(ctx.Query, e, vs.Frame, pick, 0.01);
+        // A part's tag shows the part's few words unless another field or a tag type was asked for (the element's mark is the element's).
+        if (part != null && typeId == null && field is null or "mark") (type, field) = (null, "partLabel");
+        var attrs = new JsonObject { ["viewId"] = viewId, ["element"] = e.Id, ["field"] = field ?? "mark", ["at"] = at };
+        if (part != null) attrs["part"] = part;
+        // A text tag (issue #92): what it says, typed; its {…} read from the element.
+        var free = a["text"] is null ? null : ((string?)a["text"])?.Trim('\n', '\r', ' ') is { Length: > 0 } ft ? ft : throw new CommandException("Write what the text tag says.");
+        if (free != null) attrs["text"] = free;
+        if (type != null) attrs["tagType"] = type.Id;
+        if (a["leader"] is JsonValue lv && lv.TryGetValue<bool>(out var leader) && !leader) attrs["leader"] = false;
+        if (Pt(a["elbow"]) is { } elbow) attrs["elbow"] = J(elbow);
+        if (a["leaderShape"] is not null) attrs["leaderShape"] = LeaderShape(a["leaderShape"]) ?? throw new CommandException("A leader is straight or an elbow.");
+        if (Json.Number(a["rotation"]) is { } rot && Math.Abs(rot) > 1e-9) attrs["rotation"] = Math.Round(rot, 4);
+        if (a["align"] is JsonValue al && al.TryGetValue<bool>(out var aligned) && aligned) attrs["align"] = true;
+        attrs[TagLeaders.RevKey] = TagLeaders.Rev;
+        // Where the element stands now: the tag follows it from there (report #93).
+        TagHold.Hold(ctx.Model, attrs, e, Views.Find(ctx.Model, viewId) is { } v && TagHold.Axes(ctx.Model, v) is { Plan: true }, ctx.Query.Geometry);
+        var tag = new Entity(ctx.NewId(), IfcClass.Annotation, free != null ? "Text tag" : part != null ? $"Tag {TagText.Mark(ctx.Model, e)} {part}" : $"Tag {TagText.Mark(ctx.Model, e)}", attrs, "TAG");
+        ctx.Add(tag);
+        return tag;
+    }
+
     public static void Register(IModuleRegistry r)
     {
         // A tag of an element on a view: its mark (or name, class, type, any parameter), at a point; of one of its parts (decision 736:
         // part, a window's sill:inside or sill:outside; or pick, the click's point in the view, the part it lands on).
-        r.Command("addTag", "Tag", (ctx, a) =>
-        {
-            var viewId = (string?)a["viewId"] ?? throw new CommandException("A tag is put on a view.");
-            if (Views.Find(ctx.Model, viewId) == null) throw new CommandException("There is no such view.");
-            var e = ctx.Model.Get((string?)a["element"] ?? "") ?? throw new CommandException("Tag what? Pick an element.");
-            if (e.Class == IfcClass.Annotation) throw new CommandException("Tags are for the model's elements.");
-            var field = CleanField((string?)a["field"]);
-            if (a["field"] != null && field == null) throw new CommandException("Which field does the tag show? A mark, a name, a class, a type or a parameter's name.");
-            var at = a["at"] is JsonArray p && p.Count >= 2 ? new JsonArray(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0) : throw new CommandException("Where does the tag go?");
-            // Its type: the one named, else (no field asked for) the standards' type for the element's class (a door's marker), else none.
-            var book = DraftingResources.Book(ctx.Model);
-            var typeId = (string?)a["tagType"];
-            if (typeId != null && Standards.TagTypeOf(book, typeId) == null) throw new CommandException("There is no such tag type.");
-            var type = typeId != null ? Standards.TagTypeOf(book, typeId) : field == null ? Standards.TagTypeOf(book, null, e.Class) : null;
-            // A part of the element (decision 736): the one named, else the one the click (pick, in the view) landed on; its
-            // few words by default, and none of the class's own tag types (a window's marker is the window's).
-            string? part = null;
-            if ((string?)a["part"] is { Length: > 0 } named)
-                part = PartOf(ctx.Query, e, named) != null ? named : throw new CommandException("The element has no such part.");
-            else if (Pt(a["pick"]) is { } pick && Views.Find(ctx.Model, viewId) is { } pv
-                && ctx.Query.Services.All<IPartSource>().Any(s => s.PartsOf(ctx.Query, e).Any(x => x.Points != null))
-                && (Views.Spec(ctx.Model, pv, [], ctx.Query.Services).Spec ?? Views.Generate(ctx.Query, pv).Spec) is { } vs)
-                part = PartAt(ctx.Query, e, vs.Frame, pick, 0.01);
-            // A part's tag shows the part's few words unless another field or a tag type was asked for (the element's mark is the element's).
-            if (part != null && typeId == null && field is null or "mark") (type, field) = (null, "partLabel");
-            var attrs = new JsonObject { ["viewId"] = viewId, ["element"] = e.Id, ["field"] = field ?? "mark", ["at"] = at };
-            if (part != null) attrs["part"] = part;
-            // A text tag (issue #92): what it says, typed; its {…} read from the element.
-            var free = a["text"] is null ? null : ((string?)a["text"])?.Trim('\n', '\r', ' ') is { Length: > 0 } ft ? ft : throw new CommandException("Write what the text tag says.");
-            if (free != null) attrs["text"] = free;
-            if (type != null) attrs["tagType"] = type.Id;
-            if (a["leader"] is JsonValue lv && lv.TryGetValue<bool>(out var leader) && !leader) attrs["leader"] = false;
-            if (Pt(a["elbow"]) is { } elbow) attrs["elbow"] = J(elbow);
-            if (a["leaderShape"] is not null) attrs["leaderShape"] = LeaderShape(a["leaderShape"]) ?? throw new CommandException("A leader is straight or an elbow.");
-            if (Json.Number(a["rotation"]) is { } rot && Math.Abs(rot) > 1e-9) attrs["rotation"] = Math.Round(rot, 4);
-            if (a["align"] is JsonValue al && al.TryGetValue<bool>(out var aligned) && aligned) attrs["align"] = true;
-            attrs[TagLeaders.RevKey] = TagLeaders.Rev;
-            // Where the element stands now: the tag follows it from there (report #93).
-            TagHold.Hold(ctx.Model, attrs, e, Views.Find(ctx.Model, viewId) is { } v && TagHold.Axes(ctx.Model, v) is { Plan: true }, ctx.Query.Geometry);
-            var tag = new Entity(ctx.NewId(), IfcClass.Annotation, free != null ? "Text tag" : part != null ? $"Tag {TagText.Mark(ctx.Model, e)} {part}" : $"Tag {TagText.Mark(ctx.Model, e)}", attrs, "TAG");
-            ctx.Add(tag);
-            return new JsonObject { ["id"] = tag.Id };
-        });
+        r.Command("addTag", "Tag", (ctx, a) => new JsonObject { ["id"] = Add(ctx, a).Id });
 
         // A tag changed (report #64; issue #72: tagType chosen keeps it over the tag rules, byRules gives it back to them, shown false
         // switches it off; issue #92: text, a text tag's own words): its head moved (at: an elbow leader's knee), its leader bent (elbow; null: straight again),

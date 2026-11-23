@@ -163,37 +163,81 @@ public static partial class Runs
     /// </summary>
     public static List<Vec3> Centreline(IModelView m, Entity run, Setting s, out double z0) => Centreline(m, run, s, out z0, out _);
 
-    /// <summary>A run's own elevations, one per point (above its storey; null: the run's elevation), when it has them.</summary>
-    public static List<double?>? LevelsOf(Entity run)
+    /// <summary>
+    /// A point's own elevations above its storey: where the run arrives at it and
+    /// where it leaves (null: the run's elevation). They differ where the run
+    /// rises or drops at the point, as it does where its plane changes while it
+    /// is drawn: a vertical leg there, with a bend at each end, the run one
+    /// element still. Stored as a number, or as <c>[in, out]</c> for a rise.
+    /// </summary>
+    public readonly record struct PointLevel(double? In, double? Out)
+    {
+        public static PointLevel At(double? level) => new(level, level);
+        public bool Rises => In != Out;
+        public bool None => In == null && Out == null;
+    }
+
+    /// <summary>One point's levels as stored or given: a number, null, or [in, out].</summary>
+    public static PointLevel LevelOf(JsonNode? x) => x is JsonArray p && p.Count == 2 ? new(Json.Number(p[0]), Json.Number(p[1])) : PointLevel.At(Json.Number(x));
+
+    static JsonNode? Num(double? v) => v is { } x ? JsonValue.Create(Math.Round(x, 4)) : null;
+
+    /// <summary>Levels as stored: a number where the run passes at one height, [in, out] where it rises; null when none is the run's own.</summary>
+    public static JsonArray? LevelsJson(IEnumerable<PointLevel> levels)
+    {
+        var all = levels.ToList();
+        if (all.All(l => l.None)) return null;
+        return new JsonArray(all.Select(l => l.Rises ? new JsonArray(Num(l.In), Num(l.Out)) : Num(l.In)).ToArray());
+    }
+
+    /// <summary>The run's own levels, point by point (a rise is a point whose two differ), when it has any.</summary>
+    public static List<PointLevel>? PointLevelsOf(Entity run)
     {
         if (run.Attrs["levels"] is not JsonArray a || a.Count != Points(run).Count) return null;
-        var o = a.Select(x => Json.Number(x)).ToList();
-        return o.Any(x => x != null) ? o : null;
+        var o = a.Select(LevelOf).ToList();
+        return o.Any(l => !l.None) ? o : null;
     }
+
+    /// <summary>A run's own elevations, one per point (above its storey; null: the run's elevation), when it has them; at a rise, the level the run arrives at.</summary>
+    public static List<double?>? LevelsOf(Entity run) => PointLevelsOf(run)?.Select(l => l.In).ToList();
 
     /// <summary>
     /// Levels carried onto new points: a point where an old one was keeps its
-    /// level; a new one takes the level of the old line where it falls
-    /// (between two levels, in proportion). Null when the run had none.
+    /// levels (a rise its two); with as many points as before, one moved off the
+    /// old line keeps the levels of the point it was; a new one takes the level
+    /// of the old line where it falls (between two levels, in proportion). Null
+    /// when the run had none. <paramref name="byIndex"/>: the same points
+    /// moved (a handle dragged, a leg slid), each keeping its own levels
+    /// wherever it went, along its leg too.
     /// </summary>
-    public static JsonArray? RemapLevels(IReadOnlyList<Vec2> oldPts, IReadOnlyList<double?>? oldLevels, IReadOnlyList<Vec2> newPts, double baseLevel)
+    public static JsonArray? RemapLevels(IReadOnlyList<Vec2> oldPts, IReadOnlyList<PointLevel>? oldLevels, IReadOnlyList<Vec2> newPts, double baseLevel, bool byIndex = false)
     {
         if (oldLevels == null || oldPts.Count != oldLevels.Count || oldPts.Count < 2) return null;
-        var o = new JsonArray();
-        foreach (var p in newPts)
+        if (byIndex && newPts.Count == oldPts.Count) return LevelsJson(oldLevels);
+        var o = new List<PointLevel>();
+        for (var k = 0; k < newPts.Count; k++)
         {
-            var same = Enumerable.Range(0, oldPts.Count).FirstOrDefault(i => (oldPts[i] - p).Length < 1e-6, -1);
-            if (same >= 0) { o.Add(oldLevels[same] is { } v ? (JsonNode)v : null); continue; }
-            var (station, _) = Pipes.Nearest(oldPts, p);
+            var p = newPts[k];
+            var same = k < oldPts.Count && (oldPts[k] - p).Length < 1e-6 ? k : Enumerable.Range(0, oldPts.Count).FirstOrDefault(i => (oldPts[i] - p).Length < 1e-6, -1);
+            if (same >= 0) { o.Add(oldLevels[same]); continue; }
+            var (station, off) = Pipes.Nearest(oldPts, p);
+            if (newPts.Count == oldPts.Count && off > 1e-6) { o.Add(oldLevels[k]); continue; }
             var (_, leg, _) = Pipes.AtStation(oldPts, station);
-            double a0 = oldLevels[leg] ?? baseLevel, a1 = oldLevels[Math.Min(leg + 1, oldPts.Count - 1)] ?? baseLevel;
+            var next = Math.Min(leg + 1, oldPts.Count - 1);
+            // Along a leg: from where it leaves its first point to where it arrives at the next.
+            double? from = oldLevels[leg].Out, to = oldLevels[next].In;
             double s0 = 0; for (var i = 1; i <= leg; i++) s0 += (oldPts[i] - oldPts[i - 1]).Length;
-            var len = (oldPts[Math.Min(leg + 1, oldPts.Count - 1)] - oldPts[leg]).Length;
+            var len = (oldPts[next] - oldPts[leg]).Length;
             var t = len > 1e-9 ? Math.Clamp((station - s0) / len, 0, 1) : 0;
-            o.Add(oldLevels[leg] == null && oldLevels[Math.Min(leg + 1, oldPts.Count - 1)] == null ? null : (JsonNode)Math.Round(a0 + (a1 - a0) * t, 4));
+            double a0 = from ?? baseLevel, a1 = to ?? baseLevel;
+            o.Add(PointLevel.At(from == null && to == null ? null : Math.Round(a0 + (a1 - a0) * t, 4)));
         }
-        return o;
+        return LevelsJson(o);
     }
+
+    /// <summary>The same, from levels of one height per point.</summary>
+    public static JsonArray? RemapLevels(IReadOnlyList<Vec2> oldPts, IReadOnlyList<double?>? oldLevels, IReadOnlyList<Vec2> newPts, double baseLevel) =>
+        RemapLevels(oldPts, oldLevels?.Select(PointLevel.At).ToList(), newPts, baseLevel);
 
     /// <summary>
     /// The run's route in plan as built, what the plan draws: a connected end
@@ -204,13 +248,13 @@ public static partial class Runs
     /// is written back into the run when what an end is on moves
     /// (<see cref="Refollow"/>), so the run's points are where it is drawn.
     /// </summary>
-    static (List<Vec2> Points, List<int?> Source, List<double?>? Levels, Vec3? StartAt, Vec3? EndAt) Follow(IModelView m, Entity run, Setting s, double zRun, HashSet<string>? visiting = null)
+    static (List<Vec2> Points, List<int?> Source, List<PointLevel>? Levels, Vec3? StartAt, Vec3? EndAt) Follow(IModelView m, Entity run, Setting s, double zRun, HashSet<string>? visiting = null)
     {
         // The runs whose centrelines are being built for this one: a junction back onto one of them (a loop left by an older file) is not followed.
         visiting ??= [];
         visiting.Add(run.Id);
         var pts = Points(run);
-        var levels = LevelsOf(run);
+        var levels = PointLevelsOf(run);
         var src = Enumerable.Range(0, pts.Count).Select(i => (int?)i).ToList();
         Vec3? startAt = null, endAt = null;
         if (pts.Count < 2) return (pts, src, levels, null, null);
@@ -252,7 +296,7 @@ public static partial class Runs
             var d = pts[1] - pts[0];
             pts.Insert(1, Math.Abs(d.X) >= Math.Abs(d.Y) ? new Vec2(pts[1].X, pts[0].Y) : new Vec2(pts[0].X, pts[1].Y));
             src.Insert(1, null);
-            levels?.Insert(1, levels[0] is { } l0 && levels[2] is { } l2 ? (l0 + l2) / 2 : levels[0] ?? levels[2]);
+            if (levels != null) levels.Insert(1, PointLevel.At(levels[0].Out is { } l0 && levels[1].In is { } l1 ? (l0 + l1) / 2 : levels[0].Out ?? levels[1].In));
             // A material that turns less than a right angle cuts the elbow into the turns it may make.
             var laid = laying.Lay(s.Service, s.Material, pts);
             if (laid.Count != pts.Count) { pts = laid; src = [.. pts.Select((_, k) => k == 0 ? (int?)0 : k == pts.Count - 1 ? 1 : null)]; levels = null; }
@@ -285,9 +329,15 @@ public static partial class Runs
         // The run's own elevations, set in its profile: each point at its own, the ends jogging to their ports.
         if (levels != null)
         {
-            if (startAt is { } sl && Math.Abs(sl.Z - (z0 + (levels[0] ?? s.Elevation))) > 1e-6) { o.Add(sl); vertexOf.Add(null); }
-            for (var i = 0; i < pts.Count; i++) { o.Add(new Vec3(pts[i].X, pts[i].Y, z0 + (levels[i] ?? s.Elevation))); vertexOf.Add(src[i]); }
-            if (endAt is { } el && Math.Abs(el.Z - (z0 + (levels[^1] ?? s.Elevation))) > 1e-6) { o.Add(el); vertexOf.Add(null); }
+            if (startAt is { } sl && Math.Abs(sl.Z - (z0 + (levels[0].In ?? s.Elevation))) > 1e-6) { o.Add(sl); vertexOf.Add(null); }
+            for (var i = 0; i < pts.Count; i++)
+            {
+                // A rise at the point (its plane changed there): straight up or down, the point once at each height.
+                double zIn = z0 + (levels[i].In ?? s.Elevation), zOut = z0 + (levels[i].Out ?? s.Elevation);
+                o.Add(new Vec3(pts[i].X, pts[i].Y, zIn)); vertexOf.Add(src[i]);
+                if (Math.Abs(zOut - zIn) > 1e-6) { o.Add(new Vec3(pts[i].X, pts[i].Y, zOut)); vertexOf.Add(src[i]); }
+            }
+            if (endAt is { } el && Math.Abs(el.Z - (z0 + (levels[^1].Out ?? s.Elevation))) > 1e-6) { o.Add(el); vertexOf.Add(null); }
             return o;
         }
         if (s.Slope > 1e-9)
@@ -337,6 +387,9 @@ public static partial class Runs
         var color = s.Service switch { Services.Heating => "#c0392b", Services.ColdWater => "#2e86de", Services.HotWater => "#e67e22", Services.Drainage => "#7f8c8d", Services.Electrical => "#f1c40f",
             Services.Gas => "#e1b12c", Services.FuelOil => "#8e5b3a", Services.FireAlarm => "#d35400", Services.FireWater => "#c0392b", _ => "#95a5a6" };
         var lines = s.Pair ? new[] { ("supply", Shift(line, s.Separation / 2)), ("return", Shift(line, -s.Separation / 2)) } : [("pipe", line)];
+        // On the plan: the system's colour and line type (the return's for a pair's return), dashed where the run lies over the cut.
+        var system = SystemOf(m, run);
+        var style = system != null ? Systems.StyleOf(system) : SystemStyle.For(s.Service);
         foreach (var (name, pts) in lines)
         {
             var (legs, bends) = Pipes.Fillet(pts, Math.Max(radius * 2 * s.BendRadius, radius * 2));
@@ -349,7 +402,9 @@ public static partial class Runs
                 for (var i = 1; i < bend.Count; i++)
                     if (Pipes.Tube(bend[i - 1], bend[i], radius, 0, "bend") is { } t) elbows.Add(t);
             if (elbows.Count > 0) parts.Add(new GeometryPart("Bends", color, Openings.Combine(elbows, "bend"), null, "bend:" + name));
-            plan.Add(new PlanItem("symbol", false, Spots(pts)));
+            var look = style.Of(name);
+            foreach (var (piece, lo, hi) in PlanPieces(pts))
+                plan.Add(new PlanItem("symbol", false, piece, Style: look.Spec) { Heights = (lo, hi), AboveStyle = look.AboveSpec });
         }
         // A tee where a branch leaves: a short stub across the trunk at the junction.
         foreach (var (branch, station) in BranchesOf(m, run.Id))
@@ -359,7 +414,8 @@ public static partial class Runs
             var across = new Vec3(-dir.Y, dir.X, 0);
             var centre = new Vec3(at.X, at.Y, z);
             if (Pipes.Tube(centre - across * (radius * 1.6), centre + across * (radius * 1.6), radius * 1.15, 0, "tee") is { } tee) parts.Add(new GeometryPart("Tee", color, tee, null, "tee:" + branch.Id));
-            plan.Add(new PlanItem("heavy", true, [at + across.Xy * 0.03, at - across.Xy * 0.03, at - across.Xy * 0.03 + dir * 0.03, at + across.Xy * 0.03 + dir * 0.03]));
+            plan.Add(new PlanItem("heavy", true, [at + across.Xy * 0.03, at - across.Xy * 0.03, at - across.Xy * 0.03 + dir * 0.03, at + across.Xy * 0.03 + dir * 0.03], Style: style.Line.Spec with { Pattern = null })
+                { Heights = (z, z), AboveStyle = style.Line.AboveSpec });
         }
         // Gas and fuel oil go through walls in sleeves: a short tube round the pipe across each wall it crosses, two ticks on the plan.
         foreach (var sleeve in Sleeves.Of(m, run, s, line))
@@ -367,9 +423,12 @@ public static partial class Runs
             if (Pipes.Tube(sleeve.A, sleeve.B, sleeve.Diameter / 2, 0, "sleeve") is { } tube) parts.Add(new GeometryPart("Sleeve", "#7f8c8d", tube, null, "sleeve:" + sleeve.WallId));
             var d = (sleeve.B.Xy - sleeve.A.Xy).Normalized();
             var n = new Vec2(-d.Y, d.X) * Math.Max(0.04, sleeve.Diameter);
-            plan.Add(new PlanItem("symbol", false, [sleeve.A.Xy + n, sleeve.A.Xy - n]));
-            plan.Add(new PlanItem("symbol", false, [sleeve.B.Xy + n, sleeve.B.Xy - n]));
+            var tick = style.Line.Spec with { Pattern = null };
+            plan.Add(new PlanItem("symbol", false, [sleeve.A.Xy + n, sleeve.A.Xy - n], Style: tick));
+            plan.Add(new PlanItem("symbol", false, [sleeve.B.Xy + n, sleeve.B.Xy - n], Style: tick));
         }
+        // A rise or drop inside the run (its plane changed there): the rise node's sign (RunRises.cs).
+        plan.AddRange(RiseMarks(line));
         plan.Add(new PlanItem("hit", false, Spots(line)));
         return new ElementGeometry(parts, plan, line.Select(p => p.Xy).ToList());
     }
@@ -384,6 +443,25 @@ public static partial class Runs
     {
         var o = new List<Vec2>();
         foreach (var p in line) if (o.Count == 0 || (p.Xy - o[^1]).Length > 1e-9) o.Add(p.Xy);
+        return o;
+    }
+
+    /// <summary>
+    /// A 3D line as the plan draws it by its heights: its legs in plan (a vertical jog draws nothing), those that lie level at
+    /// one height joined into one piece, each with the heights it spans (a plan draws it overhead over its cut, beyond under its level).
+    /// </summary>
+    public static List<(List<Vec2> Points, double Lo, double Hi)> PlanPieces(List<Vec3> line)
+    {
+        var o = new List<(List<Vec2> Points, double Lo, double Hi)>();
+        for (var i = 1; i < line.Count; i++)
+        {
+            var (a, b) = (line[i - 1], line[i]);
+            if ((b.Xy - a.Xy).Length < 1e-9) continue;
+            var (lo, hi) = (Math.Min(a.Z, b.Z), Math.Max(a.Z, b.Z));
+            if (o.Count > 0 && o[^1] is var last && hi - lo < 1e-6 && last.Hi - last.Lo < 1e-6 && Math.Abs(last.Lo - lo) < 1e-6 && (last.Points[^1] - a.Xy).Length < 1e-9)
+                last.Points.Add(b.Xy);
+            else o.Add(([a.Xy, b.Xy], lo, hi));
+        }
         return o;
     }
 
@@ -445,11 +523,16 @@ public static partial class Runs
     public static Entity Draw(ICommandContext ctx, Entity system, string storeyId, JsonObject a)
     {
         var service = Systems.Service(system);
-        var attrs = new JsonObject { ["systemId"] = system.Id, ["points"] = J(Lay(service, (string?)a["material"] ?? Systems.Of(system).Material, PointsArg(a["points"]))) };
+        var given = PointsArg(a["points"]);
+        var material = (string?)a["material"] ?? Systems.Of(system).Material;
+        var baseLevel = Json.Number(a["elevation"]) ?? Systems.Of(system).ElevationOf((string?)a["plane"]);
+        // Its own levels, one per point drawn (a number, null, or [in, out] where its plane changed: a rise there), laid with the points.
+        var (laid, levels) = LayWithLevels(service, material, given, a["levels"] is JsonArray lv && lv.Count == given.Count ? [.. lv.Select(LevelOf)] : null, baseLevel);
+        var attrs = new JsonObject { ["systemId"] = system.Id, ["points"] = J(laid) };
         foreach (var k in new[] { "elevation", "size", "separation", "slope", "height", "cover", "offset" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
         if (a["warningTape"] is JsonValue wt && wt.TryGetValue<bool>(out var tape)) attrs["warningTape"] = tape;
         if ((string?)a["along"] is { Length: > 0 } along) attrs["along"] = along;
-        if (a["levels"] is JsonArray lv && lv.Count == ((JsonArray)attrs["points"]!).Count) attrs["levels"] = lv.DeepClone();
+        if (levels != null) attrs["levels"] = levels;
         if ((string?)a["plane"] is "floor" or "ceiling" or "wall") attrs["plane"] = (string)a["plane"]!;
         if (a["pair"] is JsonValue pv && pv.TryGetValue<bool>(out var pair)) attrs["pair"] = pair;
         if ((string?)a["material"] is { Length: > 0 } mat) attrs["material"] = mat;
@@ -554,7 +637,8 @@ public static partial class Runs
             var n = Points(run).Count;
             if (a["levels"] is not JsonArray given || given.Count != n) throw new CommandException($"One elevation per point ({n}), or null.");
             var attrs = run.CloneAttrs();
-            if (given.Any(x => Json.Number(x) != null)) attrs["levels"] = new JsonArray(given.Select(x => Json.Number(x) is { } v ? (JsonNode)Math.Round(v, 4) : null).ToArray());
+            // A point's [in, out]: the run rises or drops there.
+            if (LevelsJson(given.Select(LevelOf)) is { } levels) attrs["levels"] = levels;
             else attrs.Remove("levels");
             ctx.Replace(run.With(attrs: attrs));
             return null;
@@ -564,10 +648,11 @@ public static partial class Runs
         {
             var run = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("Which run?");
             if (!IsRun(run)) throw new CommandException("Not a run.");
-            // The elevations follow the points (or come with them); the connected ends stay on what they are on.
-            SetRoute(ctx, run, PointsArg(a["points"]), a["levels"] as JsonArray);
+            // The elevations follow the points, each its own wherever it is dragged (or come with them); the connected ends stay on what they are on.
+            SetRoute(ctx, run, PointsArg(a["points"]), a["levels"] as JsonArray, byIndex: true);
             return null;
         });
         RegisterRouteEdits(r);
+        RegisterRises(r);
     }
 }

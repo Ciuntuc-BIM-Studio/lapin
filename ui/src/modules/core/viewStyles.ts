@@ -40,6 +40,8 @@ export interface ViewStyle { id: string; name: string; discipline: string | null
   wallFinishesPlan?: boolean; wallFinishesSection?: boolean; floorFinishesPlan?: boolean; floorFinishesSection?: boolean;
   /** Its plans' and its sections' and elevations' partial structure display (decision 500); unset, its layers. */
   layersPlan?: LayerMode | null; layersSection?: LayerMode | null;
+  /** Whether its views draw what is not of their discipline halftone (an MEP plan's architecture): its own choice (null: the discipline's, on for MEP), and as it resolves. */
+  halftoneOthers?: boolean | null; halftonesOthers?: boolean;
   /** Whether the partial structure display leaves out the separate finish elements (rooms' finishes, skirtings, finish coverings) with the finish layers (decision 502); on unless false (a project made before). */
   finishElements?: boolean;
   /** Hatch lines closer than this on paper (mm, default 0.7) are not drawn; 0 draws all (docs/plan-material-graphics.md, stage 1). */

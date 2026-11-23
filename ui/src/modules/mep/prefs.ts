@@ -11,6 +11,10 @@ interface MepPrefs {
   pair: boolean | null;
   /** New runs: the plane they run in (null: the system's default). */
   plane: Plane | null;
+  /** New runs: an elevation of their own above the storey (m), over the plane; null: the plane's. */
+  elevation: number | null;
+  /** Runs drawn with no laying rules to follow keep their legs square to the plan's axes. */
+  square: boolean;
   /** Connect: the run end picked first, waiting for what it joins. */
   pending: { runId: string; end: 'start' | 'end' } | null;
   /** A gas main: how far to the left of the line it follows (m; right when negative), and its cover (m). */
@@ -20,6 +24,6 @@ interface MepPrefs {
   pendingMain: string | null;
 }
 
-export const useMep = create<MepPrefs>(() => ({ systemId: null, pair: null, plane: null, pending: null, mainOffset: 1, mainDepth: 0.9, pendingMain: null }));
+export const useMep = create<MepPrefs>(() => ({ systemId: null, pair: null, plane: null, elevation: null, square: true, pending: null, mainOffset: 1, mainDepth: 0.9, pendingMain: null }));
 
 export const setMep = (patch: Partial<MepPrefs>): void => useMep.setState(patch);

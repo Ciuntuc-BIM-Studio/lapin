@@ -15,6 +15,8 @@ import { unitLabel } from '../engine/unitsStore';
 import { useInterface } from '../app/interface';
 import { t } from '../i18n';
 import { autoholdOn, useAutohold } from '../app/autohold';
+import { useUi } from '../app/store';
+import { findTool } from '../platform/modules';
 
 type ToScreen = (p: Vec2) => { x: number; y: number };
 
@@ -27,6 +29,8 @@ function relAngle(live: ReturnType<typeof useLive.getState>, end: Vec2): number 
 export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
   const live = useLive();
   const autohold = useAutohold((s) => s.on);
+  // What the tool drawing adds beside the cursor (an MEP run's plane and elevation).
+  const Info = useUi((s) => (s.tool ? findTool(s.tool)?.cursorInfo : undefined));
   const box = useRef<HTMLDivElement>(null);
   // The box stays inside the view it is drawn over: near the right edge it moves left, it never lies over the panels beside it.
   useLayoutEffect(() => {
@@ -66,6 +70,7 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
         {cell('ang', '∠', formatAngle(m.ang), '°')}
         {rel != null && cell('rel', '∡', formatAngle(rel), '°')}
       </>}
+      {Info && live.owner === 'tool' && <Info />}
       {live.rect && !liveHintSeen() && <span className="live-hint text" data-testid="live-hint">{live.mode === 'rect' ? t('Space: length ∠ angle') : t('Space: width × height')}</span>}
       {autohold && <span className="live-tag" data-testid="autohold-hint" title={t('Autohold: the drag follows the pointer without the button. Click to drop it here')}>{t('Autohold')}</span>}
       {live.rect && <span className="live-hint" title={t('Space switches length and angle with width and height')}>␣</span>}

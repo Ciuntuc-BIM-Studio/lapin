@@ -15,6 +15,12 @@ Cerut pe 23.11.2026 de utilizator: un generator de geometrie pentru pereții tun
 2. **Ce face:** amândouă: portal/culee cu aripi și, într-o etapă ulterioară, căptușeala tunelului (o boltă: un profil transversal dus de-a lungul unui aliniament).
 3. **IFC configurabil**, ca setare pe element sau pe tip: aripile ca `IfcWall` RETAININGWALL simplu, sau un ansamblu (IFC 4.3: `IfcBridgePart` ABUTMENT cu aripile; tunelul `IfcTunnelPart` dacă schema scrisă îl are; în IFC4, `IfcWall`/`IfcElementAssembly` ca înlocuitori).
 
+**Răspunsurile la întrebările lui S4 (23.11.2026, „mergi pe recomandări”):**
+
+- (a) **Legată, implicit.** Căptușeala preluată de pe o axă ține minte elementul și cele două stații și, când se schimbă geometria lui în plan sau linia roșie, se reface în același pas de anulare, fiecare bloc sau inel cu GlobalId-ul lui; stațiile care ies din noua lungime se opresc la capete, cu o notă. **Dezleagă** (comandă și buton în proprietăți) o face copia de până acum; **Leagă de o axă…** o leagă din nou. Dacă sursa e ștearsă, căptușeala rămâne, dezlegată, cu o notă; nu se șterge niciodată. Căptușelile făcute înainte rămân copii, neschimbate.
+- (b) **IFC rămâne proxy pe bloc sau inel** sub ansamblul „Tunnel lining”; se trece la entitățile de tunel când IFC le va avea.
+- (c) **Inelele TBM pe segmente** (de exemplu 5 + cheie) și **inelele conice** vin mai târziu, într-o etapă separată.
+
 ## Proiectul (analiza aprobată)
 
 - **Parametri pe segment:** lungimea și unghiul în plan față de segmentul dinainte; fructul feței și al spatelui (de exemplu 10:1); cota coronamentului la început și la capăt (liniar, mai târziu o curbă); grosimea la coronament și la bază; talpa (consola față, consola spate, pintenul, cota).
@@ -131,12 +137,23 @@ Nimic nou. Geometria e codul propriu Lapin (MIT); booleanele sunt manifold, deja
 
 - Capătul oblic doar pe aliniament cu pantă constantă (altfel rămâne drept, cu o notă).
 - Inelele TBM nu sunt împărțite în segmente și nu au conicitate pentru curbe.
-- Căptușeala nu urmează singură drumul dacă acesta se schimbă: se preia axa din nou (`civil.updateTunnelLining {axis}`).
+- ~~Căptușeala nu urmează singură drumul dacă acesta se schimbă~~: legată de sursă din 23.11.2026 (mai jos).
 - Golurile (nișe, galerii transversale), armarea, hidroizolația ca strat propriu și excavația (volumul săpăturii) vin mai târziu.
+
+**Căptușeala legată de axa sursei (23.11.2026, ramura `feat/civil-followups`, decizia 799).** Răspunsul (a) de mai sus.
+
+- **Legătura:** `axisSource {id, from, to, linked: true}` (plus `level` pentru o sursă fără linie roșie: un zid, o linie desenată). `civil.addTunnelLining {axis}` și `civil.updateTunnelLining {axis}` leagă implicit (`linked: false` face o copie, ca înainte). O căptușeală salvată înainte nu are `linked`: rămâne copia ei, fără `IProjectUpgrade` (forma datelor nu s-a schimbat pentru ea).
+- **Urmarea:** un `ICommandFollowUp` (`TunnelLinks.cs`, Civil), după orice comandă, în pasul ei: căptușelile legate a căror sursă s-a schimbat (sau al căror teren, pentru o sursă cu linia roșie după teren) își iau axa din nou prin același cod ca la preluare (`Tunnels.TakeFrom`); se rescriu doar axa și linia roșie (`path`, `stationStart`, `horizontal`, `profile`, `curves`), stațiile bifate și secțiunile alese rămân, iar dacă nimic nu diferă nu se scrie nimic. Blocurile sunt numerotate de la început, deci GlobalId-urile rămân. O căptușeală care urmează alta urmează și ea (până la patru niveluri).
+- **Stațiile:** cele cerute rămân în `axisSource`; când sursa e mai scurtă, căptușeala se oprește la capătul ei, cu o notă (în proprietăți și în diagnosticul geometriei), și revine la stațiile cerute când sursa crește. Sub un metru între ele: dezlegată, cu o notă.
+- **Dezlegată:** `civil.unlinkTunnelLining {id}` (o copie a axei de acum, sursa rămâne numită ca s-o poți lega din nou); sursa ștearsă sau fără axă: dezlegată, cu o notă, niciodată ștearsă; axa editată pe căptușeala însăși (linia roșie în configuratorul de coridor, o mutare, punctele trase): dezlegată, cu o notă. O schimbare a secțiunii, a blocurilor sau a capetelor păstrează legătura.
+- **Interfața:** în proprietăți, rândul **Axis**: „follows it” cu **Unlink**, sau „a copy” cu **Link again** (aceeași sursă, aceleași stații) și **Link to an axis…** (clic pe axă la început, apoi la sfârșit); nota sub el. Configuratorul de coridor spune că o axă legată se schimbă la sursă. Textele în toate cele 11 limbi.
+- **Teste:** `TunnelLinkTests` (6): drumul schimbat (în plan și linia roșie), căptușeala urmează într-un pas, GlobalId-urile la fel, anularea; stațiile oprite la capăt cu notă și revenite, sub un metru dezlegată; dezlegată nu mai urmează, legată din nou urmează; sursa ștearsă: rămâne, dezlegată, cu notă, iar anularea o leagă la loc; axa editată pe căptușeală o dezleagă, secțiunea nu; o copie de dinainte rămâne neschimbată. `tunnel.test.ts`.
+
+**Ce a rămas:** inelele TBM pe segmente și conice (răspunsul c), etapă separată; entitățile de tunel în IFC când schema le va avea (răspunsul b).
 
 ## Întrebări deschise
 
-Pentru S4, de întrebat utilizatorul: (a) căptușeala să urmeze singură axa din care a fost preluată (legată, ca o ușă de perete) sau să rămână copia ei (acum)? (b) IFC: proxy pe bloc (acum) sau `IfcWall`/`IfcSlab` pe bucăți (pereți, boltă, radier)? Sau `IfcFacility`/`IfcFacilityPart` în IFC 4.3? (c) inelele TBM împărțite în segmente (5+1 cheie) și cu conicitate?
+Nimic deschis pentru S4 (răspunsurile din 23.11.2026, mai sus).
 
 
 Răspunse de utilizator la 23.11.2026, toate ca recomandat (la S3, mai sus). Rămân pentru întrebarea utilizatorului: unde stă rostul dintre aripă și peretele frontal (acum la 5 mm după începutul pantei aripii) și dacă talpa unei aripi răsucite trebuie să se îngusteze spre colț.

@@ -114,6 +114,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         LineProfiles.Register(r);
         // Hardscapes, their types and kerbs (T4).
         Hardscapes.Register(r);
+        PathTypes.Register(r);
 
         // A terrain from points ([x, y, z]) or from a survey file's text (xyz or PENZD).
         r.Command("addTerrain", "Terrain", (ctx, a) =>

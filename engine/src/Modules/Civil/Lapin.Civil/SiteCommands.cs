@@ -596,6 +596,8 @@ public static class SiteCommands
             foreach (var k in new[] { "surfaceMaterial", "baseMaterial" }) if ((string?)a[k] is { } name) attrs[k] = Materials.Ensure(ctx, name).Id;
             CorridorCommands.WithTemplate(attrs, a);
             ctx.Replace(e.With(attrs: attrs));
+            // Its build-up from a hardscape type, or back to its own courses (useHardscapeType, hardscapeTypeId | hardscapeType).
+            PathTypes.Apply(ctx, a, e.Id);
             return null;
         });
 
@@ -800,6 +802,7 @@ public static class SiteCommands
         ctx.Add(e);
         Spatial.Contain(ctx, terrain != null ? Spatial.StoreyOf(ctx.Model, terrain.Id)?.Id ?? storeyId : storeyId, e.Id);
         if (terrain != null) ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, terrain.Id, [e.Id]));
+        PathTypes.Apply(ctx, a, e.Id);
         return new JsonObject { ["id"] = e.Id };
     }
 }

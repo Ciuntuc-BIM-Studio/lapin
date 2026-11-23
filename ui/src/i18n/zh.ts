@@ -3,6 +3,41 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
+  "Tag system": "标注系统",
+  "Open a plan to tag its systems.": "打开平面图以标注其系统。",
+  "Everything on this plan has its tag already.": "此平面图上的所有内容都已有标注。",
+  "on the selected devices": "在选中的设备上",
+  "every device (printed)": "在每个设备上（打印）",
+  "Supply line": "供水线",
+  "Return line": "回水线",
+  "Service's colours": "专业颜色",
+  "Coverage circles": "覆盖圆",
+  "This plan": "此平面图",
+  "as each system": "按各系统",
+  "over the cut": "剖切面以上",
+  "overhead dashes": "上方虚线",
+  "Line type over the plan's cut": "剖切面以上的线型",
+  "How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there": "其管线和符号在平面图中的画法：颜色和线型；剖切面以上（吊顶处）的线型",
+  "A paired run's return line": "成对管线的回水线",
+  "Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none": "平面图在何处绘制其设备的覆盖圆：在选中的设备上（仅屏幕）、在每个设备上（也打印）或不绘制",
+  "This plan's coverage circles, over every system's own setting": "此平面图的覆盖圆，优先于各系统自身的设置",
+  "Other disciplines halftone": "其他专业淡显",
+  "What is not of the view's discipline drawn grey under it: an MEP plan's walls, doors and furniture under the services (on by default for the MEP discipline)": "不属于视图专业的内容在其下方以灰色绘制：机电平面图中的墙、门和家具位于管线之下（MEP 专业默认开启）",
+  "Its views draw what is not of their discipline grey (an MEP plan's architecture); on by default for the MEP discipline": "其视图以灰色绘制不属于其专业的内容（机电平面图的建筑部分）；MEP 专业默认开启",
+  "dashdot": "点划线",
+  "dashdotdot": "双点划线",
+  "Coverage": "覆盖",
+  "MEP run": "机电管线",
+  "MEP rise / drop": "上升 / 下降",
+  "MEP terminal": "机电末端",
+  "MEP: a run's material and size (PP-R 20, Ø125)": "机电：管线的材料和尺寸（PP-R 20, Ø125）",
+  "MEP: a run's fall (i=2 %), where it falls": "机电：管线的坡度（i=2 %），有坡度处",
+  "MEP: where a rise goes (↑ +2.40)": "机电：立管通往何处（↑ +2.40）",
+  "MEP: a terminal's power or flow (P=1200 W)": "机电：末端的功率或流量（P=1200 W）",
+  "Tag system tags a plan: open a plan of the storey.": "标注系统用于平面图：打开该楼层的平面图。",
+  "Which plan? (viewId)": "哪个平面图？(viewId)",
+  "Coverage is all, selected or none.": "覆盖为 all、selected 或 none。",
   // Site grading T4: hardscapes, their types and kerbs (docs/plan-site-grading.md).
   "Above the paving": "高出铺装",
   "Below the paving": "低于铺装",
@@ -5438,42 +5473,30 @@ export const ZH: Record<string, string> = {
   "A profile keeps its two ends.": "剖面保留其两端。",
   "A hardscape has no vertical curves.": "铺装没有竖曲线。",
   "Segment grade": "该段坡度",
-};
-
-/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
-const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
-  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "二阶：不稳定，荷载已超过临界荷载 (αcr < 1)。"],
-  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `1 根构件松弛后出现机构：节点 ${m[1]} (${m[2]}) 无约束。`],
-  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `${m[1]} 根构件松弛后出现机构：节点 ${m[2]} (${m[3]}) 无约束。`],
-  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `1 根构件松弛且 ${m[1]} 个支座脱离后出现机构：节点 ${m[2]} (${m[3]}) 无约束。`],
-  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `${m[1]} 根构件松弛且 ${m[2]} 个支座脱离后出现机构：节点 ${m[3]} (${m[4]}) 无约束。`],
-  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `节点 ${m[1]} (${m[2]}) 处出现机构。`],
-  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "单向杆件和支座未收敛：它们回到了已试过的状态。"],
-  [/^Not settled in (\d+) iterations\.$/, (m) => `${m[1]} 次迭代后仍未收敛。`],
-  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "这些荷载下无屈曲：几何刚度只起刚化作用。"],
-  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "无屈曲模态：受压杆件由其周围的构件约束。"],
-  [/^A mechanism in its last states\.$/, () => "在最后几个状态中出现机构。"],
-];
-function s5msg(text: string): string {
-  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
-  return text;
-}
-
-/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
-function s5dSeg(t: string): string {
-  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
-  if (a) return a[3] ? `φ 至 1/${a[1]}，沿 ${a[2]} (m = ${a[3]})` : `φ 至 1/${a[1]}，沿 ${a[2]}`;
-  const b = /^no column along (X|Y)$/.exec(t);
-  return b ? `沿 ${b[1]} 无柱` : t;
-}
-const S5D_TAILS: Record<string, string> = {
-  'the seismic effects × 1/(1 − θ) there (or second order).': "该处地震作用 × 1/(1 − θ)（或二阶分析）。",
-  'a second-order analysis is needed there.': "该处需要二阶分析。",
-  'above 0.3, not allowed: stiffen the structure.': "超过 0.3，不允许：请加强结构刚度。",
-  "Exact surfaces": "精确曲面",
-  "Studio solids as advanced B-rep on their exact surfaces": "Studio 实体以高级 B-rep 写在其精确曲面上",
-  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Lapin 精确知道的 Studio 实体（基本体、由直线和圆弧拉伸、旋转、平滑放样、闭合 SubD）以 IfcAdvancedBrep 写在平面、圆柱面、圆锥面、球面、圆环面和 B 样条曲面上，而不是写成小平面；其余照旧",
-  "solids for CAD programs, on their exact surfaces where known": "供 CAD 程序使用的实体，已知处写在其精确曲面上",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "各段与平面轴线成直角，除非材料的敷设规则另有规定；关闭：任意角度",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "绘制时：F 地面，C 顶棚，W 墙，E 输入标高",
+  "open end": "开放端",
+  "open ends": "开放端",
+  "Select the open ends": "选择开放端",
+  // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
+  "follows it": "跟随它",
+  "a copy": "副本",
+  "its own": "自有",
+  "Link again": "重新链接",
+  "Link to an axis…": "链接到轴线…",
+  "Link the lining to an axis": "将衬砌链接到轴线",
+  "When that element's axis or red line changes, the lining is rebuilt along it": "该构件的轴线或红线改变时，衬砌沿其重建",
+  "Keep the axis as it is now, a copy that no longer follows its source": "保留当前轴线，作为不再跟随来源的副本",
+  "Follow that element again between the same stations": "在相同桩号之间重新跟随该构件",
+  "Click a road, a path, a wall or a line where the lining starts, then where it ends; it follows that element from then on": "点击衬砌开始处的道路、园路、墙或线，再点击结束处；此后它跟随该构件",
+  "The lining follows another element's axis with its curves: change them there and the lining follows, or move its points to draw it anew (unlinked).": "衬砌跟随另一构件的轴线及其曲线：在那里修改，衬砌随之改变；或移动其点重新绘制（取消链接）。",
+  "Use a hardscape type": "使用铺装类型",
+  "Its layers from a hardscape type, shared and edited in one place; off, its own surface and base courses": "其层次取自铺装类型，共享并在一处编辑；关闭时使用自身的面层和基层",
+  "Unlink tunnel lining": "取消隧道衬砌链接",
+  "The element its axis followed was deleted: the lining keeps its last axis, unlinked.": "其轴线所跟随的构件已删除：衬砌保留最后的轴线，已取消链接。",
+  "Its axis was edited on the lining itself: it keeps that axis, unlinked.": "其轴线在衬砌本身上被编辑：保留该轴线，已取消链接。",
+  "The lining is not linked to an axis.": "衬砌未链接到轴线。",
   // The tunnel lining (docs/plan-wing-walls.md, S4)
   "Tunnel lining": "隧道衬砌",
   "Tunnel lining…": "隧道衬砌…",
@@ -5637,6 +5660,42 @@ const S5D_TAILS: Record<string, string> = {
   "Formwork, footing": "模板，基础",
   "Change retaining wall segment": "修改挡土墙分段",
   "Stem": "墙身",
+};
+
+/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
+const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "二阶：不稳定，荷载已超过临界荷载 (αcr < 1)。"],
+  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `1 根构件松弛后出现机构：节点 ${m[1]} (${m[2]}) 无约束。`],
+  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `${m[1]} 根构件松弛后出现机构：节点 ${m[2]} (${m[3]}) 无约束。`],
+  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `1 根构件松弛且 ${m[1]} 个支座脱离后出现机构：节点 ${m[2]} (${m[3]}) 无约束。`],
+  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `${m[1]} 根构件松弛且 ${m[2]} 个支座脱离后出现机构：节点 ${m[3]} (${m[4]}) 无约束。`],
+  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `节点 ${m[1]} (${m[2]}) 处出现机构。`],
+  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "单向杆件和支座未收敛：它们回到了已试过的状态。"],
+  [/^Not settled in (\d+) iterations\.$/, (m) => `${m[1]} 次迭代后仍未收敛。`],
+  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "这些荷载下无屈曲：几何刚度只起刚化作用。"],
+  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "无屈曲模态：受压杆件由其周围的构件约束。"],
+  [/^A mechanism in its last states\.$/, () => "在最后几个状态中出现机构。"],
+];
+function s5msg(text: string): string {
+  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
+  return text;
+}
+
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ 至 1/${a[1]}，沿 ${a[2]} (m = ${a[3]})` : `φ 至 1/${a[1]}，沿 ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `沿 ${b[1]} 无柱` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "该处地震作用 × 1/(1 − θ)（或二阶分析）。",
+  'a second-order analysis is needed there.': "该处需要二阶分析。",
+  'above 0.3, not allowed: stiffen the structure.': "超过 0.3，不允许：请加强结构刚度。",
+  "Exact surfaces": "精确曲面",
+  "Studio solids as advanced B-rep on their exact surfaces": "Studio 实体以高级 B-rep 写在其精确曲面上",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Lapin 精确知道的 Studio 实体（基本体、由直线和圆弧拉伸、旋转、平滑放样、闭合 SubD）以 IfcAdvancedBrep 写在平面、圆柱面、圆锥面、球面、圆环面和 B 样条曲面上，而不是写成小平面；其余照旧",
+  "solids for CAD programs, on their exact surfaces where known": "供 CAD 程序使用的实体，已知处写在其精确曲面上",
 };
 export const ZH_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ
@@ -6064,4 +6123,10 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} 个采样 · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `图像 ${m[1]} × ${m[2]}：${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `无法生成图像：${m[1]}`],
+  // MEP: Tag system's count.
+  [/^(\d+) tag\(s\) placed\.$/, (m) => `已放置 ${m[1]} 个标注。`],
+  // A tunnel lining linked to its axis's source (23.11.2026)
+  [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `“${m[1]}”已无轴线：衬砌保留最后的轴线，已取消链接。`],
+  [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `“${m[1]}”在衬砌桩号之间已不足一米：衬砌保留最后的轴线，已取消链接。`],
+  [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `“${m[1]}”现在更短：衬砌从 ${m[2]} 到 ${m[3]} m，而非链接时的 ${m[4]} 到 ${m[5]} m。`],
 ];

@@ -3,6 +3,41 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
+  "Tag system": "Etichetta il sistema",
+  "Open a plan to tag its systems.": "Apri una pianta per etichettarne i sistemi.",
+  "Everything on this plan has its tag already.": "Tutto su questa pianta ha già la sua etichetta.",
+  "on the selected devices": "sui dispositivi selezionati",
+  "every device (printed)": "su ogni dispositivo (stampato)",
+  "Supply line": "Linea di mandata",
+  "Return line": "Linea di ritorno",
+  "Service's colours": "Colori dell'impianto",
+  "Coverage circles": "Cerchi di copertura",
+  "This plan": "Questa pianta",
+  "as each system": "come ogni sistema",
+  "over the cut": "sopra il piano di taglio",
+  "overhead dashes": "tratteggio sopra",
+  "Line type over the plan's cut": "Tipo di linea sopra il piano di taglio",
+  "How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there": "Come si disegnano in pianta le sue tratte e i suoi simboli: colore e tipo di linea; sopra il piano di taglio (a soffitto), il loro tipo di linea lì",
+  "A paired run's return line": "La linea di ritorno di una tratta doppia",
+  "Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none": "Dove le piante disegnano i cerchi di copertura dei suoi dispositivi: sui dispositivi selezionati (solo a schermo), su ogni dispositivo (anche in stampa) o da nessuna parte",
+  "This plan's coverage circles, over every system's own setting": "I cerchi di copertura di questa pianta, sopra l'impostazione di ogni sistema",
+  "Other disciplines halftone": "Altre discipline in mezzatinta",
+  "What is not of the view's discipline drawn grey under it: an MEP plan's walls, doors and furniture under the services (on by default for the MEP discipline)": "Ciò che non è della disciplina della vista, disegnato grigio sotto: muri, porte e arredi di una pianta impiantistica sotto gli impianti (attivo di default per la disciplina MEP)",
+  "Its views draw what is not of their discipline grey (an MEP plan's architecture); on by default for the MEP discipline": "Le sue viste disegnano grigio ciò che non è della loro disciplina (l'architettura di una pianta impiantistica); attivo di default per la disciplina MEP",
+  "dashdot": "tratto-punto",
+  "dashdotdot": "tratto-punto-punto",
+  "Coverage": "Copertura",
+  "MEP run": "Tratta impiantistica",
+  "MEP rise / drop": "Salita / discesa",
+  "MEP terminal": "Terminale impiantistico",
+  "MEP: a run's material and size (PP-R 20, Ø125)": "Impianti: materiale e dimensione di una tratta (PP-R 20, Ø125)",
+  "MEP: a run's fall (i=2 %), where it falls": "Impianti: pendenza di una tratta (i=2 %), dove scende",
+  "MEP: where a rise goes (↑ +2.40)": "Impianti: dove arriva una salita (↑ +2.40)",
+  "MEP: a terminal's power or flow (P=1200 W)": "Impianti: potenza o portata di un terminale (P=1200 W)",
+  "Tag system tags a plan: open a plan of the storey.": "Etichetta il sistema etichetta una pianta: apri una pianta del piano.",
+  "Which plan? (viewId)": "Quale pianta? (viewId)",
+  "Coverage is all, selected or none.": "La copertura è all, selected o none.",
   // Site grading T4: hardscapes, their types and kerbs (docs/plan-site-grading.md).
   "Above the paving": "Sopra la pavimentazione",
   "Below the paving": "Sotto la pavimentazione",
@@ -5402,44 +5437,30 @@ export const IT: Record<string, string> = {
   "A profile keeps its two ends.": "Un profilo mantiene le sue due estremità.",
   "A hardscape has no vertical curves.": "Una pavimentazione non ha raccordi verticali.",
   "Segment grade": "Pendenza del tratto",
-};
-const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
-
-/** Phrases with a number or a name in them. */
-/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
-const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
-  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Secondo ordine: instabile, i carichi superano quelli critici (αcr < 1)."],
-  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Un meccanismo dopo che 1 asta si è scaricata: niente trattiene il nodo ${m[1]} (${m[2]}).`],
-  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Un meccanismo dopo che ${m[1]} aste si sono scaricate: niente trattiene il nodo ${m[2]} (${m[3]}).`],
-  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Un meccanismo dopo che 1 asta si è scaricata e ${m[1]} appoggio si è sollevato: niente trattiene il nodo ${m[2]} (${m[3]}).`],
-  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Un meccanismo dopo che ${m[1]} aste si sono scaricate e ${m[2]} appoggi si sono sollevati: niente trattiene il nodo ${m[3]} (${m[4]}).`],
-  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `Un meccanismo al nodo ${m[1]} (${m[2]}).`],
-  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Le aste monolatere e gli appoggi non hanno raggiunto la convergenza: tornano a stati già provati."],
-  [/^Not settled in (\d+) iterations\.$/, (m) => `Nessuna convergenza in ${m[1]} iterazioni.`],
-  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Nessuna instabilità sotto questi carichi: la rigidezza geometrica irrigidisce soltanto."],
-  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Nessun modo di instabilità: le aste compresse sono trattenute da ciò che le circonda."],
-  [/^A mechanism in its last states\.$/, () => "Un meccanismo negli ultimi stati."],
-];
-function s5msg(text: string): string {
-  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
-  return text;
-}
-
-/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
-function s5dSeg(t: string): string {
-  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
-  if (a) return a[3] ? `φ fino a 1/${a[1]} lungo ${a[2]} (m = ${a[3]})` : `φ fino a 1/${a[1]} lungo ${a[2]}`;
-  const b = /^no column along (X|Y)$/.exec(t);
-  return b ? `nessun pilastro lungo ${b[1]}` : t;
-}
-const S5D_TAILS: Record<string, string> = {
-  'the seismic effects × 1/(1 − θ) there (or second order).': "gli effetti sismici × 1/(1 − θ) lì (o secondo ordine).",
-  'a second-order analysis is needed there.': "lì serve un'analisi del secondo ordine.",
-  'above 0.3, not allowed: stiffen the structure.': "oltre 0.3, non ammesso: irrigidisci la struttura.",
-  "Exact surfaces": "Superfici esatte",
-  "Studio solids as advanced B-rep on their exact surfaces": "Solidi di Studio come B-rep avanzata sulle loro superfici esatte",
-  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "I solidi di Studio che Lapin conosce esattamente (primitive, estrusioni di linee e archi, rivoluzioni, loft morbidi, SubD chiuse) scritti come IfcAdvancedBrep su piani, cilindri, coni, sfere, tori e superfici B-spline invece che a facce; il resto come prima",
-  "solids for CAD programs, on their exact surfaces where known": "solidi per i programmi CAD, sulle loro superfici esatte dove sono note",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Tratti ad angolo retto rispetto agli assi della pianta, salvo che le regole di posa del materiale dicano altro; disattivato: con qualsiasi angolo",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "Mentre disegni: F pavimento, C soffitto, W muro, E una quota digitata",
+  "open end": "estremità aperta",
+  "open ends": "estremità aperte",
+  "Select the open ends": "Seleziona le estremità aperte",
+  // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
+  "follows it": "lo segue",
+  "a copy": "una copia",
+  "its own": "il proprio",
+  "Link again": "Collega di nuovo",
+  "Link to an axis…": "Collega a un asse…",
+  "Link the lining to an axis": "Collega il rivestimento a un asse",
+  "When that element's axis or red line changes, the lining is rebuilt along it": "Quando l'asse o la livelletta di quell'elemento cambiano, il rivestimento viene ricostruito lungo di esso",
+  "Keep the axis as it is now, a copy that no longer follows its source": "Mantieni l'asse com'è ora, una copia che non segue più la sua origine",
+  "Follow that element again between the same stations": "Segui di nuovo quell'elemento tra le stesse progressive",
+  "Click a road, a path, a wall or a line where the lining starts, then where it ends; it follows that element from then on": "Clicca su una strada, un vialetto, un muro o una linea dove inizia il rivestimento, poi dove finisce; da allora segue quell'elemento",
+  "The lining follows another element's axis with its curves: change them there and the lining follows, or move its points to draw it anew (unlinked).": "Il rivestimento segue l'asse di un altro elemento con le sue curve: modificale lì e il rivestimento segue, oppure sposta i suoi punti per ridisegnarlo (scollegato).",
+  "Use a hardscape type": "Usa un tipo di pavimentazione",
+  "Its layers from a hardscape type, shared and edited in one place; off, its own surface and base courses": "I suoi strati da un tipo di pavimentazione, condiviso e modificato in un solo punto; disattivato, i propri strati di usura e di base",
+  "Unlink tunnel lining": "Scollega il rivestimento di galleria",
+  "The element its axis followed was deleted: the lining keeps its last axis, unlinked.": "L'elemento di cui seguiva l'asse è stato eliminato: il rivestimento mantiene il suo ultimo asse, scollegato.",
+  "Its axis was edited on the lining itself: it keeps that axis, unlinked.": "Il suo asse è stato modificato sul rivestimento stesso: mantiene quell'asse, scollegato.",
+  "The lining is not linked to an axis.": "Il rivestimento non è collegato a nessun asse.",
   // The tunnel lining (docs/plan-wing-walls.md, S4)
   "Tunnel lining": "Rivestimento di galleria",
   "Tunnel lining…": "Rivestimento di galleria…",
@@ -5603,6 +5624,44 @@ const S5D_TAILS: Record<string, string> = {
   "Formwork, footing": "Casseratura, fondazione",
   "Change retaining wall segment": "Modifica tratto del muro di sostegno",
   "Stem": "Elevazione",
+};
+const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
+
+/** Phrases with a number or a name in them. */
+/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
+const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Secondo ordine: instabile, i carichi superano quelli critici (αcr < 1)."],
+  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Un meccanismo dopo che 1 asta si è scaricata: niente trattiene il nodo ${m[1]} (${m[2]}).`],
+  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Un meccanismo dopo che ${m[1]} aste si sono scaricate: niente trattiene il nodo ${m[2]} (${m[3]}).`],
+  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Un meccanismo dopo che 1 asta si è scaricata e ${m[1]} appoggio si è sollevato: niente trattiene il nodo ${m[2]} (${m[3]}).`],
+  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Un meccanismo dopo che ${m[1]} aste si sono scaricate e ${m[2]} appoggi si sono sollevati: niente trattiene il nodo ${m[3]} (${m[4]}).`],
+  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `Un meccanismo al nodo ${m[1]} (${m[2]}).`],
+  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Le aste monolatere e gli appoggi non hanno raggiunto la convergenza: tornano a stati già provati."],
+  [/^Not settled in (\d+) iterations\.$/, (m) => `Nessuna convergenza in ${m[1]} iterazioni.`],
+  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Nessuna instabilità sotto questi carichi: la rigidezza geometrica irrigidisce soltanto."],
+  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Nessun modo di instabilità: le aste compresse sono trattenute da ciò che le circonda."],
+  [/^A mechanism in its last states\.$/, () => "Un meccanismo negli ultimi stati."],
+];
+function s5msg(text: string): string {
+  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
+  return text;
+}
+
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ fino a 1/${a[1]} lungo ${a[2]} (m = ${a[3]})` : `φ fino a 1/${a[1]} lungo ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `nessun pilastro lungo ${b[1]}` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "gli effetti sismici × 1/(1 − θ) lì (o secondo ordine).",
+  'a second-order analysis is needed there.': "lì serve un'analisi del secondo ordine.",
+  'above 0.3, not allowed: stiffen the structure.': "oltre 0.3, non ammesso: irrigidisci la struttura.",
+  "Exact surfaces": "Superfici esatte",
+  "Studio solids as advanced B-rep on their exact surfaces": "Solidi di Studio come B-rep avanzata sulle loro superfici esatte",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "I solidi di Studio che Lapin conosce esattamente (primitive, estrusioni di linee e archi, rivoluzioni, loft morbidi, SubD chiuse) scritti come IfcAdvancedBrep su piani, cilindri, coni, sfere, tori e superfici B-spline invece che a facce; il resto come prima",
+  "solids for CAD programs, on their exact surfaces where known": "solidi per i programmi CAD, sulle loro superfici esatte dove sono note",
 };
 export const IT_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ
@@ -6030,4 +6089,10 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} campioni · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `Immagine ${m[1]} × ${m[2]}: ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `Impossibile creare l’immagine: ${m[1]}`],
+  // MEP: Tag system's count.
+  [/^(\d+) tag\(s\) placed\.$/, (m) => `${m[1]} etichetta/e posizionata/e.`],
+  // A tunnel lining linked to its axis's source (23.11.2026)
+  [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `«${m[1]}» non ha più un asse: il rivestimento mantiene il suo ultimo asse, scollegato.`],
+  [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `«${m[1]}» non corre più per un metro tra le progressive del rivestimento: mantiene il suo ultimo asse, scollegato.`],
+  [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `«${m[1]}» ora è più corto: il rivestimento va da ${m[2]} a ${m[3]} m, non da ${m[4]} a ${m[5]} m come collegato.`],
 ];

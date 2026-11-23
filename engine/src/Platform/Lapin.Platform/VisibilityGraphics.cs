@@ -128,7 +128,36 @@ public sealed class VisibilityGraphics
             SubjectFaded = ElementViews.ContextOf(view) == "faded",
             ElementRows = view.Attrs[ElementGraphics.Key] as JsonObject is { Count: > 0 } rows ? rows : null,
             ViewId = view.Id,
+            // An MEP plan's walls, doors and furniture grey under the services (its style's, the view's own choice over it).
+            Discipline = style is { HalftonesOthers: true } && DisciplineCategories.TryGetValue(style.Discipline ?? "", out var own) ? own : null,
         };
+    }
+
+    /// <summary>
+    /// The categories of a discipline's own elements, for a view whose style draws the others halftone
+    /// (<see cref="ViewStyles.Style.HalftonesOthers"/>): an MEP view's services; a structural view's load-bearing kinds.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, IReadOnlySet<string>> DisciplineCategories = new Dictionary<string, IReadOnlySet<string>>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["MEP"] = new HashSet<string> { "mep" },
+        ["Structure"] = new HashSet<string> { "walls", "slabs", "roofs", "columns", "beams", "other", "rebar", "formwork", "steelConnections" },
+    };
+
+    /// <summary>The categories the view's discipline draws in full, the other model elements halftone; null: none drawn halftone for it.</summary>
+    public IReadOnlySet<string>? Discipline { get; private init; }
+
+    /// <summary>
+    /// Whether an element is drawn halftone as not of the view's discipline (<see cref="Discipline"/>): an element of the model
+    /// (on a storey; never an annotation, a grid, a view's own drafting) of another category, unless the view's graphics give
+    /// its category a colour or say it is not halftone (the user's Visibility / Graphics wins).
+    /// </summary>
+    public bool OutsideDiscipline(Entity e)
+    {
+        if (Discipline == null || e.Class is IfcClass.Annotation or IfcClass.Grid or IfcClass.BuildingStorey || e.Str("viewId") != null) return false;
+        var category = ReferenceLayers.CategoryOf(e);
+        if (category != null && Discipline.Contains(category)) return false;
+        if (CategoryRow(e) is { } row && (row["halftone"] is JsonValue || (string?)row["lineColor"] is { Length: > 0 })) return false;
+        return Spatial.StoreyOf(m, e.Id) != null;
     }
 
     /// <summary>A view's graphics read as given (a test, an export with graphics of its own).</summary>
@@ -220,7 +249,7 @@ public sealed class VisibilityGraphics
 
     /// <summary>Whether anything in the view's graphics draws an element otherwise than its styles (a filter's colour or lines, a halftone, a transparency).</summary>
     public bool HasOverrides =>
-        HasLinks || HasElementGraphics || (SubjectFaded && Subject != null) || (Graphics?["filters"] as JsonArray)?.OfType<JsonObject>().Any(r => r.Count > 2 || r.Any(kv => kv.Key is not ("id" or "hidden"))) == true
+        HasLinks || HasElementGraphics || Discipline != null || (SubjectFaded && Subject != null) || (Graphics?["filters"] as JsonArray)?.OfType<JsonObject>().Any(r => r.Count > 2 || r.Any(kv => kv.Key is not ("id" or "hidden"))) == true
         || (Graphics?["categories"] as JsonObject)?.Any(c => c.Value?["halftone"] != null || c.Value?["transparency"] != null) == true;
 
     /// <summary>
@@ -296,6 +325,7 @@ public sealed class VisibilityGraphics
             if (True(r["halftone"])) return Links.Halftone;
         }
         if (True(CategoryRow(e)?["halftone"])) return Links.Halftone;
+        if (OutsideDiscipline(e)) return Links.Halftone;
         return Halftone(e) ? Links.Halftone : null;
     }
 

@@ -128,6 +128,22 @@ describe('keyIntent', () => {
     expect(keyIntent(press('z'), state())).toEqual({ kind: 'type', buffer: 'z' });
   });
 
+  it("gives a drawing tool its option letters once a point is placed (an MEP run's F, C, W, E), not the shortcuts", () => {
+    const drawing = (text = '', more: Partial<KeySnapshot> = {}) => state({ tool: 'mep.run', toolLetters: 'FCWE', live: { active: true, owner: 'tool', text, typed: !!text }, ...more });
+    expect(keyIntent(press('c'), drawing())).toEqual({ kind: 'toolLetter', key: 'C' });
+    expect(keyIntent(press('W'), drawing())).toEqual({ kind: 'toolLetter', key: 'W' });
+    expect(keyIntent(press('e'), drawing())).toEqual({ kind: 'toolLetter', key: 'E' });
+    // After a typed length a unit's letter is the unit's (2400c: cm, 10f: ft); a letter the tool does not take goes on as before.
+    expect(keyIntent(press('c'), drawing('2400'))).toEqual({ kind: 'liveType', key: 'c' });
+    expect(keyIntent(press('w'), drawing('2400'))).toEqual({ kind: 'toolLetter', key: 'W' });
+    expect(keyIntent(press('a'), drawing())).toEqual({ kind: 'type', buffer: 'a' });
+    // Before the first point (no box) and with Shift, the letters are the shortcuts' (WA: Wall).
+    expect(keyIntent(press('w'), state({ tool: 'mep.run', toolLetters: 'FCWE' }))).toEqual({ kind: 'type', buffer: 'w' });
+    expect(keyIntent(press('W', { shiftKey: true }), drawing())).not.toEqual({ kind: 'toolLetter', key: 'W' });
+    // Something typed on the command line keeps the letters there.
+    expect(keyIntent(press('c'), drawing('', { buffer: 'W' }))).toEqual({ kind: 'type', buffer: 'Wc' });
+  });
+
   it('sends digits to the live length while a segment is drawn and the command line is empty', () => {
     const live = (text = '', typed = false) => state({ live: { active: true, text, typed }, hotbar: 9 });
     expect(keyIntent(press('3'), live())).toEqual({ kind: 'liveType', key: '3' });

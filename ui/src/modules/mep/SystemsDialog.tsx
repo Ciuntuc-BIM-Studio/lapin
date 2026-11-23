@@ -10,7 +10,9 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { materialOf, materialsFor, services, systemsQuery, type Defaults, type SystemInfo } from './network';
+import { materialOf, materialsFor, services, systemsQuery, type Defaults, type LineLook, type SystemInfo } from './network';
+import { COVERAGE_MODES, LINE_TYPES } from './planGraphics';
+import { front2dView } from '../../viewport/viewTemporary';
 import { mepHooks } from './hooks';
 import { setMep, useMep, type Plane } from './prefs';
 import { Cell, LengthField, NumberField } from '../../shell/cells';
@@ -35,6 +37,11 @@ export function SystemsDialog() {
     if (r?.id) setMep({ systemId: r.id });
   };
   const d = current?.defaults;
+  const style = (id: string, line: 'line' | 'return', patch: Partial<LineLook>) => void execute('mep.updateSystem', { id, style: { [line]: patch } });
+  const planId = front2dView();
+  const plan = planId && useUi.getState().view === 'plan' ? planId : null;
+  const planNode = plan ? useSession.getState().nodes.get(plan) : undefined;
+  const covered = current && (current.service === 'fireAlarm' || current.service === 'fireWater');
   // The material's laying rule in a few words, when the product knows the rules (mep-pro).
   const rule = current && d ? mepHooks.ruleText(current.service, materialOf(current.service, d.material)?.id ?? null) : null;
   return (
@@ -89,8 +96,42 @@ export function SystemsDialog() {
                 )}
                 <dt title="Whether its runs cut their own openings in the walls, floors and roofs they cross (Manage → Cut order)">Runs cut walls, floors and roofs</dt>
                 <dd><select data-system-cut value={current.cutHosts == null ? '' : current.cutHosts ? 'yes' : 'no'} onChange={(e) => void execute('mep.updateSystem', { id: current.id, cutHosts: e.target.value === '' ? null : e.target.value === 'yes' })}><option value="">as the cut order</option><option value="yes">yes</option><option value="no">no</option></select></dd>
+                {current.style && (
+                  <>
+                    <dt title="How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there">{d.pair ? 'Supply line' : 'Line'}</dt>
+                    <dd><LookFields look={current.style.line} onChange={(p) => style(current.id, 'line', p)} testId="mep-style-line" /></dd>
+                    {d.pair && (
+                      <>
+                        <dt title="A paired run's return line">Return line</dt>
+                        <dd><LookFields look={current.style.return} onChange={(p) => style(current.id, 'return', p)} testId="mep-style-return" /></dd>
+                      </>
+                    )}
+                    <dt />
+                    <dd><button type="button" className="btn small" onClick={() => void execute('mep.updateSystem', { id: current.id, style: null })}>Service's colours</button></dd>
+                  </>
+                )}
+                {covered && (
+                  <>
+                    <dt title="Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none">Coverage circles</dt>
+                    <dd><select data-mep-coverage value={current.coverage ?? 'selected'} onChange={(e) => void execute('mep.updateSystem', { id: current.id, coverage: e.target.value === 'selected' ? null : e.target.value })}>
+                      {COVERAGE_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                    </select></dd>
+                  </>
+                )}
                 <dt>Insulation</dt><dd><LengthField metres={d.insulation} min={0} onCommit={(v) => { if (v != null) update(current.id, { insulation: v }); }} /></dd>
                 <dt>Bend radius</dt><dd><LengthField metres={d.bendRadius} min={0} onCommit={(v) => { if (v != null) update(current.id, { bendRadius: v }); }} /></dd>
+              </dl>
+            </>
+          )}
+          {plan && (
+            <>
+              <h4 className="eyebrow" style={{ marginTop: 14 }}>This plan</h4>
+              <dl className="fields">
+                <dt title="This plan's coverage circles, over every system's own setting">Coverage circles</dt>
+                <dd><select data-mep-view-coverage value={typeof planNode?.props.mepCoverage === 'string' ? planNode.props.mepCoverage : ''} onChange={(e) => void execute('mep.setCoverage', { viewId: plan, mode: e.target.value || null })}>
+                  <option value="">as each system</option>
+                  {COVERAGE_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                </select></dd>
               </dl>
             </>
           )}
@@ -104,5 +145,22 @@ export function SystemsDialog() {
         <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
+  );
+}
+
+/** A line's colour, line type and line type over the cut. */
+function LookFields({ look, onChange, testId }: { look: LineLook; onChange: (patch: Partial<LineLook>) => void; testId: string }) {
+  return (
+    <span className="row" data-testid={testId}>
+      <input type="color" value={look.color} title="Colour" onChange={(e) => onChange({ color: e.target.value })} />
+      <select value={look.pattern} title="Line type" onChange={(e) => onChange({ pattern: e.target.value })}>
+        {[...new Set([...LINE_TYPES, look.pattern])].map((p) => <option key={p} value={p}>{p}</option>)}
+      </select>
+      <span className="muted small">over the cut</span>
+      <select value={look.above ?? 'overhead'} title="Line type over the plan's cut" onChange={(e) => onChange({ above: e.target.value })}>
+        <option value="overhead">overhead dashes</option>
+        {[...new Set([...LINE_TYPES.filter((p) => p !== 'solid'), ...(look.above && look.above !== 'overhead' ? [look.above] : [])])].map((p) => <option key={p} value={p}>{p}</option>)}
+      </select>
+    </span>
   );
 }
