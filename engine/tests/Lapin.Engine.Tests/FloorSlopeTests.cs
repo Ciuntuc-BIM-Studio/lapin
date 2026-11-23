@@ -268,6 +268,29 @@ public sealed class FloorSlopeTests
         Assert.Contains(Standards.FormatLevel(Slabs.Top(f.Model, f.Model.Get(id2)!) - 0.02), texts);
     }
 
+    [Fact]
+    public void A_room_s_floor_marks_follow_the_room_where_its_walls_now_put_it()
+    {
+        // The bathroom's region and drain in plan are the room's live outline, as its floor's body is: not the outline the room
+        // stored when it was placed (they were drawn where the bathroom had been, over another floor, once its walls moved).
+        var f = F();
+        string Wall(double x1, double y1, double x2, double y2) => (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = x1, ["y1"] = y1, ["x2"] = x2, ["y2"] = y2 })!["id"]!;
+        foreach (var (x1, y1, x2, y2) in new[] { (0.0, 0.0, 5.0, 0.0), (5, 0, 5, 4), (5, 4, 0, 4), (0, 4, 0, 0) }) Wall(x1, y1, x2, y2);
+        var partition = Wall(2.6, 0, 2.6, 4);
+        var id = Floor(f, Rect(-0.15, -0.15, 5.15, 4.15), Type(f));
+        var bath = (string)f.Run("architecture.addRoom", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 1.3, ["y"] = 2, ["name"] = "Bath", ["function"] = "Bath" })!["id"]!;
+        Run(f, "slopeRoom", new JsonObject { ["roomId"] = bath });
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey, ["scale"] = 50 })!["id"]!;
+        double Reach() => Views.Render(new Ctx(f), Views.Find(f.Model, plan)!).Pens.Where(p => p.Layer == FloorSlopes.Layer)
+            .SelectMany(p => p.Segments.SelectMany(s => new[] { s.A, s.B }).Concat(p.Loops.SelectMany(l => l))).Max(v => v.X);
+        // The region's outline and the drain inside the bathroom (its walls 0.2 m thick round the partition at 2.6).
+        Assert.InRange(Reach(), 2.3, 2.6);
+        // The partition moved 1 m east: the bathroom is wider, its floor's region and its marks with it.
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = partition, ["x1"] = 3.6, ["x2"] = 3.6 });
+        Assert.Equal(-0.02, TopAt(f, id, 1.8, 2), 9);
+        Assert.InRange(Reach(), 3.3, 3.6);
+    }
+
     sealed class Ctx(Fixture f) : IQueryContext
     {
         public IModelView Model => f.Model;

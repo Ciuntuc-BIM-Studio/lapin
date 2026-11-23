@@ -216,9 +216,9 @@ public static class FloorSlopes
     }
 
     /// <summary>How far the shaped build-up reaches above and below the flat one (for the openings' cutters).</summary>
-    public static (double Down, double Up) Reach(IModelView m, Entity slab)
+    public static (double Down, double Up) Reach(IModelView m, Entity slab, IServices? services = null)
     {
-        if (Solve(m, slab, null) is not { } b || b.Pieces.Count == 0) return (0, 0);
+        if (Solve(m, slab, services) is not { } b || b.Pieces.Count == 0) return (0, 0);
         double lo = 0, hi = 0;
         foreach (var p in b.Pieces)
             for (var i = 0; i < p.Piece.Mesh.Points.Count; i++) { lo = Math.Min(lo, p.H(i)); hi = Math.Max(hi, p.H(i)); }
@@ -300,7 +300,9 @@ public static class FloorSlopes
         {
             if (!Has(slab) || hidden.Contains(slab.Id) || graphics.Hides(slab) || Spatial.StoreyOf(m, slab.Id)?.Id != storey) continue;
             Built? b;
-            try { b = Solve(m, slab, null); } catch (Exception) { continue; }
+            // With the view's services: a room's region takes the room's outline now, as the floor's body does, not the one the
+            // room stored when it was placed (its marks were drawn where the room had been once its walls moved).
+            try { b = Solve(m, slab, c.Services); } catch (Exception) { continue; }
             if (b == null) continue;
             // Its outline as a flat floor's is drawn: a top falling below the plan's level would leave the view's range there
             // and its edges with it, so the outline is drawn here too (under the model's lines, which cover it where they draw it).
