@@ -21,7 +21,10 @@ export const useTerrainEdit = create<{
   editPoints: boolean; setEditPoints: (v: boolean) => void; gripMode: PointGripMode; setGripMode: (m: PointGripMode) => void;
   /** The points picked to type their elevation (T1, docs/plan-site-grading.md): one terrain's, by index; none: null. */
   picked: { id: string; indices: number[] } | null;
+  /** Grips on every vertex along the outline's arcs too (a terrain whose outline is its points); off: on its corners (and the vertices given a height of their own). */
+  allOutline: boolean;
 }>((set) => ({
+  allOutline: false,
   editPoints: false,
   setEditPoints: (editPoints) => set({ editPoints }),
   gripMode: 'all',

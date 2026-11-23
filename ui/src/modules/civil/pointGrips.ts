@@ -19,7 +19,7 @@ import { num } from '../../engine/model';
 import { useSession } from '../../engine/session';
 import { arcsOf, fromPairs, outlinePoints } from '../../viewport/contour';
 import { inLoop } from '../../viewport/outlineShape';
-import { pickedOf, togglePicked } from './prefs';
+import { pickedOf, togglePicked, useTerrainEdit } from './prefs';
 
 /** The most survey points that get a grip at once. */
 export const MAX_POINT_GRIPS = 400;
@@ -100,37 +100,89 @@ const segDist = (p: Vec2, a: Vec2, b: Vec2): number => {
 };
 
 /** Whether a point is on the ground a boundary keeps: inside it, or on it. */
-export function withinBoundary(loop: Vec2[] | null, p: Vec2): boolean {
+export function withinBoundary(loop: Vec2[] | null, p: Vec2, n?: NodeDto): boolean {
   if (!loop || inLoop(loop, p)) return true;
-  return loop.some((a, i) => segDist(p, a, loop[(i + 1) % loop.length]) <= ON_OUTLINE);
+  return loop.some((a, i) => segDist(p, a, loop[(i + 1) % loop.length]) <= ON_OUTLINE) || (!!n && onOutline(n, p));
+}
+
+/**
+ * Whether a point stands on the terrain's boundary as drawn, to the millimetre: on a straight edge, or on an arc itself (its
+ * circle, on the side it bulges to), not on the screen's coarser steps of it.
+ */
+export function onOutline(n: NodeDto, p: Vec2, tol = 1e-3): boolean {
+  const pts = fromPairs(n.props.boundary);
+  if (pts.length < 3) return false;
+  const rises = arcsOf(n.props.boundaryArcs, pts.length);
+  return pts.some((a, i) => {
+    const b = pts[(i + 1) % pts.length], s = rises?.[i] ?? 0;
+    if (Math.abs(s) < 1e-6) return segDist(p, a, b) <= tol;
+    const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy);
+    if (L < 1e-9) return false;
+    // The arc's middle lies `s` to the left of its chord's middle; its centre R back from there.
+    const nx = -dy / L, ny = dx / L, R = (L * L / 4 + s * s) / (2 * Math.abs(s));
+    const mx = (a.x + b.x) / 2 + nx * s, my = (a.y + b.y) / 2 + ny * s;
+    const cx = mx - nx * Math.sign(s) * R, cy = my - ny * Math.sign(s) * R;
+    if (Math.abs(Math.hypot(p.x - cx, p.y - cy) - R) > tol) return false;
+    const side = dx * (p.y - a.y) - dy * (p.x - a.x);
+    return side * s >= -tol * L;
+  });
 }
 
 /** The survey points that get a grip: on the ground the boundary keeps, (given) among `only`, the `max` nearest `centre`. */
 function gripPoints(n: NodeDto, centre: { x: number; y: number }, max: number, only: Set<number> | null): GripPoint[] {
   if (!Array.isArray(n.props.points)) return [];
   const loop = boundaryLoop(n);
+  const hidden = arcVertices(n);
   const pts: GripPoint[] = [];
   (n.props.points as unknown[]).forEach((pt, i) => {
     if (!Array.isArray(pt) || pt.length < 3) return;
     if (only && !only.has(i)) return;
     const [x, y, z] = pt as [number, number, number];
     if (![x, y, z].every(Number.isFinite)) return;
-    if (!withinBoundary(loop, { x, y })) return;
+    if (!withinBoundary(loop, { x, y }, n)) return;
+    if (hidden.has(i)) return;
     pts.push({ i, x, y, z, d: (x - centre.x) ** 2 + (y - centre.y) ** 2 });
   });
   if (pts.length > max) pts.sort((a, b) => a.d - b.d).length = max;
   return pts;
 }
 
-/** The indices of the survey points standing on the terrain's outline as built (to the millimetre, its arcs in short steps). */
-export function outlinePointIndices(n: NodeDto): number[] {
+/**
+ * The indices of the survey points standing on the terrain's outline as built (to the millimetre, its arcs in short steps):
+ * with `all` false, those of a terrain whose outline is its points that carry grips (its corners and the vertices along its
+ * arcs given a height of their own), as the grips have them.
+ */
+export function outlinePointIndices(n: NodeDto, all = true): number[] {
   const loop = boundaryLoop(n);
   if (!loop || !Array.isArray(n.props.points)) return [];
+  const hidden = all ? new Set<number>() : arcVertices(n, false);
   const o: number[] = [];
+  (n.props.points as unknown[]).forEach((pt, i) => {
+    if (!Array.isArray(pt) || pt.length < 3 || hidden.has(i)) return;
+    const p = { x: pt[0] as number, y: pt[1] as number };
+    if (onOutline(n, p) || loop.some((a, k) => segDist(p, a, loop[(k + 1) % loop.length]) <= ON_OUTLINE)) o.push(i);
+  });
+  return o;
+}
+
+/**
+ * The points along the arcs of a terrain whose outline is its points that get no grip (site grading T1, decision 791): every
+ * vertex of the outline that is not a corner nor given a height of its own (`outlineOwn`), unless the grips are asked on all of
+ * them (`allOutline`; `asked` false: as if not). They follow their corners: the engine lays them again between them.
+ */
+export function arcVertices(n: NodeDto, asked = true): Set<number> {
+  const o = new Set<number>();
+  if (n.props.outlinePoints !== true || (asked && useTerrainEdit.getState().allOutline)) return o;
+  const loop = boundaryLoop(n);
+  if (!loop || !Array.isArray(n.props.points)) return o;
+  const corners = fromPairs(n.props.boundary);
+  const own = fromPairs(n.props.outlineOwn);
+  const near = (list: Vec2[], p: Vec2) => list.some((c) => Math.hypot(c.x - p.x, c.y - p.y) <= 1e-3);
   (n.props.points as unknown[]).forEach((pt, i) => {
     if (!Array.isArray(pt) || pt.length < 3) return;
     const p = { x: pt[0] as number, y: pt[1] as number };
-    if (loop.some((a, k) => segDist(p, a, loop[(k + 1) % loop.length]) <= ON_OUTLINE)) o.push(i);
+    if (near(corners, p) || near(own, p)) return;
+    if (onOutline(n, p)) o.add(i);
   });
   return o;
 }

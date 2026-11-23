@@ -283,6 +283,62 @@ public static class TerrainOutlines
         }
         if (added || prune) attrs["points"] = Terrains.PointsJson(pts);
         Cage.Prune(attrs, pts);
+        // The arcs' vertices follow their corners (a corner kept its height, the arc between it and the next one is laid again).
+        Settle(attrs);
+    }
+
+    /// <summary>The attribute holding the places of the vertices along an outline's arcs given a height of their own: they keep it.</summary>
+    public const string OwnKey = "outlineOwn";
+
+    /// <summary>
+    /// The vertices along the outline's arcs (its chords' vertices, not its corners) laid again between the heights of their
+    /// edge's corners, by how far along the edge they lie, after points were set (<paramref name="set"/>: their indices). A vertex
+    /// along an arc that was set itself takes a height of its own (<see cref="OwnKey"/>): it keeps it, and the ones on either side
+    /// run from it. A terrain whose outline is not its points (<see cref="Holds"/>) is left as it is. The corners alone carry the
+    /// outline's grips by default; this keeps the ground between them on the arc as the corners say.
+    /// </summary>
+    public static void Settle(JsonObject attrs, IEnumerable<int>? set = null)
+    {
+        if (!Holds(attrs)) return;
+        var corners = PointLists.Xy(attrs[Terrains.BoundaryKey]);
+        if (corners.Count < 3) return;
+        var verts = Vertices(corners, ArcOutline.Rises(attrs[Terrains.BoundaryArcs], corners.Count));
+        var pts = PointLists.Xyz(attrs["points"]);
+        var index = new Dictionary<(long, long), int>();
+        for (var i = 0; i < pts.Count; i++) index.TryAdd(Key(pts[i].Xy), i);
+        var chord = verts.Where(v => !v.Corner).Select(v => Key(v.P)).ToHashSet();
+        var own = PointLists.Xy(attrs[OwnKey]).Select(Key).Where(chord.Contains).ToHashSet();
+        foreach (var i in set ?? []) if (i >= 0 && i < pts.Count && chord.Contains(Key(pts[i].Xy))) own.Add(Key(pts[i].Xy));
+        var changed = false;
+        var n = verts.Count;
+        for (var k = 0; k < n; k++)
+        {
+            if (!verts[k].Corner) continue;
+            // The run of this edge: its corner, the vertices along it, the next corner.
+            var run = new List<int> { k };
+            for (var j = (k + 1) % n; !verts[j].Corner; j = (j + 1) % n) run.Add(j);
+            run.Add((run[^1] + 1) % n);
+            if (run.Count <= 2) continue;
+            var dist = new double[run.Count];
+            for (var r = 1; r < run.Count; r++) dist[r] = dist[r - 1] + (verts[run[r]].P - verts[run[r - 1]].P).Length;
+            int? At(int r) => index.TryGetValue(Key(verts[run[r]].P), out var i) ? i : null;
+            var anchors = Enumerable.Range(0, run.Count).Where(r => (r == 0 || r == run.Count - 1 || own.Contains(Key(verts[run[r]].P))) && At(r) != null).ToList();
+            if (anchors.Count < 2 || anchors[0] != 0 || anchors[^1] != run.Count - 1) continue;
+            for (var a = 0; a + 1 < anchors.Count; a++)
+            {
+                var (r0, r1) = (anchors[a], anchors[a + 1]);
+                var (z0, z1) = (pts[At(r0)!.Value].Z, pts[At(r1)!.Value].Z);
+                for (var r = r0 + 1; r < r1; r++)
+                {
+                    if (At(r) is not { } i) continue;
+                    var f = dist[r1] - dist[r0] > 1e-12 ? (dist[r] - dist[r0]) / (dist[r1] - dist[r0]) : 0;
+                    var z = Math.Round(z0 + (z1 - z0) * f, 9);
+                    if (Math.Abs(pts[i].Z - z) > 1e-12) { pts[i] = pts[i] with { Z = z }; changed = true; }
+                }
+            }
+        }
+        if (changed) attrs["points"] = Terrains.PointsJson(pts);
+        if (own.Count > 0) attrs[OwnKey] = Terrains.ContourJson(verts.Where(v => own.Contains(Key(v.P))).Select(v => v.P)); else attrs.Remove(OwnKey);
     }
 
     /// <summary><see cref="Follow"/> for a terrain whose boundary was just set in <paramref name="attrs"/>: the heights from its own survey ground.</summary>

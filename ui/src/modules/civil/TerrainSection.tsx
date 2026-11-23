@@ -6,7 +6,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { SURVEY, downloadLandXml, pickText } from './survey';
 import { notify, useUi } from '../../app/store';
-import { setPicked, useTerrainEdit } from './prefs';
+import { redrawGrips, setPicked, useTerrainEdit } from './prefs';
 import { MAX_POINT_GRIPS, outlinePointIndices, terrainControls, type PointGripMode } from './pointGrips';
 import { formatLength, levelUnit, parseLevel } from '../../engine/unitsStore';
 
@@ -144,7 +144,8 @@ function PickedPoints({ node, picked }: { node: NodeDto; picked: number[] }) {
     if (z == null || !Number.isFinite(z)) { notify('That elevation does not read: type a number in the project\'s unit.'); return; }
     void execute('civil.setTerrainPoints', { id: node.id, indices: picked, z });
   };
-  const outline = outlinePointIndices(node);
+  const allOutline = useTerrainEdit((s) => s.allOutline);
+  const outline = outlinePointIndices(node, allOutline);
   return (
     <div className="row small" data-testid="terrain-picked" style={{ flexWrap: 'wrap', gap: '2px 6px', width: '100%' }}>
       {picked.length > 0 ? <>
@@ -155,6 +156,9 @@ function PickedPoints({ node, picked }: { node: NodeDto; picked: number[] }) {
         {' · '}<button type="button" className="link small" onClick={() => setPicked(node.id, [])}>let go</button>
       </> : <span className="muted">No point picked.</span>}
       {outline.length > 0 && <>{' · '}<button type="button" className="link small" onClick={() => setPicked(node.id, outline)}>pick the outline's</button></>}
+      {node.props.outlinePoints === true && <label className="small" title="Grips on every vertex along the outline's arcs too; off, on its corners only, the arcs following them" style={{ width: '100%' }}>
+        <input type="checkbox" checked={allOutline} data-testid="terrain-all-outline" onChange={(e) => { useTerrainEdit.setState({ allOutline: e.target.checked }); redrawGrips(); }} /> all outline points
+      </label>}
     </div>
   );
 }

@@ -6272,7 +6272,8 @@ export const scenes = [
   },
   {
     // Site grading T1 (docs/plan-site-grading.md; forum topic 230): a terrain drawn straight on an outline with an arc, at a height
-    // typed; every vertex of its outline a point with a grip in 3D; two points picked on the arc and their elevation typed at once.
+    // typed; every vertex of its outline a point, grips on its corners in 3D; the arc's two corners picked and their elevation typed
+    // at once, the arc following them.
     id: 'terrain-outline',
     touches: ['civil'],
     async run(t) {
@@ -6319,12 +6320,24 @@ export const scenes = [
       await open3d(t);
       await t.page.locator('button[title="Frame everything"]').first().click();
       await t.wait(1500);
-      t.expect(await t.page.locator('[data-grip3d^="pt"]').count() > 20, 'the terrain\'s points, its outline\'s too, have grips in 3D');
-      await t.shot('terrain-outline-3d', { of: 'canvas', pad: 0 });
-      // Two points of the arc picked by a click on their grips, their elevation typed at once.
+      // Grips on the outline's corners (and the inside), none on the points along the arc: those follow their corners.
       const pts = terrain.props.points;
-      const onArc = pts.map((p, i) => [p, i]).filter(([p]) => p[1] > 12.5).sort((a, b) => b[0][1] - a[0][1]).slice(0, 2).map(([, i]) => i);
-      for (const i of onArc) {
+      // The arc as the terrain keeps it: its edge's corners and rise give its circle (its middle `s` left of its chord's).
+      const bd = terrain.props.boundary, k = terrain.props.boundaryArcs.findIndex((r) => Math.abs(r) > 1e-6);
+      const [a, b, sr] = [bd[k], bd[(k + 1) % bd.length], terrain.props.boundaryArcs[k]];
+      const L = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L, R = (L * L / 4 + sr * sr) / (2 * Math.abs(sr));
+      const cx = (a[0] + b[0]) / 2 + nx * sr - nx * Math.sign(sr) * R, cy = (a[1] + b[1]) / 2 + ny * sr - ny * Math.sign(sr) * R;
+      const isCorner = (p) => bd.some((c) => Math.hypot(c[0] - p[0], c[1] - p[1]) < 1e-3);
+      const onArc = (p) => !isCorner(p) && Math.abs(Math.hypot(p[0] - cx, p[1] - cy) - R) < 1e-3 && ((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])) * sr > 0;
+      const arcPts = pts.map((p, i) => [p, i]).filter(([p]) => onArc(p)).map(([, i]) => i);
+      t.expect(arcPts.length > 10, 'the arc\'s vertices are points of the terrain');
+      t.expect(await t.page.locator('[data-grip3d^="pt"]').count() > 4, 'the terrain\'s points have grips in 3D');
+      for (const i of arcPts) t.expect(await t.page.locator(`[data-grip3d="pt${i}"]`).count() === 0, 'no grip on a vertex of the arc');
+      await t.shot('terrain-outline-3d', { of: 'canvas', pad: 0 });
+      // The arc's two corners picked by a click on their grips, their elevation typed at once: the arc follows them.
+      const corner = (x, y) => pts.findIndex((p) => Math.hypot(p[0] - x, p[1] - y) < 1e-3);
+      const ends = [corner(a[0], a[1]), corner(b[0], b[1])];
+      for (const i of ends) {
         const r = await t.page.locator(`[data-grip3d="pt${i}"] circle`).first().boundingBox();
         t.expect(!!r, `point ${i} has a grip`);
         await t.page.mouse.click(r.x + r.width / 2, r.y + r.height / 2);
@@ -6334,7 +6347,7 @@ export const scenes = [
       await t.page.locator('[data-testid=terrain-picked-z]').fill('3.00');
       await t.shot('terrain-picked-properties', { of: 'aside.props', pad: 0, maxHeight: 520 });
       await t.page.locator('[data-testid=terrain-picked] button', { hasText: 'set elevation' }).click();
-      await t.until(async () => (await made())?.props.points.filter((p) => Math.abs(p[2] - 3) < 1e-6).length === 2, 'the two points are at 3.00');
+      await t.until(async () => (await made())?.props.points.filter((p) => onArc(p) && Math.abs(p[2] - 3) < 1e-6).length === arcPts.length, 'the two corners are at 3.00, and the whole arc between them');
       await t.wait(1500);
       await t.shot('terrain-outline-raised', { of: 'canvas', pad: 0 });
     },

@@ -257,4 +257,59 @@ public sealed class TerrainOutlineTests
         Assert.Equal(0.3, Terrains.Of(t).ElevationAt(5, 5)!.Value, 9);
         Assert.All(Terrains.BoundaryOutline(t), p => Assert.Equal(4, (p - new Vec2(5, 5)).Length, 6));
     }
+
+    /// <summary>The square of 10 m with its north edge bulging 2 m out, corners at 1, 2, 3, 4 m; the arc's vertices, west to east.</summary>
+    static (string Id, List<int> Arc, int Ne, int Nw) Bulged(Fixture f)
+    {
+        var id = OnOutline(f, new JsonObject { ["points"] = Pts([0, 0, 1], [10, 0, 2], [10, 10, 3], [0, 10, 4]), ["arcs"] = P(0, 0, -2, 0), ["spacing"] = 0 });
+        var pts = Terrains.Points(f.Model.Get(id)!);
+        var arc = Enumerable.Range(0, pts.Count).Where(i => pts[i].Y > 10 + 1e-9).OrderBy(i => pts[i].X).ToList();
+        int Find(double x, double y) => pts.FindIndex(p => (p.Xy - new Vec2(x, y)).Length < 1e-6);
+        return (id, arc, Find(10, 10), Find(0, 10));
+    }
+
+    [Fact]
+    public void A_corner_s_height_changed_lays_the_arc_s_vertices_again_between_its_corners_in_the_same_undo_step()
+    {
+        var f = F();
+        var (id, arc, ne, _) = Bulged(f);
+        Assert.True(arc.Count > 4);
+        f.Run("civil.moveTerrainPoint", new JsonObject { ["id"] = id, ["index"] = ne, ["z"] = 6 });
+        var pts = Terrains.Points(f.Model.Get(id)!);
+        // From 4 at the west corner to 6 at the east one, evenly along the arc; each vertex between them.
+        var mid = arc.MinBy(i => Math.Abs(pts[i].X - 5));
+        Assert.Equal(5, pts[mid].Z, 1);
+        for (var k = 1; k < arc.Count; k++) Assert.True(pts[arc[k]].Z >= pts[arc[k - 1]].Z - 1e-9, "rising west to east");
+        Assert.All(arc, i => Assert.InRange(pts[i].Z, 4 - 1e-9, 6 + 1e-9));
+        // The straight edges have no vertices of their own: nothing else moved.
+        Assert.Equal(1, Terrains.Of(f.Model.Get(id)!).ElevationAt(0, 0)!.Value, 9);
+        f.Session.Undo();
+        pts = Terrains.Points(f.Model.Get(id)!);
+        Assert.Equal(3.5, pts[mid].Z, 1);
+        Assert.Equal(3, pts[ne].Z, 9);
+        // Typed for many at once (the corners picked) the same.
+        f.Run("civil.setTerrainPoints", new JsonObject { ["id"] = id, ["indices"] = new JsonArray(ne), ["z"] = 6 });
+        Assert.Equal(5, Terrains.Points(f.Model.Get(id)!)[mid].Z, 1);
+    }
+
+    [Fact]
+    public void A_vertex_of_the_arc_given_its_own_height_keeps_it_and_splits_the_arc_in_two()
+    {
+        var f = F();
+        var (id, arc, ne, nw) = Bulged(f);
+        var pts = Terrains.Points(f.Model.Get(id)!);
+        var mid = arc.MinBy(i => Math.Abs(pts[i].X - 5));
+        f.Run("civil.moveTerrainPoint", new JsonObject { ["id"] = id, ["index"] = mid, ["z"] = 10 });
+        Assert.Single(PointLists.Xy(f.Model.Get(id)!.Attrs[TerrainOutlines.OwnKey]));
+        f.Run("civil.moveTerrainPoint", new JsonObject { ["id"] = id, ["index"] = ne, ["z"] = 0 });
+        pts = Terrains.Points(f.Model.Get(id)!);
+        Assert.Equal(10, pts[mid].Z, 9);
+        // East of it, from 10 down to the corner's 0; west of it, from the corner's 4 up to 10.
+        var east = arc.Where(i => pts[i].X > pts[mid].X).ToList();
+        var west = arc.Where(i => pts[i].X < pts[mid].X).ToList();
+        Assert.All(east, i => Assert.InRange(pts[i].Z, 0 - 1e-9, 10 + 1e-9));
+        Assert.All(west, i => Assert.InRange(pts[i].Z, 4 - 1e-9, 10 + 1e-9));
+        for (var k = 1; k < east.Count; k++) Assert.True(pts[east[k]].Z <= pts[east[k - 1]].Z + 1e-9, "falling east of it");
+        Assert.Equal(4, pts[nw].Z, 9);
+    }
 }

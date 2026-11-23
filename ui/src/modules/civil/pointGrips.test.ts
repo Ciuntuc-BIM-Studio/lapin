@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeDto } from '../../engine/protocol';
-import { MAX_POINT_GRIPS, boundaryLoop, decorateCornerGrips, elevationStep, outlinePointIndices, terrainControls, terrainPlanPointGrips, terrainPointGrips, withinBoundary } from './pointGrips';
+import { MAX_POINT_GRIPS, boundaryLoop, decorateCornerGrips, elevationStep, onOutline, outlinePointIndices, terrainControls, terrainPlanPointGrips, terrainPointGrips, withinBoundary } from './pointGrips';
 import { pickedOf, setPicked, useTerrainEdit } from './prefs';
 
 const terrain = (points: number[][], datum = 100): NodeDto =>
@@ -83,6 +83,32 @@ describe('a terrain on its outline (site grading T1)', () => {
     const arc = square({ boundaryArcs: [0, 0, -2, 0], points: [[0, 0, 0], [10, 0, 0], [10, 10, 0], [0, 10, 0], [5, 12, 0]] });
     expect(outlinePointIndices(arc)).toContain(4);
     expect(terrainPointGrips(arc, { x: 0, y: 0 }).map((g) => g.key)).toContain('pt4');
+  });
+
+  it('on a terrain whose outline is its points, gives grips to the corners only, the arc\'s vertices following them, unless asked for all', () => {
+    useTerrainEdit.setState({ picked: null, allOutline: false });
+    const own = square({ outlinePoints: true, boundaryArcs: [0, 0, -2, 0], points: [[0, 0, 0], [10, 0, 0], [10, 10, 0], [0, 10, 0], [3, 11.719, 0], [5, 12, 0], [7, 11.719, 0], [5, 5, 0]] });
+    expect(terrainPointGrips(own, { x: 0, y: 0 }).map((g) => g.key)).toEqual(['pt0', 'pt1', 'pt2', 'pt3', 'pt7']);
+    expect(outlinePointIndices(own, false)).toEqual([0, 1, 2, 3]);
+    // A vertex given its own height keeps its grip.
+    const kept = square({ ...own.props, outlineOwn: [[5, 12]] });
+    expect(terrainPointGrips(kept, { x: 0, y: 0 }).map((g) => g.key)).toContain('pt5');
+    expect(outlinePointIndices(kept, false)).toEqual([0, 1, 2, 3, 5]);
+    // All outline points: every vertex of the arc.
+    useTerrainEdit.setState({ allOutline: true });
+    expect(terrainPointGrips(own, { x: 0, y: 0 })).toHaveLength(8);
+    expect(outlinePointIndices(own, true)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    useTerrainEdit.setState({ allOutline: false });
+  });
+
+  it('finds a point on an arc of the outline on the arc itself, not on the screen\'s coarser steps of it', () => {
+    // A half circle of 12 m over the edge from (24, 0) to (0, 0), running west and bulging north (to its right: a negative rise).
+    const half = square({ boundary: [[0, 0], [24, 0], [24, 0.001], [0, 0.001]], boundaryArcs: [0, 0, -12, 0] });
+    const at = (deg: number, r = 12) => ({ x: 12 + r * Math.cos((deg * Math.PI) / 180), y: 0.001 + r * Math.sin((deg * Math.PI) / 180) });
+    expect(onOutline(half, at(10))).toBe(true);
+    expect(onOutline(half, at(97))).toBe(true);
+    expect(onOutline(half, at(10, 12.01))).toBe(false);
+    expect(onOutline(half, at(-30))).toBe(false);
   });
 
   it('marks the points picked, and types one elevation for all of them in one command', () => {

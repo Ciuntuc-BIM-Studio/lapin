@@ -383,6 +383,8 @@ public static class SiteCommands
             attrs["points"] = Terrains.PointsJson(pts);
             if (wasControl && (x != p.X || y != p.Y))
                 Cage.Write(attrs, pts, Cage.Indices(t).Where(i => i != idx).Append(idx));
+            // A terrain whose outline is its points: the arcs' vertices follow their corners (T1, TerrainOutlines.Settle).
+            TerrainOutlines.Settle(attrs, [idx]);
             ctx.Replace(t.With(attrs: attrs));
             return new JsonObject { ["index"] = idx, ["elevation"] = Math.Round(z - datum, 4) };
         });
@@ -408,6 +410,7 @@ public static class SiteCommands
             Cage.Follow(t, pts, moves, indices.ToHashSet());
             var attrs = t.CloneAttrs();
             attrs["points"] = Terrains.PointsJson(pts);
+            TerrainOutlines.Settle(attrs, indices);
             ctx.Replace(t.With(attrs: attrs));
             return new JsonObject { ["count"] = indices.Count };
         });
