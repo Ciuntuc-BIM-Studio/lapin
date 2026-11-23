@@ -11,14 +11,14 @@ namespace Lapin.PointClouds;
 /// </summary>
 public sealed class PlyReader : IPointReader
 {
-    enum Encoding { Ascii, Little, Big }
-    sealed record Prop(string Name, string Type, string? ListCount = null);
-    sealed record Element(string Name, long Count, List<Prop> Props);
+    internal enum Encoding { Ascii, Little, Big }
+    internal sealed record Prop(string Name, string Type, string? ListCount = null);
+    internal sealed record Element(string Name, long Count, List<Prop> Props);
 
     readonly IPointSource _source;
-    readonly Encoding _enc;
-    readonly long _dataAt;
-    readonly List<Element> _elements = [];
+    internal readonly Encoding _enc;
+    internal readonly long _dataAt;
+    internal readonly List<Element> _elements = [];
     public PointCloudHeader Header { get; }
 
     public PlyReader(IPointSource source)
@@ -77,7 +77,7 @@ public sealed class PlyReader : IPointReader
         };
     }
 
-    Element? Vertex => _elements.FirstOrDefault(e => e.Name == "vertex");
+    internal Element? Vertex => _elements.FirstOrDefault(e => e.Name == "vertex");
     static readonly string[] IntensityNames = ["intensity", "scalar_intensity", "scalar_Intensity", "reflectance", "scalar_reflectance"];
     static readonly string[] ClassNames = ["classification", "scalar_classification", "scalar_Classification", "class", "label"];
 
@@ -97,7 +97,7 @@ public sealed class PlyReader : IPointReader
         return null;
     }
 
-    static int Size(string type) => type switch
+    internal static int Size(string type) => type switch
     {
         "char" or "int8" or "uchar" or "uint8" => 1,
         "short" or "int16" or "ushort" or "uint16" => 2,
@@ -106,7 +106,7 @@ public sealed class PlyReader : IPointReader
         _ => 0,
     };
 
-    double Value(ReadOnlySpan<byte> b, string type)
+    internal double Value(ReadOnlySpan<byte> b, string type)
     {
         var big = _enc == Encoding.Big;
         return type switch
@@ -194,7 +194,7 @@ public sealed class PlyReader : IPointReader
         }
     }
 
-    void Skip(Stream s, Element e)
+    internal void Skip(Stream s, Element e)
     {
         var fixedSize = e.Props.All(p => p.ListCount == null) ? e.Props.Sum(p => Size(p.Type)) : -1;
         if (fixedSize >= 0) { s.Seek(fixedSize * e.Count, SeekOrigin.Current); return; }

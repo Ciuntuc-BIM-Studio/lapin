@@ -41,6 +41,10 @@ public sealed record PointCloudHeader
     public string? Units { get; init; }
     /// <summary>The finest step its coordinates take (a LAS's scale), per axis, when it has one.</summary>
     public double[]? Precision { get; init; }
+    /// <summary>The file's axis that points up when it is not z ("y", "-y"): Gaussian splats come from reconstructions, y up or down.</summary>
+    public string? Up { get; init; }
+    /// <summary>Whether its points are Gaussians (<see cref="ISplatReader"/>): a 3DGS PLY, an SPZ.</summary>
+    public bool Splats { get; init; }
     /// <summary>What the reader noticed and the user should know (an unknown property, a part it skipped).</summary>
     public IReadOnlyList<string> Notes { get; init; } = [];
 }
@@ -84,7 +88,7 @@ public sealed class PointCloudException(string message) : Exception(message);
 public static class PointReaders
 {
     /// <summary>The extensions Lapin reads, lower case, without the dot.</summary>
-    public static readonly string[] Extensions = ["las", "laz", "e57", "ply", "xyz", "pts", "csv", "txt"];
+    public static readonly string[] Extensions = ["las", "laz", "e57", "ply", "spz", "xyz", "pts", "csv", "txt"];
 
     public static IPointReader Open(IPointSource source)
     {
@@ -95,14 +99,23 @@ public static class PointReaders
         head = head[..n];
         if (head.StartsWith("LASF"u8)) return new LasReader(source);
         if (head.StartsWith("ASTM-E57"u8)) return new E57Reader(source);
-        if (head.StartsWith("ply"u8)) return new PlyReader(source);
+        if (head.StartsWith("ply"u8))
+        {
+            // A PLY whose vertices are Gaussians (3D Gaussian splatting's layout) is read as splats.
+            var ply = new PlyReader(source);
+            return GaussianPlyReader.Is(ply) ? new GaussianPlyReader(source, ply) : ply;
+        }
+        // SPZ: versions 1–3 are one gzip stream; version 4 starts with its magic, NGSP, and holds ZSTD streams.
+        if (head.Length >= 2 && head[0] == 0x1f && head[1] == 0x8b && ext == "spz") return new SpzReader(source);
+        if (head.StartsWith("NGSP"u8)) throw new PointCloudException($"{source.Name} is SPZ version 4 (ZSTD), which Lapin does not read yet: save it as SPZ version 3 or as a PLY.");
         return ext switch
         {
             "las" or "laz" => throw new PointCloudException($"{source.Name} is not a LAS file (it does not start with LASF)."),
             "e57" => throw new PointCloudException($"{source.Name} is not an E57 file."),
             "ply" => throw new PointCloudException($"{source.Name} is not a PLY file."),
+            "spz" => throw new PointCloudException($"{source.Name} is not an SPZ file (it is not gzip)."),
             "xyz" or "pts" or "csv" or "txt" or "asc" => new TextPointReader(source),
-            _ => throw new PointCloudException($"Lapin reads point clouds as LAS, LAZ, E57, PLY, XYZ, PTS or CSV; {source.Name} is none of them."),
+            _ => throw new PointCloudException($"Lapin reads point clouds as LAS, LAZ, E57, PLY, SPZ, XYZ, PTS or CSV; {source.Name} is none of them."),
         };
     }
 }
