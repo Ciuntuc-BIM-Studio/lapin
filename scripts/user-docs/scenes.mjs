@@ -6733,6 +6733,94 @@ export const scenes = [
     },
   },
   {
+    // Site grading T5 (docs/plan-site-grading.md; forum 230 §4, benlungu): a lower plaza at −2.00 whose edge bulges in an arc
+    // and an upper one at −1.00 whose edge curves in, bridged by Grade between edges (a green patch ruled between their edges,
+    // live as they change), in plan, in 3D and in a section across both; a terrace with Slope to ground (1:2 in cut, 1:3 in fill)
+    // and its daylight line and hachures.
+    id: 'site-grading',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A 60 × 44 m survey every 2 m: rising 4 % to the east and 3 % to the north, from −2.40 in the south-west.
+      const g = (x, y) => -2.4 + 0.04 * x + 0.03 * y + 0.25 * Math.sin(x / 9) * Math.cos(y / 11);
+      const rows = [];
+      for (let x = 0; x <= 60; x += 2) for (let y = 0; y <= 44; y += 2) rows.push(`${x} ${y} ${(100 + g(x, y)).toFixed(3)}`);
+      const made = await t.cmd('civil.addTerrain', { text: rows.join('\n'), datum: 100, storeyId: s, interval: 0.25, majorEvery: 4, name: 'Survey' });
+      const terrainId = made?.id;
+      t.expect(!!terrainId, 'a terrain from the survey');
+      // benlungu's two plazas: the lower at −2.00, its east edge an arc bulging out; the upper at −1.00, its west edge curving in.
+      const lower = (await t.cmd('civil.addHardscape', { name: 'Lower plaza', points: [[6, 6], [20, 6], [20, 24], [6, 24]], arcs: [0, -3.5, 0, 0], type: 'stoneSlabs', elevation: -2, terrainId }))?.id;
+      const upper = (await t.cmd('civil.addHardscape', { name: 'Upper plaza', points: [[30, 6], [46, 6], [46, 24], [30, 24]], arcs: [0, 0, 0, 2.5], type: 'pavers', elevation: -1, terrainId }))?.id;
+      t.expect(!!lower && !!upper, 'the two plazas');
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(400); };
+      const gradings = async () => (await t.nodes()).filter((n) => n.type === 'LapinGrading');
+      // Grade between edges: the lower plaza, then the upper one.
+      await t.tool('civil.gradeBetween');
+      t.expect(await t.page.locator('[data-testid=grading-more]').count() === 1, 'the tool\'s bar offers more edges');
+      await click(12, 15);
+      await click(38, 15);
+      await t.until(async () => (await gradings()).length === 1, 'two plazas picked make a grading between them');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      const patch = (await gradings())[0];
+      t.expect(patch.props.surfaceUsed === 'loft', `ruled between the two edges (${patch.props.surfaceUsed})`);
+      t.expect(patch.props.terrainId === terrainId, 'part of the terrain');
+      await t.cmd('civil.updateGrading', { id: patch.id, name: 'Green slope' });
+      await select(t, patch.id);
+      await t.wait(900);
+      await t.page.locator('[data-testid=grading-section]').waitFor();
+      await t.shot('grading-properties', { of: 'aside.props', pad: 0, maxHeight: 760 });
+      await t.ui({ selection: null, selected: [] });
+      // A terrace at −0.10 to the north, with a slope to the ground all round: 1:2 in cut, 1:3 in fill.
+      const terrace = (await t.cmd('civil.addHardscape', { name: 'Terrace', points: [[16, 30], [34, 30], [34, 38], [16, 38]], type: 'gravel', elevation: -0.1, terrainId }))?.id;
+      t.expect(!!terrace, 'the terrace');
+      await t.wait(800);
+      await t.tool('civil.slopeToGround');
+      t.expect(await t.page.locator('[data-testid=grading-cut]').count() === 1, 'the tool\'s bar offers the cut slope');
+      await click(25, 34);
+      await t.until(async () => (await gradings()).length === 2, 'a slope from the terrace to the ground');
+      await t.keys('Escape');
+      await t.ui({ tool: null, selection: null, selected: [] });
+      const slope = (await gradings()).find((n) => n.id !== patch.id);
+      t.expect(Array.isArray(slope.props.daylight) && slope.props.daylight.length >= 1, 'with its daylight line');
+      await t.fit();
+      await t.wait(1800);
+      await t.shot('grading-plan', { of: '[data-testid=plan]', pad: 0 });
+      // In 3D, rendered (the storey's grid at ±0.00 would stand over this ground below it): the two plazas and the green slope
+      // bridging them, seen from the south; then the terrace and its slopes.
+      await open3d(t);
+      const profile = (p) => t.page.evaluate(async (v) => (await import('/src/viewport/render3d.ts')).setRenderProfile(v), p);
+      try {
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ date: '2026-06-21', hour: 15 }));
+        await profile('realistic');
+        await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.2, pitch: -0.3, distance: 34, target: { x: 25, y: 15, z: -1.5 } }, false));
+        await t.wait(3000);
+        await t.shot('grading-plazas-3d', { of: 'canvas', pad: 0 });
+        await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.3, pitch: -0.42, distance: 30, target: { x: 25, y: 34, z: -0.4 } }, false));
+        await t.wait(3000);
+        await t.shot('grading-slope-3d', { of: 'canvas', pad: 0 });
+      } finally {
+        await profile('drawing').catch(() => {});
+      }
+      // A section across both plazas and the green slope between them, closer on the slope.
+      await t.cmd('view.create', { kind: 'section', name: 'G-G', start: [2, 15], end: [52, 15], depth: 0.5, scale: 100 });
+      await openFromBrowser(t, 'G-G', 3000);
+      await t.fit();
+      await t.wait(1500);
+      const box = await t.page.locator('[data-testid=drawing]').boundingBox();
+      await t.page.mouse.move(box.x + box.width * 0.47, box.y + box.height * 0.52);
+      for (let k = 0; k < 4; k++) { await t.page.mouse.wheel(0, -300); await t.wait(150); }
+      await t.page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.1);
+      await t.wait(1200);
+      await t.shot('grading-section', { of: '[data-testid=drawing]', pad: 0 });
+    },
+  },
+  {
     // Gates (report #57): a fence wall along the street with a sliding gate drawn on it by the tool (its middle on the wall's
     // axis, the wall cut, the zone it parks in dashed) and a pedestrian gate beside it; a wrought iron double gate on the parcel's
     // side edge from the built-in styles; the configurator with its preview; a gate's properties; the gates in 3D.

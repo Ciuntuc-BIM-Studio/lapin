@@ -269,6 +269,32 @@ Profilul unui pavaj este muchia lui de sus: cotele colțurilor se pot schimba (f
 
 ![Profilul longitudinal pe o planșă](shots/profile-sheet.webp)
 
+## Sistematizare între margini și taluzuri
+
+Două unelte din grupul **Sistematizare** al tabului **Teren** modelează terenul din margini pe care le ai deja și le urmează mereu.
+
+**Sistematizare între margini** (<kbd>GB</kbd>) face un petic verde între două piațete, terase sau linii la cote diferite: de exemplu o piațetă de jos la −2,00 și una de sus la −1,00, cu margini curbe, și un taluz înierbat care le leagă. Dă clic pe prima margine (un pavaj, o linie caracteristică, o platformă sau o alee, un zid ori un șanț), apoi pe a doua: peticul se face imediat. Dintr-un pavaj sau dintr-o platformă se ia doar porțiunea marginii care stă față în față cu cealaltă, deci peticul merge de-a lungul celor două margini și se închide cu legături drepte la capetele lor. Bifează **Mai multe margini** în bară ca să alegi trei sau mai multe, apoi apasă **Fă sistematizarea**; o margine aleasă din nou e lăsată.
+
+![Două piațete la −2,00 și −1,00 cu margini curbe, legate de un taluz verde](shots/grading-plazas-3d.webp)
+
+Suprafața lui e făcută numai din acele margini, deci cotele lor se păstrează exact: marginea peticului e marginea piațetei, la cota ei, fără niciun gol. Între două margini e o suprafață **riglată** (drepte de la fiecare punct al unei margini la punctul aflat la fel de departe de-a lungul celeilalte); din trei sau mai multe margini, sau cu **Triangulată (TIN)**, e triangulată din margini. Peticul **urmează** ce l-a făcut: ridici o piațetă, o muți, schimbi o linie caracteristică, iar peticul și terenul se schimbă odată cu ea, în același pas de anulare.
+
+![Proprietățile sistematizării: ce este, suprafața, materialul și marginile](shots/grading-properties.webp)
+
+**Cote scrise.** O margine care urmează o piațetă are cotele piațetei. Ca marginea peticului să aibă cote proprii, apasă **desprinde** lângă ea în proprietăți: punctele ei devin ale sistematizării, așa cum sunt acum, iar cota fiecăruia se scrie în tabel (gol: a terenului). O margine poate fi și o linie proprie de la început (prin API: `civil.addGrading` cu `{points}`), cu cotele scrise, restul de pe teren.
+
+**Taluz la teren** (<kbd>SG</kbd>) duce un taluz de la o margine până întâlnește terenul: de la o terasă sau o platformă, spre exterior de jur împrejur; de la o linie deschisă (o linie caracteristică, o alee), pe partea pe care dai clic. Scrie în bară pantele de **Săpătură** și **Umplutură** ca `1:2`, `2` sau `50 %` (1:2 înseamnă 2 m pe orizontală pentru 1 m pe verticală): unde terenul e deasupra marginii, taluzul urcă la panta de săpătură; unde e dedesubt, coboară la panta de umplutură. Unde întâlnește terenul e **linia de intersecție cu terenul** (daylight line), calculată exact pe triunghiurile terenului. La un colț exterior taluzul îl ocolește ca un con, la un colț interior cele două taluzuri se întâlnesc pe bisectoarea colțului. Unde nu ajunge la teren în **Cel mult** (20 m dacă nu schimbi) sau iese de pe teren, se oprește acolo și spune. În proprietăți, un taluz poate merge în schimb **Până la** o lățime (întâlnește terenul la acea distanță, cu panta care rezultă) sau o cotă.
+
+![O terasă cu taluzurile ei până la teren, în plan: linia de intersecție punctată, hașurile de taluz de la creasta fiecăruia](shots/grading-plan.webp)
+
+![Taluzurile terasei în 3D](shots/grading-slope-3d.webp)
+
+**Pe teren.** O sistematizare face parte din terenul ei: marginile, generatoarele și linia de intersecție sunt linii de rupere ale terenului, iar punctele ridicării din interior sunt lăsate afară (terenul spune câte), deci terenul acolo e suprafața sistematizării; curbele de nivel continuă peste ea. Secțiunile taie terenul cu ea; analiza săpătură/umplutură și grila terenului o includ. Fără teren, un petic între margini e o suprafață proprie (un taluz are nevoie de un teren de întâlnit).
+
+![O secțiune prin cele două piațete și taluzul verde dintre ele](shots/grading-section.webp)
+
+**Plan, cantități și IFC.** În plan o sistematizare e hașurată cu grafica de suprafață a materialului ei (**Grass**, iarbă, dacă nu alegi altul), iar un taluz are linia de intersecție punctată și **hașurile de taluz**: linii peste taluz de la creastă în jos, lungi și scurte alternativ, ca planul să arate încotro coboară. *Lapin_GradingQuantities* dă aria în plan și aria suprafeței, punctul cel mai jos și cel mai înalt și, la un taluz, lungimea liniei de intersecție și lățimea cea mai mare; *Lapin_EarthworkQuantities* săpătura și umplutura față de terenul existent. În IFC 4.3 merge ca *IfcEarthworksFill* (un taluz *SLOPEFILL*) sau, când e mai mult săpătură, *IfcEarthworksCut*; în IFC4 ca proxy. Geometria terenului o include, iar un fișier scris de Lapin revine ca aceeași sistematizare. Fiecare schimbare e un pas de anulare; o sistematizare ștearsă lasă terenul cum era.
+
 ## Planul de situație și planul de încadrare
 
 Browserul proiectului are, sub niveluri, **Terenul** (*Site*): desenele amplasamentului, care nu țin de niciun etaj. Un proiect nou pornește cu două:

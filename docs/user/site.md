@@ -271,6 +271,32 @@ A hardscape's profile is its top edge: its corners' heights can be changed (the 
 
 ![The long profile on a sheet](shots/profile-sheet.webp)
 
+## Grading between edges and slopes
+
+Two tools in the **Grading** group of the **Site** tab shape the ground from edges you already have, and keep following them.
+
+**Grade between edges** (<kbd>GB</kbd>) makes a green patch between two plazas, terraces or lines at different heights: a lower plaza at −2.00 and an upper one at −1.00, say, with curved edges, and a slope of grass bridging them. Click the first edge (a hardscape, a feature line, a platform, or a path, wall or ditch), then the second: the patch is made at once. Of a hardscape or a platform only the stretch of its edge that faces the other is taken, so the patch runs along the two facing edges and is closed by straight joins at their ends. Tick **More edges** in the bar to pick three or more, then press **Make the grading**; picking an edge again lets it go.
+
+![Two plazas at −2.00 and −1.00 with curved edges, bridged by a green slope](shots/grading-plazas-3d.webp)
+
+Its surface is made from those edges only, so their heights hold exactly: the patch's edge is the plaza's edge, at the plaza's height, with no gap. Between two edges it is a **ruled** surface (straight lines from each point of one edge to the point as far along the other); from three or more edges, or with **Triangulated (TIN)** chosen, it is triangulated from the edges. The patch **follows** what it was made from: raise a plaza, move it, change a feature line, and the patch and the ground change with it, in the same undo step.
+
+![The grading's properties: what it is, its surface, its material and its edges](shots/grading-properties.webp)
+
+**Typing heights.** An edge that follows a plaza takes the plaza's heights. To give the patch's edge heights of its own, press **detach** beside it in the properties: its points become the grading's own, as they are now, and each one's elevation can be typed in the table (empty: the ground's). An edge can also be a line of its own from the start (through the API: `civil.addGrading` with `{points}`), its heights typed, the rest from the ground.
+
+**Slope to ground** (<kbd>SG</kbd>) runs a slope from an edge until it meets the ground: from a terrace or a platform outwards all round, from an open line (a feature line, a path) on the side you click. Type its **Cut** and **Fill** slopes in the bar as `1:2`, `2` or `50 %` (1:2 means 2 m across for 1 m up): where the ground is above the edge the slope climbs at the cut slope, where it is below it falls at the fill slope. Where it meets the ground is the **daylight line**, worked out exactly on the terrain's triangles. At an outside corner the slope turns round it as a cone, at an inside corner the two slopes meet on the corner's bisector. Where it does not reach the ground within **At most** (20 m unless you change it), or runs off the terrain, it stops there and says so. In its properties a slope can instead go **Down to** a width (it meets the ground that far out, at whatever slope that takes) or a level.
+
+![A terrace with its slopes to the ground in plan: the daylight line dashed, the hachures from the top of each slope](shots/grading-plan.webp)
+
+![The terrace's slopes in 3D](shots/grading-slope-3d.webp)
+
+**On the terrain.** A grading is part of its terrain: its edges, its rulings and its daylight line are the terrain's breaklines, and the survey points inside it are left out (the terrain says how many), so the ground there is the grading's surface; the contours run on across it. Sections cut the ground with it; the terrain's cut/fill analysis and grid include it. Without a terrain, a patch between edges is a surface of its own (a slope needs a ground to meet).
+
+![A section across the two plazas and the green slope between them](shots/grading-section.webp)
+
+**Plan, quantities and IFC.** In plan a grading is hatched with its material's surface graphics (**Grass** unless you choose another), and a slope has its daylight line dashed and its **hachures**: lines across the slope from its top down, long and short in turn, so the plan shows which way it falls. *Lapin_GradingQuantities* gives its plan and surface areas, its lowest and highest points and, for a slope, the daylight line's length and its widest; *Lapin_EarthworkQuantities* its cut and fill against the existing ground. To IFC 4.3 it goes as an *IfcEarthworksFill* (a slope *SLOPEFILL*) or, when it mostly cuts, an *IfcEarthworksCut*; to IFC4 as a proxy. The terrain's geometry includes it, and a file Lapin wrote comes back as the same grading. Each change is one undo step; a grading deleted leaves the ground as it was.
+
 ## Site plans and location plans
 
 The project browser has a **Site** under the levels: the site's own drawings, which belong to no storey. A new project starts with two:

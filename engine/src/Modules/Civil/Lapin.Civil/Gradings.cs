@@ -29,7 +29,7 @@ namespace Lapin.Civil;
 public static class Gradings
 {
     public const string Class = "LapinGrading";
-    public const string Color = "#7fa65a";
+    public const string Color = "#93c45f";
     public const string TerrainKey = "terrain";
     public const string Patch = "patch";
     public const string Slope = "slope";
@@ -1048,7 +1048,20 @@ public static class Gradings
                 attrs[k] = v;
             }
         if (a["level"] != null) { if (Json.Number(a["level"]) is { } lv) attrs["level"] = lv; else attrs.Remove("level"); }
-        if ((string?)a["material"] is { Length: > 0 } mat) attrs["material"] = ctx.Model.Get(mat) is { Class: IfcClass.Material } me ? me.Id : Materials.Ensure(ctx, mat, mat == Material ? Color : null).Id;
+        if ((string?)a["material"] is { Length: > 0 } mat)
+            attrs["material"] = ctx.Model.Get(mat) is { Class: IfcClass.Material } me ? me.Id : mat == Material ? Grass(ctx).Id : Materials.Ensure(ctx, mat).Id;
+    }
+
+    /// <summary>
+    /// The project's grass: the material it has by that name as it is, else a new one in a fresh green with the grass hatch (tufts)
+    /// over it in plan, as the ready-made pavings' materials get theirs (<see cref="Hardscapes.PresetLooks"/>).
+    /// </summary>
+    public static Entity Grass(ICommandContext ctx)
+    {
+        if (Materials.Find(ctx.Model, Material) is { } had) return had;
+        var e = new Entity(ctx.NewId(), IfcClass.Material, Material, new JsonObject { ["color"] = Color, ["elevation"] = new JsonObject { ["hatch"] = "GRASS", ["hatchColor"] = LineColor } });
+        ctx.Add(e);
+        return e;
     }
 
     /// <summary>A slope 1 : N as its N: a number, „1:N”, or a grade („50 %”, a fraction under 1 read as rise over run).</summary>
@@ -1085,7 +1098,7 @@ public static class Gradings
         }
         if (terrain != null) attrs[TerrainKey] = terrain.Id;
         WriteOptions(ctx, attrs, a);
-        if (attrs["material"] == null) attrs["material"] = Materials.Ensure(ctx, Material, Color).Id;
+        if (attrs["material"] == null) attrs["material"] = Grass(ctx).Id;
         var n = m.OfClass(Class).Count() + 1;
         var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : kind == Slope ? $"Slope {n}" : $"Grading {n}";
         var e = new Entity(ctx.NewId(), Class, name, attrs, kind == Slope ? "SLOPEFILL" : "USERDEFINED");
@@ -1116,6 +1129,9 @@ public static class Gradings
         ], Color));
         r.Geometry(Class, Geometry);
         r.Quantities(Class, Quantities);
+        // Drawn in plan by its own lines whatever its height (it lies on the ground, under a storey's range), on site plans as the site.
+        Lapin.Drawing.Views.Generator.SymbolicInPlan.Add(Class);
+        SitePlans.SiteClasses.Add(Class);
         r.Service<INodeProps>(new Props());
         r.Service<IElementPlacement>(new Placement());
         r.Service<IElementRise>(new Rise());
