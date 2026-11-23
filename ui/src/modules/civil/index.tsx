@@ -21,6 +21,9 @@ import { formatLength, levelUnit, parseLevel, unitName } from '../../engine/unit
 import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './survey';
 import { TerrainSection } from './TerrainSection';
 import { FeatureLineSection } from './FeatureLineSection';
+import { profileOnLine, sectionLine } from './profileTools';
+import { ProfilePanel } from './ProfilePanel';
+import { ProfilePlanOverlay } from './ProfilePlanOverlay';
 import { contourAt, dragContour, featureLine, featureLineGrips, featureLineGrips3d } from './featureLineTools';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection, TunnelLiningSection } from './SiteSections';
 import { isDitch, setBrush, useBrush, useTerrainEdit, type BrushKind } from './prefs';
@@ -490,7 +493,7 @@ const civil: LapinModule = {
     id: 'site', label: 'Site', order: 40, include: ['modify'],
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, terrainOnOutline, parcel], small: [terrainOnPicked, terrainBoundary, splitTerrain, mergeTerrains, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
-      { label: 'Grading', tools: [featureLine, contourAt, dragContour], small: [] },
+      { label: 'Grading', tools: [featureLine, contourAt, dragContour], small: [sectionLine, profileOnLine] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, subregion, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, hardscape, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework, hardscapeSlope, portal, tunnel] },
@@ -558,6 +561,8 @@ const civil: LapinModule = {
     { id: 'planting', label: 'Planting', classes: ['LapinPlanting'], component: PlantingSection, replacesFields: () => true },
     { id: 'entourage', label: 'Entourage', classes: ['LapinEntourage'], component: EntourageSection, replacesFields: () => true },
   ],
+  overlays: [ProfilePanel],
+  planOverlays: [ProfilePlanOverlay],
   dialogs: { brush: BrushDialog, corridor: CorridorDialog, entourageKinds: EntourageKindsDialog, portal: PortalDialog, tunnel: TunnelDialog, hardscapeTypes: HardscapeTypesDialog },
   editType: { LapinHardscapeType: (id: string) => { useHardscapeTypeEdit.setState({ id }); useUi.setState({ dialog: 'hardscapeTypes' }); } },
 };

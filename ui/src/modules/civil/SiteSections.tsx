@@ -5,6 +5,7 @@
  * Lengths in the project's unit.
  */
 
+import { ProfileButton } from './ProfileButton';
 import { useMemo, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
@@ -46,6 +47,7 @@ export function EarthworkSection({ node }: { node: NodeDto }) {
         <dt>Bottom width</dt><dd><Mm value={node.props.bottomWidth} fallback={0.4} min={50} onCommit={(v) => set({ bottomWidth: v })} /></dd>
         <dt>Side slope</dt><dd>1 : <NumberField value={slope} min={0} max={10} onCommit={(v) => { if (v != null) set({ slope: v }); }} /></dd>
         <Configure />
+        <ProfileButton id={node.id} />
         <dt>Top width</dt><dd><span className="num">{lengthText((typeof node.props.bottomWidth === 'number' ? node.props.bottomWidth : 0.4) + 2 * slope * (typeof node.props.depth === 'number' ? node.props.depth : 0.5))}</span></dd>
       </dl>
     );
@@ -69,6 +71,7 @@ export function PathSection({ node }: { node: NodeDto }) {
   return (
     <dl className="fields">
       <Configure />
+      <ProfileButton id={node.id} />
       <dt>Width</dt><dd><Mm value={node.props.width} fallback={1.5} min={200} onCommit={(v) => set({ width: v })} /></dd>
       <dt>Surface course</dt><dd><Mm value={node.props.surfaceThickness} fallback={0.06} min={0} onCommit={(v) => set({ surfaceThickness: v })} /></dd>
       <dt>Surface material</dt><dd><MaterialPicker value={mat('surfaceMaterial')} onChange={(m) => { if (m && m !== mat('surfaceMaterial')) set({ surfaceMaterial: m }); }} /></dd>
@@ -90,6 +93,7 @@ export function RetainingWallSection({ node }: { node: NodeDto }) {
     <>
     <dl className="fields">
       <Configure />
+      <ProfileButton id={node.id} />
       {node.props.portal != null && typeof node.props.portal === 'object' && (
         <><dt /><dd><button type="button" className="btn compact" data-action="portal-configure" title="its preset, wings, section, free ends and IFC" onClick={() => openPortal(node)}>Portal configurator…</button></dd></>
       )}

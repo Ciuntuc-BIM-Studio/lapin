@@ -4,6 +4,7 @@
  * own plainly, one taken from the ground or a grade greyed) and, between corners, the grade (typed as 2 %, 1:50, -1,5 %).
  */
 
+import { ProfileButton } from './ProfileButton';
 import { useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
@@ -12,7 +13,7 @@ import { formatLength, levelUnit, parseLength, parseLevel } from '../../engine/u
 import { formatGrade, lineOf, readGrade } from './featureLines';
 
 /** A text field that commits on Enter or blur and takes the value back when the node changes under it. */
-function CommitInput({ value, onCommit, className, label, testId, disabled, width = '6em', placeholder }: { placeholder?: string; value: string; onCommit: (text: string) => void; className?: string; label: string; testId?: string; disabled?: boolean; width?: string }) {
+export function CommitInput({ value, onCommit, className, label, testId, disabled, width = '6em', placeholder }: { placeholder?: string; value: string; onCommit: (text: string) => void; className?: string; label: string; testId?: string; disabled?: boolean; width?: string }) {
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
   const commit = () => { if (text !== value) onCommit(text); };
@@ -89,6 +90,7 @@ export function FeatureLineSection({ node }: { node: NodeDto }) {
   return (
     <div className="layers" data-testid="feature-line-section">
       <dl className="fields">
+        <ProfileButton id={node.id} />
         <dt>Terrain</dt>
         <dd>{terrain ? terrain.name : <span className="muted">—</span>}</dd>
         <dt>Contour elevation</dt>

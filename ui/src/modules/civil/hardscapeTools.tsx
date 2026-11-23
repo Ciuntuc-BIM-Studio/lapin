@@ -5,6 +5,7 @@
  * grips of its outline and its top's height grips in 3D.
  */
 
+import { ProfileButton } from './ProfileButton';
 import { create } from 'zustand';
 import { ArrowDownRight, Grid2x2 } from 'lucide-react';
 import type { Grip, Grip3D, GripView, RefLine, ToolDef } from '../../platform/module';
@@ -158,6 +159,7 @@ export function HardscapeSection({ node }: { node: NodeDto }) {
   return (
     <div className="layers" data-testid="hardscape-section">
       <dl className="fields">
+        <ProfileButton id={node.id} />
         <dt>Type</dt>
         <dd><select value={typeId} disabled={!node.editable} data-testid="hardscape-section-type" onChange={(e) => set(typeArgs(e.target.value))}><TypeOptions /></select>
           {' '}<button type="button" className="link small" onClick={() => { useHardscapeTypeEdit.setState({ id: typeId || null }); useUi.setState({ dialog: 'hardscapeTypes' }); }}>Edit types…</button></dd>
