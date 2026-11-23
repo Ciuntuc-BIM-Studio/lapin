@@ -193,6 +193,26 @@ O captură de Gaussian splats (o scenă antrenată din fotografii sau dintr-un f
 
 Splat-urile nu se exportă cu modelul (și nici nu se tipăresc încă pe planșe: o planșă desenează felia capturii ca puncte). Culoarea lor e culoarea de bază a splat-urilor; culoarea care se schimbă cu direcția din care privești, formatul SOG și PLY-ul comprimat al SuperSplat vin mai târziu (`docs/plan-gaussian-splats.md`).
 
+### Scara, decuparea și măsurarea unei capturi
+
+O captură antrenată din fotografii nu are o mărime reală: unitatea ei e cea aleasă de reconstrucție. **Calibrează scara** o face reală, pentru orice nor de puncte, cu splats sau fără. Pornește-o din butonul cu riglă de pe rândul norului în **Manage → Links** sau dă clic dreapta lângă nor în vederea 3D și alege **Calibrează scara…**. Dă clic pe două puncte ale norului aflate la o distanță cunoscută (se prind de punctele lui, de centrul unui splat) și scrie distanța lor reală la cursor, sau dă clic pe al doilea punct și Lapin ți-o cere. Norul crește sau se micșorează în jurul primului punct; punctele, splat-urile, feliile, snap-urile și exporturile îl urmează toate, iar o anulare îl aduce înapoi. Factorul apare ca **Factor de scară** în dialogul de așezare (butonul cu pin), lângă unitate, unde se poate și scrie; verificarea mărimii îl ia în calcul.
+
+![Calibrează scara: centrele a două splat-uri alese în 3D, distanța lor arătată înainte de a o scrie pe cea reală](shots/gaussian-splat-calibrate.webp)
+
+![Dialogul de așezare cu factorul de scară al capturii](shots/gaussian-splat-place.webp)
+
+O captură are în jurul subiectului fragmente plutitoare și grădinile vecinilor; o scanare, strada. Butonul de decupare de pe rândul norului (sau **Decupează norul de puncte…** din meniul de clic dreapta al vederii 3D, lângă nor) îi deschide **cutia de decupare**: **Potrivește pe nor** face o cutie în jurul întregului nor, după rotirea legăturii; apoi mijlocul, mărimile și rotirea ei o strâng la ce păstrezi, fiecare schimbare un pas de anulare, iar **Resetează** o scoate. Ce e în afară se ascunde peste tot: în 3D (puncte și splat-uri), în planuri și secțiuni, din snap-uri și din exporturi. Fișierul norului și indexul lui rămân cum sunt.
+
+![Cutia de decupare pe rândul unei capturi în Manage → Links](shots/gaussian-splat-crop-links.webp)
+
+![Captura decupată: copacul de la marginea ei tăiat](shots/gaussian-splat-crop.webp)
+
+**Măsoară** (<kbd>ME</kbd>) merge pe o captură în vederea 3D ca pe model: punctele lui se prind de punctele norului și de centrele splat-urilor și rămân la înălțimea la care au fost alese. Bara lui are două moduri: **Distanță**, un lanț de segmente cu totalul pe parcurs arătat în eticheta uneltei, și **Arie**, un contur închis de puncte prinse, a cărui arie și perimetru, în planul care li se potrivește cel mai bine, se arată pe măsură ce le alegi (o bucată de fațadă, o pantă de acoperiș) și se spun din nou la sfârșit, cu înclinarea planului.
+
+![Măsoară, Arie: peretele din spate al capturii măsurat pe splat-urile lui](shots/gaussian-splat-area.webp)
+
+Un PLY cu fețe (o rețea, cum e rezultatul MeshSplatting) nu e un nor de puncte: **Leagă nor de puncte…** spune asta și propune să-l imporți ca rețea 3D sau să-i legi vârfurile ca puncte.
+
 ## Modele 3D
 
 **Export 3D (glTF, USD, DAE)…** scrie modelul ca suprafețe pentru randare, vizualizare și realitate augmentată (AR):
@@ -205,7 +225,7 @@ Splat-urile nu se exportă cu modelul (și nici nu se tipăresc încă pe planș
 | DAE | COLLADA, pentru SketchUp și programe mai vechi. |
 | OBJ + MTL | Un .zip pentru Twinmotion, Lumion, 3ds Max și orice program de randare. Cu imaginile. |
 
-**Importă rețea (OBJ, STL, glTF)…** aduce o rețea dintr-un alt program 3D (OBJ, STL, glTF sau GLB) ca referințe pe nivelul activ. glTF își spune unitatea și care axă e în sus; pentru OBJ și STL, Lapin întreabă. O piesă de mobilier sau de decor adusă așa se așază ca orice element: **Mută**, **Copiază**, **Rotește**, **Oglindește** și **Repetare** în Modifică, **Mută 3D** în Studio pentru înălțime. Copiile ei împart triunghiurile, deci un șir de scaune cântărește cât unul. **Fă solid Studio** din Studio face forma unei referințe editabilă (vezi [Studio](studio.md)).
+**Importă rețea (OBJ, STL, glTF, PLY)…** aduce o rețea dintr-un alt program 3D (OBJ, STL, glTF, GLB sau PLY) ca referințe pe nivelul activ. glTF își spune unitatea și care axă e în sus; pentru OBJ, STL și PLY, Lapin întreabă. O rețea PLY colorată pe vârfuri (cum o scriu MeshSplatting și programele de fotogrammetrie) intră ca un singur element, cu culorile strânse în câteva sute de părți; pentru o captură antrenată cu 3D Gaussian splatting alege **−y** ca axă de sus. O piesă de mobilier sau de decor adusă așa se așază ca orice element: **Mută**, **Copiază**, **Rotește**, **Oglindește** și **Repetare** în Modifică, **Mută 3D** în Studio pentru înălțime. Copiile ei împart triunghiurile, deci un șir de scaune cântărește cât unul. **Fă solid Studio** din Studio face forma unei referințe editabilă (vezi [Studio](studio.md)).
 
 ![Șase scaune dintr-un fișier OBJ în jurul unei mese, făcute cu Modifică → Repetare](shots/reference-array.webp)
 

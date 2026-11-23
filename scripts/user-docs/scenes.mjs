@@ -360,6 +360,34 @@ function splatPly() {
   });
   return Buffer.concat([head, body]);
 }
+/**
+ * The 3D view's snaps under a grid of cursor positions while a point tool is on (Place3D's inference: its kind and the point
+ * snapped, `data-at`), over a part of the view given as fractions of it; the guide's scenes find a point cloud's points
+ * (a splat's centre) this way, as a user does by moving the cursor.
+ */
+async function snapsOver(t, { x0 = 0.1, x1 = 0.9, y0 = 0.15, y1 = 0.9, nx = 28, ny = 18 } = {}) {
+  const box = await t.page.locator('[data-testid=view3d]').boundingBox();
+  const out = [];
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const sx = box.x + box.width * (x0 + (x1 - x0) * (i + 0.5) / nx), sy = box.y + box.height * (y0 + (y1 - y0) * (j + 0.5) / ny);
+    await t.page.mouse.move(sx, sy);
+    await t.wait(25);
+    const r = await t.page.evaluate(() => { const e = document.querySelector('[data-place3d=inference]'); return e ? { kind: e.textContent, at: e.getAttribute('data-at') } : null; });
+    if (r?.kind === 'Endpoint' && r.at) out.push({ sx, sy, at: r.at.split(',').map(Number) });
+  }
+  return out;
+}
+
+/** The splat capture linked, indexed, and the 3D view turned onto it. */
+async function splatPavilion(t, placement) {
+  const r = await t.cmd('pointcloud.link', { name: 'pavilion.ply', data: splatPly().toString('base64'), ...(placement ? { placement } : {}) });
+  let st = null;
+  for (let k = 0; k < 120 && st?.state !== 'ready'; k++) { st = await t.call('doc.query', { name: 'pointcloud.status', args: { id: r.id } }); await t.wait(250); }
+  t.expect(st?.state === 'ready', `the splats are indexed (${st?.state})`);
+  await open3d(t);
+  return r.id;
+}
+
 function surveyDxf() {
   let body = '';
   for (let i = 0; i <= 8; i++) for (let j = 0; j <= 8; j++) {
@@ -9328,6 +9356,107 @@ export const scenes = [
       const points = Number(await t.page.locator('[data-testid=view3d]').getAttribute('data-cloud-points') ?? 0);
       t.expect(points > 30000, `its centres are drawn as points (${points})`);
       await t.shot('gaussian-splat-points', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
+    // Calibrate scale (G2 of docs/plan-gaussian-splats.md): a capture trained from photos has no true size; linked at half of it,
+    // two points snapped on its splats' centres in 3D (a post's foot and the far post's), their true distance typed, and the
+    // link's factor is right, the first point kept where it was.
+    id: 'gaussian-splat-calibrate',
+    async run(t) {
+      await t.fresh();
+      const id = await splatPavilion(t, { scale: 0.5 });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.1, pitch: -0.32, distance: 9, target: { x: 2.2, y: 1.5, z: 0.8 } }, false));
+      await t.wait(2500);
+      await t.ui({ dialog: 'links' });
+      await t.page.waitForSelector('button[data-link=calibrate]', { timeout: 20_000 });
+      await t.page.locator('button[data-link=calibrate]').click();
+      await t.wait(600);
+      const all = await snapsOver(t, { y0: 0.2, y1: 0.85 });
+      t.expect(all.length > 10, `the cursor snaps to the splats' centres in 3D (${all.length})`);
+      // On the pavilion, not in the tree's crown (at half size the tree stands at x = 5).
+      const snaps = all.filter((p) => p.at[0] < 3.6);
+      // The two snapped points farthest apart.
+      let best = null;
+      for (const a of snaps) for (const b of snaps) { const d = Math.hypot(a.at[0] - b.at[0], a.at[1] - b.at[1], a.at[2] - b.at[2]); if (!best || d > best.d) best = { a, b, d }; }
+      await t.page.mouse.click(best.a.sx, best.a.sy);
+      await t.page.mouse.move(best.b.sx, best.b.sy);
+      await t.wait(400);
+      await t.shot('gaussian-splat-calibrate', { of: '[data-testid=view3d]', pad: 0 });
+      await t.page.mouse.click(best.b.sx, best.b.sy);
+      const box = t.page.locator('.ask-box');
+      await box.waitFor({ timeout: 10_000 });
+      await box.locator('input').first().fill(`${(best.d * 2).toFixed(4)}m`);
+      // Enter answers it, as a user does (the box stands by the cursor, where it may be partly off the window).
+      await box.locator('input').first().press('Enter');
+      await t.wait(1500);
+      const link = (await t.nodes()).find((n) => n.id === id);
+      const scale = link?.props.placement?.scale ?? 1;
+      t.expect(Math.abs(scale - 1) < 0.02, `the capture is its true size again (its factor ${scale})`);
+      await t.ui({ dialog: 'links' });
+      await t.page.waitForSelector('[data-cloud-status=ready]', { timeout: 20_000 });
+      await t.page.locator('button[data-link=place]').click();
+      await t.page.locator('.ask-box').waitFor({ timeout: 10_000 });
+      await t.shot('gaussian-splat-place', { of: '.ask-box', pad: 6 });
+      await t.page.keyboard.press('Escape');
+      await t.ui({ dialog: null });
+    },
+  },
+  {
+    // A crop box (G2): a capture's floaters and its neighbours kept out; the box made round the cloud (Fit to cloud), then its
+    // length shortened so that the tree is left out, in 3D, in the splats and their points alike.
+    id: 'gaussian-splat-crop',
+    async run(t) {
+      await t.fresh();
+      const id = await splatPavilion(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.1, pitch: -0.32, distance: 17, target: { x: 4.5, y: 3, z: 1.6 } }, false));
+      await t.wait(2500);
+      const before = Number(await t.page.locator('[data-testid=view3d]').getAttribute('data-splats') ?? 0);
+      await t.ui({ dialog: 'links' });
+      await t.page.waitForSelector('button[data-link=crop]', { timeout: 20_000 });
+      await t.page.locator('button[data-link=crop]').click();
+      await t.page.locator('button[data-crop=fit]').click();
+      await t.wait(800);
+      const fit = (await t.nodes()).find((n) => n.id === id)?.props.crop;
+      t.expect(fit && fit.size[0] > 10, `Fit to cloud makes a box round all of it (${JSON.stringify(fit?.size)})`);
+      // Shortened in x to the pavilion and its lawn: the tree (at x = 10) left out.
+      await t.cmd('pointcloud.crop', { id, crop: { center: [3, 2, 2], size: [12, 13, 6], rotation: 0 } });
+      await t.wait(800);
+      await t.shot('gaussian-splat-crop-links', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      await t.wait(3000);
+      const after = Number(await t.page.locator('[data-testid=view3d]').getAttribute('data-splats') ?? 0);
+      t.expect(after > 0 && after < before, `the crop leaves out what is outside (${before} → ${after})`);
+      await t.shot('gaussian-splat-crop', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
+    // Measure in 3D (G2): Area, four points snapped on the splats of the pavilion's back wall: its area and perimeter in the
+    // plane that fits them, said as they are picked.
+    id: 'gaussian-splat-area',
+    async run(t) {
+      await t.fresh();
+      await splatPavilion(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -1.57, pitch: -0.1, distance: 9, target: { x: 3, y: 4, z: 1.3 } }, false));
+      await t.wait(2500);
+      await t.page.evaluate(async () => (await import('/src/modules/core/measure.ts')).setMeasureMode('area'));
+      await t.tool('measure');
+      const snaps = (await snapsOver(t, { x0: 0.15, x1: 0.85, y0: 0.2, y1: 0.9 })).filter((p) => Math.abs(p.at[1] - 4) < 0.1);
+      t.expect(snaps.length >= 4, `the back wall's splats are snapped to (${snaps.length})`);
+      // Its four corners as far as the snaps go: the extremes of x + z and x − z.
+      const pick = (f) => snaps.reduce((a, b) => (f(b) > f(a) ? b : a));
+      const corners = [pick((p) => -p.at[0] - p.at[2]), pick((p) => p.at[0] - p.at[2]), pick((p) => p.at[0] + p.at[2]), pick((p) => -p.at[0] + p.at[2])];
+      for (const c of corners.slice(0, 3)) { await t.page.mouse.click(c.sx, c.sy); await t.wait(250); }
+      await t.page.mouse.move(corners[3].sx, corners[3].sy);
+      await t.wait(400);
+      const info = await t.page.locator('[data-place3d=info]').textContent();
+      t.expect(/^Area [\d.]+ m² · perimeter/.test(info ?? ''), `the area is said as the points are picked (${info})`);
+      await t.shot('gaussian-splat-area', { of: '[data-testid=view3d]', pad: 0 });
+      await t.page.mouse.click(corners[3].sx, corners[3].sy);
+      await t.keys('Enter');
+      await t.wait(400);
+      await t.page.evaluate(async () => (await import('/src/modules/core/measure.ts')).setMeasureMode('distance'));
+      await t.keys('Escape');
     },
   },
   {

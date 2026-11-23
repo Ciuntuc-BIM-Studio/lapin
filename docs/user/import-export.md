@@ -191,6 +191,26 @@ In Manage → Links a splat cloud's row has a **Display** list: **Splats** (its 
 
 Splats are not exported with the model (nor printed on sheets yet: a sheet draws a capture's slice as dots). Their colour is the splats' base colour; the colour that changes with the viewing direction, the SOG format and SuperSplat's compressed PLY come later (`docs/plan-gaussian-splats.md`).
 
+### Scale, crop and measure a capture
+
+A capture trained from photos has no true size: its unit is whatever the reconstruction chose. **Calibrate scale** makes it true, for any point cloud, splats or not. Start it from the ruler button on the cloud's row in **Manage → Links**, or right-click near the cloud in the 3D view and choose **Calibrate scale…**. Click two points on the cloud a known distance apart (they snap to its points, a splat's centre) and type their true distance at the cursor, or click the second point and Lapin asks for it. The cloud grows or shrinks about the first point; its points, splats, slices, snaps and exports all follow, and one undo takes it back. The factor is shown as **Scale factor** in the place dialog (the pin button), beside the unit, where it can also be typed; the size check counts it.
+
+![Calibrate scale: two splats' centres picked in 3D, their distance shown before the true one is typed](shots/gaussian-splat-calibrate.webp)
+
+![The place dialog with the capture's scale factor](shots/gaussian-splat-place.webp)
+
+A capture carries floaters round its subject and the neighbours' gardens; a scan, the street. The crop button on the cloud's row (or **Crop point cloud…** on the 3D view's right-click near it) opens its **crop box**: **Fit to cloud** makes a box round the whole cloud, along the link's own turn; then its middle, its sizes and its turn shrink it to what you keep, each change one undo step, and **Reset** takes it off. What is outside is hidden everywhere: in 3D (points and splats), in plans and sections, from the snaps and from the exports. The cloud's file and its index stay as they are.
+
+![The crop box on a capture's row in Manage → Links](shots/gaussian-splat-crop-links.webp)
+
+![The capture cropped: the tree at its edge cut away](shots/gaussian-splat-crop.webp)
+
+**Measure** (<kbd>ME</kbd>) works on a capture in the 3D view as on the model: its points snap to the cloud's points and the splats' centres, and stay at the height they were picked. Its bar has two modes: **Distance**, a chain of legs with its running total shown in the tool's chip, and **Area**, a closed outline of snapped points whose area and perimeter, in the plane that best fits them, are shown as you pick them (a facade's patch, a roof's slope) and said again at the end, with the plane's tilt.
+
+![Measure, Area: the capture's back wall measured on its splats](shots/gaussian-splat-area.webp)
+
+A PLY that holds faces (a mesh, such as MeshSplatting's output) is not a point cloud: **Link point cloud…** says so and offers to import it as a 3D mesh instead, or to link its vertices as points.
+
 ## 3D models
 
 **Export 3D (glTF, USD, DAE)…** writes the model as surfaces for rendering, visualisation and augmented reality (AR):
@@ -203,7 +223,7 @@ Splats are not exported with the model (nor printed on sheets yet: a sheet draws
 | DAE | COLLADA, for SketchUp and older tools. |
 | OBJ + MTL | A .zip for Twinmotion, Lumion, 3ds Max and any renderer. Images included. |
 
-**Import mesh (OBJ, STL, glTF)…** brings in a mesh from another 3D program (OBJ, STL, glTF or GLB) as references on the active level. glTF says its unit and which way is up; for OBJ and STL Lapin asks. A piece of furniture or decoration brought this way is placed like any element: **Move**, **Copy**, **Rotate**, **Mirror** and **Array** in Modify, **Move 3D** in Studio for its height. Its copies share its triangles, so a row of chairs weighs what one does. Studio's **Make Studio solid** makes a reference's shape editable (see [Studio](studio.md)).
+**Import mesh (OBJ, STL, glTF, PLY)…** brings in a mesh from another 3D program (OBJ, STL, glTF, GLB or PLY) as references on the active level. glTF says its unit and which way is up; for OBJ, STL and PLY Lapin asks. A PLY mesh coloured by vertex (as MeshSplatting and photogrammetry programs write it) comes in as one element whose colours are gathered into a few hundred parts; for a capture trained with 3D Gaussian splatting choose **−y** as its up. A piece of furniture or decoration brought this way is placed like any element: **Move**, **Copy**, **Rotate**, **Mirror** and **Array** in Modify, **Move 3D** in Studio for its height. Its copies share its triangles, so a row of chairs weighs what one does. Studio's **Make Studio solid** makes a reference's shape editable (see [Studio](studio.md)).
 
 ![Six chairs from an OBJ file round a table, made with Modify → Array](shots/reference-array.webp)
 

@@ -34,7 +34,7 @@ Fiecare unealtă își arată literele când ții mouse-ul peste ea; le poți sc
 
 ## Măsurarea
 
-**Măsoară** (<kbd>ME</kbd>, a doua unealtă rapidă, sau **MEASURE** ori **DIST** în linia de comandă) măsoară fără să deseneze ceva: dai clic pe puncte într-un plan, o secțiune sau o fațadă, cu snap, și apeși <kbd>Enter</kbd>. Cât dai clic, câmpul de introducere arată lungimea și unghiul fiecărui segment; la sfârșit, mesajul dă lungimea totală, fiecare segment (la unul singur, Δx, Δy și unghiul) și, de la trei puncte, aria pe care o închid. În vederea 3D punctele se prind de colțurile, muchiile și fețele modelului; când sunt la înălțimi diferite, mesajul dă lungimea adevărată în spațiu, cu Δz.
+**Măsoară** (<kbd>ME</kbd>, a doua unealtă rapidă, sau **MEASURE** ori **DIST** în linia de comandă) măsoară fără să deseneze ceva: dai clic pe puncte într-un plan, o secțiune sau o fațadă, cu snap, și apeși <kbd>Enter</kbd>. Cât dai clic, câmpul de introducere arată lungimea și unghiul fiecărui segment; la sfârșit, mesajul dă lungimea totală, fiecare segment (la unul singur, Δx, Δy și unghiul) și, de la trei puncte, aria pe care o închid. În vederea 3D punctele se prind de colțurile, muchiile și fețele modelului și de punctele unui nor de puncte; când sunt la înălțimi diferite, mesajul dă lungimea adevărată în spațiu, cu Δz. Bara lui are două moduri: **Distanță** (lanțul, cu totalul pe parcurs arătat în eticheta din vederea 3D) și **Arie** (un contur închis: aria și perimetrul lui în planul care se potrivește cel mai bine punctelor, înclinarea planului spusă la sfârșit).
 
 ## Snap și ajutoare
 

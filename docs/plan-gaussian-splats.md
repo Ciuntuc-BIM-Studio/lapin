@@ -68,6 +68,31 @@ carries splats with its measuring tools.
   polyline of snapped points: its area and perimeter in its best-fit plane) and a chain of distances, if Measure does not
   have them already. A cloud's **crop box** (the part of a scan kept; outside hidden in every view), since splats carry
   floaters around the subject.
+  **From the forum** (a user pointed to MeshSplatting, which trains opaque triangle meshes instead of Gaussians): a **PLY
+  mesh** (a `face` element, vertex colours) taken by Import mesh with Lapin's own reader, and Link point cloud… given a PLY
+  with faces says it is a mesh and offers the mesh import instead.
+
+  **Done 23.11.2026 (decision 810, branch `feat/gaussian-splats`).** `pointcloud.calibrate {id, a, b, length}` multiplies
+  `placement.scale` by the ratio and moves the offset so that the first point stays put (one undo step; `pointcloud.place`
+  takes `scale` too, the place dialog shows it as Scale factor); `TransformOf` multiplies the unit by it, so points, splats
+  (centres and Gaussian sizes), slices, snaps, hierarchy boxes and the mesh exports follow; `UnitWarning` counts it. The tool
+  (`pointcloud.calibrate`, Place3D with heights, the length typed at the cursor or asked for after) starts from the ruler on
+  the cloud's row and from the 3D view's right-click near a cloud (`cloudAt`: the cloud whose drawn point is nearest the
+  ray). The crop is `crop: {center, size, rotation}` on the link (`CropBox`, project coordinates, turned about z;
+  `pointcloud.crop` with a box, `fit` or null), applied where the engine delivers: tiles, splat pages, slices, export
+  samples, the hierarchy's box; no re-indexing, so a crop changes nothing in the cache. Measure got a mode: Distance (the
+  chain, its running total in the 3D chip) and Area (a polygon; Newell's normal gives the area in the best-fit plane, the
+  perimeter and the plane's tilt), its points kept at their snapped heights in 3D (`inSpace`, `liveInfo` on ToolDef). Snapping
+  to splat centres in 3D already worked (the point tiles stay loaded, not drawn); the guide's scene now proves it by moving
+  the cursor over the capture. The PLY mesh reader (`Lapin.Mesh/PlyMesh.cs`: ascii and binary both ways, faces fanned)
+  gathers faces by colour, 3 bits a channel, into the parts of one element (at most 512), and Import mesh offers −y up for a
+  3DGS capture. Decided where the plan was silent: calibration scales about the first point, not the file's origin; the
+  crop box is in project coordinates (it stays put when the cloud is moved; Fit to cloud aligns it with the link's turn);
+  no grips for the crop in 3D yet (numbers on the row); in a plan Calibrate takes both points at the level's height.
+  Measured: the scenes calibrate a capture linked at half size back to a factor within 2 % of 1 by two clicks on splat
+  centres, and measure the pavilion's back wall at 15.21 m² (the snapped corners' 5.86 × 2.60 m). Tests:
+  `SplatCalibrateCropTests` (5), vitest (3 more in `measure.test.ts`); the scenes `gaussian-splat-calibrate`, `-crop`,
+  `-area` in both languages.
 - **G3 — the other formats and the colour by direction.** SOG (with the WebP lossless reader), SuperSplat's compressed
   PLY; spherical harmonics of degree 1–3 in the shader (Display: Full colour / Base colour), behind the display quality.
 - **G4 — on sheets.** A 3D or camera view with splats placed on a sheet prints them as a raster made by the engine (a CPU
@@ -78,4 +103,6 @@ carries splats with its measuring tools.
   splat page is that export with splats, not a new format.
 
 Later, if asked: editing splats (selecting and deleting floaters as SuperSplat does), training from photos (that is
-Lichtfeld Studio's or Postshot's job, not Lapin's), exporting splats.
+Lichtfeld Studio's or Postshot's job, not Lapin's), exporting splats; grips for the crop box in 3D. Two methods from the
+forum: MeshSplatting (opaque triangle meshes trained like splats: its PLY output is read since G2, by Import mesh) and
+Spaghetti Splatting (no file format of its own: nothing to read until it has one).
