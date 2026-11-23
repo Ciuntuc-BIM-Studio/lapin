@@ -22,7 +22,7 @@ public sealed class RunPieces : IPolylinePieces
     public void Piece(IModelView m, Entity e, JsonObject attrs, PolySlice slice, bool newStart, bool newEnd)
     {
         attrs["points"] = Runs.J(slice.Points);
-        if (Runs.LevelsOf(e) is { } levels && Runs.RemapLevels(Runs.Points(e), levels, slice.Points, Runs.SettingOf(m, e).Elevation) is { } kept) attrs["levels"] = kept;
+        if (Runs.PointLevelsOf(e) is { } levels && Runs.RemapLevels(Runs.Points(e), levels, slice.Points, Runs.SettingOf(m, e).Elevation) is { } kept) attrs["levels"] = kept;
         else attrs.Remove("levels");
     }
 

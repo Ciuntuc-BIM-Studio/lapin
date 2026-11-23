@@ -37,7 +37,7 @@ public static partial class Runs
             {
                 var attrs = run.CloneAttrs();
                 attrs["points"] = J(now.Select(Round));
-                if (RemapLevels(old, LevelsOf(run), now, s.Elevation) is { } levels) attrs["levels"] = levels; else attrs.Remove("levels");
+                if (RemapLevels(old, PointLevelsOf(run), now, s.Elevation) is { } levels) attrs["levels"] = levels; else attrs.Remove("levels");
                 ctx.Replace(run.With(attrs: attrs));
             }
         }
@@ -67,7 +67,9 @@ public static partial class Runs
         var next = Lay(setting.Service, setting.Material, points);
         var attrs = run.CloneAttrs();
         attrs["points"] = J(next);
-        var lv = levels != null && levels.Count == next.Count ? (JsonArray)levels.DeepClone() : RemapLevels(Points(run), LevelsOf(run), next, setting.Elevation);
+        // Levels given with the points (a number, null or [in, out] each) go onto them as laid; else the old ones are carried.
+        var given = levels != null && levels.Count == points.Count ? levels.Select(LevelOf).ToList() : null;
+        var lv = given != null ? (next.Count == points.Count ? LevelsJson(given) : RemapLevels(points, given, next, setting.Elevation)) : RemapLevels(Points(run), PointLevelsOf(run), next, setting.Elevation);
         if (lv != null) attrs["levels"] = lv; else attrs.Remove("levels");
         ctx.Replace(run.With(attrs: attrs));
         // Followed alone first, so the branches are measured on the route as it now stands.
@@ -217,7 +219,8 @@ public static partial class Runs
         r.Command("redrawRun", "Redraw run", (ctx, a) =>
         {
             var run = RequireRun(ctx, a);
-            SetRoute(ctx, run, PointsArg(a["points"]));
+            // With levels (one per point: a number, null, or [in, out] where its plane changed while drawn), the new path's heights.
+            SetRoute(ctx, run, PointsArg(a["points"]), a["levels"] as JsonArray);
             return null;
         });
     }
