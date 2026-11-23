@@ -195,6 +195,92 @@ public static class MepSymbols
     static void Replace(ICommandContext ctx, MepSymbolSet set) =>
         Write(ctx, s => WriteSets(s, ProjectSets(ctx.Model).Select(x => x.Id == set.Id ? set : x)));
 
+    /// <summary>
+    /// The symbol a role draws in a set of the project's: a symbol's id, or none (back to what the set's base draws). No set
+    /// named: the chosen one; a built-in chosen: a set of the project's made from it and chosen, in the same step.
+    /// </summary>
+    public static string SetRoleSymbol(ICommandContext ctx, string? setId, string key, string? symbolId)
+    {
+        var m = ctx.Model;
+        if (!IsKey(key)) throw new CommandException($"„{key}” is not an MEP role.");
+        if (symbolId != null && Symbols.DefOf(m, symbolId) == null) throw new CommandException("There is no such symbol.");
+        var id = setId ?? Chosen(m);
+        if (setId == null && Find(m, id) is { Builtin: true } builtin)
+        {
+            var made = Create(ctx, builtin.Pending ? builtin.Name : "Project symbols", null, builtin.Pending ? builtin.Id : null, builtin.Pending ? builtin.Standard : null, use: true);
+            id = made.Id;
+        }
+        var set = Own(ctx.Model, id);
+        var syms = new Dictionary<string, MepSymbolEntry>(set.Symbols, StringComparer.Ordinal);
+        if (symbolId == null) syms.Remove(key); else syms[key] = new MepSymbolEntry(SymbolId: symbolId);
+        Replace(ctx, set with { Symbols = syms });
+        return set.Id;
+    }
+
+    // ------------------------------------------------------------ files
+
+    /// <summary>A set of the project's as a symbols library file: the symbols it draws, and the set naming them by name.</summary>
+    public static JsonObject Export(IModelView m, string id)
+    {
+        var set = Own(m, id);
+        var used = set.Symbols.Where(x => x.Value.SymbolId != null && Symbols.DefOf(m, x.Value.SymbolId) != null).ToList();
+        if (used.Count == 0) throw new CommandException("The set draws no symbol of its own yet: give a role a drawn symbol first.");
+        var file = Symbols.Export(m, used.Select(x => x.Value.SymbolId!).Distinct(), set.Name);
+        var syms = new JsonObject();
+        foreach (var (k, v) in used.OrderBy(x => x.Key, StringComparer.Ordinal)) syms[k] = new JsonObject { ["symbol"] = Symbols.NameOf(m, v.SymbolId) };
+        var o = new JsonObject { ["name"] = set.Name };
+        if (set.Standard is { Length: > 0 }) o["standard"] = set.Standard;
+        if (set.Base != null && Builtin.Any(b => b.Id == set.Base)) o["base"] = set.Base;
+        o["symbols"] = syms;
+        file[FileKey] = o;
+        return file;
+    }
+
+    /// <summary>A file's set: its name, standard, base and the symbol each role names (by the symbol's name in the file).</summary>
+    public static (string Name, string? Standard, string? Base, Dictionary<string, string> Roles) ReadSet(string text)
+    {
+        var root = LibraryFile.Read(text, Symbols.Spec).Root;
+        if (root[FileKey] is not JsonObject so) throw new CommandException("This symbols file holds no MEP symbol set: import it in Manage → Symbols….");
+        var roles = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (k, v) in so["symbols"] as JsonObject ?? [])
+            if (IsKey(k) && (string?)v?["symbol"] is { Length: > 0 } name) roles[k] = name;
+        return ((string?)so["name"] is { Length: > 0 } n ? n : "MEP symbols", (string?)so["standard"], (string?)so["base"], roles);
+    }
+
+    /// <summary>
+    /// A set's file brought in, one step: its symbols as Symbols' import brings them (the choices for those of a name the project
+    /// has), and a new set of the project's naming them, chosen unless <paramref name="use"/> is false.
+    /// </summary>
+    public static JsonObject Import(ICommandContext ctx, string text, JsonObject? choices, string? all, bool use)
+    {
+        var (name, standard, baseId, roles) = ReadSet(text);
+        var read = Symbols.Read(text);
+        // What the import does with each symbol, decided before it runs, so the ids it gives back line up with the file's symbols.
+        var decisions = read.Select(s => LibraryMerge.Decide(Symbols.Rows(ctx.Model, [s])[0], choices, all)).ToList();
+        var result = Symbols.Import(ctx, text, choices, all, null);
+        var ids = (result["ids"] as JsonArray ?? []).Select(x => (string?)x).ToList();
+        var byName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var j = 0;
+        for (var i = 0; i < read.Count; i++)
+        {
+            if (decisions[i] == LibraryMerge.Skip)
+            {
+                if (ctx.Model.OfClass(Symbols.Class).FirstOrDefault(e => e.Name.Equals(read[i].Name, StringComparison.OrdinalIgnoreCase)) is { } mine) byName.TryAdd(read[i].Name, mine.Id);
+                continue;
+            }
+            if (j < ids.Count && ids[j] is { } id) byName.TryAdd(read[i].Name, id);
+            j++;
+        }
+        var set = Create(ctx, name, baseId != null && Builtin.Any(b => b.Id == baseId) ? baseId : Default, null, standard, use);
+        var syms = new Dictionary<string, MepSymbolEntry>(StringComparer.Ordinal);
+        foreach (var (k, symbolName) in roles) if (byName.TryGetValue(symbolName, out var sid)) syms[k] = new MepSymbolEntry(SymbolId: sid);
+        Replace(ctx, set with { Symbols = syms });
+        result["id"] = set.Id;
+        result["name"] = set.Name;
+        result["roles"] = syms.Count;
+        return result;
+    }
+
     // ------------------------------------------------------------ commands
 
     static JsonObject SetJson(IModelView m, MepSymbolSet s) => new()
@@ -285,6 +371,43 @@ public static class MepSymbols
                 if ((string?)s["set"] == set.Id) s.Remove("set");
             });
             return null;
+        });
+
+        // A role's symbol in a set: {setId? (the chosen one; a built-in chosen: a set of the project's made from it), role, symbolId (null: none, its base's)}.
+        r.Command("setRoleSymbol", "MEP role symbol", (ctx, a) =>
+        {
+            var key = (string?)a["role"] ?? throw new CommandException("Which role?");
+            var id = SetRoleSymbol(ctx, (string?)a["setId"] is { Length: > 0 } s ? s : null, key, (string?)a["symbolId"] is { Length: > 0 } y ? y : null);
+            return new JsonObject { ["setId"] = id };
+        });
+
+        // A set as a file to share (.lapinsymbols: its symbols, and the set).
+        r.Query("exportSymbolSet", (q, a) =>
+        {
+            var o = Export(q.Model, (string?)a["id"] ?? "");
+            var name = (string?)o[FileKey]?["name"] ?? "MEP symbols";
+            return new JsonObject { ["text"] = LibraryFile.Text(o), ["file"] = string.Concat(name.Select(ch => char.IsLetterOrDigit(ch) || ch is ' ' or '-' or '_' ? ch : '_')).Trim() + ".lapinsymbols" };
+        });
+
+        // A set's file read: its name, standard, the roles it draws, and its symbols as an import would take them.
+        r.Query("readSymbolSet", (q, a) =>
+        {
+            var text = (string?)a["text"] ?? "";
+            var (name, standard, baseId, roles) = ReadSet(text);
+            var read = Symbols.Read(text);
+            return new JsonObject
+            {
+                ["name"] = name, ["standard"] = standard, ["base"] = baseId,
+                ["roles"] = new JsonArray(roles.Select(x => (JsonNode)new JsonObject { ["role"] = x.Key, ["label"] = Label(x.Key), ["symbol"] = x.Value }).ToArray()),
+                ["preview"] = LibraryMerge.Preview(Symbols.Rows(q.Model, read)),
+            };
+        });
+
+        // A set's file brought in, one step: {text, choices?, all? (for symbols of a name the project has), use? (chosen; default yes)}.
+        r.Command("importSymbolSet", "Import MEP symbol set", (ctx, a) =>
+        {
+            var use = !(a["use"] is JsonValue uv && uv.TryGetValue<bool>(out var u) && !u);
+            return Import(ctx, (string?)a["text"] ?? "", a["choices"] as JsonObject, (string?)a["all"], use);
         });
     }
 }

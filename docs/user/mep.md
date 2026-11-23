@@ -112,6 +112,18 @@ The symbols of valves, meters, switches, outlets, lights, detectors, sprinklers,
 
 ![An MEP plan: the house halftone, the heating supply red and the return blue dashed, each run tagged with its size and each radiator with its power](shots/mep-plan-tags.webp) The **Equipment list** and the **Run list** under **System → Schedules** are schedules like any other: they go on sheets and export with them.
 
+### MEP symbols
+
+**MEP symbols…** (the System group) chooses the set every plan of the project draws its MEP symbols with. Lapin's set follows ISO 4067 for pipework and ducts and IEC 60617 for electrical devices; it is the default and draws what the plans drew before.
+
+To draw a role with a symbol of your own, draw it with the Drafting tools (at its printed size, or at its real size for an appliance), select it and choose **Save as symbol…** from the right-click menu: its base point is where the node stands, its angle the node's direction, and its scale says whether it is sized on paper (**Annotation**) or on the model (**Model**). Then in **MEP symbols…** choose it in the role's row. The project gets a set of its own, **Project symbols**, which falls back on Lapin's for every role you leave as it is. The plans draw your symbol in its system's colour, as they draw Lapin's; choosing **as the set it falls back on** again, or deleting the symbol, brings Lapin's back. A rise and a drop take a symbol each, for the rise nodes and for the rises and drops inside runs.
+
+**New set** makes another set; **Falls back on** chooses the set it borrows the roles it does not draw from. **Export…** writes the set with its symbols as a `.lapinsymbols` file, which another project or office brings in with **Import…** (Manage → Symbols… reads the same file for the symbols alone).
+
+Lapin does not draw the Romanian STAS symbols yet. **Start a Romanian (STAS) set** makes a set of that name that falls back on ISO, for you to give each role the symbol your office draws after the standard.
+
+![MEP symbols: the valve drawn by a symbol of the project's, every other role by Lapin's ISO set](shots/mep-symbols.webp)
+
 In an IFC export each system is an IfcDistributionSystem, every node and run has its IfcDistributionPorts, and the connections are written between the ports, so the network arrives in another program connected from the source to the last endpoint.
 
 ## Gas and fuel oil

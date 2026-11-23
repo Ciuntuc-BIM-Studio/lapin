@@ -5186,6 +5186,33 @@ export const scenes = [
     },
   },
   {
+    // MEP symbols… (docs/user/mep.md, MEP symbols): a symbol drawn by the user given to the valve, the project's set made for it in
+    // the same step, every other role drawn by Lapin's ISO 4067 / IEC 60617 set; the dialog lists each role's symbol and where from.
+    id: 'mep-symbols',
+    touches: ['mep', 'core'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const cold = await t.cmd('mep.createSystem', { service: 'coldWater' });
+      await t.cmd('mep.placeNode', { systemId: cold.id, role: 'waterMeter', storeyId: storey, x: 1, y: 1.5 });
+      await t.cmd('mep.placeNode', { systemId: cold.id, role: 'valve', storeyId: storey, x: 2, y: 1.5 });
+      // A ring with a bar across and a V: no ISO symbol looks like it, so the picture shows which role draws the user's.
+      const sym = await t.cmd('symbols.create', { name: 'Office valve', def: { scale: 'annotation', category: 'other', items: [
+        { type: 'circle', c: [0, 0], r: 2.5, stroke: 0.25 }, { type: 'line', a: [-2.5, 0], b: [2.5, 0], w: 0.5 },
+        { type: 'text', at: [-0.9, 0.6], text: 'V', h: 1.8 },
+      ] } });
+      const set = await t.cmd('mep.setRoleSymbol', { role: 'valve', symbolId: sym.id });
+      t.expect(!!set?.setId, 'the valve takes the symbol, in a set of the project\'s');
+      await t.button('MEP', { exact: true });
+      await t.tool('mep.symbolSets');
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-dialog="mep-symbols"]').count() > 0, 'MEP symbols opens');
+      t.expect(await t.page.locator('[data-role="valve"] select').inputValue() === sym.id, 'the valve\'s row names its symbol');
+      await t.shot('mep-symbols', { of: '.dialog', pad: 0, maxHeight: 640 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     // A run drawn in height (docs/user/mep.md, Runs): the plane and elevation beside the cursor, C after the second point taking the run up
     // to the ceiling there (a rise inside the run, one undo step), the rise's sign on the plan and the vertical leg in 3D; the system's
     // open ends marked while it is edited, counted in the edit's bar.

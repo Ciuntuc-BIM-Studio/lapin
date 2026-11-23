@@ -12,7 +12,7 @@
 import { pulldownTool } from '../../shell/pulldown';
 import { Box, Container, CookingPot, Cylinder, Filter, Fuel, GitBranchPlus, Heater, ShieldCheck, Waypoints } from 'lucide-react';
 import { AlarmSmoke, BellRing, CloudDrizzle, Cog, Droplet, FireExtinguisher, GitMerge, Hand, PanelTop, RefreshCw, Siren, ThermometerSun } from 'lucide-react';
-import { ListOrdered } from 'lucide-react';
+import { ListOrdered, Shapes } from 'lucide-react';
 import { AirVent, ArrowDownToLine, Ban, Bath, CircleDot, Droplets, Fan, Flame, Gauge, GitFork, Lightbulb, Link2, Milestone, PencilLine, Route, SquarePen, Waves, MoveVertical, Plug, ScanSearch, ShowerHead, Spline, Thermometer, ToggleLeft, Toilet, Unlink, Utensils, Wind, Workflow, Wrench, Zap, Map as MapIcon } from 'lucide-react';
 import type { Icon } from '../../icons';
 import type { Grip, LapinModule, PlaceEntry, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -50,6 +50,7 @@ import { CoverageOverlay, tagSystem } from './planGraphics';
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const SystemsDialog = lazyPart(() => import('./SystemsDialog').then((m) => m.SystemsDialog), { title: 'Systems' });
 const FanTypesDialog = lazyPart(() => import('./fans/FanTypesDialog').then((m) => m.FanTypesDialog), { title: 'Exhaust fan types' });
+const SymbolSetsDialog = lazyPart(() => import('./SymbolSetsDialog').then((m) => m.SymbolSetsDialog), { title: 'MEP symbols' });
 
 /** A role as its tool places it: its id in the engine's catalogue, the services it takes ("*": any), whether it sits on a run. */
 interface RoleTool { id: string; label: string; icon: Icon; services: string[]; inline?: boolean; shortcut?: string }
@@ -368,6 +369,8 @@ const redraw: ToolDef = {
 };
 
 const systems: ToolDef = { id: 'mep.systems', label: 'Systems…', icon: Workflow, run: () => useUi.setState({ dialog: 'mepSystems' }) };
+/** The symbol set the plans draw with, and the symbol each role draws: Lapin's, or one drawn with Drafting. */
+const symbolSets: ToolDef = { id: 'mep.symbolSets', label: 'MEP symbols…', icon: Shapes, run: () => useUi.setState({ dialog: 'mepSymbols' }) };
 
 /** What is left open in every system: selected, and counted. */
 const openPorts: ToolDef = {
@@ -539,7 +542,7 @@ const mep: LapinModule = {
       {
         label: 'System',
         tools: [pulldownTool('mep.more.newSystem', 'New system', Workflow, newSystems), edit],
-        small: [systems, mepPlan, openPorts, tagSystem,
+        small: [systems, symbolSets, mepPlan, openPorts, tagSystem,
           pulldownTool('mep.more.schedules', 'Schedules', ListOrdered, [equipmentSchedule, runSchedule, gasSchedule, fireSchedule, carrierSchedule, fanSchedule, fanRoomCheck])],
       },
       {
@@ -566,7 +569,7 @@ const mep: LapinModule = {
     { id: 'fan', label: 'Exhaust fan', classes: [FAN_CLASS], component: FanSection },
     { id: 'carrier', label: 'Cable carrier', classes: [CARRIER_CLASS], component: CarrierSection },
   ],
-  dialogs: { mepSystems: SystemsDialog, fanTypes: FanTypesDialog },
+  dialogs: { mepSystems: SystemsDialog, fanTypes: FanTypesDialog, mepSymbols: SymbolSetsDialog },
   background: Background,
   // The selected devices' coverage circles, where the plan or the system draws them on the selected only (the default),
   // and every open end of the system being edited (and in an MEP plan), a red mark on the screen only (openEnds.tsx).

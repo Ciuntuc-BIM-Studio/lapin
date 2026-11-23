@@ -3,6 +3,32 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // MEP symbol sets: Lapin's ISO set, the project's own of drawn symbols, the Romanian STAS set to fill, shared as files.
+  "MEP symbols": "ສັນຍາລັກລະບົບ MEP",
+  "MEP symbols…": "ສັນຍາລັກລະບົບ MEP…",
+  "Plans draw with": "ແຜນຜັງແຕ້ມດ້ວຍ",
+  "The set every plan of the project draws its MEP symbols with": "ຊຸດທີ່ທຸກແຜນຜັງຂອງໂຄງການໃຊ້ແຕ້ມສັນຍາລັກ MEP",
+  "Falls back on": "ໃຊ້ແທນຈາກ",
+  "Start a Romanian (STAS) set": "ເລີ່ມຊຸດໂຣມາເນຍ (STAS)",
+  "No STAS symbol is drawn yet: a set of your own, falling back on ISO, to give each role your drawn symbol": "ຍັງບໍ່ມີສັນຍາລັກ STAS ຖືກແຕ້ມ: ຊຸດຂອງທ່ານເອງ ທີ່ໃຊ້ ISO ແທນ ເພື່ອໃຫ້ແຕ່ລະບົດບາດມີສັນຍາລັກທີ່ທ່ານແຕ້ມ",
+  "The set and its symbols as a .lapinsymbols file, for another project or office": "ຊຸດ ແລະ ສັນຍາລັກຂອງມັນເປັນໄຟລ໌ .lapinsymbols ສຳລັບໂຄງການ ຫຼື ຫ້ອງການອື່ນ",
+  "Lapin's ISO 4067 / IEC 60617 symbols. Give a role a symbol of your own and a set of the project's is made from them.": "ສັນຍາລັກ ISO 4067 / IEC 60617 ຂອງ Lapin. ໃຫ້ບົດບາດໜຶ່ງມີສັນຍາລັກຂອງທ່ານເອງ ແລ້ວຊຸດຂອງໂຄງການຈະຖືກສ້າງຈາກພວກມັນ.",
+  "Draw a symbol with Drafting, select it and Save as symbol… (its base point is where the node stands, its angle the node's direction); then choose it here for a role. Roles left as they are draw the set it falls back on.": "ແຕ້ມສັນຍາລັກດ້ວຍເຄື່ອງມືແຕ້ມ, ເລືອກມັນ ແລະ ບັນທຶກເປັນສັນຍາລັກ… (ຈຸດຖານຂອງມັນແມ່ນບ່ອນທີ່ໂນດຕັ້ງຢູ່, ມຸມຂອງມັນແມ່ນທິດທາງຂອງໂນດ); ແລ້ວເລືອກມັນຢູ່ນີ້ສຳລັບບົດບາດໜຶ່ງ. ບົດບາດທີ່ປະໄວ້ຕາມເດີມຈະແຕ້ມຕາມຊຸດທີ່ໃຊ້ແທນ.",
+  "Drawn with": "ແຕ້ມດ້ວຍ",
+  "On paper: the same printed size at any scale; on the model: its real size": "ເທິງເຈ້ຍ: ຂະໜາດພິມເທົ່າກັນທຸກມາດຕາສ່ວນ; ເທິງແບບຈຳລອງ: ຂະໜາດຈິງ",
+  "as the set it falls back on": "ຕາມຊຸດທີ່ໃຊ້ແທນ",
+  "on paper": "ເທິງເຈ້ຍ",
+  "on the model": "ເທິງແບບຈຳລອງ",
+  "Name of the new symbol set": "ຊື່ຂອງຊຸດສັນຍາລັກໃໝ່",
+  "Office symbols": "ສັນຍາລັກຂອງຫ້ອງການ",
+  "Name of the symbol set": "ຊື່ຂອງຊຸດສັນຍາລັກ",
+  "Delete the symbol set „{name}”? Its symbols stay in the project.": "ລຶບຊຸດສັນຍາລັກ „{name}” ບໍ? ສັນຍາລັກຂອງມັນຍັງຢູ່ໃນໂຄງການ.",
+  "The set could not be exported.": "ບໍ່ສາມາດສົ່ງອອກຊຸດໄດ້.",
+  "MEP symbol set (.lapinsymbols)": "ຊຸດສັນຍາລັກ MEP (.lapinsymbols)",
+  "That file holds no MEP symbol set.": "ໄຟລ໌ນັ້ນບໍ່ມີຊຸດສັນຍາລັກ MEP.",
+  "Symbol set imported: the plans draw with it.": "ນຳເຂົ້າຊຸດສັນຍາລັກແລ້ວ: ແຜນຜັງແຕ້ມດ້ວຍມັນ.",
+  "Rise (going up)": "ຂຶ້ນ (ໄປທາງເທິງ)",
+  "Drop (going down)": "ລົງ (ໄປທາງລຸ່ມ)",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "ໃສ່ປ້າຍລະບົບ",
   "Open a plan to tag its systems.": "ເປີດແຜນຜັງເພື່ອໃສ່ປ້າຍລະບົບຂອງມັນ.",

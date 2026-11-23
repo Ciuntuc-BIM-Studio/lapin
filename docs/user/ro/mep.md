@@ -112,6 +112,18 @@ Simbolurile robinetelor, contoarelor, întrerupătoarelor, prizelor, corpurilor 
 
 ![Un plan de instalații: casa estompată, turul încălzirii roșu și returul albastru întrerupt, fiecare traseu etichetat cu dimensiunea lui și fiecare radiator cu puterea lui](shots/mep-plan-tags.webp) **Lista de echipamente** și **lista de trasee** de sub **Sistem → Extrase** sunt tabele ca oricare altele: merg pe planșe și se exportă cu ele.
 
+### Simboluri de instalații
+
+**Simboluri de instalații…** (grupul Sistem) alege setul cu care toate planurile proiectului își desenează simbolurile de instalații. Setul Lapin urmează ISO 4067 pentru conducte și canale și IEC 60617 pentru aparatele electrice; este cel implicit și desenează ce desenau planurile și până acum.
+
+Ca să desenezi un rol cu un simbol al tău, desenează-l cu uneltele de Desen (la mărimea tipărită sau, pentru un aparat, la mărimea reală), selectează-l și alege **Salvează ca simbol…** din meniul de clic dreapta: punctul de bază este locul unde stă nodul, unghiul este direcția nodului, iar scara spune dacă are mărimea dată pe hârtie (**Adnotare**) sau pe model (**Model**). Apoi, în **Simboluri de instalații…**, alege-l pe rândul rolului. Proiectul primește un set al lui, **Project symbols**, care folosește setul Lapin pentru fiecare rol pe care îl lași așa cum e. Planurile desenează simbolul tău în culoarea sistemului lui, cum îl desenează și pe cel Lapin; dacă alegi din nou **ca setul pe care se sprijină** sau ștergi simbolul, revine cel Lapin. O urcare și o coborâre au fiecare simbolul ei, pentru nodurile de urcare și pentru urcările și coborârile din interiorul traseelor.
+
+**Set nou** face un alt set; **Se sprijină pe** alege setul din care își ia rolurile pe care nu le desenează. **Exportă…** scrie setul cu simbolurile lui ca fișier `.lapinsymbols`, pe care alt proiect sau alt birou îl aduce cu **Importă…** (Gestionare → Simboluri… citește același fișier doar pentru simboluri).
+
+Lapin nu desenează încă simbolurile STAS românești. **Începe un set românesc (STAS)** face un set cu acest nume care se sprijină pe ISO, ca să dai fiecărui rol simbolul pe care biroul tău îl desenează după standard.
+
+![Simboluri de instalații: robinetul desenat cu un simbol al proiectului, toate celelalte roluri cu setul ISO Lapin](shots/mep-symbols.webp)
+
 La exportul IFC fiecare sistem e un IfcDistributionSystem, fiecare nod și traseu își are porturile IfcDistributionPort, iar conexiunile se scriu între porturi, așa că rețeaua ajunge în alt program conectată de la sursă la ultimul consumator.
 
 ## Gaze și motorină

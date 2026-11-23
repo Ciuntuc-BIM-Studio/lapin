@@ -1,6 +1,32 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // MEP symbol sets: Lapin's ISO set, the project's own of drawn symbols, the Romanian STAS set to fill, shared as files.
+  "MEP symbols": "Simboluri de instalații",
+  "MEP symbols…": "Simboluri de instalații…",
+  "Plans draw with": "Planurile desenează cu",
+  "The set every plan of the project draws its MEP symbols with": "Setul cu care fiecare plan al proiectului își desenează simbolurile de instalații",
+  "Falls back on": "Se sprijină pe",
+  "Start a Romanian (STAS) set": "Începe un set românesc (STAS)",
+  "No STAS symbol is drawn yet: a set of your own, falling back on ISO, to give each role your drawn symbol": "Niciun simbol STAS nu e desenat încă: un set al tău, sprijinit pe ISO, ca să dai fiecărui rol simbolul desenat de tine",
+  "The set and its symbols as a .lapinsymbols file, for another project or office": "Setul și simbolurile lui ca fișier .lapinsymbols, pentru alt proiect sau alt birou",
+  "Lapin's ISO 4067 / IEC 60617 symbols. Give a role a symbol of your own and a set of the project's is made from them.": "Simbolurile ISO 4067 / IEC 60617 ale Lapin. Dă unui rol un simbol al tău și din ele se face un set al proiectului.",
+  "Draw a symbol with Drafting, select it and Save as symbol… (its base point is where the node stands, its angle the node's direction); then choose it here for a role. Roles left as they are draw the set it falls back on.": "Desenează un simbol cu Desen, selectează-l și Salvează ca simbol… (punctul de bază este locul nodului, unghiul direcția nodului); apoi alege-l aici pentru un rol. Rolurile lăsate cum sunt desenează setul pe care se sprijină.",
+  "Drawn with": "Desenat cu",
+  "On paper: the same printed size at any scale; on the model: its real size": "Pe hârtie: aceeași mărime tipărită la orice scară; pe model: mărimea reală",
+  "as the set it falls back on": "ca setul pe care se sprijină",
+  "on paper": "pe hârtie",
+  "on the model": "pe model",
+  "Name of the new symbol set": "Numele noului set de simboluri",
+  "Office symbols": "Simbolurile biroului",
+  "Name of the symbol set": "Numele setului de simboluri",
+  "Delete the symbol set „{name}”? Its symbols stay in the project.": "Ștergi setul de simboluri „{name}”? Simbolurile lui rămân în proiect.",
+  "The set could not be exported.": "Setul nu a putut fi exportat.",
+  "MEP symbol set (.lapinsymbols)": "Set de simboluri de instalații (.lapinsymbols)",
+  "That file holds no MEP symbol set.": "Fișierul nu conține un set de simboluri de instalații.",
+  "Symbol set imported: the plans draw with it.": "Setul de simboluri a fost importat: planurile desenează cu el.",
+  "Rise (going up)": "Urcare (în sus)",
+  "Drop (going down)": "Coborâre (în jos)",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "Etichetează sistemul",
   "Open a plan to tag its systems.": "Deschide un plan ca să-i etichetezi sistemele.",

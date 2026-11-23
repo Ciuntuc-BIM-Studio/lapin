@@ -3,6 +3,32 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // MEP symbol sets: Lapin's ISO set, the project's own of drawn symbols, the Romanian STAS set to fill, shared as files.
+  "MEP symbols": "Simboli impiantistici",
+  "MEP symbols…": "Simboli impiantistici…",
+  "Plans draw with": "Le piante disegnano con",
+  "The set every plan of the project draws its MEP symbols with": "Il set con cui ogni pianta del progetto disegna i suoi simboli impiantistici",
+  "Falls back on": "Ripiega su",
+  "Start a Romanian (STAS) set": "Inizia un set rumeno (STAS)",
+  "No STAS symbol is drawn yet: a set of your own, falling back on ISO, to give each role your drawn symbol": "Nessun simbolo STAS è ancora disegnato: un set tuo, che ripiega su ISO, per dare a ogni ruolo il tuo simbolo disegnato",
+  "The set and its symbols as a .lapinsymbols file, for another project or office": "Il set e i suoi simboli come file .lapinsymbols, per un altro progetto o studio",
+  "Lapin's ISO 4067 / IEC 60617 symbols. Give a role a symbol of your own and a set of the project's is made from them.": "I simboli ISO 4067 / IEC 60617 di Lapin. Dai a un ruolo un simbolo tuo e da essi nasce un set del progetto.",
+  "Draw a symbol with Drafting, select it and Save as symbol… (its base point is where the node stands, its angle the node's direction); then choose it here for a role. Roles left as they are draw the set it falls back on.": "Disegna un simbolo con Disegno, selezionalo e Salva come simbolo… (il suo punto base è dove sta il nodo, il suo angolo la direzione del nodo); poi sceglilo qui per un ruolo. I ruoli lasciati come sono disegnano il set su cui ripiega.",
+  "Drawn with": "Disegnato con",
+  "On paper: the same printed size at any scale; on the model: its real size": "Su carta: la stessa dimensione stampata a ogni scala; sul modello: la sua dimensione reale",
+  "as the set it falls back on": "come il set su cui ripiega",
+  "on paper": "su carta",
+  "on the model": "sul modello",
+  "Name of the new symbol set": "Nome del nuovo set di simboli",
+  "Office symbols": "Simboli dello studio",
+  "Name of the symbol set": "Nome del set di simboli",
+  "Delete the symbol set „{name}”? Its symbols stay in the project.": "Eliminare il set di simboli „{name}”? I suoi simboli restano nel progetto.",
+  "The set could not be exported.": "Non è stato possibile esportare il set.",
+  "MEP symbol set (.lapinsymbols)": "Set di simboli impiantistici (.lapinsymbols)",
+  "That file holds no MEP symbol set.": "Quel file non contiene alcun set di simboli impiantistici.",
+  "Symbol set imported: the plans draw with it.": "Set di simboli importato: le piante disegnano con esso.",
+  "Rise (going up)": "Salita (verso l'alto)",
+  "Drop (going down)": "Discesa (verso il basso)",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "Etichetta il sistema",
   "Open a plan to tag its systems.": "Apri una pianta per etichettarne i sistemi.",

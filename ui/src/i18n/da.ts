@@ -3,6 +3,32 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // MEP symbol sets: Lapin's ISO set, the project's own of drawn symbols, the Romanian STAS set to fill, shared as files.
+  "MEP symbols": "Installationssymboler",
+  "MEP symbols…": "Installationssymboler…",
+  "Plans draw with": "Planer tegner med",
+  "The set every plan of the project draws its MEP symbols with": "Det sæt, som hver plan i projektet tegner sine installationssymboler med",
+  "Falls back on": "Falder tilbage på",
+  "Start a Romanian (STAS) set": "Start et rumænsk sæt (STAS)",
+  "No STAS symbol is drawn yet: a set of your own, falling back on ISO, to give each role your drawn symbol": "Der er endnu ikke tegnet noget STAS-symbol: et eget sæt, der falder tilbage på ISO, så du kan give hver rolle dit tegnede symbol",
+  "The set and its symbols as a .lapinsymbols file, for another project or office": "Sættet og dets symboler som en .lapinsymbols-fil til et andet projekt eller kontor",
+  "Lapin's ISO 4067 / IEC 60617 symbols. Give a role a symbol of your own and a set of the project's is made from them.": "Lapins symboler efter ISO 4067 / IEC 60617. Giv en rolle dit eget symbol, så laves der et sæt i projektet ud fra dem.",
+  "Draw a symbol with Drafting, select it and Save as symbol… (its base point is where the node stands, its angle the node's direction); then choose it here for a role. Roles left as they are draw the set it falls back on.": "Tegn et symbol med Tegning, markér det og Gem som symbol… (dets basispunkt er der, hvor knuden står, dets vinkel knudens retning); vælg det derefter her til en rolle. Roller, der lades som de er, tegner det sæt, der faldes tilbage på.",
+  "Drawn with": "Tegnet med",
+  "On paper: the same printed size at any scale; on the model: its real size": "På papir: samme trykte størrelse i alle målestoksforhold; på modellen: dens virkelige størrelse",
+  "as the set it falls back on": "som det sæt, der faldes tilbage på",
+  "on paper": "på papir",
+  "on the model": "på modellen",
+  "Name of the new symbol set": "Navn på det nye symbolsæt",
+  "Office symbols": "Kontorets symboler",
+  "Name of the symbol set": "Navn på symbolsættet",
+  "Delete the symbol set „{name}”? Its symbols stay in the project.": "Slet symbolsættet „{name}”? Dets symboler bliver i projektet.",
+  "The set could not be exported.": "Sættet kunne ikke eksporteres.",
+  "MEP symbol set (.lapinsymbols)": "Installationssymbolsæt (.lapinsymbols)",
+  "That file holds no MEP symbol set.": "Filen indeholder intet installationssymbolsæt.",
+  "Symbol set imported: the plans draw with it.": "Symbolsæt importeret: planerne tegner med det.",
+  "Rise (going up)": "Stigning (opad)",
+  "Drop (going down)": "Fald (nedad)",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "Mærk system",
   "Open a plan to tag its systems.": "Åbn en plan for at mærke dens systemer.",

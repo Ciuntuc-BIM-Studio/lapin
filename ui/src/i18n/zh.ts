@@ -3,6 +3,32 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // MEP symbol sets: Lapin's ISO set, the project's own of drawn symbols, the Romanian STAS set to fill, shared as files.
+  "MEP symbols": "机电符号",
+  "MEP symbols…": "机电符号…",
+  "Plans draw with": "平面图使用",
+  "The set every plan of the project draws its MEP symbols with": "项目所有平面图绘制机电符号所用的符号集",
+  "Falls back on": "回退到",
+  "Start a Romanian (STAS) set": "新建罗马尼亚（STAS）符号集",
+  "No STAS symbol is drawn yet: a set of your own, falling back on ISO, to give each role your drawn symbol": "尚未绘制任何 STAS 符号：建立一个回退到 ISO 的自有符号集，为每个角色指定你绘制的符号",
+  "The set and its symbols as a .lapinsymbols file, for another project or office": "将符号集及其符号保存为 .lapinsymbols 文件，供其他项目或事务所使用",
+  "Lapin's ISO 4067 / IEC 60617 symbols. Give a role a symbol of your own and a set of the project's is made from them.": "Lapin 的 ISO 4067 / IEC 60617 符号。为某个角色指定你自己的符号，即会据此建立项目自有的符号集。",
+  "Draw a symbol with Drafting, select it and Save as symbol… (its base point is where the node stands, its angle the node's direction); then choose it here for a role. Roles left as they are draw the set it falls back on.": "用绘图工具画一个符号，选中后执行“另存为符号…”（其基点即节点所在位置，其角度即节点方向）；然后在此为某个角色选择它。保持不变的角色按其回退的符号集绘制。",
+  "Drawn with": "绘制方式",
+  "On paper: the same printed size at any scale; on the model: its real size": "图纸上：任何比例下打印尺寸相同；模型上：按实际尺寸",
+  "as the set it falls back on": "按回退的符号集",
+  "on paper": "图纸尺寸",
+  "on the model": "实际尺寸",
+  "Name of the new symbol set": "新符号集的名称",
+  "Office symbols": "事务所符号",
+  "Name of the symbol set": "符号集名称",
+  "Delete the symbol set „{name}”? Its symbols stay in the project.": "删除符号集「{name}」？其符号仍保留在项目中。",
+  "The set could not be exported.": "无法导出该符号集。",
+  "MEP symbol set (.lapinsymbols)": "机电符号集（.lapinsymbols）",
+  "That file holds no MEP symbol set.": "该文件不包含机电符号集。",
+  "Symbol set imported: the plans draw with it.": "符号集已导入：平面图将使用它绘制。",
+  "Rise (going up)": "上升（向上）",
+  "Drop (going down)": "下降（向下）",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "标注系统",
   "Open a plan to tag its systems.": "打开平面图以标注其系统。",

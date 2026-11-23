@@ -3,6 +3,32 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // MEP symbol sets: Lapin's ISO set, the project's own of drawn symbols, the Romanian STAS set to fill, shared as files.
+  "MEP symbols": "Symboles CVC-P",
+  "MEP symbols…": "Symboles CVC-P…",
+  "Plans draw with": "Les plans dessinent avec",
+  "The set every plan of the project draws its MEP symbols with": "Le jeu avec lequel chaque plan du projet dessine ses symboles CVC-P",
+  "Falls back on": "Se rabat sur",
+  "Start a Romanian (STAS) set": "Commencer un jeu roumain (STAS)",
+  "No STAS symbol is drawn yet: a set of your own, falling back on ISO, to give each role your drawn symbol": "Aucun symbole STAS n’est encore dessiné : un jeu à vous, qui se rabat sur ISO, pour donner à chaque rôle votre symbole dessiné",
+  "The set and its symbols as a .lapinsymbols file, for another project or office": "Le jeu et ses symboles en fichier .lapinsymbols, pour un autre projet ou un autre bureau",
+  "Lapin's ISO 4067 / IEC 60617 symbols. Give a role a symbol of your own and a set of the project's is made from them.": "Les symboles ISO 4067 / CEI 60617 de Lapin. Donnez à un rôle un symbole à vous et un jeu du projet est créé à partir d’eux.",
+  "Draw a symbol with Drafting, select it and Save as symbol… (its base point is where the node stands, its angle the node's direction); then choose it here for a role. Roles left as they are draw the set it falls back on.": "Dessinez un symbole avec Dessin, sélectionnez-le et Enregistrer comme symbole… (son point de base est la place du nœud, son angle la direction du nœud) ; puis choisissez-le ici pour un rôle. Les rôles laissés tels quels dessinent le jeu sur lequel il se rabat.",
+  "Drawn with": "Dessiné avec",
+  "On paper: the same printed size at any scale; on the model: its real size": "Sur papier : la même taille imprimée à toute échelle ; sur le modèle : sa taille réelle",
+  "as the set it falls back on": "comme le jeu sur lequel il se rabat",
+  "on paper": "sur papier",
+  "on the model": "sur le modèle",
+  "Name of the new symbol set": "Nom du nouveau jeu de symboles",
+  "Office symbols": "Symboles du bureau",
+  "Name of the symbol set": "Nom du jeu de symboles",
+  "Delete the symbol set „{name}”? Its symbols stay in the project.": "Supprimer le jeu de symboles « {name} » ? Ses symboles restent dans le projet.",
+  "The set could not be exported.": "Le jeu n’a pas pu être exporté.",
+  "MEP symbol set (.lapinsymbols)": "Jeu de symboles CVC-P (.lapinsymbols)",
+  "That file holds no MEP symbol set.": "Ce fichier ne contient aucun jeu de symboles CVC-P.",
+  "Symbol set imported: the plans draw with it.": "Jeu de symboles importé : les plans dessinent avec lui.",
+  "Rise (going up)": "Montée (vers le haut)",
+  "Drop (going down)": "Descente (vers le bas)",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "Étiqueter le système",
   "Open a plan to tag its systems.": "Ouvrez un plan pour étiqueter ses systèmes.",
