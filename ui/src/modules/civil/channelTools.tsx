@@ -295,7 +295,7 @@ export function ChannelSection({ node }: { node: NodeDto }) {
   const follows = followsName(node, nodes);
   const own = node.props.outlets !== undefined;
   const shape = profileId ? `profile:${profileId}` : kind;
-  const station = (s: number) => formatLength(s);
+  const station = (s: number) => lengthText(s);
   return (
     <div className="layers" data-testid="channel-section">
       <dl className="fields">
@@ -336,7 +336,7 @@ export function ChannelSection({ node }: { node: NodeDto }) {
         {outlets.map((s, k) => (
           <tr key={`${k}:${s}`}>
             <td className="muted">{k + 1}</td>
-            <td><span className="muted">at</span> <CommitInput value={station(s)} width="5em" label="Station of the gully" testId={`channel-outlet${k}`} disabled={!node.editable}
+            <td><span className="muted">at</span> <CommitInput value={station(s)} width="7.5em" label="Station of the gully" testId={`channel-outlet${k}`} disabled={!node.editable}
               onCommit={(t) => { const v = parseLength(t); if (v == null || !Number.isFinite(v) || v < 0 || v > length) { notify('That station is not on the channel: type a distance along it.'); return; } set({ outlets: movedOutlet(outlets, k, v) }); }} /></td>
             <td>{node.editable && <button type="button" className="link small" data-testid={`channel-outlet-remove${k}`} onClick={() => set({ outlets: withoutOutlet(outlets, k) })}>remove</button>}</td>
           </tr>
