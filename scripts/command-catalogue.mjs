@@ -70,7 +70,14 @@ function bodyAt(src, at) {
 const TYPE_DECL = /^( *)(?:(?:public|internal|private|protected|static|sealed|abstract|partial|readonly|file|unsafe) +)*(?:record +(?:struct|class) +|class +|struct +|record +|interface +)(\w+)/gm;
 
 /** The type a member at `at`, indented by `indent`, belongs to: the last declared before it less indented. */
-const ownerAt = (types, at, indent) => types.filter((c) => c.index < at && c[1].length < indent).at(-1)?.[2];
+const ownerAt = (types, at, indent, src) => types.filter((c) => c.index < at && c[1].length < indent && encloses(src, c, at)).at(-1)?.[2];
+
+/** Whether the type declared by match `c` is still open at `at`: its closing brace (at its own indentation) comes after, or is not found. */
+function encloses(src, c, at) {
+  if (src === undefined) return true;
+  const close = src.indexOf(`\n${c[1]}}`, c.index);
+  return close < 0 || close >= at;
+}
 
 const ARG = (name) => new RegExp(`\\b${name}\\??\\["(\\w+)"\\]`, 'g');
 
@@ -106,18 +113,36 @@ function keysRead(body, v) {
 /** Every static method taking a JsonObject: "Class.Method" → [{param, body}]. */
 function helperIndex(files) {
   const index = new Map();
-  const decl = /^( +)(?:(?:public|internal|private|protected|static|readonly|unsafe|override|async|sealed|new)\s+)*static\s+[\w<>[\]?,.() ]+?\s(\w+)\(([^)]*\bJsonObject\??\s+(\w+)[^)]*)\)/gm;
+  const decl = /^( +)(?:(?:public|internal|private|protected|static|readonly|unsafe|override|async|sealed|new)\s+)*static\s+[\w<>[\]?,.() ]+?\s(\w+)\(([^)]*\bJsonObject\??\s+\w+[^)]*)\)/gm;
   for (const { src } of files) {
     const classes = [...src.matchAll(TYPE_DECL)];
     for (const m of src.matchAll(decl)) {
-      const owner = ownerAt(classes, m.index, m[1].length);
+      const owner = ownerAt(classes, m.index, m[1].length, src);
       if (!owner) continue;
       const key = `${owner}.${m[2]}`;
       if (!index.has(key)) index.set(key, []);
-      index.get(key).push({ param: m[4], body: bodyAt(src, m.index), owner });
+      // The parameter names in order (null for a type that is not a JsonObject, an `out` one included): a call hands its
+      // `a` at some position, and the method reads it under the name at that position, not under its last JsonObject's.
+      const params = m[3].split(',').map((p) => /^\s*(?:(?:this|in|ref)\s+)?JsonObject\??\s+(\w+)/.exec(p)?.[1] ?? null);
+      index.get(key).push({ params, body: bodyAt(src, m.index), owner });
     }
   }
   return index;
+}
+
+/** The arguments of the call whose `(` has just been passed at `at`, split at the top-level commas and trimmed. */
+function argsOf(src, at) {
+  const out = [];
+  let depth = 0, from = at;
+  for (let i = at; i < src.length; i++) {
+    const c = src[i];
+    if (c === '(' || c === '[' || c === '{') depth++;
+    else if (c === ')' || c === ']' || c === '}') {
+      if (depth === 0) { out.push(src.slice(from, i).trim()); break; }
+      depth--;
+    } else if (c === ',' && depth === 0) { out.push(src.slice(from, i).trim()); from = i + 1; }
+  }
+  return out;
 }
 
 /** The keys a handler body reads through `v` and through the helpers it hands `v` to, `depth` levels deep. */
@@ -126,11 +151,18 @@ function keysWithHelpers(body, v, owner, index, depth = 2, seen = new Set()) {
   if (depth <= 0) return keys;
   const merge = (more) => { for (const [k, t] of more) { if (!keys.has(k)) keys.set(k, new Set()); for (const x of t) keys.get(k).add(x); } };
   // Qualified (Args.Ids(a), WallsAlong.Add(ctx, a, …), Options.From(ctx.Model, a)) and unqualified calls to a helper of the same class.
-  for (const m of body.matchAll(new RegExp(`(?:\\b(\\w+)\\.)?\\b(\\w+)\\((?:[\\w.]+, )?${v}\\b\\s*[,)]`, 'g'))) {
+  // `v` may stand at any position of the call (`AxisAttrs(ctx.Model, a, fallback, out var source)`, `Linked(source, a)`).
+  for (const m of body.matchAll(/(?:\b(\w+)\.)?\b(\w+)\(/g)) {
     const name = `${m[1] ?? owner}.${m[2]}`;
-    if (seen.has(name) || !index.has(name)) continue;
-    seen.add(name);
-    for (const h of index.get(name)) merge(keysWithHelpers(h.body, h.param, h.owner, index, depth - 1, seen));
+    if (!index.has(name)) continue;
+    const pos = argsOf(body, m.index + m[0].length).indexOf(v);
+    if (pos < 0) continue;
+    for (const h of index.get(name)) {
+      const key = `${name}#${pos}`;
+      if (seen.has(key) || !h.params[pos]) continue;
+      seen.add(key);
+      merge(keysWithHelpers(h.body, h.params[pos], h.owner, index, depth - 1, seen));
+    }
   }
   return keys;
 }
@@ -167,13 +199,13 @@ export function catalogueFromSource(root = join(repoRoot, 'engine/src')) {
       if (end > 0) body = body.slice(0, end);
       // The handler's JsonObject: (ctx, a) => … or a method group; most handlers name it a.
       const param = /\(\s*\w+\s*,\s*(\w+)\s*\)\s*=>/.exec(body)?.[1] ?? 'a';
-      const owner = ownerAt(classes, m.index, /^ */.exec(src.slice(src.lastIndexOf('\n', m.index) + 1))[0].length) ?? '';
+      const owner = ownerAt(classes, m.index, /^ */.exec(src.slice(src.lastIndexOf('\n', m.index) + 1))[0].length, src) ?? '';
       const keys = keysWithHelpers(body, param, owner, index);
       // A method group (`r.Command("x", "X", Run)`): the method's own keys.
       const group = m[1] === 'Command' ? /^"(?:[^"\\]|\\.)*",\s*([\w.]+)\s*\)/.exec(body.slice(m[0].length)) : /^([\w.]+)\s*\)/.exec(body.slice(m[0].length));
       if (group && !keys.size) {
         const [cls, meth] = group[1].includes('.') ? group[1].split('.').slice(-2) : [owner, group[1]];
-        for (const h of index.get(`${cls}.${meth}`) ?? []) for (const [k, t] of keysWithHelpers(h.body, h.param, h.owner, index)) keys.set(k, t);
+        for (const h of index.get(`${cls}.${meth}`) ?? []) for (const [k, t] of keysWithHelpers(h.body, h.params.find(Boolean), h.owner, index)) keys.set(k, t);
       }
       const names = (m[2] ? [m[2]] : loopNames(src, m.index, m[3])).map((n) => (n.includes('.') ? n : `${module}.${n}`));
       const label = m[1] === 'Command' ? /^"((?:[^"\\]|\\.)*)"/.exec(body.slice(m[0].length))?.[1] : undefined;

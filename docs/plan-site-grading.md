@@ -70,6 +70,7 @@ Vezi §5.
 ### T6. Rigolă, bordură, accesorii
 - Rigolă independentă (secțiuni de catalog, radier la o pantă), bordură independentă, accesorii repetate pe un traseu (stâlpi, guri de scurgere, bolarzi), toate legate de linii caracteristice.
 - Teste: radierul la panta dată, numărul accesoriilor la pas, cantități.
+- Când un traseu folosește un tip de pavaj (decizia 799), adâncimea bordurii lui de tip vechi urmează încă stratul de uzură propriu al traseului; T6 o leagă de stratul de sus al tipului.
 
 ### T7. Pante în pardoseli (157/#96)
 - Același motor de pante pe fața de sus a unei plăci (puncte de cotă, linii de rupere, pante spre sifoane).
