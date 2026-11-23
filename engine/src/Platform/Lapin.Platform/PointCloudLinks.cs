@@ -227,7 +227,7 @@ public static class PointCloudLinks
     public static double[] TransformOf(IModelView m, Entity link)
     {
         var p = link.Attrs["placement"] as JsonObject ?? [];
-        // Its unit's metres, times the factor a calibration found (decision 810): one scale for points, splats, slices and snaps.
+        // Its unit's metres, times the factor a calibration found (decision 812): one scale for points, splats, slices and snaps.
         var k = MetresOf((string?)p["units"]) * ScaleOf(p);
         var mode = (string?)p["mode"] ?? "origin";
         // The file's axes stood upright first (its up axis onto z): what follows works on the upright file.
@@ -492,7 +492,7 @@ public static class PointCloudLinks
         a.W * b.Y - a.X * b.Z + a.Y * b.W + a.Z * b.X,
         a.W * b.Z + a.X * b.Y - a.Y * b.X + a.Z * b.W);
 
-    // ─── Calibration and crop (decision 810) ───
+    // ─── Calibration and crop (decision 812) ───
 
     /// <summary>A transform's inverse (both 12 numbers: the images of the axes, then of the origin).</summary>
     public static double[] Invert(double[] t)
