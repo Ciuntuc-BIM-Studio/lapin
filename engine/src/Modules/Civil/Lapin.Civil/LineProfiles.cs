@@ -346,7 +346,7 @@ public static class LineProfiles
         // A point inserted on a feature line's profile: {id, station, z?}. On a straight segment the corner goes in line; on an arc
         // the arc is split there, each part an arc of the same circle. Without z the line stays as it was (the point takes the line's
         // height there, its own only where the line's design gave it one); a grade over the segment holds on both parts.
-        r.Command("insertProfilePoint", "Profile point", (ctx, a) => new JsonObject { ["index"] = Insert(ctx, a) });
+        r.Command("insertProfilePoint", "Profile point", (ctx, a) => new JsonObject { ["index"] = LineProfiles.Insert(ctx, a) });
 
         // A point taken out of a feature line's profile: {id, index}. Its two segments become one, straight unless both were arcs of
         // one circle; a grade over them holds when they had the same one. A line keeps two points at least (three closed).
@@ -387,7 +387,7 @@ public static class LineProfiles
 
         // A point of a feature line's profile dragged: {id, index, z? (its height, own from now), station? (along a straight run,
         // between its neighbours)}: one undo step for both.
-        r.Command("moveProfilePoint", "Move profile point", (ctx, a) => { Move(ctx, a); return null; });
+        r.Command("moveProfilePoint", "Move profile point", (ctx, a) => { LineProfiles.Move(ctx, a); return null; });
 
         // A point locked against the profile's edits, or let go: {id, index, locked}.
         r.Command("lockProfilePoint", "Lock profile point", (ctx, a) =>

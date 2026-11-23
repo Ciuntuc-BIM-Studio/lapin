@@ -988,7 +988,7 @@ public static class FeatureLines
         // A feature line on a terrain: {points [[x, y] | [x, y, z]], arcs?, grades?, closed?, elevation? (a contour), drape?, tolerance?,
         // terrainId? (else the terrain under it), name?}. A corner without a height of its own takes the ground's; one off every
         // terrain without one is refused, named (Î6).
-        r.Command("addFeatureLine", "Feature line", (ctx, a) => Add(ctx, a));
+        r.Command("addFeatureLine", "Feature line", (ctx, a) => FeatureLines.Add(ctx, a));
 
         // Its corners, arcs, grades, closed, elevation (null: no longer a contour), drape, tolerance, name, terrain.
         r.Command("updateFeatureLine", "Change feature line", (ctx, a) =>
