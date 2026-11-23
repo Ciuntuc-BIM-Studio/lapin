@@ -8,9 +8,9 @@
 import { create } from 'zustand';
 import { activate } from '../../platform/modules';
 import { promptText } from '../../shell/prompts';
-import { BrickWall, Combine, Crop, Layers, PenLine, Scissors, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
+import { BrickWall, Combine, Crop, Hexagon, Layers, MousePointerClick, PenLine, Scissors, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
-import type { Grip, Grip3D, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
+import type { Grip, Grip3D, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { curvedOutlineGrips, holeGrips, outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
 import { arcsOf, edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
@@ -22,7 +22,7 @@ import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './surv
 import { TerrainSection } from './TerrainSection';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
 import { isDitch, setBrush, useBrush, useTerrainEdit, type BrushKind } from './prefs';
-import { MAX_POINT_GRIPS, terrainBase, terrainPointGrips } from './pointGrips';
+import { MAX_POINT_GRIPS, decorateCornerGrips, terrainBase, terrainPlanPointGrips, terrainPointGrips } from './pointGrips';
 import { useCamera } from '../../viewport/camera';
 import { EntourageSection, entourage, entourageRow, useEntouragePrefs } from './entourage';
 import { lazyPart } from '../../platform/lazyPart';
@@ -170,6 +170,72 @@ const flatTerrain: ToolDef = {
     await ctx.execute('civil.addFlatTerrain', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, elevation: parseLevel(answer) ?? 0 });
   },
 };
+
+/** How a terrain drawn on an outline takes its heights: level at a height asked, or on the ground under it (T1). */
+const useOutlineHeights = create<{ ground: boolean }>(() => ({ ground: false }));
+function OutlineTerrainBar() {
+  const ground = useOutlineHeights((s) => s.ground);
+  return (
+    <>
+      <PlainShapeBar />
+      <select className={`cad-layer${ground ? ' on' : ''}`} value={ground ? 'ground' : 'level'} data-testid="terrain-outline-heights" title="Level at a height you type, or on the ground of the terrain under it"
+        onChange={(e) => useOutlineHeights.setState({ ground: e.target.value === 'ground' })}>
+        <option value="level">At a height</option>
+        <option value="ground">On the ground</option>
+      </select>
+    </>
+  );
+}
+
+/** The ground's elevation asked: a number in the level unit, or empty (`empty` says what that means); undefined when cancelled or unread. */
+function askElevation(text: string, initial: string): number | null | undefined {
+  const answer = promptText(text, initial, { unit: unitName(levelUnit()) });
+  if (answer == null) return undefined;
+  if (answer.trim() === '') return null;
+  const v = parseLevel(answer);
+  if (v == null || !Number.isFinite(v)) { refuseDatum(); return undefined; }
+  return v;
+}
+
+/**
+ * A terrain straight from an outline (T1, docs/plan-site-grading.md; forum topic 230): a polygon whose edges may be arcs
+ * (Space), a rectangle or a circle; every vertex of it a point with a grip, level at the height typed or on the ground under it.
+ */
+const terrainOnOutline: ToolDef = {
+  id: 'civil.terrainOutline', label: 'Terrain on outline', icon: Hexagon, shortcut: 'TO',
+  gesture: { kind: 'polygon', shapes: true },
+  options: OutlineTerrainBar,
+  space: toggleOutlineArcs,
+  complete: async ({ points, arcs }, ctx) => {
+    if (points.length < 3) return;
+    const ground = useOutlineHeights.getState().ground;
+    const z = ground ? null : askElevation('The ground\'s elevation ({unit}, ±0.00 = 0):', '0');
+    if (z === undefined) return;
+    await ctx.execute('civil.addTerrainOnOutline', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(arcs ? { arcs } : {}), ...(ground ? { ground: true } : { elevation: z ?? 0 }) });
+  },
+};
+
+/** A terrain on the outline of what is picked: a room, a parcel, a terrain's parcel, a platform (at its level), or a closed drafted shape (Convert to…). */
+const terrainOnPicked: ToolDef = {
+  id: 'civil.terrainPicked', label: 'Terrain on picked outline', icon: MousePointerClick,
+  gesture: { kind: 'pick', types: ['IfcSpace', 'LapinSiteFeature', 'IfcGeographicElement', 'IfcEarthworksCut', 'IfcAnnotation'] },
+  complete: async ({ entity }, ctx) => {
+    if (!entity) return;
+    if (entity.type === 'IfcAnnotation') {
+      const { convertPicked } = await import('../drafting/convert/convert');
+      convertPicked(entity.id, 'terrainOutline');
+      return;
+    }
+    // A platform gives its level; the others ask, empty taking the ground under it.
+    const z = entity.type === 'IfcEarthworksCut' ? null : askElevation('The ground\'s elevation ({unit}, ±0.00 = 0; empty: the ground under it):', '');
+    if (z === undefined) return;
+    const r = await ctx.execute('civil.addTerrainOnOutline', { fromId: entity.id, ...(z == null ? (entity.type === 'IfcEarthworksCut' ? {} : { ground: true }) : { elevation: z }) });
+    if (r) notify('A terrain on the outline picked: each of its vertices is a point with a grip.');
+  },
+};
+
+/** A point's elevation asked (model height, ±0.00 = 0), its present one offered; null when cancelled or unread. */
+const askPointElevation = (now: number): number | null => askElevation('The point\'s elevation ({unit}, ±0.00 = 0):', formatLength(now, levelUnit())) ?? null;
 
 /** A spot level at a click: the designed ground's height, written on the plan beside a cross. */
 const spot: ToolDef = {
@@ -407,7 +473,7 @@ const civil: LapinModule = {
   tabs: [{
     id: 'site', label: 'Site', order: 40, include: ['modify'],
     groups: [
-      { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainBoundary, splitTerrain, mergeTerrains, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
+      { label: 'Terrain', tools: [terrainFromFile, flatTerrain, terrainOnOutline, parcel], small: [terrainOnPicked, terrainBoundary, splitTerrain, mergeTerrains, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, subregion, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
@@ -423,11 +489,18 @@ const civil: LapinModule = {
         ...holeGrips(n.id, n.props.holes, n.props.holeArcs, (holes, holeArcs) => ({ command: 'civil.updatePlatform', args: { id: n.id, holes, holeArcs } }), 'civil'),
       ];
     },
-    // A terrain's parcel and irregular boundary, by their corners; edges may be arcs.
-    IfcGeographicElement: (n: NodeDto) => [
-      ...curvedOutlineGrips(n.id, fromPairs(n.props.parcel), n.props.parcelArcs, (pts, arcs) => ({ command: 'civil.setParcel', args: { terrainId: n.id, points: toPairs(pts), arcs } }), 'civil'),
-      ...curvedOutlineGrips(n.id, fromPairs(n.props.boundary), n.props.boundaryArcs, (pts, arcs) => ({ command: 'civil.setBoundary', args: { terrainId: n.id, points: toPairs(pts), arcs } }), 'civil'),
-    ],
+    // A terrain's parcel and irregular boundary, by their corners; edges may be arcs. While editing its points (T1), its survey
+    // points too, each one's right-click setting its elevation or picking it; a boundary corner standing on a point offers the same.
+    IfcGeographicElement: (n: NodeDto, view?: GripView) => {
+      const edit = useTerrainEdit.getState().editPoints && n.props.predefinedType === 'TERRAIN';
+      const boundary = curvedOutlineGrips(n.id, fromPairs(n.props.boundary), n.props.boundaryArcs, (pts, arcs) => ({ command: 'civil.setBoundary', args: { terrainId: n.id, points: toPairs(pts), arcs } }), 'civil');
+      return [
+        ...curvedOutlineGrips(n.id, fromPairs(n.props.parcel), n.props.parcelArcs, (pts, arcs) => ({ command: 'civil.setParcel', args: { terrainId: n.id, points: toPairs(pts), arcs } }), 'civil'),
+        ...(edit ? decorateCornerGrips(n, boundary, askPointElevation) : boundary),
+        // In a plan only (it names its view): the 3D view has the points' own height grips.
+        ...(edit && view?.view ? terrainPlanPointGrips(n, useCamera.getState().target, askPointElevation) : []),
+      ];
+    },
     IfcPavement: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updatePath', args: { id: n.id, points: toPairs(pts) } })),
     LapinRetainingWall: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateRetainingWall', args: { id: n.id, points: toPairs(pts) } })),
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? outlineGrips({ pts }, (o) => ({ command: 'civil.updatePlanting', args: { id: n.id, points: toPairs(o.pts) } })) : []; },

@@ -6271,6 +6271,75 @@ export const scenes = [
     },
   },
   {
+    // Site grading T1 (docs/plan-site-grading.md; forum topic 230): a terrain drawn straight on an outline with an arc, at a height
+    // typed; every vertex of its outline a point with a grip in 3D; two points picked on the arc and their elevation typed at once.
+    id: 'terrain-outline',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A frame for the plan, gone once the outline is drawn.
+      const frame = await t.cmd('civil.addTerrainOnOutline', { storeyId: s, points: [[-4, -4], [28, -4], [28, 30], [-4, 30]], elevation: 0, spacing: 0 });
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      await t.wait(800);
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(250); };
+      // Terrain on outline: two straight edges, then (Space) an arc going on tangent, then (Space) straight back; at 1.50.
+      await t.tool('civil.terrainOutline');
+      await t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=polygon]').click();
+      t.expect(await t.page.locator('[data-testid=terrain-outline-heights]').count() === 1, 'the tool\'s bar offers a height or the ground under it');
+      await click(0, 0);
+      await click(24, 0);
+      await click(24, 12);
+      const arcs = t.page.locator('[data-testid=command-line] [data-testid=outline-shape] [data-shape=arcs]');
+      await arcs.click();
+      await click(0, 12);
+      await arcs.click();
+      const answers = t.page.listeners('dialog');
+      t.page.removeAllListeners('dialog');
+      t.page.once('dialog', (d) => void d.accept('1.50'));
+      await t.keys('Enter');
+      await t.wait(1000);
+      for (const l of answers) t.page.on('dialog', l);
+      const made = async () => (await t.nodes()).find((n) => n.type === 'IfcGeographicElement' && n.props.outlinePoints === true && n.id !== frame.id);
+      await t.until(async () => Array.isArray((await made())?.props.boundaryArcs), 'the tool makes a terrain on the outline, its arc kept');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      await t.cmd('element.delete', { id: frame.id });
+      const terrain = await made();
+      t.expect(terrain.props.points.length > 20, 'every vertex of the outline, the arc\'s too, is a point of the terrain');
+      // Its points' grips in 3D: the outline's vertices among them.
+      await select(t, terrain.id);
+      await t.wait(600);
+      await t.page.locator('aside.props [data-testid=terrain-cage]').waitFor();
+      await t.page.locator('aside.props dd button.link').first().click();
+      await t.ui({ keyPlan: true });
+      await open3d(t);
+      await t.page.locator('button[title="Frame everything"]').first().click();
+      await t.wait(1500);
+      t.expect(await t.page.locator('[data-grip3d^="pt"]').count() > 20, 'the terrain\'s points, its outline\'s too, have grips in 3D');
+      await t.shot('terrain-outline-3d', { of: 'canvas', pad: 0 });
+      // Two points of the arc picked by a click on their grips, their elevation typed at once.
+      const pts = terrain.props.points;
+      const onArc = pts.map((p, i) => [p, i]).filter(([p]) => p[1] > 12.5).sort((a, b) => b[0][1] - a[0][1]).slice(0, 2).map(([, i]) => i);
+      for (const i of onArc) {
+        const r = await t.page.locator(`[data-grip3d="pt${i}"] circle`).first().boundingBox();
+        t.expect(!!r, `point ${i} has a grip`);
+        await t.page.mouse.click(r.x + r.width / 2, r.y + r.height / 2);
+        await t.wait(400);
+      }
+      await t.until(async () => (await t.page.locator('[data-testid=terrain-picked]').innerText().catch(() => '')).includes('2'), 'two points picked');
+      await t.page.locator('[data-testid=terrain-picked-z]').fill('3.00');
+      await t.shot('terrain-picked-properties', { of: 'aside.props', pad: 0, maxHeight: 520 });
+      await t.page.locator('[data-testid=terrain-picked] button', { hasText: 'set elevation' }).click();
+      await t.until(async () => (await made())?.props.points.filter((p) => Math.abs(p[2] - 3) < 1e-6).length === 2, 'the two points are at 3.00');
+      await t.wait(1500);
+      await t.shot('terrain-outline-raised', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     // Gates (report #57): a fence wall along the street with a sliding gate drawn on it by the tool (its middle on the wall's
     // axis, the wall cut, the zone it parks in dashed) and a pedestrian gate beside it; a wrought iron double gate on the parcel's
     // side edge from the built-in styles; the configurator with its preview; a gate's properties; the gates in 3D.

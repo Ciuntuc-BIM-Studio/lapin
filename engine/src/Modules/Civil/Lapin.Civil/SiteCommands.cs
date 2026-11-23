@@ -126,6 +126,8 @@ public static class SiteCommands
                 attrs.Remove(Terrains.BoundaryKey);
                 attrs.Remove(Terrains.BoundaryArcs);
             }
+            // A terrain whose outline is its own points keeps it so (T1, TerrainOutlines.cs): the new vertices become points, the gone ones go.
+            TerrainOutlines.Follow(attrs, t, prune: true, byOrder: true);
             ctx.Replace(t.With(attrs: attrs));
             return new JsonObject { ["id"] = t.Id };
         });
@@ -167,6 +169,9 @@ public static class SiteCommands
             var allPts = Terrains.Points(t);
             Cage.Prune(keptAttrs, allPts, lc);
             Cage.Prune(otherAttrs, allPts, rc);
+            // A terrain whose outline is its own points: each half's too, the cut's ends at the ground's height (T1).
+            TerrainOutlines.Follow(keptAttrs, t, prune: true);
+            TerrainOutlines.Follow(otherAttrs, t, prune: true);
             // What is placed on the terrain (spot levels, slope tags, subregions) goes to the half it lies in.
             bool InOther(JsonNode? item) => PlacedAt(item) is { } at && !Polygon2.Contains(lc, at) && Polygon2.Contains(rc, at);
             foreach (var key in PlacedKeys)
@@ -252,6 +257,15 @@ public static class SiteCommands
                     ArcOutline.Write(attrs, outline.Rises, Terrains.BoundaryArcs);
                 }
                 else problems.Add((JsonNode)MergedBoundaryProblem);
+            }
+            // One of them with its outline as its own points (T1): the merged outline's vertices are points too, at the ground's height
+            // where none stood; the points on the seam stay.
+            attrs.Remove(TerrainOutlines.Flag);
+            if (list.Any(TerrainOutlines.Holds) && attrs[Terrains.BoundaryKey] != null)
+            {
+                attrs[TerrainOutlines.Flag] = true;
+                var grounds = list.Select(tr => Terrains.Of(tr)).ToList();
+                TerrainOutlines.Follow(attrs, [], null, p => grounds.Select(g => g.ElevationAt(p.X, p.Y)).FirstOrDefault(z => z != null), prune: false);
             }
             if (faces is { Count: > 0 }) attrs["faces"] = Terrains.FacesJson(faces.Distinct()); else attrs.Remove("faces");
             attrs.Remove("existingFaces");

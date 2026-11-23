@@ -89,6 +89,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Catalog("entourage", new JsonArray([.. Entourage.Kinds.Select(k => (JsonNode)new JsonObject { ["key"] = k.Key, ["label"] = k.Label, ["category"] = k.Category, ["height"] = k.Height, ["color"] = k.Color })]));
         r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));
         SiteCommands.Register(r);
+        TerrainOutlines.Register(r);
         GeoImportCommands.Register(r);
         CorridorCommands.Register(r);
 

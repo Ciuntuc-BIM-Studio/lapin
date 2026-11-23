@@ -6,8 +6,9 @@ import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { SURVEY, downloadLandXml, pickText } from './survey';
 import { notify, useUi } from '../../app/store';
-import { useTerrainEdit } from './prefs';
-import { MAX_POINT_GRIPS, terrainControls, type PointGripMode } from './pointGrips';
+import { setPicked, useTerrainEdit } from './prefs';
+import { MAX_POINT_GRIPS, outlinePointIndices, terrainControls, type PointGripMode } from './pointGrips';
+import { formatLength, levelUnit, parseLevel } from '../../engine/unitsStore';
 
 interface Legend { kind: string; area: number; bands: { key: string; label: string; color: string; area: number }[] }
 
@@ -35,6 +36,9 @@ export function TerrainSection({ node }: { node: NodeDto }) {
   const showOn = (m: PointGripMode) => { useTerrainEdit.getState().setGripMode(m); useUi.setState({ selected: [...useUi.getState().selected] }); };
   const controls = terrainControls(node).size;
   const [cageStep, setCageStep] = useState(10);
+  // Points picked (T1): their elevation typed, absolute, all at once.
+  const picked = useTerrainEdit((s) => (s.picked?.id === node.id ? s.picked.indices : null));
+  const outlinePoints = node.props.outlinePoints === true;
   const relations = useSession((s) => s.relations);
   const nodes = useSession((s) => s.nodes);
   const pads = [...relations.values()].filter((r) => r.class === 'IfcRelVoidsElement' && r.relating === node.id).reduce((n, r) => n + r.related.length, 0);
@@ -55,7 +59,8 @@ export function TerrainSection({ node }: { node: NodeDto }) {
             : gripMode === 'pick' ? 'Click a point\'s grip to make it a control, or a free point again.'
             : count > MAX_POINT_GRIPS
               ? `Grips on the ${MAX_POINT_GRIPS} points nearest the 3D view's centre: move the view to reach the others.`
-              : 'Drag a point\'s grip up or down in the 3D view.'}</div>}
+              : 'Drag a point\'s grip up or down in the 3D view, or click it to pick it and type its elevation.'}</div>}
+          {editPoints && gripMode === 'all' && node.editable && <PickedPoints node={node} picked={picked ?? []} />}
         </dd>
         <dt>Control cage</dt>
         <dd data-testid="terrain-cage">
@@ -81,7 +86,10 @@ export function TerrainSection({ node }: { node: NodeDto }) {
         <dd>{subregions}{subregions > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.removeSubregion', { id: node.id, all: true })}>clear</button></>}</dd>
         <dt>Boundary</dt>
         <dd>
-          {boundary ? <>clipped <button type="button" className="link small" onClick={() => void execute('civil.setBoundary', { id: node.id })}>remove</button></>
+          {boundary ? <>clipped <button type="button" className="link small" onClick={() => void execute('civil.setBoundary', { id: node.id })}>remove</button>
+            {node.editable && !outlinePoints && <>{' · '}<button type="button" className="link small" data-testid="terrain-outline-points" title="Make each vertex of the boundary a point of the terrain, at the ground's height there, so it has a grip and an elevation to type"
+              onClick={() => void execute('civil.outlineToPoints', { id: node.id }).then((r) => { if ((r as { moved?: number } | null)?.moved) notify('The outline\'s points take the surveyed heights, and the brush strokes work on them now: the ground moved a little along the outline.'); })}>outline as points</button></>}
+            {outlinePoints && <div className="muted small">Its outline's vertices are its points.</div>}</>
             : <><span className="muted">convex hull</span>{parcel && <> <button type="button" className="link small" onClick={() => void execute('civil.setBoundary', { id: node.id, fromParcel: true })}>from parcel</button></>}</>}
         </dd>
         <dt>Parcel</dt>
@@ -118,6 +126,35 @@ export function TerrainSection({ node }: { node: NodeDto }) {
         </button>
         <button type="button" onClick={() => void downloadLandXml([node.id]).catch((e) => notify(e instanceof Error ? e.message : String(e)))}><FileDown size={13} /> LandXML</button>
       </div>
+    </div>
+  );
+}
+
+/** The points picked in the 3D view (or in plan, from a point's right-click): how many, their elevation typed, absolute, as one undo step. */
+function PickedPoints({ node, picked }: { node: NodeDto; picked: number[] }) {
+  const datum = typeof node.props.datum === 'number' ? node.props.datum : 0;
+  const pts = Array.isArray(node.props.points) ? (node.props.points as number[][]) : [];
+  const first = picked.length ? pts[picked[0]] : undefined;
+  const same = first && picked.every((i) => pts[i] && Math.abs(pts[i][2] - first[2]) < 1e-6);
+  const shown = same && first ? formatLength(first[2] - datum, levelUnit()) : '';
+  const [text, setText] = useState(shown);
+  useEffect(() => setText(shown), [shown, picked.length]);
+  const set = () => {
+    const z = parseLevel(text);
+    if (z == null || !Number.isFinite(z)) { notify('That elevation does not read: type a number in the project\'s unit.'); return; }
+    void execute('civil.setTerrainPoints', { id: node.id, indices: picked, z });
+  };
+  const outline = outlinePointIndices(node);
+  return (
+    <div className="row small" data-testid="terrain-picked" style={{ flexWrap: 'wrap', gap: '2px 6px', width: '100%' }}>
+      {picked.length > 0 ? <>
+        <span>{picked.length}</span> <span>picked</span>
+        <input type="text" value={text} placeholder={same ? '' : 'several'} style={{ width: '6em', flex: 'none' }} aria-label="Elevation of the points picked" data-testid="terrain-picked-z"
+          onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') set(); }} />
+        <button type="button" className="link small" onClick={set}>set elevation</button>
+        {' · '}<button type="button" className="link small" onClick={() => setPicked(node.id, [])}>let go</button>
+      </> : <span className="muted">No point picked.</span>}
+      {outline.length > 0 && <>{' · '}<button type="button" className="link small" onClick={() => setPicked(node.id, outline)}>pick the outline's</button></>}
     </div>
   );
 }

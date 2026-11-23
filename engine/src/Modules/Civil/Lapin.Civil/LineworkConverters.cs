@@ -93,6 +93,32 @@ public static class LineworkConverters
         }, "The parcel (the property's boundary) of the terrain under each closed outline, its arcs kept.");
 
     /// <summary>
+    /// A terrain inside a closed outline (T1, docs/plan-site-grading.md): its corners, straight or arcs (a circle by its four quarter
+    /// arcs), each vertex a point of the terrain with a grip; at the heights the shape brought (a DXF's), else at the height given,
+    /// else on the ground under it (±0.00 where there is none).
+    /// </summary>
+    public static readonly LineworkConverter TerrainOnOutline = new("terrainOutline", "Terrain inside", "civil", "closed", Plan,
+        [new("elevation", "Height (empty: the ground under it)", "length")],
+        (q, view, s, o) =>
+        {
+            var storey = LineworkConversion.PlanStorey(q.Model, view);
+            if (s.Kind == "ellipse") throw new CommandException("A terrain's outline has straight edges or arcs: the ellipse is not converted (draw it as a polyline or with arcs).");
+            var (corners, rises) = s.Outline();
+            var given = LineworkConversion.Num(o, "elevation");
+            var own = s.Kind != "circle" && s.Heights is { } hs && hs.Count == s.Points.Count && hs.All(double.IsFinite) ? hs : null;
+            var args = new JsonObject
+            {
+                ["storeyId"] = storey.Id,
+                ["points"] = new JsonArray([.. corners.Select((c, i) => (JsonNode)(own != null
+                    ? new JsonArray(Math.Round(c.X, 9), Math.Round(c.Y, 9), Math.Round(own[i], 9))
+                    : new JsonArray(Math.Round(c.X, 9), Math.Round(c.Y, 9))))]),
+                ["arcs"] = new JsonArray([.. (rises ?? new double[corners.Count]).Select(r => (JsonNode)Math.Round(r, 9))]),
+            };
+            if (given is { } z) args["elevation"] = z; else args["ground"] = true;
+            return [new("civil.addTerrainOnOutline", args, $"A terrain inside {corners.Count} corners")];
+        }, "A terrain inside each closed outline, every vertex of it a point with a grip.");
+
+    /// <summary>
     /// The converter of what civil's linework becomes as <paramref name="kind"/> (road, path, breakline; a module's own, a track,
     /// through <see cref="LineworkElements.Makers"/>): the shapes chosen grouped by the chain each belongs to (lines and open
     /// polylines on its view and layer meeting end to end), one civil.fromLinework for each chain. A hook for premium modules too.
@@ -137,6 +163,6 @@ public static class LineworkConverters
 
     public static void Register(IModuleRegistry r)
     {
-        foreach (var c in new[] { Terrain, Platforms, Parcel, Roads, Paths, Breaklines }) r.Service<LineworkConverter>(c);
+        foreach (var c in new[] { Terrain, TerrainOnOutline, Platforms, Parcel, Roads, Paths, Breaklines }) r.Service<LineworkConverter>(c);
     }
 }
