@@ -43,7 +43,9 @@ public sealed record PointCloudHeader
     public double[]? Precision { get; init; }
     /// <summary>The file's axis that points up when it is not z ("y", "-y"): Gaussian splats come from reconstructions, y up or down.</summary>
     public string? Up { get; init; }
-    /// <summary>Whether its points are Gaussians (<see cref="ISplatReader"/>): a 3DGS PLY, an SPZ.</summary>
+    /// <summary>How many faces it has (a PLY mesh's): a mesh is imported as one, not linked as a cloud, unless asked.</summary>
+    public long Faces { get; init; }
+        /// <summary>Whether its points are Gaussians (<see cref="ISplatReader"/>): a 3DGS PLY, an SPZ.</summary>
     public bool Splats { get; init; }
     /// <summary>What the reader noticed and the user should know (an unknown property, a part it skipped).</summary>
     public IReadOnlyList<string> Notes { get; init; } = [];

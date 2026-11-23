@@ -74,6 +74,7 @@ public sealed class PlyReader : IPointReader
         {
             Format = $"PLY {(_enc == Encoding.Ascii ? "ascii" : "binary")}", Count = v.Count,
             HasColor = ColorProps(v) != null, HasIntensity = Find(v, IntensityNames) != null, HasClassification = Find(v, ClassNames) != null,
+            Faces = _elements.FirstOrDefault(e => e.Name == "face")?.Count ?? 0,
         };
     }
 

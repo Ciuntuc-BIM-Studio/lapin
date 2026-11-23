@@ -62,7 +62,7 @@ public static class PointCloudSlices
         var f = spec.Frame;
         var px = PaperPixel * c.Scale / 1000;
         var key = string.Join('|', link.Str("key"), string.Join(',', t.Select(v => v.ToString("R"))), spec.Kind, f.Origin, f.Right, f.Up, f.Dir, spec.Span, spec.Rise,
-            px.ToString("R"), look.ColorMode, look.Halftone, look.Slice, string.Join(',', look.HiddenClasses.Order()));
+            px.ToString("R"), look.ColorMode, look.Halftone, look.Slice, string.Join(',', look.HiddenClasses.Order()), look.Crop?.ToJson().ToJsonString() ?? "");
         lock (Gate)
             if (Cache.TryGetValue(key, out var hit)) { Order.Remove(key); Order.AddFirst(key); return hit; }
         var d = Render(c, spec, store, t, look, px);
@@ -149,6 +149,7 @@ public static class PointCloudSlices
                 if (look.HiddenClasses.Contains(p.Class(i))) continue;
                 var (wx, wy, wz) = PointCloudLinks.Apply(t, p.X(i), p.Y(i), p.Z(i));
                 var w = new Vec3(wx, wy, wz);
+                if (look.Crop is { } crop && !crop.Inside(wx, wy, wz)) continue;
                 var dep = f.Depth(w);
                 if (dep < dmin || dep > dmax) continue;
                 var at = f.Map(w);

@@ -65,6 +65,7 @@ public static class PointCloudLinks
                     {
                         if (look.HiddenClasses.Contains(p.Class(i))) continue;
                         var (x, y, z) = Apply(t, p.X(i), p.Y(i), p.Z(i));
+                        if (look.Crop is { } crop && !crop.Inside(x, y, z)) continue;
                         pos.Add((float)x); pos.Add((float)y); pos.Add((float)z);
                         var c = s.HasColor ? (p.R(i), p.G(i), p.B(i)) : ((byte)200, (byte)200, (byte)200);
                         col.Add(c.Item1); col.Add(c.Item2); col.Add(c.Item3);
@@ -226,7 +227,8 @@ public static class PointCloudLinks
     public static double[] TransformOf(IModelView m, Entity link)
     {
         var p = link.Attrs["placement"] as JsonObject ?? [];
-        var k = MetresOf((string?)p["units"]);
+        // Its unit's metres, times the factor a calibration found (decision 810): one scale for points, splats, slices and snaps.
+        var k = MetresOf((string?)p["units"]) * ScaleOf(p);
         var mode = (string?)p["mode"] ?? "origin";
         // The file's axes stood upright first (its up axis onto z): what follows works on the upright file.
         var up = UpOf((string?)p["up"]);
@@ -262,6 +264,9 @@ public static class PointCloudLinks
         var to = Turn(O);
         return [.. tx, .. ty, .. tz, to[0] + Off(0), to[1] + Off(1), to[2] + Off(2)];
     }
+
+    /// <summary>The factor a calibration wrote on a placement (1 when none).</summary>
+    public static double ScaleOf(JsonObject? placement) => Json.Number(placement?["scale"]) is { } s && s > 0 && double.IsFinite(s) ? s : 1;
 
     /// <summary>The axes a cloud's file may have up: z (a scan's), y (SPZ's, three.js's, glTF's), −y (a 3D Gaussian splatting PLY's, COLMAP's).</summary>
     public static readonly string[] Ups = ["z", "y", "-y"];
@@ -331,11 +336,12 @@ public static class PointCloudLinks
     /// The size check (the units): the cloud's box in metres under its unit, and a warning when that is unlikely for a scan
     /// of a building or a site (under 20 cm, or over 50 km) or when the file's own unit differs from the one chosen.
     /// </summary>
-    public static string? UnitWarning(double[]? bounds, string units, string? fileUnits)
+    public static string? UnitWarning(double[]? bounds, string units, string? fileUnits, double scale = 1)
     {
-        if (fileUnits != null && fileUnits != units) return $"The file says its coordinates are in {UnitName(fileUnits)}; the cloud is placed as {UnitName(units)}.";
+        if (fileUnits != null && fileUnits != units && Math.Abs(scale - 1) < 1e-9) return $"The file says its coordinates are in {UnitName(fileUnits)}; the cloud is placed as {UnitName(units)}.";
         if (bounds == null) return null;
-        var k = MetresOf(units);
+        // The calibration's factor too: a capture of unknown size calibrated to a true distance is as large as it says.
+        var k = MetresOf(units) * scale;
         var size = Math.Max(Math.Max(bounds[3] - bounds[0], bounds[4] - bounds[1]), bounds[5] - bounds[2]) * k;
         if (size < 0.2) return $"The cloud is {size * 1000:0} mm across in {UnitName(units)}: check its unit.";
         if (size > 50_000) return $"The cloud is {size / 1000:0} km across in {UnitName(units)}: check its unit.";
@@ -363,6 +369,9 @@ public static class PointCloudLinks
             nodes.Add((JsonNode)new JsonArray(n.Name, n.Count, R(b[0]), R(b[1]), R(b[2]), R(b[3]), R(b[4]), R(b[5]), Math.Round(e / PointStore.Resolution * scale, 5)));
         }
         var all = BoxOf(t, s.Bounds[0], s.Bounds[1], s.Bounds[2], s.Bounds[3], s.Bounds[4], s.Bounds[5]);
+        // Cropped: what is kept is inside the crop's box too.
+        if (CropOf(link)?.Box() is { } cb)
+            for (var k = 0; k < 3; k++) { all[k] = Math.Max(all[k], cb[k]); all[k + 3] = Math.Max(all[k], Math.Min(all[k + 3], cb[k + 3])); }
         return new JsonObject
         {
             ["id"] = link.Id, ["points"] = s.Points, ["nodes"] = nodes, ["box"] = new JsonArray(all.Select(v => (JsonNode)R(v)).ToArray()),
@@ -376,6 +385,7 @@ public static class PointCloudLinks
     {
         var s = StoreOf(link) ?? throw new CommandException("The point cloud is not indexed yet.");
         var t = TransformOf(m, link);
+        var crop = CropOf(link);
         var o = new List<PointTile>();
         foreach (var name in names.Take(64))
         {
@@ -384,13 +394,18 @@ public static class PointCloudLinks
             var pos = new float[3 * p.Count];
             var col = new int[p.Count];
             var val = new int[p.Count];
+            var n = 0;
             for (var i = 0; i < p.Count; i++)
             {
                 var (x, y, z) = Apply(t, p.X(i), p.Y(i), p.Z(i));
-                pos[3 * i] = (float)x; pos[3 * i + 1] = (float)y; pos[3 * i + 2] = (float)z;
-                col[i] = (p.R(i) << 16) | (p.G(i) << 8) | p.B(i);
-                val[i] = p.Intensity(i) | (p.Class(i) << 16);
+                // Outside the crop: not sent (the 3D view, its snaps and picking never see it).
+                if (crop != null && !crop.Inside(x, y, z)) continue;
+                pos[3 * n] = (float)x; pos[3 * n + 1] = (float)y; pos[3 * n + 2] = (float)z;
+                col[n] = (p.R(i) << 16) | (p.G(i) << 8) | p.B(i);
+                val[n] = p.Intensity(i) | (p.Class(i) << 16);
+                n++;
             }
+            if (n < p.Count) { pos = pos[..(3 * n)]; col = col[..n]; val = val[..n]; }
             o.Add(new PointTile(link.Id, name, pos, col, val));
         }
         return o;
@@ -421,6 +436,17 @@ public static class PointCloudLinks
         var t = TransformOf(m, link);
         var (k, lq) = Turn(t);
         var (idx, bytes) = s.Read(start, SplatPageRecords, Math.Max(1, budget));
+        // Cropped: the Gaussians whose centres are outside left out.
+        if (CropOf(link) is { } crop)
+        {
+            var from0 = Math.Clamp(start, 0, s.Count);
+            idx = idx.Where(i =>
+            {
+                var g = SplatStore.Unpack(bytes.AsSpan((int)(i - from0) * SplatStore.BytesPerSplat, SplatStore.BytesPerSplat));
+                var (x, y, z) = Apply(t, g.X, g.Y, g.Z);
+                return crop.Inside(x, y, z);
+            }).ToList();
+        }
         var n = idx.Count;
         var pos = new float[3 * n];
         var scl = new float[3 * n];
@@ -466,6 +492,74 @@ public static class PointCloudLinks
         a.W * b.Y - a.X * b.Z + a.Y * b.W + a.Z * b.X,
         a.W * b.Z + a.X * b.Y - a.Y * b.X + a.Z * b.W);
 
+    // ─── Calibration and crop (decision 810) ───
+
+    /// <summary>A transform's inverse (both 12 numbers: the images of the axes, then of the origin).</summary>
+    public static double[] Invert(double[] t)
+    {
+        double a = t[0], b = t[3], c = t[6], d = t[1], e = t[4], f = t[7], g = t[2], h = t[5], i = t[8];
+        var det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
+        if (Math.Abs(det) < 1e-300) throw new CommandException("The cloud's placement cannot be undone (its scale is 0).");
+        double[] m = [(e * i - f * h) / det, (f * g - d * i) / det, (d * h - e * g) / det, (c * h - b * i) / det, (a * i - c * g) / det, (b * g - a * h) / det, (b * f - c * e) / det, (c * d - a * f) / det, (a * e - b * d) / det];
+        // m holds the inverse's columns (as t does); its origin is −M·o.
+        var (ox, oy, oz) = (t[9], t[10], t[11]);
+        return [.. m, -(m[0] * ox + m[3] * oy + m[6] * oz), -(m[1] * ox + m[4] * oy + m[7] * oz), -(m[2] * ox + m[5] * oy + m[8] * oz)];
+    }
+
+    /// <summary>
+    /// A cloud scaled true (G2): two points picked on it (in the project, m) that are <paramref name="length"/> apart in truth.
+    /// Its placement's factor is multiplied by the ratio, and its offset moved so that the first point stays where it was.
+    /// </summary>
+    public static JsonObject Calibrate(ICommandContext ctx, Entity link, double[] a, double[] b, double length)
+    {
+        var d = Math.Sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+        if (!(d > 1e-9)) throw new CommandException("The two points are the same: pick two points apart.");
+        if (!(length > 0) || !double.IsFinite(length)) throw new CommandException("Their true distance is a length above 0.");
+        var ratio = length / d;
+        var before = TransformOf(ctx.Model, link);
+        var inFile = Apply(Invert(before), a[0], a[1], a[2]);
+        var attrs = link.CloneAttrs();
+        var p = (attrs["placement"] as JsonObject)?.DeepClone() as JsonObject ?? new JsonObject();
+        var scale = ScaleOf(p) * ratio;
+        p["scale"] = Math.Round(scale, 9);
+        CheckPlacement(p);
+        attrs["placement"] = p;
+        var scaled = link.With(attrs: attrs);
+        // The first point kept where it was: the offset takes what the new factor moved it by.
+        var after = Apply(TransformOf(ctx.Model, scaled), inFile.X, inFile.Y, inFile.Z);
+        var off = p["offset"] as JsonArray;
+        double Off(int i) => off != null && off.Count > i ? Json.Number(off[i]) ?? 0 : 0;
+        p["offset"] = new JsonArray(Math.Round(Off(0) + a[0] - after.X, 6), Math.Round(Off(1) + a[1] - after.Y, 6), Math.Round(Off(2) + a[2] - after.Z, 6));
+        CheckPlacement(p);
+        ctx.Replace(link.With(attrs: attrs));
+        return new JsonObject { ["scale"] = p["scale"]?.DeepClone(), ["ratio"] = Math.Round(ratio, 9), ["warning"] = UnitWarning(BoundsOf(link), (string?)p["units"] ?? "m", null, scale) };
+    }
+
+    /// <summary>A link's crop when it has one: a box in the project (its middle, its sizes, m) turned about z by <c>rotation</c> degrees.</summary>
+    public static CropBox? CropOf(Entity link) => CropBox.From(link.Attrs["crop"] as JsonObject);
+
+    /// <summary>The box round a cloud in the project, its sides along the link's own turn (the crop "Fit to cloud" makes).</summary>
+    public static CropBox? Fit(IModelView m, Entity link)
+    {
+        if (BoundsOf(link) is not { } fb) return null;
+        var t = TransformOf(m, link);
+        var deg = Json.Number((link.Attrs["placement"] as JsonObject)?["rotation"]) ?? 0;
+        var r = deg * Math.PI / 180;
+        var (c, s) = (Math.Cos(r), Math.Sin(r));
+        double[] lo = [double.MaxValue, double.MaxValue, double.MaxValue], hi = [double.MinValue, double.MinValue, double.MinValue];
+        for (var i = 0; i < 8; i++)
+        {
+            var w = Apply(t, (i & 1) != 0 ? fb[3] : fb[0], (i & 2) != 0 ? fb[4] : fb[1], (i & 4) != 0 ? fb[5] : fb[2]);
+            // Into the box's own axes (turned back by the link's turn).
+            double[] q = [c * w.X + s * w.Y, -s * w.X + c * w.Y, w.Z];
+            for (var k = 0; k < 3; k++) { lo[k] = Math.Min(lo[k], q[k]); hi[k] = Math.Max(hi[k], q[k]); }
+        }
+        double mx = (lo[0] + hi[0]) / 2, my = (lo[1] + hi[1]) / 2;
+        return new CropBox([Math.Round(c * mx - s * my, 4), Math.Round(s * mx + c * my, 4), Math.Round((lo[2] + hi[2]) / 2, 4)],
+            [Math.Round(hi[0] - lo[0], 4), Math.Round(hi[1] - lo[1], 4), Math.Round(hi[2] - lo[2], 4)], deg);
+    }
+
+    // ─── The link ───
     // ─── The link ───
 
     /// <summary>A cloud linked: by its path (the desktop) or its bytes (a browser); its header read, its index started.</summary>
@@ -496,6 +590,9 @@ public static class PointCloudLinks
         catch (PointCloudException e) { throw new CommandException(e.Message); }
         catch (Exception e) when (e is IOException or EndOfStreamException or ArgumentException) { throw new CommandException($"{source.Name} could not be read: {e.Message}"); }
 
+        // A PLY of faces is a mesh (MeshSplatting's output, a photogrammetry model): imported as one unless its vertices are asked for.
+        if (header.Faces > 0 && !(a["asPoints"] is JsonValue ap && ap.TryGetValue<bool>(out var asPoints) && asPoints))
+            throw new CommandException($"{source.Name} holds a mesh ({header.Faces:N0} faces), not a point cloud: import it as a 3D mesh, or link its vertices as points.");
         var placement = DefaultPlacement(ctx.Model, header);
         if (a["placement"] is JsonObject asked) foreach (var (k, v) in asked) placement[k] = v?.DeepClone();
         CheckPlacement(placement);
@@ -530,6 +627,7 @@ public static class PointCloudLinks
     {
         if ((string?)p["mode"] is { } mode && !Modes.Contains(mode)) throw new CommandException($"A cloud is placed by {string.Join(", ", Modes)}.");
         if ((string?)p["units"] is { } u && !Units.Contains(u)) throw new CommandException($"A cloud's unit is one of {string.Join(", ", Units)}.");
+        if (p["scale"] is { } sc && (Json.Number(sc) is not { } sn || !(sn is >= 1e-6 and <= 1e6))) throw new CommandException("A cloud's scale is a factor between 0.000001 and 1 000 000.");
         if ((string?)p["up"] is { } up && !Ups.Contains(up)) throw new CommandException($"A cloud's up axis is one of {string.Join(", ", Ups)}.");
         if (p["offset"] is JsonArray off && (off.Count != 3 || off.Any(v => Json.Number(v) is not { } n || !double.IsFinite(n) || Math.Abs(n) > 1e7)))
             throw new CommandException("A cloud's offset is three distances (x, y, z) within 10 000 km.");
@@ -550,7 +648,7 @@ public static class PointCloudLinks
     public const double MaxSlice = 100;
 
     /// <summary>How a cloud is drawn in one view: its link's settings, then the view's row over them (decision 396).</summary>
-    public sealed record Look(bool Shown, bool Halftone, string ColorMode, IReadOnlySet<int> HiddenClasses, double Slice, double PointSize, string Display = "points");
+    public sealed record Look(bool Shown, bool Halftone, string ColorMode, IReadOnlySet<int> HiddenClasses, double Slice, double PointSize, string Display = "points", CropBox? Crop = null);
 
     public static Look LookIn(JsonObject? graphics, Entity link)
     {
@@ -561,7 +659,7 @@ public static class PointCloudLinks
         var slice = Json.Number(row?["slice"]) is { } sl && sl > 0 ? sl : DefaultSlice;
         // Splats or points in 3D: the view's row, else the link's; a cloud of plain points is points.
         var display = !IsSplats(link) ? "points" : (string?)row?["display"] is { } d && Displays.Contains(d) ? d : link.Str("display") is { } ld && Displays.Contains(ld) ? ld : "splats";
-        return new Look(Links.Visible(link) && !T(row?["hidden"]), Links.IsHalftone(link) || T(row?["halftone"]), mode, hidden, slice, link.NumOrNull("pointSize") ?? 2, display);
+        return new Look(Links.Visible(link) && !T(row?["hidden"]), Links.IsHalftone(link) || T(row?["halftone"]), mode, hidden, slice, link.NumOrNull("pointSize") ?? 2, display, CropOf(link));
     }
 
     /// <summary>A view's row for a cloud, checked: {hidden, halftone, colorMode, hiddenClasses: [0–255…], slice: m, display: splats | points}; null when it says nothing.</summary>
@@ -629,7 +727,8 @@ public static class PointCloudLinks
             if (!Is(link)) throw new CommandException("That link is not a point cloud.");
             var attrs = link.CloneAttrs();
             var p = (attrs["placement"] as JsonObject)?.DeepClone() as JsonObject ?? new JsonObject();
-            foreach (var k in new[] { "mode", "units", "offset", "rotation", "up" }) if (a.ContainsKey(k)) p[k] = a[k]?.DeepClone();
+            foreach (var k in new[] { "mode", "units", "offset", "rotation", "up", "scale" }) if (a.ContainsKey(k)) p[k] = a[k]?.DeepClone();
+            if (p["scale"] is JsonValue sv && Json.Number(sv) is { } one && Math.Abs(one - 1) < 1e-12) p.Remove("scale");
             if (Json.Number(p["rotation"]) is { } rot && !double.IsFinite(rot)) throw new CommandException("A cloud's rotation is a number of degrees.");
             CheckPlacement(p);
             attrs["placement"] = p;
@@ -653,6 +752,31 @@ public static class PointCloudLinks
             }
             ctx.Replace(link.With(attrs: attrs));
             return null;
+        });
+
+        // Scaled true by two points picked on it and their true distance (G2): one undo step.
+        r.Command("pointcloud.calibrate", "Calibrate point cloud", (ctx, a) =>
+        {
+            var link = Links.Require(ctx.Model, (string?)a["id"]);
+            if (!Is(link)) throw new CommandException("That link is not a point cloud.");
+            static double[] P(JsonNode? n) => n is JsonArray { Count: 3 } v && v.Select(Json.Number).All(x => x is { } d && double.IsFinite(d))
+                ? v.Select(x => Json.Number(x)!.Value).ToArray() : throw new CommandException("A point is three numbers (x, y, z).");
+            return Calibrate(ctx, link, P(a["a"]), P(a["b"]), Json.Number(a["length"]) ?? 0);
+        });
+
+        // What of it is kept (G2): a box in the project, turned about z; `fit` makes the box round the whole cloud; null takes it off.
+        r.Command("pointcloud.crop", "Crop point cloud", (ctx, a) =>
+        {
+            var link = Links.Require(ctx.Model, (string?)a["id"]);
+            if (!Is(link)) throw new CommandException("That link is not a point cloud.");
+            var attrs = link.CloneAttrs();
+            CropBox? box;
+            if (a["fit"] is JsonValue fv && fv.TryGetValue<bool>(out var fit) && fit) box = Fit(ctx.Model, link) ?? throw new CommandException("The cloud's size is not known yet: wait for its index.");
+            else if (a.ContainsKey("crop") && a["crop"] is null) box = null;
+            else box = CropBox.From(a["crop"] as JsonObject) ?? throw new CommandException("A crop is {center: [x, y, z], size: [x, y, z], rotation}, its sizes above 0.");
+            if (box == null) attrs.Remove("crop"); else attrs["crop"] = box.ToJson();
+            ctx.Replace(link.With(attrs: attrs));
+            return box?.ToJson();
         });
 
         // Read again from its file (the desktop): a file changed since makes a new index; one unchanged keeps its own.
@@ -680,11 +804,11 @@ public static class PointCloudLinks
             var link = Links.Require(q.Model, (string?)a["id"]);
             var units = (string?)a["units"] ?? (string?)(link.Attrs["placement"] as JsonObject)?["units"] ?? "m";
             var b = BoundsOf(link);
-            var k = MetresOf(units);
+            var k = MetresOf(units) * (Json.Number(a["scale"]) is { } fs && fs > 0 ? fs : ScaleOf(link.Attrs["placement"] as JsonObject));
             return new JsonObject
             {
                 ["size"] = b != null ? new JsonArray(Math.Round((b[3] - b[0]) * k, 3), Math.Round((b[4] - b[1]) * k, 3), Math.Round((b[5] - b[2]) * k, 3)) : null,
-                ["warning"] = UnitWarning(b, units, (string?)(link.Attrs["cloud"] as JsonObject)?["units"]),
+                ["warning"] = UnitWarning(b, units, (string?)(link.Attrs["cloud"] as JsonObject)?["units"], Json.Number(a["scale"]) is { } qs && qs > 0 ? qs : ScaleOf(link.Attrs["placement"] as JsonObject)),
             };
         });
     }
@@ -699,3 +823,45 @@ public sealed record SplatPage(string Link, long Start, long? Next, long Total, 
 
 /// <summary>A tile of a point cloud for the 3D view: its points in the project (x y z a point), colours (0xRRGGBB) and values (intensity | class « 16).</summary>
 public sealed record PointTile(string Link, string Name, float[] Positions, int[] Colors, int[] Values);
+
+/// <summary>
+/// What of a point cloud is kept (docs/plan-gaussian-splats.md, G2): a box in the project, its middle and sizes in metres,
+/// turned about the vertical through its middle by <see cref="Rotation"/> degrees. Points and splats outside are not sent to
+/// the 3D view, not drawn in plans and sections, not snapped to and not exported.
+/// </summary>
+public sealed record CropBox(double[] Center, double[] Size, double Rotation)
+{
+    readonly double _c = Math.Cos(Rotation * Math.PI / 180), _s = Math.Sin(Rotation * Math.PI / 180);
+
+    public bool Inside(double x, double y, double z)
+    {
+        double dx = x - Center[0], dy = y - Center[1];
+        double u = _c * dx + _s * dy, v = -_s * dx + _c * dy;
+        return Math.Abs(u) <= Size[0] / 2 && Math.Abs(v) <= Size[1] / 2 && Math.Abs(z - Center[2]) <= Size[2] / 2;
+    }
+
+    /// <summary>The project's axis-aligned box round it (min x, y, z, max x, y, z).</summary>
+    public double[] Box()
+    {
+        var hx = Math.Abs(_c) * Size[0] / 2 + Math.Abs(_s) * Size[1] / 2;
+        var hy = Math.Abs(_s) * Size[0] / 2 + Math.Abs(_c) * Size[1] / 2;
+        return [Center[0] - hx, Center[1] - hy, Center[2] - Size[2] / 2, Center[0] + hx, Center[1] + hy, Center[2] + Size[2] / 2];
+    }
+
+    public JsonObject ToJson() => new()
+    {
+        ["center"] = new JsonArray(Center.Select(v => (JsonNode)v).ToArray()), ["size"] = new JsonArray(Size.Select(v => (JsonNode)v).ToArray()), ["rotation"] = Rotation,
+    };
+
+    /// <summary>A crop read from a link or a command; null when it is not one (a size not above 0, a number missing).</summary>
+    public static CropBox? From(JsonObject? o)
+    {
+        if (o == null) return null;
+        static double[]? Three(JsonNode? n) => n is JsonArray { Count: 3 } a && a.Select(Json.Number).All(x => x is { } d && double.IsFinite(d) && Math.Abs(d) < 1e7) ? a.Select(x => Json.Number(x)!.Value).ToArray() : null;
+        var c = Three(o["center"]);
+        var s = Three(o["size"]);
+        var r = Json.Number(o["rotation"]) ?? 0;
+        if (c == null || s == null || s.Any(v => !(v > 0)) || !double.IsFinite(r)) return null;
+        return new CropBox(c, s, r);
+    }
+}
