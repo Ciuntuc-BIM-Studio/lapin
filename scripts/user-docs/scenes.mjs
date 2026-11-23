@@ -5173,6 +5173,58 @@ export const scenes = [
     },
   },
   {
+    // A run drawn in height (docs/user/mep.md, Runs): the plane and elevation beside the cursor, C after the second point taking the run up
+    // to the ceiling there (a rise inside the run, one undo step), the rise's sign on the plan and the vertical leg in 3D; the system's
+    // open ends marked while it is edited, counted in the edit's bar.
+    id: 'mep-heights',
+    touches: ['mep'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.button('MEP', { exact: true });
+      const r = await t.cmd('mep.placeSystem', { service: 'heating', storeyId: storey, x: 1, y: 1.5, to: [3.5, 7.3] });
+      await t.page.evaluate(async (id) => (await import('/src/modules/mep/prefs.ts')).setMep({ systemId: id, plane: 'floor', elevation: null, square: true }), r.id);
+      await t.ui({ keyPlan: false });
+      await t.wait(800);
+      await t.fit();
+      await t.tool('mep.run');
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 4 }); await t.page.mouse.click(px, py); await t.wait(250); };
+      const move = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 6 }); await t.wait(300); };
+      await click(2, 3.2);
+      await move(4.5, 3.2);
+      t.expect(await t.page.locator('[data-testid=mep-level]').count() > 0, 'the plane and elevation show beside the cursor');
+      await click(5.2, 3.2);
+      // C: the leg from here on is on the ceiling; the box says how far the run rises at this point.
+      await t.keys('c');
+      await move(5.2, 5.6);
+      t.expect(await t.page.locator('[data-testid=mep-level-change]').count() > 0, 'the rise at the point shows beside the cursor');
+      await t.shot('mep-run-heights', { of: '[data-testid=plan]', pad: 0 });
+      await click(5.2, 5.8);
+      await t.keys('Enter');
+      await t.ui({ tool: null });
+      let made = null;
+      for (let i = 0; i < 40 && !made; i++) { await t.wait(100); made = (await t.nodes()).find((n) => n.type === 'IfcPipeSegment' && Array.isArray(n.props.levels)); }
+      t.expect(!!made, 'the run is made with its levels');
+      t.expect(Array.isArray(made.props.levels[1]), `the rise is at the second point (${JSON.stringify(made.props.levels)})`);
+      t.expect(made.props.plane === 'floor', 'the run starts on the floor');
+      // The system edited: every open end marked on the plan, their count in the bar.
+      await t.page.evaluate(async (id) => (await import('/src/modules/mep/edit.ts')).editSystem(id), r.id);
+      await t.page.locator('[data-testid=mep-open-ends-count]').waitFor({ timeout: 10_000 });
+      t.expect(await t.page.locator('[data-testid=mep-open-ends] circle').count() >= 2, 'the open ends are marked on the plan');
+      await t.wait(400);
+      await t.shot('mep-open-ends', { of: '[data-testid=plan]', pad: 0 });
+      await t.page.locator('[data-testid=mep-open-ends-count]').click();
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selected.length) > 0, 'a click on the count selects the open ends');
+      await t.page.evaluate(async () => (await import('/src/platform/scope.ts')).exitScope(false));
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.page.evaluate(async ([target, azimuth, pitch, distance]) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target, azimuth, pitch, distance }, false), [{ x: 4.2, y: 4.2, z: 1.2 }, -Math.PI * 0.3, -0.35, 9]);
+      await t.wait(1500);
+      await t.shot('mep-run-rise-3d', { of: '[data-testid=view3d]', pad: 0 });
+      await t.ui({ view: 'plan', keyPlan: true });
+    },
+  },
+  {
     // Gas and fuel oil (report #72): a house's gas installation from the meter box on the facade to the boiler and the cooker,
     // the regulator and the meter on the way, sleeved through the wall; the street's main 0.9 m down and the service connection
     // rising into the box; the gas system's defaults; the bill of materials.

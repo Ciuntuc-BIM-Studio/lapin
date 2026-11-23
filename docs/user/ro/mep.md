@@ -22,7 +22,36 @@ Sub **Sistem nou**, alege serviciul (**Încălzire**, **Apă**, **Apă caldă**,
 
 **Traseu** (<kbd>RN</kbd>) desenează un traseu punct cu punct; apasă <kbd>Enter</kbd> ca să termini. Un capăt care cade pe un port liber se conectează la el; un capăt care cade pe un traseu al aceluiași sistem se ramifică din el.
 
+### Desenarea pe înălțime
+
+Un traseu stă pe un plan al sistemului său: pardoseala, tavanul sau peretele, fiecare la cota pe care o dă **Sisteme…** (implicit 0,20 m, 2,40 m și 1,10 m peste nivel). Cât desenezi, caseta de lângă cursor arată lungimea și unghiul tronsonului și, după ele, planul și cota lui (**tavan +2400**); pe un nivel care nu e la cota zero a proiectului arată și cota față de zero (**±0 +5400**). Bara liniei de comandă stabilește planul pe care pornește un traseu nou (**ca sistemul**, **pardoseală**, **tavan**, **perete**, sau o **cotă** pe care o tastezi).
+
+După ce ai pus primul punct, apasă o tastă ca să schimbi planul tronsonului pe care îl desenezi:
+
+| Tasta | Tronsonul de la ultimul punct |
+|---|---|
+| <kbd>F</kbd> | pe pardoseală |
+| <kbd>C</kbd> | pe tavan |
+| <kbd>W</kbd> | pe perete |
+| <kbd>E</kbd> | la o cotă pe care o tastezi, apoi <kbd>Enter</kbd> (<kbd>Esc</kbd> renunță) |
+
+Cât unealta desenează, literele acestea sunt opțiunile ei, ca opțiunile unei comenzi: nu pornesc altă unealtă. Înainte de primul punct sunt scurtăturile obișnuite. După o lungime tastată, litera unei unități rămâne a unității: 2400c înseamnă 2400 cm.
+
+Când planul se schimbă după ce ai desenat câteva tronsoane, traseul urcă sau coboară în ultimul punct pus: acolo apare un tronson vertical, cu câte o curbă la fiecare capăt. Caseta arată saltul (**↑ +2200**). Rămâne un singur traseu, făcut într-un singur pas de anulare, iar planul marchează locul cu semnul de urcare / coborâre: un cerc cu punct unde traseul urcă, cu un x unde coboară. **Redesenează traseul** primește aceleași taste pentru traseul nou.
+
+![Desenarea unui traseu: după al doilea punct, C duce tronsonul următor pe tavan; caseta arată planul, cota lui și urcarea](shots/mep-run-heights.webp)
+
+![Același traseu în 3D: pe pardoseală, drept în sus la colț, apoi pe tavan](shots/mep-run-rise-3d.webp)
+
+Tronsoanele unui traseu rămân în unghi drept față de axele planului, dacă materialul lui nu are reguli de pozare (cu MEP Pro: cupru în pași de 45°, PVC cu cel mult 45° pe colț). Oprește **Ortho** în bară ca să desenezi în orice unghi. O lungime sau un unghi tastate în casetă se iau exact cum le-ai tastat, ca la pereți.
+
+### Capete libere
+
 **Conectează** leagă capătul unui traseu la un nod sau la alt traseu; **Deconectează** îl eliberează. **Porturi libere** selectează tot ce e încă neconectat.
+
+Cât un sistem e în modul de editare, și în orice plan al disciplinei instalații, fiecare port liber și fiecare capăt de traseu neconectat are un mic semn roșu. Bara de editare le numără (**2 capete libere**); dă clic pe număr ca să le selectezi. Semnele apar doar pe ecran: planșele, PDF-ul și exporturile nu le arată niciodată.
+
+![Un sistem în modul de editare: cele două capete libere marcate, numărul lor în bară](shots/mep-open-ends.webp)
 
 ## Modelarea unui traseu
 
