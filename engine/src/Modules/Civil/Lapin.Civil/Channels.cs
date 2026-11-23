@@ -563,7 +563,7 @@ public static class Channels
         var m = ctx.Model;
         if (a["points"] == null && a["along"] == null) throw new CommandException("A channel runs along points drawn or along an element: give points or along.");
         var attrs = new JsonObject { ["kind"] = "u" };
-        Apply(ctx, attrs, a);
+        Channels.Apply(ctx, attrs, a);
         var n = m.OfClass(Class).Count() + 1;
         var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Channel {n}";
         var probe = new Entity("probe", Class, name, (JsonObject)attrs.DeepClone(), Predefined);
@@ -616,7 +616,7 @@ public static class Channels
         {
             var e = Spatial.Require(ctx.Model, (string?)a["id"], Class);
             var attrs = e.CloneAttrs();
-            Apply(ctx, attrs, a);
+            Channels.Apply(ctx, attrs, a);
             if (a["standalone"] is JsonValue sv && sv.TryGetValue<bool>(out var st) && st) attrs.Remove("terrain");
             else if ((string?)a["terrainId"] is { Length: > 0 } tid) attrs["terrain"] = Terrains.Require(ctx.Model, tid).Id;
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : null;

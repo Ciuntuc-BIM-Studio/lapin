@@ -109,7 +109,7 @@ public static class Profiles
     public const string Class = "LapinProfile";
     public const string Key = "profile";
     public const string IdKey = "profileId";
-    public static readonly string[] Uses = ["sweep", "reveal", "footing", "kerb"];
+    public static readonly string[] Uses = ["sweep", "reveal", "footing", "kerb", "channel"];
 
     static ProfileVertex V(double u, double v, double b = 0) => new(u, v, b);
 

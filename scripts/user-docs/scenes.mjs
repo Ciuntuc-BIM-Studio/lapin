@@ -6869,7 +6869,10 @@ export const scenes = [
       await t.until(async () => (await t.page.locator('[data-testid=profile-graph] path').count()) >= 2, 'the graph draws the channel');
       await t.wait(1200);
       await t.shot('drainage-channel-profile', { of: '.pane.on .view-area', pad: 0 });
+      await t.page.locator('[data-testid=profile-close]').click();
       await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1000);
       // Kerb along a line: the plaza's south edge, bevelled, standing outside it.
       await t.tool('civil.kerbAlong');
       await t.page.locator('[data-testid=kerb-tool-shape]').selectOption('bevelled');
@@ -6896,8 +6899,8 @@ export const scenes = [
       await t.ui({ selection: post, selected: [post] });
       await t.wait(500);
       await t.tool('civil.alongLine');
-      await t.page.locator('.dialog').waitFor({ timeout: 5000 });
-      t.expect(await t.page.locator('.dialog select').evaluateAll((els) => els.some((e) => [...e.options].some((o) => o.value === 'ground') && e.value === 'ground')), 'the dialog is set to a path with the copies on the ground');
+      await t.page.getByText('Rise above it').first().waitFor({ timeout: 5000 });
+      t.expect(await t.page.locator('select').evaluateAll((els) => els.some((e) => [...e.options].some((o) => o.value === 'ground') && e.value === 'ground')), 'the dialog is set to a path with the copies on the ground');
       await t.keys('Escape');
       await t.wait(400);
       const row = await t.cmd('element.array', { ids: [post], kind: 'path', along: walk, spacing: 6, level: 'ground', rise: 0 });

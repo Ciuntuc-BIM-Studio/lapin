@@ -240,7 +240,7 @@ public static class KerbLines
         if (a["points"] == null && a["along"] == null) throw new CommandException("A kerb runs along points drawn or along an element: give points or along.");
         var attrs = new JsonObject { ["exportAs"] = Kerbs.IfcKerbClass };
         if (a["follow"] == null) attrs["follow"] = a["along"] != null ? "line" : "ground";
-        Apply(ctx, attrs, a);
+        KerbLines.Apply(ctx, attrs, a);
         var probe = new Entity("probe", Kerbs.Class, "probe", (JsonObject)attrs.DeepClone());
         var l = Laid(m, probe);
         if (l.Plan.Count < 2) throw new CommandException(l.Notes.FirstOrDefault() ?? "A kerb needs two points at least.");
@@ -275,7 +275,7 @@ public static class KerbLines
         {
             var e = ctx.Model.Get((string?)a["id"] ?? "") is { } x && Is(x) ? x : throw new CommandException("There is no such standalone kerb (a hardscape's kerb is changed with its hardscape).");
             var attrs = e.CloneAttrs();
-            Apply(ctx, attrs, a);
+            KerbLines.Apply(ctx, attrs, a);
             if (a["standalone"] is JsonValue sv && sv.TryGetValue<bool>(out var st) && st) attrs.Remove("terrain");
             else if ((string?)a["terrainId"] is { Length: > 0 } tid) attrs["terrain"] = Terrains.Require(ctx.Model, tid).Id;
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : null;
