@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { ExternalLink, LogOut, X } from 'lucide-react';
+import { ExternalLink, X } from 'lucide-react';
 import { useUi, notify } from '../../app/store';
 import { backdropClose } from '../../shell/Dialog';
 import { engine, useSession } from '../../engine/session';
@@ -16,25 +16,18 @@ import { projectTitle } from '../../engine/files';
 import { begin, end } from '../../engine/ifcImport';
 import { useLooks } from '../../platform/looks';
 import { useClip3d } from '../../viewport/section3d';
-import {
-  canRemember, DEFAULT_SERVER, listModels, listProjects, openVersion, restore, send, signIn, signOut, useSpeckle,
-  type SendWhat, type SpeckleItem, type SpeckleSent,
-} from './speckle';
+import { listModels, listProjects, openVersion, restore, send, useSpeckle, type SendWhat, type SpeckleItem, type SpeckleSent } from './speckle';
+import { message, SignedIn, SignInButton, SignInFields, useSignInForm, WIDE } from './SpeckleAccount';
 
-const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const NEW_MODEL = '__new__';
-/** A text field across its column (`.fields input` is narrow, for numbers). */
-const WIDE = { width: '100%', textAlign: 'left' } as const;
 
 export function SpeckleSendDialog() {
   const close = () => useUi.setState({ dialog: null });
   const account = useSpeckle((s) => s.account);
-  const [server, setServer] = useState(() => useSpeckle.getState().server || DEFAULT_SERVER);
-  const [token, setToken] = useState('');
-  const [remember, setRemember] = useState(true);
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const form = useSignInForm(setError);
   const [projects, setProjects] = useState<SpeckleItem[]>([]);
   const [project, setProject] = useState<string>('');
   const [models, setModels] = useState<SpeckleItem[]>([]);
@@ -76,11 +69,6 @@ export function SpeckleSendDialog() {
     return () => { live = false; };
   }, [account, project]);
 
-  const doSignIn = async () => {
-    setBusy(true); setError(null);
-    try { await signIn(server, token, remember && canRemember()); setToken(''); } catch (e) { setError(message(e)); } finally { setBusy(false); }
-  };
-
   const doSend = async () => {
     setBusy(true); setError(null); setSent(null);
     begin('Sending to Speckle', 'Converting the model', () => { void engine.call('cancel.long', {}).catch(() => undefined); });
@@ -102,26 +90,9 @@ export function SpeckleSendDialog() {
       <div className="dialog" role="dialog" aria-label="Send to Speckle" data-testid="speckle-send" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Send to Speckle</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
-          {checking ? <p className="muted">Looking for your Speckle account…</p> : !account ? (
+          {checking ? <p className="muted">Looking for your Speckle account…</p> : !account ? <SignInFields form={form} /> : (
             <>
-              <dl className="fields">
-                <dt title="Speckle's own server, or the one your firm hosts">Server</dt>
-                <dd><input className="speckle-server" style={WIDE} value={server} onChange={(e) => setServer(e.target.value)} placeholder={DEFAULT_SERVER} /></dd>
-                <dt title="In Speckle: your profile → Developer settings → Access tokens → New token, with streams:read, streams:write and profile:read">Token</dt>
-                <dd><input className="speckle-token" style={WIDE} type="password" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} placeholder="Personal access token" /></dd>
-                {canRemember() && <>
-                  <dt title="In the system's secure store (Keychain, Credential Manager, Secret Service), never in a file">Remember</dt>
-                  <dd><label><input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={remember} onChange={(e) => setRemember(e.target.checked)} />on this computer, in its secure store</label></dd>
-                </>}
-              </dl>
-              <p className="muted small">Make a token in Speckle under your profile: Developer settings → Access tokens, with the scopes streams:read, streams:write and profile:read. Lapin never writes it into the project, its settings or a report.</p>
-            </>
-          ) : (
-            <>
-              <div className="row" style={{ alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span className="grow" data-no-i18n>{account.name ?? account.email ?? ''} · {account.server}</span>
-                <button type="button" className="btn" data-action="speckle-sign-out" onClick={() => void signOut()} title="Forget this account and its token on this computer"><LogOut size={13} /> Sign out</button>
-              </div>
+              <SignedIn account={account} />
               <dl className="fields">
                 <dt>Project</dt>
                 <dd><select className="speckle-project" value={project} onChange={(e) => setProject(e.target.value)}>
@@ -161,7 +132,7 @@ export function SpeckleSendDialog() {
         <footer className="dialog-foot">
           <span className="grow" />
           <button type="button" onClick={close}>{sent ? 'Close' : 'Cancel'}</button>
-          {!checking && !account && <button type="button" className="btn primary" data-action="speckle-sign-in" disabled={busy || !token.trim()} onClick={() => void doSignIn()}>{busy ? 'Signing in…' : 'Sign in'}</button>}
+          {!checking && !account && <SignInButton form={form} />}
           {account && <button type="button" className="btn primary" data-action="speckle-send" disabled={busy || !canSend} onClick={() => void doSend()}>{busy ? 'Sending…' : 'Send'}</button>}
         </footer>
       </div>
