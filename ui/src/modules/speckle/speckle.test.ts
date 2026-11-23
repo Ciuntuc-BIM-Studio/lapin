@@ -20,6 +20,8 @@ describe('the Speckle connector', () => {
   it('receives the latest version unless one is named, by the levels unless asked to put everything on the current storey', () => {
     const base = { projectId: 'p', modelId: 'm', activeStoreyId: 's1' };
     expect(receiveArgs({ ...base })).toEqual({ projectId: 'p', modelId: 'm', activeStoreyId: 's1' });
+    expect(receiveArgs({ ...base, storeys: 'create' })).toEqual({ projectId: 'p', modelId: 'm', activeStoreyId: 's1' });
+    expect(receiveArgs({ ...base, storeys: 'levels' })).toEqual({ projectId: 'p', modelId: 'm', activeStoreyId: 's1', levels: 'existing' });
     expect(receiveArgs({ ...base, versionId: 'v2', storeys: 'active', origin: 'internal', asCopy: true }))
       .toEqual({ projectId: 'p', modelId: 'm', versionId: 'v2', storeyId: 's1', origin: 'internal', asCopy: true });
     expect(receiveArgs({ projectId: 'p', modelId: 'm', versionId: null, origin: 'base' })).toEqual({ projectId: 'p', modelId: 'm' });

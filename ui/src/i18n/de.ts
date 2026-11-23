@@ -39,8 +39,6 @@ export const DE: Record<string, string> = {
   "Receive from Speckle": "Von Speckle empfangen",
   "the latest": "die neueste",
   "no model in this project": "kein Modell in diesem Projekt",
-  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "Nach den Ebenen der Version: jedes Objekt auf dem Geschoss seiner Ebene (5 cm), sonst auf dem, auf dem es steht",
-  "by the version's levels": "nach den Ebenen der Version",
   "all on the current storey": "alle auf dem aktuellen Geschoss",
   "Send writes the model from the project base point; a model from another program may start at its internal origin": "Senden schreibt das Modell vom Projektbasispunkt aus; ein Modell aus einem anderen Programm kann an seinem internen Ursprung beginnen",
   "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "Die Objekte kommen als Referenzen, mit ihren Flächen, Farben und Eigenschaften, nach dem Modell gruppiert. Eine neuere Version aktualisiert sie an Ort und Stelle und behält ihre GlobalIds; was die Version nicht mehr enthält, wird entfernt.",
@@ -55,6 +53,11 @@ export const DE: Record<string, string> = {
   "Downloading from Speckle": "Lade von Speckle herunter",
   "Reading the objects": "Lese die Objekte",
   "Bringing the objects in": "Bringe die Objekte ein",
+  // Speckle receive, storeys from the version's levels (docs/plan-speckle.md).
+  "By the version's levels: each object on the storey at its level (5 cm), the missing storeys made from the version's levels with their names and elevations": "Nach den Ebenen der Version: jedes Objekt auf dem Geschoss seiner Ebene (5 cm), die fehlenden Geschosse aus den Ebenen der Version mit Namen und Höhen angelegt",
+  "by the version's levels, creating the missing ones": "nach den Ebenen der Version, fehlende anlegen",
+  "by the version's levels, only the project's storeys": "nach den Ebenen der Version, nur die Geschosse des Projekts",
+  "Storeys made": "Angelegte Geschosse",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "Erkennung",
   "Recognise walls and slabs": "Wände und Decken erkennen",

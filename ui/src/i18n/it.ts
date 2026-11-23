@@ -39,8 +39,6 @@ export const IT: Record<string, string> = {
   "Receive from Speckle": "Ricevi da Speckle",
   "the latest": "la più recente",
   "no model in this project": "nessun modello in questo progetto",
-  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "Secondo i livelli della versione: ogni oggetto sul piano del suo livello (5 cm), altrimenti su quello su cui poggia",
-  "by the version's levels": "secondo i livelli della versione",
   "all on the current storey": "tutti sul piano corrente",
   "Send writes the model from the project base point; a model from another program may start at its internal origin": "Invia scrive il modello dal punto base del progetto; un modello di un altro programma può partire dalla sua origine interna",
   "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "Gli oggetti entrano come riferimenti, con le loro superfici, colori e proprietà, raggruppati per modello. Ricevere una versione più nuova li aggiorna sul posto e ne conserva i GlobalId; ciò che la versione non ha più viene rimosso.",
@@ -55,6 +53,11 @@ export const IT: Record<string, string> = {
   "Downloading from Speckle": "Download da Speckle",
   "Reading the objects": "Lettura degli oggetti",
   "Bringing the objects in": "Importazione degli oggetti",
+  // Speckle receive, storeys from the version's levels (docs/plan-speckle.md).
+  "By the version's levels: each object on the storey at its level (5 cm), the missing storeys made from the version's levels with their names and elevations": "Secondo i livelli della versione: ogni oggetto sul piano del suo livello (5 cm), i piani mancanti creati dai livelli della versione, con nomi e quote",
+  "by the version's levels, creating the missing ones": "secondo i livelli della versione, creando quelli mancanti",
+  "by the version's levels, only the project's storeys": "secondo i livelli della versione, solo i piani del progetto",
+  "Storeys made": "Piani creati",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "Riconoscimento",
   "Recognise walls and slabs": "Riconosci muri e solai",

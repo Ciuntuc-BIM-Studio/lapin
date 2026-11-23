@@ -5,6 +5,7 @@
  * as Send writes them, or its internal origin). Receive downloads the version, says what it holds, then brings it in as one
  * undo step; received again, the same model's references are updated in place, keeping their GlobalIds. A version sent from
  * this project (its objects are this project's elements) is offered as a copy, never over the elements themselves.
+ * Storeys: by the version's levels, the missing storeys made from them (the default), or only the project's, or all on one.
  * Recognise walls and slabs (S3, on by default, as the IFC import's recognition): the walls and floors whose bodies Lapin
  * rebuilds within 1 mm or 0.5 % come in as native walls and slabs, the rest as references; the report says how many of each.
  */
@@ -42,7 +43,7 @@ export function SpeckleReceiveDialog() {
   const [model, setModel] = useState('');
   const [versions, setVersions] = useState<SpeckleVersion[]>([]);
   const [version, setVersion] = useState(LATEST);
-  const [storeys, setStoreys] = useState<ReceiveStoreys>('levels');
+  const [storeys, setStoreys] = useState<ReceiveStoreys>('create');
   const [origin, setOrigin] = useState<'base' | 'internal'>('base');
   const [recognize, setRecognize] = useState(true);
   const [own, setOwn] = useState<SpeckleSurvey | null>(null);
@@ -128,9 +129,10 @@ export function SpeckleReceiveDialog() {
                   <option value={LATEST}>the latest</option>
                   {versions.map((v) => <option key={v.id} value={v.id} data-no-i18n>{versionLabel(v)}</option>)}
                 </select></dd>
-                <dt title="By the version's levels: each object on the storey at its level (5 cm), else the one it stands on">Storeys</dt>
+                <dt title="By the version's levels: each object on the storey at its level (5 cm), the missing storeys made from the version's levels with their names and elevations">Storeys</dt>
                 <dd><select className="speckle-storeys" value={storeys} onChange={(e) => setStoreys(e.target.value as ReceiveStoreys)}>
-                  <option value="levels">by the version's levels</option>
+                  <option value="create">by the version's levels, creating the missing ones</option>
+                  <option value="levels">by the version's levels, only the project's storeys</option>
                   <option value="active">all on the current storey</option>
                 </select></dd>
                 <dt title="Send writes the model from the project base point; a model from another program may start at its internal origin">Origin</dt>
@@ -159,6 +161,7 @@ export function SpeckleReceiveDialog() {
                     <dt>Removed</dt><dd data-no-i18n>{received.removed}</dd>
                     {received.shared > 0 && <><dt>Shared bodies</dt><dd data-no-i18n>{received.shared}</dd></>}
                     {received.lines > 0 && <><dt>With lines only</dt><dd data-no-i18n>{received.lines}</dd></>}
+                    {received.levels && received.levels.made > 0 && <><dt>Storeys made</dt><dd data-no-i18n>{received.levels.made}</dd></>}
                     {received.recognition && <><dt>Recognised</dt><dd data-no-i18n>{received.recognition.recognized}</dd></>}
                     {received.recognition && <><dt>References</dt><dd data-no-i18n>{received.references ?? 0}</dd></>}
                   </dl>

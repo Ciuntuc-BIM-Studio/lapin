@@ -39,8 +39,6 @@ export const ZH: Record<string, string> = {
   "Receive from Speckle": "从 Speckle 接收",
   "the latest": "最新版本",
   "no model in this project": "此项目中没有模型",
-  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "按版本的标高：每个对象放在其标高所在的楼层（5 cm），否则放在其所在的楼层",
-  "by the version's levels": "按版本的标高",
   "all on the current storey": "全部放在当前楼层",
   "Send writes the model from the project base point; a model from another program may start at its internal origin": "发送从项目基点写出模型；来自其他程序的模型可能从其内部原点开始",
   "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "对象作为参照进入，带有其表面、颜色和属性，按模型分组。接收较新的版本会就地更新它们并保留其 GlobalId；版本中不再有的会被删除。",
@@ -55,6 +53,11 @@ export const ZH: Record<string, string> = {
   "Downloading from Speckle": "正在从 Speckle 下载",
   "Reading the objects": "正在读取对象",
   "Bringing the objects in": "正在导入对象",
+  // Speckle receive, storeys from the version's levels (docs/plan-speckle.md).
+  "By the version's levels: each object on the storey at its level (5 cm), the missing storeys made from the version's levels with their names and elevations": "按版本的标高：每个对象放在其标高所在的楼层（5 厘米），缺少的楼层按版本的标高及其名称和高程创建",
+  "by the version's levels, creating the missing ones": "按版本的标高，创建缺少的楼层",
+  "by the version's levels, only the project's storeys": "按版本的标高，仅用项目的楼层",
+  "Storeys made": "已创建楼层",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "识别",
   "Recognise walls and slabs": "识别墙和楼板",

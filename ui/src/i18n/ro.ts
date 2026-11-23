@@ -37,8 +37,6 @@ export const RO: Record<string, string> = {
   "Receive from Speckle": "Primește din Speckle",
   "the latest": "cea mai nouă",
   "no model in this project": "niciun model în acest proiect",
-  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "După nivelurile versiunii: fiecare obiect pe etajul de la nivelul lui (5 cm), altfel pe cel pe care stă",
-  "by the version's levels": "după nivelurile versiunii",
   "all on the current storey": "toate pe etajul curent",
   "Send writes the model from the project base point; a model from another program may start at its internal origin": "Trimiterea scrie modelul din punctul de bază al proiectului; un model din alt program poate porni din originea lui internă",
   "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "Obiectele intră ca referințe, cu suprafețele, culorile și proprietățile lor, grupate după model. O versiune mai nouă primită le actualizează pe loc și le păstrează GlobalId-urile; ce nu mai are versiunea se șterge.",
@@ -53,6 +51,11 @@ export const RO: Record<string, string> = {
   "Downloading from Speckle": "Descarc din Speckle",
   "Reading the objects": "Citesc obiectele",
   "Bringing the objects in": "Aduc obiectele",
+  // Speckle receive, storeys from the version's levels (docs/plan-speckle.md).
+  "By the version's levels: each object on the storey at its level (5 cm), the missing storeys made from the version's levels with their names and elevations": "După nivelurile versiunii: fiecare obiect pe etajul de la nivelul lui (5 cm), etajele care lipsesc făcute din nivelurile versiunii, cu numele și cotele lor",
+  "by the version's levels, creating the missing ones": "după nivelurile versiunii, cu etajele care lipsesc făcute",
+  "by the version's levels, only the project's storeys": "după nivelurile versiunii, doar etajele proiectului",
+  "Storeys made": "Etaje făcute",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "Recunoaștere",
   "Recognise walls and slabs": "Recunoaște pereții și plăcile",

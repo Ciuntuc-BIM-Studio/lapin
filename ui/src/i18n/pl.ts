@@ -39,8 +39,6 @@ export const PL: Record<string, string> = {
   "Receive from Speckle": "Odbierz ze Speckle",
   "the latest": "najnowsza",
   "no model in this project": "brak modelu w tym projekcie",
-  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "Według poziomów wersji: każdy obiekt na kondygnacji swojego poziomu (5 cm), w przeciwnym razie na tej, na której stoi",
-  "by the version's levels": "według poziomów wersji",
   "all on the current storey": "wszystkie na bieżącej kondygnacji",
   "Send writes the model from the project base point; a model from another program may start at its internal origin": "Wysyłanie zapisuje model od punktu bazowego projektu; model z innego programu może zaczynać się w swoim początku wewnętrznym",
   "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "Obiekty wchodzą jako odniesienia, z powierzchniami, kolorami i właściwościami, pogrupowane według modelu. Nowsza wersja aktualizuje je na miejscu i zachowuje ich GlobalId; to, czego wersja już nie ma, jest usuwane.",
@@ -55,6 +53,11 @@ export const PL: Record<string, string> = {
   "Downloading from Speckle": "Pobieranie ze Speckle",
   "Reading the objects": "Czytanie obiektów",
   "Bringing the objects in": "Wprowadzanie obiektów",
+  // Speckle receive, storeys from the version's levels (docs/plan-speckle.md).
+  "By the version's levels: each object on the storey at its level (5 cm), the missing storeys made from the version's levels with their names and elevations": "Według poziomów wersji: każdy obiekt na kondygnacji swojego poziomu (5 cm), brakujące kondygnacje utworzone z poziomów wersji, z ich nazwami i rzędnymi",
+  "by the version's levels, creating the missing ones": "według poziomów wersji, tworząc brakujące",
+  "by the version's levels, only the project's storeys": "według poziomów wersji, tylko kondygnacje projektu",
+  "Storeys made": "Utworzone kondygnacje",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "Rozpoznawanie",
   "Recognise walls and slabs": "Rozpoznaj ściany i stropy",

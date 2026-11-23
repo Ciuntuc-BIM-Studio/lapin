@@ -39,8 +39,6 @@ export const LO: Record<string, string> = {
   "Receive from Speckle": "ຮັບຈາກ Speckle",
   "the latest": "ລຸ້ນລ່າສຸດ",
   "no model in this project": "ບໍ່ມີແບບຈຳລອງໃນໂຄງການນີ້",
-  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "ຕາມລະດັບຂອງລຸ້ນ: ແຕ່ລະວັດຖຸຢູ່ຊັ້ນທີ່ລະດັບຂອງມັນ (5 cm), ຖ້າບໍ່ດັ່ງນັ້ນຢູ່ຊັ້ນທີ່ມັນຕັ້ງຢູ່",
-  "by the version's levels": "ຕາມລະດັບຂອງລຸ້ນ",
   "all on the current storey": "ທັງໝົດຢູ່ຊັ້ນປັດຈຸບັນ",
   "Send writes the model from the project base point; a model from another program may start at its internal origin": "ການສົ່ງຂຽນແບບຈຳລອງຈາກຈຸດອ້າງອີງຂອງໂຄງການ; ແບບຈຳລອງຈາກໂປຣແກຣມອື່ນອາດເລີ່ມຈາກຈຸດກຳເນີດພາຍໃນຂອງມັນ",
   "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "ວັດຖຸເຂົ້າມາເປັນການອ້າງອີງ, ພ້ອມພື້ນຜິວ, ສີ ແລະ ຄຸນສົມບັດຂອງມັນ, ຈັດກຸ່ມຕາມແບບຈຳລອງ. ການຮັບລຸ້ນໃໝ່ກວ່າຈະອັບເດດພວກມັນຢູ່ບ່ອນເດີມ ແລະ ຮັກສາ GlobalId ໄວ້; ສິ່ງທີ່ລຸ້ນບໍ່ມີອີກແລ້ວຈະຖືກລຶບ.",
@@ -55,6 +53,11 @@ export const LO: Record<string, string> = {
   "Downloading from Speckle": "ກຳລັງດາວໂຫຼດຈາກ Speckle",
   "Reading the objects": "ກຳລັງອ່ານວັດຖຸ",
   "Bringing the objects in": "ກຳລັງນຳວັດຖຸເຂົ້າ",
+  // Speckle receive, storeys from the version's levels (docs/plan-speckle.md).
+  "By the version's levels: each object on the storey at its level (5 cm), the missing storeys made from the version's levels with their names and elevations": "ຕາມລະດັບຂອງລຸ້ນ: ວັດຖຸແຕ່ລະອັນຢູ່ຊັ້ນຂອງລະດັບມັນ (5 cm), ຊັ້ນທີ່ຂາດສ້າງຈາກລະດັບຂອງລຸ້ນ ພ້ອມຊື່ ແລະ ລະດັບຄວາມສູງ",
+  "by the version's levels, creating the missing ones": "ຕາມລະດັບຂອງລຸ້ນ, ສ້າງຊັ້ນທີ່ຂາດ",
+  "by the version's levels, only the project's storeys": "ຕາມລະດັບຂອງລຸ້ນ, ສະເພາະຊັ້ນຂອງໂຄງການ",
+  "Storeys made": "ຊັ້ນທີ່ສ້າງ",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "ການຮັບຮູ້",
   "Recognise walls and slabs": "ຮັບຮູ້ຝາ ແລະ ພື້ນ",

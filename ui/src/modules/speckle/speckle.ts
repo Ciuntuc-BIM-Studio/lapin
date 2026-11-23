@@ -175,10 +175,17 @@ export interface SpeckleReceived {
   versionId: string; model?: string | null; elements: number; added: number; updated: number; unchanged: number; removed: number; shared: number;
   triangles: number; lines: number; skipped: Record<string, number>; storeys: Record<string, number>; groupId?: string | null; notes: string[];
   recognized?: number; native?: number; references?: number; recognition?: SpeckleRecognition | null;
+  levels?: SpeckleLevels | null;
 }
 
-/** Where the objects go: on the storeys their levels match, or all on the storey the interface is on. */
-export type ReceiveStoreys = 'levels' | 'active';
+/** What a receive did to the storeys: matched to the version's levels, made, renamed, moved, removed, kept (their level gone); the levels' datum shift, metres. */
+export interface SpeckleLevels { matched: number; made: number; renamed: number; moved: number; removed: number; kept: number; datum: number }
+
+/**
+ * Where the objects go: on their levels' storeys, the missing ones made from the version's levels (`create`, the default), or
+ * only on the project's storeys (`levels`: a level none matches goes on the storey below it), or all on the storey the interface is on.
+ */
+export type ReceiveStoreys = 'create' | 'levels' | 'active';
 
 export interface ReceiveArgs {
   projectId: string; modelId: string; versionId?: string | null; asCopy?: boolean; origin?: 'base' | 'internal';
@@ -194,6 +201,7 @@ export function receiveArgs(a: ReceiveArgs): Record<string, unknown> {
   if (a.asCopy) o.asCopy = true;
   if (a.origin === 'internal') o.origin = 'internal';
   if (a.recognize) o.recognize = true;
+  if (a.storeys === 'levels') o.levels = 'existing';
   if (a.activeStoreyId) {
     if (a.storeys === 'active') o.storeyId = a.activeStoreyId;
     else o.activeStoreyId = a.activeStoreyId;

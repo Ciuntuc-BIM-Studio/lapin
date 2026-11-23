@@ -39,8 +39,6 @@ export const DA: Record<string, string> = {
   "Receive from Speckle": "Modtag fra Speckle",
   "the latest": "den nyeste",
   "no model in this project": "ingen model i dette projekt",
-  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "Efter versionens niveauer: hvert objekt på etagen i dets niveau (5 cm), ellers den, det står på",
-  "by the version's levels": "efter versionens niveauer",
   "all on the current storey": "alle på den aktuelle etage",
   "Send writes the model from the project base point; a model from another program may start at its internal origin": "Send skriver modellen fra projektets basispunkt; en model fra et andet program kan starte i sit interne origo",
   "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "Objekterne kommer ind som referencer med deres flader, farver og egenskaber, grupperet efter modellen. En nyere version opdaterer dem på stedet og beholder deres GlobalId'er; det, versionen ikke længere har, fjernes.",
@@ -55,6 +53,11 @@ export const DA: Record<string, string> = {
   "Downloading from Speckle": "Henter fra Speckle",
   "Reading the objects": "Læser objekterne",
   "Bringing the objects in": "Henter objekterne ind",
+  // Speckle receive, storeys from the version's levels (docs/plan-speckle.md).
+  "By the version's levels: each object on the storey at its level (5 cm), the missing storeys made from the version's levels with their names and elevations": "Efter versionens niveauer: hvert objekt på etagen ved dets niveau (5 cm), de manglende etager oprettet ud fra versionens niveauer med deres navne og koter",
+  "by the version's levels, creating the missing ones": "efter versionens niveauer, de manglende oprettes",
+  "by the version's levels, only the project's storeys": "efter versionens niveauer, kun projektets etager",
+  "Storeys made": "Oprettede etager",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "Genkendelse",
   "Recognise walls and slabs": "Genkend vægge og dæk",
