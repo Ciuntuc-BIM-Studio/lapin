@@ -53,7 +53,7 @@ import { DrawingLayer } from './DrawingLayer';
 import { PlanOverlays } from './PlanOverlays';
 import { useShallow } from 'zustand/react/shallow';
 import { useDisplay } from '../app/display';
-import { gridSnapStep, gridStepAt, usePrefs } from '../app/prefs';
+import { gridSnapStep, gridStepAt, useGridScale, usePrefs } from '../app/prefs';
 import { exportFile } from '../engine/files';
 import { basePoint, surveyPoint, fromFrame, isIdentity, setTrueNorth, toFrame, trueNorthTurn, turn, ucsOf, useLocation, useTrueNorth } from '../app/location';
 import { UcsIcon } from './UcsIcon';
@@ -62,6 +62,10 @@ import { setUnderlay, useUnderlay } from './underlay';
 import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { CadOverlay } from './cad/canvas';
+import { Crosshair } from './Crosshair';
+import { snapAlong } from '../platform/anchor';
+import { setDatum, useDatum } from './datum';
+import { DatumMark } from './DatumMark';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
 import { WALL_CLASSES, elementCurves, gridAxisShapes, wallAxes, wallAxisPoints } from './cad/elementSnaps';
 import { clearShown, hiddenInDrawing, publishShown, shownItems, shownWholeOf } from './cad/shown';
@@ -79,7 +83,7 @@ import { actualScale, boundsOf, coreBounds, framing, middleDouble, popHistory, p
 import { ScaleChip, ScalePicker, StructurePicker } from './ScaleChip';
 import { DASHES, planDetail, shownAt } from './planDetail';
 import { useLineTypes } from '../modules/core/lineTypes/lineTypes';
-import { axisLine, riseThrough } from './arc';
+import { arcOf, axisLine, riseThrough } from './arc';
 import { PICKED, arrivingDir, circleOutline, ellipseOutline, loopOf, pickOutline, rectangleOutline, tangentRise, useOutlineShape } from './outlineShape';
 import { useLang } from '../i18n';
 import { others, reportPresence, useShare } from '../engine/share';
@@ -117,7 +121,10 @@ export function PlanView() {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [pts, setPts] = useState<Vec2[]>([]);
   // Reference point before placing the first point (forum #126): Space switches distance/angle and X/Y offsets.
-  const [refPt, setRefPt] = useState<Vec2 | null>(null);
+  // Shared with sections and set by F6 as well (viewport/datum.ts, forum topic 226).
+  const refPt = useDatum((d) => d.pt);
+  const refMode = useDatum((d) => d.mode);
+  const setRefPt = (p: Vec2 | null) => setDatum(p, 'polar');
   const [pickRef, setPickRef] = useState(false);
   // A shaped outline's edges as drawn (forum topic 97): edge i's rise, from pts[i] to pts[i + 1].
   const rises = useRef<number[]>([]);
@@ -179,6 +186,8 @@ export function PlanView() {
   // The view (centre, zoom) is remembered per plan for the session, so the tab comes back as it was left.
   const key = ownPlan ?? (storey ? `plan:${storey.id}` : 'plan:none');
   const [view, setView] = useState<View>(() => recall<View>(key) ?? { cx: 4, cy: 2, scale: 60 });
+  // The zoom the snap step follows, for the status line to say the step really used (forum topic 226).
+  useEffect(() => { useGridScale.setState({ scale: view.scale }); }, [view.scale]);
   // The view held is the key's only once it was recalled or framed for it: another plan's framing (a new plan view
   // opened from one zoomed in, 318 %) is never remembered as this one's (decision 399).
   const viewKey = useRef<string | null>(recall<View>(key) ? key : null);
@@ -420,6 +429,9 @@ export function PlanView() {
   /** The selection dragged by its body (its trace shows over the plan). */
   const dragTrace = useTrace((s) => s.trace?.owner === 'drag');
 
+  /** A point on a host (a wall a door goes on) moved along its axis to the grid step in force: the grid snap for what is placed along a host. */
+  const alongGrid = (host: NodeDto, at: Vec2): Vec2 => { const arc = arcOf(host.props); return arc ? snapAlong(arc, at, gridSnapStep(view.scale)) : at; };
+
   const snapAt = useCallback((clientX: number, clientY: number, from?: Vec2): Aimed => {
     const rect = svgRef.current!.getBoundingClientRect();
     const raw = toWorld(clientX - rect.left, clientY - rect.top);
@@ -488,9 +500,11 @@ export function PlanView() {
       case 'pick': {
         const e = g.reach ? nearestOf(raw, g.reach / view.scale, pickItems, nodes, g.types) : pick(raw, g.types);
         // A door or window a module refused where the cursor is goes to the place it offered, when that is near.
-        const what = e && g.placing ? g.placing(e, raw) : null;
-        const q = e && what ? requestFor(e, raw, what) : null;
-        const to = q ? placedAt(q.arc, raw, verdictFor(q.req)).point : raw;
+        // What is placed along a wall goes to the grid along it (forum topic 226), the anchor edge at the cursor.
+        const at = e && g.placing ? alongGrid(e, raw) : raw;
+        const what = e && g.placing ? g.placing(e, at) : null;
+        const q = e && what ? requestFor(e, at, what) : null;
+        const to = q ? placedAt(q.arc, at, verdictFor(q.req), what?.shift).point : at;
         if (e) void complete([to], e);
         else useSession.setState({ error: 'Pick an element this tool works on.' });
         break;
@@ -597,17 +611,19 @@ export function PlanView() {
   const last = pts[pts.length - 1];
   useEffect(() => {
     const k = tool?.gesture?.kind;
-    const base = last ?? refPt;
+    const base = refPt ?? last;
     if (base && (k === 'point' || k === 'twoPoints' || k === 'polyline' || k === 'polygon' || k === 'rectangle' || k === 'threePoints' || k === 'pickThenPoint')) {
       // The angle to the piece before (decision 738): a polyline's previous point, a chain tool's last piece's start.
       const prev = !last ? null : k === 'polyline' || k === 'polygon' ? pts[pts.length - 2] : k === 'twoPoints' ? chainPrev.current : null;
       const ref = previousRef(last ?? base, prev);
-      liveBegin('tool', base, (p, typed) => { if (!last && refPt) setRefPt(null); clickRef.current(p, p, false, typed); },
-        k === 'rectangle' && last ? { rect: tool?.id ?? 'rectangle' } : !last && refPt ? { rect: `ref:${tool?.id ?? 'point'}`, delta: true }
+      liveBegin('tool', base, (p, typed) => { if (refPt) setDatum(null); clickRef.current(p, p, false, typed); },
+        // From a reference point set by the key: ΔX and ΔY typed at the cursor; set from the menu: a distance and an angle.
+        refPt && refMode === 'xy' ? { rect: `datum:${tool?.id ?? 'point'}` } : refPt ? { rect: `ref:${tool?.id ?? 'point'}`, delta: true }
+          : k === 'rectangle' && last ? { rect: tool?.id ?? 'rectangle' }
           : last && tool?.gesture?.kind === 'twoPoints' && tool.gesture.measure ? { measure: true }
           : last && (k === 'twoPoints' || k === 'polyline' || k === 'polygon') ? { angles: true, ...(ref ? { ref } : {}) } : {});
     } else liveEnd('tool');
-  }, [last, refPt, tool]);
+  }, [last, refPt, refMode, tool]);
   useEffect(() => () => liveEnd('tool'), []);
   // A plan that goes while the selection is dragged takes the drag's trace with it.
   useEffect(() => () => { if (carrying()) carryEnd(); }, []);
@@ -636,7 +652,7 @@ export function PlanView() {
     take: () => {
       const c = lastClient.current, raw = rawHover.current;
       if (!c || !raw) return;
-      const snapped = snapAt(c.x, c.y, pts[pts.length - 1] ?? refPt ?? useCad.getState().step?.base ?? undefined);
+      const snapped = snapAt(c.x, c.y, refPt ?? pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined);
       click(constrained(snapped).point, raw, false, undefined, false, { shift: false, ctrl: false, alt: false });
     },
   };
@@ -717,8 +733,9 @@ export function PlanView() {
     { const c = usePickCycle.getState().cycle; if (c && !cycledId(c, cycleKey, rawHover.current!, 3 / view.scale)) clearCycle(); }
     holdRefresh();
     if (tool?.gesture?.kind === 'pick' && tool.gesture.placing) {
-      const g = tool.gesture, at = rawHover.current;
-      const host = g.reach ? nearestOf(at, g.reach / view.scale, pickItems, nodes, g.types) : pick(at, g.types);
+      const g = tool.gesture, at0 = rawHover.current;
+      const host = g.reach ? nearestOf(at0, g.reach / view.scale, pickItems, nodes, g.types) : pick(at0, g.types);
+      const at = host ? alongGrid(host, at0) : at0;
       const what = host ? g.placing!(host, at) : null;
       const q = host && what ? requestFor(host, at, what) : null;
       if (q) { askPlacement(q.req); setPlacing(q.req); } else resetPlacement();
@@ -805,10 +822,10 @@ export function PlanView() {
     if (d && !d.moved && e.button === 2 && !tool?.gesture && !useCad.getState().step) { if (!editor.onContextMenu(e)) roomMenu(e.clientX, e.clientY); return; }
     if (!d || d.moved || e.button !== 0) return;
     const rect = svgRef.current!.getBoundingClientRect();
-    const snapped = snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? refPt ?? useCad.getState().step?.base ?? undefined);
+    const snapped = snapAt(e.clientX, e.clientY, refPt ?? pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined);
     if (canRef && (pickRef || e.altKey)) { setRefPt(snapped.point); setPickRef(false); return; }
     const to = constrained(snapped).point;
-    if (!pts.length && refPt) setRefPt(null);
+    if (refPt) setDatum(null);
     click(to, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey, undefined, e.ctrlKey || e.metaKey, modsOf(e));
   };
   /**
@@ -938,14 +955,15 @@ export function PlanView() {
     }
     // What a pick would put down (a door, on the side of the wall the cursor is on).
     if (tool.gesture.kind === 'pick' && tool.gesture.ghost && rawHover.current) {
-      const at = rawHover.current;
-      const host = tool.gesture.reach ? nearestOf(at, tool.gesture.reach / view.scale, pickItems, nodes, tool.gesture.types) : pick(at, tool.gesture.types);
+      const at0 = rawHover.current;
+      const host = tool.gesture.reach ? nearestOf(at0, tool.gesture.reach / view.scale, pickItems, nodes, tool.gesture.types) : pick(at0, tool.gesture.types);
       if (!host) return null;
+      const at = tool.gesture.placing ? alongGrid(host, at0) : at0;
       // A module's verdict on whether it fits here: refused, the ghost is an error with the reason; or it stands at the place offered.
       const what = tool.gesture.placing?.(host, at) ?? null;
       const q = what ? requestFor(host, at, what) : null;
       const verdict = q ? verdictFor(q.req) : null;
-      const put = q ? placedAt(q.arc, at, verdict) : { point: at, snapped: false };
+      const put = q ? placedAt(q.arc, at, verdict, what?.shift) : { point: at, snapped: false };
       const bad = verdict?.ok === false && !put.snapped;
       const label = reasonLines(verdict, lang);
       const tip = toScreen(at);
@@ -1210,6 +1228,8 @@ export function PlanView() {
         {editor.render}
         <PlanOverlays toScreen={toScreen} toWorld={toWorld} scale={view.scale} rotation={rot} view={{ id: ownPlan ?? null, storeyId: storey?.id ?? null }} />
         {preview}
+        {refPt && pts.length > 0 && <DatumMark at={toScreen(refPt)} />}
+        <Crosshair at={marker ?? (hover ? toScreen(hover.point) : null)} width={size.w} height={size.h} />
         {marker && hover && !hover.mode && (hover.kind === 'point' && !hover.guides.length
           ? <rect x={marker.x - 5} y={marker.y - 5} width={10} height={10} className="plan-snap point" />
           : <path d={`M${marker.x - 6},${marker.y}H${marker.x + 6}M${marker.x},${marker.y - 6}V${marker.y + 6}`} className="plan-snap" />)}

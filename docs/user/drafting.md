@@ -56,6 +56,24 @@ Lapin snaps to the ends, middles and intersections of what is drawn, and to the 
 
 **The grid.** The plan's grid is **adaptive** at first: its step follows the zoom. In **Preferences → Grid and snaps** choose **Fixed** and type its step (for example 100 mm or 1 m) and every how many lines one is drawn heavier. The grid then keeps that step at every zoom, and the cursor snaps to it where no object snap takes the point. Where the **Nearest** snap holds the cursor on a line or curve and the grid is on, the point slides along it to the nearest grid line, so one coordinate comes from the object and the other from the grid (no values like 1016.18). When the step is too fine for the zoom, only its heavier lines are drawn. The 3D view's ground grid takes the same step.
 
+**The grid step in use.** The chip beside **GRID** under the view (a number such as *50 mm*) is the step the cursor snaps to **now**: with the adaptive grid it changes as you zoom (50 mm zoomed in, 500 mm zoomed out), with a fixed grid it stays. Click it to snap to the grid or not, to follow the zoom, or to pick one fixed step (10, 25, 50, 100, 250, 500 mm or 1 m; **Other step…** opens Preferences). A door or window placed along a wall also goes to this step, measured from the wall's start.
+
+![The grid step chip and its menu](shots/precision-grid-step.webp)
+
+**Divisions and distance from an end.** Two more object snaps, off until you tick them (SNAP menu or Preferences → Grid and snaps), add points along every edge, drawn line and wall axis: **Divisions** cuts it into equal parts (3 and 4 at first: thirds and quarters; type others, such as `5, 6`, in Preferences), and **Distance from an end** puts a point a set distance in from each end (500 mm at first, any value in Preferences). Type <kbd>DIV</kbd> or <kbd>DIS</kbd> for one point only. The middle stays the Midpoint's.
+
+**Insertion anchor.** Which point of a column sits at the cursor: pick one of the nine points of its box (corners, edge middles, centre) in the small 3×3 selector in the Column tool's bar, or press <kbd>F4</kbd> (<kbd>Shift</kbd>+<kbd>F4</kbd> for the previous one). The ghost shows the column where it will stand, with a cross at the anchor. A door or window has three along the wall: its left edge, its centre or its right edge (as you see them on the screen). Each tool remembers its choice. The anchor only helps placing: nothing of it is stored in the element.
+
+![The Column tool with its anchor selector: the bottom left corner at the cursor](shots/precision-anchor-column.webp)
+
+![The Window tool: its left edge at the cursor](shots/precision-anchor-window.webp)
+
+**A temporary reference point.** While a drawing or placing tool waits for a point, point at a corner (a snap) and press <kbd>F6</kbd>: that spot becomes a temporary 0,0. Beside the cursor the box now reads **ΔX** and **ΔY** from it; type them (<kbd>Tab</kbd> goes to the next, <kbd>Enter</kbd> takes the point), or just click. <kbd>F6</kbd> again on the same spot, <kbd>Esc</kbd> or the next click drops it. It works in plans and in sections and elevations.
+
+![ΔX 2000 and ΔY 1500 typed from a corner](shots/precision-datum.webp)
+
+**A crosshair across the view.** Preferences → Grid and snaps → Cursor: lines through the aimed point across the whole view, as in AutoCAD, to see its alignment with walls and grid lines. Off at first.
+
 **UCS.** A user coordinate system, as in AutoCAD: type **UCS** on the command line, click its origin, then a point on its X axis (<kbd>Enter</kbd> keeps the angle). **W** goes back to the plan's own axes (World), **B** puts it on the project base point, **S** on the survey point with its axes east and north, and **R** turns it by an angle you type. The **UCS** chip beside SNAP shows when one is set, and its menu offers the same. In a UCS, typed coordinates (`x,y`, `@dx,dy`, `d<angle`), ortho, polar tracking and the grid follow its axes, and its icon (X red, Y green) stands at its origin. The UCS is kept in the project, and setting it is one undo step.
 
 ![A UCS turned 30°: its icon and the grid along its axes](shots/ucs.webp)

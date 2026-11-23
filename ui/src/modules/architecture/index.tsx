@@ -15,6 +15,8 @@ import { activeStorey, execute, query, useSession } from '../../engine/session';
 import { registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import type { Shape } from '../../viewport/cad/shapes';
 import { num, ofClass, relatingOf, typeLayers, typeOf, usageOf } from '../../engine/model';
+import { alongShift, anchorFor, shiftedAlong } from '../../platform/anchor';
+import { AnchorPicker } from '../../shell/AnchorPicker';
 import { fillFlips, fillGhost, flipFillHand, useFillHand, type PanelLike } from './fillPlacing';
 import { activate, useToolTick } from '../../platform/modules';
 import { gateGroup } from './gates/tools';
@@ -439,6 +441,19 @@ function resolveFillType(kind: 'door' | 'window') {
   const type = (wanted ? s.nodes.get(wanted) : undefined) ?? ofClass(s, kind === 'door' ? 'IfcDoorType' : 'IfcWindowType')[0];
   return { wanted, type, s };
 }
+/** A door's or window's width: its type's, else a default. */
+const fillWidth = (kind: 'door' | 'window', type: { props: Record<string, unknown> } | undefined): number =>
+  (type?.props.spec as { width?: number } | undefined)?.width ?? (kind === 'door' ? 0.9 : 1.2);
+/** How far along the wall the opening's centre lies from the cursor: the anchor edge is at the cursor. */
+function fillShift(kind: 'door' | 'window', wall: { props: Record<string, unknown> }, at: Vec2, width: number): number {
+  const arc = arcOf(wall.props);
+  return arc ? alongShift(arc, project(arc, at), width, anchorFor(`architecture.${kind}`).h) : 0;
+}
+/** The cursor's point moved to the opening's centre (its anchor at the cursor). */
+function anchoredAt(kind: 'door' | 'window', wall: { props: Record<string, unknown> }, at: Vec2, width: number): Vec2 {
+  const arc = arcOf(wall.props);
+  return arc ? shiftedAlong(arc, at, fillShift(kind, wall, at, width)) : at;
+}
 /** A door or window: click a wall where it goes (the type: the one picked in the configurator, else the project's first). */
 const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'], shortcut: string): ToolDef => ({
   id: `architecture.${kind}`, label, icon, shortcut,
@@ -446,17 +461,20 @@ const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'],
   typed: kind === 'door' ? typedBy('IfcDoorType', 'doorTypeId', 'joinery', JoineryThumb) : typedBy('IfcWindowType', 'windowTypeId', 'joinery', JoineryThumb),
   // Space: the other hand; the side of the wall the cursor is on: the side it opens to, shown before the click.
   space: flipFillHand,
-  options: FillPlacingHint,
+  // The opening's edge at the cursor (forum topic 226): its left edge, centre or right edge, as the selector or F4 has it.
+  anchor: 'along',
+  options: () => <><FillPlacingHint /><AnchorPicker tool={`architecture.${kind}`} kind="along" /></>,
   gesture: {
     kind: 'pick', types: ['IfcWall'], reach: 40,
     // What a module that drives a wall is asked, as the cursor moves: whether this fits there.
-    placing: (_wall, _at) => {
+    placing: (wall, at) => {
       const { type } = resolveFillType(kind);
-      const width = (type?.props.spec as { width?: number } | undefined)?.width ?? (kind === 'door' ? 0.9 : 1.2);
-      return { kind, width, typeId: type?.id ?? null };
+      const width = fillWidth(kind, type);
+      return { kind, width, typeId: type?.id ?? null, shift: fillShift(kind, wall, at, width) };
     },
-    ghost: (wall, at) => {
+    ghost: (wall, at0) => {
       const { type, s } = resolveFillType(kind);
+      const at = anchoredAt(kind, wall, at0, fillWidth(kind, type));
       const spec = type?.props.spec as { width?: number; columns?: number[]; panels?: PanelLike[] } | undefined;
       const shape = spec?.width ? { width: spec.width, columns: spec.columns, panels: spec.panels }
         : kind === 'door' ? { width: 0.9, panels: [{ operation: 'swing-left' }] } : { width: 1.2, panels: [{ operation: 'fixed' }] };
@@ -465,9 +483,11 @@ const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'],
       return fillGhost(wall.props, at, thickness, shape, useFillHand.getState().flipped);
     },
   },
-  complete: async ({ points: [p], entity }, ctx) => {
+  complete: async ({ points: [p0], entity }, ctx) => {
     if (!entity) return;
     const typeId = resolveFillType(kind).wanted;
+    // The cursor stands at the opening's anchor; it is put where its centre goes (forum topic 226).
+    const p = anchoredAt(kind, entity, p0, fillWidth(kind, resolveFillType(kind).type));
     await ctx.execute(kind === 'door' ? 'architecture.addDoor' : 'architecture.addWindow', {
       wallId: entity.id, x: p.x, y: p.y, ...fillFlips(arcOf(entity.props), p, useFillHand.getState().flipped), ...(typeId ? { typeId } : {}),
     });

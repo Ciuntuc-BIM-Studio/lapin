@@ -80,7 +80,7 @@ describe('the codes and the menu', () => {
   });
 
   it('leaves the running snaps in the preferences as they were', () => {
-    expect(readPrefs(null).snapModes).toEqual([...SNAP_MODES]);
+    expect(readPrefs(null).snapModes).toEqual(SNAP_MODES.filter((m) => m !== 'division' && m !== 'distance')); // Divisions and Distance are off until ticked
   });
 });
 

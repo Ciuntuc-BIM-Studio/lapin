@@ -284,7 +284,7 @@ export function useCadCanvas(o: {
     const base = from ?? cad.step?.base ?? null;
     const prefs = usePrefs.getState();
     // Object Snap Override (forum topic 154): an armed snap is the only one this point takes.
-    const s = snapsOn(cad.snapOverride, cad.osnap, cad.gridOnly) ? findSnap(raw, shapes, index, { tolerance: tol, modes: modesFor(cad.snapOverride, prefs.snapModes, cad.gridOnly), from: base, wallAxes: wallAxesRef.current, gridAxes: gridAxesRef.current, curves: curvesRef.current }) : null;
+    const s = snapsOn(cad.snapOverride, cad.osnap, cad.gridOnly) ? findSnap(raw, shapes, index, { tolerance: tol, modes: modesFor(cad.snapOverride, prefs.snapModes, cad.gridOnly), from: base, wallAxes: wallAxesRef.current, gridAxes: gridAxesRef.current, curves: curvesRef.current, divisions: prefs.snapDivisions, distance: prefs.snapDistance }) : null;
     if (s && !isLineSnap(s)) {
       // Resting on a snap acquires it for the guide lines.
       if (!hold.current || Math.hypot(hold.current.p.x - s.point.x, hold.current.p.y - s.point.y) > 1e-9) {

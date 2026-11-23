@@ -56,6 +56,24 @@ Lapin se prinde de capetele, mijloacele și intersecțiile a ce e desenat, și d
 
 **Grila.** Grila planului e la început **adaptivă**: pasul ei urmează zoomul. În **Preferințe → Grilă și snap** alege **Fixă** și scrie pasul (de exemplu 100 mm sau 1 m) și la câte linii una e desenată mai groasă. Grila păstrează atunci acel pas la orice zoom, iar cursorul face snap la ea unde niciun snap la obiecte nu ia punctul. Unde snapul **Cel mai apropiat** ține cursorul pe o linie sau o curbă și grila e pornită, punctul alunecă pe ea până la cea mai apropiată linie a grilei, așa că o coordonată vine din obiect și cealaltă din grilă (fără valori ca 1016,18). Când pasul e prea fin pentru zoom, se desenează doar liniile ei mai groase. Grila de la sol a vederii 3D ia același pas.
 
+**Pasul grilei folosit.** Căsuța de lângă **GRID** sub vedere (un număr, de pildă *50 mm*) arată pasul la care se prinde cursorul **acum**: la grila adaptivă se schimbă cu zoomul (50 mm apropiat, 500 mm depărtat), la grila fixă rămâne. Un clic o deschide: prinde sau nu de grilă, urmărește zoomul sau un singur pas fix (10, 25, 50, 100, 250, 500 mm sau 1 m; **Alt pas…** deschide Preferințele). O ușă sau o fereastră așezată pe un perete merge și ea la acest pas, măsurat de la începutul peretelui.
+
+![Căsuța pasului grilei și meniul ei](shots/precision-grid-step.webp)
+
+**Diviziuni și distanță de la un capăt.** Încă două snap-uri pe obiecte, oprite până le bifezi (meniul SNAP sau Preferințe → Grilă și snap-uri), adaugă puncte pe fiecare muchie, linie desenată și axă de perete: **Diviziuni** o taie în părți egale (la început 3 și 4: treimi și sferturi; în Preferințe poți scrie altele, de pildă `5, 6`), iar **Distanță de la un capăt** pune un punct la o distanță dată de fiecare capăt (la început 500 mm, orice valoare în Preferințe). Scrie <kbd>DIV</kbd> sau <kbd>DIS</kbd> pentru un singur punct. Mijlocul rămâne al snap-ului Mijloc.
+
+**Ancora de inserare.** Care punct al unui stâlp stă la cursor: alegi unul din cele nouă puncte ale casetei lui (colțuri, mijloace de muchii, centru) în micul selector 3×3 din bara uneltei Stâlp, sau apeși <kbd>F4</kbd> (<kbd>Shift</kbd>+<kbd>F4</kbd> pentru precedenta). Umbra arată stâlpul unde va sta, cu o cruce la ancoră. O ușă sau o fereastră are trei ancore de-a lungul peretelui: marginea din stânga, centrul sau marginea din dreapta (cum le vezi pe ecran). Fiecare unealtă își ține alegerea. Ancora doar ajută la așezare: nimic din ea nu se păstrează în element.
+
+![Unealta Stâlp cu selectorul ancorei: colțul stânga jos la cursor](shots/precision-anchor-column.webp)
+
+![Unealta Fereastră: marginea ei din stânga la cursor](shots/precision-anchor-window.webp)
+
+**Un punct de referință temporar.** Cât o unealtă de desenat sau de așezat așteaptă un punct, arată spre un colț (un snap) și apasă <kbd>F6</kbd>: locul acela devine un 0,0 temporar. Lângă cursor, caseta arată acum **ΔX** și **ΔY** de la el; scrie-le (<kbd>Tab</kbd> trece la următoarea, <kbd>Enter</kbd> ia punctul) sau doar dă clic. <kbd>F6</kbd> din nou pe același loc, <kbd>Esc</kbd> sau următorul clic îl renunță. Merge în planuri și în secțiuni și fațade.
+
+![ΔX 2000 și ΔY 1500 scrise de la un colț](shots/precision-datum.webp)
+
+**Un reticul peste toată vederea.** Preferințe → Grilă și snap-uri → Cursor: linii prin punctul țintit, peste toată vederea, ca în AutoCAD, ca să vezi alinierea cu pereții și cu liniile grilei. La început, oprit.
+
 **UCS.** Un sistem de coordonate al utilizatorului, ca în AutoCAD: scrie **UCS** în linia de comandă, dă clic pe origine, apoi pe un punct de pe axa X (<kbd>Enter</kbd> păstrează unghiul). **W** revine la axele planului (Global), **B** îl pune în punctul de bază al proiectului, **S** în punctul topografic, cu axele spre est și nord, iar **R** îl rotește cu un unghi pe care îl scrii. Chip-ul **UCS** de lângă SNAP arată când e setat unul, iar meniul lui oferă același lucru. Într-un UCS, coordonatele scrise (`x,y`, `@dx,dy`, `d<unghi`), ortho, urmărirea polară și grila urmează axele lui, iar pictograma lui (X roșu, Y verde) stă în origine. UCS-ul se păstrează în proiect, iar setarea lui e un singur pas de undo.
 
 ![Un UCS rotit cu 30°: pictograma lui și grila de-a lungul axelor](shots/ucs.webp)

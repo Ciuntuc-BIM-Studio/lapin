@@ -13,8 +13,8 @@
 import type { Vec2 } from '../../platform/module';
 import { angleInArc, bounds, dist, ellipseWhole, intersectShapes, keyPoints, nearestOnShape, prims, type Shape } from './shapes';
 
-export type SnapMode = 'endpoint' | 'midpoint' | 'center' | 'quadrant' | 'intersection' | 'perpendicular' | 'nearest' | 'tangent' | 'wallAxis' | 'gridAxis';
-export const ALL_MODES: ReadonlySet<SnapMode> = new Set<SnapMode>(['endpoint', 'midpoint', 'center', 'quadrant', 'intersection', 'perpendicular', 'nearest', 'tangent', 'wallAxis', 'gridAxis']);
+export type SnapMode = 'endpoint' | 'midpoint' | 'center' | 'quadrant' | 'intersection' | 'perpendicular' | 'nearest' | 'tangent' | 'wallAxis' | 'gridAxis' | 'division' | 'distance';
+export const ALL_MODES: ReadonlySet<SnapMode> = new Set<SnapMode>(['endpoint', 'midpoint', 'center', 'quadrant', 'intersection', 'perpendicular', 'nearest', 'tangent', 'wallAxis', 'gridAxis', 'division', 'distance']);
 
 /**
  * A broad phase: each shape's box in the cells of a grid. The cell is twice the shapes' average size, and never finer than
@@ -81,6 +81,10 @@ export interface SnapOptions {
   curves?: readonly Shape[];
   /** The shown grid's axes (a line each: IfcGrid's): the Grid axis snap's, and all that "Grid only" takes. */
   gridAxes?: readonly Shape[];
+  /** The Division snap's: each edge cut into this many equal parts (3: thirds, 4: quarters), a point at each cut (the middle is the Midpoint's). */
+  divisions?: readonly number[];
+  /** The Distance snap's: a point this far (m) from each end of an edge, along it (forum topic 226). */
+  distance?: number;
 }
 /**
  * `shape` is the index in the shapes searched (−1: a wall axis or an element curve, then `on` is it). `along`: a point anywhere
@@ -92,7 +96,7 @@ export interface Snap { point: Vec2; mode: SnapMode; shape: number; on?: Shape; 
 export const isLineSnap = (s: { mode: SnapMode; along?: boolean }) => s.mode === 'nearest' || ((s.mode === 'wallAxis' || s.mode === 'gridAxis') && !!s.along);
 
 type Key = SnapMode | 'axisPoint' | 'gridPoint' | 'gridPerp';
-const ORDER: Key[] = ['endpoint', 'intersection', 'axisPoint', 'gridPoint', 'midpoint', 'tangent', 'center', 'quadrant', 'perpendicular', 'gridPerp'];
+const ORDER: Key[] = ['endpoint', 'intersection', 'axisPoint', 'gridPoint', 'midpoint', 'division', 'distance', 'tangent', 'center', 'quadrant', 'perpendicular', 'gridPerp'];
 
 /** Where a line from `from` touches the curve (a circle, an arc where it runs, an ellipse or an elliptical arc where it runs): none from inside it or on it. */
 export function tangentPoints(s: Shape, from: Vec2): Vec2[] {
@@ -118,6 +122,35 @@ export function tangentPoints(s: Shape, from: Vec2): Vec2[] {
   return [];
 }
 
+
+/**
+ * The points the Division and Distance snaps offer on a shape (forum topic 226, Archicad's intelligent snap points): each
+ * straight edge cut into `divisions` equal parts (thirds, quarters…), each arc into equal angles, and a point `distance`
+ * (m) in from each end of every edge. The ends and the middle belong to the Endpoint and Midpoint snaps; none sits on an end.
+ */
+export function edgePoints(s: Shape, divisions: readonly number[], distance: number): { division: Vec2[]; distance: Vec2[] } {
+  const out = { division: [] as Vec2[], distance: [] as Vec2[] };
+  if (s.type === 'ellipse') return out;
+  const add = (list: Vec2[], q: Vec2) => { if (!list.some((r) => dist(r, q) < 1e-9)) list.push(q); };
+  const ns = [...new Set(divisions.filter((n) => Number.isInteger(n) && n >= 2 && n <= 64))];
+  for (const pr of prims(s)) {
+    if (pr.kind === 'seg') {
+      const len = dist(pr.a, pr.b);
+      if (len < 1e-9) continue;
+      const at = (t: number): Vec2 => ({ x: pr.a.x + (pr.b.x - pr.a.x) * t, y: pr.a.y + (pr.b.y - pr.a.y) * t });
+      for (const n of ns) for (let k = 1; k < n; k++) if (Math.abs(k / n - 0.5) > 1e-9) add(out.division, at(k / n));
+      if (distance > 1e-9 && distance < len - 1e-9) { add(out.distance, at(distance / len)); add(out.distance, at(1 - distance / len)); }
+    } else if (!pr.full) {
+      const sweep = (((pr.end - pr.start) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) || 2 * Math.PI;
+      const P = (a: number): Vec2 => ({ x: pr.c.x + pr.r * Math.cos(a), y: pr.c.y + pr.r * Math.sin(a) });
+      for (const n of ns) for (let k = 1; k < n; k++) if (Math.abs(k / n - 0.5) > 1e-9) add(out.division, P(pr.start + (sweep * k) / n));
+      const da = distance / pr.r, arcLen = sweep * pr.r;
+      if (distance > 1e-9 && distance < arcLen - 1e-9) { add(out.distance, P(pr.start + da)); add(out.distance, P(pr.start + sweep - da)); }
+    }
+  }
+  return out;
+}
+
 export function findSnap(p: Vec2, shapes: readonly Shape[], index: SnapIndex | null, o: SnapOptions): Snap | null {
   const tol = o.tolerance;
   const ids = index ? index.query({ x: p.x - tol, y: p.y - tol }, { x: p.x + tol, y: p.y + tol }) : shapes.map((_, i) => i);
@@ -135,6 +168,11 @@ export function findSnap(p: Vec2, shapes: readonly Shape[], index: SnapIndex | n
     for (const q of k.endpoints) offer('endpoint', q, i);
     for (const q of k.midpoints) offer('midpoint', q, i);
     for (const q of k.quadrants) offer('quadrant', q, i);
+    if (o.modes.has('division') || o.modes.has('distance')) {
+      const e = edgePoints(s, o.divisions ?? [], o.distance ?? 0);
+      for (const q of e.division) offer('division', q, i);
+      for (const q of e.distance) offer('distance', q, i);
+    }
     // A centre from its curve, or from near the centre itself.
     for (const c of k.centers)
       if (o.modes.has('center') && (nearestOnShape(s, p).dist <= tol || dist(c, p) <= tol)) {
@@ -159,7 +197,15 @@ export function findSnap(p: Vec2, shapes: readonly Shape[], index: SnapIndex | n
     for (const ax of o.wallAxes ?? []) {
       const k = keyPoints(ax);
       for (const q of [...k.endpoints, ...k.midpoints]) offerAs('axisPoint', { point: q, mode: 'wallAxis', shape: -1, on: ax });
+
       offerAs('wallAxis', { point: nearestOnShape(ax, p).point, mode: 'wallAxis', shape: -1, on: ax, along: true });
+    }
+  // A wall's axis is an edge too: its thirds, quarters and a distance from its ends (the same Division and Distance snaps).
+  if (o.modes.has('division') || o.modes.has('distance'))
+    for (const ax of o.wallAxes ?? []) {
+      const e = edgePoints(ax, o.divisions ?? [], o.distance ?? 0);
+      for (const q of e.division) offerAs('division', { point: q, mode: 'division', shape: -1, on: ax });
+      for (const q of e.distance) offerAs('distance', { point: q, mode: 'distance', shape: -1, on: ax });
     }
   if (o.modes.has('gridAxis')) {
     const axes = o.gridAxes ?? [];
@@ -209,7 +255,7 @@ export type SnapOverride = SnapMode | 'none';
 
 /** AutoCAD's short codes, typed at the command line while a point is asked. */
 export const SNAP_CODES: Readonly<Record<string, SnapOverride>> = {
-  END: 'endpoint', MID: 'midpoint', INT: 'intersection', CEN: 'center', QUA: 'quadrant', PER: 'perpendicular', TAN: 'tangent', NEA: 'nearest', AXI: 'wallAxis', GRID: 'gridAxis', NON: 'none',
+  END: 'endpoint', MID: 'midpoint', INT: 'intersection', CEN: 'center', QUA: 'quadrant', PER: 'perpendicular', TAN: 'tangent', NEA: 'nearest', AXI: 'wallAxis', GRID: 'gridAxis', DIV: 'division', DIS: 'distance', NON: 'none',
 };
 
 /** The snaps the next point may use: the override alone, else the running ones. */

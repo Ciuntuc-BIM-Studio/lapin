@@ -9,6 +9,8 @@ import { arcOf } from '../../viewport/arc';
 import { typeOf, usageOf } from '../../engine/model';
 import { activate } from '../../platform/modules';
 import { TypeOption, typeArg, useTypePick } from './typePick';
+import { AnchorPicker } from '../../shell/AnchorPicker';
+import { COLUMN_TOOL, columnGhost, columnInsertion } from './columnAnchor';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { ensureStorey, execute, useSession } from '../../engine/session';
@@ -27,9 +29,11 @@ const StructureTypesDialog = lazyPart(() => import('./StructureTypesDialog').the
 
 const column: ToolDef = {
   id: 'structure.column', label: 'Column', icon: ColumnIcon, shortcut: 'CL',
-  gesture: { kind: 'point' },
-  options: () => <><TypeOption kind="column" /><DimRefChoice /></>,
-  complete: async ({ points: [p] }, ctx) => { await ctx.execute('structure.addColumn', { storeyId: ctx.storeyId, x: p.x, y: p.y, ...typeArg('column') }); },
+  // The point of the column's box at the cursor (forum topic 226): its centre, a corner or an edge's middle; F4 steps through them.
+  anchor: 'box',
+  gesture: { kind: 'point', ghost: columnGhost },
+  options: () => <><TypeOption kind="column" /><AnchorPicker tool={COLUMN_TOOL} kind="box" /><DimRefChoice /></>,
+  complete: async ({ points: [c] }, ctx) => { const p = columnInsertion(c); await ctx.execute('structure.addColumn', { storeyId: ctx.storeyId, x: p.x, y: p.y, ...typeArg('column') }); },
 };
 const beam: ToolDef = chainTool({
   id: 'structure.beam', label: 'Beam', icon: BeamIcon, shortcut: 'BM', more: () => <><TypeOption kind="beam" /><DimRefChoice /></>,

@@ -3120,3 +3120,12 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 .render-dialog dd.row select { flex: 1 1 auto; min-width: 0; }
 .render-dialog label.row { display: inline-flex; align-items: center; gap: 6px; flex: none; }
 .render-dialog input[type=checkbox] { width: auto; flex: none; margin: 0; }
+
+/* The insertion anchor's selector (forum topic 226): the element's box as a 3×3 of small cells, or a row of three along a wall. */
+.anchor-picker { display: inline-grid; grid-template-columns: repeat(3, 12px); gap: 2px; padding: 3px; border: 1px solid var(--line, #bbb); border-radius: 3px; vertical-align: middle; }
+.anchor-picker.along { grid-template-rows: 12px; }
+.anchor-cell { all: unset; box-sizing: border-box; width: 12px; height: 12px; display: grid; place-items: center; cursor: pointer; border-radius: 2px; }
+.anchor-cell:hover { background: var(--hover, rgba(128, 128, 128, 0.2)); }
+.anchor-cell .anchor-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--ink-muted, #888); }
+.anchor-cell.on .anchor-dot { width: 8px; height: 8px; background: var(--accent, #c2410c); }
+.datum-mark circle, .datum-mark path, .datum-mark line { stroke: var(--accent, #c2410c); fill: none; stroke-width: 1.5; }

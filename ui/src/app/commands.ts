@@ -13,7 +13,9 @@ import { assistantAvailable } from '../assistant/available';
 import { toggleGrid, toggleThinLines } from './display';
 import { chooseWorkspace, onInterfaceChange, useInterface, WORKSPACE_IDS, WORKSPACE_LABELS } from './interface';
 import { effectiveBindings, formatBinding, resolveAlias, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
-import { activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
+import { anchorFor, setAnchor, stepAnchor } from '../platform/anchor';
+import { datumHere } from '../viewport/datum';
+import { findTool, activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
 import { extraTools, extraToolsRev } from '../platform/extraTools';
 import { tabHandlers } from '../platform/scope';
 import { redo, undo, useSession } from '../engine/session';
@@ -42,6 +44,13 @@ export function gestureFree(): boolean {
   if (carrying() || useMove3d.getState().ids.length) { notify('Finish or cancel (Esc) what you are doing first, then undo or redo.'); return false; }
   if (useCad.getState().step) cancelStep(true);
   return true;
+}
+
+/** F4: the active tool's insertion anchor one step on (a column's nine points, a door's three along the wall). */
+function stepToolAnchor(by: number): void {
+  const tool = findTool(useUi.getState().tool);
+  if (!tool?.anchor) { notify('Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.'); return; }
+  setAnchor(tool.id, stepAnchor(anchorFor(tool.id), tool.anchor, by), tool.anchor);
 }
 
 const dialog = (id: string) => () => useUi.setState({ dialog: id });
@@ -94,6 +103,9 @@ function appCommands(): CommandDef[] {
     { id: 'app.ortho', label: 'Ortho', category: draw, defaults: ['F8'], run: () => useCad.setState((s) => ({ ortho: !s.ortho })) },
     { id: 'app.grid', label: 'Grid', category: draw, defaults: ['F7'], run: toggleGrid },
     { id: 'app.thinLines', label: 'Thin lines', category: views, defaults: [], same: 'TL', run: toggleThinLines },
+    { id: 'app.anchorNext', label: 'Insertion anchor: next', category: draw, defaults: ['F4'], run: () => stepToolAnchor(1) },
+    { id: 'app.anchorPrev', label: 'Insertion anchor: previous', category: draw, defaults: ['Shift+F4'], run: () => stepToolAnchor(-1) },
+    { id: 'app.datum', label: 'Temporary reference point at the cursor (again: drop it)', category: draw, defaults: ['F6'], run: () => { if (!datumHere()) notify('Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.'); } },
     { id: 'app.polar', label: 'Polar tracking', category: draw, defaults: ['F10'], run: () => useCad.setState((s) => ({ polar: !s.polar })) },
     { id: 'app.zoomIn', label: 'Zoom in', category: views, defaults: ['Plus', '='], same: 'ZI', run: zoom((h) => h.zoomBy(1.25)) },
     { id: 'app.zoomOut', label: 'Zoom out', category: views, defaults: ['-'], same: 'ZO', run: zoom((h) => h.zoomBy(0.8)) },

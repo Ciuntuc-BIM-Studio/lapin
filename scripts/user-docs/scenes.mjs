@@ -15422,6 +15422,98 @@ export const scenes = [
     },
   },
   // --- material graphics scenes (end)
+  {
+    // Precision (forum topics 226, 228): the grid step the status line says, the insertion anchor of a column and a window, a
+    // temporary reference point with ΔX and ΔY, the Divisions snap, the crosshair, and Measure in a section.
+    id: 'precision',
+    touches: ['core', 'architecture', 'structure'],
+    async run(t) {
+      await t.fresh();
+      const page = t.page;
+      const { storey, walls } = await house(t, { roof: false });
+      await t.fit();
+      const prefs = (patch) => page.evaluate(async (p) => (await import('/src/app/prefs.ts')).setPrefs(p), patch);
+      const move = async (x, y) => { const [px, py] = await t.planPoint(x, y); await page.mouse.move(px, py, { steps: 4 }); await t.wait(250); return [px, py]; };
+      const click = async (x, y) => { const [px, py] = await move(x, y); await page.mouse.click(px, py); await t.wait(600); };
+      const columns = async () => (await t.nodes()).filter((n) => n.type === 'IfcColumn');
+      // The step in the status line is the one the cursor snaps to, and a fixed one is easy to choose.
+      const chip = page.locator('[data-testid=grid-step]');
+      await t.tool('structure.column');
+      await t.wait(600);
+      t.expect(await chip.count() > 0, 'the grid step is shown in the bar');
+      await prefs({ gridMode: 'fixed', gridStep: 0.05, gridSnap: true });
+      await t.wait(300);
+      t.expect(/50/.test((await chip.textContent()) ?? ''), `a fixed step of 50 mm is what the chip says (${await chip.textContent()})`);
+      await chip.click();
+      await t.wait(400);
+      await t.shot('precision-grid-step', { clip: { x: 0, y: 560, width: 1400, height: 340 } });
+      await page.keyboard.press('Escape');
+      // A column by its bottom-left corner: the corner is where the click is.
+      await page.locator('[data-anchor="-1,-1"]').first().click();
+      const [cx, cy] = await move(2.03, 2.04);
+      await t.shot('precision-anchor-column', { clip: { x: 200, y: 120, width: 1200, height: 760 } });
+      await page.mouse.click(cx, cy);
+      await t.until(async () => (await columns()).length === 1, 'a column was placed');
+      const col = (await columns())[0];
+      console.log('column props', JSON.stringify(col.props).slice(0, 300));
+      // F4 steps the anchor on.
+      await page.keyboard.press('F4');
+      await t.wait(200);
+      t.expect(await page.locator('[data-anchor="0,-1"]').first().getAttribute('aria-pressed') === 'true', 'F4 steps the anchor to the next one');
+      // A window by its left edge.
+      await t.tool('architecture.window');
+      await page.locator('[data-anchor="-1,0"]').first().click();
+      await move(5.02, 0.05);
+      await t.shot('precision-anchor-window', { clip: { x: 200, y: 120, width: 1200, height: 760 } });
+      await page.keyboard.press('Escape');
+      // A reference point: F6 on a corner, then ΔX and ΔY typed.
+      await t.tool('structure.column');
+      await page.locator('[data-anchor="0,0"]').first().click();
+      await move(0, 0);
+      await page.keyboard.press('F6');
+      await move(3, 3);
+      for (const k of ['2', '0', '0', '0', 'Tab', '1', '5', '0', '0']) await page.keyboard.press(k);
+      await t.wait(300);
+      await t.shot('precision-datum', { clip: { x: 200, y: 120, width: 1200, height: 760 } });
+      await page.keyboard.press('Enter');
+      await t.until(async () => (await columns()).length === 2, 'the column from the reference point was placed');
+      const two = (await columns()).find((c) => c.id !== col.id);
+      console.log('datum column props', JSON.stringify(two.props).slice(0, 300));
+      await page.keyboard.press('Escape');
+      // Divisions: the wall's thirds.
+      await prefs({ snapModes: ['endpoint', 'division'], snapDivisions: [3] });
+      await t.tool('structure.column');
+      await move(4, 0.02);
+      t.expect(await page.locator('.cad-snap text').first().textContent() === 'division', 'the third of the wall is a snap');
+      await page.keyboard.press('Escape');
+      // The crosshair.
+      await prefs({ crosshair: true });
+      await t.wait(300);
+      t.expect(await page.locator('[data-testid=crosshair]').count() > 0, 'the crosshair across the view');
+      await prefs({ crosshair: false });
+      // Measure in a section.
+      const section = (await t.cmd('view.create', { kind: 'section', name: 'M-M', start: [-1, 2], end: [13, 2], scale: 50 })).id;
+      await t.wait(800);
+      await openFromBrowser(t, 'M-M', 2500);
+      await t.fit();
+      await t.tool('measure');
+      const dpoint = async (x, y) => page.evaluate(async ([viewId, x, y]) => {
+        const svg = document.querySelector('[data-testid=drawing]');
+        const view = (await import('/src/viewport/zoom.ts')).recall(viewId);
+        const r = svg.getBoundingClientRect();
+        return [r.left + (x - view.cx) * view.scale + r.width / 2, r.top + r.height / 2 - (y - view.cy) * view.scale];
+      }, [section, x, y]);
+      const [ax, ay] = await dpoint(0, 0);
+      await page.mouse.move(ax, ay, { steps: 4 });
+      await page.mouse.click(ax, ay);
+      await t.wait(300);
+      const [bx, by] = await dpoint(5, 2.7);
+      await page.mouse.move(bx, by, { steps: 8 });
+      await t.wait(400);
+      t.expect(await page.locator('.live-box').count() > 0, 'Measure in a section reads the length at the cursor');
+      await t.shot('precision-measure-section', { clip: { x: 200, y: 120, width: 1200, height: 760 } });
+    },
+  },
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

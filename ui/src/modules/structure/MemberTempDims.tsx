@@ -19,6 +19,7 @@ import { commitAcross, commitEnd, hostOf, type Host } from '../../viewport/lineD
 import { t } from '../../i18n';
 import { chainMode } from '../core/chainTool';
 import { useTypePick } from './typePick';
+import { columnInsertion } from './columnAnchor';
 import { beamDims, columnDims, columnLines, columnMove, type ColumnTypeProps } from './memberDims';
 
 /** The type the tool would place with: the one picked in its bar, else the project's first. */
@@ -74,7 +75,7 @@ export function MemberDims({ toScreen, scale, view }: PlanOverlayProps) {
   } else if (placing) {
     live = false;
     const type = pickedType('column', nodes);
-    const own = columnLines('', '', placing.b, type?.props as ColumnTypeProps | undefined);
+    const own = columnLines('', '', columnInsertion(placing.b), type?.props as ColumnTypeProps | undefined);
     for (const { host, dims } of columnDims(own, lines, axes, {}, mode)) sets.push({ host, dims, commit: () => Promise.resolve(null), valueTitle: columnTitle, ownTitle });
   } else if (drawing) {
     live = false;

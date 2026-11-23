@@ -7,7 +7,7 @@
 import { create } from 'zustand';
 import type { NodeDto } from '../engine/protocol';
 import { arcOf, pointAt, project, type Arc } from '../viewport/arc';
-import type { PlacementRequest, PlacementVerdict, Vec2 } from './module';
+import type { PlacementRequest, PlacementVerdict, PlacingWhat, Vec2 } from './module';
 import { translate, type Lang } from '../i18n';
 import { wrapText } from '../viewport/wrapText';
 
@@ -18,10 +18,12 @@ const THROTTLE_MS = 120;
 export type PlacementCheck = (req: PlacementRequest) => Promise<PlacementVerdict | null> | PlacementVerdict | null;
 
 /** The request for a host and a cursor point: where along the host's axis it falls (null when the host has no axis). */
-export function requestFor(host: NodeDto, at: Vec2, what: { kind: 'door' | 'window'; width: number; typeId: string | null }): { req: PlacementRequest; arc: Arc } | null {
+export function requestFor(host: NodeDto, at: Vec2, what: PlacingWhat): { req: PlacementRequest; arc: Arc } | null {
   const arc = arcOf(host.props);
   if (!arc) return null;
-  return { req: { ...what, host, along: project(arc, at) }, arc };
+  // The opening's centre: the cursor's place, moved by the insertion anchor and the grid (`what.shift`).
+  const { shift, ...rest } = what;
+  return { req: { ...rest, host, along: project(arc, at) + (shift ?? 0) }, arc };
 }
 
 /**
@@ -37,12 +39,13 @@ export function reasonLines(verdict: PlacementVerdict | null, lang?: Lang, width
 export const placementKey = (r: PlacementRequest): string => `${r.kind}|${r.host.id}|${Math.round(r.along * 100)}|${r.width}|${r.typeId ?? ''}`;
 
 /** The point the placement goes to: the offered place when the verdict refuses and it is within reach, on the cursor's side of the host; else the cursor. */
-export function placedAt(arc: Arc, at: Vec2, verdict: PlacementVerdict | null): { point: Vec2; snapped: boolean } {
+export function placedAt(arc: Arc, at: Vec2, verdict: PlacementVerdict | null, shift = 0): { point: Vec2; snapped: boolean } {
   const to = verdict && !verdict.ok ? verdict.snapAlong : undefined;
   if (to == null) return { point: at, snapped: false };
+  // The place offered is a centre; the cursor stands `shift` from it (the anchor), so the point returned is the cursor's for that centre.
   const here = project(arc, at);
-  if (Math.abs(to - here) > SNAP_REACH) return { point: at, snapped: false };
-  const q = pointAt(arc, here), p = pointAt(arc, to);
+  if (Math.abs(to - (here + shift)) > SNAP_REACH) return { point: at, snapped: false };
+  const q = pointAt(arc, here), p = pointAt(arc, to - shift);
   return { point: { x: p.x + at.x - q.x, y: p.y + at.y - q.y }, snapped: true };
 }
 

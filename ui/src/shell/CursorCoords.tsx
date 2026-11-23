@@ -9,9 +9,9 @@
 import { useShallow } from 'zustand/react/shallow';
 import { useUi } from '../app/store';
 import { useLive } from '../viewport/liveInput';
-import { formatLength, unitLabel, unit } from '../engine/unitsStore';
+import { formatLength, lengthText, unitLabel, unit } from '../engine/unitsStore';
 import { basePoint, mapFrame, setUcs, surveyPoint, toFrame, toMap, ucsOf, useLocation } from '../app/location';
-import { POLAR_STEPS, SNAP_MODES, setPrefs, usePrefs, type CoordSystem } from '../app/prefs';
+import { GRID_STEPS, POLAR_STEPS, SNAP_MODES, chooseGridStep, gridSnapStep, setPrefs, useGridScale, usePrefs, type CoordSystem } from '../app/prefs';
 import { openContextMenu, type MenuItem } from './ContextMenu';
 import { startCommand, useCad } from '../viewport/cad/session';
 import type { SnapMode } from '../viewport/cad/snaps';
@@ -22,7 +22,7 @@ export const COORD_LABELS: Record<CoordSystem, string> = {
 };
 export const SNAP_LABELS: Record<SnapMode, string> = {
   endpoint: 'Endpoint', midpoint: 'Midpoint', intersection: 'Intersection', center: 'Centre', quadrant: 'Quadrant', perpendicular: 'Perpendicular', nearest: 'Nearest',
-  tangent: 'Tangent', wallAxis: 'Wall axis', gridAxis: 'Grid axis',
+  tangent: 'Tangent', wallAxis: 'Wall axis', gridAxis: 'Grid axis', division: 'Divisions', distance: 'Distance from an end',
 };
 
 export const fixed3 = (v: number) => v.toFixed(3);
@@ -86,6 +86,33 @@ export function UcsChip() {
   );
 }
 
+/** The grid snap's choices (forum topic 226): off, the adaptive step that follows the zoom, or one fixed step whatever the zoom; the step in use is checked. */
+export function gridStepItems(): MenuItem[] {
+  const p = usePrefs.getState();
+  const fixed = p.gridMode === 'fixed';
+  return [
+    { label: 'Snap to the grid', checked: p.gridSnap, onSelect: () => setPrefs({ gridSnap: !p.gridSnap }) },
+    { label: 'Step: follows the zoom (adaptive)', checked: p.gridSnap && !fixed, onSelect: () => chooseGridStep('adaptive') },
+    ...GRID_STEPS.map((st) => ({ label: `${t('Step')}: ${lengthText(st)}`, checked: p.gridSnap && fixed && Math.abs(p.gridStep - st) < 1e-9, onSelect: () => chooseGridStep(st) })),
+    { label: 'Other step…', onSelect: () => useUi.setState({ dialog: 'preferences' }) },
+  ];
+}
+
+/** The chip beside the snap switches: the step the cursor snaps to now (at this zoom, when the grid is adaptive), and its menu. */
+export function GridStepChip() {
+  const prefs = usePrefs(useShallow((s) => ({ gridMode: s.gridMode, gridStep: s.gridStep, gridSnap: s.gridSnap })));
+  const scale = useGridScale((s) => s.scale);
+  const view = useUi((s) => s.view);
+  if (view !== 'plan') return null;
+  const step = gridSnapStep(scale, prefs);
+  return (
+    <button type="button" className={`cad-toggle${step > 0 ? ' on' : ''}`} data-testid="grid-step" title={`${t('Grid snap')}: ${step > 0 ? lengthText(step) : t('off')}${prefs.gridMode === 'adaptive' ? ` (${t('follows the zoom')})` : ''}. ${t('Click to choose the step')}`}
+      onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); const items = gridStepItems(); openContextMenu(r.left, Math.max(8, r.top - items.length * 28 - 4), items); }}>
+      <span data-no-i18n>{step > 0 ? lengthText(step) : '—'}</span>
+    </button>
+  );
+}
+
 /** The snap settings' menu (the SNAP switch's right click, or its ▾): each object snap on or off, the grid's snapping, polar's angle. */
 export function openSnapMenu(x: number, y: number): void {
   const p = usePrefs.getState();
@@ -93,7 +120,7 @@ export function openSnapMenu(x: number, y: number): void {
   const items: MenuItem[] = [
     ...SNAP_MODES.map((m) => ({ label: SNAP_LABELS[m], checked: p.snapModes.includes(m), onSelect: () => toggle(m) })),
     { label: 'Grid only (every other snap off)', checked: useCad.getState().gridOnly, onSelect: () => useCad.setState((c) => ({ gridOnly: !c.gridOnly })) },
-    { label: 'Snap to the grid', checked: p.gridSnap, onSelect: () => setPrefs({ gridSnap: !p.gridSnap }) },
+    ...gridStepItems(),
     ...POLAR_STEPS.map((a) => ({ label: `${t('Polar every')} ${a}°`, checked: p.polarStep === a, onSelect: () => { setPrefs({ polarStep: a }); useCad.setState({ polar: true }); } })),
     { label: 'Preferences…', onSelect: () => useUi.setState({ dialog: 'preferences' }) },
   ];

@@ -8,7 +8,7 @@
  */
 
 import { useShallow } from 'zustand/react/shallow';
-import { usePrefs } from '../app/prefs';
+import { gridSnapStep, useGridScale, usePrefs } from '../app/prefs';
 import { useUi } from '../app/store';
 import { useCad } from '../viewport/cad/session';
 import { useInterface } from '../app/interface';
@@ -52,13 +52,16 @@ export function useHudFacts() {
   useSession((s) => s.nodes);
   useStandards((s) => s.units);
   const prefs = usePrefs(useShallow((p) => ({ gridSnap: p.gridSnap, gridMode: p.gridMode, gridStep: p.gridStep })));
+  const scale = useGridScale((s) => s.scale);
+  // The step the cursor really snaps to at this zoom (forum topic 226: the status line once said 50 mm whatever the zoom did).
+  const snapStep = gridSnapStep(scale, prefs);
   const storey = activeStorey();
   const active = findTool(tool);
   return {
     mode: active ? active.label.toUpperCase() : 'SELECT',
     level: (storey?.name ?? '—').toUpperCase(), elevation: level(num(storey ?? undefined, 'elevation')),
     view: view === 'plan' ? 'PLAN' : view === 'drawing' ? 'DRAWING' : view === 'sheet' ? 'SHEET' : view === 'schedule' ? 'SCHEDULE' : view === 'gantt' ? 'GANTT' : view === 'estimate' ? 'ESTIMATE' : view === 'costTime' ? 'S-CURVE' : `3D · ${style === 'edges' ? 'EDGES' : style === 'xray' ? 'X-RAY' : style === 'wireframe' ? 'WIREFRAME' : 'SHADED'}`,
-    snap: prefs.gridSnap ? `POINTS · GRID ${prefs.gridMode === 'fixed' ? lengthText(prefs.gridStep) : lengthText(0.05)}` : 'POINTS',
+    snap: snapStep > 0 ? `POINTS · GRID ${lengthText(snapStep)}` : 'POINTS',
   };
 }
 

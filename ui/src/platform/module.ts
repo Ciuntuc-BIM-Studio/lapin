@@ -45,7 +45,7 @@ export type Gesture =
      * What the click would put on the element (a door or window: its size and type), so the modules' `placementCheck`s
      * are asked as the cursor moves; null: nothing to check here.
      */
-    placing?: (entity: NodeDto, at: Vec2) => { kind: 'door' | 'window'; width: number; typeId: string | null } | null;
+    placing?: (entity: NodeDto, at: Vec2) => PlacingWhat | null;
   }
   /**
    * An element picked, then a point (a bar cut: one end of the lap on the bar, then the other): the first click's point and the
@@ -122,6 +122,8 @@ export interface ToolDef {
   typed?: TypedTool;
   /** Points it snaps to in a plan besides what the plan shows, given the plan's storey (a pad footing: the columns of the storey above, decision 507). */
   snapPoints?: (storeyId: string | null) => Vec2[];
+  /** The tool places by an insertion anchor (forum topic 226): all nine points of the element's box, or the three along a wall (a door, a window). F4 steps it; its selector is in the bar. */
+  anchor?: 'box' | 'along';
 }
 
 /** A tool's types, for a quick slot holding the tool with one of them and for the catalog (decision 263). */
@@ -372,6 +374,8 @@ export interface Replaces {
 
 /** What a door or window being placed asks of the modules: where along its host's axis (m from its start), how wide, of which type. */
 export interface PlacementRequest { kind: 'door' | 'window'; host: NodeDto; along: number; width: number; typeId: string | null }
+/** What a door or window tool says of what it would put (`placing`): its size and type, and how far along the wall its centre lies from the cursor's place (the insertion anchor and the grid). */
+export type PlacingWhat = { kind: 'door' | 'window'; width: number; typeId: string | null; shift?: number };
 /** The answer: whether it fits, the reason when it does not (a sentence, shown by the cursor), and the place along the host's axis where it does. */
 export interface PlacementVerdict { ok: boolean; message?: string; snapAlong?: number }
 

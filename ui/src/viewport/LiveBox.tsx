@@ -39,6 +39,8 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
   const deltaHere = useInterface((s) => s.parts.prompt !== 'commandLine') && live.delta;
   const m = live.owner ? liveMeasure(live) : null;
   if (!live.owner || !m || !live.cursor) return null;
+  /** From a temporary reference point (viewport/datum.ts): the two fields are the offsets ΔX and ΔY from it. */
+  const datum = !!live.rect?.startsWith('datum:');
   const rel = relAngle(live, m.end);
   const at = toScreen(m.end);
   const cell = (f: LiveField, label: string, shown: string, unit: string) => (
@@ -57,8 +59,8 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
         <span className="live-cell ro" title={t('Measured')}><span className="live-label">↔</span>{formatLength(m.len)}<span className="live-unit">{unitLabel()}</span></span>
         {cell('len', '=', '?', live.len ? '' : unitLabel())}
       </> : live.mode === 'rect' ? <>
-        {cell('len', 'W', formatLength(m.dx), unitLabel())}
-        {cell('ang', 'H', formatLength(m.dy), unitLabel())}
+        {cell('len', datum ? 'ΔX' : 'W', formatLength(m.dx), unitLabel())}
+        {cell('ang', datum ? 'ΔY' : 'H', formatLength(m.dy), unitLabel())}
       </> : <>
         {cell('len', 'L', formatLength(m.len), unitLabel())}
         {cell('ang', '∠', formatAngle(m.ang), '°')}
@@ -77,6 +79,7 @@ export function LiveBar({ inline }: { inline?: boolean }) {
   const here = useInterface((s) => (s.parts.prompt === 'commandLine') === !!inline);
   const m = live.owner ? liveMeasure(live) : null;
   if (!live.owner || !m || !here) return null;
+  const datum = !!live.rect?.startsWith('datum:');
   const rel = relAngle(live, m.end);
   const field = (f: LiveField, label: string, shown: string) => (
     <label className={`live-field${live.focus === f ? ' on' : ''}`}>
@@ -100,8 +103,8 @@ export function LiveBar({ inline }: { inline?: boolean }) {
         <span className="live-ro"><span>{t('Measured')}</span>{formatLength(m.len)}</span>
         {field('len', `${t('True distance')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.len))}
       </> : live.mode === 'rect' ? <>
-        {field('len', `${t('Width')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dx))}
-        {field('ang', `${t('Height')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dy))}
+        {field('len', `${datum ? 'ΔX' : t('Width')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dx))}
+        {field('ang', `${datum ? 'ΔY' : t('Height')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dy))}
       </> : <>
         {field('len', `Length${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.len))}
         {field('ang', 'Angle (°)', formatAngle(m.ang))}
