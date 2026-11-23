@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Defaults } from './network';
-import { SAME, change, elevationLevel, planeLevel, resolve, runHeights, squared, syncLegs } from './levels';
+import { SAME, change, elevationLevel, planeLevel, redrawLegs, resolve, runHeights, squared, syncLegs } from './levels';
 
 const D = { plane: 'floor', floorElevation: 0.2, ceilingElevation: 2.4, wallElevation: 1.1 } as Defaults;
 const P = (x: number, y: number) => ({ x, y });
@@ -45,6 +45,15 @@ describe('the height a run is drawn at', () => {
     expect(runHeights(3, [SAME, SAME], D, 0.2)).toEqual({});
     expect(runHeights(3, [planeLevel('ceiling'), planeLevel('ceiling')], D, 0.2)).toEqual({ levels: [2.4, 2.4, 2.4] });
     expect(runHeights(3, [SAME, planeLevel('wall')], D, 0.2)).toEqual({ levels: [null, [null, 1.1], 1.1] });
+  });
+
+  it("sends a redrawn path's changed legs only, the ones before the first change left to the old run's levels", () => {
+    const own = planeLevel('floor');
+    expect(redrawLegs([own, own], own, D)).toBeNull();
+    expect(redrawLegs([own, planeLevel('ceiling'), planeLevel('ceiling')], own, D)).toEqual([null, 2.4, 2.4]);
+    // Up and back down to the run's own plane: from the change on, every leg is said.
+    expect(redrawLegs([own, planeLevel('ceiling'), own], own, D)).toEqual([null, 2.4, 0.2]);
+    expect(redrawLegs([elevationLevel(1), elevationLevel(1)], own, D)).toEqual([1, 1]);
   });
 
   it('shows the rise or drop at the last point', () => {

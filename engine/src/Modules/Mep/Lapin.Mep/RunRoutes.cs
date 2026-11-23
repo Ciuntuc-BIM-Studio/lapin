@@ -60,16 +60,17 @@ public static partial class Runs
     /// the old points (or given), its ends followed; the branches on it stay
     /// where they joined it (their stations measured again on the new route).
     /// </summary>
-    public static void SetRoute(ICommandContext ctx, Entity run, IReadOnlyList<Vec2> points, JsonArray? levels = null)
+    public static void SetRoute(ICommandContext ctx, Entity run, IReadOnlyList<Vec2> points, JsonArray? levels = null, bool byIndex = false)
     {
         var before = Followed(ctx.Model, run);
         var setting = SettingOf(ctx.Model, run);
-        var next = Lay(setting.Service, setting.Material, points);
+        // Levels given with the points (a number, null or [in, out] each); else the old ones carried onto them (by index: the same points moved).
+        var given = levels != null && levels.Count == points.Count ? levels.Select(LevelOf).ToList()
+            : RemapLevels(Points(run), PointLevelsOf(run), points, setting.Elevation, byIndex) is { } carried ? [.. carried.Select(LevelOf)] : null;
+        // Laid by the material piece by piece between rises, so a vertical leg stays vertical.
+        var (next, lv) = LayWithLevels(setting.Service, setting.Material, points, given, setting.Elevation);
         var attrs = run.CloneAttrs();
         attrs["points"] = J(next);
-        // Levels given with the points (a number, null or [in, out] each) go onto them as laid; else the old ones are carried.
-        var given = levels != null && levels.Count == points.Count ? levels.Select(LevelOf).ToList() : null;
-        var lv = given != null ? (next.Count == points.Count ? LevelsJson(given) : RemapLevels(points, given, next, setting.Elevation)) : RemapLevels(Points(run), PointLevelsOf(run), next, setting.Elevation);
         if (lv != null) attrs["levels"] = lv; else attrs.Remove("levels");
         ctx.Replace(run.With(attrs: attrs));
         // Followed alone first, so the branches are measured on the route as it now stands.
@@ -197,7 +198,7 @@ public static partial class Runs
         {
             var run = RequireRun(ctx, a);
             var leg = (int?)Json.Number(a["leg"]) ?? throw new CommandException("Which leg?");
-            SetRoute(ctx, run, SlideLeg(Followed(ctx.Model, run), leg, PointArg(a["by"], "displacement")));
+            SetRoute(ctx, run, SlideLeg(Followed(ctx.Model, run), leg, PointArg(a["by"], "displacement")), byIndex: true);
             return null;
         });
 
@@ -219,8 +220,10 @@ public static partial class Runs
         r.Command("redrawRun", "Redraw run", (ctx, a) =>
         {
             var run = RequireRun(ctx, a);
-            // With levels (one per point: a number, null, or [in, out] where its plane changed while drawn), the new path's heights.
-            SetRoute(ctx, run, PointsArg(a["points"]), a["levels"] as JsonArray);
+            // With levels (one per point: a number, null, or [in, out]), the new path's heights; with legs (one per leg: an elevation
+            // where its plane was changed while drawing, else null), the old levels carried where the path meets them, the rest as drawn.
+            var pts = PointsArg(a["points"]);
+            SetRoute(ctx, run, pts, a["legs"] is JsonArray legs ? LegLevels(ctx.Model, run, pts, legs) : a["levels"] as JsonArray);
             return null;
         });
     }

@@ -133,4 +133,70 @@ public class MepRunRiseTests
         f.Run("mep.setRunLevels", new JsonObject { ["id"] = run, ["levels"] = new JsonArray(null, new JsonArray(0.5, 2.0), 2.0) });
         Assert.Equal(0.5, Runs.LevelsOf(f.Model.Get(run)!)![1]!.Value, 6);
     }
+
+    [Fact]
+    public void A_rise_dragged_by_its_handle_keeps_its_two_levels_along_its_leg_too()
+    {
+        var (f, _, run) = FloorThenCeiling();
+        // Along its own leg (on the old line): the grip sends the points alone.
+        f.Run("mep.setRunPoints", new JsonObject { ["id"] = run, ["points"] = MepFixture.Pts((0, 0), (2, 0), (6, 0)) });
+        Assert.Equal(new Vec2(2, 0), Runs.Rises(Line(f, run)).Single().At);
+        // Off it, and back onto the line beyond the next point's side.
+        f.Run("mep.setRunPoints", new JsonObject { ["id"] = run, ["points"] = MepFixture.Pts((0, 0), (2, 1), (6, 0)) });
+        f.Run("mep.setRunPoints", new JsonObject { ["id"] = run, ["points"] = MepFixture.Pts((0, 0), (4, 0), (6, 0)) });
+        var levels = Runs.PointLevelsOf(f.Model.Get(run)!)!;
+        Assert.True(levels[1].Rises);
+        Assert.Equal(2.4, levels[1].Out!.Value, 6);
+        Assert.Equal(new Vec2(4, 0), Runs.Rises(Line(f, run)).Single().At);
+    }
+
+    [Fact]
+    public void A_path_redrawn_with_its_legs_changed_carries_the_old_rises_and_rises_from_the_level_it_arrives_with()
+    {
+        var (f, _, run) = FloorThenCeiling();
+        // The old rise at (3, 0) is on the new path; the third leg was drawn on the wall (1.1): from the ceiling, where the run arrives there.
+        f.Run("mep.redrawRun", new JsonObject { ["id"] = run, ["points"] = MepFixture.Pts((0, 0), (3, 0), (6, 0), (6, 3)), ["legs"] = new JsonArray(null, null, 1.1) });
+        var levels = Runs.PointLevelsOf(f.Model.Get(run)!)!;
+        Assert.True(levels[1].Rises);
+        Assert.Equal(2.4, levels[1].Out!.Value, 6);
+        Assert.Equal(2.4, levels[2].In!.Value, 6);
+        Assert.Equal(1.1, levels[2].Out!.Value, 6);
+        Assert.Equal(1.1, levels[3].In!.Value, 6);
+        var line = Line(f, run);
+        Assert.Equal(2, Runs.Rises(line).Count());
+        Assert.Equal(1.1, line[^1].Z, 6);
+        // A run with no levels redrawn with its first leg changed: all of it at that elevation, no rise.
+        var (g, s, _) = FloorThenCeiling();
+        var flat = g.Draw(s, MepFixture.Pts((0, 4), (3, 4)));
+        g.Run("mep.redrawRun", new JsonObject { ["id"] = flat, ["points"] = MepFixture.Pts((0, 4), (3, 4), (3, 6)), ["legs"] = new JsonArray(2.4, 2.4) });
+        Assert.Empty(Runs.Rises(Line(g, flat)));
+        Assert.All(Line(g, flat), p => Assert.Equal(2.4, p.Z, 6));
+    }
+
+    [Fact]
+    public void One_side_of_a_rise_is_set_on_its_own_and_the_other_kept()
+    {
+        var (f, _, run) = FloorThenCeiling();
+        f.Run("mep.setPointLevel", new JsonObject { ["id"] = run, ["index"] = 1, ["side"] = "out", ["level"] = 2.1 });
+        var l = Runs.PointLevelsOf(f.Model.Get(run)!)![1];
+        Assert.Null(l.In);
+        Assert.Equal(2.1, l.Out!.Value, 6);
+        f.Run("mep.setPointLevel", new JsonObject { ["id"] = run, ["index"] = 1, ["side"] = "in", ["level"] = 0.5 });
+        Assert.Equal(new Runs.PointLevel(0.5, 2.1), Runs.PointLevelsOf(f.Model.Get(run)!)![1]);
+        // Both sides at once: one level, no rise.
+        f.Run("mep.setPointLevel", new JsonObject { ["id"] = run, ["index"] = 1, ["level"] = 2.4 });
+        Assert.Empty(Runs.Rises(Line(f, run)));
+        f.Session.Undo();
+        Assert.True(Runs.PointLevelsOf(f.Model.Get(run)!)![1].Rises);
+    }
+
+    [Fact]
+    public void Laid_in_pieces_between_rises_the_rise_stays_on_its_point_without_rules()
+    {
+        var pts = new List<Vec2> { new(0, 0), new(3, 0), new(3, 3), new(6, 3) };
+        var levels = new List<Runs.PointLevel> { Runs.PointLevel.At(null), new(null, 2.4), Runs.PointLevel.At(2.4), Runs.PointLevel.At(2.4) };
+        var (laid, lv) = Runs.LayWithLevels(Services.Heating, null, pts, levels, 0.2);
+        Assert.Equal(pts, laid);
+        Assert.Equal(levels, lv!.Select(Runs.LevelOf).ToList());
+    }
 }

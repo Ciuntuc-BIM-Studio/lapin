@@ -91,6 +91,19 @@ export function runHeights(n: number, legs: Level[], d: Defaults | null, runZ?: 
   return { ...own, levels };
 }
 
+/**
+ * A redrawn path's legs as mep.redrawRun takes them: null for each leg before the first one whose height was changed (the
+ * old run's levels are carried there, its rises among them), then each leg's elevation; null when none was changed.
+ */
+export function redrawLegs(legs: Level[], own: Level, d: Defaults | null): (number | null)[] | null {
+  const same = (l: Level) => l.plane === own.plane && l.elevation === own.elevation;
+  const first = legs.findIndex((l) => !same(l));
+  if (first < 0) return null;
+  const z = legs.map((l) => resolve(l, d).z);
+  if (z.slice(first).some((v) => v == null)) return null;
+  return legs.map((_, i) => (i < first ? null : Math.round(z[i]! * 1e4) / 1e4));
+}
+
 /** What changes at the last point placed: the rise (+) or drop (−) to the leg being drawn, m; null when none. */
 export function change(s: Pick<DrawLevelState, 'current' | 'legs'>, d: Defaults | null): number | null {
   const before = s.legs[s.legs.length - 1];

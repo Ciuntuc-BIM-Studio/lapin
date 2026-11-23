@@ -24,7 +24,7 @@ import { runSystem, schedule } from './tools';
 import { mepHooks } from './hooks';
 import { setMep, useMep } from './prefs';
 import { LevelCells, RunLevelOptions, endLegs, levelInfo, levelLetters, systemDefaults, trackLegs, type LevelSource } from './DrawLevel';
-import { resolve, runHeights, squared, useDrawLevel, type Level } from './levels';
+import { redrawLegs, runHeights, squared, useDrawLevel, type Level } from './levels';
 import { useLive } from '../../viewport/liveInput';
 import { OpenEndsOverlay } from './openEnds';
 import { usePlaceRole } from './placeRole';
@@ -358,9 +358,9 @@ const redraw: ToolDef = {
     if (points.length < 2) return;
     const target = redrawTarget(points[0]);
     if (!target) { notify('Select the run first, or start the path on it.'); return; }
-    const d = systemDefaults(systemOfRun(target));
-    const { levels } = runHeights(points.length, legs, d, resolve(ownLevel(target), d).z);
-    await execute('mep.redrawRun', { id: target.id, points: points.map((p) => [p.x, p.y]), ...(levels ? { levels } : {}) });
+    // The legs whose height was changed while drawing; the old run's levels (its rises) carried over the others by the engine.
+    const changed = redrawLegs(legs.slice(0, points.length - 1), ownLevel(target), systemDefaults(systemOfRun(target)));
+    await execute('mep.redrawRun', { id: target.id, points: points.map((p) => [p.x, p.y]), ...(changed ? { legs: changed } : {}) });
     useUi.setState({ selected: [target.id], selection: target.id });
   },
 };

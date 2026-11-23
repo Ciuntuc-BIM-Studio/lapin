@@ -206,11 +206,14 @@ public static partial class Runs
     /// levels (a rise its two); with as many points as before, one moved off the
     /// old line keeps the levels of the point it was; a new one takes the level
     /// of the old line where it falls (between two levels, in proportion). Null
-    /// when the run had none.
+    /// when the run had none. <paramref name="byIndex"/>: the same points
+    /// moved (a handle dragged, a leg slid), each keeping its own levels
+    /// wherever it went, along its leg too.
     /// </summary>
-    public static JsonArray? RemapLevels(IReadOnlyList<Vec2> oldPts, IReadOnlyList<PointLevel>? oldLevels, IReadOnlyList<Vec2> newPts, double baseLevel)
+    public static JsonArray? RemapLevels(IReadOnlyList<Vec2> oldPts, IReadOnlyList<PointLevel>? oldLevels, IReadOnlyList<Vec2> newPts, double baseLevel, bool byIndex = false)
     {
         if (oldLevels == null || oldPts.Count != oldLevels.Count || oldPts.Count < 2) return null;
+        if (byIndex && newPts.Count == oldPts.Count) return LevelsJson(oldLevels);
         var o = new List<PointLevel>();
         for (var k = 0; k < newPts.Count; k++)
         {
@@ -495,18 +498,15 @@ public static partial class Runs
     {
         var service = Systems.Service(system);
         var given = PointsArg(a["points"]);
-        var laid = Lay(service, (string?)a["material"] ?? Systems.Of(system).Material, given);
+        var material = (string?)a["material"] ?? Systems.Of(system).Material;
+        var baseLevel = Json.Number(a["elevation"]) ?? Systems.Of(system).ElevationOf((string?)a["plane"]);
+        // Its own levels, one per point drawn (a number, null, or [in, out] where its plane changed: a rise there), laid with the points.
+        var (laid, levels) = LayWithLevels(service, material, given, a["levels"] is JsonArray lv && lv.Count == given.Count ? [.. lv.Select(LevelOf)] : null, baseLevel);
         var attrs = new JsonObject { ["systemId"] = system.Id, ["points"] = J(laid) };
         foreach (var k in new[] { "elevation", "size", "separation", "slope", "height", "cover", "offset" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
         if (a["warningTape"] is JsonValue wt && wt.TryGetValue<bool>(out var tape)) attrs["warningTape"] = tape;
         if ((string?)a["along"] is { Length: > 0 } along) attrs["along"] = along;
-        // Its own levels, one per point drawn (a number, null, or [in, out] where its plane changed: a rise there), carried onto the points as laid.
-        if (a["levels"] is JsonArray lv && lv.Count == given.Count)
-        {
-            var own = lv.Select(LevelOf).ToList();
-            var baseLevel = Json.Number(a["elevation"]) ?? Systems.Of(system).ElevationOf((string?)a["plane"]);
-            if ((laid.Count == given.Count ? LevelsJson(own) : RemapLevels(given, own, laid, baseLevel)) is { } levels) attrs["levels"] = levels;
-        }
+        if (levels != null) attrs["levels"] = levels;
         if ((string?)a["plane"] is "floor" or "ceiling" or "wall") attrs["plane"] = (string)a["plane"]!;
         if (a["pair"] is JsonValue pv && pv.TryGetValue<bool>(out var pair)) attrs["pair"] = pair;
         if ((string?)a["material"] is { Length: > 0 } mat) attrs["material"] = mat;
@@ -622,10 +622,11 @@ public static partial class Runs
         {
             var run = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("Which run?");
             if (!IsRun(run)) throw new CommandException("Not a run.");
-            // The elevations follow the points (or come with them); the connected ends stay on what they are on.
-            SetRoute(ctx, run, PointsArg(a["points"]), a["levels"] as JsonArray);
+            // The elevations follow the points, each its own wherever it is dragged (or come with them); the connected ends stay on what they are on.
+            SetRoute(ctx, run, PointsArg(a["points"]), a["levels"] as JsonArray, byIndex: true);
             return null;
         });
         RegisterRouteEdits(r);
+        RegisterRises(r);
     }
 }
