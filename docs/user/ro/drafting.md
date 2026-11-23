@@ -68,6 +68,12 @@ Lapin se prinde de capetele, mijloacele și intersecțiile a ce e desenat, și d
 
 ![Unealta Fereastră: marginea ei din stânga la cursor](shots/precision-anchor-window.webp)
 
+![Bara de sub vedere cu unealta Stâlp: selectorul ancorei, opțiunile ei și comutatoarele de snap](shots/precision-bar-column.webp)
+
+![Bara cu unealta Fereastră pe o lățime mică: trece pe un al doilea rând](shots/precision-bar-window-1280.webp)
+
+![Măsurarea într-o secțiune: lungimea și unghiul se citesc la cursor](shots/precision-measure-section.webp)
+
 **Un punct de referință temporar.** Cât o unealtă de desenat sau de așezat așteaptă un punct, arată spre un colț (un snap) și apasă <kbd>F6</kbd>: locul acela devine un 0,0 temporar. Lângă cursor, caseta arată acum **ΔX** și **ΔY** de la el; scrie-le (<kbd>Tab</kbd> trece la următoarea, <kbd>Enter</kbd> ia punctul) sau doar dă clic. <kbd>F6</kbd> din nou pe același loc, <kbd>Esc</kbd> sau următorul clic îl renunță. Merge în planuri și în secțiuni și fațade.
 
 ![ΔX 2000 și ΔY 1500 scrise de la un colț](shots/precision-datum.webp)

@@ -15451,6 +15451,7 @@ export const scenes = [
       // A column by its bottom-left corner: the corner is where the click is.
       await page.locator('[data-anchor="-1,-1"]').first().click();
       const [cx, cy] = await move(2.03, 2.04);
+      await t.shot('precision-bar-column', { of: '.cad-line', pad: 0 });
       await t.shot('precision-anchor-column', { clip: { x: 200, y: 120, width: 1200, height: 760 } });
       await page.mouse.click(cx, cy);
       await t.until(async () => (await columns()).length === 1, 'a column was placed');
@@ -15464,6 +15465,19 @@ export const scenes = [
       await t.tool('architecture.window');
       await page.locator('[data-anchor="-1,0"]').first().click();
       await move(5.02, 0.05);
+      await t.shot('precision-bar-window', { of: '.cad-line', pad: 0 });
+      const vp = page.viewportSize();
+      await page.setViewportSize({ width: 1280, height: vp.height });
+      await t.wait(500);
+      await t.shot('precision-bar-window-1280', { of: '.cad-line', pad: 0 });
+      for (const id of ['architecture.wall', 'drafting.line']) {
+        await t.tool(id).catch(() => {});
+        await t.wait(400);
+        await t.shot(`precision-bar-${id.replace('.', '-')}-1280`, { of: '.cad-line', pad: 0 });
+      }
+      await page.setViewportSize(vp);
+      await t.wait(400);
+      await t.shot('precision-hud', { clip: { x: 80, y: 60, width: 600, height: 110 } });
       await t.shot('precision-anchor-window', { clip: { x: 200, y: 120, width: 1200, height: 760 } });
       await page.keyboard.press('Escape');
       // A reference point: F6 on a corner, then ΔX and ΔY typed.

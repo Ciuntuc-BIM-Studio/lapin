@@ -68,6 +68,12 @@ Lapin snaps to the ends, middles and intersections of what is drawn, and to the 
 
 ![The Window tool: its left edge at the cursor](shots/precision-anchor-window.webp)
 
+![The bar under the view with the Column tool: its anchor selector, its options and the snap switches](shots/precision-bar-column.webp)
+
+![The bar with the Window tool at a narrow width: it wraps onto a second row](shots/precision-bar-window-1280.webp)
+
+![Measure in a section: its length and angle read at the cursor](shots/precision-measure-section.webp)
+
 **A temporary reference point.** While a drawing or placing tool waits for a point, point at a corner (a snap) and press <kbd>F6</kbd>: that spot becomes a temporary 0,0. Beside the cursor the box now reads **ΔX** and **ΔY** from it; type them (<kbd>Tab</kbd> goes to the next, <kbd>Enter</kbd> takes the point), or just click. <kbd>F6</kbd> again on the same spot, <kbd>Esc</kbd> or the next click drops it. It works in plans and in sections and elevations.
 
 ![ΔX 2000 and ΔY 1500 typed from a corner](shots/precision-datum.webp)
