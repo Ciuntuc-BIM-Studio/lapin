@@ -412,7 +412,30 @@ public sealed record PlanItem(string Kind, bool Closed, IReadOnlyList<Vec2> Poin
 
     /// <summary>The style it draws in out of the cut's reach (<see cref="Heights"/>); null: its own, its pattern left to the role (overhead's dashes).</summary>
     public Lapin.Drawing.LineStyleSpec? AboveStyle { get; init; }
+
+    /// <summary>
+    /// Sized on paper, as a text is (an MEP device's symbol, a rise's mark): its points are drawn as they read at
+    /// 1:<see cref="PaperAnchor.Scale"/>, about <see cref="PaperAnchor.At"/>; a plan at another scale draws them that much larger
+    /// or smaller round that point (<see cref="OnPaper"/>), so 1:50 and 1:100 print them the same size. Null: the model's size.
+    /// </summary>
+    public PaperAnchor? Paper { get; init; }
+
+    /// <summary>A text of kind <c>text</c> (a drawn symbol's letter): its words, its height (metres on the model) and angle (°), at its first point.</summary>
+    public string? Text { get; init; }
+    public double TextHeight { get; init; }
+    public double TextAngle { get; init; }
+
+    /// <summary>The item as a plan at 1:<paramref name="scale"/> draws it: sized on paper (<see cref="Paper"/>), its points and text scaled about its anchor.</summary>
+    public PlanItem OnPaper(double scale)
+    {
+        if (Paper is not { } p || !(scale > 0) || Math.Abs(scale - p.Scale) < 1e-9) return this;
+        var k = scale / p.Scale;
+        return this with { Points = [.. Points.Select(q => p.At + (q - p.At) * k)], TextHeight = TextHeight * k, Paper = null };
+    }
 }
+
+/// <summary>Where a plan item sized on paper is scaled about, and the scale (1 : n) its points are drawn at (<see cref="PlanItem.Paper"/>).</summary>
+public sealed record PaperAnchor(Vec2 At, double Scale);
 
 /// <summary>
 /// An element's plan symbols as one view draws them (MEP: a device's coverage drawn in every view, only on the selected

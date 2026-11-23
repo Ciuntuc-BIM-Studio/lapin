@@ -27,13 +27,15 @@ public static partial class Runs
     {
         foreach (var (at, up) in Rises(line))
         {
-            yield return new PlanItem("symbol", true, [.. Chords.Ring(at, 0.06)]);
-            if (up) yield return new PlanItem("heavy", true, [.. Chords.Ring(at, 0.015)]);
+            // Sized on paper, as the rise node's sign is.
+            var paper = new PaperAnchor(at, Nodes.SymbolScale);
+            yield return new PlanItem("symbol", true, [.. Chords.Ring(at, 0.06)]) { Paper = paper };
+            if (up) yield return new PlanItem("heavy", true, [.. Chords.Ring(at, 0.015)]) { Paper = paper };
             else
             {
                 const double c = 0.042;
-                yield return new PlanItem("symbol", false, [at + new Vec2(-c, -c), at + new Vec2(c, c)]);
-                yield return new PlanItem("symbol", false, [at + new Vec2(-c, c), at + new Vec2(c, -c)]);
+                yield return new PlanItem("symbol", false, [at + new Vec2(-c, -c), at + new Vec2(c, c)]) { Paper = paper };
+                yield return new PlanItem("symbol", false, [at + new Vec2(-c, c), at + new Vec2(c, -c)]) { Paper = paper };
             }
         }
     }

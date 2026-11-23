@@ -81,7 +81,7 @@ import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
 import { actualScale, boundsOf, coreBounds, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
 import { ScaleChip, ScalePicker, StructurePicker } from './ScaleChip';
-import { DASHES, planDetail, shownAt } from './planDetail';
+import { DASHES, onPaper, planDetail, shownAt } from './planDetail';
 import { useLineTypes } from '../modules/core/lineTypes/lineTypes';
 import { arcOf, axisLine, riseThrough } from './arc';
 import { PICKED, arrivingDir, circleOutline, ellipseOutline, loopOf, pickOutline, rectangleOutline, tangentRise, useOutlineShape } from './outlineShape';
@@ -244,8 +244,10 @@ export function PlanView() {
   // The shown storey only.
   // The storey's items, each with the plan items its plan's scale draws (a track: its axis at 1:2000, its rails at 1:500, every sleeper at 1:100).
   const detail = planDetail(drawing?.scale ?? 100);
+  // What is sized on paper (an MEP device's symbol) at the plan's scale, as its drawing has it, so the selection and the picks lie on it.
+  const paperScale = drawing?.scale ?? 100;
   const items = useMemo(() => [...render.values()].filter((r) => r.storeyId === storey?.id)
-    .map((r) => (r.plan.every((it) => shownAt(it, detail)) ? r : { ...r, plan: r.plan.filter((it) => shownAt(it, detail)) })), [render, storey?.id, detail]);
+    .map((r) => (r.plan.every((it) => shownAt(it, detail) && !it.paper) ? r : { ...r, plan: r.plan.filter((it) => shownAt(it, detail)).map((it) => onPaper(it, paperScale)) })), [render, storey?.id, detail, paperScale]);
   // What the snaps and the selection take: only the elements the view's drawing shows (forum #31, decisions 491 and 498), all
   // of them over modelling lines; a part of a whole drawn as one keeps its own lines (drilling into assemblies).
   const snapItems = useMemo(() => shownItems(items, drawing, shownWholeOf(relations, (id) => wholeOf(id, nodes, relations))), [items, drawing, nodes, relations]);

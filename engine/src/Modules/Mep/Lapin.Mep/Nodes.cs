@@ -298,6 +298,9 @@ public static class Nodes
         // The ports, as short ticks, so a run finds them by eye.
         foreach (var p in Ports(m, e))
             if (Math.Abs(p.Dir.Z) < 0.9) o.Add(new PlanItem("symbol", false, [p.At.Xy, p.At.Xy + p.Dir.Xy * 0.06]));
+        // Sized on paper as a text is, so 1:50 and 1:100 print it the same size (its ticks with it), unless the role's symbol is
+        // its body's real outline (a boiler, a radiator's length, a tank): drawn as at 1:50 round the node's point.
+        if (PaperSized(role)) for (var i = 0; i < o.Count; i++) o[i] = o[i] with { Paper = new PaperAnchor(Position(e), SymbolScale) };
         // In its system's colour, drawn whole wherever it is mounted (an MEP plan's symbols: their heights are for the tags).
         var system = m.Get(e.Str("systemId") ?? "") is { Class: Systems.Class } sys ? sys : null;
         var look = (system != null ? Systems.StyleOf(system) : SystemStyle.For(role.Ports.FirstOrDefault()?.Service ?? Services.Heating)).Line;
@@ -309,6 +312,23 @@ public static class Nodes
         if (Coverage(e, role) is > 0 and var reach) o.Add(new PlanItem("reach", true, Circle(reach), Style: new(1, Pale(look.Color), null)));
         return o;
     }
+
+    /// <summary>The scale (1 : n) the coded symbols are drawn at in metres: a plan at another scale draws those sized on paper that much larger or smaller.</summary>
+    public const double SymbolScale = 50;
+
+    /// <summary>
+    /// The roles whose plan symbol is their body's real outline, drawn at the model's size at every scale (the convention for
+    /// appliances, sanitary fixtures, radiators, cabinets and tanks: the plan shows the room they take); every other role's
+    /// symbol (a valve, a meter, a device, a rise) is sized on paper.
+    /// </summary>
+    public static readonly IReadOnlySet<string> ModelSized = new HashSet<string>
+    {
+        "boiler", "gasBoiler", "oilBoiler", "manifold", "radiator", "basin", "sink", "shower", "bath", "wc", "panel", "diffuser", "grille",
+        "meterBox", "gasMeter", "flexConnector", "cooker", "waterHeater", "oilTank", "firePanel", "fireTank", "firePump", "hydrant", "breechingInlet",
+    };
+
+    /// <summary>Whether a role's symbol is sized on paper (<see cref="ModelSized"/>: those that are not).</summary>
+    public static bool PaperSized(Role role) => !ModelSized.Contains(role.Id);
 
     /// <summary>A colour paled towards white (a coverage circle's, under the plan's lines).</summary>
     public static string Pale(string color, double by = 0.65)
