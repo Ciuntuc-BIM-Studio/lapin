@@ -374,6 +374,18 @@ Pune **Anturajul în 2D** al stilului vederii pe **detaliat** pentru simbolurile
 
 ![Aceeași livadă desenată detaliat](shots/planting-symbols-detailed.webp)
 
+### Colorată sau machetă
+
+Cum arată plantele în 3D e o setare a vederii, **Vegetație** (în proprietățile vederii sau **Vedere → Setările vederii**; pentru un stil întreg, **Gestionare → Stiluri de vedere**): **colorată**, implicit, desenează fiecare specie în culoarea ei, ca mai sus; **machetă** le desenează ca arborii unei machete de arhitectură, neutri și fațetați, așa că situația se citește ca o machetă de volume. În machetă un foios e un ciorchine rotunjit de patru până la șapte boțuri fațetate pe trunchiul lui, un pom fructifer la fel, mai lat și mai jos, un brad sau un molid trei-patru conuri suprapuse, un pin un smoc turtit sus pe un trunchi înalt și gol, un arbust un ciorchine jos, fără trunchi, o plantă de gard viu un bloc cu opt laturi teșit sus, iar gazonul un covor subțire. Coroanele sunt de un alb cald, trunchiurile puțin mai închise, cu fețe plane, așa că se citesc la fel în tema deschisă și în cea întunecată. Lapin face singur fiecare corp din sămânța plantei: vecinii diferă, iar o zonă crește la fel de fiecare dată.
+
+![O grădină în 3D, colorată](shots/planting-coloured-3d.webp)
+
+![Aceeași grădină ca machetă](shots/planting-maquette-3d.webp)
+
+Selectează o plantă, iar proprietățile ei au **Vegetația în 3D**, o comutare rapidă a setării vederii 3D; orice altă vedere (o vedere 3D salvată, o secțiune) o păstrează pe a ei. Exporturile glTF, USD și COLLADA ale unei vederi 3D iau plantele cum le arată ea; o secțiune sau o fațadă cu **Anturajul în 2D** **detaliat** desenează liniile corpurilor pe care i le dă vegetația vederii. Cantitățile, extrasul de plantare și exportul IFC nu se schimbă: numără și scriu mereu plantele așa cum sunt. Proiectele făcute înainte își desenează plantele colorate.
+
+![Vegetația în 3D în proprietățile unei plante](shots/planting-vegetation-toggle.webp)
+
 ## Oameni și mașini
 
 **Anturaj** (EN) pune un om sau o mașină la un clic; alegi ce în bara liniei de comandă cât timp unealta e pornită: un **bărbat în picioare**, o **femeie mergând**, un **copil**, o **persoană la telefon**, o **mașină** sau un **SUV / dubă**. **Rând de anturaj** (ER) pune un rând de-a lungul unei linii pe care o desenezi: mașini la 2,5 m, parcate una lângă alta de-a curmezișul ei, cu fața spre stânga liniei, oameni la 1,2 m, mergând de-a lungul ei. Fiecare stă pe terenul de sub el, sau pe pardoseala etajului lui unde nu e teren.
@@ -390,7 +402,7 @@ Selectează unul ca să-l schimbi în proprietăți: felul, **rotația**, **în�
 
 ![Proprietățile unei mașini](shots/entourage-properties.webp)
 
-Cum se desenează în 2D oamenii, mașinile și plantele e o setare a stilului vederii, **Anturajul în 2D** (în proprietățile vederii sau **Vedere → Setările vederii**; pentru un stil întreg, **Gestionare → Stiluri de vedere**): **contururi** (implicit), **abstract** (un om un cerc în plan și un cap peste un corp într-o fațadă, o mașină o cutie rotunjită, un arbore un cerc cu trunchiul lui), **detaliat** (simbolurile de peisagistică ale plantelor și fiecare linie a corpurilor, cu umbrele de soare ale vederii, cum le desena Lapin înainte) sau **nedesenat**. **Umplerea siluetelor** umple siluetele din fațade și secțiuni cu gri deschis sau verde pal. Se desenează cu penița 2 (0,13 mm la 1:100), dacă **Gestionare → Stiluri de obiecte** nu dă alta categoriei **Anturaj**, iar **Vizibilitate / Grafică** ascunde categoria într-o vedere. Planșele, PDF-ul și DXF-ul îi tipăresc cum îi desenează vederea; corpurile lor 3D nu se schimbă niciodată. Proiectele făcute înainte îi desenează și ele ca contururi.
+Cum se desenează în 2D oamenii, mașinile și plantele e o setare a stilului vederii, **Anturajul în 2D** (în proprietățile vederii sau **Vedere → Setările vederii**; pentru un stil întreg, **Gestionare → Stiluri de vedere**): **contururi** (implicit), **abstract** (un om un cerc în plan și un cap peste un corp într-o fațadă, o mașină o cutie rotunjită, un arbore un cerc cu trunchiul lui), **detaliat** (simbolurile de peisagistică ale plantelor și fiecare linie a corpurilor, cu umbrele de soare ale vederii, cum le desena Lapin înainte) sau **nedesenat**. **Umplerea siluetelor** umple siluetele din fațade și secțiuni cu gri deschis sau verde pal. Se desenează cu penița 2 (0,13 mm la 1:100), dacă **Gestionare → Stiluri de obiecte** nu dă alta categoriei **Anturaj**, iar **Vizibilitate / Grafică** ascunde categoria într-o vedere. Planșele, PDF-ul și DXF-ul îi tipăresc cum îi desenează vederea; setarea aceasta nu le schimbă niciodată corpurile 3D (ale plantelor le dă **Vegetația** vederii, mai sus). Proiectele făcute înainte îi desenează și ele ca contururi.
 
 Dau desenelor și imaginilor scara, dar nu fac parte din clădire. Un export IFC sau Fragments (File → Export…) îi lasă afară dacă nu bifezi **Anturaj** în lista de feluri; IFC îi scrie ca IfcBuildingElementProxy „Entourage”. Exporturile 3D (glTF, USD, COLLADA) îi iau. Testele de coliziuni îi lasă afară.
 

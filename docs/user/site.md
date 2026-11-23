@@ -376,6 +376,18 @@ Set the view style's **Entourage in 2D** to **detailed** for the landscape drawi
 
 ![The same orchard drawn detailed](shots/planting-symbols-detailed.webp)
 
+### Coloured or maquette
+
+How plants look in 3D is a setting of the view, **Vegetation** (in the view's properties or **View → View settings**; for a whole style, **Manage → View styles**): **coloured**, the default, draws each species in its colour as above; **maquette** draws them as an architectural model's trees, neutral and faceted, so a site reads as a massing model. In the maquette a broadleaf is a rounded cluster of four to seven faceted blobs on its trunk, a fruit tree the same, wider and lower, a fir or a spruce three or four stacked cones, a pine a flat clump high on a tall bare trunk, a shrub a low cluster with no trunk, a hedge plant a bevelled eight-sided block and grass a thin mat. The crowns are an off-white and the trunks a little darker, flat shaded, so they read in the light and the dark theme alike. Lapin makes each body itself from the plant's seed: neighbours differ, and a zone grows the same way every time.
+
+![A garden in 3D, coloured](shots/planting-coloured-3d.webp)
+
+![The same garden as a maquette](shots/planting-maquette-3d.webp)
+
+Select a plant and its properties offer **Vegetation in 3D**, a quick switch of the 3D view's setting; every other view (a saved 3D view, a section) keeps its own. The glTF, USD and COLLADA exports of a 3D view take its plants as it shows them; a section or an elevation whose **Entourage in 2D** is **detailed** draws the lines of the bodies its view's vegetation gives. The quantities, the planting schedule and the IFC export never change: they always count and write the plants as they are. Projects made before draw their plants coloured.
+
+![Vegetation in 3D in a plant's properties](shots/planting-vegetation-toggle.webp)
+
 ## People and cars
 
 **Entourage** (EN) puts a person or a car at a click; choose which in the command line's bar while the tool is on: a **man standing**, a **woman walking**, a **child**, a **person on the phone**, a **car** or an **SUV / van**. **Entourage row** (ER) puts a row of them along a line you draw: cars every 2.5 m, parked side by side across it with their fronts to its left, people every 1.2 m, walking along it. Each stands on the terrain under it, or on its storey's floor where there is no terrain.
@@ -392,7 +404,7 @@ In 3D they are simple figures: people with their limbs, clothes, hair and shoes,
 
 ![A car's properties](shots/entourage-properties.webp)
 
-How people, cars and plants draw in 2D is a setting of the view style, **Entourage in 2D** (in the view's properties or **View → View settings**; for a whole style, **Manage → View styles**): **outlines** (the default), **abstract** (a person a circle in plan and a head over a body in an elevation, a car a rounded box, a tree a circle with its trunk), **detailed** (the plants' landscape symbols and every line of the bodies, with the view's sun shadows, as Lapin drew them before) or **not drawn**. **Silhouette fill** fills the silhouettes of elevations and sections light grey or pale green. They draw with pen 2 (0.13 mm at 1:100) unless **Manage → Object styles** gives the **Entourage** category another, and **Visibility / Graphics** hides that category in a view. Sheets, the PDF and DXF print them as the view draws them; their 3D bodies never change. Projects made before draw them as outlines too.
+How people, cars and plants draw in 2D is a setting of the view style, **Entourage in 2D** (in the view's properties or **View → View settings**; for a whole style, **Manage → View styles**): **outlines** (the default), **abstract** (a person a circle in plan and a head over a body in an elevation, a car a rounded box, a tree a circle with its trunk), **detailed** (the plants' landscape symbols and every line of the bodies, with the view's sun shadows, as Lapin drew them before) or **not drawn**. **Silhouette fill** fills the silhouettes of elevations and sections light grey or pale green. They draw with pen 2 (0.13 mm at 1:100) unless **Manage → Object styles** gives the **Entourage** category another, and **Visibility / Graphics** hides that category in a view. Sheets, the PDF and DXF print them as the view draws them; this setting never changes their 3D bodies (the plants' are the view's **Vegetation**, above). Projects made before draw them as outlines too.
 
 They give drawings and pictures their scale but are no part of the building. An IFC or Fragments export (File → Export…) leaves them out unless you tick **Entourage** in its list of kinds; IFC writes them as IfcBuildingElementProxy "Entourage". The 3D exports (glTF, USD, COLLADA) take them. Clash tests leave them out.
 
