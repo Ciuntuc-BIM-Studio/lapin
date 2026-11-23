@@ -277,7 +277,18 @@ public static class FeatureLines
     /// </summary>
     public static List<List<Vec3>> Split(IReadOnlyList<IReadOnlyList<Vec3>> lines, out int clashes)
     {
-        clashes = 0;
+        var o = Split(lines, out List<Clash> found);
+        clashes = found.Count;
+        return o;
+    }
+
+    /// <summary>Where two feature lines cross at heights more than a millimetre apart (Î7): the place, the height that holds (line <see cref="First"/>, drawn first) and the other's there.</summary>
+    public sealed record Clash(Vec2 At, double Held, double Other, int First, int Second);
+
+    /// <summary><see cref="Split(IReadOnlyList{IReadOnlyList{Vec3}}, out int)"/>, with each crossing where the heights disagreed.</summary>
+    public static List<List<Vec3>> Split(IReadOnlyList<IReadOnlyList<Vec3>> lines, out List<Clash> clashes)
+    {
+        clashes = [];
         var inserts = lines.Select(l => new List<(int Seg, double T, Vec3 P)>()).ToList();
         for (var i = 0; i < lines.Count; i++)
             for (var j = i + 1; j < lines.Count; j++)
@@ -297,16 +308,16 @@ public static class FeatureLines
                         if (t < -1e-12 || t > 1 + 1e-12 || u < -1e-12 || u > 1 + 1e-12) continue;
                         var at = a0 + (a1 - a0) * Math.Clamp(t, 0, 1);
                         var other = b0.Z + (b1.Z - b0.Z) * Math.Clamp(u, 0, 1);
-                        if (Math.Abs(other - at.Z) > 1e-3) clashes++;
+                        if (Math.Abs(other - at.Z) > 1e-3 && !clashes.Any(c => (c.At - at.Xy).Length < 1e-6)) clashes.Add(new Clash(at.Xy, at.Z, other, i, j));
                         inserts[i].Add((p, t, at));
                         inserts[j].Add((q, u, at));
                     }
             }
-        var o = new List<List<Vec3>>();
+        var outLines = new List<List<Vec3>>();
         for (var i = 0; i < lines.Count; i++)
         {
             var l = lines[i];
-            if (inserts[i].Count == 0) { o.Add([.. l]); continue; }
+            if (inserts[i].Count == 0) { outLines.Add([.. l]); continue; }
             var bySeg = inserts[i].GroupBy(x => x.Seg).ToDictionary(g => g.Key, g => g.OrderBy(x => x.T).ToList());
             var pts = new List<Vec3>();
             for (var k = 0; k < l.Count; k++)
@@ -320,9 +331,84 @@ public static class FeatureLines
                     foreach (var x in on)
                         if (x.T > 1e-12 && x.T < 1 - 1e-12 && (pts[^1].Xy - x.P.Xy).Length > 1e-9) pts.Add(x.P);
             }
-            o.Add(pts);
+            outLines.Add(pts);
         }
-        return o;
+        return outLines;
+    }
+
+    /// <summary>The crossings on a terrain where its feature lines disagree (model heights), with the two lines' ids.</summary>
+    public static List<(Clash Clash, string Held, string Other)> Clashes(Entity terrain)
+    {
+        var on = OnTerrain(terrain);
+        if (on.Count < 2) return [];
+        var datum = terrain.Num("datum");
+        Split([.. on.Select(f => f.Points)], out List<Clash> found);
+        return [.. found.Select(c => (c with { Held = c.Held - datum, Other = c.Other - datum }, on[c.First].Id, on[c.Second].Id))];
+    }
+
+    /// <summary>
+    /// A terrain split in two (T2, Î8): each of its feature lines goes to the half it lies in; one across the cut (the line through
+    /// <paramref name="p"/> and <paramref name="q"/>) is cut there, as laid (its arcs in chords), every corner keeping its height
+    /// (the cut's at the line's height there), the part on the kept half keeping the line's id, each other part a line of its own.
+    /// </summary>
+    public static void FollowSplit(ICommandContext ctx, Entity was, string otherId, IReadOnlyList<Vec2> kept, IReadOnlyList<Vec2> other, Vec2 p, Vec2 q)
+    {
+        var ground = Terrains.Base(was);
+        foreach (var line in Of(ctx.Model, was.Id).ToList())
+        {
+            var s = SpecOf(line);
+            if (s.Corners.Count < 2) continue;
+            var z = CornerZ(s, v => ground.ElevationAt(v.X, v.Y));
+            var laid = Line(s, z);
+            var d = q - p;
+            double Side(Vec2 v) => Vec2.Cross(d, v - p);
+            bool InOther(Vec2 v) => !Polygon2.Contains(kept, v) && Polygon2.Contains(other, v);
+            // Cut where it crosses the line, then gathered into runs by the half each piece's middle lies in.
+            var runs = new List<(bool Other, List<Vec3> Pts)>();
+            for (var i = 0; i + 1 < laid.Count; i++)
+            {
+                var (a, b) = (laid[i], laid[i + 1]);
+                var cuts = new List<Vec3> { a };
+                var (sa, sb) = (Side(a.Xy), Side(b.Xy));
+                if (sa * sb < 0) cuts.Add(a + (b - a) * (sa / (sa - sb)));
+                cuts.Add(b);
+                for (var k = 0; k + 1 < cuts.Count; k++)
+                {
+                    var half = InOther((cuts[k].Xy + cuts[k + 1].Xy) * 0.5);
+                    if (runs.Count == 0 || runs[^1].Other != half) runs.Add((half, [cuts[k]]));
+                    runs[^1].Pts.Add(cuts[k + 1]);
+                }
+            }
+            if (runs.All(r => !r.Other)) continue;
+            if (runs.All(r => r.Other))
+            {
+                var moved = line.CloneAttrs();
+                moved[TerrainKey] = otherId;
+                ctx.Replace(line.With(attrs: moved));
+                continue;
+            }
+            // A closed line cut becomes open runs; the last joins the first when they are on the same half.
+            if (s.Closed && runs.Count > 2 && runs[0].Other == runs[^1].Other)
+            {
+                runs[0] = (runs[0].Other, [.. runs[^1].Pts.Take(runs[^1].Pts.Count - 1), .. runs[0].Pts]);
+                runs.RemoveAt(runs.Count - 1);
+            }
+            var first = true;
+            var storey = Spatial.StoreyOf(ctx.Model, line.Id)?.Id;
+            foreach (var (half, pts) in runs.Where(r => r.Pts.Count >= 2).OrderBy(r => r.Other))
+            {
+                var attrs = line.CloneAttrs();
+                attrs[TerrainKey] = half ? otherId : was.Id;
+                attrs.Remove("arcs"); attrs.Remove("grades"); attrs.Remove("closed");
+                var own = s.Elevation != null || s.Drape;
+                attrs["points"] = PointsJson([.. pts.Select(v => v.Xy)], [.. pts.Select(v => own ? (double?)null : R(v.Z))]);
+                if (first && !half) { ctx.Replace(line.With(attrs: attrs)); first = false; continue; }
+                var e = new Entity(ctx.NewId(), Class, line.Name, attrs);
+                ctx.Add(e);
+                if (storey != null) Spatial.Contain(ctx, storey, e.Id);
+            }
+            if (first) ctx.Remove(line.Id);
+        }
     }
 
     /// <summary>The segments of lines in a plan grid, to tell the points within a distance of any of them without trying them all.</summary>
@@ -413,6 +499,19 @@ public static class FeatureLines
             var lengths = new JsonArray();
             for (var k = 0; k < s.Segments; k++) lengths.Add((JsonNode)Math.Round(s.Edge(k).Length, 6));
             props["segmentLengths"] = lengths;
+            // Where it crosses another line of its terrain at another height (Î7): the place, the height that holds, its own there, the other line.
+            if (model.Get(entity.Str(TerrainKey) ?? "") is { } t && Terrains.IsTerrain(t))
+            {
+                var clashes = new JsonArray();
+                foreach (var (c, held, other) in Clashes(t))
+                    if (held == entity.Id || other == entity.Id)
+                        clashes.Add((JsonNode)new JsonObject
+                        {
+                            ["x"] = Math.Round(c.At.X, 4), ["y"] = Math.Round(c.At.Y, 4), ["held"] = Math.Round(c.Held, 4), ["other"] = Math.Round(c.Other, 4),
+                            ["holds"] = held == entity.Id, ["with"] = held == entity.Id ? other : held,
+                        });
+                if (clashes.Count > 0) props["clashes"] = clashes;
+            }
         }
     }
 
@@ -618,7 +717,8 @@ public static class FeatureLines
             var drag = to - from;
             if (drag.Length < 1e-6) throw new CommandException("The contour was not moved.");
             var reach = Json.Number(a["reach"]) is { } rv && rv > 0 ? rv : Math.Max(2, 3 * drag.Length);
-            if (reach <= drag.Length * 1.0001) throw new CommandException($"The reach ({reach:0.##} m) must be longer than the drag ({drag.Length:0.##} m).");
+            // The field folds the ground over itself where it changes faster than the drag (its steepest is 2/R): a reach of twice the drag at least.
+            if (reach < 2 * drag.Length) throw new CommandException($"The reach ({reach:0.##} m) must be twice the drag ({drag.Length:0.##} m) at least, or the ground would fold over itself.");
             Entity? line = (string?)a["lineId"] is { } lid ? Require(m, lid) : null;
             var t = line != null ? TerrainOf(m, line) : Terrains.Require(m, (string?)a["id"] ?? (string?)a["terrainId"] ?? Terrains.Under(m, from)?.Id);
             var ground = Terrains.Of(t);
@@ -654,10 +754,13 @@ public static class FeatureLines
             else id = line.Id;
             if (m.Get(id) is { } existing && existing == line)
             {
-                // A feature line dragged: its corners by the same field (its arcs as they were).
-                var s = SpecOf(line);
+                // A feature line dragged: its corners by the same field (its arcs as they were). Its straight segments within the reach
+                // get corners every eighth of the reach first, so the line bends with the ground as the field does, not as a chord.
+                var s = Densified(SpecOf(line), from, reach);
                 var attrs = line.CloneAttrs();
                 attrs["points"] = PointsJson([.. s.Corners.Select(Moved)], s.Z);
+                if (s.Rises.Any(r => Math.Abs(r) > 1e-12)) attrs["arcs"] = new JsonArray([.. s.Rises.Select(r => (JsonNode)r)]); else attrs.Remove("arcs");
+                WriteGrades(attrs, s.Grades);
                 ctx.Replace(line.With(attrs: attrs));
             }
             // The ground within the reach follows: its points take the height from where the field carries them.
@@ -732,6 +835,40 @@ public static class FeatureLines
         if (r >= reach) return 0;
         var o = reach - r;
         return o * o / (o * o + r * r);
+    }
+
+    /// <summary>
+    /// A line with corners added on its straight segments that come within <paramref name="reach"/> of <paramref name="at"/>, one every
+    /// eighth of the reach, each at the height between its segment's ends (none of its own when they have none); a segment with a grade
+    /// or an arc is left as it is. The line in space is the same.
+    /// </summary>
+    public static Spec Densified(Spec s, Vec2 at, double reach)
+    {
+        var step = reach / 8;
+        var corners = new List<Vec2>();
+        var zs = new List<double?>();
+        var rises = new List<double>();
+        var grades = new List<double?>();
+        var n = s.Corners.Count;
+        for (var k = 0; k < n; k++)
+        {
+            corners.Add(s.Corners[k]);
+            zs.Add(s.Z[k]);
+            if (k >= s.Segments) break;
+            var (a, b) = (s.Corners[k], s.Corners[(k + 1) % n]);
+            var len = (b - a).Length;
+            var split = Math.Abs(s.Rises[k]) <= 1e-12 && s.Grades[k] == null && Polyline2.SegmentDistance(at, a, b) < reach && len > step;
+            var parts = split ? (int)Math.Ceiling(len / step) : 1;
+            for (var q = 1; q < parts; q++)
+            {
+                var f = (double)q / parts;
+                corners.Add(a + (b - a) * f);
+                zs.Add(s.Z[k] is { } z0 && s.Z[(k + 1) % n] is { } z1 ? R(z0 + (z1 - z0) * f) : null);
+                rises.Add(0); grades.Add(null);
+            }
+            rises.Add(s.Rises[k]); grades.Add(s.Grades[k]);
+        }
+        return s with { Corners = corners, Z = zs, Rises = [.. rises], Grades = [.. grades] };
     }
 
     /// <summary>

@@ -197,6 +197,8 @@ public static class SiteCommands
                     ctx.AddRelation(new Relation(ctx.NewId(), rel.Class, second.Id, moving));
                 }
             }
+            // Its feature lines go to the half they lie in; one across the cut is cut there, each part to its half (T2, Î8).
+            FeatureLines.FollowSplit(ctx, t, second.Id, lc, rc, p, q);
             return new JsonObject { ["ids"] = new JsonArray(t.Id, second.Id) };
         });
 
@@ -296,6 +298,13 @@ public static class SiteCommands
             {
                 foreach (var rel in ctx.Model.RelationsOf(tr.Id).Where(x => x.Relating == tr.Id).ToList())
                     ctx.ReplaceRelation(rel with { Relating = primary.Id });
+                // Its feature lines are the merged terrain's (T2).
+                foreach (var fl in FeatureLines.Of(ctx.Model, tr.Id).ToList())
+                {
+                    var fa = fl.CloneAttrs();
+                    fa[FeatureLines.TerrainKey] = primary.Id;
+                    ctx.Replace(fl.With(attrs: fa));
+                }
                 ctx.Remove(tr.Id);
             }
             var result = new JsonObject { ["id"] = primary.Id, ["points"] = pts.Count };

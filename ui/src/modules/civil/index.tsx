@@ -21,10 +21,10 @@ import { formatLength, levelUnit, parseLevel, unitName } from '../../engine/unit
 import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './survey';
 import { TerrainSection } from './TerrainSection';
 import { FeatureLineSection } from './FeatureLineSection';
-import { contourAt, dragContour, featureLine, featureLineGrips, featureLineGrips3d, featureLineRefs } from './featureLineTools';
+import { contourAt, dragContour, featureLine, featureLineGrips, featureLineGrips3d } from './featureLineTools';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
 import { isDitch, setBrush, useBrush, useTerrainEdit, type BrushKind } from './prefs';
-import { MAX_POINT_GRIPS, decorateCornerGrips, terrainBase, terrainPlanPointGrips, terrainPointGrips } from './pointGrips';
+import { MAX_POINT_GRIPS, decorateCornerGrips, terrainPlanPointGrips, terrainPointGrips } from './pointGrips';
 import { useCamera } from '../../viewport/camera';
 import { EntourageSection, entourage, entourageRow, useEntouragePrefs } from './entourage';
 import { lazyPart } from '../../platform/lazyPart';
@@ -505,7 +505,8 @@ const civil: LapinModule = {
         ...(edit && view?.view ? terrainPlanPointGrips(n, useCamera.getState().target, askPointElevation) : []),
       ];
     },
-    LapinFeatureLine: featureLineGrips,
+    // In a plan only (it names its view): in 3D a corner's plan grips would stand on the storey's level, under the ground; there it has its height grips.
+    LapinFeatureLine: (n: NodeDto, view?: GripView) => (view?.view ? featureLineGrips(n) : []),
     IfcPavement: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updatePath', args: { id: n.id, points: toPairs(pts) } })),
     LapinRetainingWall: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateRetainingWall', args: { id: n.id, points: toPairs(pts) } })),
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? outlineGrips({ pts }, (o) => ({ command: 'civil.updatePlanting', args: { id: n.id, points: toPairs(o.pts) } })) : []; },
@@ -513,13 +514,13 @@ const civil: LapinModule = {
   grips3d: {
     // A terrain's survey points, while "edit in 3D" is on: the MAX_POINT_GRIPS nearest the view's centre (pointGrips.ts).
     IfcGeographicElement: (n: NodeDto): Grip3D[] =>
-      useTerrainEdit.getState().editPoints ? terrainPointGrips(n, useCamera.getState().target, terrainBase(n), MAX_POINT_GRIPS, useTerrainEdit.getState().gripMode) : [],
+      useTerrainEdit.getState().editPoints ? terrainPointGrips(n, useCamera.getState().target, 0, MAX_POINT_GRIPS, useTerrainEdit.getState().gripMode) : [],
     // A feature line's corners: a height grip on each.
     LapinFeatureLine: featureLineGrips3d,
   },
   references: {
     IfcEarthworksCut: (n: NodeDto) => { if (isDitch(n)) return pathRefs(n); const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts, arcsOf(n.props.arcs, pts.length))] : []; },
-    LapinFeatureLine: featureLineRefs,
+    // None for a feature line: a reference stands on the storey's level, and in 3D it would run under the ground (the line is drawn itself in plan and in 3D).
     IfcPavement: pathRefs,
     LapinRetainingWall: pathRefs,
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts)] : []; },

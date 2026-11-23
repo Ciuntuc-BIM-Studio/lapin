@@ -34,6 +34,8 @@ export function FeatureLineSection({ node }: { node: NodeDto }) {
   const editable = node.editable;
   const update = (args: Record<string, unknown>) => void execute('civil.updateFeatureLine', { id: node.id, ...args });
   const unit = levelUnit();
+  // Crossings with another line of the terrain at another height (decision Î7): the engine sends them with the node.
+  const clashes = (Array.isArray(node.props.clashes) ? node.props.clashes : []) as { x: number; y: number; held: number; other: number; holds: boolean; with: string }[];
 
   const setHeight = (i: number, text: string) => {
     const z = parseLevel(text);
@@ -112,6 +114,17 @@ export function FeatureLineSection({ node }: { node: NodeDto }) {
             <option value="end">its end</option>
           </select>
         </dd>
+        {clashes.length > 0 && <>
+          <dt>Crossings</dt>
+          <dd data-testid="feature-line-clashes">
+            {clashes.map((c, i) => (
+              <div key={i} className="small">
+                ({formatLength(c.x, 'm')}, {formatLength(c.y, 'm')}) <span className={c.holds ? '' : 'warn'}>{c.holds ? 'holds here' : 'bends here'}</span>: {formatLength(c.held, unit)} / {formatLength(c.other, unit)}{nodes.get(c.with) ? <> · {nodes.get(c.with)!.name}</> : null}
+              </div>
+            ))}
+            <div className="muted small">Where two lines cross at different heights the one drawn first holds; the plan marks each crossing with both heights.</div>
+          </dd>
+        </>}
       </dl>
       <table data-testid="feature-line-corners">
         <tbody>{rows}</tbody>

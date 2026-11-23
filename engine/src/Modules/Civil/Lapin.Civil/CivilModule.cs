@@ -368,6 +368,16 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 var mid = new Vec2(o.Average(p => p.X), o.Average(p => p.Y));
                 mk.Text(new PenText(mid, $"{pad.Name} {Standards.FormatLevel(pad.Num("elevation"), c.Book)}", text.Height, 0, "middle", "middle", true, text.Font), "#000000");
             }
+            // Feature lines crossing at different heights (Î7): a red cross at each, the height that holds and the other's.
+            foreach (var (cl, _, _) in FeatureLines.Clashes(e))
+            {
+                var rr = 1.5 * c.Mm;
+                var at = cl.At;
+                mk.Line(at + new Vec2(-rr, -rr), at + new Vec2(rr, rr), "LEVELS", Pens.Default.Cut, "#c0392b");
+                mk.Line(at + new Vec2(-rr, rr), at + new Vec2(rr, -rr), "LEVELS", Pens.Default.Cut, "#c0392b");
+                mk.Text(new PenText(at + new Vec2(rr * 1.3, rr * 0.4), $"{Standards.FormatLevel(cl.Held, c.Book)} / {Standards.FormatLevel(cl.Other, c.Book)}", text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#c0392b");
+                mk.Snaps.Add(at);
+            }
             // Spot levels: a cross and the designed ground's height beside it.
             var r = 1.2 * c.Mm;
             foreach (var p in Terrains.Spots(e))

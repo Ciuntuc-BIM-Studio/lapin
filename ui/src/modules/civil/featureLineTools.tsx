@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 import { Grab, LineSquiggle, Waypoints } from 'lucide-react';
-import type { Grip, Grip3D, GripStep, RefLine, ToolDef, Vec2 } from '../../platform/module';
+import type { Grip, Grip3D, GripStep, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { notify } from '../../app/store';
 import { promptText } from '../../shell/prompts';
@@ -185,12 +185,6 @@ export function flatten(l: FLine): Vec2[] {
   out.push(l.closed ? l.pts[0] : l.pts[n - 1]);
   return out;
 }
-
-/** The line drawn over a selected feature line. */
-export const featureLineRefs = (n: NodeDto): RefLine[] => {
-  const l = lineOf(n.props);
-  return l.pts.length >= 2 ? [{ points: flatten(l), closed: false, kind: 'axis' }] : [];
-};
 
 /** A corner's height typed, as one engine command. */
 const heightStep = (id: string, i: number, now: number | null): GripStep | null => {

@@ -175,7 +175,7 @@ public static class Terrains
         FeatureLines.Near? near = null;
         if (featured.Count > 0)
         {
-            foreach (var line in FeatureLines.Split([.. featured.Select(f => f.Points)], out _))
+            foreach (var line in FeatureLines.Split([.. featured.Select(f => f.Points)], out int _))
                 for (var i = 0; i < line.Count; i++) { if (i > 0) segments.Add((all.Count - 1, all.Count)); all.Add(line[i]); }
             near = new FeatureLines.Near(featured.Select(f => (f.Points, f.Tolerance)));
         }
@@ -588,8 +588,9 @@ public static class Terrains
         {
             if (FeatureLines.Dropped(e) is var dropped and > 0)
                 problems.Add($"{dropped} survey point(s) lie within a feature line's tolerance of it: they are left out of the triangulation, the line holds there.");
-            FeatureLines.Split([.. FeatureLines.OnTerrain(e).Select(f => f.Points)], out var clashes);
-            if (clashes > 0) problems.Add($"{clashes} crossing(s) of feature lines at different heights: the line drawn first holds there, the other bends to it.");
+            // Î7: the line drawn first holds; each crossing is marked in plan too, with its two heights.
+            foreach (var (c, held, other) in FeatureLines.Clashes(e).Take(10))
+                problems.Add($"Feature lines cross at ({c.At.X:0.00}, {c.At.Y:0.00}) at different heights: {m.Get(held)?.Name ?? "one"} holds {c.Held:0.000}, {m.Get(other)?.Name ?? "the other"} would be {c.Other:0.000} and bends to it.");
         }
         var works = new List<Earthwork>();
         var pads = PadShapes(m, e, t, baseZ);

@@ -250,6 +250,8 @@ public sealed class FeatureLineTests
             Assert.Equal(expected, after[i].Z, 9);
             Assert.Equal(before[i].Xy, after[i].Xy);
         }
+        // A reach shorter than twice the drag would fold the ground: refused.
+        Assert.Throws<CommandException>(() => f.Run("civil.dragContour", new JsonObject { ["id"] = t, ["elevation"] = 1, ["from"] = P(10, 20), ["to"] = P(13, 20), ["reach"] = 5 }));
         // Shepard between the grab and the reach's edge: 1, ½ halfway, 0 at the reach.
         Assert.Equal(1, FeatureLines.Shepard(0, reach), 12);
         Assert.Equal(0.5, FeatureLines.Shepard(5, reach), 12);
@@ -276,6 +278,9 @@ public sealed class FeatureLineTests
         var r = f.Run("civil.dragContour", new JsonObject { ["id"] = t, ["elevation"] = 1.5, ["from"] = P(15, 20), ["to"] = P(17, 20), ["reach"] = 8 })!;
         Assert.Equal(id, (string)r["id"]!);
         Assert.Single(f.Model.OfClass(FeatureLines.Class));
+        // Its straight run within the reach got corners every eighth of it, so it bends with the field: the grabbed place moved by the whole drag.
+        Assert.True(FeatureLines.SpecOf(f.Model.Get(id)!).Corners.Count > 8);
+        Assert.Contains(FeatureLines.SpecOf(f.Model.Get(id)!).Corners, c => (c - new Vec2(17, 20)).Length < 1e-6);
         // Its corners beyond the reach stayed; the ground at the grabbed point's new place is 1.5.
         var s = FeatureLines.SpecOf(f.Model.Get(id)!);
         Assert.Equal(new Vec2(15, 4), s.Corners[0]);
@@ -359,7 +364,53 @@ public sealed class FeatureLineTests
         var g = Ground(f, t);
         Assert.Contains(g.Tin.Points, p => (p.Xy - new Vec2(21, 21)).Length < 1e-9 && Math.Abs(p.Z - 2) < 1e-9);
         Assert.Equal(2, g.ElevationAt(25, 21)!.Value, 9);
-        Assert.Contains(f.Session.Geometry(t)!.Diagnostics!, d => d.Contains("crossing"));
+        // Î7: the terrain names the crossing and both heights; each line's props carry it; the plan marks it with both heights.
+        Assert.Contains(f.Session.Geometry(t)!.Diagnostics!, d => d.Contains("cross at (21.00, 21.00)") && d.Contains("2.000") && d.Contains("1.000"));
+        var second = f.Model.OfClass(FeatureLines.Class).Last();
+        var props = new JsonObject();
+        new FeatureLines.Props().Add(second, f.Model, props);
+        var clash = Assert.Single((JsonArray)props["clashes"]!)!;
+        Assert.False((bool)clash["holds"]!);
+        Assert.Equal(1, (double)clash["other"]!, 9);
+        var view = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        var d = (JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = view })!;
+        var texts = d["pens"]!.AsArray().OfType<JsonObject>().Where(p => p["texts"] != null)
+            .SelectMany(p => p["texts"]!.AsArray().OfType<JsonObject>()).Select(x => (string)x["text"]!).ToList();
+        Assert.Contains(texts, txt => txt.Contains("+2.00 / +1.00"));
+    }
+
+    [Fact]
+    public void A_terrain_split_sends_each_feature_line_to_its_half_and_cuts_one_across_the_cut()
+    {
+        var f = F();
+        var t = Field(f, (x, _) => 0.1 * x);
+        var across = Line(f, new JsonObject { ["points"] = Pts([4, 10, 1], [30, 10, 3]) });
+        var east = Line(f, new JsonObject { ["points"] = Pts([30, 30], [36, 34]), ["elevation"] = 3.3 });
+        var west = Line(f, new JsonObject { ["points"] = Pts([4, 30, 0.6], [8, 34, 0.8]) });
+        var ids = (JsonArray)f.Run("civil.splitTerrain", new JsonObject { ["id"] = t, ["x1"] = 24, ["y1"] = -5, ["x2"] = 24, ["y2"] = 45 })!["ids"]!;
+        var (kept, other) = ((string)ids[0]!, (string)ids[1]!);
+        Assert.Equal(kept, f.Model.Get(west)!.Str(FeatureLines.TerrainKey));
+        Assert.Equal(other, f.Model.Get(east)!.Str(FeatureLines.TerrainKey));
+        // The one across: its part on the kept half keeps its id, the other part is a line of its own; the cut at its height there.
+        var a = FeatureLines.SpecOf(f.Model.Get(across)!);
+        Assert.Equal(kept, f.Model.Get(across)!.Str(FeatureLines.TerrainKey));
+        var parts = f.Model.OfClass(FeatureLines.Class).Where(x => x.Str(FeatureLines.TerrainKey) == other && x.Id != east).ToList();
+        var b = FeatureLines.SpecOf(Assert.Single(parts));
+        var cut = 1 + 2 * 20.0 / 26;
+        Assert.Equal(new Vec2(4, 10), a.Corners[0]);
+        Assert.Equal(24, a.Corners[^1].X, 9);
+        Assert.Equal(cut, a.Z[^1]!.Value, 9);
+        Assert.Equal(24, b.Corners[0].X, 9);
+        Assert.Equal(cut, b.Z[0]!.Value, 9);
+        Assert.Equal(3, b.Z[^1]!.Value, 9);
+        // Each half is shaped by its own lines.
+        Assert.Equal(3.3, Terrains.Of(f.Model.Get(other)!).ElevationAt(33, 32)!.Value, 9);
+        Assert.Equal(1 + 2 * 23.0 / 26, Terrains.Of(f.Model.Get(other)!).ElevationAt(27, 10)!.Value, 9);
+        Assert.Equal(1.5, Terrains.Of(f.Model.Get(kept)!).ElevationAt(10.5, 10)!.Value, 9);
+        // Merged again: every line is the merged terrain's.
+        f.Run("civil.mergeTerrains", new JsonObject { ["ids"] = new JsonArray(kept, other) });
+        Assert.All(f.Model.OfClass(FeatureLines.Class), x => Assert.Equal(kept, x.Str(FeatureLines.TerrainKey)));
+        Assert.Equal(3.3, Terrains.Of(f.Model.Get(kept)!).ElevationAt(33, 32)!.Value, 9);
     }
 
     [Fact]
@@ -407,5 +458,36 @@ public sealed class FeatureLineTests
         Assert.True(tb.Attrs[FeatureLines.Derived] != null, string.Join(",", tb.Attrs.Select(kv => kv.Key)));
         Assert.Equal(2.5, Terrains.Of(tb).ElevationAt(25.3, 30)!.Value, 9);
         Assert.Equal(Terrains.Of(f.Model.Get(t)!).Tin.Triangles, Terrains.Of(tb).Tin.Triangles);
+    }
+}
+
+public sealed class FeatureLineFrameTests
+{
+    static JsonArray P(params double[] v) => new([.. v.Select(x => (JsonNode)x)]);
+
+    /// <summary>
+    /// A terrain and its feature line on a storey at +1.20 with a datum of 100: the terrain's body, the ground's heights and the
+    /// feature line's line in space all stand in the same frame, the model's heights (z − datum), whatever the storey's elevation:
+    /// the 3D view draws them, and their grips, without adding the storey's.
+    /// </summary>
+    [Fact]
+    public void On_a_storey_at_an_elevation_the_line_sits_on_the_terrain_s_own_surface()
+    {
+        var f = new Fixture(new ArchitectureModule(), new CivilModule());
+        f.Run("storey.update", new JsonObject { ["id"] = f.Storey, ["elevation"] = 1.2 });
+        var pts = new JsonArray();
+        for (var i = 0; i <= 10; i++) for (var j = 0; j <= 10; j++) pts.Add(P(i * 3.0, j * 3.0, 100 + 0.05 * i * 3 + 0.02 * j * 3));
+        var t = (string)f.Run("civil.addTerrain", new JsonObject { ["storeyId"] = f.Storey, ["points"] = pts, ["datum"] = 100 })!["id"]!;
+        var id = (string)f.Run("civil.addFeatureLine", new JsonObject { ["points"] = new JsonArray(P(4, 4), P(20, 9, 1.5), P(26, 25)) })!["id"]!;
+        var ground = Terrains.Of(f.Model.Get(t)!);
+        var body = f.Session.Geometry(t)!.Parts[0].Solid;
+        // The body's top is the ground's height (z − datum), not raised by the storey's 1.20.
+        Assert.Equal(0.05 * 30 + 0.02 * 30, body.Vertices.Max(v => v.Z), 6);
+        var line = Assert.Single(f.Session.Geometry(id)!.Lines!);
+        foreach (var p in line) Assert.Equal(ground.ElevationAt(p.X, p.Y)!.Value + 0.02, p.Z, 9);
+        // The corners as the interface gets them (cornerZ) are those heights too.
+        var cz = FeatureLines.CornerZ(FeatureLines.SpecOf(f.Model.Get(id)!), q => FeatureLines.GroundOf(f.Model, f.Model.Get(id)!)(q));
+        Assert.Equal(1.5, cz[1]!.Value, 12);
+        Assert.Equal(ground.ElevationAt(4, 4)!.Value, cz[0]!.Value, 9);
     }
 }
