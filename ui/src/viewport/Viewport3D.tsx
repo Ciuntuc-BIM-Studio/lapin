@@ -94,6 +94,8 @@ import { fineShown, useFineBodies } from './fineBodies';
 import { disposeUnderlays, sameSources, underlayGroup, underlaySources, type UnderlayBatch } from './underlays3d';
 import { PointCloudLayer, type Hierarchy, type Tile } from './pointClouds3d';
 import { SplatLayer, type SplatPage } from './splats3d';
+import { openCrop, startCalibrate } from '../modules/core/cloudCalibrate';
+import { cloudAt } from './scene3d';
 import { cloudSpecs, isCloudLink, setCloudStatus, setSplatsDrawn, type ViewCloud } from './pointClouds';
 import { copyArrays, displayQualityOf, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
 import { inWorld } from '../engine/instances';
@@ -1805,7 +1807,13 @@ export function Viewport3D() {
         if (id && pickable(nodes.get(id)) && !shownSelection(selected, nodes, relations).has(id)) pickByMods(id, modsOf(e), currentNavStyle());
       }
       const ui = useUi.getState();
-      openContextMenu(e.clientX, e.clientY, [...selectionItems(), ...temporaryItems(), ...viewSheetItems(ui.view === '3d' ? ui.view3dId ?? '3d' : null, useSession.getState().nodes)]);
+      // Near a point cloud's points (or a splat's centre): its own tools (G2 of docs/plan-gaussian-splats.md).
+      const cloud = ui.tool ? null : cloudAt({ camera: camRef, canvas: host, scene }, e.clientX, e.clientY);
+      const cloudItems = cloud ? [
+        { label: 'Calibrate scale…', onSelect: () => startCalibrate(cloud) },
+        { label: 'Crop point cloud…', onSelect: () => openCrop(cloud) },
+      ] : [];
+      openContextMenu(e.clientX, e.clientY, [...cloudItems, ...selectionItems(), ...temporaryItems(), ...viewSheetItems(ui.view === '3d' ? ui.view3dId ?? '3d' : null, useSession.getState().nodes)]);
     };
     renderer.domElement.addEventListener('pointerdown', onRightDown);
     renderer.domElement.addEventListener('contextmenu', onMenu);

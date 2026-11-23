@@ -650,27 +650,28 @@ const SDNF_TIMEOUT_MS = 30 * 60_000;
  * A mesh from another program into the open project as references (OBJ, STL, glTF, GLB: docs/plan-studio-editor.md);
  * Studio's Make Studio solid makes one editable. OBJ and STL say neither their unit nor which way is up: asked for.
  */
-export async function importMesh(): Promise<void> {
-  const exts = ['obj', 'stl', 'gltf', 'glb'];
-  const picked = isDesktop() ? null : await pickFile('Meshes', exts);
-  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'Meshes (OBJ, STL, glTF)', extensions: exts }]) : picked?.name ?? null;
+export async function importMesh(given?: { source: { name: string; path?: string; data?: string }; up?: string }): Promise<void> {
+  const exts = ['obj', 'stl', 'gltf', 'glb', 'ply'];
+  const picked = given || isDesktop() ? null : await pickFile('Meshes', exts);
+  const path = given ? given.source.path ?? given.source.name : isDesktop() ? await pickPath('open', undefined, [{ name: 'Meshes (OBJ, STL, glTF, PLY)', extensions: exts }]) : picked?.name ?? null;
   if (!path) return;
-  const name = path.split(/[\\/]/).pop() ?? path;
+  const name = given?.source.name ?? path.split(/[\\/]/).pop() ?? path;
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
-  // An OBJ or STL says neither its unit nor its up; any mesh comes in as references or, asked, editable (Studio solids).
+  // An OBJ, STL or PLY says neither its unit nor its up; any mesh comes in as references or, asked, editable (Studio solids).
   const { ask, choiceField } = await import('../shell/AskBox');
-  const units = ext === 'obj' || ext === 'stl';
+  const units = ext === 'obj' || ext === 'stl' || ext === 'ply';
+  const ups = [{ value: 'z', label: 'z (CAD, BIM)' }, { value: 'y', label: 'y (most 3D programs)' }, ...(ext === 'ply' ? [{ value: '-y', label: '−y (a 3DGS capture, MeshSplatting)' }] : [])];
   const r = await ask(`Import ${name}`, [
     ...(units ? [
       choiceField('scale', 'Its unit', ext === 'stl' ? '0.001' : '1', [{ value: '1', label: 'metres' }, { value: '0.01', label: 'centimetres' }, { value: '0.001', label: 'millimetres' }, { value: '0.0254', label: 'inches' }]),
-      choiceField('up', 'Up is its', ext === 'obj' ? 'y' : 'z', [{ value: 'z', label: 'z (CAD, BIM)' }, { value: 'y', label: 'y (most 3D programs)' }]),
+      choiceField('up', 'Up is its', given?.up ?? (ext === 'obj' ? 'y' : 'z'), ups),
     ] : []),
     choiceField('as', 'As', 'reference', [{ value: 'reference', label: 'references' }, { value: 'editable', label: 'editable (Studio solids)' }]),
   ]);
   if (!r) return;
   const options: Record<string, unknown> = { ...(units ? { scale: Number(r.scale), up: r.up } : {}), ...(r.as === 'editable' ? { editable: true } : {}) };
   const storeyId = activeStorey()?.id;
-  const source = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name, path };
+  const source = given ? given.source : picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name, path };
   // The model framed when it is in, unless the camera is moved meanwhile.
   const pose = poseKey();
   try {
@@ -745,6 +746,20 @@ export async function linkPointCloud(): Promise<void> {
       { command: 'pointcloud.link', args: { ...source, placement } }, { timeoutMs: LONG_TIMEOUT_MS });
     notify(`Linked ${name}: indexed in the background; Manage → Links shows how far.${res.notes.length ? ' ' + res.notes.join(' ') : ''}`);
   } catch (e) {
-    notify(e instanceof Error ? e.message : String(e));
+    const msg = e instanceof Error ? e.message : String(e);
+    // A PLY of faces (MeshSplatting's output, a photogrammetry model) is a mesh: offered as one (G2 of docs/plan-gaussian-splats.md).
+    if (msg.includes('holds a mesh')) {
+      const { ask: askMesh, choiceField: choice } = await import('../shell/AskBox');
+      const a = await askMesh(`${name} is a mesh`, [choice('as', 'Bring it in', 'mesh', [{ value: 'mesh', label: 'as a 3D mesh (Import mesh)' }, { value: 'points', label: 'its vertices, as a point cloud' }])]);
+      if (a?.as === 'mesh') { await importMesh({ source, up: '-y' }); return; }
+      if (a?.as === 'points') {
+        try {
+          await engine.call('doc.execute', { command: 'pointcloud.link', args: { ...source, placement, asPoints: true } }, { timeoutMs: LONG_TIMEOUT_MS });
+          notify(`Linked ${name}'s vertices as a point cloud.`);
+        } catch (e2) { notify(e2 instanceof Error ? e2.message : String(e2)); }
+      }
+      return;
+    }
+    notify(msg);
   }
 }

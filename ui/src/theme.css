@@ -3192,3 +3192,13 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 .profile-place .btn { padding: 3px 10px; }
 .profile-legend { white-space: nowrap; flex: none; }
 .profile-bar .profile-readout { min-width: 0; }
+
+/* A point cloud's crop on its row in Manage → Links (G2 of docs/plan-gaussian-splats.md). */
+.cloud-crop { margin: 6px 0; padding: 6px 8px; border: 1px solid var(--border, #d8d2c6); border-radius: 6px; }
+.cloud-crop .row-tools { display: flex; gap: 6px; margin-bottom: 6px; }
+.cloud-crop-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 10px; }
+.cloud-crop-fields label { display: flex; flex-direction: column; font-size: 11px; }
+.cloud-crop-fields input { width: 100%; }
+
+/* A tool's live measure in the 3D placing chip (Measure's running total, its area): never cut short. */
+.mode-chip .mode-info { flex: none; font-weight: 600; overflow: visible; }

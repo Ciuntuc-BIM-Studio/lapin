@@ -138,6 +138,17 @@ export const FAQ: Entry[] = [
     source: 'forum topic 237',
   },
   {
+    id: 'point-cloud-calibrate-crop',
+    q: ['How do I scale a point cloud or a splat capture to its true size?', 'How do I crop a point cloud or remove floaters?', 'How do I measure an area on a scan or a splat?', 'Can I import a MeshSplatting mesh?'],
+    qRo: ['Cum aduc un nor de puncte sau o captură de splats la mărimea reală?', 'Cum decupez un nor de puncte sau scot fragmentele plutitoare?', 'Cum măsor o arie pe o scanare sau pe un splat?', 'Pot importa o rețea MeshSplatting?'],
+    keywords: ['calibrate', 'calibration', 'scale', 'true', 'size', 'crop', 'box', 'floaters', 'clip', 'measure', 'area', 'perimeter', 'meshsplatting', 'mesh', 'ply', 'splat', 'cloud', 'scan',
+      'calibrez', 'scara', 'marime', 'decupez', 'decupare', 'cutie', 'arie', 'perimetru', 'retea', 'nor', 'escala', 'recortar', 'echelle', 'rogner', 'scala', 'ritaglia', 'massstab', 'zuschneiden', 'skala', 'przytnij', '裁剪', '校准'],
+    a: 'Manage → Links has, on a point cloud\'s row (splats or not), a ruler button: Calibrate scale. Click two points on the cloud a known distance apart (they snap to its points or a splat\'s centre) and type their true distance; the cloud grows or shrinks about the first point, in one undo step, and the place dialog shows the factor (Scale factor) where it can be typed too. The crop button beside it opens the cloud\'s crop box: Fit to cloud, then shrink its middle, sizes and turn; what is outside is hidden in 3D, plans, sections, snaps and exports, and Reset takes it off. Both are on the 3D view\'s right-click near the cloud too. Measure (ME) has an Area mode: in 3D, a closed outline of snapped points gives its area and perimeter in the plane that fits them. A PLY with faces (MeshSplatting\'s output) is a mesh: File → Import mesh… takes it (choose −y up for a 3DGS capture), and Link point cloud… offers that when given one.',
+    aRo: 'Manage → Links are, pe rândul unui nor de puncte (cu splats sau fără), un buton cu riglă: Calibrează scara. Dă clic pe două puncte ale norului aflate la o distanță cunoscută (se prind de punctele lui sau de centrul unui splat) și scrie distanța lor reală; norul crește sau se micșorează în jurul primului punct, într-un singur pas de anulare, iar dialogul de așezare arată factorul (Factor de scară), unde se poate și scrie. Butonul de decupare de lângă el deschide cutia de decupare a norului: Potrivește pe nor, apoi strânge mijlocul, mărimile și rotirea; ce e în afară se ascunde în 3D, planuri, secțiuni, snap-uri și exporturi, iar Resetează o scoate. Amândouă sunt și în meniul de clic dreapta al vederii 3D, lângă nor. Măsoară (ME) are modul Arie: în 3D, un contur închis de puncte prinse dă aria și perimetrul lui în planul care li se potrivește. Un PLY cu fețe (rezultatul MeshSplatting) e o rețea: Fișier → Importă rețea… îl ia (alege −y în sus pentru o captură 3DGS), iar Leagă nor de puncte… propune asta când primește unul.',
+    action: { label: 'Open Links', labelRo: 'Deschide Links', run: { kind: 'dialog', id: 'links' } },
+    source: 'forum topic 237',
+  },
+  {
     id: 'point-cloud-views',
     q: ['How do I trace walls over a point cloud in a plan?', 'Why is my point cloud not in the plan?', 'How do I hide the vegetation or the noise of a scan?', 'Can I snap to the points of a scan?'],
     qRo: ['Cum desenez pereți peste un nor de puncte în plan?', 'De ce nu apare norul de puncte în plan?', 'Cum ascund vegetația sau zgomotul unei scanări?', 'Pot face snap pe punctele unei scanări?'],

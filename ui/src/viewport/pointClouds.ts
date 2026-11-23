@@ -55,7 +55,8 @@ export function cloudSpecs(nodes: ReadonlyMap<string, NodeDto>, view?: Record<st
     const mode = (v.colorMode ?? n.props.colorMode) as ColorMode;
     out.push({
       id: n.id,
-      rev: JSON.stringify([n.props.key ?? null, n.props.placement ?? null]),
+      // Its crop too (G2): the engine sends only what is inside it, so a new box asks for the tiles again.
+      rev: JSON.stringify([n.props.key ?? null, n.props.placement ?? null, n.props.crop ?? null]),
       shown: n.props.visible !== false && n.props.in3d !== false && v.hidden !== true,
       halftone: n.props.halftone === true || v.halftone === true,
       colorMode: MODES.includes(mode) ? mode : 'rgb',

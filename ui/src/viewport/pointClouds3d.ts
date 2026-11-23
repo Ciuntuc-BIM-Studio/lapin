@@ -380,7 +380,16 @@ export class PointCloudLayer {
    * of the ray at a distance t along it (the cursor's tolerance in pixels as metres there), kept by the view's cuts.
    */
   pointsNear(ray: { origin: Vec3; dir: Vec3 }, reach: (t: number) => number, max = 8, kept: (p: Vec3) => boolean = () => true): Vec3[] {
-    const out: { p: Vec3; t: number }[] = [];
+    return this.near(ray, reach, kept).slice(0, max).map((q) => q.p);
+  }
+
+  /** The cloud whose drawn point is nearest the eye along the cursor's ray (the 3D view's menu: Calibrate scale…, Crop…), null when none. */
+  cloudNear(ray: { origin: Vec3; dir: Vec3 }, reach: (t: number) => number, kept: (p: Vec3) => boolean = () => true): string | null {
+    return this.near(ray, reach, kept)[0]?.id ?? null;
+  }
+
+  private near(ray: { origin: Vec3; dir: Vec3 }, reach: (t: number) => number, kept: (p: Vec3) => boolean): { p: Vec3; t: number; id: string }[] {
+    const out: { p: Vec3; t: number; id: string }[] = [];
     const { origin: o, dir: d } = ray;
     const sphere = new THREE.Sphere();
     for (const c of this.clouds.values()) {
@@ -406,12 +415,12 @@ export class PointCloudLayer {
           if (hidden.size && hidden.has(Math.min(31, cls[i]))) continue;
           const p = { x: pos[3 * i], y: pos[3 * i + 1], z: pos[3 * i + 2] };
           if (!kept(p)) continue;
-          out.push({ p, t: along });
+          out.push({ p, t: along, id: c.spec.id });
         }
       }
     }
     out.sort((a, b) => a.t - b.t);
-    return out.slice(0, max).map((q) => q.p);
+    return out;
   }
 
   dispose(): void {

@@ -157,6 +157,19 @@ export function cloudPointsNear(v: ViewRefs, ray: Ray3, tol = 10, max = 6): Vec3
   return layer.pointsNear(ray, reach, max, (p) => kept(new THREE.Vector3(p.x, p.y, p.z)));
 }
 
+/** The point cloud drawn under the cursor (its points or a splat's centre within `tol` px), for the 3D view's menu; null when none. */
+export function cloudAt(v: ViewRefs, clientX: number, clientY: number, tol = 12): string | null {
+  const layer = v.scene.current?.userData.pointClouds as PointCloudLayer | undefined;
+  const ray = rayAt(v, clientX, clientY);
+  const c = v.camera.current, r = v.canvas.current?.getBoundingClientRect();
+  if (!layer || !ray || !c || !r) return null;
+  const persp = c as THREE.PerspectiveCamera, ortho = c as THREE.OrthographicCamera;
+  const reach = persp.isPerspectiveCamera
+    ? ((k: number) => (t: number) => t * k)((2 * Math.tan((persp.fov * Math.PI) / 360) / r.height) * tol)
+    : ((m: number) => () => m)(((ortho.top - ortho.bottom) / ortho.zoom / r.height) * tol);
+  return layer.cloudNear(ray, reach, (p) => kept(new THREE.Vector3(p.x, p.y, p.z)));
+}
+
 /** The cursor in the 3D view, snapped (snap3d.ts): the edges near it, the body under it, the active level, the clouds' points. */
 export function snapAt(v: ViewRefs, clientX: number, clientY: number, o: { level: number; base?: Vec3 | null; lock?: Lock3; skip?: ReadonlySet<string>; points?: Vec3[]; axes?: readonly Axis3[] }): Snapped3 | null {
   const r = v.canvas.current?.getBoundingClientRect();
