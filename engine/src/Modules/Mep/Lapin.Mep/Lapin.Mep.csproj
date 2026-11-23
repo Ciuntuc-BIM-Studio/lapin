@@ -15,5 +15,7 @@
     <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
     <ProjectReference Include="$(LapinGeometryDir)Lapin.Geometry/Lapin.Geometry.csproj" Private="false" />
     <ProjectReference Include="../../Architecture/Lapin.Architecture/Lapin.Architecture.csproj" Private="false" />
+    <!-- Tags: the MEP module's Tag system makes Annotate's tags (Lapin.Drafting.Tags). -->
+    <ProjectReference Include="../../Drafting/Lapin.Drafting/Lapin.Drafting.csproj" Private="false" />
   </ItemGroup>
 </Project>

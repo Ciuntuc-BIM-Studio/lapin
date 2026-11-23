@@ -295,12 +295,31 @@ public static class Nodes
                 o.Add(new PlanItem("symbol", true, box));
                 break;
         }
-        // What a detector or a hydrant covers, a dashed circle round it: a "reach", drawn and printed but never picked, boxed or framed.
-        if (Coverage(e, role) is > 0 and var reach) o.Add(new PlanItem("reach", true, Circle(reach)));
         // The ports, as short ticks, so a run finds them by eye.
         foreach (var p in Ports(m, e))
             if (Math.Abs(p.Dir.Z) < 0.9) o.Add(new PlanItem("symbol", false, [p.At.Xy, p.At.Xy + p.Dir.Xy * 0.06]));
+        // In its system's colour; a fitting or a piece of equipment wholly over the plan's cut dashed as overhead. A terminal
+        // (a light, a diffuser, a detector on the ceiling) keeps its symbol whole, as MEP plans draw them.
+        var system = m.Get(e.Str("systemId") ?? "") is { Class: Systems.Class } sys ? sys : null;
+        var look = (system != null ? Systems.StyleOf(system) : SystemStyle.For(role.Ports.FirstOrDefault()?.Service ?? Services.Heating)).Line;
+        var spec = new Lapin.Drawing.LineStyleSpec(null, look.Color, null);
+        var bottom = StoreyZ(m, e) + Elevation(e, role);
+        (double, double)? heights = role.KindIn(system != null ? Systems.Service(system) : "") == "endpoint" || role.Kind == "endpoint" ? null
+            : role.IsRise ? (Math.Min(bottom, RiseTop(m, e)), Math.Max(bottom, RiseTop(m, e))) : (bottom, bottom + size.Z);
+        for (var i = 0; i < o.Count; i++)
+            if (o[i].Kind != "hit") o[i] = o[i] with { Style = spec, Heights = heights, AboveStyle = spec with { Pattern = look.AboveSpec.Pattern } };
+        // What a detector or a hydrant covers, a circle round it, pale and thin: a "reach", never picked, boxed or framed; drawn
+        // in a view as its coverage setting says (MepPlanInView: on the selected devices only, by default).
+        if (Coverage(e, role) is > 0 and var reach) o.Add(new PlanItem("reach", true, Circle(reach), Style: new(1, Pale(look.Color), null)));
         return o;
+    }
+
+    /// <summary>A colour paled towards white (a coverage circle's, under the plan's lines).</summary>
+    public static string Pale(string color, double by = 0.65)
+    {
+        if (color.Length != 7 || color[0] != '#' || !int.TryParse(color.AsSpan(1), System.Globalization.NumberStyles.HexNumber, null, out var rgb)) return "#c8c8c8";
+        int Mix(int c) => (int)Math.Round(c + (255 - c) * by);
+        return $"#{Mix((rgb >> 16) & 255):x2}{Mix((rgb >> 8) & 255):x2}{Mix(rgb & 255):x2}";
     }
 
     public static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)

@@ -337,6 +337,9 @@ public static partial class Runs
         var color = s.Service switch { Services.Heating => "#c0392b", Services.ColdWater => "#2e86de", Services.HotWater => "#e67e22", Services.Drainage => "#7f8c8d", Services.Electrical => "#f1c40f",
             Services.Gas => "#e1b12c", Services.FuelOil => "#8e5b3a", Services.FireAlarm => "#d35400", Services.FireWater => "#c0392b", _ => "#95a5a6" };
         var lines = s.Pair ? new[] { ("supply", Shift(line, s.Separation / 2)), ("return", Shift(line, -s.Separation / 2)) } : [("pipe", line)];
+        // On the plan: the system's colour and line type (the return's for a pair's return), dashed where the run lies over the cut.
+        var system = SystemOf(m, run);
+        var style = system != null ? Systems.StyleOf(system) : SystemStyle.For(s.Service);
         foreach (var (name, pts) in lines)
         {
             var (legs, bends) = Pipes.Fillet(pts, Math.Max(radius * 2 * s.BendRadius, radius * 2));
@@ -349,7 +352,9 @@ public static partial class Runs
                 for (var i = 1; i < bend.Count; i++)
                     if (Pipes.Tube(bend[i - 1], bend[i], radius, 0, "bend") is { } t) elbows.Add(t);
             if (elbows.Count > 0) parts.Add(new GeometryPart("Bends", color, Openings.Combine(elbows, "bend"), null, "bend:" + name));
-            plan.Add(new PlanItem("symbol", false, Spots(pts)));
+            var look = style.Of(name);
+            foreach (var (piece, lo, hi) in PlanPieces(pts))
+                plan.Add(new PlanItem("symbol", false, piece, Style: look.Spec) { Heights = (lo, hi), AboveStyle = look.AboveSpec });
         }
         // A tee where a branch leaves: a short stub across the trunk at the junction.
         foreach (var (branch, station) in BranchesOf(m, run.Id))
@@ -359,7 +364,8 @@ public static partial class Runs
             var across = new Vec3(-dir.Y, dir.X, 0);
             var centre = new Vec3(at.X, at.Y, z);
             if (Pipes.Tube(centre - across * (radius * 1.6), centre + across * (radius * 1.6), radius * 1.15, 0, "tee") is { } tee) parts.Add(new GeometryPart("Tee", color, tee, null, "tee:" + branch.Id));
-            plan.Add(new PlanItem("heavy", true, [at + across.Xy * 0.03, at - across.Xy * 0.03, at - across.Xy * 0.03 + dir * 0.03, at + across.Xy * 0.03 + dir * 0.03]));
+            plan.Add(new PlanItem("heavy", true, [at + across.Xy * 0.03, at - across.Xy * 0.03, at - across.Xy * 0.03 + dir * 0.03, at + across.Xy * 0.03 + dir * 0.03], Style: style.Line.Spec with { Pattern = null })
+                { Heights = (z, z), AboveStyle = style.Line.AboveSpec });
         }
         // Gas and fuel oil go through walls in sleeves: a short tube round the pipe across each wall it crosses, two ticks on the plan.
         foreach (var sleeve in Sleeves.Of(m, run, s, line))
@@ -367,8 +373,9 @@ public static partial class Runs
             if (Pipes.Tube(sleeve.A, sleeve.B, sleeve.Diameter / 2, 0, "sleeve") is { } tube) parts.Add(new GeometryPart("Sleeve", "#7f8c8d", tube, null, "sleeve:" + sleeve.WallId));
             var d = (sleeve.B.Xy - sleeve.A.Xy).Normalized();
             var n = new Vec2(-d.Y, d.X) * Math.Max(0.04, sleeve.Diameter);
-            plan.Add(new PlanItem("symbol", false, [sleeve.A.Xy + n, sleeve.A.Xy - n]));
-            plan.Add(new PlanItem("symbol", false, [sleeve.B.Xy + n, sleeve.B.Xy - n]));
+            var tick = style.Line.Spec with { Pattern = null };
+            plan.Add(new PlanItem("symbol", false, [sleeve.A.Xy + n, sleeve.A.Xy - n], Style: tick));
+            plan.Add(new PlanItem("symbol", false, [sleeve.B.Xy + n, sleeve.B.Xy - n], Style: tick));
         }
         plan.Add(new PlanItem("hit", false, Spots(line)));
         return new ElementGeometry(parts, plan, line.Select(p => p.Xy).ToList());
@@ -384,6 +391,25 @@ public static partial class Runs
     {
         var o = new List<Vec2>();
         foreach (var p in line) if (o.Count == 0 || (p.Xy - o[^1]).Length > 1e-9) o.Add(p.Xy);
+        return o;
+    }
+
+    /// <summary>
+    /// A 3D line as the plan draws it by its heights: its legs in plan (a vertical jog draws nothing), those that lie level at
+    /// one height joined into one piece, each with the heights it spans (a plan draws it overhead over its cut, beyond under its level).
+    /// </summary>
+    public static List<(List<Vec2> Points, double Lo, double Hi)> PlanPieces(List<Vec3> line)
+    {
+        var o = new List<(List<Vec2> Points, double Lo, double Hi)>();
+        for (var i = 1; i < line.Count; i++)
+        {
+            var (a, b) = (line[i - 1], line[i]);
+            if ((b.Xy - a.Xy).Length < 1e-9) continue;
+            var (lo, hi) = (Math.Min(a.Z, b.Z), Math.Max(a.Z, b.Z));
+            if (o.Count > 0 && o[^1] is var last && hi - lo < 1e-6 && last.Hi - last.Lo < 1e-6 && Math.Abs(last.Lo - lo) < 1e-6 && (last.Points[^1] - a.Xy).Length < 1e-9)
+                last.Points.Add(b.Xy);
+            else o.Add(([a.Xy, b.Xy], lo, hi));
+        }
         return o;
     }
 

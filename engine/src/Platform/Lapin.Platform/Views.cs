@@ -578,6 +578,10 @@ public static class Views
         var planCut = view.NumOrNull("cutHeight") ?? DefaultCut;
         IReadOnlyList<IPlanAtCut> atCut = plan && !site && Math.Abs(planCut - DefaultCut) > 1e-9 ? q.Services.All<IPlanAtCut>() : [];
         var planStorey = plan && storey != null && m.Get(storey) is { Class: IfcClass.BuildingStorey } ps ? ps : null;
+        // What a module draws of an element by the view (an MEP device's coverage, as the view or its system says).
+        IReadOnlyList<IPlanInView> inView = plan ? q.Services.All<IPlanInView>() : [];
+        // Where a symbol drawn by its heights (PlanItem.Heights) leaves the cut's reach: over the plan's cut, under its level (a plan seen from above).
+        (double Cut, double Floor)? reach = plan && !site && planStorey != null && view.Str("look") != "up" ? (Range(m, view).Cut, planStorey.Num("elevation")) : null;
         // In a plan the partial structure display and the finishes by kind of view rule what the cut plane cuts (decision 500):
         // a floor seen under it, a soffit over it, shows as it is, so a plan without the finishes still sees its floors.
         double? structureCut = plan && !site && planStorey != null && (style.Layers != "all" || vg.FinishesHidden.Count > 0) ? Range(m, view).Cut : null;
@@ -641,6 +645,7 @@ public static class Views
                     if (sh.Mode == null || sh.Mode == entourage) silhouettes.Add(new DrawSilhouette(sh, e.Id, e.Class, style.EntourageFill, thin));
             var symbolsHere = spanned ? span!.PlanOn(m, e, planStorey!) ?? g.Plan : Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey ? g.Plan : null;
             if (symbolsHere != null && !spanned && atCut.FirstOrDefault(x => x.Handles(e)) is { } hook && hook.PlanAt(m, e, planCut) is { } cutHere) symbolsHere = cutHere;
+            if (symbolsHere != null && inView.Count > 0 && inView.FirstOrDefault(x => x.Handles(e)) is { } drawsIn) symbolsHere = drawsIn.PlanIn(m, view, e, symbolsHere);
             if (view.Str("kind") == "plan" && !stored && Generator.SymbolicInPlan.Contains(e.Class) && symbolsHere != null)
                 foreach (var item in symbolsHere)
                 {
@@ -654,7 +659,14 @@ public static class Views
                     }
                     if (SymbolFill(item, e) is { } sf) { fills.Add(sf); continue; }
                     var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" => LineRole.Cut, "heavy" => LineRole.Cut, "dashed" or "reach" => LineRole.Hidden, "overhead" or "ridge" or "hip" or "valley" or "break" => LineRole.Overhead, _ => null };
-                    if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, item.Mode != null ? item.Style ?? thin : item.Style));
+                    var symbolStyle = item.Mode != null ? item.Style ?? thin : item.Style;
+                    // Drawn by where it lies (an MEP run on the ceiling): over the cut as overhead, under the level as beyond, in its style for that.
+                    if (role != null && item.Heights is { } hz && reach is { } rz && (hz.Lo > rz.Cut + 1e-6 || hz.Hi < rz.Floor - 1e-6))
+                    {
+                        role = hz.Lo > rz.Cut + 1e-6 ? LineRole.Overhead : LineRole.Beyond;
+                        symbolStyle = item.AboveStyle ?? (symbolStyle == null ? null : symbolStyle with { Pattern = null });
+                    }
+                    if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, symbolStyle));
                 }
         }
         return (parts, symbols, fills, texts);
