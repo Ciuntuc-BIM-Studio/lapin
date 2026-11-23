@@ -596,6 +596,8 @@ public static class Terrains
         {
             if (FeatureLines.Covered(e) is var covered and > 0)
                 problems.Add($"{covered} survey point(s) lie under a hardscape: they are left out of the triangulation, the ground there is its top.");
+            if (FeatureLines.Graded(e) is var graded and > 0)
+                problems.Add($"{graded} survey point(s) lie inside a grading: they are left out of the triangulation, the ground there is the grading's.");
             if (FeatureLines.Dropped(e) is var dropped and > 0)
                 problems.Add($"{dropped} survey point(s) lie within a feature line's tolerance of it: they are left out of the triangulation, the line holds there.");
             // Î7: the line drawn first holds; each crossing is marked in plan too, with its two heights.
@@ -664,7 +666,7 @@ public static class Terrains
         foreach (var sr in SubregionsOf(e))
             if (SubregionPart(t, sr, m) is { } part) parts.Add(part);
         if (e.Str("analysis") is { } kind && kind != "none" && Analysis.Of(m, e, kind) is { } analysis) parts.AddRange(Analysis.Overlay(analysis));
-        var g = new ElementGeometry(parts, Plan(e, t, pads.Select(p => (p.Outline, p.Z, p.Holes)).ToList(), DitchesOf(m, e.Id).ToList(), FeatureLines.Areas(e)), null, problems.Count > 0 ? problems : null);
+        var g = new ElementGeometry(parts, Plan(e, t, pads.Select(p => (p.Outline, p.Z, p.Holes)).ToList(), DitchesOf(m, e.Id).ToList(), FeatureLines.CoveringAreas(e)), null, problems.Count > 0 ? problems : null);
         Works.AddOrUpdate(g, works);
         SculptWorks.AddOrUpdate(g, new SculptVolume(sculptCut, sculptFill));
         return g;
@@ -802,6 +804,15 @@ public static class Terrains
     {
         var poly = ArcOutline.Points(sr.Contour, sr.Arcs);
         if (poly.Count < 3 || SubregionSurface(t, poly) is not { } subTin) return null;
+        return Skin(subTin, sr.Name, Materials.ColorOf(m, sr.Material), sr.Material, "subregion:" + sr.Id);
+    }
+
+    /// <summary>
+    /// A thin skin over a piece of ground (a subregion's, a grading's, T5): its triangles a hair above (15 mm) and below (5 mm),
+    /// closed round its edge, in its material; its coarser copies keep its own edges.
+    /// </summary>
+    public static GeometryPart? Skin(Tin subTin, string name, string color, string? material, string key)
+    {
         var n = subTin.Points.Count;
         var verts = new List<Vec3>(n * 2);
         foreach (var p in subTin.Points) verts.Add(new Vec3(p.X, p.Y, p.Z + 0.015));
@@ -814,8 +825,8 @@ public static class Terrains
             tris.Add((a, n + a, b));
             tris.Add((b, n + a, n + b));
         }
-        if (SolidFromMesh.Build(verts, tris, "subregion") is not { } skin) return null;
-        return new GeometryPart(sr.Name, Materials.ColorOf(m, sr.Material), skin, sr.Material, "subregion:" + sr.Id) { LodKeepsEdges = true };
+        if (SolidFromMesh.Build(verts, tris, key.StartsWith("subregion:", StringComparison.Ordinal) ? "subregion" : key) is not { } skin) return null;
+        return new GeometryPart(name, color, skin, material, key) { LodKeepsEdges = true };
     }
 
     /// <summary>Segments joined end to end into polylines (a contour's pieces, one per triangle, into its lines).</summary>

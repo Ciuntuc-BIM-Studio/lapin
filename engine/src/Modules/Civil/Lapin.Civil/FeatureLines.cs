@@ -499,7 +499,8 @@ public static class FeatureLines
         var m = ctx.Model;
         var lines = Of(m, terrain.Id).ToList();
         var hardscapes = Hardscapes.Of(m, terrain.Id).ToList();
-        if (lines.Count == 0 && hardscapes.Count == 0 && terrain.Attrs[Derived] == null) return;
+        var graded = Gradings.Of(m, terrain.Id).Any();
+        if (lines.Count == 0 && hardscapes.Count == 0 && !graded && terrain.Attrs[Derived] == null) return;
         var ground = Terrains.Base(terrain);
         var datum = terrain.Num("datum");
         var list = new JsonArray();
@@ -518,6 +519,8 @@ public static class FeatureLines
                 });
             list.Add((JsonNode)new JsonObject { ["id"] = h.Id, [AreaKey] = new JsonArray([.. ring.Select(p => (JsonNode)new JsonArray(p.X, p.Y))]) });
         }
+        // The gradings next (T5): their boundaries, rulings, edges, rays and daylight lines; the survey under them goes.
+        if (graded) foreach (var item in Gradings.Derived(m, terrain, ground, datum)) list.Add((JsonNode)item);
         foreach (var line in lines)
         {
             var s = SpecOf(line);
@@ -636,6 +639,14 @@ public static class FeatureLines
     /// <summary>The outlines a terrain's ground is covered by (its hardscapes', as it holds them).</summary>
     public static List<List<Vec2>> Areas(Entity terrain) =>
         [.. ((terrain.Attrs[Derived] as JsonArray)?.OfType<JsonObject>() ?? []).Select(o => PointLists.Xy(o[AreaKey]).ToList()).Where(a => a.Count >= 3)];
+
+    /// <summary>The areas a terrain's ground is covered in by its hardscapes (T4), not its graded ones (T5, ground still: their contours are drawn).</summary>
+    public static List<List<Vec2>> CoveringAreas(Entity terrain) =>
+        [.. ((terrain.Attrs[Derived] as JsonArray)?.OfType<JsonObject>() ?? []).Where(o => o[Gradings.GradedKey] == null).Select(o => PointLists.Xy(o[AreaKey]).ToList()).Where(a => a.Count >= 3)];
+
+    /// <summary>The areas of a terrain's gradings (T5), as it holds them.</summary>
+    public static List<List<Vec2>> GradedAreas(Entity terrain) =>
+        [.. ((terrain.Attrs[Derived] as JsonArray)?.OfType<JsonObject>() ?? []).Where(o => o[Gradings.GradedKey] != null).Select(o => PointLists.Xy(o[AreaKey]).ToList()).Where(a => a.Count >= 3)];
 
     /// <summary>Whether a point in plan lies inside any of the areas.</summary>
     public static bool InAreas(List<List<Vec2>> areas, Vec2 p) => areas.Count > 0 && areas.Any(a => Polygon2.Contains(a, p));
@@ -819,8 +830,17 @@ public static class FeatureLines
     /// <summary>The survey points under a terrain's hardscapes (T4), left out of its triangulation: the ground there is their top.</summary>
     public static int Covered(Entity terrain)
     {
-        var areas = Areas(terrain);
+        var areas = CoveringAreas(terrain);
         return areas.Count == 0 ? 0 : Terrains.Points(terrain).Count(p => InAreas(areas, p.Xy));
+    }
+
+    /// <summary>The survey points inside a terrain's gradings (T5), not under a hardscape: left out, the ground there is the grading's.</summary>
+    public static int Graded(Entity terrain)
+    {
+        var areas = GradedAreas(terrain);
+        if (areas.Count == 0) return 0;
+        var covering = CoveringAreas(terrain);
+        return Terrains.Points(terrain).Count(p => InAreas(areas, p.Xy) && !InAreas(covering, p.Xy));
     }
 
     // ─── The element ────────────────────────────────────────────────────
@@ -947,6 +967,12 @@ public static class FeatureLines
                 foreach (var x in new[] { ch.Before, ch.After })
                     if (x != null && Is(x) && x.Str(TerrainKey) is { } tid) (touched ??= []).Add(tid);
                 if ((ch.After ?? ch.Before) is { } t && Terrains.IsTerrain(t) && GroundChanged(ch.Before, ch.After)) (touched ??= []).Add(t.Id);
+                // A grading changed (T5): its terrain, and the one it was on.
+                foreach (var x in new[] { ch.Before, ch.After })
+                    if (x != null && Gradings.Is(x) && x.Str(Gradings.TerrainKey) is { } gt) (touched ??= []).Add(gt);
+                // Something a grading follows changed (a hardscape, a feature line, a platform, a path's line): the grading's terrain.
+                if ((ch.After ?? ch.Before) is { } src && !Gradings.Is(src))
+                    foreach (var g in Gradings.Following(ctx.Model, src.Id)) if (g.Str(Gradings.TerrainKey) is { } ft) (touched ??= []).Add(ft);
                 // A hardscape changed (T4): every terrain it is, or was, cut into gets its edges again.
                 if ((ch.After ?? ch.Before) is { } h && Hardscapes.Is(h))
                     foreach (var t2 in Terrains.All(ctx.Model))
@@ -958,6 +984,9 @@ public static class FeatureLines
             if (touched == null) return result;
             foreach (var id in touched)
                 if (ctx.Model.Get(id) is { } t && Terrains.IsTerrain(t)) Refresh(ctx, t);
+            // Its gradings written to IFC as the earthwork they now mostly are (T5).
+            foreach (var id in touched)
+                foreach (var g in Gradings.Of(ctx.Model, id).ToList()) Gradings.Classify(ctx, g);
             return result;
         }
 

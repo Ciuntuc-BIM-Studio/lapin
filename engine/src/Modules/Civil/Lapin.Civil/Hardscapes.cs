@@ -339,6 +339,7 @@ public static class Hardscapes
         r.Service<IElementPlacement>(new Placement());
         r.Service<IElementRise>(new Rise());
         r.Service<IDeletionFollowers>(new Followers());
+        r.Service<IHostedPlacement>(new Hosted());
         r.Service<IDeletion>(new TypeDeletion());
         r.Service<IScheduleSource>(new Schedule());
         r.Catalog("hardscapeTypes", PresetsJson());
@@ -575,6 +576,24 @@ public static class Hardscapes
             TopSurface.Write(attrs, s with { Elevation = s.Elevation + dz, CornerZ = [.. s.CornerZ.Select(z => z is { } v ? v + dz : (double?)null)] });
             ctx.Replace(e.With(attrs: attrs));
             return true;
+        }
+    }
+
+    /// <summary>
+    /// A hardscape cut into a terrain is hosted by it (its IfcRelVoidsElement), so element.transform leaves it to its module: it is
+    /// moved, turned and mirrored as a standalone one is, still cut into its terrain (found with T5: moving it did nothing). A copy
+    /// is not made here.
+    /// </summary>
+    sealed class Hosted : IHostedPlacement
+    {
+        public bool Handles(IModelView m, Entity e) => Is(e) && TerrainOf(m, e) != null;
+
+        public IReadOnlyList<string> Transform(ICommandContext ctx, IReadOnlyList<Entity> elements, Placement2D t, bool copy)
+        {
+            if (copy) return [];
+            var moving = elements.Select(e => e.Id).ToHashSet();
+            foreach (var e in elements) if (ctx.Model.Get(e.Id) is { } now) Lapin.Platform.Placement.Transform(ctx, now, t, moving);
+            return [];
         }
     }
 

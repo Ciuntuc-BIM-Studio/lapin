@@ -115,6 +115,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         // Hardscapes, their types and kerbs (T4).
         Hardscapes.Register(r);
         PathTypes.Register(r);
+        // Grading between edges and slopes to the ground (T5).
+        Gradings.Register(r);
 
         // A terrain from points ([x, y, z]) or from a survey file's text (xyz or PENZD).
         r.Command("addTerrain", "Terrain", (ctx, a) =>
@@ -353,6 +355,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         var text = Standards.ResolveText(c.Book, new JsonObject());
         // The hardscapes (T4): their paving hatched as its material's surface looks, their level or their fall written in them.
         foreach (var mk in HardscapeMarks(c, storey, text)) yield return mk;
+        // The gradings (T5): their material hatched, a slope's hachures from its top down.
+        foreach (var mk in GradingMarks(c, storey)) yield return mk;
         foreach (var e in c.Model.OfClass(IfcClass.GeographicElement))
         {
             // A site plan shows every terrain; any other plan its own storey's.
@@ -566,6 +570,73 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                     label.Text(new PenText(top.Points[i] + (mid - top.Points[i]).Normalized() * (2.5 * c.Mm), Standards.FormatLevel(top.Z[i], c.Book), text.Height * 0.7, 0, "middle", "middle", false, text.Font), "#000000");
             label.Snaps.Add(mid);
             yield return label;
+        }
+    }
+
+    /// <summary>The layer a grading's hatch and a slope's hachures draw on (DXF, the PDF's groups).</summary>
+    public const string GradingLayer = "GRADING";
+
+    /// <summary>
+    /// A grading in a plan or a site plan: its material's surface hatch over it (grass), and on a slope the hachures of an
+    /// embankment or a cutting: ticks square across it from the top of the slope down, every 2.5 mm of the drawing, long and short
+    /// in turn (the short half as long), so the slope reads which way it falls; none where it changes from cut to fill.
+    /// </summary>
+    static IEnumerable<ViewMark> GradingMarks(ViewContext c, string? storey)
+    {
+        var m = c.Model;
+        var site = SitePlans.Of(c.View) != null;
+        var hidden = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        var graphics = VisibilityGraphics.Of(m, c.View);
+        var patterns = DraftingResources.Patterns(m);
+        var standard = MaterialStandards.Of(m);
+        var minSpacing = ViewStyles.Of(m, c.View).MinHatchSpacing;
+        foreach (var e in m.OfClass(Gradings.Class))
+        {
+            if (hidden.Contains(e.Id) || graphics.Hides(e) || (!site && Spatial.StoreyOf(m, e.Id)?.Id != storey)) continue;
+            var s = Gradings.ShapeOf(m, e);
+            if (s.Surface == null) continue;
+            var under = new ViewMark(null) { Under = true };
+            var material = m.Get(e.Str("material") ?? "");
+            var g = Lapin.Drawing.MaterialGraphics.Resolve(material, "elevation", material == null ? Gradings.Material : null, standard: standard);
+            if (g.Hatch is { } name && Lapin.Drawing.Hatch.HatchLibrary.Find(name, patterns) is { Solid: false } pattern
+                && Lapin.Drawing.Hatch.HatchScale.Lay(pattern, c.Scale, g.HatchScale, g.HatchAngle, null, 40_000, null, minSpacing) is { } laid)
+                foreach (var area in s.Areas())
+                {
+                    var (segs, _) = Lapin.Drawing.Hatch.HatchFill.Segments([area], pattern, laid);
+                    foreach (var sg in segs) under.Line(sg.A, sg.B, GradingLayer, Pens.Default.Hatch, g.HatchColor ?? "#6b8f4e");
+                }
+            if (under.Lines.Count > 0) yield return under;
+            if (s.Strips.Count == 0) continue;
+            var ticks = new ViewMark(e.Id);
+            var spacing = 2.5 * c.Mm;
+            foreach (var st in s.Strips)
+            {
+                var n = st.Origins.Count;
+                var quads = st.Closed ? n : n - 1;
+                var carry = spacing / 2;
+                var count = 0;
+                for (var i = 0; i < quads; i++)
+                {
+                    var j = (i + 1) % n;
+                    if (st.Cut[i] != st.Cut[j]) { carry = spacing / 2; continue; }
+                    // The top of the slope: the edge over a fill, the daylight line over a cut.
+                    var (t0, b0, t1, b1) = st.Cut[i] ? (st.Ends[i].Xy, st.Origins[i].Xy, st.Ends[j].Xy, st.Origins[j].Xy) : (st.Origins[i].Xy, st.Ends[i].Xy, st.Origins[j].Xy, st.Ends[j].Xy);
+                    var (m0, m1) = ((t0 + b0) * 0.5, (t1 + b1) * 0.5);
+                    var len = (m1 - m0).Length;
+                    var at = carry;
+                    for (; at <= len; at += spacing)
+                    {
+                        var u = len < 1e-12 ? 0 : at / len;
+                        var top = t0 + (t1 - t0) * u;
+                        var bottom = b0 + (b1 - b0) * u;
+                        if ((bottom - top).Length > 1e-6)
+                            ticks.Line(top, top + (bottom - top) * (count % 2 == 0 ? 1 : 0.5), GradingLayer, Pens.Default.Seen, Gradings.LineColor);
+                        count++;
+                    }
+                    carry = at - len;
+                }
+            }
+            if (ticks.Lines.Count > 0) yield return ticks;
         }
     }
 
