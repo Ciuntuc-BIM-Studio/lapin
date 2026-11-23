@@ -24,7 +24,7 @@ const useLineOptions = create<{ ground: boolean; closed: boolean; elevation: str
 export const useDragReach = create<{ text: string }>(() => ({ text: '' }));
 
 /** Arcs on or off for the edges drawn next (Space), as the outline tools' bar has it. */
-function ArcsToggle() {
+export function ArcsToggle() {
   const arcs = useOutlineShape((s) => s.arcs);
   return <button type="button" className={`cad-toggle${arcs ? ' on' : ''}`} data-shape="arcs" aria-pressed={arcs} title="The next edges are arcs, each going on tangent from the edge before" onClick={toggleOutlineArcs}>{arcs ? 'Arcs (Space)' : 'Lines (Space)'}</button>;
 }
@@ -70,7 +70,7 @@ function DragBar() {
 }
 
 /** The rises of the edges drawn: one per edge, 0 where straight; closed adds the closing edge, straight. */
-function risesOf(n: number, arcs: number[] | undefined, closed: boolean): number[] {
+export function risesOf(n: number, arcs: number[] | undefined, closed: boolean): number[] {
   const r = Array.from({ length: n - 1 }, (_, i) => arcs?.[i] ?? 0);
   return closed ? [...r, 0] : r;
 }
@@ -199,18 +199,22 @@ const heightStep = (id: string, i: number, now: number | null): GripStep | null 
  * bends it. Each edit is the line as `civil.updateFeatureLine` takes it, one undo step.
  */
 export function featureLineGrips(n: NodeDto): Grip[] {
+  return lineGrips(n, (next) => saveLine(n.id, next), (i, l) => [
+    { label: 'Set elevation…', run: () => heightStep(n.id, i, l.resolved[i]) },
+    { label: 'On the ground', run: () => ({ command: 'civil.setFeatureLinePoints', args: { id: n.id, indices: [i], ground: true } }) },
+  ]);
+}
+
+/** The same grips for any line kept as `points` and `arcs` (a channel, a standalone kerb): `save` says how an edited line is written back, `menu` what a corner's right-click offers. */
+export function lineGrips(n: NodeDto, save: (next: FLine) => GripStep, menu?: (i: number, l: FLine) => Grip['menu']): Grip[] {
   const l = lineOf(n.props);
   if (l.pts.length < 2) return [];
-  const save = (next: FLine) => saveLine(n.id, next);
   const grips: Grip[] = l.pts.map((p, i) => ({
     key: `v${i}`, kind: 'vertex' as const, at: p,
     title: 'Drag to move the corner · Ctrl/⌘-click: remove this corner',
     step: (to: Vec2) => save(moveCorner(l, i, to)),
     remove: () => { const next = removeCorner(l, i); return next ? save(next) : null; },
-    menu: [
-      { label: 'Set elevation…', run: () => heightStep(n.id, i, l.resolved[i]) },
-      { label: 'On the ground', run: () => ({ command: 'civil.setFeatureLinePoints', args: { id: n.id, indices: [i], ground: true } }) },
-    ],
+    ...(menu ? { menu: menu(i, l) } : {}),
   }));
   const count = l.arcs.length;
   for (let k = 0; k < count; k++) {

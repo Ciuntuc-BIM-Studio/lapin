@@ -26,7 +26,8 @@ export function arrayFieldShown(key: string, v: Answers): boolean {
     case 'lz': return kind === 'grid' && Number(v.levels) > 1;
     case 'angle': case 'centreBy': return kind === 'polar';
     case 'cx': case 'cy': return kind === 'polar' && typedCentre;
-    case 'spacing': case 'start': case 'end': case 'offset': case 'orient': case 'flip': return kind === 'path';
+    case 'spacing': case 'start': case 'end': case 'offset': case 'orient': case 'flip': case 'level': return kind === 'path';
+    case 'rise': return kind === 'path' && (v.level === 'ground' || v.level === 'line');
     default: return false;
   }
 }
