@@ -65,7 +65,7 @@ public static class Kerbs
     public static string CatalogueId(string shape) => shape switch { "bevelled" => "kerbBevelled", "rounded" => "kerbRounded", _ => "kerbUpright" };
 
     /// <summary>The profile cut down to a reveal: nothing above <paramref name="top"/> over the paving (consecutive points the same dropped).</summary>
-    static List<Vec2> Clamp(List<Vec2> p, double top)
+    public static List<Vec2> Clamp(List<Vec2> p, double top)
     {
         var o = new List<Vec2>();
         foreach (var q in p.Select(q => q.Y > top ? q with { Y = top } : q))
@@ -158,6 +158,8 @@ public static class Kerbs
 
     public static ElementGeometry? Geometry(Entity k, IModelView m, IServices _)
     {
+        // A kerb bound to no hardscape (T6): along its own line.
+        if (k.Str(HostKey) == null) return KerbLines.Geometry(k, m);
         if (m.Get(k.Str(HostKey) ?? "") is not { } host || !Hardscapes.Is(host)) return new ElementGeometry([], Diagnostics: ["The kerb's hardscape is not in the project."]);
         var material = k.Str("material");
         var color = material != null ? Materials.ColorOf(m, material) : Color;
@@ -167,6 +169,7 @@ public static class Kerbs
 
     public static IEnumerable<QuantitySet> Quantities(Entity k, ElementGeometry? g, IModelView m)
     {
+        if (k.Str(HostKey) == null) { foreach (var q in KerbLines.Quantities(k, g, m)) yield return q; yield break; }
         if (g == null || m.Get(k.Str(HostKey) ?? "") is not { } host) yield break;
         var c = Hardscapes.Corners(host);
         var rises = Hardscapes.Rises(host);
@@ -211,6 +214,18 @@ public static class Kerbs
         }
         if (drops.Any(d => d is < 0)) throw new CommandException("A dropped kerb's reveal is 0 or more above the paving.");
         if (drops.Any(d => d != null)) attrs["drops"] = new JsonArray([.. drops.Select(d => d is { } v ? (JsonNode)Math.Round(v, 6) : null)]); else attrs.Remove("drops");
+        ApplyShape(ctx, attrs, a);
+        if (had != null) { ctx.Replace(had.With(attrs: attrs)); return had.Id; }
+        var k = new Entity(ctx.NewId(), Class, $"{host.Name} kerb", attrs);
+        ctx.Add(k);
+        if (Spatial.StoreyOf(m, host.Id) is { } storey) Spatial.Contain(ctx, storey.Id, k.Id);
+        return k.Id;
+    }
+
+    /// <summary>A kerb's shape as a command gives it, over what it had: {height?, width?, depth?, shape?, profileId? ("" back to the shape), material?}.</summary>
+    public static void ApplyShape(ICommandContext ctx, JsonObject attrs, JsonObject a)
+    {
+        var m = ctx.Model;
         foreach (var key in new[] { "height", "width", "depth" })
             if (Json.Number(a[key]) is { } v)
             {
@@ -233,11 +248,6 @@ public static class Kerbs
         }
         if ((string?)a["material"] is { Length: > 0 } mat) attrs["material"] = Materials.Ensure(ctx, mat, "#a5a29b").Id;
         else if (attrs["material"] == null) attrs["material"] = Materials.Ensure(ctx, "Concrete kerb", "#a5a29b").Id;
-        if (had != null) { ctx.Replace(had.With(attrs: attrs)); return had.Id; }
-        var k = new Entity(ctx.NewId(), Class, $"{host.Name} kerb", attrs);
-        ctx.Add(k);
-        if (Spatial.StoreyOf(m, host.Id) is { } storey) Spatial.Contain(ctx, storey.Id, k.Id);
-        return k.Id;
     }
 
     /// <summary>Its edges' data run the other way round, as its hardscape mirrored is (<see cref="ArcOutline.RunBack"/>).</summary>
@@ -265,5 +275,7 @@ public static class Kerbs
             var host = Spatial.Require(ctx.Model, (string?)a["id"], Hardscapes.Class);
             return Kerbs.SetKerb(ctx, host, a) is { } id ? new JsonObject { ["id"] = id } : null;
         });
+        // Kerbs bound to no hardscape (T6).
+        KerbLines.Register(r);
     }
 }

@@ -9,7 +9,7 @@ import { ProfileButton } from './ProfileButton';
 import { useMemo, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
-import { useUi } from '../../app/store';
+import { notify, useUi } from '../../app/store';
 import { isDitch } from './prefs';
 import { t, useLang } from '../../i18n';
 import { groupedSpecies, speciesName, type Species } from './species';
@@ -61,6 +61,12 @@ export function EarthworkSection({ node }: { node: NodeDto }) {
       <dt>Elevation</dt><dd><Mm value={node.props.elevation} onCommit={(v) => set({ elevation: v })} /></dd>
       <dt>Cut slope</dt><dd>1 : <NumberField value={cutSlope} min={0} max={10} onCommit={(v) => { if (v != null) set({ cutSlope: v }); }} /></dd>
       <dt>Fill slope</dt><dd>1 : <NumberField value={fillSlope} min={0} max={10} onCommit={(v) => { if (v != null) set({ fillSlope: v }); }} /></dd>
+      {(cutSlope > 0 || fillSlope > 0) && <><dt /><dd><button type="button" className="btn compact" data-testid="platform-slopes-to-grading" disabled={!node.editable}
+        title="Its slopes become a grading: a slope to the ground from its outline, at the same 1:N, which you can then change on its own"
+        onClick={() => void execute('civil.platformSlopesToGrading', { id: node.id }).then((r) => {
+          const made = r as { id?: string; notes?: string[] } | null;
+          if (made?.id) { useUi.setState({ selected: [made.id] }); if (made.notes?.length) notify(made.notes[0]); }
+        })}>Convert slopes to grading</button></dd></>}
     </dl>
   );
 }

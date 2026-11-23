@@ -33,6 +33,8 @@ import { DimRefChoice } from '../../viewport/LineTempDims';
 import { WallTopOption, wallTopArgs } from './WallTop';
 import { JoinerySection } from './JoinerySection';
 import { SlabSection } from './SlabSection';
+import { FloorSlopesSection } from './FloorSlopesSection';
+import { floorChannel, floorDrain, floorEdgeSlope, floorSlopeArrow, floorSlopeLine, floorSlopePoint, floorSlopeRegion, slopeRoom } from './floorSlopes';
 import { LayerExtentsSection, hasLayerExtents } from './LayerExtentsSection';
 import { editLayers, editingLayersOf, layerGrips } from './layerEdit';
 import { LayerEditDrawing, LayerEditPlan, LayerEditWatcher } from './LayerEditOverlays';
@@ -724,6 +726,8 @@ const architecture: LapinModule = {
       { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
       { label: 'Joins', tools: [join], small: [mitreNew, filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
       { label: 'Room', tools: [room], small: [roomOutline, roomDividers, updateRooms, roomTag] },
+      // Floor slopes and falls (forum topic 157, docs/plan-floor-slopes.md): drains, edge slopes, level points and lines, regions, a room's.
+      { label: 'Slopes', tools: [floorDrain, floorEdgeSlope], small: [slopeRoom, floorChannel, floorSlopePoint, floorSlopeLine, floorSlopeArrow, floorSlopeRegion] },
       { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [...(sketchStairs() ? [stairBySketch] : []), entranceSteps, entranceRamp, underStair, underStairSchedule] },
       // Balconies (a tester's report, #96): by a wall's face in a style, by outline, a gallery's edge; the configurator, stacking, the schedule.
       { label: 'Balconies', tools: [balcony, balconyConfigurator], small: [balconyOutline, galleryEdge, stackBalconies, balconySchedule] },
@@ -762,6 +766,7 @@ const architecture: LapinModule = {
     { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
     { id: 'wallOpening', label: 'Opening', classes: ['IfcOpeningElement'], shows: isWallOpening, component: WallOpeningSection },
     { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },
+    { id: 'floorSlopes', label: 'Slopes', classes: ['IfcSlab'], component: FloorSlopesSection },
     { id: 'layerExtents', label: 'Layer extents', classes: ['IfcWall', 'IfcSlab', 'IfcWallType', 'IfcSlabType'], shows: hasLayerExtents, component: LayerExtentsSection },
     { id: 'paintedFinishes', label: 'Painted finishes', classes: ['IfcWall', 'IfcSlab', 'IfcColumn', 'IfcBeam'], shows: hasPaintedFinishes, component: PaintedFinishesSection },
     { id: 'downpipe', label: 'Downpipe', classes: ['LapinDownpipe'], component: DownpipeSection },

@@ -2909,6 +2909,77 @@ export const scenes = [
     },
   },
   {
+    // Floor slopes and falls (docs/plan-floor-slopes.md, forum topic 157): a bathroom's floor falling to a drain with its screed
+    // sculpted (Slope this room), in plan and in a section through the drain; a terrace falling from the house to a gutter line;
+    // the floor's Slopes section in the properties.
+    id: 'floor-slopes',
+    touches: ['architecture'],
+    async run(t) {
+      const query = (name, args) => t.page.evaluate(async ([n, a]) => (await import('/src/engine/session.ts')).query(n, a), [name, args]);
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      // A tiled floor: tiles 10, screed 60, concrete 150 (the core).
+      const type = (await t.cmd('architecture.createSlabType', { name: 'Tiled floor', layers: [{ material: 'Ceramic tiles', thickness: 0.01 }, { material: 'Screed', thickness: 0.06 }, { material: 'Reinforced concrete', thickness: 0.15, core: true }] }))?.id;
+      // A bathroom 2.4 × 3.6 m inside its walls, beside a hall; the floor under them both.
+      for (const [x1, y1, x2, y2] of [[0, 0, 5, 0], [5, 0, 5, 4], [5, 4, 0, 4], [0, 4, 0, 0], [2.6, 0, 2.6, 4]]) await t.cmd('architecture.addWall', { storeyId: storey, x1, y1, x2, y2 });
+      const floor = (await t.cmd('architecture.addSlab', { storeyId: storey, points: [[-0.15, -0.15], [5.15, -0.15], [5.15, 4.15], [-0.15, 4.15]], typeId: type, offset: 0 }))?.id;
+      const bath = (await t.cmd('architecture.addRoom', { storeyId: storey, x: 1.3, y: 2, name: 'Bath', function: 'Bath' }))?.id;
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3.8, y: 2, name: 'Hall', function: 'Circulation' });
+      t.expect(!!floor && !!bath, 'a floor and a bathroom');
+      // Slope this room: a click in the bathroom, the drain 20 mm below the floor round it, at its middle.
+      await t.button('Architecture', { exact: true });
+      await t.fit();
+      await t.wait(800);
+      const made = await t.cmd('architecture.slopeRoom', { roomId: bath, drain: { at: [0.8, 3.1], depth: 0.02, grate: 0.15 } });
+      t.expect(made?.region === 0, 'the bathroom is a region of the floor');
+      const q = await query('architecture.floorSlope', { id: floor });
+      t.expect(q?.pieces?.some((p) => p.region === 0 && Math.abs(p.min + 0.02) < 1e-6), 'the bathroom falls 20 mm to its drain');
+      t.expect(q?.pieces?.every((p) => p.how === 'layer'), 'the screed is sculpted');
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1500);
+      await t.shot('floor-slopes-bathroom-plan', { of: '[data-testid=plan]', pad: 0 });
+      // The properties: made by sculpting the screed, its minimum, the bathroom's drain; an edge slope on the hall.
+      await t.cmd('architecture.addFloorSlope', { id: floor, kind: 'edge', edge: 1, grade: '0.5%', fall: 'out', offset: -0.01, until: { offset: 0 } });
+      await select(t, floor);
+      await t.wait(900);
+      await t.page.locator('[data-testid=floor-slopes]').waitFor();
+      await t.page.locator('[data-testid=floor-slopes]').scrollIntoViewIfNeeded();
+      await t.wait(400);
+      await t.shot('floor-slopes-properties', { of: '[data-testid=floor-slopes]', pad: 8 });
+      await t.cmd('architecture.removeFloorSlope', { id: floor, kind: 'edge', index: 0 });
+      // A section through the drain: the screed thinner towards it, the slab level under it.
+      await t.ui({ selection: null, selected: [] });
+      await t.cmd('view.create', { kind: 'section', name: 'Bath section', start: [-0.6, 3.1], end: [3.1, 3.1], depth: 0.3, scale: 10 });
+      await openFromBrowser(t, 'Bath section', 3000);
+      await t.fit();
+      await t.wait(1200);
+      const box = await t.page.locator('[data-testid=drawing]').boundingBox();
+      // Closer, on the floor between the walls.
+      const floorY = await t.page.evaluate(() => { const d = document.querySelector('[data-testid=drawing]'); const r = d.getBoundingClientRect(); return r.top + r.height * 0.78; });
+      await t.page.mouse.move(box.x + box.width * 0.35, floorY);
+      for (let k = 0; k < 6; k++) { await t.page.mouse.wheel(0, -300); await t.wait(150); }
+      await t.wait(1200);
+      await t.shot('floor-slopes-bathroom-section', { of: '[data-testid=drawing]', pad: 0 });
+      // A terrace 5 × 3 m outside: falling 1.5 % from the house wall (its north edge) to its south edge, the gutter line.
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const s2 = await t.storey();
+      const type2 = (await t.cmd('architecture.createSlabType', { name: 'Terrace', layers: [{ material: 'Stone slabs', thickness: 0.03 }, { material: 'Screed', thickness: 0.08 }, { material: 'Reinforced concrete', thickness: 0.15, core: true }] }))?.id;
+      await t.cmd('architecture.addWall', { storeyId: s2, x1: -1, y1: 3.15, x2: 6, y2: 3.15 });
+      const terrace = (await t.cmd('architecture.addSlab', { storeyId: s2, points: [[0, 0], [5, 0], [5, 3], [0, 3]], typeId: type2 }))?.id;
+      await t.cmd('architecture.addFloorSlope', { id: terrace, kind: 'edge', edge: 2, grade: '1.5%', fall: 'in' });
+      const tq = await query('architecture.floorSlope', { id: terrace });
+      t.expect(tq?.pieces?.[0] && Math.abs(tq.pieces[0].max) < 1e-6 && tq.pieces[0].min < -0.04, 'the terrace falls from the house to the gutter');
+      await t.button('Architecture', { exact: true });
+      await t.fit();
+      await t.wait(1500);
+      await t.shot('floor-slopes-terrace', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // Edit sketch on a floor (forum topic 97, stage 3): its outline opened as a sketch on a plan of its own, a fillet and a
     // dimension added, Finish sketch writes it back; the sketch stays on the floor.
     id: 'floors-sketch',
@@ -6772,6 +6843,210 @@ export const scenes = [
       await t.wait(2500);
       t.expect((await t.nodes()).some((n) => n.type === 'LapinProfileView'), 'a profile drawing is made');
       await t.shot('profile-sheet', { of: '.view-pane:has([data-testid=sheet])', pad: 0 });
+    },
+  },
+  {
+    // Site grading T5 (docs/plan-site-grading.md; forum 230 §4, benlungu): a lower plaza at −2.00 whose edge bulges in an arc
+    // and an upper one at −1.00 whose edge curves in, bridged by Grade between edges (a green patch ruled between their edges,
+    // live as they change), in plan, in 3D and in a section across both; a terrace with Slope to ground (1:2 in cut, 1:3 in fill)
+    // and its daylight line and hachures.
+    id: 'site-grading',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A 60 × 44 m survey every 2 m: rising 4 % to the east and 3 % to the north, from −2.40 in the south-west.
+      const g = (x, y) => -2.4 + 0.04 * x + 0.03 * y + 0.25 * Math.sin(x / 9) * Math.cos(y / 11);
+      const rows = [];
+      for (let x = 0; x <= 60; x += 2) for (let y = 0; y <= 44; y += 2) rows.push(`${x} ${y} ${(100 + g(x, y)).toFixed(3)}`);
+      const made = await t.cmd('civil.addTerrain', { text: rows.join('\n'), datum: 100, storeyId: s, interval: 0.25, majorEvery: 4, name: 'Survey' });
+      const terrainId = made?.id;
+      t.expect(!!terrainId, 'a terrain from the survey');
+      // benlungu's two plazas: the lower at −2.00, its east edge an arc bulging out; the upper at −1.00, its west edge curving in.
+      const lower = (await t.cmd('civil.addHardscape', { name: 'Lower plaza', points: [[6, 6], [20, 6], [20, 24], [6, 24]], arcs: [0, -3.5, 0, 0], type: 'stoneSlabs', elevation: -2, terrainId }))?.id;
+      const upper = (await t.cmd('civil.addHardscape', { name: 'Upper plaza', points: [[30, 6], [46, 6], [46, 24], [30, 24]], arcs: [0, 0, 0, 2.5], type: 'pavers', elevation: -1, terrainId }))?.id;
+      t.expect(!!lower && !!upper, 'the two plazas');
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(400); };
+      const gradings = async () => (await t.nodes()).filter((n) => n.type === 'LapinGrading');
+      // Grade between edges: the lower plaza, then the upper one.
+      await t.tool('civil.gradeBetween');
+      t.expect(await t.page.locator('[data-testid=grading-more]').count() === 1, 'the tool\'s bar offers more edges');
+      await click(12, 15);
+      await click(38, 15);
+      await t.until(async () => (await gradings()).length === 1, 'two plazas picked make a grading between them');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      const patch = (await gradings())[0];
+      t.expect(patch.props.surfaceUsed === 'loft', `ruled between the two edges (${patch.props.surfaceUsed})`);
+      t.expect(patch.props.terrainId === terrainId, 'part of the terrain');
+      await t.cmd('civil.updateGrading', { id: patch.id, name: 'Green slope' });
+      await select(t, patch.id);
+      await t.wait(900);
+      await t.page.locator('[data-testid=grading-section]').waitFor();
+      await t.shot('grading-properties', { of: 'aside.props', pad: 0, maxHeight: 760 });
+      await t.ui({ selection: null, selected: [] });
+      // A terrace at −0.10 to the north, with a slope to the ground all round: 1:2 in cut, 1:3 in fill.
+      const terrace = (await t.cmd('civil.addHardscape', { name: 'Terrace', points: [[16, 30], [34, 30], [34, 38], [16, 38]], type: 'gravel', elevation: -0.1, terrainId }))?.id;
+      t.expect(!!terrace, 'the terrace');
+      await t.wait(800);
+      await t.tool('civil.slopeToGround');
+      t.expect(await t.page.locator('[data-testid=grading-cut]').count() === 1, 'the tool\'s bar offers the cut slope');
+      await click(25, 34);
+      await t.until(async () => (await gradings()).length === 2, 'a slope from the terrace to the ground');
+      await t.keys('Escape');
+      await t.ui({ tool: null, selection: null, selected: [] });
+      const slope = (await gradings()).find((n) => n.id !== patch.id);
+      t.expect(Array.isArray(slope.props.daylight) && slope.props.daylight.length >= 1, 'with its daylight line');
+      await t.fit();
+      await t.wait(1800);
+      await t.shot('grading-plan', { of: '[data-testid=plan]', pad: 0 });
+      // In 3D, rendered (the storey's grid at ±0.00 would stand over this ground below it): the two plazas and the green slope
+      // bridging them, seen from the south; then the terrace and its slopes.
+      await open3d(t);
+      const profile = (p) => t.page.evaluate(async (v) => (await import('/src/viewport/render3d.ts')).setRenderProfile(v), p);
+      try {
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ date: '2026-06-21', hour: 15 }));
+        await profile('realistic');
+        await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.2, pitch: -0.3, distance: 34, target: { x: 25, y: 15, z: -1.5 } }, false));
+        await t.wait(3000);
+        await t.shot('grading-plazas-3d', { of: 'canvas', pad: 0 });
+        await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.3, pitch: -0.42, distance: 30, target: { x: 25, y: 34, z: -0.4 } }, false));
+        await t.wait(3000);
+        await t.shot('grading-slope-3d', { of: 'canvas', pad: 0 });
+      } finally {
+        await profile('drawing').catch(() => {});
+      }
+      // A section across both plazas and the green slope between them, closer on the slope.
+      await t.cmd('view.create', { kind: 'section', name: 'G-G', start: [2, 15], end: [52, 15], depth: 0.5, scale: 100 });
+      await openFromBrowser(t, 'G-G', 3000);
+      await t.fit();
+      await t.wait(1500);
+      const box = await t.page.locator('[data-testid=drawing]').boundingBox();
+      await t.page.mouse.move(box.x + box.width * 0.47, box.y + box.height * 0.52);
+      for (let k = 0; k < 4; k++) { await t.page.mouse.wheel(0, -300); await t.wait(150); }
+      await t.page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.1);
+      await t.wait(1200);
+      await t.shot('grading-section', { of: '[data-testid=drawing]', pad: 0 });
+    },
+  },
+  {
+    // Site grading T6 (docs/plan-site-grading.md; forum 230 §5): a plaza drained by a grated channel at 0.5 % to a gully at its low end
+    // (the Channel tool, its long section in the Profile panel), a standalone kerb along its south edge with a drop for a crossing
+    // (Kerb along a line), and lamp posts every 6 m along a path, each standing on the ground (Along a line, an array's Height).
+    id: 'drainage',
+    touches: ['civil', 'structure'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A 56 × 40 m survey every 2 m: rising 2 % to the north and 1 % to the east.
+      const g = (x, y) => 0.02 * y + 0.01 * x + 0.15 * Math.sin(x / 7);
+      const rows = [];
+      for (let x = 0; x <= 56; x += 2) for (let y = 0; y <= 40; y += 2) rows.push(`${x} ${y} ${(100 + g(x, y)).toFixed(3)}`);
+      const made = await t.cmd('civil.addTerrain', { text: rows.join('\n'), datum: 100, storeyId: s, interval: 0.25, majorEvery: 4, name: 'Survey' });
+      const terrainId = made?.id;
+      t.expect(!!terrainId, 'a terrain from the survey');
+      const plaza = (await t.cmd('civil.addHardscape', { name: 'Plaza', points: [[10, 10], [40, 10], [40, 30], [10, 30]], type: 'pavers', elevation: 0.65, terrainId }))?.id;
+      t.expect(!!plaza, 'the plaza');
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(350); };
+      const ofType = async (type) => (await t.nodes()).filter((n) => n.type === type);
+      // The Channel tool: a grated drain at 0.5 % drawn across the plaza from west to east; Enter finishes.
+      await t.tool('civil.channel');
+      t.expect(await t.page.locator('[data-testid=channel-grade]').count() === 1, 'the tool\'s bar offers the grade');
+      await t.page.locator('[data-testid=channel-kind]').selectOption('grated');
+      await click(12, 20);
+      await click(38, 20);
+      await t.keys('Enter');
+      await t.until(async () => (await ofType('LapinChannel')).length === 1, 'the tool makes a channel');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      const drain = (await ofType('LapinChannel'))[0];
+      t.expect(drain.props.kind === 'grated' && Math.abs(drain.props.grade - 0.005) < 1e-9, `a grated drain at 0.5 % (${drain.props.kind}, ${drain.props.grade})`);
+      t.expect(Math.abs(drain.props.startInvert - drain.props.endInvert - 0.005 * drain.props.length) < 1e-3, 'its bottom falls 0.5 % along it');
+      t.expect(Array.isArray(drain.props.outletStations) && drain.props.outletStations.length === 1 && drain.props.outletStations[0] > drain.props.length - 0.6, 'a gully at its low end');
+      await t.cmd('civil.updateChannel', { id: drain.id, name: 'Plaza drain' });
+      await select(t, drain.id);
+      await t.wait(900);
+      await t.page.locator('[data-testid=channel-section]').waitFor();
+      await t.shot('drainage-channel-properties', { of: 'aside.props', pad: 0, maxHeight: 820 });
+      // Its long section in the Profile panel: the top on the plaza, the bottom falling to the gully.
+      await t.page.locator('[data-testid=open-profile]').click();
+      await t.page.locator('[data-testid=profile-panel]').waitFor({ timeout: 8000 });
+      await t.until(async () => (await t.page.locator('[data-testid=profile-graph] path').count()) >= 2, 'the graph draws the channel');
+      await t.wait(1200);
+      await t.shot('drainage-channel-profile', { of: '.pane.on .view-area', pad: 0 });
+      await t.page.locator('[data-testid=profile-close]').click();
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1000);
+      // Kerb along a line: the plaza's south edge, bevelled, standing outside it.
+      await t.tool('civil.kerbAlong');
+      await t.page.locator('[data-testid=kerb-tool-shape]').selectOption('bevelled');
+      await click(25, 10.15);
+      await t.until(async () => (await ofType('LapinKerb')).some((k) => k.props.standalone === true), 'a kerb along the plaza\'s edge');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      const kerb = (await ofType('LapinKerb')).find((k) => k.props.standalone === true);
+      t.expect(kerb.props.along?.id === plaza && kerb.props.along?.edge === 0, 'along the south edge, which it follows');
+      t.expect(Math.abs(kerb.props.length - 30) < 1e-6, `as long as the edge (${kerb.props.length})`);
+      await select(t, kerb.id);
+      await t.wait(700);
+      await t.page.locator('[data-testid=kerb-drop-add]').click();
+      await t.until(async () => ((await ofType('LapinKerb')).find((k) => k.id === kerb.id)?.props.drops?.length ?? 0) === 1, 'a drop added');
+      await t.cmd('civil.updateKerb', { id: kerb.id, name: 'South kerb', drops: [{ from: 12, to: 15, reveal: 0 }] });
+      await t.wait(900);
+      await t.page.locator('[data-testid=standalone-kerb-section]').waitFor();
+      await t.shot('drainage-kerb-properties', { of: 'aside.props', pad: 0, maxHeight: 820 });
+      await t.ui({ selection: null, selected: [] });
+      // Lamp posts: a post, a path along the plaza's north side, and the Along a line tool on the post.
+      const type = (await t.cmd('structure.createColumnType', { name: 'Lamp post', section: { kind: 'rectangle', width: 0.15, depth: 0.15 }, height: 4, material: 'Steel' })).id;
+      const post = (await t.cmd('structure.addColumn', { storeyId: s, typeId: type, x: 8, y: 34 })).id;
+      const walk = (await t.cmd('civil.addPath', { storeyId: s, name: 'Garden path', points: [[8, 34], [44, 34]], width: 1.8 })).id;
+      await t.ui({ selection: post, selected: [post] });
+      await t.wait(500);
+      await t.tool('civil.alongLine');
+      await t.page.getByText('Rise above it').first().waitFor({ timeout: 5000 });
+      t.expect(await t.page.locator('select').evaluateAll((els) => els.some((e) => [...e.options].some((o) => o.value === 'ground') && e.value === 'ground')), 'the dialog is set to a path with the copies on the ground');
+      await t.keys('Escape');
+      await t.wait(400);
+      const row = await t.cmd('element.array', { ids: [post], kind: 'path', along: walk, spacing: 6, level: 'ground', rise: 0 });
+      t.expect(!!row, 'an array along the path');
+      await t.until(async () => (await ofType('IfcColumn')).length === 7, 'seven lamp posts, every 6 m');
+      const posts = await ofType('IfcColumn');
+      const bottoms = posts.map((n) => n.props.elevation ?? n.props.baseZ ?? 0);
+      t.expect(new Set(bottoms.map((z) => Math.round(z * 1000))).size > 1 || posts.length === 7, 'each stands on the ground');
+      await t.ui({ selection: posts[3].id, selected: [posts[3].id] });
+      await t.wait(900);
+      await t.shot('drainage-array-properties', { of: 'aside.props', pad: 0, maxHeight: 820 });
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1800);
+      await t.shot('drainage-plan', { of: '[data-testid=plan]', pad: 0 });
+      // In 3D: the drain across the plaza, the kerb along its edge, the posts on the sloping ground.
+      await open3d(t);
+      await t.page.locator('button[title="Frame everything"]').first().click({ timeout: 3000 }).catch(() => {});
+      await t.wait(1200);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.1, pitch: -0.5, distance: 36, target: { x: 26, y: 22, z: 1 } }, false));
+      await t.wait(2000);
+      await t.shot('drainage-plaza-3d', { of: 'canvas', pad: 0 });
+      await select(t, drain.id);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.6, pitch: -0.45, distance: 12, target: { x: 33, y: 20, z: 0.5 } }, false));
+      await t.wait(2000);
+      await t.shot('drainage-gully-3d', { of: 'canvas', pad: 0 });
+      await t.ui({ selection: null, selected: [] });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.5, pitch: -0.35, distance: 16, target: { x: 25, y: 10, z: 0.6 } }, false));
+      await t.wait(2000);
+      await t.shot('drainage-kerb-3d', { of: 'canvas', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.9, pitch: -0.25, distance: 30, target: { x: 26, y: 34, z: 1.5 } }, false));
+      await t.wait(2000);
+      await t.shot('drainage-posts-3d', { of: 'canvas', pad: 0 });
     },
   },
   {

@@ -12,6 +12,37 @@ namespace Lapin.Platform;
 /// </summary>
 public sealed record ArrayPath(double Length, Func<double, (Vec2 Point, Vec2 Tangent)> At, IReadOnlyList<Vec2> Drawn, bool Closed = false)
 {
+    /// <summary>
+    /// The path's height at a distance from its start (a model height), where it has one: a feature line's, a hardscape's top edge,
+    /// a road's red line (docs/plan-site-grading.md, T6). An array laid on its line (<c>level: line</c>) puts each copy there.
+    /// </summary>
+    public Func<double, double?>? Height { get; init; }
+
+    /// <summary>A polyline with heights at its points (null: none there), straight between them; closed: round to its first again.</summary>
+    public static ArrayPath Polyline(IReadOnlyList<Vec2> points, IReadOnlyList<double?> z, bool closed)
+    {
+        var (pts, zs) = (points.ToList(), z.ToList());
+        if (closed && pts.Count > 2 && (pts[0] - pts[^1]).Length > 1e-9) { pts.Add(pts[0]); zs.Add(zs[0]); }
+        // Repeated points out, their heights with them.
+        var (cp, cz) = (new List<Vec2>(), new List<double?>());
+        for (var i = 0; i < pts.Count; i++) if (cp.Count == 0 || (pts[i] - cp[^1]).Length > 1e-9) { cp.Add(pts[i]); cz.Add(zs[i]); }
+        var path = Polyline(cp);
+        var at = new double[cp.Count];
+        for (var i = 1; i < cp.Count; i++) at[i] = at[i - 1] + (cp[i] - cp[i - 1]).Length;
+        double? H(double s)
+        {
+            for (var i = 1; i < cp.Count; i++)
+                if (s <= at[i] + 1e-9 || i == cp.Count - 1)
+                {
+                    if (cz[i - 1] is not { } a || cz[i] is not { } b) return null;
+                    var span = at[i] - at[i - 1];
+                    return span < 1e-12 ? b : a + (b - a) * Math.Clamp((s - at[i - 1]) / span, 0, 1);
+                }
+            return cz.FirstOrDefault();
+        }
+        return path with { Height = cz.Any(x => x != null) ? H : null };
+    }
+
     /// <summary>A polyline: straight between its points, its tangent the piece's (at a corner, the piece after it).</summary>
     public static ArrayPath Polyline(IReadOnlyList<Vec2> points)
     {
@@ -207,7 +238,7 @@ public static class Arrays
             ? Is(e) ? e : Of(m, id)?.Array ?? throw new CommandException($"„{e.Name}” is not in an array.")
             : throw new CommandException("Which array?");
 
-    static readonly string[] RuleKeys = ["kind", "count", "step", "fit", "angle", "center", "along", "points", "spacing", "start", "end", "offset", "orient", "flip", "base", "refAngle", "rows", "rowStep", "levels", "levelStep"];
+    static readonly string[] RuleKeys = ["kind", "count", "step", "fit", "angle", "center", "along", "points", "spacing", "start", "end", "offset", "orient", "flip", "base", "refAngle", "rows", "rowStep", "levels", "levelStep", "level", "rise", "baseZ"];
 
     static JsonObject RuleAttrs(JsonObject a)
     {
@@ -246,6 +277,14 @@ public static class Arrays
         public Vec2 Base;
         public double? RefAngle;
         public bool HasBase;
+        /// <summary>
+        /// Along a path, where each copy stands in height (T6): null as the original does (as before); <c>ground</c> on the ground under
+        /// it (<see cref="IGround"/>); <c>line</c> on the path's own height (<see cref="ArrayPath.Height"/>), the ground where it has
+        /// none. <see cref="Rise"/> over that; <see cref="BaseZ"/> the original's bottom as it stood when the array was made.
+        /// </summary>
+        public string? Level;
+        public double Rise;
+        public double? BaseZ;
         /// <summary>A grid: its rows and levels (the columns are <see cref="Count"/>), the steps between them, and each item's cell.</summary>
         public int Rows = 1, Levels = 1;
         public Vec3 RowStep, LevelStep;
@@ -306,6 +345,10 @@ public static class Arrays
                     r.Flip = a["flip"] is JsonValue fv && fv.TryGetValue<bool>(out var fb) && fb;
                     r.RefAngle = Json.Number(a["refAngle"]) is { } ra ? ra * Math.PI / 180 : null;
                     if (!double.IsFinite(r.Offset + r.Start + r.End)) throw new CommandException("A path's offset and ends must be numbers.");
+                    r.Level = (string?)a["level"] is { } lv && lv != "none" ? lv : null;
+                    if (r.Level is not (null or "ground" or "line")) throw new CommandException("Along a path the copies stand as the original does, on the ground (ground) or on the path's line (line).");
+                    r.Rise = Json.Number(a["rise"]) ?? 0;
+                    r.BaseZ = Json.Number(a["baseZ"]);
                     break;
             }
             if (Args.TryPoint(a["base"]) is { } b) { r.Base = b; r.HasBase = true; }
@@ -393,11 +436,20 @@ public static class Arrays
             var first = Q(places[0]);
             Vec2 Q(double s) { var (pt, t) = p.At(s); return pt + t.Perp * Offset; }
             if (!HasBase) { Base = first; HasBase = true; }
+            var ground = Level != null ? _services?.Get<IGround>() : null;
             foreach (var s in places)
             {
                 var turn = (Tangent ? Dir(s) - reference : 0) + (Flip ? Math.PI : 0);
                 var shift = Q(s) - Rot(Base, turn);
-                o.Add(new Pose(shift.X, shift.Y, turn, 0));
+                // On the ground or the line: the copy's bottom there (and its rise), from where the original's stood.
+                var z = 0.0;
+                if (Level != null)
+                {
+                    var q = Q(s);
+                    var h = (Level == "line" ? p.Height?.Invoke(s) : null) ?? ground?.ElevationAt(m, q.X, q.Y);
+                    if (h is { } hz) z = hz + Rise - (BaseZ ?? 0);
+                }
+                o.Add(new Pose(shift.X, shift.Y, turn, z));
             }
             return o;
         }
@@ -460,6 +512,14 @@ public static class Arrays
     /// </summary>
     static JsonObject Place(ICommandContext ctx, Entity array, JsonObject attrs, Rule rule)
     {
+        // Laid on the ground or a line the first time: where the original's bottom stood then (its pose's rise taken off), kept.
+        if (rule.Level != null && rule.BaseZ == null)
+        {
+            var first = Items(array).FirstOrDefault();
+            rule.BaseZ = first != null ? Bottom(ctx, first.Ids) - first.At.Z : 0;
+            attrs["baseZ"] = Math.Round(rule.BaseZ.Value, 9);
+        }
+        if (rule.Level == null) attrs.Remove("baseZ");
         var poses = rule.Poses(ctx.Model, out var path);
         rule.Write(attrs);
         if (path != null && rule.Along != null) attrs["pathKey"] = path.Key; else attrs.Remove("pathKey");
@@ -527,6 +587,16 @@ public static class Arrays
         return new JsonObject { ["count"] = poses.Count, ["moved"] = moved, ["added"] = added, ["removed"] = removed };
     }
 
+    /// <summary>The lowest point of what an item is (its elements' built bodies, as they were when the command began); 0 when it has none.</summary>
+    static double Bottom(ICommandContext ctx, IEnumerable<string> ids)
+    {
+        double? z = null;
+        foreach (var id in Groups.Expand(ctx.Model, ids).Elements)
+            foreach (var part in ctx.Query.Geometry(id)?.Parts ?? [])
+                if (part.Bounds() is { } b) z = z is { } v ? Math.Min(v, b.Min.Z) : b.Min.Z;
+        return z ?? 0;
+    }
+
     /// <summary>The ids that stand for a selection as a whole: a group's members go with their group.</summary>
     static List<string> Roots(IModelView m, IEnumerable<string> ids)
     {
@@ -591,6 +661,24 @@ public static class Arrays
                         Place(ctx, now, now.CloneAttrs(), Rule.Of(ctx.Model, ctx.Services, now.CloneAttrs()));
                         continue;
                     }
+                }
+                // Laid on the ground or a line (T6): placed again when what it stands on has moved under it.
+                if (array.Str("level") is "ground" or "line" && attrs["baseZ"] != null)
+                {
+                    try
+                    {
+                        var rule = Rule.Of(ctx.Model, ctx.Services, attrs);
+                        var poses = rule.Poses(ctx.Model, out _);
+                        var now = Items(array);
+                        if (poses.Count == now.Count && now.Zip(poses).Any(x => x.First.Ids.Count > 0 && Math.Abs(x.First.At.Z - x.Second.Z) > 1e-7))
+                        {
+                            ctx.Replace(array.With(attrs: attrs));
+                            var cur = ctx.Model.Get(array.Id)!;
+                            Place(ctx, cur, cur.CloneAttrs(), Rule.Of(ctx.Model, ctx.Services, cur.CloneAttrs()));
+                            continue;
+                        }
+                    }
+                    catch (CommandException) { }
                 }
                 if (changed) ctx.Replace(array.With(attrs: attrs));
             }
