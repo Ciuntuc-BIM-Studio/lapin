@@ -1,0 +1,47 @@
+{
+  "step": 4,
+  "title": "main is no longer c1: 409 with the current value; nothing changed. Ana pulls (S1: keeps her work as a wip branch).",
+  "request": {
+    "method": "POST",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/refs/update",
+    "headers": {
+      "authorization": "Bearer test-access-token-ana",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "updates": [
+        {
+          "name": "refs/heads/main",
+          "old": "fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1",
+          "new": "adc421509ab97b9cb16f960a1119756f71af1fae30b1f7d58ca8754df2955cc3"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 409,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "code": "ref_moved",
+      "message": "refs/heads/main has moved: fetch and pull first.",
+      "refs": [
+        {
+          "name": "refs/heads/main",
+          "expected": "fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1",
+          "current": "ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94",
+          "updatedAt": "2026-11-23T10:51:10Z",
+          "updatedBy": {
+            "id": "atrium:5d2c8a4e-1f3b-4c6d-9e7a-0b1c2d3e4f50",
+            "name": "Mihai Ionescu"
+          }
+        }
+      ]
+    }
+  },
+  "opaque": [
+    "/response/body/message",
+    "/response/body/refs/0/updatedAt"
+  ]
+}

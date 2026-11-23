@@ -1,0 +1,20 @@
+{
+  "step": 5,
+  "title": "One object, with its ETag.",
+  "request": {
+    "method": "GET",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3",
+    "headers": {
+      "authorization": "Bearer test-access-token-viewer"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/octet-stream",
+      "etag": "\"0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3\"",
+      "cache-control": "private, no-store"
+    },
+    "bodyFile": "../../blobs/hello.py"
+  }
+}

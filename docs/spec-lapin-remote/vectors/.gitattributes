@@ -1,0 +1,4 @@
+# The vectors are bytes whose hashes are their ids: never convert line endings, never diff them as text.
+blobs/** -text -diff
+objects/** -text -diff
+canonical/** -text -diff

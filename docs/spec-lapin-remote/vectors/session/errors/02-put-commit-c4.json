@@ -1,0 +1,20 @@
+{
+  "step": 2,
+  "title": "c4 and T4 are uploaded, but not scripts/missing.py.",
+  "request": {
+    "method": "PUT",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/526d5f566c1249a0ca287dee0d830734e8b2fd1e19ade5fc5e932700b35ea697",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/octet-stream"
+    },
+    "bodyFile": "../../objects/c4.json"
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "etag": "\"526d5f566c1249a0ca287dee0d830734e8b2fd1e19ade5fc5e932700b35ea697\""
+    },
+    "body": null
+  }
+}

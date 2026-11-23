@@ -1,0 +1,49 @@
+{
+  "step": 4,
+  "title": "The objects the client lacks, as a zip whose entries are named by id (entries listed, not the zip bytes).",
+  "request": {
+    "method": "POST",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/pack",
+    "headers": {
+      "authorization": "Bearer test-access-token-viewer",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "hashes": [
+        "336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67",
+        "941f7c834ec70c7171289afba2fc9d5042cab97306759b2c9979f34be04a7c26",
+        "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+        "0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3",
+        "73fa0eeab0127616e19bacf37ac6cf241f8156c89aa6f851ad030b306c05728c"
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/zip"
+    },
+    "bodyZipEntries": [
+      {
+        "name": "336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67",
+        "file": "../../objects/tag-issue.json"
+      },
+      {
+        "name": "941f7c834ec70c7171289afba2fc9d5042cab97306759b2c9979f34be04a7c26",
+        "file": "../../objects/T2.json"
+      },
+      {
+        "name": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+        "file": "../../blobs/walls.arrow"
+      },
+      {
+        "name": "0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3",
+        "file": "../../blobs/hello.py"
+      },
+      {
+        "name": "73fa0eeab0127616e19bacf37ac6cf241f8156c89aa6f851ad030b306c05728c",
+        "file": "../../blobs/issue.pdf"
+      }
+    ]
+  }
+}

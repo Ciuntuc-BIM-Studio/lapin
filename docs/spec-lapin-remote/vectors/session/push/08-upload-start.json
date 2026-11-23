@@ -1,0 +1,37 @@
+{
+  "step": 8,
+  "title": "4. A resumable upload (any size may use it; above `chunk` it must): walls.arrow, 256 bytes.",
+  "request": {
+    "method": "POST",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/uploads",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "sha256": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+      "size": 256
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "location": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/uploads/{upload}"
+    },
+    "body": {
+      "id": "{upload}",
+      "offset": 0,
+      "chunk": 16777216,
+      "expiresAt": "2026-11-24T10:51:00Z"
+    }
+  },
+  "capture": {
+    "upload": "/response/body/id"
+  },
+  "opaque": [
+    "/response/body/id",
+    "/response/body/expiresAt",
+    "/response/headers/location"
+  ]
+}

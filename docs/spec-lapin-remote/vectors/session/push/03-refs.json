@@ -1,0 +1,35 @@
+{
+  "step": 3,
+  "title": "1. Fetch the refs: main is c1, as last seen.",
+  "request": {
+    "method": "GET",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/refs",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "etag": "\"r-7\""
+    },
+    "body": {
+      "refs": [
+        {
+          "name": "refs/heads/main",
+          "target": "fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1",
+          "updatedAt": "2026-11-23T10:00:05Z",
+          "updatedBy": {
+            "id": "atrium:5d2c8a4e-1f3b-4c6d-9e7a-0b1c2d3e4f50",
+            "name": "Mihai Ionescu"
+          }
+        }
+      ]
+    }
+  },
+  "opaque": [
+    "/response/headers/etag",
+    "/response/body/refs/0/updatedAt"
+  ]
+}

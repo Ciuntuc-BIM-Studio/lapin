@@ -1,0 +1,26 @@
+{
+  "step": 11,
+  "title": "Bytes 0..9.",
+  "request": {
+    "method": "PATCH",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/uploads/{upload}",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/offset+octet-stream",
+      "upload-offset": "0",
+      "content-length": "10"
+    },
+    "bodyFile": "../../blobs/missing.py",
+    "bodyRange": {
+      "offset": 0,
+      "length": 10
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {
+      "upload-offset": "10"
+    },
+    "body": null
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "step": 4,
+  "title": "2-3. The closure (c2, its tree, the new parts, the tag, the issued file) against objects/missing.",
+  "request": {
+    "method": "POST",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/missing",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "hashes": [
+        "ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94",
+        "941f7c834ec70c7171289afba2fc9d5042cab97306759b2c9979f34be04a7c26",
+        "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+        "0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3",
+        "336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67",
+        "73fa0eeab0127616e19bacf37ac6cf241f8156c89aa6f851ad030b306c05728c"
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "missing": [
+        "ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94",
+        "941f7c834ec70c7171289afba2fc9d5042cab97306759b2c9979f34be04a7c26",
+        "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+        "0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3",
+        "336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67"
+      ]
+    }
+  }
+}

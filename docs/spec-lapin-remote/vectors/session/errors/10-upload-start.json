@@ -1,0 +1,37 @@
+{
+  "step": 10,
+  "title": "A resumable upload of missing.py (24 bytes), never finished: the object does not exist until its last chunk.",
+  "request": {
+    "method": "POST",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/uploads",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "sha256": "535ec7ad1a1a2734381137db05491f341c5431d1ebb600b11b2ab19c24c7bb98",
+      "size": 24
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "location": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/uploads/{upload}"
+    },
+    "body": {
+      "id": "{upload}",
+      "offset": 0,
+      "chunk": 16777216,
+      "expiresAt": "2026-11-24T11:10:00Z"
+    }
+  },
+  "capture": {
+    "upload": "/response/body/id"
+  },
+  "opaque": [
+    "/response/body/id",
+    "/response/body/expiresAt",
+    "/response/headers/location"
+  ]
+}

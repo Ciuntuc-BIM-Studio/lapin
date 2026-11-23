@@ -123,6 +123,8 @@ Regula de o singură dată se păstrează: un blob stă în fișier **o dată**,
 
 Un singur protocol, **neutru față de limbaj**: JSON canonic, SHA-256 și zip. Același pe un folder și pe server, ca să se poată scrie oricând un client sau un server în altă limbă (§9). Specificația lui va sta în `docs/spec-lapin-remote.md` (MIT), cu **vectori de conformitate** (fișiere JSON de intrare și ieșire așteptată), pe care îi rulează și testele lui Lapin, și ale lui Atrium Server.
 
+**Specificația e scrisă** (23.11.2026): [`docs/spec-lapin-remote.md`](spec-lapin-remote.md), „lapin-remote 1.0”, normativă, cu vectorii în `docs/spec-lapin-remote/vectors/` (făcuți de `make-vectors.mjs`). Ce a hotărât ea peste plan e în anexa B a ei; cea mai importantă: copia de vizualizare nu e un câmp al commit-ului (i-ar schimba hash-ul), ci o înregistrare alături.
+
 ### 3.1 Operațiile
 
 - **fetch**: citește ref-urile depozitului, apoi commit-urile pe care proiectul nu le are (mergând înapoi de la cap până la commit-uri cunoscute), apoi obiectele lipsă din arborii lor. Nu schimbă modelul.

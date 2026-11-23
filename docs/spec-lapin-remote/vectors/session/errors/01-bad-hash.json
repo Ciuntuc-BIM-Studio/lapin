@@ -1,0 +1,28 @@
+{
+  "step": 1,
+  "title": "A PUT whose bytes do not hash to the id in the path: 400, nothing stored.",
+  "request": {
+    "method": "PUT",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/octet-stream"
+    },
+    "bodyFile": "../../blobs/hello.txt"
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "code": "hash_mismatch",
+      "message": "The bytes do not hash to the id.",
+      "expected": "0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3",
+      "actual": "fffac16a720cca4dfaf893c3d25fbf5f1a8e07e5aa9c0ec3d4ec2da2a8bb7658"
+    }
+  },
+  "opaque": [
+    "/response/body/message"
+  ]
+}

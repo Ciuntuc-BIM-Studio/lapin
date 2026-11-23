@@ -1,0 +1,20 @@
+{
+  "step": 3,
+  "title": "T4.",
+  "request": {
+    "method": "PUT",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/a3a1b99c43064c9aef682e0a1fc3ee704a23191aba7f3b4819165afe8011bd6d",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/octet-stream"
+    },
+    "bodyFile": "../../objects/T4.json"
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "etag": "\"a3a1b99c43064c9aef682e0a1fc3ee704a23191aba7f3b4819165afe8011bd6d\""
+    },
+    "body": null
+  }
+}

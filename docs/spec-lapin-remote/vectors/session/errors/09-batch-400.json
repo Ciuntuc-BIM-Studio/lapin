@@ -1,0 +1,27 @@
+{
+  "step": 9,
+  "title": "objects/missing with more than maxBatch hashes: 400.",
+  "request": {
+    "method": "POST",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/missing",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "bodyNote": "{\"hashes\": [10001 ids]}"
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "code": "batch_too_large",
+      "message": "At most 10000 hashes per request.",
+      "limit": 10000
+    }
+  },
+  "opaque": [
+    "/response/body/message"
+  ]
+}
