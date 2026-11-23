@@ -44,7 +44,7 @@ interface NetworkPort { key: string; service: string; flow: string; at: [number,
 interface NetworkNode { id: string; name: string; role: string; storeyId: string | null; ports: NetworkPort[] }
 interface NetworkRun { id: string; name: string; storeyId: string | null; points: [number, number][]; start: RunEnd; end: RunEnd }
 export interface NetworkSystem { id: string; name: string; service: string; defaults: Defaults; nodes: NetworkNode[]; runs: NetworkRun[] }
-type OpenItem =
+export type OpenItem =
   | { kind: 'port'; id: string; name: string; port: string; at: [number, number, number] }
   | { kind: 'run'; id: string; name: string; end: 'start' | 'end'; at: [number, number] };
 /** A material runs are made of (the engine's RunMaterials): its laying rules, when the product has them, come from mep-pro. */

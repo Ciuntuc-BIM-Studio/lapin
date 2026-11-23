@@ -5315,6 +5315,12 @@ export const FR: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Point de référence temporaire au curseur (encore : l’abandonner)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Lancez un outil de dessin ou de placement, pointez un endroit, puis appuyez sur cette touche : le point suivant est mesuré à partir de lui.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Lancez un outil qui place par un ancrage (Poteau, Porte, Fenêtre), puis appuyez sur cette touche pour parcourir ses ancrages.",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Tronçons à angle droit par rapport aux axes du plan, sauf si les règles de pose du matériau disent autrement ; désactivé : à n'importe quel angle",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "En dessinant : F sol, C plafond, W mur, E une cote saisie",
+  "open end": "extrémité libre",
+  "open ends": "extrémités libres",
+  "Select the open ends": "Sélectionner les extrémités libres",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

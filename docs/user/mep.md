@@ -22,7 +22,36 @@ In the edit mode everything that is not the system is faded, and only the system
 
 **Run** (<kbd>RN</kbd>) draws a run point by point; press <kbd>Enter</kbd> to finish. An end that lands on an open port connects to it; an end that lands on a run of the same system branches off it.
 
+### Drawing in height
+
+A run lies on a plane of its system: the floor, the ceiling or the wall, each at the elevation **Systems…** sets for it (by default 0.20 m, 2.40 m and 1.10 m above the level). While you draw, the box beside the cursor shows the length and angle of the leg and, after them, the plane and its elevation (**ceiling +2400**); on a level that is not at the project's zero it also shows the elevation from zero (**±0 +5400**). The command line's bar sets the plane a new run starts on (**as the system**, **floor**, **ceiling**, **wall**, or an **elevation** you type).
+
+Once the first point is placed, press a key to change the plane of the leg you are drawing:
+
+| Key | The leg from the last point |
+|---|---|
+| <kbd>F</kbd> | on the floor |
+| <kbd>C</kbd> | on the ceiling |
+| <kbd>W</kbd> | on the wall |
+| <kbd>E</kbd> | at an elevation you type, then <kbd>Enter</kbd> (<kbd>Esc</kbd> drops it) |
+
+These letters are the tool's options while it draws, as a command's options are: they do not start another tool then (before the first point they are the usual shortcuts). After a typed length, a unit's letter stays the unit's: 2400c is 2400 cm.
+
+When the plane changes after some legs are drawn, the run rises or drops at the last point you placed: a vertical leg there, with a bend at each end. The box shows the step (**↑ +2200**). It is still one run, made in one undo step, and the plan marks the place with the rise / drop sign: a ring with a dot where the run goes up, a cross where it goes down. **Redraw path** takes the same keys for the new path.
+
+![Drawing a run: after the second point C takes the next leg to the ceiling; the box shows the plane, its elevation and the rise](shots/mep-run-heights.webp)
+
+![The same run in 3D: on the floor, straight up at the corner, on along the ceiling](shots/mep-run-rise-3d.webp)
+
+A run's legs are kept square to the plan's axes unless its material has laying rules (with MEP Pro: copper at 45° steps, PVC turning 45° at most). Turn off **Ortho** in the bar to draw at any angle. A length or an angle typed in the box is taken as typed, as it is for walls.
+
+### Open ends
+
 **Connect** joins a run's end to a node or to another run; **Disconnect** frees it. **Open ports** selects everything still unconnected.
+
+While a system is in its edit mode, and in any plan of the MEP discipline, every free port and every run end that is not connected has a small red mark. The edit bar counts them (**2 open ends**); click the count to select them. The marks are shown on the screen only. Sheets, the PDF and exports never show them.
+
+![A system in its edit mode: its two open ends marked, their count in the bar](shots/mep-open-ends.webp)
 
 ## Reshaping a run
 

@@ -24,6 +24,10 @@ import { PICKABLE, RUN_CLASSES, endSpec, isNode, isRun, nearerEnd, nearestRun, n
 import { runSystem, schedule } from './tools';
 import { mepHooks } from './hooks';
 import { setMep, useMep } from './prefs';
+import { LevelCells, RunLevelOptions, endLegs, levelInfo, levelLetters, systemDefaults, trackLegs, type LevelSource } from './DrawLevel';
+import { redrawLegs, runHeights, squared, useDrawLevel, type Level } from './levels';
+import { useLive } from '../../viewport/liveInput';
+import { OpenEndsOverlay } from './openEnds';
 import { usePlaceRole } from './placeRole';
 import { activate, findTool } from '../../platform/modules';
 import { MepSection } from './MepSection';
@@ -164,26 +168,48 @@ const nodeTool = (r: RoleTool): ToolDef => ({
 const nodeTools = ROLES.map(nodeTool);
 const oldNode = (id: string) => nodeTools.find((t) => t.id === `mep.node.${id}`)!;
 
-/** A run along a polyline (Enter or a click on the last point finishes it); an end on an open port or on a run of the system connects there. */
+/**
+ * Where a run's next point may go: as the material is laid when its rules are known (mep-pro: copper at 45° steps, PVC
+ * turning 45° at most, PEX-AL-PEX freely); without them square to the plan's axes, unless the bar's Ortho is off.
+ */
+const layRun = (systemId: string | null, placed: Vec2[], aimed: Vec2): Vec2 => {
+  const m = systemMaterial(systemId);
+  if (m && mepHooks.ruleText(m.service, m.material) != null) return mepHooks.nextPoint(m.service, m.material, placed, aimed);
+  return useMep.getState().square ? squared(placed, aimed) : aimed;
+};
+
+/** The Run tool's heights: its bar's plane or elevation, kept for the next run when a key changes it. */
+const runLevels: LevelSource = {
+  start: () => { const { plane, elevation } = useMep.getState(); return { plane, elevation }; },
+  defaults: () => systemDefaults(editedSystem() ?? useMep.getState().systemId),
+  sticky: true,
+};
+
+/**
+ * A run along a polyline (Enter or a click on the last point finishes it); an end on an open port or on a run of the system
+ * connects there. Its plane changed while drawing (F, C, W, E) makes it rise or drop at the last point: one run, one undo step.
+ */
 const run: ToolDef = {
   id: 'mep.run', label: 'Run', icon: Spline, shortcut: 'RN',
-  // Laid as the system's material allows when its rules are known (mep-pro: copper at 45° steps, PVC turning 45° at most, PEX-AL-PEX freely).
   gesture: {
     kind: 'polyline',
-    constrain: (placed, aimed) => {
-      const m = systemMaterial(editedSystem() ?? useMep.getState().systemId);
-      return m ? mepHooks.nextPoint(m.service, m.material, placed, aimed) : aimed;
-    },
+    constrain: (placed, aimed) => { trackLegs(placed, runLevels); return layRun(editedSystem() ?? useMep.getState().systemId, placed, aimed); },
   },
+  options: RunLevelOptions,
+  letters: levelLetters(runLevels),
+  cursorInfo: levelInfo(runLevels),
   complete: async ({ points }, ctx) => {
+    trackLegs(points, runLevels);
+    const legs = useDrawLevel.getState().legs;
+    endLegs();
     const systemId = await runSystem();
     if (!systemId || points.length < 2) return;
     const start = await endSpec(systemId, points[0]);
     const end = await endSpec(systemId, points[points.length - 1]);
-    const { pair, plane } = useMep.getState();
+    const { pair } = useMep.getState();
     await ctx.execute('mep.drawRun', {
       systemId, storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]),
-      ...(start ? { start } : {}), ...(end ? { end } : {}), ...(pair != null ? { pair } : {}), ...(plane ? { plane } : {}),
+      ...(start ? { start } : {}), ...(end ? { end } : {}), ...(pair != null ? { pair } : {}), ...runHeights(points.length, legs, systemDefaults(systemId)),
     });
   },
 };
@@ -277,6 +303,8 @@ const detour: ToolDef = {
       return [on.leg.a, ...bypass(on.leg, placed[0], placed[1], aimed), on.leg.b];
     },
   },
+  // Beside the cursor: the height of the run the detour is on.
+  cursorInfo: DetourInfo,
   complete: async ({ points: [from, to, side] }) => {
     const on = runAt(from);
     if (!on) { notify('Start the detour on a run.'); return; }
@@ -292,22 +320,49 @@ const redrawTarget = (first: Vec2): NodeDto | null => {
   return sel.length === 1 ? sel[0] : runAt(first)?.run ?? null;
 };
 
-/** Redraw path: the selected run (or the one the path starts on) takes a new path; its system, size and connections stay, its ends on their ports. */
+/** A run's own height: its elevation, else its plane (null: its system's). */
+const ownLevel = (n: NodeDto): Level => ({
+  plane: n.props.plane === 'floor' || n.props.plane === 'ceiling' || n.props.plane === 'wall' ? n.props.plane : null,
+  elevation: typeof n.props.elevation === 'number' ? n.props.elevation : null,
+});
+const systemOfRun = (n: NodeDto | null | undefined): string | null => (typeof n?.props.systemId === 'string' ? n.props.systemId : null);
+
+/** A redrawn path's heights: the run's own to start with; a key changes them for this path only. */
+const redrawLevels: LevelSource = {
+  start: (first: Vec2) => { const t = redrawTarget(first); return t ? ownLevel(t) : { plane: null, elevation: null }; },
+  defaults: (first: Vec2 | null) => systemDefaults(systemOfRun(first ? redrawTarget(first) : null)),
+};
+
+/** Beside the cursor in a detour: the plane and elevation of the run it goes round on. */
+function DetourInfo() {
+  const base = useLive((s) => s.base);
+  const on = base ? runAt(base) : null;
+  if (!on) return null;
+  return <LevelCells level={ownLevel(on.run)} defaults={systemDefaults(systemOfRun(on.run))} />;
+}
+
+/**
+ * Redraw path: the selected run (or the one the path starts on) takes a new path; its system, size and connections stay,
+ * its ends on their ports. F, C, W, E while drawing change the height of the legs from there on, as the Run tool's do.
+ */
 const redraw: ToolDef = {
   id: 'mep.redrawRun', label: 'Redraw path', icon: PencilLine, shortcut: 'RP',
   gesture: {
     kind: 'polyline',
-    constrain: (placed, aimed) => {
-      const target = redrawTarget(placed[0]);
-      const m = systemMaterial(typeof target?.props.systemId === 'string' ? target.props.systemId : null);
-      return m ? mepHooks.nextPoint(m.service, m.material, placed, aimed) : aimed;
-    },
+    constrain: (placed, aimed) => { trackLegs(placed, redrawLevels); return layRun(systemOfRun(redrawTarget(placed[0])), placed, aimed); },
   },
+  letters: levelLetters(redrawLevels),
+  cursorInfo: levelInfo(redrawLevels),
   complete: async ({ points }) => {
+    trackLegs(points, redrawLevels);
+    const legs = useDrawLevel.getState().legs;
+    endLegs();
     if (points.length < 2) return;
     const target = redrawTarget(points[0]);
     if (!target) { notify('Select the run first, or start the path on it.'); return; }
-    await execute('mep.redrawRun', { id: target.id, points: points.map((p) => [p.x, p.y]) });
+    // The legs whose height was changed while drawing; the old run's levels (its rises) carried over the others by the engine.
+    const changed = redrawLegs(legs.slice(0, points.length - 1), ownLevel(target), systemDefaults(systemOfRun(target)));
+    await execute('mep.redrawRun', { id: target.id, points: points.map((p) => [p.x, p.y]), ...(changed ? { legs: changed } : {}) });
     useUi.setState({ selected: [target.id], selection: target.id });
   },
 };
@@ -513,8 +568,9 @@ const mep: LapinModule = {
   ],
   dialogs: { mepSystems: SystemsDialog, fanTypes: FanTypesDialog },
   background: Background,
-  // The selected devices' coverage circles, where the plan or the system draws them on the selected only (the default).
-  planOverlays: [CoverageOverlay],
+  // The selected devices' coverage circles, where the plan or the system draws them on the selected only (the default),
+  // and every open end of the system being edited (and in an MEP plan), a red mark on the screen only (openEnds.tsx).
+  planOverlays: [CoverageOverlay, OpenEndsOverlay],
   grips: { ...byClass(grips), [FAN_CLASS]: fanGrips, [CARRIER_CLASS]: carrierGrips },
   // Create similar: a node by its role (its classes are many), a run on its system, a fan of its kind and type, a carrier of its type.
   similarFor: (n) => {
