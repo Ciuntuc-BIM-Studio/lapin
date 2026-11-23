@@ -116,7 +116,7 @@ public sealed class ProfileSheet : ISheetContent
             double Y(double z) => Title + gh - (z - datum) * kv;
             void T(double xx, double yy, string s, double size, string anchor = "start", bool bold = false) => text.Texts.Add(new PenText(new Vec2(xx, yy), s, size, Anchor: anchor, Bold: bold));
             T(0, 5, $"{view.Name}", 4, bold: true);
-            T(0, 10, $"Long profile · {l.Entity.Name} · H 1:{F(scale, "0")} · V 1:{F(scale / ex, "0.#")} ({F(ex, "0.#")}×) · datum {F(datum)}" + (pages > 1 ? $" · {pg + 1}/{pages}" : ""), 2.5);
+            T(0, 10, $"H 1:{F(scale, "0")} · V 1:{F(scale / ex, "0.#")} ({F(ex, "0.#")}×) · datum {F(datum)}" + (pages > 1 ? $" · {pg + 1}/{pages}" : ""), 2.5);
             // The grid: levels and stations.
             for (var z = datum; z <= top + 1e-9; z += levelStep)
             {
@@ -149,7 +149,9 @@ public sealed class ProfileSheet : ISheetContent
                 var c = new Vec2(X(p.Station), Y(p.Z));
                 pvi.Curves.Add(PenCurve.Circle(c, p.Designed ? 0.8 : 0.5));
                 var label = $"{Chain.Label(p.Station + l.Start)}  {F(p.Z)}" + (p.Curve > 0 ? $"  L={F(p.Curve, "0.##")}" : "");
-                T(c.X, c.Y - 2, label, 2, "middle");
+                // At the ends the label leans inwards, clear of the level labels and the edge.
+                var anchor = p.Station <= s0 + 1e-6 ? "start" : p.Station >= s1 - 1e-6 ? "end" : "middle";
+                T(c.X, c.Y - 2, label, 2, anchor);
                 if (p.Curve > 0)
                 {
                     pvi.Segments.Add((new Vec2(X(Math.Max(s0, p.Station - p.Curve / 2)), Title + gh + 1), new Vec2(X(Math.Min(s1, p.Station + p.Curve / 2)), Title + gh + 1)));
