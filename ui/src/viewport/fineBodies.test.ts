@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RenderItem, RenderPart } from '../engine/protocol';
-import { fineShown, keepFine, notAsked } from './fineBodies';
+import { fineShown, keepFine, modeOf, notAsked } from './fineBodies';
 
 const item = (id: string, parts: RenderPart[] = []): RenderItem => ({ nodeId: id, type: 'IfcColumn', storeyId: null, editable: true, color: '#fff', positions: new Float32Array(), normals: new Float32Array(), indices: new Int32Array(), edges: new Float32Array(), plan: [], snaps: [], diagnostics: [], parts });
 const part = (name: string): RenderPart => ({ name, color: '#fff', positions: new Float32Array(), normals: new Float32Array(), indices: new Int32Array(), edges: new Float32Array() });
@@ -31,5 +31,26 @@ describe('fine bodies at LOD 400', () => {
   it('leaves instances of shared meshes alone', () => {
     const shared = { ...item('s'), instance: { mesh: 'm', matrix: new Float32Array(12) } };
     expect(notAsked(new Map([['s', shared]]))).toEqual([]);
+  });
+});
+
+describe('the plants\' maquette bodies (decision 812)', () => {
+  it('names what a view draws otherwise: fine from LOD 400, the maquette, both, or nothing', () => {
+    expect(modeOf({ lod: 350 })).toBeNull();
+    expect(modeOf({ lod: 350, vegetation: 'coloured' })).toBeNull();
+    expect(modeOf({ lod: 400 })).toBe('fine');
+    expect(modeOf({ lod: 300, vegetation: 'maquette' })).toBe('maquette');
+    expect(modeOf({ lod: 400, vegetation: 'maquette' })).toBe('fine+maquette');
+  });
+
+  it('a reply for another mode forgets the bodies kept for the last one, so they are asked again', () => {
+    const tree = item('t', [part('coloured')]);
+    const render = new Map([['t', tree]]);
+    keepFine(render, { lod: 350, vegetation: 'maquette', items: [{ nodeId: 't', parts: [part('maquette')] }] }, [tree]);
+    expect(fineShown(tree, true).parts?.[0].name).toBe('maquette');
+    expect(notAsked(render)).toEqual([]);
+    keepFine(render, { lod: 400, items: [] }, []);
+    expect(fineShown(tree, true)).toBe(tree);
+    expect(notAsked(render)).toEqual([tree]);
   });
 });
