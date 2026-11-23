@@ -34,6 +34,27 @@ export const DA: Record<string, string> = {
   "Gathering the objects": "Samler objekterne",
   "Preparing the objects": "Forbereder objekterne",
   "Making the version": "Laver versionen",
+  // The Speckle connector's receive: File → Speckle → Receive… (docs/plan-speckle.md, S2).
+  "Receive…": "Modtag…",
+  "Receive from Speckle": "Modtag fra Speckle",
+  "the latest": "den nyeste",
+  "no model in this project": "ingen model i dette projekt",
+  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "Efter versionens niveauer: hvert objekt på etagen i dets niveau (5 cm), ellers den, det står på",
+  "by the version's levels": "efter versionens niveauer",
+  "all on the current storey": "alle på den aktuelle etage",
+  "Send writes the model from the project base point; a model from another program may start at its internal origin": "Send skriver modellen fra projektets basispunkt; en model fra et andet program kan starte i sit interne origo",
+  "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "Objekterne kommer ind som referencer med deres flader, farver og egenskaber, grupperet efter modellen. En nyere version opdaterer dem på stedet og beholder deres GlobalId'er; det, versionen ikke længere har, fjernes.",
+  "They are already here. Received as a copy, the objects come in as references with ids of their own, beside the elements, which stay as they are.": "De er her allerede. Modtaget som en kopi kommer objekterne ind som referencer med egne id'er ved siden af elementerne, som forbliver, som de er.",
+  "Updated": "Opdateret",
+  "Unchanged": "Uændret",
+  "With lines only": "Kun med linjer",
+  "Receive as a copy": "Modtag som en kopi",
+  "Receive": "Modtag",
+  "Receiving…": "Modtager…",
+  "Receiving from Speckle": "Modtager fra Speckle",
+  "Downloading from Speckle": "Henter fra Speckle",
+  "Reading the objects": "Læser objekterne",
+  "Bringing the objects in": "Henter objekterne ind",
   // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
   "MEP legend": "Installationssignatur",
   "MEP LEGEND": "INSTALLATIONSSIGNATUR",
@@ -6365,5 +6386,8 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” løber ikke længere en meter mellem foringens stationer: den beholder sin sidste akse, frakoblet.`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” er kortere nu: foringen løber fra ${m[2]} til ${m[3]} m, ikke ${m[4]} til ${m[5]} m som koblet.`],
   // The Speckle connector's send (docs/plan-speckle.md, S1)
+  // The Speckle connector's receive (docs/plan-speckle.md, S2)
+  [/^Received (\d+) objects from Speckle\.$/, (m) => `Modtog ${m[1]} objekter fra Speckle.`],
+  [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Denne version blev sendt fra dette projekt: ${m[1]} af dens objekter er projektets egne elementer.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Sendt: ${m[1]} elementer, som en ny version.`],
 ];

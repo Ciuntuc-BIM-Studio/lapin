@@ -34,6 +34,27 @@ export const ZH: Record<string, string> = {
   "Gathering the objects": "正在收集对象",
   "Preparing the objects": "正在准备对象",
   "Making the version": "正在创建版本",
+  // The Speckle connector's receive: File → Speckle → Receive… (docs/plan-speckle.md, S2).
+  "Receive…": "接收…",
+  "Receive from Speckle": "从 Speckle 接收",
+  "the latest": "最新版本",
+  "no model in this project": "此项目中没有模型",
+  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "按版本的标高：每个对象放在其标高所在的楼层（5 cm），否则放在其所在的楼层",
+  "by the version's levels": "按版本的标高",
+  "all on the current storey": "全部放在当前楼层",
+  "Send writes the model from the project base point; a model from another program may start at its internal origin": "发送从项目基点写出模型；来自其他程序的模型可能从其内部原点开始",
+  "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "对象作为参照进入，带有其表面、颜色和属性，按模型分组。接收较新的版本会就地更新它们并保留其 GlobalId；版本中不再有的会被删除。",
+  "They are already here. Received as a copy, the objects come in as references with ids of their own, beside the elements, which stay as they are.": "它们已经在这里。作为副本接收时，对象作为带有自己 id 的参照进入，放在元素旁边，元素保持不变。",
+  "Updated": "已更新",
+  "Unchanged": "未更改",
+  "With lines only": "仅有线条",
+  "Receive as a copy": "作为副本接收",
+  "Receive": "接收",
+  "Receiving…": "正在接收…",
+  "Receiving from Speckle": "正在从 Speckle 接收",
+  "Downloading from Speckle": "正在从 Speckle 下载",
+  "Reading the objects": "正在读取对象",
+  "Bringing the objects in": "正在导入对象",
   // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
   "MEP legend": "机电图例",
   "MEP LEGEND": "机电图例",
@@ -6364,5 +6385,8 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `“${m[1]}”在衬砌桩号之间已不足一米：衬砌保留最后的轴线，已取消链接。`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `“${m[1]}”现在更短：衬砌从 ${m[2]} 到 ${m[3]} m，而非链接时的 ${m[4]} 到 ${m[5]} m。`],
   // The Speckle connector's send (docs/plan-speckle.md, S1)
+  // The Speckle connector's receive (docs/plan-speckle.md, S2)
+  [/^Received (\d+) objects from Speckle\.$/, (m) => `已从 Speckle 接收 ${m[1]} 个对象。`],
+  [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `此版本是从本项目发送的：其中 ${m[1]} 个对象是本项目自己的元素。`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `已发送：${m[1]} 个构件，作为新版本。`],
 ];

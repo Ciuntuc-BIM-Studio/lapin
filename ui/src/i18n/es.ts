@@ -34,6 +34,27 @@ export const ES: Record<string, string> = {
   "Gathering the objects": "Reuniendo los objetos",
   "Preparing the objects": "Preparando los objetos",
   "Making the version": "Creando la versión",
+  // The Speckle connector's receive: File → Speckle → Receive… (docs/plan-speckle.md, S2).
+  "Receive…": "Recibir…",
+  "Receive from Speckle": "Recibir de Speckle",
+  "the latest": "la más reciente",
+  "no model in this project": "ningún modelo en este proyecto",
+  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "Por los niveles de la versión: cada objeto en la planta de su nivel (5 cm), si no en la que se apoya",
+  "by the version's levels": "por los niveles de la versión",
+  "all on the current storey": "todo en la planta actual",
+  "Send writes the model from the project base point; a model from another program may start at its internal origin": "Enviar escribe el modelo desde el punto base del proyecto; un modelo de otro programa puede partir de su origen interno",
+  "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "Los objetos entran como referencias, con sus superficies, colores y propiedades, agrupados por el modelo. Recibir una versión más nueva los actualiza en su sitio y conserva sus GlobalId; lo que la versión ya no tiene se elimina.",
+  "They are already here. Received as a copy, the objects come in as references with ids of their own, beside the elements, which stay as they are.": "Ya están aquí. Recibidos como copia, los objetos entran como referencias con ids propios, junto a los elementos, que quedan como están.",
+  "Updated": "Actualizados",
+  "Unchanged": "Sin cambios",
+  "With lines only": "Solo con líneas",
+  "Receive as a copy": "Recibir como copia",
+  "Receive": "Recibir",
+  "Receiving…": "Recibiendo…",
+  "Receiving from Speckle": "Recibiendo de Speckle",
+  "Downloading from Speckle": "Descargando de Speckle",
+  "Reading the objects": "Leyendo los objetos",
+  "Bringing the objects in": "Trayendo los objetos",
   // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
   "MEP legend": "Leyenda de instalaciones",
   "MEP LEGEND": "LEYENDA DE INSTALACIONES",
@@ -6370,5 +6391,8 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `«${m[1]}» ya no tiene un metro entre los puntos del revestimiento: conserva su último eje, desvinculado.`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `«${m[1]}» es más corto ahora: el revestimiento va de ${m[2]} a ${m[3]} m, no de ${m[4]} a ${m[5]} m como se vinculó.`],
   // The Speckle connector's send (docs/plan-speckle.md, S1)
+  // The Speckle connector's receive (docs/plan-speckle.md, S2)
+  [/^Received (\d+) objects from Speckle\.$/, (m) => `Recibidos ${m[1]} objetos de Speckle.`],
+  [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Esta versión se envió desde este proyecto: ${m[1]} de sus objetos son elementos suyos.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Enviado: ${m[1]} elementos, como una versión nueva.`],
 ];
