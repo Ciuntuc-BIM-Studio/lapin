@@ -68,6 +68,14 @@ $S --data "$D" --urls http://127.0.0.1:5280
 
 Then in Lapin: Manage → Remote, kind **Server**, address `http://127.0.0.1:5280` (plain http is accepted on this computer only), sign in as `mihai@example.com`, **Projects on the remote**, pick Bloc P+4, **Use this project**; commit and push. In a second window sign in as `ana@example.com` and clone the project. Push from both to see the 409, then keep the work as a branch. Atrium (the viewer) opens the pushed commit through its viewer IFC: File → Open from server.
 
+The same round trip without the interface (push, clone, a second user's push, the 409, keep as a branch) runs against the server when its variables are set; without them the test passes at once:
+
+```sh
+LAPIN_REMOTE_SERVER=http://127.0.0.1:5280 LAPIN_REMOTE_PROJECT=<id of a project with no commit yet> \
+LAPIN_REMOTE_MIHAI=mihai@example.com LAPIN_REMOTE_ANA=ana@example.com LAPIN_REMOTE_PASSWORD='choose-a-password' \
+dotnet test engine/tests/Lapin.Engine.Tests --filter RemoteServerTests
+```
+
 `curl -s http://127.0.0.1:5280/lapin-remote/1.0/capabilities` checks the server answers; `GET /lapin-remote/1.0/projects/<id>/refs/log` (with a bearer token) shows who moved what.
 
 ## Where the tokens are
@@ -79,4 +87,4 @@ Never in a project, a commit, a ref entry or a folder remote. The engine gets th
 - The browser's engine: the HTTP remote is synchronous (`HttpClient.Send`), which the WebAssembly engine cannot do; remote calls work on the desktop. The browser needs an async path in the worker.
 - Versions as `refs/tags/v/<n>` tags and issues as `refs/tags/issue/*` (the client pushes and fetches tags, but Save version and Issue do not make them yet).
 - The status bar's `↑2 ↓1`, the History tab in Manage → Versions, fetch on open and every 5 minutes, Clean up (folder GC).
-- An `atrium:` author id: Foundation's `current-user` gives the e-mail address as the id, which never goes into a commit, so commits on a server are signed `local:<installation>` with the account's name until the server tells the public id.
+- An `atrium:` author id: Foundation's `current-user` gives the e-mail address as the id, which never goes into a commit, so commits on a server are signed `local:<installation>` with the account's name until the server tells the public id (the server's ref log names the account by its `atrium:` id all the same).
