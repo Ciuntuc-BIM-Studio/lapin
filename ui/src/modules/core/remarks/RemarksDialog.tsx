@@ -39,6 +39,16 @@ function Choice({ value, choices, onChange, label, any, disabled }: { value: str
   );
 }
 
+/** A remark asked for from elsewhere (a submission's gate on the CDE server: W4), by its BCF GUID; taken when the dialog has its list. */
+let askedGuid: string | null = null;
+
+/** Model remarks opened on one remark (by its topic GUID), from the publish queue's gate findings. */
+export function openRemark(guid: string): void {
+  if (!useSession.getState().doc) { notify('Open or clone the project first, then sync its issues: the issue is shown in Model remarks.'); return; }
+  askedGuid = guid.toLowerCase();
+  useUi.setState({ screen: 'workspace', dialog: 'remarks' });
+}
+
 export function RemarksDialog() {
   const nodes = useSession((s) => s.nodes);
   const view = useUi((s) => s.view);
@@ -67,6 +77,15 @@ export function RemarksDialog() {
     if (r && n === asked.current) { setData(r); setInfo(i); }
   }, []);
   useEffect(() => { void reload(); }, [reload, nodes]);
+  // A remark asked for (openRemark): selected once the list is there, the filters cleared so it shows.
+  useEffect(() => {
+    if (!data || !askedGuid) return;
+    const want = askedGuid;
+    askedGuid = null;
+    const r = data.remarks.find((x) => x.guid.toLowerCase() === want);
+    if (r) { setFilter(noFilter); setCurrent(r.id); }
+    else notify('This issue is not in the project open here: sync its issues (File → Collaborate…) to bring it.');
+  }, [data]);
 
   const shown = useMemo(() => (data ? filterRemarks(data.remarks, filter) : []), [data, filter]);
   const remark = useMemo(() => data?.remarks.find((r) => r.id === current) ?? null, [data, current]);

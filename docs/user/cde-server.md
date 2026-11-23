@@ -4,7 +4,7 @@ order: 126
 summary: Sign in to your office's CDE server (Atrium Server, such as cde.lapinbim.com), clone a project, save your work to the server and get the others', keep the issues in step, and, as an administrator, manage the accounts and projects.
 ---
 
-A CDE server keeps your office's projects in one place: every save with its author and note, the versions and issue sheets, the members of each project and their roles, and the issues (BCF topics) everyone answers. Lapin works on it from the desktop app and from the browser. The company's server is at **cde.lapinbim.com**; your office can run its own, Atrium Server, which is free.
+A CDE server keeps your office's projects in one place: every save with its author and note, the versions and issue tags, the members of each project and their roles, and the issues (BCF topics) everyone answers. Lapin works on it from the desktop app and from the browser. The company's server is at **cde.lapinbim.com**; your office can run its own, Atrium Server, which is free.
 
 There is no sign-up: the server's administrator makes your account and gives you a first password, which you change after you sign in.
 
@@ -24,18 +24,21 @@ In the browser, the start screen lists the projects you are a member of, with yo
 - an **Editor** also saves to the server, and makes and changes issues;
 - an **Owner** does everything, and manages the project's members and rules.
 
-A project's page shows the history of its main line (who saved, when, with what note, and the versions and issue sheets made from each save), the branches in progress, the **Activity**, the **Members** and the **Rules**.
+A project's page shows the history of its main line (who saved, when, with what note, and the versions and issue tags made from each save), the branches in progress, the **Activity**, the **Members** and the **Rules**.
 
-On the desktop, File → Collaborate… shows the Activity and the Rules of the project the file is connected to.
+On the desktop, File → Collaborate… shows the Publishing, the Activity and the Rules of the project the file is connected to.
 
-**Activity** lists, newest first, the saves to the server, the versions and issue sheets, and every change to an issue: who created it, commented, changed its status, assigned it. **More** reads older entries.
+An **issue tag** is an issue made with **Manage → Issue…** (its revision, status, container and files) once it is on the server; it never changes.
+
+**Activity** lists, newest first, the saves to the server, the versions and issue tags, the submissions and their decisions, and every change to an issue: who created it, commented, changed its status, assigned it. **More** reads older entries.
 
 **Members**: owners add someone who has an account on the server (by e-mail address), change a role, or remove a member. A project always keeps at least one owner.
 
 **Rules** (owners change them; the others read them):
 
 - who saves to main: editors and owners, or owners only;
-- who makes issue sheets;
+- who makes issue tags directly: owners only, or editors and owners;
+- who approves submissions: owners only, or editors and owners;
 - who comments on issues: everyone, viewers too, or editors and owners;
 - who closes an issue: its author and owners, or anyone who may change it;
 - whether **Resolved** needs a comment saying how it was resolved.
@@ -77,11 +80,33 @@ What your role does not allow is greyed out:
 
 The types, statuses, priorities and labels offered are the project's own on the server, and **Assigned to** lists the project's members. When the server refuses a change it says why (for example *Say how it was resolved: add a comment, then set Resolved.*): a value your role may not set comes back as the server has it; a status waiting for its comment stays in your project until you add the comment and sync again.
 
+## Publishing
+
+On a CDE server an issue goes from Lapin to the server in two ways, both from the end of **Manage → Issue…**, under **On the CDE server**. Either way the project is saved to the server first, so the issue goes with a save the server holds; the files the project keeps (the PDFs, the transmittal, the IFC when kept) go with it.
+
+- **Submit for approval** asks an approver to publish the issue. It waits in the project's **Submissions** until an approver approves it (the server then makes its issue tag) or rejects it. Editors and owners submit.
+- **Make the issue tag now** puts the issue tag on the server at once, without approval, where the project's rules let you (owners by default). On a folder remote this is the only way.
+
+A WIP issue stays in the project: issue to Shared or Published to put it on the server.
+
+The project's page (in the browser) and **File → Collaborate… → Publishing** (on the desktop) have three tabs:
+
+- **Containers**: the ISO 19650 containers. **WIP** lists the branches in progress; **Shared** and **Published** list the issue tags with their revision, status, date and who issued them (**approved** when it came through the queue); a Published revision goes to **Archived** when the same issue is published again at a later revision. **Open** opens a revision read-only; **.lapin** and **IFC** download it; **files** lists the issued files, each to download.
+- **Submissions**: the queue, waiting ones first (**Show** picks the others: approved, rejected, withdrawn, all). Click one for its commit, documents, files and **gate**: the open issues that stop it. An issue is tied to a document by a reference link `lapin-document:<document name>`; with no documents, every open issue of priority Critical stops it. Click an issue of the gate to open it in Model remarks (in the project open here, after Sync issues).
+  - **Approve** (with an optional note) makes the issue tag; the resolved issues tied to the submission are closed. While the gate fails, only an owner approves, by ticking **Approve despite the open issues** and writing a note: the override and its note are kept.
+  - **Reject** needs the reason.
+  - **Withdraw** is the author's.
+  - What your role and the project's rules do not allow is greyed out; the author does not approve their own submission (unless they are the project's only owner).
+- **Handover diff**: pick two issued revisions, **Compare**: the documents added, removed, changed (another file) and unchanged between them, and how many model parts changed. **Export to XLSX** writes the handover report with this diff.
+
+**Handover report (XLSX)** writes an Excel workbook of the project open here: a **Report** sheet (project, server, when, by whom, the counts), **Issues** (number, title, type, status, priority, assigned to, due date, labels, dates and authors, comments), **Comments**, the **Journal** (every change to the issues on the server: who, when, the old and the new value) and, from the Handover diff, the **Handover diff** sheet. Lapin writes it itself; it opens in Excel, LibreOffice and Numbers.
+
 ## Administration
 
 A server administrator sees **Administration** (on the start screen in the browser; **File → Collaborate… → Administration…** on the desktop):
 
 - **Accounts**: every account with its projects. **Create account** makes one from an e-mail address and a name; the server makes its first password and shows it **once**: copy it and give it to the person. **Disable** ends someone's sign-ins and refuses new ones (their projects, saves and issues stay); **Enable** lets them back. The key button sets a new password, shown once. **Administrator** gives or takes the administration (you cannot take your own, nor disable yourself).
 - **New project**: a project made on the server, with you as its owner. Open its page to add the members.
+- **E-mail outbox**: the mails the server writes (a submission to its approvers, its approval or rejection to its author, an issue to its new assignee), with their status. Sending is off until the server's administrator sets its SMTP settings; until then the mails wait in the outbox, and nothing is lost.
 
 The browser keeps nothing of the passwords: they are shown once and gone.

@@ -9,6 +9,8 @@
  * the issue and saves the project as a version named after it, in one call:
  * the project is clean after. The dialog then shows that issue as issued —
  * its names, its files — until it is closed or a new issue is started.
+ * With a remote (W4, CdePublish.tsx IssueOnServer) the issue then goes on: submitted for approval on a CDE server, or its issue tag
+ * made directly where the rules allow.
  */
 
 import { backdropClose } from '../../../shell/Dialog';
@@ -24,6 +26,7 @@ import {
 } from './cde';
 import { PendingDialog } from '../PendingDialog';
 import { documentPictures } from '../documents/documents';
+import { IssueOnServer } from '../CdePublish';
 
 export function IssueDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -156,6 +159,7 @@ export function IssueDialog() {
               ))}
             </ul>
             {done.path && canUseFolder() && <button type="button" className="link" onClick={() => void openFolder(done.path!)}><FolderOpen size={12} /> Open folder</button>}
+            <IssueOnServer issue={done} />
           </div>
         ) : (
           <div className="dialog-body cde">

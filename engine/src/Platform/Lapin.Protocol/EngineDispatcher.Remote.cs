@@ -193,6 +193,9 @@ public sealed partial class EngineDispatcher
                 return (IssueInfo(h, IssueRemote(h, p)), null);
             }
             case "remote.atrium": return await Atrium(p, tokens);
+            case "remote.handoverReport": return await HandoverReport(p, tokens, now);
+            case "remote.submitIssue": return await SubmitIssue(p, me, tokens);
+            case "remote.issueTag": return await IssueTag(p, me, tokens, now);
             case "remote.push": return await Push(p, me, tokens, now);
             case "remote.pull": return await Pull(p, me, tokens, now, asBytes);
             case "remote.clone": return await Clone(p, me, tokens, now);
@@ -523,6 +526,9 @@ public sealed partial class EngineDispatcher
 
     static readonly string[] AtriumMethods = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
+    static readonly System.Text.RegularExpressions.Regex ReadOnlyObject = new(
+        "^lapin-remote/1\\.0/projects/[A-Za-z0-9._-]{1,128}/(commits/[0-9a-f]{64}/(package|viewer)|objects/[0-9a-f]{64})$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     /// <summary>
     /// One request to the server's own API (Atrium's <c>/atrium/1.0</c>: the account, its administration, members, rules, activity;
     /// BCF 3.0; and the making of a project, <c>POST /lapin-remote/1.0/projects</c>) on the sign-in the call carries, for the desktop's
@@ -534,13 +540,21 @@ public sealed partial class EngineDispatcher
         var method = ((string?)p["method"] ?? "GET").ToUpperInvariant();
         var path = ((string?)p["path"] ?? "").TrimStart('/');
         var bare = path.Split('?')[0];
+        // W4: a commit's package, its viewer record and an object (its IFC copy, an issued file) read for the desktop's containers view.
+        var download = method == "GET" && ReadOnlyObject.IsMatch(bare);
         var allowed = bare.StartsWith("atrium/1.0/", StringComparison.Ordinal) || bare.StartsWith("bcf/3.0/", StringComparison.Ordinal)
-            || (bare == "lapin-remote/1.0/projects" && method == "POST");
+            || (bare == "lapin-remote/1.0/projects" && method == "POST") || download;
         if (!allowed || !AtriumMethods.Contains(method) || path.Contains("..", StringComparison.Ordinal) || path.Contains('\\') || path.Contains("//", StringComparison.Ordinal) || path.Contains('#'))
             throw new CommandException("Not a request of the server's own API.");
         var remote = await HttpRemote.OpenAsync(Http, url, "-", tokens);
-        var a = await remote.ApiAsync(new HttpMethod(method), path, p["body"]?.DeepClone(), (string?)p["ifMatch"]);
+        var bytes = download && Flag(p, "bytes");
+        var a = await remote.ApiAsync(new HttpMethod(method), path, p["body"]?.DeepClone(), (string?)p["ifMatch"], bytes);
         var o = new JsonObject { ["status"] = a.Status, ["body"] = a.Json?.DeepClone(), ["etag"] = a.ETag };
+        if (a.Bytes is { } b)
+        {
+            if ((string?)p["saveTo"] is { Length: > 0 } to) { Lapin.Platform.AtomicFile.Write(RefuseOverRead(HostFiles.Check(to)), b); o["saved"] = to; o["bytes"] = b.Length; }
+            else o["data"] = Convert.ToBase64String(b);
+        }
         Tokens(o, tokens);
         return (o, null);
     }

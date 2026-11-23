@@ -150,6 +150,7 @@ console.log(`▸ ${product.name} for the browser → build/${id}/${webName}: ${t
 
 // 5. The budgets (docs/plan-browser-engine.md, stage 3 and Lazy parts): the first load, and everything a session may fetch.
 const BUDGET_MB = 20;
-const BUDGET_ALL_MB = 22;
+// 22.5 since the CDE web W4 (publishing screens, their strings in every language): the W3 build stood at 22.0.
+const BUDGET_ALL_MB = 22.5;
 if (total.first > BUDGET_MB) { console.error(`build-web: the first load, ${total.first.toFixed(1)} MB, is over the ${BUDGET_MB} MB budget.`); process.exit(1); }
 if (total.all > BUDGET_ALL_MB) { console.error(`build-web: ${total.all.toFixed(1)} MB with the lazy parts is over the ${BUDGET_ALL_MB} MB budget.`); process.exit(1); }

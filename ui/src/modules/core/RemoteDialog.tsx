@@ -5,7 +5,8 @@
  * (fast-forward only for now) and pushed; ahead/behind as the last fetch saw it. A push the remote refused because someone pushed
  * first, or a pull whose histories went different ways, offers to keep my work as a branch on the remote or to discard my commits
  * (they stay in the file). A project can also be cloned from a remote into a new file. On a server (W3): Sync issues (the remarks with
- * the server's issues), the project's activity and rules, and Administration… for the server's administrators.
+ * the server's issues), the project's activity and rules, and Administration… for the server's administrators. W4: Publishing (the
+ * containers, the publish queue, the handover diff and report: CdePublish.tsx).
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -24,6 +25,7 @@ import { when } from './format';
 import { useCde } from '../../engine/cdeServer';
 import { account } from '../../engine/atrium';
 import { ActivityList, RulesEditor, openAdmin } from './CdeAdmin';
+import { PublishingPanel } from './CdePublish';
 
 type Kind = 'folder' | 'server';
 interface Outcome { pushed?: boolean; pulled?: boolean; kind?: string; message?: string; notes?: string[]; branch?: string; uploaded?: number; status?: HistoryStatus }
@@ -118,7 +120,7 @@ export function RemoteDialog() {
           )}
           {status && !remote && <AddRemote busy={busy} onAdded={refresh} setBusy={setBusy} />}
           {remote?.kind === 'server' && <Account server={remote.url} signedIn={account} onChange={refresh} />}
-          {remote?.kind === 'server' && account && <ServerProject server={remote.url} project={remote.project} busy={busy} run={run} />}
+          {remote?.kind === 'server' && account && <ServerProject server={remote.url} project={remote.project} name={projectTitle(path)} busy={busy} run={run} />}
           <div className="version-save">
             <input placeholder="Commit message" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="Commit message" onKeyDown={(e) => { if (e.key === 'Enter') void commit(); }} />
             <button type="button" className="btn primary" disabled={busy || !status?.uncommitted} onClick={() => void commit()} title="The project as it is now, committed into its file"><GitCommitHorizontal size={13} /> Commit</button>
@@ -168,7 +170,7 @@ export function RemoteDialog() {
  * The server project's own (W3): Sync issues, its activity and its rules, and Administration… for the server's administrators. The
  * desktop reaches the server through the engine on the project's sign-in.
  */
-function ServerProject({ server, project, busy, run }: { server: string; project: string; busy: boolean; run: (what: () => Promise<unknown>) => Promise<void> }) {
+function ServerProject({ server, project, name, busy, run }: { server: string; project: string; name: string; busy: boolean; run: (what: () => Promise<unknown>) => Promise<void> }) {
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => { account(server).then((a) => setIsAdmin(a.isAdmin)).catch(() => setIsAdmin(false)); }, [server]);
   return (
@@ -179,6 +181,10 @@ function ServerProject({ server, project, busy, run }: { server: string; project
         <span className="grow" />
         {isAdmin && <button type="button" data-remote="admin" onClick={() => openAdmin(server)} title="The server's accounts and new projects"><ShieldCheck size={13} /> Administration…</button>}
       </div>
+      <details data-remote="publishing">
+        <summary>Publishing: containers, submissions, handover</summary>
+        <PublishingPanel server={server} project={project} name={name} />
+      </details>
       <details>
         <summary>Activity</summary>
         <ActivityList server={server} project={project} />

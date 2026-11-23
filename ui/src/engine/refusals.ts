@@ -19,6 +19,20 @@ export const REFUSALS: Record<string, string> = {
   last_owner: 'The project needs at least one owner: make someone else owner first.',
   not_offered: 'This server does not offer it (an older Atrium Server).',
   unauthorized: 'Sign in to the server again.',
+  // W4: publishing.
+  tag_exists: 'That issue tag is on the server already: an issue tag never changes. Make a new revision.',
+  already_submitted: 'This issue and revision wait for approval already.',
+  unknown_commit: 'The server does not have the issue\'s commit: save to the server first.',
+  object_missing: 'The server lacks a file of the issue: send it again.',
+  gate_failed: 'Open issues stop the approval: resolve or close them, or an owner approves with a note.',
+  reason_required: 'Say why it is rejected.',
+  note_required: 'Passing the gate needs a note.',
+  not_pending: 'Someone decided on this submission meanwhile.',
+  own_submission: 'You cannot approve or reject your own submission.',
+  override_forbidden: 'Only the project\'s owners pass a failing gate.',
+  no_submission: 'The server has no such submission.',
+  no_tag: 'The server has no such issue tag.',
+  tag_immutable: 'An issue tag never changes.',
 };
 export const refusalText = (code: string, message?: string | null) => REFUSALS[code] ?? message ?? code;
 

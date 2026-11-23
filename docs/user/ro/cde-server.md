@@ -4,7 +4,7 @@ order: 126
 summary: Te autentifici pe serverul CDE al biroului tău (Atrium Server, cum e cde.lapinbim.com), clonezi un proiect, salvezi lucrul pe server și îl iei pe al celorlalți, ții problemele la zi și, ca administrator, gestionezi conturile și proiectele.
 ---
 
-Un server CDE ține proiectele biroului tău într-un singur loc: fiecare salvare cu autorul și nota ei, versiunile și emiterile, membrii fiecărui proiect și rolurile lor, și problemele (subiectele BCF) la care răspund toți. Lapin lucrează cu el din aplicația desktop și din browser. Serverul companiei e la **cde.lapinbim.com**; biroul tău își poate rula propriul server, Atrium Server, care e gratuit.
+Un server CDE ține proiectele biroului tău într-un singur loc: fiecare salvare cu autorul și nota ei, versiunile și etichetele de emitere, membrii fiecărui proiect și rolurile lor, și problemele (subiectele BCF) la care răspund toți. Lapin lucrează cu el din aplicația desktop și din browser. Serverul companiei e la **cde.lapinbim.com**; biroul tău își poate rula propriul server, Atrium Server, care e gratuit.
 
 Nu există înregistrare: administratorul serverului îți face contul și îți dă o primă parolă, pe care o schimbi după ce te autentifici.
 
@@ -24,18 +24,21 @@ După autentificare, **Schimbă parola…** îți setează propria parolă; cele
 - un **Editor** salvează și pe server și face și modifică probleme;
 - un **Proprietar** face totul și gestionează membrii și regulile proiectului.
 
-Pagina unui proiect arată istoricul ramurii lui principale (cine a salvat, când, cu ce notă, și versiunile și emiterile făcute din fiecare salvare), ramurile în lucru, **Activitatea**, **Membrii** și **Regulile**.
+Pagina unui proiect arată istoricul ramurii lui principale (cine a salvat, când, cu ce notă, și versiunile și etichetele de emitere făcute din fiecare salvare), ramurile în lucru, **Activitatea**, **Membrii** și **Regulile**.
 
-Pe desktop, Fișier → Colaborează… arată Activitatea și Regulile proiectului la care e conectat fișierul.
+Pe desktop, Fișier → Colaborează… arată Publicarea, Activitatea și Regulile proiectului la care e conectat fișierul.
 
-**Activitatea** listează, cele mai noi primele, salvările pe server, versiunile și emiterile și fiecare schimbare a unei probleme: cine a creat-o, a comentat-o, i-a schimbat starea, a atribuit-o. **Mai multe** citește intrările mai vechi.
+O **etichetă de emitere** e o emitere făcută cu **Manage → Issue…** (revizia, starea, containerul și fișierele ei) odată ajunsă pe server; nu se mai schimbă niciodată.
+
+**Activitatea** listează, cele mai noi primele, salvările pe server, versiunile și etichetele de emitere, propunerile și deciziile asupra lor, și fiecare schimbare a unei probleme: cine a creat-o, a comentat-o, i-a schimbat starea, a atribuit-o. **Mai multe** citește intrările mai vechi.
 
 **Membri**: proprietarii adaugă pe cineva care are un cont pe server (după adresa de e-mail), schimbă un rol sau scot un membru. Un proiect păstrează întotdeauna cel puțin un proprietar.
 
 **Reguli** (le schimbă proprietarii; ceilalți le citesc):
 
 - cine salvează în main: editorii și proprietarii, sau doar proprietarii;
-- cine face emiteri;
+- cine face direct etichetele de emitere: doar proprietarii, sau editorii și proprietarii;
+- cine aprobă propunerile: doar proprietarii, sau editorii și proprietarii;
 - cine comentează problemele: toată lumea, și cititorii, sau editorii și proprietarii;
 - cine închide o problemă: autorul ei și proprietarii, sau oricine o poate modifica;
 - dacă **Rezolvată** cere un comentariu care spune cum a fost rezolvată.
@@ -77,11 +80,33 @@ Ce nu permite rolul tău apare estompat:
 
 Tipurile, stările, prioritățile și etichetele oferite sunt cele proprii proiectului pe server, iar **Responsabil** listează membrii proiectului. Când serverul refuză o schimbare, spune de ce (de exemplu *Spune cum a fost rezolvată: adaugă un comentariu, apoi setează Rezolvată.*): o valoare pe care rolul tău nu o poate seta revine așa cum o are serverul; o stare care așteaptă comentariul rămâne în proiectul tău până adaugi comentariul și sincronizezi din nou.
 
+## Publicarea
+
+Pe un server CDE o emitere ajunge din Lapin pe server în două feluri, amândouă de la sfârșitul **Manage → Issue…**, sub **Pe serverul CDE**. În ambele cazuri proiectul se salvează întâi pe server, ca emiterea să meargă cu o salvare pe care serverul o are; fișierele păstrate în proiect (PDF-urile, borderoul, IFC-ul când e păstrat) merg cu ea.
+
+- **Propune spre aprobare** cere unui aprobator să publice emiterea. Ea așteaptă în **Propuneri** până când un aprobator o aprobă (serverul îi face atunci eticheta de emitere) sau o respinge. Propun editorii și proprietarii.
+- **Fă acum eticheta de emitere** pune eticheta de emitere pe server imediat, fără aprobare, acolo unde regulile proiectului îți permit (implicit proprietarilor). Pe un dosar la distanță e singurul fel.
+
+O emitere WIP rămâne în proiect: emite în Comune sau Publicate ca să ajungă pe server.
+
+Pagina proiectului (în browser) și **Fișier → Colaborează… → Publicare** (pe desktop) au trei file:
+
+- **Containere**: containerele ISO 19650. **WIP** listează ramurile în lucru; **Comune** și **Publicate** listează etichetele de emitere cu revizia, starea, data și cine le-a emis (**aprobată** când a trecut prin coadă); o revizie Publicată trece în **Arhivate** când aceeași emitere e publicată din nou la o revizie ulterioară. **Deschide** deschide o revizie doar pentru citire; **.lapin** și **IFC** o descarcă; **fișiere** listează fișierele emise, fiecare de descărcat.
+- **Propuneri**: coada, întâi cele care așteaptă (**Arată** le alege pe celelalte: aprobate, respinse, retrase, toate). Un clic pe una arată commit-ul, documentele, fișierele și **poarta**: problemele deschise care o opresc. O problemă se leagă de un document printr-o legătură de referință `lapin-document:<numele documentului>`; fără documente, orice problemă deschisă cu prioritatea Critical o oprește. Un clic pe o problemă a porții o deschide în Observații pe model (în proiectul deschis aici, după Sincronizează problemele).
+  - **Aprobă** (cu o notă opțională) face eticheta de emitere; problemele rezolvate legate de propunere se închid. Cât timp poarta nu e îndeplinită, aprobă doar un proprietar, bifând **Aprobă în ciuda problemelor deschise** și scriind o notă: derogarea și nota ei rămân scrise.
+  - **Respinge** cere motivul.
+  - **Retrage** e a autorului.
+  - Ce nu permit rolul tău și regulile proiectului e dezactivat; autorul nu își aprobă propria propunere (decât dacă e singurul proprietar al proiectului).
+- **Diferențe la predare**: alege două revizii emise, **Compară**: documentele adăugate, eliminate, schimbate (alt fișier) și neschimbate între ele, și câte părți ale modelului s-au schimbat. **Exportă în XLSX** scrie raportul de predare cu aceste diferențe.
+
+**Raport de predare (XLSX)** scrie un registru Excel al proiectului deschis aici: o foaie **Report** (proiectul, serverul, când, de cine, numărătorile), **Issues** (numărul, titlul, tipul, starea, prioritatea, cui e atribuită, termenul, etichetele, datele și autorii, comentariile), **Comments**, **Journal** (fiecare schimbare a problemelor pe server: cine, când, valoarea veche și cea nouă) și, din Diferențe la predare, foaia **Handover diff**. Lapin îl scrie singur; se deschide în Excel, LibreOffice și Numbers.
+
 ## Administrare
 
 Un administrator al serverului vede **Administrare** (pe ecranul de start în browser; **Fișier → Colaborează… → Administrare…** pe desktop):
 
 - **Conturi**: fiecare cont cu proiectele lui. **Creează cont** face unul dintr-o adresă de e-mail și un nume; serverul face prima lui parolă și o arată **o singură dată**: copiaz-o și dă-o persoanei. **Dezactivează** încheie autentificările cuiva și le refuză pe cele noi (proiectele, salvările și problemele lui rămân); **Activează** îl lasă să revină. Butonul cu cheie setează o parolă nouă, arătată o singură dată. **Administrator** dă sau retrage administrarea (nu o poți retrage pe a ta și nu te poți dezactiva).
 - **Proiect nou**: un proiect făcut pe server, cu tine proprietar. Deschide-i pagina ca să adaugi membrii.
+- **Mesaje e-mail de trimis**: mesajele pe care le scrie serverul (o propunere către aprobatorii ei, aprobarea sau respingerea către autor, o problemă către noul ei responsabil), cu starea lor. Trimiterea e oprită până când administratorul serverului îi pune setările SMTP; până atunci mesajele așteaptă aici și nu se pierde nimic.
 
 Browserul nu păstrează nimic din parole: sunt arătate o singură dată și dispar.

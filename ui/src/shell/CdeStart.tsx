@@ -18,6 +18,7 @@ import { useSession } from '../engine/session';
 import { notify, useUi } from '../app/store';
 import { when } from '../modules/core/format';
 import { ActivityList, AdminPanel, RulesEditor } from '../modules/core/CdeAdmin';
+import { PublishingPanel } from '../modules/core/CdePublish';
 import { account } from '../engine/atrium';
 import { REFUSALS } from '../engine/remote';
 import {
@@ -283,10 +284,11 @@ function ProjectPage({ project, back, connected }: { project: ServerProject; bac
             ))}
           </ul>
         </>}
-        {(data.refs.versions.length > 0 || data.refs.issues.length > 0) && <>
-          <p className="eyebrow">Versions and issues</p>
+        <PublishingPanel server={window.location.origin} project={project.id} name={project.name} />
+        {data.refs.versions.length > 0 && <>
+          <p className="eyebrow">Versions</p>
           <ul className="cde-list">
-            {[...data.refs.versions, ...data.refs.issues].map((t) => (
+            {data.refs.versions.map((t) => (
               <li key={t.name} className="cde-row">
                 <span className="cde-row-body">
                   <span className="recent-name" data-no-i18n>{refLabel(t.name)}</span>

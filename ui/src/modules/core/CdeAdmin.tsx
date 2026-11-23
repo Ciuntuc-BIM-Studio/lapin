@@ -12,6 +12,8 @@ import { confirmAction } from '../../shell/prompts';
 import { notify, useUi } from '../../app/store';
 import { when } from './format';
 import { refLabel } from '../../engine/cdeServer';
+import { issueLabel, submissionWords } from '../../engine/publishing';
+import { OutboxList } from './CdePublish';
 import {
   activity, adminUsers, changeUser, createProject, createUser, getRules, issueWords, putRules, resetPassword,
   type ActivityItem, type AdminUser, type Rules,
@@ -101,6 +103,7 @@ export function AdminPanel({ server, onProject }: { server: string; onProject?: 
         <input placeholder="Project name" aria-label="Project name" value={project} onChange={(e) => setProject(e.target.value)} data-cde-new-project />
         <button type="submit" className="btn" disabled={busy || !project.trim()} data-cde-create-project><FolderPlus size={13} />Create project</button>
       </form>
+      <OutboxList server={server} />
     </div>
   );
 }
@@ -149,6 +152,8 @@ export function RulesEditor({ server, project }: { server: string; project: stri
             <option value="editor">Editors and owners</option><option value="owner">Owners only</option></select></td></tr>
           <tr><td>Who makes issue tags</td><td><select aria-label="Who makes issue tags" value={rules.issueTags} disabled={off} onChange={(e) => void set({ issueTags: e.target.value as Rules['issueTags'] })}>
             <option value="owner">Owners only</option><option value="editor">Editors and owners</option></select></td></tr>
+          <tr><td>Who approves submissions</td><td><select aria-label="Who approves submissions" value={rules.approve ?? 'owner'} disabled={off || rules.approve === undefined} data-cde-rule="approve" onChange={(e) => void set({ approve: e.target.value as NonNullable<Rules['approve']> })}>
+            <option value="owner">Owners only</option><option value="editor">Editors and owners</option></select></td></tr>
           <tr><td>Who comments on issues</td><td><select aria-label="Who comments on issues" value={rules.comments} disabled={off} onChange={(e) => void set({ comments: e.target.value as Rules['comments'] })}>
             <option value="viewer">Everyone, viewers too</option><option value="editor">Editors and owners</option></select></td></tr>
           <tr><td>Who closes an issue</td><td><select aria-label="Who closes an issue" value={rules.close} disabled={off} onChange={(e) => void set({ close: e.target.value as Rules['close'] })}>
@@ -157,12 +162,21 @@ export function RulesEditor({ server, project }: { server: string; project: stri
         </tbody>
       </table>
       {!owner && <p className="muted small">The project's owners change its rules.</p>}
+      <p className="muted small">Issue tags are the issues made with Manage → Issue… once they are on the server: revision, status, container and files, never changed. Someone who may not make them submits the issue for approval.</p>
     </div>
   );
 }
 
-/** One activity line: a ref moved (a save to the server, a version, an issue tag) or an issue changed. */
+/** One activity line: a ref moved (a save to the server, a version, an issue tag), an issue changed, or a submission (W4). */
 function ActivityLine({ item, nameOf }: { item: ActivityItem; nameOf: (email: string) => string }) {
+  if (item.kind === 'submission') {
+    return (
+      <li className="small" data-cde-activity="submission">
+        <span data-no-i18n>{when(item.at)} · {item.by.name} · {issueLabel(item.issue, item.revision)}</span>{' '}
+        {submissionWords(item.changes).map((w, i) => <span key={w} className="muted">{i > 0 ? ', ' : ''}<span data-i18n-ctx="cde">{w}</span></span>)}
+      </li>
+    );
+  }
   if (item.kind === 'ref') {
     return (
       <li className="small" data-cde-activity="ref">

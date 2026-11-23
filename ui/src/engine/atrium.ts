@@ -41,6 +41,35 @@ async function need<T>(server: string, method: string, path: string, body?: unkn
 
 const enc = encodeURIComponent;
 
+// ------------------------------------------------------------ what the server offers
+
+const offered = new Map<string, Promise<string[]>>();
+
+/**
+ * The features of Atrium's own API (`GET /atrium/1.0/`, no sign-in: `{api, version, features}`), asked once per server; an older
+ * server answers 404 there, which is no feature. W4's screens show when it offers `submissions`.
+ */
+export function features(server: string): Promise<string[]> {
+  let f = offered.get(server);
+  if (!f) {
+    f = (async () => {
+      try {
+        if (isCdeServer(server)) {
+          const r = await fetch('/atrium/1.0/', { credentials: 'omit' });
+          return r.ok ? ((await r.json()) as { features?: string[] }).features ?? [] : [];
+        }
+        const a = await request<{ features?: string[] }>(server, 'GET', 'atrium/1.0/');
+        return a.status === 200 ? a.body?.features ?? [] : [];
+      } catch { return []; }
+    })();
+    offered.set(server, f);
+  }
+  return f;
+}
+
+/** Forgets what servers offer (tests). */
+export const forgetFeatures = () => offered.clear();
+
 // ------------------------------------------------------------ the account
 
 export interface Account { id: string; publicId: string; authorId: string; name: string; email: string; isAdmin: boolean; projects: { id: string; name: string; role: Role }[] }
@@ -66,9 +95,14 @@ export const resetPassword = async (server: string, email: string) => (await nee
 /** A new project (administrators): the caller becomes its owner and adds the members. */
 export const createProject = (server: string, name: string) => need<{ id: string; name: string; role?: Role }>(server, 'POST', 'lapin-remote/1.0/projects', { name: name.trim() });
 
+// ------------------------------------------------------------ a project's members (read by any member)
+
+export const members = (server: string, project: string) =>
+  need<{ role: Role; members: { email: string; name: string; role: Role }[] }>(server, 'GET', `atrium/1.0/projects/${enc(project)}/members`);
+
 // ------------------------------------------------------------ a project's rules
 
-export interface Rules { main: 'editor' | 'owner'; issueTags: 'editor' | 'owner'; comments: 'viewer' | 'editor'; close: 'author' | 'editor'; resolveNeedsComment: boolean; role: Role }
+export interface Rules { main: 'editor' | 'owner'; issueTags: 'editor' | 'owner'; comments: 'viewer' | 'editor'; close: 'author' | 'editor'; resolveNeedsComment: boolean; approve?: 'editor' | 'owner'; role: Role }
 export const getRules = (server: string, project: string) => need<Rules>(server, 'GET', `atrium/1.0/projects/${enc(project)}/rules`);
 export const putRules = (server: string, project: string, change: Partial<Omit<Rules, 'role'>>) => need<Rules>(server, 'PUT', `atrium/1.0/projects/${enc(project)}/rules`, change);
 
@@ -77,7 +111,8 @@ export const putRules = (server: string, project: string, change: Partial<Omit<R
 export interface RefItem { kind: 'ref'; at: string; by: { id: string; name: string }; name: string; old: string | null; new: string | null; force: boolean }
 export interface IssueChange { type: string; commentGuid: string | null; viewpointGuid: string | null; old: string | null; new: string | null }
 export interface IssueItem { kind: 'issue'; at: string; by: { id: string; name: string; email: string }; topicGuid: string; title: string | null; changes: IssueChange[] }
-export type ActivityItem = RefItem | IssueItem;
+export interface SubmissionItem { kind: 'submission'; at: string; by: { id: string; name: string; email: string }; submissionId: string; number: number; issue: number | null; revision: string; purpose: string; changes: { type: string; old: string | null; new: string | null }[] }
+export type ActivityItem = RefItem | IssueItem | SubmissionItem;
 
 /** The ref log and the issue changes together, newest first, a page at a time. */
 export const activity = (server: string, project: string, cursor?: string, limit = 50) =>
@@ -106,4 +141,76 @@ export function issueWords(item: IssueItem, nameOf: (email: string) => string = 
     }
   }
   return words;
+}
+
+// ------------------------------------------------------------ publishing (W4: the publish queue, containers, the handover diff, the outbox)
+
+export interface Person { id: string; name: string; email?: string }
+export interface ServerFile { name: string; sha256: string; size: number }
+export interface GateTopic { guid: string; serverAssignedId: string | null; title: string; status: string | null; priority: string | null; document: string | null }
+export type SubmissionStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn';
+export interface Submission {
+  id: string; number: number; status: SubmissionStatus; commit: string; issue: number | null; issueId: string | null; revision: string;
+  purpose: 'shared' | 'published'; suitability: string; note: string; documents: string[]; files: ServerFile[];
+  author: Person; created: string; decidedBy: Person | null; decided: string | null; decisionNote: string | null; reason: string | null; override: boolean;
+  tag: string | null; tagId: string | null; closedTopics: string[]; gate: { passed: boolean; topics: GateTopic[] } | null;
+}
+
+const S = (project: string) => `atrium/1.0/projects/${enc(project)}/submissions`;
+export const listSubmissions = async (server: string, project: string, status?: SubmissionStatus) =>
+  (await need<{ submissions: Submission[] }>(server, 'GET', `${S(project)}${status ? `?status=${status}` : ''}`)).submissions;
+export const getSubmission = (server: string, project: string, id: string) => need<Submission>(server, 'GET', `${S(project)}/${enc(id)}`);
+export const approveSubmission = (server: string, project: string, id: string, note: string, override = false) =>
+  need<Submission>(server, 'POST', `${S(project)}/${enc(id)}/approve`, { note, ...(override ? { override: true } : {}) });
+export const rejectSubmission = (server: string, project: string, id: string, reason: string) => need<Submission>(server, 'POST', `${S(project)}/${enc(id)}/reject`, { reason });
+export const withdrawSubmission = (server: string, project: string, id: string) => need<Submission>(server, 'POST', `${S(project)}/${enc(id)}/withdraw`, {});
+
+export interface IssueTagItem {
+  kind: 'issue'; name: string; issue: number; revision: string; suitability: string; container: string; tag: string; commit: string; at: string;
+  author: Person; issuedAt: string; issuedBy: Person; note: string | null; files: ServerFile[]; submission: string | null; supersededBy: string | null;
+}
+export interface WipItem { kind: 'branch'; name: string; commit: string; updatedAt: string; updatedBy: Person }
+export interface Containers { wip: (WipItem | IssueTagItem)[]; shared: IssueTagItem[]; published: IssueTagItem[]; archived: IssueTagItem[] }
+export const containers = (server: string, project: string) => need<Containers>(server, 'GET', `atrium/1.0/projects/${enc(project)}/containers`);
+
+export interface DiffSide { name: string; commit: string; revision: string; at: string }
+export interface DiffDocument { document: string; name: string; sha256: string; size: number }
+export interface HandoverDiff {
+  from: DiffSide; to: DiffSide;
+  documents: { added: DiffDocument[]; removed: DiffDocument[]; changed: { document: string; from: ServerFile; to: ServerFile }[]; unchanged: string[] };
+  parts: { added: string[]; removed: string[]; changed: string[] };
+}
+export const handoverDiff = (server: string, project: string, from: string, to: string) =>
+  need<HandoverDiff>(server, 'GET', `atrium/1.0/projects/${enc(project)}/handover-diff?from=${enc(from)}&to=${enc(to)}`);
+
+export interface OutboxItem { id: string | number; kind: string; projectId: string | null; to: string; subject: string; body: string; status: 'pending' | 'sent' | 'failed'; attempts: number; created: string; nextAttempt: string | null; lastError: string | null; sent: string | null }
+export const outbox = (server: string, status?: OutboxItem['status'], limit = 100) =>
+  need<{ smtp: boolean; items: OutboxItem[] }>(server, 'GET', `atrium/1.0/admin/outbox?limit=${limit}${status ? `&status=${status}` : ''}`);
+
+/**
+ * A commit's package or an object (an issued file, an IFC copy) of a server project, as bytes: the page's fetch in the browser, the
+ * engine on the desktop (remote.atrium reads these paths, and nothing else of lapin-remote).
+ */
+export async function serverBytes(server: string, path: string): Promise<Uint8Array> {
+  if (isCdeServer(server)) {
+    const r = await api(`/${path}`);
+    if (!r.ok) {
+      let b: { code?: string; message?: string } = {};
+      try { b = await r.json() as typeof b; } catch { b = {}; }
+      throw new AtriumError(r.status, b.code ?? `http_${r.status}`, refusalText(b.code ?? '', b.message ?? `The server answered ${r.status}.`));
+    }
+    return new Uint8Array(await r.arrayBuffer());
+  }
+  const a = await remoteCall<{ status: number; body: { code?: string; message?: string } | null; data?: string }>('remote.atrium', { url: server, method: 'GET', path, bytes: true }, server);
+  if (a.status < 200 || a.status >= 300 || !a.data) throw new AtriumError(a.status, a.body?.code ?? `http_${a.status}`, refusalText(a.body?.code ?? '', a.body?.message ?? `The server answered ${a.status}.`));
+  const bin = atob(a.data);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+/** The viewer record of a commit (its IFC copy's object), or null when it has none. */
+export async function commitViewer(server: string, project: string, commit: string): Promise<{ ifc: string; schema: string; size: number } | null> {
+  const a = await request<{ ifc: string; schema: string; size: number }>(server, 'GET', `lapin-remote/1.0/projects/${enc(project)}/commits/${commit}/viewer`);
+  return a.status === 200 && a.body ? a.body : null;
 }
