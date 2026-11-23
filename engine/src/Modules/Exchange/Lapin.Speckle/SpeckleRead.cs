@@ -19,8 +19,16 @@ namespace Lapin.Speckle;
 /// <summary>One colour's triangles of a received object, in metres, Z up: its colour, opacity and render material's name.</summary>
 public sealed record ReceivedPart(string Color, double Opacity, string? Material, List<Vec3> Vertices, List<(int A, int B, int C)> Triangles);
 
-/// <summary>A level the version names (a <c>LevelProxy</c>, or an object's own level): its name, elevation in metres, and its GlobalId when Lapin sent it.</summary>
-public sealed record ReceivedLevel(string Name, double? Elevation, string? GlobalId);
+/// <summary>
+/// A level the version names (a <c>LevelProxy</c>, or an object's own level): its name, elevation in metres (as the version
+/// gives it, from its own datum), its GlobalId when Lapin sent it, and its applicationId (Revit's level, the same in every
+/// version), by which a later receive finds the storey it made for it again.
+/// </summary>
+public sealed record ReceivedLevel(string Name, double? Elevation, string? GlobalId, string? ApplicationId = null)
+{
+    /// <summary>What the level is known by from one version to the next: its applicationId, else its name.</summary>
+    public string Key => ApplicationId is { Length: > 0 } a ? a : "name:" + Name;
+}
 
 /// <summary>
 /// One object of a version as it comes in: its Speckle ids, name, type and the IFC class it is taken as, the collections it
@@ -35,9 +43,12 @@ public sealed record ReceivedElement(string? ApplicationId, string? ObjectId, st
 public sealed record ReceivedDefinition(string Id, string Name, List<ReceivedPart> Parts);
 
 /// <summary>A version read: its objects, the definitions they share, what was left out (by Speckle type) and its notes.</summary>
+/// <see cref="Levels"/>: every level it names, by its proxies or its objects, once each.
 public sealed record SpeckleReceived(List<ReceivedElement> Elements, Dictionary<string, ReceivedDefinition> Definitions, Dictionary<string, int> Skipped,
-    List<string> Notes, string? RootApplicationId, string? Origin)
+    List<string> Notes, string? RootApplicationId, string? Origin, List<ReceivedLevel>? Levels = null)
 {
+    public IReadOnlyList<ReceivedLevel> AllLevels => Levels ?? [];
+
     public int SkippedCount => Skipped.Values.Sum();
     public int Triangles => Elements.Sum(e => e.Parts.Sum(p => p.Triangles.Count)) + Definitions.Values.Sum(d => d.Parts.Sum(p => p.Triangles.Count));
 }
@@ -172,6 +183,8 @@ public static class SpeckleRead
         readonly Dictionary<string, int> colourOf = [];
         readonly Dictionary<string, ReceivedLevel> levelOf = [];
         readonly Dictionary<string, ReceivedLevel> levelByName = new(StringComparer.OrdinalIgnoreCase);
+        /// <summary>The levels objects name that no proxy gives (an older connector's level object, a level's name alone), by their key.</summary>
+        readonly Dictionary<string, ReceivedLevel> otherLevels = [];
         readonly HashSet<string> unitNotes = [];
         int lostFaces;
 
@@ -200,7 +213,8 @@ public static class SpeckleRead
             Walk(root, [], 0, isRoot: true);
             if (lostFaces > 0) notes.Add($"{lostFaces} face(s) naming vertices a mesh does not have were left out.");
             var rootProps = Member(root, "properties") as IDictionary<string, object?>;
-            return new SpeckleReceived(elements, definitions, skipped, notes, root.applicationId, (rootProps != null && rootProps.TryGetValue("origin", out var og) ? og as string : null));
+            var levels = levelByName.Values.Concat(otherLevels.Values).GroupBy(l => l.Key).Select(g => g.First()).ToList();
+            return new SpeckleReceived(elements, definitions, skipped, notes, root.applicationId, (rootProps != null && rootProps.TryGetValue("origin", out var og) ? og as string : null), levels);
         }
 
         /// <summary>Every object by its applicationId, wherever it stands (definitions keep theirs outside the collections).</summary>
@@ -232,7 +246,8 @@ public static class SpeckleRead
             var units = props.GetValueOrDefault("units") as string ?? Member(v, "units") as string;
             var elevation = Number(props.GetValueOrDefault("elevation")) ?? Number(Member(v, "elevation"));
             var name = v.name is { Length: > 0 } n ? n : "Level";
-            return new ReceivedLevel(name, elevation * (units != null ? Metres(units, notes) : ModelMetres()), props.GetValueOrDefault("GlobalId") as string);
+            return new ReceivedLevel(name, elevation * (units != null ? Metres(units, notes) : ModelMetres()), props.GetValueOrDefault("GlobalId") as string,
+                p.applicationId ?? v.applicationId);
         }
 
         double? modelMetres;
@@ -366,12 +381,14 @@ public static class SpeckleRead
             switch (Member(b, "level"))
             {
                 case string s when levelByName.TryGetValue(s, out var byName): return byName;
-                case string s: return new ReceivedLevel(s, null, null);
+                case string s: return otherLevels.TryGetValue("name:" + s, out var seen) ? seen : otherLevels["name:" + s] = new ReceivedLevel(s, null, null);
                 case Base lb:
                     var units = Member(lb, "units") as string;
                     var name = Member(lb, "name") as string ?? "Level";
                     var elevation = Number(Member(lb, "elevation"));
-                    return levelByName.TryGetValue(name, out var known) ? known : new ReceivedLevel(name, elevation * (units != null ? Metres(units, notes) : ModelMetres()), null);
+                    if (levelByName.TryGetValue(name, out var known)) return known;
+                    var made = new ReceivedLevel(name, elevation * (units != null ? Metres(units, notes) : ModelMetres()), null, lb.applicationId);
+                    return otherLevels.TryGetValue(made.Key, out var had) ? had : otherLevels[made.Key] = made;
             }
             return null;
         }

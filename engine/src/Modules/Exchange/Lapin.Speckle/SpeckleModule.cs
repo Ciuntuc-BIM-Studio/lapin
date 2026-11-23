@@ -121,7 +121,7 @@ public sealed class SpeckleModule : ILapinModule
         });
 
         // A version into the project as references (SpeckleReceive), one undo step: {projectId, modelId, versionId?, asCopy?, origin?,
-        // storeyId?, activeStoreyId?, recognize?}. Received again, the same model's references are updated in place, keeping their
+        // storeyId?, activeStoreyId?, recognize?, levels?: "create" (the default: the missing storeys made from the version's levels) | "existing"}. Received again, the same model's references are updated in place, keeping their
         // GlobalIds; recognize: its walls and slabs made native where they pass the fidelity gate (SpeckleRecognition).
         r.Command("receive", "Receive from Speckle", (ctx, a) =>
         {
