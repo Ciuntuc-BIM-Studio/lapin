@@ -6432,7 +6432,8 @@ export const scenes = [
       await t.tool('sitework.scaffoldOnWalls');
       await t.ui({ selection: slab, selected: [slab, beam] });
       await t.tool('sitework.formwork');
-      await t.wait(800);
+      // The engine makes them a moment after the tools run (slower under load): wait for them rather than a fixed time.
+      await t.until(async () => (await t.nodes()).filter((n) => n.type === 'LapinFormwork').length >= 2 && (await t.nodes()).some((n) => n.type === 'LapinScaffold'), 'formwork on the floor and on the beam');
       const nodes = await t.nodes();
       const scaffold = nodes.find((n) => n.type === 'LapinScaffold');
       t.expect(scaffold && scaffold.props.closed === true, 'one closed scaffold round the walls');
@@ -6469,7 +6470,7 @@ export const scenes = [
       // The walls' formwork (their ring beams when they have them, else both faces), and its configurator.
       await t.ui({ selection: walls[0], selected: [walls[0], walls[1], walls[2], walls[3]] });
       await t.tool('sitework.formwork');
-      await t.wait(800);
+      await t.until(async () => (await t.nodes()).filter((n) => n.type === 'LapinFormwork' && n.props.kind === 'upright').length >= 4, 'formwork on the four walls');
       t.expect((await t.nodes()).filter((n) => n.type === 'LapinFormwork' && n.props.kind === 'upright').length === 4, 'formwork on the four walls');
       await t.ui({ selection: null, selected: [] });
       await t.tool('sitework.formworkTypes');
@@ -14147,6 +14148,9 @@ export const scenes = [
       await t.wait(600);
       t.expect(await dialog.locator('[data-tag-rules] [data-field=tag-rule-when]').count() === 1, 'the Tags tab lists the tag rule');
       t.expect(await dialog.locator('[data-field=tag-rule-new]').count() === 1, 'and New rule');
+      // The tag types' table has grown (a marker's symbol, fields): the rules lie below the dialog's fold, so bring them into view.
+      await dialog.locator('[data-tag-rules]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await t.wait(300);
       await t.shot('tag-rules', { of: '[data-tag-rules]', pad: 6 });
       await t.ui({ dialog: null });
       // A marker's properties: Shown, and its Tag type among the markers'.

@@ -70,8 +70,7 @@ export function StructureTypesDialog() {
   // A strip foundation's shape: the standard stem on a footing, or a profile of the project.
   const [stripShape, setStripShape] = useState<'standard' | 'profile'>('standard');
   const [profileId, setProfileId] = useState<string | null>(null);
-  // A beam type as a lintel (report #135): its mark, the bearing its lintels take, its stock lengths.
-  const [mark, setMark] = useState('');
+  // A beam type as a lintel (report #135): the bearing its lintels take, its stock lengths.
   const [bearing, setBearing] = useState<number | null>(null);
   const [lengths, setLengths] = useState<number[]>([]);
   // A column's finish layers round its core (decision 719), outward.
@@ -100,7 +99,6 @@ export function StructureTypesDialog() {
     setMaterial(own);
     // A type still in its section's default material follows a new section's, as a new one does.
     setMaterialChosen((own || CONCRETE) !== defaultTypeMaterial(!!sec?.kind && !['rectangle', 'circle', 'polygon'].includes(sec.kind)));
-    setMark(typeof t.props.mark === 'string' ? t.props.mark : '');
     setBearing(typeof t.props.bearing === 'number' ? t.props.bearing : null);
     setLengths(Array.isArray(t.props.lengths) ? (t.props.lengths as number[]) : []);
     if (t.props.kind === 'strip') {
@@ -142,7 +140,7 @@ export function StructureTypesDialog() {
     const args: Record<string, unknown> = { id: edited.id, name };
     if ((kind === 'column' || kind === 'beam') && shape === 'library') { if (lib.picked) Object.assign(args, { profile: lib.picked.profile, library: lib.picked.library }); }
     else if (kind === 'column' || kind === 'beam') args.section = section;
-    if (kind === 'column' || kind === 'beam') Object.assign(args, { mark, ...(kind === 'beam' ? { bearing, lengths } : {}) });
+    if (kind === 'column' || kind === 'beam') Object.assign(args, { ...(kind === 'beam' ? { bearing, lengths } : {}) });
     if (kind === 'column') args.finishLayers = wrapsArg(wraps);
     else if (kind === 'strip' && stripShape === 'profile') Object.assign(args, { bottom, ...(profileId ? { profileId } : {}) });
     else if (kind === 'strip') Object.assign(args, { stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom, ...(edited.props.profile ? { profile: null } : { core }) });
@@ -236,7 +234,6 @@ export function StructureTypesDialog() {
               {shape === 'rectangle' && <Len label={kind === 'beam' ? 'Depth' : 'Length'} value={d} min={0.01} onChange={setD} />}
             </>}
             {(kind === 'column' || kind === 'beam') && materialField}
-            {edited && (kind === 'column' || kind === 'beam') && <label className="field-line"><span className="eyebrow">Mark</span><input data-field="type-mark" value={mark} onChange={(e) => setMark(e.target.value)} /></label>}
             {edited && kind === 'beam' && <>
               <p className="muted small">As a lintel (a door's or window's precast product): the bearing its lintels take unless the rule says its own, and the lengths it is made in (none: cut to length).</p>
               <label className="field-line"><span className="eyebrow">Bearing</span><LengthField metres={bearing} blank min={0} onCommit={(m) => setBearing(m ?? null)} /></label>
