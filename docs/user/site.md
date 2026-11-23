@@ -99,6 +99,28 @@ In 3D, **Visibility / Graphics** hides a view's paths, roads, kerbs and pavement
 
 ![A section across a warped wing: its face leaning on its footing](shots/portal-section.webp)
 
+## Tunnel lining
+
+![The configurator on its horseshoe preset, the engine's preview beside its numbers](shots/tunnel-configurator.webp)
+
+**Tunnel lining…** (<kbd>TU</kbd>, in the **Landscape** group) sweeps a tunnel's cross-section along an axis. Pick a preset: **Horseshoe (NATM)** (a mined tunnel: crown, side, corner and invert arcs, all tangent, with an outer shell of shotcrete), **Circular (TBM ring)** (a bored tunnel's ring of one thickness), **Cut-and-cover box** (haunches under its roof) or **Vault on walls** (a vault on upright walls over a flat floor). Then set its numbers by group: the section (the clear width, the clear height over the road, the radii, the invert under the road), the lining (its thickness at the crown, at the walls and at the invert, and the outer shell; 0 leaves it out), the blocks (a casting block's length, or a ring's width) and the output. Every number may be a formula, as in the portal configurator: the wall and invert thicknesses are `{= thickness}` by default. Under **Section**, a profile you drew and saved ([Profiles](profiles.md)) can be the section instead: its outside and the clear opening inside it, the opening's floor under the road by **Invert under the road**. The preview is the engine's (plan, section, 3D), built by the same code as the lining.
+
+**Placing it.** **On an axis…** asks for a road, a path, a retaining wall, a track or a drafted line: click where the lining starts, then where it ends. The lining takes that axis between the two stations, with its curves and clothoids, and its red line (a designed one as it is; one that follows the ground fitted to points), and keeps its stations. **Draw the axis…** takes a polyline you draw instead; round its corners in the corridor configurator (**Configurator…** in its properties: radii and clothoids at each vertex, the red line's PVIs, the stations, the sections at stations), as for a road. The red line is the road's level on the axis; the section stays plumb and square to the axis in plan (no superelevation: the road's crossfall inside it is its own).
+
+![A horseshoe lining round a curve, in its casting blocks, with a portal at its mouth](shots/tunnel-3d.webp)
+
+**Blocks and rings.** The lining is cut into casting blocks (12.5 m by default) from its start, or into rings for a TBM, the last one what is left. Each is a part of its own, with its own GlobalId, kept when you change the lining's numbers (more blocks add new ones after). In plan the lining's outside and its clear opening are drawn hidden, its axis as a centre line, its ends and its joints across it, its stations along it.
+
+**Portals.** In the lining's properties, **Portal** **At the start** or **At the end** stands a portal (the portal configurator's flared preset) across the axis at that end: its face wall wider than the lining and its crown a metre over it, the wings going out of the tunnel. The lining passes through the face wall: the wall is cut by the lining's outside behind the end and by its clear opening in front, and follows the lining when it changes. **End skewed by** and **Start skewed by** turn an end's plane about the vertical (the portal made then turns with it); a skewed end needs a straight axis at a constant grade at that end.
+
+![A section across the lining at a station: the lining and its shotcrete shell](shots/tunnel-section.webp)
+
+**Sections.** A section across the lining (from the corridor configurator, or drawn) shows its layers with their materials; a section that follows the lining's axis is its long section, the crown and the invert along it.
+
+![The long section along the lining's axis](shots/tunnel-long-section.webp)
+
+**Exact geometry, IFC and quantities.** Along a straight at a constant grade every face is a plane, a cylinder or a ruled surface; over a vertical curve a translational B-spline surface (the parabola exactly); round a circular arc on a level grade a surface of revolution (tori, cones). A clothoid, or an arc on a grade, is skinned through sections close enough that it stays within the chord rule (1 mm). With **Exact surfaces** ticked ([Import and export](import-export.md)) the IFC export writes each block, and the STEP export always does, as an IfcAdvancedBrep on those surfaces. **IFC** *assembly* (the default) writes the lining as an IfcElementAssembly (user-defined, "Tunnel lining") over one IfcBuildingElementProxy per block or ring ("Lining block", "Lining ring") and per piece of the outer shell; IFC 4.3 has no tunnel lining element, and a wall or a slab would say the vault and the invert are what they are not. *body* writes one proxy. Each block has its quantities: concrete, the inner face's formwork, the outer face, the ends' formwork, and **Formwork** (with the outer face when **Outer face formworked**, the default of the box and the vault); the lining adds the section's area, the clear opening and the outer shell's volume.
+
 ## The terrain: boundary, slopes and grading
 
 ![A survey clipped to an L-shaped boundary, a slope tag, a gravel subregion and the cut/fill grid over a raised stroke](shots/terrain-tools-plan.webp)

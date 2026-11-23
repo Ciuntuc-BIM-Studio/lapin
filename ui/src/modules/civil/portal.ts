@@ -32,11 +32,11 @@ export const PRESET_HINTS: Record<string, string> = {
 /** The configurator open: on a new portal, or on a wall it made (its id). */
 export const usePortalDialog = create<{ id: string | null; spec: PortalSpec }>(() => ({ id: null, spec: { preset: 'flared' } }));
 
-/** The spec whole: the defaults, under its preset's, under what it gives (as the engine's Portals.Full). */
-export function fullSpec(catalog: PortalCatalog, spec: PortalSpec): PortalSpec {
+/** The spec whole: the defaults, under its preset's, under what it gives (as the engine's Portals.Full); `fallback` the preset when it names none the catalogue has. */
+export function fullSpec(catalog: PortalCatalog, spec: PortalSpec, fallback = 'flared'): PortalSpec {
   const o: PortalSpec = {};
   for (const p of catalog.params) o[p.key] = p.default;
-  const preset = typeof spec.preset === 'string' && catalog.presets.some((x) => x.key === spec.preset) ? spec.preset : 'flared';
+  const preset = typeof spec.preset === 'string' && catalog.presets.some((x) => x.key === spec.preset) ? spec.preset : fallback;
   Object.assign(o, catalog.presets.find((x) => x.key === preset)?.set ?? {});
   o.preset = preset;
   for (const [k, v] of Object.entries(spec)) if (k !== 'preset') o[k] = v;

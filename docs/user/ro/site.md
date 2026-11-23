@@ -97,6 +97,28 @@ Liniatura CAD devine elemente de teren: **Drum din desen CAD** (LR) și **Linie 
 
 ![O secțiune printr-o aripă răsucită: fața înclinată pe talpă](shots/portal-section.webp)
 
+## Căptușeala tunelului
+
+![Configuratorul pe presetarea în potcoavă, previzualizarea motorului lângă valori](shots/tunnel-configurator.webp)
+
+**Căptușeală de tunel…** (<kbd>TU</kbd>, în grupul **Peisagistică**) duce secțiunea transversală a unui tunel de-a lungul unei axe. Alege o presetare: **Potcoavă (NATM)** (un tunel minat: arcele calotei, ale pereților, ale colțurilor și ale radierului, toate tangente, cu o căptușeală primară de torcret), **Circulară (inel TBM)** (inelul de o singură grosime al unui tunel forat), **Cadru casetat (tranșee acoperită)** (cu vute sub placa superioară) sau **Boltă pe pereți** (o boltă pe pereți verticali, peste un radier plat). Apoi dă-i valorile pe grupuri: secțiunea (lățimea liberă, înălțimea liberă peste drum, razele, radierul sub drum), căptușeala (grosimea la calotă, la pereți și la radier, și căptușeala primară; 0 o lasă deoparte), blocurile (lungimea blocului de betonare sau lățimea inelului) și ieșirile. Orice valoare poate fi o formulă, ca în configuratorul portalului: grosimea pereților și a radierului sunt implicit `{= thickness}`. La **Secțiune**, un profil desenat și salvat ([Profile](profiles.md)) poate fi secțiunea: exteriorul lui și golul liber din el, podeaua golului sub drum cu **Radier sub drum**. Previzualizarea este a motorului (plan, secțiune, 3D), făcută de același cod ca și căptușeala.
+
+**Așezarea.** **Pe o axă…** cere un drum, o alee, un zid de sprijin, o cale ferată sau o linie desenată: clic unde începe căptușeala, apoi unde se termină. Căptușeala preia axa dintre cele două stații, cu curbele și clotoidele ei, și linia ei roșie (una proiectată așa cum este; una care urmează terenul, ajustată prin puncte), și îi păstrează stațiile. **Desenează axa…** ia în schimb o polilinie desenată; colțurile ei se rotunjesc în configuratorul de coridor (**Configurator…** în proprietăți: raze și clotoide la fiecare vârf, PVI-urile liniei roșii, stațiile, secțiunile la stații), ca la un drum. Linia roșie este cota drumului pe axă; secțiunea rămâne verticală și perpendiculară pe axă în plan (fără supraînălțare: panta transversală a drumului din tunel este a lui).
+
+![O căptușeală în potcoavă pe o curbă, în blocurile ei de betonare, cu un portal la intrare](shots/tunnel-3d.webp)
+
+**Blocuri și inele.** Căptușeala se împarte de la început în blocuri de betonare (implicit 12,5 m) sau, pentru TBM, în inele; ultimul este ce rămâne. Fiecare este o parte a ei, cu GlobalId-ul ei, păstrat când schimbi valorile căptușelii (blocurile în plus vin după). În plan, exteriorul căptușelii și golul liber se desenează ascunse, axa ca linie de ax, capetele și rosturile de-a curmezișul, stațiile de-a lungul ei.
+
+**Portaluri.** În proprietățile căptușelii, **Portal** **La început** sau **La capăt** așază un portal (presetarea cu aripi evazate a configuratorului de portal) de-a curmezișul axei la acel capăt: peretele frontal mai lat decât căptușeala, coronamentul cu un metru peste ea, aripile ieșind din tunel. Căptușeala trece prin peretele frontal: zidul este tăiat de exteriorul căptușelii în spatele capătului și de golul liber în fața lui, și o urmează când se schimbă. **Oblic la capăt cu** și **Oblic la început cu** rotesc planul unui capăt în jurul verticalei (portalul făcut atunci se rotește cu el); un capăt oblic cere axa dreaptă, cu pantă constantă, la acel capăt.
+
+![O secțiune transversală prin căptușeală la o stație: căptușeala și căptușeala primară de torcret](shots/tunnel-section.webp)
+
+**Secțiuni.** O secțiune de-a curmezișul căptușelii (din configuratorul de coridor sau desenată) arată straturile cu materialele lor; o secțiune care urmează axa căptușelii este profilul ei longitudinal, cu calota și radierul de-a lungul ei.
+
+![Profilul longitudinal de-a lungul axei căptușelii](shots/tunnel-long-section.webp)
+
+**Geometria exactă, IFC și cantitățile.** Pe un aliniament cu pantă constantă, fiecare față este un plan, un cilindru sau o suprafață riglată; peste o racordare verticală, o suprafață B-spline de translație (parabola exact); pe un arc de cerc în palier, o suprafață de revoluție (tori, conuri). O clotoidă sau un arc în pantă se acoperă prin secțiuni destul de dese încât să rămână în regula corzilor (1 mm). Cu **Suprafețe exacte** bifat ([Import și export](import-export.md)), exportul IFC scrie fiecare bloc ca IfcAdvancedBrep pe aceste suprafețe, iar exportul STEP o face mereu. **IFC** *ansamblu* (implicit) scrie căptușeala ca IfcElementAssembly (definit de utilizator, „Tunnel lining”) peste câte un IfcBuildingElementProxy pe bloc sau inel („Lining block”, „Lining ring”) și pe fiecare bucată a căptușelii primare; IFC 4.3 nu are un element pentru căptușeala de tunel, iar un perete sau o placă ar spune despre boltă și radier ce nu sunt. *corp* scrie un singur proxy. Fiecare bloc are cantitățile lui: betonul, cofrajul feței interioare, fața exterioară, cofrajul capetelor și **Cofraj** (cu fața exterioară când **Fața exterioară cofrată** este bifat, implicit la cadrul casetat și la boltă); căptușeala adaugă aria secțiunii, golul liber și volumul căptușelii primare.
+
 ## Terenul: limită, pante și sistematizare
 
 ![Un teren ridicat topografic, decupat după o limită în L, o etichetă de pantă, o subregiune de pietriș și grila săpătură/umplutură peste o tușă ridicată](shots/terrain-tools-plan.webp)

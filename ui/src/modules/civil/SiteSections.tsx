@@ -17,6 +17,8 @@ import { LengthField, NumberField } from '../../shell/cells';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { segmentRows } from './retainingWall';
 import { openPortal } from './portalTools';
+import { openTunnel, portalAtEnd } from './tunnelTools';
+import { axisSourceOf, TUNNEL_PRESET_LABELS } from './tunnel';
 
 /** Opens the corridor configurator on the element selected. */
 export function Configure() {
@@ -226,5 +228,31 @@ export function PlantingSection({ node }: { node: NodeDto }) {
         ))}
       </select>
     </div>
+  );
+}
+
+/**
+ * A tunnel lining (docs/plan-wing-walls.md, S4): its configurator (section, thicknesses, blocks, IFC), the corridor configurator
+ * (its axis's curves, its red line, sections at stations), a portal at either end, and where its axis came from.
+ */
+export function TunnelLiningSection({ node }: { node: NodeDto }) {
+  const nodes = useSession((s) => s.nodes);
+  useLang();
+  const spec = (node.props.lining as Record<string, unknown> | undefined) ?? {};
+  const preset = typeof spec.profileId === 'string' && spec.profileId ? t('Drawn section') : t(TUNNEL_PRESET_LABELS[String(spec.preset ?? 'horseshoe')] ?? String(spec.preset ?? ''));
+  const source = axisSourceOf(node.props);
+  const host = source ? nodes.get(source.id) : undefined;
+  return (
+    <dl className="fields">
+      <dt>Section</dt><dd><span data-no-i18n>{preset}</span></dd>
+      <dt /><dd><button type="button" className="btn compact" data-action="tunnel-configure" title="its section, thicknesses, blocks and IFC" onClick={() => openTunnel(node)}>Tunnel configurator…</button></dd>
+      <Configure />
+      {source && <><dt>Axis from</dt><dd><span data-no-i18n>{host?.name ?? '—'} · {lengthText(source.from)} → {lengthText(source.to)}</span></dd></>}
+      <dt>Portal</dt>
+      <dd className="row" style={{ gap: 4 }}>
+        <button type="button" className="btn compact" data-action="tunnel-portal-start" title="A portal at the lining's start, its face across the axis, the lining's opening through it" onClick={() => void portalAtEnd(node.id, 'start')}>At the start</button>
+        <button type="button" className="btn compact" data-action="tunnel-portal-end" title="A portal at the lining's end, its face across the axis, the lining's opening through it" onClick={() => void portalAtEnd(node.id, 'end')}>At the end</button>
+      </dd>
+    </dl>
   );
 }

@@ -6582,6 +6582,58 @@ export const scenes = [
     },
   },
   {
+    // The tunnel lining (docs/plan-wing-walls.md, S4): the configurator on its horseshoe preset with the engine's preview; a horseshoe
+    // lining taken from a curved road between two stations, in its casting blocks, with a portal at its mouth, in 3D; a section across
+    // it at a station, its two layers (the lining and its shotcrete shell); the long section along its axis.
+    id: 'tunnel',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.tool('civil.tunnel');
+      await t.wait(600);
+      await t.page.locator('.dialog [data-tunnel-preset=horseshoe]').click();
+      await t.wait(4000);
+      t.expect(await t.page.locator('.dialog [data-param=sideRadius]').count() === 1, 'the horseshoe shows its side radius');
+      t.expect(await t.page.locator('.dialog [data-worked=wallThickness]').count() === 1, 'the wall thickness is worked out from its formula');
+      t.expect(await t.page.locator('.dialog [data-testid=type-preview] canvas, .dialog [data-testid=type-preview] svg').count() > 0, 'the configurator previews the lining');
+      await t.shot('tunnel-configurator', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      // A road with a 160 m curve between 30 m clothoids, level; the lining from its station 40 round the curve, a portal at its mouth.
+      const road = (await t.cmd('civil.addPath', { storeyId: s, points: [[0, 0], [120, 0], [220, 110]], template: 'road' })).id;
+      await t.cmd('civil.setCorridor', { id: road, curves: [[0, 0, 0], [160, 30, 30], [0, 0, 0]], profile: { mode: 'design', pvis: [[0, 0, 0], [300, 0, 0]] } });
+      const lining = (await t.cmd('civil.addTunnelLining', { storeyId: s, spec: { preset: 'horseshoe' }, axis: { id: road, from: 40, to: 200 } })).id;
+      const portal = (await t.cmd('civil.tunnelPortal', { id: lining, end: 'start' })).id;
+      t.expect(!!lining && !!portal, 'the lining and its portal');
+      const nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'LapinTunnelLining').length === 1, 'one lining');
+      await open3d(t);
+      const orbit = (view) => t.page.evaluate(async (v) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo(v, false), view);
+      await orbit({ azimuth: 0.94, pitch: -0.3, distance: 70, target: { x: 60, y: 8, z: 3 } });
+      await t.wait(2500);
+      await t.shot('tunnel-3d', { of: 'canvas', pad: 0 });
+      // A section across the lining at station 0+100, its line from the cross-section the corridor configurator draws.
+      const cs = await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('civil.crossSection', { id, station: 100 }), lining);
+      await t.cmd('view.create', { kind: 'section', name: 'T-T', start: cs.line.start, end: cs.line.end, depth: 0.5, scale: 100 });
+      await openFromBrowser(t, 'T-T', 1500);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('tunnel-section', { of: '[data-testid=drawing]', pad: 0 });
+      // The long section along its axis: the crown, the invert and the blocks' joints.
+      await t.cmd('view.create', { kind: 'section', name: 'L-L', along: lining, depth: 0.2, scale: 500 });
+      await openFromBrowser(t, 'L-L', 1500);
+      // A developed section of some hundred pieces round the curve: a few seconds to draw.
+      await t.wait(8000);
+      await t.fit();
+      await t.wait(1500);
+      await t.shot('tunnel-long-section', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // The planting library (decision 234): a small orchard with a walnut, conifers along the back and shrubs in front, drawn in plan by
     // their families' outlines (decision 341), then by the detailed symbols the view style's Entourage in 2D asks for.
     id: 'planting-symbols',
