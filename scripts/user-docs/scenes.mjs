@@ -7444,6 +7444,62 @@ export const scenes = [
     },
   },
   {
+    // Limit to its ends (decision 802, Î10 of docs/plan-site-grading.md): a plain section cuts and sees only the strip
+    // between its two ends; on for a new section, off for one saved before. A 70 m terrain and a 10 m wall: with it the
+    // section is the wall's 12 m, without it the whole terrain's width.
+    id: 'section-limit-ends',
+    touches: ['core', 'civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.cmd('civil.addFlatTerrain', { storeyId: s, x1: -30, y1: -15, x2: 40, y2: 15, elevation: -0.3 });
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 3, x2: 10, y2: 3 })).id;
+      await t.cmd('architecture.addWindow', { wallId: wall, x: 5, y: 3 });
+      const section = (await t.cmd('view.create', { kind: 'section', name: 'E-E', start: [-1, 0], end: [11, 0], depth: 6, scale: 50 })).id;
+      const props = async () => (await t.nodes()).find((n) => n.id === section)?.props ?? {};
+      t.expect((await props()).limitEnds === true, 'a new section is limited to its ends');
+      const width = async () => {
+        const d = await t.call('doc.query', { name: 'view.drawing', args: { id: section } });
+        const xs = d.pens.filter((p) => ['CUT', 'SEEN'].includes(p.layer)).flatMap((p) => (p.segments ?? []).filter((_, i) => i % 2 === 0));
+        return Math.max(...xs) - Math.min(...xs);
+      };
+      const limited = await width();
+      t.expect(limited <= 12.01, `limited, the section is as wide as its line (${limited.toFixed(2)} m)`);
+      await openFromBrowser(t, 'E-E', 2500);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('section-limit-ends', { of: '[data-testid=drawing]', pad: 0 });
+      await t.page.locator('nav.browser').getByText('E-E', { exact: true }).first().click();
+      const box = t.page.locator('[data-field=section-limit-ends]');
+      await box.waitFor();
+      t.expect(await box.isChecked(), 'the settings show Limit to its ends ticked');
+      await box.scrollIntoViewIfNeeded();
+      const panel = await t.page.locator('.view-settings').boundingBox();
+      const row = await box.boundingBox();
+      t.expect(panel && row, 'the view settings show Limit to its ends');
+      await t.shot('section-limit-ends-setting', { clip: { x: panel.x, y: Math.max(0, row.y - 40), width: panel.width, height: row.height + 80 } });
+      // A controlled box: it shows the engine's answer, so a click, then the wait.
+      await box.click();
+      await t.wait(1500);
+      t.expect((await props()).limitEnds == null, 'unticked, the field goes (as a section saved before)');
+      const open = await width();
+      t.expect(open > 60, `without it, the section draws the whole terrain (${open.toFixed(2)} m)`);
+      await openFromBrowser(t, 'E-E', 2000);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('section-limit-ends-off', { of: '[data-testid=drawing]', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/engine/session.ts')).undo());
+      await t.wait(800);
+      t.expect((await props()).limitEnds === true, 'one undo ticks it again');
+      // In plan: the selected section shows the strip it sees, its sides out to its far line.
+      await openFromBrowser(t, 'Ground floor', 2000);
+      await select(t, section);
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('section-limit-ends-plan', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // The X-ray visual style (report #142, decision 462): View → Visual style cycles shaded, edges, X-ray, wireframe; View → X-ray
     // switches it directly. Every surface is see-through with its edges; the selected wall stays solid.
     id: 'views-xray',
