@@ -175,6 +175,24 @@ Norul rămâne în fișierul lui. Nu se copiază în proiect: proiectul păstrea
 
 Un nor nu se exportă cu modelul: IFC și Fragments duc modelul, nu scanarea, iar **Export 3D…** ia un eșantion din el ca puncte în GLB și glTF doar la cerere. Planurile, secțiunile și fațadele îl desenează și ele (*Secțiuni, fațade și 3D*, Norii de puncte în vederi). În browser se poate lega un nor de cel mult 160 MB; e indexat în pagină și trebuie legat din nou după reîncărcarea paginii. Norii mai mari cer aplicația desktop.
 
+### Gaussian splats
+
+O captură de Gaussian splats (o scenă antrenată din fotografii sau dintr-un film cu Postshot, Polycam, Luma, Lichtfeld Studio, Brush sau codul original de 3D Gaussian splatting) se leagă la fel: **File → Link point cloud…** ia un **PLY 3DGS** (forma în care îl scriu programele de antrenare: centrul, culoarea, opacitatea, mărimea și rotația fiecărui splat) și **SPZ**-ul Niantic (versiunile 1–3, forma lui comprimată; versiunea 4 încă nu se citește). Un fișier de splats e un nor de puncte cu ceva în plus, iar Manage → Links îi spune **Gaussian splats**:
+
+- centrele splat-urilor sunt indexate ca punctele norului, colorate cu culoarea lor de bază, cele aproape transparente lăsate deoparte. Așa că tot ce face un nor de puncte merge și aici: planurile și secțiunile îi desenează felia ca puncte, snap-urile în 2D și 3D îi găsesc punctele, iar **Visibility / Graphics** îl arată, îl ascunde și îl face halftone;
+- o vedere 3D îi desenează splat-urile: fiecare o elipsă întoarsă spre cameră, amestecate din spate în față, cum arată captura în vizualizatorul ei. În bugetul din **View → Display quality** (1, 2 sau 4 milioane de splat-uri deodată, jumătate în browser), splat-urile cele mai mari și mai opace se desenează primele;
+- splat-urile vin din reconstrucții, ale căror axe nu sunt ale unei clădiri: un SPZ are y în sus, un PLY 3DGS y în jos. Lapin ridică captura după asta când e legată. Dacă un fișier e scris altfel, butonul cu pin din Manage → Links o reașază și îi cere **Up axis** (z, y sau −y), lângă unitate, mutare și rotire.
+
+![O captură de Gaussian splats a unui foișor în grădină, în vederea 3D](shots/gaussian-splat-3d.webp)
+
+În Manage → Links rândul unui nor de splats are o listă **Display**: **Splats** (gaussienele lui) sau **Points** (centrele lor, ca orice nor, colorate și cu mărimea la fel). **Visibility / Graphics → Point clouds** are coloana **Drawn as**, care o stabilește pentru o vedere (**as its link**, **Splats** sau **Points**). Vederea cu puncte e mai ușoară și arată forma mai bine când desenezi peste ea; cea cu splat-uri arată locul cum a fost fotografiat.
+
+![Manage → Links cu o captură de Gaussian splats](shots/gaussian-splat-links.webp)
+
+![Aceeași captură desenată ca puncte](shots/gaussian-splat-points.webp)
+
+Splat-urile nu se exportă cu modelul (și nici nu se tipăresc încă pe planșe: o planșă desenează felia capturii ca puncte). Culoarea lor e culoarea de bază a splat-urilor; culoarea care se schimbă cu direcția din care privești, formatul SOG și PLY-ul comprimat al SuperSplat vin mai târziu (`docs/plan-gaussian-splats.md`).
+
 ## Modele 3D
 
 **Export 3D (glTF, USD, DAE)…** scrie modelul ca suprafețe pentru randare, vizualizare și realitate augmentată (AR):

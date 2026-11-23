@@ -173,6 +173,24 @@ In **Manage → Links** a cloud has its own row: its points, how far its index i
 
 A cloud is never exported with the model: IFC and Fragments carry the model, not the scan, and **Export 3D…** takes a sample of it as points in GLB and glTF only when asked. Plans, sections and elevations draw it too (*Sections, elevations and 3D*, Point clouds in views). In the browser a cloud of up to 160 MB can be linked; it is indexed in the page and has to be linked again after the page is reloaded. Larger clouds need the desktop app.
 
+### Gaussian splats
+
+A Gaussian splat capture (a scene trained from photos or a video by Postshot, Polycam, Luma, Lichtfeld Studio, Brush or the original 3D Gaussian splatting code) is linked the same way: **File → Link point cloud…** takes a **3DGS PLY** (the layout the trainers write: each splat's centre, colour, opacity, size and rotation) and Niantic's **SPZ** (versions 1–3, its compressed form; version 4 is not read yet). A splat file is a point cloud with more to it, and Manage → Links names its kind **Gaussian splats**:
+
+- its splats' centres are indexed as the cloud's points, coloured by their base colour, the nearly transparent ones left out. So everything a point cloud does works on it: plans and sections draw its slice as dots, the snaps in 2D and 3D find its points, and **Visibility / Graphics** shows, hides and halftones it;
+- a 3D view draws its splats: each one an ellipse that faces the camera, blended back to front, as the capture looks in its own viewer. Within the budget of **View → Display quality** (1, 2 or 4 million splats at once, half in a browser), the largest and most opaque splats are drawn first;
+- splats come from reconstructions, whose axes are not a building's: an SPZ has y up, a 3DGS PLY y down. Lapin stands the capture up by that when it is linked. If a file was written otherwise, the pin button in Manage → Links places it again and asks for its **Up axis** (z, y or −y), beside its unit, its move and its turn.
+
+![A Gaussian splat capture of a garden pavilion in the 3D view](shots/gaussian-splat-3d.webp)
+
+In Manage → Links a splat cloud's row has a **Display** list: **Splats** (its Gaussians) or **Points** (their centres, as any cloud, coloured and sized the same way). **Visibility / Graphics → Point clouds** has a **Drawn as** column that sets it for one view (**as its link**, **Splats** or **Points**). A point view is lighter and reads the shape better when tracing over it; a splat view shows the place as it was photographed.
+
+![Manage → Links with a Gaussian splat capture](shots/gaussian-splat-links.webp)
+
+![The same capture drawn as points](shots/gaussian-splat-points.webp)
+
+Splats are not exported with the model (nor printed on sheets yet: a sheet draws a capture's slice as dots). Their colour is the splats' base colour; the colour that changes with the viewing direction, the SOG format and SuperSplat's compressed PLY come later (`docs/plan-gaussian-splats.md`).
+
 ## 3D models
 
 **Export 3D (glTF, USD, DAE)…** writes the model as surfaces for rendering, visualisation and augmented reality (AR):
