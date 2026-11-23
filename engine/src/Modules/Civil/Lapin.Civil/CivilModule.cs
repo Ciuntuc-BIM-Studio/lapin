@@ -66,8 +66,9 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Quantities(IfcClass.GeographicElement, Terrains.Quantities);
         r.Geometry(IfcClass.Pavement, (e, m, _) => Paths.Geometry(e, m));
         r.Quantities(IfcClass.Pavement, Paths.Quantities);
-        // A wall with batters, segments of its own, a toe, a heel or a key is built by BatteredWalls (docs/plan-wing-walls.md); any other as before.
-        r.Geometry(RetainingWalls.Class, (e, m, services) => BatteredWalls.Is(e) ? BatteredWalls.Geometry(e, m, services) : RetainingWalls.Geometry(e, m));
+        // A wall with batters, segments of its own, a toe, a heel or a key is built by BatteredWalls (docs/plan-wing-walls.md); one whose
+        // section is a drawn profile, or any other, as before (RetainingWalls).
+        r.Geometry(RetainingWalls.Class, (e, m, services) => RetainingWalls.ProfileOf(m, e) == null && BatteredWalls.Is(e) ? BatteredWalls.Geometry(e, m, services) : RetainingWalls.Geometry(e, m));
         r.Quantities(RetainingWalls.Class, RetainingWalls.Quantities);
         LineworkElements.Register(r);
         // What drafted linework becomes on the site, in Convert to… (audit S12).
@@ -94,6 +95,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Catalog("entourage", new JsonArray([.. Entourage.Kinds.Select(k => (JsonNode)new JsonObject { ["key"] = k.Key, ["label"] = k.Label, ["category"] = k.Category, ["height"] = k.Height, ["color"] = k.Color })]));
         r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));
         SiteCommands.Register(r);
+        // The tunnel-portal and bridge-abutment configurator (docs/plan-wing-walls.md, S3).
+        Portals.Register(r);
         GeoImportCommands.Register(r);
         CorridorCommands.Register(r);
 

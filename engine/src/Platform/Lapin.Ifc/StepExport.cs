@@ -76,13 +76,13 @@ public static class StepExport
             foreach (var p in parts)
             {
                 ExactBody? body = null;
-                if (parts.Count == 1)
-                    foreach (var src in exactSources)
-                    {
-                        try { body = src.ExactOf(m, session.Catalog, e, p.Solid); }
-                        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException) { notes.Add($"„{e.Name}” was written as its facets: {ex.Message}"); }
-                        if (body != null) break;
-                    }
+                // One part: the element's exact body; several: each part's, where its module knows them (an abutment's wings).
+                foreach (var src in exactSources)
+                {
+                    try { body = parts.Count == 1 ? src.ExactOf(m, session.Catalog, e, p.Solid) : p.Key is { } key ? src.ExactOfPart(m, session.Catalog, e, key, p.Solid) : null; }
+                    catch (Exception ex) when (ex is ArgumentException or InvalidOperationException) { notes.Add($"„{e.Name}” was written as its facets: {ex.Message}"); }
+                    if (body != null) break;
+                }
                 if (body != null) exact++;
                 else { body = ExactBuild.Planar(p.Solid); faceted++; }
                 var brep = w.Brep(body, parts.Count == 1 ? e.Name : $"{e.Name} {p.Name}");
