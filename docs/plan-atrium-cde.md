@@ -504,7 +504,7 @@ Fiecare etapă are teste offline (xUnit, fără rețea) și teste pe Hetzner. Ve
   - tokenul în seiful sistemului.
 - **Atrium Server**: endpoint-urile din §12, fără propuneri și rezervări; GC; `.lapin` asamblat.
 - **Atrium**: File → Open from server… (sign in, proiectul, lista commit-urilor de pe `main`, deschidere prin `viewer.ifc`); cititorul formatului 3.
-- **Hetzner**: §11.
+- **Local întâi** (răspunsul lui Ionuț, 23.11.2026): Atrium Server pornit pe Mac (`dotnet run` pe `http://127.0.0.1`, date într-un folder temporar), Lapin desktop și Atrium legate de el; Hetzner (§11) abia după ce proba locală trece, ca S1b.
 
 **Teste offline (xUnit):**
 
@@ -524,7 +524,7 @@ Fiecare etapă are teste offline (xUnit, fără rețea) și teste pe Hetzner. Ve
   - viewer: push dă 403, iar fără token dă 401.
 - **Pull cu avans rapid**: un singur pas de undo; un pull cu modificări locale e refuzat.
 
-**Pe Hetzner (manual, cu lista în `deploy/cde/README.md`):**
+**Local, apoi pe Hetzner (manual, cu lista în `deploy/cde/README.md`; întâi cu serverul pe `127.0.0.1`, două proiecte sau două conturi pe același Mac, apoi S1b pe Hetzner):**
 
 - Bloc-P-4 importat ca proiect nativ, commit-uit și urcat de pe Mac (A).
 - Clonat pe al doilea calculator, sau în a doua instanță cu alt cont (B); B editează și urcă; A face pull, iar modelele sunt egale.
@@ -607,6 +607,8 @@ Fiecare etapă are teste offline (xUnit, fără rețea) și teste pe Hetzner. Ve
 ---
 
 ## 14. Întrebările pentru Ionuț
+
+**Răspuns (23.11.2026): toate cele 17, după recomandare.** Prima probă se face local (serverul pe Mac), Hetzner după (S1b).
 
 1. **Istoria locală în fișierul `.lapin`** (`history/`), ca versiunile, sau într-un folder alături? *Recomandarea: în fișier; fișierul circulă cu istoria lui.*
 2. **Istorie completă sau scurtată** în fișier când există un server (obiectele vechi doar pe server, aduse la cerere)? *Recomandarea: completă implicit; „scurtată” ca opțiune după S2, pentru proiectele mari.*
