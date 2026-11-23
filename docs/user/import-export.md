@@ -225,7 +225,10 @@ The storeys go as Speckle levels, so Revit receives the elements on their levels
 
 **File → Speckle → Receive…** brings a version of a Speckle model into the open project, whichever program sent it (Revit, Rhino, Archicad, another Lapin). It signs in with the same account as **Send…**. You choose the **Project**, the **Model** and the **Version** (**the latest** by default, or one from its list, by its message, date and the program that sent it), then:
 
-- **Storeys**: **by the version's levels**, each object on the storey at its level (within 5 cm), else on the storey it stands on, else on the storey you are on; or **all on the current storey**.
+- **Storeys**:
+  - **by the version's levels, creating the missing ones** (the default): each level of the version finds the project's storey at its elevation (within 5 cm), else the one with its name; a level no storey matches becomes a new storey, with the level's name and elevation. Each object goes on its level's storey, whether it comes in as a reference or as a recognised wall or slab.
+  - **by the version's levels, only the project's storeys**: no storey is made; an object whose level no storey matches goes on the storey below it.
+  - **all on the current storey**.
 - **Origin**: **the project base point** (Send writes the model from there, so a model sent from Lapin comes back where it was) or **the internal origin**.
 - **Recognition**: **Recognise walls and slabs** (on by default) makes the walls and floors native Lapin walls and slabs where they really are; see below.
 
@@ -243,6 +246,8 @@ The objects of one model come in as one group named after it. Copies of a block 
 **Recognising walls and slabs.** With **Recognise walls and slabs** ticked, each wall and floor that came in is read as an IFC import reads a reference: its triangles as an upright prism, a wall with its openings, a floor by its outline and thickness. It becomes a native wall or slab only when the native element's body is the received one within 1 mm or 0.5 % (the same check as an IFC import's): anything that differs more stays a reference. A wall's own parameters are checked against its body too (Revit's width and location line, a floor's thickness; Lapin's layers): if they disagree, the body wins and the object stays a reference. Curtain walls stay references. A recognised element keeps its GlobalId, its group, its storey and its **Speckle** properties, and Lapin adds nothing of its own to it: no lintels, no reveals, no joins; a recognised floor cuts no wall, as the walls came. The dialog says how many objects were recognised, how many stayed references, and why.
 
 Received again, a recognised wall whose object did not change is left as it is; one whose object changed is recognised again in place, with the same GlobalId, or turns back into a reference (with the same GlobalId) if it no longer passes; one the version no longer has is removed.
+
+**Storeys made from the levels.** A storey made this way is as high as the gap to the storey above it. The levels' elevations are read the way the version's geometry is, from the **Origin** chosen: from the project base point, its elevation is added to them. When most of the objects stand the same height off their levels (Revit can give its levels from the survey point and its geometry from the internal origin), the storeys are placed by the objects, and the dialog says by how much. A newer version renames and moves only the storeys it made, and only while nothing else stands on them: a storey with your own elements on it, or a recognised wall, keeps its name and elevation, and the dialog says so. A storey whose level is gone from the version is removed if it is empty, and kept if anything stands on it. A storey the project had is never renamed, moved or removed.
 
 **A version sent from this project** (its objects are this project's own elements, by their GlobalIds) is not received over them: Lapin says so and offers **Receive as a copy**, which brings its objects in as references with ids of their own, beside the elements, which stay as they are. Received in another project, a model sent from Lapin keeps its elements' GlobalIds.
 
