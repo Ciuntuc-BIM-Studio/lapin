@@ -229,6 +229,7 @@ Etajele pleacă drept niveluri Speckle, așa că Revit primește elementele pe n
 
 - **Etaje**: **după nivelurile versiunii**, fiecare obiect pe etajul de la nivelul lui (în 5 cm), altfel pe etajul pe care stă, altfel pe etajul pe care ești; sau **toate pe etajul curent**.
 - **Origine**: **punctul de bază al proiectului** (Trimite scrie modelul de acolo, deci un model trimis din Lapin se întoarce unde era) sau **originea internă**.
+- **Recunoaștere**: **Recunoaște pereții și plăcile** (bifat implicit) face din pereți și planșee pereți și plăci native Lapin acolo unde chiar sunt; vezi mai jos.
 
 **Primește** descarcă versiunea (**Renunță** o oprește) și o aduce într-un singur pas: un singur **Undo** o scoate toată. Obiectele intră ca **referințe**, ca la importul unui mesh sau al unui fișier IFC: se văd, se măsoară și se prind, nu se editează. Fiecare își păstrează:
 
@@ -241,9 +242,13 @@ Obiectele unui model intră ca un grup cu numele lui. Copiile unui bloc sau ale 
 
 **O versiune mai nouă** a aceluiași model primită actualizează pe loc ce a venit înainte: fiecare obiect e găsit din nou după applicationId (altfel după id-ul Speckle) și își păstrează GlobalId-ul, grupul și tot ce îl numește; un obiect neschimbat rămâne cum e; cele noi intră în grupul modelului; cele pe care versiunea nu le mai are se șterg, cum reîncărcarea unei legături scoate ce nu mai e în fișierul ei. Fereastra arată câte s-au adăugat, actualizat, au rămas neschimbate și s-au șters.
 
+**Recunoașterea pereților și a plăcilor.** Cu **Recunoaște pereții și plăcile** bifat, fiecare perete și planșeu primit e citit cum citește un import IFC o referință: triunghiurile lui ca o prismă verticală, un perete cu golurile lui, un planșeu după contur și grosime. Devine perete sau placă nativă doar când corpul elementului nativ e cel primit cu cel mult 1 mm sau 0,5 % diferență (aceeași verificare ca la importul IFC): ce diferă mai mult rămâne referință. Și parametrii peretelui sunt verificați față de corpul lui (lățimea și linia de amplasare din Revit, grosimea unui planșeu; straturile Lapin): dacă nu se potrivesc, corpul are dreptate și obiectul rămâne referință. Pereții cortină rămân referințe. Un element recunoscut își păstrează GlobalId-ul, grupul, etajul și proprietățile **Speckle**, iar Lapin nu-i adaugă nimic al lui: nici buiandrugi, nici glafuri, nici îmbinări; o placă recunoscută nu taie niciun perete, cum au venit pereții. Fereastra spune câte obiecte au fost recunoscute, câte au rămas referințe și de ce.
+
+Primit din nou, un perete recunoscut al cărui obiect nu s-a schimbat rămâne cum e; unul al cărui obiect s-a schimbat e recunoscut din nou pe loc, cu același GlobalId, sau redevine referință (cu același GlobalId) dacă nu mai trece verificarea; unul pe care versiunea nu-l mai are se șterge.
+
 **O versiune trimisă din acest proiect** (obiectele ei sunt elementele proiectului, după GlobalId-uri) nu se primește peste ele: Lapin spune asta și oferă **Primește ca o copie**, care aduce obiectele ca referințe cu id-uri proprii, lângă elemente, care rămân cum sunt. Primit în alt proiect, un model trimis din Lapin păstrează GlobalId-urile elementelor.
 
-Nu se primesc încă: texturile, muchiile obiectelor și recunoașterea referințelor ca pereți și plăci native (cum poate un import IFC).
+Nu se primesc încă: texturile, muchiile obiectelor și recunoașterea altor elemente (stâlpi, grinzi, uși și ferestre) ca elemente native.
 
 ## Lapin pentru browser
 
