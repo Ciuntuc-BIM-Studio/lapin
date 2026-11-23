@@ -5,6 +5,7 @@
  * Lengths in the project's unit.
  */
 
+import { ProfileButton } from './ProfileButton';
 import { useMemo, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
@@ -12,13 +13,14 @@ import { useUi } from '../../app/store';
 import { isDitch } from './prefs';
 import { t, useLang } from '../../i18n';
 import { groupedSpecies, speciesName, type Species } from './species';
-import { lengthText } from '../../engine/unitsStore';
+import { formatLength, lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { segmentRows } from './retainingWall';
 import { openPortal } from './portalTools';
-import { openTunnel, portalAtEnd } from './tunnelTools';
+import { linkToAxis, openTunnel, portalAtEnd, relinkTunnel, unlinkTunnel } from './tunnelTools';
 import { axisSourceOf, TUNNEL_PRESET_LABELS } from './tunnel';
+import { pathTypeArgs, TypeOptions, useHardscapeTypeEdit } from './hardscapeTools';
 
 /** Opens the corridor configurator on the element selected. */
 export function Configure() {
@@ -46,6 +48,7 @@ export function EarthworkSection({ node }: { node: NodeDto }) {
         <dt>Bottom width</dt><dd><Mm value={node.props.bottomWidth} fallback={0.4} min={50} onCommit={(v) => set({ bottomWidth: v })} /></dd>
         <dt>Side slope</dt><dd>1 : <NumberField value={slope} min={0} max={10} onCommit={(v) => { if (v != null) set({ slope: v }); }} /></dd>
         <Configure />
+        <ProfileButton id={node.id} />
         <dt>Top width</dt><dd><span className="num">{lengthText((typeof node.props.bottomWidth === 'number' ? node.props.bottomWidth : 0.4) + 2 * slope * (typeof node.props.depth === 'number' ? node.props.depth : 0.5))}</span></dd>
       </dl>
     );
@@ -66,14 +69,29 @@ export function PathSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
   const set = (args: Record<string, unknown>) => void execute('civil.updatePath', { id: node.id, ...args });
   const mat = (key: string) => (typeof node.props[key] === 'string' ? nodes.get(node.props[key] as string)?.name ?? '' : '');
+  // Its build-up from a hardscape type (shared, edited in one place) or its own two courses (docs/plan-site-grading.md, T4).
+  const typeId = typeof node.props.hardscapeTypeId === 'string' ? node.props.hardscapeTypeId : '';
+  const layers = Array.isArray(node.props.hardscapeLayers) ? (node.props.hardscapeLayers as { material: string; thickness: number }[]) : [];
   return (
     <dl className="fields">
       <Configure />
+      <ProfileButton id={node.id} />
       <dt>Width</dt><dd><Mm value={node.props.width} fallback={1.5} min={200} onCommit={(v) => set({ width: v })} /></dd>
+      <dt>Use a hardscape type</dt>
+      <dd><input type="checkbox" checked={!!typeId} disabled={!node.editable} data-testid="path-use-type" title="Its layers from a hardscape type, shared and edited in one place; off, its own surface and base courses"
+        onChange={(e) => set({ useHardscapeType: e.target.checked })} /></dd>
+      {typeId ? <>
+        <dt>Type</dt>
+        <dd><select value={typeId} disabled={!node.editable} data-testid="path-type" onChange={(e) => set(pathTypeArgs(e.target.value))}><TypeOptions /></select>
+          {' '}<button type="button" className="link small" onClick={() => { useHardscapeTypeEdit.setState({ id: typeId }); useUi.setState({ dialog: 'hardscapeTypes' }); }}>Edit types…</button></dd>
+        <dt>Build-up</dt>
+        <dd className="small" data-testid="path-layers">{layers.map((l, i) => <div key={i}><span>{l.material}</span> <span className="num muted">{formatLength(l.thickness)}</span></div>)}</dd>
+      </> : <>
       <dt>Surface course</dt><dd><Mm value={node.props.surfaceThickness} fallback={0.06} min={0} onCommit={(v) => set({ surfaceThickness: v })} /></dd>
       <dt>Surface material</dt><dd><MaterialPicker value={mat('surfaceMaterial')} onChange={(m) => { if (m && m !== mat('surfaceMaterial')) set({ surfaceMaterial: m }); }} /></dd>
       <dt>Base course</dt><dd><Mm value={node.props.baseThickness} fallback={0.2} min={0} onCommit={(v) => set({ baseThickness: v })} /></dd>
       <dt>Base material</dt><dd><MaterialPicker value={mat('baseMaterial')} onChange={(m) => { if (m && m !== mat('baseMaterial')) set({ baseMaterial: m }); }} /></dd>
+      </>}
       <dt>Kerbs</dt><dd><input type="checkbox" checked={node.props.kerb === true} onChange={(e) => set({ kerb: e.target.checked })} /></dd>
       {node.props.kerb === true && <>
         <dt>Kerb height</dt><dd><Mm value={node.props.kerbHeight} fallback={0.1} min={20} onCommit={(v) => set({ kerbHeight: v })} /></dd>
@@ -90,6 +108,7 @@ export function RetainingWallSection({ node }: { node: NodeDto }) {
     <>
     <dl className="fields">
       <Configure />
+      <ProfileButton id={node.id} />
       {node.props.portal != null && typeof node.props.portal === 'object' && (
         <><dt /><dd><button type="button" className="btn compact" data-action="portal-configure" title="its preset, wings, section, free ends and IFC" onClick={() => openPortal(node)}>Portal configurator…</button></dd></>
       )}
@@ -248,6 +267,16 @@ export function TunnelLiningSection({ node }: { node: NodeDto }) {
       <dt /><dd><button type="button" className="btn compact" data-action="tunnel-configure" title="its section, thicknesses, blocks and IFC" onClick={() => openTunnel(node)}>Tunnel configurator…</button></dd>
       <Configure />
       {source && <><dt>Axis from</dt><dd><span data-no-i18n>{host?.name ?? '—'} · {lengthText(source.from)} → {lengthText(source.to)}</span></dd></>}
+      <dt>Axis</dt>
+      <dd data-testid="tunnel-link">
+        {source?.linked
+          ? <><span title="When that element's axis or red line changes, the lining is rebuilt along it">follows it</span>{' '}
+            <button type="button" className="btn compact" data-action="tunnel-unlink" disabled={!node.editable} title="Keep the axis as it is now, a copy that no longer follows its source" onClick={() => void unlinkTunnel(node.id)}>Unlink</button></>
+          : <><span className="muted">{source ? 'a copy' : 'its own'}</span>{' '}
+            {source && host && <button type="button" className="btn compact" data-action="tunnel-relink" disabled={!node.editable} title="Follow that element again between the same stations" onClick={() => void relinkTunnel(node.id, source)}>Link again</button>}</>}
+        {' '}<button type="button" className="btn compact" data-action="tunnel-link-axis" disabled={!node.editable} title="Click a road, a path, a wall or a line where the lining starts, then where it ends; it follows that element from then on" onClick={() => linkToAxis(node.id)}>Link to an axis…</button>
+      </dd>
+      {source?.note && <><dt /><dd className="muted small" data-testid="tunnel-link-note">{source.note}</dd></>}
       <dt>Portal</dt>
       <dd className="row" style={{ gap: 4 }}>
         <button type="button" className="btn compact" data-action="tunnel-portal-start" title="A portal at the lining's start, its face across the axis, the lining's opening through it" onClick={() => void portalAtEnd(node.id, 'start')}>At the start</button>

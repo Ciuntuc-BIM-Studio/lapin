@@ -238,7 +238,7 @@ export function SheetView() {
   const boundariesOf = (viewId: string) => [...nodes.values()].filter((n) => n.type === 'LapinViewBoundary' && n.props.viewId === viewId);
   const views = [...nodes.values()].filter((n) => n.type === 'LapinView');
   const storeyPlans = [...nodes.values()].filter((n) => n.type === 'IfcBuildingStorey').map((s) => ({ id: `plan:${s.id}`, name: `${s.name} (plan)` }));
-  const schedules = [...nodes.values()].filter((n) => n.type === 'LapinSchedule').map((x) => ({ id: x.id, name: x.name }));
+  const schedules = [...nodes.values()].filter((n) => n.type === 'LapinSchedule' || n.type === 'LapinProfileView').map((x) => ({ id: x.id, name: x.name }));
   // Every view, and each of its named boundaries (one view may go on several sheets, a boundary each).
   const placeable = [...storeyPlans, ...views.map((x) => ({ id: x.id, name: x.name })), ...schedules]
     .flatMap((x) => [{ id: `${x.id}|`, name: x.name }, ...boundariesOf(x.id).map((b) => ({ id: `${x.id}|${b.id}`, name: `${x.name} › ${b.name}` }))])

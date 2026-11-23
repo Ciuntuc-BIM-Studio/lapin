@@ -29,7 +29,7 @@ export function viewIdOfTab(t: Pane & { storeyId?: string | null }, nodes: Reado
 }
 
 /** The browser's fold under a set for each kind of item (ProjectBrowser's `Kind` ids). */
-const KIND_FOLD: Record<BrowserItem['kind'], string> = { plan: 'plans', section: 'sections', elevation: 'elevations', plane: 'planes', '3d': '3d', sheet: 'sheets', schedule: 'schedules', site: 'site' };
+const KIND_FOLD: Record<BrowserItem['kind'], string> = { plan: 'plans', section: 'sections', elevation: 'elevations', plane: 'planes', '3d': '3d', sheet: 'sheets', schedule: 'schedules', profile: 'profiles', site: 'site' };
 
 /**
  * The folds to open so the item `id` shows: the Site's, or the first set holding it and its kind there (a callout's
@@ -82,7 +82,7 @@ export function canPlace(id: string | null, nodes: ReadonlyMap<string, NodeDto>)
   if (!id) return false;
   if (id.startsWith('plan:')) return nodes.get(id.slice(5))?.type === 'IfcBuildingStorey';
   const n = nodes.get(id);
-  return n?.type === 'LapinView' || n?.type === 'LapinSchedule';
+  return n?.type === 'LapinView' || n?.type === 'LapinSchedule' || n?.type === 'LapinProfileView';
 }
 
 /** The sheets that match what is typed (in the number or the name, any case), in number order. */

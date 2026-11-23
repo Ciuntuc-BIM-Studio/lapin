@@ -21,6 +21,9 @@ import { formatLength, levelUnit, parseLevel, unitName } from '../../engine/unit
 import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './survey';
 import { TerrainSection } from './TerrainSection';
 import { FeatureLineSection } from './FeatureLineSection';
+import { profileOnLine, sectionLine } from './profileTools';
+import { ProfilePanel } from './ProfilePanel';
+import { ProfilePlanOverlay } from './ProfilePlanOverlay';
 import { contourAt, dragContour, featureLine, featureLineGrips, featureLineGrips3d } from './featureLineTools';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection, TunnelLiningSection } from './SiteSections';
 import { isDitch, setBrush, useBrush, useTerrainEdit, type BrushKind } from './prefs';
@@ -30,7 +33,7 @@ import { EntourageSection, entourage, entourageRow, useEntouragePrefs } from './
 import { lazyPart } from '../../platform/lazyPart';
 import { HardscapeSection, KerbSection, hardscape, hardscapeGrips, hardscapeGrips3d, hardscapeRefs, hardscapeSlope, similarHardscape, useHardscapeTypeEdit } from './hardscapeTools';
 import { drawPortalPath, openPortal, placePortal, placePortalOnRoad } from './portalTools';
-import { drawTunnelAxis, openTunnel, placeTunnelOnAxis } from './tunnelTools';
+import { drawTunnelAxis, linkTunnelToAxis, openTunnel, placeTunnelOnAxis } from './tunnelTools';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const BrushDialog = lazyPart(() => import('./BrushDialog').then((m) => m.BrushDialog), { title: 'Terrain brush' });
@@ -475,7 +478,7 @@ const civil: LapinModule = {
   name: 'Civil',
   summary: 'The terrain from survey points or flat, its contours, the brush that works it, platforms and ditches with their cut and fill, paths, retaining walls, plantings, people and cars.',
   // The old Road tool: the Path tool, set to Road.
-  legacyTools: [road, placePortal, placePortalOnRoad, drawPortalPath, placeTunnelOnAxis, drawTunnelAxis],
+  legacyTools: [road, placePortal, placePortalOnRoad, drawPortalPath, placeTunnelOnAxis, drawTunnelAxis, linkTunnelToAxis],
   // Create similar: the tool that made the element, set as it was (a road's template, a zone or a single plant, the entourage's kind).
   similar: {
     IfcEarthworksCut: (n) => activate(n.props.contour ? platform : ditch),
@@ -490,7 +493,7 @@ const civil: LapinModule = {
     id: 'site', label: 'Site', order: 40, include: ['modify'],
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, terrainOnOutline, parcel], small: [terrainOnPicked, terrainBoundary, splitTerrain, mergeTerrains, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
-      { label: 'Grading', tools: [featureLine, contourAt, dragContour], small: [] },
+      { label: 'Grading', tools: [featureLine, contourAt, dragContour], small: [sectionLine, profileOnLine] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, subregion, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, hardscape, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework, hardscapeSlope, portal, tunnel] },
@@ -558,6 +561,8 @@ const civil: LapinModule = {
     { id: 'planting', label: 'Planting', classes: ['LapinPlanting'], component: PlantingSection, replacesFields: () => true },
     { id: 'entourage', label: 'Entourage', classes: ['LapinEntourage'], component: EntourageSection, replacesFields: () => true },
   ],
+  overlays: [ProfilePanel],
+  planOverlays: [ProfilePlanOverlay],
   dialogs: { brush: BrushDialog, corridor: CorridorDialog, entourageKinds: EntourageKindsDialog, portal: PortalDialog, tunnel: TunnelDialog, hardscapeTypes: HardscapeTypesDialog },
   editType: { LapinHardscapeType: (id: string) => { useHardscapeTypeEdit.setState({ id }); useUi.setState({ dialog: 'hardscapeTypes' }); } },
 };

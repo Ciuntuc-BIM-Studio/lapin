@@ -105,6 +105,12 @@ Liniatura CAD devine elemente de teren: **Drum din desen CAD** (LR) și **Linie 
 
 **Așezarea.** **Pe o axă…** cere un drum, o alee, un zid de sprijin, o cale ferată sau o linie desenată: clic unde începe căptușeala, apoi unde se termină. Căptușeala preia axa dintre cele două stații, cu curbele și clotoidele ei, și linia ei roșie (una proiectată așa cum este; una care urmează terenul, ajustată prin puncte), și îi păstrează stațiile. **Desenează axa…** ia în schimb o polilinie desenată; colțurile ei se rotunjesc în configuratorul de coridor (**Configurator…** în proprietăți: raze și clotoide la fiecare vârf, PVI-urile liniei roșii, stațiile, secțiunile la stații), ca la un drum. Linia roșie este cota drumului pe axă; secțiunea rămâne verticală și perpendiculară pe axă în plan (fără supraînălțare: panta transversală a drumului din tunel este a lui).
 
+**Legată de axa ei.** O căptușeală pusă cu **Pe o axă…** urmează acel element: muți punctele drumului, îi racordezi colțurile sau îi schimbi linia roșie, iar căptușeala se reface de-a lungul lui în același pas de anulare, fiecare bloc și inel cu GlobalId-ul lui. Proprietățile o spun pe rândul **Axă** (**îl urmează**). Când drumul devine mai scurt decât stațiile căptușelii, căptușeala se oprește la capătul lui și o notă sub rând o spune; ajunge din nou la stațiile ei când drumul crește la loc. **Dezleagă** păstrează axa așa cum e acum, o copie care nu mai urmează: drumul se poate schimba fără ea. **Leagă din nou** urmează același element între aceleași stații; **Leagă de o axă…** alege altul (clic unde începe căptușeala, apoi unde se termină). O căptușeală al cărei drum e șters rămâne unde era, dezlegată, cu o notă; la fel una căreia îi editezi axa ei (linia roșie în configuratorul de coridor, punctele trase). Schimbarea secțiunii, a blocurilor sau a capetelor păstrează legătura. Căptușelile făcute înainte să poată urma rămân copiile care erau.
+
+![Drumul îndoit din nou, căptușeala urmându-l între aceleași stații](shots/tunnel-linked-plan.webp)
+
+![Proprietățile căptușelii: axa ei urmează drumul, cu Dezleagă și Leagă de o axă…](shots/tunnel-linked-properties.webp)
+
 ![O căptușeală în potcoavă pe o curbă, în blocurile ei de betonare, cu un portal la intrare](shots/tunnel-3d.webp)
 
 **Blocuri și inele.** Căptușeala se împarte de la început în blocuri de betonare (implicit 12,5 m) sau, pentru TBM, în inele; ultimul este ce rămâne. Fiecare este o parte a ei, cu GlobalId-ul ei, păstrat când schimbi valorile căptușelii (blocurile în plus vin după). În plan, exteriorul căptușelii și golul liber se desenează ascunse, axa ca linie de ax, capetele și rosturile de-a curmezișul, stațiile de-a lungul ei.
@@ -224,7 +230,44 @@ O latură în arc ia cotele celor două colțuri ale ei după lungime. Planul î
 
 ![O subregiune de pietriș transformată în pavaj](shots/hardscape-converted.webp)
 
+**O alee dintr-un tip de pavaj.** O alee sau un drum își păstrează straturile proprii de uzură și de bază, dacă nu bifezi **Folosește un tip de pavaj** în proprietățile lui: atunci carosabilul e alcătuit din straturile tipului, de sus în jos, în materialele lor (fiecare strat tăiat din teren, cu aria și volumul lui în *Lapin_PavementLayerQuantities*), iar felul pavajului în IFC e al tipului. Alege tipul alături, sau **Editează tipurile…**: un tip editat schimbă deodată toate aleile și pavajele lui. Bordurile, rigolele și trotuarele rămân ale aleii. Debifează și aleea e alcătuită din nou din straturile ei, exact ca înainte; o alee pe care n-ai bifat-o niciodată e cum a fost mereu.
+
+![Proprietățile unei alei cu Folosește un tip de pavaj: alcătuirea pavelelor în locul straturilor ei](shots/path-hardscape-type.webp)
+
 **Editarea, cantitățile și IFC.** În plan conturul are mânerele de contur (colțuri, laturi, arce, racordare și teșire); în 3D fața de sus are mânere de cotă. Se mută, se rotește și se oglindește ca orice element; fiecare schimbare e un pas de anulare. *Lapin_HardscapeQuantities* dă aria pavată, aria feței de sus, perimetrul, grosimea alcătuirii și volumul, iar fiecare strat aria și volumul lui; *Lapin_KerbQuantities* lungimea bordurii, lungimea coborâtă și volumul; **Extrasul de pavaje** le listează pe toate. În plan pavajul e hașurat cum arată materialul stratului de sus (grafica lui de suprafață, Gestionare → Materiale), iar secțiunile îi taie straturile. În IFC merge ca *IfcPavement* (IFC 4.3) sau ca *IfcSlab* numit *Pavement* (IFC4), cu straturile ca *IfcMaterialLayerSetUsage*, iar bordura ca *IfcKerb* (IFC 4.3) sau ca proxy numit *Kerb* (IFC4); un fișier scris de Lapin revine ca același pavaj și aceeași bordură.
+
+## Profile
+
+Un **profil** este cotele unei linii de-a lungul ei, desenate ca un grafic pe care îl poți edita: stația pe orizontală, cota pe verticală. Merge pe orice linie care are cote: o linie caracteristică, marginea unui pavaj, axul unei alei, al unui drum, al unui zid de sprijin sau al unui șanț, și o **linie de secțiune** trasată peste teren. Îl deschizi din **Profil…** în proprietățile liniei, sau din grupul **Sistematizare** al filei **Teren** (*Site*): **Profil pe o linie** (<kbd>LP</kbd>, apoi clic pe linie în plan) și **Linie de secțiune** (<kbd>SQ</kbd>, o polilinie trasată ca o linie caracteristică; profilul ei se deschide când termini). Profilul este un panou sub plan, deci planul rămâne la vedere.
+
+![O linie de secțiune peste un deal, profilul ei sub plan, stația de sub cursor din grafic marcată în plan](shots/profile-plan-graph-linked.webp)
+
+**Graficul.** **Terenul existent** (ridicarea, citită exact pe triunghiurile terenului) este gri întrerupt, **terenul proiectat** (cu liniile caracteristice și pavajele) verde subțire, iar **profilul** liniei roșu gros, cu punctele lui: un punct plin are o cotă proprie (este proiectat), unul gol stă pe teren, un lăcățel mic marchează un punct blocat, iar un arc sub punct marchează o racordare verticală. **Cote** exagerează scara verticală: 1× este adevărat, 2×, 5× și 10× fac pantele mai ușor de citit. Între punctele proiectate panta e scrisă în %.
+
+**Planul și graficul sunt legate.** Plimbă cursorul pe grafic și planul marchează acea stație pe linie; plimbă-l pe linie în plan și graficul o marchează; un clic în oricare alege stația (o linie verticală plină în grafic, un punct în plan).
+
+**O linie de secțiune peste teren.** O linie de secțiune doar citește terenul, până editezi unul din punctele ei: atunci terenul din ambele părți o urmează, pe **lățimea de influență** a ei, și scade la nimic la marginea ei (aceeași descreștere netedă ca la tragerea unei curbe de nivel). Scrie lățimea în panou; trebuie să fie cel puțin **dublul celei mai mari modificări**, altfel editarea e refuzată cu un mesaj care o spune, iar nimic nu se schimbă. O editare este un pas de anulare.
+
+![Punctul de pe deal tras în jos: curbele de nivel din plan urmează linia de secțiune](shots/profile-section-line.webp)
+
+**Editarea profilului.**
+
+- **Trage un punct** în sus sau în jos; un punct de pe un tronson drept poate aluneca și de-a lungul liniei, între vecinii lui (capetele și punctele unde linia se îndoaie în plan rămân la stația lor). Linia roșie urmează mouse-ul cât tragi, iar o singură comandă pleacă la eliberare.
+- **Dă clic pe un punct** ca să-i scrii **cota**, **racordarea verticală** (o curbă parabolică de lungimea aceea în punct; refuzată la capete sau când nu încape între vecini), ca să-l **blochezi** (un punct blocat își păstrează cota și stația, iar o editare care l-ar muta e refuzată) sau ca să-l **ștergi**. **La teren** îi ia din nou cota din teren.
+- **Dublu clic pe linie**, sau **Punct** la stația aleasă, adaugă un punct.
+- **Dă clic pe un tronson** ca să-i scrii **panta**: `2 %`, `1:50`, `-0,5 %` (virgula zecimală merge). **O pantă scrisă păstrează** începutul sau sfârșitul; celălalt capăt ia cota pe care o dă panta.
+
+![O pantă de 2 % scrisă pe un tronson: punctul de la capătul lui o urmează](shots/profile-grade-typed.webp)
+
+Profilul unui pavaj este muchia lui de sus: cotele colțurilor se pot schimba (fața de sus devine „pe colțuri”), dar nu se pot adăuga, șterge, racorda sau bloca, fiindcă forma o ține planul. O alee, un zid sau un șanț folosește linia roșie a coridorului: când profilul lui urmează terenul, **Proiectează profilul** îl face întâi unul proiectat.
+
+**Secțiuni transversale.** Fila **Secțiuni transversale** arată terenul **peste** linie la anumite stații: scrie un **interval** (din 10 în 10 m) sau alege o stație și apasă **Secțiune aici**; **Lățime pe fiecare parte** spune cât ajunge fiecare parte. Fiecare secțiune este un grafic mic cu terenul existent, terenul proiectat și punctul liniei marcat, și e trasată peste linie în plan. Trage un punct al unei secțiuni sau trage curba terenului unde vrei un punct nou: prima editare la o stație face o scurtă linie de secțiune perpendiculară pe linie acolo, iar terenul de lângă ea o urmează pe lățimea ei de influență; editările următoare îi mută punctele ca la profilul longitudinal. Cotele secțiunilor folosesc aceeași exagerare.
+
+![Secțiuni transversale din 10 în 10 m sub plan](shots/profile-cross-sections.webp)
+
+**Pe o planșă.** **Pune pe o planșă…** face din **profilul longitudinal** (și din secțiunile transversale, când sunt afișate) un desen de sine stătător, la scara aleasă (orizontala 1:500, cotele exagerate ca în panou) și îl pune pe o planșă nouă sau pe una aleasă. Desenul are grila de cote cu planul de referință, ambele terenuri, punctele și racordările numite, iar dedesubt un tabel cu stațiile, ambele terenuri și săpătura sau umplutura; PDF-ul și DXF-ul planșei tipăresc ce arată planșa. Desenele sunt listate sub **Desene de profil** în browserul proiectului și rămân în pas cu linia: schimbi linia, se schimbă planșa.
+
+![Profilul longitudinal pe o planșă](shots/profile-sheet.webp)
 
 ## Planul de situație și planul de încadrare
 

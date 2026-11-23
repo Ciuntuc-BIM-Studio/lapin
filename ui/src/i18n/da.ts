@@ -5449,51 +5449,90 @@ export const DA: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Midlertidigt referencepunkt ved markøren (igen: fjern det)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Start et tegne- eller placeringsværktøj, peg på et sted, og tryk så på denne tast: det næste punkt måles fra det.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Start et værktøj, der placerer efter et anker (Søjle, Dør, Vindue), og tryk så på denne tast for at gennemgå dets ankre.",
+  "Profile on a line": "Profil på en linje",
+  "Section line": "Snitlinje",
+  "Pick a line in the plan (a feature line, a hardscape, a path, a wall or a ditch): its profile opens as a graph to edit": "Vælg en linje i planen (en karakteristisk linje, en belægning, en sti, en mur eller en grøft): dens profil åbner som en graf, der kan redigeres",
+  "A platform has no profile: pick a ditch, or draw a section line across it.": "En platform har ingen profil: vælg en grøft, eller tegn en snitlinje henover den.",
+  "Draw a line over the terrain: its profile opens, and editing it reshapes the ground within an influence width each side": "Tegn en linje over terrænet: dens profil åbner, og redigering af den former jorden inden for en påvirkningsbredde til hver side",
+  "The line's heights along it, as a graph to edit; cross sections across it": "Linjens højder langs den som en graf, der kan redigeres; tværsnit på tværs af den",
+  "Profile drawings": "Profiltegninger",
+  "Long profile": "Længdeprofil",
+  "Cross sections": "Tværsnit",
+  "Cross section": "Tværsnit",
+  "Vertical exaggeration": "Lodret overdrivelse",
+  "Add a point at the picked station": "Tilføj et punkt ved den valgte station",
+  "Place on a sheet…": "Placer på et ark…",
+  "Place on a sheet": "Placer på et ark",
+  "The long profile and the cross sections as drawings on a sheet": "Længdeprofilet og tværsnittene som tegninger på et ark",
+  "Existing ground": "Eksisterende terræn",
+  "Design ground": "Projekteret terræn",
+  "Designed": "Projekteret",
+  "Vertical curve": "Lodret kurve",
+  "Length of the vertical curve": "Længden af den lodrette kurve",
+  "Elevation of the point": "Punktets kote",
+  "Unlock": "Lås op",
+  "A locked point keeps its height and station when the profile is edited": "Et låst punkt beholder sin kote og station, når profilen redigeres",
+  "Only a feature line's points can be locked.": "Kun punkter på en karakteristisk linje kan låses.",
+  "Take the point out": "Fjern punktet",
+  "To ground": "Til terræn",
+  "Take this point's height from the ground again": "Tag punktets kote fra terrænet igen",
+  "Grade of the segment": "Faldet på strækningen",
+  "Type 2 %, 1:50 or -1,5 %.": "Skriv 2 %, 1:50 eller -1,5 %.",
+  "Drag a point, or click it to type its height. Click a segment to type its grade. Double-click the line to add a point.": "Træk et punkt, eller klik på det for at skrive dets kote. Klik på en strækning for at skrive dens fald. Dobbeltklik på linjen tilføjer et punkt.",
+  "Hover the graph or the line in the plan; click to pick a station.": "Hold markøren over grafen eller linjen i planen; klik for at vælge en station.",
+  "This profile follows the ground.": "Denne profil følger terrænet.",
+  "Design the profile": "Projektér profilen",
+  "Influence width": "Påvirkningsbredde",
+  "Largest change": "Største ændring",
+  "the width must be at least twice that.": "bredden skal være mindst det dobbelte.",
+  "The ground follows an edited point within this width each side; at least twice the largest change.": "Terrænet følger et redigeret punkt inden for denne bredde til hver side; mindst det dobbelte af den største ændring.",
+  "Width each way": "Bredde til hver side",
+  "Interval between sections": "Afstand mellem snit",
+  "A cross section at the picked station": "Et tværsnit ved den valgte station",
+  "Take this section out": "Fjern dette snit",
+  "Pick a station in the graph or the plan and press “Section here”, or type an interval: each cross section shows the ground across the line.": "Vælg en station i grafen eller planen og tryk på „Snit her“, eller skriv en afstand: hvert tværsnit viser terrænet på tværs af linjen.",
+  "That point is locked.": "Punktet er låst.",
+  "Scale of the long profile": "Målestok for længdeprofilet",
+  "Scale of the cross sections": "Målestok for tværsnittene",
+  "Heights exaggerated": "Overdrevne højder",
+  "A new sheet": "Et nyt ark",
+  "The profile is on the sheet; its PDF and DXF print what it shows.": "Profilet er på arket; dets PDF og DXF udskriver det, det viser.",
+  "Reading the profile…": "Læser profilen…",
+  "This element has no profile.": "Dette element har ingen profil.",
+  "There is no such point.": "Der findes intet sådant punkt.",
+  "A hardscape corner keeps its place along the edge: change its height.": "Et hjørne i belægningen bliver på sin plads langs kanten: ændr dets kote.",
+  "Design the profile first: it follows the ground now.": "Projektér først profilen: den følger nu terrænet.",
+  "Type a grade.": "Skriv et fald.",
+  "A hardscape keeps its corners: add one in plan.": "En belægning beholder sine hjørner: tilføj et i planen.",
+  "A hardscape keeps its corners: take one out in plan.": "En belægning beholder sine hjørner: fjern et i planen.",
+  "There is no profile at that station.": "Der er ingen profil ved den station.",
+  "A profile keeps its two ends.": "En profil beholder sine to ender.",
+  "A hardscape has no vertical curves.": "En belægning har ingen lodrette kurver.",
+  "Segment grade": "Faldet på strækningen",
   // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
   "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Strækninger vinkelret på planens akser, medmindre materialets lægningsregler siger andet; fra: i enhver vinkel",
   "While drawing: F floor, C ceiling, W wall, E a typed elevation": "Mens du tegner: F gulv, C loft, W væg, E en indtastet kote",
   "open end": "åben ende",
   "open ends": "åbne ender",
   "Select the open ends": "Vælg de åbne ender",
-};
-
-const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
-
-/** Phrases with a number or a name in them. */
-/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
-const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
-  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Andenorden: ustabil, lasterne er over de kritiske (αcr < 1)."],
-  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at 1 stang blev slap: intet fastholder knude ${m[1]} (${m[2]}).`],
-  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at ${m[1]} stænger blev slappe: intet fastholder knude ${m[2]} (${m[3]}).`],
-  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at 1 stang blev slap og ${m[1]} understøtning løftede: intet fastholder knude ${m[2]} (${m[3]}).`],
-  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at ${m[1]} stænger blev slappe og ${m[2]} understøtninger løftede: intet fastholder knude ${m[3]} (${m[4]}).`],
-  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme ved knude ${m[1]} (${m[2]}).`],
-  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Énvejsstængerne og understøtningerne konvergerede ikke: de vender tilbage til tilstande, der allerede er prøvet."],
-  [/^Not settled in (\d+) iterations\.$/, (m) => `Ikke konvergeret efter ${m[1]} iterationer.`],
-  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Ingen knækning under disse laster: den geometriske stivhed afstiver kun."],
-  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Ingen knækform: de trykkede stænger holdes af det, der omgiver dem."],
-  [/^A mechanism in its last states\.$/, () => "En mekanisme i de sidste tilstande."],
-];
-function s5msg(text: string): string {
-  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
-  return text;
-}
-
-/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
-function s5dSeg(t: string): string {
-  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
-  if (a) return a[3] ? `φ op til 1/${a[1]} langs ${a[2]} (m = ${a[3]})` : `φ op til 1/${a[1]} langs ${a[2]}`;
-  const b = /^no column along (X|Y)$/.exec(t);
-  return b ? `ingen søjle langs ${b[1]}` : t;
-}
-const S5D_TAILS: Record<string, string> = {
-  'the seismic effects × 1/(1 − θ) there (or second order).': "jordskælvspåvirkningerne × 1/(1 − θ) dér (eller andenorden).",
-  'a second-order analysis is needed there.': "en andenordensberegning er nødvendig dér.",
-  'above 0.3, not allowed: stiffen the structure.': "over 0.3, ikke tilladt: afstiv konstruktionen.",
-  "Exact surfaces": "Eksakte flader",
-  "Studio solids as advanced B-rep on their exact surfaces": "Studio-legemer som avanceret B-rep på deres eksakte flader",
-  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "De Studio-legemer, Lapin kender eksakt (primitiver, ekstruderinger af linjer og buer, omdrejninger, bløde lofts, lukkede SubD'er), skrevet som IfcAdvancedBrep på planer, cylindre, kegler, kugler, tori og B-spline-flader i stedet for facetter; resten som før",
-  "solids for CAD programs, on their exact surfaces where known": "legemer til CAD-programmer, på deres eksakte flader hvor de kendes",
+  // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
+  "follows it": "følger den",
+  "a copy": "en kopi",
+  "its own": "egen",
+  "Link again": "Kobl igen",
+  "Link to an axis…": "Kobl til en akse…",
+  "Link the lining to an axis": "Kobl foringen til en akse",
+  "When that element's axis or red line changes, the lining is rebuilt along it": "Når elementets akse eller røde linje ændres, genopbygges foringen langs den",
+  "Keep the axis as it is now, a copy that no longer follows its source": "Behold aksen, som den er nu, en kopi der ikke længere følger sin kilde",
+  "Follow that element again between the same stations": "Følg elementet igen mellem de samme stationer",
+  "Click a road, a path, a wall or a line where the lining starts, then where it ends; it follows that element from then on": "Klik på en vej, en sti, en mur eller en linje, hvor foringen begynder, og derefter hvor den slutter; derefter følger den elementet",
+  "The lining follows another element's axis with its curves: change them there and the lining follows, or move its points to draw it anew (unlinked).": "Foringen følger et andet elements akse med dens kurver: ret dem dér, så følger foringen med, eller flyt dens punkter for at tegne den på ny (frakoblet).",
+  "Use a hardscape type": "Brug en belægningstype",
+  "Its layers from a hardscape type, shared and edited in one place; off, its own surface and base courses": "Lagene fra en belægningstype, fælles og redigeret ét sted; fra: dens egne slid- og bærelag",
+  "Unlink tunnel lining": "Frakobl tunnelforing",
+  "The element its axis followed was deleted: the lining keeps its last axis, unlinked.": "Elementet, hvis akse den fulgte, blev slettet: foringen beholder sin sidste akse, frakoblet.",
+  "Its axis was edited on the lining itself: it keeps that axis, unlinked.": "Dens akse blev redigeret på selve foringen: den beholder den akse, frakoblet.",
+  "The lining is not linked to an axis.": "Foringen er ikke koblet til en akse.",
   // The tunnel lining (docs/plan-wing-walls.md, S4)
   "Tunnel lining": "Tunnelforing",
   "Tunnel lining…": "Tunnelforing…",
@@ -5657,6 +5696,45 @@ const S5D_TAILS: Record<string, string> = {
   "Formwork, footing": "Forskalling, fundament",
   "Change retaining wall segment": "Ret støttemurens strækning",
   "Stem": "Væg",
+};
+
+const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
+
+/** Phrases with a number or a name in them. */
+/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
+const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Andenorden: ustabil, lasterne er over de kritiske (αcr < 1)."],
+  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at 1 stang blev slap: intet fastholder knude ${m[1]} (${m[2]}).`],
+  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at ${m[1]} stænger blev slappe: intet fastholder knude ${m[2]} (${m[3]}).`],
+  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at 1 stang blev slap og ${m[1]} understøtning løftede: intet fastholder knude ${m[2]} (${m[3]}).`],
+  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at ${m[1]} stænger blev slappe og ${m[2]} understøtninger løftede: intet fastholder knude ${m[3]} (${m[4]}).`],
+  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme ved knude ${m[1]} (${m[2]}).`],
+  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Énvejsstængerne og understøtningerne konvergerede ikke: de vender tilbage til tilstande, der allerede er prøvet."],
+  [/^Not settled in (\d+) iterations\.$/, (m) => `Ikke konvergeret efter ${m[1]} iterationer.`],
+  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Ingen knækning under disse laster: den geometriske stivhed afstiver kun."],
+  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Ingen knækform: de trykkede stænger holdes af det, der omgiver dem."],
+  [/^A mechanism in its last states\.$/, () => "En mekanisme i de sidste tilstande."],
+];
+function s5msg(text: string): string {
+  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
+  return text;
+}
+
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ op til 1/${a[1]} langs ${a[2]} (m = ${a[3]})` : `φ op til 1/${a[1]} langs ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `ingen søjle langs ${b[1]}` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "jordskælvspåvirkningerne × 1/(1 − θ) dér (eller andenorden).",
+  'a second-order analysis is needed there.': "en andenordensberegning er nødvendig dér.",
+  'above 0.3, not allowed: stiffen the structure.': "over 0.3, ikke tilladt: afstiv konstruktionen.",
+  "Exact surfaces": "Eksakte flader",
+  "Studio solids as advanced B-rep on their exact surfaces": "Studio-legemer som avanceret B-rep på deres eksakte flader",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "De Studio-legemer, Lapin kender eksakt (primitiver, ekstruderinger af linjer og buer, omdrejninger, bløde lofts, lukkede SubD'er), skrevet som IfcAdvancedBrep på planer, cylindre, kegler, kugler, tori og B-spline-flader i stedet for facetter; resten som før",
+  "solids for CAD programs, on their exact surfaces where known": "legemer til CAD-programmer, på deres eksakte flader hvor de kendes",
 };
 export const DA_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ
@@ -6086,4 +6164,8 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^The image could not be made: (.+)$/, (m) => `Billedet kunne ikke laves: ${m[1]}`],
   // MEP: Tag system's count.
   [/^(\d+) tag\(s\) placed\.$/, (m) => `${m[1]} mærkat(er) sat.`],
+  // A tunnel lining linked to its axis's source (23.11.2026)
+  [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” har ingen akse nu: foringen beholder sin sidste akse, frakoblet.`],
+  [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” løber ikke længere en meter mellem foringens stationer: den beholder sin sidste akse, frakoblet.`],
+  [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” er kortere nu: foringen løber fra ${m[2]} til ${m[3]} m, ikke ${m[4]} til ${m[5]} m som koblet.`],
 ];

@@ -33,8 +33,9 @@ public sealed record RenderPart(string Name, string Color, float[] Positions, fl
 /// <summary>A coarser copy of a part (<see cref="Lapin.Geometry.MeshSimplify"/>): its triangles as three corners each (no normals or indices: shaded flat), its edges, the most it strays (m).</summary>
 public sealed record RenderLod(float Error, float[] Positions, float[] Normals, int[] Indices, float[] Edges)
 {
-    public static IReadOnlyList<RenderLod>? Of(Lapin.Geometry.TriMesh m) =>
-        Lapin.Geometry.MeshSimplify.Levels(m)?.Select(l => new RenderLod(l.Error, l.Mesh.Positions, l.Mesh.Normals, l.Mesh.Indices, l.Mesh.Edges)).ToList();
+    /// <summary>The part's coarser copies; with <paramref name="keepEdges"/> each draws the part's own edges (<see cref="GeometryPart.LodKeepsEdges"/>).</summary>
+    public static IReadOnlyList<RenderLod>? Of(Lapin.Geometry.TriMesh m, bool keepEdges = false) =>
+        Lapin.Geometry.MeshSimplify.Levels(m)?.Select(l => new RenderLod(l.Error, l.Mesh.Positions, l.Mesh.Normals, l.Mesh.Indices, keepEdges ? m.Edges : l.Mesh.Edges)).ToList();
 }
 
 /// <summary>

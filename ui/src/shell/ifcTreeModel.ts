@@ -20,7 +20,7 @@ export interface ShapeItem { type: string; [k: string]: unknown }
 
 const SPATIAL = new Set(['IfcProject', 'IfcSite', 'IfcBuilding', 'IfcBuildingStorey']);
 /** What the tree leaves out: views, sheets, schedules, types, materials, layer sets, usages, phases (the browser shows those elsewhere). */
-const NOT_ELEMENTS = new Set(['LapinView', 'LapinSheet', 'LapinSchedule', 'LapinViewSet', 'IfcMaterial', 'IfcMaterialLayerSet', 'IfcMaterialLayerSetUsage', 'LapinPhase', 'LapinDrawing', 'LapinGraphicsSet']);
+const NOT_ELEMENTS = new Set(['LapinView', 'LapinSheet', 'LapinSchedule', 'LapinProfileView', 'LapinViewSet', 'IfcMaterial', 'IfcMaterialLayerSet', 'IfcMaterialLayerSetUsage', 'LapinPhase', 'LapinDrawing', 'LapinGraphicsSet']);
 
 export const isType = (n: NodeDto) => /Type$|Style$/.test(n.type);
 export const isElement = (n: NodeDto) => !SPATIAL.has(n.type) && !NOT_ELEMENTS.has(n.type) && !isType(n) && n.type !== 'IfcOpeningElement' && !n.type.startsWith('Lapin');

@@ -5408,49 +5408,90 @@ export const RO: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Punct de referință temporar la cursor (din nou: îl elimini)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Pornește o unealtă de desenare sau de plasare, indică un loc, apoi apasă această tastă: punctul următor se măsoară de la el.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Pornește o unealtă care plasează după o ancoră (Stâlp, Ușă, Fereastră), apoi apasă această tastă ca să parcurgi ancorele ei.",
+  "Profile on a line": "Profil pe o linie",
+  "Section line": "Linie de secțiune",
+  "Pick a line in the plan (a feature line, a hardscape, a path, a wall or a ditch): its profile opens as a graph to edit": "Alege o linie în plan (o linie caracteristică, un pavaj, o alee, un zid sau un șanț): profilul ei se deschide ca un grafic de editat",
+  "A platform has no profile: pick a ditch, or draw a section line across it.": "O platformă nu are profil: alege un șanț sau trasează o linie de secțiune peste ea.",
+  "Draw a line over the terrain: its profile opens, and editing it reshapes the ground within an influence width each side": "Trasează o linie peste teren: profilul ei se deschide, iar editarea lui remodelează terenul pe o lățime de influență de fiecare parte",
+  "The line's heights along it, as a graph to edit; cross sections across it": "Cotele liniei de-a lungul ei, ca un grafic de editat; secțiuni transversale peste ea",
+  "Profile drawings": "Desene de profil",
+  "Long profile": "Profil longitudinal",
+  "Cross sections": "Secțiuni transversale",
+  "Cross section": "Secțiune transversală",
+  "Vertical exaggeration": "Exagerare verticală",
+  "Add a point at the picked station": "Adaugă un punct la stația aleasă",
+  "Place on a sheet…": "Pune pe o planșă…",
+  "Place on a sheet": "Pune pe o planșă",
+  "The long profile and the cross sections as drawings on a sheet": "Profilul longitudinal și secțiunile transversale ca desene pe o planșă",
+  "Existing ground": "Teren existent",
+  "Design ground": "Teren proiectat",
+  "Designed": "Proiectat",
+  "Vertical curve": "Racordare verticală",
+  "Length of the vertical curve": "Lungimea racordării verticale",
+  "Elevation of the point": "Cota punctului",
+  "Unlock": "Deblochează",
+  "A locked point keeps its height and station when the profile is edited": "Un punct blocat își păstrează cota și stația când profilul este editat",
+  "Only a feature line's points can be locked.": "Doar punctele unei linii caracteristice pot fi blocate.",
+  "Take the point out": "Scoate punctul",
+  "To ground": "La teren",
+  "Take this point's height from the ground again": "Ia din nou cota punctului din teren",
+  "Grade of the segment": "Panta segmentului",
+  "Type 2 %, 1:50 or -1,5 %.": "Scrie 2 %, 1:50 sau -1,5 %.",
+  "Drag a point, or click it to type its height. Click a segment to type its grade. Double-click the line to add a point.": "Trage un punct sau dă clic pe el ca să-i scrii cota. Dă clic pe un segment ca să-i scrii panta. Dublu clic pe linie adaugă un punct.",
+  "Hover the graph or the line in the plan; click to pick a station.": "Treci cursorul peste grafic sau peste linie în plan; dă clic ca să alegi o stație.",
+  "This profile follows the ground.": "Acest profil urmărește terenul.",
+  "Design the profile": "Proiectează profilul",
+  "Influence width": "Lățime de influență",
+  "Largest change": "Cea mai mare modificare",
+  "the width must be at least twice that.": "lățimea trebuie să fie cel puțin dublul.",
+  "The ground follows an edited point within this width each side; at least twice the largest change.": "Terenul urmează un punct editat pe această lățime, de fiecare parte; cel puțin dublul celei mai mari modificări.",
+  "Width each way": "Lățime pe fiecare parte",
+  "Interval between sections": "Intervalul dintre secțiuni",
+  "A cross section at the picked station": "O secțiune transversală la stația aleasă",
+  "Take this section out": "Scoate această secțiune",
+  "Pick a station in the graph or the plan and press “Section here”, or type an interval: each cross section shows the ground across the line.": "Alege o stație în grafic sau în plan și apasă „Secțiune aici”, sau scrie un interval: fiecare secțiune transversală arată terenul peste linie.",
+  "That point is locked.": "Punctul este blocat.",
+  "Scale of the long profile": "Scara profilului longitudinal",
+  "Scale of the cross sections": "Scara secțiunilor transversale",
+  "Heights exaggerated": "Cote exagerate",
+  "A new sheet": "O planșă nouă",
+  "The profile is on the sheet; its PDF and DXF print what it shows.": "Profilul este pe planșă; PDF-ul și DXF-ul ei tipăresc ce arată.",
+  "Reading the profile…": "Se citește profilul…",
+  "This element has no profile.": "Acest element nu are profil.",
+  "There is no such point.": "Nu există un asemenea punct.",
+  "A hardscape corner keeps its place along the edge: change its height.": "Un colț de pavaj își păstrează locul pe muchie: schimbă-i cota.",
+  "Design the profile first: it follows the ground now.": "Proiectează întâi profilul: acum urmărește terenul.",
+  "Type a grade.": "Scrie o pantă.",
+  "A hardscape keeps its corners: add one in plan.": "Un pavaj își păstrează colțurile: adaugă unul în plan.",
+  "A hardscape keeps its corners: take one out in plan.": "Un pavaj își păstrează colțurile: scoate unul în plan.",
+  "There is no profile at that station.": "Nu există profil la acea stație.",
+  "A profile keeps its two ends.": "Un profil își păstrează cele două capete.",
+  "A hardscape has no vertical curves.": "Un pavaj nu are racordări verticale.",
+  "Segment grade": "Panta tronsonului",
   // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
   "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Tronsoane în unghi drept față de axele planului, dacă regulile de pozare ale materialului nu cer altceva; oprit: în orice unghi",
   "While drawing: F floor, C ceiling, W wall, E a typed elevation": "În timp ce desenezi: F pardoseală, C tavan, W perete, E o cotă tastată",
   "open end": "capăt liber",
   "open ends": "capete libere",
   "Select the open ends": "Selectează capetele libere",
-};
-
-/** Phrases with a number or a name in them. */
-/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
-const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
-  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Ordinul doi: instabil, încărcările au depășit încărcările critice (αcr < 1)."],
-  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mecanism după ce 1 bară s-a destins: nimic nu ține nodul ${m[1]} (${m[2]}).`],
-  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mecanism după ce ${m[1]} bare s-au destins: nimic nu ține nodul ${m[2]} (${m[3]}).`],
-  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mecanism după ce 1 bară s-a destins și ${m[1]} reazeme s-au dezlipit: nimic nu ține nodul ${m[2]} (${m[3]}).`],
-  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mecanism după ce ${m[1]} bare s-au destins și ${m[2]} reazeme s-au dezlipit: nimic nu ține nodul ${m[3]} (${m[4]}).`],
-  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `Mecanism în nodul ${m[1]} (${m[2]}).`],
-  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Barele și reazemele care lucrează într-un singur sens nu au convergit: revin la stări deja încercate."],
-  [/^Not settled in (\d+) iterations\.$/, (m) => `Neconvergit în ${m[1]} iterații.`],
-  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Fără flambaj sub aceste încărcări: rigiditatea geometrică doar rigidizează."],
-  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Fără mod de flambaj: barele comprimate sunt ținute de ce le înconjoară."],
-  [/^A mechanism in its last states\.$/, () => "Un mecanism în ultimele stări."],
-];
-function s5msg(text: string): string {
-  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
-  return text;
-}
-
-/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
-function s5dSeg(t: string): string {
-  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
-  if (a) return a[3] ? `φ până la 1/${a[1]} pe ${a[2]} (m = ${a[3]})` : `φ până la 1/${a[1]} pe ${a[2]}`;
-  const b = /^no column along (X|Y)$/.exec(t);
-  return b ? `niciun stâlp pe ${b[1]}` : t;
-}
-const S5D_TAILS: Record<string, string> = {
-  'the seismic effects × 1/(1 − θ) there (or second order).': "efectele seismice × 1/(1 − θ) acolo (sau ordinul doi).",
-  'a second-order analysis is needed there.': "acolo este nevoie de o analiză de ordinul doi.",
-  'above 0.3, not allowed: stiffen the structure.': "peste 0.3, nepermis: rigidizează structura.",
-  "Exact surfaces": "Suprafețe exacte",
-  "Studio solids as advanced B-rep on their exact surfaces": "Solidele Studio ca B-rep avansat pe suprafețele lor exacte",
-  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Solidele Studio pe care Lapin le știe exact (primitive, extrudări din linii și arce, revoluții, loft-uri netede, SubD închise) scrise ca IfcAdvancedBrep pe plane, cilindri, conuri, sfere, tori și suprafețe B-spline în loc de fațete; restul ca înainte",
-  "solids for CAD programs, on their exact surfaces where known": "solide pentru programe CAD, pe suprafețele lor exacte unde sunt știute",
+  // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
+  "follows it": "îl urmează",
+  "a copy": "o copie",
+  "its own": "proprie",
+  "Link again": "Leagă din nou",
+  "Link to an axis…": "Leagă de o axă…",
+  "Link the lining to an axis": "Leagă căptușeala de o axă",
+  "When that element's axis or red line changes, the lining is rebuilt along it": "Când axa sau linia roșie a acelui element se schimbă, căptușeala se reface de-a lungul ei",
+  "Keep the axis as it is now, a copy that no longer follows its source": "Păstrează axa așa cum e acum, o copie care nu își mai urmează sursa",
+  "Follow that element again between the same stations": "Urmează din nou acel element între aceleași poziții kilometrice",
+  "Click a road, a path, a wall or a line where the lining starts, then where it ends; it follows that element from then on": "Clic pe un drum, o alee, un zid sau o linie unde începe căptușeala, apoi unde se termină; de atunci urmează acel element",
+  "The lining follows another element's axis with its curves: change them there and the lining follows, or move its points to draw it anew (unlinked).": "Căptușeala urmează axa altui element, cu curbele ei: schimbă-le acolo și căptușeala urmează, sau mută-i punctele ca s-o desenezi din nou (dezlegată).",
+  "Use a hardscape type": "Folosește un tip de pavaj",
+  "Its layers from a hardscape type, shared and edited in one place; off, its own surface and base courses": "Straturile dintr-un tip de pavaj, comun și editat într-un singur loc; debifat, propriile straturi de uzură și de bază",
+  "Unlink tunnel lining": "Dezleagă căptușeala de tunel",
+  "The element its axis followed was deleted: the lining keeps its last axis, unlinked.": "Elementul a cărui axă o urma a fost șters: căptușeala își păstrează ultima axă, dezlegată.",
+  "Its axis was edited on the lining itself: it keeps that axis, unlinked.": "Axa i-a fost editată pe căptușeala însăși: o păstrează, dezlegată.",
+  "The lining is not linked to an axis.": "Căptușeala nu este legată de o axă.",
   // The tunnel lining (docs/plan-wing-walls.md, S4)
   "Tunnel lining": "Căptușeală de tunel",
   "Tunnel lining…": "Căptușeală de tunel…",
@@ -5614,6 +5655,43 @@ const S5D_TAILS: Record<string, string> = {
   "Formwork, footing": "Cofraj, talpă",
   "Change retaining wall segment": "Modifică segmentul zidului de sprijin",
   "Stem": "Elevație",
+};
+
+/** Phrases with a number or a name in them. */
+/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
+const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Ordinul doi: instabil, încărcările au depășit încărcările critice (αcr < 1)."],
+  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mecanism după ce 1 bară s-a destins: nimic nu ține nodul ${m[1]} (${m[2]}).`],
+  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mecanism după ce ${m[1]} bare s-au destins: nimic nu ține nodul ${m[2]} (${m[3]}).`],
+  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mecanism după ce 1 bară s-a destins și ${m[1]} reazeme s-au dezlipit: nimic nu ține nodul ${m[2]} (${m[3]}).`],
+  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mecanism după ce ${m[1]} bare s-au destins și ${m[2]} reazeme s-au dezlipit: nimic nu ține nodul ${m[3]} (${m[4]}).`],
+  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `Mecanism în nodul ${m[1]} (${m[2]}).`],
+  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Barele și reazemele care lucrează într-un singur sens nu au convergit: revin la stări deja încercate."],
+  [/^Not settled in (\d+) iterations\.$/, (m) => `Neconvergit în ${m[1]} iterații.`],
+  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Fără flambaj sub aceste încărcări: rigiditatea geometrică doar rigidizează."],
+  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Fără mod de flambaj: barele comprimate sunt ținute de ce le înconjoară."],
+  [/^A mechanism in its last states\.$/, () => "Un mecanism în ultimele stări."],
+];
+function s5msg(text: string): string {
+  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
+  return text;
+}
+
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ până la 1/${a[1]} pe ${a[2]} (m = ${a[3]})` : `φ până la 1/${a[1]} pe ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `niciun stâlp pe ${b[1]}` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "efectele seismice × 1/(1 − θ) acolo (sau ordinul doi).",
+  'a second-order analysis is needed there.': "acolo este nevoie de o analiză de ordinul doi.",
+  'above 0.3, not allowed: stiffen the structure.': "peste 0.3, nepermis: rigidizează structura.",
+  "Exact surfaces": "Suprafețe exacte",
+  "Studio solids as advanced B-rep on their exact surfaces": "Solidele Studio ca B-rep avansat pe suprafețele lor exacte",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Solidele Studio pe care Lapin le știe exact (primitive, extrudări din linii și arce, revoluții, loft-uri netede, SubD închise) scrise ca IfcAdvancedBrep pe plane, cilindri, conuri, sfere, tori și suprafețe B-spline în loc de fațete; restul ca înainte",
+  "solids for CAD programs, on their exact surfaces where known": "solide pentru programe CAD, pe suprafețele lor exacte unde sunt știute",
 };
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // S5d: global imperfections, sheeting, θ
@@ -6043,4 +6121,8 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^The image could not be made: (.+)$/, (m) => `Imaginea nu a putut fi creată: ${m[1]}`],
   // MEP: Tag system's count.
   [/^(\d+) tag\(s\) placed\.$/, (m) => `${m[1]} etichetă(e) puse.`],
+  // A tunnel lining linked to its axis's source (23.11.2026)
+  [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” nu mai are axă: căptușeala își păstrează ultima axă, dezlegată.`],
+  [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” nu mai are un metru între pozițiile căptușelii: căptușeala își păstrează ultima axă, dezlegată.`],
+  [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” e mai scurt acum: căptușeala merge de la ${m[2]} la ${m[3]} m, nu de la ${m[4]} la ${m[5]} m cum a fost legată.`],
 ];

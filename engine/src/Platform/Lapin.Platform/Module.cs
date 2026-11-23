@@ -342,6 +342,12 @@ public sealed record GeometryPart
     public string? TypeId { get; init; }
     /// <summary>A part plans cut as any other although its class draws by its symbols there (a lift's shaft walls round its car's symbol).</summary>
     public bool CutInPlan { get; init; }
+    /// <summary>
+    /// Its coarser copies in 3D (<see cref="RenderLod"/>) draw its own edges, not their folds: a terrain's, whose triangles a coarser
+    /// copy draws out into long slivers whose folds are noise (stray lines out of a hardscape's corners). Its edges are its creases
+    /// and open edges, which the copies hold to within their error.
+    /// </summary>
+    public bool LodKeepsEdges { get; init; }
 
     Solid? _solid;
     Func<Solid>? _make;

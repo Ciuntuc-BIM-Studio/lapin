@@ -5416,51 +5416,90 @@ export const FR: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Point de référence temporaire au curseur (encore : l’abandonner)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Lancez un outil de dessin ou de placement, pointez un endroit, puis appuyez sur cette touche : le point suivant est mesuré à partir de lui.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Lancez un outil qui place par un ancrage (Poteau, Porte, Fenêtre), puis appuyez sur cette touche pour parcourir ses ancrages.",
+  "Profile on a line": "Profil sur une ligne",
+  "Section line": "Ligne de coupe",
+  "Pick a line in the plan (a feature line, a hardscape, a path, a wall or a ditch): its profile opens as a graph to edit": "Choisissez une ligne dans le plan (une ligne caractéristique, un revêtement, un chemin, un mur ou un fossé) : son profil s'ouvre en graphique à modifier",
+  "A platform has no profile: pick a ditch, or draw a section line across it.": "Une plateforme n'a pas de profil : choisissez un fossé ou tracez une ligne de coupe en travers.",
+  "Draw a line over the terrain: its profile opens, and editing it reshapes the ground within an influence width each side": "Tracez une ligne sur le terrain : son profil s'ouvre, et le modifier remodèle le sol dans une largeur d'influence de chaque côté",
+  "The line's heights along it, as a graph to edit; cross sections across it": "Les altitudes de la ligne le long de son tracé, en graphique à modifier ; des coupes en travers",
+  "Profile drawings": "Dessins de profil",
+  "Long profile": "Profil en long",
+  "Cross sections": "Profils en travers",
+  "Cross section": "Profil en travers",
+  "Vertical exaggeration": "Exagération verticale",
+  "Add a point at the picked station": "Ajouter un point à la station choisie",
+  "Place on a sheet…": "Placer sur une feuille…",
+  "Place on a sheet": "Placer sur une feuille",
+  "The long profile and the cross sections as drawings on a sheet": "Le profil en long et les profils en travers en dessins sur une feuille",
+  "Existing ground": "Terrain existant",
+  "Design ground": "Terrain projeté",
+  "Designed": "Projeté",
+  "Vertical curve": "Raccordement vertical",
+  "Length of the vertical curve": "Longueur du raccordement vertical",
+  "Elevation of the point": "Altitude du point",
+  "Unlock": "Déverrouiller",
+  "A locked point keeps its height and station when the profile is edited": "Un point verrouillé garde son altitude et sa station quand le profil est modifié",
+  "Only a feature line's points can be locked.": "Seuls les points d'une ligne caractéristique peuvent être verrouillés.",
+  "Take the point out": "Retirer le point",
+  "To ground": "Au terrain",
+  "Take this point's height from the ground again": "Reprendre l'altitude du point au terrain",
+  "Grade of the segment": "Pente du tronçon",
+  "Type 2 %, 1:50 or -1,5 %.": "Saisissez 2 %, 1:50 ou -1,5 %.",
+  "Drag a point, or click it to type its height. Click a segment to type its grade. Double-click the line to add a point.": "Faites glisser un point, ou cliquez dessus pour saisir son altitude. Cliquez sur un tronçon pour saisir sa pente. Un double-clic sur la ligne ajoute un point.",
+  "Hover the graph or the line in the plan; click to pick a station.": "Survolez le graphique ou la ligne dans le plan ; cliquez pour choisir une station.",
+  "This profile follows the ground.": "Ce profil suit le terrain.",
+  "Design the profile": "Concevoir le profil",
+  "Influence width": "Largeur d'influence",
+  "Largest change": "Plus grand changement",
+  "the width must be at least twice that.": "la largeur doit être au moins le double.",
+  "The ground follows an edited point within this width each side; at least twice the largest change.": "Le terrain suit un point modifié dans cette largeur de chaque côté ; au moins le double du plus grand changement.",
+  "Width each way": "Largeur de chaque côté",
+  "Interval between sections": "Intervalle entre les coupes",
+  "A cross section at the picked station": "Un profil en travers à la station choisie",
+  "Take this section out": "Retirer cette coupe",
+  "Pick a station in the graph or the plan and press “Section here”, or type an interval: each cross section shows the ground across the line.": "Choisissez une station dans le graphique ou le plan et appuyez sur « Coupe ici », ou saisissez un intervalle : chaque profil en travers montre le terrain de part et d'autre de la ligne.",
+  "That point is locked.": "Le point est verrouillé.",
+  "Scale of the long profile": "Échelle du profil en long",
+  "Scale of the cross sections": "Échelle des profils en travers",
+  "Heights exaggerated": "Altitudes exagérées",
+  "A new sheet": "Une nouvelle feuille",
+  "The profile is on the sheet; its PDF and DXF print what it shows.": "Le profil est sur la feuille ; son PDF et son DXF impriment ce qu'elle montre.",
+  "Reading the profile…": "Lecture du profil…",
+  "This element has no profile.": "Cet élément n'a pas de profil.",
+  "There is no such point.": "Ce point n'existe pas.",
+  "A hardscape corner keeps its place along the edge: change its height.": "Un coin de revêtement garde sa place le long du bord : changez son altitude.",
+  "Design the profile first: it follows the ground now.": "Concevez d'abord le profil : il suit le terrain pour l'instant.",
+  "Type a grade.": "Saisissez une pente.",
+  "A hardscape keeps its corners: add one in plan.": "Un revêtement garde ses coins : ajoutez-en un dans le plan.",
+  "A hardscape keeps its corners: take one out in plan.": "Un revêtement garde ses coins : retirez-en un dans le plan.",
+  "There is no profile at that station.": "Il n'y a pas de profil à cette station.",
+  "A profile keeps its two ends.": "Un profil garde ses deux extrémités.",
+  "A hardscape has no vertical curves.": "Un revêtement n'a pas de raccordements verticaux.",
+  "Segment grade": "Pente du tronçon",
   // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
   "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Tronçons à angle droit par rapport aux axes du plan, sauf si les règles de pose du matériau disent autrement ; désactivé : à n'importe quel angle",
   "While drawing: F floor, C ceiling, W wall, E a typed elevation": "En dessinant : F sol, C plafond, W mur, E une cote saisie",
   "open end": "extrémité libre",
   "open ends": "extrémités libres",
   "Select the open ends": "Sélectionner les extrémités libres",
-};
-
-const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
-
-/** Phrases with a number or a name in them. */
-/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
-const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
-  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Second ordre : instable, les charges dépassent les charges critiques (αcr < 1)."],
-  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mécanisme une fois 1 barre détendue : rien ne retient le nœud ${m[1]} (${m[2]}).`],
-  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mécanisme une fois ${m[1]} barres détendues : rien ne retient le nœud ${m[2]} (${m[3]}).`],
-  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mécanisme une fois 1 barre détendue et ${m[1]} appui soulevé : rien ne retient le nœud ${m[2]} (${m[3]}).`],
-  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mécanisme une fois ${m[1]} barres détendues et ${m[2]} appuis soulevés : rien ne retient le nœud ${m[3]} (${m[4]}).`],
-  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `Un mécanisme au nœud ${m[1]} (${m[2]}).`],
-  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Les barres unilatérales et les appuis n'ont pas convergé : ils reviennent à des états déjà essayés."],
-  [/^Not settled in (\d+) iterations\.$/, (m) => `Pas de convergence en ${m[1]} itérations.`],
-  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Pas de flambement sous ces charges : la rigidité géométrique ne fait que raidir."],
-  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Pas de mode de flambement : les barres comprimées sont retenues par ce qui les entoure."],
-  [/^A mechanism in its last states\.$/, () => "Un mécanisme dans ses derniers états."],
-];
-function s5msg(text: string): string {
-  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
-  return text;
-}
-
-/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
-function s5dSeg(t: string): string {
-  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
-  if (a) return a[3] ? `φ jusqu'à 1/${a[1]} selon ${a[2]} (m = ${a[3]})` : `φ jusqu'à 1/${a[1]} selon ${a[2]}`;
-  const b = /^no column along (X|Y)$/.exec(t);
-  return b ? `aucun poteau selon ${b[1]}` : t;
-}
-const S5D_TAILS: Record<string, string> = {
-  'the seismic effects × 1/(1 − θ) there (or second order).': "les effets sismiques × 1/(1 − θ) à cet étage (ou second ordre).",
-  'a second-order analysis is needed there.': "une analyse au second ordre est nécessaire à cet étage.",
-  'above 0.3, not allowed: stiffen the structure.': "au-delà de 0.3, non admis : rigidifiez la structure.",
-  "Exact surfaces": "Surfaces exactes",
-  "Studio solids as advanced B-rep on their exact surfaces": "Solides Studio en B-rep avancé sur leurs surfaces exactes",
-  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Les solides Studio que Lapin connaît exactement (primitives, extrusions de lignes et d'arcs, révolutions, lissages lisses, SubD fermés) écrits en IfcAdvancedBrep sur des plans, cylindres, cônes, sphères, tores et surfaces B-spline au lieu de facettes ; le reste comme avant",
-  "solids for CAD programs, on their exact surfaces where known": "solides pour les logiciels de CAO, sur leurs surfaces exactes lorsqu'elles sont connues",
+  // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
+  "follows it": "le suit",
+  "a copy": "une copie",
+  "its own": "le sien",
+  "Link again": "Relier à nouveau",
+  "Link to an axis…": "Relier à un axe…",
+  "Link the lining to an axis": "Relier le revêtement à un axe",
+  "When that element's axis or red line changes, the lining is rebuilt along it": "Quand l'axe ou la ligne rouge de cet élément change, le revêtement est reconstruit le long de celui-ci",
+  "Keep the axis as it is now, a copy that no longer follows its source": "Garder l'axe tel qu'il est, une copie qui ne suit plus sa source",
+  "Follow that element again between the same stations": "Suivre à nouveau cet élément entre les mêmes points kilométriques",
+  "Click a road, a path, a wall or a line where the lining starts, then where it ends; it follows that element from then on": "Cliquez sur une route, une allée, un mur ou une ligne là où commence le revêtement, puis là où il finit ; il suit cet élément ensuite",
+  "The lining follows another element's axis with its curves: change them there and the lining follows, or move its points to draw it anew (unlinked).": "Le revêtement suit l'axe d'un autre élément avec ses courbes : modifiez-les là-bas et le revêtement suit, ou déplacez ses points pour le redessiner (délié).",
+  "Use a hardscape type": "Utiliser un type de revêtement",
+  "Its layers from a hardscape type, shared and edited in one place; off, its own surface and base courses": "Ses couches d'un type de revêtement, partagé et modifié en un seul endroit ; désactivé, ses propres couches de roulement et de base",
+  "Unlink tunnel lining": "Délier le revêtement de tunnel",
+  "The element its axis followed was deleted: the lining keeps its last axis, unlinked.": "L'élément dont il suivait l'axe a été supprimé : le revêtement garde son dernier axe, délié.",
+  "Its axis was edited on the lining itself: it keeps that axis, unlinked.": "Son axe a été modifié sur le revêtement lui-même : il garde cet axe, délié.",
+  "The lining is not linked to an axis.": "Le revêtement n'est relié à aucun axe.",
   // The tunnel lining (docs/plan-wing-walls.md, S4)
   "Tunnel lining": "Revêtement de tunnel",
   "Tunnel lining…": "Revêtement de tunnel…",
@@ -5624,6 +5663,45 @@ const S5D_TAILS: Record<string, string> = {
   "Formwork, footing": "Coffrage, semelle",
   "Change retaining wall segment": "Modifier le segment du mur de soutènement",
   "Stem": "Voile",
+};
+
+const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
+
+/** Phrases with a number or a name in them. */
+/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
+const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Second ordre : instable, les charges dépassent les charges critiques (αcr < 1)."],
+  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mécanisme une fois 1 barre détendue : rien ne retient le nœud ${m[1]} (${m[2]}).`],
+  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mécanisme une fois ${m[1]} barres détendues : rien ne retient le nœud ${m[2]} (${m[3]}).`],
+  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mécanisme une fois 1 barre détendue et ${m[1]} appui soulevé : rien ne retient le nœud ${m[2]} (${m[3]}).`],
+  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mécanisme une fois ${m[1]} barres détendues et ${m[2]} appuis soulevés : rien ne retient le nœud ${m[3]} (${m[4]}).`],
+  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `Un mécanisme au nœud ${m[1]} (${m[2]}).`],
+  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Les barres unilatérales et les appuis n'ont pas convergé : ils reviennent à des états déjà essayés."],
+  [/^Not settled in (\d+) iterations\.$/, (m) => `Pas de convergence en ${m[1]} itérations.`],
+  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Pas de flambement sous ces charges : la rigidité géométrique ne fait que raidir."],
+  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Pas de mode de flambement : les barres comprimées sont retenues par ce qui les entoure."],
+  [/^A mechanism in its last states\.$/, () => "Un mécanisme dans ses derniers états."],
+];
+function s5msg(text: string): string {
+  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
+  return text;
+}
+
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ jusqu'à 1/${a[1]} selon ${a[2]} (m = ${a[3]})` : `φ jusqu'à 1/${a[1]} selon ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `aucun poteau selon ${b[1]}` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "les effets sismiques × 1/(1 − θ) à cet étage (ou second ordre).",
+  'a second-order analysis is needed there.': "une analyse au second ordre est nécessaire à cet étage.",
+  'above 0.3, not allowed: stiffen the structure.': "au-delà de 0.3, non admis : rigidifiez la structure.",
+  "Exact surfaces": "Surfaces exactes",
+  "Studio solids as advanced B-rep on their exact surfaces": "Solides Studio en B-rep avancé sur leurs surfaces exactes",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Les solides Studio que Lapin connaît exactement (primitives, extrusions de lignes et d'arcs, révolutions, lissages lisses, SubD fermés) écrits en IfcAdvancedBrep sur des plans, cylindres, cônes, sphères, tores et surfaces B-spline au lieu de facettes ; le reste comme avant",
+  "solids for CAD programs, on their exact surfaces where known": "solides pour les logiciels de CAO, sur leurs surfaces exactes lorsqu'elles sont connues",
 };
 export const FR_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ
@@ -6053,4 +6131,8 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^The image could not be made: (.+)$/, (m) => `L’image n’a pas pu être créée : ${m[1]}`],
   // MEP: Tag system's count.
   [/^(\d+) tag\(s\) placed\.$/, (m) => `${m[1]} étiquette(s) placée(s).`],
+  // A tunnel lining linked to its axis's source (23.11.2026)
+  [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `« ${m[1]} » n'a plus d'axe : le revêtement garde son dernier axe, délié.`],
+  [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `« ${m[1]} » ne fait plus un mètre entre les points du revêtement : il garde son dernier axe, délié.`],
+  [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `« ${m[1]} » est plus court : le revêtement va de ${m[2]} à ${m[3]} m, et non de ${m[4]} à ${m[5]} m comme relié.`],
 ];

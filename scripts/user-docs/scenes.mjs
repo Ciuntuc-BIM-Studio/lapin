@@ -6684,6 +6684,97 @@ export const scenes = [
     },
   },
   {
+    // Site grading T3 (docs/plan-site-grading.md): the profile editor. A section line drawn across a hill with the Section line tool,
+    // its profile open under the plan (the survey's ground dashed, the line heavy), a point put in at the hill's top from the plan and
+    // dragged down, a grade typed, the stations linked between the graph and the plan, cross sections every 10 m with a point
+    // dragged in one, and the long profile and the cross sections placed on a sheet.
+    id: 'grading-profiles',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A 60 × 40 m survey every 2 m: a hill 4 m high in the middle of a gentle rise to the east.
+      const g = (x, y) => 0.015 * x + 4 * Math.exp(-((x - 30) ** 2 + (y - 20) ** 2) / 220);
+      const rows = [];
+      for (let x = 0; x <= 60; x += 2) for (let y = 0; y <= 40; y += 2) rows.push(`${x} ${y} ${(100 + g(x, y)).toFixed(3)}`);
+      const made = await t.cmd('civil.addTerrain', { text: rows.join('\n'), datum: 100, storeyId: s, interval: 0.5, majorEvery: 2, name: 'Survey' });
+      t.expect(!!made?.id, 'a terrain from the survey');
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(1000);
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(300); };
+      const lines = async () => (await t.nodes()).filter((n) => n.type === 'LapinFeatureLine');
+      const panel = t.page.locator('[data-testid=profile-panel]');
+      // The Section line tool: a line from the west edge to the east across the hill; Enter finishes, the panel opens on it.
+      await t.tool('civil.sectionLine');
+      await click(4, 20);
+      await click(56, 20);
+      await t.keys('Enter');
+      await t.until(async () => (await lines()).length === 1, 'the tool makes a section line');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      await panel.waitFor({ timeout: 8000 });
+      await t.until(async () => (await t.page.locator('[data-testid=profile-graph] path').count()) >= 3, 'the graph draws the ground');
+      const section = (await lines())[0];
+      t.expect(section.props.section === true, 'a section line');
+      // A station picked in the plan: the line answers the pointer while the panel is open, and the graph marks the station.
+      await click(30, 20);
+      await t.until(async () => (await t.page.locator('[data-testid=profile-readout]').textContent())?.includes('0+02') ?? false, 'a click on the line in the plan picks its station in the graph');
+      // A point at that station (the hill's top): put in from the panel, it lies on the ground.
+      await t.page.locator('[data-testid=profile-add-point]').click();
+      await t.until(async () => (await lines())[0].props.points.length === 3, 'the point goes in');
+      await t.wait(700);
+      // Hovering the graph marks the place in the plan.
+      const graph = t.page.locator('[data-testid=profile-graph]');
+      const gb = await graph.boundingBox();
+      const top = await t.page.locator('[data-testid=profile-point] circle').nth(1).boundingBox();
+      await t.page.mouse.move(top.x + top.width / 2 + 90, gb.y + gb.height * 0.5, { steps: 4 });
+      await t.wait(500);
+      t.expect(await t.page.locator('[data-testid=profile-plan-hover]').count() === 1, 'the plan marks the station under the cursor in the graph');
+      await t.shot('profile-plan-graph-linked', { of: '.pane.on .view-area', pad: 0 });
+      // The point dragged down by the mouse: the ground follows it within the influence width.
+      const dot = t.page.locator('[data-testid=profile-point] circle').nth(1);
+      const db = await dot.boundingBox();
+      const [cx, cy] = [db.x + db.width / 2, db.y + db.height / 2];
+      await t.page.locator('[data-testid=profile-reach-input]').fill('14 m');
+      await t.page.locator('[data-testid=profile-reach-input]').press('Enter');
+      await t.wait(900);
+      const db2 = await t.page.locator('[data-testid=profile-point] circle').nth(1).boundingBox();
+      await t.page.mouse.move(db2.x + db2.width / 2, db2.y + db2.height / 2);
+      await t.page.mouse.down();
+      await t.page.mouse.move(db2.x + db2.width / 2, db2.y + db2.height / 2 + 30, { steps: 8 });
+      await t.page.mouse.up();
+      await t.until(async () => { const p = (await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('civil.profile', { id }), section.id)); return p?.points?.[1]?.designed === true && p.points[1].z < 103.5; }, 'the point dragged down takes a height of its own');
+      await t.wait(900);
+      await t.shot('profile-section-line', { of: '.pane.on .view-area', pad: 0 });
+      // A grade typed on the segment on the west of the point: 2 %, the point keeps its height and the west end follows.
+      const c0 = await t.page.locator('[data-testid=profile-point] circle').nth(0).boundingBox();
+      const c1 = await t.page.locator('[data-testid=profile-point] circle').nth(1).boundingBox();
+      await t.page.mouse.click((c0.x + c1.x) / 2 + c0.width / 2, (c0.y + c1.y) / 2 + c0.height / 2);
+      await t.page.locator('[data-testid=profile-grade]').waitFor({ timeout: 4000 });
+      await t.page.locator('[data-testid=profile-grade]').fill('2 %');
+      await t.page.locator('[data-testid=profile-grade]').press('Enter');
+      await t.wait(1200);
+      await t.shot('profile-grade-typed', { of: '.pane.on .view-area', pad: 0 });
+      // The cross sections: every 10 m, a point dragged up in one of them.
+      await t.page.locator('[data-testid=profile-tab-cross]').click();
+      await t.page.locator('[data-testid=profile-interval]').fill('10');
+      await t.page.locator('[data-testid=profile-interval]').press('Enter');
+      await t.until(async () => (await t.page.locator('[data-testid=profile-cross]').count()) >= 4, 'cross sections every 10 m');
+      await t.wait(900);
+      await t.shot('profile-cross-sections', { of: '.pane.on .view-area', pad: 0 });
+      // The long profile and the cross sections on a sheet.
+      await t.page.locator('[data-testid=profile-place-open]').click();
+      await t.page.locator('[data-testid=profile-place]').waitFor();
+      await t.page.locator('[data-testid=profile-place-go]').click();
+      await t.page.locator('[data-testid=sheet]').waitFor({ timeout: 10_000 });
+      await t.wait(2500);
+      t.expect((await t.nodes()).some((n) => n.type === 'LapinProfileView'), 'a profile drawing is made');
+      await t.shot('profile-sheet', { of: '.view-pane:has([data-testid=sheet])', pad: 0 });
+    },
+  },
+  {
     // Gates (report #57): a fence wall along the street with a sliding gate drawn on it by the tool (its middle on the wall's
     // axis, the wall cut, the zone it parks in dashed) and a pedestrian gate beside it; a wrought iron double gate on the parcel's
     // side edge from the built-in styles; the configurator with its preview; a gate's properties; the gates in 3D.
@@ -6836,6 +6927,61 @@ export const scenes = [
       await t.wait(1500);
       await t.shot('tunnel-long-section', { of: '[data-testid=drawing]', pad: 0 });
       await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // A lining linked to its road (docs/plan-wing-walls.md, S4, 23.11.2026): the road bent anew, the lining follows it in the same
+    // undo step, its blocks kept; its properties say it follows the road, with Unlink and Link to an axis….
+    id: 'tunnel-linked',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      const road = (await t.cmd('civil.addPath', { storeyId: s, name: 'Road', points: [[0, 0], [100, 0], [200, 0]], template: 'road' })).id;
+      await t.cmd('civil.setCorridor', { id: road, profile: { mode: 'design', pvis: [[0, 0, 0], [300, 0, 0]] } });
+      const lining = (await t.cmd('civil.addTunnelLining', { storeyId: s, spec: { preset: 'horseshoe' }, axis: { id: road, from: 40, to: 170 } })).id;
+      // The road's middle vertex moved north and its corner rounded: the lining takes the new axis between the same stations.
+      await t.cmd('civil.updatePath', { id: road, points: [[0, 0], [100, 30], [200, 0]] });
+      await t.cmd('civil.setCorridor', { id: road, curves: [[0, 0, 0], [180, 25, 25], [0, 0, 0]] });
+      const node = (await t.nodes()).find((n) => n.id === lining);
+      t.expect(node?.props.axisSource?.linked === true, 'the lining follows the road');
+      const path = node?.props.path ?? [];
+      t.expect(path.some((p) => p[1] > 10), 'its axis bent with the road');
+      await t.fit();
+      await t.wait(1500);
+      const quiet = await t.page.addStyleTag({ content: '.hotbar, .hud-card { display: none !important }' });
+      await t.shot('tunnel-linked-plan', { of: '[data-testid=plan]', pad: 0 });
+      await quiet.evaluate((el) => el.remove());
+      await select(t, lining);
+      await t.wait(900);
+      await t.page.locator('aside.props [data-testid=tunnel-link]').waitFor();
+      t.expect(await t.page.locator('aside.props [data-action=tunnel-unlink]').count() === 1, 'Unlink in its properties');
+      await t.shot('tunnel-linked-properties', { of: 'aside.props', pad: 0, maxHeight: 520 });
+      await t.ui({ selection: null, selected: [], keyPlan: true });
+    },
+  },
+  {
+    // A path built of a hardscape type (docs/plan-site-grading.md, T4, 23.11.2026): Use a hardscape type in its properties, the type
+    // and its build-up in place of its own courses.
+    id: 'path-hardscape-type',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.button('Site', { exact: true });
+      const path = (await t.cmd('civil.addPath', { storeyId: s, name: 'Garden path', points: [[0, 0], [12, 0], [18, 6]], width: 1.8 })).id;
+      await t.cmd('civil.updatePath', { id: path, hardscapeType: 'pavers' });
+      const node = (await t.nodes()).find((n) => n.id === path);
+      t.expect(node?.props.hardscapeTypeName === 'Concrete pavers', 'the path is of the pavers');
+      await select(t, path);
+      await t.wait(900);
+      await t.page.locator('aside.props [data-testid=path-use-type]').waitFor();
+      t.expect(await t.page.locator('aside.props [data-testid=path-use-type]').isChecked(), 'Use a hardscape type is ticked');
+      t.expect(await t.page.locator('aside.props [data-testid=path-layers] div').count() === 3, 'its build-up: the type\'s three layers');
+      await t.shot('path-hardscape-type', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      await t.ui({ selection: null, selected: [] });
     },
   },
   {

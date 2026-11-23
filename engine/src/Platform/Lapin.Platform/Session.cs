@@ -1345,7 +1345,7 @@ public sealed partial class Session
         foreach (var p in shared)
         {
             var m = p.Tessellate();
-            parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(read, e.Id, p, bands), RenderLod.Of(m), p.Key));
+            parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(read, e.Id, p, bands), RenderLod.Of(m, p.LodKeepsEdges), p.Key));
             if (p.Bounds() is { } b) box = box is { } o ? (new Vec3(Math.Min(o.Min.X, b.Min.X), Math.Min(o.Min.Y, b.Min.Y), Math.Min(o.Min.Z, b.Min.Z)), new Vec3(Math.Max(o.Max.X, b.Max.X), Math.Max(o.Max.Y, b.Max.Y), Math.Max(o.Max.Z, b.Max.Z))) : b;
         }
         var (lo, hi) = box ?? (Vec3.Zero, Vec3.Zero);
@@ -1400,7 +1400,7 @@ public sealed partial class Session
         foreach (var p in g?.Parts ?? [])
         {
             var m = p.Tessellate();
-            parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(read, e.Id, p, bands), RenderLod.Of(m), p.Key));
+            parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(read, e.Id, p, bands), RenderLod.Of(m, p.LodKeepsEdges), p.Key));
         }
         // The interface's plan lines (picking, snapping, the selection): an entourage's outline symbols, whatever a view draws.
         var plan = (g?.Plan ?? []).Where(i => i.In(ViewStyles.EntourageModes[0])).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray(), null,

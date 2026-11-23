@@ -107,6 +107,12 @@ In 3D, **Visibility / Graphics** hides a view's paths, roads, kerbs and pavement
 
 **Placing it.** **On an axis…** asks for a road, a path, a retaining wall, a track or a drafted line: click where the lining starts, then where it ends. The lining takes that axis between the two stations, with its curves and clothoids, and its red line (a designed one as it is; one that follows the ground fitted to points), and keeps its stations. **Draw the axis…** takes a polyline you draw instead; round its corners in the corridor configurator (**Configurator…** in its properties: radii and clothoids at each vertex, the red line's PVIs, the stations, the sections at stations), as for a road. The red line is the road's level on the axis; the section stays plumb and square to the axis in plan (no superelevation: the road's crossfall inside it is its own).
 
+**Linked to its axis.** A lining placed **On an axis…** follows that element: move the road's points, round its corners or change its red line, and the lining is rebuilt along it in the same undo step, each block and ring keeping its GlobalId. Its properties say so on the **Axis** row (**follows it**). When the road gets shorter than the lining's stations, the lining stops at its end and a note under the row says so; it runs to its stations again when the road grows back. **Unlink** keeps the axis as it is now, a copy that no longer follows: the road can change without it. **Link again** follows the same element between the same stations; **Link to an axis…** picks another (click where the lining starts, then where it ends). A lining whose road is deleted stays where it was, unlinked, with a note; so does one whose own axis you edit (its red line in the corridor configurator, its points dragged). Changing its section, blocks or ends keeps the link. Linings made before linings could follow stay the copies they were.
+
+![The road bent anew, the lining following it between the same stations](shots/tunnel-linked-plan.webp)
+
+![The lining's properties: its axis follows the road, with Unlink and Link to an axis…](shots/tunnel-linked-properties.webp)
+
 ![A horseshoe lining round a curve, in its casting blocks, with a portal at its mouth](shots/tunnel-3d.webp)
 
 **Blocks and rings.** The lining is cut into casting blocks (12.5 m by default) from its start, or into rings for a TBM, the last one what is left. Each is a part of its own, with its own GlobalId, kept when you change the lining's numbers (more blocks add new ones after). In plan the lining's outside and its clear opening are drawn hidden, its axis as a centre line, its ends and its joints across it, its stations along it.
@@ -226,7 +232,44 @@ An edge that is an arc takes the heights of its two corners along its length. Th
 
 ![A gravel subregion converted to a hardscape](shots/hardscape-converted.webp)
 
+**A path of a hardscape type.** A path or a road keeps its own surface and base courses, unless you tick **Use a hardscape type** in its properties: then its carriageway is built of the type's layers, top down, in their materials (each layer cut out of the terrain, its area and volume in *Lapin_PavementLayerQuantities*), and its IFC pavement kind is the type's. Choose the type beside it, or **Edit types…**: a type edited changes every path and hardscape of it at once. Its kerbs, gutters and sidewalks stay the path's own. Untick it and the path is built of its own courses again, exactly as before; a path you never ticked is as it always was.
+
+![A path's properties with Use a hardscape type: the pavers' build-up in place of its own courses](shots/path-hardscape-type.webp)
+
 **Editing, quantities and IFC.** In plan its outline has the outline grips (corners, edges, arcs, fillet and chamfer); in 3D its top has height grips. It moves, rotates and mirrors like any element; each change is one undo step. *Lapin_HardscapeQuantities* gives its paved area, top surface area, perimeter, build-up depth and volume, and each layer its area and volume; *Lapin_KerbQuantities* the kerb's length, its dropped length and its volume; the **Hardscape schedule** lists them all. In plan its paving is hatched as its top layer's material looks (its surface graphics, Manage → Materials), and sections cut its layers. To IFC it goes as an *IfcPavement* (IFC 4.3) or an *IfcSlab* named *Pavement* (IFC4) with its layers as an *IfcMaterialLayerSetUsage*, its kerb as an *IfcKerb* (IFC 4.3) or a proxy named *Kerb* (IFC4); a file Lapin wrote comes back as the same hardscape and kerb.
+
+## Profiles
+
+A **profile** is a line's heights along it, drawn as a graph you can edit: station along the bottom, elevation up the side. It works on any line that has heights: a feature line, the edge of a hardscape, the axis of a path, road, retaining wall or ditch, and a **section line** drawn over the terrain. Open it from **Profile…** in the line's properties, or from the **Grading** group of the **Site** tab: **Profile on a line** (<kbd>LP</kbd>, then click the line in plan) and **Section line** (<kbd>SQ</kbd>, a polyline drawn like a feature line; its profile opens when you finish). The profile is a panel under the plan, so the plan stays in view.
+
+![A section line across a hill, its profile under the plan, the station hovered in the graph marked in the plan](shots/profile-plan-graph-linked.webp)
+
+**The graph.** The **existing ground** (the survey, read exactly on the terrain's triangles) is dashed grey, the **design ground** (with feature lines and hardscapes) thin green, and the line's own **profile** heavy red, with its points: a filled point has a height of its own (it is designed), a hollow one lies on the ground, a small padlock marks a locked one, and an arc under a point marks a vertical curve. **Heights** exaggerates the vertical scale: 1× is true, 2×, 5× and 10× make slopes easier to read. Between designed points the grade is written in %.
+
+**Plan and graph are linked.** Move the cursor along the graph and the plan marks that station on the line; move it along the line in plan and the graph marks it; click either to pick the station (a solid vertical line in the graph, a dot in the plan).
+
+**A section line over the terrain.** A section line only reads the ground, until you edit one of its points: then the ground on each side follows, within its **influence width**, and fades to nothing at the edge of it (the same smooth fall-off as dragging a contour). Type the width in the panel; it must be at least **twice the largest change**, or the edit is refused with a message saying so, and nothing changes. One edit is one undo step.
+
+![The point on the hill dragged down: the contours in the plan follow the section line](shots/profile-section-line.webp)
+
+**Editing the profile.**
+
+- **Drag a point** up or down; a point on a straight run may also slide along the line, between its neighbours (the ends and the points where the line bends in plan stay at their station). The red line follows the mouse while you drag, and one command is sent when you let go.
+- **Click a point** to type its **elevation**, its **vertical curve** (a parabolic curve of that length at the point; refused at the ends, or when it does not fit between the neighbours), to **lock** it (a locked point keeps its height and station, and an edit that would move it is refused) or to **delete** it. **To ground** takes its height from the ground again.
+- **Double-click the line**, or press **Point** at the picked station, to add a point.
+- **Click a segment** to type its **grade**: `2 %`, `1:50`, `-0,5 %` (a decimal comma is fine). **A typed grade keeps** its start or its end; the other end takes the height the grade gives.
+
+![A grade of 2 % typed on a segment: the point at its end follows](shots/profile-grade-typed.webp)
+
+A hardscape's profile is its top edge: its corners' heights can be changed (the top becomes "by corners") but not added, deleted, curved or locked, as the plan keeps its shape. A path, wall or ditch uses the corridor's red line: when its profile follows the ground, **Design the profile** makes it a designed one first.
+
+**Cross sections.** The **Cross sections** tab shows the ground **across** the line at stations: type an **interval** (every 10 m), or pick a station and press **Section here**; **Width each way** sets how far each side reaches. Each section is a small graph with the existing ground, the design ground and the line's point marked, and it is drawn across the line in plan. Drag a point of a section, or drag the ground curve where you want a new one: the first edit at a station makes a short section line square to the line there, and the ground beside it follows within its influence width; later edits move its points like the long profile's. The sections' heights use the same exaggeration.
+
+![Cross sections every 10 m under the plan](shots/profile-cross-sections.webp)
+
+**On a sheet.** **Place on a sheet…** makes the **long profile** (and the cross sections, when shown) a drawing of its own, at the scale you choose (its horizontal 1:500 and heights exaggerated as in the panel) and puts it on a new sheet, or on one you pick. The drawing has the level grid with its datum, both grounds, the points and curves named, and under it a table of the stations, both grounds and the cut or fill; the sheet's PDF and DXF print what the sheet shows. The drawings are listed under **Profile drawings** in the project browser, and they stay in step with the line: change the line and the sheet changes.
+
+![The long profile on a sheet](shots/profile-sheet.webp)
 
 ## Site plans and location plans
 

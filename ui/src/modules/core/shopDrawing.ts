@@ -105,7 +105,7 @@ export const mm = (metres: number): string => `${Math.round(metres * 1000)} mm`;
 export const nothingChosen = (c: Choices): boolean => !c.views.length && !c.iso && !c.sections.length && !c.atFeatures;
 
 /** The element classes a shop drawing is not of: drawings, sheets, annotations, groups and the spatial structure. */
-const NOT_DRAWN = new Set(['LapinView', 'LapinSheet', 'LapinSchedule', 'LapinShopDrawing', 'IfcAnnotation', 'IfcGroup', 'IfcGrid', 'IfcBuildingStorey', 'IfcBuilding', 'IfcSite', 'IfcProject']);
+const NOT_DRAWN = new Set(['LapinView', 'LapinSheet', 'LapinSchedule', 'LapinProfileView', 'LapinShopDrawing', 'IfcAnnotation', 'IfcGroup', 'IfcGrid', 'IfcBuildingStorey', 'IfcBuilding', 'IfcSite', 'IfcProject']);
 
 /** The one element a shop drawing is made of: the selection when it is a single element of the model. */
 export function drawableElement(selected: string[], nodes: Map<string, { type: string }>): string | null {

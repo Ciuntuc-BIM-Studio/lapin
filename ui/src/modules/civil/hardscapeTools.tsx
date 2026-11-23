@@ -5,6 +5,7 @@
  * grips of its outline and its top's height grips in 3D.
  */
 
+import { ProfileButton } from './ProfileButton';
 import { create } from 'zustand';
 import { ArrowDownRight, Grid2x2 } from 'lucide-react';
 import type { Grip, Grip3D, GripView, RefLine, ToolDef } from '../../platform/module';
@@ -33,8 +34,8 @@ export const useHardscapeTypeEdit = create<{ id: string | null }>(() => ({ id: n
 /** What the Hardscape tool lays: a type of the project's (its id) or a ready-made one (`preset:key`), cut into the terrain or alone, with a kerb all round or not. */
 export const useHardscapeTool = create<{ type: string; standalone: boolean; kerb: boolean }>(() => ({ type: 'preset:pavers', standalone: false, kerb: false }));
 
-/** The type picker: the project's types, then the ready-made ones not in it yet. */
-function TypeOptions() {
+/** The type picker: the project's types, then the ready-made ones not in it yet (a path's „Use a hardscape type” too). */
+export function TypeOptions() {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
   const types = ofClass({ nodes, relations }, HARDSCAPE_TYPE);
@@ -50,6 +51,9 @@ function TypeOptions() {
 }
 
 const typeArgs = (v: string): Record<string, unknown> => (v.startsWith('preset:') ? { type: v.slice(7) } : { typeId: v });
+
+/** A path's command arguments for a type picked (a path names its hardscape type with its own keys). */
+export const pathTypeArgs = (v: string): Record<string, unknown> => (v.startsWith('preset:') ? { hardscapeType: v.slice(7) } : { hardscapeTypeId: v });
 
 function HardscapeBar() {
   const s = useHardscapeTool();
@@ -158,6 +162,7 @@ export function HardscapeSection({ node }: { node: NodeDto }) {
   return (
     <div className="layers" data-testid="hardscape-section">
       <dl className="fields">
+        <ProfileButton id={node.id} />
         <dt>Type</dt>
         <dd><select value={typeId} disabled={!node.editable} data-testid="hardscape-section-type" onChange={(e) => set(typeArgs(e.target.value))}><TypeOptions /></select>
           {' '}<button type="button" className="link small" onClick={() => { useHardscapeTypeEdit.setState({ id: typeId || null }); useUi.setState({ dialog: 'hardscapeTypes' }); }}>Edit types…</button></dd>

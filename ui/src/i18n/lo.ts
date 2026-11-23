@@ -5508,49 +5508,90 @@ export const LO: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "ຈຸດອ້າງອີງຊົ່ວຄາວທີ່ເຄີເຊີ (ອີກຄັ້ງ: ປ່ອຍມັນ)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "ເລີ່ມເຄື່ອງມືແຕ້ມ ຫຼື ວາງ, ຊີ້ໄປທີ່ຈຸດໜຶ່ງ, ແລ້ວກົດປຸ່ມນີ້: ຈຸດຖັດໄປຈະວັດຈາກມັນ.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "ເລີ່ມເຄື່ອງມືທີ່ວາງຕາມຈຸດຢຶດ (ເສົາ, ປະຕູ, ປ່ອງຢ້ຽມ), ແລ້ວກົດປຸ່ມນີ້ເພື່ອໄລ່ຜ່ານຈຸດຢຶດຂອງມັນ.",
+  "Profile on a line": "ໜ້າຕັດຕາມເສັ້ນ",
+  "Section line": "ເສັ້ນຕັດ",
+  "Pick a line in the plan (a feature line, a hardscape, a path, a wall or a ditch): its profile opens as a graph to edit": "ເລືອກເສັ້ນໃນແຜນຜັງ (ເສັ້ນລັກສະນະ, ພື້ນປູ, ທາງ, ກຳແພງ ຫຼື ຮ່ອງ): ໜ້າຕັດຂອງມັນຈະເປີດເປັນກຣາຟໃຫ້ແກ້ໄຂ",
+  "A platform has no profile: pick a ditch, or draw a section line across it.": "ເວທີບໍ່ມີໜ້າຕັດ: ເລືອກຮ່ອງ ຫຼື ແຕ້ມເສັ້ນຕັດຜ່ານມັນ.",
+  "Draw a line over the terrain: its profile opens, and editing it reshapes the ground within an influence width each side": "ແຕ້ມເສັ້ນຜ່ານພື້ນດິນ: ໜ້າຕັດຂອງມັນຈະເປີດ ແລະ ການແກ້ໄຂຈະປັບຮູບດິນໃນຄວາມກວ້າງອິດທິພົນທັງສອງຂ້າງ",
+  "The line's heights along it, as a graph to edit; cross sections across it": "ລະດັບຂອງເສັ້ນຕາມຄວາມຍາວ ເປັນກຣາຟໃຫ້ແກ້ໄຂ; ໜ້າຕັດຂວາງ",
+  "Profile drawings": "ແຕ້ມໜ້າຕັດ",
+  "Long profile": "ໜ້າຕັດຕາມຍາວ",
+  "Cross sections": "ໜ້າຕັດຂວາງ",
+  "Cross section": "ໜ້າຕັດຂວາງ",
+  "Vertical exaggeration": "ການຂະຫຍາຍແນວຕັ້ງ",
+  "Add a point at the picked station": "ເພີ່ມຈຸດທີ່ສະຖານີທີ່ເລືອກ",
+  "Place on a sheet…": "ວາງໃສ່ແຜ່ນ…",
+  "Place on a sheet": "ວາງໃສ່ແຜ່ນ",
+  "The long profile and the cross sections as drawings on a sheet": "ໜ້າຕັດຕາມຍາວ ແລະ ຂວາງ ເປັນແຜນແຕ້ມໃນແຜ່ນ",
+  "Existing ground": "ພື້ນດິນເດີມ",
+  "Design ground": "ພື້ນດິນອອກແບບ",
+  "Designed": "ອອກແບບແລ້ວ",
+  "Vertical curve": "ເສັ້ນໂຄ້ງແນວຕັ້ງ",
+  "Length of the vertical curve": "ຄວາມຍາວຂອງເສັ້ນໂຄ້ງແນວຕັ້ງ",
+  "Elevation of the point": "ລະດັບຂອງຈຸດ",
+  "Unlock": "ປົດລັອກ",
+  "A locked point keeps its height and station when the profile is edited": "ຈຸດທີ່ລັອກຈະຮັກສາລະດັບ ແລະ ສະຖານີ ເມື່ອແກ້ໄຂໜ້າຕັດ",
+  "Only a feature line's points can be locked.": "ສາມາດລັອກໄດ້ສະເພາະຈຸດຂອງເສັ້ນລັກສະນະ.",
+  "Take the point out": "ເອົາຈຸດອອກ",
+  "To ground": "ລົງພື້ນດິນ",
+  "Take this point's height from the ground again": "ເອົາລະດັບຂອງຈຸດຈາກພື້ນດິນອີກຄັ້ງ",
+  "Grade of the segment": "ຄວາມຊັນຂອງຊ່ວງ",
+  "Type 2 %, 1:50 or -1,5 %.": "ພິມ 2 %, 1:50 ຫຼື -1,5 %.",
+  "Drag a point, or click it to type its height. Click a segment to type its grade. Double-click the line to add a point.": "ລາກຈຸດ ຫຼື ກົດໃສ່ມັນເພື່ອພິມລະດັບ. ກົດໃສ່ຊ່ວງເພື່ອພິມຄວາມຊັນ. ກົດສອງຄັ້ງໃສ່ເສັ້ນເພື່ອເພີ່ມຈຸດ.",
+  "Hover the graph or the line in the plan; click to pick a station.": "ເອົາເມົາສ໌ໄປເໜືອກຣາຟ ຫຼື ເສັ້ນໃນແຜນຜັງ; ກົດເພື່ອເລືອກສະຖານີ.",
+  "This profile follows the ground.": "ໜ້າຕັດນີ້ຕາມພື້ນດິນ.",
+  "Design the profile": "ອອກແບບໜ້າຕັດ",
+  "Influence width": "ຄວາມກວ້າງອິດທິພົນ",
+  "Largest change": "ການປ່ຽນແປງໃຫຍ່ສຸດ",
+  "the width must be at least twice that.": "ຄວາມກວ້າງຕ້ອງຢ່າງໜ້ອຍສອງເທົ່າ.",
+  "The ground follows an edited point within this width each side; at least twice the largest change.": "ພື້ນດິນຈະຕາມຈຸດທີ່ແກ້ໄຂໃນຄວາມກວ້າງນີ້ທັງສອງຂ້າງ; ຢ່າງໜ້ອຍສອງເທົ່າຂອງການປ່ຽນແປງໃຫຍ່ສຸດ.",
+  "Width each way": "ຄວາມກວ້າງແຕ່ລະຂ້າງ",
+  "Interval between sections": "ໄລຍະຫ່າງລະຫວ່າງໜ້າຕັດ",
+  "A cross section at the picked station": "ໜ້າຕັດຂວາງທີ່ສະຖານີທີ່ເລືອກ",
+  "Take this section out": "ເອົາໜ້າຕັດນີ້ອອກ",
+  "Pick a station in the graph or the plan and press “Section here”, or type an interval: each cross section shows the ground across the line.": "ເລືອກສະຖານີໃນກຣາຟ ຫຼື ແຜນຜັງ ແລ້ວກົດ “ຕັດບ່ອນນີ້” ຫຼື ພິມໄລຍະຫ່າງ: ແຕ່ລະໜ້າຕັດຂວາງສະແດງພື້ນດິນທົ່ວເສັ້ນ.",
+  "That point is locked.": "ຈຸດຖືກລັອກ.",
+  "Scale of the long profile": "ມາດຕາສ່ວນຂອງໜ້າຕັດຕາມຍາວ",
+  "Scale of the cross sections": "ມາດຕາສ່ວນຂອງໜ້າຕັດຂວາງ",
+  "Heights exaggerated": "ລະດັບຂະຫຍາຍ",
+  "A new sheet": "ແຜ່ນໃໝ່",
+  "The profile is on the sheet; its PDF and DXF print what it shows.": "ໜ້າຕັດຢູ່ໃນແຜ່ນແລ້ວ; PDF ແລະ DXF ຂອງມັນພິມສິ່ງທີ່ສະແດງ.",
+  "Reading the profile…": "ກຳລັງອ່ານໜ້າຕັດ…",
+  "This element has no profile.": "ອົງປະກອບນີ້ບໍ່ມີໜ້າຕັດ.",
+  "There is no such point.": "ບໍ່ມີຈຸດນັ້ນ.",
+  "A hardscape corner keeps its place along the edge: change its height.": "ມຸມຂອງພື້ນປູຢູ່ບ່ອນເດີມຕາມຂອບ: ປ່ຽນລະດັບຂອງມັນ.",
+  "Design the profile first: it follows the ground now.": "ອອກແບບໜ້າຕັດກ່ອນ: ຕອນນີ້ມັນຕາມພື້ນດິນ.",
+  "Type a grade.": "ພິມຄວາມຊັນ.",
+  "A hardscape keeps its corners: add one in plan.": "ພື້ນປູຮັກສາມຸມຂອງມັນ: ເພີ່ມໃນແຜນຜັງ.",
+  "A hardscape keeps its corners: take one out in plan.": "ພື້ນປູຮັກສາມຸມຂອງມັນ: ເອົາອອກໃນແຜນຜັງ.",
+  "There is no profile at that station.": "ບໍ່ມີໜ້າຕັດທີ່ສະຖານີນັ້ນ.",
+  "A profile keeps its two ends.": "ໜ້າຕັດຮັກສາສອງປາຍຂອງມັນ.",
+  "A hardscape has no vertical curves.": "ພື້ນປູບໍ່ມີເສັ້ນໂຄ້ງແນວຕັ້ງ.",
+  "Segment grade": "ຄວາມຊັນຂອງຊ່ວງ",
   // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
   "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "ຊ່ວງຕັ້ງສາກກັບແກນຂອງແຜນຜັງ, ເວັ້ນເສຍແຕ່ກົດການວາງຂອງວັດສະດຸບອກເປັນຢ່າງອື່ນ; ປິດ: ໃນມຸມໃດກໍໄດ້",
   "While drawing: F floor, C ceiling, W wall, E a typed elevation": "ໃນຂະນະແຕ້ມ: F ພື້ນ, C ເພດານ, W ຝາ, E ລະດັບທີ່ພິມ",
   "open end": "ປາຍເປີດ",
   "open ends": "ປາຍເປີດ",
   "Select the open ends": "ເລືອກປາຍເປີດ",
-};
-
-/** Phrases with a number or a name in them. */
-/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
-const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
-  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "ອັນດັບສອງ: ບໍ່ໝັ້ນຄົງ, ນ້ຳໜັກເກີນຄ່າວິກິດແລ້ວ (αcr < 1)."],
-  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ 1 ທ່ອນຫຼຸດ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[1]} (${m[2]}).`],
-  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ ${m[1]} ທ່ອນຫຼຸດ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[2]} (${m[3]}).`],
-  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ 1 ທ່ອນຫຼຸດ ແລະ ${m[1]} ຈຸດຮອງຮັບຍົກ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[2]} (${m[3]}).`],
-  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ ${m[1]} ທ່ອນຫຼຸດ ແລະ ${m[2]} ຈຸດຮອງຮັບຍົກ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[3]} (${m[4]}).`],
-  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກທີ່ຈຸດຕໍ່ ${m[1]} (${m[2]}).`],
-  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "ທ່ອນທິດທາງດຽວ ແລະ ຈຸດຮອງຮັບບໍ່ລູ່ເຂົ້າ: ພວກມັນກັບໄປຫາສະຖານະທີ່ລອງແລ້ວ."],
-  [/^Not settled in (\d+) iterations\.$/, (m) => `ບໍ່ລູ່ເຂົ້າໃນ ${m[1]} ຮອບຊ້ຳ.`],
-  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "ບໍ່ມີການໂກ່ງງໍພາຍໃຕ້ນ້ຳໜັກເຫຼົ່ານີ້: ຄວາມແຂງເລຂາຄະນິດພຽງແຕ່ເພີ່ມຄວາມແຂງ."],
-  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "ບໍ່ມີໂໝດການໂກ່ງງໍ: ແທ່ງທີ່ຖືກອັດຖືກຍຶດດ້ວຍສິ່ງອ້ອມຂ້າງ."],
-  [/^A mechanism in its last states\.$/, () => "ເປັນກົນໄກໃນສະຖານະສຸດທ້າຍຂອງມັນ."],
-];
-function s5msg(text: string): string {
-  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
-  return text;
-}
-
-/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
-function s5dSeg(t: string): string {
-  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
-  if (a) return a[3] ? `φ ຮອດ 1/${a[1]} ຕາມ ${a[2]} (m = ${a[3]})` : `φ ຮອດ 1/${a[1]} ຕາມ ${a[2]}`;
-  const b = /^no column along (X|Y)$/.exec(t);
-  return b ? `ບໍ່ມີເສົາຕາມ ${b[1]}` : t;
-}
-const S5D_TAILS: Record<string, string> = {
-  'the seismic effects × 1/(1 − θ) there (or second order).': "ຜົນແຜ່ນດິນໄຫວ × 1/(1 − θ) ບ່ອນນັ້ນ (ຫຼື ອັນດັບສອງ).",
-  'a second-order analysis is needed there.': "ບ່ອນນັ້ນຕ້ອງວິເຄາະອັນດັບສອງ.",
-  'above 0.3, not allowed: stiffen the structure.': "ເກີນ 0.3, ບໍ່ອະນຸຍາດ: ເສີມຄວາມແຂງຂອງໂຄງສ້າງ.",
-  "Exact surfaces": "ພື້ນຜິວທີ່ແນ່ນອນ",
-  "Studio solids as advanced B-rep on their exact surfaces": "ຮູບທຣົງຕັນຂອງ Studio ເປັນ B-rep ຂັ້ນສູງເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນ",
-  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "ຮູບທຣົງຕັນຂອງ Studio ທີ່ Lapin ຮູ້ຢ່າງແນ່ນອນ (ຮູບພື້ນຖານ, ການດຶງອອກຈາກເສັ້ນ ແລະ ເສັ້ນໂຄ້ງ, ການໝູນ, loft ລຽບ, SubD ປິດ) ຂຽນເປັນ IfcAdvancedBrep ເທິງລະນາບ, ທໍ່ກົມ, ກວຍ, ຮູບກົມ, ຮູບວົງແຫວນ ແລະ ພື້ນຜິວ B-spline ແທນເຫຼີ່ຍມ; ສ່ວນທີ່ເຫຼືອຄືເກົ່າ",
-  "solids for CAD programs, on their exact surfaces where known": "ຮູບທຣົງຕັນສຳລັບໂປຣແກຣມ CAD, ເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນບ່ອນທີ່ຮູ້",
+  // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
+  "follows it": "ຕາມມັນ",
+  "a copy": "ສຳເນົາ",
+  "its own": "ຂອງຕົນເອງ",
+  "Link again": "ເຊື່ອມອີກຄັ້ງ",
+  "Link to an axis…": "ເຊື່ອມກັບແກນ…",
+  "Link the lining to an axis": "ເຊື່ອມແຜ່ນບຸກັບແກນ",
+  "When that element's axis or red line changes, the lining is rebuilt along it": "ເມື່ອແກນ ຫຼື ເສັ້ນແດງຂອງອົງປະກອບນັ້ນປ່ຽນ, ແຜ່ນບຸຈະຖືກສ້າງໃໝ່ຕາມມັນ",
+  "Keep the axis as it is now, a copy that no longer follows its source": "ຮັກສາແກນໄວ້ຄືດຽວນີ້, ເປັນສຳເນົາທີ່ບໍ່ຕາມແຫຼ່ງຂອງມັນອີກ",
+  "Follow that element again between the same stations": "ຕາມອົງປະກອບນັ້ນອີກຄັ້ງລະຫວ່າງສະຖານີເກົ່າ",
+  "Click a road, a path, a wall or a line where the lining starts, then where it ends; it follows that element from then on": "ຄລິກຖະໜົນ, ທາງຍ່າງ, ກຳແພງ ຫຼື ເສັ້ນບ່ອນແຜ່ນບຸເລີ່ມ, ແລ້ວບ່ອນມັນສິ້ນສຸດ; ຈາກນັ້ນມັນຕາມອົງປະກອບນັ້ນ",
+  "The lining follows another element's axis with its curves: change them there and the lining follows, or move its points to draw it anew (unlinked).": "ແຜ່ນບຸຕາມແກນຂອງອົງປະກອບອື່ນພ້ອມເສັ້ນໂຄ້ງ: ປ່ຽນພວກມັນຢູ່ທີ່ນັ້ນ ແລ້ວແຜ່ນບຸຈະຕາມ, ຫຼື ຍ້າຍຈຸດຂອງມັນເພື່ອແຕ້ມໃໝ່ (ຍົກເລີກການເຊື່ອມ).",
+  "Use a hardscape type": "ໃຊ້ປະເພດພື້ນປູ",
+  "Its layers from a hardscape type, shared and edited in one place; off, its own surface and base courses": "ຊັ້ນຂອງມັນຈາກປະເພດພື້ນປູ, ໃຊ້ຮ່ວມກັນ ແລະ ແກ້ໄຂບ່ອນດຽວ; ປິດ: ຊັ້ນໜ້າ ແລະ ຊັ້ນພື້ນຂອງຕົນເອງ",
+  "Unlink tunnel lining": "ຍົກເລີກການເຊື່ອມແຜ່ນບຸອຸໂມງ",
+  "The element its axis followed was deleted: the lining keeps its last axis, unlinked.": "ອົງປະກອບທີ່ແກນຂອງມັນຕາມຖືກລຶບແລ້ວ: ແຜ່ນບຸຮັກສາແກນສຸດທ້າຍໄວ້, ບໍ່ເຊື່ອມ.",
+  "Its axis was edited on the lining itself: it keeps that axis, unlinked.": "ແກນຂອງມັນຖືກແກ້ໄຂຢູ່ແຜ່ນບຸເອງ: ມັນຮັກສາແກນນັ້ນໄວ້, ບໍ່ເຊື່ອມ.",
+  "The lining is not linked to an axis.": "ແຜ່ນບຸບໍ່ໄດ້ເຊື່ອມກັບແກນໃດ.",
   // The tunnel lining (docs/plan-wing-walls.md, S4)
   "Tunnel lining": "ແຜ່ນບຸຜະໜັງອຸໂມງ",
   "Tunnel lining…": "ແຜ່ນບຸຜະໜັງອຸໂມງ…",
@@ -5714,6 +5755,43 @@ const S5D_TAILS: Record<string, string> = {
   "Formwork, footing": "ແບບຫຼໍ່, ຖານຮາກ",
   "Change retaining wall segment": "ປ່ຽນທ່ອນຂອງກຳແພງກັນດິນ",
   "Stem": "ລຳຕົວຝາ",
+};
+
+/** Phrases with a number or a name in them. */
+/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
+const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "ອັນດັບສອງ: ບໍ່ໝັ້ນຄົງ, ນ້ຳໜັກເກີນຄ່າວິກິດແລ້ວ (αcr < 1)."],
+  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ 1 ທ່ອນຫຼຸດ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[1]} (${m[2]}).`],
+  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ ${m[1]} ທ່ອນຫຼຸດ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[2]} (${m[3]}).`],
+  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ 1 ທ່ອນຫຼຸດ ແລະ ${m[1]} ຈຸດຮອງຮັບຍົກ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[2]} (${m[3]}).`],
+  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ ${m[1]} ທ່ອນຫຼຸດ ແລະ ${m[2]} ຈຸດຮອງຮັບຍົກ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[3]} (${m[4]}).`],
+  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກທີ່ຈຸດຕໍ່ ${m[1]} (${m[2]}).`],
+  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "ທ່ອນທິດທາງດຽວ ແລະ ຈຸດຮອງຮັບບໍ່ລູ່ເຂົ້າ: ພວກມັນກັບໄປຫາສະຖານະທີ່ລອງແລ້ວ."],
+  [/^Not settled in (\d+) iterations\.$/, (m) => `ບໍ່ລູ່ເຂົ້າໃນ ${m[1]} ຮອບຊ້ຳ.`],
+  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "ບໍ່ມີການໂກ່ງງໍພາຍໃຕ້ນ້ຳໜັກເຫຼົ່ານີ້: ຄວາມແຂງເລຂາຄະນິດພຽງແຕ່ເພີ່ມຄວາມແຂງ."],
+  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "ບໍ່ມີໂໝດການໂກ່ງງໍ: ແທ່ງທີ່ຖືກອັດຖືກຍຶດດ້ວຍສິ່ງອ້ອມຂ້າງ."],
+  [/^A mechanism in its last states\.$/, () => "ເປັນກົນໄກໃນສະຖານະສຸດທ້າຍຂອງມັນ."],
+];
+function s5msg(text: string): string {
+  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
+  return text;
+}
+
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ ຮອດ 1/${a[1]} ຕາມ ${a[2]} (m = ${a[3]})` : `φ ຮອດ 1/${a[1]} ຕາມ ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `ບໍ່ມີເສົາຕາມ ${b[1]}` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "ຜົນແຜ່ນດິນໄຫວ × 1/(1 − θ) ບ່ອນນັ້ນ (ຫຼື ອັນດັບສອງ).",
+  'a second-order analysis is needed there.': "ບ່ອນນັ້ນຕ້ອງວິເຄາະອັນດັບສອງ.",
+  'above 0.3, not allowed: stiffen the structure.': "ເກີນ 0.3, ບໍ່ອະນຸຍາດ: ເສີມຄວາມແຂງຂອງໂຄງສ້າງ.",
+  "Exact surfaces": "ພື້ນຜິວທີ່ແນ່ນອນ",
+  "Studio solids as advanced B-rep on their exact surfaces": "ຮູບທຣົງຕັນຂອງ Studio ເປັນ B-rep ຂັ້ນສູງເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນ",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "ຮູບທຣົງຕັນຂອງ Studio ທີ່ Lapin ຮູ້ຢ່າງແນ່ນອນ (ຮູບພື້ນຖານ, ການດຶງອອກຈາກເສັ້ນ ແລະ ເສັ້ນໂຄ້ງ, ການໝູນ, loft ລຽບ, SubD ປິດ) ຂຽນເປັນ IfcAdvancedBrep ເທິງລະນາບ, ທໍ່ກົມ, ກວຍ, ຮູບກົມ, ຮູບວົງແຫວນ ແລະ ພື້ນຜິວ B-spline ແທນເຫຼີ່ຍມ; ສ່ວນທີ່ເຫຼືອຄືເກົ່າ",
+  "solids for CAD programs, on their exact surfaces where known": "ຮູບທຣົງຕັນສຳລັບໂປຣແກຣມ CAD, ເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນບ່ອນທີ່ຮູ້",
 };
 export const LO_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ
@@ -6143,4 +6221,8 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^The image could not be made: (.+)$/, (m) => `ບໍ່ສາມາດສ້າງຮູບໄດ້: ${m[1]}`],
   // MEP: Tag system's count.
   [/^(\d+) tag\(s\) placed\.$/, (m) => `ໃສ່ປ້າຍແລ້ວ ${m[1]} ອັນ.`],
+  // A tunnel lining linked to its axis's source (23.11.2026)
+  [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” ບໍ່ມີແກນແລ້ວ: ແຜ່ນບຸຮັກສາແກນສຸດທ້າຍໄວ້, ບໍ່ເຊື່ອມ.`],
+  [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” ບໍ່ຍາວຮອດໜຶ່ງແມັດລະຫວ່າງສະຖານີຂອງແຜ່ນບຸອີກແລ້ວ: ມັນຮັກສາແກນສຸດທ້າຍໄວ້, ບໍ່ເຊື່ອມ.`],
+  [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” ສັ້ນລົງແລ້ວ: ແຜ່ນບຸແລ່ນຈາກ ${m[2]} ຫາ ${m[3]} m, ບໍ່ແມ່ນ ${m[4]} ຫາ ${m[5]} m ຕາມທີ່ເຊື່ອມ.`],
 ];
