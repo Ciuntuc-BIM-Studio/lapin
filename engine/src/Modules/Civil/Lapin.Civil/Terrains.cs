@@ -186,7 +186,10 @@ public static class Terrains
         // A survey point on a breakline takes the breakline's height there: the line holds.
         var onLine = LineIndex.Of(lines);
         // One within a feature line's tolerance conflicts with it and is left out of the triangulation (the terrain says how many).
-        all.AddRange(basePts.Where(p => near?.Within(p.Xy) != true && !FeatureLines.InAreas(areas, p.Xy)).Select(p => onLine?.HeightAt(p) is { } z ? p with { Z = z } : p));
+        // The section lines' changes (T3): the survey points within a reach follow them, faded across it (derived, never stored).
+        var shifts = sculpted && features ? FeatureLines.Shifts(x) : [];
+        var keptPts = basePts.Where(p => near?.Within(p.Xy) != true && !FeatureLines.InAreas(areas, p.Xy)).ToList();
+        all.AddRange(keptPts.Select(p => onLine?.HeightAt(p) is { } z ? p with { Z = z } : shifts.Count > 0 ? p with { Z = p.Z + FeatureLines.ShiftAt(shifts, p.Xy) } : p));
         var pts = all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList();
         if (dabs.Count > 0)
         {
@@ -196,6 +199,9 @@ public static class Terrains
             // What the brush added within a feature line's tolerance goes too.
             if (near != null) pts = [.. pts.Where((p, i) => i < featureEnd || (!near.Within(p.Xy) && !FeatureLines.InAreas(areas, p.Xy)))];
         }
+        // Where the survey is sparse within a reach, points of the change's own (after the brush: their heights are the worked ground's).
+        if (shifts.Count > 0)
+            pts.AddRange(FeatureLines.Band(shifts, Base(x), keptPts, p => near?.Within(p) == true || FeatureLines.InAreas(areas, p)));
         var tin = Tin.Delaunay(pts, segments, boundary.Count >= 3 ? boundary : null);
         // A surface from a file with holes or a concave edge keeps to where its triangles were.
         if (footprint != null && tin.Triangles.Count > 0)
