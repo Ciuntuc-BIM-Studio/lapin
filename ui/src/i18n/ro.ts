@@ -5270,6 +5270,7 @@ const S5D_TAILS: Record<string, string> = {
   "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Solidele Studio pe care Lapin le știe exact (primitive, extrudări din linii și arce, revoluții, loft-uri netede, SubD închise) scrise ca IfcAdvancedBrep pe plane, cilindri, conuri, sfere, tori și suprafețe B-spline în loc de fațete; restul ca înainte",
   "solids for CAD programs, on their exact surfaces where known": "solide pentru programe CAD, pe suprafețele lor exacte unde sunt știute",
   // The tunnel-portal and bridge-abutment configurator (docs/plan-wing-walls.md, S3)
+  "Drawn by the engine, as the drawings draw it: the portal or abutment as these values build it.": "Desenat de motor, cum îl desenează desenele: portalul sau culeea așa cum le construiesc aceste valori.",
   "Portal or abutment": "Portal sau culee",
   "Portal or abutment…": "Portal sau culee…",
   "Place portal": "Așază portalul",

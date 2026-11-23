@@ -5318,6 +5318,7 @@ const S5D_TAILS: Record<string, string> = {
   "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Los sólidos de Studio que Lapin conoce exactamente (primitivas, extrusiones de líneas y arcos, revoluciones, solevados suaves, SubD cerrados) escritos como IfcAdvancedBrep sobre planos, cilindros, conos, esferas, toros y superficies B-spline en lugar de facetas; el resto como antes",
   "solids for CAD programs, on their exact surfaces where known": "sólidos para programas CAD, sobre sus superficies exactas donde se conocen",
   // The tunnel-portal and bridge-abutment configurator (docs/plan-wing-walls.md, S3)
+  "Drawn by the engine, as the drawings draw it: the portal or abutment as these values build it.": "Dibujado por el motor, como lo dibujan los planos: el portal o el estribo tal como lo construyen estos valores.",
   "Portal or abutment": "Portal o estribo",
   "Portal or abutment…": "Portal o estribo…",
   "Place portal": "Colocar portal",

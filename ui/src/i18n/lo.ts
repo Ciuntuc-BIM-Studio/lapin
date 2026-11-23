@@ -5370,6 +5370,7 @@ const S5D_TAILS: Record<string, string> = {
   "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "ຮູບທຣົງຕັນຂອງ Studio ທີ່ Lapin ຮູ້ຢ່າງແນ່ນອນ (ຮູບພື້ນຖານ, ການດຶງອອກຈາກເສັ້ນ ແລະ ເສັ້ນໂຄ້ງ, ການໝູນ, loft ລຽບ, SubD ປິດ) ຂຽນເປັນ IfcAdvancedBrep ເທິງລະນາບ, ທໍ່ກົມ, ກວຍ, ຮູບກົມ, ຮູບວົງແຫວນ ແລະ ພື້ນຜິວ B-spline ແທນເຫຼີ່ຍມ; ສ່ວນທີ່ເຫຼືອຄືເກົ່າ",
   "solids for CAD programs, on their exact surfaces where known": "ຮູບທຣົງຕັນສຳລັບໂປຣແກຣມ CAD, ເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນບ່ອນທີ່ຮູ້",
   // The tunnel-portal and bridge-abutment configurator (docs/plan-wing-walls.md, S3)
+  "Drawn by the engine, as the drawings draw it: the portal or abutment as these values build it.": "ແຕ້ມໂດຍເຄື່ອງຈັກ, ຄືກັບທີ່ແບບແຕ້ມແຕ້ມມັນ: ປະຕູອຸໂມງ ຫຼື ຕີນຂົວ ຕາມທີ່ຄ່າເຫຼົ່ານີ້ສ້າງ.",
   "Portal or abutment": "ປະຕູອຸໂມງ ຫຼື ຄໍ້າຂົວ",
   "Portal or abutment…": "ປະຕູອຸໂມງ ຫຼື ຄໍ້າຂົວ…",
   "Place portal": "ວາງປະຕູອຸໂມງ",

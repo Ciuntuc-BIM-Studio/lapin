@@ -5312,6 +5312,7 @@ const S5D_TAILS: Record<string, string> = {
   "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Lapin 精确知道的 Studio 实体（基本体、由直线和圆弧拉伸、旋转、平滑放样、闭合 SubD）以 IfcAdvancedBrep 写在平面、圆柱面、圆锥面、球面、圆环面和 B 样条曲面上，而不是写成小平面；其余照旧",
   "solids for CAD programs, on their exact surfaces where known": "供 CAD 程序使用的实体，已知处写在其精确曲面上",
   // The tunnel-portal and bridge-abutment configurator (docs/plan-wing-walls.md, S3)
+  "Drawn by the engine, as the drawings draw it: the portal or abutment as these values build it.": "由引擎绘制,与图纸的画法相同:按这些数值生成的洞门或桥台.",
   "Portal or abutment": "隧道洞门或桥台",
   "Portal or abutment…": "隧道洞门或桥台…",
   "Place portal": "放置洞门",

@@ -133,7 +133,7 @@ export function PortalDialog() {
                   </div>
                 ))}
               </dl>
-              <TypePreview typeClass="LapinPortal" type={previewSpec} />
+              <TypePreview typeClass="LapinPortal" type={previewSpec} caption="Drawn by the engine, as the drawings draw it: the portal or abutment as these values build it." />
             </div>
             {values && values.problems.length > 0 && (
               <ul className="muted small" data-testid="portal-problems">{values.problems.map((p) => <li key={p} data-no-i18n>{p}</li>)}</ul>
