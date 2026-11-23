@@ -195,7 +195,7 @@ describe('the snap preferences', () => {
   it('lists Tangent and Wall axis, both on by default', () => {
     expect(SNAP_MODES).toContain('tangent');
     expect(SNAP_MODES).toContain('wallAxis');
-    expect(readPrefs(null).snapModes).toEqual([...SNAP_MODES]);
+    expect(readPrefs(null).snapModes).toEqual(SNAP_MODES.filter((m) => m !== 'division' && m !== 'distance')); // Divisions and Distance are off until ticked
   });
   it('turns the new snaps on for settings kept before they existed, and keeps a choice made since', () => {
     const before = readPrefs({ snapModes: ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'nearest'] });

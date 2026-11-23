@@ -6514,7 +6514,8 @@ export const scenes = [
       await t.tool('sitework.scaffoldOnWalls');
       await t.ui({ selection: slab, selected: [slab, beam] });
       await t.tool('sitework.formwork');
-      await t.wait(800);
+      // The engine makes them a moment after the tools run (slower under load): wait for them rather than a fixed time.
+      await t.until(async () => (await t.nodes()).filter((n) => n.type === 'LapinFormwork').length >= 2 && (await t.nodes()).some((n) => n.type === 'LapinScaffold'), 'formwork on the floor and on the beam');
       const nodes = await t.nodes();
       const scaffold = nodes.find((n) => n.type === 'LapinScaffold');
       t.expect(scaffold && scaffold.props.closed === true, 'one closed scaffold round the walls');
@@ -6551,7 +6552,7 @@ export const scenes = [
       // The walls' formwork (their ring beams when they have them, else both faces), and its configurator.
       await t.ui({ selection: walls[0], selected: [walls[0], walls[1], walls[2], walls[3]] });
       await t.tool('sitework.formwork');
-      await t.wait(800);
+      await t.until(async () => (await t.nodes()).filter((n) => n.type === 'LapinFormwork' && n.props.kind === 'upright').length >= 4, 'formwork on the four walls');
       t.expect((await t.nodes()).filter((n) => n.type === 'LapinFormwork' && n.props.kind === 'upright').length === 4, 'formwork on the four walls');
       await t.ui({ selection: null, selected: [] });
       await t.tool('sitework.formworkTypes');
@@ -13417,6 +13418,55 @@ export const scenes = [
     },
   },
   {
+    // Opening heights stacked or on one line with prefixes of the style's own (forum topic 229): the string across the door
+    // and the window as above, its style first writing h= over p=, then its own format H {h}[, S {p}] on one line.
+    id: 'dimension-opening-height-line',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('drafting.addDimension', { viewId: `plan:${storey}`, pts: [[0, 0], [2.55, 0], [3.45, 0], [8.9, 0], [10.1, 0], [12, 0]], at: [6, -1.4], dir: [1, 0] });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -0.5, y: -2.6 }, { x: 12.5, y: 1.2 }));
+      const plan = t.page.locator('[data-testid=plan]');
+      const [x0, y0] = await t.planPoint(-0.5, 1.0);
+      const [x1, y1] = await t.planPoint(12.5, -2.6);
+      const clip = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+      await t.cmd('standards.set', { kind: 'dim', entry: { id: 'standard', openingHeight: 'hp' } });
+      await t.wait(800);
+      t.expect(await plan.locator('text', { hasText: /^p=900$/ }).count() === 1, 'the window\'s sill under its height');
+      await t.shot('dimension-opening-height-stacked', { clip });
+      await t.cmd('standards.set', { kind: 'dim', entry: { id: 'standard', openingHeight: 'custom', openingText: 'H {h}[, S {p}]' } });
+      await t.wait(800);
+      t.expect(await plan.locator('text', { hasText: /^H 1500, S 900$/ }).count() === 1, 'the window\'s height and sill on one line, with the style\'s prefixes');
+      t.expect(await plan.locator('text', { hasText: /^H 2100$/ }).count() === 1, 'the door\'s height alone (no sill)');
+      await t.shot('dimension-opening-height-line', { clip });
+    },
+  },
+  {
+    // A dimension's value dragged off its place (forum topic 227): its leader back to the segment stops short of the value,
+    // never across its digits: one moved under the line, one beside its segment, one off a vertical dimension.
+    id: 'dimension-text-leader',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const view = `plan:${storey}`;
+      const below = await t.cmd('drafting.addDimension', { viewId: view, pts: [[8.9, 0], [10.1, 0]], at: [9.5, -1.2], dir: [1, 0] });
+      const beside = await t.cmd('drafting.addDimension', { viewId: view, pts: [[2.55, 0], [3.45, 0]], at: [3, -1.2], dir: [1, 0] });
+      const up = await t.cmd('drafting.addDimension', { viewId: view, pts: [[12, 0], [12, 3]], at: [13.2, 1.5], dir: [0, 1] });
+      await t.cmd('drafting.moveDimensionText', { id: below.id, segment: 0, by: [0, -0.75] });
+      await t.cmd('drafting.moveDimensionText', { id: beside.id, segment: 0, by: [-1.6, -0.35] });
+      await t.cmd('drafting.moveDimensionText', { id: up.id, segment: 0, by: [0.6, 0.4] });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: 0, y: -2.6 }, { x: 14.6, y: 3.4 }));
+      await t.wait(800);
+      const [x0, y0] = await t.planPoint(0, 3.4);
+      const [x1, y1] = await t.planPoint(14.6, -2.6);
+      await t.shot('dimension-text-leader', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+    },
+  },
+  {
     // A dimension style's extension lines and dimension line (issue #66): a string along the south wall, its end extension
     // lines left out, the others at a fixed length in a blue dashed pen, the dimension line heavier; then the style's columns
     // in Drafting standards → Dimensions.
@@ -14180,6 +14230,9 @@ export const scenes = [
       await t.wait(600);
       t.expect(await dialog.locator('[data-tag-rules] [data-field=tag-rule-when]').count() === 1, 'the Tags tab lists the tag rule');
       t.expect(await dialog.locator('[data-field=tag-rule-new]').count() === 1, 'and New rule');
+      // The tag types' table has grown (a marker's symbol, fields): the rules lie below the dialog's fold, so bring them into view.
+      await dialog.locator('[data-tag-rules]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await t.wait(300);
       await t.shot('tag-rules', { of: '[data-tag-rules]', pad: 6 });
       await t.ui({ dialog: null });
       // A marker's properties: Shown, and its Tag type among the markers'.
@@ -15455,6 +15508,112 @@ export const scenes = [
     },
   },
   // --- material graphics scenes (end)
+  {
+    // Precision (forum topics 226, 228): the grid step the status line says, the insertion anchor of a column and a window, a
+    // temporary reference point with ΔX and ΔY, the Divisions snap, the crosshair, and Measure in a section.
+    id: 'precision',
+    touches: ['core', 'architecture', 'structure'],
+    async run(t) {
+      await t.fresh();
+      const page = t.page;
+      const { storey, walls } = await house(t, { roof: false });
+      await t.fit();
+      const prefs = (patch) => page.evaluate(async (p) => (await import('/src/app/prefs.ts')).setPrefs(p), patch);
+      const move = async (x, y) => { const [px, py] = await t.planPoint(x, y); await page.mouse.move(px, py, { steps: 4 }); await t.wait(250); return [px, py]; };
+      const click = async (x, y) => { const [px, py] = await move(x, y); await page.mouse.click(px, py); await t.wait(600); };
+      const columns = async () => (await t.nodes()).filter((n) => n.type === 'IfcColumn');
+      // The step in the status line is the one the cursor snaps to, and a fixed one is easy to choose.
+      const chip = page.locator('[data-testid=grid-step]');
+      await t.tool('structure.column');
+      await t.wait(600);
+      t.expect(await chip.count() > 0, 'the grid step is shown in the bar');
+      await prefs({ gridMode: 'fixed', gridStep: 0.05, gridSnap: true });
+      await t.wait(300);
+      t.expect(/50/.test((await chip.textContent()) ?? ''), `a fixed step of 50 mm is what the chip says (${await chip.textContent()})`);
+      await chip.click();
+      await t.wait(400);
+      await t.shot('precision-grid-step', { clip: { x: 0, y: 560, width: 1400, height: 340 } });
+      await page.keyboard.press('Escape');
+      // A column by its bottom-left corner: the corner is where the click is.
+      await page.locator('[data-anchor="-1,-1"]').first().click();
+      const [cx, cy] = await move(2.03, 2.04);
+      await t.shot('precision-bar-column', { of: '.cad-line', pad: 0 });
+      await t.shot('precision-anchor-column', { clip: { x: 200, y: 120, width: 1200, height: 760 } });
+      await page.mouse.click(cx, cy);
+      await t.until(async () => (await columns()).length === 1, 'a column was placed');
+      const col = (await columns())[0];
+      console.log('column props', JSON.stringify(col.props).slice(0, 300));
+      // F4 steps the anchor on.
+      await page.keyboard.press('F4');
+      await t.wait(200);
+      t.expect(await page.locator('[data-anchor="0,-1"]').first().getAttribute('aria-pressed') === 'true', 'F4 steps the anchor to the next one');
+      // A window by its left edge.
+      await t.tool('architecture.window');
+      await page.locator('[data-anchor="-1,0"]').first().click();
+      await move(5.02, 0.05);
+      await t.shot('precision-bar-window', { of: '.cad-line', pad: 0 });
+      const vp = page.viewportSize();
+      await page.setViewportSize({ width: 1280, height: vp.height });
+      await t.wait(500);
+      await t.shot('precision-bar-window-1280', { of: '.cad-line', pad: 0 });
+      for (const id of ['architecture.wall', 'drafting.line']) {
+        await t.tool(id).catch(() => {});
+        await t.wait(400);
+        await t.shot(`precision-bar-${id.replace('.', '-')}-1280`, { of: '.cad-line', pad: 0 });
+      }
+      await page.setViewportSize(vp);
+      await t.wait(400);
+      await t.shot('precision-hud', { clip: { x: 80, y: 60, width: 600, height: 110 } });
+      await t.shot('precision-anchor-window', { clip: { x: 200, y: 120, width: 1200, height: 760 } });
+      await page.keyboard.press('Escape');
+      // A reference point: F6 on a corner, then ΔX and ΔY typed.
+      await t.tool('structure.column');
+      await page.locator('[data-anchor="0,0"]').first().click();
+      await move(0, 0);
+      await page.keyboard.press('F6');
+      await move(3, 3);
+      for (const k of ['2', '0', '0', '0', 'Tab', '1', '5', '0', '0']) await page.keyboard.press(k);
+      await t.wait(300);
+      await t.shot('precision-datum', { clip: { x: 200, y: 120, width: 1200, height: 760 } });
+      await page.keyboard.press('Enter');
+      await t.until(async () => (await columns()).length === 2, 'the column from the reference point was placed');
+      const two = (await columns()).find((c) => c.id !== col.id);
+      console.log('datum column props', JSON.stringify(two.props).slice(0, 300));
+      await page.keyboard.press('Escape');
+      // Divisions: the wall's thirds.
+      await prefs({ snapModes: ['endpoint', 'division'], snapDivisions: [3] });
+      await t.tool('structure.column');
+      await move(4, 0.02);
+      t.expect(await page.locator('.cad-snap text').first().textContent() === 'division', 'the third of the wall is a snap');
+      await page.keyboard.press('Escape');
+      // The crosshair.
+      await prefs({ crosshair: true });
+      await t.wait(300);
+      t.expect(await page.locator('[data-testid=crosshair]').count() > 0, 'the crosshair across the view');
+      await prefs({ crosshair: false });
+      // Measure in a section.
+      const section = (await t.cmd('view.create', { kind: 'section', name: 'M-M', start: [-1, 2], end: [13, 2], scale: 50 })).id;
+      await t.wait(800);
+      await openFromBrowser(t, 'M-M', 2500);
+      await t.fit();
+      await t.tool('measure');
+      const dpoint = async (x, y) => page.evaluate(async ([viewId, x, y]) => {
+        const svg = document.querySelector('[data-testid=drawing]');
+        const view = (await import('/src/viewport/zoom.ts')).recall(viewId);
+        const r = svg.getBoundingClientRect();
+        return [r.left + (x - view.cx) * view.scale + r.width / 2, r.top + r.height / 2 - (y - view.cy) * view.scale];
+      }, [section, x, y]);
+      const [ax, ay] = await dpoint(0, 0);
+      await page.mouse.move(ax, ay, { steps: 4 });
+      await page.mouse.click(ax, ay);
+      await t.wait(300);
+      const [bx, by] = await dpoint(5, 2.7);
+      await page.mouse.move(bx, by, { steps: 8 });
+      await t.wait(400);
+      t.expect(await page.locator('.live-box').count() > 0, 'Measure in a section reads the length at the cursor');
+      await t.shot('precision-measure-section', { clip: { x: 200, y: 120, width: 1200, height: 760 } });
+    },
+  },
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

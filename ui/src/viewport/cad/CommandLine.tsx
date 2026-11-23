@@ -15,7 +15,7 @@ import { LiveBar } from '../LiveBox';
 import { findTool, useToolTick } from '../../platform/modules';
 import { ROLES, findCommand, roleLabel, useCad } from './session';
 import { useLayers } from './layers';
-import { openSnapMenu, UcsChip, useSnapSummary } from '../../shell/CursorCoords';
+import { GridStepChip, openSnapMenu, UcsChip, useSnapSummary } from '../../shell/CursorCoords';
 import { setPrefs, usePrefs } from '../../app/prefs';
 import { t } from '../../i18n';
 
@@ -48,6 +48,7 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
       <button type="button" className="cad-toggle cad-more" data-testid="snap-menu" title="Snap settings" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); openSnapMenu(r.left, r.top); }}>▾</button>
       <button type="button" className={`cad-toggle${gridOnly ? ' on' : ''}`} data-testid="grid-only-toggle" aria-pressed={gridOnly}
         title={t('Grid only: every other snap is off; only the grid axes, their crossings and ends snap (type GRID for one point). Esc turns it off')} onClick={() => useCad.setState({ gridOnly: !gridOnly })}>GRID</button>
+      <GridStepChip />
       <button type="button" className={`cad-toggle${ortho ? ' on' : ''}`} title={bindingText('app.ortho') ? `Ortho (${bindingText('app.ortho').split(', ')[0]}; hold Shift)` : 'Ortho (hold Shift)'} onClick={() => useCad.setState({ ortho: !ortho })}>ORTHO</button>
       <UcsChip />
       <button type="button" className={`cad-toggle${polar ? ' on' : ''}`} title={`${t('Polar tracking every')} ${polarStep}°${key('app.polar')}`} onClick={() => useCad.setState({ polar: !polar })}>POLAR</button>

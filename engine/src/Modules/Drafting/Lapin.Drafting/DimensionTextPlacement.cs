@@ -153,4 +153,32 @@ public static class DimensionTextPlacement
 
     /// <summary>A value's rectangle, moved by <paramref name="by"/>.</summary>
     public static TextRoom.Box Box(string owner, Seg s, Vec2 by) => new(owner, TextRoom.Kind.Text, s.Centre + by, s.R, s.Up, s.W / 2, s.H / 2);
+
+    /// <summary>The gap (paper mm) a leader keeps from the value it points to (forum topic 227).</summary>
+    public const double LeaderGap = 0.5;
+
+    /// <summary>
+    /// Where a leader from <paramref name="from"/> (its segment's middle) to a moved value ends (forum topic 227): on the
+    /// outline of the value's rectangle and its opening-height rows (<paramref name="boxes"/>, their union in the first's
+    /// frame) grown by <paramref name="gap"/>, at its point nearest <paramref name="from"/>, so the leader stops short of the
+    /// text and never crosses its digits. Null when <paramref name="from"/> lies within that outline (the text stands on its segment).
+    /// </summary>
+    public static Vec2? LeaderEnd(IReadOnlyList<TextRoom.Box> boxes, Vec2 from, double gap)
+    {
+        if (boxes.Count == 0) return null;
+        var (c0, r, up) = (boxes[0].C, boxes[0].R, boxes[0].Up);
+        double x0 = double.MaxValue, x1 = double.MinValue, y0 = double.MaxValue, y1 = double.MinValue;
+        foreach (var b in boxes)
+        {
+            var (x, y) = (Vec2.Dot(b.C - c0, r), Vec2.Dot(b.C - c0, up));
+            // A box's half sizes along the first's axes (the same frame, or turned a quarter or a half turn).
+            var hw = Math.Abs(Vec2.Dot(b.R, r)) * b.Hw + Math.Abs(Vec2.Dot(b.Up, r)) * b.Hh;
+            var hh = Math.Abs(Vec2.Dot(b.R, up)) * b.Hw + Math.Abs(Vec2.Dot(b.Up, up)) * b.Hh;
+            (x0, x1, y0, y1) = (Math.Min(x0, x - hw), Math.Max(x1, x + hw), Math.Min(y0, y - hh), Math.Max(y1, y + hh));
+        }
+        var all = new TextRoom.Box(boxes[0].Owner, TextRoom.Kind.Text, c0 + r * ((x0 + x1) / 2) + up * ((y0 + y1) / 2), r, up, (x1 - x0) / 2 + gap, (y1 - y0) / 2 + gap);
+        var d = from - all.C;
+        if (Math.Abs(Vec2.Dot(d, r)) <= all.Hw + 1e-12 && Math.Abs(Vec2.Dot(d, up)) <= all.Hh + 1e-12) return null;
+        return all.Nearest(from);
+    }
 }

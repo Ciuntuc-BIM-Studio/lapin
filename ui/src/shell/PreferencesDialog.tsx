@@ -202,7 +202,16 @@ export function PreferencesDialog() {
                 <button type="button" className="btn" onClick={() => setPrefs({ snapModes: [...SNAP_MODES] })}>All</button>
                 <button type="button" className="btn" onClick={() => setPrefs({ snapModes: [] })}>None</button>
               </p>
-              <p className="muted small">F3 turns snapping on and off; a right click on SNAP under the view opens this list.</p>
+              <dl className="fields">
+                <dt title="Each edge is cut into this many equal parts: 3 is thirds, 4 quarters; several, separated by commas. The Divisions snap above must be on.">Divisions</dt>
+                <dd><input type="text" size={8} data-field="prefs-snap-divisions" defaultValue={p.snapDivisions.join(', ')} key={p.snapDivisions.join(',')}
+                  onBlur={(e) => setPrefs({ snapDivisions: e.target.value.split(/[\s,;]+/).map(Number).filter((n) => Number.isInteger(n)) })} /></dd>
+                <dt title="A point this far in from each end of an edge, along it. The Distance from an end snap above must be on.">Distance from an end</dt>
+                <dd><LengthField metres={p.snapDistance} min={0.001} testId="prefs-snap-distance" onCommit={(v) => { if (v != null && v > 0) setPrefs({ snapDistance: v }); }} /></dd>
+              </dl>
+              <p className="muted small">F3 turns snapping on and off; a right click on SNAP under the view opens this list. Divisions and Distance from an end are off until you tick them: they add points along every edge.</p>
+              <h4>Cursor</h4>
+              <label className="row small"><input type="checkbox" data-field="prefs-crosshair" checked={p.crosshair} onChange={(e) => setPrefs({ crosshair: e.target.checked })} /> Crosshair across the whole view (as in AutoCAD)</label>
               <h4>Polar tracking</h4>
               <label className="row small">Every <select value={p.polarStep} data-field="prefs-polar" onChange={(e) => setPrefs({ polarStep: Number(e.target.value) })}>
                 {POLAR_STEPS.map((a) => <option key={a} value={a} data-no-i18n>{a}°</option>)}

@@ -5,7 +5,7 @@
  * Lengths in the project's unit.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
@@ -15,6 +15,7 @@ import { groupedSpecies, speciesName, type Species } from './species';
 import { lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { MaterialPicker } from '../core/MaterialPicker';
+import { segmentRows } from './retainingWall';
 
 /** Opens the corridor configurator on the element selected. */
 export function Configure() {
@@ -83,6 +84,7 @@ export function RetainingWallSection({ node }: { node: NodeDto }) {
   const set = (args: Record<string, unknown>) => void execute('civil.updateRetainingWall', { id: node.id, ...args });
   const fixedTop = typeof node.props.topElevation === 'number';
   return (
+    <>
     <dl className="fields">
       <Configure />
       <dt>Thickness</dt><dd><Mm value={node.props.thickness} fallback={0.3} min={100} onCommit={(v) => set({ thickness: v })} /></dd>
@@ -97,7 +99,87 @@ export function RetainingWallSection({ node }: { node: NodeDto }) {
       <dt>Embedment</dt><dd><Mm value={node.props.embed} fallback={0.3} min={0} onCommit={(v) => set({ embed: v })} /></dd>
       <dt>Footing width</dt><dd><Mm value={node.props.footingWidth} fallback={0.8} min={100} onCommit={(v) => set({ footingWidth: v })} /></dd>
       <dt>Footing thickness</dt><dd><Mm value={node.props.footingThickness} fallback={0.3} min={0} onCommit={(v) => set({ footingThickness: v })} /></dd>
+      <BatterFields node={node} />
     </dl>
+    <RetainingWallSegments node={node} />
+    </>
+  );
+}
+
+const num = (v: unknown) => (typeof v === 'number' ? v : null);
+
+/**
+ * A retaining wall's batters (n:1, empty upright), the back by its batter or by its thickness at the base, the footing's toe and heel
+ * (empty: from the footing width) and the key under it (docs/plan-wing-walls.md, S1).
+ */
+function BatterFields({ node }: { node: NodeDto }) {
+  const set = (args: Record<string, unknown>) => void execute('civil.updateRetainingWall', { id: node.id, ...args });
+  const byBase = typeof node.props.baseThickness === 'number';
+  const thickness = typeof node.props.thickness === 'number' ? node.props.thickness : 0.3;
+  return (
+    <>
+      <dt>Front batter</dt><dd><NumberField value={num(node.props.frontBatter)} min={0} blank placeholder="upright" suffix=":1" onCommit={(v) => set({ frontBatter: v })} /></dd>
+      <dt>Back face</dt>
+      <dd><select value={byBase ? 'base' : 'batter'} onChange={(e) => set(e.target.value === 'base' ? { baseThickness: thickness + 0.2, backBatter: null } : { baseThickness: null })}>
+        <option value="batter">by its batter</option><option value="base">by its thickness at the base</option></select></dd>
+      {byBase
+        ? <><dt>Thickness at the base</dt><dd><LengthField metres={num(node.props.baseThickness)} min={0.05} blank onCommit={(m) => set({ baseThickness: m })} /></dd></>
+        : <><dt>Back batter</dt><dd><NumberField value={num(node.props.backBatter)} min={0} blank placeholder="upright" suffix=":1" onCommit={(v) => set({ backBatter: v })} /></dd></>}
+      <dt>Toe</dt><dd><LengthField metres={num(node.props.toe)} min={0} blank placeholder="auto" title="from the footing width" onCommit={(m) => set({ toe: m })} /></dd>
+      <dt>Heel</dt><dd><LengthField metres={num(node.props.heel)} min={0} blank placeholder="auto" title="from the footing width" onCommit={(m) => set({ heel: m })} /></dd>
+      <dt>Key width</dt><dd><LengthField metres={num(node.props.keyWidth)} min={0} blank placeholder="no key" onCommit={(m) => set({ keyWidth: m })} /></dd>
+      <dt>Key depth</dt><dd><LengthField metres={num(node.props.keyDepth)} min={0} blank placeholder="no key" onCommit={(m) => set({ keyDepth: m })} /></dd>
+      {num(node.props.keyWidth) != null && num(node.props.keyDepth) != null
+        && <><dt>Key from the toe</dt><dd><LengthField metres={num(node.props.keyAt)} min={0} blank placeholder="centred" onCommit={(m) => set({ keyAt: m })} /></dd></>}
+    </>
+  );
+}
+
+/**
+ * The wall's segments, one by one: its length and turn (the path's), and what it has of its own (empty: the wall's): its crown at
+ * its start and its end, its crown thickness, its batters, its footing level, and its warp (the face from one batter at its start
+ * to another at its end, the warped wing).
+ */
+export function RetainingWallSegments({ node }: { node: NodeDto }) {
+  const rows = segmentRows(node.props.path, node.props.segments);
+  const [open, setOpen] = useState<number | null>(null);
+  const set = (index: number, args: Record<string, unknown>) => void execute('civil.setRetainingWallSegment', { id: node.id, index, ...args });
+  if (rows.length === 0) return null;
+  return (
+    <div className="layers" data-testid="wall-segments">
+      <p className="eyebrow">Segments</p>
+      {rows.map((r) => {
+        const own = (k: string) => num(r.own[k]);
+        return (
+          <div key={r.index}>
+            <button type="button" className="link small" onClick={() => setOpen(open === r.index ? null : r.index)}>
+              <span data-no-i18n>{open === r.index ? '▾' : '▸'} </span><span>Segment</span>
+              <span data-no-i18n> {r.index + 1} · {lengthText(r.length)} · {Math.round(r.turn * 10) / 10}°</span>
+              {r.own.warp === true && <> · <span>warped</span></>}
+            </button>
+            {open === r.index && (
+              <dl className="fields">
+                <dt>Length</dt><dd><LengthField metres={r.length} min={0.05} onCommit={(m) => { if (m != null) set(r.index, { length: m }); }} /></dd>
+                <dt>{r.index === 0 ? 'Direction from east' : 'Turn from the one before'}</dt>
+                <dd><NumberField value={Math.round(r.turn * 100) / 100} min={-179} max={179} suffix="°" onCommit={(v) => { if (v != null) set(r.index, { angle: v }); }} /></dd>
+                <dt>Crown at its start</dt><dd><LengthField metres={own('topStart')} blank placeholder="the wall's" onCommit={(m) => set(r.index, { topStart: m })} /></dd>
+                <dt>Crown at its end</dt><dd><LengthField metres={own('topEnd')} blank placeholder="the wall's" onCommit={(m) => set(r.index, { topEnd: m })} /></dd>
+                <dt>Thickness at the crown</dt><dd><LengthField metres={own('thickness')} min={0.05} blank placeholder="the wall's" onCommit={(m) => set(r.index, { thickness: m })} /></dd>
+                <dt>Front batter</dt><dd><NumberField value={own('frontBatter')} min={0} blank placeholder="the wall's" suffix=":1" onCommit={(v) => set(r.index, { frontBatter: v })} /></dd>
+                <dt>Back batter</dt><dd><NumberField value={own('backBatter')} min={0} blank placeholder="the wall's" suffix=":1" onCommit={(v) => set(r.index, { backBatter: v })} /></dd>
+                <dt>Footing level</dt><dd><LengthField metres={own('footingLevel')} blank placeholder="the wall's" onCommit={(m) => set(r.index, { footingLevel: m })} /></dd>
+                <dt>Warped</dt>
+                <dd><label><input type="checkbox" checked={r.own.warp === true} onChange={(e) => set(r.index, { warp: e.target.checked })} /> <span className="muted small">the face turns to another batter at the end</span></label></dd>
+                {r.own.warp === true && <>
+                  <dt>Front batter at its end</dt><dd><NumberField value={own('frontBatterEnd')} min={0} blank placeholder="as at the start" suffix=":1" onCommit={(v) => set(r.index, { frontBatterEnd: v })} /></dd>
+                  <dt>Back batter at its end</dt><dd><NumberField value={own('backBatterEnd')} min={0} blank placeholder="as at the start" suffix=":1" onCommit={(v) => set(r.index, { backBatterEnd: v })} /></dd>
+                </>}
+              </dl>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

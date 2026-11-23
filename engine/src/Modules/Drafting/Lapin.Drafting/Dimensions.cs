@@ -541,7 +541,7 @@ public static class Dimensions
             {
                 var h = text.Height * mm;
                 top = style.Placement switch { "centered" => h * 0.5 + style.TextGap * mm, "below" => style.TextGap * mm + h * OpeningHeights.Pitch, _ => style.TextGap * mm };
-                rows = OpeningHeights.Rows(style.OpeningHeight, opening, style.Unit, style.Precision, style.SuppressesZeros);
+                rows = OpeningHeights.Rows(style.OpeningHeight, opening, style.Unit, style.Precision, style.SuppressesZeros, style.OpeningText);
             }
             o.Add(new SegValue(value, readable, up, su, mid, tat, baseline, rows, top));
         }
@@ -576,6 +576,20 @@ public static class Dimensions
             var at = v.Mid - v.Up * (v.RowsTop + h + k * h * OpeningHeights.Pitch) + by;
             yield return new TextRoom.Box(owner, TextRoom.Kind.Text, at + v.Up * (h / 2), r, v.Up, BuildupText.Measure(v.Rows[k], text.Height, text.Bold) * mm / 2, h / 2);
         }
+    }
+
+    /// <summary>
+    /// Where the leader of a value moved by hand by <paramref name="by"/> (standing at <paramref name="at"/>) ends: its box and
+    /// its opening-height rows, a gap short of them (forum topic 227); null when its segment's middle lies within them.
+    /// </summary>
+    static Vec2? LeaderEnd(string owner, SegValue v, string value, Vec2 at, TextStyle text, double mm, Vec2 by)
+    {
+        var h = text.Height * mm;
+        var r = new Vec2(v.Up.Y, -v.Up.X);
+        var centre = v.Baseline == "middle" ? at : at + v.Up * (h / 2);
+        var boxes = new List<TextRoom.Box> { new(owner, TextRoom.Kind.Text, centre, r, v.Up, BuildupText.Measure(value, text.Height, text.Bold) * mm / 2, h / 2) };
+        boxes.AddRange(RowBoxes(owner, v, text, mm, by));
+        return DimensionTextPlacement.LeaderEnd(boxes, v.Mid, DimensionTextPlacement.LeaderGap * mm);
     }
 
     /// <summary>
@@ -675,11 +689,10 @@ public static class Dimensions
                 var h = text.Height * mm;
                 var across = Vec2.Dot(by, up);
                 var along = Math.Abs(Vec2.Dot(by, su)) - (qb - qa).Length / 2;
-                if (across < -h * 0.5 || across > h * 1.5 || along > 0)
-                {
-                    var foot = baseline == "middle" ? tat - up * (h * 0.6) : tat - up * (h * 0.15);
+                // It ends at the value's box (with its opening-height rows, which move with it) a small gap short of it,
+                // never across the digits (forum topic 227).
+                if ((across < -h * 0.5 || across > h * 1.5 || along > 0) && LeaderEnd(owner, v, value, tat, text, mm, by) is { } foot)
                     mk.Line(mid, foot, "DIMENSION", Pens.Default.Hatch, color);
-                }
             }
             // Moved by the placement: a leader from its segment's middle to the value's nearest point once it stands further than the style's distance.
             else if (auto.TryGetValue(i, out var placed))
@@ -688,7 +701,8 @@ public static class Dimensions
                 if (placed.Length > (style.TextLeader ?? Standards.DefaultTextLeader) * mm + 1e-9)
                 {
                     var seg = segs.First(x => x.Index == i);
-                    mk.Line(mid, DimensionTextPlacement.Box(owner, seg, placed).Nearest(mid), "DIMENSION", Pens.Default.Hatch, color);
+                    if (DimensionTextPlacement.LeaderEnd([DimensionTextPlacement.Box(owner, seg, placed)], mid, DimensionTextPlacement.LeaderGap * mm) is { } end)
+                        mk.Line(mid, end, "DIMENSION", Pens.Default.Hatch, color);
                 }
             }
             mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font, text.Italic), textColor);

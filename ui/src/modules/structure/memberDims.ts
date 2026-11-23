@@ -16,7 +16,7 @@ export interface ColumnTypeProps {
 }
 
 /** The section's extents in its own axes (x along its width): its outline's box, centred unless drawn as rings. */
-function extents(s: ColumnTypeProps['section']): { x0: number; x1: number; y0: number; y1: number } {
+export function extents(s: ColumnTypeProps['section']): { x0: number; x1: number; y0: number; y1: number } {
   const rings = s?.rings?.filter((r) => r.length >= 3);
   if (rings?.length) {
     const pts = rings.flat();

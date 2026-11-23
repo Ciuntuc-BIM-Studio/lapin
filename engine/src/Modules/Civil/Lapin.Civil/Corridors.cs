@@ -452,6 +452,7 @@ public static class Corridors
         var c = ChainOf(e);
         var seg = c.SegmentAt(station);
         if (e.Class == IfcClass.Pavement) { var t = Paths.TemplateOf(e); var red = RedLine(m, e, c); return (Paths.SectionAt(t, red(station)), t.Left, -t.Right); }
+        if (e.Class == RetainingWalls.Class && BatteredWalls.Is(e)) return BatteredWalls.SectionAt(m, e, station);
         if (e.Class == RetainingWalls.Class) { var s = RetainingWalls.Of(e); var levels = RetainingWalls.Levels(m, e, c); return (RetainingWalls.SectionAt(s, levels, station, seg), s.FootingWidth / 2, -s.FootingWidth / 2); }
         if (CorridorKinds.Of(e) is { } kind) return kind.Section(m, e, c, station);
         var d = Ditches.SectionAt(m, e, c, station);

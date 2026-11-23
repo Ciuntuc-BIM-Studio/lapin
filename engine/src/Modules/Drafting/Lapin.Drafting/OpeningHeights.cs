@@ -60,18 +60,47 @@ public static class OpeningHeights
         return best?.O;
     }
 
-    /// <summary>The rows written under the line, top down: the height alone (150), h=150, h=150 and p=90 (no p for a door), 150/90.</summary>
-    public static List<string> Rows(string format, WallOpening o, string unit, int precision, bool suppressZeros = false)
+    /// <summary>
+    /// The rows written under the line, top down, in the style's form (<paramref name="format"/>, with its own
+    /// <paramref name="text"/> for "custom"; forum topic 229): the height alone (150), h=150, h=150 over p=90 (no p for a
+    /// door), 150/90, h=150, p=90 on one line, or the style's own format (<see cref="Standards.OpeningFormat"/>).
+    /// </summary>
+    public static List<string> Rows(string format, WallOpening o, string unit, int precision, bool suppressZeros = false, string? text = null)
     {
+        if (Standards.OpeningFormat(format, text) is not { } pattern) return [];
         var h = Standards.FormatDimension(o.Height, unit, precision, suppressZeros);
         var sill = o.Sill > NoSill ? Standards.FormatDimension(o.Sill, unit, precision, suppressZeros) : null;
-        return format switch
+        return Fill(pattern, h, sill);
+    }
+
+    /// <summary>
+    /// A format filled (forum topic 229): <c>{h}</c> the height, <c>{p}</c> the sill, <c>|</c> a new row; a part in
+    /// <c>[…]</c> is written only when the sill it names is there, and a row naming the sill outside brackets is left out
+    /// without it. Rows left empty are dropped. Anything else is written as typed.
+    /// </summary>
+    public static List<string> Fill(string pattern, string h, string? sill)
+    {
+        string Values(string s) => s.Replace("{h}", h).Replace("{p}", sill ?? "");
+        var rows = new List<string>();
+        foreach (var row in pattern.Split('|'))
         {
-            "number" => [h],
-            "h" => ["h=" + h],
-            "hp" => sill != null ? ["h=" + h, "p=" + sill] : ["h=" + h],
-            "slash" => [sill != null ? $"{h}/{sill}" : h],
-            _ => [],
-        };
+            var sb = new System.Text.StringBuilder();
+            var keep = true;
+            var i = 0;
+            while (i < row.Length)
+            {
+                var open = row.IndexOf('[', i);
+                var close = open < 0 ? -1 : row.IndexOf(']', open + 1);
+                var plain = close < 0 ? row[i..] : row[i..open];
+                if (sill == null && plain.Contains("{p}")) keep = false;
+                sb.Append(Values(plain));
+                if (close < 0) break;
+                var part = row[(open + 1)..close];
+                if (sill != null || !part.Contains("{p}")) sb.Append(Values(part));
+                i = close + 1;
+            }
+            if (keep && sb.ToString().Trim() is { Length: > 0 } written) rows.Add(written);
+        }
+        return rows;
     }
 }

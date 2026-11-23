@@ -51,6 +51,9 @@ const GLYPH: Record<SnapMode, (x: number, y: number) => JSX.Element> = {
   tangent: (x, y) => <g><circle cx={x} cy={y} r={5} /><path d={`M${x - 7},${y - 5}H${x + 7}`} /></g>,
   // The grid axis: a diamond on a dash-dot line.
   gridAxis: (x, y) => <g><path d={`M${x},${y - 5}L${x + 5},${y}L${x},${y + 5}L${x - 5},${y}Z`} /><path d={`M${x - 11},${y}H${x - 7}M${x + 7},${y}H${x + 11}`} /></g>,
+  // Division: two ticks across a line with a dot between; Distance: a dimension's end ticks with an arrow.
+  division: (x, y) => <g><path d={`M${x - 6},${y - 4}V${y + 4}M${x + 6},${y - 4}V${y + 4}M${x - 6},${y}H${x + 6}`} /><circle cx={x} cy={y} r={2} /></g>,
+  distance: (x, y) => <g><path d={`M${x - 7},${y - 5}V${y + 5}M${x - 7},${y}H${x + 5}M${x + 1},${y - 4}L${x + 5},${y}L${x + 1},${y + 4}`} /></g>,
   wallAxis: (x, y) => <g><circle cx={x} cy={y} r={3.5} /><path d={`M${x - 11},${y}H${x - 6}M${x - 4},${y}H${x - 3}M${x + 3},${y}H${x + 4}M${x + 6},${y}H${x + 11}`} /></g>,
 };
 

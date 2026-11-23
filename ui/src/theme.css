@@ -3120,3 +3120,24 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 .render-dialog dd.row select { flex: 1 1 auto; min-width: 0; }
 .render-dialog label.row { display: inline-flex; align-items: center; gap: 6px; flex: none; }
 .render-dialog input[type=checkbox] { width: auto; flex: none; margin: 0; }
+
+/* The insertion anchor's selector (forum topic 226): the element's box as a 3×3 of small cells, or a row of three along a wall. */
+.anchor-picker { display: inline-grid; grid-template-columns: repeat(3, 12px); gap: 2px; padding: 3px; border: 1px solid var(--line, #bbb); border-radius: 3px; vertical-align: middle; }
+.anchor-picker.along { grid-template-rows: 12px; }
+.anchor-cell { all: unset; box-sizing: border-box; width: 12px; height: 12px; display: grid; place-items: center; cursor: pointer; border-radius: 2px; }
+.anchor-cell:hover { background: var(--hover, rgba(128, 128, 128, 0.2)); }
+.anchor-cell .anchor-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--ink-muted, #888); }
+.anchor-cell.on .anchor-dot { width: 8px; height: 8px; background: var(--accent, #c2410c); }
+.datum-mark circle, .datum-mark path, .datum-mark line { stroke: var(--accent, #c2410c); fill: none; stroke-width: 1.5; }
+
+/* The command line's bar (forum topic 226): a tool's options, the anchor selector and the snap switches wrap onto a second row
+   rather than squeeze one another (labels cut, a switch over a select); the line in the status line stays one row. */
+.cad-prompt:not(.inline) { flex-wrap: wrap; row-gap: 4px; }
+.cad-prompt:not(.inline) > * { flex-shrink: 0; }
+.cad-prompt:not(.inline) > .cad-label { flex-shrink: 1; min-width: 6ch; }
+.cad-prompt .cad-layer, .cad-prompt .cad-layer > span, .cad-prompt .btn { white-space: nowrap; }
+.cad-prompt .grow { flex: 1 1 0; min-width: 0; }
+.cad-prompt .btn { width: auto; padding: 3px 8px; font-size: 11px; }
+.cad-prompt label.cad-layer { max-width: none; }
+.cad-prompt span.cad-layer { max-width: none; }
+.cad-prompt span.cad-layer select { max-width: 220px; }

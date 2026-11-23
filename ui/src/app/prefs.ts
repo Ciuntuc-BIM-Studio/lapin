@@ -82,19 +82,25 @@ export interface Prefs {
    * Properties' "Doors and windows"): its edges (openings) or its centre (centrelines); a dot still switches one dimension.
    */
   tempDimOpeningRef: OpeningDimRef;
+  /** The Division snap's cuts (forum topic 226): each edge into this many equal parts, one number per cut (3: thirds, 4: quarters). */
+  snapDivisions: number[];
+  /** The Distance snap's distance (m): a point this far in from each end of an edge. */
+  snapDistance: number;
+  /** A crosshair across the whole drawing area, as AutoCAD's cursor (forum topic 226); off by default. */
+  crosshair: boolean;
   /** The arrow keys' nudge step, metres (forum topic 212): 0 follows the zoom (about four pixels), else this one; Shift is ten times as far. */
   nudgeStep: number;
 }
 
-export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'tangent', 'nearest', 'wallAxis', 'gridAxis'];
+export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'tangent', 'nearest', 'wallAxis', 'gridAxis', 'division', 'distance'];
 /** The object snaps before forum topic 151 added Tangent and Wall axis: what settings kept with no list of known snaps knew. */
 const FIRST_SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'nearest'];
-/** The object snaps on by default (all of them: none takes a point ahead of the drawn lines' ends and crossings). */
-const SNAP_MODES_ON: readonly SnapMode[] = SNAP_MODES;
+/** The object snaps on by default (all of them but the Division and Distance, which add points along every edge: none takes a point ahead of the drawn lines' ends and crossings). */
+const SNAP_MODES_ON: readonly SnapMode[] = SNAP_MODES.filter((m) => m !== 'division' && m !== 'distance');
 export const POLAR_STEPS: readonly number[] = [5, 10, 15, 22.5, 30, 45, 90];
 export const DEFAULT_PREFS: Prefs = {
   theme: 'paper', viewportTheme: 'same', lastLight: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
-  snapModes: [...SNAP_MODES], snapModesKnown: [...SNAP_MODES], polarStep: 45, coords: 'internal',
+  snapModes: [...SNAP_MODES_ON], snapModesKnown: [...SNAP_MODES], polarStep: 45, coords: 'internal',
   profileStandardsHidden: [], newProjectProfileStandards: null, defaultTemplate: null, newProjectMaterialStandard: null,
   developerExtras: false, pythonPath: null, externalEditor: null, navStyle: DEFAULT_NAV_STYLE, constrainWhileDrawing: true,
   openingAlong: { from: 'start', point: 'centre' },
@@ -102,9 +108,15 @@ export const DEFAULT_PREFS: Prefs = {
   tempDimRef: 'core',
   tempDimOpeningRef: 'openings',
   nudgeStep: 0,
+  snapDivisions: [3, 4],
+  snapDistance: 0.5,
+  crosshair: false,
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
+
+/** The cuts a list holds: whole numbers from 2 to 64, each once, in order. */
+const divisionsOf = (v: unknown): number[] | null => (Array.isArray(v) ? [...new Set(v.filter((n): n is number => Number.isInteger(n) && n >= 2 && n <= 64))].sort((a, b) => a - b) : null);
 
 const KEY = 'lapin.prefs';
 const pick = <T,>(v: unknown, allowed: readonly T[], fallback: T): T => (allowed.includes(v as T) ? (v as T) : fallback);
@@ -143,6 +155,9 @@ export function readPrefs(stored: unknown): Prefs {
     tempDimRef: pick(o.tempDimRef, DIM_REFS, d.tempDimRef),
     tempDimOpeningRef: pick(o.tempDimOpeningRef, OPENING_DIM_REFS, d.tempDimOpeningRef),
     nudgeStep: typeof o.nudgeStep === 'number' && Number.isFinite(o.nudgeStep) && o.nudgeStep > 0 ? Math.min(1, Math.max(0.001, o.nudgeStep)) : 0,
+    snapDivisions: divisionsOf(o.snapDivisions) ?? d.snapDivisions,
+    snapDistance: typeof o.snapDistance === 'number' && Number.isFinite(o.snapDistance) && o.snapDistance > 0 ? Math.min(1000, o.snapDistance) : d.snapDistance,
+    crosshair: o.crosshair === true,
     openingAlong: {
       from: pick((o.openingAlong as { from?: unknown } | undefined)?.from, ['start', 'face', 'core'] as const, d.openingAlong.from),
       point: pick((o.openingAlong as { point?: unknown } | undefined)?.point, ['start', 'centre', 'end'] as const, d.openingAlong.point),
@@ -191,4 +206,15 @@ export function gridStepAt(scale: number, p: Pick<Prefs, 'gridMode' | 'gridStep'
 export function gridSnapStep(scale: number, p: Pick<Prefs, 'gridMode' | 'gridStep' | 'gridSnap'> = usePrefs.getState()): number {
   if (!p.gridSnap) return 0;
   return p.gridMode === 'fixed' ? p.gridStep : scale > 30 ? 0.05 : 0.5;
+}
+
+/** The zoom (pixels per metre) of the plan being drawn in: what the adaptive grid's snap step follows; the plan writes it, the status line reads it. */
+export const useGridScale = create<{ scale: number }>(() => ({ scale: 50 }));
+
+/** The steps the snap menu offers for a fixed grid (m); Preferences takes any. */
+export const GRID_STEPS: readonly number[] = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1];
+
+/** Snapping to a fixed step (the step chosen, snapping on), or back to the adaptive grid that follows the zoom. */
+export function chooseGridStep(step: number | 'adaptive'): void {
+  setPrefs(step === 'adaptive' ? { gridMode: 'adaptive', gridSnap: true } : { gridMode: 'fixed', gridStep: step, gridSnap: true });
 }

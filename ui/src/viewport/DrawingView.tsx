@@ -39,6 +39,9 @@ import { currentNavStyle } from '../app/navStyleStore';
 import { clearShown, hiddenInDrawing, publishShown } from './cad/shown';
 import { drawOrderItems, isDrafted } from './drawOrder';
 import { CadOverlay } from './cad/canvas';
+import { Crosshair } from './Crosshair';
+import { setDatum, useDatum } from './datum';
+import { DatumMark } from './DatumMark';
 import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, finishStep, frameArg, useCad } from './cad/session';
@@ -116,6 +119,9 @@ export function DrawingView() {
   useToolTick((s) => s.n);
   const toolMode = tool?.mode?.();
   useEffect(() => { setPts([]); }, [toolId, id, toolMode]);
+  // A temporary reference point (F6, viewport/datum.ts) belongs to the tool it was set for.
+  const datum = useDatum((d) => d.pt);
+  useEffect(() => { setDatum(null); }, [toolId, id]);
 
   useEffect(() => {
     const el = ref.current;
@@ -212,6 +218,7 @@ export function DrawingView() {
     const g = tool?.gesture;
     if (!g) return false;
     acquire(p);
+    if (useDatum.getState().pt) setDatum(null);
     switch (g.kind) {
       case 'point': void complete([p]); break;
       case 'pick':
@@ -258,6 +265,8 @@ export function DrawingView() {
       if ((e.target as HTMLElement)?.closest('input, select, textarea, [role="dialog"]') || e.defaultPrevented || useCad.getState().step) return;
       // Esc while the selection is dragged by its body: nothing moves.
       if (e.key === 'Escape' && carrying()) { drag.current = null; carryEnd(); clearLiveRise(); return; }
+      // A reference point being held: Esc drops it before the gesture's own rule.
+      if (e.key === 'Escape' && useDatum.getState().pt) { setDatum(null); return; }
       // One rule (gestureKeys.ts): Enter finishes, Esc cancels the step in progress. A typed length is the key router's (Enter takes it, Esc clears it).
       const act = gestureKey(e.key, tool?.gesture, pts.length, !!picked.current);
       if (act === 'completePick') {
@@ -280,11 +289,18 @@ export function DrawingView() {
   clickRef.current = gestureClick;
   // A measuring two-point tool (Scale image, forum 143) likewise: the distance shown, the true one typed.
   const measuring = tool?.gesture?.kind === 'twoPoints' && !!tool.gesture.measure;
-  const first = (tool?.gesture?.kind === 'pickThenPoint' || measuring) && pts.length === 1 && active ? pts[0] : undefined;
+  const gk = tool?.gesture?.kind;
+  const first = (gk === 'pickThenPoint' || measuring) && pts.length === 1 && active ? pts[0] : undefined;
+  // A chain of points (Measure, a polyline, a rectangle…) reads its length and angle from the last point, here as in a plan (forum topic 228).
+  const chainFrom = !first && active && pts.length > 0 && (gk === 'twoPoints' || gk === 'polyline' || gk === 'polygon' || gk === 'rectangle' || gk === 'threePoints') ? pts[pts.length - 1] : undefined;
+  const fromDatum = datum && active && (gk === 'point' || gk === 'twoPoints' || gk === 'polyline' || gk === 'polygon' || gk === 'rectangle' || gk === 'threePoints') ? datum : undefined;
   useEffect(() => {
-    if (first) liveBegin('tool', first, (p, typed) => clickRef.current(p, p, typed), { measure: measuring });
+    // From a temporary reference point: ΔX and ΔY typed at the cursor.
+    if (fromDatum) liveBegin('tool', fromDatum, (p, typed) => { setDatum(null); clickRef.current(p, p, typed); }, { rect: `datum:${tool?.id ?? 'point'}` });
+    else if (first) liveBegin('tool', first, (p, typed) => clickRef.current(p, p, typed), { measure: measuring });
+    else if (chainFrom) liveBegin('tool', chainFrom, (p, typed) => clickRef.current(p, p, typed), gk === 'rectangle' ? { rect: tool?.id ?? 'rectangle' } : { angles: true });
     else liveEnd('tool');
-  }, [first, measuring]);
+  }, [first, chainFrom, fromDatum, measuring, gk, tool?.id]);
   useEffect(() => () => liveEnd('tool'), []);
   // A view that goes while the selection is dragged takes the drag's trace with it.
   useEffect(() => () => { if (carrying()) carryEnd(); clearLiveRise(); }, []);
@@ -345,7 +361,7 @@ export function DrawingView() {
   const at = (e: React.PointerEvent): { raw: Vec2; aimed: Aimed } => {
     const r = ref.current!.getBoundingClientRect();
     const raw = toWorld(e.clientX - r.left, e.clientY - r.top);
-    const aimed = aim(raw, useCad.getState().step?.base ?? null, { orthoHeld: e.shiftKey });
+    const aimed = aim(raw, useCad.getState().step?.base ?? datum ?? pts[pts.length - 1] ?? null, { orthoHeld: e.shiftKey });
     useCad.setState({ cursor: aimed.point, aim: aimed });
     liveCursor(aimed.point);
     return { raw, aimed };
@@ -547,6 +563,7 @@ export function DrawingView() {
             return `M${a.x} ${a.y}L${b.x} ${b.y}`;
           }).join('')} />
         ))}
+        {datum && <DatumMark at={toScreen(datum)} to={pts.length === 0 && hover ? toScreen(hover.point) : null} />}
         {pts.length > 0 && (() => {
           // The next point: the cursor's, or where a typed length puts it.
           const cur = hover ? (live.owner === 'tool' && (live.len || live.ang || live.rel) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point : null;
@@ -559,9 +576,10 @@ export function DrawingView() {
         })()}
         {box && <SelectRegion d={box} />}
         {editor.render}
+        <Crosshair at={hover ? toScreen(hover.point) : null} width={size.w} height={size.h} />
         <DrawingOverlays toScreen={toScreen} toWorld={toWorld} scale={v.scale} view={{ id: id ?? null }}
           drawing={drawing ? { kind: drawing.kind, frame: drawing.frame, developed: (drawing.frames?.length ?? 0) > 0, marks: drawing.marks } : null} />
-        {(cadStep || editor.dragging || dragTrace) && <CadOverlay aimed={hover} toScreen={toScreen} />}
+        {(cadStep || editor.dragging || dragTrace || (tool?.gesture && hover)) && <CadOverlay aimed={hover} toScreen={toScreen} />}
       </svg>
       {drawing?.problem && <div className="error-text view-problem">{drawing.problem}</div>}
       {active && <LiveBox toScreen={toScreen} />}
