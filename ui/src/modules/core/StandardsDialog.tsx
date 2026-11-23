@@ -31,17 +31,23 @@ import { TagRulesEditor } from './TagRulesEditor';
 import type { TagRuleDto } from './tagRules';
 import { FieldPicker } from '../../shell/FieldPicker';
 import { parseDecimal } from '../../shell/parseDecimal';
+import { openingFormat } from './openingFormat';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
 type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[]; tableStyles?: { id: string; name: string; cells?: boolean; table?: { rows?: unknown[]; cols?: unknown[] } }[] };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[]; lineType?: boolean; labels?: Record<string, string> };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
+/** How a dimension writes an opening's height under its line (decision 338; one line and custom: forum topic 229). */
+const OPENING_HEIGHTS = ['off', 'number', 'h', 'hp', 'slash', 'line', 'custom'] as const;
+/** The opening text's tokens, one phrase for the translations. */
+const OPENING_TEXT_HELP = 'When Opening height is custom: {h} the height, {p} the sill, | starts a new line, [ ] is written only when there is a sill (a door has none); e.g. H {h}[, S {p}]. Empty: h={h}|p={p}';
 const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot', 'dashdotdot'];
 /** How a choice reads where its value alone would not say it. */
 const CHOICE_LABELS: Record<string, string> = { project: 'as the project', across: 'perpendicular to the tag line', along: 'along the tag line', buildup: 'build-up',
   // An opening's height under a dimension line across it (report #92, decision 338).
-  off: 'off', number: '150', h: 'h=150', hp: 'h=150, p=90', slash: '150/90',
+  // One line, or the style's own format with its prefixes (forum topic 229).
+  off: 'off', number: '150', h: 'h=150', hp: 'h=150 over p=90', slash: '150/90', line: 'h=150, p=90 (one line)', custom: 'custom (Opening text)',
   // A dimension's trailing zeros (forum #81).
   keep: 'keep (2.500)', suppress: 'suppress (2.5)' };
 /**
@@ -62,7 +68,7 @@ const DIM_LINE_COLS: Col[] = [
   { key: 'textColor', label: 'Text colour', title: "The values' colour; empty: the colour of its text style (Text tab), else the style's", kind: 'color' },
 ];
 /** The dimension style fields left empty to say "as before" (sent as null). */
-const NULLABLE = new Set(['textLeader', 'extFixed', 'extWeight', 'dimLineWeight']);
+const NULLABLE = new Set(['textLeader', 'extFixed', 'extWeight', 'dimLineWeight', 'openingText']);
 /** The colours that may be cleared back to the style's. */
 const CLEARABLE = new Set(['extColor', 'dimLineColor', 'textColor']);
 const TABS: Tab[] = [
@@ -77,7 +83,9 @@ const TABS: Tab[] = [
     // Trailing zeros dropped (2.500 → 2.5, 3.000 → 3) or kept, or as the project's standards say (forum #81).
     { key: 'zeros', label: 'Trailing zeros', title: 'Whether a value drops its trailing zeros (2.500 → 2.5, 3.000 → 3) or keeps them; as the project: the Project tab says', kind: 'choice', choices: ['project', 'keep', 'suppress'] },
     // A segment across a door, a window or an opening writes its height under the line, and its sill in some forms (decision 338).
-    { key: 'openingHeight', label: 'Opening height', title: 'Under a dimension segment across a door, window or opening: its height (and its sill), read from the model', kind: 'choice', choices: ['off', 'number', 'h', 'hp', 'slash'] },
+    { key: 'openingHeight', label: 'Opening height', title: 'Under a dimension segment across a door, window or opening: its height (and its sill), read from the model', kind: 'choice', choices: [...OPENING_HEIGHTS] },
+    // Its own format, prefixes and all, when Opening height is custom (forum topic 229).
+    { key: 'openingText', label: 'Opening text', title: OPENING_TEXT_HELP, kind: 'text' },
     // Values that do not fit between their witness lines moved clear of their neighbours, with a leader past a distance (forum #78).
     { key: 'autoText', label: 'Text placement', title: 'A value that does not fit between its witness lines moves just outside its segment, or above and below the line in turn, clear of the other values; as the project: Annotate → Dimension rules… says', kind: 'choice', choices: ['project', 'on', 'off'] },
     { key: 'textLeader', label: 'Leader beyond mm', title: 'A value moved further than this (mm on paper) from its place gets a leader to its segment; empty: as the project', kind: 'mm' },
@@ -187,6 +195,8 @@ export function StandardsDialog() {
         setEditing(e.id);
         return;
       }
+      // An opening text typed is the style's format: Opening height becomes custom with it, in the same undo step (forum topic 229).
+      if (tab.id === 'dim' && c.key === 'openingText' && typeof value === 'string' && value && e.openingHeight !== 'custom') { set({ id: e.id, openingText: value, openingHeight: 'custom' }); return; }
       set({ id: e.id, [c.key]: value });
     };
     switch (c.kind) {
@@ -219,7 +229,9 @@ export function StandardsDialog() {
         }} />;
       default: {
         const numeric = c.kind === 'mm' || c.kind === 'number';
-        return <input className={numeric ? 'num' : undefined} key={`${e.id}${c.key}${v}`} defaultValue={v == null ? '' : String(v)}
+        // An opening text shows the format its Opening height stands for until it has its own (forum topic 229).
+        const hint = c.key === 'openingText' ? openingFormat(String(e.openingHeight ?? 'off')) ?? '' : undefined;
+        return <input className={numeric ? 'num' : undefined} key={`${e.id}${c.key}${v}`} defaultValue={v == null ? '' : String(v)} placeholder={hint}
           onBlur={(ev) => {
             const t = ev.target.value.trim();
             if (t === String(v ?? '')) return;

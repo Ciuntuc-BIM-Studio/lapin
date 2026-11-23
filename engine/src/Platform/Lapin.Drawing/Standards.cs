@@ -16,6 +16,9 @@ public sealed record TextStyle(string Id, string Name, double Height, string Fon
 /// writes the opening's height under the dimension line, as Romanian and European drawings do (the width over it):
 /// "off", "number" (150), "h" (h=150), "hp" (h=150 and, under it, the sill p=90 when there is one) or "slash" (150/90).
 /// Off when a style does not say (older projects); a new project's Standard style says "number".
+/// "line" writes both on one line (h=150, p=90), and "custom" as <see cref="OpeningText"/> says (forum topic 229, decision 790):
+/// a format of the style's own, <c>{h}</c> the height, <c>{p}</c> the sill, <c>|</c> a new row, <c>[…]</c> written only
+/// when the sill is there (<see cref="Standards.OpeningFormat"/>); each preset is such a format, so its output is as before.
 /// </para>
 /// <para>
 /// <see cref="Zeros"/> (forum #81): whether a value's trailing zeros are written (2.500, "keep") or dropped (2.5, and 3 for
@@ -45,7 +48,7 @@ public sealed record TextStyle(string Id, string Name, double Height, string Fon
 public sealed record DimStyle(string Id, string Name, string TextStyle, string Arrow, double ArrowSize, double ExtGap, double ExtOver, string Placement, double TextGap, int Precision, string Unit, string? Color = null, string OpeningHeight = "off", string Zeros = "project",
     string AutoText = "project", double? TextLeader = null,
     string? ExtSuppress = null, double? ExtFixed = null, double? ExtWeight = null, string? ExtColor = null, string? ExtLineType = null,
-    double? DimLineWeight = null, string? DimLineColor = null, string? DimLineType = null, string? TextColor = null, double? TickWeight = null)
+    double? DimLineWeight = null, string? DimLineColor = null, string? DimLineType = null, string? TextColor = null, double? TickWeight = null, string? OpeningText = null)
 {
     /// <summary>The pen a tick or a dot is drawn with (paper mm, audit 22.11.2026 §5.3): the style's own, else 0.25 mm as always.</summary>
     public const double DefaultTickWeight = 0.25;
@@ -281,7 +284,29 @@ public static class Standards
     public static readonly string[] Arrows = ["tick", "arrow", "dot", "none"];
     public static readonly string[] Placements = ["above", "centered", "below"];
     /// <summary>How a dimension writes an opening's height under its line (decision 338): not at all, 150, h=150, h=150 with p=90 under it, 150/90.</summary>
-    public static readonly string[] OpeningHeights = ["off", "number", "h", "hp", "slash"];
+    public static readonly string[] OpeningHeights = ["off", "number", "h", "hp", "slash", "line", "custom"];
+    /// <summary>The longest opening text a dimension style keeps (forum topic 229).</summary>
+    public const int MaxOpeningText = 120;
+
+    /// <summary>
+    /// The format an opening's height is written in under a dimension line (forum topic 229, decision 790): each preset's own
+    /// (150; h=150; h=150 over p=90; 150/90; h=150, p=90 on one line), or the style's <paramref name="text"/> for "custom"
+    /// (empty: the stacked one's); null when it is off. <c>{h}</c> the height, <c>{p}</c> the sill, <c>|</c> a new row,
+    /// <c>[…]</c> written only when every value in it is there (a door has no sill).
+    /// </summary>
+    public static string? OpeningFormat(string choice, string? text) => choice switch
+    {
+        "number" => "{h}",
+        "h" => "h={h}",
+        "hp" => "h={h}|p={p}",
+        "slash" => "{h}[/{p}]",
+        "line" => "h={h}[, p={p}]",
+        "custom" => string.IsNullOrWhiteSpace(text) ? "h={h}|p={p}" : text,
+        _ => null,
+    };
+
+    /// <summary>An opening text as a style keeps it: trimmed, at most <see cref="MaxOpeningText"/> characters; null when empty.</summary>
+    public static string? OpeningTextOf(JsonNode? v) => v is JsonValue j && j.TryGetValue<string>(out var s) && s.Trim() is { Length: > 0 } t ? (t.Length > MaxOpeningText ? t[..MaxOpeningText] : t) : null;
     /// <summary>A dimension style's trailing zeros (forum #81): as the project, kept, or dropped.</summary>
     public static readonly string[] ZeroChoices = ["project", "keep", "suppress"];
     /// <summary>A dimension style's automatic text placement (forum #78): as the project, on, off.</summary>
@@ -314,7 +339,7 @@ public static class Standards
     public static readonly string[] TextOverrides = ["height", "font", "bold", "italic", "color"];
     // The extension lines' and the dimension line's pens of issue #66, and the ticks' (audit 22.11.2026), may be overridden too.
     public static readonly string[] DimOverrides = ["arrow", "arrowSize", "placement", "textGap", "precision", "unit", "color", "openingHeight", "zeros", "autoText", "textLeader", "extSuppress", "extFixed",
-        "extWeight", "extColor", "extLineType", "dimLineWeight", "dimLineColor", "dimLineType", "tickWeight"];
+        "extWeight", "extColor", "extLineType", "dimLineWeight", "dimLineColor", "dimLineType", "tickWeight", "openingText"];
     public static readonly string[] AxisOverrides = ["bubble", "ends", "size", "lineType"];
 
     static string Str(JsonNode? v, string fallback) => v is JsonValue j && j.TryGetValue<string>(out var s) && s.Length > 0 ? s : fallback;
@@ -341,7 +366,7 @@ public static class Standards
             v["precision"] is JsonValue pv && Lapin.Model.Json.Number(pv) is { } pn && double.IsFinite(pn) ? Math.Max(-1, (int)Math.Round(pn)) : d.Precision, OneOf(v["unit"], Units, d.Unit), Color(v["color"]), OneOf(v["openingHeight"], OpeningHeights, d.OpeningHeight),
             OneOf(v["zeros"], ZeroChoices, d.Zeros), OneOf(v["autoText"], AutoTextChoices, d.AutoText), TextLeaderOf(v["textLeader"]),
             ExtSuppressOf(v["extSuppress"]), Within(v["extFixed"], MaxExtFixed), Within(v["extWeight"], MaxDimPen), Color(v["extColor"]), LineType(v["extLineType"]),
-            Within(v["dimLineWeight"], MaxDimPen), Color(v["dimLineColor"]), LineType(v["dimLineType"]), Color(v["textColor"]), Within(v["tickWeight"], MaxDimPen));
+            Within(v["dimLineWeight"], MaxDimPen), Color(v["dimLineColor"]), LineType(v["dimLineType"]), Color(v["textColor"]), Within(v["tickWeight"], MaxDimPen), OpeningTextOf(v["openingText"]));
     }
 
     static AxisStyle ReadAxis(JsonObject v) => ReadAxis(v, LineTypes);

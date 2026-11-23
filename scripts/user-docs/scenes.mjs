@@ -13335,6 +13335,55 @@ export const scenes = [
     },
   },
   {
+    // Opening heights stacked or on one line with prefixes of the style's own (forum topic 229): the string across the door
+    // and the window as above, its style first writing h= over p=, then its own format H {h}[, S {p}] on one line.
+    id: 'dimension-opening-height-line',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('drafting.addDimension', { viewId: `plan:${storey}`, pts: [[0, 0], [2.55, 0], [3.45, 0], [8.9, 0], [10.1, 0], [12, 0]], at: [6, -1.4], dir: [1, 0] });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -0.5, y: -2.6 }, { x: 12.5, y: 1.2 }));
+      const plan = t.page.locator('[data-testid=plan]');
+      const [x0, y0] = await t.planPoint(-0.5, 1.0);
+      const [x1, y1] = await t.planPoint(12.5, -2.6);
+      const clip = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+      await t.cmd('standards.set', { kind: 'dim', entry: { id: 'standard', openingHeight: 'hp' } });
+      await t.wait(800);
+      t.expect(await plan.locator('text', { hasText: /^p=900$/ }).count() === 1, 'the window\'s sill under its height');
+      await t.shot('dimension-opening-height-stacked', { clip });
+      await t.cmd('standards.set', { kind: 'dim', entry: { id: 'standard', openingHeight: 'custom', openingText: 'H {h}[, S {p}]' } });
+      await t.wait(800);
+      t.expect(await plan.locator('text', { hasText: /^H 1500, S 900$/ }).count() === 1, 'the window\'s height and sill on one line, with the style\'s prefixes');
+      t.expect(await plan.locator('text', { hasText: /^H 2100$/ }).count() === 1, 'the door\'s height alone (no sill)');
+      await t.shot('dimension-opening-height-line', { clip });
+    },
+  },
+  {
+    // A dimension's value dragged off its place (forum topic 227): its leader back to the segment stops short of the value,
+    // never across its digits: one moved under the line, one beside its segment, one off a vertical dimension.
+    id: 'dimension-text-leader',
+    touches: ['drafting'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const view = `plan:${storey}`;
+      const below = await t.cmd('drafting.addDimension', { viewId: view, pts: [[8.9, 0], [10.1, 0]], at: [9.5, -1.2], dir: [1, 0] });
+      const beside = await t.cmd('drafting.addDimension', { viewId: view, pts: [[2.55, 0], [3.45, 0]], at: [3, -1.2], dir: [1, 0] });
+      const up = await t.cmd('drafting.addDimension', { viewId: view, pts: [[12, 0], [12, 3]], at: [13.2, 1.5], dir: [0, 1] });
+      await t.cmd('drafting.moveDimensionText', { id: below.id, segment: 0, by: [0, -0.75] });
+      await t.cmd('drafting.moveDimensionText', { id: beside.id, segment: 0, by: [-1.6, -0.35] });
+      await t.cmd('drafting.moveDimensionText', { id: up.id, segment: 0, by: [0.6, 0.4] });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: 0, y: -2.6 }, { x: 14.6, y: 3.4 }));
+      await t.wait(800);
+      const [x0, y0] = await t.planPoint(0, 3.4);
+      const [x1, y1] = await t.planPoint(14.6, -2.6);
+      await t.shot('dimension-text-leader', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+    },
+  },
+  {
     // A dimension style's extension lines and dimension line (issue #66): a string along the south wall, its end extension
     // lines left out, the others at a fixed length in a blue dashed pen, the dimension line heavier; then the style's columns
     // in Drafting standards → Dimensions.

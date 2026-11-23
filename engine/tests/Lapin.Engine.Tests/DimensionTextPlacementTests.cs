@@ -97,7 +97,10 @@ public class DimensionTextPlacementTests
         Assert.Equal(off + 1, mark.Lines.Count);
         var leader = mark.Lines[^1];
         Assert.Equal(new Vec2(0.05, 2), leader.A);
-        Assert.True(leader.B.X < 0, "it ends at the value's side nearest the segment");
+        // It ends at the value's side nearest the segment, a gap short of it (forum topic 227).
+        var value = mark.Texts[0].Text;
+        Assert.Equal(value.At.X + BuildupText.Measure(value.Text, value.Height, false) * 0.1 / 2 + DimensionTextPlacement.LeaderGap * 0.1, leader.B.X, 6);
+        Assert.True(leader.B.X < leader.A.X);
         // A dimension style may say its own: off, or a leader distance of its own.
         f.Run("standards.set", new JsonObject { ["kind"] = "dim", ["entry"] = new JsonObject { ["id"] = Standards.Standard, ["textLeader"] = 10 } });
         Assert.Equal(off, Mark(f, dim).Lines.Count);

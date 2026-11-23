@@ -149,4 +149,56 @@ public class OpeningHeightTests
         var dxf = System.Text.Encoding.Latin1.GetString(Views.Dxf(f.Session.Reader, Views.Find(f.Model, Plan(f))!));
         Assert.Matches(@"\n\s*1\r?\n1500\r?\n", dxf);
     }
+
+    /// <summary>Forum topic 229: what each preset wrote before, filled from its format, the same.</summary>
+    [Theory]
+    [InlineData("number", "1500", "2100")]
+    [InlineData("h", "h=1500", "h=2100")]
+    [InlineData("hp", "h=1500|p=900", "h=2100")]
+    [InlineData("slash", "1500/900", "2100")]
+    [InlineData("line", "h=1500, p=900", "h=2100")]
+    public void Each_preset_is_a_format_that_writes_what_it_wrote(string preset, string window, string door)
+    {
+        var format = Standards.OpeningFormat(preset, null)!;
+        Assert.Equal(window.Split('|'), OpeningHeights.Fill(format, "1500", "900"));
+        Assert.Equal(door.Split('|'), OpeningHeights.Fill(format, "2100", null));
+        Assert.Null(Standards.OpeningFormat("off", "H{h}"));
+    }
+
+    [Fact]
+    public void A_style_writes_the_height_and_sill_on_one_line_or_in_its_own_format_with_its_own_prefixes()
+    {
+        var (f, wall, _) = Setup();
+        var window = Dim(f, Plan(f), (2.4, -0.1), (3.6, -0.1));
+        f.Run("architecture.addWallOpening", new JsonObject { ["wallId"] = wall, ["along"] = 1, ["width"] = 0.9, ["height"] = 2.1 });
+        var door = Dim(f, Plan(f), (0.55, -0.1), (1.45, -0.1));
+        // One line: h=…, p=… beside each other, one row under the line; a door without its p.
+        Style(f, "line");
+        var rows = Texts(f, Plan(f), window);
+        Assert.Equal(["1200", "h=1500, p=900"], rows.Select(t => t.Text));
+        Assert.Equal(["900", "h=2100"], Texts(f, Plan(f), door).Select(t => t.Text));
+        // The style's own format: its own prefixes, the sill's part in brackets left out for a door.
+        f.Run("standards.set", new JsonObject { ["kind"] = "dim", ["entry"] = new JsonObject { ["id"] = Standards.Standard, ["openingHeight"] = "custom", ["openingText"] = "H {h}[; P {p}]" } });
+        Assert.Equal(["1200", "H 1500; P 900"], Texts(f, Plan(f), window).Select(t => t.Text));
+        Assert.Equal(["900", "H 2100"], Texts(f, Plan(f), door).Select(t => t.Text));
+        // Rows of its own: | starts one; a row naming the sill outside brackets is left out for a door.
+        f.Run("standards.set", new JsonObject { ["kind"] = "dim", ["entry"] = new JsonObject { ["id"] = Standards.Standard, ["openingText"] = "hgt {h}|sill {p}" } });
+        Assert.Equal(["1200", "hgt 1500", "sill 900"], Texts(f, Plan(f), window).Select(t => t.Text));
+        Assert.Equal(["900", "hgt 2100"], Texts(f, Plan(f), door).Select(t => t.Text));
+        // Kept with the style, read back as saved; emptied, custom is the stacked form.
+        Assert.Equal("hgt {h}|sill {p}", Standards.DimOf(DraftingResources.Book(f.Model), Standards.Standard).OpeningText);
+        f.Run("standards.set", new JsonObject { ["kind"] = "dim", ["entry"] = new JsonObject { ["id"] = Standards.Standard, ["openingText"] = null } });
+        Assert.Equal(["1200", "h=1500", "p=900"], Texts(f, Plan(f), window).Select(t => t.Text));
+        // One dimension may take a format of its own over its style's.
+        Assert.Equal("{h}", Standards.ResolveDim(DraftingResources.Book(f.Model), new JsonObject { ["o.openingText"] = "{h}" }).OpeningText);
+    }
+
+    [Fact]
+    public void A_style_saved_before_writes_no_opening_text_and_reads_as_it_did()
+    {
+        var (f, _, _) = Setup(fresh: false);
+        var json = Standards.ToJson(DraftingResources.Book(f.Model)).ToJsonString();
+        Assert.DoesNotContain("openingText", json);
+        Assert.Null(Standards.DimOf(DraftingResources.Book(f.Model), Standards.Standard).OpeningText);
+    }
 }
