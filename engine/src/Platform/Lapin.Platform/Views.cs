@@ -606,7 +606,8 @@ public static class Views
             // Connections (steel nodes, fasteners) from LOD 350.
             if (building < PlanDetail.Lod350 && ReferenceLayers.CategoryOf(e) == "steelConnections") continue;
             // LOD 400 draws a member's real section, its root fillets and sloping flanges (decision 415); every lower level the light one.
-            if ((building >= PlanDetail.Lod400 ? q.FineGeometry(e.Id) : q.Geometry(e.Id)) is not { } g) continue;
+            // The plants as the view's vegetation style has them (decision 812): coloured, or the maquette's bodies.
+            if (vg.Shaped(q, e.Id, building >= PlanDetail.Lod400 ? q.FineGeometry(e.Id) : q.Geometry(e.Id)) is not { } g) continue;
             var smooth = building >= PlanDetail.Lod400 && g.FineShape;
             if (cutZ is { } cz && stored && Plan2d.Read(e) is { Count: > 0 } own)
             {

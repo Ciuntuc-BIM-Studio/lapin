@@ -80,7 +80,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         LineworkElements.Register(r);
         // What drafted linework becomes on the site, in Convert to… (audit S12).
         LineworkConverters.Register(r);
-        r.Geometry(Plantings.Class, (e, m, _) => Plantings.Geometry(e, m));
+        r.Geometry(Plantings.Class, (e, m, s) => Plantings.Geometry(e, m, s?.Get<GeometryOptions>()?.Maquette == true));
         r.Quantities(Plantings.Class, Plantings.Quantities);
         r.Geometry(Entourage.Class, (e, m, _) => Entourage.Geometry(e, m));
         Entourage.Register(r);
