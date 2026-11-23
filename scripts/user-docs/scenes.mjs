@@ -6353,6 +6353,132 @@ export const scenes = [
     },
   },
   {
+    // Site grading T2 (docs/plan-site-grading.md): a feature line drawn on a terrain with an arc, its corners' heights typed, the terrain
+    // passing through it; a grade typed between two corners; a contour drawn at an elevation; a contour dragged with its reach.
+    id: 'feature-lines',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A 40 × 30 m ground surveyed every 2 m: a gentle slope to the east with a low, wide rise in the middle.
+      const g = (x, y) => 0.04 * x + 0.02 * y + 1.2 * Math.exp(-((x - 22) ** 2 + (y - 15) ** 2) / 160);
+      const lines = [];
+      for (let x = 0; x <= 40; x += 2) for (let y = 0; y <= 30; y += 2) lines.push(`${x} ${y} ${(100 + g(x, y)).toFixed(3)}`);
+      const made = await t.cmd('civil.addTerrain', { text: lines.join('\n'), datum: 100, storeyId: s, interval: 0.25, majorEvery: 4, name: 'Survey' });
+      const terrainId = made?.id;
+      t.expect(!!terrainId, 'a terrain from the survey');
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(1000);
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(250); };
+      const answer = async (text, act) => {
+        const kept = t.page.listeners('dialog');
+        t.page.removeAllListeners('dialog');
+        t.page.once('dialog', (d) => void d.accept(text));
+        await act();
+        await t.wait(900);
+        for (const l of kept) t.page.on('dialog', l);
+      };
+      const lineNodes = async () => (await t.nodes()).filter((n) => n.type === 'LapinFeatureLine');
+      // The Feature line tool: a straight edge, then (Space) an arc going on tangent, then straight again; Enter finishes; the heights
+      // of the four corners typed at once, the two in the middle left to the ground.
+      await t.tool('civil.featureLine');
+      t.expect(await t.page.locator('[data-testid=feature-line-heights]').count() === 1, 'the tool\'s bar offers heights or the ground');
+      // A path's edge along the south, its ends a few centimetres off the ground (0.31 and 1.82 there).
+      await click(4, 4);
+      await click(14, 4);
+      const arcs = t.page.locator('[data-testid=command-line] [data-shape=arcs]');
+      await arcs.click();
+      await click(24, 7);
+      await arcs.click();
+      await click(36, 7);
+      await answer('0.30; ; ; 1.80', () => t.keys('Enter'));
+      await t.until(async () => (await lineNodes()).length === 1, 'the tool makes a feature line');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      const line = (await lineNodes())[0];
+      t.expect(line.props.points.length === 4 && line.props.arcs.some((r) => Math.abs(r) > 1e-6), 'four corners, an arc among the edges');
+      t.expect(line.props.ownZ.join() === 'true,false,false,true', `the corners typed have a height of their own (${line.props.ownZ})`);
+      t.expect(Math.abs(line.props.cornerZ[0] - 0.3) < 1e-6 && Math.abs(line.props.cornerZ[3] - 1.8) < 1e-6, 'the heights typed');
+      // Selected: its corners' elevations and the grades between them.
+      await select(t, line.id);
+      await t.wait(900);
+      await t.page.locator('[data-testid=feature-line-section]').waitFor();
+      // A grade typed between the first two corners: 7.5 %, the second corner following (the ground rises about as much there).
+      await t.page.locator('[data-testid=feature-line-grade0]').fill('7.5 %');
+      await t.page.locator('[data-testid=feature-line-grade0]').press('Enter');
+      await t.until(async () => { const l = (await lineNodes())[0]; return Math.abs(l.props.cornerZ[1] - (0.3 + 0.075 * l.props.segmentLengths[0])) < 1e-3; }, 'a grade of 7.5 % raises the second corner by 7.5 % of the segment (about 0.75 over its 10 m)');
+      // A corner's elevation typed: the third, 1.90.
+      await t.page.locator('[data-testid=feature-line-z2]').fill('1.90');
+      await t.page.locator('[data-testid=feature-line-z2]').press('Enter');
+      await t.until(async () => { const l = (await lineNodes())[0]; return Math.abs(l.props.cornerZ[2] - 1.9) < 1e-6 && l.props.ownZ[2] === true; }, 'the third corner takes the elevation typed');
+      await t.shot('feature-line-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      // In plan, the grips on the selected line: its corners, its segments' middles, the arc's.
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-grip]').count() >= 4, 'the line has grips in plan');
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('feature-line-plan', { of: '[data-testid=plan]', pad: 0 });
+      // In 3D: the terrain passes through the line, which has a height grip on each corner.
+      await select(t, line.id);
+      await t.ui({ keyPlan: true });
+      await open3d(t);
+      await t.page.locator('button[title="Frame everything"]').first().click();
+      await t.wait(1200);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.1, pitch: -0.32, distance: 30, target: { x: 20, y: 6, z: 1 } }, false));
+      await t.wait(1500);
+      t.expect(await t.page.locator('[data-grip3d^="fl"]').count() === 4, 'a height grip on each corner in 3D');
+      await t.shot('feature-line-3d', { of: 'canvas', pad: 0 });
+      await t.ui({ keyPlan: false });
+      await openFromBrowser(t, 'Ground floor', 2000);
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(800);
+      // The Contour at elevation tool: the 1.50 contour on the north side drawn again a metre to the west of where the ground has
+      // it (a fill), the elevation in its bar.
+      const at150 = (y) => { let lo = 0, hi = 40; for (let k = 0; k < 60; k++) { const m = (lo + hi) / 2; if (g(m, y) < 1.5) lo = m; else hi = m; } return lo; };
+      await t.tool('civil.contourAt');
+      await t.page.locator('[data-testid=contour-elevation]').fill('1.50');
+      for (const y of [20, 23, 26]) await click(at150(y) - 1, y);
+      await t.keys('Enter');
+      await t.until(async () => (await lineNodes()).length === 2, 'the tool draws a contour');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      const contour = (await lineNodes()).find((n) => n.props.elevation != null);
+      t.expect(Math.abs(contour.props.elevation - 1.5) < 1e-6 && contour.name.startsWith('Contour'), `a contour at 1.50 (${contour.name})`);
+      await t.wait(1200);
+      await t.shot('feature-line-contour', { of: '[data-testid=plan]', pad: 0 });
+      // The Drag contour tool: the contour at 1.00 nearest the hill's foot, found by the engine; pressed on, dragged 3 m to the east.
+      const near = await t.page.evaluate(async ([x, y]) => (await import('/src/engine/session.ts')).query('civil.contourNear', { x, y, within: 6 }), [9, 14]);
+      t.expect(!!near && near.points.length > 3, 'a contour near (9, 14)');
+      const grab = near.points.reduce((best, p) => (Math.hypot(p[0] - 9, p[1] - 14) < Math.hypot(best[0] - 9, best[1] - 14) ? p : best));
+      await t.tool('civil.dragContour');
+      const [gx, gy] = await t.planPoint(grab[0], grab[1]);
+      await t.page.mouse.move(gx - 40, gy - 20, { steps: 4 });
+      await t.page.mouse.move(gx, gy, { steps: 6 });
+      await t.wait(900);
+      t.expect(await t.page.locator('[data-testid=drag-hover]').count() === 1, 'the contour under the cursor lights up');
+      await t.page.locator('[data-testid=drag-contour-reach]').fill('6 m');
+      await t.shot('feature-line-drag-before', { of: '[data-testid=plan]', pad: 0 });
+      await t.page.mouse.down();
+      const [tx, ty] = await t.planPoint(grab[0] + 2.5, grab[1] + 0.5);
+      await t.page.mouse.move(tx, ty, { steps: 12 });
+      await t.wait(700);
+      t.expect(await t.page.locator('.plan-body polyline, [data-testid=draw-body]').count() >= 1, 'the dragged contour is previewed');
+      await t.shot('feature-line-drag-preview', { of: '[data-testid=plan]', pad: 0 });
+      await t.page.mouse.up();
+      await t.until(async () => (await lineNodes()).length === 3, 'the drag makes a contour feature line of the part moved');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      const dragged = (await lineNodes()).find((n) => n.id !== line.id && n.id !== contour.id);
+      t.expect(dragged && dragged.props.elevation != null, 'the part dragged is a contour at its elevation');
+      await t.wait(1500);
+      await t.shot('feature-line-drag-after', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // Gates (report #57): a fence wall along the street with a sliding gate drawn on it by the tool (its middle on the wall's
     // axis, the wall cut, the zone it parks in dashed) and a pedestrian gate beside it; a wrought iron double gate on the parcel's
     // side edge from the built-in styles; the configurator with its preview; a gate's properties; the gates in 3D.

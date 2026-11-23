@@ -154,7 +154,7 @@ public static class SitePlans
     }
 
     /// <summary>What a site view draws by its symbols, not as the project's buildings: the terrain, paths, plants, people and cars, and the site's features (the neighbours among them).</summary>
-    public static readonly HashSet<string> SiteClasses = [IfcClass.GeographicElement, "IfcPavement", "LapinPlanting", "LapinSiteFeature", "LapinEntourage"];
+    public static readonly HashSet<string> SiteClasses = [IfcClass.GeographicElement, "IfcPavement", "LapinPlanting", "LapinSiteFeature", "LapinEntourage", "LapinFeatureLine"];
 
     /// <summary>
     /// The project's buildings filled in its colour, under the drawing's lines: every face turned up of every element

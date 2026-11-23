@@ -15,8 +15,6 @@
 
 import type { Grip, Grip3D, Vec2, Vec3 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
-import { num } from '../../engine/model';
-import { useSession } from '../../engine/session';
 import { arcsOf, fromPairs, outlinePoints } from '../../viewport/contour';
 import { inLoop } from '../../viewport/outlineShape';
 import { pickedOf, togglePicked, useTerrainEdit } from './prefs';
@@ -49,8 +47,8 @@ export function terrainControls(n: NodeDto): Set<number> {
 }
 
 /**
- * The height grips of a terrain's survey points nearest `centre` in plan, at most `max`; `base`: what model heights
- * stand on (the storey's elevation). A survey height is z − datum in the model.
+ * The height grips of a terrain's survey points nearest `centre` in plan, at most `max`; `base`: an offset (0: the 3D
+ * view draws the terrain at its model heights, z − datum, whatever its storey's elevation, as the engine builds its body).
  */
 export function terrainPointGrips(n: NodeDto, centre: { x: number; y: number }, base = 0, max = MAX_POINT_GRIPS, mode: PointGripMode = 'all'): Grip3D[] {
   if (!Array.isArray(n.props.points)) return [];
@@ -235,5 +233,3 @@ export function decorateCornerGrips(n: NodeDto, grips: Grip[], ask: (now: number
   });
 }
 
-/** The storey elevation a terrain's model heights stand on. */
-export const terrainBase = (n: NodeDto): number => num(n.storeyId ? useSession.getState().nodes.get(n.storeyId) : undefined, 'elevation');

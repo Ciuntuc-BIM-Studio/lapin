@@ -100,6 +100,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         TerrainOutlines.Register(r);
         GeoImportCommands.Register(r);
         CorridorCommands.Register(r);
+        // Feature lines, the terrain's breaklines as elements of their own; contours drawn and dragged (T2).
+        FeatureLines.Register(r);
 
         // A terrain from points ([x, y, z]) or from a survey file's text (xyz or PENZD).
         r.Command("addTerrain", "Terrain", (ctx, a) =>
@@ -133,6 +135,9 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 attrs["points"] = Terrains.PointsJson(pts);
                 // New points: the file's triangles no longer fit them.
                 attrs.Remove("faces");
+                // Nor are the outline's vertices its points any more (T1): the flag and the arcs' own heights go with the old survey.
+                attrs.Remove(TerrainOutlines.Flag);
+                attrs.Remove(TerrainOutlines.OwnKey);
                 // The cage's controls that no longer stand on a point go.
                 Cage.Prune(attrs, pts);
             }
@@ -365,6 +370,16 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 if (o.Count < 3) continue;
                 var mid = new Vec2(o.Average(p => p.X), o.Average(p => p.Y));
                 mk.Text(new PenText(mid, $"{pad.Name} {Standards.FormatLevel(pad.Num("elevation"), c.Book)}", text.Height, 0, "middle", "middle", true, text.Font), "#000000");
+            }
+            // Feature lines crossing at different heights (Î7): a red cross at each, the height that holds and the other's.
+            foreach (var (cl, _, _) in FeatureLines.Clashes(e))
+            {
+                var rr = 1.5 * c.Mm;
+                var at = cl.At;
+                mk.Line(at + new Vec2(-rr, -rr), at + new Vec2(rr, rr), "LEVELS", Pens.Default.Cut, "#c0392b");
+                mk.Line(at + new Vec2(-rr, rr), at + new Vec2(rr, -rr), "LEVELS", Pens.Default.Cut, "#c0392b");
+                mk.Text(new PenText(at + new Vec2(rr * 1.3, rr * 0.4), $"{Standards.FormatLevel(cl.Held, c.Book)} / {Standards.FormatLevel(cl.Other, c.Book)}", text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#c0392b");
+                mk.Snaps.Add(at);
             }
             // Spot levels: a cross and the designed ground's height beside it.
             var r = 1.2 * c.Mm;

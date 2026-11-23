@@ -85,21 +85,30 @@ public static class Terrains
     /// <summary>The ground as surveyed (or snapshotted in <c>existingPoints</c>), before the brush (what cut and fill are measured against).</summary>
     public static Terrain Existing(Entity e) => ExistingCache.GetValue(e, x => Built(x, sculpted: false));
 
+    static readonly ConditionalWeakTable<Entity, Terrain> BaseCache = new();
+
+    /// <summary>
+    /// The ground as worked, without its feature lines (T2): what a draped feature line, and a corner without a height of its own,
+    /// read their heights from. The same as <see cref="Of"/> for a terrain with none.
+    /// </summary>
+    public static Terrain Base(Entity e) => e.Attrs[FeatureLines.Derived] == null ? Of(e) : BaseCache.GetValue(e, x => Built(x, sculpted: true, features: false));
+
     /// <summary>The attributes a terrain's surface is made of; the others (spot levels, tags, subregions, the parcel, labels) leave it as it is.</summary>
-    static readonly string[] SurfaceKeys = ["points", "faces", "breaklines", "sculpts", "datum", BoundaryKey, BoundaryArcs];
+    static readonly string[] SurfaceKeys = ["points", "faces", "breaklines", "sculpts", "datum", BoundaryKey, BoundaryArcs, FeatureLines.Derived];
     static readonly string[] ExistingKeys = ["points", "faces", "existingPoints", "existingFaces", "breaklines", "datum", BoundaryKey, BoundaryArcs];
 
     /// <summary>The surfaces built lately, by what they are made of: a terrain changed only in what it shows keeps its surface.</summary>
     static readonly Dictionary<string, Terrain> ByContent = [];
 
-    static Terrain Built(Entity x, bool sculpted)
+    static Terrain Built(Entity x, bool sculpted, bool features = true)
     {
         using var hash = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
         foreach (var k in sculpted ? SurfaceKeys : ExistingKeys)
-            hash.AppendData(System.Text.Encoding.UTF8.GetBytes($"{k}={x.Attrs[k]?.ToJsonString()}\n"));
-        var key = (sculpted ? "s" : "e") + Convert.ToHexString(hash.GetHashAndReset());
+            if (features || k != FeatureLines.Derived)
+                hash.AppendData(System.Text.Encoding.UTF8.GetBytes($"{k}={x.Attrs[k]?.ToJsonString()}\n"));
+        var key = (sculpted ? features ? "s" : "b" : "e") + Convert.ToHexString(hash.GetHashAndReset());
         lock (ByContent) if (ByContent.TryGetValue(key, out var known)) return known;
-        var t = BuildTerrain(x, sculpted);
+        var t = BuildTerrain(x, sculpted, features);
         lock (ByContent)
         {
             if (ByContent.Count >= 32) ByContent.Clear();
@@ -138,7 +147,7 @@ public static class Terrains
     static Tin FromFaces(IReadOnlyList<Vec3> pts, List<int> faces, double datum) =>
         Tin.FromMesh(pts.SelectMany(p => new[] { p.X, p.Y, p.Z - datum }).ToList(), faces);
 
-    static Terrain BuildTerrain(Entity x, bool sculpted)
+    static Terrain BuildTerrain(Entity x, bool sculpted, bool features = true)
     {
         var datum = x.Num("datum");
         var survey = Points(x);
@@ -149,22 +158,42 @@ public static class Terrains
         var faces = Faces(x.Attrs["faces"], survey.Count);
         var footprint = faces != null ? FromFaces(survey, faces, datum) : null;
         var lines = Breaklines(x);
+        // The feature lines it is shaped by (T2): the proposed ground's only, never the existing one's.
+        var featured = sculpted && features ? FeatureLines.OnTerrain(x) : [];
         var dabs = sculpted ? Sculpt.Of(x) : [];
         var boundary = BoundaryOutline(x);
         // The file's triangles as they are (audit G9): nothing added to them, every point on one.
-        if (footprint != null && lines.Count == 0 && dabs.Count == 0 && ownBase && faces!.Distinct().Count() == survey.Count)
+        if (footprint != null && lines.Count == 0 && featured.Count == 0 && dabs.Count == 0 && ownBase && faces!.Distinct().Count() == survey.Count)
             return new Terrain(boundary.Count >= 3 && SubregionSurface(new Terrain(footprint), boundary) is { } clipped ? clipped : footprint);
         // Breaklines first (their heights win where a survey point is in the same place), their segments kept as edges.
         var all = new List<Vec3>();
         var segments = new List<(int, int)>();
         foreach (var line in lines)
             for (var i = 0; i < line.Count; i++) { if (i > 0) segments.Add((all.Count - 1, all.Count)); all.Add(line[i]); }
+        // The feature lines after them, split where they cross one another; their points hold their heights through the brush.
+        var fromFeatures = all.Count;
+        FeatureLines.Near? near = null;
+        if (featured.Count > 0)
+        {
+            foreach (var line in FeatureLines.Split([.. featured.Select(f => f.Points)], out int _))
+                for (var i = 0; i < line.Count; i++) { if (i > 0) segments.Add((all.Count - 1, all.Count)); all.Add(line[i]); }
+            near = new FeatureLines.Near(featured.Select(f => (f.Points, f.Tolerance)));
+        }
+        var featureEnd = all.Count;
         var basePts = ownBase ? survey : ExistingPoints(x);
         // A survey point on a breakline takes the breakline's height there: the line holds.
         var onLine = LineIndex.Of(lines);
-        all.AddRange(basePts.Select(p => onLine?.HeightAt(p) is { } z ? p with { Z = z } : p));
+        // One within a feature line's tolerance conflicts with it and is left out of the triangulation (the terrain says how many).
+        all.AddRange(basePts.Where(p => near?.Within(p.Xy) != true).Select(p => onLine?.HeightAt(p) is { } z ? p with { Z = z } : p));
         var pts = all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList();
-        if (dabs.Count > 0) pts = Sculpt.Apply(pts, segments, dabs);
+        if (dabs.Count > 0)
+        {
+            var held = pts.GetRange(fromFeatures, featureEnd - fromFeatures);
+            pts = Sculpt.Apply(pts, segments, dabs);
+            for (var i = 0; i < held.Count; i++) pts[fromFeatures + i] = held[i];
+            // What the brush added within a feature line's tolerance goes too.
+            if (near != null) pts = [.. pts.Where((p, i) => i < featureEnd || !near.Within(p.Xy))];
+        }
         var tin = Tin.Delaunay(pts, segments, boundary.Count >= 3 ? boundary : null);
         // A surface from a file with holes or a concave edge keeps to where its triangles were.
         if (footprint != null && tin.Triangles.Count > 0)
@@ -353,7 +382,7 @@ public static class Terrains
 
     static (double Cut, double Fill) ComputeSculptEarthwork(Entity e, Terrain existing, Terrain proposed, double baseZ, IServices? services)
     {
-        var hasDifference = Sculpt.Of(e).Count > 0 || e.Attrs["existingPoints"] is JsonArray { Count: >= 3 };
+        var hasDifference = Sculpt.Of(e).Count > 0 || e.Attrs["existingPoints"] is JsonArray { Count: >= 3 } || e.Attrs[FeatureLines.Derived] != null;
         if (!hasDifference) return (0, 0);
         if (services?.Get<ISolidBooleans>() is { } booleans && Body(existing, baseZ) is { } exBody && Body(proposed, baseZ) is { } prBody)
         {
@@ -554,6 +583,15 @@ public static class Terrains
         if (Body(t, baseZ) is not { } body) return new ElementGeometry([], Diagnostics: ["The terrain's surface could not be closed into a solid."]);
         var (sculptCut, sculptFill) = existing.Tin.Triangles.Count > 0 ? ComputeSculptEarthwork(e, existing, t, baseZ, services) : (0.0, 0.0);
         var problems = new List<string>(DrawnNotes(e, t));
+        // What its feature lines did to its survey (T2): the points they dropped, the crossings where two disagreed.
+        if (e.Attrs[FeatureLines.Derived] != null)
+        {
+            if (FeatureLines.Dropped(e) is var dropped and > 0)
+                problems.Add($"{dropped} survey point(s) lie within a feature line's tolerance of it: they are left out of the triangulation, the line holds there.");
+            // Î7: the line drawn first holds; each crossing is marked in plan too, with its two heights.
+            foreach (var (c, held, other) in FeatureLines.Clashes(e).Take(10))
+                problems.Add($"Feature lines cross at ({c.At.X:0.00}, {c.At.Y:0.00}) at different heights: {m.Get(held)?.Name ?? "one"} holds {c.Held:0.000}, {m.Get(other)?.Name ?? "the other"} would be {c.Other:0.000} and bends to it.");
+        }
         var works = new List<Earthwork>();
         var pads = PadShapes(m, e, t, baseZ);
         if (pads.Count > 0)

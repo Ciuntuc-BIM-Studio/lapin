@@ -128,6 +128,8 @@ export function PlanView() {
   const [pickRef, setPickRef] = useState(false);
   // A shaped outline's edges as drawn (forum topic 97): edge i's rise, from pts[i] to pts[i + 1].
   const rises = useRef<number[]>([]);
+  // Redraws the plan when a tool's hover has its answer (a contour found under the cursor).
+  const [, setHoverTick] = useState(0);
   useEffect(() => { rises.current = pts.length < 2 ? [] : rises.current.slice(0, pts.length - 1); }, [pts]);
   const [hover, setHover] = useState<Aimed | null>(null);
   /** What a click would select under the cursor now (the outline lit; null while a tool or a step takes the point). */
@@ -477,6 +479,8 @@ export function PlanView() {
   };
   /** The drawn polygon's rises, its closing edge's last. */
   const polygonArcs = (closing: number): number[] => [...pts.slice(0, -1).map((_, i) => rises.current[i] ?? 0), closing];
+  /** The drawn polyline's rises: one per edge. */
+  const polylineArcs = (): number[] => pts.slice(0, -1).map((_, i) => rises.current[i] ?? 0);
 
   const click = useCallback((p0: Vec2, raw: Vec2, add: boolean, typed0?: number, leaf = false, mods?: Mods) => {
     // A typed length, angle, width or height holds: the click gives the direction only, as the preview showed.
@@ -566,8 +570,10 @@ export function PlanView() {
       }
       case 'polyline': {
         const last = pts[pts.length - 1];
-        if (last && pts.length >= 2 && Math.hypot(last.x - p.x, last.y - p.y) < 8 / view.scale) void complete(pts);
-        else setPts([...pts, p]);
+        // With `arcs` (and the bar's Arcs on): each edge after the first goes on tangent from the one before.
+        const arcsOn = !!g.arcs && useOutlineShape.getState().arcs;
+        if (last && pts.length >= 2 && Math.hypot(last.x - p.x, last.y - p.y) < 8 / view.scale) void complete(pts, undefined, undefined, undefined, g.arcs ? polylineArcs() : undefined);
+        else { if (g.arcs && pts.length) rises.current = [...rises.current.slice(0, pts.length - 1), arcsOn ? nextRise(p) : 0]; setPts([...pts, p]); }
         break;
       }
     }
@@ -596,7 +602,7 @@ export function PlanView() {
       if (act === 'clear') { setPts([]); picked.current = undefined; }
       else if (act === 'exit' || (e.key === 'Escape' && !tool?.gesture)) setTool(null);
       else if (act === 'complete' && tool?.gesture?.kind === 'polygon') void complete(pts, undefined, undefined, undefined, polygonArcs(tool.gesture.shapes && useOutlineShape.getState().arcs ? nextRise(pts[0]) : 0));
-      else if (act === 'complete') void complete(pts);
+      else if (act === 'complete') void complete(pts, undefined, undefined, undefined, tool?.gesture?.kind === 'polyline' && tool.gesture.arcs ? polylineArcs() : undefined);
     };
     const onUp = (e: KeyboardEvent) => { if (e.key === 'Shift') setOrtho(false); };
     window.addEventListener('keydown', onKey);
@@ -691,6 +697,8 @@ export function PlanView() {
       if (hit && sel.includes(hit.id)) carry = sel;
     }
     const base = carry ? snapAt(e.clientX, e.clientY).point : undefined;
+    // A drag tool (a contour dragged): the press is its first point, whatever follows.
+    if (e.button === 0 && tool?.gesture?.kind === 'twoPoints' && tool.gesture.drag && !useCad.getState().step) setPts([snapAt(e.clientX, e.clientY).point]);
     drag.current = { x: e.clientX, y: e.clientY, view, moved: false, carry, copy: e.altKey || e.ctrlKey || e.metaKey, base, pan: pansIn2d(currentNavStyle(), e.button, modsOf(e)) };
   };
   const onPointerMove = (e: React.PointerEvent) => {
@@ -791,6 +799,11 @@ export function PlanView() {
         const by = carryBy(a, snapAt(e.clientX, e.clientY, a).point);
         carryEnd();
         if (by) void execute('element.transform', { ids: d.carry, op: d.copy || e.ctrlKey || e.metaKey || e.altKey ? 'copy' : 'move', by });
+        return;
+      }
+      // A drag tool: let go where the drag ends (Esc while it is down dropped its first point: nothing happens).
+      if (tool?.gesture?.kind === 'twoPoints' && tool.gesture.drag && !step) {
+        if (pts[0]) void complete([pts[0], snapAt(e.clientX, e.clientY, pts[0]).point]);
         return;
       }
       if (step?.want === 'point' && !tool?.gesture) {
@@ -953,6 +966,11 @@ export function PlanView() {
         </g>
       );
     }
+    // What the press of a drag tool would take.
+    if (tool.gesture.kind === 'twoPoints' && tool.gesture.hover && pts.length === 0) {
+      const lines = tool.gesture.hover(cur, () => setHoverTick((n) => n + 1));
+      return lines.length ? <g className="plan-preview" data-testid="drag-hover">{lines.map((l, i) => <polyline key={i} fill="none" points={l.map(toScreen).map((p) => `${p.x},${p.y}`).join(' ')} />)}</g> : null;
+    }
     // What a pick would put down (a door, on the side of the wall the cursor is on).
     if (tool.gesture.kind === 'pick' && tool.gesture.ghost && rawHover.current) {
       const at0 = rawHover.current;
@@ -1065,6 +1083,13 @@ export function PlanView() {
           {pts.length >= 2 && <line className="closing" x1={ps[ps.length - 1].x} y1={ps[ps.length - 1].y} x2={ps[0].x} y2={ps[0].y} />}
         </g>
       );
+    }
+    // A polyline whose edges may be arcs: those drawn, then the next edge as it would be.
+    if (tool.gesture.kind === 'polyline' && tool.gesture.arcs && pts.length > 0) {
+      const rs = [...pts.slice(0, -1).map((_, i) => rises.current[i] ?? 0), useOutlineShape.getState().arcs ? nextRise(cur) : 0];
+      const all = [...pts, cur];
+      const ps = all.flatMap((a, i) => (i === all.length - 1 ? [a] : axisLine({ a, b: all[i + 1], rise: rs[i] ?? 0 }).slice(0, -1))).map(toScreen);
+      return <g className="plan-preview" data-testid="outline-preview"><polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} /></g>;
     }
     if ((g === 'polyline' || g === 'polygon') && pts.length > 0) {
       const all = [...pts, cur].map(toScreen);
