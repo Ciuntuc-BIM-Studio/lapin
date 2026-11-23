@@ -1,0 +1,35 @@
+{
+  "step": 2,
+  "title": "The project, the caller's role and the project's rules.",
+  "request": {
+    "method": "GET",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "id": "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90",
+      "name": "Bloc P+4",
+      "defaultRef": "refs/heads/main",
+      "role": "owner",
+      "rules": {
+        "main": "editor",
+        "issueTags": "owner"
+      },
+      "limits": {
+        "maxObject": 2147483648,
+        "chunk": 16777216,
+        "maxBatch": 10000,
+        "maxPush": 4294967296,
+        "maxPack": 4294967296,
+        "maxCommitsPage": 1000
+      }
+    }
+  }
+}

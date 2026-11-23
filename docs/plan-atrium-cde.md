@@ -54,14 +54,13 @@ Commit-ul:
   "at": "2026-11-23T10:42:00Z",
   "message": "Pereții etajului 2, varianta B",
   "app": "0.1.1612", "product": "lapin",
-  "entities": 12840,
-  "viewer": { "ifc": "<sha256>", "schema": "IFC4" }
+  "entities": 12840
 }
 ```
 
 - `parents`: zero pentru primul commit, unul de obicei, doi pentru o îmbinare (S4).
 - `author.id` e id-ul contului de pe server (`atrium:<id>`) sau, pe un folder, `local:<id aleator al instalării>`. **Fără e-mail**: fișierul circulă, iar numele ajunge.
-- `viewer` e **opțional** și nu face parte din arbore: e copia derivată pe care o deschide Atrium (§5.1). Lipsa ei nu strică nimic; poate fi ștearsă de GC și refăcută.
+- Copia de vizualizare (IFC-ul pe care îl deschide Atrium, §5.1) **nu e un câmp al commit-ului**: un export nu se reface octet cu octet, deci ar schimba id-ul commit-ului la fiecare regenerare. E o înregistrare înlocuibilă alături de commit (`PUT`/`GET …/commits/{id}/viewer`; pe un folder, `viewers/<commit>.json`), după `docs/spec-lapin-remote.md` (anexa B, punctul 1). Lipsa ei nu strică nimic; poate fi ștearsă de GC și refăcută.
 - Hash-ul commit-ului e SHA-256 al JSON-ului canonic. Un câmp necunoscut e păstrat și intră în hash: o versiune mai nouă poate adăuga câmpuri fără să rupă istoria.
 
 Eticheta unei emiteri:
@@ -122,6 +121,8 @@ Regula de o singură dată se păstrează: un blob stă în fișier **o dată**,
 ## 3. Protocolul
 
 Un singur protocol, **neutru față de limbaj**: JSON canonic, SHA-256 și zip. Același pe un folder și pe server, ca să se poată scrie oricând un client sau un server în altă limbă (§9). Specificația lui va sta în `docs/spec-lapin-remote.md` (MIT), cu **vectori de conformitate** (fișiere JSON de intrare și ieșire așteptată), pe care îi rulează și testele lui Lapin, și ale lui Atrium Server.
+
+**Specificația e scrisă** (23.11.2026): [`docs/spec-lapin-remote.md`](spec-lapin-remote.md), „lapin-remote 1.0”, normativă, cu vectorii în `docs/spec-lapin-remote/vectors/` (făcuți de `make-vectors.mjs`). Ce a hotărât ea peste plan e în anexa B a ei; cea mai importantă: copia de vizualizare nu e un câmp al commit-ului (i-ar schimba hash-ul), ci o înregistrare alături.
 
 ### 3.1 Operațiile
 

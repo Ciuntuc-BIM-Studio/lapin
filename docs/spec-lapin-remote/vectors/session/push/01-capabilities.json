@@ -1,0 +1,55 @@
+{
+  "step": 1,
+  "title": "The client reads what the server supports (anonymous).",
+  "request": {
+    "method": "GET",
+    "path": "/lapin-remote/1.0/capabilities",
+    "headers": {}
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "protocol": "lapin-remote",
+      "version": "1.0",
+      "majors": [
+        1
+      ],
+      "objects": {
+        "commit": [
+          1
+        ],
+        "tag": [
+          1
+        ],
+        "tree": [
+          3
+        ]
+      },
+      "limits": {
+        "maxObject": 2147483648,
+        "chunk": 16777216,
+        "maxBatch": 10000,
+        "maxPush": 4294967296,
+        "maxPack": 4294967296,
+        "maxCommitsPage": 1000
+      },
+      "encodings": [
+        "gzip"
+      ],
+      "features": [
+        "uploads",
+        "pack",
+        "package",
+        "viewer",
+        "range",
+        "projects.create"
+      ],
+      "auth": {
+        "foundation": "/foundation/1.1"
+      }
+    }
+  }
+}

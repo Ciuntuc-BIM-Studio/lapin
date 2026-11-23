@@ -1,0 +1,20 @@
+{
+  "step": 3,
+  "title": "c3.",
+  "request": {
+    "method": "PUT",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/adc421509ab97b9cb16f960a1119756f71af1fae30b1f7d58ca8754df2955cc3",
+    "headers": {
+      "authorization": "Bearer test-access-token-ana",
+      "content-type": "application/octet-stream"
+    },
+    "bodyFile": "../../objects/c3.json"
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "etag": "\"adc421509ab97b9cb16f960a1119756f71af1fae30b1f7d58ca8754df2955cc3\""
+    },
+    "body": null
+  }
+}

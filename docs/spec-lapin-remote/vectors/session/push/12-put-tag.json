@@ -1,0 +1,20 @@
+{
+  "step": 12,
+  "title": "4. The tag object.",
+  "request": {
+    "method": "PUT",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/octet-stream"
+    },
+    "bodyFile": "../../objects/tag-issue.json"
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "etag": "\"336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67\""
+    },
+    "body": null
+  }
+}

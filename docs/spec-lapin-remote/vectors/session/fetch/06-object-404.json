@@ -1,0 +1,24 @@
+{
+  "step": 6,
+  "title": "An object the project does not have.",
+  "request": {
+    "method": "GET",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/535ec7ad1a1a2734381137db05491f341c5431d1ebb600b11b2ab19c24c7bb98",
+    "headers": {
+      "authorization": "Bearer test-access-token-viewer"
+    }
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "code": "object_missing",
+      "message": "The object does not exist in this project."
+    }
+  },
+  "opaque": [
+    "/response/body/message"
+  ]
+}

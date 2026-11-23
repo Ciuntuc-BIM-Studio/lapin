@@ -1,0 +1,28 @@
+{
+  "step": 8,
+  "title": "A single PUT above the chunk size: 413; use /uploads.",
+  "request": {
+    "method": "PUT",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/0000000000000000000000000000000000000000000000000000000000000000",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/octet-stream",
+      "content-length": "16777217"
+    },
+    "bodyNote": "16777217 bytes, not included"
+  },
+  "response": {
+    "status": 413,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "code": "too_large",
+      "message": "An object above 16777216 bytes goes through /uploads.",
+      "limit": 16777216
+    }
+  },
+  "opaque": [
+    "/response/body/message"
+  ]
+}

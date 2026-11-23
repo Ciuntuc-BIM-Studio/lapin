@@ -1,0 +1,43 @@
+{
+  "step": 4,
+  "title": "The closure is not complete: 422 with what is missing; no ref moved.",
+  "request": {
+    "method": "POST",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/refs/update",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "updates": [
+        {
+          "name": "refs/heads/main",
+          "old": "ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94",
+          "new": "526d5f566c1249a0ca287dee0d830734e8b2fd1e19ade5fc5e932700b35ea697"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "code": "object_missing",
+      "message": "1 object named by the update is missing.",
+      "missing": [
+        {
+          "id": "535ec7ad1a1a2734381137db05491f341c5431d1ebb600b11b2ab19c24c7bb98",
+          "kind": "blob",
+          "from": "a3a1b99c43064c9aef682e0a1fc3ee704a23191aba7f3b4819165afe8011bd6d",
+          "path": "scripts/missing.py",
+          "size": 24
+        }
+      ]
+    }
+  },
+  "opaque": [
+    "/response/body/message"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "step": 1,
+  "title": "Ana's closure: c3 and T3 (hello.py is on the server since Mihai's push).",
+  "request": {
+    "method": "POST",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/missing",
+    "headers": {
+      "authorization": "Bearer test-access-token-ana",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "hashes": [
+        "adc421509ab97b9cb16f960a1119756f71af1fae30b1f7d58ca8754df2955cc3",
+        "840b22f3b53397e114f3dfc3d11817158ab758eebb378e141f01e3ca3235288f",
+        "0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3"
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "missing": [
+        "adc421509ab97b9cb16f960a1119756f71af1fae30b1f7d58ca8754df2955cc3",
+        "840b22f3b53397e114f3dfc3d11817158ab758eebb378e141f01e3ca3235288f"
+      ]
+    }
+  }
+}

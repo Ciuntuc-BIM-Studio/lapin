@@ -1,0 +1,60 @@
+{
+  "step": 14,
+  "title": "5. refs/update, compare-and-swap: main c1 -> c2 and the new issue tag, all or none.",
+  "request": {
+    "method": "POST",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/refs/update",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "updates": [
+        {
+          "name": "refs/heads/main",
+          "old": "fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1",
+          "new": "ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94"
+        },
+        {
+          "name": "refs/tags/issue/1-P01",
+          "old": null,
+          "new": "336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "etag": "\"r-8\""
+    },
+    "body": {
+      "refs": [
+        {
+          "name": "refs/heads/main",
+          "target": "ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94",
+          "updatedAt": "2026-11-23T10:00:05Z",
+          "updatedBy": {
+            "id": "atrium:5d2c8a4e-1f3b-4c6d-9e7a-0b1c2d3e4f50",
+            "name": "Mihai Ionescu"
+          }
+        },
+        {
+          "name": "refs/tags/issue/1-P01",
+          "target": "336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67",
+          "updatedAt": "2026-11-23T10:00:05Z",
+          "updatedBy": {
+            "id": "atrium:5d2c8a4e-1f3b-4c6d-9e7a-0b1c2d3e4f50",
+            "name": "Mihai Ionescu"
+          }
+        }
+      ]
+    }
+  },
+  "opaque": [
+    "/response/headers/etag",
+    "/response/body/refs/0/updatedAt",
+    "/response/body/refs/1/updatedAt"
+  ]
+}

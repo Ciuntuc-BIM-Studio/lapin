@@ -1,0 +1,4 @@
+{
+  "b": 2, "a": 1, "B": 0, "\u20ac": "euro", "\r": "cr", "1": "one",
+  "\ud83d\ude00": "emoji (U+1F600, D83D DE00)", "\ufb33": "U+FB33 sorts after the emoji in UTF-16 order"
+}

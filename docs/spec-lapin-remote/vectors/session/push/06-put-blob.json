@@ -1,0 +1,20 @@
+{
+  "step": 6,
+  "title": "4. Upload: scripts/hello.py.",
+  "request": {
+    "method": "PUT",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/octet-stream"
+    },
+    "bodyFile": "../../blobs/hello.py"
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "etag": "\"0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3\""
+    },
+    "body": null
+  }
+}

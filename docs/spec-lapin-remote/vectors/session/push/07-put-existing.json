@@ -1,0 +1,20 @@
+{
+  "step": 7,
+  "title": "4. A PUT of an object the server has already: 200, nothing written.",
+  "request": {
+    "method": "PUT",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/73fa0eeab0127616e19bacf37ac6cf241f8156c89aa6f851ad030b306c05728c",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/octet-stream"
+    },
+    "bodyFile": "../../blobs/issue.pdf"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "etag": "\"73fa0eeab0127616e19bacf37ac6cf241f8156c89aa6f851ad030b306c05728c\""
+    },
+    "body": null
+  }
+}

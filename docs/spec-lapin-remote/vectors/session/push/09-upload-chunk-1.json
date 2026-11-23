@@ -1,0 +1,26 @@
+{
+  "step": 9,
+  "title": "4. The first chunk, bytes 0..99.",
+  "request": {
+    "method": "PATCH",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/uploads/{upload}",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/offset+octet-stream",
+      "upload-offset": "0",
+      "content-length": "100"
+    },
+    "bodyFile": "../../blobs/walls.arrow",
+    "bodyRange": {
+      "offset": 0,
+      "length": 100
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {
+      "upload-offset": "100"
+    },
+    "body": null
+  }
+}

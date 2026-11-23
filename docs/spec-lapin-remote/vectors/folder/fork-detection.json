@@ -1,0 +1,43 @@
+{
+  "title": "Two computers on a synced folder both extended seq 1 (old c1): the earlier `at` wins; the later stays reachable and its author makes it a wip branch.",
+  "project": "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90",
+  "entries": [
+    {
+      "file": "refs/heads/main/00000001-fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1-local-9f2b6c1d0e8a4b7c.ref",
+      "content": "{\"at\":\"2026-11-23T10:00:05Z\",\"author\":{\"id\":\"local:9f2b6c1d0e8a4b7c\",\"name\":\"Mihai Ionescu\"},\"format\":\"lapin-ref\",\"name\":\"refs/heads/main\",\"new\":\"fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1\",\"old\":null,\"seq\":1,\"v\":1}"
+    },
+    {
+      "file": "refs/heads/main/00000002-ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94-local-9f2b6c1d0e8a4b7c.ref",
+      "content": "{\"at\":\"2026-11-23T10:51:10Z\",\"author\":{\"id\":\"local:9f2b6c1d0e8a4b7c\",\"name\":\"Mihai Ionescu\"},\"format\":\"lapin-ref\",\"name\":\"refs/heads/main\",\"new\":\"ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94\",\"old\":\"fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1\",\"seq\":2,\"v\":1}"
+    },
+    {
+      "file": "refs/heads/main/00000002-adc421509ab97b9cb16f960a1119756f71af1fae30b1f7d58ca8754df2955cc3-local-3a7d5e9f1b2c4d6e.ref",
+      "content": "{\"at\":\"2026-11-23T10:51:40Z\",\"author\":{\"id\":\"local:3a7d5e9f1b2c4d6e\",\"name\":\"Ana Popescu\"},\"format\":\"lapin-ref\",\"name\":\"refs/heads/main\",\"new\":\"adc421509ab97b9cb16f960a1119756f71af1fae30b1f7d58ca8754df2955cc3\",\"old\":\"fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1\",\"seq\":2,\"v\":1}"
+    }
+  ],
+  "expected": {
+    "head": "ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94",
+    "seq": 2,
+    "chain": [
+      "refs/heads/main/00000001-fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1-local-9f2b6c1d0e8a4b7c.ref",
+      "refs/heads/main/00000002-ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94-local-9f2b6c1d0e8a4b7c.ref"
+    ],
+    "detached": [
+      {
+        "file": "refs/heads/main/00000002-adc421509ab97b9cb16f960a1119756f71af1fae30b1f7d58ca8754df2955cc3-local-3a7d5e9f1b2c4d6e.ref",
+        "new": "adc421509ab97b9cb16f960a1119756f71af1fae30b1f7d58ca8754df2955cc3",
+        "author": {
+          "id": "local:3a7d5e9f1b2c4d6e",
+          "name": "Ana Popescu"
+        },
+        "reason": "fork"
+      }
+    ],
+    "reachable": [
+      "fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1",
+      "ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94",
+      "adc421509ab97b9cb16f960a1119756f71af1fae30b1f7d58ca8754df2955cc3"
+    ],
+    "loserAction": "the client whose install id is local:3a7d5e9f1b2c4d6e writes refs/heads/wip/<author>/<name> = c3 (old null) and tells its user to pull"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "step": 13,
+  "title": "4. The commit last (any order is valid; last is the client's habit).",
+  "request": {
+    "method": "PUT",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/octet-stream"
+    },
+    "bodyFile": "../../objects/c2.json"
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "etag": "\"ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94\""
+    },
+    "body": null
+  }
+}

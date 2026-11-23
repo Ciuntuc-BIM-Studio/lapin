@@ -1,0 +1,20 @@
+{
+  "step": 10,
+  "title": "4. The connection broke; the client asks where to resume.",
+  "request": {
+    "method": "HEAD",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/uploads/{upload}",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "upload-offset": "100",
+      "upload-length": "256",
+      "cache-control": "private, no-store"
+    },
+    "body": null
+  }
+}

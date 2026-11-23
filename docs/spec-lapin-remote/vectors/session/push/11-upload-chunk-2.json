@@ -1,0 +1,30 @@
+{
+  "step": 11,
+  "title": "4. The last chunk, bytes 100..255: the server checks the hash and the object exists.",
+  "request": {
+    "method": "PATCH",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/uploads/{upload}",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/offset+octet-stream",
+      "upload-offset": "100",
+      "content-length": "156"
+    },
+    "bodyFile": "../../blobs/walls.arrow",
+    "bodyRange": {
+      "offset": 100,
+      "length": 156
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "upload-offset": "256"
+    },
+    "body": {
+      "sha256": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+      "size": 256
+    }
+  }
+}

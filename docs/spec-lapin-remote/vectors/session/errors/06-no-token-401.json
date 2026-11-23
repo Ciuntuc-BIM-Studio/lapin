@@ -1,0 +1,23 @@
+{
+  "step": 6,
+  "title": "No token: 401 with the Bearer challenge.",
+  "request": {
+    "method": "GET",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/refs",
+    "headers": {}
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "www-authenticate": "Bearer"
+    },
+    "body": {
+      "code": "unauthorized",
+      "message": "Sign in first."
+    }
+  },
+  "opaque": [
+    "/response/body/message"
+  ]
+}
