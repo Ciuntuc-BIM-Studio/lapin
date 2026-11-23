@@ -1,6 +1,37 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // The Speckle connector: File → Speckle → Send… (docs/plan-speckle.md, S1).
+  "Send…": "Trimite…",
+  "Send to Speckle": "Trimite în Speckle",
+  "Looking for your Speckle account…": "Caut contul tău Speckle…",
+  "Server": "Server",
+  "Token": "Token",
+  "Remember": "Ține minte",
+  "Speckle's own server, or the one your firm hosts": "Serverul Speckle, sau cel găzduit de firma ta",
+  "In Speckle: your profile → Developer settings → Access tokens → New token, with streams:read, streams:write and profile:read": "În Speckle: profilul tău → Developer settings → Access tokens → New token, cu streams:read, streams:write și profile:read",
+  "Personal access token": "Token personal de acces",
+  "In the system's secure store (Keychain, Credential Manager, Secret Service), never in a file": "În spațiul securizat al sistemului (Keychain, Credential Manager, Secret Service), niciodată într-un fișier",
+  "on this computer, in its secure store": "pe acest calculator, în spațiul lui securizat",
+  "Make a token in Speckle under your profile: Developer settings → Access tokens, with the scopes streams:read, streams:write and profile:read. Lapin never writes it into the project, its settings or a report.": "Fă un token în Speckle, în profilul tău: Developer settings → Access tokens, cu drepturile streams:read, streams:write și profile:read. Lapin nu-l scrie niciodată în proiect, în setări sau într-un raport.",
+  "Sign out": "Deconectează-te",
+  "Forget this account and its token on this computer": "Uită acest cont și tokenul lui pe acest calculator",
+  "no project: make one in Speckle": "niciun proiect: fă unul în Speckle",
+  "a new model…": "un model nou…",
+  "Message": "Mesaj",
+  "What changed in this version": "Ce s-a schimbat în această versiune",
+  "as the 3D view shows it": "cum o arată vederea 3D",
+  "the selection": "selecția",
+  "Each element goes as a Speckle object with its GlobalId, its surfaces in its materials' colours, and its properties: IFC class, type, storey, phase, layers, property sets and quantities. Sending again makes a new version of the same objects.": "Fiecare element pleacă ca obiect Speckle cu GlobalId-ul lui, cu suprafețele în culorile materialelor și cu proprietățile lui: clasa IFC, tipul, etajul, faza, straturile, seturile de proprietăți și cantitățile. O nouă trimitere face o versiune nouă a acelorași obiecte.",
+  "Open the version in Speckle": "Deschide versiunea în Speckle",
+  "Signing in…": "Mă conectez…",
+  "Sign in": "Conectează-te",
+  "Converting the model": "Convertesc modelul",
+  "Sending to Speckle": "Trimit în Speckle",
+  "Uploading to Speckle": "Încarc în Speckle",
+  "Gathering the objects": "Adun obiectele",
+  "Preparing the objects": "Pregătesc obiectele",
+  "Making the version": "Fac versiunea",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "Etichetează sistemul",
   "Open a plan to tag its systems.": "Deschide un plan ca să-i etichetezi sistemele.",
@@ -6087,4 +6118,6 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” nu mai are axă: căptușeala își păstrează ultima axă, dezlegată.`],
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” nu mai are un metru între pozițiile căptușelii: căptușeala își păstrează ultima axă, dezlegată.`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” e mai scurt acum: căptușeala merge de la ${m[2]} la ${m[3]} m, nu de la ${m[4]} la ${m[5]} m cum a fost legată.`],
+  // The Speckle connector's send (docs/plan-speckle.md, S1)
+  [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Trimis: ${m[1]} elemente, ca versiune nouă.`],
 ];

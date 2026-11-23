@@ -3,6 +3,37 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // The Speckle connector: File → Speckle → Send… (docs/plan-speckle.md, S1).
+  "Send…": "发送…",
+  "Send to Speckle": "发送到 Speckle",
+  "Looking for your Speckle account…": "正在查找你的 Speckle 账户…",
+  "Server": "服务器",
+  "Token": "令牌",
+  "Remember": "记住",
+  "Speckle's own server, or the one your firm hosts": "Speckle 官方服务器，或你公司自建的服务器",
+  "In Speckle: your profile → Developer settings → Access tokens → New token, with streams:read, streams:write and profile:read": "在 Speckle 中：你的个人资料 → Developer settings → Access tokens → New token，勾选 streams:read、streams:write 和 profile:read",
+  "Personal access token": "个人访问令牌",
+  "In the system's secure store (Keychain, Credential Manager, Secret Service), never in a file": "保存在系统的安全存储中（钥匙串、凭据管理器、Secret Service），绝不写入文件",
+  "on this computer, in its secure store": "在这台电脑的安全存储中",
+  "Make a token in Speckle under your profile: Developer settings → Access tokens, with the scopes streams:read, streams:write and profile:read. Lapin never writes it into the project, its settings or a report.": "在 Speckle 的个人资料中创建令牌：Developer settings → Access tokens，权限为 streams:read、streams:write 和 profile:read。Lapin 绝不会把它写入项目、设置或报告。",
+  "Sign out": "退出登录",
+  "Forget this account and its token on this computer": "在这台电脑上忘记此账户及其令牌",
+  "no project: make one in Speckle": "没有项目：请在 Speckle 中创建一个",
+  "a new model…": "新模型…",
+  "Message": "消息",
+  "What changed in this version": "此版本的变更",
+  "as the 3D view shows it": "按 3D 视图显示的样子",
+  "the selection": "所选内容",
+  "Each element goes as a Speckle object with its GlobalId, its surfaces in its materials' colours, and its properties: IFC class, type, storey, phase, layers, property sets and quantities. Sending again makes a new version of the same objects.": "每个构件作为一个 Speckle 对象发送，带有它的 GlobalId、按材质颜色着色的表面，以及它的属性：IFC 类、类型、楼层、阶段、构造层、属性集和工程量。再次发送会为相同的对象创建新版本。",
+  "Open the version in Speckle": "在 Speckle 中打开该版本",
+  "Signing in…": "正在登录…",
+  "Sign in": "登录",
+  "Converting the model": "正在转换模型",
+  "Sending to Speckle": "正在发送到 Speckle",
+  "Uploading to Speckle": "正在上传到 Speckle",
+  "Gathering the objects": "正在收集对象",
+  "Preparing the objects": "正在准备对象",
+  "Making the version": "正在创建版本",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "标注系统",
   "Open a plan to tag its systems.": "打开平面图以标注其系统。",
@@ -6129,4 +6160,6 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `“${m[1]}”已无轴线：衬砌保留最后的轴线，已取消链接。`],
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `“${m[1]}”在衬砌桩号之间已不足一米：衬砌保留最后的轴线，已取消链接。`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `“${m[1]}”现在更短：衬砌从 ${m[2]} 到 ${m[3]} m，而非链接时的 ${m[4]} 到 ${m[5]} m。`],
+  // The Speckle connector's send (docs/plan-speckle.md, S1)
+  [/^Sent: (\d+) elements, as a new version\.$/, (m) => `已发送：${m[1]} 个构件，作为新版本。`],
 ];

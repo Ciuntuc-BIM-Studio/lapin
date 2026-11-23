@@ -3,6 +3,37 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // The Speckle connector: File → Speckle → Send… (docs/plan-speckle.md, S1).
+  "Send…": "Senden…",
+  "Send to Speckle": "An Speckle senden",
+  "Looking for your Speckle account…": "Suche dein Speckle-Konto…",
+  "Server": "Server",
+  "Token": "Token",
+  "Remember": "Merken",
+  "Speckle's own server, or the one your firm hosts": "Der Server von Speckle oder der deines Büros",
+  "In Speckle: your profile → Developer settings → Access tokens → New token, with streams:read, streams:write and profile:read": "In Speckle: dein Profil → Developer settings → Access tokens → New token, mit streams:read, streams:write und profile:read",
+  "Personal access token": "Persönliches Zugriffstoken",
+  "In the system's secure store (Keychain, Credential Manager, Secret Service), never in a file": "Im sicheren Speicher des Systems (Schlüsselbund, Anmeldeinformationsverwaltung, Secret Service), nie in einer Datei",
+  "on this computer, in its secure store": "auf diesem Computer, in seinem sicheren Speicher",
+  "Make a token in Speckle under your profile: Developer settings → Access tokens, with the scopes streams:read, streams:write and profile:read. Lapin never writes it into the project, its settings or a report.": "Erstelle ein Token in Speckle in deinem Profil: Developer settings → Access tokens, mit den Berechtigungen streams:read, streams:write und profile:read. Lapin schreibt es nie in das Projekt, seine Einstellungen oder einen Bericht.",
+  "Sign out": "Abmelden",
+  "Forget this account and its token on this computer": "Dieses Konto und sein Token auf diesem Computer vergessen",
+  "no project: make one in Speckle": "kein Projekt: lege eines in Speckle an",
+  "a new model…": "ein neues Modell…",
+  "Message": "Nachricht",
+  "What changed in this version": "Was sich in dieser Version geändert hat",
+  "as the 3D view shows it": "wie die 3D-Ansicht es zeigt",
+  "the selection": "die Auswahl",
+  "Each element goes as a Speckle object with its GlobalId, its surfaces in its materials' colours, and its properties: IFC class, type, storey, phase, layers, property sets and quantities. Sending again makes a new version of the same objects.": "Jedes Element geht als Speckle-Objekt mit seiner GlobalId, seinen Flächen in den Farben seiner Materialien und seinen Eigenschaften: IFC-Klasse, Typ, Geschoss, Phase, Schichten, Eigenschaftssätze und Mengen. Erneutes Senden erstellt eine neue Version derselben Objekte.",
+  "Open the version in Speckle": "Version in Speckle öffnen",
+  "Signing in…": "Anmelden…",
+  "Sign in": "Anmelden",
+  "Converting the model": "Modell wird umgewandelt",
+  "Sending to Speckle": "Wird an Speckle gesendet",
+  "Uploading to Speckle": "Wird zu Speckle hochgeladen",
+  "Gathering the objects": "Objekte werden gesammelt",
+  "Preparing the objects": "Objekte werden vorbereitet",
+  "Making the version": "Version wird erstellt",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "System beschriften",
   "Open a plan to tag its systems.": "Öffne einen Grundriss, um seine Systeme zu beschriften.",
@@ -6093,4 +6124,6 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” hat jetzt keine Achse: Die Auskleidung behält ihre letzte Achse, nicht mehr verknüpft.`],
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” verläuft keinen Meter mehr zwischen den Stationen der Auskleidung: Sie behält ihre letzte Achse, nicht mehr verknüpft.`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” ist jetzt kürzer: Die Auskleidung verläuft von ${m[2]} bis ${m[3]} m, nicht von ${m[4]} bis ${m[5]} m wie verknüpft.`],
+  // The Speckle connector's send (docs/plan-speckle.md, S1)
+  [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Gesendet: ${m[1]} Elemente, als neue Version.`],
 ];

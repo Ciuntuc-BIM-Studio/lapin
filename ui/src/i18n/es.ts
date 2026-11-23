@@ -3,6 +3,37 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // The Speckle connector: File → Speckle → Send… (docs/plan-speckle.md, S1).
+  "Send…": "Enviar…",
+  "Send to Speckle": "Enviar a Speckle",
+  "Looking for your Speckle account…": "Buscando tu cuenta de Speckle…",
+  "Server": "Servidor",
+  "Token": "Token",
+  "Remember": "Recordar",
+  "Speckle's own server, or the one your firm hosts": "El servidor de Speckle, o el que aloja tu empresa",
+  "In Speckle: your profile → Developer settings → Access tokens → New token, with streams:read, streams:write and profile:read": "En Speckle: tu perfil → Developer settings → Access tokens → New token, con streams:read, streams:write y profile:read",
+  "Personal access token": "Token de acceso personal",
+  "In the system's secure store (Keychain, Credential Manager, Secret Service), never in a file": "En el almacén seguro del sistema (Llavero, Administrador de credenciales, Secret Service), nunca en un archivo",
+  "on this computer, in its secure store": "en este ordenador, en su almacén seguro",
+  "Make a token in Speckle under your profile: Developer settings → Access tokens, with the scopes streams:read, streams:write and profile:read. Lapin never writes it into the project, its settings or a report.": "Crea un token en Speckle, en tu perfil: Developer settings → Access tokens, con los permisos streams:read, streams:write y profile:read. Lapin nunca lo escribe en el proyecto, en sus ajustes ni en un informe.",
+  "Sign out": "Cerrar sesión",
+  "Forget this account and its token on this computer": "Olvidar esta cuenta y su token en este ordenador",
+  "no project: make one in Speckle": "ningún proyecto: crea uno en Speckle",
+  "a new model…": "un modelo nuevo…",
+  "Message": "Mensaje",
+  "What changed in this version": "Qué cambió en esta versión",
+  "as the 3D view shows it": "como lo muestra la vista 3D",
+  "the selection": "la selección",
+  "Each element goes as a Speckle object with its GlobalId, its surfaces in its materials' colours, and its properties: IFC class, type, storey, phase, layers, property sets and quantities. Sending again makes a new version of the same objects.": "Cada elemento va como un objeto de Speckle con su GlobalId, sus superficies en los colores de sus materiales y sus propiedades: clase IFC, tipo, planta, fase, capas, conjuntos de propiedades y cantidades. Enviar de nuevo crea una versión nueva de los mismos objetos.",
+  "Open the version in Speckle": "Abrir la versión en Speckle",
+  "Signing in…": "Iniciando sesión…",
+  "Sign in": "Iniciar sesión",
+  "Converting the model": "Convirtiendo el modelo",
+  "Sending to Speckle": "Enviando a Speckle",
+  "Uploading to Speckle": "Subiendo a Speckle",
+  "Gathering the objects": "Reuniendo los objetos",
+  "Preparing the objects": "Preparando los objetos",
+  "Making the version": "Creando la versión",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "Etiquetar sistema",
   "Open a plan to tag its systems.": "Abre una planta para etiquetar sus sistemas.",
@@ -6135,4 +6166,6 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `«${m[1]}» ya no tiene eje: el revestimiento conserva su último eje, desvinculado.`],
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `«${m[1]}» ya no tiene un metro entre los puntos del revestimiento: conserva su último eje, desvinculado.`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `«${m[1]}» es más corto ahora: el revestimiento va de ${m[2]} a ${m[3]} m, no de ${m[4]} a ${m[5]} m como se vinculó.`],
+  // The Speckle connector's send (docs/plan-speckle.md, S1)
+  [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Enviado: ${m[1]} elementos, como una versión nueva.`],
 ];

@@ -3,6 +3,37 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // The Speckle connector: File → Speckle → Send… (docs/plan-speckle.md, S1).
+  "Send…": "Envoyer…",
+  "Send to Speckle": "Envoyer vers Speckle",
+  "Looking for your Speckle account…": "Recherche de votre compte Speckle…",
+  "Server": "Serveur",
+  "Token": "Jeton",
+  "Remember": "Mémoriser",
+  "Speckle's own server, or the one your firm hosts": "Le serveur de Speckle, ou celui hébergé par votre entreprise",
+  "In Speckle: your profile → Developer settings → Access tokens → New token, with streams:read, streams:write and profile:read": "Dans Speckle : votre profil → Developer settings → Access tokens → New token, avec streams:read, streams:write et profile:read",
+  "Personal access token": "Jeton d'accès personnel",
+  "In the system's secure store (Keychain, Credential Manager, Secret Service), never in a file": "Dans le coffre sécurisé du système (Trousseau, Gestionnaire d'identification, Secret Service), jamais dans un fichier",
+  "on this computer, in its secure store": "sur cet ordinateur, dans son coffre sécurisé",
+  "Make a token in Speckle under your profile: Developer settings → Access tokens, with the scopes streams:read, streams:write and profile:read. Lapin never writes it into the project, its settings or a report.": "Créez un jeton dans Speckle, dans votre profil : Developer settings → Access tokens, avec les droits streams:read, streams:write et profile:read. Lapin ne l'écrit jamais dans le projet, ses réglages ou un rapport.",
+  "Sign out": "Se déconnecter",
+  "Forget this account and its token on this computer": "Oublier ce compte et son jeton sur cet ordinateur",
+  "no project: make one in Speckle": "aucun projet : créez-en un dans Speckle",
+  "a new model…": "un nouveau modèle…",
+  "Message": "Message",
+  "What changed in this version": "Ce qui a changé dans cette version",
+  "as the 3D view shows it": "comme la vue 3D le montre",
+  "the selection": "la sélection",
+  "Each element goes as a Speckle object with its GlobalId, its surfaces in its materials' colours, and its properties: IFC class, type, storey, phase, layers, property sets and quantities. Sending again makes a new version of the same objects.": "Chaque élément part comme un objet Speckle avec son GlobalId, ses surfaces aux couleurs de ses matériaux et ses propriétés : classe IFC, type, niveau, phase, couches, jeux de propriétés et quantités. Un nouvel envoi crée une nouvelle version des mêmes objets.",
+  "Open the version in Speckle": "Ouvrir la version dans Speckle",
+  "Signing in…": "Connexion…",
+  "Sign in": "Se connecter",
+  "Converting the model": "Conversion du modèle",
+  "Sending to Speckle": "Envoi vers Speckle",
+  "Uploading to Speckle": "Téléversement vers Speckle",
+  "Gathering the objects": "Collecte des objets",
+  "Preparing the objects": "Préparation des objets",
+  "Making the version": "Création de la version",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "Étiqueter le système",
   "Open a plan to tag its systems.": "Ouvrez un plan pour étiqueter ses systèmes.",
@@ -6097,4 +6128,6 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `« ${m[1]} » n'a plus d'axe : le revêtement garde son dernier axe, délié.`],
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `« ${m[1]} » ne fait plus un mètre entre les points du revêtement : il garde son dernier axe, délié.`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `« ${m[1]} » est plus court : le revêtement va de ${m[2]} à ${m[3]} m, et non de ${m[4]} à ${m[5]} m comme relié.`],
+  // The Speckle connector's send (docs/plan-speckle.md, S1)
+  [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Envoyé : ${m[1]} éléments, comme nouvelle version.`],
 ];

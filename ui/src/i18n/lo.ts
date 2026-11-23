@@ -3,6 +3,37 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // The Speckle connector: File → Speckle → Send… (docs/plan-speckle.md, S1).
+  "Send…": "ສົ່ງ…",
+  "Send to Speckle": "ສົ່ງໄປ Speckle",
+  "Looking for your Speckle account…": "ກຳລັງຊອກຫາບັນຊີ Speckle ຂອງທ່ານ…",
+  "Server": "ເຊີບເວີ",
+  "Token": "ໂທເຄັນ",
+  "Remember": "ຈື່ໄວ້",
+  "Speckle's own server, or the one your firm hosts": "ເຊີບເວີຂອງ Speckle ຫຼື ເຊີບເວີທີ່ບໍລິສັດຂອງທ່ານໂຮສ",
+  "In Speckle: your profile → Developer settings → Access tokens → New token, with streams:read, streams:write and profile:read": "ໃນ Speckle: ໂປຣໄຟລ໌ຂອງທ່ານ → Developer settings → Access tokens → New token, ພ້ອມ streams:read, streams:write ແລະ profile:read",
+  "Personal access token": "ໂທເຄັນເຂົ້າເຖິງສ່ວນຕົວ",
+  "In the system's secure store (Keychain, Credential Manager, Secret Service), never in a file": "ໃນບ່ອນເກັບທີ່ປອດໄພຂອງລະບົບ (Keychain, Credential Manager, Secret Service), ບໍ່ເຄີຍຢູ່ໃນໄຟລ໌",
+  "on this computer, in its secure store": "ໃນຄອມພິວເຕີນີ້, ໃນບ່ອນເກັບທີ່ປອດໄພຂອງມັນ",
+  "Make a token in Speckle under your profile: Developer settings → Access tokens, with the scopes streams:read, streams:write and profile:read. Lapin never writes it into the project, its settings or a report.": "ສ້າງໂທເຄັນໃນ Speckle ທີ່ໂປຣໄຟລ໌ຂອງທ່ານ: Developer settings → Access tokens, ພ້ອມສິດ streams:read, streams:write ແລະ profile:read. Lapin ບໍ່ເຄີຍຂຽນມັນລົງໃນໂຄງການ, ການຕັ້ງຄ່າ ຫຼື ລາຍງານ.",
+  "Sign out": "ອອກຈາກລະບົບ",
+  "Forget this account and its token on this computer": "ລືມບັນຊີນີ້ ແລະ ໂທເຄັນຂອງມັນໃນຄອມພິວເຕີນີ້",
+  "no project: make one in Speckle": "ບໍ່ມີໂຄງການ: ສ້າງໜຶ່ງໃນ Speckle",
+  "a new model…": "ໂມເດລໃໝ່…",
+  "Message": "ຂໍ້ຄວາມ",
+  "What changed in this version": "ສິ່ງທີ່ປ່ຽນໃນເວີຊັນນີ້",
+  "as the 3D view shows it": "ຕາມທີ່ມຸມມອງ 3D ສະແດງ",
+  "the selection": "ສິ່ງທີ່ເລືອກ",
+  "Each element goes as a Speckle object with its GlobalId, its surfaces in its materials' colours, and its properties: IFC class, type, storey, phase, layers, property sets and quantities. Sending again makes a new version of the same objects.": "ແຕ່ລະອົງປະກອບຖືກສົ່ງເປັນວັດຖຸ Speckle ພ້ອມ GlobalId, ພື້ນຜິວຕາມສີຂອງວັດສະດຸ ແລະ ຄຸນສົມບັດ: ຄລາສ IFC, ປະເພດ, ຊັ້ນ, ໄລຍະ, ຊັ້ນວັດສະດຸ, ຊຸດຄຸນສົມບັດ ແລະ ປະລິມານ. ການສົ່ງອີກຄັ້ງຈະສ້າງເວີຊັນໃໝ່ຂອງວັດຖຸດຽວກັນ.",
+  "Open the version in Speckle": "ເປີດເວີຊັນໃນ Speckle",
+  "Signing in…": "ກຳລັງເຂົ້າສູ່ລະບົບ…",
+  "Sign in": "ເຂົ້າສູ່ລະບົບ",
+  "Converting the model": "ກຳລັງແປງໂມເດລ",
+  "Sending to Speckle": "ກຳລັງສົ່ງໄປ Speckle",
+  "Uploading to Speckle": "ກຳລັງອັບໂຫຼດໄປ Speckle",
+  "Gathering the objects": "ກຳລັງລວບລວມວັດຖຸ",
+  "Preparing the objects": "ກຳລັງກະກຽມວັດຖຸ",
+  "Making the version": "ກຳລັງສ້າງເວີຊັນ",
   // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
   "Tag system": "ໃສ່ປ້າຍລະບົບ",
   "Open a plan to tag its systems.": "ເປີດແຜນຜັງເພື່ອໃສ່ປ້າຍລະບົບຂອງມັນ.",
@@ -6187,4 +6218,6 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” ບໍ່ມີແກນແລ້ວ: ແຜ່ນບຸຮັກສາແກນສຸດທ້າຍໄວ້, ບໍ່ເຊື່ອມ.`],
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” ບໍ່ຍາວຮອດໜຶ່ງແມັດລະຫວ່າງສະຖານີຂອງແຜ່ນບຸອີກແລ້ວ: ມັນຮັກສາແກນສຸດທ້າຍໄວ້, ບໍ່ເຊື່ອມ.`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” ສັ້ນລົງແລ້ວ: ແຜ່ນບຸແລ່ນຈາກ ${m[2]} ຫາ ${m[3]} m, ບໍ່ແມ່ນ ${m[4]} ຫາ ${m[5]} m ຕາມທີ່ເຊື່ອມ.`],
+  // The Speckle connector's send (docs/plan-speckle.md, S1)
+  [/^Sent: (\d+) elements, as a new version\.$/, (m) => `ສົ່ງແລ້ວ: ${m[1]} ອົງປະກອບ, ເປັນເວີຊັນໃໝ່.`],
 ];
