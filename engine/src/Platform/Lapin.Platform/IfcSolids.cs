@@ -94,6 +94,12 @@ public interface IIfcSweptBodies
 public interface IIfcExactBodies
 {
     ExactBody? ExactOf(IModelView model, IServices services, Entity element, Solid body);
+
+    /// <summary>
+    /// The exact body of one of an element's parts (<paramref name="key"/>, its body <paramref name="body"/>) written as an element of its
+    /// own (a wing of an abutment, decision 789 S3), or null (written as its facets). Only what knows its parts says.
+    /// </summary>
+    ExactBody? ExactOfPart(IModelView model, IServices services, Entity element, string key, Solid body) => null;
 }
 
 /// <summary>

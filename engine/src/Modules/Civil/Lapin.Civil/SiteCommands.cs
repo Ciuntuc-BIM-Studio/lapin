@@ -634,7 +634,7 @@ public static class SiteCommands
         });
 
         // One segment of a retaining wall (docs/plan-wing-walls.md): its batters, crown thickness, crown at its start and its end,
-        // footing level, its warp (the face from one batter to another), null clearing one; its length and its turn from the segment
+        // footing level, its warp (the face from one batter to another) and its twist, its free end's batter and turn, null clearing one; its length and its turn from the segment
         // before (degrees, + to the left; the first segment's direction from east), the segments after it keeping theirs.
         r.Command("setRetainingWallSegment", "Change retaining wall segment", (ctx, a) =>
         {
@@ -649,10 +649,13 @@ public static class SiteCommands
             foreach (var k in BatteredWalls.SegmentKeys)
                 if (a.ContainsKey(k))
                 {
-                    if (Json.Number(a[k]) is { } v) o[k] = k is "topStart" or "topEnd" or "footingLevel" ? v : Math.Max(0, v);
+                    if (Json.Number(a[k]) is { } v) o[k] = BatteredWalls.SignedSegmentKeys.Contains(k) ? v : Math.Max(0, v);
                     else o.Remove(k);
                 }
             if (a.ContainsKey("warp")) { if (a["warp"] is JsonValue w && w.TryGetValue<bool>(out var on) && on) o["warp"] = true; else o.Remove("warp"); }
+            // A warped face's twist along its slope (by default) or along the whole segment; the segment's name (its part's, as an assembly).
+            if (a.ContainsKey("twist")) { if ((string?)a["twist"] == "segment") o["twist"] = "segment"; else o.Remove("twist"); }
+            if (a.ContainsKey("name")) { if (((string?)a["name"])?.Trim() is { Length: > 0 } nm) o["name"] = nm; else o.Remove("name"); }
             var length = Json.Number(a["length"]);
             var turn = Json.Number(a["angle"]);
             if (length != null || turn != null)

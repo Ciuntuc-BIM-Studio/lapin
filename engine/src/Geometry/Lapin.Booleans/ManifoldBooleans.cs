@@ -44,6 +44,32 @@ public sealed class ManifoldBooleans : ISolidBooleans
     public Solid? Intersection(Solid a, Solid b, string? tag = null) =>
         Run(a, [b], manifold_intersection, tag ?? a.Tag);
 
+    /// <summary>The union and the differences chained in manifold, every input a body as given, the result read once.</summary>
+    public Solid? UnionLess(IReadOnlyList<Solid> solids, IReadOnlyList<Solid> cutters, string? tag = null)
+    {
+        if (solids.Count == 0) return null;
+        var live = new List<IntPtr>();
+        try
+        {
+            var acc = ToManifold(solids[0], live);
+            foreach (var (o, op) in solids.Skip(1).Select(x => (x, (Func<IntPtr, IntPtr, IntPtr, IntPtr>)manifold_union))
+                .Concat(cutters.Select(x => (x, (Func<IntPtr, IntPtr, IntPtr, IntPtr>)manifold_difference))))
+            {
+                var m = ToManifold(o, live);
+                Check(m);
+                var r = op(manifold_alloc_manifold(), acc, m);
+                live.Add(r);
+                acc = r;
+            }
+            Check(acc);
+            return manifold_is_empty(acc) != 0 ? null : FromManifold(acc, tag ?? solids[0].Tag);
+        }
+        finally
+        {
+            foreach (var p in live) manifold_delete_manifold(p);
+        }
+    }
+
     static Solid? Run(Solid first, IReadOnlyList<Solid> others, Func<IntPtr, IntPtr, IntPtr, IntPtr> op, string? tag)
     {
         var live = new List<IntPtr>();

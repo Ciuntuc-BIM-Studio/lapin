@@ -138,7 +138,7 @@ Example: `vectors/objects/T2.json` (707 bytes, id `941f7c834ec70c7171289afba2fc9
 | `v` | integer | yes | `1` |
 | `tree` | id | yes | the tree |
 | `parents` | array of id | yes | `[]` for a first commit, one usually, two for a merge (from S4); distinct; at most 16 |
-| `author` | `{id: string, name: string}` | yes | `id`: `<scheme>:<value>`, scheme `[a-z][a-z0-9]{0,15}`, value `[A-Za-z0-9._-]{1,128}`; 1.0 defines `atrium:<user id on the server>` and `local:<random id of the installation>`. `name`: 1–256 characters. **No e-mail address**, in this or any other member |
+| `author` | `{id: string, name: string}` | yes | `id`: `<scheme>:<value>`, scheme `[a-z][a-z0-9]{0,15}`, value `[A-Za-z0-9._-]{1,128}`; 1.0 defines `atrium:<the account's public id on the server>` (an opaque id, never the sign-in e-mail) and `local:<random id of the installation>`. `name`: 1–256 characters. **No e-mail address**, in this or any other member |
 | `at` | string | yes | when the commit was made, UTC, RFC 3339 as `YYYY-MM-DDTHH:MM:SSZ` or `YYYY-MM-DDTHH:MM:SS.sssZ` |
 | `message` | string | yes | may be empty; at most 65 536 bytes of UTF-8 |
 | `app` | string | no (Lapin writes it) | the Lapin build |
@@ -640,7 +640,7 @@ Sorted by `name` (ordinal); a deleted ref is not listed. `target` is the id the 
 
 - `old`: the value the client expects (`null`: the ref must not exist). `new`: the value to set (`null`: delete the ref). `force` (boolean, optional, owner only): allows a non-fast-forward move of `refs/heads/main`.
 - At most 100 updates, each name once (else 400). **All or none**: either every update is applied in one transaction, with its ref log entries, or none is.
-- The server verifies, in this order (§11): the names and ids (400); the caller's rights for each update (403); each `new` exists, has the right kind, is valid and canonical, and its closure is complete (422); the rules of §5.3 (422); and last, atomically with the write, that every ref's current value is `old` (409).
+- The server verifies, in this order (§11): the names and ids (400); the caller's rights for each update (403); each `new` exists, has the right kind, is valid and canonical, and its closure is complete (422); the rules of §5.3 (422), except the two that depend on the request alone (moving an existing issue tag, `tag_immutable`; deleting `refs/heads/main`, `protected_ref`), which are checked before the objects; and last, atomically with the write, that every ref's current value is `old` (409).
 - `200`: the refs after the update, as `GET {p}/refs` returns them, with the new `ETag`.
 - `409` `ref_moved`: `{"code": "ref_moved", "message": "…", "refs": [{"name", "expected", "current", "updatedAt", "updatedBy"}]}`, one entry for every update whose `old` did not match (`current: null` when the ref does not exist). Nothing changed.
 - `422` `object_missing`: `{"code": "object_missing", "message": "…", "missing": [{"id", "kind", "from", "path"?, "size"?}]}`: each object that is missing, its expected kind, the object that names it (`from`), and for a part its `path` and declared `size`. `422` `invalid_object`: `{"invalid": [{"id", "kind", "reason"}]}`. Both lists may appear in one body; `code` is the first that applies (`invalid_object` before `object_missing`). The other 422 codes carry `name` (the ref).
@@ -669,7 +669,7 @@ Query: `name` (optional: one ref; else all), `limit`, `cursor`. `200`, newest fi
 **`PUT`**: the body is the object's bytes (`application/octet-stream`; `Content-Encoding: gzip` allowed when announced), at most `chunk` decoded bytes.
 
 - The server writes the bytes to a temporary file while hashing them (never the whole body in memory), compares the hash with `{id}`, and only then renames the file into place.
-- `201`: stored. `200`: the project held it already (the server MAY answer before reading the body). `400` `hash_mismatch` `{expected, actual}`: nothing is stored. `413` `too_large` `{limit}`: above `chunk` (use §10.9) or `maxObject`. `507` `quota`. Both 200 and 201 carry `ETag: "<id>"`.
+- `201`: stored. `200`: the project held it already (the body is still read and hashed, so wrong bytes give 400 even then). `400` `hash_mismatch` `{expected, actual}`: nothing is stored. `413` `too_large` `{limit}`: above `chunk` (use §10.9) or `maxObject`. `507` `quota`. Both 200 and 201 carry `ETag: "<id>"`.
 - The server does not parse the object here: a tree, commit or tag is validated when a ref update first makes it reachable (§11).
 
 **`HEAD`**: `200` with `Content-Length` (the size) when held, `404` when not.

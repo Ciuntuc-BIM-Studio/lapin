@@ -6626,6 +6626,106 @@ export const scenes = [
     },
   },
   {
+    // Tunnel portals and bridge abutments (docs/plan-wing-walls.md, S3): the configurator on its warped-wings preset with the
+    // engine's preview; a tunnel portal with straight wings dropping to their free ends and a bridge abutment with warped wings,
+    // made by the configurator's command, in 3D; a section across a wing, its face leaning and its footing.
+    id: 'portals',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.cmd('civil.addFlatTerrain', { storeyId: s, x1: -40, y1: -30, x2: 80, y2: 40, elevation: 0 });
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      // The configurator: a new portal, on the warped-wings preset, the engine's preview beside its numbers.
+      await t.tool('civil.portal');
+      await t.wait(600);
+      await t.page.locator('.dialog [data-portal-preset=warped]').click();
+      await t.wait(4000);
+      t.expect(await t.page.locator('.dialog [data-param=warpBatter]').count() === 1, 'the warped preset shows the batter at the free end');
+      t.expect(await t.page.locator('.dialog [data-worked=wingLength]').count() === 1, 'the wing length is worked out from its formula');
+      t.expect(await t.page.locator('.dialog [data-testid=type-preview] canvas, .dialog [data-testid=type-preview] svg').count() > 0, 'the configurator previews the portal');
+      await t.shot('portal-configurator', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      // A tunnel portal with straight wings, the crown dropping to the embankment's level + 0.5 at each free end; an abutment with warped wings.
+      const portal = (await t.cmd('civil.addPortal', { storeyId: s, spec: { preset: 'straight' }, origin: [0, 0], direction: [0, 1] })).id;
+      const abutment = (await t.cmd('civil.addPortal', { storeyId: s, spec: { preset: 'abutment', warp: true, wingAngle: 30 }, origin: [45, 0], direction: [0, 1] })).id;
+      const walls = (await t.nodes()).filter((n) => n.type === 'LapinRetainingWall');
+      t.expect(walls.length === 2 && walls.every((w) => w.props.ifcMapping === 'assembly'), 'two walls, each an assembly of its wings and face wall');
+      await open3d(t);
+      const orbit = (view) => t.page.evaluate(async (v) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo(v, false), view);
+      await orbit({ azimuth: 0.6, pitch: -0.38, distance: 34, target: { x: 0, y: 2, z: 3 } });
+      await t.wait(2000);
+      await t.shot('portal-3d', { of: 'canvas', pad: 0 });
+      await orbit({ azimuth: 2.6, pitch: -0.42, distance: 36, target: { x: 45, y: 4, z: 2 } });
+      await t.wait(2000);
+      await t.shot('abutment-3d', { of: 'canvas', pad: 0 });
+      // A section across the abutment's left wing, at its middle: the face leaning more as the wing goes, on its footing (the terrain,
+      // 120 m wide, taken away first, so the drawing fits the wing).
+      await t.cmd('element.delete', { ids: (await t.nodes()).filter((n) => n.type === 'IfcGeographicElement').map((n) => n.id) });
+      await t.cmd('view.create', { kind: 'section', name: 'W-W', start: [31.9, 0.25], end: [42.3, 6.25], depth: 1, scale: 50 });
+      await openFromBrowser(t, 'W-W', 1500);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('portal-section', { of: '[data-testid=drawing]', pad: 0 });
+      t.expect(!!portal && !!abutment, 'the portal and the abutment');
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // The tunnel lining (docs/plan-wing-walls.md, S4): the configurator on its horseshoe preset with the engine's preview; a horseshoe
+    // lining taken from a curved road between two stations, in its casting blocks, with a portal at its mouth, in 3D; a section across
+    // it at a station, its two layers (the lining and its shotcrete shell); the long section along its axis.
+    id: 'tunnel',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.tool('civil.tunnel');
+      await t.wait(600);
+      await t.page.locator('.dialog [data-tunnel-preset=horseshoe]').click();
+      await t.wait(4000);
+      t.expect(await t.page.locator('.dialog [data-param=sideRadius]').count() === 1, 'the horseshoe shows its side radius');
+      t.expect(await t.page.locator('.dialog [data-worked=wallThickness]').count() === 1, 'the wall thickness is worked out from its formula');
+      t.expect(await t.page.locator('.dialog [data-testid=type-preview] canvas, .dialog [data-testid=type-preview] svg').count() > 0, 'the configurator previews the lining');
+      await t.shot('tunnel-configurator', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      // A road with a 160 m curve between 30 m clothoids, level; the lining from its station 40 round the curve, a portal at its mouth.
+      const road = (await t.cmd('civil.addPath', { storeyId: s, points: [[0, 0], [120, 0], [220, 110]], template: 'road' })).id;
+      await t.cmd('civil.setCorridor', { id: road, curves: [[0, 0, 0], [160, 30, 30], [0, 0, 0]], profile: { mode: 'design', pvis: [[0, 0, 0], [300, 0, 0]] } });
+      const lining = (await t.cmd('civil.addTunnelLining', { storeyId: s, spec: { preset: 'horseshoe' }, axis: { id: road, from: 40, to: 200 } })).id;
+      const portal = (await t.cmd('civil.tunnelPortal', { id: lining, end: 'start' })).id;
+      t.expect(!!lining && !!portal, 'the lining and its portal');
+      const nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'LapinTunnelLining').length === 1, 'one lining');
+      await open3d(t);
+      const orbit = (view) => t.page.evaluate(async (v) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo(v, false), view);
+      await orbit({ azimuth: 0.94, pitch: -0.3, distance: 70, target: { x: 60, y: 8, z: 3 } });
+      await t.wait(2500);
+      await t.shot('tunnel-3d', { of: 'canvas', pad: 0 });
+      // A section across the lining at station 0+100, its line from the cross-section the corridor configurator draws.
+      const cs = await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('civil.crossSection', { id, station: 100 }), lining);
+      await t.cmd('view.create', { kind: 'section', name: 'T-T', start: cs.line.start, end: cs.line.end, depth: 0.5, scale: 100 });
+      await openFromBrowser(t, 'T-T', 1500);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('tunnel-section', { of: '[data-testid=drawing]', pad: 0 });
+      // The long section along its axis: the crown, the invert and the blocks' joints.
+      await t.cmd('view.create', { kind: 'section', name: 'L-L', along: lining, depth: 0.2, scale: 500 });
+      await openFromBrowser(t, 'L-L', 1500);
+      // A developed section of some hundred pieces round the curve: a few seconds to draw.
+      await t.wait(8000);
+      await t.fit();
+      await t.wait(1500);
+      await t.shot('tunnel-long-section', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // The planting library (decision 234): a small orchard with a walnut, conifers along the back and shrubs in front, drawn in plan by
     // their families' outlines (decision 341), then by the detailed symbols the view style's Entourage in 2D asks for.
     id: 'planting-symbols',

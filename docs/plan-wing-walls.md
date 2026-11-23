@@ -39,8 +39,8 @@ Cerut pe 23.11.2026 de utilizator: un generator de geometrie pentru pereții tun
 |---|---|---|
 | **S1** | Zidul de sprijin extins: fruct față/spate pe zid și pe segment, grosime la coronament și la bază, coronament liniar pe segment (început/capăt), cota tălpii pe segment, consolă față, consolă spate, pinten; îmbinări exacte; cantități (volum, cofraj pe fețe); plan și secțiune; IFC (planele exacte ca IfcFacetedBrep); câmpurile din panou în toate limbile | făcut (23.11.2026) |
 | **S2** | Aripa răsucită: opțiunea „Warped” pe segment, fața de la fructul de început la alt fruct la capăt, petec B-spline exact, tesselat după `Chords`, exact în IFC (IfcAdvancedBrep) și STEP; volumul și cofrajul pe suprafața adevărată | făcut (23.11.2026) |
-| **S3** | Configuratorul de portal și culee: presetări (aripi drepte, în U, evazate, răsucite; culee cu aripi), previzualizare de motor, formule `{= …}`, traseul desenat și profilul salvat, alegerea IFC (`IfcWall` simplu sau ansamblu `IfcBridgePart`/`IfcTunnelPart`, înlocuitori în IFC4); pagina din ghid și scena ei | de făcut |
-| **S4** | Căptușeala tunelului: profilul boltii (codat sau desenat) dus de-a lungul unui aliniament (codul drumurilor curbe și al aliniamentelor, `Lapin.Alignments`), exact unde se poate (cilindri, conuri, B-spline), cantități, IFC `IfcTunnelPart` | de făcut |
+| **S3** | Configuratorul de portal și culee: presetări (aripi drepte, în U, evazate, răsucite; culee cu aripi), previzualizare de motor, formule `{= …}`, traseul desenat și profilul salvat, alegerea IFC (`IfcWall` simplu sau ansamblu `IfcBridgePart`/`IfcTunnelPart`, înlocuitori în IFC4); pagina din ghid și scena ei | făcut (23.11.2026) |
+| **S4** | Căptușeala tunelului: profilul boltii (codat sau desenat) dus de-a lungul unui aliniament (codul drumurilor curbe și al aliniamentelor, `Lapin.Alignments`), exact unde se poate (cilindri, conuri, B-spline), cantități, IFC (IFC4X3_ADD2 nu are `IfcTunnelPart`: ansamblu de proxy-uri) | făcut (23.11.2026) |
 | **S5** | Ghidul complet (EN + RO) și un tutorial video (`../lapin-film`) | de făcut |
 
 Paginile de ghid și scena așteaptă S3: S1 nu schimbă nicio pagină existentă (ghidul nu descrie câmpurile zidului de sprijin). Câmpurile noi apar în panou, iar pagina va fi scrisă odată cu configuratorul.
@@ -84,14 +84,62 @@ Nimic nou. Geometria e codul propriu Lapin (MIT); booleanele sunt manifold, deja
 - **Secțiunea** de-a lungul zidului (`Corridors.Section`) arată fața înclinată, talpa și pintenul. Secțiunile obișnuite taie corpul.
 - **Interfața:** în panoul zidului apar fructul feței, spatele (după fruct sau după grosimea la bază), consola față, consola spate și pintenul. Lista „Segments” deschide fiecare segment cu lungimea, rotirea, coronamentul la început și la capăt, grosimea, fructurile, cota tălpii și „Warped” cu fructurile de la capăt. Textele sunt în toate cele 11 limbi.
 
-**Ce a rămas:**
+**Ce a rămas după S1–S2:**
 
-- S3–S5.
+- S3–S5 (S3 făcut, mai jos).
 - Coronamentul după linia roșie (profilul proiectat) e luat liniar între capetele fiecărui segment.
 - Curbele traseului nu sunt urmate de un zid cu fruct (o notă o spune).
 - O consolă dată explicit 0 sub o față răsucită lasă talpa tangentă la piciorul curb (implicit se lasă cel puțin 5 cm).
 
+**S3 (23.11.2026, ramura `feat/wing-walls-s3`, decizia 795).** Răspunsurile utilizatorului la întrebările 1–5 (toate ca recomandat): 1 și 2 rămân cum erau; 3: capătul liber drept (implicit), înclinat după taluz sau rotit paralel cu drumul; 4: răsucirea pe pantă (implicit) sau pe tot segmentul; 5: un `IfcWall` pe aripă și pe peretele frontal, grupate într-un ansamblu, cu varianta simplă păstrată ca setare.
+
+- **Motorul (`Portals.cs`, Civil):**
+  - `civil.addPortal {spec, origin + direction | towards | axis {id, at, reverse}}` și `civil.updatePortal {id, spec}` fac un zid de sprijin: traseul (aripa dreaptă, peretele frontal, aripa stângă), secțiunea, coronamentul, fructurile și răsucirea pe segmente, capetele, maparea IFC. Spec-ul stă pe zid (`portal`), așa că configuratorul se redeschide pe el și reface același element (aceleași GlobalId-uri), într-un pas de anulare. Interogarea `civil.portalValues` dă valorile calculate, problemele și traseul; catalogul `civil.portal` dă parametrii și presetările.
+  - Presetările: aripi drepte (în prelungire, 90°), în U (0°), evazate (30°), răsucite, culee cu aripi (rambleul între aripi, partea înaltă în interior).
+  - Formulele: orice număr poate fi `{= …}` sau `= …`, citind celelalte chei, `height` și parametrii proiectului; implicit `endCrown = {= embankment + 0.5}` și `wingLength = {= (crown - embankment) * slope}`. O formulă care se citește pe sine e refuzată, cu motivul.
+  - Traseul desenat (`path`) înlocuiește trasarea din valori; profilul desenat și salvat (`profileId`, un `LapinSectionProfile`) e secțiunea elevației, întinsă între talpă și coronament (`RetainingWalls.ProfileOf`, prin `Corridors.Sweep`).
+- **`BatteredWalls`:**
+  - Capătul liber: `endBatter` (n:1, înclinat după taluz) și `endTurn` (grade, cel mult 60°) pe primul și pe ultimul segment; elevația și talpa sunt duse mai departe și tăiate de planul capătului (elevația deasupra tălpii, talpa verticală, cu consola ei).
+  - `twist: "segment"`: fața se răsucește pe tot segmentul; peste colț, unde coronamentul e orizontal, ea e un petec biliniar exact (B-spline 2×1 degenerat).
+  - Ansamblul (`ifcMapping: "assembly"`): câte o parte pe segment. Aripa începe la 5 mm după începutul pantei, într-un rost perpendicular pe ea, iar peretele frontal păstrează colțurile. Fiecare parte are cantitățile ei (beton, cofraj pe fețe; unde se ating două părți nu se socotește cofraj, prin suprapunerea exactă a triunghiurilor). Pe zid apar și `FaceWallVolume`, `WingsVolume`, `FaceWallFormwork`, `WingsFormwork`.
+  - Bucățile se unesc și se taie (rosturi, capete, părți) într-o singură trecere booleană (`ISolidBooleans.UnionLess`), fiecare intrare fiind o bucată construită. Bucățile se suprapun cu 0,1 mm unde se întâlnesc cu altele, ca să nu rămână trei fețe pe un plan (care lăsau fisuri în uniune).
+  - Îndreptat din S1: pe segmentul care intră într-un colț, porțiunea orizontală se măsoară acum înapoi de la colț (era măsurată înainte, așa că două aripi oglindite nu ieșeau la fel).
+- **IFC:** ansamblul e un `IfcElementAssembly` (portalul USERDEFINED „Tunnel portal”; culeea ABUTMENT în IFC 4.3, USERDEFINED „Abutment” în IFC4) peste câte un `IfcWall` RETAININGWALL pe parte. În IFC 4.3 culeea stă într-un `IfcBridgePart` ABUTMENT al unui `IfcBridge` al proiectului. IFC4X3_ADD2 nu are entitatea de tunel, așa că portalul rămâne un ansamblu. Aripile răsucite se scriu exact, fiecare ca `IfcAdvancedBrep` (`IIfcExactBodies.ExactOfPart`), și tot așa în STEP. Varianta `wall` scrie un singur `IfcWall`.
+- **Interfața:** Site → Landscape → **Portal or abutment…** (PO): presetările, valorile pe grupuri (câmpuri care primesc număr sau formulă, cu valoarea calculată alături), previzualizarea motorului (plan, secțiune prin aripa stângă, 3D, prin `types.preview`), plasarea prin două puncte sau pe un drum ales, traseul desenat, profilul. În proprietățile zidului apare **Portal configurator…**. Textele sunt în toate cele 11 limbi.
+- **Teste:** `PortalTests` (13): fiecare presetare închisă și împărțită în trei părți cu volumele adunate; aripile oglindite; capetele; răsucirea pe segment; formulele; IFC ansamblu, punte 4.3 și zid simplu; cantitățile pe părți; GlobalId-urile păstrate și pasul de anulare; drum, traseu desenat și profil. `portal.test.ts` (vitest). Ghidul: `site.md` (en și ro), scena `portals`.
+
+**Ce a rămas după S3:**
+
+- Cu răsucirea pe tot segmentul și tălpi foarte late (piciorul feței ajunge departe la 2:3), uniunea poate lăsa o muchie comună la patru fețe între tălpi. Corpul rămâne închis și orientat, dar corpul exact al întregului (și al peretelui frontal) se scrie atunci ca fațete; aripile rămân exacte.
+- Talpa unei aripi răsucite are aceeași lățime pe toată lungimea (cea de la piciorul cel mai depărtat).
+- Un profil desenat nu se împarte în părți: ansamblul îl ține întreg.
+- Banchetă de rezemare a culeei, zidul de gardă și armarea vin mai târziu.
+
+**S4 (23.11.2026, ramura `feat/tunnel-lining`, decizia 796).** Căptușeala tunelului.
+
+- **Elementul:** `LapinTunnelLining` (`Tunnels.cs`, `TunnelSections.cs`, Civil), un fel de coridor (`ICorridorKind`). De ce un fel de coridor și nu un element legat de axa altuia: axa e a lui, ca a unui drum, preluată între două stații ale unui drum, unei alei, unui zid, unei căi ferate sau unei linii desenate (geometria în plan tăiată la stații: liniile și arcele cum sunt, clotoida după curbura ei, care e liniară; linia roșie proiectată copiată cu PVI-urile ei, una după teren ajustată în PVI-uri) sau desenată. Așa, configuratorul de coridor (stații, linie roșie, curbe, secțiuni la stații, profil longitudinal), portalurile, matricile și secțiunile care urmează o axă merg pe căptușeală fără cod nou. Sursa rămâne notată (`axisSource`), iar o axă preluată din nou păstrează stațiile și secțiunile alese.
+- **Secțiunea:** presetări codate: potcoavă NATM (arc de calotă, arce laterale tangente în interior, arce de colț tangente la perete și la radier, arcul radierului; exteriorul e aceeași construcție cu dimensiunile crescute cu grosimea calotei, a pereților și a radierului, deci concentric la grosime egală), circulară (inel TBM, o grosime, în inele de lățimea dată), cadru casetat cu vute (tranșee acoperită), boltă pe pereți verticali; sau un profil desenat și salvat (exteriorul și golul din el). O căptușeală primară de torcret (implicit 0,25 m la potcoavă) e decalajul exact al exteriorului (arce concentrice, arc de rază egală cu grosimea la colțuri). Valorile pot fi formule, prin același evaluator ca la S3 (`Portals.EvaluateWith`).
+- **Geometria:** secțiunea stă verticală și perpendiculară pe axă în plan; supraînălțarea nu se aplică (panta transversală a drumului din tunel e a lui). Pe tronsoane, tăiate la vârfurile axei și la capetele racordărilor verticale: aliniament cu pantă constantă — fețe riglate (plane, cilindri, B-spline 2×1 pe un arc în pantă), exacte și pentru capete oblice sau în mitră; aliniament cu racordare verticală — suprafață B-spline de translație (parabola exact, grad 2); arc de cerc în palier — revoluție (tori, conuri, cilindri, plane ca NURBS); clotoidă sau arc în pantă — suprafață acoperită prin secțiuni (skinning cubic), în regula corzilor (abaterea de la măturarea adevărată sub 1 mm). Fața 3D e tesselată după `Chords`; corpul exact se verifică față de fațete (`ExactCheck.Fit`, 2 mm sau cât lasă pasul minim al regulii corzilor pe o rază mare).
+- **Blocuri și inele:** de la început, la 12,5 m (implicit) sau la lățimea inelului TBM; ultimul ce rămâne. Fiecare bloc e o parte (`block:k`, `ring:k`, `primary:k`) cu GlobalId-ul ei, păstrat la schimbarea valorilor. Cantități pe bloc: beton (volumul exact al măturării: ∫(O′×U)·A + (U′×U)·Qx, deci Pappus pe curbă), cofrajul feței interioare, fața exterioară, cofrajul capetelor, cofrajul total (cu fața exterioară pentru tranșee acoperită), volumul torcretului.
+- **Portalul la un capăt:** `civil.tunnelPortal {id, end, skew?, spec?}` așază portalul S3 (aripi evazate) de-a curmezișul axei, mai lat decât căptușeala, cu coronamentul la 1 m peste ea; peretele frontal e tăiat de exteriorul căptușelii în spate și de golul liber în față (`Tunnels.PortalCutters`, un rând în `BatteredWalls.Build`), urmând căptușeala când se schimbă. Capătul poate fi oblic (`skewStart`, `skewEnd`), exact pe un aliniament cu pantă constantă.
+- **Desene:** în plan, exteriorul și golul ascunse, axa, capetele, rosturile și stațiile cu etichete; secțiunea la o stație (straturile cu materialele lor); profilul longitudinal ca secțiune care urmează axa (acum după curbe, nu după coarde).
+- **IFC:** IFC4X3_ADD2 nu are entități de tunel, deci: `IfcElementAssembly` USERDEFINED „Tunnel lining” cu câte un `IfcBuildingElementProxy` USERDEFINED pe bloc („Lining block”), inel („Lining ring”) și bucată de torcret („Outer shell”). Proxy, nu `IfcWall` sau `IfcSlab`: căptușeala e o boltă cu radier, iar un perete sau o placă ar da cititorilor (cantități, filtre) un sens greșit. Varianta *body* scrie un singur proxy. Fiecare bloc exact ca IfcAdvancedBrep (cu suprafețele exacte bifate) și în STEP.
+- **Interfața:** Site → Landscape → **Tunnel lining…** (TU): presetări, valori pe grupuri cu formule, profilul desenat, previzualizarea motorului; **On an axis…** (clic pe axă la început, apoi la sfârșit) sau **Draw the axis…**. În proprietăți: **Tunnel configurator…**, configuratorul de coridor, **Portal** la început sau la capăt, capetele oblice. Textele în toate cele 11 limbi.
+- **Teste:** `TunnelLiningTests` (11, cu 15 cazuri): fiecare presetare închisă și exactă, volumul și cofrajul pe aliniament; potcoava tangentă și grosimile; inelul TBM pe arc în palier ca segment de tor (Pappus pentru volum și pentru fața interioară); profilul desenat; blocurile și GlobalId-urile la schimbare, anulare; linia roșie cu racordare verticală exactă; preluată de la un drum cu clotoide (abaterea suprafeței acoperite); portalul cu golul și capătul oblic; IFC ansamblu și corp, citit înapoi; secțiunea la stație, planul și profilul longitudinal pe curbă. `tunnel.test.ts` (vitest). Ghidul: `site.md` (en și ro), scena `tunnel`.
+
+**Ce a rămas după S4:**
+
+- Capătul oblic doar pe aliniament cu pantă constantă (altfel rămâne drept, cu o notă).
+- Inelele TBM nu sunt împărțite în segmente și nu au conicitate pentru curbe.
+- Căptușeala nu urmează singură drumul dacă acesta se schimbă: se preia axa din nou (`civil.updateTunnelLining {axis}`).
+- Golurile (nișe, galerii transversale), armarea, hidroizolația ca strat propriu și excavația (volumul săpăturii) vin mai târziu.
+
 ## Întrebări deschise
+
+Pentru S4, de întrebat utilizatorul: (a) căptușeala să urmeze singură axa din care a fost preluată (legată, ca o ușă de perete) sau să rămână copia ei (acum)? (b) IFC: proxy pe bloc (acum) sau `IfcWall`/`IfcSlab` pe bucăți (pereți, boltă, radier)? Sau `IfcFacility`/`IfcFacilityPart` în IFC 4.3? (c) inelele TBM împărțite în segmente (5+1 cheie) și cu conicitate?
+
+
+Răspunse de utilizator la 23.11.2026, toate ca recomandat (la S3, mai sus). Rămân pentru întrebarea utilizatorului: unde stă rostul dintre aripă și peretele frontal (acum la 5 mm după începutul pantei aripii) și dacă talpa unei aripi răsucite trebuie să se îngusteze spre colț.
 
 1. **Unde pleacă fructul:** din muchia coronamentului, cu grosimea coronamentului constantă (aleasă aici, ca la aripi), sau din bază, cu baza paralelă cu traseul și coronamentul care se lățește unde coboară?
 2. **Panta peste colț:** coronamentul rămâne orizontal pe colț, iar panta aripii începe unde se termină colțul (dincolo de spatele tălpii peretelui principal). E bine așa, sau panta trebuie să înceapă din axul colțului, cu o mică treaptă acceptată?

@@ -16,6 +16,9 @@ import { lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { segmentRows } from './retainingWall';
+import { openPortal } from './portalTools';
+import { openTunnel, portalAtEnd } from './tunnelTools';
+import { axisSourceOf, TUNNEL_PRESET_LABELS } from './tunnel';
 
 /** Opens the corridor configurator on the element selected. */
 export function Configure() {
@@ -87,6 +90,9 @@ export function RetainingWallSection({ node }: { node: NodeDto }) {
     <>
     <dl className="fields">
       <Configure />
+      {node.props.portal != null && typeof node.props.portal === 'object' && (
+        <><dt /><dd><button type="button" className="btn compact" data-action="portal-configure" title="its preset, wings, section, free ends and IFC" onClick={() => openPortal(node)}>Portal configurator…</button></dd></>
+      )}
       <dt>Thickness</dt><dd><Mm value={node.props.thickness} fallback={0.3} min={100} onCommit={(v) => set({ thickness: v })} /></dd>
       <dt>High ground on the</dt>
       <dd><select value={(node.props.side as string | undefined) ?? 'left'} onChange={(e) => set({ side: e.target.value })}><option value="left">left</option><option value="right">right</option></select> <span className="muted small">of the way it was drawn</span></dd>
@@ -222,5 +228,31 @@ export function PlantingSection({ node }: { node: NodeDto }) {
         ))}
       </select>
     </div>
+  );
+}
+
+/**
+ * A tunnel lining (docs/plan-wing-walls.md, S4): its configurator (section, thicknesses, blocks, IFC), the corridor configurator
+ * (its axis's curves, its red line, sections at stations), a portal at either end, and where its axis came from.
+ */
+export function TunnelLiningSection({ node }: { node: NodeDto }) {
+  const nodes = useSession((s) => s.nodes);
+  useLang();
+  const spec = (node.props.lining as Record<string, unknown> | undefined) ?? {};
+  const preset = typeof spec.profileId === 'string' && spec.profileId ? t('Drawn section') : t(TUNNEL_PRESET_LABELS[String(spec.preset ?? 'horseshoe')] ?? String(spec.preset ?? ''));
+  const source = axisSourceOf(node.props);
+  const host = source ? nodes.get(source.id) : undefined;
+  return (
+    <dl className="fields">
+      <dt>Section</dt><dd><span data-no-i18n>{preset}</span></dd>
+      <dt /><dd><button type="button" className="btn compact" data-action="tunnel-configure" title="its section, thicknesses, blocks and IFC" onClick={() => openTunnel(node)}>Tunnel configurator…</button></dd>
+      <Configure />
+      {source && <><dt>Axis from</dt><dd><span data-no-i18n>{host?.name ?? '—'} · {lengthText(source.from)} → {lengthText(source.to)}</span></dd></>}
+      <dt>Portal</dt>
+      <dd className="row" style={{ gap: 4 }}>
+        <button type="button" className="btn compact" data-action="tunnel-portal-start" title="A portal at the lining's start, its face across the axis, the lining's opening through it" onClick={() => void portalAtEnd(node.id, 'start')}>At the start</button>
+        <button type="button" className="btn compact" data-action="tunnel-portal-end" title="A portal at the lining's end, its face across the axis, the lining's opening through it" onClick={() => void portalAtEnd(node.id, 'end')}>At the end</button>
+      </dd>
+    </dl>
   );
 }

@@ -25,7 +25,10 @@ public static class BatteredWalls
     public static readonly string[] WallKeys = ["frontBatter", "backBatter", "baseThickness", "toe", "heel", "keyWidth", "keyDepth", "keyAt"];
 
     /// <summary>A segment's numbers (null or absent: the wall's).</summary>
-    public static readonly string[] SegmentKeys = ["frontBatter", "backBatter", "frontBatterEnd", "backBatterEnd", "thickness", "baseThickness", "topStart", "topEnd", "footingLevel"];
+    public static readonly string[] SegmentKeys = ["frontBatter", "backBatter", "frontBatterEnd", "backBatterEnd", "thickness", "baseThickness", "topStart", "topEnd", "footingLevel", "endBatter", "endTurn"];
+
+    /// <summary>A segment's numbers that may be negative (elevations, an end's turn); the rest are kept at 0 or more.</summary>
+    public static readonly string[] SignedSegmentKeys = ["topStart", "topEnd", "footingLevel", "endTurn"];
 
     public static bool Is(Entity e)
     {
@@ -35,9 +38,16 @@ public static class BatteredWalls
         return e.Attrs["segments"] is JsonArray a && a.Any(x => x is JsonObject o && o.Count > 0);
     }
 
-    /// <summary>One segment's overrides, as stored (null: the wall's own value).</summary>
+    /// <summary>
+    /// One segment's overrides, as stored (null: the wall's own value). <see cref="TwistAll"/>: a warped face turns along the whole
+    /// segment (<c>twist: "segment"</c>), not only along its slope. <see cref="EndBatter"/> and <see cref="EndTurn"/> shape the free end
+    /// the segment has (the first segment's start, the last one's end): the end leaning n:1 with the embankment, and turned by degrees
+    /// about the vertical, + making its side towards the high ground the longer (S3, docs/plan-wing-walls.md). <see cref="Name"/>: what the
+    /// segment is (a wing, the face wall), its part's name.
+    /// </summary>
     public sealed record SegmentSpec(double? FrontBatter, double? BackBatter, double? FrontBatterEnd, double? BackBatterEnd, bool Warp,
-        double? Thickness, double? BaseThickness, double? TopStart, double? TopEnd, double? FootingLevel)
+        double? Thickness, double? BaseThickness, double? TopStart, double? TopEnd, double? FootingLevel,
+        bool TwistAll = false, double? EndBatter = null, double? EndTurn = null, string? Name = null)
     {
         public static readonly SegmentSpec None = new(null, null, null, null, false, null, null, null, null, null);
     }
@@ -47,7 +57,8 @@ public static class BatteredWalls
         if (e.Attrs["segments"] is not JsonArray a || i < 0 || i >= a.Count || a[i] is not JsonObject o) return SegmentSpec.None;
         double? N(string k) => Json.Number(o[k]);
         var warp = o["warp"] is JsonValue v && v.TryGetValue<bool>(out var w) && w;
-        return new(N("frontBatter"), N("backBatter"), N("frontBatterEnd"), N("backBatterEnd"), warp, N("thickness"), N("baseThickness"), N("topStart"), N("topEnd"), N("footingLevel"));
+        return new(N("frontBatter"), N("backBatter"), N("frontBatterEnd"), N("backBatterEnd"), warp, N("thickness"), N("baseThickness"), N("topStart"), N("topEnd"), N("footingLevel"),
+            (string?)o["twist"] == "segment", N("endBatter"), N("endTurn"), (string?)o["name"] is { Length: > 0 } nm ? nm : null);
     }
 
     /// <summary>A batter n:1 (n up for one across) as the run across per unit of height; 0 or none is upright. Kept to 1:5 at the flattest.</summary>
@@ -73,10 +84,20 @@ public static class BatteredWalls
         public double S0, S1;
         public bool StartCorner, EndCorner;
 
+        /// <summary>A warped face turns along the whole segment (from 0 to L), not only along its slope (S0 to S1).</summary>
+        public bool TwistAll;
+        /// <summary>Its free ends, when it has one and it is not square: the run per unit of height the end leans by, and the tangent of its turn.</summary>
+        public double StartLean, StartTurn, EndLean, EndTurn;
+        public string? Name;
+
         public double Fraction(double x) => S1 - S0 < 1e-9 ? (x <= S0 ? 0 : 1) : Math.Clamp((x - S0) / (S1 - S0), 0, 1);
+        /// <summary>How far along its turn a warped face is at x: along the slope, or along the whole segment.</summary>
+        public double Twist(double x) => TwistAll ? (L < 1e-9 ? 0 : Math.Clamp(x / L, 0, 1)) : Fraction(x);
         public double Top(double x) => Z0 + (Z1 - Z0) * Fraction(x);
-        public double Kf(double x) => Kf0 + (Kf1 - Kf0) * Fraction(x);
-        public double Kb(double x) => Kb0 + (Kb1 - Kb0) * Fraction(x);
+        public double Kf(double x) => Kf0 + (Kf1 - Kf0) * Twist(x);
+        public double Kb(double x) => Kb0 + (Kb1 - Kb0) * Twist(x);
+        /// <summary>Whether the free end at the start (or the end) is not square: it leans or is turned.</summary>
+        public bool Shaped(bool atEnd) => atEnd ? !EndCorner && (EndLean > 1e-9 || Math.Abs(EndTurn) > 1e-9) : !StartCorner && (StartLean > 1e-9 || Math.Abs(StartTurn) > 1e-9);
         public double WF(double x, double z) => -T / 2 - (Top(x) - z) * Kf(x);
         public double WB(double x, double z) => T / 2 + (Top(x) - z) * Kb(x);
         public Vec3 P(double x, double w, double z) { var p = A + D * x + H * w; return new Vec3(p.X, p.Y, z); }
@@ -133,10 +154,23 @@ public static class BatteredWalls
             }
             else leg.Kb0 = Run(g.BackBatter ?? wBack);
             leg.Kb1 = g.Warp && g.BackBatterEnd != null ? Run(g.BackBatterEnd) : leg.Kb0;
+            leg.TwistAll = g.Warp && g.TwistAll;
+            leg.Name = g.Name;
             leg.S0 = 0;
             leg.S1 = leg.L;
-            // The footing: the toe and the heel from the stem's base where it reaches furthest (a footing as wide as the wall's
-            // footing width, centred on the stem, when they are not given).
+            // Its free ends' shape: leaning n:1 (a run per unit of height), turned (up to 60° either way).
+            var lean = Run(g.EndBatter);
+            var turn = Math.Tan(Math.Clamp(g.EndTurn ?? 0, -60, 60) * Math.PI / 180);
+            if (i == 0) { leg.StartLean = lean; leg.StartTurn = turn; }
+            if (i == chain.Segments - 1) { leg.EndLean = lean; leg.EndTurn = turn; }
+            Foot(leg, null);
+            legs.Add(leg);
+        }
+        // The footing: the toe and the heel from the stem's base where it reaches furthest (a footing as wide as the wall's
+        // footing width, centred on the stem, when they are not given). A face that turns along its whole segment has its foot
+        // found by sampling once the corners are known (its crown is level over them, its batter turning already).
+        void Foot(Leg leg, int? samples)
+        {
             if (leg.Footing)
             {
                 // Each face's foot is a quadratic along the slope: its furthest point at an end or at its vertex.
@@ -150,8 +184,10 @@ public static class BatteredWalls
                     return min ? vals.Min() : vals.Max();
                 }
                 double TopF(double f) => leg.Z0 + (leg.Z1 - leg.Z0) * f;
-                var front = Ext(f => -leg.T / 2 - (TopF(f) - leg.Zf) * (leg.Kf0 + (leg.Kf1 - leg.Kf0) * f), true);
-                var back = Ext(f => leg.T / 2 + (TopF(f) - leg.Zf) * (leg.Kb0 + (leg.Kb1 - leg.Kb0) * f), false);
+                var front = samples is { } n1 ? Enumerable.Range(0, n1 + 1).Min(k => leg.WF(leg.L * k / n1, leg.Zf))
+                    : Ext(f => -leg.T / 2 - (TopF(f) - leg.Zf) * (leg.Kf0 + (leg.Kf1 - leg.Kf0) * f), true);
+                var back = samples is { } n2 ? Enumerable.Range(0, n2 + 1).Max(k => leg.WB(leg.L * k / n2, leg.Zf))
+                    : Ext(f => leg.T / 2 + (TopF(f) - leg.Zf) * (leg.Kb0 + (leg.Kb1 - leg.Kb0) * f), false);
                 // At least 5 cm past the stem either side (a footing flush with a curved foot would touch it at one point only).
                 var spare = Math.Max(0.05, (s.FootingWidth - (back - front)) / 2);
                 leg.Fa = front - Math.Max(0, toe ?? spare);
@@ -167,9 +203,21 @@ public static class BatteredWalls
                 }
             }
             else { leg.Fa = leg.WF(0, leg.Zf); leg.Fb = leg.WB(0, leg.Zf); }
-            legs.Add(leg);
         }
-        // The corners: where each pair of the two segments' edges cross, and how far the crown stays level either side.
+        var corners = Corners(legs, s.HighOnLeft, notes);
+        // A face turning along its whole segment: its foot again, by its batter as it is with the corners known, and the corners again.
+        if (legs.Any(g => g.TwistAll && g.Footing))
+        {
+            foreach (var g in legs.Where(g => g.TwistAll)) Foot(g, 200);
+            foreach (var g in legs) { g.S0 = 0; g.S1 = g.L; }
+            corners = Corners(legs, s.HighOnLeft, []);
+        }
+        return (legs, corners, notes);
+    }
+
+    /// <summary>The corners: where each pair of the two segments' edges cross, and how far the crown stays level either side.</summary>
+    static List<Corner> Corners(List<Leg> legs, bool highOnLeft, List<string> notes)
+    {
         var corners = new List<Corner>();
         for (var k = 0; k + 1 < legs.Count; k++)
         {
@@ -178,7 +226,7 @@ public static class BatteredWalls
             var cos = Vec2.Dot(li.D, lj.D);
             var straight = Math.Abs(sin) < Math.Sin(Math.PI / 180) && cos > 0;
             if (cos < Math.Cos(170 * Math.PI / 180)) notes.Add($"Segments {k + 1} and {k + 2} turn back on each other: the corner may not close.");
-            var outerFront = (sin > 0) == s.HighOnLeft;
+            var outerFront = (sin > 0) == highOnLeft;
             var crossings = new Dictionary<string, Vec2>();
             if (!straight)
             {
@@ -194,7 +242,8 @@ public static class BatteredWalls
                 {
                     if (Cross(li.B + li.H * wi, li.D, lj.A + lj.H * wj, lj.D) is not { } p) continue;
                     crossings[key] = p;
-                    b = Math.Max(b, Vec2.Dot(p - li.B, li.D));
+                    // How far the crossing is back along the first from the corner, and along the second (the level stretch over the corner on each).
+                    b = Math.Max(b, -Vec2.Dot(p - li.B, li.D));
                     a = Math.Max(a, Vec2.Dot(p - lj.A, lj.D));
                 }
                 li.S1 = li.L - Math.Min(b, 0.45 * li.L);
@@ -203,7 +252,7 @@ public static class BatteredWalls
             li.EndCorner = lj.StartCorner = true;
             corners.Add(new Corner(k, li.B, outerFront, straight, crossings));
         }
-        return (legs, corners, notes);
+        return corners;
     }
 
     static Vec2? Cross(Vec2 p, Vec2 dp, Vec2 q, Vec2 dq)
@@ -216,8 +265,8 @@ public static class BatteredWalls
 
     // ------------------------------------------------------------------ the pieces
 
-    /// <summary>A warped face, exactly: the leg it is on, its side, its patch, the direction its parameter runs along.</summary>
-    public sealed record Warp(int Leg, bool Front, BSplineSurface Patch, Vec3 Along);
+    /// <summary>A warped face, exactly: the leg it is on, its side, its patch, the direction its parameter runs along, the stretch of the leg it covers.</summary>
+    public sealed record Warp(int Leg, bool Front, BSplineSurface Patch, Vec3 Along, double X0, double X1);
 
     /// <summary>A plane the wall's faces may lie on, and what a face on it is (front, back, crown, end, footing, footingTop, bottom, key, step).</summary>
     public sealed record LabelledPlane(Vec3 N, double D, string Label);
@@ -226,8 +275,10 @@ public static class BatteredWalls
     public sealed class Pieces
     {
         public List<Solid> Stem = [], Footing = [];
-        /// <summary>The warped middle pieces with their volumes exactly (what the facets miss).</summary>
-        public List<(Solid Piece, double Exact)> Warped = [];
+        /// <summary>The warped pieces with their volumes exactly (what the facets miss), and the leg each is of.</summary>
+        public List<(Solid Piece, double Exact, int Leg)> Warped = [];
+        /// <summary>The leg each piece is of (a part of the assembly is its leg's pieces).</summary>
+        public Dictionary<Solid, int> LegOf = new(ReferenceEqualityComparer.Instance);
         public List<LabelledPlane> Planes = [];
         public List<Warp> Warps = [];
     }
@@ -236,9 +287,11 @@ public static class BatteredWalls
     /// The patch of a warped face over its slope: u along the leg from S0 to S1, v from the footing's top (0) to the crown (1). The crown
     /// edge is a line, the base the parabola the batter's change makes there, the face between them ruled: degree 2 by 1, exact.
     /// </summary>
-    public static BSplineSurface Patch(Leg g, bool front)
+    public static BSplineSurface Patch(Leg g, bool front) => Patch(g, front, g.S0, g.S1);
+
+    /// <summary>The patch over x0 to x1 (a face turning along its whole segment has one over each corner's level crown too, its base a line there).</summary>
+    public static BSplineSurface Patch(Leg g, bool front, double x0, double x1)
     {
-        var (x0, x1) = (g.S0, g.S1);
         var ctrl = new Vec3[3, 2];
         double W(double x, double z) => front ? g.WF(x, z) : g.WB(x, z);
         var crownW = front ? -g.T / 2 : g.T / 2;
@@ -378,10 +431,13 @@ public static class BatteredWalls
     }
 
     /// <summary>Points along a slope of a leg the chord rule asks for (a warped face's patches and their twist), from S0 to S1.</summary>
-    static (List<double> Xs, List<double> Rows) Samples(Leg g, List<Warp> warps)
+    static (List<double> Xs, List<double> Rows) Samples(Leg g, List<Warp> warps) => Samples(g, warps, g.S0, g.S1);
+
+    /// <summary>The same over the stretch x0 to x1 of the leg (its patches over that stretch).</summary>
+    static (List<double> Xs, List<double> Rows) Samples(Leg g, List<Warp> warps, double x0, double x1)
     {
-        var mine = warps.Where(w => w.Leg == g.Index).ToList();
-        if (mine.Count == 0) return ([g.S0, g.S1], [0, 1]);
+        var mine = warps.Where(w => w.Leg == g.Index && Math.Abs(w.X0 - x0) < 1e-9 && Math.Abs(w.X1 - x1) < 1e-9).ToList();
+        if (mine.Count == 0) return ([x0, x1], [0, 1]);
         var us = new SortedSet<double> { 0, 1 };
         var vs = new SortedSet<double> { 0, 1 };
         foreach (var w in mine)
@@ -394,7 +450,26 @@ public static class BatteredWalls
             var cells = (int)Math.Ceiling(Math.Sqrt(twist / (4 * Chords.Tolerance)));
             for (var k = 1; k < cells; k++) { us.Add((double)k / cells); vs.Add((double)k / cells); }
         }
-        return ([.. us.Select(u => g.S0 + (g.S1 - g.S0) * u)], [.. vs]);
+        return ([.. us.Select(u => x0 + (x1 - x0) * u)], [.. vs]);
+    }
+
+    /// <summary>Every point along a leg its patches ask for, over all their stretches (for lines drawn along it).</summary>
+    static List<double> AllSamples(Leg g, List<Warp> warps)
+    {
+        var xs = new SortedSet<double>(Samples(g, warps).Xs);
+        foreach (var w in warps.Where(w => w.Leg == g.Index)) foreach (var x in Samples(g, warps, w.X0, w.X1).Xs) xs.Add(x);
+        return [.. xs];
+    }
+
+    /// <summary>The stretches of a leg its warped faces cover: the slope, and with a whole-segment twist the level crown over each corner too.</summary>
+    static List<(double X0, double X1)> WarpedStretches(Leg g)
+    {
+        var o = new List<(double, double)>();
+        if (!g.FrontWarps && !g.BackWarps) return o;
+        if (g.TwistAll && g.StartCorner && g.S0 > 1e-6) o.Add((0, g.S0));
+        if (g.S1 - g.S0 > 1e-6) o.Add((g.S0, g.S1));
+        if (g.TwistAll && g.EndCorner && g.L - g.S1 > 1e-6) o.Add((g.S1, g.L));
+        return o;
     }
 
     public static Pieces Make(List<Leg> legs, List<Corner> corners)
@@ -402,37 +477,67 @@ public static class BatteredWalls
         var o = new Pieces();
         if (legs.Count == 0) return o;
         foreach (var g in legs)
-        {
-            if (g.FrontWarps && g.S1 - g.S0 > 1e-6) o.Warps.Add(new Warp(g.Index, true, Patch(g, true), g.D3));
-            if (g.BackWarps && g.S1 - g.S0 > 1e-6) o.Warps.Add(new Warp(g.Index, false, Patch(g, false), g.D3));
-        }
+            foreach (var (x0, x1) in WarpedStretches(g))
+            {
+                if (g.FrontWarps) o.Warps.Add(new Warp(g.Index, true, Patch(g, true, x0, x1), g.D3, x0, x1));
+                if (g.BackWarps) o.Warps.Add(new Warp(g.Index, false, Patch(g, false, x0, x1), g.D3, x0, x1));
+            }
         var width = legs.Max(g => g.Width);
         foreach (var g in legs)
         {
+            void Stem(Solid? piece) { if (piece != null) { o.Stem.Add(piece); o.LegOf[piece] = g.Index; } }
+            void Footing(Solid? piece) { if (piece != null) { o.Footing.Add(piece); o.LegOf[piece] = g.Index; } }
             var prev = g.StartCorner ? corners[g.Index - 1] : null;
             var next = g.EndCorner ? corners[g.Index] : null;
             var (pl, nl) = (prev != null ? legs[g.Index - 1] : null, next != null ? legs[g.Index + 1] : null);
             var ext = 4 * width + g.L + 1;
-            // The stem: its slope between the corners, and its level ends over each corner.
-            var (xs, rows) = Samples(g, o.Warps);
-            if (g.S1 - g.S0 > 1e-6 && Loft(g, xs, x => StemRing(g, x, rows)) is { } mid)
+            // The stem: its slope between the corners (and with a whole-segment twist, its warped stretches over the corners), and its
+            // level ends over each corner (from where its twist starts).
+            var stretches = WarpedStretches(g);
+            if (stretches.Count == 0 && g.S1 - g.S0 > 1e-6) stretches.Add((g.S0, g.S1));
+            // The stretches lofted as one piece (a whole-segment twist's three: no faces between them inside the wall), its rows the
+            // finest any of them asks, carried a hair past each end it shares with another piece (its section there kept), so no two
+            // pieces meet face to face on the plane a corner's pieces are cut on as well: three faces on one plane may leave a crack.
+            if (stretches.Count > 0)
             {
-                o.Stem.Add(mid);
-                if (o.Warps.Any(w => w.Leg == g.Index)) o.Warped.Add((mid, ExactVolume(g)));
+                var (x0, x1) = (stretches[0].X0, stretches[^1].X1);
+                var xs = new SortedSet<double>();
+                var rowSet = new SortedSet<double>();
+                foreach (var (a0, a1) in stretches) { var (sx, sr) = Samples(g, o.Warps, a0, a1); foreach (var x in sx) xs.Add(x); foreach (var r in sr) rowSet.Add(r); }
+                var rows = rowSet.ToList();
+                // A section where an assembly's joint with the face wall falls, so the joint's cut runs along the facets' edges, on the surface.
+                if (prev != null && g.S0 + JointPast < x1) xs.Add(g.S0 + JointPast);
+                if (next != null && g.S1 - JointPast > x0) xs.Add(g.S1 - JointPast);
+                var (e0, e1) = (x0 > 1e-9 || prev != null ? Overlap : 0, x1 < g.L - 1e-9 || next != null ? Overlap : 0);
+                var stations = (e0 > 0 ? new[] { x0 - e0 } : []).Concat(xs).Concat(e1 > 0 ? new[] { x1 + e1 } : []).ToList();
+                if (Loft(g, stations, x => StemRing(g, Math.Clamp(x, x0, x1), rows)) is { } mid)
+                {
+                    Stem(mid);
+                    if (o.Warps.Any(w => w.Leg == g.Index))
+                        o.Warped.Add((mid, stretches.Sum(st => ExactVolume(g, st.X0, st.X1)) + e0 * RingArea(StemRing(g, x0, rows)) + e1 * RingArea(StemRing(g, x1, rows)), g.Index));
+                }
             }
-            Solid? StartPiece(List<(double W, double Z)> ring, (Vec3 N, double D) outer) =>
-                Clip(Clip(Loft(g, [g.S0 - ext, g.S0], _ => ring), outer.N, outer.D), -pl!.D3, -(Vec3.Dot(pl.D3, pl.A.At(0)) + pl.S1));
-            Solid? EndPiece(List<(double W, double Z)> ring, (Vec3 N, double D) outer) =>
-                Clip(Clip(Loft(g, [g.S1, g.S1 + ext], _ => ring), outer.N, outer.D), nl!.D3, Vec3.Dot(nl.D3, nl.A.At(0)) + nl.S0);
-            if (prev != null && StartPiece(StemRing(g, g.S0, [0, 1]), OuterStem(pl!, true, prev.OuterFront)) is { } sp) o.Stem.Add(sp);
-            if (next != null && EndPiece(StemRing(g, g.S1, [0, 1]), OuterStem(nl!, false, next.OuterFront)) is { } ep) o.Stem.Add(ep);
+            var (c0, c1) = (stretches.Count > 0 ? stretches[0].X0 : g.S0, stretches.Count > 0 ? stretches[^1].X1 : g.S1);
+            Solid? StartPiece(List<(double W, double Z)> ring, (Vec3 N, double D) outer, double at) =>
+                Clip(Clip(Loft(g, [at - ext, at], _ => ring), outer.N, outer.D), -pl!.D3, -(Vec3.Dot(pl.D3, pl.A.At(0)) + pl.S1));
+            Solid? EndPiece(List<(double W, double Z)> ring, (Vec3 N, double D) outer, double at) =>
+                Clip(Clip(Loft(g, [at, at + ext], _ => ring), outer.N, outer.D), nl!.D3, Vec3.Dot(nl.D3, nl.A.At(0)) + nl.S0);
+            if (prev != null) Stem(StartPiece(StemRing(g, c0, [0, 1]), OuterStem(pl!, true, prev.OuterFront), c0));
+            if (next != null) Stem(EndPiece(StemRing(g, c1, [0, 1]), OuterStem(nl!, false, next.OuterFront), c1));
+            // A free end that leans or is turned: the stem and the footing carried past it, cut by its plane once joined.
+            var (eStart, eEnd) = (EndReach(g, false), EndReach(g, true));
+            if (eStart > 0) Stem(Loft(g, [-eStart, Overlap], _ => StemRing(g, 0, [0, 1])));
+            if (eEnd > 0) Stem(Loft(g, [g.L - Overlap, g.L + eEnd], _ => StemRing(g, g.L, [0, 1])));
             // The footing, the same way round its corners.
             if (g.Footing)
             {
                 var ring = Box(g.Fa, g.Fb, g.Bottom, g.Zf);
-                if (g.S1 - g.S0 > 1e-6 && Loft(g, [g.S0, g.S1], _ => ring) is { } fm) o.Footing.Add(fm);
-                if (prev != null && StartPiece(ring, OuterFoot(pl!, prev.OuterFront)) is { } fs) o.Footing.Add(fs);
-                if (next != null && EndPiece(ring, OuterFoot(nl!, next.OuterFront)) is { } fe) o.Footing.Add(fe);
+                // Carried a hair past a corner as the stem is (no three faces on one plane).
+                if (g.S1 - g.S0 > 1e-6) Footing(Loft(g, [g.S0 - (prev != null ? Overlap : 0), g.S1 + (next != null ? Overlap : 0)], _ => ring));
+                if (prev != null) Footing(StartPiece(ring, OuterFoot(pl!, prev.OuterFront), g.S0));
+                if (next != null) Footing(EndPiece(ring, OuterFoot(nl!, next.OuterFront), g.S1));
+                if (eStart > 0) Footing(Loft(g, [-eStart - FootSpare(g, false), Overlap], _ => ring));
+                if (eEnd > 0) Footing(Loft(g, [g.L - Overlap, g.L + eEnd + FootSpare(g, true)], _ => ring));
                 // The key, mitred at the corners.
                 if (g.KeyA is { } ka && g.KeyB is { } kb)
                 {
@@ -441,10 +546,93 @@ public static class BatteredWalls
                     else key = Clip(key, -g.D3, -Vec3.Dot(g.D3, g.A.At(0)));
                     if (nl != null) { var n = (g.D3 + nl.D3).Normalized(); key = Clip(key, n, Vec3.Dot(n, g.B.At(0))); }
                     else key = Clip(key, g.D3, Vec3.Dot(g.D3, g.B.At(0)));
-                    if (key != null) o.Footing.Add(key);
+                    Footing(key);
                 }
             }
             Label(o, g, legs, corners);
+        }
+        return o;
+    }
+
+    /// <summary>How far a stem's stretch is carried past an end it shares with another piece (a tenth of a millimetre).</summary>
+    const double Overlap = 1e-4;
+
+    /// <summary>How far past its slope's start a wing's joint with the face wall is, as an assembly (5 mm).</summary>
+    const double JointPast = 5e-3;
+
+    static double RingArea(List<(double W, double Z)> ring)
+    {
+        var a = 0.0;
+        for (var k = 0; k < ring.Count; k++) { var (p, q) = (ring[k], ring[(k + 1) % ring.Count]); a += p.W * q.Z - q.W * p.Z; }
+        return Math.Abs(a) / 2;
+    }
+
+    // ------------------------------------------------------------------ free ends
+
+    /// <summary>How far past a free end its stem reaches before its plane cuts it (0: a square end, cut by nothing).</summary>
+    static double EndReach(Leg g, bool atEnd)
+    {
+        if (!g.Shaped(atEnd)) return 0;
+        var (lean, turn) = atEnd ? (g.EndLean, g.EndTurn) : (g.StartLean, g.StartTurn);
+        var top = atEnd ? g.Z1 : g.Z0;
+        var across = Math.Max(Math.Abs(g.Fa), Math.Abs(g.Fb));
+        return (top - g.Zf) * lean + across * Math.Abs(turn) + 0.1;
+    }
+
+    /// <summary>How far the footing reaches past a leaning end's foot: its toe there (none for an end turned only, flush with the stem).</summary>
+    static double FootSpare(Leg g, bool atEnd)
+    {
+        var lean = atEnd ? g.EndLean : g.StartLean;
+        if (lean <= 1e-9 || !g.Footing) return 0;
+        var x = atEnd ? g.L : 0;
+        return Math.Max(0.05, g.WF(x, g.Zf) - g.Fa);
+    }
+
+    /// <summary>
+    /// The plane of a free end (pointing out of the wall), at the crown's level there: the stem's, leaning back from the crown's end
+    /// (s·(x − Xe) − w·tan φ − (Ze − z)·k = 0), or with <paramref name="footing"/> the footing's, upright, its toe past the stem's foot.
+    /// </summary>
+    public static (Vec3 N, double D) EndPlane(Leg g, bool atEnd, bool footing)
+    {
+        var sgn = atEnd ? 1.0 : -1.0;
+        var (lean, turn) = atEnd ? (g.EndLean, g.EndTurn) : (g.StartLean, g.StartTurn);
+        var (xe, ze) = atEnd ? (g.L, g.Z1) : (0.0, g.Z0);
+        var xy = g.D * sgn - g.H * turn;
+        if (footing)
+        {
+            var nf = new Vec3(xy.X, xy.Y, 0);
+            var df = Vec2.Dot(xy, g.A) + sgn * xe + (ze - g.Zf) * lean + FootSpare(g, atEnd);
+            var lf = nf.Length;
+            return (nf * (1 / lf), df / lf);
+        }
+        var n = new Vec3(xy.X, xy.Y, lean);
+        var d = Vec2.Dot(xy, g.A) + sgn * xe + ze * lean;
+        var l = n.Length;
+        return (n * (1 / l), d / l);
+    }
+
+    /// <summary>What cuts a wall's shaped free ends: beyond each end's plane, the stem's above the footing's top, the footing's below it (one, upright, for a turned end).</summary>
+    static List<Solid> EndCutters(List<Leg> legs)
+    {
+        var o = new List<Solid>();
+        if (legs.Count == 0) return o;
+        var big = legs.Sum(g => g.L) + legs.Max(g => g.Width) * 4 + 50;
+        var zLow = legs.Min(g => g.KeyA != null ? g.KeyBottom : g.Bottom) - 5;
+        var zHigh = legs.Max(g => Math.Max(g.Z0, g.Z1)) + 5;
+        foreach (var (g, atEnd) in new[] { (legs[0], false), (legs[^1], true) })
+        {
+            if (!g.Shaped(atEnd)) continue;
+            var lean = atEnd ? g.EndLean : g.StartLean;
+            var xe = atEnd ? g.L : 0;
+            Solid? Half((Vec3 N, double D) plane, double z0, double z1) =>
+                Clip(Loft(g, [xe - big, xe + big], _ => Box(-big, big, z0, z1)), -plane.N, -plane.D);
+            if (lean <= 1e-9 || !g.Footing)
+            {
+                if (Half(EndPlane(g, atEnd, false), zLow, zHigh) is { } c) o.Add(c);
+                continue;
+            }
+            if (Half(EndPlane(g, atEnd, false), g.Zf, zHigh) is { } stem) o.Add(stem);
+            if (Half(EndPlane(g, atEnd, true), zLow, g.Zf) is { } foot) o.Add(foot);
         }
         return o;
     }
@@ -460,15 +648,15 @@ public static class BatteredWalls
             o.Planes.Add(new(n, Vec3.Dot(n, a), label));
             o.Planes.Add(new(-n, -Vec3.Dot(n, a), label));
         }
-        foreach (var x in new[] { g.S0, g.S1 })
+        foreach (var x in new[] { 0, g.S0, g.S1, g.L }.Distinct())
         {
-            // The faces at either end of the slope (where flat, the faces over the corners; where planar, the slope's own).
-            var xb = x == g.S0 ? Math.Max(0, g.S0 - 1) : Math.Min(g.L, g.S1 + 1);
+            // The faces through the ruling at each end of the slope and of the leg, along the leg (the faces over the corners and past
+            // a shaped free end, which keep one section); where planar, the slope's own.
             foreach (var front in new[] { true, false })
             {
                 double W(double xx, double z) => front ? g.WF(xx, z) : g.WB(xx, z);
                 var label = front ? "front" : "back";
-                Plane(g.P(x, W(x, g.Zf), g.Zf), g.P(x, W(x, g.Top(x)), g.Top(x)), g.P(xb, W(xb, g.Zf), g.Zf) + (xb == x ? g.D3 : Vec3.Zero), label);
+                Plane(g.P(x, W(x, g.Zf), g.Zf), g.P(x, W(x, g.Top(x)), g.Top(x)), g.P(x, W(x, g.Zf), g.Zf) + g.D3, label);
                 if (!(front ? g.FrontWarps : g.BackWarps) && g.S1 - g.S0 > 1e-6)
                     Plane(g.P(g.S0, W(g.S0, g.Zf), g.Zf), g.P(g.S1, W(g.S1, g.Zf), g.Zf), g.P(g.S0, W(g.S0, g.Top(g.S0)), g.Top(g.S0)), label);
             }
@@ -489,12 +677,26 @@ public static class BatteredWalls
         // The wall's two ends.
         if (!g.StartCorner) Plane(g.P(0, 0, 0), g.P(0, 1, 0), g.P(0, 0, 1), "end");
         if (!g.EndCorner) Plane(g.P(g.L, 0, 0), g.P(g.L, 1, 0), g.P(g.L, 0, 1), "end");
+        // A shaped free end's planes: the stem's (leaning, turned) and the footing's.
+        foreach (var atEnd in new[] { false, true })
+        {
+            if (!g.Shaped(atEnd)) continue;
+            foreach (var foot in new[] { false, true })
+            {
+                var (n, d) = EndPlane(g, atEnd, foot);
+                o.Planes.Add(new(n, d, "end"));
+                o.Planes.Add(new(-n, -d, "end"));
+            }
+        }
         // Where the slope starts and ends (a step where the crown jumps at a corner).
         foreach (var x in new[] { g.S0, g.S1 }) Plane(g.P(x, 0, 0), g.P(x, 1, 0), g.P(x, 0, 1), "step");
     }
 
     /// <summary>The volume of a leg's slope (its middle piece) exactly: ∫ (T·h + (kf + kb)·h²/2) dx, a cubic, by five-point Gauss.</summary>
-    public static double ExactVolume(Leg g) => Gauss(g.S0, g.S1, x => { var h = g.Top(x) - g.Zf; return g.T * h + (g.Kf(x) + g.Kb(x)) * h * h / 2; });
+    public static double ExactVolume(Leg g) => ExactVolume(g, g.S0, g.S1);
+
+    /// <summary>The same over x0 to x1 (a cubic on each stretch the crown and the batters are linear on).</summary>
+    public static double ExactVolume(Leg g, double x0, double x1) => Gauss(x0, x1, x => { var h = g.Top(x) - g.Zf; return g.T * h + (g.Kf(x) + g.Kb(x)) * h * h / 2; });
 
     /// <summary>A patch's area: ∫∫ |Su × Sv|, by Gauss in both directions (ten points each: well within a square millimetre on a wall).</summary>
     public static double TrueArea(BSplineSurface s)
@@ -530,6 +732,13 @@ public static class BatteredWalls
 
     // ------------------------------------------------------------------ the wall
 
+    /// <summary>One part of the wall as an assembly (a wing, the face wall): its leg, its key and name, its body.</summary>
+    public sealed record Part(int Leg, string Key, string Name, Solid Solid)
+    {
+        /// <summary>Whether a point of the wall is in this part (its warped pieces' share of what the facets miss is reckoned by it).</summary>
+        public Func<Vec3, bool> Holds { get; init; } = _ => true;
+    }
+
     /// <summary>A built wall: its body and what made it (its quantities and its exact body read them).</summary>
     public sealed class Built
     {
@@ -539,22 +748,37 @@ public static class BatteredWalls
         public Solid? Solid;
         public ISolidBooleans? Booleans;
         public List<string> Notes = [];
+        /// <summary>Its parts, one per segment, when it is built as an assembly (none otherwise).</summary>
+        public List<Part> Parts = [];
         double? _stem;
 
         /// <summary>The stem's volume, exactly where it warps: its pieces joined, less what the facets miss.</summary>
         public double StemVolume()
         {
             if (_stem is { } v) return v;
-            var joined = Booleans != null && Pieces.Stem.Count > 1 ? Booleans.Union(Pieces.Stem, "stem") : null;
+            // A shaped free end cuts the stem as it cuts the wall.
+            var cut = EndCutters(Legs);
+            var joined = Booleans != null && (Pieces.Stem.Count > 1 || cut.Count > 0) ? Booleans.UnionLess(Pieces.Stem, cut, "stem") : null;
             var raw = joined != null ? Measure.Volume(joined) : Pieces.Stem.Sum(Measure.Volume);
             return (_stem = raw + Correction).Value;
         }
 
         /// <summary>The volume the warped faces' facets miss: their exact volume less their facets'.</summary>
         public double Correction => Pieces.Warped.Sum(w => w.Exact - Measure.Volume(w.Piece));
+
+        /// <summary>What the warped pieces in a part miss (its share of <see cref="Correction"/>): each piece the part its middle is in.</summary>
+        public double CorrectionOf(Part part) => Pieces.Warped.Where(w => part.Holds(w.Piece.Vertices.Aggregate(Vec3.Zero, (a, p) => a + p) * (1.0 / w.Piece.Vertices.Length)))
+            .Sum(w => w.Exact - Measure.Volume(w.Piece));
     }
 
     static readonly ConditionalWeakTable<Solid, Built> Made = new();
+
+    /// <summary>Whether the wall is written as an assembly of its segments (each a wall of its own: the wings and the face wall).</summary>
+    public static bool AsAssembly(Entity e) => e.Str("ifcMapping") == "assembly";
+
+    /// <summary>A segment's part key and its name (its own, else by where it stands: the wings at the free ends, the face wall between).</summary>
+    public static (string Key, string Name) PartOf(Leg g, int count) =>
+        ($"leg:{g.Index}", g.Name ?? (count >= 3 && g.Index == 0 ? "Wing" : count >= 3 && g.Index == count - 1 ? "Wing" : count >= 3 ? "Face wall" : $"Segment {g.Index + 1}"));
 
     /// <summary>The wall built: its pieces joined (by the booleans given; without them, laid side by side, with a note).</summary>
     public static Built Build(Entity e, IModelView m, ISolidBooleans? booleans)
@@ -562,25 +786,107 @@ public static class BatteredWalls
         var (legs, corners, notes) = Resolve(m, e);
         var pieces = Make(legs, corners);
         var all = pieces.Stem.Concat(pieces.Footing).ToList();
-        Solid? solid = null;
-        if (booleans != null)
-            try { solid = booleans.Union(all, "retaining"); }
-            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException) { notes.Add($"The wall's pieces could not be joined: {ex.Message}"); }
-        else notes.Add("The wall's pieces are laid side by side: this build has no booleans to join them.");
-        solid ??= all.Count > 0 ? Paths.Combine(all, "retaining") : null;
-        // Its joints: a gap as wide as each, square to its segment.
+        // Its joints: a gap as wide as each, square to its segment; its shaped free ends, cut by their planes.
         var spec = CorridorSpec.Of(e);
         var joints = JointPlaces(e, legs);
-        if (solid != null && booleans != null && joints.Count > 0)
+        var cutters = joints.Select(j => Loft(j.Leg, [j.X - spec.JointWidth / 2, j.X + spec.JointWidth / 2],
+            _ => Box(j.Leg.Fa - 1, j.Leg.Fb + 1, (j.Leg.KeyA != null ? j.Leg.KeyBottom : j.Leg.Bottom) - 1, Math.Max(j.Leg.Z0, j.Leg.Z1) + 1))).OfType<Solid>().ToList();
+        cutters.AddRange(EndCutters(legs));
+        // A portal at a tunnel lining's end: the lining's outside and its clear opening through the face wall (S4).
+        cutters.AddRange(Tunnels.PortalCutters(m, e));
+        Solid? solid = null;
+        if (booleans != null)
         {
-            var cutters = joints.Select(j => Loft(j.Leg, [j.X - spec.JointWidth / 2, j.X + spec.JointWidth / 2],
-                _ => Box(j.Leg.Fa - 1, j.Leg.Fb + 1, (j.Leg.KeyA != null ? j.Leg.KeyBottom : j.Leg.Bottom) - 1, Math.Max(j.Leg.Z0, j.Leg.Z1) + 1))).OfType<Solid>().ToList();
-            try { solid = booleans.Difference(solid, cutters, "retaining") ?? solid; }
-            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException) { notes.Add($"The joints could not be cut: {ex.Message}"); }
+            // Joined and cut in one go; when that fails, joined only (a note says what was left uncut).
+            try { solid = booleans.UnionLess(all, cutters, "retaining"); }
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+            {
+                try { solid = booleans.Union(all, "retaining"); notes.Add($"The joints and the ends could not be cut: {ex.Message}"); }
+                catch (Exception ex2) when (ex2 is InvalidOperationException or ArgumentException) { notes.Add($"The wall's pieces could not be joined: {ex2.Message}"); }
+            }
         }
+        else
+        {
+            notes.Add("The wall's pieces are laid side by side: this build has no booleans to join them.");
+            if (legs.Any(g => g.Shaped(false) || g.Shaped(true))) notes.Add("The wall's free ends are left square: this build has no booleans to cut them.");
+        }
+        solid ??= all.Count > 0 ? Paths.Combine(all, "retaining") : null;
         var built = new Built { Legs = legs, Corners = corners, Pieces = pieces, Solid = solid, Booleans = booleans, Notes = notes };
         if (solid != null) Made.AddOrUpdate(solid, built);
+        // As an assembly: a part per segment. A wing (the first or the last segment) is the wall from where its slope starts, a plane
+        // square to it (its construction joint with the face wall), to its free end; the face wall is the rest, its corners with it;
+        // segments between corners are split among them on the mitres. Each cut as the wall is; every input a piece as built.
+        if (AsAssembly(e) && legs.Count > 1 && booleans != null)
+        {
+            try
+            {
+                foreach (var (leg, region, keep) in Regions(legs, corners))
+                {
+                    var part = booleans.UnionLess(all, [.. cutters, .. region], "retaining");
+                    if (part == null || part.Faces.Length == 0) continue;
+                    var (key, name) = PartOf(leg, legs.Count);
+                    built.Parts.Add(new Part(leg.Index, key, name, part) { Holds = keep });
+                }
+                built.Parts.Sort((a, b) => a.Leg.CompareTo(b.Leg));
+                foreach (var p in built.Parts) Made.AddOrUpdate(p.Solid, built);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+            {
+                built.Parts.Clear();
+                notes.Add($"The wall could not be split into its parts: {ex.Message}");
+            }
+        }
         return built;
+    }
+
+    /// <summary>
+    /// Each segment's region of the wall as an assembly: what is taken away from the wall to leave it (convex cutters), and whether a
+    /// point is in it. The wings from their slope's start (the segment next to them past its middle, so the other wing is not); the
+    /// segments between, on the mitres at their corners, less the wings'.
+    /// </summary>
+    static List<(Leg Leg, List<Solid> Away, Func<Vec3, bool> Holds)> Regions(List<Leg> legs, List<Corner> corners)
+    {
+        var n = legs.Count;
+        var big = legs.Sum(g => g.L) + legs.Max(g => g.Width) * 4 + 50;
+        var (zLow, zHigh) = (legs.Min(g => g.KeyA != null ? g.KeyBottom : g.Bottom) - 5, legs.Max(g => Math.Max(g.Z0, g.Z1)) + 5);
+        Solid? Keep(IEnumerable<(Vec3 N, double D)> planes)
+        {
+            var g = legs[0];
+            Solid? box = Loft(g, [-big, big], _ => Box(-big, big, zLow, zHigh));
+            foreach (var (pn, pd) in planes) box = Clip(box, pn, pd);
+            return box;
+        }
+        // x along a leg at least (or at most) c, as a plane n·p ≤ d.
+        (Vec3 N, double D) AtLeast(Leg g, double c) => (-g.D3, -(Vec3.Dot(g.D3, g.A.At(0)) + c));
+        (Vec3 N, double D) AtMost(Leg g, double c) => (g.D3, Vec3.Dot(g.D3, g.A.At(0)) + c);
+        static (Vec3 N, double D) Flip((Vec3 N, double D) h) => (-h.N, -h.D);
+        static bool In(Vec3 p, (Vec3 N, double D) h) => Vec3.Dot(h.N, p) <= h.D + 1e-9;
+        var o = new List<(Leg, List<Solid>, Func<Vec3, bool>)>();
+        // The wings: the last from its slope's start, the first to its slope's end (when there are two segments, the last only).
+        var wings = new List<(Leg Leg, (Vec3 N, double D) A, (Vec3 N, double D) B)>();
+        // The joint 5 mm past the slope's start: off the planes the pieces meet on, so no cut runs along one or leaves a sliver.
+        const double Past = JointPast;
+        var last = legs[^1];
+        wings.Add((last, AtLeast(last, Math.Min(last.L, last.S0 + Past)), AtLeast(legs[^2], legs[^2].L / 2)));
+        if (n >= 3) wings.Add((legs[0], AtMost(legs[0], Math.Max(0, legs[0].S1 - Past)), AtMost(legs[1], legs[1].L / 2)));
+        // What is not a wing's: short of its joint, and past its joint beyond the middle of the segment next to it (the two overlapping
+        // by a metre, so they leave no sheet on the joint's plane between them).
+        foreach (var (g, a, b) in wings)
+            o.Add((g, [.. new[] { Keep([Flip(a)]), Keep([(a.N, a.D + 1), Flip(b)]) }.OfType<Solid>()], p => In(p, a) && In(p, b)));
+        var wingAway = wings.Select(w => Keep([w.A, w.B])).OfType<Solid>().ToList();
+        bool InWing(Vec3 p) => wings.Any(w => In(p, w.A) && In(p, w.B));
+        var middle = legs.Where(g => !wings.Any(w => w.Leg == g)).ToList();
+        foreach (var g in middle)
+        {
+            var away = new List<Solid>(wingAway);
+            var planes = new List<(Vec3 N, double D)>();
+            // Between the mitres at its corners with the other segments between (a wing's side is the wing's already).
+            if (g.StartCorner && middle.Contains(legs[g.Index - 1])) { var m = -(legs[g.Index - 1].D3 + g.D3).Normalized(); planes.Add((m, Vec3.Dot(m, g.A.At(0)))); }
+            if (g.EndCorner && middle.Contains(legs[g.Index + 1])) { var m = (g.D3 + legs[g.Index + 1].D3).Normalized(); planes.Add((m, Vec3.Dot(m, g.B.At(0)))); }
+            foreach (var h in planes) if (Keep([Flip(h)]) is { } beyond) away.Add(beyond);
+            o.Add((g, away, p => !InWing(p) && planes.All(h => In(p, h))));
+        }
+        return o;
     }
 
     /// <summary>The wall a body was built as (the geometry's), when it is still known.</summary>
@@ -605,7 +911,11 @@ public static class BatteredWalls
         var built = Build(e, m, services.Get<ISolidBooleans>());
         if (built.Solid is not { } solid || solid.Faces.Length == 0) return new ElementGeometry([], Diagnostics: ["The retaining wall could not be built."]);
         var material = e.Str("material");
-        var parts = new List<GeometryPart> { new("Retaining wall", material != null ? Materials.ColorOf(m, material) : RetainingWalls.Color, solid, material, "wall") };
+        var color = material != null ? Materials.ColorOf(m, material) : RetainingWalls.Color;
+        // As an assembly, a part per segment (each a wall of its own in IFC); else the wall whole.
+        var parts = built.Parts.Count > 1
+            ? built.Parts.Select(p => new GeometryPart(p.Name, color, p.Solid, material, p.Key)).ToList()
+            : new List<GeometryPart> { new("Retaining wall", color, solid, material, "wall") };
         var path = built.Legs.Select(g => g.A).Append(built.Legs[^1].B).ToList();
         return new ElementGeometry(parts, Plan(e, built), [path[0], path[^1]], built.Notes.Count > 0 ? built.Notes : null);
     }
@@ -614,9 +924,10 @@ public static class BatteredWalls
 
     /// <summary>
     /// A line along the wall at an offset (by leg, along x): through each leg's samples, from the crossing at each corner (or the leg's
-    /// end at a free end or a straight joint).
+    /// end at a free end or a straight joint; at a shaped free end, where its plane cuts the line: at the crown, at the stem's foot or
+    /// at the footing, as <paramref name="level"/> says).
     /// </summary>
-    static List<Vec2> Along(Built b, string key, Func<Leg, double, double> w)
+    static List<Vec2> Along(Built b, string key, Func<Leg, double, double> w, string level = "crown")
     {
         var o = new List<Vec2>();
         foreach (var g in b.Legs)
@@ -624,15 +935,37 @@ public static class BatteredWalls
             var prev = g.StartCorner ? b.Corners[g.Index - 1] : null;
             var next = g.EndCorner ? b.Corners[g.Index] : null;
             if (prev?.Crossings.TryGetValue(key, out var p0) == true) { if (o.Count == 0 || (o[^1] - p0).Length > 1e-9) o.Add(p0); }
-            else o.Add(g.P2(0, w(g, 0)));
-            var (xs, _) = Samples(g, b.Pieces.Warps);
-            foreach (var x in xs) o.Add(g.P2(x, w(g, x)));
+            else o.Add(FreeEnd(g, false, w, level));
+            foreach (var x in AllSamples(g, b.Pieces.Warps))
+                if (prev != null || x >= Cut(g, false, w, level) - 1e-12)
+                    if (next != null || x <= Cut(g, true, w, level) + 1e-12) o.Add(g.P2(x, w(g, x)));
             if (next?.Crossings.TryGetValue(key, out var p1) == true) o.Add(p1);
-            else o.Add(g.P2(g.L, w(g, g.L)));
+            else o.Add(FreeEnd(g, true, w, level));
         }
         var clean = new List<Vec2>();
         foreach (var p in o) if (clean.Count == 0 || (clean[^1] - p).Length > 1e-9) clean.Add(p);
         return clean;
+    }
+
+    /// <summary>Where a free end cuts a line along the leg (its distance along it): its own end when square, else on its plane.</summary>
+    static double Cut(Leg g, bool atEnd, Func<Leg, double, double> w, string level)
+    {
+        var xe = atEnd ? g.L : 0;
+        if (!g.Shaped(atEnd)) return xe;
+        var sgn = atEnd ? 1.0 : -1.0;
+        var (lean, turn) = atEnd ? (g.EndLean, g.EndTurn) : (g.StartLean, g.StartTurn);
+        var ze = atEnd ? g.Z1 : g.Z0;
+        var drop = level switch { "base" => (ze - g.Zf) * lean, "foot" => (ze - g.Zf) * lean + FootSpare(g, atEnd), _ => 0 };
+        // The line's offset where it meets the plane: past the end it keeps the end's; before it, found again from where it is (planar there).
+        var x = xe;
+        for (var k = 0; k < 4; k++) x = xe + sgn * (w(g, Math.Clamp(x, 0, g.L)) * turn + drop);
+        return x;
+    }
+
+    static Vec2 FreeEnd(Leg g, bool atEnd, Func<Leg, double, double> w, string level)
+    {
+        var x = Cut(g, atEnd, w, level);
+        return g.P2(x, w(g, Math.Clamp(x, 0, g.L)));
     }
 
     static List<PlanItem> Plan(Entity e, Built b)
@@ -642,15 +975,19 @@ public static class BatteredWalls
         var crown = front.Concat(Enumerable.Reverse(back)).ToList();
         var plan = new List<PlanItem> { new("cut", true, crown) };
         // A leaning front is seen from above down to its foot; a leaning back is under the high ground; the footing under both.
-        if (b.Legs.Any(g => g.Kf0 > 0 || g.Kf1 > 0)) plan.Add(new("outline", false, Along(b, "baseF", (g, x) => g.WF(x, g.Zf))));
-        if (b.Legs.Any(g => g.Kb0 > 0 || g.Kb1 > 0)) plan.Add(new("dashed", false, Along(b, "baseB", (g, x) => g.WB(x, g.Zf))));
+        if (b.Legs.Any(g => g.Kf0 > 0 || g.Kf1 > 0)) plan.Add(new("outline", false, Along(b, "baseF", (g, x) => g.WF(x, g.Zf), "base")));
+        if (b.Legs.Any(g => g.Kb0 > 0 || g.Kb1 > 0)) plan.Add(new("dashed", false, Along(b, "baseB", (g, x) => g.WB(x, g.Zf), "base")));
         if (b.Legs.Any(g => g.Footing))
         {
-            var fa = Along(b, "footF", (g, _) => g.Fa);
-            var fb = Along(b, "footB", (g, _) => g.Fb);
+            var fa = Along(b, "footF", (g, _) => g.Fa, "foot");
+            var fb = Along(b, "footB", (g, _) => g.Fb, "foot");
             plan.Add(new("dashed", true, fa.Concat(Enumerable.Reverse(fb)).ToList()));
         }
         foreach (var (g, x) in JointPlaces(e, b.Legs)) plan.Add(new("cut", false, [g.P2(x, -g.T / 2), g.P2(x, g.T / 2)]));
+        // A leaning free end is seen from above down to its foot: its crown's end, then the line across its foot.
+        foreach (var (g, atEnd) in new[] { (b.Legs[0], false), (b.Legs[^1], true) })
+            if (g.Shaped(atEnd) && (atEnd ? g.EndLean : g.StartLean) > 1e-9)
+                plan.Add(new("outline", false, [FreeEnd(g, atEnd, (l, x) => l.WF(x, l.Zf), "base"), FreeEnd(g, atEnd, (l, x) => l.WB(x, l.Zf), "base")]));
         return plan;
     }
 
@@ -689,13 +1026,18 @@ public static class BatteredWalls
 
     // ------------------------------------------------------------------ quantities
 
-    /// <summary>The areas of the body's faces by what they are (front, back, crown, end, footing…), the warped faces at their true area.</summary>
-    public static Dictionary<string, double> Areas(Built b, Solid s)
+    /// <summary>
+    /// The areas of the body's faces by what they are (front, back, crown, end, footing…), the warped faces at their true area. A face
+    /// one of <paramref name="others"/> (the assembly's other parts) has on the same plane facing it is where two parts meet: no
+    /// formwork, left out.
+    /// </summary>
+    public static Dictionary<string, double> Areas(Built b, Solid s, IReadOnlyList<Solid>? others = null)
     {
         var o = new Dictionary<string, double>();
         void Add(string k, double a) => o[k] = o.GetValueOrDefault(k) + a;
         var surfaces = b.Pieces.Warps.Select(w => (Warp: w, Surface: new SplineSurface(w.Patch))).ToList();
         var zf = b.Legs.Max(g => g.Zf);
+        var seen = new HashSet<Warp>();
         for (var f = 0; f < s.Faces.Length; f++)
         {
             var face = s.Faces[f];
@@ -703,47 +1045,127 @@ public static class BatteredWalls
             var n = face.Normal;
             var d = Vec3.Dot(n, p0);
             var area = Measure.FaceArea(s, f);
+            // Where it meets another part is inside the wall: only the rest of the face is formwork.
+            if (others != null) area = Math.Max(0, area - Contact(s, f, others));
+            if (area < 1e-9) continue;
             var label = b.Pieces.Planes.FirstOrDefault(pl => Vec3.Dot(pl.N, n) > 1 - 1e-7 && Math.Abs(pl.D - d) < 1e-6)?.Label;
             if (label == null)
             {
                 var pts = face.Outer.Select(i => s.Vertices[i]).ToList();
                 var on = surfaces.FirstOrDefault(x => pts.All(p => x.Surface.Distance(p) < 1e-6)).Warp;
-                if (on != null) continue; // counted whole below, exactly
+                if (on != null) { seen.Add(on); continue; } // counted whole below, exactly
                 label = "other";
             }
             // An end face below the footing's top is the footing's.
             if (label is "end" or "step" && face.Outer.All(i => s.Vertices[i].Z <= zf + 1e-6)) label = "footing";
             Add(label, area);
         }
-        foreach (var (w, _) in surfaces) Add(w.Front ? "front" : "back", TrueArea(w.Patch));
+        // Each warped face this body has, whole (a part has only its own leg's).
+        foreach (var (w, _) in surfaces) if (others == null || seen.Contains(w)) Add(w.Front ? "front" : "back", TrueArea(w.Patch));
         return o;
+    }
+
+    /// <summary>
+    /// How much of face f of s lies on faces of the others facing it (the plane the same, the normals opposite): where two parts of the
+    /// assembly meet. Their triangles overlapped exactly (each pair of triangles clipped one by the other in the plane).
+    /// </summary>
+    public static double Contact(Solid s, int f, IReadOnlyList<Solid> others)
+    {
+        var face = s.Faces[f];
+        var n = face.Normal;
+        var d = Vec3.Dot(n, s.Vertices[face.Outer[0]]);
+        var (u, v) = VecMath.PlaneBasis(n);
+        Vec2 P(Vec3 x) => new(Vec3.Dot(x, u), Vec3.Dot(x, v));
+        List<List<Vec2>> Tris(Solid x, Face g) =>
+            [.. Triangulator.Face(x.Vertices, g.Outer, g.Holes, g.Normal).Select(t => Polygon2.EnsureCcw([P(x.Vertices[t.A]), P(x.Vertices[t.B]), P(x.Vertices[t.C])]).ToList())];
+        List<List<Vec2>>? mine = null;
+        var sum = 0.0;
+        foreach (var other in others)
+        {
+            if (ReferenceEquals(other, s)) continue;
+            foreach (var g in other.Faces)
+            {
+                if (Vec3.Dot(g.Normal, n) > -1 + 1e-6) continue;
+                if (Math.Abs(Vec3.Dot(g.Normal, other.Vertices[g.Outer[0]]) + d) > 1e-5) continue;
+                mine ??= Tris(s, face);
+                foreach (var t in Tris(other, g))
+                    foreach (var a in mine)
+                    {
+                        // a clipped by each edge of t (both anticlockwise): what is left is their overlap.
+                        IReadOnlyList<Vec2> ring = a;
+                        for (var k = 0; k < 3 && ring.Count >= 3; k++)
+                        {
+                            var (p0, p1) = (t[k], t[(k + 1) % 3]);
+                            ring = Polygon2.ClipHalf(ring, q => Vec2.Cross(p1 - p0, q - p0));
+                        }
+                        if (ring.Count >= 3) sum += Math.Abs(Polygon2.SignedArea(ring));
+                    }
+            }
+        }
+        return sum;
+    }
+
+    /// <summary>A body's measures as a quantity set: its concrete, its formwork by face, its crown.</summary>
+    static List<Quantity> Measures(Dictionary<string, double> areas, double concrete)
+    {
+        double A(string k) => areas.GetValueOrDefault(k);
+        var (front, back, ends, footing) = (A("front"), A("back"), A("end") + A("step") + A("other"), A("footing"));
+        return
+        [
+            new("ConcreteVolume", concrete, "VOLUME", "Concrete"), new("GrossVolume", concrete, "VOLUME"), new("NetVolume", concrete, "VOLUME"),
+            new("FormworkArea", front + back + ends + footing, "AREA", "Formwork"),
+            new("FormworkFront", front, "AREA", "Formwork, front face"), new("FormworkBack", back, "AREA", "Formwork, back face"),
+            new("FormworkEnds", ends, "AREA", "Formwork, ends"), new("FormworkFooting", footing, "AREA", "Formwork, footing"),
+            new("CrownArea", A("crown"), "AREA", "Crown"),
+        ];
     }
 
     public static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry g, IModelView m)
     {
-        var part = g.Parts.FirstOrDefault(p => p.Key == "wall");
-        if (part == null) yield break;
-        var built = Of(part.Solid) ?? Build(e, m, null);
-        var solid = part.Solid;
+        var first = g.Parts.FirstOrDefault(p => p.Key == "wall") ?? g.Parts.FirstOrDefault(p => p.Key?.StartsWith("leg:", StringComparison.Ordinal) == true);
+        if (first == null) yield break;
+        var built = Of(first.Solid) ?? Build(e, m, null);
+        var solid = built.Solid ?? first.Solid;
         var length = built.Legs.Sum(x => x.L);
         var concrete = Measure.Volume(solid) + built.Correction;
         var stem = built.StemVolume();
         var areas = Areas(built, solid);
-        double A(string k) => areas.GetValueOrDefault(k);
-        var (front, back, ends, footing) = (A("front"), A("back"), A("end") + A("step") + A("other"), A("footing"));
         var joints = JointPlaces(e, built.Legs).Count;
         var material = e.Str("material") is { } mid && m.Get(mid) is { Class: IfcClass.Material } ? mid : null;
         var height = built.Legs.Max(x => Math.Max(x.Z0, x.Z1) - x.Bottom);
-        yield return new QuantitySet("Lapin_RetainingWallQuantities",
-        [
+        var main = new List<Quantity>
+        {
             new("Length", length, "LENGTH"), new("MaxHeight", height, "LENGTH", "Height, footing included"),
-            new("ConcreteVolume", concrete, "VOLUME", "Concrete"), new("GrossVolume", concrete, "VOLUME"), new("NetVolume", concrete, "VOLUME"),
-            new("StemVolume", stem, "VOLUME", "Stem"), new("FootingVolume", Math.Max(0, concrete - stem), "VOLUME", "Footing"),
-            new("FormworkArea", front + back + ends + footing, "AREA", "Formwork"),
-            new("FormworkFront", front, "AREA", "Formwork, front face"), new("FormworkBack", back, "AREA", "Formwork, back face"),
-            new("FormworkEnds", ends, "AREA", "Formwork, ends"), new("FormworkFooting", footing, "AREA", "Formwork, footing"),
-            new("CrownArea", A("crown"), "AREA", "Crown"), new("Joints", joints, "COUNT", "Joints"),
-        ], Material: material);
+        };
+        main.AddRange(Measures(areas, concrete).Take(3));
+        main.Add(new("StemVolume", stem, "VOLUME", "Stem"));
+        main.Add(new("FootingVolume", Math.Max(0, concrete - stem), "VOLUME", "Footing"));
+        main.AddRange(Measures(areas, concrete).Skip(3));
+        main.Add(new("Joints", joints, "COUNT", "Joints"));
+        // As an assembly: each part's own measures (where it meets another part is no formwork), and on the wall the face wall's and the
+        // wings' together, so a schedule's columns can show them.
+        var parts = built.Parts.Where(p => g.Parts.Any(x => ReferenceEquals(x.Solid, p.Solid))).ToList();
+        var sets = new List<QuantitySet>();
+        if (parts.Count > 1)
+        {
+            var solids = parts.Select(p => p.Solid).ToList();
+            double faceV = 0, wingV = 0, faceF = 0, wingF = 0;
+            foreach (var p in parts)
+            {
+                var leg = built.Legs[p.Leg];
+                var measures = Measures(Areas(built, p.Solid, solids), Measure.Volume(p.Solid) + built.CorrectionOf(p));
+                var v = measures.First(x => x.Name == "ConcreteVolume").Value;
+                var fw = measures.First(x => x.Name == "FormworkArea").Value;
+                if (leg.StartCorner && leg.EndCorner) { faceV += v; faceF += fw; } else { wingV += v; wingF += fw; }
+                sets.Add(new QuantitySet("Lapin_RetainingWallQuantities", [new("Length", leg.L, "LENGTH"), .. measures], Part: p.Key, PartName: p.Name, Material: material));
+            }
+            main.Add(new("FaceWallVolume", faceV, "VOLUME", "Concrete, face wall"));
+            main.Add(new("WingsVolume", wingV, "VOLUME", "Concrete, wings"));
+            main.Add(new("FaceWallFormwork", faceF, "AREA", "Formwork, face wall"));
+            main.Add(new("WingsFormwork", wingF, "AREA", "Formwork, wings"));
+        }
+        yield return new QuantitySet("Lapin_RetainingWallQuantities", main, Material: material);
+        foreach (var x in sets) yield return x;
     }
 
     // ------------------------------------------------------------------ exactly
@@ -783,6 +1205,17 @@ sealed class RetainingWallExactBodies : IIfcExactBodies
     {
         if (element.Class != RetainingWalls.Class || !BatteredWalls.Is(element)) return null;
         var built = BatteredWalls.Of(body) ?? BatteredWalls.Build(element, model, services.Get<ISolidBooleans>());
+        return BatteredWalls.Exact(built, body, 0.003);
+    }
+
+    /// <summary>A wing or the face wall of a wall written as an assembly: its own body exactly, when it warps.</summary>
+    public ExactBody? ExactOfPart(IModelView model, IServices services, Entity element, string key, Solid body)
+    {
+        if (element.Class != RetainingWalls.Class || !key.StartsWith("leg:", StringComparison.Ordinal)) return null;
+        var built = BatteredWalls.Of(body) ?? BatteredWalls.Build(element, model, services.Get<ISolidBooleans>());
+        // A wing whose face warps; the face wall (the corners, a few millimetres of the wings' warped faces at their joints) as its facets.
+        var part = built.Parts.FirstOrDefault(p => p.Key == key);
+        if (part == null || !built.Pieces.Warps.Any(w => w.Leg == part.Leg)) return null;
         return BatteredWalls.Exact(built, body, 0.003);
     }
 }

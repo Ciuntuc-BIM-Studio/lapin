@@ -925,6 +925,8 @@ public static partial class IfcExport
             // placed along their alignment's curve where the module says where (IfcLinearPlacement), their body in that frame.
             var railPart = o.Ifc43 ? RailwayPart(e) : null;
             if (railPart is { } part) (spatial, relTo, z0) = (part, sitePlace, 0.0);
+            // IFC 4.3: an abutment stands in a bridge's part of its kind (IfcBridgePart ABUTMENT), its heights absolute.
+            else if (o.Ifc43 && BridgePart(e) is { } bridgePart) (spatial, relTo, z0) = (bridgePart, sitePlace, 0.0);
             var fr = Frame.AtZ(z0);
             string? place = null;
             if (railPart != null && LinearPlace(e) is { } along) (place, fr) = along;
@@ -1149,6 +1151,16 @@ public static partial class IfcExport
         }
 
         /// <summary>The element's body as it is exactly, from the first module that knows it (<see cref="IIfcExactBodies"/>), checked against its geometry's body.</summary>
+        ExactBody? ExactOfPart(Entity e, string key, Solid solid)
+        {
+            foreach (var src in s.Catalog.All<IIfcExactBodies>())
+            {
+                try { if (src.ExactOfPart(m, s.Catalog, e, key, solid) is { } b) return b; }
+                catch (Exception ex) when (ex is ArgumentException or InvalidOperationException) { Notes.Add($"A part of „{e.Name}” was written as its facets: {ex.Message}"); }
+            }
+            return null;
+        }
+
         ExactBody? ExactOf(Entity e, Solid solid)
         {
             foreach (var src in s.Catalog.All<IIfcExactBodies>())
@@ -1376,6 +1388,8 @@ public static partial class IfcExport
             if (pre == null) return new(cls, "NOTDEFINED", null);
             // A user-defined type names itself through the element's objectType (a diamond crossing, a level crossing).
             if (pre == "USERDEFINED") return new(cls, pre, e.Str("objectType"));
+            // A type this schema does not have (IFC4's assembly as an ABUTMENT): user-defined, named by the element's object type when it has one.
+            if (!allowed.Contains(pre) && pre != "NOTDEFINED" && e.Str("objectType") is { Length: > 0 } named) return new(cls, "USERDEFINED", named);
             // A predefined type may come with the element's own object type too (a downpipe: a rigid segment, "Downpipe").
             if (allowed.Contains(pre) || pre == "NOTDEFINED") return new(cls, pre, e.Str("objectType"));
             return new(cls, "USERDEFINED", pre);
@@ -1740,7 +1754,10 @@ public static partial class IfcExport
                 var p = parts[i];
                 var key = p.Key ?? $"part:{i}";
                 var pk = PartKind(kind.Class, key, p, zones);
-                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { p.Unit != null && p.Instances is { Count: > 0 } copies ? Mapped(p.Unit, copies, StyleKey(p), fr) : BodyOf([items?[i] ?? Brep(p.Solid, StyleKey(p), fr)]) }));
+                // A part its module knows exactly (an abutment's warped wing) as an IfcAdvancedBrep, when the export asks.
+                var exactPart = o.AdvancedBrep && items?[i] == null && p.Unit == null ? ExactOfPart(e, key, p.Solid) : null;
+                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { p.Unit != null && p.Instances is { Count: > 0 } copies ? Mapped(p.Unit, copies, StyleKey(p), fr)
+                    : exactPart != null ? AdvancedRep(exactPart, StyleKey(p), fr) : BodyOf([items?[i] ?? Brep(p.Solid, StyleKey(p), fr)]) }));
                 var r = Product(pk, Gid(e.Id, key), p.Name, pk.ObjectType, Place(place, 0), shape, $"{e.Id}/{key}", flight: pk.Class == IfcClass.StairFlight ? FlightOf(e, key) : null);
                 if (p.Material != null) UseMaterial(p.Material, r);
                 // A part made of a type (a lintel of a beam type, report #135): typed by it, IfcBeamType LINTEL.
@@ -1779,6 +1796,13 @@ public static partial class IfcExport
             if (host == "IfcElementAssembly")
                 switch (prefix)
                 {
+                    // An abutment's or a tunnel portal's wings and face wall (a retaining wall written as an assembly, decision 789 S3).
+                    case "leg": return new(IfcClass.Wall, "RETAININGWALL", null);
+                    // A tunnel lining's casting blocks, its TBM rings and its outer shell (S4): IFC has no tunnel lining element, so each a
+                    // proxy named for what it is (a wall or a slab would say a lining's vault and invert are what they are not).
+                    case "block": return new(IfcClass.BuildingElementProxy, "USERDEFINED", "Lining block");
+                    case "ring": return new(IfcClass.BuildingElementProxy, "USERDEFINED", "Lining ring");
+                    case "primary": return new(IfcClass.BuildingElementProxy, "USERDEFINED", "Outer shell");
                     case "rail": return o.Ifc43 ? new("IfcRail", "RAIL", null) : new("IfcMember", "USERDEFINED", "Rail");
                     case "sleeper": return o.Ifc43 ? new("IfcTrackElement", "SLEEPER", null) : new("IfcBuildingElementPart", "USERDEFINED", "Sleeper");
                     case "bearer": return o.Ifc43 ? new("IfcTrackElement", "SLEEPER", null) : new("IfcBuildingElementPart", "USERDEFINED", "Bearer");
@@ -2412,6 +2436,31 @@ public static partial class IfcExport
                 Define(r, f.Add("IFCPROPERTYSET", Gid(project.Id, "railway/" + part + "/pset"), Null, S("Pset_RailwayTrackStructurePart"), Null, L(new[] { Single("HasBallastTrack", Typed("IFCBOOLEAN", True)) })), Gid(project.Id, "railway/" + part + "/pset-rel"));
             return r;
         }
+
+        string bridgeRef = "";
+
+        /// <summary>
+        /// IFC 4.3: the bridge part an element stands in (<c>ifcBridgePart</c>, its IfcBridgePartTypeEnum: an abutment written as an
+        /// assembly of its wings and face wall, decision 789 S3), one per element, aggregated in the project's bridge under the site
+        /// (made once); null when it has none.
+        /// </summary>
+        string? BridgePart(Entity e)
+        {
+            if (e.Str("ifcBridgePart") is not { Length: > 0 } kind) return null;
+            if (bridgeRef.Length == 0)
+            {
+                bridgeRef = f.Add("IFCBRIDGE", Gid(project.Id, "bridge"), Null, S("Bridge"), Null, Null, Place(sitePlace, 0), Null, Null, E("ELEMENT"), E("NOTDEFINED"));
+                refIdOf[bridgeRef] = project.Id;
+                f.Add("IFCRELAGGREGATES", Gid(project.Id, "aggregates/bridge"), Null, Null, Null, siteRef, L(new[] { bridgeRef }));
+            }
+            var predefined = kind.ToUpperInvariant() is var k && BridgePartTypes.Contains(k) ? k : "USERDEFINED";
+            var r = f.Add("IFCBRIDGEPART", Gid(e.Id, "bridge-part"), Null, S(e.Name), Null, predefined == "USERDEFINED" ? S(kind) : Null, Place(sitePlace, 0), Null, Null, E("ELEMENT"), E("NOTDEFINED"), E(predefined));
+            refIdOf[r] = e.Id + "/bridge-part";
+            f.Add("IFCRELAGGREGATES", Gid(e.Id, "bridge-part/aggregates"), Null, Null, Null, bridgeRef, L(new[] { r }));
+            return r;
+        }
+
+        static readonly HashSet<string> BridgePartTypes = ["ABUTMENT", "DECK", "DECK_SEGMENT", "FOUNDATION", "PIER", "PIER_SEGMENT", "PYLON", "SUBSTRUCTURE", "SUPERSTRUCTURE", "SURFACESTRUCTURE"];
 
         /// <summary>Nothing of the railway's spatial tree is made ahead; the parts come as the elements ask for them.</summary>
         void Railway() { }

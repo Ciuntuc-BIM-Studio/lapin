@@ -51,6 +51,11 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             new("baseThickness", "Thickness at the base", "length", Min: 0.05), new("toe", "Toe", "length", Min: 0), new("heel", "Heel", "length", Min: 0),
             new("keyWidth", "Key width", "length", Min: 0), new("keyDepth", "Key depth", "length", Min: 0), new("keyAt", "Key from the toe", "length", Min: 0),
         ], RetainingWalls.Color));
+        // The tunnel lining (docs/plan-wing-walls.md, S4): a section swept along an axis, in casting blocks or rings.
+        r.Class(new(Tunnels.Class, "Tunnel lining",
+        [
+            new("skewStart", "Start skewed by (°)", "number", Min: -60, Max: 60), new("skewEnd", "End skewed by (°)", "number", Min: -60, Max: 60),
+        ], Tunnels.Color));
         r.Class(new(Plantings.Class, "Planting", [new("density", "Plants per 100 m²", "number", Min: 0.1, Max: 500), new("seed", "Seed", "number", Min: 0, Max: 1e9)], "#5a9440"));
         r.Class(new(Entourage.Class, "Entourage",
         [
@@ -66,9 +71,12 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Quantities(IfcClass.GeographicElement, Terrains.Quantities);
         r.Geometry(IfcClass.Pavement, (e, m, _) => Paths.Geometry(e, m));
         r.Quantities(IfcClass.Pavement, Paths.Quantities);
-        // A wall with batters, segments of its own, a toe, a heel or a key is built by BatteredWalls (docs/plan-wing-walls.md); any other as before.
-        r.Geometry(RetainingWalls.Class, (e, m, services) => BatteredWalls.Is(e) ? BatteredWalls.Geometry(e, m, services) : RetainingWalls.Geometry(e, m));
+        // A wall with batters, segments of its own, a toe, a heel or a key is built by BatteredWalls (docs/plan-wing-walls.md); one whose
+        // section is a drawn profile, or any other, as before (RetainingWalls).
+        r.Geometry(RetainingWalls.Class, (e, m, services) => RetainingWalls.ProfileOf(m, e) == null && BatteredWalls.Is(e) ? BatteredWalls.Geometry(e, m, services) : RetainingWalls.Geometry(e, m));
         r.Quantities(RetainingWalls.Class, RetainingWalls.Quantities);
+        r.Geometry(Tunnels.Class, (e, m, _) => Tunnels.Geometry(e, m));
+        r.Quantities(Tunnels.Class, Tunnels.Quantities);
         LineworkElements.Register(r);
         // What drafted linework becomes on the site, in Convert to… (audit S12).
         LineworkConverters.Register(r);
@@ -94,6 +102,10 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Catalog("entourage", new JsonArray([.. Entourage.Kinds.Select(k => (JsonNode)new JsonObject { ["key"] = k.Key, ["label"] = k.Label, ["category"] = k.Category, ["height"] = k.Height, ["color"] = k.Color })]));
         r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));
         SiteCommands.Register(r);
+        // The tunnel-portal and bridge-abutment configurator (docs/plan-wing-walls.md, S3).
+        Portals.Register(r);
+        // The tunnel lining along an axis (S4).
+        Tunnels.Register(r);
         TerrainOutlines.Register(r);
         GeoImportCommands.Register(r);
         CorridorCommands.Register(r);
@@ -582,6 +594,8 @@ sealed class CivilSectionPaths : ISectionPaths
 {
     public FollowedPath? PathOf(IModelView m, Entity e)
     {
+        // A tunnel lining along its curves as they are (its axis drawn through them), not their chords.
+        if (Tunnels.Is(e)) return Tunnels.FollowedPathOf(e);
         if (Corridors.Is(e)) return new FollowedPath(Corridors.ChainOf(e).Path, CorridorSpec.Of(e).StationStart);
         if (e.Class == SiteFeatures.Class && SiteFeatures.Kind(e) is "line" or "parcel" or "area") return new FollowedPath(SiteFeatures.Points(e).Select(p => p.Xy).ToList());
         return null;

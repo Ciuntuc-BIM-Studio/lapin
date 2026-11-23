@@ -12,6 +12,16 @@ public interface ISolidBooleans
     Solid? Difference(Solid a, IReadOnlyList<Solid> cutters, string? tag = null);
     Solid? Union(IReadOnlyList<Solid> solids, string? tag = null);
     Solid? Intersection(Solid a, Solid b, string? tag = null);
+
+    /// <summary>
+    /// The union of <paramref name="solids"/> less every cutter, in one go: what a body made of pieces and cut (a wall's part, its
+    /// joints and ends) asks, so no result of one boolean goes into the next as its faces (a warped face's merged facets may not).
+    /// </summary>
+    Solid? UnionLess(IReadOnlyList<Solid> solids, IReadOnlyList<Solid> cutters, string? tag = null)
+    {
+        var u = Union(solids, tag);
+        return u == null || cutters.Count == 0 ? u : Difference(u, cutters, tag);
+    }
 }
 
 /// <summary>

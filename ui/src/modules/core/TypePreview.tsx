@@ -33,7 +33,8 @@ const PANE_LABEL: Record<PreviewPane, string> = { plan: 'Plan', section: 'Sectio
  * <code>faces</code>: the wall's faces named on the drawings (R · exterior on top in plan, as the table's layer 1, and on
  * the right in section; L · interior opposite).
  */
-export function TypePreview({ typeClass, type, highlight = null, faces = false }: { typeClass: string; type: Record<string, unknown>; highlight?: number | null; faces?: boolean }) {
+/** <code>caption</code>: the line under the preview (a configurator not of a wall type says what its sample is); by default the wall types'. */
+export function TypePreview({ typeClass, type, highlight = null, faces = false, caption }: { typeClass: string; type: Record<string, unknown>; highlight?: number | null; faces?: boolean; caption?: string }) {
   const prefs = useTypePreview();
   const projectScales = useStandards((s) => s.scales);
   const lang = useLang((s) => s.lang);
@@ -104,7 +105,7 @@ export function TypePreview({ typeClass, type, highlight = null, faces = false }
             ))}
           </div>
         )}
-      <p className="muted small">Drawn by the engine, as the drawings draw it: a sample wall of the type with another joined to it in T. Hover a layer's row to light it up in all three.</p>
+      <p className="muted small">{caption ?? "Drawn by the engine, as the drawings draw it: a sample wall of the type with another joined to it in T. Hover a layer's row to light it up in all three."}</p>
     </section>
   );
 }
