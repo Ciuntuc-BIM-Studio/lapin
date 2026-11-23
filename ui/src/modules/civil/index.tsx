@@ -22,6 +22,7 @@ import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './surv
 import { TerrainSection } from './TerrainSection';
 import { FeatureLineSection } from './FeatureLineSection';
 import { profileOnLine, sectionLine } from './profileTools';
+import { GradingSection, gradeBetweenEdges, slopeToGround } from './gradingTools';
 import { ProfilePanel } from './ProfilePanel';
 import { ProfilePlanOverlay } from './ProfilePlanOverlay';
 import { contourAt, dragContour, featureLine, featureLineGrips, featureLineGrips3d } from './featureLineTools';
@@ -486,6 +487,7 @@ const civil: LapinModule = {
     LapinRetainingWall: () => activate(retainingWall),
     LapinHardscape: (n) => { similarHardscape(n); if (useUi.getState().tool !== hardscape.id) activate(hardscape); },
     LapinFeatureLine: (n) => { if (useUi.getState().tool !== (n.props.elevation != null ? contourAt : featureLine).id) activate(n.props.elevation != null ? contourAt : featureLine); },
+    LapinGrading: (n) => activate(n.props.kind === 'slope' ? slopeToGround : gradeBetweenEdges),
     LapinPlanting: (n) => activate(n.props.contour ? plantingZone : plant),
     LapinEntourage: (n) => { if (typeof n.props.kind === 'string') useEntouragePrefs.setState({ kind: n.props.kind as never }); if (useUi.getState().tool !== entourage.id) activate(entourage); },
   },
@@ -493,7 +495,7 @@ const civil: LapinModule = {
     id: 'site', label: 'Site', order: 40, include: ['modify'],
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, terrainOnOutline, parcel], small: [terrainOnPicked, terrainBoundary, splitTerrain, mergeTerrains, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
-      { label: 'Grading', tools: [featureLine, contourAt, dragContour], small: [sectionLine, profileOnLine] },
+      { label: 'Grading', tools: [featureLine, contourAt, dragContour, gradeBetweenEdges, slopeToGround], small: [sectionLine, profileOnLine] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, subregion, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, hardscape, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework, hardscapeSlope, portal, tunnel] },
@@ -556,6 +558,7 @@ const civil: LapinModule = {
     { id: 'path', label: 'Path', classes: ['IfcPavement'], component: PathSection, replacesFields: () => true },
     { id: 'hardscape', label: 'Hardscape', classes: ['LapinHardscape'], component: HardscapeSection, replacesFields: () => true },
     { id: 'kerb', label: 'Kerb', classes: ['LapinKerb'], component: KerbSection, replacesFields: () => true },
+    { id: 'grading', label: 'Grading', classes: ['LapinGrading'], component: GradingSection, replacesFields: () => true },
     { id: 'retainingWall', label: 'Retaining wall', classes: ['LapinRetainingWall'], component: RetainingWallSection, replacesFields: () => true },
     { id: 'tunnelLining', label: 'Tunnel lining', classes: ['LapinTunnelLining'], component: TunnelLiningSection },
     { id: 'planting', label: 'Planting', classes: ['LapinPlanting'], component: PlantingSection, replacesFields: () => true },
