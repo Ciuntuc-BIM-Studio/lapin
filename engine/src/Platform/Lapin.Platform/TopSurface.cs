@@ -15,7 +15,7 @@ namespace Lapin.Platform;
 /// drawing read the same top. Stored on the element's attributes: <c>topMode</c>, <c>elevation</c>, <c>grade</c>,
 /// <c>slopeDirection</c>, <c>slopeOrigin</c>, <c>cornerZ</c>.
 /// </summary>
-public static class TopSurface
+public static partial class TopSurface
 {
     public const string Level = "level", Plane = "slope", Corners = "corners";
     public static readonly string[] Modes = [Level, Plane, Corners];

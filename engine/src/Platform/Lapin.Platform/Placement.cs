@@ -225,6 +225,8 @@ public static class Placement
             // A line with its board on one side (a skirting's): mirrored, on the other.
             if (t.Mirrored && (string?)a["side"] is "left" or "right") a["side"] = (string?)a["side"] == "left" ? "right" : "left";
         }
+        // A floor's slopes (docs/plan-floor-slopes.md): its points, lines, drains and regions with it, its edges run back when mirrored.
+        if (a[TopSurface.SurfaceKey] is JsonObject surface && a["contour"] is JsonArray carried) TopSurface.Carry(surface, t, carried.Count);
         if (a["ridgeDirection"] is JsonArray { Count: >= 2 } rd) a["ridgeDirection"] = J(t.Dir(Args.PointOf(rd)));
         // A mirrored arc bulges to the other side of its chord.
         if (t.Mirrored && Json.Number(a[PathCurve.Key]) is { } rise && e.Class != IfcClass.Annotation) a[PathCurve.Key] = -rise;
