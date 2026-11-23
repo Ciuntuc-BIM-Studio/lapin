@@ -4,6 +4,7 @@
  * into plain copies.
  */
 
+import { heightArgs, heightOf } from './arrayHeight';
 import { Blocks, MousePointer2 } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
@@ -84,6 +85,11 @@ export function ArraySection({ node }: { node: NodeDto }) {
           </select></dd>
           <dt>Turn round</dt>
           <dd><input type="checkbox" checked={p.flip === true} onChange={(e) => set({ flip: e.target.checked })} /></dd>
+          <dt>Height</dt>
+          <dd><select value={heightOf(p.level)} data-testid="array-height" onChange={(e) => set(heightArgs(e.target.value, num('rise') ?? 0))}>
+            <option value="none">As the original</option><option value="ground">On the ground</option><option value="line">On the line</option>
+          </select></dd>
+          {heightOf(p.level) !== 'none' && <><dt>Rise above it</dt><dd><LengthCell metres={num('rise') ?? 0} onCommit={(m) => { if (m != null) set({ rise: m }); }} /></dd></>}
         </>}
       </dl>
       <div className="pad row-wrap">

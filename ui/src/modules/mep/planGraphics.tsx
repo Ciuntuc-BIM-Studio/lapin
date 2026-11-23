@@ -5,7 +5,8 @@
  * view or the system says "selected" (the default; "all" is in the engine's drawing and prints, "none" draws none).
  */
 
-import { Tags } from 'lucide-react';
+import { Tags, TableProperties } from 'lucide-react';
+import { useLang } from '../../i18n';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
 import { notify, useUi } from '../../app/store';
@@ -91,5 +92,18 @@ export const tagSystem: ToolDef = {
       const n = (r as { tagged?: number } | null)?.tagged;
       if (n != null) notify(n === 0 ? 'Everything on this plan has its tag already.' : `${n} tag(s) placed.`);
     });
+  },
+};
+
+/**
+ * The MEP legend: where its top-left corner goes, on a plan (listing that plan) or on a sheet (listing its views); the symbols and
+ * line types they draw, live, its words in the interface's language (Properties: the view it lists, its title, its language).
+ */
+export const mepLegend: ToolDef = {
+  id: 'mep.legend', label: 'MEP legend', icon: TableProperties,
+  gesture: { kind: 'point' },
+  complete: async ({ points: [p] }, ctx) => {
+    if (!ctx.viewId) { notify('Open a plan or a sheet to place the MEP legend.'); return; }
+    await ctx.execute('sheet.addLegend', { viewId: ctx.viewId, at: [p.x, p.y], kind: 'mep', lang: useLang.getState().lang });
   },
 };

@@ -26,7 +26,7 @@ export interface NodeDto {
 
 export interface RelationDto { id: string; class: string; relating: string; related: string[] }
 
-export interface PlanItemDto { kind: 'cut' | 'outline' | 'symbol' | string; closed: boolean; points: number[]; text?: string | null; minDetail?: number | null; maxDetail?: number | null; pattern?: string | null; /** A layered element's cut piece: its layer's role (core, finishes…), so a plan snaps only to what it draws. */ sub?: string | null }
+export interface PlanItemDto { kind: 'cut' | 'outline' | 'symbol' | string; closed: boolean; points: number[]; text?: string | null; minDetail?: number | null; maxDetail?: number | null; pattern?: string | null; /** A layered element's cut piece: its layer's role (core, finishes…), so a plan snaps only to what it draws. */ sub?: string | null; /** Sized on paper (an MEP device's symbol): its anchor and the scale its points are drawn at, [x, y, n]; a plan at 1:m draws them m/n as large round the anchor. */ paper?: number[] | null }
 
 export interface RenderPart {
   name: string;

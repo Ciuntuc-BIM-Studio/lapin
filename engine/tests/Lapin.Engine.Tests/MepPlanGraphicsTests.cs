@@ -119,6 +119,44 @@ public class MepPlanGraphicsTests
         }
     }
 
+    /// <summary>The width (metres) of what a plan draws of an element, its coverage circle left out.</summary>
+    static double Extent(F f, string view, string element)
+    {
+        var lines = f.Lines(view, element).Where(l => l.Role != LineRole.Hidden).ToList();
+        Assert.NotEmpty(lines);
+        var xs = lines.SelectMany(l => new[] { l.A.X, l.B.X }).ToList();
+        return xs.Max() - xs.Min();
+    }
+
+    [Fact]
+    public void Device_symbols_print_the_same_size_at_1_50_and_1_100_an_appliance_keeps_its_real_outline()
+    {
+        var f = new F();
+        var cold = f.Id("mep.createSystem", new JsonObject { ["service"] = Services.ColdWater });
+        var heating = f.Id("mep.createSystem", new JsonObject { ["service"] = Services.Heating });
+        var valve = f.Id("mep.placeNode", new JsonObject { ["systemId"] = cold, ["role"] = "valve", ["x"] = 0, ["y"] = 0 });
+        var radiator = f.Id("mep.placeNode", new JsonObject { ["systemId"] = heating, ["role"] = "radiator", ["x"] = 3, ["y"] = 0 });
+        var rise = f.Id("mep.placeNode", new JsonObject { ["systemId"] = cold, ["role"] = "rise", ["x"] = 6, ["y"] = 0 });
+        var p50 = f.Id("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey, ["name"] = "1:50", ["scale"] = 50 });
+        var p100 = f.Id("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey, ["name"] = "1:100", ["scale"] = 100 });
+        // The valve's and the rise's signs: as coded at 1:50, twice as large on the model at 1:100, so the same on paper.
+        foreach (var id in new[] { valve, rise })
+        {
+            var (a, b) = (Extent(f, p50, id), Extent(f, p100, id));
+            Assert.Equal(2 * a, b, 3);
+            Assert.Equal(a / 50, b / 100, 6);
+        }
+        // The valve's body 80 mm across, its ports' ticks 60 mm out either side.
+        Assert.Equal(0.2, Extent(f, p50, valve), 3);
+        // A radiator is drawn at its length at any scale (1 m), its ports' ticks inside it.
+        Assert.Equal(1.0, Extent(f, p50, radiator), 3);
+        Assert.Equal(1.0, Extent(f, p100, radiator), 3);
+        // The interface's plan lines carry the anchor so its picks lie on what the plan draws.
+        var dto = f.Session.Snapshot().Render.First(r => r.NodeId == valve).Plan;
+        Assert.Contains(dto, p => p.Kind == "symbol" && p.Paper is [0, 0, 50]);
+        Assert.Contains(dto, p => p.Kind == "hit" && p.Paper != null);
+    }
+
     [Fact]
     public void Tag_system_places_neighbours_tags_clear_of_each_other_and_of_the_runs()
     {

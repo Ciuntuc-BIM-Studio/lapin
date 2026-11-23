@@ -1,0 +1,208 @@
+{
+  "id": "iso",
+  "name": "ISO 4067 / IEC 60617",
+  "standard": "ISO 4067 (pipework, ducts), IEC 60617 (electrical)",
+  "description": "Lapin's own drawing of each role's symbol. Sized on paper: drawn at their 1:50 size, the same printed size at any scale; sized on the model: the body's real outline.",
+  "symbols": {
+    "boiler": {
+      "coded": "boiler",
+      "size": "model"
+    },
+    "manifold": {
+      "coded": "manifold",
+      "size": "model"
+    },
+    "radiator": {
+      "coded": "radiator",
+      "size": "model"
+    },
+    "waterMeter": {
+      "coded": "meter",
+      "size": "paper"
+    },
+    "valve": {
+      "coded": "valve",
+      "size": "paper"
+    },
+    "basin": {
+      "coded": "basin",
+      "size": "model"
+    },
+    "sink": {
+      "coded": "sink",
+      "size": "model"
+    },
+    "shower": {
+      "coded": "shower",
+      "size": "model"
+    },
+    "bath": {
+      "coded": "bath",
+      "size": "model"
+    },
+    "wc": {
+      "coded": "wc",
+      "size": "model"
+    },
+    "stack": {
+      "coded": "stack",
+      "size": "paper"
+    },
+    "cleanout": {
+      "coded": "cleanout",
+      "size": "paper"
+    },
+    "panel": {
+      "coded": "panel",
+      "size": "model"
+    },
+    "outlet": {
+      "coded": "outlet",
+      "size": "paper"
+    },
+    "light": {
+      "coded": "light",
+      "size": "paper"
+    },
+    "switch": {
+      "coded": "switch",
+      "size": "paper"
+    },
+    "fan": {
+      "coded": "fan",
+      "size": "paper"
+    },
+    "diffuser": {
+      "coded": "diffuser",
+      "size": "model"
+    },
+    "grille": {
+      "coded": "grille",
+      "size": "model"
+    },
+    "meterBox": {
+      "coded": "meterBox",
+      "size": "model"
+    },
+    "regulator": {
+      "coded": "regulator",
+      "size": "paper"
+    },
+    "gasMeter": {
+      "coded": "gasMeter",
+      "size": "model"
+    },
+    "gasShutoff": {
+      "coded": "gasCock",
+      "size": "paper"
+    },
+    "gasTap": {
+      "coded": "gasCock",
+      "size": "paper"
+    },
+    "flexConnector": {
+      "coded": "flex",
+      "size": "model"
+    },
+    "gasBoiler": {
+      "coded": "boiler",
+      "size": "model"
+    },
+    "cooker": {
+      "coded": "cooker",
+      "size": "model"
+    },
+    "waterHeater": {
+      "coded": "waterHeater",
+      "size": "model"
+    },
+    "tappingTee": {
+      "coded": "tappingTee",
+      "size": "paper"
+    },
+    "oilTank": {
+      "coded": "oilTank",
+      "size": "model"
+    },
+    "fillPoint": {
+      "coded": "fillPoint",
+      "size": "paper"
+    },
+    "ventCap": {
+      "coded": "ventCap",
+      "size": "paper"
+    },
+    "oilFilter": {
+      "coded": "oilFilter",
+      "size": "paper"
+    },
+    "oilBoiler": {
+      "coded": "boiler",
+      "size": "model"
+    },
+    "firePanel": {
+      "coded": "firePanel",
+      "size": "model"
+    },
+    "smokeDetector": {
+      "coded": "smokeDetector",
+      "size": "paper"
+    },
+    "heatDetector": {
+      "coded": "heatDetector",
+      "size": "paper"
+    },
+    "callPoint": {
+      "coded": "callPoint",
+      "size": "paper"
+    },
+    "sounder": {
+      "coded": "sounder",
+      "size": "paper"
+    },
+    "sounderBeacon": {
+      "coded": "sounderBeacon",
+      "size": "paper"
+    },
+    "fireTank": {
+      "coded": "fireTank",
+      "size": "model"
+    },
+    "firePump": {
+      "coded": "firePump",
+      "size": "model"
+    },
+    "hydrant": {
+      "coded": "hydrant",
+      "size": "model"
+    },
+    "externalHydrant": {
+      "coded": "externalHydrant",
+      "size": "paper"
+    },
+    "breechingInlet": {
+      "coded": "breechingInlet",
+      "size": "model"
+    },
+    "sprinkler": {
+      "coded": "sprinkler",
+      "size": "paper"
+    },
+    "rise": {
+      "coded": "rise",
+      "size": "paper"
+    },
+    "cap": {
+      "coded": "cap",
+      "size": "paper"
+    },
+    "coupling": {
+      "coded": "coupling",
+      "size": "paper"
+    },
+    "drop": {
+      "coded": "rise",
+      "size": "paper"
+    }
+  }
+}

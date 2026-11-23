@@ -49,15 +49,16 @@ public static class Paths
         public double Right => Half + R.Extent;
     }
 
-    static Side SideOf(Entity e, string key, Courses c)
+    /// <param name="wearing">The wearing course's thickness: the path's own surface course, or the top layer of the hardscape type it uses.</param>
+    static Side SideOf(Entity e, string key, Courses c, double wearing)
     {
         var o = e.Attrs[key] as JsonObject;
         double N(string k, double d) => Json.Number(o?[k]) ?? d;
         bool B(string k, bool d) => o?[k] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : d;
-        // Old paths: one "kerb" switch for both sides, sunk as deep as the surface course.
+        // Old paths: one "kerb" switch for both sides, sunk as deep as the wearing course (a hardscape type's top layer when it uses one, T6).
         return new(B("gutter", false), B("kerb", o == null && c.Kerb), B("sidewalk", false),
             Math.Max(0.1, N("gutterWidth", 0.5)), Math.Max(0, N("gutterDepth", 0.05)),
-            Math.Max(0.02, N("kerbWidth", o == null ? c.KerbWidth : 0.15)), Math.Max(0, N("kerbHeight", o == null ? c.KerbHeight : 0.12)), Math.Max(0, N("kerbDepth", o == null ? c.Surface : 0.15)),
+            Math.Max(0.02, N("kerbWidth", o == null ? c.KerbWidth : 0.15)), Math.Max(0, N("kerbHeight", o == null ? c.KerbHeight : 0.12)), Math.Max(0, N("kerbDepth", o == null ? wearing : 0.15)),
             Math.Max(0.3, N("sidewalkWidth", 1.5)), Math.Max(0.02, N("sidewalkThickness", 0.1)));
     }
 
@@ -69,11 +70,16 @@ public static class Paths
         var width = road ? 2 * Math.Max(1, e.Num("laneWidth", 3)) : c.Width;
         var fall = e.Str("fall") is "crown" or "left" or "right" ? e.Str("fall")! : road ? "crown" : "right";
         var layers = m != null ? PathTypes.LayersOf(m, e) : null;
-        return new(road ? "road" : "alley", width, Math.Clamp(e.Num("crossfall", road ? 2.5 : 0), 0, 20) / 100, fall, c.Surface, c.Base, SideOf(e, "left", c), SideOf(e, "right", c))
+        var wearing = layers is { Count: > 0 } ? Math.Max(0, layers[0].Thickness) : c.Surface;
+        return new(road ? "road" : "alley", width, Math.Clamp(e.Num("crossfall", road ? 2.5 : 0), 0, 20) / 100, fall, c.Surface, c.Base, SideOf(e, "left", c, wearing), SideOf(e, "right", c, wearing))
         {
             Layers = layers is { Count: > 0 } ? layers : null,
         };
     }
+
+    /// <summary>The carriageway's top at offset <paramref name="o"/> (+ left) across a station whose red line is <paramref name="z0"/>: its crossfall applied.</summary>
+    public static double TopAt(Template t, double z0, double o) =>
+        t.Fall switch { "crown" => z0 - t.Crossfall * Math.Abs(o), "left" => z0 - t.Crossfall * o, _ => z0 + t.Crossfall * o };
 
     /// <summary>The cross-section at a station whose red line (the carriageway's top on the axis) is <paramref name="z0"/>: its parts as (offset, elevation) polygons.</summary>
     public static List<SectionPart> SectionAt(Template t, double z0)

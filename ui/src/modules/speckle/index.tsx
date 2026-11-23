@@ -1,5 +1,5 @@
 /**
- * The Speckle connector (docs/plan-speckle.md, decision 804): File → Speckle → Send…, the model sent to a Speckle server.
+ * The Speckle connector (docs/plan-speckle.md, decision 807): File → Speckle → Send…, the model sent to a Speckle server.
  * Desktop only (module.json): the browser's build leaves it out with its engine half (scripts/product.mjs).
  */
 

@@ -5,7 +5,7 @@ using Lapin.Platform;
 namespace Lapin.Speckle;
 
 /// <summary>
-/// The Speckle connector (docs/plan-speckle.md, decision 804), stage S1: the model sent to a Speckle server as a new
+/// The Speckle connector (docs/plan-speckle.md, decision 807), stage S1: the model sent to a Speckle server as a new
 /// version of a model, its elements Speckle data objects keyed by their GlobalIds. Every call is a query: sending changes
 /// nothing of the project (no undo step), and none is a guest's to make (EngineDispatcher.HostOnlyQueries: the account
 /// is the host's). Desktop only (module.json).

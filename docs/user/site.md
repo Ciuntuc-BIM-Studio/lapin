@@ -73,7 +73,7 @@ In 3D, **Visibility / Graphics** hides a view's paths, roads, kerbs and pavement
 
 **Modify → Split element** cuts a platform in two along a line of two points (each part levelled at the same height, its holes on the part they lie in, a hole the line crosses refuses), and **Modify → Trim/Extend elements** trims a platform or the parcel by a straight boundary, keeping the side you click. A terrain keeps one parcel: it is trimmed, not split.
 
-**Slopes round a platform.** A platform's properties take a **Cut slope** and a **Fill slope** as 1 : N (horizontal over vertical; 0, the default, keeps its sides vertical). With a slope the cut widens upwards and the fill spreads downwards at that batter until they meet the ground, so the platform runs out into the terrain instead of standing in a vertical pit or on a vertical bank; its cut and fill are measured on the sloped volumes. The slopes reach as high and as low as the ground round the platform does, not the whole terrain's. A slope that would run so far out that it crosses itself (a long slope round a narrow notch of the outline) is refused: the platform is not levelled, nothing is measured for it, and the terrain says why; give it a steeper slope (a smaller N) or a simpler outline. A platform with holes keeps vertical sides. An outline that crosses itself, a platform's, a parcel's, a terrain boundary's, a subregion's or a planting zone's, is refused.
+**Slopes round a platform.** A platform's properties take a **Cut slope** and a **Fill slope** as 1 : N (horizontal over vertical; 0, the default, keeps its sides vertical). With a slope the cut widens upwards and the fill spreads downwards at that batter until they meet the ground, so the platform runs out into the terrain instead of standing in a vertical pit or on a vertical bank; its cut and fill are measured on the sloped volumes. The slopes reach as high and as low as the ground round the platform does, not the whole terrain's. A slope that would run so far out that it crosses itself (a long slope round a narrow notch of the outline) is refused: the platform is not levelled, nothing is measured for it, and the terrain says why; give it a steeper slope (a smaller N) or a simpler outline. A platform with holes keeps vertical sides. An outline that crosses itself, a platform's, a parcel's, a terrain boundary's, a subregion's or a planting zone's, is refused. **Convert slopes to grading** in a platform's properties (when it has a cut or a fill slope) turns its slopes into a **Slope to ground** grading from its outline, outwards, at the same 1 : N, daylighted exactly on the ground and kept live as the platform changes (see *Grading between edges and slopes*); the platform itself is then cut plumb, and the new grading is selected. One undo step undoes it. A platform not converted keeps its slopes as they were.
 
 ## Tunnel portals and bridge abutments
 
@@ -222,7 +222,7 @@ An edge that is an arc takes the heights of its two corners along its length. Th
 
 ![A sidewalk at a 2 % fall in section: its pavers, bedding and sub-base, its kerb, the ground meeting its edge](shots/hardscape-sidewalk-section.webp)
 
-**On the terrain or standalone.** Cut into a terrain, a hardscape's top edges are the terrain's breaklines, as feature lines are: the ground meets its edges exactly, the survey points under it are left out of the terrain (the terrain says how many), the terrain is cut by its layers and its kerb, and its cut is measured for it in *Lapin_EarthworkQuantities*. Change its top or its outline and the ground follows. The terrain's contours stop at its outline. **Standalone** in the properties takes it out of the terrain (the ground is the survey again); **cut into the terrain** puts it back. A standalone hardscape needs no terrain at all: a sidewalk round a building, a terrace on a slab.
+**On the terrain or standalone.** Cut into a terrain, a hardscape's top edges are the terrain's breaklines, as feature lines are: the ground meets its edges exactly, the survey points under it are left out of the terrain (the terrain says how many), the terrain is cut by its layers and its kerb, and its cut is measured for it in *Lapin_EarthworkQuantities*. Change its top or its outline and the ground follows. The terrain's contours stop at its outline. **Standalone** in the properties takes it out of the terrain (the ground is the survey again); **cut into the terrain** puts it back. A standalone hardscape needs no terrain at all: a sidewalk round a building, a terrace on a slab. A copy of a hardscape that was cut into a terrain cuts the same terrain.
 
 **Its kerb.** Tick **Kerb** in its properties (or in the tool's bar) for a kerb along its edges, outside its outline. It has a shape (**Upright**, **Bevelled**, **Rounded**, or a profile of your own drawn in **Manage → Profiles** with the use **Kerb**: its inner side is laid on the paving's edge, its top the kerb's height above the paving), its height **Above the paving**, a **Width**, its depth **Below the paving** and a material. The **Kerb edges** table switches it on or off edge by edge and drops it: type a reveal in **Dropped to** (`0` at a crossing) and the kerb comes down to that height above the paving along that edge. Kerbs meet mitred where two edges have one and stop square where an edge has none; on a sloped hardscape the kerb follows the top. The kerb is an element of its own (select it to reach its hardscape); it goes with its hardscape when that is deleted.
 
@@ -270,6 +270,76 @@ A hardscape's profile is its top edge: its corners' heights can be changed (the 
 **On a sheet.** **Place on a sheet…** makes the **long profile** (and the cross sections, when shown) a drawing of its own, at the scale you choose (its horizontal 1:500 and heights exaggerated as in the panel) and puts it on a new sheet, or on one you pick. The drawing has the level grid with its datum, both grounds, the points and curves named, and under it a table of the stations, both grounds and the cut or fill; the sheet's PDF and DXF print what the sheet shows. The drawings are listed under **Profile drawings** in the project browser, and they stay in step with the line: change the line and the sheet changes.
 
 ![The long profile on a sheet](shots/profile-sheet.webp)
+
+## Grading between edges and slopes
+
+Two tools in the **Grading** group of the **Site** tab shape the ground from edges you already have, and keep following them.
+
+**Grade between edges** (<kbd>GB</kbd>) makes a green patch between two plazas, terraces or lines at different heights: a lower plaza at −2.00 and an upper one at −1.00, say, with curved edges, and a slope of grass bridging them. Click the first edge (a hardscape, a feature line, a platform, or a path, wall or ditch), then the second: the patch is made at once. Of a hardscape or a platform only the stretch of its edge that faces the other is taken, so the patch runs along the two facing edges and is closed by straight joins at their ends. Tick **More edges** in the bar to pick three or more, then press **Make the grading**; picking an edge again lets it go.
+
+![Two plazas at −2.00 and −1.00 with curved edges, bridged by a green slope](shots/grading-plazas-3d.webp)
+
+Its surface is made from those edges only, so their heights hold exactly: the patch's edge is the plaza's edge, at the plaza's height, with no gap. Between two edges it is a **ruled** surface (straight lines from each point of one edge to the point as far along the other); from three or more edges, or with **Triangulated (TIN)** chosen, it is triangulated from the edges. The patch **follows** what it was made from: raise a plaza, move it, change a feature line, and the patch and the ground change with it, in the same undo step.
+
+![The grading's properties: what it is, its surface, its material and its edges](shots/grading-properties.webp)
+
+**Typing heights.** An edge that follows a plaza takes the plaza's heights. To give the patch's edge heights of its own, press **detach** beside it in the properties: its points become the grading's own, as they are now, and each one's elevation can be typed in the table (empty: the ground's). An edge can also be a line of its own from the start (through the API: `civil.addGrading` with `{points}`), its heights typed, the rest from the ground.
+
+**Slope to ground** (<kbd>SG</kbd>) runs a slope from an edge until it meets the ground: from a terrace or a platform outwards all round, from an open line (a feature line, a path) on the side you click. Type its **Cut** and **Fill** slopes in the bar as `1:2`, `2` or `50 %` (1:2 means 2 m across for 1 m up): where the ground is above the edge the slope climbs at the cut slope, where it is below it falls at the fill slope. Where it meets the ground is the **daylight line**, worked out exactly on the terrain's triangles. At an outside corner the slope turns round it as a cone, at an inside corner the two slopes meet on the corner's bisector. Where it does not reach the ground within **At most** (20 m unless you change it), or runs off the terrain, it stops there and says so. In its properties a slope can instead go **Down to** a width (it meets the ground that far out, at whatever slope that takes) or a level.
+
+![A terrace with its slopes to the ground in plan: the daylight line dashed, the hachures from the top of each slope](shots/grading-plan.webp)
+
+![The terrace's slopes in 3D](shots/grading-slope-3d.webp)
+
+**On the terrain.** A grading is part of its terrain: its edges, its rulings and its daylight line are the terrain's breaklines, and the survey points inside it are left out (the terrain says how many), so the ground there is the grading's surface; the contours run on across it. Sections cut the ground with it; the terrain's cut/fill analysis and grid include it. Without a terrain, a patch between edges is a surface of its own (a slope needs a ground to meet).
+
+![A section across the two plazas and the green slope between them](shots/grading-section.webp)
+
+**Plan, quantities and IFC.** In plan a grading is hatched with its material's surface graphics (**Grass** unless you choose another), and a slope has its daylight line dashed and its **hachures**: lines across the slope from its top down, long and short in turn, so the plan shows which way it falls. *Lapin_GradingQuantities* gives its plan and surface areas, its lowest and highest points and, for a slope, the daylight line's length and its widest; *Lapin_EarthworkQuantities* its cut and fill against the existing ground. To IFC 4.3 it goes as an *IfcEarthworksFill* (a slope *SLOPEFILL*) or, when it mostly cuts, an *IfcEarthworksCut*; to IFC4 as a proxy. The terrain's geometry includes it, and a file Lapin wrote comes back as the same grading. Each change is one undo step; a grading deleted leaves the ground as it was.
+
+## Channels
+
+A **drainage channel** (Romanian *rigolă*) runs along a line, takes the rain off a plaza or a road and delivers it to a gully. The **Drainage** group of the **Site** tab has two tools for it: **Drainage channel** (<kbd>RG</kbd>) draws one on a polyline (clicks; **Arcs** or <kbd>Space</kbd> for curved stretches; Enter finishes), and **Drainage channel along a line** (<kbd>RJ</kbd>) takes a line you pick: click near the edge of a hardscape you want it to run along, a path (the side you click is the edge of its carriageway), a feature line, a platform's outline, a kerb or another channel. A channel drawn this way follows its line: change the line and the channel changes with it. The bar chooses its **section**, how its bottom runs, and its width and depth.
+
+![A plaza with a grated drain across it at 0.5 %, a gully at its low end, in 3D](shots/drainage-plaza-3d.webp)
+
+**Its section.** A **U channel** and a **V channel** are open; a **Slot drain** is a body with a narrow slot to the top; a **Grated drain** is a U body with a cast iron grating level with the surface; a **Cobble swale** is a shallow dish paved in cobbles. A section drawn in **Manage → Profiles** with the use **Channel** is offered under **Profiles**: its outline is laid across the channel, to the left and right of the axis, up from the bottom. Each section has its sizes in the properties (width, depth, wall, base, and for a drain the grating's thickness, the slot's width and its neck), and its material.
+
+![A drain's properties: its section, invert, top, gullies and numbers](shots/drainage-channel-properties.webp)
+
+**Its bottom.** **At a grade** gives the invert (its bottom) a constant fall from its start: type `0.5 %`, `1:200` or `0.005`, positive falling from the start, negative rising; the **Start level** is the level of the bottom at the start, or empty to take the channel's top there less its depth. **At a depth under its top** keeps the bottom the same depth under the top all along, so it follows the ground. A channel whose bottom would come up to its top says where, and is cut down to 2 cm deep there; lower its start or its grade. **Top** says what its top is flush with: the ground, or a hardscape's top where it runs through one (found where it lies, so the plaza's paving is cut for it), or the heights of the line it follows.
+
+**Gullies.** A channel with a fall has a **gully** (a pot) at its lowest point. In the properties **Gullies** lists them by their distance along the channel: type another, **Add a gully** for one at the end, **remove** takes one away (a channel can have none: it is then said to have no gully at its low points), **At its lowest point** goes back to the one it was made with. Where the invert has a low point of its own (a channel that rises and falls) the properties and the plan mark it.
+
+![The channel's long section in the Profile panel: its top on the plaza, its bottom falling to the gully](shots/drainage-channel-profile.webp)
+
+**Profile…** in its properties opens the long section under the plan: the top and the invert along it, read-only (change the grade or the start level in the properties). In plan the channel is drawn with its walls, its grating hatched, the gullies as a square with its cross, and its fall and the inverts written beside it.
+
+![The gully at the low end of the drain](shots/drainage-gully-3d.webp)
+
+**On the terrain.** A channel cuts the terrain under it (its excavation measured for it), unless you choose **standalone** in its properties; **cut into the terrain** picks a terrain again, and a copy of it cuts the same one. It has plan grips (move a corner, add one at an edge's middle, bend an edge) and moves, rotates and mirrors like any element, each change one undo step. *Lapin_ChannelQuantities* gives its length, volume, excavation, grating length, the inverts at both ends, its fall, its least and greatest depth and the number of gullies; the **Channel schedule** lists them. To IFC it goes as an *IfcEarthworksCut* (*TRENCH*), a slot or grated drain as an *IfcDistributionChamberElement* (*TRENCH*), with its body; a file Lapin wrote comes back as the same channel.
+
+## Standalone kerbs
+
+A kerb need not belong to a hardscape. **Kerb** (<kbd>BK</kbd>, in the **Drainage** group) draws one along a polyline on the ground; **Kerb along a line** (<kbd>BJ</kbd>) takes a hardscape's edge, a path's side, a feature line or a platform's outline you pick, and follows it. The bar chooses its **shape** (**Upright**, **Bevelled**, **Rounded**, or a profile of the project's), which side of its line it **stands on**, looking along it (the right by default: round an outline drawn anticlockwise that is outside it, away from the paving), its **height**, and its **heights**: those of its line, or the ground (a hardscape's top where one lies under it). A kerb drawn takes the ground, a kerb along a line the line's heights, unless you say otherwise.
+
+![The kerb along the plaza's south edge, dropped where a path crosses it](shots/drainage-kerb-3d.webp)
+
+![A standalone kerb's properties: its shape, side, heights, material and its drops](shots/drainage-kerb-properties.webp)
+
+**Drops.** **Add a drop** in its properties puts a stretch in (from, to, as distances along the kerb, and its **Reveal**: its height over the paving there, `0` at a crossing); change the numbers in the table, or **remove** it. Each dropped stretch is its own run of kerb, mitred where the line turns and square where it stops. A kerb cuts the terrain it is given, as a channel does, and has the same plan grips for its own points. *Lapin_KerbQuantities* gives its length, its dropped length and its volume; to IFC it goes as an *IfcKerb* (IFC 4.3) or a proxy named *Kerb* (IFC4). A hardscape's own kerb is changed with its hardscape (**Kerb edges**, above): only one without a hardscape has these properties.
+
+## Accessories along a line
+
+Posts, lamps, bollards, gullies, benches or trees every few metres along a line are an **array along a path**, as before, and now they can stand on the ground. **Along a line** (<kbd>AX</kbd>, in the **Drainage** group) is the Array dialog already set to **Along a path** with **Height: On the ground**: select what to lay out (the first of the row), press it, set the **Spacing** (or the number of copies), then click the line in a plan and the point of the selection that goes onto it. The line can be a path or a road, a feature line, a hardscape (its whole perimeter), a kerb, a channel, a platform, or any line you draw.
+
+![Lamp posts every 6 m along a path, each on the sloping ground](shots/drainage-posts-3d.webp)
+
+The **Height** of an array along a path is **As the original** (each copy at the original's height, as always), **On the ground** (each copy's bottom on the terrain's designed ground, or a hardscape's top, where it stands), or **On the line** (on the line's own height: a feature line's, a hardscape's top edge, a road's red line; the ground where the line has none), with a **Rise above it** in metres for a lamp mounted on a wall. Both are in the array's properties as well. The copies stand again when the ground or the line changes under them.
+
+![An array's properties: along a path, with its height on the ground](shots/drainage-array-properties.webp)
+
+![The plaza in plan: its drain with the gully, the kerb, the path and the posts](shots/drainage-plan.webp)
 
 ## Site plans and location plans
 

@@ -22,6 +22,7 @@ import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './surv
 import { TerrainSection } from './TerrainSection';
 import { FeatureLineSection } from './FeatureLineSection';
 import { profileOnLine, sectionLine } from './profileTools';
+import { GradingSection, gradeBetweenEdges, slopeToGround } from './gradingTools';
 import { ProfilePanel } from './ProfilePanel';
 import { ProfilePlanOverlay } from './ProfilePlanOverlay';
 import { contourAt, dragContour, featureLine, featureLineGrips, featureLineGrips3d } from './featureLineTools';
@@ -31,7 +32,8 @@ import { MAX_POINT_GRIPS, decorateCornerGrips, terrainPlanPointGrips, terrainPoi
 import { useCamera } from '../../viewport/camera';
 import { EntourageSection, entourage, entourageRow, useEntouragePrefs } from './entourage';
 import { lazyPart } from '../../platform/lazyPart';
-import { HardscapeSection, KerbSection, hardscape, hardscapeGrips, hardscapeGrips3d, hardscapeRefs, hardscapeSlope, similarHardscape, useHardscapeTypeEdit } from './hardscapeTools';
+import { HardscapeSection, hardscape, hardscapeGrips, hardscapeGrips3d, hardscapeRefs, hardscapeSlope, similarHardscape, useHardscapeTypeEdit } from './hardscapeTools';
+import { ChannelSection, KerbOrStandaloneSection, activateTool, alongLine, channel, channelAlong, channelGrips, kerb, kerbAlong, kerbGrips, similarChannel, similarKerb } from './channelTools';
 import { drawPortalPath, openPortal, placePortal, placePortalOnRoad } from './portalTools';
 import { drawTunnelAxis, linkTunnelToAxis, openTunnel, placeTunnelOnAxis } from './tunnelTools';
 
@@ -486,6 +488,9 @@ const civil: LapinModule = {
     LapinRetainingWall: () => activate(retainingWall),
     LapinHardscape: (n) => { similarHardscape(n); if (useUi.getState().tool !== hardscape.id) activate(hardscape); },
     LapinFeatureLine: (n) => { if (useUi.getState().tool !== (n.props.elevation != null ? contourAt : featureLine).id) activate(n.props.elevation != null ? contourAt : featureLine); },
+    LapinGrading: (n) => activate(n.props.kind === 'slope' ? slopeToGround : gradeBetweenEdges),
+    LapinChannel: (n) => activateTool(similarChannel(n)),
+    LapinKerb: (n) => activateTool(similarKerb(n)),
     LapinPlanting: (n) => activate(n.props.contour ? plantingZone : plant),
     LapinEntourage: (n) => { if (typeof n.props.kind === 'string') useEntouragePrefs.setState({ kind: n.props.kind as never }); if (useUi.getState().tool !== entourage.id) activate(entourage); },
   },
@@ -493,10 +498,11 @@ const civil: LapinModule = {
     id: 'site', label: 'Site', order: 40, include: ['modify'],
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, terrainOnOutline, parcel], small: [terrainOnPicked, terrainBoundary, splitTerrain, mergeTerrains, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
-      { label: 'Grading', tools: [featureLine, contourAt, dragContour], small: [sectionLine, profileOnLine] },
+      { label: 'Grading', tools: [featureLine, contourAt, dragContour, gradeBetweenEdges, slopeToGround], small: [sectionLine, profileOnLine] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, subregion, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, hardscape, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework, hardscapeSlope, portal, tunnel] },
+      { label: 'Drainage', tools: [channel, kerb, alongLine], small: [channelAlong, kerbAlong] },
       { label: 'Entourage', tools: [entourage], small: [entourageRow, entourageKinds] },
     ],
   }],
@@ -527,6 +533,8 @@ const civil: LapinModule = {
     IfcPavement: (n: NodeDto, view?: GripView) => (view?.view ? polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updatePath', args: { id: n.id, points: toPairs(pts) } })) : []),
     LapinRetainingWall: (n: NodeDto, view?: GripView) => (view?.view ? polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateRetainingWall', args: { id: n.id, points: toPairs(pts) } })) : []),
     LapinHardscape: hardscapeGrips,
+    LapinChannel: channelGrips,
+    LapinKerb: kerbGrips,
     LapinTunnelLining: (n: NodeDto, view?: GripView) => (view?.view ? polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateTunnelLining', args: { id: n.id, points: toPairs(pts) } })) : []),
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? outlineGrips({ pts }, (o) => ({ command: 'civil.updatePlanting', args: { id: n.id, points: toPairs(o.pts) } })) : []; },
   },
@@ -555,7 +563,9 @@ const civil: LapinModule = {
     { id: 'earthwork', label: 'Earthwork', classes: ['IfcEarthworksCut'], component: EarthworkSection, replacesFields: () => true },
     { id: 'path', label: 'Path', classes: ['IfcPavement'], component: PathSection, replacesFields: () => true },
     { id: 'hardscape', label: 'Hardscape', classes: ['LapinHardscape'], component: HardscapeSection, replacesFields: () => true },
-    { id: 'kerb', label: 'Kerb', classes: ['LapinKerb'], component: KerbSection, replacesFields: () => true },
+    { id: 'kerb', label: 'Kerb', classes: ['LapinKerb'], component: KerbOrStandaloneSection, replacesFields: () => true },
+    { id: 'channel', label: 'Drainage channel', classes: ['LapinChannel'], component: ChannelSection, replacesFields: () => true },
+    { id: 'grading', label: 'Grading', classes: ['LapinGrading'], component: GradingSection, replacesFields: () => true },
     { id: 'retainingWall', label: 'Retaining wall', classes: ['LapinRetainingWall'], component: RetainingWallSection, replacesFields: () => true },
     { id: 'tunnelLining', label: 'Tunnel lining', classes: ['LapinTunnelLining'], component: TunnelLiningSection },
     { id: 'planting', label: 'Planting', classes: ['LapinPlanting'], component: PlantingSection, replacesFields: () => true },

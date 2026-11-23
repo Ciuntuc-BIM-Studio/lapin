@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    The Speckle connector (docs/plan-speckle.md, decision 804), stage S1: the model sent to a Speckle server
+    The Speckle connector (docs/plan-speckle.md, decision 807), stage S1: the model sent to a Speckle server
     (app.speckle.systems or one a firm hosts) through Speckle's official .NET SDK (Apache-2.0; its licences are in
     NOTICE.md and checked by scripts/check-licenses.mjs). The one exchange written on another's library, since
     Speckle is a server's protocol rather than a file format. Desktop only ("desktopOnly" in module.json): the

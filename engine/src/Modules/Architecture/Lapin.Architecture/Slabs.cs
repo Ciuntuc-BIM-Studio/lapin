@@ -194,6 +194,11 @@ public static class Slabs
         var problems = new List<string>();
         // Its own holes (audit S4): islands of its outline, each layer built round them (no boolean needed).
         var own = OutlineHoles.Built(slab);
+        // Slopes and falls (docs/plan-floor-slopes.md): a floor with a shaped top builds its layers on it; one without, as always.
+        var shaped = FloorSlopes.Has(slab);
+        if (shaped)
+            parts.AddRange(FloorSlopes.Parts(slab, m, services, contour, index => LayerExtents.SlabContour(contour, extents, index, Short), own, problems));
+        else
         foreach (var (from, to, material, name, index) in Section(m, slab))
         {
             if (!(to - from > 1e-9)) continue;
@@ -211,6 +216,8 @@ public static class Slabs
                 // Each opening as a prism through the whole build-up, a little proud of it.
                 var section = Section(m, slab);
                 var (z0, z1) = (top + section.Min(b => b.From) - 0.05, top + section.Max(b => b.To) + 0.05);
+                // Through a shaped build-up wherever it reaches.
+                if (shaped && FloorSlopes.Reach(m, slab) is var (down, up)) (z0, z1) = (z0 + Math.Min(0, down), z1 + Math.Max(0, up));
                 var cutters = holes.Select(h => Prism.ExtrudeFootprint(h, z0, z1 - z0, "opening")).OfType<Solid>().ToList();
                 // One the library refuses leaves that part uncut and says so (audit 22.11.2026), as a wall's opening does.
                 Solid? Cut(Solid solid, string name)
@@ -344,6 +351,8 @@ public static class Slabs
     /// <summary>The floor's whole thickness over its outline: what it cuts lower priorities with.</summary>
     public static Solid? Envelope(Entity slab, IModelView m)
     {
+        // A shaped floor's build-up follows its top (docs/plan-floor-slopes.md).
+        if (FloorSlopes.Has(slab) && FloorSlopes.Envelope(slab, m) is { } shapedEnvelope) return shapedEnvelope;
         var contour = Contour(slab);
         if (contour.Count < 3) return null;
         var section = Section(m, slab);
@@ -375,13 +384,16 @@ public static class Slabs
         if (BeamBlock.Of(m, slab) is { } bb)
             foreach (var q in BeamBlock.Quantities(bb, g, m, area * width)) yield return q;
         var net = g.Parts.Sum(p => Measure.Volume(p.Solid));
+        // A shaped floor's gross volume is its shaped envelope's (the same as area × width when nothing steps or is held).
+        var shaped = FloorSlopes.Has(slab);
+        var gross = shaped && FloorSlopes.GrossVolume(slab, m) is { } gv ? gv : area * width;
         yield return new QuantitySet("Qto_SlabBaseQuantities",
         [
             new("Width", width, "LENGTH"),
             new("Perimeter", Perimeter(slab), "LENGTH"),
             new("GrossArea", area, "AREA", "Gross area"),
             new("NetArea", width > 0 ? net / width : 0, "AREA", "Net area"),
-            new("GrossVolume", area * width, "VOLUME", "Gross volume"),
+            new("GrossVolume", gross, "VOLUME", "Gross volume"),
             new("NetVolume", net, "VOLUME", "Net volume"),
         ]);
         for (var i = 0; i < section.Count; i++)
@@ -405,5 +417,6 @@ public static class Slabs
                 new("NetVolume", v, "VOLUME", "Net volume"),
             ], $"layer:{index}", name, material);
         }
+        if (shaped) foreach (var q in FloorSlopes.Quantities(slab, g, m)) yield return q;
     }
 }

@@ -51,7 +51,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     /// <c>openingSymbols</c> turns them off.
     /// </summary>
     public IEnumerable<ViewMark> Marks(ViewContext c) =>
-        (c.Kind == "plan" ? OpeningMarkers.Marks(c).Concat(Rooms.Marks(c)).Concat(Stairs.StairMarks.Marks(c)).Concat(Stairs.RampMarks.Marks(c)).Concat(Balconies.BalconyModule.Marks(c)).Concat(ColorSchemes.Legends(c)) : ElevationSymbols(c).Concat(ColorSchemes.Legends(c)))
+        (c.Kind == "plan" ? FloorSlopes.Marks(c).Concat(OpeningMarkers.Marks(c)).Concat(Rooms.Marks(c)).Concat(Stairs.StairMarks.Marks(c)).Concat(Stairs.RampMarks.Marks(c)).Concat(Balconies.BalconyModule.Marks(c)).Concat(ColorSchemes.Legends(c)) : ElevationSymbols(c).Concat(ColorSchemes.Legends(c)))
             .Concat(c.Kind == "3d" ? [] : Drainage.Marks(c));
 
     IEnumerable<ViewMark> ElevationSymbols(ViewContext c)
@@ -553,6 +553,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 Slabs.SetOutline(attrs, contour, arcs);
                 Slabs.SetEllipses(attrs, a, slab);
                 RemapExtents(slab, attrs, contour);
+                // Its edge slopes and corners' heights on the edges it keeps (docs/plan-floor-slopes.md).
+                if (attrs[FloorSlopes.Key] is JsonObject surface) TopSurface.RemapEdges(surface, Slabs.Corners(slab), contour);
             }
             // Its holes given, or kept and checked against the outline as it now is (audit S4).
             if (a[OutlineHoles.Key] != null || a["points"] != null || a["x1"] != null) OutlineHoles.Apply(attrs, a);
@@ -654,6 +656,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             foreach (var id in Ids(a)) Slabs.SetType(ctx, Spatial.Require(ctx.Model, id, IfcClass.Slab), type);
             return null;
         });
+
+        // Floor slopes and falls (docs/plan-floor-slopes.md, forum topic 157): points, lines, drains, edge slopes, regions, a room's.
+        FloorSlopes.Register(r);
 
         // ------------------------------------------------------------ schedules
         new Schedules.ScheduleEntity().Register(r);

@@ -15,6 +15,7 @@ import { cadLog, moved, registerCommand, shapesOf, startCommand, useCad, type St
 import type { Shape } from '../../viewport/cad/shapes';
 import { rotatedShape } from '../../viewport/cad/rotate';
 import { arrayFieldShown, checkArray, polarArgs, polarStep } from './arrayDialog';
+import { heightArgs } from './arrayHeight';
 import { arraySkipNotes, arrayTargets, gridOffsets, stepArgs, stepBetween, type ArrayPlace, type ArrayTargets, type StepJob, type V3 } from './arrayGrid';
 
 type Vec2 = { x: number; y: number };
@@ -181,6 +182,18 @@ registerCommand({ names: ['ARRAYCENTRE', 'ARRAYCENTER'], label: 'Array round a c
  * an array is said by its field, the box kept open. A row's or a grid's step and a polar array's centre are typed or
  * clicked in the plan.
  */
+/** What the Site tab's Along a line sets for the next array along a path: its copies on the ground. */
+let presetHeight: 'ground' | null = null;
+const pathHeight = (): string => { const h = presetHeight ?? 'none'; presetHeight = null; return h; };
+
+/** The Array dialog, on the selection, set to a path with the copies on the ground (Site → Along a line). */
+export async function arrayAlongLine(): Promise<void> {
+  presetHeight = 'ground';
+  presetKind = 'path';
+  try { await arraySelection(); } finally { presetHeight = null; presetKind = null; }
+}
+let presetKind: 'path' | null = null;
+
 export async function arraySelection(): Promise<void> {
   const targets = arrayable();
   const ids = targets.ids;
@@ -190,7 +203,7 @@ export async function arraySelection(): Promise<void> {
   // Clicking a step, a centre or a path needs a plan (or a section, an elevation, a drafting view) open, not the 3D view.
   const inPlan = !!useCad.getState().host && arrayPlace() !== '3d';
   const fields: Field[] = [
-    choiceField('kind', 'Kind', 'row', [{ value: 'row', label: 'In a row' }, { value: 'grid', label: 'In a grid (columns × rows)' }, { value: 'polar', label: 'Round a centre' }, { value: 'path', label: 'Along a path' }]),
+    choiceField('kind', 'Kind', presetKind ?? 'row', [{ value: 'row', label: 'In a row' }, { value: 'grid', label: 'In a grid (columns × rows)' }, { value: 'polar', label: 'Round a centre' }, { value: 'path', label: 'Along a path' }]),
     numberField('count', 'Copies (with the first)', 3),
     numberField('cols', 'Columns', 3), numberField('rows', 'Rows', 2), numberField('levels', 'Levels', 1),
     choiceField('by', 'Step given by', 'typed', [{ value: 'typed', label: 'Typing it (step x, y, z)' }, { value: 'click', label: 'Clicking two points in a plan' }]),
@@ -203,6 +216,8 @@ export async function arraySelection(): Promise<void> {
     lengthField('start', 'Start distance', 0), lengthField('end', 'End distance', 0), lengthField('offset', 'Offset from the path (+ left)', 0),
     choiceField('orient', 'Orientation', 'tangent', [{ value: 'tangent', label: 'Along the path' }, { value: 'fixed', label: 'Fixed' }]),
     choiceField('flip', 'Turn round', 'no', [{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]),
+    choiceField('level', 'Height', pathHeight(), [{ value: 'none', label: 'As the original' }, { value: 'ground', label: 'On the ground' }, { value: 'line', label: 'On the line' }]),
+    lengthField('rise', 'Rise above it', 0),
   ].map((f) => ({ ...f, show: (v: Record<string, string>) => arrayFieldShown(f.key, v) }));
   const r = await ask('Array', fields, { check: checkArray });
   if (!r) return;
@@ -211,6 +226,7 @@ export async function arraySelection(): Promise<void> {
     const rule: PathRule = { kind: 'path', orient: r.orient, flip: r.flip === 'yes', start: Number(r.start), end: Number(r.end), offset: Number(r.offset) };
     if (count >= 1) rule.count = count;
     if (spacing > 0) rule.spacing = spacing;
+    Object.assign(rule, heightArgs(String(r.level), Number(r.rise)));
     if (!inPlan) { notify('Open a plan to click the path in.'); return; }
     pending = { ids, rule };
     await startCommand('ARRAYPATH');

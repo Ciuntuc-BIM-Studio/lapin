@@ -244,6 +244,11 @@ public static class HatchLibrary
 *ASPHALT, Asphalt: a sparse fine stipple
 0, 0,0, 2.2,1.7, 0,-4.4
 0, 1.4,0.6, 2.9,2.3, 0,-5.8
+
+*GRASS, Grass: tufts of three short blades on a 12 mm lattice at 60 degrees
+90, 0,0, 10.392305,-6, 1.4,-19.384610
+60, 0,0, 6,10.392305, 1.1,-10.9
+120, 0,0, 6,-10.392305, 1.1,-10.9
 """;
 
     static readonly List<HatchPattern> Patterns = [.. Pat.Parse(BuiltIn).Patterns, BattHatch.Pattern];

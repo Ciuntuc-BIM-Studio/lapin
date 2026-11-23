@@ -415,7 +415,7 @@ public static partial class Runs
             var centre = new Vec3(at.X, at.Y, z);
             if (Pipes.Tube(centre - across * (radius * 1.6), centre + across * (radius * 1.6), radius * 1.15, 0, "tee") is { } tee) parts.Add(new GeometryPart("Tee", color, tee, null, "tee:" + branch.Id));
             plan.Add(new PlanItem("heavy", true, [at + across.Xy * 0.03, at - across.Xy * 0.03, at - across.Xy * 0.03 + dir * 0.03, at + across.Xy * 0.03 + dir * 0.03], Style: style.Line.Spec with { Pattern = null })
-                { Heights = (z, z), AboveStyle = style.Line.AboveSpec });
+                { Heights = (z, z), AboveStyle = style.Line.AboveSpec, Paper = new PaperAnchor(at, Nodes.SymbolScale) });
         }
         // Gas and fuel oil go through walls in sleeves: a short tube round the pipe across each wall it crosses, two ticks on the plan.
         foreach (var sleeve in Sleeves.Of(m, run, s, line))
@@ -424,11 +424,12 @@ public static partial class Runs
             var d = (sleeve.B.Xy - sleeve.A.Xy).Normalized();
             var n = new Vec2(-d.Y, d.X) * Math.Max(0.04, sleeve.Diameter);
             var tick = style.Line.Spec with { Pattern = null };
-            plan.Add(new PlanItem("symbol", false, [sleeve.A.Xy + n, sleeve.A.Xy - n], Style: tick));
-            plan.Add(new PlanItem("symbol", false, [sleeve.B.Xy + n, sleeve.B.Xy - n], Style: tick));
+            // Each tick on its wall face, its length on paper.
+            plan.Add(new PlanItem("symbol", false, [sleeve.A.Xy + n, sleeve.A.Xy - n], Style: tick) { Paper = new PaperAnchor(sleeve.A.Xy, Nodes.SymbolScale) });
+            plan.Add(new PlanItem("symbol", false, [sleeve.B.Xy + n, sleeve.B.Xy - n], Style: tick) { Paper = new PaperAnchor(sleeve.B.Xy, Nodes.SymbolScale) });
         }
         // A rise or drop inside the run (its plane changed there): the rise node's sign (RunRises.cs).
-        plan.AddRange(RiseMarks(line));
+        plan.AddRange(RiseMarks(m, line));
         plan.Add(new PlanItem("hit", false, Spots(line)));
         return new ElementGeometry(parts, plan, line.Select(p => p.Xy).ToList());
     }

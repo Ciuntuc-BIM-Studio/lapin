@@ -115,6 +115,11 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         // Hardscapes, their types and kerbs (T4).
         Hardscapes.Register(r);
         PathTypes.Register(r);
+        // Grading between edges and slopes to the ground (T5).
+        Gradings.Register(r);
+        // Standalone channels (T6); standalone kerbs register with the hardscape's (Kerbs); a platform's slopes made a grading.
+        Channels.Register(r);
+        PlatformGradings.Register(r);
 
         // A terrain from points ([x, y, z]) or from a survey file's text (xyz or PENZD).
         r.Command("addTerrain", "Terrain", (ctx, a) =>
@@ -353,6 +358,10 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         var text = Standards.ResolveText(c.Book, new JsonObject());
         // The hardscapes (T4): their paving hatched as its material's surface looks, their level or their fall written in them.
         foreach (var mk in HardscapeMarks(c, storey, text)) yield return mk;
+        // The gradings (T5): their material hatched, a slope's hachures from its top down.
+        foreach (var mk in GradingMarks(c, storey)) yield return mk;
+        // The channels (T6): their fall, their inverts at the ends, their gullies and low points.
+        foreach (var mk in ChannelMarks(c, storey, text)) yield return mk;
         foreach (var e in c.Model.OfClass(IfcClass.GeographicElement))
         {
             // A site plan shows every terrain; any other plan its own storey's.
@@ -569,6 +578,135 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         }
     }
 
+    /// <summary>The layer a grading's hatch and a slope's hachures draw on (DXF, the PDF's groups).</summary>
+    public const string GradingLayer = "GRADING";
+
+    /// <summary>
+    /// A grading in a plan or a site plan: its material's surface hatch over it (grass), and on a slope the hachures of an
+    /// embankment or a cutting: ticks square across it from the top of the slope down, every 2.5 mm of the drawing, long and short
+    /// in turn (the short half as long), so the slope reads which way it falls; none where it changes from cut to fill.
+    /// </summary>
+    static IEnumerable<ViewMark> GradingMarks(ViewContext c, string? storey)
+    {
+        var m = c.Model;
+        var site = SitePlans.Of(c.View) != null;
+        var hidden = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        var graphics = VisibilityGraphics.Of(m, c.View);
+        var patterns = DraftingResources.Patterns(m);
+        var standard = MaterialStandards.Of(m);
+        var minSpacing = ViewStyles.Of(m, c.View).MinHatchSpacing;
+        foreach (var e in m.OfClass(Gradings.Class))
+        {
+            if (hidden.Contains(e.Id) || graphics.Hides(e) || (!site && Spatial.StoreyOf(m, e.Id)?.Id != storey)) continue;
+            var s = Gradings.ShapeOf(m, e);
+            if (s.Surface == null) continue;
+            var under = new ViewMark(null) { Under = true };
+            var material = m.Get(e.Str("material") ?? "");
+            var g = Lapin.Drawing.MaterialGraphics.Resolve(material, "elevation", material == null ? Gradings.Material : null, standard: standard);
+            if (g.Hatch is { } name && Lapin.Drawing.Hatch.HatchLibrary.Find(name, patterns) is { Solid: false } pattern
+                && Lapin.Drawing.Hatch.HatchScale.Lay(pattern, c.Scale, g.HatchScale, g.HatchAngle, null, 40_000, null, minSpacing) is { } laid)
+                foreach (var area in s.Areas())
+                {
+                    var (segs, _) = Lapin.Drawing.Hatch.HatchFill.Segments([area], pattern, laid);
+                    foreach (var sg in segs) under.Line(sg.A, sg.B, GradingLayer, Pens.Default.Hatch, g.HatchColor ?? "#6b8f4e");
+                }
+            if (under.Lines.Count > 0) yield return under;
+            if (s.Strips.Count == 0) continue;
+            var ticks = new ViewMark(e.Id);
+            var spacing = 2.5 * c.Mm;
+            foreach (var st in s.Strips)
+            {
+                var n = st.Origins.Count;
+                var quads = st.Closed ? n : n - 1;
+                var carry = spacing / 2;
+                var count = 0;
+                for (var i = 0; i < quads; i++)
+                {
+                    var j = (i + 1) % n;
+                    if (st.Cut[i] != st.Cut[j]) { carry = spacing / 2; continue; }
+                    // The top of the slope: the edge over a fill, the daylight line over a cut.
+                    var (t0, b0, t1, b1) = st.Cut[i] ? (st.Ends[i].Xy, st.Origins[i].Xy, st.Ends[j].Xy, st.Origins[j].Xy) : (st.Origins[i].Xy, st.Ends[i].Xy, st.Origins[j].Xy, st.Ends[j].Xy);
+                    var (m0, m1) = ((t0 + b0) * 0.5, (t1 + b1) * 0.5);
+                    var len = (m1 - m0).Length;
+                    var at = carry;
+                    for (; at <= len; at += spacing)
+                    {
+                        var u = len < 1e-12 ? 0 : at / len;
+                        var top = t0 + (t1 - t0) * u;
+                        var bottom = b0 + (b1 - b0) * u;
+                        if ((bottom - top).Length > 1e-6)
+                            ticks.Line(top, top + (bottom - top) * (count % 2 == 0 ? 1 : 0.5), GradingLayer, Pens.Default.Seen, Gradings.LineColor);
+                        count++;
+                    }
+                    carry = at - len;
+                }
+            }
+            if (ticks.Lines.Count > 0) yield return ticks;
+        }
+    }
+
+    /// <summary>
+    /// A channel in a plan or a site plan: an arrow along it the way it falls, with its grade, on each stretch long enough for one
+    /// (every 10 m at most); its invert level at each end (IL); a gully's invert at each outlet; a low point that is no outlet ringed
+    /// in red, so standing water shows before it is built.
+    /// </summary>
+    static IEnumerable<ViewMark> ChannelMarks(ViewContext c, string? storey, TextStyle text)
+    {
+        var m = c.Model;
+        var site = SitePlans.Of(c.View) != null;
+        var hidden = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        var graphics = VisibilityGraphics.Of(m, c.View);
+        foreach (var e in m.OfClass(Channels.Class))
+        {
+            if (hidden.Contains(e.Id) || graphics.Hides(e) || (!site && Spatial.StoreyOf(m, e.Id)?.Id != storey)) continue;
+            var l = Channels.LaidOf(m, e);
+            if (l.Stations.Count < 2) continue;
+            var mk = new ViewMark(e.Id);
+            var ch = l.Chain;
+            var half = Channels.OuterHalf(Channels.SpecOf(e), Channels.Profile(m, e, Channels.SpecOf(e)));
+            const string color = "#1f5f8b";
+            // Its fall: an arrow beside it every 10 m (one in each stretch shorter), pointing downhill, the grade over it.
+            var len = 5.0 * c.Mm;
+            var every = Math.Max(10, len * 2);
+            var count = Math.Max(1, (int)Math.Floor(l.Length / every));
+            for (var k = 0; k < count; k++)
+            {
+                var st = l.Length * (k + 0.5) / count;
+                var (a0, a1) = (Math.Max(0, st - 0.5), Math.Min(l.Length, st + 0.5));
+                var fall = (l.InvertAt(a0) - l.InvertAt(a1)) / Math.Max(1e-9, a1 - a0);
+                if (Math.Abs(fall) < 1e-6) continue;
+                var p = ch.PointAt(st);
+                var dir = ch.DirectionAt(st) * (fall > 0 ? 1 : -1);
+                var side = ch.DirectionAt(st).Perp * (half + 1.5 * c.Mm);
+                DrawSlopeArrow(mk, p + side - dir * (len * 0.5), p + side + dir * (len * 0.5), c.Mm, $"{Math.Abs(fall) * 100:0.0#} %", text.Height, text.Font);
+            }
+            // Its inverts at its ends.
+            foreach (var (st, at) in new[] { (0.0, 0), (l.Length, l.Stations.Count - 1) })
+            {
+                var p = ch.PointAt(st);
+                var d = ch.DirectionAt(st) * (st == 0 ? -1 : 1);
+                mk.Text(new PenText(p + d * (2.5 * c.Mm), $"IL {Standards.FormatLevel(l.Invert[at], c.Book)}", text.Height * 0.8, -Standards.ReadableDeg(-Math.Atan2(d.Y, d.X) * 180 / Math.PI), "middle", "middle", false, text.Font), color);
+                mk.Snaps.Add(p);
+            }
+            // Its gullies: their invert; a low point with none ringed red.
+            foreach (var st in l.Outlets)
+            {
+                var p = ch.PointAt(st);
+                mk.Text(new PenText(p + new Vec2(0, -(half + 3 * c.Mm)), $"IL {Standards.FormatLevel(l.InvertAt(st), c.Book)}", text.Height * 0.8, 0, "middle", "middle", false, text.Font), color);
+                mk.Snaps.Add(p);
+            }
+            foreach (var st in l.Lows.Where(s => !l.Outlets.Any(o => Math.Abs(o - s) < 0.5)))
+            {
+                var p = ch.PointAt(st);
+                var r = Math.Max(half * 1.5, 1.5 * c.Mm);
+                var ring = Enumerable.Range(0, 24).Select(i => p + new Vec2(Math.Cos(i * Math.PI / 12), Math.Sin(i * Math.PI / 12)) * r).ToList();
+                for (var i = 0; i < ring.Count; i++) mk.Line(ring[i], ring[(i + 1) % ring.Count], "LEVELS", Pens.Default.Seen, "#c0392b");
+                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), $"Low point {Standards.FormatLevel(l.InvertAt(st), c.Book)}", text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#c0392b");
+            }
+            yield return mk;
+        }
+    }
+
     static void DrawSlopeArrow(ViewMark mk, Vec2 a, Vec2 b, double mm, string label, double textHeight, string font)
     {
         var dir = (b - a).Normalized();
@@ -617,10 +755,15 @@ sealed class CivilArrayPaths : IArrayPaths
             var c = Corridors.ChainOf(e);
             if (c.Length < 1e-9) return null;
             var axis = c.Axis(Chords.Tolerance);
-            return new ArrayPath(c.Length, s => (c.PointAt(c.Start + s), c.DirectionAt(c.Start + s)), axis, (axis[0] - axis[^1]).Length < 1e-6);
+            // Its red line's height along it (T6: copies laid on the line).
+            var red = Corridors.RedLine(m, e, c);
+            return new ArrayPath(c.Length, s => (c.PointAt(c.Start + s), c.DirectionAt(c.Start + s)), axis, (axis[0] - axis[^1]).Length < 1e-6) { Height = s => red(c.Start + s) };
         }
         if (e.Class == SiteFeatures.Class && SiteFeatures.Kind(e) is "line" or "parcel" or "area" && SiteFeatures.Points(e).Select(p => p.Xy).ToList() is { Count: >= 2 } pts)
             return ArrayPath.Polyline(pts);
+        // A feature line, a hardscape's perimeter, a kerb, a channel, a platform's outline (T6): their lines, with their heights.
+        if (SiteLines.Followable(e) && SiteLines.Of(m, e) is { Plan.Count: >= 2 } l)
+            return ArrayPath.Polyline(l.Plan, l.Z, l.Closed);
         return null;
     }
 }

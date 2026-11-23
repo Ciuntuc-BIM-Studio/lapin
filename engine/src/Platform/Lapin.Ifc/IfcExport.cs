@@ -241,6 +241,8 @@ public static partial class IfcExport
         ["IfcCourse"] = ["ARMOUR", "FILTER", "BALLASTBED", "CORE", "PAVEMENT", "PROTECTION"],
         // IfcKerbTypeEnum has only USERDEFINED and NOTDEFINED.
         ["IfcKerb"] = [],
+        // A grading that mostly fills (site grading T5): IfcEarthworksFillTypeEnum.
+        ["IfcEarthworksFill"] = ["BACKFILL", "COUNTERWEIGHT", "EMBANKMENT", "SLOPEFILL", "SUBGRADE", "SUBGRADEBED", "TRANSITIONSECTION"],
         ["IfcSignal"] = ["VISUAL", "AUDIO", "MIXED"],
         [RoomDividers.Class] = ["BOUNDARY", "CLEARANCE", "PROVISIONFORVOID"],
     };
@@ -1377,7 +1379,9 @@ public static partial class IfcExport
         Kind KindOf(Entity e)
         {
             var cls = e.Str("exportAs") is { Length: > 3 } x && x.StartsWith("Ifc", StringComparison.Ordinal) ? x : e.Class;
-            if (cls == IfcClass.EarthworksCut && !o.Ifc43) return new(IfcClass.BuildingElementProxy, "USERDEFINED", e.PredefinedType == "TRENCH" ? "Trench" : "Earthworks cut");
+            if (cls == IfcClass.EarthworksCut && !o.Ifc43) return new(IfcClass.BuildingElementProxy, "USERDEFINED", e.PredefinedType == "TRENCH" ? "Trench" : e.Str("objectType") ?? "Earthworks cut");
+            // IFC 4.3's earthworks fill (a grading, T5); IFC4 has none: a proxy named by its object type.
+            if (cls == "IfcEarthworksFill" && !o.Ifc43) return new(IfcClass.BuildingElementProxy, "USERDEFINED", e.Str("objectType") ?? "Earthworks fill");
             // IFC 4.3's pavement and vegetation; IFC4 has a slab named Pavement and a user-defined geographic element.
             if (cls == IfcClass.Pavement && !o.Ifc43) return new(IfcClass.Slab, "USERDEFINED", "Pavement");
             // A kerb (a hardscape's, site grading T4): IFC 4.3's IfcKerb; IFC4 has none, a proxy named Kerb.

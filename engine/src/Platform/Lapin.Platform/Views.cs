@@ -551,6 +551,8 @@ public static class Views
         // How much a plan's drawn symbols draw (a track's sleepers, a plant's leaves): by the view's own level when it sets one,
         // else by the scale, as their legibility on paper asks.
         var detail = ViewDetail.Own(view, vg) is { } ownLod ? PlanDetail.SymbolsOf(ownLod) : PlanDetail.Of(view.NumOrNull("scale") ?? 100);
+        // What is sized on paper (PlanItem.Paper: an MEP device's symbol) is drawn at the plan's scale.
+        var paperScale = view.NumOrNull("scale") ?? 100;
         // How much of the building's elements draws (decision 401): coarse, one outline hatched as the core; medium, the
         // layers; fine, the layers with the details of doors and windows, and the bars a linked structural model brings.
         var building = lod;
@@ -619,9 +621,10 @@ public static class Views
                     if (!bySymbol && Measure.Bounds(p.Solid) is { } b && b.Max.Z > SitePlans.Underground && ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) && Detailed(e, p))
                         parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: true) { Smooth = smooth });
                 if (bySymbol)
-                    foreach (var item in g.Plan!)
+                    foreach (var item0 in g.Plan!)
                     {
-                        if (!item.At(detail) || !item.In(entourage)) continue;
+                        if (!item0.At(detail) || !item0.In(entourage)) continue;
+                        var item = item0.OnPaper(paperScale);
                         if (SymbolFill(item, e) is { } sf) { fills.Add(sf); continue; }
                         var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" or "heavy" => LineRole.Cut, _ => null };
                         // A symbol with a line style of its own keeps it here as in a plan (a feature line, T2).
@@ -647,9 +650,16 @@ public static class Views
             if (symbolsHere != null && !spanned && atCut.FirstOrDefault(x => x.Handles(e)) is { } hook && hook.PlanAt(m, e, planCut) is { } cutHere) symbolsHere = cutHere;
             if (symbolsHere != null && inView.Count > 0 && inView.FirstOrDefault(x => x.Handles(e)) is { } drawsIn) symbolsHere = drawsIn.PlanIn(m, view, e, symbolsHere);
             if (view.Str("kind") == "plan" && !stored && Generator.SymbolicInPlan.Contains(e.Class) && symbolsHere != null)
-                foreach (var item in symbolsHere)
+                foreach (var item0 in symbolsHere)
                 {
-                    if (!item.At(e.Class is IfcClass.Door or IfcClass.Window ? joinerySymbols : detail) || !item.In(entourage)) continue;
+                    if (!item0.At(e.Class is IfcClass.Door or IfcClass.Window ? joinerySymbols : detail) || !item0.In(entourage)) continue;
+                    var item = item0.OnPaper(paperScale);
+                    // A drawn symbol's letter (an MEP symbol of the user's own): a text of the element's.
+                    if (item.Kind == "text")
+                    {
+                        if (item.Text is { Length: > 0 } words && item.Points.Count > 0) texts.Add(new DText(item.Points[0], words, item.TextHeight > 0 ? item.TextHeight : null, item.TextAngle, e.Id, e.Class, item.Style?.Color));
+                        continue;
+                    }
                     if (item.Kind == "outline")
                     {
                         if (outlines != null)
