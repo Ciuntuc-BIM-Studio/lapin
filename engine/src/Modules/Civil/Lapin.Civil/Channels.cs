@@ -27,6 +27,11 @@ namespace Lapin.Civil;
 public static class Channels
 {
     public const string Class = "LapinChannel";
+    /// <summary>
+    /// What it is called wherever it is shown (properties, the browser, schedules, its part and new ones' names): "Drainage
+    /// channel", since "Channel" is the steel U profile in the interface's dictionaries (23.11.2026); the class id stays.
+    /// </summary>
+    public const string Label = "Drainage channel";
     public const string Predefined = "TRENCH";
     public const string Color = "#a8a59d";
     public const string GratingColor = "#4a4c50";
@@ -377,7 +382,7 @@ public static class Channels
 
     // ─── Geometry, plan, quantities ─────────────────────────────────────
 
-    static readonly (string Key, string Name)[] PartNames = [("body", "Channel"), ("grating", "Grating"), ("outlet", "Gully")];
+    static readonly (string Key, string Name)[] PartNames = [("body", "Drainage channel"), ("grating", "Grating"), ("outlet", "Gully")];
 
     public static ElementGeometry? Geometry(Entity e, IModelView m, IServices _)
     {
@@ -565,7 +570,7 @@ public static class Channels
         var attrs = new JsonObject { ["kind"] = "u" };
         Channels.Apply(ctx, attrs, a);
         var n = m.OfClass(Class).Count() + 1;
-        var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Channel {n}";
+        var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Drainage channel {n}";
         var probe = new Entity("probe", Class, name, (JsonObject)attrs.DeepClone(), Predefined);
         var (plan, _, problems) = PathOf(m, probe);
         if (plan.Count < 2) throw new CommandException(problems.FirstOrDefault() ?? "A channel needs two points at least.");
@@ -586,7 +591,7 @@ public static class Channels
 
     public static void Register(IModuleRegistry r)
     {
-        r.Class(new(Class, "Channel",
+        r.Class(new(Class, Label,
         [
             new("kind", "Section", "choice", Choices: Kinds),
             new("width", "Width", "length", Min: 0.02, Max: 5),
@@ -609,10 +614,10 @@ public static class Channels
 
         // A channel (T6): {points [[x, y] | [x, y, z]…], arcs? | along {id, edge?, side?, offset?}, kind?, sizes?, invert?, grade?,
         // startZ?, top?, outlets?, profileId?, material?, gratingMaterial?, terrainId? | standalone?, name?, storeyId?}.
-        r.Command("addChannel", "Channel", (ctx, a) => Channels.Add(ctx, a));
+        r.Command("addChannel", "Drainage channel", (ctx, a) => Channels.Add(ctx, a));
 
         // Changed any time, one undo step: {id, …as addChannel, terrainId? (cut into that one), standalone? (cuts nothing)}.
-        r.Command("updateChannel", "Change channel", (ctx, a) =>
+        r.Command("updateChannel", "Change drainage channel", (ctx, a) =>
         {
             var e = Spatial.Require(ctx.Model, (string?)a["id"], Class);
             var attrs = e.CloneAttrs();
@@ -668,7 +673,7 @@ public static class Channels
     sealed class Schedule : IScheduleSource
     {
         public string Kind => "channel";
-        public string Label => "Channel schedule";
+        public string Label => "Drainage channel schedule";
 
         public ScheduleGrid Grid(IQueryContext q)
         {

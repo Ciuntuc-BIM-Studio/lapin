@@ -184,6 +184,54 @@ public static class KerbLines
         ]);
     }
 
+    /// <summary>
+    /// The standalone kerbs that run through a hardscape's outline (follow-ups of 23.11.2026): those whose body, the band from
+    /// their line to its back, enters the outline past a millimetre, found where they lie, not stored. A kerb along the paving's
+    /// edge, on its far side, does not.
+    /// </summary>
+    public static IEnumerable<Entity> Over(IModelView m, IReadOnlyList<Vec2> outline)
+    {
+        if (outline.Count < 3) yield break;
+        var (x0, y0, x1, y1) = (outline.Min(p => p.X), outline.Min(p => p.Y), outline.Max(p => p.X), outline.Max(p => p.Y));
+        foreach (var k in m.OfClass(Kerbs.Class))
+        {
+            if (!Is(k)) continue;
+            var l = Laid(m, k);
+            if (l.Plan.Count < 2) continue;
+            var s = Kerbs.SpecOf(k, 1);
+            var w = s.Width + 0.01;
+            if (l.Plan.Max(p => p.X) + w < x0 || l.Plan.Min(p => p.X) - w > x1 || l.Plan.Max(p => p.Y) + w < y0 || l.Plan.Min(p => p.Y) - w > y1) continue;
+            // Its band sampled: points along its line a quarter, half and three quarters of its width out to its back.
+            var right = k.Str("side") != "left";
+            var (pts, closed) = (l.Plan, l.Closed);
+            var segs = closed ? pts.Count : pts.Count - 1;
+            var inside = false;
+            for (var i = 0; i < segs && !inside; i++)
+            {
+                var (a, b) = (pts[i], pts[(i + 1) % pts.Count]);
+                var len = (b - a).Length;
+                if (len < 1e-9) continue;
+                var d = (b - a) * (1 / len);
+                var n = right ? new Vec2(d.Y, -d.X) : new Vec2(-d.Y, d.X);
+                var steps = Math.Max(2, (int)Math.Ceiling(len / 0.25));
+                for (var j = 0; j <= steps && !inside; j++)
+                    foreach (var f in new[] { 0.25, 0.5, 0.75 })
+                    {
+                        var q = a + d * (len * j / steps) + n * (s.Width * f);
+                        if (Polygon2.Contains(outline, q) && Distance(outline, q) > 1e-3) { inside = true; break; }
+                    }
+            }
+            if (inside) yield return k;
+        }
+    }
+
+    static double Distance(IReadOnlyList<Vec2> loop, Vec2 p)
+    {
+        var d = double.PositiveInfinity;
+        for (var i = 0; i < loop.Count; i++) d = Math.Min(d, Polyline2.SegmentDistance(p, loop[i], loop[(i + 1) % loop.Count]));
+        return d;
+    }
+
     /// <summary>The kerbs on a terrain (those it is given to cut).</summary>
     public static IEnumerable<Entity> Of(IModelView m, string terrainId) => m.OfClass(Kerbs.Class).Where(e => Is(e) && e.Str("terrain") == terrainId);
 

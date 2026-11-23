@@ -5919,6 +5919,19 @@ export const PL: Record<string, string> = {
   "Minimum thickness": "Minimalna grubość",
   "Make it flat again": "Przywróć poziomą",
   "Region": "Strefa",
+  // Follow-ups of 23.11.2026: the drainage channel's schedule, floors' slope marks by scale, the drawing language.
+  "slope|Grade": "Spadek",
+  "Drainage channel schedule": "Zestawienie ścieków odwadniających",
+  "Change drainage channel": "Zmień ściek odwadniający",
+  "Floor slope marks": "Oznaczenia spadków stropów",
+  "Floors' fall arrows, spot levels and drains' levels are drawn in plans at this scale and larger; at smaller scales a floor shows its outline and drains only": "Strzałki spadku, rzędne punktów i rzędne wpustów stropów rysuje się w rzutach w tej skali i większych; w mniejszych skalach strop pokazuje tylko obrys i wpusty",
+  "at 1:20 and larger": "w 1:20 i większej",
+  "at 1:50 and larger": "w 1:50 i większej",
+  "at 1:100 and larger": "w 1:100 i większej",
+  "at 1:200 and larger": "w 1:200 i większej",
+  "at every scale": "w każdej skali",
+  "Drawing language": "Język rysunków",
+  "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Język słów, które rysunki piszą same (RD ścieku, punkt najniższy); legenda zachowuje język, w którym ją umieszczono",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

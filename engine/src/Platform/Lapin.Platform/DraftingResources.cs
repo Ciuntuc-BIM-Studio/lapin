@@ -899,7 +899,7 @@ public static class DraftingResources
             return null;
         });
 
-        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), whether values that do not fit are moved clear of their neighbours (dimAutoText) and past how many paper mm they take a leader (dimTextLeader), the decimals and trailing zeros levels are written with (levelDecimals 0–4, levelZeros project, keep or suppress), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both), how dates are written (dateFormat).
+        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), whether values that do not fit are moved clear of their neighbours (dimAutoText) and past how many paper mm they take a leader (dimTextLeader), the decimals and trailing zeros levels are written with (levelDecimals 0–4, levelZeros project, keep or suppress), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both), how dates are written (dateFormat), the smallest scale floors' slope marks are drawn at (floorSlopeMarks, its denominator; 50), the language the engine's own words on drawings are in (drawingLang).
         r.Command("standards.options", "Change drafting standards", (ctx, a) =>
         {
             var raw = Standards.ToJson(Book(ctx.Model));
@@ -940,6 +940,18 @@ public static class DraftingResources
             {
                 if (a["dateFormat"] is null) raw.Remove("dateFormat");
                 else raw["dateFormat"] = DrawingDates.Of(a["dateFormat"]) ?? throw new CommandException($"A date is written {string.Join(", ", DrawingDates.Formats)}.");
+            }
+            // Floors' slope marks (fall arrows, spot levels) drawn down to this scale (its denominator; follow-ups of 23.11.2026); null: 50, at 1:50 and larger.
+            if (a.ContainsKey("floorSlopeMarks"))
+            {
+                if (a["floorSlopeMarks"] is null) raw.Remove("floorSlopeMarks");
+                else raw["floorSlopeMarks"] = Standards.FloorSlopeMarksOf(a["floorSlopeMarks"]) ?? throw new CommandException("Floors' slope marks are drawn down to a scale of 1:1 to 1:100000 (its denominator).");
+            }
+            // The language the engine's own words on drawings are in (a channel's IL, a low point); null: English.
+            if (a.ContainsKey("drawingLang"))
+            {
+                if (a["drawingLang"] is null || (string?)a["drawingLang"] == "en") raw.Remove("drawingLang");
+                else raw["drawingLang"] = DrawingLanguage.Known((string?)a["drawingLang"]) ?? throw new CommandException($"Drawings are written in {string.Join(", ", DrawingLanguage.Languages)}.");
             }
             // The section and elevation markers' symbol size and text height (paper mm, decision 455); null: the defaults.
             void Mark(string key, double min, double max, string what)

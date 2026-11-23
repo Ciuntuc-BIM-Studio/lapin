@@ -5915,6 +5915,19 @@ export const ZH: Record<string, string> = {
   "Minimum thickness": "最小厚度",
   "Make it flat again": "恢复为水平",
   "Region": "分区",
+  // Follow-ups of 23.11.2026: the drainage channel's schedule, floors' slope marks by scale, the drawing language.
+  "slope|Grade": "坡度",
+  "Drainage channel schedule": "排水沟明细表",
+  "Change drainage channel": "修改排水沟",
+  "Floor slope marks": "楼板坡度标记",
+  "Floors' fall arrows, spot levels and drains' levels are drawn in plans at this scale and larger; at smaller scales a floor shows its outline and drains only": "楼板的坡度箭头、点标高和地漏标高在此比例及更大比例的平面图中绘制；在更小比例下楼板只显示轮廓和地漏",
+  "at 1:20 and larger": "1:20 及更大",
+  "at 1:50 and larger": "1:50 及更大",
+  "at 1:100 and larger": "1:100 及更大",
+  "at 1:200 and larger": "1:200 及更大",
+  "at every scale": "任何比例",
+  "Drawing language": "图纸语言",
+  "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "图纸自行书写的文字的语言（排水沟的管底、低点）；图例保留其放置时的语言",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

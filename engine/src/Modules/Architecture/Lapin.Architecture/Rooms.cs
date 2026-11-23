@@ -527,6 +527,36 @@ public static class Rooms
         mark.Snaps.Add(at);
         return mark;
     }
+
+    /// <summary>
+    /// The boxes the rooms' stamps take in a plan (in model units), as <see cref="Marks"/> draws them: what other marks keep clear
+    /// of (a floor's slope arrows). A stamp drawn by a symbol: a box of its lines' size round its point.
+    /// </summary>
+    public static List<(Vec2 Min, Vec2 Max)> StampBoxes(ViewContext c)
+    {
+        var o = new List<(Vec2, Vec2)>();
+        if (c.Kind != "plan") return o;
+        var m = c.Model;
+        var storeyId = c.View.Str("storeyId");
+        var hidden = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        var graphics = VisibilityGraphics.Of(m, c.View);
+        var type = Standards.TagTypeOf(c.Book, null, Class) is { Shape: "room" } t ? t : Standards.DefaultRoomTag;
+        foreach (var room in m.OfClass(Class))
+        {
+            if (hidden.Contains(room.Id) || graphics.Hides(room) || Spatial.StoreyOf(m, room.Id)?.Id != storeyId) continue;
+            if (Of(room, m, c.Geometry) is not { } outline) continue;
+            var own = TagRules.RuleType(m, c.Book, room) is { Shape: "room" } ruled ? ruled : type;
+            var style = Standards.TextOf(c.Book, own.TextStyle);
+            var at = StampPoint(room, outline);
+            var lines = TagText.Lines(own.Written, m, room, Values(room, outline, m, c.Book.Units, c.Book.AreaRounding), c.Book.Units);
+            var h = style.Height * c.Mm;
+            var step = h * 1.5;
+            var width = lines.Count == 0 ? 4 * h : lines.Max(l => l.Length * h * 0.6);
+            var top = at.Y + step * (Math.Max(lines.Count, 1) - 1) / 2;
+            o.Add((new Vec2(at.X - width / 2 - h * 0.3, top - step * (Math.Max(lines.Count, 1) - 1) - h * 0.7), new Vec2(at.X + width / 2 + h * 0.3, top + h * 0.7)));
+        }
+        return o;
+    }
 }
 
 /// <summary>

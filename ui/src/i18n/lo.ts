@@ -5972,6 +5972,19 @@ export const LO: Record<string, string> = {
   "Minimum thickness": "ຄວາມໜາຕ່ຳສຸດ",
   "Make it flat again": "ເຮັດໃຫ້ແປອີກຄັ້ງ",
   "Region": "ເຂດ",
+  // Follow-ups of 23.11.2026: the drainage channel's schedule, floors' slope marks by scale, the drawing language.
+  "slope|Grade": "ຄວາມຊັນ",
+  "Drainage channel schedule": "ຕາຕະລາງຮ່ອງລະບາຍນ້ຳ",
+  "Change drainage channel": "ປ່ຽນຮ່ອງລະບາຍນ້ຳ",
+  "Floor slope marks": "ເຄື່ອງໝາຍຄວາມຊັນຂອງພື້ນ",
+  "Floors' fall arrows, spot levels and drains' levels are drawn in plans at this scale and larger; at smaller scales a floor shows its outline and drains only": "ລູກສອນຄວາມຊັນ, ລະດັບຈຸດ ແລະ ລະດັບທໍ່ລະບາຍຂອງພື້ນ ແຕ້ມໃນແຜນຜັງທີ່ມາດຕາສ່ວນນີ້ ແລະ ໃຫຍ່ກວ່າ; ທີ່ມາດຕາສ່ວນນ້ອຍກວ່າ ພື້ນສະແດງພຽງຂອບ ແລະ ທໍ່ລະບາຍ",
+  "at 1:20 and larger": "ທີ່ 1:20 ແລະ ໃຫຍ່ກວ່າ",
+  "at 1:50 and larger": "ທີ່ 1:50 ແລະ ໃຫຍ່ກວ່າ",
+  "at 1:100 and larger": "ທີ່ 1:100 ແລະ ໃຫຍ່ກວ່າ",
+  "at 1:200 and larger": "ທີ່ 1:200 ແລະ ໃຫຍ່ກວ່າ",
+  "at every scale": "ທຸກມາດຕາສ່ວນ",
+  "Drawing language": "ພາສາຂອງແບບແຕ້ມ",
+  "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "ພາສາຂອງຄຳທີ່ແບບແຕ້ມຂຽນເອງ (ລະດັບກົ້ນຂອງຮ່ອງ, ຈຸດຕ່ຳ); ຄຳອະທິບາຍສັນຍາລັກຮັກສາພາສາທີ່ມັນຖືກວາງ",
 };
 
 /** Phrases with a number or a name in them. */

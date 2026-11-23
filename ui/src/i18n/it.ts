@@ -5879,6 +5879,19 @@ export const IT: Record<string, string> = {
   "Minimum thickness": "Spessore minimo",
   "Make it flat again": "Rendilo di nuovo piano",
   "Region": "Zona",
+  // Follow-ups of 23.11.2026: the drainage channel's schedule, floors' slope marks by scale, the drawing language.
+  "slope|Grade": "Pendenza",
+  "Drainage channel schedule": "Abaco delle canalette di drenaggio",
+  "Change drainage channel": "Modifica canaletta di drenaggio",
+  "Floor slope marks": "Segni di pendenza dei solai",
+  "Floors' fall arrows, spot levels and drains' levels are drawn in plans at this scale and larger; at smaller scales a floor shows its outline and drains only": "Le frecce di pendenza, le quote puntuali e le quote delle pilette dei solai si disegnano in pianta a questa scala e maggiori; a scale minori il solaio mostra solo il contorno e le pilette",
+  "at 1:20 and larger": "a 1:20 e maggiore",
+  "at 1:50 and larger": "a 1:50 e maggiore",
+  "at 1:100 and larger": "a 1:100 e maggiore",
+  "at 1:200 and larger": "a 1:200 e maggiore",
+  "at every scale": "a ogni scala",
+  "Drawing language": "Lingua dei disegni",
+  "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "La lingua delle parole che i disegni scrivono da sé (la QS di una canaletta, un punto basso); una legenda mantiene la lingua in cui è stata posata",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
