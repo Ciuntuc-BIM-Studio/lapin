@@ -253,6 +253,52 @@ fn user_settings_write(
     write_atomic(&path, &text).map_err(|e| e.to_string())
 }
 
+/// The remotes' sign-ins (docs/remote.md): a server's refresh token, kept by the shell, never by the engine and never in a
+/// project. Not the system's keychain yet (S1): a file of its own in the user's app folder, readable by its owner only (0600
+/// on macOS and Linux), beside settings.json but apart from it, so the settings never carry a token. The keyring crate
+/// (Keychain, Credential Manager, Secret Service) takes its place in S2 (docs/plan-atrium-cde.md §7).
+#[derive(Default)]
+struct SecretsFile(Mutex<()>);
+
+fn secrets_path(app: &AppHandle) -> Result<PathBuf, String> {
+    Ok(app.path().app_data_dir().map_err(|e| e.to_string())?.join("remote-secrets.json"))
+}
+
+fn read_secrets(path: &std::path::Path) -> std::collections::BTreeMap<String, String> {
+    std::fs::read_to_string(path).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default()
+}
+
+fn write_secrets(path: &std::path::Path, map: &std::collections::BTreeMap<String, String>) -> Result<(), String> {
+    let text = serde_json::to_vec_pretty(map).map_err(|e| e.to_string())?;
+    write_atomic(path, &text).map_err(|e| e.to_string())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600)).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// A remote's refresh token, by its key (the server's address and the account); none when not signed in.
+#[tauri::command]
+fn remote_secret_get(app: AppHandle, file: State<'_, Arc<SecretsFile>>, key: String) -> Result<Option<String>, String> {
+    let _one = file.0.lock().unwrap();
+    Ok(read_secrets(&secrets_path(&app)?).get(&key).cloned())
+}
+
+/// A remote's refresh token kept (a sign-in, or a refresh that replaced it: it is single-use), or forgotten (`value` none: signed out).
+#[tauri::command]
+fn remote_secret_set(app: AppHandle, file: State<'_, Arc<SecretsFile>>, key: String, value: Option<String>) -> Result<(), String> {
+    let path = secrets_path(&app)?;
+    let _one = file.0.lock().unwrap();
+    let mut map = read_secrets(&path);
+    match value {
+        Some(v) => { map.insert(key, v); }
+        None => { map.remove(&key); }
+    }
+    write_secrets(&path, &map)
+}
+
 /// The file this instance was started for (LAPIN_OPEN, else the first argument: a file opened from the file manager
 /// through the Linux desktop entry's `Exec=… %f`), if any: a project, an IFC or a DXF that exists.
 #[tauri::command]
@@ -571,7 +617,8 @@ pub fn run() {
         .manage(engine.clone())
         .manage(Arc::new(OllamaCalls::default()))
         .manage(Arc::new(SettingsFile::default()))
-        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file, open_path, stop_engine, ollama_request, ollama_cancel, user_settings_read, user_settings_write])
+        .manage(Arc::new(SecretsFile::default()))
+        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file, open_path, stop_engine, ollama_request, ollama_cancel, user_settings_read, user_settings_write, remote_secret_get, remote_secret_set])
         .setup({
             let engine = engine.clone();
             move |app| {
