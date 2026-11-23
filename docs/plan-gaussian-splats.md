@@ -1,7 +1,7 @@
 # Gaussian splats
 
 Asked on the forum (topic 237, "Gaussian Splat Support", 23.11.2026) and accepted by the user the same day ("I'm in, will do it").
-Decision 808 and the following, one per stage, in `docs/decisions-pending.md`.
+Decision 809 and the following, one per stage, in `docs/decisions-pending.md`.
 
 The request: link Gaussian splats (3DGS `.ply`, the compressed `.spz` and `.sog`) as point clouds are linked; switch between
 the splat and the point view; snap to them; measure distance and area on them; rescale a splat by two points and the real
@@ -49,7 +49,7 @@ carries splats with its measuring tools.
   Tests: the readers on small files written by the tests (PLY binary, SPZ v2 and v3), the transform of a Gaussian (a
   rotated, scaled link gives the covariance expected), the renderer's covariance and sort functions in vitest.
 
-  **Done 23.11.2026 (decision 808, branch `feat/gaussian-splats`).** Built as above, SPZ version 1 read too (float16
+  **Done 23.11.2026 (decision 809, branch `feat/gaussian-splats`).** Built as above, SPZ version 1 read too (float16
   positions); version 4 (ZSTD streams, new since the plan) is refused with a message. Decided where this plan was silent:
   an **up axis** on every cloud's placement (`placement.up`: `z`, `y`, `-y`; `-y` by default for a 3DGS PLY, COLMAP's axes,
   `y` for an SPZ, RUB), applied before the placement mode and asked in the place dialog, without which every capture lay on
