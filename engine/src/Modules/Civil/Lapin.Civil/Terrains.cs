@@ -654,7 +654,7 @@ public static class Terrains
             else problems.Add("Ditches, paths and hardscapes need the boolean library (manifold), missing here.");
         }
         var material = e.Str("material");
-        var parts = new List<GeometryPart> { new("Ground", Materials.ColorOf(m, material) is "#c9ced6" ? Color : Materials.ColorOf(m, material), body, material, "ground") };
+        var parts = new List<GeometryPart> { new("Ground", Materials.ColorOf(m, material) is "#c9ced6" ? Color : Materials.ColorOf(m, material), body, material, "ground") { LodKeepsEdges = true } };
         foreach (var sr in SubregionsOf(e))
             if (SubregionPart(t, sr, m) is { } part) parts.Add(part);
         if (e.Str("analysis") is { } kind && kind != "none" && Analysis.Of(m, e, kind) is { } analysis) parts.AddRange(Analysis.Overlay(analysis));
@@ -809,7 +809,7 @@ public static class Terrains
             tris.Add((b, n + a, n + b));
         }
         if (SolidFromMesh.Build(verts, tris, "subregion") is not { } skin) return null;
-        return new GeometryPart(sr.Name, Materials.ColorOf(m, sr.Material), skin, sr.Material, "subregion:" + sr.Id);
+        return new GeometryPart(sr.Name, Materials.ColorOf(m, sr.Material), skin, sr.Material, "subregion:" + sr.Id) { LodKeepsEdges = true };
     }
 
     /// <summary>Segments joined end to end into polylines (a contour's pieces, one per triangle, into its lines).</summary>

@@ -41,6 +41,35 @@ public static class Hardscapes
         new("stoneSlabs", "Stone slabs", "RIGID", [("Stone slabs", 0.05, "#aaa49a"), ("Mortar bed", 0.04, "#cdc8bd"), ("Concrete base", 0.12, "#b9b9b1"), ("Crushed stone", 0.15, "#9d978c")]),
     ];
 
+    /// <summary>
+    /// The graphics the ready-made build-ups' materials are made with where the material standards' names give them none or a
+    /// wrong one (a material's own graphics, edited in Manage → Materials as any other's): concrete pavers in a 200 × 100 running
+    /// bond, asphalt a sparse stipple, grass pavers their 600 × 400 blocks with openings, seen from above (a hardscape's plan and
+    /// an elevation: <c>elevation</c>); asphalt's cut that stipple too, and crushed stone cut as gravel (its name says stone,
+    /// masonry's 45° lines). Gravel, stone slabs, sand, mortar and concrete keep what the standard gives their names. A material
+    /// gets them only when the project does not have it yet: one it has keeps what it has.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, JsonObject> PresetLooks = new Dictionary<string, JsonObject>
+    {
+        ["Concrete pavers"] = new() { ["elevation"] = new JsonObject { ["hatch"] = "PAVER_200X100" } },
+        ["Asphalt wearing course"] = new() { ["elevation"] = new JsonObject { ["hatch"] = "ASPHALT" }, ["section"] = new JsonObject { ["hatch"] = "ASPHALT" } },
+        ["Asphalt binder course"] = new() { ["elevation"] = new JsonObject { ["hatch"] = "ASPHALT" }, ["section"] = new JsonObject { ["hatch"] = "ASPHALT" } },
+        ["Grass pavers"] = new() { ["elevation"] = new JsonObject { ["hatch"] = "GRASS_PAVER_600X400" } },
+        ["Crushed stone"] = new() { ["elevation"] = new JsonObject { ["hatch"] = "GRAVEL" }, ["section"] = new JsonObject { ["hatch"] = "GRAVEL" } },
+    };
+
+    /// <summary>The shipped materials among <paramref name="layers"/> the project does not have yet, made with their looks (<see cref="PresetLooks"/>).</summary>
+    static void EnsureLooks(ICommandContext ctx, IEnumerable<LayerSpec> layers)
+    {
+        foreach (var l in layers)
+        {
+            if (!PresetLooks.TryGetValue(l.Material, out var look) || Materials.Find(ctx.Model, l.Material) != null) continue;
+            var attrs = new JsonObject { ["color"] = l.Color ?? Presets.SelectMany(p => p.Layers).FirstOrDefault(x => x.Material == l.Material).Color ?? Materials.DefaultColor(l.Material) };
+            foreach (var (k, v) in look) attrs[k] = v!.DeepClone();
+            ctx.Add(new Entity(ctx.NewId(), IfcClass.Material, l.Material, attrs));
+        }
+    }
+
     public static JsonArray PresetsJson() => new([.. Presets.Select(p => (JsonNode)new JsonObject
     {
         ["key"] = p.Key, ["name"] = p.Name, ["pavement"] = p.Pavement, ["indicative"] = true,
@@ -63,6 +92,29 @@ public static class Hardscapes
 
     /// <summary>Its top edges in space, closed (the first point not repeated): the line the terrain meets it on, and what T5 grades from.</summary>
     public static List<Vec3> Edge(Entity e) => Top(e).Ring;
+
+    /// <summary>The longest stretch of a top edge the terrain is given without a point on it (metres).</summary>
+    public const double BreaklineStep = 1.0;
+
+    /// <summary>
+    /// Its top edges as the terrain is given them (<see cref="Edge"/>, closed, the first point not repeated), each straight stretch
+    /// longer than <see cref="BreaklineStep"/> split evenly, the points on it at its heights: the ground then fans from many points
+    /// along an edge, in triangles that lie in one plane with it, instead of from its two corners in long slivers whose folds
+    /// drew as stray lines in 3D. The same edge, so the ground meets it exactly as before.
+    /// </summary>
+    public static List<Vec3> Breakline(Entity e)
+    {
+        var ring = Edge(e);
+        var o = new List<Vec3>(ring.Count * 2);
+        for (var i = 0; i < ring.Count; i++)
+        {
+            var (a, b) = (ring[i], ring[(i + 1) % ring.Count]);
+            o.Add(a);
+            var n = (int)Math.Ceiling(new Vec2(b.X - a.X, b.Y - a.Y).Length / BreaklineStep);
+            for (var k = 1; k < n; k++) o.Add(a + (b - a) * ((double)k / n));
+        }
+        return o;
+    }
 
     /// <summary>The terrain it is cut into, or none (standalone).</summary>
     public static Entity? TerrainOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelVoidsElement) is { } t && Terrains.IsTerrain(t) ? t : null;
@@ -198,6 +250,7 @@ public static class Hardscapes
     public static Entity CreateType(ICommandContext ctx, string name, IReadOnlyList<LayerSpec> layers, string? pavement, string? preset = null)
     {
         LayerSets.Validate(layers, "A hardscape type");
+        EnsureLooks(ctx, layers);
         var attrs = new JsonObject();
         if (preset != null) { attrs["preset"] = preset; attrs["indicative"] = true; }
         var type = new Entity(ctx.NewId(), TypeClass, string.IsNullOrWhiteSpace(name) ? "Hardscape" : name.Trim(), attrs, Pavement(pavement));
@@ -361,6 +414,7 @@ public static class Hardscapes
             if (a["layers"] != null)
             {
                 var layers = LayerSets.Parse(a["layers"], "A hardscape type");
+                EnsureLooks(ctx, layers);
                 LayerSets.Rewrite(ctx, ctx.Model.Get(type.Id)!, layers);
             }
             foreach (var e in ctx.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).Where(Is).ToList())

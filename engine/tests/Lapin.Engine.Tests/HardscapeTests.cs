@@ -325,6 +325,41 @@ public sealed class HardscapeTests
     }
 
     [Fact]
+    public void The_ready_made_pavings_hatch_their_top_in_plan_and_a_material_the_project_has_keeps_its_graphics()
+    {
+        // A new project: concrete pavers in their 200 × 100 bond, asphalt stippled, grass pavers' blocks, crushed stone cut as gravel.
+        var f = F();
+        var pavers = Add(f, new JsonObject { ["points"] = Rect(0, 0, 4, 2), ["type"] = "pavers", ["elevation"] = 0, ["storeyId"] = f.Storey });
+        Add(f, new JsonObject { ["points"] = Rect(10, 0, 14, 2), ["type"] = "asphalt", ["elevation"] = 0, ["storeyId"] = f.Storey });
+        Add(f, new JsonObject { ["points"] = Rect(20, 0, 24, 2), ["type"] = "grassPavers", ["elevation"] = 0, ["storeyId"] = f.Storey });
+        string? Look(string name, string kind) => (string?)Materials.Find(f.Model, name)!.Attrs[kind]?["hatch"];
+        Assert.Equal("PAVER_200X100", Look("Concrete pavers", "elevation"));
+        Assert.Equal("ASPHALT", Look("Asphalt wearing course", "elevation"));
+        Assert.Equal("GRASS_PAVER_600X400", Look("Grass pavers", "elevation"));
+        Assert.Equal("GRAVEL", Look("Crushed stone", "section"));
+        var view = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        List<(double X0, double Y0, double X1, double Y1)> Hatch(Fixture fx, string v) => [.. ((JsonObject)fx.Session.Query("view.drawing", new JsonObject { ["id"] = v })!)["pens"]!.AsArray().OfType<JsonObject>()
+            .Where(p => (string?)p["layer"] == CivilModule.HardscapeLayer && p["segments"] is JsonArray)
+            .SelectMany(p => p["segments"]!.AsArray().Select(x => (double)x!).Chunk(4).Select(c => (c[0], c[1], c[2], c[3])))];
+        var lines = Hatch(f, view);
+        // The pavers: a course every 100 mm across the 2 m, joints every 200 mm along them, all inside the outline.
+        var mine = lines.Where(l => Math.Max(l.X0, l.X1) <= 4 + 1e-6).ToList();
+        Assert.InRange(mine.Count(l => Math.Abs(l.Y0 - l.Y1) < 1e-6 && Math.Abs(l.X1 - l.X0) > 3.9), 19, 21);
+        Assert.True(mine.Count(l => Math.Abs(l.X0 - l.X1) < 1e-6) >= 19 * 19 / 2, $"{mine.Count} pavers' joints");
+        Assert.Contains(lines, l => l.X0 > 9.9 && l.X0 < 14.1);
+        Assert.Contains(lines, l => l.X0 > 19.9 && l.X0 < 24.1);
+        // A project that has its own „Concrete pavers” already, with graphics of its own: they stay.
+        var g = F();
+        var own = g.Model.Get((string)g.Run("material.create", new JsonObject { ["name"] = "Concrete pavers" })!["id"]!)!;
+        g.Run("material.update", new JsonObject { ["id"] = own.Id, ["elevation"] = new JsonObject { ["hatch"] = "TILE_300X300" } });
+        var before = g.Model.Get(own.Id)!.Attrs.ToJsonString();
+        Add(g, new JsonObject { ["points"] = Rect(0, 0, 4, 2), ["type"] = "pavers", ["elevation"] = 0, ["storeyId"] = g.Storey });
+        Assert.Equal(before, g.Model.Get(own.Id)!.Attrs.ToJsonString());
+        Assert.Equal(own.Id, Hardscapes.LayersOf(g.Model, g.Model.Get(g.Model.OfClass(Hardscapes.Class).Single().Id)!)[0].Material);
+        Assert.Single(g.Model.OfClass(IfcClass.Material), x => x.Name == "Concrete pavers");
+    }
+
+    [Fact]
     public void A_sloped_sidewalk_over_an_even_survey_is_cut_into_the_ground_and_a_flat_corner_is_kept_by_the_triangulation()
     {
         // A face with three corners in a line (a hardscape's edge fanning to a row of survey points on a plane): two triangles,
@@ -339,6 +374,47 @@ public sealed class HardscapeTests
         var g = f.Session.Geometry(t)!;
         Assert.DoesNotContain(g.Diagnostics ?? [], d => d.Contains("could not be cut"));
         Assert.True(f.Session.Quantities(t).First(s => s.Name == "Lapin_EarthworkQuantities" && s.Part == "pad:" + w).Quantities.First(q => q.Name == "CutVolume").Value > 1);
+    }
+
+    [Fact]
+    public void The_ground_round_a_hardscape_draws_no_stray_lines_in_3D()
+    {
+        // The user guide's survey (falling 3 % and 1 %, a swell in the middle), a plaza and a long sidewalk cut into it. The ground
+        // fanned from each edge's two corners in long slivers whose folds passed the 3D view's crease angle: stray lines out of the
+        // corners, 20 m long. Its edges are given the ground with a point every metre, and the ground's coarser copies draw its
+        // edges: what it draws on its top is the cut round each hardscape and the folds of the survey, none longer than a survey diagonal.
+        var f = F();
+        static double G(double x, double y) => 0.03 * x + 0.01 * y + 0.35 * Math.Exp(-((x - 24) * (x - 24) + (y - 20) * (y - 20)) / 180.0);
+        var lines = new List<string>();
+        for (var x = 0; x <= 50; x += 2) for (var y = 0; y <= 36; y += 2) lines.Add(FormattableString.Invariant($"{x} {y} {100 + G(x, y):0.000}"));
+        var t = (string)f.Run("civil.addTerrain", new JsonObject { ["text"] = string.Join("\n", lines), ["datum"] = 100, ["storeyId"] = f.Storey, ["interval"] = 0.25 })!["id"]!;
+        Add(f, new JsonObject { ["points"] = Rect(14, 14, 30, 26), ["type"] = "pavers", ["elevation"] = 0.95, ["kerb"] = new JsonObject { ["all"] = true } });
+        Add(f, new JsonObject { ["points"] = Rect(4, 30, 46, 32.4), ["type"] = "stoneSlabs", ["grade"] = "2 %", ["direction"] = 270, ["origin"] = P(4, 32.4), ["elevation"] = 0.5 + G(4, 32.4) });
+        var outlines = new[] { new List<Vec2> { new(14, 14), new(30, 14), new(30, 26), new(14, 26) }, new List<Vec2> { new(4, 30), new(46, 30), new(46, 32.4), new(4, 32.4) } };
+        static double Off(List<Vec2> poly, Vec2 q) => Enumerable.Range(0, poly.Count).Min(i =>
+        {
+            var (a, b) = (poly[i], poly[(i + 1) % poly.Count]);
+            var k = Math.Clamp(Vec2.Dot(q - a, b - a) / Vec2.Dot(b - a, b - a), 0, 1);
+            return (q - (a + (b - a) * k)).Length;
+        });
+        // What the 3D view is sent: the ground's mesh and its coarser copies for the distance, which draw its own edges (theirs
+        // drew their slivers' folds, past their 40°, out of the kerb's corners).
+        var ground = f.Session.Snapshot().Render.Single(r => r.NodeId == t).Parts!.Single(p => p.Key == "ground");
+        Assert.NotNull(ground.Lods);
+        foreach (var (edges, level) in new[] { (ground.Edges, -1) }.Concat(ground.Lods!.Select((l, k) => (l.Edges, k))))
+        {
+            var drawn = 0;
+            for (var i = 0; i < edges.Length; i += 6)
+            {
+                var (a, b) = (new Vec2(edges[i], edges[i + 1]), new Vec2(edges[i + 3], edges[i + 4]));
+                var mid = (a + b) * 0.5;
+                // The terrain's sides, and the cut round each hardscape, are folds it has.
+                if (mid.X < 1e-3 || mid.Y < 1e-3 || mid.X > 50 - 1e-3 || mid.Y > 36 - 1e-3 || outlines.Min(o => Off(o, mid)) < 0.3) continue;
+                drawn++;
+                Assert.True((b - a).Length < 2.9, $"level {level}: a stray line from {a} to {b}");
+            }
+            Assert.True(drawn < 40, $"level {level}: {drawn} lines on the ground's top");
+        }
     }
 
     [Theory]
@@ -370,6 +446,11 @@ public sealed class HardscapeTests
         Assert.Contains("IFCMATERIALLAYERSETUSAGE(", text);
         Assert.Contains("'Concrete pavers'", text);
         Assert.DoesNotContain("'Pset_Lapin", text);
+        // The kerb connected to its hardscape (IfcRelConnectsElements, the hardscape relating), besides its intent.
+        string Line(string gid) => text.Split('\n').First(l => l.Contains('(') && l[(l.IndexOf('(') + 1)..].StartsWith($"'{gid}'"));
+        string Ref(string line) => line[..line.IndexOf('=')];
+        var rel = text.Split('\n').Single(l => l.Contains("IFCRELCONNECTSELEMENTS(") && l.Contains("'Kerb'"));
+        Assert.EndsWith($",{Ref(Line(id))},{Ref(Line(kerb))});", rel.Trim());
         var g = F();
         IfcImport.Run(g.Session, ms.ToArray(), "plaza.ifc", null, out _);
         var back = g.Model.Get(id);
@@ -381,5 +462,12 @@ public sealed class HardscapeTests
         Assert.Equal(t, Hardscapes.TerrainOf(g.Model, back)?.Id);
         Assert.Equal(id, g.Model.Get(kerb)?.Str(Kerbs.HostKey));
         Assert.Equal(Vol(f, id), Vol(g, id), 6);
+        // A file whose kerb's intent does not name its hardscape: the relationship does.
+        var bare = text.Replace("IFCPROPERTYSINGLEVALUE('hardscape',", "IFCPROPERTYSINGLEVALUE('was',");
+        Assert.NotEqual(text, bare);
+        var h = F();
+        IfcImport.Run(h.Session, System.Text.Encoding.UTF8.GetBytes(bare), "plaza.ifc", null, out _);
+        Assert.Equal(id, h.Model.Get(kerb)?.Str(Kerbs.HostKey));
+        Assert.Equal(Kerbs.Of(f.Model, id)!.Id, Kerbs.Of(h.Model, id)?.Id);
     }
 }

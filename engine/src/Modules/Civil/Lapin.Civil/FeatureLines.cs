@@ -255,7 +255,8 @@ public static class FeatureLines
         {
             if (Hardscapes.Corners(h).Count < 3) continue;
             var ring = Hardscapes.Edge(h);
-            foreach (var piece in Clip([.. ring, ring[0]], ground))
+            var breakline = Hardscapes.Breakline(h);
+            foreach (var piece in Clip([.. breakline, breakline[0]], ground))
                 list.Add((JsonNode)new JsonObject
                 {
                     ["id"] = h.Id,

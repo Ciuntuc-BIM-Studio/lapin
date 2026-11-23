@@ -69,6 +69,13 @@ public static partial class IfcExport
     public const string IntentSetName = "Lapin_Intent";
 
     /// <summary>
+    /// The elements that name another one they stand by, written also as IfcRelConnectsElements (the one named relating, the
+    /// element related; the relationship's Name the connection's) and read back from it when the element's Lapin_Intent does not
+    /// name it: a kerb (<c>LapinKerb</c>, its <c>hardscape</c>) by its hardscape (site grading T4).
+    /// </summary>
+    public static readonly (string Class, string Key, string Name)[] Connections = [("LapinKerb", "hardscape", "Kerb")];
+
+    /// <summary>
     /// The Mode an IfcSurfaceTexture is written with for each of a material's maps (docs/plan-render.md, S1): the colour as X3D's
     /// MODULATE (multiplied by the surface's colour, as most readers take an unnamed texture), the others by what they are for.
     /// </summary>
@@ -2754,6 +2761,10 @@ public static partial class IfcExport
                 }
                 if (e.Str("host") is { } host && written.TryGetValue(host, out var h))
                     f.Add("IFCRELCONNECTSELEMENTS", Gid(e.Id, "host-rel"), Null, S(e.Str("hostRelation") ?? "Formwork"), Null, Null, h, element);
+                // An element standing by another it names (a kerb by its hardscape, site grading T4): connected to it, the named one relating.
+                foreach (var c in Connections.Where(c => c.Class == e.Class))
+                    if (e.Str(c.Key) is { } other && written.TryGetValue(other, out var by))
+                        f.Add("IFCRELCONNECTSELEMENTS", Gid(e.Id, c.Key + "-rel"), Null, S(c.Name), Null, Null, by, element);
             }
             // Coverings on an element's faces (the finish painter, forum topic 83): one IfcRelCoversBldgElements per element covered.
             foreach (var g in m.Entities.Where(e => e.Str("covers") is { } c && written.ContainsKey(e.Id) && written.ContainsKey(c)).GroupBy(e => e.Str("covers")!).OrderBy(g => g.Key, StringComparer.Ordinal))
