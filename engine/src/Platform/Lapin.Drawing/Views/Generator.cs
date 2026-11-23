@@ -286,7 +286,12 @@ public static class Generator
                 // Cut only: a line in space draws only where the plane cuts it.
                 if (v.CutOnly && role != LineRole.Cut) continue;
                 for (var i = 0; i + 1 < mapped.Count; i++)
-                    lines.Add(new DLine(mapped[i], mapped[i + 1], role, sym.Element, sym.Class, Own: sym.Own));
+                {
+                    var (a, b) = (mapped[i], mapped[i + 1]);
+                    // Seen only between the view's ends (a piece of a jogged section, a section limited to its ends).
+                    if (v.Span is { } sp && !ClipX(ref a, ref b, sp.Min, sp.Max)) continue;
+                    lines.Add(new DLine(a, b, role, sym.Element, sym.Class, Own: sym.Own));
+                }
             }
         if (plan && symbols != null)
             foreach (var sym in symbols.Where(s => s.Points3 == null))
@@ -298,6 +303,20 @@ public static class Generator
         List<DFill>? fills = null;
         if (!plan && !v.CutOnly && silhouettes is { Count: > 0 }) DrawSilhouettes(silhouettes, v, lines, ref fills);
         return new ViewDrawing(cuts, lines, fills);
+    }
+
+    /// <summary>A segment clipped to x within <paramref name="x0"/>..<paramref name="x1"/>; false when nothing of it lies there.</summary>
+    static bool ClipX(ref Vec2 a, ref Vec2 b, double x0, double x1)
+    {
+        if (Math.Max(a.X, b.X) < x0 - 1e-9 || Math.Min(a.X, b.X) > x1 + 1e-9) return false;
+        var d = b - a;
+        if (Math.Abs(d.X) < 1e-12) return true;
+        var (t0, t1) = ((x0 - a.X) / d.X, (x1 - a.X) / d.X);
+        if (t0 > t1) (t0, t1) = (t1, t0);
+        var (s0, s1) = (Math.Max(0, t0), Math.Min(1, t1));
+        if (s1 - s0 < 1e-12) return false;
+        (a, b) = (a + d * s0, a + d * s1);
+        return true;
     }
 
     /// <summary>

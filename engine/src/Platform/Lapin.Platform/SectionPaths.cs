@@ -127,14 +127,27 @@ public static class SectionPaths
     public static bool Projects(Entity view) => IsJogged(view) && view.Str(JoggedKey) != DevelopedMode;
 
     /// <summary>
-    /// The planar cuts a section is drawn by, and whether each sees only its stretch (a line of more than one piece). Developed:
+    /// The view's field that limits a plain two-point section to its ends (decision 802, Î10 of docs/plan-site-grading.md):
+    /// true, it cuts and sees only the strip between its two ends (its line's length, across its whole depth), as each piece
+    /// of a jogged, curved or following section always does. A section made by <c>view.create</c> gets it (the default for new
+    /// sections); one saved before has none and draws across the whole width its plane crosses, as it did.
+    /// </summary>
+    public const string LimitEndsKey = "limitEnds";
+
+    /// <summary>Whether the section sees only between its ends: <see cref="LimitEndsKey"/> (a line of more than one piece always does).</summary>
+    public static bool LimitsEnds(Entity view) => view.Bool(LimitEndsKey);
+
+    /// <summary>
+    /// The planar cuts a section is drawn by, and whether each sees only its stretch (a line of more than one piece, or one
+    /// that limits its ends, <see cref="LimitsEnds"/>). Developed:
     /// every straight piece at its developed station (<see cref="Pieces(IReadOnlyList{Vec2})"/>). Projected (<see cref="Projects"/>):
     /// <see cref="ProjectedPieces"/>, falling back to developed when the line turns back over itself.
     /// </summary>
     public static (List<Piece> Pieces, bool Spanned) Cuts(Entity view, IReadOnlyList<Vec2> path)
     {
         var raw = Pieces(path);
-        var spanned = raw.Count > 1;
+        // A plain line sees only between its ends too when it limits them (decision 802).
+        var spanned = raw.Count > 1 || LimitsEnds(view);
         if (spanned && Projects(view) && ProjectedPieces(raw) is { } projected) return (projected, true);
         return (raw, spanned);
     }
@@ -227,6 +240,11 @@ public static class SectionPaths
             var mode = (string?)a[JoggedKey];
             if (mode is not (null or ProjectedMode or DevelopedMode)) throw new CommandException("A jogged section is drawn \"projected\" or \"developed\".");
             if (mode == DevelopedMode) attrs[JoggedKey] = DevelopedMode; else attrs.Remove(JoggedKey);
+        }
+        if (a.ContainsKey("limitEnds"))
+        {
+            // Limit to its ends (decision 802): true kept; false or null clears it (a section without it sees across its plane's width).
+            if (a["limitEnds"] is JsonValue lv && lv.TryGetValue<bool>(out var limit) && limit) attrs[LimitEndsKey] = true; else attrs.Remove(LimitEndsKey);
         }
         if (a.ContainsKey("stations"))
         {

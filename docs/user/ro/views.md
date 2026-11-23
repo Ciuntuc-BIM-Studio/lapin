@@ -24,6 +24,18 @@ O secțiune nu trebuie să fie o singură linie dreaptă. **Secțiune în trepte
 
 Selectează secțiunea în navigator ca să-i setezi scara, adâncimea, disciplina și stilul în panoul de proprietăți.
 
+### Cât de lat vede o secțiune
+
+O secțiune dreaptă e **limitată la capete**: taie și vede doar fâșia dintre cele două capete ale liniei ei, cât e de lungă, pe toată adâncimea. Un teren lung, un drum sau clădirea vecină care trec de capetele ei nu se mai desenează acolo, așa că o secțiune de 10 m printr-un perete are 10 m lățime chiar și pe un teren de 70 m. O secțiune nouă are bifat **Limitată la capete** în setările vederii. Debifează ca să desenezi tot ce traversează planul secțiunii, oricât de lat. O secțiune salvată înainte de această opțiune se deschide cu ea debifată, desenată exact cum era; bifeaz-o când vrei. Fiecare schimbare e un pas de anulare. Selectată într-un plan, o secțiune limitată arată fâșia pe care o vede: cele două laturi, de la capete până la linia ei îndepărtată (până la grip-ul de adâncime când vede fără capăt). Axele și marcajele altor secțiuni de dincolo de capete nu apar în ea, iar planșele, PDF-ul și DXF-ul tipăresc ce arată vederea. O secțiune în trepte, curbă sau pe lungul unui element nu are această bifă: fiecare bucată a ei vede mereu doar între capetele ei.
+
+![Secțiunea E-E limitată la capete: peretele și terenul dintre cele două capete ale liniei](shots/section-limit-ends.webp)
+
+![Setările secțiunii: Limitată la capete](shots/section-limit-ends-setting.webp)
+
+![Aceeași secțiune fără ea: terenul desenat pe toată lățimea, peretele mic la mijloc](shots/section-limit-ends-off.webp)
+
+![Secțiunea selectată în plan: fâșia pe care o vede, de la linia ei până la linia îndepărtată](shots/section-limit-ends-plan.webp)
+
 ### Cât de departe vede o secțiune
 
 O secțiune desenează ce taie planul ei și, în spatele lui, tot ce vede până la **adâncimea** ei. Dacă adâncimea e goală, secțiunea vede fără capăt. Adâncimea se setează la **Adâncime**, în setările vederii (**Vedere → Setările vederii** sau proprietățile secțiunii). O poți și trage într-un plan: selectează secțiunea și apare o prindere pe linia ei îndepărtată, la mijloc. Trage prinderea spre tăietură sau departe de ea. O linie întreruptă arată unde secțiunea se oprește din văzut. La o secțiune fără adâncime, prinderea stă în fața liniei ei, gata de tras înăuntru. Ctrl/⌘-clic pe prindere și secțiunea vede din nou fără capăt. Fiecare schimbare e un singur pas de anulare.

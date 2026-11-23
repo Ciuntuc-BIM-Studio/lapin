@@ -1730,6 +1730,8 @@ public static class Views
                     break;
                 case "section":
                     // Its line: start and end, or pts (jogged), an arc through three points (curve), or an element it follows (along: a road, a wall, a drafted polyline); its depth.
+                    // A new section sees only between its ends unless asked otherwise (decision 802); one saved before has no field and sees across.
+                    if (!a.ContainsKey("limitEnds")) attrs[SectionPaths.LimitEndsKey] = true;
                     SectionPaths.Set(ctx.Model, ctx.Services, attrs, a, create: true);
                     if (Json.Number(a["depth"]) is { } d) attrs["depth"] = d;
                     name = (string?)a["name"] ?? $"Section {ctx.Model.OfClass(Class).Count(v => v.Str("kind") == "section") + 1}";
@@ -1847,7 +1849,8 @@ public static class Views
         });
 
         // A section's line moved or redrawn: {id, start?, end?} or {id, pts}, {curve: "arc" | null}, {along: element | null}, {stations: m | null},
-        // {jogged: "projected" | "developed" | null}: how a jogged line is drawn (report #146; projected, the default, stores nothing).
+        // {jogged: "projected" | "developed" | null}: how a jogged line is drawn (report #146; projected, the default, stores nothing),
+        // {limitEnds: bool}: a plain line seeing only between its ends (decision 802).
         r.Command("view.setLine", "Move section", (ctx, a) =>
         {
             var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "section" ? x : throw new CommandException("Not a section.");
