@@ -137,8 +137,9 @@ public static class BatteredWalls
             leg.Zf = leg.Bottom + tf;
             leg.Footing = tf > 1e-6;
             var (st0, st1) = (chain.StationOf(i), chain.StationOf(i + 1));
+            // A crown given at one end only slopes from the wall's own crown at the other (the panel's "the wall's").
             var z0 = g.TopStart ?? levels.Top(st0, i);
-            var z1 = g.TopEnd ?? (g.TopStart != null ? z0 : levels.Top(st1, i));
+            var z1 = g.TopEnd ?? levels.Top(st1, i);
             leg.Z0 = Math.Max(z0, leg.Zf + 0.05);
             leg.Z1 = Math.Max(z1, leg.Zf + 0.05);
             leg.Warp = g.Warp;

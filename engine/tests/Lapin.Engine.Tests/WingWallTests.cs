@@ -180,6 +180,32 @@ public class WingWallTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void A_crown_given_at_one_end_only_slopes_from_the_walls_own_crown_at_the_other()
+    {
+        // The tutorial's wing: the first segment's free end at its start, only "Crown at its start" typed; its end ("the wall's") stays at 3.0.
+        var f = Site();
+        Flat(f);
+        var w = Wall(f, new JsonObject { ["frontBatter"] = 10 }, (10, 6), (10, 0), (0, 0));
+        f.Run("civil.setRetainingWallSegment", new JsonObject { ["id"] = w, ["index"] = 0, ["topStart"] = 1.0 });
+        var s = Body(f, w);
+        Closed(s);
+        var built = BatteredWalls.Of(s)!;
+        Assert.Equal(1.0, built.Legs[0].Z0, 9);
+        Assert.Equal(3.0, built.Legs[0].Z1, 9);
+        // It slopes, not steps: the crown is level over the corner and only the free end is 1.0 high.
+        var areas = BatteredWalls.Areas(built, s);
+        Assert.False(areas.ContainsKey("step"));
+        Assert.Contains(s.Vertices, p => Math.Abs(p.Y - 6) < 1e-9 && Math.Abs(p.Z - 1.0) < 1e-9);
+        Assert.DoesNotContain(s.Vertices, p => p.Y < 5.9 && Math.Abs(p.Z - 1.0) < 1e-9);
+        // The other way round: only "Crown at its end" on the second segment, its start the wall's.
+        f.Run("civil.setRetainingWallSegment", new JsonObject { ["id"] = w, ["index"] = 0, ["topStart"] = null });
+        f.Run("civil.setRetainingWallSegment", new JsonObject { ["id"] = w, ["index"] = 1, ["topEnd"] = 1.0 });
+        var leg = BatteredWalls.Of(Body(f, w))!.Legs[1];
+        Assert.Equal(3.0, leg.Z0, 9);
+        Assert.Equal(1.0, leg.Z1, 9);
+    }
+
+    [Fact]
     public void A_warped_wing_turns_its_face_from_one_batter_to_another_exactly()
     {
         var f = Site();
