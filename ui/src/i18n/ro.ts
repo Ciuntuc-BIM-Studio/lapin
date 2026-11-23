@@ -32,6 +32,27 @@ export const RO: Record<string, string> = {
   "Gathering the objects": "Adun obiectele",
   "Preparing the objects": "Pregătesc obiectele",
   "Making the version": "Fac versiunea",
+  // The Speckle connector's receive: File → Speckle → Receive… (docs/plan-speckle.md, S2).
+  "Receive…": "Primește…",
+  "Receive from Speckle": "Primește din Speckle",
+  "the latest": "cea mai nouă",
+  "no model in this project": "niciun model în acest proiect",
+  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "După nivelurile versiunii: fiecare obiect pe etajul de la nivelul lui (5 cm), altfel pe cel pe care stă",
+  "by the version's levels": "după nivelurile versiunii",
+  "all on the current storey": "toate pe etajul curent",
+  "Send writes the model from the project base point; a model from another program may start at its internal origin": "Trimiterea scrie modelul din punctul de bază al proiectului; un model din alt program poate porni din originea lui internă",
+  "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "Obiectele intră ca referințe, cu suprafețele, culorile și proprietățile lor, grupate după model. O versiune mai nouă primită le actualizează pe loc și le păstrează GlobalId-urile; ce nu mai are versiunea se șterge.",
+  "They are already here. Received as a copy, the objects come in as references with ids of their own, beside the elements, which stay as they are.": "Sunt deja aici. Primite ca o copie, obiectele intră ca referințe cu id-uri proprii, lângă elemente, care rămân cum sunt.",
+  "Updated": "Actualizate",
+  "Unchanged": "Neschimbate",
+  "With lines only": "Doar cu linii",
+  "Receive as a copy": "Primește ca o copie",
+  "Receive": "Primește",
+  "Receiving…": "Primesc…",
+  "Receiving from Speckle": "Primesc din Speckle",
+  "Downloading from Speckle": "Descarc din Speckle",
+  "Reading the objects": "Citesc obiectele",
+  "Bringing the objects in": "Aduc obiectele",
   // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
   "MEP legend": "Legendă instalații",
   "MEP LEGEND": "LEGENDĂ INSTALAȚII",
@@ -5853,6 +5874,19 @@ export const RO: Record<string, string> = {
   "Minimum thickness": "Grosime minimă",
   "Make it flat again": "Fă-o din nou orizontală",
   "Region": "Zona",
+  // Follow-ups of 23.11.2026: the drainage channel's schedule, floors' slope marks by scale, the drawing language.
+  "slope|Grade": "Panta",
+  "Drainage channel schedule": "Extrasul rigolelor de drenaj",
+  "Change drainage channel": "Modifică rigola de drenaj",
+  "Floor slope marks": "Marcajele pantelor plăcilor",
+  "Floors' fall arrows, spot levels and drains' levels are drawn in plans at this scale and larger; at smaller scales a floor shows its outline and drains only": "Săgețile de cădere, cotele punctelor și cotele sifoanelor plăcilor se desenează în planuri la această scară și la cele mai mari; la scări mai mici placa își arată doar conturul și sifoanele",
+  "at 1:20 and larger": "la 1:20 și mai mare",
+  "at 1:50 and larger": "la 1:50 și mai mare",
+  "at 1:100 and larger": "la 1:100 și mai mare",
+  "at 1:200 and larger": "la 1:200 și mai mare",
+  "at every scale": "la orice scară",
+  "Drawing language": "Limba desenelor",
+  "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Limba cuvintelor pe care desenele le scriu singure (CR-ul unei rigole, un punct jos); o legendă își păstrează limba în care a fost pusă",
 };
 
 /** Phrases with a number or a name in them. */
@@ -6329,5 +6363,8 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” nu mai are un metru între pozițiile căptușelii: căptușeala își păstrează ultima axă, dezlegată.`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” e mai scurt acum: căptușeala merge de la ${m[2]} la ${m[3]} m, nu de la ${m[4]} la ${m[5]} m cum a fost legată.`],
   // The Speckle connector's send (docs/plan-speckle.md, S1)
+  // The Speckle connector's receive (docs/plan-speckle.md, S2)
+  [/^Received (\d+) objects from Speckle\.$/, (m) => `Primite ${m[1]} obiecte din Speckle.`],
+  [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Această versiune a fost trimisă din acest proiect: ${m[1]} dintre obiectele ei sunt elementele lui.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Trimis: ${m[1]} elemente, ca versiune nouă.`],
 ];

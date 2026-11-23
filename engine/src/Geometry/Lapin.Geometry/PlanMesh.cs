@@ -7,7 +7,9 @@ namespace Lapin.Geometry;
 /// an outline's edge), takes straight segments (every triangle the segment passes through split along it), and is split where a
 /// function linear on each triangle changes sign (a crease where two planes meet, where a fall reaches its limit). Every split
 /// point is shared by the triangles on both sides of the edge it lies on, so the triangles always meet edge to edge, and each
-/// value is carried to it linearly along that edge. Triangles run counter-clockwise seen from above.
+/// value is carried to it linearly along that edge. Triangles run counter-clockwise seen from above. It decides with the same
+/// predicates as the terrain's <see cref="Tin"/> (<see cref="PlanPredicates"/>), and <see cref="ToTin"/> gives one channel of it as
+/// a TIN, which <see cref="Terrain"/> asks (elevations, contours) as it asks a terrain.
 /// </summary>
 public sealed class PlanMesh
 {
@@ -61,7 +63,7 @@ public sealed class PlanMesh
         return Points.Count - 1;
     }
 
-    static double Orient(Vec2 a, Vec2 b, Vec2 c) => (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
+    static double Orient(Vec2 a, Vec2 b, Vec2 c) => PlanPredicates.Orient(a.X, a.Y, b.X, b.Y, c.X, c.Y);
 
     /// <summary>The plan area the triangles cover.</summary>
     public double Area => Triangles.Sum(t => Orient(Points[t.A], Points[t.B], Points[t.C]) / 2);
@@ -180,11 +182,7 @@ public sealed class PlanMesh
         }
     }
 
-    static bool InCircle(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
-    {
-        double ax = a.X - d.X, ay = a.Y - d.Y, bx = b.X - d.X, by = b.Y - d.Y, cx = c.X - d.X, cy = c.Y - d.Y;
-        return (ax * ax + ay * ay) * (bx * cy - cx * by) - (bx * bx + by * by) * (ax * cy - cx * ay) + (cx * cx + cy * cy) * (ax * by - bx * ay) > 1e-12;
-    }
+    static bool InCircle(Vec2 a, Vec2 b, Vec2 c, Vec2 d) => PlanPredicates.InCircle(a.X, a.Y, b.X, b.Y, c.X, c.Y, d.X, d.Y);
 
     /// <summary>
     /// A straight segment taken into the mesh: its ends put in, then every triangle it passes through split along it, so it
@@ -311,6 +309,9 @@ public sealed class PlanMesh
         }
         return added;
     }
+
+    /// <summary>The mesh as a TIN, its heights one channel's values (<see cref="Terrain"/> then asks it as it asks a terrain).</summary>
+    public Tin ToTin(int channel = 0) => new([.. Points.Select((p, i) => p.At(Values[i][channel]))], [.. Triangles]);
 
     /// <summary>A copy of the triangles <paramref name="which"/> takes, their points numbered afresh.</summary>
     public PlanMesh Sub(Func<int, bool> which)

@@ -259,7 +259,29 @@ Ce ajunge e un arbore Proiect → Clădire → Etaj → clasă IFC, cu elementel
 - suprafețele lui, aceleași pe care le scrie **Export 3D**, în metri, în culorile și transparența materialelor lui;
 - proprietățile lui: clasa IFC, numele, tipul, etajul, faza, materialele și straturile (fiecare cu grosimea lui), seturile de proprietăți și cantitățile, fiecare cu unitatea ei.
 
-Etajele pleacă drept niveluri Speckle, așa că Revit primește elementele pe nivelurile lor. Imaginile materialelor (texturile) și muchiile elementelor nu se trimit; o copie (un șir de scaune la fel) pleacă cu suprafețele ei proprii. Primirea unui model din Speckle în Lapin vine într-o versiune următoare.
+Etajele pleacă drept niveluri Speckle, așa că Revit primește elementele pe nivelurile lor. Imaginile materialelor (texturile) și muchiile elementelor nu se trimit; o copie (un șir de scaune la fel) pleacă cu suprafețele ei proprii.
+
+### Primirea din Speckle
+
+**Fișier → Speckle → Primește…** aduce o versiune a unui model Speckle în proiectul deschis, oricare program a trimis-o (Revit, Rhino, Archicad, alt Lapin). Se conectează cu același cont ca **Trimite…**. Alegi **Proiectul**, **Modelul** și **Versiunea** (implicit **cea mai nouă**, sau una din listă, după mesajul ei, dată și programul care a trimis-o), apoi:
+
+- **Etaje**: **după nivelurile versiunii**, fiecare obiect pe etajul de la nivelul lui (în 5 cm), altfel pe etajul pe care stă, altfel pe etajul pe care ești; sau **toate pe etajul curent**.
+- **Origine**: **punctul de bază al proiectului** (Trimite scrie modelul de acolo, deci un model trimis din Lapin se întoarce unde era) sau **originea internă**.
+
+**Primește** descarcă versiunea (**Renunță** o oprește) și o aduce într-un singur pas: un singur **Undo** o scoate toată. Obiectele intră ca **referințe**, ca la importul unui mesh sau al unui fișier IFC: se văd, se măsoară și se prind, nu se editează. Fiecare își păstrează:
+
+- suprafețele, în metri, oricare ar fi unitatea versiunii, în culorile materialelor de randare (unul transparent ca material propriu);
+- clasa IFC, când versiunea o numește (categoriile Revit: pereți, plăci, acoperișuri, uși, ferestre, stâlpi, grinzi… drept clasele lor IFC), altfel element de construcție generic (proxy);
+- proprietățile, la **Proprietăți IFC**: setul **Speckle** (applicationId-ul, id-ul și tipul Speckle, colecțiile în care stă) și câte un set pentru fiecare grup de proprietăți (**Speckle · Parameters**…);
+- de unde vine: serverul, proiectul, modelul și versiunea.
+
+Obiectele unui model intră ca un grup cu numele lui. Copiile unui bloc sau ale unei familii (instanțele Speckle) au un singur corp comun, ca la un fișier Fragments importat. Liniile, poliliniile, arcele și cercurile care sunt singure un obiect se desenează în plan; punctele, textele și obiectele fără geometrie se lasă afară, iar fereastra spune câte din fiecare.
+
+**O versiune mai nouă** a aceluiași model primită actualizează pe loc ce a venit înainte: fiecare obiect e găsit din nou după applicationId (altfel după id-ul Speckle) și își păstrează GlobalId-ul, grupul și tot ce îl numește; un obiect neschimbat rămâne cum e; cele noi intră în grupul modelului; cele pe care versiunea nu le mai are se șterg, cum reîncărcarea unei legături scoate ce nu mai e în fișierul ei. Fereastra arată câte s-au adăugat, actualizat, au rămas neschimbate și s-au șters.
+
+**O versiune trimisă din acest proiect** (obiectele ei sunt elementele proiectului, după GlobalId-uri) nu se primește peste ele: Lapin spune asta și oferă **Primește ca o copie**, care aduce obiectele ca referințe cu id-uri proprii, lângă elemente, care rămân cum sunt. Primit în alt proiect, un model trimis din Lapin păstrează GlobalId-urile elementelor.
+
+Nu se primesc încă: texturile, muchiile obiectelor și recunoașterea referințelor ca pereți și plăci native (cum poate un import IFC).
 
 ## Lapin pentru browser
 

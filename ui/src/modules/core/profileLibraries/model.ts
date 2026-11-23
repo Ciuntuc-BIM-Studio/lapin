@@ -255,14 +255,14 @@ export function ringsPath(rings: Ring[], k: number, x0: number, y0: number): str
 }
 
 /** A profile's outside as the project's 2D profiles keep it (`LapinProfile`: wall sweeps, reveals, strip footings), the insertion point bottom left, bottom middle for a footing; holes are left out. */
-export function asSweepShape(rings: Ring[], use: 'sweep' | 'reveal' | 'footing' | 'kerb', name: string): { name: string; points: [number, number][]; insertion: [number, number] } | null {
+export function asSweepShape(rings: Ring[], use: 'sweep' | 'reveal' | 'footing' | 'kerb' | 'channel', name: string): { name: string; points: [number, number][]; insertion: [number, number] } | null {
   const area = (r: Ring) => r.reduce((a, p, i) => { const q = r[(i + 1) % r.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0) / 2;
   const outs = rings.filter((r) => r.length >= 3 && area(r) > 0);
   if (!outs.length) return null;
   const outer = outs.reduce((a, b) => (area(b) > area(a) ? b : a));
   const xs = outer.map((p) => p[0]), ys = outer.map((p) => p[1]);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys);
-  return { name, points: outer.map(([x, y]) => [Math.round((x - minX) * 1e6) / 1e6, Math.round((y - minY) * 1e6) / 1e6]), insertion: use === 'footing' ? [(maxX - minX) / 2, 0] : [0, 0] };
+  return { name, points: outer.map(([x, y]) => [Math.round((x - minX) * 1e6) / 1e6, Math.round((y - minY) * 1e6) / 1e6]), insertion: use === 'footing' || use === 'channel' ? [(maxX - minX) / 2, 0] : [0, 0] };
 }
 
 /** A profile added to a library's list: one of the same name replaced, the list in natural order. */

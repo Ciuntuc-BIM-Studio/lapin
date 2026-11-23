@@ -200,16 +200,16 @@ public static class Hardscapes
         var top = Top(e);
         var parts = new List<GeometryPart>();
         var problems = new List<string>();
-        // The channels running through it (T6) take their shape out of its layers: found where they lie, not stored.
-        var cutters = Channels.Over(m, top.Points).SelectMany(ch => Channels.Cutters(m, ch)).ToList();
+        // The channels (T6) and the standalone kerbs running through it take their shape out of its layers: found where they lie, not stored.
+        var cutters = Cutters(m, top.Points);
         var booleans = cutters.Count > 0 ? services.Get<ISolidBooleans>() : null;
-        if (cutters.Count > 0 && booleans == null) problems.Add("A channel through a hardscape needs the boolean library (manifold), missing here.");
+        if (cutters.Count > 0 && booleans == null) problems.Add("A channel or a kerb through a hardscape needs the boolean library (manifold), missing here.");
         foreach (var (i, l, s) in Bodies(m, e))
         {
             var body = s;
             if (booleans != null)
                 try { body = booleans.Difference(s, cutters, "layer:" + i) ?? s; }
-                catch (InvalidOperationException ex) { problems.Add($"A channel could not be cut through its layer {i + 1} ({ex.Message})."); }
+                catch (InvalidOperationException ex) { problems.Add($"A channel or a kerb could not be cut through its layer {i + 1} ({ex.Message})."); }
             parts.Add(new GeometryPart(l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", Materials.ColorOf(m, l.Material), body, l.Material, "layer:" + i));
         }
         if (top.Note != null) problems.Add(top.Note);
@@ -217,6 +217,10 @@ public static class Hardscapes
         var plan = new List<PlanItem> { new("heavy", true, top.Points) };
         return new ElementGeometry(parts, plan, corners, problems.Count > 0 ? problems : null);
     }
+
+    /// <summary>What is cut out of a hardscape's layers: the channels and the standalone kerbs running through its outline.</summary>
+    static List<Solid> Cutters(IModelView m, IReadOnlyList<Vec2> outline) =>
+        [.. Channels.Over(m, outline).SelectMany(ch => Channels.Cutters(m, ch)), .. KerbLines.Over(m, outline).SelectMany(k => KerbLines.Solids(m, k).Select(x => x.Solid))];
 
     public static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)
     {
@@ -231,17 +235,23 @@ public static class Hardscapes
         }
         var layers = LayersOf(m, e);
         var depth = layers.Sum(l => Math.Max(0, l.Thickness));
+        // A channel or a kerb running through it: each layer's volume is its body's, as drawn, with what they take out of it
+        // (follow-ups of 23.11.2026); otherwise the plan area times the thickness, exactly, as before.
+        var cut = Channels.Over(m, top.Points).Any() || KerbLines.Over(m, top.Points).Any();
+        double LayerVolume(int i, MaterialLayer l) =>
+            cut && g.Parts.FirstOrDefault(p => p.Key == "layer:" + i) is { } part ? Measure.Volume(part.Solid) : area * Math.Max(0, l.Thickness);
+        var volume = cut ? Enumerable.Range(0, layers.Count).Sum(i => LayerVolume(i, layers[i])) : area * depth;
         yield return new QuantitySet("Lapin_HardscapeQuantities",
         [
             new("Area", area, "AREA", "Paved area"),
             new("SurfaceArea", surface, "AREA", "Top surface area"),
             new("Perimeter", ArcOutline.PerimeterOf(e), "LENGTH", "Perimeter"),
             new("Depth", depth, "LENGTH", "Build-up depth"),
-            new("Volume", area * depth, "VOLUME", "Volume"),
+            new("Volume", volume, "VOLUME", "Volume"),
             new("MinElevation", top.Min, "LENGTH", "Lowest top"),
             new("MaxElevation", top.Max, "LENGTH", "Highest top"),
         ]);
-        // Each layer: plumb sides under the top, so its volume is the plan area times its thickness, exactly.
+        // Each layer: plumb sides under the top, so its volume is the plan area times its thickness, exactly (less a channel's or a kerb's).
         for (var i = 0; i < layers.Count; i++)
         {
             var l = layers[i];
@@ -249,7 +259,7 @@ public static class Hardscapes
             [
                 new("Thickness", l.Thickness, "LENGTH", "Thickness"),
                 new("Area", area, "AREA", "Area"),
-                new("Volume", area * Math.Max(0, l.Thickness), "VOLUME", "Volume"),
+                new("Volume", LayerVolume(i, l), "VOLUME", "Volume"),
             ], "layer:" + i, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", l.Material);
         }
     }

@@ -257,7 +257,29 @@ What arrives is a tree Project → Building → Storey → IFC class, with the s
 - its surfaces, the same as **Export 3D** writes, in metres, in its materials' colours and transparency;
 - its properties: IFC class, name, type, storey, phase, its materials and layers (each with its thickness), its property sets and its quantities, each with its unit.
 
-The storeys go as Speckle levels, so Revit receives the elements on their levels. The materials' images (textures) and the elements' edges are not sent; a copy (a row of the same chairs) goes with its own surfaces. Receiving a model from Speckle into Lapin comes in a later version.
+The storeys go as Speckle levels, so Revit receives the elements on their levels. The materials' images (textures) and the elements' edges are not sent; a copy (a row of the same chairs) goes with its own surfaces.
+
+### Receiving from Speckle
+
+**File → Speckle → Receive…** brings a version of a Speckle model into the open project, whichever program sent it (Revit, Rhino, Archicad, another Lapin). It signs in with the same account as **Send…**. You choose the **Project**, the **Model** and the **Version** (**the latest** by default, or one from its list, by its message, date and the program that sent it), then:
+
+- **Storeys**: **by the version's levels**, each object on the storey at its level (within 5 cm), else on the storey it stands on, else on the storey you are on; or **all on the current storey**.
+- **Origin**: **the project base point** (Send writes the model from there, so a model sent from Lapin comes back where it was) or **the internal origin**.
+
+**Receive** downloads the version (**Cancel** stops it) and brings it in as one step: one **Undo** takes it all out. The objects come in as **references**, as an imported mesh or IFC file does: shown, measured and snapped to, not edited. Each keeps:
+
+- its surfaces in metres, whatever unit the version was in, in the colours of its render materials (a see-through one as a material of its own);
+- its IFC class when the version names one (Revit's categories: walls, floors, roofs, doors, windows, columns, beams… as their IFC classes), else a building element proxy;
+- its properties under **IFC properties**: the set **Speckle** (its applicationId, its Speckle id and type, the collections it stands in) and one set per group of its properties (**Speckle · Parameters**…);
+- where it came from: the server, project, model and version.
+
+The objects of one model come in as one group named after it. Copies of a block or family (Speckle's instances) share one body, as an imported Fragments file's do. Lines, polylines, arcs and circles that are an object by themselves are drawn in plan; points, texts and objects with no geometry are left out, and the dialog says how many of each.
+
+**Receiving a newer version** of the same model updates what came before in place: each object is found again by its applicationId (else by its Speckle id) and keeps its GlobalId, its group and anything that names it; an object that did not change is left as it is; new ones are added to the model's group; those the version no longer has are removed, as a link's reload removes what its file no longer holds. The dialog shows how many were added, updated, unchanged and removed.
+
+**A version sent from this project** (its objects are this project's own elements, by their GlobalIds) is not received over them: Lapin says so and offers **Receive as a copy**, which brings its objects in as references with ids of their own, beside the elements, which stay as they are. Received in another project, a model sent from Lapin keeps its elements' GlobalIds.
+
+Not received yet: textures, the objects' edges, and recognising references as native walls and slabs (as an IFC import can).
 
 ## Lapin for the browser
 

@@ -124,6 +124,34 @@ public class GeometryRobustnessTests
         Assert.True(clock.ElapsedMilliseconds < 3000, $"{clock.ElapsedMilliseconds} ms");
     }
 
+    /// <summary>
+    /// A face whose loop passes through a corner in a line with two others (a terrain's coplanar triangles on a regular grid of
+    /// points: a dart turning back at a point on its own chord, a triangle with a point on an edge) is triangulated with every
+    /// edge of its loop an edge of a triangle: an ear passing by that corner left a T-junction, the terrain's body was not
+    /// closed for manifold and nothing was cut into it (the hardscapes' plazas z-fighting with the ground).
+    /// </summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void A_corner_in_a_line_with_its_ear_s_chord_is_not_passed_by(int which)
+    {
+        // The faces as the terrain's body had them (coordinates as computed there, a few ulps off the grid).
+        Vec3[] pts = which == 0
+            ? [new(8.000000000000002, 43.19999999999998, -0.9821384615000044), new(8.400000000000002, 42.79999999999998, -1.033507692320003),
+               new(8.800000000000002, 43.19999999999998, -0.9700461539000018), new(8.400000000000002, 43.19999999999998, -0.9760923077000031),
+               new(8.400000000000002, 43.59999999999998, -0.918676923080002)]
+            : [new(9.600000000000003, 40.79999999999999, -1.0611538463000019), new(10.000000000000004, 40.39999999999999, -1.0175230770000006),
+               new(10.000000000000004, 40.79999999999999, -1.056507692500001), new(10.000000000000004, 41.19999999999999, -1.0954923080000027)];
+        var loop = Enumerable.Range(0, pts.Length).ToArray();
+        var normal = VecMath.NewellNormal(pts).Normalized();
+        var tris = Triangulator.Face(pts, loop, null, normal);
+        var edges = tris.SelectMany(t => new[] { (t.A, t.B), (t.B, t.C), (t.C, t.A) }).ToHashSet();
+        for (var i = 0; i < loop.Length; i++) Assert.Contains((loop[i], loop[(i + 1) % loop.Length]), edges);
+        var area = tris.Sum(t => Vec3.Dot(Vec3.Cross(pts[t.B] - pts[t.A], pts[t.C] - pts[t.A]), normal) / 2);
+        var fan = Enumerable.Range(1, pts.Length - 2).Sum(i => Vec3.Dot(Vec3.Cross(pts[i] - pts[0], pts[i + 1] - pts[0]), normal) / 2);
+        Assert.Equal(fan, area, 9);
+    }
+
     static byte[] Chunk(string kind, byte[] data)
     {
         var o = new List<byte>();

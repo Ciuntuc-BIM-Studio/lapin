@@ -34,6 +34,27 @@ export const LO: Record<string, string> = {
   "Gathering the objects": "ກຳລັງລວບລວມວັດຖຸ",
   "Preparing the objects": "ກຳລັງກະກຽມວັດຖຸ",
   "Making the version": "ກຳລັງສ້າງເວີຊັນ",
+  // The Speckle connector's receive: File → Speckle → Receive… (docs/plan-speckle.md, S2).
+  "Receive…": "ຮັບ…",
+  "Receive from Speckle": "ຮັບຈາກ Speckle",
+  "the latest": "ລຸ້ນລ່າສຸດ",
+  "no model in this project": "ບໍ່ມີແບບຈຳລອງໃນໂຄງການນີ້",
+  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "ຕາມລະດັບຂອງລຸ້ນ: ແຕ່ລະວັດຖຸຢູ່ຊັ້ນທີ່ລະດັບຂອງມັນ (5 cm), ຖ້າບໍ່ດັ່ງນັ້ນຢູ່ຊັ້ນທີ່ມັນຕັ້ງຢູ່",
+  "by the version's levels": "ຕາມລະດັບຂອງລຸ້ນ",
+  "all on the current storey": "ທັງໝົດຢູ່ຊັ້ນປັດຈຸບັນ",
+  "Send writes the model from the project base point; a model from another program may start at its internal origin": "ການສົ່ງຂຽນແບບຈຳລອງຈາກຈຸດອ້າງອີງຂອງໂຄງການ; ແບບຈຳລອງຈາກໂປຣແກຣມອື່ນອາດເລີ່ມຈາກຈຸດກຳເນີດພາຍໃນຂອງມັນ",
+  "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "ວັດຖຸເຂົ້າມາເປັນການອ້າງອີງ, ພ້ອມພື້ນຜິວ, ສີ ແລະ ຄຸນສົມບັດຂອງມັນ, ຈັດກຸ່ມຕາມແບບຈຳລອງ. ການຮັບລຸ້ນໃໝ່ກວ່າຈະອັບເດດພວກມັນຢູ່ບ່ອນເດີມ ແລະ ຮັກສາ GlobalId ໄວ້; ສິ່ງທີ່ລຸ້ນບໍ່ມີອີກແລ້ວຈະຖືກລຶບ.",
+  "They are already here. Received as a copy, the objects come in as references with ids of their own, beside the elements, which stay as they are.": "ພວກມັນຢູ່ທີ່ນີ້ແລ້ວ. ເມື່ອຮັບເປັນສຳເນົາ, ວັດຖຸເຂົ້າມາເປັນການອ້າງອີງທີ່ມີ id ຂອງຕົນເອງ, ຢູ່ຂ້າງອົງປະກອບ ເຊິ່ງຍັງຄືເດີມ.",
+  "Updated": "ອັບເດດແລ້ວ",
+  "Unchanged": "ບໍ່ປ່ຽນແປງ",
+  "With lines only": "ມີແຕ່ເສັ້ນ",
+  "Receive as a copy": "ຮັບເປັນສຳເນົາ",
+  "Receive": "ຮັບ",
+  "Receiving…": "ກຳລັງຮັບ…",
+  "Receiving from Speckle": "ກຳລັງຮັບຈາກ Speckle",
+  "Downloading from Speckle": "ກຳລັງດາວໂຫຼດຈາກ Speckle",
+  "Reading the objects": "ກຳລັງອ່ານວັດຖຸ",
+  "Bringing the objects in": "ກຳລັງນຳວັດຖຸເຂົ້າ",
   // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
   "MEP legend": "ຄຳອະທິບາຍ MEP",
   "MEP LEGEND": "ຄຳອະທິບາຍ MEP",
@@ -5953,6 +5974,19 @@ export const LO: Record<string, string> = {
   "Minimum thickness": "ຄວາມໜາຕ່ຳສຸດ",
   "Make it flat again": "ເຮັດໃຫ້ແປອີກຄັ້ງ",
   "Region": "ເຂດ",
+  // Follow-ups of 23.11.2026: the drainage channel's schedule, floors' slope marks by scale, the drawing language.
+  "slope|Grade": "ຄວາມຊັນ",
+  "Drainage channel schedule": "ຕາຕະລາງຮ່ອງລະບາຍນ້ຳ",
+  "Change drainage channel": "ປ່ຽນຮ່ອງລະບາຍນ້ຳ",
+  "Floor slope marks": "ເຄື່ອງໝາຍຄວາມຊັນຂອງພື້ນ",
+  "Floors' fall arrows, spot levels and drains' levels are drawn in plans at this scale and larger; at smaller scales a floor shows its outline and drains only": "ລູກສອນຄວາມຊັນ, ລະດັບຈຸດ ແລະ ລະດັບທໍ່ລະບາຍຂອງພື້ນ ແຕ້ມໃນແຜນຜັງທີ່ມາດຕາສ່ວນນີ້ ແລະ ໃຫຍ່ກວ່າ; ທີ່ມາດຕາສ່ວນນ້ອຍກວ່າ ພື້ນສະແດງພຽງຂອບ ແລະ ທໍ່ລະບາຍ",
+  "at 1:20 and larger": "ທີ່ 1:20 ແລະ ໃຫຍ່ກວ່າ",
+  "at 1:50 and larger": "ທີ່ 1:50 ແລະ ໃຫຍ່ກວ່າ",
+  "at 1:100 and larger": "ທີ່ 1:100 ແລະ ໃຫຍ່ກວ່າ",
+  "at 1:200 and larger": "ທີ່ 1:200 ແລະ ໃຫຍ່ກວ່າ",
+  "at every scale": "ທຸກມາດຕາສ່ວນ",
+  "Drawing language": "ພາສາຂອງແບບແຕ້ມ",
+  "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "ພາສາຂອງຄຳທີ່ແບບແຕ້ມຂຽນເອງ (ລະດັບກົ້ນຂອງຮ່ອງ, ຈຸດຕ່ຳ); ຄຳອະທິບາຍສັນຍາລັກຮັກສາພາສາທີ່ມັນຖືກວາງ",
 };
 
 /** Phrases with a number or a name in them. */
@@ -6429,5 +6463,8 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” ບໍ່ຍາວຮອດໜຶ່ງແມັດລະຫວ່າງສະຖານີຂອງແຜ່ນບຸອີກແລ້ວ: ມັນຮັກສາແກນສຸດທ້າຍໄວ້, ບໍ່ເຊື່ອມ.`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” ສັ້ນລົງແລ້ວ: ແຜ່ນບຸແລ່ນຈາກ ${m[2]} ຫາ ${m[3]} m, ບໍ່ແມ່ນ ${m[4]} ຫາ ${m[5]} m ຕາມທີ່ເຊື່ອມ.`],
   // The Speckle connector's send (docs/plan-speckle.md, S1)
+  // The Speckle connector's receive (docs/plan-speckle.md, S2)
+  [/^Received (\d+) objects from Speckle\.$/, (m) => `ຮັບ ${m[1]} ວັດຖຸຈາກ Speckle.`],
+  [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `ລຸ້ນນີ້ຖືກສົ່ງຈາກໂຄງການນີ້: ${m[1]} ວັດຖຸຂອງມັນເປັນອົງປະກອບຂອງໂຄງການເອງ.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `ສົ່ງແລ້ວ: ${m[1]} ອົງປະກອບ, ເປັນເວີຊັນໃໝ່.`],
 ];

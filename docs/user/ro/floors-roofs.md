@@ -104,13 +104,15 @@ O placă poate cădea spre un sifon, poate avea pantă de la o margine spre o ri
 
 - **Sifon de pardoseală**: clic pe placă și scrie cât de jos stă sifonul sub pardoseala din jur (20 mm implicit). Conturul rămâne la cota plăcii, iar placa coboară de la fiecare margine spre sifon. În proprietăți un sifon poate primi un **grătar** (un pătrat la adâncimea sifonului).
 - **Rigolă de pardoseală**: două clicuri de-a lungul ei; placa coboară spre ea din ambele părți.
-- **Pantă de la margine**: clic lângă o margine și scrie panta (`1.5 %`, `1:50`). Coboară dinspre margine; cu minus (`-1.5 %`) coboară spre margine, care devine linia rigolei. În proprietăți o pantă se poate opri la o abatere (**până pe partea opusă** implicit), după care placa rămâne orizontală. Mai multe margini care coboară dinspre ele se întâlnesc în dolii, mai multe care coboară spre ele în coame.
+- **Pantă de la margine**: clic lângă o margine și scrie panta (`1.5 %`, `1:50`). Coboară dinspre margine; cu minus (`-1.5 %`) coboară spre margine, care devine linia rigolei. În proprietăți o pantă se poate opri la o abatere (**până pe partea opusă** implicit), după care placa rămâne orizontală. Mai multe margini care coboară dinspre ele se întâlnesc în dolii, mai multe care coboară spre ele în coame. O limită lucrează doar lângă marginea ei: pe partea de placă pe care o acoperă panta ei, până la dolia sau coama unde se întâlnește cu panta marginii vecine. Acolo placa se oprește la limită și rămâne orizontală, apoi coboară spre acea dolie (sau urcă spre acea coamă) cum vine spre ea cealaltă pantă, în oglindă; pantele celorlalte margini nu sunt scurtate de ea, iar doliile și coamele rămân unde erau. O terasă cu două rigole păstrează limita uneia lângă rigola ei, iar cealaltă urcă mai departe de la a ei. O margine cu limită fără altă pantă alături rămâne orizontală dincolo de limită peste tot.
 - **Punct de cotă** și **Linie de cotă**: placa trece prin ele, la o abatere de la fața plăcii (`-20`) sau la o cotă (`=3.18`, care rămâne pe loc când se mută nivelul sau placa). O linie e o coamă sau o dolie dreaptă între capetele ei.
 - **Săgeată de pantă a plăcii**: toată fața ca un singur plan, de la capătul de sus la cel de jos.
 - **Zonă a plăcii**: un contur desenat în interiorul plăcii, cu abaterea lui (o cădiță de duș coborâtă) și cu pantele și sifoanele lui. Face treaptă față de rest pe conturul lui. O zonă trebuie să stea în interiorul plăcii; ca o parte care ajunge la marginea plăcii să aibă panta ei, împarte placa (**Modifică → Împarte elementul**): fiecare parte își păstrează pantele de pe partea ei, iar o linie de cotă peste tăietură e tăiată acolo, la cota ei.
 - **Pantă pentru această încăpere**: clic într-o încăpere. Placa de sub ea primește o zonă pe conturul încăperii, cu un sifon la mijloc; zona urmează încăperea când se mută pereții. O încăpere care acoperă toată placa dă forma plăcii însăși.
 
 ![O baie care coboară spre un sifon: săgețile cu pantele și cota sifonului](shots/floor-slopes-bathroom-plan.webp)
+
+![Aceeași baie la 1:100: sifonul și conturul zonei, fără săgeți și cote](shots/floor-slopes-bathroom-plan-100.webp)
 
 **Realizată prin** spune cum urmează placa pantele:
 
@@ -119,9 +121,11 @@ O placă poate cădea spre un sifon, poate avea pantă de la o margine spre o ri
 
 ![O secțiune prin sifonul băii: șapa mai subțire spre sifon, placa orizontală sub ea](shots/floor-slopes-bathroom-section.webp)
 
-Pantele sunt exacte: fiecare pliu unde se întâlnesc două plane e o muchie a corpului plăcii, așa că secțiunile taie stratul sculptat ca o pană, vederea 3D arată fața reală, iar cantitățile sunt ale solidelor. Un plan al nivelului plăcii desenează o săgeată pe fiecare plan, cu panta lui, cotele sifoanelor, ale punctelor și ale capetelor liniilor (și punctele cel mai sus și cel mai jos ale unei plăci înclinate), sifoanele și rigolele, liniile de cotă și contururile zonelor.
+Pantele sunt exacte: fiecare pliu unde se întâlnesc două plane e o muchie a corpului plăcii, așa că secțiunile taie stratul sculptat ca o pană, vederea 3D arată fața reală, iar cantitățile sunt ale solidelor. Un plan al nivelului plăcii desenează sifoanele și rigolele, liniile de cotă și contururile zonelor, iar la **1:50 și mai mare** o săgeată pe fiecare plan, cu panta lui, și cotele sifoanelor, ale punctelor și ale capetelor liniilor (și punctele cel mai sus și cel mai jos ale unei plăci înclinate); la 1:100 și mai mic săgețile și cotele lipsesc. **Marcajele pantelor plăcilor** din **Gestionare → Standarde de desen** schimbă scara (1:20, 1:50, 1:100, 1:200 sau orice scară). O săgeată care ar acoperi eticheta unei încăperi se mută lângă ea.
 
 ![O terasă care coboară 1,5 % de la casă spre linia rigolei](shots/floor-slopes-terrace.webp)
+
+![O terasă cu două rigole: panta de la sud se oprește la 1 m și rămâne orizontală, cea de la est urcă mai departe de la rigola ei până la coamă](shots/floor-slopes-two-gutters.webp)
 
 Cantitățile plăcii primesc, pe fiecare strat, **grosimea medie** (volumul pe aria în plan), **grosimea cea mai mică** și **cea mai mare**, iar pentru placă **aria suprafeței (pe pantă)**, **căderea** (cel mai sus minus cel mai jos) și, la un singur plan, **panta**; volumul brut e al alcătuirii cu formă. În IFC placa rămâne un IfcSlab cu IfcMaterialLayerSetUsage; corpurile straturilor sunt solidele cu formă, iar pantele merg în `Lapin_Intent`, deci Lapin le citește înapoi ca pante.
 

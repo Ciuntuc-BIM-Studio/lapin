@@ -14,7 +14,7 @@ namespace Lapin.Platform;
 /// hardscape's top (<see cref="Spec"/>; <c>elevation</c> is the offset from the element's reference height).</item>
 /// <item><b>Edge slopes</b> (they replace the base's plane): from an edge of the outline, at a grade, falling away from it
 /// (<c>in</c>) or towards it (<c>out</c>), starting at its offset, as far as a limit (<c>until</c>: an offset, or a distance in
-/// plan or along the slope), then level. Edges falling away from themselves meet in valleys (the higher of their planes holds,
+/// plan or along the slope), then level; a limit acts only on the part its own slope covers (see <see cref="FieldOf"/>). Edges falling away from themselves meet in valleys (the higher of their planes holds,
 /// so each edge keeps its height); edges falling towards themselves meet in ridges (the lower holds); with both, the lower of
 /// the two.</item>
 /// <item><b>Points</b> at an offset or an absolute level, <b>lines</b> with a height at each end (straight between), and
@@ -255,7 +255,8 @@ public static partial class TopSurface
                     return new PlaneField(spec.Elevation, 0, 0);
             }
         }
-        Field? falls = null, rises2 = null;
+        // Each edge's plane and its limit (the level it stops at), in its group: those falling away from their edge, those falling towards it.
+        var slopes = new List<(bool FallsIn, PlaneField Plane, double? Stop)>();
         foreach (var e in sh.Edges)
         {
             if (e.Edge < 0 || e.Edge >= corners.Count) { notes.Add($"Edge {e.Edge + 1} is not an edge of the outline now; its slope is left out."); continue; }
@@ -265,19 +266,42 @@ public static partial class TopSurface
             var h = e.Offset ?? sh.Base.Elevation;
             var sgn = e.FallsIn ? -1.0 : 1.0;
             var g = e.Grade;
-            Field f = new PlaneField(h - sgn * g * (n.X * a.X + n.Y * a.Y), sgn * g * n.X, sgn * g * n.Y);
+            var plane = new PlaneField(h - sgn * g * (n.X * a.X + n.Y * a.Y), sgn * g * n.X, sgn * g * n.Y);
             double? target = e.UntilOffset;
             if (target == null && e.UntilDistance is { } dist && dist > 0)
             {
                 var plan = e.AlongSlope ? dist * Math.Cos(Math.Atan(g)) : dist;
                 target = h + sgn * g * plan;
             }
-            if (target is { } t)
+            // A limit on the wrong side of the edge's height (a fall that would rise to it) is the edge's height: level from the edge.
+            slopes.Add((e.FallsIn, plane, target is { } t ? (e.FallsIn ? Math.Min(t, h) : Math.Max(t, h)) : null));
+        }
+        Field? falls = null, rises2 = null;
+        for (var i = 0; i < slopes.Count; i++)
+        {
+            var (fallsIn, p, stop) = slopes[i];
+            Field f = p;
+            if (stop is { } t)
             {
-                // A limit on the wrong side of the edge's height (a fall that would rise to it) is the edge's height: level from the edge.
-                f = e.FallsIn ? new MaxField(f, new PlaneField(Math.Min(t, h), 0, 0)) : new MinField(f, new PlaneField(Math.Max(t, h), 0, 0));
+                // A limit acts near its own edge only (follow-ups of 23.11.2026): on the part of the outline its plane covers, where
+                // it holds among its group's planes (the higher of those falling away from their edges, the lower of those falling
+                // towards them). There the slope stops at the limit and the top is level, until, near the valley or ridge where its
+                // plane met the next one, it comes down (or up) to it along that plane mirrored in its own (2P − Q), so the valley or
+                // ridge stays where it was and the other edges' planes are not touched. An edge alone in its group: level beyond its
+                // limit everywhere, as before.
+                Field? mirror = null;
+                for (var k = 0; k < slopes.Count; k++)
+                {
+                    if (k == i || slopes[k].FallsIn != fallsIn) continue;
+                    var q = slopes[k].Plane;
+                    Field m = new PlaneField(2 * p.A - q.A, 2 * p.B - q.B, 2 * p.C - q.C);
+                    mirror = mirror == null ? m : fallsIn ? new MinField(mirror, m) : new MaxField(mirror, m);
+                }
+                Field level = new PlaneField(t, 0, 0);
+                if (mirror != null) level = fallsIn ? new MinField(level, mirror) : new MaxField(level, mirror);
+                f = fallsIn ? new MaxField(p, level) : new MinField(p, level);
             }
-            if (e.FallsIn) falls = falls == null ? f : new MaxField(falls, f);
+            if (fallsIn) falls = falls == null ? f : new MaxField(falls, f);
             else rises2 = rises2 == null ? f : new MinField(rises2, f);
         }
         return (falls, rises2) switch

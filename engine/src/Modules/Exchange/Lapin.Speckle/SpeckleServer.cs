@@ -14,6 +14,12 @@ public sealed record SpeckleAccount(string Server, string? Name, string? Email);
 /// <summary>A Speckle project or model as the pickers list it.</summary>
 public sealed record SpeckleItem(string Id, string Name, string? Role, DateTime UpdatedAt);
 
+/// <summary>A version of a model as the receive dialog lists it: its message, the application that sent it, when and by whom.</summary>
+public sealed record SpeckleVersionInfo(string Id, string? Message, string? SourceApplication, DateTime CreatedAt, string? Author, string? ReferencedObject);
+
+/// <summary>A version fetched: where it came from, and its objects as Speckle's SDK reads them.</summary>
+public sealed record SpeckleFetched(SpeckleSource Source, Base Root);
+
 /// <summary>What a send made: the version, its model and where its page is on the server.</summary>
 public sealed record SpeckleSent(string ProjectId, string ModelId, string VersionId, string RootId, string Url, int Objects);
 
@@ -68,7 +74,7 @@ public sealed class SpeckleServer
 
     public void SignOut() { lock (_lock) _account = null; }
 
-    Account Current() { lock (_lock) return _account ?? throw new CommandException("Sign in to Speckle first (File → Speckle → Send…)."); }
+    Account Current() { lock (_lock) return _account ?? throw new CommandException("Sign in to Speckle first (File → Speckle → Send… or Receive…)."); }
 
     /// <summary>The projects the account may see, most recently changed first; those whose name has <paramref name="search"/>.</summary>
     public List<SpeckleItem> Projects(string? search, CancellationToken ct)
@@ -93,6 +99,51 @@ public sealed class SpeckleServer
             var r = await client.Model.GetModels(projectId, 100, null, null, ct).ConfigureAwait(false);
             return r.items.Select(x => new SpeckleItem(x.id, x.name, null, x.updatedAt)).ToList();
         }, "list the models", account.serverInfo.url);
+    }
+
+    /// <summary>A model's versions, the newest first (50 at most).</summary>
+    public List<SpeckleVersionInfo> Versions(string projectId, string modelId, CancellationToken ct)
+    {
+        var account = Current();
+        return Run(async () =>
+        {
+            using var client = Services.GetRequiredService<IClientFactory>().Create(account);
+            var r = await client.Version.GetVersions(modelId, projectId, 50, null, null, ct).ConfigureAwait(false);
+            return r.items.Select(Info).ToList();
+        }, "list the versions", account.serverInfo.url);
+    }
+
+    static SpeckleVersionInfo Info(global::Speckle.Sdk.Api.GraphQL.Models.Version v) =>
+        new(v.id, v.message, v.sourceApplication, v.createdAt, v.authorUser?.name, v.referencedObject);
+
+    /// <summary>
+    /// A version's objects downloaded (the model's latest when no <paramref name="versionId"/>), through the SDK's cache; the
+    /// version then marked received by Lapin on the server (what Speckle shows in its history), if the server takes it.
+    /// </summary>
+    public SpeckleFetched Fetch(string projectId, string modelId, string? versionId, Action<string, int, int>? progress, CancellationToken ct)
+    {
+        var account = Current();
+        var server = account.serverInfo.url;
+        return Run(async () =>
+        {
+            using var client = Services.GetRequiredService<IClientFactory>().Create(account);
+            var model = await client.Model.Get(modelId, projectId, ct).ConfigureAwait(false);
+            global::Speckle.Sdk.Api.GraphQL.Models.Version version;
+            if (string.IsNullOrEmpty(versionId))
+                version = (await client.Version.GetVersions(modelId, projectId, 1, null, null, ct).ConfigureAwait(false)).items.FirstOrDefault()
+                    ?? throw new CommandException($"The model „{model.name}” has no version yet.");
+            else version = await client.Version.Get(versionId, projectId, ct).ConfigureAwait(false);
+            if (string.IsNullOrEmpty(version.referencedObject)) throw new CommandException("That version holds no objects.");
+            progress?.Invoke("Downloading from Speckle", 0, 0);
+            // Receive2 reads every version a 2.x server holds, and a newer server's bundles as a best-effort tree; the SDK marks it
+            // legacy in favour of Receive3, which reads bundles only (Speckle 2026.9 on), so not what a self-hosted 2.x server has.
+#pragma warning disable CS0618
+            var root = await Services.GetRequiredService<IOperations>().Receive2(new Uri(server), projectId, version.referencedObject, account.token, new Progress(progress), ct).ConfigureAwait(false);
+#pragma warning restore CS0618
+            try { await client.Version.Received(new MarkReceivedVersionInput(version.id, projectId, SpeckleConvert.SourceApplication, null), ct).ConfigureAwait(false); }
+            catch (Exception) { /* only Speckle's history: a server that refuses it receives just the same */ }
+            return new SpeckleFetched(new SpeckleSource(server, projectId, modelId, model.name, version.id, version.sourceApplication, version.message), root);
+        }, "receive", server, "Stopped: nothing was received.");
     }
 
     /// <summary>
@@ -144,11 +195,11 @@ public sealed class SpeckleServer
     /// The SDK's async work, waited for on the engine's thread (one call at a time, as every call is); what goes wrong is told
     /// as a refusal the user reads, never with the token in it.
     /// </summary>
-    static T Run<T>(Func<Task<T>> work, string what, string server)
+    static T Run<T>(Func<Task<T>> work, string what, string server, string stopped = "Stopped: nothing more was sent.")
     {
         try { return Task.Run(work).GetAwaiter().GetResult(); }
         catch (CommandException) { throw; }
-        catch (OperationCanceledException) { throw new CommandException("Stopped: nothing more was sent."); }
+        catch (OperationCanceledException) { throw new CommandException(stopped); }
         catch (Exception ex)
         {
             var inner = ex is AggregateException { InnerException: { } i } ? i : ex;
@@ -175,6 +226,8 @@ public sealed class SpeckleServer
             {
                 ProgressEvent.UploadBytes or ProgressEvent.UploadingObjects => "Uploading to Speckle",
                 ProgressEvent.FindingChildren => "Gathering the objects",
+                ProgressEvent.DownloadBytes or ProgressEvent.DownloadObjects or ProgressEvent.CacheCheck => "Downloading from Speckle",
+                ProgressEvent.DeserializeObject => "Reading the objects",
                 _ => "Preparing the objects",
             };
             sink(stage, (int)Math.Min(value.Count, int.MaxValue), (int)Math.Min(value.Total ?? 0, int.MaxValue));

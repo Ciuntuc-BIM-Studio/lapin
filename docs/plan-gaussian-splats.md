@@ -1,7 +1,7 @@
 # Gaussian splats
 
 Asked on the forum (topic 237, "Gaussian Splat Support", 23.11.2026) and accepted by the user the same day ("I'm in, will do it").
-Decision 811 and the following, one per stage, in `docs/decisions-pending.md`.
+Decision 812 and the following, one per stage, in `docs/decisions-pending.md`.
 
 The request: link Gaussian splats (3DGS `.ply`, the compressed `.spz` and `.sog`) as point clouds are linked; switch between
 the splat and the point view; snap to them; measure distance and area on them; rescale a splat by two points and the real
@@ -49,7 +49,7 @@ carries splats with its measuring tools.
   Tests: the readers on small files written by the tests (PLY binary, SPZ v2 and v3), the transform of a Gaussian (a
   rotated, scaled link gives the covariance expected), the renderer's covariance and sort functions in vitest.
 
-  **Done 23.11.2026 (decision 811, branch `feat/gaussian-splats`).** Built as above, SPZ version 1 read too (float16
+  **Done 23.11.2026 (decision 812, branch `feat/gaussian-splats`).** Built as above, SPZ version 1 read too (float16
   positions); version 4 (ZSTD streams, new since the plan) is refused with a message. Decided where this plan was silent:
   an **up axis** on every cloud's placement (`placement.up`: `z`, `y`, `-y`; `-y` by default for a 3DGS PLY, COLMAP's axes,
   `y` for an SPZ, RUB), applied before the placement mode and asked in the place dialog, without which every capture lay on
@@ -72,7 +72,7 @@ carries splats with its measuring tools.
   mesh** (a `face` element, vertex colours) taken by Import mesh with Lapin's own reader, and Link point cloud… given a PLY
   with faces says it is a mesh and offers the mesh import instead.
 
-  **Done 23.11.2026 (decision 812, branch `feat/gaussian-splats`).** `pointcloud.calibrate {id, a, b, length}` multiplies
+  **Done 23.11.2026 (decision 813, branch `feat/gaussian-splats`).** `pointcloud.calibrate {id, a, b, length}` multiplies
   `placement.scale` by the ratio and moves the offset so that the first point stays put (one undo step; `pointcloud.place`
   takes `scale` too, the place dialog shows it as Scale factor); `TransformOf` multiplies the unit by it, so points, splats
   (centres and Gaussian sizes), slices, snaps, hierarchy boxes and the mesh exports follow; `UnitWarning` counts it. The tool

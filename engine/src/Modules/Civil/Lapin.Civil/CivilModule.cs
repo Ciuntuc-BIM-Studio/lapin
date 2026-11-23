@@ -685,14 +685,14 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             {
                 var p = ch.PointAt(st);
                 var d = ch.DirectionAt(st) * (st == 0 ? -1 : 1);
-                mk.Text(new PenText(p + d * (2.5 * c.Mm), $"IL {Standards.FormatLevel(l.Invert[at], c.Book)}", text.Height * 0.8, -Standards.ReadableDeg(-Math.Atan2(d.Y, d.X) * 180 / Math.PI), "middle", "middle", false, text.Font), color);
+                mk.Text(new PenText(p + d * (2.5 * c.Mm), $"{DrawingWords.Of("IL", c.Book.DrawingLang)} {Standards.FormatLevel(l.Invert[at], c.Book)}", text.Height * 0.8, -Standards.ReadableDeg(-Math.Atan2(d.Y, d.X) * 180 / Math.PI), "middle", "middle", false, text.Font), color);
                 mk.Snaps.Add(p);
             }
             // Its gullies: their invert; a low point with none ringed red.
             foreach (var st in l.Outlets)
             {
                 var p = ch.PointAt(st);
-                mk.Text(new PenText(p + new Vec2(0, -(half + 3 * c.Mm)), $"IL {Standards.FormatLevel(l.InvertAt(st), c.Book)}", text.Height * 0.8, 0, "middle", "middle", false, text.Font), color);
+                mk.Text(new PenText(p + new Vec2(0, -(half + 3 * c.Mm)), $"{DrawingWords.Of("IL", c.Book.DrawingLang)} {Standards.FormatLevel(l.InvertAt(st), c.Book)}", text.Height * 0.8, 0, "middle", "middle", false, text.Font), color);
                 mk.Snaps.Add(p);
             }
             foreach (var st in l.Lows.Where(s => !l.Outlets.Any(o => Math.Abs(o - s) < 0.5)))
@@ -701,7 +701,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 var r = Math.Max(half * 1.5, 1.5 * c.Mm);
                 var ring = Enumerable.Range(0, 24).Select(i => p + new Vec2(Math.Cos(i * Math.PI / 12), Math.Sin(i * Math.PI / 12)) * r).ToList();
                 for (var i = 0; i < ring.Count; i++) mk.Line(ring[i], ring[(i + 1) % ring.Count], "LEVELS", Pens.Default.Seen, "#c0392b");
-                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), $"Low point {Standards.FormatLevel(l.InvertAt(st), c.Book)}", text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#c0392b");
+                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), $"{DrawingWords.Of("Low point", c.Book.DrawingLang)} {Standards.FormatLevel(l.InvertAt(st), c.Book)}", text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#c0392b");
             }
             yield return mk;
         }

@@ -240,6 +240,19 @@ public sealed record StyleBook(
     public FrameLine? InsetFrame { get; init; }
     /// <summary>How title blocks, sheets, symbols and documents write a date (<see cref="DrawingDates"/>): one of <see cref="DrawingDates.Formats"/>; null: dd.MM.yyyy (documents: by their language).</summary>
     public string? DateFormat { get; init; }
+    /// <summary>
+    /// The smallest scale floors' slope marks (fall arrows, spot levels, drains' levels) are drawn at, as its denominator (50: at
+    /// 1:50 and larger, none at 1:100); null: <see cref="Standards.DefaultFloorSlopeMarks"/> (docs/plan-floor-slopes.md Q8).
+    /// </summary>
+    public int? FloorSlopeMarks { get; init; }
+    /// <summary>
+    /// The language the words the engine writes on drawings by itself are in (a channel's IL, a low point; <see cref="Lapin.Drawing.DrawingLanguage"/>);
+    /// null: English, as drawings were written before.
+    /// </summary>
+    public string? DrawingLang { get; init; }
+
+    /// <summary>Whether floors' slope marks are drawn at a view's scale (its denominator).</summary>
+    public bool ShowsFloorSlopeMarks(double scale) => scale <= (FloorSlopeMarks ?? Standards.DefaultFloorSlopeMarks) + 1e-9;
 }
 
 public static class Standards
@@ -537,7 +550,20 @@ public static class Standards
         list.Any(s => id(s) == key) ? list : [standard, .. list];
 
     /// <summary>The standards from a project's JSON, tolerantly: a malformed field falls back to the Standard style's, an unreadable entry is dropped, the Standard entries are always there.</summary>
-    public static StyleBook Read(JsonNode? raw) => FrameLines.With(ReadBook(raw), raw as JsonObject) with { DateFormat = DrawingDates.Of(raw?["dateFormat"]) };
+    public static StyleBook Read(JsonNode? raw) => FrameLines.With(ReadBook(raw), raw as JsonObject) with
+    {
+        DateFormat = DrawingDates.Of(raw?["dateFormat"]),
+        FloorSlopeMarks = FloorSlopeMarksOf(raw?["floorSlopeMarks"]),
+        DrawingLang = DrawingLanguage.Known((string?)(raw?["drawingLang"] as JsonValue)),
+    };
+
+    /// <summary>Floors' slope marks drawn at 1:50 and larger unless the standards say otherwise.</summary>
+    public const int DefaultFloorSlopeMarks = 50;
+
+    /// <summary>A scale's denominator floors' slope marks may be drawn down to (1 to 100000), or null.</summary>
+    public static int? FloorSlopeMarksOf(JsonNode? n) =>
+        n is JsonValue v && v.GetValueKind() == JsonValueKind.Number && double.TryParse(v.ToJsonString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var d)
+        && double.IsFinite(d) && d >= 1 && d <= 100000 ? (int)Math.Round(d) : null;
 
     static StyleBook ReadBook(JsonNode? raw)
     {

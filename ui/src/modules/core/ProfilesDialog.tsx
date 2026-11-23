@@ -17,9 +17,10 @@ import { ProfilePickerField } from './profileLibraries/ProfilePickerField';
 import { asSweepShape, type ProfileJson as LibraryProfile, type Ring } from './profileLibraries/model';
 import { formatPoints, parsePoints, profileArea, profileSize, profileSvg, type CatalogueProfile, type ProfileJson } from './profiles';
 
-export type ProfileUse = 'sweep' | 'reveal' | 'footing' | 'kerb';
+export type ProfileUse = 'sweep' | 'reveal' | 'footing' | 'kerb' | 'channel';
 const USES: { id: ProfileUse; label: string }[] = [
   { id: 'sweep', label: 'Wall sweep' }, { id: 'reveal', label: 'Wall reveal' }, { id: 'footing', label: 'Strip footing' }, { id: 'kerb', label: 'Kerb' },
+  { id: 'channel', label: 'Drainage channel' },
 ];
 
 export const profileCatalogue = (): CatalogueProfile[] =>

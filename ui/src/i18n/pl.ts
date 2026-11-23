@@ -34,6 +34,27 @@ export const PL: Record<string, string> = {
   "Gathering the objects": "Zbieram obiekty",
   "Preparing the objects": "Przygotowuję obiekty",
   "Making the version": "Tworzę wersję",
+  // The Speckle connector's receive: File → Speckle → Receive… (docs/plan-speckle.md, S2).
+  "Receive…": "Odbierz…",
+  "Receive from Speckle": "Odbierz ze Speckle",
+  "the latest": "najnowsza",
+  "no model in this project": "brak modelu w tym projekcie",
+  "By the version's levels: each object on the storey at its level (5 cm), else the one it stands on": "Według poziomów wersji: każdy obiekt na kondygnacji swojego poziomu (5 cm), w przeciwnym razie na tej, na której stoi",
+  "by the version's levels": "według poziomów wersji",
+  "all on the current storey": "wszystkie na bieżącej kondygnacji",
+  "Send writes the model from the project base point; a model from another program may start at its internal origin": "Wysyłanie zapisuje model od punktu bazowego projektu; model z innego programu może zaczynać się w swoim początku wewnętrznym",
+  "The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.": "Obiekty wchodzą jako odniesienia, z powierzchniami, kolorami i właściwościami, pogrupowane według modelu. Nowsza wersja aktualizuje je na miejscu i zachowuje ich GlobalId; to, czego wersja już nie ma, jest usuwane.",
+  "They are already here. Received as a copy, the objects come in as references with ids of their own, beside the elements, which stay as they are.": "Już tu są. Odebrane jako kopia, obiekty wchodzą jako odniesienia z własnymi id, obok elementów, które pozostają bez zmian.",
+  "Updated": "Zaktualizowane",
+  "Unchanged": "Bez zmian",
+  "With lines only": "Tylko z liniami",
+  "Receive as a copy": "Odbierz jako kopię",
+  "Receive": "Odbierz",
+  "Receiving…": "Odbieranie…",
+  "Receiving from Speckle": "Odbieranie ze Speckle",
+  "Downloading from Speckle": "Pobieranie ze Speckle",
+  "Reading the objects": "Czytanie obiektów",
+  "Bringing the objects in": "Wprowadzanie obiektów",
   // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
   "MEP legend": "Legenda instalacji",
   "MEP LEGEND": "LEGENDA INSTALACJI",
@@ -5900,6 +5921,19 @@ export const PL: Record<string, string> = {
   "Minimum thickness": "Minimalna grubość",
   "Make it flat again": "Przywróć poziomą",
   "Region": "Strefa",
+  // Follow-ups of 23.11.2026: the drainage channel's schedule, floors' slope marks by scale, the drawing language.
+  "slope|Grade": "Spadek",
+  "Drainage channel schedule": "Zestawienie ścieków odwadniających",
+  "Change drainage channel": "Zmień ściek odwadniający",
+  "Floor slope marks": "Oznaczenia spadków stropów",
+  "Floors' fall arrows, spot levels and drains' levels are drawn in plans at this scale and larger; at smaller scales a floor shows its outline and drains only": "Strzałki spadku, rzędne punktów i rzędne wpustów stropów rysuje się w rzutach w tej skali i większych; w mniejszych skalach strop pokazuje tylko obrys i wpusty",
+  "at 1:20 and larger": "w 1:20 i większej",
+  "at 1:50 and larger": "w 1:50 i większej",
+  "at 1:100 and larger": "w 1:100 i większej",
+  "at 1:200 and larger": "w 1:200 i większej",
+  "at every scale": "w każdej skali",
+  "Drawing language": "Język rysunków",
+  "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Język słów, które rysunki piszą same (RD ścieku, punkt najniższy); legenda zachowuje język, w którym ją umieszczono",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -6383,5 +6417,8 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” nie ma już metra między kilometrażami obudowy: zachowuje ostatnią oś, odłączona.`],
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” jest teraz krótszy: obudowa biegnie od ${m[2]} do ${m[3]} m, a nie od ${m[4]} do ${m[5]} m jak połączono.`],
   // The Speckle connector's send (docs/plan-speckle.md, S1)
+  // The Speckle connector's receive (docs/plan-speckle.md, S2)
+  [/^Received (\d+) objects from Speckle\.$/, (m) => `Odebrano ${m[1]} obiektów ze Speckle.`],
+  [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Ta wersja została wysłana z tego projektu: ${m[1]} jej obiektów to jego własne elementy.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Wysłano: ${m[1]} elementów, jako nową wersję.`],
 ];

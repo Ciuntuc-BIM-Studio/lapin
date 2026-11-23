@@ -118,7 +118,9 @@ public static class RetainingWalls
         var bottom = g.FootingLevel ?? b.Levels[seg].Bottom;
         var (a, z) = (c.StationOf(seg), c.StationOf(seg + 1));
         var f = z - a < 1e-9 ? 0 : Math.Clamp((station - a) / (z - a), 0, 1);
-        var top = g.TopStart is { } t0 ? t0 + ((g.TopEnd ?? t0) - t0) * f : b.Top(station, seg);
+        // A crown given at one end only slopes from the wall's own crown at the other, as the battered wall's does.
+        var (t0, t1) = (g.TopStart ?? b.Top(a, seg), g.TopEnd ?? b.Top(z, seg));
+        var top = g.TopStart == null && g.TopEnd == null ? b.Top(station, seg) : t0 + (t1 - t0) * f;
         return (top, bottom);
     }
 

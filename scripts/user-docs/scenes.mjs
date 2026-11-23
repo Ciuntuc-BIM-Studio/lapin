@@ -3019,8 +3019,20 @@ export const scenes = [
       t.expect(q?.pieces?.every((p) => p.how === 'layer'), 'the screed is sculpted');
       await t.ui({ selection: null, selected: [] });
       await t.fit();
+      // The plan at 1:50, where floors' fall arrows and levels are drawn (Floor slope marks in the drafting standards); at 1:100 they are not.
+      const scalePick = t.page.locator('[data-testid=plan] [data-testid=view-scale], .view-toolbar [data-testid=view-scale]').first();
+      await scalePick.selectOption('50');
       await t.wait(1500);
+      await t.fit();
+      await t.wait(1200);
       await t.shot('floor-slopes-bathroom-plan', { of: '[data-testid=plan]', pad: 0 });
+      await scalePick.selectOption('100');
+      await t.wait(1500);
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('floor-slopes-bathroom-plan-100', { of: '[data-testid=plan]', pad: 0 });
+      await scalePick.selectOption('50');
+      await t.wait(900);
       // The properties: made by sculpting the screed, its minimum, the bathroom's drain; an edge slope on the hall.
       await t.cmd('architecture.addFloorSlope', { id: floor, kind: 'edge', edge: 1, grade: '0.5%', fall: 'out', offset: -0.01, until: { offset: 0 } });
       await select(t, floor);
@@ -3054,9 +3066,23 @@ export const scenes = [
       const tq = await query('architecture.floorSlope', { id: terrace });
       t.expect(tq?.pieces?.[0] && Math.abs(tq.pieces[0].max) < 1e-6 && tq.pieces[0].min < -0.04, 'the terrace falls from the house to the gutter');
       await t.button('Architecture', { exact: true });
+      await t.page.locator('[data-testid=plan] [data-testid=view-scale], .view-toolbar [data-testid=view-scale]').first().selectOption('50');
+      await t.wait(1200);
       await t.fit();
       await t.wait(1500);
       await t.shot('floor-slopes-terrace', { of: '[data-testid=plan]', pad: 0 });
+      // A terrace with two gutters, south and east: the south slope stops 1 m out (+20 mm) and stays level, the east one rises on
+      // from its own gutter to the ridge where they meet (a limit acts near its own edge only).
+      await t.cmd('architecture.resetFloorSlope', { id: terrace });
+      await t.cmd('architecture.setFloorSlope', { id: terrace, how: 'bend' });
+      await t.cmd('architecture.addFloorSlope', { id: terrace, kind: 'edge', edge: 0, grade: '2%', fall: 'out', until: { offset: 0.02 } });
+      await t.cmd('architecture.addFloorSlope', { id: terrace, kind: 'edge', edge: 1, grade: '1.5%', fall: 'out' });
+      const two = await query('architecture.floorSlope', { id: terrace });
+      t.expect(two?.pieces?.[0] && two.pieces[0].max > 0.03, 'the east gutter\'s slope rises past the south one\'s limit');
+      await t.wait(1500);
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('floor-slopes-two-gutters', { of: '[data-testid=plan]', pad: 0 });
       await t.ui({ keyPlan: true });
     },
   },
@@ -7023,6 +7049,8 @@ export const scenes = [
     async run(t) {
       await t.fresh();
       const s = await t.storey();
+      // The drawings in the guide's language (Manage → Drafting standards → Drawing language): a channel's IL and low points.
+      await t.cmd('standards.options', { drawingLang: t.lang === 'en' ? null : t.lang });
       // A 56 × 40 m survey every 2 m: rising 2 % to the north and 1 % to the east.
       const g = (x, y) => 0.02 * y + 0.01 * x + 0.15 * Math.sin(x / 7);
       const rows = [];

@@ -217,7 +217,7 @@ public static class Slabs
                 var section = Section(m, slab);
                 var (z0, z1) = (top + section.Min(b => b.From) - 0.05, top + section.Max(b => b.To) + 0.05);
                 // Through a shaped build-up wherever it reaches.
-                if (shaped && FloorSlopes.Reach(m, slab) is var (down, up)) (z0, z1) = (z0 + Math.Min(0, down), z1 + Math.Max(0, up));
+                if (shaped && FloorSlopes.Reach(m, slab, services) is var (down, up)) (z0, z1) = (z0 + Math.Min(0, down), z1 + Math.Max(0, up));
                 var cutters = holes.Select(h => Prism.ExtrudeFootprint(h, z0, z1 - z0, "opening")).OfType<Solid>().ToList();
                 // One the library refuses leaves that part uncut and says so (audit 22.11.2026), as a wall's opening does.
                 Solid? Cut(Solid solid, string name)

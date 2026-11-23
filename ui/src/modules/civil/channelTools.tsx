@@ -57,7 +57,8 @@ function ChannelBar({ draw }: { draw: boolean }) {
         <option value="depth">At a depth under its top</option>
       </select>
       {s.invert === 'grade' && <>
-        <label className="cad-layer" title="Its fall from the start, 0.5 %, 1:200 or 0.005 (negative: it rises)">Grade{' '}
+        {/* A fall's grade, not a material's ("Grade" alone is a timber or steel class in the dictionaries). */}
+        <label className="cad-layer" data-i18n-ctx="slope" title="Its fall from the start, 0.5 %, 1:200 or 0.005 (negative: it rises)">Grade{' '}
           <CommitInput value={s.grade} width="4.5em" label="Grade" testId="channel-grade" onCommit={(t) => set({ grade: t })} /></label>
         <label className="cad-layer" title="The level of its bottom at its start (empty: its top there less its depth)">Start level{' '}
           <CommitInput value={s.startZ} width="4.5em" label="Start level" testId="channel-start" placeholder="from the top" onCommit={(t) => set({ startZ: t })} /></label>
@@ -314,7 +315,7 @@ export function ChannelSection({ node }: { node: NodeDto }) {
           <option value="grade">At a grade</option><option value="depth">At a depth under its top</option>
         </select></dd>
         {invert === 'grade' && <>
-          <dt title="Positive: it falls from its start">Grade</dt>
+          <dt data-i18n-ctx="slope" title="Positive: it falls from its start">Grade</dt>
           <dd><CommitInput value={gradeShown(grade)} width="5em" label="Grade" testId="channel-section-grade" disabled={!node.editable}
             onCommit={(t) => { const g = readGrade(t); if (g == null) { unreadGrade(); return; } set({ grade: g }); }} /></dd>
           <dt title="The level of its bottom at its start (empty: its top there less its depth)">Start level</dt>
