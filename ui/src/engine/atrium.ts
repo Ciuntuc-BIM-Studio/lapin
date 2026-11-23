@@ -9,9 +9,11 @@
 import { api, isCdeServer, type Role } from './cdeServer';
 import { remoteCall } from './remote';
 import { refusalText } from './refusals';
+import type { CheckSettings, ChecksReport, GateChecks } from './checks';
 
+/** A refusal: its status and stable code, the message said here, and the server's own words and body (a 422's gate, a 400's member). */
 export class AtriumError extends Error {
-  constructor(public status: number, public code: string, message: string) { super(message); }
+  constructor(public status: number, public code: string, message: string, public serverMessage: string | null = null, public body: Record<string, unknown> | null = null) { super(message); }
 }
 
 interface Answer<T> { status: number; body: T | null; etag: string | null }
@@ -36,7 +38,7 @@ async function need<T>(server: string, method: string, path: string, body?: unkn
   if (a.status >= 200 && a.status < 300) return (a.body ?? {}) as T;
   const b = (a.body ?? {}) as { code?: string; message?: string };
   const code = b.code ?? (a.status === 404 || a.status === 405 ? 'not_offered' : a.status === 401 ? 'unauthorized' : `http_${a.status}`);
-  throw new AtriumError(a.status, code, refusalText(code, b.message ?? `The server answered ${a.status}.`));
+  throw new AtriumError(a.status, code, refusalText(code, b.message ?? `The server answered ${a.status}.`), b.message ?? null, (a.body ?? null) as Record<string, unknown> | null);
 }
 
 const enc = encodeURIComponent;
@@ -102,9 +104,14 @@ export const members = (server: string, project: string) =>
 
 // ------------------------------------------------------------ a project's rules
 
-export interface Rules { main: 'editor' | 'owner'; issueTags: 'editor' | 'owner'; comments: 'viewer' | 'editor'; close: 'author' | 'editor'; resolveNeedsComment: boolean; approve?: 'editor' | 'owner'; role: Role }
+export interface Rules {
+  main: 'editor' | 'owner'; issueTags: 'editor' | 'owner'; comments: 'viewer' | 'editor'; close: 'author' | 'editor'; resolveNeedsComment: boolean; approve?: 'editor' | 'owner'; role: Role;
+  /** W5: the naming rule (a regex every file's code must match whole), and the checks' settings (every member, defaults filled). */
+  naming?: string | null; checks?: CheckSettings;
+}
 export const getRules = (server: string, project: string) => need<Rules>(server, 'GET', `atrium/1.0/projects/${enc(project)}/rules`);
-export const putRules = (server: string, project: string, change: Partial<Omit<Rules, 'role'>>) => need<Rules>(server, 'PUT', `atrium/1.0/projects/${enc(project)}/rules`, change);
+/** Changes the rules given; `checks` replaces the settings whole (members left out take their defaults). */
+export const putRules = (server: string, project: string, change: Partial<Omit<Rules, 'role' | 'checks'>> & { checks?: CheckSettings | null }) => need<Rules>(server, 'PUT', `atrium/1.0/projects/${enc(project)}/rules`, change);
 
 // ------------------------------------------------------------ activity
 
@@ -153,7 +160,9 @@ export interface Submission {
   id: string; number: number; status: SubmissionStatus; commit: string; issue: number | null; issueId: string | null; revision: string;
   purpose: 'shared' | 'published'; suitability: string; note: string; documents: string[]; files: ServerFile[];
   author: Person; created: string; decidedBy: Person | null; decided: string | null; decisionNote: string | null; reason: string | null; override: boolean;
-  tag: string | null; tagId: string | null; closedTopics: string[]; gate: { passed: boolean; topics: GateTopic[] } | null;
+  tag: string | null; tagId: string | null; closedTopics: string[]; gate: { passed: boolean; topics: GateTopic[]; checks?: GateChecks | null } | null;
+  /** W5: the checks on its PDF and DXF files (the list carries them without `files`). */
+  checks?: ChecksReport | null;
 }
 
 const S = (project: string) => `atrium/1.0/projects/${enc(project)}/submissions`;
@@ -164,6 +173,45 @@ export const approveSubmission = (server: string, project: string, id: string, n
   need<Submission>(server, 'POST', `${S(project)}/${enc(id)}/approve`, { note, ...(override ? { override: true } : {}) });
 export const rejectSubmission = (server: string, project: string, id: string, reason: string) => need<Submission>(server, 'POST', `${S(project)}/${enc(id)}/reject`, { reason });
 export const withdrawSubmission = (server: string, project: string, id: string) => need<Submission>(server, 'POST', `${S(project)}/${enc(id)}/withdraw`, {});
+/** W5: the checks run again (202: the submission, its checks back to pending). */
+export const rerunChecks = (server: string, project: string, id: string) => need<Submission>(server, 'POST', `${S(project)}/${enc(id)}/checks`);
+
+// ------------------------------------------------------------ the document register (W5)
+
+export interface RegisterEntry { code: string; title: string | null; revision: string | null; fields: Record<string, string> }
+export interface Register {
+  name: string | null; imported: string; importedBy: Person | null;
+  columns: { code: string; title: string | null; revision: string | null; fields: string[] };
+  count: number; entries: RegisterEntry[]; warnings: string[];
+}
+const R = (project: string) => `atrium/1.0/projects/${enc(project)}/register`;
+/** The project's register, or null when it has none. */
+export async function getRegister(server: string, project: string): Promise<Register | null> {
+  try { return await need<Register>(server, 'GET', R(project)); } catch (e) { if (e instanceof AtriumError && e.code === 'no_register') return null; throw e; }
+}
+export const registerType = (name: string) => (/\.xlsx$/i.test(name) ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv');
+/** A register imported from a CSV or XLSX file (owners): it replaces the one there. The file goes as it is, not as JSON. */
+export async function putRegister(server: string, project: string, bytes: Uint8Array, name: string): Promise<Register> {
+  const path = `${R(project)}?name=${enc(name)}`;
+  const type = registerType(name);
+  if (isCdeServer(server)) {
+    const r = await api(`/${path}`, { method: 'PUT', headers: { 'content-type': type }, body: bytes as BodyInit });
+    let body: Record<string, unknown> | null = null;
+    try { body = await r.json() as Record<string, unknown>; } catch { body = null; }
+    if (r.ok) return body as unknown as Register;
+    const code = (body?.code as string | undefined) ?? `http_${r.status}`;
+    const said = (body?.message as string | undefined) ?? `The server answered ${r.status}.`;
+    throw new AtriumError(r.status, code, refusalText(code, said), said, body);
+  }
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  const a = await remoteCall<Answer<Register>>('remote.atrium', { url: server, method: 'PUT', path, data: btoa(bin), contentType: type }, server);
+  if (a.status >= 200 && a.status < 300 && a.body) return a.body;
+  const b = (a.body ?? {}) as unknown as { code?: string; message?: string };
+  const code = b.code ?? `http_${a.status}`;
+  throw new AtriumError(a.status, code, refusalText(code, b.message ?? `The server answered ${a.status}.`), b.message ?? null, b as Record<string, unknown>);
+}
+export const deleteRegister = (server: string, project: string) => need<unknown>(server, 'DELETE', R(project));
 
 export interface IssueTagItem {
   kind: 'issue'; name: string; issue: number; revision: string; suitability: string; container: string; tag: string; commit: string; at: string;

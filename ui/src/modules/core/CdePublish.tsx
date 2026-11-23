@@ -6,8 +6,8 @@
  * revisions; the handover report (XLSX, written by the engine); and the server's e-mail outbox for its administrators.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, Download, FileSpreadsheet, FolderOpen, GitCompare, RefreshCw, Undo2, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Check, Download, FileSpreadsheet, FolderOpen, GitCompare, RefreshCw, RotateCw, Undo2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { download, isDesktop, openProjectBytes, pickPath, safeFileName, fileBytes } from '../../engine/files';
 import { historyStatus, refusalText, remoteCall, signedIn, syncIssues, writingCall } from '../../engine/remote';
@@ -15,9 +15,11 @@ import { useCde, type Role } from '../../engine/cdeServer';
 import { when } from './format';
 import { openRemark } from './remarks/RemarksDialog';
 import {
-  account, approveSubmission, features, commitViewer, containers as getContainers, getRules, handoverDiff, members as listMembers, listSubmissions, outbox, rejectSubmission, serverBytes, withdrawSubmission,
-  type Containers, type HandoverDiff, type OutboxItem, type Rules, type ServerFile, type Submission, type SubmissionStatus,
+  AtriumError, account, approveSubmission, features, commitViewer, containers as getContainers, getRules, getSubmission, handoverDiff, members as listMembers, listSubmissions, outbox, rejectSubmission, rerunChecks, serverBytes, withdrawSubmission,
+  type Containers, type GateTopic, type HandoverDiff, type OutboxItem, type Rules, type ServerFile, type Submission, type SubmissionStatus,
 } from '../../engine/atrium';
+import { pollChecks, type GateChecks } from '../../engine/checks';
+import { ChecksLine, ChecksReportView, RegisterPanel } from './CdeChecks';
 import { CONTAINERS, atLeast, comparable, containerRows, issueLabel, mayTagDirectly, proposedPair, purposeOf, submissionRights, SUBMISSION_STATUS, tagShort, type ContainerId, type Me } from '../../engine/publishing';
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -98,18 +100,45 @@ function useMe(server: string, project: string): { me: Me | null; rules: Rules |
 
 // ------------------------------------------------------------ the panel
 
-type Tab = 'containers' | 'submissions' | 'diff';
+type Tab = 'containers' | 'submissions' | 'diff' | 'register';
 
-/** Containers, the publish queue and the handover diff of a server project, with the handover report. */
-export function PublishingPanel({ server, project, name }: { server: string; project: string; name: string }) {
-  const [offers, setOffers] = useState<boolean | null>(null);
-  useEffect(() => { let live = true; void features(server).then((f) => { if (live) setOffers(f.includes('submissions')); }); return () => { live = false; }; }, [server]);
-  if (offers === null) return null;
-  if (!offers) return <p className="muted small" data-cde-publishing="none">This server does not offer publishing (an Atrium Server older than W4).</p>;
-  return <Publishing server={server} project={project} name={name} />;
+/**
+ * A submission read whole (with its checks report) and kept up to date while its checks run (W5): polled until they are done or
+ * failed, the polling stopped when the screen closes. `watch` starts it again (after Run checks again).
+ */
+export function useLiveSubmission(server: string, project: string, first: Submission | null, poll = true): { s: Submission | null; set: (s: Submission) => void; watch: () => void } {
+  const [s, setS] = useState<Submission | null>(first);
+  const [n, setN] = useState(0);
+  const id = first?.id ?? null;
+  // A newer copy from the list (without the files' findings) keeps the report read here, and is read whole again.
+  const seen = useRef(first);
+  useEffect(() => {
+    if (!first || seen.current === first) return;
+    seen.current = first;
+    setS((old) => (old && old.id === first.id && old.checks?.files && first.checks && !first.checks.files ? { ...first, checks: old.checks } : first));
+    setN((x) => x + 1);
+  }, [first]);
+  useEffect(() => {
+    if (!id) return;
+    const stop = new AbortController();
+    const get = () => getSubmission(server, project, id);
+    void (poll ? pollChecks(get, { signal: stop.signal, onUpdate: (x) => { if (!stop.signal.aborted) setS(x); } }) : get().then((x) => { if (!stop.signal.aborted) setS(x); }))
+      .catch(() => { /* the list's copy stays */ });
+    return () => stop.abort();
+  }, [server, project, id, n, poll]);
+  return { s, set: setS, watch: () => setN((x) => x + 1) };
 }
 
-function Publishing({ server, project, name }: { server: string; project: string; name: string }) {
+/** Containers, the publish queue and the handover diff of a server project, with the handover report; the register from W5. */
+export function PublishingPanel({ server, project, name }: { server: string; project: string; name: string }) {
+  const [offers, setOffers] = useState<string[] | null>(null);
+  useEffect(() => { let live = true; void features(server).then((f) => { if (live) setOffers(f); }); return () => { live = false; }; }, [server]);
+  if (offers === null) return null;
+  if (!offers.includes('submissions')) return <p className="muted small" data-cde-publishing="none">This server does not offer publishing (an Atrium Server older than W4).</p>;
+  return <Publishing server={server} project={project} name={name} offers={offers} />;
+}
+
+function Publishing({ server, project, name, offers }: { server: string; project: string; name: string; offers: string[] }) {
   const [tab, setTab] = useState<Tab>('containers');
   const [data, setData] = useState<Containers | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
@@ -132,14 +161,15 @@ function Publishing({ server, project, name }: { server: string; project: string
         <button type="button" className="link small" data-cde="handover-report" disabled={busy} title="The issues, their comments and the journal of who changed what, as an Excel workbook" onClick={() => void run(() => exportHandover(server, project, name))}><FileSpreadsheet size={12} /> Handover report (XLSX)</button>
       </p>
       <div className="cde-tabs" role="tablist">
-        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff']] as [Tab, string][]).map(([id, label]) => (
+        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff'], ...(offers.includes('register') ? [['register', 'Register']] : [])] as [Tab, string][]).map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} className={`tab${tab === id ? ' active' : ''}`} data-cde-tab={id} onClick={() => setTab(id)}>{label}</button>
         ))}
       </div>
       {failed && <p className="muted small">{failed}</p>}
       {tab === 'containers' && <ContainersView server={server} project={project} name={name} data={data} busy={busy} run={run} />}
-      {tab === 'submissions' && <SubmissionsQueue server={server} project={project} who={who} onDecided={load} />}
+      {tab === 'submissions' && <SubmissionsQueue server={server} project={project} who={who} onDecided={load} checks={offers.includes('checks')} />}
       {tab === 'diff' && <HandoverDiffView server={server} project={project} name={name} data={data} />}
+      {tab === 'register' && <RegisterPanel server={server} project={project} owner={who.me?.role === 'owner' || Boolean(who.me?.isAdmin && who.rules?.role === 'owner')} />}
     </div>
   );
 }
@@ -195,7 +225,7 @@ const FILTERS: { id: SubmissionStatus | ''; label: string }[] = [
   { id: 'pending', label: 'Waiting for approval' }, { id: '', label: 'All' }, { id: 'approved', label: 'Approved' }, { id: 'rejected', label: 'Rejected' }, { id: 'withdrawn', label: 'Withdrawn' },
 ];
 
-function SubmissionsQueue({ server, project, who, onDecided }: { server: string; project: string; who: ReturnType<typeof useMe>; onDecided: () => void }) {
+function SubmissionsQueue({ server, project, who, onDecided, checks }: { server: string; project: string; who: ReturnType<typeof useMe>; onDecided: () => void; checks: boolean }) {
   const [filter, setFilter] = useState<SubmissionStatus | ''>('pending');
   const [list, setList] = useState<Submission[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
@@ -220,28 +250,53 @@ function SubmissionsQueue({ server, project, who, onDecided }: { server: string;
             <button type="button" className="cde-row-body link" onClick={() => setOpen(open === s.id ? null : s.id)}>
               <span className="recent-name"><span data-no-i18n>{`${s.number}. ${issueLabel(s.issue, s.revision)} · ${s.suitability}`}</span> <span className="chip">{s.purpose === 'shared' ? 'Shared' : 'Published'}</span>
                 <span className={`chip${s.status === 'pending' ? ' warn' : ''}`}>{SUBMISSION_STATUS[s.status]}</span>
-                {s.status === 'pending' && s.gate && !s.gate.passed && <span className="chip warn" data-cde-gate="failed">Gate: open issues</span>}</span>
+                {s.status === 'pending' && s.gate && !s.gate.passed && <span className="chip warn" data-cde-gate="failed">{s.gate.topics.length > 0 ? 'Gate: open issues' : 'Gate fails'}</span>}
+                {checks && s.checks && <ChecksLine checks={s.checks} compact />}</span>
               <span className="muted small" data-no-i18n>{s.author.name} · {when(s.created)}{s.note ? ` · ${s.note}` : ''}</span>
             </button>
           </li>
         ))}
       </ul>
-      {current && <SubmissionDetail key={current.id} server={server} project={project} s={current} who={who} onDone={() => { load(); onDecided(); }} />}
+      {current && <SubmissionDetail key={current.id} server={server} project={project} first={current} who={who} checks={checks} onDone={() => { load(); onDecided(); }} />}
     </div>
   );
 }
 
-function SubmissionDetail({ server, project, s, who, onDone }: { server: string; project: string; s: Submission; who: ReturnType<typeof useMe>; onDone: () => void }) {
+/** The gate's checks in words, beside its topics (W5): running, failed, or what they found; errors stop the approval. */
+function GateChecksLine({ checks }: { checks: GateChecks | null | undefined }) {
+  if (!checks) return null;
+  return <p className="small" data-cde-gate-checks={checks.status}><ChecksLine checks={checks} />
+    {checks.status === 'done' && checks.errors > 0 && <span className="muted"> · <span>errors stop the approval</span></span>}
+    {checks.status === 'pending' && <span className="muted"> · <span>an approval runs them first</span></span>}</p>;
+}
+
+function SubmissionDetail({ server, project, first, who, checks, onDone }: { server: string; project: string; first: Submission; who: ReturnType<typeof useMe>; checks: boolean; onDone: () => void }) {
   const [note, setNote] = useState('');
   const [reason, setReason] = useState('');
   const [override, setOverride] = useState(false);
   const [busy, setBusy] = useState(false);
+  const live = useLiveSubmission(server, project, first, checks);
+  const s = live.s ?? first;
   const rights = submissionRights(s, who.me, who.rules, who.owners);
   const failing = s.gate != null && !s.gate.passed;
   const act = async (what: () => Promise<Submission>, done: string) => {
     if (busy) return;
     setBusy(true);
-    try { await what(); notify(done); onDone(); } catch (e) { notify(message(e)); } finally { setBusy(false); }
+    try { await what(); notify(done); onDone(); } catch (e) {
+      // W5: an approval runs pending checks first; a gate they fail comes back as 422 gate_failed with the topics and the checks.
+      if (e instanceof AtriumError && e.code === 'gate_failed' && e.body && s.gate) {
+        live.set({ ...s, gate: { passed: false, topics: (e.body.topics as GateTopic[] | undefined) ?? s.gate.topics, checks: (e.body.checks as GateChecks | undefined) ?? s.gate.checks } });
+        live.watch();
+      }
+      notify(message(e));
+    } finally { setBusy(false); }
+  };
+  const mine = Boolean(who.me && s.author.email && s.author.email.toLowerCase() === who.me.email.toLowerCase());
+  const mayRerun = mine || (who.me != null && atLeast(who.me.isAdmin ? 'owner' : who.me.role, who.rules?.approve ?? 'owner'));
+  const rerun = async () => {
+    if (busy) return;
+    setBusy(true);
+    try { live.set(await rerunChecks(server, project, s.id)); live.watch(); notify('The checks run again.'); } catch (e) { notify(message(e)); } finally { setBusy(false); }
   };
   const canApprove = rights.approve && (!failing || (override && rights.override && note.trim().length > 0));
   return (
@@ -253,8 +308,11 @@ function SubmissionDetail({ server, project, s, who, onDone }: { server: string;
       {s.gate && (
         <div className="cde-gate" data-cde-gate={s.gate.passed ? 'passed' : 'failed'}>
           {s.gate.passed
-            ? <p className="small cde-ok"><Check size={12} /> No open issue stops this submission.</p>
-            : <p className="small cde-warn">These open issues stop the approval: resolve or close them, or an owner approves with a note.</p>}
+            ? <p className="small cde-ok"><Check size={12} /> {s.gate.checks ? 'No open issue and no error of the checks stops this submission.' : 'No open issue stops this submission.'}</p>
+            : s.gate.topics.length > 0
+              ? <p className="small cde-warn">These open issues stop the approval: resolve or close them, or an owner approves with a note.</p>
+              : <p className="small cde-warn">The checks' errors stop the approval: fix the files and submit again, or an owner approves with a note.</p>}
+          {checks && <GateChecksLine checks={s.gate.checks} />}
           <ul className="cde-list">
             {s.gate.topics.map((t) => (
               <li key={t.guid} className="small">
@@ -267,6 +325,15 @@ function SubmissionDetail({ server, project, s, who, onDone }: { server: string;
           </ul>
         </div>
       )}
+      {checks && s.checks && (
+        <div className="cde-submission-checks" data-cde-submission-checks>
+          <p className="eyebrow small">Checks on the documents
+            <button type="button" className="link small" disabled={busy || s.status !== 'pending' || !mayRerun || s.checks.status === 'pending'} data-cde-rerun
+              title={s.status !== 'pending' ? 'A decided submission keeps the report it was decided on' : mayRerun ? 'Check the files again, after the register or the check settings changed' : 'Its author or an approver runs the checks again'}
+              onClick={() => void rerun()}><RotateCw size={12} /> Run checks again</button></p>
+          <ChecksReportView server={server} project={project} checks={s.checks} />
+        </div>
+      )}
       {s.status !== 'pending' && (
         <p className="small"><span className="muted">{SUBMISSION_STATUS[s.status]}</span>{' '}
           <span data-no-i18n>{s.decidedBy?.name ?? ''}{s.decided ? ` · ${when(s.decided)}` : ''}{s.reason ? ` · ${s.reason}` : ''}{s.decisionNote ? ` · ${s.decisionNote}` : ''}</span>
@@ -277,7 +344,7 @@ function SubmissionDetail({ server, project, s, who, onDone }: { server: string;
         <>
           <div className="cde-add">
             <input placeholder="A note with the approval (optional; needed to override the gate)" aria-label="Approval note" value={note} disabled={!rights.approve} onChange={(e) => setNote(e.target.value)} data-cde-approve-note />
-            {failing && <label className="row small" title={rights.override ? undefined : 'Only owners pass a failing gate'}><input type="checkbox" checked={override} disabled={!rights.override} onChange={(e) => setOverride(e.target.checked)} data-cde-override /> Approve despite the open issues</label>}
+            {failing && <label className="row small" title={rights.override ? undefined : 'Only owners pass a failing gate'}><input type="checkbox" checked={override} disabled={!rights.override} onChange={(e) => setOverride(e.target.checked)} data-cde-override /> {s.gate && s.gate.topics.length === 0 ? 'Approve despite the errors' : 'Approve despite the open issues'}</label>}
             <button type="button" className="btn primary" disabled={busy || !canApprove} title={rights.why ?? (failing && !override ? 'The gate fails: an owner approves with a note' : 'Approve: the server makes the issue tag')} data-cde-approve
               onClick={() => void act(() => approveSubmission(server, project, s.id, note.trim(), failing && override), 'Approved: the issue tag is made.')}><Check size={13} />Approve</button>
           </div>
@@ -390,6 +457,24 @@ export function OutboxList({ server }: { server: string }) {
 
 // ------------------------------------------------------------ an issue put on the server (Manage → Issue…)
 
+/** The checks of a submission just made, read until they end (the polling stops when the Issue dialog closes). */
+function SubmittedChecks({ server, project, first }: { server: string; project: string; first: Submission }) {
+  const live = useLiveSubmission(server, project, first);
+  const s = live.s ?? first;
+  const shown = useRef(false);
+  useEffect(() => {
+    if (shown.current || !s.checks || s.checks.status === 'pending') return;
+    shown.current = true;
+    const e = s.checks.summary?.errors ?? 0;
+    notify(s.checks.status === 'failed' ? 'The checks could not run.' : e > 0 ? 'The checks found errors in the documents: the approval waits for them.' : 'The checks found no error in the documents.');
+  }, [s.checks]);
+  return (
+    <div className="cde-submitted-checks" data-cde-submitted-checks>
+      <ChecksReportView server={server} project={project} checks={s.checks} />
+    </div>
+  );
+}
+
 interface SubmitAnswer { ok: boolean; code?: string; message?: string; submission?: Submission; tag?: string; notes?: string[] }
 
 /** The project saved to its remote first (an issue goes with a commit the remote holds): committed when it changed, pushed, its issues synced. */
@@ -416,6 +501,7 @@ export function IssueOnServer({ issue }: { issue: { id: string; number: number; 
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState<SubmitAnswer | null>(null);
   const [queue, setQueue] = useState(false);
+  const [checks, setChecks] = useState(false);
   useEffect(() => {
     let live = true;
     void historyStatus().then(async (s) => {
@@ -424,7 +510,7 @@ export function IssueOnServer({ issue }: { issue: { id: string; number: number; 
       setRemote(r);
       if (r?.kind === 'server' && await signedIn(r.url)) {
         const [got, offers] = await Promise.all([getRules(r.url, r.project).catch(() => null), features(r.url)]);
-        if (live) { setRules(got); setRole(got?.role ?? null); setQueue(offers.includes('submissions')); }
+        if (live) { setRules(got); setRole(got?.role ?? null); setQueue(offers.includes('submissions')); setChecks(offers.includes('checks')); }
       }
     }).catch(() => { if (live) setRemote(null); });
     return () => { live = false; };
@@ -470,6 +556,7 @@ export function IssueOnServer({ issue }: { issue: { id: string; number: number; 
           {answer.submission.gate && !answer.submission.gate.passed && <span className="chip warn">Gate: open issues</span>}
         </p>
       )}
+      {answer?.ok && answer.submission && server && checks && remote.kind === 'server' && <SubmittedChecks server={server} project={remote.project} first={answer.submission} />}
       {answer?.ok && !answer.submission && <p className="small cde-ok" data-cde-tagged><span>Issue tag made:</span> <span data-no-i18n>{tagShort(answer.tag ?? '')}</span></p>}
       {answer && !answer.ok && <p className="small cde-warn">{refusalText(answer.code ?? '', answer.message)}</p>}
     </div>

@@ -529,6 +529,10 @@ public sealed partial class EngineDispatcher
     static readonly System.Text.RegularExpressions.Regex ReadOnlyObject = new(
         "^lapin-remote/1\\.0/projects/[A-Za-z0-9._-]{1,128}/(commits/[0-9a-f]{64}/(package|viewer)|objects/[0-9a-f]{64})$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
+    /// <summary>The register's path with its file's name (<c>?name=</c>), the one request whose body is a file (W5).</summary>
+    static readonly System.Text.RegularExpressions.Regex RegisterPath = new(
+        "^atrium/1\\.0/projects/[A-Za-z0-9._-]{1,128}/register(\\?name=[^&#]*)?$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     /// <summary>
     /// One request to the server's own API (Atrium's <c>/atrium/1.0</c>: the account, its administration, members, rules, activity;
     /// BCF 3.0; and the making of a project, <c>POST /lapin-remote/1.0/projects</c>) on the sign-in the call carries, for the desktop's
@@ -546,9 +550,17 @@ public sealed partial class EngineDispatcher
             || (bare == "lapin-remote/1.0/projects" && method == "POST") || download;
         if (!allowed || !AtriumMethods.Contains(method) || path.Contains("..", StringComparison.Ordinal) || path.Contains('\\') || path.Contains("//", StringComparison.Ordinal) || path.Contains('#'))
             throw new CommandException("Not a request of the server's own API.");
+        // W5: a project's document register goes up as the file itself (CSV or XLSX, base64 in `data`), the only raw body sent.
+        byte[]? raw = null;
+        if ((string?)p["data"] is { } data)
+        {
+            if (method != "PUT" || !RegisterPath.IsMatch(path)) throw new CommandException("Only a document register is sent as a file.");
+            try { raw = Convert.FromBase64String(data); }
+            catch (FormatException) { throw new CommandException("The register's bytes are not base64."); }
+        }
         var remote = await HttpRemote.OpenAsync(Http, url, "-", tokens);
         var bytes = download && Flag(p, "bytes");
-        var a = await remote.ApiAsync(new HttpMethod(method), path, p["body"]?.DeepClone(), (string?)p["ifMatch"], bytes);
+        var a = await remote.ApiAsync(new HttpMethod(method), path, raw == null ? p["body"]?.DeepClone() : null, (string?)p["ifMatch"], bytes, raw, (string?)p["contentType"]);
         var o = new JsonObject { ["status"] = a.Status, ["body"] = a.Json?.DeepClone(), ["etag"] = a.ETag };
         if (a.Bytes is { } b)
         {

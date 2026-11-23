@@ -91,7 +91,7 @@ O emitere WIP rămâne în proiect: emite în Comune sau Publicate ca să ajung�
 
 Emiterea din nou a acelorași planșe face o **revizie nouă a aceleiași emiteri** (Issue… o propune: **Emite ca** → *Revizie nouă a emiterii #n*, revizia de după ultima ei): propunerea și eticheta de emitere poartă numărul și identitatea acelei emiteri, `#1 P01`, apoi `#1 P02`. Odată publicată revizia ulterioară, cea Publicată dinainte trece în **Arhivate**. **Emitere nouă** dă documentelor un număr nou.
 
-Pagina proiectului (în browser) și **Fișier → Colaborează… → Publicare** (pe desktop) au trei file:
+Pagina proiectului (în browser) și **Fișier → Colaborează… → Publicare** (pe desktop) au aceste file:
 
 - **Containere**: containerele ISO 19650. **WIP** listează ramurile în lucru; **Comune** și **Publicate** listează etichetele de emitere cu revizia, starea, data și cine le-a emis (**aprobată** când a trecut prin coadă); o revizie Publicată trece în **Arhivate** când aceeași emitere e publicată din nou la o revizie ulterioară. **Deschide** deschide o revizie doar pentru citire; **.lapin** și **IFC** o descarcă; **fișiere** listează fișierele emise, fiecare de descărcat.
 - **Propuneri**: coada, întâi cele care așteaptă (**Arată** le alege pe celelalte: aprobate, respinse, retrase, toate). Un clic pe una arată commit-ul, documentele, fișierele și **poarta**: problemele deschise care o opresc. O problemă se leagă de un document printr-o legătură de referință `lapin-document:<numele documentului>`, pe care Lapin o pune singur: o observație făcută cu o planșă în față e legată de documentul planșei, iar dialogul observațiilor arată, adaugă și scoate documentele unei observații (vezi [Observații](cde.md)); Sincronizează problemele trimite legăturile pe server. Fără documente, orice problemă deschisă cu prioritatea Critical o oprește. Un clic pe o problemă a porții o deschide în Observații pe model (în proiectul deschis aici, după Sincronizează problemele).
@@ -100,8 +100,33 @@ Pagina proiectului (în browser) și **Fișier → Colaborează… → Publicare
   - **Retrage** e a autorului.
   - Ce nu permit rolul tău și regulile proiectului e dezactivat; autorul nu își aprobă propria propunere (decât dacă e singurul proprietar al proiectului).
 - **Diferențe la predare**: alege două revizii emise, **Compară**: documentele adăugate, eliminate, schimbate (alt fișier) și neschimbate între ele, și câte părți ale modelului s-au schimbat. **Exportă în XLSX** scrie raportul de predare cu aceste diferențe.
+- **Registru** (când serverul verifică documentele): registrul de documente al proiectului. Proprietarii aleg **Importă un registru (CSV sau XLSX)…**: primul rând numește coloanele, codul (obligatoriu: `code`, `document`, `cod`…), titlul, revizia așteptată și orice valoare pe care cartușul trebuie s-o arate (`client`, `beneficiar`…). Fila arată documentele, ce coloane s-au citit și **avertismentele la import** (un rând fără cod, un cod întâlnit de două ori). Un import nou îl înlocuiește; **Șterge** îl scoate. Membrii îl citesc.
 
 **Raport de predare (XLSX)** scrie un registru Excel al proiectului deschis aici: o foaie **Report** (proiectul, serverul, când, de cine, numărătorile), **Issues** (numărul, titlul, tipul, starea, prioritatea, cui e atribuită, termenul, etichetele, datele și autorii, comentariile), **Comments**, **Journal** (fiecare schimbare a problemelor pe server: cine, când, valoarea veche și cea nouă) și, din Diferențe la predare, foaia **Handover diff**. Lapin îl scrie singur; se deschide în Excel, LibreOffice și Numbers.
+
+## Verificările documentelor
+
+Un server CDE precum cde.lapinbim.com verifică fiecare planșă PDF și DXF pe care o emite o propunere, adesea venită din alte programe, de îndată ce e propusă. Doar **erorile** opresc aprobarea; avertismentele și notele se arată.
+
+- **V1**, numele și reviziile: codul fișierului se potrivește cu regula de denumire a proiectului și e în registru; revizia lui e a propunerii și a registrului și nu se întoarce înapoi; numărul planșei și revizia din cartuș sunt cele din numele fișierului.
+- **V2**, cartușul: găsit, cu câmpurile obligatorii, revizia, scara și data scrise ca atare, data nu în viitor, valorile pe care le așteaptă registrul sau setările. O pagină fără text (o scanare) nu se poate citi.
+- **V3**, o planșă goală sau desenul ieșit de pe pagină când a fost tipărit.
+- **V4**, un substituent: o planșă cu puțin mai mult decât un X.
+- **V5**, planșa altui proiect: cartușul numește alt proiect, alt cod sau număr de proiect, ori pe pagină e un cuvânt-cheie al altui proiect.
+
+După **Propune spre aprobare**, Manage → Issue… așteaptă verificările și arată ce au găsit. În **Propuneri**, o propunere arată **Verificări:** și numărătorile în coadă, iar deschisă, verificările lângă problemele porții și raportul: fiecare fișier, ce e greșit în tot fișierul, apoi erorile, avertismentele și notele lui, fiecare cu pagina ei. **pagina n** arată pagina cu fiecare constatare desenată peste ea ca un chenar cu codul ei; ține mouse-ul pe chenar ca să vezi ce spune; **−** și **+** micșorează și măresc. Un DXF se arată ca pagina lui, cu cartușul citit de server, nu cu desenul.
+
+Când verificările găsesc erori, corectează fișierul și propune din nou; sau, când registrul ori setările verificărilor erau greșite, corectează-le și apasă **Rulează din nou verificările** (autorul sau un aprobator, cât timp propunerea așteaptă): propunerea e verificată din nou cu ele. Un proprietar poate totuși aproba cu **Aprobă în ciuda erorilor** și o notă, ca la problemele deschise.
+
+**Reguli → Verificări ale documentelor** (le schimbă proprietarii; ceilalți le citesc):
+
+- **Regula de denumire**: o expresie regulată cu care trebuie să se potrivească tot codul, de exemplu `(?<project>EL24)-[A-Z]{3}-L2-[A-Z0-9]{2}-[A-Z]{2}-[A-Z]-\d{4}` (grupul `project` e câmpul de proiect al codului). **Încearcă un cod** spune pe loc dacă un cod se potrivește.
+- **Codul proiectului**, **Numărul proiectului**, **Numele proiectului**: cu ce compară V5; **Cuvintele-cheie ale altui proiect**, câte unul pe rând (codul sau locul unui proiect anterior).
+- **Valori așteptate**: rânduri `câmp = valoare` pe care cartușul fiecărei planșe trebuie să le arate (coloanele registrului au întâietate).
+- **O dată în viitor după** atâtea zile; **Verificări rulate**: V1–V5, fiecare pornită sau oprită.
+- **Cartuș**: *Găsit după etichetele lui* (implicit: DRAWING NO, TITLE, REVISION, DATE, SCALE, PROJECT și formele lor românești, COD PLANȘĂ, TITLU, REVIZIE, DATA, SCARA, PROIECT), sau *Descris aici*: o regiune fixă într-un colț al paginii (mărimea și marginile ei în mm) și câmpurile, fiecare cu felul lui, etichetele după care e tipărit, dacă e obligatoriu, zona lui în regiune și atributele DXF care îl dau.
+
+**Salvează setările verificărilor** le trimite; o valoare pe care serverul n-o acceptă e spusă lângă câmpul ei. Activitatea arată fiecare rulare a verificărilor cu ce a găsit.
 
 ## Administrare
 

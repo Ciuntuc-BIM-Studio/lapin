@@ -27,6 +27,7 @@ public sealed partial class CdeTests
         public readonly Dictionary<string, byte[]> Objects = new(StringComparer.Ordinal);
         public readonly List<JsonObject> Submissions = [];
         public string IssueTags = "owner";
+        public (byte[] Bytes, string? Type, string Query)? Register;
         public Dictionary<string, JsonObject> InnerTopics => inner.Topics;
 
         static HttpResponseMessage Json(HttpStatusCode s, JsonNode o) => new(s) { Content = new StringContent(o.ToJsonString(), Encoding.UTF8, "application/json") };
@@ -59,7 +60,7 @@ public sealed partial class CdeTests
             var path = request.RequestUri!.AbsolutePath;
             var p = $"/lapin-remote/1.0/projects/{CdeProject}";
             var role = request.Headers.Authorization?.Parameter switch { "tok-mihai" => "owner", "tok-ana" => "editor", "tok-vio" => "viewer", _ => null };
-            if (role == null || !(path.StartsWith(p, StringComparison.Ordinal) || path.EndsWith("/submissions", StringComparison.Ordinal))) return await base.SendAsync(request, cancellationToken);
+            if (role == null || !(path.StartsWith(p, StringComparison.Ordinal) || path.EndsWith("/submissions", StringComparison.Ordinal) || path.EndsWith("/register", StringComparison.Ordinal))) return await base.SendAsync(request, cancellationToken);
             var body = request.Content == null ? null : await request.Content.ReadAsByteArrayAsync(cancellationToken);
             var json = body is { Length: > 0 } && body[0] == '{' ? JsonNode.Parse(body) as JsonObject : null;
             if (path == $"/atrium/1.0/projects/{CdeProject}/submissions" && request.Method == HttpMethod.Post)
@@ -77,6 +78,12 @@ public sealed partial class CdeTests
                 s["gate"] = Gate(json["documents"] as JsonArray);
                 Submissions.Add(s);
                 return Json(HttpStatusCode.Created, s);
+            }
+            if (path == $"/atrium/1.0/projects/{CdeProject}/register" && request.Method == HttpMethod.Put)
+            {
+                if (role != "owner") return Error(403, "forbidden", "Only owners import the register.");
+                Register = (body ?? [], request.Content?.Headers.ContentType?.MediaType, request.RequestUri.Query);
+                return Json(HttpStatusCode.OK, new JsonObject { ["name"] = "registru.csv", ["count"] = 1, ["entries"] = new JsonArray(), ["warnings"] = new JsonArray() });
             }
             if (path == $"{p}/refs") return Json(HttpStatusCode.OK, RefsJson());
             if (path == $"{p}/objects/missing")
@@ -257,5 +264,23 @@ public sealed partial class CdeTests
         Assert.Equal(to, (string?)c.Call("remote.atrium", new JsonObject { ["path"] = $"lapin-remote/1.0/projects/{CdeProject}/objects/{file.Sha256}", ["bytes"] = true, ["saveTo"] = to })["saved"]);
         foreach (var bad in new[] { $"lapin-remote/1.0/projects/{CdeProject}/refs", $"lapin-remote/1.0/projects/{CdeProject}/objects/{file.Sha256}/x", $"lapin-remote/1.0/projects/{CdeProject}/objects/zz" })
             Assert.Throws<InvalidOperationException>(() => c.Call("remote.atrium", new JsonObject { ["path"] = bad, ["bytes"] = true }));
+    }
+
+    [Fact]
+    public void The_desktop_sends_a_document_register_as_its_file_and_no_other_request_as_bytes()
+    {
+        var server = new PublishServer(new IssueSyncTests.FakeCde());
+        var c = Issued(new HttpClient(server), _ => Server());
+        var csv = Encoding.UTF8.GetBytes("cod;titlu\nPRJ-A-0101;Plan parter\n");
+        var r = c.Call("remote.atrium", new JsonObject { ["method"] = "PUT", ["path"] = $"atrium/1.0/projects/{CdeProject}/register?name=registru.csv", ["data"] = Convert.ToBase64String(csv), ["contentType"] = "text/csv" });
+        Assert.Equal(200, (int)r["status"]!);
+        Assert.Equal(csv, server.Register!.Value.Bytes);
+        Assert.Equal("text/csv", server.Register.Value.Type);
+        Assert.Equal("?name=registru.csv", server.Register.Value.Query);
+        // Bytes go only to the register, and only with PUT.
+        foreach (var (method, path) in new[] { ("PUT", $"atrium/1.0/projects/{CdeProject}/rules"), ("POST", $"atrium/1.0/projects/{CdeProject}/register"), ("PUT", $"atrium/1.0/projects/{CdeProject}/register/x") })
+            Assert.Throws<InvalidOperationException>(() => c.Call("remote.atrium", new JsonObject { ["method"] = method, ["path"] = path, ["data"] = Convert.ToBase64String(csv) }));
+        c.Token = "tok-ana";
+        Assert.Equal(403, (int)c.Call("remote.atrium", new JsonObject { ["method"] = "PUT", ["path"] = $"atrium/1.0/projects/{CdeProject}/register", ["data"] = Convert.ToBase64String(csv) })["status"]!);
     }
 }

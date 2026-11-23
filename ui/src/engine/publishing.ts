@@ -80,7 +80,8 @@ export function submissionWords(changes: { type: string }[]): string[] {
   const words: string[] = [];
   for (const c of changes) {
     const w = c.type === 'submission_created' ? 'submitted for approval' : c.type === 'submission_approved' ? 'approved'
-      : c.type === 'submission_rejected' ? 'rejected' : c.type === 'submission_withdrawn' ? 'withdrew it' : c.type === 'gate_overridden' ? 'passed the gate by override' : 'changed it';
+      : c.type === 'submission_rejected' ? 'rejected' : c.type === 'submission_withdrawn' ? 'withdrew it' : c.type === 'gate_overridden' ? 'passed the gate by override'
+      : c.type === 'checks_done' ? 'checked the documents' : 'changed it';
     if (!words.includes(w)) words.push(w);
   }
   return words;

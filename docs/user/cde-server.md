@@ -91,7 +91,7 @@ A WIP issue stays in the project: issue to Shared or Published to put it on the 
 
 Issuing the same sheets again makes a **new revision of the same issue** (Issue… proposes it: **Issue as** → *New revision of issue #n*, the revision after its last): the submission and the issue tag carry that issue's number and identity, `#1 P01`, then `#1 P02`. Once the later revision is published, the earlier Published one moves to **Archived**. **New issue** gives the documents a new number instead.
 
-The project's page (in the browser) and **File → Collaborate… → Publishing** (on the desktop) have three tabs:
+The project's page (in the browser) and **File → Collaborate… → Publishing** (on the desktop) have these tabs:
 
 - **Containers**: the ISO 19650 containers. **WIP** lists the branches in progress; **Shared** and **Published** list the issue tags with their revision, status, date and who issued them (**approved** when it came through the queue); a Published revision goes to **Archived** when the same issue is published again at a later revision. **Open** opens a revision read-only; **.lapin** and **IFC** download it; **files** lists the issued files, each to download.
 - **Submissions**: the queue, waiting ones first (**Show** picks the others: approved, rejected, withdrawn, all). Click one for its commit, documents, files and **gate**: the open issues that stop it. An issue is tied to a document by a reference link `lapin-document:<document name>`, which Lapin sets itself: a remark made with a sheet in front is tied to that sheet's document, and the remarks dialog shows, adds and removes a remark's documents (see [Remarks](cde.md)); Sync issues sends the ties to the server. With no documents, every open issue of priority Critical stops it. Click an issue of the gate to open it in Model remarks (in the project open here, after Sync issues).
@@ -100,8 +100,33 @@ The project's page (in the browser) and **File → Collaborate… → Publishing
   - **Withdraw** is the author's.
   - What your role and the project's rules do not allow is greyed out; the author does not approve their own submission (unless they are the project's only owner).
 - **Handover diff**: pick two issued revisions, **Compare**: the documents added, removed, changed (another file) and unchanged between them, and how many model parts changed. **Export to XLSX** writes the handover report with this diff.
+- **Register** (when the server checks documents): the project's document register. Owners **Import a register (CSV or XLSX)…**: its first row names the columns, the code (required: `code`, `document`, `cod`…), the title, the expected revision, and any value the title block must show (`client`, `beneficiar`…). The tab shows the documents, which columns were read, and the **import warnings** (a row without a code, a code met twice). Importing again replaces it; **Delete** removes it. Members read it.
 
 **Handover report (XLSX)** writes an Excel workbook of the project open here: a **Report** sheet (project, server, when, by whom, the counts), **Issues** (number, title, type, status, priority, assigned to, due date, labels, dates and authors, comments), **Comments**, the **Journal** (every change to the issues on the server: who, when, the old and the new value) and, from the Handover diff, the **Handover diff** sheet. Lapin writes it itself; it opens in Excel, LibreOffice and Numbers.
+
+## Checks on the documents
+
+A CDE server such as cde.lapinbim.com checks every PDF and DXF sheet a submission issues, which often come from other tools, as soon as it is submitted. Only **errors** stop the approval; warnings and notes are shown.
+
+- **V1**, names and revisions: the file's code matches the project's naming rule and is in the register; its revision is the submission's and the register's, and does not go back; the title block's drawing number and revision are the file name's.
+- **V2**, the title block: found, its required fields there, the revision, scale and date written as such, the date not in the future, the values the register or the settings expect. A page without text (a scan) cannot be read.
+- **V3**, an empty sheet, or the drawing shifted off the page when it was printed.
+- **V4**, a placeholder: a sheet holding little more than a cross.
+- **V5**, another project's sheet: its title block names another project, project code or number, or a keyword of another project is on the page.
+
+After **Submit for approval**, Manage → Issue… waits for the checks and shows what they found. In **Submissions**, a submission shows **Checks:** and the counts in the queue and, opened, the checks beside the gate's issues and the report: each file, what is wrong with the whole file, then its errors, warnings and notes, each with its page. **page n** shows the page with every finding drawn over it as a box tagged with its code; point at a box for what it says; **−** and **+** zoom. A DXF is shown as its page with the title block the server read, not its drawing.
+
+When the checks find errors, fix the file and submit again; or, when the register or the check settings were wrong, correct them and click **Run checks again** (the author or an approver, while the submission waits): the submission is checked again with them. An owner can still approve with **Approve despite the errors** and a note, as for open issues.
+
+**Rules → Checks on documents** (owners change them; the others read them):
+
+- **Naming rule**: a regular expression the whole code must match, such as `(?<project>EL24)-[A-Z]{3}-L2-[A-Z0-9]{2}-[A-Z]{2}-[A-Z]-\d{4}` (the group `project` is the code's project field). **Try a code** says at once whether a code matches.
+- **Project code**, **Project number**, **Project name**: what V5 compares with; **Another project's keywords**, one per line (an earlier project's code or place).
+- **Expected values**: `field = value` lines every sheet's title block must show (the register's columns win over them).
+- **A date in the future after** so many days; **Checks run**: V1 to V5, each on or off.
+- **Title block**: *Found by its labels* (the default: DRAWING NO, TITLE, REVISION, DATE, SCALE, PROJECT and their Romanian forms), or *Described here*: a fixed region in a corner of the page (its size and margins in mm) and the fields, each with its kind, the labels it is printed after, whether it is required, its zone in the region, and the DXF attributes that give it.
+
+**Save the check settings** sends them; a value the server does not accept is said next to its field. Activity shows each run of the checks with what it found.
 
 ## Administration
 

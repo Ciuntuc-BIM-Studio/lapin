@@ -505,13 +505,19 @@ public sealed class HttpRemote : IRemote
     /// refreshed once on a 401 as every call here. The answer is given whatever its status (the caller reads refusals' codes): its
     /// JSON (null when it is not JSON), its ETag, and its bytes when asked for.
     /// </summary>
-    public async Task<ApiAnswer> ApiAsync(HttpMethod method, string path, JsonNode? body = null, string? ifMatch = null, bool bytes = false)
+    public async Task<ApiAnswer> ApiAsync(HttpMethod method, string path, JsonNode? body = null, string? ifMatch = null, bool bytes = false, byte[]? raw = null, string? contentType = null)
     {
         var url = new Uri(_root, path.TrimStart('/'));
         using var res = await Call(() =>
         {
             var req = new HttpRequestMessage(method, url);
-            if (body != null) req.Content = JsonBody(body);
+            if (raw != null)
+            {
+                // A file sent as it is (Atrium W5: a document register, CSV or XLSX), not as JSON.
+                req.Content = new ByteArrayContent(raw);
+                req.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType ?? "application/octet-stream");
+            }
+            else if (body != null) req.Content = JsonBody(body);
             if (ifMatch != null) req.Headers.TryAddWithoutValidation("If-Match", ifMatch);
             return req;
         });

@@ -14,8 +14,10 @@ import { when } from './format';
 import { refLabel } from '../../engine/cdeServer';
 import { issueLabel, submissionWords } from '../../engine/publishing';
 import { OutboxList } from './CdePublish';
+import { CheckSettingsEditor, CountsText } from './CdeChecks';
+import { checksDone } from '../../engine/checks';
 import {
-  activity, adminUsers, changeUser, createProject, createUser, getRules, issueWords, putRules, resetPassword,
+  activity, adminUsers, changeUser, createProject, createUser, features, getRules, issueWords, putRules, resetPassword,
   type ActivityItem, type AdminUser, type Rules,
 } from '../../engine/atrium';
 
@@ -135,7 +137,9 @@ export function CdeAdminDialog() {
 export function RulesEditor({ server, project }: { server: string; project: string }) {
   const [rules, setRules] = useState<Rules | null>(null);
   const [busy, setBusy] = useState(false);
+  const [checks, setChecks] = useState(false);
   useEffect(() => { getRules(server, project).then(setRules).catch(() => setRules(null)); }, [server, project]);
+  useEffect(() => { let live = true; void features(server).then((f) => { if (live) setChecks(f.includes('checks')); }); return () => { live = false; }; }, [server]);
   if (!rules) return null;
   const owner = rules.role === 'owner';
   const set = async (change: Partial<Omit<Rules, 'role'>>) => {
@@ -163,6 +167,7 @@ export function RulesEditor({ server, project }: { server: string; project: stri
       </table>
       {!owner && <p className="muted small">The project's owners change its rules.</p>}
       <p className="muted small">Issue tags are the issues made with Manage → Issue… once they are on the server: revision, status, container and files, never changed. Someone who may not make them submits the issue for approval.</p>
+      {checks && <CheckSettingsEditor server={server} project={project} rules={rules} onSaved={setRules} />}
     </div>
   );
 }
@@ -174,6 +179,10 @@ function ActivityLine({ item, nameOf }: { item: ActivityItem; nameOf: (email: st
       <li className="small" data-cde-activity="submission">
         <span data-no-i18n>{when(item.at)} · {item.by.name} · {issueLabel(item.issue, item.revision)}</span>{' '}
         {submissionWords(item.changes).map((w, i) => <span key={w} className="muted">{i > 0 ? ', ' : ''}<span data-i18n-ctx="cde">{w}</span></span>)}
+        {item.changes.filter((c) => c.type === 'checks_done').slice(-1).map((c, i) => {
+          const done = checksDone(c.new);
+          return done && <span key={i} className="muted" data-cde-activity-checks={done.errors}>: {done.status === 'failed' ? <span>could not run</span> : <CountsText c={done} />}</span>;
+        })}
       </li>
     );
   }

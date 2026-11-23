@@ -1099,6 +1099,58 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .cde-block { color: var(--err); }
 .cde-warn { color: var(--warn, #b7791f); }
 .cde-ok { color: var(--ok); }
+/* CDE web W5: checks on foreign documents (modules/core/CdeChecks.tsx). */
+.cde-checks-line { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.cde-checks-line .spin, .cde-page-loading .spin { animation: cde-spin 1s linear infinite; }
+@keyframes cde-spin { to { transform: rotate(360deg); } }
+.cde-count.sev-error { color: var(--err); }
+.cde-count.sev-warning { color: var(--warn, #b7791f); }
+.cde-checks { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 8px; }
+.cde-checked-file { border: 1px solid var(--rule); border-radius: 3px; padding: 6px 10px; background: var(--panel); }
+.cde-checked-name { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 4px; }
+.cde-findings-list { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.cde-finding { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; padding: 2px 4px; border-radius: 3px; }
+.cde-finding > svg { flex: none; margin-top: 2px; }
+.cde-finding.sev-error > svg { color: var(--err); }
+.cde-finding.sev-warning > svg { color: var(--warn, #b7791f); }
+.cde-finding.sev-info > svg { color: var(--accent); }
+.cde-finding.active { background: var(--accent-wash); }
+.cde-finding-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.cde-finding code { font-size: 11px; }
+.cde-facts { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.cde-fact { overflow-wrap: anywhere; }
+.cde-severity-group .eyebrow, .cde-file-level .eyebrow { display: flex; align-items: center; gap: 4px; margin: 6px 0 2px; }
+.cde-page-view { margin-top: 6px; }
+.cde-page-scroll { max-width: 100%; max-height: 640px; overflow: auto; border: 1px solid var(--rule); background: var(--bg, #fff); }
+.cde-page { position: relative; background: #fff; box-shadow: 0 0 0 1px var(--rule); }
+.cde-page-canvas { position: absolute; inset: 0; }
+.cde-page-loading { position: absolute; left: 8px; top: 8px; margin: 0; display: inline-flex; gap: 4px; align-items: center; }
+.cde-box { position: absolute; box-sizing: border-box; pointer-events: none; }
+.cde-box.titleblock { border: 1px dashed #6b6357; }
+.cde-box.field { border: 1px dotted #9a9184; line-height: 1; color: #1e2a3a; overflow: visible; white-space: nowrap; font-family: Arial, Helvetica, sans-serif; }
+.cde-box.finding { border: 2px solid var(--err); background: rgba(161, 38, 13, 0.08); pointer-events: auto; }
+.cde-box.finding.sev-warning { border-color: #b7791f; background: rgba(183, 121, 31, 0.08); }
+.cde-box.finding.sev-info { border-color: #0067c0; background: rgba(0, 103, 192, 0.06); }
+.cde-box.finding.active { box-shadow: 0 0 0 3px rgba(161, 38, 13, 0.35); }
+.cde-box-tag { position: absolute; left: -2px; top: -16px; font-size: 10px; line-height: 14px; padding: 0 3px; background: var(--err); color: #fff; white-space: nowrap; }
+.cde-box.sev-warning .cde-box-tag { background: #b7791f; }
+.cde-box.sev-info .cde-box-tag { background: #0067c0; }
+.cde-box-tip { display: none; position: absolute; left: 0; top: 100%; z-index: 2; width: max-content; max-width: 320px; padding: 4px 6px; font-size: 11px; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); }
+.cde-box.finding:hover .cde-box-tip, .cde-box.finding.active .cde-box-tip { display: block; }
+.cde-register-table { max-height: 420px; overflow: auto; }
+.cde-register-table td { font-size: 12px; }
+.cde-check-settings textarea, .cde-check-settings td > input:not([type=checkbox]):not([type=number]) { width: 100%; box-sizing: border-box; }
+.cde-check-settings .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+.cde-settings-table td:first-child { white-space: nowrap; vertical-align: top; padding-top: 6px; }
+.cde-settings-table td:last-child { width: 100%; }
+.cde-settings-table input[type=number] { width: 80px; }
+.cde-check-list { display: flex; flex-direction: column; gap: 2px; }
+.cde-title-block { border-left: 2px solid var(--rule); padding-left: 10px; margin: 4px 0 8px; }
+.cde-region { flex-wrap: wrap; max-width: none; }
+.cde-region input[type=number] { width: 70px; flex: none; }
+.cde-fields-table input:not([type=checkbox]) { width: 100%; min-width: 60px; box-sizing: border-box; }
+.cde-bad-row td { background: rgba(161, 38, 13, 0.08); }
+.cde-bad { margin: 2px 0; }
 /* Manage → Openings vs MEP (decision 289): the kinds side by side, the tabs, the results as a table of rows to click. */
 .coordination .coordination-kinds { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .coordination .tabs-row { display: flex; gap: 6px; margin: 10px 0 6px; }

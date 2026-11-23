@@ -24,7 +24,7 @@ export const REFUSALS: Record<string, string> = {
   already_submitted: 'This issue and revision wait for approval already.',
   unknown_commit: 'The server does not have the issue\'s commit: save to the server first.',
   object_missing: 'The server lacks a file of the issue: send it again.',
-  gate_failed: 'Open issues stop the approval: resolve or close them, or an owner approves with a note.',
+  gate_failed: 'Open issues or the errors the checks found stop the approval: resolve them, or an owner approves with a note.',
   reason_required: 'Say why it is rejected.',
   note_required: 'Passing the gate needs a note.',
   not_pending: 'Someone decided on this submission meanwhile.',
@@ -33,6 +33,10 @@ export const REFUSALS: Record<string, string> = {
   no_submission: 'The server has no such submission.',
   no_tag: 'The server has no such issue tag.',
   tag_immutable: 'An issue tag never changes.',
+  // W5: checks on foreign documents, the register.
+  no_register: 'This project has no document register.',
+  bad_register: 'Not a register: a CSV or XLSX file whose first row names the columns, with a code column and at least one row with a code.',
+  too_large: 'The file is too large for the server.',
 };
 export const refusalText = (code: string, message?: string | null) => REFUSALS[code] ?? message ?? code;
 
