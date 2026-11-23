@@ -3,7 +3,8 @@
  * see-through and glass, a light's glow, from look.ts. Metals and glossy faces
  * reflect a soft room (three's RoomEnvironment, made once per renderer), since
  * without something to reflect a metal shows black; the rest keep the scene's
- * own lights. Glass is see-through (its opacity) in the drawing and medium
+ * own lights; in a room, the medium and realistic views give the opaque ones
+ * the room's own reflection instead (its probe, probes3d.ts). Glass is see-through (its opacity) in the drawing and medium
  * views, and lets light through (its transmission and index of refraction)
  * in the realistic one (render3d.ts), switched in place on its materials.
  */
@@ -47,6 +48,8 @@ export function standardMaterial(color: THREE.ColorRepresentation, map: THREE.Te
   if (l.transmission > 0) { m.userData.glass = { transmission: l.transmission }; lightThrough(m as THREE.MeshPhysicalMaterial, glassOn); }
   const env = reflects(l) ? reflections() : null;
   if (env) { m.envMap = env; m.envMapIntensity = 0.8; }
+  // In a room, the medium and realistic views reflect the room itself instead (probes3d.ts); glass keeps its look.
+  if (env && opacity >= 1 && l.transmission <= 0) m.userData.probes = true;
   m.userData.opacity = opacity;
   if (l.emissive) {
     m.emissive = new THREE.Color(l.emissive);

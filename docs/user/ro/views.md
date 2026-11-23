@@ -243,6 +243,20 @@ Vedere → **Calitate afișare** are, pentru Mediu și Realist, **Expunerea** ca
 
 Vederea desenează întâi luminile cele mai apropiate de tine și de ce privești, câteva cu umbre, celelalte fără, și niciuna mai departe de 30 m (Mediu) sau 60 m (Realist); colțul din dreapta jos spune câte (*12 / 48 lumini, 4 cu umbre*). O lumină desenată fără umbre trece prin pereți, iar în vederea live lumina nu se reflectă din pereți: un tavan deasupra spoturilor rămâne întunecat. O [randare](render.md) le ia pe toate, fiecare cu umbra ei, și lumina reflectată de pereți și de tavan.
 
+### Reflexii
+
+În vederile Mediu și Realist o pardoseală lucioasă, un blat lustruit sau un metal reflectă camera în care se află: ferestrele ei acolo unde sunt ferestrele, mobilierul, petele de soare, lămpile noaptea. Lucios înseamnă un material cu **Rugozitate** sub 0,3 sau cu **Metalicitate** peste 0,3 (Gestionare → **Materiale** → Aspect); cu un set de texturi rugozitatea înmulțește harta setului, deci un parchet de stejar lăcuit e setul de stejar cu rugozitatea în jur de 0,15. Sticla își păstrează aspectul. Un proiect cu toate materialele mate arată ca întotdeauna.
+
+Reflexia vine din [camerele](rooms.md) proiectului: fiecare cameră în care e ceva lucios primește o *sondă*, camera văzută de la 1,70 m deasupra pardoselii, iar o cameră mai lungă de 12 m câte una la 8 m. Reflexiile sunt potrivite pe cutia camerei, deci o fereastră se reflectă în pardoseala din fața ei, nu undeva în cer, și trec peste un perete sau un gol de ușă în cele ale camerei vecine pe vreun metru. O față lucioasă din afara oricărei camere (o terasă, un model fără camere) reflectă un studio moale, ca înainte. Sondele se fac din modelul așa cum e, nu se salvează: la câteva cadre după ce deschizi vederea, schimbi modelul, muți soarele sau aprinzi o lumină, reflexiile se desenează din nou, întâi camera cea mai apropiată; până atunci rămân cele vechi.
+
+![Sufrageria cu parchetul de stejar mat](shots/reflections-before.webp)
+
+![Același parchet lăcuit (rugozitate 0,15): reflectă camera, petele de soare strălucesc](shots/reflections-after.webp)
+
+![Aceeași cameră la amurg, sub lămpile ei, cu sonda refăcută pentru noapte](shots/reflections-dusk.webp)
+
+Fiecare sondă e desenată cu luminile, soarele și cerul vederii, și vederea ține până la 10 camere apropiate de tine deodată (6 în Mediu; mai puține și mai mici pe o placă grafică slabă). Sunt aproximări live: o reflexie e exactă doar pe pereții camerei, iar o față lucioasă nu reflectă celelalte fețe lucioase. O [randare](render.md) urmărește exact fiecare reflexie, inclusiv oglinzile și sticla.
+
 ## Modelare în 3D
 
 Vederea 3D e un loc în care modelezi, nu doar privești: elementele se mută și se copiază acolo ca în plan, prinse de colțurile, muchiile și fețele celorlalte elemente.
