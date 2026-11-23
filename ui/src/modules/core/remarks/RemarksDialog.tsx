@@ -6,13 +6,15 @@
  * comment, with or without the view as it is now; a new remark from the 3D
  * view with a snapshot taken from it; Import BCF… and Export BCF… (all, the
  * open ones, the one selected; 2.1 or 3.0) through the file pickers the IFC
- * import and export use.
+ * import and export use. A project whose remote is a CDE server has its
+ * remarks synced with the server's issues (W3): Sync issues, the server's
+ * choices and members, and what the user's role may not do greyed out.
  */
 
 import { confirmAction } from '../../../shell/prompts';
 import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, Download, Eye, MessageSquare, Plus, Trash2, Upload, X } from 'lucide-react';
+import { Camera, Download, Eye, MessageSquare, Plus, RefreshCw, Trash2, Upload, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
 import { useSession } from '../../../engine/session';
 import { useCamera } from '../../../viewport/camera';
@@ -21,14 +23,16 @@ import {
   retakeViewpoint, setAuthor, snapshotOf, updateRemark, viewpointNow, when, type Filter, type NewRemark, type RemarkList,
 } from './remarks';
 import { PendingDialog } from '../PendingDialog';
+import { choicesFor, issueInfo, personName, rightsOf, statusesFor, type IssueInfo } from './issues';
+import { syncIssues } from '../../../engine/remote';
 
 const blank: NewRemark = { title: '', description: '', type: 'Issue', status: 'Open', priority: 'Normal', assignedTo: '', dueDate: '', labels: [] };
 
 /** A select over the engine's choices, keeping a value the list lacks (a file's own status) as a choice of its own. */
-function Choice({ value, choices, onChange, label, any }: { value: string; choices: string[]; onChange: (v: string) => void; label: string; any?: string }) {
+function Choice({ value, choices, onChange, label, any, disabled }: { value: string; choices: string[]; onChange: (v: string) => void; label: string; any?: string; disabled?: boolean }) {
   const all = value && !choices.includes(value) ? [value, ...choices] : choices;
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
+    <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} disabled={disabled}>
       {any != null && <option value={ANY}>{any}</option>}
       {all.map((c) => <option key={c} value={c}>{c}</option>)}
     </select>
@@ -52,11 +56,16 @@ export function RemarksDialog() {
   const [version, setVersion] = useState<'2.1' | '3.0'>('2.1');
   const [me, setMe] = useState(author());
   const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState<IssueInfo | null>(null);
   const close = () => useUi.setState({ dialog: null });
 
   // Only the latest list is kept (one asked before it, answering late, is dropped).
   const asked = useRef(0);
-  const reload = useCallback(async () => { const n = ++asked.current; const r = await listRemarks(); if (r && n === asked.current) setData(r); }, []);
+  const reload = useCallback(async () => {
+    const n = ++asked.current;
+    const [r, i] = await Promise.all([listRemarks(), issueInfo().catch(() => null)]);
+    if (r && n === asked.current) { setData(r); setInfo(i); }
+  }, []);
   useEffect(() => { void reload(); }, [reload, nodes]);
 
   const shown = useMemo(() => (data ? filterRemarks(data.remarks, filter) : []), [data, filter]);
@@ -104,14 +113,32 @@ export function RemarksDialog() {
 
   const nameMe = (v: string) => { setMe(v); setAuthor(v); };
 
+  const sync = () => info?.server && run(() => syncIssues(info.server!));
+
   if (!data) return <PendingDialog title="Remarks" />;
   const inThreeD = view === '3d' && hasCamera;
+  const linked = Boolean(info?.linked);
+  const can = rightsOf(info, remark);
+  const canNew = rightsOf(info, null);
+  const types = choicesFor(info, info?.extensions?.types, data.types);
+  const priorities = choicesFor(info, info?.extensions?.priorities, data.priorities);
+  const people = Object.entries(info?.people ?? {}).sort((a, b) => a[1].localeCompare(b[1]));
+  const who = (x: string | undefined) => personName(info, x);
+  const fieldsOff = busy || !can.edit || can.statusOnly;
+  const assignee = (value: string, onChange: (v: string) => void, disabled: boolean) => linked && people.length > 0
+    ? <select value={value} onChange={(e) => onChange(e.target.value)} aria-label="Assigned to" disabled={disabled}>
+        <option value="">Nobody</option>
+        {value && !people.some(([e]) => e === value.toLowerCase()) && <option value={value} data-no-i18n>{value}</option>}
+        {people.map(([email, name]) => <option key={email} value={email} data-no-i18n>{name}</option>)}
+      </select>
+    : null;
   return (
     <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide remarks" role="dialog" aria-label="Remarks" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Remarks</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="remarks-bar">
-          <button type="button" className="btn" onClick={startNew} disabled={busy} title="A new remark, with the 3D view as it is now when it is in front"><Plus size={13} /> New remark</button>
+          <button type="button" className="btn" onClick={startNew} disabled={busy || !canNew.create} title={canNew.create ? 'A new remark, with the 3D view as it is now when it is in front' : 'Your role in this project (Viewer) does not create issues'}><Plus size={13} /> New remark</button>
+          {linked && <button type="button" className="btn" data-remarks="sync" onClick={() => void sync()} disabled={busy} title="The remarks synced with the server's issues: theirs brought here (one undo step), yours sent"><RefreshCw size={13} /> Sync issues</button>}
           <button type="button" className="btn" onClick={() => void run(() => importBcf())} disabled={busy} title="Read a BCF file (2.1 .bcfzip or 3.0 .bcf): its topics become remarks, known ones updated"><Upload size={13} /> Import BCF…</button>
           <span className="remarks-export">
             <Download size={13} />
@@ -124,13 +151,18 @@ export function RemarksDialog() {
             </select>
           </span>
           <span className="grow" />
-          <label className="row small"><span className="muted">Your name</span><input value={me} onChange={(e) => nameMe(e.target.value)} placeholder="On what you write" aria-label="Your name" style={{ width: 120 }} /></label>
+          {linked
+            ? <span className="muted small" data-remarks="synced">{info?.syncedAt ? <><span>Synced</span> {when(info.syncedAt)}</> : <span>Not synced yet</span>}{(info?.pending ?? 0) > 0 && <> · <span className="badge">{info!.pending} not sent</span></>}</span>
+            : <label className="row small"><span className="muted">Your name</span><input value={me} onChange={(e) => nameMe(e.target.value)} placeholder="On what you write" aria-label="Your name" style={{ width: 120 }} /></label>}
         </div>
         <div className="remarks-filters">
           <input value={filter.text} onChange={(e) => setFilter({ ...filter, text: e.target.value })} placeholder="Search…" aria-label="Search remarks" />
           <Choice value={filter.status} choices={data.statuses} onChange={(v) => setFilter({ ...filter, status: v })} label="Status filter" any="Any status" />
           <Choice value={filter.priority} choices={data.priorities} onChange={(v) => setFilter({ ...filter, priority: v })} label="Priority filter" any="Any priority" />
-          <Choice value={filter.assignee} choices={assigneesOf(data.remarks)} onChange={(v) => setFilter({ ...filter, assignee: v })} label="Assignee filter" any="Anyone" />
+          <select value={filter.assignee} onChange={(e) => setFilter({ ...filter, assignee: e.target.value })} aria-label="Assignee filter">
+            <option value="">Anyone</option>
+            {assigneesOf(data.remarks).map((a) => <option key={a} value={a} data-no-i18n>{who(a)}</option>)}
+          </select>
           <label className="row small"><input type="checkbox" checked={filter.open} onChange={(e) => setFilter({ ...filter, open: e.target.checked })} /> Open only</label>
         </div>
         <div className="dialog-body split remarks-body">
@@ -144,7 +176,7 @@ export function RemarksDialog() {
                   <span className="muted small">
                     <span className={`remark-status${r.open ? '' : ' closed'}`}>{r.status ?? 'Open'}</span>
                     {r.priority && <> · {r.priority}</>}
-                    {r.assignedTo && <> · {r.assignedTo}</>}
+                    {r.assignedTo && <> · <span data-no-i18n>{who(r.assignedTo)}</span></>}
                     {r.comments.length > 0 && <> · <MessageSquare size={10} /> {r.comments.length}</>}
                   </span>
                 </button>
@@ -158,10 +190,10 @@ export function RemarksDialog() {
                 <label className="row"><span className="muted small loc-label">Title</span><input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} aria-label="Title" autoFocus /></label>
                 <label className="row"><span className="muted small loc-label">Description</span><textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} aria-label="Description" rows={3} /></label>
                 <div className="remark-fields">
-                  <label className="row"><span className="muted small loc-label">Type</span><Choice value={draft.type} choices={data.types} onChange={(v) => setDraft({ ...draft, type: v })} label="Type" /></label>
-                  <label className="row"><span className="muted small loc-label">Status</span><Choice value={draft.status} choices={data.statuses} onChange={(v) => setDraft({ ...draft, status: v })} label="Status" /></label>
-                  <label className="row"><span className="muted small loc-label">Priority</span><Choice value={draft.priority} choices={data.priorities} onChange={(v) => setDraft({ ...draft, priority: v })} label="Priority" /></label>
-                  <label className="row"><span className="muted small loc-label">Assigned to</span><input value={draft.assignedTo} onChange={(e) => setDraft({ ...draft, assignedTo: e.target.value })} aria-label="Assigned to" /></label>
+                  <label className="row"><span className="muted small loc-label">Type</span><Choice value={draft.type} choices={types} onChange={(v) => setDraft({ ...draft, type: v })} label="Type" /></label>
+                  <label className="row"><span className="muted small loc-label">Status</span><Choice value={draft.status} choices={statusesFor(info, data.statuses, canNew)} onChange={(v) => setDraft({ ...draft, status: v })} label="Status" /></label>
+                  <label className="row"><span className="muted small loc-label">Priority</span><Choice value={draft.priority} choices={priorities} onChange={(v) => setDraft({ ...draft, priority: v })} label="Priority" /></label>
+                  <label className="row"><span className="muted small loc-label">Assigned to</span>{assignee(draft.assignedTo, (v) => setDraft({ ...draft, assignedTo: v }), false) ?? <input value={draft.assignedTo} onChange={(e) => setDraft({ ...draft, assignedTo: e.target.value })} aria-label="Assigned to" />}</label>
                   <label className="row"><span className="muted small loc-label">Due</span><input type="date" value={draft.dueDate.slice(0, 10)} onChange={(e) => setDraft({ ...draft, dueDate: e.target.value ? `${e.target.value}T00:00:00Z` : '' })} aria-label="Due date" /></label>
                   <label className="row"><span className="muted small loc-label">Labels</span><input value={draft.labels.join(', ')} onChange={(e) => setDraft({ ...draft, labels: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} placeholder="Comma-separated" aria-label="Labels" /></label>
                 </div>
@@ -177,17 +209,19 @@ export function RemarksDialog() {
             {!creating && !remark && <p className="muted">Pick a remark, or make a new one.</p>}
             {!creating && remark && (
               <div className="remark">
-                <input className="remark-heading" value={remark.title} onChange={(e) => setData({ ...data, remarks: data.remarks.map((r) => (r.id === remark.id ? { ...r, title: e.target.value } : r)) })} onBlur={(e) => e.target.value.trim() && e.target.value !== remark.title && void field('title', e.target.value.trim())} aria-label="Title" />
-                <p className="muted small">{remark.creationAuthor} · {when(remark.creationDate)}{remark.modifiedDate && <> · <span>edited</span> {remark.modifiedAuthor} {when(remark.modifiedDate)}</>}</p>
+                <input className="remark-heading" disabled={fieldsOff} value={remark.title} onChange={(e) => setData({ ...data, remarks: data.remarks.map((r) => (r.id === remark.id ? { ...r, title: e.target.value } : r)) })} onBlur={(e) => e.target.value.trim() && e.target.value !== remark.title && void field('title', e.target.value.trim())} aria-label="Title" />
+                <p className="muted small"><span data-no-i18n>{who(remark.creationAuthor)}</span> · {when(remark.creationDate)}{remark.modifiedDate && <> · <span>edited</span> <span data-no-i18n>{who(remark.modifiedAuthor)}</span> {when(remark.modifiedDate)}</>}</p>
+                {linked && !can.edit && <p className="muted small">{can.comment ? 'Your role lets you read this issue and comment on it.' : 'Your role lets you read this issue.'}</p>}
+                {can.statusOnly && <p className="muted small">As its assignee you may change its status.</p>}
                 <div className="remark-fields">
-                  <label className="row"><span className="muted small loc-label">Status</span><Choice value={remark.status ?? 'Open'} choices={data.statuses} onChange={(v) => void field('status', v)} label="Status" /></label>
-                  <label className="row"><span className="muted small loc-label">Priority</span><Choice value={remark.priority ?? ''} choices={data.priorities} onChange={(v) => void field('priority', v)} label="Priority" /></label>
-                  <label className="row"><span className="muted small loc-label">Type</span><Choice value={remark.type ?? ''} choices={data.types} onChange={(v) => void field('type', v)} label="Type" /></label>
-                  <label className="row"><span className="muted small loc-label">Assigned to</span><input defaultValue={remark.assignedTo ?? ''} key={`a${remark.id}${remark.modifiedDate}`} onBlur={(e) => e.target.value !== (remark.assignedTo ?? '') && void field('assignedTo', e.target.value)} aria-label="Assigned to" /></label>
-                  <label className="row"><span className="muted small loc-label">Due</span><input type="date" defaultValue={remark.dueDate?.slice(0, 10) ?? ''} key={`d${remark.id}${remark.modifiedDate}`} onChange={(e) => void field('dueDate', e.target.value ? `${e.target.value}T00:00:00Z` : '')} aria-label="Due date" /></label>
-                  <label className="row"><span className="muted small loc-label">Labels</span><input defaultValue={remark.labels.join(', ')} key={`l${remark.id}${remark.modifiedDate}`} onBlur={(e) => e.target.value !== remark.labels.join(', ') && void labels(e.target.value)} aria-label="Labels" /></label>
+                  <label className="row" title={linked && info?.rules?.resolveNeedsComment ? 'Resolved needs your comment first: say how it was resolved.' : undefined}><span className="muted small loc-label">Status</span><Choice value={remark.status ?? 'Open'} choices={statusesFor(info, data.statuses, can, remark.status)} onChange={(v) => void field('status', v)} label="Status" disabled={busy || !can.edit} /></label>
+                  <label className="row"><span className="muted small loc-label">Priority</span><Choice value={remark.priority ?? ''} choices={priorities} onChange={(v) => void field('priority', v)} label="Priority" disabled={fieldsOff} /></label>
+                  <label className="row"><span className="muted small loc-label">Type</span><Choice value={remark.type ?? ''} choices={types} onChange={(v) => void field('type', v)} label="Type" disabled={fieldsOff} /></label>
+                  <label className="row"><span className="muted small loc-label">Assigned to</span>{assignee(remark.assignedTo ?? '', (v) => void field('assignedTo', v), fieldsOff) ?? <input defaultValue={remark.assignedTo ?? ''} disabled={fieldsOff} key={`a${remark.id}${remark.modifiedDate}`} onBlur={(e) => e.target.value !== (remark.assignedTo ?? '') && void field('assignedTo', e.target.value)} aria-label="Assigned to" />}</label>
+                  <label className="row"><span className="muted small loc-label">Due</span><input type="date" disabled={fieldsOff} defaultValue={remark.dueDate?.slice(0, 10) ?? ''} key={`d${remark.id}${remark.modifiedDate}`} onChange={(e) => void field('dueDate', e.target.value ? `${e.target.value}T00:00:00Z` : '')} aria-label="Due date" /></label>
+                  <label className="row"><span className="muted small loc-label">Labels</span><input disabled={fieldsOff} defaultValue={remark.labels.join(', ')} key={`l${remark.id}${remark.modifiedDate}`} onBlur={(e) => e.target.value !== remark.labels.join(', ') && void labels(e.target.value)} aria-label="Labels" placeholder={linked && info?.extensions?.labels?.length ? info.extensions.labels.join(', ') : undefined} /></label>
                 </div>
-                <textarea className="remark-description" defaultValue={remark.description ?? ''} key={`t${remark.id}${remark.modifiedDate}`} onBlur={(e) => e.target.value !== (remark.description ?? '') && void field('description', e.target.value)} placeholder="Description" aria-label="Description" rows={3} />
+                <textarea className="remark-description" disabled={fieldsOff} defaultValue={remark.description ?? ''} key={`t${remark.id}${remark.modifiedDate}`} onBlur={(e) => e.target.value !== (remark.description ?? '') && void field('description', e.target.value)} placeholder="Description" aria-label="Description" rows={3} />
                 <div className="remark-view">
                   {snapshot && <img className="remark-snapshot" src={`data:image/png;base64,${snapshot}`} alt="Snapshot" />}
                   <div className="row">
@@ -195,7 +229,7 @@ export function RemarksDialog() {
                       ? <button type="button" className="btn" onClick={show} title="The 3D view at this remark's camera, with its elements selected and its section planes"><Eye size={13} /> Show in 3D</button>
                       : <span className="muted small">No viewpoint.</span>}
                     {viewpoint && <span className="muted small">{found(viewpoint).length} of {viewpoint.selection.length} elements found</span>}
-                    <button type="button" className="btn" onClick={() => void run(() => retakeViewpoint(remark.id))} disabled={busy || !inThreeD} title="The 3D view as it is now becomes this remark's viewpoint (the comments that pointed at the old one follow it)"><Camera size={13} /> Retake from the 3D view</button>
+                    <button type="button" className="btn" onClick={() => void run(() => retakeViewpoint(remark.id))} disabled={busy || !inThreeD || fieldsOff} title="The 3D view as it is now becomes this remark's viewpoint (the comments that pointed at the old one follow it)"><Camera size={13} /> Retake from the 3D view</button>
                   </div>
                 </div>
                 <h4>Comments</h4>
@@ -205,7 +239,7 @@ export function RemarksDialog() {
                     const vp = c.viewpoint ? remark.viewpoints.find((v) => v.guid === c.viewpoint) : undefined;
                     return (
                       <li key={c.guid}>
-                        <span className="muted small">{c.author} · {when(c.date)}</span>
+                        <span className="muted small"><span data-no-i18n>{who(c.author)}</span> · {when(c.date)}</span>
                         <span>{c.text}</span>
                         {vp && <button type="button" className="link small" onClick={() => void openViewpoint(vp).catch((e) => notify(e instanceof Error ? e.message : String(e)))} title="The 3D view as this comment saw it"><Eye size={11} /> Show</button>}
                       </li>
@@ -213,16 +247,16 @@ export function RemarksDialog() {
                   })}
                 </ul>
                 <div className="remark-reply">
-                  <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Answer…" aria-label="Comment" rows={2} />
+                  <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Answer…" aria-label="Comment" rows={2} disabled={!can.comment} />
                   <div className="row small">
                     <label className="row small"><input type="checkbox" checked={commentWithView && inThreeD} disabled={!inThreeD} onChange={(e) => setCommentWithView(e.target.checked)} /> With the 3D view</label>
                     <span className="grow" />
-                    <button type="button" className="btn primary" onClick={() => void send()} disabled={busy || !comment.trim()}>Comment</button>
+                    <button type="button" className="btn primary" onClick={() => void send()} disabled={busy || !comment.trim() || !can.comment}>Comment</button>
                   </div>
                 </div>
                 <div className="row">
                   <span className="grow" />
-                  <button type="button" className="btn" onClick={remove} disabled={busy} title="Delete this remark (one undo step)"><Trash2 size={13} /> Delete</button>
+                  <button type="button" className="btn" onClick={remove} disabled={busy || !can.del} title={can.del ? 'Delete this remark (one undo step)' : "Only the project's owners delete issues"}><Trash2 size={13} /> Delete</button>
                 </div>
               </div>
             )}

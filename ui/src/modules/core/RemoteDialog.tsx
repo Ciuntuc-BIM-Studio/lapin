@@ -4,11 +4,12 @@
  * e-mail and password. From here the project is committed (with a message: the commit stays in the project's file), fetched, pulled
  * (fast-forward only for now) and pushed; ahead/behind as the last fetch saw it. A push the remote refused because someone pushed
  * first, or a pull whose histories went different ways, offers to keep my work as a branch on the remote or to discard my commits
- * (they stay in the file). A project can also be cloned from a remote into a new file.
+ * (they stay in the file). A project can also be cloned from a remote into a new file. On a server (W3): Sync issues (the remarks with
+ * the server's issues), the project's activity and rules, and Administration… for the server's administrators.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, FolderOpen, GitCommitHorizontal, KeyRound, LogIn, LogOut, RefreshCw, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, FolderOpen, GitCommitHorizontal, KeyRound, LogIn, LogOut, MessageSquare, RefreshCw, ShieldCheck, Trash2, X } from 'lucide-react';
 import { backdropClose } from '../../shell/Dialog';
 import { confirmAction } from '../../shell/prompts';
 import { notify, useUi } from '../../app/store';
@@ -16,11 +17,13 @@ import { useSession } from '../../engine/session';
 import { enter, isDesktop, pickPath, projectTitle } from '../../engine/files';
 import { pickFolder } from './cde/cde';
 import {
-  authorFor, changePassword, historyLog, historyStatus, remoteCall, serverOf, setAuthorName, authorName, signedIn, signIn, signOut, writingCall,
+  authorFor, changePassword, historyLog, historyStatus, remoteCall, serverOf, setAuthorName, authorName, signedIn, signIn, signOut, syncIssues, writingCall,
   type CommitInfo, type HistoryStatus,
 } from '../../engine/remote';
 import { when } from './format';
 import { useCde } from '../../engine/cdeServer';
+import { account } from '../../engine/atrium';
+import { ActivityList, RulesEditor, openAdmin } from './CdeAdmin';
 
 type Kind = 'folder' | 'server';
 interface Outcome { pushed?: boolean; pulled?: boolean; kind?: string; message?: string; notes?: string[]; branch?: string; uploaded?: number; status?: HistoryStatus }
@@ -115,6 +118,7 @@ export function RemoteDialog() {
           )}
           {status && !remote && <AddRemote busy={busy} onAdded={refresh} setBusy={setBusy} />}
           {remote?.kind === 'server' && <Account server={remote.url} signedIn={account} onChange={refresh} />}
+          {remote?.kind === 'server' && account && <ServerProject server={remote.url} project={remote.project} busy={busy} run={run} />}
           <div className="version-save">
             <input placeholder="Commit message" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="Commit message" onKeyDown={(e) => { if (e.key === 'Enter') void commit(); }} />
             <button type="button" className="btn primary" disabled={busy || !status?.uncommitted} onClick={() => void commit()} title="The project as it is now, committed into its file"><GitCommitHorizontal size={13} /> Commit</button>
@@ -157,6 +161,33 @@ export function RemoteDialog() {
         <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
+  );
+}
+
+/**
+ * The server project's own (W3): Sync issues, its activity and its rules, and Administration… for the server's administrators. The
+ * desktop reaches the server through the engine on the project's sign-in.
+ */
+function ServerProject({ server, project, busy, run }: { server: string; project: string; busy: boolean; run: (what: () => Promise<unknown>) => Promise<void> }) {
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => { account(server).then((a) => setIsAdmin(a.isAdmin)).catch(() => setIsAdmin(false)); }, [server]);
+  return (
+    <section className="remote-server">
+      <div className="version-save">
+        <button type="button" disabled={busy} data-remote="sync-issues" onClick={() => void run(() => syncIssues(server))} title="The remarks synced with the server's issues: theirs brought here (one undo step), yours sent"><MessageSquare size={13} /> Sync issues</button>
+        <button type="button" onClick={() => useUi.setState({ dialog: 'remarks' })} title="Manage → Model remarks…">Model remarks…</button>
+        <span className="grow" />
+        {isAdmin && <button type="button" data-remote="admin" onClick={() => openAdmin(server)} title="The server's accounts and new projects"><ShieldCheck size={13} /> Administration…</button>}
+      </div>
+      <details>
+        <summary>Activity</summary>
+        <ActivityList server={server} project={project} />
+      </details>
+      <details>
+        <summary>Rules</summary>
+        <RulesEditor server={server} project={project} />
+      </details>
+    </section>
   );
 }
 
@@ -343,6 +374,8 @@ export function SaveToServerDialog() {
         return;
       }
       notify('Saved to the server.');
+      // The issues go along (W3): the remarks synced with the server's.
+      if (server) await syncIssues(server, true);
       close();
     } catch (e) { notify(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   };

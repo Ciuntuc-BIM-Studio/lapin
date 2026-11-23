@@ -20,6 +20,16 @@ public sealed class RemoteTokens
     public bool Changed { get; set; }
 }
 
+/// <summary>An answer of the server's other APIs (<see cref="HttpRemote.ApiAsync"/>): its status, its JSON, its ETag, its bytes.</summary>
+public sealed record ApiAnswer(int Status, JsonNode? Json, string? ETag, byte[]? Bytes)
+{
+    public bool Ok => Status is >= 200 and < 300;
+    /// <summary>The refusal's stable code (Atrium's <c>{code, message}</c>), else one made of the status.</summary>
+    public string Code => (Json as JsonObject)?["code"] is JsonValue v && v.TryGetValue<string>(out var c) ? c
+        : Status switch { 401 => "unauthorized", 403 => "forbidden", 404 => "not_found", 409 => "conflict", 412 => "changed", _ => "error" };
+    public string Message => (Json as JsonObject)?["message"] is JsonValue v && v.TryGetValue<string>(out var m) ? m : $"The server answered {Status}.";
+}
+
 /// <summary>A server's capabilities (§10.1): its limits and its features.</summary>
 public sealed record RemoteCapabilities(string Version, long MaxObject, long Chunk, int MaxBatch, long MaxPack, int MaxCommitsPage, IReadOnlyList<string> Features, string Foundation)
 {
@@ -488,6 +498,37 @@ public sealed class HttpRemote : IRemote
         var body = new JsonObject { ["ifc"] = ifc, ["schema"] = schema };
         await Ok(await Call(() => new HttpRequestMessage(HttpMethod.Put, $"{_p}/commits/{commit}/viewer") { Content = JsonBody(body) }));
     }
+
+    /// <summary>
+    /// A request to the server's other APIs on the same sign-in (Atrium's own <c>/atrium/1.0</c>, BCF 3.0 <c>/bcf/3.0</c>; Atrium's
+    /// docs/atrium-server.md): <paramref name="path"/> relative to the server's root, a JSON body, an <c>If-Match</c>; the bearer token
+    /// refreshed once on a 401 as every call here. The answer is given whatever its status (the caller reads refusals' codes): its
+    /// JSON (null when it is not JSON), its ETag, and its bytes when asked for.
+    /// </summary>
+    public async Task<ApiAnswer> ApiAsync(HttpMethod method, string path, JsonNode? body = null, string? ifMatch = null, bool bytes = false)
+    {
+        var url = new Uri(_root, path.TrimStart('/'));
+        using var res = await Call(() =>
+        {
+            var req = new HttpRequestMessage(method, url);
+            if (body != null) req.Content = JsonBody(body);
+            if (ifMatch != null) req.Headers.TryAddWithoutValidation("If-Match", ifMatch);
+            return req;
+        });
+        var etag = res.Headers.TryGetValues("ETag", out var tags) ? tags.FirstOrDefault() : null;
+        if (bytes && res.IsSuccessStatusCode) return new ApiAnswer((int)res.StatusCode, null, etag, await res.Content.ReadAsByteArrayAsync());
+        var text = await res.Content.ReadAsStringAsync();
+        JsonNode? json = null;
+        if (text.Length > 0)
+        {
+            try { json = JsonNode.Parse(text); }
+            catch (JsonException) { json = null; }
+        }
+        return new ApiAnswer((int)res.StatusCode, json, etag, null);
+    }
+
+    /// <summary>The server's root (where <c>/foundation/versions</c> is).</summary>
+    public Uri Root => _root;
 
     /// <summary>
     /// Foundation's current user (OpenCDE 1.1, <c>GET /foundation/1.1/current-user</c>) with the access token: its JSON, or null when

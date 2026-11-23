@@ -3,6 +3,7 @@ using Lapin.Ifc;
 using Lapin.Package;
 using Lapin.Package.Remote;
 using Lapin.Platform;
+using Lapin.Platform.Cde.Remarks;
 
 namespace Lapin.Protocol;
 
@@ -80,7 +81,7 @@ public sealed partial class EngineDispatcher
                 if (h.Unreadable is { } why) throw new CommandException($"The project's history could not be read ({why}): it is kept as it is and cannot take a commit.");
                 var build = ProjectPackage.Build(session);
                 CommitObject commit;
-                try { commit = h.CommitLive(build.Manifest, me, message, session.Model.Entities.Count(), now); }
+                try { commit = h.CommitLive(build.Manifest, me, message, session.Model.Entities.Count(), now, IssuesApart(h)); }
                 catch (InvalidDataException e) { throw new CommandException(e.Message); }
                 var (r, d) = files.WriteHistory(session, h, build, asBytes, new JsonObject { ["commit"] = CommitJson(commit, h) });
                 r["status"] = Status(files.History(session));
@@ -185,6 +186,13 @@ public sealed partial class EngineDispatcher
                 Tokens(o, tokens);
                 return (o, null);
             }
+            case "remote.syncIssues": return await SyncIssues(p, me, tokens, now, asBytes);
+            case "remote.issueInfo":
+            {
+                var h = files.History(session);
+                return (IssueInfo(h, IssueRemote(h, p)), null);
+            }
+            case "remote.atrium": return await Atrium(p, tokens);
             case "remote.push": return await Push(p, me, tokens, now);
             case "remote.pull": return await Pull(p, me, tokens, now, asBytes);
             case "remote.clone": return await Clone(p, me, tokens, now);
@@ -226,7 +234,7 @@ public sealed partial class EngineDispatcher
         var build = ProjectPackage.Build(session);
         var o = new JsonObject
         {
-            ["branch"] = h.Head, ["head"] = h.HeadCommit, ["uncommitted"] = h.HeadCommit == null ? build.Manifest.Parts.Count > 0 : h.Uncommitted(build.Manifest),
+            ["branch"] = h.Head, ["head"] = h.HeadCommit, ["uncommitted"] = h.HeadCommit == null ? build.Manifest.Parts.Count > 0 : h.Uncommitted(build.Manifest, IssuesApart(h)),
             ["saved"] = session.Path != null,
             ["problems"] = new JsonArray([.. h.Problems.Select(x => (JsonNode)x)]),
             ["unreadable"] = h.Unreadable,
@@ -273,7 +281,7 @@ public sealed partial class EngineDispatcher
     /// </summary>
     Func<string, (byte[] Ifc, string Schema)?> Viewer(PackageHistory h) => commit =>
     {
-        if (commit != h.HeadCommit || h.Uncommitted(ProjectPackage.Build(session).Manifest)) return null;
+        if (commit != h.HeadCommit || h.Uncommitted(ProjectPackage.Build(session).Manifest, IssuesApart(h))) return null;
         ReportProgress("Exporting the viewer copy", 0, 0);
         var (bytes, _) = IfcExport.Bytes(session, "viewer.ifc", new IfcExportOptions("IFC4"));
         return (bytes, "IFC4");
@@ -316,7 +324,7 @@ public sealed partial class EngineDispatcher
     {
         var h = files.History(session).Clone();
         var e = TheRemote(h, p);
-        if (h.HeadCommit != null && h.Uncommitted(ProjectPackage.Build(session).Manifest))
+        if (h.HeadCommit != null && h.Uncommitted(ProjectPackage.Build(session).Manifest, IssuesApart(h)))
             throw new CommandException("The project has changes that are not committed: commit first, then pull.");
         using var remote = await OpenRemote(e, me, tokens);
         var fetched = await RemoteOps.FetchAsync(remote, h, e.Name, me, now);
@@ -368,6 +376,8 @@ public sealed partial class EngineDispatcher
         try { content = h.Content(target.Tree); }
         catch (InvalidDataException ex) { throw new CommandException(ex.Message); }
         var (entities, relations) = session.Upgraded(content.Entities, content.Relations);
+        // A server's issues are synced on their own (remote.syncIssues): the remarks here stay as they are, whatever the commit held.
+        if (IssuesApart(h) != null) entities = [.. entities.Where(x => x.Class != Remarks.Class), .. session.Model.OfClass(Remarks.Class)];
         var diff = session.Edit("Pull", edit => { ModelCompare.Apply(edit, entities, relations); session.AdoptClasses(content.Classes); });
         h.Move(h.Head, theirs, me, "pull", now);
         var (r, saved) = files.WriteHistory(session, h, ProjectPackage.Build(session), asBytes, o);
@@ -415,5 +425,123 @@ public sealed partial class EngineDispatcher
         var o = new JsonObject { ["path"] = path, ["status"] = Status(files.History(session)) };
         Tokens(o, tokens);
         return (o, diff);
+    }
+
+    // ------------------------------------------------------------ issues (Atrium docs/plan-cde-web.md W3)
+
+    /// <summary>
+    /// When the project's remote is a server, its remarks are the server's issues, synced on their own (<see cref="IssueSync"/>): their
+    /// parts are left out of "uncommitted" and of a commit's "nothing changed", and a pull keeps the remarks here. A folder remote has no
+    /// issues of its own: remarks travel with the commits there, as everything else.
+    /// </summary>
+    static Func<string, bool>? IssuesApart(PackageHistory h) => h.Remotes.Any(r => r.Kind == "server") ? IsIssuePart : null;
+
+    static bool IsIssuePart(string path) => path.StartsWith("model/", StringComparison.Ordinal) && path.Contains($"/{Remarks.Class}/", StringComparison.Ordinal);
+
+    static RemoteEntry? IssueRemote(PackageHistory h, JsonObject p)
+    {
+        var name = (string?)p["remote"];
+        return h.Remotes.FirstOrDefault(r => r.Kind == "server" && (name == null || r.Name == name));
+    }
+
+    /// <summary>
+    /// What the interface needs to show the issues of a server project without asking the server: whether the project has one, and from
+    /// the last sync the account, its role, the project's rules, its members' names and its BCF choices, the topics the server holds,
+    /// and how many remarks wait to be sent.
+    /// </summary>
+    JsonObject IssueInfo(PackageHistory h, RemoteEntry? e)
+    {
+        var o = new JsonObject { ["linked"] = e != null };
+        if (e == null) return o;
+        o["server"] = e.Url;
+        o["project"] = e.Project;
+        if (h.Issues.GetValueOrDefault(e.Name) is not { } st || (string?)st["project"] != e.Project) return o;
+        foreach (var key in new[] { "account", "name", "role", "isAdmin", "rules", "people", "extensions", "syncedAt", "last" })
+            o[key] = st[key]?.DeepClone();
+        var known = st["topics"] as JsonObject ?? [];
+        o["known"] = new JsonArray([.. known.Select(kv => (JsonNode)kv.Key)]);
+        var local = Remarks.All(session.Model).ToDictionary(t => t.Guid.ToString("D"));
+        var pending = 0;
+        foreach (var (g, t) in local)
+        {
+            if (known[g] is not JsonObject k || k["base"] is not JsonObject b) { pending++; continue; }
+            var fields = IssueSync.FieldsOf(t);
+            var comments = (k["comments"] as JsonArray ?? []).Select(x => (string?)x).ToHashSet();
+            var viewpoints = (k["viewpoints"] as JsonArray ?? []).Select(x => (string?)x).ToHashSet();
+            if (IssueSync.Fields.Any(f => !IssueSync.SameValue(fields[f], b[f]))
+                || t.Comments.Any(c => !comments.Contains(c.Guid.ToString("D"))) || t.Viewpoints.Any(v => !viewpoints.Contains(v.Guid.ToString("D"))))
+                pending++;
+        }
+        pending += known.Count(kv => !local.ContainsKey(kv.Key));
+        o["pending"] = pending;
+        return o;
+    }
+
+    /// <summary>
+    /// The remarks synced with the server project's issues (<see cref="IssueSync"/>): what came from the server applied in one undo step
+    /// ("Sync issues"), the sync's state kept with the history (in remotes.json, never in a commit); in the browser the file is written in
+    /// memory with it, on the desktop the next save writes it.
+    /// </summary>
+    async Task<(object? Result, Diff? Diff)> SyncIssues(JsonObject p, RemoteAuthor me, RemoteTokens tokens, DateTime now, bool asBytes)
+    {
+        var h = files.History(session).Clone();
+        var e = IssueRemote(h, p) ?? throw new CommandException("Issues are synced with a server: connect one in File → Collaborate….");
+        IssueSync.Outcome outcome;
+        using (var remote = (HttpRemote)await OpenRemote(e, me, tokens))
+        {
+            ReportProgress("Syncing issues", 0, 0);
+            outcome = await new IssueSync(remote, e.Project).RunAsync(Remarks.All(session.Model), h.Issues.GetValueOrDefault(e.Name), e.Url, now);
+        }
+        h.Issues[e.Name] = outcome.State;
+        Diff? diff = null;
+        if (outcome.Topics.Count > 0)
+            diff = session.Edit("Sync issues", edit =>
+            {
+                foreach (var (g, t) in outcome.Topics)
+                {
+                    var id = Remarks.IdOf(g);
+                    var existing = edit.Model.Get(id);
+                    if (t == null) { if (existing is { Class: Remarks.Class }) edit.Remove(id); }
+                    else if (existing is { Class: Remarks.Class }) edit.Replace(Remarks.ToEntity(t));
+                    else if (existing == null) edit.Add(Remarks.ToEntity(t));
+                }
+            });
+        var o = new JsonObject { ["report"] = outcome.Report };
+        Tokens(o, tokens);
+        if (asBytes)
+        {
+            var (r, saved) = files.WriteHistory(session, h, ProjectPackage.Build(session), true, o);
+            r["info"] = IssueInfo(files.History(session), e);
+            r["status"] = Status(files.History(session));
+            return (r, diff == null ? saved : saved == null ? diff : Merge(diff, saved));
+        }
+        files.KeepHistory(session, h);
+        o["info"] = IssueInfo(h, e);
+        o["status"] = Status(h);
+        return (o, diff);
+    }
+
+    static readonly string[] AtriumMethods = ["GET", "POST", "PUT", "PATCH", "DELETE"];
+
+    /// <summary>
+    /// One request to the server's own API (Atrium's <c>/atrium/1.0</c>: the account, its administration, members, rules, activity;
+    /// BCF 3.0; and the making of a project, <c>POST /lapin-remote/1.0/projects</c>) on the sign-in the call carries, for the desktop's
+    /// interface, which cannot reach the server itself. Its status, JSON and ETag are the answer, whatever the status.
+    /// </summary>
+    async Task<(object? Result, Diff? Diff)> Atrium(JsonObject p, RemoteTokens tokens)
+    {
+        var url = (string?)p["url"] ?? IssueRemote(files.History(session), p)?.Url ?? throw new CommandException("Which server?");
+        var method = ((string?)p["method"] ?? "GET").ToUpperInvariant();
+        var path = ((string?)p["path"] ?? "").TrimStart('/');
+        var bare = path.Split('?')[0];
+        var allowed = bare.StartsWith("atrium/1.0/", StringComparison.Ordinal) || bare.StartsWith("bcf/3.0/", StringComparison.Ordinal)
+            || (bare == "lapin-remote/1.0/projects" && method == "POST");
+        if (!allowed || !AtriumMethods.Contains(method) || path.Contains("..", StringComparison.Ordinal) || path.Contains('\\') || path.Contains("//", StringComparison.Ordinal) || path.Contains('#'))
+            throw new CommandException("Not a request of the server's own API.");
+        var remote = await HttpRemote.OpenAsync(Http, url, "-", tokens);
+        var a = await remote.ApiAsync(new HttpMethod(method), path, p["body"]?.DeepClone(), (string?)p["ifMatch"]);
+        var o = new JsonObject { ["status"] = a.Status, ["body"] = a.Json?.DeepClone(), ["etag"] = a.ETag };
+        Tokens(o, tokens);
+        return (o, null);
     }
 }

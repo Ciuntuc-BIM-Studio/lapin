@@ -12,7 +12,8 @@ import { isDesktop, keepProjectFile, reportWarnings, saveProject } from './files
 import { LONG_TIMEOUT_MS } from './client';
 import { useSession } from './session';
 import { notify, useUi } from '../app/store';
-import { cdeTokens, isCdeServer, keepCdeTokens, signIn as cdeSignIn, signOut as cdeSignOut, useCde } from './cdeServer';
+import { refusalText } from './refusals';
+import { heldCdeTokens, isCdeServer, keepCdeTokens, signIn as cdeSignIn, signOut as cdeSignOut, useCde, withTokens } from './cdeServer';
 
 export interface RemoteInfo { name: string; kind: 'folder' | 'server'; url: string; project: string; ahead: number; behind: number; fetchedAt: string | null; remoteHead: string | null }
 export interface CommitInfo { id: string; message: string; at: string; author: { id: string; name: string }; entities: number | null; parents: string[]; tags: string[]; pushed?: boolean }
@@ -131,26 +132,42 @@ export async function changePassword(server: string, currentPassword: string, ne
   return remoteCall<{ changed: boolean; code?: string; message?: string }>('remote.changePassword', { url: server, currentPassword, newPassword }, server);
 }
 
-/** One call of the history or the remote: the author and, for a server, its tokens added; tokens a refresh replaced kept at once. */
+/** The calls on one server's tokens, one after another (a desktop's sign-in to a server that is not the page's). */
+const serverQueues = new Map<string, Promise<unknown>>();
+function inTurn<T>(server: string, f: () => Promise<T>): Promise<T> {
+  const run = (serverQueues.get(server) ?? Promise.resolve()).then(f, f);
+  serverQueues.set(server, run.catch(() => undefined));
+  return run;
+}
+
+/**
+ * One call of the history or the remote: the author and, for a server, its tokens added; tokens a refresh replaced kept at once. The
+ * calls on a server's sign-in go one at a time, and in front of a CDE server in turn with the start screen's refreshes (W3): the
+ * refresh token is single use, so two refreshes with the same one would sign the user out.
+ */
 export async function remoteCall<T>(method: string, args: Record<string, unknown> = {}, server: string | null = null): Promise<T> {
-  const extra: Record<string, unknown> = { author: authorFor(server) };
   const cde = isCdeServer(server);
-  if (server) {
-    const t = cde ? await cdeTokens() : await tokensOf(server);
-    if (t.access) extra.token = t.access;
-    if (t.refresh) extra.refreshToken = t.refresh;
-  }
-  const r = await engine.call<T & { tokens?: { accessToken: string | null; refreshToken: string | null } }>(method, { ...args, ...extra }, { timeoutMs: LONG_TIMEOUT_MS });
-  if (server && r && typeof r === 'object' && r.tokens) {
-    if (cde) keepCdeTokens(r.tokens.accessToken, r.tokens.refreshToken);
-    else {
-      tokens.set(server, { access: r.tokens.accessToken, refresh: r.tokens.refreshToken });
-      await keepRefresh(server, r.tokens.refreshToken);
+  const call = async (): Promise<T> => {
+    const extra: Record<string, unknown> = { author: authorFor(server) };
+    if (server) {
+      const t = cde ? await heldCdeTokens() : await tokensOf(server);
+      if (t.access) extra.token = t.access;
+      if (t.refresh) extra.refreshToken = t.refresh;
     }
-  }
-  noteStatus(r);
-  reportWarnings(r);
-  return r;
+    const r = await engine.call<T & { tokens?: { accessToken: string | null; refreshToken: string | null } }>(method, { ...args, ...extra }, { timeoutMs: LONG_TIMEOUT_MS });
+    if (server && r && typeof r === 'object' && r.tokens) {
+      if (cde) keepCdeTokens(r.tokens.accessToken, r.tokens.refreshToken);
+      else {
+        tokens.set(server, { access: r.tokens.accessToken, refresh: r.tokens.refreshToken });
+        await keepRefresh(server, r.tokens.refreshToken);
+      }
+    }
+    noteStatus(r);
+    reportWarnings(r);
+    return r;
+  };
+  if (!server) return call();
+  return cde ? withTokens(call) : inTurn(server, call);
 }
 
 /**
@@ -212,7 +229,51 @@ export async function getLatest(): Promise<void> {
     const o = await writingCall<{ pulled?: boolean; kind?: string; message?: string; notes?: string[] }>('remote.pull', {}, server);
     if (!o) return;
     for (const n of o.notes ?? []) notify(n);
+    // The server's issues come with the latest (W3), whatever the commits did.
+    if (server) await syncIssues(server, true);
     if (o.pulled === false) return open(o.message ?? 'Someone saved before you: choose what to keep.');
     notify('Up to date with the server.');
   } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
+}
+
+// ------------------------------------------------------------ issues (W3)
+
+/** What a sync of the issues did (engine IssueSync): changes here, what went to the server, conflicts merged, refusals, others' work. */
+export interface IssueSyncReport {
+  changedHere: number; added: number; removed: number; created: number; updated: number; comments: number; viewpoints: number; deleted: number; conflicts: number;
+  refused: { guid: string; title: string | null; code: string; message: string }[];
+  byOthers: { who: string; title: string | null; what: string[] }[];
+  first: boolean;
+}
+
+export { REFUSALS, refusalText } from './refusals';
+
+/**
+ * The project's remarks synced with the server's issues (remote.syncIssues): what came from the server in one undo step, what changed
+ * here sent. `quiet` says only what matters (a sync along Save to server or Get latest). Null when there is no server or no sign-in.
+ */
+export async function syncIssues(server: string, quiet = false): Promise<IssueSyncReport | null> {
+  if (!await signedIn(server)) { if (!quiet) notify('Sign in to the server first.'); return null; }
+  try {
+    const r = engineInBrowser
+      ? await writingCall<{ report: IssueSyncReport }>('remote.syncIssues', {}, server)
+      : await remoteCall<{ report: IssueSyncReport }>('remote.syncIssues', {}, server);
+    if (!r) return null;
+    tellIssueSync(r.report, quiet);
+    return r.report;
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+    return null;
+  }
+}
+
+/** What a sync did, said: the counts, each refusal once, and who else changed what. */
+export function tellIssueSync(r: IssueSyncReport, quiet: boolean): void {
+  const sent = r.created + r.updated + r.comments + r.viewpoints + r.deleted;
+  if (r.changedHere > 0 || sent > 0 || !quiet) notify(r.changedHere === 0 && sent === 0 ? 'Issues up to date with the server.' : `Issues synced: ${r.changedHere} changed here, ${sent} sent.`);
+  if (r.conflicts > 0) notify(`${r.conflicts} edits met someone else's: merged, the last writer's value kept.`);
+  const codes = [...new Set(r.refused.map((x) => x.code))];
+  for (const code of codes) notify(refusalText(code, r.refused.find((x) => x.code === code)?.message));
+  const who = [...new Set(r.byOthers.map((x) => x.who))];
+  if (who.length > 0) notify(`Changed by others: ${who.join(', ')}`);
 }

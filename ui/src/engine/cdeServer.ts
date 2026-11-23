@@ -75,15 +75,30 @@ export function isCdeServer(url: string | null | undefined): boolean {
 }
 
 /**
- * The sign-in's tokens for a call of the engine's remote (W2): an access token got first when only the refresh token is kept, so the
- * engine starts with a live one (it refreshes by itself on a 401 and hands the new pair back).
+ * One user of the sign-in's tokens at a time (W3): a refresh here, and a call of the engine's remote (which refreshes by itself on a
+ * 401 and hands the new pair back), never overlap, so a refresh token, which is single use, is never spent twice. Calls of the
+ * server that hold a live access token do not wait; only refreshes and the engine's calls queue here.
  */
-export async function cdeTokens(): Promise<{ access: string | null; refresh: string | null }> {
-  if (!access) await refresh();
+let tokenLock: Promise<unknown> = Promise.resolve();
+export function withTokens<T>(f: () => Promise<T>): Promise<T> {
+  const run = tokenLock.then(f, f);
+  tokenLock = run.catch(() => undefined);
+  return run;
+}
+
+/**
+ * The sign-in's tokens for a call of the engine's remote (W2), inside withTokens: an access token got first when only the refresh
+ * token is kept, so the engine starts with a live one.
+ */
+export async function heldCdeTokens(): Promise<{ access: string | null; refresh: string | null }> {
+  if (!access) await refreshNow(null);
   let kept: string | null = null;
   try { kept = tabStorage()?.getItem(REFRESH_KEY) ?? null; } catch { kept = null; }
   return { access, refresh: kept };
 }
+
+/** The tokens for one engine call, in turn with the refreshes (withTokens). */
+export const cdeTokens = () => withTokens(heldCdeTokens);
 
 /** Tokens the engine's refresh replaced (the refresh token is single use): kept at once, as a refresh here keeps them. None: signed out. */
 export function keepCdeTokens(accessToken: string | null, refreshToken: string | null): void {
@@ -114,19 +129,26 @@ async function tokenRequest(form: Record<string, string>): Promise<{ access_toke
   return r.json();
 }
 
-/** A refresh with the kept refresh token, one at a time (the token is single use): false when there is none or it is dead. */
-function refresh(): Promise<boolean> {
-  refreshing ??= (async () => {
-    const token = tabStorage()?.getItem(REFRESH_KEY);
-    if (!token) return false;
-    try {
-      keep(await tokenRequest({ grant_type: 'refresh_token', refresh_token: token, client_id: CLIENT_ID }));
-      return true;
-    } catch {
-      forget();
-      return false;
-    }
-  })().finally(() => { refreshing = null; });
+/**
+ * A refresh with the kept refresh token (single use): false when there is none or it is dead. `used` is the access token the caller
+ * had: when another refresh (here, or the engine's, handed back) replaced it meanwhile, the new one is used and none is spent.
+ */
+async function refreshNow(used: string | null): Promise<boolean> {
+  if (access && access !== used) return true;
+  const token = tabStorage()?.getItem(REFRESH_KEY);
+  if (!token) return false;
+  try {
+    keep(await tokenRequest({ grant_type: 'refresh_token', refresh_token: token, client_id: CLIENT_ID }));
+    return true;
+  } catch {
+    forget();
+    return false;
+  }
+}
+
+/** A refresh in turn with the engine's calls (withTokens), one at a time. */
+function refresh(used: string | null = null): Promise<boolean> {
+  refreshing ??= withTokens(() => refreshNow(used)).finally(() => { refreshing = null; });
   return refreshing;
 }
 
@@ -135,13 +157,13 @@ function refresh(): Promise<boolean> {
  * that stays signs the user out of the interface.
  */
 export async function api(path: string, init: RequestInit = {}): Promise<Response> {
-  if (!access) await refresh();
+  if (!access) await refresh(null);
   const send = () => fetch(path, { ...init, credentials: 'omit', headers: { ...(init.headers as Record<string, string> | undefined), ...(access ? { authorization: `Bearer ${access}` } : {}) } });
   const used = access;
   let r = await send();
   if (r.status === 401) {
     // Another request may have refreshed meanwhile: use its token, else refresh now.
-    if ((access && access !== used) || await refresh()) r = await send();
+    if (await refresh(used)) r = await send();
     if (r.status === 401) { forget(); useCde.setState({ user: null }); }
   }
   return r;
@@ -353,6 +375,6 @@ export function chipsByCommit(tags: TagObject[]): Map<string, string[]> {
 
 /** The test hook: the module's memory as it is at a page load. */
 export function resetCdeForTests(): void {
-  access = null; refreshing = null; detecting = null;
+  access = null; refreshing = null; detecting = null; tokenLock = Promise.resolve();
   useCde.setState({ server: '', user: null, offline: false, opened: null, cloned: null, unpushed: null, linked: false });
 }

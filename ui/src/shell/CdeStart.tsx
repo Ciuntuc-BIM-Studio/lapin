@@ -4,11 +4,12 @@
  * (author, date, message, its versions and issues), the branches in progress, activity and members. A project is cloned to work on
  * (W2: the browser's engine holds it with its history; File → Save to server sends the work, Get latest brings the others'), a
  * commit opens read-only (its package: nothing goes back to the server) or downloads as a .lapin or as its IFC copy. "Work offline"
- * goes to the ordinary start screen; File → Server projects… comes back.
+ * goes to the ordinary start screen; File → Server projects… comes back. W3: a project's activity (saves and issue changes), its
+ * rules (owners change them), and for the server's administrators its accounts and new projects (modules/core/CdeAdmin.tsx).
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowUp, CloudDownload, Download, FolderOpen, KeyRound, LogIn, LogOut, RefreshCw, Trash2, UserPlus, WifiOff } from 'lucide-react';
+import { ArrowLeft, ArrowUp, CloudDownload, Download, FolderOpen, KeyRound, LogIn, LogOut, RefreshCw, ShieldCheck, Trash2, UserPlus, WifiOff } from 'lucide-react';
 import { BrandName } from './BrandMark';
 import { confirmAction } from './prompts';
 import { confirmDiscard, download, enter, openProjectBytes, safeFileName } from '../engine/files';
@@ -16,10 +17,13 @@ import { remoteCall } from '../engine/remote';
 import { useSession } from '../engine/session';
 import { notify, useUi } from '../app/store';
 import { when } from '../modules/core/format';
+import { ActivityList, AdminPanel, RulesEditor } from '../modules/core/CdeAdmin';
+import { account } from '../engine/atrium';
+import { REFUSALS } from '../engine/remote';
 import {
-  CdeError, activity, changePassword, chipsByCommit, commitPackage, getObjectJson, listCommits, listMembers, listProjects, listRefs, objectBytes,
+  CdeError, changePassword, chipsByCommit, commitPackage, getObjectJson, listCommits, listMembers, listProjects, listRefs, objectBytes,
   readRefs, refLabel, removeMember, setMember, signIn, signOut, useCde, viewerOf,
-  type Commit, type LogEntry, type Member, type RefsRead, type Role, type ServerProject, type TagObject,
+  type Commit, type Member, type RefsRead, type Role, type ServerProject, type TagObject,
 } from '../engine/cdeServer';
 
 const ROLES: { id: Role; label: string }[] = [{ id: 'viewer', label: 'Viewer' }, { id: 'editor', label: 'Editor' }, { id: 'owner', label: 'Owner' }];
@@ -27,6 +31,7 @@ const roleLabel = (r: string) => ROLES.find((x) => x.id === r)?.label ?? r;
 const short = (id: string) => id.slice(0, 8);
 /** The server's refusals the interface says in the reader's language; any other as the server words it. */
 const SAID: Record<string, string> = {
+  ...REFUSALS,
   invalid_grant: 'The e-mail address or the password is wrong.',
   no_account: "Nobody has an account with that e-mail address. The server's administrator adds accounts.",
   last_owner: 'The project needs at least one owner: make someone else owner first.',
@@ -79,7 +84,15 @@ export function CdeStart() {
   const doc = useSession((s) => s.doc);
   const [project, setProject] = useState<ServerProject | null>(null);
   const [changing, setChanging] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [admin, setAdmin] = useState(false);
+  const [projectsShown, setProjectsShown] = useState(0);
   const host = window.location.host;
+  const server = useCde((s) => s.server) || window.location.origin;
+  useEffect(() => {
+    setIsAdmin(false); setAdmin(false);
+    if (user) account(server).then((a) => setIsAdmin(a.isAdmin)).catch(() => setIsAdmin(false));
+  }, [user, server]);
   return (
     <div className="start cde-start">
       <section className="start-left">
@@ -93,6 +106,7 @@ export function CdeStart() {
           <div className="cde-actions">
             <button type="button" className="btn" onClick={() => setChanging(!changing)}><KeyRound size={14} />Change password…</button>
             <button type="button" className="btn" onClick={() => { signOut(); setProject(null); }}><LogOut size={14} />Sign out</button>
+            {isAdmin && <button type="button" className={`btn${admin ? ' primary' : ''}`} data-cde="admin" onClick={() => { setAdmin(!admin); setProject(null); }}><ShieldCheck size={14} />Administration</button>}
           </div>
           {changing && <ChangePassword onDone={() => setChanging(false)} />}
         </>}
@@ -106,7 +120,8 @@ export function CdeStart() {
       </section>
       <section className="start-right">
         {!user && <p className="muted small">Sign in with the account the server's administrator made for you.</p>}
-        {user && !project && <Projects onOpen={setProject} />}
+        {user && admin && <AdminPanel server={server} onProject={() => setProjectsShown((n) => n + 1)} />}
+        {user && !project && !admin && <Projects key={projectsShown} onOpen={setProject} />}
         {user && project && <ProjectPage key={project.id} project={project} back={() => setProject(null)} connected={connected} />}
       </section>
     </div>
@@ -196,7 +211,7 @@ function Projects({ onOpen }: { onOpen: (p: ServerProject) => void }) {
   );
 }
 
-interface ProjectData { refs: RefsRead; commits: Commit[]; chips: Map<string, string[]>; log: LogEntry[] }
+interface ProjectData { refs: RefsRead; commits: Commit[]; chips: Map<string, string[]> }
 
 function ProjectPage({ project, back, connected }: { project: ServerProject; back: () => void; connected: boolean }) {
   const [data, setData] = useState<ProjectData | null>(null);
@@ -206,13 +221,12 @@ function ProjectPage({ project, back, connected }: { project: ServerProject; bac
   const load = useCallback(async () => {
     try {
       const refs = readRefs(await listRefs(project.id));
-      const [commits, tags, log] = await Promise.all([
+      const [commits, tags] = await Promise.all([
         refs.main ? listCommits(project.id, refs.main.target, 200) : Promise.resolve([]),
         Promise.all([...refs.versions, ...refs.issues].map((r) => getObjectJson<TagObject>(project.id, r.target).catch(() => null))),
-        activity(project.id, 30).catch(() => []),
       ]);
-      if (!gone.current) setData({ refs, commits, chips: chipsByCommit(tags.filter((t): t is TagObject => !!t)), log });
-    } catch (e) { notify(message(e)); if (!gone.current) setData({ refs: readRefs([]), commits: [], chips: new Map(), log: [] }); }
+      if (!gone.current) setData({ refs, commits, chips: chipsByCommit(tags.filter((t): t is TagObject => !!t)) });
+    } catch (e) { notify(message(e)); if (!gone.current) setData({ refs: readRefs([]), commits: [], chips: new Map() }); }
   }, [project.id]);
   useEffect(() => { void load(); }, [load]);
   const run = async (what: () => Promise<void>) => {
@@ -282,18 +296,9 @@ function ProjectPage({ project, back, connected }: { project: ServerProject; bac
             ))}
           </ul>
         </>}
-        {data.log.length > 0 && <>
-          <p className="eyebrow">Activity</p>
-          <ul className="cde-list cde-activity">
-            {data.log.map((e, i) => (
-              <li key={i} className="small">
-                <span data-no-i18n>{when(e.at)} · {e.by.name} · {refLabel(e.name)}</span>{' '}
-                <span className="muted" data-i18n-ctx="cde">{e.old === null ? 'created' : e.new === null ? 'deleted' : e.force ? 'moved by force' : 'moved'}</span>
-              </li>
-            ))}
-          </ul>
-        </>}
+        <ActivityList server={window.location.origin} project={project.id} />
         <Members project={project} />
+        <RulesEditor server={window.location.origin} project={project.id} />
       </>}
     </div>
   );

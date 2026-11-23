@@ -175,3 +175,47 @@ describe('a project read', () => {
     expect(await cde.listCommits('p', 'h', 50)).toEqual([{ id: 'h', message: 'Walls', at: '2026-11-23T10:00:00Z', author: { id: 'atrium:1', name: 'Ana' }, parents: ['g'], entities: 12 }]);
   });
 });
+
+describe('the one sign-in shared with the engine (W3)', () => {
+  it("never spends a refresh token twice: a refresh waits for the engine's call and takes the pair it handed back", async () => {
+    cde.keepCdeTokens('A1', 'R1');
+    const spent: string[] = [];
+    let token = 'A1';
+    fetch.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url === '/foundation/oauth2/token') {
+        spent.push(form(init).refresh_token);
+        return answer(400, { error: 'invalid_grant', error_description: 'used' });
+      }
+      return auth(init) === `Bearer ${token}` ? answer(200, { refs: [] }) : answer(401, { code: 'unauthorized', message: 'Sign in.' });
+    });
+    // The engine's call holds the tokens; on its way it refreshed with R1 (the server now knows A5 and R5 only).
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const engineCall = cde.withTokens(async () => { token = 'A5'; await gate; cde.keepCdeTokens('A5', 'R5'); });
+    const read = cde.listRefs('p');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(spent).toEqual([]);
+    release();
+    await engineCall;
+    expect(await read).toEqual([]);
+    expect(spent).toEqual([]);
+    expect(tab.get('lapin.cde.refresh')).toBe('R5');
+  });
+
+  it("gives the engine its tokens in turn with a refresh under way", async () => {
+    tab.set('lapin.cde.refresh', 'R1');
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    fetch.mockImplementation(async (url: string) => {
+      expect(url).toBe('/foundation/oauth2/token');
+      await gate;
+      return answer(200, { access_token: 'A2', refresh_token: 'R2' });
+    });
+    const first = cde.listRefs('p').catch(() => null);
+    const tokens = cde.cdeTokens();
+    release();
+    expect(await tokens).toEqual({ access: 'A2', refresh: 'R2' });
+    await first;
+    expect(fetch.mock.calls.filter((c) => c[0] === '/foundation/oauth2/token').length).toBe(1);
+  });
+});

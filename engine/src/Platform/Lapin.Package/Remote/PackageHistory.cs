@@ -44,6 +44,13 @@ public sealed class PackageHistory
     public List<RefMove> Log { get; private init; } = [];
     public List<RemoteEntry> Remotes { get; private init; } = [];
 
+    /// <summary>
+    /// The issue sync's state per remote (Atrium docs/plan-cde-web.md W3): the server project and account it was made with, the BCF
+    /// journal's last seq, and each topic's ETag and the server values last seen. Kept in <c>remotes.json</c> (member <c>issues</c>),
+    /// never in a commit: it is this copy's, as the remotes' last-seen refs are.
+    /// </summary>
+    public Dictionary<string, JsonObject> Issues { get; private init; } = new(StringComparer.Ordinal);
+
     /// <summary>Commits and tags, by id: their canonical bytes.</summary>
     readonly Dictionary<string, byte[]> _commits = new(StringComparer.Ordinal);
     /// <summary>Trees, by id.</summary>
@@ -74,7 +81,7 @@ public sealed class PackageHistory
         var c = new PackageHistory
         {
             Head = Head, Refs = new(Refs, StringComparer.Ordinal), Seen = Seen.ToDictionary(kv => kv.Key, kv => kv.Value.Clone(), StringComparer.Ordinal),
-            Log = [.. Log], Remotes = [.. Remotes], _refsExtra = (JsonObject)_refsExtra.DeepClone(), _remotesExtra = (JsonObject)_remotesExtra.DeepClone(),
+            Log = [.. Log], Remotes = [.. Remotes], Issues = Issues.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal), _refsExtra = (JsonObject)_refsExtra.DeepClone(), _remotesExtra = (JsonObject)_remotesExtra.DeepClone(),
             _source = _source, Unreadable = Unreadable,
         };
         foreach (var (k, v) in _commits) c._commits[k] = v;
@@ -154,6 +161,11 @@ public sealed class PackageHistory
                     foreach (var r in list.OfType<JsonObject>())
                         if ((string?)r["name"] is { } n && (string?)r["kind"] is { } kind && (string?)r["url"] is { } url && (string?)r["project"] is { } project)
                             Remotes.Add(new RemoteEntry(n, kind, url, project));
+                }
+                else if (k == "issues" && val is JsonObject issues)
+                {
+                    foreach (var (rn, state) in issues)
+                        if (state is JsonObject so) Issues[rn] = (JsonObject)so.DeepClone();
                 }
                 else if (k is not ("format" or "v")) _remotesExtra[k] = val?.DeepClone();
         }
@@ -339,22 +351,32 @@ public sealed class PackageHistory
     }
 
     /// <summary>Whether two trees name the same parts (path and hash), whatever build wrote them: the project's state is the same.</summary>
-    public static bool SameParts(PackageManifest a, PackageManifest b) =>
-        a.Parts.Count == b.Parts.Count && a.Parts.Zip(b.Parts).All(x => x.First.Path == x.Second.Path && x.First.Sha256 == x.Second.Sha256);
+    public static bool SameParts(PackageManifest a, PackageManifest b, Func<string, bool>? ignore = null)
+    {
+        if (ignore == null)
+            return a.Parts.Count == b.Parts.Count && a.Parts.Zip(b.Parts).All(x => x.First.Path == x.Second.Path && x.First.Sha256 == x.Second.Sha256);
+        var x = a.Parts.Where(p => !ignore(p.Path)).ToList();
+        var y = b.Parts.Where(p => !ignore(p.Path)).ToList();
+        return x.Count == y.Count && x.Zip(y).All(q => q.First.Path == q.Second.Path && q.First.Sha256 == q.Second.Sha256);
+    }
 
-    /// <summary>Whether the live project differs from the head commit's tree (§8.4: "uncommitted changes"); a project without commits has changes when it holds anything.</summary>
-    public bool Uncommitted(PackageManifest live) => HeadCommit is not { } head || !_commits.ContainsKey(head) || !_trees.ContainsKey(Commit(head).Tree) || !SameParts(Tree(Commit(head).Tree), live);
+    /// <summary>
+    /// Whether the live project differs from the head commit's tree (§8.4: "uncommitted changes"); a project without commits has changes
+    /// when it holds anything. <paramref name="ignore"/> leaves parts out of the comparison (a server's issues, synced on their own).
+    /// </summary>
+    public bool Uncommitted(PackageManifest live, Func<string, bool>? ignore = null) =>
+        HeadCommit is not { } head || !_commits.ContainsKey(head) || !_trees.ContainsKey(Commit(head).Tree) || !SameParts(Tree(Commit(head).Tree), live, ignore);
 
     /// <summary>
     /// A commit of the project as <paramref name="manifest"/> describes it, on the current branch: the tree and the commit added,
     /// the branch moved (logged <c>commit</c>). Its blobs are the live parts the save that follows writes. Refused when nothing changed.
     /// </summary>
-    public CommitObject CommitLive(PackageManifest manifest, RemoteAuthor author, string message, int entities, DateTime now)
+    public CommitObject CommitLive(PackageManifest manifest, RemoteAuthor author, string message, int entities, DateTime now, Func<string, bool>? ignore = null)
     {
         var tree = RemoteObjects.Tree(manifest);
         var treeId = ObjectIds.Of(tree);
         var parent = HeadCommit;
-        if (parent != null && _commits.ContainsKey(parent) && _trees.TryGetValue(Commit(parent).Tree, out var pt) && SameParts(RemoteObjects.ReadTree(pt), manifest))
+        if (parent != null && _commits.ContainsKey(parent) && _trees.TryGetValue(Commit(parent).Tree, out var pt) && SameParts(RemoteObjects.ReadTree(pt), manifest, ignore))
             throw new InvalidDataException("Nothing changed since the last commit.");
         var bytes = RemoteObjects.Commit(treeId, parent is null ? [] : [parent], author, now, message.Trim(), manifest.App, manifest.Product, entities);
         var id = ObjectIds.Of(bytes);
@@ -560,6 +582,8 @@ public sealed class PackageHistory
             ["format"] = "lapin-history-remotes", ["v"] = 1,
             ["remotes"] = new JsonArray(Remotes.Select(r => (JsonNode)new JsonObject { ["name"] = r.Name, ["kind"] = r.Kind, ["url"] = r.Url, ["project"] = r.Project }).ToArray()),
         };
+        if (Issues.Count > 0)
+            o["issues"] = new JsonObject(Issues.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone())));
         foreach (var (k, v) in _remotesExtra) o[k] = v?.DeepClone();
         return o;
     }
