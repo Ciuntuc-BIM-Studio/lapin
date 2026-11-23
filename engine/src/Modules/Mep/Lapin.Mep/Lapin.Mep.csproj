@@ -21,5 +21,7 @@
   <ItemGroup>
     <!-- The built-in MEP symbol sets, data (MepSymbols): a role's symbol by name, size and drawing. -->
     <EmbeddedResource Include="SymbolSets/*.json" LogicalName="Lapin.Mep.SymbolSets.%(Filename).json" />
+    <!-- The MEP legend's words in every language, from the interface's (scripts/mep-words.mjs). -->
+    <EmbeddedResource Include="MepWords.json" LogicalName="Lapin.Mep.MepWords.json" />
   </ItemGroup>
 </Project>

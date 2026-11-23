@@ -3,6 +3,18 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
+  "MEP legend": "ຄຳອະທິບາຍ MEP",
+  "MEP LEGEND": "ຄຳອະທິບາຍ MEP",
+  "MEP symbols and lines": "ສັນຍາລັກ ແລະ ເສັ້ນ MEP",
+  "Of the view": "ຂອງມຸມມອງ",
+  "The view whose symbols and lines it lists; by itself: the sheet's views, or the view it is on": "ມຸມມອງທີ່ມັນສະແດງສັນຍາລັກ ແລະ ເສັ້ນ; ໂດຍອັດຕະໂນມັດ: ມຸມມອງຂອງແຜ່ນ ຫຼື ມຸມມອງທີ່ມັນຢູ່",
+  "the sheet's views": "ມຸມມອງຂອງແຜ່ນ",
+  "Open a plan or a sheet to place the MEP legend.": "ເປີດແຜນຜັງ ຫຼື ແຜ່ນ ເພື່ອວາງຄຳອະທິບາຍ MEP.",
+  "Cold water": "ນ້ຳເຢັນ",
+  "Supply air": "ລົມສົ່ງເຂົ້າ",
+  "Extract air": "ລົມດູດອອກ",
+  "WC": "ໂຖສ້ວມ",
   // MEP symbol sets: Lapin's ISO set, the project's own of drawn symbols, the Romanian STAS set to fill, shared as files.
   "MEP symbols": "ສັນຍາລັກລະບົບ MEP",
   "MEP symbols…": "ສັນຍາລັກລະບົບ MEP…",

@@ -1,6 +1,18 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
+  "MEP legend": "Legendă instalații",
+  "MEP LEGEND": "LEGENDĂ INSTALAȚII",
+  "MEP symbols and lines": "simboluri și linii de instalații",
+  "Of the view": "A vederii",
+  "The view whose symbols and lines it lists; by itself: the sheet's views, or the view it is on": "Vederea ale cărei simboluri și linii le listează; de la sine: vederile planșei sau vederea pe care stă",
+  "the sheet's views": "vederile planșei",
+  "Open a plan or a sheet to place the MEP legend.": "Deschide un plan sau o planșă ca să pui legenda instalațiilor.",
+  "Cold water": "Apă rece",
+  "Supply air": "Aer introdus",
+  "Extract air": "Aer evacuat",
+  "WC": "Vas WC",
   // MEP symbol sets: Lapin's ISO set, the project's own of drawn symbols, the Romanian STAS set to fill, shared as files.
   "MEP symbols": "Simboluri de instalații",
   "MEP symbols…": "Simboluri de instalații…",

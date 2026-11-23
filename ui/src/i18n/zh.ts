@@ -3,6 +3,18 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
+  "MEP legend": "机电图例",
+  "MEP LEGEND": "机电图例",
+  "MEP symbols and lines": "机电符号与线型",
+  "Of the view": "所列视图",
+  "The view whose symbols and lines it lists; by itself: the sheet's views, or the view it is on": "图例所列符号与线型来自的视图；默认：图纸上的各视图，或图例所在的视图",
+  "the sheet's views": "图纸上的各视图",
+  "Open a plan or a sheet to place the MEP legend.": "打开平面图或图纸以放置机电图例。",
+  "Cold water": "冷水",
+  "Supply air": "送风",
+  "Extract air": "排风",
+  "WC": "坐便器",
   // MEP symbol sets: Lapin's ISO set, the project's own of drawn symbols, the Romanian STAS set to fill, shared as files.
   "MEP symbols": "机电符号",
   "MEP symbols…": "机电符号…",

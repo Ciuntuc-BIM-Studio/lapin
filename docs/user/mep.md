@@ -124,6 +124,12 @@ Lapin does not draw the Romanian STAS symbols yet. **Start a Romanian (STAS) set
 
 ![MEP symbols: the valve drawn by a symbol of the project's, every other role by Lapin's ISO set](shots/mep-symbols.webp)
 
+### MEP legend
+
+**MEP legend** (the System group) places a legend where you click, on a plan or on a sheet: the line of each service its view draws, in its system's colour and line type (a paired run's supply and return apart), then the symbol of each role it draws, as the project's set draws it (a rise and a drop apart). It lists only what the view shows and changes as the model does. On a sheet it lists the sheet's views; **Of the view** in its properties names one view instead. Its words are written in the interface's language when it is placed; **Language** in its properties changes them. **Lists** also turns a sheet's legend of materials or lines into an MEP legend.
+
+![An MEP plan with its legend: the heating's supply and return, the cold water, the radiators, the meter and the valve drawn by the project's symbol](shots/mep-legend.webp)
+
 In an IFC export each system is an IfcDistributionSystem, every node and run has its IfcDistributionPorts, and the connections are written between the ports, so the network arrives in another program connected from the source to the last endpoint.
 
 ## Gas and fuel oil

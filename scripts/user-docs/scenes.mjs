@@ -5210,6 +5210,21 @@ export const scenes = [
       t.expect(await t.page.locator('[data-role="valve"] select').inputValue() === sym.id, 'the valve\'s row names its symbol');
       await t.shot('mep-symbols', { of: '.dialog', pad: 0, maxHeight: 640 });
       await t.ui({ dialog: null });
+      // The MEP legend on an MEP plan of the level: the lines and symbols it draws, the valve by the project's symbol.
+      const heating = await t.cmd('mep.placeSystem', { service: 'heating', storeyId: storey, x: 1, y: 6, to: [3.5, 7.3] });
+      t.expect(!!heating?.id, 'a heating system placed');
+      await t.cmd('mep.drawRun', { systemId: cold.id, storeyId: storey, points: [[1, 1.5], [4, 1.5], [4, 4]] });
+      await t.tool('mep.plan');
+      await t.wait(800);
+      const mepView = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().planViewId);
+      t.expect(!!mepView, 'MEP plan opens a plan of the MEP discipline');
+      const legend = await t.cmd('sheet.addLegend', { viewId: mepView, at: [13.5, 8], kind: 'mep', lang: 'en' });
+      t.expect(!!legend?.id, 'the MEP legend goes on the plan');
+      await t.ui({ keyPlan: false, selection: null, selected: [] });
+      await t.wait(1000);
+      await t.fit();
+      await t.shot('mep-legend', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ keyPlan: true });
     },
   },
   {

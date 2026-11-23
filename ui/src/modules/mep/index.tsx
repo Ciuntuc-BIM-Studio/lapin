@@ -45,7 +45,7 @@ import { cableTray, carrierSchedule, layInCarrier } from './carriers/tools';
 import { useCarrierPrefs } from './carriers/carriers';
 import { CarrierSection } from './carriers/CarrierSection';
 import { CLASS as CARRIER_CLASS, carrierPoints } from './carriers/carriers';
-import { CoverageOverlay, tagSystem } from './planGraphics';
+import { CoverageOverlay, mepLegend, tagSystem } from './planGraphics';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const SystemsDialog = lazyPart(() => import('./SystemsDialog').then((m) => m.SystemsDialog), { title: 'Systems' });
@@ -542,7 +542,7 @@ const mep: LapinModule = {
       {
         label: 'System',
         tools: [pulldownTool('mep.more.newSystem', 'New system', Workflow, newSystems), edit],
-        small: [systems, symbolSets, mepPlan, openPorts, tagSystem,
+        small: [systems, symbolSets, mepPlan, openPorts, tagSystem, mepLegend,
           pulldownTool('mep.more.schedules', 'Schedules', ListOrdered, [equipmentSchedule, runSchedule, gasSchedule, fireSchedule, carrierSchedule, fanSchedule, fanRoomCheck])],
       },
       {

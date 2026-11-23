@@ -3,6 +3,18 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
+  "MEP legend": "TGA-Legende",
+  "MEP LEGEND": "TGA-LEGENDE",
+  "MEP symbols and lines": "TGA-Symbole und -Linien",
+  "Of the view": "Der Ansicht",
+  "The view whose symbols and lines it lists; by itself: the sheet's views, or the view it is on": "Die Ansicht, deren Symbole und Linien sie aufführt; von selbst: die Ansichten des Plans oder die Ansicht, auf der sie steht",
+  "the sheet's views": "die Ansichten des Plans",
+  "Open a plan or a sheet to place the MEP legend.": "Öffne einen Grundriss oder einen Plan, um die TGA-Legende zu platzieren.",
+  "Cold water": "Kaltwasser",
+  "Supply air": "Zuluft",
+  "Extract air": "Abluft",
+  "WC": "WC",
   // MEP symbol sets: Lapin's ISO set, the project's own of drawn symbols, the Romanian STAS set to fill, shared as files.
   "MEP symbols": "TGA-Symbole",
   "MEP symbols…": "TGA-Symbole…",

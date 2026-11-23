@@ -8,6 +8,21 @@ using Lapin.Model;
 
 namespace Lapin.Platform;
 
+/// <summary>One line, fill or text of a legend row's symbol (<see cref="DrawingKeys.Entry.Glyph"/>): paper mm, y up, its pen's width.</summary>
+public sealed record LegendGlyph(IReadOnlyList<Vec2> Points, bool Closed, double Width, bool Fill = false, string? Text = null, double Height = 0);
+
+/// <summary>
+/// A kind of legend a module brings (the MEP legend: the symbols and line types a view draws): its kind's id, its name, its
+/// heading in a legend's language, and its rows for the views it lists (<see cref="DrawingKeys.SourceViews"/>).
+/// </summary>
+public interface ILegendKind
+{
+    string Kind { get; }
+    string Name { get; }
+    string Title(string? lang);
+    List<DrawingKeys.Entry> Entries(IQueryContext q, IReadOnlyList<Entity> views, string? lang);
+}
+
 /// <summary>
 /// Keys to a drawing (decision 620): a legend on a sheet's paper of what its views draw, live (the materials their cuts are
 /// hatched and filled with, or the lines they are drawn in), and a scale bar, on the paper (at a view's scale or its own) or
@@ -53,8 +68,24 @@ public static class DrawingKeys
 
     /// <summary>One row of a legend: its name, and what its swatch shows (a fill, a hatch, or a line).</summary>
     /// <param name="Look">A material's graphics, which its swatch is drawn with (decision 678: its hatch colour and weight, background hatch, fill opacity).</param>
+    /// <param name="Glyph">A symbol drawn in its swatch (a module's legend: an MEP device's symbol), in paper mm round its insertion point, in <paramref name="Stroke"/>.</param>
     public sealed record Entry(string Name, string? Fill = null, string? Hatch = null, double HatchScale = 1, double HatchAngle = 0, string? Stroke = null, double Width = 0, double[]? Dash = null,
-        ResolvedMaterial? Look = null);
+        ResolvedMaterial? Look = null, IReadOnlyList<LegendGlyph>? Glyph = null);
+
+    /// <summary>The kinds a legend may list: Lapin's (materials, lines) and the modules' (<see cref="ILegendKind"/>).</summary>
+    public static IReadOnlyList<string> KindsOf(IServices services) => [.. LegendKinds, .. services.All<ILegendKind>().Select(k => k.Kind)];
+
+    /// <summary>
+    /// The views a module's legend reads: the one it names (<c>sourceViewId</c>), else on a sheet's paper the views placed on the
+    /// sheet, else the view it is on.
+    /// </summary>
+    public static List<Entity> SourceViews(IQueryContext q, Entity view, Entity legend)
+    {
+        var m = q.Model;
+        if (legend.Str("sourceViewId") is { } sid && Views.Find(m, sid) is { } named && !PaperViews.Is(named)) return [named];
+        if (PaperViews.SheetOf(m, view) is { } sheet) return [.. PaperViews.Placements(q, sheet).Where(p => !p.Content).Select(p => p.View)];
+        return PaperViews.Is(view) ? [] : [view];
+    }
 
     /// <summary>What a legend lists: the materials the sheet's views cut, by name; or the lines they draw (role, type and width).</summary>
     public static List<Entry> Entries(IQueryContext q, Entity view, string kind, string? lang = null)
@@ -126,28 +157,35 @@ public static class DrawingKeys
     {
         if (c.Query == null) return null;
         var at = Args.PointOf(e.Attrs["at"]);
-        var kind = e.Str("kind") == "lines" ? "lines" : "materials";
+        // A module's kind (an MEP legend) when a module brings it; else Lapin's.
+        var module = e.Str("kind") is { } k0 && !LegendKinds.Contains(k0) ? c.Query.Services.All<ILegendKind>().FirstOrDefault(x => x.Kind == k0) : null;
+        var kind = module?.Kind ?? (e.Str("kind") == "lines" ? "lines" : "materials");
         // Its words in its own language (audit §16 leftovers), set from the interface's when it was placed.
         var lang = DrawingWords.Known(e.Str("lang"));
-        var rows = Entries(c.Query, c.View, kind, lang);
+        var rows = module != null ? module.Entries(c.Query, SourceViews(c.Query, c.View, e), lang) : Entries(c.Query, c.View, kind, lang);
         var mm = c.Mm;
         var text = Standards.ResolveText(c.Book, []);
         var mk = new ViewMark(e.Id);
-        var title = e.Str("title") is { Length: > 0 } t ? PaperViews.Fill(c, t) : DrawingWords.Of(kind == "lines" ? "LINES" : "LEGEND", lang);
+        var title = e.Str("title") is { Length: > 0 } t ? PaperViews.Fill(c, t) : module != null ? module.Title(lang) : DrawingWords.Of(kind == "lines" ? "LINES" : "LEGEND", lang);
         mk.Text(new PenText(at - new Vec2(0, TitleH * mm), title, TitleH, 0, "start", "bottom", true, text.Font));
         var patterns = DraftingResources.Patterns(c.Model);
         var y = at.Y - (TitleH + 4) * mm;
         var width = Swatch + 4 + Label * 0.6 * Math.Max(12, rows.Count == 0 ? 0 : rows.Max(r => r.Name.Length));
         if (rows.Count == 0)
         {
-            mk.Text(new PenText(new Vec2(at.X, y - SwatchH * mm), DrawingWords.Of("(none on this sheet's views)", lang), Label, 0, "start", "bottom", false, text.Font), "#808080");
+            mk.Text(new PenText(new Vec2(at.X, y - SwatchH * mm), DrawingWords.Of(module != null && !PaperViews.Is(c.View) ? "(none in this view)" : "(none on this sheet's views)", lang), Label, 0, "start", "bottom", false, text.Font), "#808080");
             y -= Row * mm;
         }
         foreach (var r in rows)
         {
+            if (r.Glyph != null)
+            {
+                y = GlyphRow(mk, r, at.X, y, mm, text.Font);
+                continue;
+            }
             var (x0, x1, y1, y0) = (at.X, at.X + Swatch * mm, y, y - SwatchH * mm);
             IReadOnlyList<Vec2> box = [new(x0, y0), new(x1, y0), new(x1, y1), new(x0, y1)];
-            if (kind == "lines")
+            if (kind == "lines" || (module != null && r.Stroke != null && r.Look == null && r.Fill == null && r.Hatch == null))
             {
                 var mid = (y0 + y1) / 2;
                 mk.Line(new Vec2(x0, mid), new Vec2(x1, mid), "LEGEND", r.Width, r.Stroke ?? "#000000", r.Dash);
@@ -174,6 +212,33 @@ public static class DrawingKeys
         mk.Snaps.Add(at);
         mk.Data = new JsonObject { ["legend"] = kind, ["rows"] = rows.Count };
         return mk;
+    }
+
+    /// <summary>
+    /// A row whose swatch is a symbol (<see cref="Entry.Glyph"/>): drawn at its printed size in a box as wide as the swatches
+    /// (a larger one shrunk to fit), centred in it, its row as tall as it needs; returns where the next row starts.
+    /// </summary>
+    static double GlyphRow(ViewMark mk, Entry r, double x, double y, double mm, string font)
+    {
+        var pts = r.Glyph!.SelectMany(g => g.Text != null ? [g.Points[0], g.Points[0] + new Vec2(g.Height * 0.7 * g.Text.Length, g.Height)] : g.Points).ToList();
+        if (pts.Count == 0) pts.Add(new Vec2(0, 0));
+        var (gx0, gy0, gx1, gy1) = (pts.Min(p => p.X), pts.Min(p => p.Y), pts.Max(p => p.X), pts.Max(p => p.Y));
+        const double maxH = 10;
+        var k = Math.Min(1, Math.Min(Swatch / Math.Max(gx1 - gx0, 1e-6), maxH / Math.Max(gy1 - gy0, 1e-6)));
+        var h = Math.Max(SwatchH, (gy1 - gy0) * k);
+        var centre = new Vec2(x + Swatch / 2 * mm, y - h / 2 * mm);
+        var mid = new Vec2((gx0 + gx1) / 2, (gy0 + gy1) / 2);
+        Vec2 P(Vec2 q) => centre + (q - mid) * (k * mm);
+        var color = r.Stroke ?? "#000000";
+        foreach (var g in r.Glyph!)
+        {
+            if (g.Text != null) { mk.Text(new PenText(P(g.Points[0]), g.Text, Math.Max(0.5, g.Height * k), 0, "start", "bottom", false, font), color); continue; }
+            var q = g.Points.Select(P).ToList();
+            if (g.Fill) { if (q.Count >= 3) mk.Fills.Add(([q], color)); continue; }
+            mk.Polyline(q, g.Closed, "LEGEND", g.Width, color);
+        }
+        mk.Text(new PenText(new Vec2(x + (Swatch + 4) * mm, centre.Y - Label / 2 * mm), r.Name, Label, 0, "start", "bottom", false, font));
+        return y - Math.Max(Row, h + 2) * mm;
     }
 
     // ------------------------------------------------------------ the scale bar
@@ -369,9 +434,11 @@ public static class DrawingKeys
 
     static JsonArray At(JsonNode? n) => Args.TryPoint(n) is { } p ? new JsonArray(p.X, p.Y) : throw new CommandException("Where? [x, y].");
 
-    static void Apply(JsonObject attrs, JsonObject a)
+    static void Apply(JsonObject attrs, JsonObject a, IReadOnlyList<string> kinds)
     {
-        if ((string?)a["kind"] is { } k) attrs["kind"] = LegendKinds.Contains(k) ? k : throw new CommandException($"„{k}” is not a legend's kind ({string.Join(", ", LegendKinds)}).");
+        if ((string?)a["kind"] is { } k) attrs["kind"] = kinds.Contains(k) ? k : throw new CommandException($"„{k}” is not a legend's kind ({string.Join(", ", kinds)}).");
+        // The view a module's legend lists (none: the sheet's views, or the view it is on).
+        if (a.ContainsKey("sourceViewId")) { if ((string?)a["sourceViewId"] is { Length: > 0 } sv) attrs["sourceViewId"] = sv; else attrs.Remove("sourceViewId"); }
         if (a.ContainsKey("title")) { if ((string?)a["title"] is { Length: > 0 } t) attrs["title"] = t.Trim(); else attrs.Remove("title"); }
         // The language its own words are written in (DrawingWords); null: English.
         if (a.ContainsKey("lang"))
@@ -427,10 +494,13 @@ public static class DrawingKeys
         r.Command("sheet.addLegend", "Legend", (ctx, a) =>
         {
             var view = ViewOf(ctx, a);
-            if (!PaperViews.Is(view)) throw new CommandException("A legend goes on a sheet: open the sheet and annotate it.");
             var attrs = new JsonObject { ["viewId"] = view.Id, ["at"] = At(a["at"]), ["kind"] = "materials" };
-            Apply(attrs, a);
-            var e = new Entity(ctx.NewId(), IfcClass.Annotation, (string?)attrs["kind"] == "lines" ? "Line legend" : "Material legend", attrs, Legend);
+            Apply(attrs, a, KindsOf(ctx.Services));
+            // Lapin's legends list a sheet's views; a module's (an MEP legend) goes on a view too, listing it.
+            var module = ctx.Services.All<ILegendKind>().FirstOrDefault(x => x.Kind == (string?)attrs["kind"]);
+            if (module == null && !PaperViews.Is(view)) throw new CommandException("A legend goes on a sheet: open the sheet and annotate it.");
+            if ((string?)attrs["sourceViewId"] is { } src && (Views.Find(ctx.Model, src) is not { } sv || PaperViews.Is(sv))) throw new CommandException("The legend lists a view: a plan, a section or an elevation.");
+            var e = new Entity(ctx.NewId(), IfcClass.Annotation, module?.Name ?? ((string?)attrs["kind"] == "lines" ? "Line legend" : "Material legend"), attrs, Legend);
             ctx.Add(e);
             return new JsonObject { ["id"] = e.Id };
         });
@@ -442,7 +512,7 @@ public static class DrawingKeys
             var attrs = new JsonObject { ["viewId"] = view.Id };
             // On a view it may stand by itself (none: under the drawing's bottom left, where a site plan draws its own).
             if (a["at"] != null || PaperViews.Is(view)) attrs["at"] = At(a["at"]);
-            Apply(attrs, a);
+            Apply(attrs, a, KindsOf(ctx.Services));
             var e = new Entity(ctx.NewId(), IfcClass.Annotation, "Scale bar", attrs, ScaleBar);
             ctx.Add(e);
             return new JsonObject { ["id"] = e.Id };
@@ -457,7 +527,7 @@ public static class DrawingKeys
             var attrs = new JsonObject { ["viewId"] = view.Id };
             if (a["at"] != null) attrs["at"] = At(a["at"]);
             else if (PaperViews.Is(view)) throw new CommandException("Where? [x, y].");
-            Apply(attrs, a);
+            Apply(attrs, a, KindsOf(ctx.Services));
             var e = new Entity(ctx.NewId(), IfcClass.Annotation, "North arrow", attrs, NorthArrow);
             ctx.Add(e);
             return new JsonObject { ["id"] = e.Id };
@@ -479,7 +549,7 @@ public static class DrawingKeys
                     if (e.PredefinedType == Legend || Views.Find(ctx.Model, e.Str("viewId") ?? "") is not { } kv || PaperViews.Is(kv)) throw new CommandException("On a sheet it stays where it is placed: give it a point.");
                     attrs.Remove("at");
                 }
-                Apply(attrs, a);
+                Apply(attrs, a, KindsOf(ctx.Services));
                 ctx.Replace(e.With(attrs: attrs));
             }
             return null;

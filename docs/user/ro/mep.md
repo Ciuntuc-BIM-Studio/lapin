@@ -124,6 +124,12 @@ Lapin nu desenează încă simbolurile STAS românești. **Începe un set român
 
 ![Simboluri de instalații: robinetul desenat cu un simbol al proiectului, toate celelalte roluri cu setul ISO Lapin](shots/mep-symbols.webp)
 
+### Legenda instalațiilor
+
+**Legendă instalații** (grupul Sistem) pune o legendă unde dai clic, pe un plan sau pe o planșă: linia fiecărei instalații pe care o desenează vederea, în culoarea și tipul de linie ale sistemului ei (turul și returul unui traseu pereche separat), apoi simbolul fiecărui rol pe care îl desenează, așa cum îl desenează setul proiectului (urcarea și coborârea separat). Listează doar ce arată vederea și se schimbă odată cu modelul. Pe o planșă listează vederile planșei; **A vederii** din proprietățile ei numește în schimb o singură vedere. Cuvintele ei se scriu în limba interfeței de când a fost pusă; **Limba** din proprietăți le schimbă. **Liste** transformă și legenda de materiale sau de linii a unei planșe într-o legendă de instalații.
+
+![Un plan de instalații cu legenda lui: turul și returul încălzirii, apa rece, radiatoarele, apometrul și robinetul desenat cu simbolul proiectului](shots/mep-legend.webp)
+
 La exportul IFC fiecare sistem e un IfcDistributionSystem, fiecare nod și traseu își are porturile IfcDistributionPort, iar conexiunile se scriu între porturi, așa că rețeaua ajunge în alt program conectată de la sursă la ultimul consumator.
 
 ## Gaze și motorină

@@ -3,6 +3,18 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
+  "MEP legend": "Installationssignatur",
+  "MEP LEGEND": "INSTALLATIONSSIGNATUR",
+  "MEP symbols and lines": "installationssymboler og -linjer",
+  "Of the view": "For visningen",
+  "The view whose symbols and lines it lists; by itself: the sheet's views, or the view it is on": "Den visning, hvis symboler og linjer den viser; af sig selv: arkets visninger eller den visning, den står på",
+  "the sheet's views": "arkets visninger",
+  "Open a plan or a sheet to place the MEP legend.": "Åbn en plan eller et ark for at placere installationssignaturen.",
+  "Cold water": "Koldt vand",
+  "Supply air": "Indblæsningsluft",
+  "Extract air": "Udsugningsluft",
+  "WC": "Toilet",
   // MEP symbol sets: Lapin's ISO set, the project's own of drawn symbols, the Romanian STAS set to fill, shared as files.
   "MEP symbols": "Installationssymboler",
   "MEP symbols…": "Installationssymboler…",
