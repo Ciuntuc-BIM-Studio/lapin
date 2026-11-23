@@ -75,6 +75,30 @@ In 3D, **Visibility / Graphics** hides a view's paths, roads, kerbs and pavement
 
 **Slopes round a platform.** A platform's properties take a **Cut slope** and a **Fill slope** as 1 : N (horizontal over vertical; 0, the default, keeps its sides vertical). With a slope the cut widens upwards and the fill spreads downwards at that batter until they meet the ground, so the platform runs out into the terrain instead of standing in a vertical pit or on a vertical bank; its cut and fill are measured on the sloped volumes. The slopes reach as high and as low as the ground round the platform does, not the whole terrain's. A slope that would run so far out that it crosses itself (a long slope round a narrow notch of the outline) is refused: the platform is not levelled, nothing is measured for it, and the terrain says why; give it a steeper slope (a smaller N) or a simpler outline. A platform with holes keeps vertical sides. An outline that crosses itself, a platform's, a parcel's, a terrain boundary's, a subregion's or a planting zone's, is refused.
 
+## Tunnel portals and bridge abutments
+
+![The configurator on its warped-wings preset, the engine's preview beside its numbers](shots/portal-configurator.webp)
+
+**Portal or abutment…** (<kbd>PO</kbd>, in the **Landscape** group) lays out a face wall across a road with a wing at each end, as one retaining wall whose corners, batters and quantities are the retaining wall's own. Pick a preset: **Straight wings** (a tunnel portal, its wings in line with the face wall), **U wings** (along the road), **Flared wings** (at an angle to the road), **Warped wings** (their face turning from the face wall's batter to the embankment's slope) or **Abutment with wings** (a bridge abutment, the embankment held between its wings). Then set its numbers by group: the face wall's length, crown and footing level; the wings' length, their angle to the road and the crown at their free end; the section (crown thickness, front and back batters n:1, footing, toe, heel); the warp; the free end; the output. The preview beside them is the engine's (plan, a section across the left wing, 3D), built by the same code as the element.
+
+**Formulas.** Every number may be a formula: type `= embankment + 0.5` (or `{= embankment + 0.5}`) and the value it gives shows beside it. A formula reads the configurator's other numbers by their key (`crown`, `footingLevel`, `faceLength`, `wingLength`, `wingAngle`, `endCrown`, `embankment`, `slope`, `thickness`, `frontBatter`…, and `height`, the face wall's crown over its footing's underside) and the project's own parameters by their key. By default the crown at the free end is `{= embankment + 0.5}` and the wing is as long as the embankment's slope reaches: `{= (crown - embankment) * slope}`, with the slope given as 1:m (1.5 for a 2:3 slope). A formula that reads itself, or a name that is not there, is listed under the numbers and its default stands.
+
+**The wings.** The right wing mirrors the left unless **Right wing mirrors the left** is cleared; then the right one takes its own length, angle and crown. Left and right are as seen from the face wall looking along the wings. Over each corner the crown stays level, and the wing's slope starts just past it. With **Warped wings**, the face turns from the face wall's batter at the corner to **Batter at the free end** (by default the embankment's, `1 / slope`), along the wing's slope or, with **Twist along** *segment*, along the whole wing. The warped face is exact: one B-spline face in IFC (IfcAdvancedBrep) and STEP, its area and volume measured on the true surface.
+
+**The free end** is **square** (upright, square to the wing), **battered** (leaning with the embankment, by **End batter n:1**, the footing reaching past its foot) or **parallel** (turned about the vertical so it runs along the road; **End turned by** gives another angle, up to 60°). A U wing is parallel to the road already, so its end stays square.
+
+**Placing it.** **Place…** asks for two points: the face wall's middle on the road's axis, then a point the way the wings go. **On a road…** asks for a road or a path: the portal stands across it where you click, the wings along its way. **Draw the path** takes a polyline you draw instead of the numbers' layout: its first and last segments are the wings, the rest the face wall. Under **Section**, a profile you drew and saved ([Profiles](profiles.md)) can be the stem's section instead of the coded one: it is stretched at each station between the footing's top and the crown, its width kept.
+
+![A tunnel portal with straight wings, their crowns dropping to the free ends](shots/portal-3d.webp)
+
+**Editing.** Selected, the wall shows **Portal configurator…** in its properties: it opens on the wall's preset and numbers (formulas as you wrote them), and **Apply** rebuilds the same element in place, one undo step, its GlobalIds kept.
+
+**IFC and quantities.** **IFC** *assembly* (the default) writes the portal as an IfcElementAssembly (a tunnel portal user-defined; an abutment ABUTMENT, in IFC 4.3 standing in an IfcBridgePart ABUTMENT of the project's IfcBridge) over one IfcWall RETAININGWALL per wing and the face wall, so each part is dimensioned, formworked and reinforced on its own. A wing meets the face wall at a joint square to it, just past where its slope starts. *wall* writes it as one IfcWall RETAININGWALL. Each part has its own quantities (concrete, formwork on its front, back, ends and footing, its crown), where two parts meet is no formwork, and the wall's own add **Concrete, face wall**, **Concrete, wings**, **Formwork, face wall** and **Formwork, wings** for the schedules.
+
+![A bridge abutment with warped wings](shots/abutment-3d.webp)
+
+![A section across a warped wing: its face leaning on its footing](shots/portal-section.webp)
+
 ## The terrain: boundary, slopes and grading
 
 ![A survey clipped to an L-shaped boundary, a slope tag, a gravel subregion and the cut/fill grid over a raised stroke](shots/terrain-tools-plan.webp)

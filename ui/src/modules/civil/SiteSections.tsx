@@ -16,6 +16,7 @@ import { lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { segmentRows } from './retainingWall';
+import { openPortal } from './portalTools';
 
 /** Opens the corridor configurator on the element selected. */
 export function Configure() {
@@ -87,6 +88,9 @@ export function RetainingWallSection({ node }: { node: NodeDto }) {
     <>
     <dl className="fields">
       <Configure />
+      {node.props.portal != null && typeof node.props.portal === 'object' && (
+        <><dt /><dd><button type="button" className="btn compact" data-action="portal-configure" title="its preset, wings, section, free ends and IFC" onClick={() => openPortal(node)}>Portal configurator…</button></dd></>
+      )}
       <dt>Thickness</dt><dd><Mm value={node.props.thickness} fallback={0.3} min={100} onCommit={(v) => set({ thickness: v })} /></dd>
       <dt>High ground on the</dt>
       <dd><select value={(node.props.side as string | undefined) ?? 'left'} onChange={(e) => set({ side: e.target.value })}><option value="left">left</option><option value="right">right</option></select> <span className="muted small">of the way it was drawn</span></dd>

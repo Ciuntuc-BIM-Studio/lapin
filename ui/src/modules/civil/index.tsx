@@ -8,7 +8,7 @@
 import { create } from 'zustand';
 import { activate } from '../../platform/modules';
 import { promptText } from '../../shell/prompts';
-import { BrickWall, Combine, Crop, Layers, PenLine, Scissors, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
+import { BrickWall, Combine, Landmark, Crop, Layers, PenLine, Scissors, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, Grip3D, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -26,11 +26,13 @@ import { MAX_POINT_GRIPS, terrainBase, terrainPointGrips } from './pointGrips';
 import { useCamera } from '../../viewport/camera';
 import { EntourageSection, entourage, entourageRow, useEntouragePrefs } from './entourage';
 import { lazyPart } from '../../platform/lazyPart';
+import { drawPortalPath, openPortal, placePortal, placePortalOnRoad } from './portalTools';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const BrushDialog = lazyPart(() => import('./BrushDialog').then((m) => m.BrushDialog), { title: 'Terrain brush' });
 const CorridorDialog = lazyPart(() => import('./CorridorDialog').then((m) => m.CorridorDialog), { title: 'Corridor' });
 const EntourageKindsDialog = lazyPart(() => import('./EntourageKindsDialog').then((m) => m.EntourageKindsDialog), { title: 'Entourage kinds' });
+const PortalDialog = lazyPart(() => import('./PortalDialog').then((m) => m.PortalDialog), { title: 'Portal or abutment' });
 
 /** The lowest surveyed elevation, rounded down to the metre: what ±0.00 defaults to. */
 function lowest(text: string): number | null {
@@ -362,6 +364,9 @@ const retainingWall: ToolDef = {
   complete: async ({ points }, ctx) => { await ctx.execute('civil.addRetainingWall', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) }); },
 };
 
+/** The tunnel-portal and bridge-abutment configurator (docs/plan-wing-walls.md, S3): a face wall and its wings from a preset. */
+const portal: ToolDef = { id: 'civil.portal', label: 'Portal or abutment…', icon: Landmark, shortcut: 'PO', run: () => openPortal() };
+
 /** One plant at a click (the catalogue's first species; changed in the inspector). */
 const plant: ToolDef = {
   id: 'civil.plant', label: 'Plant', icon: TreeDeciduous, shortcut: 'PN',
@@ -395,7 +400,7 @@ const civil: LapinModule = {
   name: 'Civil',
   summary: 'The terrain from survey points or flat, its contours, the brush that works it, platforms and ditches with their cut and fill, paths, retaining walls, plantings, people and cars.',
   // The old Road tool: the Path tool, set to Road.
-  legacyTools: [road],
+  legacyTools: [road, placePortal, placePortalOnRoad, drawPortalPath],
   // Create similar: the tool that made the element, set as it was (a road's template, a zone or a single plant, the entourage's kind).
   similar: {
     IfcEarthworksCut: (n) => activate(n.props.contour ? platform : ditch),
@@ -410,7 +415,7 @@ const civil: LapinModule = {
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainBoundary, splitTerrain, mergeTerrains, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, subregion, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
-      { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
+      { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework, portal] },
       { label: 'Entourage', tools: [entourage], small: [entourageRow, entourageKinds] },
     ],
   }],
@@ -451,7 +456,7 @@ const civil: LapinModule = {
     { id: 'planting', label: 'Planting', classes: ['LapinPlanting'], component: PlantingSection, replacesFields: () => true },
     { id: 'entourage', label: 'Entourage', classes: ['LapinEntourage'], component: EntourageSection, replacesFields: () => true },
   ],
-  dialogs: { brush: BrushDialog, corridor: CorridorDialog, entourageKinds: EntourageKindsDialog },
+  dialogs: { brush: BrushDialog, corridor: CorridorDialog, entourageKinds: EntourageKindsDialog, portal: PortalDialog },
 };
 
 export default civil;
