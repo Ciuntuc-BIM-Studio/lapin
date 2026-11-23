@@ -97,6 +97,28 @@ Liniatura CAD devine elemente de teren: **Drum din desen CAD** (LR) și **Linie 
 
 ![O secțiune printr-o aripă răsucită: fața înclinată pe talpă](shots/portal-section.webp)
 
+## Căptușeala tunelului
+
+![Configuratorul pe presetarea în potcoavă, previzualizarea motorului lângă valori](shots/tunnel-configurator.webp)
+
+**Căptușeală de tunel…** (<kbd>TU</kbd>, în grupul **Peisagistică**) duce secțiunea transversală a unui tunel de-a lungul unei axe. Alege o presetare: **Potcoavă (NATM)** (un tunel minat: arcele calotei, ale pereților, ale colțurilor și ale radierului, toate tangente, cu o căptușeală primară de torcret), **Circulară (inel TBM)** (inelul de o singură grosime al unui tunel forat), **Cadru casetat (tranșee acoperită)** (cu vute sub placa superioară) sau **Boltă pe pereți** (o boltă pe pereți verticali, peste un radier plat). Apoi dă-i valorile pe grupuri: secțiunea (lățimea liberă, înălțimea liberă peste drum, razele, radierul sub drum), căptușeala (grosimea la calotă, la pereți și la radier, și căptușeala primară; 0 o lasă deoparte), blocurile (lungimea blocului de betonare sau lățimea inelului) și ieșirile. Orice valoare poate fi o formulă, ca în configuratorul portalului: grosimea pereților și a radierului sunt implicit `{= thickness}`. La **Secțiune**, un profil desenat și salvat ([Profile](profiles.md)) poate fi secțiunea: exteriorul lui și golul liber din el, podeaua golului sub drum cu **Radier sub drum**. Previzualizarea este a motorului (plan, secțiune, 3D), făcută de același cod ca și căptușeala.
+
+**Așezarea.** **Pe o axă…** cere un drum, o alee, un zid de sprijin, o cale ferată sau o linie desenată: clic unde începe căptușeala, apoi unde se termină. Căptușeala preia axa dintre cele două stații, cu curbele și clotoidele ei, și linia ei roșie (una proiectată așa cum este; una care urmează terenul, ajustată prin puncte), și îi păstrează stațiile. **Desenează axa…** ia în schimb o polilinie desenată; colțurile ei se rotunjesc în configuratorul de coridor (**Configurator…** în proprietăți: raze și clotoide la fiecare vârf, PVI-urile liniei roșii, stațiile, secțiunile la stații), ca la un drum. Linia roșie este cota drumului pe axă; secțiunea rămâne verticală și perpendiculară pe axă în plan (fără supraînălțare: panta transversală a drumului din tunel este a lui).
+
+![O căptușeală în potcoavă pe o curbă, în blocurile ei de betonare, cu un portal la intrare](shots/tunnel-3d.webp)
+
+**Blocuri și inele.** Căptușeala se împarte de la început în blocuri de betonare (implicit 12,5 m) sau, pentru TBM, în inele; ultimul este ce rămâne. Fiecare este o parte a ei, cu GlobalId-ul ei, păstrat când schimbi valorile căptușelii (blocurile în plus vin după). În plan, exteriorul căptușelii și golul liber se desenează ascunse, axa ca linie de ax, capetele și rosturile de-a curmezișul, stațiile de-a lungul ei.
+
+**Portaluri.** În proprietățile căptușelii, **Portal** **La început** sau **La capăt** așază un portal (presetarea cu aripi evazate a configuratorului de portal) de-a curmezișul axei la acel capăt: peretele frontal mai lat decât căptușeala, coronamentul cu un metru peste ea, aripile ieșind din tunel. Căptușeala trece prin peretele frontal: zidul este tăiat de exteriorul căptușelii în spatele capătului și de golul liber în fața lui, și o urmează când se schimbă. **Oblic la capăt cu** și **Oblic la început cu** rotesc planul unui capăt în jurul verticalei (portalul făcut atunci se rotește cu el); un capăt oblic cere axa dreaptă, cu pantă constantă, la acel capăt.
+
+![O secțiune transversală prin căptușeală la o stație: căptușeala și căptușeala primară de torcret](shots/tunnel-section.webp)
+
+**Secțiuni.** O secțiune de-a curmezișul căptușelii (din configuratorul de coridor sau desenată) arată straturile cu materialele lor; o secțiune care urmează axa căptușelii este profilul ei longitudinal, cu calota și radierul de-a lungul ei.
+
+![Profilul longitudinal de-a lungul axei căptușelii](shots/tunnel-long-section.webp)
+
+**Geometria exactă, IFC și cantitățile.** Pe un aliniament cu pantă constantă, fiecare față este un plan, un cilindru sau o suprafață riglată; peste o racordare verticală, o suprafață B-spline de translație (parabola exact); pe un arc de cerc în palier, o suprafață de revoluție (tori, conuri). O clotoidă sau un arc în pantă se acoperă prin secțiuni destul de dese încât să rămână în regula corzilor (1 mm). Cu **Suprafețe exacte** bifat ([Import și export](import-export.md)), exportul IFC scrie fiecare bloc ca IfcAdvancedBrep pe aceste suprafețe, iar exportul STEP o face mereu. **IFC** *ansamblu* (implicit) scrie căptușeala ca IfcElementAssembly (definit de utilizator, „Tunnel lining”) peste câte un IfcBuildingElementProxy pe bloc sau inel („Lining block”, „Lining ring”) și pe fiecare bucată a căptușelii primare; IFC 4.3 nu are un element pentru căptușeala de tunel, iar un perete sau o placă ar spune despre boltă și radier ce nu sunt. *corp* scrie un singur proxy. Fiecare bloc are cantitățile lui: betonul, cofrajul feței interioare, fața exterioară, cofrajul capetelor și **Cofraj** (cu fața exterioară când **Fața exterioară cofrată** este bifat, implicit la cadrul casetat și la boltă); căptușeala adaugă aria secțiunii, golul liber și volumul căptușelii primare.
+
 ## Terenul: limită, pante și sistematizare
 
 ![Un teren ridicat topografic, decupat după o limită în L, o etichetă de pantă, o subregiune de pietriș și grila săpătură/umplutură peste o tușă ridicată](shots/terrain-tools-plan.webp)
@@ -127,7 +149,7 @@ Un teren decupat cu **Limita terenului** își păstrează cotele conturului aș
 
 **O rețea de control.** Pe o ridicare deasă, mutarea punctelor unul câte unul e lentă. Câteva puncte pot deveni **puncte de control** care le modelează pe celelalte, ca o rețea low-poly: la **Rețea de control**, **la fiecare** *10* **m** ia punctul cel mai apropiat de fiecare nod al unei grile de 10 m (și colțurile), **pe contur** ia punctele de pe conturul terenului, iar **șterge toate** le scoate pe toate. În timpul editării în 3D, **Mânere pe** alege ce primește mâner: **toate punctele** (ca înainte), **doar punctele de control**, sau **alege punctele de control**, unde se văd toate punctele, cele de control pline; un clic pe mânerul unui punct îl face punct de control, sau din nou punct liber. Cu **doar punctele de control**, trage un punct de control în sus sau în jos (ori scrie distanța): ajunge exact acolo, iar punctele libere din jur îl urmează lin, cu o parte din mutarea lui care scade cu distanța și se stinge la celelalte puncte de control, care rămân pe loc. Punctele libere își păstrează forma (denivelări, pante) și se mută cu ea, iar readucerea punctului de control pune toate punctele înapoi; toată mutarea e un singur pas de anulare. Un punct mutat singur (cu **toate punctele**) își păstrează mutarea. Un teren fără puncte de control merge ca înainte. Împărțirea unui teren lasă fiecărei jumătăți punctele de control din ea; unirea le adună.
 
-**Subregiuni.** **Subregiune** (în grupul **Terasamente**) desenează o zonă a terenului cu materialul ei (pietriș, implicit): o curte, un gazon, un pat de pietriș. Terenul își păstrează cotele; zona își poartă materialul în 3D, ca o pieliță subțire care urmează chiar triunghiurile terenului, cu liniile de frângere cu tot, și e conturată în plan. Fiecare își dă aria în plan listelor (*Lapin_SubregionQuantities*). **Subregiuni** din proprietățile terenului le numără, iar **șterge toate** le scoate.
+**Subregiuni.** **Subregiune** (în grupul **Terasamente**) desenează o zonă a terenului cu materialul ei (pietriș, implicit): o curte, un gazon, un pat de pietriș. Terenul își păstrează cotele; zona își poartă materialul în 3D, ca o pieliță subțire care urmează chiar triunghiurile terenului, cu liniile de frângere cu tot, și e conturată în plan. Fiecare își dă aria în plan listelor (*Lapin_SubregionQuantities*). **Subregiuni** din proprietățile terenului le numără și le listează, **șterge toate** le scoate, iar **în pavaj** lângă una o face pavaj (mai jos).
 
 ![O subregiune de pietriș pe teren, în 3D](shots/terrain-subregion-3d.webp)
 
@@ -169,6 +191,40 @@ O linie caracteristică se mută, se rotește și se oglindește ca orice elemen
 ![Curba de nivel trasă: curbele vecine o urmează, scăzând cu distanța](shots/feature-line-drag-after.webp)
 
 Două lucruri decurg din felul în care un teren își ține punctele. **Înlocuirea punctelor topografice ale unui teren pe de-a-ntregul** (**Înlocuiește punctele…**, sau *Change terrain* cu puncte noi) renunță la regula „conturul e punctele lui” și la cotele proprii pe care le aveau vârfurile arcelor lui: punctele noi sunt punctele terenului așa cum vin. Iar **un vârf de arc mutat în plan prin API** (nu prin mânerele conturului) devine un punct obișnuit al terenului, cu o cotă proprie. Liniile caracteristice nu sunt atinse de niciuna: rămân pe teren și continuă să-l modeleze.
+
+## Pavaje (hardscape)
+
+Un **pavaj** (hardscape) e o suprafață pavată cu alcătuirea ei: o piață, un trotuar, o terasă, o parcare, o platformă de pietriș. Se desenează cu **Pavaj** (<kbd>HS</kbd>, în grupul **Peisagistică** din tabul **Teren**) pe un contur, ca o platformă: clicuri (**Arce** sau <kbd>Space</kbd> pentru laturi curbe), un dreptunghi sau un cerc. Bara alege **tipul**, dacă e **Tăiat în teren** sau **Independent** și dacă primește o **Bordură** pe tot conturul. Pornește orizontal, la cota terenului din mijlocul lui (la 0 fără teren dedesubt); totul se schimbă apoi din proprietăți, fără să-l desenezi din nou.
+
+![O piață cu bordură, tăiată într-o ridicare în pantă, în 3D](shots/hardscape-plaza-3d.webp)
+
+**Tipul.** Un tip de pavaj e o alcătuire de straturi de sus în jos, fiecare cu materialul și grosimea lui, ca la un tip de planșeu. Lapin vine cu câteva gata făcute, marcate orientative: **Concrete pavers** (pavele de beton 6 cm, pat de nisip 4 cm, balast 20 cm), **Asphalt** (asfalt), **Gravel** (pietriș), **Grass pavers** (dale înierbate) și **Stone slabs** (dale de piatră); verifică-le față de alcătuirea ta. **Editează tipurile…** din proprietăți deschide **Tipuri de pavaj**: schimbi straturile unui tip, ordinea și materialele lor, felul pavajului (**Rigid** sau **Flexibil**, cum îi spune IFC 4.3), faci unul nou sau aduci unul gata făcut. Toate pavajele tipului urmează când îl salvezi, iar un tip editat e al tău, nu mai e marcat orientativ.
+
+![Dialogul Tipuri de pavaj cu straturile pavelelor](shots/hardscape-types.webp)
+
+**Fața de sus.** **Fața de sus** din proprietăți e una din trei:
+
+- **Orizontală**: toată fața la **Cotă** (±0,00 = 0).
+- **Plan înclinat**: un plan care coboară cu o **Pantă** (`2 %`, `1:50`, `0.02`) spre o direcție (**Coboară spre**, în grade de la +x, în sens trigonometric), cota ținând în originea lui. **Săgeată de pantă** (în grupul **Peisagistică**) o dă desenând: clic pe capătul de sus, apoi pe cel de jos, peste pavaj, și scrii panta.
+- **După colțuri**: o cotă pentru fiecare colț, scrisă în tabelul colțurilor sau dată cu mânerele de cotă ale colțurilor în 3D. Când colțurile stau într-un plan, fața e acel plan; când nu, fața se triangulează între ele, iar proprietățile spun asta.
+
+O latură în arc ia cotele celor două colțuri ale ei după lungime. Planul își scrie cota în mijloc, sau o săgeată în sensul pantei cu panta ei, sau cotele colțurilor.
+
+![Proprietățile unui pavaj: tipul, alcătuirea, fața de sus, terenul și bordura cu laturile ei](shots/hardscape-properties.webp)
+
+![Un trotuar cu pantă de 2 % în secțiune: pavelele, patul, fundația, bordura, terenul lipit de marginea lui](shots/hardscape-sidewalk-section.webp)
+
+**Pe teren sau independent.** Tăiat într-un teren, marginile de sus ale pavajului sunt liniile de rupere ale terenului, ca liniile caracteristice: terenul se lipește exact de marginile lui, punctele ridicării de sub el ies din teren (terenul spune câte), terenul e tăiat de straturile și bordura lui, iar săpătura i se măsoară în *Lapin_EarthworkQuantities*. Când îi schimbi fața de sus sau conturul, terenul urmează. Curbele de nivel se opresc la conturul lui. **Independent** din proprietăți îl scoate din teren (terenul e din nou ridicarea); **taie în teren** îl pune la loc. Un pavaj independent nu are nevoie de teren: un trotuar în jurul unei clădiri, o terasă pe o placă.
+
+**Bordura.** Bifează **Bordură** în proprietăți (sau în bara uneltei) pentru o bordură pe laturi, în afara conturului. Are o formă (**Verticală**, **Teșită**, **Rotunjită**, sau un profil al tău desenat în **Gestionare → Profile** cu folosința **Bordură**: latura dinspre pavaj stă pe marginea pavajului, vârful la înălțimea bordurii peste pavaj), înălțimea **Peste pavaj**, o **Lățime**, adâncimea **Sub pavaj** și un material. Tabelul **Laturile bordurii** o pornește sau o oprește latură cu latură și o coboară: scrie o înălțime în **Coborâtă la** (`0` la o trecere) și bordura coboară la acea înălțime peste pavaj pe latura aceea. Bordurile se îmbină în unghi unde două laturi au bordură și se opresc drept unde o latură nu are; pe un pavaj înclinat bordura urmează fața. Bordura e un element al ei (selecteaz-o ca să ajungi la pavajul ei); pleacă odată cu pavajul când acesta e șters.
+
+![Piața în plan: pavajul hașurat, cota lui și bordura](shots/hardscape-plaza-plan.webp)
+
+**O subregiune făcută pavaj.** În proprietățile terenului, **în pavaj** lângă o subregiune o face pavaj, cu același contur și aceeași arie: un tip din materialul subregiunii peste patul și fundația pavelelor, colțurile pe teren acolo unde stătea subregiunea, tăiat în teren. Subregiunea dispare, în același pas de anulare. Subregiunile pe care nu le transformi rămân ce erau.
+
+![O subregiune de pietriș transformată în pavaj](shots/hardscape-converted.webp)
+
+**Editarea, cantitățile și IFC.** În plan conturul are mânerele de contur (colțuri, laturi, arce, racordare și teșire); în 3D fața de sus are mânere de cotă. Se mută, se rotește și se oglindește ca orice element; fiecare schimbare e un pas de anulare. *Lapin_HardscapeQuantities* dă aria pavată, aria feței de sus, perimetrul, grosimea alcătuirii și volumul, iar fiecare strat aria și volumul lui; *Lapin_KerbQuantities* lungimea bordurii, lungimea coborâtă și volumul; **Extrasul de pavaje** le listează pe toate. În plan pavajul e hașurat cum arată materialul stratului de sus (grafica lui de suprafață, Gestionare → Materiale), iar secțiunile îi taie straturile. În IFC merge ca *IfcPavement* (IFC 4.3) sau ca *IfcSlab* numit *Pavement* (IFC4), cu straturile ca *IfcMaterialLayerSetUsage*, iar bordura ca *IfcKerb* (IFC 4.3) sau ca proxy numit *Kerb* (IFC4); un fișier scris de Lapin revine ca același pavaj și aceeași bordură.
 
 ## Planul de situație și planul de încadrare
 

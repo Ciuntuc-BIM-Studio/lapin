@@ -180,11 +180,13 @@ public static class Terrains
             near = new FeatureLines.Near(featured.Select(f => (f.Points, f.Tolerance)));
         }
         var featureEnd = all.Count;
+        // What the hardscapes cut into it cover (T4): the ground there is their top, its survey points left out.
+        var areas = sculpted && features ? FeatureLines.Areas(x) : [];
         var basePts = ownBase ? survey : ExistingPoints(x);
         // A survey point on a breakline takes the breakline's height there: the line holds.
         var onLine = LineIndex.Of(lines);
         // One within a feature line's tolerance conflicts with it and is left out of the triangulation (the terrain says how many).
-        all.AddRange(basePts.Where(p => near?.Within(p.Xy) != true).Select(p => onLine?.HeightAt(p) is { } z ? p with { Z = z } : p));
+        all.AddRange(basePts.Where(p => near?.Within(p.Xy) != true && !FeatureLines.InAreas(areas, p.Xy)).Select(p => onLine?.HeightAt(p) is { } z ? p with { Z = z } : p));
         var pts = all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList();
         if (dabs.Count > 0)
         {
@@ -192,7 +194,7 @@ public static class Terrains
             pts = Sculpt.Apply(pts, segments, dabs);
             for (var i = 0; i < held.Count; i++) pts[fromFeatures + i] = held[i];
             // What the brush added within a feature line's tolerance goes too.
-            if (near != null) pts = [.. pts.Where((p, i) => i < featureEnd || !near.Within(p.Xy))];
+            if (near != null) pts = [.. pts.Where((p, i) => i < featureEnd || (!near.Within(p.Xy) && !FeatureLines.InAreas(areas, p.Xy)))];
         }
         var tin = Tin.Delaunay(pts, segments, boundary.Count >= 3 ? boundary : null);
         // A surface from a file with holes or a concave edge keeps to where its triangles were.
@@ -586,6 +588,8 @@ public static class Terrains
         // What its feature lines did to its survey (T2): the points they dropped, the crossings where two disagreed.
         if (e.Attrs[FeatureLines.Derived] != null)
         {
+            if (FeatureLines.Covered(e) is var covered and > 0)
+                problems.Add($"{covered} survey point(s) lie under a hardscape: they are left out of the triangulation, the ground there is its top.");
             if (FeatureLines.Dropped(e) is var dropped and > 0)
                 problems.Add($"{dropped} survey point(s) lie within a feature line's tolerance of it: they are left out of the triangulation, the line holds there.");
             // Î7: the line drawn first holds; each crossing is marked in plan too, with its two heights.
@@ -630,6 +634,8 @@ public static class Terrains
         // Ditches and paths take their volume out of the ground: the ditch's channel, the path's courses.
         var cutters = DitchesOf(m, e.Id).Select(d => (Element: d, Solids: Ditches.Cutters(d, t, m)))
             .Concat(PathsOf(m, e.Id).Select(pth => (Element: pth, Solids: Paths.GroundCutters(m, pth))))
+            // A hardscape (T4): its layers and its kerb, under a ground that meets its top edges.
+            .Concat(Hardscapes.Of(m, e.Id).Select(h => (Element: h, Solids: Hardscapes.GroundCutters(m, h))))
             .Where(x => x.Solids.Count > 0).ToList();
         if (cutters.Count > 0)
         {
@@ -645,14 +651,14 @@ public static class Terrains
                     }
                     catch (InvalidOperationException ex) { problems.Add($"{element.Name}: could not be cut into the ground ({ex.Message})."); }
                 }
-            else problems.Add("Ditches and paths need the boolean library (manifold), missing here.");
+            else problems.Add("Ditches, paths and hardscapes need the boolean library (manifold), missing here.");
         }
         var material = e.Str("material");
         var parts = new List<GeometryPart> { new("Ground", Materials.ColorOf(m, material) is "#c9ced6" ? Color : Materials.ColorOf(m, material), body, material, "ground") };
         foreach (var sr in SubregionsOf(e))
             if (SubregionPart(t, sr, m) is { } part) parts.Add(part);
         if (e.Str("analysis") is { } kind && kind != "none" && Analysis.Of(m, e, kind) is { } analysis) parts.AddRange(Analysis.Overlay(analysis));
-        var g = new ElementGeometry(parts, Plan(e, t, pads.Select(p => (p.Outline, p.Z, p.Holes)).ToList(), DitchesOf(m, e.Id).ToList()), null, problems.Count > 0 ? problems : null);
+        var g = new ElementGeometry(parts, Plan(e, t, pads.Select(p => (p.Outline, p.Z, p.Holes)).ToList(), DitchesOf(m, e.Id).ToList(), FeatureLines.Areas(e)), null, problems.Count > 0 ? problems : null);
         Works.AddOrUpdate(g, works);
         SculptWorks.AddOrUpdate(g, new SculptVolume(sculptCut, sculptFill));
         return g;
@@ -663,12 +669,13 @@ public static class Terrains
         Chain(t.Contour(z).SelectMany(s => Outside(s.A, s.B, pads)).ToList());
 
     /// <summary>The plan: contours (the major ones heavier) outside the platforms, the terrain's edge, the platforms' outlines.</summary>
-    static List<PlanItem> Plan(Entity e, Terrain t, List<(IReadOnlyList<Vec2> Outline, double Z, IReadOnlyList<IReadOnlyList<Vec2>> Holes)> pads, List<Entity> ditches)
+    static List<PlanItem> Plan(Entity e, Terrain t, List<(IReadOnlyList<Vec2> Outline, double Z, IReadOnlyList<IReadOnlyList<Vec2>> Holes)> pads, List<Entity> ditches, List<List<Vec2>>? covered = null)
     {
         var items = new List<PlanItem>();
         var interval = DrawnInterval(e, t);
         var major = Math.Max(1, (int)Math.Round(e.NumOrNull("majorEvery") ?? Defaults.MajorEvery));
-        var padAreas = pads.Select(x => (x.Outline, x.Holes)).ToList();
+        // The contours stop at the platforms and at the hardscapes cut into it (T4), which draw their own outlines.
+        var padAreas = pads.Select(x => (x.Outline, x.Holes)).Concat((covered ?? []).Select(a => ((IReadOnlyList<Vec2>)a, (IReadOnlyList<IReadOnlyList<Vec2>>)[]))).ToList();
         if (interval > 0)
             foreach (var z in t.Levels(interval))
             {

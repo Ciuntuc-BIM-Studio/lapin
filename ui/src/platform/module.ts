@@ -21,7 +21,9 @@ export type Gesture =
     /** In a plan, the gesture is a drag: pressed at the first point, let go at the second (a contour dragged, site grading T2); `body` previews it while the button is down. */
     drag?: boolean;
     /** Before the first point (with `drag`): what the press would take, as lines on the plan (metres), drawn as the cursor moves; `redraw` asks for the plan to be drawn again once the answer is in. */
-    hover?: (at: Vec2, redraw: () => void) => Vec2[][] }
+    hover?: (at: Vec2, redraw: () => void) => Vec2[][];
+    /** What the hint over the view says the tool asks for, after its name (a contour dragged: press on it and drag); else the two points' own. */
+    hint?: string }
   /** `ghost`: what the click would put there, as lines on the plan (metres), redrawn as the cursor moves (a family's outline, turned and mirrored). */
   | { kind: 'point'; ghost?: (at: Vec2) => Vec2[][] }
   | { kind: 'rectangle' }
@@ -471,7 +473,7 @@ export interface LapinModule {
   /** The grips of a selected entity in 3D only (heights, faces; Grip3D), by IFC class. */
   grips3d?: Record<string, (node: NodeDto) => Grip3D[]>;
   /** The lines drawn over a selected entity (its axis, its outline), by IFC class. */
-  references?: Record<string, (node: NodeDto) => RefLine[]>;
+  references?: Record<string, (node: NodeDto, view?: GripView) => RefLine[]>;
   /** Create Similar (CS): the tool that builds this class, set up like the element (its type, its style). */
   similar?: Record<string, (node: NodeDto) => void>;
   /**

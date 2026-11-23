@@ -31,7 +31,7 @@ export function usePortalCatalog(): PortalCatalog {
 interface Values { values: Record<string, number>; problems: string[]; path: [number, number][] }
 
 /** One number (or formula): its text, read back on Enter or blur; the value a formula gives beside it. */
-function FormulaField({ p, value, worked, onCommit }: { p: PortalParam; value: unknown; worked?: number; onCommit: (v: number | string | null) => void }) {
+export function FormulaField({ p, value, worked, onCommit }: { p: PortalParam; value: unknown; worked?: number; onCommit: (v: number | string | null) => void }) {
   const [text, setText] = useState(fieldText(value));
   useEffect(() => setText(fieldText(value)), [value]);
   const unit = p.kind === 'length' ? 'm' : p.kind === 'angle' ? '°' : '';

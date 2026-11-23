@@ -8,7 +8,7 @@
 import { create } from 'zustand';
 import { activate } from '../../platform/modules';
 import { promptText } from '../../shell/prompts';
-import { BrickWall, Combine, Landmark, Crop, Hexagon, Layers, MousePointerClick, PenLine, Scissors, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
+import { BrickWall, Combine, Landmark, TrainFrontTunnel as TunnelIcon, Crop, Hexagon, Layers, MousePointerClick, PenLine, Scissors, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, Grip3D, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -22,19 +22,23 @@ import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './surv
 import { TerrainSection } from './TerrainSection';
 import { FeatureLineSection } from './FeatureLineSection';
 import { contourAt, dragContour, featureLine, featureLineGrips, featureLineGrips3d } from './featureLineTools';
-import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
+import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection, TunnelLiningSection } from './SiteSections';
 import { isDitch, setBrush, useBrush, useTerrainEdit, type BrushKind } from './prefs';
 import { MAX_POINT_GRIPS, decorateCornerGrips, terrainPlanPointGrips, terrainPointGrips } from './pointGrips';
 import { useCamera } from '../../viewport/camera';
 import { EntourageSection, entourage, entourageRow, useEntouragePrefs } from './entourage';
 import { lazyPart } from '../../platform/lazyPart';
+import { HardscapeSection, KerbSection, hardscape, hardscapeGrips, hardscapeGrips3d, hardscapeRefs, hardscapeSlope, similarHardscape, useHardscapeTypeEdit } from './hardscapeTools';
 import { drawPortalPath, openPortal, placePortal, placePortalOnRoad } from './portalTools';
+import { drawTunnelAxis, openTunnel, placeTunnelOnAxis } from './tunnelTools';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const BrushDialog = lazyPart(() => import('./BrushDialog').then((m) => m.BrushDialog), { title: 'Terrain brush' });
 const CorridorDialog = lazyPart(() => import('./CorridorDialog').then((m) => m.CorridorDialog), { title: 'Corridor' });
+const HardscapeTypesDialog = lazyPart(() => import('./HardscapeTypesDialog').then((m) => m.HardscapeTypesDialog), { title: 'Hardscape types' });
 const EntourageKindsDialog = lazyPart(() => import('./EntourageKindsDialog').then((m) => m.EntourageKindsDialog), { title: 'Entourage kinds' });
 const PortalDialog = lazyPart(() => import('./PortalDialog').then((m) => m.PortalDialog), { title: 'Portal or abutment' });
+const TunnelDialog = lazyPart(() => import('./TunnelDialog').then((m) => m.TunnelDialog), { title: 'Tunnel lining' });
 
 /** The lowest surveyed elevation, rounded down to the metre: what ±0.00 defaults to. */
 function lowest(text: string): number | null {
@@ -435,6 +439,9 @@ const retainingWall: ToolDef = {
 /** The tunnel-portal and bridge-abutment configurator (docs/plan-wing-walls.md, S3): a face wall and its wings from a preset. */
 const portal: ToolDef = { id: 'civil.portal', label: 'Portal or abutment…', icon: Landmark, shortcut: 'PO', run: () => openPortal() };
 
+/** The tunnel lining configurator (docs/plan-wing-walls.md, S4): a section swept along an axis, in casting blocks or rings. */
+const tunnel: ToolDef = { id: 'civil.tunnel', label: 'Tunnel lining…', icon: TunnelIcon, shortcut: 'TU', run: () => openTunnel() };
+
 /** One plant at a click (the catalogue's first species; changed in the inspector). */
 const plant: ToolDef = {
   id: 'civil.plant', label: 'Plant', icon: TreeDeciduous, shortcut: 'PN',
@@ -468,12 +475,13 @@ const civil: LapinModule = {
   name: 'Civil',
   summary: 'The terrain from survey points or flat, its contours, the brush that works it, platforms and ditches with their cut and fill, paths, retaining walls, plantings, people and cars.',
   // The old Road tool: the Path tool, set to Road.
-  legacyTools: [road, placePortal, placePortalOnRoad, drawPortalPath],
+  legacyTools: [road, placePortal, placePortalOnRoad, drawPortalPath, placeTunnelOnAxis, drawTunnelAxis],
   // Create similar: the tool that made the element, set as it was (a road's template, a zone or a single plant, the entourage's kind).
   similar: {
     IfcEarthworksCut: (n) => activate(n.props.contour ? platform : ditch),
     IfcPavement: (n) => { usePathKind.setState({ kind: n.props.template === 'road' ? 'road' : 'path' }); if (useUi.getState().tool !== path.id) activate(path); },
     LapinRetainingWall: () => activate(retainingWall),
+    LapinHardscape: (n) => { similarHardscape(n); if (useUi.getState().tool !== hardscape.id) activate(hardscape); },
     LapinFeatureLine: (n) => { if (useUi.getState().tool !== (n.props.elevation != null ? contourAt : featureLine).id) activate(n.props.elevation != null ? contourAt : featureLine); },
     LapinPlanting: (n) => activate(n.props.contour ? plantingZone : plant),
     LapinEntourage: (n) => { if (typeof n.props.kind === 'string') useEntouragePrefs.setState({ kind: n.props.kind as never }); if (useUi.getState().tool !== entourage.id) activate(entourage); },
@@ -485,7 +493,7 @@ const civil: LapinModule = {
       { label: 'Grading', tools: [featureLine, contourAt, dragContour], small: [] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, subregion, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
-      { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework, portal] },
+      { label: 'Landscape', tools: [path, hardscape, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework, hardscapeSlope, portal, tunnel] },
       { label: 'Entourage', tools: [entourage], small: [entourageRow, entourageKinds] },
     ],
   }],
@@ -512,8 +520,11 @@ const civil: LapinModule = {
     },
     // In a plan only (it names its view): in 3D a corner's plan grips would stand on the storey's level, under the ground; there it has its height grips.
     LapinFeatureLine: (n: NodeDto, view?: GripView) => (view?.view ? featureLineGrips(n) : []),
-    IfcPavement: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updatePath', args: { id: n.id, points: toPairs(pts) } })),
-    LapinRetainingWall: (n: NodeDto) => polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateRetainingWall', args: { id: n.id, points: toPairs(pts) } })),
+    // In a plan only: in 3D their plan grips would stand on the storey's level, under the ground they follow.
+    IfcPavement: (n: NodeDto, view?: GripView) => (view?.view ? polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updatePath', args: { id: n.id, points: toPairs(pts) } })) : []),
+    LapinRetainingWall: (n: NodeDto, view?: GripView) => (view?.view ? polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateRetainingWall', args: { id: n.id, points: toPairs(pts) } })) : []),
+    LapinHardscape: hardscapeGrips,
+    LapinTunnelLining: (n: NodeDto, view?: GripView) => (view?.view ? polylineGrips(pathOf(n), (pts) => ({ command: 'civil.updateTunnelLining', args: { id: n.id, points: toPairs(pts) } })) : []),
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? outlineGrips({ pts }, (o) => ({ command: 'civil.updatePlanting', args: { id: n.id, points: toPairs(o.pts) } })) : []; },
   },
   grips3d: {
@@ -522,12 +533,17 @@ const civil: LapinModule = {
       useTerrainEdit.getState().editPoints ? terrainPointGrips(n, useCamera.getState().target, 0, MAX_POINT_GRIPS, useTerrainEdit.getState().gripMode) : [],
     // A feature line's corners: a height grip on each.
     LapinFeatureLine: featureLineGrips3d,
+    // A hardscape's top: its elevation, or each corner's height.
+    LapinHardscape: hardscapeGrips3d,
   },
   references: {
     IfcEarthworksCut: (n: NodeDto) => { if (isDitch(n)) return pathRefs(n); const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts, arcsOf(n.props.arcs, pts.length))] : []; },
     // None for a feature line: a reference stands on the storey's level, and in 3D it would run under the ground (the line is drawn itself in plan and in 3D).
-    IfcPavement: pathRefs,
-    LapinRetainingWall: pathRefs,
+    // In a plan only, as their grips (in 3D the axis would run on the storey's level, under the ground).
+    IfcPavement: (n: NodeDto, view?: GripView) => (view?.view ? pathRefs(n) : []),
+    LapinRetainingWall: (n: NodeDto, view?: GripView) => (view?.view ? pathRefs(n) : []),
+    LapinHardscape: hardscapeRefs,
+    LapinTunnelLining: (n: NodeDto, view?: GripView) => (view?.view ? pathRefs(n) : []),
     LapinPlanting: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts)] : []; },
   },
   propertySections: [
@@ -535,11 +551,15 @@ const civil: LapinModule = {
     { id: 'featureLine', label: 'Feature line', classes: ['LapinFeatureLine'], component: FeatureLineSection, replacesFields: () => true },
     { id: 'earthwork', label: 'Earthwork', classes: ['IfcEarthworksCut'], component: EarthworkSection, replacesFields: () => true },
     { id: 'path', label: 'Path', classes: ['IfcPavement'], component: PathSection, replacesFields: () => true },
+    { id: 'hardscape', label: 'Hardscape', classes: ['LapinHardscape'], component: HardscapeSection, replacesFields: () => true },
+    { id: 'kerb', label: 'Kerb', classes: ['LapinKerb'], component: KerbSection, replacesFields: () => true },
     { id: 'retainingWall', label: 'Retaining wall', classes: ['LapinRetainingWall'], component: RetainingWallSection, replacesFields: () => true },
+    { id: 'tunnelLining', label: 'Tunnel lining', classes: ['LapinTunnelLining'], component: TunnelLiningSection },
     { id: 'planting', label: 'Planting', classes: ['LapinPlanting'], component: PlantingSection, replacesFields: () => true },
     { id: 'entourage', label: 'Entourage', classes: ['LapinEntourage'], component: EntourageSection, replacesFields: () => true },
   ],
-  dialogs: { brush: BrushDialog, corridor: CorridorDialog, entourageKinds: EntourageKindsDialog, portal: PortalDialog },
+  dialogs: { brush: BrushDialog, corridor: CorridorDialog, entourageKinds: EntourageKindsDialog, portal: PortalDialog, tunnel: TunnelDialog, hardscapeTypes: HardscapeTypesDialog },
+  editType: { LapinHardscapeType: (id: string) => { useHardscapeTypeEdit.setState({ id }); useUi.setState({ dialog: 'hardscapeTypes' }); } },
 };
 
 export default civil;

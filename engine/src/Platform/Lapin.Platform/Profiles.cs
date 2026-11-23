@@ -109,7 +109,7 @@ public static class Profiles
     public const string Class = "LapinProfile";
     public const string Key = "profile";
     public const string IdKey = "profileId";
-    public static readonly string[] Uses = ["sweep", "reveal", "footing"];
+    public static readonly string[] Uses = ["sweep", "reveal", "footing", "kerb"];
 
     static ProfileVertex V(double u, double v, double b = 0) => new(u, v, b);
 
@@ -152,6 +152,24 @@ public static class Profiles
             p => [V(0, 0), V(p("depth"), 0), V(p("depth"), p("width")), V(0, p("width"))]),
         new("roundGroove", "Round groove", "reveal", [("radius", "Radius", 0.015)],
             p => [V(0, 2 * p("radius"), -1), V(0, 0)]),
+        // Kerbs (site grading T4): u out of the paving's edge, v up from the paving's top; the paving's edge at the insertion point.
+        new("kerbUpright", "Upright kerb", "kerb", [("height", "Height above the paving", 0.12), ("width", "Width", 0.15), ("depth", "Depth below the paving", 0.25)],
+            p => [V(0, -p("depth")), V(p("width"), -p("depth")), V(p("width"), p("height")), V(0, p("height"))]),
+        new("kerbBevelled", "Bevelled kerb", "kerb", [("height", "Height above the paving", 0.12), ("width", "Width", 0.15), ("depth", "Depth below the paving", 0.25)],
+            p =>
+            {
+                var c = Math.Min(0.03, Math.Min(p("width"), p("height")) * 0.5);
+                return c < 1e-6 ? [V(0, -p("depth")), V(p("width"), -p("depth")), V(p("width"), p("height")), V(0, p("height"))]
+                    : [V(0, -p("depth")), V(p("width"), -p("depth")), V(p("width"), p("height")), V(c, p("height")), V(0, p("height") - c)];
+            }),
+        new("kerbRounded", "Rounded kerb", "kerb", [("height", "Height above the paving", 0.12), ("width", "Width", 0.15), ("depth", "Depth below the paving", 0.25)],
+            p =>
+            {
+                var r = Math.Min(0.03, Math.Min(p("width"), p("height")) * 0.5);
+                // A quarter round on the paving's side of its top (bulge tan(90° / 4)).
+                return r < 1e-6 ? [V(0, -p("depth")), V(p("width"), -p("depth")), V(p("width"), p("height")), V(0, p("height"))]
+                    : [V(0, -p("depth")), V(p("width"), -p("depth")), V(p("width"), p("height")), V(r, p("height"), Math.Tan(Math.PI / 8)), V(0, p("height") - r)];
+            }),
         // Footings: across the axis (u, left positive), up from the bottom (v); the axis on the middle unless said.
         new("footingRect", "Rectangular footing", "footing", [("width", "Width", 0.6), ("height", "Height", 0.4)],
             p => [V(-p("width") / 2, 0), V(p("width") / 2, 0), V(p("width") / 2, p("height")), V(-p("width") / 2, p("height"))]),

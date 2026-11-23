@@ -13,6 +13,7 @@ import { useUi } from '../app/store';
 import { useCad } from '../viewport/cad/session';
 import { useInterface } from '../app/interface';
 import { hint } from '../app/commands';
+import { t } from '../i18n';
 import { activateSlot, findTool, hotbarIds, putInSlot, quickSlot, resetSlots, swapSlots, typeSlot, typesOf, useToolTick } from '../platform/modules';
 import { reach, SLOT_DRAG, TOOL_DRAG, useHotbars } from '../app/hotbar';
 import { openContextMenu } from './ContextMenu';
@@ -37,6 +38,8 @@ export function toolHint(tool: string | null): string | null {
   if (!active || !g) return null;
   if (g.kind === 'twoPoints' && g.measure) return `${active.label}: click two points a known distance apart · type their true distance (2400, 50m) · Esc cancels`;
   const space = active.spaceHint?.();
+  // A tool of its own words (a contour dragged): its hint, translated as a phrase.
+  if (g.kind === 'twoPoints' && g.hint) return `${t(active.label)}: ${t(g.hint)}`;
   if (g.kind === 'twoPoints') return `${active.label}: click its start, then its end · Shift squares it${space ? ` · Space: ${space}` : ''} · ${g.repeat ? 'Enter ends the chain, Esc cancels' : 'Esc cancels'}`;
   if (g.kind === 'threePoints' && g.arc && space) return `${active.label}: click its start, its end, then a point it passes through · Space: ${space} · Esc cancels`;
   if (g.kind === 'pickThenPoint') return `${active.label}: ${g.hint ?? 'click the element, then a point · Enter takes the first click alone, Esc cancels'}`;

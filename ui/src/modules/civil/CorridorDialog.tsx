@@ -18,6 +18,7 @@ import { execute, query, useSession } from '../../engine/session';
 import { fromPairs } from '../../viewport/contour';
 import { parseStationList, stationLabel } from './stations';
 import { Cell, LengthField, NumberField } from '../../shell/cells';
+import { openTunnel } from './tunnelTools';
 
 type Pair = [number, number];
 type Curve = [number, number, number];
@@ -29,7 +30,7 @@ interface Spec {
   curves: Curve[];
 }
 interface CorridorData {
-  kind: 'path' | 'retainingWall' | 'ditch' | 'track'; start: number; end: number; length: number; left: number; right: number;
+  kind: 'path' | 'retainingWall' | 'ditch' | 'track' | 'tunnelLining'; start: number; end: number; length: number; left: number; right: number;
   /** The axis runs on arcs and clothoids (some vertex has a radius that fits). */
   curved: boolean;
   /** Why the curves given could not be built, when the axis fell back to the polyline. */
@@ -72,7 +73,7 @@ const NATURAL = '#8a6a44';
 const PROPOSED = '#3f8a4a';
 const RED = '#c8372d';
 
-const commandOf = (n: NodeDto) => (n.type === 'IfcPavement' ? 'civil.updatePath' : n.type === 'LapinRetainingWall' ? 'civil.updateRetainingWall' : n.type === 'LapinTrack' ? 'civil.updateTrack' : 'civil.updateDitch');
+const commandOf = (n: NodeDto) => (n.type === 'IfcPavement' ? 'civil.updatePath' : n.type === 'LapinRetainingWall' ? 'civil.updateRetainingWall' : n.type === 'LapinTrack' ? 'civil.updateTrack' : n.type === 'LapinTunnelLining' ? 'civil.updateTunnelLining' : 'civil.updateDitch');
 
 /** A plot's frame: data bounds to SVG pixels, y up; the vertical scale exaggerated by `exaggerate`. */
 function frame(xs: number[], ys: number[], w: number, h: number, pad: number, equal: boolean) {
@@ -208,6 +209,14 @@ function TemplateEditor({ node }: { node: NodeDto }) {
       </dl>
     );
   }
+  if (node.type === 'LapinTunnelLining') {
+    return (
+      <dl className="fields corridor-form">
+        <dt /><dd><button type="button" className="btn compact" data-action="tunnel-configure" onClick={() => openTunnel(node)}>Tunnel configurator…</button></dd>
+        <dt /><dd><span className="muted small">The section, its thicknesses, its blocks and its IFC are the tunnel configurator's; the red line is the road's level on the axis.</span></dd>
+      </dl>
+    );
+  }
   if (node.type === 'LapinRetainingWall') {
     return (
       <dl className="fields corridor-form">
@@ -239,13 +248,17 @@ function CurvesEditor({ node, d, onSave }: { node: NodeDto; d: CorridorData; onS
   const pts = fromPairs(node.props.path);
   // An axis generated from another (a parallel track) has no vertices of its own to curve.
   const generated = !!node.props.reference && typeof node.props.reference === 'object';
+  // A lining's axis taken from another element (a road's alignment, cut between two stations): its curves are that one's.
+  const taken = node.type === 'LapinTunnelLining' && !!node.props.axisSource;
   const curves: Curve[] = pts.map((_, i) => d.spec.curves?.[i] ?? [0, 0, 0]);
   const any = curves.some((c) => c.some((x) => x > 0));
   const put = (i: number, k: number, v: number) => onSave(curves.map((c, j) => (j === i ? c.map((x, m) => (m === k ? Math.max(0, v) : x)) as Curve : c)));
-  const cell = (i: number, k: number) => (generated ? <span className="num">{curves[i][k] || '—'}</span> : <Num value={curves[i][k]} min={0} width={76} onCommit={(v) => put(i, k, v)} />);
+  const cell = (i: number, k: number) => (generated || taken ? <span className="num">{curves[i][k] || '—'}</span> : <Num value={curves[i][k]} min={0} width={76} onCommit={(v) => put(i, k, v)} />);
   return (
     <div className="corridor-form">
-      {generated
+      {taken
+        ? <p className="muted small">The lining's axis was taken from another element with its curves: change them there and take the axis again, or move its points to draw it anew.</p>
+        : generated
         ? <p className="muted small">A parallel track's curves come from its reference, offset: edit them on the reference.</p>
         : <p className="muted small">Give a vertex a radius to round the corner there; the clothoids run into and out of the arc. 0: a plain corner. Metres.</p>}
       <table className="panel-grid corridor-curves">
@@ -265,7 +278,7 @@ function CurvesEditor({ node, d, onSave }: { node: NodeDto; d: CorridorData; onS
       </table>
       <p className="muted small">{d.curved ? 'The axis runs on arcs and clothoids; the stations follow it.' : 'The axis is the polyline.'}</p>
       {d.problem && <p className="error-text">{d.problem}</p>}
-      {!generated && <div className="row"><button type="button" className="btn compact" disabled={!any} onClick={() => onSave(curves.map(() => [0, 0, 0] as Curve))}>Clear curves</button></div>}
+      {!generated && !taken && <div className="row"><button type="button" className="btn compact" disabled={!any} onClick={() => onSave(curves.map(() => [0, 0, 0] as Curve))}>Clear curves</button></div>}
     </div>
   );
 }
@@ -282,7 +295,7 @@ export function CorridorDialog() {
   const [newSection, setNewSection] = useState('');
   const [made, setMade] = useState<string | null>(null);
   const close = () => useUi.setState({ dialog: null });
-  const valid = !!node && (node.type === 'IfcPavement' || node.type === 'LapinRetainingWall' || node.type === 'LapinTrack' || (node.type === 'IfcEarthworksCut' && Array.isArray(node.props.path)));
+  const valid = !!node && (node.type === 'IfcPavement' || node.type === 'LapinRetainingWall' || node.type === 'LapinTrack' || node.type === 'LapinTunnelLining' || (node.type === 'IfcEarthworksCut' && Array.isArray(node.props.path)));
 
   // Another element: its own stations from its start.
   useEffect(() => { setStation(null); setData(null); setSection(null); }, [id]);

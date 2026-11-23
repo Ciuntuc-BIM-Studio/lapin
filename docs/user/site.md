@@ -99,6 +99,28 @@ In 3D, **Visibility / Graphics** hides a view's paths, roads, kerbs and pavement
 
 ![A section across a warped wing: its face leaning on its footing](shots/portal-section.webp)
 
+## Tunnel lining
+
+![The configurator on its horseshoe preset, the engine's preview beside its numbers](shots/tunnel-configurator.webp)
+
+**Tunnel lining…** (<kbd>TU</kbd>, in the **Landscape** group) sweeps a tunnel's cross-section along an axis. Pick a preset: **Horseshoe (NATM)** (a mined tunnel: crown, side, corner and invert arcs, all tangent, with an outer shell of shotcrete), **Circular (TBM ring)** (a bored tunnel's ring of one thickness), **Cut-and-cover box** (haunches under its roof) or **Vault on walls** (a vault on upright walls over a flat floor). Then set its numbers by group: the section (the clear width, the clear height over the road, the radii, the invert under the road), the lining (its thickness at the crown, at the walls and at the invert, and the outer shell; 0 leaves it out), the blocks (a casting block's length, or a ring's width) and the output. Every number may be a formula, as in the portal configurator: the wall and invert thicknesses are `{= thickness}` by default. Under **Section**, a profile you drew and saved ([Profiles](profiles.md)) can be the section instead: its outside and the clear opening inside it, the opening's floor under the road by **Invert under the road**. The preview is the engine's (plan, section, 3D), built by the same code as the lining.
+
+**Placing it.** **On an axis…** asks for a road, a path, a retaining wall, a track or a drafted line: click where the lining starts, then where it ends. The lining takes that axis between the two stations, with its curves and clothoids, and its red line (a designed one as it is; one that follows the ground fitted to points), and keeps its stations. **Draw the axis…** takes a polyline you draw instead; round its corners in the corridor configurator (**Configurator…** in its properties: radii and clothoids at each vertex, the red line's PVIs, the stations, the sections at stations), as for a road. The red line is the road's level on the axis; the section stays plumb and square to the axis in plan (no superelevation: the road's crossfall inside it is its own).
+
+![A horseshoe lining round a curve, in its casting blocks, with a portal at its mouth](shots/tunnel-3d.webp)
+
+**Blocks and rings.** The lining is cut into casting blocks (12.5 m by default) from its start, or into rings for a TBM, the last one what is left. Each is a part of its own, with its own GlobalId, kept when you change the lining's numbers (more blocks add new ones after). In plan the lining's outside and its clear opening are drawn hidden, its axis as a centre line, its ends and its joints across it, its stations along it.
+
+**Portals.** In the lining's properties, **Portal** **At the start** or **At the end** stands a portal (the portal configurator's flared preset) across the axis at that end: its face wall wider than the lining and its crown a metre over it, the wings going out of the tunnel. The lining passes through the face wall: the wall is cut by the lining's outside behind the end and by its clear opening in front, and follows the lining when it changes. **End skewed by** and **Start skewed by** turn an end's plane about the vertical (the portal made then turns with it); a skewed end needs a straight axis at a constant grade at that end.
+
+![A section across the lining at a station: the lining and its shotcrete shell](shots/tunnel-section.webp)
+
+**Sections.** A section across the lining (from the corridor configurator, or drawn) shows its layers with their materials; a section that follows the lining's axis is its long section, the crown and the invert along it.
+
+![The long section along the lining's axis](shots/tunnel-long-section.webp)
+
+**Exact geometry, IFC and quantities.** Along a straight at a constant grade every face is a plane, a cylinder or a ruled surface; over a vertical curve a translational B-spline surface (the parabola exactly); round a circular arc on a level grade a surface of revolution (tori, cones). A clothoid, or an arc on a grade, is skinned through sections close enough that it stays within the chord rule (1 mm). With **Exact surfaces** ticked ([Import and export](import-export.md)) the IFC export writes each block, and the STEP export always does, as an IfcAdvancedBrep on those surfaces. **IFC** *assembly* (the default) writes the lining as an IfcElementAssembly (user-defined, "Tunnel lining") over one IfcBuildingElementProxy per block or ring ("Lining block", "Lining ring") and per piece of the outer shell; IFC 4.3 has no tunnel lining element, and a wall or a slab would say the vault and the invert are what they are not. *body* writes one proxy. Each block has its quantities: concrete, the inner face's formwork, the outer face, the ends' formwork, and **Formwork** (with the outer face when **Outer face formworked**, the default of the box and the vault); the lining adds the section's area, the clear opening and the outer shell's volume.
+
 ## The terrain: boundary, slopes and grading
 
 ![A survey clipped to an L-shaped boundary, a slope tag, a gravel subregion and the cut/fill grid over a raised stroke](shots/terrain-tools-plan.webp)
@@ -129,7 +151,7 @@ A terrain clipped by a **Terrain boundary** keeps its outline's heights as the g
 
 **A control cage.** On a dense survey, moving points one by one is slow. A few points can be made **controls** that shape the rest, like a low-poly cage: under **Control cage**, **every** *10* **m** takes the point nearest each node of a 10 m grid (its corners too), **along the boundary** takes the points on the terrain's outline, and **clear** takes them all off. While editing in 3D, **Grips on** chooses what gets a grip: **all points** (as before), **controls only**, or **choose controls**, where every point shows and the controls are filled; click a point's grip to make it a control, or a free point again. With **controls only**, drag a control up or down (or type the distance): it goes exactly there, and the free points around it follow smoothly, by a part of its move that fades with distance and comes to nothing at the other controls, which stay where they are. The free points keep their own shape (bumps, slopes) and move with it, and dragging the control back puts every point back; the whole move is one undo step. A point moved on its own (with **all points**) keeps its own move. A terrain without controls works as before. Splitting a terrain leaves each half the controls inside it; merging gathers them.
 
-**Subregions.** **Subregion** (in the **Earthworks** group) draws an area of the terrain with a material of its own (gravel by default): a courtyard, a lawn, a gravel bed. The ground keeps its levels; the area wears its material in 3D, as a thin skin that follows the terrain's own triangles, breaklines included, and is outlined in plan. Each gives its plan area to schedules (*Lapin_SubregionQuantities*). **Subregions** in the terrain's properties counts them, and **clear** removes them.
+**Subregions.** **Subregion** (in the **Earthworks** group) draws an area of the terrain with a material of its own (gravel by default): a courtyard, a lawn, a gravel bed. The ground keeps its levels; the area wears its material in 3D, as a thin skin that follows the terrain's own triangles, breaklines included, and is outlined in plan. Each gives its plan area to schedules (*Lapin_SubregionQuantities*). **Subregions** in the terrain's properties counts and lists them, **clear** removes them, and **to hardscape** beside one makes it a hardscape (below).
 
 ![A gravel subregion on the terrain in 3D](shots/terrain-subregion-3d.webp)
 
@@ -171,6 +193,40 @@ A feature line moves, rotates and mirrors like any element (a move in space also
 ![The contour dragged: the neighbouring contours follow with it, fading with the distance](shots/feature-line-drag-after.webp)
 
 Two things follow from how a terrain keeps its points. **Replacing a terrain's survey points wholesale** (**Replace the points…**, or *Change terrain* with new points) drops the rule that the outline is its points, and the heights its arcs' vertices had of their own: the new points are the terrain's points as they come. And **an arc vertex moved in plan through the API** (not by the outline's grips) becomes an ordinary point of the terrain with a height of its own. Feature lines are not touched by either: they stay on the terrain and keep shaping it.
+
+## Hardscape
+
+A **hardscape** is a paved area with a build-up of its own: a plaza, a sidewalk, a terrace, a car park, a platform of gravel. Draw it with **Hardscape** (<kbd>HS</kbd>, in the **Landscape** group of the **Site** tab) on an outline, as a platform: clicks (**Arcs** or <kbd>Space</kbd> for curved edges), a rectangle or a circle. The bar chooses its **type**, whether it is **Cut into the terrain** or **Standalone**, and whether it gets a **Kerb** all round. It starts level at the ground's height in its middle (at 0 with no terrain under it); everything is changed afterwards in its properties, without drawing it again.
+
+![A plaza with a kerb, cut into a sloping survey, in 3D](shots/hardscape-plaza-3d.webp)
+
+**Its type.** A hardscape type is a build-up of layers from the top down, each a material and a thickness, as a floor type is. Lapin comes with a few ready-made ones, marked indicative: **Concrete pavers** (6 cm pavers, 4 cm sand bedding, 20 cm crushed stone), **Asphalt**, **Gravel**, **Grass pavers** and **Stone slabs**; check them against your own build-up. **Edit types…** in the properties (or the type picker) opens **Hardscape types**: change a type's layers, their order and materials, its pavement kind (**Rigid** or **Flexible**, what IFC 4.3 calls it), make a new one, or bring in a ready-made one. Every hardscape of the type follows when it is saved, and an edited type is your own, no longer marked indicative.
+
+![The Hardscape types dialog with the pavers' layers](shots/hardscape-types.webp)
+
+**Its top.** **Top surface** in the properties is one of three:
+
+- **Flat and level**: the whole top at its **Elevation** (±0.00 = 0).
+- **Sloped plane**: a plane falling at a **Slope** (`2 %`, `1:50`, `0.02`) towards a direction (**Falls towards**, in degrees from +x, anticlockwise), its elevation holding at its origin. **Slope arrow** (in the **Landscape** group) sets it by drawing: click the high end, then the low end, over the hardscape, and type the grade.
+- **By its corners**: a height for each corner, typed in the corner table or set with the corners' height grips in 3D. When the corners lie in one plane the top is that plane; when they do not, the top is triangulated between them, and the properties say so.
+
+An edge that is an arc takes the heights of its two corners along its length. The plan writes its level in its middle, or an arrow the way it falls with its grade, or its corners' levels.
+
+![A hardscape's properties: its type, build-up, top, terrain and kerb with its edges](shots/hardscape-properties.webp)
+
+![A sidewalk at a 2 % fall in section: its pavers, bedding and sub-base, its kerb, the ground meeting its edge](shots/hardscape-sidewalk-section.webp)
+
+**On the terrain or standalone.** Cut into a terrain, a hardscape's top edges are the terrain's breaklines, as feature lines are: the ground meets its edges exactly, the survey points under it are left out of the terrain (the terrain says how many), the terrain is cut by its layers and its kerb, and its cut is measured for it in *Lapin_EarthworkQuantities*. Change its top or its outline and the ground follows. The terrain's contours stop at its outline. **Standalone** in the properties takes it out of the terrain (the ground is the survey again); **cut into the terrain** puts it back. A standalone hardscape needs no terrain at all: a sidewalk round a building, a terrace on a slab.
+
+**Its kerb.** Tick **Kerb** in its properties (or in the tool's bar) for a kerb along its edges, outside its outline. It has a shape (**Upright**, **Bevelled**, **Rounded**, or a profile of your own drawn in **Manage → Profiles** with the use **Kerb**: its inner side is laid on the paving's edge, its top the kerb's height above the paving), its height **Above the paving**, a **Width**, its depth **Below the paving** and a material. The **Kerb edges** table switches it on or off edge by edge and drops it: type a reveal in **Dropped to** (`0` at a crossing) and the kerb comes down to that height above the paving along that edge. Kerbs meet mitred where two edges have one and stop square where an edge has none; on a sloped hardscape the kerb follows the top. The kerb is an element of its own (select it to reach its hardscape); it goes with its hardscape when that is deleted.
+
+![The plaza in plan: its paving hatched, its level and its kerb](shots/hardscape-plaza-plan.webp)
+
+**A subregion made a hardscape.** In a terrain's properties, **to hardscape** beside a subregion makes it a hardscape with the same outline and area: a type of the subregion's material over the pavers' bedding and sub-base, its corners on the ground where the subregion lay, cut into the terrain. The subregion goes, in the same undo step. Subregions you do not convert stay what they were.
+
+![A gravel subregion converted to a hardscape](shots/hardscape-converted.webp)
+
+**Editing, quantities and IFC.** In plan its outline has the outline grips (corners, edges, arcs, fillet and chamfer); in 3D its top has height grips. It moves, rotates and mirrors like any element; each change is one undo step. *Lapin_HardscapeQuantities* gives its paved area, top surface area, perimeter, build-up depth and volume, and each layer its area and volume; *Lapin_KerbQuantities* the kerb's length, its dropped length and its volume; the **Hardscape schedule** lists them all. In plan its paving is hatched as its top layer's material looks (its surface graphics, Manage → Materials), and sections cut its layers. To IFC it goes as an *IfcPavement* (IFC 4.3) or an *IfcSlab* named *Pavement* (IFC4) with its layers as an *IfcMaterialLayerSetUsage*, its kerb as an *IfcKerb* (IFC 4.3) or a proxy named *Kerb* (IFC4); a file Lapin wrote comes back as the same hardscape and kerb.
 
 ## Site plans and location plans
 

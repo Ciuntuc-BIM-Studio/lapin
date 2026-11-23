@@ -6550,6 +6550,98 @@ export const scenes = [
     },
   },
   {
+    // Site grading T4 (docs/plan-site-grading.md): a plaza drawn with the Hardscape tool and a kerb all round, cut into a sloping
+    // survey; a sidewalk at a 2 % fall with a kerb on its street side, in section; the types dialog; a gravel subregion converted.
+    id: 'hardscape',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A 50 × 36 m survey every 2 m: falling 3 % to the east and 1 % to the north, with a gentle swell in the middle.
+      const g = (x, y) => 0.03 * x + 0.01 * y + 0.35 * Math.exp(-((x - 24) ** 2 + (y - 20) ** 2) / 180);
+      const lines = [];
+      for (let x = 0; x <= 50; x += 2) for (let y = 0; y <= 36; y += 2) lines.push(`${x} ${y} ${(100 + g(x, y)).toFixed(3)}`);
+      const made = await t.cmd('civil.addTerrain', { text: lines.join('\n'), datum: 100, storeyId: s, interval: 0.25, majorEvery: 4, name: 'Survey' });
+      const terrainId = made?.id;
+      t.expect(!!terrainId, 'a terrain from the survey');
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(1000);
+      const clicks = async (pts) => { for (const [x, y] of pts) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(250); } };
+      const hardscapes = async () => (await t.nodes()).filter((n) => n.type === 'LapinHardscape');
+      // The Hardscape tool: concrete pavers, cut into the terrain, a kerb all round; four corners, Enter closes it.
+      await t.tool('civil.hardscape');
+      t.expect(await t.page.locator('[data-testid=hardscape-type]').count() === 1, 'the tool\'s bar offers its type');
+      await t.page.locator('[data-testid=hardscape-kerb]').check();
+      await clicks([[14, 14], [30, 14], [30, 26], [14, 26]]);
+      await t.keys('Enter');
+      await t.until(async () => (await hardscapes()).length === 1, 'the tool makes a hardscape');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      const plaza = (await hardscapes())[0];
+      t.expect(plaza.props.terrainId === terrainId && typeof plaza.props.kerbId === 'string', 'cut into the terrain, with its kerb');
+      t.expect(plaza.props.typeName === 'Concrete pavers' && plaza.props.layers.length === 3, `the pavers' three layers (${plaza.props.typeName})`);
+      // Its top level at 0.95, a little into the swell.
+      await t.cmd('civil.updateHardscape', { id: plaza.id, name: 'Plaza', elevation: 0.95 });
+      // The kerb dropped flush on the south side where the path comes in.
+      await t.cmd('civil.setHardscapeKerb', { id: plaza.id, drop: { edge: 0, reveal: 0 } });
+      // A sidewalk along the north edge of the site, falling 2 % towards the road to the south of it, a kerb on its road side only.
+      const walk = (await t.cmd('civil.addHardscape', { name: 'Sidewalk', points: [[4, 30], [46, 30], [46, 32.4], [4, 32.4]], type: 'stoneSlabs', grade: '2 %', direction: 270, origin: [4, 32.4], elevation: 0.5 + g(4, 32.4) }))?.id;
+      t.expect(!!walk, 'a sidewalk by the API');
+      await t.cmd('civil.setHardscapeKerb', { id: walk, edges: [true, false, false, false] });
+      // A gravel bed drawn as a subregion first, converted from the terrain's properties.
+      await t.cmd('civil.addSubregion', { terrainId, points: [[36, 6], [46, 6], [46, 14], [36, 14]], material: 'Gravel', name: 'Gravel bed' });
+      await select(t, plaza.id);
+      await t.wait(900);
+      await t.page.locator('[data-testid=hardscape-section]').waitFor();
+      await t.shot('hardscape-properties', { of: 'aside.props', pad: 0, maxHeight: 760 });
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1500);
+      await t.shot('hardscape-plaza-plan', { of: '[data-testid=plan]', pad: 0 });
+      // The types dialog on the pavers.
+      await select(t, plaza.id);
+      await t.wait(600);
+      await t.page.locator('[data-testid=hardscape-section]').getByText('Edit types…').click();
+      await t.page.locator('[data-testid=hardscape-types]').waitFor();
+      await t.wait(600);
+      await t.shot('hardscape-types', { of: '[data-testid=hardscape-types] .dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      // The subregion made a hardscape from the terrain's properties.
+      await select(t, terrainId);
+      await t.wait(900);
+      await t.page.locator('[data-testid=subregion-to-hardscape]').first().click();
+      await t.until(async () => (await hardscapes()).length === 3, 'the subregion becomes a hardscape');
+      const gravel = (await hardscapes()).find((n) => n.name === 'Gravel bed');
+      t.expect(!!gravel && Math.abs(gravel.props.area - 80) < 1e-6, 'with the subregion\'s outline and area');
+      // A section across the sidewalk and the plaza's north edge: the layers, the kerbs, the ground meeting their edges.
+      await t.cmd('view.create', { kind: 'section', name: 'S-S', start: [20, 34.5], end: [20, 23], depth: 0.5, scale: 50 });
+      await openFromBrowser(t, 'S-S', 3000);
+      await t.fit();
+      await t.wait(1500);
+      // Closer, on the sidewalk and the plaza's north edge (the section shows the whole terrain it crosses).
+      const box = await t.page.locator('[data-testid=drawing]').boundingBox();
+      await t.page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.49);
+      for (let k = 0; k < 5; k++) { await t.page.mouse.wheel(0, -300); await t.wait(150); }
+      await t.page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.12);
+      await t.wait(1200);
+      await t.shot('hardscape-sidewalk-section', { of: '[data-testid=drawing]', pad: 0 });
+      // In 3D: the plaza with its kerb, the sidewalk, the gravel bed, the ground meeting them.
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.page.locator('button[title="Frame everything"]').first().click({ timeout: 3000 }).catch(() => {});
+      await t.wait(1200);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.35, pitch: -0.42, distance: 42, target: { x: 26, y: 20, z: 1 } }, false));
+      await t.wait(2000);
+      await t.shot('hardscape-plaza-3d', { of: 'canvas', pad: 0 });
+      await select(t, gravel.id);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.6, pitch: -0.5, distance: 22, target: { x: 41, y: 10, z: 0.8 } }, false));
+      await t.wait(2000);
+      await t.shot('hardscape-converted', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     // Gates (report #57): a fence wall along the street with a sliding gate drawn on it by the tool (its middle on the wall's
     // axis, the wall cut, the zone it parks in dashed) and a pedestrian gate beside it; a wrought iron double gate on the parcel's
     // side edge from the built-in styles; the configurator with its preview; a gate's properties; the gates in 3D.
@@ -6649,6 +6741,58 @@ export const scenes = [
       await t.wait(800);
       await t.shot('portal-section', { of: '[data-testid=drawing]', pad: 0 });
       t.expect(!!portal && !!abutment, 'the portal and the abutment');
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // The tunnel lining (docs/plan-wing-walls.md, S4): the configurator on its horseshoe preset with the engine's preview; a horseshoe
+    // lining taken from a curved road between two stations, in its casting blocks, with a portal at its mouth, in 3D; a section across
+    // it at a station, its two layers (the lining and its shotcrete shell); the long section along its axis.
+    id: 'tunnel',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.tool('civil.tunnel');
+      await t.wait(600);
+      await t.page.locator('.dialog [data-tunnel-preset=horseshoe]').click();
+      await t.wait(4000);
+      t.expect(await t.page.locator('.dialog [data-param=sideRadius]').count() === 1, 'the horseshoe shows its side radius');
+      t.expect(await t.page.locator('.dialog [data-worked=wallThickness]').count() === 1, 'the wall thickness is worked out from its formula');
+      t.expect(await t.page.locator('.dialog [data-testid=type-preview] canvas, .dialog [data-testid=type-preview] svg').count() > 0, 'the configurator previews the lining');
+      await t.shot('tunnel-configurator', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      // A road with a 160 m curve between 30 m clothoids, level; the lining from its station 40 round the curve, a portal at its mouth.
+      const road = (await t.cmd('civil.addPath', { storeyId: s, points: [[0, 0], [120, 0], [220, 110]], template: 'road' })).id;
+      await t.cmd('civil.setCorridor', { id: road, curves: [[0, 0, 0], [160, 30, 30], [0, 0, 0]], profile: { mode: 'design', pvis: [[0, 0, 0], [300, 0, 0]] } });
+      const lining = (await t.cmd('civil.addTunnelLining', { storeyId: s, spec: { preset: 'horseshoe' }, axis: { id: road, from: 40, to: 200 } })).id;
+      const portal = (await t.cmd('civil.tunnelPortal', { id: lining, end: 'start' })).id;
+      t.expect(!!lining && !!portal, 'the lining and its portal');
+      const nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'LapinTunnelLining').length === 1, 'one lining');
+      await open3d(t);
+      const orbit = (view) => t.page.evaluate(async (v) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo(v, false), view);
+      await orbit({ azimuth: 0.94, pitch: -0.3, distance: 70, target: { x: 60, y: 8, z: 3 } });
+      await t.wait(2500);
+      await t.shot('tunnel-3d', { of: 'canvas', pad: 0 });
+      // A section across the lining at station 0+100, its line from the cross-section the corridor configurator draws.
+      const cs = await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('civil.crossSection', { id, station: 100 }), lining);
+      await t.cmd('view.create', { kind: 'section', name: 'T-T', start: cs.line.start, end: cs.line.end, depth: 0.5, scale: 100 });
+      await openFromBrowser(t, 'T-T', 1500);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('tunnel-section', { of: '[data-testid=drawing]', pad: 0 });
+      // The long section along its axis: the crown, the invert and the blocks' joints.
+      await t.cmd('view.create', { kind: 'section', name: 'L-L', along: lining, depth: 0.2, scale: 500 });
+      await openFromBrowser(t, 'L-L', 1500);
+      // A developed section of some hundred pieces round the curve: a few seconds to draw.
+      await t.wait(8000);
+      await t.fit();
+      await t.wait(1500);
+      await t.shot('tunnel-long-section', { of: '[data-testid=drawing]', pad: 0 });
       await t.ui({ keyPlan: true });
     },
   },

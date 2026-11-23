@@ -232,6 +232,8 @@ public static partial class IfcExport
         ["IfcRail"] = ["RACKRAIL", "BLADE", "GUARDRAIL", "STOCKRAIL", "CHECKRAIL", "RAIL"],
         ["IfcTrackElement"] = ["TRACKENDOFALIGNMENT", "BLOCKINGDEVICE", "VEHICLESTOP", "SLEEPER", "HALF_SET_OF_BLADES", "SPEEDREGULATOR", "DERAILER", "FROG"],
         ["IfcCourse"] = ["ARMOUR", "FILTER", "BALLASTBED", "CORE", "PAVEMENT", "PROTECTION"],
+        // IfcKerbTypeEnum has only USERDEFINED and NOTDEFINED.
+        ["IfcKerb"] = [],
         ["IfcSignal"] = ["VISUAL", "AUDIO", "MIXED"],
         [RoomDividers.Class] = ["BOUNDARY", "CLEARANCE", "PROVISIONFORVOID"],
     };
@@ -1371,6 +1373,8 @@ public static partial class IfcExport
             if (cls == IfcClass.EarthworksCut && !o.Ifc43) return new(IfcClass.BuildingElementProxy, "USERDEFINED", e.PredefinedType == "TRENCH" ? "Trench" : "Earthworks cut");
             // IFC 4.3's pavement and vegetation; IFC4 has a slab named Pavement and a user-defined geographic element.
             if (cls == IfcClass.Pavement && !o.Ifc43) return new(IfcClass.Slab, "USERDEFINED", "Pavement");
+            // A kerb (a hardscape's, site grading T4): IFC 4.3's IfcKerb; IFC4 has none, a proxy named Kerb.
+            if (cls == "IfcKerb" && !o.Ifc43) return new(IfcClass.BuildingElementProxy, "USERDEFINED", "Kerb");
             if (cls == IfcClass.GeographicElement && e.PredefinedType == "VEGETATION" && o.Ifc43) return new(cls, "VEGETATION", null);
             string[]? allowed;
             if (o.Ifc43 && Classes43.TryGetValue(cls, out var allowed43)) allowed = allowed43;
@@ -1723,7 +1727,8 @@ public static partial class IfcExport
             }
             if (LayerSets.UsageOf(m, e.Id) is { } u && Layers.ReadUsage(u) is { } usage && m.Get(usage.ForLayerSet) is { } set)
             {
-                var direction = e.Class is IfcClass.Slab or IfcClass.Roof ? "AXIS3" : "AXIS2";
+                // A floor's, a roof's, or another element's laid through its thickness (a hardscape's, docs/plan-site-grading.md T4).
+                var direction = e.Class is IfcClass.Slab or IfcClass.Roof || u.Str("layerSetDirection") == "AXIS3" ? "AXIS3" : "AXIS2";
                 var usageRef = f.Add("IFCMATERIALLAYERSETUSAGE", LayerSet(set), E(direction), E(usage.DirectionSense), R(usage.Offset), Null);
                 var rel = m.RelationsOf(e.Id, IfcClass.RelAssociatesMaterial).FirstOrDefault(r => r.Relating == u.Id);
                 f.Add("IFCRELASSOCIATESMATERIAL", rel != null ? Gid(rel.Id) : Gid(e.Id, "material"), Null, Null, Null, L(new[] { entity }), usageRef);
@@ -1793,6 +1798,11 @@ public static partial class IfcExport
                 {
                     // An abutment's or a tunnel portal's wings and face wall (a retaining wall written as an assembly, decision 789 S3).
                     case "leg": return new(IfcClass.Wall, "RETAININGWALL", null);
+                    // A tunnel lining's casting blocks, its TBM rings and its outer shell (S4): IFC has no tunnel lining element, so each a
+                    // proxy named for what it is (a wall or a slab would say a lining's vault and invert are what they are not).
+                    case "block": return new(IfcClass.BuildingElementProxy, "USERDEFINED", "Lining block");
+                    case "ring": return new(IfcClass.BuildingElementProxy, "USERDEFINED", "Lining ring");
+                    case "primary": return new(IfcClass.BuildingElementProxy, "USERDEFINED", "Outer shell");
                     case "rail": return o.Ifc43 ? new("IfcRail", "RAIL", null) : new("IfcMember", "USERDEFINED", "Rail");
                     case "sleeper": return o.Ifc43 ? new("IfcTrackElement", "SLEEPER", null) : new("IfcBuildingElementPart", "USERDEFINED", "Sleeper");
                     case "bearer": return o.Ifc43 ? new("IfcTrackElement", "SLEEPER", null) : new("IfcBuildingElementPart", "USERDEFINED", "Bearer");

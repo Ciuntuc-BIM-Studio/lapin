@@ -135,7 +135,7 @@ export function useGripEditor(o: GripEditorOptions) {
           if (t) gs.push({ ...t, key: `${t.key}@${via.inset}` });
         }
       }
-      for (const r of referencesOf(n)) if ((!tag || !r.tag || r.tag === tag) && inView(r.view, n.storeyId)) rs.push({ ...r, owner: n.id });
+      for (const r of referencesOf(n, { view: views[0] })) if ((!tag || !r.tag || r.tag === tag) && inView(r.view, n.storeyId)) rs.push({ ...r, owner: n.id });
     }
     return { grips: gs, refs: rs };
   // eslint-disable-next-line react-hooks/exhaustive-deps
