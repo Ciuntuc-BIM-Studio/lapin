@@ -33,18 +33,19 @@ public static partial class T
         {
             var attrs = Take(ctx.Model, a, 0, out var source);
             Linked(source!, a);
+            foreach (var k in new[] { "skewStart", "skewEnd" }) if (Json.Number(a[k]) is { } sk) attrs[k] = sk;
             return new JsonObject { ["name"] = (string?)a["name"] };
         });
     }
 }
 `);
   const c = catalogueFromSource(dir);
-  assert.deepEqual(args(c, 'core.add')?.sort(), ['level', 'linked', 'name']);
+  assert.deepEqual(args(c, 'core.add')?.sort(), ['level', 'linked', 'name', 'skewEnd', 'skewStart']);
 });
 
 test('the tunnel lining commands list axis, level and linked', () => {
   const c = catalogueFromSource();
   for (const n of ['civil.addTunnelLining', 'civil.updateTunnelLining']) {
-    for (const k of ['axis', 'level', 'linked']) assert.ok(args(c, n)?.includes(k), `${n} lacks ${k}`);
+    for (const k of ['axis', 'level', 'linked', 'skewStart', 'skewEnd']) assert.ok(args(c, n)?.includes(k), `${n} lacks ${k}`);
   }
 });

@@ -103,6 +103,15 @@ function keysRead(body, v) {
   const keys = new Map();
   const add = (k, t) => { if (!keys.has(k)) keys.set(k, new Set()); if (t) keys.get(k).add(t); };
   for (const m of body.matchAll(ARG(v))) add(m[1], typeHint(body.slice(Math.max(0, m.index - 30), m.index), body.slice(m.index + m[0].length)));
+  // A key read through the variable of a loop over literals: `foreach (var k in new[] { "skewStart", "skewEnd" }) … a[k]`
+  // (or the first of each tuple of `new[] { ("x", …), … }`).
+  for (const loop of body.matchAll(/foreach \(var (?:\(([\w, ]+)\)|(\w+)) in new(?:\s*(?:string)?\[\])? ?\{([^}]*)\}\)/g)) {
+    const vars = (loop[1] ?? loop[2]).split(',').map((x) => x.trim());
+    const names = [...loop[3].matchAll(loop[1] ? /\(\s*"([\w.-]+)"/g : /"([\w.-]+)"/g)].map((x) => x[1]);
+    const rest = body.slice(loop.index + loop[0].length);
+    for (const m of rest.matchAll(new RegExp(`\\b${v}\\??\\[${vars[0]}\\]`, 'g')))
+      for (const n of names) add(n, typeHint(rest.slice(Math.max(0, m.index - 30), m.index), rest.slice(m.index + m[0].length)));
+  }
   // P(a, "x", "y") and Args.Point(a, "x", "y"): two numbers; Number(a, "k"): one.
   for (const m of body.matchAll(new RegExp(`\\(${v}, "(\\w+)", "(\\w+)"`, 'g'))) { add(m[1], 'float'); add(m[2], 'float'); }
   for (const m of body.matchAll(new RegExp(`Number\\(${v}, "(\\w+)"\\)`, 'g'))) add(m[1], 'float');
