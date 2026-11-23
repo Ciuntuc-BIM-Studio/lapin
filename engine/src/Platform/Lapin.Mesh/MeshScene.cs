@@ -143,9 +143,15 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
     public int TriangleCount => Groups.Sum(g => g.Elements.SelectMany(e => e.Flatten()).Sum(e => e.Parts.Sum(p => p.Indices.Length / 3)));
 
     /// <summary>The session's visible elements as a scene.</summary>
-    public static MeshScene Build(Session session, MeshExportOptions o)
+    public static MeshScene Build(Session session, MeshExportOptions o) => Build(session.Reader, o);
+
+    /// <summary>
+    /// The visible elements as a scene, read through a query's view of the session: what a module asks for (the Speckle
+    /// connector sends this same scene, docs/plan-speckle.md), as the exports do through <see cref="Build(Session, MeshExportOptions)"/>.
+    /// </summary>
+    public static MeshScene Build(IQueryContext q, MeshExportOptions o)
     {
-        var m = session.Model;
+        var m = q.Model;
         var notes = new List<string>();
         var project = Spatial.Project(m);
         var view = o.ViewId == null ? null
@@ -155,9 +161,9 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         var hidden = (view?.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         if (o.Hidden != null) hidden.UnionWith(o.Hidden);
         var planes = MeshClip.Unit(o.Planes ?? []);
-        var filters = session.Catalog.All<IViewElementFilter>();
-        var reader = session.Reader;
-        IReadOnlyList<IViewPartFilter> partFilters = view == null ? [] : session.Catalog.All<IViewPartFilter>();
+        var filters = q.Services.All<IViewElementFilter>();
+        var reader = q;
+        IReadOnlyList<IViewPartFilter> partFilters = view == null ? [] : q.Services.All<IViewPartFilter>();
         // The layers a 3D view shows (its style's, or its own), the parts it leaves out left out here too.
         var layers = o.Layers ?? (view != null ? ViewStyles.Of(m, view).Layers : "all");
         var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
@@ -213,7 +219,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         var elementOf = new Dictionary<string, (MeshGroup Group, MeshElement Element)>();
         foreach (var e in m.Entities.ToList())
         {
-            if (!IsElement(session, e) || !InPhase(project, e, o.Phase) || hidden.Contains(e.Id)) continue;
+            if (!IsElement(q, e) || !InPhase(project, e, o.Phase) || hidden.Contains(e.Id)) continue;
             if (Links.Of(m, e) is { } link && !Links.Visible(link)) continue;
             // Rooms are volumes of air: a model without a view's graphics leaves them out, as the 3D view does.
             if (view == null && e.Class == IfcClass.Space) continue;
@@ -223,7 +229,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
                 if (filters.Select(f => f.For(reader, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             }
             ElementGeometry? geo;
-            try { geo = session.Geometry(e.Id); }
+            try { geo = q.Geometry(e.Id); }
             catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException) { notes.Add($"„{e.Name}” was left out: {ex.Message}"); continue; }
             var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0 && ViewStyles.Shows3d(m, layers, e.Id, p, bands) && !partFilters.Any(f => f.Hides(reader, view!, e, p.Key)) && !(vg?.HidesPart(e, p.Key) ?? false)).ToList() ?? [];
             if (parts.Count == 0) continue;
@@ -261,7 +267,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         Assemblies(m, elementOf);
 
         // The openings as solid voids, for clash tools (decision 289): a group of their own, "Opening voids", each a provision for void.
-        var voidGroup = o.Voids ? VoidGroup(session, ox, oy, oz, materials, notes) : null;
+        var voidGroup = o.Voids ? VoidGroup(q, ox, oy, oz, materials, notes) : null;
 
         if (layers != "all") notes.Add(layers == "core" ? "The layered elements with their cores only, as the 3D view shows them." : "The layered elements without their finishes, as the 3D view shows them.");
         if (planes.Length > 0) notes.Add($"Cut as the 3D view cuts it ({planes.Length} plane{(planes.Length == 1 ? "" : "s")}){(o.Caps ? ", the cuts closed in their materials" : "")}.");
@@ -272,9 +278,9 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
     }
 
     /// <summary>The voids of the project's openings (the kinds and offset its settings say), as elements of a group named "Opening voids", in a translucent violet.</summary>
-    static MeshGroup VoidGroup(Session session, double ox, double oy, double oz, List<MeshMaterial> materials, List<string> notes)
+    static MeshGroup VoidGroup(IQueryContext q, double ox, double oy, double oz, List<MeshMaterial> materials, List<string> notes)
     {
-        var voids = Lapin.Platform.Coordination.OpeningVoids.Of(session.Model, session.Catalog, Lapin.Platform.Coordination.VoidOptions.From(session.Model, null));
+        var voids = Lapin.Platform.Coordination.OpeningVoids.Of(q.Model, q.Services, Lapin.Platform.Coordination.VoidOptions.From(q.Model, null));
         var (r, g, b) = Rgb(Lapin.Platform.Coordination.OpeningVoids.Color);
         materials.Add(new MeshMaterial("Opening void", r, g, b, 0.35f, null, null, MaterialLook.Plain with { Transparency = 0.65 }));
         var k = materials.Count - 1;
@@ -362,10 +368,10 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
     }
 
     /// <summary>What the IFC export takes as an element: a body of its own, an element's class (no opening, grid or annotation).</summary>
-    static bool IsElement(Session s, Entity e) =>
-        (s.Catalog.Geometry(e.Class) != null || StoredBodies.Has(e))
+    static bool IsElement(IQueryContext q, Entity e) =>
+        (q.Services.Get<IGeometryProducers>()?.Geometry(e.Class) != null || StoredBodies.Has(e))
         && e.Class is not (IfcClass.OpeningElement or IfcClass.Grid or IfcClass.Annotation)
-        && (s.Catalog.Class(e.Class)?.Kind ?? "element") == "element";
+        && (q.Describe(e.Class)?.Kind ?? "element") == "element";
 
     /// <summary>Whether the element exists at the end of the phase asked for (as the IFC export and the phases module see it).</summary>
     static bool InPhase(Entity? project, Entity e, string? phase)

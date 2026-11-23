@@ -781,8 +781,11 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// </summary>
     public static readonly string[] HostOnlyCommands = ["scripting.", "graphs.", "marks.renumber", "markRules.renumber"];
 
-    /// <summary>The namespaces of queries no guest asks: a project's graphs (their evaluation runs the host's commands on a copy of the model).</summary>
-    public static readonly string[] HostOnlyQueries = ["graphs."];
+    /// <summary>
+    /// The namespaces of queries no guest asks: a project's graphs (their evaluation runs the host's commands on a copy of the
+    /// model), and the Speckle connector's (docs/plan-speckle.md): its account is the host's, signed in with the host's token.
+    /// </summary>
+    public static readonly string[] HostOnlyQueries = ["graphs.", "speckle."];
 
     /// <summary>Whether a <c>doc.execute</c> names a host-only command, itself or as a step of its batch.</summary>
     static bool HostOnly(JsonObject p)

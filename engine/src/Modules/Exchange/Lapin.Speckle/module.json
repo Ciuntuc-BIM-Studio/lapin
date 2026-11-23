@@ -1,0 +1,1 @@
+{ "id": "speckle", "name": "Speckle", "assembly": "Lapin.Speckle.dll", "requires": ["core"], "desktopOnly": true }

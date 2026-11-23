@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The Speckle connector (docs/plan-speckle.md, decision 804), stage S1: the model sent to a Speckle server
+    (app.speckle.systems or one a firm hosts) through Speckle's official .NET SDK (Apache-2.0; its licences are in
+    NOTICE.md and checked by scripts/check-licenses.mjs). The one exchange written on another's library, since
+    Speckle is a server's protocol rather than a file format. Desktop only ("desktopOnly" in module.json): the
+    browser's engine (WebAssembly) never builds it in, so the SDK never reaches the web build.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>speckle</LapinModuleId>
+    <!-- The SDK and its packages go into the module's folder (artifacts/modules/speckle), which the host loads from. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <!-- Desktop only, never trimmed (the SDK finds its object types by reflection). -->
+    <IsTrimmable>false</IsTrimmable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Mesh/Lapin.Mesh.csproj" Private="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Speckle.Objects was merged into Speckle.Sdk at 2026.7: the object model (DataObject, Mesh, Collection, proxies) is in it. -->
+    <PackageReference Include="Speckle.Sdk" Version="2026.9.0" />
+    <!--
+      The SDK's Microsoft.Data.Sqlite 10.0.0 brings SQLitePCLRaw 2.1.11, whose SQLite has a known vulnerability
+      (GHSA-2m69-gcr7-jv3q, every version up to 2.1.11): taken at 2.1.14, the same API.
+    -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.14" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lapin.Engine.Tests" />
+  </ItemGroup>
+</Project>
