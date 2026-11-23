@@ -242,6 +242,8 @@ Every stage ships on its own and leaves flat floors byte-for-byte as they were (
 >
 > **Q8. Plan display:** slope arrows and spot levels on by default in plans at 1:50 and larger, off at 1:100 and smaller? Relative or absolute levels by default?
 >
+> *Answered (23.11.2026, Ionuț, "go with the recommendations"; follow-ups, decision 808):* yes, at 1:50 and larger by default, with **Floor slope marks** in the drafting standards (`floorSlopeMarks`, a scale's denominator) to change it; an arrow is moved clear of a room's stamp. Levels stay absolute, as built.
+>
 > **Q9. Is S1 the right first release** (one plane, by edge or by levels, bent or sculpted), with drains in S2? Rychlas's bathroom case needs S2.
 >
 > **Q10. Walls on bent floors** follow only through the wall-bottom attach of `plan-attach-to.md` (A8), not automatically?

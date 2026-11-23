@@ -5823,6 +5823,19 @@ export const DA: Record<string, string> = {
   "Minimum thickness": "Mindste tykkelse",
   "Make it flat again": "Gør det vandret igen",
   "Region": "Område",
+  // Follow-ups of 23.11.2026: the drainage channel's schedule, floors' slope marks by scale, the drawing language.
+  "slope|Grade": "Fald",
+  "Drainage channel schedule": "Afvandingsrendeliste",
+  "Change drainage channel": "Ret afvandingsrende",
+  "Floor slope marks": "Dæks faldmarkeringer",
+  "Floors' fall arrows, spot levels and drains' levels are drawn in plans at this scale and larger; at smaller scales a floor shows its outline and drains only": "Dæks faldpile, punktkoter og afløbskoter tegnes i planer i dette målforhold og større; i mindre målforhold viser et dæk kun sin kontur og sine afløb",
+  "at 1:20 and larger": "ved 1:20 og større",
+  "at 1:50 and larger": "ved 1:50 og større",
+  "at 1:100 and larger": "ved 1:100 og større",
+  "at 1:200 and larger": "ved 1:200 og større",
+  "at every scale": "i alle målforhold",
+  "Drawing language": "Tegningssprog",
+  "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Sproget for de ord, tegninger selv skriver (en rendes BK, et lavpunkt); en signaturforklaring beholder det sprog, den blev placeret i",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

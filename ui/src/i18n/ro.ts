@@ -5782,6 +5782,19 @@ export const RO: Record<string, string> = {
   "Minimum thickness": "Grosime minimă",
   "Make it flat again": "Fă-o din nou orizontală",
   "Region": "Zona",
+  // Follow-ups of 23.11.2026: the drainage channel's schedule, floors' slope marks by scale, the drawing language.
+  "slope|Grade": "Panta",
+  "Drainage channel schedule": "Extrasul rigolelor de drenaj",
+  "Change drainage channel": "Modifică rigola de drenaj",
+  "Floor slope marks": "Marcajele pantelor plăcilor",
+  "Floors' fall arrows, spot levels and drains' levels are drawn in plans at this scale and larger; at smaller scales a floor shows its outline and drains only": "Săgețile de cădere, cotele punctelor și cotele sifoanelor plăcilor se desenează în planuri la această scară și la cele mai mari; la scări mai mici placa își arată doar conturul și sifoanele",
+  "at 1:20 and larger": "la 1:20 și mai mare",
+  "at 1:50 and larger": "la 1:50 și mai mare",
+  "at 1:100 and larger": "la 1:100 și mai mare",
+  "at 1:200 and larger": "la 1:200 și mai mare",
+  "at every scale": "la orice scară",
+  "Drawing language": "Limba desenelor",
+  "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Limba cuvintelor pe care desenele le scriu singure (CR-ul unei rigole, un punct jos); o legendă își păstrează limba în care a fost pusă",
 };
 
 /** Phrases with a number or a name in them. */

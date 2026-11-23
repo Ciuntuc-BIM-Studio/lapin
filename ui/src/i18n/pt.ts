@@ -5826,6 +5826,19 @@ export const PT: Record<string, string> = {
   "Minimum thickness": "Espessura mínima",
   "Make it flat again": "Torná-lo nivelado de novo",
   "Region": "Região",
+  // Follow-ups of 23.11.2026: the drainage channel's schedule, floors' slope marks by scale, the drawing language.
+  "slope|Grade": "Inclinação",
+  "Drainage channel schedule": "Tabela de caleiras de drenagem",
+  "Change drainage channel": "Alterar caleira de drenagem",
+  "Floor slope marks": "Marcas de inclinação das lajes",
+  "Floors' fall arrows, spot levels and drains' levels are drawn in plans at this scale and larger; at smaller scales a floor shows its outline and drains only": "As setas de caimento, as cotas de pontos e as cotas dos ralos das lajes são desenhadas em planta nesta escala e maiores; em escalas menores a laje mostra só o contorno e os ralos",
+  "at 1:20 and larger": "a 1:20 e maior",
+  "at 1:50 and larger": "a 1:50 e maior",
+  "at 1:100 and larger": "a 1:100 e maior",
+  "at 1:200 and larger": "a 1:200 e maior",
+  "at every scale": "em qualquer escala",
+  "Drawing language": "Idioma dos desenhos",
+  "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "O idioma das palavras que os desenhos escrevem por si (a CF de uma caleira, um ponto baixo); uma legenda mantém o idioma em que foi colocada",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

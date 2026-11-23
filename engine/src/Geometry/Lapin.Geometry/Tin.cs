@@ -1,9 +1,12 @@
 using System.Globalization;
-using Lapin.Geometry;
 
-namespace Lapin.Civil;
+namespace Lapin.Geometry;
 
-/// <summary>A triangulated irregular network: points (x, y in plan, z the elevation) and counter-clockwise triangles.</summary>
+/// <summary>
+/// A triangulated irregular network: points (x, y in plan, z the elevation) and counter-clockwise triangles. The one
+/// triangulation engine (moved from the civil module on 23.11.2026, unchanged): terrains, feature lines, hardscapes and gradings
+/// are built on it, and the floors' <see cref="PlanMesh"/> shares its predicates (<see cref="PlanPredicates"/>).
+/// </summary>
 public sealed record Tin(IReadOnlyList<Vec3> Points, IReadOnlyList<(int A, int B, int C)> Triangles)
 {
     /// <summary>Points the triangulations made on this thread have inserted, counted from its start: how much work a build took.</summary>
@@ -513,7 +516,7 @@ static class Constrained
 
         var fixedEdges = new HashSet<(int, int)>();
         static (int, int) Key(int a, int b) => a < b ? (a, b) : (b, a);
-        double Orient(int a, int b, int c) => (pts[b].X - pts[a].X) * (pts[c].Y - pts[a].Y) - (pts[b].Y - pts[a].Y) * (pts[c].X - pts[a].X);
+        double Orient(int a, int b, int c) => PlanPredicates.Orient(pts[a].X, pts[a].Y, pts[b].X, pts[b].Y, pts[c].X, pts[c].Y);
         int Third(int t, int u, int v) => tris[t].First(x => x != u && x != v);
         bool Exists(int a, int b) => owner.ContainsKey((a, b)) || owner.ContainsKey((b, a));
         // Whether u–v crosses a–b inside both (not at a shared point).
@@ -571,11 +574,7 @@ static class Constrained
         foreach (var (a, b) in constraints) Insert(a, b, 0);
 
         // Lawson: an edge whose far point lies inside the circle of the near triangle turns, unless it is a constraint.
-        bool InCircle(int a, int b, int c, int d)
-        {
-            double ax = pts[a].X - pts[d].X, ay = pts[a].Y - pts[d].Y, bx = pts[b].X - pts[d].X, by = pts[b].Y - pts[d].Y, cx = pts[c].X - pts[d].X, cy = pts[c].Y - pts[d].Y;
-            return (ax * ax + ay * ay) * (bx * cy - cx * by) - (bx * bx + by * by) * (ax * cy - cx * ay) + (cx * cx + cy * cy) * (ax * by - bx * ay) > 1e-12;
-        }
+        bool InCircle(int a, int b, int c, int d) => PlanPredicates.InCircle(pts[a].X, pts[a].Y, pts[b].X, pts[b].Y, pts[c].X, pts[c].Y, pts[d].X, pts[d].Y);
         var stack = new Stack<(int, int)>(touched);
         var steps = 0;
         while (stack.Count > 0 && steps++ < 200000)
@@ -587,5 +586,22 @@ static class Constrained
             foreach (var e in new[] { (u, w2), (w2, v), (v, w1), (w1, u) }) stack.Push(e);
         }
         return tris.Select(x => (x[0], x[1], x[2])).ToList();
+    }
+}
+
+/// <summary>
+/// The plan predicates every triangulation here decides by (<see cref="Tin"/>'s constrained Delaunay and <see cref="PlanMesh"/>):
+/// which side of a line a point is on, and whether a point lies inside a triangle's circle, each computed one way only.
+/// </summary>
+public static class PlanPredicates
+{
+    /// <summary>Twice the signed area of a, b, c in plan: positive when they turn counter-clockwise.</summary>
+    public static double Orient(double ax, double ay, double bx, double by, double cx, double cy) => (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+
+    /// <summary>Whether d lies inside the circle through a, b, c (counter-clockwise), past a hair (1e-12) so a cocircular point is not.</summary>
+    public static bool InCircle(double pax, double pay, double pbx, double pby, double pcx, double pcy, double pdx, double pdy)
+    {
+        double ax = pax - pdx, ay = pay - pdy, bx = pbx - pdx, by = pby - pdy, cx = pcx - pdx, cy = pcy - pdy;
+        return (ax * ax + ay * ay) * (bx * cy - cx * by) - (bx * bx + by * by) * (ax * cy - cx * ay) + (cx * cx + cy * cy) * (ax * by - bx * ay) > 1e-12;
     }
 }

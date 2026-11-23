@@ -32,9 +32,11 @@ import type { TagRuleDto } from './tagRules';
 import { FieldPicker } from '../../shell/FieldPicker';
 import { parseDecimal } from '../../shell/parseDecimal';
 import { openingFormat } from './openingFormat';
+import { DEFAULT_FLOOR_SLOPE_MARKS, drawingLangArg, floorSlopeMarkChoices, floorSlopeMarksArg } from './drawingOptions';
+import { LANGUAGES } from '../../i18n';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[]; tableStyles?: { id: string; name: string; cells?: boolean; table?: { rows?: unknown[]; cols?: unknown[] } }[] };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; floorSlopeMarks?: number | null; drawingLang?: string | null; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[]; tableStyles?: { id: string; name: string; cells?: boolean; table?: { rows?: unknown[]; cols?: unknown[] } }[] };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[]; lineType?: boolean; labels?: Record<string, string> };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -275,6 +277,16 @@ export function StandardsDialog() {
       <dt title="Whether levels drop their trailing zeros (+3.150 → +3.15, +3.00 → +3) or keep them; as the project: as Suppress trailing zeros says">Level trailing zeros</dt>
       <dd><select data-field="levelZeros" value={String(book.levelZeros ?? 'project')} onChange={(e) => void execute('standards.options', { levelZeros: e.target.value })}>
         {[['project', 'as the project'], ['keep', 'keep (+3.150)'], ['suppress', 'suppress (+3.15)']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select></dd>
+      {/* Floors' fall arrows and levels drawn at this scale and larger (follow-ups of 23.11.2026, plan-floor-slopes Q8): 1:50 by default. */}
+      <dt title="Floors' fall arrows, spot levels and drains' levels are drawn in plans at this scale and larger; at smaller scales a floor shows its outline and drains only">Floor slope marks</dt>
+      <dd><select data-field="floorSlopeMarks" value={String(book.floorSlopeMarks ?? DEFAULT_FLOOR_SLOPE_MARKS)} onChange={(e) => void execute('standards.options', { floorSlopeMarks: floorSlopeMarksArg(Number(e.target.value)) })}>
+        {floorSlopeMarkChoices(book.floorSlopeMarks).map((c) => <option key={c.value} value={String(c.value)}>{c.label}</option>)}
+      </select></dd>
+      {/* The language of the words the engine writes on drawings by itself (a channel's IL, a low point); legends keep their own. */}
+      <dt title="The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in">Drawing language</dt>
+      <dd><select data-field="drawingLang" value={book.drawingLang ?? 'en'} onChange={(e) => void execute('standards.options', { drawingLang: drawingLangArg(e.target.value) })}>
+        {LANGUAGES.map((l) => <option key={l.id} value={l.id} data-no-i18n>{l.name}</option>)}
       </select></dd>
       {/* Forum topic 192, decision 749: what a new door's, window's or opening's sill is measured from (the architecture module's own project setting). */}
       {openingSillFrom != null && <>

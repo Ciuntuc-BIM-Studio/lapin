@@ -8,7 +8,7 @@
 export type ProfilePoint = [number, number] | [number, number, number];
 export interface ProfileJson { name?: string; points: ProfilePoint[]; insertion?: [number, number] }
 export interface CatalogueParam { key: string; label: string; default: number }
-export interface CatalogueProfile { id: string; label: string; use: 'sweep' | 'reveal' | 'footing' | 'kerb'; params: CatalogueParam[]; shape: ProfileJson }
+export interface CatalogueProfile { id: string; label: string; use: 'sweep' | 'reveal' | 'footing' | 'kerb' | 'channel'; params: CatalogueParam[]; shape: ProfileJson }
 
 type P = [number, number];
 

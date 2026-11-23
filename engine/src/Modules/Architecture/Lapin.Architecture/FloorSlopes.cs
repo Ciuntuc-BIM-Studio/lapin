@@ -293,6 +293,9 @@ public static class FloorSlopes
         var hidden = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         var graphics = VisibilityGraphics.Of(m, c.View);
         var text = Standards.ResolveText(c.Book, new JsonObject());
+        // The fall arrows and the levels only at the scales the standards draw them at (1:50 and larger unless they say otherwise).
+        var annotate = c.Book.ShowsFloorSlopeMarks(c.Scale);
+        List<(Vec2 Min, Vec2 Max)>? stamps = null;
         foreach (var slab in m.OfClass(IfcClass.Slab))
         {
             if (!Has(slab) || hidden.Contains(slab.Id) || graphics.Hides(slab) || Spatial.StoreyOf(m, slab.Id)?.Id != storey) continue;
@@ -310,7 +313,7 @@ public static class FloorSlopes
             var levels = new List<(Vec2 At, double H)>();
             foreach (var p in b.Pieces)
             {
-                Arrows(mk, b, p, c.Mm, text);
+                if (annotate) Arrows(mk, b, p, c.Mm, text, stamps ??= Rooms.StampBoxes(c));
                 var sh = p.Piece.Shape;
                 foreach (var d in sh.Drains)
                 {
@@ -354,7 +357,7 @@ public static class FloorSlopes
             foreach (var p in b.Pieces.Where(x => x.Piece.Region >= 0))
                 foreach (var (x, y) in p.Piece.Mesh.BoundaryEdges()) mk.Line(p.Piece.Mesh.Points[x], p.Piece.Mesh.Points[y], Layer, Pens.Default.Hatch, Green, [3, 1.5]);
             var placed = new List<Vec2>();
-            foreach (var (at, h) in levels)
+            foreach (var (at, h) in annotate ? levels : [])
             {
                 if (placed.Any(q => (q - at).Length < 4 * c.Mm)) continue;
                 placed.Add(at);
@@ -376,12 +379,16 @@ public static class FloorSlopes
         return best;
     }
 
-    /// <summary>An arrow down each plane of a piece: one for a plane; else one per group of triangles falling the same way (at least 4 % of the piece), at the largest's middle.</summary>
-    static void Arrows(ViewMark mk, Built b, Shaped p, double mm, TextStyle text)
+    /// <summary>
+    /// An arrow down each plane of a piece: one for a plane; else one per group of triangles falling the same way (at least 4 % of
+    /// the piece), at the largest's middle. An arrow that would cover a room's stamp (<paramref name="avoid"/>) is moved clear of
+    /// it when it can be: a little way along or across its fall, else to another triangle of its group; else it stays.
+    /// </summary>
+    static void Arrows(ViewMark mk, Built b, Shaped p, double mm, TextStyle text, IReadOnlyList<(Vec2 Min, Vec2 Max)> avoid)
     {
         var mesh = p.Piece.Mesh;
         var total = mesh.Area;
-        var groups = new Dictionary<(long, long), (double Area, Vec2 At, double BigArea, Vec2 Down, double Grade)>();
+        var groups = new Dictionary<(long, long), (double Area, Vec2 At, double BigArea, Vec2 Down, double Grade, List<(double Area, Vec2 Mid)> Tris)>();
         foreach (var (x, y, z) in mesh.Triangles)
         {
             var (pa, pb, pc) = (mesh.Points[x], mesh.Points[y], mesh.Points[z]);
@@ -396,15 +403,46 @@ public static class FloorSlopes
             var key = ((long)Math.Round(gx * 1e4), (long)Math.Round(gy * 1e4));
             var area = Math.Abs(det) / 2;
             var mid = (pa + pb + pc) * (1.0 / 3);
-            groups[key] = groups.TryGetValue(key, out var gr)
-                ? (gr.Area + area, area > gr.BigArea ? mid : gr.At, Math.Max(area, gr.BigArea), gr.Down, gr.Grade)
-                : (area, mid, area, new Vec2(-gx, -gy) * (1 / grade), grade);
+            if (groups.TryGetValue(key, out var gr))
+            {
+                gr.Tris.Add((area, mid));
+                groups[key] = (gr.Area + area, area > gr.BigArea ? mid : gr.At, Math.Max(area, gr.BigArea), gr.Down, gr.Grade, gr.Tris);
+            }
+            else groups[key] = (area, mid, area, new Vec2(-gx, -gy) * (1 / grade), grade, [(area, mid)]);
         }
+        var len = 7.0 * mm;
+        var h = text.Height * 0.8 * mm;
         foreach (var g in groups.Values.Where(g => g.Area >= 0.04 * total).OrderByDescending(g => g.Area).Take(12))
         {
-            var len = 7.0 * mm;
-            SlopeArrow(mk, g.At - g.Down * (len * 0.5), g.At + g.Down * (len * 0.5), mm, GradeText(g.Grade), text.Height, text.Font);
+            var label = GradeText(g.Grade);
+            var at = g.At;
+            if (avoid.Count > 0 && Covers(at, g.Down, len, label, h, mm, avoid))
+            {
+                var perp = g.Down.Perp;
+                var near = new List<Vec2>();
+                foreach (var k in new[] { 1.0, 2.0, 3.0, 4.0 })
+                    foreach (var d in new[] { perp, -perp, g.Down, -g.Down })
+                        near.Add(g.At + d * (k * 4 * mm));
+                var others = g.Tris.OrderByDescending(t => t.Area).Take(40).Select(t => t.Mid);
+                var clear = near.Where(q => mesh.Locate(q) != null).Concat(others).FirstOrDefault(q => !Covers(q, g.Down, len, label, h, mm, avoid), new Vec2(double.NaN, double.NaN));
+                if (double.IsFinite(clear.X)) at = clear;
+            }
+            SlopeArrow(mk, at - g.Down * (len * 0.5), at + g.Down * (len * 0.5), mm, label, text.Height, text.Font);
         }
+    }
+
+    /// <summary>Whether an arrow at <paramref name="at"/> (its shaft and its label, as <see cref="SlopeArrow"/> draws them) meets one of the boxes, a millimetre on paper round each.</summary>
+    static bool Covers(Vec2 at, Vec2 down, double len, string label, double h, double mm, IReadOnlyList<(Vec2 Min, Vec2 Max)> boxes)
+    {
+        var perp = new Vec2(-down.Y, down.X);
+        var (a, e) = (at - down * (len * 0.5), at + down * (len * 0.5));
+        var c = at + perp * (2.2 * mm);
+        var w = label.Length * h * 0.6 / 2;
+        Vec2[] pts = [a, e, a + perp * (1.2 * mm), e + perp * (1.2 * mm), c + down * w + perp * (h / 2), c - down * w + perp * (h / 2), c + down * w - perp * (h / 2), c - down * w - perp * (h / 2)];
+        var (x0, y0, x1, y1) = (pts.Min(q => q.X), pts.Min(q => q.Y), pts.Max(q => q.X), pts.Max(q => q.Y));
+        foreach (var (min, max) in boxes)
+            if (x1 > min.X - mm && x0 < max.X + mm && y1 > min.Y - mm && y0 < max.Y + mm) return true;
+        return false;
     }
 
     /// <summary>A grade as plans write it: 1.5 %; under one percent with two decimals.</summary>
