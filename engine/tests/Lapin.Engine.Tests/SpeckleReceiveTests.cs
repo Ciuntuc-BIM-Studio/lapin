@@ -26,6 +26,8 @@ namespace Lapin.Engine.Tests;
 /// refused unless received as a copy. And, when a server is given (LAPIN_SPECKLE_TEST_URL, LAPIN_SPECKLE_TEST_TOKEN), a model
 /// sent to it and received back.
 /// </summary>
+// One at a time: Speckle's SDK keeps one type loader, which setting it up again resets.
+[Collection("Speckle SDK")]
 public sealed class SpeckleReceiveTests
 {
     const string Server = "https://speckle.test";

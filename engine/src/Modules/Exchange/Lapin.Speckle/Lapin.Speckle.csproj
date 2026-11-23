@@ -17,6 +17,8 @@
     <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
     <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
     <ProjectReference Include="../../../Platform/Lapin.Mesh/Lapin.Mesh.csproj" Private="false" />
+    <!-- Recognition (S3): MeshRecognition and the fidelity gate, as the Fragments import uses them. -->
+    <ProjectReference Include="../../../Platform/Lapin.Ifc/Lapin.Ifc.csproj" Private="false" />
   </ItemGroup>
   <ItemGroup>
     <!-- Speckle.Objects was merged into Speckle.Sdk at 2026.7: the object model (DataObject, Mesh, Collection, proxies) is in it. -->

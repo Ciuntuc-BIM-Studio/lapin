@@ -26,9 +26,10 @@ public sealed record ReceivedLevel(string Name, double? Elevation, string? Globa
 /// One object of a version as it comes in: its Speckle ids, name, type and the IFC class it is taken as, the collections it
 /// stands in, its properties (as sets), and its geometry: its own triangles in the version's frame (metres), or an instance of
 /// a definition (<see cref="Instance"/>: the definition's id and its twelve numbers), or lines only (curves, drawn in plan).
+/// <see cref="Hints"/>: what its program says of its shape (its location line, thickness, height), which recognition checks its body against.
 /// </summary>
 public sealed record ReceivedElement(string? ApplicationId, string? ObjectId, string Name, string? SpeckleType, string IfcClass, string Path, JsonObject Properties,
-    List<ReceivedPart> Parts, (string Definition, double[] Xf)? Instance, List<Plan2dItem>? Lines, ReceivedLevel? Level);
+    List<ReceivedPart> Parts, (string Definition, double[] Xf)? Instance, List<Plan2dItem>? Lines, ReceivedLevel? Level, ReceivedHints? Hints = null);
 
 /// <summary>A definition several instances share (an <c>InstanceDefinitionProxy</c>): its triangles once, in its own frame, metres.</summary>
 public sealed record ReceivedDefinition(string Id, string Name, List<ReceivedPart> Parts);
@@ -321,7 +322,7 @@ public static class SpeckleRead
             var sets = Sets(b, props, path);
 
             ReceivedElement Make(List<ReceivedPart> parts, (string, double[])? instance, List<Plan2dItem>? lines) =>
-                new(b.applicationId, b.id, name, b.speckle_type, cls, string.Join(" / ", path), sets, parts, instance, lines, LevelOf(b));
+                new(b.applicationId, b.id, name, b.speckle_type, cls, string.Join(" / ", path), sets, parts, instance, lines, LevelOf(b), SpeckleHints.Read(b, props, cls, notes));
 
             foreach (var l in g.Left) Skip(l);
             if (g.Parts.Count == 0 && g.Instances.Count == 1)
