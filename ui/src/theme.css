@@ -301,8 +301,10 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .grip-overlay .plan-grip, .grip-overlay .plan-grip-hit, .grip-overlay .grip3d { pointer-events: all; }
 
 /* HUD over the view (Atrium) */
-.hud-card { position: absolute; left: 10px; top: 10px; display: grid; grid-template-columns: auto auto; gap: 1px 10px; padding: 5px 9px; background: var(--hud-glass); border: 1px solid var(--rule); border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; backdrop-filter: blur(3px); pointer-events: none; }
+.hud-card { position: absolute; left: 10px; top: 10px; max-width: 200px; box-sizing: border-box; display: grid; grid-template-columns: auto auto; gap: 1px 10px; padding: 5px 9px; background: var(--hud-glass); border: 1px solid var(--rule); border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; backdrop-filter: blur(3px); pointer-events: none; }
 .hud-card .eyebrow { font-size: 9px; letter-spacing: 0.1em; }
+/* A view's toolbar (title, chips) starts right of the mode / level card, never under it. */
+.view-area:has(.hud-card) .view-toolbar:not(.schedule-pane *) { left: 220px; max-width: none; }
 .hud-map { position: absolute; right: 12px; top: 12px; width: 180px; padding: 8px 10px 10px; background: var(--hud-glass); border: 1px solid var(--rule); border-radius: 3px; color: var(--ink); backdrop-filter: blur(3px); transition: background .15s; }
 .hud-map:hover { background: var(--hud); }
 .hud-map svg { display: block; width: 100%; margin-top: 6px; }
