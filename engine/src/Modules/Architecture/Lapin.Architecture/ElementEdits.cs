@@ -163,6 +163,9 @@ public static class OutlineEdits
                 if (LayerExtents.ToJson(LayerExtents.RemapEdges(extents, Slabs.Corners(e), corners, Slabs.Rises(e), rises)) is { } kept) attrs[LayerExtents.Key] = kept;
                 else attrs.Remove(LayerExtents.Key);
             }
+            // Its slopes (docs/plan-floor-slopes.md): what lies on this part goes with it, a line across the cut cut there.
+            if (e.Class == IfcClass.Slab && e.Attrs[FloorSlopes.Key] is JsonObject surface)
+                attrs[FloorSlopes.Key] = TopSurface.Share(surface, on, Slabs.Corners(e), corners);
             if (e.Class != Ceilings.Class) return;
             // A ceiling's grid stays where it was on each part (its origin pinned), its fixtures in the part their cell lies in.
             var grid = Ceilings.GridOf(ctx.Model, e);

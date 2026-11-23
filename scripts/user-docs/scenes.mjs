@@ -2909,6 +2909,77 @@ export const scenes = [
     },
   },
   {
+    // Floor slopes and falls (docs/plan-floor-slopes.md, forum topic 157): a bathroom's floor falling to a drain with its screed
+    // sculpted (Slope this room), in plan and in a section through the drain; a terrace falling from the house to a gutter line;
+    // the floor's Slopes section in the properties.
+    id: 'floor-slopes',
+    touches: ['architecture'],
+    async run(t) {
+      const query = (name, args) => t.page.evaluate(async ([n, a]) => (await import('/src/engine/session.ts')).query(n, a), [name, args]);
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const storey = await t.storey();
+      // A tiled floor: tiles 10, screed 60, concrete 150 (the core).
+      const type = (await t.cmd('architecture.createSlabType', { name: 'Tiled floor', layers: [{ material: 'Ceramic tiles', thickness: 0.01 }, { material: 'Screed', thickness: 0.06 }, { material: 'Reinforced concrete', thickness: 0.15, core: true }] }))?.id;
+      // A bathroom 2.4 × 3.6 m inside its walls, beside a hall; the floor under them both.
+      for (const [x1, y1, x2, y2] of [[0, 0, 5, 0], [5, 0, 5, 4], [5, 4, 0, 4], [0, 4, 0, 0], [2.6, 0, 2.6, 4]]) await t.cmd('architecture.addWall', { storeyId: storey, x1, y1, x2, y2 });
+      const floor = (await t.cmd('architecture.addSlab', { storeyId: storey, points: [[-0.15, -0.15], [5.15, -0.15], [5.15, 4.15], [-0.15, 4.15]], typeId: type, offset: 0 }))?.id;
+      const bath = (await t.cmd('architecture.addRoom', { storeyId: storey, x: 1.3, y: 2, name: 'Bath', function: 'Bath' }))?.id;
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3.8, y: 2, name: 'Hall', function: 'Circulation' });
+      t.expect(!!floor && !!bath, 'a floor and a bathroom');
+      // Slope this room: a click in the bathroom, the drain 20 mm below the floor round it, at its middle.
+      await t.button('Architecture', { exact: true });
+      await t.fit();
+      await t.wait(800);
+      const made = await t.cmd('architecture.slopeRoom', { roomId: bath, drain: { at: [0.8, 3.1], depth: 0.02, grate: 0.15 } });
+      t.expect(made?.region === 0, 'the bathroom is a region of the floor');
+      const q = await query('architecture.floorSlope', { id: floor });
+      t.expect(q?.pieces?.some((p) => p.region === 0 && Math.abs(p.min + 0.02) < 1e-6), 'the bathroom falls 20 mm to its drain');
+      t.expect(q?.pieces?.every((p) => p.how === 'layer'), 'the screed is sculpted');
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1500);
+      await t.shot('floor-slopes-bathroom-plan', { of: '[data-testid=plan]', pad: 0 });
+      // The properties: made by sculpting the screed, its minimum, the bathroom's drain; an edge slope on the hall.
+      await t.cmd('architecture.addFloorSlope', { id: floor, kind: 'edge', edge: 1, grade: '0.5%', fall: 'out', offset: -0.01, until: { offset: 0 } });
+      await select(t, floor);
+      await t.wait(900);
+      await t.page.locator('[data-testid=floor-slopes]').waitFor();
+      await t.page.locator('[data-testid=floor-slopes]').scrollIntoViewIfNeeded();
+      await t.wait(400);
+      await t.shot('floor-slopes-properties', { of: '[data-testid=floor-slopes]', pad: 8 });
+      await t.cmd('architecture.removeFloorSlope', { id: floor, kind: 'edge', index: 0 });
+      // A section through the drain: the screed thinner towards it, the slab level under it.
+      await t.ui({ selection: null, selected: [] });
+      await t.cmd('view.create', { kind: 'section', name: 'Bath section', start: [-0.6, 3.1], end: [3.1, 3.1], depth: 0.3, scale: 10 });
+      await openFromBrowser(t, 'Bath section', 3000);
+      await t.fit();
+      await t.wait(1200);
+      const box = await t.page.locator('[data-testid=drawing]').boundingBox();
+      // Closer, on the floor between the walls.
+      const floorY = await t.page.evaluate(() => { const d = document.querySelector('[data-testid=drawing]'); const r = d.getBoundingClientRect(); return r.top + r.height * 0.78; });
+      await t.page.mouse.move(box.x + box.width * 0.35, floorY);
+      for (let k = 0; k < 6; k++) { await t.page.mouse.wheel(0, -300); await t.wait(150); }
+      await t.wait(1200);
+      await t.shot('floor-slopes-bathroom-section', { of: '[data-testid=drawing]', pad: 0 });
+      // A terrace 5 × 3 m outside: falling 1.5 % from the house wall (its north edge) to its south edge, the gutter line.
+      await t.fresh();
+      await t.ui({ keyPlan: false });
+      const s2 = await t.storey();
+      const type2 = (await t.cmd('architecture.createSlabType', { name: 'Terrace', layers: [{ material: 'Stone slabs', thickness: 0.03 }, { material: 'Screed', thickness: 0.08 }, { material: 'Reinforced concrete', thickness: 0.15, core: true }] }))?.id;
+      await t.cmd('architecture.addWall', { storeyId: s2, x1: -1, y1: 3.15, x2: 6, y2: 3.15 });
+      const terrace = (await t.cmd('architecture.addSlab', { storeyId: s2, points: [[0, 0], [5, 0], [5, 3], [0, 3]], typeId: type2 }))?.id;
+      await t.cmd('architecture.addFloorSlope', { id: terrace, kind: 'edge', edge: 2, grade: '1.5%', fall: 'in' });
+      const tq = await query('architecture.floorSlope', { id: terrace });
+      t.expect(tq?.pieces?.[0] && Math.abs(tq.pieces[0].max) < 1e-6 && tq.pieces[0].min < -0.04, 'the terrace falls from the house to the gutter');
+      await t.button('Architecture', { exact: true });
+      await t.fit();
+      await t.wait(1500);
+      await t.shot('floor-slopes-terrace', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // Edit sketch on a floor (forum topic 97, stage 3): its outline opened as a sketch on a plan of its own, a fillet and a
     // dimension added, Finish sketch writes it back; the sketch stays on the floor.
     id: 'floors-sketch',

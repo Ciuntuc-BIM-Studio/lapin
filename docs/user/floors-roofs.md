@@ -100,6 +100,35 @@ A **roof** is split and trimmed the same way. Each part keeps the rules of its e
 
 ![A gable roof split across its ridge: two roofs, the same slopes](shots/roof-split.webp)
 
+### Slopes and falls
+
+A floor can fall to a drain, slope from an edge to a gutter, or follow level points and lines, while it stays one floor with its type's layers. Select a floor: its **Slopes** section in the properties starts flat and offers the tools; they are also in **Architecture → Slopes**. Each click is one undo step, and **Make it flat again** takes it all away.
+
+- **Floor drain**: click on the floor and type how far the drain sits below the floor round it (20 mm by default). The outline stays at the floor's level and the floor falls from every edge to the drain. In the properties a drain can get a **grate** (a square at the drain's depth).
+- **Channel drain**: two clicks along it; the floor falls to it from both sides.
+- **Edge slope**: click near an edge and type its slope (`1.5 %`, `1:50`). It falls away from the edge; type a minus (`-1.5 %`) and it falls towards the edge instead, which makes the edge a gutter line. In the properties a slope can stop at an offset (**to the far side** by default), then the floor stays level. Several edges falling away from themselves meet in valleys, several falling towards themselves in ridges.
+- **Level point** and **Level line**: the floor passes through them, at an offset from the floor's top (`-20`) or at a level (`=3.18`, which stays where it is when the storey or the floor moves). A line is a ridge or a valley straight between its ends.
+- **Floor slope arrow**: the whole top as one plane, from the high end to the low end.
+- **Floor region**: an outline drawn inside the floor with its own offset (a sunk shower tray) and its own slopes and drains. It steps from the rest along its outline. A region must lie inside the floor; to give a part that runs to the floor's edge its own slope, split the floor (**Modify → Split element**): each part keeps the slopes on its side, a level line across the cut is cut there at its height.
+- **Slope this room**: click in a room. The floor under it takes a region on the room's outline with a drain at its middle; the region follows the room when its walls move. A room that covers the whole floor shapes the floor itself.
+
+![A bathroom falling to a drain: the arrows with their grades and the drain's level](shots/floor-slopes-bathroom-plan.webp)
+
+**Made by** says how the floor follows its slopes:
+
+- **Sculpting a layer** (the default when the type has a layer above its core): one layer takes the falls in its thickness, a screed to falls, and the layers above it follow at their own thickness; the core and what is under it stay level. The **Sculpted layer** is by default the screed above the core (else the layer just above it); any layer with a thickness can be chosen. Its **Minimum thickness** (30 mm for a screed, else 10 mm) is never gone below: where the falls would go lower, the layer stays at its minimum and the properties say over how much area (*Screed: held at its 30 mm minimum over 8.0 m²*).
+- **Bending the whole floor**: every layer follows the slope at its own thickness, the underside too, as the core plane of a sloped slab. Thicknesses are measured plumb, so volumes stay area × thickness; at a few percent the difference from the thickness across the slope is under 0.05 %. A beam-and-block floor is not bent: sculpt its screed.
+
+![A section through the bathroom's drain: the screed thinner towards the drain, the slab level under it](shots/floor-slopes-bathroom-section.webp)
+
+The falls are exact: every fold where two planes meet is an edge of the floor's body, so sections cut the sculpted layer as a wedge, the 3D view shows the real top and the quantities are the solids' own. A plan of the floor's storey draws an arrow down each plane with its grade, the levels of the drains, points and lines' ends (and the highest and lowest points of a sloped floor), the drains and channels, the level lines and the regions' outlines.
+
+![A terrace falling 1.5 % from the house to a gutter line](shots/floor-slopes-terrace.webp)
+
+The floor's quantities gain, per layer, its **Average thickness** (its volume over its plan area), **Least** and **Greatest thickness**, and for the floor the **Surface area (on the slope)**, the **Fall** (highest less lowest) and, for a single plane, its **Slope**; the gross volume is the shaped build-up's. In IFC the floor is still an IfcSlab with its IfcMaterialLayerSetUsage; its layers' bodies are the shaped solids, and its slopes travel in its `Lapin_Intent`, so Lapin reads them back as slopes.
+
+![A floor's Slopes section: made by sculpting the screed, its minimum, a drain and an edge slope](shots/floor-slopes-properties.webp)
+
 ## Roofs
 
 Choose **Architecture → Roof** (<kbd>RF</kbd>) and click the outline of the walls under it. Lapin builds the roof over that outline, at the top of its level.

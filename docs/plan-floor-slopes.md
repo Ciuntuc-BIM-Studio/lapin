@@ -1,6 +1,6 @@
 # Floor slopes: falls, drains, split parts, a sculpted layer
 
-Proposed on 19.11.2026 (decision 724, **proposed, not built**). Source: GitHub issue #96, from forum topic 157 (Rychlas), postponed on 18.11.2026 "to be planned later, starting with a spec (the model change is the hard part)". This is that spec. Nothing here is built yet; the questions for the user are in §11.
+Proposed on 19.11.2026 (decision 724). **Built on 23.11.2026 as site grading T7** (decision 805, branch `feat/floor-slopes`; `docs/plan-site-grading.md` §5 T7): S1–S3 in one go (a plane, edge slopes with limits, points, lines, drains with grates and channels, regions, the room tool), with Q1 vertical, Q2 the offset at the held edges, Q3 held at the minimum with a Problem (30 mm screed, else 10 mm), Q7 a region steps (the whole build-up when bent, the sculpted layer when sculpted). Left from S4 and §5.3: listed there. Source: GitHub issue #96, from forum topic 157 (Rychlas), postponed on 18.11.2026 "to be planned later, starting with a spec (the model change is the hard part)". This is that spec. Nothing here is built yet; the questions for the user are in §11.
 
 ## 1. The request
 
