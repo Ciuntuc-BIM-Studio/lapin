@@ -208,4 +208,37 @@ public class MeshRecognitionTests
         }
         finally { Directory.Delete(dir, true); }
     }
+    /// <summary>
+    /// A reference column (a stored body, as an import or a Speckle receive leaves one) cuts nothing: read as its class it has no
+    /// place, section or height, and cut as a default column at the origin of its storey. A floor on a storey whose height took
+    /// that default column through it came back from recognition 9.8 m off in plan (snowdon structural, received by its levels).
+    /// </summary>
+    [Fact]
+    public void A_reference_column_cuts_no_recognised_floor()
+    {
+        var g = new Fixture(new ArchitectureModule(), new StructureModule());
+        var storey = (string)g.Run("storey.create", new JsonObject { ["name"] = "Parking", ["elevation"] = -3.0 })!["id"]!;
+        static string Box(string name, double x0, double y0, double z0, double x1, double y1, double z1) =>
+            FormattableString.Invariant($"o {name}\nv {x0} {y0} {z0}\nv {x1} {y0} {z0}\nv {x1} {y1} {z0}\nv {x0} {y1} {z0}\nv {x0} {y0} {z1}\nv {x1} {y0} {z1}\nv {x1} {y1} {z1}\nv {x0} {y1} {z1}\n")
+            + "f 1 3 2\nf 1 4 3\nf 5 6 7\nf 5 7 8\nf 1 2 6\nf 1 6 5\nf 2 3 7\nf 2 7 6\nf 3 4 8\nf 3 8 7\nf 4 1 5\nf 4 5 8\n";
+        // A floor round the origin, under ±0.00; a column far from it.
+        MeshImport.Run(g.Session, System.Text.Encoding.UTF8.GetBytes(Box("Slab", -5, -4, -1.3, 6, 5, -1.05)), "slab.obj", new JsonObject { ["up"] = "z" }, null, out _);
+        MeshImport.Run(g.Session, System.Text.Encoding.UTF8.GetBytes(Box("Col", 40, 40, -3, 40.4, 40.4, 0)), "col.obj", new JsonObject { ["up"] = "z" }, null, out _);
+        var slab = g.Model.Entities.Single(x => x.Str("source") == "slab.obj");
+        var col = g.Model.Entities.Single(x => x.Str("source") == "col.obj");
+        g.Session.Edit("On the storey, as a floor and a column", edit =>
+        {
+            edit.Replace(slab.With(attrs: Set(slab.CloneAttrs(), "exportAs", IfcClass.Slab)));
+            edit.Remove(col.Id);
+            edit.Add(new Entity(col.Id, IfcClass.Column, "Column", col.CloneAttrs()));
+            edit.Relate(IfcClass.RelContainedInSpatialStructure, storey, slab.Id);
+            edit.Relate(IfcClass.RelContainedInSpatialStructure, storey, col.Id);
+        });
+        MeshRecognitionReport report = MeshRecognitionReport.None;
+        g.Session.Edit("Recognise", edit => report = MeshRecognition.Recognize(edit, g.Session.Catalog, [slab.Id]));
+        Assert.Equal(1, report.Recognized);
+        Assert.True(report.Fidelity!.Checks.Single().Pass, report.Fidelity.Checks.Single().Reason);
+        var volume = g.Session.Reader.Geometry(slab.Id)!.Parts.Sum(p => Lapin.Geometry.Measure.Volume(p.Solid));
+        Assert.Equal(11 * 9 * 0.25, volume, 6);
+    }
 }
