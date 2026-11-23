@@ -127,6 +127,17 @@ export const FAQ: Entry[] = [
     source: 'faq',
   },
   {
+    id: 'gaussian-splats',
+    q: ['Can Lapin show Gaussian splats?', 'How do I link a 3DGS PLY or an SPZ file?', 'Can I measure or snap on a Gaussian splat?', 'Why is my splat lying on its side?'],
+    qRo: ['Poate Lapin afișa Gaussian splats?', 'Cum leg un fișier PLY 3DGS sau SPZ?', 'Pot măsura sau face snap pe un Gaussian splat?', 'De ce stă splat-ul meu culcat?'],
+    keywords: ['gaussian', 'splat', 'splats', 'splatting', '3dgs', 'spz', 'ply', 'supersplat', 'postshot', 'polycam', 'luma', 'nerf', 'radiance',
+      'gaussiene', 'nor', 'puncte', 'fotogrametrie', 'gaussianas', 'gaussiennes', 'gaussiane', 'gausssche', 'gaussowskie', '高斯泼溅'],
+    a: 'File → Link point cloud… takes a Gaussian splat file as it takes a scan: a 3D Gaussian splatting PLY (as trainers write it) or Niantic\'s SPZ (versions 1–3; version 4 not yet). It is a point cloud link with more to it: its centres are indexed as points (coloured by the splats\' base colour, the nearly transparent ones left out), so plans and sections draw its slice, the snaps find its points, and Visibility / Graphics treats it as any cloud; a 3D view draws its Gaussians, sorted and blended, the largest first within the display quality\'s budget. Manage → Links sets its Display (Splats or Points) and Visibility / Graphics → Point clouds overrides it per view. Lying on its side? Splats come y-up (SPZ) or y-down (3DGS PLY), and Lapin stands them up by that; if a file was written otherwise, place it again (the pin in Manage → Links) and choose its up axis.',
+    aRo: 'File → Link point cloud… ia un fișier de Gaussian splats cum ia o scanare: un PLY de 3D Gaussian splatting (cum îl scriu programele de antrenare) sau SPZ-ul Niantic (versiunile 1–3; versiunea 4 încă nu). E o legătură de nor de puncte cu ceva în plus: centrele lui sunt indexate ca puncte (colorate cu culoarea de bază a splat-urilor, cele aproape transparente lăsate deoparte), așa că planurile și secțiunile îi desenează felia, snap-urile îi găsesc punctele, iar Visibility / Graphics îl tratează ca pe orice nor; o vedere 3D îi desenează gaussienele, sortate și amestecate, cele mai mari întâi, în bugetul calității afișării. Manage → Links îi stabilește Display (Splats sau Points), iar Visibility / Graphics → Point clouds îl schimbă pe vedere. Stă culcat? Splat-urile vin cu y în sus (SPZ) sau y în jos (PLY 3DGS), iar Lapin le ridică după asta; dacă un fișier e scris altfel, reașază-l (pinul din Manage → Links) și alege-i axa de sus.',
+    action: { label: 'Open Links', labelRo: 'Deschide Links', run: { kind: 'dialog', id: 'links' } },
+    source: 'forum topic 237',
+  },
+  {
     id: 'point-cloud-views',
     q: ['How do I trace walls over a point cloud in a plan?', 'Why is my point cloud not in the plan?', 'How do I hide the vegetation or the noise of a scan?', 'Can I snap to the points of a scan?'],
     qRo: ['Cum desenez pereți peste un nor de puncte în plan?', 'De ce nu apare norul de puncte în plan?', 'Cum ascund vegetația sau zgomotul unei scanări?', 'Pot face snap pe punctele unei scanări?'],

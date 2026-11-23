@@ -34,6 +34,11 @@ export interface CloudSpec {
   pointSize: number;
   /** The ASPRS classes hidden (0–31; above 31 counts as 31). */
   hiddenClasses: readonly number[];
+  /**
+   * Drawn as Gaussian splats (splats3d.ts), its link's file holding them and the link or the view saying so: its points are
+   * still streamed, not drawn, for the snaps.
+   */
+  splats?: boolean;
 }
 
 /** The points drawn at most, all clouds together, by the project's display quality (fewer in a browser). */
@@ -254,6 +259,8 @@ export class PointCloudLayer {
       u.zRange.value.set(c.hierarchy.box[2], c.hierarchy.box[5]);
       u.iRange.value.set(c.hierarchy.intensityRange[0], c.hierarchy.intensityRange[1]);
     }
+    // A cloud drawn as splats: its points' tiles stay (the snaps walk them), not drawn.
+    c.mat.visible = !c.spec.splats;
     c.mat.needsUpdate = true;
   }
 
@@ -364,7 +371,7 @@ export class PointCloudLayer {
   /** How many points are drawn now, all clouds. */
   drawn(): number {
     let n = 0;
-    for (const c of this.clouds.values()) if (c.group.visible) for (const t of c.tiles.values()) if (t.object.visible) n += t.object.geometry.getAttribute('position').count;
+    for (const c of this.clouds.values()) if (c.group.visible && !c.spec.splats) for (const t of c.tiles.values()) if (t.object.visible) n += t.object.geometry.getAttribute('position').count;
     return n;
   }
 

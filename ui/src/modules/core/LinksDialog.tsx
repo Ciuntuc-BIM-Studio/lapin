@@ -18,9 +18,9 @@ import { isDesktop, pickFile, toBase64 } from '../../engine/files';
 import { setLooks } from '../../platform/looks';
 import type { NodeDto } from '../../engine/protocol';
 import { Cell, NumberField } from '../../shell/cells';
-import { CLOUD_MODES, CLOUD_UNITS } from '../../engine/files';
+import { CLOUD_MODES, CLOUD_UNITS, CLOUD_UPS } from '../../engine/files';
 import { query } from '../../engine/session';
-import { isCloudLink, setCloudStatus, statusText, usePointClouds } from '../../viewport/pointClouds';
+import { isCloudLink, isSplatLink, setCloudStatus, statusText, usePointClouds } from '../../viewport/pointClouds';
 
 const COLOR_MODES = [
   { value: 'rgb', label: 'RGB' }, { value: 'intensity', label: 'Intensity' }, { value: 'elevation', label: 'Elevation' }, { value: 'classification', label: 'Classification' },
@@ -28,7 +28,7 @@ const COLOR_MODES = [
 
 /** Where a cloud stands: by the map, origin to origin or centred, its unit, moved (x, y, z) and turned (°), asked then sent as one step. */
 export async function placeCloud(l: NodeDto): Promise<void> {
-  const p = (l.props.placement ?? {}) as { mode?: string; units?: string; offset?: number[]; rotation?: number };
+  const p = (l.props.placement ?? {}) as { mode?: string; units?: string; offset?: number[]; rotation?: number; up?: string };
   const { ask, choiceField, lengthField, numberField } = await import('../../shell/AskBox');
   const off = Array.isArray(p.offset) ? p.offset : [0, 0, 0];
   const r = await ask(`Place the point cloud ${l.name}`, [
@@ -36,9 +36,10 @@ export async function placeCloud(l: NodeDto): Promise<void> {
     choiceField('units', 'Its unit', p.units ?? 'm', CLOUD_UNITS.filter((u) => u.value !== 'auto')),
     lengthField('x', 'Moved x', off[0] ?? 0), lengthField('y', 'Moved y', off[1] ?? 0), lengthField('z', 'Moved z', off[2] ?? 0),
     numberField('rotation', 'Turned (°)', p.rotation ?? 0),
+    choiceField('up', 'Up axis', p.up ?? 'z', CLOUD_UPS),
   ]);
   if (!r) return;
-  await execute('pointcloud.place', { id: l.id, mode: r.mode, units: r.units, offset: [Number(r.x), Number(r.y), Number(r.z)], rotation: Number(r.rotation) });
+  await execute('pointcloud.place', { id: l.id, mode: r.mode, units: r.units, offset: [Number(r.x), Number(r.y), Number(r.z)], rotation: Number(r.rotation), up: r.up });
   const check = await query<{ warning?: string | null }>('pointcloud.check', { id: l.id });
   if (check?.warning) notify(check.warning);
 }
@@ -145,7 +146,7 @@ export function LinksDialog() {
                   return (
                     <tr key={l.id} className={busy === l.id ? 'muted' : undefined}>
                       <td><Cell value={l.name} onCommit={(t) => { const v = t.trim(); if (!v) return false; if (v !== l.name) void execute('link.update', { id: l.id, name: v }); }} /></td>
-                      <td>{cloud ? <span title={info.format}>Point cloud</span> : String(l.props.kind ?? '').toUpperCase()}</td>
+                      <td>{cloud ? <span title={info.format}>{isSplatLink(l) ? 'Gaussian splats' : 'Point cloud'}</span> : String(l.props.kind ?? '').toUpperCase()}</td>
                       <td title={path ?? 'linked from the browser: its bytes were read once'}>{file}{!path && <span className="muted small"> (no path)</span>}
                         {cloud && <div className="muted small" data-cloud-status={status[l.id]?.state ?? 'waiting'}>{statusText(status[l.id])}</div>}
                         {cloud && (
@@ -154,6 +155,11 @@ export function LinksDialog() {
                               {COLOR_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                             </select>
                             <label className="small" title="Point size (px)" style={{ marginLeft: 8 }}>Size <NumberField min={1} max={12} integer style={{ width: 44 }} value={Number(l.props.pointSize ?? 2)} onCommit={(v) => { if (v != null) void execute('pointcloud.update', { id: l.id, pointSize: v }); }} /></label>
+                            {isSplatLink(l) && (
+                              <select aria-label="Display" data-link="display" style={{ marginLeft: 8 }} title="How it is drawn in 3D: its Gaussians, or their centres as points" value={l.props.display === 'points' ? 'points' : 'splats'} onChange={(e) => void execute('pointcloud.update', { id: l.id, display: e.target.value })}>
+                                <option value="splats">Splats</option><option value="points">Points</option>
+                              </select>
+                            )}
                           </div>
                         )}
                       </td>
