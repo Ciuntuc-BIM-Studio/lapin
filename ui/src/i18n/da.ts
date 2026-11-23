@@ -55,6 +55,14 @@ export const DA: Record<string, string> = {
   "Downloading from Speckle": "Henter fra Speckle",
   "Reading the objects": "Læser objekterne",
   "Bringing the objects in": "Henter objekterne ind",
+  // Speckle receive, recognition (docs/plan-speckle.md, S3).
+  "Recognition": "Genkendelse",
+  "Recognise walls and slabs": "Genkend vægge og dæk",
+  "Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references": "Vægge og dæk, hvis legemer Lapin genskaber inden for 1 mm eller 0,5 %, bliver native vægge og dæk; resten forbliver referencer",
+  "A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.": "En væg eller et dæk bliver kun en nativ væg eller et nativt dæk, hvor dets native legeme er det modtagne inden for 1 mm eller 0,5 %, og hvor dets egne parametre (bredde, tykkelse, placeringslinje) stemmer med legemet; resten forbliver referencer. Glasfacader forbliver referencer.",
+  "Recognised": "Genkendt",
+  "References": "Referencer",
+  "Stayed references:": "Forblev referencer:",
   // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
   "MEP legend": "Installationssignatur",
   "MEP LEGEND": "INSTALLATIONSSIGNATUR",
@@ -6401,6 +6409,7 @@ export const DA_PATTERNS: Language['patterns'] = [
   // The Speckle connector's send (docs/plan-speckle.md, S1)
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Modtog ${m[1]} objekter fra Speckle.`],
+  [/^Received (\d+) objects from Speckle: (\d+) native walls and slabs, (\d+) references\.$/, (m) => `Modtog ${m[1]} objekter fra Speckle: ${m[2]} native vægge og dæk, ${m[3]} referencer.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Denne version blev sendt fra dette projekt: ${m[1]} af dens objekter er projektets egne elementer.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Sendt: ${m[1]} elementer, som en ny version.`],
 ];

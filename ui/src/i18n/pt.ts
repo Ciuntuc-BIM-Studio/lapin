@@ -55,6 +55,14 @@ export const PT: Record<string, string> = {
   "Downloading from Speckle": "Baixando do Speckle",
   "Reading the objects": "Lendo os objetos",
   "Bringing the objects in": "Trazendo os objetos",
+  // Speckle receive, recognition (docs/plan-speckle.md, S3).
+  "Recognition": "Reconhecimento",
+  "Recognise walls and slabs": "Reconhecer paredes e lajes",
+  "Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references": "As paredes e pisos cujo corpo o Lapin reconstrói dentro de 1 mm ou 0,5 % tornam-se paredes e lajes nativas; o resto fica como referências",
+  "A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.": "Uma parede ou um piso só se torna parede ou laje nativa onde o seu corpo nativo é o recebido dentro de 1 mm ou 0,5 % e os seus próprios parâmetros (largura, espessura, linha de localização) concordam com o corpo; o resto fica como referências. As fachadas-cortina ficam como referências.",
+  "Recognised": "Reconhecidos",
+  "References": "Referências",
+  "Stayed references:": "Ficaram como referências:",
   // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
   "MEP legend": "Legenda de instalações",
   "MEP LEGEND": "LEGENDA DE INSTALAÇÕES",
@@ -6403,6 +6411,7 @@ export const PT_PATTERNS: Language['patterns'] = [
   // The Speckle connector's send (docs/plan-speckle.md, S1)
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Recebidos ${m[1]} objetos do Speckle.`],
+  [/^Received (\d+) objects from Speckle: (\d+) native walls and slabs, (\d+) references\.$/, (m) => `Recebidos ${m[1]} objetos do Speckle: ${m[2]} paredes e lajes nativas, ${m[3]} referências.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Esta versão foi enviada deste projeto: ${m[1]} de seus objetos são elementos dele.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Enviado: ${m[1]} elementos, como uma versão nova.`],
 ];

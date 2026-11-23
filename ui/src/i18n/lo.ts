@@ -55,6 +55,14 @@ export const LO: Record<string, string> = {
   "Downloading from Speckle": "ກຳລັງດາວໂຫຼດຈາກ Speckle",
   "Reading the objects": "ກຳລັງອ່ານວັດຖຸ",
   "Bringing the objects in": "ກຳລັງນຳວັດຖຸເຂົ້າ",
+  // Speckle receive, recognition (docs/plan-speckle.md, S3).
+  "Recognition": "ການຮັບຮູ້",
+  "Recognise walls and slabs": "ຮັບຮູ້ຝາ ແລະ ພື້ນ",
+  "Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references": "ຝາ ແລະ ພື້ນທີ່ Lapin ສ້າງຮູບຊົງຄືນໄດ້ພາຍໃນ 1 mm ຫຼື 0.5 % ກາຍເປັນຝາ ແລະ ພື້ນແບບເດີມຂອງ Lapin; ສ່ວນທີ່ເຫຼືອຍັງເປັນການອ້າງອີງ",
+  "A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.": "ຝາ ຫຼື ພື້ນຈະກາຍເປັນຝາ ຫຼື ພື້ນແບບເດີມຂອງ Lapin ເມື່ອຮູບຊົງຂອງມັນກົງກັບທີ່ໄດ້ຮັບພາຍໃນ 1 mm ຫຼື 0.5 % ແລະ ພາລາມິເຕີຂອງມັນ (ຄວາມກວ້າງ, ຄວາມໜາ, ເສັ້ນຕຳແໜ່ງ) ກົງກັບຮູບຊົງ; ສ່ວນທີ່ເຫຼືອຍັງເປັນການອ້າງອີງ. ຝາຜ້າມ່ານຍັງເປັນການອ້າງອີງ.",
+  "Recognised": "ຮັບຮູ້ແລ້ວ",
+  "References": "ການອ້າງອີງ",
+  "Stayed references:": "ຍັງເປັນການອ້າງອີງ:",
   // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
   "MEP legend": "ຄຳອະທິບາຍ MEP",
   "MEP LEGEND": "ຄຳອະທິບາຍ MEP",
@@ -6458,6 +6466,7 @@ export const LO_PATTERNS: Language['patterns'] = [
   // The Speckle connector's send (docs/plan-speckle.md, S1)
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `ຮັບ ${m[1]} ວັດຖຸຈາກ Speckle.`],
+  [/^Received (\d+) objects from Speckle: (\d+) native walls and slabs, (\d+) references\.$/, (m) => `ຮັບ ${m[1]} ວັດຖຸຈາກ Speckle: ${m[2]} ຝາ ແລະ ພື້ນແບບເດີມ, ${m[3]} ການອ້າງອີງ.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `ລຸ້ນນີ້ຖືກສົ່ງຈາກໂຄງການນີ້: ${m[1]} ວັດຖຸຂອງມັນເປັນອົງປະກອບຂອງໂຄງການເອງ.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `ສົ່ງແລ້ວ: ${m[1]} ອົງປະກອບ, ເປັນເວີຊັນໃໝ່.`],
 ];

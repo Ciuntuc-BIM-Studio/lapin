@@ -55,6 +55,14 @@ export const FR: Record<string, string> = {
   "Downloading from Speckle": "Téléchargement depuis Speckle",
   "Reading the objects": "Lecture des objets",
   "Bringing the objects in": "Import des objets",
+  // Speckle receive, recognition (docs/plan-speckle.md, S3).
+  "Recognition": "Reconnaissance",
+  "Recognise walls and slabs": "Reconnaître les murs et les dalles",
+  "Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references": "Les murs et planchers dont Lapin refait le corps à 1 mm ou 0,5 % près deviennent des murs et dalles natifs ; le reste reste en références",
+  "A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.": "Un mur ou un plancher ne devient mur ou dalle natif que si son corps natif est celui reçu à 1 mm ou 0,5 % près et si ses propres paramètres (largeur, épaisseur, ligne d’implantation) s’accordent avec son corps ; le reste reste en références. Les murs-rideaux restent des références.",
+  "Recognised": "Reconnus",
+  "References": "Références",
+  "Stayed references:": "Restés en références :",
   // MEP legend: the symbols and line types a view draws, on a plan or a sheet; the services' names its rows take.
   "MEP legend": "Légende CVC-P",
   "MEP LEGEND": "LÉGENDE CVC-P",
@@ -6368,6 +6376,7 @@ export const FR_PATTERNS: Language['patterns'] = [
   // The Speckle connector's send (docs/plan-speckle.md, S1)
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `${m[1]} objets reçus de Speckle.`],
+  [/^Received (\d+) objects from Speckle: (\d+) native walls and slabs, (\d+) references\.$/, (m) => `${m[1]} objets reçus de Speckle : ${m[2]} murs et dalles natifs, ${m[3]} références.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Cette version a été envoyée depuis ce projet : ${m[1]} de ses objets sont ses propres éléments.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Envoyé : ${m[1]} éléments, comme nouvelle version.`],
 ];

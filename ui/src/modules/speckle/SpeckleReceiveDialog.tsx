@@ -5,6 +5,8 @@
  * as Send writes them, or its internal origin). Receive downloads the version, says what it holds, then brings it in as one
  * undo step; received again, the same model's references are updated in place, keeping their GlobalIds. A version sent from
  * this project (its objects are this project's elements) is offered as a copy, never over the elements themselves.
+ * Recognise walls and slabs (S3, on by default, as the IFC import's recognition): the walls and floors whose bodies Lapin
+ * rebuilds within 1 mm or 0.5 % come in as native walls and slabs, the rest as references; the report says how many of each.
  */
 
 import { useEffect, useState } from 'react';
@@ -42,6 +44,7 @@ export function SpeckleReceiveDialog() {
   const [version, setVersion] = useState(LATEST);
   const [storeys, setStoreys] = useState<ReceiveStoreys>('levels');
   const [origin, setOrigin] = useState<'base' | 'internal'>('base');
+  const [recognize, setRecognize] = useState(true);
   const [own, setOwn] = useState<SpeckleSurvey | null>(null);
   const [received, setReceived] = useState<SpeckleReceived | null>(null);
 
@@ -80,7 +83,7 @@ export function SpeckleReceiveDialog() {
   }, [account, project, model]);
 
   const args = (asCopy: boolean, versionId?: string | null): ReceiveArgs => ({
-    projectId: project, modelId: model, versionId: versionId ?? (version === LATEST ? null : version), asCopy, origin, storeys,
+    projectId: project, modelId: model, versionId: versionId ?? (version === LATEST ? null : version), asCopy, origin, storeys, recognize,
     activeStoreyId: useUi.getState().storeyId,
   });
 
@@ -99,6 +102,7 @@ export function SpeckleReceiveDialog() {
   };
 
   const skipped = received ? Object.entries(received.skipped) : [];
+  const kept = received?.recognition ? Object.entries(received.recognition.kept) : [];
 
   return (
     <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
@@ -134,8 +138,11 @@ export function SpeckleReceiveDialog() {
                   <option value="base">the project base point</option>
                   <option value="internal">the internal origin</option>
                 </select></dd>
+                <dt title="Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references">Recognition</dt>
+                <dd><label><input type="checkbox" className="speckle-recognize" checked={recognize} onChange={(e) => setRecognize(e.target.checked)} /> <span>Recognise walls and slabs</span></label></dd>
               </dl>
               <p className="muted small">The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.</p>
+              {recognize && <p className="muted small">A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.</p>}
               {own && (
                 <div className="speckle-own" data-testid="speckle-own">
                   <p>{`This version was sent from this project: ${own.native} of its objects are its own elements.`}</p>
@@ -152,7 +159,10 @@ export function SpeckleReceiveDialog() {
                     <dt>Removed</dt><dd data-no-i18n>{received.removed}</dd>
                     {received.shared > 0 && <><dt>Shared bodies</dt><dd data-no-i18n>{received.shared}</dd></>}
                     {received.lines > 0 && <><dt>With lines only</dt><dd data-no-i18n>{received.lines}</dd></>}
+                    {received.recognition && <><dt>Recognised</dt><dd data-no-i18n>{received.recognition.recognized}</dd></>}
+                    {received.recognition && <><dt>References</dt><dd data-no-i18n>{received.references ?? 0}</dd></>}
                   </dl>
+                  {kept.length > 0 && <p className="muted small speckle-kept">Stayed references: <span data-no-i18n>{kept.map(([k, n]) => `${k} (${n})`).join('; ')}</span></p>}
                   {skipped.length > 0 && <p className="muted small">Left out: <span data-no-i18n>{skipped.map(([k, n]) => `${k} ${n}`).join(', ')}</span></p>}
                   {received.notes.map((n) => <p key={n} className="muted small">{n}</p>)}
                 </div>
