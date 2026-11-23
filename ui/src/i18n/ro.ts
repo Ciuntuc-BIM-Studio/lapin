@@ -5272,6 +5272,12 @@ export const RO: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Punct de referință temporar la cursor (din nou: îl elimini)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Pornește o unealtă de desenare sau de plasare, indică un loc, apoi apasă această tastă: punctul următor se măsoară de la el.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Pornește o unealtă care plasează după o ancoră (Stâlp, Ușă, Fereastră), apoi apasă această tastă ca să parcurgi ancorele ei.",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Tronsoane în unghi drept față de axele planului, dacă regulile de pozare ale materialului nu cer altceva; oprit: în orice unghi",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "În timp ce desenezi: F pardoseală, C tavan, W perete, E o cotă tastată",
+  "open end": "capăt liber",
+  "open ends": "capete libere",
+  "Select the open ends": "Selectează capetele libere",
 };
 
 /** Phrases with a number or a name in them. */

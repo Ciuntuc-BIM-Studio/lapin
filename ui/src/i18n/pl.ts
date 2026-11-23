@@ -5319,6 +5319,12 @@ export const PL: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Tymczasowy punkt odniesienia przy kursorze (ponownie: usuń go)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Uruchom narzędzie rysowania lub wstawiania, wskaż miejsce, a następnie naciśnij ten klawisz: kolejny punkt jest mierzony od niego.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Uruchom narzędzie wstawiające według punktu wstawienia (Słup, Drzwi, Okno), a następnie naciśnij ten klawisz, aby przełączać jego punkty.",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Odcinki pod kątem prostym do osi rzutu, chyba że zasady układania materiału mówią inaczej; wyłączone: pod dowolnym kątem",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "Podczas rysowania: F podłoga, C sufit, W ściana, E wpisana rzędna",
+  "open end": "otwarty koniec",
+  "open ends": "otwarte końce",
+  "Select the open ends": "Zaznacz otwarte końce",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

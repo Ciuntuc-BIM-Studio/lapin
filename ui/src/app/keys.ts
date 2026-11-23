@@ -74,6 +74,8 @@ export interface KeySnapshot {
   takeAll?: boolean;
   /** A segment being drawn from a base: its length and angle can be typed (the focused field's text). */
   live?: { active: boolean; /** Who owns the box: "drag" and "grip" are drags (autohold, issue 86). */ owner?: string | null; /** A drag is held by autohold. */ autohold?: boolean; text: string; typed: boolean; /** A rectangle tool: Space switches length/angle with width/height. */ rect?: boolean; mode?: 'polar' | 'rect' };
+  /** The letters the active tool takes as its options now (ToolDef.letters), while its segment is drawn. */
+  toolLetters?: string;
   /** A 3D tool waits for a typed value (valueOwner.ts): what is typed so far. */
   value?: { text: string } | null;
   /** The arrow keys are the nudge's now (app/nudge.ts nudgeReady): a selection in a view that moves it, nothing else asking for the keys. */
@@ -85,6 +87,8 @@ export type KeyIntent =
   /** Letters that are a sequence something longer starts with: typed, and run if nothing more comes. */
   | { kind: 'pending'; id: string; buffer: string }
   | { kind: 'toolSpace' }
+  /** A letter the active tool takes as an option (an MEP run's plane). */
+  | { kind: 'toolLetter'; key: string }
   /** The ` key: the command line takes all typing, or gives it back. */
   | { kind: 'cmdMode' }
   | { kind: 'closeDialog' } | { kind: 'deselect' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'stepSpace' } | { kind: 'backspace' }
@@ -167,6 +171,8 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
     if (e.key === 'Backspace' && s.live.text) return { kind: 'liveBack' };
     if (/^[0-9.,+]$/.test(e.key) || (e.key === '-' && (s.live.text || (s.live.rect && s.live.mode === 'rect')))) return { kind: 'liveType', key: e.key };
     if (unitKey(s.live.text, e.key)) return { kind: 'liveType', key: e.key.toLowerCase() };
+    // The tool's option letters (a run's F, C, W, E), once a point is placed: after a unit's letter (2400c is cm), before the shortcuts.
+    if (s.toolLetters && s.live.owner === 'tool' && !e.shiftKey && /^[a-z]$/i.test(e.key) && s.toolLetters.includes(e.key.toUpperCase())) return { kind: 'toolLetter', key: e.key.toUpperCase() };
   }
   const typing = s.buffer.length > 0 || !!s.step;
   // Esc: first the running command (or what is typed), then, with nothing on, the selection lets go (a drilled one steps up first: DrillCrumbs).
@@ -219,6 +225,7 @@ function snapshot(): KeySnapshot {
     hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll,
     live: (() => { const l = useLive.getState(); return { active: !!l.owner, owner: l.owner, autohold: autoholdOn(), text: l[l.focus], typed: !!(l.len || l.ang || l.rel), rect: !!l.rect, mode: l.mode }; })(),
     value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
+    toolLetters: (ui.tool ? findTool(ui.tool)?.letters?.keys() : undefined) || undefined,
     nudge: nudgeReady(nudgeState()),
   };
 }
@@ -242,6 +249,7 @@ export function carryOut(intent: KeyIntent): void {
       }, pending.delay + 10);
       break;
     }
+    case 'toolLetter': { const t = useUi.getState().tool; if (t) findTool(t)?.letters?.take(intent.key); break; }
     case 'toolSpace': { const t = useUi.getState().tool; if (t) findTool(t)?.space?.(); useToolTick.setState((s) => ({ n: s.n + 1 })); break; }
     case 'closeDialog': useUi.setState({ dialog: null }); break;
     case 'deselect': select(null); break;

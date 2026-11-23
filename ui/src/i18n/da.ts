@@ -5313,6 +5313,12 @@ export const DA: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Midlertidigt referencepunkt ved markøren (igen: fjern det)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Start et tegne- eller placeringsværktøj, peg på et sted, og tryk så på denne tast: det næste punkt måles fra det.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Start et værktøj, der placerer efter et anker (Søjle, Dør, Vindue), og tryk så på denne tast for at gennemgå dets ankre.",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Strækninger vinkelret på planens akser, medmindre materialets lægningsregler siger andet; fra: i enhver vinkel",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "Mens du tegner: F gulv, C loft, W væg, E en indtastet kote",
+  "open end": "åben ende",
+  "open ends": "åbne ender",
+  "Select the open ends": "Vælg de åbne ender",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

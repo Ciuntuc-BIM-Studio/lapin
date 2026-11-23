@@ -5315,6 +5315,12 @@ export const ZH: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "光标处的临时参考点(再次:取消)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "启动绘制或放置工具,指向一个位置,然后按此键:下一点将从该点量起。",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "启动按锚点放置的工具(柱、门、窗),然后按此键依次切换其锚点。",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "各段与平面轴线成直角，除非材料的敷设规则另有规定；关闭：任意角度",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "绘制时：F 地面，C 顶棚，W 墙，E 输入标高",
+  "open end": "开放端",
+  "open ends": "开放端",
+  "Select the open ends": "选择开放端",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

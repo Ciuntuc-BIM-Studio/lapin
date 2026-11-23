@@ -5372,6 +5372,12 @@ export const LO: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "ຈຸດອ້າງອີງຊົ່ວຄາວທີ່ເຄີເຊີ (ອີກຄັ້ງ: ປ່ອຍມັນ)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "ເລີ່ມເຄື່ອງມືແຕ້ມ ຫຼື ວາງ, ຊີ້ໄປທີ່ຈຸດໜຶ່ງ, ແລ້ວກົດປຸ່ມນີ້: ຈຸດຖັດໄປຈະວັດຈາກມັນ.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "ເລີ່ມເຄື່ອງມືທີ່ວາງຕາມຈຸດຢຶດ (ເສົາ, ປະຕູ, ປ່ອງຢ້ຽມ), ແລ້ວກົດປຸ່ມນີ້ເພື່ອໄລ່ຜ່ານຈຸດຢຶດຂອງມັນ.",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "ຊ່ວງຕັ້ງສາກກັບແກນຂອງແຜນຜັງ, ເວັ້ນເສຍແຕ່ກົດການວາງຂອງວັດສະດຸບອກເປັນຢ່າງອື່ນ; ປິດ: ໃນມຸມໃດກໍໄດ້",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "ໃນຂະນະແຕ້ມ: F ພື້ນ, C ເພດານ, W ຝາ, E ລະດັບທີ່ພິມ",
+  "open end": "ປາຍເປີດ",
+  "open ends": "ປາຍເປີດ",
+  "Select the open ends": "ເລືອກປາຍເປີດ",
 };
 
 /** Phrases with a number or a name in them. */

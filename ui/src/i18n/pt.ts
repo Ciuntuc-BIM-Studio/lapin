@@ -5316,6 +5316,12 @@ export const PT: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Ponto de referência temporário no cursor (de novo: descartá-lo)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Inicie uma ferramenta de desenho ou de colocação, aponte um local e pressione esta tecla: o ponto seguinte é medido a partir dele.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Inicie uma ferramenta que posiciona por âncora (Pilar, Porta, Janela) e pressione esta tecla para percorrer suas âncoras.",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Trechos em ângulo reto com os eixos da planta, a menos que as regras de assentamento do material digam outra coisa; desligado: em qualquer ângulo",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "Ao desenhar: F piso, C teto, W parede, E uma cota digitada",
+  "open end": "extremidade aberta",
+  "open ends": "extremidades abertas",
+  "Select the open ends": "Selecionar as extremidades abertas",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
