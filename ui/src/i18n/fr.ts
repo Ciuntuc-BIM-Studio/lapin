@@ -3,6 +3,41 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
+  "Tag system": "Étiqueter le système",
+  "Open a plan to tag its systems.": "Ouvrez un plan pour étiqueter ses systèmes.",
+  "Everything on this plan has its tag already.": "Tout ce qui est sur ce plan a déjà son étiquette.",
+  "on the selected devices": "sur les appareils sélectionnés",
+  "every device (printed)": "sur chaque appareil (imprimé)",
+  "Supply line": "Ligne d'aller",
+  "Return line": "Ligne de retour",
+  "Service's colours": "Couleurs du lot",
+  "Coverage circles": "Cercles de couverture",
+  "This plan": "Ce plan",
+  "as each system": "comme chaque système",
+  "over the cut": "au-dessus du plan de coupe",
+  "overhead dashes": "tirets au-dessus",
+  "Line type over the plan's cut": "Type de ligne au-dessus du plan de coupe",
+  "How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there": "Comment ses tronçons et symboles se dessinent en plan : couleur et type de ligne ; au-dessus du plan de coupe (au plafond), leur type de ligne là",
+  "A paired run's return line": "La ligne de retour d'un tronçon double",
+  "Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none": "Où les plans dessinent les cercles de couverture de ses appareils : sur les appareils sélectionnés (à l'écran seulement), sur chaque appareil (imprimé aussi) ou nulle part",
+  "This plan's coverage circles, over every system's own setting": "Les cercles de couverture de ce plan, au-dessus du réglage de chaque système",
+  "Other disciplines halftone": "Autres disciplines en demi-teinte",
+  "What is not of the view's discipline drawn grey under it: an MEP plan's walls, doors and furniture under the services (on by default for the MEP discipline)": "Ce qui n'est pas de la discipline de la vue dessiné en gris dessous : murs, portes et mobilier d'un plan CVC-plomberie-électricité sous les réseaux (activé par défaut pour la discipline MEP)",
+  "Its views draw what is not of their discipline grey (an MEP plan's architecture); on by default for the MEP discipline": "Ses vues dessinent en gris ce qui n'est pas de leur discipline (l'architecture d'un plan de réseaux) ; activé par défaut pour la discipline MEP",
+  "dashdot": "trait-point",
+  "dashdotdot": "trait-point-point",
+  "Coverage": "Couverture",
+  "MEP run": "Tronçon de réseau",
+  "MEP rise / drop": "Montée / descente",
+  "MEP terminal": "Terminal de réseau",
+  "MEP: a run's material and size (PP-R 20, Ø125)": "Réseaux : matériau et taille d'un tronçon (PP-R 20, Ø125)",
+  "MEP: a run's fall (i=2 %), where it falls": "Réseaux : pente d'un tronçon (i=2 %), là où il descend",
+  "MEP: where a rise goes (↑ +2.40)": "Réseaux : où va une montée (↑ +2.40)",
+  "MEP: a terminal's power or flow (P=1200 W)": "Réseaux : puissance ou débit d'un terminal (P=1200 W)",
+  "Tag system tags a plan: open a plan of the storey.": "Étiqueter le système étiquette un plan : ouvrez un plan du niveau.",
+  "Which plan? (viewId)": "Quel plan ? (viewId)",
+  "Coverage is all, selected or none.": "La couverture est all, selected ou none.",
   // Site grading T2: feature lines, contours drawn and dragged (docs/plan-site-grading.md).
   "Feature line": "Ligne caractéristique",
   "Contour at elevation": "Courbe de niveau à une cote",
@@ -5848,4 +5883,6 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} échantillons · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `Image ${m[1]} × ${m[2]} : ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `L’image n’a pas pu être créée : ${m[1]}`],
+  // MEP: Tag system's count.
+  [/^(\d+) tag\(s\) placed\.$/, (m) => `${m[1]} étiquette(s) placée(s).`],
 ];

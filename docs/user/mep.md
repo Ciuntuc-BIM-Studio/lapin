@@ -10,7 +10,7 @@ The **MEP** tab draws the building's services the way an engineer sketches them:
 
 ## A system in one click
 
-The MEP tab gathers its tools in three groups: **System** (**New system** ▾ with the services, **Edit system**, **Systems…**, **MEP plan**, **Open ports** and the **Schedules** ▾), **Runs** (**Run**, **Place node**, the run edits, **Close the loop** and the **Street** ▾) and **Carriers and fans** (**Cable tray**, the **Fans** ▾, **Lay in carrier**, **Duct to outlet**, **Fan types**). A button with ▾ opens its list; each tool keeps its letters, and **Commands…** and **My tools** find it as before.
+The MEP tab gathers its tools in three groups: **System** (**New system** ▾ with the services, **Edit system**, **Systems…**, **MEP plan**, **Open ports**, **Tag system** and the **Schedules** ▾), **Runs** (**Run**, **Place node**, the run edits, **Close the loop** and the **Street** ▾) and **Carriers and fans** (**Cable tray**, the **Fans** ▾, **Lay in carrier**, **Duct to outlet**, **Fan types**). A button with ▾ opens its list; each tool keeps its letters, and **Commands…** and **My tools** find it as before.
 
 Under **New system**, choose the service (**Heating**, **Water**, **Hot water**, **Drainage**, **Electrical**, **Ventilation**) and click in the plan. Lapin places the whole system: the source where you clicked, a first endpoint a few metres away, and the run between them. The system opens for editing.
 
@@ -52,11 +52,34 @@ A **light** placed now lights the Medium and Realistic 3D views, 1000 lm at 3500
 
 **Systems…** lists the systems of the project and the defaults of the current one: the size, the plane and the elevations of each plane, the slope (drainage), whether runs are drawn as a pair (heating: supply and return) and how far apart, the material and the insulation. Change a default and every node and run without a value of its own follows.
 
+Each system also has its **plan graphics**: the colour and line type of its line (**Supply line** and **Return line** for a paired system), and the line type its runs take **over the cut**, on the ceiling. Each service starts with the usual ones, chosen so that a plan still reads when printed in black and white:
+
+| Service | Colour | Line | Over the cut |
+|---|---|---|---|
+| Heating supply / return | red / blue | solid / dashed | overhead dashes / dash dot dot |
+| Cold water | green | centre line | dotted |
+| Hot water | magenta | dash dot | dotted |
+| Drainage | brown, heavier | solid | overhead dashes |
+| Gas | yellow | dash dot dot | dotted |
+| Fuel oil | brown | dash dot dot | dotted |
+| Electrical | orange | short dashes | dotted |
+| Supply air / extract air | blue / green, heavier | solid / dashed | overhead dashes / dash dot dot |
+| Fire alarm | red | dash dot | dotted |
+| Fire hydrants | dark red, heavier | centre line | dotted |
+
+**Service's colours** puts them back. A view's **Visibility / Graphics** still wins: a colour or a line given to the MEP category, a filter or an element there draws over the system's.
+
 ![The Systems dialog](shots/mep-systems.webp)
 
 ## Plans, lists and IFC
 
-**MEP plan** makes a plan of the MEP discipline for the level, filed under the MEP set in the browser. The **Equipment list** and the **Run list** under **System → Schedules** are schedules like any other: they go on sheets and export with them.
+**MEP plan** makes a plan of the MEP discipline for the level, filed under the MEP set in the browser. In it the walls, doors, furniture and everything else that is not MEP draw grey (halftone), the services over them in their colours. Turn it off with **Other disciplines halftone** in the view's settings (or for every MEP view in **View styles**); a colour you give a category in **Visibility / Graphics** wins over the grey.
+
+On every plan a run that lies wholly over the plan's cut (on the ceiling) is drawn dashed, as overhead elements are, in its system's line type over the cut; one under the level (under the floor) is drawn as what lies beyond. Equipment and fittings over the cut are dashed the same way; terminals on the ceiling (lights, diffusers, detectors) keep their symbols whole, as MEP plans draw them. A plan cut higher (**View range…**) draws the ceiling runs as seen.
+
+**Tag system** tags the plan in front: each run with its material and size, and its slope where it falls (`PP-R 20`, `PVC 110` / `i=2 %`), each rise or drop with the elevation it goes to (`↑ +2.40`), each radiator, terminal or appliance with its power or flow (`P=1200 W`). It tags the system you edit (else the current one; with neither, every system), skips what has a tag on this plan already, and is one undo step. The tags are Annotate's, of three tag types it adds to the project, **MEP run**, **MEP rise / drop** and **MEP terminal**: change their text in **Drafting standards → Tag types** with the fields `{mepSize}`, `{mepSlope}`, `{mepRise}` and `{mepDutyText}` or any other. Like every tag, they follow their element when it moves.
+
+![An MEP plan: the house halftone, the heating supply red and the return blue dashed, each run tagged with its size and each radiator with its power](shots/mep-plan-tags.webp) The **Equipment list** and the **Run list** under **System → Schedules** are schedules like any other: they go on sheets and export with them.
 
 In an IFC export each system is an IfcDistributionSystem, every node and run has its IfcDistributionPorts, and the connections are written between the ports, so the network arrives in another program connected from the source to the last endpoint.
 
@@ -100,9 +123,9 @@ Sizing the pipes from the appliances' consumption and checking the pressure drop
 
 ![A fire alarm loop: the panel by the entrance, detectors with their coverage, a call point and a sounder, the loop closed back to the panel](shots/mep-fire-plan.webp)
 
-Each detector shows its **coverage** as a dashed circle. By default the radius comes from the planning table for a flat ceiling up to 6 m: 5.8 m for a smoke detector, 3.6 m for a heat detector. Set a detector's own **Coverage radius** in its properties when the room, its height or its ceiling asks for another value.
+Each detector has its **coverage**, a pale circle round it. By default only the selected detectors show it, on the screen, so the plan stays readable; **Systems… → Coverage circles** draws it on every device of the system (printed too) or on none, and **This plan → Coverage circles** sets it for one plan over the systems'. By default the radius comes from the planning table for a flat ceiling up to 6 m: 5.8 m for a smoke detector, 3.6 m for a heat detector. Set a detector's own **Coverage radius** in its properties when the room, its height or its ceiling asks for another value.
 
-**New system → Fire hydrants** places a **fire pump set** and a first **internal hydrant** joined to it by a galvanised steel pipe (DN 50 by default). Each hydrant placed after it tees onto the network. The **fire water reserve** feeds the pump by the pump's own suction port, and the **fire brigade inlet** is joined by hand with **Run**. **External hydrant** and **Sprinkler** complete the network. An internal hydrant draws its reach as a dashed circle: its **Hose length** (20 m by default) plus its **Compact jet** (6 m). Set both as the norm asks for the building.
+**New system → Fire hydrants** places a **fire pump set** and a first **internal hydrant** joined to it by a galvanised steel pipe (DN 50 by default). Each hydrant placed after it tees onto the network. The **fire water reserve** feeds the pump by the pump's own suction port, and the **fire brigade inlet** is joined by hand with **Run**. **External hydrant** and **Sprinkler** complete the network. An internal hydrant has its reach, a coverage circle like a detector's (here set to every device): its **Hose length** (20 m by default) plus its **Compact jet** (6 m). Set both as the norm asks for the building.
 
 ![Internal hydrants fed from the pump set, their reach drawn on the plan](shots/mep-fire-hydrants.webp)
 

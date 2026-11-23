@@ -3,6 +3,41 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
+  "Tag system": "Etiquetar sistema",
+  "Open a plan to tag its systems.": "Abre una planta para etiquetar sus sistemas.",
+  "Everything on this plan has its tag already.": "Todo lo de esta planta ya tiene su etiqueta.",
+  "on the selected devices": "en los dispositivos seleccionados",
+  "every device (printed)": "en cada dispositivo (impreso)",
+  "Supply line": "Línea de ida",
+  "Return line": "Línea de retorno",
+  "Service's colours": "Colores de la instalación",
+  "Coverage circles": "Círculos de cobertura",
+  "This plan": "Esta planta",
+  "as each system": "como cada sistema",
+  "over the cut": "sobre el plano de corte",
+  "overhead dashes": "trazos de por encima",
+  "Line type over the plan's cut": "Tipo de línea sobre el plano de corte",
+  "How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there": "Cómo se dibujan en planta sus tramos y símbolos: color y tipo de línea; sobre el plano de corte (en el techo), su tipo de línea allí",
+  "A paired run's return line": "La línea de retorno de un tramo doble",
+  "Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none": "Dónde dibujan las plantas los círculos de cobertura de sus dispositivos: en los seleccionados (solo en pantalla), en cada dispositivo (también impreso) o en ninguno",
+  "This plan's coverage circles, over every system's own setting": "Los círculos de cobertura de esta planta, sobre el ajuste de cada sistema",
+  "Other disciplines halftone": "Otras disciplinas en medio tono",
+  "What is not of the view's discipline drawn grey under it: an MEP plan's walls, doors and furniture under the services (on by default for the MEP discipline)": "Lo que no es de la disciplina de la vista, en gris debajo: muros, puertas y mobiliario de una planta de instalaciones bajo las instalaciones (activado por defecto en la disciplina MEP)",
+  "Its views draw what is not of their discipline grey (an MEP plan's architecture); on by default for the MEP discipline": "Sus vistas dibujan en gris lo que no es de su disciplina (la arquitectura de una planta de instalaciones); activado por defecto en la disciplina MEP",
+  "dashdot": "trazo y punto",
+  "dashdotdot": "trazo y dos puntos",
+  "Coverage": "Cobertura",
+  "MEP run": "Tramo de instalaciones",
+  "MEP rise / drop": "Subida / bajada",
+  "MEP terminal": "Terminal de instalaciones",
+  "MEP: a run's material and size (PP-R 20, Ø125)": "Instalaciones: material y tamaño de un tramo (PP-R 20, Ø125)",
+  "MEP: a run's fall (i=2 %), where it falls": "Instalaciones: pendiente de un tramo (i=2 %), donde la tiene",
+  "MEP: where a rise goes (↑ +2.40)": "Instalaciones: adónde llega una subida (↑ +2.40)",
+  "MEP: a terminal's power or flow (P=1200 W)": "Instalaciones: potencia o caudal de un terminal (P=1200 W)",
+  "Tag system tags a plan: open a plan of the storey.": "Etiquetar sistema etiqueta una planta: abre una planta de la planta del edificio.",
+  "Which plan? (viewId)": "¿Qué planta? (viewId)",
+  "Coverage is all, selected or none.": "La cobertura es all, selected o none.",
   // Site grading T2: feature lines, contours drawn and dragged (docs/plan-site-grading.md).
   "Feature line": "Línea característica",
   "Contour at elevation": "Curva de nivel a una cota",
@@ -5886,4 +5921,6 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} muestras · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `Imagen ${m[1]} × ${m[2]}: ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `No se pudo crear la imagen: ${m[1]}`],
+  // MEP: Tag system's count.
+  [/^(\d+) tag\(s\) placed\.$/, (m) => `${m[1]} etiqueta(s) colocada(s).`],
 ];

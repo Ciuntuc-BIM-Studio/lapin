@@ -3,6 +3,41 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
+  "Tag system": "System beschriften",
+  "Open a plan to tag its systems.": "Öffne einen Grundriss, um seine Systeme zu beschriften.",
+  "Everything on this plan has its tag already.": "Alles auf diesem Grundriss ist schon beschriftet.",
+  "on the selected devices": "an den ausgewählten Geräten",
+  "every device (printed)": "an jedem Gerät (gedruckt)",
+  "Supply line": "Vorlaufleitung",
+  "Return line": "Rücklaufleitung",
+  "Service's colours": "Farben des Gewerks",
+  "Coverage circles": "Abdeckungskreise",
+  "This plan": "Dieser Grundriss",
+  "as each system": "wie jedes System",
+  "over the cut": "über der Schnittebene",
+  "overhead dashes": "Überkopf-Strichlinie",
+  "Line type over the plan's cut": "Linientyp über der Schnittebene",
+  "How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there": "Wie seine Leitungen und Symbole im Grundriss zeichnen: Farbe und Linientyp; über der Schnittebene (an der Decke) ihr Linientyp dort",
+  "A paired run's return line": "Die Rücklaufleitung einer Leitungspaares",
+  "Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none": "Wo die Grundrisse die Abdeckungskreise seiner Geräte zeichnen: an den ausgewählten Geräten (nur auf dem Bildschirm), an jedem Gerät (auch gedruckt) oder gar nicht",
+  "This plan's coverage circles, over every system's own setting": "Die Abdeckungskreise dieses Grundrisses, über der Einstellung jedes Systems",
+  "Other disciplines halftone": "Andere Fachbereiche gerastert",
+  "What is not of the view's discipline drawn grey under it: an MEP plan's walls, doors and furniture under the services (on by default for the MEP discipline)": "Was nicht zum Fachbereich der Ansicht gehört, grau darunter: Wände, Türen und Möbel eines TGA-Grundrisses unter den Leitungen (für den Fachbereich MEP standardmäßig an)",
+  "Its views draw what is not of their discipline grey (an MEP plan's architecture); on by default for the MEP discipline": "Ihre Ansichten zeichnen grau, was nicht zu ihrem Fachbereich gehört (die Architektur eines TGA-Grundrisses); für den Fachbereich MEP standardmäßig an",
+  "dashdot": "Strich-Punkt",
+  "dashdotdot": "Strich-Punkt-Punkt",
+  "Coverage": "Abdeckung",
+  "MEP run": "TGA-Leitung",
+  "MEP rise / drop": "Steigung / Fallleitung",
+  "MEP terminal": "TGA-Endgerät",
+  "MEP: a run's material and size (PP-R 20, Ø125)": "TGA: Material und Größe einer Leitung (PP-R 20, Ø125)",
+  "MEP: a run's fall (i=2 %), where it falls": "TGA: Gefälle einer Leitung (i=2 %), wo sie fällt",
+  "MEP: where a rise goes (↑ +2.40)": "TGA: wohin eine Steigleitung führt (↑ +2.40)",
+  "MEP: a terminal's power or flow (P=1200 W)": "TGA: Leistung oder Volumenstrom eines Endgeräts (P=1200 W)",
+  "Tag system tags a plan: open a plan of the storey.": "System beschriften beschriftet einen Grundriss: öffne einen Grundriss des Geschosses.",
+  "Which plan? (viewId)": "Welcher Grundriss? (viewId)",
+  "Coverage is all, selected or none.": "Die Abdeckung ist all, selected oder none.",
   // Site grading T2: feature lines, contours drawn and dragged (docs/plan-site-grading.md).
   "Feature line": "Gestaltungslinie",
   "Contour at elevation": "Höhenlinie auf Höhe",
@@ -5844,4 +5879,6 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} Samples · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `Bild ${m[1]} × ${m[2]}: ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `Das Bild konnte nicht erstellt werden: ${m[1]}`],
+  // MEP: Tag system's count.
+  [/^(\d+) tag\(s\) placed\.$/, (m) => `${m[1]} Beschriftung(en) gesetzt.`],
 ];

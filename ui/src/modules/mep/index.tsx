@@ -3,8 +3,9 @@
  * with their defaults, nodes with ports placed by role, runs between them
  * that snap to ports and to other runs, connections made and undone by hand,
  * a system placed whole and shaped in its edit mode (docs/plan-mep.md). Tags
- * come from Annotate's TAG, as for any element; a plan of the MEP discipline
- * is made from here. The engineering on the network (checks, sizing, the
+ * come from Annotate's TAG, as for any element, and Tag system tags a plan's
+ * runs, rises and terminals at once; a plan of the MEP discipline is made from
+ * here (the services in their colours, the architecture halftone). The engineering on the network (checks, sizing, the
  * assistants) is mep-pro's, which adds its groups to this tab.
  */
 
@@ -40,6 +41,7 @@ import { cableTray, carrierSchedule, layInCarrier } from './carriers/tools';
 import { useCarrierPrefs } from './carriers/carriers';
 import { CarrierSection } from './carriers/CarrierSection';
 import { CLASS as CARRIER_CLASS, carrierPoints } from './carriers/carriers';
+import { CoverageOverlay, tagSystem } from './planGraphics';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const SystemsDialog = lazyPart(() => import('./SystemsDialog').then((m) => m.SystemsDialog), { title: 'Systems' });
@@ -482,7 +484,7 @@ const mep: LapinModule = {
       {
         label: 'System',
         tools: [pulldownTool('mep.more.newSystem', 'New system', Workflow, newSystems), edit],
-        small: [systems, mepPlan, openPorts,
+        small: [systems, mepPlan, openPorts, tagSystem,
           pulldownTool('mep.more.schedules', 'Schedules', ListOrdered, [equipmentSchedule, runSchedule, gasSchedule, fireSchedule, carrierSchedule, fanSchedule, fanRoomCheck])],
       },
       {
@@ -511,6 +513,8 @@ const mep: LapinModule = {
   ],
   dialogs: { mepSystems: SystemsDialog, fanTypes: FanTypesDialog },
   background: Background,
+  // The selected devices' coverage circles, where the plan or the system draws them on the selected only (the default).
+  planOverlays: [CoverageOverlay],
   grips: { ...byClass(grips), [FAN_CLASS]: fanGrips, [CARRIER_CLASS]: carrierGrips },
   // Create similar: a node by its role (its classes are many), a run on its system, a fan of its kind and type, a carrier of its type.
   similarFor: (n) => {

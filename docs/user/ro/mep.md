@@ -10,7 +10,7 @@ Fila **Instalații** desenează instalațiile clădirii așa cum le schițează 
 
 ## Un sistem dintr-un clic
 
-Fila Instalații își adună uneltele în trei grupuri: **Sistem** (**Sistem nou** ▾ cu serviciile, **Editează sistemul**, **Sisteme…**, **Plan instalații**, **Porturi libere** și **Extrase** ▾), **Trasee** (**Traseu**, **Plasează nod**, editările traseului, **Închide bucla** și **Stradă** ▾) și **Suporturi de cabluri și ventilatoare** (**Jgheab de cabluri**, **Ventilatoare** ▾, **Pozează în suportul de cabluri**, **Tub spre gura de evacuare**, **Tipuri de ventilatoare**). Un buton cu ▾ deschide lista lui; fiecare unealtă își păstrează literele, iar **Comenzi…** și **Uneltele mele** o găsesc ca până acum.
+Fila Instalații își adună uneltele în trei grupuri: **Sistem** (**Sistem nou** ▾ cu serviciile, **Editează sistemul**, **Sisteme…**, **Plan instalații**, **Porturi libere**, **Etichetează sistemul** și **Extrase** ▾), **Trasee** (**Traseu**, **Plasează nod**, editările traseului, **Închide bucla** și **Stradă** ▾) și **Suporturi de cabluri și ventilatoare** (**Jgheab de cabluri**, **Ventilatoare** ▾, **Pozează în suportul de cabluri**, **Tub spre gura de evacuare**, **Tipuri de ventilatoare**). Un buton cu ▾ deschide lista lui; fiecare unealtă își păstrează literele, iar **Comenzi…** și **Uneltele mele** o găsesc ca până acum.
 
 Sub **Sistem nou**, alege serviciul (**Încălzire**, **Apă**, **Apă caldă**, **Canalizare**, **Electrice**, **Ventilație**) și dă clic în plan. Lapin plasează sistemul întreg: sursa unde ai dat clic, un prim consumator la câțiva metri și traseul dintre ei. Sistemul se deschide pentru editare.
 
@@ -52,11 +52,34 @@ Un **corp de iluminat** pus de acum luminează vederile 3D Mediu și Realist, 10
 
 **Sisteme…** arată sistemele proiectului și valorile implicite ale celui curent: dimensiunea, planul și cota fiecărui plan, panta (canalizare), dacă traseele se desenează în pereche (încălzire: tur și retur) și la ce distanță, materialul și izolația. Schimbă o valoare implicită și fiecare nod și traseu fără o valoare proprie urmează.
 
+Fiecare sistem are și **grafica de plan**: culoarea și tipul de linie al liniei lui (**Linia de tur** și **Linia de retur** la un sistem în pereche) și tipul de linie pe care traseele îl iau **peste planul de secționare**, pe tavan. Fiecare instalație pornește cu cele obișnuite, alese așa încât planul să se citească și tipărit alb-negru:
+
+| Instalație | Culoare | Linie | Peste planul de secționare |
+|---|---|---|---|
+| Încălzire tur / retur | roșu / albastru | continuă / întreruptă | liniuțe de deasupra / linie-două puncte |
+| Apă rece | verde | linie de ax | punctată |
+| Apă caldă | magenta | linie-punct | punctată |
+| Canalizare | maro, mai groasă | continuă | liniuțe de deasupra |
+| Gaze | galben | linie-două puncte | punctată |
+| Motorină | maro | linie-două puncte | punctată |
+| Electrice | portocaliu | liniuțe scurte | punctată |
+| Aer introdus / aer evacuat | albastru / verde, mai groase | continuă / întreruptă | liniuțe de deasupra / linie-două puncte |
+| Semnalizare incendiu | roșu | linie-punct | punctată |
+| Hidranți | roșu închis, mai groasă | linie de ax | punctată |
+
+**Culorile instalației** le aduce înapoi. **Vizibilitate / Grafică** a vederii câștigă în continuare: o culoare sau o linie dată acolo categoriei MEP, unui filtru sau unui element se desenează peste cea a sistemului.
+
 ![Dialogul Sisteme](shots/mep-systems.webp)
 
 ## Planuri, liste și IFC
 
-**Plan instalații** face un plan al disciplinei MEP pentru nivel, pus în setul MEP din navigator. **Lista de echipamente** și **lista de trasee** de sub **Sistem → Extrase** sunt tabele ca oricare altele: merg pe planșe și se exportă cu ele.
+**Plan instalații** face un plan al disciplinei MEP pentru nivel, pus în setul MEP din navigator. În el pereții, ușile, mobilierul și tot ce nu ține de instalații se desenează gri (estompat), cu instalațiile peste ele în culorile lor. Oprește asta cu **Celelalte specialități estompate** din setările vederii (sau pentru toate vederile MEP din **Stiluri de vedere**); o culoare dată unei categorii în **Vizibilitate / Grafică** câștigă în fața griului.
+
+Pe orice plan, un traseu aflat în întregime peste planul de secționare (pe tavan) se desenează întrerupt, ca elementele de deasupra, cu tipul de linie al sistemului lui peste planul de secționare; unul sub nivel (sub pardoseală) se desenează ca ce se vede dincolo. Echipamentele și fitingurile de peste planul de secționare se desenează întrerupt la fel; terminalele de pe tavan (corpuri de iluminat, difuzoare, detectoare) își păstrează simbolurile întregi, cum le desenează planurile de instalații. Un plan secționat mai sus (**Domeniul vederii…**) desenează traseele de pe tavan ca văzute.
+
+**Etichetează sistemul** etichetează planul din față: fiecare traseu cu materialul și dimensiunea lui și cu panta acolo unde are pantă (`PP-R 20`, `PVC 110` / `i=2 %`), fiecare urcare sau coborâre cu cota la care ajunge (`↑ +2.40`), fiecare radiator, terminal sau aparat cu puterea sau debitul lui (`P=1200 W`). Etichetează sistemul pe care îl editezi (altfel pe cel curent; fără niciunul, toate sistemele), sare peste ce are deja o etichetă pe acest plan și este un singur pas de anulare. Etichetele sunt cele din Adnotare, de trei tipuri de etichetă pe care le adaugă proiectului, **Traseu de instalații**, **Urcare / coborâre** și **Terminal de instalații**: schimbă-le textul în **Standarde de desenare → Tipuri de etichete** cu câmpurile `{mepSize}`, `{mepSlope}`, `{mepRise}` și `{mepDutyText}` sau oricare altele. Ca orice etichetă, își urmează elementul când acesta se mută.
+
+![Un plan de instalații: casa estompată, turul încălzirii roșu și returul albastru întrerupt, fiecare traseu etichetat cu dimensiunea lui și fiecare radiator cu puterea lui](shots/mep-plan-tags.webp) **Lista de echipamente** și **lista de trasee** de sub **Sistem → Extrase** sunt tabele ca oricare altele: merg pe planșe și se exportă cu ele.
 
 La exportul IFC fiecare sistem e un IfcDistributionSystem, fiecare nod și traseu își are porturile IfcDistributionPort, iar conexiunile se scriu între porturi, așa că rețeaua ajunge în alt program conectată de la sursă la ultimul consumator.
 
@@ -100,9 +123,9 @@ Dimensionarea țevilor după consumul aparatelor și verificarea căderii de pre
 
 ![O buclă de semnalizare incendiu: centrala lângă intrare, detectoarele cu acoperirea lor, un declanșator manual și o sirenă, bucla închisă înapoi la centrală](shots/mep-fire-plan.webp)
 
-Fiecare detector își arată **acoperirea** ca un cerc punctat. Implicit raza vine din tabelul de proiectare pentru un tavan plan de până la 6 m: 5,8 m pentru un detector de fum, 3,6 m pentru un detector de temperatură. Dă unui detector propria **Raza de acoperire** în proprietățile lui când încăperea, înălțimea ei sau tavanul cer altă valoare.
+Fiecare detector are **acoperirea** lui, un cerc pal în jurul lui. Implicit doar detectoarele selectate o arată, pe ecran, ca planul să rămână lizibil; **Sisteme… → Cercuri de acoperire** o desenează pe fiecare dispozitiv al sistemului (și tipărit) sau pe niciunul, iar **Acest plan → Cercuri de acoperire** o stabilește pentru un singur plan, peste setarea sistemelor. Implicit raza vine din tabelul de proiectare pentru un tavan plan de până la 6 m: 5,8 m pentru un detector de fum, 3,6 m pentru un detector de temperatură. Dă unui detector propria **Raza de acoperire** în proprietățile lui când încăperea, înălțimea ei sau tavanul cer altă valoare.
 
-**Sistem nou → Hidranți** pune un **grup de pompare pentru incendiu** și un prim **hidrant interior** legat de el printr-o țeavă din oțel zincat (implicit DN 50). Fiecare hidrant pus după el se leagă de rețea printr-un teu. **Rezerva intangibilă de apă** alimentează pompa prin racordul de aspirație al pompei, iar **racordul pentru autospecialele de pompieri** se leagă de mână cu **Traseu**. **Hidrant exterior** și **Sprinkler** completează rețeaua. Un hidrant interior își desenează raza de acțiune ca un cerc punctat: **Lungimea furtunului** (implicit 20 m) plus **Jet compact** (6 m). Pune-le pe amândouă cum cere normativul pentru clădire.
+**Sistem nou → Hidranți** pune un **grup de pompare pentru incendiu** și un prim **hidrant interior** legat de el printr-o țeavă din oțel zincat (implicit DN 50). Fiecare hidrant pus după el se leagă de rețea printr-un teu. **Rezerva intangibilă de apă** alimentează pompa prin racordul de aspirație al pompei, iar **racordul pentru autospecialele de pompieri** se leagă de mână cu **Traseu**. **Hidrant exterior** și **Sprinkler** completează rețeaua. Un hidrant interior are raza lui de acțiune, un cerc de acoperire ca al unui detector (aici pe fiecare dispozitiv): **Lungimea furtunului** (implicit 20 m) plus **Jet compact** (6 m). Pune-le pe amândouă cum cere normativul pentru clădire.
 
 ![Hidranți interiori alimentați din grupul de pompare, cu raza lor de acțiune desenată pe plan](shots/mep-fire-hydrants.webp)
 

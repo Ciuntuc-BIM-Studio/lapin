@@ -1,6 +1,41 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
+  "Tag system": "Etichetează sistemul",
+  "Open a plan to tag its systems.": "Deschide un plan ca să-i etichetezi sistemele.",
+  "Everything on this plan has its tag already.": "Tot ce e pe acest plan are deja eticheta.",
+  "on the selected devices": "pe dispozitivele selectate",
+  "every device (printed)": "pe fiecare dispozitiv (tipărit)",
+  "Supply line": "Linia de tur",
+  "Return line": "Linia de retur",
+  "Service's colours": "Culorile instalației",
+  "Coverage circles": "Cercuri de acoperire",
+  "This plan": "Acest plan",
+  "as each system": "ca fiecare sistem",
+  "over the cut": "peste planul de secționare",
+  "overhead dashes": "liniuțe de deasupra",
+  "Line type over the plan's cut": "Tipul de linie peste planul de secționare",
+  "How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there": "Cum se desenează în plan traseele și simbolurile lui: culoare și tip de linie; peste planul de secționare (pe tavan), tipul de linie de acolo",
+  "A paired run's return line": "Linia de retur a unui traseu pereche",
+  "Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none": "Unde desenează planurile cercurile de acoperire ale dispozitivelor lui: pe dispozitivele selectate (doar pe ecran), pe fiecare dispozitiv (și tipărit) sau deloc",
+  "This plan's coverage circles, over every system's own setting": "Cercurile de acoperire ale acestui plan, peste setarea fiecărui sistem",
+  "Other disciplines halftone": "Celelalte specialități estompate",
+  "What is not of the view's discipline drawn grey under it: an MEP plan's walls, doors and furniture under the services (on by default for the MEP discipline)": "Ce nu ține de specialitatea vederii se desenează gri sub ea: pereții, ușile și mobilierul unui plan de instalații sub instalații (implicit pentru specialitatea MEP)",
+  "Its views draw what is not of their discipline grey (an MEP plan's architecture); on by default for the MEP discipline": "Vederile lui desenează gri ce nu ține de specialitatea lor (arhitectura unui plan de instalații); implicit pentru specialitatea MEP",
+  "dashdot": "linie-punct",
+  "dashdotdot": "linie-două puncte",
+  "Coverage": "Acoperire",
+  "MEP run": "Traseu de instalații",
+  "MEP rise / drop": "Urcare / coborâre",
+  "MEP terminal": "Terminal de instalații",
+  "MEP: a run's material and size (PP-R 20, Ø125)": "Instalații: materialul și dimensiunea unui traseu (PP-R 20, Ø125)",
+  "MEP: a run's fall (i=2 %), where it falls": "Instalații: panta unui traseu (i=2 %), acolo unde are pantă",
+  "MEP: where a rise goes (↑ +2.40)": "Instalații: unde ajunge o urcare (↑ +2.40)",
+  "MEP: a terminal's power or flow (P=1200 W)": "Instalații: puterea sau debitul unui terminal (P=1200 W)",
+  "Tag system tags a plan: open a plan of the storey.": "Etichetează sistemul lucrează pe un plan: deschide un plan al nivelului.",
+  "Which plan? (viewId)": "Care plan? (viewId)",
+  "Coverage is all, selected or none.": "Acoperirea e all, selected sau none.",
   // Site grading T2: feature lines, contours drawn and dragged (docs/plan-site-grading.md).
   "Feature line": "Linie caracteristică",
   "Contour at elevation": "Curbă de nivel la cotă",
@@ -5838,4 +5873,6 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} eșantioane · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `Imagine ${m[1]} × ${m[2]}: ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `Imaginea nu a putut fi creată: ${m[1]}`],
+  // MEP: Tag system's count.
+  [/^(\d+) tag\(s\) placed\.$/, (m) => `${m[1]} etichetă(e) puse.`],
 ];
