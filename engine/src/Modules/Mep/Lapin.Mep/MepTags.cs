@@ -28,6 +28,8 @@ public static class MepTags
         new(TerminalType, "MEP terminal", "{mepDutyText}", [], LeaderShape: "elbow", Unit: "mm"),
     ];
 
+    static Vec2? Pt(JsonNode? n) => n is JsonArray { Count: >= 2 } a && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y ? new Vec2(x, y) : null;
+
     static string Mm(double metres) => Math.Round(metres * 1000, 1).ToString("0.#", CultureInfo.InvariantCulture);
 
     /// <summary>A run's material and size as a drawing writes them: Cu 18, PP-R 20, PVC 110; a duct Ø125 or 300×200; null for what is not a run.</summary>
@@ -104,57 +106,187 @@ public static class MepTags
 
     /// <summary>
     /// A system's runs, rises and terminals (with a duty) on a plan tagged, those that have a tag on it already left as they
-    /// are; every system's when none is named. A run's tag along its longest leg, beside it; a node's at a leader's reach.
-    /// Returns how many tags were made.
+    /// are; every system's when none is named. Each tag goes to the first of its candidate places (a run's beside its legs, a
+    /// node's round it on a leader) whose text and leader cross least of what the plan draws (walls, windows, runs, symbols),
+    /// the tags on it and those placed before it (<see cref="Place"/>): one step, the same places each time. Returns how many tags were made.
     /// </summary>
     public static int TagSystem(ICommandContext ctx, Entity view, IReadOnlyList<Entity> systems)
     {
         var m = ctx.Model;
         if (view.Str("kind") is not ("plan" or null) || view.Str("storeyId") is not { } storeyId) throw new CommandException("Tag system tags a plan: open a plan of the storey.");
         var tagged = m.OfClass(IfcClass.Annotation).Where(a => a.PredefinedType == "TAG" && a.Str("viewId") == view.Id).Select(a => a.Str("element")).OfType<string>().ToHashSet();
-        var scale = view.NumOrNull("scale") ?? 100;
-        // Paper millimetres on the model at the view's scale.
-        var mm = scale / 1000;
-        var made = new List<(string Element, JsonObject Args)>();
         bool Here(Entity e) => Spatial.StoreyOf(m, e.Id)?.Id == storeyId && !tagged.Contains(e.Id);
+        var todo = new List<(Entity Element, string Type)>();
         foreach (var system in systems)
         {
             foreach (var run in Runs.Of(m, system.Id).Where(Here).OrderBy(r => r.Name, StringComparer.Ordinal))
-            {
-                var pts = Runs.Points(run);
-                if (pts.Count < 2) continue;
-                var leg = Enumerable.Range(1, pts.Count - 1).MaxBy(i => (pts[i] - pts[i - 1]).Length);
-                var (a, b) = (pts[leg - 1], pts[leg]);
-                if ((b - a).Length < 1e-6) continue;
-                var along = (b - a).Normalized();
-                // Read upright: the side above the line as it reads (left of a run drawn rightwards).
-                if (along.X < -1e-9 || (Math.Abs(along.X) < 1e-9 && along.Y < 0)) along = -along;
-                var left = new Vec2(-along.Y, along.X);
-                var s = Runs.SettingOf(m, run);
-                var clear = (s.Pair ? s.Separation / 2 : 0) + s.Size / 2 + 1.5 * mm;
-                var text = (Size(m, run) ?? "").Length * 2.5 * 0.6 * mm;
-                var at = (a + b) * 0.5 + left * clear - along * (text / 2);
-                made.Add((run.Id, new JsonObject { ["tagType"] = RunType, ["at"] = new JsonArray(at.X, at.Y), ["leader"] = false, ["align"] = true }));
-            }
+                if (Runs.Points(run).Count >= 2) todo.Add((run, RunType));
             foreach (var node in Nodes.Of(m, system.Id).Where(Here).OrderBy(n => n.Name, StringComparer.Ordinal))
-            {
-                var role = Nodes.RoleOf(node);
-                var type = role is { IsRise: true } ? RiseType : Duty(m, node) != null ? TerminalType : null;
-                if (type == null) continue;
-                var p = Nodes.Position(node);
-                var at = p + new Vec2(8, 6) * mm;
-                made.Add((node.Id, new JsonObject { ["tagType"] = type, ["at"] = new JsonArray(at.X, at.Y) }));
-            }
+                if ((Nodes.RoleOf(node) is { IsRise: true } ? RiseType : Duty(m, node) != null ? TerminalType : null) is { } type) todo.Add((node, type));
         }
-        if (made.Count == 0) return 0;
+        if (todo.Count == 0) return 0;
+        var book = DraftingResources.Book(m);
+        var mm = (view.NumOrNull("scale") ?? 100) / 1000;
+        var h = Standards.TextOf(book, Standards.Standard).Height * mm;
+        // What the plan draws now (its lines and its marks: other tags' text boxes among them), as segments to keep clear of.
+        var obstacles = Obstacles(ctx.Query, view);
+        var placed = new List<Vec2[]>();
+        var made = new List<(string Element, JsonObject Args)>();
+        foreach (var (e, typeId) in todo)
+        {
+            var type = book.TagTypes.FirstOrDefault(t => t.Id == typeId) ?? Types.First(t => t.Id == typeId);
+            var lines = TagText.Lines(type.Written, m, e).Where(l => l.Length > 0).ToList();
+            if (lines.Count == 0) lines = ["?"];
+            var w = lines.Max(l => BuildupText.Measure(l, h / mm, false)) * mm;
+            var (args, box) = Runs.IsRun(e) ? Place(RunCandidates(m, e, lines.Count, w, h), obstacles, placed) : Place(NodeCandidates(m, e, lines.Count, w, h, mm), obstacles, placed);
+            args["tagType"] = typeId;
+            placed.Add(box);
+            made.Add((e.Id, args));
+        }
         EnsureTypes(ctx);
         foreach (var (element, args) in made)
         {
             args["viewId"] = view.Id;
             args["element"] = element;
-            Tags.Add(ctx, args);
+            var tag = Tags.Add(ctx, args);
+            // A run's tag keeps its leader's end (not drawn) behind its knee, so its text reads on from there.
+            if (Pt(args["end"]) is { } end)
+            {
+                var attrs = tag.CloneAttrs();
+                attrs["end"] = new JsonArray(end.X, end.Y);
+                ctx.Replace(tag.With(attrs: attrs));
+            }
         }
         return made.Count;
+    }
+
+    /// <summary>The candidate whose box and leader cross least (the first of those, in the candidates' order): deterministic.</summary>
+    static (JsonObject Args, Vec2[] Box) Place(List<(JsonObject Args, Vec2[] Box, (Vec2 A, Vec2 B)? Leader)> candidates, List<(Vec2 A, Vec2 B)> obstacles, List<Vec2[]> placed)
+    {
+        var best = candidates[0];
+        var least = int.MaxValue;
+        // A leader crossing a line (a wall between the node and its text) counts as the text crossing it; every candidate's
+        // leader leaves the node's own symbol alike, so those crossings only add the same to each.
+        foreach (var c in candidates)
+        {
+            var hits = obstacles.Count(o => Crosses(c.Box, o.A, o.B)) + placed.Count(p => Overlap(c.Box, p)) * 100
+                + (c.Leader is { } l ? obstacles.Count(o => Segments(l.A, l.B, o.A, o.B)) + placed.Count(p => Crosses(p, l.A, l.B)) * 100 : 0);
+            if (hits < least) (best, least) = (c, hits);
+        }
+        return (best.Args, best.Box);
+    }
+
+    /// <summary>A run's tag along it, beside the line on either side, at the middle of its legs, the longest first, and at their quarters.</summary>
+    static List<(JsonObject, Vec2[], (Vec2, Vec2)?)> RunCandidates(IModelView m, Entity run, int rows, double w, double h)
+    {
+        var pts = Runs.Points(run);
+        var s = Runs.SettingOf(m, run);
+        var clear = (s.Pair ? s.Separation / 2 : 0) + s.Size / 2 + 0.3 * h;
+        var pad = TagLeaders.Pad * h;
+        var o = new List<(JsonObject, Vec2[], (Vec2, Vec2)?)>();
+        var legs = Enumerable.Range(1, pts.Count - 1).Where(i => (pts[i] - pts[i - 1]).Length > 1e-6).OrderByDescending(i => (pts[i] - pts[i - 1]).Length).ThenBy(i => i).ToList();
+        foreach (var at in new[] { 0.5, 0.25, 0.75 })
+            foreach (var leg in legs)
+                foreach (var left in new[] { true, false })
+                {
+                    var (a, b) = (pts[leg - 1], pts[leg]);
+                    var along = (b - a).Normalized();
+                    // Read upright: along to the right (up for a vertical leg), its left above the line.
+                    if (along.X < -1e-9 || (Math.Abs(along.X) < 1e-9 && along.Y < 0)) along = -along;
+                    var up = new Vec2(-along.Y, along.X);
+                    var mid = a + (b - a) * at;
+                    // The box a plain tag's text takes (TagLeaders.Plain, no underline): the first row centred on the knee, the
+                    // others down from it, a pad round them; from the knee along to past the text.
+                    var top = h / 2 + pad;
+                    var bottom = -h / 2 - TagLeaders.Pitch * h * (rows - 1) - TagLeaders.Under * h - pad;
+                    var v = left ? clear - bottom : -clear - top;
+                    var knee = mid + up * v - along * (pad + w / 2);
+                    Vec2 P(double du, double dv) => knee + along * du + up * dv;
+                    // Its leader's end (not drawn) behind the knee: the text then reads on from the knee (TagLeaders.Side), never back over it.
+                    var behind = knee - along * h;
+                    // Turned along its own leg (not the run's longest line, as aligned tags are).
+                    var angle = Math.Round(Math.Atan2(along.Y, along.X) * 180 / Math.PI, 4);
+                    o.Add((new JsonObject { ["at"] = new JsonArray(knee.X, knee.Y), ["end"] = new JsonArray(behind.X, behind.Y), ["leader"] = false, ["rotation"] = angle },
+                        [P(0, bottom), P(2 * pad + w, bottom), P(2 * pad + w, top), P(0, top)], null));
+                }
+        return o;
+    }
+
+    /// <summary>A node's tag on a leader, its knee round the node at two reaches in eight directions (the room side found by what is clear).</summary>
+    static List<(JsonObject, Vec2[], (Vec2, Vec2)?)> NodeCandidates(IModelView m, Entity node, int rows, double w, double h, double mm)
+    {
+        var p = Nodes.Position(node);
+        var o = new List<(JsonObject, Vec2[], (Vec2, Vec2)?)>();
+        (double X, double Y)[] dirs = [(1, 1), (-1, 1), (1, -1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)];
+        foreach (var reach in new[] { 8.0, 14.0, 22.0 })
+            foreach (var (dx, dy) in dirs)
+            {
+                var d = new Vec2(dx, dy);
+                var knee = p + d.Normalized() * (reach * mm);
+                // The text on the side away from the node (TagLeaders.Side), its rows down from the first, over the shoulder.
+                var side = knee.X < p.X - 1e-9 ? -1 : 1;
+                var pad = TagLeaders.Pad * h;
+                var x0 = knee.X; var x1 = knee.X + side * (2 * pad + w);
+                var top = knee.Y + TagLeaders.Under * h + h + pad;
+                var bottom = knee.Y + TagLeaders.Under * h - TagLeaders.Pitch * h * (rows - 1) - TagLeaders.Under * h - pad;
+                var (lo, hi) = (Math.Min(x0, x1), Math.Max(x0, x1));
+                o.Add((new JsonObject { ["at"] = new JsonArray(knee.X, knee.Y) }, [new(lo, bottom), new(hi, bottom), new(hi, top), new(lo, top)], (p, knee)));
+            }
+        return o;
+    }
+
+    /// <summary>The plan's lines as segments (its pens' and its marks', the tags' boxes among them; never the hidden ones, a coverage circle).</summary>
+    static List<(Vec2 A, Vec2 B)> Obstacles(IQueryContext q, Entity view)
+    {
+        var o = new List<(Vec2, Vec2)>();
+        Views.Rendered r;
+        try { r = Views.Render(q, view); }
+        catch (CommandException) { return o; }
+        foreach (var pen in r.Pens)
+        {
+            if (pen.Layer is PenLayer.Hidden or PenLayer.Fill or PenLayer.Hatch) continue;
+            o.AddRange(pen.Segments);
+            foreach (var loop in pen.Loops)
+                for (var i = 0; i < loop.Count; i++) o.Add((loop[i], loop[(i + 1) % loop.Count]));
+        }
+        foreach (var mk in r.Marks)
+            foreach (var l in mk.Lines)
+                if (!mk.Pick || l.Layer == "PICK" && mk.Owner != null && m(q, mk.Owner)) o.Add((l.A, l.B));
+        return o;
+
+        // A pick mark's lines count only for an annotation's (a tag's text box); an element's pick lines repeat its own.
+        static bool m(IQueryContext q, string owner) => q.Model.Get(owner) is { Class: IfcClass.Annotation };
+    }
+
+    /// <summary>Whether a segment touches a convex box (an end inside, or crossing an edge).</summary>
+    static bool Crosses(Vec2[] box, Vec2 a, Vec2 b)
+    {
+        if (Inside(box, a) || Inside(box, b)) return true;
+        for (var i = 0; i < box.Length; i++)
+            if (Segments(box[i], box[(i + 1) % box.Length], a, b)) return true;
+        return false;
+    }
+
+    static bool Overlap(Vec2[] x, Vec2[] y) =>
+        x.Any(p => Inside(y, p)) || y.Any(p => Inside(x, p)) || Enumerable.Range(0, x.Length).Any(i => Crosses(y, x[i], x[(i + 1) % x.Length]));
+
+    static bool Inside(Vec2[] box, Vec2 p)
+    {
+        int pos = 0, neg = 0;
+        for (var i = 0; i < box.Length; i++)
+        {
+            var (a, b) = (box[i], box[(i + 1) % box.Length]);
+            var c = (b.X - a.X) * (p.Y - a.Y) - (b.Y - a.Y) * (p.X - a.X);
+            if (c > 1e-12) pos++; else if (c < -1e-12) neg++;
+        }
+        return pos == 0 || neg == 0;
+    }
+
+    static bool Segments(Vec2 p1, Vec2 p2, Vec2 p3, Vec2 p4)
+    {
+        static double Cross(Vec2 o, Vec2 a, Vec2 b) => (a.X - o.X) * (b.Y - o.Y) - (a.Y - o.Y) * (b.X - o.X);
+        var d1 = Cross(p3, p4, p1); var d2 = Cross(p3, p4, p2); var d3 = Cross(p1, p2, p3); var d4 = Cross(p1, p2, p4);
+        return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
     }
 
     public static void Register(IModuleRegistry r)

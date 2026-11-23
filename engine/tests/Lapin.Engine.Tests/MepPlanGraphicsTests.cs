@@ -104,6 +104,49 @@ public class MepPlanGraphicsTests
     }
 
     [Fact]
+    public void Node_symbols_draw_whole_wherever_they_are_mounted()
+    {
+        var f = new F();
+        var alarm = f.Id("mep.createSystem", new JsonObject { ["service"] = Services.FireAlarm });
+        // A panel on the wall at 1.30 m (over the 1.20 m cut) and a detector on the ceiling: both seen, solid, in the system's colour.
+        var panel = f.Id("mep.placeNode", new JsonObject { ["systemId"] = alarm, ["role"] = "firePanel", ["x"] = 0, ["y"] = 0 });
+        var detector = f.Id("mep.placeNode", new JsonObject { ["systemId"] = alarm, ["role"] = "smokeDetector", ["x"] = 3, ["y"] = 0 });
+        foreach (var id in new[] { panel, detector })
+        {
+            var lines = f.Lines(f.Plan, id).Where(l => l.Role != LineRole.Hidden).ToList();
+            Assert.NotEmpty(lines);
+            Assert.All(lines, l => { Assert.True(l.Role is LineRole.Projection or LineRole.Cut, l.Role); Assert.Null(l.Own!.Pattern); Assert.Equal("#e53935", l.Own.Color); });
+        }
+    }
+
+    [Fact]
+    public void Tag_system_places_neighbours_tags_clear_of_each_other_and_of_the_runs()
+    {
+        var f = new F();
+        var plan = f.Id("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey, ["discipline"] = "MEP", ["name"] = "MEP" });
+        var heating = f.Id("mep.createSystem", new JsonObject { ["service"] = Services.Heating });
+        // Two radiators side by side, a boiler with a run going up past it: their tags would land on each other at one fixed place.
+        f.Id("mep.placeNode", new JsonObject { ["systemId"] = heating, ["role"] = "radiator", ["x"] = 0, ["y"] = 0 });
+        f.Id("mep.placeNode", new JsonObject { ["systemId"] = heating, ["role"] = "radiator", ["x"] = 1.2, ["y"] = 0 });
+        f.Id("mep.placeNode", new JsonObject { ["systemId"] = heating, ["role"] = "boiler", ["x"] = 0, ["y"] = -2 });
+        f.Id("mep.drawRun", new JsonObject { ["systemId"] = heating, ["points"] = Pts((0.6, -3), (0.6, 2)) });
+        f.Id("mep.drawRun", new JsonObject { ["systemId"] = heating, ["points"] = Pts((-3, 1), (4, 1)) });
+        Assert.Equal(5, (int)f.Run("mep.tagSystem", new JsonObject { ["viewId"] = plan })!["tagged"]!);
+        var tags = TagsOn(f, plan).Select(t => t.Id).ToHashSet();
+        var boxes = Views.Render(f.Session.Reader, Views.Find(f.Model, plan)!).Marks
+            .Where(mk => mk.Owner != null && tags.Contains(mk.Owner) && mk.Lines.Any(l => l.Layer == "PICK"))
+            .Select(mk => mk.Lines.Where(l => l.Layer == "PICK").SelectMany(l => new[] { l.A, l.B }).ToList())
+            .Select(p => (X0: p.Min(q => q.X), Y0: p.Min(q => q.Y), X1: p.Max(q => q.X), Y1: p.Max(q => q.Y))).ToList();
+        Assert.Equal(5, boxes.Count);
+        for (var i = 0; i < boxes.Count; i++)
+            for (var j = i + 1; j < boxes.Count; j++)
+            {
+                var (a, b) = (boxes[i], boxes[j]);
+                Assert.False(a.X0 < b.X1 && b.X0 < a.X1 && a.Y0 < b.Y1 && b.Y0 < a.Y1, $"tags {i} and {j} overlap: {string.Join(" ; ", boxes)} at {string.Join(" ; ", TagsOn(f, plan).Select(t => f.Model.Get(t.Str("element")!)!.Name + " " + t.Attrs["at"]!.ToJsonString()))}");
+            }
+    }
+
+    [Fact]
     public void An_mep_plan_draws_the_architecture_halftone_unless_its_style_says_not()
     {
         var f = new F();

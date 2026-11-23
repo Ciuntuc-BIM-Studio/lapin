@@ -5144,20 +5144,6 @@ export const scenes = [
       await t.wait(1000);
       await t.fit();
       await t.shot('mep-plan', { of: '[data-testid=plan]', pad: 0 });
-      // An MEP plan of the level: the house halftone, the supply red and the return blue dashed; Tag system writes each run's
-      // material and size and each radiator's power, in one step.
-      await t.tool('mep.plan');
-      await t.wait(800);
-      const mepView = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().planViewId);
-      t.expect(!!mepView, 'MEP plan opens a plan of the MEP discipline');
-      await t.tool('mep.tagSystem');
-      await t.wait(1000);
-      const mepTags = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.viewId === mepView && String(n.props.tagType ?? '').startsWith('mep-'));
-      t.expect(mepTags.length >= 4, `Tag system tags the runs and radiators, found ${mepTags.length}`);
-      await t.fit();
-      await t.shot('mep-plan-tags', { of: '[data-testid=plan]', pad: 0 });
-      await t.ui({ planViewId: null });
-      await t.wait(500);
       // A detour with the tool: two clicks on the first run's longest leg, a third to the side, the span going out, along and back round what is in the way.
       const first = (await t.nodes()).find((n) => n.id === r.runId);
       const pts = first.props.points;
@@ -5183,7 +5169,20 @@ export const scenes = [
       await t.tool('mep.systems');
       t.expect(await t.page.locator('[aria-label="Systems"]').count() > 0, 'the Systems dialog opens');
       await t.shot('mep-systems', { of: '.dialog', pad: 0 });
-      await t.ui({ dialog: null, keyPlan: true });
+      await t.ui({ dialog: null, keyPlan: false, selection: null, selected: [] });
+      // An MEP plan of the level: the house halftone, the supply red and the return blue dashed; Tag system writes each run's
+      // material and size and each radiator's power, in one step.
+      await t.tool('mep.plan');
+      await t.wait(800);
+      const mepView = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().planViewId);
+      t.expect(!!mepView, 'MEP plan opens a plan of the MEP discipline');
+      await t.tool('mep.tagSystem');
+      await t.wait(1000);
+      const mepTags = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.viewId === mepView && String(n.props.tagType ?? '').startsWith('mep-'));
+      t.expect(mepTags.length >= 4, `Tag system tags the runs and radiators, found ${mepTags.length}`);
+      await t.fit();
+      await t.shot('mep-plan-tags', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ keyPlan: true });
     },
   },
   {
