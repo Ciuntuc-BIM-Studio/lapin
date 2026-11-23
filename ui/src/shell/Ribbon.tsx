@@ -64,6 +64,8 @@ function UndoItems({ run }: { run: (f: () => unknown) => () => void }) {
 function FileItems({ section, first, run }: { section: FileSection; first: boolean; run: (f: () => unknown) => () => void }) {
   const actions = fileActions();
   const shown = section.ids.map((id) => actions.get(id)).filter((a): a is FileAction => Boolean(a) && (a!.shown?.() ?? true));
+  // A section with nothing shown here (Speckle in the browser) is left out, its heading too.
+  if (shown.length === 0) return null;
   return (
     <>
       {!first && <div className="menu-sep" role="separator" />}

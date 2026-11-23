@@ -14,6 +14,8 @@ export interface ResolvedProduct {
   required: string[];
   engine: string[];
   ui: string[];
+  /** For the browser: the product's modules left out as desktop-only (or needing one). */
+  desktopOnly?: string[];
 }
-export function resolveProduct(root: string, productId: string): ResolvedProduct;
+export function resolveProduct(root: string, productId: string, options?: { target?: 'desktop' | 'web' }): ResolvedProduct;
 export function productIds(root: string): string[];

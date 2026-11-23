@@ -24,7 +24,9 @@ const id = args.find((a) => !a.startsWith('--')) ?? 'lapin';
 const engineOnly = args.includes('--engine-only');
 // The interface alone, over the engine built last time (build/<id>/web-engine).
 const uiOnly = args.includes('--ui-only');
-const product = resolveProduct(root, id);
+// For the browser: the desktop-only modules (the Speckle connector) left out, engine and interface (scripts/product.mjs).
+const product = resolveProduct(root, id, { target: 'web' });
+if (product.desktopOnly) console.log(`▸ desktop only, left out of the browser's build: ${product.desktopOnly.join(', ')}`);
 const host = join(root, 'engine/src/Host/Lapin.Browser');
 const out = join(root, 'build', id);
 const sh = (cmd, a, opts = {}) => execFileSync(cmd, a, { cwd: root, stdio: 'inherit', ...opts, env: { ...process.env, ...(opts.env ?? {}) } });
@@ -38,7 +40,7 @@ const dotnet = join(dotnetRoot, process.platform === 'win32' ? 'dotnet.exe' : 'd
 // 1. manifold for the browser comes with the Lapin.Booleans package, or from the core checked out beside the repo (the engine's build says how to build it there).
 
 // 2. The product's modules, built in (the browser loads nothing from a folder).
-const modules = engineModules(root, id);
+const modules = engineModules(root, id, { target: 'web' });
 const gen = join(host, 'generated');
 mkdirSync(gen, { recursive: true });
 writeFileSync(join(gen, 'Product.g.props'), `<Project>

@@ -18,8 +18,19 @@
     <ItemGroup>
       <_LapinModuleFiles Include="$(OutDir)*.dll;$(OutDir)*.pdb" Exclude="$(OutDir)Lapin.Model.*;$(OutDir)Lapin.Platform.*;$(OutDir)Lapin.Geometry.*;$(OutDir)Lapin.Booleans.*;$(OutDir)Lapin.Alignments.*" />
     </ItemGroup>
+    <!--
+      A module that brings packages of its own (CopyLocalLockFileAssemblies: the Speckle connector's SDK) brings their
+      native libraries too, under runtimes/<rid>/native as NuGet lays them (the host finds them there, ModuleLoader;
+      a product build keeps only its platform's); and its third-party notices, NOTICE.md beside module.json.
+    -->
+    <ItemGroup>
+      <_LapinModuleNative Include="$(OutDir)runtimes/**/native/*" />
+      <_LapinModuleNotice Include="$(MSBuildProjectDirectory)/NOTICE.md" Condition="Exists('$(MSBuildProjectDirectory)/NOTICE.md')" />
+    </ItemGroup>
     <RemoveDir Directories="$(LapinModulesDir)$(LapinModuleId)" />
-    <Copy SourceFiles="@(_LapinModuleFiles);$(MSBuildProjectDirectory)/module.json"
+    <Copy SourceFiles="@(_LapinModuleFiles);$(MSBuildProjectDirectory)/module.json;@(_LapinModuleNotice)"
           DestinationFolder="$(LapinModulesDir)$(LapinModuleId)" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(_LapinModuleNative)"
+          DestinationFiles="@(_LapinModuleNative->'$(LapinModulesDir)$(LapinModuleId)/runtimes/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="false" />
   </Target>
 </Project>
