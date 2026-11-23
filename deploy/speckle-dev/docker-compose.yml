@@ -1,0 +1,102 @@
+# Lapin DEV-ONLY local Speckle server (decision 800). Never production.
+#
+# Adapted from Speckle's official compose files at tag 2.31.14:
+#   https://github.com/specklesystems/speckle-server/blob/2.31.14/docker-compose-speckle.yml
+#   https://github.com/specklesystems/speckle-server/blob/2.31.14/docker-compose-deps.yml
+# Differences: published images pinned to 2.31.14 instead of building from source;
+# secrets come from .env; everything binds to 127.0.0.1 on ports clear of Lapin's
+# dev (47810, 5180) and Postgres/Redis defaults; the preview, webhook and
+# IFC-import services and the multi-region/keycloak/maildev extras are left out.
+name: lapin-speckle-dev
+
+services:
+  postgres:
+    image: 'postgres:16.4-alpine3.20@sha256:d898b0b78a2627cb4ee63464a14efc9d296884f1b28c841b0ab7d7c42f1fffdf'
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: speckle
+      POSTGRES_USER: speckle
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?copy .env.example to .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data/
+    command: postgres -c max_prepared_transactions=150 -c wal_level=logical
+
+  redis:
+    image: 'valkey/valkey:8.1-alpine'
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+  minio:
+    # minio/minio left Docker Hub and quay.io (2025); Chainguard's free image, pinned by digest.
+    image: 'cgr.dev/chainguard/minio@sha256:304e0bbeb70a9aa0c40ff26d5a9c0a24296019c6d326ba8b75214fb73441d6e9'
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER:?copy .env.example to .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:?copy .env.example to .env}
+    volumes:
+      - minio-data:/data
+    ports:
+      - '127.0.0.1:9100:9000'
+
+  speckle-server:
+    image: speckle/speckle-server:2.31.14
+    platform: linux/amd64
+    restart: unless-stopped
+    depends_on: [postgres, redis, minio]
+    environment:
+      CANONICAL_URL: 'http://127.0.0.1:8090'
+      FRONTEND_ORIGIN: 'http://127.0.0.1:8090'
+      PRIVATE_OBJECTS_SERVER_URL: 'http://speckle-server:3000'
+      SESSION_SECRET: ${SESSION_SECRET:?copy .env.example to .env}
+      STRATEGY_LOCAL: 'true'
+      LOG_LEVEL: 'info'
+      LOG_PRETTY: 'true'
+      POSTGRES_URL: 'postgres'
+      POSTGRES_USER: 'speckle'
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: 'speckle'
+      REDIS_URL: 'redis://redis'
+      S3_ENDPOINT: 'http://minio:9000'
+      S3_PUBLIC_ENDPOINT: 'http://127.0.0.1:9100'
+      S3_ACCESS_KEY: ${MINIO_USER}
+      S3_SECRET_KEY: ${MINIO_PASSWORD}
+      S3_BUCKET: 'speckle-server'
+      S3_CREATE_BUCKET: 'true'
+      S3_REGION: ''
+      FILE_SIZE_LIMIT_MB: 1000
+      EMAIL_FROM: 'no-reply@localhost'
+      ONBOARDING_STREAM_URL: ''
+      DISABLE_TRACKING: 'true'
+      ENABLE_MP: 'false'
+
+  speckle-frontend-2:
+    image: speckle/speckle-frontend-2:2.31.14
+    platform: linux/amd64
+    restart: unless-stopped
+    depends_on: [speckle-server]
+    environment:
+      NUXT_PUBLIC_SERVER_NAME: 'lapin-dev'
+      NUXT_PUBLIC_API_ORIGIN: 'http://127.0.0.1:8090'
+      NUXT_PUBLIC_BASE_URL: 'http://127.0.0.1:8090'
+      NUXT_PUBLIC_BACKEND_API_ORIGIN: 'http://speckle-server:3000'
+      NUXT_PUBLIC_LOG_LEVEL: 'warn'
+      NUXT_REDIS_URL: 'redis://redis'
+      LOG_LEVEL: 'info'
+
+  speckle-ingress:
+    image: speckle/speckle-docker-compose-ingress:2.31.14
+    platform: linux/amd64
+    restart: unless-stopped
+    depends_on: [speckle-server, speckle-frontend-2]
+    environment:
+      FILE_SIZE_LIMIT_MB: '100'
+      NGINX_ENVSUBST_OUTPUT_DIR: '/etc/nginx'
+    ports:
+      - '127.0.0.1:8090:8080'
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
