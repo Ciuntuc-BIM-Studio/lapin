@@ -91,7 +91,7 @@ Nimic nou. Geometria e codul propriu Lapin (MIT); booleanele sunt manifold, deja
 - Curbele traseului nu sunt urmate de un zid cu fruct (o notă o spune).
 - O consolă dată explicit 0 sub o față răsucită lasă talpa tangentă la piciorul curb (implicit se lasă cel puțin 5 cm).
 
-**S3 (23.11.2026, ramura `feat/wing-walls-s3`, decizia 794).** Răspunsurile utilizatorului la întrebările 1–5 (toate ca recomandat): 1 și 2 rămân cum erau; 3: capătul liber drept (implicit), înclinat după taluz sau rotit paralel cu drumul; 4: răsucirea pe pantă (implicit) sau pe tot segmentul; 5: un `IfcWall` pe aripă și pe peretele frontal, grupate într-un ansamblu, cu varianta simplă păstrată ca setare.
+**S3 (23.11.2026, ramura `feat/wing-walls-s3`, decizia 795).** Răspunsurile utilizatorului la întrebările 1–5 (toate ca recomandat): 1 și 2 rămân cum erau; 3: capătul liber drept (implicit), înclinat după taluz sau rotit paralel cu drumul; 4: răsucirea pe pantă (implicit) sau pe tot segmentul; 5: un `IfcWall` pe aripă și pe peretele frontal, grupate într-un ansamblu, cu varianta simplă păstrată ca setare.
 
 - **Motorul (`Portals.cs`, Civil):**
   - `civil.addPortal {spec, origin + direction | towards | axis {id, at, reverse}}` și `civil.updatePortal {id, spec}` fac un zid de sprijin: traseul (aripa dreaptă, peretele frontal, aripa stângă), secțiunea, coronamentul, fructurile și răsucirea pe segmente, capetele, maparea IFC. Spec-ul stă pe zid (`portal`), așa că configuratorul se redeschide pe el și reface același element (aceleași GlobalId-uri), într-un pas de anulare. Interogarea `civil.portalValues` dă valorile calculate, problemele și traseul; catalogul `civil.portal` dă parametrii și presetările.
