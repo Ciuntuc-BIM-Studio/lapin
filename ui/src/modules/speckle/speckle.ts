@@ -155,3 +155,58 @@ export async function openVersion(url: string): Promise<void> {
   if (!isDesktop()) { window.open(url, '_blank', 'noopener'); return; }
   await ask('speckle.openVersion', { url });
 }
+
+// ---------------------------------------------------------------------------------------------------- Receive (S2)
+
+export interface SpeckleVersion { id: string; message?: string | null; sourceApplication?: string | null; author?: string | null; createdAt?: string }
+
+/** What a receive would do, before it is done (speckle.survey). */
+export interface SpeckleSurvey {
+  versionId: string; model?: string | null; message?: string | null; sourceApplication?: string | null;
+  elements: number; instances: number; definitions: number; lines: number; triangles: number; skipped: Record<string, number>; levels: string[];
+  existing: number; updates: number; adds: number; removes: number; native: number; fromThisProject: boolean; notes: string[];
+}
+
+/** What a receive did (speckle.receive). */
+export interface SpeckleReceived {
+  versionId: string; model?: string | null; elements: number; added: number; updated: number; unchanged: number; removed: number; shared: number;
+  triangles: number; lines: number; skipped: Record<string, number>; storeys: Record<string, number>; groupId?: string | null; notes: string[];
+}
+
+/** Where the objects go: on the storeys their levels match, or all on the storey the interface is on. */
+export type ReceiveStoreys = 'levels' | 'active';
+
+export interface ReceiveArgs {
+  projectId: string; modelId: string; versionId?: string | null; asCopy?: boolean; origin?: 'base' | 'internal';
+  storeys?: ReceiveStoreys; activeStoreyId?: string | null;
+}
+
+/** The arguments of speckle.survey and speckle.receive (the latest version when none is named). */
+export function receiveArgs(a: ReceiveArgs): Record<string, unknown> {
+  const o: Record<string, unknown> = { projectId: a.projectId, modelId: a.modelId };
+  if (a.versionId) o.versionId = a.versionId;
+  if (a.asCopy) o.asCopy = true;
+  if (a.origin === 'internal') o.origin = 'internal';
+  if (a.activeStoreyId) {
+    if (a.storeys === 'active') o.storeyId = a.activeStoreyId;
+    else o.activeStoreyId = a.activeStoreyId;
+  }
+  return o;
+}
+
+export const listVersions = (projectId: string, modelId: string) => ask<SpeckleVersion[]>('speckle.versions', { projectId, modelId });
+
+/** Downloads the version (kept by the engine for the receive that follows) and says what receiving it would do. */
+export const survey = (a: ReceiveArgs) => ask<SpeckleSurvey>('speckle.survey', receiveArgs(a), true);
+
+/** The version into the project as references: one undo step; its diff arrives as an event. */
+export async function receive(a: ReceiveArgs): Promise<SpeckleReceived> {
+  const r = await engine.call<SpeckleReceived>('doc.execute', { command: 'speckle.receive', args: receiveArgs(a) }, { timeoutMs: LONG_TIMEOUT_MS });
+  write(KEY.project, a.projectId);
+  write(KEY.model, a.modelId);
+  useSpeckle.setState({ project: a.projectId, model: a.modelId });
+  return r;
+}
+
+/** A receive's report in a line (the notice). */
+export const receivedSummary = (r: SpeckleReceived) => `Received ${r.elements} objects from Speckle.`;
