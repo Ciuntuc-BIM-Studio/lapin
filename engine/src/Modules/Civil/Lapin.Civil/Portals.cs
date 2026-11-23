@@ -124,17 +124,24 @@ public static class Portals
     /// The spec's numbers: plain ones as they are, formulas worked out (each reading the others by key, <c>height</c> the face wall's
     /// crown over its footing's underside, and last the project's parameters by key), a formula reading itself through others refused.
     /// </summary>
-    public static Values Evaluate(JsonObject? given, IModelView? m)
+    public static Values Evaluate(JsonObject? given, IModelView? m) =>
+        EvaluateWith(Params, Full(given), m, (key, get) => key.Equals("height", StringComparison.OrdinalIgnoreCase) ? get("crown") - get("footingLevel") : null);
+
+    /// <summary>
+    /// A configurator's numbers (its parameters <paramref name="ps"/>, its spec whole): plain ones as they are, formulas worked out (each
+    /// reading the others by key, then <paramref name="extra"/>'s names, then the project's parameters by key), a formula reading itself
+    /// through others refused. The tunnel lining's configurator (S4) works out its numbers the same way.
+    /// </summary>
+    public static Values EvaluateWith(Param[] ps, JsonObject spec, IModelView? m, Func<string, Func<string, double?>, double?>? extra = null)
     {
-        var spec = Full(given);
         var numbers = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         var problems = new List<string>();
         var busy = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var kinds = Params.ToDictionary(p => p.Key, p => p, StringComparer.OrdinalIgnoreCase);
+        var kinds = ps.ToDictionary(p => p.Key, p => p, StringComparer.OrdinalIgnoreCase);
         double? Get(string key)
         {
             if (numbers.TryGetValue(key, out var known)) return known;
-            if (key.Equals("height", StringComparison.OrdinalIgnoreCase)) return Get("crown") - Get("footingLevel");
+            if (extra?.Invoke(key, Get) is { } named) return named;
             if (!kinds.TryGetValue(key, out var p) || p.Kind is "choice" or "bool" or "text") return null;
             var node = spec[p.Key];
             double? v;
@@ -156,7 +163,7 @@ public static class Portals
             }
             return null;
         }
-        foreach (var p in Params) Get(p.Key);
+        foreach (var p in ps) Get(p.Key);
         return new(numbers, spec, problems.Distinct().ToList());
     }
 
@@ -308,18 +315,7 @@ public static class Portals
         {
             var raw = (a["spec"] as JsonObject)?.DeepClone() as JsonObject ?? [];
             var (origin, direction) = Placement(ctx.Model, a, null);
-            raw.Remove("origin");
-            raw.Remove("direction");
-            raw["origin"] = new JsonArray(origin.X, origin.Y);
-            raw["direction"] = new JsonArray(direction.X, direction.Y);
-            var v = Evaluate(raw, ctx.Model);
-            var material = Materials.Ensure(ctx, v.Text("material", "Reinforced concrete"), RetainingWalls.Color);
-            var (attrs, predefined, _) = Attrs(v, raw, origin, direction, material.Id, ProfileOf(ctx.Model, raw));
-            var kind = v.Text("kind", "portal") == "abutment" ? "Abutment" : "Tunnel portal";
-            var count = ctx.Model.OfClass(RetainingWalls.Class).Count(x => x.Attrs[Key] is JsonObject) + 1;
-            var e = new Entity(ctx.NewId(), RetainingWalls.Class, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"{kind} {count}", attrs, predefined);
-            ctx.Add(e);
-            if (SiteCommandsStorey(ctx.Model, a) is { } storey) Spatial.Contain(ctx, storey, e.Id);
+            var e = Add(ctx, raw, origin, direction, (string?)a["name"], SiteCommandsStorey(ctx.Model, a));
             return new JsonObject { ["id"] = e.Id };
         });
 
@@ -357,6 +353,29 @@ public static class Portals
             };
         });
         r.Service<ITypePreview>(new PortalPreview());
+    }
+
+    /// <summary>
+    /// A portal or an abutment laid out by the configurator at <paramref name="origin"/>, its wings along <paramref name="direction"/>:
+    /// a retaining wall that keeps its spec, added on the storey given. <paramref name="more"/> sets attributes of its own beside the
+    /// configurator's (a tunnel lining's opening through its face wall, S4).
+    /// </summary>
+    public static Entity Add(ICommandContext ctx, JsonObject raw, Vec2 origin, Vec2 direction, string? name, string? storeyId, JsonObject? more = null)
+    {
+        raw.Remove("origin");
+        raw.Remove("direction");
+        raw["origin"] = new JsonArray(origin.X, origin.Y);
+        raw["direction"] = new JsonArray(direction.X, direction.Y);
+        var v = Evaluate(raw, ctx.Model);
+        var material = Materials.Ensure(ctx, v.Text("material", "Reinforced concrete"), RetainingWalls.Color);
+        var (attrs, predefined, _) = Attrs(v, raw, origin, direction, material.Id, ProfileOf(ctx.Model, raw));
+        if (more != null) foreach (var (k, val) in more) attrs[k] = val?.DeepClone();
+        var kind = v.Text("kind", "portal") == "abutment" ? "Abutment" : "Tunnel portal";
+        var count = ctx.Model.OfClass(RetainingWalls.Class).Count(x => x.Attrs[Key] is JsonObject) + 1;
+        var e = new Entity(ctx.NewId(), RetainingWalls.Class, name?.Trim() is { Length: > 0 } nm ? nm : $"{kind} {count}", attrs, predefined);
+        ctx.Add(e);
+        if (storeyId != null) Spatial.Contain(ctx, storeyId, e.Id);
+        return e;
     }
 
     /// <summary>The keys the configurator owns: those it does not set again on a rebuild are dropped (a profile taken off, an assembly made a wall).</summary>

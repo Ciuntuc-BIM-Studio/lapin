@@ -1793,6 +1793,11 @@ public static partial class IfcExport
                 {
                     // An abutment's or a tunnel portal's wings and face wall (a retaining wall written as an assembly, decision 789 S3).
                     case "leg": return new(IfcClass.Wall, "RETAININGWALL", null);
+                    // A tunnel lining's casting blocks, its TBM rings and its outer shell (S4): IFC has no tunnel lining element, so each a
+                    // proxy named for what it is (a wall or a slab would say a lining's vault and invert are what they are not).
+                    case "block": return new(IfcClass.BuildingElementProxy, "USERDEFINED", "Lining block");
+                    case "ring": return new(IfcClass.BuildingElementProxy, "USERDEFINED", "Lining ring");
+                    case "primary": return new(IfcClass.BuildingElementProxy, "USERDEFINED", "Outer shell");
                     case "rail": return o.Ifc43 ? new("IfcRail", "RAIL", null) : new("IfcMember", "USERDEFINED", "Rail");
                     case "sleeper": return o.Ifc43 ? new("IfcTrackElement", "SLEEPER", null) : new("IfcBuildingElementPart", "USERDEFINED", "Sleeper");
                     case "bearer": return o.Ifc43 ? new("IfcTrackElement", "SLEEPER", null) : new("IfcBuildingElementPart", "USERDEFINED", "Bearer");

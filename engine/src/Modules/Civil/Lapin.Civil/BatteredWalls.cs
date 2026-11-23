@@ -792,6 +792,8 @@ public static class BatteredWalls
         var cutters = joints.Select(j => Loft(j.Leg, [j.X - spec.JointWidth / 2, j.X + spec.JointWidth / 2],
             _ => Box(j.Leg.Fa - 1, j.Leg.Fb + 1, (j.Leg.KeyA != null ? j.Leg.KeyBottom : j.Leg.Bottom) - 1, Math.Max(j.Leg.Z0, j.Leg.Z1) + 1))).OfType<Solid>().ToList();
         cutters.AddRange(EndCutters(legs));
+        // A portal at a tunnel lining's end: the lining's outside and its clear opening through the face wall (S4).
+        cutters.AddRange(Tunnels.PortalCutters(m, e));
         Solid? solid = null;
         if (booleans != null)
         {
