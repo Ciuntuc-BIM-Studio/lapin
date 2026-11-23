@@ -5283,6 +5283,48 @@ export const scenes = [
     },
   },
   {
+    // MEP symbols… (docs/user/mep.md, MEP symbols): a symbol drawn by the user given to the valve, the project's set made for it in
+    // the same step, every other role drawn by Lapin's ISO 4067 / IEC 60617 set; the dialog lists each role's symbol and where from.
+    id: 'mep-symbols',
+    touches: ['mep', 'core'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const cold = await t.cmd('mep.createSystem', { service: 'coldWater' });
+      await t.cmd('mep.placeNode', { systemId: cold.id, role: 'waterMeter', storeyId: storey, x: 1, y: 1.5 });
+      await t.cmd('mep.placeNode', { systemId: cold.id, role: 'valve', storeyId: storey, x: 2, y: 1.5 });
+      // A ring with a bar across and a V: no ISO symbol looks like it, so the picture shows which role draws the user's.
+      const sym = await t.cmd('symbols.create', { name: 'Office valve', def: { scale: 'annotation', category: 'other', items: [
+        { type: 'circle', c: [0, 0], r: 2.5, stroke: 0.25 }, { type: 'line', a: [-2.5, 0], b: [2.5, 0], w: 0.5 },
+        { type: 'text', at: [-0.9, 0.6], text: 'V', h: 1.8 },
+      ] } });
+      const set = await t.cmd('mep.setRoleSymbol', { role: 'valve', symbolId: sym.id });
+      t.expect(!!set?.setId, 'the valve takes the symbol, in a set of the project\'s');
+      await t.button('MEP', { exact: true });
+      await t.tool('mep.symbolSets');
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-dialog="mep-symbols"]').count() > 0, 'MEP symbols opens');
+      t.expect(await t.page.locator('[data-role="valve"] select').inputValue() === sym.id, 'the valve\'s row names its symbol');
+      await t.shot('mep-symbols', { of: '.dialog', pad: 0, maxHeight: 640 });
+      await t.ui({ dialog: null });
+      // The MEP legend on an MEP plan of the level: the lines and symbols it draws, the valve by the project's symbol.
+      const heating = await t.cmd('mep.placeSystem', { service: 'heating', storeyId: storey, x: 1, y: 6, to: [3.5, 7.3] });
+      t.expect(!!heating?.id, 'a heating system placed');
+      await t.cmd('mep.drawRun', { systemId: cold.id, storeyId: storey, points: [[1, 1.5], [4, 1.5], [4, 4]] });
+      await t.tool('mep.plan');
+      await t.wait(800);
+      const mepView = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().planViewId);
+      t.expect(!!mepView, 'MEP plan opens a plan of the MEP discipline');
+      const legend = await t.cmd('sheet.addLegend', { viewId: mepView, at: [13.5, 8], kind: 'mep', lang: 'en' });
+      t.expect(!!legend?.id, 'the MEP legend goes on the plan');
+      await t.ui({ keyPlan: false, selection: null, selected: [] });
+      await t.wait(1000);
+      await t.fit();
+      await t.shot('mep-legend', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // A run drawn in height (docs/user/mep.md, Runs): the plane and elevation beside the cursor, C after the second point taking the run up
     // to the ceiling there (a rise inside the run, one undo step), the rise's sign on the plan and the vertical leg in 3D; the system's
     // open ends marked while it is edited, counted in the edit's bar.
@@ -11378,6 +11420,25 @@ export const scenes = [
       const written = await t.call('project.exportIfc', { geometry: 'faceset', tolerance: 0.002 });
       t.expect(typeof written?.data === 'string' && atob(written.data).includes('IFCPOLYGONALFACESET'), 'the IFC export writes face sets when asked');
       await ifc.getByRole('button', { name: 'Cancel' }).click();
+    },
+  },
+  {
+    // File → Speckle → Send… (docs/plan-speckle.md, S1): the account asked for the first time. The guide's runs have no Speckle
+    // server, so the picture is the sign-in; what follows a sign-in is checked against a server by SpeckleTests and by hand.
+    id: 'speckle',
+    touches: ['speckle'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      t.expect((await t.call('doc.query', { name: 'speckle.accounts', args: {} }))?.length === 0, 'no account is held before one signs in');
+      await t.button('File', { exact: true });
+      await t.page.locator('[data-menu=speckle-send]').click();
+      const dialog = t.page.locator('[aria-label="Send to Speckle"]');
+      await dialog.locator('input.speckle-token').waitFor({ timeout: 20_000 });
+      t.expect(await dialog.locator('input.speckle-server').inputValue() === 'https://app.speckle.systems', 'the server is Speckle\'s own unless another is given');
+      t.expect(await dialog.locator('input.speckle-token').getAttribute('type') === 'password', 'the token is typed hidden');
+      await t.shot('speckle-sign-in', { of: '[aria-label="Send to Speckle"]', pad: 0 });
+      await dialog.getByRole('button', { name: 'Cancel' }).click();
     },
   },
   {

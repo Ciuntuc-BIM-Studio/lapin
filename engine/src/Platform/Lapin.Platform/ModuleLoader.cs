@@ -65,12 +65,24 @@ public static class ModuleLoader
         return o;
     }
 
-    /// <summary>A module's own dependencies (another module's contract) are looked up in every module folder.</summary>
+    /// <summary>
+    /// A module's own dependencies (another module's contract) are looked up in every module folder; so are the native
+    /// libraries a module's packages bring (the Speckle SDK's SQLite), under <c>runtimes/&lt;rid&gt;/native</c> as NuGet lays
+    /// them, or beside its assemblies.
+    /// </summary>
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(Untrimmed)]
     static void Hook()
     {
         if (_hooked) return;
         _hooked = true;
+        AssemblyLoadContext.Default.ResolvingUnmanagedDll += (_, name) =>
+        {
+            lock (SearchDirs)
+                foreach (var dir in SearchDirs)
+                    foreach (var p in NativeCandidates(dir, name))
+                        if (File.Exists(p)) return System.Runtime.InteropServices.NativeLibrary.Load(Path.GetFullPath(p));
+            return IntPtr.Zero;
+        };
         AssemblyLoadContext.Default.Resolving += (ctx, name) =>
         {
             lock (SearchDirs)
@@ -81,5 +93,15 @@ public static class ModuleLoader
                 }
             return null;
         };
+    }
+
+    /// <summary>Where a native library named <paramref name="name"/> (e_sqlite3) may lie in a module's folder: this platform's runtimes folder, then beside the assemblies.</summary>
+    public static IEnumerable<string> NativeCandidates(string dir, string name)
+    {
+        var file = OperatingSystem.IsWindows() ? $"{name}.dll" : OperatingSystem.IsMacOS() ? $"lib{name}.dylib" : $"lib{name}.so";
+        if (name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".dylib", StringComparison.Ordinal) || name.Contains(".so", StringComparison.Ordinal)) file = name;
+        var rid = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
+        yield return Path.Combine(dir, "runtimes", rid, "native", file);
+        yield return Path.Combine(dir, file);
     }
 }

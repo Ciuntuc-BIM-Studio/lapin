@@ -284,6 +284,65 @@ fn stop_engine(engine: State<'_, Arc<Engine>>) {
     engine.stop();
 }
 
+// ─── Secrets, in the system's secure store ───────────────────────────────────
+//
+// What the interface must remember but never write in a file (a Speckle personal access token,
+// docs/plan-speckle.md): kept in macOS' Keychain, Windows' Credential Manager or the Secret Service on Linux
+// (GNOME Keyring, KWallet), under the service "Lapin" and a key the interface names. Only keys of the kinds
+// listed in SECRET_KINDS are taken. The value goes to the interface when asked, which hands it to the engine
+// (in memory only, over the local socket); it never goes into settings.json, the project, a report or a log.
+
+const SECRET_SERVICE: &str = "Lapin";
+/// The kinds of secret kept: a key starts with one of these (`speckle:https://app.speckle.systems`).
+const SECRET_KINDS: &[&str] = &["speckle:"];
+
+/// Whether the interface may keep a secret under `key`: one of SECRET_KINDS, short, printable.
+fn secret_key_allowed(key: &str) -> bool {
+    key.len() <= 300 && SECRET_KINDS.iter().any(|k| key.starts_with(k) && key.len() > k.len()) && !key.chars().any(|c| c.is_control())
+}
+
+fn secret_entry(key: &str) -> Result<keyring::Entry, String> {
+    if !secret_key_allowed(key) {
+        return Err("That secret is not one Lapin keeps.".into());
+    }
+    keyring::Entry::new(SECRET_SERVICE, key).map_err(|e| e.to_string())
+}
+
+/// The store is the system's: its calls may wait on the user (a Keychain prompt) or on D-Bus, so never on the main thread.
+async fn off_main<T: Send + 'static>(f: impl FnOnce() -> Result<T, String> + Send + 'static) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(f).await.map_err(|e| e.to_string())?
+}
+
+/// The secret kept under `key`; none when there is none.
+#[tauri::command]
+async fn secret_read(key: String) -> Result<Option<String>, String> {
+    off_main(move || match secret_entry(&key)?.get_password() {
+        Ok(v) => Ok(Some(v)),
+        Err(keyring::Error::NoEntry) => Ok(None),
+        Err(e) => Err(e.to_string()),
+    })
+    .await
+}
+
+/// Keeps `value` under `key`, over what was there.
+#[tauri::command]
+async fn secret_write(key: String, value: String) -> Result<(), String> {
+    if value.is_empty() || value.len() > 4096 {
+        return Err("A secret is 1 to 4096 characters.".into());
+    }
+    off_main(move || secret_entry(&key)?.set_password(&value).map_err(|e| e.to_string())).await
+}
+
+/// Forgets the secret under `key` (nothing to do when there is none).
+#[tauri::command]
+async fn secret_delete(key: String) -> Result<(), String> {
+    off_main(move || match secret_entry(&key)?.delete_credential() {
+        Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+        Err(e) => Err(e.to_string()),
+    })
+    .await
+}
+
 // ─── Ollama, for the model assistant (docs/plan-assistant.md) ───────────────
 //
 // The interface talks to Ollama with fetch where Ollama's default origins let
@@ -571,7 +630,7 @@ pub fn run() {
         .manage(engine.clone())
         .manage(Arc::new(OllamaCalls::default()))
         .manage(Arc::new(SettingsFile::default()))
-        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file, open_path, stop_engine, ollama_request, ollama_cancel, user_settings_read, user_settings_write])
+        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file, open_path, stop_engine, ollama_request, ollama_cancel, user_settings_read, user_settings_write, secret_read, secret_write, secret_delete])
         .setup({
             let engine = engine.clone();
             move |app| {
@@ -597,6 +656,7 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
+        secret_key_allowed,
         configured_ollama_port, file_of_kind, merged_settings, ollama_port_allowed, openable, read_lines, read_settings, ready_port,
         write_atomic, Engine, PROJECT_FILES,
     };
@@ -684,6 +744,17 @@ mod tests {
         let mut first = Vec::new();
         read_lines(&b"1\n2\n3\n"[..], false, |l| { first.push(l); false }).unwrap();
         assert_eq!(first, vec!["1"]);
+    }
+
+    #[test]
+    fn keeps_only_the_kinds_of_secret_it_knows() {
+        assert!(secret_key_allowed("speckle:https://app.speckle.systems"));
+        assert!(secret_key_allowed("speckle:http://127.0.0.1:8090"));
+        assert!(!secret_key_allowed("speckle:"));
+        assert!(!secret_key_allowed("github:token"));
+        assert!(!secret_key_allowed(""));
+        assert!(!secret_key_allowed("speckle:a\nb"));
+        assert!(!secret_key_allowed(&format!("speckle:{}", "x".repeat(300))));
     }
 
     #[test]

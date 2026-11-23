@@ -106,9 +106,29 @@ Each system also has its **plan graphics**: the colour and line type of its line
 
 On every plan a run that lies wholly over the plan's cut (on the ceiling) is drawn dashed, as overhead elements are, in its system's line type over the cut; one under the level (under the floor) is drawn as what lies beyond. Equipment and fittings over the cut are dashed the same way; terminals on the ceiling (lights, diffusers, detectors) keep their symbols whole, as MEP plans draw them. A plan cut higher (**View range…**) draws the ceiling runs as seen.
 
+The symbols of valves, meters, switches, outlets, lights, detectors, sprinklers, rises and drops, and the marks of tees and sleeves are sized on paper, as text is: a plan at 1:100 prints them the same size as one at 1:50 (they are drawn at their 1:50 size and grow with the scale). What a plan draws at its real size stays so at every scale: boilers, radiators, manifolds, sanitary fixtures, cookers, water heaters, meter boxes and gas meters, panels, diffusers and grilles, tanks, pumps and hydrant cabinets, and flexible connectors along their length.
+
 **Tag system** tags the plan in front: each run with its material and size, and its slope where it falls (`PP-R 20`, `PVC 110` / `i=2 %`), each rise or drop with the elevation it goes to (`↑ +2.40`), each radiator, terminal or appliance with its power or flow (`P=1200 W`). It tags the system you edit (else the current one; with neither, every system), skips what has a tag on this plan already, and is one undo step. Each tag goes where its text, and a node's leader, cross the least of the plan: walls, windows, runs, symbols and the other tags; drag one where you want it. The tags are Annotate's, of three tag types it adds to the project, **MEP run**, **MEP rise / drop** and **MEP terminal**: change their text in **Drafting standards → Tag types** with the fields `{mepSize}`, `{mepSlope}`, `{mepRise}` and `{mepDutyText}` or any other. Like every tag, they follow their element when it moves.
 
 ![An MEP plan: the house halftone, the heating supply red and the return blue dashed, each run tagged with its size and each radiator with its power](shots/mep-plan-tags.webp) The **Equipment list** and the **Run list** under **System → Schedules** are schedules like any other: they go on sheets and export with them.
+
+### MEP symbols
+
+**MEP symbols…** (the System group) chooses the set every plan of the project draws its MEP symbols with. Lapin's set follows ISO 4067 for pipework and ducts and IEC 60617 for electrical devices; it is the default and draws what the plans drew before.
+
+To draw a role with a symbol of your own, draw it with the Drafting tools (at its printed size, or at its real size for an appliance), select it and choose **Save as symbol…** from the right-click menu: its base point is where the node stands, its angle the node's direction, and its scale says whether it is sized on paper (**Annotation**) or on the model (**Model**). Then in **MEP symbols…** choose it in the role's row. The project gets a set of its own, **Project symbols**, which falls back on Lapin's for every role you leave as it is. The plans draw your symbol in its system's colour, as they draw Lapin's; choosing **as the set it falls back on** again, or deleting the symbol, brings Lapin's back. A rise and a drop take a symbol each, for the rise nodes and for the rises and drops inside runs.
+
+**New set** makes another set; **Falls back on** chooses the set it borrows the roles it does not draw from. **Export…** writes the set with its symbols as a `.lapinsymbols` file, which another project or office brings in with **Import…** (Manage → Symbols… reads the same file for the symbols alone).
+
+Lapin does not draw the Romanian STAS symbols yet. **Start a Romanian (STAS) set** makes a set of that name that falls back on ISO, for you to give each role the symbol your office draws after the standard.
+
+![MEP symbols: the valve drawn by a symbol of the project's, every other role by Lapin's ISO set](shots/mep-symbols.webp)
+
+### MEP legend
+
+**MEP legend** (the System group) places a legend where you click, on a plan or on a sheet: the line of each service its view draws, in its system's colour and line type (a paired run's supply and return apart), then the symbol of each role it draws, as the project's set draws it (a rise and a drop apart). It lists only what the view shows and changes as the model does. On a sheet it lists the sheet's views; **Of the view** in its properties names one view instead. Its words are written in the interface's language when it is placed; **Language** in its properties changes them. **Lists** also turns a sheet's legend of materials or lines into an MEP legend.
+
+![An MEP plan with its legend: the heating's supply and return, the cold water, the radiators, the meter and the valve drawn by the project's symbol](shots/mep-legend.webp)
 
 In an IFC export each system is an IfcDistributionSystem, every node and run has its IfcDistributionPorts, and the connections are written between the ports, so the network arrives in another program connected from the source to the last endpoint.
 

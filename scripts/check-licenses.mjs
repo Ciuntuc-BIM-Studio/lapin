@@ -42,6 +42,18 @@ const projects = ['engine/src/Host/Lapin.Host', ...moduleProjects];
 const nuget = process.env.NUGET_PACKAGES ?? join(homedir(), '.nuget/packages');
 // A licence shipped as a file: read its title.
 const FILE_LICENCES = [[/Apache License\s+Version 2\.0/i, 'Apache-2.0'], [/^\s*MIT License/im, 'MIT'], [/Permission is hereby granted, free of charge/i, 'MIT']];
+// NuGet packages that declare no licence, each verified by hand from its source repository: the licence file read there
+// (its address and its words below), for this exact version only (its nuspec's commit must be the one checked), so a new
+// version is checked again. Speckle.DoubleNumerics (the Speckle SDK's, docs/plan-speckle.md): a fork of
+// Weingartner/System.Numerics.DoubleVectors, MIT ("MIT License ... Copyright (c) 2016 Weingartner ... Permission is
+// hereby granted, free of charge ..."), read on 23.11.2026; its text is in the Speckle module's NOTICE.md.
+const NUGET_VERIFIED = {
+  'Speckle.DoubleNumerics@4.1.0': {
+    licence: 'MIT',
+    source: 'https://github.com/specklesystems/Speckle.DoubleNumerics/blob/master/LICENSE',
+    commit: 'eff10f3469d3389b67eaf69286aa054806bb0f52',
+  },
+};
 const seen = new Set();
 for (const project of projects) {
   let listed;
@@ -62,7 +74,11 @@ for (const project of projects) {
       const text = existsSync(nuspec) ? readFileSync(nuspec, 'utf8') : '';
       const expr = text.match(/<license type="expression">([^<]+)<\/license>/)?.[1];
       const file = text.match(/<license type="file">([^<]+)<\/license>/)?.[1];
-      const licence = expr ?? (file && existsSync(join(dir, file)) ? FILE_LICENCES.find(([re]) => re.test(readFileSync(join(dir, file), 'utf8')))?.[1] : undefined);
+      const verified = NUGET_VERIFIED[key];
+      const fromFile = file && existsSync(join(dir, file)) ? FILE_LICENCES.find(([re]) => re.test(readFileSync(join(dir, file), 'utf8')))?.[1] : undefined;
+      // A package verified by hand counts only as the very build checked (its nuspec names the same commit).
+      const byHand = !expr && !fromFile && verified && text.includes(`commit="${verified.commit}"`) ? verified.licence : undefined;
+      const licence = expr ?? fromFile ?? byHand;
       if (!licence || !ok(licence)) bad.push(`${key} (NuGet): ${licence ?? 'unknown licence'}`);
       else licences.add(licence);
     }

@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
-import { execute } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
 import { notify, useUi } from '../../app/store';
 import { promptText } from '../../shell/prompts';
 import { NumberField } from '../../shell/cells';
@@ -127,15 +127,30 @@ export function KeyFields({ node }: { node: NodeDto }) {
   const [title, setTitle] = useState(typeof node.props.title === 'string' ? node.props.title : '');
   useEffect(() => setTitle(typeof node.props.title === 'string' ? node.props.title : ''), [node.props.title]);
   if (legend) {
+    // A module's kind (the MEP legend: the symbols and line types a view draws) when the product has the module.
+    const mep = node.props.kind === 'mep';
+    const hasMep = mep || !!useSession.getState().info?.catalogs['mep.roles'];
+    const onSheet = isPaperView(typeof node.props.viewId === 'string' ? node.props.viewId : null);
+    const views = mep ? [...useSession.getState().nodes.values()].filter((n) => n.type === 'LapinView' && ['plan', 'section', 'elevation'].includes(String(n.props.kind ?? 'plan'))) : [];
     return (
       <dl className="fields">
         <dt>Lists</dt>
-        <dd><select data-testid="legend-kind" value={node.props.kind === 'lines' ? 'lines' : 'materials'} onChange={(e) => set({ kind: e.target.value })}>
-          <option value="materials">materials (hatches and fills)</option>
-          <option value="lines">line styles</option>
+        <dd><select data-testid="legend-kind" value={mep ? 'mep' : node.props.kind === 'lines' ? 'lines' : 'materials'} onChange={(e) => set({ kind: e.target.value })}>
+          {(onSheet || !mep) && <option value="materials">materials (hatches and fills)</option>}
+          {(onSheet || !mep) && <option value="lines">line styles</option>}
+          {hasMep && <option value="mep">MEP symbols and lines</option>}
         </select></dd>
+        {mep && (
+          <>
+            <dt title="The view whose symbols and lines it lists; by itself: the sheet's views, or the view it is on">Of the view</dt>
+            <dd><select data-testid="legend-source" value={typeof node.props.sourceViewId === 'string' ? node.props.sourceViewId : ''} onChange={(e) => set({ sourceViewId: e.target.value || null })}>
+              <option value="">{onSheet ? "the sheet's views" : 'this view'}</option>
+              {views.map((v) => <option key={v.id} value={v.id} data-no-i18n>{v.name}</option>)}
+            </select></dd>
+          </>
+        )}
         <dt title="Its heading; {…} tokens as in a title block. Empty: LEGEND">Title</dt>
-        <dd><input value={title} placeholder="LEGEND" onChange={(e) => setTitle(e.target.value)} onBlur={() => set({ title: title.trim() || null })} /></dd>
+        <dd><input value={title} placeholder={mep ? 'MEP LEGEND' : 'LEGEND'} onChange={(e) => setTitle(e.target.value)} onBlur={() => set({ title: title.trim() || null })} /></dd>
         <dt title="The language of its own words: its heading, the lines' roles and types">Language</dt>
         <dd><select data-testid="legend-lang" value={typeof node.props.lang === 'string' ? node.props.lang : 'en'} onChange={(e) => set({ lang: e.target.value === 'en' ? null : e.target.value })}>
           {LANGUAGES.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}

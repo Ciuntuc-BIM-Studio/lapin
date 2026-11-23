@@ -193,6 +193,34 @@ A cloud is never exported with the model: IFC and Fragments carry the model, not
 
 You choose what to export, which phase, and the origin. **What** is **everything**, or the model **as the view shows it**: the 3D view in front, without its hidden elements and categories and the storeys it does not show, with the layers it shows (without finishes, or the cores only). When that view is cut (the cut above the storeys shown, a section shown in 3D, the section box), **Cut** cuts the export there too and closes each cut in its materials, so the file looks like the screen. A 3D view that leaves anything out is exported as it shows it unless you choose otherwise. Every element keeps its IFC class, type and GlobalId. To exchange the model itself rather than its surfaces, use **Export IFC**.
 
+## Speckle
+
+**File → Speckle → Send…** sends the model to a [Speckle](https://speckle.systems) server, from where Revit, Rhino and Grasshopper, Power BI, Blender and Speckle's web viewer take it, with no IFC between them. It is in the desktop app, not in Lapin for the browser.
+
+![Send to Speckle: the account](shots/speckle-sign-in.webp)
+
+The first time, Lapin asks for your account:
+
+- **Server**: Speckle's own, `https://app.speckle.systems`, or the one your firm hosts.
+- **Token**: a personal access token you make in Speckle, under your profile: **Developer settings → Access tokens → New token**, with the scopes `streams:read`, `streams:write` and `profile:read`.
+- **Remember**: the token is kept in your computer's secure store (Keychain on macOS, Credential Manager on Windows, the Secret Service, GNOME Keyring or KWallet, on Linux), so Lapin signs you in by itself next time. It is never written into the project, Lapin's settings or a report. **Sign out** forgets it.
+
+Signed in, you choose the **Project** (one of yours on that server), the **Model** to send to, or **a new model…** with its name, a **Message** for the version, and **What** goes:
+
+- **the whole model**;
+- **as the 3D view shows it**: the 3D view in front, without its hidden elements, categories and storeys, cut as it is cut, as **Export 3D** takes it;
+- **the selection**.
+
+**Send** shows how far it is (converting the model, uploading, making the version); **Cancel** stops it. When it is done, **Open the version in Speckle** opens it in your browser.
+
+What arrives is a tree Project → Building → Storey → IFC class, with the site's elements beside the building. Each element is a Speckle object with:
+
+- its **GlobalId** as its id in Speckle, so the next send makes a new version of the *same* objects (Speckle shows what changed between them);
+- its surfaces, the same as **Export 3D** writes, in metres, in its materials' colours and transparency;
+- its properties: IFC class, name, type, storey, phase, its materials and layers (each with its thickness), its property sets and its quantities, each with its unit.
+
+The storeys go as Speckle levels, so Revit receives the elements on their levels. The materials' images (textures) and the elements' edges are not sent; a copy (a row of the same chairs) goes with its own surfaces. Receiving a model from Speckle into Lapin comes in a later version.
+
 ## Lapin for the browser
 
 **File → Lapin for the browser (.html)…** writes the project as one web page, a single .html file you can send to anyone. It opens with a double-click in any browser (Chrome, Edge, Safari, Firefox), on any computer, with no internet and nothing to install:

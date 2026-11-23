@@ -47,3 +47,6 @@ cubes_1m_fixed.ifc
 python/lapinbim/__init__.pyi
 python/lapinbim/catalogue.json
 __pycache__/
+
+# Local Speckle dev server secrets
+deploy/speckle-dev/.env

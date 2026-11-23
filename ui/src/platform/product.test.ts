@@ -53,6 +53,23 @@ describe('products', () => {
     expect(p.modules).not.toContain('mep');
   });
 
+  it('leaves a desktop-only module out of the browser\'s build, with what needs it, and keeps it on the desktop', () => {
+    const root = fixture({ speckle: ['core'], relay: ['speckle'], civil: ['core'] }, ['speckle', 'civil'], { full: ['civil', 'speckle', 'relay'] });
+    const f = join(root, 'engine/src/Modules/speckle/Lapin.speckle/module.json');
+    writeFileSync(f, JSON.stringify({ ...JSON.parse(readFileSync(f, 'utf8')), desktopOnly: true }));
+    const desktop = resolveProduct(root, 'full');
+    expect(desktop.modules).toEqual(['core', 'civil', 'speckle', 'relay']);
+    expect(desktop.desktopOnly).toBeUndefined();
+    const web = resolveProduct(root, 'full', { target: 'web' });
+    expect(web.modules).toEqual(['core', 'civil']);
+    expect(web.engine).toEqual(['core', 'civil']);
+    expect(web.ui).toEqual(['civil']);
+    expect(web.desktopOnly).toEqual(['speckle', 'relay']);
+    // Lapin's own: the Speckle connector on the desktop, never in the browser.
+    expect(resolveProduct(repo, 'lapin').modules).toContain('speckle');
+    expect(resolveProduct(repo, 'lapin', { target: 'web' }).modules).not.toContain('speckle');
+  });
+
   it('refuses a module the repository does not have, naming who wanted it', () => {
     const root = fixture({ civil: ['terrain'] }, [], { civil: ['civil'], ghost: ['nothing'] });
     expect(() => resolveProduct(root, 'civil')).toThrow(/no module "terrain" \(required by "civil"\)/);

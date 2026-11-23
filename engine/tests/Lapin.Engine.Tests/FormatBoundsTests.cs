@@ -8,6 +8,9 @@ using Lapin.Platform;
 
 namespace Lapin.Engine.Tests;
 
+// Lapin's own Parquet, not the namespace of the Parquet library the Speckle SDK brings (Speckle.Sdk.Parquet).
+using Parquet = Lapin.Mesh.Bos.Parquet;
+
 /// <summary>
 /// Damaged or crafted files are refused with a reason, never by filling the memory or with an internal error (audit
 /// 22.11.2026, G19): Thrift counts, Parquet pages, a .bos's zip entries, a .lapin's parts, column kinds a newer Lapin wrote.

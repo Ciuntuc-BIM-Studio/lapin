@@ -34,7 +34,10 @@ public sealed class FragContext
     public Func<string, FragElementData?> Element { get; init; } = _ => null;
 
     /// <summary>The context of a scene built from <paramref name="session"/> with <paramref name="o"/>.</summary>
-    public static FragContext Of(Session session, MeshScene scene, MeshExportOptions o)
+    public static FragContext Of(Session session, MeshScene scene, MeshExportOptions o) => Of(session.Reader, scene);
+
+    /// <summary>The context of <paramref name="scene"/>, read through a query's view of the session (what a module has).</summary>
+    public static FragContext Of(IQueryContext session, MeshScene scene)
     {
         var m = session.Model;
         string? Gid(Entity? e) => e?.Id is { Length: 22 } id ? id : null;
@@ -77,7 +80,7 @@ public sealed class FragContext
         };
     }
 
-    static FragElementData ElementOf(Session session, Entity e)
+    static FragElementData ElementOf(IQueryContext session, Entity e)
     {
         var m = session.Model;
         var attrs = new List<FragValue>();

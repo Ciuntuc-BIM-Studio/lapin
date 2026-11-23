@@ -21,6 +21,9 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+# The system's secure store for the secrets the interface keeps (a Speckle token, docs/plan-speckle.md): macOS Keychain,
+# Windows Credential Manager, the Secret Service on Linux (through zbus, pure Rust: no libdbus). MIT OR Apache-2.0.
+keyring = { version = "3.6", default-features = false, features = ["apple-native", "windows-native", "async-secret-service", "async-io", "crypto-rust"] }
 
 [features]
 default = ["custom-protocol"]

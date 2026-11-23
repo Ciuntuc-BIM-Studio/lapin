@@ -8,6 +8,9 @@ using Lapin.Structure;
 
 namespace Lapin.Engine.Tests;
 
+// Lapin's own Parquet, not the namespace of the Parquet library the Speckle SDK brings (Speckle.Sdk.Parquet).
+using Parquet = Lapin.Mesh.Bos.Parquet;
+
 /// <summary>
 /// BIM Open Schema (docs/bos.md): Lapin's own Parquet reader on files pyarrow wrote (Snappy and dictionaries, GZIP,
 /// DELTA_BINARY_PACKED and pages v2), its writer read back, Snappy by hand; a project exported as a <c>.bos</c> the way

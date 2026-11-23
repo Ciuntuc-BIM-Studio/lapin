@@ -103,7 +103,10 @@ for (const m of product.engine.filter((id) => id !== 'core')) {
   const src = join(root, 'engine/artifacts/modules', m);
   if (!existsSync(src)) { console.error(`Module ${m} was not built (${src}).`); process.exit(1); }
   mkdirSync(join(res, 'modules', m), { recursive: true });
-  for (const f of readdirSync(src).filter((f) => !f.endsWith('.pdb'))) cpSync(join(src, f), join(res, 'modules', m, f));
+  for (const f of readdirSync(src).filter((f) => !f.endsWith('.pdb') && f !== 'runtimes')) cpSync(join(src, f), join(res, 'modules', m, f));
+  // A module's native libraries (the Speckle SDK's SQLite, runtimes/<rid>/native): only those of the platform built for.
+  const native = join(src, 'runtimes', rid, 'native');
+  if (existsSync(native)) cpSync(native, join(res, 'modules', m, 'runtimes', rid, 'native'), { recursive: true });
 }
 
 // The lapinbim package for the Script panel's Python (docs/plan-python-scripting.md, stage 2), where the product has the scripting
@@ -141,6 +144,12 @@ if (mac && identity)
   for (const dir of ['bin', 'lib'])
     for (const f of readdirSync(join(res, 'oidn', dir)))
       sh('codesign', ['--force', '--sign', identity, '--options', 'runtime', '--timestamp', join(res, 'oidn', dir, f)]);
+// The modules' native libraries (the Speckle SDK's libe_sqlite3.dylib) signed the same way, as notarization asks.
+if (mac && identity)
+  for (const m of product.engine.filter((id) => id !== 'core')) {
+    const native = join(res, 'modules', m, 'runtimes', rid, 'native');
+    if (existsSync(native)) for (const f of readdirSync(native)) sh('codesign', ['--force', '--sign', identity, '--options', 'runtime', '--timestamp', join(native, f)]);
+  }
 // Linux (issue #23): the .deb, the .rpm and the AppImage carry a desktop entry made from linux/app.desktop.hbs (name, comment,
 // Exec with the file opened, the icon by the binary's name, which icon themes look up, Categories=Graphics;Engineering;,
 // the .lapin MIME type, StartupWMClass), and the .lapin MIME type itself (linux/lapin-project.xml) for the MIME

@@ -31,6 +31,7 @@ public static class DrawingWords
         // A channel's invert level, and a low point with no outlet (site grading T6; follow-ups of 23.11.2026), as plans write them.
         ["IL"] = new() { ["ro"] = "CR", ["es"] = "CF", ["de"] = "SH", ["fr"] = "FE", ["da"] = "BK", ["it"] = "QS", ["pl"] = "RD", ["pt"] = "CF", ["lo"] = "ລະດັບກົ້ນ", ["zh"] = "管底" },
         ["Low point"] = new() { ["ro"] = "Punct jos", ["es"] = "Punto bajo", ["de"] = "Tiefpunkt", ["fr"] = "Point bas", ["da"] = "Lavpunkt", ["it"] = "Punto basso", ["pl"] = "Punkt najniższy", ["pt"] = "Ponto baixo", ["lo"] = "ຈຸດຕ່ຳ", ["zh"] = "低点" },
+        ["(none in this view)"] = new() { ["ro"] = "(niciunul în această vedere)", ["es"] = "(ninguno en esta vista)", ["de"] = "(keine in dieser Ansicht)", ["fr"] = "(aucun dans cette vue)", ["da"] = "(ingen i denne visning)", ["it"] = "(nessuno in questa vista)", ["pl"] = "(brak w tym widoku)", ["pt"] = "(nenhum nesta vista)", ["lo"] = "(ບໍ່ມີໃນມຸມມອງນີ້)", ["zh"] = "（此视图中没有）" },
         ["(none on this sheet's views)"] = new() { ["ro"] = "(niciunul în vederile acestei planșe)", ["es"] = "(ninguno en las vistas de esta lámina)", ["de"] = "(keine in den Ansichten dieses Plans)", ["fr"] = "(aucun dans les vues de cette feuille)", ["da"] = "(ingen i dette arks visninger)", ["it"] = "(nessuno nelle viste di questa tavola)", ["pl"] = "(brak w widokach tego arkusza)", ["pt"] = "(nenhum nas vistas desta prancha)", ["lo"] = "(ບໍ່ມີໃນມຸມມອງຂອງແຜ່ນນີ້)", ["zh"] = "（本图纸的视图中没有）" },
     };
 

@@ -7,6 +7,12 @@
 // A module has an engine half (engine/src/Modules/*/*/module.json), a UI half
 // (ui/src/modules/<id>/index.tsx, with an optional module.json beside it), or
 // both. "core" is the platform's and comes with every product.
+//
+// A module may be for the desktop only ("desktopOnly": true in either half's
+// module.json: the Speckle connector, which rides on a .NET SDK the browser's
+// engine does not carry). A product resolved for the browser (`{ target: 'web' }`,
+// scripts/build-web.mjs) leaves such a module out, with whatever needs it: its
+// engine half is never built into the WebAssembly engine, its interface never bundled.
 import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,7 +27,7 @@ const readJson = (f) => JSON.parse(readFileSync(f, 'utf8'));
  * ui/src/modules layout), and the paths say where each half is.
  */
 export function knownModules(root, externals = {}) {
-  const o = { core: { id: 'core', name: 'Core', requires: [], engine: true, ui: existsSync(join(root, 'ui/src/modules/core/index.tsx')), external: false } };
+  const o = { core: { id: 'core', name: 'Core', requires: [], engine: true, ui: existsSync(join(root, 'ui/src/modules/core/index.tsx')), external: false, desktopOnly: false } };
   const scan = (base, external) => {
     const engineDir = join(base, 'engine/src/Modules');
     if (existsSync(engineDir))
@@ -30,15 +36,16 @@ export function knownModules(root, externals = {}) {
           const f = join(engineDir, group, project, 'module.json');
           if (!existsSync(f)) continue;
           const m = readJson(f);
-          o[m.id] = { id: m.id, name: m.name, requires: m.requires ?? [], engine: true, ui: false, engineDir: join(engineDir, group, project), external };
+          o[m.id] = { id: m.id, name: m.name, requires: m.requires ?? [], engine: true, ui: false, engineDir: join(engineDir, group, project), external, desktopOnly: m.desktopOnly === true };
         }
     const uiDir = join(base, 'ui/src/modules');
     if (existsSync(uiDir))
       for (const id of readdirSync(uiDir)) {
         if (!existsSync(join(uiDir, id, 'index.tsx'))) continue;
         const meta = existsSync(join(uiDir, id, 'module.json')) ? readJson(join(uiDir, id, 'module.json')) : {};
-        const m = (o[id] ??= { id, name: meta.name ?? id, requires: [], engine: false, ui: false, external });
+        const m = (o[id] ??= { id, name: meta.name ?? id, requires: [], engine: false, ui: false, external, desktopOnly: false });
         m.ui = true;
+        if (meta.desktopOnly === true) m.desktopOnly = true;
         m.uiDir = join(uiDir, id);
         m.requires = [...new Set([...m.requires, ...(meta.requires ?? [])])];
       }
@@ -56,9 +63,10 @@ export function knownModules(root, externals = {}) {
 /**
  * The product with its modules completed: every module it names, what they
  * require (transitively), core first, in a stable order. Throws on a module
- * the repository does not have.
+ * the repository does not have. For the browser (`target: 'web'`), the
+ * desktop-only modules and those needing them are left out (`desktopOnly` lists them).
  */
-export function resolveProduct(root, productId) {
+export function resolveProduct(root, productId, { target = 'desktop' } = {}) {
   // A product of this repository by its id, or a product file of its own given by path (a private edition kept in its
   // sibling repository: LAPIN_PRODUCT=../lapin-x/products/lapin-x.json); "external" folders are this repository's siblings either way.
   const file = productId.endsWith('.json') ? resolve(root, productId) : join(root, 'products', `${productId}.json`);
@@ -75,6 +83,16 @@ export function resolveProduct(root, productId) {
   };
   visit('core');
   for (const id of product.modules) visit(id);
+  // The browser's build: a desktop-only module out, and every module that needs one (directly or through another).
+  const left = [];
+  if (target === 'web') {
+    const out = (id, seen = new Set()) => {
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return known[id].desktopOnly || known[id].requires.some((r) => out(r, seen));
+    };
+    for (const id of [...order]) if (out(id)) { left.push(id); order.splice(order.indexOf(id), 1); }
+  }
   const added = order.filter((id) => !product.modules.includes(id) && id !== 'core');
   return {
     id: product.id,
@@ -100,6 +118,8 @@ export function resolveProduct(root, productId) {
     ...(product.disciplines ? { disciplines: product.disciplines } : {}),
     /** What came only because another module needs it. */
     required: added,
+    /** For the browser: the modules of the product left out as desktop-only (or needing one). */
+    ...(left.length ? { desktopOnly: left } : {}),
     engine: order.filter((id) => known[id].engine),
     ui: order.filter((id) => known[id].ui),
     /** Where the interface half of each module outside this repository is (id → folder): the build imports those by path. */
@@ -117,8 +137,8 @@ export function resolveProduct(root, productId) {
  * (the browser's, which loads nothing from a folder): each one's project and
  * the class that is its ILapinModule, core left out (it is the platform's).
  */
-export function engineModules(root, productId) {
-  const p = resolveProduct(root, productId);
+export function engineModules(root, productId, { target = 'desktop' } = {}) {
+  const p = resolveProduct(root, productId, { target });
   const known = knownModules(root, readJson(join(root, 'products', `${productId}.json`)).external ?? {});
   const o = [];
   for (const m of Object.values(known)) {
