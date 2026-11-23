@@ -644,6 +644,9 @@ public static class Terrains
             .Concat(PathsOf(m, e.Id).Select(pth => (Element: pth, Solids: Paths.GroundCutters(m, pth))))
             // A hardscape (T4): its layers and its kerb, under a ground that meets its top edges.
             .Concat(Hardscapes.Of(m, e.Id).Select(h => (Element: h, Solids: Hardscapes.GroundCutters(m, h))))
+            // A channel and a standalone kerb (T6) given this terrain: the channel's outer shape and gullies, the kerb's body.
+            .Concat(Channels.Of(m, e.Id).Select(ch => (Element: ch, Solids: Channels.Cutters(m, ch))))
+            .Concat(KerbLines.Of(m, e.Id).Select(k => (Element: k, Solids: KerbLines.Solids(m, k).Select(x => x.Solid).ToList())))
             .Where(x => x.Solids.Count > 0).ToList();
         if (cutters.Count > 0)
         {

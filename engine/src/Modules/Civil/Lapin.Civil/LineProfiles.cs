@@ -59,7 +59,7 @@ public static class LineProfiles
     /// <summary>A point of a profile: its station and height, whether the design gives it (else the ground does), locked, its vertical curve, whether it may move along the station, and its typed grade onwards.</summary>
     public sealed record Point(double Station, double Z, bool Designed, bool Locked, double Curve, bool Movable, double? Grade);
 
-    public static bool Has(Entity e) => FeatureLines.Is(e) || Hardscapes.Is(e) || Corridors.Is(e);
+    public static bool Has(Entity e) => FeatureLines.Is(e) || Hardscapes.Is(e) || Corridors.Is(e) || Channels.Is(e);
 
     /// <summary>The line of an element, or a refusal naming what has a profile.</summary>
     public static Line Of(IModelView m, Entity e)
@@ -67,7 +67,8 @@ public static class LineProfiles
         if (FeatureLines.Is(e)) return OfFeatureLine(m, e);
         if (Hardscapes.Is(e)) return OfHardscape(m, e);
         if (Corridors.Is(e)) return OfCorridor(m, e);
-        throw new CommandException("A profile is drawn along a feature line, a section line, a hardscape's edge, or a path's, wall's or ditch's axis.");
+        if (Channels.Is(e)) return OfChannel(m, e);
+        throw new CommandException("A profile is drawn along a feature line, a section line, a hardscape's edge, a channel, or a path's, wall's or ditch's axis.");
     }
 
     /// <summary>The stations of a feature line's corners along its plan polyline (its arcs in chords).</summary>
@@ -126,6 +127,23 @@ public static class LineProfiles
         var points = top.CornerIndex.Select(i => new Point(st[i], top.Z[i], true, false, 0, false, null)).ToList();
         var terrain = Hardscapes.TerrainOf(m, e) ?? Terrains.Under(m, path[0]);
         return new Line("hardscape", e, path, st, 0, laid, points, terrain, true);
+    }
+
+    /// <summary>
+    /// A channel's long section (T6): its invert as the line, its ends and its outlets as points (shown, not dragged here: its grade
+    /// and start level are set in its properties), the ground under it.
+    /// </summary>
+    static Line OfChannel(IModelView m, Entity e)
+    {
+        var l = Channels.LaidOf(m, e);
+        if (l.Stations.Count < 2) throw new CommandException(l.Notes.FirstOrDefault() ?? "A channel needs two points at least.");
+        var path = l.Stations.Select(l.Chain.PointAt).ToList();
+        var st = FeatureLines.Stations(path, p => p);
+        var laid = l.Stations.Select((s, i) => (s, l.Invert[i])).ToList();
+        var at = new SortedSet<double>([0, l.Length, .. l.Outlets]);
+        var points = at.Select(s => new Point(s, l.InvertAt(s), true, true, 0, false, null)).ToList();
+        var terrain = m.Get(e.Str("terrain") ?? "") is { } t && Terrains.IsTerrain(t) ? t : Terrains.Under(m, path[0]);
+        return new Line("channel", e, path, st, 0, laid, points, terrain, false);
     }
 
     static Line OfCorridor(IModelView m, Entity e)
@@ -203,6 +221,12 @@ public static class LineProfiles
             if (l.Entity.Attrs[CrossKey] is JsonObject cross) o[CrossKey] = cross.DeepClone();
         }
         if (l.Kind == "corridor") o["mode"] = CorridorSpec.Of(l.Entity).Mode;
+        if (l.Kind == "channel")
+        {
+            // Its top (what it lies in, or the line it follows) above its invert.
+            var c = Channels.LaidOf(m, l.Entity);
+            o["top"] = Pairs(c.Stations.Select((s, i) => (s, (double?)c.Top[i])));
+        }
         return o;
     }
 

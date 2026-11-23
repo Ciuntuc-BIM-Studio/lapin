@@ -193,15 +193,25 @@ public static class Hardscapes
         return o;
     }
 
-    public static ElementGeometry? Geometry(Entity e, IModelView m, IServices _)
+    public static ElementGeometry? Geometry(Entity e, IModelView m, IServices services)
     {
         var corners = Corners(e);
         if (corners.Count < 3) return new ElementGeometry([], Diagnostics: ["A hardscape needs an outline of three corners at least."]);
         var top = Top(e);
         var parts = new List<GeometryPart>();
-        foreach (var (i, l, s) in Bodies(m, e))
-            parts.Add(new GeometryPart(l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", Materials.ColorOf(m, l.Material), s, l.Material, "layer:" + i));
         var problems = new List<string>();
+        // The channels running through it (T6) take their shape out of its layers: found where they lie, not stored.
+        var cutters = Channels.Over(m, top.Points).SelectMany(ch => Channels.Cutters(m, ch)).ToList();
+        var booleans = cutters.Count > 0 ? services.Get<ISolidBooleans>() : null;
+        if (cutters.Count > 0 && booleans == null) problems.Add("A channel through a hardscape needs the boolean library (manifold), missing here.");
+        foreach (var (i, l, s) in Bodies(m, e))
+        {
+            var body = s;
+            if (booleans != null)
+                try { body = booleans.Difference(s, cutters, "layer:" + i) ?? s; }
+                catch (InvalidOperationException ex) { problems.Add($"A channel could not be cut through its layer {i + 1} ({ex.Message})."); }
+            parts.Add(new GeometryPart(l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", Materials.ColorOf(m, l.Material), body, l.Material, "layer:" + i));
+        }
         if (top.Note != null) problems.Add(top.Note);
         if (parts.Count == 0) problems.Add("The hardscape has no type with layers: give it one.");
         var plan = new List<PlanItem> { new("heavy", true, top.Points) };
@@ -581,8 +591,9 @@ public static class Hardscapes
 
     /// <summary>
     /// A hardscape cut into a terrain is hosted by it (its IfcRelVoidsElement), so element.transform leaves it to its module: it is
-    /// moved, turned and mirrored as a standalone one is, still cut into its terrain (found with T5: moving it did nothing). A copy
-    /// is not made here.
+    /// moved, turned and mirrored as a standalone one is, still cut into its terrain (found with T5: moving it did nothing). Copied
+    /// (T6; before, a copy did nothing), the copy is cut into the same terrain, with its type, its storey, its own layer usage and a
+    /// copy of its kerb, then carried as a move carries it.
     /// </summary>
     sealed class Hosted : IHostedPlacement
     {
@@ -590,10 +601,36 @@ public static class Hardscapes
 
         public IReadOnlyList<string> Transform(ICommandContext ctx, IReadOnlyList<Entity> elements, Placement2D t, bool copy)
         {
-            if (copy) return [];
+            if (copy) return [.. elements.Select(e => Copy(ctx, e, t)).OfType<string>()];
             var moving = elements.Select(e => e.Id).ToHashSet();
             foreach (var e in elements) if (ctx.Model.Get(e.Id) is { } now) Lapin.Platform.Placement.Transform(ctx, now, t, moving);
             return [];
+        }
+
+        static string? Copy(ICommandContext ctx, Entity e, Placement2D t)
+        {
+            var m = ctx.Model;
+            if (m.Get(e.Id) is not { } now || TerrainOf(m, now) is not { } terrain) return null;
+            // Its storey, type and layer usage as any element's copy has them; left where it is, then carried by its own placement.
+            var id = Lapin.Platform.Placement.DeepCopy(ctx, now, Placement2D.Move(new Vec2(0, 0)));
+            ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, terrain.Id, [id]));
+            var moving = new HashSet<string> { id };
+            if (Kerbs.Of(m, now.Id) is { } kerb)
+            {
+                // A kerb selected with it was copied already, still naming the original: it is the copy's; else one is made.
+                var copied = ctx.Model.OfClass(Kerbs.Class).FirstOrDefault(k => k.Id != kerb.Id && k.Str(Kerbs.HostKey) == now.Id);
+                var attrs = (copied ?? kerb).CloneAttrs();
+                attrs[Kerbs.HostKey] = id;
+                if (copied != null) ctx.Replace(copied.With(attrs: attrs));
+                else
+                {
+                    var k = new Entity(ctx.NewId(), Kerbs.Class, kerb.Name, attrs, kerb.PredefinedType);
+                    ctx.Add(k);
+                    if (Spatial.StoreyOf(m, kerb.Id) is { } storey) Spatial.Contain(ctx, storey.Id, k.Id);
+                }
+            }
+            Lapin.Platform.Placement.Transform(ctx, ctx.Model.Get(id)!, t, moving);
+            return id;
         }
     }
 
