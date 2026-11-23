@@ -89,10 +89,12 @@ On a CDE server an issue goes from Lapin to the server in two ways, both from th
 
 A WIP issue stays in the project: issue to Shared or Published to put it on the server.
 
+Issuing the same sheets again makes a **new revision of the same issue** (Issue… proposes it: **Issue as** → *New revision of issue #n*, the revision after its last): the submission and the issue tag carry that issue's number and identity, `#1 P01`, then `#1 P02`. Once the later revision is published, the earlier Published one moves to **Archived**. **New issue** gives the documents a new number instead.
+
 The project's page (in the browser) and **File → Collaborate… → Publishing** (on the desktop) have three tabs:
 
 - **Containers**: the ISO 19650 containers. **WIP** lists the branches in progress; **Shared** and **Published** list the issue tags with their revision, status, date and who issued them (**approved** when it came through the queue); a Published revision goes to **Archived** when the same issue is published again at a later revision. **Open** opens a revision read-only; **.lapin** and **IFC** download it; **files** lists the issued files, each to download.
-- **Submissions**: the queue, waiting ones first (**Show** picks the others: approved, rejected, withdrawn, all). Click one for its commit, documents, files and **gate**: the open issues that stop it. An issue is tied to a document by a reference link `lapin-document:<document name>`; with no documents, every open issue of priority Critical stops it. Click an issue of the gate to open it in Model remarks (in the project open here, after Sync issues).
+- **Submissions**: the queue, waiting ones first (**Show** picks the others: approved, rejected, withdrawn, all). Click one for its commit, documents, files and **gate**: the open issues that stop it. An issue is tied to a document by a reference link `lapin-document:<document name>`, which Lapin sets itself: a remark made with a sheet in front is tied to that sheet's document, and the remarks dialog shows, adds and removes a remark's documents (see [Remarks](cde.md)); Sync issues sends the ties to the server. With no documents, every open issue of priority Critical stops it. Click an issue of the gate to open it in Model remarks (in the project open here, after Sync issues).
   - **Approve** (with an optional note) makes the issue tag; the resolved issues tied to the submission are closed. While the gate fails, only an owner approves, by ticking **Approve despite the open issues** and writing a note: the override and its note are kept.
   - **Reject** needs the reason.
   - **Withdraw** is the author's.

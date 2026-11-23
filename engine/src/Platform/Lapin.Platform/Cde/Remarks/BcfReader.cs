@@ -92,6 +92,15 @@ public static class BcfReader
             if (inner.Count > 0) labels.AddRange(inner.Select(x => x.Value.Trim()).Where(x => x.Length > 0));
             else if (l.Value.Trim() is { Length: > 0 } v) labels.Add(v);
         }
+        // Reference links: bare <ReferenceLink> elements (2.1) or <ReferenceLinks><ReferenceLink/></ReferenceLinks> (3.0).
+        var links = new List<string>();
+        foreach (var l in Children(t, "ReferenceLink")) if (l.Value.Trim() is { Length: > 0 } v) links.Add(v);
+        foreach (var l in Children(t, "ReferenceLinks"))
+        {
+            var inner = Children(l, "ReferenceLink").ToList();
+            if (inner.Count > 0) links.AddRange(inner.Select(x => x.Value.Trim()).Where(x => x.Length > 0));
+            else if (l.Value.Trim() is { Length: > 0 } v) links.Add(v);
+        }
         // Comments and viewpoint references: beside the topic (2.1) or inside it (3.0).
         var commentEls = Children(markup, "Comment").Concat(Child(t, "Comments") is { } cs ? Children(cs, "Comment") : []);
         var vpEls = Children(markup, "Viewpoints").Concat(Child(t, "Viewpoints") is { } vs ? Children(vs, "ViewPoint").Concat(Children(vs, "Viewpoint")) : []);
@@ -111,7 +120,7 @@ public static class BcfReader
         }
         return new BcfTopic(guid, Text(t, "Title") ?? "Untitled", Text(t, "Description"), Attr(t, "TopicType"), Attr(t, "TopicStatus"), Text(t, "Priority"),
             Bcf.ParseNum(Text(t, "Index")) is { } tix ? (int)tix : null, Text(t, "CreationDate") ?? Bcf.Now(), Text(t, "CreationAuthor") ?? "",
-            Text(t, "ModifiedDate"), Text(t, "ModifiedAuthor"), Text(t, "AssignedTo"), Text(t, "DueDate"), Text(t, "Stage"), labels, comments, viewpoints);
+            Text(t, "ModifiedDate"), Text(t, "ModifiedAuthor"), Text(t, "AssignedTo"), Text(t, "DueDate"), Text(t, "Stage"), labels, comments, viewpoints, links);
     }
 
     static string Join(string folder, string file)

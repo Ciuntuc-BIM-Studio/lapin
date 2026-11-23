@@ -27,6 +27,7 @@ public sealed partial class CdeTests
         public readonly Dictionary<string, byte[]> Objects = new(StringComparer.Ordinal);
         public readonly List<JsonObject> Submissions = [];
         public string IssueTags = "owner";
+        public Dictionary<string, JsonObject> InnerTopics => inner.Topics;
 
         static HttpResponseMessage Json(HttpStatusCode s, JsonNode o) => new(s) { Content = new StringContent(o.ToJsonString(), Encoding.UTF8, "application/json") };
         static HttpResponseMessage Error(int s, string code, string message, JsonObject? more = null)
@@ -35,6 +36,22 @@ public sealed partial class CdeTests
             foreach (var (k, v) in more ?? []) o[k] = v?.DeepClone();
             return Json((HttpStatusCode)s, o);
         }
+        /// <summary>The server's publish gate: the open topics (neither Closed nor Resolved) with a label or a reference link naming a submitted document.</summary>
+        JsonObject Gate(JsonArray? documents)
+        {
+            var docs = (documents ?? []).Select(x => (string?)x).OfType<string>().ToList();
+            var topics = new JsonArray();
+            foreach (var t in inner.Topics.Values)
+            {
+                if ((string?)t["topic_status"] is { } st && (st.Equals("Closed", StringComparison.OrdinalIgnoreCase) || st.Equals("Resolved", StringComparison.OrdinalIgnoreCase))) continue;
+                var labels = (t["labels"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>();
+                var links = (t["reference_links"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>();
+                var doc = docs.FirstOrDefault(d => labels.Any(l => l.Equals(d, StringComparison.OrdinalIgnoreCase)) || links.Any(l => l.Contains(d, StringComparison.OrdinalIgnoreCase)));
+                if (doc != null) topics.Add((JsonNode)new JsonObject { ["guid"] = (string?)t["guid"], ["title"] = (string?)t["title"], ["document"] = doc });
+            }
+            return new JsonObject { ["passed"] = topics.Count == 0, ["topics"] = topics };
+        }
+
         JsonObject RefsJson() => new() { ["refs"] = new JsonArray([.. Refs.Select(r => (JsonNode)new JsonObject { ["name"] = r.Key, ["target"] = r.Value })]) };
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -57,7 +74,7 @@ public sealed partial class CdeTests
                 s["id"] = $"s{Submissions.Count + 1}";
                 s["number"] = Submissions.Count + 1;
                 s["status"] = "pending";
-                s["gate"] = new JsonObject { ["passed"] = true, ["topics"] = new JsonArray() };
+                s["gate"] = Gate(json["documents"] as JsonArray);
                 Submissions.Add(s);
                 return Json(HttpStatusCode.Created, s);
             }

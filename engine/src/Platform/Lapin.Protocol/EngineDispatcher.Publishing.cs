@@ -279,12 +279,14 @@ public sealed partial class EngineDispatcher
                 await SendFiles(remote, issue);
                 var body = new JsonObject
                 {
-                    ["commit"] = commit, ["issue"] = Flag(p, "next") ? null : issue.Record.Number, ["revision"] = issue.Record.Revision, ["purpose"] = issue.Purpose,
+                    // A new revision keeps its issue's number; only a first issue may let the server number it.
+                    ["commit"] = commit, ["issue"] = Flag(p, "next") && issue.Record.Of == null ? null : issue.Record.Number, ["revision"] = issue.Record.Revision, ["purpose"] = issue.Purpose,
                     ["suitability"] = issue.Suitability, ["note"] = (string?)p["note"] ?? issue.Record.Note ?? "",
                     ["documents"] = new JsonArray([.. issue.Documents.Select(x => (JsonNode)x)]),
                     ["files"] = new JsonArray([.. issue.Files.Select(f => (JsonNode)new JsonObject { ["name"] = f.File.Name, ["sha256"] = f.File.Sha256, ["size"] = f.File.Size })]),
                 };
-                if (issue.Record.Id.Length == 22) body["issueId"] = issue.Record.Id;
+                // The issue's GlobalId: a new revision of an earlier issue names that issue's (the server keeps one GlobalId for all its revisions).
+                if (issue.Record.IssueId.Length == 22) body["issueId"] = issue.Record.IssueId;
                 var a = await remote.ApiAsync(HttpMethod.Post, $"atrium/1.0/projects/{Uri.EscapeDataString(e.Project)}/submissions", body);
                 if (a.Status is 200 or 201) o = new JsonObject { ["ok"] = true, ["submission"] = a.Json?.DeepClone() };
                 else
@@ -317,7 +319,7 @@ public sealed partial class EngineDispatcher
         {
             ["format"] = "lapin-tag", ["v"] = 1, ["commit"] = commit, ["kind"] = "issue", ["number"] = issue.Record.Number,
             ["author"] = new JsonObject { ["id"] = me.Id, ["name"] = me.Name }, ["at"] = RemoteObjects.Stamp(now),
-            ["issue"] = issue.Record.Id.Length == 22 ? issue.Record.Id : Lapin.Model.GlobalId.New(),
+            ["issue"] = issue.Record.IssueId.Length == 22 ? issue.Record.IssueId : Lapin.Model.GlobalId.New(),
             ["revision"] = issue.Record.Revision, ["status"] = issue.Suitability, ["container"] = issue.Purpose == "shared" ? "Shared" : "Published",
             ["files"] = new JsonArray([.. issue.Files.Select(f => (JsonNode)new JsonObject { ["name"] = f.File.Name, ["sha256"] = f.File.Sha256, ["size"] = f.File.Size })]),
         };

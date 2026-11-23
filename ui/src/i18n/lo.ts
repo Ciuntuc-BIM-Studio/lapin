@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Remarks tied to documents, issues re-issued as revisions (decision 811: remarks/RemarksDialog.tsx, cde/IssueDialog.tsx).
+  "None: the remark stops no issue.": "ບໍ່ມີ: ຂໍ້ສັງເກດນີ້ບໍ່ຢຸດການອອກເອກະສານໃດ.",
+  "An open remark tied to a document stops the submission of its new revision on a CDE server": "ຂໍ້ສັງເກດທີ່ເປີດຢູ່ ແລະ ຜູກກັບເອກະສານ ຈະຢຸດການສົ່ງສະບັບແກ້ໄຂໃໝ່ຂອງເອກະສານນັ້ນ ຢູ່ເທິງເຊີບເວີ CDE",
+  "Not tied to this document": "ບໍ່ຜູກກັບເອກະສານນີ້ອີກ",
+  "Tie to a document": "ຜູກກັບເອກະສານ",
+  "Tie to a document…": "ຜູກກັບເອກະສານ…",
+  "Links:": "ລິ້ງ:",
+  "New revision of issue": "ສະບັບແກ້ໄຂໃໝ່ຂອງການອອກ",
+  "Issue as": "ອອກເປັນ",
+  "Same documents as its last revision": "ເອກະສານດຽວກັນກັບສະບັບແກ້ໄຂສຸດທ້າຍຂອງມັນ",
   // CDE on the web, W4: publishing (modules/core/CdePublish.tsx, CdeAdmin.tsx, remarks/RemarksDialog.tsx, engine/refusals.ts, the engine's notes).
   "Saved.": "ບັນທຶກແລ້ວ.",
   "Opened from the server, read-only: changes stay here and never reach the server. Save keeps a copy on this computer.": "ເປີດຈາກເຊີບເວີ, ອ່ານຢ່າງດຽວ: ການປ່ຽນແປງຢູ່ທີ່ນີ້ ແລະ ບໍ່ໄປຮອດເຊີບເວີ. ການບັນທຶກເກັບສຳເນົາໄວ້ໃນຄອມພິວເຕີນີ້.",

@@ -9,18 +9,21 @@
  * import and export use. A project whose remote is a CDE server has its
  * remarks synced with the server's issues (W3): Sync issues, the server's
  * choices and members, and what the user's role may not do greyed out.
+ * A remark is tied to documents (BCF reference links `lapin-document:<document>`): a new one made with a sheet in front (or a view
+ * placed on sheets) takes theirs, and the user adds or takes away any of the project's; a CDE server's publish gate stops the
+ * submission of a document while a remark tied to it is open.
  */
 
 import { confirmAction } from '../../../shell/prompts';
 import { backdropClose } from '../../../shell/Dialog';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, Download, Eye, MessageSquare, Plus, RefreshCw, Trash2, Upload, X } from 'lucide-react';
+import { Camera, Download, Eye, FileText, MessageSquare, Plus, RefreshCw, Trash2, Upload, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
 import { useSession } from '../../../engine/session';
 import { useCamera } from '../../../viewport/camera';
 import {
-  ANY, assigneesOf, author, commentRemark, createRemark, deleteRemarks, exportBcf, filterRemarks, found, importBcf, listRemarks, noFilter, openViewpoint,
-  retakeViewpoint, setAuthor, snapshotOf, updateRemark, viewpointNow, when, type Filter, type NewRemark, type RemarkList,
+  ANY, assigneesOf, author, commentRemark, createRemark, deleteRemarks, documentLabel, exportBcf, filterRemarks, found, importBcf, listRemarks, noFilter, openViewpoint,
+  placeInFront, remarkDocuments, retakeViewpoint, setAuthor, snapshotOf, updateRemark, viewpointNow, when, withDocument, type DocumentChoice, type Filter, type NewRemark, type RemarkList,
 } from './remarks';
 import { PendingDialog } from '../PendingDialog';
 import { choicesFor, issueInfo, personName, rightsOf, statusesFor, type IssueInfo } from './issues';
@@ -36,6 +39,28 @@ function Choice({ value, choices, onChange, label, any, disabled }: { value: str
       {any != null && <option value={ANY}>{any}</option>}
       {all.map((c) => <option key={c} value={c}>{c}</option>)}
     </select>
+  );
+}
+
+/** The documents a remark is tied to, each with a button taking it away, and a choice adding one of the project's. */
+function DocumentsField({ documents, choices, onChange, disabled }: { documents: string[]; choices: DocumentChoice[]; onChange: (next: string[]) => void; disabled?: boolean }) {
+  const left = choices.filter((c) => !documents.some((d) => d.toLowerCase() === c.document.toLowerCase()));
+  return (
+    <div className="remark-documents" data-remark-documents="">
+      {documents.length === 0 && <span className="muted small">None: the remark stops no issue.</span>}
+      {documents.map((d) => (
+        <span key={d} className="chip remark-document" data-remark-document={d} title="An open remark tied to a document stops the submission of its new revision on a CDE server">
+          <FileText size={10} /> <span data-no-i18n>{documentLabel(choices, d)}</span>
+          {!disabled && <button type="button" className="icon" onClick={() => onChange(withDocument(documents, d, false))} title="Not tied to this document" aria-label="Not tied to this document"><X size={10} /></button>}
+        </span>
+      ))}
+      {!disabled && left.length > 0 && (
+        <select value="" onChange={(e) => e.target.value && onChange(withDocument(documents, e.target.value, true))} aria-label="Tie to a document" data-remark-add-document="">
+          <option value="">Tie to a document…</option>
+          {left.map((c) => <option key={`${c.kind}:${c.id}`} value={c.document} data-no-i18n>{`${c.label} · ${c.document}`}</option>)}
+        </select>
+      )}
+    </div>
   );
 }
 
@@ -67,6 +92,8 @@ export function RemarksDialog() {
   const [me, setMe] = useState(author());
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState<IssueInfo | null>(null);
+  const [choices, setChoices] = useState<DocumentChoice[]>([]);
+  const [draftDocs, setDraftDocs] = useState<string[]>([]);
   const close = () => useUi.setState({ dialog: null });
 
   // Only the latest list is kept (one asked before it, answering late, is dropped).
@@ -77,6 +104,12 @@ export function RemarksDialog() {
     if (r && n === asked.current) { setData(r); setInfo(i); }
   }, []);
   useEffect(() => { void reload(); }, [reload, nodes]);
+  // The project's documents to tie remarks to (the names an issue gives them), following the project.
+  useEffect(() => {
+    let live = true;
+    void remarkDocuments().then((r) => { if (live) setChoices(r.documents); }).catch(() => undefined);
+    return () => { live = false; };
+  }, [nodes]);
   // A remark asked for (openRemark): selected once the list is there, the filters cleared so it shows.
   useEffect(() => {
     if (!data || !askedGuid) return;
@@ -107,6 +140,9 @@ export function RemarksDialog() {
     const can = view === '3d' && hasCamera;
     setWithView(can);
     setPreview(can ? useCamera.getState().api?.snapshot(640) ?? null : null);
+    // Made with a sheet in front (or a view placed on sheets): tied to their documents, which the user may change before creating it.
+    setDraftDocs([]);
+    void remarkDocuments(placeInFront(useUi.getState())).then((r) => { setChoices(r.documents); setDraftDocs(r.at); }).catch(() => undefined);
   };
 
   const run = async (f: () => Promise<unknown>, after?: () => void) => {
@@ -116,12 +152,13 @@ export function RemarksDialog() {
 
   const create = () => run(async () => {
     if (!draft.title.trim()) { notify('A remark has a title.'); return; }
-    const r = await createRemark({ ...draft, title: draft.title.trim() }, withView && view === '3d' && hasCamera ? viewpointNow() : null);
+    const r = await createRemark({ ...draft, title: draft.title.trim(), documents: draftDocs }, withView && view === '3d' && hasCamera ? viewpointNow() : null);
     setCreating(false);
     setCurrent(r.id);
   });
 
   const field = (key: keyof NewRemark, value: string) => remark && run(() => updateRemark(remark.id, { [key]: value }));
+  const tie = (next: string[]) => remark && run(() => updateRemark(remark.id, { documents: next }));
   const labels = (s: string) => remark && run(() => updateRemark(remark.id, { labels: s.split(',').map((x) => x.trim()).filter(Boolean) }));
 
   const send = () => remark && comment.trim() && run(() => commentRemark(remark.id, comment.trim(), commentWithView && view === '3d' && hasCamera), () => { setComment(''); setCommentWithView(false); });
@@ -216,6 +253,7 @@ export function RemarksDialog() {
                   <label className="row"><span className="muted small loc-label">Due</span><input type="date" value={draft.dueDate.slice(0, 10)} onChange={(e) => setDraft({ ...draft, dueDate: e.target.value ? `${e.target.value}T00:00:00Z` : '' })} aria-label="Due date" /></label>
                   <label className="row"><span className="muted small loc-label">Labels</span><input value={draft.labels.join(', ')} onChange={(e) => setDraft({ ...draft, labels: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} placeholder="Comma-separated" aria-label="Labels" /></label>
                 </div>
+                <div className="row"><span className="muted small loc-label">Documents</span><DocumentsField documents={draftDocs} choices={choices} onChange={setDraftDocs} /></div>
                 <label className="row small"><input type="checkbox" checked={withView && inThreeD} disabled={!inThreeD} onChange={(e) => setWithView(e.target.checked)} /> With the 3D view: its camera, the selection, the section box, a snapshot</label>
                 {!inThreeD && <p className="muted small">Open the 3D view first to keep a viewpoint with the remark.</p>}
                 {preview && withView && inThreeD && <img className="remark-snapshot" src={preview} alt="Snapshot" />}
@@ -240,6 +278,10 @@ export function RemarksDialog() {
                   <label className="row"><span className="muted small loc-label">Due</span><input type="date" disabled={fieldsOff} defaultValue={remark.dueDate?.slice(0, 10) ?? ''} key={`d${remark.id}${remark.modifiedDate}`} onChange={(e) => void field('dueDate', e.target.value ? `${e.target.value}T00:00:00Z` : '')} aria-label="Due date" /></label>
                   <label className="row"><span className="muted small loc-label">Labels</span><input disabled={fieldsOff} defaultValue={remark.labels.join(', ')} key={`l${remark.id}${remark.modifiedDate}`} onBlur={(e) => e.target.value !== remark.labels.join(', ') && void labels(e.target.value)} aria-label="Labels" placeholder={linked && info?.extensions?.labels?.length ? info.extensions.labels.join(', ') : undefined} /></label>
                 </div>
+                <div className="row"><span className="muted small loc-label">Documents</span><DocumentsField documents={remark.documents ?? []} choices={choices} onChange={(next) => void tie(next)} disabled={fieldsOff} /></div>
+                {(remark.referenceLinks ?? []).some((l) => !/^lapin-document:/i.test(l)) && (
+                  <p className="muted small"><span>Links:</span> {(remark.referenceLinks ?? []).filter((l) => !/^lapin-document:/i.test(l)).map((l) => <code key={l} data-no-i18n>{l} </code>)}</p>
+                )}
                 <textarea className="remark-description" disabled={fieldsOff} defaultValue={remark.description ?? ''} key={`t${remark.id}${remark.modifiedDate}`} onBlur={(e) => e.target.value !== (remark.description ?? '') && void field('description', e.target.value)} placeholder="Description" aria-label="Description" rows={3} />
                 <div className="remark-view">
                   {snapshot && <img className="remark-snapshot" src={`data:image/png;base64,${snapshot}`} alt="Snapshot" />}

@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // Remarks tied to documents, issues re-issued as revisions (decision 811: remarks/RemarksDialog.tsx, cde/IssueDialog.tsx).
+  "None: the remark stops no issue.": "Ninguno: la observación no detiene ninguna emisión.",
+  "An open remark tied to a document stops the submission of its new revision on a CDE server": "Una observación abierta vinculada a un documento detiene el envío de su nueva revisión en un servidor CDE",
+  "Not tied to this document": "Ya no vinculada a este documento",
+  "Tie to a document": "Vincular a un documento",
+  "Tie to a document…": "Vincular a un documento…",
+  "Links:": "Enlaces:",
+  "New revision of issue": "Nueva revisión de la emisión",
+  "Issue as": "Emitir como",
+  "Same documents as its last revision": "Los mismos documentos que su última revisión",
   // CDE on the web, W4: publishing (modules/core/CdePublish.tsx, CdeAdmin.tsx, remarks/RemarksDialog.tsx, engine/refusals.ts, the engine's notes).
   "Saved.": "Guardado.",
   "Opened from the server, read-only: changes stay here and never reach the server. Save keeps a copy on this computer.": "Abierto desde el servidor, solo lectura: los cambios se quedan aquí y nunca llegan al servidor. Guardar conserva una copia en este equipo.",

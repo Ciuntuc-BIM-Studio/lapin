@@ -3171,3 +3171,7 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 .cad-prompt label.cad-layer { max-width: none; }
 .cad-prompt span.cad-layer { max-width: none; }
 .cad-prompt span.cad-layer select { max-width: 220px; }
+.remark-documents { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.remark-documents .remark-document { display: inline-flex; align-items: center; gap: 3px; text-transform: none; letter-spacing: 0; font-size: 11px; }
+.remark-documents .remark-document .icon { padding: 0 2px; }
+.remark-documents select { max-width: 280px; }

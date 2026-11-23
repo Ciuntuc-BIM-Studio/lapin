@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Remarks tied to documents, issues re-issued as revisions (decision 811: remarks/RemarksDialog.tsx, cde/IssueDialog.tsx).
+  "None: the remark stops no issue.": "无：该备注不会阻止任何发布。",
+  "An open remark tied to a document stops the submission of its new revision on a CDE server": "与文档关联的未关闭备注会阻止在 CDE 服务器上提交该文档的新修订版",
+  "Not tied to this document": "不再关联此文档",
+  "Tie to a document": "关联到文档",
+  "Tie to a document…": "关联到文档…",
+  "Links:": "链接：",
+  "New revision of issue": "发布的新修订版",
+  "Issue as": "发布为",
+  "Same documents as its last revision": "与其上一修订版相同的文档",
   // CDE on the web, W4: publishing (modules/core/CdePublish.tsx, CdeAdmin.tsx, remarks/RemarksDialog.tsx, engine/refusals.ts, the engine's notes).
   "Saved.": "已保存。",
   "Opened from the server, read-only: changes stay here and never reach the server. Save keeps a copy on this computer.": "已从服务器以只读方式打开：更改留在这里，永远不会到达服务器。保存会在本机保留一份副本。",

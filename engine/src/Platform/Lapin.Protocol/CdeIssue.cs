@@ -45,7 +45,10 @@ public static class CdeIssue
         var container = (string?)p["container"] is { Length: > 0 } c ? c : CdeRevisions.ContainerFor(status);
         if (!CdeRevisions.Containers.Contains(container)) throw new CommandException($"The container is one of {string.Join(", ", CdeRevisions.Containers)}.");
         var number = (int)names["number"]!;
-        var name = (string?)p["name"] is { Length: > 0 } nm ? nm.Trim() : $"Issue {number}";
+        // A new revision of an earlier issue (its number kept; the revision after its last), checked before any file is made.
+        var of = (string?)names["of"];
+        if (of != null) CdeIssues.CheckRevision(m, of, revision);
+        var name = (string?)p["name"] is { Length: > 0 } nm ? nm.Trim() : of != null ? CdeIssues.SeriesOf(m, of)!.Name : $"Issue {number}";
         var note = ((string?)p["note"])?.Trim();
         // The IFC is kept in the project's file only on request: a large model is tens of MB an issue. Its name and hash are recorded either way.
         var keepModel = Flag(p, "keepModel");
@@ -140,6 +143,7 @@ public static class CdeIssue
             ["files"] = new JsonArray(files.Select(f => (JsonNode)f.ToJson()).ToArray()),
         };
         if (version is { } v) args["version"] = v;
+        if (of != null) args["of"] = of;
         var diff = session.Execute("cde.recordIssue", args, out var recorded);
         var result = recorded as JsonObject ?? new JsonObject();
         result["path"] = into;

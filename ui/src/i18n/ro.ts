@@ -1,6 +1,16 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Remarks tied to documents, issues re-issued as revisions (decision 811: remarks/RemarksDialog.tsx, cde/IssueDialog.tsx).
+  "None: the remark stops no issue.": "Niciunul: observația nu oprește nicio emitere.",
+  "An open remark tied to a document stops the submission of its new revision on a CDE server": "O observație deschisă legată de un document oprește propunerea noii lui revizii pe un server CDE",
+  "Not tied to this document": "Nu mai e legată de acest document",
+  "Tie to a document": "Leagă de un document",
+  "Tie to a document…": "Leagă de un document…",
+  "Links:": "Legături:",
+  "New revision of issue": "Revizie nouă a emiterii",
+  "Issue as": "Emite ca",
+  "Same documents as its last revision": "Aceleași documente ca ultima ei revizie",
   // CDE on the web, W4: publishing (modules/core/CdePublish.tsx, CdeAdmin.tsx, remarks/RemarksDialog.tsx, engine/refusals.ts, the engine's notes).
   "Saved.": "Salvat.",
   "Opened from the server, read-only: changes stay here and never reach the server. Save keeps a copy on this computer.": "Deschis de pe server, doar pentru citire: modificările rămân aici și nu ajung niciodată pe server. Salvarea păstrează o copie pe acest computer.",

@@ -555,4 +555,40 @@ public sealed class IssueSyncTests
         foreach (var bad in new[] { "lapin-remote/1.0/projects/x/refs", "atrium/1.0/../lapin-remote/1.0/projects", "foundation/oauth2/token" })
             Assert.Throws<InvalidOperationException>(() => mihai.Call("remote.atrium", new JsonObject { ["path"] = bad }));
     }
+
+    [Fact]
+    public void Reference_links_go_with_a_new_topic_are_patched_only_when_changed_and_come_back_from_the_server()
+    {
+        var (server, http) = Server();
+        var mihai = new Client(http, "tok-mihai");
+        var g = NewRemark(mihai, "Door tag missing");
+        mihai.Update(g, new JsonObject { ["documents"] = new JsonArray("PRJ-ORG-ZZ-00-DR-A-0101") });
+        mihai.Sync();
+        var key = g.ToString("D");
+        Assert.Equal(["lapin-document:PRJ-ORG-ZZ-00-DR-A-0101"], server.Topics[key]["reference_links"]!.AsArray().Select(x => (string?)x));
+        Assert.Equal(0, server.Patches);
+        // Nothing changed: nothing sent.
+        mihai.Sync();
+        Assert.Equal(0, server.Patches);
+
+        // A second document here: one merge patch with the links alone.
+        mihai.Update(g, new JsonObject { ["documents"] = new JsonArray("PRJ-ORG-ZZ-00-DR-A-0101", "PRJ-ORG-ZZ-01-DR-A-0102") });
+        var r = mihai.Sync();
+        Assert.Equal("", Refused(r));
+        Assert.Equal(1, server.Patches);
+        Assert.Equal(["reference_links_updated"], server.Journal.Where(e => (string?)e["author"] == "mihai@example.com" && ((string?)e["type"])!.EndsWith("_updated", StringComparison.Ordinal)).Select(e => (string?)e["type"]));
+        Assert.Equal(2, server.Topics[key]["reference_links"]!.AsArray().Count);
+
+        // Another tool links a URL on the server: it comes here, beside the documents.
+        var ana = new Client(http, "tok-ana");
+        ana.Sync();
+        Assert.Equal(["PRJ-ORG-ZZ-00-DR-A-0101", "PRJ-ORG-ZZ-01-DR-A-0102"], ana.Remark(g)!.Documents);
+        server.Topics[key]["reference_links"] = new JsonArray("https://example.com/rfi/12", "lapin-document:PRJ-ORG-ZZ-00-DR-A-0101");
+        server.ServerEdit(key, "description", "See the RFI.", "ana@example.com");
+        mihai.Sync();
+        var t = mihai.Remark(g)!;
+        Assert.Equal(["https://example.com/rfi/12", "lapin-document:PRJ-ORG-ZZ-00-DR-A-0101"], t.Links);
+        Assert.Equal("See the RFI.", t.Description);
+        Assert.Equal(1, server.Patches);
+    }
 }

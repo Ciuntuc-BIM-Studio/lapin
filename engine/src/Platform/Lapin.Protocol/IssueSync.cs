@@ -23,8 +23,14 @@ namespace Lapin.Protocol;
 /// </summary>
 public sealed class IssueSync(HttpRemote server, string project)
 {
-    /// <summary>The topic fields synced: BCF's writable ones Lapin keeps (reference links, index and BIM snippets stay the server's).</summary>
-    public static readonly string[] Fields = ["title", "description", "topic_type", "topic_status", "priority", "assigned_to", "due_date", "stage", "labels"];
+    /// <summary>
+    /// The topic fields synced: BCF's writable ones Lapin keeps (index and BIM snippets stay the server's). The reference links carry the
+    /// documents a remark is tied to (<c>lapin-document:…</c>), which the server's publish gate reads.
+    /// </summary>
+    public static readonly string[] Fields = ["title", "description", "topic_type", "topic_status", "priority", "assigned_to", "due_date", "stage", "labels", "reference_links"];
+
+    /// <summary>The fields that are lists of strings (the others are strings).</summary>
+    static bool IsList(string field) => field is "labels" or "reference_links";
 
     /// <summary>How many times an edit is sent again after a 412 before it is left for the next sync.</summary>
     public const int Retries = 3;
@@ -454,6 +460,7 @@ public sealed class IssueSync(HttpRemote server, string project)
         ["title"] = t.Title, ["description"] = Text(t.Description), ["topic_type"] = Text(t.Type), ["topic_status"] = Text(t.Status), ["priority"] = Text(t.Priority),
         ["assigned_to"] = Text(t.AssignedTo), ["due_date"] = Text(t.DueDate), ["stage"] = Text(t.Stage),
         ["labels"] = t.Labels.Count > 0 ? new JsonArray([.. t.Labels.Select(l => (JsonNode)l)]) : null,
+        ["reference_links"] = t.Links.Count > 0 ? new JsonArray([.. t.Links.Select(l => (JsonNode)l)]) : null,
     };
 
     static string? Text(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
@@ -465,7 +472,7 @@ public sealed class IssueSync(HttpRemote server, string project)
         foreach (var f in Fields)
         {
             var v = topic[f];
-            o[f] = f == "labels" ? (v is JsonArray { Count: > 0 } a ? a.DeepClone() : null) : (v is JsonValue sv && sv.TryGetValue<string>(out var s) && s.Length > 0 ? s : null);
+            o[f] = IsList(f) ? (v is JsonArray { Count: > 0 } a ? a.DeepClone() : null) : (v is JsonValue sv && sv.TryGetValue<string>(out var s) && s.Length > 0 ? s : null);
         }
         // What the remark shows of the topic beside its fields.
         foreach (var k in new[] { "creation_date", "creation_author", "modified_date", "modified_author", "server_assigned_id" })
@@ -493,10 +500,12 @@ public sealed class IssueSync(HttpRemote server, string project)
         var j = s.Json;
         string? S(string k) => j[k] is JsonValue v && v.TryGetValue<string>(out var x) && x.Length > 0 ? x : null;
         var labels = j["labels"] is JsonArray la ? la.Select(x => (string?)x).OfType<string>().Where(x => x.Length > 0).ToList() : [];
+        var links = j["reference_links"] is JsonArray ra ? ra.Select(x => (string?)x).OfType<string>().Where(x => x.Length > 0).ToList() : [];
         return new BcfTopic(Bcf.ParseGuid(S("guid")) ?? mine?.Guid ?? Guid.NewGuid(), S("title") ?? mine?.Title ?? "", S("description"), S("topic_type"), S("topic_status"), S("priority"),
             j["index"] is JsonValue iv && iv.TryGetValue<int>(out var ix) ? ix : mine?.Index, S("creation_date") ?? mine?.CreationDate ?? Bcf.Now(), S("creation_author") ?? mine?.CreationAuthor ?? "",
             S("modified_date"), S("modified_author"), S("assigned_to"), S("due_date"), S("stage"), labels,
-            s.Comments.Count > 0 || mine == null ? s.Comments : mine.Comments, s.Viewpoints.Count > 0 || mine == null ? s.Viewpoints : mine.Viewpoints);
+            s.Comments.Count > 0 || mine == null ? s.Comments : mine.Comments, s.Viewpoints.Count > 0 || mine == null ? s.Viewpoints : mine.Viewpoints,
+            links.Count > 0 ? links : null);
     }
 
     /// <summary>The topic with some fields put back to <paramref name="fields"/>' (changes the server refused for now, kept to send again).</summary>
@@ -516,6 +525,7 @@ public sealed class IssueSync(HttpRemote server, string project)
                 "due_date" => t with { DueDate = v },
                 "stage" => t with { Stage = v },
                 "labels" => t with { Labels = Bcf.Strings(fields[k]) },
+                "reference_links" => t with { ReferenceLinks = Bcf.Strings(fields[k]) is { Count: > 0 } l ? l : null },
                 _ => t,
             };
         }
