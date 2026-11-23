@@ -96,7 +96,10 @@ public static class LineStyles
             or "IFCAIRTERMINAL" or "IFCSANITARYTERMINAL" or "IFCFIRESUPPRESSIONTERMINAL" or "IFCLIGHTFIXTURE" or "IFCOUTLET" or "IFCVALVE"
             or "IFCPUMP" or "IFCFAN" or "IFCBOILER" or "IFCTANK" or "IFCSPACEHEATER" or "IFCFLOWMETER" or "IFCELECTRICDISTRIBUTIONBOARD"
             or "IFCUNITARYCONTROLELEMENT" or "IFCDISTRIBUTIONCHAMBERELEMENT" or "IFCFLOWTERMINAL" or "IFCFLOWSEGMENT" or "IFCFLOWFITTING"
-            or "LAPINEXHAUSTFAN" => "mep",
+            or "LAPINEXHAUSTFAN"
+            // The rest of the MEP module's devices (switches, burners, filters, the fire detection's sensors and alarms, carriers' fittings).
+            or "IFCSWITCHINGDEVICE" or "IFCBURNER" or "IFCFILTER" or "IFCSENSOR" or "IFCALARM" or "IFCCABLECARRIERFITTING" or "IFCCABLEFITTING"
+            or "IFCJUNCTIONBOX" or "IFCPROTECTIVEDEVICE" or "IFCDISTRIBUTIONSYSTEM" => "mep",
         "LAPINSTEELNODE" or "IFCMECHANICALFASTENER" or "IFCFASTENER" => "steelConnections",
         "IFCTRANSPORTELEMENT" => "transport",
         "IFCSHADINGDEVICE" => "shading",

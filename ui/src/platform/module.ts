@@ -122,6 +122,14 @@ export interface ToolDef {
   space?: () => void;
   /** What Space does now, in a few words, for the hint over the view (a wall: the line on the other side). */
   spaceHint?: () => string | null;
+  /**
+   * Letters the tool takes as its options once its gesture has a point placed (an MEP run's planes: F, C, W, and E for a typed
+   * elevation), as a CAD command's options are typed while it asks for input: not the start of a shortcut then. `keys`: the
+   * letters (upper case) it takes now; `take`: what one does.
+   */
+  letters?: { keys: () => string; take: (key: string) => void };
+  /** What the tool says beside the cursor while a segment is drawn, after its length and angle (an MEP run: its plane and elevation). */
+  cursorInfo?: ComponentType;
   /** What the tool lets one choose while it is on (the line a wall is drawn on), shown in the command line's bar. */
   options?: ComponentType;
   /** What it puts down, shown in Properties while it is on (the type a wall is drawn with), before the first click. */

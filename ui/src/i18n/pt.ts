@@ -3,6 +3,41 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
+  "Tag system": "Etiquetar sistema",
+  "Open a plan to tag its systems.": "Abra uma planta para etiquetar os seus sistemas.",
+  "Everything on this plan has its tag already.": "Tudo nesta planta já tem a sua etiqueta.",
+  "on the selected devices": "nos dispositivos selecionados",
+  "every device (printed)": "em cada dispositivo (impresso)",
+  "Supply line": "Linha de ida",
+  "Return line": "Linha de retorno",
+  "Service's colours": "Cores da especialidade",
+  "Coverage circles": "Círculos de cobertura",
+  "This plan": "Esta planta",
+  "as each system": "como cada sistema",
+  "over the cut": "acima do plano de corte",
+  "overhead dashes": "tracejado acima",
+  "Line type over the plan's cut": "Tipo de linha acima do plano de corte",
+  "How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there": "Como os seus troços e símbolos se desenham em planta: cor e tipo de linha; acima do plano de corte (no teto), o seu tipo de linha aí",
+  "A paired run's return line": "A linha de retorno de um troço duplo",
+  "Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none": "Onde as plantas desenham os círculos de cobertura dos seus dispositivos: nos selecionados (só no ecrã), em cada dispositivo (também impresso) ou em nenhum",
+  "This plan's coverage circles, over every system's own setting": "Os círculos de cobertura desta planta, acima da definição de cada sistema",
+  "Other disciplines halftone": "Outras especialidades em meio-tom",
+  "What is not of the view's discipline drawn grey under it: an MEP plan's walls, doors and furniture under the services (on by default for the MEP discipline)": "O que não é da especialidade da vista, desenhado a cinzento por baixo: paredes, portas e mobiliário de uma planta de instalações sob as instalações (ativado por omissão na especialidade MEP)",
+  "Its views draw what is not of their discipline grey (an MEP plan's architecture); on by default for the MEP discipline": "As suas vistas desenham a cinzento o que não é da sua especialidade (a arquitetura de uma planta de instalações); ativado por omissão na especialidade MEP",
+  "dashdot": "traço-ponto",
+  "dashdotdot": "traço-ponto-ponto",
+  "Coverage": "Cobertura",
+  "MEP run": "Troço de instalações",
+  "MEP rise / drop": "Subida / descida",
+  "MEP terminal": "Terminal de instalações",
+  "MEP: a run's material and size (PP-R 20, Ø125)": "Instalações: material e dimensão de um troço (PP-R 20, Ø125)",
+  "MEP: a run's fall (i=2 %), where it falls": "Instalações: pendente de um troço (i=2 %), onde desce",
+  "MEP: where a rise goes (↑ +2.40)": "Instalações: aonde chega uma subida (↑ +2.40)",
+  "MEP: a terminal's power or flow (P=1200 W)": "Instalações: potência ou caudal de um terminal (P=1200 W)",
+  "Tag system tags a plan: open a plan of the storey.": "Etiquetar sistema etiqueta uma planta: abra uma planta do piso.",
+  "Which plan? (viewId)": "Que planta? (viewId)",
+  "Coverage is all, selected or none.": "A cobertura é all, selected ou none.",
   // Site grading T4: hardscapes, their types and kerbs (docs/plan-site-grading.md).
   "Above the paving": "Acima do pavimento",
   "Below the paving": "Abaixo do pavimento",
@@ -5379,6 +5414,12 @@ export const PT: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Ponto de referência temporário no cursor (de novo: descartá-lo)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Inicie uma ferramenta de desenho ou de colocação, aponte um local e pressione esta tecla: o ponto seguinte é medido a partir dele.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Inicie uma ferramenta que posiciona por âncora (Pilar, Porta, Janela) e pressione esta tecla para percorrer suas âncoras.",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Trechos em ângulo reto com os eixos da planta, a menos que as regras de assentamento do material digam outra coisa; desligado: em qualquer ângulo",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "Ao desenhar: F piso, C teto, W parede, E uma cota digitada",
+  "open end": "extremidade aberta",
+  "open ends": "extremidades abertas",
+  "Select the open ends": "Selecionar as extremidades abertas",
   // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
   "follows it": "segue-o",
   "a copy": "uma cópia",
@@ -6025,6 +6066,8 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} amostras · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `Imagem ${m[1]} × ${m[2]}: ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `Não foi possível criar a imagem: ${m[1]}`],
+  // MEP: Tag system's count.
+  [/^(\d+) tag\(s\) placed\.$/, (m) => `${m[1]} etiqueta(s) colocada(s).`],
   // A tunnel lining linked to its axis's source (23.11.2026)
   [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `«${m[1]}» já não tem eixo: o revestimento mantém o seu último eixo, desligado.`],
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `«${m[1]}» já não tem um metro entre as estacas do revestimento: mantém o seu último eixo, desligado.`],

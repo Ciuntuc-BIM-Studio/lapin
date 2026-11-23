@@ -3,6 +3,41 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
+  "Tag system": "Mærk system",
+  "Open a plan to tag its systems.": "Åbn en plan for at mærke dens systemer.",
+  "Everything on this plan has its tag already.": "Alt på denne plan har allerede sin mærkat.",
+  "on the selected devices": "på de valgte enheder",
+  "every device (printed)": "på hver enhed (udskrevet)",
+  "Supply line": "Fremløbsledning",
+  "Return line": "Returledning",
+  "Service's colours": "Fagets farver",
+  "Coverage circles": "Dækningscirkler",
+  "This plan": "Denne plan",
+  "as each system": "som hvert system",
+  "over the cut": "over snitplanet",
+  "overhead dashes": "overliggende stiplet",
+  "Line type over the plan's cut": "Linjetype over planens snit",
+  "How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there": "Hvordan dens føringer og symboler tegnes i plan: farve og linjetype; over snitplanet (ved loftet) deres linjetype dér",
+  "A paired run's return line": "Returledningen i en parret føring",
+  "Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none": "Hvor planerne tegner dens enheders dækningscirkler: på de valgte enheder (kun på skærmen), på hver enhed (også udskrevet) eller ingen steder",
+  "This plan's coverage circles, over every system's own setting": "Denne plans dækningscirkler, over hvert systems egen indstilling",
+  "Other disciplines halftone": "Andre fag i halvtone",
+  "What is not of the view's discipline drawn grey under it: an MEP plan's walls, doors and furniture under the services (on by default for the MEP discipline)": "Det, der ikke hører til visningens fag, tegnet gråt under den: vægge, døre og møbler i en installationsplan under installationerne (slået til som standard for faget MEP)",
+  "Its views draw what is not of their discipline grey (an MEP plan's architecture); on by default for the MEP discipline": "Dens visninger tegner gråt, hvad der ikke hører til deres fag (arkitekturen i en installationsplan); slået til som standard for faget MEP",
+  "dashdot": "streg-prik",
+  "dashdotdot": "streg-prik-prik",
+  "Coverage": "Dækning",
+  "MEP run": "Installationsføring",
+  "MEP rise / drop": "Stigning / fald",
+  "MEP terminal": "Installationsterminal",
+  "MEP: a run's material and size (PP-R 20, Ø125)": "Installationer: en førings materiale og størrelse (PP-R 20, Ø125)",
+  "MEP: a run's fall (i=2 %), where it falls": "Installationer: en førings fald (i=2 %), hvor den falder",
+  "MEP: where a rise goes (↑ +2.40)": "Installationer: hvor en stigning går hen (↑ +2.40)",
+  "MEP: a terminal's power or flow (P=1200 W)": "Installationer: en terminals effekt eller flow (P=1200 W)",
+  "Tag system tags a plan: open a plan of the storey.": "Mærk system mærker en plan: åbn en plan af etagen.",
+  "Which plan? (viewId)": "Hvilken plan? (viewId)",
+  "Coverage is all, selected or none.": "Dækning er all, selected eller none.",
   // Site grading T4: hardscapes, their types and kerbs (docs/plan-site-grading.md).
   "Above the paving": "Over belægningen",
   "Below the paving": "Under belægningen",
@@ -5376,6 +5411,12 @@ export const DA: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Midlertidigt referencepunkt ved markøren (igen: fjern det)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Start et tegne- eller placeringsværktøj, peg på et sted, og tryk så på denne tast: det næste punkt måles fra det.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Start et værktøj, der placerer efter et anker (Søjle, Dør, Vindue), og tryk så på denne tast for at gennemgå dets ankre.",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Strækninger vinkelret på planens akser, medmindre materialets lægningsregler siger andet; fra: i enhver vinkel",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "Mens du tegner: F gulv, C loft, W væg, E en indtastet kote",
+  "open end": "åben ende",
+  "open ends": "åbne ender",
+  "Select the open ends": "Vælg de åbne ender",
   // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
   "follows it": "følger den",
   "a copy": "en kopi",
@@ -6023,6 +6064,8 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} samples · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `Billede ${m[1]} × ${m[2]}: ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `Billedet kunne ikke laves: ${m[1]}`],
+  // MEP: Tag system's count.
+  [/^(\d+) tag\(s\) placed\.$/, (m) => `${m[1]} mærkat(er) sat.`],
   // A tunnel lining linked to its axis's source (23.11.2026)
   [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” har ingen akse nu: foringen beholder sin sidste akse, frakoblet.`],
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” løber ikke længere en meter mellem foringens stationer: den beholder sin sidste akse, frakoblet.`],

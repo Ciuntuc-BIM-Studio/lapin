@@ -402,6 +402,26 @@ public sealed record PlanItem(string Kind, bool Closed, IReadOnlyList<Vec2> Poin
     public bool At(int detail) => detail >= MinDetail && detail <= MaxDetail;
     /// <summary>Whether it draws in a view whose entourage mode is <paramref name="mode"/>.</summary>
     public bool In(string mode) => Mode == null || Mode == mode;
+
+    /// <summary>
+    /// The heights (world metres, lowest and highest) of what the item stands for, when the plan should draw it by where it lies
+    /// (an MEP run under the ceiling): wholly above a plan's cut it draws as overhead, wholly under the plan's level as beyond,
+    /// both in <see cref="AboveStyle"/>; null: drawn as its kind says, wherever it is.
+    /// </summary>
+    public (double Lo, double Hi)? Heights { get; init; }
+
+    /// <summary>The style it draws in out of the cut's reach (<see cref="Heights"/>); null: its own, its pattern left to the role (overhead's dashes).</summary>
+    public Lapin.Drawing.LineStyleSpec? AboveStyle { get; init; }
+}
+
+/// <summary>
+/// An element's plan symbols as one view draws them (MEP: a device's coverage drawn in every view, only on the selected
+/// ones, or in none, as the view or the system says): given its symbols, the ones the view draws.
+/// </summary>
+public interface IPlanInView
+{
+    bool Handles(Entity e);
+    IReadOnlyList<PlanItem> PlanIn(IModelView m, Entity view, Entity e, IReadOnlyList<PlanItem> items);
 }
 
 /// <summary>

@@ -5169,7 +5169,72 @@ export const scenes = [
       await t.tool('mep.systems');
       t.expect(await t.page.locator('[aria-label="Systems"]').count() > 0, 'the Systems dialog opens');
       await t.shot('mep-systems', { of: '.dialog', pad: 0 });
-      await t.ui({ dialog: null, keyPlan: true });
+      await t.ui({ dialog: null, keyPlan: false, selection: null, selected: [] });
+      // An MEP plan of the level: the house halftone, the supply red and the return blue dashed; Tag system writes each run's
+      // material and size and each radiator's power, in one step.
+      await t.tool('mep.plan');
+      await t.wait(800);
+      const mepView = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().planViewId);
+      t.expect(!!mepView, 'MEP plan opens a plan of the MEP discipline');
+      await t.tool('mep.tagSystem');
+      await t.wait(1000);
+      const mepTags = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.viewId === mepView && String(n.props.tagType ?? '').startsWith('mep-'));
+      t.expect(mepTags.length >= 4, `Tag system tags the runs and radiators, found ${mepTags.length}`);
+      await t.fit();
+      await t.shot('mep-plan-tags', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // A run drawn in height (docs/user/mep.md, Runs): the plane and elevation beside the cursor, C after the second point taking the run up
+    // to the ceiling there (a rise inside the run, one undo step), the rise's sign on the plan and the vertical leg in 3D; the system's
+    // open ends marked while it is edited, counted in the edit's bar.
+    id: 'mep-heights',
+    touches: ['mep'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.button('MEP', { exact: true });
+      const r = await t.cmd('mep.placeSystem', { service: 'heating', storeyId: storey, x: 1, y: 1.5, to: [3.5, 7.3] });
+      await t.page.evaluate(async (id) => (await import('/src/modules/mep/prefs.ts')).setMep({ systemId: id, plane: 'floor', elevation: null, square: true }), r.id);
+      await t.ui({ keyPlan: false });
+      await t.wait(800);
+      await t.fit();
+      await t.tool('mep.run');
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 4 }); await t.page.mouse.click(px, py); await t.wait(250); };
+      const move = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 6 }); await t.wait(300); };
+      await click(2, 3.2);
+      await move(4.5, 3.2);
+      t.expect(await t.page.locator('[data-testid=mep-level]').count() > 0, 'the plane and elevation show beside the cursor');
+      await click(5.2, 3.2);
+      // C: the leg from here on is on the ceiling; the box says how far the run rises at this point.
+      await t.keys('c');
+      await move(5.2, 5.6);
+      t.expect(await t.page.locator('[data-testid=mep-level-change]').count() > 0, 'the rise at the point shows beside the cursor');
+      await t.shot('mep-run-heights', { of: '[data-testid=plan]', pad: 0 });
+      await click(5.2, 5.8);
+      await t.keys('Enter');
+      await t.ui({ tool: null });
+      let made = null;
+      for (let i = 0; i < 40 && !made; i++) { await t.wait(100); made = (await t.nodes()).find((n) => n.type === 'IfcPipeSegment' && Array.isArray(n.props.levels)); }
+      t.expect(!!made, 'the run is made with its levels');
+      t.expect(Array.isArray(made.props.levels[1]), `the rise is at the second point (${JSON.stringify(made.props.levels)})`);
+      t.expect(made.props.plane === 'floor', 'the run starts on the floor');
+      // The system edited: every open end marked on the plan, their count in the bar.
+      await t.page.evaluate(async (id) => (await import('/src/modules/mep/edit.ts')).editSystem(id), r.id);
+      await t.page.locator('[data-testid=mep-open-ends-count]').waitFor({ timeout: 10_000 });
+      t.expect(await t.page.locator('[data-testid=mep-open-ends] circle').count() >= 2, 'the open ends are marked on the plan');
+      await t.wait(400);
+      await t.shot('mep-open-ends', { of: '[data-testid=plan]', pad: 0 });
+      await t.page.locator('[data-testid=mep-open-ends-count]').click();
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selected.length) > 0, 'a click on the count selects the open ends');
+      await t.page.evaluate(async () => (await import('/src/platform/scope.ts')).exitScope(false));
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.page.evaluate(async ([target, azimuth, pitch, distance]) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target, azimuth, pitch, distance }, false), [{ x: 4.2, y: 4.2, z: 1.2 }, -Math.PI * 0.3, -0.35, 9]);
+      await t.wait(1500);
+      await t.shot('mep-run-rise-3d', { of: '[data-testid=view3d]', pad: 0 });
+      await t.ui({ view: 'plan', keyPlan: true });
     },
   },
   {
@@ -5247,6 +5312,7 @@ export const scenes = [
       await device('smokeDetector', 9.5, 4);
       await device('heatDetector', 9.5, 1.2);
       await device('sounder', 6.4, 1.2);
+      const smoke = await device('smokeDetector', 6.4, 4);
       const call = await device('callPoint', 3.9, 0.35);
       t.expect(!!call.runId, 'the call point joins the loop');
       // Close the loop from the tab, with the fire alarm system current.
@@ -5256,16 +5322,21 @@ export const scenes = [
       const net = await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('mep.network', { systemId: id }), alarm.id);
       const back = net[0].nodes.find((n) => n.id === alarm.sourceId).ports.find((p) => p.key === 'return');
       t.expect(back?.taken, 'the loop comes back to the panel');
-      await t.ui({ keyPlan: false, view: 'plan', selection: null, selected: [] });
+      // The coverage circles: drawn for the selected detector only, by default.
+      await t.ui({ keyPlan: false, view: 'plan', selection: smoke.id, selected: [smoke.id] });
       await t.wait(1000);
       await t.fit();
       const quiet = await t.page.addStyleTag({ content: '.hotbar { display: none !important }' });
+      t.expect(await t.page.locator('[data-testid=mep-coverage] circle').count() === 1, 'the selected detector shows its coverage');
       await t.shot('mep-fire-plan', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ selection: null, selected: [] });
 
       // Hydrants: the pump set in the corner, a hydrant cabinet against the north wall of each room (its back to the wall).
       const water = await t.cmd('mep.placeSystem', { service: 'fireWater', storeyId: storey, x: 1.2, y: 7.3, to: [5.6, 7.72] });
       const second = await t.cmd('mep.placeNode', { systemId: water.id, role: 'hydrant', storeyId: storey, x: 10.8, y: 7.72, connect: true });
       t.expect(!!second.runId, 'the second hydrant tees onto the network');
+      // The hydrants' reach on every one, printed too (Systems… → Coverage circles: every device).
+      await t.cmd('mep.updateSystem', { id: water.id, coverage: 'all' });
       await t.wait(1000);
       await t.fit();
       await t.shot('mep-fire-hydrants', { of: '[data-testid=plan]', pad: 0 });

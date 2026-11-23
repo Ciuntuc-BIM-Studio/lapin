@@ -56,6 +56,10 @@ public sealed class MepModule : ILapinModule
         CableCarriers.Register(r);
         // Exhaust fans and ventilators (report #55): their own elements and types, a wall fan's provision, a duct to an outlet.
         Fans.ExhaustFans.Register(r);
+        // Tags of runs, rises and terminals (their fields, tag types and Tag system); coverage circles drawn by the view's setting.
+        MepTags.RegisterFields(Nodes.Classes.Union(Runs.Classes));
+        MepTags.Register(r);
+        r.Service<IPlanInView>(new MepPlanInView());
         // On the plan the schematic is drawn from symbols, not from the bodies' cut.
         foreach (var cls in Nodes.Classes.Concat(Runs.Classes)) Generator.SymbolicInPlan.Add(cls);
         r.Catalog("roles", new JsonArray(Roles.All.Select(x => (JsonNode)new JsonObject
@@ -67,7 +71,7 @@ public sealed class MepModule : ILapinModule
             ["endpointFor"] = x.EndpointFor, ["consumption"] = x.Consumption, ["flue"] = x.Flue,
             ["chain"] = x.Chain, ["coverage"] = x.Coverage, ["hoseLength"] = x.HoseLength, ["jetLength"] = x.JetLength,
         }).ToArray()));
-        r.Catalog("services", new JsonArray(Services.All.Select(s => (JsonNode)new JsonObject { ["id"] = s, ["label"] = Services.Label(s), ["defaults"] = SystemDefaults.For(s).ToJson() }).ToArray()));
+        r.Catalog("services", new JsonArray(Services.All.Select(s => (JsonNode)new JsonObject { ["id"] = s, ["label"] = Services.Label(s), ["defaults"] = SystemDefaults.For(s).ToJson(), ["style"] = SystemStyle.For(s).ToJson() }).ToArray()));
         r.Catalog("materials", new JsonArray(RunMaterials.All.Select(x => (JsonNode)new JsonObject
         {
             ["id"] = x.Id, ["label"] = x.Label, ["services"] = new JsonArray(x.Services.Select(s => (JsonNode)s).ToArray()),

@@ -3,9 +3,10 @@
 import { useEffect } from 'react';
 import { useUi } from '../../app/store';
 import { setMep, useMep } from './prefs';
+import { DrawLevelReset } from './DrawLevel';
 
 export function Background() {
   const tool = useUi((s) => s.tool);
   useEffect(() => { if (tool !== 'mep.connect' && useMep.getState().pending) setMep({ pending: null }); }, [tool]);
-  return null;
+  return <DrawLevelReset />;
 }

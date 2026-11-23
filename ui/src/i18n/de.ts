@@ -3,6 +3,41 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
+  "Tag system": "System beschriften",
+  "Open a plan to tag its systems.": "Öffne einen Grundriss, um seine Systeme zu beschriften.",
+  "Everything on this plan has its tag already.": "Alles auf diesem Grundriss ist schon beschriftet.",
+  "on the selected devices": "an den ausgewählten Geräten",
+  "every device (printed)": "an jedem Gerät (gedruckt)",
+  "Supply line": "Vorlaufleitung",
+  "Return line": "Rücklaufleitung",
+  "Service's colours": "Farben des Gewerks",
+  "Coverage circles": "Abdeckungskreise",
+  "This plan": "Dieser Grundriss",
+  "as each system": "wie jedes System",
+  "over the cut": "über der Schnittebene",
+  "overhead dashes": "Überkopf-Strichlinie",
+  "Line type over the plan's cut": "Linientyp über der Schnittebene",
+  "How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there": "Wie seine Leitungen und Symbole im Grundriss zeichnen: Farbe und Linientyp; über der Schnittebene (an der Decke) ihr Linientyp dort",
+  "A paired run's return line": "Die Rücklaufleitung einer Leitungspaares",
+  "Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none": "Wo die Grundrisse die Abdeckungskreise seiner Geräte zeichnen: an den ausgewählten Geräten (nur auf dem Bildschirm), an jedem Gerät (auch gedruckt) oder gar nicht",
+  "This plan's coverage circles, over every system's own setting": "Die Abdeckungskreise dieses Grundrisses, über der Einstellung jedes Systems",
+  "Other disciplines halftone": "Andere Fachbereiche gerastert",
+  "What is not of the view's discipline drawn grey under it: an MEP plan's walls, doors and furniture under the services (on by default for the MEP discipline)": "Was nicht zum Fachbereich der Ansicht gehört, grau darunter: Wände, Türen und Möbel eines TGA-Grundrisses unter den Leitungen (für den Fachbereich MEP standardmäßig an)",
+  "Its views draw what is not of their discipline grey (an MEP plan's architecture); on by default for the MEP discipline": "Ihre Ansichten zeichnen grau, was nicht zu ihrem Fachbereich gehört (die Architektur eines TGA-Grundrisses); für den Fachbereich MEP standardmäßig an",
+  "dashdot": "Strich-Punkt",
+  "dashdotdot": "Strich-Punkt-Punkt",
+  "Coverage": "Abdeckung",
+  "MEP run": "TGA-Leitung",
+  "MEP rise / drop": "Steigung / Fallleitung",
+  "MEP terminal": "TGA-Endgerät",
+  "MEP: a run's material and size (PP-R 20, Ø125)": "TGA: Material und Größe einer Leitung (PP-R 20, Ø125)",
+  "MEP: a run's fall (i=2 %), where it falls": "TGA: Gefälle einer Leitung (i=2 %), wo sie fällt",
+  "MEP: where a rise goes (↑ +2.40)": "TGA: wohin eine Steigleitung führt (↑ +2.40)",
+  "MEP: a terminal's power or flow (P=1200 W)": "TGA: Leistung oder Volumenstrom eines Endgeräts (P=1200 W)",
+  "Tag system tags a plan: open a plan of the storey.": "System beschriften beschriftet einen Grundriss: öffne einen Grundriss des Geschosses.",
+  "Which plan? (viewId)": "Welcher Grundriss? (viewId)",
+  "Coverage is all, selected or none.": "Die Abdeckung ist all, selected oder none.",
   // Site grading T4: hardscapes, their types and kerbs (docs/plan-site-grading.md).
   "Above the paving": "Über dem Belag",
   "Below the paving": "Unter dem Belag",
@@ -5339,6 +5374,12 @@ export const DE: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Temporärer Bezugspunkt am Cursor (nochmals: verwerfen)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Starten Sie ein Zeichen- oder Platzierungswerkzeug, zeigen Sie auf eine Stelle und drücken Sie dann diese Taste: der nächste Punkt wird von dort gemessen.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Starten Sie ein Werkzeug, das über einen Anker platziert (Stütze, Tür, Fenster), und drücken Sie dann diese Taste, um dessen Anker durchzuschalten.",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "Abschnitte rechtwinklig zu den Achsen des Plans, sofern die Verlegeregeln des Materials nichts anderes sagen; aus: in jedem Winkel",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "Beim Zeichnen: F Boden, C Decke, W Wand, E eine eingetippte Höhe",
+  "open end": "offenes Ende",
+  "open ends": "offene Enden",
+  "Select the open ends": "Offene Enden auswählen",
   // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
   "follows it": "folgt ihr",
   "a copy": "eine Kopie",
@@ -5986,6 +6027,8 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} Samples · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `Bild ${m[1]} × ${m[2]}: ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `Das Bild konnte nicht erstellt werden: ${m[1]}`],
+  // MEP: Tag system's count.
+  [/^(\d+) tag\(s\) placed\.$/, (m) => `${m[1]} Beschriftung(en) gesetzt.`],
   // A tunnel lining linked to its axis's source (23.11.2026)
   [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” hat jetzt keine Achse: Die Auskleidung behält ihre letzte Achse, nicht mehr verknüpft.`],
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” verläuft keinen Meter mehr zwischen den Stationen der Auskleidung: Sie behält ihre letzte Achse, nicht mehr verknüpft.`],

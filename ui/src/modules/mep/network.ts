@@ -21,21 +21,30 @@ interface RoleInfo {
   id: string; label: string; ifcClass: string; kind: 'source' | 'endpoint' | 'inline' | 'rise'; symbol: string;
   services: string[]; ports: { key: string; service: string; flow: 'in' | 'out' | 'both'; pair: string | null }[];
   size: [number, number, number]; elevation: number; duty: number | null; dutyUnit: string | null;
+  /** What a detector covers (m), a hydrant's hose and jet (m): its coverage circle on the plan. */
+  coverage?: number | null; hoseLength?: number | null; jetLength?: number | null;
 }
-interface ServiceInfo { id: string; label: string; defaults: Defaults }
+/** How one line of a system draws in plan: colour, line type, its line type over the cut (null: the overhead dashes), pen (null: a seen line's). */
+export interface LineLook { color: string; pattern: string; above: string | null; pen: number | null }
+export interface SystemStyle { line: LineLook; return: LineLook }
+interface ServiceInfo { id: string; label: string; defaults: Defaults; style?: SystemStyle }
 export interface Defaults {
   size: number; plane: 'floor' | 'ceiling' | 'wall'; floorElevation: number; ceilingElevation: number; wallElevation: number;
   slope: number; pair: boolean; separation: number; material: string | null; insulation: number; bendRadius: number;
   /** A gas system's gas (natural, LPG) and pressure class (low, medium); null for the other services. */
   gas?: 'natural' | 'lpg' | null; pressure?: 'low' | 'medium' | null;
 }
-export interface SystemInfo { id: string; name: string; service: string; defaults: Defaults; nodes: number; runs: number; cutHosts?: boolean | null }
+export interface SystemInfo {
+  id: string; name: string; service: string; defaults: Defaults; nodes: number; runs: number; cutHosts?: boolean | null;
+  /** Its plan graphics (the service's colours and line types, its own over them) and its coverage circles' setting (null: selected). */
+  style?: SystemStyle; coverage?: 'all' | 'selected' | 'none' | null;
+}
 type RunEnd = { nodeId: string; port: string } | { runId: string; station: number } | null;
 interface NetworkPort { key: string; service: string; flow: string; at: [number, number, number]; taken: boolean }
 interface NetworkNode { id: string; name: string; role: string; storeyId: string | null; ports: NetworkPort[] }
 interface NetworkRun { id: string; name: string; storeyId: string | null; points: [number, number][]; start: RunEnd; end: RunEnd }
 export interface NetworkSystem { id: string; name: string; service: string; defaults: Defaults; nodes: NetworkNode[]; runs: NetworkRun[] }
-type OpenItem =
+export type OpenItem =
   | { kind: 'port'; id: string; name: string; port: string; at: [number, number, number] }
   | { kind: 'run'; id: string; name: string; end: 'start' | 'end'; at: [number, number] };
 /** A material runs are made of (the engine's RunMaterials): its laying rules, when the product has them, come from mep-pro. */

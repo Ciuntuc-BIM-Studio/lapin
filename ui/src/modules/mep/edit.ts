@@ -13,6 +13,7 @@ import { enterScope, exitScope, useScope } from '../../platform/scope';
 import { mepHooks } from './hooks';
 import { fittingsQuery, openPortsQuery } from './network';
 import { setMep } from './prefs';
+import { OpenEndsButton } from './openEnds';
 
 const KIND = 'System';
 
@@ -33,6 +34,8 @@ export function editSystem(systemId: string): void {
   enterScope({
     id: systemId, kind: KIND, label: system.name,
     includes: (n) => n.id === systemId || n.props.systemId === systemId,
+    // Its open ends counted in the bar, selected on a click; marked on the plan meanwhile (openEnds.tsx).
+    bar: OpenEndsButton,
     onDone: async () => {
       if (mepHooks.resolve) { await mepHooks.resolve(systemId); return; }
       const [fittings, open] = await Promise.all([fittingsQuery(systemId), openPortsQuery(systemId)]);

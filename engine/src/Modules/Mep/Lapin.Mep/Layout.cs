@@ -154,7 +154,7 @@ public static class Layout
         pts.Insert(leg + 1, at);
         var attrs = run.CloneAttrs();
         attrs["points"] = Runs.J(pts);
-        if (Runs.RemapLevels(old, Runs.LevelsOf(run), pts, Runs.SettingOf(ctx.Model, run).Elevation) is { } levels) attrs["levels"] = levels;
+        if (Runs.RemapLevels(old, Runs.PointLevelsOf(run), pts, Runs.SettingOf(ctx.Model, run).Elevation) is { } levels) attrs["levels"] = levels;
         ctx.Replace(run.With(attrs: attrs));
     }
 

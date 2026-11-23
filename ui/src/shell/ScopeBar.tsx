@@ -32,6 +32,7 @@ export function ScopeBar() {
     <div className="scope-bar" role="status">
       {/* Each word its own text, so the interface's language takes it; capitals by the style. */}
       <span className="scope-what"><span>Editing</span>{scope.kind && <><span>{scope.kind}</span><span>·</span></>}<span data-no-i18n>{scope.label}</span></span>
+      {scope.bar && <scope.bar />}
       <button type="button" onClick={() => void exitScope()} title="Leave the edit mode (Esc)">Done</button>
     </div>
   );

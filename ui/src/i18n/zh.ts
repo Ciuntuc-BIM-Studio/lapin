@@ -3,6 +3,41 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
+  "Tag system": "标注系统",
+  "Open a plan to tag its systems.": "打开平面图以标注其系统。",
+  "Everything on this plan has its tag already.": "此平面图上的所有内容都已有标注。",
+  "on the selected devices": "在选中的设备上",
+  "every device (printed)": "在每个设备上（打印）",
+  "Supply line": "供水线",
+  "Return line": "回水线",
+  "Service's colours": "专业颜色",
+  "Coverage circles": "覆盖圆",
+  "This plan": "此平面图",
+  "as each system": "按各系统",
+  "over the cut": "剖切面以上",
+  "overhead dashes": "上方虚线",
+  "Line type over the plan's cut": "剖切面以上的线型",
+  "How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there": "其管线和符号在平面图中的画法：颜色和线型；剖切面以上（吊顶处）的线型",
+  "A paired run's return line": "成对管线的回水线",
+  "Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none": "平面图在何处绘制其设备的覆盖圆：在选中的设备上（仅屏幕）、在每个设备上（也打印）或不绘制",
+  "This plan's coverage circles, over every system's own setting": "此平面图的覆盖圆，优先于各系统自身的设置",
+  "Other disciplines halftone": "其他专业淡显",
+  "What is not of the view's discipline drawn grey under it: an MEP plan's walls, doors and furniture under the services (on by default for the MEP discipline)": "不属于视图专业的内容在其下方以灰色绘制：机电平面图中的墙、门和家具位于管线之下（MEP 专业默认开启）",
+  "Its views draw what is not of their discipline grey (an MEP plan's architecture); on by default for the MEP discipline": "其视图以灰色绘制不属于其专业的内容（机电平面图的建筑部分）；MEP 专业默认开启",
+  "dashdot": "点划线",
+  "dashdotdot": "双点划线",
+  "Coverage": "覆盖",
+  "MEP run": "机电管线",
+  "MEP rise / drop": "上升 / 下降",
+  "MEP terminal": "机电末端",
+  "MEP: a run's material and size (PP-R 20, Ø125)": "机电：管线的材料和尺寸（PP-R 20, Ø125）",
+  "MEP: a run's fall (i=2 %), where it falls": "机电：管线的坡度（i=2 %），有坡度处",
+  "MEP: where a rise goes (↑ +2.40)": "机电：立管通往何处（↑ +2.40）",
+  "MEP: a terminal's power or flow (P=1200 W)": "机电：末端的功率或流量（P=1200 W）",
+  "Tag system tags a plan: open a plan of the storey.": "标注系统用于平面图：打开该楼层的平面图。",
+  "Which plan? (viewId)": "哪个平面图？(viewId)",
+  "Coverage is all, selected or none.": "覆盖为 all、selected 或 none。",
   // Site grading T4: hardscapes, their types and kerbs (docs/plan-site-grading.md).
   "Above the paving": "高出铺装",
   "Below the paving": "低于铺装",
@@ -5378,6 +5413,12 @@ export const ZH: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "光标处的临时参考点(再次:取消)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "启动绘制或放置工具,指向一个位置,然后按此键:下一点将从该点量起。",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "启动按锚点放置的工具(柱、门、窗),然后按此键依次切换其锚点。",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "各段与平面轴线成直角，除非材料的敷设规则另有规定；关闭：任意角度",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "绘制时：F 地面，C 顶棚，W 墙，E 输入标高",
+  "open end": "开放端",
+  "open ends": "开放端",
+  "Select the open ends": "选择开放端",
   // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
   "follows it": "跟随它",
   "a copy": "副本",
@@ -6022,6 +6063,8 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} 个采样 · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `图像 ${m[1]} × ${m[2]}：${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `无法生成图像：${m[1]}`],
+  // MEP: Tag system's count.
+  [/^(\d+) tag\(s\) placed\.$/, (m) => `已放置 ${m[1]} 个标注。`],
   // A tunnel lining linked to its axis's source (23.11.2026)
   [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `“${m[1]}”已无轴线：衬砌保留最后的轴线，已取消链接。`],
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `“${m[1]}”在衬砌桩号之间已不足一米：衬砌保留最后的轴线，已取消链接。`],

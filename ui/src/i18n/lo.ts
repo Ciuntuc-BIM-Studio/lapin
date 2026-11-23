@@ -3,6 +3,41 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // MEP plan graphics: colours and line types per service, overhead runs, coverage circles, Tag system.
+  "Tag system": "ໃສ່ປ້າຍລະບົບ",
+  "Open a plan to tag its systems.": "ເປີດແຜນຜັງເພື່ອໃສ່ປ້າຍລະບົບຂອງມັນ.",
+  "Everything on this plan has its tag already.": "ທຸກຢ່າງໃນແຜນຜັງນີ້ມີປ້າຍແລ້ວ.",
+  "on the selected devices": "ຢູ່ອຸປະກອນທີ່ເລືອກ",
+  "every device (printed)": "ຢູ່ທຸກອຸປະກອນ (ພິມ)",
+  "Supply line": "ສາຍສົ່ງ",
+  "Return line": "ສາຍກັບ",
+  "Service's colours": "ສີຂອງລະບົບ",
+  "Coverage circles": "ວົງການຄອບຄຸມ",
+  "This plan": "ແຜນຜັງນີ້",
+  "as each system": "ຕາມແຕ່ລະລະບົບ",
+  "over the cut": "ເໜືອລະດັບຕັດ",
+  "overhead dashes": "ເສັ້ນຂີດເທິງ",
+  "Line type over the plan's cut": "ປະເພດເສັ້ນເໜືອລະດັບຕັດ",
+  "How its runs and symbols draw in plan: colour and line type; over the plan's cut (on the ceiling) the line type they take there": "ສາຍ ແລະ ສັນຍາລັກຂອງມັນແຕ້ມໃນແຜນຜັງແນວໃດ: ສີ ແລະ ປະເພດເສັ້ນ; ເໜືອລະດັບຕັດ (ຢູ່ເພດານ) ປະເພດເສັ້ນຢູ່ທີ່ນັ້ນ",
+  "A paired run's return line": "ສາຍກັບຂອງສາຍຄູ່",
+  "Where the plans draw its devices' coverage circles: on the selected devices (on the screen only), on every device (printed too), or none": "ແຜນຜັງແຕ້ມວົງການຄອບຄຸມຂອງອຸປະກອນຢູ່ໃສ: ຢູ່ອຸປະກອນທີ່ເລືອກ (ໃນໜ້າຈໍເທົ່ານັ້ນ), ຢູ່ທຸກອຸປະກອນ (ພິມນຳ) ຫຼື ບໍ່ມີ",
+  "This plan's coverage circles, over every system's own setting": "ວົງການຄອບຄຸມຂອງແຜນຜັງນີ້, ເໜືອການຕັ້ງຄ່າຂອງແຕ່ລະລະບົບ",
+  "Other disciplines halftone": "ສາຂາອື່ນເປັນສີຈາງ",
+  "What is not of the view's discipline drawn grey under it: an MEP plan's walls, doors and furniture under the services (on by default for the MEP discipline)": "ສິ່ງທີ່ບໍ່ແມ່ນສາຂາຂອງມຸມມອງແຕ້ມເປັນສີເທົາຢູ່ລຸ່ມ: ຝາ, ປະຕູ ແລະ ເຟີນີເຈີຂອງແຜນຜັງລະບົບ ຢູ່ລຸ່ມລະບົບ (ເປີດຕາມຄ່າເລີ່ມຕົ້ນສຳລັບສາຂາ MEP)",
+  "Its views draw what is not of their discipline grey (an MEP plan's architecture); on by default for the MEP discipline": "ມຸມມອງຂອງມັນແຕ້ມສິ່ງທີ່ບໍ່ແມ່ນສາຂາຂອງມັນເປັນສີເທົາ (ສະຖາປັດຂອງແຜນຜັງລະບົບ); ເປີດຕາມຄ່າເລີ່ມຕົ້ນສຳລັບສາຂາ MEP",
+  "dashdot": "ເສັ້ນຂີດ-ຈຸດ",
+  "dashdotdot": "ເສັ້ນຂີດ-ສອງຈຸດ",
+  "Coverage": "ການຄອບຄຸມ",
+  "MEP run": "ສາຍລະບົບ",
+  "MEP rise / drop": "ຂຶ້ນ / ລົງ",
+  "MEP terminal": "ປາຍທາງລະບົບ",
+  "MEP: a run's material and size (PP-R 20, Ø125)": "ລະບົບ: ວັດສະດຸ ແລະ ຂະໜາດຂອງສາຍ (PP-R 20, Ø125)",
+  "MEP: a run's fall (i=2 %), where it falls": "ລະບົບ: ຄວາມຄ້ອຍຂອງສາຍ (i=2 %), ບ່ອນທີ່ມັນຄ້ອຍ",
+  "MEP: where a rise goes (↑ +2.40)": "ລະບົບ: ທໍ່ຂຶ້ນໄປໃສ (↑ +2.40)",
+  "MEP: a terminal's power or flow (P=1200 W)": "ລະບົບ: ກຳລັງ ຫຼື ອັດຕາໄຫຼຂອງປາຍທາງ (P=1200 W)",
+  "Tag system tags a plan: open a plan of the storey.": "ໃສ່ປ້າຍລະບົບໃຊ້ກັບແຜນຜັງ: ເປີດແຜນຜັງຂອງຊັ້ນ.",
+  "Which plan? (viewId)": "ແຜນຜັງໃດ? (viewId)",
+  "Coverage is all, selected or none.": "ການຄອບຄຸມແມ່ນ all, selected ຫຼື none.",
   // Site grading T4: hardscapes, their types and kerbs (docs/plan-site-grading.md).
   "Above the paving": "ເໜືອພື້ນປູ",
   "Below the paving": "ລຸ່ມພື້ນປູ",
@@ -5435,6 +5470,12 @@ export const LO: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "ຈຸດອ້າງອີງຊົ່ວຄາວທີ່ເຄີເຊີ (ອີກຄັ້ງ: ປ່ອຍມັນ)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "ເລີ່ມເຄື່ອງມືແຕ້ມ ຫຼື ວາງ, ຊີ້ໄປທີ່ຈຸດໜຶ່ງ, ແລ້ວກົດປຸ່ມນີ້: ຈຸດຖັດໄປຈະວັດຈາກມັນ.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "ເລີ່ມເຄື່ອງມືທີ່ວາງຕາມຈຸດຢຶດ (ເສົາ, ປະຕູ, ປ່ອງຢ້ຽມ), ແລ້ວກົດປຸ່ມນີ້ເພື່ອໄລ່ຜ່ານຈຸດຢຶດຂອງມັນ.",
+  // MEP: a run drawn in height (the plane keys, square legs) and its open ends.
+  "Legs at right angles to the plan's axes, unless the material's laying rules say otherwise; off: at any angle": "ຊ່ວງຕັ້ງສາກກັບແກນຂອງແຜນຜັງ, ເວັ້ນເສຍແຕ່ກົດການວາງຂອງວັດສະດຸບອກເປັນຢ່າງອື່ນ; ປິດ: ໃນມຸມໃດກໍໄດ້",
+  "While drawing: F floor, C ceiling, W wall, E a typed elevation": "ໃນຂະນະແຕ້ມ: F ພື້ນ, C ເພດານ, W ຝາ, E ລະດັບທີ່ພິມ",
+  "open end": "ປາຍເປີດ",
+  "open ends": "ປາຍເປີດ",
+  "Select the open ends": "ເລືອກປາຍເປີດ",
   // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
   "follows it": "ຕາມມັນ",
   "a copy": "ສຳເນົາ",
@@ -6080,6 +6121,8 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} ຕົວຢ່າງ · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `ຮູບ ${m[1]} × ${m[2]}: ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `ບໍ່ສາມາດສ້າງຮູບໄດ້: ${m[1]}`],
+  // MEP: Tag system's count.
+  [/^(\d+) tag\(s\) placed\.$/, (m) => `ໃສ່ປ້າຍແລ້ວ ${m[1]} ອັນ.`],
   // A tunnel lining linked to its axis's source (23.11.2026)
   [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” ບໍ່ມີແກນແລ້ວ: ແຜ່ນບຸຮັກສາແກນສຸດທ້າຍໄວ້, ບໍ່ເຊື່ອມ.`],
   [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” ບໍ່ຍາວຮອດໜຶ່ງແມັດລະຫວ່າງສະຖານີຂອງແຜ່ນບຸອີກແລ້ວ: ມັນຮັກສາແກນສຸດທ້າຍໄວ້, ບໍ່ເຊື່ອມ.`],

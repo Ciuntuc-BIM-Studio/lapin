@@ -11,6 +11,8 @@ import { notify, useUi } from '../../../app/store';
 import { execute, useSession } from '../../../engine/session';
 import { LengthField } from '../../../shell/cells';
 import { schedule } from '../tools';
+import { LevelCells } from '../DrawLevel';
+import { elevationLevel } from '../levels';
 import { CLASS, carrierEnd, carrierKinds, carrierPresets, carrierTypes, isCarrier, step45, typeArg, useCarrierPrefs } from './carriers';
 
 /** The bar: the type the tool puts down and the elevation it goes at. */
@@ -36,6 +38,12 @@ function CarrierOptions() {
   );
 }
 
+/** Beside the cursor while a carrier is drawn: the elevation it goes at (the bar's). */
+function CarrierLevel() {
+  const elevation = useCarrierPrefs((s) => s.elevation);
+  return <LevelCells level={elevationLevel(elevation)} defaults={null} />;
+}
+
 const carriersOf = () => [...useSession.getState().nodes.values()].filter(isCarrier);
 
 /** A carrier along a polyline (Enter or a click on the last point finishes it); an end on another carrier joins it. */
@@ -43,6 +51,7 @@ export const cableTray: ToolDef = {
   id: 'mep.cableTray', label: 'Cable tray', icon: Rows3, shortcut: 'CT',
   gesture: { kind: 'polyline', constrain: (placed, aimed) => step45(placed, aimed) },
   options: CarrierOptions,
+  cursorInfo: CarrierLevel,
   complete: async ({ points }, ctx) => {
     if (points.length < 2) return;
     const { type, elevation } = useCarrierPrefs.getState();
