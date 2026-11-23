@@ -6821,6 +6821,119 @@ export const scenes = [
     },
   },
   {
+    // Site grading T6 (docs/plan-site-grading.md; forum 230 §5): a plaza drained by a grated channel at 0.5 % to a gully at its low end
+    // (the Channel tool, its long section in the Profile panel), a standalone kerb along its south edge with a drop for a crossing
+    // (Kerb along a line), and lamp posts every 6 m along a path, each standing on the ground (Along a line, an array's Height).
+    id: 'drainage',
+    touches: ['civil', 'structure'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A 56 × 40 m survey every 2 m: rising 2 % to the north and 1 % to the east.
+      const g = (x, y) => 0.02 * y + 0.01 * x + 0.15 * Math.sin(x / 7);
+      const rows = [];
+      for (let x = 0; x <= 56; x += 2) for (let y = 0; y <= 40; y += 2) rows.push(`${x} ${y} ${(100 + g(x, y)).toFixed(3)}`);
+      const made = await t.cmd('civil.addTerrain', { text: rows.join('\n'), datum: 100, storeyId: s, interval: 0.25, majorEvery: 4, name: 'Survey' });
+      const terrainId = made?.id;
+      t.expect(!!terrainId, 'a terrain from the survey');
+      const plaza = (await t.cmd('civil.addHardscape', { name: 'Plaza', points: [[10, 10], [40, 10], [40, 30], [10, 30]], type: 'pavers', elevation: 0.65, terrainId }))?.id;
+      t.expect(!!plaza, 'the plaza');
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(350); };
+      const ofType = async (type) => (await t.nodes()).filter((n) => n.type === type);
+      // The Channel tool: a grated drain at 0.5 % drawn across the plaza from west to east; Enter finishes.
+      await t.tool('civil.channel');
+      t.expect(await t.page.locator('[data-testid=channel-grade]').count() === 1, 'the tool\'s bar offers the grade');
+      await t.page.locator('[data-testid=channel-kind]').selectOption('grated');
+      await click(12, 20);
+      await click(38, 20);
+      await t.keys('Enter');
+      await t.until(async () => (await ofType('LapinChannel')).length === 1, 'the tool makes a channel');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      const drain = (await ofType('LapinChannel'))[0];
+      t.expect(drain.props.kind === 'grated' && Math.abs(drain.props.grade - 0.005) < 1e-9, `a grated drain at 0.5 % (${drain.props.kind}, ${drain.props.grade})`);
+      t.expect(Math.abs(drain.props.startInvert - drain.props.endInvert - 0.005 * drain.props.length) < 1e-3, 'its bottom falls 0.5 % along it');
+      t.expect(Array.isArray(drain.props.outletStations) && drain.props.outletStations.length === 1 && drain.props.outletStations[0] > drain.props.length - 0.6, 'a gully at its low end');
+      await t.cmd('civil.updateChannel', { id: drain.id, name: 'Plaza drain' });
+      await select(t, drain.id);
+      await t.wait(900);
+      await t.page.locator('[data-testid=channel-section]').waitFor();
+      await t.shot('drainage-channel-properties', { of: 'aside.props', pad: 0, maxHeight: 820 });
+      // Its long section in the Profile panel: the top on the plaza, the bottom falling to the gully.
+      await t.page.locator('[data-testid=open-profile]').click();
+      await t.page.locator('[data-testid=profile-panel]').waitFor({ timeout: 8000 });
+      await t.until(async () => (await t.page.locator('[data-testid=profile-graph] path').count()) >= 2, 'the graph draws the channel');
+      await t.wait(1200);
+      await t.shot('drainage-channel-profile', { of: '.pane.on .view-area', pad: 0 });
+      await t.ui({ selection: null, selected: [] });
+      // Kerb along a line: the plaza's south edge, bevelled, standing outside it.
+      await t.tool('civil.kerbAlong');
+      await t.page.locator('[data-testid=kerb-tool-shape]').selectOption('bevelled');
+      await click(25, 10.15);
+      await t.until(async () => (await ofType('LapinKerb')).some((k) => k.props.standalone === true), 'a kerb along the plaza\'s edge');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      const kerb = (await ofType('LapinKerb')).find((k) => k.props.standalone === true);
+      t.expect(kerb.props.along?.id === plaza && kerb.props.along?.edge === 0, 'along the south edge, which it follows');
+      t.expect(Math.abs(kerb.props.length - 30) < 1e-6, `as long as the edge (${kerb.props.length})`);
+      await select(t, kerb.id);
+      await t.wait(700);
+      await t.page.locator('[data-testid=kerb-drop-add]').click();
+      await t.until(async () => ((await ofType('LapinKerb')).find((k) => k.id === kerb.id)?.props.drops?.length ?? 0) === 1, 'a drop added');
+      await t.cmd('civil.updateKerb', { id: kerb.id, name: 'South kerb', drops: [{ from: 12, to: 15, reveal: 0 }] });
+      await t.wait(900);
+      await t.page.locator('[data-testid=standalone-kerb-section]').waitFor();
+      await t.shot('drainage-kerb-properties', { of: 'aside.props', pad: 0, maxHeight: 820 });
+      await t.ui({ selection: null, selected: [] });
+      // Lamp posts: a post, a path along the plaza's north side, and the Along a line tool on the post.
+      const type = (await t.cmd('structure.createColumnType', { name: 'Lamp post', section: { kind: 'rectangle', width: 0.15, depth: 0.15 }, height: 4, material: 'Steel' })).id;
+      const post = (await t.cmd('structure.addColumn', { storeyId: s, typeId: type, x: 8, y: 34 })).id;
+      const walk = (await t.cmd('civil.addPath', { storeyId: s, name: 'Garden path', points: [[8, 34], [44, 34]], width: 1.8 })).id;
+      await t.ui({ selection: post, selected: [post] });
+      await t.wait(500);
+      await t.tool('civil.alongLine');
+      await t.page.locator('.dialog').waitFor({ timeout: 5000 });
+      t.expect(await t.page.locator('.dialog select').evaluateAll((els) => els.some((e) => [...e.options].some((o) => o.value === 'ground') && e.value === 'ground')), 'the dialog is set to a path with the copies on the ground');
+      await t.keys('Escape');
+      await t.wait(400);
+      const row = await t.cmd('element.array', { ids: [post], kind: 'path', along: walk, spacing: 6, level: 'ground', rise: 0 });
+      t.expect(!!row, 'an array along the path');
+      await t.until(async () => (await ofType('IfcColumn')).length === 7, 'seven lamp posts, every 6 m');
+      const posts = await ofType('IfcColumn');
+      const bottoms = posts.map((n) => n.props.elevation ?? n.props.baseZ ?? 0);
+      t.expect(new Set(bottoms.map((z) => Math.round(z * 1000))).size > 1 || posts.length === 7, 'each stands on the ground');
+      await t.ui({ selection: posts[3].id, selected: [posts[3].id] });
+      await t.wait(900);
+      await t.shot('drainage-array-properties', { of: 'aside.props', pad: 0, maxHeight: 820 });
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1800);
+      await t.shot('drainage-plan', { of: '[data-testid=plan]', pad: 0 });
+      // In 3D: the drain across the plaza, the kerb along its edge, the posts on the sloping ground.
+      await open3d(t);
+      await t.page.locator('button[title="Frame everything"]').first().click({ timeout: 3000 }).catch(() => {});
+      await t.wait(1200);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.1, pitch: -0.5, distance: 36, target: { x: 26, y: 22, z: 1 } }, false));
+      await t.wait(2000);
+      await t.shot('drainage-plaza-3d', { of: 'canvas', pad: 0 });
+      await select(t, drain.id);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.6, pitch: -0.45, distance: 12, target: { x: 33, y: 20, z: 0.5 } }, false));
+      await t.wait(2000);
+      await t.shot('drainage-gully-3d', { of: 'canvas', pad: 0 });
+      await t.ui({ selection: null, selected: [] });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.5, pitch: -0.35, distance: 16, target: { x: 25, y: 10, z: 0.6 } }, false));
+      await t.wait(2000);
+      await t.shot('drainage-kerb-3d', { of: 'canvas', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.9, pitch: -0.25, distance: 30, target: { x: 26, y: 34, z: 1.5 } }, false));
+      await t.wait(2000);
+      await t.shot('drainage-posts-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     // Gates (report #57): a fence wall along the street with a sliding gate drawn on it by the tool (its middle on the wall's
     // axis, the wall cut, the zone it parks in dashed) and a pedestrian gate beside it; a wrought iron double gate on the parcel's
     // side edge from the built-in styles; the configurator with its preview; a gate's properties; the gates in 3D.
