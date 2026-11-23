@@ -245,10 +245,25 @@ public static class FeatureLines
     {
         var m = ctx.Model;
         var lines = Of(m, terrain.Id).ToList();
-        if (lines.Count == 0 && terrain.Attrs[Derived] == null) return;
+        var hardscapes = Hardscapes.Of(m, terrain.Id).ToList();
+        if (lines.Count == 0 && hardscapes.Count == 0 && terrain.Attrs[Derived] == null) return;
         var ground = Terrains.Base(terrain);
         var datum = terrain.Num("datum");
         var list = new JsonArray();
+        // The hardscapes' top edges first (T4): rigid, they hold where a feature line crosses them; the ground under each one goes.
+        foreach (var h in hardscapes)
+        {
+            if (Hardscapes.Corners(h).Count < 3) continue;
+            var ring = Hardscapes.Edge(h);
+            foreach (var piece in Clip([.. ring, ring[0]], ground))
+                list.Add((JsonNode)new JsonObject
+                {
+                    ["id"] = h.Id,
+                    ["points"] = new JsonArray([.. piece.Select(p => (JsonNode)new JsonArray(p.X, p.Y, R(p.Z + datum)))]),
+                    ["tol"] = Hardscapes.Tolerance,
+                });
+            list.Add((JsonNode)new JsonObject { ["id"] = h.Id, [AreaKey] = new JsonArray([.. ring.Select(p => (JsonNode)new JsonArray(p.X, p.Y))]) });
+        }
         foreach (var line in lines)
         {
             var s = SpecOf(line);
@@ -269,6 +284,16 @@ public static class FeatureLines
         if (attrs[Derived]?.ToJsonString() == terrain.Attrs[Derived]?.ToJsonString()) return;
         ctx.Replace(terrain.With(attrs: attrs));
     }
+
+    /// <summary>A <see cref="Derived"/> item's outline in plan whose ground it covers (a hardscape's, T4): the survey points inside leave the triangulation.</summary>
+    public const string AreaKey = "inside";
+
+    /// <summary>The outlines a terrain's ground is covered by (its hardscapes', as it holds them).</summary>
+    public static List<List<Vec2>> Areas(Entity terrain) =>
+        [.. ((terrain.Attrs[Derived] as JsonArray)?.OfType<JsonObject>() ?? []).Select(o => PointLists.Xy(o[AreaKey]).ToList()).Where(a => a.Count >= 3)];
+
+    /// <summary>Whether a point in plan lies inside any of the areas.</summary>
+    public static bool InAreas(List<List<Vec2>> areas, Vec2 p) => areas.Count > 0 && areas.Any(a => Polygon2.Contains(a, p));
 
     /// <summary>
     /// Lines that cross each other in plan, each split at the crossing: a crossing becomes a vertex of both, at the height of
@@ -442,7 +467,15 @@ public static class FeatureLines
         var lines = OnTerrain(terrain);
         if (lines.Count == 0) return 0;
         var near = new Near(lines.Select(l => (l.Points, l.Tolerance)));
-        return Terrains.Points(terrain).Count(p => near.Within(p.Xy));
+        var areas = Areas(terrain);
+        return Terrains.Points(terrain).Count(p => near.Within(p.Xy) && !InAreas(areas, p.Xy));
+    }
+
+    /// <summary>The survey points under a terrain's hardscapes (T4), left out of its triangulation: the ground there is their top.</summary>
+    public static int Covered(Entity terrain)
+    {
+        var areas = Areas(terrain);
+        return areas.Count == 0 ? 0 : Terrains.Points(terrain).Count(p => InAreas(areas, p.Xy));
     }
 
     // ─── The element ────────────────────────────────────────────────────
@@ -565,7 +598,14 @@ public static class FeatureLines
                 foreach (var x in new[] { ch.Before, ch.After })
                     if (x != null && Is(x) && x.Str(TerrainKey) is { } tid) (touched ??= []).Add(tid);
                 if ((ch.After ?? ch.Before) is { } t && Terrains.IsTerrain(t) && GroundChanged(ch.Before, ch.After)) (touched ??= []).Add(t.Id);
+                // A hardscape changed (T4): every terrain it is, or was, cut into gets its edges again.
+                if ((ch.After ?? ch.Before) is { } h && Hardscapes.Is(h))
+                    foreach (var t2 in Terrains.All(ctx.Model))
+                        if (Hardscapes.Of(ctx.Model, t2.Id).Any() || Areas(t2).Count > 0) (touched ??= []).Add(t2.Id);
             }
+            // A hardscape cut into a terrain or taken out of it.
+            foreach (var rc in edit.RelationChanges)
+                if ((rc.After ?? rc.Before) is { Class: IfcClass.RelVoidsElement } rel && ctx.Model.Get(rel.Relating) is { } host && Terrains.IsTerrain(host)) (touched ??= []).Add(host.Id);
             if (touched == null) return result;
             foreach (var id in touched)
                 if (ctx.Model.Get(id) is { } t && Terrains.IsTerrain(t)) Refresh(ctx, t);

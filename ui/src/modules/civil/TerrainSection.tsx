@@ -83,7 +83,15 @@ export function TerrainSection({ node }: { node: NodeDto }) {
         <dt>Slope tags</dt>
         <dd>{slopes}{slopes > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.removeSlope', { id: node.id, all: true })}>clear</button></>}</dd>
         <dt>Subregions</dt>
-        <dd>{subregions}{subregions > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.removeSubregion', { id: node.id, all: true })}>clear</button></>}</dd>
+        <dd>{subregions}{subregions > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.removeSubregion', { id: node.id, all: true })}>clear</button></>}
+          {/* Each one made a hardscape (T4): its outline, its top on the ground at its corners, cut into this terrain. */}
+          {subregions > 0 && node.editable && <ul className="small" data-testid="terrain-subregions" style={{ margin: '2px 0 0', paddingLeft: 14 }}>
+            {(node.props.subregions as { id?: string; name?: string }[]).map((sr, i) => (
+              <li key={sr.id ?? i}><span>{sr.name ?? `Subregion ${i + 1}`}</span> <button type="button" className="link small" data-testid="subregion-to-hardscape" title="Make it a hardscape: its outline, a type of its material, its top on the ground at its corners, cut into the terrain"
+                onClick={() => void execute('civil.subregionToHardscape', { terrainId: node.id, subregionId: sr.id }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ selected: [id] }); })}>to hardscape</button></li>
+            ))}
+          </ul>}
+        </dd>
         <dt>Boundary</dt>
         <dd>
           {boundary ? <>clipped <button type="button" className="link small" onClick={() => void execute('civil.setBoundary', { id: node.id })}>remove</button>

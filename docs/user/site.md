@@ -105,7 +105,7 @@ A terrain clipped by a **Terrain boundary** keeps its outline's heights as the g
 
 **A control cage.** On a dense survey, moving points one by one is slow. A few points can be made **controls** that shape the rest, like a low-poly cage: under **Control cage**, **every** *10* **m** takes the point nearest each node of a 10 m grid (its corners too), **along the boundary** takes the points on the terrain's outline, and **clear** takes them all off. While editing in 3D, **Grips on** chooses what gets a grip: **all points** (as before), **controls only**, or **choose controls**, where every point shows and the controls are filled; click a point's grip to make it a control, or a free point again. With **controls only**, drag a control up or down (or type the distance): it goes exactly there, and the free points around it follow smoothly, by a part of its move that fades with distance and comes to nothing at the other controls, which stay where they are. The free points keep their own shape (bumps, slopes) and move with it, and dragging the control back puts every point back; the whole move is one undo step. A point moved on its own (with **all points**) keeps its own move. A terrain without controls works as before. Splitting a terrain leaves each half the controls inside it; merging gathers them.
 
-**Subregions.** **Subregion** (in the **Earthworks** group) draws an area of the terrain with a material of its own (gravel by default): a courtyard, a lawn, a gravel bed. The ground keeps its levels; the area wears its material in 3D, as a thin skin that follows the terrain's own triangles, breaklines included, and is outlined in plan. Each gives its plan area to schedules (*Lapin_SubregionQuantities*). **Subregions** in the terrain's properties counts them, and **clear** removes them.
+**Subregions.** **Subregion** (in the **Earthworks** group) draws an area of the terrain with a material of its own (gravel by default): a courtyard, a lawn, a gravel bed. The ground keeps its levels; the area wears its material in 3D, as a thin skin that follows the terrain's own triangles, breaklines included, and is outlined in plan. Each gives its plan area to schedules (*Lapin_SubregionQuantities*). **Subregions** in the terrain's properties counts and lists them, **clear** removes them, and **to hardscape** beside one makes it a hardscape (below).
 
 ![A gravel subregion on the terrain in 3D](shots/terrain-subregion-3d.webp)
 
@@ -147,6 +147,40 @@ A feature line moves, rotates and mirrors like any element (a move in space also
 ![The contour dragged: the neighbouring contours follow with it, fading with the distance](shots/feature-line-drag-after.webp)
 
 Two things follow from how a terrain keeps its points. **Replacing a terrain's survey points wholesale** (**Replace the points…**, or *Change terrain* with new points) drops the rule that the outline is its points, and the heights its arcs' vertices had of their own: the new points are the terrain's points as they come. And **an arc vertex moved in plan through the API** (not by the outline's grips) becomes an ordinary point of the terrain with a height of its own. Feature lines are not touched by either: they stay on the terrain and keep shaping it.
+
+## Hardscape
+
+A **hardscape** is a paved area with a build-up of its own: a plaza, a sidewalk, a terrace, a car park, a platform of gravel. Draw it with **Hardscape** (<kbd>HS</kbd>, in the **Landscape** group of the **Site** tab) on an outline, as a platform: clicks (**Arcs** or <kbd>Space</kbd> for curved edges), a rectangle or a circle. The bar chooses its **type**, whether it is **Cut into the terrain** or **Standalone**, and whether it gets a **Kerb** all round. It starts level at the ground's height in its middle (at 0 with no terrain under it); everything is changed afterwards in its properties, without drawing it again.
+
+![A plaza with a kerb, cut into a sloping survey, in 3D](shots/hardscape-plaza-3d.webp)
+
+**Its type.** A hardscape type is a build-up of layers from the top down, each a material and a thickness, as a floor type is. Lapin comes with a few ready-made ones, marked indicative: **Concrete pavers** (6 cm pavers, 4 cm sand bedding, 20 cm crushed stone), **Asphalt**, **Gravel**, **Grass pavers** and **Stone slabs**; check them against your own build-up. **Edit types…** in the properties (or the type picker) opens **Hardscape types**: change a type's layers, their order and materials, its pavement kind (**Rigid** or **Flexible**, what IFC 4.3 calls it), make a new one, or bring in a ready-made one. Every hardscape of the type follows when it is saved, and an edited type is your own, no longer marked indicative.
+
+![The Hardscape types dialog with the pavers' layers](shots/hardscape-types.webp)
+
+**Its top.** **Top surface** in the properties is one of three:
+
+- **Flat and level**: the whole top at its **Elevation** (±0.00 = 0).
+- **Sloped plane**: a plane falling at a **Slope** (`2 %`, `1:50`, `0.02`) towards a direction (**Falls towards**, in degrees from +x, anticlockwise), its elevation holding at its origin. **Slope arrow** (in the **Landscape** group) sets it by drawing: click the high end, then the low end, over the hardscape, and type the grade.
+- **By its corners**: a height for each corner, typed in the corner table or set with the corners' height grips in 3D. When the corners lie in one plane the top is that plane; when they do not, the top is triangulated between them, and the properties say so.
+
+An edge that is an arc takes the heights of its two corners along its length. The plan writes its level in its middle, or an arrow the way it falls with its grade, or its corners' levels.
+
+![A hardscape's properties: its type, build-up, top, terrain and kerb with its edges](shots/hardscape-properties.webp)
+
+![A sidewalk at a 2 % fall in section: its pavers, bedding and sub-base, its kerb, the ground meeting its edge](shots/hardscape-sidewalk-section.webp)
+
+**On the terrain or standalone.** Cut into a terrain, a hardscape's top edges are the terrain's breaklines, as feature lines are: the ground meets its edges exactly, the survey points under it are left out of the terrain (the terrain says how many), the terrain is cut by its layers and its kerb, and its cut is measured for it in *Lapin_EarthworkQuantities*. Change its top or its outline and the ground follows. The terrain's contours stop at its outline. **Standalone** in the properties takes it out of the terrain (the ground is the survey again); **cut into the terrain** puts it back. A standalone hardscape needs no terrain at all: a sidewalk round a building, a terrace on a slab.
+
+**Its kerb.** Tick **Kerb** in its properties (or in the tool's bar) for a kerb along its edges, outside its outline. It has a shape (**Upright**, **Bevelled**, **Rounded**, or a profile of your own drawn in **Manage → Profiles** with the use **Kerb**: its inner side is laid on the paving's edge, its top the kerb's height above the paving), its height **Above the paving**, a **Width**, its depth **Below the paving** and a material. The **Kerb edges** table switches it on or off edge by edge and drops it: type a reveal in **Dropped to** (`0` at a crossing) and the kerb comes down to that height above the paving along that edge. Kerbs meet mitred where two edges have one and stop square where an edge has none; on a sloped hardscape the kerb follows the top. The kerb is an element of its own (select it to reach its hardscape); it goes with its hardscape when that is deleted.
+
+![The plaza in plan: its paving hatched, its level and its kerb](shots/hardscape-plaza-plan.webp)
+
+**A subregion made a hardscape.** In a terrain's properties, **to hardscape** beside a subregion makes it a hardscape with the same outline and area: a type of the subregion's material over the pavers' bedding and sub-base, its corners on the ground where the subregion lay, cut into the terrain. The subregion goes, in the same undo step. Subregions you do not convert stay what they were.
+
+![A gravel subregion converted to a hardscape](shots/hardscape-converted.webp)
+
+**Editing, quantities and IFC.** In plan its outline has the outline grips (corners, edges, arcs, fillet and chamfer); in 3D its top has height grips. It moves, rotates and mirrors like any element; each change is one undo step. *Lapin_HardscapeQuantities* gives its paved area, top surface area, perimeter, build-up depth and volume, and each layer its area and volume; *Lapin_KerbQuantities* the kerb's length, its dropped length and its volume; the **Hardscape schedule** lists them all. In plan its paving is hatched as its top layer's material looks (its surface graphics, Manage → Materials), and sections cut its layers. To IFC it goes as an *IfcPavement* (IFC 4.3) or an *IfcSlab* named *Pavement* (IFC4) with its layers as an *IfcMaterialLayerSetUsage*, its kerb as an *IfcKerb* (IFC 4.3) or a proxy named *Kerb* (IFC4); a file Lapin wrote comes back as the same hardscape and kerb.
 
 ## Site plans and location plans
 

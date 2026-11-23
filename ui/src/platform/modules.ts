@@ -75,7 +75,8 @@ export const moduleView = (kind: string): ModuleViewDef | null =>
 export const gripsOf = (node: NodeDto, view?: GripView): Grip[] => node.props.pinned === true ? [] : modules.flatMap((m) => m.grips?.[node.type]?.(node, view) ?? []).map((g) => ({ owner: node.id, ...g }));
 /** A selected element's grips in 3D only (Grip3D: heights and faces), none for one pinned. */
 export const grips3dOf = (node: NodeDto): Grip3D[] => node.props.pinned === true ? [] : modules.flatMap((m) => m.grips3d?.[node.type]?.(node) ?? []).map((g) => ({ owner: node.id, ...g }));
-export const referencesOf = (node: NodeDto): RefLine[] => modules.flatMap((m) => m.references?.[node.type]?.(node) ?? []);
+/** The lines drawn over a selected element; `view` names the view they are drawn in (none: the 3D view), as for its grips. */
+export const referencesOf = (node: NodeDto, view?: GripView): RefLine[] => modules.flatMap((m) => m.references?.[node.type]?.(node, view) ?? []);
 export const similarOf = (cls: string) => modules.map((m) => m.similar?.[cls]).find(Boolean) ?? null;
 /**
  * What Create similar does with this element: its class's `similar`, else a module's `similarFor`, else, for an element of a type,

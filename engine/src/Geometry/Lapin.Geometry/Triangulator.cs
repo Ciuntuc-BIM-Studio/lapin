@@ -12,6 +12,8 @@ public static class Triangulator
     static bool InTriangle(Vec2 a, Vec2 b, Vec2 c, Vec2 p) =>
         Cross2(a, b, p) >= 0 && Cross2(b, c, p) >= 0 && Cross2(c, a, p) >= 0;
 
+
+
     static bool Same(Vec2 a, Vec2 b, double tol) => Math.Abs(a.X - b.X) <= tol && Math.Abs(a.Y - b.Y) <= tol;
 
     /// <summary>
@@ -149,7 +151,11 @@ public static class Triangulator
             if (q.X < x0 || q.X > x1 || q.Y < y0 || q.Y > y1) return false;
             Vec2 a = pos[ia], b = pos[ib], c = pos[ic];
             if (Same(q, a, tol) || Same(q, b, tol) || Same(q, c, tol)) return false;
-            return InTriangle(a, b, c, q) && Corner(p) <= tol;
+            if (InTriangle(a, b, c, q)) return Corner(p) <= tol;
+            // A flat corner on the ear's new edge c–a, a hair outside it once projected, blocks it too (else a T-junction).
+            var span = x1 - x0 + (y1 - y0);
+            var eps = 1e-12 * span * span;
+            return Math.Abs(Corner(p)) <= eps && Math.Abs(Cross2(c, a, q)) <= eps && Vec2.Dot(q - c, a - c) > 0 && Vec2.Dot(q - a, c - a) > 0;
         }
 
         bool IsEar(int ib)

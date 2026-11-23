@@ -99,6 +99,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         CorridorCommands.Register(r);
         // Feature lines, the terrain's breaklines as elements of their own; contours drawn and dragged (T2).
         FeatureLines.Register(r);
+        // Hardscapes, their types and kerbs (T4).
+        Hardscapes.Register(r);
 
         // A terrain from points ([x, y, z]) or from a survey file's text (xyz or PENZD).
         r.Command("addTerrain", "Terrain", (ctx, a) =>
@@ -294,13 +296,13 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
     static (Entity E, string Key, string ArcsKey, List<Vec2> Corners, double[]? Rises) OutlineOf(ICommandContext ctx, JsonObject a)
     {
         var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("The element is not in the project.");
-        var (key, arcsKey) = e.Class == IfcClass.EarthworksCut && !Ditches.Is(e) ? ("contour", ArcOutline.Key)
+        var (key, arcsKey) = (e.Class == IfcClass.EarthworksCut && !Ditches.Is(e)) || Hardscapes.Is(e) ? ("contour", ArcOutline.Key)
             : Terrains.IsTerrain(e) ? ("parcel", Terrains.ParcelArcs)
-            : throw new CommandException("Only a platform or a terrain's parcel has its outline's edges bent and its corners rounded here.");
+            : throw new CommandException("Only a platform, a hardscape or a terrain's parcel has its outline's edges bent and its corners rounded here.");
         var corners = ArcOutline.CornersOf(e, key);
         if (corners.Count < 3) throw new CommandException(key == "parcel" ? "The terrain has no parcel." : "The platform has no outline.");
         // One of a platform's own holes (audit S4): {hole: its index}.
-        if (key == "contour" && OutlineHoles.Index(a, e) is { } k) { var h = OutlineHoles.Of(e)[k]; return (e, "hole:" + k, arcsKey, [.. h.Corners], h.Rises); }
+        if (key == "contour" && !Hardscapes.Is(e) && OutlineHoles.Index(a, e) is { } k) { var h = OutlineHoles.Of(e)[k]; return (e, "hole:" + k, arcsKey, [.. h.Corners], h.Rises); }
         return (e, key, arcsKey, corners, ArcOutline.RisesOf(e, key, arcsKey));
     }
 
@@ -314,7 +316,9 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         var attrs = e.CloneAttrs();
         attrs[key] = Terrains.ContourJson(c);
         ArcOutline.Write(attrs, r, arcsKey);
-        if (key == "contour") OutlineHoles.Apply(attrs, new JsonObject());
+        if (key == "contour" && !Hardscapes.Is(e)) OutlineHoles.Apply(attrs, new JsonObject());
+        // A hardscape's corners' own heights follow the corners that stayed (a fillet adds two, a chamfer one: none of their own).
+        if (Hardscapes.Is(e) && attrs["cornerZ"] is JsonArray) attrs.Remove("cornerZ");
         ctx.Replace(e.With(attrs: attrs));
     }
 
@@ -333,6 +337,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             yield return mk;
         }
         var text = Standards.ResolveText(c.Book, new JsonObject());
+        // The hardscapes (T4): their paving hatched as its material's surface looks, their level or their fall written in them.
+        foreach (var mk in HardscapeMarks(c, storey, text)) yield return mk;
         foreach (var e in c.Model.OfClass(IfcClass.GeographicElement))
         {
             // A site plan shows every terrain; any other plan its own storey's.
@@ -491,6 +497,62 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         }
         var last = line[^1] - line[^2];
         return (line[^1], last.Length > 1e-9 ? last.Normalized() : new Vec2(1, 0), total);
+    }
+
+    /// <summary>The layer a hardscape's paving hatch draws on (DXF, the PDF's groups).</summary>
+    public const string HardscapeLayer = "HARDSCAPE-HATCH";
+
+    /// <summary>
+    /// A hardscape in a plan or a site plan: its top layer's material hatched over its outline (the material's surface graphics,
+    /// as a floor finish's in a room; under the model's lines) and, in its middle, its level or, on a plane, an arrow the way it
+    /// falls with its grade. A plan shows its storey's; a site plan every one.
+    /// </summary>
+    static IEnumerable<ViewMark> HardscapeMarks(ViewContext c, string? storey, TextStyle text)
+    {
+        var m = c.Model;
+        var site = SitePlans.Of(c.View) != null;
+        var hidden = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        var graphics = VisibilityGraphics.Of(m, c.View);
+        var patterns = DraftingResources.Patterns(m);
+        var standard = MaterialStandards.Of(m);
+        var minSpacing = ViewStyles.Of(m, c.View).MinHatchSpacing;
+        foreach (var e in m.OfClass(Hardscapes.Class))
+        {
+            if (hidden.Contains(e.Id) || graphics.Hides(e) || (!site && Spatial.StoreyOf(m, e.Id)?.Id != storey) || Hardscapes.Corners(e).Count < 3) continue;
+            var top = Hardscapes.Top(e);
+            var loops = new List<IReadOnlyList<Vec2>> { top.Points };
+            var mk = new ViewMark(null) { Under = true };
+            if (Hardscapes.LayersOf(m, e).FirstOrDefault() is { } layer)
+            {
+                var material = m.Get(layer.Material);
+                var g = Lapin.Drawing.MaterialGraphics.Resolve(material, "elevation", material == null ? layer.Material : null, standard: standard);
+                if (g.Hatch is { } name && Lapin.Drawing.Hatch.HatchLibrary.Find(name, patterns) is { Solid: false } pattern
+                    && Lapin.Drawing.Hatch.HatchScale.Lay(pattern, c.Scale, g.HatchScale, g.HatchAngle, null, 40_000, null, minSpacing) is { } laid)
+                {
+                    var (segs, _) = Lapin.Drawing.Hatch.HatchFill.Segments(loops, pattern, laid);
+                    foreach (var sg in segs) mk.Line(sg.A, sg.B, HardscapeLayer, Pens.Default.Hatch, g.HatchColor ?? "#7a7670");
+                }
+            }
+            if (mk.Lines.Count > 0) yield return mk;
+            var label = new ViewMark(e.Id);
+            var mid = Polygon2.InteriorPoint(top.Points);
+            var spec = TopSurface.Read(e.Attrs, Hardscapes.Corners(e).Count);
+            if (spec.Mode == TopSurface.Plane && Math.Abs(spec.Grade) > 1e-9)
+            {
+                var dir = spec.Grade >= 0 ? spec.Down : -spec.Down;
+                var len = 6.0 * c.Mm;
+                DrawSlopeArrow(label, mid - dir * (len * 0.5), mid + dir * (len * 0.5), c.Mm, $"{Math.Abs(spec.Grade) * 100:0.0} %", text.Height, text.Font);
+                label.Text(new PenText(mid + new Vec2(0, -text.Height * c.Mm * 1.8), Standards.FormatLevel(top.At(mid), c.Book), text.Height * 0.8, 0, "middle", "middle", false, text.Font), "#000000");
+            }
+            else if (top.Planar)
+                label.Text(new PenText(mid, Standards.FormatLevel(top.At(mid), c.Book), text.Height * 0.8, 0, "middle", "middle", false, text.Font), "#000000");
+            else
+                // By its corners: each corner's level beside it.
+                foreach (var i in top.CornerIndex)
+                    label.Text(new PenText(top.Points[i] + (mid - top.Points[i]).Normalized() * (2.5 * c.Mm), Standards.FormatLevel(top.Z[i], c.Book), text.Height * 0.7, 0, "middle", "middle", false, text.Font), "#000000");
+            label.Snaps.Add(mid);
+            yield return label;
+        }
     }
 
     static void DrawSlopeArrow(ViewMark mk, Vec2 a, Vec2 b, double mm, string label, double textHeight, string font)

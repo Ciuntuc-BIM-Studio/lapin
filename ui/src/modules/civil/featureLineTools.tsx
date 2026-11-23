@@ -155,6 +155,7 @@ export const dragContour: ToolDef = {
   options: DragBar,
   gesture: {
     kind: 'twoPoints', drag: true,
+    hint: 'press on a contour and drag it where it should run: the ground follows within the reach · Esc cancels',
     hover: (at, redraw) => { const n = nearAt(at, redraw); return n ? [asLine(n)] : []; },
     body: ({ a, b }) => {
       const n = nearAt(a, grab.redraw);
