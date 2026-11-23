@@ -5376,45 +5376,24 @@ export const DA: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Midlertidigt referencepunkt ved markøren (igen: fjern det)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Start et tegne- eller placeringsværktøj, peg på et sted, og tryk så på denne tast: det næste punkt måles fra det.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Start et værktøj, der placerer efter et anker (Søjle, Dør, Vindue), og tryk så på denne tast for at gennemgå dets ankre.",
-};
-
-const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
-
-/** Phrases with a number or a name in them. */
-/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
-const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
-  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Andenorden: ustabil, lasterne er over de kritiske (αcr < 1)."],
-  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at 1 stang blev slap: intet fastholder knude ${m[1]} (${m[2]}).`],
-  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at ${m[1]} stænger blev slappe: intet fastholder knude ${m[2]} (${m[3]}).`],
-  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at 1 stang blev slap og ${m[1]} understøtning løftede: intet fastholder knude ${m[2]} (${m[3]}).`],
-  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at ${m[1]} stænger blev slappe og ${m[2]} understøtninger løftede: intet fastholder knude ${m[3]} (${m[4]}).`],
-  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme ved knude ${m[1]} (${m[2]}).`],
-  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Énvejsstængerne og understøtningerne konvergerede ikke: de vender tilbage til tilstande, der allerede er prøvet."],
-  [/^Not settled in (\d+) iterations\.$/, (m) => `Ikke konvergeret efter ${m[1]} iterationer.`],
-  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Ingen knækning under disse laster: den geometriske stivhed afstiver kun."],
-  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Ingen knækform: de trykkede stænger holdes af det, der omgiver dem."],
-  [/^A mechanism in its last states\.$/, () => "En mekanisme i de sidste tilstande."],
-];
-function s5msg(text: string): string {
-  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
-  return text;
-}
-
-/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
-function s5dSeg(t: string): string {
-  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
-  if (a) return a[3] ? `φ op til 1/${a[1]} langs ${a[2]} (m = ${a[3]})` : `φ op til 1/${a[1]} langs ${a[2]}`;
-  const b = /^no column along (X|Y)$/.exec(t);
-  return b ? `ingen søjle langs ${b[1]}` : t;
-}
-const S5D_TAILS: Record<string, string> = {
-  'the seismic effects × 1/(1 − θ) there (or second order).': "jordskælvspåvirkningerne × 1/(1 − θ) dér (eller andenorden).",
-  'a second-order analysis is needed there.': "en andenordensberegning er nødvendig dér.",
-  'above 0.3, not allowed: stiffen the structure.': "over 0.3, ikke tilladt: afstiv konstruktionen.",
-  "Exact surfaces": "Eksakte flader",
-  "Studio solids as advanced B-rep on their exact surfaces": "Studio-legemer som avanceret B-rep på deres eksakte flader",
-  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "De Studio-legemer, Lapin kender eksakt (primitiver, ekstruderinger af linjer og buer, omdrejninger, bløde lofts, lukkede SubD'er), skrevet som IfcAdvancedBrep på planer, cylindre, kegler, kugler, tori og B-spline-flader i stedet for facetter; resten som før",
-  "solids for CAD programs, on their exact surfaces where known": "legemer til CAD-programmer, på deres eksakte flader hvor de kendes",
+  // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
+  "follows it": "følger den",
+  "a copy": "en kopi",
+  "its own": "egen",
+  "Link again": "Kobl igen",
+  "Link to an axis…": "Kobl til en akse…",
+  "Link the lining to an axis": "Kobl foringen til en akse",
+  "When that element's axis or red line changes, the lining is rebuilt along it": "Når elementets akse eller røde linje ændres, genopbygges foringen langs den",
+  "Keep the axis as it is now, a copy that no longer follows its source": "Behold aksen, som den er nu, en kopi der ikke længere følger sin kilde",
+  "Follow that element again between the same stations": "Følg elementet igen mellem de samme stationer",
+  "Click a road, a path, a wall or a line where the lining starts, then where it ends; it follows that element from then on": "Klik på en vej, en sti, en mur eller en linje, hvor foringen begynder, og derefter hvor den slutter; derefter følger den elementet",
+  "The lining follows another element's axis with its curves: change them there and the lining follows, or move its points to draw it anew (unlinked).": "Foringen følger et andet elements akse med dens kurver: ret dem dér, så følger foringen med, eller flyt dens punkter for at tegne den på ny (frakoblet).",
+  "Use a hardscape type": "Brug en belægningstype",
+  "Its layers from a hardscape type, shared and edited in one place; off, its own surface and base courses": "Lagene fra en belægningstype, fælles og redigeret ét sted; fra: dens egne slid- og bærelag",
+  "Unlink tunnel lining": "Frakobl tunnelforing",
+  "The element its axis followed was deleted: the lining keeps its last axis, unlinked.": "Elementet, hvis akse den fulgte, blev slettet: foringen beholder sin sidste akse, frakoblet.",
+  "Its axis was edited on the lining itself: it keeps that axis, unlinked.": "Dens akse blev redigeret på selve foringen: den beholder den akse, frakoblet.",
+  "The lining is not linked to an axis.": "Foringen er ikke koblet til en akse.",
   // The tunnel lining (docs/plan-wing-walls.md, S4)
   "Tunnel lining": "Tunnelforing",
   "Tunnel lining…": "Tunnelforing…",
@@ -5578,6 +5557,45 @@ const S5D_TAILS: Record<string, string> = {
   "Formwork, footing": "Forskalling, fundament",
   "Change retaining wall segment": "Ret støttemurens strækning",
   "Stem": "Væg",
+};
+
+const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
+
+/** Phrases with a number or a name in them. */
+/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
+const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Andenorden: ustabil, lasterne er over de kritiske (αcr < 1)."],
+  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at 1 stang blev slap: intet fastholder knude ${m[1]} (${m[2]}).`],
+  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at ${m[1]} stænger blev slappe: intet fastholder knude ${m[2]} (${m[3]}).`],
+  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at 1 stang blev slap og ${m[1]} understøtning løftede: intet fastholder knude ${m[2]} (${m[3]}).`],
+  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme, efter at ${m[1]} stænger blev slappe og ${m[2]} understøtninger løftede: intet fastholder knude ${m[3]} (${m[4]}).`],
+  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `En mekanisme ved knude ${m[1]} (${m[2]}).`],
+  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Énvejsstængerne og understøtningerne konvergerede ikke: de vender tilbage til tilstande, der allerede er prøvet."],
+  [/^Not settled in (\d+) iterations\.$/, (m) => `Ikke konvergeret efter ${m[1]} iterationer.`],
+  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Ingen knækning under disse laster: den geometriske stivhed afstiver kun."],
+  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Ingen knækform: de trykkede stænger holdes af det, der omgiver dem."],
+  [/^A mechanism in its last states\.$/, () => "En mekanisme i de sidste tilstande."],
+];
+function s5msg(text: string): string {
+  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
+  return text;
+}
+
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ op til 1/${a[1]} langs ${a[2]} (m = ${a[3]})` : `φ op til 1/${a[1]} langs ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `ingen søjle langs ${b[1]}` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "jordskælvspåvirkningerne × 1/(1 − θ) dér (eller andenorden).",
+  'a second-order analysis is needed there.': "en andenordensberegning er nødvendig dér.",
+  'above 0.3, not allowed: stiffen the structure.': "over 0.3, ikke tilladt: afstiv konstruktionen.",
+  "Exact surfaces": "Eksakte flader",
+  "Studio solids as advanced B-rep on their exact surfaces": "Studio-legemer som avanceret B-rep på deres eksakte flader",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "De Studio-legemer, Lapin kender eksakt (primitiver, ekstruderinger af linjer og buer, omdrejninger, bløde lofts, lukkede SubD'er), skrevet som IfcAdvancedBrep på planer, cylindre, kegler, kugler, tori og B-spline-flader i stedet for facetter; resten som før",
+  "solids for CAD programs, on their exact surfaces where known": "legemer til CAD-programmer, på deres eksakte flader hvor de kendes",
 };
 export const DA_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ
@@ -6005,4 +6023,8 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} samples · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `Billede ${m[1]} × ${m[2]}: ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `Billedet kunne ikke laves: ${m[1]}`],
+  // A tunnel lining linked to its axis's source (23.11.2026)
+  [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” har ingen akse nu: foringen beholder sin sidste akse, frakoblet.`],
+  [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” løber ikke længere en meter mellem foringens stationer: den beholder sin sidste akse, frakoblet.`],
+  [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” er kortere nu: foringen løber fra ${m[2]} til ${m[3]} m, ikke ${m[4]} til ${m[5]} m som koblet.`],
 ];

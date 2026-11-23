@@ -30,7 +30,7 @@ import { EntourageSection, entourage, entourageRow, useEntouragePrefs } from './
 import { lazyPart } from '../../platform/lazyPart';
 import { HardscapeSection, KerbSection, hardscape, hardscapeGrips, hardscapeGrips3d, hardscapeRefs, hardscapeSlope, similarHardscape, useHardscapeTypeEdit } from './hardscapeTools';
 import { drawPortalPath, openPortal, placePortal, placePortalOnRoad } from './portalTools';
-import { drawTunnelAxis, openTunnel, placeTunnelOnAxis } from './tunnelTools';
+import { drawTunnelAxis, linkTunnelToAxis, openTunnel, placeTunnelOnAxis } from './tunnelTools';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const BrushDialog = lazyPart(() => import('./BrushDialog').then((m) => m.BrushDialog), { title: 'Terrain brush' });
@@ -475,7 +475,7 @@ const civil: LapinModule = {
   name: 'Civil',
   summary: 'The terrain from survey points or flat, its contours, the brush that works it, platforms and ditches with their cut and fill, paths, retaining walls, plantings, people and cars.',
   // The old Road tool: the Path tool, set to Road.
-  legacyTools: [road, placePortal, placePortalOnRoad, drawPortalPath, placeTunnelOnAxis, drawTunnelAxis],
+  legacyTools: [road, placePortal, placePortalOnRoad, drawPortalPath, placeTunnelOnAxis, drawTunnelAxis, linkTunnelToAxis],
   // Create similar: the tool that made the element, set as it was (a road's template, a zone or a single plant, the entourage's kind).
   similar: {
     IfcEarthworksCut: (n) => activate(n.props.contour ? platform : ditch),

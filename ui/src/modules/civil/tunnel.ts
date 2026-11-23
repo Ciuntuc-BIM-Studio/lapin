@@ -30,8 +30,13 @@ export function isRings(spec: PortalSpec): boolean {
   return spec.preset === 'circular' && !(typeof spec.profileId === 'string' && spec.profileId);
 }
 
-/** Where a lining's axis came from: the element and its two stations, when it was taken from one. */
-export function axisSourceOf(props: Record<string, unknown>): { id: string; from: number; to: number } | null {
-  const s = props.axisSource as { id?: unknown; from?: unknown; to?: unknown } | undefined;
-  return s && typeof s.id === 'string' && typeof s.from === 'number' && typeof s.to === 'number' ? { id: s.id, from: s.from, to: s.to } : null;
+/**
+ * Where a lining's axis came from: the element and its two stations, when it was taken from one; whether it follows that element
+ * (linked) or is a copy of it (unlinked, or made before linings could follow), and what its link says of itself (a note).
+ */
+export function axisSourceOf(props: Record<string, unknown>): { id: string; from: number; to: number; linked: boolean; note: string | null } | null {
+  const s = props.axisSource as { id?: unknown; from?: unknown; to?: unknown; linked?: unknown; note?: unknown } | undefined;
+  return s && typeof s.id === 'string' && typeof s.from === 'number' && typeof s.to === 'number'
+    ? { id: s.id, from: s.from, to: s.to, linked: s.linked === true, note: typeof s.note === 'string' ? s.note : null }
+    : null;
 }

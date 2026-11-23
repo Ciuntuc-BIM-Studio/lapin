@@ -28,7 +28,7 @@ namespace Lapin.Civil;
 /// plumb; the road's crossfall inside it is its own.
 /// </para>
 /// </summary>
-public static class Tunnels
+public static partial class Tunnels
 {
     public const string Class = "LapinTunnelLining";
     public const string Key = "lining";
@@ -256,6 +256,7 @@ public static class Tunnels
         var built = new Built { Chain = c, Grade = g, Values = v, Section = section, Rings = rings };
         built.Notes.AddRange(section.Problems);
         if (c.Problem != null) built.Notes.Add(c.Problem);
+        if (AxisNote(e) is { } axisNote) built.Notes.Add(axisNote);
         if (c.Segments == 0 || c.Length < 0.05) { built.Notes.Add("The lining's axis has no length."); return built; }
         var box = section.Outside.Box();
         var xMax = Math.Max(Math.Abs(box.MinX), Math.Abs(box.MaxX));
@@ -754,57 +755,36 @@ public static class Tunnels
     static JsonObject AxisAttrs(IModelView m, JsonObject a, double fallbackZ, out JsonObject? source)
     {
         source = null;
-        var corridor = CorridorSpec.Default.ToJson();
-        corridor["interval"] = 20.0;
-        var attrs = new JsonObject();
         if (a["axis"] is JsonObject ax)
         {
             var host = m.Get((string?)ax["id"] ?? "") ?? throw new CommandException("There is no such axis to follow.");
             var hc = HostChain(host) ?? throw new CommandException("The element picked has no axis to follow.");
-            var s0 = Math.Clamp(StationArg(hc, ax["from"], hc.Start), hc.Start, hc.End);
-            var s1 = Math.Clamp(StationArg(hc, ax["to"], hc.End), hc.Start, hc.End);
-            if (s1 < s0) (s0, s1) = (s1, s0);
-            if (s1 - s0 < 1) throw new CommandException("The lining runs one metre at least between its two stations.");
-            var (path, segments) = Clip(hc, s0, s1);
-            attrs["path"] = Terrains.ContourJson(path);
-            corridor["stationStart"] = s0;
-            if (segments != null) corridor["horizontal"] = AlignmentJson.Horizontal(segments);
-            // The red line: the host's designed one as it is (its PVIs by station), else its own line under the axis fitted to PVIs.
-            var hs = Corridors.Is(host) ? CorridorSpec.Of(host) : null;
-            List<Pvi> pvis;
-            if (hs is { Mode: "design" } && hs.Pvis.Count >= 2 && VerticalProfile.Problem(hs.Pvis) == null) pvis = [.. hs.Pvis];
-            else if (hs != null)
-            {
-                var red = Corridors.RedLine(m, host, hc);
-                pvis = VerticalProfile.FromGround(s0, s1, s => red(s), fallbackZ, 5, 0.02);
-            }
-            else
-            {
-                var z = Json.Number(a["level"]) ?? fallbackZ;
-                pvis = [new Pvi(s0, z), new Pvi(s1, z)];
-            }
-            corridor["profile"] = new JsonObject { ["mode"] = "design", ["ground"] = "proposed", ["pvis"] = new JsonArray([.. pvis.Select(p => (JsonNode)new JsonArray(p.Station, p.Elevation, p.Length))]) };
+            var level = Json.Number(a["level"]) ?? fallbackZ;
+            var (taken, s0, s1) = TakeFrom(m, host, hc, StationArg(hc, ax["from"], hc.Start), StationArg(hc, ax["to"], hc.End), level, fallbackZ);
             source = new JsonObject { ["id"] = host.Id, ["from"] = s0, ["to"] = s1 };
+            // A level of its own only for an element with no red line (a wall's foot, a drafted line): what it is taken at again when it follows.
+            if (!Corridors.Is(host)) source["level"] = level;
+            return taken;
         }
-        else
+        var corridor = CorridorSpec.Default.ToJson();
+        corridor["interval"] = 20.0;
+        var attrs = new JsonObject();
+        var pts = Args.StoredPoints(a["points"] as JsonArray);
+        if (pts is not { Count: >= 2 }) throw new CommandException("A lining needs its axis: two points at least, or an axis picked and two stations on it.");
+        var (clean, _) = Chain.Clean(pts, null);
+        if (clean.Count < 2) throw new CommandException("A lining needs its axis: two different points.");
+        attrs["path"] = Terrains.ContourJson(clean);
+        if (a["curves"] is JsonArray cv)
         {
-            var pts = Args.StoredPoints(a["points"] as JsonArray);
-            if (pts is not { Count: >= 2 }) throw new CommandException("A lining needs its axis: two points at least, or an axis picked and two stations on it.");
-            var (clean, _) = Chain.Clean(pts, null);
-            if (clean.Count < 2) throw new CommandException("A lining needs its axis: two different points.");
-            attrs["path"] = Terrains.ContourJson(clean);
-            if (a["curves"] is JsonArray cv)
-            {
-                var curves = CorridorSpec.ReadCurves(cv);
-                var (path, kept) = Chain.Clean(clean, curves);
-                if (kept.Any(k => !k.IsCorner) && PiAlignment.Problem(PiAlignment.Of(path, kept)) is { } why) throw new CommandException(why);
-                corridor["curves"] = CorridorSpec.CurvesJson(curves);
-            }
-            var c = new Chain(clean, CorridorSpec.ReadCurves(corridor["curves"]), 0);
-            var z0 = Json.Number(a["level"]) ?? fallbackZ;
-            var z1 = Json.Number(a["levelEnd"]) ?? z0;
-            corridor["profile"] = new JsonObject { ["mode"] = "design", ["ground"] = "proposed", ["pvis"] = new JsonArray(new JsonArray(c.Start, z0, 0), new JsonArray(c.End, z1, 0)) };
+            var curves = CorridorSpec.ReadCurves(cv);
+            var (path, kept) = Chain.Clean(clean, curves);
+            if (kept.Any(k => !k.IsCorner) && PiAlignment.Problem(PiAlignment.Of(path, kept)) is { } why) throw new CommandException(why);
+            corridor["curves"] = CorridorSpec.CurvesJson(curves);
         }
+        var c = new Chain(clean, CorridorSpec.ReadCurves(corridor["curves"]), 0);
+        var z0 = Json.Number(a["level"]) ?? fallbackZ;
+        var z1 = Json.Number(a["levelEnd"]) ?? z0;
+        corridor["profile"] = new JsonObject { ["mode"] = "design", ["ground"] = "proposed", ["pvis"] = new JsonArray(new JsonArray(c.Start, z0, 0), new JsonArray(c.End, z1, 0)) };
         attrs["corridor"] = corridor;
         return attrs;
     }
@@ -817,13 +797,14 @@ public static class Tunnels
         // A corridor kind: the corridor configurator's stations, red line and sections are the lining's too.
         CorridorKinds.All = [.. CorridorKinds.All.Where(k => k is not TunnelKind), new TunnelKind()];
 
-        // A lining on an axis: taken between two stations of an element picked ({axis: {id, from, to}}: stations or points), or drawn ({points, curves, level}).
+        // A lining on an axis: taken between two stations of an element picked ({axis: {id, from, to}}: stations or points; linked to
+        // it, following it, unless linked: false), or drawn ({points, curves, level}).
         r.Command("addTunnelLining", "Tunnel lining", (ctx, a) =>
         {
             var storey = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id;
             var fallback = storey != null && ctx.Model.Get(storey) is { } st ? st.Num("elevation") : 0.0;
             var attrs = AxisAttrs(ctx.Model, a, fallback, out var source);
-            if (source != null) attrs["axisSource"] = source;
+            if (source != null) attrs["axisSource"] = Linked(source, a);
             var raw = (a["spec"] as JsonObject)?.DeepClone() as JsonObject ?? [];
             Apply(ctx, attrs, raw);
             foreach (var k in new[] { "skewStart", "skewEnd" }) if (Json.Number(a[k]) is { } sk) attrs[k] = Math.Clamp(sk, -60, 60);
@@ -834,7 +815,8 @@ public static class Tunnels
             return new JsonObject { ["id"] = e.Id };
         });
 
-        // The configurator again on a lining: its section, blocks and IFC rebuilt in place (its GlobalIds kept); its ends' skew; its axis taken again.
+        // The configurator again on a lining: its section, blocks and IFC rebuilt in place (its GlobalIds kept); its ends' skew; its axis
+        // taken again ({axis}: linked to it from now on, unless linked: false).
         r.Command("updateTunnelLining", "Change tunnel lining", (ctx, a) =>
         {
             var e = Spatial.Require(ctx.Model, (string?)a["id"], Class);
@@ -861,7 +843,7 @@ public static class Tunnels
                 foreach (var (k, val) in axis) attrs[k] = val?.DeepClone();
                 // The stations ticked and the sections chosen stay.
                 if (attrs["corridor"] is JsonObject cor) { cor["interval"] = keep["interval"]?.DeepClone(); cor["sections"] = keep["sections"]?.DeepClone(); }
-                if (source != null) attrs["axisSource"] = source; else attrs.Remove("axisSource");
+                if (source != null) attrs["axisSource"] = Linked(source, a); else attrs.Remove("axisSource");
             }
             var raw = (a["spec"] as JsonObject)?.DeepClone() as JsonObject ?? (e.Attrs[Key]?.DeepClone() as JsonObject) ?? [];
             Apply(ctx, attrs, raw);
@@ -925,6 +907,7 @@ public static class Tunnels
                 ["sectionArea"] = Math.Round(s.Outer.Area - s.Inner.Area, 6), ["clearArea"] = Math.Round(s.Inner.Area, 6),
             };
         });
+        RegisterLinks(r);
         r.Service<ITypePreview>(new TunnelPreview());
         r.Service<IViewAnnotations>(new TunnelMarks());
         r.Service<IIfcExactBodies>(new TunnelExactBodies());

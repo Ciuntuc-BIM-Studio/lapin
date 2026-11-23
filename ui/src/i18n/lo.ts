@@ -5435,43 +5435,24 @@ export const LO: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "ຈຸດອ້າງອີງຊົ່ວຄາວທີ່ເຄີເຊີ (ອີກຄັ້ງ: ປ່ອຍມັນ)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "ເລີ່ມເຄື່ອງມືແຕ້ມ ຫຼື ວາງ, ຊີ້ໄປທີ່ຈຸດໜຶ່ງ, ແລ້ວກົດປຸ່ມນີ້: ຈຸດຖັດໄປຈະວັດຈາກມັນ.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "ເລີ່ມເຄື່ອງມືທີ່ວາງຕາມຈຸດຢຶດ (ເສົາ, ປະຕູ, ປ່ອງຢ້ຽມ), ແລ້ວກົດປຸ່ມນີ້ເພື່ອໄລ່ຜ່ານຈຸດຢຶດຂອງມັນ.",
-};
-
-/** Phrases with a number or a name in them. */
-/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
-const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
-  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "ອັນດັບສອງ: ບໍ່ໝັ້ນຄົງ, ນ້ຳໜັກເກີນຄ່າວິກິດແລ້ວ (αcr < 1)."],
-  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ 1 ທ່ອນຫຼຸດ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[1]} (${m[2]}).`],
-  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ ${m[1]} ທ່ອນຫຼຸດ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[2]} (${m[3]}).`],
-  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ 1 ທ່ອນຫຼຸດ ແລະ ${m[1]} ຈຸດຮອງຮັບຍົກ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[2]} (${m[3]}).`],
-  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ ${m[1]} ທ່ອນຫຼຸດ ແລະ ${m[2]} ຈຸດຮອງຮັບຍົກ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[3]} (${m[4]}).`],
-  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກທີ່ຈຸດຕໍ່ ${m[1]} (${m[2]}).`],
-  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "ທ່ອນທິດທາງດຽວ ແລະ ຈຸດຮອງຮັບບໍ່ລູ່ເຂົ້າ: ພວກມັນກັບໄປຫາສະຖານະທີ່ລອງແລ້ວ."],
-  [/^Not settled in (\d+) iterations\.$/, (m) => `ບໍ່ລູ່ເຂົ້າໃນ ${m[1]} ຮອບຊ້ຳ.`],
-  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "ບໍ່ມີການໂກ່ງງໍພາຍໃຕ້ນ້ຳໜັກເຫຼົ່ານີ້: ຄວາມແຂງເລຂາຄະນິດພຽງແຕ່ເພີ່ມຄວາມແຂງ."],
-  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "ບໍ່ມີໂໝດການໂກ່ງງໍ: ແທ່ງທີ່ຖືກອັດຖືກຍຶດດ້ວຍສິ່ງອ້ອມຂ້າງ."],
-  [/^A mechanism in its last states\.$/, () => "ເປັນກົນໄກໃນສະຖານະສຸດທ້າຍຂອງມັນ."],
-];
-function s5msg(text: string): string {
-  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
-  return text;
-}
-
-/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
-function s5dSeg(t: string): string {
-  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
-  if (a) return a[3] ? `φ ຮອດ 1/${a[1]} ຕາມ ${a[2]} (m = ${a[3]})` : `φ ຮອດ 1/${a[1]} ຕາມ ${a[2]}`;
-  const b = /^no column along (X|Y)$/.exec(t);
-  return b ? `ບໍ່ມີເສົາຕາມ ${b[1]}` : t;
-}
-const S5D_TAILS: Record<string, string> = {
-  'the seismic effects × 1/(1 − θ) there (or second order).': "ຜົນແຜ່ນດິນໄຫວ × 1/(1 − θ) ບ່ອນນັ້ນ (ຫຼື ອັນດັບສອງ).",
-  'a second-order analysis is needed there.': "ບ່ອນນັ້ນຕ້ອງວິເຄາະອັນດັບສອງ.",
-  'above 0.3, not allowed: stiffen the structure.': "ເກີນ 0.3, ບໍ່ອະນຸຍາດ: ເສີມຄວາມແຂງຂອງໂຄງສ້າງ.",
-  "Exact surfaces": "ພື້ນຜິວທີ່ແນ່ນອນ",
-  "Studio solids as advanced B-rep on their exact surfaces": "ຮູບທຣົງຕັນຂອງ Studio ເປັນ B-rep ຂັ້ນສູງເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນ",
-  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "ຮູບທຣົງຕັນຂອງ Studio ທີ່ Lapin ຮູ້ຢ່າງແນ່ນອນ (ຮູບພື້ນຖານ, ການດຶງອອກຈາກເສັ້ນ ແລະ ເສັ້ນໂຄ້ງ, ການໝູນ, loft ລຽບ, SubD ປິດ) ຂຽນເປັນ IfcAdvancedBrep ເທິງລະນາບ, ທໍ່ກົມ, ກວຍ, ຮູບກົມ, ຮູບວົງແຫວນ ແລະ ພື້ນຜິວ B-spline ແທນເຫຼີ່ຍມ; ສ່ວນທີ່ເຫຼືອຄືເກົ່າ",
-  "solids for CAD programs, on their exact surfaces where known": "ຮູບທຣົງຕັນສຳລັບໂປຣແກຣມ CAD, ເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນບ່ອນທີ່ຮູ້",
+  // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
+  "follows it": "ຕາມມັນ",
+  "a copy": "ສຳເນົາ",
+  "its own": "ຂອງຕົນເອງ",
+  "Link again": "ເຊື່ອມອີກຄັ້ງ",
+  "Link to an axis…": "ເຊື່ອມກັບແກນ…",
+  "Link the lining to an axis": "ເຊື່ອມແຜ່ນບຸກັບແກນ",
+  "When that element's axis or red line changes, the lining is rebuilt along it": "ເມື່ອແກນ ຫຼື ເສັ້ນແດງຂອງອົງປະກອບນັ້ນປ່ຽນ, ແຜ່ນບຸຈະຖືກສ້າງໃໝ່ຕາມມັນ",
+  "Keep the axis as it is now, a copy that no longer follows its source": "ຮັກສາແກນໄວ້ຄືດຽວນີ້, ເປັນສຳເນົາທີ່ບໍ່ຕາມແຫຼ່ງຂອງມັນອີກ",
+  "Follow that element again between the same stations": "ຕາມອົງປະກອບນັ້ນອີກຄັ້ງລະຫວ່າງສະຖານີເກົ່າ",
+  "Click a road, a path, a wall or a line where the lining starts, then where it ends; it follows that element from then on": "ຄລິກຖະໜົນ, ທາງຍ່າງ, ກຳແພງ ຫຼື ເສັ້ນບ່ອນແຜ່ນບຸເລີ່ມ, ແລ້ວບ່ອນມັນສິ້ນສຸດ; ຈາກນັ້ນມັນຕາມອົງປະກອບນັ້ນ",
+  "The lining follows another element's axis with its curves: change them there and the lining follows, or move its points to draw it anew (unlinked).": "ແຜ່ນບຸຕາມແກນຂອງອົງປະກອບອື່ນພ້ອມເສັ້ນໂຄ້ງ: ປ່ຽນພວກມັນຢູ່ທີ່ນັ້ນ ແລ້ວແຜ່ນບຸຈະຕາມ, ຫຼື ຍ້າຍຈຸດຂອງມັນເພື່ອແຕ້ມໃໝ່ (ຍົກເລີກການເຊື່ອມ).",
+  "Use a hardscape type": "ໃຊ້ປະເພດພື້ນປູ",
+  "Its layers from a hardscape type, shared and edited in one place; off, its own surface and base courses": "ຊັ້ນຂອງມັນຈາກປະເພດພື້ນປູ, ໃຊ້ຮ່ວມກັນ ແລະ ແກ້ໄຂບ່ອນດຽວ; ປິດ: ຊັ້ນໜ້າ ແລະ ຊັ້ນພື້ນຂອງຕົນເອງ",
+  "Unlink tunnel lining": "ຍົກເລີກການເຊື່ອມແຜ່ນບຸອຸໂມງ",
+  "The element its axis followed was deleted: the lining keeps its last axis, unlinked.": "ອົງປະກອບທີ່ແກນຂອງມັນຕາມຖືກລຶບແລ້ວ: ແຜ່ນບຸຮັກສາແກນສຸດທ້າຍໄວ້, ບໍ່ເຊື່ອມ.",
+  "Its axis was edited on the lining itself: it keeps that axis, unlinked.": "ແກນຂອງມັນຖືກແກ້ໄຂຢູ່ແຜ່ນບຸເອງ: ມັນຮັກສາແກນນັ້ນໄວ້, ບໍ່ເຊື່ອມ.",
+  "The lining is not linked to an axis.": "ແຜ່ນບຸບໍ່ໄດ້ເຊື່ອມກັບແກນໃດ.",
   // The tunnel lining (docs/plan-wing-walls.md, S4)
   "Tunnel lining": "ແຜ່ນບຸຜະໜັງອຸໂມງ",
   "Tunnel lining…": "ແຜ່ນບຸຜະໜັງອຸໂມງ…",
@@ -5635,6 +5616,43 @@ const S5D_TAILS: Record<string, string> = {
   "Formwork, footing": "ແບບຫຼໍ່, ຖານຮາກ",
   "Change retaining wall segment": "ປ່ຽນທ່ອນຂອງກຳແພງກັນດິນ",
   "Stem": "ລຳຕົວຝາ",
+};
+
+/** Phrases with a number or a name in them. */
+/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
+const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "ອັນດັບສອງ: ບໍ່ໝັ້ນຄົງ, ນ້ຳໜັກເກີນຄ່າວິກິດແລ້ວ (αcr < 1)."],
+  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ 1 ທ່ອນຫຼຸດ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[1]} (${m[2]}).`],
+  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ ${m[1]} ທ່ອນຫຼຸດ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[2]} (${m[3]}).`],
+  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ 1 ທ່ອນຫຼຸດ ແລະ ${m[1]} ຈຸດຮອງຮັບຍົກ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[2]} (${m[3]}).`],
+  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກເມື່ອ ${m[1]} ທ່ອນຫຼຸດ ແລະ ${m[2]} ຈຸດຮອງຮັບຍົກ: ບໍ່ມີຫຍັງຍຶດຈຸດຕໍ່ ${m[3]} (${m[4]}).`],
+  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `ເປັນກົນໄກທີ່ຈຸດຕໍ່ ${m[1]} (${m[2]}).`],
+  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "ທ່ອນທິດທາງດຽວ ແລະ ຈຸດຮອງຮັບບໍ່ລູ່ເຂົ້າ: ພວກມັນກັບໄປຫາສະຖານະທີ່ລອງແລ້ວ."],
+  [/^Not settled in (\d+) iterations\.$/, (m) => `ບໍ່ລູ່ເຂົ້າໃນ ${m[1]} ຮອບຊ້ຳ.`],
+  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "ບໍ່ມີການໂກ່ງງໍພາຍໃຕ້ນ້ຳໜັກເຫຼົ່ານີ້: ຄວາມແຂງເລຂາຄະນິດພຽງແຕ່ເພີ່ມຄວາມແຂງ."],
+  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "ບໍ່ມີໂໝດການໂກ່ງງໍ: ແທ່ງທີ່ຖືກອັດຖືກຍຶດດ້ວຍສິ່ງອ້ອມຂ້າງ."],
+  [/^A mechanism in its last states\.$/, () => "ເປັນກົນໄກໃນສະຖານະສຸດທ້າຍຂອງມັນ."],
+];
+function s5msg(text: string): string {
+  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
+  return text;
+}
+
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ ຮອດ 1/${a[1]} ຕາມ ${a[2]} (m = ${a[3]})` : `φ ຮອດ 1/${a[1]} ຕາມ ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `ບໍ່ມີເສົາຕາມ ${b[1]}` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "ຜົນແຜ່ນດິນໄຫວ × 1/(1 − θ) ບ່ອນນັ້ນ (ຫຼື ອັນດັບສອງ).",
+  'a second-order analysis is needed there.': "ບ່ອນນັ້ນຕ້ອງວິເຄາະອັນດັບສອງ.",
+  'above 0.3, not allowed: stiffen the structure.': "ເກີນ 0.3, ບໍ່ອະນຸຍາດ: ເສີມຄວາມແຂງຂອງໂຄງສ້າງ.",
+  "Exact surfaces": "ພື້ນຜິວທີ່ແນ່ນອນ",
+  "Studio solids as advanced B-rep on their exact surfaces": "ຮູບທຣົງຕັນຂອງ Studio ເປັນ B-rep ຂັ້ນສູງເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນ",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "ຮູບທຣົງຕັນຂອງ Studio ທີ່ Lapin ຮູ້ຢ່າງແນ່ນອນ (ຮູບພື້ນຖານ, ການດຶງອອກຈາກເສັ້ນ ແລະ ເສັ້ນໂຄ້ງ, ການໝູນ, loft ລຽບ, SubD ປິດ) ຂຽນເປັນ IfcAdvancedBrep ເທິງລະນາບ, ທໍ່ກົມ, ກວຍ, ຮູບກົມ, ຮູບວົງແຫວນ ແລະ ພື້ນຜິວ B-spline ແທນເຫຼີ່ຍມ; ສ່ວນທີ່ເຫຼືອຄືເກົ່າ",
+  "solids for CAD programs, on their exact surfaces where known": "ຮູບທຣົງຕັນສຳລັບໂປຣແກຣມ CAD, ເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນບ່ອນທີ່ຮູ້",
 };
 export const LO_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ
@@ -6062,4 +6080,8 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} ຕົວຢ່າງ · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `ຮູບ ${m[1]} × ${m[2]}: ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `ບໍ່ສາມາດສ້າງຮູບໄດ້: ${m[1]}`],
+  // A tunnel lining linked to its axis's source (23.11.2026)
+  [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” ບໍ່ມີແກນແລ້ວ: ແຜ່ນບຸຮັກສາແກນສຸດທ້າຍໄວ້, ບໍ່ເຊື່ອມ.`],
+  [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” ບໍ່ຍາວຮອດໜຶ່ງແມັດລະຫວ່າງສະຖານີຂອງແຜ່ນບຸອີກແລ້ວ: ມັນຮັກສາແກນສຸດທ້າຍໄວ້, ບໍ່ເຊື່ອມ.`],
+  [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” ສັ້ນລົງແລ້ວ: ແຜ່ນບຸແລ່ນຈາກ ${m[2]} ຫາ ${m[3]} m, ບໍ່ແມ່ນ ${m[4]} ຫາ ${m[5]} m ຕາມທີ່ເຊື່ອມ.`],
 ];

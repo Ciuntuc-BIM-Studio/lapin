@@ -41,6 +41,9 @@ public static class Paths
     /// </summary>
     public sealed record Template(string Kind, double Width, double Crossfall, string Fall, double Surface, double Base, Side L, Side R)
     {
+        /// <summary>The build-up of the hardscape type the path uses (<see cref="PathTypes"/>), top down, in place of its own two courses; null when it keeps its own.</summary>
+        public IReadOnlyList<MaterialLayer>? Layers { get; init; }
+
         public double Half => Width / 2;
         public double Left => Half + L.Extent;
         public double Right => Half + R.Extent;
@@ -58,13 +61,18 @@ public static class Paths
             Math.Max(0.3, N("sidewalkWidth", 1.5)), Math.Max(0.02, N("sidewalkThickness", 0.1)));
     }
 
-    public static Template TemplateOf(Entity e)
+    /// <summary>The path's cross-section; with the model, the layers of the hardscape type it uses in place of its own courses (<see cref="PathTypes"/>).</summary>
+    public static Template TemplateOf(Entity e, IModelView? m = null)
     {
         var c = Of(e);
         var road = e.Str("template") == "road";
         var width = road ? 2 * Math.Max(1, e.Num("laneWidth", 3)) : c.Width;
         var fall = e.Str("fall") is "crown" or "left" or "right" ? e.Str("fall")! : road ? "crown" : "right";
-        return new(road ? "road" : "alley", width, Math.Clamp(e.Num("crossfall", road ? 2.5 : 0), 0, 20) / 100, fall, c.Surface, c.Base, SideOf(e, "left", c), SideOf(e, "right", c));
+        var layers = m != null ? PathTypes.LayersOf(m, e) : null;
+        return new(road ? "road" : "alley", width, Math.Clamp(e.Num("crossfall", road ? 2.5 : 0), 0, 20) / 100, fall, c.Surface, c.Base, SideOf(e, "left", c), SideOf(e, "right", c))
+        {
+            Layers = layers is { Count: > 0 } ? layers : null,
+        };
     }
 
     /// <summary>The cross-section at a station whose red line (the carriageway's top on the axis) is <paramref name="z0"/>: its parts as (offset, elevation) polygons.</summary>
@@ -76,8 +84,22 @@ public static class Paths
         List<Vec2> Strip(double down, double thick) =>
             [.. across.Select(o => new Vec2(o, Top(o) - down)), .. across.Reverse().Select(o => new Vec2(o, Top(o) - down - thick))];
         var parts = new List<SectionPart>();
-        if (t.Surface > 0) parts.Add(new("surface", Strip(0, t.Surface)));
-        if (t.Base > 0) parts.Add(new("base", Strip(t.Surface, t.Base)));
+        if (t.Layers is { } layers)
+        {
+            // A hardscape type's build-up: each layer under the one above it, keyed by its place in the set.
+            var down = 0.0;
+            for (var i = 0; i < layers.Count; i++)
+            {
+                var th = Math.Max(0, layers[i].Thickness);
+                if (th > 0) parts.Add(new(PathTypes.LayerKey(i), Strip(down, th)));
+                down += th;
+            }
+        }
+        else
+        {
+            if (t.Surface > 0) parts.Add(new("surface", Strip(0, t.Surface)));
+            if (t.Base > 0) parts.Add(new("base", Strip(t.Surface, t.Base)));
+        }
         foreach (var (side, sign) in new[] { (t.L, 1.0), (t.R, -1.0) })
         {
             var e = sign * h;
@@ -112,7 +134,7 @@ public static class Paths
     {
         var c = Corridors.ChainOf(e);
         if (c.Segments == 0) return [];
-        var t = TemplateOf(e);
+        var t = TemplateOf(e, m);
         var red = Corridors.RedLine(m, e, c);
         return Corridors.Sweep(c, Corridors.Runs(c, CorridorSpec.Of(e)), (s, _) => SectionAt(t, red(s)), 2.0);
     }
@@ -127,7 +149,7 @@ public static class Paths
         var c = Corridors.ChainOf(e);
         var o = new List<Solid>();
         if (c.Segments == 0) return o;
-        var t = TemplateOf(e);
+        var t = TemplateOf(e, m);
         var red = Corridors.RedLine(m, e, c);
         foreach (var (from, to) in Corridors.Runs(c, CorridorSpec.Of(e)))
             for (var seg = 0; seg < c.Segments; seg++)
@@ -170,13 +192,18 @@ public static class Paths
         var solids = Solids(m, e);
         var parts = new List<GeometryPart>();
         var sm = e.Str("surfaceMaterial"); var bm = e.Str("baseMaterial");
+        // A hardscape type's layers first, top down, each in its material.
+        if (PathTypes.LayersOf(m, e) is { Count: > 0 } layers)
+            for (var i = 0; i < layers.Count; i++)
+                if (solids.TryGetValue(PathTypes.LayerKey(i), out var ls) && ls.Count > 0)
+                    parts.Add(new GeometryPart(PathTypes.LayerName(m, layers, i), Materials.ColorOf(m, layers[i].Material), Combine(ls, PathTypes.LayerKey(i)), layers[i].Material, PathTypes.LayerKey(i)));
         foreach (var (key, name, color) in PartNames)
         {
             if (!solids.TryGetValue(key, out var list) || list.Count == 0) continue;
             var material = key == "surface" ? sm : key == "base" ? bm : null;
             parts.Add(new GeometryPart(name, material != null ? Materials.ColorOf(m, material) : color, Combine(list, key), material, key));
         }
-        var t = TemplateOf(e);
+        var t = TemplateOf(e, m);
         var plan = new List<PlanItem> { new("heavy", true, Corridors.Outline(c, t.Left, -t.Right)), new("symbol", false, c.Axis()) };
         // The carriageway's edges inside the outline, where something stands beside it.
         if (t.L.Extent > 0) plan.Add(new("symbol", false, OffsetLine(c, t.Half)));
@@ -211,18 +238,31 @@ public static class Paths
     {
         if (g == null) yield break;
         var c = Corridors.ChainOf(e);
-        var t = TemplateOf(e);
+        var t = TemplateOf(e, m);
         var length = c.Length;
         double Vol(string key) => g.Parts.Where(p => p.Key == key).Sum(p => Measure.Volume(p.Solid));
         var sides = new[] { t.L, t.R };
+        // With a hardscape type: its top layer is the surface course, the ones under it the base.
+        var layers = t.Layers;
+        var surface = layers != null ? Vol(PathTypes.LayerKey(0)) : Vol("surface");
+        var under = layers != null ? Enumerable.Range(1, layers.Count - 1).Sum(i => Vol(PathTypes.LayerKey(i))) : Vol("base");
         yield return new QuantitySet("Lapin_PavementQuantities",
         [
             new("Length", length, "LENGTH"), new("Width", t.Width, "LENGTH"), new("GrossArea", length * t.Width, "AREA", "Paved area"),
-            new("SurfaceVolume", Vol("surface"), "VOLUME", "Surface course"), new("BaseVolume", Vol("base"), "VOLUME", "Base course"),
+            new("SurfaceVolume", surface, "VOLUME", "Surface course"), new("BaseVolume", under, "VOLUME", "Base course"),
             new("KerbLength", sides.Count(s => s.Kerb || s.Sidewalk) * length, "LENGTH", "Kerbs"),
             new("GutterLength", sides.Count(s => s.Gutter) * length, "LENGTH", "Gutters"),
             new("SidewalkArea", sides.Where(s => s.Sidewalk).Sum(s => s.SidewalkWidth) * length, "AREA", "Sidewalks"),
         ]);
+        // Each layer of the type, as a hardscape's: its thickness, the area paved, its volume (its body's).
+        if (layers != null)
+            for (var i = 0; i < layers.Count; i++)
+                yield return new QuantitySet(PathTypes.LayerSet,
+                [
+                    new("Thickness", layers[i].Thickness, "LENGTH", "Thickness"),
+                    new("Area", length * t.Width, "AREA", "Area"),
+                    new("Volume", Vol(PathTypes.LayerKey(i)), "VOLUME", "Volume"),
+                ], PathTypes.LayerKey(i), PathTypes.LayerName(m, layers, i), layers[i].Material);
     }
 
     public static JsonObject Attrs(IReadOnlyList<Vec2> path, Courses c, string? surfaceMaterial, string? baseMaterial)

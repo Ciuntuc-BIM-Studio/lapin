@@ -5378,42 +5378,24 @@ export const ZH: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "光标处的临时参考点(再次:取消)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "启动绘制或放置工具,指向一个位置,然后按此键:下一点将从该点量起。",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "启动按锚点放置的工具(柱、门、窗),然后按此键依次切换其锚点。",
-};
-
-/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
-const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
-  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "二阶：不稳定，荷载已超过临界荷载 (αcr < 1)。"],
-  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `1 根构件松弛后出现机构：节点 ${m[1]} (${m[2]}) 无约束。`],
-  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `${m[1]} 根构件松弛后出现机构：节点 ${m[2]} (${m[3]}) 无约束。`],
-  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `1 根构件松弛且 ${m[1]} 个支座脱离后出现机构：节点 ${m[2]} (${m[3]}) 无约束。`],
-  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `${m[1]} 根构件松弛且 ${m[2]} 个支座脱离后出现机构：节点 ${m[3]} (${m[4]}) 无约束。`],
-  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `节点 ${m[1]} (${m[2]}) 处出现机构。`],
-  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "单向杆件和支座未收敛：它们回到了已试过的状态。"],
-  [/^Not settled in (\d+) iterations\.$/, (m) => `${m[1]} 次迭代后仍未收敛。`],
-  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "这些荷载下无屈曲：几何刚度只起刚化作用。"],
-  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "无屈曲模态：受压杆件由其周围的构件约束。"],
-  [/^A mechanism in its last states\.$/, () => "在最后几个状态中出现机构。"],
-];
-function s5msg(text: string): string {
-  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
-  return text;
-}
-
-/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
-function s5dSeg(t: string): string {
-  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
-  if (a) return a[3] ? `φ 至 1/${a[1]}，沿 ${a[2]} (m = ${a[3]})` : `φ 至 1/${a[1]}，沿 ${a[2]}`;
-  const b = /^no column along (X|Y)$/.exec(t);
-  return b ? `沿 ${b[1]} 无柱` : t;
-}
-const S5D_TAILS: Record<string, string> = {
-  'the seismic effects × 1/(1 − θ) there (or second order).': "该处地震作用 × 1/(1 − θ)（或二阶分析）。",
-  'a second-order analysis is needed there.': "该处需要二阶分析。",
-  'above 0.3, not allowed: stiffen the structure.': "超过 0.3，不允许：请加强结构刚度。",
-  "Exact surfaces": "精确曲面",
-  "Studio solids as advanced B-rep on their exact surfaces": "Studio 实体以高级 B-rep 写在其精确曲面上",
-  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Lapin 精确知道的 Studio 实体（基本体、由直线和圆弧拉伸、旋转、平滑放样、闭合 SubD）以 IfcAdvancedBrep 写在平面、圆柱面、圆锥面、球面、圆环面和 B 样条曲面上，而不是写成小平面；其余照旧",
-  "solids for CAD programs, on their exact surfaces where known": "供 CAD 程序使用的实体，已知处写在其精确曲面上",
+  // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
+  "follows it": "跟随它",
+  "a copy": "副本",
+  "its own": "自有",
+  "Link again": "重新链接",
+  "Link to an axis…": "链接到轴线…",
+  "Link the lining to an axis": "将衬砌链接到轴线",
+  "When that element's axis or red line changes, the lining is rebuilt along it": "该构件的轴线或红线改变时，衬砌沿其重建",
+  "Keep the axis as it is now, a copy that no longer follows its source": "保留当前轴线，作为不再跟随来源的副本",
+  "Follow that element again between the same stations": "在相同桩号之间重新跟随该构件",
+  "Click a road, a path, a wall or a line where the lining starts, then where it ends; it follows that element from then on": "点击衬砌开始处的道路、园路、墙或线，再点击结束处；此后它跟随该构件",
+  "The lining follows another element's axis with its curves: change them there and the lining follows, or move its points to draw it anew (unlinked).": "衬砌跟随另一构件的轴线及其曲线：在那里修改，衬砌随之改变；或移动其点重新绘制（取消链接）。",
+  "Use a hardscape type": "使用铺装类型",
+  "Its layers from a hardscape type, shared and edited in one place; off, its own surface and base courses": "其层次取自铺装类型，共享并在一处编辑；关闭时使用自身的面层和基层",
+  "Unlink tunnel lining": "取消隧道衬砌链接",
+  "The element its axis followed was deleted: the lining keeps its last axis, unlinked.": "其轴线所跟随的构件已删除：衬砌保留最后的轴线，已取消链接。",
+  "Its axis was edited on the lining itself: it keeps that axis, unlinked.": "其轴线在衬砌本身上被编辑：保留该轴线，已取消链接。",
+  "The lining is not linked to an axis.": "衬砌未链接到轴线。",
   // The tunnel lining (docs/plan-wing-walls.md, S4)
   "Tunnel lining": "隧道衬砌",
   "Tunnel lining…": "隧道衬砌…",
@@ -5577,6 +5559,42 @@ const S5D_TAILS: Record<string, string> = {
   "Formwork, footing": "模板，基础",
   "Change retaining wall segment": "修改挡土墙分段",
   "Stem": "墙身",
+};
+
+/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
+const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "二阶：不稳定，荷载已超过临界荷载 (αcr < 1)。"],
+  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `1 根构件松弛后出现机构：节点 ${m[1]} (${m[2]}) 无约束。`],
+  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `${m[1]} 根构件松弛后出现机构：节点 ${m[2]} (${m[3]}) 无约束。`],
+  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `1 根构件松弛且 ${m[1]} 个支座脱离后出现机构：节点 ${m[2]} (${m[3]}) 无约束。`],
+  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `${m[1]} 根构件松弛且 ${m[2]} 个支座脱离后出现机构：节点 ${m[3]} (${m[4]}) 无约束。`],
+  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `节点 ${m[1]} (${m[2]}) 处出现机构。`],
+  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "单向杆件和支座未收敛：它们回到了已试过的状态。"],
+  [/^Not settled in (\d+) iterations\.$/, (m) => `${m[1]} 次迭代后仍未收敛。`],
+  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "这些荷载下无屈曲：几何刚度只起刚化作用。"],
+  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "无屈曲模态：受压杆件由其周围的构件约束。"],
+  [/^A mechanism in its last states\.$/, () => "在最后几个状态中出现机构。"],
+];
+function s5msg(text: string): string {
+  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
+  return text;
+}
+
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ 至 1/${a[1]}，沿 ${a[2]} (m = ${a[3]})` : `φ 至 1/${a[1]}，沿 ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `沿 ${b[1]} 无柱` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "该处地震作用 × 1/(1 − θ)（或二阶分析）。",
+  'a second-order analysis is needed there.': "该处需要二阶分析。",
+  'above 0.3, not allowed: stiffen the structure.': "超过 0.3，不允许：请加强结构刚度。",
+  "Exact surfaces": "精确曲面",
+  "Studio solids as advanced B-rep on their exact surfaces": "Studio 实体以高级 B-rep 写在其精确曲面上",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Lapin 精确知道的 Studio 实体（基本体、由直线和圆弧拉伸、旋转、平滑放样、闭合 SubD）以 IfcAdvancedBrep 写在平面、圆柱面、圆锥面、球面、圆环面和 B 样条曲面上，而不是写成小平面；其余照旧",
+  "solids for CAD programs, on their exact surfaces where known": "供 CAD 程序使用的实体，已知处写在其精确曲面上",
 };
 export const ZH_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ
@@ -6004,4 +6022,8 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} 个采样 · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `图像 ${m[1]} × ${m[2]}：${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `无法生成图像：${m[1]}`],
+  // A tunnel lining linked to its axis's source (23.11.2026)
+  [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `“${m[1]}”已无轴线：衬砌保留最后的轴线，已取消链接。`],
+  [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `“${m[1]}”在衬砌桩号之间已不足一米：衬砌保留最后的轴线，已取消链接。`],
+  [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `“${m[1]}”现在更短：衬砌从 ${m[2]} 到 ${m[3]} m，而非链接时的 ${m[4]} 到 ${m[5]} m。`],
 ];

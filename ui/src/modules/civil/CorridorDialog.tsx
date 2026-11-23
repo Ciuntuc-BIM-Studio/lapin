@@ -257,7 +257,9 @@ function CurvesEditor({ node, d, onSave }: { node: NodeDto; d: CorridorData; onS
   return (
     <div className="corridor-form">
       {taken
-        ? <p className="muted small">The lining's axis was taken from another element with its curves: change them there and take the axis again, or move its points to draw it anew.</p>
+        ? <p className="muted small">{(node.props.axisSource as { linked?: unknown }).linked === true
+          ? 'The lining follows another element\'s axis with its curves: change them there and the lining follows, or move its points to draw it anew (unlinked).'
+          : 'The lining\'s axis was taken from another element with its curves: change them there and take the axis again, or move its points to draw it anew.'}</p>
         : generated
         ? <p className="muted small">A parallel track's curves come from its reference, offset: edit them on the reference.</p>
         : <p className="muted small">Give a vertex a radius to round the corner there; the clothoids run into and out of the arc. 0: a plain corner. Metres.</p>}

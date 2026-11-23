@@ -365,6 +365,9 @@ public static class Hardscapes
             }
             foreach (var e in ctx.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).Where(Is).ToList())
                 SetType(ctx, e, ctx.Model.Get(type.Id)!);
+            // The paths built of it (PathTypes) read its layers as they are; its pavement kind they take.
+            foreach (var p in ctx.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).Where(x => x.Class == IfcClass.Pavement).ToList())
+                PathTypes.Follow(ctx, p, ctx.Model.Get(type.Id)!);
             return null;
         });
 
@@ -538,7 +541,7 @@ public static class Hardscapes
         {
             if (e.Class != TypeClass) return;
             var n = m.RelatedOf(e.Id, IfcClass.RelDefinesByType).Count(x => !deleting.Contains(x.Id));
-            if (n > 0) throw new CommandException($"„{e.Name}” is used by {n} hardscape(s): give them another type first.");
+            if (n > 0) throw new CommandException($"„{e.Name}” is used by {n} hardscape(s) or path(s): give them another type first.");
         }
 
         public bool Delete(ICommandContext ctx, string id) => false;

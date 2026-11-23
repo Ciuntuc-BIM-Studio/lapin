@@ -6726,6 +6726,61 @@ export const scenes = [
     },
   },
   {
+    // A lining linked to its road (docs/plan-wing-walls.md, S4, 23.11.2026): the road bent anew, the lining follows it in the same
+    // undo step, its blocks kept; its properties say it follows the road, with Unlink and Link to an axis….
+    id: 'tunnel-linked',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      const road = (await t.cmd('civil.addPath', { storeyId: s, name: 'Road', points: [[0, 0], [100, 0], [200, 0]], template: 'road' })).id;
+      await t.cmd('civil.setCorridor', { id: road, profile: { mode: 'design', pvis: [[0, 0, 0], [300, 0, 0]] } });
+      const lining = (await t.cmd('civil.addTunnelLining', { storeyId: s, spec: { preset: 'horseshoe' }, axis: { id: road, from: 40, to: 170 } })).id;
+      // The road's middle vertex moved north and its corner rounded: the lining takes the new axis between the same stations.
+      await t.cmd('civil.updatePath', { id: road, points: [[0, 0], [100, 30], [200, 0]] });
+      await t.cmd('civil.setCorridor', { id: road, curves: [[0, 0, 0], [180, 25, 25], [0, 0, 0]] });
+      const node = (await t.nodes()).find((n) => n.id === lining);
+      t.expect(node?.props.axisSource?.linked === true, 'the lining follows the road');
+      const path = node?.props.path ?? [];
+      t.expect(path.some((p) => p[1] > 10), 'its axis bent with the road');
+      await t.fit();
+      await t.wait(1500);
+      const quiet = await t.page.addStyleTag({ content: '.hotbar, .hud-card { display: none !important }' });
+      await t.shot('tunnel-linked-plan', { of: '[data-testid=plan]', pad: 0 });
+      await quiet.evaluate((el) => el.remove());
+      await select(t, lining);
+      await t.wait(900);
+      await t.page.locator('aside.props [data-testid=tunnel-link]').waitFor();
+      t.expect(await t.page.locator('aside.props [data-action=tunnel-unlink]').count() === 1, 'Unlink in its properties');
+      await t.shot('tunnel-linked-properties', { of: 'aside.props', pad: 0, maxHeight: 520 });
+      await t.ui({ selection: null, selected: [], keyPlan: true });
+    },
+  },
+  {
+    // A path built of a hardscape type (docs/plan-site-grading.md, T4, 23.11.2026): Use a hardscape type in its properties, the type
+    // and its build-up in place of its own courses.
+    id: 'path-hardscape-type',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.button('Site', { exact: true });
+      const path = (await t.cmd('civil.addPath', { storeyId: s, name: 'Garden path', points: [[0, 0], [12, 0], [18, 6]], width: 1.8 })).id;
+      await t.cmd('civil.updatePath', { id: path, hardscapeType: 'pavers' });
+      const node = (await t.nodes()).find((n) => n.id === path);
+      t.expect(node?.props.hardscapeTypeName === 'Concrete pavers', 'the path is of the pavers');
+      await select(t, path);
+      await t.wait(900);
+      await t.page.locator('aside.props [data-testid=path-use-type]').waitFor();
+      t.expect(await t.page.locator('aside.props [data-testid=path-use-type]').isChecked(), 'Use a hardscape type is ticked');
+      t.expect(await t.page.locator('aside.props [data-testid=path-layers] div').count() === 3, 'its build-up: the type\'s three layers');
+      await t.shot('path-hardscape-type', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      await t.ui({ selection: null, selected: [] });
+    },
+  },
+  {
     // The planting library (decision 234): a small orchard with a walnut, conifers along the back and shrubs in front, drawn in plan by
     // their families' outlines (decision 341), then by the detailed symbols the view style's Entourage in 2D asks for.
     id: 'planting-symbols',

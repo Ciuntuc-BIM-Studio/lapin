@@ -46,7 +46,8 @@ describe('the tunnel lining configurator', () => {
     expect(isRings({ preset: 'circular' })).toBe(true);
     expect(isRings({ preset: 'circular', profileId: 'p1' })).toBe(false);
     expect(isRings({ preset: 'box' })).toBe(false);
-    expect(axisSourceOf({ axisSource: { id: 'r1', from: 120, to: 290 } })).toEqual({ id: 'r1', from: 120, to: 290 });
+    expect(axisSourceOf({ axisSource: { id: 'r1', from: 120, to: 290 } })).toEqual({ id: 'r1', from: 120, to: 290, linked: false, note: null });
+    expect(axisSourceOf({ axisSource: { id: 'r1', from: 120, to: 290, linked: true, note: 'held' } })).toEqual({ id: 'r1', from: 120, to: 290, linked: true, note: 'held' });
     expect(axisSourceOf({})).toBeNull();
   });
 });

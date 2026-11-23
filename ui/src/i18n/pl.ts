@@ -5382,50 +5382,24 @@ export const PL: Record<string, string> = {
   "Temporary reference point at the cursor (again: drop it)": "Tymczasowy punkt odniesienia przy kursorze (ponownie: usuń go)",
   "Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.": "Uruchom narzędzie rysowania lub wstawiania, wskaż miejsce, a następnie naciśnij ten klawisz: kolejny punkt jest mierzony od niego.",
   "Start a tool that places by an anchor (Column, Door, Window), then press this key to step through its anchors.": "Uruchom narzędzie wstawiające według punktu wstawienia (Słup, Drzwi, Okno), a następnie naciśnij ten klawisz, aby przełączać jego punkty.",
-};
-/** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
-const form = (count: string, one: string, few: string, many: string) => {
-  const c = Number(count);
-  if (c === 1) return one;
-  return c % 10 >= 2 && c % 10 <= 4 && (c % 100 < 12 || c % 100 > 14) ? few : many;
-};
-const n = (count: string, one: string, few: string, many: string) => `${count} ${form(count, one, few, many)}`;
-
-/** Phrases with a number or a name in them. */
-/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
-const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
-  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Drugi rząd: konstrukcja niestateczna, obciążenia przekroczyły krytyczne (αcr < 1)."],
-  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mechanizm po zwiotczeniu prętów (1): nic nie podtrzymuje węzła ${m[1]} (${m[2]}).`],
-  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mechanizm po zwiotczeniu prętów (${m[1]}): nic nie podtrzymuje węzła ${m[2]} (${m[3]}).`],
-  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mechanizm po zwiotczeniu prętów (1) i oderwaniu podpór (${m[1]}): nic nie podtrzymuje węzła ${m[2]} (${m[3]}).`],
-  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mechanizm po zwiotczeniu prętów (${m[1]}) i oderwaniu podpór (${m[2]}): nic nie podtrzymuje węzła ${m[3]} (${m[4]}).`],
-  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `Mechanizm w węźle ${m[1]} (${m[2]}).`],
-  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Pręty jednokierunkowe i podpory nie ustaliły się: wracają do stanów już sprawdzonych."],
-  [/^Not settled in (\d+) iterations\.$/, (m) => `Brak zbieżności po ${m[1]} iteracjach.`],
-  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Brak wyboczenia przy tych obciążeniach: sztywność geometryczna tylko usztywnia."],
-  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Brak postaci wyboczenia: pręty ściskane są podtrzymywane przez otoczenie."],
-  [/^A mechanism in its last states\.$/, () => "Mechanizm w ostatnich stanach."],
-];
-function s5msg(text: string): string {
-  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
-  return text;
-}
-
-/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
-function s5dSeg(t: string): string {
-  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
-  if (a) return a[3] ? `φ do 1/${a[1]} wzdłuż ${a[2]} (m = ${a[3]})` : `φ do 1/${a[1]} wzdłuż ${a[2]}`;
-  const b = /^no column along (X|Y)$/.exec(t);
-  return b ? `brak słupa wzdłuż ${b[1]}` : t;
-}
-const S5D_TAILS: Record<string, string> = {
-  'the seismic effects × 1/(1 − θ) there (or second order).': "oddziaływania sejsmiczne × 1/(1 − θ) tam (lub drugi rząd).",
-  'a second-order analysis is needed there.': "tam potrzebna jest analiza drugiego rzędu.",
-  'above 0.3, not allowed: stiffen the structure.': "powyżej 0.3, niedopuszczalne: usztywnij konstrukcję.",
-  "Exact surfaces": "Powierzchnie dokładne",
-  "Studio solids as advanced B-rep on their exact surfaces": "Bryły Studio jako zaawansowany B-rep na ich dokładnych powierzchniach",
-  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Bryły Studio, które Lapin zna dokładnie (prymitywy, wyciągnięcia z linii i łuków, obroty, gładkie lofty, zamknięte SubD), zapisane jako IfcAdvancedBrep na płaszczyznach, walcach, stożkach, sferach, torusach i powierzchniach B-spline zamiast ścianek; reszta jak dotąd",
-  "solids for CAD programs, on their exact surfaces where known": "bryły dla programów CAD, na ich dokładnych powierzchniach tam, gdzie są znane",
+  // A tunnel lining linked to its axis's source; a path of a hardscape type (decision on S4 and T4, 23.11.2026)
+  "follows it": "podąża za nim",
+  "a copy": "kopia",
+  "its own": "własna",
+  "Link again": "Połącz ponownie",
+  "Link to an axis…": "Połącz z osią…",
+  "Link the lining to an axis": "Połącz obudowę z osią",
+  "When that element's axis or red line changes, the lining is rebuilt along it": "Gdy oś lub niweleta tego elementu się zmieni, obudowa zostanie odbudowana wzdłuż niej",
+  "Keep the axis as it is now, a copy that no longer follows its source": "Zachowaj oś taką, jaka jest teraz: kopię, która nie podąża już za źródłem",
+  "Follow that element again between the same stations": "Ponownie podążaj za tym elementem między tymi samymi kilometrażami",
+  "Click a road, a path, a wall or a line where the lining starts, then where it ends; it follows that element from then on": "Kliknij drogę, ścieżkę, mur lub linię tam, gdzie zaczyna się obudowa, potem tam, gdzie się kończy; odtąd podąża za tym elementem",
+  "The lining follows another element's axis with its curves: change them there and the lining follows, or move its points to draw it anew (unlinked).": "Obudowa podąża za osią innego elementu z jej łukami: zmień je tam, a obudowa podąży, albo przesuń jej punkty, aby narysować ją od nowa (odłączona).",
+  "Use a hardscape type": "Użyj typu nawierzchni",
+  "Its layers from a hardscape type, shared and edited in one place; off, its own surface and base courses": "Jej warstwy z typu nawierzchni, wspólnego i edytowanego w jednym miejscu; wyłączone: własne warstwy ścieralna i podbudowy",
+  "Unlink tunnel lining": "Odłącz obudowę tunelu",
+  "The element its axis followed was deleted: the lining keeps its last axis, unlinked.": "Element, za którego osią podążała, został usunięty: obudowa zachowuje ostatnią oś, odłączona.",
+  "Its axis was edited on the lining itself: it keeps that axis, unlinked.": "Jej oś edytowano na samej obudowie: zachowuje tę oś, odłączona.",
+  "The lining is not linked to an axis.": "Obudowa nie jest połączona z żadną osią.",
   // The tunnel lining (docs/plan-wing-walls.md, S4)
   "Tunnel lining": "Obudowa tunelu",
   "Tunnel lining…": "Obudowa tunelu…",
@@ -5589,6 +5563,50 @@ const S5D_TAILS: Record<string, string> = {
   "Formwork, footing": "Szalunek, fundament",
   "Change retaining wall segment": "Zmień odcinek muru oporowego",
   "Stem": "Trzon",
+};
+/** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
+const form = (count: string, one: string, few: string, many: string) => {
+  const c = Number(count);
+  if (c === 1) return one;
+  return c % 10 >= 2 && c % 10 <= 4 && (c % 100 < 12 || c % 100 > 14) ? few : many;
+};
+const n = (count: string, one: string, few: string, many: string) => `${count} ${form(count, one, few, many)}`;
+
+/** Phrases with a number or a name in them. */
+/** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
+const S5_MESSAGES: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Second order: unstable, the loads are past the critical ones \(αcr < 1\)\.$/, () => "Drugi rząd: konstrukcja niestateczna, obciążenia przekroczyły krytyczne (αcr < 1)."],
+  [/^A mechanism once 1 members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mechanizm po zwiotczeniu prętów (1): nic nie podtrzymuje węzła ${m[1]} (${m[2]}).`],
+  [/^A mechanism once (\d+) members? went slack: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mechanizm po zwiotczeniu prętów (${m[1]}): nic nie podtrzymuje węzła ${m[2]} (${m[3]}).`],
+  [/^A mechanism once 1 members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mechanizm po zwiotczeniu prętów (1) i oderwaniu podpór (${m[1]}): nic nie podtrzymuje węzła ${m[2]} (${m[3]}).`],
+  [/^A mechanism once (\d+) members? went slack and (\d+) supports? lifted: nothing holds node (\S+) \(([^)]*)\)\.$/, (m) => `Mechanizm po zwiotczeniu prętów (${m[1]}) i oderwaniu podpór (${m[2]}): nic nie podtrzymuje węzła ${m[3]} (${m[4]}).`],
+  [/^A mechanism at node (\S+) \(([^)]*)\)\.$/, (m) => `Mechanizm w węźle ${m[1]} (${m[2]}).`],
+  [/^The one-way members and supports did not settle: they go back to states already tried\.$/, () => "Pręty jednokierunkowe i podpory nie ustaliły się: wracają do stanów już sprawdzonych."],
+  [/^Not settled in (\d+) iterations\.$/, (m) => `Brak zbieżności po ${m[1]} iteracjach.`],
+  [/^No buckling under these loads: the geometric stiffness only stiffens\.$/, () => "Brak wyboczenia przy tych obciążeniach: sztywność geometryczna tylko usztywnia."],
+  [/^No buckling mode: the compressed bars are held by what is round them\.$/, () => "Brak postaci wyboczenia: pręty ściskane są podtrzymywane przez otoczenie."],
+  [/^A mechanism in its last states\.$/, () => "Mechanizm w ostatnich stanach."],
+];
+function s5msg(text: string): string {
+  for (const [re, f] of S5_MESSAGES) { const x = re.exec(text); if (x) return f(x); }
+  return text;
+}
+
+/** S5d: the parts of the imperfections', sheeting's and θ notes that vary. */
+function s5dSeg(t: string): string {
+  const a = /^φ up to 1\/(\d+) along (X|Y)(?: \(m = ([\d.]+)\))?$/.exec(t);
+  if (a) return a[3] ? `φ do 1/${a[1]} wzdłuż ${a[2]} (m = ${a[3]})` : `φ do 1/${a[1]} wzdłuż ${a[2]}`;
+  const b = /^no column along (X|Y)$/.exec(t);
+  return b ? `brak słupa wzdłuż ${b[1]}` : t;
+}
+const S5D_TAILS: Record<string, string> = {
+  'the seismic effects × 1/(1 − θ) there (or second order).': "oddziaływania sejsmiczne × 1/(1 − θ) tam (lub drugi rząd).",
+  'a second-order analysis is needed there.': "tam potrzebna jest analiza drugiego rzędu.",
+  'above 0.3, not allowed: stiffen the structure.': "powyżej 0.3, niedopuszczalne: usztywnij konstrukcję.",
+  "Exact surfaces": "Powierzchnie dokładne",
+  "Studio solids as advanced B-rep on their exact surfaces": "Bryły Studio jako zaawansowany B-rep na ich dokładnych powierzchniach",
+  "Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before": "Bryły Studio, które Lapin zna dokładnie (prymitywy, wyciągnięcia z linii i łuków, obroty, gładkie lofty, zamknięte SubD), zapisane jako IfcAdvancedBrep na płaszczyznach, walcach, stożkach, sferach, torusach i powierzchniach B-spline zamiast ścianek; reszta jak dotąd",
+  "solids for CAD programs, on their exact surfaces where known": "bryły dla programów CAD, na ich dokładnych powierzchniach tam, gdzie są znane",
 };
 export const PL_PATTERNS: Language['patterns'] = [
   // S5d: global imperfections, sheeting, θ
@@ -6016,4 +6034,8 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^(\d+) samples · (\d+):(\d\d)$/, (m) => `${m[1]} próbek · ${m[2]}:${m[3]}`],
   [/^Image (\d+) × (\d+): (\d+) %$/, (m) => `Obraz ${m[1]} × ${m[2]}: ${m[3]} %`],
   [/^The image could not be made: (.+)$/, (m) => `Nie udało się utworzyć obrazu: ${m[1]}`],
+  // A tunnel lining linked to its axis's source (23.11.2026)
+  [/^„(.+)” has no axis now: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” nie ma już osi: obudowa zachowuje ostatnią oś, odłączona.`],
+  [/^„(.+)” no longer runs a metre between the lining's stations: the lining keeps its last axis, unlinked\.$/, (m) => `„${m[1]}” nie ma już metra między kilometrażami obudowy: zachowuje ostatnią oś, odłączona.`],
+  [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `„${m[1]}” jest teraz krótszy: obudowa biegnie od ${m[2]} do ${m[3]} m, a nie od ${m[4]} do ${m[5]} m jak połączono.`],
 ];
