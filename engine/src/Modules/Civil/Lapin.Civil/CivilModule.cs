@@ -47,6 +47,9 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             new("thickness", "Thickness", "length", Min: 0.1), new("height", "Height over the high ground", "length", Min: 0), new("topElevation", "Crown elevation (fixed)", "length"),
             new("embed", "Embedment under the low ground", "length", Min: 0), new("footingWidth", "Footing width", "length", Min: 0.1), new("footingThickness", "Footing thickness", "length", Min: 0),
             new("side", "High ground on the", "choice", Choices: ["left", "right"]),
+            new("frontBatter", "Front batter n:1 (0: upright)", "number", Min: 0, Max: 100), new("backBatter", "Back batter n:1 (0: upright)", "number", Min: 0, Max: 100),
+            new("baseThickness", "Thickness at the base", "length", Min: 0.05), new("toe", "Toe", "length", Min: 0), new("heel", "Heel", "length", Min: 0),
+            new("keyWidth", "Key width", "length", Min: 0), new("keyDepth", "Key depth", "length", Min: 0), new("keyAt", "Key from the toe", "length", Min: 0),
         ], RetainingWalls.Color));
         r.Class(new(Plantings.Class, "Planting", [new("density", "Plants per 100 m²", "number", Min: 0.1, Max: 500), new("seed", "Seed", "number", Min: 0, Max: 1e9)], "#5a9440"));
         r.Class(new(Entourage.Class, "Entourage",
@@ -63,7 +66,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Quantities(IfcClass.GeographicElement, Terrains.Quantities);
         r.Geometry(IfcClass.Pavement, (e, m, _) => Paths.Geometry(e, m));
         r.Quantities(IfcClass.Pavement, Paths.Quantities);
-        r.Geometry(RetainingWalls.Class, (e, m, _) => RetainingWalls.Geometry(e, m));
+        // A wall with batters, segments of its own, a toe, a heel or a key is built by BatteredWalls (docs/plan-wing-walls.md); any other as before.
+        r.Geometry(RetainingWalls.Class, (e, m, services) => BatteredWalls.Is(e) ? BatteredWalls.Geometry(e, m, services) : RetainingWalls.Geometry(e, m));
         r.Quantities(RetainingWalls.Class, RetainingWalls.Quantities);
         LineworkElements.Register(r);
         // What drafted linework becomes on the site, in Convert to… (audit S12).
@@ -76,6 +80,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Service<IElementUpdate>(new KindUpdate());
         r.Service<IViewAnnotations>(this);
         r.Service<IGround>(new Ground());
+        r.Service<IIfcExactBodies>(new RetainingWallExactBodies());
         r.Service<IScheduleSource>(new PlantingSchedule());
         PlantingSchedule.RegisterTemplate(r);
         r.Service<IScheduleSource>(new ParcelCoordinates());

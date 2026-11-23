@@ -582,7 +582,10 @@ public static class SiteCommands
                 Json.Number(a["footingWidth"]) ?? 0.8, Json.Number(a["footingThickness"]) ?? 0.3, (string?)a["side"] != "right");
             var concrete = Materials.Ensure(ctx, (string?)a["material"] ?? "Reinforced concrete", RetainingWalls.Color);
             var n = ctx.Model.OfClass(RetainingWalls.Class).Count() + 1;
-            var e = new Entity(ctx.NewId(), RetainingWalls.Class, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Retaining wall {n}", RetainingWalls.Attrs(path, spec, concrete.Id), "RETAININGWALL");
+            var attrs = RetainingWalls.Attrs(path, spec, concrete.Id);
+            // Its batters, toe, heel and key, when given (docs/plan-wing-walls.md).
+            foreach (var k in BatteredWalls.WallKeys) if (Json.Number(a[k]) is { } v) attrs[k] = Math.Max(0, v);
+            var e = new Entity(ctx.NewId(), RetainingWalls.Class, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Retaining wall {n}", attrs, "RETAININGWALL");
             ctx.Add(e);
             Spatial.Contain(ctx, storeyId, e.Id);
             return new JsonObject { ["id"] = e.Id };
@@ -597,6 +600,44 @@ public static class SiteCommands
             if (a.ContainsKey("topElevation")) { if (Json.Number(a["topElevation"]) is { } top) attrs["topElevation"] = top; else attrs.Remove("topElevation"); }
             if ((string?)a["side"] is { } side) attrs["side"] = side == "right" ? "right" : "left";
             if ((string?)a["material"] is { } name) attrs["material"] = Materials.Ensure(ctx, name).Id;
+            // Its batters (n:1, 0 upright), the thickness at its base, its toe, heel and key: null clears one.
+            foreach (var k in BatteredWalls.WallKeys)
+                if (a.ContainsKey(k)) { if (Json.Number(a[k]) is { } v) attrs[k] = Math.Max(0, v); else attrs.Remove(k); }
+            ctx.Replace(e.With(attrs: attrs));
+            return null;
+        });
+
+        // One segment of a retaining wall (docs/plan-wing-walls.md): its batters, crown thickness, crown at its start and its end,
+        // footing level, its warp (the face from one batter to another), null clearing one; its length and its turn from the segment
+        // before (degrees, + to the left; the first segment's direction from east), the segments after it keeping theirs.
+        r.Command("setRetainingWallSegment", "Change retaining wall segment", (ctx, a) =>
+        {
+            var e = Spatial.Require(ctx.Model, (string?)a["id"], RetainingWalls.Class);
+            var path = Chain.Clean(RetainingWalls.Path(e), null).Path.ToList();
+            var i = (int)(Json.Number(a["index"]) ?? -1);
+            if (i < 0 || i >= path.Count - 1) throw new CommandException("The wall has no such segment.");
+            var attrs = e.CloneAttrs();
+            var segs = attrs["segments"] as JsonArray ?? [];
+            while (segs.Count < path.Count - 1) segs.Add((JsonNode)new JsonObject());
+            if (segs[i] is not JsonObject o) segs[i] = o = new JsonObject();
+            foreach (var k in BatteredWalls.SegmentKeys)
+                if (a.ContainsKey(k))
+                {
+                    if (Json.Number(a[k]) is { } v) o[k] = k is "topStart" or "topEnd" or "footingLevel" ? v : Math.Max(0, v);
+                    else o.Remove(k);
+                }
+            if (a.ContainsKey("warp")) { if (a["warp"] is JsonValue w && w.TryGetValue<bool>(out var on) && on) o["warp"] = true; else o.Remove("warp"); }
+            var length = Json.Number(a["length"]);
+            var turn = Json.Number(a["angle"]);
+            if (length != null || turn != null)
+            {
+                if (length is < 0.05) throw new CommandException("A segment is 5 cm long at least.");
+                if (turn is { } tt && i > 0 && Math.Abs(tt) >= 179) throw new CommandException("A segment cannot turn back on the one before it.");
+                attrs["path"] = Terrains.ContourJson(RetainingWallPaths.WithSegment(path, i, length, turn));
+            }
+            // Trailing empty overrides go; none at all, the key goes.
+            while (segs.Count > 0 && segs[^1] is JsonObject { Count: 0 } or null) segs.RemoveAt(segs.Count - 1);
+            if (segs.Count == 0) attrs.Remove("segments"); else attrs["segments"] = segs;
             ctx.Replace(e.With(attrs: attrs));
             return null;
         });

@@ -95,9 +95,11 @@ public static class RetainingWalls
         return new ElementGeometry(parts, plan, [c.Path[0], c.Path[^1]], c.Problem is { } why ? [why] : null);
     }
 
-    public static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)
+    public static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m) =>
+        g == null ? [] : BatteredWalls.Is(e) ? BatteredWalls.Quantities(e, g, m) : Plain(e, g, m);
+
+    static IEnumerable<QuantitySet> Plain(Entity e, ElementGeometry g, IModelView m)
     {
-        if (g == null) yield break;
         var c = Corridors.ChainOf(e);
         if (c.Segments == 0) yield break;
         var s = Of(e);
