@@ -273,24 +273,40 @@ function tellOld(notes: string[]): void {
   notify(`Opened an old Lapin project: save it to keep it in the new format.${notes.length ? ` Left out: ${notes.join('; ')}.` : ''}`);
 }
 
+/** A project opened from bytes in the browser's engine (a file picked, or a commit's package from a CDE server): false when it failed. */
+async function openBytes(name: string, bytes: Uint8Array, handle: FileSystemFileHandle | null): Promise<boolean> {
+  try {
+    const r = await engine.call<{ notes?: string[]; page?: string | null; absent?: string[] } | null>('project.openBytes', { name, data: toBase64(bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
+    // An old project (format 2), or one read from a page, opens unsaved: saving must not write over the file it came from.
+    const old = !useSession.getState().doc?.path;
+    projectHandle = old ? null : handle;
+    enter();
+    if (!openedFromPage(r?.page)) {
+      if (old) tellOld(r?.notes ?? []);
+      else tellAbsent(r?.absent);
+    }
+    return true;
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+    return false;
+  }
+}
+
+/**
+ * A project handed over as bytes (a commit's package from a CDE server, engine/cdeServer.ts), opened with no file of its own:
+ * Save asks where, so it keeps a copy and never writes back. False when the user kept the open project or it did not open.
+ */
+export async function openProjectBytes(name: string, bytes: Uint8Array): Promise<boolean> {
+  if (!(await confirmDiscard('The project has unsaved changes. Open another anyway?'))) return false;
+  return openBytes(name, bytes, null);
+}
+
 export async function openProject(path?: string): Promise<void> {
   if (!(await confirmDiscard('The project has unsaved changes. Open another anyway?'))) return;
   if (engineInBrowser) {
     const picked = await pickFile('Lapin project', ['lapin', 'html', 'htm']);
     if (!picked) return;
-    try {
-      const r = await engine.call<{ notes?: string[]; page?: string | null; absent?: string[] } | null>('project.openBytes', { name: picked.name, data: toBase64(picked.bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
-      // An old project (format 2), or one read from a page, opens unsaved: saving must not write over the file it came from.
-      const old = !useSession.getState().doc?.path;
-      projectHandle = old ? null : picked.handle;
-      enter();
-      if (!openedFromPage(r?.page)) {
-        if (old) tellOld(r?.notes ?? []);
-        else tellAbsent(r?.absent);
-      }
-    } catch (e) {
-      notify(e instanceof Error ? e.message : String(e));
-    }
+    await openBytes(picked.name, picked.bytes, picked.handle);
     return;
   }
   const target = path ?? (await pickPath('open', undefined, OPEN_FILTERS));

@@ -87,7 +87,23 @@ Never in a project, a commit, a ref entry or a folder remote. The engine gets th
 
 ## What S1 does not do yet
 
-- The browser's engine: the HTTP remote is synchronous (`HttpClient.Send`), which the WebAssembly engine cannot do; remote calls work on the desktop. The browser needs an async path in the worker.
+- The browser's engine: the HTTP remote is synchronous (`HttpClient.Send`), which the WebAssembly engine cannot do; remote calls work on the desktop. The browser needs an async path in the worker (Atrium's `docs/plan-cde-web.md`, W2). Until then the browser hides Collaborate, Save to server and Get latest, and in front of a CDE server reads it without the engine (below).
 - Versions as `refs/tags/v/<n>` tags and issues as `refs/tags/issue/*` (the client pushes and fetches tags, but Save version and Issue do not make them yet).
 - The status bar's `↑2 ↓1`, the History tab in Manage → Versions, fetch on open and every 5 minutes, Clean up (folder GC).
 - An `atrium:` author id: Foundation's `current-user` gives the e-mail address as the id, which never goes into a commit, so commits on a server are signed `local:<installation>` with the account's name until the server tells the public id (the server's ref log names the account by its `atrium:` id all the same).
+
+## Lapin on the web in front of a CDE server (W1)
+
+Atrium's `docs/plan-cde-web.md`, stage W1: Lapin's browser build served at `https://cde.lapinbim.com/` with Atrium Server's APIs on the same origin. Read-only, and without the engine's remote (which the browser cannot run yet):
+
+| What | Where |
+|---|---|
+| The server's client in the interface: password sign-in (client `lapin-web`), refresh on 401 one at a time, projects, refs, the commits walk, tag objects, the ref log, members, change password, the package and the viewer IFC | `ui/src/engine/cdeServer.ts` (tests: `cdeServer.test.ts`) |
+| The start screen in front of the server: sign in, projects, a project's history of main (author, date, message, version and issue chips), branches in progress, versions and issues, activity, members (owners change roles, remove, add by e-mail), change password, Work offline | `ui/src/shell/CdeStart.tsx`, chosen by `StartScreen.tsx`; File → **Server projects…** comes back |
+| Open: the commit's package (`…/commits/{c}/package?viewer=false`) into the browser's engine with no file of its own, so Save keeps a copy and nothing goes back; downloads of the `.lapin` and of the commit's IFC copy | `openProjectBytes` in `ui/src/engine/files.ts` |
+| The build | `node scripts/build-web.mjs lapin --cde` → `build/lapin/web-cde` (`VITE_CDE_SERVER=same-origin`); a stock web build also finds a server when its origin answers `/lapin-remote/1.0/capabilities` |
+| The deploy | `deploy/web/deploy.sh --cde` → `/opt/lapin/www/cde`; the nginx block is Atrium's `deploy/cde/nginx-cde.conf` (API prefixes to `lapin-cde:8080`, `/api/feedback` to the feedback container, CSP) |
+
+Tokens: the access token in the tab's memory, the refresh token (single use, rotated) in `sessionStorage` (a reload keeps the sign-in, closing the tab ends it); never `localStorage`, no cookie.
+
+To try it locally: run Atrium Server on `127.0.0.1:5280` (above), `node scripts/build-web.mjs lapin --cde`, and serve `build/lapin/web-cde` with the four API prefixes proxied to the server (any static server with a proxy; `/lapin-remote/1.0/capabilities` must answer JSON on the page's origin).

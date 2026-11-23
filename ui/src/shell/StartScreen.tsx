@@ -2,7 +2,7 @@
 
 import { confirmAction } from './prompts';
 import { useEffect, useState } from 'react';
-import { CloudDownload, Feather, FilePlus2, FolderOpen, History, LayoutTemplate, Trash2, Users } from 'lucide-react';
+import { CloudDownload, Feather, FilePlus2, FolderOpen, History, LayoutTemplate, Server, Trash2, Users } from 'lucide-react';
 import { JoinDialog } from './Sharing';
 import { lazyPart } from '../platform/lazyPart';
 import { OptimizeIfcDialog } from './OptimizeIfcDialog';
@@ -22,12 +22,23 @@ import { discardWork, enter, isDesktop, listRecovery, newProject, openProject, p
 import { notify, useUi } from '../app/store';
 import { openLink } from './support';
 import { LANGUAGES, setLang, useLang } from '../i18n';
+import { CdeStart } from './CdeStart';
+import { detectCde, useCde } from '../engine/cdeServer';
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 const OpenFromServerDialog = lazyPart(() => import('../modules/core/RemoteDialog').then((m) => m.OpenFromServerDialog), { title: 'Open from server' });
 
+/** The start screen: in front of a CDE server (engine/cdeServer.ts), the server's own until the user works offline. */
 export function StartScreen() {
+  const cde = useCde((s) => s.server);
+  const offline = useCde((s) => s.offline);
+  useEffect(() => { void detectCde(); }, []);
+  if (cde && !offline) return <CdeStart />;
+  return <LocalStart cde={Boolean(cde)} />;
+}
+
+function LocalStart({ cde }: { cde: boolean }) {
   const lang = useLang((x) => x.lang);
   const connected = useSession((s) => s.connected);
   const doc = useSession((s) => s.doc);
@@ -57,6 +68,7 @@ export function StartScreen() {
         <button type="button" className="btn big" data-start="templates" disabled={!connected} onClick={() => useUi.setState({ dialog: 'projectTemplates' })}><LayoutTemplate size={18} />New from template…</button>
         <button type="button" className="btn big" disabled={!connected} onClick={() => void openProject()}><FolderOpen size={18} />Open project…</button>
         {isDesktop() && <button type="button" className="btn big" data-start="open-server" disabled={!connected} onClick={() => useUi.setState({ dialog: 'remoteClone' })}><CloudDownload size={18} />Open from server…</button>}
+        {cde && <button type="button" className="btn big" data-start="cde-online" onClick={() => useCde.setState({ offline: false })}><Server size={18} />Server projects…</button>}
         <button type="button" className="btn big" onClick={() => useUi.setState({ dialog: 'join' })}><Users size={18} />Join session…</button>
         <button type="button" className="btn big" data-start="optimize-ifc" disabled={!connected} onClick={() => openOptimize()}><Feather size={18} />Optimize IFC…</button>
         {doc && (doc.path || doc.canUndo) && <button type="button" className="btn big" onClick={back}>Back to {projectTitle(doc.path)}</button>}

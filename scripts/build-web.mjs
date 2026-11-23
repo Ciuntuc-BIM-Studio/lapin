@@ -7,6 +7,10 @@
 //
 //   node scripts/build-web.mjs [id]        (default: lapin)
 //   --engine-only                           the engine alone (build/<id>/web-engine)
+//   --ui-only                               the interface alone, over the engine built last time
+//   --cde                                   the build for a CDE server's origin (cde.lapinbim.com: Atrium Server's APIs
+//                                           on the same origin, Atrium docs/plan-cde-web.md W1) → build/<id>/web-cde;
+//                                           its start screen signs in to that server (ui/src/engine/cdeServer.ts)
 //
 // Needs the .NET wasm-tools workload: DOTNET_ROOT, else ~/.dotnet-wasm
 // (engine/src/Host/Lapin.Browser/README.md says how to install it).
@@ -24,6 +28,7 @@ const id = args.find((a) => !a.startsWith('--')) ?? 'lapin';
 const engineOnly = args.includes('--engine-only');
 // The interface alone, over the engine built last time (build/<id>/web-engine).
 const uiOnly = args.includes('--ui-only');
+const cde = args.includes('--cde');
 const product = resolveProduct(root, id);
 const host = join(root, 'engine/src/Host/Lapin.Browser');
 const out = join(root, 'build', id);
@@ -124,12 +129,13 @@ console.log(`▸ engine for ${id}: ${engineMB.first.toFixed(1)} MB at the first 
 if (engineOnly) process.exit(0);
 
 // 4. The interface, talking to the engine in a worker, with this product's modules.
-const web = join(out, 'web');
+const webName = cde ? 'web-cde' : 'web';
+const web = join(out, webName);
 rmSync(web, { recursive: true, force: true });
 const manifest = join(out, 'product.json');
 mkdirSync(out, { recursive: true });
 writeFileSync(manifest, JSON.stringify(product, null, 2));
-sh('pnpm', ['--filter', 'ui', 'build'], { env: { LAPIN_PRODUCT_FILE: manifest, LAPIN_UI_OUT: web, VITE_ENGINE: 'worker', LAPIN_UI_BASE: './' } });
+sh('pnpm', ['--filter', 'ui', 'build'], { env: { LAPIN_PRODUCT_FILE: manifest, LAPIN_UI_OUT: web, VITE_ENGINE: 'worker', LAPIN_UI_BASE: './', ...(cde ? { VITE_CDE_SERVER: 'same-origin' } : {}) } });
 cpSync(join(engineOut, 'wwwroot'), join(web, 'engine'), { recursive: true });
 // The interface's first load: the page's entry and what it imports statically, the engine's worker, the styles.
 const assets = join(web, 'assets');
@@ -140,7 +146,7 @@ follow(entry);
 for (const f of readdirSync(assets)) if (/^engine\.worker-.*\.js$/.test(f)) follow(f);
 const first = (p) => !p.startsWith(assets) || firstUi.has(p.slice(assets.length + 1)) || p.endsWith('.css');
 const total = downloadMB(web, first);
-console.log(`▸ ${product.name} for the browser → build/${id}/web: ${total.first.toFixed(1)} MB at the first load, ${total.all.toFixed(1)} MB with every lazy part (brotli)`);
+console.log(`▸ ${product.name} for the browser → build/${id}/${webName}: ${total.first.toFixed(1)} MB at the first load, ${total.all.toFixed(1)} MB with every lazy part (brotli)`);
 
 // 5. The budgets (docs/plan-browser-engine.md, stage 3 and Lazy parts): the first load, and everything a session may fetch.
 const BUDGET_MB = 20;

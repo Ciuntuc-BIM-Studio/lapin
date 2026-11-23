@@ -143,6 +143,33 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .template-name { font-weight: 700; font-size: 14px; padding: 0 12px; }
 .template .muted { padding: 0 12px; }
 .start-foot { grid-column: 1 / -1; align-self: end; display: flex; justify-content: space-between; padding: 14px 0; border-top: 1px solid var(--rule); }
+/* In front of a CDE server (shell/CdeStart.tsx): sign in, projects, a project's history, branches, activity and members. */
+.cde-start { padding-bottom: 48px; }
+.cde-start .start-left > .btn.big { margin-top: 8px; }
+.cde-notice { margin: 0 0 10px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--panel); }
+.cde-signin { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.cde-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.cde-actions .btn { width: auto; display: inline-flex; align-items: center; gap: 6px; }
+.cde-title { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 22px; }
+.cde-project .eyebrow { margin: 16px 0 6px; display: flex; align-items: center; gap: 6px; }
+.cde-project .eyebrow .link { display: inline-flex; align-items: center; gap: 4px; text-transform: none; letter-spacing: 0; font-size: 12px; }
+.cde-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.cde-row { display: flex; align-items: center; gap: 12px; padding: 6px 10px; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+.cde-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cde-row-body .recent-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cde-row-actions { display: inline-flex; align-items: center; gap: 4px; }
+.cde-row-actions .btn { width: auto; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; }
+.cde-row-actions .icon { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; }
+.cde-activity li { padding: 2px 0; }
+.cde-members { border-collapse: collapse; margin-bottom: 8px; }
+.cde-members td { padding: 3px 10px 3px 0; }
+.cde-add { display: flex; gap: 6px; align-items: center; max-width: 560px; }
+.cde-add input { flex: 1; min-width: 0; }
+.cde-add .btn { width: auto; display: inline-flex; align-items: center; gap: 4px; }
+@media (max-width: 760px) {
+  .start.cde-start { grid-template-columns: 1fr; gap: 24px; padding: 24px 16px; }
+  .cde-row { flex-wrap: wrap; }
+}
 
 /* Workspace */
 .workspace { display: flex; flex-direction: column; height: 100%; }
