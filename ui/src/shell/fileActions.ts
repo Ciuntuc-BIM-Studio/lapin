@@ -8,11 +8,12 @@ import type { FileAction } from '../platform/module';
 import { modules } from '../platform/modules';
 import { resolveFileActions } from '../platform/replaces';
 import { useUi } from '../app/store';
-import { importDxf, importIfc, linkPointCloud, newProject, openProject, saveProject, importFragments, importBos, importSdnf, linkLapin, importMesh, importTrace, importProjectTypes } from '../engine/files';
+import { importDxf, importIfc, linkPointCloud, newProject, openProject, saveProject, importFragments, importBos, importSdnf, linkLapin, importMesh, importTrace, importProjectTypes, isDesktop } from '../engine/files';
 import { openOptimize } from '../engine/ifcOptimize';
 import { engineInBrowser } from '../engine/session';
 import { hasModule } from '../platform/brand';
 import { leave } from '../engine/share';
+import { getLatest } from '../engine/remote';
 
 /** A section of the menu: its heading (none for the first), its actions by id. */
 export interface FileSection { head?: string; ids: string[] }
@@ -54,6 +55,11 @@ export function baseFileActions(): FileAction[] {
     { id: 'file.exportHtml', label: 'Lapin for the browser (.html)…', menu: 'export-html', run: dialog('exportHtml') },
     // Lapin Extensions (docs/plan-extensions.md): content packs from the catalogue, into Lapin's own libraries.
     { id: 'file.extensions', label: 'Extensions…', menu: 'extensions', run: dialog('extensions') },
+    // Server and collaboration (docs/remote.md): the project's history and its remote, a server or a folder.
+    { id: 'file.collaborate', label: 'Collaborate…', run: dialog('remote') },
+    { id: 'file.saveServer', label: 'Save to server…', run: dialog('remoteSave') },
+    { id: 'file.getLatest', label: 'Get latest from server', run: () => getLatest() },
+    { id: 'file.openServer', label: 'Open from server…', shown: () => isDesktop(), run: dialog('remoteClone') },
     { id: 'file.share', label: 'Share session…', shown: () => !engineInBrowser, run: dialog('share') },
     { id: 'file.join', label: 'Join session…', run: dialog('join') },
     { id: 'file.preferences', label: 'Preferences…', keys: 'app.preferences', run: dialog('preferences') },
@@ -68,7 +74,8 @@ export const HOST_SECTIONS: FileSection[] = [
   { head: 'IFC and Fragments', ids: ['file.importIfc', 'file.importFragments', 'file.importBos', 'file.importSdnf', 'file.linkIfc', 'file.linkLapin', 'file.exportExchange', 'file.exportJg', 'file.optimizeIfc'] },
   { head: 'Other formats', ids: ['file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh', 'file.exportMesh', 'file.exportHtml'] },
   { ids: ['file.extensions'] },
-  { ids: ['file.share', 'file.join', 'file.startScreen'] },
+  { head: 'Server and collaboration', ids: ['file.collaborate', 'file.saveServer', 'file.getLatest', 'file.openServer', 'file.share', 'file.join'] },
+  { ids: ['file.startScreen'] },
 ];
 
 /** A guest works in the host's project: the host opens and saves it; a guest exports what they need, or leaves. */

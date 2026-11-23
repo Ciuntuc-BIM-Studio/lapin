@@ -2,8 +2,9 @@
 
 import { confirmAction } from './prompts';
 import { useEffect, useState } from 'react';
-import { Feather, FilePlus2, FolderOpen, History, LayoutTemplate, Trash2, Users } from 'lucide-react';
+import { CloudDownload, Feather, FilePlus2, FolderOpen, History, LayoutTemplate, Trash2, Users } from 'lucide-react';
 import { JoinDialog } from './Sharing';
+import { lazyPart } from '../platform/lazyPart';
 import { OptimizeIfcDialog } from './OptimizeIfcDialog';
 import { openOptimize } from '../engine/ifcOptimize';
 import { modules, productInfo } from '../platform/modules';
@@ -17,12 +18,14 @@ import { usePrefs } from '../app/prefs';
 import { applyNewProjectStandard } from '../engine/newProjectStandard';
 import { MaterialStandardChoice } from './MaterialStandardChoice';
 import { engineInBrowser, useSession } from '../engine/session';
-import { discardWork, enter, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
+import { discardWork, enter, isDesktop, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
 import { notify, useUi } from '../app/store';
 import { openLink } from './support';
 import { LANGUAGES, setLang, useLang } from '../i18n';
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+const OpenFromServerDialog = lazyPart(() => import('../modules/core/RemoteDialog').then((m) => m.OpenFromServerDialog), { title: 'Open from server' });
 
 export function StartScreen() {
   const lang = useLang((x) => x.lang);
@@ -41,6 +44,7 @@ export function StartScreen() {
   };
   const back = () => useUi.setState({ screen: 'workspace' });
   const joining = useUi((s) => s.dialog === 'join');
+  const cloning = useUi((s) => s.dialog === 'remoteClone');
   const optimizing = useUi((s) => s.dialog === 'optimizeIfc');
   return (
     <div className="start">
@@ -52,6 +56,7 @@ export function StartScreen() {
         {fromTemplate && <p className="muted small" data-start="default-template"><span>From the template</span> <span data-no-i18n>{fromTemplate.name}</span></p>}
         <button type="button" className="btn big" data-start="templates" disabled={!connected} onClick={() => useUi.setState({ dialog: 'projectTemplates' })}><LayoutTemplate size={18} />New from template…</button>
         <button type="button" className="btn big" disabled={!connected} onClick={() => void openProject()}><FolderOpen size={18} />Open project…</button>
+        {isDesktop() && <button type="button" className="btn big" data-start="open-server" disabled={!connected} onClick={() => useUi.setState({ dialog: 'remoteClone' })}><CloudDownload size={18} />Open from server…</button>}
         <button type="button" className="btn big" onClick={() => useUi.setState({ dialog: 'join' })}><Users size={18} />Join session…</button>
         <button type="button" className="btn big" data-start="optimize-ifc" disabled={!connected} onClick={() => openOptimize()}><Feather size={18} />Optimize IFC…</button>
         {doc && (doc.path || doc.canUndo) && <button type="button" className="btn big" onClick={back}>Back to {projectTitle(doc.path)}</button>}
@@ -128,6 +133,7 @@ export function StartScreen() {
         </span>
       </footer>
       {joining && <JoinDialog />}
+      {cloning && <OpenFromServerDialog />}
       {optimizing && <OptimizeIfcDialog />}
       {choosing && <ProjectTemplatesDialog />}
     </div>

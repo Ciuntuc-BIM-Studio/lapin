@@ -14,7 +14,7 @@ For developers. The protocol is `docs/spec-lapin-remote.md` (normative) with its
 | The HTTP remote: discovery, password sign-in, refresh on 401, refs with ETag, `refs/update`, `objects/missing`, PUT, resumable uploads, packs, the commits walk, viewer records | `Remote/HttpRemote.cs` |
 | Push, fetch, clone, where a pull stands (§8) | `Remote/RemoteOps.cs` |
 | The engine's calls `history.*` and `remote.*`, the viewer IFC, pull as one undo step | `engine/src/Platform/Lapin.Protocol/EngineDispatcher.Remote.cs`, `ProjectFiles.History.cs` |
-| Manage → Remote | `ui/src/modules/core/RemoteDialog.tsx`, `ui/src/engine/remote.ts` |
+| File → Server and collaboration: Collaborate…, Save to server…, Get latest from server, Open from server… (also on the start screen) | `ui/src/modules/core/RemoteDialog.tsx` (`RemoteDialog`, `SaveToServerDialog`, `OpenFromServerDialog`), `ui/src/engine/remote.ts` (`getLatest`), `ui/src/shell/fileActions.ts` |
 | The desktop's store of sign-ins (`remote_secret_get` / `remote_secret_set`) | `desktop/src-tauri/src/lib.rs` |
 | Tests: every vector, and the round trips | `engine/tests/Lapin.Engine.Tests/RemoteVectorTests.cs`, `RemoteRoundTripTests.cs` |
 
@@ -43,9 +43,9 @@ All take `author` (`{id, name}`: `local:<installation id>`, or `atrium:<public i
 ### Against a folder
 
 1. `pnpm dev` (or `pnpm dev:desktop`), open or make a project, save it.
-2. Manage → Remote: kind **Folder**, choose an empty folder (for instance `~/LapinRemoteTest`), give your name, **Make a new project there**. The folder gets `lapin-remote.json` and `<project id>/project.json`.
+2. File → Collaborate…: kind **Folder**, choose an empty folder (for instance `~/LapinRemoteTest`), give your name, **Make a new project there**. The folder gets `lapin-remote.json` and `<project id>/project.json`.
 3. Type a message, **Commit**, then **Push**. The folder now holds `objects/`, `commits/`, `refs/heads/main/00000001-….ref` and `viewers/<commit>.json`.
-4. Open a second Lapin window (or `pnpm dev` on another port) with another name; Manage → Remote → **Clone a project from a remote…**: kind Folder, the same folder, the project id (shown in the first window), a new file. Both projects are the same.
+4. Open a second Lapin window (or `pnpm dev` on another port) with another name; File → **Open from server…**: kind Folder, the same folder, the project id (shown in the first window), a new file. Both projects are the same.
 5. Edit and push from one, **Pull** in the other: the change arrives in one undo step. Commit in both and push from both: the second is refused ("pull first"); **Keep my work as a branch** pushes it as `wip/<you>/<date>` and brings the project to the remote's.
 
 From the command line, the same round trip runs in `dotnet test engine/tests/Lapin.Engine.Tests --filter RemoteRoundTripTests`.
@@ -66,7 +66,7 @@ $S project member <id> ana@example.com editor --data "$D"
 $S --data "$D" --urls http://127.0.0.1:5280
 ```
 
-Then in Lapin: Manage → Remote, kind **Server**, address `http://127.0.0.1:5280` (plain http is accepted on this computer only), sign in as `mihai@example.com`, **Projects on the remote**, pick Bloc P+4, **Use this project**; commit and push. In a second window sign in as `ana@example.com` and clone the project. Push from both to see the 409, then keep the work as a branch. Atrium (the viewer) opens the pushed commit through its viewer IFC: File → Open from server.
+Then in Lapin: File → **Collaborate…**, kind **Server**, address `http://127.0.0.1:5280` (plain http is accepted on this computer only), sign in as `mihai@example.com`, **Projects on the remote**, pick Bloc P+4, **Use this project**; commit and push. In a second window sign in as `ana@example.com` and clone the project. Push from both to see the 409, then keep the work as a branch. Atrium (the viewer) opens the pushed commit through its viewer IFC: File → Open from server.
 
 The same round trip without the interface (push, clone, a second user's push, the 409, keep as a branch) runs against the server when its variables are set; without them the test passes at once:
 

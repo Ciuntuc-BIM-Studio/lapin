@@ -1,5 +1,5 @@
 /**
- * Manage → Remote: the project's history and its remote (docs/remote.md; lapin-remote 1.0, docs/spec-lapin-remote.md; decision
+ * File → Collaborate…: the project's history and its remote (docs/remote.md; lapin-remote 1.0, docs/spec-lapin-remote.md; decision
  * 793, stage S1). A remote is a folder (a disk, a NAS, a synced folder) or a server (Atrium Server) signed in to with the account's
  * e-mail and password. From here the project is committed (with a message: the commit stays in the project's file), fetched, pulled
  * (fast-forward only for now) and pushed; ahead/behind as the last fetch saw it. A push the remote refused because someone pushed
@@ -13,7 +13,7 @@ import { backdropClose } from '../../shell/Dialog';
 import { confirmAction } from '../../shell/prompts';
 import { notify, useUi } from '../../app/store';
 import { useSession } from '../../engine/session';
-import { isDesktop, pickPath, projectTitle } from '../../engine/files';
+import { enter, isDesktop, pickPath, projectTitle } from '../../engine/files';
 import { pickFolder } from './cde/cde';
 import {
   authorFor, historyLog, historyStatus, remoteCall, serverOf, setAuthorName, authorName, signedIn, signIn, signOut, writingCall,
@@ -86,8 +86,8 @@ export function RemoteDialog() {
   const remote = status?.remotes[0] ?? null;
   return (
     <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
-      <div className="dialog wide" role="dialog" aria-label="Remote" onClick={(e) => e.stopPropagation()}>
-        <header className="dialog-head"><span className="panel-title">Remote · {projectTitle(path)}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
+      <div className="dialog wide" role="dialog" aria-label="Collaborate" onClick={(e) => e.stopPropagation()}>
+        <header className="dialog-head"><span className="panel-title">Collaborate · {projectTitle(path)}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           {status === null && <p className="muted">Reading the history…</p>}
           {status?.unreadable && <p className="error-text">The project's history could not be read: it is kept as it is.</p>}
@@ -147,7 +147,7 @@ export function RemoteDialog() {
               </tbody>
             </table>
           )}
-          {isDesktop() && <Clone busy={busy} setBusy={setBusy} />}
+          {isDesktop() && <p><button type="button" className="link" onClick={() => useUi.setState({ dialog: 'remoteClone' })}>Open a project from a server…</button></p>}
           <p className="muted small">A commit stays in the project's file. Push sends the commits to the remote; pull brings the remote's in, in one undo step. Sign-ins are kept by this computer, never in the project.</p>
         </div>
         <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
@@ -244,16 +244,83 @@ function AddRemote({ busy, setBusy, onAdded }: { busy: boolean; setBusy: (b: boo
   );
 }
 
-/** A project cloned from a remote into a new file (the desktop), opened in place of this one. */
-function Clone({ busy, setBusy }: { busy: boolean; setBusy: (b: boolean) => void }) {
-  const [open, setOpen] = useState(false);
+/** File → Open from server…: a project cloned from a remote into a new file (the desktop), opened in place of this one. */
+export function OpenFromServerDialog() {
+  const [busy, setBusy] = useState(false);
+  const close = () => useUi.setState({ dialog: null });
+  return (
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
+      <div className="dialog wide" role="dialog" aria-label="Open from server" onClick={(e) => e.stopPropagation()}>
+        <header className="dialog-head"><span className="panel-title">Open from server</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
+        <div className="dialog-body">
+          <p className="muted small">The project is copied from the server or folder into a new file on this computer, and opened.</p>
+          <CloneForm busy={busy} setBusy={setBusy} />
+        </div>
+        <footer className="dialog-foot"><span className="grow" /><button type="button" onClick={close}>Cancel</button></footer>
+      </div>
+    </div>
+  );
+}
+
+/** File → Save to server…: the project's changes committed with a message and pushed, in one step. Without a remote, the Collaborate dialog opens to connect one. */
+export function SaveToServerDialog() {
+  const [status, setStatus] = useState<HistoryStatus | null>(null);
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const close = () => useUi.setState({ dialog: null });
+  const gone = useRef(false);
+  useEffect(() => () => { gone.current = true; }, []);
+  useEffect(() => {
+    void historyStatus().then((s) => {
+      if (gone.current) return;
+      if (!s.remotes[0]) { notify('Connect a server or folder first.'); useUi.setState({ dialog: 'remote' }); return; }
+      setStatus(s);
+    }).catch((e) => { notify(e instanceof Error ? e.message : String(e)); close(); });
+  }, []);
+  const remote = status?.remotes[0] ?? null;
+  const server = serverOf(status);
+  const go = async () => {
+    if (busy || !status) return;
+    setBusy(true);
+    try {
+      if (server && !await signedIn(server)) { notify('Sign in to the server first.'); useUi.setState({ dialog: 'remote' }); return; }
+      if (status.uncommitted && !await writingCall('history.commit', { message: message.trim() }, server)) return;
+      const o = await remoteCall<Outcome>('remote.push', {}, server);
+      for (const n of o.notes ?? []) notify(n);
+      if (o.pushed === false) { notify(o.message ?? 'The server did not take it.'); useUi.setState({ dialog: 'remote' }); return; }
+      notify('Saved to the server.');
+      close();
+    } catch (e) { notify(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
+  };
+  return (
+    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
+      <div className="dialog" role="dialog" aria-label="Save to server" onClick={(e) => e.stopPropagation()}>
+        <header className="dialog-head"><span className="panel-title">Save to server</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
+        <div className="dialog-body">
+          {!status && <p className="muted">Reading the history…</p>}
+          {remote && <p><span className="muted">{remote.kind === 'server' ? 'Server' : 'Folder'}</span> <span data-no-i18n>{remote.url}</span>{' · '}<span data-no-i18n>{remote.project}</span></p>}
+          {status && !status.uncommitted && <p className="muted">Nothing new since the last save: the saved version is sent again if the server lacks it.</p>}
+          {status?.uncommitted && (
+            <input autoFocus placeholder="What changed? (a short note)" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="Note for this save" onKeyDown={(e) => { if (e.key === 'Enter' && message.trim()) void go(); }} />
+          )}
+        </div>
+        <footer className="dialog-foot">
+          <span className="grow" />
+          <button type="button" onClick={close}>Cancel</button>
+          <button type="button" className="btn primary" disabled={busy || !status || (status.uncommitted && !message.trim())} onClick={() => void go()}><ArrowUp size={13} /> Save to server</button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function CloneForm({ busy, setBusy }: { busy: boolean; setBusy: (b: boolean) => void }) {
   const [kind, setKind] = useState<Kind>('folder');
   const [url, setUrl] = useState('');
   const [project, setProject] = useState('');
   const [account, setAccount] = useState(false);
   const target = kind === 'server' ? url.trim().replace(/\/+$/, '') : null;
   useEffect(() => { if (target) void signedIn(target).then(setAccount); else setAccount(false); }, [target]);
-  if (!open) return <p><button type="button" className="link" onClick={() => setOpen(true)}>Clone a project from a remote…</button></p>;
   const server = kind === 'server' ? url.trim().replace(/\/+$/, '') : null;
   const go = async () => {
     if (useSession.getState().doc?.dirty && !confirmAction('The project open now has changes not saved. Clone anyway (they are lost)?')) return;
@@ -264,6 +331,7 @@ function Clone({ busy, setBusy }: { busy: boolean; setBusy: (b: boolean) => void
       await remoteCall('remote.clone', { kind, url: kind === 'folder' ? url : server, project: project.trim(), path: file }, server);
       notify('Cloned: the project is the remote\'s, in a new file.');
       useUi.setState({ dialog: null });
+      enter();
     } catch (e) { notify(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   };
   return (
@@ -276,7 +344,7 @@ function Clone({ busy, setBusy }: { busy: boolean; setBusy: (b: boolean) => void
       </select>
       <input placeholder={kind === 'folder' ? 'Folder (full path)' : 'Server address'} value={url} onChange={(e) => setUrl(e.target.value)} aria-label="Address" />
       <input placeholder="Project id" value={project} onChange={(e) => setProject(e.target.value)} aria-label="Project id" />
-      <button type="button" className="btn primary" disabled={busy || !url.trim() || !project.trim() || (kind === 'server' && !account)} onClick={() => void go()}>Clone</button>
+      <button type="button" className="btn primary" disabled={busy || !url.trim() || !project.trim() || (kind === 'server' && !account)} onClick={() => void go()}>Open</button>
     </div>
     </section>
   );

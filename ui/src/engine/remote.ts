@@ -10,7 +10,7 @@ import { engine, engineInBrowser } from './session';
 import { isDesktop, keepProjectFile, reportWarnings, saveProject } from './files';
 import { LONG_TIMEOUT_MS } from './client';
 import { useSession } from './session';
-import { notify } from '../app/store';
+import { notify, useUi } from '../app/store';
 
 export interface RemoteInfo { name: string; kind: 'folder' | 'server'; url: string; project: string; ahead: number; behind: number; fetchedAt: string | null; remoteHead: string | null }
 export interface CommitInfo { id: string; message: string; at: string; author: { id: string; name: string }; entities: number | null; parents: string[]; tags: string[]; pushed?: boolean }
@@ -148,4 +148,27 @@ export async function writingCall<T extends object>(method: string, args: Record
     if (!await saveProject(true)) return null;
   }
   return remoteCall<T>(method, args, server);
+}
+
+/**
+ * File → Get latest from server: the remote's new commits brought into the project. Without a remote, the Collaborate dialog opens to
+ * connect one; with changes not saved to the server yet, or a history that went another way, it opens too, where the choices are.
+ */
+export async function getLatest(): Promise<void> {
+  const open = (why: string) => { notify(why); useUi.setState({ dialog: 'remote' }); };
+  try {
+    const s = await historyStatus();
+    const remote = s.remotes[0];
+    if (!remote) return open('Connect a server or folder first.');
+    const server = serverOf(s);
+    if (server && !await signedIn(server)) return open('Sign in to the server first.');
+    if (s.uncommitted) return open('Save your changes to the server first (or keep them as a version), then get the latest.');
+    const fetched = await remoteCall<{ notes: string[] }>('remote.fetch', {}, server);
+    for (const n of fetched.notes ?? []) notify(n);
+    const o = await writingCall<{ pulled?: boolean; kind?: string; message?: string; notes?: string[] }>('remote.pull', {}, server);
+    if (!o) return;
+    for (const n of o.notes ?? []) notify(n);
+    if (o.pulled === false) return open(o.message ?? 'Someone saved before you: choose what to keep.');
+    notify('Up to date with the server.');
+  } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
 }
