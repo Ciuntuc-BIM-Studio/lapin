@@ -1,0 +1,118 @@
+{
+  "blobs": {
+    "empty.bin": {
+      "id": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "what": "zero bytes"
+    },
+    "hello.txt": {
+      "id": "fffac16a720cca4dfaf893c3d25fbf5f1a8e07e5aa9c0ec3d4ec2da2a8bb7658",
+      "size": 14,
+      "what": "ASCII text with a final LF"
+    },
+    "unicode.txt": {
+      "id": "a2d740571f4fa8c34d22142f544115b12ee79470a805be2a2e58cedc1f1e72f1",
+      "size": 39,
+      "what": "UTF-8 text with multi-byte characters"
+    },
+    "document.json": {
+      "id": "5e0b1db26ac04e4ff0dd62a50b538a74d1df1a11fc84e714dcc52d9d7c62ad66",
+      "size": 40,
+      "what": "a project/document.json"
+    },
+    "walls.arrow": {
+      "id": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+      "size": 256,
+      "what": "bytes 0x00..0xFF (stands in for an Arrow table)"
+    },
+    "relations.arrow": {
+      "id": "06102ac035947e401232f8dec2ec7f18b3a14bf1add20ae3e247947f81d74d41",
+      "size": 64,
+      "what": "64 binary bytes (stands in for model/relations.arrow)"
+    },
+    "hello.py": {
+      "id": "0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3",
+      "size": 23,
+      "what": "a project script"
+    },
+    "issue.pdf": {
+      "id": "73fa0eeab0127616e19bacf37ac6cf241f8156c89aa6f851ad030b306c05728c",
+      "size": 42,
+      "what": "an issued file (a stub PDF)"
+    },
+    "missing.py": {
+      "id": "535ec7ad1a1a2734381137db05491f341c5431d1ebb600b11b2ab19c24c7bb98",
+      "size": 24,
+      "what": "named by tree T4, never uploaded (the 422 case)"
+    }
+  },
+  "objects": {
+    "T1": {
+      "kind": "tree",
+      "id": "7e4c2e2a044109912f4dd8ad2e65e9c4e6946d015a4c38419ef7b39ac32ef0df",
+      "size": 378,
+      "file": "objects/T1.json"
+    },
+    "T2": {
+      "kind": "tree",
+      "id": "941f7c834ec70c7171289afba2fc9d5042cab97306759b2c9979f34be04a7c26",
+      "size": 707,
+      "file": "objects/T2.json"
+    },
+    "T3": {
+      "kind": "tree",
+      "id": "840b22f3b53397e114f3dfc3d11817158ab758eebb378e141f01e3ca3235288f",
+      "size": 550,
+      "file": "objects/T3.json"
+    },
+    "T4": {
+      "kind": "tree",
+      "id": "a3a1b99c43064c9aef682e0a1fc3ee704a23191aba7f3b4819165afe8011bd6d",
+      "size": 844,
+      "file": "objects/T4.json"
+    },
+    "c1": {
+      "kind": "commit",
+      "id": "fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1",
+      "size": 305,
+      "file": "objects/c1.json"
+    },
+    "c2": {
+      "kind": "commit",
+      "id": "ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94",
+      "size": 389,
+      "file": "objects/c2.json"
+    },
+    "c3": {
+      "kind": "commit",
+      "id": "adc421509ab97b9cb16f960a1119756f71af1fae30b1f7d58ca8754df2955cc3",
+      "size": 371,
+      "file": "objects/c3.json"
+    },
+    "c4": {
+      "kind": "commit",
+      "id": "526d5f566c1249a0ca287dee0d830734e8b2fd1e19ade5fc5e932700b35ea697",
+      "size": 371,
+      "file": "objects/c4.json"
+    },
+    "commit-future": {
+      "kind": "commit",
+      "id": "4db4ba1dee86d896ee4956a7958127b3f3d2129876c8138d58ef887eb33db7c7",
+      "size": 442,
+      "file": "objects/commit-future.json"
+    },
+    "tag-issue": {
+      "kind": "tag",
+      "id": "336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67",
+      "size": 496,
+      "file": "objects/tag-issue.json"
+    },
+    "tag-version": {
+      "kind": "tag",
+      "id": "a228d75c7f0b06705ebe34d91be043766ccd7d86fa9d9c2a2173ebd6a187e38d",
+      "size": 291,
+      "file": "objects/tag-version.json"
+    }
+  },
+  "project": "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90"
+}

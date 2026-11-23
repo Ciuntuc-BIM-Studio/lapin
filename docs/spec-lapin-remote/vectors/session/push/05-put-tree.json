@@ -1,0 +1,20 @@
+{
+  "step": 5,
+  "title": "4. Upload: the tree T2 in one PUT.",
+  "request": {
+    "method": "PUT",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/941f7c834ec70c7171289afba2fc9d5042cab97306759b2c9979f34be04a7c26",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/octet-stream"
+    },
+    "bodyFile": "../../objects/T2.json"
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "etag": "\"941f7c834ec70c7171289afba2fc9d5042cab97306759b2c9979f34be04a7c26\""
+    },
+    "body": null
+  }
+}

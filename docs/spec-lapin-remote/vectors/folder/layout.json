@@ -1,0 +1,26 @@
+{
+  "title": "The files of a folder remote after the push session (objects listed, not their gzip bytes).",
+  "files": {
+    "lapin-remote.json": "{\"format\":\"lapin-remote\",\"v\":1}",
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/project.json": "{\"createdAt\":\"2026-11-23T09:59:00Z\",\"defaultRef\":\"refs/heads/main\",\"format\":\"lapin-remote-project\",\"id\":\"0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90\",\"name\":\"Bloc P+4\",\"v\":1}"
+  },
+  "objects": [
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/5e/5e0b1db26ac04e4ff0dd62a50b538a74d1df1a11fc84e714dcc52d9d7c62ad66.gz",
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/06/06102ac035947e401232f8dec2ec7f18b3a14bf1add20ae3e247947f81d74d41.gz",
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/7e/7e4c2e2a044109912f4dd8ad2e65e9c4e6946d015a4c38419ef7b39ac32ef0df.gz",
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/94/941f7c834ec70c7171289afba2fc9d5042cab97306759b2c9979f34be04a7c26.gz",
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/40/40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880.gz",
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/03/0322c09de894ffaf5e59b5b819ec263948006bc37999e4b3defb7d7cd1ab11d3.gz",
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/objects/73/73fa0eeab0127616e19bacf37ac6cf241f8156c89aa6f851ad030b306c05728c.gz"
+  ],
+  "commits": [
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/commits/fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1.json",
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/commits/ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94.json",
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/commits/336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67.json"
+  ],
+  "refs": [
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/refs/heads/main/00000001-fedb729f0255c515f1716fa24c7a47eeeeb4df20007dd8bc967056da0c35aeb1-local-9f2b6c1d0e8a4b7c.ref",
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/refs/heads/main/00000002-ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94-local-9f2b6c1d0e8a4b7c.ref",
+    "0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/refs/tags/issue/1-P01/00000001-336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67-local-9f2b6c1d0e8a4b7c.ref"
+  ]
+}

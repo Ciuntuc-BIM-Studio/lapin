@@ -1,0 +1,22 @@
+{
+  "step": 2,
+  "title": "The same again: 304, no body.",
+  "request": {
+    "method": "GET",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/refs",
+    "headers": {
+      "authorization": "Bearer test-access-token-viewer",
+      "if-none-match": "\"r-8\""
+    }
+  },
+  "response": {
+    "status": 304,
+    "headers": {
+      "etag": "\"r-8\""
+    },
+    "body": null
+  },
+  "opaque": [
+    "/response/headers/etag"
+  ]
+}

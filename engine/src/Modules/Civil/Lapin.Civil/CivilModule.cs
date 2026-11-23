@@ -97,6 +97,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         SiteCommands.Register(r);
         // The tunnel-portal and bridge-abutment configurator (docs/plan-wing-walls.md, S3).
         Portals.Register(r);
+        TerrainOutlines.Register(r);
         GeoImportCommands.Register(r);
         CorridorCommands.Register(r);
 

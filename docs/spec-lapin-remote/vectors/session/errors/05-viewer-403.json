@@ -1,0 +1,34 @@
+{
+  "step": 5,
+  "title": "A viewer (reader) may not push.",
+  "request": {
+    "method": "POST",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/refs/update",
+    "headers": {
+      "authorization": "Bearer test-access-token-viewer",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "updates": [
+        {
+          "name": "refs/heads/main",
+          "old": "ce2c4e189b12a9e5bf3498d026dd8a8c465b546bf2ed29ffe644f6c5813a3c94",
+          "new": "526d5f566c1249a0ca287dee0d830734e8b2fd1e19ade5fc5e932700b35ea697"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 403,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "code": "forbidden",
+      "message": "Your role in this project (viewer) cannot update refs/heads/main."
+    }
+  },
+  "opaque": [
+    "/response/body/message"
+  ]
+}

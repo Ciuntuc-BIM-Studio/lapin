@@ -279,7 +279,9 @@ export function useGripEditor(o: GripEditorOptions) {
       ...(g?.members ?? []).filter((m) => m.corner && !(m.kind === 'vertex' && m.remove && !m.removeLabel)).flatMap((m) => cornerMenu(m.corner!)),
     ];
     if (!items.length) return false;
-    openContextMenu(e.clientX, e.clientY, items);
+    // An outline's corner whose grip has a menu of its own too (a terrain's outline point, T1): its corner's items first.
+    const corner = g?.members.some((m) => m.kind === 'vertex' && m.remove && !m.removeLabel) ? cornerItems(e) : [];
+    openContextMenu(e.clientX, e.clientY, [...corner, ...items]);
     return true;
   };
   /**

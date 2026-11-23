@@ -1,0 +1,35 @@
+{
+  "step": 13,
+  "title": "An issue tag never moves, even for an owner: 422.",
+  "request": {
+    "method": "POST",
+    "path": "/lapin-remote/1.0/projects/0b6f1c2e-5a7d-4c1e-9f3a-2d8e6b4a1c90/refs/update",
+    "headers": {
+      "authorization": "Bearer test-access-token-mihai",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "updates": [
+        {
+          "name": "refs/tags/issue/1-P01",
+          "old": "336f44b81f7218e8d60240bb8beea12a4c37612e49c892131fddf1cc193fac67",
+          "new": "a228d75c7f0b06705ebe34d91be043766ccd7d86fa9d9c2a2173ebd6a187e38d"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 422,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "code": "tag_immutable",
+      "message": "An issue tag cannot be moved.",
+      "name": "refs/tags/issue/1-P01"
+    }
+  },
+  "opaque": [
+    "/response/body/message"
+  ]
+}
