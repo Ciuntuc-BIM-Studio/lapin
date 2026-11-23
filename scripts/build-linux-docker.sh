@@ -6,7 +6,7 @@ set -euo pipefail
 # workflow, for when Actions is not available. Needs Docker (OrbStack, Docker
 # Desktop or Colima); on Apple Silicon the container runs x64 under emulation,
 # so it is slower than Actions.
-#   scripts/build-linux-docker.sh [product] [ref]     (default: lapin, origin/main; LAPIN_SKIP_TESTS=1 skips the engine's tests)
+#   scripts/build-linux-docker.sh [product] [ref]     (default: lapin, origin/main; LAPIN_SKIP_TESTS=1 skips the engine's tests; LAPIN_LINUX_BUNDLES=deb,rpm leaves the AppImage out)
 # The packages land in build/<product>-linux/. The toolchains, the packages'
 # caches, Rust's target and manifold's library are kept in Docker volumes, so
 # a second build is quicker. The build is of a clean clone of <ref>: what is
@@ -50,7 +50,7 @@ docker run --rm --platform linux/amd64 \
   -v lapin-linux-pnpm:/root/.local/share/pnpm \
   -v lapin-linux-nuget:/root/.nuget/packages \
   -v lapin-linux-native:/native \
-  -e LAPIN_SKIP_TESTS="${LAPIN_SKIP_TESTS:-}" -e PRODUCT="${product}" -e COMMIT="${commit}" -e CI=true -e APPIMAGE_EXTRACT_AND_RUN=1 \
+  -e LAPIN_SKIP_TESTS="${LAPIN_SKIP_TESTS:-}" -e LAPIN_LINUX_BUNDLES="${LAPIN_LINUX_BUNDLES:-}" -e PRODUCT="${product}" -e COMMIT="${commit}" -e CI=true -e APPIMAGE_EXTRACT_AND_RUN=1 \
   "${image}" bash -euo pipefail -c '
     git config --global --add safe.directory "*"
     git clone -q /repo.git /work && cd /work && git checkout -q --detach "$COMMIT"
@@ -65,7 +65,8 @@ docker run --rm --platform linux/amd64 \
     [ -n "${LAPIN_SKIP_TESTS:-}" ] || dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo
     pnpm build:product "$PRODUCT"
     rm -f /out/*.deb /out/*.rpm /out/*.AppImage
-    cp build/"$PRODUCT"/bundle/deb/*.deb build/"$PRODUCT"/bundle/rpm/*.rpm build/"$PRODUCT"/bundle/appimage/*.AppImage /out/
+    # The packages made (LAPIN_LINUX_BUNDLES may leave one out).
+    for f in build/"$PRODUCT"/bundle/deb/*.deb build/"$PRODUCT"/bundle/rpm/*.rpm build/"$PRODUCT"/bundle/appimage/*.AppImage; do [ -f "$f" ] && cp "$f" /out/; done
     ls -la /out
   '
 echo "✓ ${out}"

@@ -148,8 +148,11 @@ if (mac && identity)
 // (Fedora, RHEL, openSUSE) uses the system's WebKitGTK like the .deb, not the older one the AppImage carries.
 // Only here: on macOS and Windows a file association would register .lapin before the app handles a file opened so.
 const mimeXml = { [`/usr/share/mime/packages/${id}.xml`]: 'linux/lapin-project.xml' };
+// LAPIN_LINUX_BUNDLES=deb,rpm leaves a package out (23.11.2026: the AppImage tools' "continuous" plugin stopped running);
+// empty or unset, all three.
+const linuxTargets = (process.env.LAPIN_LINUX_BUNDLES ?? '').split(',').map((s) => s.trim()).filter((s) => ['deb', 'rpm', 'appimage'].includes(s));
 const linuxBundle = {
-  targets: ['deb', 'rpm', 'appimage'],
+  targets: linuxTargets.length ? linuxTargets : ['deb', 'rpm', 'appimage'],
   shortDescription: product.description ?? 'BIM modeller on the IFC schema',
   fileAssociations: [{ ext: ['lapin'], name: 'Lapin project', description: 'Lapin project', mimeType: 'application/x-lapin-project', role: 'Editor' }],
   linux: { deb: { desktopTemplate: 'linux/app.desktop.hbs', files: mimeXml }, rpm: { desktopTemplate: 'linux/app.desktop.hbs', files: mimeXml }, appimage: { files: mimeXml } },
