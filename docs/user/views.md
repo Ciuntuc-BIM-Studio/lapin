@@ -24,6 +24,18 @@ A section need not be one straight line. **Jogged section** (<kbd>SJ</kbd>) draw
 
 Select the section in the browser to set its scale, its depth, its discipline and its style in the properties panel.
 
+### How wide a section sees
+
+A straight section is **limited to its ends**: it cuts and sees only the strip between the two ends of its line, its length, across its whole depth. A long terrain, a road or the building next door reaching past its ends is not drawn there, so a 10 m section through a wall is 10 m wide even on a 70 m site. A new section has **Limit to its ends** ticked in the view's settings. Untick it to draw everything the section's plane crosses, however wide. A section saved before this option came opens with it unticked, drawn exactly as it was; tick it when you want it. Each change is one step to undo. Selected in a plan, a limited section shows the strip it sees: its two sides, from its ends out to its far line (out to its far grip when it sees without end). Grid lines and other sections' markers beyond its ends are left out of it, and sheets, the PDF and the DXF print what the view shows. A jogged, curved or following section has no such box: each of its pieces always sees only between its own ends.
+
+![Section E-E limited to its ends: the wall and the terrain between the two ends of its line](shots/section-limit-ends.webp)
+
+![The section's settings: Limit to its ends](shots/section-limit-ends-setting.webp)
+
+![The same section without it: the terrain drawn over its whole width, the wall small in the middle](shots/section-limit-ends-off.webp)
+
+![The section selected in plan: the strip it sees, from its line out to its far line](shots/section-limit-ends-plan.webp)
+
 ### How far a section sees
 
 A section draws what its plane cuts and, behind it, everything it sees up to its **depth**. Empty, the depth has no end. Set it under **Depth** in the view's settings (**View → View settings**, or the section's properties). You can also drag it in a plan: select the section, and a grip stands on its far line, at the middle. Drag the grip towards the cut or away from it. A dashed line shows where the section stops seeing. A section without a depth has the grip out in front of its line, ready to drag in. Ctrl/⌘-click the grip and the section sees without end again. Each change is one step to undo.

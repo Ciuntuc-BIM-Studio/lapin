@@ -16,7 +16,7 @@ import type { Grip, GripView, RefLine, Vec2 } from '../../platform/module';
 import { LengthField } from '../../shell/cells';
 import { lengthText } from '../../engine/unitsStore';
 import { BEYOND_MODES, DEFAULT_NEAR_DEPTH, type BeyondMode, type ViewStyle } from './viewStyles';
-import { sectionPoints } from './sections';
+import { limitsEnds, offersLimitEnds, sectionPoints } from './sections';
 
 const r3 = (v: number) => Math.round(v * 1000) / 1000;
 
@@ -107,12 +107,27 @@ export function sectionFarGrips(node: NodeDto): Grip[] {
   }];
 }
 
-/** A section's far line, drawn over it when selected: its line moved along the look by its depth, piece by piece. */
+/**
+ * A section's far line, drawn over it when selected: its line moved along the look by its depth, piece by piece. A plain
+ * section limited to its ends (decision 802) also draws its two sides, from its ends out to the far line (as far as its
+ * far grip when it sees without end): the strip it cuts and sees.
+ */
 export function sectionFarLine(node: NodeDto): RefLine[] {
   if (node.type !== 'LapinView' || node.props.kind !== 'section' || node.props.curve === 'arc') return [];
   const depth = viewDepth(node);
   const pts = sectionPoints(node);
-  if (depth == null || pts.length < 2) return [];
+  if (pts.length < 2) return [];
+  if (offersLimitEnds(node) && limitsEnds(node)) {
+    const [a, b] = pts;
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (len < 1e-9) return [];
+    const look = { x: -(b.y - a.y) / len, y: (b.x - a.x) / len };
+    const d = depth ?? Math.max(2, len / 2);
+    const out = (p: Vec2) => ({ x: p.x + look.x * d, y: p.y + look.y * d });
+    // Without end: the sides only, open at the far end; with a depth: the far line closes the strip.
+    return [{ points: depth == null ? [out(a), a, b, out(b)] : [a, b, out(b), out(a)], closed: depth != null, kind: 'outline' }];
+  }
+  if (depth == null) return [];
   const lines: RefLine[] = [];
   for (let i = 0; i + 1 < pts.length; i++) {
     const [a, b] = [pts[i], pts[i + 1]];
