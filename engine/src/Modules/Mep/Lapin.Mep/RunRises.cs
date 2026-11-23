@@ -22,21 +22,16 @@ public static partial class Runs
                 yield return (line[i].Xy, line[i + 1].Z > line[i].Z);
     }
 
-    /// <summary>ISO 4067, as the rise node draws it: a ring; a dot where the run rises, a cross where it drops.</summary>
-    internal static IEnumerable<PlanItem> RiseMarks(IReadOnlyList<Vec3> line)
+    /// <summary>The rise or drop sign of the project's symbol set (ISO 4067: a ring with a dot where the run rises, a cross where it drops), as the rise node draws it, sized on paper as its set says.</summary>
+    internal static IEnumerable<PlanItem> RiseMarks(IModelView m, IReadOnlyList<Vec3> line)
     {
+        var role = Roles.Require("rise");
         foreach (var (at, up) in Rises(line))
         {
-            // Sized on paper, as the rise node's sign is.
-            var paper = new PaperAnchor(at, Nodes.SymbolScale);
-            yield return new PlanItem("symbol", true, [.. Chords.Ring(at, 0.06)]) { Paper = paper };
-            if (up) yield return new PlanItem("heavy", true, [.. Chords.Ring(at, 0.015)]) { Paper = paper };
-            else
-            {
-                const double c = 0.042;
-                yield return new PlanItem("symbol", false, [at + new Vec2(-c, -c), at + new Vec2(c, c)]) { Paper = paper };
-                yield return new PlanItem("symbol", false, [at + new Vec2(-c, c), at + new Vec2(c, -c)]) { Paper = paper };
-            }
+            var choice = MepSymbols.For(m, MepSymbols.KeyOf(role, !up));
+            var paper = choice.Paper ? new PaperAnchor(at, Nodes.SymbolScale) : null;
+            foreach (var item in Nodes.SymbolItems(m, role, choice, role.Size, (x, y) => at + new Vec2(x, y), up, 0))
+                yield return item with { Paper = paper };
         }
     }
 

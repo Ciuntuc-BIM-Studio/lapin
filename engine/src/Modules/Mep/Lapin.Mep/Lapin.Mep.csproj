@@ -18,4 +18,8 @@
     <!-- Tags: the MEP module's Tag system makes Annotate's tags (Lapin.Drafting.Tags). -->
     <ProjectReference Include="../../Drafting/Lapin.Drafting/Lapin.Drafting.csproj" Private="false" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- The built-in MEP symbol sets, data (MepSymbols): a role's symbol by name, size and drawing. -->
+    <EmbeddedResource Include="SymbolSets/*.json" LogicalName="Lapin.Mep.SymbolSets.%(Filename).json" />
+  </ItemGroup>
 </Project>

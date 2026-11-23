@@ -103,7 +103,11 @@ public static class Nodes
         return new ElementGeometry(parts, Symbol(m, e, role, size), [Position(e), .. Ports(m, e).Select(p => p.At.Xy)]);
     }
 
-    /// <summary>The role's symbol on the plan (the engineering symbol, not the box): what the schematic shows.</summary>
+    /// <summary>
+    /// The role's symbol on the plan (the engineering symbol, not the box): what the schematic shows, as the project's symbol set
+    /// draws it (<see cref="MepSymbols"/>: Lapin's ISO 4067 / IEC 60617 drawing, or a symbol of the user's own), with the ports'
+    /// ticks, sized on paper or at the model's size as its set says, in its system's colour.
+    /// </summary>
     static List<PlanItem> Symbol(IModelView m, Entity e, Role role, Vec3 size)
     {
         var o = new List<PlanItem>();
@@ -111,14 +115,52 @@ public static class Nodes
         double w = size.X / 2, d = size.Y / 2;
         Vec2[] box = [P(-w, -d), P(w, -d), P(w, d), P(-w, d)];
         o.Add(new PlanItem("hit", true, box));
+        var up = !role.IsRise || RiseTop(m, e) > ToWorld(m, e, role, Vec3.Zero).Z;
+        var choice = MepSymbols.For(m, MepSymbols.KeyOf(role, !up));
+        var drawn = SymbolItems(m, role, choice, size, P, up, e.Num("rotation"));
+        o.AddRange(drawn);
+        // A drawn symbol larger than the role's box is picked where it draws.
+        if (choice.Def != null && drawn.SelectMany(i => i.Points).ToList() is { Count: > 0 } all)
+        {
+            var (x0, y0, x1, y1) = (all.Min(q => q.X), all.Min(q => q.Y), all.Max(q => q.X), all.Max(q => q.Y));
+            o.Add(new PlanItem("hit", true, [new(x0, y0), new(x1, y0), new(x1, y1), new(x0, y1)]));
+        }
+        // The ports, as short ticks, so a run finds them by eye.
+        foreach (var p in Ports(m, e))
+            if (Math.Abs(p.Dir.Z) < 0.9) o.Add(new PlanItem("symbol", false, [p.At.Xy, p.At.Xy + p.Dir.Xy * 0.06]));
+        // Sized on paper as a text is, so 1:50 and 1:100 print it the same size (its ticks with it), unless the role's symbol is
+        // its body's real outline (a boiler, a radiator's length, a tank): drawn as at 1:50 round the node's point.
+        if (choice.Paper) for (var i = 0; i < o.Count; i++) o[i] = o[i] with { Paper = new PaperAnchor(Position(e), SymbolScale) };
+        // In its system's colour, drawn whole wherever it is mounted (an MEP plan's symbols: their heights are for the tags).
+        var system = m.Get(e.Str("systemId") ?? "") is { Class: Systems.Class } sys ? sys : null;
+        var look = (system != null ? Systems.StyleOf(system) : SystemStyle.For(role.Ports.FirstOrDefault()?.Service ?? Services.Heating)).Line;
+        var spec = new Lapin.Drawing.LineStyleSpec(null, look.Color, null);
+        for (var i = 0; i < o.Count; i++)
+            if (o[i].Kind != "hit") o[i] = o[i] with { Style = spec };
+        // What a detector or a hydrant covers, a circle round it, pale and thin: a "reach", never picked, boxed or framed; drawn
+        // in a view as its coverage setting says (MepPlanInView: on the selected devices only, by default).
+        if (Coverage(e, role) is > 0 and var reach) o.Add(new PlanItem("reach", true, [.. Chords.Ring(new Vec2(0, 0), reach).Select(q => P(q.X, q.Y))], Style: new(1, Pale(look.Color), null)));
+        return o;
+    }
+
+    /// <summary>
+    /// What a symbol set's choice draws for a role, its points mapped by <paramref name="P"/> from the node's own frame (metres,
+    /// as at 1:50 when sized on paper): a definition's strokes, fills and texts, or Lapin's coded drawing of that name.
+    /// </summary>
+    internal static List<PlanItem> SymbolItems(IModelView m, Role role, MepSymbolChoice choice, Vec3 size, Func<double, double, Vec2> P, bool up, double angleDeg)
+    {
+        if (choice.Def is { } def) return DefItems(m, def, choice.Paper, P, angleDeg);
+        var o = new List<PlanItem>();
+        var code = choice.Coded;
+        double w = size.X / 2, d = size.Y / 2;
+        Vec2[] box = [P(-w, -d), P(w, -d), P(w, d), P(-w, d)];
         // Every ring as Chords makes it (at least 24 sides): the symbols are drawn round, whatever their size.
         List<Vec2> Circle(double r) => [.. Chords.Ring(new Vec2(0, 0), r).Select(q => P(q.X, q.Y))];
-        switch (role.Symbol)
+        switch (code)
         {
             case "rise":
             {
                 // ISO 4067: a ring; a dot for a rise (the pipe comes up to the eye), a cross for a drop.
-                var up = RiseTop(m, e) > ToWorld(m, e, role, Vec3.Zero).Z;
                 o.Add(new PlanItem("symbol", true, Circle(0.06)));
                 if (up) o.Add(new PlanItem("heavy", true, Circle(0.015)));
                 else { o.Add(new PlanItem("symbol", false, [P(-0.042, -0.042), P(0.042, 0.042)])); o.Add(new PlanItem("symbol", false, [P(-0.042, 0.042), P(0.042, -0.042)])); }
@@ -258,7 +300,7 @@ public static class Nodes
             case "sounderBeacon":
                 // A horn: its body and its flare; a beacon's rays over it.
                 o.Add(new PlanItem("symbol", true, [P(-0.12, -0.05), P(-0.04, -0.05), P(0.1, -0.13), P(0.1, 0.13), P(-0.04, 0.05), P(-0.12, 0.05)]));
-                if (role.Symbol == "sounderBeacon")
+                if (code == "sounderBeacon")
                     foreach (var a in new[] { -0.6, 0.0, 0.6 }) o.Add(new PlanItem("symbol", false, [P(0.14 * Math.Cos(a), 0.14 * Math.Sin(a)), P(0.2 * Math.Cos(a), 0.2 * Math.Sin(a))]));
                 break;
             case "fireTank":
@@ -295,40 +337,35 @@ public static class Nodes
                 o.Add(new PlanItem("symbol", true, box));
                 break;
         }
-        // The ports, as short ticks, so a run finds them by eye.
-        foreach (var p in Ports(m, e))
-            if (Math.Abs(p.Dir.Z) < 0.9) o.Add(new PlanItem("symbol", false, [p.At.Xy, p.At.Xy + p.Dir.Xy * 0.06]));
-        // Sized on paper as a text is, so 1:50 and 1:100 print it the same size (its ticks with it), unless the role's symbol is
-        // its body's real outline (a boiler, a radiator's length, a tank): drawn as at 1:50 round the node's point.
-        if (PaperSized(role)) for (var i = 0; i < o.Count; i++) o[i] = o[i] with { Paper = new PaperAnchor(Position(e), SymbolScale) };
-        // In its system's colour, drawn whole wherever it is mounted (an MEP plan's symbols: their heights are for the tags).
-        var system = m.Get(e.Str("systemId") ?? "") is { Class: Systems.Class } sys ? sys : null;
-        var look = (system != null ? Systems.StyleOf(system) : SystemStyle.For(role.Ports.FirstOrDefault()?.Service ?? Services.Heating)).Line;
-        var spec = new Lapin.Drawing.LineStyleSpec(null, look.Color, null);
-        for (var i = 0; i < o.Count; i++)
-            if (o[i].Kind != "hit") o[i] = o[i] with { Style = spec };
-        // What a detector or a hydrant covers, a circle round it, pale and thin: a "reach", never picked, boxed or framed; drawn
-        // in a view as its coverage setting says (MepPlanInView: on the selected devices only, by default).
-        if (Coverage(e, role) is > 0 and var reach) o.Add(new PlanItem("reach", true, Circle(reach), Style: new(1, Pale(look.Color), null)));
+        return o;
+    }
+
+    /// <summary>
+    /// A symbol definition's drawing (a symbol of the user's own, Drafting → Save as symbol) as plan items: its insertion point
+    /// on the node's point, its +x along the node's X; its mm on paper as at 1:50 (an annotation symbol) or the building's (a
+    /// model one). Strokes as lines (a pen of 0.45 mm or more as the heavy line), fills, texts; hatches are left out.
+    /// </summary>
+    internal static List<PlanItem> DefItems(IModelView m, SymbolDef def, bool paper, Func<double, double, Vec2> P, double angleDeg)
+    {
+        var unit = paper ? SymbolScale / 1000 : 0.001;
+        var sd = SymbolRender.Render(m, def, Symbols.Resolver(m, def, null, null), unit);
+        var o = new List<PlanItem>();
+        Vec2 Q(Vec2 q) => P(q.X * unit, q.Y * unit);
+        foreach (var st in sd.Strokes)
+            if (st.Pts.Count >= 2) o.Add(new PlanItem(st.Width >= 0.45 ? "heavy" : "symbol", st.Closed, [.. st.Pts.Select(Q)]));
+        foreach (var f in sd.Fills)
+            foreach (var loop in f.Loops)
+                if (loop.Count >= 3) o.Add(new PlanItem("fill", true, [.. loop.Select(Q)]));
+        foreach (var t in sd.Texts)
+            if (t.Text.Length > 0) o.Add(new PlanItem("text", false, [Q(t.At)]) { Text = t.Text, TextHeight = t.Height * unit, TextAngle = t.Angle + angleDeg });
         return o;
     }
 
     /// <summary>The scale (1 : n) the coded symbols are drawn at in metres: a plan at another scale draws those sized on paper that much larger or smaller.</summary>
     public const double SymbolScale = 50;
 
-    /// <summary>
-    /// The roles whose plan symbol is their body's real outline, drawn at the model's size at every scale (the convention for
-    /// appliances, sanitary fixtures, radiators, cabinets and tanks: the plan shows the room they take); every other role's
-    /// symbol (a valve, a meter, a device, a rise) is sized on paper.
-    /// </summary>
-    public static readonly IReadOnlySet<string> ModelSized = new HashSet<string>
-    {
-        "boiler", "gasBoiler", "oilBoiler", "manifold", "radiator", "basin", "sink", "shower", "bath", "wc", "panel", "diffuser", "grille",
-        "meterBox", "gasMeter", "flexConnector", "cooker", "waterHeater", "oilTank", "firePanel", "fireTank", "firePump", "hydrant", "breechingInlet",
-    };
-
-    /// <summary>Whether a role's symbol is sized on paper (<see cref="ModelSized"/>: those that are not).</summary>
-    public static bool PaperSized(Role role) => !ModelSized.Contains(role.Id);
+    /// <summary>Whether a role's symbol is sized on paper in the project's set (Lapin's ISO set: all but the bodies' real outlines, appliances, fixtures, tanks).</summary>
+    public static bool PaperSized(IModelView m, Role role) => MepSymbols.For(m, role.Id).Paper;
 
     /// <summary>A colour paled towards white (a coverage circle's, under the plan's lines).</summary>
     public static string Pale(string color, double by = 0.65)

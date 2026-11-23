@@ -60,6 +60,8 @@ public sealed class MepModule : ILapinModule
         MepTags.RegisterFields(Nodes.Classes.Union(Runs.Classes));
         MepTags.Register(r);
         r.Service<IPlanInView>(new MepPlanInView());
+        // The plan symbols' sets: Lapin's ISO 4067 / IEC 60617 set (data), the pending Romanian STAS one, the project's own of drawn symbols.
+        MepSymbols.Register(r);
         // On the plan the schematic is drawn from symbols, not from the bodies' cut.
         foreach (var cls in Nodes.Classes.Concat(Runs.Classes)) Generator.SymbolicInPlan.Add(cls);
         r.Catalog("roles", new JsonArray(Roles.All.Select(x => (JsonNode)new JsonObject

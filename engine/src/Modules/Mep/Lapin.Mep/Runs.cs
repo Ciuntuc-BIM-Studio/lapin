@@ -429,7 +429,7 @@ public static partial class Runs
             plan.Add(new PlanItem("symbol", false, [sleeve.B.Xy + n, sleeve.B.Xy - n], Style: tick) { Paper = new PaperAnchor(sleeve.B.Xy, Nodes.SymbolScale) });
         }
         // A rise or drop inside the run (its plane changed there): the rise node's sign (RunRises.cs).
-        plan.AddRange(RiseMarks(line));
+        plan.AddRange(RiseMarks(m, line));
         plan.Add(new PlanItem("hit", false, Spots(line)));
         return new ElementGeometry(parts, plan, line.Select(p => p.Xy).ToList());
     }
