@@ -87,6 +87,9 @@ public static class SectionMarkers
             if (path == null) continue;
             // Its cuts: a projected jogged section's parallel pieces only (its jogs cut nothing), a developed one's every piece.
             var (pieces, spanned) = SectionPaths.Cuts(v, path);
+            // A plain line limited to its ends (decision 802) is clipped at them where a view cuts across it; an elevation sees
+            // its whole marker from the side, wherever its own plane lies.
+            if (spanned && pieces.Count == 1 && c.Kind == "elevation") spanned = false;
             var mk = new ViewMark(v.Id);
             foreach (var piece in pieces)
             {

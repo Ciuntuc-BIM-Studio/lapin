@@ -8,8 +8,9 @@
  */
 
 import { hasModule } from '../platform/brand';
+import { openProfile } from '../modules/civil/profileStore';
 import { useEffect, useRef, useState, type DragEvent } from 'react';
-import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, ListPlus, Frame, Layers, Map as MapIcon, Plus, ScanSearch, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
+import { Box, Camera, ChartSpline, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, ListPlus, Frame, Layers, Map as MapIcon, Plus, ScanSearch, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { execute, activeStorey, useSession } from '../engine/session';
 import { newSchedule } from '../modules/cost/schedules';
@@ -303,6 +304,10 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
               </select>
             )}>
             {(item) => <Row item={item} on={view === 'schedule' && ui.scheduleId === item.id} open={() => showSchedule(item.id)} />}
+          </Kind>}
+          {/* Profile drawings are the Civil module's: the long profile or cross sections of a line, placed on a sheet. */}
+          {hasModule('civil') && of('profile').length > 0 && <Kind id={`${id}:profiles`} icon={<ChartSpline size={13} />} label="Profile drawings" list={of('profile')}>
+            {(item) => <Row item={item} on={false} open={() => { if (typeof item.node?.props.line === 'string') openProfile(item.node.props.line); }} />}
           </Kind>}
         </>}
       </div>

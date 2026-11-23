@@ -111,6 +111,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         CorridorCommands.Register(r);
         // Feature lines, the terrain's breaklines as elements of their own; contours drawn and dragged (T2).
         FeatureLines.Register(r);
+        LineProfiles.Register(r);
         // Hardscapes, their types and kerbs (T4).
         Hardscapes.Register(r);
         PathTypes.Register(r);

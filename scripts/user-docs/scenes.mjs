@@ -6642,6 +6642,97 @@ export const scenes = [
     },
   },
   {
+    // Site grading T3 (docs/plan-site-grading.md): the profile editor. A section line drawn across a hill with the Section line tool,
+    // its profile open under the plan (the survey's ground dashed, the line heavy), a point put in at the hill's top from the plan and
+    // dragged down, a grade typed, the stations linked between the graph and the plan, cross sections every 10 m with a point
+    // dragged in one, and the long profile and the cross sections placed on a sheet.
+    id: 'grading-profiles',
+    touches: ['civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      // A 60 × 40 m survey every 2 m: a hill 4 m high in the middle of a gentle rise to the east.
+      const g = (x, y) => 0.015 * x + 4 * Math.exp(-((x - 30) ** 2 + (y - 20) ** 2) / 220);
+      const rows = [];
+      for (let x = 0; x <= 60; x += 2) for (let y = 0; y <= 40; y += 2) rows.push(`${x} ${y} ${(100 + g(x, y)).toFixed(3)}`);
+      const made = await t.cmd('civil.addTerrain', { text: rows.join('\n'), datum: 100, storeyId: s, interval: 0.5, majorEvery: 2, name: 'Survey' });
+      t.expect(!!made?.id, 'a terrain from the survey');
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(1000);
+      const click = async (x, y) => { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(300); };
+      const lines = async () => (await t.nodes()).filter((n) => n.type === 'LapinFeatureLine');
+      const panel = t.page.locator('[data-testid=profile-panel]');
+      // The Section line tool: a line from the west edge to the east across the hill; Enter finishes, the panel opens on it.
+      await t.tool('civil.sectionLine');
+      await click(4, 20);
+      await click(56, 20);
+      await t.keys('Enter');
+      await t.until(async () => (await lines()).length === 1, 'the tool makes a section line');
+      await t.keys('Escape');
+      await t.ui({ tool: null });
+      await panel.waitFor({ timeout: 8000 });
+      await t.until(async () => (await t.page.locator('[data-testid=profile-graph] path').count()) >= 3, 'the graph draws the ground');
+      const section = (await lines())[0];
+      t.expect(section.props.section === true, 'a section line');
+      // A station picked in the plan: the line answers the pointer while the panel is open, and the graph marks the station.
+      await click(30, 20);
+      await t.until(async () => (await t.page.locator('[data-testid=profile-readout]').textContent())?.includes('0+02') ?? false, 'a click on the line in the plan picks its station in the graph');
+      // A point at that station (the hill's top): put in from the panel, it lies on the ground.
+      await t.page.locator('[data-testid=profile-add-point]').click();
+      await t.until(async () => (await lines())[0].props.points.length === 3, 'the point goes in');
+      await t.wait(700);
+      // Hovering the graph marks the place in the plan.
+      const graph = t.page.locator('[data-testid=profile-graph]');
+      const gb = await graph.boundingBox();
+      const top = await t.page.locator('[data-testid=profile-point] circle').nth(1).boundingBox();
+      await t.page.mouse.move(top.x + top.width / 2 + 90, gb.y + gb.height * 0.5, { steps: 4 });
+      await t.wait(500);
+      t.expect(await t.page.locator('[data-testid=profile-plan-hover]').count() === 1, 'the plan marks the station under the cursor in the graph');
+      await t.shot('profile-plan-graph-linked', { of: '.pane.on .view-area', pad: 0 });
+      // The point dragged down by the mouse: the ground follows it within the influence width.
+      const dot = t.page.locator('[data-testid=profile-point] circle').nth(1);
+      const db = await dot.boundingBox();
+      const [cx, cy] = [db.x + db.width / 2, db.y + db.height / 2];
+      await t.page.locator('[data-testid=profile-reach-input]').fill('14 m');
+      await t.page.locator('[data-testid=profile-reach-input]').press('Enter');
+      await t.wait(900);
+      const db2 = await t.page.locator('[data-testid=profile-point] circle').nth(1).boundingBox();
+      await t.page.mouse.move(db2.x + db2.width / 2, db2.y + db2.height / 2);
+      await t.page.mouse.down();
+      await t.page.mouse.move(db2.x + db2.width / 2, db2.y + db2.height / 2 + 30, { steps: 8 });
+      await t.page.mouse.up();
+      await t.until(async () => { const p = (await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('civil.profile', { id }), section.id)); return p?.points?.[1]?.designed === true && p.points[1].z < 103.5; }, 'the point dragged down takes a height of its own');
+      await t.wait(900);
+      await t.shot('profile-section-line', { of: '.pane.on .view-area', pad: 0 });
+      // A grade typed on the segment on the west of the point: 2 %, the point keeps its height and the west end follows.
+      const c0 = await t.page.locator('[data-testid=profile-point] circle').nth(0).boundingBox();
+      const c1 = await t.page.locator('[data-testid=profile-point] circle').nth(1).boundingBox();
+      await t.page.mouse.click((c0.x + c1.x) / 2 + c0.width / 2, (c0.y + c1.y) / 2 + c0.height / 2);
+      await t.page.locator('[data-testid=profile-grade]').waitFor({ timeout: 4000 });
+      await t.page.locator('[data-testid=profile-grade]').fill('2 %');
+      await t.page.locator('[data-testid=profile-grade]').press('Enter');
+      await t.wait(1200);
+      await t.shot('profile-grade-typed', { of: '.pane.on .view-area', pad: 0 });
+      // The cross sections: every 10 m, a point dragged up in one of them.
+      await t.page.locator('[data-testid=profile-tab-cross]').click();
+      await t.page.locator('[data-testid=profile-interval]').fill('10');
+      await t.page.locator('[data-testid=profile-interval]').press('Enter');
+      await t.until(async () => (await t.page.locator('[data-testid=profile-cross]').count()) >= 4, 'cross sections every 10 m');
+      await t.wait(900);
+      await t.shot('profile-cross-sections', { of: '.pane.on .view-area', pad: 0 });
+      // The long profile and the cross sections on a sheet.
+      await t.page.locator('[data-testid=profile-place-open]').click();
+      await t.page.locator('[data-testid=profile-place]').waitFor();
+      await t.page.locator('[data-testid=profile-place-go]').click();
+      await t.page.locator('[data-testid=sheet]').waitFor({ timeout: 10_000 });
+      await t.wait(2500);
+      t.expect((await t.nodes()).some((n) => n.type === 'LapinProfileView'), 'a profile drawing is made');
+      await t.shot('profile-sheet', { of: '.view-pane:has([data-testid=sheet])', pad: 0 });
+    },
+  },
+  {
     // Gates (report #57): a fence wall along the street with a sliding gate drawn on it by the tool (its middle on the wall's
     // axis, the wall cut, the zone it parks in dashed) and a pedestrian gate beside it; a wrought iron double gate on the parcel's
     // side edge from the built-in styles; the configurator with its preview; a gate's properties; the gates in 3D.
@@ -7262,6 +7353,62 @@ export const scenes = [
       await t.page.evaluate(async () => (await import('/src/engine/session.ts')).undo());
       await t.wait(800);
       t.expect((await t.nodes()).find((n) => n.id === section)?.props.depth == null, 'one undo takes the depth back');
+    },
+  },
+  {
+    // Limit to its ends (decision 802, Î10 of docs/plan-site-grading.md): a plain section cuts and sees only the strip
+    // between its two ends; on for a new section, off for one saved before. A 70 m terrain and a 10 m wall: with it the
+    // section is the wall's 12 m, without it the whole terrain's width.
+    id: 'section-limit-ends',
+    touches: ['core', 'civil'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.cmd('civil.addFlatTerrain', { storeyId: s, x1: -30, y1: -15, x2: 40, y2: 15, elevation: -0.3 });
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 3, x2: 10, y2: 3 })).id;
+      await t.cmd('architecture.addWindow', { wallId: wall, x: 5, y: 3 });
+      const section = (await t.cmd('view.create', { kind: 'section', name: 'E-E', start: [-1, 0], end: [11, 0], depth: 6, scale: 50 })).id;
+      const props = async () => (await t.nodes()).find((n) => n.id === section)?.props ?? {};
+      t.expect((await props()).limitEnds === true, 'a new section is limited to its ends');
+      const width = async () => {
+        const d = await t.call('doc.query', { name: 'view.drawing', args: { id: section } });
+        const xs = d.pens.filter((p) => ['CUT', 'SEEN'].includes(p.layer)).flatMap((p) => (p.segments ?? []).filter((_, i) => i % 2 === 0));
+        return Math.max(...xs) - Math.min(...xs);
+      };
+      const limited = await width();
+      t.expect(limited <= 12.01, `limited, the section is as wide as its line (${limited.toFixed(2)} m)`);
+      await openFromBrowser(t, 'E-E', 2500);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('section-limit-ends', { of: '[data-testid=drawing]', pad: 0 });
+      await t.page.locator('nav.browser').getByText('E-E', { exact: true }).first().click();
+      const box = t.page.locator('[data-field=section-limit-ends]');
+      await box.waitFor();
+      t.expect(await box.isChecked(), 'the settings show Limit to its ends ticked');
+      await box.scrollIntoViewIfNeeded();
+      const panel = await t.page.locator('.view-settings').boundingBox();
+      const row = await box.boundingBox();
+      t.expect(panel && row, 'the view settings show Limit to its ends');
+      await t.shot('section-limit-ends-setting', { clip: { x: panel.x, y: Math.max(0, row.y - 40), width: panel.width, height: row.height + 80 } });
+      // A controlled box: it shows the engine's answer, so a click, then the wait.
+      await box.click();
+      await t.wait(1500);
+      t.expect((await props()).limitEnds == null, 'unticked, the field goes (as a section saved before)');
+      const open = await width();
+      t.expect(open > 60, `without it, the section draws the whole terrain (${open.toFixed(2)} m)`);
+      await openFromBrowser(t, 'E-E', 2000);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('section-limit-ends-off', { of: '[data-testid=drawing]', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/engine/session.ts')).undo());
+      await t.wait(800);
+      t.expect((await props()).limitEnds === true, 'one undo ticks it again');
+      // In plan: the selected section shows the strip it sees, its sides out to its far line.
+      await openFromBrowser(t, 'Ground floor', 2000);
+      await select(t, section);
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('section-limit-ends-plan', { of: '[data-testid=plan]', pad: 0 });
     },
   },
   {

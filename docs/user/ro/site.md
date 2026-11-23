@@ -236,6 +236,39 @@ O latură în arc ia cotele celor două colțuri ale ei după lungime. Planul î
 
 **Editarea, cantitățile și IFC.** În plan conturul are mânerele de contur (colțuri, laturi, arce, racordare și teșire); în 3D fața de sus are mânere de cotă. Se mută, se rotește și se oglindește ca orice element; fiecare schimbare e un pas de anulare. *Lapin_HardscapeQuantities* dă aria pavată, aria feței de sus, perimetrul, grosimea alcătuirii și volumul, iar fiecare strat aria și volumul lui; *Lapin_KerbQuantities* lungimea bordurii, lungimea coborâtă și volumul; **Extrasul de pavaje** le listează pe toate. În plan pavajul e hașurat cum arată materialul stratului de sus (grafica lui de suprafață, Gestionare → Materiale), iar secțiunile îi taie straturile. În IFC merge ca *IfcPavement* (IFC 4.3) sau ca *IfcSlab* numit *Pavement* (IFC4), cu straturile ca *IfcMaterialLayerSetUsage*, iar bordura ca *IfcKerb* (IFC 4.3) sau ca proxy numit *Kerb* (IFC4); un fișier scris de Lapin revine ca același pavaj și aceeași bordură.
 
+## Profile
+
+Un **profil** este cotele unei linii de-a lungul ei, desenate ca un grafic pe care îl poți edita: stația pe orizontală, cota pe verticală. Merge pe orice linie care are cote: o linie caracteristică, marginea unui pavaj, axul unei alei, al unui drum, al unui zid de sprijin sau al unui șanț, și o **linie de secțiune** trasată peste teren. Îl deschizi din **Profil…** în proprietățile liniei, sau din grupul **Sistematizare** al filei **Teren** (*Site*): **Profil pe o linie** (<kbd>LP</kbd>, apoi clic pe linie în plan) și **Linie de secțiune** (<kbd>SQ</kbd>, o polilinie trasată ca o linie caracteristică; profilul ei se deschide când termini). Profilul este un panou sub plan, deci planul rămâne la vedere.
+
+![O linie de secțiune peste un deal, profilul ei sub plan, stația de sub cursor din grafic marcată în plan](shots/profile-plan-graph-linked.webp)
+
+**Graficul.** **Terenul existent** (ridicarea, citită exact pe triunghiurile terenului) este gri întrerupt, **terenul proiectat** (cu liniile caracteristice și pavajele) verde subțire, iar **profilul** liniei roșu gros, cu punctele lui: un punct plin are o cotă proprie (este proiectat), unul gol stă pe teren, un lăcățel mic marchează un punct blocat, iar un arc sub punct marchează o racordare verticală. **Cote** exagerează scara verticală: 1× este adevărat, 2×, 5× și 10× fac pantele mai ușor de citit. Între punctele proiectate panta e scrisă în %.
+
+**Planul și graficul sunt legate.** Plimbă cursorul pe grafic și planul marchează acea stație pe linie; plimbă-l pe linie în plan și graficul o marchează; un clic în oricare alege stația (o linie verticală plină în grafic, un punct în plan).
+
+**O linie de secțiune peste teren.** O linie de secțiune doar citește terenul, până editezi unul din punctele ei: atunci terenul din ambele părți o urmează, pe **lățimea de influență** a ei, și scade la nimic la marginea ei (aceeași descreștere netedă ca la tragerea unei curbe de nivel). Scrie lățimea în panou; trebuie să fie cel puțin **dublul celei mai mari modificări**, altfel editarea e refuzată cu un mesaj care o spune, iar nimic nu se schimbă. O editare este un pas de anulare.
+
+![Punctul de pe deal tras în jos: curbele de nivel din plan urmează linia de secțiune](shots/profile-section-line.webp)
+
+**Editarea profilului.**
+
+- **Trage un punct** în sus sau în jos; un punct de pe un tronson drept poate aluneca și de-a lungul liniei, între vecinii lui (capetele și punctele unde linia se îndoaie în plan rămân la stația lor). Linia roșie urmează mouse-ul cât tragi, iar o singură comandă pleacă la eliberare.
+- **Dă clic pe un punct** ca să-i scrii **cota**, **racordarea verticală** (o curbă parabolică de lungimea aceea în punct; refuzată la capete sau când nu încape între vecini), ca să-l **blochezi** (un punct blocat își păstrează cota și stația, iar o editare care l-ar muta e refuzată) sau ca să-l **ștergi**. **La teren** îi ia din nou cota din teren.
+- **Dublu clic pe linie**, sau **Punct** la stația aleasă, adaugă un punct.
+- **Dă clic pe un tronson** ca să-i scrii **panta**: `2 %`, `1:50`, `-0,5 %` (virgula zecimală merge). **O pantă scrisă păstrează** începutul sau sfârșitul; celălalt capăt ia cota pe care o dă panta.
+
+![O pantă de 2 % scrisă pe un tronson: punctul de la capătul lui o urmează](shots/profile-grade-typed.webp)
+
+Profilul unui pavaj este muchia lui de sus: cotele colțurilor se pot schimba (fața de sus devine „pe colțuri”), dar nu se pot adăuga, șterge, racorda sau bloca, fiindcă forma o ține planul. O alee, un zid sau un șanț folosește linia roșie a coridorului: când profilul lui urmează terenul, **Proiectează profilul** îl face întâi unul proiectat.
+
+**Secțiuni transversale.** Fila **Secțiuni transversale** arată terenul **peste** linie la anumite stații: scrie un **interval** (din 10 în 10 m) sau alege o stație și apasă **Secțiune aici**; **Lățime pe fiecare parte** spune cât ajunge fiecare parte. Fiecare secțiune este un grafic mic cu terenul existent, terenul proiectat și punctul liniei marcat, și e trasată peste linie în plan. Trage un punct al unei secțiuni sau trage curba terenului unde vrei un punct nou: prima editare la o stație face o scurtă linie de secțiune perpendiculară pe linie acolo, iar terenul de lângă ea o urmează pe lățimea ei de influență; editările următoare îi mută punctele ca la profilul longitudinal. Cotele secțiunilor folosesc aceeași exagerare.
+
+![Secțiuni transversale din 10 în 10 m sub plan](shots/profile-cross-sections.webp)
+
+**Pe o planșă.** **Pune pe o planșă…** face din **profilul longitudinal** (și din secțiunile transversale, când sunt afișate) un desen de sine stătător, la scara aleasă (orizontala 1:500, cotele exagerate ca în panou) și îl pune pe o planșă nouă sau pe una aleasă. Desenul are grila de cote cu planul de referință, ambele terenuri, punctele și racordările numite, iar dedesubt un tabel cu stațiile, ambele terenuri și săpătura sau umplutura; PDF-ul și DXF-ul planșei tipăresc ce arată planșa. Desenele sunt listate sub **Desene de profil** în browserul proiectului și rămân în pas cu linia: schimbi linia, se schimbă planșa.
+
+![Profilul longitudinal pe o planșă](shots/profile-sheet.webp)
+
 ## Planul de situație și planul de încadrare
 
 Browserul proiectului are, sub niveluri, **Terenul** (*Site*): desenele amplasamentului, care nu țin de niciun etaj. Un proiect nou pornește cu două:

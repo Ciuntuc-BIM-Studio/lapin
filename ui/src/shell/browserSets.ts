@@ -11,7 +11,7 @@ import type { NodeDto } from '../engine/protocol';
 import { productInfo } from '../platform/brand';
 
 /** `site`: a site plan or a location plan, listed under the browser's Site rather than in the sets. */
-export type ItemKind = 'plan' | 'section' | 'elevation' | 'plane' | '3d' | 'sheet' | 'schedule' | 'site';
+export type ItemKind = 'plan' | 'section' | 'elevation' | 'plane' | '3d' | 'sheet' | 'schedule' | 'profile' | 'site';
 
 export interface SetFilter {
   disciplines?: string[];
@@ -44,7 +44,7 @@ export interface SetGroup { set: BrowserSet | null; items: BrowserItem[] }
 /** The product's disciplines (products/<id>.json), else architecture, structure and MEP; the first is a view's when it names none. */
 export const DISCIPLINES: string[] = productInfo.disciplines?.length ? productInfo.disciplines : ['Architecture', 'Structure', 'MEP'];
 export const DEFAULT_DISCIPLINE = DISCIPLINES[0];
-export const KINDS: ItemKind[] = ['plan', 'section', 'elevation', 'plane', '3d', 'sheet', 'schedule'];
+export const KINDS: ItemKind[] = ['plan', 'section', 'elevation', 'plane', '3d', 'sheet', 'schedule', 'profile'];
 export const DEFAULT_SETS: BrowserSet[] = DISCIPLINES.map((d) => ({ id: d.toLowerCase(), name: d, filter: { disciplines: [d] } }));
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
@@ -96,7 +96,7 @@ const number = (v: unknown): number | null => (typeof v === 'number' ? v : typeo
 export function itemOf(node: NodeDto): BrowserItem | null {
   const kind: ItemKind | null = node.type === 'LapinView' ? (node.props.kind === 'plan' && typeof node.props.site === 'string' ? 'site'
     : ['plan', 'section', 'elevation', 'plane', '3d'].includes(String(node.props.kind)) ? (node.props.kind as ItemKind) : null)
-    : node.type === 'LapinSheet' ? 'sheet' : node.type === 'LapinSchedule' ? 'schedule' : null;
+    : node.type === 'LapinSheet' ? 'sheet' : node.type === 'LapinSchedule' ? 'schedule' : node.type === 'LapinProfileView' ? 'profile' : null;
   if (!kind) return null;
   return {
     id: node.id, name: node.name, kind, discipline: str(node.props.discipline) ?? DEFAULT_DISCIPLINE,
@@ -126,4 +126,4 @@ export const disciplineOf = (set: BrowserSet | null): string => (set?.filter.dis
 /** A view or schedule dragged from the project browser onto a sheet (decision 287): its id under this type. */
 export const VIEW_DRAG = 'application/x-lapin-view';
 /** What the browser lets one drag onto a sheet: drawings and schedules (a 3D view and a sheet are not placed). */
-export const SHEETABLE = new Set<BrowserItem['kind']>(['plan', 'site', 'section', 'elevation', 'plane', 'schedule']);
+export const SHEETABLE = new Set<BrowserItem['kind']>(['plan', 'site', 'section', 'elevation', 'plane', 'schedule', 'profile']);

@@ -214,7 +214,7 @@ public static class LegacyImport
                         JsonArray Plan(JsonArray q) => new JsonArray(JsonValue.Create(Num(q[0]) ?? 0), JsonValue.Create(-(Num(q[2]) ?? 0)));
                         var (start, end) = (Plan(ma), Plan(mb));
                         if (v["plane"]?["flipped"] is JsonValue fv && fv.TryGetValue<bool>(out var flipped) && flipped) (start, end) = (end, start);
-                        made = Id(Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = start, ["end"] = end, ["name"] = Str(v["name"]) }));
+                        made = Id(Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = start, ["end"] = end, ["name"] = Str(v["name"]), ["limitEnds"] = false }));
                     }
                     else sectionsLost++;
                     break;

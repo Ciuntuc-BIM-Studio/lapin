@@ -184,6 +184,20 @@ export function sectionGrips(node: NodeDto, view?: GripView): Grip[] {
 
 export const sectionRefs = (node: NodeDto): RefLine[] => (isSection(node) && sectionPoints(node).length >= 2 ? [{ points: sectionPoints(node), closed: false, kind: 'axis' }] : []);
 
+/**
+ * Whether a section offers Limit to its ends (decision 802): a plain straight line of its own (not across an element, not
+ * an element's view). A jogged, curved or following section always sees each piece only between its ends.
+ */
+export function offersLimitEnds(node: NodeDto): boolean {
+  return isSection(node) && !followedBy(node) && !isCurvedSection(node) && !isAcross(node) && node.props.of == null && sectionPoints(node).length === 2;
+}
+
+/** Whether a section sees only between its two ends: `limitEnds` (a new section's default; one saved before has none and sees across). */
+export const limitsEnds = (node: NodeDto): boolean => node.props.limitEnds === true;
+
+/** The command that turns Limit to its ends on or off: one undo step. */
+export const limitEndsCommand = (node: NodeDto, on: boolean) => ({ command: 'view.setLine', args: { id: node.id, limitEnds: on } });
+
 /** In a section's settings: its line (how many pieces, how long), how a jogged one is drawn, what it follows, and the stations written along it. */
 export function SectionFields({ view }: { view: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -202,6 +216,13 @@ export function SectionFields({ view }: { view: NodeDto }) {
     <>
       <dt title="The line the section cuts along: straight, jogged, an arc, or an element's">Line</dt>
       <dd className="muted small">{kind}{followed ? <>: <span data-no-i18n>{followed.name}</span></> : null}{pts.length >= 2 ? <span data-no-i18n> · {lengthText(length)}</span> : null}</dd>
+      {offersLimitEnds(view) && (
+        <>
+          <dt title="Cut and see only the strip between the line's two ends (its length), across its whole depth; off: everything the section's plane crosses, however wide">Limit to its ends</dt>
+          <dd><input type="checkbox" data-field="section-limit-ends" checked={limitsEnds(view)}
+            onChange={(e) => { const c = limitEndsCommand(view, e.target.checked); void execute(c.command, c.args); }} /></dd>
+        </>
+      )}
       {jogged && (
         <>
           <dt title="Projected: the pieces parallel to the first cut the model and the jogs cut nothing, all drawn in one frame, so grids stand where they cross in plan. Developed: every piece cuts and is drawn beside the previous at its length">Jogged</dt>

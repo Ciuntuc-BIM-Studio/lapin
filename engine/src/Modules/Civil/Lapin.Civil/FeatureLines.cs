@@ -39,6 +39,16 @@ public static class FeatureLines
     {
         public int Segments => Closed ? Corners.Count : Corners.Count - 1;
         public PathCurve Edge(int k) => new(Corners[k], Corners[(k + 1) % Corners.Count], Rises[k]);
+        /// <summary>A section line (T3): it follows the ground exactly until it is shaped, and the ground beside it follows its changes within <see cref="Reach"/>.</summary>
+        public bool Section { get; init; }
+        /// <summary>Each corner's parabolic vertical curve, its length in station (T3; 0: a grade break).</summary>
+        public double[] Curves { get; init; } = [];
+        /// <summary>The corners locked against the profile editor's changes (T3).</summary>
+        public bool[] Locked { get; init; } = [];
+        /// <summary>A section line's lateral influence width (m); null: three times its largest change, 2 m at least.</summary>
+        public double? Reach { get; init; }
+        public double CurveAt(int i) => i >= 0 && i < Curves.Length ? Curves[i] : 0;
+        public bool LockedAt(int i) => i >= 0 && i < Locked.Length && Locked[i];
     }
 
     public static Spec SpecOf(Entity e) => SpecOf(e.Attrs);
@@ -48,9 +58,18 @@ public static class FeatureLines
         var (corners, z) = ReadPoints(a["points"]);
         var closed = a["closed"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && c && corners.Count >= 3;
         var segs = Math.Max(0, closed ? corners.Count : corners.Count - 1);
+        var locked = new bool[corners.Count];
+        foreach (var x in (a["locked"] as JsonArray) ?? [])
+            if (Json.Number(x) is { } li && li >= 0 && li < corners.Count && li == Math.Floor(li)) locked[(int)li] = true;
         return new Spec(corners, z, Numbers(a["arcs"], segs).Select(v => v ?? 0).ToArray(), Numbers(a["grades"], segs),
             closed, a["drape"] is JsonValue dv && dv.TryGetValue<bool>(out var d) && d, Json.Number(a["elevation"]),
-            Math.Max(0.001, Json.Number(a["tolerance"]) ?? DefaultTolerance));
+            Math.Max(0.001, Json.Number(a["tolerance"]) ?? DefaultTolerance))
+        {
+            Section = a["section"] is JsonValue sv && sv.TryGetValue<bool>(out var sec) && sec,
+            Curves = Numbers(a["curves"], corners.Count).Select(v => v is { } l && l > 0 ? l : 0).ToArray(),
+            Locked = locked,
+            Reach = Json.Number(a["reach"]) is { } rr && rr > 0 ? rr : null,
+        };
     }
 
     /// <summary>Corners as stored or given: [x, y] or [x, y, z] (z a model height; null or missing: none of its own).</summary>
@@ -146,14 +165,23 @@ public static class FeatureLines
     /// </summary>
     public static List<Vec3> Line(Spec s, IReadOnlyList<double?> cornerZ)
     {
+        var (o, at) = Laid(s, cornerZ);
+        return s.Curves.Any(l => l > 0) ? WithCurves(s, o, at, cornerZ, null) : o;
+    }
+
+    /// <summary>The line in space before its vertical curves, with where each corner lies in it (a closed line's first corner at 0).</summary>
+    static (List<Vec3> Points, int[] CornerAt) Laid(Spec s, IReadOnlyList<double?> cornerZ)
+    {
         var o = new List<Vec3>();
         var n = s.Corners.Count;
-        if (n == 0) return o;
+        var at = new int[n];
+        if (n == 0) return (o, at);
         for (var k = 0; k < s.Segments; k++)
         {
             var j = (k + 1) % n;
             var (z0, z1) = (cornerZ[k] ?? double.NaN, cornerZ[j] ?? double.NaN);
             var c = s.Edge(k);
+            at[k] = o.Count;
             o.Add(new Vec3(s.Corners[k].X, s.Corners[k].Y, z0));
             if (!c.IsArc) continue;
             var len = c.Length;
@@ -165,9 +193,213 @@ public static class FeatureLines
             }
         }
         var last = s.Closed ? 0 : n - 1;
+        if (!s.Closed) at[n - 1] = o.Count;
         o.Add(new Vec3(s.Corners[last].X, s.Corners[last].Y, cornerZ[last] ?? double.NaN));
+        return (o, at);
+    }
+
+    /// <summary>The stations (plan distance from the start) of a polyline's points.</summary>
+    public static double[] Stations<T>(IReadOnlyList<T> pts, Func<T, Vec2> xy)
+    {
+        var st = new double[pts.Count];
+        for (var i = 1; i < pts.Count; i++) st[i] = st[i - 1] + (xy(pts[i]) - xy(pts[i - 1])).Length;
+        return st;
+    }
+
+    /// <summary>
+    /// The corners where a vertical curve may round the line: an inner corner of an open line (a closed line's corners but its
+    /// first), with a length, whose two segments are designed (<paramref name="segDesigned"/>; null: all).
+    /// </summary>
+    static bool CurveCorner(Spec s, int k, bool[]? segDesigned) =>
+        s.CurveAt(k) > 0 && k > 0 && (s.Closed ? k < s.Corners.Count : k < s.Corners.Count - 1)
+        && (segDesigned == null || segDesigned[k - 1] && segDesigned[k % s.Segments]);
+
+    /// <summary>
+    /// The line with each corner that has one rounded by its symmetric parabolic vertical curve (T3, as the roads' red line,
+    /// <see cref="Lapin.Alignments.VerticalProfile"/>): between the tangents' grades into and out of the corner, L/2 either side of
+    /// it in station; laid in as many pieces as the one rule for curves gives (<see cref="Chords"/>, the parabola's radius
+    /// L / |Δg|), the points already within it lifted onto it. The corner itself stays where it is in plan.
+    /// </summary>
+    static List<Vec3> WithCurves(Spec s, List<Vec3> pts, int[] at, IReadOnlyList<double?> cornerZ, bool[]? segDesigned)
+    {
+        var st = Stations(pts, p => p.Xy);
+        var n = s.Corners.Count;
+        var curves = new List<(double From, double To, Func<double, double> Z)>();
+        for (var k = 1; k < n + (s.Closed ? 0 : -1); k++)
+        {
+            if (!CurveCorner(s, k, segDesigned)) continue;
+            var (ip, ik, inx) = (at[k - 1], at[k], k + 1 < n ? at[k + 1] : pts.Count - 1);
+            if (cornerZ[k - 1] is not { } za || cornerZ[k] is not { } zk || cornerZ[(k + 1) % n] is not { } zb) continue;
+            var (s0, sk, s1) = (st[ip], st[ik], st[inx]);
+            if (sk - s0 < 1e-9 || s1 - sk < 1e-9) continue;
+            var g1 = (zk - za) / (sk - s0);
+            var g2 = (zb - zk) / (s1 - sk);
+            var len = Math.Min(s.CurveAt(k), 2 * Math.Min(sk - s0, s1 - sk));
+            if (Math.Abs(g2 - g1) < 1e-12 || len < 1e-6) continue;
+            var bvc = sk - len / 2;
+            var zBvc = zk - g1 * len / 2;
+            curves.Add((bvc, sk + len / 2, x => zBvc + g1 * (x - bvc) + (g2 - g1) * (x - bvc) * (x - bvc) / (2 * len)));
+        }
+        if (curves.Count == 0) return pts;
+        // The stations a curve adds: its pieces by the one rule.
+        var extra = new List<double>();
+        foreach (var (from, to, z) in curves)
+        {
+            var len = to - from;
+            var g1 = (z(from + 1e-6) - z(from)) / 1e-6;
+            var g2 = (z(to) - z(to - 1e-6)) / 1e-6;
+            var dg = Math.Abs(Math.Atan(g2) - Math.Atan(g1));
+            var pieces = Chords.Count(len / Math.Max(1e-12, Math.Abs(g2 - g1)), dg, 2);
+            for (var q = 0; q <= pieces; q++) extra.Add(from + len * q / pieces);
+        }
+        return Resample(pts, st, extra, x => curves.FirstOrDefault(c => x >= c.From - 1e-9 && x <= c.To + 1e-9) is { Z: not null } c ? c.Z(x) : null);
+    }
+
+    /// <summary>A polyline in space with points added at <paramref name="extra"/> stations (on it, between its points), each height <paramref name="z"/> gives replacing its own.</summary>
+    static List<Vec3> Resample(List<Vec3> pts, double[] st, IEnumerable<double> extra, Func<double, double?> z)
+    {
+        var all = st.Select((v, i) => (S: v, I: i)).Concat(extra.Where(x => x > st[0] + 1e-9 && x < st[^1] - 1e-9).Select(x => (S: x, I: -1)))
+            .OrderBy(x => x.S).ThenByDescending(x => x.I).ToList();
+        var o = new List<Vec3>();
+        var seg = 0;
+        foreach (var (sv, i) in all)
+        {
+            Vec3 p;
+            if (i >= 0) { p = pts[i]; seg = Math.Min(i, pts.Count - 2); }
+            else
+            {
+                while (seg + 1 < st.Length - 1 && st[seg + 1] < sv) seg++;
+                var t = st[seg + 1] - st[seg] < 1e-12 ? 0 : (sv - st[seg]) / (st[seg + 1] - st[seg]);
+                p = pts[seg] + (pts[seg + 1] - pts[seg]) * t;
+                if (o.Count > 0 && (o[^1].Xy - p.Xy).Length < 1e-6) continue;
+            }
+            if (z(sv) is { } h) p = p with { Z = Math.Round(h, 9) };
+            if (o.Count > 0 && (o[^1].Xy - p.Xy).Length < 1e-9 && i < 0) continue;
+            o.Add(p);
+        }
         return o;
     }
+
+    /// <summary>
+    /// Which corners carry a height of the design (T3): their own, a grade's from a neighbour, a contour's; not a draped line's
+    /// nor a corner left to the ground.
+    /// </summary>
+    public static bool[] Designed(Spec s)
+    {
+        var n = s.Corners.Count;
+        if (s.Elevation != null) return [.. Enumerable.Repeat(true, n)];
+        if (s.Drape) return new bool[n];
+        return [.. CornerZ(s, _ => null).Select(v => v != null)];
+    }
+
+    /// <summary>Where a polyline in plan crosses a ground's triangle edges, by station: the points between which the ground along it is straight.</summary>
+    public static List<double> Crossings(Terrain ground, IReadOnlyList<Vec2> poly)
+    {
+        var o = new List<double>();
+        var st = Stations(poly, p => p);
+        for (var i = 0; i + 1 < poly.Count; i++)
+        {
+            var (a, b) = (poly[i], poly[i + 1]);
+            var d = b - a;
+            var len = d.Length;
+            o.Add(st[i]);
+            if (len < 1e-12) continue;
+            var lo = new Vec2(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y));
+            var hi = new Vec2(Math.Max(a.X, b.X), Math.Max(a.Y, b.Y));
+            var seen = new HashSet<(int, int)>();
+            foreach (var ti in ground.TrianglesIn(lo, hi))
+            {
+                var tr = ground.Tin.Triangles[ti];
+                foreach (var (u, v) in new[] { (tr.A, tr.B), (tr.B, tr.C), (tr.C, tr.A) })
+                {
+                    if (!seen.Add(u < v ? (u, v) : (v, u))) continue;
+                    var (p, q) = (ground.Tin.Points[u].Xy, ground.Tin.Points[v].Xy);
+                    var e = q - p;
+                    var den = Vec2.Cross(d, e);
+                    if (Math.Abs(den) < 1e-15) continue;
+                    var t = Vec2.Cross(p - a, e) / den;
+                    var w = Vec2.Cross(p - a, d) / den;
+                    if (t > 1e-12 && t < 1 - 1e-12 && w >= -1e-12 && w <= 1 + 1e-12) o.Add(st[i] + t * len);
+                }
+            }
+        }
+        if (poly.Count > 0) o.Add(st[^1]);
+        o.Sort();
+        var clean = new List<double>();
+        foreach (var x in o) if (clean.Count == 0 || x - clean[^1] > 1e-9) clean.Add(x);
+        return clean;
+    }
+
+    /// <summary>A polyline's point at a station (clamped to it).</summary>
+    public static Vec2 PointAt(IReadOnlyList<Vec2> poly, double[] st, double s)
+    {
+        if (poly.Count == 1 || s <= 0) return poly[0];
+        for (var i = 1; i < poly.Count; i++)
+            if (s <= st[i] || i == poly.Count - 1)
+            {
+                var len = st[i] - st[i - 1];
+                var t = len < 1e-12 ? 0 : Math.Clamp((s - st[i - 1]) / len, 0, 1);
+                return poly[i - 1] + (poly[i] - poly[i - 1]) * t;
+            }
+        return poly[^1];
+    }
+
+    /// <summary>
+    /// A section line in space over its ground (T3), with the change it makes along it: a segment between two designed corners
+    /// is the design's (straight at its grade, rounded by its vertical curves); any other follows the ground exactly (a point at
+    /// every crossing of the ground's triangle edges) lifted by the change at its corners, linearly between them (none at a
+    /// corner left to the ground). The change is the line's height less the ground's, at every point of it.
+    /// </summary>
+    public static (List<Vec3> Line, List<Vec3> Delta) SectionLine(Spec s, IReadOnlyList<double?> cornerZ, bool[] designed, Terrain ground)
+    {
+        var n = s.Corners.Count;
+        var (flat3, at) = Laid(s, [.. s.Corners.Select(_ => (double?)0)]);
+        var flat = flat3.Select(p => p.Xy).ToList();
+        var st = Stations(flat, p => p);
+        var cornerSt = Enumerable.Range(0, n).Select(i => st[at[i]]).ToArray();
+        var endSt = st[^1];
+        var segDesigned = Enumerable.Range(0, s.Segments).Select(k => designed[k] && designed[(k + 1) % n]).ToArray();
+        double G(Vec2 p) => ground.ElevationAt(p.X, p.Y) ?? double.NaN;
+        var dCorner = Enumerable.Range(0, n).Select(i => designed[i] && cornerZ[i] is { } z ? z - G(s.Corners[i]) : 0).ToArray();
+        var stations = Crossings(ground, flat);
+        var line = new List<Vec3>();
+        foreach (var sv in stations.Concat(cornerSt).Append(endSt).Distinct().Order())
+        {
+            // The segment it lies on (the last that starts at or before it).
+            var k = 0;
+            for (var q = 0; q < s.Segments; q++) if (cornerSt[q] <= sv + 1e-9) k = q;
+            var j = (k + 1) % n;
+            var (a, b) = (cornerSt[k], k + 1 < n ? cornerSt[j] : endSt);
+            var t = b - a < 1e-12 ? 0 : Math.Clamp((sv - a) / (b - a), 0, 1);
+            var p = PointAt(flat, st, sv);
+            double z;
+            if (segDesigned[k]) z = cornerZ[k]!.Value + (cornerZ[j]!.Value - cornerZ[k]!.Value) * t;
+            else z = G(p) + dCorner[k] + (dCorner[j] - dCorner[k]) * t;
+            if (!double.IsFinite(z)) continue;
+            if (line.Count > 0 && (line[^1].Xy - p).Length < 1e-9) { line[^1] = new Vec3(p.X, p.Y, Math.Round(z, 9)); continue; }
+            line.Add(new Vec3(p.X, p.Y, Math.Round(z, 9)));
+        }
+        if (s.Curves.Any(l => l > 0) && line.Count >= 2)
+        {
+            // The corners' places in the line just laid.
+            var lst = Stations(line, p => p.Xy);
+            var cat = cornerSt.Select(c => Array.FindIndex(lst, x => Math.Abs(x - c) < 1e-6)).ToArray();
+            if (cat.All(i => i >= 0)) line = WithCurves(s, line, cat, cornerZ, segDesigned);
+        }
+        var delta = line.Select(p => new Vec3(p.X, p.Y, double.IsFinite(G(p.Xy)) ? Math.Round(p.Z - G(p.Xy), 9) : 0)).ToList();
+        return (line, delta);
+    }
+
+    /// <summary>A section line's reach: its own, else three times its largest change, 2 m at least.</summary>
+    public static double ReachOf(Spec s, IReadOnlyList<Vec3> delta) => s.Reach ?? Math.Max(2, 3 * MaxChange(delta));
+
+    public static double MaxChange(IReadOnlyList<Vec3> delta) => delta.Count == 0 ? 0 : delta.Max(d => Math.Abs(d.Z));
+
+    /// <summary>The refusal of a reach too short for the change (Î3: the field's steepest is 2/R, so R ≥ 2 × the change, or the ground folds).</summary>
+    public static string? ReachProblem(double reach, double change) =>
+        reach + 1e-9 < 2 * change
+            ? $"The influence width ({reach.ToString("0.##", CultureInfo.InvariantCulture)} m) must be twice the largest change ({change.ToString("0.##", CultureInfo.InvariantCulture)} m) at least, or the ground would fold over itself: widen it, or change the profile less."
+            : null;
 
     /// <summary>The ground a feature line on a terrain reads its draped and unset corners from: the terrain without its feature lines.</summary>
     public static Func<Vec2, double?> GroundOf(IModelView m, Entity line)
@@ -182,7 +414,28 @@ public static class FeatureLines
         var s = SpecOf(line);
         var problems = new List<string>();
         var z = CornerZ(s, GroundOf(m, line), problems);
-        return (problems.Count == 0 && s.Corners.Count >= 2 ? Line(s, z) : [], z, problems);
+        if (problems.Count > 0 || s.Corners.Count < 2) return ([], z, problems);
+        if (s.Section && BaseOf(m, line) is { } g) return (SectionLine(s, z, Designed(s), g).Line, z, problems);
+        return (Line(s, z), z, problems);
+    }
+
+    /// <summary>The ground of a feature line's terrain without its feature lines, or null.</summary>
+    public static Terrain? BaseOf(IModelView m, Entity line) =>
+        m.Get(line.Str(TerrainKey) ?? "") is { } t && Terrains.IsTerrain(t) ? Terrains.Base(t) : null;
+
+    /// <summary>
+    /// What a section line changes, as its terrain is to hold it: its line in space and the change along it (none when no corner is
+    /// designed: it only reads the ground), with its reach; a line on another kind of ground than a terrain's has none.
+    /// </summary>
+    public static (List<Vec3> Line, List<Vec3> Delta, double Reach)? SectionChange(Spec s, Terrain ground)
+    {
+        if (!s.Section || s.Corners.Count < 2) return null;
+        var designed = Designed(s);
+        if (!designed.Any(d => d)) return null;
+        var z = CornerZ(s, p => ground.ElevationAt(p.X, p.Y));
+        if (z.Any(v => v == null)) return null;
+        var (line, delta) = SectionLine(s, z, designed, ground);
+        return (line, delta, ReachOf(s, delta));
     }
 
     /// <summary>
@@ -255,7 +508,8 @@ public static class FeatureLines
         {
             if (Hardscapes.Corners(h).Count < 3) continue;
             var ring = Hardscapes.Edge(h);
-            foreach (var piece in Clip([.. ring, ring[0]], ground))
+            var breakline = Hardscapes.Breakline(h);
+            foreach (var piece in Clip([.. breakline, breakline[0]], ground))
                 list.Add((JsonNode)new JsonObject
                 {
                     ["id"] = h.Id,
@@ -271,7 +525,23 @@ public static class FeatureLines
             var problems = new List<string>();
             var z = CornerZ(s, p => ground.ElevationAt(p.X, p.Y), problems);
             if (problems.Count > 0) continue;
-            foreach (var piece in Clip(Line(s, z), ground))
+            List<Vec3> laid;
+            if (s.Section)
+            {
+                // A section line only reads the ground until a corner of it is designed; then it holds its line, and the ground
+                // beside it takes its change within its reach (T3, Î3), worked out when the terrain is built.
+                if (SectionChange(s, ground) is not { } change) continue;
+                laid = change.Line;
+                list.Add((JsonNode)new JsonObject
+                {
+                    ["id"] = line.Id,
+                    [ShiftKey] = new JsonArray([.. change.Delta.Select(d => (JsonNode)new JsonArray(R(d.X), R(d.Y), R(d.Z)))]),
+                    ["reach"] = R(change.Reach),
+                    ["tol"] = s.Tolerance,
+                });
+            }
+            else laid = Line(s, z);
+            foreach (var piece in Clip(laid, ground))
                 list.Add((JsonNode)new JsonObject
                 {
                     ["id"] = line.Id,
@@ -283,6 +553,81 @@ public static class FeatureLines
         if (list.Count > 0) attrs[Derived] = list; else attrs.Remove(Derived);
         if (attrs[Derived]?.ToJsonString() == terrain.Attrs[Derived]?.ToJsonString()) return;
         ctx.Replace(terrain.With(attrs: attrs));
+    }
+
+    /// <summary>A <see cref="Derived"/> item's change along a section line (T3): [[x, y, dz]…], with its <c>reach</c>.</summary>
+    public const string ShiftKey = "shift";
+
+    /// <summary>The section lines' changes a terrain holds: each one's points in plan with its change there, its reach and its tolerance.</summary>
+    public static List<(List<Vec3> Delta, double Reach, double Tolerance)> Shifts(Entity terrain)
+    {
+        var o = new List<(List<Vec3>, double, double)>();
+        foreach (var item in (terrain.Attrs[Derived] as JsonArray)?.OfType<JsonObject>() ?? [])
+            if (item[ShiftKey] is JsonArray arr && PointLists.Xyz(arr) is { Count: >= 2 } d && Json.Number(item["reach"]) is { } r && r > 0)
+                o.Add((d, r, Math.Max(0.001, Json.Number(item["tol"]) ?? DefaultTolerance)));
+        return o;
+    }
+
+    /// <summary>The nearest point of a polyline to a point in plan: how far, and the polyline's third coordinate there (linear).</summary>
+    public static (double Distance, double Value) Nearest(IReadOnlyList<Vec3> line, Vec2 p)
+    {
+        var best = (D: double.MaxValue, V: 0.0);
+        for (var i = 0; i + 1 < line.Count; i++)
+        {
+            var (a, b) = (line[i], line[i + 1]);
+            var d = b.Xy - a.Xy;
+            var len2 = Vec2.Dot(d, d);
+            var t = len2 < 1e-18 ? 0 : Math.Clamp(Vec2.Dot(p - a.Xy, d) / len2, 0, 1);
+            var q = a.Xy + d * t;
+            var dist = (p - q).Length;
+            if (dist < best.D) best = (dist, a.Z + (b.Z - a.Z) * t);
+        }
+        if (line.Count == 1) best = ((p - line[0].Xy).Length, line[0].Z);
+        return best;
+    }
+
+    /// <summary>
+    /// How much the section lines raise the ground at a point (T3, Î3): each one's change at its nearest point, faded by Shepard's
+    /// weighting across its reach (all of it on the line, none at the reach and beyond); the lines' add up.
+    /// </summary>
+    public static double ShiftAt(IReadOnlyList<(List<Vec3> Delta, double Reach, double Tolerance)> shifts, Vec2 p)
+    {
+        double dz = 0;
+        foreach (var (d, reach, _) in shifts)
+        {
+            var (r, v) = Nearest(d, p);
+            if (r < reach) dz += v * Shepard(r, reach);
+        }
+        return dz;
+    }
+
+    /// <summary>
+    /// Points the ground within a section line's reach gets so that it can follow the change smoothly where the survey is sparse
+    /// (derived, never stored): a grid a sixth of the reach apart (0.25 to 2 m) inside the reach, none within half a step of a
+    /// survey point or within the line's tolerance, each at the ground's height there plus the change faded across the reach.
+    /// </summary>
+    public static List<Vec3> Band(IReadOnlyList<(List<Vec3> Delta, double Reach, double Tolerance)> shifts, Terrain ground, IReadOnlyList<Vec3> survey, Func<Vec2, bool> skip)
+    {
+        var o = new List<Vec3>();
+        foreach (var (d, reach, tol) in shifts)
+        {
+            var h = Math.Clamp(reach / 6, 0.25, 2);
+            var cells = new HashSet<(long, long)>();
+            foreach (var q in survey) cells.Add(((long)Math.Floor(q.X / (h / 2)), (long)Math.Floor(q.Y / (h / 2))));
+            var (lo, hi) = (new Vec2(d.Min(v => v.X) - reach, d.Min(v => v.Y) - reach), new Vec2(d.Max(v => v.X) + reach, d.Max(v => v.Y) + reach));
+            for (var x = Math.Floor(lo.X / h) * h; x <= hi.X; x += h)
+                for (var y = Math.Floor(lo.Y / h) * h; y <= hi.Y; y += h)
+                {
+                    if (o.Count > 40000) return o;
+                    var p = new Vec2(x, y);
+                    var (r, _) = Nearest(d, p);
+                    if (r >= reach * 0.95 || r <= Math.Max(tol, h / 4)) continue;
+                    if (cells.Contains(((long)Math.Floor(x / (h / 2)), (long)Math.Floor(y / (h / 2)))) || skip(p)) continue;
+                    if (ground.ElevationAt(x, y) is not { } g) continue;
+                    o.Add(new Vec3(x, y, g + ShiftAt(shifts, p)));
+                }
+        }
+        return o;
     }
 
     /// <summary>A <see cref="Derived"/> item's outline in plan whose ground it covers (a hardscape's, T4): the survey points inside leave the triangulation.</summary>
@@ -424,7 +769,7 @@ public static class FeatureLines
             {
                 var attrs = line.CloneAttrs();
                 attrs[TerrainKey] = half ? otherId : was.Id;
-                attrs.Remove("arcs"); attrs.Remove("grades"); attrs.Remove("closed");
+                attrs.Remove("arcs"); attrs.Remove("grades"); attrs.Remove("closed"); attrs.Remove("curves"); attrs.Remove("locked");
                 var own = s.Elevation != null || s.Drape;
                 attrs["points"] = PointsJson([.. pts.Select(v => v.Xy)], [.. pts.Select(v => own ? (double?)null : R(v.Z))]);
                 if (first && !half) { ctx.Replace(line.With(attrs: attrs)); first = false; continue; }
@@ -498,11 +843,15 @@ public static class FeatureLines
         if (!s.Closed) flat.Add(s.Corners[^1]);
         plan.Add(new PlanItem("symbol", s.Closed, flat, Style: PlanStyle(s)));
         var lines = line.Count >= 2 ? new List<IReadOnlyList<Vec3>> { line.Select(p => p with { Z = p.Z + 0.02 }).ToList() } : null;
-        return new ElementGeometry([], plan, s.Corners, problems.Count > 0 ? problems : null, Lines: lines, LineColor: Color);
+        return new ElementGeometry([], plan, s.Corners, problems.Count > 0 ? problems : null, Lines: lines, LineColor: s.Section ? SectionColor : Color);
     }
 
     /// <summary>Its own line in plan: a contour solid and heavier, any other dash-dot-dot, both in the feature lines' colour.</summary>
-    public static LineStyleSpec PlanStyle(Spec s) => s.Elevation != null ? new LineStyleSpec(3, Color, "solid") : new LineStyleSpec(2, Color, "dashdotdot");
+    public static LineStyleSpec PlanStyle(Spec s) => s.Elevation != null ? new LineStyleSpec(3, Color, "solid")
+        : s.Section ? new LineStyleSpec(2, SectionColor, "dashed") : new LineStyleSpec(2, Color, "dashdotdot");
+
+    /// <summary>A section line's colour (T3): it reads the ground, so it is told apart from the lines that shape it.</summary>
+    public const string SectionColor = "#6d4c9f";
 
     public static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)
     {
@@ -639,24 +988,7 @@ public static class FeatureLines
         // A feature line on a terrain: {points [[x, y] | [x, y, z]], arcs?, grades?, closed?, elevation? (a contour), drape?, tolerance?,
         // terrainId? (else the terrain under it), name?}. A corner without a height of its own takes the ground's; one off every
         // terrain without one is refused, named (Î6).
-        r.Command("addFeatureLine", "Feature line", (ctx, a) =>
-        {
-            var m = ctx.Model;
-            var (corners, _) = ReadPoints(a["points"]);
-            var terrain = (string?)a["terrainId"] is { } tid ? Terrains.Require(m, tid)
-                : corners.Select(c => Terrains.Under(m, c)).FirstOrDefault(t => t != null)
-                  ?? throw new CommandException("A feature line is drawn on a terrain: there is none under it.");
-            var attrs = new JsonObject { [TerrainKey] = terrain.Id };
-            Write(attrs, a, null);
-            var s = Check(attrs, terrain);
-            var n = m.OfClass(Class).Count() + 1;
-            var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm
-                : s.Elevation is { } z ? $"Contour {z.ToString("0.00", CultureInfo.InvariantCulture)}" : $"Feature line {n}";
-            var e = new Entity(ctx.NewId(), Class, name, attrs);
-            ctx.Add(e);
-            if (Spatial.StoreyOf(m, terrain.Id) is { } storey) Spatial.Contain(ctx, storey.Id, e.Id);
-            return new JsonObject { ["id"] = e.Id };
-        });
+        r.Command("addFeatureLine", "Feature line", (ctx, a) => FeatureLines.Add(ctx, a));
 
         // Its corners, arcs, grades, closed, elevation (null: no longer a contour), drape, tolerance, name, terrain.
         r.Command("updateFeatureLine", "Change feature line", (ctx, a) =>
@@ -682,6 +1014,7 @@ public static class FeatureLines
             var indices = (a["indices"] as JsonArray)?.Select(x => Json.Number(x) is { } v ? (int)v : -1).Where(i => i >= 0 && i < n).Distinct().ToList()
                 ?? (Json.Number(a["index"]) is { } one && one >= 0 && one < n ? [(int)one] : []);
             if (indices.Count == 0) throw new CommandException("Which corners? The line has " + n + ", from 0.");
+            if (indices.FirstOrDefault(s.LockedAt, -1) is var li && li >= 0) throw new CommandException(LockedMessage(li));
             var resolved = CornerZ(s, GroundOf(ctx.Model, e));
             var own = s.Elevation is { } level ? s.Corners.Select(_ => (double?)level).ToList() : s.Drape ? s.Corners.Select(_ => (double?)null).ToList() : [.. s.Z];
             var grades = s.Grades.ToArray();
@@ -727,6 +1060,7 @@ public static class FeatureLines
                 // The corner that follows keeps no height of its own: its height is the grade's.
                 var resolved = CornerZ(s, GroundOf(ctx.Model, e));
                 var (from, to) = keepEnd ? (k + 1, k) : (k, k + 1);
+                if (s.LockedAt(to % n)) throw new CommandException(LockedMessage(to % n));
                 own[from] ??= resolved[from] ?? throw new CommandException(Off(from, s.Corners[from]));
                 own[to] = null;
                 // Nor does another grade give it a height: a grade into the corner kept from the other side goes.
@@ -801,6 +1135,8 @@ public static class FeatureLines
                 attrs["points"] = PointsJson([.. s.Corners.Select(Moved)], s.Z);
                 if (s.Rises.Any(r => Math.Abs(r) > 1e-12)) attrs["arcs"] = new JsonArray([.. s.Rises.Select(r => (JsonNode)r)]); else attrs.Remove("arcs");
                 WriteGrades(attrs, s.Grades);
+                WriteCurves(attrs, s.Curves);
+                WriteLocked(attrs, s.Locked);
                 ctx.Replace(line.With(attrs: attrs));
             }
             // The ground within the reach follows: its points take the height from where the field carries them.
@@ -864,6 +1200,27 @@ public static class FeatureLines
         });
     }
 
+    /// <summary>A feature line added (the command <c>civil.addFeatureLine</c>).</summary>
+    public static JsonObject Add(ICommandContext ctx, JsonObject a)
+    {
+        var m = ctx.Model;
+        var (corners, _) = ReadPoints(a["points"]);
+        var terrain = (string?)a["terrainId"] is { } tid ? Terrains.Require(m, tid)
+            : corners.Select(c => Terrains.Under(m, c)).FirstOrDefault(t => t != null)
+              ?? throw new CommandException("A feature line is drawn on a terrain: there is none under it.");
+        var attrs = new JsonObject { [TerrainKey] = terrain.Id };
+        Write(attrs, a, null);
+        var s = Check(attrs, terrain);
+        var n = m.OfClass(Class).Count() + 1;
+        var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm
+            : s.Elevation is { } z ? $"Contour {z.ToString("0.00", CultureInfo.InvariantCulture)}"
+            : s.Section ? $"Section line {m.OfClass(Class).Count(x => SpecOf(x).Section) + 1}" : $"Feature line {n}";
+        var e = new Entity(ctx.NewId(), Class, name, attrs);
+        ctx.Add(e);
+        if (Spatial.StoreyOf(m, terrain.Id) is { } storey) Spatial.Contain(ctx, storey.Id, e.Id);
+        return new JsonObject { ["id"] = e.Id };
+    }
+
     /// <summary>
     /// How much of a drag a point carries at <paramref name="r"/> from the grab, with reach <paramref name="reach"/>: Shepard's
     /// inverse-distance weighting (power 2) between the grab, moved by the whole drag, and the reach's edge, which stays:
@@ -889,11 +1246,15 @@ public static class FeatureLines
         var zs = new List<double?>();
         var rises = new List<double>();
         var grades = new List<double?>();
+        var curves = new List<double>();
+        var locked = new List<bool>();
         var n = s.Corners.Count;
         for (var k = 0; k < n; k++)
         {
             corners.Add(s.Corners[k]);
             zs.Add(s.Z[k]);
+            curves.Add(s.CurveAt(k));
+            locked.Add(s.LockedAt(k));
             if (k >= s.Segments) break;
             var (a, b) = (s.Corners[k], s.Corners[(k + 1) % n]);
             var len = (b - a).Length;
@@ -904,11 +1265,11 @@ public static class FeatureLines
                 var f = (double)q / parts;
                 corners.Add(a + (b - a) * f);
                 zs.Add(s.Z[k] is { } z0 && s.Z[(k + 1) % n] is { } z1 ? R(z0 + (z1 - z0) * f) : null);
-                rises.Add(0); grades.Add(null);
+                rises.Add(0); grades.Add(null); curves.Add(0); locked.Add(false);
             }
             rises.Add(s.Rises[k]); grades.Add(s.Grades[k]);
         }
-        return s with { Corners = corners, Z = zs, Rises = [.. rises], Grades = [.. grades] };
+        return s with { Corners = corners, Z = zs, Rises = [.. rises], Grades = [.. grades], Curves = [.. curves], Locked = [.. locked] };
     }
 
     /// <summary>
@@ -981,9 +1342,11 @@ public static class FeatureLines
         : n is JsonObject o && Json.Number(o["x"]) is { } ox && Json.Number(o["y"]) is { } oy ? new Vec2(ox, oy) : null;
 
     /// <summary>A feature line's plan polyline (its arcs in chords), a closed one ending where it began.</summary>
-    static List<Vec2> Flat(Spec s) => Line(s, s.Corners.Select(_ => (double?)0).ToList()).Select(p => p.Xy).ToList();
+    public static List<Vec2> Flat(Spec s) => Line(s, s.Corners.Select(_ => (double?)0).ToList()).Select(p => p.Xy).ToList();
 
     static double Distance(Spec s, Vec2 p) => s.Corners.Count < 2 ? double.MaxValue : PolyDistance(Flat(s), p);
+
+    public static string LockedMessage(int i) => $"Point {i + 1} is locked: unlock it to change it.";
 
     public static Entity Require(IModelView m, string? id) =>
         m.Get(id ?? "") is { } e && Is(e) ? e : throw new CommandException("There is no such feature line.");
@@ -1008,6 +1371,8 @@ public static class FeatureLines
             {
                 if (a["arcs"] == null) attrs.Remove("arcs");
                 if (a["grades"] == null) attrs.Remove("grades");
+                if (a["curves"] == null) attrs.Remove("curves");
+                if (a["locked"] == null) attrs.Remove("locked");
             }
         }
         if (a["closed"] is JsonValue cv && cv.TryGetValue<bool>(out var closed)) { if (closed) attrs["closed"] = true; else attrs.Remove("closed"); }
@@ -1028,10 +1393,24 @@ public static class FeatureLines
         if (a.ContainsKey("elevation")) { if (Json.Number(a["elevation"]) is { } z) attrs["elevation"] = R(z); else attrs.Remove("elevation"); }
         if (a["drape"] is JsonValue dv && dv.TryGetValue<bool>(out var drape)) { if (drape) attrs["drape"] = true; else attrs.Remove("drape"); }
         if (Json.Number(a["tolerance"]) is { } tol) attrs["tolerance"] = Math.Clamp(tol, 0.001, 5);
+        if (a["section"] is JsonValue sv && sv.TryGetValue<bool>(out var section)) { if (section) attrs["section"] = true; else attrs.Remove("section"); }
+        if (a.ContainsKey("reach")) { if (Json.Number(a["reach"]) is { } r && r > 0) attrs["reach"] = R(r); else attrs.Remove("reach"); }
+        if (a["curves"] is JsonArray cs) WriteCurves(attrs, [.. Numbers(cs, n).Select(v => v is { } l && l > 0 ? l : 0)]);
+        if (a["locked"] is JsonArray ls) WriteLocked(attrs, [.. Enumerable.Range(0, n).Select(i => ls.Any(x => Json.Number(x) == i))]);
+    }
+
+    public static void WriteCurves(JsonObject attrs, double[] curves)
+    {
+        if (curves.Any(l => l > 0)) attrs["curves"] = new JsonArray([.. curves.Select(l => (JsonNode)R(l))]); else attrs.Remove("curves");
+    }
+
+    public static void WriteLocked(JsonObject attrs, bool[] locked)
+    {
+        if (locked.Any(l => l)) attrs["locked"] = new JsonArray([.. locked.Select((l, i) => (l, i)).Where(x => x.l).Select(x => (JsonNode)x.i)]); else attrs.Remove("locked");
     }
 
     /// <summary>A line's attributes checked on its terrain: two corners at least (three closed), and every corner with a height (Î6).</summary>
-    static Spec Check(JsonObject attrs, Entity terrain)
+    public static Spec Check(JsonObject attrs, Entity terrain)
     {
         var s = SpecOf(attrs);
         if (s.Corners.Count < 2) throw new CommandException("A feature line needs two corners at least.");
@@ -1040,6 +1419,22 @@ public static class FeatureLines
         var g = Terrains.Base(terrain);
         CornerZ(s, p => g.ElevationAt(p.X, p.Y), problems);
         if (problems.Count > 0) throw new CommandException(problems[0]);
+        // Its vertical curves fit between their neighbours (T3), as a road's red line's must.
+        for (var k = 0; k < s.Corners.Count; k++)
+        {
+            var l = s.CurveAt(k);
+            if (l <= 0) continue;
+            if (k == 0 || !s.Closed && k == s.Corners.Count - 1) throw new CommandException("A vertical curve rounds a corner between two segments: an end has none.");
+            var before = s.Edge(k - 1).Length;
+            var after = s.Edge(k % s.Segments).Length;
+            var prev = s.CurveAt(k - 1) / 2;
+            var next = s.CurveAt((k + 1) % s.Corners.Count) / 2;
+            if (l / 2 + prev > before + 1e-9 || l / 2 + next > after + 1e-9)
+                throw new CommandException($"The vertical curve at point {k + 1} ({l.ToString("0.##", CultureInfo.InvariantCulture)} m) does not fit between its neighbours: shorten it.");
+        }
+        // A section line's change within a reach long enough not to fold the ground (Î3).
+        if (s.Section && s.Reach is { } reach && SectionChange(s, g) is { } change && ReachProblem(reach, MaxChange(change.Delta)) is { } why)
+            throw new CommandException(why);
         return s;
     }
 

@@ -1,6 +1,6 @@
 # Plan: conectorul Speckle
 
-Hotărârea utilizatorului (23.11.2026, decizia 800): Lapin primește un conector Speckle construit pe **SDK-ul .NET oficial al Speckle** (`Speckle.Sdk`, `Speckle.Objects`), ca excepție notată de la principiul „formatele de schimb scrise după specificația publică, fără dependențe”. Speckle e un protocol de server (GraphQL plus încărcarea obiectelor), nu un format de fișier, iar reproducerea serializării și a identificatorilor lui ar fi fragilă. Modulul e **deschis (MIT)**: aduce utilizatori, nu e premium.
+Hotărârea utilizatorului (23.11.2026, decizia 804): Lapin primește un conector Speckle construit pe **SDK-ul .NET oficial al Speckle** (`Speckle.Sdk`, `Speckle.Objects`), ca excepție notată de la principiul „formatele de schimb scrise după specificația publică, fără dependențe”. Speckle e un protocol de server (GraphQL plus încărcarea obiectelor), nu un format de fișier, iar reproducerea serializării și a identificatorilor lui ar fi fragilă. Modulul e **deschis (MIT)**: aduce utilizatori, nu e premium.
 
 ## De ce
 

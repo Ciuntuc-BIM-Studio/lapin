@@ -225,6 +225,25 @@ public static class HatchLibrary
 *METAL_SEAM_500, Standing-seam metal sheet, seams every 500 mm (real size)
 ;%TYPE=MODEL
 90, 0,0, 0,500
+
+;; Paving seen from above (site grading T4: a hardscape's top layer in plan)
+*PAVER_200X100, Concrete pavers 200 x 100, running bond (real size)
+;%TYPE=MODEL
+0, 0,0, 0,100
+90, 0,0, 100,100, 100,-100
+
+*GRASS_PAVER_600X400, Grass pavers 600 x 400, six 120 mm openings each (real size)
+;%TYPE=MODEL
+0, 0,0, 0,400
+90, 0,0, 0,600
+0, 40,40, 0,200, 120,-80
+0, 40,160, 0,200, 120,-80
+90, 40,40, 0,200, 120,-80
+90, 160,40, 0,200, 120,-80
+
+*ASPHALT, Asphalt: a sparse fine stipple
+0, 0,0, 2.2,1.7, 0,-4.4
+0, 1.4,0.6, 2.9,2.3, 0,-5.8
 """;
 
     static readonly List<HatchPattern> Patterns = [.. Pat.Parse(BuiltIn).Patterns, BattHatch.Pattern];

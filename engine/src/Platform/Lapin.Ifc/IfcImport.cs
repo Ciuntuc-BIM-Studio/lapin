@@ -356,10 +356,11 @@ public static partial class IfcImport
             public RelIndex VoidsOf => _voidsOf ??= new(f.OfType("IFCRELVOIDSELEMENT"), r => [Ref(r[4])]);                   // element → its voids
             public RelIndex FillsOf => _fillsOf ??= new(f.OfType("IFCRELFILLSELEMENT"), r => [Ref(r[4])]);                   // opening → its fills
             public RelIndex JoinsOf => _joinsOf ??= new(f.OfType("IFCRELCONNECTSPATHELEMENTS"), r => [Ref(r[5])]);           // relating element → its joins
+            public RelIndex ConnectedBy => _connectedBy ??= new(f.OfType("IFCRELCONNECTSELEMENTS"), r => [Ref(r[6])]);       // related element → its connections
             public RelIndex PartsOf => _partsOf ??= new(f.OfType("IFCRELAGGREGATES"), r => [Ref(r[4])]);                     // whole → its aggregations
             public RelIndex PropertiesOf => _propertiesOf ??= new(f.OfType("IFCMATERIALPROPERTIES"), p => [Ref(p[3])]);       // material → its properties
             public RelIndex RepresentationsOf => _repsOf ??= new(f.OfType("IFCMATERIALDEFINITIONREPRESENTATION"), r => [Ref(r[3])]); // material → its looks
-            RelIndex? _typeOf, _materialOf, _voidsOf, _fillsOf, _joinsOf, _partsOf, _propertiesOf, _repsOf;
+            RelIndex? _typeOf, _materialOf, _voidsOf, _fillsOf, _joinsOf, _connectedBy, _partsOf, _propertiesOf, _repsOf;
         }
 
         RelIndexes Rels => rels ??= new RelIndexes(f);
@@ -1140,6 +1141,10 @@ public static partial class IfcImport
             var name = e.Type == "IFCSPACE" && e.Args.Count > 7 && Str(e[7]) is { Length: > 0 } longName ? longName : Str(e[2]);
             // A SubD solid's cage rides in a set of its own (decision 780).
             if (SubDCageOf(e.Id) is { } cage) intent.Attrs["cage"] = cage;
+            // What it stands by, from its IfcRelConnectsElements when its intent does not name it (a kerb's hardscape).
+            foreach (var c in IfcExport.Connections.Where(c => c.Class == cls && intent.Attrs[c.Key] == null))
+                foreach (var rel in Rels.ConnectedBy[e.Id])
+                    if (Str(rel[2]) == c.Name && f.Get(rel[5]) is { } by && Str(by[0]) is { Length: 22 } byGid) { intent.Attrs[c.Key] = byGid; break; }
             Put(edit, gid, cls, name ?? cls[3..], intent.Attrs, predefined);
             var storey = StoreyFor(e.Id);
             relations.Add(x => Contain(x, gid, storey));
