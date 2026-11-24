@@ -92,3 +92,5 @@ export const WallSweepIcon = icon('wallSweep');
 export const WallRevealIcon = icon('wallReveal');
 /** A profile: a stepped footing's outline and its insertion point. */
 export const ProfileIcon = icon('profile');
+/** The ellipse tool: an ellipse, not lucide's egg. */
+export const EllipseIcon = icon('ellipse');

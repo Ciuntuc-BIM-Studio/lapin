@@ -79,7 +79,7 @@ export const woodModule: LapinModule = {
   name: 'Wood',
   summary: 'Timber-frame walls from the configurator: studs on a module, plates, noggins, and every door and window framed by its rules; the Timber schedule.',
   tabs: [{
-    id: 'wood', label: 'Wood', order: 33, include: ['modify'],
+    id: 'wood', label: 'Wood', order: 33, include: ['modify', 'groups'],
     groups: [
       { label: 'Frame', tools: [frame, roofFraming] },
       { label: 'Schedule', tools: [schedule, roofTimber, boards, panels, cltSchedule] },

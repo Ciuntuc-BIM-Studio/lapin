@@ -6,7 +6,7 @@ summary: Keep elements together as a group, open a group to edit it, select by a
 
 ## Groups
 
-A group keeps elements together. Select them and click **Modify → Create group** (<kbd>GP</kbd>). A click on any member then selects the whole group, in plans and in 3D. The group moves, copies, rotates, mirrors and deletes as one, and a copy is a group of its own. In IFC a group is an IfcGroup, so other programs see it too.
+A group keeps elements together. Select them and click **Group → Create group** (<kbd>GP</kbd>). A click on any member then selects the whole group, in plans and in 3D. The group moves, copies, rotates, mirrors and deletes as one, and a copy is a group of its own. In IFC a group is an IfcGroup, so other programs see it too.
 
 The right-click menu on a plan, a section or an elevation has the same commands: **Create group** for the selection, and on a group **Ungroup** and **Edit group**. Lines, texts and hatches drawn on a view group too, an imported DXF plan's lines among them, so a whole drawing moves as one.
 
@@ -26,7 +26,7 @@ Double-click a member, or click **Edit group** (<kbd>EG</kbd>). The rest of the 
 
 A component is a group whose copies stay the same, as in SketchUp, or as a model group in Revit: change one and all of them change. It suits what you repeat many times: a planter, a bay of a canopy or of a facade, a kitchen island, a roof light, a typical bathroom. It takes the project's own elements of any kind: **walls** (with the doors and windows in them), floors, rooms, furniture, Studio solids. Elements referenced from an imported file cannot be part of one: they stay where the file put them.
 
-Select the elements and choose **Modify → Make component** (<kbd>CK</kbd>). Then copy it as you copy anything: **Copy**, **Rotate**, **Copy to storeys**. Each copy is an **instance**.
+Select the elements and choose **Group → Make component** (<kbd>CK</kbd>). Then copy it as you copy anything: **Copy**, **Rotate**, **Copy to storeys**. Each copy is an **instance**.
 
 - **Double-click** an instance to open it, as a group. What you change inside (an outline, a height, a push/pull, a new or deleted member) changes in every instance, in one undo step.
 - **Move and turn** an instance on its own: the others stay where they are, and an edit reaches a turned instance turned.
@@ -40,7 +40,7 @@ Select the elements and choose **Modify → Make component** (<kbd>CK</kbd>). Th
 
 A component can carry 2D information with it, as Revit's attached detail groups: lines, hatches, texts, symbols, tags and dimensions drawn on a plan, gathered in named **detail sets** such as *Technical* or *Sales*. Every instance draws them in its own place, turned or mirrored with it, in every plan of its storey.
 
-- Draw the notes on a plan over one instance. Select them together with the instance (or open the instance first) and choose **Modify → Add to detail set** (<kbd>DS</kbd>), or **Add to detail set** in the instance's properties. Type the set's name: a new name makes a new set. Drafting selected with the elements when you make the component goes into a set called *Details*.
+- Draw the notes on a plan over one instance. Select them together with the instance (or open the instance first) and choose **Group → Add to detail set** (<kbd>DS</kbd>), or **Add to detail set** in the instance's properties. Type the set's name: a new name makes a new set. Drafting selected with the elements when you make the component goes into a set called *Details*.
 - Edit them inside any instance, as any member: move a line, change a text, delete a hatch. Every instance follows, in one undo step. A tag in a set tags the same element in each instance.
 - Each view chooses the sets it shows: **Visibility / Graphics → Annotations → Detail sets of components**. A new view shows them all; untick *Sales* on the technical plans and *Technical* on the plans for selling. A view template's graphics set does this for all its views.
 - **Remove from group** or **Ungroup** turns a detail back into plain drafting on its storey's plan.
@@ -49,7 +49,7 @@ A component can carry 2D information with it, as Revit's attached detail groups:
 
 ### Apartment types
 
-An **apartment type** is a component named and listed as an apartment. Select an apartment's walls, rooms and furniture and choose **Modify → Make apartment type** (<kbd>CU</kbd>). The doors and windows in those walls come with them. Copy it, rotate it or **Mirror** it, as the flat on the other side of a staircase: a change in one reaches the others, mirrored where they are, and every element keeps its identity in IFC.
+An **apartment type** is a component named and listed as an apartment. Select an apartment's walls, rooms and furniture and choose **Group → Make apartment type** (<kbd>CU</kbd>). The doors and windows in those walls come with them. Copy it, rotate it or **Mirror** it, as the flat on the other side of a staircase: a change in one reaches the others, mirrored where they are, and every element keeps its identity in IFC.
 
 An apartment type holds the inner walls, the doors between the rooms, the rooms and the furniture. The building holds the facade, the walls between apartments and the corridor. Where the two meet belongs to each instance:
 

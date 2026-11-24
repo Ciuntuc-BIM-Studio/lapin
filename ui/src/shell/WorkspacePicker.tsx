@@ -4,7 +4,7 @@
  * The project stays one: a hidden tab's tools are still in Commands… and the shortcuts.
  */
 
-import { chooseWorkspace, useInterface, visibleTabIds, WORKSPACE_IDS, WORKSPACE_LABELS } from '../app/interface';
+import { chooseWorkspace, useInterface, visibleTabIds, WORKSPACE_IDS, WORKSPACE_LABELS, type WorkspaceId } from '../app/interface';
 import { ribbonTabs } from '../platform/modules';
 
 /** The workspaces as one choice, each with the tabs it shows here; the user's own only once it is made. */
@@ -25,5 +25,19 @@ export function WorkspacePicker({ compact = false }: { compact?: boolean }) {
         );
       })}
     </div>
+  );
+}
+
+/** The workspace as one labelled choice, for the start screen (the same store as the picker; View → Interface… shows each one's tabs). */
+export function WorkspaceSelect() {
+  const s = useInterface();
+  const ids = WORKSPACE_IDS.filter((w) => w !== 'mine' || s.mine !== null || s.workspace === 'mine');
+  return (
+    <label className="start-workspace" data-field="workspace-select">
+      <span>Workspace</span>
+      <select value={s.workspace} onChange={(e) => chooseWorkspace(e.target.value as WorkspaceId)}>
+        {ids.map((w) => <option key={w} value={w} data-workspace={w}>{WORKSPACE_LABELS[w]}</option>)}
+      </select>
+    </label>
   );
 }

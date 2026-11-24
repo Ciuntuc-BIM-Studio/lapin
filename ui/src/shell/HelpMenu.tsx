@@ -20,7 +20,7 @@ import { isDesktop } from '../engine/files';
 import { checkForUpdates } from '../app/updates';
 import { LANGUAGES, setLang, useLang } from '../i18n';
 import { BunnyIcon } from '../icons';
-import { replacements } from '../platform/modules';
+import { modules, productInfo, replacements } from '../platform/modules';
 import { lazyPart } from '../platform/lazyPart';
 
 // Ask Lapin and its answers (help/faq.ts), fetched the first time it is opened.
@@ -206,6 +206,8 @@ function AboutDialog({ version, overrides, onClose }: { version?: string; overri
           <p className="about-name"><BunnyIcon size={22} /><b>Lapin</b> <span className="muted" data-no-i18n>{version ?? ''}</span></p>
           <p>A classic BIM modeller built natively on IFC, by Ciuntuc BIM Studio.</p>
           <p>Lapin is free and open source, under the MIT licence. <button type="button" className="link" onClick={() => openLink('source')}>Source code on GitHub</button></p>
+          <h4>This edition</h4>
+          <p className="muted small">{productInfo.name}: {modules.map((m) => m.name).join(' · ')}</p>
           <h4>Helpware</h4>
           <p>If Lapin helps you in any way, we encourage you, without obliging you, to help anyone who needs help, in any way you can: your time, your skills, a hand to someone nearby, a gift to people or a cause you trust.</p>
           <p className="muted small">Lapin asks nothing for itself and takes no donations. This is a request, not a condition of the licence.</p>

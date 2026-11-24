@@ -6,7 +6,9 @@ summary: Ecranul de start, un proiect nou, părțile ferestrei, cum te miști î
 
 ## Ecranul de start
 
-Când pornește, Lapin arată ecranul de start. **Proiect nou** începe o clădire goală. **Deschide un proiect…** deschide un fișier `.lapin`. Proiectele deschise înainte sunt sub **Recente**.
+Când pornește, Lapin arată ecranul de start. **Proiect nou** începe o clădire goală. **Deschide un proiect…** deschide un fișier `.lapin`. Proiectele deschise înainte sunt sub **Recente**, fiecare cu o poză mică a vederii 3D așa cum era când l-ai salvat (o pictogramă până când proiectul a fost salvat o dată de pe acest calculator).
+
+Cu un proiect deschis, apasă **Înapoi la** *(numele lui)*, primul buton, sau <kbd>Esc</kbd>, ca să te întorci la el; **Proiect nou** e atunci un buton obișnuit. **Spațiu de lucru**, sub butoane, alege ce taburi ale panglicii arată fereastra (vezi [Interfața și scurtăturile](interface.md)). Limba se alege din lista de la baza ecranului, fiecare numită în limba ei; toată interfața se schimbă pe loc.
 
 **Pornește de la** dă un proiect nou pregătit pentru lucrul lui: **Casă parter** (fundații și parter), **Casă P+1** (și un etaj), **Bloc de locuințe** (parter și patru etaje), **Hală sau structură** (un nivel înalt de 6 m, în spațiul de lucru Structură și armare), **Doar desen 2D** (un nivel, în spațiul de lucru Desen 2D) și **Pornește de la un IFC** (un proiect nou, apoi fișierul IFC de importat). Fiecare își alege și spațiul de lucru; nivelurile se pot redenumi, adăuga sau șterge apoi, ca în orice proiect.
 
@@ -21,7 +23,7 @@ Un proiect nou are deja trei niveluri: **Foundations** (−1,50), **Ground floor
 ![Părțile ferestrei Lapin](shots/workspace.webp)
 
 1. **Taburile panglicii.** Desen, Arhitectură, Interior, Structură, Teren, Studio, Adnotări, Gestionare, Execuție și Vedere își grupează fiecare uneltele. **Fișier** deschide, salvează, importă și exportă. **Anulează** și **Refă** sunt la capătul din dreapta al aceleiași bare (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
-2. **Panglica.** Are uneltele tabului curent. Ține mouse-ul peste o unealtă ca să vezi numele și literele ei de la tastatură.
+2. **Panglica.** Are uneltele tabului curent. Ține mouse-ul peste o unealtă ca să vezi numele și literele ei de la tastatură; ține apăsat <kbd>Alt</kbd> ca să vezi dintr-o dată literele tuturor uneltelor mari. Când o bandă e mai lată decât fereastra, uneltele mici arată doar pictogramele; lărgește fereastra și numele revin.
 3. **Navigatorul proiectului.** Listează nivelurile, planurile, secțiunile, fațadele, vederile 3D, planșele și extrasele. Dublu clic pe una o deschide într-un tab. Un proiect se deschide pe planul parterului, cu vederea 3D într-un tab alături.
 4. **Vederea.** Aici desenezi: un plan, o secțiune, o vedere 3D sau o planșă. Poți deschide mai multe vederi alăturate cu cele două butoane din dreapta sus a vederii.
 5. **Bara rapidă.** Are uneltele cele mai folosite pe tastele <kbd>1</kbd>–<kbd>9</kbd>.

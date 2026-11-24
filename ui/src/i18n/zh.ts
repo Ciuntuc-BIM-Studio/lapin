@@ -6561,6 +6561,7 @@ export const ZH: Record<string, string> = {
   "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "跳过：只更改项目中的材料。创建：项目中缺少其材料的行会创建该材料。",
   // The diagram display (View → Display quality).
   'Diagram': '图解', 'Soft volumes like a card model, with the sun’s soft shadows and thin light edges: for massing and volume studies.': '像卡纸模型一样柔和的体量，带有太阳的柔和阴影和细而浅的边线：用于体量研究。', 'White model': '白模', 'Every element a light white-grey.': '每个构件都是浅白灰色。', 'Pastel by category': '按类别柔和色', 'Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).': '墙、楼板、屋顶、结构、门窗、场地和绿化各用一种柔和的淡色（Preferences → Display 可修改）。', 'Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.': '仅在屏幕上：图纸、图幅和导出仍保持原有颜色。在 Visibility/Graphics 中设置的颜色仍然优先。', 'Diagram colours': '图解颜色', 'The pastel of each category in the Diagram display (View → Display quality). On screen only.': '“图解”显示中每个类别的柔和色（View → Display quality）。仅在屏幕上。', 'Slabs and floors': '楼板和地面', 'Columns and beams': '柱和梁', 'Terrain and site': '地形和场地', 'Vegetation and furniture': '植被和家具', 'Everything else': '其他所有',
+  'Press WA to draw walls; every element is native IFC.': '按 WA 绘制墙体；每个元素都是原生 IFC。',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
