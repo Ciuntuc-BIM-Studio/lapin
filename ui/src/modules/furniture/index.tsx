@@ -7,7 +7,7 @@
  */
 
 import {
-  Archive, Armchair, BookHeart, Package, Ruler, BedDouble, BedSingle, Coffee, CookingPot, LampDesk, Layers3, Library, ListOrdered, PanelsTopLeft, Settings2, Shapes, Shirt, Sofa, Table2, Users, UtensilsCrossed,
+  Archive, Armchair, Bath, BookHeart, Package, Ruler, BedDouble, BedSingle, Coffee, CookingPot, Droplet, Grip, LampDesk, Layers3, Library, ListOrdered, PanelsTopLeft, RectangleVertical, Settings2, Shapes, Shirt, ShowerHead, Sofa, Table2, Toilet, Users, UtensilsCrossed,
 } from 'lucide-react';
 import type { Icon } from '../../icons';
 import type { LapinModule, PlaceEntry, ToolDef } from '../../platform/module';
@@ -108,7 +108,17 @@ const KINDS: { category: string; kind: string; label: string; icon: Icon; shortc
   { category: 'Tables', kind: 'desk', label: 'Desk', icon: LampDesk },
   // Furniture from a CC0 model stretched by zones (decision 477): sofas, chairs, tables, lamps, plants, rugs; the model and its size in Furniture types.
   { category: 'Models', kind: 'model', label: 'From a model', icon: Shapes },
+  // Sanitary fixtures (forum topic #245): written to IFC as IfcSanitaryTerminal with their connection points; the accessories as furniture.
+  { category: 'Sanitary', kind: 'toilet', label: 'WC', icon: Toilet },
+  { category: 'Sanitary', kind: 'bidet', label: 'Bidet', icon: Toilet },
+  { category: 'Sanitary', kind: 'washbasin', label: 'Wash basin', icon: Droplet },
+  { category: 'Sanitary', kind: 'vanity', label: 'Vanity unit', icon: RectangleVertical },
+  { category: 'Sanitary', kind: 'shower', label: 'Shower', icon: ShowerHead },
+  { category: 'Sanitary', kind: 'bath', label: 'Bath', icon: Bath },
+  { category: 'Sanitary', kind: 'kitchenSink', label: 'Kitchen sink', icon: CookingPot },
+  { category: 'Sanitary', kind: 'bathAccessory', label: 'Bathroom accessory', icon: Grip },
 ];
+const SANITARY = KINDS.filter((k) => k.category === 'Sanitary').map((k) => k.kind);
 const CATEGORIES = [...new Set(KINDS.map((k) => k.category))];
 
 /** The bar's and Properties' pieces for a kind, made once each (a component made again would start over). */
@@ -151,6 +161,16 @@ const piece = (k: (typeof KINDS)[number]): ToolDef => ({
   run: () => { usePlaceKind.setState({ kind: k.kind }); if (useUi.getState().tool !== place.id) activate(place); },
 });
 const pieces = KINDS.map(piece);
+
+/** Sanitary fixtures (forum topic #245): the Place tool on the sanitary kind last placed, a WC the first time; the kind is changed in the bar. */
+const sanitary: ToolDef = {
+  id: 'furniture.sanitary', label: 'Sanitary fixture', icon: Bath,
+  run: () => {
+    const now = usePlaceKind.getState().kind;
+    usePlaceKind.setState({ kind: SANITARY.includes(now) ? now : 'toilet' });
+    if (useUi.getState().tool !== place.id) activate(place);
+  },
+};
 
 /** A kitchen of any layout: two points along a wall, its back on the wall's face, as long as the line (an L or a U tucked into the corner it is drawn near). */
 const kitchen: ToolDef = {
@@ -265,6 +285,7 @@ const furniture: LapinModule = {
     groups: [
       { label: 'Furniture', tools: [place], small: [chairsAround] },
       { label: 'Kitchen', tools: [kitchen] },
+      { label: 'Sanitary', tools: [sanitary] },
       { label: 'Schedules', tools: [byType], small: [byRoom, kitchenUnits, cutList] },
       { label: 'Types', tools: [types], small: [library] },
     ],

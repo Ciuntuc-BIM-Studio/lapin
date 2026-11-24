@@ -84,6 +84,16 @@ public sealed class Builder(Vec2 at, double z, double rotationDeg, bool mirror)
         Add(role, Lapin.Geometry.Prism.Extrude(profile, null, new Vec3(0, 0, z1 - z0), "furniture"));
     }
 
+    /// <summary>A plan polygon with holes through it (a basin's rim round its bowl, a sink's top round its bowls) extruded from z0 to z1.</summary>
+    public void PlanPrism(string role, IReadOnlyList<(double X, double Y)> plan, IReadOnlyList<IReadOnlyList<(double X, double Y)>> holes, double z0, double z1)
+    {
+        if (plan.Count < 3 || z1 - z0 < 1e-4) return;
+        Front.Add((role, plan.Min(p => p.X), plan.Max(p => p.X), z0, z1, plan.Min(p => p.Y)));
+        var profile = plan.Select(p => W(Mx(p.X), p.Y, z0)).ToList();
+        IReadOnlyList<IReadOnlyList<Vec3>> inner = [.. holes.Where(h => h.Count >= 3).Select(h => (IReadOnlyList<Vec3>)h.Select(p => W(Mx(p.X), p.Y, z0)).ToList())];
+        Add(role, Lapin.Geometry.Prism.Extrude(profile, inner, new Vec3(0, 0, z1 - z0), "furniture"));
+    }
+
     /// <summary>A block with a rectangular hole through it, top to bottom (a vanity's top cut for its basin).</summary>
     public void Slab(string role, double x0, double x1, double y0, double y1, double z0, double z1, (double X0, double X1, double Y0, double Y1) hole)
     {
@@ -181,6 +191,8 @@ public static class FurnitureBodies
             case "kitchen": Kitchen(b, s, length ?? s.W); break;
             case Casework.Key: Casework.Build(b, s); break;
             case FurnitureModels.Key: FurnitureModels.Build(b, s); break;
+            // Sanitary fixtures (forum topic #245).
+            default: if (Sanitary.Is(s.Kind)) Sanitary.Build(b, s); break;
         }
     }
 

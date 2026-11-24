@@ -996,7 +996,7 @@ public static partial class IfcExport
             if (at == null) placeOf[e.Id] = (place, z0);
             Contain(spatial, entity);
             Elements++;
-            if (type != null) TypeOf(type, kind, entity, mirrored, terms);
+            if (type != null) TypeOf(type, kind, entity, mirrored, terms, retyped: e.Str("exportAs") is { Length: > 3 } ea && ea == kind.Class && ea != e.Class);
             if (src?["material"] == null) MaterialsOf(e, entity, parts, grouped, type != null && types.TryGetValue(mirrored ? type.Id + MirrorKey : type.Id, out var written2) ? (type.Id + (mirrored ? MirrorKey : ""), written2.Ref) : null);
             if (grouped) Parts(e, kind, parts, place, fr, entity, partItems);
             if (fittings.Count > 0) Parts(e, kind, fittings, place, fr, entity);
@@ -1505,12 +1505,13 @@ public static partial class IfcExport
 
         // ─── Types and materials ────────────────────────────────────────────
 
-        void TypeOf(Entity type, Kind kind, string entity, bool mirrored = false, IfcJoineryType? terms = null)
+        void TypeOf(Entity type, Kind kind, string entity, bool mirrored = false, IfcJoineryType? terms = null, bool retyped = false)
         {
             var key = mirrored ? type.Id + MirrorKey : type.Id;
             if (!types.TryGetValue(key, out var t))
             {
-                var typeClass = type.Class.EndsWith("Type", StringComparison.Ordinal) && Classes.ContainsKey(type.Class[..^4]) ? type.Class : kind.Class + "Type";
+                // An element written as another class (exportAs: a sanitary fixture kept as furniture, forum topic #245) has its type written as that class's type.
+                var typeClass = !retyped && type.Class.EndsWith("Type", StringComparison.Ordinal) && Classes.ContainsKey(type.Class[..^4]) ? type.Class : kind.Class + "Type";
                 var gid = mirrored ? Gid(type.Id, MirrorKey) : Gid(type.Id);
                 // The mirrored type carries the type's intent and says whose mirror it is, so Lapin reads it back as the type itself.
                 // A type of Lapin's own class (an exhaust fan's, a gate's) says it, so it comes back as itself.

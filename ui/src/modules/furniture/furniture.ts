@@ -11,7 +11,24 @@ export interface KindParam { key: string; label: string; kind: 'length' | 'numbe
 export interface FurnitureKind {
   key: string; label: string; group: string; predefined: string; objectType?: string | null;
   width: number; depth: number; height: number; params: KindParam[]; defaults: Record<string, unknown>; roles: string[];
+  /** The IFC class its pieces are written as: IfcFurniture, a sanitary fixture's IfcSanitaryTerminal (forum topic #245). */
+  ifcClass?: string;
+  /** The common sizes it offers (indicative): a word on what each is, and the values it gives the type. */
+  sizes?: KindSize[];
+  sizesIndicative?: boolean | null;
 }
+export interface KindSize { label: string; spec: Record<string, unknown> }
+
+/** A common size as the dialog lists it: its word, then its width × depth × height in mm. */
+export const sizeLabel = (z: KindSize, word: (s: string) => string = (s) => s): string => {
+  const mm = (v: unknown) => Math.round(Number(v ?? 0) * 1000);
+  const dims = [z.spec.width, z.spec.depth, z.spec.height].filter((v) => v != null).map(mm).join(' × ');
+  return z.label ? `${word(z.label)} ${dims}` : dims;
+};
+
+/** The common size a spec is, if it is one: the first whose values it has. */
+export const sizeIndex = (sizes: KindSize[] | undefined, spec: FurnitureSpec): number =>
+  (sizes ?? []).findIndex((z) => Object.entries(z.spec).every(([k, v]) => typeof v === 'number' ? Math.abs(Number(spec[k]) - v) < 1e-6 : spec[k] === v));
 export type FurnitureSpec = Record<string, unknown> & { kind?: string; width?: number; depth?: number; height?: number; materials?: Record<string, string> };
 
 export const TYPE_CLASS = 'IfcFurnitureType';
@@ -23,6 +40,8 @@ export const ROLE_LABELS: Record<string, string> = {
   back: 'Back', legs: 'Legs',
   // The models' slots (decision 477).
   accent: 'Accent', shade: 'Shade', foliage: 'Foliage', pot: 'Pot',
+  // Sanitary fixtures (forum topic #245).
+  ceramic: 'Ceramic', seat: 'Seat', fittings: 'Taps and fittings', screen: 'Shower glass', steel: 'Steel', mirror: 'Mirror',
 };
 
 /** A role a type made before it had its own material takes another's (a kitchen's plinth its body's, its handles the metal's; decision 472). */
@@ -131,6 +150,10 @@ export const CHOICE_LABELS: Record<string, string> = {
   slab: 'Slab', framed: 'Framed', fluted: 'Fluted', flap: 'Flap', up: 'Lifts up', down: 'Drops down', box: 'Carcass', gap: 'Knee space', both: 'Both sides',
   sideboard: 'Sideboard', wardrobe: 'Wardrobe', wardrobeSliding: 'Wardrobe, sliding doors', bookcase: 'Bookcase', tvUnit: 'TV unit', chest: 'Chest of drawers',
   vanity: 'Bathroom vanity', desk: 'Desk', hallUnit: 'Hall unit', nightstand: 'Nightstand',
+  // Sanitary fixtures (forum topic #245).
+  wallHung: 'Wall-hung', floor: 'On the floor', concealed: 'Concealed', closeCoupled: 'Close-coupled', wall: 'On the wall', pedestal: 'Pedestal',
+  semiPedestal: 'Half pedestal', deck: 'On the deck', quadrant: 'Quadrant', door: 'Hinged door', walkIn: 'Walk-in screen',
+  towelRail: 'Towel rail', grabBar: 'Grab bar', mirror: 'Mirror', paperHolder: 'Toilet roll holder',
 };
 
 /** Whether a parameter applies to the type's layout (a parameter without layouts applies to all). */

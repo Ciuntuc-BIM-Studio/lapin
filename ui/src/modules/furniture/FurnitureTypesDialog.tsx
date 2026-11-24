@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { BookmarkPlus, Copy, FileUp, Library, Plus, Trash2, X } from 'lucide-react';
+import { t, useLang } from '../../i18n';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
@@ -22,7 +23,7 @@ import { ParamField } from './ParamField';
 import { saveTypeToLibrary } from './library';
 import { cutListRows, type CaseworkCatalog } from './casework';
 import {
-  CHOICE_LABELS, ROLE_FALLBACK, ROLE_LABELS, TYPE_CLASS, appliesTo, chooseType, kindOf, planBox, planPaths, sizeOf, specOf, useTypesDialog,
+  CHOICE_LABELS, ROLE_FALLBACK, ROLE_LABELS, TYPE_CLASS, appliesTo, chooseType, kindOf, planBox, planPaths, sizeIndex, sizeLabel, sizeOf, specOf, useTypesDialog,
   type FurnitureKind, type FurnitureSpec, type KitchenLayout, type PreviewDto,
 } from './furniture';
 
@@ -102,6 +103,7 @@ export function FurnitureTypesDialog() {
   const relations = useSession((s) => s.relations);
   const error = useSession((s) => s.error);
   const kinds = useKinds();
+  useLang((s) => s.lang);
   const model = { nodes, relations };
   const selected = useTypesDialog((s) => s.typeId);
   const [newKind, setNewKind] = useState('sofa');
@@ -197,6 +199,17 @@ export function FurnitureTypesDialog() {
                 <dl className="fields">
                   <dt>Name</dt>
                   <dd><input key={type.id + type.name} data-field="furniture-type-name" defaultValue={type.name} onBlur={(e) => { const n = e.target.value.trim(); if (n && n !== type.name) update({}, n); }} /></dd>
+                  {!!kind.sizes?.length && <>
+                    {/* The common sizes (forum topic #245): indicative, a manufacturer's own are in its catalogue. */}
+                    <dt title="Indicative sizes: a manufacturer's own are in its catalogue">Common size</dt>
+                    <dd>
+                      <select data-field="furniture-common-size" value={String(sizeIndex(kind.sizes, spec))} title="Indicative sizes: a manufacturer's own are in its catalogue"
+                        onChange={(e) => { const z = kind.sizes?.[Number(e.target.value)]; if (z) update(z.spec); }}>
+                        <option value="-1">Its own</option>
+                        {kind.sizes.map((z, i) => <option key={i} value={i} data-no-i18n>{sizeLabel(z, t)}</option>)}
+                      </select>
+                    </dd>
+                  </>}
                   {spec.kind !== 'kitchen' && spec.kind !== 'model' && <><dt>Width</dt><dd><LengthField testId="furniture-width" metres={Number(spec.width ?? kind.width)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ width: v }); }} /></dd></>}
                   {spec.kind !== 'model' && <><dt>Depth</dt><dd><LengthField testId="furniture-depth" metres={Number(spec.depth ?? kind.depth)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ depth: v }); }} /></dd>
                   <dt>{spec.kind === 'kitchen' ? 'Worktop height' : 'Height'}</dt><dd><LengthField testId="furniture-height" metres={Number(spec.height ?? kind.height)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ height: v }); }} /></dd></>}
@@ -208,7 +221,7 @@ export function FurnitureTypesDialog() {
                     </div>
                   ))}
                   <dt title="The symbol a plan draws this piece with (Manage → Symbols…); none: its body seen from above">Plan symbol</dt>
-                  <dd><SymbolPicker field="furniture-plan-symbol" value={typeof spec.planSymbol === 'string' && spec.planSymbol ? spec.planSymbol : null} list={symbols} category="Furniture"
+                  <dd><SymbolPicker field="furniture-plan-symbol" value={typeof spec.planSymbol === 'string' && spec.planSymbol ? spec.planSymbol : null} list={symbols} category={kind.group === 'Sanitary' ? 'sanitary' : 'furniture'}
                     noneLabel="Drawn from above" onChange={(id) => update({ planSymbol: id ?? '' })} /></dd>
                   <dt className="section-dt">Materials</dt><dd />
                   {rolesOf(spec, kind.roles, modelsCat?.models).map((role) => (

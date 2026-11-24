@@ -45,14 +45,16 @@ public sealed class FurnitureTests
             Assert.True(g.Parts.Sum(p => p.Solid.Faces.Length) < 6000, $"{k.Key}: low-poly");
             Assert.NotEmpty(g.Plan!);
             var (min, max) = Bounds(f, id);
-            Assert.InRange(min.Z, -0.001, 0.001);
+            // A sanitary fixture may hang on its wall, its height its rim's (SanitaryTests checks its own).
+            var sanitary = Sanitary.Is(k);
+            if (!sanitary) Assert.InRange(min.Z, -0.001, 0.001);
             // As wide as its type (a round table: its diameter), within its handles and a duvet's overhang.
             Assert.InRange(max.X - min.X, k.Width - 0.01, k.Width + 0.03);
             var s = SpecOf(f, id);
             var depth = k.Key switch { "sofa" when s.Str("chaise") != "none" => k.Depth + s.Num("chaiseLength", 0), "cornerSofa" => s.Num("cornerLength", 0), _ => k.Depth };
             Assert.InRange(max.Y - min.Y, depth - 0.01, depth + 0.07);
             // As high as its type: the kitchen's tall unit and taps stand above its worktop.
-            if (k.Key != "kitchen") Assert.InRange(max.Z, k.Height - 0.02, k.Height + 0.15);
+            if (k.Key != "kitchen" && !sanitary) Assert.InRange(max.Z, k.Height - 0.02, k.Height + 0.15);
             x += 4;
         }
         // A type's name says its kind and size; the materials by role are the project's.

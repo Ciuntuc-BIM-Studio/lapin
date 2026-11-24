@@ -41,6 +41,8 @@ public sealed class FurnitureModule : ILapinModule
         r.Catalog("models", FurnitureModels.Catalog());
         r.Service<IElementPlacement>(new FurniturePlacement());
         r.Service<IElementFrames>(new FurnitureFrames());
+        // A sanitary fixture's connection points, written to IFC as its ports (forum topic #245).
+        r.Service<IIfcNetwork>(new SanitaryNetwork());
         r.Service<IScheduleSource>(new FurnitureSchedule());
         FurnitureSchedule.RegisterTemplate(r);
         r.Service<IScheduleSource>(new FurnitureByRoom());
@@ -186,6 +188,7 @@ public sealed class FurnitureModule : ILapinModule
                 var (predefined, objectType) = FurnitureKinds.IfcOf(ts);
                 var attrs = e.CloneAttrs();
                 if (objectType != null) attrs["objectType"] = objectType; else attrs.Remove("objectType");
+                SetExportAs(attrs, ts);
                 if (ts.Kind.Key != "kitchen") attrs.Remove("length");
                 ctx.Replace(e.With(name: named ? type.Name : e.Name, attrs: attrs, predefinedType: predefined));
             }
@@ -304,7 +307,7 @@ public sealed class FurnitureModule : ILapinModule
     static string Mm(double v) => Lapin.Model.Numbers.Mm(v);
 
     /// <summary>A type's name from its kind and size: Sofa 2200 × 950, Bed 1600 × 2050.</summary>
-    static string DefaultName(Spec s) => s.Kind.Key == FurnitureModels.Key ? $"{FurnitureModels.Of(s).Name} {Mm(FurnitureModels.SizeOf(s, FurnitureModels.Of(s)).W)} × {Mm(FurnitureModels.SizeOf(s, FurnitureModels.Of(s)).D)}" : s.Kind.Key == Casework.Key ? $"{Casework.Label(s)} {Mm(s.W)} × {Mm(s.D)}" : s.Kind.Key == "kitchen" ? KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} {KitchenLayouts.Label(l)}, depth {Mm(s.D)}" : $"{s.Kind.Label}, depth {Mm(s.D)}" : $"{s.Kind.Label} {Mm(s.W)} × {Mm(s.D)}";
+    static string DefaultName(Spec s) => s.Kind.Key == Sanitary.AccessoryKey ? $"{Sanitary.Item(s).Label} {Mm(s.W)} × {Mm(s.D)}" : s.Kind.Key == FurnitureModels.Key ? $"{FurnitureModels.Of(s).Name} {Mm(FurnitureModels.SizeOf(s, FurnitureModels.Of(s)).W)} × {Mm(FurnitureModels.SizeOf(s, FurnitureModels.Of(s)).D)}" : s.Kind.Key == Casework.Key ? $"{Casework.Label(s)} {Mm(s.W)} × {Mm(s.D)}" : s.Kind.Key == "kitchen" ? KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} {KitchenLayouts.Label(l)}, depth {Mm(s.D)}" : $"{s.Kind.Label}, depth {Mm(s.D)}" : $"{s.Kind.Label} {Mm(s.W)} × {Mm(s.D)}";
 
     static void EnsureMaterials(IEdit edit, JsonObject spec)
     {
@@ -345,11 +348,22 @@ public sealed class FurnitureModule : ILapinModule
         if (Math.Abs(offset) > 1e-9) attrs["offset"] = offset;
         if (k.Key == "kitchen" && length is { } l && l >= 0.6) attrs["length"] = l;
         if (objectType != null) attrs["objectType"] = objectType;
+        SetExportAs(attrs, ts);
         var e = new Entity(edit.NewId(), Class, type.Name, attrs, predefined);
         edit.Add(e);
         Spatial.Contain(edit, storey.Id, e.Id);
         edit.Relate(IfcClass.RelDefinesByType, type.Id, e.Id);
         return e.Id;
+    }
+
+    /// <summary>
+    /// The class a piece is written to IFC as, when its kind's is not IfcFurniture (a sanitary fixture's IfcSanitaryTerminal, forum topic
+    /// #245): the element's <c>exportAs</c>, which the export, the mesh exports and the cut order read; its type is written as that class's type.
+    /// </summary>
+    static void SetExportAs(JsonObject attrs, Spec spec)
+    {
+        var cls = FurnitureKinds.ClassOf(spec);
+        if (cls != Class) attrs["exportAs"] = cls; else attrs.Remove("exportAs");
     }
 
     // ---- The body ----
