@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { bandsOf, lineLeft, mirrorLine, wallGhost } from './wallLine';
+import { bandsOf, lineLeft, mirrorBands, mirrorLine, wallGhost } from './wallLine';
+import { drawsFlipped, onCoreCentre, wallLineArgs } from './prefs';
 
 // The engine's test wall (WallReferenceLineTests): 100 insulation outside, a 250 core, 15 plaster. Drawn along +x, its axis on
 // the core's centre: the insulation (exterior) to the right, from −0.225 to −0.125, the plaster to the left up to 0.14.
@@ -36,6 +37,25 @@ describe('the line a wall is drawn on, and Space (decision 692)', () => {
     // Twice is where it started.
     const once = mirrorLine('offset', -0.12)!;
     expect(mirrorLine(once.line, once.lineOffset)).toEqual({ line: 'offset', lineOffset: -0.12 });
+  });
+
+  it('on the core centre, Space mirrors the wall across its axis instead (forum topic 238): the exterior to the left, addWall told flip', () => {
+    expect(onCoreCentre('core', 0)).toBe(true);
+    expect(onCoreCentre('offset', 0)).toBe(true);
+    expect(onCoreCentre('offset', 0.1)).toBe(false);
+    expect(onCoreCentre('exterior', 0)).toBe(false);
+    // The layers mirrored: the insulation (exterior) now left of the axis, the plaster right; the core still centred.
+    const m = mirrorBands(bandsOf(layers));
+    expect(m.map((x) => [x.from, x.to].map((v) => Math.round(v * 1e6) / 1e6))).toEqual([[-0.14, -0.125], [-0.125, 0.125], [0.125, 0.225]]);
+    expect(m.map((x) => x.core)).toEqual([false, true, false]);
+    const path = { a: { x: 0, y: 0 }, b: { x: 4, y: 0 }, rise: 0 };
+    const ys = wallGhost(path, m, 0).flat().map((p) => Math.round(p.y * 1e6) / 1e6);
+    expect([Math.min(...ys), Math.max(...ys)]).toEqual([-0.14, 0.225]);
+    // What addWall is told: flip only while flipped on the core's centre; a face keeps its own Space.
+    expect(wallLineArgs({ line: 'core', lineOffset: 0, remember: false, flipped: true })).toEqual({ flip: true });
+    expect(wallLineArgs({ line: 'core', lineOffset: 0, remember: false, flipped: false })).toEqual({});
+    expect(wallLineArgs({ line: 'exterior', lineOffset: 0, remember: false, flipped: true })).toEqual({ reference: 'exterior' });
+    expect(drawsFlipped({ line: 'exterior', lineOffset: 0, flipped: true })).toBe(false);
   });
 
   it('the ghost lies on the side of the line the wall will be built: left of an exterior face, right of an interior one', () => {

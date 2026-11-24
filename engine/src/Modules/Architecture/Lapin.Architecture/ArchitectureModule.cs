@@ -1218,6 +1218,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 var remember = a["rememberReference"] is JsonValue rv && rv.TryGetValue<bool>(out var rb) && rb;
                 if (!line.IsCoreCentre) wall = WallReference.Apply(ctx, wall, line, remember);
             }
+            // Flipped while drawn (Space on the core's centre, forum topic 238): mirrored across its axis, its exterior to the left,
+            // in the same step as it is made, before it joins.
+            if (a["flip"] is JsonValue fv && fv.TryGetValue<bool>(out var flip) && flip)
+            {
+                Walls.Flip(ctx, wall);
+                wall = ctx.Model.Get(wall.Id) ?? wall;
+            }
             if (!unjoined) Joins.Auto(ctx, Paths(ctx), wall.Id, Style(a["joinStyle"]) ?? JoinStyle.Mitre);
             return new JsonObject { ["id"] = wall.Id };
         });

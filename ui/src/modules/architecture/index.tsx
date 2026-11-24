@@ -22,7 +22,7 @@ import { activate, useToolTick } from '../../platform/modules';
 import { gateGroup } from './gates/tools';
 import { GateSection } from './gates/GateSection';
 import { CLASS as GATE_CLASS, TYPE_CLASS as GATE_TYPE, gateGrips, overallOf, useGateTypesDialog } from './gates/gates';
-import { setJoinStyle, setRememberLine, setWallLine, setWallLineOffset, useWallPrefs, wallLineArgs, type WallLine } from './prefs';
+import { drawsFlipped, setJoinStyle, setRememberLine, setWallLine, setWallLineOffset, toggleWallFlip, useWallPrefs, wallLineArgs, type WallLine } from './prefs';
 import { LengthField } from '../../shell/cells';
 import { axisFromReference, referenceArc } from '../../viewport/wallReference';
 import { WallLayers } from './WallLayers';
@@ -140,22 +140,31 @@ const wall: ToolDef = chainTool({
   // Space: the line on the other side (Revit's Spacebar), before the first click or between clicks.
   space: flipWallLine,
   spaceHint: () => {
-    const { line, lineOffset } = useWallPrefs.getState();
-    const next = mirrorLine(line, lineOffset);
-    return next ? `the other side (${LINE_NAMES[next.line]})` : null;
+    const prefs = useWallPrefs.getState();
+    const next = mirrorLine(prefs.line, prefs.lineOffset);
+    if (next && next.line !== prefs.line) return `the other side (${LINE_NAMES[next.line]})`;
+    if (next && Math.abs(next.lineOffset - prefs.lineOffset) > 1e-9) return 'the other side';
+    // The core's centre: Space mirrors the wall across it (forum topic 238).
+    return drawsFlipped(prefs) ? 'flip the wall back (exterior on the right)' : 'flip the wall (exterior on the left)';
   },
 });
 
 /** The lines' names, as the bar's list writes them. */
 const LINE_NAMES: Record<WallLine, string> = { core: 'Core centre', coreExterior: 'Core, exterior face', coreInterior: 'Core, interior face', exterior: 'Exterior face', interior: 'Interior face', offset: 'Offset from the core centre' };
 
-/** Space while the Wall tool is on (decision 692): the line drawn on goes to the other side of the wall; the core's centre has none. */
+/**
+ * Space while the Wall tool is on (decision 692): the line drawn on goes to the other side of the wall. The core's centre has no
+ * other side, so there Space mirrors the wall across it instead, as Revit's Spacebar does (forum topic 238): its exterior goes to
+ * the left as drawn, the ghost shows it, and the walls drawn next are built so, until Space again.
+ */
 function flipWallLine(): void {
   const { line, lineOffset } = useWallPrefs.getState();
   const next = mirrorLine(line, lineOffset);
-  if (!next) { notify('The core centre has no other side: choose a face or an offset to flip with Space, or flip the wall afterwards with its arrow.'); return; }
-  if (next.line !== line) setWallLine(next.line);
-  if (next.lineOffset !== lineOffset) setWallLineOffset(next.lineOffset);
+  if (!next || (next.line === line && Math.abs(next.lineOffset - lineOffset) < 1e-9)) toggleWallFlip();
+  else {
+    if (next.line !== line) setWallLine(next.line);
+    if (next.lineOffset !== lineOffset) setWallLineOffset(next.lineOffset);
+  }
   useToolTick.setState((t) => ({ n: t.n + 1 }));
 }
 
@@ -165,7 +174,7 @@ function flipWallLine(): void {
  * are snapped, moved and grown by (forum topic 159, decision 685). Unticked, the line only places them, as before.
  */
 function WallLineOption() {
-  const { line, lineOffset, remember } = useWallPrefs();
+  const { line, lineOffset, remember, flipped } = useWallPrefs();
   return (
     <>
       <select className={`cad-layer${line !== 'core' ? ' on' : ''}`} value={line} data-testid="wall-line" title="The line you click: the core's centre (the axis), a face of the core, a finish face, or an offset from the core's centre; the exterior is the wall's right as you draw"
@@ -177,8 +186,8 @@ function WallLineOption() {
         <option value="interior">Interior face</option>
         <option value="offset">Offset from the core centre</option>
       </select>
-      <button type="button" className="btn small" data-action="wall-line-flip" disabled={line === 'core'} onClick={flipWallLine}
-        title="Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); the wall's ghost shows where it will be built">Other side (Space)</button>
+      <button type="button" className={`btn small${drawsFlipped({ line, lineOffset, flipped }) ? ' on' : ''}`} data-action="wall-line-flip" aria-pressed={drawsFlipped({ line, lineOffset, flipped })} onClick={flipWallLine}
+        title="Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); on the core centre, the wall mirrored across it (its exterior to the left). The wall's ghost shows where it will be built">Other side (Space)</button>
       {line === 'offset' && (
         <LengthField metres={lineOffset} testId="wall-line-offset" style={{ width: 80 }} title="How far the line you click lies from the core's centre: positive to the left as you draw, negative to the right (the exterior)"
           onCommit={(m) => { if (m != null) { setWallLineOffset(m); useToolTick.setState((t) => ({ n: t.n + 1 })); } }} />

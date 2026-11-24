@@ -23,6 +23,9 @@ export function bandsOf(layers: { thickness: number; core?: boolean }[], thickne
   return layers.map((l, i) => { const from = at; at += l.thickness; return { from, to: at, core: i === core }; });
 }
 
+/** The layers mirrored across the axis, as a flipped wall has them (the exterior to the left; forum topic 238). */
+export const mirrorBands = (bands: Band[]): Band[] => bands.map((b) => ({ ...b, from: -b.to, to: -b.from })).reverse();
+
 /** How far left of the axis the line clicked lies. */
 export function lineLeft(bands: Band[], line: WallLine, offset: number): number {
   if (line === 'offset') return offset;

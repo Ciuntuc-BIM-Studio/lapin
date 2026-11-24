@@ -29,8 +29,23 @@ function storedRemember(): boolean {
   try { return localStorage.getItem(REMEMBER_KEY) === '1'; } catch { return false; }
 }
 
-/** `remember`: the walls drawn keep the line they were drawn on as their reference line (forum topic 159; off: placed by it only, as before). */
-export const useWallPrefs = create<{ joinStyle: JoinStyle; line: WallLine; lineOffset: number; remember: boolean }>(() => ({ joinStyle: stored(), line: storedLine(), lineOffset: storedOffset(), remember: storedRemember() }));
+/**
+ * `remember`: the walls drawn keep the line they were drawn on as their reference line (forum topic 159; off: placed by it only, as before).
+ * `flipped`: drawn on the core's centre, the walls come mirrored across it, their exterior to the left as drawn (Space, forum topic 238); for
+ * this session only.
+ */
+export const useWallPrefs = create<{ joinStyle: JoinStyle; line: WallLine; lineOffset: number; remember: boolean; flipped: boolean }>(() => ({ joinStyle: stored(), line: storedLine(), lineOffset: storedOffset(), remember: storedRemember(), flipped: false }));
+
+/** Whether the line is the core's centre (an offset of 0 too): it has no other side, so Space mirrors the wall across it instead (forum topic 238). */
+export const onCoreCentre = (line: WallLine, lineOffset: number): boolean => line === 'core' || (line === 'offset' && Math.abs(lineOffset) < 1e-9);
+
+/** Whether the walls drawn now come mirrored across their axis: flipped by Space while drawn on the core's centre. */
+export const drawsFlipped = (p: { line: WallLine; lineOffset: number; flipped?: boolean }): boolean => !!p.flipped && onCoreCentre(p.line, p.lineOffset);
+
+/** Space on the core's centre: the walls drawn next come mirrored across it (or back). */
+export function toggleWallFlip(): void {
+  useWallPrefs.setState((p) => ({ flipped: !p.flipped }));
+}
 
 export function setWallLine(line: WallLine): void {
   useWallPrefs.setState({ line });
@@ -47,9 +62,9 @@ export function setRememberLine(remember: boolean): void {
   try { localStorage.setItem(REMEMBER_KEY, remember ? '1' : '0'); } catch { /* the choice holds for this session */ }
 }
 
-/** What addWall is told of the line chosen: nothing for the core's centre, the line, and whether the wall keeps it. */
-export function wallLineArgs(p: { line: WallLine; lineOffset: number; remember: boolean }): Record<string, unknown> {
-  if (p.line === 'core' || (p.line === 'offset' && Math.abs(p.lineOffset) < 1e-9)) return {};
+/** What addWall is told of the line chosen: nothing for the core's centre (but `flip` when Space mirrored it), the line, and whether the wall keeps it. */
+export function wallLineArgs(p: { line: WallLine; lineOffset: number; remember: boolean; flipped?: boolean }): Record<string, unknown> {
+  if (onCoreCentre(p.line, p.lineOffset)) return drawsFlipped(p) ? { flip: true } : {};
   const reference = p.line === 'offset' ? { kind: 'offset', offset: p.lineOffset } : p.line;
   return { reference, ...(p.remember ? { rememberReference: true } : {}) };
 }
