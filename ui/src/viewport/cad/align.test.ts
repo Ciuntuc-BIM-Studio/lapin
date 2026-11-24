@@ -57,7 +57,18 @@ describe('ALIGN', () => {
     expect(engine.execute).toHaveBeenCalledWith('element.align', expect.objectContaining({ ids: ['w2'], reference: [[8, -1], [8, 10]], line: [[3, 1], [3, 4]], referenceId: 'g#A' }));
   });
 
-  it('refuses a line not parallel to the reference and waits for another', async () => {
+  it('turns a line not parallel to the reference onto it in a plan, about the point picked (forum topic 234)', async () => {
+    await startCommand('ALIGN');
+    pickAt('w1'); await feedPoint(P(0.15, 3));
+    pickAt('c1'); await feedPoint(P(5, 4.81));
+    expect(engine.execute).toHaveBeenCalledWith('element.align', {
+      ids: ['c1'], reference: [[0.15, 0], [0.15, 6]], line: [[4.8, 4.8], [5.2, 4.8]], referenceId: 'w1', rotate: true, pivot: [5, 4.81],
+    });
+  });
+
+  it('in a section or an elevation, refuses a line not parallel to the reference and waits for another', async () => {
+    const host = useCad.getState().host!;
+    useCad.setState({ host: { ...host, isPlan: () => false, frameAt: () => ({ origin: [0, 0, 0], right: [1, 0, 0], up: [0, 0, 1] }) as never } });
     await startCommand('ALIGN');
     pickAt('w1'); await feedPoint(P(0.15, 3));
     pickAt('c1'); await feedPoint(P(5, 4.81));

@@ -103,6 +103,84 @@ public class AlignTests
         Assert.Equal(0, P(f, w, "start").X, 4);
     }
 
+    static JsonNode? AlignTurning(Fixture f, string id, JsonArray reference, JsonArray line, JsonArray? pivot = null)
+    {
+        var a = new JsonObject { ["ids"] = new JsonArray(id), ["reference"] = reference, ["line"] = line, ["rotate"] = true };
+        if (pivot != null) a["pivot"] = pivot;
+        return f.Run("element.align", a);
+    }
+
+    [Fact]
+    public void With_rotate_a_wall_not_parallel_turns_about_the_point_picked_then_moves_onto_the_reference_in_one_undo_step()
+    {
+        var f = F();
+        var w = f.Wall(2, 2, 4, 4);   // 45°
+        var r = AlignTurning(f, w, L(0, 0, 10, 0), L(2, 2, 4, 4), J(3, 3))!;
+        // Turned by the smaller angle (−45°) about (3, 3), then moved down onto y = 0.
+        var (s, e) = (P(f, w, "start"), P(f, w, "end"));
+        Assert.Equal(3 - Math.Sqrt(2), s.X, 9);
+        Assert.Equal(3 + Math.Sqrt(2), e.X, 9);
+        Assert.Equal(0, s.Y, 9);
+        Assert.Equal(0, e.Y, 9);
+        Assert.Equal(-45, (double)r["turned"]!, 9);
+        f.Session.Undo();
+        Assert.Equal(2, P(f, w, "start").X, 9);
+        Assert.Equal(4, P(f, w, "end").Y, 9);
+    }
+
+    [Fact]
+    public void With_rotate_the_turn_is_the_smaller_one_either_way_and_a_parallel_line_only_moves()
+    {
+        var f = F();
+        // 100° from the reference's direction: turned by −10°, not by 80°, so the wall keeps its sense nearly.
+        var a = Math.PI * 100 / 180;
+        var w = f.Wall(0, 1, Math.Cos(a) * 4, 1 + Math.Sin(a) * 4);
+        AlignTurning(f, w, L(0, 0, 0, 10), L(0, 1, Math.Cos(a) * 4, 1 + Math.Sin(a) * 4), J(0, 1));
+        var (s, e) = (P(f, w, "start"), P(f, w, "end"));
+        Assert.Equal(0, s.X, 9);
+        Assert.Equal(0, e.X, 9);
+        Assert.Equal(1, s.Y, 9);
+        Assert.Equal(5, e.Y, 9);
+        // Parallel already: no turn.
+        var v = f.Wall(3, 0, 3, 4);
+        var r = AlignTurning(f, v, L(0, 0, 0, 10), L(3, 0, 3, 4))!;
+        Assert.Null(r["turned"]);
+        Assert.Equal(0, P(f, v, "start").X, 9);
+    }
+
+    [Fact]
+    public void With_rotate_a_drafted_line_turns_onto_a_wall_axis_about_its_middle_when_no_point_is_given()
+    {
+        var f = F();
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        var line = (string)f.Run("drafting.draw", new JsonObject { ["viewId"] = plan, ["shape"] = new JsonObject { ["type"] = "line", ["a"] = J(0, 0), ["b"] = J(2, 2) } })!["ids"]![0]!;
+        var w = f.Wall(-1, 5, 6, 5);
+        AlignTurning(f, line, L(-1, 5, 6, 5), L(0, 0, 2, 2));
+        var s = f.Model.Get(line)!.Attrs["shape"]!;
+        Assert.Equal(5, (double)s["a"]![1]!, 9);
+        Assert.Equal(5, (double)s["b"]![1]!, 9);
+        Assert.Equal(1 - Math.Sqrt(2), (double)s["a"]![0]!, 9);
+        Assert.Equal(1 + Math.Sqrt(2), (double)s["b"]![0]!, 9);
+    }
+
+    [Fact]
+    public void With_rotate_a_door_in_its_wall_or_a_turn_in_a_section_is_refused()
+    {
+        var f = F();
+        var w = f.Wall(0, 0, 6, 0);
+        var door = (string)f.Run("architecture.addDoor", new JsonObject { ["wallId"] = w, ["x"] = 3, ["y"] = 0 })!["id"]!;
+        var ex = Assert.Throws<CommandException>(() => AlignTurning(f, door, L(0, 2, 6, 3), L(2.5, 0, 3.5, 0)));
+        Assert.Contains("turns with its wall", ex.Message);
+        var v = f.Wall(3, 1, 4, 3);
+        var a = new JsonObject
+        {
+            ["ids"] = new JsonArray(v), ["reference"] = L(0, 0, 10, 0), ["line"] = L(3, 1, 4, 3), ["rotate"] = true,
+            ["frame"] = new JsonObject { ["origin"] = new JsonArray(0, 0, 0), ["right"] = new JsonArray(1, 0, 0), ["up"] = new JsonArray(0, 0, 1) },
+        };
+        Assert.Throws<CommandException>(() => f.Run("element.align", a));
+        Assert.Equal(3, P(f, v, "start").X, 9);
+    }
+
     [Fact]
     public void The_reference_itself_a_pinned_element_and_a_lock_without_an_axis_or_plane_are_refused()
     {

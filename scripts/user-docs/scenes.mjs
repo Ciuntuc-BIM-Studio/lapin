@@ -871,6 +871,52 @@ export const scenes = [
     },
   },
   {
+    // A wall's length along its faces and the offsets from a corner (forum topic 240): a partition joined to a room's west wall
+    // shows its length on each face from the west wall's inner face; the wall turning the corner above gives the offsets from the
+    // interior and exterior corners; a click on the length's witness end takes the far face; 3500 typed moves its free end.
+    id: 'wall-temp-length',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ tempDimRef: 'faces' }));
+      const brick = (await t.cmd('architecture.createWallType', { name: 'Brick 300', layers: [{ material: 'Brick', thickness: 0.3, core: true }] })).id;
+      const part = (await t.cmd('architecture.createWallType', { name: 'Partition 200', layers: [{ material: 'Brick', thickness: 0.2, core: true }] })).id;
+      const storeyId = await t.storey();
+      const add = async (x1, y1, x2, y2, typeId) => (await t.cmd('architecture.addWall', { storeyId, x1, y1, x2, y2, typeId })).id;
+      // The west wall up x = 0, turning west at its top into a wall beside no part of the partition.
+      const west = await add(0, 0, 0, 5, brick);
+      const top = await add(0, 5, -4, 5, brick);
+      await t.cmd('architecture.joinWalls', { a: west, b: top });
+      const host = await add(0, 2, 4, 2, part);
+      await t.cmd('architecture.joinWalls', { a: host, b: west });
+      await t.ui({ keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -2.5, y: -0.5 }, { x: 5.5, y: 6 }));
+      await t.wait(800);
+      await t.ui({ selection: host, selected: [host] });
+      await t.wait(900);
+      const dims = t.page.locator('[data-testid=wall-dims]');
+      const value = async (key) => Number(await dims.locator(`[data-dim="${key}"]`).getAttribute('data-value'));
+      t.expect(Math.abs(await value('l:left') - 3.85) < 1e-6 && Math.abs(await value('l:right') - 3.85) < 1e-6, 'its length on each face, 3850 from the west wall\'s inner face to its free end');
+      t.expect(await dims.locator('[data-dim="x:left"][data-target="' + top + '"]').count() === 1, 'across to the wall turning the corner above');
+      t.expect(Math.abs(await value('x:left') - 2.75) < 1e-6, 'the offset from the interior corner: 2750 from its face to the top wall\'s inner face');
+      const [x0, y0] = await t.planPoint(-2.5, 6);
+      const [x1, y1] = await t.planPoint(5.5, -0.5);
+      await t.shot('wall-temp-length', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      // The length's witness end at the west wall: the far face, the exterior side.
+      await dims.locator('[data-dim="l:left"] [data-end="ref"]').click();
+      await t.wait(400);
+      t.expect(Math.abs(await value('l:left') - 4.15) < 1e-6, 'a click on the witness end measures from the west wall\'s far face');
+      await dims.locator('[data-dim="l:right"] [data-value-hit]').click();
+      await t.page.locator('[data-field=temp-dim]').fill('3500');
+      await t.page.locator('[data-field=temp-dim]').press('Enter');
+      await t.wait(900);
+      const moved = (await t.nodes()).find((n) => n.id === host);
+      t.expect(Math.abs(moved.props.end[0] - 3.65) < 1e-3 && Math.abs(moved.props.start[0]) < 1e-3, `3500 typed moves its free end to x = 3.65 (now ${moved.props.end[0]})`);
+      await t.ui({ selection: null, selected: [] });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // A wall's temporary dimensions (decision 693): a partition inside a room shows its distances across to the walls either side
     // and from its free ends to the walls ahead; 2000 typed to the north wall moves it; while drawing, the same, read only.
     id: 'wall-temp-dimensions',
@@ -2965,7 +3011,8 @@ export const scenes = [
     },
   },
   {
-    // Modify → Align (Revit's; forum topics 109, 170, 171): a grid axis as the reference, two walls' faces brought onto it with Multiple alignment.
+    // Modify → Align (Revit's; forum topics 109, 170, 171): a grid axis as the reference, two walls' faces brought onto it with Multiple alignment;
+    // the second wall slanted, turned parallel to the axis first (forum topic 234).
     id: 'walls-align',
     touches: ['architecture', 'drafting', 'core'],
     async run(t) {
@@ -2982,7 +3029,7 @@ export const scenes = [
       // One 300 mm layer, the wall's line along its middle: its faces 150 mm either side.
       const typeId = (await t.cmd('architecture.createWallType', { name: 'Brick 300', layers: [{ material: 'Brick', thickness: 0.3, core: true }] })).id;
       const w1 = await t.cmd('architecture.addWall', { storeyId: storey, typeId, x1: 0, y1: 1.2, x2: 4, y2: 1.2 });
-      const w2 = await t.cmd('architecture.addWall', { storeyId: storey, typeId, x1: 5, y1: 2, x2: 9.5, y2: 2 });
+      const w2 = await t.cmd('architecture.addWall', { storeyId: storey, typeId, x1: 5, y1: 2, x2: 9.5, y2: 2.6 });
       await t.fit();
       await t.wait(600);
       const wall = async (id) => (await t.nodes()).find((n) => n.id === id);
@@ -2995,12 +3042,15 @@ export const scenes = [
       await t.wait(300);
       await click(10.5, 0);
       await click(2, 1.2 - th / 2 + 0.02);
-      await click(7, 2 - th / 2 + 0.02);
+      // The slanted wall's lower face at x = 7: its axis there, less half its thickness measured square to it.
+      const slope = 0.6 / 4.5;
+      await click(7, 2 + slope * 2 - (th / 2) * Math.hypot(1, slope) + 0.02);
       await t.page.keyboard.press('Escape');
       await t.wait(800);
       for (const id of [w1.id, w2.id]) {
         const y = (await wall(id)).props.start[1];
-        t.expect(Math.abs(y - th / 2) < 1e-3, `the wall's face lies on the axis (its axis at ${y}, half its thickness ${th / 2})`);
+        const y2 = (await wall(id)).props.end[1];
+        t.expect(Math.abs(y - th / 2) < 1e-3 && Math.abs(y2 - th / 2) < 1e-3, `the wall's face lies on the axis, turned parallel to it (its axis at ${y} to ${y2}, half its thickness ${th / 2})`);
       }
       await t.ui({ selection: null, selected: [] });
       await t.page.mouse.move(5, 5);

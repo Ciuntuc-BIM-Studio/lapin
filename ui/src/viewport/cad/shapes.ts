@@ -278,3 +278,35 @@ export function arcThrough(p1: Vec2, p2: Vec2, p3: Vec2): Shape | null {
   // Counter-clockwise from p1 to p3 when p2 lies on that way round, else from p3 to p1.
   return angleInArc(a2, a1, a3) ? { type: 'arc', c, r, start: normAngle(a1), end: normAngle(a3) } : { type: 'arc', c, r, start: normAngle(a3), end: normAngle(a1) };
 }
+
+/** A straight line by its two points. */
+export type Line = [Vec2, Vec2];
+
+/** A shape's straight pieces: a line, a polyline's segments, an ellipse's chords; a circle or an arc has none. */
+export function segmentsOf(s: Shape): Line[] {
+  if (s.type === 'line') return [[s.a, s.b]];
+  if (s.type === 'ellipse') return segmentsOf({ type: 'polyline', pts: ellipsePoints(s), closed: false });
+  if (s.type === 'polyline') {
+    const n = s.pts.length, out: Line[] = [];
+    for (let i = 0; i < (s.closed ? n : n - 1); i++) out.push([s.pts[i], s.pts[(i + 1) % n]]);
+    return out;
+  }
+  return [];
+}
+
+const distToSegment = (p: Vec2, [a, b]: Line): number => {
+  const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+  const t = l2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)) : 0;
+  return Math.hypot(a.x + dx * t - p.x, a.y + dy * t - p.y);
+};
+
+/** The straight line among these shapes nearest the point (none when they have no straight piece). */
+export function nearestLine(shapes: readonly Shape[], at: Vec2): Line | null {
+  let best: Line | null = null, least = Infinity;
+  for (const s of shapes) for (const l of segmentsOf(s)) {
+    if (Math.hypot(l[1].x - l[0].x, l[1].y - l[0].y) < 1e-9) continue;
+    const d = distToSegment(at, l);
+    if (d < least) { least = d; best = l; }
+  }
+  return best;
+}

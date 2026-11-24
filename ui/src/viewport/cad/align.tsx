@@ -1,8 +1,9 @@
 /**
  * ALIGN (AL; Modify → Align), Revit's Align (forum topics 109, 170, 171): the reference line first (a wall's face, axis or
  * reference line, a grid axis, a reference plane, a floor's or a column's edge, a drafted line…), then the line on the element
- * to move, parallel to it: the element moves square to the reference until that line lies on it (element.align, by
- * element.transform's move: a wall keeps its joins as a move does; a door or window slides along its wall), one undo step.
+ * to move: the element moves square to the reference until that line lies on it (element.align, by element.transform's move:
+ * a wall keeps its joins as a move does; a door or window slides along its wall), one undo step. A line not parallel to the
+ * reference is turned onto its direction first in a plan (forum topic 234), by the smaller angle about the point picked.
  * After one, a new reference is asked, as Revit does; with Multiple (or Ctrl held on the pick) the same reference takes one
  * element after another until Enter or Esc. With Lock, an element aligned to a grid axis or a reference plane is linked to it
  * (element.lockTo) and follows it from then on. In a section or an elevation the lines are the view's, and the move goes up
@@ -15,45 +16,16 @@ import { execute, useSession } from '../../engine/session';
 import { arcOf, isArc } from '../arc';
 import { referenceArc } from '../wallReference';
 import { xy } from '../../platform/vec';
-import { ellipsePoints, type Shape } from './shapes';
+import { nearestLine, type Line, type Shape } from './shapes';
 import { cadHost, cadLog, ctrlWasHeld, frameArg, registerCommand, submit, useCad, type Step } from './session';
 
-export type Line = [Vec2, Vec2];
+export { nearestLine, segmentsOf, type Line } from './shapes';
 
 /** The options the command bar shows: Multiple alignment and Lock, remembered between runs. */
 export const useAlign = create<{ multiple: boolean; lock: boolean }>(() => ({ multiple: false, lock: false }));
 
 /** How far from parallel (radians) two lines may be and still align: the engine's ElementAlign.AngleTolerance. */
 export const ALIGN_TOLERANCE = 0.1 * Math.PI / 180;
-
-/** A shape's straight pieces: a line, a polyline's segments, an ellipse's chords; a circle or an arc has none. */
-export function segmentsOf(s: Shape): Line[] {
-  if (s.type === 'line') return [[s.a, s.b]];
-  if (s.type === 'ellipse') return segmentsOf({ type: 'polyline', pts: ellipsePoints(s), closed: false });
-  if (s.type === 'polyline') {
-    const n = s.pts.length, out: Line[] = [];
-    for (let i = 0; i < (s.closed ? n : n - 1); i++) out.push([s.pts[i], s.pts[(i + 1) % n]]);
-    return out;
-  }
-  return [];
-}
-
-const distToSegment = (p: Vec2, [a, b]: Line): number => {
-  const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
-  const t = l2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)) : 0;
-  return Math.hypot(a.x + dx * t - p.x, a.y + dy * t - p.y);
-};
-
-/** The straight line among these shapes nearest the point (none when they have no straight piece). */
-export function nearestLine(shapes: readonly Shape[], at: Vec2): Line | null {
-  let best: Line | null = null, least = Infinity;
-  for (const s of shapes) for (const l of segmentsOf(s)) {
-    if (Math.hypot(l[1].x - l[0].x, l[1].y - l[0].y) < 1e-9) continue;
-    const d = distToSegment(at, l);
-    if (d < least) { least = d; best = l; }
-  }
-  return best;
-}
 
 /** Whether two lines run the same way (either sense), within the tolerance. */
 export function parallel(r: Line, l: Line): boolean {
@@ -125,23 +97,26 @@ export function alignCommand(): Step {
     const go = async (id: string, line: Line | null, at: Vec2): Promise<Step | null> => {
       if (id === refId) { cadLog('Pick a line on another element: the reference stays where it is.'); return target(refId, ref, again); }
       if (!line) { cadLog('No straight line there: pick a face, an axis or an edge parallel to the reference.'); return target(refId, ref, again); }
-      if (!parallel(ref, line)) { cadLog('Not parallel to the reference: Align moves an element square to it (Rotate it first).'); return target(refId, ref, again); }
+      // Not parallel: in a plan, turned onto the reference's direction about the point picked, then moved (forum topic 234,
+      // Revit's Align on lines), in the same undo step; in a section or an elevation a turn would tip the element over.
+      const turn = !parallel(ref, line);
+      if (turn && frameArg(at).frame) { cadLog('Not parallel to the reference: in a section or an elevation, Align moves an element square to it (Rotate it first).'); return target(refId, ref, again); }
       const multiple = useAlign.getState().multiple || ctrlWasHeld();
       const lock = useAlign.getState().lock && lockable(refId);
       if (useAlign.getState().lock && !lock) cadLog('Lock keeps an alignment to a grid axis or a reference plane only: aligned without it.');
       await execute('element.align', {
-        ids: [id], reference: ref.map(xy), line: line.map(xy), referenceId: refId, ...(lock ? { lock: true } : {}), ...frameArg(at),
+        ids: [id], reference: ref.map(xy), line: line.map(xy), referenceId: refId, ...(lock ? { lock: true } : {}), ...(turn ? { rotate: true, pivot: xy(at) } : {}), ...frameArg(at),
       });
       return multiple ? target(refId, ref, true) : reference();
     };
     return {
       prompt: again
         ? `Align: pick the next element's line, parallel to the reference ${flags()} (Enter to finish)`
-        : `Align: pick the line on the element to move, parallel to the reference ${flags()}`,
+        : `Align: pick the line on the element to move (turned parallel to the reference if it is not) ${flags()}`,
       want: 'pick', pickInViews: true,
       hint: again
         ? 'Align: click the next element\'s line, parallel to the reference · Enter or Esc finishes'
-        : 'Align: click the line on the element to move, parallel to the reference · Ctrl: several · Esc cancels',
+        : 'Align: click the line on the element to move (it turns parallel to the reference if it is not) · Ctrl: several · Esc cancels',
       keywords: keys(() => target(refId, ref, again)),
       preview: (c) => { const u = lineUnder(c); return [asShape(ref), ...(u && u.id !== refId ? [asShape(u.line)] : [])]; },
       pick: (hit, at) => go(hit.id, nearestLine([hit.shape], at), at),

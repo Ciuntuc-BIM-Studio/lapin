@@ -29,6 +29,74 @@ public static class DraftCommands
 
     static Shape ShapeArg(JsonNode? n) => Shape.From(n) ?? throw new CommandException("A shape is a line {a, b}, a polyline {pts, closed}, a circle {c, r} or an arc {c, r, start, end}.");
 
+    /// <summary>
+    /// A drafted line, or an open polyline's end segment, trimmed or carried on to a boundary (forum topic 235), as Revit's
+    /// Trim/Extend does to elements (<see cref="PathEdits.TrimExtend"/>): the boundary's line (or circle) runs on past its ends,
+    /// so a line reaches a wall it would miss as the wall lies. A line picked on the part to keep has the end on the other side
+    /// of the boundary moved to it (or the end nearer it, when the boundary lies past the line); a polyline has the end whose
+    /// segment comes nearer the boundary moved. An element boundary is taken in a plan, where drafted points are the model's.
+    /// </summary>
+    public static JsonObject TrimExtend(ICommandContext ctx, JsonObject a)
+    {
+        var e = Drafts.Require(ctx.Model, (string?)a["id"]);
+        var s = Drafts.ShapeOf(e);
+        if (s is not (Line or Polyline { Closed: false })) throw new CommandException("Lines and open polylines are trimmed or extended to a boundary.");
+        if (a["boundary"] != null && a["line"] == null && a["arc"] == null && View(ctx, e.Str("viewId")).Str("kind") is not (null or "plan"))
+            throw new CommandException("A drafted line goes to an element's axis or face in a plan; here, pick a line.");
+        var pick = Args.TryPoint(a["at"]);
+        const double tiny = 1e-9;
+        switch (s)
+        {
+            case Line l:
+            {
+                var length = (l.B - l.A).Length;
+                if (length < tiny) throw new CommandException("The line has no length.");
+                var dir = (l.B - l.A) * (1 / length);
+                double Along(Vec2 p) => Vec2.Dot(p - l.A, dir);
+                var keep = pick ?? (l.A + l.B) * 0.5;
+                var kept = Math.Clamp(Along(keep), 0, length);
+                var boundary = PathEdits.BoundaryOf(ctx, a, e, "boundary", l.A + dir * kept);
+                var hits = PathEdits.Cross(PathEdits.Curve.Line(l.A, l.B), boundary).Select(Along).ToList();
+                if (hits.Count == 0) throw new CommandException($"„{e.Name}” never meets the boundary, carried on as it runs.");
+                double Off(double x) => x < 0 ? -x : x > length ? x - length : 0;
+                var sx = hits.OrderBy(Off).ThenBy(x => Math.Abs(x - kept)).First();
+                var (s0, s1) = sx <= tiny ? (sx, length) : sx >= length - tiny ? (0, sx) : kept <= sx ? (0, sx) : (sx, length);
+                if (Math.Abs(s0) < tiny && Math.Abs(s1 - length) < tiny) throw new CommandException($"„{e.Name}” already ends at the boundary.");
+                if (s1 - s0 < 1e-6) throw new CommandException($"„{e.Name}” would have no length left: pick it on the part to keep.");
+                Drafts.Set(ctx, e, new Line(l.A + dir * s0, l.A + dir * s1));
+                break;
+            }
+            case Polyline p:
+            {
+                var pts = p.Pts.ToList();
+                var n = pts.Count;
+                var boundary = PathEdits.BoundaryOf(ctx, a, e, "boundary", pick ?? pts[n / 2]);
+                // Each end's segment, from its inner point out to its end: where its line meets the boundary, metres from the inner point.
+                (double Move, Vec2 To)? EndOf(Vec2 inner, Vec2 end)
+                {
+                    var len = (end - inner).Length;
+                    if (len < tiny) return null;
+                    var d = (end - inner) * (1 / len);
+                    var best = PathEdits.Cross(PathEdits.Curve.Line(inner, end), boundary).Select(x => Vec2.Dot(x - inner, d))
+                        .Where(t => t > 1e-6).OrderBy(t => Math.Abs(t - len)).Cast<double?>().FirstOrDefault();
+                    return best is { } t ? (Math.Abs(t - len), inner + d * t) : null;
+                }
+                var first = EndOf(pts[1], pts[0]);
+                var last = EndOf(pts[n - 2], pts[n - 1]);
+                if (first == null && last == null) throw new CommandException($"„{e.Name}” never meets the boundary, carried on as its end segments run.");
+                // The end that comes nearer the boundary; equal, the one nearer the pick.
+                var atStart = last == null || first != null && (first.Value.Move < last.Value.Move - 1e-9
+                    || Math.Abs(first.Value.Move - last.Value.Move) <= 1e-9 && pick is { } k && (k - pts[0]).Length < (k - pts[n - 1]).Length);
+                var to = atStart ? first!.Value : last!.Value;
+                if (to.Move < tiny) throw new CommandException($"„{e.Name}” already ends at the boundary.");
+                if (atStart) pts[0] = to.To; else pts[n - 1] = to.To;
+                Drafts.Set(ctx, e, new Polyline(pts, false));
+                break;
+            }
+        }
+        return new JsonObject { ["id"] = e.Id };
+    }
+
     /// <summary>drafting.transform's work: drafted shapes and texts moved, copied, turned, mirrored or scaled (calibrateImage scales a PDF's group by it too).</summary>
     public static JsonObject Transform(ICommandContext ctx, JsonObject a)
     {
@@ -300,6 +368,11 @@ public static class DraftCommands
             Drafts.Set(ctx, e, o);
             return null;
         });
+
+        // {id, at (on the part to keep), boundary: id (an element: its axis, or its face near or far from the part kept) | line:
+        // [[x, y], [x, y]] (a grid axis, a drafted line, an edge) | arc: {c, r}, face?} → {id}. Forum topic 235: a drafted line
+        // brought to a wall, a beam or a grid axis, to its line carried on when it does not reach the element as it lies.
+        r.Command("trimExtend", "Trim or extend to a boundary", (ctx, a) => TrimExtend(ctx, a));
 
         // Two lines joined by an arc (radius 0: a sharp corner) or by a line (chamfer).
         r.Command("fillet", "Fillet", (ctx, a) => Corner(ctx, a, false));
