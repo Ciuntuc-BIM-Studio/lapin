@@ -68,6 +68,8 @@ describe('the languages', () => {
 
   // One phrase for each pattern, in order: Spanish matches the same ones as Romanian.
   const samples = [
+    'Still working on: Import IFC…',
+    'Move is still running: its result shows when it lands.',
     'Imported frame.sdnf: 12 new, 0 updated, 4 plates, 16 holes, 1 grids, 2 left out.',
     'Wall — Brick 250 · Floor',
     'Fold the project browser (B)',

@@ -6555,6 +6555,9 @@ const S5D_TAILS: Record<string, string> = {
   "solids for CAD programs, on their exact surfaces where known": "供 CAD 程序使用的实体，已知处写在其精确曲面上",
 };
 export const ZH_PATTERNS: Language['patterns'] = [
+  // What the engine is still working on, by name (app report #187).
+  [/^Still working on: (.+)…$/, (m) => { const t = ZH[m[1]] ?? m[1]; return `仍在处理：${t}…`; }],
+  [/^(.+) is still running: its result shows when it lands\.$/, (m) => { const t = ZH[m[1]] ?? m[1]; return `${t} 仍在运行：完成后会显示结果。`; }],
   // S5d: global imperfections, sheeting, θ
   [/^Global sway imperfections \(EN 1993-1-1 5\.3\.2; the same form for concrete, EN 1992-1-1 5\.2; timber by EN 1995-1-1 5\.4\.4\): each ultimate combination solved four times, ±X and ±Y, with φ·NEd at the top and −φ·NEd at the foot of each compressed column, NEd of its first-order result; h = ([\d.]+) m, αh = ([\d.]+), (.+), (.+)\. A combination's results are the envelope of its four\.$/, (m) => `整体侧移缺陷 (EN 1993-1-1 5.3.2；混凝土形式相同，EN 1992-1-1 5.2；木材按 EN 1995-1-1 5.4.4)：每个承载能力极限状态组合求解四次，±X 和 ±Y，每根受压柱顶部 φ·NEd、底部 −φ·NEd，NEd 取自其一阶结果；h = ${m[1]} m，αh = ${m[2]}，${s5dSeg(m[3])}，${s5dSeg(m[4])}。一个组合的结果取这四者的包络。`],
   [/^EN 1993-1-1 5\.3\.2\(4\): in (\d+) ultimate combinations? the horizontal loads are at least 0\.15 of the vertical ones along (X|Y|X and Y): the sway imperfections could be left out there; they are kept, on the safe side\.$/, (m) => `EN 1993-1-1 5.3.2(4)：在 ${m[1]} 个承载能力极限状态组合中，沿 ${m[2].replace(' and ', ' 和 ')} 的水平荷载至少为竖向荷载的 0.15：此处可略去侧移缺陷；出于安全考虑仍予保留。`],

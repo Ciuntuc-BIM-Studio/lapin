@@ -15,6 +15,7 @@ import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo, Sha
 import { storeys } from './model';
 import { useUi } from '../app/store';
 import { DEFAULT_VIEW_SCALES, useStandards, type AreaStep, type Unit } from './unitsStore';
+import { begin, callLabel, commandLabel, haveCommandLabels, setCommandLabels, SlowCalls, stillRunning } from './running';
 
 export interface SessionState {
   connected: boolean;
@@ -96,6 +97,10 @@ export const REMEMBERED_IDS = ['wallTypeId', 'slabTypeId', 'doorTypeId', 'window
 /** Run an engine command; its diff arrives as an event. Errors land in the session. */
 export async function execute(command: string, args: Record<string, unknown> = {}): Promise<unknown> {
   if (recording) { recording.push({ command, args }); return null; }
+  // The same edit asked again while the first still runs (app report #187): said so, not queued behind it a second time.
+  const end = begin(command, args);
+  if (!end) { notify(stillRunning(commandLabel(command))); return null; }
+  void loadCommandLabels();
   try {
     const result = await engine.call('doc.execute', { command, args });
     useSession.setState({ error: null });
@@ -104,7 +109,17 @@ export async function execute(command: string, args: Record<string, unknown> = {
   } catch (e) {
     useSession.setState({ error: e instanceof Error ? e.message : String(e) });
     return null;
+  } finally {
+    end();
   }
+}
+
+/** The commands' readable names, fetched once, the first time an edit is sent (a slow one is then said by name). */
+let labelsAsked = false;
+async function loadCommandLabels(): Promise<void> {
+  if (labelsAsked || haveCommandLabels()) return;
+  labelsAsked = true;
+  try { setCommandLabels((await engine.call<{ commands?: { name: string; label?: string }[] }>('session.catalogue'))?.commands); } catch { labelsAsked = false; }
 }
 
 /** A command that took sketch constraints off shapes it replaced says which and why (`dropped`): shown, never silent. */
@@ -169,8 +184,6 @@ const LOST_NOTICE_MS = 10_000;
 const LOST_NOTICE = 'The engine stopped; restarting…';
 /** Said when the transport does not retry (the engine in a worker): nothing is restarting. */
 const STOPPED_NOTICE = 'The engine stopped: reload the page to start it again.';
-/** An edit past the usual wait: the engine still works on it, and its result shows when it lands. */
-export const STILL_WORKING = 'Still working on the last edit…';
 
 /** Connect to the engine and keep the session in step with it. */
 export async function connect(): Promise<void> {
@@ -180,12 +193,14 @@ export async function connect(): Promise<void> {
   engine.onEvent('ended', (d) => useShare.setState({ ended: String(d) }));
   setPresenceSender((p) => engine.notify('presence.update', p as Record<string, unknown>));
   // An edit is waited for while the engine is connected (it finishes it whatever the window does): past the usual wait, said so.
-  // Slow edits can overlap: the notice goes only when the last of them has landed.
-  let slowCalls = 0;
-  engine.onSlow((_method, slow) => {
-    slowCalls = Math.max(0, slowCalls + (slow ? 1 : -1));
-    if (slow) notify(STILL_WORKING);
-    else if (slowCalls === 0 && useUi.getState().notice === STILL_WORKING) notify(null);
+  // It names the edit (app report #187). Slow edits can overlap: the newest still running is named, and the notice goes
+  // only when the last of them has landed (and only if it is still the one shown).
+  const slowCalls = new SlowCalls();
+  let shown: string | null = null;
+  engine.onSlow((method, slow, params) => {
+    const text = slowCalls.change(callLabel(method, params), slow);
+    if (text) notify(shown = text);
+    else if (shown && useUi.getState().notice === shown) { shown = null; notify(null); }
   });
   let lost: ReturnType<typeof setTimeout> | undefined;
   engine.onStatus((connected) => {
