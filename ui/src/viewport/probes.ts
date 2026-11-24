@@ -311,8 +311,8 @@ export interface ProbeBudget { slots: number; size: number; facesPerFrame: numbe
  * (an integrated or software one, or a small texture limit) halves the realistic's to the medium's and the medium's to 4.
  * Memory: a probe of 256 px is 6.3 MB (half float, its blur levels), of 128 px 1.6 MB.
  */
-export function probeBudget(profile: 'drawing' | 'medium' | 'realistic', weak: boolean): ProbeBudget | null {
-  if (profile === 'drawing') return null;
+export function probeBudget(profile: 'drawing' | 'medium' | 'realistic' | 'diagram', weak: boolean): ProbeBudget | null {
+  if (profile === 'drawing' || profile === 'diagram') return null;
   if (profile === 'medium') return weak ? { slots: 4, size: 128, facesPerFrame: 1 } : { slots: 6, size: 128, facesPerFrame: 2 };
   return weak ? { slots: 6, size: 128, facesPerFrame: 2 } : { slots: 10, size: 256, facesPerFrame: 2 };
 }

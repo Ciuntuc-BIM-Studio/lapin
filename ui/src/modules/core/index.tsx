@@ -404,7 +404,7 @@ const core: LapinModule = {
         { id: 'view.displayQuality', label: 'Display quality', icon: Gauge, run: () => useUi.setState({ dialog: 'displayQuality' }) },
         // The 3D view rendered by path tracing, and its image saved (docs/plan-render.md, S4): the medium and realistic views.
         { id: 'view.render', label: 'Render', icon: Aperture, run: () => {
-          if (useRenderProfile.getState().profile === 'drawing') { notify('Rendering needs the medium or realistic view: View → Display quality.'); return; }
+          if (useRenderProfile.getState().profile === 'drawing' || useRenderProfile.getState().profile === 'diagram') { notify('Rendering needs the medium or realistic view: View → Display quality.'); return; }
           if (useUi.getState().view !== '3d') useUi.setState({ view: '3d' });
           toggleRendering();
         } },

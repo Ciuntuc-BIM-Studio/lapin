@@ -23,8 +23,8 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { Sky } from './sky';
 import { whiteBalanceGains } from './lights3d';
 
-export type RenderProfile = 'drawing' | 'medium' | 'realistic';
-export const PROFILES: readonly RenderProfile[] = ['drawing', 'medium', 'realistic'];
+export type RenderProfile = 'drawing' | 'medium' | 'realistic' | 'diagram';
+export const PROFILES: readonly RenderProfile[] = ['drawing', 'medium', 'realistic', 'diagram'];
 
 const KEY = 'lapin.render3d';
 
@@ -59,11 +59,14 @@ export interface ProfileSpec {
   glass: boolean;
   toneMapping: THREE.ToneMapping;
   exposure: number;
+  /** The diagram display (viewport/diagram.ts): soft shadows and occlusion on a light background, no lamps, no night, no tracing. */
+  diagram?: boolean;
 }
 
 export const SPECS: Record<RenderProfile, ProfileSpec> = {
   drawing: { sun: false, shadowMap: 2048, ao: false, sky: false, skyLight: 0, ground: false, glass: false, toneMapping: THREE.NoToneMapping, exposure: 1 },
   medium: { sun: true, shadowMap: 2048, ao: true, sky: false, skyLight: 0.55, ground: false, glass: false, toneMapping: THREE.NeutralToneMapping, exposure: 1 },
+  diagram: { sun: true, shadowMap: 2048, ao: true, sky: false, skyLight: 0, ground: false, glass: false, toneMapping: THREE.NeutralToneMapping, exposure: 1, diagram: true },
   realistic: { sun: true, shadowMap: 4096, ao: true, sky: true, skyLight: 0.5, ground: true, glass: true, toneMapping: THREE.AgXToneMapping, exposure: 0.85 },
 };
 
@@ -204,7 +207,7 @@ export class Realism {
     const spec = this.spec;
     this.renderer.toneMapping = spec.toneMapping;
     if (profile !== 'drawing' && !this.composer) this.build();
-    if (this.occlusion) this.occlusion.enabled = spec.ao;
+    if (this.occlusion) { this.occlusion.enabled = spec.ao; this.occlusion.blendIntensity = spec.diagram ? 0.45 : 0.9; }
     this.applyLook();
     this.applyEnvironment();
   }
@@ -213,7 +216,7 @@ export class Realism {
   night = 0;
 
   setNight(night: number): void {
-    this.night = this.profile === 'drawing' ? 0 : night;
+    this.night = this.profile === 'drawing' || this.profile === 'diagram' ? 0 : night;
     this.applyLook();
     this.applyEnvironment();
   }

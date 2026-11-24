@@ -223,8 +223,24 @@ View → **Display quality** sets how the 3D view renders, on this computer:
 - **Drawing**: the sheet’s palette and an even light, as Lapin always drew. Quick on any computer.
 - **Medium**: the sun’s shadows, shade in the corners where faces meet, and light from the sky.
 - **Realistic**: the sky behind the model and a ground under it (where the project has no terrain), and glass the light comes through. For presenting, on a good graphics card.
+- **Diagram**: soft volumes like a card model, with the sun’s soft shadows and thin light-grey edges on a light background. For massing and volume studies (see *Diagram display* below).
 
 ![A house in the realistic view](shots/view-realistic.webp)
+
+#### Diagram display
+
+Choose **Diagram** in View → **Display quality**, then how it colours:
+
+- **White model**: every element a light white-grey, like a card model.
+- **Pastel by category**: walls, slabs and floors, roofs, columns and beams, doors and windows, terrain and site, vegetation and furniture, and everything else each get a muted pastel.
+
+![A house as a white model](shots/view-diagram-white.webp)
+
+![The same house in pastel by category](shots/view-diagram-pastel.webp)
+
+![Pastel by category at noon](shots/view-diagram-noon.webp)
+
+The colours are on screen only: drawings, sheets, the PDF, exports and the model keep their own. A colour you set for an element in **Visibility/Graphics** still wins, so you can accent a few things (the site in green, one building highlighted); glass stays see-through and the selection is still lit. Edit the pastels in **Preferences → Display → Diagram colours** (one colour a category, **Default colours** puts them back). The choice is kept on this computer. The light is neutral and even, so a face turned from the sun stays light and the shadows stay soft; the display has no textures (a terrain’s photo, a material’s picture), only the flat colours, and a cut-out figure keeps its outline in its colour. It has no lamps and no night, and it does not offer Render.
 
 The sun is the project’s: where it stands for the project’s place (Manage → **Location**) on a day at an hour. View → **Sun and shadows** sets the day (the equinox and the solstices are a click away) and the hour, plays the day through, and turns the sun on in the drawing view too. Without a coordinate system and a survey point, the place is Bucharest. The time zone follows the place’s longitude, with European summer time in Europe.
 
@@ -406,7 +422,7 @@ The **View** tab sets what the view in front shows and how it looks.
 - **IFC 2D symbols.** Elements imported or linked from an IFC file that bring their own plan drawing (a footprint, a door's swing, a fixture's symbol, with the file's colours, fills and texts) draw it in plans instead of their cut. Untick it in View settings (or in a view style) to draw their 3D cut instead.
 - **Visibility** (<kbd>VV</kbd>) and **Graphics** (<kbd>VG</kbd>). They show or hide categories and set their pens, line types and fills; a category's subcategories and the filters also set cut hatch and fill ([Material graphics](material-graphics.md)).
 - **Split** and **Window.** They show two views side by side, or open a view in a separate window.
-- **Display quality.** How the 3D view renders (**Drawing**, **Medium** or **Realistic**, kept on this computer: see *Realistic, with the sun*), and how the 3D view draws parts of many triangles (an imported plant, furniture, pipes) when they are far away. **Balanced** draws a far part coarser only where the difference is under a pixel. **Fast** lets it stray up to 3 pixels, for large models and slower computers. **Precise** draws every part as it is. The precision belongs to the project. The model, its drawings, exports and quantities are never coarsened: a curve is made of straight pieces that stray at most a millimetre from it.
+- **Display quality.** How the 3D view renders (**Drawing**, **Medium**, **Realistic** or **Diagram**, kept on this computer: see *Realistic, with the sun*), and how the 3D view draws parts of many triangles (an imported plant, furniture, pipes) when they are far away. **Balanced** draws a far part coarser only where the difference is under a pixel. **Fast** lets it stray up to 3 pixels, for large models and slower computers. **Precise** draws every part as it is. The precision belongs to the project. The model, its drawings, exports and quantities are never coarsened: a curve is made of straight pieces that stray at most a millimetre from it.
 - **Sun and shadows.** The project’s sun on a day at an hour, lighting the 3D view with its shadows (see *Realistic, with the sun*).
 
 ![Display quality](shots/display-quality.webp)

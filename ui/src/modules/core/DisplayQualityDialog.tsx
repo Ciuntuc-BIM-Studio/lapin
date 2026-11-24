@@ -10,12 +10,19 @@ import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { displayQualityOf, type DisplayQuality } from '../../viewport/lod';
+import { setDiagram, useDiagram } from '../../viewport/diagram';
 import { setCameraLook, setRenderProfile, useCameraLook, useRenderProfile, type RenderProfile } from '../../viewport/render3d';
 
 const RENDERING: { id: RenderProfile; label: string; note: string }[] = [
   { id: 'drawing', label: 'Drawing', note: 'The sheet’s palette and an even light: quick on any computer.' },
   { id: 'medium', label: 'Medium', note: 'The sun’s shadows, shade in corners, light from the sky.' },
   { id: 'realistic', label: 'Realistic', note: 'The sky and a ground round the model, glass the light comes through: for presenting, on a good graphics card.' },
+  { id: 'diagram', label: 'Diagram', note: 'Soft volumes like a card model, with the sun’s soft shadows and thin light edges: for massing and volume studies.' },
+];
+
+const DIAGRAM_VARIANTS: { id: 'white' | 'pastel'; label: string; note: string }[] = [
+  { id: 'white', label: 'White model', note: 'Every element a light white-grey.' },
+  { id: 'pastel', label: 'Pastel by category', note: 'Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).' },
 ];
 
 const CHOICES: { id: DisplayQuality; label: string; note: string }[] = [
@@ -28,6 +35,7 @@ export function DisplayQualityDialog() {
   const quality = useSession((s) => displayQualityOf(s.nodes));
   const profile = useRenderProfile((s) => s.profile);
   const look = useCameraLook();
+  const variant = useDiagram((st) => st.variant);
   const close = () => useUi.setState({ dialog: null });
   return (
     <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
@@ -41,6 +49,17 @@ export function DisplayQualityDialog() {
               <span><strong>{c.label}</strong><span className="muted small">{c.note}</span></span>
             </label>
           ))}
+          {profile === 'diagram' && (
+            <div className="quality-sub" data-testid="diagram-variant" role="radiogroup" aria-label="Diagram colours">
+              {DIAGRAM_VARIANTS.map((c) => (
+                <label key={c.id} className="quality-choice">
+                  <input type="radio" name="diagram-variant" checked={variant === c.id} onChange={() => setDiagram({ variant: c.id })} />
+                  <span><strong>{c.label}</strong><span className="muted small">{c.note}</span></span>
+                </label>
+              ))}
+              <p className="muted small">Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.</p>
+            </div>
+          )}
           <p className="muted small">Kept on this computer. The sun is the project’s, on the day and hour of View → Sun and shadows.</p>
           {profile !== 'drawing' && (
             <dl className="fields" data-testid="camera-look">

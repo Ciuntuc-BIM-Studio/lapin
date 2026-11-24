@@ -8932,8 +8932,23 @@ export const scenes = [
         t.expect(await t.page.locator('.dialog input[type=date]').count() === 1, "the sun's day");
         await t.shot('sun-dialog', { of: '.dialog', pad: 0 });
         await t.keys('Escape');
+        // The diagram display (viewport/diagram.ts): the white model, then a pastel by category, the sun as it is.
+        const diagram = (v) => t.page.evaluate(async (variant) => (await import('/src/viewport/diagram.ts')).setDiagram({ variant }), v);
+        await profile('diagram');
+        await diagram('white');
+        await t.wait(1500);
+        await t.shot('view-diagram-white', { of: '[data-testid=view3d]', pad: 0 });
+        await diagram('pastel');
+        await t.wait(1500);
+        t.expect(await t.page.evaluate(async () => (await import('/src/viewport/render3d.ts')).useRenderProfile.getState().profile) === 'diagram', 'the diagram display is on');
+        await t.shot('view-diagram-pastel', { of: '[data-testid=view3d]', pad: 0 });
+        // The same at noon: the faces turned from the sun stay light.
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ date: '2026-06-21', hour: 12.5 }));
+        await t.wait(1500);
+        await t.shot('view-diagram-noon', { of: '[data-testid=view3d]', pad: 0 });
       } finally {
         // The scenes after draw as the drawing does.
+        await t.page.evaluate(async () => (await import('/src/viewport/diagram.ts')).setDiagram({ variant: 'white' }));
         await profile('drawing');
       }
     },
