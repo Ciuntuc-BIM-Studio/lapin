@@ -104,6 +104,8 @@ public static partial class IfcExport
     const string MirrorKey = "#mirrored";
     /// <summary>An apartment type's instance: its type's name and id, where it stands (docs/plan-units.md).</summary>
     public const string UnitSetName = "Lapin_Unit";
+    /// <summary>The same as <see cref="UnitSetName"/> on an instance of a component that is not an apartment type.</summary>
+    public const string ComponentSetName = "Lapin_Component";
     /// <summary>A SubD solid's cage (decision 780): its points, faces and creases as JSON in <see cref="SubDCageProperty"/>, read back into its <c>cage</c>.</summary>
     public const string SubDSetName = "Lapin_SubD";
     public const string SubDCageProperty = "Cage";
@@ -2726,9 +2728,9 @@ public static partial class IfcExport
                 if (members.Count == 0) continue;
                 var group = f.Add("IFCGROUP", Gid(g.Id), Null, S(g.Name), Null, Null);
                 f.Add("IFCRELASSIGNSTOGROUP", Gid(g.Id, "members"), Null, Null, Null, L(members), Null, group);
-                // An instance of an apartment type says of which, and where it stands (docs/plan-units.md).
-                if (Components.UnitOf(m, g) is { } unit)
-                    Define(group, f.Add("IFCPROPERTYSET", Gid(g.Id, UnitSetName), Null, S(UnitSetName), Null, L(new[]
+                // An instance of a component says of which, and where it stands (docs/plan-units.md); an apartment type's as Lapin_Unit.
+                if (Components.InstanceOf(m, g) is { } unit && (unit.Unit ? UnitSetName : ComponentSetName) is var setName)
+                    Define(group, f.Add("IFCPROPERTYSET", Gid(g.Id, setName), Null, S(setName), Null, L(new[]
                     {
                         Single("Type", Typed("IFCLABEL", S(unit.Type.Name))),
                         Single("TypeId", Typed("IFCIDENTIFIER", S(unit.Type.Id))),

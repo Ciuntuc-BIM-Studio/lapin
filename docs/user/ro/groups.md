@@ -24,7 +24,7 @@ Dă dublu-clic pe un membru sau apasă **Editează grupul** (<kbd>EG</kbd>). Res
 
 ## Componente
 
-O componentă e un grup ale cărui copii rămân la fel, ca în SketchUp: schimbi una și se schimbă toate. Se potrivește pentru ce repeți de multe ori: o jardinieră, o travee de copertină, o insulă de bucătărie, un luminator, placa unei încăperi tip. Primește **solide Studio, plăci și încăperi**; pereții nu pot face parte dintr-una, pentru că îmbinările și ușile unui perete depind de vecinii lui.
+O componentă e un grup ale cărui copii rămân la fel, ca în SketchUp sau ca un model group în Revit: schimbi una și se schimbă toate. Se potrivește pentru ce repeți de multe ori: o jardinieră, o travee de copertină sau de fațadă, o insulă de bucătărie, un luminator, o baie tip. Primește elementele proiectului de orice fel: **pereți** (cu ușile și ferestrele din ei), plăci, încăperi, mobilier, solide Studio. Elementele luate ca referință dintr-un fișier importat nu pot face parte dintr-una: rămân unde le-a pus fișierul.
 
 Selectează elementele și alege **Modifică → Fă componentă** (<kbd>CK</kbd>). Apoi o copiezi ca pe orice: **Copy**, **Rotate**, **Copy to storeys**. Fiecare copie e o **instanță**.
 
@@ -32,10 +32,11 @@ Selectează elementele și alege **Modifică → Fă componentă** (<kbd>CK</kbd
 - **Muți și rotești** o instanță separat: celelalte rămân unde sunt, iar o modificare ajunge rotită la o instanță rotită.
 - **Fă unică**, din proprietăți, lasă o instanță să o ia pe drumul ei. **Selectează instanțele** le selectează pe toate.
 - **Mirror** o păstrează instanță, cu mâna schimbată: ce modifici în oricare ajunge oglindit în cealaltă.
+- **Pereții** dintr-o componentă se îmbină între ei cum i-ai desenat, în fiecare instanță. Unde unul întâlnește un perete care nu face parte din nicio instanță, se oprește în el: capătul lui se taie la fața acelui perete, iar celălalt perete rămâne cum e, așa că mutarea sau editarea unei instanțe nu schimbă pereții din jur. Selectează ușa împreună cu peretele ei: o ușă singură nu poate face parte dintr-o componentă.
 
 ### Tipuri de apartament
 
-O componentă nu poate conține pereți, dar un **tip de apartament** poate. Selectează pereții, încăperile și mobilierul unui apartament și alege **Modificare → Fă tip de apartament** (<kbd>CU</kbd>). Ușile și ferestrele din acei pereți vin cu ei. Copiază-l, rotește-l sau oglindește-l cu **Mirror**, ca apartamentul de pe cealaltă parte a casei scării: o schimbare într-unul ajunge în celelalte, oglindită acolo unde sunt oglindite, iar fiecare element își păstrează identitatea în IFC.
+Un **tip de apartament** e o componentă numită și listată ca apartament. Selectează pereții, încăperile și mobilierul unui apartament și alege **Modificare → Fă tip de apartament** (<kbd>CU</kbd>). Ușile și ferestrele din acei pereți vin cu ei. Copiază-l, rotește-l sau oglindește-l cu **Mirror**, ca apartamentul de pe cealaltă parte a casei scării: o schimbare într-unul ajunge în celelalte, oglindită acolo unde sunt oglindite, iar fiecare element își păstrează identitatea în IFC.
 
 Tipul de apartament ține pereții interiori, ușile dintre camere, camerele și mobilierul. Clădirea ține fațada, pereții dintre apartamente și coridorul. Locul unde se întâlnesc ține de fiecare instanță:
 
@@ -44,7 +45,7 @@ Tipul de apartament ține pereții interiori, ușile dintre camere, camerele și
 
 Un tip de apartament are dimensiuni fixe: nu se întinde după un loc mai lat sau mai îngust.
 
-**Copiază pe niveluri** face din copie altă instanță, care se oprește în pereții acelui nivel. În IFC o instanță e un grup de elemente obișnuite, cu setul de proprietăți `Lapin_Unit`; importă fișierul din nou cu **Ca un singur grup** nebifat și e din nou o instanță; cu opțiunea bifată, cum e implicit, elementele lui rămân membri obișnuiți ai grupului fișierului.
+**Copiază pe niveluri** face din copie altă instanță, care se oprește în pereții acelui nivel. În IFC o instanță e un grup de elemente obișnuite, cu setul de proprietăți `Lapin_Unit` (`Lapin_Component` la orice altă componentă); importă fișierul din nou cu **Ca un singur grup** nebifat și e din nou o instanță; cu opțiunea bifată, cum e implicit, elementele lui rămân membri obișnuiți ai grupului fișierului.
 
 ![Un tip de apartament în două instanțe, a doua oglindită](shots/units-plan.webp)
 

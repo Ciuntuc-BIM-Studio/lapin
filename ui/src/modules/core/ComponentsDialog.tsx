@@ -17,7 +17,7 @@ export function ComponentsDialog() {
       <div className="dialog" role="dialog" aria-label="Components" data-testid="components" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Components</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
-          {rows.length === 0 ? <p className="muted small">No components yet. Select Studio solids, floors or rooms, then Modify → Make component.</p> : (
+          {rows.length === 0 ? <p className="muted small">No components yet. Select walls, floors, rooms or Studio solids, then Modify → Make component.</p> : (
             <table className="grid small">
               <thead><tr><th>Component</th><th>Kind</th><th>Instances</th><th>Elements</th><th /></tr></thead>
               <tbody>

@@ -53,7 +53,7 @@ export async function makeUnit(): Promise<void> {
 }
 
 export async function makeComponent(): Promise<void> {
-  if (!selected().length) { notify('Select Studio solids, floors or rooms to make a component.'); return; }
+  if (!selected().length) { notify('Select walls, floors, rooms or Studio solids to make a component.'); return; }
   const { ask, textField } = await import('../../shell/AskBox');
   const r = await ask('Make component', [textField('name', 'Name', '')]);
   if (!r) return;

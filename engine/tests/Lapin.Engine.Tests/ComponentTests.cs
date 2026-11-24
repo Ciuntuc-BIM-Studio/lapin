@@ -7,7 +7,7 @@ using Lapin.Studio;
 
 namespace Lapin.Engine.Tests;
 
-/// <summary>Components (docs/components.md): instances of Studio solids, floors and rooms; what changes in one follows in the others, in one undo step, under the ids they had; never walls.</summary>
+/// <summary>Components (docs/components.md): instances of Studio solids, floors and rooms; what changes in one follows in the others, in one undo step, under the ids they had; walls too since forum #224 (ComponentWallTests).</summary>
 public class ComponentTests
 {
     static Fixture F() => new(new ArchitectureModule(), new DraftingModule(), new StudioModule());
@@ -50,13 +50,13 @@ public class ComponentTests
     }
 
     [Fact]
-    public void Walls_cannot_be_part_of_a_component()
+    public void Walls_can_be_part_of_a_component_since_forum_224()
     {
         var f = F();
         var wall = f.Wall(0, 0, 4, 0);
-        var ex = Assert.Throws<CommandException>(() => f.Run("component.make", new JsonObject { ["ids"] = Ids(wall) }));
-        Assert.Contains("only Studio solids, floors and rooms", ex.Message);
-        Assert.Empty(f.Model.OfClass(Components.Class));
+        var made = f.Run("component.make", new JsonObject { ["ids"] = Ids(wall) })!;
+        Assert.Equal("Component 1", f.Model.Get((string)made["component"]!)!.Name);
+        Assert.Null(f.Model.Get((string)made["component"]!)!.Str(Components.KindKey));
     }
 
     [Fact]

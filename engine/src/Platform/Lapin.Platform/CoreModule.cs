@@ -579,8 +579,8 @@ public static class ElementTransform
     {
         if (ctx.Services.Get<IPathElements>() is not { } paths) return;
         bool IsPath(string id) => ctx.Model.Get(id) is { } e && paths.IsPath(e.Class) && e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray;
-        // An apartment type's inner walls stop in the building's as its instances say (docs/plan-units.md), not joined here.
-        var units = Components.UnitMembers(ctx.Model).ToHashSet();
+        // A component's walls (an apartment type's inner walls) stop in the building's as its instances say (docs/plan-units.md), not joined here.
+        var units = Components.InstanceMemberIds(ctx.Model).ToHashSet();
         var moved = r.Moved.Where(id => IsPath(id) && !units.Contains(id)).ToList();
         var copied = r.Copies.Values.Where(id => IsPath(id) && !units.Contains(id)).ToList();
         if (moved.Count == 0 && copied.Count == 0) return;

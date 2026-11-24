@@ -1040,7 +1040,7 @@ public static partial class IfcImport
         int with2d, left2d, without2d;
 
         /// <summary>
-        /// Lapin's own apartment types (docs/plan-units.md): an IfcGroup saying Lapin_Unit, whose members came back natively,
+        /// Lapin's own components and apartment types (docs/plan-units.md): an IfcGroup saying Lapin_Component or Lapin_Unit, whose members came back natively,
         /// is an instance again. Not when the file comes in as one group, for groups do not nest; then, and in anyone else's
         /// file, they are plain elements.
         /// </summary>
@@ -1054,14 +1054,15 @@ public static partial class IfcImport
             foreach (var g in f.OfType("IFCGROUP"))
                 foreach (var sid in definitions.GetValueOrDefault(g.Id) ?? [])
                 {
-                    if (f.Entities.GetValueOrDefault(sid) is not { Type: "IFCPROPERTYSET" } set || Str(set[2]) != IfcExport.UnitSetName) continue;
+                    if (f.Entities.GetValueOrDefault(sid) is not { Type: "IFCPROPERTYSET" } set || Str(set[2]) is not (IfcExport.UnitSetName or IfcExport.ComponentSetName)) continue;
+                    var unit = Str(set[2]) == IfcExport.UnitSetName;
                     var p = new Dictionary<string, object?>();
                     foreach (var x in Items(set[4]))
                         if (x.Type == "IFCPROPERTYSINGLEVALUE" && Str(x[0]) is { } name) p[name] = Value(x[2]);
                     if (Str(g[0]) is not { } gid || !GlobalId.IsValid(gid) || p.GetValueOrDefault("TypeId") as string is not { } typeId || !GlobalId.IsValid(typeId)) continue;
                     double N(string k) => Convert.ToDouble(p.GetValueOrDefault(k) ?? 0d, System.Globalization.CultureInfo.InvariantCulture);
-                    Components.Restore(edit, gid, Str(g[2]) ?? "Apartment", typeId, p.GetValueOrDefault("Type") as string ?? "Apartment type", members.GetValueOrDefault(g.Id) ?? [],
-                        [N("X"), N("Y"), N("Z"), N("Degrees"), p.GetValueOrDefault("Mirrored") is true ? 1 : 0]);
+                    Components.Restore(edit, gid, Str(g[2]) ?? (unit ? "Apartment" : "Component"), typeId, p.GetValueOrDefault("Type") as string ?? (unit ? "Apartment type" : "Component"), members.GetValueOrDefault(g.Id) ?? [],
+                        [N("X"), N("Y"), N("Z"), N("Degrees"), p.GetValueOrDefault("Mirrored") is true ? 1 : 0], unit);
                 }
         }
 

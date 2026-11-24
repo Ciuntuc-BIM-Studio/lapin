@@ -18,7 +18,7 @@ Cerut de un tester la 09.11.2026 („work efficiently with instances”) și dus
 
 Componentele (`docs/components.md`), nu generatorul halei metalice. Hala își reface piesele dintr-o specificație, dar un apartament e desenat liber cu uneltele obișnuite și nu are o specificație din care să fie refăcut. Componentele țin membri reali și duc schimbările de la o instanță la celelalte, cu aceleași id-uri (`Components.Settle`, `componentKey`), iar instanța știe deja să fie oglindită (`componentXf`, al cincilea număr).
 
-Un apartament-tip e un `LapinComponent` cu `kind: "unit"`, care primește și pereți, uși, ferestre, finisaje de cameră și mobilier. Componentele obișnuite rămân cum sunt: fără pereți nativi, cum a cerut utilizatorul.
+Un apartament-tip e un `LapinComponent` cu `kind: "unit"`, care primește și pereți, uși, ferestre, finisaje de cameră și mobilier. Componentele obișnuite au rămas la început fără pereți nativi, cum a cerut utilizatorul; de la subiectul de forum #224 (24.11.2026) primesc și ele pereți, cu aceleași reguli (îmbinările din interior, oprirea la limită), iar tipul de apartament rămâne o componentă numită și listată ca apartament.
 
 ### Regula de împărțire
 
