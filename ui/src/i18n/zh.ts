@@ -89,6 +89,12 @@ export const ZH: Record<string, string> = {
   "The project has no IDS file on the server.": "项目在服务器上没有 IDS 文件。",
   "Not an IDS 1.0 file.": "不是 IDS 1.0 文件。",
   "The project holds 50 IDS files, the most a project may.": "项目已有 50 个 IDS 文件，这是一个项目的上限。",
+  // CDE on the web, W6d: the project's IDS files and the server's (modules/core/CdeIds.tsx).
+  "Put this project's IDS files on the server": "将此项目的 IDS 文件放到服务器上",
+  "Replace the files of the same name with these copies?": "用这些副本替换同名文件？",
+  "Copy the ticked files": "复制勾选的文件",
+  "Bring server IDS files into this project": "将服务器上的 IDS 文件带入此项目",
+  "IDS files brought into the project: one undo step.": "IDS 文件已带入项目：一个撤销步骤。",
   // The Speckle connector: File → Speckle → Send… (docs/plan-speckle.md, S1).
   "Send…": "发送…",
   "Send to Speckle": "发送到 Speckle",

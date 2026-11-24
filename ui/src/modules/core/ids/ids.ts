@@ -9,7 +9,7 @@ import { engine, execute, query, useSession } from '../../../engine/session';
 import { LONG_TIMEOUT_MS } from '../../../engine/client';
 import { useCamera } from '../../../viewport/camera';
 
-export interface IdsFile { id: string; name: string; file: string; title?: string; version?: string; specifications: number; size: number; addedAt?: string; addedBy?: string }
+export interface IdsFile { id: string; name: string; file: string; title?: string; version?: string; specifications: number; size: number; sha256?: string; addedAt?: string; addedBy?: string; xml?: string }
 export interface IdsFiles { files: IdsFile[]; blocks: boolean; onSubmit: boolean }
 
 export interface IdsFailure { globalId: string; class: string; name?: string; elementId?: string; facet: number; requirement: string; actual: string; expected: string; instructions?: string }
@@ -28,6 +28,9 @@ export async function addIdsFile(file: File): Promise<IdsFile> {
   const text = await file.text();
   return engine.call<IdsFile>('ids.add', { text, name: file.name, author: me() });
 }
+
+/** Several IDS files' texts (a CDE server's, W6d) kept in the project in one undo step. */
+export const addIdsFiles = (files: { name: string; text: string }[]) => engine.call<unknown>('ids.add', { files, author: me() });
 
 export const removeIdsFile = (id: string) => execute('ids.remove', { id });
 export const setIdsRules = (rules: { blocks?: boolean; onSubmit?: boolean }) => execute('ids.setRules', rules);

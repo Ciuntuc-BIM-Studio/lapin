@@ -87,6 +87,12 @@ export const RO: Record<string, string> = {
   "The project has no IDS file on the server.": "Proiectul nu are niciun fișier IDS pe server.",
   "Not an IDS 1.0 file.": "Nu este un fișier IDS 1.0.",
   "The project holds 50 IDS files, the most a project may.": "Proiectul are 50 de fișiere IDS, cele mai multe pe care le poate avea.",
+  // CDE on the web, W6d: the project's IDS files and the server's (modules/core/CdeIds.tsx).
+  "Put this project's IDS files on the server": "Pune fișierele IDS ale acestui proiect pe server",
+  "Replace the files of the same name with these copies?": "Înlocuiești fișierele cu același nume cu aceste copii?",
+  "Copy the ticked files": "Copiază fișierele bifate",
+  "Bring server IDS files into this project": "Adu fișierele IDS de pe server în acest proiect",
+  "IDS files brought into the project: one undo step.": "Fișierele IDS au fost aduse în proiect: un singur pas de anulare.",
   // The Speckle connector: File → Speckle → Send… (docs/plan-speckle.md, S1).
   "Send…": "Trimite…",
   "Send to Speckle": "Trimite în Speckle",

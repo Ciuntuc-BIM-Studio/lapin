@@ -19,6 +19,7 @@ public sealed partial class EngineDispatcher
         {
             case "ids.add":
             {
+                if (p["files"] is JsonArray files) return ids.AddMany(p, files);
                 if ((string?)p["text"] is { } text) return ids.Add(p, Encoding.UTF8.GetBytes(text), (string?)p["name"] ?? "requirements.ids");
                 var (bytes, name, _, _) = IfcBytes(p);
                 return ids.Add(p, bytes, (string?)p["name"] ?? name);

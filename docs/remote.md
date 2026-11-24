@@ -228,5 +228,28 @@ Limits:
 
 - The failures' words (requirement, actual, expected, the facets' texts in the specifications view) are the server's English, shown as they come; the interface around them is translated.
 - A failing GlobalId is not selected in the model from the server's report (the dry run's commit is the open project, but its elements' GlobalIds are not mapped back here); Manage → IDS… does that for the project's own run.
-- The IDS files on the server and those kept in the project (W6) are separate; nothing copies one to the other.
+- The IDS files on the server and those kept in the project (W6) are separate; they are copied only when the user asks (W6d, below).
 - Pending submissions are not re-checked when the IDS files or the switches change: **Run checks again** does it, as the server's contract says.
+
+## The project's IDS files and the server's (W6d)
+
+A follow-up to W6c (decision 833): the project's own IDS files (W6, Manage → IDS…) and the server's (W6c) stay separate, but each side can be copied onto the other when the user asks.
+
+| What | Where |
+|---|---|
+| `idsName` (the name a project's file takes on the server, which keeps only names ending in `.ids`: `rules.xml` → `rules.ids`); `copyRows` (each file of one side: `same` when the other side holds the same content under any name, `differs` when it has a file of that name ignoring case with other content, else `new`; the project's SHA-256 is of the text it keeps as UTF-8, the server's of the bytes it was sent, so a file sent from the project compares as the same); `sendIds` (each file put in turn with the existing `PUT …/ids/{name}`; a refusal kept with its file, `bad_ids` with its `problems`, the others still sent); `idsTexts` (the server's files read back as text) | `ui/src/engine/serverIds.ts` (tests: `serverIds.test.ts`) |
+| `ids.files` with `text: true` hands each file's text (`xml`) as the project keeps it, which is what goes to the server; `ids.add` with `files` (each `name` and `text`) reads every file first (a refusal names the file and keeps nothing) and keeps them all through `ids.store` with `files` in one undo step, a file of the same name (ignoring case) replaced and keeping its id | `Lapin.Platform/Cde/IdsFiles.cs`, `Lapin.Ids/IdsCalls.cs`, `EngineDispatcher.Ids.cs`; test `IdsCommandTests.A_servers_IDS_files_come_in_together_in_one_undo_step_and_the_files_text_goes_out_as_kept` |
+| **Put this project's IDS files on the server** in Publishing → IDS on the server (owners, with a project open: File → Collaborate…): the project's files, each New, The same (not tickable) or Changed; **Copy the ticked files**, a replace confirmed first; each sent file marked Sent, a refused one with its problems and their lines beside it; the list reloaded. **Bring server IDS files into this project** in Manage → IDS… (the project's remote when it is a signed-in server that offers `ids` and the account is an editor or owner) and in Publishing's IDS tab: the server's files against the project's, the same pick list, kept in one undo step | `ui/src/modules/core/CdeIds.tsx` (`IdsCopy`, `IdsFromServer`), `ids/IdsPanel.tsx`, `CdePublish.tsx` |
+
+On the desktop the bytes go as before: `remote.atrium` with base64 to `PUT …/ids/{name}` (W6c's allow-list) and the same path read back as bytes. No new engine call reaches the network.
+
+**The browser budget** (brotli, as `scripts/build-web.mjs` counts; measured on 24.11.2026): origin/main at `f5a21e7c3` (W6c merged with main, Gaussian splats G3 among it) already stood at **24,138,264** bytes with every lazy part, 21,016 over 23 MB (W6c's 24,112,587 was measured before that merge), first load 20,935,429. With W6d: everything **24,138,878** (+614), first load **20,934,090** (nothing new at start; the native code varies by a KB or two). `CdeIds` grew from 3,584 to 4,830 bytes, `IdsPanel` from 3,088 to 3,260; the engine's part is a few hundred bytes. The budget was raised by the smallest step that fits, from 23 to **23.03 MB** (24,148,951 bytes; 10,073 left), with the numbers in the script's comment.
+
+End to end (headless Chrome against a local Atrium Server with W6b on a copy of the test data, the CDE build served as cde.lapinbim.com serves it): the owner opens a new project on the server (File → Collaborate…), keeps four IDS files in it, and Put this project's IDS files on the server lists them as Changed (an older copy on the server), The same (the same content under `naming.ids`, the project's `naming.IDS`, not tickable), New (`slabs.xml`, named `slabs.ids`) and New; Copy asks before replacing, sends three, marks them Sent and shows the refused one's problem with its line beside it (the refusal played by the page's route: no file Lapin keeps is refused by the server's reader, which shares its rules); the server then holds the project's bytes and the list reloads. An editor has no Put button; in Manage → IDS… Bring server IDS files into this project finds the project's server, lists two New and one Changed, asks before replacing, keeps all three in one step, and one undo brings back the project's own copy. The button and the list in Romanian. 21 checks.
+
+Limits:
+
+- Nothing is copied by itself: a file changed on one side is not sent to the other until the user does it again.
+- A file deleted on one side is not deleted on the other.
+- Files are sent one after the other (at most 50 per project on the server: a 409 `too_many` is shown beside the file that met it).
+

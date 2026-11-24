@@ -89,6 +89,12 @@ export const DE: Record<string, string> = {
   "The project has no IDS file on the server.": "Das Projekt hat keine IDS-Datei auf dem Server.",
   "Not an IDS 1.0 file.": "Keine IDS-1.0-Datei.",
   "The project holds 50 IDS files, the most a project may.": "Das Projekt hat 50 IDS-Dateien, so viele, wie ein Projekt haben darf.",
+  // CDE on the web, W6d: the project's IDS files and the server's (modules/core/CdeIds.tsx).
+  "Put this project's IDS files on the server": "Die IDS-Dateien dieses Projekts auf den Server stellen",
+  "Replace the files of the same name with these copies?": "Die Dateien gleichen Namens durch diese Kopien ersetzen?",
+  "Copy the ticked files": "Die angehakten Dateien kopieren",
+  "Bring server IDS files into this project": "IDS-Dateien vom Server in dieses Projekt holen",
+  "IDS files brought into the project: one undo step.": "IDS-Dateien ins Projekt geholt: ein Rückgängig-Schritt.",
   // The Speckle connector: File → Speckle → Send… (docs/plan-speckle.md, S1).
   "Send…": "Senden…",
   "Send to Speckle": "An Speckle senden",

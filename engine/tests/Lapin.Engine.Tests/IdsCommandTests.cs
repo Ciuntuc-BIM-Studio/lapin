@@ -94,6 +94,31 @@ public class IdsCommandTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
+    public void A_servers_IDS_files_come_in_together_in_one_undo_step_and_the_files_text_goes_out_as_kept()
+    {
+        var (f, d, _, _) = Project();
+        var id = (string)Call(d, "ids.add", new JsonObject { ["text"] = Rules, ["name"] = "Office.ids" })["id"]!;
+        var newer = Rules.Replace("<version>1</version>", "<version>2</version>");
+        var other = Head + Spec("Walls are named", "N-01", Walls, "<attribute><name><simpleValue>Name</simpleValue></name></attribute>") + Tail;
+        // Two files brought in (a newer copy of one by its name, ignoring case, and a new one) in one step.
+        var many = Call(d, "ids.add", new JsonObject { ["files"] = new JsonArray(new JsonObject { ["name"] = "office.ids", ["text"] = newer }, new JsonObject { ["name"] = "names.ids", ["text"] = other }) });
+        Assert.Equal(2, many["files"]!.AsArray().Count);
+        Assert.Equal(id, (string)many["files"]![0]!["id"]!);
+        Assert.Equal(2, f.Model.OfClass(IdsFiles.Class).Count());
+        f.Session.Undo();
+        Assert.Equal("1", Assert.Single(f.Model.OfClass(IdsFiles.Class)).Str("version"));
+        // One that is not IDS: nothing kept, and the refusal names it.
+        var why = Failure(d, "ids.add", new JsonObject { ["files"] = new JsonArray(new JsonObject { ["name"] = "names.ids", ["text"] = other }, new JsonObject { ["name"] = "bad.ids", ["text"] = "<x/>" }) });
+        Assert.StartsWith("bad.ids:", why);
+        Assert.Single(f.Model.OfClass(IdsFiles.Class));
+        // The text as kept, with its hash, for a server: only when asked.
+        var files = Call(d, "doc.query", new JsonObject { ["name"] = "ids.files", ["args"] = new JsonObject { ["text"] = true } })["files"]!.AsArray();
+        Assert.Equal(Rules, (string?)files[0]!["xml"]);
+        Assert.Equal(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(Rules))), (string?)files[0]!["sha256"]);
+        Assert.Null(Call(d, "doc.query", new JsonObject { ["name"] = "ids.files" })["files"]![0]!["xml"]);
+    }
+
+    [Fact]
     public void A_run_checks_the_model_as_its_IFC_says_it_with_each_failing_wall_and_its_element()
     {
         var (f, d, wall, other) = Project();

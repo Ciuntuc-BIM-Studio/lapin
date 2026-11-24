@@ -41,7 +41,7 @@ Când proiectul are fișiere IDS, **Gestionare → Emite… → Pe serverul CDE*
 
 ## Fișiere IDS pe serverul CDE
 
-Un server CDE poate ține fișiere IDS proprii pentru un proiect și verifica modelul fiecărei propuneri cu ele, aprobarea socotind ce găsesc: vezi [IDS pe server](cde-server.md#ids-pe-server). **Verifică pe server**, în Gestionare → Emite… → Pe serverul CDE, le rulează pe commit-ul abia salvat înainte să propui. Fișierele păstrate în proiect (acest panou) și cele de pe server sunt separate: pune același fișier în ambele ca să fie verificat întâi aici.
+Un server CDE poate ține fișiere IDS proprii pentru un proiect și verifica modelul fiecărei propuneri cu ele, aprobarea socotind ce găsesc: vezi [IDS pe server](cde-server.md#ids-pe-server). **Verifică pe server**, în Gestionare → Emite… → Pe serverul CDE, le rulează pe commit-ul abia salvat înainte să propui. Fișierele păstrate în proiect (acest panou) și cele de pe server sunt separate și se copiază între ele doar când ceri: **Adu fișierele IDS de pe server în acest proiect** (în acest panou, pentru editori și proprietari, când serverul proiectului oferă IDS) listează fișierele serverului, fiecare **Nou**, **La fel** sau **Modificate** (un fișier cu același nume aici, cu alt conținut); bifează-le pe cele pe care le vrei și apasă **Copiază fișierele bifate**. Înlocuirea unuia modificat se confirmă întâi, iar toate vin într-un singur pas de anulare. În sens invers, proprietarii folosesc **Pune fișierele IDS ale acestui proiect pe server** în Publicare → IDS pe server.
 
 ## Ce nu verifică IDS 1.0
 

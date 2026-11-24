@@ -89,6 +89,12 @@ export const LO: Record<string, string> = {
   "The project has no IDS file on the server.": "ໂຄງການບໍ່ມີໄຟລ໌ IDS ຢູ່ເຊີບເວີ.",
   "Not an IDS 1.0 file.": "ບໍ່ແມ່ນໄຟລ໌ IDS 1.0.",
   "The project holds 50 IDS files, the most a project may.": "ໂຄງການມີໄຟລ໌ IDS 50 ໄຟລ໌, ຫຼາຍທີ່ສຸດທີ່ໂຄງການມີໄດ້.",
+  // CDE on the web, W6d: the project's IDS files and the server's (modules/core/CdeIds.tsx).
+  "Put this project's IDS files on the server": "ວາງໄຟລ໌ IDS ຂອງໂຄງການນີ້ໄວ້ຢູ່ເຊີບເວີ",
+  "Replace the files of the same name with these copies?": "ແທນທີ່ໄຟລ໌ທີ່ມີຊື່ດຽວກັນດ້ວຍສຳເນົາເຫຼົ່ານີ້ບໍ?",
+  "Copy the ticked files": "ສຳເນົາໄຟລ໌ທີ່ໝາຍໄວ້",
+  "Bring server IDS files into this project": "ນຳໄຟລ໌ IDS ຈາກເຊີບເວີເຂົ້າມາໃນໂຄງການນີ້",
+  "IDS files brought into the project: one undo step.": "ນຳໄຟລ໌ IDS ເຂົ້າມາໃນໂຄງການແລ້ວ: ການຍົກເລີກໜຶ່ງຂັ້ນ.",
   // The Speckle connector: File → Speckle → Send… (docs/plan-speckle.md, S1).
   "Send…": "ສົ່ງ…",
   "Send to Speckle": "ສົ່ງໄປ Speckle",
