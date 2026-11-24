@@ -19,6 +19,7 @@ import { POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, usePrefs, type CoordSy
 import { setDisplay, useDisplay, type Display } from '../app/display';
 import { themeAccent3D, setHighlight, useHighlight } from '../app/highlight';
 import { ColourField, PaletteManager } from './ColourField';
+import { CATEGORIES, CATEGORY_LABELS, DEFAULT_PALETTE, resetDiagramPalette, setDiagram, useDiagram } from '../viewport/diagram';
 import { setLocationShown, setUcs, surveyPoint, ucsOf, useLocation } from '../app/location';
 import { LANGUAGES, setLang, useLang } from '../i18n';
 import { LengthField, NumberField } from './cells';
@@ -114,6 +115,7 @@ export function PreferencesDialog() {
   const p = usePrefs();
   const display = useDisplay();
   const hl = useHighlight();
+  const diagram = useDiagram();
   const lang = useLang((s) => s.lang);
   const loc = useLocation((s) => s.loc);
   const ucs = ucsOf(loc);
@@ -252,6 +254,14 @@ export function PreferencesDialog() {
                 ))}
               </div>
               <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'displayQuality' })}>Display quality…</button></p>
+              <h4>Diagram colours</h4>
+              <p className="muted small">The pastel of each category in the Diagram display (View → Display quality). On screen only.</p>
+              <div className="pref-colours" data-testid="prefs-diagram">
+                {CATEGORIES.map((c) => (
+                  <label key={c} className="row small"><span>{CATEGORY_LABELS[c]}</span> <ColourField value={diagram.palette[c] ?? DEFAULT_PALETTE[c]} data-field={`prefs-diagram-${c}`} onChange={(v) => setDiagram({ palette: { [c]: v } })} /></label>
+                ))}
+                <button type="button" className="btn compact" disabled={Object.keys(diagram.palette).length === 0} onClick={resetDiagramPalette}>Default colours</button>
+              </div>
               <h4>Selection and preselection</h4>
               <label className="row small"><input type="checkbox" data-field="prefs-preselect" checked={hl.preselect} onChange={(e) => setHighlight({ preselect: e.target.checked })} /> Preselection highlight: light up what the cursor is over before a click, in plans, sections, sheets and 3D</label>
               <div className="pref-colours" data-testid="prefs-highlight">

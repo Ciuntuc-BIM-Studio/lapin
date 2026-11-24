@@ -221,8 +221,22 @@ Vedere → **Calitate afișare** stabilește cum se desenează vederea 3D, pe ac
 - **Desen**: paleta planșei și o lumină egală, cum a desenat Lapin dintotdeauna. Rapid pe orice calculator.
 - **Mediu**: umbrele soarelui, umbră în colțurile unde se întâlnesc fețele și lumină din cer.
 - **Realist**: cerul în spatele modelului și un teren sub el (unde proiectul nu are teren), și sticlă prin care trece lumina. Pentru prezentări, pe o placă grafică bună.
+- **Diagramă**: volume moi, ca o machetă din carton, cu umbrele line ale soarelui și muchii subțiri, gri deschis, pe fundal luminos. Pentru studii de volumetrie (vezi *Afișarea ca diagramă*, mai jos).
 
 ![O casă în vederea realistă](shots/view-realistic.webp)
+
+#### Afișarea ca diagramă
+
+Alege **Diagramă** în Vedere → **Calitate afișare**, apoi cum se colorează:
+
+- **Model alb**: fiecare element într-un alb-gri deschis, ca o machetă din carton.
+- **Pastel pe categorii**: pereții, planșeele și pardoselile, acoperișurile, stâlpii și grinzile, ușile și ferestrele, terenul și amplasamentul, vegetația și mobilierul, și tot restul primesc fiecare un pastel estompat.
+
+![O casă ca model alb](shots/view-diagram-white.webp)
+
+![Aceeași casă în pastel pe categorii](shots/view-diagram-pastel.webp)
+
+Culorile sunt doar pe ecran: desenele, planșele, PDF-ul, exporturile și modelul își păstrează culorile. O culoare pe care o stabilești pentru un element în **Vizibilitate / Grafică** rămâne cea care contează, așa că poți accentua câteva lucruri (terenul în verde, o clădire evidențiată); sticla rămâne transparentă, iar selecția se luminează ca de obicei. Pastelurile se modifică în **Preferințe → Afișare → Culorile diagramei** (o culoare pe categorie, **Culorile implicite** le pun la loc). Alegerea se păstrează pe acest calculator. Afișarea ca diagramă nu are lămpi și nici noapte, și nu oferă Render.
 
 Soarele e al proiectului: unde stă pentru locul proiectului (Gestionare → **Amplasament**) într-o zi, la o oră. Vedere → **Soare și umbre** stabilește ziua (echinocțiul și solstițiile sunt la un clic) și ora, rulează ziua și aprinde soarele și în vederea de desen. Fără sistem de coordonate și punct de reper, locul e Bucureștiul. Fusul orar urmează longitudinea locului, cu ora de vară europeană în Europa.
 
@@ -401,7 +415,7 @@ Tabul **Vedere** setează ce arată vederea din față și cum arată.
 - **Stiluri de vedere.** (Fiecare setează și distanța minimă a hașurii, tăietura la scară mică și setul de grafică a materialelor: vezi [Grafica materialelor](material-graphics.md).) Arhitectural, Structural (doar miezurile), Instalații sau al tău. Fiecare stil alege straturile desenate (afișarea lor parțială a structurii, separat pentru planuri, secțiuni și vederi 3D) și cum se unesc materialele.
 - **Vizibilitate** (<kbd>VV</kbd>) și **Grafică** (<kbd>VG</kbd>). Arată sau ascund categorii și le setează penițele, tipurile de linie și umpluturile; subcategoriile unei categorii și filtrele setează și hașura și umplutura tăieturii ([Grafica materialelor](material-graphics.md)).
 - **Împarte** și **Fereastră.** Arată două vederi alăturate sau deschid o vedere într-o fereastră separată.
-- **Calitate afișare.** Cum se desenează vederea 3D (**Desen**, **Mediu** sau **Realist**, păstrat pe acest calculator: vezi *Realist, cu soarele*) și cum desenează vederea 3D piesele cu multe triunghiuri (o instalație importată, mobilier, țevi) când sunt departe. **Echilibrat** desenează mai grosier o piesă îndepărtată doar unde diferența e sub un pixel. **Rapid** o lasă să se abată până la 3 pixeli, pentru modele mari și calculatoare mai lente. **Precis** desenează fiecare piesă așa cum e. Precizia ține de proiect. Modelul, desenele, exporturile și cantitățile nu devin niciodată mai grosiere: o curbă e făcută din bucăți drepte care se abat de la ea cel mult un milimetru.
+- **Calitate afișare.** Cum se desenează vederea 3D (**Desen**, **Mediu**, **Realist** sau **Diagramă**, păstrat pe acest calculator: vezi *Realist, cu soarele*) și cum desenează vederea 3D piesele cu multe triunghiuri (o instalație importată, mobilier, țevi) când sunt departe. **Echilibrat** desenează mai grosier o piesă îndepărtată doar unde diferența e sub un pixel. **Rapid** o lasă să se abată până la 3 pixeli, pentru modele mari și calculatoare mai lente. **Precis** desenează fiecare piesă așa cum e. Precizia ține de proiect. Modelul, desenele, exporturile și cantitățile nu devin niciodată mai grosiere: o curbă e făcută din bucăți drepte care se abat de la ea cel mult un milimetru.
 - **Soare și umbre.** Soarele proiectului într-o zi, la o oră, luminând vederea 3D cu umbrele lui (vezi *Realist, cu soarele*).
 
 ![Calitate afișare](shots/display-quality.webp)

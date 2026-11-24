@@ -114,6 +114,7 @@ export interface LightCaps { spotShadow: number; pointShadow: number; spot: numb
  */
 export const CAPS: Record<RenderProfile, LightCaps> = {
   drawing: { spotShadow: 0, pointShadow: 0, spot: 0, point: 0, rect: 0, radius: 0 },
+  diagram: { spotShadow: 0, pointShadow: 0, spot: 0, point: 0, rect: 0, radius: 0 },
   medium: { spotShadow: 2, pointShadow: 0, spot: 8, point: 8, rect: 2, radius: 30 },
   realistic: { spotShadow: 4, pointShadow: 0, spot: 16, point: 16, rect: 4, radius: 60 },
 };

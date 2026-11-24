@@ -35,6 +35,7 @@ import { boxUv, boxUvSized, hasRelief, imageOf, imageTexture, orthophotos, ortho
 import { lookOf } from './look';
 import { xrayLooks } from './xray';
 import { glassThrough, reflections, standardMaterial } from './materialLook';
+import { DIAGRAM_BACKGROUND, DIAGRAM_EDGES, diagramLooks, useDiagram } from './diagram';
 import { nightOf, Realism, sunColour, useCameraLook, useRenderProfile, whiteBalanceKelvin } from './render3d';
 import { buildTraceScene, exposureFactor, resolutionOf, TraceMaterials, type TraceInput } from './pathTrace';
 import type { PathTraceView, TraceLook, TraceSky } from './pathTraceView';
@@ -108,7 +109,8 @@ const LOD_EVERY = 150;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
 const GRID = { paper: [0xb5532d, 0xd6cebf], graphite: [0xe07a4f, 0x34312c], classic: [0x0067c0, 0xd0d0d0], contrast: [0x003f9e, 0x9a9a9a] } as const;
 /** The edges' one material, shared by every element (highlights and looks change only the faces'). */
-const EDGES = new THREE.LineBasicMaterial({ color: 0x1e2a3a });
+const EDGES_COLOUR = 0x1e2a3a;
+const EDGES = new THREE.LineBasicMaterial({ color: EDGES_COLOUR });
 EDGES.userData.shared = true;
 /** CAD linework's materials, one a colour (a DXF's lines keep their layer's), shared like the edges'. */
 const LINEWORK = new Map<string, THREE.LineBasicMaterial>();
@@ -790,7 +792,7 @@ export function Viewport3D() {
       clearTimeout(lightTimer);
       lightTimer = window.setTimeout(async () => {
         const n = ++lightsAsked;
-        if (useRenderProfile.getState().profile === 'drawing') { lightSources = []; rig.setProfile('drawing', []); useLightBudget.setState({ total: 0, drawn: 0, shadowed: 0 }); invalidate.current(); return; }
+        if (useRenderProfile.getState().profile === 'drawing' || useRenderProfile.getState().profile === 'diagram') { lightSources = []; rig.setProfile('drawing', []); useLightBudget.setState({ total: 0, drawn: 0, shadowed: 0 }); invalidate.current(); return; }
         const list = await query<LightSourceDto[]>('light.sources', {}).catch(() => null);
         if (n !== lightsAsked || !list) return;
         for (const key of new Set(list.map((x) => x.profile).filter((k): k is string => !!k)))
@@ -1018,8 +1020,8 @@ export function Viewport3D() {
       const up = dir[2] > 0.005;
       const altitude = (Math.asin(Math.max(-1, Math.min(1, dir[2]))) * 180) / Math.PI;
       // The drawing keeps its even light under the sun; the others take most of theirs from the sky (render3d.ts).
-      sun.intensity = up ? (spec.skyLight ? 3.2 : 2.6) : 0;
-      hemi.intensity = spec.skyLight ? (up ? 0.25 : 0.4) : up ? 1.1 : 0.6;
+      sun.intensity = up ? (spec.diagram ? 2.4 : spec.skyLight ? 3.2 : 2.6) : 0;
+      hemi.intensity = spec.diagram ? (up ? 0.6 : 0.5) : spec.skyLight ? (up ? 0.25 : 0.4) : up ? 1.1 : 0.6;
       // The night's sky light: what is left of it under the opened exposure, a faint glow (the drawing keeps its even light).
       if (realism.night > 0) hemi.intensity *= (1 - realism.night) + (realism.night * 0.04) / realism.gain;
       sunColour(altitude, sun.color);
@@ -1043,7 +1045,11 @@ export function Viewport3D() {
       placeProbesSoon();
       glassThrough(s, realism.spec.glass);
       // The roughness and occlusion maps in the medium and realistic views; the drawing keeps its flat look (docs/plan-render.md, S1).
-      surfaceMaps(s, profile !== 'drawing');
+      surfaceMaps(s, profile === 'medium' || profile === 'realistic');
+      // The diagram's light background and light edges (viewport/diagram.ts); the other displays keep the theme's.
+      rendererRef.current?.setClearColor(profile === 'diagram' ? DIAGRAM_BACKGROUND : CLEAR[currentViewTheme()]);
+      EDGES.color.setHex(profile === 'diagram' ? DIAGRAM_EDGES : EDGES_COLOUR);
+      invalidate.current();
       aimSun();
       fetchLights();
       traceDirty.current();
@@ -1192,7 +1198,7 @@ export function Viewport3D() {
       const mode = useRenderMode.getState();
       if (!mode.on) return false;
       if (stillBusy) return true;
-      if (realism.profile === 'drawing') { setRendering(false); return false; }
+      if (realism.profile === 'drawing' || realism.profile === 'diagram') { setRendering(false); return false; }
       if (!tracer) {
         tracerLoad ??= import('./pathTraceView').then(({ PathTraceView }) => {
           tracer = new PathTraceView(renderer);
@@ -2017,12 +2023,13 @@ export function Viewport3D() {
 
   // The view clears to the theme's paper or graphite; the grid lies on the active storey, shown or hidden by View → Grid (F7) as in plans.
   const theme = useViewTheme();
+  const profileNow = useRenderProfile((st) => st.profile);
   const gridShown = useDisplay((st) => st.grid);
   const elevation = elevationRef.current;
   const gridFixed = usePrefs((st) => (st.gridMode === 'fixed' ? st.gridStep : 0));
   const ucs3d = useLocation((st) => st.loc.ucs ? `${st.loc.ucs.x},${st.loc.ucs.y},${st.loc.ucs.angle}` : '');
   useEffect(() => {
-    rendererRef.current?.setClearColor(CLEAR[theme]);
+    rendererRef.current?.setClearColor(profileNow === 'diagram' ? DIAGRAM_BACKGROUND : CLEAR[theme]);
     const s = scene.current;
     const old = s?.getObjectByName('ground-grid');
     if (!s) return;
@@ -2032,7 +2039,7 @@ export function Viewport3D() {
     grid.visible = gridShown;
     s.add(grid);
     invalidate.current();
-  }, [theme, elevation, gridShown, gridFixed, ucs3d]);
+  }, [theme, profileNow, elevation, gridShown, gridFixed, ucs3d]);
 
   // The grid's axes, on the lowest storey: dash-dot lines with their labels at both ends.
   // Keyed on the grids and the lowest storey only, not on every diff.
@@ -2077,6 +2084,7 @@ export function Viewport3D() {
   const lightBudget = useLightBudget();
   const renderMode = useRenderMode();
   const renderProfile = useRenderProfile((st) => st.profile);
+  const diagram = useDiagram();
   const meshes = useSession((st) => st.meshes);
 
   // The reference planes (docs/plan-studio-thick.md): a translucent quad each, as large as the model on it, with its name;
@@ -2173,7 +2181,10 @@ export function Viewport3D() {
       object.visible = object.visible && visualStyle !== 'wireframe' && !(walking && live.get(id)?.item.type === 'IfcSpace');
     }
     // X-ray: every element but the selection see-through, over its own look.
-    const seen = visualStyle === 'xray' ? xrayLooks(looks, render.keys(), shown) : looks;
+    // The diagram display: its colours under the elements' own looks, then X-ray over them.
+    const nodesNow = useSession.getState().nodes;
+    const coloured = renderProfile === 'diagram' ? diagramLooks(looks, [...render.values()].map((r) => ({ id: r.nodeId, type: r.type, predefinedType: nodesNow.get(r.nodeId)?.props.predefinedType })), diagram) : looks;
+    const seen = visualStyle === 'xray' ? xrayLooks(coloured, render.keys(), shown) : coloured;
     for (const [id, { item, object }] of live) {
       highlight(object, shown.has(id));
       look(object, seen[id]);
@@ -2203,7 +2214,7 @@ export function Viewport3D() {
     boxDirty.current();
     traceDirty.current();
     invalidate.current();
-  }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown, drafts3d, fineBodies.on, fineBodies.version, selColour]);
+  }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown, drafts3d, fineBodies.on, fineBodies.version, selColour, renderProfile, diagram]);
   // The rooms' reflection probes again when the model or its looks change, not the selection (docs/plan-render.md, S3).
   useEffect(() => { probesDirty.current(); }, [render, meshes, layers, expansion, looks, visualStyle, capsShown, drafts3d, fineBodies.on, fineBodies.version]);
 
@@ -2397,7 +2408,7 @@ export function Viewport3D() {
           <Lightbulb size={12} /><span>{`${lightBudget.drawn} / ${lightBudget.total} lights, ${lightBudget.shadowed} with shadows`}</span>
         </div>
       )}
-      {renderProfile !== 'drawing' && !walkStart && !renderMode.on && (
+      {renderProfile !== 'drawing' && renderProfile !== 'diagram' && !walkStart && !renderMode.on && (
         <button type="button" className="render-button" data-testid="render-button" onClick={() => setRendering(true)}
           title="Render this view as a photograph: light traced as it bounces, refining while the camera rests">
           <Aperture size={13} /><span>Render</span>
