@@ -6527,6 +6527,8 @@ export const PT: Record<string, string> = {
   "flip the wall (exterior on the left)": "inverter a parede (exterior à esquerda)",
   "flip the wall back (exterior on the right)": "repor a parede (exterior à direita)",
   "the other side": "o outro lado",
+  // Forum topic 232: the held Tab's list over nothing.
+  "Nothing under the pointer": "Nada sob o ponteiro",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

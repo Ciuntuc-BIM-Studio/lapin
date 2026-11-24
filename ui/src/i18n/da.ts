@@ -6524,6 +6524,8 @@ export const DA: Record<string, string> = {
   "flip the wall (exterior on the left)": "vend væggen (yderside til venstre)",
   "flip the wall back (exterior on the right)": "vend væggen tilbage (yderside til højre)",
   "the other side": "den anden side",
+  // Forum topic 232: the held Tab's list over nothing.
+  "Nothing under the pointer": "Intet under markøren",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

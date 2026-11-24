@@ -6483,6 +6483,8 @@ export const RO: Record<string, string> = {
   "flip the wall (exterior on the left)": "întoarce peretele (exteriorul la stânga)",
   "flip the wall back (exterior on the right)": "întoarce peretele înapoi (exteriorul la dreapta)",
   "the other side": "cealaltă parte",
+  // Forum topic 232: the held Tab's list over nothing.
+  "Nothing under the pointer": "Nimic sub cursor",
 };
 
 /** Phrases with a number or a name in them. */

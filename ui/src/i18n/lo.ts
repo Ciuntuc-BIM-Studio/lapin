@@ -6583,6 +6583,8 @@ export const LO: Record<string, string> = {
   "flip the wall (exterior on the left)": "ປີ້ນຝາ (ໜ້ານອກຢູ່ຊ້າຍ)",
   "flip the wall back (exterior on the right)": "ປີ້ນຝາກັບຄືນ (ໜ້ານອກຢູ່ຂວາ)",
   "the other side": "ອີກຂ້າງ",
+  // Forum topic 232: the held Tab's list over nothing.
+  "Nothing under the pointer": "ບໍ່ມີຫຍັງຢູ່ກ້ອງຕົວຊີ້",
 };
 
 /** Phrases with a number or a name in them. */

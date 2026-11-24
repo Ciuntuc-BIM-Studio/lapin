@@ -112,9 +112,35 @@ describe('the hold over a view', () => {
     expect(tabHoldDown(false)).toBe('pass');
   });
 
-  it('a pointer that left the elements before the threshold opens nothing', () => {
+  it('a pointer that drifted off the elements before the threshold still opens the list, which fills again as it moves back (forum topic 232)', () => {
     tabHoldDown(false);
     under = ['w'];
+    vi.advanceTimersByTime(HOLD_MS + 1);
+    expect(useTabHold.getState()).toMatchObject({ open: true, ids: ['w'] });
+    expect(holdPhase()).toBe('open');
+    under = [];
+    holdRefresh();
+    expect(useTabHold.getState()).toMatchObject({ open: true, ids: [] });
+    under = ['w', 's'];
+    holdRefresh();
+    expect(useTabHold.getState()).toMatchObject({ open: true, ids: ['w', 's'], index: 0 });
+    expect(tabHoldUp()).toBe('take');
+    expect(taken).toEqual(['w']);
+  });
+
+  it('let go over nothing, the list takes nothing (the selection stays)', () => {
+    tabHoldDown(false);
+    under = [];
+    vi.advanceTimersByTime(HOLD_MS + 1);
+    expect(useTabHold.getState()).toMatchObject({ open: true, ids: [] });
+    expect(tabHoldUp()).toBe('take');
+    expect(taken).toEqual([]);
+    expect(useTabHold.getState().open).toBe(false);
+  });
+
+  it('a view the pointer left before the threshold opens nothing', () => {
+    tabHoldDown(false);
+    setCycleSource(null);
     vi.advanceTimersByTime(HOLD_MS + 1);
     expect(useTabHold.getState().open).toBe(false);
     expect(holdPhase()).toBe('idle');

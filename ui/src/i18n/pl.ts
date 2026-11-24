@@ -6530,6 +6530,8 @@ export const PL: Record<string, string> = {
   "flip the wall (exterior on the left)": "odwróć ścianę (zewnętrze po lewej)",
   "flip the wall back (exterior on the right)": "odwróć ścianę z powrotem (zewnętrze po prawej)",
   "the other side": "druga strona",
+  // Forum topic 232: the held Tab's list over nothing.
+  "Nothing under the pointer": "Nic pod kursorem",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

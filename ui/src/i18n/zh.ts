@@ -6526,6 +6526,8 @@ export const ZH: Record<string, string> = {
   "flip the wall (exterior on the left)": "翻转墙（外侧在左）",
   "flip the wall back (exterior on the right)": "将墙翻转回来（外侧在右）",
   "the other side": "另一侧",
+  // Forum topic 232: the held Tab's list over nothing.
+  "Nothing under the pointer": "指针下没有对象",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

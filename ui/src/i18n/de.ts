@@ -6487,6 +6487,8 @@ export const DE: Record<string, string> = {
   "flip the wall (exterior on the left)": "Wand spiegeln (Außenseite links)",
   "flip the wall back (exterior on the right)": "Wand zurückspiegeln (Außenseite rechts)",
   "the other side": "die andere Seite",
+  // Forum topic 232: the held Tab's list over nothing.
+  "Nothing under the pointer": "Nichts unter dem Zeiger",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
