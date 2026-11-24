@@ -25,18 +25,22 @@ export function mergeTabs(modules: readonly LapinModule[], orders: Record<string
 
 /**
  * The shared groups after a tab's own. A shared group with the label of one the tab has (Draft's own Modify; Architecture's own Joins)
- * is one group with it: the tab's tools first, then the shared ones it does not already have (the same label, or one `alsoCalled`
- * says), so a tab never shows two Move or two Copy buttons. The shared tools left out stay tools (their ids resolve).
+ * is one group with it: the tab's tools first, then the shared ones. A shared tool the tab already has anywhere (the same label, or one
+ * `alsoCalled` says) is left out, so a tab never shows two Move or two Offset buttons, wherever its own is. The shared tools left out
+ * stay tools (their ids resolve).
  */
 function withShared(own: RibbonGroupDef[], shared: RibbonGroupDef[]): RibbonGroupDef[] {
   const out = [...own];
+  const names = (t: ToolDef) => [t.label, ...(t.alsoCalled ?? [])];
+  const have = new Set(own.flatMap((g) => [...g.tools, ...(g.small ?? [])].flatMap(names)));
+  const fresh = (t: ToolDef) => !names(t).some((n) => have.has(n));
   for (const s of shared) {
     const at = out.findIndex((g) => g.label === s.label);
-    if (at < 0) { out.push(s); continue; }
+    const tools = s.tools.filter(fresh), small = (s.small ?? []).filter(fresh);
+    for (const t of [...tools, ...small]) names(t).forEach((n) => have.add(n));
+    if (at < 0) { if (tools.length + small.length > 0) out.push({ ...s, tools, small }); continue; }
     const g = out[at];
-    const have = new Set([...g.tools, ...(g.small ?? [])].flatMap((t) => [t.label, ...(t.alsoCalled ?? [])]));
-    const fresh = (t: ToolDef) => !have.has(t.label) && !(t.alsoCalled ?? []).some((n) => have.has(n));
-    out[at] = { ...g, tools: [...g.tools, ...s.tools.filter(fresh)], small: [...(g.small ?? []), ...(s.small ?? []).filter(fresh)] };
+    out[at] = { ...g, tools: [...g.tools, ...tools], small: [...(g.small ?? []), ...small] };
   }
   return out;
 }

@@ -35,6 +35,24 @@ describe('the ribbon tabs', () => {
     expect(tabs[0].groups[0].small?.map((t) => t.id)).toEqual(['cad.erase', 'cad.copy', 'modify.pin']);
   });
 
+  it('leaves out a shared tool the tab has in any other group, by its label or one it is also called', () => {
+    const tabs = mergeTabs([
+      mod({ sharedGroups: { modify: { label: 'Modify', tools: [], small: [{ ...tool('modify.offset'), label: 'Offset element', alsoCalled: ['Offset'] }, tool('modify.pin')] } } }),
+      mod({ tabs: [{ id: 'draft', label: 'Draft', order: 10, include: ['modify'], groups: [{ label: 'Edit', tools: [], small: [{ ...tool('cad.offset'), label: 'Offset' }] }] }] }),
+    ]);
+    expect(tabs[0].groups.map((g) => g.label)).toEqual(['Edit', 'Modify']);
+    expect(tabs[0].groups[1].small?.map((t) => t.id)).toEqual(['modify.pin']);
+  });
+
+  it('shows no shared group whose tools the tab all has, and a group of its own after Modify', () => {
+    const tabs = mergeTabs([
+      mod({ sharedGroups: { modify: { label: 'Modify', tools: [], small: [tool('modify.pin')] }, groups: { label: 'Group', tools: [tool('modify.group')], small: [tool('modify.ungroup')] }, same: { label: 'Same', tools: [tool('x')] } } }),
+      mod({ tabs: [{ id: 'a', label: 'A', order: 10, include: ['modify', 'groups'], groups: [{ label: 'Build', tools: [tool('wall')] }] }, { id: 'b', label: 'B', order: 11, include: ['same'], groups: [{ label: 'Own', tools: [{ ...tool('b.x'), label: 'x' }] }] }] }),
+    ]);
+    expect(tabs[0].groups.map((g) => g.label)).toEqual(['Build', 'Modify', 'Group']);
+    expect(tabs[1].groups.map((g) => g.label)).toEqual(['Own']);
+  });
+
   it('places the tabs as the product says, its own work first', () => {
     const modules = [
       mod({ tabs: [{ id: 'draft', label: 'Draft', order: 10, groups: [] }, { id: 'architecture', label: 'Architecture', order: 20, groups: [] }] }),

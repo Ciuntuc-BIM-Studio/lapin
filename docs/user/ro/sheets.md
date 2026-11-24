@@ -77,7 +77,7 @@ Notele, semnele și cheile care țin de planșă, nu de una dintre vederile ei, 
 - **Textele** pot avea câmpuri vii, ca ale unui cartuș: `Planșa {sheet.number} din {sheet.count}`, `{project.name}`, `{sheet.date}`. Pe o vedere, un text rămâne cum l-ai scris.
 - **Notă cu indicator** (Adnotări → Text): dă clic unde arată săgeata, apoi unde stă textul, și scrie-l. Mutată, nota își ia săgeata cu ea; **Linie de indicație → scoate** din proprietăți scoate săgeata. Selectată, vârful săgeții și fiecare cot au mânerele lor: trage unul ca să-l muți singur.
 - **Liniile, poliliniile, dreptunghiurile, cercurile, arcele, hașurile, simbolurile și imaginile** sunt ale uneltelor din Desen, cu mânerele, straturile și uneltele lor de modificare. Săgeata nordului e unul dintre simbolurile lui Lapin (**Adnotări → Simbol**). Simbolurile puse cu **Așază simbol…** din bara planșei se aleg cu un clic și aici și se mută în milimetri de hârtie.
-- **Nor de revizie** (Desen → Umplutură, Adnotări → Planșe sau REVCLOUD în linia de comandă): două colțuri, sau **P** pentru un poligon închis cu Enter. **Nor de revizie** din proprietățile oricărei polilinii închise sau ale unui cerc o face nor sau o readuce la loc și îi stabilește arcul pe hârtie.
+- **Nor de revizie** (Desen → Desenează, Adnotări → Planșe sau REVCLOUD în linia de comandă): două colțuri, sau **P** pentru un poligon închis cu Enter. **Nor de revizie** din proprietățile oricărei polilinii închise sau ale unui cerc o face nor sau o readuce la loc și îi stabilește arcul pe hârtie.
 - **Legendă** (Adnotări → Planșe): o listă vie a ce desenează vederile planșei: materialele cu care sunt hașurate și umplute tăieturile lor sau, cu **Liste** din proprietăți, liniile lor după rol, tip și grosime. Se schimbă odată cu vederile și cu modelul, iar titlul ei primește și el câmpuri. Cuvintele ei (titlul, rolurile și tipurile liniilor) sunt scrise în limba pe care o avea interfața când a fost pusă; **Limba** din proprietăți le schimbă. Cu instalațiile, **Liste** oferă și **simboluri și linii de instalații**: liniile instalațiilor și simbolurile aparatelor pe care le desenează vederile ([Legenda instalațiilor](mep.md#legenda-instalatiilor)).
   La o legendă de materiale, **Materiale** spune care: **ale zonelor secționate** (ca până acum), **ce arată vederile** (zonele lor secționate și fețele pe care le văd, așa că tencuiala, cărămida și placajul unei fațade sunt listate) sau **cele etichetate cu o cheie** (doar materialele citite de [etichetele de cheie de material](drafting.md#eticheta-de-cheie-de-material) ale vederilor). Ultimele două își cheiază rândurile: fiecare rând începe cu cheia materialului într-un cerc, apoi mostra și `nume — descriere` (primul rând al descrierii materialului), în ordinea cheilor, ca un tabel de finisaje al fațadei. **Chei** pornește sau oprește asta la oricare dintre cele trei, iar **Rând** scrie un rând al tău: `{key}`, `{name}`, `{description}`, `{category}` sau orice parametru al materialului (`{name} — {Finish}`); o parte dintre liniuțe care iese goală e lăsată afară. Un material listat de o legendă cu chei primește numărul definitiv când legenda e pusă sau schimbată, așa că cheia lui rămâne.
 
@@ -93,3 +93,20 @@ Ce e desenat pe planșă se tipărește pe ea, peste vederi, exact cum se vede: 
 ## Tipărirea
 
 Butoanele **PDF** și **DXF** din bara planșei o exportă. Un PDF e gata de tipărit sau de trimis. Un DXF se deschide în AutoCAD și în alte programe CAD cu layerele, liniile și hașurile lui; cercurile, arcele și elipsele (desenate, sau laturile curbe ale planșeelor și ale altor contururi pe un plan) sunt scrise ca CIRCLE, ARC și ELLIPSE adevărate, nu ca linii scurte, și revin ca curbe când DXF-ul e importat din nou. **Tipărește** trimite planșa la imprimantă sau plotter la formatul ei, la 1:1, în linii vectoriale: alegi plotterul și hârtia în fereastra de tipărire. Pe o imprimantă mai mică, alegi încadrarea în pagină.
+
+### Seturi de publicare
+
+**Gestionare → Publică…** (grupul Emitere) exportă mai multe planșe și vederi dintr-o dată. Un **set de publicare** este o alegere cu nume de planșe și vederi, păstrată în proiect: se salvează odată cu el, iar fiecare schimbare e un singur pas de anulare.
+
+![Publică: un set de planșe și vederi, formatele lui](shots/publish-sets.webp)
+
+- **Set de publicare** deschide un set salvat. **Salvează setul** păstrează schimbările tale, **Salvează ca set nou** păstrează ce e bifat ca set nou, iar coșul șterge setul. Planșele și vederile rămân în proiect.
+- Planșele sunt listate după număr. Vederile sunt grupate după fel: planuri de etaj, amplasament, secțiuni, fațade, plane de referință și vederi 3D. Fiecare grup are **Toate** și **Niciunul**.
+- Alege formatele: **Fiecare ca PDF**, **Toate într-un singur PDF** (fiecare planșă, apoi fiecare vedere, cu numele setului) și **Fiecare ca DXF**. Fereastra spune câte fișiere ies.
+- O vedere exportată singură primește o pagină cât desenul ei la scara ei, cu o margine de 10 mm și cu numele și scara dedesubt. Zona ei decupată contează.
+- Fișierul unei planșe poartă numărul și numele ei (*A-101 Parter.pdf*), cel al unei vederi, numele vederii. Două fișiere cu același nume se numerotează *(2)*.
+- **Exportă…** pe desktop scrie într-un folder pe care îl alegi. Într-un browser, un singur fișier vine ca atare, iar mai multe vin într-un singur zip cu numele setului.
+
+O planșă sau o vedere ștearsă după salvarea setului iese din el, iar fereastra spune câte nu mai sunt în proiect.
+
+Exportul nu înregistrează nimic. Ca să emiți planșele cu o revizie, un statut și verificări, folosește **Gestionare → Emite…**, care poate porni de la planșele unui set (vezi [Emiterea](cde.md#emiterea)).

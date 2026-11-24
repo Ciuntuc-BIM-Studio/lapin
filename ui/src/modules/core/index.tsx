@@ -6,7 +6,7 @@ import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
 import { calibrateTool } from './cloudCalibrate';
-import { Aperture, AlignStartVertical, ArrowLeftRight, CornerDownRight, CopyPlus, Slash, Scale, Braces, Tags, Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2, ListChecks } from 'lucide-react';
+import { Aperture, AlignStartVertical, ArrowLeftRight, CornerDownRight, CopyPlus, Slash, Scale, Braces, Tags, Pin, PinOff, Printer, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2, ListChecks } from 'lucide-react';
 import { openTempDimProperties, TEMP_DIM_DIALOG } from '../../viewport/tempDimProps';
 import { AngleDims } from '../../viewport/AngleTempDims';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
@@ -116,6 +116,7 @@ const ExportMeshDialog = lazyPart(() => import('./ExportMeshDialog').then((m) =>
 // Lapin for the browser (decision 482): the project as one .html, a viewer and the package.
 const ExportHtmlDialog = lazyPart(() => import('./ExportHtmlDialog').then((m) => m.ExportHtmlDialog), { title: 'Lapin for the browser' });
 const ProjectFolderDialog = lazyPart(() => import('./cde/ProjectFolderDialog').then((m) => m.ProjectFolderDialog), { title: 'Project folder' });
+const PublishDialog = lazyPart(() => import('./publish/PublishDialog').then((m) => m.PublishDialog), { title: 'Publish' });
 const IssueDialog = lazyPart(() => import('./cde/IssueDialog').then((m) => m.IssueDialog), { title: 'Issue' });
 const CheckDialog = lazyPart(() => import('./cde/CheckDialog').then((m) => m.CheckDialog), { title: 'Check' });
 // IDS 1.0 (docs/ids.md): the project's .ids files run over the model.
@@ -231,7 +232,7 @@ const core: LapinModule = {
       // parallel; floors and ceilings trimmed or split by a line. The command line's TRIMEXTEND, SPLITELEMENT and OFFSET.
       { id: 'modify.trimExtend', label: 'Trim/Extend elements', icon: Scissors, run: () => void startCommand('TRIMEXTEND') },
       { id: 'modify.split', label: 'Split element', icon: SquareSplitHorizontal, run: () => void startCommand('SPLITELEMENT') },
-      { id: 'modify.offset', label: 'Offset element', icon: CopyPlus, run: () => void startCommand('OFFSET') },
+      { id: 'modify.offset', label: 'Offset element', alsoCalled: ['Offset'], icon: CopyPlus, run: () => void startCommand('OFFSET') },
       { id: 'modify.delete', label: 'Delete', alsoCalled: ['Erase'], icon: Trash2, run: () => void startCommand('ERASE') },
       // Pinned where it is, as Revit pins (decision 449): not moved, turned, mirrored nor deleted until unpinned.
       { id: 'modify.pin', label: 'Pin', icon: Pin, run: () => void pinSelection(true) },
@@ -241,17 +242,19 @@ const core: LapinModule = {
       { id: 'modify.moveToStorey', label: 'Move to storey', icon: MoveToStoreyIcon, run: () => useUi.setState({ dialog: 'moveToStorey' }) },
       // ArchiCAD's copy to stories (a tester's wish): the selection onto several storeys at once; COPYSTOREY on the command line.
       { id: 'modify.copyToStoreys', label: 'Copy to storeys', icon: CopyToStoreysIcon, run: () => useUi.setState({ dialog: 'copyToStoreys' }) },
-      // Groups (docs/groups.md), with Revit's keys.
+      // Imported references made Lapin elements, or Studio solids (decision 214).
+      { id: 'modify.convertToNative', label: 'Convert to native', icon: Wand2, shortcut: 'NV', run: () => void convertToNative() },
+    ] },
+    // The group tools in a panel of their own (a tester's wish, forum topic 257); their ids stay the ones the shortcuts and My tools know.
+    groups: { label: 'Group', tools: [
       { id: 'modify.group', label: 'Create group', icon: Group, shortcut: 'GP', run: () => void groupSelection() },
+    ], small: [
       { id: 'modify.component', label: 'Make component', icon: Boxes, shortcut: 'CK', run: () => void makeComponent() },
       { id: 'modify.unit', label: 'Make apartment type', icon: Building2, shortcut: 'CU', run: () => void makeUnit() },
-      // Detail sets of a component (forum #224): 2D drafting every instance draws, shown per view.
       { id: 'modify.detailSet', label: 'Add to detail set', icon: PenLine, shortcut: 'DS', run: () => void addToDetailSet() },
       { id: 'modify.ungroup', label: 'Ungroup', icon: Ungroup, shortcut: 'UG', run: () => void ungroupSelection() },
       { id: 'modify.editGroup', label: 'Edit group', icon: PencilRuler, shortcut: 'EG', run: editSelectedGroup },
       { id: 'modify.removeFromGroup', label: 'Remove from group', icon: SquareMinus, run: () => void removeFromGroup() },
-      // Imported references made Lapin elements, or Studio solids (decision 214).
-      { id: 'modify.convertToNative', label: 'Convert to native', icon: Wand2, shortcut: 'NV', run: () => void convertToNative() },
     ] },
   },
   tabs: [{
@@ -319,6 +322,8 @@ const core: LapinModule = {
         { id: 'manage.check', label: 'Check', icon: ClipboardCheck, run: () => useUi.setState({ dialog: 'cdeCheck' }) },
         // Information requirements as buildingSMART IDS 1.0 files, checked on the model (docs/ids.md).
         { id: 'manage.ids', label: 'IDS…', icon: ListChecks, run: () => useUi.setState({ dialog: 'ids' }) },
+        // Publish sets: named choices of sheets and views exported again in one step, as PDF and DXF (forum topic 225).
+        { id: 'manage.publish', label: 'Publish…', icon: Printer, run: () => useUi.setState({ dialog: 'publish' }) },
         { id: 'manage.issue', label: 'Issue…', icon: Send, run: () => useUi.setState({ dialog: 'cdeIssue' }) },
         // The remarks on the model, exchanged as BCF (docs/plan-cde.md, stage 2).
         { id: 'manage.remarks', label: 'Model remarks…', icon: MessageSquareText, run: () => useUi.setState({ dialog: 'remarks' }) },
@@ -460,7 +465,7 @@ const core: LapinModule = {
   },
   references: { LapinView: (n) => [...sectionRefs(n), ...sectionFarLine(n)] },
   placeSources: corePlaceSources,
-  dialogs: { insetPick: InsetPickDialog, placeCatalog: PlaceCatalogDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, materialStandards: MaterialStandardsDialog, materialGraphicsSets: MaterialGraphicsSetsDialog, hatchPatterns: HatchPatternsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, newLevels: NewLevelsDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, remote: RemoteDialog, remoteSave: SaveToServerDialog, remoteClone: OpenFromServerDialog, cdeAdmin: CdeAdminDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, markRules: MarkRulesDialog, typePacks: TypePacksDialog, projectTypes: ProjectTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, saveHatch: SaveHatchDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, ids: IdsDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, render: RenderDialog, [TEMP_DIM_DIALOG]: TempDimPropertiesDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog, elementGraphics: ElementGraphicsDialog, thermalSettings: ThermalSettingsDialog },
+  dialogs: { insetPick: InsetPickDialog, placeCatalog: PlaceCatalogDialog, components: ComponentsDialog, importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, materialStandards: MaterialStandardsDialog, materialGraphicsSets: MaterialGraphicsSetsDialog, hatchPatterns: HatchPatternsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, newLevels: NewLevelsDialog, shopDrawing: ShopDrawingDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, remote: RemoteDialog, remoteSave: SaveToServerDialog, remoteClone: OpenFromServerDialog, cdeAdmin: CdeAdminDialog, mapTypes: MapTypesDialog, fieldAliases: FieldAliasesDialog, markRules: MarkRulesDialog, typePacks: TypePacksDialog, projectTypes: ProjectTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, exportHtml: ExportHtmlDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, publish: PublishDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, symbols: SymbolsDialog, rules: RulesDialog, classifications: ClassificationsDialog, importTable: ImportTableDialog, saveSymbol: SaveSymbolDialog, saveHatch: SaveHatchDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, ids: IdsDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, render: RenderDialog, [TEMP_DIM_DIALOG]: TempDimPropertiesDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog, quickSelect: QuickSelectDialog, fieldsInspector: FieldsInspectorDialog, elementGraphics: ElementGraphicsDialog, thermalSettings: ThermalSettingsDialog },
   background: CoreBackground,
   // Angular temporary dimensions (decision 738): the angle a straight wall or beam selected makes where it meets another, and the segment's while one is drawn.
   planOverlays: [AngleDims],

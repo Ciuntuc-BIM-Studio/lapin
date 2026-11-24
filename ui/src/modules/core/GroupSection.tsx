@@ -36,7 +36,7 @@ export function GroupSection({ node }: { node: NodeDto }) {
         })}><Ungroup size={14} />Ungroup</button>
         <button type="button" className="btn" onClick={() => useUi.setState({ selected: members, selection: members[members.length - 1] ?? null })}><MousePointer2 size={14} />Select members</button>
         {instances.length > 0 && <button type="button" className="btn" data-action="component-instances" onClick={() => useUi.setState({ selected: instances, selection: node.id })}><Copy size={14} />Select instances</button>}
-        {instances.length > 0 && <button type="button" className="btn" data-action="component-detail" title="Select the 2D drafting drawn on a plan with this instance: every instance draws it" onClick={() => void addToDetailSet()}><PenLine size={14} />Add to detail set</button>}
+        {instances.length > 0 && <button type="button" className="btn" data-action="component-detail" title="Select the 2D drafting drawn on a plan, a section or an elevation with this instance: every instance draws it" onClick={() => void addToDetailSet()}><PenLine size={14} />Add to detail set</button>}
         {instances.length > 1 && <button type="button" className="btn" data-action="component-unique" title="This instance goes its own way; the others stay as they are" onClick={() => void execute('component.makeUnique', { id: node.id })}><Unlink size={14} />Make unique</button>}
         {/* An imported IFC's group keeps its file: a lighter copy of it, its GlobalIds and properties the same (docs/ifc-optimize.md). */}
         {isDesktop() && typeof node.props.source === 'string' && /\.ifc(zip)?$/i.test(node.props.source) && (

@@ -17,7 +17,8 @@ import { projectTypesFile } from '../modules/core/projectTypes';
 import { emptyPane, notify, notifyProblem, select, useUi } from '../app/store';
 import { usePrefs } from '../app/prefs';
 import { applyNewProjectStandard } from './newProjectStandard';
-import { fitAfterImport, poseKey } from '../viewport/camera';
+import { fitAfterImport, poseKey, useCamera } from '../viewport/camera';
+import { rememberThumb } from './recentThumbs';
 import { flushUserSettings } from '../app/userSettings';
 import { useCde } from './cdeServer';
 
@@ -360,6 +361,8 @@ export async function saveProject(as = false): Promise<boolean> {
   try {
     const saved = await engine.call('project.save', { path }, { timeoutMs: LONG_TIMEOUT_MS });
     remember(path);
+    // The 3D view's small picture for the start screen's recent list; it never holds up or fails the save.
+    rememberThumb(path, () => useCamera.getState().api?.snapshot?.(320));
     notify(`Saved ${projectTitle(path)}.`);
     reportWarnings(saved);
     return true;

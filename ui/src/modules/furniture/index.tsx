@@ -281,7 +281,7 @@ const furniture: LapinModule = {
   placeSources: [{ id: 'furniture', label: 'Furniture', order: 50, useEntries: useFurnitureEntries, manage: { label: 'My furniture…', run: () => useUi.setState({ dialog: 'furnitureLibrary' }) } }],
   tabs: [{
     // On the Interior tab with the finishes (decision 367).
-    id: 'interior', label: 'Interior', order: 25, include: ['modify'], i18nCtx: 'furniture',
+    id: 'interior', label: 'Interior', order: 25, include: ['modify', 'groups'], i18nCtx: 'furniture',
     groups: [
       { label: 'Furniture', tools: [place], small: [chairsAround] },
       { label: 'Kitchen', tools: [kitchen] },

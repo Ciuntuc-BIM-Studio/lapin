@@ -780,7 +780,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         {
             case "session.info" or "session.catalogue" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "view.fine" or "pointcloud.tiles" or "pointcloud.splats"
                 or "project.versions" or "project.compareVersions"
-                or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportStep" or "project.exportMesh" or "project.exportSurvey" or "project.exportHtml" or "project.htmlPlan":
+                or "export.pdf" or "export.dxf" or "export.publish" or "project.exportIfc" or "project.exportStep" or "project.exportMesh" or "project.exportSurvey" or "project.exportHtml" or "project.htmlPlan":
                 return null;
             case "doc.execute":
                 // A project's scripts are the host's (docs/plan-python-scripting.md §7): a guest never puts one in, alone or in a batch.
@@ -1490,6 +1490,25 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     : Views.Find(session.Model, id) is { } view ? Views.Dxf(session.Reader, view, (string?)p["coords"] ?? "internal")
                     : throw new CommandException("There is no such sheet or view.");
                 return (Deliver(bytes, "drawing.dxf"), null);
+            }
+            // A publish set's files (forum topic 225), or the sheets and views given: written into a folder (the desktop), else one file
+            // when only one is made and `zip` is not asked, else all of them as one zip, delivered as any export is.
+            case "export.publish":
+            {
+                var (sheets, views, formats, name, missing) = PublishSets.Request(session.Model, p);
+                var outs = PublishSets.Files(session.Reader, sheets, views, formats, name);
+                if ((string?)p["folder"] is { Length: > 0 } into)
+                {
+                    var folder = HostFiles.Check(into);
+                    Directory.CreateDirectory(folder);
+                    foreach (var o in outs) Lapin.Platform.AtomicFile.Write(RefuseOverRead(Path.Combine(folder, o.Name)), o.Bytes);
+                    return (new JsonObject { ["folder"] = folder, ["written"] = new JsonArray([.. outs.Select(o => (JsonNode)o.Name)]), ["missing"] = missing }, null);
+                }
+                var one = outs.Count == 1 && p["zip"]?.GetValue<bool>() != true;
+                var delivered = one ? Deliver(outs[0].Bytes, outs[0].Name) : Deliver(PublishSets.Zip(outs), PublishSets.FileStem(name) + ".zip");
+                delivered["files"] = new JsonArray([.. outs.Select(o => (JsonNode)o.Name)]);
+                delivered["missing"] = missing;
+                return (delivered, null);
             }
             // Bytes the interface made (a schedule's CSV or XLSX, exported types) written where the desktop's save dialog says (report #66).
             case "file.write":

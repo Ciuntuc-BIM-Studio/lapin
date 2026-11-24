@@ -76,7 +76,7 @@ const analysis: LapinModule = {
   summary: 'Load cases, loads, EN 1990 combinations, the linear static analysis of frames with its diagrams, and the IFC Structural Analysis View.',
   tabs: [{
     // The Structure tab's group.
-    id: 'structure', label: 'Structure', order: 30, include: ['modify'],
+    id: 'structure', label: 'Structure', order: 30, include: ['modify', 'groups'],
     groups: [{ label: 'Loads', tools: [cases, area, line, point, runTool], small: [importLoads, importCases] }],
   }],
   dialogs: { analysisLoads: LoadsDialog, analysisResults: ResultsDialog },

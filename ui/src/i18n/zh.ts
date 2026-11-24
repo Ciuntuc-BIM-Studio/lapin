@@ -2431,6 +2431,32 @@ export const ZH: Record<string, string> = {
   'Keep the files in the project file (and the project folder, when asked), the transmittal with them, and save a version of the project named after the issue': '将文件及传送单保存在项目文件中（如有要求，也保存到项目文件夹），并保存以该发布命名的项目版本',
   'Save the project first: an issue is kept as a version in its file.': '请先保存项目：发布内容以版本形式保存在其文件中。',
   'Keep the IFC in the project file': '将 IFC 保存在项目文件中',
+  // Publish sets (forum topic 225)
+  'Publish': '出图',
+  'Publish…': '出图…',
+  'Publish set': '出图集',
+  '(none: tick below)': '（无：请在下方勾选）',
+  'no longer in the project': '已不在项目中',
+  'Deleted since the set was saved': '自保存该集以来已删除',
+  'Set name': '集名称',
+  'Save set': '保存集',
+  'Keep the changes in this set': '保留对此集的更改',
+  'Save as new set': '另存为新集',
+  'Keep what is ticked as a new set, in the project': '将已勾选的内容作为新集保存在项目中',
+  'Delete this set (the sheets and views stay)': '删除此集（图纸和视图保留）',
+  'Delete set': '删除集',
+  'The project has no sheet.': '项目中没有图纸。',
+  'Each on a page of its own, at its scale.': '每个单独一页，按其比例。',
+  'Formats': '格式',
+  'Each as a PDF': '每个导出为 PDF',
+  'All in one PDF': '全部合并为一个 PDF',
+  'Each as a DXF': '每个导出为 DXF',
+  'Tick a sheet or a view and a format.': '请勾选图纸或视图以及格式。',
+  'file': '文件',
+  'On the desktop into a folder you pick; in a browser as one file, or one zip': '桌面版导出到您选择的文件夹；浏览器中导出为一个文件或一个 zip',
+  'Sheets and views exported in one step, as PDF and DXF. Save the choice as a set to export the same drawings again; an issue with its revision and transmittal is Manage → Issue…': '一步将图纸和视图导出为 PDF 和 DXF。将所选内容保存为集，即可再次导出相同的图纸；带修订和传送单的发布位于“管理 → 发布…”',
+  'The sheets of a publish set': '出图集的图纸',
+  'views stay out: an issue sends sheets': '视图不包含在内：发布只发送图纸',
   'A large model is tens of MB an issue: unticked, the IFC goes to the project folder only, and the project file keeps its name and hash': '大型模型每次发布占用数十 MB：取消勾选后，IFC 仅发送到项目文件夹，项目文件只保留其名称和哈希值',
   'Without a project folder, an IFC not kept in the project file goes nowhere: only its name and hash are recorded.': '没有项目文件夹时，未保存在项目文件中的 IFC 将无处可去：只记录其名称和哈希值。',
   'Where it goes': '保存位置',
@@ -2582,7 +2608,7 @@ export const ZH: Record<string, string> = {
   'Editing': '编辑中',
   // IFC and Fragments exchanged alike (docs/fragments.md, Exchange)
   'IFC and Fragments': 'IFC 和 Fragments', 'Other formats': '其他格式', 'Import Fragments': '导入 Fragments', 'Make apartment type': '创建户型', 'Apartment type': '户型', 'Select the walls, rooms and furniture of an apartment.': '请选择一套公寓的墙、房间和家具。', 'Made an apartment type: copies of it are instances. Double-click one to edit them all.': '已创建户型：其副本是实例。双击其中一个即可编辑全部。', 'Doors and windows from the room': '从房间设置门窗', 'Add door': '添加门', 'Add window': '添加窗', 'Take it away': '移除', 'From the middle of the side': '距边中点', 'Empty: as its type says': '留空：按类型', 'as its type': '按类型', 'No wall can take it here.': '此处没有可容纳它的墙。', 'It was deleted: any change here puts it back.': '已被删除：在此作任何更改即可恢复。', 'no wall': '无墙', 'Doors and windows chosen here, by type and side. Placing them on the walls goes on as before.': '在此按类型和边选择门窗。在墙上放置门窗的方式仍可使用。', 'No': '否', 'Yes': '是', 'Place it elsewhere: its own ids stay': '放到别处：其标识保持不变', 'Choose its file again and read it': '重新选择文件并读取', 'Place the linked project': '放置链接的项目', 'Linked project read again.': '已重新读取链接的项目。', 'A linked project changed: Manage → Links reads it again.': '链接的项目已更改：管理 → 链接可重新读取。', 'Link Lapin project…': '链接 Lapin 项目…', 'Placed at x': '放置于 x', 'Placed at y': '放置于 y', 'The source changed: read it again': '源文件已更改：重新读取', 'Make component': '创建组件', 'Components': '组件', 'Component': '组件', 'Select instances': '选择实例', 'Make unique': '设为唯一', 'An instance: what you change inside it changes in all of them. Move and turn it on its own.': '这是一个实例：内部的修改会同步到所有实例。可单独移动和旋转。', 'No components yet. Select walls, floors, rooms or Studio solids, then Modify → Make component.': '还没有组件。选择墙、楼板、房间或 Studio 实体，然后点击 修改 → 创建组件。', 'Instances': '实例', 'This instance goes its own way; the others stay as they are': '此实例独立出来；其他实例保持不变', 'Select walls, floors, rooms or Studio solids to make a component.': '请选择墙、楼板、房间或 Studio 实体来创建组件。', 'Made a component: copies of it are instances. Double-click one to edit them all.': '组件已创建：其副本都是实例。双击其中一个即可全部编辑。', 'Hand (Space)': '开启方向 (空格)', 'Other hand (Space)': '另一开启方向 (空格)', 'The side of the wall the cursor is on is the side it opens to': '光标所在的墙体一侧即为开启的一侧', 'Import BIM Open Schema…': '导入 BIM Open Schema…', 'Import BIM Open Schema': '导入 BIM Open Schema', 'Export IFC, Fragments or BOS…': '导出 IFC、Fragments 或 BOS…', 'Export IFC, Fragments or BOS': '导出 IFC、Fragments 或 BOS', 'Parquet tables, for data analysis and viewers': 'Parquet 数据表，用于数据分析和查看器', 'Export IFC or Fragments…': '导出 IFC 或 Fragments…', 'Export IFC or Fragments': '导出 IFC 或 Fragments', 'Export 3D (glTF, USD, DAE)…': '导出三维（glTF、USD、DAE）…', 'What to export': '导出内容', 'Reading the project…': '正在读取项目…', 'only what it shows': '仅其显示的内容', '3D view': '三维视图', 'Parts': '部件', 'grouped under their element': '归入所属图元之下', 'one body each': '各为一个主体', 'the project base point': '项目基点', 'the internal origin': '内部原点', 'the survey point (real coordinates)': '测量点（真实坐标）', 'the model for every BIM program': '适用于所有 BIM 程序的模型', 'That Open\'s format, for BIM web viewers': 'That Open 的格式，用于 BIM 网页查看器', 'The elements that stand at the end of this phase': '此阶段结束时存在的图元', 'What the 3D view does not draw now (the storeys it does not show, what is hidden for now) left out': '三维视图当前未绘制的内容（未显示的楼层、临时隐藏的内容）将被排除', 'A layered wall\'s layers, a window\'s frame and glass: parts under their element, or one body each': '分层墙的各层、窗的框和玻璃：作为所属图元下的部件，或各为一个主体',
-  'Add to detail set': '添加到详图集', 'Detail set': '详图集', 'Detail sets': '详图集', 'Detail set of components': '组件的详图集', 'Select the 2D drafting drawn on a plan with this instance: every instance draws it': '将平面图上的二维图形与此实例一起选择：每个实例都会绘制它', 'Select the 2D drafting (lines, hatches, texts, symbols, tags, dimensions) drawn on a plan, together with the instance of a component, or open the instance first.': '请将平面图上的二维图形（线、填充、文字、符号、标记、尺寸）与组件的实例一起选择，或先打开该实例。', 'Added to the detail set: every instance draws it. Choose per view which sets show in Visibility / Graphics → Annotations.': '已添加到详图集：每个实例都会绘制它。在 可见性 / 图形 → 注释 中为每个视图选择显示哪些集。',
+  'Add to detail set': '添加到详图集', 'Detail set': '详图集', 'Detail sets': '详图集', 'Detail set of components': '组件的详图集', 'Select the 2D drafting drawn on a plan, a section or an elevation with this instance: every instance draws it': '将平面图、剖面图或立面图上的二维图形与此实例一起选择：每个实例都会绘制它', 'Select the 2D drafting (lines, hatches, texts, symbols, tags, dimensions) drawn on a plan, a section or an elevation, together with the instance of a component, or open the instance first.': '请将平面图、剖面图或立面图上的二维图形（线、填充、文字、符号、标记、尺寸）与组件的实例一起选择，或先打开该实例。', 'Added to the detail set: every instance draws it. Choose per view which sets show in Visibility / Graphics → Annotations.': '已添加到详图集：每个实例都会绘制它。在 可见性 / 图形 → 注释 中为每个视图选择显示哪些集。',
   // Roads on alignments and civil linework (decision 213)
   'Ask Me': "问我", 'Road from linework': "由线条生成道路", 'Breakline from linework': "由线条生成断裂线", 'Road': "道路", 'Corridor…': "道路廊道…", 'Terrain from LandXML': "由 LandXML 生成地形", 'Curves': "曲线",
   // An import made editable (decision 214)
@@ -6563,6 +6589,7 @@ export const ZH: Record<string, string> = {
   "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "跳过：只更改项目中的材料。创建：项目中缺少其材料的行会创建该材料。",
   // The diagram display (View → Display quality).
   'Diagram': '图解', 'Soft volumes like a card model, with the sun’s soft shadows and thin light edges: for massing and volume studies.': '像卡纸模型一样柔和的体量，带有太阳的柔和阴影和细而浅的边线：用于体量研究。', 'White model': '白模', 'Every element a light white-grey.': '每个构件都是浅白灰色。', 'Pastel by category': '按类别柔和色', 'Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).': '墙、楼板、屋顶、结构、门窗、场地和绿化各用一种柔和的淡色（Preferences → Display 可修改）。', 'Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.': '仅在屏幕上：图纸、图幅和导出仍保持原有颜色。在 Visibility/Graphics 中设置的颜色仍然优先。', 'Diagram colours': '图解颜色', 'The pastel of each category in the Diagram display (View → Display quality). On screen only.': '“图解”显示中每个类别的柔和色（View → Display quality）。仅在屏幕上。', 'Slabs and floors': '楼板和地面', 'Columns and beams': '柱和梁', 'Terrain and site': '地形和场地', 'Vegetation and furniture': '植被和家具', 'Everything else': '其他所有',
+  'Press WA to draw walls; every element is native IFC.': '按 WA 绘制墙体；每个元素都是原生 IFC。',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
@@ -6625,6 +6652,10 @@ const S5D_TAILS: Record<string, string> = {
   'A row\'s text: {key}, {name}, {description} (the first line of the material\'s), {category}, or any parameter of the material ({Finish}); a part between — that comes out empty is left out': '行的文字：{key}、{name}、{description}（材料说明的第一行）、{category}，或材料的任意参数（{Finish}）；— 之间结果为空的部分会省略',
 };
 export const ZH_PATTERNS: Language['patterns'] = [
+  // Publish sets (forum topic 225)
+  [/^Saved the publish set (.+)\.$/, (m) => `已保存出图集 ${m[1]}。`],
+  [/^Exported (\d+) files into (.+)\.$/, (m) => `已导出 ${m[1]} 个文件到 ${m[2]}。`],
+  [/^(\d+) sheets or views of the set are no longer in the project\.$/, (m) => `集中有 ${m[1]} 张图纸或视图已不在项目中。`],
   // What the engine is still working on, by name (app report #187).
   [/^Still working on: (.+)…$/, (m) => { const t = ZH[m[1]] ?? m[1]; return `仍在处理：${t}…`; }],
   [/^(.+) is still running: its result shows when it lands\.$/, (m) => { const t = ZH[m[1]] ?? m[1]; return `${t} 仍在运行：完成后会显示结果。`; }],

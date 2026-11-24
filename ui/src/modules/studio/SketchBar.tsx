@@ -6,7 +6,8 @@
  */
 
 import type { ComponentType } from 'react';
-import { ArrowRightToLine, Check, Circle, CopyPlus, CornerUpRight, Egg, Eraser, Grid3x3, Redo2, RectangleHorizontal, Scissors, Slash, Spline, Scan, Type, X, Box } from 'lucide-react';
+import { ArrowRightToLine, Check, Circle, CopyPlus, CornerUpRight, Eraser, Grid3x3, Redo2, RectangleHorizontal, Scissors, Slash, Spline, Scan, Type, X, Box } from 'lucide-react';
+import { EllipseIcon } from '../../icons';
 import { useUi } from '../../app/store';
 import { useSession } from '../../engine/session';
 import { chipOf } from '../../viewport/cad/constraints';
@@ -21,7 +22,7 @@ type Icon = ComponentType<{ size?: number | string }>;
 /** The Draft commands' labels and icons, as the Draft tab has them. */
 export const DRAFT_TOOLS: Record<string, { label: string; icon: Icon }> = {
   LINE: { label: 'Line', icon: Slash }, PLINE: { label: 'Polyline', icon: Spline }, RECTANGLE: { label: 'Rectangle', icon: RectangleHorizontal },
-  CIRCLE: { label: 'Circle', icon: Circle }, ARC: { label: 'Arc', icon: Redo2 }, ELLIPSE: { label: 'Ellipse', icon: Egg },
+  CIRCLE: { label: 'Circle', icon: Circle }, ARC: { label: 'Arc', icon: Redo2 }, ELLIPSE: { label: 'Ellipse', icon: EllipseIcon },
   OFFSET: { label: 'Offset', icon: CopyPlus }, TRIM: { label: 'Trim', icon: Scissors }, EXTEND: { label: 'Extend', icon: ArrowRightToLine },
   FILLET: { label: 'Fillet', icon: CornerUpRight }, CHAMFER: { label: 'Chamfer', icon: CornerUpRight }, ERASE: { label: 'Erase', icon: Eraser },
   TEXT: { label: 'Text', icon: Type }, HATCH: { label: 'Hatch', icon: Grid3x3 },

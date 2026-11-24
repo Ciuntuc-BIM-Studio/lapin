@@ -260,7 +260,8 @@ public static class DraftCommands
             {
                 var e = Drafts.Require(ctx.Model, id);
                 var attrs = e.CloneAttrs();
-                if (a["shape"] != null) attrs["shape"] = ShapeArg(a["shape"]).ToJson();
+                // Given in a view's drawing: a component's side detail takes it to its kept points (docs/components.md, Sides).
+                if (a["shape"] != null) attrs["shape"] = (Components.FromView(ctx, e, (string?)a["viewId"]) is { } back ? AnnotationPlacement.Map(ShapeArg(a["shape"]), back) : ShapeArg(a["shape"])).ToJson();
                 if ((string?)a["layer"] is { } layer)
                 {
                     if (Drafts.Layers(ctx.Model).All(l => l.Name != layer)) throw new CommandException($"There is no layer „{layer}”.");

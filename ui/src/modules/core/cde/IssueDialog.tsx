@@ -30,6 +30,7 @@ import { PendingDialog } from '../PendingDialog';
 import { documentPictures } from '../documents/documents';
 import { IssueOnServer } from '../CdePublish';
 import { t } from '../../../i18n';
+import { publishSets, type PublishSet } from '../publish/publish';
 
 export function IssueDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -57,6 +58,9 @@ export function IssueDialog() {
   // What the issue is: '' a new issue, else a new revision of the issue with this GlobalId; proposed from what is chosen until the user picks.
   const [target, setTarget] = useState('');
   const [picked, setPicked] = useState(false);
+  // Publish sets (forum topic 225): one picked ticks its sheets; its views stay out (an issue sends sheets).
+  const [publish, setPublish] = useState<PublishSet[]>([]);
+  const [fromSet, setFromSet] = useState('');
   const [phase, dispatch] = useReducer(issuePhase, { kind: 'form' });
   const done = phase.kind === 'done' ? phase.result : null;
   const busy = phase.kind === 'issuing';
@@ -74,6 +78,13 @@ export function IssueDialog() {
     return () => { live = false; };
   }, [nodes]);
   useEffect(() => { setChosen((c) => c ?? new Set(sheets.map((x) => x.id))); }, [sheets]);
+  useEffect(() => { let live = true; void publishSets().then((r) => { if (live) setPublish(r); }); return () => { live = false; }; }, [nodes]);
+  const takeSet = (id: string) => {
+    setFromSet(id);
+    const ps = publish.find((x) => x.id === id);
+    if (ps) setChosen(new Set(ps.sheets));
+  };
+  const fromSetViews = publish.find((x) => x.id === fromSet)?.views.length ?? 0;
   const ids = useMemo(() => sheets.filter((x) => chosen?.has(x.id)).map((x) => x.id), [sheets, chosen]);
   // The written documents go too, all ticked at first (docs/plan-documents.md).
   useEffect(() => { setChosenDocs((c) => c ?? (docs.length ? new Set(docs.map((x) => x.id)) : null)); }, [docs]);
@@ -117,7 +128,7 @@ export function IssueDialog() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId, picked, showing, names]);
 
-  const toggle = (id: string) => setChosen((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggle = (id: string) => { setFromSet(''); setChosen((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; }); };
   const toggleDoc = (id: string) => setChosenDocs((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const chooseStatus = (code: string) => { setStatus(code); setContainer(containerFor(code)); };
   const chooseKind = (c: boolean) => { setContractual(c); setRevision(revisionFor(targetSeries, c, s?.lastRevision ?? null)); };
@@ -218,6 +229,15 @@ export function IssueDialog() {
               <label className="row"><span className="muted small loc-label">Note</span><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="On the transmittal (optional)" aria-label="Note" /></label>
             </div>
             <h4>What goes</h4>
+            {publish.length > 0 && (
+              <label className="row small"><span className="muted">The sheets of a publish set</span>
+                <select value={fromSet} onChange={(e) => takeSet(e.target.value)} aria-label="Publish set" data-field="issue-publish-set">
+                  <option value="">—</option>
+                  {publish.map((x) => <option key={x.id} value={x.id} data-no-i18n>{x.name}</option>)}
+                </select>
+                {fromSetViews > 0 && <span className="muted"><span data-no-i18n>{fromSetViews}</span> <span>views stay out: an issue sends sheets</span></span>}
+              </label>
+            )}
             <div className="cde-sheets">
               {sheets.length === 0 && docs.length === 0 && <p className="muted small">The project has no sheet; the model alone can go.</p>}
               {sheets.map((x) => {

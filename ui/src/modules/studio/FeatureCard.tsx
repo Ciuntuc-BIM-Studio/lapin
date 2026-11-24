@@ -29,7 +29,8 @@ const solidsSelected = (node: NodeDto): string[] => {
 
 /** The class's fields a solid shows, by what it is made by (a sweep has no depth, a box no twist). */
 export function featureFieldKeys(node: NodeDto): string[] | null {
-  const common = ['cutPriority', 'exportAs'];
+  // Its material first, whatever made it (forum topics 60 and 259: the field was added after this list and never shown).
+  const common = ['material', 'cutPriority', 'exportAs'];
   switch (node.props.operation) {
     case 'extrude': return ['depth', 'offset', 'symmetric', 'taper', ...common];
     case 'sweep': return ['offset', 'place', 'placeOffset', 'twist', 'scaleEnd', 'rise', 'turns', ...common];

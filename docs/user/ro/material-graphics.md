@@ -155,7 +155,7 @@ Ca să schimbi hașura unui singur element într-o singură vedere (scara hașur
 
 ### Salvează ca model de hașură
 
-Desenează modelul cu linii, polilinii, arce și cercuri în orice vedere (o țesătură de cărămizi, un rost de placă), selectează-le și scrie **SAVEHATCH**. Fă clic pe două colțuri pentru celulă (sau <kbd>Enter</kbd> pentru limitele desenului), apoi dă-i un nume și alege unitățile **Desen** sau **Mărime reală**.
+Desenează modelul cu linii, polilinii, arce și cercuri în orice vedere (o țesătură de cărămizi, un rost de placă), selectează-le și alege **Desen → Umplutură → Salvează ca model de hașură** (sau scrie **SAVEHATCH**). Fă clic pe două colțuri pentru celulă (sau <kbd>Enter</kbd> pentru limitele desenului), apoi dă-i un nume și alege unitățile **Desen** sau **Mărime reală**.
 
 ![Salvarea liniilor desenate ca model](shots/save-hatch.webp)
 

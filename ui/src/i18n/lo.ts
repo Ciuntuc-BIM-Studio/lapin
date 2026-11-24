@@ -2430,6 +2430,32 @@ export const LO: Record<string, string> = {
   'Fix what blocks, then come back: the issue cannot go.': 'ກະລຸນາແກ້ໄຂສິ່ງທີ່ກີດຂວາງ ແລ້ວກັບມາໃໝ່: ການອອກເອກະສານບໍ່ສາມາດດຳເນີນໄດ້.', 'Issue anyway, with the warnings': 'ອອກເອກະສານເລີຍ ພ້ອມຄຳເຕືອນ',
   'Issued': 'ອອກແລ້ວ', 'files': 'ຟາຍ', 'Issuing…': 'ກຳລັງອອກເອກະສານ…', 'Keep the files in the project file (and the project folder, when asked), the transmittal with them, and save a version of the project named after the issue': 'ເກັບຟາຍໄວ້ໃນຟາຍໂຄງການ (ແລະ ໂຟນເດີໂຄງການ ເມື່ອຮ້ອງຂໍ), ພ້ອມໃບນຳສົ່ງ, ແລະ ບັນທຶກເວີຊັນຂອງໂຄງການຕາມຊື່ການອອກເອກະສານ',
   'Save the project first: an issue is kept as a version in its file.': 'ກະລຸນາບັນທຶກໂຄງການກ່ອນ: ການອອກເອກະສານຖືກເກັບເປັນເວີຊັນໃນຟາຍຂອງມັນ.', 'Keep the IFC in the project file': 'ເກັບ IFC ໄວ້ໃນຟາຍໂຄງການ',
+  // Publish sets (forum topic 225)
+  'Publish': 'ເຜີຍແຜ່',
+  'Publish…': 'ເຜີຍແຜ່…',
+  'Publish set': 'ຊຸດເຜີຍແຜ່',
+  '(none: tick below)': '(ບໍ່ມີ: ໝາຍຖືກຂ້າງລຸ່ມ)',
+  'no longer in the project': 'ບໍ່ຢູ່ໃນໂຄງການແລ້ວ',
+  'Deleted since the set was saved': 'ລຶບແລ້ວຕັ້ງແຕ່ບັນທຶກຊຸດ',
+  'Set name': 'ຊື່ຊຸດ',
+  'Save set': 'ບັນທຶກຊຸດ',
+  'Keep the changes in this set': 'ເກັບການປ່ຽນແປງໄວ້ໃນຊຸດນີ້',
+  'Save as new set': 'ບັນທຶກເປັນຊຸດໃໝ່',
+  'Keep what is ticked as a new set, in the project': 'ເກັບສິ່ງທີ່ໝາຍຖືກໄວ້ເປັນຊຸດໃໝ່ ໃນໂຄງການ',
+  'Delete this set (the sheets and views stay)': 'ລຶບຊຸດນີ້ (ແຜ່ນແບບ ແລະ ມຸມມອງຍັງຢູ່)',
+  'Delete set': 'ລຶບຊຸດ',
+  'The project has no sheet.': 'ໂຄງການບໍ່ມີແຜ່ນແບບ.',
+  'Each on a page of its own, at its scale.': 'ແຕ່ລະອັນຢູ່ໜ້າຂອງຕົນເອງ ຕາມມາດຕາສ່ວນຂອງມັນ.',
+  'Formats': 'ຮູບແບບ',
+  'Each as a PDF': 'ແຕ່ລະອັນເປັນ PDF',
+  'All in one PDF': 'ທັງໝົດໃນ PDF ດຽວ',
+  'Each as a DXF': 'ແຕ່ລະອັນເປັນ DXF',
+  'Tick a sheet or a view and a format.': 'ໝາຍຖືກແຜ່ນແບບ ຫຼື ມຸມມອງ ແລະ ຮູບແບບ.',
+  'file': 'ຟາຍ',
+  'On the desktop into a folder you pick; in a browser as one file, or one zip': 'ໃນເດັສທັອບໄປຍັງໂຟນເດີທີ່ທ່ານເລືອກ; ໃນບຣາວເຊີເປັນຟາຍດຽວ ຫຼື zip ດຽວ',
+  'Sheets and views exported in one step, as PDF and DXF. Save the choice as a set to export the same drawings again; an issue with its revision and transmittal is Manage → Issue…': 'ສົ່ງອອກແຜ່ນແບບ ແລະ ມຸມມອງໃນຂັ້ນຕອນດຽວ ເປັນ PDF ແລະ DXF. ບັນທຶກທາງເລືອກເປັນຊຸດ ເພື່ອສົ່ງອອກແບບດຽວກັນອີກ; ການອອກເອກະສານພ້ອມການແກ້ໄຂ ແລະ ໃບສົ່ງມອບຢູ່ທີ່ ຈັດການ → ການອອກເອກະສານ…',
+  'The sheets of a publish set': 'ແຜ່ນແບບຂອງຊຸດເຜີຍແຜ່',
+  'views stay out: an issue sends sheets': 'ມຸມມອງບໍ່ລວມ: ການອອກເອກະສານສົ່ງແຜ່ນແບບ',
   'A large model is tens of MB an issue: unticked, the IFC goes to the project folder only, and the project file keeps its name and hash': 'ແບບຈຳລອງໃຫຍ່ມີຂະໜາດຫຼາຍສິບ MB ຕໍ່ການອອກເອກະສານ: ເມື່ອບໍ່ໝາຍ, IFC ຈະໄປທີ່ໂຟນເດີໂຄງການເທົ່ານັ້ນ, ແລະ ຟາຍໂຄງການເກັບພຽງຊື່ ແລະ hash ຂອງມັນ',
   'Without a project folder, an IFC not kept in the project file goes nowhere: only its name and hash are recorded.': 'ຖ້າບໍ່ມີໂຟນເດີໂຄງການ, IFC ທີ່ບໍ່ໄດ້ເກັບໄວ້ໃນຟາຍໂຄງການຈະບໍ່ໄປໃສ: ບັນທຶກພຽງຊື່ ແລະ hash ຂອງມັນ.',
   'Where it goes': 'ບ່ອນທີ່ມັນໄປ', 'Into the project file, with the issue\'s record and a version named after it: open, save or download the files later from Manage → Project folder.': 'ເຂົ້າໃນຟາຍໂຄງການ, ພ້ອມບັນທຶກການອອກເອກະສານ ແລະ ເວີຊັນຕາມຊື່ຂອງມັນ: ເປີດ, ບັນທຶກ ຫຼື ດາວໂຫຼດຟາຍພາຍຫຼັງຈາກ Manage → Project folder.',
@@ -2626,7 +2652,7 @@ export const LO: Record<string, string> = {
   'IFC and Fragments': 'IFC ແລະ Fragments',
   'Other formats': 'ຮູບແບບອື່ນໆ',
   'Import Fragments': 'ນຳເຂົ້າ Fragments', 'Make apartment type': 'ສ້າງປະເພດອາພາດເມັນ', 'Apartment type': 'ປະເພດອາພາດເມັນ', 'Select the walls, rooms and furniture of an apartment.': 'ເລືອກຝາ, ຫ້ອງ ແລະເຟີນິເຈີຂອງອາພາດເມັນ.', 'Made an apartment type: copies of it are instances. Double-click one to edit them all.': 'ສ້າງປະເພດອາພາດເມັນແລ້ວ: ສຳເນົາແມ່ນອິນສະແຕນ. ຄລິກສອງເທື່ອໃສ່ອັນໜຶ່ງເພື່ອແກ້ໄຂທັງໝົດ.', 'Doors and windows from the room': 'ປະຕູແລະປ່ອງຢ້ຽມຈາກຫ້ອງ', 'Add door': 'ເພີ່ມປະຕູ', 'Add window': 'ເພີ່ມປ່ອງຢ້ຽມ', 'Take it away': 'ເອົາອອກ', 'From the middle of the side': 'ຈາກກາງຂອງດ້ານ', 'Empty: as its type says': 'ຫວ່າງ: ຕາມປະເພດ', 'as its type': 'ຕາມປະເພດ', 'No wall can take it here.': 'ບໍ່ມີຝາຢູ່ບ່ອນນີ້ທີ່ຮັບມັນໄດ້.', 'It was deleted: any change here puts it back.': 'ຖືກລຶບແລ້ວ: ການປ່ຽນແປງໃດໆຢູ່ນີ້ຈະເອົາຄືນ.', 'no wall': 'ບໍ່ມີຝາ', 'Doors and windows chosen here, by type and side. Placing them on the walls goes on as before.': 'ເລືອກປະຕູແລະປ່ອງຢ້ຽມຢູ່ນີ້ ຕາມປະເພດແລະດ້ານ. ການວາງໃສ່ຝາຍັງໃຊ້ໄດ້.', 'No': 'ບໍ່', 'Yes': 'ແມ່ນ', 'Place it elsewhere: its own ids stay': 'ວາງໄວ້ບ່ອນອື່ນ: ລະຫັດຂອງມັນຍັງຄົງເດີມ', 'Choose its file again and read it': 'ເລືອກໄຟລ໌ຄືນໃໝ່ແລະອ່ານ', 'Place the linked project': 'ວາງໂຄງການທີ່ເຊື່ອມໂຍງ', 'Linked project read again.': 'ອ່ານໂຄງການທີ່ເຊື່ອມໂຍງຄືນໃໝ່ແລ້ວ.', 'A linked project changed: Manage → Links reads it again.': 'ໂຄງການທີ່ເຊື່ອມໂຍງມີການປ່ຽນແປງ: ຈັດການ → ການເຊື່ອມໂຍງ ຈະອ່ານຄືນໃໝ່.', 'Link Lapin project…': 'ເຊື່ອມໂຄງການ Lapin…', 'Placed at x': 'ວາງທີ່ x', 'Placed at y': 'ວາງທີ່ y', 'The source changed: read it again': 'ຕົ້ນສະບັບປ່ຽນແລ້ວ: ອ່ານໃໝ່', 'Make component': 'ສ້າງອົງປະກອບ', 'Components': 'ອົງປະກອບ', 'Component': 'ອົງປະກອບ', 'Select instances': 'ເລືອກສຳເນົາທັງໝົດ', 'Make unique': 'ແຍກອອກຕ່າງຫາກ', 'An instance: what you change inside it changes in all of them. Move and turn it on its own.': 'ສຳເນົາໜຶ່ງ: ສິ່ງທີ່ປ່ຽນຂ້າງໃນຈະປ່ຽນໃນທຸກອັນ. ຍ້າຍ ແລະ ໝຸນແຍກກັນໄດ້.', 'No components yet. Select walls, floors, rooms or Studio solids, then Modify → Make component.': 'ຍັງບໍ່ມີອົງປະກອບ. ເລືອກຝາ, ພື້ນ, ຫ້ອງ ຫຼື ຮູບທຣົງ Studio ແລ້ວສ້າງອົງປະກອບ.', 'Instances': 'ສຳເນົາ', 'This instance goes its own way; the others stay as they are': 'ສຳເນົານີ້ແຍກໄປຕ່າງຫາກ; ອັນອື່ນຄົງເດີມ', 'Select walls, floors, rooms or Studio solids to make a component.': 'ເລືອກຝາ, ພື້ນ, ຫ້ອງ ຫຼື ຮູບທຣົງ Studio ເພື່ອສ້າງອົງປະກອບ.', 'Made a component: copies of it are instances. Double-click one to edit them all.': 'ສ້າງອົງປະກອບແລ້ວ: ສຳເນົາຂອງມັນເຊື່ອມກັນ. ຄລິກສອງເທື່ອເພື່ອແກ້ໄຂທັງໝົດ.', 'Hand (Space)': 'ມື (Space)', 'Other hand (Space)': 'ອີກມືໜຶ່ງ (Space)', 'The side of the wall the cursor is on is the side it opens to': 'ດ້ານຂອງຝາທີ່ເຄີເຊີຢູ່ ແມ່ນດ້ານທີ່ມັນເປີດໄປ', 'Import BIM Open Schema…': 'ນຳເຂົ້າ BIM Open Schema…', 'Import BIM Open Schema': 'ນຳເຂົ້າ BIM Open Schema', 'Export IFC, Fragments or BOS…': 'ສົ່ງອອກ IFC, Fragments ຫຼື BOS…', 'Export IFC, Fragments or BOS': 'ສົ່ງອອກ IFC, Fragments ຫຼື BOS', 'Parquet tables, for data analysis and viewers': 'ຕາຕະລາງ Parquet ສຳລັບການວິເຄາະຂໍ້ມູນ ແລະ ໂປຣແກຣມເບິ່ງ',
-  'Add to detail set': 'ເພີ່ມໃສ່ຊຸດລາຍລະອຽດ', 'Detail set': 'ຊຸດລາຍລະອຽດ', 'Detail sets': 'ຊຸດລາຍລະອຽດ', 'Detail set of components': 'ຊຸດລາຍລະອຽດຂອງອົງປະກອບ', 'Select the 2D drafting drawn on a plan with this instance: every instance draws it': 'ເລືອກແບບ 2D ຈາກແຜນຜັງພ້ອມກັບອິນສະແຕນນີ້: ທຸກອິນສະແຕນຈະແຕ້ມມັນ', 'Select the 2D drafting (lines, hatches, texts, symbols, tags, dimensions) drawn on a plan, together with the instance of a component, or open the instance first.': 'ເລືອກແບບ 2D (ເສັ້ນ, ລາຍຂີດ, ຂໍ້ຄວາມ, ສັນຍາລັກ, ປ້າຍ, ຂະໜາດ) ຈາກແຜນຜັງພ້ອມກັບອິນສະແຕນຂອງອົງປະກອບ, ຫຼື ເປີດອິນສະແຕນກ່ອນ.', 'Added to the detail set: every instance draws it. Choose per view which sets show in Visibility / Graphics → Annotations.': 'ເພີ່ມໃສ່ຊຸດລາຍລະອຽດແລ້ວ: ທຸກອິນສະແຕນຈະແຕ້ມມັນ. ເລືອກໃນແຕ່ລະມຸມມອງວ່າຊຸດໃດສະແດງ ໃນ ການເບິ່ງເຫັນ / ກຣາຟິກ → ໝາຍເຫດ.',
+  'Add to detail set': 'ເພີ່ມໃສ່ຊຸດລາຍລະອຽດ', 'Detail set': 'ຊຸດລາຍລະອຽດ', 'Detail sets': 'ຊຸດລາຍລະອຽດ', 'Detail set of components': 'ຊຸດລາຍລະອຽດຂອງອົງປະກອບ', 'Select the 2D drafting drawn on a plan, a section or an elevation with this instance: every instance draws it': 'ເລືອກແບບ 2D ຈາກແຜນຜັງ, ຮູບຕັດ ຫຼື ຮູບດ້ານ ພ້ອມກັບອິນສະແຕນນີ້: ທຸກອິນສະແຕນຈະແຕ້ມມັນ', 'Select the 2D drafting (lines, hatches, texts, symbols, tags, dimensions) drawn on a plan, a section or an elevation, together with the instance of a component, or open the instance first.': 'ເລືອກແບບ 2D (ເສັ້ນ, ລາຍຂີດ, ຂໍ້ຄວາມ, ສັນຍາລັກ, ປ້າຍ, ຂະໜາດ) ຈາກແຜນຜັງ, ຮູບຕັດ ຫຼື ຮູບດ້ານ ພ້ອມກັບອິນສະແຕນຂອງອົງປະກອບ, ຫຼື ເປີດອິນສະແຕນກ່ອນ.', 'Added to the detail set: every instance draws it. Choose per view which sets show in Visibility / Graphics → Annotations.': 'ເພີ່ມໃສ່ຊຸດລາຍລະອຽດແລ້ວ: ທຸກອິນສະແຕນຈະແຕ້ມມັນ. ເລືອກໃນແຕ່ລະມຸມມອງວ່າຊຸດໃດສະແດງ ໃນ ການເບິ່ງເຫັນ / ກຣາຟິກ → ໝາຍເຫດ.',
   'Export IFC or Fragments…': 'ສົ່ງອອກ IFC ຫຼື Fragments…',
   'Export IFC or Fragments': 'ສົ່ງອອກ IFC ຫຼື Fragments',
   'Export 3D (glTF, USD, DAE)…': 'ສົ່ງອອກ 3D (glTF, USD, DAE)…',
@@ -6620,6 +6646,7 @@ export const LO: Record<string, string> = {
   "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "ຂ້າມ: ມີແຕ່ວັດສະດຸຂອງໂຄງການທີ່ປ່ຽນ. ສ້າງ: ແຖວທີ່ວັດສະດຸບໍ່ມີໃນໂຄງການຈະສ້າງມັນ.",
   // The diagram display (View → Display quality).
   'Diagram': 'ແຜນພາບ', 'Soft volumes like a card model, with the sun’s soft shadows and thin light edges: for massing and volume studies.': 'ປະລິມານນຸ່ມນວນຄືແບບຈຳລອງກະດາດແຂງ ມີເງົາອ່ອນຂອງດວງຕາເວັນ ແລະ ຂອບບາງສີອ່ອນ: ສຳລັບການສຶກສາມວນປະລິມານ.', 'White model': 'ແບບຈຳລອງສີຂາວ', 'Every element a light white-grey.': 'ທຸກອົງປະກອບເປັນສີຂາວເທົາອ່ອນ.', 'Pastel by category': 'ສີພາສເຕວຕາມໝວດ', 'Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).': 'ຝາ, ພື້ນ, ຫຼັງຄາ, ໂຄງສ້າງ, ປະຕູ ແລະ ປ່ອງຢ້ຽມ, ພື້ນທີ່ ແລະ ພືດພັນ ແຕ່ລະອັນມີສີພາສເຕວອ່ອນໆ (Preferences → Display ແກ້ໄຂໄດ້).', 'Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.': 'ສະເພາະໃນໜ້າຈໍ: ແບບແປນ, ແຜ່ນ ແລະ ການສົ່ງອອກຍັງຄົງສີເດີມ. ສີທີ່ຕັ້ງໃນ Visibility/Graphics ຍັງມີຄວາມສຳຄັນກວ່າ.', 'Diagram colours': 'ສີຂອງແຜນພາບ', 'The pastel of each category in the Diagram display (View → Display quality). On screen only.': 'ສີພາສເຕວຂອງແຕ່ລະໝວດໃນການສະແດງແຜນພາບ (View → Display quality). ສະເພາະໃນໜ້າຈໍ.', 'Slabs and floors': 'ພື້ນຊັ້ນ ແລະ ພື້ນເຮືອນ', 'Columns and beams': 'ເສົາ ແລະ ຄານ', 'Terrain and site': 'ພື້ນທີ່ດິນ ແລະ ສະຖານທີ່', 'Vegetation and furniture': 'ພືດພັນ ແລະ ເຄື່ອງເຮືອນ', 'Everything else': 'ທຸກຢ່າງອື່ນ',
+  'Press WA to draw walls; every element is native IFC.': 'ກົດ WA ເພື່ອແຕ້ມຝາ; ທຸກອົງປະກອບເປັນ IFC ແບບເນທີຟ.',
 };
 
 /** Phrases with a number or a name in them. */
@@ -6683,6 +6710,10 @@ const S5D_TAILS: Record<string, string> = {
   'A row\'s text: {key}, {name}, {description} (the first line of the material\'s), {category}, or any parameter of the material ({Finish}); a part between — that comes out empty is left out': 'ຂໍ້ຄວາມຂອງແຖວ: {key}, {name}, {description} (ແຖວທຳອິດຂອງຄຳອະທິບາຍວັດສະດຸ), {category}, ຫຼື ພາລາມິເຕີໃດໜຶ່ງຂອງວັດສະດຸ ({Finish}); ສ່ວນລະຫວ່າງ — ທີ່ອອກມາວ່າງຈະຖືກຕັດອອກ',
 };
 export const LO_PATTERNS: Language['patterns'] = [
+  // Publish sets (forum topic 225)
+  [/^Saved the publish set (.+)\.$/, (m) => `ບັນທຶກຊຸດເຜີຍແຜ່ ${m[1]} ແລ້ວ.`],
+  [/^Exported (\d+) files into (.+)\.$/, (m) => `ສົ່ງອອກ ${m[1]} ຟາຍໄປຍັງ ${m[2]} ແລ້ວ.`],
+  [/^(\d+) sheets or views of the set are no longer in the project\.$/, (m) => `ແຜ່ນແບບ ຫຼື ມຸມມອງ ${m[1]} ຂອງຊຸດບໍ່ຢູ່ໃນໂຄງການແລ້ວ.`],
   // What the engine is still working on, by name (app report #187).
   [/^Still working on: (.+)…$/, (m) => { const t = LO[m[1]] ?? m[1]; return `ຍັງເຮັດວຽກຢູ່: ${t}…`; }],
   [/^(.+) is still running: its result shows when it lands\.$/, (m) => { const t = LO[m[1]] ?? m[1]; return `${t} ຍັງເຮັດວຽກຢູ່: ຜົນຈະສະແດງເມື່ອສຳເລັດ.`; }],

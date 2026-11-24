@@ -855,7 +855,7 @@ const studio: LapinModule = {
     // Beside Save as symbol: closed drafting made a family.
     { id: 'draft', label: 'Draft', order: 10, groups: [{ label: 'Part', tools: [partFromSketch] }] },
     {
-    id: 'studio', label: 'Studio', order: 50, include: ['modify'],
+    id: 'studio', label: 'Studio', order: 50, include: ['modify', 'groups'],
     groups: [
       // Fewer groups than the tools (audit S14: about eighty on one tab): the tools used most stay buttons, the rest gathered under
       // pulldowns; each keeps its id, letters and place in My tools.

@@ -467,7 +467,10 @@ public static class Sheets
     }
 
     public static byte[] Pdf(IQueryContext q, IEnumerable<Entity> sheets, Issuing? issuing = null) =>
-        PdfWriter.Write(sheets.Select(s => Compose(q, s, null, issuing)).ToList(), id => q.Model.Get(id) is { Class: Images.Class } image ? Images.Bytes(image) : null);
+        PdfWriter.Write(sheets.Select(s => Compose(q, s, null, issuing)).ToList(), ImageOf(q));
+
+    /// <summary>A picture's file by its id, as the PDF writer asks for it (the project's images).</summary>
+    public static Func<string, byte[]?> ImageOf(IQueryContext q) => id => q.Model.Get(id) is { Class: Images.Class } image ? Images.Bytes(image) : null;
 
     public static byte[] Dxf(IQueryContext q, Entity sheet, Issuing? issuing = null) => DxfWriter.Page(Compose(q, sheet, null, issuing), $"Lapin · {sheet.Str("number")} {sheet.Name}");
 

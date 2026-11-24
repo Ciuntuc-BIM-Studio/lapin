@@ -169,7 +169,7 @@ const steel: LapinModule = {
   name: 'Steel',
   summary: 'Steel members with configurable ends (extension, cuts by a plane, mitres, fits, copes), made from a drafted outline too; hollow and cold-formed sections; portal frame halls with haunches and their connections.',
   tabs: [{
-    id: 'steel', label: 'Steel', order: 34, include: ['modify'],
+    id: 'steel', label: 'Steel', order: 34, include: ['modify', 'groups'],
     groups: [
       { label: 'Halls', tools: [hall] },
       { label: 'Members', tools: [column, member, joist, convert] },

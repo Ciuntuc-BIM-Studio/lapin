@@ -761,7 +761,7 @@ const architecture: LapinModule = {
   // The edges of the wall or floor edited in "Edit layers", kept in step with the model (forum topic 89).
   background: LayerEditWatcher,
   tabs: [{
-    id: 'architecture', label: 'Architecture', order: 20, include: ['modify', 'joins'],
+    id: 'architecture', label: 'Architecture', order: 20, include: ['modify', 'groups', 'joins'],
     groups: [
       { label: 'Build', tools: [wall, opening, slab, roof], small: [wallFromSolids, curtainWall, roofConfigurator, downpipe, railing] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes, sunshadeTypes, windowSillSchedule] },
@@ -780,7 +780,7 @@ const architecture: LapinModule = {
   }, {
     // Finishes, after Architecture: what lines a room (its floor, walls and ceiling by a finish of its own, false ceilings, skirtings). Other modules add their groups by this id.
     // Interior (decision 367): finishes and furniture on one tab; the furniture's "Table" is a piece of furniture there.
-    id: 'interior', label: 'Interior', order: 25, include: ['modify'], i18nCtx: 'furniture',
+    id: 'interior', label: 'Interior', order: 25, include: ['modify', 'groups'], i18nCtx: 'furniture',
     groups: [
       { label: 'Room', tools: [finishRoom], small: [roomFinishes, roomFinishSchedule] },
       // The finish painter (forum topic 83): faces of walls, floors and columns painted, inside and out.
