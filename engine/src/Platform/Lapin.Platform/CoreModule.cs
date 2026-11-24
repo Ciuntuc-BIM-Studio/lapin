@@ -678,7 +678,8 @@ public static class ElementTransform
             }
         }
         // How each one is carried: a drafted shape (or a bar drawn on the view) as the view's points say, the rest in the model.
-        Placement2D Of(Entity e) => inModel != null && !OnView(e) ? inModel : t;
+        // A component's detail on one of its sides is kept in the component's own frame (docs/components.md): the view's edit taken there, else it stays.
+        Placement2D Of(Entity e) => Components.IsSideDetail(e) ? Components.SideCarry(ctx.Model, e, t, frame) : inModel != null && !OnView(e) ? inModel : t;
         // What is pinned is not moved, turned or mirrored; it is copied, and its copies are not pinned (decision 449).
         if (!copy) Pins.Refuse(all);
         // What a module places in a host (a door in its opening, the opening in its wall) is not moved on its own like the rest.

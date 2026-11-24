@@ -35,7 +35,7 @@ export function installRecentErrors(): void {
 /** What the help menu links to: the guide, the forum (Lapin's users and fans, docs/plan-forum.md), the community on Skool (courses), the site, the source. */
 export const LINKS = { guide: 'https://lapinbim.com/docs/', forum: 'https://forum.lapinbim.com', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://lapinbim.com', source: 'https://github.com/Ciuntuc-BIM-Studio/lapin' } as const;
 
-/** The languages the user guide is written in (scripts/user-docs/languages.mjs); an interface language not among them (Lao) opens it in English. */
+/** The languages the user guide is written in (scripts/user-docs/languages.mjs); an interface language not among them (Lao, Chinese, Greek) opens it in English. */
 const GUIDED: readonly Lang[] = ['en', 'ro', 'es', 'de', 'fr', 'da', 'it', 'pl', 'pt'];
 const guided = (lang: Lang): Lang => (GUIDED.includes(lang) ? lang : 'en');
 

@@ -20,6 +20,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUi } from '../app/store';
 import { execute, useSession } from '../engine/session';
+import type { NodeDto } from '../engine/protocol';
 import type { Grip, GripView, OutlineOffsetGrip, RefLine, Vec2 } from '../platform/module';
 import { offsetAll, offsetDistance, offsetOutline } from './outlineOffset';
 import { outlinePoints } from './contour';
@@ -96,6 +97,16 @@ interface Drag { group: GripGroup; members: Grip[]; at: Vec2; moved: boolean; co
 /** An offset drag's preview: each outline as the engine would offset it (by its owner, for its height in 3D), or why it cannot be. */
 interface OffsetPreview { distance: number; outlines: { owner?: string; pts: Vec2[] }[]; problem: string | null }
 
+/**
+ * A component's detail (forum #224) is kept on no view of the project's: in a view that draws it, its grips are those of the
+ * shape as this view draws it, saved with the view's id so the engine takes the points to where it keeps them (docs/components.md).
+ */
+function drawnHere(n: NodeDto, mark: object | undefined, view: string | undefined): NodeDto {
+  if (n.props.viewId !== 'component-detail' || !view) return n;
+  const shape = (mark as { shapes?: Record<string, unknown>[] } | undefined)?.shapes?.find((s) => !s.hatch);
+  return shape ? { ...n, props: { ...n.props, viewId: view, shape: shape as NodeDto["props"][string] } } : n;
+}
+
 export function useGripEditor(o: GripEditorOptions) {
   const selected = useUi((s) => s.selected);
   const nodes = useSession((s) => s.nodes);
@@ -120,9 +131,10 @@ export function useGripEditor(o: GripEditorOptions) {
     for (const id of selected) {
       // A grid axis is selected as grid#tag: only that axis.
       const [nodeId, tag] = id.includes('#') ? [id.slice(0, id.indexOf('#')), id.slice(id.indexOf('#') + 1)] : [id, null];
-      const n = nodes.get(nodeId);
-      if (!n?.editable) continue;
-      const marks = o.marks?.filter((m) => m.id === n.id || m.id.startsWith(`${n.id}:`));
+      const kept = nodes.get(nodeId);
+      if (!kept?.editable) continue;
+      const marks = o.marks?.filter((m) => m.id === kept.id || m.id.startsWith(`${kept.id}:`));
+      const n = drawnHere(kept, marks?.find((m) => m.id === kept.id), views[0]);
       for (const g of gripsOf(n, { mark: marks?.find((m) => m.id === n.id), marks, view: views[0], frame: o.frame, kind: o.viewKind, developed: o.developed })) if ((!tag || g.key.startsWith(`${tag}:`)) && inView(g.view, n.storeyId)) gs.push(g);
       // Seen through an inset view (decision 576): the grips it has on its own view, where the inset shows them.
       for (const m of marks ?? []) {

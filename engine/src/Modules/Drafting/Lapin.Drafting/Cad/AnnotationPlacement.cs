@@ -125,6 +125,24 @@ public sealed class AnnotationPlacement : IElementPlacement
         return n * Vec2.Dot(by, n);
     }
 
+    /// <summary>Carried as a whole with everything it hangs on (a component's detail drawn where a view sees its instance).</summary>
+    public JsonObject? Carried(IModelView m, Entity e, Placement2D t) => Carry(m, e, t, Everything.Set);
+
+    sealed class Everything : IReadOnlySet<string>
+    {
+        public static readonly Everything Set = new();
+        public int Count => int.MaxValue;
+        public bool Contains(string item) => true;
+        public bool IsProperSubsetOf(IEnumerable<string> other) => false;
+        public bool IsProperSupersetOf(IEnumerable<string> other) => true;
+        public bool IsSubsetOf(IEnumerable<string> other) => false;
+        public bool IsSupersetOf(IEnumerable<string> other) => true;
+        public bool Overlaps(IEnumerable<string> other) => other.Any();
+        public bool SetEquals(IEnumerable<string> other) => false;
+        public IEnumerator<string> GetEnumerator() => Enumerable.Empty<string>().GetEnumerator();
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
     public void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving)
     {
         if (e.PredefinedType == Drafts.Predefined) Drafts.Require(ctx.Model, e.Id);

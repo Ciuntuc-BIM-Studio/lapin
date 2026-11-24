@@ -38,8 +38,8 @@ if (!detached) setTimeout(() => void checkForUpdates(), 8000);
 // Replies to the user's reports, asked for only once they opted in (docs/decisions-pending.md 177).
 if (!detached && !isGuest()) startReplies();
 void syncWindows();
-// The interface in the language chosen (English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese, Lao
-// or Simplified Chinese), drawn once that language's file is here.
+// The interface in the language chosen (English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese, Lao,
+// Simplified Chinese or Greek), drawn once that language's file is here.
 void languageReady.then(() => {
   createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);
   startTranslator(document.getElementById('root')!);

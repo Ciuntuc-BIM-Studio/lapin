@@ -3,6 +3,7 @@
   "name": "Lapin Planning",
   "modules": [
     "architecture",
+    "roofpanels",
     "structure",
     "rebar",
     "wood",

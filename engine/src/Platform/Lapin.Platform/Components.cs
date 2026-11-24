@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Lapin.Drawing.Views;
 using Lapin.Geometry;
 using Lapin.Model;
 
@@ -40,16 +41,36 @@ public static class Components
     public const string DetailSetKey = "detailSet";
     /// <summary>
     /// The view a detail is kept on: none of the project's. It belongs to its instance, and every plan of the instance's storey
-    /// draws it there (<see cref="DetailsIn"/>), so deleting, duplicating or saving a view never touches it.
+    /// draws it there, or (a side detail) every section and elevation that looks at its side (<see cref="DetailsIn"/>), so
+    /// deleting, duplicating or saving a view never touches it.
     /// </summary>
     public const string DetailView = "component-detail";
     /// <summary>On a detail: the view it was drawn on, where it goes back when it leaves its instance and its storey has no plan to take it.</summary>
     const string DetailFromKey = "detailFrom";
+    /// <summary>
+    /// On a detail drawn in a section or an elevation: the side of the component it is drawn on, as the view looked at it in the
+    /// component's own frame (<see cref="Sides"/>). None: a plan's detail.
+    /// </summary>
+    public const string DetailSideKey = "detailSide";
+    /// <summary>
+    /// On a side detail: how its points are kept, [x0, y0, s], from the side's own (x along the side from the instance's point,
+    /// y up from its level): x = x0 + s·x', y = y0 + y'. The way the view it was drawn on saw the instance it was added to, so
+    /// it is kept as drawn; the same in every instance's copy.
+    /// </summary>
+    public const string DetailFrameKey = "detailFrame";
+    /// <summary>
+    /// The sides of a component, each by the plan direction (in the component's own frame, before it is turned or mirrored) a
+    /// view looks along to see it: the front from in front of it (south of it, unturned), looking north.
+    /// </summary>
+    public static readonly (string Name, Vec2 Look)[] Sides = [("front", new(0, 1)), ("back", new(0, -1)), ("left", new(1, 0)), ("right", new(-1, 0))];
     /// <summary>What may be a detail: 2D drafting (lines, hatches, texts, symbols, tags, dimensions).</summary>
     static readonly string[] DetailKinds = ["DRAFT", "TEXT", Symbols.Predefined, "TAG", "DIMENSION"];
 
     /// <summary>Whether an entity is a detail of a component: an annotation in a detail set.</summary>
     public static bool IsDetail(Entity e) => e.Class == IfcClass.Annotation && e.Str(DetailSetKey) != null;
+
+    /// <summary>Whether a detail is drawn on a side of its component (a section's or an elevation's), not on its plan.</summary>
+    public static bool IsSideDetail(Entity e) => e.Class == IfcClass.Annotation && e.Str(DetailSideKey) != null && e.Str("viewId") == DetailView;
 
     /// <summary>The detail sets of a component, by name, as its instances have them.</summary>
     public static IEnumerable<string> DetailSets(IModelView m, string component) =>
@@ -60,19 +81,42 @@ public static class Components
         Groups.MembersOf(m, group).Select(id => Spatial.StoreyOf(m, id)?.Id).FirstOrDefault(s => s != null);
 
     /// <summary>
-    /// The model as a view draws its annotations: each instance's details drawn on a plan of its storey whose graphics show
-    /// their set (<c>detailSets</c>, <see cref="VisibilityGraphics.HidesDetailSet"/>), as if drawn on it, in the instance's own
-    /// place (each instance has its own, carried by <see cref="Settle"/>); never in another kind of view. The model itself when
-    /// there are none.
+    /// The model as a view draws its annotations: each instance's details as if drawn on the view, in the instance's own place
+    /// (each instance has its own copy, carried by <see cref="Settle"/>), when the view's graphics show their set
+    /// (<c>detailSets</c>, <see cref="VisibilityGraphics.HidesDetailSet"/>). A plan of an instance's storey draws its plan
+    /// details as they are. A section or an elevation (<paramref name="spec"/>: as it is drawn) draws the side details of each
+    /// instance it sees whose side it looks at (<see cref="SideMap"/>), mapped from the side to the view as the instance is
+    /// turned and mirrored (<see cref="IElementPlacement.Carried"/>). The model itself when there are none.
     /// </summary>
-    public static IModelView DetailsIn(IModelView m, Entity view, JsonObject? graphics)
+    public static IModelView DetailsIn(IModelView m, Entity view, JsonObject? graphics, ViewSpec? spec = null, IServices? services = null)
     {
-        if ((view.Str("kind") ?? "plan") != "plan" || view.Str("storeyId") is not { } storey) return m;
+        var kind = view.Str("kind") ?? "plan";
+        if (kind == "plan") return PlanDetailsIn(m, view, graphics);
+        if (kind is not ("section" or "elevation") || spec == null) return m;
+        List<Entity>? put = null;
+        Dictionary<string, (string Side, double X0, double Y0, double S)?>? maps = null;
+        foreach (var e in m.OfClass(IfcClass.Annotation))
+        {
+            if (!IsSideDetail(e) || e.Str(DetailSetKey) is not { } set || VisibilityGraphics.HidesDetailSet(graphics, set)) continue;
+            if (Groups.Of(m, e.Id) is not { } g || Of(g) == null) continue;
+            maps ??= [];
+            if (!maps.TryGetValue(g.Id, out var map)) maps[g.Id] = map = SideMap(m, g, spec.Frame) is { } sm && Sees(m, g, spec) ? sm : null;
+            if (map is not { } a || a.Side != e.Str(DetailSideKey) || Shown(e, a) is not { } t) continue;
+            var attrs = CarriedAttrs(m, services, e, t);
+            attrs["viewId"] = view.Id;
+            (put ??= []).Add(e.With(attrs: attrs));
+        }
+        return put == null ? m : new OverlayModel(m, put);
+    }
+
+    static IModelView PlanDetailsIn(IModelView m, Entity view, JsonObject? graphics)
+    {
+        if (view.Str("storeyId") is not { } storey) return m;
         List<Entity>? put = null;
         Dictionary<string, string?>? storeys = null;
         foreach (var e in m.OfClass(IfcClass.Annotation))
         {
-            if (e.Str("viewId") != DetailView || e.Str(DetailSetKey) is not { } set || VisibilityGraphics.HidesDetailSet(graphics, set)) continue;
+            if (e.Str("viewId") != DetailView || IsSideDetail(e) || e.Str(DetailSetKey) is not { } set || VisibilityGraphics.HidesDetailSet(graphics, set)) continue;
             if (Groups.Of(m, e.Id) is not { } g || Of(g) == null) continue;
             storeys ??= [];
             if (!storeys.TryGetValue(g.Id, out var on)) storeys[g.Id] = on = StoreyOfInstance(m, g.Id);
@@ -82,6 +126,117 @@ public static class Components
             (put ??= []).Add(e.With(attrs: attrs));
         }
         return put == null ? m : new OverlayModel(m, put);
+    }
+
+    /// <summary>
+    /// How a view's drawing (<paramref name="frame"/>) sees an instance: the side it looks at, and the map from that side's
+    /// own points (x along it from the instance's point, y up from the instance's level) to the drawing's, x = x0 + s·x',
+    /// y = y0 + y' (s = -1 for a mirrored instance). Null when the view does not look square at one of its sides.
+    /// </summary>
+    public static (string Side, double X0, double Y0, double S)? SideMap(IModelView m, Entity group, ViewFrame frame) =>
+        Of(group) == null ? null : SideMap(Xf(group), LevelOf(m, group, Groups.MembersOf(m, group.Id)), frame);
+
+    static (string Side, double X0, double Y0, double S)? SideMap(double[] xf, double level, ViewFrame frame)
+    {
+        var look = new Vec2(frame.Dir.X, frame.Dir.Y);
+        if (look.Length < 1e-9 || Math.Abs(frame.Dir.Z) > 1e-6 || Math.Abs(frame.Up.Z - 1) > 1e-6) return null;
+        look = look.Normalized();
+        var turn = xf[3] * Math.PI / 180;
+        var mirrored = xf[4] != 0;
+        var (c, sn) = (Math.Cos(turn), Math.Sin(turn));
+        // The look in the component's own frame: turned back, then mirrored back about its own x axis.
+        var own = new Vec2(look.X * c + look.Y * sn, -look.X * sn + look.Y * c);
+        if (mirrored) own = new Vec2(own.X, -own.Y);
+        foreach (var (name, side) in Sides)
+        {
+            if (Vec2.Dot(own, side) < 1 - 1e-6) continue;
+            // The side's x runs along its look turned clockwise, as a view's right does; in the model, turned and mirrored.
+            var along = new Vec2(side.Y, -side.X);
+            if (mirrored) along = new Vec2(along.X, -along.Y);
+            var world = new Vec2(along.X * c - along.Y * sn, along.X * sn + along.Y * c);
+            var s = Vec2.Dot(world, new Vec2(frame.Right.X, frame.Right.Y)) < 0 ? -1.0 : 1.0;
+            var x0 = Vec3.Dot(new Vec3(xf[0], xf[1], 0) - frame.Origin, frame.Right);
+            return (name, x0, level - frame.Origin.Z, s);
+        }
+        return null;
+    }
+
+    /// <summary>The level an instance stands at: its storey's, raised by its own height.</summary>
+    static double LevelOf(IModelView m, Entity group, IEnumerable<string> members) =>
+        (members.Select(id => Spatial.StoreyOf(m, id)).FirstOrDefault(s => s != null)?.Num("elevation") ?? 0) + Xf(group)[2];
+
+    /// <summary>Whether a section or an elevation sees an instance: some of it lies within its depth (and its ends, when it has them).</summary>
+    static bool Sees(IModelView m, Entity group, ViewSpec spec)
+    {
+        var points = Groups.MembersOf(m, group.Id).Select(m.Get).OfType<Entity>().Where(e => e.Class != IfcClass.Annotation).SelectMany(PointsOf).ToList();
+        if (points.Count == 0) return true;
+        var f = spec.Frame;
+        var depths = points.Select(p => f.Depth(new Vec3(p.X, p.Y, f.Origin.Z))).ToList();
+        if (depths.Max() < -1e-6 || depths.Min() > spec.Below + 1e-6) return false;
+        if (spec.Span is var (lo, hi))
+        {
+            var xs = points.Select(p => f.Map(new Vec3(p.X, p.Y, f.Origin.Z)).X).ToList();
+            if (xs.Max() < lo - 1e-6 || xs.Min() > hi + 1e-6) return false;
+        }
+        return true;
+    }
+
+    /// <summary>The map of a side's own points to the drawing's, x = x0 + s·x', y = y0 + y', as a placement.</summary>
+    static Placement2D MapOf(double x0, double y0, double s) =>
+        new(p => new Vec2(x0 + s * p.X, y0 + p.Y), 0, s < 0, Math.PI / 2);
+
+    /// <summary>How a side detail's points as kept (<see cref="DetailFrameKey"/>) go to a drawing that sees its side as <paramref name="a"/> says; null when it has no frame.</summary>
+    static Placement2D? Shown(Entity e, (string Side, double X0, double Y0, double S) a)
+    {
+        if (FrameOf(e) is not var (hx, hy, hs)) return null;
+        // Kept → the side's own: x' = hs·(x − hx), y' = y − hy; then to the drawing.
+        var s = a.S * hs;
+        return MapOf(a.X0 - s * hx, a.Y0 - hy, s);
+    }
+
+    static (double X0, double Y0, double S)? FrameOf(Entity e) =>
+        e.Attrs[DetailFrameKey] is JsonArray { Count: 3 } f && Json.Number(f[0]) is { } x && Json.Number(f[1]) is { } y && Json.Number(f[2]) is { } s ? (x, y, s < 0 ? -1 : 1) : null;
+
+    /// <summary>A detail's attributes carried by a placement, as its module carries them, without an edit.</summary>
+    static JsonObject CarriedAttrs(IModelView m, IServices? services, Entity e, Placement2D t) =>
+        services?.All<IElementPlacement>().FirstOrDefault(p => p.Handles(e))?.Carried(m, e, t) ?? Placement.Carry(e, t);
+
+    /// <summary>
+    /// How a side detail is carried by element.transform: in a section or an elevation (<paramref name="frame"/>, its
+    /// origin, right and up) that sees its side, the view's own placement taken to the way it is kept; anywhere else (its
+    /// instance moved, turned or mirrored as a whole, in a plan; brought up to another instance) it stays as it is, kept in
+    /// the component's own frame.
+    /// </summary>
+    public static Placement2D SideCarry(IModelView m, Entity e, Placement2D t, (Vec3 Origin, Vec3 Right, Vec3 Up)? frame)
+    {
+        var still = Placement2D.Move(new Vec2(0, 0));
+        if (frame is not { } fr || Groups.Of(m, e.Id) is not { } g || Of(g) == null) return still;
+        var dir = new Vec3(-fr.Right.Y, fr.Right.X, 0);
+        if (SideMap(m, g, new ViewFrame(fr.Origin, fr.Right, fr.Up, dir)) is not { } a || a.Side != e.Str(DetailSideKey) || Shown(e, a) is not { } d) return still;
+        // d: kept → drawing; the view's placement seen from the kept points.
+        var back = Inverse(d);
+        var s = d.Mirrored ? -1.0 : 1.0;
+        return new Placement2D(p => back.Point(t.Point(d.Point(p))), s > 0 ? t.Turn : -t.Turn, t.Mirrored, s > 0 ? t.Axis : Math.PI - t.Axis, t.Rise);
+    }
+
+    /// <summary>The way back of a side's map (x = x0 + s·x', y = y0 + y'): a drawing's points to the kept ones.</summary>
+    static Placement2D Inverse(Placement2D d)
+    {
+        var o = d.Point(new Vec2(0, 0));
+        var s = d.Mirrored ? -1.0 : 1.0;
+        return MapOf(-s * o.X, -o.Y, s);
+    }
+
+    /// <summary>
+    /// How points given in a view's drawing (a grip dragged, a shape written afresh, <c>drafting.updateDraft</c> with its
+    /// <c>viewId</c>) go to a side detail's kept points: through the side the view sees of the detail's instance, as it stands
+    /// now. Null for anything else (a plan's detail, plain drafting, a view that does not see its side): the points as given.
+    /// </summary>
+    public static Placement2D? FromView(ICommandContext ctx, Entity e, string? viewId)
+    {
+        if (viewId == null || !IsSideDetail(e) || Views.Find(ctx.Model, viewId) is not { } view || view.Str("kind") is not ("section" or "elevation")) return null;
+        if (Groups.Of(ctx.Model, e.Id) is not { } g || Of(g) == null || Views.SpecOf(ctx.Query, view) is not { } spec) return null;
+        return SideMap(ctx.Model, g, spec.Frame) is { } a && a.Side == e.Str(DetailSideKey) && Shown(e, a) is { } d ? Inverse(d) : null;
     }
 
     /// <summary>
@@ -98,13 +253,41 @@ public static class Components
                 .SelectMany(r => r!.Related).Where(x => x != e.Id).Select(x => Spatial.StoreyOf(m, x)?.Id).FirstOrDefault(s => s != null);
             var attrs = e.CloneAttrs();
             var from = attrs[DetailFromKey]?.GetValue<string>();
-            attrs["viewId"] = storey != null ? StoreyPlans.Of(m, storey)?.Id ?? "plan:" + storey
+            if (IsSideDetail(e)) attrs = Unside(ctx, edit, e, from) ?? attrs;
+            else attrs["viewId"] = storey != null ? StoreyPlans.Of(m, storey)?.Id ?? "plan:" + storey
                 : from != null && Views.Find(m, from) != null ? from : Spatial.Storeys(m).FirstOrDefault() is { } first ? "plan:" + first.Id : from;
             attrs.Remove(DetailSetKey);
             attrs.Remove(DetailFromKey);
+            attrs.Remove(DetailSideKey);
+            attrs.Remove(DetailFrameKey);
             attrs.Remove(MemberKey);
             ctx.Replace(e.With(attrs: attrs));
         }
+    }
+
+    /// <summary>
+    /// A side detail left without its instance: plain drafting on a section or an elevation that looks at its side of the
+    /// instance it left (the one it was drawn on first), where that view drew it; on the view it was drawn on, as kept, when
+    /// none does.
+    /// </summary>
+    static JsonObject? Unside(ICommandContext ctx, IEdit edit, Entity e, string? from)
+    {
+        var m = ctx.Model;
+        var rel = edit.RelationChanges.Select(r => r.Before).FirstOrDefault(r => r is { Class: Groups.Rel } && r.Related.Contains(e.Id));
+        var group = rel == null ? null : m.Get(rel.Relating) ?? edit.EntityChanges.FirstOrDefault(c => c.Id == rel.Relating)?.Before;
+        if (group == null || Of(group) == null) return null;
+        var level = LevelOf(m, group, rel!.Related.Where(x => x != e.Id));
+        var views = m.OfClass(Views.Class).Where(v => v.Str("kind") is "section" or "elevation").OrderBy(v => v.Id == from ? 0 : 1);
+        foreach (var view in views)
+        {
+            if (Views.SpecOf(ctx.Query, view) is not { } spec || SideMap(Xf(group), level, spec.Frame) is not { } a || a.Side != e.Str(DetailSideKey) || Shown(e, a) is not { } t) continue;
+            var attrs = CarriedAttrs(m, ctx.Services, e, t);
+            attrs["viewId"] = view.Id;
+            return attrs;
+        }
+        var kept = e.CloneAttrs();
+        if (from != null) kept["viewId"] = from;
+        return kept;
     }
 
     /// <summary>An instance copied by a command that leaves drafting out (Copy to storeys): its details copied into its twin, naming the twin's members.</summary>
@@ -650,15 +833,26 @@ public static class Components
             var ids = Args.Ids(a).Where(x => x != group.Id).ToList();
             if (ids.Count == 0) throw new CommandException("Select the 2D drafting to add to the detail set.");
             var adding = new List<string>();
+            var frames = new Dictionary<string, (string Side, double X0, double Y0, double S)>();
             foreach (var id in ids)
             {
                 if (m.Get(id) is not { } e) continue;
                 var view = e.Str("viewId") is { } vid && vid != DetailView ? Views.Find(m, vid) : null;
-                if (e.Class != IfcClass.Annotation || !DetailKinds.Contains(e.PredefinedType) || (e.Str("viewId") != DetailView && (view == null || (view.Str("kind") ?? "plan") != "plan")))
-                    throw new CommandException($"„{e.Name}” cannot be in a detail set: only 2D drafting drawn on a plan can (lines, hatches, texts, symbols, tags, dimensions).");
+                var kind = view?.Str("kind") ?? "plan";
+                if (e.Class != IfcClass.Annotation || !DetailKinds.Contains(e.PredefinedType) || (e.Str("viewId") != DetailView && (view == null || kind is not ("plan" or "section" or "elevation"))))
+                    throw new CommandException($"„{e.Name}” cannot be in a detail set: only 2D drafting drawn on a plan, a section or an elevation can (lines, hatches, texts, symbols, tags, dimensions).");
                 if (Groups.Of(m, id) is { } was && was.Id != group.Id && Of(was) != null) throw new CommandException($"„{e.Name}” is in another instance.");
                 var attrs = e.CloneAttrs();
                 attrs[DetailSetKey] = set;
+                // Drawn in a section or an elevation: kept on the side of the component the view looks at, as drawn (DetailFrameKey).
+                if (view != null && kind != "plan")
+                {
+                    if (!frames.TryGetValue(view.Id, out var side))
+                        frames[view.Id] = side = (Views.SpecOf(ctx.Query, view) is { } spec ? SideMap(m, group, spec.Frame) : null)
+                            ?? throw new CommandException($"„{view.Name}” does not look square at a side of the instance (its front, back, left or right): a detail in a section or an elevation is drawn on one of them.");
+                    attrs[DetailSideKey] = side.Side;
+                    attrs[DetailFrameKey] = new JsonArray(Math.Round(side.X0, 9), Math.Round(side.Y0, 9), side.S);
+                }
                 if (view != null) { attrs[DetailFromKey] = view.Id; attrs["viewId"] = DetailView; }
                 ctx.Replace(e.With(attrs: attrs));
                 adding.Add(id);
