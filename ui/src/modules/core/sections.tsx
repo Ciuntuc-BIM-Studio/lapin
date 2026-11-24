@@ -27,6 +27,38 @@ export function sectionPoints(node: NodeDto): Vec2[] {
   return a && b ? [a, b] : [];
 }
 
+/**
+ * A new section's line and the way it looks, from its three clicks (forum topic 247): its start, its end, then a point on the
+ * side it looks to. A section looks left of its line as drawn from start to end, so a third click on the right swaps the ends;
+ * one on the line (or none) keeps the left.
+ */
+export function sectionByThreeClicks(a: Vec2, b: Vec2, side?: Vec2 | null): { start: Vec2; end: Vec2 } {
+  const cross = side ? (b.x - a.x) * (side.y - a.y) - (b.y - a.y) * (side.x - a.x) : 0;
+  return cross < -1e-12 ? { start: b, end: a } : { start: a, end: b };
+}
+
+/**
+ * What the Section tool draws as the pointer moves: the line to the pointer, then, once both ends are down, the line with an
+ * arrow at each end towards the side the pointer is on (where the section will look), as one polyline in plan metres.
+ */
+export function sectionPreview(placed: Vec2[], aimed: Vec2): Vec2[] | null {
+  if (placed.length === 1) return [placed[0], aimed];
+  if (placed.length < 2) return null;
+  const { start, end } = sectionByThreeClicks(placed[0], placed[1], aimed);
+  const len = Math.hypot(end.x - start.x, end.y - start.y);
+  if (len < 1e-9) return null;
+  const u = { x: (end.x - start.x) / len, y: (end.y - start.y) / len };
+  const look = { x: -u.y, y: u.x };
+  const k = Math.max(0.3, Math.min(2, len * 0.12));
+  // An arrow from an end: its stem out towards the look, then its head.
+  const arrow = (p: Vec2): Vec2[] => {
+    const tip = { x: p.x + look.x * k, y: p.y + look.y * k };
+    const h = k * 0.35;
+    return [p, tip, { x: tip.x - look.x * h + u.x * h, y: tip.y - look.y * h + u.y * h }, tip, { x: tip.x - look.x * h - u.x * h, y: tip.y - look.y * h - u.y * h }, tip, p];
+  };
+  return [...arrow(start), ...arrow(end)];
+}
+
 const isSection = (n: NodeDto | undefined | null): boolean => n?.type === 'LapinView' && n.props.kind === 'section';
 const isCurvedSection = (n: NodeDto): boolean => n.props.curve === 'arc';
 const followedBy = (n: NodeDto): string | null => (typeof n.props.along === 'string' ? n.props.along : null);
@@ -153,11 +185,36 @@ export function sectionHeadGrips(node: NodeDto, view?: GripView): Grip[] {
   });
 }
 
+/** Whether a section can be flipped to look the other way (forum topic 247): any of its own, not one following an element or a shop drawing's. */
+export const canFlipSection = (node: NodeDto): boolean => isSection(node) && !followedBy(node) && node.props.of == null;
+
+/** The command that turns a section to look the other way: one undo step (the engine's view.flipSection). */
+export const flipSectionCommand = (node: NodeDto) => ({ command: 'view.flipSection', args: { id: node.id } });
+
+/** The way a section looks in plan: left of its first piece as drawn (one across an element, flipped: right). */
+export function sectionLook(node: NodeDto): Vec2 | null {
+  const pts = sectionPoints(node);
+  if (pts.length < 2) return null;
+  const len = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+  if (len < 1e-9) return null;
+  const left = { x: -(pts[1].y - pts[0].y) / len, y: (pts[1].x - pts[0].x) / len };
+  return isAcross(node) && node.props.flip === true ? { x: -left.x, y: -left.y } : left;
+}
+
+/** A section's flip arrow in plan, beside the middle of its first piece, pointing the way it would look once flipped. */
+function sectionFlipGrip(node: NodeDto): Grip | null {
+  const pts = sectionPoints(node), look = sectionLook(node);
+  if (!canFlipSection(node) || !look) return null;
+  const at = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+  return { key: 'flip', kind: 'flip', at, dir: { x: -look.x, y: -look.y }, title: 'Flip: the section looks the other way', click: () => flipSectionCommand(node) };
+}
+
 /** A section's grips in plan: its points (dragged, or taken out), a new point on each piece; a curved section its three points; one that follows an element has none of its own; one across an element its margins and station. An elevation's line ends. */
 export function sectionGrips(node: NodeDto, view?: GripView): Grip[] {
   if (node.props.kind === 'elevation') return elevationGrips(node, view);
   if (!isSection(node)) return [];
-  const heads = sectionHeadGrips(node, view);
+  const flip = sectionFlipGrip(node);
+  const heads = [...sectionHeadGrips(node, view), ...(flip ? [flip] : [])];
   if (followedBy(node)) return heads;
   if (isAcross(node)) return [...acrossGrips(node), ...heads];
   const pts = sectionPoints(node);
@@ -230,6 +287,12 @@ export function SectionFields({ view }: { view: NodeDto }) {
             <option value="projected">Projected</option>
             <option value="developed">Developed</option>
           </select></dd>
+        </>
+      )}
+      {canFlipSection(view) && (
+        <>
+          <dt title="The side the section looks to: flipped, it looks the other way (its line runs the other way round, its heads stay at their ends)">Direction</dt>
+          <dd><button type="button" className="btn small" data-action="section-flip" onClick={() => { const c = flipSectionCommand(view); void execute(c.command, c.args); }}>Flip direction</button></dd>
         </>
       )}
       {along && (

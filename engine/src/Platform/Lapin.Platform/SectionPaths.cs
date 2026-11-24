@@ -261,6 +261,29 @@ public static class SectionPaths
         if (attrs["start"] is null || attrs["end"] is null) throw new CommandException("A section needs its line.");
     }
 
+    /// <summary>
+    /// The section turned to look the other way (forum topic 247): its line runs the other way round, so it looks to the other
+    /// side (a section looks left of its line): start and end swap, a jogged line's points are reversed, an arc's ends swap round
+    /// the point it passes through, and each head's offset goes with its end. What it cuts stays.
+    /// </summary>
+    public static Entity Flipped(Entity view)
+    {
+        var attrs = view.CloneAttrs();
+        if (attrs["pts"] is JsonArray pts)
+        {
+            var q = pts.Select(n => n?.DeepClone()).ToList();
+            if (IsArc(view) && q.Count == 3) (q[0], q[2]) = (q[2], q[0]); else q.Reverse();
+            attrs["pts"] = new JsonArray(q.ToArray());
+        }
+        if (attrs["start"] is JsonArray s && attrs["end"] is JsonArray e) (attrs["start"], attrs["end"]) = (e.DeepClone(), s.DeepClone());
+        var (ha, hb) = (attrs["headA"]?.DeepClone(), attrs["headB"]?.DeepClone());
+        attrs.Remove("headA");
+        attrs.Remove("headB");
+        if (hb != null) attrs["headA"] = hb;
+        if (ha != null) attrs["headB"] = ha;
+        return view.With(attrs: attrs);
+    }
+
     /// <summary>The step of the stations written along a developed section (m): as set, else a tenth of the scale along an element (10 m at 1:100); null: none.</summary>
     public static double? Stations(Entity view, double scale)
     {

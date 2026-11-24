@@ -69,6 +69,27 @@ public class WallTests
     }
 
     [Fact]
+    public void A_wall_drawn_flipped_on_its_core_centre_is_mirrored_across_its_axis_in_one_step()
+    {
+        // Forum topic 238: Space while drawing on the core's centre mirrors the wall (addWall's flip), as flipWall afterwards does.
+        var f = new Fixture();
+        var type = f.Type("Brick 37", ("Plaster", 0.02, false), ("Brick", 0.25, false), ("Insulation", 0.1, false));
+        var plain = f.Wall(0, 0, 5, 0, type);
+        var drawn = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 3, ["x2"] = 5, ["y2"] = 3, ["typeId"] = type, ["flip"] = true })!["id"]!;
+        var (pMin, pMax) = f.Bounds(plain);
+        var (min, max) = f.Bounds(drawn);
+        // The plain wall's body lies 40 mm left of its axis (y = 0); the flipped one 40 mm right of its own (y = 3).
+        Assert.Equal(0.04, (pMin.Y + pMax.Y) / 2, 6);
+        Assert.Equal(3 - 0.04, (min.Y + max.Y) / 2, 6);
+        Assert.Equal(3 - pMax.Y, min.Y, 6);
+        Assert.True(f.Usage(drawn).Negative);
+        // One undo step takes the whole wall away.
+        f.Session.Undo();
+        Assert.Null(f.Model.Get(drawn));
+        Assert.NotNull(f.Model.Get(plain));
+    }
+
+    [Fact]
     public void Flipping_swaps_a_walls_faces_and_refuses_a_flip_along_it()
     {
         // element-flip.e2e.test.ts: a wall on y = 10, brick 200 + insulation 100.

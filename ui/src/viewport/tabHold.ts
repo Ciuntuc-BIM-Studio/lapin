@@ -77,15 +77,21 @@ function close(): void {
   if (useTabHold.getState().open) useTabHold.setState({ open: false, ids: [], index: 0 });
 }
 
+/**
+ * The threshold passed with Tab still down: the list opens with what is under the pointer now. A hold began over two elements
+ * or more, so it opens even when the pointer has drifted since (by a pixel or two, as a hand does) to where one lies or none:
+ * it shows what is there and fills as the pointer moves (forum topic 232: before, the hold then ended silently, and with the
+ * key's autorepeat no longer pressing Tab again, holding it did nothing at all). Only a view gone (the pointer left it) closes it.
+ */
 function openList(): void {
   timer = null;
   const s = cycleSource();
   const at = s?.at();
-  const ids = s && at ? s.ids(at) : [];
-  if (!s || !at || ids.length < 2) { phase = 'idle'; return; }
+  if (!s || !at) { phase = 'idle'; return; }
+  const ids = s.ids(at);
   phase = 'open';
   useTabHold.setState({ open: true, ids, index: 0, key: s.key, client });
-  lit(s.key, at, ids, 0);
+  if (ids.length > 1) lit(s.key, at, ids, 0);
 }
 
 /** The pointer moved over the view (its handler calls this after it has set the pointer): the list follows it. */
@@ -112,10 +118,10 @@ export function tabHoldDown(repeat: boolean): DownVerdict {
   return v;
 }
 
-/** Tab came up: `tap` means the caller runs the Tab command now (the hold never began); `take` took the current element. */
+/** Tab came up: `tap` means the caller runs the Tab command now (the hold never began); `take` took the current element (none listed: nothing is taken, the selection stays). */
 export function tabHoldUp(): UpVerdict {
   const v = upVerdict(phase);
-  const s = v === 'take' ? cycleSource() : null;
+  const s = v === 'take' && useTabHold.getState().ids.length > 0 ? cycleSource() : null;
   close();
   s?.take?.();
   return v;

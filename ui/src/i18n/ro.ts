@@ -6476,6 +6476,17 @@ export const RO: Record<string, string> = {
   "Drawing language": "Limba desenelor",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Limba cuvintelor pe care desenele le scriu singure (CR-ul unei rigole, un punct jos); o legendă își păstrează limba în care a fost pusă",
   'Open-web joist': 'Grindă cu zăbrele', 'New type from a preset': 'Tip nou dintr-o presetare', 'The preset sizes are indicative: your own norms and sizes decide.': 'Dimensiunile presetărilor sunt orientative: normele și dimensiunile dumneavoastră hotărăsc.', 'Joist depth': 'Înălțimea grinzii', 'Chords': 'Tălpi', 'Webs': 'Zăbrele', 'Angle webs': 'Zăbrele din corniere', 'Lines only': 'Doar linii', 'Round bar webs': 'Zăbrele din bare rotunde', 'Edit the type': 'Editează tipul', 'Webs as the imported file drew them': 'Zăbrele așa cum le-a desenat fișierul importat', 'Regenerate webs': 'Regenerează zăbrelele',
+  // Forum topics 238 and 247: Space mirrors a wall on its core centre; a section's third click and Flip direction.
+  "Flip direction": "Întoarce direcția",
+  "The side the section looks to: flipped, it looks the other way (its line runs the other way round, its heads stay at their ends)": "Partea spre care privește secțiunea: întoarsă, privește în partea cealaltă (linia ei merge invers, capetele rămân la capete)",
+  "Flip: the section looks the other way": "Întoarce: secțiunea privește în partea cealaltă",
+  "click its start, its end, then the side it looks to · Esc cancels": "dă clic pe început, pe sfârșit, apoi pe partea spre care privește · Esc anulează",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); on the core centre, the wall mirrored across it (its exterior to the left). The wall's ghost shows where it will be built": "Space: aceeași linie de cealaltă parte a peretelui (fața exterioară și cea interioară își schimbă locul, un decalaj își schimbă semnul); pe axul miezului, peretele oglindit față de el (exteriorul la stânga). Fantoma peretelui arată unde va fi construit",
+  "flip the wall (exterior on the left)": "întoarce peretele (exteriorul la stânga)",
+  "flip the wall back (exterior on the right)": "întoarce peretele înapoi (exteriorul la dreapta)",
+  "the other side": "cealaltă parte",
+  // Forum topic 232: the held Tab's list over nothing.
+  "Nothing under the pointer": "Nimic sub cursor",
 };
 
 /** Phrases with a number or a name in them. */

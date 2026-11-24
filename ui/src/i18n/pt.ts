@@ -6520,6 +6520,17 @@ export const PT: Record<string, string> = {
   "Drawing language": "Idioma dos desenhos",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "O idioma das palavras que os desenhos escrevem por si (a CF de uma caleira, um ponto baixo); uma legenda mantém o idioma em que foi colocada",
   'Open-web joist': 'Viga treliçada', 'New type from a preset': 'Novo tipo a partir de uma predefinição', 'The preset sizes are indicative: your own norms and sizes decide.': 'As dimensões das predefinições são indicativas: as suas próprias normas e dimensões decidem.', 'Joist depth': 'Altura da viga', 'Chords': 'Banzos', 'Webs': 'Diagonais', 'Angle webs': 'Diagonais em cantoneiras', 'Lines only': 'Apenas linhas', 'Round bar webs': 'Diagonais em varões redondos', 'Edit the type': 'Editar o tipo', 'Webs as the imported file drew them': 'Diagonais tal como o ficheiro importado as desenhou', 'Regenerate webs': 'Regenerar as diagonais',
+  // Forum topics 238 and 247: Space mirrors a wall on its core centre; a section's third click and Flip direction.
+  "Flip direction": "Inverter direção",
+  "The side the section looks to: flipped, it looks the other way (its line runs the other way round, its heads stay at their ends)": "O lado para onde o corte olha: invertido, olha para o outro lado (a sua linha corre ao contrário, as suas cabeças ficam nas suas pontas)",
+  "Flip: the section looks the other way": "Inverter: o corte olha para o outro lado",
+  "click its start, its end, then the side it looks to · Esc cancels": "clique no início, no fim e depois no lado para onde olha · Esc cancela",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); on the core centre, the wall mirrored across it (its exterior to the left). The wall's ghost shows where it will be built": "Espaço: a mesma linha do outro lado da parede (as faces exterior e interior trocam, um deslocamento muda de sinal); no centro do núcleo, a parede espelhada em relação a ele (o exterior à esquerda). A pré-visualização da parede mostra onde será construída",
+  "flip the wall (exterior on the left)": "inverter a parede (exterior à esquerda)",
+  "flip the wall back (exterior on the right)": "repor a parede (exterior à direita)",
+  "the other side": "o outro lado",
+  // Forum topic 232: the held Tab's list over nothing.
+  "Nothing under the pointer": "Nada sob o ponteiro",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

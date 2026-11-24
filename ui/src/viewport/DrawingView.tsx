@@ -51,6 +51,7 @@ import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import { clearLiveRise, inModel, setLiveRise, viewFrameAt } from './viewFrame';
 import { markIds, markOwner, markSelected } from './planPick';
 import { cycledId, cycleOpen, clearCycle, setCycleSource, usePickCycle, withFirst, type CycleSource } from './pickCycle';
+import { markPaths } from './markPaths';
 import { holdRefresh } from './tabHold';
 import { autoholdOn, clickEnds, onAutoholdCancel, releaseEnds } from '../app/autohold';
 import { boxOutcome, dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
@@ -546,23 +547,14 @@ export function DrawingView() {
         }}>
         <rect width="100%" height="100%" className="paper" />
         {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} onDark={onDark} screen={size} />}
-        {(drawing?.marks ?? []).filter((m) => targets.size > 0 && markSelected(m.id, targetList) && !markSelected(m.id, shown)).map((m) => (
-          <path key={`tag:${m.id}`} className="plan-mark tag-target" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
-            const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
-            return `M${a.x} ${a.y}L${b.x} ${b.y}`;
-          }).join('')} />
+        {markPaths((drawing?.marks ?? []).filter((m) => targets.size > 0 && markSelected(m.id, targetList) && !markSelected(m.id, shown)), 'tag', toScreen).map((p) => (
+          <path key={p.key} className="plan-mark tag-target" d={p.d} />
         ))}
-        {hoverId && !markSelected(hoverId, shown) && (drawing?.marks ?? []).filter((m) => m.id === hoverId || markSelected(m.id, [hoverId])).map((m) => (
-          <path key={`hover:${m.id}`} className="plan-mark plan-hover-mark" aria-hidden="true" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
-            const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
-            return `M${a.x} ${a.y}L${b.x} ${b.y}`;
-          }).join('')} />
+        {hoverId && !markSelected(hoverId, shown) && markPaths((drawing?.marks ?? []).filter((m) => m.id === hoverId || markSelected(m.id, [hoverId])), 'hover', toScreen).map((p) => (
+          <path key={p.key} className="plan-mark plan-hover-mark" aria-hidden="true" d={p.d} />
         ))}
-        {(drawing?.marks ?? []).filter((m) => markSelected(m.id, shown)).map((m) => (
-          <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
-            const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
-            return `M${a.x} ${a.y}L${b.x} ${b.y}`;
-          }).join('')} />
+        {markPaths((drawing?.marks ?? []).filter((m) => markSelected(m.id, shown)), 'sel', toScreen).map((p) => (
+          <path key={p.key} className="plan-mark selected" d={p.d} />
         ))}
         {datum && <DatumMark at={toScreen(datum)} to={pts.length === 0 && hover ? toScreen(hover.point) : null} />}
         {pts.length > 0 && (() => {

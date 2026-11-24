@@ -1867,6 +1867,26 @@ public static class Views
             return null;
         });
 
+        // A section turned to look the other way (forum topic 247): {id}. Its line runs the other way round (its ends swap, a
+        // jogged line's points reversed, an arc's ends swapped round its middle point) and its heads' offsets go with their ends;
+        // across an element, its flip toggled. One undo step; pinned, refused; one following an element is refused.
+        r.Command("view.flipSection", "Flip section", (ctx, a) =>
+        {
+            var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "section" ? x : throw new CommandException("Not a section.");
+            Pins.Refuse([v]);
+            if (ElementViews.Is(v)) throw new CommandException($"„{v.Name}” is a shop drawing's view: it looks the way its element does.");
+            if (AcrossSections.Is(v))
+            {
+                var across = v.CloneAttrs();
+                AcrossSections.Set(ctx, across, new JsonObject { ["flip"] = !v.Bool("flip") });
+                ctx.Replace(v.With(attrs: across));
+                return null;
+            }
+            if (SectionPaths.Along(v) != null) throw new CommandException($"„{v.Name}” follows its element and looks the way the element runs: stop following it first.");
+            ctx.Replace(SectionPaths.Flipped(v));
+            return null;
+        });
+
         // A section's or an elevation's depth, its far clip (issue #93, decision 721): {id, depth: m | null}; null sees without
         // end. A section's from its cut, an elevation's from where it starts seeing. Typed, or its far line dragged in plan; one undo step.
         r.Command("view.setDepth", "View depth", (ctx, a) =>

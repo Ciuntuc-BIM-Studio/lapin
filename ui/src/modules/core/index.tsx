@@ -65,7 +65,7 @@ import { setStoreys3d, showAllStoreys3d } from '../../viewport/storeys3dActions'
 import { ViewSettingsDialog, ViewSettingsSection, ViewStylesDialog } from './ViewSettings';
 import { cutAtPlan, toggleSectionBox } from '../../viewport/sectionBoxTools';
 import { frontDiscipline } from './disciplines';
-import { sectionGrips, sectionRefs, sectionTools } from './sections';
+import { sectionByThreeClicks, sectionGrips, sectionPreview, sectionRefs, sectionTools } from './sections';
 import { elevationFarGrips, sectionFarGrips, sectionFarLine } from './ViewDepth';
 import { lazyPart } from '../../platform/lazyPart';
 // Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
@@ -330,10 +330,13 @@ const core: LapinModule = {
       { label: 'Views', tools: [
         { id: 'view.3d', label: '3D', icon: Box, run: () => useUi.setState({ view: '3d' }) },
         { id: 'view.plan', label: 'Plan', icon: Square, run: () => useUi.setState({ view: 'plan' }) },
+        // Three clicks (forum topic 247): its start, its end, then the side it looks to, shown by arrows as the pointer moves.
         { id: 'view.section', label: 'Section', icon: SectionIcon, shortcut: 'SE',
-          gesture: { kind: 'twoPoints' },
-          complete: async ({ points: [a, b] }, ctx) => {
-            const r = await ctx.execute('view.create', { kind: 'section', start: [a.x, a.y], end: [b.x, b.y], discipline: frontDiscipline() }) as { id?: string } | null;
+          gesture: { kind: 'threePoints', preview: sectionPreview, hint: 'click its start, its end, then the side it looks to · Esc cancels' },
+          complete: async ({ points: [a, b, c] }, ctx) => {
+            if (!a || !b) return;
+            const { start, end } = sectionByThreeClicks(a, b, c);
+            const r = await ctx.execute('view.create', { kind: 'section', start: [start.x, start.y], end: [end.x, end.y], discipline: frontDiscipline() }) as { id?: string } | null;
             if (r?.id) useUi.setState({ view: 'drawing', drawingViewId: r.id, tool: null });
           } },
         ...sectionTools,

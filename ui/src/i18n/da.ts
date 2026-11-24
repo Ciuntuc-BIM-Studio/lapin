@@ -6517,6 +6517,17 @@ export const DA: Record<string, string> = {
   "Drawing language": "Tegningssprog",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Sproget for de ord, tegninger selv skriver (en rendes BK, et lavpunkt); en signaturforklaring beholder det sprog, den blev placeret i",
   'Open-web joist': 'Gitterligger', 'New type from a preset': 'Ny type fra en forudindstilling', 'The preset sizes are indicative: your own norms and sizes decide.': 'Forudindstillingernes mål er vejledende: dine egne normer og mål afgør.', 'Joist depth': 'Liggerhøjde', 'Chords': 'Flanger', 'Webs': 'Diagonaler', 'Angle webs': 'Diagonaler af vinkelstål', 'Lines only': 'Kun linjer', 'Round bar webs': 'Diagonaler af rundstål', 'Edit the type': 'Redigér typen', 'Webs as the imported file drew them': 'Diagonaler, som den importerede fil tegnede dem', 'Regenerate webs': 'Gendan diagonalerne',
+  // Forum topics 238 and 247: Space mirrors a wall on its core centre; a section's third click and Flip direction.
+  "Flip direction": "Vend retning",
+  "The side the section looks to: flipped, it looks the other way (its line runs the other way round, its heads stay at their ends)": "Siden snittet ser mod: vendt ser det mod den anden side (dets linje løber den anden vej, dets hoveder bliver ved deres ender)",
+  "Flip: the section looks the other way": "Vend: snittet ser mod den anden side",
+  "click its start, its end, then the side it looks to · Esc cancels": "klik dets start, dets slutning og derefter siden det ser mod · Esc annullerer",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); on the core centre, the wall mirrored across it (its exterior to the left). The wall's ghost shows where it will be built": "Mellemrum: samme linje på den anden side af væggen (yder- og indersiden bytter, en forskydning skifter fortegn); på kernens midte spejles væggen om den (yderside til venstre). Væggens skygge viser, hvor den bygges",
+  "flip the wall (exterior on the left)": "vend væggen (yderside til venstre)",
+  "flip the wall back (exterior on the right)": "vend væggen tilbage (yderside til højre)",
+  "the other side": "den anden side",
+  // Forum topic 232: the held Tab's list over nothing.
+  "Nothing under the pointer": "Intet under markøren",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

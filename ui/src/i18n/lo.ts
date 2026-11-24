@@ -6576,6 +6576,17 @@ export const LO: Record<string, string> = {
   "Drawing language": "ພາສາຂອງແບບແຕ້ມ",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "ພາສາຂອງຄຳທີ່ແບບແຕ້ມຂຽນເອງ (ລະດັບກົ້ນຂອງຮ່ອງ, ຈຸດຕ່ຳ); ຄຳອະທິບາຍສັນຍາລັກຮັກສາພາສາທີ່ມັນຖືກວາງ",
   'Open-web joist': 'ຄານໂຄງຂື່ (ເຫຼັກ)', 'New type from a preset': 'ປະເພດໃໝ່ຈາກຄ່າທີ່ຕັ້ງໄວ້', 'The preset sizes are indicative: your own norms and sizes decide.': 'ຂະໜາດຂອງຄ່າທີ່ຕັ້ງໄວ້ເປັນພຽງຕົວຢ່າງ: ໃຫ້ຖືຕາມມາດຕະຖານ ແລະ ຂະໜາດຂອງທ່ານເອງ.', 'Joist depth': 'ຄວາມສູງຂອງຄານ', 'Chords': 'ເສັ້ນຂອບ', 'Webs': 'ເສັ້ນຍຶດ', 'Angle webs': 'ເສັ້ນຍຶດເຫຼັກສາກ', 'Lines only': 'ເສັ້ນເທົ່ານັ້ນ', 'Round bar webs': 'ເສັ້ນຍຶດເຫຼັກກົມ', 'Edit the type': 'ແກ້ໄຂປະເພດ', 'Webs as the imported file drew them': 'ເສັ້ນຍຶດຕາມທີ່ໄຟລ໌ທີ່ນຳເຂົ້າໄດ້ແຕ້ມ', 'Regenerate webs': 'ສ້າງເສັ້ນຍຶດຄືນໃໝ່',
+  // Forum topics 238 and 247: Space mirrors a wall on its core centre; a section's third click and Flip direction.
+  "Flip direction": "ປີ້ນທິດທາງ",
+  "The side the section looks to: flipped, it looks the other way (its line runs the other way round, its heads stay at their ends)": "ຂ້າງທີ່ພາກຕັດຫັນໄປ: ເມື່ອປີ້ນ, ມັນຫັນໄປອີກຂ້າງ (ເສັ້ນຂອງມັນແລ່ນກັບກັນ, ຫົວຂອງມັນຢູ່ປາຍເດີມ)",
+  "Flip: the section looks the other way": "ປີ້ນ: ພາກຕັດຫັນໄປອີກຂ້າງ",
+  "click its start, its end, then the side it looks to · Esc cancels": "ຄລິກຈຸດເລີ່ມ, ຈຸດສິ້ນສຸດ, ແລ້ວຂ້າງທີ່ມັນຫັນໄປ · Esc ຍົກເລີກ",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); on the core centre, the wall mirrored across it (its exterior to the left). The wall's ghost shows where it will be built": "Space: ເສັ້ນດຽວກັນຢູ່ອີກຂ້າງຂອງຝາ (ໜ້ານອກ ແລະ ໜ້າໃນສະຫຼັບກັນ, ໄລຍະເລື່ອນປ່ຽນເຄື່ອງໝາຍ); ຢູ່ໃຈກາງແກນ, ຝາຖືກສະທ້ອນອ້ອມມັນ (ໜ້ານອກຢູ່ຊ້າຍ). ເງົາຂອງຝາສະແດງບ່ອນທີ່ຈະສ້າງ",
+  "flip the wall (exterior on the left)": "ປີ້ນຝາ (ໜ້ານອກຢູ່ຊ້າຍ)",
+  "flip the wall back (exterior on the right)": "ປີ້ນຝາກັບຄືນ (ໜ້ານອກຢູ່ຂວາ)",
+  "the other side": "ອີກຂ້າງ",
+  // Forum topic 232: the held Tab's list over nothing.
+  "Nothing under the pointer": "ບໍ່ມີຫຍັງຢູ່ກ້ອງຕົວຊີ້",
 };
 
 /** Phrases with a number or a name in them. */

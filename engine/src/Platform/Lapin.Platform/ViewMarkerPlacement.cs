@@ -77,8 +77,8 @@ public sealed class ViewMarkerPlacement : IElementPlacement
         if (attrs["pts"] is JsonArray pts)
         {
             var q = pts.OfType<JsonArray>().Select(p => t.Point(Args.PointOf(p))).ToList();
-            // Mirrored, it looks the mirrored way: its line runs the other way (an arc's ends swap, its middle stays).
-            if (t.Mirrored) { if (e.Str("curve") == "arc" && q.Count == 3) (q[0], q[1]) = (q[1], q[0]); else q.Reverse(); }
+            // Mirrored, it looks the mirrored way: its line runs the other way (an arc's ends swap, the point it passes through stays: [start, through, end]).
+            if (t.Mirrored) { if (e.Str("curve") == "arc" && q.Count == 3) (q[0], q[2]) = (q[2], q[0]); else q.Reverse(); }
             attrs["pts"] = new JsonArray(q.Select(p => (JsonNode)J(p)).ToArray());
         }
         if (t.Mirrored && attrs["start"] is JsonArray s0 && attrs["end"] is JsonArray e0) (attrs["start"], attrs["end"]) = (e0.DeepClone(), s0.DeepClone());
