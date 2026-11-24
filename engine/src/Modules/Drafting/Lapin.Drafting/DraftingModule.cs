@@ -687,13 +687,13 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
     /// <summary>Consecutive points that are one point (within a tenth of a millimetre, what a dimension can tell apart), once.</summary>
     static List<Vec2> Distinct(List<Vec2> pts) => Polyline2.Dedupe(pts, tolerance: 1e-4);
 
-    /// <summary>What a point placed on <paramref name="view"/> holds on: an edge the view cuts (as drawn when the command began), a grid axis, a wall's centre line; null: nothing.</summary>
+    /// <summary>What a point placed on <paramref name="view"/> holds on: a drafted line's point on the view, an edge the view cuts (as drawn when the command began), a grid axis, a wall's centre line; null: nothing.</summary>
     static Func<Vec2, DimEndRef?> Associator(ICommandContext ctx, Entity view)
     {
         var (drawing, spec, _) = Views.Generate(ctx.Query, view);
         if (drawing == null || spec == null) return _ => null;
         var tolerance = Tolerance(view);
-        return p => Dimensions.Associate(ctx.Model, spec.Kind, drawing, p, tolerance);
+        return p => Dimensions.Associate(ctx.Model, spec.Kind, drawing, p, tolerance, viewId: view.Id);
     }
 
     /// <summary>A plan of any sort (a floor plan, a site or location plan, a ceiling plan): they all share the model's x and y.</summary>

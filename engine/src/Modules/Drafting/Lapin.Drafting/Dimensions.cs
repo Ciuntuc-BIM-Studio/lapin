@@ -21,6 +21,9 @@ namespace Lapin.Drafting;
 /// <item>"opening": a door's, window's or bare opening's place in its wall (forum topic 78): <c>local</c> from its
 /// centre in the wall's frame (along, across), so the point goes where the opening is slid; with <c>localDir</c> a jamb,
 /// taken onto the wall's jamb face as the plan cuts it (an opening made wider moves it).</item>
+/// <item>"vertex": a drafted line's or polyline's point on the same view (app report #186), by its index (<c>index</c>): the
+/// end follows that point when the shape is edited, moved or turned; a point no longer there (the shape gone, or fewer points)
+/// is an orphan.</item>
 /// </list>
 /// </summary>
 public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Dir, Vec2? Local = null, Vec2? LocalDir = null, string? Tag = null, double S = 0, double? S2 = null, double? Len = null, int FrameRev = 0)
@@ -38,6 +41,7 @@ public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Di
         {
             case "grid": o["grid"] = Element; o["tag"] = Tag; o["s"] = S; if (S2 is { } g2) o["s2"] = g2; break;
             case "axis": o["element"] = Element; o["s"] = S; if (S2 is { } a2) o["s2"] = a2; break;
+            case "vertex": o["element"] = Element; o["index"] = (int)S; break;
             case "opening":
                 o["element"] = Element; o["local"] = J(Local ?? default);
                 if (LocalDir is { } jd) o["localDir"] = J(jd);
@@ -62,6 +66,7 @@ public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Di
         {
             case "grid" when (string?)o["grid"] is { } g && (string?)o["tag"] is { } t: return new("grid", g, default, default, Tag: t, S: Json.Number(o["s"]) ?? 0, S2: Json.Number(o["s2"]));
             case "axis" when (string?)o["element"] is { } e: return new("axis", e, default, default, S: Json.Number(o["s"]) ?? 0, S2: Json.Number(o["s2"]));
+            case "vertex" when (string?)o["element"] is { Length: > 0 } e && Json.Number(o["index"]) is { } ix && ix >= 0: return new("vertex", e, default, default, S: Math.Floor(ix));
             case "opening" when (string?)o["element"] is { Length: > 0 } e && V(o["local"]) is { } l: return new("opening", e, default, default, l, V(o["localDir"]));
             case "edge" when (string?)o["element"] is { Length: > 0 } e && V(o["offset"]) is { } off && V(o["dir"]) is { } d:
                 return new("edge", e, off, d, V(o["local"]), V(o["localDir"]), Len: Json.Number(o["len"]), FrameRev: (int)(Json.Number(o["frame"]) ?? 0));
@@ -199,8 +204,10 @@ public static class Dimensions
     /// across it: at a corner, the face of the wall that closes the side, which
     /// moves the point when that wall moves, not the end of the wall measured.
     /// </summary>
-    public static DimEndRef? Associate(IModelView m, string viewKind, ViewDrawing d, Vec2 p, double tolerance, Vec2? along = null)
+    public static DimEndRef? Associate(IModelView m, string viewKind, ViewDrawing d, Vec2 p, double tolerance, Vec2? along = null, string? viewId = null)
     {
+        // A drafted line's or polyline's point on the view (app report #186): the end follows it when the shape is edited.
+        if (viewId != null && HoldOnVertex(m, viewId, p, tolerance) is { } vertex) return vertex;
         (DPolygon Poly, Vec2 A, Vec2 B, double Dist, double Across)? best = null;
         foreach (var poly in d.Cuts)
             foreach (var l in poly.Loops)
@@ -251,6 +258,8 @@ public static class Dimensions
                 return m.Get(r.Element) is { } w && Frame(w) is { } f ? OnLine(f.O, P(w.Attrs["end"]), r, hint) : null;
             case "opening":
                 return OnOpening(m, d, r);
+            case "vertex":
+                return VertexOf(m.Get(r.Element), (int)r.S);
         }
         Vec2 q, dir;
         if (viewKind == "plan" && r.Local is { } local && r.LocalDir is { } ld && Frame(m.Get(r.Element), r.FrameRev) is { } frame && Middle(d, r.Element) != null)
@@ -274,6 +283,35 @@ public static class Dimensions
             if (dist <= Reach && (best == null || dist < best.Value.Dist)) best = (dist, onLine);
         }
         return best?.P;
+    }
+
+    /// <summary>The points of a drafted line or polyline (null: not a drafted shape with corners: a circle, an arc, a hatch, or not drafted at all).</summary>
+    static IReadOnlyList<Vec2>? VerticesOf(Entity? e) =>
+        e is { Class: IfcClass.Annotation, PredefinedType: Cad.Drafts.Predefined } && Cad.Drafts.ShapeOf(e) is { } shape
+            ? shape switch { Cad.Line l => [l.A, l.B], Cad.Polyline pl => pl.Pts, _ => null }
+            : null;
+
+    /// <summary>A drafted shape's point by its index, where it is now; null when the shape or the point is gone.</summary>
+    static Vec2? VertexOf(Entity? e, int index) => VerticesOf(e) is { } v && index >= 0 && index < v.Count ? v[index] : null;
+
+    /// <summary>
+    /// A point held on a drafted line's or polyline's point on view <paramref name="viewId"/> (the nearest within
+    /// <paramref name="tolerance"/>, app report #186); null when none is that near. Hidden or locked layers' shapes count too:
+    /// what the dimension measures is drawn on the view.
+    /// </summary>
+    public static DimEndRef? HoldOnVertex(IModelView m, string viewId, Vec2 p, double tolerance)
+    {
+        (string Id, int Index, double Dist)? best = null;
+        foreach (var e in m.OfClass(IfcClass.Annotation))
+        {
+            if (e.PredefinedType != Cad.Drafts.Predefined || e.Str("viewId") != viewId || VerticesOf(e) is not { } pts) continue;
+            for (var i = 0; i < pts.Count; i++)
+            {
+                var dist = (pts[i] - p).Length;
+                if (dist <= tolerance && (best == null || dist < best.Value.Dist - 1e-9)) best = (e.Id, i, dist);
+            }
+        }
+        return best is { } b ? new DimEndRef("vertex", b.Id, default, default, S: b.Index) : null;
     }
 
     /// <summary>The wall an opening is in (a door or window: the wall of the opening it fills).</summary>
@@ -744,7 +782,7 @@ public static class Dimensions
         return p;
     }
 
-    static string Key(DimEndRef r) => r.Kind == "grid" ? $"{r.Element}:{r.Tag}" : r.Element;
+    static string Key(DimEndRef r) => r.Kind switch { "grid" => $"{r.Element}:{r.Tag}", "vertex" => $"{r.Element}#{(int)r.S}", _ => r.Element };
 
     /// <summary>
     /// A string's segment driven to <paramref name="value"/>: what its second
@@ -800,6 +838,17 @@ public static class Dimensions
             foreach (var ax in (attrs["axes"] as JsonArray)?.OfType<JsonObject>() ?? [])
                 if ((string?)ax["tag"] == r.Tag) { ax["a"] = new JsonArray(P(ax["a"]).X + by.X, P(ax["a"]).Y + by.Y); ax["b"] = new JsonArray(P(ax["b"]).X + by.X, P(ax["b"]).Y + by.Y); }
             ctx.Replace(grid.With(attrs: attrs));
+            return;
+        }
+        if (r.Kind == "vertex")
+        {
+            // A drafted shape's point: that point alone moves (a line made longer), the shape's other points stay.
+            var draft = ctx.Model.Get(r.Element);
+            var pts = VerticesOf(draft)?.ToList() ?? throw new CommandException("The dimension's line is gone.");
+            var i = (int)r.S;
+            if (i < 0 || i >= pts.Count) throw new CommandException("The dimension's point is no longer on its line.");
+            pts[i] += by;
+            Cad.Drafts.Set(ctx, draft!, Cad.Drafts.ShapeOf(draft!) is Cad.Line ? new Cad.Line(pts[0], pts[1]) : new Cad.Polyline(pts, ((Cad.Polyline)Cad.Drafts.ShapeOf(draft!)!).Closed));
             return;
         }
         if (r.Kind == "opening")
