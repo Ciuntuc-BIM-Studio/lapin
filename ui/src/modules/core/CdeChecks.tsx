@@ -13,6 +13,7 @@ import { AlertCircle, AlertTriangle, Info, Loader2, Minus, Plus, Trash2, Upload,
 import { notify } from '../../app/store';
 import { confirmAction } from '../../shell/prompts';
 import { when } from './format';
+import { lazyPart } from '../../platform/lazyPart';
 import {
   AtriumError, deleteRegister, getRegister, putRegister, putRules, serverBytes,
   type Register, type Rules,
@@ -24,6 +25,7 @@ import {
 } from '../../engine/checks';
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const IdsReportView = lazyPart(() => import('./CdeIds').then((m) => m.IdsReportView), { inline: true });
 const P = (project: string) => `lapin-remote/1.0/projects/${encodeURIComponent(project)}`;
 
 // ------------------------------------------------------------ counts and the summary
@@ -97,6 +99,7 @@ export function ChecksReportView({ server, project, checks }: { server: string; 
       <p className="small"><ChecksLine checks={checks} />
         {checks.finished && <span className="muted small" data-no-i18n> · {checks.requestedBy?.name ?? ''} · {when(checks.finished)}</span>}</p>
       {checks.files?.map((f) => <CheckedFileView key={f.sha256 + f.name} server={server} project={project} file={f} />)}
+      {checks.ids && <IdsReportView ids={checks.ids} />}
     </div>
   );
 }

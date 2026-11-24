@@ -29,13 +29,16 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 // The IDS parts (docs/ids.md): fetched when first shown, so a session that never checks an IDS carries none of them.
 const IdsOnSubmit = lazyPart(() => import('./ids/IdsOnSubmit').then((m) => m.IdsOnSubmit), { inline: true });
 const IdsPanel = lazyPart(() => import('./ids/IdsPanel').then((m) => m.IdsPanel), { inline: true });
+// W6c: the IDS files on the server and the dry run (CdeIds.tsx), when the server offers `ids`.
+const IdsServerPanel = lazyPart(() => import('./CdeIds').then((m) => m.IdsServerPanel), { inline: true });
+const IdsCheckOnServer = lazyPart(() => import('./CdeIds').then((m) => m.IdsCheckOnServer), { inline: true });
 const short = (id: string) => id.slice(0, 8);
 const P = (project: string) => `lapin-remote/1.0/projects/${encodeURIComponent(project)}`;
 
 // ------------------------------------------------------------ files from the server
 
 /** Bytes of the server saved where the user says: a download in the browser, the save dialog on the desktop (the engine writes them). */
-async function saveFromServer(server: string, path: string, name: string): Promise<void> {
+export async function saveFromServer(server: string, path: string, name: string): Promise<void> {
   if (isDesktop()) {
     const to = await pickPath('save', name);
     if (!to) return;
@@ -106,7 +109,7 @@ function useMe(server: string, project: string): { me: Me | null; rules: Rules |
 
 // ------------------------------------------------------------ the panel
 
-type Tab = 'containers' | 'submissions' | 'diff' | 'register' | 'ids';
+type Tab = 'containers' | 'submissions' | 'diff' | 'register' | 'serverIds' | 'ids';
 
 /**
  * A submission read whole (with its checks report) and kept up to date while its checks run (W5): polled until they are done or
@@ -151,6 +154,7 @@ function Publishing({ server, project, name, offers, withModel }: { server: stri
   const [failed, setFailed] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const who = useMe(server, project);
+  const owner = who.me?.role === 'owner' || Boolean(who.me?.isAdmin && who.rules?.role === 'owner');
   const load = useCallback(() => {
     setFailed(null);
     getContainers(server, project).then(setData).catch((e) => { setFailed(message(e)); setData({ wip: [], shared: [], published: [], archived: [] }); });
@@ -168,7 +172,7 @@ function Publishing({ server, project, name, offers, withModel }: { server: stri
         <button type="button" className="link small" data-cde="handover-report" disabled={busy} title="The issues, their comments and the journal of who changed what, as an Excel workbook" onClick={() => void run(() => exportHandover(server, project, name))}><FileSpreadsheet size={12} /> Handover report (XLSX)</button>
       </p>
       <div className="cde-tabs" role="tablist">
-        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff'], ...(offers.includes('register') ? [['register', 'Register']] : []), ...(withModel ? [['ids', 'IDS']] : [])] as [Tab, string][]).map(([id, label]) => (
+        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff'], ...(offers.includes('register') ? [['register', 'Register']] : []), ...(offers.includes('ids') ? [['serverIds', 'IDS on the server']] : []), ...(withModel ? [['ids', 'IDS']] : [])] as [Tab, string][]).map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} className={`tab${tab === id ? ' active' : ''}`} data-cde-tab={id} onClick={() => setTab(id)}>{label}</button>
         ))}
       </div>
@@ -177,7 +181,8 @@ function Publishing({ server, project, name, offers, withModel }: { server: stri
       {tab === 'submissions' && <SubmissionsQueue server={server} project={project} who={who} onDecided={load} checks={offers.includes('checks')} />}
       {tab === 'diff' && <HandoverDiffView server={server} project={project} name={name} data={data} />}
       {tab === 'ids' && <IdsPanel />}
-      {tab === 'register' && <RegisterPanel server={server} project={project} owner={who.me?.role === 'owner' || Boolean(who.me?.isAdmin && who.rules?.role === 'owner')} />}
+      {tab === 'register' && <RegisterPanel server={server} project={project} owner={owner} />}
+      {tab === 'serverIds' && <IdsServerPanel server={server} project={project} owner={owner} />}
     </div>
   );
 }
@@ -486,7 +491,7 @@ function SubmittedChecks({ server, project, first }: { server: string; project: 
 interface SubmitAnswer { ok: boolean; code?: string; message?: string; submission?: Submission; tag?: string; notes?: string[] }
 
 /** The project saved to its remote first (an issue goes with a commit the remote holds): committed when it changed, pushed, its issues synced. */
-async function saveForIssue(server: string | null, note: string): Promise<boolean> {
+export async function saveForIssue(server: string | null, note: string): Promise<boolean> {
   const s = await historyStatus();
   if (s.uncommitted && !await writingCall('history.commit', { message: note }, server)) return false;
   const o = await remoteCall<{ pushed?: boolean; message?: string; notes?: string[] }>('remote.push', {}, server);
@@ -510,6 +515,7 @@ export function IssueOnServer({ issue }: { issue: { id: string; number: number; 
   const [answer, setAnswer] = useState<SubmitAnswer | null>(null);
   const [queue, setQueue] = useState(false);
   const [checks, setChecks] = useState(false);
+  const [serverIds, setServerIds] = useState(false);
   // The project's IDS files run before it goes (docs/ids.md): closed while they are read and checked, then as the run and the user's note say.
   const [ids, setIds] = useState(false);
   const [idsGate, setIdsGate] = useState<IdsGate>({ blocked: false, why: null });
@@ -530,7 +536,7 @@ export function IssueOnServer({ issue }: { issue: { id: string; number: number; 
       setRemote(r);
       if (r?.kind === 'server' && await signedIn(r.url)) {
         const [got, offers] = await Promise.all([getRules(r.url, r.project).catch(() => null), features(r.url)]);
-        if (live) { setRules(got); setRole(got?.role ?? null); setQueue(offers.includes('submissions')); setChecks(offers.includes('checks')); }
+        if (live) { setRules(got); setRole(got?.role ?? null); setQueue(offers.includes('submissions')); setChecks(offers.includes('checks')); setServerIds(offers.includes('ids')); }
       }
     }).catch(() => { if (live) setRemote(null); });
     return () => { live = false; };
@@ -564,6 +570,7 @@ export function IssueOnServer({ issue }: { issue: { id: string; number: number; 
             ? 'The project is saved to the server, then the issue goes there: submitted for approval (an approver makes it Shared or Published), or as its issue tag directly where the project\'s rules let you.'
             : 'The project is saved to the folder, then the issue goes there as its issue tag.'}</p>
           {ids && <IdsOnSubmit onGate={setIdsGate} />}
+          {server && serverIds && atLeast(role, 'editor') && <IdsCheckOnServer server={server} project={remote.project} label={label} />}
           <div className="cde-actions">
             {remote.kind === 'server' && <button type="button" className="btn primary" disabled={busy || !mayAsk || idsGate.blocked} data-cde-submit title={mayAsk ? 'Ask an approver to publish this issue' : queue ? 'Viewers do not submit issues' : 'This server has no publish queue (an Atrium Server older than W4)'} onClick={() => void go('remote.submitIssue')}><Check size={13} />Submit for approval</button>}
             <button type="button" className="btn" disabled={busy || !direct || idsGate.blocked} data-cde-tag-direct title={direct ? 'Make the issue tag now, without approval' : 'The project\'s rules keep issue tags for its owners: submit for approval'} onClick={() => void go('remote.issueTag')}>Make the issue tag now</button>

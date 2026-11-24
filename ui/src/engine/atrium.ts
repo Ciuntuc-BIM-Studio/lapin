@@ -33,7 +33,7 @@ async function request<T>(server: string, method: string, path: string, body?: u
 }
 
 /** A request whose answer must be a success: its JSON, or the refusal thrown with its code and the message said here. */
-async function need<T>(server: string, method: string, path: string, body?: unknown): Promise<T> {
+export async function need<T>(server: string, method: string, path: string, body?: unknown): Promise<T> {
   const a = await request<T>(server, method, path, body);
   if (a.status >= 200 && a.status < 300) return (a.body ?? {}) as T;
   const b = (a.body ?? {}) as { code?: string; message?: string };
@@ -108,10 +108,16 @@ export interface Rules {
   main: 'editor' | 'owner'; issueTags: 'editor' | 'owner'; comments: 'viewer' | 'editor'; close: 'author' | 'editor'; resolveNeedsComment: boolean; approve?: 'editor' | 'owner'; role: Role;
   /** W5: the naming rule (a regex every file's code must match whole), and the checks' settings (every member, defaults filled). */
   naming?: string | null; checks?: CheckSettings;
+  /** W6c: the project's IDS files run on every submission (`enabled`), a failing specification an error (`blocking`). */
+  ids?: { enabled: boolean; blocking: boolean };
 }
 export const getRules = (server: string, project: string) => need<Rules>(server, 'GET', `atrium/1.0/projects/${enc(project)}/rules`);
 /** Changes the rules given; `checks` replaces the settings whole (members left out take their defaults). */
 export const putRules = (server: string, project: string, change: Partial<Omit<Rules, 'role' | 'checks'>> & { checks?: CheckSettings | null }) => need<Rules>(server, 'PUT', `atrium/1.0/projects/${enc(project)}/rules`, change);
+
+/** The change `PUT rules` takes for the IDS switches: the whole `ids` object (members left out would take their defaults). */
+export const idsRule = (rules: Pick<Rules, 'ids'>, change: Partial<NonNullable<Rules['ids']>>) =>
+  ({ ids: { enabled: rules.ids?.enabled ?? true, blocking: rules.ids?.blocking ?? true, ...change } });
 
 // ------------------------------------------------------------ activity
 
@@ -191,23 +197,26 @@ export async function getRegister(server: string, project: string): Promise<Regi
 }
 export const registerType = (name: string) => (/\.xlsx$/i.test(name) ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv');
 /** A register imported from a CSV or XLSX file (owners): it replaces the one there. The file goes as it is, not as JSON. */
-export async function putRegister(server: string, project: string, bytes: Uint8Array, name: string): Promise<Register> {
-  const path = `${R(project)}?name=${enc(name)}`;
-  const type = registerType(name);
+export const putRegister = (server: string, project: string, bytes: Uint8Array, name: string) => putFile<Register>(server, `${R(project)}?name=${enc(name)}`, bytes, registerType(name));
+
+/**
+ * A file put as its own bytes (the register, W5; an IDS file, W6c): the page's fetch in front of the server, else the engine
+ * (remote.atrium sends bytes to those two paths only). A refusal is thrown with its body (a 400's problems).
+ */
+export async function putFile<T>(server: string, path: string, bytes: Uint8Array, type: string): Promise<T> {
+  let a: Answer<T>;
   if (isCdeServer(server)) {
     const r = await api(`/${path}`, { method: 'PUT', headers: { 'content-type': type }, body: bytes as BodyInit });
-    let body: Record<string, unknown> | null = null;
-    try { body = await r.json() as Record<string, unknown>; } catch { body = null; }
-    if (r.ok) return body as unknown as Register;
-    const code = (body?.code as string | undefined) ?? `http_${r.status}`;
-    const said = (body?.message as string | undefined) ?? `The server answered ${r.status}.`;
-    throw new AtriumError(r.status, code, refusalText(code, said), said, body);
+    let body: T | null = null;
+    try { body = await r.json() as T; } catch { body = null; }
+    a = { status: r.status, body, etag: null };
+  } else {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    a = await remoteCall<Answer<T>>('remote.atrium', { url: server, method: 'PUT', path, data: btoa(bin), contentType: type }, server);
   }
-  let bin = '';
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  const a = await remoteCall<Answer<Register>>('remote.atrium', { url: server, method: 'PUT', path, data: btoa(bin), contentType: type }, server);
   if (a.status >= 200 && a.status < 300 && a.body) return a.body;
-  const b = (a.body ?? {}) as unknown as { code?: string; message?: string };
+  const b = (a.body ?? {}) as { code?: string; message?: string };
   const code = b.code ?? `http_${a.status}`;
   throw new AtriumError(a.status, code, refusalText(code, b.message ?? `The server answered ${a.status}.`), b.message ?? null, b as Record<string, unknown>);
 }

@@ -37,6 +37,10 @@ export const REFUSALS: Record<string, string> = {
   no_register: 'This project has no document register.',
   bad_register: 'Not a register: a CSV or XLSX file whose first row names the columns, with a code column and at least one row with a code.',
   too_large: 'The file is too large for the server.',
+  // W6c: IDS files on the server.
+  no_ids: 'The project has no IDS file on the server.',
+  bad_ids: 'Not an IDS 1.0 file.',
+  too_many: 'The project holds 50 IDS files, the most a project may.',
 };
 export const refusalText = (code: string, message?: string | null) => REFUSALS[code] ?? message ?? code;
 

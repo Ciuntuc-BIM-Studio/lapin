@@ -130,6 +130,18 @@ Când verificările găsesc erori, corectează fișierul și propune din nou; sa
 
 **Salvează setările verificărilor** le trimite; o valoare pe care serverul n-o acceptă e spusă lângă câmpul ei. Activitatea arată fiecare rulare a verificărilor cu ce a găsit.
 
+## IDS pe server
+
+Un server care îl oferă (Atrium Server de la W6b, precum cde.lapinbim.com) verifică și modelul fiecărei propuneri cu **fișierele IDS** ale proiectului (buildingSMART IDS 1.0, vezi [Verificări IDS](ids.md)): copia IFC pe care Lapin o salvează cu fiecare commit și fiecare fișier `.ifc` sau `.ifczip` pe care îl emite propunerea.
+
+**Publicare → IDS pe server** listează fișierele IDS ale proiectului cu titlul, versiunea, versiunile IFC, câte specificații au, cine le-a încărcat și când. Proprietarii apasă **Adaugă un fișier IDS…** (un fișier cu același nume îl înlocuiește pe cel de acolo) și butonul coș ca să șteargă unul; ceilalți le citesc. Butonul de descărcare păstrează o copie; butonul listă deschide specificațiile fișierului: la ce se aplică fiecare și ce cere. Un fișier care nu e IDS 1.0 e refuzat, cu fiecare problemă găsită de server și rândul ei.
+
+**Reguli** are două comutatoare (le schimbă proprietarii): **Fișierele IDS rulează la fiecare propunere** și **O specificație IDS care nu trece oprește aprobarea** (oprit, o specificație care nu trece e un avertisment, nu o eroare).
+
+Verificările unei propuneri arată un grup **IDS** după documente: câte specificații trec și câte nu, apoi fiecare fișier IDS pe fiecare model, specificație cu specificație, **Trece**, **Nu trece** sau **Sărită** (scrisă pentru altă versiune IFC). Una care nu trece arată ce cere, elementele care nu trec (GlobalId, clasa și numele, cerința, ce are elementul și ce se așteaptă; primele 50 și câte mai sunt) și **GlobalId-uri care nu trec**, cu un buton care le copiază. Notele și avertismentele spun când commit-ul nu are copie IFC pe server sau un model nu a putut fi citit, era prea mare ori a durat prea mult.
+
+Înainte de a propune, **Gestionare → Emite… → Pe serverul CDE → Verifică pe server** (editorii și proprietarii) salvează proiectul pe server și rulează acolo fișierele IDS pe acel commit, cu același raport; nu se propune nimic. E verificarea serverului, cea pe care o socotește aprobarea; fișierele IDS proprii ale proiectului (Gestionare → IDS…) rulează în continuare aici înainte de Propune spre aprobare, ca până acum.
+
 ## Administrare
 
 Un administrator al serverului vede **Administrare** (pe ecranul de start în browser; **Fișier → Colaborează… → Administrare…** pe desktop):

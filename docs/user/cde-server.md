@@ -130,6 +130,18 @@ When the checks find errors, fix the file and submit again; or, when the registe
 
 **Save the check settings** sends them; a value the server does not accept is said next to its field. Activity shows each run of the checks with what it found.
 
+## IDS on the server
+
+A server that offers it (Atrium Server from W6b, such as cde.lapinbim.com) also checks every submission's model against the project's **IDS files** (buildingSMART IDS 1.0, see [IDS checks](ids.md)): the IFC copy Lapin saves with each commit, and each `.ifc` or `.ifczip` file the submission issues.
+
+**Publishing → IDS on the server** lists the project's IDS files with their title, version, IFC versions, how many specifications they hold, who uploaded them and when. Owners click **Add an IDS file…** (a file of the same name replaces the one there) and the trash button to delete one; the others read them. The download button keeps a copy; the list button opens the file's specifications: what each applies to and what it requires. A file that is not IDS 1.0 is refused, with every problem the server found and its line.
+
+**Rules** has two switches (owners change them): **IDS files run on every submission**, and **A failing IDS specification stops the approval** (off, a failing specification is a warning, not an error).
+
+A submission's checks show an **IDS** group after the documents: how many specifications pass and fail, then each IDS file over each model, specification by specification, **Pass**, **Fail** or **Skipped** (written for another IFC version). A failing one shows what it requires, the failing elements (GlobalId, class and name, the requirement, what the element has and what is expected; the first 50, and how many more), and **Failing GlobalIds**, with a button that copies them. Notes and warnings say when the commit has no IFC copy on the server, or a model could not be read, was too large, or took too long.
+
+Before submitting, **Manage → Issue… → On the CDE server → Check on the server** (editors and owners) saves the project to the server and runs its IDS files there on that commit, showing the same report; nothing is submitted. It is the server's own check, the one the approval counts; the project's own IDS files (Manage → IDS…) still run here before Submit for approval as they did.
+
 ## Administration
 
 A server administrator sees **Administration** (on the start screen in the browser; **File → Collaborate… → Administration…** on the desktop):

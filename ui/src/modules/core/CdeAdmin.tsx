@@ -17,7 +17,7 @@ import { OutboxList } from './CdePublish';
 import { CheckSettingsEditor, CountsText } from './CdeChecks';
 import { checksDone } from '../../engine/checks';
 import {
-  activity, adminUsers, changeUser, createProject, createUser, features, getRules, issueWords, putRules, resetPassword,
+  activity, adminUsers, changeUser, createProject, createUser, features, getRules, idsRule, issueWords, putRules, resetPassword,
   type ActivityItem, type AdminUser, type Rules,
 } from '../../engine/atrium';
 
@@ -137,9 +137,9 @@ export function CdeAdminDialog() {
 export function RulesEditor({ server, project }: { server: string; project: string }) {
   const [rules, setRules] = useState<Rules | null>(null);
   const [busy, setBusy] = useState(false);
-  const [checks, setChecks] = useState(false);
+  const [checks, setChecks] = useState<string[]>([]);
   useEffect(() => { getRules(server, project).then(setRules).catch(() => setRules(null)); }, [server, project]);
-  useEffect(() => { let live = true; void features(server).then((f) => { if (live) setChecks(f.includes('checks')); }); return () => { live = false; }; }, [server]);
+  useEffect(() => { let live = true; void features(server).then((f) => { if (live) setChecks(f); }); return () => { live = false; }; }, [server]);
   if (!rules) return null;
   const owner = rules.role === 'owner';
   const set = async (change: Partial<Omit<Rules, 'role'>>) => {
@@ -162,12 +162,16 @@ export function RulesEditor({ server, project }: { server: string; project: stri
             <option value="viewer">Everyone, viewers too</option><option value="editor">Editors and owners</option></select></td></tr>
           <tr><td>Who closes an issue</td><td><select aria-label="Who closes an issue" value={rules.close} disabled={off} onChange={(e) => void set({ close: e.target.value as Rules['close'] })}>
             <option value="author">Its author, and owners</option><option value="editor">Anyone who may change it</option></select></td></tr>
+          {checks.includes('ids') && <>
+            <tr><td>IDS files run on every submission</td><td><input type="checkbox" aria-label="IDS files run on every submission" checked={rules.ids?.enabled ?? true} disabled={off} data-cde-rule="ids.enabled" onChange={(e) => void set(idsRule(rules, { enabled: e.target.checked }))} /></td></tr>
+            <tr><td>A failing IDS specification stops the approval</td><td><input type="checkbox" aria-label="A failing IDS specification stops the approval" checked={rules.ids?.blocking ?? true} disabled={off} data-cde-rule="ids.blocking" onChange={(e) => void set(idsRule(rules, { blocking: e.target.checked }))} /></td></tr>
+          </>}
           <tr><td>Resolved needs a comment</td><td><input type="checkbox" aria-label="Resolved needs a comment" checked={rules.resolveNeedsComment} disabled={off} onChange={(e) => void set({ resolveNeedsComment: e.target.checked })} /></td></tr>
         </tbody>
       </table>
       {!owner && <p className="muted small">The project's owners change its rules.</p>}
       <p className="muted small">Issue tags are the issues made with Manage → Issue… once they are on the server: revision, status, container and files, never changed. Someone who may not make them submits the issue for approval.</p>
-      {checks && <CheckSettingsEditor server={server} project={project} rules={rules} onSaved={setRules} />}
+      {checks.includes('checks') && <CheckSettingsEditor server={server} project={project} rules={rules} onSaved={setRules} />}
     </div>
   );
 }

@@ -39,6 +39,10 @@ Când proiectul are fișiere IDS, **Gestionare → Emite… → Pe serverul CDE*
 
 În **Fișier → Colaborează… → Publicare**, tabul **IDS** e același panou.
 
+## Fișiere IDS pe serverul CDE
+
+Un server CDE poate ține fișiere IDS proprii pentru un proiect și verifica modelul fiecărei propuneri cu ele, aprobarea socotind ce găsesc: vezi [IDS pe server](cde-server.md#ids-pe-server). **Verifică pe server**, în Gestionare → Emite… → Pe serverul CDE, le rulează pe commit-ul abia salvat înainte să propui. Fișierele păstrate în proiect (acest panou) și cele de pe server sunt separate: pune același fișier în ambele ca să fie verificat întâi aici.
+
 ## Ce nu verifică IDS 1.0
 
 IDS 1.0 nu citește geometrie, coliziuni sau calcule: pentru ele folosește [Detectarea coliziunilor](clash.md) și [verificările dinaintea unei emiteri](cde.md). Corespondența claselor de ocurențe cu tipurile din IFC2X3 nu se aplică (Lapin scrie IFC4).

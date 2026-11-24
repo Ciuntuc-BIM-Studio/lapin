@@ -569,6 +569,10 @@ public sealed partial class EngineDispatcher
     static readonly System.Text.RegularExpressions.Regex RegisterPath = new(
         "^atrium/1\\.0/projects/[A-Za-z0-9._-]{1,128}/register(\\?name=[^&#]*)?$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
+    /// <summary>A project's IDS file by its (encoded) name, no query (W6c): put as the file itself, and read back as bytes for a download.</summary>
+    static readonly System.Text.RegularExpressions.Regex IdsPath = new(
+        "^atrium/1\\.0/projects/[A-Za-z0-9._-]{1,128}/ids/[A-Za-z0-9._~%!$&'()*+,;=@-]{1,800}\\.[iI][dD][sS]$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     /// <summary>
     /// One request to the server's own API (Atrium's <c>/atrium/1.0</c>: the account, its administration, members, rules, activity;
     /// BCF 3.0; and the making of a project, <c>POST /lapin-remote/1.0/projects</c>) on the sign-in the call carries, for the desktop's
@@ -581,18 +585,19 @@ public sealed partial class EngineDispatcher
         var path = ((string?)p["path"] ?? "").TrimStart('/');
         var bare = path.Split('?')[0];
         // W4: a commit's package, its viewer record and an object (its IFC copy, an issued file) read for the desktop's containers view.
-        var download = method == "GET" && ReadOnlyObject.IsMatch(bare);
+        var download = method == "GET" && (ReadOnlyObject.IsMatch(bare) || IdsPath.IsMatch(path));
         var allowed = bare.StartsWith("atrium/1.0/", StringComparison.Ordinal) || bare.StartsWith("bcf/3.0/", StringComparison.Ordinal)
             || (bare == "lapin-remote/1.0/projects" && method == "POST") || download;
         if (!allowed || !AtriumMethods.Contains(method) || path.Contains("..", StringComparison.Ordinal) || path.Contains('\\') || path.Contains("//", StringComparison.Ordinal) || path.Contains('#'))
             throw new CommandException("Not a request of the server's own API.");
-        // W5: a project's document register goes up as the file itself (CSV or XLSX, base64 in `data`), the only raw body sent.
+        // W5: a project's document register goes up as the file itself (CSV or XLSX, base64 in `data`); W6c: an IDS file, the same way.
+        // No other request carries bytes.
         byte[]? raw = null;
         if ((string?)p["data"] is { } data)
         {
-            if (method != "PUT" || !RegisterPath.IsMatch(path)) throw new CommandException("Only a document register is sent as a file.");
+            if (method != "PUT" || !(RegisterPath.IsMatch(path) || IdsPath.IsMatch(path))) throw new CommandException("Only a document register or an IDS file is sent as a file.");
             try { raw = Convert.FromBase64String(data); }
-            catch (FormatException) { throw new CommandException("The register's bytes are not base64."); }
+            catch (FormatException) { throw new CommandException("The file's bytes are not base64."); }
         }
         var remote = (HttpRemote)await HttpRemote.ConnectAsync(Http, url, "-", tokens);
         var bytes = download && Flag(p, "bytes");
