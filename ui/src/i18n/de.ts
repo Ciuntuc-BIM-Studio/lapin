@@ -3,6 +3,9 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  "Same class, in this view": "Gleiche Klasse, in dieser Ansicht",
+  "Nothing of what this tool places is in this view.": "Nichts von dem, was dieses Werkzeug platziert, ist in dieser Ansicht.",
+  "Select an element first: Select similar takes the others of its class and type.": "Wähle zuerst ein Element: Ähnliche auswählen nimmt die anderen seiner Klasse und seines Typs.",
   // IDS 1.0 checks (docs/ids.md).
   "Run the check": "Prüfung starten",
   "IDS": "IDS",
@@ -6532,6 +6535,9 @@ const S5D_TAILS: Record<string, string> = {
   "solids for CAD programs, on their exact surfaces where known": "Volumenkörper für CAD-Programme, auf ihren exakten Flächen, wo diese bekannt sind",
 };
 export const DE_PATTERNS: Language['patterns'] = [
+  // What the engine is still working on, by name (app report #187).
+  [/^Still working on: (.+)…$/, (m) => { const t = DE[m[1]] ?? m[1]; return `Wird noch bearbeitet: ${t}…`; }],
+  [/^(.+) is still running: its result shows when it lands\.$/, (m) => { const t = DE[m[1]] ?? m[1]; return `${t} läuft noch: das Ergebnis erscheint, sobald es fertig ist.`; }],
   // S5d: global imperfections, sheeting, θ
   [/^Global sway imperfections \(EN 1993-1-1 5\.3\.2; the same form for concrete, EN 1992-1-1 5\.2; timber by EN 1995-1-1 5\.4\.4\): each ultimate combination solved four times, ±X and ±Y, with φ·NEd at the top and −φ·NEd at the foot of each compressed column, NEd of its first-order result; h = ([\d.]+) m, αh = ([\d.]+), (.+), (.+)\. A combination's results are the envelope of its four\.$/, (m) => `Globale Schiefstellungs-Imperfektionen (EN 1993-1-1 5.3.2; dieselbe Form für Beton, EN 1992-1-1 5.2; Holz nach EN 1995-1-1 5.4.4): jede Kombination im Grenzzustand der Tragfähigkeit viermal gelöst, ±X und ±Y, mit φ·NEd am Kopf und −φ·NEd am Fuß jeder gedrückten Stütze, NEd aus ihrem Ergebnis nach Theorie 1. Ordnung; h = ${m[1]} m, αh = ${m[2]}, ${s5dSeg(m[3])}, ${s5dSeg(m[4])}. Die Ergebnisse einer Kombination sind die Einhüllende der vier.`],
   [/^EN 1993-1-1 5\.3\.2\(4\): in (\d+) ultimate combinations? the horizontal loads are at least 0\.15 of the vertical ones along (X|Y|X and Y): the sway imperfections could be left out there; they are kept, on the safe side\.$/, (m) => `EN 1993-1-1 5.3.2(4): in ${m[1]} Kombination(en) im Grenzzustand der Tragfähigkeit betragen die Horizontallasten mindestens 0.15 der vertikalen in ${m[2].replace(' and ', ' und ')}: die Schiefstellungs-Imperfektionen könnten dort weggelassen werden; sie bleiben, auf der sicheren Seite.`],

@@ -20,6 +20,8 @@ import { criteriaOf, defaultKeys, similarIds, type SimilarKey } from './similar'
 import { hideSelection, isolateSelection, resetTemporary, temporaryOn, useTemporary } from '../viewport/temporary';
 import { useScope } from '../platform/scope';
 import type { MenuItem } from './ContextMenu';
+import type { NodeDto, RelationDto } from '../engine/protocol';
+import { bindingText } from '../app/commands';
 import { offsetMenuItems } from '../viewport/outlineOffset';
 import { SCALE_IMAGE_TOOL, scalableTrace, startScaleImage } from '../modules/drafting/scaleImage';
 
@@ -53,27 +55,48 @@ function chooseAll(ids: string[]): void {
   useUi.setState({ selected: ids, selection: ids[ids.length - 1] ?? null });
 }
 
-/** Select similar (the same class and type) in this view or in the whole project, and "Select all with the same…" a thing the selection is told by (forum topic 73). */
-export function similarItems(): MenuItem[] {
+/** What Select similar matches the selection by, when it can: all of one class, each editable (else null). */
+function similarBasis(): { model: { nodes: Map<string, NodeDto>; relations: Map<string, RelationDto> }; ids: string[] } | null {
   const { selected } = useUi.getState();
   const { nodes, relations } = useSession.getState();
-  const model = { nodes, relations };
   const ids = selected.filter((id) => nodes.has(id));
-  if (!ids.length || ids.some((id) => !nodes.get(id)?.editable)) return [];
-  if (ids.some((id) => nodes.get(id)!.type !== nodes.get(ids[0])!.type)) return [];
+  if (!ids.length || ids.some((id) => !nodes.get(id)?.editable)) return null;
+  if (ids.some((id) => nodes.get(id)!.type !== nodes.get(ids[0])!.type)) return null;
+  return { model: { nodes, relations }, ids };
+}
+
+/**
+ * Select similar in this view (forum topics 73 and 250; its keys, Ctrl+Shift+A by default): the elements of the selection's
+ * class and type the view in front shows. Said when the selection has nothing to match.
+ */
+export function selectSimilarHere(): void {
+  const b = similarBasis();
+  if (!b) { notify('Select an element first: Select similar takes the others of its class and type.'); return; }
+  chooseAll(similarIds(b.model, b.ids, defaultKeys(b.model, b.ids), inFrontView));
+}
+
+/** Select similar (the same class and type) in this view or in the whole project, and "Select all with the same…" a thing the selection is told by (forum topic 73); its class alone among them (forum topic 250). */
+export function similarItems(): MenuItem[] {
+  const b = similarBasis();
+  if (!b) return [];
+  const { model, ids } = b;
   const keys = defaultKeys(model, ids);
+  const keysText = bindingText('app.selectSimilar');
   const items: MenuItem[] = [
-    { label: 'Select similar in this view', onSelect: () => chooseAll(similarIds(model, ids, keys, inFrontView)) },
+    { label: 'Select similar in this view', shortcut: keysText || undefined, onSelect: () => chooseAll(similarIds(model, ids, keys, inFrontView)) },
     { label: 'Select similar in the whole project', onSelect: () => chooseAll(similarIds(model, ids, keys)) },
   ];
-  // What the clicked element is told apart by: one entry for each, matched in the project (one element selected).
+  // What the clicked element is told apart by: one entry for each, matched in the project (one element selected); first its
+  // class whatever the type (all the walls), in this view.
+  const cls = model.nodes.get(ids[0])!.type;
+  const sub: MenuItem[] = [{ label: 'Same class, in this view', hint: cls, raw: false, onSelect: () => chooseAll(similarIds(model, ids, [], inFrontView)) }];
   if (ids.length === 1) {
-    const sub: MenuItem[] = criteriaOf(model, ids[0]).map((c) => ({
+    sub.push(...criteriaOf(model, ids[0]).map((c) => ({
       label: c.label, hint: c.value, raw: false,
       onSelect: () => chooseAll(similarIds(model, ids, [c.key as SimilarKey])),
-    }));
-    if (sub.length) items.push({ label: 'Select all with the same…', submenu: sub, onSelect: () => undefined });
+    })));
   }
+  items.push({ label: 'Select all with the same…', submenu: sub, onSelect: () => undefined });
   return items;
 }
 

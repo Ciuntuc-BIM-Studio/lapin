@@ -571,6 +571,8 @@ table.layer-edit:not(.zones):not(.material-params) > tbody > tr:not(.layer-parts
 .ref-face { fill: var(--accent); font: 700 11px var(--font); text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: var(--bg, #fff); stroke-width: 3px; }
 .grip-hint { font-size: 11px; fill: var(--accent); font-weight: 600; pointer-events: none; }
 .plan-grip-drag { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
+/* The line a dragged grip keeps its distance from (a dimension line stacked on a parallel one, forum topic 236). */
+.grip-guide { stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 6 3; vector-effect: non-scaling-stroke; pointer-events: none; }
 /* An outline offset while Shift-dragging an edge's middle (decision 609): the engine's result, solid; why it cannot be, in red. */
 .ref-line.offset-preview { stroke-dasharray: none; stroke-width: 1.8; }
 .grip-hint.offset-problem { fill: var(--danger, #c0392b); }

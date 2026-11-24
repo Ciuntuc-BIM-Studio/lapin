@@ -248,6 +248,11 @@ export interface Grip {
   sketch?: { viewId: string; shape: string; part: string };
   /** Where a drag puts it, kept to its own angles (a tag's knee, decision 331); `free` while Shift is held. */
   constrain?: (to: Vec2, free: boolean) => Vec2;
+  /**
+   * A guide shown while it is dragged to `at` (a dimension line stacked at the set distance from a parallel one, forum topic
+   * 236: that line, and what the distance is); null: none there.
+   */
+  guide?: (at: Vec2) => { a: Vec2; b: Vec2; label?: string } | null;
   /** For grips that are not one command: do it. */
   move?: (to: Vec2) => Promise<unknown> | void;
   /** Ctrl/⌘-click: insert a vertex here (an edge's middle). */

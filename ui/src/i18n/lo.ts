@@ -3,6 +3,9 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  "Same class, in this view": "ຄລາສດຽວກັນ, ໃນມຸມມອງນີ້",
+  "Nothing of what this tool places is in this view.": "ບໍ່ມີສິ່ງທີ່ເຄື່ອງມືນີ້ວາງຢູ່ໃນມຸມມອງນີ້.",
+  "Select an element first: Select similar takes the others of its class and type.": "ເລືອກອົງປະກອບກ່ອນ: ເລືອກທີ່ຄ້າຍກັນ ຈະເອົາອັນອື່ນທີ່ມີຄລາສ ແລະ ປະເພດດຽວກັນ.",
   // IDS 1.0 checks (docs/ids.md).
   "Run the check": "ເລີ່ມການກວດສອບ",
   "IDS": "IDS",
@@ -6626,6 +6629,9 @@ const S5D_TAILS: Record<string, string> = {
   "solids for CAD programs, on their exact surfaces where known": "ຮູບທຣົງຕັນສຳລັບໂປຣແກຣມ CAD, ເທິງພື້ນຜິວທີ່ແນ່ນອນຂອງມັນບ່ອນທີ່ຮູ້",
 };
 export const LO_PATTERNS: Language['patterns'] = [
+  // What the engine is still working on, by name (app report #187).
+  [/^Still working on: (.+)…$/, (m) => { const t = LO[m[1]] ?? m[1]; return `ຍັງເຮັດວຽກຢູ່: ${t}…`; }],
+  [/^(.+) is still running: its result shows when it lands\.$/, (m) => { const t = LO[m[1]] ?? m[1]; return `${t} ຍັງເຮັດວຽກຢູ່: ຜົນຈະສະແດງເມື່ອສຳເລັດ.`; }],
   // S5d: global imperfections, sheeting, θ
   [/^Global sway imperfections \(EN 1993-1-1 5\.3\.2; the same form for concrete, EN 1992-1-1 5\.2; timber by EN 1995-1-1 5\.4\.4\): each ultimate combination solved four times, ±X and ±Y, with φ·NEd at the top and −φ·NEd at the foot of each compressed column, NEd of its first-order result; h = ([\d.]+) m, αh = ([\d.]+), (.+), (.+)\. A combination's results are the envelope of its four\.$/, (m) => `ຄວາມບົກຜ່ອງລວມຂອງການເອນຂ້າງ (EN 1993-1-1 5.3.2; ຮູບແບບດຽວກັນສຳລັບຄອນກຣີດ, EN 1992-1-1 5.2; ໄມ້ຕາມ EN 1995-1-1 5.4.4): ແຕ່ລະການປະສົມຂອງສະພາບຂີດຈຳກັດສູງສຸດຖືກແກ້ສີ່ຄັ້ງ, ±X ແລະ ±Y, ດ້ວຍ φ·NEd ທີ່ປາຍເທິງ ແລະ −φ·NEd ທີ່ຕີນຂອງເສົາທີ່ຖືກອັດແຕ່ລະຕົ້ນ, NEd ຈາກຜົນອັນດັບໜຶ່ງຂອງມັນ; h = ${m[1]} m, αh = ${m[2]}, ${s5dSeg(m[3])}, ${s5dSeg(m[4])}. ຜົນຂອງການປະສົມແມ່ນເສັ້ນຫຸ້ມຂອງສີ່ຕົວນັ້ນ.`],
   [/^EN 1993-1-1 5\.3\.2\(4\): in (\d+) ultimate combinations? the horizontal loads are at least 0\.15 of the vertical ones along (X|Y|X and Y): the sway imperfections could be left out there; they are kept, on the safe side\.$/, (m) => `EN 1993-1-1 5.3.2(4): ໃນ ${m[1]} ການປະສົມຂອງສະພາບຂີດຈຳກັດສູງສຸດ ນ້ຳໜັກແນວນອນຢ່າງໜ້ອຍ 0.15 ຂອງແນວຕັ້ງຕາມ ${m[2].replace(' and ', ' ແລະ ')}: ຄວາມບົກຜ່ອງຂອງການເອນຂ້າງອາດຖືກຕັດອອກບ່ອນນັ້ນ; ແຕ່ຍັງເກັບໄວ້, ເພື່ອຄວາມປອດໄພ.`],

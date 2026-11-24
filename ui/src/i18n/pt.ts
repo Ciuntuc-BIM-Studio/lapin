@@ -3,6 +3,9 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  "Same class, in this view": "Mesma classe, nesta vista",
+  "Nothing of what this tool places is in this view.": "Nada do que esta ferramenta coloca está nesta vista.",
+  "Select an element first: Select similar takes the others of its class and type.": "Selecione primeiro um elemento: Selecionar semelhantes pega os outros da mesma classe e tipo.",
   // IDS 1.0 checks (docs/ids.md).
   "Run the check": "Executar a verificação",
   "IDS": "IDS",
@@ -6571,6 +6574,9 @@ const S5D_TAILS: Record<string, string> = {
   "solids for CAD programs, on their exact surfaces where known": "sólidos para programas CAD, sobre as suas superfícies exatas onde são conhecidas",
 };
 export const PT_PATTERNS: Language['patterns'] = [
+  // What the engine is still working on, by name (app report #187).
+  [/^Still working on: (.+)…$/, (m) => { const t = PT[m[1]] ?? m[1]; return `Ainda trabalhando em: ${t}…`; }],
+  [/^(.+) is still running: its result shows when it lands\.$/, (m) => { const t = PT[m[1]] ?? m[1]; return `${t} ainda está em execução: o resultado aparece quando terminar.`; }],
   // S5d: global imperfections, sheeting, θ
   [/^Global sway imperfections \(EN 1993-1-1 5\.3\.2; the same form for concrete, EN 1992-1-1 5\.2; timber by EN 1995-1-1 5\.4\.4\): each ultimate combination solved four times, ±X and ±Y, with φ·NEd at the top and −φ·NEd at the foot of each compressed column, NEd of its first-order result; h = ([\d.]+) m, αh = ([\d.]+), (.+), (.+)\. A combination's results are the envelope of its four\.$/, (m) => `Imperfeições globais de desaprumo (EN 1993-1-1 5.3.2; a mesma forma para o betão, EN 1992-1-1 5.2; a madeira segundo a EN 1995-1-1 5.4.4): cada combinação de estado limite último resolvida quatro vezes, ±X e ±Y, com φ·NEd no topo e −φ·NEd no pé de cada pilar comprimido, NEd do seu resultado de primeira ordem; h = ${m[1]} m, αh = ${m[2]}, ${s5dSeg(m[3])}, ${s5dSeg(m[4])}. Os resultados de uma combinação são a envolvente das quatro.`],
   [/^EN 1993-1-1 5\.3\.2\(4\): in (\d+) ultimate combinations? the horizontal loads are at least 0\.15 of the vertical ones along (X|Y|X and Y): the sway imperfections could be left out there; they are kept, on the safe side\.$/, (m) => `EN 1993-1-1 5.3.2(4): em ${m[1]} combinação(ões) de estado limite último as cargas horizontais são pelo menos 0.15 das verticais segundo ${m[2].replace(' and ', ' e ')}: as imperfeições de desaprumo poderiam ser omitidas aí; mantêm-se, do lado da segurança.`],

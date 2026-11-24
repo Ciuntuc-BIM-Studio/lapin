@@ -3,6 +3,9 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  "Same class, in this view": "Samme klasse, i denne visning",
+  "Nothing of what this tool places is in this view.": "Intet af det, dette værktøj placerer, er i denne visning.",
+  "Select an element first: Select similar takes the others of its class and type.": "Vælg først et element: Vælg lignende tager de andre af dets klasse og type.",
   // IDS 1.0 checks (docs/ids.md).
   "Run the check": "Kør kontrollen",
   "IDS": "IDS",
@@ -6569,6 +6572,9 @@ const S5D_TAILS: Record<string, string> = {
   "solids for CAD programs, on their exact surfaces where known": "legemer til CAD-programmer, på deres eksakte flader hvor de kendes",
 };
 export const DA_PATTERNS: Language['patterns'] = [
+  // What the engine is still working on, by name (app report #187).
+  [/^Still working on: (.+)…$/, (m) => { const t = DA[m[1]] ?? m[1]; return `Arbejder stadig på: ${t}…`; }],
+  [/^(.+) is still running: its result shows when it lands\.$/, (m) => { const t = DA[m[1]] ?? m[1]; return `${t} kører stadig: resultatet vises, når det er færdigt.`; }],
   // S5d: global imperfections, sheeting, θ
   [/^Global sway imperfections \(EN 1993-1-1 5\.3\.2; the same form for concrete, EN 1992-1-1 5\.2; timber by EN 1995-1-1 5\.4\.4\): each ultimate combination solved four times, ±X and ±Y, with φ·NEd at the top and −φ·NEd at the foot of each compressed column, NEd of its first-order result; h = ([\d.]+) m, αh = ([\d.]+), (.+), (.+)\. A combination's results are the envelope of its four\.$/, (m) => `Globale skævstillings-imperfektioner (EN 1993-1-1 5.3.2; samme form for beton, EN 1992-1-1 5.2; træ efter EN 1995-1-1 5.4.4): hver kombination i brudgrænsetilstanden løst fire gange, ±X og ±Y, med φ·NEd i toppen og −φ·NEd i foden af hver trykt søjle, NEd fra dens førsteordens resultat; h = ${m[1]} m, αh = ${m[2]}, ${s5dSeg(m[3])}, ${s5dSeg(m[4])}. En kombinations resultater er omhyllingen af de fire.`],
   [/^EN 1993-1-1 5\.3\.2\(4\): in (\d+) ultimate combinations? the horizontal loads are at least 0\.15 of the vertical ones along (X|Y|X and Y): the sway imperfections could be left out there; they are kept, on the safe side\.$/, (m) => `EN 1993-1-1 5.3.2(4): i ${m[1]} kombination(er) i brudgrænsetilstanden er de vandrette laster mindst 0.15 af de lodrette langs ${m[2].replace(' and ', ' og ')}: skævstillings-imperfektionerne kunne udelades dér; de beholdes, på den sikre side.`],

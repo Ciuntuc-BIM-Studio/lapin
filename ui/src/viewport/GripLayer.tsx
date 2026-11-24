@@ -360,7 +360,8 @@ export function useGripEditor(o: GripEditorOptions) {
     const members = movers(drag.group, pickOf(drag.group), e.altKey);
     // A grip that keeps its own angles (a tag's knee): on them unless Shift frees it.
     const typed = livePoint({ ...useLive.getState(), cursor: aimed }) ?? aimed;
-    const keep = members.length === 1 ? members[0].constrain : undefined;
+    // Not while Ctrl/⌘-dragging a new point out of the grip (`insertAt`): that point goes where it is dropped.
+    const keep = members.length === 1 && !drag.insert ? members[0].constrain : undefined;
     const kept = keep ? keep(typed, e.shiftKey) : typed;
     // A module's own snap for a grip of an element it does not own (a generated block's grid), after the owner's.
     const at = members.length === 1 ? gripSnapped(members[0], kept, e.shiftKey) : kept;
@@ -503,6 +504,18 @@ export function useGripEditor(o: GripEditorOptions) {
           <g className="plan-preview">
             <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="plan-grip-drag" />
             <text x={b.x + 10} y={b.y - 10}>{formatLength(Math.hypot(dx, dy))} · {formatAngle(ang)}°</text>
+          </g>
+        );
+      })()}
+      {drag?.moved && !drag.offset && !drag.insert && drag.members.length === 1 && drag.members[0].guide && (() => {
+        // A guide the grip shows where it is now (a dimension line stacked on a parallel one, forum topic 236).
+        const g = drag.members[0].guide!(drag.at);
+        if (!g) return null;
+        const z = zOf(drag.group), a = o.toScreen(g.a, z), b = o.toScreen(g.b, z), q = o.toScreen(drag.at, z);
+        return (
+          <g className="plan-preview" data-testid="grip-guide">
+            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="grip-guide" />
+            {g.label && <text x={q.x + 12} y={q.y + 16} className="grip-hint">{g.label}</text>}
           </g>
         );
       })()}

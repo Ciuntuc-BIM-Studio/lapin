@@ -1,6 +1,9 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  "Same class, in this view": "Aceeași clasă, în această vedere",
+  "Nothing of what this tool places is in this view.": "Nimic din ce pune această unealtă nu e în această vedere.",
+  "Select an element first: Select similar takes the others of its class and type.": "Selectează mai întâi un element: Selectează similare le ia pe celelalte din clasa și tipul lui.",
   // IDS 1.0 checks (docs/ids.md).
   "Run the check": "Rulează verificarea",
   "IDS": "IDS",
@@ -6526,6 +6529,9 @@ const S5D_TAILS: Record<string, string> = {
   "solids for CAD programs, on their exact surfaces where known": "solide pentru programe CAD, pe suprafețele lor exacte unde sunt știute",
 };
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  // What the engine is still working on, by name (app report #187).
+  [/^Still working on: (.+)…$/, (m) => { const t = RO[m[1]] ?? m[1]; return `Se lucrează încă la: ${t}…`; }],
+  [/^(.+) is still running: its result shows when it lands\.$/, (m) => { const t = RO[m[1]] ?? m[1]; return `${t} rulează încă: rezultatul apare când se termină.`; }],
   // S5d: global imperfections, sheeting, θ
   [/^Global sway imperfections \(EN 1993-1-1 5\.3\.2; the same form for concrete, EN 1992-1-1 5\.2; timber by EN 1995-1-1 5\.4\.4\): each ultimate combination solved four times, ±X and ±Y, with φ·NEd at the top and −φ·NEd at the foot of each compressed column, NEd of its first-order result; h = ([\d.]+) m, αh = ([\d.]+), (.+), (.+)\. A combination's results are the envelope of its four\.$/, (m) => `Imperfecțiuni globale de deplasare laterală (EN 1993-1-1 5.3.2; aceeași formă pentru beton, EN 1992-1-1 5.2; lemnul după EN 1995-1-1 5.4.4): fiecare combinație la starea limită ultimă rezolvată de patru ori, ±X și ±Y, cu φ·NEd în capul și −φ·NEd în piciorul fiecărui stâlp comprimat, NEd din rezultatul lui de ordinul întâi; h = ${m[1]} m, αh = ${m[2]}, ${s5dSeg(m[3])}, ${s5dSeg(m[4])}. Rezultatele unei combinații sunt înfășurătoarea celor patru.`],
   [/^EN 1993-1-1 5\.3\.2\(4\): in (\d+) ultimate combinations? the horizontal loads are at least 0\.15 of the vertical ones along (X|Y|X and Y): the sway imperfections could be left out there; they are kept, on the safe side\.$/, (m) => `EN 1993-1-1 5.3.2(4): în ${m[1]} combinații la starea limită ultimă încărcările orizontale sunt cel puțin 0.15 din cele verticale pe direcția ${m[2].replace(' and ', ' și ')}: imperfecțiunile de deplasare laterală ar putea fi omise acolo; sunt păstrate, în favoarea siguranței.`],

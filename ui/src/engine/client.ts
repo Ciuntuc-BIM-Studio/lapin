@@ -70,7 +70,7 @@ export class EngineClient {
   private link: EngineLink | null = null;
   private seq = 0;
   private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout>; done?: () => void }>();
-  private slowListeners = new Set<(method: string, slow: boolean) => void>();
+  private slowListeners = new Set<(method: string, slow: boolean, params: Record<string, unknown>) => void>();
   private diffListeners = new Set<(d: Diff) => void>();
   private eventListeners = new Map<string, Set<(data: unknown) => void>>();
   private statusListeners = new Set<(connected: boolean) => void>();
@@ -161,14 +161,16 @@ export class EngineClient {
         // Waited for while connected; past the usual wait, said to be slow (and said again when it lands).
         timer = setTimeout(() => {
           if (!this.pending.has(id)) return;
-          done = () => this.slowListeners.forEach((l) => l(method, false));
+          done = () => this.slowListeners.forEach((l) => l(method, false, params));
           this.pending.get(id)!.done = done;
-          this.slowListeners.forEach((l) => l(method, true));
+          this.slowListeners.forEach((l) => l(method, true, params));
         }, timeoutMs ?? DEFAULT_TIMEOUT_MS);
       } else {
         timer = setTimeout(() => {
           if (!this.pending.delete(id)) return;
-          reject(new Error(`The engine did not answer ${method} within ${Math.round(timeoutMs / 1000)} s.`));
+          // A question says which (doc.query plan.drawing), so the message tells what the engine was asked (app report #187).
+          const what = typeof params.name === 'string' ? `${method} (${params.name})` : method;
+          reject(new Error(`The engine did not answer ${what} within ${Math.round(timeoutMs / 1000)} s.`));
         }, timeoutMs);
       }
       this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject, timer, done });
@@ -176,8 +178,8 @@ export class EngineClient {
     });
   }
 
-  /** A call waited for without a limit (an edit) that passed the usual wait (slow true), then landed or failed (false). */
-  onSlow(l: (method: string, slow: boolean) => void): () => void { this.slowListeners.add(l); return () => this.slowListeners.delete(l); }
+  /** A call waited for without a limit (an edit) that passed the usual wait (slow true), then landed or failed (false); with its params, to name it. */
+  onSlow(l: (method: string, slow: boolean, params: Record<string, unknown>) => void): () => void { this.slowListeners.add(l); return () => this.slowListeners.delete(l); }
 
   /** A call that wants no answer (presence): sent if connected, else dropped. */
   notify(method: string, params: Record<string, unknown> = {}): void {
