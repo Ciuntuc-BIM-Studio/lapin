@@ -73,6 +73,7 @@ public static class Indexer
         var lim = limits ?? new Limits();
         System.IO.Directory.CreateDirectory(dir);
         foreach (var f in new[] { "meta.json", "points.bin" }) { var p = Path.Combine(dir, f); if (File.Exists(p)) File.Delete(p); }
+        SplatStore.Delete(dir);
         var h = reader.Header;
         var expected = Math.Max(1, h.Count ?? 0);
 
@@ -282,6 +283,9 @@ public static class Indexer
             Nodes = nodes, SourceLength = sourceLength, SourceKey = sourceKey,
         };
         data.Dispose();
+        // A splat file's Gaussians beside its points (docs/plan-gaussian-splats.md), before the index's meta: an index is never
+        // ready without them.
+        if (reader is ISplatReader splats) SplatStore.Write(splats, dir, done => progress?.Invoke("Splats", 0.95 + 0.05 * done), cancel);
         PointStore.WriteMeta(dir, store);
         progress?.Invoke("Done", 1);
         return PointStore.Open(dir) ?? throw new PointCloudException("The index could not be read back.");

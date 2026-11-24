@@ -5,6 +5,7 @@ import { LibraryImportHost } from '../../platform/ImportPreview';
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
+import { calibrateTool } from './cloudCalibrate';
 import { Aperture, AlignStartVertical, ArrowLeftRight, CornerDownRight, CopyPlus, Slash, Scale, Braces, Tags, Pin, PinOff, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { openTempDimProperties, TEMP_DIM_DIALOG } from '../../viewport/tempDimProps';
 import { AngleDims } from '../../viewport/AngleTempDims';
@@ -205,7 +206,8 @@ const core: LapinModule = {
   summary: 'Project, views, selection and measuring.',
   // The modify tools have no tab of their own: the modelling tabs include them (Architecture, Structure).
   // The old Clash check… button, when Clash detection is the one window.
-  legacyTools: hasModule('clash') ? [openingsCheck] : [],
+  // Calibrate scale (G2 of docs/plan-gaussian-splats.md): started from a cloud's row or the 3D view's menu, not from the ribbon.
+  legacyTools: [...(hasModule('clash') ? [openingsCheck] : []), calibrateTool],
   sharedGroups: {
     // The corners of walls, beams and strip footings (S13): the tab's own Joins group (a wall's Join, the new-corner style) goes with it.
     joins: { label: 'Joins', tools: [joinTool('Mitre', 'core.mitre', Slash, { style: 'mitre' }), joinTool('Butt', 'core.butt', CornerDownRight, { style: 'butt' }), joinTool('Swap', 'core.swap', ArrowLeftRight, { swap: true })] },

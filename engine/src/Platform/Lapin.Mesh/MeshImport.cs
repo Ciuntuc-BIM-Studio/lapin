@@ -12,7 +12,8 @@ namespace Lapin.Mesh;
 /// A mesh read from a file: its pieces (an OBJ object, a glTF node's mesh, an STL file), each a name, a colour and
 /// triangles in model metres, Z up; a glTF primitive's piece also names its material (the furniture models map it to a role).
 /// </summary>
-public sealed record MeshPiece(string Name, string Color, List<Vec3> Vertices, List<(int A, int B, int C)> Triangles, string? Material = null);
+/// <para><c>Element</c>: pieces naming the same one are the parts of one element (a PLY mesh's colours).</para>
+public sealed record MeshPiece(string Name, string Color, List<Vec3> Vertices, List<(int A, int B, int C)> Triangles, string? Material = null, string? Element = null);
 
 /// <summary>What a mesh import brought: the references made, the triangles, and its notes.</summary>
 public sealed record MeshImportResult(int Elements, int Triangles, IReadOnlyList<string> Notes, EditableReport? Editable = null)
@@ -38,7 +39,7 @@ public sealed record MeshImportResult(int Elements, int Triangles, IReadOnlyList
 /// </summary>
 public static class MeshImport
 {
-    public static readonly string[] Formats = ["obj", "stl", "gltf", "glb"];
+    public static readonly string[] Formats = ["obj", "stl", "gltf", "glb", "ply"];
 
     public static MeshImportResult Run(Session session, byte[] bytes, string name, JsonObject options, string? folder, out Diff diff)
     {
@@ -52,7 +53,8 @@ public static class MeshImport
                 "obj" => Obj(bytes, notes),
                 "stl" => Stl(bytes, Path.GetFileNameWithoutExtension(name)),
                 "gltf" or "glb" => Gltf(bytes, ext == "glb", folder, notes),
-                _ => throw new CommandException($"„{name}” is not a mesh Lapin reads (OBJ, STL, glTF, GLB)."),
+                "ply" => PlyMesh.Read(bytes, name, notes),
+                _ => throw new CommandException($"„{name}” is not a mesh Lapin reads (OBJ, STL, glTF, GLB, PLY)."),
             };
         }
         // What a malformed file can raise while it is read (a null where a number is wanted, a number too big for an int,
@@ -68,7 +70,8 @@ public static class MeshImport
         var scale = Json.Number(options["scale"]) is { } sc && sc > 0 ? sc : 1;
         var up = ext is "gltf" or "glb" ? "y" : (string?)options["up"] ?? (ext == "obj" ? "y" : "z");
         var shift = options["at"] is JsonArray { Count: >= 3 } at && Json.Number(at[0]) is { } ax && Json.Number(at[1]) is { } ay && Json.Number(at[2]) is { } az ? new Vec3(ax, ay, az) : Vec3.Zero;
-        Vec3 Map(Vec3 p) { var q = p * scale; if (up == "y") q = MeshMath.FromYUp(q.X, q.Y, q.Z); return q + shift; }
+        // −y up (a 3D Gaussian splatting capture's, COLMAP's axes, as MeshSplatting keeps them): x stays, z forward, −y up.
+        Vec3 Map(Vec3 p) { var q = p * scale; if (up == "y") q = MeshMath.FromYUp(q.X, q.Y, q.Z); else if (up == "-y") q = new Vec3(q.X, q.Z, -q.Y); return q + shift; }
         foreach (var p in pieces) for (var i = 0; i < p.Vertices.Count; i++) p.Vertices[i] = Map(p.Vertices[i]);
         if (Flag(options["oneElement"]) && pieces.Count > 1)
         {
@@ -91,14 +94,16 @@ public static class MeshImport
         {
             var storey = (string?)options["storeyId"] is { Length: > 0 } sid && edit.Model.Get(sid) is { Class: IfcClass.BuildingStorey } given ? given
                 : Spatial.EnsureStorey(edit, session.Product);
-            foreach (var p in pieces)
+            // Pieces naming one element are its parts (a PLY mesh's colours); the others an element each.
+            foreach (var g in pieces.Select((p, i) => (p, i)).GroupBy(x => x.p.Element ?? $"\u0000{x.i}"))
             {
+                var ps = g.Select(x => x.p).ToList();
                 var attrs = new JsonObject
                 {
-                    [StoredBodies.Key] = StoredBodies.Write([(p.Name, p.Color, p.Vertices, p.Triangles)]),
+                    [StoredBodies.Key] = StoredBodies.Write(ps.Select(p => (p.Name, p.Color, (IReadOnlyList<Vec3>)p.Vertices, (IReadOnlyList<(int A, int B, int C)>)p.Triangles))),
                     ["source"] = name,
                 };
-                var e = new Entity(edit.NewId(), IfcClass.BuildingElementProxy, p.Name, attrs);
+                var e = new Entity(edit.NewId(), IfcClass.BuildingElementProxy, ps[0].Element ?? ps[0].Name, attrs);
                 edit.Add(e);
                 made.Add(e.Id);
                 Spatial.Contain(edit, storey.Id, e.Id);

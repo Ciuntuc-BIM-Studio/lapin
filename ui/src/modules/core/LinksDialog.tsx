@@ -10,17 +10,18 @@
 import { confirmAction } from '../../shell/prompts';
 import { backdropClose } from '../../shell/Dialog';
 import { useEffect, useState } from 'react';
-import { ExternalLink, Feather, FolderOpen, MapPin, Move, RefreshCw, Trash2, Unlink, Wand2, X } from 'lucide-react';
+import { Crop, ExternalLink, Feather, FolderOpen, MapPin, Move, RefreshCw, Ruler, Trash2, Unlink, Wand2, X } from 'lucide-react';
 import { fileName, openOptimize } from '../../engine/ifcOptimize';
 import { notify, useUi } from '../../app/store';
 import { engine, execute, useSession } from '../../engine/session';
 import { isDesktop, pickFile, toBase64 } from '../../engine/files';
 import { setLooks } from '../../platform/looks';
 import type { NodeDto } from '../../engine/protocol';
-import { Cell, NumberField } from '../../shell/cells';
-import { CLOUD_MODES, CLOUD_UNITS } from '../../engine/files';
+import { Cell, LabeledLength, LabeledNumber, NumberField } from '../../shell/cells';
+import { fitCrop, startCalibrate, useCloudTools } from './cloudCalibrate';
+import { CLOUD_MODES, CLOUD_UNITS, CLOUD_UPS } from '../../engine/files';
 import { query } from '../../engine/session';
-import { isCloudLink, setCloudStatus, statusText, usePointClouds } from '../../viewport/pointClouds';
+import { isCloudLink, isSplatLink, setCloudStatus, statusText, usePointClouds } from '../../viewport/pointClouds';
 
 const COLOR_MODES = [
   { value: 'rgb', label: 'RGB' }, { value: 'intensity', label: 'Intensity' }, { value: 'elevation', label: 'Elevation' }, { value: 'classification', label: 'Classification' },
@@ -28,7 +29,7 @@ const COLOR_MODES = [
 
 /** Where a cloud stands: by the map, origin to origin or centred, its unit, moved (x, y, z) and turned (°), asked then sent as one step. */
 export async function placeCloud(l: NodeDto): Promise<void> {
-  const p = (l.props.placement ?? {}) as { mode?: string; units?: string; offset?: number[]; rotation?: number };
+  const p = (l.props.placement ?? {}) as { mode?: string; units?: string; offset?: number[]; rotation?: number; up?: string; scale?: number };
   const { ask, choiceField, lengthField, numberField } = await import('../../shell/AskBox');
   const off = Array.isArray(p.offset) ? p.offset : [0, 0, 0];
   const r = await ask(`Place the point cloud ${l.name}`, [
@@ -36,11 +37,44 @@ export async function placeCloud(l: NodeDto): Promise<void> {
     choiceField('units', 'Its unit', p.units ?? 'm', CLOUD_UNITS.filter((u) => u.value !== 'auto')),
     lengthField('x', 'Moved x', off[0] ?? 0), lengthField('y', 'Moved y', off[1] ?? 0), lengthField('z', 'Moved z', off[2] ?? 0),
     numberField('rotation', 'Turned (°)', p.rotation ?? 0),
+    choiceField('up', 'Up axis', p.up ?? 'z', CLOUD_UPS),
+    numberField('scale', 'Scale factor', p.scale ?? 1),
   ]);
   if (!r) return;
-  await execute('pointcloud.place', { id: l.id, mode: r.mode, units: r.units, offset: [Number(r.x), Number(r.y), Number(r.z)], rotation: Number(r.rotation) });
+  await execute('pointcloud.place', { id: l.id, mode: r.mode, units: r.units, offset: [Number(r.x), Number(r.y), Number(r.z)], rotation: Number(r.rotation), up: r.up, scale: Number(r.scale) > 0 ? Number(r.scale) : 1 });
   const check = await query<{ warning?: string | null }>('pointcloud.check', { id: l.id });
   if (check?.warning) notify(check.warning);
+}
+
+interface CropSpec { center: number[]; size: number[]; rotation?: number }
+
+/**
+ * A cloud's crop (G2 of docs/plan-gaussian-splats.md): the box kept, its middle, its sizes and its turn, each edit one undo step;
+ * Fit to cloud makes the box round the whole cloud (along the link's own turn), Reset takes it off.
+ */
+function CropPanel({ link }: { link: NodeDto }) {
+  const crop = (link.props.crop ?? null) as CropSpec | null;
+  const put = (patch: Partial<{ center: number[]; size: number[]; rotation: number }>) => {
+    if (!crop) return;
+    void execute('pointcloud.crop', { id: link.id, crop: { center: patch.center ?? crop.center, size: patch.size ?? crop.size, rotation: patch.rotation ?? crop.rotation ?? 0 } });
+  };
+  const at = (a: number[], i: number, v: number) => a.map((x, k) => (k === i ? v : x));
+  return (
+    <div className="cloud-crop" data-testid="cloud-crop">
+      <div className="row-tools">
+        <button type="button" className="btn small" data-crop="fit" onClick={() => void fitCrop(link.id).catch((e) => notify(e instanceof Error ? e.message : String(e)))}>Fit to cloud</button>
+        <button type="button" className="btn small" data-crop="reset" disabled={!crop} onClick={() => void execute('pointcloud.crop', { id: link.id, crop: null })}>Reset</button>
+      </div>
+      {!crop && <p className="muted small">Not cropped: Fit to cloud makes a box round it, then its numbers shrink it.</p>}
+      {crop && (
+        <div className="cloud-crop-fields">
+          {(['x', 'y', 'z'] as const).map((k, i) => <LabeledLength key={`c${k}`} label={`Middle ${k}`} metres={crop.center[i]} onCommit={(v) => put({ center: at(crop.center, i, v) })} />)}
+          {(['x', 'y', 'z'] as const).map((k, i) => <LabeledLength key={`s${k}`} label={`Size ${k}`} min={0.001} metres={crop.size[i]} onCommit={(v) => { if (v > 0) put({ size: at(crop.size, i, v) }); }} />)}
+          <LabeledNumber label="Turned (°)" value={crop.rotation ?? 0} onCommit={(v) => put({ rotation: v })} />
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** A linked project placed elsewhere (docs/links.md, Hotlinks); in a browser its file is asked for, the page having kept no path. */
@@ -90,6 +124,7 @@ export function LinksDialog() {
   const close = () => useUi.setState({ dialog: null });
   const links = [...nodes.values()].filter(isLink).sort((a, b) => a.name.localeCompare(b.name));
   const status = usePointClouds((st) => st.status);
+  const cropOpen = useCloudTools((st) => st.cropOpen);
   const cloudIds = links.filter(isCloudLink).map((l) => l.id).join(',');
   // The clouds' indexes, asked again while any is being made (the 3D view reports them too when it is open).
   useEffect(() => {
@@ -145,15 +180,21 @@ export function LinksDialog() {
                   return (
                     <tr key={l.id} className={busy === l.id ? 'muted' : undefined}>
                       <td><Cell value={l.name} onCommit={(t) => { const v = t.trim(); if (!v) return false; if (v !== l.name) void execute('link.update', { id: l.id, name: v }); }} /></td>
-                      <td>{cloud ? <span title={info.format}>Point cloud</span> : String(l.props.kind ?? '').toUpperCase()}</td>
+                      <td>{cloud ? <span title={info.format}>{isSplatLink(l) ? 'Gaussian splats' : 'Point cloud'}</span> : String(l.props.kind ?? '').toUpperCase()}</td>
                       <td title={path ?? 'linked from the browser: its bytes were read once'}>{file}{!path && <span className="muted small"> (no path)</span>}
                         {cloud && <div className="muted small" data-cloud-status={status[l.id]?.state ?? 'waiting'}>{statusText(status[l.id])}</div>}
+                        {cloud && cropOpen === l.id && <CropPanel link={l} />}
                         {cloud && (
                           <div className="row-tools">
                             <select aria-label="Colours" title="What colours its points" value={String(l.props.colorMode ?? 'rgb')} onChange={(e) => void execute('pointcloud.update', { id: l.id, colorMode: e.target.value })}>
                               {COLOR_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                             </select>
                             <label className="small" title="Point size (px)" style={{ marginLeft: 8 }}>Size <NumberField min={1} max={12} integer style={{ width: 44 }} value={Number(l.props.pointSize ?? 2)} onCommit={(v) => { if (v != null) void execute('pointcloud.update', { id: l.id, pointSize: v }); }} /></label>
+                            {isSplatLink(l) && (
+                              <select aria-label="Display" data-link="display" style={{ marginLeft: 8 }} title="How it is drawn in 3D: its Gaussians, or their centres as points" value={l.props.display === 'points' ? 'points' : 'splats'} onChange={(e) => void execute('pointcloud.update', { id: l.id, display: e.target.value })}>
+                                <option value="splats">Splats</option><option value="points">Points</option>
+                              </select>
+                            )}
                           </div>
                         )}
                       </td>
@@ -166,6 +207,8 @@ export function LinksDialog() {
                         {l.props.kind === 'lapin' && <button type="button" className="icon mini" data-link="place-project" title="Place it elsewhere: its own ids stay" disabled={busy != null} onClick={() => void run(l.id, () => placeProject(l))}><Move size={13} /></button>}
                         {l.props.kind === 'lapin' && !path && <button type="button" className="icon mini" data-link="read-picked" title="Choose its file again and read it" disabled={busy != null} onClick={() => void run(l.id, () => readPicked(l))}><FolderOpen size={13} /></button>}
                         {cloud && <button type="button" className="icon mini" data-link="place" title="Where it stands: by the map, origin to origin or centred, its unit, moved and turned" disabled={busy != null} onClick={() => void run(l.id, () => placeCloud(l))}><MapPin size={12} /></button>}
+                        {cloud && <button type="button" className="icon mini" data-link="calibrate" title="Calibrate scale: two points on the cloud and their true distance" disabled={busy != null} onClick={() => startCalibrate(l.id)}><Ruler size={12} /></button>}
+                        {cloud && <button type="button" className={`icon mini${l.props.crop ? ' on' : ''}`} data-link="crop" title="Crop: keep only what is inside a box" disabled={busy != null} onClick={() => useCloudTools.setState({ cropOpen: cropOpen === l.id ? null : l.id })}><Crop size={12} /></button>}
                         {path && cloud && <button type="button" className="icon mini" title="Read the file again (indexed again if it changed)" disabled={busy != null} onClick={() => void run(l.id, () => execute('pointcloud.reload', { id: l.id }))}><RefreshCw size={12} /></button>}
                         {path && !cloud && <button type="button" className="icon mini" title="Read the file again (what the link holds is replaced)" disabled={busy != null} onClick={() => void run(l.id, () => engine.call('project.reloadLink', { id: l.id }, { timeoutMs: 600_000 }).then(() => notify(`${l.name} read again.`)))}><RefreshCw size={12} /></button>}
                         {!cloud && <button type="button" className="icon mini" title="Convert to native: what it brought stays, editable, as the project's own" disabled={busy != null} onClick={() => void run(l.id, () => execute('link.convert', { id: l.id }))}><Wand2 size={12} /></button>}
