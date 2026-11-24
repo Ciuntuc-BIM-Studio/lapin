@@ -9,6 +9,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { crc32 } from 'node:zlib';
 import { say } from './languages.mjs';
 
 /** Ask Me's question in the help scene: each language's way of asking how to copy a wall. */
@@ -314,6 +315,22 @@ function scanLas() {
  * pavilion's four timber posts, its rendered back wall and roof, a tree's soft crown. Written here, some forty thousand.
  */
 function splatPly() {
+  const g = pavilionGaussians();
+  const C0 = 0.28209479177387814;
+  const props = ['x', 'y', 'z', 'nx', 'ny', 'nz', 'f_dc_0', 'f_dc_1', 'f_dc_2', 'opacity', 'scale_0', 'scale_1', 'scale_2', 'rot_0', 'rot_1', 'rot_2', 'rot_3'];
+  const head = Buffer.from(`ply\nformat binary_little_endian 1.0\nelement vertex ${g.length}\n${props.map((p) => `property float ${p}\n`).join('')}end_header\n`, 'ascii');
+  const body = Buffer.alloc(g.length * props.length * 4);
+  g.forEach(([x, y, z, sx, sy, sz, r, gr, b, a], i) => {
+    const v = [x, y, z, 0, 0, 0, (r - 0.5) / C0, (gr - 0.5) / C0, (b - 0.5) / C0, Math.log(a / (1 - a)), Math.log(sx), Math.log(sy), Math.log(sz), 1, 0, 0, 0];
+    v.forEach((f, k) => body.writeFloatLE(f, (i * props.length + k) * 4));
+  });
+  return Buffer.concat([head, body]);
+}
+/**
+ * The pavilion's Gaussians in the file's axes: [x, y, z, sx, sy, sz, r, g, b, opacity, part], `part` 1 for the back wall's
+ * (the one the SOG capture gives a colour that changes with the side it is seen from), else 0.
+ */
+function pavilionGaussians() {
   const g = [];
   let seed = 11;
   const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
@@ -331,12 +348,14 @@ function splatPly() {
   // Four posts and two beams, timber.
   for (const [px, py] of [[0, 0], [6, 0], [6, 4], [0, 4]]) for (let i = 0; i < 700; i++) add(px + (rnd() - 0.5) * 0.14, py + (rnd() - 0.5) * 0.14, rnd() * 2.6, 0.03, 0.03, 0.06, 0.45, 0.3, 0.18);
   // The back wall, rendered white; a doorway in it.
+  const wall0 = g.length;
   for (let i = 0; i < 6000; i++) {
     const x = rnd() * 6, z = rnd() * 2.6;
     if (x > 2.5 && x < 3.5 && z < 2.1) continue;
     const k = 0.9 + rnd() * 0.1;
     add(x, 4, z, 0.06, 0.006, 0.06, 0.93 * k, 0.9 * k, 0.84 * k);
   }
+  for (let i = wall0; i < g.length; i++) g[i].push(1);
   // The roof, two planes of red tiles from the eaves at 2.6 m to the ridge at 3.6 m.
   for (let i = 0; i < 7000; i++) {
     const x = -0.3 + rnd() * 6.6, v = rnd(), side = rnd() < 0.5 ? -1 : 1;
@@ -351,14 +370,110 @@ function splatPly() {
     const k = 0.7 + rnd() * 0.5;
     add(10 + r * Math.sin(e) * Math.cos(a), 5 + r * Math.sin(e) * Math.sin(a), 3.6 + r * Math.cos(e), 0.18, 0.18, 0.18, 0.2 * k, 0.45 * k, 0.15 * k, 0.6);
   }
-  const props = ['x', 'y', 'z', 'nx', 'ny', 'nz', 'f_dc_0', 'f_dc_1', 'f_dc_2', 'opacity', 'scale_0', 'scale_1', 'scale_2', 'rot_0', 'rot_1', 'rot_2', 'rot_3'];
-  const head = Buffer.from(`ply\nformat binary_little_endian 1.0\nelement vertex ${g.length}\n${props.map((p) => `property float ${p}\n`).join('')}end_header\n`, 'ascii');
-  const body = Buffer.alloc(g.length * props.length * 4);
-  g.forEach(([x, y, z, sx, sy, sz, r, gr, b, a], i) => {
-    const v = [x, y, z, 0, 0, 0, (r - 0.5) / C0, (gr - 0.5) / C0, (b - 0.5) / C0, Math.log(a / (1 - a)), Math.log(sx), Math.log(sy), Math.log(sz), 1, 0, 0, 0];
-    v.forEach((f, k) => body.writeFloatLE(f, (i * props.length + k) * 4));
+  return g;
+}
+
+/**
+ * A WebP lossless image (RFC 9649) of ARGB pixels as simply as the format allows: no transforms, every channel's 256 values
+ * an 8-bit code (written high bit first), the distance code a single symbol. Larger than cwebp's, read the same.
+ */
+function webpLossless(w, h, argb) {
+  const bytes = [];
+  let acc = 0, n = 0;
+  const put = (v, bits) => {
+    for (let k = 0; k < bits; k++) { acc |= ((v >>> k) & 1) << n; if (++n === 8) { bytes.push(acc); acc = 0; n = 0; } }
+  };
+  put(0x2f, 8); put(w - 1, 14); put(h - 1, 14); put(1, 1); put(0, 3);
+  put(0, 1); put(0, 1); put(0, 1); // no transform, no colour cache, one group of codes
+  const literals = (alphabet) => {
+    put(0, 1); put(8, 4);
+    for (const sym of [17, 18, 0, 1, 2, 3, 4, 5, 16, 6, 7, 8]) put(sym === 0 || sym === 8 ? 1 : 0, 3);
+    put(0, 1);
+    for (let s = 0; s < alphabet; s++) put(s < 256 ? 1 : 0, 1);
+  };
+  literals(280); literals(256); literals(256); literals(256);
+  put(1, 1); put(0, 1); put(0, 1); put(0, 1);
+  const rev = (v) => { let r = 0; for (let i = 0; i < 8; i++) { r = (r << 1) | (v & 1); v >>= 1; } return r; };
+  for (const p of argb) { put(rev((p >>> 8) & 255), 8); put(rev((p >>> 16) & 255), 8); put(rev(p & 255), 8); put(rev(p >>> 24), 8); }
+  if (n > 0) bytes.push(acc);
+  const data = Buffer.from(bytes);
+  const pad = data.length & 1;
+  const head = Buffer.alloc(20);
+  head.write('RIFF', 0); head.writeUInt32LE(12 + data.length + pad, 4); head.write('WEBPVP8L', 8); head.writeUInt32LE(data.length, 16);
+  return Buffer.concat([head, data, Buffer.alloc(pad)]);
+}
+
+/** A zip of the files given, stored (no compression), as a .sog bundles its meta.json and images. */
+function storedZip(files) {
+  const locals = [], central = [];
+  let at = 0;
+  for (const [name, data] of Object.entries(files)) {
+    const nm = Buffer.from(name), crc = crc32(data);
+    const lh = Buffer.alloc(30);
+    lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt32LE(crc, 14); lh.writeUInt32LE(data.length, 18); lh.writeUInt32LE(data.length, 22); lh.writeUInt16LE(nm.length, 26);
+    const ch = Buffer.alloc(46);
+    ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt32LE(crc, 16); ch.writeUInt32LE(data.length, 20); ch.writeUInt32LE(data.length, 24);
+    ch.writeUInt16LE(nm.length, 28); ch.writeUInt32LE(at, 42);
+    locals.push(lh, nm, data);
+    central.push(ch, nm);
+    at += 30 + nm.length + data.length;
+  }
+  const cd = Buffer.concat(central);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(Object.keys(files).length, 8); end.writeUInt16LE(Object.keys(files).length, 10);
+  end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(at, 16);
+  return Buffer.concat([...locals, cd, end]);
+}
+
+/**
+ * The pavilion as a SOG (version 3, PlayCanvas's published layout: meta.json and lossless WebP images in a zip), with
+ * spherical harmonics of degree 1: the back wall's splats warm (orange) seen from the garden and cool (blue) from behind,
+ * by their z coefficient (the file's z is the project's y, towards the wall), the rest without (a palette entry of zeros).
+ */
+function splatSog() {
+  const g = pavilionGaussians();
+  const C0 = 0.28209479177387814, n = g.length, W = 512, H = Math.ceil(n / W);
+  const px = (r, gr, b, a = 255) => (((a & 255) << 24) | ((r & 255) << 16) | ((gr & 255) << 8) | (b & 255)) >>> 0;
+  const img = () => new Uint32Array(W * H);
+  const lo = img(), hi = img(), scl = img(), qts = img(), c0 = img(), lab = img();
+  const slog = (v) => Math.sign(v) * Math.log(Math.abs(v) + 1);
+  const lowest = (a) => a.reduce((m, v) => Math.min(m, v), Infinity), highest = (a) => a.reduce((m, v) => Math.max(m, v), -Infinity);
+  const mins = [0, 1, 2].map((k) => lowest(g.map((x) => slog(x[k])))), maxs = [0, 1, 2].map((k) => highest(g.map((x) => slog(x[k]))));
+  const book = (a, b) => ({ values: Array.from({ length: 256 }, (_, k) => a + ((b - a) * k) / 255), at: (v) => Math.max(0, Math.min(255, Math.round(((v - a) / (b - a)) * 255))) });
+  const logs = g.flatMap((x) => [Math.log(x[3]), Math.log(x[4]), Math.log(x[5])]);
+  const sb = book(lowest(logs), highest(logs));
+  const dcs = g.flatMap((x) => [6, 7, 8].map((k) => (x[k] - 0.5) / C0));
+  const cb = book(lowest(dcs), highest(dcs));
+  const hb = book(-1, 1);
+  g.forEach((x, i) => {
+    const q = [0, 1, 2].map((k) => Math.round(((slog(x[k]) - mins[k]) / (maxs[k] - mins[k])) * 65535));
+    lo[i] = px(q[0] & 255, q[1] & 255, q[2] & 255);
+    hi[i] = px(q[0] >> 8, q[1] >> 8, q[2] >> 8);
+    scl[i] = px(sb.at(Math.log(x[3])), sb.at(Math.log(x[4])), sb.at(Math.log(x[5])));
+    qts[i] = px(128, 128, 128); // the identity, exactly
+    c0[i] = px(cb.at((x[6] - 0.5) / C0), cb.at((x[7] - 0.5) / C0), cb.at((x[8] - 0.5) / C0), Math.min(255, Math.round(204 * Math.sqrt(x[9]))));
+    lab[i] = px(x[10] === 1 ? 1 : 0, 0, 0);
   });
-  return Buffer.concat([head, body]);
+  // The palette: entry 0 all zeros; entry 1 degree 1's y, z, x coefficients, z warm in red, cool in blue.
+  const pal = new Uint32Array(64 * 3);
+  for (let c = 0; c < 3; c++) pal[c] = px(hb.at(0), hb.at(0), hb.at(0));
+  pal[3] = px(hb.at(0), hb.at(0), hb.at(0));
+  pal[4] = px(hb.at(0.75), hb.at(0.1), hb.at(-0.75));
+  pal[5] = px(hb.at(0), hb.at(0), hb.at(0));
+  const meta = {
+    version: 3, asset: { generator: "Lapin's user guide" }, count: n,
+    means: { mins, maxs, files: ['means_l.webp', 'means_u.webp'] },
+    scales: { codebook: sb.values, files: ['scales.webp'] },
+    quats: { files: ['quats.webp'] },
+    sh0: { codebook: cb.values, files: ['sh0.webp'] },
+    shN: { count: 2, bands: 1, codebook: hb.values, files: ['shN_centroids.webp', 'shN_labels.webp'] },
+  };
+  return storedZip({
+    'meta.json': Buffer.from(JSON.stringify(meta)),
+    'means_l.webp': webpLossless(W, H, lo), 'means_u.webp': webpLossless(W, H, hi), 'scales.webp': webpLossless(W, H, scl),
+    'quats.webp': webpLossless(W, H, qts), 'sh0.webp': webpLossless(W, H, c0), 'shN_labels.webp': webpLossless(W, H, lab),
+    'shN_centroids.webp': webpLossless(64 * 3, 1, pal),
+  });
 }
 /**
  * The 3D view's snaps under a grid of cursor positions while a point tool is on (Place3D's inference: its kind and the point
@@ -9560,6 +9675,48 @@ export const scenes = [
       await t.wait(400);
       await t.page.evaluate(async () => (await import('/src/modules/core/measure.ts')).setMeasureMode('distance'));
       await t.keys('Escape');
+    },
+  },
+  {
+    // G3 of docs/plan-gaussian-splats.md: the pavilion as a SOG (PlayCanvas's zip of lossless WebP images) whose back wall's
+    // splats carry spherical harmonics of degree 1, warm seen from the garden and cool from behind. Full colour shows that
+    // change from both sides; Base colour draws the wall in its base colour from either. Manage → Links names the format.
+    id: 'gaussian-splat-sh',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      const r = await t.cmd('pointcloud.link', { name: 'pavilion.sog', data: splatSog().toString('base64') });
+      t.expect(/^SOG version 3/.test(r?.format ?? ''), `the SOG is read (${r?.format})`);
+      t.expect(r?.placement?.up === '-y', `stood up from y down, as a 3DGS PLY (${r?.placement?.up})`);
+      let st = null;
+      for (let k = 0; k < 120 && st?.state !== 'ready'; k++) { st = await t.call('doc.query', { name: 'pointcloud.status', args: { id: r.id } }); await t.wait(250); }
+      t.expect(st?.state === 'ready', `the splats are indexed (${st?.state})`);
+      const page = await t.call('pointcloud.splats', { id: r.id, start: 0, budget: 100000, sh: 3 });
+      t.expect(page?.shDegree === 1, `its harmonics come with its pages (degree ${page?.shDegree})`);
+      await open3d(t);
+      const view = (azimuth) => t.page.evaluate(async (az) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: az, pitch: -0.12, distance: 11, target: { x: 3, y: 4, z: 1.4 } }, false), azimuth);
+      const sh = async () => Number(await t.page.locator('[data-testid=view3d]').getAttribute('data-splat-sh') ?? 0);
+      // From the garden (south of the wall) it is warm, from behind (north) cool.
+      await view(-1.57);
+      await t.wait(3000);
+      t.expect(await sh() === 1, `the 3D view draws them in full colour (degree ${await sh()})`);
+      await t.shot('gaussian-splat-sh-back', { of: '[data-testid=view3d]', pad: 0 });
+      await view(1.57);
+      await t.wait(2000);
+      await t.shot('gaussian-splat-sh-front', { of: '[data-testid=view3d]', pad: 0 });
+      // Base colour, chosen on its row in Manage → Links: the same wall from the garden in its base colour.
+      await t.ui({ dialog: 'links' });
+      await t.page.waitForSelector('[data-cloud-status=ready]', { timeout: 20_000 });
+      await t.page.waitForSelector('select[data-link=splat-color]', { timeout: 10_000 });
+      const format = await t.page.locator('[data-link=format]').first().textContent();
+      t.expect(format === 'SOG v3 · SH 1', `its row names the format (${format})`);
+      await t.page.locator('select[data-link=splat-color]').selectOption('base');
+      await t.wait(500);
+      await t.shot('gaussian-splat-sh-links', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      await t.wait(2500);
+      t.expect(await sh() === 0, `in base colour no harmonics are drawn (degree ${await sh()})`);
+      await t.shot('gaussian-splat-sh-base', { of: '[data-testid=view3d]', pad: 0 });
     },
   },
   {

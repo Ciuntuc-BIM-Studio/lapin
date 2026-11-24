@@ -49,7 +49,7 @@ public sealed class GaussianPlyReader : ISplatReader
         Header = new PointCloudHeader
         {
             Format = $"PLY Gaussian splats{(degree > 0 ? $", harmonics of degree {degree}" : "")}", Count = v.Count, HasColor = true,
-            Up = "-y", Splats = true, Notes = notes,
+            Up = "-y", Splats = true, ShDegree = degree, Notes = notes,
         };
     }
 

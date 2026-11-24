@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 import type { NodeDto } from '../engine/protocol';
-import type { CloudSpec, ColorMode } from './pointClouds3d';
+import type { CloudSpec, ColorMode, SplatColor } from './pointClouds3d';
 
 export const isCloudLink = (n: NodeDto | undefined): boolean => !!n && n.type === 'LapinLink' && n.props.kind === 'pointcloud';
 
@@ -23,7 +23,7 @@ export function setCloudStatus(id: string, s: CloudStatus): void {
 }
 
 /** A view's own settings for one cloud (its graphics' `pointClouds`): what it overrides of the link's. */
-export interface ViewCloud { hidden?: boolean; halftone?: boolean; colorMode?: ColorMode; hiddenClasses?: number[]; display?: CloudDisplay }
+export interface ViewCloud { hidden?: boolean; halftone?: boolean; colorMode?: ColorMode; hiddenClasses?: number[]; display?: CloudDisplay; splatColor?: SplatColor }
 
 /** How a splat link is drawn in 3D (docs/plan-gaussian-splats.md): its Gaussians, or their centres as points. */
 export type CloudDisplay = 'splats' | 'points';
@@ -36,6 +36,11 @@ export function displayOf(n: NodeDto, view?: ViewCloud): CloudDisplay {
   if (!isSplatLink(n)) return 'points';
   const d = view?.display ?? n.props.display;
   return d === 'points' ? 'points' : 'splats';
+}
+
+/** A splat link's colour (G3): the view's row, else the link's own, else full. */
+export function splatColorOf(n: NodeDto, view?: ViewCloud): SplatColor {
+  return (view?.splatColor ?? n.props.splatColor) === 'base' ? 'base' : 'full';
 }
 
 /** The graphics' point cloud rows of a view node (its own graphics; a set's are resolved by the engine for 2D). */
@@ -63,6 +68,7 @@ export function cloudSpecs(nodes: ReadonlyMap<string, NodeDto>, view?: Record<st
       pointSize: typeof n.props.pointSize === 'number' ? n.props.pointSize : 2,
       hiddenClasses: Array.isArray(v.hiddenClasses) ? v.hiddenClasses.filter((k) => Number.isInteger(k)) : [],
       splats: displayOf(n, v) === 'splats',
+      splatColor: splatColorOf(n, v),
     });
   }
   return out.sort((a, b) => a.id.localeCompare(b.id));
@@ -74,6 +80,20 @@ export function setSplatsDrawn(id: string, n: number): void {
   // Drawn as points again (n < 0): the count goes.
   if (n < 0) { if (cur?.splats != null) { const { splats: _, ...rest } = cur; usePointClouds.setState((st) => ({ status: { ...st.status, [id]: rest } })); } return; }
   setCloudStatus(id, { ...(cur ?? { state: 'ready' }), splats: n });
+}
+
+/**
+ * A cloud's file format in a few words, for its row in Manage → Links (the engine's whole description is its title):
+ * "SOG v3 · SH 3", "SPZ v4", "SuperSplat PLY · SH 1", "3DGS PLY", "LAS 1.4, point format 7" as it is.
+ */
+export function cloudFormat(format: string): string {
+  const sh = /harmonics of degree (\d)/.exec(format);
+  const tail = sh ? ` · SH ${sh[1]}` : '';
+  let m: RegExpExecArray | null;
+  if ((m = /^(SOG|SPZ) version (\d+)/.exec(format))) return `${m[1]} v${m[2]}${tail}`;
+  if (/^Compressed PLY/.test(format)) return `SuperSplat PLY${tail}`;
+  if (/^PLY Gaussian/.test(format)) return `3DGS PLY${tail}`;
+  return format;
 }
 
 /** A cloud's state in a few words, for Manage → Links. */

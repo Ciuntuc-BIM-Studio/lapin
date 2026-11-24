@@ -1069,7 +1069,7 @@ export function Viewport3D() {
     // Gaussian splats (docs/plan-gaussian-splats.md): the splat links drawn as splats, their Gaussians asked for page by page.
     const splats = new SplatLayer({
       status: (id) => query('pointcloud.status', { id }),
-      page: (id, start, budget) => engine.call<SplatPage>('pointcloud.splats', { id, start, budget }, { timeoutMs: 120_000 }),
+      page: (id, start, budget, sh, shBytes) => engine.call<SplatPage>('pointcloud.splats', { id, start, budget, sh, shBytes }, { timeoutMs: 120_000 }),
     }, () => invalidate.current(), renderer.capabilities.maxTextureSize);
     splats.onDrawn = (id, n) => setSplatsDrawn(id, n);
     s.add(splats.group);
@@ -1344,6 +1344,7 @@ export function Viewport3D() {
       if (host.current) {
         host.current.dataset.cloudPoints = String(clouds.drawn());
         host.current.dataset.splats = String(splats.drawn());
+        host.current.dataset.splatSh = String(splats.shDrawn());
         const p = probes.stats();
         host.current.dataset.probes = `${p.baked}/${p.slots}/${p.probes}/${p.waiting}`;
       }

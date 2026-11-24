@@ -45,8 +45,10 @@ public sealed record PointCloudHeader
     public string? Up { get; init; }
     /// <summary>How many faces it has (a PLY mesh's): a mesh is imported as one, not linked as a cloud, unless asked.</summary>
     public long Faces { get; init; }
-        /// <summary>Whether its points are Gaussians (<see cref="ISplatReader"/>): a 3DGS PLY, an SPZ.</summary>
+    /// <summary>Whether its points are Gaussians (<see cref="ISplatReader"/>): a 3DGS PLY, a compressed PLY, an SPZ, a SOG.</summary>
     public bool Splats { get; init; }
+    /// <summary>The degree of a splat file's spherical harmonics as Lapin keeps them (0–3): how its colour changes with the view.</summary>
+    public int ShDegree { get; init; }
     /// <summary>What the reader noticed and the user should know (an unknown property, a part it skipped).</summary>
     public IReadOnlyList<string> Notes { get; init; } = [];
 }
@@ -90,7 +92,7 @@ public sealed class PointCloudException(string message) : Exception(message);
 public static class PointReaders
 {
     /// <summary>The extensions Lapin reads, lower case, without the dot.</summary>
-    public static readonly string[] Extensions = ["las", "laz", "e57", "ply", "spz", "xyz", "pts", "csv", "txt"];
+    public static readonly string[] Extensions = ["las", "laz", "e57", "ply", "spz", "sog", "xyz", "pts", "csv", "txt"];
 
     public static IPointReader Open(IPointSource source)
     {
@@ -103,21 +105,25 @@ public static class PointReaders
         if (head.StartsWith("ASTM-E57"u8)) return new E57Reader(source);
         if (head.StartsWith("ply"u8))
         {
-            // A PLY whose vertices are Gaussians (3D Gaussian splatting's layout) is read as splats.
+            // A PLY whose vertices are Gaussians (3D Gaussian splatting's layout), or SuperSplat's compressed PLY, is read as splats.
             var ply = new PlyReader(source);
-            return GaussianPlyReader.Is(ply) ? new GaussianPlyReader(source, ply) : ply;
+            return CompressedPlyReader.Is(ply) ? new CompressedPlyReader(source, ply) : GaussianPlyReader.Is(ply) ? new GaussianPlyReader(source, ply) : ply;
         }
-        // SPZ: versions 1–3 are one gzip stream; version 4 starts with its magic, NGSP, and holds ZSTD streams.
+        // SPZ: versions 1–3 are one gzip stream; version 4 starts with its magic, NGSP, and holds Zstandard streams.
         if (head.Length >= 2 && head[0] == 0x1f && head[1] == 0x8b && ext == "spz") return new SpzReader(source);
-        if (head.StartsWith("NGSP"u8)) throw new PointCloudException($"{source.Name} is SPZ version 4 (ZSTD), which Lapin does not read yet: save it as SPZ version 3 or as a PLY.");
+        if (head.StartsWith("NGSP"u8)) return new SpzReader(source);
+        // SOG: a zip of meta.json and WebP images, or a folder's meta.json.
+        if (head.StartsWith("PK\x03\x04"u8) && ext == "sog") return new SogReader(source);
+        if (System.IO.Path.GetFileName(source.Name).Equals("meta.json", StringComparison.OrdinalIgnoreCase)) return new SogReader(source);
         return ext switch
         {
             "las" or "laz" => throw new PointCloudException($"{source.Name} is not a LAS file (it does not start with LASF)."),
             "e57" => throw new PointCloudException($"{source.Name} is not an E57 file."),
             "ply" => throw new PointCloudException($"{source.Name} is not a PLY file."),
-            "spz" => throw new PointCloudException($"{source.Name} is not an SPZ file (it is not gzip)."),
+            "spz" => throw new PointCloudException($"{source.Name} is not an SPZ file (it is neither gzip nor NGSP)."),
+            "sog" => throw new PointCloudException($"{source.Name} is not a SOG file (it is not a zip)."),
             "xyz" or "pts" or "csv" or "txt" or "asc" => new TextPointReader(source),
-            _ => throw new PointCloudException($"Lapin reads point clouds as LAS, LAZ, E57, PLY, SPZ, XYZ, PTS or CSV; {source.Name} is none of them."),
+            _ => throw new PointCloudException($"Lapin reads point clouds as LAS, LAZ, E57, PLY, SPZ, SOG, XYZ, PTS or CSV; {source.Name} is none of them."),
         };
     }
 }

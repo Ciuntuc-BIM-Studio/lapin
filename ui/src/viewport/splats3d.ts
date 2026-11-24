@@ -8,17 +8,29 @@
  * blends it premultiplied. The quads are drawn back to front: a worker sorts the centres by depth (a 16-bit counting sort,
  * splatSort.ts) when the camera has turned or moved enough. Clipped by the view's planes (by the Gaussian's centre), greyed
  * for halftone, as the points are. No library: the clipping, the budget and the picking stay Lapin's.
+ *
+ * G3: the colour by direction. When a cloud is drawn in full colour, its spherical harmonics (degrees 1–3) come with its
+ * pages, a byte each, into a second integer texture (1–3 texels a splat by degree); the vertex shader evaluates them along the
+ * direction from the eye to the splat, turned into the file's frame by the page's `turn` (the link's rotation and up axis
+ * undone), with the standard real basis (splatSh.ts). The degree is the display quality's (Fast 1, else 3), lowered by the
+ * engine until the cloud's coefficients fit its share of the bytes (splatSh.shBytes).
  */
 
 import * as THREE from 'three';
 import type { DisplayQuality } from './lod';
 import type { CloudSpec } from './pointClouds3d';
 import { depthRow, sortBackToFront, type DepthRow } from './splatSort';
+import { shBytes, shCoeffs, shDegreeCap, shTexels, writeSh } from './splatSh';
 
-/** A page of a link's Gaussians as the engine sends it (PointCloudLinks.Splats): rotations w x y z, colours RGBA a byte each. */
+/**
+ * A page of a link's Gaussians as the engine sends it (PointCloudLinks.Splats): rotations w x y z, colours RGBA a byte each;
+ * when harmonics were asked, their degree, their bytes (packed in ints) and the turn of a project direction into the file's
+ * (3 × 3, column by column).
+ */
 export interface SplatPage {
   link: string; start: number; next: number | null; total: number; kept: number;
   positions: Float32Array; scales: Float32Array; rotations: Float32Array; colors: Int32Array;
+  shDegree?: number; sh?: Int32Array; turn?: Float32Array;
 }
 
 /** The Gaussians drawn at most, all splat clouds together, by the project's display quality (fewer in a browser). */
@@ -126,11 +138,51 @@ precision highp usampler2D;
 #include <common>
 #include <clipping_planes_pars_vertex>
 uniform usampler2D splatData;
+uniform usampler2D shData;
+uniform int shDegree;
+uniform int shTexels;
+uniform mat3 fileTurn;
+uniform vec3 eye;
+uniform vec3 viewDir;
 uniform vec2 viewport;
 uniform float halftone;
 attribute uint splatIndex;
 varying vec4 vColor;
 varying vec2 vPos;
+// A harmonic's byte k of the splat's texels t0–t2, as the value it stands for: (b − 128) / 128.
+float shByte(uvec4 t0, uvec4 t1, uvec4 t2, int k) {
+  int ti = k >> 4;
+  uvec4 t = ti == 0 ? t0 : (ti == 1 ? t1 : t2);
+  uint w = t[(k >> 2) & 3];
+  return float((w >> uint(8 * (k & 3))) & 255u) / 128.0 - 1.0;
+}
+vec3 shCoeff(uvec4 t0, uvec4 t1, uvec4 t2, int j) {
+  return vec3(shByte(t0, t1, t2, 3 * j), shByte(t0, t1, t2, 3 * j + 1), shByte(t0, t1, t2, 3 * j + 2));
+}
+// The colour seen from the eye (Kerbl et al. 2023: the real basis with the Condon–Shortley phase), in the file's frame.
+vec3 shColour(vec3 base, vec3 centre, bool ortho) {
+  if (shDegree == 0) return base;
+  vec3 d = normalize(fileTurn * (ortho ? viewDir : centre - eye));
+  ivec2 at = ivec2(int(splatIndex & 1023u) * shTexels, int(splatIndex >> 10u));
+  uvec4 t0 = texelFetch(shData, at, 0);
+  uvec4 t1 = shTexels > 1 ? texelFetch(shData, at + ivec2(1, 0), 0) : uvec4(0u);
+  uvec4 t2 = shTexels > 2 ? texelFetch(shData, at + ivec2(2, 0), 0) : uvec4(0u);
+  float x = d.x, y = d.y, z = d.z;
+  vec3 c = base - 0.4886025119029199 * y * shCoeff(t0, t1, t2, 0) + 0.4886025119029199 * z * shCoeff(t0, t1, t2, 1) - 0.4886025119029199 * x * shCoeff(t0, t1, t2, 2);
+  if (shDegree > 1) {
+    float xx = x * x, yy = y * y, zz = z * z;
+    c += 1.0925484305920792 * x * y * shCoeff(t0, t1, t2, 3) - 1.0925484305920792 * y * z * shCoeff(t0, t1, t2, 4)
+      + 0.31539156525252005 * (2.0 * zz - xx - yy) * shCoeff(t0, t1, t2, 5) - 1.0925484305920792 * x * z * shCoeff(t0, t1, t2, 6)
+      + 0.5462742152960396 * (xx - yy) * shCoeff(t0, t1, t2, 7);
+    if (shDegree > 2) {
+      c += -0.5900435899266435 * y * (3.0 * xx - yy) * shCoeff(t0, t1, t2, 8) + 2.890611442640554 * x * y * z * shCoeff(t0, t1, t2, 9)
+        - 0.4570457994644658 * y * (4.0 * zz - xx - yy) * shCoeff(t0, t1, t2, 10) + 0.3731763325901154 * z * (2.0 * zz - 3.0 * xx - 3.0 * yy) * shCoeff(t0, t1, t2, 11)
+        - 0.4570457994644658 * x * (4.0 * zz - xx - yy) * shCoeff(t0, t1, t2, 12) + 1.445305721320277 * z * (xx - yy) * shCoeff(t0, t1, t2, 13)
+        - 0.5900435899266435 * x * (xx - 3.0 * yy) * shCoeff(t0, t1, t2, 14);
+    }
+  }
+  return clamp(c, 0.0, 1.0);
+}
 void main() {
   ivec2 at = ivec2(int(splatIndex & 1023u) * 2, int(splatIndex >> 10u));
   uvec4 a = texelFetch(splatData, at, 0);
@@ -165,7 +217,7 @@ void main() {
   // Across the major, a quarter turn anticlockwise: the quad keeps its winding (front-facing).
   vec2 minor = min(3.0 * sqrt(l2), 1024.0) * vec2(-dir.y, dir.x);
   vec4 rgba = vec4((a.w) & 255u, (a.w >> 8u) & 255u, (a.w >> 16u) & 255u, (a.w >> 24u) & 255u) / 255.0;
-  vColor = vec4(mix(rgba.rgb, vec3(0.62), halftone), rgba.a);
+  vColor = vec4(mix(shColour(rgba.rgb, centre, ortho), vec3(0.62), halftone), rgba.a);
   vPos = position.xy;
   vec2 ndc = clip.xy / clip.w + (position.x * major + position.y * minor) * 2.0 / viewport;
   gl_Position = vec4(ndc, clip.z / clip.w, 1.0);
@@ -185,25 +237,44 @@ void main() {
   gl_FragColor = vec4(vColor.rgb * alpha, alpha);
 }`;
 
+/** A 1 × 1 texture standing in for the harmonics of a cloud drawn in its base colour (a sampler must have one). */
+let noSh: THREE.DataTexture | null = null;
+function emptySh(): THREE.DataTexture {
+  if (noSh) return noSh;
+  noSh = new THREE.DataTexture(new Uint32Array(4), 1, 1, THREE.RGBAIntegerFormat, THREE.UnsignedIntType);
+  noSh.internalFormat = 'RGBA32UI';
+  noSh.minFilter = noSh.magFilter = THREE.NearestFilter;
+  noSh.needsUpdate = true;
+  return noSh;
+}
+
 function material(data: THREE.DataTexture): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     vertexShader: VERT, fragmentShader: FRAG, clipping: true, transparent: true, depthWrite: false, depthTest: true, side: THREE.DoubleSide,
     blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor,
     blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor,
-    uniforms: { splatData: { value: data }, viewport: { value: new THREE.Vector2(1, 1) }, halftone: { value: 0 } },
+    uniforms: {
+      splatData: { value: data }, viewport: { value: new THREE.Vector2(1, 1) }, halftone: { value: 0 },
+      shData: { value: emptySh() }, shDegree: { value: 0 }, shTexels: { value: 1 }, fileTurn: { value: new THREE.Matrix3() },
+      eye: { value: new THREE.Vector3() }, viewDir: { value: new THREE.Vector3(0, 0, -1) },
+    },
   });
 }
 
 /** What the layer asks of the engine. */
 export interface SplatSource {
   status(id: string): Promise<{ state: string } | null>;
-  page(id: string, start: number, budget: number): Promise<SplatPage | null>;
+  /** `sh`: the highest degree of harmonics wanted (0: none), `shBytes`: the bytes they may take for this cloud. */
+  page(id: string, start: number, budget: number, sh?: number, shBytes?: number): Promise<SplatPage | null>;
 }
+
+/** What a cloud's Gaussians were asked with: another asks for them again. */
+interface Ask { budget: number; sh: number; shBytes: number }
 
 interface Cloud {
   spec: CloudSpec;
-  /** The budget its Gaussians were asked with; another budget asks for them again. */
-  budget: number;
+  /** What its Gaussians were asked with (the budget, the harmonics); another asking loads them again. */
+  ask: Ask;
   loading: boolean;
   /** Bumped when the cloud is asked for again, so a late page of the earlier asking is dropped. */
   gen: number;
@@ -211,6 +282,11 @@ interface Cloud {
   loaded: number;
   tex: Uint32Array | null;
   texture: THREE.DataTexture | null;
+  /** Its harmonics' texture (G3), `texels` a splat, at the degree the first page came with; none in base colour. */
+  shTex: Uint32Array | null;
+  shTexture: THREE.DataTexture | null;
+  shDegree: number;
+  texels: number;
   positions: Float32Array;
   mesh: THREE.Mesh<THREE.InstancedBufferGeometry, THREE.ShaderMaterial> | null;
   order: THREE.InstancedBufferAttribute | null;
@@ -229,6 +305,8 @@ export class SplatLayer {
   private worker: Worker | null = null;
   private workerTried = false;
   private budget = 2_000_000;
+  private shCap = 3;
+  private shRoom = shBytes();
   /** Called with how many Gaussians a cloud draws, for the panels (−1: it is no longer drawn as splats). */
   onDrawn: (id: string, drawn: number) => void = () => undefined;
 
@@ -246,7 +324,8 @@ export class SplatLayer {
       if (c && c.spec.rev !== spec.rev) { this.drop(spec.id, c); c = undefined; }
       if (!c) {
         c = {
-          spec, budget: 0, loading: false, gen: 0, capacity: 0, loaded: 0, tex: null, texture: null, positions: new Float32Array(0), mesh: null, order: null,
+          spec, ask: { budget: 0, sh: -1, shBytes: 0 }, loading: false, gen: 0, capacity: 0, loaded: 0, tex: null, texture: null,
+          shTex: null, shTexture: null, shDegree: 0, texels: 0, positions: new Float32Array(0), mesh: null, order: null,
           box: new THREE.Box3(), sortedRow: null, sortedEye: new THREE.Vector3(), sortedN: 0, sorting: false, seq: 0,
         };
         this.clouds.set(spec.id, c);
@@ -260,17 +339,19 @@ export class SplatLayer {
     this.invalidate();
   }
 
-  /** The budget a cloud has: the quality's, shared by the clouds shown. */
-  private share(): number {
-    const shown = [...this.clouds.values()].filter((c) => c.spec.shown).length;
-    return Math.max(50_000, Math.floor(this.budget / Math.max(1, shown)));
+  /** What a cloud asks for: the quality's budget and harmonics' bytes, shared by the clouds shown; no harmonics in base colour. */
+  private share(c: Cloud): Ask {
+    const shown = Math.max(1, [...this.clouds.values()].filter((x) => x.spec.shown).length);
+    const full = c.spec.splatColor !== 'base';
+    return { budget: Math.max(50_000, Math.floor(this.budget / shown)), sh: full ? this.shCap : 0, shBytes: full ? Math.floor(this.shRoom / shown) : 0 };
   }
 
   /** A cloud's Gaussians asked for, page by page, once its index is ready. */
-  private async load(c: Cloud, budget: number): Promise<void> {
+  private async load(c: Cloud, ask: Ask): Promise<void> {
     c.loading = true;
     const gen = ++c.gen;
-    c.budget = budget;
+    c.ask = ask;
+    const budget = ask.budget;
     const live = () => this.clouds.get(c.spec.id) === c && c.gen === gen;
     try {
       for (let k = 0; ; k++) {
@@ -283,14 +364,18 @@ export class SplatLayer {
       let start: number | null = 0;
       let first = true;
       while (start != null) {
-        const p = await this.source.page(c.spec.id, start, budget);
+        const p = await this.source.page(c.spec.id, start, budget, ask.sh, ask.shBytes);
         if (!live() || !p) return;
-        if (first) { this.allocate(c, Math.min(p.kept, this.maxTexture * PER_ROW)); first = false; }
+        if (first) { this.allocate(c, Math.min(p.kept, this.maxTexture * PER_ROW), p.sh ? p.shDegree ?? 0 : 0, p.turn); first = false; }
         const room = Math.max(0, c.capacity - c.loaded);
         const n = Math.min(room, p.colors.length);
         if (n > 0) {
           const part = n === p.colors.length ? p : { positions: p.positions.subarray(0, 3 * n), scales: p.scales.subarray(0, 3 * n), rotations: p.rotations.subarray(0, 4 * n), colors: p.colors.subarray(0, n) };
           writePage(c.tex!, c.loaded, part);
+          if (c.shTex && p.sh && (p.shDegree ?? 0) === c.shDegree) {
+            writeSh(c.shTex, c.loaded, c.texels, p.sh, shCoeffs(c.shDegree) * 3, n);
+            c.shTexture!.needsUpdate = true;
+          }
           c.positions.set(part.positions, 3 * c.loaded);
           for (let i = 0; i < n; i++) c.box.expandByPoint(new THREE.Vector3(part.positions[3 * i], part.positions[3 * i + 1], part.positions[3 * i + 2]));
           this.sendPositions(c, c.loaded, part.positions);
@@ -309,9 +394,11 @@ export class SplatLayer {
     }
   }
 
-  private allocate(c: Cloud, n: number): void {
+  private allocate(c: Cloud, n: number, shDegree = 0, turn?: Float32Array): void {
     this.free(c);
     c.capacity = n;
+    c.shDegree = shDegree;
+    c.texels = shTexels(shDegree);
     c.loaded = 0;
     c.box.makeEmpty();
     const rows = Math.max(1, Math.ceil(n / PER_ROW));
@@ -332,6 +419,20 @@ export class SplatLayer {
     g.setAttribute('splatIndex', order);
     g.instanceCount = 0;
     const mesh = new THREE.Mesh(g, material(texture));
+    if (shDegree > 0 && PER_ROW * c.texels <= this.maxTexture) {
+      c.shTex = new Uint32Array(rows * PER_ROW * c.texels * 4);
+      const sht = new THREE.DataTexture(c.shTex, PER_ROW * c.texels, rows, THREE.RGBAIntegerFormat, THREE.UnsignedIntType);
+      sht.internalFormat = 'RGBA32UI';
+      sht.minFilter = sht.magFilter = THREE.NearestFilter;
+      sht.generateMipmaps = false;
+      sht.needsUpdate = true;
+      c.shTexture = sht;
+      const u = mesh.material.uniforms;
+      u.shData.value = sht;
+      u.shDegree.value = shDegree;
+      u.shTexels.value = c.texels;
+      if (turn && turn.length === 9) (u.fileTurn.value as THREE.Matrix3).fromArray(Array.from(turn));
+    } else c.shDegree = 0;
     mesh.frustumCulled = false;
     mesh.renderOrder = 10;
     mesh.visible = c.spec.shown;
@@ -348,7 +449,9 @@ export class SplatLayer {
   private free(c: Cloud): void {
     if (c.mesh) { this.group.remove(c.mesh); c.mesh.geometry.dispose(); c.mesh.material.dispose(); }
     c.texture?.dispose();
+    c.shTexture?.dispose();
     c.mesh = null; c.texture = null; c.tex = null; c.order = null; c.sortedRow = null; c.sortedN = 0;
+    c.shTexture = null; c.shTex = null; c.shDegree = 0;
   }
 
   private drop(id: string, c: Cloud): void {
@@ -398,16 +501,26 @@ export class SplatLayer {
   /** A frame: the budget by the quality, the clouds asked for again if it changed, a sort asked for when the view has moved enough. */
   update(camera: THREE.Camera, renderer: { getDrawingBufferSize(v: THREE.Vector2): THREE.Vector2 }, quality: DisplayQuality, browser = false): void {
     this.budget = splatBudget(quality, browser);
-    const share = this.share();
+    this.shCap = shDegreeCap(quality);
+    this.shRoom = shBytes(browser);
     camera.updateMatrixWorld();
     const size = renderer.getDrawingBufferSize(new THREE.Vector2());
     const eye = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
     const row = depthRow(camera.matrixWorldInverse.elements);
     for (const c of this.clouds.values()) {
       if (!c.spec.shown) continue;
-      if (!c.loading && c.budget !== share) void this.load(c, share);
+      const ask = this.share(c);
+      if (!c.loading && (c.ask.budget !== ask.budget || c.ask.sh !== ask.sh || c.ask.shBytes !== ask.shBytes)) void this.load(c, ask);
       if (!c.mesh || c.loaded === 0) continue;
-      c.mesh.material.uniforms.viewport.value.set(size.x, size.y);
+      const u = c.mesh.material.uniforms;
+      u.viewport.value.set(size.x, size.y);
+      if (c.shDegree > 0) {
+        // The eye and the view's direction in the cloud's frame (the project's: its mesh is not moved).
+        c.mesh.updateMatrixWorld();
+        const inv = new THREE.Matrix4().copy(c.mesh.matrixWorld).invert();
+        (u.eye.value as THREE.Vector3).copy(eye).applyMatrix4(inv);
+        (u.viewDir.value as THREE.Vector3).set(0, 0, -1).transformDirection(camera.matrixWorld).transformDirection(inv);
+      }
       if (c.sorting || !this.moved(c, row, eye)) continue;
       c.sortedRow = row;
       c.sortedEye.copy(eye);
@@ -435,6 +548,13 @@ export class SplatLayer {
     const b = new THREE.Box3();
     for (const c of this.clouds.values()) if (c.spec.shown && !c.box.isEmpty()) b.union(c.box);
     return b.isEmpty() ? null : b;
+  }
+
+  /** The highest degree of harmonics drawn now (0: every cloud in its base colour), for the guide's checks. */
+  shDrawn(): number {
+    let d = 0;
+    for (const c of this.clouds.values()) if (c.mesh?.visible && c.loaded > 0) d = Math.max(d, c.shDegree);
+    return d;
   }
 
   /** How many Gaussians are drawn now, all clouds. */

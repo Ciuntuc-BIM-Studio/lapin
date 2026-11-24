@@ -39,7 +39,12 @@ export interface CloudSpec {
    * still streamed, not drawn, for the snaps.
    */
   splats?: boolean;
+  /** A splat cloud's colour (G3): full, changing with the view by its spherical harmonics, or its base colour alone. */
+  splatColor?: SplatColor;
 }
+
+/** How a splat cloud is coloured: by its harmonics, with the view, or by degree 0 alone. */
+export type SplatColor = 'full' | 'base';
 
 /** The points drawn at most, all clouds together, by the project's display quality (fewer in a browser). */
 export function pointBudget(q: DisplayQuality, browser = false): number {

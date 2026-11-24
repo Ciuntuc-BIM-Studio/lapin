@@ -66,6 +66,12 @@ public sealed class PlyReader : IPointReader
         }
         _enc = enc ?? throw new PointCloudException($"{source.Name}: its PLY header names no format Lapin knows (ascii, binary_little_endian, binary_big_endian).");
         var v = Vertex ?? throw new PointCloudException($"{source.Name}: the PLY file has no vertex element.");
+        // SuperSplat's compressed PLY (chunks and packed vertices): read by CompressedPlyReader, which takes this header.
+        if (CompressedPlyReader.Is(this))
+        {
+            Header = new PointCloudHeader { Format = "Compressed PLY Gaussian splats", Count = v.Count, HasColor = true, Up = "-y", Splats = true };
+            return;
+        }
         if (v.Props.Any(p => p.ListCount != null)) throw new PointCloudException($"{source.Name}: its vertices carry lists, which Lapin does not read.");
         var names = v.Props.Select(p => p.Name).ToHashSet();
         if (!names.Contains("x") || !names.Contains("y") || !names.Contains("z")) throw new PointCloudException($"{source.Name}: its vertices have no x, y and z.");

@@ -63,6 +63,53 @@ public static class Splat
 
     /// <summary>A harmonic quantized to a byte (SPZ's rule).</summary>
     public static byte ShByte(double v) => (byte)Math.Clamp(Math.Round(v * 128 + 128), 0, 255);
+
+    /// <summary>A byte of <c>sh.bin</c> as the harmonic it stands for.</summary>
+    public static double ShValue(byte b) => (b - 128) / 128.0;
+
+    /// <summary>
+    /// The real spherical harmonics of degrees 1–3 at a unit direction (x, y, z), with the Condon–Shortley phase, as 3D Gaussian
+    /// splatting uses them (Kerbl et al. 2023, its reference renderer; SOG's and glTF's KHR_gaussian_splatting's basis): 3, 5
+    /// and 7 values, band by band, into <paramref name="o"/> (its length the coefficients wanted). The interface's shader
+    /// evaluates the same (ui/src/viewport/splatSh.ts).
+    /// </summary>
+    public static void ShBasis(double x, double y, double z, Span<double> o)
+    {
+        const double C1 = 0.4886025119029199;
+        double xx = x * x, yy = y * y, zz = z * z, xy = x * y, yz = y * z, xz = x * z;
+        Span<double> b =
+        [
+            -C1 * y, C1 * z, -C1 * x,
+            1.0925484305920792 * xy, -1.0925484305920792 * yz, 0.31539156525252005 * (2 * zz - xx - yy), -1.0925484305920792 * xz, 0.5462742152960396 * (xx - yy),
+            -0.5900435899266435 * y * (3 * xx - yy), 2.890611442640554 * xy * z, -0.4570457994644658 * y * (4 * zz - xx - yy),
+            0.3731763325901154 * z * (2 * zz - 3 * xx - 3 * yy), -0.4570457994644658 * x * (4 * zz - xx - yy), 1.445305721320277 * z * (xx - yy),
+            -0.5900435899266435 * x * (xx - 3 * yy),
+        ];
+        b[..Math.Min(o.Length, 15)].CopyTo(o);
+    }
+
+    /// <summary>
+    /// A Gaussian's colour seen along <paramref name="dir"/> (from the eye to it, in the file's frame; any length): its base
+    /// colour (0–1, degree 0) plus its harmonics (<paramref name="sh"/>: <c>sh.bin</c>'s bytes, coefficient by coefficient,
+    /// colours inner) of degree up to <paramref name="degree"/>, at least 0.
+    /// </summary>
+    public static (double R, double G, double B) Colour((double R, double G, double B) baseColour, ReadOnlySpan<byte> sh, int degree, (double X, double Y, double Z) dir)
+    {
+        var n = ShCoeffs(Math.Clamp(degree, 0, 3));
+        n = Math.Min(n, sh.Length / 3);
+        var len = Math.Sqrt(dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z);
+        if (n == 0 || !(len > 0)) return baseColour;
+        Span<double> basis = stackalloc double[15];
+        ShBasis(dir.X / len, dir.Y / len, dir.Z / len, basis);
+        var (r, g, b) = baseColour;
+        for (var j = 0; j < n; j++)
+        {
+            r += basis[j] * ShValue(sh[3 * j]);
+            g += basis[j] * ShValue(sh[3 * j + 1]);
+            b += basis[j] * ShValue(sh[3 * j + 2]);
+        }
+        return (Math.Max(0, r), Math.Max(0, g), Math.Max(0, b));
+    }
 }
 
 /// <summary>
@@ -217,6 +264,34 @@ public sealed class SplatStore
             above += Histogram[k];
         }
         return (-1, 0, Count);
+    }
+
+    /// <summary>
+    /// The harmonics of the records [<paramref name="start"/>, <paramref name="start"/> + <paramref name="count"/>) as
+    /// <c>sh.bin</c> keeps them (<see cref="ShDegree"/>'s coefficients × 3 bytes a Gaussian); empty when it has none.
+    /// </summary>
+    public byte[] ReadSh(long start, int count)
+    {
+        var per = Splat.ShCoeffs(ShDegree) * 3;
+        start = Math.Clamp(start, 0, Count);
+        var end = Math.Min(Count, start + count);
+        var path = Path.Combine(Directory, "sh.bin");
+        if (per == 0 || end <= start || !File.Exists(path)) return [];
+        var bytes = new byte[(end - start) * per];
+        using (var h = File.OpenHandle(path))
+            if (RandomAccess.Read(h, bytes, start * per) < bytes.Length) return [];
+        return bytes;
+    }
+
+    /// <summary>
+    /// The degree of harmonics a cloud can be drawn with: at most <paramref name="asked"/> and the file's, lowered until the
+    /// kept Gaussians' coefficients (3 bytes each a Gaussian) fit in <paramref name="bytes"/>.
+    /// </summary>
+    public static int DegreeFor(int fileDegree, int asked, long kept, long bytes)
+    {
+        var d = Math.Clamp(Math.Min(asked, fileDegree), 0, 3);
+        while (d > 0 && kept * 3L * Splat.ShCoeffs(d) > bytes) d--;
+        return d;
     }
 
     /// <summary>

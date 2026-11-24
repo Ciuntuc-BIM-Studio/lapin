@@ -28,8 +28,8 @@ carries splats with its measuring tools.
 - **Formats after their public specifications**, Lapin's own C# readers, managed only (the browser's engine has them too):
   3DGS PLY (INRIA's layout: `x y z`, `f_dc_*`, `f_rest_*`, `opacity` as a logit, `scale_*` as logarithms, `rot_*` as a
   quaternion w x y z), SuperSplat's compressed PLY (`chunk` and packed `vertex` elements), Niantic's SPZ (gzip, versions
-  2 and 3; MIT spec), PlayCanvas's SOG (a zip or folder: `meta.json` and lossless WebP images; WebP lossless decoded by
-  Lapin's own reader after RFC 9649). Nothing GPL or LGPL.
+  1–3, and version 4 of Zstandard streams; MIT spec), PlayCanvas's SOG (a zip or folder: `meta.json` and lossless WebP images; WebP lossless decoded by
+  Lapin's own reader after RFC 9649; Zstandard after RFC 8878). Nothing GPL or LGPL.
 - **One rule for the view mode.** A link's own default (Splats or Points) on the Links tab, overridden per view on the
   Point clouds tab of Visibility / Graphics (Splats / Points / By link). Plans and sections draw the slice as dots, as for
   any cloud; a 3D view and a camera view draw splats.
@@ -95,6 +95,35 @@ carries splats with its measuring tools.
   `-area` in both languages.
 - **G3 — the other formats and the colour by direction.** SOG (with the WebP lossless reader), SuperSplat's compressed
   PLY; spherical harmonics of degree 1–3 in the shader (Display: Full colour / Base colour), behind the display quality.
+
+  **Done 24.11.2026 (decision 830, branch `feat/gaussian-splats-g3`).** Two decoders of Lapin's own, managed only, after
+  their RFCs: `WebPLossless` (RFC 9649: RIFF, the four transforms with pixel bundling, simple and normal prefix codes, meta
+  prefix codes, the colour cache, LZ77 with the 120 neighbourhood distances; a lossy VP8 image refused by name) and `Zstd`
+  (RFC 8878: raw, RLE and compressed blocks, Huffman literals by direct or FSE weights in one or four streams, FSE sequence
+  tables in every mode, repeat offsets, skippable frames; no dictionaries, the checksum not checked). Readers: `SogReader`
+  (PlayCanvas's published specification, versions 2 and 3: a `.sog` zip or a folder's `meta.json`, means in a 16-bit
+  symmetric log, scales and colours by codebook, version 3's exponential-map rotations and (a/204)² opacities, version 2's
+  smallest three; the harmonics' palette and labels), `CompressedPlyReader` (SuperSplat's chunks of 256 with their bounds,
+  colour bounds when present, 11-10-11 positions and log scales, the smallest three in 2 + 3 × 10 bits, the `sh` element's
+  bytes over ±4) and `SpzReader` version 4 (the 32-byte header, extension records stepped over, the table of contents,
+  each attribute its own Zstandard stream). All three fill `sh.bin`. `pointcloud.splats` takes `sh` (the degree wanted) and
+  `shBytes` (the room for it): the page carries the harmonics as `sh.bin` keeps them, packed in ints, and `turn`, the 3 × 3
+  matrix taking a project direction into the file's (the placement's linear part inverted, its scale taken out), so the
+  shader evaluates the colour (Kerbl et al.'s real basis with the Condon–Shortley phase, `splatSh.ts`, the engine's
+  `Splat.ShBasis` and `Splat.Colour` the reference) along the eye-to-splat direction in the file's frame whatever the link's
+  rotation and up axis. Decided where the plan was silent: `splatColor` (`full` by default, `base`) on the link (a list
+  beside Display in Manage → Links) and on a view's row (V/G's **Splat colour** column); the degree by quality (Fast 1,
+  Balanced and Precise 3), lowered by the engine (`SplatStore.DegreeFor`) until the kept splats' coefficients fit the share of
+  96 MB (48 MB in a browser) of the clouds shown, so Balanced's 2 million keep degree 3 and Precise's 4 million degree 2; the
+  harmonics in a second RGBA32UI texture, 1–3 texels a splat; Base colour asks for none (memory and load time saved); SOG's
+  first layout (no `version`, before 2) refused with a message, its opacities above 1 kept at 1, blind data left aside;
+  a SOG folder's link takes the folder's name; the Links row names the format in a few words ("SOG v3 · SH 3"). Measured
+  (Release, M-series Mac, a synthetic capture of a million Gaussians with harmonics of degree 3, random so hardly
+  compressible: one palette entry a splat): the SOG (images by cwebp, 58 MB) indexed with its splats in 1.1 s, the SPZ
+  version 4 (streams by zstd -3, 59 MB) in 0.8 s, as G1's PLY and SPZ v3. The guide's SOG (41 407 splats, its back wall
+  given degree 1) draws the wall warm from the garden, cool from behind, white in Base colour. Tests: `WebPTests` (3),
+  `ZstdTests` (4), `SplatFormatTests` (9: each format read back as the 3DGS PLY's Gaussians within its quantization, the
+  basis orthonormal, a page's harmonics, degree and turn), vitest `splatSh.test.ts` (5); the scene `gaussian-splat-sh`.
 - **G4 — on sheets.** A 3D or camera view with splats placed on a sheet prints them as a raster made by the engine (a CPU
   splatting of the view at the sheet's resolution, the same sort and projection as the screen's), under the view's lines,
   dimensions and notes; the PDF carries it. Dimensions and notes in a 3D view on a sheet as they are today.

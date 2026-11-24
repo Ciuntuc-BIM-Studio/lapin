@@ -430,12 +430,20 @@ public static class PointCloudLinks
     /// first), each placed by the link: its centre by its transform, its rotation turned by the transform's, its scales times
     /// the transform's factor (its unit's).
     /// </summary>
-    public static SplatPage Splats(IModelView m, Entity link, long start, long budget)
+    /// <remarks>
+    /// G3: with <paramref name="shDegree"/> above 0, each kept Gaussian's spherical harmonics come too, at the degree asked or
+    /// the file's, lowered until the cloud's kept Gaussians' coefficients fit in <paramref name="shBytes"/> (a byte each: the
+    /// interface's texture); a byte each as <c>sh.bin</c> keeps them, coefficient by coefficient, colours inner, packed four to
+    /// an int. They stay in the file's frame: <c>Turn</c> (a 3 × 3 matrix, column by column) turns a direction in the project
+    /// into the file's, for the view-dependent colour.
+    /// </remarks>
+    public static SplatPage Splats(IModelView m, Entity link, long start, long budget, int shDegree = 0, long shBytes = long.MaxValue)
     {
         var s = SplatsOf(link) ?? throw new CommandException(IsSplats(link) ? "The splats are not indexed yet." : "That cloud holds no Gaussian splats.");
         var t = TransformOf(m, link);
         var (k, lq) = Turn(t);
         var (idx, bytes) = s.Read(start, SplatPageRecords, Math.Max(1, budget));
+        var degree = shDegree > 0 ? SplatStore.DegreeFor(s.ShDegree, shDegree, s.Cut(Math.Max(1, budget)).Kept, shBytes) : 0;
         // Cropped: the Gaussians whose centres are outside left out.
         if (CropOf(link) is { } crop)
         {
@@ -463,8 +471,26 @@ public static class PointCloudLinks
             rot[4 * j] = (float)q.W; rot[4 * j + 1] = (float)q.X; rot[4 * j + 2] = (float)q.Y; rot[4 * j + 3] = (float)q.Z;
             col[j] = g.R | g.G << 8 | g.B << 16 | g.A << 24;
         }
+        int[]? sh = null;
+        float[]? turn = null;
+        if (degree > 0)
+        {
+            var raw = s.ReadSh(from, (int)Math.Min(SplatPageRecords, s.Count - from));
+            var per = Splat.ShCoeffs(s.ShDegree) * 3;
+            var take = Splat.ShCoeffs(degree) * 3;
+            var packed = new byte[(n * take + 3) & ~3];
+            if (raw.Length > 0)
+                for (var j = 0; j < n; j++) raw.AsSpan((int)(idx[j] - from) * per, take).CopyTo(packed.AsSpan(j * take));
+            else packed.AsSpan().Fill(Splat.ShByte(0));
+            sh = new int[packed.Length / 4];
+            Buffer.BlockCopy(packed, 0, sh, 0, packed.Length);
+            // The project's directions into the file's: the inverse of the placement's linear part, its scale taken out.
+            var inv = Invert(t);
+            turn = new float[9];
+            for (var i = 0; i < 9; i++) turn[i] = (float)(inv[i] * k);
+        }
         var next = from + SplatPageRecords;
-        return new SplatPage(link.Id, from, next < s.Count ? next : null, s.Count, s.Cut(Math.Max(1, budget)).Kept, pos, scl, rot, col);
+        return new SplatPage(link.Id, from, next < s.Count ? next : null, s.Count, s.Cut(Math.Max(1, budget)).Kept, pos, scl, rot, col, degree, sh, turn);
     }
 
     /// <summary>A transform's linear part as a factor and a turn (a unit quaternion w, x, y, z): k·R, k the cube root of its determinant.</summary>
@@ -608,9 +634,12 @@ public static class PointCloudLinks
         {
             ["format"] = header.Format, ["points"] = header.Count, ["color"] = header.HasColor, ["intensity"] = header.HasIntensity,
             ["classification"] = header.HasClassification, ["crs"] = header.Crs, ["units"] = header.Units,
+            ["shDegree"] = header.Splats ? header.ShDegree : null,
             ["bounds"] = header.Bounds is { } hb ? new JsonArray(hb.Select(v => (JsonNode)Math.Round(v, 4)).ToArray()) : null,
         };
         var named = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? Path.GetFileNameWithoutExtension(nm) : link.Name;
+        // A SOG folder's meta.json: the link takes the folder's name.
+        if (path != null && Path.GetFileName(path).Equals("meta.json", StringComparison.OrdinalIgnoreCase) && Path.GetFileName(Path.GetDirectoryName(path)) is { Length: > 0 } folder) named = folder;
         ctx.Replace(link.With(name: named, attrs: attrs));
         ForgetFailed(key);
         var status = Status(ctx.Model.Get(link.Id)!, ctx.Deliveries);
@@ -638,6 +667,9 @@ public static class PointCloudLinks
     /// <summary>How a splat link is drawn in 3D: as its Gaussians or as their centres.</summary>
     public static readonly string[] Displays = ["splats", "points"];
 
+    /// <summary>A splat cloud's colour (G3): full (the spherical harmonics, changing with the view) or base (degree 0 alone).</summary>
+    public static readonly string[] SplatColors = ["full", "base"];
+
     /// <summary>Whether a link's file holds Gaussians.</summary>
     public static bool IsSplats(Entity link) => link.Attrs["splats"] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
 
@@ -648,7 +680,7 @@ public static class PointCloudLinks
     public const double MaxSlice = 100;
 
     /// <summary>How a cloud is drawn in one view: its link's settings, then the view's row over them (decision 396).</summary>
-    public sealed record Look(bool Shown, bool Halftone, string ColorMode, IReadOnlySet<int> HiddenClasses, double Slice, double PointSize, string Display = "points", CropBox? Crop = null);
+    public sealed record Look(bool Shown, bool Halftone, string ColorMode, IReadOnlySet<int> HiddenClasses, double Slice, double PointSize, string Display = "points", CropBox? Crop = null, string SplatColor = "full");
 
     public static Look LookIn(JsonObject? graphics, Entity link)
     {
@@ -659,7 +691,8 @@ public static class PointCloudLinks
         var slice = Json.Number(row?["slice"]) is { } sl && sl > 0 ? sl : DefaultSlice;
         // Splats or points in 3D: the view's row, else the link's; a cloud of plain points is points.
         var display = !IsSplats(link) ? "points" : (string?)row?["display"] is { } d && Displays.Contains(d) ? d : link.Str("display") is { } ld && Displays.Contains(ld) ? ld : "splats";
-        return new Look(Links.Visible(link) && !T(row?["hidden"]), Links.IsHalftone(link) || T(row?["halftone"]), mode, hidden, slice, link.NumOrNull("pointSize") ?? 2, display, CropOf(link));
+        var colour = (string?)row?["splatColor"] is { } sc && SplatColors.Contains(sc) ? sc : link.Str("splatColor") is { } lc && SplatColors.Contains(lc) ? lc : "full";
+        return new Look(Links.Visible(link) && !T(row?["hidden"]), Links.IsHalftone(link) || T(row?["halftone"]), mode, hidden, slice, link.NumOrNull("pointSize") ?? 2, display, CropOf(link), colour);
     }
 
     /// <summary>A view's row for a cloud, checked: {hidden, halftone, colorMode, hiddenClasses: [0–255…], slice: m, display: splats | points}; null when it says nothing.</summary>
@@ -689,6 +722,9 @@ public static class PointCloudLinks
                 case "display":
                     if ((string?)val is { } d) o[k] = Displays.Contains(d) ? d : throw new CommandException($"A splat cloud is drawn as {string.Join(" or ", Displays)}.");
                     break;
+                case "splatColor":
+                    if ((string?)val is { } c) o[k] = SplatColors.Contains(c) ? c : throw new CommandException($"A splat cloud's colour is {string.Join(" or ", SplatColors)}.");
+                    break;
                 default: throw new CommandException($"„{k}” is not a point cloud's setting.");
             }
         return o.Count > 0 ? o : null;
@@ -707,6 +743,8 @@ public static class PointCloudLinks
             ["color"] = (bool?)cloud?["color"] ?? false, ["intensity"] = (bool?)cloud?["intensity"] ?? false, ["classification"] = (bool?)cloud?["classification"] ?? false,
             ["classes"] = new JsonArray(classes.Select(c => (JsonNode)c).ToArray()),
             ["splats"] = IsSplats(link), ["display"] = IsSplats(link) ? link.Str("display") ?? "splats" : null,
+            ["splatColor"] = IsSplats(link) ? link.Str("splatColor") ?? "full" : null,
+            ["shDegree"] = IsSplats(link) ? (SplatsOf(link)?.ShDegree ?? (int?)Json.Number((link.Attrs["cloud"] as JsonObject)?["shDegree"])) : null,
         };
     }
 
@@ -749,6 +787,12 @@ public static class PointCloudLinks
             {
                 if (!IsSplats(link)) throw new CommandException("Only a cloud of Gaussian splats is drawn as splats.");
                 attrs["display"] = Displays.Contains(display) ? display : throw new CommandException($"A splat cloud is drawn as {string.Join(" or ", Displays)}.");
+            }
+            // Its colour (G3): with the view (full, its harmonics) or its base colour alone.
+            if ((string?)a["splatColor"] is { } colour)
+            {
+                if (!IsSplats(link)) throw new CommandException("Only a cloud of Gaussian splats has a full or a base colour.");
+                attrs["splatColor"] = SplatColors.Contains(colour) ? colour : throw new CommandException($"A splat cloud's colour is {string.Join(" or ", SplatColors)}.");
             }
             ctx.Replace(link.With(attrs: attrs));
             return null;
@@ -819,7 +863,8 @@ public static class PointCloudLinks
 /// from <c>Next</c>, null after the last; <c>Total</c> in the file, <c>Kept</c> by the budget in all), each kept one's centre
 /// (x y z), scales (m), rotation (w x y z) and colour (RGBA, a byte each, red the lowest: little-endian bytes r, g, b, a).
 /// </summary>
-public sealed record SplatPage(string Link, long Start, long? Next, long Total, long Kept, float[] Positions, float[] Scales, float[] Rotations, int[] Colors);
+public sealed record SplatPage(string Link, long Start, long? Next, long Total, long Kept, float[] Positions, float[] Scales, float[] Rotations, int[] Colors,
+    int ShDegree = 0, int[]? Sh = null, float[]? Turn = null);
 
 /// <summary>A tile of a point cloud for the 3D view: its points in the project (x y z a point), colours (0xRRGGBB) and values (intensity | class « 16).</summary>
 public sealed record PointTile(string Link, string Name, float[] Positions, int[] Colors, int[] Values);
