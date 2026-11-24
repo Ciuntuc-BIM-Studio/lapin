@@ -2965,7 +2965,8 @@ export const scenes = [
     },
   },
   {
-    // Modify → Align (Revit's; forum topics 109, 170, 171): a grid axis as the reference, two walls' faces brought onto it with Multiple alignment.
+    // Modify → Align (Revit's; forum topics 109, 170, 171): a grid axis as the reference, two walls' faces brought onto it with Multiple alignment;
+    // the second wall slanted, turned parallel to the axis first (forum topic 234).
     id: 'walls-align',
     touches: ['architecture', 'drafting', 'core'],
     async run(t) {
@@ -2982,7 +2983,7 @@ export const scenes = [
       // One 300 mm layer, the wall's line along its middle: its faces 150 mm either side.
       const typeId = (await t.cmd('architecture.createWallType', { name: 'Brick 300', layers: [{ material: 'Brick', thickness: 0.3, core: true }] })).id;
       const w1 = await t.cmd('architecture.addWall', { storeyId: storey, typeId, x1: 0, y1: 1.2, x2: 4, y2: 1.2 });
-      const w2 = await t.cmd('architecture.addWall', { storeyId: storey, typeId, x1: 5, y1: 2, x2: 9.5, y2: 2 });
+      const w2 = await t.cmd('architecture.addWall', { storeyId: storey, typeId, x1: 5, y1: 2, x2: 9.5, y2: 2.6 });
       await t.fit();
       await t.wait(600);
       const wall = async (id) => (await t.nodes()).find((n) => n.id === id);
@@ -2995,12 +2996,15 @@ export const scenes = [
       await t.wait(300);
       await click(10.5, 0);
       await click(2, 1.2 - th / 2 + 0.02);
-      await click(7, 2 - th / 2 + 0.02);
+      // The slanted wall's lower face at x = 7: its axis there, less half its thickness measured square to it.
+      const slope = 0.6 / 4.5;
+      await click(7, 2 + slope * 2 - (th / 2) * Math.hypot(1, slope) + 0.02);
       await t.page.keyboard.press('Escape');
       await t.wait(800);
       for (const id of [w1.id, w2.id]) {
         const y = (await wall(id)).props.start[1];
-        t.expect(Math.abs(y - th / 2) < 1e-3, `the wall's face lies on the axis (its axis at ${y}, half its thickness ${th / 2})`);
+        const y2 = (await wall(id)).props.end[1];
+        t.expect(Math.abs(y - th / 2) < 1e-3 && Math.abs(y2 - th / 2) < 1e-3, `the wall's face lies on the axis, turned parallel to it (its axis at ${y} to ${y2}, half its thickness ${th / 2})`);
       }
       await t.ui({ selection: null, selected: [] });
       await t.page.mouse.move(5, 5);
