@@ -653,7 +653,7 @@ public sealed partial class Session
         return _fine.GetValue(g, _ => Geometry(id, new GeometryOptions(Fine: true)) ?? g);
     }
 
-    /// <summary>What the vegetation's maquette style draws in place of <see cref="Geometry(string)"/> (decision 812), kept as long as that geometry stands.</summary>
+    /// <summary>What the vegetation's maquette style draws in place of <see cref="Geometry(string)"/> (decision 818), kept as long as that geometry stands.</summary>
     readonly System.Runtime.CompilerServices.ConditionalWeakTable<ElementGeometry, ElementGeometry> _maquette = new();
 
     /// <summary>The element as a view in the maquette style draws it (<see cref="ElementGeometry.VegetationShape"/>); its own geometry when it has no such body.</summary>
@@ -665,7 +665,7 @@ public sealed partial class Session
 
     /// <summary>
     /// What a 3D view draws otherwise than the render has it: finer from LOD 400 (decision 415), and in the vegetation's maquette
-    /// style the plants' maquette bodies (decision 812). Under LOD 400 and coloured nothing, so no one else's mesh grows; else the
+    /// style the plants' maquette bodies (decision 818). Under LOD 400 and coloured nothing, so no one else's mesh grows; else the
     /// bodies of <paramref name="ids"/> (null: of every element that has one).
     /// </summary>
     public FineBodies FineBodies(string? viewId, IReadOnlyList<string>? ids)
@@ -718,7 +718,7 @@ public sealed partial class Session
     /// fill and hatch, the hatch at 1:<paramref name="scale"/>.
     /// </summary>
     /// <param name="fine">The bodies as a 3D view at LOD 400 draws them (decision 415), so the caps close them.</param>
-    /// <param name="maquette">The plants as a 3D view in the vegetation's maquette style draws them (decision 812).</param>
+    /// <param name="maquette">The plants as a 3D view in the vegetation's maquette style draws them (decision 818).</param>
     public List<CapItem> Caps(IReadOnlyList<ClipPlane> planes, double lift = 0.0005, bool drawing = false, double scale = 50, string layers = "all", bool fine = false, bool maquette = false)
     {
         var result = new List<CapItem>();

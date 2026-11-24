@@ -93,7 +93,10 @@ import { place, placedBox } from '../engine/instances';
 import { fineShown, useFineBodies } from './fineBodies';
 import { disposeUnderlays, sameSources, underlayGroup, underlaySources, type UnderlayBatch } from './underlays3d';
 import { PointCloudLayer, type Hierarchy, type Tile } from './pointClouds3d';
-import { cloudSpecs, isCloudLink, setCloudStatus, type ViewCloud } from './pointClouds';
+import { SplatLayer, type SplatPage } from './splats3d';
+import { openCrop, startCalibrate } from '../modules/core/cloudCalibrate';
+import { cloudAt } from './scene3d';
+import { cloudSpecs, isCloudLink, setCloudStatus, setSplatsDrawn, type ViewCloud } from './pointClouds';
 import { copyArrays, displayQualityOf, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
 import { inWorld } from '../engine/instances';
 import { clampWheel, middleDouble, wheelZoom } from './zoom';
@@ -625,6 +628,8 @@ export function Viewport3D() {
   const instances = useRef<InstanceLayer | null>(null);
   /** The point clouds linked, streamed by the camera (pointClouds3d.ts). */
   const cloudLayer = useRef<PointCloudLayer | null>(null);
+  /** The Gaussian splat clouds linked, drawn by Lapin's own renderer (splats3d.ts). */
+  const splatLayer = useRef<SplatLayer | null>(null);
   const cloudKeyRef = useRef('[]');
   /** The model's box (the sun's shadows are fitted in it) forgotten: the elements changed. */
   const boxDirty = useRef<() => void>(() => undefined);
@@ -1061,6 +1066,15 @@ export function Viewport3D() {
     s.userData.pointClouds = clouds;
     cloudLayer.current = clouds;
     clouds.sync(JSON.parse(cloudKeyRef.current));
+    // Gaussian splats (docs/plan-gaussian-splats.md): the splat links drawn as splats, their Gaussians asked for page by page.
+    const splats = new SplatLayer({
+      status: (id) => query('pointcloud.status', { id }),
+      page: (id, start, budget) => engine.call<SplatPage>('pointcloud.splats', { id, start, budget }, { timeoutMs: 120_000 }),
+    }, () => invalidate.current(), renderer.capabilities.maxTextureSize);
+    splats.onDrawn = (id, n) => setSplatsDrawn(id, n);
+    s.add(splats.group);
+    splatLayer.current = splats;
+    splats.sync(JSON.parse(cloudKeyRef.current));
 
     // Each frame draws every heavy part's copy its distance chooses (lod.ts); the instances' choice, at most every
     // LOD_EVERY ms while the camera moves (a pass goes through every instance), and once more when it stops.
@@ -1322,13 +1336,14 @@ export function Viewport3D() {
       repaint();
     });
     const draw = () => {
-      relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); fitShadow(); placeLights();
+      relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); splats.update(cam, renderer, qualityRef.current, engineInBrowser); fitShadow(); placeLights();
       // A few faces of the rooms' probes, before the frame that reads them (not while the path tracer draws).
       const eye = (cam as THREE.PerspectiveCamera).isPerspectiveCamera ? cam.position : controls.target;
       const baking = probes.on && !useRenderMode.getState().on && probes.step([eye.x, eye.y, eye.z], prepareCapture);
       if (!traceFrame()) realism.render(cam, controls.target.distanceTo(cam.position));
       if (host.current) {
         host.current.dataset.cloudPoints = String(clouds.drawn());
+        host.current.dataset.splats = String(splats.drawn());
         const p = probes.stats();
         host.current.dataset.probes = `${p.baked}/${p.slots}/${p.probes}/${p.waiting}`;
       }
@@ -1792,7 +1807,13 @@ export function Viewport3D() {
         if (id && pickable(nodes.get(id)) && !shownSelection(selected, nodes, relations).has(id)) pickByMods(id, modsOf(e), currentNavStyle());
       }
       const ui = useUi.getState();
-      openContextMenu(e.clientX, e.clientY, [...selectionItems(), ...temporaryItems(), ...viewSheetItems(ui.view === '3d' ? ui.view3dId ?? '3d' : null, useSession.getState().nodes)]);
+      // Near a point cloud's points (or a splat's centre): its own tools (G2 of docs/plan-gaussian-splats.md).
+      const cloud = ui.tool ? null : cloudAt({ camera: camRef, canvas: host, scene }, e.clientX, e.clientY);
+      const cloudItems = cloud ? [
+        { label: 'Calibrate scale…', onSelect: () => startCalibrate(cloud) },
+        { label: 'Crop point cloud…', onSelect: () => openCrop(cloud) },
+      ] : [];
+      openContextMenu(e.clientX, e.clientY, [...cloudItems, ...selectionItems(), ...temporaryItems(), ...viewSheetItems(ui.view === '3d' ? ui.view3dId ?? '3d' : null, useSession.getState().nodes)]);
     };
     renderer.domElement.addEventListener('pointerdown', onRightDown);
     renderer.domElement.addEventListener('contextmenu', onMenu);
@@ -1972,6 +1993,8 @@ export function Viewport3D() {
       window.removeEventListener('blur', onWalkBlur);
       clouds.dispose();
       cloudLayer.current = null;
+      splats.dispose();
+      splatLayer.current = null;
       // The elements, the lights, the ground grid and the grid's axes.
       shadowOnly.dispose();
       meadow.dispose();
@@ -2115,7 +2138,7 @@ export function Viewport3D() {
   const fog = useUi((st) => st.fog);
   // The layers this 3D view shows (its style's or its own): the parts the others are drawn without, picked through, walked through.
   const layers = useSession((st) => layers3dOf(st.nodes, view3dId).mode);
-  // At LOD 400 members draw their real section (decision 415), in the maquette style plants their maquette bodies (decision 812),
+  // At LOD 400 members draw their real section (decision 415), in the maquette style plants their maquette bodies (decision 818),
   // fetched then: everyone else's meshes stay as they are.
   const fineBodies = useFineBodies(view3dId, render, useSession((st) => st.nodes));
   // Fog: the model fades into the background with distance (a display rule for linked context, big sites).
@@ -2259,7 +2282,7 @@ export function Viewport3D() {
   }, [nodes, view3dId, hasClouds]);
   const cloudKey = JSON.stringify(cloudSpecs(nodes, cloudRows));
   cloudKeyRef.current = cloudKey;
-  useEffect(() => { cloudLayer.current?.sync(JSON.parse(cloudKey)); }, [cloudKey]);
+  useEffect(() => { cloudLayer.current?.sync(JSON.parse(cloudKey)); splatLayer.current?.sync(JSON.parse(cloudKey)); }, [cloudKey]);
 
   const storeySetting = settingOf(nodes, view3dId);
   const storeyList = storeysOf({ nodes, relations: useSession.getState().relations });

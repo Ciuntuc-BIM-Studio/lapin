@@ -49,7 +49,7 @@ namespace Lapin.Platform;
 /// up to the view's depth, as before; the default and a style saved before), <c>near</c> (what lies within <c>nearDepth</c>
 /// of the cut as before, what lies wholly farther in the background pen: thin and grey, ArchiCAD's marked distant area)
 /// or <c>cut</c> (only what the plane cuts: a detail); <c>nearDepth</c> in metres, 1 by default.</item>
-/// <item><c>vegetation</c>: how plants' bodies look (decision 812): <c>coloured</c> (each species in its colour, as before; the
+/// <item><c>vegetation</c>: how plants' bodies look (decision 818): <c>coloured</c> (each species in its colour, as before; the
 /// default and a style saved before) or <c>maquette</c> (neutral faceted bodies, an architectural model's), in the 3D, its
 /// exports and the drawings that draw bodies alike.</item>
 /// </list>
@@ -66,7 +66,7 @@ public static class ViewStyles
 
     /// <summary>What a section or an elevation draws beyond its cut (decision 721): everything, the near part with the rest in the background, or the cut alone.</summary>
     public static readonly string[] BeyondModes = ["full", "near", "cut"];
-    /// <summary>How plants' bodies look (decision 812): each species in its colour (the default), or as an architectural model's.</summary>
+    /// <summary>How plants' bodies look (decision 818): each species in its colour (the default), or as an architectural model's.</summary>
     public static readonly string[] VegetationModes = ["coloured", "maquette"];
     public const string Maquette = "maquette";
 
@@ -163,7 +163,7 @@ public static class ViewStyles
             if (Math.Abs(NearDepth - DefaultNearDepth) > 1e-9) o["nearDepth"] = NearDepth;
             // The same: a style that leaves it to its discipline saves as before.
             if (HalftoneOthers is { } ho) o["halftoneOthers"] = ho;
-            // The same (decision 812): a style whose plants are coloured saves as before.
+            // The same (decision 818): a style whose plants are coloured saves as before.
             if (Vegetation != "coloured") o["vegetation"] = Vegetation;
             return o;
         }
@@ -203,7 +203,7 @@ public static class ViewStyles
             Json.Number(o["nearDepth"]) is { } nd && nd >= 0 && double.IsFinite(nd) ? nd : DefaultNearDepth,
             // A style saved before the other disciplines' halftone: as its discipline says (on for MEP).
             Own(o["halftoneOthers"]),
-            // A style saved before the vegetation's styles (decision 812): coloured, as before.
+            // A style saved before the vegetation's styles (decision 818): coloured, as before.
             (string?)o["vegetation"] is { } vm && VegetationModes.Contains(vm) ? vm : "coloured");
 
         /// <summary>A hatch spacing threshold (paper mm, 0 or more); null when it is not one.</summary>
@@ -296,7 +296,7 @@ public static class ViewStyles
             Beyond = (string?)o["beyond"] is { } bm && BeyondModes.Contains(bm) ? bm : s.Beyond,
             NearDepth = Json.Number(o["nearDepth"]) is { } nd && nd >= 0 && double.IsFinite(nd) ? nd : s.NearDepth,
             HalftoneOthers = Own(o["halftoneOthers"]) ?? s.HalftoneOthers,
-            // How its plants look (decision 812), its own over its style's.
+            // How its plants look (decision 818), its own over its style's.
             Vegetation = (string?)o["vegetation"] is { } vm && VegetationModes.Contains(vm) ? vm : s.Vegetation,
         };
     }
@@ -657,7 +657,7 @@ public static class ViewStyles
                 // What a section or an elevation sees beyond its cut (decision 721): full, near or cut; the near part's depth.
                 else if (f == "beyond") own[f] = BeyondMode(value);
                 else if (f == "nearDepth") own[f] = NearDepthOf(value);
-                // How its plants look (decision 812): coloured or maquette.
+                // How its plants look (decision 818): coloured or maquette.
                 else if (f == "vegetation") own[f] = VegetationMode(value);
                 else own[f] = value is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException($"{f} is true or false.");
             }

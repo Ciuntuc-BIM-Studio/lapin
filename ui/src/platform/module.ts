@@ -128,6 +128,12 @@ export interface ToolDef {
    * letters (upper case) it takes now; `take`: what one does.
    */
   letters?: { keys: () => string; take: (key: string) => void };
+  /**
+   * In the 3D view, its points are drawn where they were snapped, at their heights, not on the level (Measure on a point cloud);
+   * `liveInfo` says what the points so far and the cursor's measure (x, y, z each), shown in the tool's chip (a running total, an area).
+   */
+  inSpace?: boolean;
+  liveInfo?: (points: readonly { x: number; y: number; z: number }[]) => string | null;
   /** What the tool says beside the cursor while a segment is drawn, after its length and angle (an MEP run: its plane and elevation). */
   cursorInfo?: ComponentType;
   /** What the tool lets one choose while it is on (the line a wall is drawn on), shown in the command line's bar. */

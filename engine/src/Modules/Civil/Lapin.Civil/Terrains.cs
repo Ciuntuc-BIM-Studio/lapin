@@ -657,7 +657,11 @@ public static class Terrains
                     {
                         var cutVol = 0.0;
                         foreach (var c in solids) if (booleans.Intersection(body, c) is { } ci) cutVol += Measure.Volume(ci);
-                        body = booleans.Difference(body, solids, "terrain") ?? body;
+                        // Its solids joined first, then taken out at once: one after the other, a hardscape's kerb flush with the
+                        // side its layers had just cut (the two in one plane, their chords apart) left a fin of ground of no
+                        // thickness there, a body not closed for the next cut (the plazas after it z-fought the ground).
+                        var cutter = solids.Count > 1 ? booleans.Union(solids, "cutter") ?? solids[0] : solids[0];
+                        body = booleans.Difference(body, solids.Count > 1 && cutter != solids[0] ? [cutter] : solids, "terrain") ?? body;
                         works.Add(new Earthwork(element.Id, cutVol, 0));
                     }
                     catch (InvalidOperationException ex) { problems.Add($"{element.Name}: could not be cut into the ground ({ex.Message})."); }

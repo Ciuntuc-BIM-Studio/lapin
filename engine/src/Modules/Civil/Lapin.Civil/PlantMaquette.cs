@@ -3,7 +3,7 @@ using Lapin.Geometry;
 namespace Lapin.Civil;
 
 /// <summary>
-/// A plant as an architectural model's (decision 812, the vegetation's maquette style): neutral, faceted, flat shaded, so it
+/// A plant as an architectural model's (decision 818, the vegetation's maquette style): neutral, faceted, flat shaded, so it
 /// reads as a massing model's tree. Each body is Lapin's own, made from the plant's seed so neighbours differ and the same
 /// plant always comes out the same:
 /// <list type="bullet">

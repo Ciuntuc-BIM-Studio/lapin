@@ -52,7 +52,7 @@ public sealed record CapItem(string NodeId, IReadOnlyList<CapPart> Parts);
 public sealed record FineBody(string NodeId, IReadOnlyList<RenderPart> Parts);
 
 /// <summary>
-/// A 3D view's level of development and its vegetation's style (decision 812), and the bodies it draws otherwise than the render
+/// A 3D view's level of development and its vegetation's style (decision 818), and the bodies it draws otherwise than the render
 /// has them: finer from LOD 400, the plants' maquette bodies in the maquette style.
 /// </summary>
 public sealed record FineBodies(int Lod, IReadOnlyList<FineBody> Items)

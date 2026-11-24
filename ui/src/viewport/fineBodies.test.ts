@@ -34,7 +34,7 @@ describe('fine bodies at LOD 400', () => {
   });
 });
 
-describe('the plants\' maquette bodies (decision 812)', () => {
+describe('the plants\' maquette bodies (decision 818)', () => {
   it('names what a view draws otherwise: fine from LOD 400, the maquette, both, or nothing', () => {
     expect(modeOf({ lod: 350 })).toBeNull();
     expect(modeOf({ lod: 350, vegetation: 'coloured' })).toBeNull();

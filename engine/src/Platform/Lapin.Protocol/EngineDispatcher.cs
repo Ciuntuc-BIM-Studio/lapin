@@ -744,7 +744,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         if (method == "doc.query" && (string?)p["name"] is { } q && HostOnlyQueries.Any(x => q.StartsWith(x, StringComparison.Ordinal))) return "Only the host can do that.";
         switch (method)
         {
-            case "session.info" or "session.catalogue" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "view.fine" or "pointcloud.tiles"
+            case "session.info" or "session.catalogue" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "view.fine" or "pointcloud.tiles" or "pointcloud.splats"
                 or "project.versions" or "project.compareVersions"
                 or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportStep" or "project.exportMesh" or "project.exportSurvey" or "project.exportHtml" or "project.htmlPlan":
                 return null;
@@ -918,6 +918,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             // A point cloud's tiles for the 3D view, by name, as raw arrays (docs/point-clouds.md).
             case "pointcloud.tiles":
                 return (PointCloudLinks.Tiles(session.Model, Links.Require(session.Model, (string?)p["id"]), (p["nodes"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>()), null);
+            // A splat link's Gaussians, a page at a time, as raw arrays (docs/plan-gaussian-splats.md): {id, start, budget}.
+            case "pointcloud.splats":
+                return (PointCloudLinks.Splats(session.Model, Links.Require(session.Model, (string?)p["id"]), (long)(Json.Number(p["start"]) ?? 0), (long)(Json.Number(p["budget"]) ?? 3_000_000)), null);
             case "quantities.of": return (session.Quantities((string?)p["id"] ?? throw new CommandException("Which element?")), null);
             // Several elements' quantity sets in one call (the model assistant's lists and sums): id → sets; an id the model lacks is left out.
             // At most MaxQuantityIds a call: more is refused with the number, never cut without a word (audit 22.11.2026).

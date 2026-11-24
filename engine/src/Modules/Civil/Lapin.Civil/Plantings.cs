@@ -166,7 +166,7 @@ public static class Plantings
 
     /// <summary>
     /// A planting's bodies, plan symbols and silhouettes: coloured (each species in its colour), or with <paramref name="maquette"/>
-    /// as an architectural model's (<see cref="PlantMaquette"/>, decision 812: the crowns and the trunks neutral, apart), for a
+    /// as an architectural model's (<see cref="PlantMaquette"/>, decision 818: the crowns and the trunks neutral, apart), for a
     /// view in the vegetation's maquette style. Either way it says it has the other (<see cref="ElementGeometry.VegetationShape"/>).
     /// </summary>
     public static ElementGeometry? Geometry(Entity e, IModelView m, bool maquette = false)

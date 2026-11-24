@@ -62,7 +62,7 @@ public static class PointCloudSlices
         var f = spec.Frame;
         var px = PaperPixel * c.Scale / 1000;
         var key = string.Join('|', link.Str("key"), string.Join(',', t.Select(v => v.ToString("R"))), spec.Kind, f.Origin, f.Right, f.Up, f.Dir, spec.Span, spec.Rise,
-            px.ToString("R"), look.ColorMode, look.Halftone, look.Slice, string.Join(',', look.HiddenClasses.Order()));
+            px.ToString("R"), look.ColorMode, look.Halftone, look.Slice, string.Join(',', look.HiddenClasses.Order()), look.Crop?.ToJson().ToJsonString() ?? "");
         lock (Gate)
             if (Cache.TryGetValue(key, out var hit)) { Order.Remove(key); Order.AddFirst(key); return hit; }
         var d = Render(c, spec, store, t, look, px);
@@ -138,7 +138,9 @@ public static class PointCloudSlices
         }
         // The points in the slice, mapped into the view.
         var pts = new List<(Vec2 At, double Depth, byte R, byte G, byte B)>();
-        double zLo = store.Bounds[2], zHi = store.Bounds[5];
+        // Elevation is the project's (a file stood upright by its link has its height on another axis).
+        var wb = PointCloudLinks.BoxOf(t, store.Bounds[0], store.Bounds[1], store.Bounds[2], store.Bounds[3], store.Bounds[4], store.Bounds[5]);
+        double zLo = wb[2], zHi = wb[5];
         foreach (var n in take)
         {
             var p = store.Read(n.Name);
@@ -147,12 +149,13 @@ public static class PointCloudSlices
                 if (look.HiddenClasses.Contains(p.Class(i))) continue;
                 var (wx, wy, wz) = PointCloudLinks.Apply(t, p.X(i), p.Y(i), p.Z(i));
                 var w = new Vec3(wx, wy, wz);
+                if (look.Crop is { } crop && !crop.Inside(wx, wy, wz)) continue;
                 var dep = f.Depth(w);
                 if (dep < dmin || dep > dmax) continue;
                 var at = f.Map(w);
                 if (spec.Span is { } sp && (at.X < sp.Min || at.X > sp.Max)) continue;
                 if (spec.Rise is { } ri && (at.Y < ri.Min || at.Y > ri.Max)) continue;
-                var (r, g, b) = ColorOf(look.ColorMode, store, p, i, (p.Z(i) - zLo) / Math.Max(zHi - zLo, 1e-6));
+                var (r, g, b) = ColorOf(look.ColorMode, store, p, i, (wz - zLo) / Math.Max(zHi - zLo, 1e-6));
                 if (look.Halftone) (r, g, b) = ((byte)(r + (255 - r) * 0.6), (byte)(g + (255 - g) * 0.6), (byte)(b + (255 - b) * 0.6));
                 pts.Add((at, dep, r, g, b));
             }

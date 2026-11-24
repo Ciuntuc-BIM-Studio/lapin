@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// The vegetation's maquette style (decision 812): a view draws the plants coloured (as before, the default) or as an
+/// The vegetation's maquette style (decision 818): a view draws the plants coloured (as before, the default) or as an
 /// architectural model's, neutral faceted blobs; chosen per view through its style, so the 3D, the mesh exports and the
 /// drawings agree.
 /// </summary>

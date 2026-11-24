@@ -216,7 +216,7 @@ export function RetainingWallSegments({ node }: { node: NodeDto }) {
 }
 
 /**
- * A quick switch of how the 3D view ({3D}) draws the plants (decision 812): coloured or as a maquette, the {3D}'s own setting
+ * A quick switch of how the 3D view ({3D}) draws the plants (decision 818): coloured or as a maquette, the {3D}'s own setting
  * (its view settings show it, and every other view sets its own there).
  */
 function Vegetation3d() {

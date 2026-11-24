@@ -1,6 +1,6 @@
 /**
  * Bodies a 3D view draws otherwise than the render holds them: a member's real section at LOD 400 (decision 415), and the plants'
- * maquette bodies in the vegetation's maquette style (decision 812). The render holds the light coloured bodies for everyone; a
+ * maquette bodies in the vegetation's maquette style (decision 818). The render holds the light coloured bodies for everyone; a
  * view at LOD 400 or in the maquette style asks the engine for its own (`view.fine`) and draws them in their place. Asked once
  * per element as it is built: a changed element comes back as a new render item, so only it is asked again; a view that changes
  * its level or its vegetation asks for them all again.
