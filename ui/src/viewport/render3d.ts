@@ -66,7 +66,7 @@ export interface ProfileSpec {
 export const SPECS: Record<RenderProfile, ProfileSpec> = {
   drawing: { sun: false, shadowMap: 2048, ao: false, sky: false, skyLight: 0, ground: false, glass: false, toneMapping: THREE.NoToneMapping, exposure: 1 },
   medium: { sun: true, shadowMap: 2048, ao: true, sky: false, skyLight: 0.55, ground: false, glass: false, toneMapping: THREE.NeutralToneMapping, exposure: 1 },
-  diagram: { sun: true, shadowMap: 2048, ao: true, sky: false, skyLight: 0.75, ground: false, glass: false, toneMapping: THREE.NeutralToneMapping, exposure: 1, diagram: true },
+  diagram: { sun: true, shadowMap: 2048, ao: true, sky: false, skyLight: 1, ground: false, glass: false, toneMapping: THREE.NeutralToneMapping, exposure: 1, diagram: true },
   realistic: { sun: true, shadowMap: 4096, ao: true, sky: true, skyLight: 0.5, ground: true, glass: true, toneMapping: THREE.AgXToneMapping, exposure: 0.85 },
 };
 

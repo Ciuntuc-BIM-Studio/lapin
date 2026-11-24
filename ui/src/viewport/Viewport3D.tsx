@@ -1020,11 +1020,12 @@ export function Viewport3D() {
       const up = dir[2] > 0.005;
       const altitude = (Math.asin(Math.max(-1, Math.min(1, dir[2]))) * 180) / Math.PI;
       // The drawing keeps its even light under the sun; the others take most of theirs from the sky (render3d.ts).
-      sun.intensity = up ? (spec.diagram ? 2.4 : spec.skyLight ? 3.2 : 2.6) : 0;
-      hemi.intensity = spec.diagram ? (up ? 0.6 : 0.5) : spec.skyLight ? (up ? 0.25 : 0.4) : up ? 1.1 : 0.6;
+      sun.intensity = up ? (spec.diagram ? 1.8 : spec.skyLight ? 3.2 : 2.6) : 0;
+      hemi.intensity = spec.diagram ? (up ? 1.1 : 0.8) : spec.skyLight ? (up ? 0.25 : 0.4) : up ? 1.1 : 0.6;
       // The night's sky light: what is left of it under the opened exposure, a faint glow (the drawing keeps its even light).
       if (realism.night > 0) hemi.intensity *= (1 - realism.night) + (realism.night * 0.04) / realism.gain;
-      sunColour(altitude, sun.color);
+      // The diagram's sun is white: a card model under a daylight lamp, not a sunset.
+      if (spec.diagram) sun.color.set(0xffffff); else sunColour(altitude, sun.color);
       sun.castShadow = up;
       if (sun.shadow.mapSize.x !== spec.shadowMap) {
         sun.shadow.mapSize.set(spec.shadowMap, spec.shadowMap);
