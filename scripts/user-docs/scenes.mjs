@@ -3845,6 +3845,43 @@ export const scenes = [
     },
   },
   {
+    // Open-web joists (decision 827): the Steel tab's Open-web joist placed with two clicks on the plan, a second one of a joist type made
+    // from a preset by the command; the joist's section in Properties; the joists in 3D.
+    id: 'steel-joists',
+    touches: ['steel'],
+    async run(t) {
+      await t.fresh();
+      const storey = await t.storey();
+      await t.button('Steel', { exact: true });
+      await t.ui({ view: 'plan' });
+      await t.wait(500);
+      await t.tool('steel.joist');
+      t.expect(await t.page.locator('[data-field=new-element]').count() > 0, 'the Open-web joist tool shows its type in Properties');
+      const a = await t.planPoint(1, 1);
+      const b = await t.planPoint(7, 1);
+      await t.page.mouse.click(a[0], a[1]);
+      await t.page.mouse.click(b[0], b[1]);
+      await t.wait(600);
+      await t.keys('Escape');
+      let joists = (await t.nodes()).filter((n) => n.type === 'LapinSteelJoist');
+      t.expect(joists.length === 1, `the tool places one joist (${joists.length})`);
+      const preset = (await t.cmd('steel.createJoistType', { preset: 'OWJ 500' })).id;
+      await t.cmd('steel.addJoist', { storeyId: storey, x1: 1, y1: 3, x2: 7, y2: 3, typeId: preset });
+      await t.cmd('steel.addJoist', { storeyId: storey, x1: 1, y1: 5, x2: 7, y2: 5, typeId: preset });
+      joists = (await t.nodes()).filter((n) => n.type === 'LapinSteelJoist');
+      t.expect(joists.length === 3, 'three joists');
+      await t.keys('Escape');
+      await t.ui({ tool: null, selection: joists[0].id, selected: [joists[0].id] });
+      await t.wait(700);
+      t.expect(await t.page.locator('[data-field=joist-section]').count() > 0, 'the joist shows its section in Properties');
+      await t.shot('steel-joist-props', { of: 'aside.props', pad: 0, maxHeight: 760 });
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.shot('steel-joists', { of: 'canvas', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // A profile's real shape: steel at LOD 400 with its root fillets (decision 415); a curtain wall's mullions and a window's frame and
     // sash from an aluminium section with chambers (decision 417).
     id: 'profile-shapes',
@@ -13115,6 +13152,43 @@ export const scenes = [
       t.expect((await t.page.locator('[data-testid=cde-storage]').innerText()).match(/\d/) != null, 'the size the issues take in the project file is shown');
       await t.shot('cde-issues', { of: '.dialog', pad: 0 });
       await t.button('Done', { exact: true });
+      // The same sheet again: Issue… proposes a new revision of issue 1 (decision 824), P02, "New issue" still a choice.
+      await t.wait(300);
+      await t.tool('manage.issue');
+      await t.page.waitForSelector('[data-field=issue-target]', { timeout: 15_000 });
+      await t.page.waitForFunction(() => document.querySelector('.dialog input[aria-label=Revision]')?.value === 'P02', null, { timeout: 10_000 });
+      t.expect((await t.page.locator('[data-field=issue-target]').inputValue()) !== '', 'the same sheet again is proposed as a new revision of issue 1');
+      t.expect(await t.page.locator('[data-field=issue-target] option[value=""]').count() === 1, 'a new issue stays a choice');
+      await t.shot('cde-reissue', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog-head button[title=Close]').click();
+    },
+  },
+  {
+    // IDS 1.0 checks (docs/ids.md): an .ids file kept in the project (added through the engine, as the file input would), Manage → IDS…,
+    // Run over the house as its IFC export writes it: walls named and with a material pass, the office's code fails on every wall;
+    // the failing specification opened with its failures, each a link to its wall.
+    id: 'ids',
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      const spec = (name, id, req) => `<specification name="${name}" identifier="${id}" ifcVersion="IFC4"><applicability minOccurs="1" maxOccurs="unbounded"><entity><name><simpleValue>IFCWALL</simpleValue></name></entity></applicability><requirements>${req}</requirements></specification>`;
+      const text = '<?xml version="1.0" encoding="UTF-8"?><ids xmlns="http://standards.buildingsmart.org/IDS" xmlns:xs="http://www.w3.org/2001/XMLSchema"><info><title>Office delivery rules</title><version>1.0</version></info><specifications>'
+        + spec('Walls are named', 'W-01', '<attribute><name><simpleValue>Name</simpleValue></name></attribute>')
+        + spec('Walls have a material', 'W-02', '<material/>')
+        + spec('Walls are on a storey', 'W-03', '<partOf relation="IFCRELCONTAINEDINSPATIALSTRUCTURE"><entity><name><simpleValue>IFCBUILDINGSTOREY</simpleValue></name></entity></partOf>')
+        + spec('Walls carry the office code', 'W-04', '<property><propertySet><simpleValue>Office_Data</simpleValue></propertySet><baseName><simpleValue>Code</simpleValue></baseName></property>')
+        + '</specifications></ids>';
+      await t.call('ids.add', { text, name: 'office-delivery.ids' });
+      await t.tool('manage.ids');
+      await t.page.waitForSelector('[data-ids-file]', { timeout: 15_000 });
+      await t.page.locator('[data-ids=run]').click();
+      await t.page.waitForSelector('[data-ids-results]', { timeout: 60_000 });
+      t.expect(await t.page.locator('[data-ids-status=pass]').count() === 3, 'the walls are named, have a material and stand on a storey');
+      t.expect(await t.page.locator('[data-ids-status=fail]').count() === 1, 'the office code is missing on the walls');
+      await t.page.locator('[data-ids-status=fail] > button').click();
+      await t.page.waitForSelector('[data-ids-failure]', { timeout: 10_000 });
+      await t.shot('ids-results', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog-head button[title=Close]').click();
     },
   },
   {

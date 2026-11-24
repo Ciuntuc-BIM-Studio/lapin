@@ -23,7 +23,16 @@ public sealed record ForeignPart(string Path, byte[] Bytes, DateTimeOffset Modif
 public sealed class PackageForeign
 {
     /// <summary>The top-level names Lapin owns: written by it, or kept for what it will write (the layout in docs/format-lapin.md). An entry under one of them is never kept.</summary>
-    public static readonly IReadOnlyList<string> Owned = ["manifest.json", "project", "model", "versions", "issues", "journal", "derived", "analytics"];
+    public static readonly IReadOnlyList<string> Owned = ["manifest.json", "project", "model", "versions", "issues", "journal", "derived", "analytics", "history"];
+
+    /// <summary>
+    /// The project's history (docs/spec-lapin-remote.md §6), read with the file's other entries and written back with every save: like
+    /// them, what the file holds beside the model. Empty for a project without one (nothing is written then).
+    /// </summary>
+    public Remote.PackageHistory History { get; private init; } = Remote.PackageHistory.Empty();
+
+    /// <summary>The same entries with another history (a commit, a fetch, a clone).</summary>
+    public PackageForeign WithHistory(Remote.PackageHistory history) => new(Parts, ModuleParts) { Unreadable = Unreadable, History = history };
 
     public IReadOnlyList<ForeignPart> Parts { get; }
 
@@ -47,8 +56,10 @@ public sealed class PackageForeign
         if (!File.Exists(path)) return None;
         try
         {
-            using var file = File.OpenRead(path);
-            return Of(file);
+            PackageForeign o;
+            using (var file = File.OpenRead(path)) o = Of(file);
+            var history = Remote.PackageHistory.Of(path);
+            return history.Any || history.Unreadable != null ? o.WithHistory(history) : o;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new PackageForeign([]) { Unreadable = ex.Message }; }
     }
@@ -56,8 +67,10 @@ public sealed class PackageForeign
     /// <summary>The foreign entries in a package's bytes (the browser's).</summary>
     public static PackageForeign Of(byte[] bytes)
     {
-        using var ms = new MemoryStream(bytes, writable: false);
-        return Of(ms);
+        PackageForeign o;
+        using (var ms = new MemoryStream(bytes, writable: false)) o = Of(ms);
+        var history = Remote.PackageHistory.Of(bytes);
+        return history.Any || history.Unreadable != null ? o.WithHistory(history) : o;
     }
 
     static PackageForeign Of(Stream input)

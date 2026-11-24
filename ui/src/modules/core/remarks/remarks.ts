@@ -24,6 +24,8 @@ export interface Remark {
   id: string; guid: string; title: string; description?: string; type?: string; status?: string; priority?: string; index?: number;
   creationDate: string; creationAuthor: string; modifiedDate?: string; modifiedAuthor?: string; assignedTo?: string; dueDate?: string; stage?: string;
   labels: string[]; comments: Comment[]; viewpoints: Viewpoint[]; open: boolean;
+  /** BCF reference links (URLs and Lapin's own `lapin-document:<document>`), and the documents those name. */
+  referenceLinks?: string[]; documents?: string[];
 }
 export interface RemarkList { remarks: Remark[]; statuses: string[]; types: string[]; priorities: string[] }
 
@@ -125,11 +127,41 @@ export async function openViewpoint(vp: Viewpoint): Promise<void> {
   useSectionBox.setState({ box: vp.clippingPlanes.length ? boxOfPlanes(vp.clippingPlanes, bounds) : null });
 }
 
+/** A document a remark can be tied to: a sheet, a written document or the model, by the name an issue gives it (what a submission sends). */
+export interface DocumentChoice { kind: 'sheet' | 'document' | 'model'; id: string; label: string; document: string }
+
+/** Where a new remark is made: the sheet in front, or a view in front (the sheets it is placed on). */
+export interface RemarkPlace { sheetId?: string; viewId?: string }
+
+/** The sheet or view in front, as a new remark takes it (a 3D view is the model's, not a sheet's). */
+export function placeInFront(ui: { view: string; sheetId: string | null; drawingViewId: string | null; planViewId: string | null; storeyId?: string | null }): RemarkPlace {
+  if (ui.view === 'sheet' && ui.sheetId) return { sheetId: ui.sheetId };
+  if (ui.view === 'drawing' && ui.drawingViewId) return { viewId: ui.drawingViewId };
+  if (ui.view === 'plan') return ui.planViewId ? { viewId: ui.planViewId } : ui.storeyId ? { viewId: `plan:${ui.storeyId}` } : {};
+  return {};
+}
+
+/** The project's documents, and those the place in front gives a new remark. */
+export const remarkDocuments = (place: RemarkPlace = {}) =>
+  query<{ documents: DocumentChoice[]; at: string[] }>('remarks.documents', { ...place }).then((r) => r ?? { documents: [], at: [] });
+
+/** A document's label: the sheet's number and title (or the written document's), else the name as kept (a document the project no longer has). */
+export function documentLabel(choices: DocumentChoice[], document: string): string {
+  const c = choices.find((x) => x.document.toLowerCase() === document.toLowerCase());
+  return c ? `${c.label} · ${c.document}` : document;
+}
+
+/** A remark's documents with one added or taken away (each once, ignoring case). */
+export function withDocument(documents: string[], document: string, on: boolean): string[] {
+  const rest = documents.filter((d) => d.toLowerCase() !== document.toLowerCase());
+  return on ? [...rest, document] : rest;
+}
+
 export interface NewRemark { title: string; description: string; type: string; status: string; priority: string; assignedTo: string; dueDate: string; labels: string[] }
 
-export const createRemark = (r: NewRemark, viewpoint: ReturnType<typeof viewpointNow> | null) =>
+export const createRemark = (r: NewRemark & { documents?: string[] }, viewpoint: ReturnType<typeof viewpointNow> | null) =>
   execute('remarks.create', { ...r, author: author(), ...(viewpoint ? { viewpoint } : {}) }) as Promise<{ id: string; guid: string }>;
-export const updateRemark = (id: string, fields: Partial<NewRemark>) => execute('remarks.update', { id, ...fields, author: author() });
+export const updateRemark = (id: string, fields: Partial<NewRemark> & { documents?: string[] }) => execute('remarks.update', { id, ...fields, author: author() });
 export const commentRemark = (id: string, text: string, withView: boolean) => execute('remarks.comment', { id, text, author: author(), ...(withView ? { viewpoint: viewpointNow() } : {}) });
 export const retakeViewpoint = (id: string) => execute('remarks.addViewpoint', { id, replace: true, viewpoint: viewpointNow(), author: author() });
 export const deleteRemarks = (ids: string[]) => execute('remarks.delete', { ids });

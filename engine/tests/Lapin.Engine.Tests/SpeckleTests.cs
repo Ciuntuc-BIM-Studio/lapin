@@ -23,6 +23,8 @@ namespace Lapin.Engine.Tests;
 /// export's scene in metres, its materials and properties), written and read back by Speckle's own serializer; and,
 /// when a server is given (LAPIN_SPECKLE_TEST_URL and LAPIN_SPECKLE_TEST_TOKEN), sent to it twice and received back.
 /// </summary>
+// One at a time: Speckle's SDK keeps one type loader, which setting it up again resets.
+[Collection("Speckle SDK")]
 public sealed class SpeckleTests
 {
     /// <summary>Two storeys: a layered wall with a door and a window, a plain wall and a slab on the ground floor, a wall upstairs; glass-like insulation.</summary>

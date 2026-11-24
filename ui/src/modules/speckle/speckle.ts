@@ -156,7 +156,7 @@ export async function openVersion(url: string): Promise<void> {
   await ask('speckle.openVersion', { url });
 }
 
-// ---------------------------------------------------------------------------------------------------- Receive (S2)
+// ---------------------------------------------------------------------------------------------------- Receive (S2, recognition S3)
 
 export interface SpeckleVersion { id: string; message?: string | null; sourceApplication?: string | null; author?: string | null; createdAt?: string }
 
@@ -167,18 +167,31 @@ export interface SpeckleSurvey {
   existing: number; updates: number; adds: number; removes: number; native: number; fromThisProject: boolean; notes: string[];
 }
 
-/** What a receive did (speckle.receive). */
+/** What recognition made of a receive's elements: how many became native, and why the rest stayed references. */
+export interface SpeckleRecognition { recognized: number; offered: number; byClass: Record<string, number>; kept: Record<string, number>; reverted: number }
+
+/** What a receive did (speckle.receive): with recognition, how many of the model's objects are now native elements and how many references. */
 export interface SpeckleReceived {
   versionId: string; model?: string | null; elements: number; added: number; updated: number; unchanged: number; removed: number; shared: number;
   triangles: number; lines: number; skipped: Record<string, number>; storeys: Record<string, number>; groupId?: string | null; notes: string[];
+  recognized?: number; native?: number; references?: number; recognition?: SpeckleRecognition | null;
+  levels?: SpeckleLevels | null;
 }
 
-/** Where the objects go: on the storeys their levels match, or all on the storey the interface is on. */
-export type ReceiveStoreys = 'levels' | 'active';
+/** What a receive did to the storeys: matched to the version's levels, made, renamed, moved, removed, kept (their level gone); the levels' datum shift, metres. */
+export interface SpeckleLevels { matched: number; made: number; renamed: number; moved: number; removed: number; kept: number; datum: number }
+
+/**
+ * Where the objects go: on their levels' storeys, the missing ones made from the version's levels (`create`, the default), or
+ * only on the project's storeys (`levels`: a level none matches goes on the storey below it), or all on the storey the interface is on.
+ */
+export type ReceiveStoreys = 'create' | 'levels' | 'active';
 
 export interface ReceiveArgs {
   projectId: string; modelId: string; versionId?: string | null; asCopy?: boolean; origin?: 'base' | 'internal';
   storeys?: ReceiveStoreys; activeStoreyId?: string | null;
+  /** Walls and slabs made native where they pass the fidelity gate (the dialog's default). */
+  recognize?: boolean;
 }
 
 /** The arguments of speckle.survey and speckle.receive (the latest version when none is named). */
@@ -187,6 +200,8 @@ export function receiveArgs(a: ReceiveArgs): Record<string, unknown> {
   if (a.versionId) o.versionId = a.versionId;
   if (a.asCopy) o.asCopy = true;
   if (a.origin === 'internal') o.origin = 'internal';
+  if (a.recognize) o.recognize = true;
+  if (a.storeys === 'levels') o.levels = 'existing';
   if (a.activeStoreyId) {
     if (a.storeys === 'active') o.storeyId = a.activeStoreyId;
     else o.activeStoreyId = a.activeStoreyId;
@@ -208,5 +223,7 @@ export async function receive(a: ReceiveArgs): Promise<SpeckleReceived> {
   return r;
 }
 
-/** A receive's report in a line (the notice). */
-export const receivedSummary = (r: SpeckleReceived) => `Received ${r.elements} objects from Speckle.`;
+/** A receive's report in a line (the notice): with recognition, how many objects are native elements and how many references. */
+export const receivedSummary = (r: SpeckleReceived) => r.recognition
+  ? `Received ${r.elements} objects from Speckle: ${r.native ?? 0} native elements, ${r.references ?? 0} references.`
+  : `Received ${r.elements} objects from Speckle.`;

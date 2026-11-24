@@ -13,22 +13,36 @@ public sealed record SpeckleSource(string Server, string ProjectId, string Model
 /// How a version comes in: as a copy with ids of its own (<paramref name="AsCopy"/>: a version sent from this project, beside
 /// its elements); its coordinates from the project's base point (<c>base</c>, as Send writes them) or its internal origin;
 /// every object on one storey (<paramref name="StoreyId"/>) instead of by its level; <paramref name="ActiveStoreyId"/> the storey
-/// the interface is on, where an object goes that neither its level nor its height places.
+/// the interface is on, where an object goes that neither its level nor its height places; <paramref name="Recognize"/>: its walls
+/// and slabs made native where they pass the fidelity gate (<see cref="SpeckleRecognition"/>; the dialog asks for it by default).
 /// </summary>
-public sealed record SpeckleReceiveOptions(bool AsCopy = false, string Origin = "base", string? StoreyId = null, string? ActiveStoreyId = null)
+/// <paramref name="CreateStoreys"/>: a level no storey matches made a storey (the default; <c>levels: "existing"</c> keeps to the project's storeys, as S2 did).
+public sealed record SpeckleReceiveOptions(bool AsCopy = false, string Origin = "base", string? StoreyId = null, string? ActiveStoreyId = null, bool Recognize = false,
+    bool CreateStoreys = true)
 {
     public static SpeckleReceiveOptions From(JsonObject a)
     {
         var origin = (string?)a["origin"] ?? "base";
         if (origin is not ("base" or "internal")) throw new CommandException($"„{origin}” is not base or internal.");
         return new SpeckleReceiveOptions(a["asCopy"] is JsonValue v && v.TryGetValue<bool>(out var b) && b, origin, (string?)a["storeyId"] is { Length: > 0 } s ? s : null,
-            (string?)a["activeStoreyId"] is { Length: > 0 } act ? act : null);
+            (string?)a["activeStoreyId"] is { Length: > 0 } act ? act : null, a["recognize"] is JsonValue rv && rv.TryGetValue<bool>(out var rb) && rb,
+            ((string?)a["levels"] ?? "create") switch
+            {
+                "create" => true,
+                "existing" => false,
+                var other => throw new CommandException($"„{other}” is not create or existing."),
+            });
     }
 }
 
-/// <summary>What a receive did: the references added, updated, left as they were and removed, the shared bodies, where they went, and what was left out.</summary>
+/// <summary>
+/// What a receive did: the objects added, updated, left as they were and removed, the shared bodies, where they went, and what
+/// was left out; what recognition made native (<see cref="Recognition"/>, null when not asked), and how many of the model's
+/// objects are now native elements (<see cref="Native"/>) and how many references (<see cref="References"/>).
+/// </summary>
 public sealed record SpeckleReceiveResult(int Added, int Updated, int Unchanged, int Removed, int Shared, int Triangles, int Lines, IReadOnlyDictionary<string, int> Skipped,
-    IReadOnlyDictionary<string, int> Storeys, IReadOnlyList<string> Notes, string? GroupId)
+    IReadOnlyDictionary<string, int> Storeys, IReadOnlyList<string> Notes, string? GroupId, SpeckleRecognitionReport? Recognition = null, int Native = 0, int References = 0,
+    SpeckleLevelReport? Levels = null)
 {
     public JsonObject ToJson()
     {
@@ -40,6 +54,7 @@ public sealed record SpeckleReceiveResult(int Added, int Updated, int Unchanged,
         {
             ["elements"] = Added + Updated + Unchanged, ["added"] = Added, ["updated"] = Updated, ["unchanged"] = Unchanged, ["removed"] = Removed, ["shared"] = Shared,
             ["triangles"] = Triangles, ["lines"] = Lines, ["skipped"] = skipped, ["storeys"] = storeys, ["groupId"] = GroupId,
+            ["recognized"] = Recognition?.Recognized ?? 0, ["native"] = Native, ["references"] = References, ["recognition"] = Recognition?.ToJson(), ["levels"] = Levels?.ToJson(),
             ["notes"] = new JsonArray(Notes.Select(n => (JsonNode)n).ToArray()),
         };
     }
@@ -51,8 +66,9 @@ public sealed record SpeckleReceiveResult(int Added, int Updated, int Unchanged,
 /// reference is), in the IFC class it names (else a proxy); instances standing as instances of one shared body per
 /// definition; curves as plan lines. Each keeps its properties as sets (<c>Speckle</c>, <c>Speckle · …</c>), and in its
 /// <c>speckle</c> attribute the server, project, model and version it came from, its applicationId, its Speckle id and type,
-/// and its collections. They go on the storey their level matches (by the GlobalId Lapin sent it with, else its elevation,
-/// 5 cm), else the one their lowest point stands on, else the one asked for; the version's coordinates are read from the
+/// and its collections. They go on their level's storey (<see cref="SpeckleLevels"/>: by the GlobalId Lapin sent it with, the
+/// storey an earlier receive made for it, its elevation, 5 cm, or its name; a level none matches made a storey unless asked
+/// to keep to the project's), else the one their lowest point stands on, else the one asked for; the version's coordinates are read from the
 /// project's base point (as Send writes them) unless asked otherwise. The first receive of a model makes one group named
 /// after it; what a later one adds joins it.
 /// <para>
@@ -66,6 +82,13 @@ public sealed record SpeckleReceiveResult(int Added, int Updated, int Unchanged,
 /// <para>
 /// A version whose objects are this project's own elements (sent from it: their applicationIds are its GlobalIds) is refused
 /// unless asked for as a copy, which takes ids of its own (derived) and never touches the native elements.
+/// </para>
+/// <para>
+/// Asked to (<see cref="SpeckleReceiveOptions.Recognize"/>), the walls and slabs then become native where they really are
+/// (<see cref="SpeckleRecognition"/>, S3), keeping their GlobalIds and their <c>speckle</c> attribute. Received again, a
+/// recognised element whose object did not change is left as it is; one whose object changed comes in again as a reference
+/// (same GlobalId) and is offered again, native once more if it passes, a reference if it no longer does; one whose object is
+/// gone is removed. What is removed goes before the rest comes in, so a native wall's openings never take a newer object with them.
 /// </para>
 /// </summary>
 public static class SpeckleReceive
@@ -113,7 +136,7 @@ public static class SpeckleReceive
     }
 
     public static SpeckleReceiveResult Apply(IEdit edit, SpeckleReceived r, SpeckleSource s, SpeckleReceiveOptions o, ProductManifest? product = null,
-        Action<string, int, int>? progress = null, CancellationToken ct = default)
+        Action<string, int, int>? progress = null, CancellationToken ct = default, IServices? services = null)
     {
         var m = edit.Model;
         var key = ModelKey(s, o.AsCopy);
@@ -207,15 +230,17 @@ public static class SpeckleReceive
         string Fallback() => fallback ??= o.ActiveStoreyId is { } act && m.Get(act) is { Class: IfcClass.BuildingStorey } active ? active.Id : Spatial.EnsureStorey(edit, product).Id;
         string? StoreyAt(double z) => storeys.LastOrDefault(x => x.Elevation <= z + ImportStoreys.Tolerance).Id ?? (storeys.Count > 0 ? storeys[0].Id : null);
         var unmatchedLevels = new HashSet<string>();
+        SpeckleLevels? levels = null;
         string StoreyFor(ReceivedLevel? level, double? lowest)
         {
             if (asked != null) return asked;
             if (level != null)
             {
+                if (levels?.StoreyOf(level) is { } byLevel) return byLevel;
                 if (level.GlobalId is { } g && storeys.Any(x => x.Id == g)) return g;
                 if (level.Elevation is { } el)
                 {
-                    var z = el + shift.Z;
+                    var z = el + shift.Z + (levels?.Report.Datum ?? 0);
                     var near = storeys.Where(x => Math.Abs(x.Elevation - z) <= ImportStoreys.Tolerance).OrderByDescending(x => string.Equals(x.Name, level.Name, StringComparison.OrdinalIgnoreCase)).ThenBy(x => Math.Abs(x.Elevation - z)).Select(x => x.Id).FirstOrDefault();
                     if (near != null) return near;
                     unmatchedLevels.Add(level.Name);
@@ -228,13 +253,49 @@ public static class SpeckleReceive
             return Fallback();
         }
 
+        // What each object updates (this model's earlier one with its applicationId, else its Speckle id), found first: what is gone
+        // from the version, and a recognised element whose object changed, go before anything comes in (a native wall takes its
+        // openings with it, and what a removal takes is never what this receive just wrote).
+        var total = r.Elements.Count;
+        var befores = new Entity?[total];
+        var matched = new HashSet<string>();
+        for (var i = 0; i < total; i++)
+        {
+            var el = r.Elements[i];
+            var b = el.ApplicationId is { } aid && byApp.TryGetValue(aid, out var x1) && !matched.Contains(x1.Id) ? x1
+                : el.ObjectId is { } oid && byObject.TryGetValue(oid, out var x2) && !matched.Contains(x2.Id) ? x2 : null;
+            if (b != null) matched.Add(b.Id);
+            befores[i] = b;
+        }
+        bool Same(Entity before, ReceivedElement el) => before.Attrs[Key] is JsonObject was && (string?)was["objectId"] == el.ObjectId && el.ObjectId != null && (string?)was["at"] == At
+            && SpeckleHints.ClassOf(before) == el.IfcClass; // a native joist is an IfcBeam written so (exportAs)
+        var removed = 0;
+        foreach (var e in existing.Where(e => e.Class != StoredBodies.SharedClass && !matched.Contains(e.Id)))
+            if (m.Get(e.Id) != null) { edit.Remove(e.Id); removed++; }
+        // A recognised element whose object changed: it comes in again as a reference, in its group, and is offered again.
+        var rejoin = new List<string>();
+        for (var i = 0; i < total; i++)
+            if (befores[i] is { } b && !StoredBodies.Has(b) && m.Get(b.Id) != null && !Same(b, r.Elements[i]))
+            {
+                if (Groups.Of(m, b.Id) != null) rejoin.Add(b.Id);
+                edit.Remove(b.Id);
+            }
+
+        // The version's levels as storeys: matched, else made (the default); after what goes went, so a storey is moved or renamed
+        // only while nothing else stands on it.
+        if (asked == null)
+        {
+            levels = SpeckleLevels.Resolve(edit, r, key, shift.Z, o.CreateStoreys, notes);
+            storeys = Spatial.Storeys(m).Select(x => (x.Id, x.Name, Elevation: x.Num("elevation"))).OrderBy(x => x.Elevation).ToList();
+        }
+
         var seen = new HashSet<string>();
         var taken = new HashSet<string>();
+        var offered = new List<(string Id, ReceivedElement El)>();
         var joins = new Dictionary<string, List<string>>();
         var made = new List<string>();
         var perStorey = new Dictionary<string, int>();
         int added = 0, updated = 0, unchanged = 0, lines = 0, triangles = 0;
-        var total = r.Elements.Count;
         for (var i = 0; i < total; i++)
         {
             if (i % 200 == 0)
@@ -243,9 +304,8 @@ public static class SpeckleReceive
                 progress?.Invoke("Bringing the objects in", i, total);
             }
             var el = r.Elements[i];
-            // The one it updates: this model's reference with its applicationId, else with its Speckle id.
-            var before = el.ApplicationId is { } aid && byApp.TryGetValue(aid, out var x1) && !seen.Contains(x1.Id) ? x1
-                : el.ObjectId is { } oid && byObject.TryGetValue(oid, out var x2) && !seen.Contains(x2.Id) ? x2 : null;
+            // The one it updates: this model's earlier object with its applicationId, else with its Speckle id.
+            var before = befores[i];
             string id;
             if (before != null) id = before.Id;
             else if (!o.AsCopy && el.ApplicationId is { } own && GlobalId.IsValid(own) && m.Get(own) == null && !taken.Contains(own)) id = own;
@@ -286,7 +346,14 @@ public static class SpeckleReceive
                 lines++;
             }
             else { seen.Remove(id); continue; }
+            // The lines it shows beside its body (a bar joist's webs), for recognition (decision 827).
+            if (el.BodyLines is { Count: > 0 } beside) attrs[BodyLines.Key] = BodyLines.Write(beside.Select(l => (l.A + shift, l.B + shift)));
             attrs["properties"] = el.Properties.DeepClone();
+            // Its program's type (Revit's "W18x55", a Lapin type's name): what recognition names a native type after, keys the types it
+            // makes by (one per type and section), and finds a catalogue profile by.
+            if ((el.Properties["Speckle"] as JsonObject)?["type"] is JsonValue tv && tv.TryGetValue<string>(out var typeName) && typeName.Length > 0
+                || (el.Properties["Speckle"] as JsonObject)?["Type"] is JsonValue tv2 && tv2.TryGetValue<string>(out typeName) && typeName.Length > 0)
+                attrs[Lapin.Ifc.MeshRecognition.TypeNameKey] = typeName;
             attrs[Key] = Meta(el.ApplicationId, el.ObjectId, el.SpeckleType, el.Path);
             attrs["source"] = SourceText(s);
 
@@ -294,23 +361,24 @@ public static class SpeckleReceive
             var storeyName = storeys.FirstOrDefault(x => x.Id == storey).Name ?? m.Get(storey)?.Name ?? "";
             perStorey[storeyName] = perStorey.GetValueOrDefault(storeyName) + 1;
 
-            if (before != null && before.Attrs[Key] is JsonObject was && (string?)was["objectId"] == el.ObjectId && el.ObjectId != null && (string?)was["at"] == At
-                && before.Class == el.IfcClass)
+            if (before != null && m.Get(id) is { } still && Same(still, el))
             {
-                // The same object as before (Speckle's id is a hash of it): left as it is, unless it moves storey.
+                // The same object as before (Speckle's id is a hash of it): left as it is, unless it moves storey; a reference
+                // recognition never offered (received without it) offered now.
                 unchanged++;
+                if (StoredBodies.Has(still) && (still.Attrs[Key] as JsonObject)?["recognition"] == null) offered.Add((id, el));
             }
             else
             {
                 Put(new Entity(id, el.IfcClass, el.Name, attrs));
                 if (before != null) updated++; else { added++; made.Add(id); }
+                offered.Add((id, el));
             }
             if (Spatial.StoreyOf(m, id)?.Id != storey) (joins.TryGetValue(storey, out var js) ? js : joins[storey] = []).Add(id);
         }
         foreach (var (storeyId, ids) in joins) edit.RelateAll(IfcClass.RelContainedInSpatialStructure, storeyId, ids);
 
-        // What the new version no longer has goes; then any shared body no instance stands on.
-        var removed = 0;
+        // What came in but was not brought (no geometry, an empty definition) goes too; then any shared body no instance stands on.
         foreach (var e in existing.Where(e => e.Class != StoredBodies.SharedClass && !seen.Contains(e.Id)))
             if (m.Get(e.Id) != null) { edit.Remove(e.Id); removed++; }
         var standing = m.Entities.Select(e => (string?)e.Attrs[StoredBodies.BodyOf]).OfType<string>().ToHashSet();
@@ -324,12 +392,25 @@ public static class SpeckleReceive
             if (groupId != null) edit.RelateAll(Groups.Rel, groupId, made);
             else groupId = Groups.Make(edit, s.ModelName is { Length: > 0 } gn ? gn : "Speckle", made)?.Id;
         }
+        if (groupId != null && rejoin.Where(id => m.Get(id) != null).ToList() is { Count: > 0 } back) edit.RelateAll(Groups.Rel, groupId, back);
         if (groupId != null) Groups.DropEmpty(edit, [groupId]);
+
+        // The walls and slabs made native where they pass the gate: in their storeys and group already, which they keep.
+        SpeckleRecognitionReport? recognition = null;
+        if (o.Recognize && services != null)
+        {
+            progress?.Invoke("Recognising walls and slabs", 0, 0);
+            recognition = SpeckleRecognition.Run(edit, services, offered, shift);
+        }
+        // The storeys of levels the version no longer has, removed when nothing stands on them; those made given their heights.
+        levels?.Finish(edit, r, key);
+        var now = Existing(m, key).Where(e => e.Class != StoredBodies.SharedClass).ToList();
+        var nativeNow = now.Count(e => !StoredBodies.Has(e));
 
         if (unmatchedLevels.Count > 0)
             notes.Add($"No storey of the project is at the level of {string.Join(", ", unmatchedLevels.Order().Select(l => $"„{l}”"))}: its objects went on the storey below them.");
         if (r.Definitions.Count > 0 && shared > 0) notes.Add($"{shared} definition(s) shared by their instances.");
-        return new SpeckleReceiveResult(added, updated, unchanged, removed, shared, triangles, lines, skipped, perStorey, notes, groupId);
+        return new SpeckleReceiveResult(added, updated, unchanged, removed, shared, triangles, lines, skipped, perStorey, notes, groupId, recognition, nativeNow, now.Count - nativeNow, levels?.Report);
     }
 
     static string SourceText(SpeckleSource s) => $"Speckle: {s.ModelName ?? s.ModelId} ({s.Server})";

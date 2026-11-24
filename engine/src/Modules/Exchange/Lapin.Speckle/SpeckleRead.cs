@@ -19,24 +19,39 @@ namespace Lapin.Speckle;
 /// <summary>One colour's triangles of a received object, in metres, Z up: its colour, opacity and render material's name.</summary>
 public sealed record ReceivedPart(string Color, double Opacity, string? Material, List<Vec3> Vertices, List<(int A, int B, int C)> Triangles);
 
-/// <summary>A level the version names (a <c>LevelProxy</c>, or an object's own level): its name, elevation in metres, and its GlobalId when Lapin sent it.</summary>
-public sealed record ReceivedLevel(string Name, double? Elevation, string? GlobalId);
+/// <summary>
+/// A level the version names (a <c>LevelProxy</c>, or an object's own level): its name, elevation in metres (as the version
+/// gives it, from its own datum), its GlobalId when Lapin sent it, and its applicationId (Revit's level, the same in every
+/// version), by which a later receive finds the storey it made for it again.
+/// </summary>
+public sealed record ReceivedLevel(string Name, double? Elevation, string? GlobalId, string? ApplicationId = null)
+{
+    /// <summary>What the level is known by from one version to the next: its applicationId, else its name.</summary>
+    public string Key => ApplicationId is { Length: > 0 } a ? a : "name:" + Name;
+}
 
 /// <summary>
 /// One object of a version as it comes in: its Speckle ids, name, type and the IFC class it is taken as, the collections it
 /// stands in, its properties (as sets), and its geometry: its own triangles in the version's frame (metres), or an instance of
 /// a definition (<see cref="Instance"/>: the definition's id and its twelve numbers), or lines only (curves, drawn in plan).
+/// <see cref="Hints"/>: what its program says of its shape (its location line, thickness, height), which recognition checks its body against.
+/// <see cref="BodyLines"/>: the lines it shows beside its body (a Revit bar joist's webs), in the version's frame, metres: not
+/// drawn, kept for recognition (decision 827).
 /// </summary>
 public sealed record ReceivedElement(string? ApplicationId, string? ObjectId, string Name, string? SpeckleType, string IfcClass, string Path, JsonObject Properties,
-    List<ReceivedPart> Parts, (string Definition, double[] Xf)? Instance, List<Plan2dItem>? Lines, ReceivedLevel? Level);
+    List<ReceivedPart> Parts, (string Definition, double[] Xf)? Instance, List<Plan2dItem>? Lines, ReceivedLevel? Level, ReceivedHints? Hints = null,
+    List<(Vec3 A, Vec3 B)>? BodyLines = null);
 
 /// <summary>A definition several instances share (an <c>InstanceDefinitionProxy</c>): its triangles once, in its own frame, metres.</summary>
 public sealed record ReceivedDefinition(string Id, string Name, List<ReceivedPart> Parts);
 
 /// <summary>A version read: its objects, the definitions they share, what was left out (by Speckle type) and its notes.</summary>
+/// <see cref="Levels"/>: every level it names, by its proxies or its objects, once each.
 public sealed record SpeckleReceived(List<ReceivedElement> Elements, Dictionary<string, ReceivedDefinition> Definitions, Dictionary<string, int> Skipped,
-    List<string> Notes, string? RootApplicationId, string? Origin)
+    List<string> Notes, string? RootApplicationId, string? Origin, List<ReceivedLevel>? Levels = null)
 {
+    public IReadOnlyList<ReceivedLevel> AllLevels => Levels ?? [];
+
     public int SkippedCount => Skipped.Values.Sum();
     public int Triangles => Elements.Sum(e => e.Parts.Sum(p => p.Triangles.Count)) + Definitions.Values.Sum(d => d.Parts.Sum(p => p.Triangles.Count));
 }
@@ -171,6 +186,8 @@ public static class SpeckleRead
         readonly Dictionary<string, int> colourOf = [];
         readonly Dictionary<string, ReceivedLevel> levelOf = [];
         readonly Dictionary<string, ReceivedLevel> levelByName = new(StringComparer.OrdinalIgnoreCase);
+        /// <summary>The levels objects name that no proxy gives (an older connector's level object, a level's name alone), by their key.</summary>
+        readonly Dictionary<string, ReceivedLevel> otherLevels = [];
         readonly HashSet<string> unitNotes = [];
         int lostFaces;
 
@@ -199,7 +216,8 @@ public static class SpeckleRead
             Walk(root, [], 0, isRoot: true);
             if (lostFaces > 0) notes.Add($"{lostFaces} face(s) naming vertices a mesh does not have were left out.");
             var rootProps = Member(root, "properties") as IDictionary<string, object?>;
-            return new SpeckleReceived(elements, definitions, skipped, notes, root.applicationId, (rootProps != null && rootProps.TryGetValue("origin", out var og) ? og as string : null));
+            var levels = levelByName.Values.Concat(otherLevels.Values).GroupBy(l => l.Key).Select(g => g.First()).ToList();
+            return new SpeckleReceived(elements, definitions, skipped, notes, root.applicationId, (rootProps != null && rootProps.TryGetValue("origin", out var og) ? og as string : null), levels);
         }
 
         /// <summary>Every object by its applicationId, wherever it stands (definitions keep theirs outside the collections).</summary>
@@ -231,7 +249,8 @@ public static class SpeckleRead
             var units = props.GetValueOrDefault("units") as string ?? Member(v, "units") as string;
             var elevation = Number(props.GetValueOrDefault("elevation")) ?? Number(Member(v, "elevation"));
             var name = v.name is { Length: > 0 } n ? n : "Level";
-            return new ReceivedLevel(name, elevation * (units != null ? Metres(units, notes) : ModelMetres()), props.GetValueOrDefault("GlobalId") as string);
+            return new ReceivedLevel(name, elevation * (units != null ? Metres(units, notes) : ModelMetres()), props.GetValueOrDefault("GlobalId") as string,
+                p.applicationId ?? v.applicationId);
         }
 
         double? modelMetres;
@@ -320,8 +339,11 @@ public static class SpeckleRead
             var cls = ClassOf(b, props, path);
             var sets = Sets(b, props, path);
 
+            // The lines beside a body, as segments (a Revit bar joist's webs): kept for recognition, not drawn.
+            List<(Vec3, Vec3)>? Beside() => g.Curves.Count == 0 ? null : [.. g.Curves.Where(x => x.Count >= 2).SelectMany(x => x.Zip(x.Skip(1)))];
             ReceivedElement Make(List<ReceivedPart> parts, (string, double[])? instance, List<Plan2dItem>? lines) =>
-                new(b.applicationId, b.id, name, b.speckle_type, cls, string.Join(" / ", path), sets, parts, instance, lines, LevelOf(b));
+                new(b.applicationId, b.id, name, b.speckle_type, cls, string.Join(" / ", path), sets, parts, instance, lines, LevelOf(b), SpeckleHints.Read(b, props, cls, notes),
+                    lines == null ? Beside() : null);
 
             foreach (var l in g.Left) Skip(l);
             if (g.Parts.Count == 0 && g.Instances.Count == 1)
@@ -365,12 +387,14 @@ public static class SpeckleRead
             switch (Member(b, "level"))
             {
                 case string s when levelByName.TryGetValue(s, out var byName): return byName;
-                case string s: return new ReceivedLevel(s, null, null);
+                case string s: return otherLevels.TryGetValue("name:" + s, out var seen) ? seen : otherLevels["name:" + s] = new ReceivedLevel(s, null, null);
                 case Base lb:
                     var units = Member(lb, "units") as string;
                     var name = Member(lb, "name") as string ?? "Level";
                     var elevation = Number(Member(lb, "elevation"));
-                    return levelByName.TryGetValue(name, out var known) ? known : new ReceivedLevel(name, elevation * (units != null ? Metres(units, notes) : ModelMetres()), null);
+                    if (levelByName.TryGetValue(name, out var known)) return known;
+                    var made = new ReceivedLevel(name, elevation * (units != null ? Metres(units, notes) : ModelMetres()), null, lb.applicationId);
+                    return otherLevels.TryGetValue(made.Key, out var had) ? had : otherLevels[made.Key] = made;
             }
             return null;
         }

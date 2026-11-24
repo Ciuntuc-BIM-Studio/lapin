@@ -64,16 +64,27 @@ public static class Cde
     /// <summary>The naming an issue writes by: the project's, as an edition's hook makes it (<see cref="CdeHooks.Naming"/>).</summary>
     public static CdeNaming Naming(IModelView m) => CdeHooks.Naming?.Invoke(CdeNaming.Of(m)) ?? CdeNaming.Of(m);
 
-    /// <summary>The names an issue would write, for the sheets asked (all by default), the documents asked (all by default), the model, the set and the transmittal.</summary>
+    /// <summary>
+    /// The names an issue would write, for the sheets asked (all by default), the documents asked (all by default), the model, the set and
+    /// the transmittal. With <c>of</c> (an earlier issue's id or GlobalId) they are a new revision of that issue: its number, and by default
+    /// the revision after its last. The project's issues as series come with them (<c>series</c>), and the one these documents would be a
+    /// new revision of (<c>match</c>: the last issue that sent exactly the sheets, the <c>documents</c> asked and the <c>model</c> or not).
+    /// </summary>
     public static JsonObject Names(IModelView m, JsonObject a)
     {
         var naming = Naming(m);
-        var revision = (string?)a["revision"] is { Length: > 0 } r ? r : CdeRevisions.Next(CdeIssues.LastRevision(m));
+        var of = (string?)a["of"] is { Length: > 0 } o ? CdeIssues.SeriesOf(m, o) ?? throw new CommandException("There is no such issue to issue a new revision of.") : null;
+        var revision = (string?)a["revision"] is { Length: > 0 } r ? r : CdeRevisions.Next(of?.LastRevision ?? CdeIssues.LastRevision(m));
         var status = (string?)a["status"] is { Length: > 0 } s ? s : "S2";
-        var n = CdeIssues.NextNumber(m);
+        var n = of?.Number ?? CdeIssues.NextNumber(m);
+        var series = CdeIssues.AllSeries(m);
+        var match = CdeIssues.Matching(m, SheetsOf(m, a["sheets"]).Select(x => x.Id), a["documents"] is JsonArray ? DocumentsOf(m, a["documents"]).Select(x => x.Id) : [],
+            a["model"] is JsonValue mv && mv.TryGetValue<bool>(out var withModel) && withModel);
         return new JsonObject
         {
-            ["revision"] = revision, ["status"] = status, ["number"] = n,
+            ["revision"] = revision, ["status"] = status, ["number"] = n, ["of"] = of?.IssueId,
+            ["series"] = new JsonArray([.. series.Select(x => (JsonNode)x.ToJson())]),
+            ["match"] = match?.ToJson(),
             ["sheets"] = new JsonArray(SheetsOf(m, a["sheets"]).Select(sheet =>
             {
                 var name = naming.For(m, sheet);
@@ -104,6 +115,8 @@ public static class Cde
         r.Class(new(CdeIssues.Class, "Issue", [], "#888888", Kind: "resource", Template: false));
         // Remarks on sheets, read back from issued PDFs (stage 3).
         PdfRemarks.CdeRemarks.Register(r);
+        // The project's IDS files (docs/ids.md): kept here; read and checked by the dispatcher's IDS calls.
+        IdsFiles.Register(r);
 
         // The project folder: a path on this computer (or a share, or a synced cloud folder); empty clears it. Kept in the project, so it travels with the file.
         r.Command("cde.setFolder", "Project folder", (ctx, a) =>
@@ -136,7 +149,7 @@ public static class Cde
             var files = (a["files"] as JsonArray ?? []).Select(IssuedFile.From).OfType<IssuedFile>().ToList();
             if (files.Count == 0) throw new CommandException("An issue has at least one file.");
             var issue = CdeIssues.Record(ctx, (string?)a["name"] ?? "", (string?)a["revision"] ?? "", (string?)a["status"] ?? "", (string?)a["container"] ?? "",
-                (string?)a["folder"], (string?)a["note"], files, a["version"] is JsonValue v && v.TryGetValue<int>(out var n) ? n : null);
+                (string?)a["folder"], (string?)a["note"], files, a["version"] is JsonValue v && v.TryGetValue<int>(out var n) ? n : null, (string?)a["of"]);
             return CdeIssues.Read(issue).ToJson();
         });
 

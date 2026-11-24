@@ -63,6 +63,13 @@ public static class BcfWriter
         // 3.0 requires both; 2.1 leaves them optional, and an empty one is best left out.
         if (t.Type is { Length: > 0 } || v3) w.WriteAttributeString("TopicType", t.Type is { Length: > 0 } ? t.Type : "Issue");
         if (t.Status is { Length: > 0 } || v3) w.WriteAttributeString("TopicStatus", t.Status is { Length: > 0 } ? t.Status : "Open");
+        // The reference links come first in both schemas: <ReferenceLink> each (2.1), wrapped in <ReferenceLinks> (3.0).
+        if (t.Links.Count > 0)
+        {
+            if (v3) w.WriteStartElement("ReferenceLinks");
+            foreach (var l in t.Links) w.WriteElementString("ReferenceLink", l);
+            if (v3) w.WriteEndElement();
+        }
         w.WriteElementString("Title", t.Title);
         if (t.Priority is { Length: > 0 }) w.WriteElementString("Priority", t.Priority);
         if (t.Index is { } ix) w.WriteElementString("Index", ix.ToString(System.Globalization.CultureInfo.InvariantCulture));

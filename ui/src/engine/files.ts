@@ -19,6 +19,7 @@ import { usePrefs } from '../app/prefs';
 import { applyNewProjectStandard } from './newProjectStandard';
 import { fitAfterImport, poseKey } from '../viewport/camera';
 import { flushUserSettings } from '../app/userSettings';
+import { useCde } from './cdeServer';
 
 const FILTERS = [{ name: 'Lapin project', extensions: ['lapin'] }];
 /** What File → Open takes: a project, or a page Lapin exported for the browser with its project inside (decision 482). */
@@ -191,7 +192,7 @@ export async function pickPath(mode: 'open' | 'save', defaultName?: string, filt
   return p?.trim() || null;
 }
 
-async function confirmDiscard(question: string): Promise<boolean> {
+export async function confirmDiscard(question: string): Promise<boolean> {
   if (!useSession.getState().doc?.dirty) return true;
   if (isDesktop()) {
     const dialog = await import('@tauri-apps/plugin-dialog');
@@ -219,6 +220,9 @@ function remember(path: string): void {
 /** Into the project: the ground floor's plan in front, the 3D open in a tab beside it. */
 export function enter(): void {
   select(null);
+  // Another project: what the CDE start screen said of the last one (opened read-only, cloned, not saved to the server) goes.
+  const cde = useCde.getState();
+  if (cde.opened || cde.cloned || cde.unpushed || cde.linked) useCde.setState({ opened: null, cloned: null, unpushed: null, linked: false });
   forget3d();
   const plan = emptyPane('plan');
   useUi.setState({ screen: 'workspace', storeyId: null, tool: null, panes: [plan], pane: 0, ...plan });
@@ -273,24 +277,40 @@ function tellOld(notes: string[]): void {
   notify(`Opened an old Lapin project: save it to keep it in the new format.${notes.length ? ` Left out: ${notes.join('; ')}.` : ''}`);
 }
 
+/** A project opened from bytes in the browser's engine (a file picked, or a commit's package from a CDE server): false when it failed. */
+async function openBytes(name: string, bytes: Uint8Array, handle: FileSystemFileHandle | null): Promise<boolean> {
+  try {
+    const r = await engine.call<{ notes?: string[]; page?: string | null; absent?: string[] } | null>('project.openBytes', { name, data: toBase64(bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
+    // An old project (format 2), or one read from a page, opens unsaved: saving must not write over the file it came from.
+    const old = !useSession.getState().doc?.path;
+    projectHandle = old ? null : handle;
+    enter();
+    if (!openedFromPage(r?.page)) {
+      if (old) tellOld(r?.notes ?? []);
+      else tellAbsent(r?.absent);
+    }
+    return true;
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+    return false;
+  }
+}
+
+/**
+ * A project handed over as bytes (a commit's package from a CDE server, engine/cdeServer.ts), opened with no file of its own:
+ * Save asks where, so it keeps a copy and never writes back. False when the user kept the open project or it did not open.
+ */
+export async function openProjectBytes(name: string, bytes: Uint8Array): Promise<boolean> {
+  if (!(await confirmDiscard('The project has unsaved changes. Open another anyway?'))) return false;
+  return openBytes(name, bytes, null);
+}
+
 export async function openProject(path?: string): Promise<void> {
   if (!(await confirmDiscard('The project has unsaved changes. Open another anyway?'))) return;
   if (engineInBrowser) {
     const picked = await pickFile('Lapin project', ['lapin', 'html', 'htm']);
     if (!picked) return;
-    try {
-      const r = await engine.call<{ notes?: string[]; page?: string | null; absent?: string[] } | null>('project.openBytes', { name: picked.name, data: toBase64(picked.bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
-      // An old project (format 2), or one read from a page, opens unsaved: saving must not write over the file it came from.
-      const old = !useSession.getState().doc?.path;
-      projectHandle = old ? null : picked.handle;
-      enter();
-      if (!openedFromPage(r?.page)) {
-        if (old) tellOld(r?.notes ?? []);
-        else tellAbsent(r?.absent);
-      }
-    } catch (e) {
-      notify(e instanceof Error ? e.message : String(e));
-    }
+    await openBytes(picked.name, picked.bytes, picked.handle);
     return;
   }
   const target = path ?? (await pickPath('open', undefined, OPEN_FILTERS));
@@ -421,7 +441,8 @@ export const discardWork = (file: string) => engine.call('recovery.discard', { p
 export async function guardWindowClose(): Promise<void> {
   if (!isDesktop()) {
     // A browser tab: the browser asks before leaving unsaved work (the journal keeps it besides).
-    window.addEventListener('beforeunload', (e) => { if (useSession.getState().doc?.dirty) e.preventDefault(); });
+    // In front of a CDE server, also while the browser holds commits the server has not got (W2: the copy here is lost with the tab).
+    window.addEventListener('beforeunload', (e) => { if (useSession.getState().doc?.dirty || useCde.getState().unpushed) e.preventDefault(); });
     return;
   }
   const { getCurrentWindow } = await import('@tauri-apps/api/window');

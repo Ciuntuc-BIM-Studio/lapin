@@ -10,7 +10,8 @@
 // (docs/point-clouds.md, decision 395). The lazy parts (docs/plan-browser-engine.md, Lazy parts): none is fetched
 // to open a project (LAPIN_WEB_PROJECT, else the user's testLapin.lapin when it is there) or to draw in one, the
 // 3D exchange is fetched by Export 3D, a BIM Open Schema file exported comes into a new project, and a part or a
-// dialog that cannot be fetched says so, then comes when it can.
+// dialog that cannot be fetched says so, then comes when it can; a sign-in to a server fetches its client (Lapin.Package.Http,
+// System.Net.Http) only then.
 //
 //   node scripts/check-web.mjs [id]       (default: lapin)
 // CHROME: the browser to drive (default: Chrome where it is usually installed).
@@ -361,6 +362,35 @@ try {
       if (!(await parts()).includes('Lapin.PointClouds')) fail('the point cloud was linked without fetching Lapin.PointClouds: is it still a lazy part?');
     }
     rmSync(dir, { recursive: true, force: true });
+  }
+  // 5. The CDE remote, its client and HTTP lazy parts (Lapin.Package.Http, System.Net.Http): fetched when a server is first reached,
+  // never at the start (checked above). The ordinary build has no Collaborate… (the CDE's copy has), so a sign-in is sent to the
+  // engine in its worker as the interface sends it, against this static server, which has no Foundation API: refused, after the parts came.
+  if (started && !failed) {
+    const attached = new Promise((r) => {
+      const old = ws.onmessage;
+      ws.onmessage = (e) => { old(e); const m = JSON.parse(e.data); if (m.method === 'Target.attachedToTarget' && m.params.targetInfo.type === 'worker') r(m.params.sessionId); };
+    });
+    await send('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: false, flatten: true });
+    const sessionId = await Promise.race([attached, sleep(10_000).then(() => null)]);
+    if (!sessionId) fail('no engine worker to send a remote call to.');
+    else {
+      const call = JSON.stringify({ id: 2_000_000_000, method: 'remote.signIn', params: { url, username: 'check-web', password: 'check-web' } });
+      // A reply to an id the interface never asked for is dropped by its client.
+      const sent = await new Promise((r, j) => {
+        const i = ++seq;
+        const t = setTimeout(() => { pending.delete(i); j(new Error('the engine\'s worker did not take the remote call in 60 s')); }, 60_000);
+        pending.set(i, (m) => { clearTimeout(t); r(m); });
+        ws.send(JSON.stringify({ id: i, sessionId, method: 'Runtime.evaluate', params: { expression: `self.onmessage({ data: { call: ${JSON.stringify(call)} } }), true`, returnByValue: true } }));
+      });
+      if (sent.result?.result?.value !== true) fail(`the remote call could not be sent to the engine's worker: ${JSON.stringify(sent.result ?? sent.error).slice(0, 300)}`);
+      else {
+        let p = [];
+        for (let k = 0; k < 60 && !p.includes('System.Net.Http'); k++) { await sleep(250); p = await parts(); }
+        if (!p.includes('Lapin.Package.Http') || !p.includes('System.Net.Http')) fail(`a sign-in to a server did not fetch its client (Lapin.Package.Http, System.Net.Http): are they still lazy parts? Fetched: ${p.join(', ') || 'none'}.`);
+        else console.log(`▸ a sign-in to a CDE server fetched its client when first used (parts: ${p.join(', ')})`);
+      }
+    }
   }
   if (errors.length) fail(`exceptions in the page: ${errors.join(' | ')}`);
   ws.close();

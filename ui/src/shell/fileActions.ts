@@ -8,11 +8,13 @@ import type { FileAction } from '../platform/module';
 import { modules } from '../platform/modules';
 import { resolveFileActions } from '../platform/replaces';
 import { useUi } from '../app/store';
-import { importDxf, importIfc, linkPointCloud, newProject, openProject, saveProject, importFragments, importBos, importSdnf, linkLapin, importMesh, importTrace, importProjectTypes } from '../engine/files';
+import { importDxf, importIfc, linkPointCloud, newProject, openProject, saveProject, importFragments, importBos, importSdnf, linkLapin, importMesh, importTrace, importProjectTypes, isDesktop } from '../engine/files';
 import { openOptimize } from '../engine/ifcOptimize';
 import { engineInBrowser } from '../engine/session';
 import { hasModule } from '../platform/brand';
 import { leave } from '../engine/share';
+import { getLatest } from '../engine/remote';
+import { cdeActive, useCde } from '../engine/cdeServer';
 
 /** A section of the menu: its heading (none for the first), its actions by id. */
 export interface FileSection { head?: string; ids: string[] }
@@ -58,6 +60,14 @@ export function baseFileActions(): FileAction[] {
     { id: 'file.speckleReceive', label: 'Receive…', menu: 'speckle-receive', shown: () => hasModule('speckle') && !engineInBrowser, run: dialog('speckleReceive') },
     // Lapin Extensions (docs/plan-extensions.md): content packs from the catalogue, into Lapin's own libraries.
     { id: 'file.extensions', label: 'Extensions…', menu: 'extensions', run: dialog('extensions') },
+    // Server and collaboration (docs/remote.md): the project's history and its remote, a server or a folder.
+    // In the browser they reach the CDE server the page is served by (its engine's remote is asynchronous, the same client as the
+    // desktop's: Atrium docs/plan-cde-web.md, W2; same origin, so no other server); without one they stay in the desktop app.
+    { id: 'file.collaborate', label: 'Collaborate…', shown: () => !engineInBrowser || cdeActive(), run: dialog('remote') },
+    { id: 'file.saveServer', label: 'Save to server…', shown: () => !engineInBrowser || cdeActive(), run: dialog('remoteSave') },
+    { id: 'file.getLatest', label: 'Get latest from server', shown: () => !engineInBrowser || cdeActive(), run: () => getLatest() },
+    { id: 'file.cdeProjects', label: 'Server projects…', menu: 'cde-projects', shown: () => cdeActive(), run: () => { useCde.setState({ offline: false }); useUi.setState({ screen: 'start' }); } },
+    { id: 'file.openServer', label: 'Open from server…', shown: () => isDesktop(), run: dialog('remoteClone') },
     { id: 'file.share', label: 'Share session…', shown: () => !engineInBrowser, run: dialog('share') },
     { id: 'file.join', label: 'Join session…', run: dialog('join') },
     { id: 'file.preferences', label: 'Preferences…', keys: 'app.preferences', run: dialog('preferences') },
@@ -73,7 +83,8 @@ export const HOST_SECTIONS: FileSection[] = [
   { head: 'Other formats', ids: ['file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh', 'file.exportMesh', 'file.exportHtml'] },
   { head: 'Speckle', ids: ['file.speckleSend', 'file.speckleReceive'] },
   { ids: ['file.extensions'] },
-  { ids: ['file.share', 'file.join', 'file.startScreen'] },
+  { head: 'Server and collaboration', ids: ['file.cdeProjects', 'file.collaborate', 'file.saveServer', 'file.getLatest', 'file.openServer', 'file.share', 'file.join'] },
+  { ids: ['file.startScreen'] },
 ];
 
 /** A guest works in the host's project: the host opens and saves it; a guest exports what they need, or leaves. */

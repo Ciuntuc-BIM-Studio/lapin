@@ -277,8 +277,12 @@ The storeys go as Speckle levels, so Revit receives the elements on their levels
 
 **File → Speckle → Receive…** brings a version of a Speckle model into the open project, whichever program sent it (Revit, Rhino, Archicad, another Lapin). It signs in with the same account as **Send…**. You choose the **Project**, the **Model** and the **Version** (**the latest** by default, or one from its list, by its message, date and the program that sent it), then:
 
-- **Storeys**: **by the version's levels**, each object on the storey at its level (within 5 cm), else on the storey it stands on, else on the storey you are on; or **all on the current storey**.
+- **Storeys**:
+  - **by the version's levels, creating the missing ones** (the default): each level of the version finds the project's storey at its elevation (within 5 cm), else the one with its name; a level no storey matches becomes a new storey, with the level's name and elevation. Each object goes on its level's storey, whether it comes in as a reference or as a recognised wall or slab.
+  - **by the version's levels, only the project's storeys**: no storey is made; an object whose level no storey matches goes on the storey below it.
+  - **all on the current storey**.
 - **Origin**: **the project base point** (Send writes the model from there, so a model sent from Lapin comes back where it was) or **the internal origin**.
+- **Recognition**: **Recognise elements** (on by default) makes the walls, floors, columns, beams, footings, doors and windows native Lapin elements where they really are; see below.
 
 **Receive** downloads the version (**Cancel** stops it) and brings it in as one step: one **Undo** takes it all out. The objects come in as **references**, as an imported mesh or IFC file does: shown, measured and snapped to, not edited. Each keeps:
 
@@ -291,9 +295,19 @@ The objects of one model come in as one group named after it. Copies of a block 
 
 **Receiving a newer version** of the same model updates what came before in place: each object is found again by its applicationId (else by its Speckle id) and keeps its GlobalId, its group and anything that names it; an object that did not change is left as it is; new ones are added to the model's group; those the version no longer has are removed, as a link's reload removes what its file no longer holds. The dialog shows how many were added, updated, unchanged and removed.
 
+**Recognising elements.** With **Recognise elements** ticked, each wall and floor that came in is read as an IFC import reads a reference: its triangles as an upright prism, a wall with its openings, a floor by its outline and thickness. It becomes a native wall or slab only when the native element's body is the received one within 1 mm or 0.5 % (the same check as an IFC import's): anything that differs more stays a reference. A wall's own parameters are checked against its body too (Revit's width and location line, a floor's thickness; Lapin's layers): if they disagree, the body wins and the object stays a reference. Curtain walls stay references. Revit's **bar joists** (K-Series and LH-Series) are recognised too, as native open-web joists, with their webs as the lines Revit sent ([Steel](steel.md#open-web-joists)). A recognised element keeps its GlobalId, its group, its storey and its **Speckle** properties, and Lapin adds nothing of its own to it: no lintels, no reveals, no joins; a recognised floor cuts no wall, as the walls came. The dialog says how many objects were recognised, how many stayed references, and why.
+
+Columns, beams and footings are read the same way, after the walls and floors, under the same check. A column is an upright prism: a rectangle, a regular polygon or a circle becomes a column of that section; any other section (a steel profile, a shaped concrete one) becomes a column of the section its body has, or of its type's catalogue profile (IPE 300, HEA 200…) when that is the body's to 2 mm. A beam is a prism lying along its axis, its section read the same way. A recognised column or footing cuts nothing it meets, as the elements came.
+
+A door or window in a recognised wall becomes an opening in the native wall. The door or window itself becomes native only if a Lapin configurator makes its body as it came, within the same check; otherwise it stays a reference standing in the wall's native opening, and the dialog says so. The wall still has to pass with its opening: its body from Revit already has the hole.
+
+Received again, a recognised element whose object did not change is left as it is; one whose object changed is recognised again in place, with the same GlobalId, or turns back into a reference (with the same GlobalId) if it no longer passes; one the version no longer has is removed.
+
+**Storeys made from the levels.** A storey made this way is as high as the gap to the storey above it. The levels' elevations are read the way the version's geometry is, from the **Origin** chosen: from the project base point, its elevation is added to them. When most of the objects stand the same height off their levels (Revit can give its levels from the survey point and its geometry from the internal origin), the storeys are placed by the objects, and the dialog says by how much. A newer version renames and moves only the storeys it made, and only while nothing else stands on them: a storey with your own elements on it, or a recognised wall, keeps its name and elevation, and the dialog says so. A storey whose level is gone from the version is removed if it is empty, and kept if anything stands on it. A storey the project had is never renamed, moved or removed.
+
 **A version sent from this project** (its objects are this project's own elements, by their GlobalIds) is not received over them: Lapin says so and offers **Receive as a copy**, which brings its objects in as references with ids of their own, beside the elements, which stay as they are. Received in another project, a model sent from Lapin keeps its elements' GlobalIds.
 
-Not received yet: textures, the objects' edges, and recognising references as native walls and slabs (as an IFC import can).
+Not received yet: textures, the objects' edges, sloping or curved beams and curved walls as native ones.
 
 ## Lapin for the browser
 

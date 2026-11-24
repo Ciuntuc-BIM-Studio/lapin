@@ -249,9 +249,11 @@ public class IfcParametricProfileTests : IDisposable
         Assert.Contains(gate.Checks, x => x.Id == r && x.Measured && x.Pass);
         Assert.Contains(gate.Checks, x => x.Id == c && x.Measured && x.Pass);
         SameBody(f.Session.Geometry(r)!.Parts[0].Solid, g.Session.Geometry(r)!.Parts[0].Solid);
-        // The I is no section recognition makes: a reference, with the file's same body.
-        Assert.True(StoredBodies.Has(g.Model.Get(i)!));
-        SameBody(f.Session.Geometry(i)!.Parts[0].Solid, g.Session.Geometry(i)!.Parts[0].Solid);
+        // The I is no section the file's reading makes: from its triangles it is made with its body's own section (decision 826),
+        // the gate judging it, the same body as the file's.
+        Assert.False(StoredBodies.Has(g.Model.Get(i)!));
+        Assert.Contains(gate.Checks, x => x.Id == i && x.Source == "triangles" && x.Measured && x.Pass);
+        Assert.InRange(Measure.Volume(g.Session.Geometry(i)!.Parts[0].Solid) / Measure.Volume(f.Session.Geometry(i)!.Parts[0].Solid), 0.995, 1.005);
     }
 
     [Fact]

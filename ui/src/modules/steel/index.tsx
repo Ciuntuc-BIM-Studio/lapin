@@ -10,7 +10,7 @@
  * frame elevation, opened as drawings.
  */
 
-import { Anchor, ArrowRightToLine, Frame, Layers3, Link2, ListOrdered, Slash, Table2, WandSparkles, Warehouse } from 'lucide-react';
+import { Anchor, ArrowRightToLine, Frame, Layers3, Link2, ListOrdered, Slash, Table2, Waypoints, WandSparkles, Warehouse } from 'lucide-react';
 import { BeamIcon, ColumnIcon } from '../../icons';
 import type { Grip, LapinModule, ToolDef } from '../../platform/module';
 import { notify, useUi } from '../../app/store';
@@ -18,6 +18,7 @@ import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { newElement, typedBy } from '../architecture/NewElement';
 import { SteelSection } from './SteelSection';
+import { JOIST_TYPE, JoistSection, JoistToolSection } from './JoistSection';
 import { NodeSection } from './NodeSection';
 import { SdnfReportDialog } from './SdnfReportDialog';
 import { HallDialog, useHall } from './HallDialog';
@@ -40,6 +41,17 @@ const member: ToolDef = {
   },
   complete: async ({ points: [a, b] }, ctx) => {
     await ctx.execute('steel.addMember', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, typeId: useUi.getState().memberTypeId ?? undefined });
+  },
+};
+
+/** An open-web joist (decision 827): two points, its top on the storey's level; its type chosen as the member's is. */
+const joist: ToolDef = {
+  id: 'steel.joist', label: 'Open-web joist', icon: Waypoints,
+  gesture: { kind: 'twoPoints', repeat: true },
+  properties: JoistToolSection,
+  typed: { ...typedBy(JOIST_TYPE, 'joistTypeId'), about: () => null },
+  complete: async ({ points: [a, b] }, ctx) => {
+    await ctx.execute('steel.addJoist', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, typeId: useUi.getState().joistTypeId ?? undefined });
   },
 };
 
@@ -141,6 +153,17 @@ function memberGrips(node: NodeDto): Grip[] {
   ];
 }
 
+/** A joist's two ends, to drag in plan; their heights stay. */
+function joistGrips(node: NodeDto): Grip[] {
+  const p = (v: unknown) => (Array.isArray(v) && v.length >= 2 ? { x: Number(v[0]), y: Number(v[1]) } : null);
+  const [s, e] = [p(node.props.start), p(node.props.end)];
+  if (!s || !e) return [];
+  return [
+    { key: 'start', kind: 'end', at: s, step: (to) => ({ command: 'steel.updateJoist', args: { id: node.id, x1: to.x, y1: to.y } }) },
+    { key: 'end', kind: 'end', at: e, step: (to) => ({ command: 'steel.updateJoist', args: { id: node.id, x2: to.x, y2: to.y } }) },
+  ];
+}
+
 const steel: LapinModule = {
   id: 'steel',
   name: 'Steel',
@@ -149,7 +172,7 @@ const steel: LapinModule = {
     id: 'steel', label: 'Steel', order: 34, include: ['modify'],
     groups: [
       { label: 'Halls', tools: [hall] },
-      { label: 'Members', tools: [column, member, convert] },
+      { label: 'Members', tools: [column, member, joist, convert] },
       { label: 'Ends', tools: [mitre, fit] },
       { label: 'Nodes', tools: [connections] },
       { label: 'Drawings', tools: [anchorPlan, frameView] },
@@ -159,11 +182,15 @@ const steel: LapinModule = {
   }],
   propertySections: [
     { id: 'steel', label: 'Steel', classes: STEEL, component: SteelSection },
+    { id: 'joist', label: 'Open-web joist', classes: ['LapinSteelJoist'], component: JoistSection },
     { id: 'steelNode', label: 'Connection', classes: ['LapinSteelNode'], component: NodeSection },
   ],
   dialogs: { steelTypes: SteelTypesDialog, steelHall: HallDialog, sdnfReport: SdnfReportDialog },
-  grips: { LapinSteelMember: memberGrips },
-  setType: { LapinSteelMember: (ids, typeId) => execute('steel.setType', { ids, typeId }) },
+  grips: { LapinSteelMember: memberGrips, LapinSteelJoist: joistGrips },
+  setType: {
+    LapinSteelMember: (ids, typeId) => execute('steel.setType', { ids, typeId }),
+    LapinSteelJoist: (ids, typeId) => execute('steel.setJoistType', { ids, typeId }),
+  },
 };
 
 export default steel;

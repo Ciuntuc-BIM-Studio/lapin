@@ -71,8 +71,10 @@ public partial class IfcRecognitionTests
     }
 
     [Fact]
-    public void A_beam_whose_profile_is_no_rectangle_stays_a_reference()
+    public void A_beam_whose_profile_is_no_rectangle_comes_in_with_its_outline_from_its_triangles()
     {
+        // Its profile is none a native beam's is read from (the file's pass leaves it a reference); its triangles then make it a
+        // beam with the T as its own outline section (decision 826, as a Speckle receive's), the gate judging it.
         var x = new Foreign();
         var f0 = x.F;
         // A T 200 wide, 200 deep, its flange and web 10 thick, swept 4 m along x with its top at 3 m.
@@ -87,8 +89,13 @@ public partial class IfcRecognitionTests
         var f = Full();
         var r = IfcImport.Run(f.Session, x.Write(Path.Combine(_dir, "tee.ifc")), null, out _);
         var tee = f.Model.Get(Guid("foreign-test", "tee"))!;
-        Assert.True(StoredBodies.Has(tee));
         Assert.Contains(r.Skipped!.Keys, k => k.Contains("profile is not a rectangle"));
+        Assert.Equal(IfcClass.Beam, tee.Class);
+        Assert.False(StoredBodies.Has(tee));
+        var section = Section.From(f.Model.RelatingOf(tee.Id, IfcClass.RelDefinesByType)!.Attrs["section"])!;
+        Assert.Equal("outline", section.Kind);
+        Assert.Equal(0.2 * 0.01 + 0.19 * 0.01, section.Area, 6);
+        Assert.True(CheckOf(r, tee.Id, "triangles").Pass, CheckOf(r, tee.Id, "triangles").Reason);
         var plain = f.Model.Get(Guid("foreign-test", "plain-beam"))!;
         Assert.Equal(IfcClass.Beam, plain.Class);
         Assert.False(StoredBodies.Has(plain));

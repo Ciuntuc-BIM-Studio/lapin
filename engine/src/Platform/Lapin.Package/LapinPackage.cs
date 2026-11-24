@@ -143,15 +143,20 @@ public static class LapinPackage
 
         Add(DocumentPath, JsonSerializer.SerializeToUtf8Bytes(document ?? [], PackageJson.Default.JsonObject));
         var classes = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        // Each row's place as its rank among the entities (and, apart, among the relationships) in creation order, not the model's
+        // running counter: the same project written again after it is opened gives the same bytes (the counter starts again at a load),
+        // so a commit's tree (docs/spec-lapin-remote.md) and a version's parts stay the same until the project changes.
+        var entityRank = Ranks(model.Entities.Select(e => e.Id), model.Order);
+        var relationRank = Ranks(model.Relations.Select(r => r.Id), model.Order);
         var chunks = model.Entities
             .GroupBy(e => (Module: moduleOf(e.Class), e.Class, Storey: storeyOf(e.Id) ?? "_"))
             .OrderBy(g => g.Key.Module, StringComparer.Ordinal).ThenBy(g => g.Key.Class, StringComparer.Ordinal).ThenBy(g => g.Key.Storey, StringComparer.Ordinal);
         foreach (var chunk in chunks)
         {
             classes[chunk.Key.Class] = chunk.Key.Module;
-            Add($"model/{Safe(chunk.Key.Module)}/{Safe(chunk.Key.Class)}/{Safe(chunk.Key.Storey)}.arrow", ArrowTables.WriteEntities(chunk.ToList(), model.Order), chunk.Key.Module);
+            Add($"model/{Safe(chunk.Key.Module)}/{Safe(chunk.Key.Class)}/{Safe(chunk.Key.Storey)}.arrow", ArrowTables.WriteEntities(chunk.ToList(), id => entityRank[id]), chunk.Key.Module);
         }
-        Add(RelationsPath, ArrowTables.WriteRelations(model.Relations.ToList(), model.Order));
+        Add(RelationsPath, ArrowTables.WriteRelations(model.Relations.ToList(), id => relationRank[id]));
         var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var t in (texts ?? []).OrderBy(t => t.Path, StringComparer.Ordinal))
         {
@@ -163,6 +168,14 @@ public static class LapinPackage
 
         var manifest = new PackageManifest(Format, Version, app, product, modules, parts.Select(p => p.Part).ToList(), classes);
         return new PackageBuild(manifest, parts);
+    }
+
+    static Dictionary<string, int> Ranks(IEnumerable<string> ids, Func<string, int> order)
+    {
+        var o = new Dictionary<string, int>(StringComparer.Ordinal);
+        var i = 0;
+        foreach (var id in ids.OrderBy(order).ThenBy(x => x, StringComparer.Ordinal)) o.TryAdd(id, i++);
+        return o;
     }
 
     /// <summary>A built project written to a file, beside first, then moved over the old one.</summary>
@@ -181,8 +194,11 @@ public static class LapinPackage
     {
         var report = new PackageWriteReport();
         using var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true);
+        // The blobs written under versions/blobs/ and issues/blobs/: the history writes none of them again (§6.4 of docs/spec-lapin-remote.md).
+        var elsewhere = new HashSet<string>(StringComparer.Ordinal);
         void Entry(string name, byte[] bytes)
         {
+            if (name.StartsWith(BlobsPrefix, StringComparison.Ordinal)) elsewhere.Add(name[BlobsPrefix.Length..]);
             using var s = zip.CreateEntry(name, CompressionLevel.Optimal).Open();
             s.Write(bytes);
         }
@@ -227,10 +243,26 @@ public static class LapinPackage
             // Compressed quickly: a PDF is compressed already, an IFC (text) shrinks well either way, and a save with many issues stays fast.
             var written = issues.Store.CopyTo(issues.Written, (sha, bytes) =>
             {
+                elsewhere.Add(sha);
                 using var s = zip.CreateEntry(PackageIssues.Prefix + sha, CompressionLevel.Fastest).Open();
                 bytes.CopyTo(s);
             }, report);
             foreach (var (sha, size) in written) report.Issues[sha] = size;
+        }
+        // The project's history (docs/spec-lapin-remote.md §6): its commits, trees and the blobs no other place in the file holds.
+        if (foreign?.History is { } history)
+        {
+            var live = allParts.Select(p => p.Part.Sha256).ToHashSet(StringComparer.Ordinal);
+            if (history.Unreadable is { } historyWhy)
+            {
+                if (history.CopyRawTo(Entry) is { } copyWhy)
+                {
+                    report.Refuse ??= $"The project's history could not be read ({historyWhy}) nor carried over ({copyWhy}): saving over its file would lose it. Save it under another name.";
+                    report.Warnings.Add($"The project's history could not be read ({historyWhy}) nor carried over ({copyWhy}): this file was written without it.");
+                }
+                else report.Warnings.Add($"The project's history could not be read ({historyWhy}): it was kept in the file as it was.");
+            }
+            else history.WriteTo(Entry, live, elsewhere);
         }
         if (foreign is { Unreadable: { } foreignWhy })
         {

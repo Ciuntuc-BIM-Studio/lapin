@@ -166,6 +166,7 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
                 : model.OfClass(cls).Where(e => Raised(e, model, mine));
             foreach (var e in candidates)
             {
+                if (StoredBodies.Has(e)) continue;
                 if (e.Id == target.Id || joined.Contains(e.Id) || PriorityOf(e, model) is not { } theirs || theirs <= mine || !Materials.Joins(model, e)) continue;
                 if (envelope(e, model) is not { } solid || Measure.Bounds(solid) is not { } b) continue;
                 const double eps = 1e-6;
@@ -264,6 +265,9 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
             foreach (var e in store.OfClass(cls))
             {
                 if (!whole && !e.Attrs.ContainsKey("cutPriority") && !e.Attrs.ContainsKey("exportAs")) continue;
+                // A reference (a stored body: an imported or received column) has none of the attributes its class's envelope is
+                // built from: read as its class, it would cut as a default one standing at the origin of its storey.
+                if (StoredBodies.Has(e)) continue;
                 // What each one read, for the targets it may cut to note (only those it is near).
                 var rec = new TrackingView(store);
                 rec.Get(e.Id);

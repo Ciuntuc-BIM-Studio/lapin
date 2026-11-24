@@ -7,7 +7,7 @@ namespace Lapin.Speckle;
 /// <summary>
 /// The Speckle connector (docs/plan-speckle.md, decision 807). S1: the model sent to a Speckle server as a new version of a
 /// model, its elements Speckle data objects keyed by their GlobalIds; sending changes nothing of the project, so every call
-/// of it is a query. S2: a version received as references (<see cref="SpeckleReceive"/>), the one command (<c>speckle.receive</c>,
+/// of it is a query. S2: a version received as references (<see cref="SpeckleReceive"/>), S3: its walls and slabs recognised as native ones (<see cref="SpeckleRecognition"/>), the one command (<c>speckle.receive</c>,
 /// one undo step), its versions and what a receive would do asked first. None is a guest's to make
 /// (EngineDispatcher.HostOnlyQueries and HostOnlyCommands: the account is the host's). Desktop only (module.json).
 /// </summary>
@@ -121,14 +121,15 @@ public sealed class SpeckleModule : ILapinModule
         });
 
         // A version into the project as references (SpeckleReceive), one undo step: {projectId, modelId, versionId?, asCopy?, origin?,
-        // storeyId?, activeStoreyId?}. Received again, the same model's references are updated in place, keeping their GlobalIds.
+        // storeyId?, activeStoreyId?, recognize?, levels?: "create" (the default: the missing storeys made from the version's levels) | "existing"}. Received again, the same model's references are updated in place, keeping their
+        // GlobalIds; recognize: its walls and slabs made native where they pass the fidelity gate (SpeckleRecognition).
         r.Command("receive", "Receive from Speckle", (ctx, a) =>
         {
             var options = SpeckleReceiveOptions.From(a);
             var (fetched, read) = Version((string?)a["projectId"], (string?)a["modelId"], (string?)a["versionId"], ctx.Query.Progress, ctx.Query.Cancellation);
             try
             {
-                var result = SpeckleReceive.Apply(ctx, read, fetched.Source, options, null, ctx.Query.Progress, ctx.Query.Cancellation).ToJson();
+                var result = SpeckleReceive.Apply(ctx, read, fetched.Source, options, null, ctx.Query.Progress, ctx.Query.Cancellation, ctx.Services).ToJson();
                 result["versionId"] = fetched.Source.VersionId;
                 result["model"] = fetched.Source.ModelName;
                 return result;

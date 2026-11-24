@@ -96,7 +96,7 @@ carries splats with its measuring tools.
 - **G3 — the other formats and the colour by direction.** SOG (with the WebP lossless reader), SuperSplat's compressed
   PLY; spherical harmonics of degree 1–3 in the shader (Display: Full colour / Base colour), behind the display quality.
 
-  **Done 24.11.2026 (decision 826, branch `feat/gaussian-splats-g3`).** Two decoders of Lapin's own, managed only, after
+  **Done 24.11.2026 (decision 830, branch `feat/gaussian-splats-g3`).** Two decoders of Lapin's own, managed only, after
   their RFCs: `WebPLossless` (RFC 9649: RIFF, the four transforms with pixel bundling, simple and normal prefix codes, meta
   prefix codes, the colour cache, LZ77 with the 120 neighbourhood distances; a lossy VP8 image refused by name) and `Zstd`
   (RFC 8878: raw, RLE and compressed blocks, Huffman literals by direct or FSE weights in one or four streams, FSE sequence
