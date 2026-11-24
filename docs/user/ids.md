@@ -41,7 +41,7 @@ In **File → Collaborate… → Publishing**, the **IDS** tab is the same panel
 
 ## IDS files on the CDE server
 
-A CDE server can hold IDS files of its own for a project and check every submission's model against them, the approval counting what it finds: see [IDS on the server](cde-server.md#ids-on-the-server). **Check on the server**, in Manage → Issue… → On the CDE server, runs them on the commit just saved before you submit. The files kept in the project (this panel) and those on the server are separate: put the same file in both to have it checked here first.
+A CDE server can hold IDS files of its own for a project and check every submission's model against them, the approval counting what it finds: see [IDS on the server](cde-server.md#ids-on-the-server). **Check on the server**, in Manage → Issue… → On the CDE server, runs them on the commit just saved before you submit. The files kept in the project (this panel) and those on the server are separate, and copied between them only when you ask: **Bring server IDS files into this project** (in this panel, for editors and owners, when the project's server offers IDS) lists the server's files, each **New**, **The same** or **Changed** (a file of that name here with other content); tick the ones you want and click **Copy the ticked files**. Replacing a changed one is confirmed first, and they all come in as one undo step. The other way, owners use **Put this project's IDS files on the server** in Publishing → IDS on the server.
 
 ## What IDS 1.0 does not check
 

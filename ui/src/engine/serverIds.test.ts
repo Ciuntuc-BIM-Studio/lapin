@@ -128,3 +128,45 @@ describe('IDS on the server (W6c)', () => {
     expect(g.results[1].specs[1].fail?.finding.details?.name).toBe('A.ifc');
   });
 });
+
+describe('the project\'s IDS files and the server\'s (W6d)', () => {
+  it('names a file as the server keeps it, ending in .ids', () => {
+    expect(ids.idsName('LOIN.ids')).toBe('LOIN.ids');
+    expect(ids.idsName('loin.IDS')).toBe('loin.IDS');
+    expect(ids.idsName('rules.xml')).toBe('rules.ids');
+    expect(ids.idsName('rules')).toBe('rules.ids');
+  });
+
+  it('tells each file new, the same (under any name) or changed (a name ignoring case, other content)', () => {
+    const rows = ids.copyRows(
+      [{ name: 'a.ids', sha256: '1' }, { name: 'B.ids', sha256: '2' }, { name: 'c.ids', sha256: '3' }, { name: 'd.ids', sha256: '4' }],
+      [{ name: 'A.IDS', sha256: '1' }, { name: 'b.ids', sha256: '9' }, { name: 'other.ids', sha256: '4' }],
+    );
+    expect(rows.map((r) => r.state)).toEqual(['same', 'differs', 'new', 'same']);
+    // No hash on the other side is never the same.
+    expect(ids.copyRows([{ name: 'a.ids', sha256: null }], [{ name: 'x.ids', sha256: null }])[0].state).toBe('new');
+  });
+
+  it('sends each file in turn, a refused one kept with its problems and the others still sent', async () => {
+    remoteCall
+      .mockResolvedValueOnce({ status: 201, body: { name: 'a.ids', specifications: 1 }, etag: null })
+      .mockResolvedValueOnce({ status: 400, body: { code: 'bad_ids', message: 'Not IDS 1.0.', problems: ['Line 3: Wrong.'] }, etag: null })
+      .mockResolvedValueOnce({ status: 403, body: { code: 'forbidden', message: 'Only the project\'s owners change its IDS files.' }, etag: null })
+      .mockResolvedValueOnce({ status: 200, body: { name: 'd.ids', specifications: 2 }, etag: null });
+    const r = await ids.sendIds(DESK, 'p1', [{ name: 'a.ids', text: '<ids>ă</ids>' }, { name: 'b.ids', text: '<x/>' }, { name: 'c.ids', text: '<y/>' }, { name: 'd.ids', text: '<z/>' }]);
+    expect(r.map((x) => x.ok)).toEqual([true, false, false, true]);
+    expect(r[1].problems).toEqual(['Line 3: Wrong.']);
+    expect(r[2].problems).toBeUndefined();
+    expect(r[2].error).toBeTruthy();
+    // The text goes as its UTF-8 bytes, to each file's own path.
+    const first = remoteCall.mock.calls[0][1] as { method: string; path: string; data: string; contentType: string };
+    expect(first).toMatchObject({ method: 'PUT', path: 'atrium/1.0/projects/p1/ids/a.ids', contentType: 'application/xml' });
+    expect(new TextDecoder().decode(Uint8Array.from(atob(first.data), (c) => c.charCodeAt(0)))).toBe('<ids>ă</ids>');
+  });
+
+  it('reads the server\'s files as text to bring into the project', async () => {
+    remoteCall.mockResolvedValueOnce({ status: 200, body: null, data: btoa(String.fromCharCode(...new TextEncoder().encode('<ids>ș</ids>'))) });
+    expect(await ids.idsTexts(DESK, 'p1', ['LOIN arhitectură.ids'])).toEqual([{ name: 'LOIN arhitectură.ids', text: '<ids>ș</ids>' }]);
+    expect(remoteCall.mock.calls[0][1]).toMatchObject({ method: 'GET', path: 'atrium/1.0/projects/p1/ids/LOIN%20arhitectur%C4%83.ids', bytes: true });
+  });
+});

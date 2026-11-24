@@ -180,9 +180,9 @@ function Publishing({ server, project, name, offers, withModel }: { server: stri
       {tab === 'containers' && <ContainersView server={server} project={project} name={name} data={data} busy={busy} run={run} />}
       {tab === 'submissions' && <SubmissionsQueue server={server} project={project} who={who} onDecided={load} checks={offers.includes('checks')} />}
       {tab === 'diff' && <HandoverDiffView server={server} project={project} name={name} data={data} />}
-      {tab === 'ids' && <IdsPanel />}
+      {tab === 'ids' && <IdsPanel server={server} project={project} />}
       {tab === 'register' && <RegisterPanel server={server} project={project} owner={owner} />}
-      {tab === 'serverIds' && <IdsServerPanel server={server} project={project} owner={owner} />}
+      {tab === 'serverIds' && <IdsServerPanel server={server} project={project} owner={owner} model={withModel} />}
     </div>
   );
 }

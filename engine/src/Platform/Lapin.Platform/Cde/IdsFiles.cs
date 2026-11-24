@@ -46,8 +46,13 @@ public static class IdsFiles
         r.Class(new(Class, "IDS file", [], "#888888", Kind: "resource", Template: false));
 
         // The checked text of an IDS (ids.add reads and checks it first): a new file, or a newer copy of one the project has (same file
-        // name, or the id given), which keeps its id. The same text twice is refused.
-        r.Command("ids.store", "Add IDS file", (ctx, a) =>
+        // name, or the id given), which keeps its id. The same text twice is refused. With `files`, several in the one step (W6d: a
+        // CDE server's IDS files brought in).
+        r.Command("ids.store", "Add IDS file", (ctx, a) => a["files"] is JsonArray many
+            ? (JsonNode)new JsonArray([.. many.OfType<JsonObject>().Select(x => (JsonNode)Store(ctx, x))])
+            : Store(ctx, a));
+
+        static JsonObject Store(ICommandContext ctx, JsonObject a)
         {
             var xml = (string?)a["xml"] ?? throw new CommandException("The IDS file's text is missing.");
             if (Encoding.UTF8.GetByteCount(xml) > MaxBytes) throw new CommandException($"The IDS file is over {MaxBytes / 1_000_000} MB.");
@@ -71,7 +76,7 @@ public static class IdsFiles
             var entity = new Entity(existing?.Id ?? ctx.NewId(), Class, name, attrs);
             if (existing != null) ctx.Replace(entity); else ctx.Add(entity);
             return ToJson(entity);
-        });
+        }
 
         r.Command("ids.remove", "Remove IDS file", (ctx, a) =>
         {
@@ -96,12 +101,13 @@ public static class IdsFiles
             return new JsonObject { ["blocks"] = blocks, ["onSubmit"] = onSubmit };
         });
 
-        r.Query("ids.files", (q, _) =>
+        r.Query("ids.files", (q, a) =>
         {
             var (blocks, onSubmit) = Rules(q.Model);
             return new JsonObject
             {
-                ["files"] = new JsonArray([.. All(q.Model).Select(e => (JsonNode)ToJson(e))]),
+                // `text`: each with its text too (W6d: what goes to a CDE server as the file).
+                ["files"] = new JsonArray([.. All(q.Model).Select(e => { var o = ToJson(e); if (a["text"] is JsonValue t && t.TryGetValue<bool>(out var w) && w) o["xml"] = Text(e); return (JsonNode)o; })]),
                 ["blocks"] = blocks, ["onSubmit"] = onSubmit,
             };
         });

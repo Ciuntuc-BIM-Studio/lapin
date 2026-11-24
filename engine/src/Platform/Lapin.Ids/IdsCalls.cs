@@ -15,7 +15,8 @@ namespace Lapin.Ids;
 /// with), which the browser's engine fetches the first time (docs/plan-browser-engine.md, Lazy parts).
 /// <list type="bullet">
 /// <item><c>ids.add</c>: an .ids file (its bytes as base64 in <c>data</c>, its <c>text</c>, or a <c>path</c> on the desktop) read as
-/// IDS 1.0 (refused with every problem and its line when it is not) and kept in the project (<c>ids.store</c>: one undo step).</item>
+/// IDS 1.0 (refused with every problem and its line when it is not) and kept in the project (<c>ids.store</c>: one undo step); with
+/// <c>files</c> (each its <c>name</c> and <c>text</c>), several in one step (W6d: a CDE server's IDS files brought in).</item>
 /// <item><c>ids.read</c>: one kept file as read: its info and its specifications in words.</item>
 /// <item><c>ids.run</c>: the project's IDS files (all, or <c>ids</c>) over the model as its IFC export writes it (or over an IFC file
 /// given as <c>data</c> or <c>path</c>): per specification what it applies to, passes and fails; kept for <c>ids.results</c>,
@@ -48,17 +49,39 @@ public sealed class IdsCalls(Session session, Action<string, int, int> ReportPro
         catch (IdsFormatException ex) { throw new CommandException("Not an IDS 1.0 file. " + string.Join(" ", ex.Problems.Take(12)) + (ex.Problems.Count > 12 ? $" (and {ex.Problems.Count - 12} more)" : "")); }
     }
 
-    public (object? Result, Diff? Diff) Add(JsonObject p, byte[] bytes, string name)
+    /// <summary>The arguments of <c>ids.store</c> for an .ids file's bytes, read first (refused, naming the file, when it is not IDS 1.0).</summary>
+    static (JsonObject Args, IdsDocument Doc) StoreArgs(JsonObject p, byte[] bytes, string name)
     {
         if (bytes.Length > IdsFiles.MaxBytes) throw new CommandException($"The IDS file is {bytes.Length / 1e6:0.0} MB: more than the {IdsFiles.MaxBytes / 1_000_000} MB an IDS is kept up to.");
         var doc = ReadIds(bytes);
         // Kept as text, as the file wrote it (its BOM dropped).
         var xml = new UTF8Encoding(false).GetString(bytes).TrimStart('﻿');
-        var args = new JsonObject
+        return (new JsonObject
         {
             ["file"] = name, ["xml"] = xml, ["title"] = doc.Info.Title, ["version"] = doc.Info.Version, ["specifications"] = doc.Specifications.Count,
             ["id"] = (string?)p["id"], ["author"] = (string?)p["author"],
-        };
+        }, doc);
+    }
+
+    /// <summary>Several .ids files (<c>files</c>: each its <c>name</c> and <c>text</c>) kept in one undo step (W6d: a CDE server's files brought in).</summary>
+    public (object? Result, Diff? Diff) AddMany(JsonObject p, JsonArray files)
+    {
+        var list = new JsonArray();
+        foreach (var f in files.OfType<JsonObject>())
+        {
+            var name = (string?)f["name"] ?? "requirements.ids";
+            try { var (a, _) = StoreArgs(p, Encoding.UTF8.GetBytes((string?)f["text"] ?? ""), name); a.Remove("id"); list.Add((JsonNode)a); }
+            catch (CommandException ex) { throw new CommandException($"{name}: {ex.Message}"); }
+        }
+        if (list.Count == 0) throw new CommandException("No IDS file was given.");
+        var diff = session.Execute("ids.store", new JsonObject { ["files"] = list }, out var stored);
+        _idsLast = null;
+        return (new JsonObject { ["files"] = stored?.DeepClone() }, diff);
+    }
+
+    public (object? Result, Diff? Diff) Add(JsonObject p, byte[] bytes, string name)
+    {
+        var (args, doc) = StoreArgs(p, bytes, name);
         var diff = session.Execute("ids.store", args, out var stored);
         _idsLast = null;
         var o = stored as JsonObject ?? [];

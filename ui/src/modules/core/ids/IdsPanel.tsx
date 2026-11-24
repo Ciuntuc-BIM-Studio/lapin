@@ -13,12 +13,15 @@ import { notify, useUi } from '../../../app/store';
 import { useSession } from '../../../engine/session';
 import { download, fileBytes, isDesktop, pickPath, safeFileName } from '../../../engine/files';
 import { historyStatus, signedIn, syncIssues } from '../../../engine/remote';
+import { lazyPart } from '../../../platform/lazyPart';
 import {
   addIdsFile, failureText, idsFiles, idsReport, idsResults, makeIdsRemarks, moreFailures, removeIdsFile, runIds, setIdsRules, showElements, specLine, totals,
   type IdsFiles, type IdsRun, type IdsSpec,
 } from './ids';
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+// W6d: Bring server IDS files into this project, when the project's server offers IDS (CdeIds.tsx, fetched then).
+const IdsFromServer = lazyPart(() => import('../CdeIds').then((m) => m.IdsFromServer), { inline: true });
 
 export function IdsDialog() {
   const close = () => useUi.setState({ dialog: null });
@@ -32,7 +35,7 @@ export function IdsDialog() {
   );
 }
 
-export function IdsPanel() {
+export function IdsPanel({ server, project }: { server?: string; project?: string }) {
   const nodes = useSession((s) => s.nodes);
   const [files, setFiles] = useState<IdsFiles | null>(null);
   const [run, setRun] = useState<IdsRun | null>(null);
@@ -88,6 +91,7 @@ export function IdsPanel() {
         <input ref={input} type="file" accept=".ids,.xml" multiple hidden onChange={(e) => add(e.target.files)} data-ids="file" />
         <button type="button" className="btn primary" disabled={Boolean(busy) || !files?.files.length} onClick={check} data-ids="run"><Play size={13} /> {busy === 'run' ? 'Checking…' : 'Run the check'}</button>
       </div>
+      <IdsFromServer server={server} project={project} />
       {files && files.files.length === 0 && <p className="muted small">The project has no IDS file yet.</p>}
       {files && files.files.length > 0 && (
         <ul className="ids-files">

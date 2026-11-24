@@ -2,32 +2,38 @@
  * IDS on the CDE server (Atrium docs/plan-cde-web.md W6c; engine/serverIds.ts): the project's IDS files under Publishing (owners add
  * and delete them, members read and download them and open their specifications), the `ids` group of a submission's checks (each
  * specification per IDS file and model, a failing one with its requirements, failures and GlobalIds; the notices apart), and Check
- * on the server in Manage → Issue… (the dry run on the commit just saved). One lazy chunk: a session that never shows IDS on a
- * server fetches none of it.
+ * on the server in Manage → Issue… (the dry run on the commit just saved). W6d: the project's own IDS files put on the server, and
+ * the server's brought into the project. One lazy chunk: a session that never shows IDS on a server fetches none of it.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Copy, Download, Info, ListTree, ShieldCheck, Trash2, Upload } from 'lucide-react';
+import { query } from '../../engine/session';
 import { notify } from '../../app/store';
 import { confirmAction } from '../../shell/prompts';
 import { when } from './format';
-import { AtriumError } from '../../engine/atrium';
-import { historyStatus } from '../../engine/remote';
-import { deleteIds, describeIds, dryRunIds, idsGroups, idsPath, listIds, problemLines, putIds, viewIds, type IdsFileInfo, type IdsReport, type IdsSpecView } from '../../engine/serverIds';
-import { specLine } from './ids/ids';
+import { AtriumError, features, getRules } from '../../engine/atrium';
+import { atLeast } from '../../engine/publishing';
+import { historyStatus, signedIn } from '../../engine/remote';
+import { copyRows, deleteIds, describeIds, dryRunIds, idsGroups, idsName, idsPath, idsTexts, listIds, problemLines, putIds, sendIds, viewIds, type CopyState, type IdsFileInfo, type IdsReport, type IdsSpecView, type SentIds } from '../../engine/serverIds';
+import { addIdsFiles, idsFiles, specLine, type IdsFile } from './ids/ids';
 import { saveFromServer, saveForIssue } from './CdePublish';
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const STATUS = { pass: 'Pass', fail: 'Fail', skipped: 'Skipped' } as const;
 
 /** The project's IDS files on the server: owners add (or replace, by name) and delete them; members read and download them. */
-export function IdsServerPanel({ server, project, owner }: { server: string; project: string; owner: boolean }) {
+export function IdsServerPanel({ server, project, owner, model = false }: { server: string; project: string; owner: boolean; model?: boolean }) {
   const [files, setFiles] = useState<IdsFileInfo[] | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [problems, setProblems] = useState<string[] | null>(null);
   const [open, setOpen] = useState<{ name: string; specs: IdsSpecView[] | null } | null>(null);
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  // W6d: the open project's own IDS files (owners, File → Collaborate…), to put on the server.
+  const [mine, setMine] = useState<{ name: string; sha256?: string; text: string }[]>([]);
+  const [putting, setPutting] = useState(false);
+  useEffect(() => { if (owner && model) void query<{ files: IdsFile[] }>('ids.files', { text: true }).then((r) => setMine((r?.files ?? []).map((f) => ({ name: idsName(f.file), sha256: f.sha256, text: f.xml ?? '' })))); }, [owner, model]);
   const load = () => { setFailed(null); listIds(server, project).then((x) => setFiles(x.files)).catch((e) => { setFailed(message(e)); setFiles([]); }); };
   useEffect(load, [server, project]);
   const work = async (f: () => Promise<unknown>) => { setBusy(true); try { await f(); } catch (e) { notify(message(e)); } finally { setBusy(false); } };
@@ -53,7 +59,9 @@ export function IdsServerPanel({ server, project, owner }: { server: string; pro
       {owner && <div className="cde-actions">
         <input ref={input} type="file" accept=".ids,application/xml,text/xml" hidden data-cde-ids-file onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }} />
         <button type="button" className="btn" disabled={busy} onClick={() => input.current?.click()} data-cde-ids-upload><Upload size={13} />Add an IDS file…</button>
+        {mine.length > 0 && <button type="button" className="btn" disabled={busy || !files} onClick={() => setPutting(!putting)} data-cde-ids-put><Upload size={13} />Put this project's IDS files on the server</button>}
       </div>}
+      {putting && files && <IdsCopy rows={copyRows(mine, files)} go={async (names) => { const r = await sendIds(server, project, mine.filter((m) => names.includes(m.name))); load(); return r; }} />}
       {problems && (
         <div className="cde-block small" data-cde-ids-problems={problems.length}>
           <p>The server refused the file: it is not IDS 1.0.</p>
@@ -160,5 +168,81 @@ export function IdsCheckOnServer({ server, project, label }: { server: string; p
       {busy && <span className="muted small"> Checking on the server…</span>}
       {report && <IdsReportView ids={report} />}
     </div>
+  );
+}
+
+const STATE: Record<CopyState, string> = { new: 'New', same: 'The same', differs: 'Changed' };
+
+/**
+ * W6d's pick list, both ways: each file new on the other side, the same there, or changed (a file of that name with other content);
+ * the ticked ones copied, a replace confirmed first; what the server refused said beside its file.
+ */
+function IdsCopy({ rows, go }: { rows: { name: string; state: CopyState }[]; go: (names: string[]) => Promise<SentIds[] | void> }) {
+  const [off, setOff] = useState<string[]>([]);
+  const [sent, setSent] = useState<SentIds[]>([]);
+  const [busy, setBusy] = useState(false);
+  const names = rows.filter((r) => r.state !== 'same' && !off.includes(r.name)).map((r) => r.name);
+  const send = async () => {
+    if (rows.some((r) => r.state === 'differs' && names.includes(r.name)) && !confirmAction('Replace the files of the same name with these copies?')) return;
+    setBusy(true);
+    try { setSent((await go(names)) ?? []); } catch (e) { notify(message(e)); } finally { setBusy(false); }
+  };
+  return (
+    <div className="small" data-cde-ids-copy={rows.length}>
+      <ul className="cde-list">{rows.map((r) => {
+        const s = sent.find((x) => x.name === r.name);
+        return (
+          <li key={r.name} className="row" data-cde-ids-copy-row={r.name} data-state={s ? (s.ok ? 'sent' : 'refused') : r.state}>
+            <label className="row"><input type="checkbox" disabled={r.state === 'same'} checked={names.includes(r.name)} onChange={(e) => setOff(e.target.checked ? off.filter((x) => x !== r.name) : [...off, r.name])} /><span data-no-i18n>{r.name}</span></label>
+            <span className={`chip${r.state === 'differs' ? ' warn' : ''}`}>{STATE[r.state]}</span>
+            {s?.ok && <span className="cde-ok">Sent</span>}
+            {s && !s.ok && (s.problems
+              ? <div className="cde-block"><p>The server refused the file: it is not IDS 1.0.</p><ul>{problemLines(s.problems).map((p, i) => <li key={i} data-no-i18n>{p.line != null && <b>{p.line}: </b>}{p.text}</li>)}</ul></div>
+              : <span className="cde-block">{s.error}</span>)}
+          </li>
+        );
+      })}</ul>
+      <button type="button" className="btn" disabled={busy || names.length === 0} onClick={() => void send()} data-cde-ids-copy-go>Copy the ticked files</button>
+    </div>
+  );
+}
+
+/**
+ * Bring server IDS files into this project (Manage → IDS… and Publishing's IDS tab; editors and owners of a server that offers IDS):
+ * the server's files beside the project's, the ticked ones kept in the project in one undo step.
+ */
+export function IdsFromServer({ server: s0, project: p0 }: { server?: string; project?: string }) {
+  const [at, setAt] = useState<{ server: string; project: string } | null>(null);
+  const [rows, setRows] = useState<{ name: string; state: CopyState }[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      let server = s0, project = p0;
+      if (!server || !project) {
+        const r = (await historyStatus()).remotes[0];
+        if (r?.kind !== 'server' || !await signedIn(r.url)) return;
+        server = r.url; project = r.project;
+      }
+      if ((await features(server)).includes('ids') && atLeast((await getRules(server, project)).role, 'editor') && live) setAt({ server, project });
+    })().catch(() => undefined);
+    return () => { live = false; };
+  }, [s0, p0]);
+  if (!at) return null;
+  const open = async () => {
+    if (rows) { setRows(null); return; }
+    try {
+      const [theirs, ours] = await Promise.all([listIds(at.server, at.project), idsFiles()]);
+      setRows(copyRows(theirs.files, (ours?.files ?? []).map((f) => ({ name: f.file, sha256: f.sha256 }))));
+    } catch (e) { notify(message(e)); }
+  };
+  return (
+    <>
+      <div className="cde-actions"><button type="button" className="btn" onClick={() => void open()} data-ids="from-server"><Download size={13} />Bring server IDS files into this project</button></div>
+      {rows && <IdsCopy rows={rows} go={async (names) => {
+        await addIdsFiles(await idsTexts(at.server, at.project, names));
+        notify('IDS files brought into the project: one undo step.');
+        setRows(null);
+      }} />}
+    </>
   );
 }

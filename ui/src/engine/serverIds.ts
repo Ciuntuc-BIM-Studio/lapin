@@ -4,7 +4,7 @@
  * of a submission's checks said from its codes and details. The screens are modules/core/CdeIds.tsx, fetched when first shown.
  */
 
-import { need, putFile, type Person } from './atrium';
+import { AtriumError, need, putFile, serverBytes, type Person } from './atrium';
 import type { Fact, Finding, FindingWords } from './checks';
 
 export interface IdsFileInfo {
@@ -94,3 +94,37 @@ export function idsGroups(r: IdsReport): { results: (IdsResult & { specs: (IdsSp
     notices: r.findings.filter((f) => f.code !== 'IDS-01'),
   };
 }
+
+// ------------------------------------------------------------ W6d: the project's own IDS files and the server's
+
+export type CopyState = 'new' | 'same' | 'differs';
+/** The name an IDS file takes on the server, which keeps only names ending in .ids. */
+export const idsName = (file: string) => (/\.ids$/i.test(file) ? file : `${file.replace(/\.[^.]*$/, '') || 'requirements'}.ids`);
+/**
+ * What copying each file of one side onto the other does: the same content already there (under any name), a file of that name
+ * (both sides compare names ignoring case) with other content, or new.
+ */
+export const copyRows = (from: { name: string; sha256?: string | null }[], to: { name: string; sha256?: string | null }[]): { name: string; state: CopyState }[] =>
+  from.map((f) => ({
+    name: f.name,
+    state: to.some((t) => t.sha256 && t.sha256 === f.sha256) ? 'same' : to.some((t) => t.name.toLowerCase() === f.name.toLowerCase()) ? 'differs' : 'new',
+  }));
+
+export interface SentIds { name: string; ok: boolean; problems?: string[]; error?: string }
+/** The files put on the server one after the other (owners); each refusal kept with its file (bad_ids with its problems), the rest still sent. */
+export async function sendIds(server: string, project: string, files: { name: string; text: string }[]): Promise<SentIds[]> {
+  const out: SentIds[] = [];
+  for (const f of files) {
+    try {
+      await putIds(server, project, f.name, new TextEncoder().encode(f.text));
+      out.push({ name: f.name, ok: true });
+    } catch (e) {
+      out.push({ name: f.name, ok: false, error: e instanceof Error ? e.message : String(e), problems: e instanceof AtriumError && e.code === 'bad_ids' ? (e.body?.problems as string[] | undefined) ?? [] : undefined });
+    }
+  }
+  return out;
+}
+
+/** The server's IDS files of those names as text, to be kept in the project. */
+export const idsTexts = (server: string, project: string, names: string[]) =>
+  Promise.all(names.map(async (name) => ({ name, text: new TextDecoder().decode(await serverBytes(server, idsPath(project, name))) })));
