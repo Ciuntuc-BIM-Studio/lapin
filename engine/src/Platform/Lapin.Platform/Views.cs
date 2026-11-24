@@ -989,6 +989,8 @@ public static class Views
         var flat = spec.Kind != "3d";
         var faced = flat && !spec.CutOnly;
         var surfaces = faced ? SurfaceHatches.PensOf(m, view, scenes, drawnParts, Background(drawing, spec, penOptions), new Dictionary<string, string?>()) : [];
+        // A plan's floors seen from above hatched by their top layer's surface pattern (forum topic 259), under everything it draws.
+        if (faced && spec.Kind == "plan" && laid == null) surfaces.AddRange(SurfaceHatches.PlanPensOf(m, view, spec, drawing, drawnParts, penOptions));
         // The sun's shadows on what the view sees (ViewShadows), filled under everything it draws: over the surfaces' fills, under their hatches.
         var shadows = faced ? ViewShadows.PenOf(m, view, scenes) : null;
         pens.InsertRange(0, [.. surfaces.Where(p => p.Layer == SurfaceHatches.FillLayer), .. shadows != null ? [shadows] : Array.Empty<Pen>(), .. surfaces.Where(p => p.Layer != SurfaceHatches.FillLayer)]);

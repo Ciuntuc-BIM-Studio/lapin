@@ -30,6 +30,8 @@ export function styleStructure(style: Pick<ViewStyle, 'layers' | 'layersPlan' | 
  * ifc2d: plans draw the 2D an IFC file gave its elements (footprints, symbols) instead of their cut.
  * voids: the openings' voids drawn, crossed and marked (decision 290); voidSizes: with their sizes and bottom levels.
  * finishHatch: plans hatch the rooms' floor finishes (decision 299; a reflected ceiling plan their ceilings).
+ * floorHatch: plans hatch the top faces of the floors they see below their cut with their top layer's surface pattern (forum topic 259);
+ * on in a new project's Architectural style, off in the others and in a project saved before.
  * surfaceHatch: elevations and sections hatch the faces they see with their materials' elevation hatch (decision 325).
  * entourage: how people, cars and plants draw in 2D (decision 341): outlines (the default), abstract, detailed or none;
  * entourageFill: the colour their silhouettes are filled with in elevations and sections, null for none.
@@ -38,7 +40,7 @@ export function styleStructure(style: Pick<ViewStyle, 'layers' | 'layersPlan' | 
  */
 export type EntourageMode = 'outline' | 'abstract' | 'detailed' | 'none';
 export type VegetationMode = 'coloured' | 'maquette';
-export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean; finishHatch?: boolean; surfaceHatch?: boolean; entourage?: EntourageMode; entourageFill?: string | null; /** How its plants' bodies look (decision 818). */ vegetation?: VegetationMode; /** The graphics set its views take when they have none of their own (decision 391). */ graphicsSet?: string | null; /** Its views' level of development (decision 404). */ detail?: number;
+export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean; finishHatch?: boolean; floorHatch?: boolean; surfaceHatch?: boolean; entourage?: EntourageMode; entourageFill?: string | null; /** How its plants' bodies look (decision 818). */ vegetation?: VegetationMode; /** The graphics set its views take when they have none of their own (decision 391). */ graphicsSet?: string | null; /** Its views' level of development (decision 404). */ detail?: number;
   /** The finish layers by the kind of view (the forum's topic #30): plans, and sections with elevations, drawing the walls' and the floors' finishes; on unless false. */
   wallFinishesPlan?: boolean; wallFinishesSection?: boolean; floorFinishesPlan?: boolean; floorFinishesSection?: boolean;
   /** Its plans' and its sections' and elevations' partial structure display (decision 500); unset, its layers. */

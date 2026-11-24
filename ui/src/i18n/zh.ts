@@ -2965,6 +2965,8 @@ export const ZH: Record<string, string> = {
   "Floor hatch": "楼板填充",
   "Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)": "平面图按类型的设定填充房间的楼面饰面（从下方观看的平面图则为其吊顶）",
   "Floor finish hatches": "楼面饰面填充",
+  "Floor surface hatches": "楼板表面填充",
+  "Plans hatch the top of the floors they see below their cut with the surface pattern of the floor's top layer material (Manage → Materials, Elevation), under the walls; a room's floor finish draws its own hatch over it": "平面图以楼板顶层材料的表面图案（管理 → 材料，立面）填充其在剖切面以下看到的楼板顶面，位于墙体之下；房间的楼面饰面在其上绘制自己的填充",
   "Surface hatches": "表面填充", "Elevations and sections hatch the faces they see with their materials' elevation hatch (Manage → Materials), where nothing nearer hides them": "立面和剖面用其材料的立面填充图案填充所见的面（管理 → 材料），前方无遮挡处",
   "Entourage in 2D": "二维配景", "How people, cars and plants draw in plans, elevations and sections: outlines (simple symbols and silhouettes), abstract (circles and boxes), detailed (every line of their symbols and bodies) or not at all; their bodies stay in 3D": "人物、汽车和植物在平面图、立面和剖面中的绘制方式：轮廓（简单符号和剪影）、抽象（圆和方框）、详细（其符号和主体的每一条线）或不绘制；其主体仍保留在三维中", "outlines": "轮廓", "abstract": "抽象", "detailed": "详细", "not drawn": "不绘制", "Silhouette fill": "剪影填充", "The fill of the silhouettes elevations and sections draw for people, cars and plants": "立面和剖面为人物、汽车和植物绘制的剪影的填充", "no fill": "无填充", "light grey": "浅灰色", "pale green": "淡绿色",
   // The vegetation's maquette style (decision 818).

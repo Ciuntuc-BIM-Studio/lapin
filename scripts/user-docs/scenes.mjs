@@ -5282,6 +5282,47 @@ export const scenes = [
     },
   },
   {
+    // Forum topic 259: a floor seen from above hatched on the plan by its top layer's surface pattern, under the walls, its
+    // opening left out; the view style's Floor surface hatches beside Floor finish hatches.
+    id: 'floor-plan-hatch',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] });
+      }
+      const inner = (await t.cmd('architecture.addWall', { storeyId: s, x1: 7, y1: 0, x2: 7, y2: 8 })).id;
+      const outer = (await t.nodes()).filter((n) => n.type === 'IfcWall' && n.id !== inner);
+      await t.cmd('architecture.addDoor', { wallId: inner, x: 7, y: 2 });
+      await t.cmd('architecture.addDoor', { wallId: outer[0].id, x: 3, y: 0 });
+      await t.cmd('architecture.addWindow', { wallId: outer[2].id, x: 3.5, y: 8 });
+      await t.cmd('architecture.addWindow', { wallId: outer[2].id, x: 9.5, y: 8 });
+      const type = (await t.cmd('architecture.createSlabType', {
+        name: 'Oak parquet on screed',
+        layers: [{ material: 'Oak parquet', thickness: 0.02 }, { material: 'Screed', thickness: 0.05 }, { material: 'Reinforced concrete', thickness: 0.15, core: true }],
+      })).id;
+      const slab = (await t.cmd('architecture.addSlab', { storeyId: s, points: outline, typeId: type })).id;
+      // A stair well: the floor's opening, not hatched.
+      await t.cmd('architecture.addSlabOpening', { slabId: slab, points: [[9, 4.5], [11.5, 4.5], [11.5, 7.5], [9, 7.5]] });
+      const parquet = (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === 'Oak parquet');
+      t.expect(parquet, 'the parquet material');
+      await t.cmd('material.update', { id: parquet.id, elevation: { hatch: 'BOARDS_150' } });
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: s, name: 'Floor plan' });
+      await t.ui({ planViewId: plan.id, keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('floor-plan-hatch', { of: '[data-testid=plan]', pad: 0 });
+      // The switch in View settings, ticked in the Architectural style.
+      await t.ui({ dialog: 'viewSettings' });
+      await t.wait(800);
+      t.expect(await t.page.locator('.dialog input[data-testid=view-floor-hatch]').isChecked(), 'the plan hatches its floors');
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     id: 'room-finishes',
     async run(t) {
       await t.fresh();

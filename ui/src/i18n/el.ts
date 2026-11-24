@@ -5494,6 +5494,8 @@ export const EL: Record<string, string> = {
   'Floor hatch': 'Διαγράμμιση δαπέδου',
   'Plans hatch the room\'s floor finish as its type says (a plan seen from below, its ceiling\'s)': 'Οι κατόψεις διαγραμμίζουν το φινίρισμα δαπέδου του χώρου όπως ορίζει ο τύπος του (σε κάτοψη από κάτω, της οροφής του)',
   'Floor finish hatches': 'Διαγραμμίσεις φινιρίσματος δαπέδου',
+  'Floor surface hatches': 'Διαγραμμίσεις επιφάνειας δαπέδων',
+  'Plans hatch the top of the floors they see below their cut with the surface pattern of the floor\'s top layer material (Manage → Materials, Elevation), under the walls; a room\'s floor finish draws its own hatch over it': 'Οι κατόψεις διαγραμμίζουν την πάνω όψη των δαπέδων που βλέπουν κάτω από την τομή τους με το μοτίβο επιφάνειας του υλικού της πάνω στρώσης του δαπέδου (Διαχείριση → Υλικά, Όψη), κάτω από τους τοίχους· το φινίρισμα δαπέδου ενός χώρου σχεδιάζει τη δική του διαγράμμιση από πάνω',
   'Surface hatches': 'Διαγραμμίσεις επιφανειών',
   'Elevations and sections hatch the faces they see with their materials\' elevation hatch (Manage → Materials), where nothing nearer hides them': 'Οι όψεις και οι τομές διαγραμμίζουν τις επιφάνειες που βλέπουν με τη διαγράμμιση όψης των υλικών τους (Διαχείριση → Υλικά), εκεί όπου τίποτα πιο κοντινό δεν τις κρύβει',
   'Entourage in 2D': 'Περιβάλλον 2D',
