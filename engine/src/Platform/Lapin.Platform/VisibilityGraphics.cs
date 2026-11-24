@@ -388,6 +388,12 @@ public sealed class VisibilityGraphics
         for (var i = 0; i < mk.Fills.Count; i++) mk.Fills[i] = mk.Fills[i] with { Color = color };
     }
 
+    /// <summary>Whether the view hides a components' detail set by its name (forum #224; <c>detailSets</c>: {name: {hidden}}; shown by default).</summary>
+    public bool HidesDetailSet(string set) => HidesDetailSet(Graphics, set);
+
+    /// <summary>Whether graphics hide a detail set (<see cref="HidesDetailSet(string)"/>), read before the rest of a view's graphics.</summary>
+    public static bool HidesDetailSet(JsonObject? graphics, string set) => True(graphics?["detailSets"]?[set]?["hidden"]);
+
     /// <summary>Whether the view hides an annotation category.</summary>
     public bool HidesAnnotation(string category) => True(Graphics?["annotations"]?[category]?["hidden"]);
 
@@ -403,7 +409,7 @@ public sealed class VisibilityGraphics
 
     /// <summary>Whether a mark is an annotation that does not belong to this view (<see cref="OwnAnnotationsOnly"/>): another view's, or the model's (a grid, a level, a room's stamp).</summary>
     public bool Foreign(Entity e, ViewMark mk) =>
-        ViewId != null && AnnotationOf(e, mk) != null && e.Str("viewId") != ViewId && mk.Data?["via"] == null;
+        ViewId != null && AnnotationOf(e, mk) != null && e.Str("viewId") is var on && on != ViewId && on != Components.DetailView && mk.Data?["via"] == null;
 
     /// <summary>The subcategories an element's category hides in this view (null: none, so its parts need not be asked).</summary>
     public JsonObject? HiddenSubs(Entity e)

@@ -49,7 +49,7 @@ import { isLightish, LightSection } from './LightSection';
 import { ArraySection, arrayOf } from './ArraySection';
 import { AutoJoinSection } from './AutoJoinSection';
 import { isPathElement } from './autoJoin';
-import { editSelectedGroup, groupSelection, makeComponent, makeUnit, removeFromGroup, ungroupSelection } from './groupTools';
+import { addToDetailSet, editSelectedGroup, groupSelection, makeComponent, makeUnit, removeFromGroup, ungroupSelection } from './groupTools';
 import { toggleRegion3d } from '../../viewport/select3d';
 import { hideHere, isolateHere, resetHere } from '../../viewport/viewTemporary';
 import { QuickSelectDialog } from './QuickSelectDialog';
@@ -244,6 +244,8 @@ const core: LapinModule = {
       { id: 'modify.group', label: 'Create group', icon: Group, shortcut: 'GP', run: () => void groupSelection() },
       { id: 'modify.component', label: 'Make component', icon: Boxes, shortcut: 'CK', run: () => void makeComponent() },
       { id: 'modify.unit', label: 'Make apartment type', icon: Building2, shortcut: 'CU', run: () => void makeUnit() },
+      // Detail sets of a component (forum #224): 2D drafting every instance draws, shown per view.
+      { id: 'modify.detailSet', label: 'Add to detail set', icon: PenLine, shortcut: 'DS', run: () => void addToDetailSet() },
       { id: 'modify.ungroup', label: 'Ungroup', icon: Ungroup, shortcut: 'UG', run: () => void ungroupSelection() },
       { id: 'modify.editGroup', label: 'Edit group', icon: PencilRuler, shortcut: 'EG', run: editSelectedGroup },
       { id: 'modify.removeFromGroup', label: 'Remove from group', icon: SquareMinus, run: () => void removeFromGroup() },

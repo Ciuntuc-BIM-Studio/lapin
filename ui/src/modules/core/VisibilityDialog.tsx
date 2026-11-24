@@ -38,6 +38,8 @@ interface Graphics extends Rules {
   pointClouds?: Record<string, CloudRow>;
   /** Only the view's own annotations (issue #111): the grids, levels, rooms' stamps and other views' marks left out. */
   ownAnnotationsOnly?: boolean;
+  /** The components' detail sets this view hides (forum #224): shown unless hidden. */
+  detailSets?: Record<string, { hidden?: boolean }>;
 }
 interface ImportInfo { id: string; kind: 'dxf' | 'image'; name: string; layers: string[] }
 export interface ViewFilter { id: string; name: string; match: 'all' | 'any'; rules: FilterRule[] }
@@ -55,6 +57,8 @@ export interface Visibility {
   /** Hidden until the graphics show them (rooms, in 3D). */ hiddenByDefault?: string[];
   links?: LinkInfo[]; annotations?: string[]; imports?: ImportInfo[]; filters?: { id: string; name: string }[];
   pointClouds?: CloudInfo[];
+  /** The components' detail sets of the project, by name (forum #224). */
+  detailSets?: string[];
 }
 
 /** The ISO 128 pen series (mm), as the engine reads a category's weight; the older names still show when a project has them. */
@@ -361,6 +365,20 @@ export function VisibilityDialog() {
                 })}
               </tbody>
             </table>
+            {(v.detailSets ?? []).length > 0 && (
+              <table className="layer-table vv-detail-sets" data-testid="vv-detail-sets">
+                <thead><tr><th>Shown</th><th>Detail set of components</th></tr></thead>
+                <tbody>
+                  {(v.detailSets ?? []).map((name) => (
+                    <tr key={name} data-detail-set={name}>
+                      <td><input type="checkbox" aria-label={name} checked={!v.graphics?.detailSets?.[name]?.hidden}
+                        onChange={(e) => void execute('view.graphics', { id: target, detailSet: name, value: e.target.checked ? null : { hidden: true } })} /></td>
+                      <td data-no-i18n>{name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
             </>
           )}
           {tab === 'imports' && (

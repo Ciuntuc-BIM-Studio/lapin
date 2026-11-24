@@ -34,6 +34,19 @@ Selectează elementele și alege **Modifică → Fă componentă** (<kbd>CK</kbd
 - **Mirror** o păstrează instanță, cu mâna schimbată: ce modifici în oricare ajunge oglindit în cealaltă.
 - **Pereții** dintr-o componentă se îmbină între ei cum i-ai desenat, în fiecare instanță. Unde unul întâlnește un perete care nu face parte din nicio instanță, se oprește în el: capătul lui se taie la fața acelui perete, iar celălalt perete rămâne cum e, așa că mutarea sau editarea unei instanțe nu schimbă pereții din jur. Selectează ușa împreună cu peretele ei: o ușă singură nu poate face parte dintr-o componentă.
 
+![O travee de fațadă din pereți făcută componentă, copiată și oglindită de-a lungul fațadei, cu notele ei într-un set de detalii](shots/component-walls-plan.webp)
+
+### Seturi de detalii
+
+O componentă poate purta cu ea informație 2D, ca grupurile de detaliu atașate din Revit: linii, hașuri, texte, simboluri, etichete și cote desenate pe un plan, strânse în **seturi de detalii** cu nume, de pildă *Tehnic* sau *Vânzare*. Fiecare instanță le desenează la locul ei, rotite sau oglindite odată cu ea, în fiecare plan al nivelului ei.
+
+- Desenează notele pe un plan, peste o instanță. Selectează-le împreună cu instanța (sau deschide mai întâi instanța) și alege **Modifică → Adaugă în setul de detalii** (<kbd>DS</kbd>), sau **Adaugă în setul de detalii** din proprietățile instanței. Scrie numele setului: un nume nou face un set nou. Desenul selectat împreună cu elementele când faci componenta intră într-un set numit *Details*.
+- Le editezi în oricare instanță, ca pe orice membru: muți o linie, schimbi un text, ștergi o hașură. Toate instanțele urmează, într-un singur pas de undo. O etichetă dintr-un set etichetează același element în fiecare instanță.
+- Fiecare vedere alege ce seturi arată: **Vizibilitate / Grafică → Adnotări → Seturi de detalii ale componentelor**. O vedere nouă le arată pe toate; debifează *Vânzare* pe planurile tehnice și *Tehnic* pe planurile de vânzare. Setul de grafică al unui șablon de vedere face asta pentru toate vederile lui.
+- **Scoate din grup** sau **Degrupează** face dintr-un detaliu desen 2D obișnuit pe planul nivelului lui.
+
+![Seturile de detalii ale unei vederi în Vizibilitate / Grafică](shots/component-detail-sets.webp)
+
 ### Tipuri de apartament
 
 Un **tip de apartament** e o componentă numită și listată ca apartament. Selectează pereții, încăperile și mobilierul unui apartament și alege **Modificare → Fă tip de apartament** (<kbd>CU</kbd>). Ușile și ferestrele din acei pereți vin cu ei. Copiază-l, rotește-l sau oglindește-l cu **Mirror**, ca apartamentul de pe cealaltă parte a casei scării: o schimbare într-unul ajunge în celelalte, oglindită acolo unde sunt oglindite, iar fiecare element își păstrează identitatea în IFC.

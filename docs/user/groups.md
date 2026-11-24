@@ -34,6 +34,19 @@ Select the elements and choose **Modify → Make component** (<kbd>CK</kbd>). Th
 - **Mirror** keeps it an instance, of the other hand: what you change in either reaches the other mirrored.
 - **Walls** in a component join among themselves as you drew them, in every instance. Where one of them meets a wall that is not part of any instance, it stops in it: its end is cut at that wall's face and the other wall is left as it is, so moving or editing an instance never changes the walls around it. Select a door together with its wall: a door alone cannot be part of a component.
 
+![A facade bay of walls made a component, copied and mirrored along the facade, its notes in a detail set](shots/component-walls-plan.webp)
+
+### Detail sets
+
+A component can carry 2D information with it, as Revit's attached detail groups: lines, hatches, texts, symbols, tags and dimensions drawn on a plan, gathered in named **detail sets** such as *Technical* or *Sales*. Every instance draws them in its own place, turned or mirrored with it, in every plan of its storey.
+
+- Draw the notes on a plan over one instance. Select them together with the instance (or open the instance first) and choose **Modify → Add to detail set** (<kbd>DS</kbd>), or **Add to detail set** in the instance's properties. Type the set's name: a new name makes a new set. Drafting selected with the elements when you make the component goes into a set called *Details*.
+- Edit them inside any instance, as any member: move a line, change a text, delete a hatch. Every instance follows, in one undo step. A tag in a set tags the same element in each instance.
+- Each view chooses the sets it shows: **Visibility / Graphics → Annotations → Detail sets of components**. A new view shows them all; untick *Sales* on the technical plans and *Technical* on the plans for selling. A view template's graphics set does this for all its views.
+- **Remove from group** or **Ungroup** turns a detail back into plain drafting on its storey's plan.
+
+![A view's detail sets in Visibility / Graphics](shots/component-detail-sets.webp)
+
 ### Apartment types
 
 An **apartment type** is a component named and listed as an apartment. Select an apartment's walls, rooms and furniture and choose **Modify → Make apartment type** (<kbd>CU</kbd>). The doors and windows in those walls come with them. Copy it, rotate it or **Mirror** it, as the flat on the other side of a staircase: a change in one reaches the others, mirrored where they are, and every element keeps its identity in IFC.

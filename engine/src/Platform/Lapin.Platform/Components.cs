@@ -36,6 +36,93 @@ public static class Components
     /// <summary>On a component: "unit" for an apartment type (docs/plan-units.md).</summary>
     public const string KindKey = "kind";
     public const string UnitKind = "unit";
+    /// <summary>On a member drawn in 2D: the detail set it is in (forum #224, Revit's attached detail groups).</summary>
+    public const string DetailSetKey = "detailSet";
+    /// <summary>
+    /// The view a detail is kept on: none of the project's. It belongs to its instance, and every plan of the instance's storey
+    /// draws it there (<see cref="DetailsIn"/>), so deleting, duplicating or saving a view never touches it.
+    /// </summary>
+    public const string DetailView = "component-detail";
+    /// <summary>On a detail: the view it was drawn on, where it goes back when it leaves its instance and its storey has no plan to take it.</summary>
+    const string DetailFromKey = "detailFrom";
+    /// <summary>What may be a detail: 2D drafting (lines, hatches, texts, symbols, tags, dimensions).</summary>
+    static readonly string[] DetailKinds = ["DRAFT", "TEXT", Symbols.Predefined, "TAG", "DIMENSION"];
+
+    /// <summary>Whether an entity is a detail of a component: an annotation in a detail set.</summary>
+    public static bool IsDetail(Entity e) => e.Class == IfcClass.Annotation && e.Str(DetailSetKey) != null;
+
+    /// <summary>The detail sets of a component, by name, as its instances have them.</summary>
+    public static IEnumerable<string> DetailSets(IModelView m, string component) =>
+        Instances(m, component).SelectMany(g => Groups.MembersOf(m, g.Id)).Select(m.Get).OfType<Entity>().Where(IsDetail).Select(e => e.Str(DetailSetKey)!).Distinct().Order(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The storey an instance stands on: its first member's that has one.</summary>
+    static string? StoreyOfInstance(IModelView m, string group) =>
+        Groups.MembersOf(m, group).Select(id => Spatial.StoreyOf(m, id)?.Id).FirstOrDefault(s => s != null);
+
+    /// <summary>
+    /// The model as a view draws its annotations: each instance's details drawn on a plan of its storey whose graphics show
+    /// their set (<c>detailSets</c>, <see cref="VisibilityGraphics.HidesDetailSet"/>), as if drawn on it, in the instance's own
+    /// place (each instance has its own, carried by <see cref="Settle"/>); never in another kind of view. The model itself when
+    /// there are none.
+    /// </summary>
+    public static IModelView DetailsIn(IModelView m, Entity view, JsonObject? graphics)
+    {
+        if ((view.Str("kind") ?? "plan") != "plan" || view.Str("storeyId") is not { } storey) return m;
+        List<Entity>? put = null;
+        Dictionary<string, string?>? storeys = null;
+        foreach (var e in m.OfClass(IfcClass.Annotation))
+        {
+            if (e.Str("viewId") != DetailView || e.Str(DetailSetKey) is not { } set || VisibilityGraphics.HidesDetailSet(graphics, set)) continue;
+            if (Groups.Of(m, e.Id) is not { } g || Of(g) == null) continue;
+            storeys ??= [];
+            if (!storeys.TryGetValue(g.Id, out var on)) storeys[g.Id] = on = StoreyOfInstance(m, g.Id);
+            if (on != storey) continue;
+            var attrs = e.CloneAttrs();
+            attrs["viewId"] = view.Id;
+            (put ??= []).Add(e.With(attrs: attrs));
+        }
+        return put == null ? m : new OverlayModel(m, put);
+    }
+
+    /// <summary>
+    /// Details left without an instance (ungrouped, taken out, made plain): plain drafting again, on a plan of the storey their
+    /// instance stood on (its floor plan, else the storey's own), or the view they were drawn on.
+    /// </summary>
+    static void Unkeep(ICommandContext ctx, IEdit edit)
+    {
+        var m = ctx.Model;
+        foreach (var e in m.OfClass(IfcClass.Annotation).Where(x => x.Str("viewId") == DetailView).ToList())
+        {
+            if (Groups.Of(m, e.Id) is { } g && Of(g) != null) continue;
+            var storey = edit.RelationChanges.Select(r => r.Before).Where(r => r is { Class: Groups.Rel } && r.Related.Contains(e.Id))
+                .SelectMany(r => r!.Related).Where(x => x != e.Id).Select(x => Spatial.StoreyOf(m, x)?.Id).FirstOrDefault(s => s != null);
+            var attrs = e.CloneAttrs();
+            var from = attrs[DetailFromKey]?.GetValue<string>();
+            attrs["viewId"] = storey != null ? StoreyPlans.Of(m, storey)?.Id ?? "plan:" + storey
+                : from != null && Views.Find(m, from) != null ? from : Spatial.Storeys(m).FirstOrDefault() is { } first ? "plan:" + first.Id : from;
+            attrs.Remove(DetailSetKey);
+            attrs.Remove(DetailFromKey);
+            attrs.Remove(MemberKey);
+            ctx.Replace(e.With(attrs: attrs));
+        }
+    }
+
+    /// <summary>An instance copied by a command that leaves drafting out (Copy to storeys): its details copied into its twin, naming the twin's members.</summary>
+    public static void CopyDetails(ICommandContext ctx, string group, string twin, IReadOnlyDictionary<string, string> names)
+    {
+        var m = ctx.Model;
+        if (m.Get(group) is not { } g || Of(g) == null) return;
+        var made = new List<string>();
+        foreach (var d in Groups.MembersOf(m, group).Select(m.Get).OfType<Entity>().Where(IsDetail).ToList())
+        {
+            var text = d.Attrs.ToJsonString();
+            foreach (var (a, b) in names) text = text.Replace(a, b, StringComparison.Ordinal);
+            var copy = new Entity(ctx.NewId(), d.Class, d.Name, JsonNode.Parse(text)!.AsObject(), d.PredefinedType);
+            ctx.Add(copy);
+            made.Add(copy.Id);
+        }
+        if (made.Count > 0) ctx.RelateAll(Groups.Rel, twin, made);
+    }
 
     public static string? Of(Entity group) => group.Class == Groups.Class ? group.Str(Key) : null;
 
@@ -236,6 +323,7 @@ public static class Components
                 StopInnerWalls(ctx, g);
                 foreach (var h in hooks) h.Placed(ctx, m.Get(id)!);
             }
+        Unkeep(ctx, edit);
         foreach (var c in m.OfClass(Class).ToList()) if (!Instances(m, c.Id).Any()) ctx.Remove(c.Id);
     }
 
@@ -419,7 +507,7 @@ public static class Components
             }
             // On the instance's own storey, with the storey's heights.
             if (storey != null && m.Get(storey) is { } target)
-                StoreyMove.Move(ctx, [.. copies.Values.Select(m.Get).OfType<Entity>().Where(e => Spatial.StoreyOf(m, e.Id)?.Id != storey)], target, "storey");
+                StoreyMove.Move(ctx, [.. copies.Values.Select(m.Get).OfType<Entity>().Where(e => Spatial.StoreyOf(m, e.Id) is { } s && s.Id != storey)], target, "storey");
             // Under the ids the instance had, its GlobalIds staying: the copies join it, what it had goes with its sketches.
             ctx.RelateAll(Groups.Rel, other.Id, copies.Values);
             var keep = new Dictionary<string, string>();
@@ -518,7 +606,18 @@ public static class Components
                 ctx.Replace(e.With(attrs: attrs));
                 foreach (var hosted in HostedBy(ctx.Model, e.Id).ToList()) GiveKey(ctx, hosted);
             }
-            var at = Middle(ctx, entities);
+            // 2D drafting selected with the elements: a detail set of the component (forum #224), "Details" unless named.
+            var detailSet = ((string?)a["detailSet"])?.Trim() is { Length: > 0 } ds ? ds : "Details";
+            foreach (var e in entities.Where(e => e.Class == IfcClass.Annotation && DetailKinds.Contains(e.PredefinedType) && e.Str("viewId") is { } v && v != DetailView && (Views.Find(ctx.Model, v)?.Str("kind") ?? "") == "plan"))
+                if (ctx.Model.Get(e.Id) is { } now)
+                {
+                    var attrs = now.CloneAttrs();
+                    attrs[DetailSetKey] = detailSet;
+                    attrs[DetailFromKey] = now.Str("viewId");
+                    attrs["viewId"] = DetailView;
+                    ctx.Replace(now.With(attrs: attrs));
+                }
+            var at = Middle(ctx, entities.Where(e => e.Class != IfcClass.Annotation).DefaultIfEmpty().OfType<Entity>().ToList() is { Count: > 0 } placed ? placed : entities);
             var g = group.CloneAttrs();
             g[Key] = component.Id;
             g[XfKey] = Write([at.X, at.Y, 0, 0, 0]);
@@ -541,6 +640,36 @@ public static class Components
             return new JsonObject { ["component"] = component.Id };
         });
 
+        // 2D drafting put in a detail set of an instance's component (forum #224): {id: the instance, ids, set}. It becomes the
+        // component's: every instance has it, in its own place, and every plan of its storey that shows the set draws it.
+        r.Command("component.addDetail", "Add to detail set", (ctx, a) =>
+        {
+            var m = ctx.Model;
+            var group = m.Get((string?)a["id"] ?? "") is { Class: Groups.Class } x && Of(x) != null ? x : throw new CommandException("Open or select an instance of a component to add details to it.");
+            var set = ((string?)a["set"])?.Trim() is { Length: > 0 and <= 80 } n ? n : throw new CommandException("A detail set needs a name.");
+            var ids = Args.Ids(a).Where(x => x != group.Id).ToList();
+            if (ids.Count == 0) throw new CommandException("Select the 2D drafting to add to the detail set.");
+            var adding = new List<string>();
+            foreach (var id in ids)
+            {
+                if (m.Get(id) is not { } e) continue;
+                var view = e.Str("viewId") is { } vid && vid != DetailView ? Views.Find(m, vid) : null;
+                if (e.Class != IfcClass.Annotation || !DetailKinds.Contains(e.PredefinedType) || (e.Str("viewId") != DetailView && (view == null || (view.Str("kind") ?? "plan") != "plan")))
+                    throw new CommandException($"„{e.Name}” cannot be in a detail set: only 2D drafting drawn on a plan can (lines, hatches, texts, symbols, tags, dimensions).");
+                if (Groups.Of(m, id) is { } was && was.Id != group.Id && Of(was) != null) throw new CommandException($"„{e.Name}” is in another instance.");
+                var attrs = e.CloneAttrs();
+                attrs[DetailSetKey] = set;
+                if (view != null) { attrs[DetailFromKey] = view.Id; attrs["viewId"] = DetailView; }
+                ctx.Replace(e.With(attrs: attrs));
+                adding.Add(id);
+            }
+            var left = adding.Select(id => Groups.Of(m, id)?.Id).OfType<string>().Where(g => g != group.Id).Distinct().ToList();
+            var fresh = adding.Where(id => Groups.Of(m, id)?.Id != group.Id).ToList();
+            if (fresh.Count > 0) ctx.RelateAll(Groups.Rel, group.Id, fresh);
+            Groups.DropEmpty(ctx, left);
+            return new JsonObject { ["set"] = set };
+        });
+
         r.Command("component.rename", "Rename component", (ctx, a) =>
         {
             var c = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x ? x : throw new CommandException("There is no such component.");
@@ -558,6 +687,7 @@ public static class Components
                 ["id"] = c.Id, ["name"] = c.Name, ["kind"] = c.Str(KindKey),
                 ["instances"] = new JsonArray([.. instances.Select(g => (JsonNode)g.Id)]),
                 ["members"] = instances.Select(g => Groups.MembersOf(q.Model, g.Id).Count()).FirstOrDefault(),
+                ["detailSets"] = new JsonArray([.. DetailSets(q.Model, c.Id).Select(x => (JsonNode)x)]),
             };
         })]));
     }

@@ -36,13 +36,26 @@ What meets the building belongs to the instance (`docs/plan-units.md`, Limita). 
 
 In IFC an instance is an `IfcGroup` with `Lapin_Unit` (its type's name and id, where it stands). It comes back an instance when the file is imported without "As one group" (`IfcImport`, `UnitInstances`).
 
+## Detail sets (forum #224)
+
+Revit's detail groups attached to a model group: named sets of 2D drafting that travel with each instance and that a view shows or hides by set.
+
+- A **detail** is a member of an instance like any other: an `IfcAnnotation` (a drafted shape or hatch, a text, a symbol, a tag, a dimension) with `detailSet` (the set's name) and `viewId` set to `Components.DetailView` (`component-detail`), a view that is none of the project's, so deleting, duplicating or saving a view never touches it, and the 3D view leaves it out. `detailFrom` keeps the view it was drawn on.
+- **Carried as members are** (`Settle`, `Carry`): each instance has its own copy, placed by `Between` (turned, mirrored), under its own ids kept through edits (`componentKey`); a tag's element and a dimension's points named after members are reworded to the instance's own. Copy to storeys copies an instance's details into its twin (`Components.CopyDetails`).
+- **Drawn** by `Components.DetailsIn`, which `Views.Render` asks before the annotations: in a plan, the details of each instance standing on its storey whose set the view's graphics do not hide are put in an overlay model (`OverlayModel`) as if drawn on that view, so every module draws them with its own code (lines, hatches, texts, symbols, tags, dimensions), on screen, on sheets and in exports. Any other kind of view draws none.
+- **Per view** (the one resolver): `view.graphics {id, detailSet, value: {hidden: true} | null}` writes `detailSets` in the view's graphics (or its graphics set, so a template rules all its views); `VisibilityGraphics.HidesDetailSet`. Shown by default. A detail never counts as another view's annotation (`ownAnnotationsOnly`).
+- **Made**: `component.addDetail {id: instance, ids, set}` (Modify → Add to detail set, DS; the instance's properties), only 2D drafting drawn on a plan; `component.make` puts drafting selected with the elements in the set `Details` (or `detailSet`). One undo step each. `component.list` and the Visibility / Graphics query list the sets.
+- **Leaving**: a detail no longer in an instance (Remove from group, Ungroup) is plain drafting again, on its storey's floor plan (`Unkeep`).
+- Tests: `ComponentDetailTests`.
+
 ## Commands
 
 `component.make {ids, name?}`, `component.makeUnique {id}`, `component.rename {id, name}`, the query `component.list`. Interface: Modify → Make component (CK), the group's section in Properties (Select instances, Make unique), Manage → Components.
 
 ## Not done
 
-- Detail groups attached to a component (forum #224, Revit's term): sets of 2D drafting that travel with each instance and that a view shows or hides by set ("technical", "sales"). Today a plan view's drafting may be a member of a group, but a component's instances live on several storeys and views, so it needs its own design: drafting owned by the component and drawn per view at each instance, with a per-view choice of sets. A tag already follows the element it tags, in every instance, since members keep their ids, but it is placed per instance.
+- A tag or a dimension in a detail set hung on an element outside the instance (a wall of the building) is not hung again on what stands by each instance: its copies point at the same element. Only what it names among the members is reworded to each instance's own.
+- Details in sections and elevations: a detail set is drawn in plans only.
 
 - Nested components, on purpose: an element belongs to one group, and selection and the edit scope rest on that (`docs/groups.md`). Letting groups nest changes both everywhere, for every group, not only for components.
 - Scaled instances, on purpose: `Placement2D` is rigid, and only drafting knows a scale. A scaled floor or solid would have to say what becomes of its thickness, its height and its sketch's numbers.
