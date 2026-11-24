@@ -12706,6 +12706,15 @@ export const scenes = [
       t.expect((await t.page.locator('[data-testid=cde-storage]').innerText()).match(/\d/) != null, 'the size the issues take in the project file is shown');
       await t.shot('cde-issues', { of: '.dialog', pad: 0 });
       await t.button('Done', { exact: true });
+      // The same sheet again: Issue… proposes a new revision of issue 1 (decision 818), P02, "New issue" still a choice.
+      await t.wait(300);
+      await t.tool('manage.issue');
+      await t.page.waitForSelector('[data-field=issue-target]', { timeout: 15_000 });
+      await t.page.waitForFunction(() => document.querySelector('.dialog input[aria-label=Revision]')?.value === 'P02', null, { timeout: 10_000 });
+      t.expect((await t.page.locator('[data-field=issue-target]').inputValue()) !== '', 'the same sheet again is proposed as a new revision of issue 1');
+      t.expect(await t.page.locator('[data-field=issue-target] option[value=""]').count() === 1, 'a new issue stays a choice');
+      await t.shot('cde-reissue', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog-head button[title=Close]').click();
     },
   },
   {

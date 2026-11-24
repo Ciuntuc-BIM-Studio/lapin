@@ -8,7 +8,7 @@ set -euo pipefail
 # Nothing on the server changes but that folder. While the old Lapin is under
 # maintenance, the server's nginx/default.conf opens /web/ and /api/feedback only.
 #
-#   deploy/web/deploy.sh [id] [--app-only | --docs-only] [--full] [--jobs N] [--dry-run]
+#   deploy/web/deploy.sh [id] [--app-only | --docs-only | --cde] [--full] [--jobs N] [--dry-run]
 #
 #   id            the edition (default: lapin); the app is built unless SKIP_BUILD=1
 #   (nothing)     the app first, live in minutes, then the user guide
@@ -18,6 +18,9 @@ set -euo pipefail
 #                 and a full run anyway once a week: scripts/user-docs/run.mjs)
 #   --jobs N      how many scenes at once (default: run.mjs's, by cores and memory)
 #   --dry-run     everything but the server: the uploads printed, not made
+#   --cde         the CDE's copy instead (Atrium docs/plan-cde-web.md, W1): build/<id>/web-cde (build-web.mjs --cde)
+#                 to <DEPLOY_DIR>/www/cde, served at https://cde.lapinbim.com/ by the cde.lapinbim.com server block
+#                 (Atrium deploy/cde/nginx-cde.conf), Atrium Server's APIs on the same origin; no guide
 #
 # The user guide goes to <DEPLOY_DIR>/www/docs (https://lapin.ciuntucbimstudio.ro/docs/):
 # its pictures retaken from this commit by scripts/user-docs (pnpm docs:user), so
@@ -28,7 +31,7 @@ set -euo pipefail
 # Careful: the old Lapin's deploy (ifc-lite/deploy/lapin/deploy.sh) syncs www/
 # with --delete and would remove www/web; give it --exclude web before using it again.
 
-ID="lapin"; APP=1; DOCS=1; DRY=0; DOC_ARGS=()
+ID="lapin"; APP=1; DOCS=1; DRY=0; CDE=0; DOC_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --app-only) DOCS=0 ;;
@@ -36,6 +39,7 @@ while [[ $# -gt 0 ]]; do
     --full) DOC_ARGS+=(--full) ;;
     --jobs) DOC_ARGS+=(--jobs "$2"); shift ;;
     --dry-run) DRY=1 ;;
+    --cde) CDE=1; DOCS=0 ;;
     -*) echo "✗ Unknown option $1"; exit 1 ;;
     *) ID="$1" ;;
   esac
@@ -48,7 +52,8 @@ done
 if (( DRY )); then SERVER="${DEPLOY_SERVER:-user@server}"; else SERVER="${DEPLOY_SERVER:?Set DEPLOY_SERVER (user@host) in deploy/web/.env, see .env.example}"; fi
 REMOTE_DIR="${DEPLOY_DIR:-/opt/lapin}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-WEB="${ROOT}/build/${ID}/web"
+WEB="${ROOT}/build/${ID}/web"; TARGET="web"; URL="https://lapin.ciuntucbimstudio.ro/web/"
+if (( CDE )); then WEB="${ROOT}/build/${ID}/web-cde"; TARGET="cde"; URL="https://cde.lapinbim.com/"; fi
 cd "${ROOT}"
 
 # What reaches the server, or (--dry-run) what would.
@@ -64,17 +69,18 @@ SHA="$(git rev-parse --short=12 HEAD)"
 
 if (( APP )); then
   T0=$SECONDS
-  if [[ "${SKIP_BUILD:-0}" != "1" ]]; then node scripts/build-web.mjs "${ID}"; fi
+  if [[ "${SKIP_BUILD:-0}" != "1" ]]; then node scripts/build-web.mjs "${ID}" $( (( CDE )) && echo --cde ); fi
   [[ -f "${WEB}/index.html" ]] || { echo "No build in ${WEB}"; exit 1; }
-  node scripts/check-web.mjs "${ID}"
+  # check-web drives the ordinary start screen; the CDE's starts at its sign-in.
+  (( CDE )) || node scripts/check-web.mjs "${ID}"
   printf '{"commit":"%s","builtAt":"%s"}\n' "${SHA}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "${WEB}/version.json"
 
-  echo "→ ${SHA} to ${SERVER}:${REMOTE_DIR}/www/web"
-  remote ssh "${SERVER}" "mkdir -p ${REMOTE_DIR}/www/web"
+  echo "→ ${SHA} to ${SERVER}:${REMOTE_DIR}/www/${TARGET}"
+  remote ssh "${SERVER}" "mkdir -p ${REMOTE_DIR}/www/${TARGET}"
   # The hashed files first, the page last: an open tab never meets a page whose files are not there yet.
-  remote rsync -az --exclude index.html "${WEB}/" "${SERVER}:${REMOTE_DIR}/www/web/"
-  remote rsync -az "${WEB}/index.html" "${SERVER}:${REMOTE_DIR}/www/web/index.html"
-  echo "✓ https://lapin.ciuntucbimstudio.ro/web/ ($(( SECONDS - T0 )) s)"
+  remote rsync -az --exclude index.html "${WEB}/" "${SERVER}:${REMOTE_DIR}/www/${TARGET}/"
+  remote rsync -az "${WEB}/index.html" "${SERVER}:${REMOTE_DIR}/www/${TARGET}/index.html"
+  echo "✓ ${URL} ($(( SECONDS - T0 )) s)"
 fi
 
 if (( DOCS )); then

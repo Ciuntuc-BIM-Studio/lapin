@@ -388,7 +388,9 @@ public sealed class EngineHub
         {
             // A long call's progress (an import's stages) goes to the local interface that asked, as text events, while the call runs.
             _dispatcher.Progress = client is SocketClient asking ? o => asking.Post(new JsonObject { ["event"] = "progress", ["data"] = o }.ToJsonString()) : null;
-            var (reply, diff) = _dispatcher.Handle(text, caller);
+            // Awaited inside the gate: a remote call (a push, a pull) holds the queue while it waits for the server, so nothing
+            // changes the session under it; every other call ends at once.
+            var (reply, diff) = await _dispatcher.HandleAsync(text, caller);
             _dispatcher.Progress = null;
             // A big snapshot's first parts, to the one who asked, before the reply that carries its last.
             foreach (var frame in _dispatcher.TakeCallerFrames()) client?.Post(frame);

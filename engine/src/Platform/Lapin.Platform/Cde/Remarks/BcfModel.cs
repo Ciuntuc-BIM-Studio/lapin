@@ -101,10 +101,20 @@ public sealed record BcfComment(Guid Guid, string Date, string Author, string Te
         : null;
 }
 
-/// <summary>A topic: the remark itself, with its comments and viewpoints.</summary>
+/// <summary>
+/// A topic: the remark itself, with its comments and viewpoints, and its reference links (BCF's <c>ReferenceLink</c>: free text, usually
+/// URLs; Lapin's own <c>lapin-document:&lt;document&gt;</c> ties the remark to an issued document, see <see cref="Bcf.DocumentLink"/>).
+/// </summary>
 public sealed record BcfTopic(Guid Guid, string Title, string? Description, string? Type, string? Status, string? Priority, int? Index, string CreationDate, string CreationAuthor,
-    string? ModifiedDate, string? ModifiedAuthor, string? AssignedTo, string? DueDate, string? Stage, IReadOnlyList<string> Labels, IReadOnlyList<BcfComment> Comments, IReadOnlyList<BcfViewpoint> Viewpoints)
+    string? ModifiedDate, string? ModifiedAuthor, string? AssignedTo, string? DueDate, string? Stage, IReadOnlyList<string> Labels, IReadOnlyList<BcfComment> Comments, IReadOnlyList<BcfViewpoint> Viewpoints,
+    IReadOnlyList<string>? ReferenceLinks = null)
 {
+    /// <summary>The reference links, none as an empty list.</summary>
+    public IReadOnlyList<string> Links => ReferenceLinks ?? [];
+
+    /// <summary>The documents the remark is tied to (its <c>lapin-document:</c> links), in order.</summary>
+    public IReadOnlyList<string> Documents => Bcf.DocumentsOf(Links);
+
     /// <summary>The topic as the remark's attributes (its title is the entity's name).</summary>
     public JsonObject ToJson(bool withSnapshots = true)
     {
@@ -114,6 +124,8 @@ public sealed record BcfTopic(Guid Guid, string Title, string? Description, stri
         Put("modifiedDate", ModifiedDate); Put("modifiedAuthor", ModifiedAuthor); Put("assignedTo", AssignedTo); Put("dueDate", DueDate); Put("stage", Stage);
         if (Index is { } i) o["index"] = i;
         o["labels"] = new JsonArray(Labels.Select(s => (JsonNode)s).ToArray());
+        // Only when there are some: a remark without links keeps the shape it had before links were kept (no upgrade, no change on a sync).
+        if (Links.Count > 0) o["referenceLinks"] = new JsonArray(Links.Select(s => (JsonNode)s).ToArray());
         o["comments"] = new JsonArray(Comments.Select(c => (JsonNode)c.ToJson()).ToArray());
         o["viewpoints"] = new JsonArray(Viewpoints.Select(v => (JsonNode)v.ToJson(withSnapshots)).ToArray());
         return o;
@@ -123,7 +135,7 @@ public sealed record BcfTopic(Guid Guid, string Title, string? Description, stri
         Json.Number(o["index"]) is { } ix ? (int)ix : null, (string?)o["creationDate"] ?? Bcf.Now(), (string?)o["creationAuthor"] ?? "", (string?)o["modifiedDate"], (string?)o["modifiedAuthor"],
         (string?)o["assignedTo"], (string?)o["dueDate"], (string?)o["stage"], Bcf.Strings(o["labels"]),
         (o["comments"] as JsonArray ?? []).Select(BcfComment.From).OfType<BcfComment>().ToList(),
-        (o["viewpoints"] as JsonArray ?? []).Select(BcfViewpoint.From).OfType<BcfViewpoint>().ToList());
+        (o["viewpoints"] as JsonArray ?? []).Select(BcfViewpoint.From).OfType<BcfViewpoint>().ToList(), Bcf.Strings(o["referenceLinks"]));
 }
 
 /// <summary>A BCF file: its version ("2.1" or "3.0") and its topics.</summary>
@@ -138,6 +150,27 @@ public static class Bcf
     public static string Now() => DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
 
     public static Guid? ParseGuid(string? s) => s != null && Guid.TryParse(s.Trim(), out var g) ? g : null;
+
+    /// <summary>
+    /// The reference link that ties a remark to a document: <c>lapin-document:</c> and the document's container name as an issue sends it in a
+    /// submission's <c>documents</c> (a file's name without its <c>_&lt;status&gt;_&lt;revision&gt;</c> and extension, as
+    /// <c>PRJ-ORG-ZZ-00-DR-A-0101</c>). Atrium Server's publish gate finds an open topic by it (a link containing a submitted document).
+    /// </summary>
+    public const string DocumentLink = "lapin-document:";
+
+    public static string LinkOf(string document) => DocumentLink + document;
+
+    /// <summary>The documents named by <c>lapin-document:</c> links, in order, each once (ignoring case).</summary>
+    public static List<string> DocumentsOf(IEnumerable<string> links) => links
+        .Where(l => l.StartsWith(DocumentLink, StringComparison.OrdinalIgnoreCase)).Select(l => l[DocumentLink.Length..].Trim()).Where(d => d.Length > 0)
+        .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+    /// <summary>The links with their <c>lapin-document:</c> ones replaced by <paramref name="documents"/> (the other links kept, first, in their order).</summary>
+    public static List<string> WithDocuments(IEnumerable<string> links, IEnumerable<string> documents) =>
+    [
+        .. links.Where(l => !l.StartsWith(DocumentLink, StringComparison.OrdinalIgnoreCase)),
+        .. documents.Select(d => d.Trim()).Where(d => d.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Select(LinkOf),
+    ];
 
     public static List<string> Strings(JsonNode? n) => (n as JsonArray ?? []).Select(x => (string?)x).OfType<string>().Where(s => s.Length > 0).ToList();
 

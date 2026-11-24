@@ -18,14 +18,21 @@ import { LONG_TIMEOUT_MS } from '../../../engine/client';
 export interface Finding { rule: string; severity: 'block' | 'warn'; message: string; entityId?: string; sheetId?: string; viewId?: string }
 export interface CheckResult { blocking: number; warnings: number; findings: Finding[]; rules: { id: string; label: string; blocking: boolean }[] }
 export interface IssuedFile { name: string; kind: string; sheetId?: string; sha256: string; size: number; drawingHash?: string; stored?: boolean }
-export interface Issue { id: string; number: number; name: string; at: string; revision: string; status: string; container: string; folder: string | null; note: string | null; version: number | null; files: IssuedFile[] }
+export interface Issue { id: string; number: number; name: string; at: string; revision: string; status: string; container: string; folder: string | null; note: string | null; version: number | null; files: IssuedFile[]; issueId?: string }
 export interface Naming { project: string; originator: string; volume: string; level: string; role: string; separator: string }
 export interface CdeSettings {
   folder: string | null; exists: boolean; containers: string[]; naming: Naming; example: string; requiredProps: string[];
   roles: { code: string; label: string }[]; statuses: { code: string; label: string; container: string }[];
   lastRevision: string | null; nextRevision: string; nextNumber: number;
 }
-export interface Names { revision: string; status: string; number: number; sheets: { id: string; number: string; title: string; name: string; file: string; problems: string[] }[]; documents?: { id: string; title: string; name: string; file: string; problems: string[] }[]; model: string; set: string; transmittal: string }
+/** An issue's revisions so far (one issue number): its GlobalId (the first record's id), its name and the last revision issued. */
+export interface Series { number: number; issueId: string; name: string; lastRevision: string; lastId: string; container: string; status: string; revisions: string[]; documents: string[] }
+export interface Names {
+  /** A new revision of this issue (its GlobalId), when asked with `of`. */
+  of?: string | null;
+  /** The project's issues, and the one whose last revision sent exactly what is chosen (the default to issue a new revision of). */
+  series?: Series[]; match?: Series | null;
+  revision: string; status: string; number: number; sheets: { id: string; number: string; title: string; name: string; file: string; problems: string[] }[]; documents?: { id: string; title: string; name: string; file: string; problems: string[] }[]; model: string; set: string; transmittal: string }
 
 /** The revision after `last`: P02 after P01, C01 for the first contractual one, C02 after C01; P01 with none. */
 export function nextRevision(last: string | null | undefined, contractual?: boolean): string {
@@ -42,6 +49,25 @@ export function nextRevision(last: string | null | undefined, contractual?: bool
 export const containerFor = (status: string) => (status === 'S0' ? 'WIP' : status.startsWith('S') ? 'Shared' : 'Published');
 
 export const isRevision = (s: string) => /^[PC]\d{2,3}$/.test(s);
+
+/** Revisions in order (P before C, then by number), as Lapin's CdeRevisions.Compare: negative when `a` comes first. */
+export function compareRevisions(a: string, b: string): number {
+  const ma = /^([PC])(\d{2,3})$/.exec(a), mb = /^([PC])(\d{2,3})$/.exec(b);
+  if (!ma || !mb) return a < b ? -1 : a > b ? 1 : 0;
+  const kind = (ma[1] === 'C' ? 1 : 0) - (mb[1] === 'C' ? 1 : 0);
+  return kind !== 0 ? kind : Number(ma[2]) - Number(mb[2]);
+}
+
+/**
+ * The revision an issue proposes: a new revision of an issue goes on from that issue's last (P01 → P02; the first contractual one C01),
+ * a new issue from the project's last revision.
+ */
+export const revisionFor = (series: Pick<Series, 'lastRevision'> | null | undefined, contractual: boolean, projectLast: string | null | undefined) =>
+  nextRevision(series ? series.lastRevision : projectLast ?? null, contractual);
+
+/** Whether a revision can be a new revision of that issue (it comes after its last). Any valid revision does for a new issue. */
+export const revisionFits = (revision: string, series: Pick<Series, 'lastRevision'> | null | undefined) =>
+  isRevision(revision) && (!series || compareRevisions(revision, series.lastRevision) > 0);
 
 /** The findings by rule, blocking rules first, each group in the order the engine gave. */
 export function groupFindings(findings: Finding[], rules: CheckResult['rules']): { id: string; label: string; blocking: boolean; findings: Finding[] }[] {
@@ -79,7 +105,7 @@ export const canUseFolder = () => (isDesktop() || devOverride()) && !isGuest();
 export const cdeSettings = () => query<CdeSettings>('cde.settings');
 export const cdeIssues = () => query<Issue[]>('cde.issues').then((r) => r ?? []);
 export const cdeCheck = (sheets?: string[], revision?: string) => query<CheckResult>('cde.check', { ...(sheets ? { sheets } : {}), ...(revision ? { revision } : {}) });
-export const cdeNames = (args: { sheets?: string[]; revision?: string; status?: string }) => query<Names>('cde.naming', args);
+export const cdeNames = (args: { sheets?: string[]; documents?: string[]; model?: boolean; revision?: string; status?: string; of?: string }) => query<Names>('cde.naming', args);
 
 /** A folder picked with the desktop's dialog; null when stepped back (or no desktop). */
 export async function pickFolder(current: string | null): Promise<string | null> {
@@ -110,6 +136,8 @@ export interface IssueRequest {
   toFolder: boolean;
   /** The engine in the browser: the project's file comes back with the reply, to keep. */
   bytes?: boolean;
+  /** A new revision of this earlier issue (its id or GlobalId): its number kept, ISO 19650's P01 → P02. */
+  of?: string;
 }
 export interface IssueResult extends Issue {
   /** The container's folder the files were also written into; null when they are in the project file alone. */

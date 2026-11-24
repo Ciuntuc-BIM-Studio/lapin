@@ -80,6 +80,28 @@ static partial class Engine
         return reply;
     }
 
+    /// <summary>
+    /// One call of the protocol that may wait for the network (the history and the remote: a server reached through the page's
+    /// fetch, Atrium docs/plan-cde-web.md §2.1 A): its frames, its diff's then its reply, go to <c>frame</c> when it ends. The worker
+    /// sends nothing else meanwhile (its queue of calls), so the session does not change under a push or a pull.
+    /// </summary>
+    [JSExport]
+    internal static async Task CallAsync(string message)
+    {
+        var d = _dispatcher ?? throw new InvalidOperationException("The engine has not started.");
+        _inCall = true;
+        byte[] reply;
+        try
+        {
+            (reply, var diff) = await d.HandleAsync(message);
+            foreach (var f in d.TakeCallerFrames()) Frame(f);
+            if (diff != null) foreach (var part in d.Parts(diff)) Frame(d.DiffFrame(part));
+        }
+        finally { _inCall = false; }
+        Frame(reply);
+        if (d.Session.DeliveriesWaiting) Deliveries();
+    }
+
     /// <summary>The deliveries waiting, each diff to the page as a call's goes (the worker has one thread: never inside a call).</summary>
     static void Deliveries()
     {

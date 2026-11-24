@@ -61,7 +61,53 @@ public static class Remarks
             DueDate = Field("dueDate", t.DueDate),
             Stage = Field("stage", t.Stage),
             Labels = a.ContainsKey("labels") ? Bcf.Strings(a["labels"]) : t.Labels,
+            // All the links (referenceLinks), or only the documents the remark is tied to (documents: its lapin-document: links, the others kept).
+            ReferenceLinks = a.ContainsKey("documents")
+                ? Bcf.WithDocuments(a.ContainsKey("referenceLinks") ? Bcf.Strings(a["referenceLinks"]) : t.Links, Bcf.Strings(a["documents"]))
+                : a.ContainsKey("referenceLinks") ? Bcf.Strings(a["referenceLinks"]) : t.ReferenceLinks,
         };
+    }
+
+    /// <summary>One document a remark can be tied to: a sheet, a written document or the model, with its container name (what an issue submits).</summary>
+    public sealed record DocumentChoice(string Kind, string Id, string Label, string Document)
+    {
+        public JsonObject ToJson() => new() { ["kind"] = Kind, ["id"] = Id, ["label"] = Label, ["document"] = Document };
+    }
+
+    /// <summary>
+    /// The project's documents as an issue names them (<see cref="Cde.Names"/>: through the edition's naming hook): each sheet, each
+    /// written document, and the model. The name is what <c>remote.submitIssue</c> sends in <c>documents</c>, so a remark tied to it
+    /// stops the submission of a revision of that document while it is open.
+    /// </summary>
+    public static List<DocumentChoice> DocumentChoices(IModelView m)
+    {
+        var naming = Cde.Naming(m);
+        var o = new List<DocumentChoice>();
+        foreach (var sheet in m.OfClass(Sheets.Class))
+            o.Add(new("sheet", sheet.Id, $"{sheet.Str("number")} {sheet.Name}".Trim(), naming.For(m, sheet)));
+        foreach (var doc in Documents.Documents.All(m))
+            o.Add(new("document", doc.Id, doc.Name, Cde.DocumentName(m, naming, doc)));
+        o.Add(new("model", "model", "The model (IFC)", naming.ForModel()));
+        return o;
+    }
+
+    /// <summary>
+    /// The documents a remark made on a sheet or a view is tied to: the sheet's; a view's, the sheets it is placed on (none when it is on
+    /// no sheet). A document or the model by its id too.
+    /// </summary>
+    public static List<string> DocumentsAt(IModelView m, string? sheetId, string? viewId)
+    {
+        var o = new List<string>();
+        var naming = Cde.Naming(m);
+        if (sheetId is { Length: > 0 })
+        {
+            if (m.Get(sheetId) is { Class: Sheets.Class } sheet) o.Add(naming.For(m, sheet));
+            else if (m.Get(sheetId) is { Class: Documents.Documents.Class } doc) o.Add(Cde.DocumentName(m, naming, doc));
+        }
+        if (viewId is { Length: > 0 })
+            foreach (var sheet in m.OfClass(Sheets.Class))
+                if (Sheets.Viewports(sheet).Any(v => v.ViewId == viewId)) o.Add(naming.For(m, sheet));
+        return [.. o.Distinct(StringComparer.OrdinalIgnoreCase)];
     }
 
     public static void Register(IModuleRegistry r)
@@ -78,6 +124,9 @@ public static class Remarks
             if (ctx.Model.Get(IdOf(guid)) != null) throw new CommandException("There is a remark with this GUID already.");
             var viewpoints = BcfViewpoint.From(a["viewpoint"]) is { } vp ? new List<BcfViewpoint> { vp } : [];
             var topic = Apply(new BcfTopic(guid, title, null, "Issue", "Open", "Normal", null, now, Author(a), null, null, null, null, null, [], [], viewpoints), a);
+            // Made on a sheet (or on a view placed on sheets): tied to their documents, beside any the caller names.
+            if (DocumentsAt(ctx.Model, (string?)a["sheetId"], (string?)a["viewId"]) is { Count: > 0 } at)
+                topic = topic with { ReferenceLinks = Bcf.WithDocuments(topic.Links, [.. topic.Documents, .. at]) };
             ctx.Add(ToEntity(topic));
             return new JsonObject { ["id"] = IdOf(guid), ["guid"] = guid.ToString("D") };
         });
@@ -136,10 +185,25 @@ public static class Remarks
         // The remarks, each with its comments and viewpoints (without the snapshots), and the choices the interface offers.
         r.Query("remarks.list", (q, _) => new JsonObject
         {
-            ["remarks"] = new JsonArray(All(q.Model).Select(t => { var o = t.ToJson(withSnapshots: false); o["id"] = IdOf(t.Guid); o["title"] = t.Title; o["open"] = IsOpen(t.Status); return (JsonNode)o; }).ToArray()),
+            ["remarks"] = new JsonArray(All(q.Model).Select(t =>
+            {
+                var o = t.ToJson(withSnapshots: false);
+                o["id"] = IdOf(t.Guid); o["title"] = t.Title; o["open"] = IsOpen(t.Status);
+                o["referenceLinks"] = new JsonArray([.. t.Links.Select(x => (JsonNode)x)]);
+                o["documents"] = new JsonArray([.. t.Documents.Select(x => (JsonNode)x)]);
+                return (JsonNode)o;
+            }).ToArray()),
             ["statuses"] = new JsonArray(Statuses.Select(s => (JsonNode)s).ToArray()),
             ["types"] = new JsonArray(Types.Select(s => (JsonNode)s).ToArray()),
             ["priorities"] = new JsonArray(Priorities.Select(s => (JsonNode)s).ToArray()),
+        });
+
+        // The documents a remark can be tied to (the project's sheets, written documents and the model, by the names an issue gives them),
+        // and those a sheet or view in front would give a new remark.
+        r.Query("remarks.documents", (q, a) => new JsonObject
+        {
+            ["documents"] = new JsonArray([.. DocumentChoices(q.Model).Select(d => (JsonNode)d.ToJson())]),
+            ["at"] = new JsonArray([.. DocumentsAt(q.Model, (string?)a["sheetId"], (string?)a["viewId"]).Select(d => (JsonNode)d)]),
         });
 
         // One viewpoint's snapshot, as base64 PNG (null when it has none).

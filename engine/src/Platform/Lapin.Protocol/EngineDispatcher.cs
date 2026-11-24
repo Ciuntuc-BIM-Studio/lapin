@@ -43,7 +43,7 @@ public interface ISupportDesk
 /// <c>issues/blobs/</c>. And it holds the entries other tools put in the
 /// file (<see cref="PackageForeign"/>), written back as they were read.
 /// </summary>
-public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Session, string, PackageVersions, IssueFiles?, PackageForeign> write)
+public sealed partial class ProjectFiles(Func<Session, string, Diff> open, Action<Session, string, PackageVersions, IssueFiles?, PackageForeign> write)
 {
     PackageVersions _versions = PackageVersions.None;
     /// <summary>The session path the versions belong to: another path (a recovered project's) has them read from its file.</summary>
@@ -119,9 +119,11 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     }
 
     /// <summary>What a save leaves: the versions, issued files and other tools' entries found in the package just written from now on.</summary>
-    void After(string name, Func<PackageVersions> reread, PackageVersions versions, PackageIssues issues, IReadOnlyDictionary<string, long> written, PackageForeign foreign, PackageWriteReport? report)
+    void After(string name, Func<PackageVersions> reread, PackageVersions versions, PackageIssues issues, IReadOnlyDictionary<string, long> written, PackageForeign foreign, PackageWriteReport? report, Func<Stream>? reopen = null)
     {
-        KeepForeign(name, foreign.Unreadable != null ? PackageForeign.None : foreign);
+        // The history's blobs are in the file just written from now on (docs/spec-lapin-remote.md §6.4), what it held in memory written there.
+        var history = reopen != null && foreign.History.Any ? foreign.History.From(reopen) : foreign.History;
+        KeepForeign(name, (foreign.Unreadable != null ? PackageForeign.None : foreign).WithHistory(history));
         Keep(name, versions.Unreadable != null ? reread() : versions);
         KeepIssues(name, issues);
         LastWarnings = report?.Warnings ?? [];
@@ -170,7 +172,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         _page = null;
         var diff = session.Saved(name);
         Adopt(null, null);
-        After(name, () => PackageVersions.Of(bytes), versions.From(bytes), issues.Store.From(bytes, report.Issues), report.Issues, foreign, report);
+        After(name, () => PackageVersions.Of(bytes), versions.From(bytes), issues.Store.From(bytes, report.Issues), report.Issues, foreign, report, () => new MemoryStream(bytes, writable: false));
         return (bytes, diff);
     }
 
@@ -239,7 +241,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         var saved = session.Path ?? target;
         var source = Take(saved);
         var written = report?.Issues ?? Written(issues);
-        After(saved, () => PackageVersions.Of(source), versions.From(source), issues.Store.From(source, written), written, foreign, report);
+        After(saved, () => PackageVersions.Of(source), versions.From(source), issues.Store.From(source, written), written, foreign, report, () => File.OpenRead(source));
         return diff;
     }
 
@@ -371,7 +373,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
             _page = null;
             var diff = session.Saved(name);
             Adopt(null, null);
-            After(name, () => PackageVersions.Of(bytes), versions.From(bytes), issues.Store.From(bytes, r.Issues), r.Issues, foreign, r);
+            After(name, () => PackageVersions.Of(bytes), versions.From(bytes), issues.Store.From(bytes, r.Issues), r.Issues, foreign, r, () => new MemoryStream(bytes, writable: false));
             Warn(result);
             result["name"] = name;
             result["data"] = Convert.ToBase64String(bytes);
@@ -381,7 +383,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         var report = LapinPackage.Write(path, build, versions, issues, foreign);
         var saved = session.Saved(path);
         var source = Take(path);
-        After(path, () => PackageVersions.Of(source), versions.From(source), issues.Store.From(source, report.Issues), report.Issues, foreign, report);
+        After(path, () => PackageVersions.Of(source), versions.From(source), issues.Store.From(source, report.Issues), report.Issues, foreign, report, () => File.OpenRead(source));
         Warn(result);
         result["path"] = path;
         return (result, saved);
@@ -643,8 +645,21 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// <summary>One call: its reply frame, and the diff it caused (null: nothing changed).</summary>
     public (byte[] Reply, Diff? Diff) Handle(string text) => Handle(text, Caller.Local);
 
-    /// <summary>One call from <paramref name="caller"/>: refused unless they may make it; their edits are theirs (their own undo).</summary>
-    public (byte[] Reply, Diff? Diff) Handle(string text, Caller caller)
+    /// <summary>
+    /// One call from <paramref name="caller"/>, waited for: <see cref="HandleAsync(string, Caller)"/>, which ends at once for every call
+    /// but the history's and the remote's. The browser's engine never waits (it has one thread): it awaits <see cref="HandleAsync(string, Caller)"/>.
+    /// </summary>
+    public (byte[] Reply, Diff? Diff) Handle(string text, Caller caller) => HandleAsync(text, caller).GetAwaiter().GetResult();
+
+    /// <summary>One call, awaited (<see cref="HandleAsync(string, Caller)"/>) as the local interface's.</summary>
+    public Task<(byte[] Reply, Diff? Diff)> HandleAsync(string text) => HandleAsync(text, Caller.Local);
+
+    /// <summary>
+    /// One call from <paramref name="caller"/>: refused unless they may make it; their edits are theirs (their own undo). The history
+    /// and remote calls (<c>history.*</c>, <c>remote.*</c>) are awaited (a server's HTTP; Atrium docs/plan-cde-web.md §2.1 A); every
+    /// other call ends before this returns. The host calls one at a time, so nothing changes the session while a remote call waits.
+    /// </summary>
+    public async Task<(byte[] Reply, Diff? Diff)> HandleAsync(string text, Caller caller)
     {
         JsonNode? id = null;
         try
@@ -664,7 +679,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             session.Cancellation = stop.Token;
             try
             {
-                var (result, diff) = Dispatch(method, p);
+                var (result, diff) = IsRemoteCall(method) ? await RemoteCallAsync(method, p) : Dispatch(method, p);
                 if (result is Diff { Reset: true } snapshot)
                 {
                     if (Parts(snapshot) is { Count: > 1 } parts)
@@ -685,6 +700,12 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         catch (Exception ex) when (ex is ModelException or JsonException or IOException or UnauthorizedAccessException or FormatException or InvalidDataException)
         {
             return (BinaryFrame.Encode(new Reply(id, null, ex.Message), ContractsOnly), null);
+        }
+        // A server out of reach (no network, a name that does not resolve, the browser's fetch refused) or a call that timed out.
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            var why = ex is TaskCanceledException ? "The server took too long to answer." : $"The server could not be reached: {ex.Message}";
+            return (BinaryFrame.Encode(new Reply(id, null, why), ContractsOnly), null);
         }
         catch (Exception ex)
         {
@@ -1530,6 +1551,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "recovery.discard":
                 (recovery ?? throw new CommandException("No recovery here.")).Discard(PathParam());
                 return (null, null);
+            // The project's history and its remote (docs/spec-lapin-remote.md, decision 793): EngineDispatcher.Remote.cs.
+            // Awaited by HandleAsync before it gets here; a caller of the synchronous Handle (the desktop's tests, a script) waits for it.
+            case var _ when IsRemoteCall(method): return RemoteCallAsync(method, p).GetAwaiter().GetResult();
             default: throw new CommandException($"Unknown method „{method}”.");
         }
     }
