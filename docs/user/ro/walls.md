@@ -86,8 +86,9 @@ Panoul de proprietăți arată peretele selectat. Sus sunt tipul și straturile 
 
 Selectează un perete drept într-un plan și Lapin îi desenează **cote temporare**, ca pentru o ușă sau o fereastră ([Cote temporare](doors-windows.md#cote-temporare)):
 
-- **De-a curmezișul**, de la referința peretelui ([linia de referință](#desenarea-peretilor) pe care o păstrează, altfel axa lui) la cel mai apropiat perete paralel sau ax de caroiaj de fiecare parte care merge pe lângă el, așezate la jumătatea porțiunii pe care o au în comun;
-- **În lungul lui**, de la fiecare capăt liber la primul perete în care intră linia lui dincolo de acel capăt. Un capăt îmbinat cu alt perete nu are (mutarea lui ar desface îmbinarea).
+- **De-a curmezișul**, de la referința peretelui ([linia de referință](#desenarea-peretilor) pe care o păstrează, altfel axa lui) la cel mai apropiat perete paralel sau ax de caroiaj de fiecare parte care merge pe lângă el, așezate la jumătatea porțiunii pe care o au în comun. Când nimic nu merge pe lângă el pe o parte, contează și un perete paralel care face colțul unui perete de care e îmbinat peretele selectat, măsurat la acel capăt: **distanța de la colțul interior** (fața lui interioară) sau, cu un clic pe punctul lui, **de la colțul exterior** (fața lui exterioară);
+- **În lungul lui**, de la fiecare capăt liber la primul perete în care intră linia lui dincolo de acel capăt. Un capăt îmbinat cu alt perete nu are (mutarea lui ar desface îmbinarea);
+- **Lungimea**, lungimea reală a peretelui pe fiecare dintre fețele lui, în afara peretelui de fiecare parte: de la fața peretelui îmbinat la fiecare capăt până la care merge cu adevărat această față (unde se oprește în latura altui perete, fața apropiată a acestuia; la un colț, fața interioară a celuilalt perete pe interior și cea exterioară pe exterior, deci lungimea exterioară se numără de la colțul exterior), sau de la un capăt liber. Linia peretelui pe care merge urmează [referința cotelor](#referinta-cotelor-de-la-fata-miezului-la-fata-miezului) aleasă de tine: fețele finisajului, fețele miezului, ori o singură lungime pe axă (sau pe centrul miezului) de la axele celorlalți pereți. Clic pe punctul de la oricare capăt ca să iei locul următor pe peretele de acolo: fața apropiată, fața îndepărtată, fețele miezului, centrul miezului, axa. O lungime scrisă mută capătul liber al peretelui sau, cu ambele capete îmbinate, capătul lui de final.
 
 Dă clic pe o valoare, scrie o distanță nouă (în unitatea proiectului; merg și sume ca `3000+150`) și apasă <kbd>Enter</kbd>: peretele se mută perpendicular pe el, sau capătul lui în lungul lui, ca să se citească ce ai scris, celălalt perete rămânând pe loc. E un singur pas de anulare, iar îmbinările peretelui și ușile și ferestrele lui se poartă ca atunci când îi tragi de mânere. <kbd>Esc</kbd> lasă valoarea cum era. Clic pe punctul de la capătul cotei dinspre celălalt perete ca să măsori la fața lui îndepărtată, la fețele miezului sau la axă; clic pe punctul de la capătul dinspre peretele selectat ca să măsori de la fața lui apropiată sau îndepărtată, de la fețele miezului sau de la axă în loc de referință. Cu ce capete pornește o cotă hotărăște [referința cotelor](#referinta-cotelor-de-la-fata-miezului-la-fata-miezului) aleasă de tine. Lacătul face din cotă una permanentă a vederii.
 
@@ -116,6 +117,8 @@ Cât desenezi, linia pe care dai clic se măsoară după aceeași alegere: cu **
 Pereții curbi nu au cote temporare, iar pereții nu se măsoară la pereți curbi.
 
 ![Cotele temporare ale unui perete: de-a curmezișul la pereții de o parte și de alta, în lung la peretele spre care merge capătul](shots/wall-temp-dimensions.webp)
+
+![Lungimea unui perete despărțitor pe fiecare față de la peretele de care e îmbinat, și distanța lui de la colțul interior](shots/wall-temp-length.webp)
 
 #### Cote temporare unghiulare
 

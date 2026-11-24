@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { commitAcross, commitEnd, hostOf, wallDims, type WallLineInfo } from './wallDims';
+import { commitAcross, commitEnd, commitLength, hostOf, wallDims, type WallLineInfo } from './wallDims';
 
 const W = (id: string, a: [number, number], b: [number, number], faces: [number, number] = [-0.15, 0.15], more: Partial<WallLineInfo> = {}): WallLineInfo =>
   ({ id, name: id, a: { x: a[0], y: a[1] }, b: { x: b[0], y: b[1] }, faces, joins: { start: [], end: [], path: [] }, ...more });
@@ -91,5 +91,83 @@ describe('a wall\'s temporary dimensions (decision 693)', () => {
     expect(val(dims.find((d) => d.key === 'x:left')!)).toBe(2.85);
     expect(val(dims.find((d) => d.key === 'x:right')!)).toBe(1.85);
     expect(val(dims.find((d) => d.key === 'e:end')!)).toBe(2.85);
+  });
+});
+
+describe('a wall\'s length along its faces, and offsets from the corners (forum topic 240)', () => {
+  // A room's corner at (0, 0): the west wall up x = 0, the south wall along y = 0, joined in a corner at their starts; both 300 thick,
+  // a 200 core. The host runs east from the west wall at y = 2 (its start on the west wall's side: a T), its end free at x = 4.
+  const joins = (start: string[] = [], end: string[] = [], path: string[] = []) => ({ start, end, path });
+  const west = W('W', [0, 0], [0, 5], [-0.15, 0.15], { core: [-0.1, 0.1], joins: joins(['S'], [], ['H']) });
+  const south = W('S', [0, 0], [6, 0], [-0.15, 0.15], { core: [-0.1, 0.1], joins: joins(['W']) });
+  const host = W('H', [0, 2], [4, 2], [-0.1, 0.1], { joins: joins(['W']) });
+  const room = [west, south, host];
+  const by = (dims: ReturnType<typeof wallDims>) => Object.fromEntries(dims.map((d) => [d.key, d]));
+
+  it('measures along each face from the face of the wall it joins (a T: its near face) to its free end', () => {
+    const d = by(wallDims(hostOf(host), room, [], {}, { mode: 'faces', length: true }));
+    expect(val(d['l:left'])).toBe(3.85);
+    expect(val(d['l:right'])).toBe(3.85);
+    expect(d['l:left'].kind).toBe('length');
+    expect(d['l:left'].options[d['l:left'].opt].what).toBe('near face');
+    expect(d['l:left'].ownOptions.map((o) => o.what)).toEqual(['end']);
+  });
+
+  it('at a corner, the inside face runs to the other\'s near face and the outside face to its far face', () => {
+    const corner = hostOf(south);
+    const faces = by(wallDims(corner, room, [], {}, { mode: 'faces', length: true }));
+    expect(val(faces['l:left'])).toBe(5.85);   // inside the room (+y): from the west wall's inner face
+    expect(val(faces['l:right'])).toBe(6.15);  // outside: from its outer face, the exterior corner
+    const core = by(wallDims(corner, room, [], {}, { mode: 'core', length: true }));
+    expect(val(core['l:left'])).toBe(5.9);
+    expect(val(core['l:right'])).toBe(6.1);
+    // Centrelines: one dimension, axis to axis.
+    const axis = wallDims(corner, room, [], {}, { mode: 'axis', length: true }).filter((x) => x.kind === 'length');
+    expect(axis.map((x) => [x.key, val(x)])).toEqual([['l:axis', 6]]);
+  });
+
+  it('a click on a witness end cycles that end\'s reference: near face, far face, core faces, axis', () => {
+    const at = (opt: number) => val(by(wallDims(hostOf(host), room, [], { 'l:left': { opt } }, { mode: 'faces', length: true }))['l:left']);
+    expect(at(1)).toBe(4.15); // the west wall's far face
+    expect(at(2)).toBe(3.9);  // its near core face
+    expect(at(3)).toBe(4.1);  // its far core face
+    expect(at(4)).toBe(4);    // its axis
+    expect(at(5)).toBe(3.85); // round again
+  });
+
+  it('a length typed moves the free end along the wall; with both ends joined, its end', () => {
+    const h = hostOf(host);
+    const left = by(wallDims(h, room, [], {}, { mode: 'faces', length: true }))['l:left'];
+    const m = commitLength(h, left, 3.5)!;
+    expect(m.a.x).toBeCloseTo(0);
+    expect(m.b.x).toBeCloseTo(3.65);
+    expect(commitLength(h, left, 3.85)).toBeNull();
+    // Only its end free at the start: the start moves.
+    const back = W('B', [4, 2], [0, 2], [-0.1, 0.1], { joins: joins([], ['W']) });
+    const hb = hostOf(back);
+    const d = by(wallDims(hb, [west, south, back], [], {}, { mode: 'faces', length: true }))['l:left'];
+    expect(val(d)).toBe(3.85);
+    const mb = commitLength(hb, d, 3)!;
+    expect(mb.a.x).toBeCloseTo(3.15);
+    expect(mb.b.x).toBeCloseTo(0);
+  });
+
+  it('without the option, no length dimension (columns, beams, a wall being drawn)', () => {
+    expect(wallDims(hostOf(host), room, [], {}, { mode: 'faces' }).some((d) => d.kind === 'length')).toBe(false);
+  });
+
+  it('measures across to a parallel wall beyond the corner of the wall it joins: offsets from the interior and exterior corners', () => {
+    // The west wall turns at its top into a wall running west, away from the host: beside no part of the host.
+    const westT = W('W', [0, 0], [0, 5], [-0.15, 0.15], { joins: joins([], ['T'], ['H']) });
+    const top = W('T', [0, 5], [-4, 5], [-0.15, 0.15], { joins: joins(['W']) });
+    const d = by(wallDims(hostOf(host), [westT, top, host], [], {}));
+    expect(d['x:left'].target.id).toBe('T');
+    expect(val(d['x:left'])).toBe(2.85);  // to its inner face: the interior corner
+    expect(d['x:left'].station).toBe(0);   // at the host's end by that corner
+    const far = by(wallDims(hostOf(host), [westT, top, host], [], { 'x:left': { opt: 1 } }));
+    expect(val(far['x:left'])).toBe(3.15); // to its outer face: the exterior corner
+    // Not joined round that corner: left out, as before.
+    const loose = W('L', [0, 5], [-4, 5]);
+    expect(wallDims(hostOf(host), [westT, loose, host], [], {}).some((x) => x.target.id === 'L')).toBe(false);
   });
 });

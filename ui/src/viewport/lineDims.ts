@@ -13,6 +13,12 @@
  * - A click on an end's dot cycles that dimension's end only: the other's near face → far face → core faces → centre of core
  *   (when off the axis) → axis; the host's own reference → near face → far face → core faces → centre of core → axis.
  * - A value typed moves the host square to its line (across) or its end along it (`commitAcross`, `commitEnd`: the new axis).
+ * - A wall's length (forum topic 240, `length`): along each face (or core face, or its axis, as the reference says), from the
+ *   face of the wall joined at each end that the face really runs to (a T: its near face; a corner: the near face inside, the
+ *   far face outside), else from its free end. Each witness end cycles on its own (near face, far face, core faces, centre of
+ *   core, axis); a value typed moves the free end, else the wall's end (`commitLength`).
+ * - Across, a parallel wall beside no part of the host still counts when it turns the corner of a wall the host is joined to:
+ *   the offsets from the interior and exterior corners (forum topic 240).
  */
 
 import type { Vec2 } from '../platform/module';
@@ -65,7 +71,9 @@ export interface DimPick { opt?: number; own?: number }
  * from its start), `value` |b − a|; across ones stand `station` metres along the host.
  */
 export interface LineDim {
-  key: string; kind: 'across' | 'end';
+  key: string; kind: 'across' | 'end' | 'length';
+  /** A length's side (1: the host's left, −1: its right) and the line it runs along, metres left of the host's axis. */
+  side?: 1 | -1; y?: number;
   target: { id: string; name: string; kind: string };
   options: { what: string; at: number }[]; opt: number;
   ownOptions: { what: string; at: number }[]; own: number; ownWhat: string;
@@ -167,6 +175,8 @@ export interface DimOptions {
   along?: boolean;
   /** Put before each dimension's key (a column's `x:`/`y:` lines). */
   prefix?: string;
+  /** The host's length along its faces, from the walls joined at its ends (walls: forum topic 240). */
+  length?: boolean;
 }
 
 /** The host's dimensions: across to each side's nearest parallel neighbour, along from each free end. */
@@ -185,6 +195,14 @@ export function lineDims(h: Host, lines: DimLineInfo[], axes: AxisLine[], picks:
     s.el ? Math.min(...s.el.faces.map((v) => Math.abs(s.at(v) - h.ref))) : Math.abs(s.y - h.ref);
   const all: { line: DimLineInfo | AxisLine; el: DimLineInfo | null }[] = [
     ...lines.filter((w) => w.id !== h.id).map((w) => ({ line: w, el: w })), ...axes.map((x) => ({ line: x, el: null }))];
+  // The walls joined at the host's ends, and a parallel one beyond the corner of one of them (forum topic 240): taken when
+  // nothing beside the host faces it on that side.
+  const atEnds = new Set([...(h.joins?.start ?? []), ...(h.joins?.end ?? [])]);
+  const byId = new Map(lines.map((w) => [w.id, w]));
+  const turnsCorner = (el: DimLineInfo | null) => !!el && atEnds.size > 0 && !atEnds.has(el.id) && (
+    [...(el.joins?.start ?? []), ...(el.joins?.end ?? [])].some((id) => atEnds.has(id))
+    || [...atEnds].some((id) => { const j = byId.get(id)?.joins; return !!j && (j.start.includes(el.id) || j.end.includes(el.id)); }));
+  const beyond: Record<'left' | 'right', Side | null> = { left: null, right: null };
   for (const { line, el } of all) {
     const dw = unit(sub(line.b, line.a));
     if (Math.abs(cross(f.d, dw)) > PARALLEL) continue;
@@ -193,18 +211,22 @@ export function lineDims(h: Host, lines: DimLineInfo[], axes: AxisLine[], picks:
     if (Math.abs(y) < 1e-3 || Math.abs(y - h.ref) < 1e-3) continue;
     const s0 = along(line.a), s1 = along(line.b);
     const lo = Math.max(0, Math.min(s0, s1)), hi = Math.min(f.length, Math.max(s0, s1));
-    if (!(hi - lo > 1e-3)) continue;
+    const apart = !(hi - lo > 1e-3);
+    if (apart && !turnsCorner(el)) continue;
     // Its left is the host's left or right: a place yw left of its axis is y ± yw left of the host's.
     const sgn = dot({ x: -dw.y, y: dw.x }, f.n) >= 0 ? 1 : -1;
     const at = (yw: number) => y + sgn * yw;
     if (el && Math.min(...el.faces.map(at)) < h.ref && Math.max(...el.faces.map(at)) > h.ref) continue; // across the host: not beside it
     const side = y > h.ref ? 'left' : 'right';
-    const cur = sides[side];
-    const cand = { line, el, y, at, lo, hi };
-    if (nearOf(cand) < (cur ? nearOf(cur) : Infinity) - 1e-9) sides[side] = cand;
+    // Beyond a corner: it stands at the host's end nearer it.
+    const station = Math.min(Math.max((s0 + s1) / 2, 0), f.length);
+    const pool = apart ? beyond : sides;
+    const cur = pool[side];
+    const cand = apart ? { line, el, y, at, lo: station, hi: station } : { line, el, y, at, lo, hi };
+    if (nearOf(cand) < (cur ? nearOf(cur) : Infinity) - 1e-9) pool[side] = cand;
   }
   for (const side of ['left', 'right'] as const) {
-    const s = sides[side];
+    const s = sides[side] ?? beyond[side];
     if (!s) continue;
     const key = `${prefix}x:${side}`;
     const options = places(s.at, s.el, h.ref);
@@ -217,6 +239,8 @@ export function lineDims(h: Host, lines: DimLineInfo[], axes: AxisLine[], picks:
       options, opt, ownOptions, own, ownWhat: ownOptions[own].what, a, b, value: Math.abs(b - a), station: (s.lo + s.hi) / 2,
     });
   }
+
+  if (o.length) out.push(...lengthDims(h, lines, picks, mode, prefix));
 
   // Along: from each end not joined to anything, the first element across the host's line beyond it.
   if (o.along === false || !h.joins) return out;
@@ -280,4 +304,82 @@ export function commitEnd(h: Host, d: LineDim, value: number): { a: Vec2; b: Vec
   const start = d.key.endsWith('e:start') ? s : 0, end = d.key.endsWith('e:end') ? s : f.length;
   if (!(end - start > 1e-3)) return null;
   return { a: framePoint({ ...h, ref: 0 }, 0, start), b: framePoint({ ...h, ref: 0 }, 0, end) };
+}
+
+/** The line a length runs along on a side, metres left of the host's axis: its face, core face, centre of core or axis. */
+function lengthLine(h: Host, side: 1 | -1, mode: DimRef): number {
+  if (mode === 'axis') return 0;
+  if (mode === 'coreCentre') return coreCentreOf(h);
+  const p = mode === 'core' ? h.core ?? h.faces : h.faces;
+  return side > 0 ? Math.max(...p) : Math.min(...p);
+}
+
+/**
+ * The host's length along each side (forum topic 240): from the face of the wall joined at each end that the side's line runs
+ * to, else from the free end. One along the axis (or the centre of core) when the reference is that; two, left and right, else.
+ */
+function lengthDims(h: Host, lines: DimLineInfo[], picks: Record<string, DimPick>, mode: DimRef, prefix: string): LineDim[] {
+  const f = frameOf(h);
+  const byId = new Map(lines.map((w) => [w.id, w]));
+  const out: LineDim[] = [];
+  const sides: (1 | -1)[] = mode === 'axis' || mode === 'coreCentre' ? [1] : [1, -1];
+  for (const side of sides) {
+    const y = lengthLine(h, side, mode);
+    const o = { x: f.o.x + f.n.x * y, y: f.o.y + f.n.y * y };
+    const endPlaces = (end: 'start' | 'end'): { what: string; at: number }[] & { pick?: number } => {
+      const sE = end === 'start' ? 0 : f.length, inward = end === 'start' ? 1 : -1;
+      const w = (h.joins?.[end] ?? []).map((id) => byId.get(id)).find((x) => !!x && Math.abs(cross(f.d, unit(sub(x.b, x.a)))) > PARALLEL);
+      if (!w) return Object.assign([{ what: 'end', at: sE }], { pick: 0 });
+      const dw = unit(sub(w.b, w.a)), c = cross(f.d, dw), nw = { x: -dw.y, y: dw.x };
+      // Where the side's line meets the line yw left of w's axis, metres along the host.
+      const at = (yw: number) => cross(sub({ x: w.a.x + nw.x * yw, y: w.a.y + nw.y * yw }, o), dw) / c;
+      // Near: the face toward the host's body.
+      const byInward = (p: number[]) => [...p].map(at).sort((u, v) => inward * (v - u));
+      const [nf, ff] = byInward(w.faces);
+      const opts = [{ what: 'near face', at: nf }, { what: 'far face', at: ff }];
+      const core = distinctCore(w.faces, w.core);
+      if (core) { const [nc, fc] = byInward(core); opts.push({ what: 'near core face', at: nc }, { what: 'far core face', at: fc }); }
+      const cc = coreCentreOf(w);
+      if (Math.abs(cc) > OFF_AXIS) opts.push({ what: 'core centre', at: at(cc) });
+      opts.push({ what: 'axis', at: at(0) });
+      // A corner (the two walls end there): the side the other turns toward runs to its near face, the outer side to its far face.
+      // A T (the host ends on its side): both to its near face.
+      const corner = (w.joins?.start ?? []).includes(h.id ?? '\u0000') ? 1 : (w.joins?.end ?? []).includes(h.id ?? '\u0000') ? -1 : 0;
+      const inner = corner === 0 || dot({ x: dw.x * corner, y: dw.y * corner }, f.n) * side > 0;
+      const find = (what: string) => opts.findIndex((x) => x.what === what);
+      const face = (kind: 'face' | 'core face') => find(`${inner ? 'near' : 'far'} ${kind}`);
+      const pick = mode === 'axis' ? find('axis')
+        : mode === 'coreCentre' ? (find('core centre') >= 0 ? find('core centre') : find('axis'))
+          : mode === 'core' && face('core face') >= 0 ? face('core face') : face('face');
+      return Object.assign(opts, { pick: Math.max(0, pick) });
+    };
+    const key = `${prefix}l:${sides.length === 1 ? 'axis' : side > 0 ? 'left' : 'right'}`;
+    const options = endPlaces('start'), ownOptions = endPlaces('end');
+    const opt = pickOf(options.length, picks[key]?.opt ?? options.pick ?? 0);
+    const own = pickOf(ownOptions.length, picks[key]?.own ?? ownOptions.pick ?? 0);
+    const a = options[opt].at, b = ownOptions[own].at;
+    if (!(Math.abs(b - a) > 1e-3)) continue;
+    out.push({
+      key, kind: 'length', side, y, target: { id: h.id ?? '', name: 'length', kind: 'length' },
+      options: [...options], opt, ownOptions: [...ownOptions], own, ownWhat: ownOptions[own].what, a, b, value: Math.abs(b - a), station: 0,
+    });
+  }
+  return out;
+}
+
+/**
+ * The host's axis with one end moved along it so that its length reads `value` (forum topic 240): its free end, else its end
+ * (the start when only that is free); null when it already reads so or it would have no length.
+ */
+export function commitLength(h: Host, d: LineDim, value: number): { a: Vec2; b: Vec2 } | null {
+  if (d.kind !== 'length' || !(value >= 0)) return null;
+  const f = frameOf(h);
+  const sgn = d.b - d.a >= 0 ? 1 : -1;
+  const startMoves = !!h.joins && h.joins.start.length === 0 && h.joins.end.length > 0;
+  let s0 = 0, s1 = f.length;
+  if (startMoves) s0 = d.b - sgn * value - d.a;
+  else s1 = f.length + (d.a + sgn * value - d.b);
+  if (Math.abs(s0) < 1e-9 && Math.abs(s1 - f.length) < 1e-9) return null;
+  if (!(s1 - s0 > 1e-3)) return null;
+  return { a: framePoint({ ...h, ref: 0 }, 0, s0), b: framePoint({ ...h, ref: 0 }, 0, s1) };
 }

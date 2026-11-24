@@ -7,7 +7,7 @@
 
 import { lineDims, type AxisLine, type DimOptions, type DimLineInfo, type DimPick, type Host, type Joins, type LineDim } from '../../viewport/lineDims';
 
-export { commitAcross, commitEnd, framePoint, frameOf, hostOf } from '../../viewport/lineDims';
+export { commitAcross, commitEnd, commitLength, framePoint, frameOf, hostOf } from '../../viewport/lineDims';
 export type { AxisLine, Host } from '../../viewport/lineDims';
 
 /** A wall as the engine gives it: its axis, its faces and core faces (left of the axis), what is joined at its ends and along it. */

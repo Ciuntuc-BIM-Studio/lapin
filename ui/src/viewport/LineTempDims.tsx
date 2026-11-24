@@ -105,14 +105,21 @@ export function TempDimSet({ testId, className, sets, live, drawing, pick, toScr
   const viewId = view.id ?? `plan:${view.storeyId}`;
   const items: Shown[] = [];
   for (const { host, dims, commit, valueTitle, ownTitle } of sets) {
-    const world = (d: LineDim, s: number, out: number) => d.kind === 'across' ? framePoint(host, s, d.station + out / scale) : framePoint(host, host.faces[1] + out / scale, s);
+    // A length (forum topic 240) runs outside the wall on its side, its witness lines from the line it measures along.
+    const outer = (side: number) => (side > 0 ? Math.max(...host.faces) : Math.min(...host.faces));
+    const world = (d: LineDim, s: number, out: number) => d.kind === 'across' ? framePoint(host, s, d.station + out / scale)
+      : d.kind === 'length' ? framePoint(host, outer(d.side ?? 1) + (d.side ?? 1) * out / scale, s)
+        : framePoint(host, host.faces[1] + out / scale, s);
+    const endTitle = t('Click: the next reference at this end (near face, far face, core faces, axis)');
     for (const d of dims) items.push({
-      key: d.key, row: 0, a: d.a, b: d.b, pt: (s, out) => toScreen(world(d, s, out)), steps: 1, value: d.value,
+      // A length on the left stands beyond the dimensions from the free ends.
+      key: d.key, row: d.kind === 'length' && (d.side ?? 1) > 0 ? 1 : 0, a: d.a, b: d.b, pt: (s, out) => toScreen(world(d, s, out)), steps: 1, value: d.value,
       data: { ref: d.target.kind, what: d.options[d.opt].what, own: d.ownWhat, target: d.target.id },
-      refTitle: `${t(d.target.kind === 'axis' ? 'The grid axis' : 'Click: the next reference (near face, far face, core faces, axis)')} · ${d.target.name} · ${t('Right click: make it the default')}`,
+      refTitle: d.kind === 'length' ? `${endTitle} · ${t('Right click: make it the default')}`
+        : `${t(d.target.kind === 'axis' ? 'The grid axis' : 'Click: the next reference (near face, far face, core faces, axis)')} · ${d.target.name} · ${t('Right click: make it the default')}`,
       cycleRef: live && d.options.length > 1 ? () => pick(d.key, { opt: d.opt + 1 }) : undefined,
-      cycleOwn: live && d.kind === 'across' && d.ownOptions.length > 1 ? () => pick(d.key, { own: d.own + 1 }) : undefined,
-      ownTitle, valueTitle: valueTitle(d),
+      cycleOwn: live && d.kind !== 'end' && d.ownOptions.length > 1 ? () => pick(d.key, { own: d.own + 1 }) : undefined,
+      ownTitle: d.kind === 'length' ? endTitle : ownTitle, valueTitle: valueTitle(d),
       commit: (v) => commit(d, v),
       onMenu: live ? (p) => menu(p.x, p.y, refOfPlace(d.options[d.opt].what, d.ownWhat)) : undefined,
       permanent: live && hasModule('drafting') ? () => {

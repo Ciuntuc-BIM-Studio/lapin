@@ -88,8 +88,9 @@ The properties panel shows the selected wall. The top of the panel holds its typ
 
 Select one straight wall in a plan and Lapin draws **temporary dimensions** for it, as it does for a door or window ([Temporary dimensions](doors-windows.md#temporary-dimensions)):
 
-- **Across**, from the wall's reference (the [reference line](#drawing-walls) it keeps, else its axis) to the nearest parallel wall or grid axis on each side that runs beside it, standing halfway along the stretch they share;
-- **Along**, from each free end to the first wall its line runs into beyond that end. An end joined to another wall has none (moving it would leave the join).
+- **Across**, from the wall's reference (the [reference line](#drawing-walls) it keeps, else its axis) to the nearest parallel wall or grid axis on each side that runs beside it, standing halfway along the stretch they share. When nothing runs beside it on a side, a parallel wall that turns the corner of a wall the selected wall is joined to counts too, measured at that end: the **offset from the interior corner** (its inner face) or, with a click on its dot, **from the exterior corner** (its outer face);
+- **Along**, from each free end to the first wall its line runs into beyond that end. An end joined to another wall has none (moving it would leave the join);
+- **Length**, the wall's real length along each of its faces, outside the wall on each side: from the face of the wall joined at each end that this face really runs to (where it stops on another wall's side, that wall's near face; at a corner, the other wall's inner face on the inside and its outer face on the outside, so the outside length is counted from the exterior corner), or from a free end. Which of the wall's lines it runs along follows your [dimension reference](#dimension-reference-core-face-to-core-face): its finish faces, its core's faces, or one length along its axis (or its core's centre) from the other walls' axes. Click the dot at either end to take the next place on the wall there: its near face, far face, core's faces, centre of core, axis. A length typed moves the wall's free end, or, with both ends joined, its end.
 
 Click a value, type a new distance (in the project's unit; sums such as `3000+150` work) and press <kbd>Enter</kbd>: the wall moves square to itself, or its end along it, so that the dimension reads what you typed, the other wall staying where it is. It is one step to undo, and the wall's joins and its doors and windows behave as when you drag its grips. <kbd>Esc</kbd> leaves the value as it was. Click the dot at the other wall's end of a dimension to measure to its far face, its core's faces or its axis; click the dot at the selected wall's end to measure from its near or far face, its core's faces or its axis instead of its reference. Which ends a dimension starts with is your [dimension reference](#dimension-reference-core-face-to-core-face). The padlock makes the dimension a permanent one of the view.
 
@@ -118,6 +119,8 @@ While you draw, the line you click is measured by the same choice: with **Faces 
 Curved walls have no temporary dimensions, and walls are not measured to curved walls.
 
 ![A wall's temporary dimensions: across to the walls either side, along to the wall its end runs toward](shots/wall-temp-dimensions.webp)
+
+![A partition's length on each face from the wall it joins, and its offset from the interior corner](shots/wall-temp-length.webp)
 
 #### Angular temporary dimensions
 
