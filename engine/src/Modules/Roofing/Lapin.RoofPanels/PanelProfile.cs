@@ -4,8 +4,8 @@ using Lapin.Model;
 
 namespace Lapin.RoofPanels;
 
-/// <summary>A colour a profile is made in: its code (RAL 8017) and its name.</summary>
-public sealed record PanelColor(string Code, string Name);
+/// <summary>A colour a profile is made in: its code (RAL 8017), its name and how the views show it (#rrggbb; null: the covering's own colour).</summary>
+public sealed record PanelColor(string Code, string Name, string? Rgb = null);
 
 /// <summary>
 /// A roof panel profile (docs/plan-roof-panels.md §3), data and never code: millimetres throughout, as makers publish them.
@@ -87,7 +87,7 @@ public sealed record PanelProfile(
             I(o["grossWidth"]), I(o["usefulWidth"]), I(o["slopeLap"]), I(o["module"], 1), (string?)o["joints"] ?? "module",
             I(o["stagger"]), I(o["endFold"]),
             lengths, onOrder, [.. ((o["maxLengths"] as JsonArray) ?? []).Select(n => I(n))],
-            [.. ((o["colors"] as JsonArray) ?? []).OfType<JsonObject>().Select(c => new PanelColor((string?)c["code"] ?? "", (string?)c["name"] ?? ""))],
+            [.. ((o["colors"] as JsonArray) ?? []).OfType<JsonObject>().Select(c => new PanelColor((string?)c["code"] ?? "", (string?)c["name"] ?? "", (string?)c["rgb"] is { Length: 7 } rgb && rgb[0] == '#' ? rgb : null))],
             Json.Number(o["minPitch"]) ?? 8, Json.Number(o["minPitchHipValley"]) ?? Json.Number(o["minPitch"]) ?? 8,
             (bool?)o["reuseOffcuts"] ?? false, I(o["valleyGap"], 65), I(o["waves"]), Json.Number(o["waveHeight"]) ?? 20,
             I(o["accessoryLength"], 2000), laps, (string?)o["notes"] ?? "", (string?)o["source"] ?? "");
@@ -101,9 +101,9 @@ public sealed record PanelProfile(
         ["minLength"] = Lengths[0], ["maxLength"] = Lengths[^1],
         ["lengths"] = OnOrder ? null : new JsonArray([.. Lengths.Select(n => (JsonNode)n)]),
         ["maxLengths"] = new JsonArray([.. MaxLengths.Select(n => (JsonNode)n)]),
-        ["colors"] = new JsonArray([.. Colors.Select(c => (JsonNode)new JsonObject { ["code"] = c.Code, ["name"] = c.Name })]),
+        ["colors"] = new JsonArray([.. Colors.Select(c => (JsonNode)new JsonObject { ["code"] = c.Code, ["name"] = c.Name, ["rgb"] = c.Rgb })]),
         ["minPitch"] = MinPitch, ["minPitchHipValley"] = MinPitchHipValley, ["reuseOffcuts"] = ReuseOffcuts, ["valleyGap"] = ValleyGap,
-        ["notes"] = Notes, ["source"] = Source,
+        ["waves"] = Waves, ["waveHeight"] = WaveHeight, ["notes"] = Notes, ["source"] = Source,
     };
 }
 

@@ -2455,6 +2455,58 @@ export const scenes = [
     },
   },
   {
+    // Roof panel layout (docs/plan-roof-panels.md, S2): an L-shaped house under a hip roof covered in Bilka Balcanic from the
+    // roof's Panels section; Panel layout… shows the panels in plan with the hip offcuts reused in the valley pieces (orange),
+    // and the 3D view the panels as the covering, each a profiled sheet.
+    id: 'roof-panels',
+    touches: ['architecture', 'roofpanels'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const outline = [[0, 0], [12, 0], [12, 6], [6, 6], [6, 11], [0, 11]];
+      for (let i = 0; i < outline.length; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % outline.length]];
+        await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] });
+      }
+      await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
+      const roof = await t.cmd('architecture.addRoof', { storeyId: s, points: outline });
+      await t.cmd('architecture.updateRoof', { id: roof.id, attrs: { shape: 'hip', pitch: 35, overhang: 0.5, covering: 'Metal sheet' } });
+      await t.wait(800);
+      await select(t, roof.id);
+      await t.wait(800);
+      // The Panels section: a profile picked, one undo step; what to buy and the offcuts reused come with it.
+      const pick = t.page.locator('[data-testid=roof-panels-profile]');
+      t.expect(await pick.count() === 1, 'the roof\'s properties have a Panels section with its profile');
+      await pick.selectOption('bilka-balcanic');
+      await t.until(async () => (await t.nodes()).find((n) => n.id === roof.id)?.props?.panels?.profile === 'bilka-balcanic', 'the roof names Bilka Balcanic');
+      await t.until(async () => await t.page.locator('[data-testid=roof-panels-summary]').count() === 1, 'the section shows what to buy');
+      const summary = await t.page.locator('[data-testid=roof-panels-summary]').innerText();
+      t.expect(summary.includes('2230 mm') && summary.includes('× 53'), `the section lists the panels to buy (${summary.replace(/\s+/g, ' ')})`);
+      await t.page.locator('[data-testid=roof-panels-section]').scrollIntoViewIfNeeded();
+      await t.shot('roof-panels-section', { of: '[data-testid=roof-panels-section]', pad: 6 });
+      // Panel layout…: the roof in plan, every panel by its length, the offcuts in orange, a panel's code on hover.
+      await t.page.locator('[data-testid=roof-panels-open]').click();
+      const dialog = t.page.locator('[data-testid=roof-panel-layout]');
+      await t.until(async () => await dialog.locator('[data-panel]').count() > 50, 'the layout draws the panels');
+      t.expect(await dialog.locator('[data-panel][fill="#e07b39"]').count() === 5, 'five valley pieces are offcuts reused, in orange');
+      t.expect(await dialog.locator('[data-testid=roof-panels-offcuts] tbody tr').count() === 5, 'the offcuts table lists the five, each with its donor');
+      const reused = dialog.locator('[data-panel][fill="#e07b39"]').first();
+      const box = await reused.boundingBox();
+      if (box) await t.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await t.wait(300);
+      const hover = await dialog.locator('[data-testid=roof-panels-hover]').innerText();
+      t.expect(/A0\d-\d\d-\d\d/.test(hover) && hover.includes('Cut from'), `hovering a panel names it and its donor (${hover})`);
+      await t.shot('roof-panel-layout', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-action=roof-panels-flat]').click();
+      await t.wait(500);
+      await t.shot('roof-panel-layout-flat', { of: '[data-testid=roof-panels-drawing]', pad: 4 });
+      await t.ui({ dialog: null, selection: null, selected: [] });
+      // The panels as the covering in 3D: a part each, profiled, the reused ones orange.
+      await open3d(t);
+      await t.shot('roof-panels-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'floors-roofs',
     async run(t) {
       await t.fresh();
