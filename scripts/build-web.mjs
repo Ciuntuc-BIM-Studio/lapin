@@ -160,6 +160,8 @@ const BUDGET_MB = 20;
 // 23.03 since the CDE web W6d (24.11.2026; measured with every lazy part, brotli as counted here): origin/main at
 // f5a21e7c3 (W6c merged with main's Gaussian splats G3) already stood at 24,138,264 bytes, 21,016 over 23 MB; W6d adds
 // 614 (24,138,878). 23.03 MB (24,148,951) is the smallest step that fits, with 10,073 bytes for the native code's few KB.
-const BUDGET_ALL_MB = 23.03;
+// 24 on 24.11.2026, at the user's request: 23.03 left 10 KB, so the next small feature would fail the build again.
+// 24 MB (25,165,824 bytes) leaves about 1 MB over the 24,138,878 bytes measured with W6d.
+const BUDGET_ALL_MB = 24;
 if (total.first > BUDGET_MB) { console.error(`build-web: the first load, ${total.first.toFixed(1)} MB, is over the ${BUDGET_MB} MB budget.`); process.exit(1); }
 if (total.all > BUDGET_ALL_MB) { console.error(`build-web: ${total.all.toFixed(1)} MB with the lazy parts is over the ${BUDGET_ALL_MB} MB budget.`); process.exit(1); }
