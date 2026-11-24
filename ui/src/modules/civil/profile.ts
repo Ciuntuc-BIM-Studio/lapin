@@ -18,6 +18,11 @@ export interface ProfilePoint {
 
 export type Series = [number, number | null][];
 
+/** The engine leaves `existing` and `design` out when there is no terrain under the line: both are then empty series, so every plot can draw and read them. */
+export function withGround<T extends { existing?: Series; design?: Series }>(r: T): T & { existing: Series; design: Series } {
+  return { ...r, existing: Array.isArray(r.existing) ? r.existing : [], design: Array.isArray(r.design) ? r.design : [] };
+}
+
 export interface ProfileData {
   kind: 'featureLine' | 'hardscape' | 'corridor';
   id: string; name: string; start: number; length: number; closed: boolean;
