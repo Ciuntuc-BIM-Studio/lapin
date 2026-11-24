@@ -9,42 +9,6 @@ using System.Text.Json.Nodes;
 namespace Lapin.Package.Remote;
 
 /// <summary>
-/// The tokens of one sign-in (§9.2): held in memory for the call that uses them, handed in by the interface (which keeps the
-/// refresh token in the system's keychain) and handed back when a refresh replaced them. Never written by the engine.
-/// </summary>
-public sealed class RemoteTokens
-{
-    public string? Access { get; set; }
-    public string? Refresh { get; set; }
-    /// <summary>Whether a refresh replaced them during the call: the interface stores the new refresh token at once (it is single-use).</summary>
-    public bool Changed { get; set; }
-}
-
-/// <summary>An answer of the server's other APIs (<see cref="HttpRemote.ApiAsync"/>): its status, its JSON, its ETag, its bytes.</summary>
-public sealed record ApiAnswer(int Status, JsonNode? Json, string? ETag, byte[]? Bytes)
-{
-    public bool Ok => Status is >= 200 and < 300;
-    /// <summary>The refusal's stable code (Atrium's <c>{code, message}</c>), else one made of the status.</summary>
-    public string Code => (Json as JsonObject)?["code"] is JsonValue v && v.TryGetValue<string>(out var c) ? c
-        : Status switch { 401 => "unauthorized", 403 => "forbidden", 404 => "not_found", 409 => "conflict", 412 => "changed", _ => "error" };
-    public string Message => (Json as JsonObject)?["message"] is JsonValue v && v.TryGetValue<string>(out var m) ? m : $"The server answered {Status}.";
-}
-
-/// <summary>A server's capabilities (§10.1): its limits and its features.</summary>
-public sealed record RemoteCapabilities(string Version, long MaxObject, long Chunk, int MaxBatch, long MaxPack, int MaxCommitsPage, IReadOnlyList<string> Features, string Foundation)
-{
-    public static RemoteCapabilities From(JsonObject o)
-    {
-        var l = o["limits"] as JsonObject ?? [];
-        return new RemoteCapabilities((string?)o["version"] ?? "1.0",
-            (long?)l["maxObject"] ?? 2147483648L, (long?)l["chunk"] ?? 16777216L, (int?)l["maxBatch"] ?? 10_000, (long?)l["maxPack"] ?? 4294967296L,
-            (int?)l["maxCommitsPage"] ?? 1000, (o["features"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() ?? [],
-            (string?)o["auth"]?["foundation"] ?? "/foundation/1.1");
-    }
-    public bool Has(string feature) => Features.Contains(feature, StringComparer.Ordinal);
-}
-
-/// <summary>
 /// A server remote speaking lapin-remote 1.0 over HTTP (docs/spec-lapin-remote.md §9–§10): the refs with their ETag, compare-and-swap
 /// with 409, objects/missing, PUT of one object up to <c>chunk</c> and resumable uploads above it (tus's <c>Upload-Offset</c>), packs,
 /// the commits walk and the viewer copy. Bearer tokens come from <see cref="RemoteTokens"/>; a 401 refreshes once and repeats once.
@@ -93,6 +57,14 @@ public sealed class HttpRemote : IRemote
         await r.ReadyAsync();
         return r;
     }
+
+    /// <summary>
+    /// <see cref="OpenAsync"/> as an <see cref="IRemote"/>, for the engine's compiled code: awaiting a <c>Task&lt;HttpRemote&gt;</c> there
+    /// makes generic instances over this assembly's type, and in the browser a lookup among those fetched this lazy part at every
+    /// start (docs/plan-browser-engine.md, Lazy parts). A <c>Task&lt;IRemote&gt;</c> names only Lapin.Package's types.
+    /// </summary>
+    public static async Task<IRemote> ConnectAsync(HttpClient http, string root, string project, RemoteTokens tokens) =>
+        await OpenAsync(http, root, project, tokens);
 
     string Absolute(string url) => Uri.TryCreate(url, UriKind.Absolute, out var u) && u.Scheme is "http" or "https" ? u.ToString() : new Uri(_root, url.TrimStart('/')).ToString();
 

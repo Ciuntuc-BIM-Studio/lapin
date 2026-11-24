@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The server remote of lapin-remote 1.0 (HttpRemote, docs/spec-lapin-remote.md §9–§10), apart from Lapin.Package so that no
+    compiled code of the engine names a type of System.Net.Http. In the browser this assembly and System.Net.Http are lazy
+    parts, run by the interpreter and fetched when a server is first reached (docs/plan-browser-engine.md, Lazy parts): an
+    AOT-compiled HttpRemote put its generic instances over HttpResponseMessage and the rest among the engine's compiled
+    methods, and looking one of those up made every start fetch System.Net.Http.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../Lapin.Package/Lapin.Package.csproj" />
+  </ItemGroup>
+</Project>

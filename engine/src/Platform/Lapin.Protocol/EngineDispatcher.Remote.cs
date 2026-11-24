@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
 using Lapin.Ifc;
 using Lapin.Package;
@@ -16,14 +17,50 @@ namespace Lapin.Protocol;
 /// </summary>
 public sealed partial class EngineDispatcher
 {
-    /// <summary>The HTTP client the server remotes use (tests give one over a fake handler).</summary>
-    public HttpClient? RemoteHttp { get; init; }
+    /// <summary>
+    /// The HTTP client the server remotes use (tests give one over a fake handler). Its field is an <see cref="object"/>, and the shared
+    /// client lives in a class of its own (<see cref="SharedHttp"/>), so that no field of the dispatcher names a type of System.Net.Http:
+    /// in the browser that assembly is a lazy part, and Mono's AOT code loads the types of every field of a class it touches, which would
+    /// make every start fetch it (docs/plan-browser-engine.md, Lazy parts). Only a remote call reaches <see cref="Http"/>.
+    /// </summary>
+    public HttpClient? RemoteHttp { get => (HttpClient?)_remoteHttp; init => _remoteHttp = value; }
+
+    readonly object? _remoteHttp;
 
     /// <summary>The clock of the history (tests fix it).</summary>
     public Func<DateTime> RemoteNow { get; init; } = () => DateTime.UtcNow;
 
-    static readonly Lazy<HttpClient> SharedHttp = new(() => new HttpClient { Timeout = TimeSpan.FromMinutes(10) });
-    HttpClient Http => RemoteHttp ?? SharedHttp.Value;
+    /// <summary>The one client of the server remotes when the host gives none, made at the first remote call (a class's statics are set up when it is first used).</summary>
+    static class SharedHttp
+    {
+        internal static readonly HttpClient Client = new() { Timeout = TimeSpan.FromMinutes(10) };
+    }
+
+    HttpClient Http => (HttpClient?)_remoteHttp ?? SharedHttp.Client;
+
+    /// <summary>
+    /// The way in to <see cref="RemoteCallAsync"/> from <see cref="HandleAsync(string, Caller)"/> and <see cref="Dispatch"/>, which every
+    /// call runs: never inlined, so that their code does not set up <see cref="RemoteCallAsync"/>'s state machine (whose fields may hold
+    /// what an await spills, of System.Net.Http's types) until a history or remote call comes. The browser's engine fetches that
+    /// assembly then (docs/plan-browser-engine.md, Lazy parts).
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    Task<(object? Result, Diff? Diff)> RemoteCall(string method, JsonObject p) => RemoteCallAsync(method, p);
+
+    /// <summary>A server's projects (<c>remote.projects</c>): in a method of its own, so that no client is spilled into <see cref="RemoteCallAsync"/>'s state machine.</summary>
+    async Task<IReadOnlyList<RemoteProject>> ServerProjects(string url, RemoteTokens tokens)
+    {
+        var http = Http;
+        var remote = new HttpRemote(http, url, await HttpRemote.DiscoverAsync(http, url), "-", tokens);
+        return await remote.ProjectsAsync();
+    }
+
+    /// <summary>A new project on a server (<c>remote.add</c> with <c>create</c>), apart for the same reason as <see cref="ServerProjects"/>.</summary>
+    async Task<RemoteProject> CreateServerProject(string root, RemoteTokens tokens, string title)
+    {
+        var http = Http;
+        return await HttpRemote.CreateProjectAsync(http, root, await HttpRemote.DiscoverAsync(http, root), tokens, title);
+    }
 
     static bool IsRemoteCall(string method) => method.StartsWith("remote.", StringComparison.Ordinal) || method.StartsWith("history.", StringComparison.Ordinal);
 
@@ -43,7 +80,7 @@ public sealed partial class EngineDispatcher
     async Task<IRemote> OpenRemote(RemoteEntry e, RemoteAuthor me, RemoteTokens tokens) => e.Kind switch
     {
         "folder" => FolderRemote.Open(FolderRemote.PathOf(e.Url), e.Project, me, RemoteNow),
-        "server" => await HttpRemote.OpenAsync(Http, e.Url, e.Project, tokens),
+        "server" => await HttpRemote.ConnectAsync(Http, e.Url, e.Project, tokens),
         _ => throw new CommandException($"A remote of kind „{e.Kind}” is not known to this Lapin."),
     };
 
@@ -123,8 +160,7 @@ public sealed partial class EngineDispatcher
                 }
                 else
                 {
-                    var remote = new HttpRemote(Http, url, await HttpRemote.DiscoverAsync(Http, url), "-", tokens);
-                    list = new JsonArray([.. (await remote.ProjectsAsync()).Select(x => (JsonNode)new JsonObject { ["id"] = x.Id, ["name"] = x.Name, ["role"] = x.Role })]);
+                    list = new JsonArray([.. (await ServerProjects(url, tokens)).Select(x => (JsonNode)new JsonObject { ["id"] = x.Id, ["name"] = x.Name, ["role"] = x.Role })]);
                 }
                 var o = new JsonObject { ["projects"] = list };
                 Tokens(o, tokens);
@@ -154,7 +190,7 @@ public sealed partial class EngineDispatcher
                     if (project == null)
                     {
                         if (!Flag(p, "create")) throw new CommandException("Which project on the server?");
-                        project = (await HttpRemote.CreateProjectAsync(Http, normal, await HttpRemote.DiscoverAsync(Http, normal), tokens, title)).Id;
+                        project = (await CreateServerProject(normal, tokens, title)).Id;
                     }
                 }
                 else throw new CommandException("A remote is a folder or a server.");
@@ -558,7 +594,7 @@ public sealed partial class EngineDispatcher
             try { raw = Convert.FromBase64String(data); }
             catch (FormatException) { throw new CommandException("The register's bytes are not base64."); }
         }
-        var remote = await HttpRemote.OpenAsync(Http, url, "-", tokens);
+        var remote = (HttpRemote)await HttpRemote.ConnectAsync(Http, url, "-", tokens);
         var bytes = download && Flag(p, "bytes");
         var a = await remote.ApiAsync(new HttpMethod(method), path, raw == null ? p["body"]?.DeepClone() : null, (string?)p["ifMatch"], bytes, raw, (string?)p["contentType"]);
         var o = new JsonObject { ["status"] = a.Status, ["body"] = a.Json?.DeepClone(), ["etag"] = a.ETag };

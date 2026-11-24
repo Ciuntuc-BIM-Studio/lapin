@@ -29,9 +29,9 @@ public sealed class RemoteException(int status, string code, string message, Jso
 }
 
 /// <summary>
-/// A remote of lapin-remote 1.0: a folder (<see cref="FolderRemote"/>, §7) or a server (<see cref="HttpRemote"/>, §9–§10), seen the
+/// A remote of lapin-remote 1.0: a folder (<see cref="FolderRemote"/>, §7) or a server (<c>HttpRemote</c>, in Lapin.Package.Http: §9–§10), seen the
 /// same way by the operations (<see cref="RemoteOps"/>). Asynchronous, so the one client runs on the desktop and in the browser's
-/// engine (WebAssembly, where <see cref="HttpClient"/> is the page's fetch and nothing may block: Atrium docs/plan-cde-web.md §2.1 A);
+/// engine (WebAssembly, where <c>HttpClient</c> is the page's fetch and nothing may block: Atrium docs/plan-cde-web.md §2.1 A);
 /// the engine still answers one call at a time (a remote call holds the queue of calls until it ends). A folder answers at once. A
 /// token, when the remote needs one, is handed to it by its maker and never written anywhere by the engine.
 /// </summary>

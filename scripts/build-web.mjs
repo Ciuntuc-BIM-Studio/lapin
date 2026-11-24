@@ -75,7 +75,8 @@ const LAZY = [
   'Lapin.Furniture.Models',         // the furniture models' CC0 meshes (decision 477), read with Lapin.Mesh's glTF reader when a piece of one is built
   'System.Private.Xml',             // XML: BCF, XLSX read, LandXML, MS Project, E57's header, COLLADA
   'System.Private.Xml.Linq',
-  'System.Net.Http',                // reached only through System.Private.Xml's resolver
+  'Lapin.Package.Http',             // the CDE's server remote (HttpRemote): interpreted, so no compiled code names System.Net.Http's types
+  'System.Net.Http',                // a server reached (a CDE remote: Lapin.Package.Http), and System.Private.Xml's resolver
   'System.Text.Encoding.CodePages', // DXF's ANSI code pages (import and export)
 ];
 // 2c. Modules left to the interpreter (docs/plan-browser-engine.md, Lazy parts, "The next lever", taken on 14.11.2026):

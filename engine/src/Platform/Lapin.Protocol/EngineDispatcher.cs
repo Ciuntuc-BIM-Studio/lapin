@@ -651,6 +651,19 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// </summary>
     public (byte[] Reply, Diff? Diff) Handle(string text, Caller caller) => HandleAsync(text, caller).GetAwaiter().GetResult();
 
+    /// <summary>
+    /// Whether <paramref name="ex"/> is an <see cref="HttpRequestException"/> (or derives from one), told by its type's name: an
+    /// <c>is HttpRequestException</c> in <see cref="HandleAsync(string, Caller)"/>, which every call runs, would make Mono's AOT code load
+    /// System.Net.Http at the first call, and in the browser that assembly is a lazy part fetched only when a server is reached
+    /// (docs/plan-browser-engine.md, Lazy parts). Such an exception exists only once the assembly is there.
+    /// </summary>
+    static bool Unreachable(Exception ex)
+    {
+        for (var t = ex.GetType(); t != null; t = t.BaseType)
+            if (t.FullName == "System.Net.Http.HttpRequestException") return true;
+        return false;
+    }
+
     /// <summary>One call, awaited (<see cref="HandleAsync(string, Caller)"/>) as the local interface's.</summary>
     public Task<(byte[] Reply, Diff? Diff)> HandleAsync(string text) => HandleAsync(text, Caller.Local);
 
@@ -679,7 +692,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             session.Cancellation = stop.Token;
             try
             {
-                var (result, diff) = IsRemoteCall(method) ? await RemoteCallAsync(method, p) : Dispatch(method, p);
+                var (result, diff) = IsRemoteCall(method) ? await RemoteCall(method, p) : Dispatch(method, p);
                 if (result is Diff { Reset: true } snapshot)
                 {
                     if (Parts(snapshot) is { Count: > 1 } parts)
@@ -702,7 +715,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             return (BinaryFrame.Encode(new Reply(id, null, ex.Message), ContractsOnly), null);
         }
         // A server out of reach (no network, a name that does not resolve, the browser's fetch refused) or a call that timed out.
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        catch (Exception ex) when (ex is TaskCanceledException || Unreachable(ex))
         {
             var why = ex is TaskCanceledException ? "The server took too long to answer." : $"The server could not be reached: {ex.Message}";
             return (BinaryFrame.Encode(new Reply(id, null, why), ContractsOnly), null);
@@ -1557,7 +1570,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 return (null, null);
             // The project's history and its remote (docs/spec-lapin-remote.md, decision 793): EngineDispatcher.Remote.cs.
             // Awaited by HandleAsync before it gets here; a caller of the synchronous Handle (the desktop's tests, a script) waits for it.
-            case var _ when IsRemoteCall(method): return RemoteCallAsync(method, p).GetAwaiter().GetResult();
+            case var _ when IsRemoteCall(method): return RemoteCall(method, p).GetAwaiter().GetResult();
             default: throw new CommandException($"Unknown method „{method}”.");
         }
     }
