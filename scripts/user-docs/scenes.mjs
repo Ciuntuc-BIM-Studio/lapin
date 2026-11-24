@@ -7401,6 +7401,44 @@ export const scenes = [
     },
   },
   {
+    // The vegetation's maquette style (decision 818): a garden of every family in 3D, coloured, then switched to the maquette from
+    // a plant's properties (Vegetation in 3D, the {3D}'s own setting): neutral faceted crowns, an architectural model's.
+    id: 'planting-maquette',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const plant = (name, x, y, seed) => t.cmd('civil.addPlanting', { storeyId: s, x, y, seed, species: [{ name }] });
+      let seed = 21;
+      for (const [k, name] of ['Walnut', 'Lime (Tilia)', 'Maple (Acer)'].entries()) await plant(name, k * 11, 14, seed++);
+      for (const [k, name] of ['Apple', 'Pear', 'Plum', 'Apricot'].entries()) await plant(name, 2 + k * 6, 3, seed++);
+      for (const [k, name] of ['Silver fir', 'Norway spruce', 'Scots pine', 'Black pine'].entries()) await plant(name, -8 - k * 7, 10 + (k % 2) * 6, seed++);
+      for (const [k, name] of ['Hazel', 'Elder', 'Lilac (Syringa)', 'Dog rose'].entries()) await plant(name, 3 + k * 4, -4, seed++);
+      for (let k = 0; k < 8; k++) await plant('Thuja', -2 + k * 1.1, -8, seed++);
+      t.expect((await t.nodes()).filter((n) => n.type === 'LapinPlanting').length === 23, 'twenty-three plants');
+      await t.button('Site', { exact: true });
+      await open3d(t);
+      const orbit = (view) => t.page.evaluate(async (v) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo(v, false), view);
+      await orbit({ azimuth: 2.0, pitch: -0.32, distance: 58, target: { x: 2, y: 5, z: 4 } });
+      await t.wait(1500);
+      await t.shot('planting-coloured-3d', { of: 'canvas', pad: 0 });
+      // A plant's properties switch the 3D view's vegetation.
+      const tree = (await t.nodes()).find((n) => n.type === 'LapinPlanting' && n.name === 'Walnut');
+      await select(t, tree.id);
+      await t.wait(800);
+      const toggle = t.page.locator('aside.props [data-testid=planting-vegetation-3d]');
+      await toggle.waitFor({ timeout: 5000 });
+      await toggle.selectOption('maquette');
+      await t.wait(1200);
+      const style = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('view.style', { id: '3d' }));
+      t.expect(style?.resolved?.vegetation === 'maquette', 'the 3D view draws the plants as a maquette');
+      await t.shot('planting-vegetation-toggle', { of: 'aside.props', pad: 0, maxHeight: 420 });
+      await t.ui({ selection: null, selected: [] });
+      await t.wait(1500);
+      await t.shot('planting-maquette-3d', { of: 'canvas', pad: 0 });
+      await t.cmd('view.setStyle', { id: '3d', vegetation: null });
+    },
+  },
+  {
     // Entourage (stage 4 of docs/plan-visualisation.md): people at the door and a row of parked cars, in 3D, in plan and in the south
     // elevation, drawn there as simple symbols and silhouettes (decision 341); the view's Entourage in 2D among its properties.
     id: 'entourage',

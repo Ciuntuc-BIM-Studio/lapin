@@ -164,7 +164,12 @@ public static class Plantings
         return o;
     }
 
-    public static ElementGeometry? Geometry(Entity e, IModelView m)
+    /// <summary>
+    /// A planting's bodies, plan symbols and silhouettes: coloured (each species in its colour), or with <paramref name="maquette"/>
+    /// as an architectural model's (<see cref="PlantMaquette"/>, decision 818: the crowns and the trunks neutral, apart), for a
+    /// view in the vegetation's maquette style. Either way it says it has the other (<see cref="ElementGeometry.VegetationShape"/>).
+    /// </summary>
+    public static ElementGeometry? Geometry(Entity e, IModelView m, bool maquette = false)
     {
         var plants = Plants(m, e);
         var parts = new List<GeometryPart>();
@@ -175,19 +180,27 @@ public static class Plantings
         {
             var sp = species[i];
             var solids = new List<Solid>();
+            var trunks = maquette ? new List<Solid>() : null;
             foreach (var p in plants.Where(p => p.Species.Name == sp.Name))
             {
                 var h = sp.Height * p.Scale; var r = sp.Crown / 2 * p.Scale;
-                solids.AddRange(Body(sp, p.At, p.Z, h, r));
+                if (trunks != null)
+                {
+                    var (crown, trunk) = PlantMaquette.Body(sp, p.At, p.Z, h, r, p.Seed);
+                    solids.AddRange(crown);
+                    trunks.AddRange(trunk);
+                }
+                else solids.AddRange(Body(sp, p.At, p.Z, h, r));
                 // In drawings by the view style's entourage mode (decision 341): the simple symbols and silhouettes, or the detailed ones.
                 plan.AddRange(Entourage2d.PlantPlan(sp, p.At, r, p.Seed));
                 silhouettes.AddRange(Entourage2d.PlantSilhouettes(sp, new Vec3(p.At.X, p.At.Y, p.Z), h, r));
             }
-            if (solids.Count > 0) parts.Add(new GeometryPart(sp.Name, sp.Color, Paths.Combine(solids, "planting"), null, $"species:{i}"));
+            if (solids.Count > 0) parts.Add(new GeometryPart(sp.Name, trunks != null ? PlantMaquette.CrownColor : sp.Color, Paths.Combine(solids, "planting"), null, $"species:{i}"));
+            if (trunks is { Count: > 0 }) parts.Add(new GeometryPart($"{sp.Name} (trunks)", PlantMaquette.TrunkColor, Paths.Combine(trunks, "planting"), null, $"species:{i}:trunk"));
         }
         if (IsZone(e)) plan.Add(new PlanItem("symbol", true, Terrains.Contour(e)));
         if (parts.Count == 0) return new ElementGeometry([], plan, null, ["No plant fits: enlarge the zone or raise the density."]);
-        return new ElementGeometry(parts, plan, IsZone(e) ? Terrains.Contour(e) : [plants[0].At], Silhouettes: silhouettes);
+        return new ElementGeometry(parts, plan, IsZone(e) ? Terrains.Contour(e) : [plants[0].At], Silhouettes: silhouettes) { VegetationShape = true };
     }
 
     /// <summary>

@@ -31,6 +31,8 @@ public sealed partial class Session
         public bool HasGeometry { get; init; }
         public bool HadItem { get; init; }
         public bool Fine { get; init; }
+        /// <summary>It has a maquette body (<see cref="ElementGeometry.VegetationShape"/>), kept as <see cref="Fine"/> is.</summary>
+        public bool Maquette { get; init; }
         public string? Storey { get; init; }
         public bool Released { get; init; }
         /// <summary>An instance of a shared body: its mesh is the session's, made and sent by the render, so it is never kept or let go.</summary>
@@ -651,28 +653,44 @@ public sealed partial class Session
         return _fine.GetValue(g, _ => Geometry(id, new GeometryOptions(Fine: true)) ?? g);
     }
 
+    /// <summary>What the vegetation's maquette style draws in place of <see cref="Geometry(string)"/> (decision 818), kept as long as that geometry stands.</summary>
+    readonly System.Runtime.CompilerServices.ConditionalWeakTable<ElementGeometry, ElementGeometry> _maquette = new();
+
+    /// <summary>The element as a view in the maquette style draws it (<see cref="ElementGeometry.VegetationShape"/>); its own geometry when it has no such body.</summary>
+    public ElementGeometry? MaquetteGeometry(string id)
+    {
+        if (Geometry(id) is not { VegetationShape: true } g) return Geometry(id);
+        return _maquette.GetValue(g, _ => Geometry(id, new GeometryOptions(Maquette: true)) ?? g);
+    }
+
     /// <summary>
-    /// What a 3D view draws finer than the render has it (decision 415): under LOD 400 nothing but its level, so no one else's
-    /// mesh grows; from it, the fine parts of <paramref name="ids"/> (null: of every element with a finer shape).
+    /// What a 3D view draws otherwise than the render has it: finer from LOD 400 (decision 415), and in the vegetation's maquette
+    /// style the plants' maquette bodies (decision 818). Under LOD 400 and coloured nothing, so no one else's mesh grows; else the
+    /// bodies of <paramref name="ids"/> (null: of every element that has one).
     /// </summary>
     public FineBodies FineBodies(string? viewId, IReadOnlyList<string>? ids)
     {
         var view = viewId == null || viewId == GraphicsSets.View3d ? GraphicsSets.As3dView(_store) : _store.Get(viewId) is { Class: Views.Class } v && v.Str("kind") == "3d" ? v : throw new CommandException("Not a 3D view.");
-        var lod = ViewDetail.Of(_store, view);
-        if (lod < PlanDetail.Lod400) return new FineBodies(lod, []);
+        var vg = VisibilityGraphics.Of(_store, view);
+        var lod = ViewDetail.Of(_store, view, vg);
+        var fine = lod >= PlanDetail.Lod400;
+        if (!fine && !vg.Maquette) return new FineBodies(lod, []);
         EnsureBuilt();
         var items = new List<FineBody>();
         var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
-        foreach (var id in ids ?? _built.Where(kv => kv.Value.Fine).Select(kv => kv.Key).ToList())
+        var q = new QueryContext(this);
+        foreach (var id in ids ?? _built.Where(kv => fine && kv.Value.Fine || vg.Maquette && kv.Value.Maquette).Select(kv => kv.Key).ToList())
         {
-            if (Geometry(id) is not { FineShape: true } || _store.Get(id) is not { } e || FineGeometry(id) is not { } fine) continue;
-            items.Add(new FineBody(id, fine.Parts.Select(p =>
+            if (_store.Get(id) is not { } e || Geometry(id) is not { } g) continue;
+            ElementGeometry? other = fine && g.FineShape ? FineGeometry(id) : vg.Maquette && g.VegetationShape ? vg.Shaped(q, id, g) : null;
+            if (other == null) continue;
+            items.Add(new FineBody(id, other.Parts.Select(p =>
             {
                 var m = p.Tessellate();
                 return new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(_store, e.Id, p, bands), null, p.Key);
             }).ToList()));
         }
-        return new FineBodies(lod, items);
+        return new FineBodies(lod, items) { Vegetation = vg.Vegetation };
     }
 
     /// <summary>What an entity measures: its quantity sets and its parts' (none when its class has no measures).</summary>
@@ -700,7 +718,8 @@ public sealed partial class Session
     /// fill and hatch, the hatch at 1:<paramref name="scale"/>.
     /// </summary>
     /// <param name="fine">The bodies as a 3D view at LOD 400 draws them (decision 415), so the caps close them.</param>
-    public List<CapItem> Caps(IReadOnlyList<ClipPlane> planes, double lift = 0.0005, bool drawing = false, double scale = 50, string layers = "all", bool fine = false)
+    /// <param name="maquette">The plants as a 3D view in the vegetation's maquette style draws them (decision 818).</param>
+    public List<CapItem> Caps(IReadOnlyList<ClipPlane> planes, double lift = 0.0005, bool drawing = false, double scale = 50, string layers = "all", bool fine = false, bool maquette = false)
     {
         var result = new List<CapItem>();
         if (planes.Count == 0) return result;
@@ -731,7 +750,7 @@ public sealed partial class Session
             // What a plane crosses is built again if it was let go.
             if (b.Released) { Rehydrate([id]); if (!_built.TryGetValue(id, out b!)) continue; }
             if (b.Geometry is not { } g0 || b.Item == null) continue;
-            var g = fine && g0.FineShape ? FineGeometry(id) ?? g0 : g0;
+            var g = fine && g0.FineShape ? FineGeometry(id) ?? g0 : maquette && g0.VegetationShape ? MaquetteGeometry(id) ?? g0 : g0;
             var cls = _store.Get(id)?.Class ?? b.Item.Type;
             for (var i = 0; i < g.Parts.Count; i++)
             {
@@ -1180,7 +1199,7 @@ public sealed partial class Session
         var pinned = g?.Instance != null;
         return new Built(g, view.Read, item, BoundsOf(g))
         {
-            HasGeometry = g != null, HadItem = item != null, Fine = g?.FineShape ?? false, Storey = item?.StoreyId, Pinned = pinned, EntityVersion = e.Version,
+            HasGeometry = g != null, HadItem = item != null, Fine = g?.FineShape ?? false, Maquette = g?.VegetationShape ?? false, Storey = item?.StoreyId, Pinned = pinned, EntityVersion = e.Version,
             Bytes = Estimate(g, item, view.Read),
             Stamp = KeepsEarlier && !pinned ? StampOf(view.Read) : null,
         };
@@ -1434,6 +1453,7 @@ public sealed partial class Session
         public IServices Services => s._catalog;
         public ElementGeometry? Geometry(string entityId) => s.Geometry(entityId);
         public ElementGeometry? FineGeometry(string entityId) => s.FineGeometry(entityId);
+        public ElementGeometry? MaquetteGeometry(string entityId) => s.MaquetteGeometry(entityId);
         public string? Title => s.Path is { Length: > 0 } p ? System.IO.Path.GetFileNameWithoutExtension(p.Replace('\\', '/').Split('/')[^1]) : null;
         public IReadOnlyList<string> DependentsOf(string id) => s.DependentsOf(id);
         public IReadOnlyList<string> DependenciesOf(string id) => s.DependenciesOf(id);

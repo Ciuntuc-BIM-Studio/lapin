@@ -2138,7 +2138,8 @@ export function Viewport3D() {
   const fog = useUi((st) => st.fog);
   // The layers this 3D view shows (its style's or its own): the parts the others are drawn without, picked through, walked through.
   const layers = useSession((st) => layers3dOf(st.nodes, view3dId).mode);
-  // At LOD 400 members draw their real section (decision 415), fetched then: everyone else's meshes stay as they are.
+  // At LOD 400 members draw their real section (decision 415), in the maquette style plants their maquette bodies (decision 818),
+  // fetched then: everyone else's meshes stay as they are.
   const fineBodies = useFineBodies(view3dId, render, useSession((st) => st.nodes));
   // Fog: the model fades into the background with distance (a display rule for linked context, big sites).
   useEffect(() => { const s = scene.current; if (s) s.fog = fog ? new THREE.FogExp2(CLEAR[theme], 0.012) : null; }, [fog, theme]);
@@ -2332,11 +2333,11 @@ export function Viewport3D() {
     if (!capPlanes.length) { put([]); return; }
     // Asked a moment after the last change (a face dragged asks once it rests), the newest answer kept.
     const timer = setTimeout(() => {
-      void engine.call<CapItem[]>('view.caps', { planes: capPlanes, style: capStyle, scale: capScale, layers, fine: fineBodies.on }).then((items) => { if (!stale) put(items ?? []); }).catch(() => undefined);
+      void engine.call<CapItem[]>('view.caps', { planes: capPlanes, style: capStyle, scale: capScale, layers, fine: fineBodies.fine, maquette: fineBodies.maquette }).then((items) => { if (!stale) put(items ?? []); }).catch(() => undefined);
     }, 60);
     return () => { stale = true; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- capKey stands for capPlanes
-  }, [capKey, render, fineBodies.on, fineBodies.version]);
+  }, [capKey, render, fineBodies.on, fineBodies.version, fineBodies.fine, fineBodies.maquette]);
   useEffect(() => {
     const s = scene.current, renderer = rendererRef.current;
     if (!s || !renderer) return;

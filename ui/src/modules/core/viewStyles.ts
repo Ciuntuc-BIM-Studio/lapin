@@ -33,9 +33,12 @@ export function styleStructure(style: Pick<ViewStyle, 'layers' | 'layersPlan' | 
  * surfaceHatch: elevations and sections hatch the faces they see with their materials' elevation hatch (decision 325).
  * entourage: how people, cars and plants draw in 2D (decision 341): outlines (the default), abstract, detailed or none;
  * entourageFill: the colour their silhouettes are filled with in elevations and sections, null for none.
+ * vegetation: how plants' bodies look (decision 818): coloured (each species in its colour, the default) or maquette
+ * (neutral faceted bodies, an architectural model's), in the 3D, its exports and the drawings alike.
  */
 export type EntourageMode = 'outline' | 'abstract' | 'detailed' | 'none';
-export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean; finishHatch?: boolean; surfaceHatch?: boolean; entourage?: EntourageMode; entourageFill?: string | null; /** The graphics set its views take when they have none of their own (decision 391). */ graphicsSet?: string | null; /** Its views' level of development (decision 404). */ detail?: number;
+export type VegetationMode = 'coloured' | 'maquette';
+export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean; finishHatch?: boolean; surfaceHatch?: boolean; entourage?: EntourageMode; entourageFill?: string | null; /** How its plants' bodies look (decision 818). */ vegetation?: VegetationMode; /** The graphics set its views take when they have none of their own (decision 391). */ graphicsSet?: string | null; /** Its views' level of development (decision 404). */ detail?: number;
   /** The finish layers by the kind of view (the forum's topic #30): plans, and sections with elevations, drawing the walls' and the floors' finishes; on unless false. */
   wallFinishesPlan?: boolean; wallFinishesSection?: boolean; floorFinishesPlan?: boolean; floorFinishesSection?: boolean;
   /** Its plans' and its sections' and elevations' partial structure display (decision 500); unset, its layers. */
@@ -85,6 +88,10 @@ export const FINISH_FIELDS: { key: 'wallFinishesPlan' | 'wallFinishesSection' | 
 
 /** The entourage modes as the editors offer them. */
 export const ENTOURAGE_MODES: [EntourageMode, string][] = [['outline', 'outlines'], ['abstract', 'abstract'], ['detailed', 'detailed'], ['none', 'not drawn']];
+/** The vegetation's styles as the editors offer them (decision 818). */
+export const VEGETATION_MODES: [VegetationMode, string][] = [['coloured', 'coloured'], ['maquette', 'maquette']];
+/** What the vegetation's style does, as its control's tooltip. */
+export const VEGETATION_HELP = "How trees, shrubs and hedges look in 3D, in the view's exports and where drawings draw their bodies: each species in its colour, or as an architectural model's, neutral and faceted";
 /** The silhouettes' fills offered: none, or a pale colour that prints light. */
 export const ENTOURAGE_FILLS: [string, string][] = [['', 'no fill'], ['#e8e8e8', 'light grey'], ['#e2ecd8', 'pale green']];
 

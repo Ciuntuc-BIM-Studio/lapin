@@ -6,13 +6,14 @@
  */
 
 import { ProfileButton } from './ProfileButton';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
-import { execute, useSession } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
 import { notify, useUi } from '../../app/store';
 import { isDitch } from './prefs';
 import { t, useLang } from '../../i18n';
 import { groupedSpecies, speciesName, type Species } from './species';
+import { VEGETATION_MODES } from '../core/viewStyles';
 import { formatLength, lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { MaterialPicker } from '../core/MaterialPicker';
@@ -214,6 +215,31 @@ export function RetainingWallSegments({ node }: { node: NodeDto }) {
   );
 }
 
+/**
+ * A quick switch of how the 3D view ({3D}) draws the plants (decision 818): coloured or as a maquette, the {3D}'s own setting
+ * (its view settings show it, and every other view sets its own there).
+ */
+function Vegetation3d() {
+  const nodes = useSession((s) => s.nodes);
+  const [mode, setMode] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void query<{ resolved: { vegetation?: string } }>('view.style', { id: '3d' }).then((r) => { if (live && r) setMode(r.resolved.vegetation ?? 'coloured'); });
+    return () => { live = false; };
+  }, [nodes]);
+  if (mode == null) return null;
+  return (
+    <>
+      <dt title="How the 3D view draws the plants: each species in its colour, or as an architectural model's, neutral and faceted. Each view sets its own in its view settings.">Vegetation in 3D</dt>
+      <dd>
+        <select data-testid="planting-vegetation-3d" value={mode} onChange={(e) => void execute('view.setStyle', { id: '3d', vegetation: e.target.value })}>
+          {VEGETATION_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </select>
+      </dd>
+    </>
+  );
+}
+
 export function PlantingSection({ node }: { node: NodeDto }) {
   const info = useSession((s) => s.info);
   // Names and the picker's groups follow the language (an option's text and a group's label are left by the translator).
@@ -228,6 +254,9 @@ export function PlantingSection({ node }: { node: NodeDto }) {
   const add = (name: string) => { const c = catalog.find((s) => s.name === name); if (c) setSpecies([...species, { ...c, share: 1 }]); };
   return (
     <div className="layers">
+      <dl className="fields">
+        <Vegetation3d />
+      </dl>
       {zone && <dl className="fields">
         <dt>Plants per 100 m²</dt><dd><NumberField value={typeof node.props.density === 'number' ? node.props.density : 3} min={0.1} onCommit={(v) => { if (v != null) set({ density: v }); }} /></dd>
         <dt>Seed</dt><dd><NumberField value={typeof node.props.seed === 'number' ? node.props.seed : 1} integer onCommit={(v) => { if (v != null) set({ seed: v }); }} /> <button type="button" className="link small" onClick={() => set({ seed: Math.floor(Math.random() * 100000) })}>shuffle</button></dd>

@@ -33,6 +33,7 @@ public sealed class OverlayQuery(IQueryContext inner, IModelView model) : IQuery
     public IServices Services => inner.Services;
     public ElementGeometry? Geometry(string entityId) => inner.Geometry(entityId);
     public ElementGeometry? FineGeometry(string entityId) => inner.FineGeometry(entityId);
+    public ElementGeometry? MaquetteGeometry(string entityId) => inner.MaquetteGeometry(entityId);
     public string? Title => inner.Title;
     public IReadOnlyList<QuantitySet> Quantities(string id) => inner.Quantities(id);
     public ClassDescriptor? Describe(string ifcClass) => inner.Describe(ifcClass);
