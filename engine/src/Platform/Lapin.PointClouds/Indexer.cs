@@ -149,6 +149,11 @@ public static class Indexer
         // Cell of a quantized point in a node's grid (the node's cube, in steps).
         var builder = new Builder(edge, step, Emit, lim.LeafMax, cancel);
 
+        // Where the points are dense (DenseBox): every point counted in the cube's 128³ cells.
+        float[] dense;
+        long[] cubeSteps = [CubeSteps(0), CubeSteps(1), CubeSteps(2)];
+        long CubeSteps(int k) => Math.Max(1, (long)Math.Ceiling(edge / step[k]));
+
         if (small)
         {
             var all = new Set((int)count);
@@ -159,6 +164,8 @@ public static class Indexer
                     all.Add(Q(r.X[i], 0), Q(r.Y[i], 1), Q(r.Z[i], 2), Col(r.R[i]), Col(r.G[i]), Col(r.B[i]), r.I[i], r.C[i]);
                 }
             raw.Clear();
+            dense = new float[Grid * Grid * Grid];
+            for (var i = 0; i < all.Count; i++) dense[DenseBox.CellOf(all.X[i], all.Y[i], all.Z[i], cubeSteps)]++;
             progress?.Invoke("Indexing", 0.6);
             builder.Top("r", all, hold: false);
             progress?.Invoke("Indexing", 0.95);
@@ -167,8 +174,7 @@ public static class Indexer
         {
             // 2. Counted on the grid.
             var cells = new int[Grid * Grid * Grid];
-            int Cell(int x, int y, int z) => (int)Math.Min(Grid - 1, (long)x * Grid / CubeSteps(0)) * Grid * Grid + (int)Math.Min(Grid - 1, (long)y * Grid / CubeSteps(1)) * Grid + (int)Math.Min(Grid - 1, (long)z * Grid / CubeSteps(2));
-            long CubeSteps(int k) => Math.Max(1, (long)Math.Ceiling(edge / step[k]));
+            int Cell(int x, int y, int z) => DenseBox.CellOf(x, y, z, cubeSteps);
             long seen = 0;
             foreach (var b in reader.Read(65536, cancel))
             {
@@ -180,6 +186,8 @@ public static class Indexer
                 seen += b.Count;
                 progress?.Invoke("Counting", 0.3 + 0.15 * Math.Min(1, (double)seen / count));
             }
+            dense = new float[cells.Length];
+            for (var i = 0; i < cells.Length; i++) dense[i] = cells[i];
             // The chunks: an octree of the counts, cut where a node holds at most ChunkMax (or is one cell).
             var chunkOf = new int[cells.Length];
             var chunks = new List<(string Name, int Level, int X0, int Y0, int Z0)>();
@@ -281,6 +289,7 @@ public static class Indexer
             HasColor = h.HasColor && colorMax > 0, HasIntensity = h.HasIntensity && iMax > iMin, HasClassification = h.HasClassification && classes.Skip(2).Any(n => n > 0),
             IntensityMin = iMin, IntensityMax = iMax, Classes = classes, Crs = h.Crs, CrsText = h.CrsText, Units = h.Units, Notes = h.Notes,
             Nodes = nodes, SourceLength = sourceLength, SourceKey = sourceKey,
+            Dense = DenseBox.FromCells(dense, min, edge, [lo[0], lo[1], lo[2], hi[0], hi[1], hi[2]]),
         };
         data.Dispose();
         // A splat file's Gaussians beside its points (docs/plan-gaussian-splats.md), before the index's meta: an index is never

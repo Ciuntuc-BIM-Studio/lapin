@@ -46,6 +46,8 @@ public sealed class PointStore : IDisposable
     /// <summary>What the index was made from: the source's length and its key (the caller's: a path and its time, or a hash).</summary>
     public long SourceLength { get; init; }
     public string SourceKey { get; init; } = "";
+    /// <summary>The dense box the indexer counted (min x, y, z, max x, y, z, the file's units); null in an index made before it was kept.</summary>
+    public double[]? Dense { init => _core = value is { Length: 6 } ? value : null; }
 
     readonly Dictionary<string, Node> _byName = [];
     SafeHandleHolder? _data;
@@ -53,6 +55,10 @@ public sealed class PointStore : IDisposable
     internal PointStore(string dir) { Directory = dir; }
 
     public Node? Get(string name) => _byName.TryGetValue(name, out var n) ? n : null;
+
+    double[]? _core;
+    /// <summary>Where the points are dense (<see cref="DenseBox"/>), in the file's units: counted when indexed, else worked out from the nodes once.</summary>
+    public double[] Core => _core ??= DenseBox.Of(this);
 
     /// <summary>A node's cube (min x, y, z, edge) in the file's units, from its name.</summary>
     public (double X, double Y, double Z, double Edge) CubeOf(string name)
@@ -126,6 +132,7 @@ public sealed class PointStore : IDisposable
                 Classes = classes, Crs = (string?)o["crs"], CrsText = (string?)o["crsText"], Units = (string?)o["units"],
                 Notes = (o["notes"] as JsonArray ?? []).Select(x => (string)x!).ToList(), Nodes = nodes,
                 SourceLength = (long?)o["sourceLength"] ?? 0, SourceKey = (string?)o["sourceKey"] ?? "",
+                Dense = o["core"] is JsonArray { Count: 6 } ? Nums(o["core"]) : null,
             };
             foreach (var n in nodes) s._byName[n.Name] = n;
             // An index cut short or damaged (its points file shorter than its nodes say, no root, its cube not three numbers): none, made again.
@@ -150,7 +157,7 @@ public sealed class PointStore : IDisposable
             ["bounds"] = Arr(s.Bounds), ["color"] = s.HasColor, ["intensity"] = s.HasIntensity, ["classification"] = s.HasClassification,
             ["intensityMin"] = (int)s.IntensityMin, ["intensityMax"] = (int)s.IntensityMax, ["classes"] = classes,
             ["crs"] = s.Crs, ["crsText"] = s.CrsText, ["units"] = s.Units, ["notes"] = new JsonArray(s.Notes.Select(n => (JsonNode)n).ToArray()),
-            ["sourceLength"] = s.SourceLength, ["sourceKey"] = s.SourceKey,
+            ["sourceLength"] = s.SourceLength, ["sourceKey"] = s.SourceKey, ["core"] = s._core is { } core ? Arr(core) : null,
             ["nodes"] = new JsonArray(s.Nodes.Select(n => (JsonNode)new JsonArray(n.Name, n.Offset, n.Count)).ToArray()),
         };
         var tmp = Path.Combine(dir, "meta.json.tmp");

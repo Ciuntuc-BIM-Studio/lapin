@@ -62,10 +62,11 @@ function CropPanel({ link }: { link: NodeDto }) {
   return (
     <div className="cloud-crop" data-testid="cloud-crop">
       <div className="row-tools">
-        <button type="button" className="btn small" data-crop="fit" onClick={() => void fitCrop(link.id).catch((e) => notify(e instanceof Error ? e.message : String(e)))}>Fit to cloud</button>
+        <button type="button" className="btn small" data-crop="fit" title="A box round where the cloud is dense: the floaters round a capture left out" onClick={() => void fitCrop(link.id).catch((e) => notify(e instanceof Error ? e.message : String(e)))}>Fit to cloud</button>
+        <button type="button" className="btn small" data-crop="whole" title="A box round all of the cloud, its outliers too" onClick={() => void fitCrop(link.id, true).catch((e) => notify(e instanceof Error ? e.message : String(e)))}>Whole cloud</button>
         <button type="button" className="btn small" data-crop="reset" disabled={!crop} onClick={() => void execute('pointcloud.crop', { id: link.id, crop: null })}>Reset</button>
       </div>
-      {!crop && <p className="muted small">Not cropped: Fit to cloud makes a box round it, then its numbers shrink it.</p>}
+      {!crop && <p className="muted small">Not cropped: Fit to cloud makes a box round where it is dense, Whole cloud round all of it; then its numbers shrink it.</p>}
       {crop && (
         <div className="cloud-crop-fields">
           {(['x', 'y', 'z'] as const).map((k, i) => <LabeledLength key={`c${k}`} label={`Middle ${k}`} metres={crop.center[i]} onCommit={(v) => put({ center: at(crop.center, i, v) })} />)}

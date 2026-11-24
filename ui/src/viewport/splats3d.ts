@@ -237,6 +237,25 @@ void main() {
   gl_FragColor = vec4(vColor.rgb * alpha, alpha);
 }`;
 
+/** Where the splats come among the transparent things: after the rest (glass, highlights, the grid's lines). */
+export const SPLAT_ORDER = 10;
+/** Among the transparent things, the grid's lines come first: after the sky (−1), before glass (0) and the splats. */
+export const UNDERLAY_ORDER = -0.5;
+
+/**
+ * Lines drawn as an underlay (the 3D view's ground grid and grid axes): after the opaque model, which hides them where it is
+ * in front by its depth, before the splats, and writing no depth, so that a capture (whose splats write none) is blended
+ * over them and hides them as an opaque model would, instead of being cut by them where its splats' centres lie a little
+ * under the grid's plane (a real capture's ground: docs/plan-gaussian-splats.md, the fixes after G4).
+ */
+export function underlayLines(o: THREE.Object3D): void {
+  o.traverse((c) => {
+    const m = (c as THREE.Line).material as THREE.Material | THREE.Material[] | undefined;
+    for (const x of Array.isArray(m) ? m : m ? [m] : []) { x.transparent = true; x.depthWrite = false; }
+    c.renderOrder = UNDERLAY_ORDER;
+  });
+}
+
 /** A 1 × 1 texture standing in for the harmonics of a cloud drawn in its base colour (a sampler must have one). */
 let noSh: THREE.DataTexture | null = null;
 function emptySh(): THREE.DataTexture {
@@ -434,7 +453,7 @@ export class SplatLayer {
       if (turn && turn.length === 9) (u.fileTurn.value as THREE.Matrix3).fromArray(Array.from(turn));
     } else c.shDegree = 0;
     mesh.frustumCulled = false;
-    mesh.renderOrder = 10;
+    mesh.renderOrder = SPLAT_ORDER;
     mesh.visible = c.spec.shown;
     mesh.material.uniforms.halftone.value = c.spec.halftone ? 0.6 : 0;
     mesh.userData = { splatCloud: c.spec.id };

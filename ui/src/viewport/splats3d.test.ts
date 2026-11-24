@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { covariance, ellipseAxes, projectCovariance, splatBudget, toHalf, writePage } from './splats3d';
+import * as THREE from 'three';
+import { covariance, ellipseAxes, projectCovariance, SPLAT_ORDER, splatBudget, toHalf, underlayLines, writePage } from './splats3d';
 import { depthRow, sortBackToFront } from './splatSort';
 
 /** IEEE half bits back to a number (what GLSL's unpackHalf2x16 does). */
@@ -120,5 +121,24 @@ describe('the splats\' sort', () => {
     }
     expect(seen.every((v) => v === 1)).toBe(true);
     expect(bad).toBe(0);
+  });
+});
+
+describe('the grid under a capture', () => {
+  it('draws its lines after the opaque model, before the splats, writing no depth (a capture blended over them hides them)', () => {
+    const grid = new THREE.GridHelper(10, 10);
+    const axis = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial());
+    const group = new THREE.Group();
+    group.add(axis);
+    underlayLines(grid);
+    underlayLines(group);
+    for (const o of [grid, axis]) {
+      const m = (o as THREE.Line).material as THREE.Material;
+      expect(m.transparent).toBe(true);
+      expect(m.depthWrite).toBe(false);
+      expect(m.depthTest).toBe(true);
+      expect(o.renderOrder).toBeLessThan(SPLAT_ORDER);
+      expect(o.renderOrder).toBeLessThan(0);
+    }
   });
 });

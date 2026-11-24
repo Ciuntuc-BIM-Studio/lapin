@@ -193,7 +193,7 @@ public static class PointCloudLinks
         else Task.Run(Work);
     }
 
-    /// <summary>What the link records of its index: points, box, what each point carries, the classes, intensity's range.</summary>
+    /// <summary>What the link records of its index: points, box, where they are dense, what each point carries, the classes, intensity's range.</summary>
     public static JsonObject Summary(PointStore s)
     {
         var classes = new JsonObject();
@@ -201,6 +201,7 @@ public static class PointCloudLinks
         return new JsonObject
         {
             ["format"] = s.Format, ["points"] = s.Points, ["bounds"] = new JsonArray(s.Bounds.Select(v => (JsonNode)Math.Round(v, 4)).ToArray()),
+            ["core"] = new JsonArray(s.Core.Select(v => (JsonNode)Math.Round(v, 4)).ToArray()),
             ["color"] = s.HasColor, ["intensity"] = s.HasIntensity, ["classification"] = s.HasClassification, ["classes"] = classes,
             ["intensityRange"] = new JsonArray(s.IntensityMin, s.IntensityMax), ["crs"] = s.Crs, ["units"] = s.Units,
         };
@@ -354,7 +355,8 @@ public static class PointCloudLinks
 
     /// <summary>
     /// The cloud's octree for the 3D view: each node's name, points, box in the project (min x, y, z, max x, y, z) and the
-    /// spacing its sample keeps (m); with the cloud's range of heights and intensity for the colours.
+    /// spacing its sample keeps (m); with the cloud's range of heights and intensity for the colours. <c>box</c> is round all of
+    /// it, <c>core</c> round where its points are dense (<see cref="DenseBox"/>: what Fit frames), both inside the crop when it has one.
     /// </summary>
     public static JsonObject? Hierarchy(IModelView m, Entity link)
     {
@@ -369,12 +371,19 @@ public static class PointCloudLinks
             nodes.Add((JsonNode)new JsonArray(n.Name, n.Count, R(b[0]), R(b[1]), R(b[2]), R(b[3]), R(b[4]), R(b[5]), Math.Round(e / PointStore.Resolution * scale, 5)));
         }
         var all = BoxOf(t, s.Bounds[0], s.Bounds[1], s.Bounds[2], s.Bounds[3], s.Bounds[4], s.Bounds[5]);
-        // Cropped: what is kept is inside the crop's box too.
+        var c = s.Core;
+        var core = BoxOf(t, c[0], c[1], c[2], c[3], c[4], c[5]);
+        // Cropped: what is kept is inside the crop's box too; a crop away from the dense part leaves the crop's box itself.
         if (CropOf(link)?.Box() is { } cb)
+        {
             for (var k = 0; k < 3; k++) { all[k] = Math.Max(all[k], cb[k]); all[k + 3] = Math.Max(all[k], Math.Min(all[k + 3], cb[k + 3])); }
+            for (var k = 0; k < 3; k++) { core[k] = Math.Max(core[k], all[k]); core[k + 3] = Math.Min(core[k + 3], all[k + 3]); }
+            if (Enumerable.Range(0, 3).Any(k => core[k] > core[k + 3])) core = (double[])all.Clone();
+        }
         return new JsonObject
         {
             ["id"] = link.Id, ["points"] = s.Points, ["nodes"] = nodes, ["box"] = new JsonArray(all.Select(v => (JsonNode)R(v)).ToArray()),
+            ["core"] = new JsonArray(core.Select(v => (JsonNode)R(v)).ToArray()),
             ["intensityRange"] = new JsonArray(s.IntensityMin, s.IntensityMax), ["color"] = s.HasColor, ["intensity"] = s.HasIntensity, ["classification"] = s.HasClassification,
         };
         static JsonNode R(double v) => Math.Round(v, 4);
@@ -564,10 +573,17 @@ public static class PointCloudLinks
     /// <summary>A link's crop when it has one: a box in the project (its middle, its sizes, m) turned about z by <c>rotation</c> degrees.</summary>
     public static CropBox? CropOf(Entity link) => CropBox.From(link.Attrs["crop"] as JsonObject);
 
-    /// <summary>The box round a cloud in the project, its sides along the link's own turn (the crop "Fit to cloud" makes).</summary>
-    public static CropBox? Fit(IModelView m, Entity link)
+    /// <summary>
+    /// The box round a cloud in the project, its sides along the link's own turn (the crop "Fit to cloud" makes): round where
+    /// its points are dense (<see cref="DenseBox"/>), its sides rounded outwards to a step of about a fiftieth of its size (1, 2
+    /// or 5 × a power of ten); with <paramref name="whole"/>, round all of it, exactly.
+    /// </summary>
+    public static CropBox? Fit(IModelView m, Entity link, bool whole = false)
     {
         if (BoundsOf(link) is not { } fb) return null;
+        var store = whole ? null : StoreOf(link);
+        var dense = store != null;
+        if (store != null) fb = store.Core;
         var t = TransformOf(m, link);
         var deg = Json.Number((link.Attrs["placement"] as JsonObject)?["rotation"]) ?? 0;
         var r = deg * Math.PI / 180;
@@ -580,12 +596,29 @@ public static class PointCloudLinks
             double[] q = [c * w.X + s * w.Y, -s * w.X + c * w.Y, w.Z];
             for (var k = 0; k < 3; k++) { lo[k] = Math.Min(lo[k], q[k]); hi[k] = Math.Max(hi[k], q[k]); }
         }
+        if (dense)
+        {
+            var step = NiceStep(Math.Max(Math.Max(hi[0] - lo[0], hi[1] - lo[1]), hi[2] - lo[2]) / 50);
+            for (var k = 0; k < 3; k++)
+            {
+                lo[k] = Math.Floor(lo[k] / step + 1e-6) * step;
+                hi[k] = Math.Ceiling(hi[k] / step - 1e-6) * step;
+            }
+        }
         double mx = (lo[0] + hi[0]) / 2, my = (lo[1] + hi[1]) / 2;
         return new CropBox([Math.Round(c * mx - s * my, 4), Math.Round(s * mx + c * my, 4), Math.Round((lo[2] + hi[2]) / 2, 4)],
             [Math.Round(hi[0] - lo[0], 4), Math.Round(hi[1] - lo[1], 4), Math.Round(hi[2] - lo[2], 4)], deg);
     }
 
-    // ─── The link ───
+    /// <summary>The step of 1, 2 or 5 × a power of ten nearest above <paramref name="v"/> (1 mm at least).</summary>
+    public static double NiceStep(double v)
+    {
+        if (!(v > 0.001)) return 0.001;
+        var p = Math.Pow(10, Math.Floor(Math.Log10(v)));
+        foreach (var k in new[] { 1.0, 2, 5, 10 }) if (k * p >= v - 1e-12) return k * p;
+        return 10 * p;
+    }
+
     // ─── The link ───
 
     /// <summary>A cloud linked: by its path (the desktop) or its bytes (a browser); its header read, its index started.</summary>
@@ -808,14 +841,15 @@ public static class PointCloudLinks
             return Calibrate(ctx, link, P(a["a"]), P(a["b"]), Json.Number(a["length"]) ?? 0);
         });
 
-        // What of it is kept (G2): a box in the project, turned about z; `fit` makes the box round the whole cloud; null takes it off.
+        // What of it is kept (G2): a box in the project, turned about z; `fit` makes the box round where the cloud is dense (the
+        // floaters round a capture left out), with `whole` round all of it; null takes it off.
         r.Command("pointcloud.crop", "Crop point cloud", (ctx, a) =>
         {
             var link = Links.Require(ctx.Model, (string?)a["id"]);
             if (!Is(link)) throw new CommandException("That link is not a point cloud.");
             var attrs = link.CloneAttrs();
             CropBox? box;
-            if (a["fit"] is JsonValue fv && fv.TryGetValue<bool>(out var fit) && fit) box = Fit(ctx.Model, link) ?? throw new CommandException("The cloud's size is not known yet: wait for its index.");
+            if (a["fit"] is JsonValue fv && fv.TryGetValue<bool>(out var fit) && fit) box = Fit(ctx.Model, link, a["whole"] is JsonValue wv && wv.TryGetValue<bool>(out var w) && w) ?? throw new CommandException("The cloud's size is not known yet: wait for its index.");
             else if (a.ContainsKey("crop") && a["crop"] is null) box = null;
             else box = CropBox.From(a["crop"] as JsonObject) ?? throw new CommandException("A crop is {center: [x, y, z], size: [x, y, z], rotation}, its sizes above 0.");
             if (box == null) attrs.Remove("crop"); else attrs["crop"] = box.ToJson();

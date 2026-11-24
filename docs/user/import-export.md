@@ -219,7 +219,9 @@ A capture trained from photos has no true size: its unit is whatever the reconst
 
 ![The place dialog with the capture's scale factor](shots/gaussian-splat-place.webp)
 
-A capture carries floaters round its subject and the neighbours' gardens; a scan, the street. The crop button on the cloud's row (or **Crop point cloud…** on the 3D view's right-click near it) opens its **crop box**: **Fit to cloud** makes a box round the whole cloud, along the link's own turn; then its middle, its sizes and its turn shrink it to what you keep, each change one undo step, and **Reset** takes it off. What is outside is hidden everywhere: in 3D (points and splats), in plans and sections, from the snaps and from the exports. The cloud's file and its index stay as they are.
+A capture carries floaters round its subject and the neighbours' gardens; a scan, the street. The crop button on the cloud's row (or **Crop point cloud…** on the 3D view's right-click near it) opens its **crop box**: **Fit to cloud** makes a box round where the cloud is dense, along the link's own turn and rounded to a tidy step, so a capture's floaters (sky, far background) are left out at once; **Whole cloud** makes it round all of it instead, outliers included. Then its middle, its sizes and its turn shrink it to what you keep, each change one undo step, and **Reset** takes it off. What is outside is hidden everywhere: in 3D (points and splats), in plans and sections, from the snaps and from the exports. The cloud's file and its index stay as they are.
+
+The 3D view's **Fit** frames a cloud the same way: where its points are dense, inside its crop when it has one, so a capture whose floaters reach hundreds of metres is framed on its subject. The ground grid lies under a capture as under a model: the capture hides it where it stands in front of it.
 
 ![The crop box on a capture's row in Manage → Links](shots/gaussian-splat-crop-links.webp)
 

@@ -221,7 +221,9 @@ O captură antrenată din fotografii nu are o mărime reală: unitatea ei e cea 
 
 ![Dialogul de așezare cu factorul de scară al capturii](shots/gaussian-splat-place.webp)
 
-O captură are în jurul subiectului fragmente plutitoare și grădinile vecinilor; o scanare, strada. Butonul de decupare de pe rândul norului (sau **Decupează norul de puncte…** din meniul de clic dreapta al vederii 3D, lângă nor) îi deschide **cutia de decupare**: **Potrivește pe nor** face o cutie în jurul întregului nor, după rotirea legăturii; apoi mijlocul, mărimile și rotirea ei o strâng la ce păstrezi, fiecare schimbare un pas de anulare, iar **Resetează** o scoate. Ce e în afară se ascunde peste tot: în 3D (puncte și splat-uri), în planuri și secțiuni, din snap-uri și din exporturi. Fișierul norului și indexul lui rămân cum sunt.
+O captură are în jurul subiectului fragmente plutitoare și grădinile vecinilor; o scanare, strada. Butonul de decupare de pe rândul norului (sau **Decupează norul de puncte…** din meniul de clic dreapta al vederii 3D, lângă nor) îi deschide **cutia de decupare**: **Potrivește pe nor** face o cutie în jurul părții dense a norului, după rotirea legăturii și rotunjită la un pas curat, așa că fragmentele plutitoare ale unei capturi (cerul, fundalul îndepărtat) rămân din prima pe dinafară; **Tot norul** o face în jurul întregului nor, cu punctele răzlețe cu tot. Apoi mijlocul, mărimile și rotirea ei o strâng la ce păstrezi, fiecare schimbare un pas de anulare, iar **Resetează** o scoate. Ce e în afară se ascunde peste tot: în 3D (puncte și splat-uri), în planuri și secțiuni, din snap-uri și din exporturi. Fișierul norului și indexul lui rămân cum sunt.
+
+**Fit** din vederea 3D încadrează un nor la fel: acolo unde punctele lui sunt dese, în cutia de decupare când are una, așa că o captură ale cărei fragmente plutitoare ajung la sute de metri e încadrată pe subiectul ei. Grila de la sol stă sub o captură ca sub un model: captura o ascunde acolo unde stă în fața ei.
 
 ![Cutia de decupare pe rândul unei capturi în Manage → Links](shots/gaussian-splat-crop-links.webp)
 

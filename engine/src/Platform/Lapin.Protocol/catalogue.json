@@ -620,7 +620,7 @@
     {"name":"planning.useIndicativeNorms","module":"planning","label":"Indicative norms","args":[]},
     {"name":"planning.viewDate","module":"planning","label":"State at date","args":[{"name":"id","type":"str"},{"name":"date","type":"str"}]},
     {"name":"pointcloud.calibrate","module":"core","label":"Calibrate point cloud","args":[{"name":"id","type":"str"},{"name":"a"},{"name":"b"},{"name":"length","type":"float"}]},
-    {"name":"pointcloud.crop","module":"core","label":"Crop point cloud","args":[{"name":"id","type":"str"},{"name":"fit","type":"bool"},{"name":"crop","type":"dict"}]},
+    {"name":"pointcloud.crop","module":"core","label":"Crop point cloud","args":[{"name":"id","type":"str"},{"name":"fit","type":"bool"},{"name":"whole","type":"bool"},{"name":"crop","type":"dict"}]},
     {"name":"pointcloud.link","module":"core","label":"Link point cloud","args":[{"name":"data","type":"str"},{"name":"name","type":"str"},{"name":"path","type":"str"},{"name":"asPoints","type":"bool"},{"name":"placement","type":"dict"}]},
     {"name":"pointcloud.place","module":"core","label":"Place point cloud","args":[{"name":"id","type":"str"},{"name":"mode"},{"name":"units"},{"name":"offset"},{"name":"rotation"},{"name":"up"},{"name":"scale"}]},
     {"name":"pointcloud.reload","module":"core","label":"Reload point cloud","args":[{"name":"id","type":"str"}]},

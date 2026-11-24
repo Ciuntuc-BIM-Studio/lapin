@@ -15,8 +15,14 @@ import type { Vec3 } from './camera';
 export type NodeRow = [string, number, number, number, number, number, number, number, number];
 
 export interface Hierarchy {
-  id: string; points: number; nodes: NodeRow[]; box: number[];
+  /** `box`: round all of it; `core`: round where its points are dense (the engine's DenseBox), both inside its crop. */
+  id: string; points: number; nodes: NodeRow[]; box: number[]; core?: number[];
   intensityRange: [number, number]; color: boolean; intensity: boolean; classification: boolean;
+}
+
+/** What Fit frames of a cloud: where its points are dense (`core`), else (an older engine) its whole box. */
+export function fitBox(h: Pick<Hierarchy, 'box' | 'core'>): number[] {
+  return h.core?.length === 6 && h.core.every(Number.isFinite) ? h.core : h.box;
 }
 
 export interface Tile { link: string; name: string; positions: Float32Array; colors: Int32Array; values: Int32Array }
@@ -302,10 +308,10 @@ export class PointCloudLayer {
     }
   }
 
-  /** The box round every cloud shown (for Zoom to fit), null when none is ready. */
+  /** The box round every cloud shown where its points are dense (for Zoom to fit: a capture's floaters left out), null when none is ready. */
   box(): THREE.Box3 | null {
     const b = new THREE.Box3();
-    for (const c of this.clouds.values()) if (c.hierarchy && c.spec.shown) b.union(new THREE.Box3(new THREE.Vector3(...c.hierarchy.box.slice(0, 3)), new THREE.Vector3(...c.hierarchy.box.slice(3, 6))));
+    for (const c of this.clouds.values()) if (c.hierarchy && c.spec.shown) { const f = fitBox(c.hierarchy); b.union(new THREE.Box3(new THREE.Vector3(f[0], f[1], f[2]), new THREE.Vector3(f[3], f[4], f[5]))); }
     return b.isEmpty() ? null : b;
   }
 
