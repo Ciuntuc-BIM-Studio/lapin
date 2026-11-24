@@ -52,6 +52,8 @@ public interface IElementPlacement
     string? Copy(ICommandContext ctx, Entity e, Placement2D t) => null;
     /// <summary>What belongs to the element without being it, and goes with its copy (a solid's sketch on a plan).</summary>
     IEnumerable<string> Dependents(IModelView m, Entity e) => [];
+    /// <summary>The element's attributes as <see cref="Transform"/> would carry them, without an edit (a component's detail drawn where a view sees its instance); null: not known without one.</summary>
+    System.Text.Json.Nodes.JsonObject? Carried(IModelView m, Entity e, Placement2D t) => null;
 }
 
 /// <summary>

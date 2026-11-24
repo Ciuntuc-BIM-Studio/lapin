@@ -63,7 +63,8 @@ export async function makeComponent(): Promise<void> {
 
 /**
  * The selected 2D drafting put in a detail set of a component (forum #224): the instance is the open one, or the one
- * selected with the drafting. Every instance then draws it, in every plan of its storey that shows the set.
+ * selected with the drafting. Every instance then draws it: drawn on a plan, in every plan of its storey that shows the set;
+ * drawn in a section or an elevation, in every section and elevation that looks at that side of the instance.
  */
 export async function addToDetailSet(): Promise<void> {
   const nodes = useSession.getState().nodes;
@@ -72,7 +73,7 @@ export async function addToDetailSet(): Promise<void> {
   const picked = selected();
   const instance = isInstance(scope?.id) ? scope!.id : picked.find((id) => isInstance(id)) ?? picked.map((id) => groupOf(id)).find((g) => isInstance(g));
   const ids = picked.filter((id) => id !== instance && nodes.get(id)?.type !== GROUP);
-  if (!instance || !ids.length) { notify('Select the 2D drafting (lines, hatches, texts, symbols, tags, dimensions) drawn on a plan, together with the instance of a component, or open the instance first.'); return; }
+  if (!instance || !ids.length) { notify('Select the 2D drafting (lines, hatches, texts, symbols, tags, dimensions) drawn on a plan, a section or an elevation, together with the instance of a component, or open the instance first.'); return; }
   const component = nodes.get(instance)!.props.component;
   const sets = [...nodes.values()].filter((n) => typeof n.props.detailSet === 'string' && [...nodes.values()].some((g) => g.props.component === component && groupOf(n.id) === g.id)).map((n) => String(n.props.detailSet));
   const { ask, textField } = await import('../../shell/AskBox');

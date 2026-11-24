@@ -721,7 +721,8 @@ function draftGrips(node: NodeDto): Grip[] {
   const s = fromJson(node.props.shape as Record<string, unknown>);
   if (!s) return [];
   const view = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
-  const save = (next: Shape): GripStep => ({ command: 'drafting.updateDraft', args: { id: node.id, shape: toJson(next) } });
+  // A component's detail drawn here: its points as this view draws them, which the engine takes back to its own (forum #224).
+  const save = (next: Shape): GripStep => ({ command: 'drafting.updateDraft', args: { id: node.id, shape: toJson(next), ...(typeof node.props.detailSet === 'string' && view ? { viewId: view } : {}) } });
   const on = (r: number, t: number): Vec2 => (s.type === 'arc' || s.type === 'circle' ? { x: s.c.x + Math.cos(t) * r, y: s.c.y + Math.sin(t) * r } : { x: 0, y: 0 });
   const grips: Grip[] = (() => {
     switch (s.type) {

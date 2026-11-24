@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   capabilities, dragPoint, gradeTarget, heightAtPx, heightRange, hitPoint, hitSegment, makeFrame, niceStep, planCrossMove, planCrossPoint, planDelete, planGrade,
-  planInsert, planMove, pointAtStation, segmentsOf, seriesPath, stationAtPoint, stationAtPx, stationName, sx, sy, ticks, valueAt, type ProfileData, type ProfilePoint,
+  planInsert, planMove, pointAtStation, segmentsOf, seriesPath, stationAtPoint, stationAtPx, stationName, sx, sy, ticks, valueAt, withGround, type ProfileData, type ProfilePoint,
 } from './profile';
 
 const pt = (station: number, z: number, o: Partial<ProfilePoint> = {}): ProfilePoint => ({ station, z, designed: true, locked: false, curve: 0, movable: true, grade: null, ...o });
@@ -163,5 +163,22 @@ describe('plan and graph', () => {
   it('writes stations as 0+020.00', () => {
     expect(stationName(20)).toBe('0+020.00');
     expect(stationName(1234.5)).toBe('1+234.50');
+  });
+});
+
+describe('a line with no terrain under it (forum 258: a retaining wall drawn on a bare site)', () => {
+  it('has empty ground series, which every plot can draw and read', () => {
+    // The engine leaves `existing` and `design` out with no terrain; a plot looping over undefined threw and blanked the window.
+    const raw: { line: [number, number][]; existing?: [number, number][]; design?: [number, number][] } = { line: [[0, 0], [10, 0]] };
+    const bare = withGround(raw);
+    expect(bare.existing).toEqual([]);
+    expect(bare.design).toEqual([]);
+    const fr = makeFrame({ s0: 0, s1: 10, z0: 0, z1: 1, width: 500, height: 200, exaggeration: 1 });
+    expect(seriesPath(fr, bare.existing)).toBe('');
+    expect(valueAt(bare.design, 5)).toBeNull();
+    expect(heightRange([bare.existing, bare.design, bare.line])).toEqual([-0.1, 0.1]);
+    const rough: { existing?: [number, number][] } = { existing: [[0, 1]] };
+    const kept = withGround(rough);
+    expect(kept.existing).toEqual([[0, 1]]);
   });
 });

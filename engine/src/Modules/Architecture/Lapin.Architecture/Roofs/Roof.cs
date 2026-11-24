@@ -355,7 +355,27 @@ public static class Roof
         "copper" => "#b87333", "zinc_titanium" => "#8c9399", "painted" => "#3c4247", _ => "#a9b0b6",
     };
 
+    /// <summary>
+    /// The roof's body: <see cref="Whole"/>, less where it meets another roof (<see cref="RoofJunctions"/>, decision 847), which
+    /// takes the boolean library; without services (what the roof cuts walls with) it is whole.
+    /// </summary>
     public static ElementGeometry? Geometry(Entity roof, IModelView m, IServices? services = null)
+    {
+        var g = Whole(roof, m, services);
+        if (g == null || g.Parts.Count == 0 || services == null || Resolve(roof, m) is not { } r) return g;
+        var shape = r.Flat ? null : Solve(r).Shape;
+        var cuts = RoofJunctions.Cuts(r, shape, m);
+        if (cuts.Count == 0) return g;
+        var plan = g.Plan == null ? null : RoofJunctions.Plan(g.Plan, r, shape, cuts);
+        if (services.Get<ISolidBooleans>() is not { } booleans)
+            return g with { Plan = plan, Diagnostics = [.. g.Diagnostics ?? [], "Where it meets another roof it needs the boolean library (manifold), missing here."] };
+        var diags = new List<string>();
+        var parts = RoofJunctions.Apply(g.Parts, cuts, booleans, diags);
+        return g with { Parts = parts, Plan = plan, Diagnostics = diags.Count > 0 ? [.. g.Diagnostics ?? [], .. diags] : g.Diagnostics };
+    }
+
+    /// <summary>The roof's body by itself, as if no other roof were near.</summary>
+    static ElementGeometry? Whole(Entity roof, IModelView m, IServices? services)
     {
         var diags = new List<string>();
         var r = Resolve(roof, m);
@@ -550,7 +570,8 @@ public static class Roof
         if (r == null) yield break;
         if (r.Flat)
         {
-            var flat = Math.Abs(Polygon2.SignedArea(EaveOutline(r)));
+            // Less what another roof takes away where they meet (decision 847).
+            var flat = Math.Max(0, Math.Abs(Polygon2.SignedArea(EaveOutline(r))) - RoofJunctions.Cuts(r, null, m).Sum(c => c.ProjectedArea));
             yield return new QuantitySet("Qto_RoofBaseQuantities", [new("GrossArea", flat, "AREA", "Covering")]);
             if (r.HasLayers) { foreach (var ls in LayerQuantities(r, m, flat, flat, geometry)) yield return ls; }
             else
@@ -564,11 +585,14 @@ public static class Roof
         if (shape == null) yield break;
         // The true sloped area less its openings, and the lines that get their own flashing, caps and gutters.
         var holes = RoofOpenings.Place(roof, shape, m, []);
+        // The areas and lines less what another roof takes away where they meet (decision 847), as the body is built.
+        var cuts = RoofJunctions.Cuts(r, shape, m);
+        var gross = Math.Max(0, shape.Planes.Sum(p => VecMath.NewellNormal(p.Points).Length) - cuts.Sum(c => c.Area));
         var q = new List<Quantity>
         {
-            new("GrossArea", shape.Planes.Sum(p => VecMath.NewellNormal(p.Points).Length), "AREA", r.HasLayers ? "Roof area" : $"Covering ({r.Covering.Id})"),
-            new("NetArea", shape.Planes.Sum(p => VecMath.NewellNormal(p.Points).Length) - holes.Sum(h => VecMath.NewellNormal(h.Hole.ToList()).Length), "AREA", r.HasLayers ? "Roof area, net" : "Covering, net"),
-            new("ProjectedArea", shape.Planes.Sum(p => Math.Abs(Polygon2.SignedArea(p.Points.Select(x => x.Xy).ToList()))), "AREA", "In plan"),
+            new("GrossArea", gross, "AREA", r.HasLayers ? "Roof area" : $"Covering ({r.Covering.Id})"),
+            new("NetArea", Math.Max(0, gross - holes.Sum(h => VecMath.NewellNormal(h.Hole.ToList()).Length)), "AREA", r.HasLayers ? "Roof area, net" : "Covering, net"),
+            new("ProjectedArea", Math.Max(0, shape.Planes.Sum(p => Math.Abs(Polygon2.SignedArea(p.Points.Select(x => x.Xy).ToList()))) - cuts.Sum(c => c.ProjectedArea)), "AREA", "In plan"),
         };
         foreach (var (kind, name, label) in new[]
         {
@@ -576,7 +600,7 @@ public static class Roof
             (LineKind.Eave, "EaveLength", "Eaves"), (LineKind.Verge, "VergeLength", "Verges (gables)"), (LineKind.Break, "BreakLength", "Mansard break"),
         })
         {
-            var len = shape.Lines.Where(l => l.Kind == kind).Sum(l => l.Length);
+            var len = shape.Lines.Where(l => l.Kind == kind).Sum(l => l.Length * RoofJunctions.ShareKept(r, shape, cuts, l.A.Xy, l.B.Xy));
             if (len > 1e-6) q.Add(new(name, len, "LENGTH", label));
         }
         yield return new QuantitySet("Qto_RoofBaseQuantities", q);

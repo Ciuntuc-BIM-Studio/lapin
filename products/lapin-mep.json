@@ -3,6 +3,7 @@
   "name": "Lapin MEP",
   "modules": [
     "architecture",
+    "roofpanels",
     "structure",
     "drafting",
     "studio",

@@ -38,12 +38,13 @@ Selectează elementele și alege **Modifică → Fă componentă** (<kbd>CK</kbd
 
 ### Seturi de detalii
 
-O componentă poate purta cu ea informație 2D, ca grupurile de detaliu atașate din Revit: linii, hașuri, texte, simboluri, etichete și cote desenate pe un plan, strânse în **seturi de detalii** cu nume, de pildă *Tehnic* sau *Vânzare*. Fiecare instanță le desenează la locul ei, rotite sau oglindite odată cu ea, în fiecare plan al nivelului ei.
+O componentă poate purta cu ea informație 2D, ca grupurile de detaliu atașate din Revit: linii, hașuri, texte, simboluri, etichete și cote desenate pe un plan, o secțiune sau o fațadă, strânse în **seturi de detalii** cu nume, de pildă *Tehnic* sau *Vânzare*. Fiecare instanță le desenează la locul ei, rotite sau oglindite odată cu ea: notele unui plan în fiecare plan al nivelului ei, ale unei secțiuni sau fațade pe acea latură a instanței.
 
 - Desenează notele pe un plan, peste o instanță. Selectează-le împreună cu instanța (sau deschide mai întâi instanța) și alege **Modifică → Adaugă în setul de detalii** (<kbd>DS</kbd>), sau **Adaugă în setul de detalii** din proprietățile instanței. Scrie numele setului: un nume nou face un set nou. Desenul selectat împreună cu elementele când faci componenta intră într-un set numit *Details*.
 - Le editezi în oricare instanță, ca pe orice membru: muți o linie, schimbi un text, ștergi o hașură. Toate instanțele urmează, într-un singur pas de undo. O etichetă dintr-un set etichetează același element în fiecare instanță.
 - Fiecare vedere alege ce seturi arată: **Vizibilitate / Grafică → Adnotări → Seturi de detalii ale componentelor**. O vedere nouă le arată pe toate; debifează *Vânzare* pe planurile tehnice și *Tehnic* pe planurile de vânzare. Setul de grafică al unui șablon de vedere face asta pentru toate vederile lui.
-- **Scoate din grup** sau **Degrupează** face dintr-un detaliu desen 2D obișnuit pe planul nivelului lui.
+- Notele desenate într-o secțiune sau o fațadă țin de latura componentei spre care privește vederea: față, spate, stânga sau dreapta. Le desenează fiecare secțiune și fațadă care privește spre acea latură a unei instanțe și o vede: o notă desenată pe fațada de sud a unei travei apare pe fațada de nord a unei copii întoarse, iar pe copiile oglindite, oglindită. O vedere care privește instanța pieziș nu primește note de latură. Le muți, rotești sau oglindești în vedere cu uneltele din Modifică.
+- **Scoate din grup** sau **Degrupează** face dintr-un detaliu desen 2D obișnuit: al unui plan pe planul nivelului lui, al unei secțiuni sau fațade pe o vedere care vede acea latură, unde era.
 
 ![Seturile de detalii ale unei vederi în Vizibilitate / Grafică](shots/component-detail-sets.webp)
 

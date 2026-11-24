@@ -38,12 +38,13 @@ Select the elements and choose **Modify → Make component** (<kbd>CK</kbd>). Th
 
 ### Detail sets
 
-A component can carry 2D information with it, as Revit's attached detail groups: lines, hatches, texts, symbols, tags and dimensions drawn on a plan, gathered in named **detail sets** such as *Technical* or *Sales*. Every instance draws them in its own place, turned or mirrored with it, in every plan of its storey.
+A component can carry 2D information with it, as Revit's attached detail groups: lines, hatches, texts, symbols, tags and dimensions drawn on a plan, a section or an elevation, gathered in named **detail sets** such as *Technical* or *Sales*. Every instance draws them in its own place, turned or mirrored with it: a plan's notes in every plan of its storey, a section's or an elevation's on that side of the instance.
 
 - Draw the notes on a plan over one instance. Select them together with the instance (or open the instance first) and choose **Modify → Add to detail set** (<kbd>DS</kbd>), or **Add to detail set** in the instance's properties. Type the set's name: a new name makes a new set. Drafting selected with the elements when you make the component goes into a set called *Details*.
 - Edit them inside any instance, as any member: move a line, change a text, delete a hatch. Every instance follows, in one undo step. A tag in a set tags the same element in each instance.
 - Each view chooses the sets it shows: **Visibility / Graphics → Annotations → Detail sets of components**. A new view shows them all; untick *Sales* on the technical plans and *Technical* on the plans for selling. A view template's graphics set does this for all its views.
-- **Remove from group** or **Ungroup** turns a detail back into plain drafting on its storey's plan.
+- Notes drawn in a section or an elevation belong to the side of the component that view looks at: its front, back, left or right. Every section and elevation that looks at that side of an instance, and sees it, draws them: a note drawn on the south elevation of a bay shows on the north elevation of a copy turned round, and on its mirrored copies mirrored. A view that looks at the instance at a slant takes no side notes. Move, turn or mirror them in the view with the Modify tools.
+- **Remove from group** or **Ungroup** turns a detail back into plain drafting: a plan's on its storey's plan, a section's or an elevation's on a view that sees that side, where it was.
 
 ![A view's detail sets in Visibility / Graphics](shots/component-detail-sets.webp)
 
