@@ -73,6 +73,7 @@ const LAZY = [
   'Lapin.PointClouds',              // point clouds: LAS, LAZ, E57, PLY, XYZ readers and the octree (File → Link point cloud…)
   'Lapin.Mesh',                     // the 3D exchange: glTF, USD, COLLADA, OBJ writers; Fragments, BIM Open Schema, mesh imports
   'Lapin.Furniture.Models',         // the furniture models' CC0 meshes (decision 477), read with Lapin.Mesh's glTF reader when a piece of one is built
+  'Lapin.Ids',                      // IDS 1.0 (docs/ids.md): the .ids reader and the checker, the first time an IDS is added or run
   'System.Private.Xml',             // XML: BCF, XLSX read, LandXML, MS Project, E57's header, COLLADA
   'System.Private.Xml.Linq',
   'System.Net.Http',                // reached only through System.Private.Xml's resolver

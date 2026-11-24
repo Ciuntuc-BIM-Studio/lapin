@@ -12970,6 +12970,34 @@ export const scenes = [
     },
   },
   {
+    // IDS 1.0 checks (docs/ids.md): an .ids file kept in the project (added through the engine, as the file input would), Manage → IDS…,
+    // Run over the house as its IFC export writes it: walls named and with a material pass, the office's code fails on every wall;
+    // the failing specification opened with its failures, each a link to its wall.
+    id: 'ids',
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      const spec = (name, id, req) => `<specification name="${name}" identifier="${id}" ifcVersion="IFC4"><applicability minOccurs="1" maxOccurs="unbounded"><entity><name><simpleValue>IFCWALL</simpleValue></name></entity></applicability><requirements>${req}</requirements></specification>`;
+      const text = '<?xml version="1.0" encoding="UTF-8"?><ids xmlns="http://standards.buildingsmart.org/IDS" xmlns:xs="http://www.w3.org/2001/XMLSchema"><info><title>Office delivery rules</title><version>1.0</version></info><specifications>'
+        + spec('Walls are named', 'W-01', '<attribute><name><simpleValue>Name</simpleValue></name></attribute>')
+        + spec('Walls have a material', 'W-02', '<material/>')
+        + spec('Walls are on a storey', 'W-03', '<partOf relation="IFCRELCONTAINEDINSPATIALSTRUCTURE"><entity><name><simpleValue>IFCBUILDINGSTOREY</simpleValue></name></entity></partOf>')
+        + spec('Walls carry the office code', 'W-04', '<property><propertySet><simpleValue>Office_Data</simpleValue></propertySet><baseName><simpleValue>Code</simpleValue></baseName></property>')
+        + '</specifications></ids>';
+      await t.call('ids.add', { text, name: 'office-delivery.ids' });
+      await t.tool('manage.ids');
+      await t.page.waitForSelector('[data-ids-file]', { timeout: 15_000 });
+      await t.page.locator('[data-ids=run]').click();
+      await t.page.waitForSelector('[data-ids-results]', { timeout: 60_000 });
+      t.expect(await t.page.locator('[data-ids-status=pass]').count() === 3, 'the walls are named, have a material and stand on a storey');
+      t.expect(await t.page.locator('[data-ids-status=fail]').count() === 1, 'the office code is missing on the walls');
+      await t.page.locator('[data-ids-status=fail] > button').click();
+      await t.page.waitForSelector('[data-ids-failure]', { timeout: 10_000 });
+      await t.shot('ids-results', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog-head button[title=Close]').click();
+    },
+  },
+  {
     // The written documents (docs/plan-documents.md): the house with two rooms and a sheet, the project's information written
     // in part, Manage → Documents…, a technical report from its template, the client typed in Project information (its chip
     // leaves To complete), an input written, then Manage → Project information… alone and the Issue dialog's documents.

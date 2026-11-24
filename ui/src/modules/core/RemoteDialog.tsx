@@ -183,7 +183,7 @@ function ServerProject({ server, project, name, busy, run }: { server: string; p
       </div>
       <details data-remote="publishing">
         <summary>Publishing: containers, submissions, handover</summary>
-        <PublishingPanel server={server} project={project} name={name} />
+        <PublishingPanel server={server} project={project} name={name} withModel />
       </details>
       <details>
         <summary>Activity</summary>

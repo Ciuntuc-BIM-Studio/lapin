@@ -204,3 +204,7 @@ Limits:
 - A finding's sentence is translated; its values (codes, expected texts, keywords) are shown as the server gives them. A project's own title-block fields keep their names.
 - The naming rule's live test uses the browser's regex, which agrees with .NET's for the usual syntax; the server is the judge (a rule that does not compile there comes back as a 400 next to the field).
 - Pending submissions are not re-checked when the register or the settings change: **Run checks again** does it, as the server's contract says.
+
+## IDS checks (W6)
+
+Atrium's `docs/plan-cde-web.md`, stage W6: an IDS 1.0 reader and checker in Lapin's engine (`Lapin.Ids`, written from buildingSMART's specification, no dependency), the project's `.ids` files kept in the project, run from Manage → IDS… and before Submit for approval in Manage → Issue… → On the CDE server. A failing specification stops the submission unless the user ticks "Submit despite the IDS failures" and writes why (`idsOverride`, carried in the submission's and the tag's note); the project's setting `cde.ids.blocks` lets failures through. Failing specifications become remarks (one undo step) that `remote.syncIssues` sends. Everything is in [`docs/ids.md`](ids.md); the user's page is `docs/user/ids.md`.

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    IDS 1.0 (buildingSMART's Information Delivery Specification, docs/ids.md): the .ids reader and the checker, written from the
+    public specification (its XML Schema and user manual), with no library of its own. It checks an IFC file read by Lapin.Ifc's
+    STEP reader: the project's own export, or a file in hand. A lazy part of the browser's engine (scripts/build-web.mjs), fetched
+    the first time an IDS is added or run.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../Lapin.Platform/Lapin.Platform.csproj" />
+    <ProjectReference Include="../Lapin.Ifc/Lapin.Ifc.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lapin.Engine.Tests" />
+  </ItemGroup>
+</Project>

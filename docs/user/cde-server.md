@@ -89,6 +89,8 @@ On a CDE server an issue goes from Lapin to the server in two ways, both from th
 
 A WIP issue stays in the project: issue to Shared or Published to put it on the server.
 
+When the project has IDS files, they are checked before **Submit for approval**, and a failing specification stops the submission unless you say why: see [IDS checks](ids.md).
+
 Issuing the same sheets again makes a **new revision of the same issue** (Issue… proposes it: **Issue as** → *New revision of issue #n*, the revision after its last): the submission and the issue tag carry that issue's number and identity, `#1 P01`, then `#1 P02`. Once the later revision is published, the earlier Published one moves to **Archived**. **New issue** gives the documents a new number instead.
 
 The project's page (in the browser) and **File → Collaborate… → Publishing** (on the desktop) have these tabs:

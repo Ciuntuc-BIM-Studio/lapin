@@ -1099,6 +1099,20 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .cde-block { color: var(--err); }
 .cde-warn { color: var(--warn, #b7791f); }
 .cde-ok { color: var(--ok); }
+/* IDS (docs/ids.md): the files, the specifications with their result chip, the failures as links to the elements. */
+.ids-files { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.ids-files .row { gap: 6px; align-items: center; }
+.ids-results { max-height: 360px; overflow-y: auto; margin-top: 6px; }
+.ids-spec > .link.row { display: flex; gap: 6px; align-items: center; text-align: left; width: 100%; }
+.ids-spec .chip.ok { color: var(--ok); border-color: var(--ok); margin-left: 0; }
+.ids-spec .chip.block { color: var(--err); border-color: var(--err); margin-left: 0; }
+.ids-spec .chip.muted { color: var(--ink-muted); border-color: var(--rule-strong); margin-left: 0; }
+.ids-spec-body { margin: 2px 0 6px 18px; }
+.ids-failures, .version-group .ids-failures, .version-group .ids-spec-body ul { margin: 2px 0; padding-left: 16px; columns: 1; }
+.ids-spec > .link.row { text-decoration: none; }
+.ids-failures .link { text-align: left; }
+.ids-on-submit { border-top: 1px solid var(--rule); margin-top: 6px; padding-top: 4px; }
+.ids-on-submit input:not([type]) { width: 100%; }
 /* CDE web W5: checks on foreign documents (modules/core/CdeChecks.tsx). */
 .cde-checks-line { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .cde-checks-line .spin, .cde-page-loading .spin { animation: cde-spin 1s linear infinite; }
