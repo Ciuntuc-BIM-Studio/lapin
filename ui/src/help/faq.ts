@@ -493,7 +493,7 @@ export const FAQ: Entry[] = [
     q: ['How do I switch to Romanian or Spanish?', 'How do I switch to German, French or Danish?', 'How do I switch to Italian?', 'How do I switch to Polish or Portuguese?', 'Can I change the language?'],
     qRo: ['Cum trec interfața în engleză?', 'Pot schimba limba?'],
     keywords: ['language', 'romanian', 'english', 'spanish', 'translate', 'limba', 'romana', 'engleza', 'spaniola', 'traducere', 'espanol', 'idioma', 'german', 'deutsch', 'french', 'francais', 'danish', 'dansk', 'germana', 'franceza', 'daneza', 'sprache', 'langue', 'sprog', 'lao', 'laotian', 'laotiana', 'italian', 'italiano', 'italiana', 'lingua', 'polish', 'polski', 'polska', 'poloneza', 'jezyk', 'portuguese', 'portugues', 'portugheza', 'brasil', '中文', '语言', '汉语', 'chinese', 'chineza', 'lengua', 'idioma', 'sprak'],
-    a: 'Help (?) → English · Română · Español · Deutsch · Français · Dansk · Italiano · Polski · Português · ພາສາລາວ switches the interface; it is remembered on this computer. ? → User guide opens the user guide in the same language (in English for Lao).',
+    a: 'Help (?) → English · Română · Español · Deutsch · Français · Dansk · Italiano · Polski · Português · ພາສາລາວ · 简体中文 · Ελληνικά switches the interface; it is remembered on this computer. ? → User guide opens the user guide in the same language (in English for Lao, Chinese and Greek).',
     aRo: 'Help (?) → English · Română · Español · Deutsch · Français · Dansk · Italiano · Polski · Português · ພາສາລາວ schimbă limba interfeței; alegerea se ține minte pe acest calculator. ? → User guide deschide ghidul utilizatorului în aceeași limbă (în engleză pentru laoțiană).',
     source: 'faq',
   },

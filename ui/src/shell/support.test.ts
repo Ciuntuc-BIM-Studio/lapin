@@ -56,8 +56,8 @@ describe('the user guide', () => {
   it('opens in each interface language: /docs/ for English, /docs/<lang>/ for the others, by the names the engine knows', async () => {
     const { guideUrl, guideLink } = await import('./support');
     const { LANGUAGES } = await import('../i18n');
-    expect(LANGUAGES.map((l) => guideUrl(l.id))).toEqual(['', 'ro/', 'es/', 'de/', 'fr/', 'da/', 'it/', 'pl/', 'pt/', '', ''].map((s) => `https://lapinbim.com/docs/${s}`));
-    expect(LANGUAGES.map((l) => guideLink(l.id))).toEqual(['guide', 'guideRo', 'guideEs', 'guideDe', 'guideFr', 'guideDa', 'guideIt', 'guidePl', 'guidePt', 'guide', 'guide']);
+    expect(LANGUAGES.map((l) => guideUrl(l.id))).toEqual(['', 'ro/', 'es/', 'de/', 'fr/', 'da/', 'it/', 'pl/', 'pt/', '', '', ''].map((s) => `https://lapinbim.com/docs/${s}`));
+    expect(LANGUAGES.map((l) => guideLink(l.id))).toEqual(['guide', 'guideRo', 'guideEs', 'guideDe', 'guideFr', 'guideDa', 'guideIt', 'guidePl', 'guidePt', 'guide', 'guide', 'guide']);
   });
 });
 
