@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseNodes, pointBudget, type NodeRow } from './pointClouds3d';
+import { chooseNodes, fitBox, pointBudget, type NodeRow } from './pointClouds3d';
 import { cloudSpecs, statusText, viewClouds } from './pointClouds';
 import type { NodeDto } from '../engine/protocol';
 
@@ -81,5 +81,14 @@ describe('a view\'s row for a cloud', () => {
     expect(cloudRow({}, { hidden: false, halftone: true })).toEqual({ halftone: true });
     expect(cloudRow({ hiddenClasses: [5] }, { hiddenClasses: [] })).toBeNull();
     expect(cloudRow({ slice: 0.2 }, { colorMode: 'classification' })).toEqual({ slice: 0.2, colorMode: 'classification' });
+  });
+});
+
+describe('what Fit frames of a cloud', () => {
+  it('is where its points are dense, else (an older engine) its whole box', () => {
+    const box = [-100, -100, -50, 100, 100, 50], core = [10, 5, 0, 20, 11, 3];
+    expect(fitBox({ box, core })).toEqual(core);
+    expect(fitBox({ box })).toEqual(box);
+    expect(fitBox({ box, core: [1, 2] })).toEqual(box);
   });
 });

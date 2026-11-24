@@ -93,7 +93,7 @@ import { place, placedBox } from '../engine/instances';
 import { fineShown, useFineBodies } from './fineBodies';
 import { disposeUnderlays, sameSources, underlayGroup, underlaySources, type UnderlayBatch } from './underlays3d';
 import { PointCloudLayer, type Hierarchy, type Tile } from './pointClouds3d';
-import { SplatLayer, type SplatPage } from './splats3d';
+import { SplatLayer, underlayLines, type SplatPage } from './splats3d';
 import { openCrop, startCalibrate } from '../modules/core/cloudCalibrate';
 import { cloudAt } from './scene3d';
 import { cloudSpecs, isCloudLink, setCloudStatus, setSplatsDrawn, type ViewCloud } from './pointClouds';
@@ -118,10 +118,12 @@ function lineworkMaterial(color: string): THREE.LineBasicMaterial {
   return m;
 }
 
+
 function groundGrid(theme: keyof typeof GRID, z: number, step = 1, ucs: { x: number; y: number; angle: number } | null = null): THREE.GridHelper {
   // 60 lines each way at the step (1 m: the adaptive grid's), at most 600; a fixed step's grid turns with the UCS (decision 445).
   const n = Math.max(2, Math.min(600, Math.round(60 / Math.max(step, 1e-3))));
   const grid = new THREE.GridHelper(n * step, n, GRID[theme][0], GRID[theme][1]);
+  underlayLines(grid);
   grid.rotation.order = 'ZXY';
   grid.rotation.x = Math.PI / 2;
   grid.rotation.z = ucs ? (ucs.angle * Math.PI) / 180 : 0;
@@ -2051,6 +2053,7 @@ export function Viewport3D() {
         const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(ax.a[0], ax.a[1], base + 0.01), new THREE.Vector3(ax.b[0], ax.b[1], base + 0.01)]);
         const line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: 0x8a5a44, dashSize: 0.6, gapSize: 0.25 }));
         line.computeLineDistances();
+        underlayLines(line);
         group.add(line);
         for (const end of [ax.a, ax.b]) {
           const cv = document.createElement('canvas');

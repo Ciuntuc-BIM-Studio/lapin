@@ -72,7 +72,7 @@ export const calibrateTool: ToolDef = {
   },
 };
 
-/** The crop made round the whole cloud (Fit to cloud), or taken off (Reset): one undo step each. */
-export async function fitCrop(id: string): Promise<void> {
-  await engine.call('doc.execute', { command: 'pointcloud.crop', args: { id, fit: true } });
+/** The crop made round where the cloud is dense (Fit to cloud) or round all of it (Whole cloud): one undo step each. */
+export async function fitCrop(id: string, whole = false): Promise<void> {
+  await engine.call('doc.execute', { command: 'pointcloud.crop', args: whole ? { id, fit: true, whole: true } : { id, fit: true } });
 }

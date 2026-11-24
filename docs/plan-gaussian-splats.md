@@ -164,6 +164,11 @@ carries splats with its measuring tools.
   pavilion's camera view with a garden wall in front, a note and a dimension on the paper, its PDF), both languages.
   Left: a capture drawn as points in a 3D view printed as dots; a lighter picture for the screen when a sheet's picture is
   large (a whole A3's PNG of a random capture is 22 MB in the sheet's drawing message).
+- **After G4 — a real capture (decision 834, 24.11.2026, branch `fix/splat-real-capture`).** The 3DGS "train" scene (1.07 M
+  splats): the 3D grid and grid axes are drawn as an underlay (transparent, no depth, after the opaque model, before the
+  splats), so a capture hides them; Fit frames a cloud's dense box (`DenseBox`: counted in 128³ cells at indexing, kept as
+  `core` in the index and the hierarchy, inside the crop; old indexes from their node counts), not its floaters' 235 m box;
+  Crop → Fit to cloud proposes that box rounded to a 1/2/5 step, **Whole cloud** (`whole: true`) the whole one.
 - **G5 — Lapin for the browser.** *Postponed by the user's choice (24.11.2026): not built after G4; taken up when asked.* The `.html` export (`docs/html-export.md`) carries a splat link's Gaussians (SPZ inside
   the page) and draws them with the same renderer; its viewer gets Measure (distance, chain, area). A combined BIM + cloud +
   splat page is that export with splats, not a new format.

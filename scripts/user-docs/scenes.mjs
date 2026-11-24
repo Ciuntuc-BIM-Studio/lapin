@@ -9636,7 +9636,12 @@ export const scenes = [
       await t.page.locator('button[data-crop=fit]').click();
       await t.wait(800);
       const fit = (await t.nodes()).find((n) => n.id === id)?.props.crop;
-      t.expect(fit && fit.size[0] > 10, `Fit to cloud makes a box round all of it (${JSON.stringify(fit?.size)})`);
+      t.expect(fit && fit.size[0] > 10, `Fit to cloud makes a box round where it is dense (${JSON.stringify(fit?.size)})`);
+      // Whole cloud: round all of it, exactly; the dense box is rounded outwards to its step, so at most a step larger at each end.
+      await t.page.locator('button[data-crop=whole]').click();
+      await t.wait(800);
+      const whole = (await t.nodes()).find((n) => n.id === id)?.props.crop;
+      t.expect(whole && [0, 1, 2].every((k) => whole.size[k] >= fit.size[k] - 1), `Whole cloud makes a box round all of it (${JSON.stringify(whole?.size)}, dense ${JSON.stringify(fit?.size)})`);
       // Shortened in x to the pavilion and its lawn: the tree (at x = 10) left out.
       await t.cmd('pointcloud.crop', { id, crop: { center: [3, 2, 2], size: [12, 13, 6], rotation: 0 } });
       await t.wait(800);
