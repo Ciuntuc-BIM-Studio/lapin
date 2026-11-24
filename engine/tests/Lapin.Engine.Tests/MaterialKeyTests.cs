@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
+using Lapin.Drawing.Views;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
@@ -187,6 +188,8 @@ public class MaterialKeyTests
         Assert.NotNull(Stored(f, render));
         Assert.Equal(Key(f, render), row.Key);
         Assert.Equal("Lime render — Lime render, white, 2 cm", row.Name);
+        // Its swatch as the elevation draws the render (its surface look, at the view's scale), not as a cut would.
+        Assert.Equal(100, row.SwatchScale);
         var texts = Sheets.Compose(f.Session.Reader, f.Model.Get(s)!).Pens.SelectMany(p => p.Texts).Select(x => x.Text).ToList();
         Assert.Contains(row.Key!, texts);
         Assert.Contains(row.Name, texts);
@@ -204,5 +207,33 @@ public class MaterialKeyTests
         rows = DrawingKeys.Entries(f.Session.Reader, paperView, "materials", null, DrawingKeys.MaterialRows.Of_(f.Model.Get(legend)!));
         Assert.Equal(render, Assert.Single(rows).Material);
         Assert.Throws<CommandException>(() => f.Run("sheet.updateKey", new JsonObject { ["id"] = legend, ["of"] = "everything" }));
+    }
+
+    [Fact]
+    public void A_seen_legend_s_swatch_is_the_surface_look_at_the_view_s_scale_and_a_cut_legend_keeps_the_cut_look()
+    {
+        var (f, _, render, _, view, _) = Facade();
+        // The render hatched BRICK in elevations and LINES45 in cuts: the swatch of a seen face takes the elevation's.
+        f.Run("material.update", new JsonObject { ["id"] = render, ["elevation"] = new JsonObject { ["hatch"] = "BRICK" }, ["section"] = new JsonObject { ["hatch"] = "LINES45" } });
+        var s = (string)f.Run("sheet.create", new JsonObject { ["name"] = "Facades", ["paper"] = "A3" })!["id"]!;
+        f.Run("sheet.addViewport", new JsonObject { ["id"] = s, ["viewId"] = view, ["x"] = 150, ["y"] = 140 });
+        var paper = Views.Find(f.Model, PaperViews.IdOf(s))!;
+        var row = DrawingKeys.Entries(f.Session.Reader, paper, "materials", null, new DrawingKeys.MaterialRows("seen", true)).Single(r => r.Material == render);
+        Assert.Equal("BRICK", row.Look!.Hatch);
+        Assert.Equal(100, row.SwatchScale);
+        // Drawn in a 14 × 5 mm swatch at 1:100: courses across it, all inside the box.
+        var mm = 0.001;
+        IReadOnlyList<Vec2> box = [new(0, 0), new(14 * mm, 0), new(14 * mm, 5 * mm), new(0, 5 * mm)];
+        var segs = MaterialSample.Swatch(row.Look, box, mm, DraftingResources.Patterns(f.Model), viewScale: row.SwatchScale).SelectMany(p => p.Segments).ToList();
+        var courses = segs.Where(x => Math.Abs(x.A.Y - x.B.Y) < 1e-12).Select(x => Math.Round(x.A.Y, 7)).Distinct().Count();
+        Assert.InRange(courses, 2, 60);
+        Assert.All(segs, x => Assert.InRange(x.A.X, -1e-9, 14 * mm + 1e-9));
+        // A legend of the cut areas keeps the cut look, at its swatch's own scale: the plan's concrete core.
+        var plan = (string)f.Run("sheet.create", new JsonObject { ["name"] = "Plan", ["paper"] = "A3" })!["id"]!;
+        f.Run("sheet.addViewport", new JsonObject { ["id"] = plan, ["viewId"] = "plan:" + f.Storey, ["x"] = 150, ["y"] = 140 });
+        var cut = DrawingKeys.Entries(f.Session.Reader, Views.Find(f.Model, PaperViews.IdOf(plan))!, "materials");
+        Assert.NotEmpty(cut);
+        Assert.All(cut, r => Assert.Equal(0, r.SwatchScale));
+        Assert.DoesNotContain(cut, r => r.Look?.Hatch == "BRICK");
     }
 }

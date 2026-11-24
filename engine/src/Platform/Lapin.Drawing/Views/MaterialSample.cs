@@ -64,8 +64,31 @@ public static class MaterialSample
     /// colour and weight), its hatch laid from the box's corner, at <paramref name="unitsPerMm"/> drawing units per paper millimetre.
     /// No outline: the legend draws its own.
     /// </summary>
-    public static List<Pen> Swatch(ResolvedMaterial look, IReadOnlyList<Vec2> box, double unitsPerMm, IReadOnlyList<Hatch.HatchPattern>? patterns = null, int maxSegments = 4000)
+    /// <param name="viewScale">
+    /// The scale of the view the swatch stands for (its denominator; 0: none): the material hatched inside the box as that view
+    /// hatches it, a real-size pattern's courses as many as the view shows on so much paper (a surface legend's swatch, forum
+    /// topic 255); none, at the box's own scale as before.
+    /// </param>
+    public static List<Pen> Swatch(ResolvedMaterial look, IReadOnlyList<Vec2> box, double unitsPerMm, IReadOnlyList<Hatch.HatchPattern>? patterns = null, int maxSegments = 4000, double viewScale = 0)
     {
+        var own = unitsPerMm * 1000;
+        if (viewScale > 0 && own > 0 && Math.Abs(viewScale / own - 1) > 1e-9)
+        {
+            // The box made as large as the view's model would be on so much paper, hatched at the view's scale, brought back.
+            var k = viewScale / own;
+            var at = box[0];
+            var pens = Swatch(look, box.Select(p => at + (p - at) * k).ToList(), unitsPerMm * k, patterns, maxSegments);
+            Vec2 Back(Vec2 p) => at + (p - at) * (1 / k);
+            var back = new List<Pen>();
+            foreach (var pen in pens)
+            {
+                var b = new Pen(pen.Layer, pen.Stroke, pen.Width, pen.Fill, pen.Dash);
+                b.Segments.AddRange(pen.Segments.Select(sg => (Back(sg.A), Back(sg.B))));
+                b.Loops.AddRange(pen.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(Back).ToArray()));
+                back.Add(b);
+            }
+            return back;
+        }
         var loop = box.ToArray();
         var drawing = new ViewDrawing([new DPolygon([loop], Element, Class, null, "material")], []);
         var materials = MaterialDrawing.Apply(drawing, _ => look);

@@ -71,8 +71,9 @@ public static class DrawingKeys
     /// <param name="Glyph">A symbol drawn in its swatch (a module's legend: an MEP device's symbol), in paper mm round its insertion point, in <paramref name="Stroke"/>.</param>
     /// <param name="Key">A keyed legend's row (forum topic 255): its material's key, drawn in a circle before the swatch.</param>
     /// <param name="Material">The material the row is of, when it is one.</param>
+    /// <param name="SwatchScale">The scale its swatch is hatched at (a surface look's: the view's, so a brick's courses read as the elevation draws them); 0: the swatch's own.</param>
     public sealed record Entry(string Name, string? Fill = null, string? Hatch = null, double HatchScale = 1, double HatchAngle = 0, string? Stroke = null, double Width = 0, double[]? Dash = null,
-        ResolvedMaterial? Look = null, IReadOnlyList<LegendGlyph>? Glyph = null, string? Key = null, string? Material = null);
+        ResolvedMaterial? Look = null, IReadOnlyList<LegendGlyph>? Glyph = null, string? Key = null, string? Material = null, double SwatchScale = 0);
 
     /// <summary>What a material legend lists (forum topic 255): its views' cut areas (as before), or what they show (cuts and seen faces), or the materials their material key tags read.</summary>
     public static readonly string[] MaterialSources = ["cut", "seen", "tagged"];
@@ -190,7 +191,8 @@ public static class DrawingKeys
 
     /// <summary>
     /// A placed view's rows of what it shows: the materials of its cut areas and of the faces it sees, or, <paramref name="tagged"/>,
-    /// those its material key tags read; each swatch drawn with the material's cut look, as the legend's other rows.
+    /// those its material key tags read; each swatch drawn as the view draws the material: a seen face's surface look at the view's
+    /// scale, a cut area's cut look.
     /// </summary>
     static void SeenRows(IModelView m, Sheets.Placement pl, bool tagged, Dictionary<string, Entry> o)
     {
@@ -205,12 +207,13 @@ public static class DrawingKeys
         foreach (var id in ids.Distinct())
         {
             if (m.Get(id) is not { Class: IfcClass.Material } mat || o.Values.Any(e => e.Material == id)) continue;
-            // Its swatch as the legend always drew one, the material's cut look (a real-size surface hatch would not read in a 14 mm swatch);
-            // its surface look when its cut draws nothing.
-            var r = cutLook.Material(id) is { } cr && (cr.Hatch != null || cr.Fill != null || cr.Background != null) ? cr : seenLook.Material(id) ?? cutLook.Material(id);
+            // Its swatch as the view draws it: a face seen with its surface look (plain render plain, brick in courses) at the view's
+            // scale; a material only cut with its cut look; the cut look when it has no surface look.
+            var surface = !cut.Contains(id) || tagged ? seenLook.Material(id) : null;
+            var r = surface ?? cutLook.Material(id);
             if (r is { Membrane: true } && !tagged) continue;
             var name = r?.Name ?? mat.Name;
-            o[name] = r != null ? new Entry(name, r.Fill, r.Hatch, r.HatchScale <= 0 ? 1 : r.HatchScale, r.HatchAngle, Look: r, Material: id) : new Entry(name, Material: id);
+            o[name] = r != null ? new Entry(name, r.Fill, r.Hatch, r.HatchScale <= 0 ? 1 : r.HatchScale, r.HatchAngle, Look: r, Material: id, SwatchScale: surface != null ? pl.Drawing.Scale : 0) : new Entry(name, Material: id);
         }
     }
 
@@ -274,7 +277,7 @@ public static class DrawingKeys
             {
                 // The swatch drawn as the drawings draw the material (MaterialSample): its fill, background hatch and hatch.
                 var look = r.Look ?? new ResolvedMaterial(r.Name, r.Hatch, r.HatchScale, r.Fill, null, false, false, null, "own", r.HatchAngle);
-                foreach (var pen in MaterialSample.Swatch(look, box, mm, patterns))
+                foreach (var pen in MaterialSample.Swatch(look, box, mm, patterns, viewScale: r.SwatchScale))
                 {
                     if (pen.Fill != null && pen.Loops.Count > 0) mk.Fills.Add((pen.Loops, pen.Fill));
                     if (pen.Stroke != null) foreach (var (a, b) in pen.Segments) mk.Line(a, b, "LEGEND", pen.Width, pen.Stroke, pen.Dash);
