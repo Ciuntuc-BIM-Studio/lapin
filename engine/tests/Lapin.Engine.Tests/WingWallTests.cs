@@ -75,6 +75,23 @@ public class WingWallTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void The_footing_reaches_its_toe_in_front_and_its_heel_behind_the_axis_and_a_segment_may_have_its_own()
+    {
+        var f = Site();
+        Flat(f);
+        var w = Wall(f, null, (0, 0), (20, 0));
+        // The wall's own: a 0.4 stem on a footing 0.5 in front of it, 1.0 behind, 0.3 thick (under −0.3), the stem 3.3 tall.
+        f.Run("civil.updateRetainingWall", new JsonObject { ["id"] = w, ["toe"] = 0.5, ["heel"] = 1.0 });
+        Assert.Equal(((0.4 + 0.5 + 1.0) * 0.3 + 0.4 * 3.3) * 20, Measure.Volume(Body(f, w)), 6);
+        // The segment's own: no toe, a heel of 0.2 and a footing 0.5 thick (its underside kept, so the stem is 0.2 shorter).
+        f.Run("civil.setRetainingWallSegment", new JsonObject { ["id"] = w, ["index"] = 0, ["toe"] = 0, ["heel"] = 0.2, ["footingThickness"] = 0.5 });
+        Assert.Equal(((0.4 + 0.0 + 0.2) * 0.5 + 0.4 * 3.1) * 20, Measure.Volume(Body(f, w)), 6);
+        // Cleared, the wall's own return.
+        f.Run("civil.setRetainingWallSegment", new JsonObject { ["id"] = w, ["index"] = 0, ["toe"] = null, ["heel"] = null, ["footingThickness"] = null });
+        Assert.Equal(((0.4 + 0.5 + 1.0) * 0.3 + 0.4 * 3.3) * 20, Measure.Volume(Body(f, w)), 6);
+    }
+
+    [Fact]
     public void A_front_batter_leans_the_face_from_the_crown_and_measures_by_hand()
     {
         var f = Site();

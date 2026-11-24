@@ -478,4 +478,36 @@ public class PlanningGeneratorTests
         Assert.Equal(7.0, MeasureQuantities.Pick([new Quantity("FormedLength", 7, "LENGTH")], "length"));
         Assert.Equal(2.0, MeasureQuantities.Pick([new Quantity("OuterSurfaceArea", 2, "AREA")], "area"));
     }
+
+    [Fact]
+    public void A_temporary_with_no_host_built_and_taken_away_in_one_phase_is_planned_as_any_element()
+    {
+        // Fabio Emmolo's report: a phase's site safety works (New Jersey barriers, signs, flaggers) are created and demolished in
+        // that phase but stand by nothing, so no host's task carries them: rules, Generate and "Elements without a task" must see
+        // them. Formwork tied to its slab, created and struck in one phase too, still lives by the slab's casting.
+        var f = F();
+        var barrier = Wall(f, "Ground floor", 0);
+        f.Run("phases.assign", new JsonObject { ["ids"] = new JsonArray(barrier), ["created"] = "new-construction", ["demolished"] = "new-construction" });
+        var slab = Slab(f, "First floor");
+        var formwork = ((JsonArray)f.Run("sitework.addFormwork", new JsonObject { ["hostIds"] = new JsonArray(slab) })!["ids"]!)[0]!.ToString();
+        f.Run("phases.assign", new JsonObject { ["ids"] = new JsonArray(formwork), ["created"] = "new-construction", ["demolished"] = "new-construction" });
+
+        var links = TaskElements.Resolve(f.Session.Reader);
+        Assert.Contains(links.Candidates, c => c.Element.Id == barrier);
+        Assert.DoesNotContain(links.Candidates, c => c.Element.Id == formwork);
+        // Without a task it is listed as such; the formwork is not (its slab's task carries it).
+        var (none, _) = links.Unlinked();
+        Assert.Contains(none, x => x.Element.Id == barrier);
+        Assert.DoesNotContain(none, x => x.Element.Id == formwork);
+
+        // A rule by class takes it, and keeps taking what the phase gains later (no fixed list).
+        var task = (string)f.Run("planning.addTask", new JsonObject { ["name"] = "Site safety", ["duration"] = 2 })!["id"]!;
+        f.Run("planning.updateTask", new JsonObject { ["id"] = task, ["rule"] = new JsonObject { ["classes"] = new JsonArray(IfcClass.Wall) } });
+        var second = Wall(f, "Ground floor", 3);
+        f.Run("phases.assign", new JsonObject { ["ids"] = new JsonArray(second), ["created"] = "new-construction", ["demolished"] = "new-construction" });
+        links = TaskElements.Resolve(f.Session.Reader);
+        Assert.True(links.ByTask[task].ContainsKey(barrier));
+        Assert.True(links.ByTask[task].ContainsKey(second));
+
+    }
 }

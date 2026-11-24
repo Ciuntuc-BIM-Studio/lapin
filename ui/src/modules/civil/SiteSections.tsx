@@ -169,7 +169,7 @@ function BatterFields({ node }: { node: NodeDto }) {
 
 /**
  * The wall's segments, one by one: its length and turn (the path's), and what it has of its own (empty: the wall's): its crown at
- * its start and its end, its crown thickness, its batters, its footing level, and its warp (the face from one batter at its start
+ * its start and its end, its crown thickness, its batters, its footing level, thickness, toe (in front) and heel (behind, on the high ground's side) measured across its own axis, and its warp (the face from one batter at its start
  * to another at its end, the warped wing).
  */
 export function RetainingWallSegments({ node }: { node: NodeDto }) {
@@ -200,6 +200,9 @@ export function RetainingWallSegments({ node }: { node: NodeDto }) {
                 <dt>Front batter</dt><dd><NumberField value={own('frontBatter')} min={0} blank placeholder="the wall's" suffix=":1" onCommit={(v) => set(r.index, { frontBatter: v })} /></dd>
                 <dt>Back batter</dt><dd><NumberField value={own('backBatter')} min={0} blank placeholder="the wall's" suffix=":1" onCommit={(v) => set(r.index, { backBatter: v })} /></dd>
                 <dt>Footing level</dt><dd><LengthField metres={own('footingLevel')} blank placeholder="the wall's" onCommit={(m) => set(r.index, { footingLevel: m })} /></dd>
+                <dt>Footing thickness</dt><dd><LengthField metres={own('footingThickness')} min={0} blank placeholder="the wall's" onCommit={(m) => set(r.index, { footingThickness: m })} /></dd>
+                <dt>Toe</dt><dd><LengthField metres={own('toe')} min={0} blank placeholder="the wall's" onCommit={(m) => set(r.index, { toe: m })} /></dd>
+                <dt>Heel</dt><dd><LengthField metres={own('heel')} min={0} blank placeholder="the wall's" onCommit={(m) => set(r.index, { heel: m })} /></dd>
                 <dt>Warped</dt>
                 <dd><label><input type="checkbox" checked={r.own.warp === true} onChange={(e) => set(r.index, { warp: e.target.checked })} /> <span className="muted small">the face turns to another batter at the end</span></label></dd>
                 {r.own.warp === true && <>

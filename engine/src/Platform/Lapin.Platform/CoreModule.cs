@@ -89,6 +89,8 @@ public sealed class CoreModule : ILapinModule
         r.Service<IProjectUpgrade>(new MaterialHatchUpgrade());
         r.Service<IProjectUpgrade>(new ViewFilterUpgrade());
         r.Service<IProjectUpgrade>(new ViewStyles.StructureUpgrade());
+        // A project saved before the floors' plan hatches (forum topic 259) keeps its plans as they were.
+        r.Service<IProjectUpgrade>(new ViewStyles.FloorHatchUpgrade());
         // The standards' own layers merged into the project's one list of drafting layers (forum #168, decision 714).
         r.Service<IProjectUpgrade>(new DraftLayers.ListUpgrade());
         // A site plan's north arrow and scale bar as annotations of its own (decision 722, issue #111).
@@ -818,7 +820,7 @@ public static class Spatial
         var project = Project(edit.Model);
         if (project == null)
         {
-            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev, [ViewFilterUpgrade.RevKey] = ViewFilterUpgrade.Rev, [ViewStyles.StructureRevKey] = ViewStyles.StructureRev, [MaterialStandards.LookRevKey] = MaterialStandards.LookRev });
+            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev, [ViewFilterUpgrade.RevKey] = ViewFilterUpgrade.Rev, [ViewStyles.StructureRevKey] = ViewStyles.StructureRev, [ViewStyles.FloorHatchRevKey] = ViewStyles.FloorHatchRev, [MaterialStandards.LookRevKey] = MaterialStandards.LookRev });
             edit.Add(project);
         }
         var site = edit.Model.OfClass(IfcClass.Site).FirstOrDefault();

@@ -123,6 +123,8 @@ With **Alignment** *view* the pattern runs on from one face to the next; with *l
 
 Until you choose one, a material's elevation hatch comes **from the name**, as its section hatch does, and **Manage → Materials** shows which (*from the name (BRICK)*): brick and masonry BRICK, stone STONE, timber BOARDS, metal cladding VERTICAL, roof tiles, shingles and slates HORIZONTAL, tiles TILES, gravel and earth as in sections. Insulation, membranes, plaster, render, paint and concrete get none: insulation's BATT is a section's hatch, never suggested for a surface (chosen by hand, it is drawn). Choose **none** to draw nothing. A jogged, curved or along-an-element section hatches each of its pieces between the piece's ends, and draws their sun shadows the same way. The view style's **Surface hatches** (**View → View settings**, **Manage → View styles**) turns them off for whole views: on in Architectural, off in Structural, MEP and Coordination. Plans keep their own cut and plan hatches. A roof's covering is hatched by its covering material, so a tiled roof shows its courses on the slopes the view sees, and none on those turned away.
 
+Plans hatch the floors they see the same way: the top of a floor below the cut takes its top layer's surface pattern, under the walls and what the plan cuts, on the layer FLOOR-HATCH. The view style's **Floor surface hatches** turns it off for whole views: on in Architectural, off in Structural, MEP and Coordination, and off in every style of a project made before. See [Floors](floors-roofs.md#floors).
+
 ![The south elevation, its facing brick hatched as its name suggests](shots/elevation-surface-hatch.webp)
 
 ![A jogged section hatching the garden wall its last piece sees](shots/section-developed-surface-hatch.webp)

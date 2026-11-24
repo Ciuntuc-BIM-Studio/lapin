@@ -25,11 +25,20 @@ namespace Lapin.Platform;
 /// laid at its station (<see cref="Piece"/>).</item>
 /// </list>
 /// The view style's <c>surfaceHatch</c> turns it on or off (on in Architectural, off in Structural, MEP and Coordination).
+/// <para>
+/// A plan hatches the floors it sees the same way (forum topic 259, <see cref="PlanPensOf"/>): the top faces of the floors
+/// below its cut, within its range's depth, with their top layer's elevation graphics, where neither its cut areas (the walls,
+/// the columns), anything seen nearer, nor a finish laid on them (a room's floor finish, which draws its own hatch) hides them;
+/// lines only, as the finish hatches,
+/// on <see cref="FloorLayer"/>. The view style's <c>floorHatch</c> turns it on or off.
+/// </para>
 /// </summary>
 public static class SurfaceHatches
 {
     public const string Layer = "SURFACE-HATCH";
     public const string FillLayer = "SURFACE-FILL";
+    /// <summary>The layer a plan's floor hatches draw on (DXF, the PDF's groups).</summary>
+    public const string FloorLayer = "FLOOR-HATCH";
     /// <summary>The most strokes one drawing's surfaces lay (a facade of brick at 1:50 is some tens of thousands).</summary>
     public const int MaxSegments = 300_000;
 
@@ -65,6 +74,55 @@ public static class SurfaceHatches
         Pens.Options options, Dictionary<string, string?> seamKeys)
     {
         if (pieces.Count == 0 || !Allowed(m, view, pieces[0].Spec)) return [];
+        return PensOf(m, view, view.Id, pieces, parts, options, seamKeys, null);
+    }
+
+    /// <summary>Whether a plan hatches the floors it sees (forum topic 259): seen from above, not a site plan, by its style.</summary>
+    public static bool FloorsAllowed(IModelView m, Entity view, ViewSpec spec) =>
+        spec.Kind == "plan" && !spec.Up && view.Str("look") != "up" && SitePlans.Of(view) == null && ViewStyles.Of(m, view).FloorHatch;
+
+    /// <summary>Whether a part is a floor's (a slab's that is not a roof's): what a plan hatches from above.</summary>
+    static bool IsFloor(IModelView m, DrawPart p) => p.Class == IfcClass.Slab && m.Get(p.Element) is { } e && e.PredefinedType != "ROOF";
+
+    /// <summary>
+    /// A plan's floor hatches (forum topic 259) as pens, to be laid under everything it draws; none when it draws none. The faces
+    /// are those of the parts below the cut and within the view's depth that look up; what hides them is its cut areas and the
+    /// faces seen nearer, but not what a plan draws by its symbols (doors, stairs, furniture: their lines go over the hatch).
+    /// </summary>
+    public static List<Pen> PlanPensOf(IModelView m, Entity view, ViewSpec spec, ViewDrawing drawing, IReadOnlyList<DrawPart> parts, Pens.Options options)
+    {
+        if (!FloorsAllowed(m, view, spec) || !parts.Any(p => IsFloor(m, p))) return [];
+        var solids = new List<(Solid, int)>();
+        for (var i = 0; i < parts.Count; i++)
+            if (!Generator.SymbolicInPlan.Contains(parts[i].Class)) solids.Add((parts[i].Solid, i));
+        // What hides the floors besides the faces nearer: the cut areas, and a finish laid on them (a room's floor finish, a
+        // covering: ViewStyles.FinishElementSub), whose top is often the floor's own (the finish taken out of the floor's top):
+        // its faces looking up, under the cut, hide the floor at any depth.
+        var caps = drawing.Cuts.Select(c => (IReadOnlyList<Vec2[]>)c.Loops).ToList();
+        var finishes = new Dictionary<string, bool>();
+        var cutZ = spec.Frame.Origin.Z;
+        foreach (var p in parts)
+        {
+            if (!finishes.TryGetValue(p.Element, out var finish))
+                finishes[p.Element] = finish = m.Get(p.Element) is { } fe && ViewStyles.FinishElementSub(m, fe) != null;
+            if (!finish) continue;
+            foreach (var face in p.Solid.Faces)
+            {
+                if (face.Outer.Length < 3 || face.Normal.Normalized().Z < 0.02 || face.Outer.Any(i => p.Solid.Vertices[i].Z > cutZ)) continue;
+                var loops = new List<Vec2[]> { face.Outer.Select(i => spec.Frame.Map(p.Solid.Vertices[i])).ToArray() };
+                foreach (var h in face.Holes) if (h.Length >= 3) loops.Add(h.Select(i => spec.Frame.Map(p.Solid.Vertices[i])).ToArray());
+                caps.Add(loops);
+            }
+        }
+        ViewFaces? scene = null;
+        var piece = new Piece(spec, 0, () => scene ??= new ViewFaces(ViewFaces.FacesOf(solids), spec.Frame, true, spec.Below, caps));
+        return PensOf(m, view, view.Id + "#floors", [piece], parts, options, [], p => IsFloor(m, p));
+    }
+
+    /// <param name="floors">A plan's floors only (<see cref="PlanPensOf"/>): the parts it picks, lines only, on <see cref="FloorLayer"/>; null: an elevation's or a section's faces.</param>
+    static List<Pen> PensOf(IModelView m, Entity view, string cacheKey, IReadOnlyList<Piece> pieces, IReadOnlyList<DrawPart> parts,
+        Pens.Options options, Dictionary<string, string?> seamKeys, Func<DrawPart, bool>? floors)
+    {
         // Each material's elevation graphics, once; a part draws a surface only when its material gives a hatch or a fill.
         var resolved = new Dictionary<string, ResolvedMaterial?>();
         // The view's material graphics (decision 680): the material's elevation step for the view's scale; a project made
@@ -79,7 +137,7 @@ public static class SurfaceHatches
             return resolved[id] = viewMaterials.Material(id);
         }
         static ResolvedMaterial? Drawn(ResolvedMaterial? r) => r is { Membrane: false } && (r.Hatch != null || r.Fill != null || r.Background != null) ? r : null;
-        var graphics = parts.Select(p => Drawn(viewMaterials.Surface(p.Element, p.Class, Material(p.Material)))).ToArray();
+        var graphics = parts.Select(p => floors != null && !floors(p) ? null : Drawn(viewMaterials.Surface(p.Element, p.Class, Material(p.Material)))).ToArray();
         if (graphics.All(g => g == null)) return [];
         var joins = ViewStyles.Of(m, view).Joins;
         var pens = new Dictionary<string, Pen>();
@@ -87,7 +145,7 @@ public static class SurfaceHatches
         foreach (var piece in pieces)
         {
             if (budget <= 0) break;
-            Hatch(m, view.Id + (pieces.Count > 1 ? "#" + piece.Index : ""), piece, parts, graphics, joins, options, seamKeys, pens, ref budget);
+            Hatch(m, cacheKey + (pieces.Count > 1 ? "#" + piece.Index : ""), piece, parts, graphics, joins, options, seamKeys, pens, ref budget, floors != null);
         }
         // Fills, solid hatches, then line hatches: a material's background hatch (decision 678) under its hatch.
         return pens.Where(kv => kv.Value.Loops.Count > 0 || kv.Value.Segments.Count > 0)
@@ -96,8 +154,10 @@ public static class SurfaceHatches
     }
 
     static void Hatch(IModelView m, string cacheKey, Piece piece, IReadOnlyList<DrawPart> parts, ResolvedMaterial?[] graphics, bool joins,
-        Pens.Options options, Dictionary<string, string?> seamKeys, Dictionary<string, Pen> pens, ref int left)
+        Pens.Options options, Dictionary<string, string?> seamKeys, Dictionary<string, Pen> pens, ref int left, bool floors = false)
     {
+        // A plan's floors: their own layer, lines only (a fill or a solid pattern would cover the plan's floors in ink).
+        var layer = floors ? FloorLayer : Layer;
         var budget = left;
         try { Draw(); }
         finally { left = budget; }
@@ -163,7 +223,7 @@ public static class SurfaceHatches
                 var g = graphics[s.Face.Owner]!;
                 if (Cat(part.Class)?.Hidden == true) continue;
                 var loops = cells.Select(c => (IReadOnlyList<Vec2>)c).ToList();
-                if (MaterialGraphics.FillInk(g) is { } fillInk) Get("fill:" + fillInk, () => new Pen(FillLayer, null, 0, fillInk, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
+                if (!floors && MaterialGraphics.FillInk(g) is { } fillInk) Get("fill:" + fillInk, () => new Pen(FillLayer, null, 0, fillInk, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
                 var category = Cat(part.Class)?.LineColor ?? "#000000";
                 var elementColor = options.ElementColors?.GetValueOrDefault(part.Element);
                 // The background hatch under the hatch (decision 678), then the hatch: each its own colour and weight.
@@ -181,8 +241,9 @@ public static class SurfaceHatches
                     // (SolidFill); an element's override colour over both.
                     if (pattern.Solid)
                     {
+                        if (floors) return;
                         var solid = elementColor ?? SolidFill.Of(g, g.Fill, category, background);
-                        Get((background ? "solidbg:" : "solid:") + solid, () => new Pen(Layer, null, 0, solid, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
+                        Get((background ? "solidbg:" : "solid:") + solid, () => new Pen(layer, null, 0, solid, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
                         return;
                     }
                     if (budget <= 0) return;
@@ -194,7 +255,7 @@ public static class SurfaceHatches
                     var element = m.Get(part.Element);
                     var own = element != null && HatchOrigins.Of(element) != null;
                     var width = weight ?? (!background && g.HatchPen is { } pn ? LineStyles.PenWidth(options.Table ?? LineStyles.DefaultPenTable(), pn, options.Scale) : Pens.Default.Hatch);
-                    var pen = Get($"{(background ? "hatchbg" : "hatch")}:{color}:{width}:{(dash == null ? "" : string.Join(" ", dash))}", () => new Pen(Layer, color, width, null, dash));
+                    var pen = Get($"{(background ? "hatchbg" : "hatch")}:{color}:{width}:{(dash == null ? "" : string.Join(" ", dash))}", () => new Pen(layer, color, width, null, dash));
                     if (BattHatch.Is(pattern))
                     {
                         // Insulation is never guessed for a surface (MaterialGraphics.ElevationFromName); asked for, its looped line runs

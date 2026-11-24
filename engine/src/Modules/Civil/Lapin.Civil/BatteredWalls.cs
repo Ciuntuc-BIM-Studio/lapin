@@ -25,7 +25,7 @@ public static class BatteredWalls
     public static readonly string[] WallKeys = ["frontBatter", "backBatter", "baseThickness", "toe", "heel", "keyWidth", "keyDepth", "keyAt"];
 
     /// <summary>A segment's numbers (null or absent: the wall's).</summary>
-    public static readonly string[] SegmentKeys = ["frontBatter", "backBatter", "frontBatterEnd", "backBatterEnd", "thickness", "baseThickness", "topStart", "topEnd", "footingLevel", "endBatter", "endTurn"];
+    public static readonly string[] SegmentKeys = ["frontBatter", "backBatter", "frontBatterEnd", "backBatterEnd", "thickness", "baseThickness", "topStart", "topEnd", "footingLevel", "endBatter", "endTurn", "toe", "heel", "footingThickness"];
 
     /// <summary>A segment's numbers that may be negative (elevations, an end's turn); the rest are kept at 0 or more.</summary>
     public static readonly string[] SignedSegmentKeys = ["topStart", "topEnd", "footingLevel", "endTurn"];
@@ -47,7 +47,8 @@ public static class BatteredWalls
     /// </summary>
     public sealed record SegmentSpec(double? FrontBatter, double? BackBatter, double? FrontBatterEnd, double? BackBatterEnd, bool Warp,
         double? Thickness, double? BaseThickness, double? TopStart, double? TopEnd, double? FootingLevel,
-        bool TwistAll = false, double? EndBatter = null, double? EndTurn = null, string? Name = null)
+        bool TwistAll = false, double? EndBatter = null, double? EndTurn = null, string? Name = null,
+        double? Toe = null, double? Heel = null, double? FootingThickness = null)
     {
         public static readonly SegmentSpec None = new(null, null, null, null, false, null, null, null, null, null);
     }
@@ -58,7 +59,8 @@ public static class BatteredWalls
         double? N(string k) => Json.Number(o[k]);
         var warp = o["warp"] is JsonValue v && v.TryGetValue<bool>(out var w) && w;
         return new(N("frontBatter"), N("backBatter"), N("frontBatterEnd"), N("backBatterEnd"), warp, N("thickness"), N("baseThickness"), N("topStart"), N("topEnd"), N("footingLevel"),
-            (string?)o["twist"] == "segment", N("endBatter"), N("endTurn"), (string?)o["name"] is { Length: > 0 } nm ? nm : null);
+            (string?)o["twist"] == "segment", N("endBatter"), N("endTurn"), (string?)o["name"] is { Length: > 0 } nm ? nm : null,
+            N("toe"), N("heel"), N("footingThickness"));
     }
 
     /// <summary>A batter n:1 (n up for one across) as the run across per unit of height; 0 or none is upright. Kept to 1:5 at the flattest.</summary>
@@ -77,6 +79,8 @@ public static class BatteredWalls
         public bool Warp, Footing;
         /// <summary>The footing's front and back offsets.</summary>
         public double Fa, Fb;
+        /// <summary>How far the footing reaches past the stem's foot, in front (the low ground's side) and behind (the high ground's): this segment's own, or the wall's; null: as wide as the wall's footing width, centred.</summary>
+        public double? Toe, Heel;
         /// <summary>The key under the footing, its two offsets and its underside (when it has one).</summary>
         public double? KeyA, KeyB;
         public double KeyBottom;
@@ -134,8 +138,12 @@ public static class BatteredWalls
             var leg = new Leg { Index = i, A = a, B = b, D = d, L = (b - a).Length, H = s.HighOnLeft ? d.Perp : -d.Perp };
             leg.T = Math.Max(0.05, g.Thickness ?? s.Thickness);
             leg.Bottom = g.FootingLevel ?? levels.Levels[i].Bottom;
-            leg.Zf = leg.Bottom + tf;
-            leg.Footing = tf > 1e-6;
+            // The footing's thickness, toe and heel are the segment's own where it has them (each wing's footing follows its own axis), else the wall's.
+            var tfi = Math.Max(0, g.FootingThickness ?? tf);
+            leg.Zf = leg.Bottom + tfi;
+            leg.Footing = tfi > 1e-6;
+            leg.Toe = g.Toe ?? toe;
+            leg.Heel = g.Heel ?? heel;
             var (st0, st1) = (chain.StationOf(i), chain.StationOf(i + 1));
             // A crown given at one end only slopes from the wall's own crown at the other (the panel's "the wall's").
             var z0 = g.TopStart ?? levels.Top(st0, i);
@@ -191,8 +199,8 @@ public static class BatteredWalls
                     : Ext(f => leg.T / 2 + (TopF(f) - leg.Zf) * (leg.Kb0 + (leg.Kb1 - leg.Kb0) * f), false);
                 // At least 5 cm past the stem either side (a footing flush with a curved foot would touch it at one point only).
                 var spare = Math.Max(0.05, (s.FootingWidth - (back - front)) / 2);
-                leg.Fa = front - Math.Max(0, toe ?? spare);
-                leg.Fb = back + Math.Max(0, heel ?? spare);
+                leg.Fa = front - Math.Max(0, leg.Toe ?? spare);
+                leg.Fb = back + Math.Max(0, leg.Heel ?? spare);
                 var (kw, kd) = (e.Num("keyWidth"), e.Num("keyDepth"));
                 if (kw > 0 && kd > 0)
                 {

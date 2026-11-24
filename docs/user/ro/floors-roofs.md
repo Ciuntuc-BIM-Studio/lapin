@@ -98,6 +98,10 @@ Un **acoperiș** se împarte și se taie la fel. Fiecare parte păstrează regul
 
 ![Un acoperiș în două ape împărțit peste coamă: două acoperișuri, aceleași pante](shots/roof-split.webp)
 
+**Hașura plăcii în plan.** Un plan hașurează fața de sus a fiecărei plăci pe care o vede sub planul de secționare cu modelul de suprafață al materialului stratului de sus al plăcii: modelul pe care i-l dă **Gestionare → Materiale** pentru fațade (hașura, scara, unghiul și peniță lui), cel pe care fațadele îl desenează pe fețele pe care le văd. Hașura umple conturul plăcii așa cum îl arată planul, fără golurile ei, sub pereți, stâlpi și tot ce taie planul, pe layerul ei (FLOOR-HATCH), deci planșele, PDF-ul și DXF-ul o tipăresc. O placă pe care planul o taie (cu fața de sus peste planul de secționare) nu se hașurează așa, nici una ascunsă în vedere. Unde o încăpere are finisaj de pardoseală, finisajul stă pe placă și acolo se desenează hașura lui (vezi [Încăperi](rooms.md)). Un material fără model de suprafață (betonul, implicit) nu desenează nimic. **Hașurile suprafeței planșeelor** din stilul vederii (**Vedere → Setările vederii**, **Gestionare → Stiluri de vedere**) le pornesc sau le opresc: pornite în Architectural, oprite în Structural, MEP și Coordination. Un proiect făcut înainte își păstrează planurile cum erau, cu ele oprite în fiecare stil: bifează-le ca să hașurezi plăcile.
+
+![Un plan cu o placă de parchet hașurată după materialul ei, sub pereți, fără golul scării](shots/floor-plan-hatch.webp)
+
 ### Pante și scurgeri
 
 O placă poate cădea spre un sifon, poate avea pantă de la o margine spre o rigolă sau poate trece prin puncte și linii de cotă, rămânând o singură placă cu straturile tipului ei. Selectează o placă: secțiunea **Pante** din proprietăți pornește orizontală și oferă uneltele; ele sunt și în **Arhitectură → Pante**. Fiecare clic e un pas de anulare, iar **Fă-o din nou orizontală** le scoate pe toate.

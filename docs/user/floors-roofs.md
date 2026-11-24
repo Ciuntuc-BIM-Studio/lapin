@@ -100,6 +100,10 @@ A **roof** is split and trimmed the same way. Each part keeps the rules of its e
 
 ![A gable roof split across its ridge: two roofs, the same slopes](shots/roof-split.webp)
 
+**Floor hatch in plan.** A plan hatches the top of each floor it sees below its cut with the surface pattern of the material of the floor's top layer: the pattern **Manage → Materials** gives it for elevations (its hatch, scale, angle and pen), the one elevations draw on the faces they see. The hatch fills the floor's outline as the plan shows it, its openings left out, under the walls, columns and everything the plan cuts, and on its own layer (FLOOR-HATCH), so sheets, the PDF and DXF print it. A floor the plan cuts (its top above the cut plane) is not hatched this way, nor one hidden in the view. Where a room has a floor finish, the finish lies on the floor and its own hatch is drawn there instead (see [Rooms](rooms.md)). A material with no surface pattern (concrete, by default) draws none. The view style's **Floor surface hatches** (**View → View settings**, **Manage → View styles**) turns it on or off: on in Architectural, off in Structural, MEP and Coordination. A project made before keeps its plans as they were, every style with it off: tick it to hatch the floors.
+
+![A plan with a parquet floor hatched by its material, under the walls, the stair opening left out](shots/floor-plan-hatch.webp)
+
 ### Slopes and falls
 
 A floor can fall to a drain, slope from an edge to a gutter, or follow level points and lines, while it stays one floor with its type's layers. Select a floor: its **Slopes** section in the properties starts flat and offers the tools; they are also in **Architecture → Slopes**. Each click is one undo step, and **Make it flat again** takes it all away.

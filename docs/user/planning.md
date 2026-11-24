@@ -83,6 +83,8 @@ In Properties a generated task says where its duration came from: the quantity, 
 
 A formwork or a scaffold from **Site works** has no task of its own: it lives by the tasks of what it serves. A formwork goes up when its floor, beam or wall starts being built, and is struck when the days set on its type have passed after it is finished (**Struck after**, in working days: 21 for floors and beams, 7 for walls, columns and footings unless the type says otherwise). A scaffold stands from the first task on its walls to the last, their finishes included. Select one and its Properties say when it is **On site** and which tasks it **Lives by**.
 
+Other temporary works built and taken away within one phase, with nothing they stand by (a phase's New Jersey barriers, signs, flaggers), are planned like any element: a task's rule takes them (by class, by **Phases** or **Demolished in**), **Generate schedule…** places them, and **Elements without a task** lists those no task has yet.
+
 ## The Gantt
 
 ![The Gantt under the 3D view, a task selected](shots/planning-gantt.webp)
