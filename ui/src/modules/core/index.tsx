@@ -232,7 +232,7 @@ const core: LapinModule = {
       // parallel; floors and ceilings trimmed or split by a line. The command line's TRIMEXTEND, SPLITELEMENT and OFFSET.
       { id: 'modify.trimExtend', label: 'Trim/Extend elements', icon: Scissors, run: () => void startCommand('TRIMEXTEND') },
       { id: 'modify.split', label: 'Split element', icon: SquareSplitHorizontal, run: () => void startCommand('SPLITELEMENT') },
-      { id: 'modify.offset', label: 'Offset element', icon: CopyPlus, run: () => void startCommand('OFFSET') },
+      { id: 'modify.offset', label: 'Offset element', alsoCalled: ['Offset'], icon: CopyPlus, run: () => void startCommand('OFFSET') },
       { id: 'modify.delete', label: 'Delete', alsoCalled: ['Erase'], icon: Trash2, run: () => void startCommand('ERASE') },
       // Pinned where it is, as Revit pins (decision 449): not moved, turned, mirrored nor deleted until unpinned.
       { id: 'modify.pin', label: 'Pin', icon: Pin, run: () => void pinSelection(true) },
@@ -242,17 +242,19 @@ const core: LapinModule = {
       { id: 'modify.moveToStorey', label: 'Move to storey', icon: MoveToStoreyIcon, run: () => useUi.setState({ dialog: 'moveToStorey' }) },
       // ArchiCAD's copy to stories (a tester's wish): the selection onto several storeys at once; COPYSTOREY on the command line.
       { id: 'modify.copyToStoreys', label: 'Copy to storeys', icon: CopyToStoreysIcon, run: () => useUi.setState({ dialog: 'copyToStoreys' }) },
-      // Groups (docs/groups.md), with Revit's keys.
+      // Imported references made Lapin elements, or Studio solids (decision 214).
+      { id: 'modify.convertToNative', label: 'Convert to native', icon: Wand2, shortcut: 'NV', run: () => void convertToNative() },
+    ] },
+    // The group tools in a panel of their own (a tester's wish, forum topic 257); their ids stay the ones the shortcuts and My tools know.
+    groups: { label: 'Group', tools: [
       { id: 'modify.group', label: 'Create group', icon: Group, shortcut: 'GP', run: () => void groupSelection() },
+    ], small: [
       { id: 'modify.component', label: 'Make component', icon: Boxes, shortcut: 'CK', run: () => void makeComponent() },
       { id: 'modify.unit', label: 'Make apartment type', icon: Building2, shortcut: 'CU', run: () => void makeUnit() },
-      // Detail sets of a component (forum #224): 2D drafting every instance draws, shown per view.
       { id: 'modify.detailSet', label: 'Add to detail set', icon: PenLine, shortcut: 'DS', run: () => void addToDetailSet() },
       { id: 'modify.ungroup', label: 'Ungroup', icon: Ungroup, shortcut: 'UG', run: () => void ungroupSelection() },
       { id: 'modify.editGroup', label: 'Edit group', icon: PencilRuler, shortcut: 'EG', run: editSelectedGroup },
       { id: 'modify.removeFromGroup', label: 'Remove from group', icon: SquareMinus, run: () => void removeFromGroup() },
-      // Imported references made Lapin elements, or Studio solids (decision 214).
-      { id: 'modify.convertToNative', label: 'Convert to native', icon: Wand2, shortcut: 'NV', run: () => void convertToNative() },
     ] },
   },
   tabs: [{

@@ -678,6 +678,9 @@ export const scenes = [
     id: 'start',
     async run(t) {
       await t.start();
+      // The workspace and the language are one-line choices (forum topic 257); the edition's modules are in Help → About.
+      t.expect(await t.page.locator('.start [data-field=workspace-select] select').count() === 1, 'the start screen has one Workspace choice');
+      t.expect(await t.page.locator('.start-foot .start-lang select option').count() >= 10, 'the start screen has one Language choice');
       await t.shot('start-screen', { clip: { x: 0, y: 0, width: 1440, height: 640 } });
       // A template (decision 261): the apartment block starts with its six levels, in the Architecture workspace.
       await t.page.locator('[data-template=block]').click();
@@ -11999,7 +12002,7 @@ export const scenes = [
       const block = (await t.cmd('studio.primitive', { shape: 'box', at: [1, 0.6], storeyId: s, width: 1, length: 0.8, height: 0.9 })).id;
       await t.ui({ keyPlan: false, selected: [floor, block], selection: block });
       await t.wait(400);
-      // Modify → Make component, named in its box.
+      // Group → Make component, named in its box.
       await t.tool('modify.component');
       await t.page.locator('.ask-box input').first().fill('Planter bay');
       await t.page.locator('.ask-box .btn.primary').click();

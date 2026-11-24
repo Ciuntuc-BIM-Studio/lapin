@@ -32,6 +32,14 @@ describe('keyIntent', () => {
     expect(keyIntent(press('ArrowUp'), state())).toBeNull();
   });
 
+  it('goes back to the open project on Escape from the start screen, and only then', () => {
+    expect(keyIntent(press('Escape'), state({ screen: 'start', project: true }))).toEqual({ kind: 'backToProject' });
+    expect(keyIntent(press('Escape'), state({ screen: 'start' }))).toBeNull();
+    expect(keyIntent(press('Escape', { inField: true }), state({ screen: 'start', project: true }))).toBeNull();
+    expect(keyIntent(press('Escape'), state({ screen: 'start', project: true, dialog: 'join' }))).toBeNull();
+    expect(keyIntent(press('Escape'), state({ project: true }))).toBeNull();
+  });
+
   it('gives the keys to an open dialog: Escape closes it, saving still works, nothing reaches the model', () => {
     const open = state({ dialog: 'materials', selected: ['w1'] });
     expect(keyIntent(press('Escape'), open)).toEqual({ kind: 'closeDialog' });

@@ -41,6 +41,8 @@ Show, hide or move a tab under **Tabs** in the same dialog and the choice become
 
 ![Focus: the selection in a card](shots/interface-focus.webp)
 
+The ribbon's large tools show their keyboard letters while you hold <kbd>Alt</kbd> alone, as Office's key tips do; their tooltips always have them. In Comfortable, a band wider than the window shows its small tools as icons only, with their names in the tooltips, until the window is wide enough again. The **Group** panel, after **Modify** on the tabs that have it, holds **Create group**, **Make component**, **Make apartment type**, **Add to detail set**, **Ungroup**, **Edit group** and **Remove from group**.
+
 In every mode the top bar keeps **Undo** and **Redo** at its right end: with their names in Comfortable, as two arrows in Compact and Focus (<kbd>Ctrl</kbd> <kbd>Z</kbd> and <kbd>Ctrl</kbd> <kbd>Y</kbd>; their tooltip says what they undo).
 
 Below the modes, each part can be set on its own: the ribbon, the quick tools (or none: the number keys still work), the command line, the HUD, the tool's prompt and fields, the key plan, the panels and the height of the property rows. Changing one part makes the choice **Custom**.

@@ -15,6 +15,7 @@
  */
 
 import { useEffect } from 'react';
+import { useSession } from '../engine/session';
 import { select, useUi } from './store';
 import { findTool, hotbarIds, useToolTick } from '../platform/modules';
 import { reach } from './hotbar';
@@ -80,6 +81,8 @@ export interface KeySnapshot {
   value?: { text: string } | null;
   /** The arrow keys are the nudge's now (app/nudge.ts nudgeReady): a selection in a view that moves it, nothing else asking for the keys. */
   nudge?: boolean;
+  /** A project is open behind the start screen (it has a file or edits): Escape goes back to it. */
+  project?: boolean;
 }
 
 export type KeyIntent =
@@ -91,6 +94,8 @@ export type KeyIntent =
   | { kind: 'toolLetter'; key: string }
   /** The ` key: the command line takes all typing, or gives it back. */
   | { kind: 'cmdMode' }
+  /** Escape on the start screen with a project open: back to the project. */
+  | { kind: 'backToProject' }
   | { kind: 'closeDialog' } | { kind: 'deselect' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'stepSpace' } | { kind: 'backspace' }
   | { kind: 'type'; buffer: string }
   | { kind: 'valueType'; key: string } | { kind: 'valueBack' } | { kind: 'valueEnter' }
@@ -135,6 +140,7 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   // Escape closes a dialog from inside one of its fields too, unless the field took it first (a cell putting its text back
   // prevents the default) or an input method is composing.
   if (e.inField && e.key === 'Escape' && s.dialog && s.screen === 'workspace' && !e.composing) return { kind: 'closeDialog' };
+  if (e.key === 'Escape' && s.screen === 'start' && s.project && !s.dialog && !e.inField && !e.inDialog && !e.composing) return { kind: 'backToProject' };
   if (e.inField || s.screen !== 'workspace') return null;
   const chord = chordOf(e);
   if (!chord) return null;
@@ -227,6 +233,7 @@ function snapshot(): KeySnapshot {
     value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
     toolLetters: (ui.tool ? findTool(ui.tool)?.letters?.keys() : undefined) || undefined,
     nudge: nudgeReady(nudgeState()),
+    project: (() => { const d = useSession.getState().doc; return !!d && (!!d.path || d.canUndo); })(),
   };
 }
 
@@ -251,6 +258,7 @@ export function carryOut(intent: KeyIntent): void {
     }
     case 'toolLetter': { const t = useUi.getState().tool; if (t) findTool(t)?.letters?.take(intent.key); break; }
     case 'toolSpace': { const t = useUi.getState().tool; if (t) findTool(t)?.space?.(); useToolTick.setState((s) => ({ n: s.n + 1 })); break; }
+    case 'backToProject': useUi.setState({ screen: 'workspace' }); break;
     case 'closeDialog': useUi.setState({ dialog: null }); break;
     case 'deselect': select(null); break;
     case 'cancel':

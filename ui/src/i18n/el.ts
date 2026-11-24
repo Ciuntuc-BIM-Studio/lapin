@@ -1747,6 +1747,7 @@ export const EL: Record<string, string> = {
   'Using another code replaces this device\'s key: keep a copy of it first if you still need it.': 'Η χρήση άλλου κωδικού αντικαθιστά το κλειδί αυτής της συσκευής: κρατήστε πρώτα ένα αντίγραφο αν το χρειάζεστε ακόμη.',
   'BIM authoring for architects and engineers': 'Μοντελοποίηση BIM για αρχιτέκτονες και μηχανικούς',
   'Start here': 'Ξεκινήστε εδώ',
+  'Press WA to draw walls; every element is native IFC.': 'Πατήστε WA για να σχεδιάσετε τοίχους· κάθε στοιχείο είναι εγγενές IFC.',
   'Recent': 'Πρόσφατα',
   'Recover': 'Ανάκτηση',
   'Projects you open or save appear here.': 'Τα έργα που ανοίγετε ή αποθηκεύετε εμφανίζονται εδώ.',

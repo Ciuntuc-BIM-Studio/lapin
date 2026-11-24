@@ -535,7 +535,7 @@ const mep: LapinModule = {
   name: 'MEP',
   summary: 'Heating, water, drainage, ventilation, electrical, gas and fire protection systems drawn as schematics on the plan.',
   tabs: [{
-    id: 'mep', label: 'MEP', order: 45, include: ['modify'],
+    id: 'mep', label: 'MEP', order: 45, include: ['modify', 'groups'],
     // Fewer groups than the tools (audit S14): the tools used most stay buttons, the rest gathered under pulldowns; each keeps
     // its id, letters and place in My tools.
     groups: [

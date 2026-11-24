@@ -155,7 +155,7 @@ To change one element's hatch in one view only (a strip foundation's hatch scale
 
 ### Save as hatch pattern
 
-Draw the pattern with lines, polylines, arcs and circles in any view (a brick bond, a tile joint), select them and type **SAVEHATCH**. Click two corners for the cell (or <kbd>Enter</kbd> for the drawing's bounds), then name it and choose **Drafting** or **Real size** units.
+Draw the pattern with lines, polylines, arcs and circles in any view (a brick bond, a tile joint), select them and choose **Draft → Fill → Save as hatch pattern** (or type **SAVEHATCH**). Click two corners for the cell (or <kbd>Enter</kbd> for the drawing's bounds), then name it and choose **Drafting** or **Real size** units.
 
 ![Saving drawn lines as a pattern](shots/save-hatch.webp)
 

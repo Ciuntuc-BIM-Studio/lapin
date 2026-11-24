@@ -495,7 +495,7 @@ const civil: LapinModule = {
     LapinEntourage: (n) => { if (typeof n.props.kind === 'string') useEntouragePrefs.setState({ kind: n.props.kind as never }); if (useUi.getState().tool !== entourage.id) activate(entourage); },
   },
   tabs: [{
-    id: 'site', label: 'Site', order: 40, include: ['modify'],
+    id: 'site', label: 'Site', order: 40, include: ['modify', 'groups'],
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, terrainOnOutline, parcel], small: [terrainOnPicked, terrainBoundary, splitTerrain, mergeTerrains, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
       { label: 'Grading', tools: [featureLine, contourAt, dragContour, gradeBetweenEdges, slopeToGround], small: [sectionLine, profileOnLine] },

@@ -7,7 +7,7 @@
  */
 
 import { quickToggleTheme, setPrefs, usePrefs } from '../app/prefs';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronDown, Moon, Redo2, Search, Sun, Undo2 } from 'lucide-react';
 import { HelpMenu } from './HelpMenu';
 import { BrandName } from './BrandMark';
@@ -97,6 +97,30 @@ function FileMenu() {
 /** A ribbon tool dragged onto a quick slot goes in it (decision 259); dragged onto the My tools tab, in My tools (decision 479); right-clicked, its menu offers My tools. */
 const dragTool = (tl: ToolDef) => ({ ...toolDragProps(tl.id), onContextMenu: (e: React.MouseEvent) => toolMenu(e, tl) });
 
+/**
+ * Whether a large band is too wide for its window, so its small tools show their icons only (a tester's wish, forum topic 257).
+ * The width the labels need is remembered while they are hidden: the labels come back once the window holds them again.
+ */
+function useTight(): [React.RefObject<HTMLDivElement>, boolean] {
+  const el = useRef<HTMLDivElement>(null);
+  const need = useRef(0);
+  const [tight, setTight] = useState(false);
+  useLayoutEffect(() => {
+    const band = el.current;
+    if (!band) return;
+    const measure = () => {
+      if (!tight) { if (band.scrollWidth > band.clientWidth + 1) { need.current = band.scrollWidth; setTight(true); } }
+      else if (band.clientWidth >= need.current) setTight(false);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(band);
+    return () => ro.disconnect();
+  }, [tight]);
+  return [el, tight];
+}
+
 /** The band of the tab: large tools with their names and keys, or icons only. */
 function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolean; onPicked?: () => void; drop?: boolean }) {
   const tool = useUi((s) => s.tool);
@@ -105,6 +129,7 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
   useSession((s) => s.version);
   const off = (tl: ToolDef) => (tl.enabled ? !tl.enabled() : false);
   useBindings();
+  const [bandRef, tight] = useTight();
   // A group shown only while something holds (`shown`): drawn again when the preferences change (Developer extras).
   usePrefs();
   const tab = { ...all, groups: all.groups.filter((g) => g.shown?.() ?? true) };
@@ -127,7 +152,7 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
     </div>
   );
   return (
-    <div className="band" role="toolbar" aria-label={tab.label} data-i18n-ctx={tab.i18nCtx} onWheel={wheelAcross}>
+    <div className={`band${tight ? ' tight' : ''}`} ref={bandRef} role="toolbar" aria-label={tab.label} data-i18n-ctx={tab.i18nCtx} onWheel={wheelAcross}>
       {tab.groups.map((g) => (
         <div className="group" key={g.label}>
           <div className="group-tools">
@@ -144,7 +169,7 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
             {g.small && g.small.length > 0 && (
               <div className="small-tools">
                 {g.small.map((tl) => (
-                  <button type="button" key={tl.id} className={`tool small${on(tl) ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)} data-pulldown={tl.items?.length ? tl.id : undefined}>
+                  <button type="button" key={tl.id} className={`tool small${on(tl) ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)} aria-label={tl.label} data-pulldown={tl.items?.length ? tl.id : undefined}>
                     <tl.icon size={14} strokeWidth={1.6} /><span>{tl.label}</span>{tl.items?.length ? <ChevronDown size={10} strokeWidth={2} aria-hidden /> : null}
                   </button>
                 ))}
@@ -191,9 +216,25 @@ export function Ribbon() {
     if (mode === 'dropdown') setDropped(!(dropped && id === tab?.id));
     useUi.setState({ tab: id });
   };
+  // Office's key tips: the large tools' shortcuts show only while Alt is held down alone (their tooltips always have them).
+  const [keytips, setKeytips] = useState(false);
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key !== 'Alt') { setKeytips(false); return; }
+      if (e.ctrlKey || e.metaKey || e.shiftKey || (e.target as HTMLElement | null)?.closest?.('input, select, textarea, [contenteditable=true]')) return;
+      setKeytips(true);
+    };
+    const up = (e: KeyboardEvent) => { if (e.key === 'Alt') setKeytips(false); };
+    const off = () => setKeytips(false);
+    // Nothing is stopped or prevented here: Alt keeps meaning what views and grips make of it.
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    window.addEventListener('blur', off);
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', off); };
+  }, []);
   const undoKeys = bindingText('app.undo'), redoKeys = bindingText('app.redo'), paletteKeys = bindingText('app.palette');
   return (
-    <header className={`topbar ribbon-${mode}`} ref={host}>
+    <header className={`topbar ribbon-${mode}${keytips ? ' keytips' : ''}`} ref={host}>
       <div className="tabs-row">
         <button type="button" className="brand" onClick={() => !isGuest() && useUi.setState({ screen: 'start' })} title="Start screen"><BrandName /></button>
         <FileMenu />

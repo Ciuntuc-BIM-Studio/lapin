@@ -6,7 +6,9 @@ summary: The start screen, a new project, the parts of the window, moving around
 
 ## The start screen
 
-When Lapin opens, it shows the start screen. **New project** starts an empty building. **Open project…** opens a `.lapin` file. The projects you have opened before are listed under **Recent**.
+When Lapin opens, it shows the start screen. **New project** starts an empty building. **Open project…** opens a `.lapin` file. The projects you have opened before are listed under **Recent**, each with a small picture of its 3D view as it was when you saved it (an icon until the project has been saved once from this computer).
+
+With a project open, press **Back to** *(its name)*, the first button, or <kbd>Esc</kbd>, to return to it; **New project** is then a plain button. **Workspace**, under the buttons, chooses which ribbon tabs the window shows (see [The interface and shortcuts](interface.md)). The language is chosen from the list at the foot of the screen, each named in itself; the whole interface changes at once.
 
 **Start from** gives a new project set up for its work: **Single-storey house** (foundations and a ground floor), **Two-storey house** (and a first floor), **Apartment block** (a ground floor and four floors), **Hall or frame** (one storey 6 m tall, in the Structure & rebar workspace), **Drafting only** (one level, in the Drafting 2D workspace) and **Start from an IFC** (a new project, then the IFC file to import). Each chooses its workspace too; the levels can be renamed, added or deleted later as in any project.
 
@@ -21,7 +23,7 @@ A new project already has three levels: **Foundations** (−1.50), **Ground floo
 ![The parts of Lapin's window](shots/workspace.webp)
 
 1. **The ribbon tabs.** Draft, Architecture, Interior, Structure, Site, Studio, Annotate, Manage, Construction and View each group their tools. **File** opens, saves, imports and exports. **Undo** and **Redo** are at the right end of the same bar (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
-2. **The ribbon.** It holds the current tab's tools. Hover over a tool to see its name and its keyboard letters.
+2. **The ribbon.** It holds the current tab's tools. Hover over a tool to see its name and its keyboard letters; hold <kbd>Alt</kbd> to see the letters of every large tool at once. When a band is wider than the window, the small tools show their icons only; make the window wider and their names come back.
 3. **The project browser.** It lists the levels, plans, sections, elevations, 3D views, sheets and schedules. Double-click one to open it in a tab. A project opens on the ground floor's plan, with the 3D view in a tab beside it.
 4. **The view.** This is where you draw: a plan, a section, a 3D view or a sheet. You can open several views side by side with the two buttons at the top right of the view.
 5. **The hotbar.** It gives the most used tools on the number keys <kbd>1</kbd>–<kbd>9</kbd>.
