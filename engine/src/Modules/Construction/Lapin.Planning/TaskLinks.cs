@@ -219,8 +219,10 @@ public sealed class TaskElements
         plan ??= Plan.Read(m);
         var t = new TaskElements(m, services, describe, plan, query);
         var producers = services.Get<IGeometryProducers>();
+        // The temporaries that live by their hosts (formwork, scaffolds: TaskLives), tied or not by the schedule: never a task's own.
+        var tied = services.All<ITaskLife>().SelectMany(l => l.Temporaries(m)).Select(x => x.Element).ToHashSet();
         foreach (var e in m.Entities)
-            if (t.IsCandidate(e, producers) && t.Facts(e.Id) is { } f) { t.Candidates.Add(f); t.candidateIds.Add(e.Id); }
+            if (t.IsCandidate(e, producers, tied) && t.Facts(e.Id) is { } f) { t.Candidates.Add(f); t.candidateIds.Add(e.Id); }
         foreach (var task in plan.Rows)
         {
             var own = t.Of(task);
@@ -231,16 +233,19 @@ public sealed class TaskElements
         return t;
     }
 
-    bool IsCandidate(Entity e, IGeometryProducers? producers)
+    bool IsCandidate(Entity e, IGeometryProducers? producers, HashSet<string> tied)
     {
         if (NotBuilt.Contains(e.Class)) return false;
         // Solids kept hidden behind the layered wall made of them (forum topic 101): the wall is built, not they.
         if (!Superseded.Counts(m, e)) return false;
         if (describe(e.Class) is { } d && d.Kind != "element") return false;
         if (!StoredBodies.Has(e) && producers?.Geometry(e.Class) == null) return false;
-        // A linked file's element belongs to that file; formwork and scaffolding (created and struck in one phase) live by their hosts' tasks.
+        // A linked file's element belongs to that file.
         if (e.Str(Platform.Links.Key) != null) return false;
-        if (e.Str("phaseCreated") is { } c && c == e.Str("phaseDemolished")) return false;
+        // Formwork and scaffolds tied to their hosts (created and struck in one phase) live by their hosts' tasks. Any other element
+        // created and demolished in one phase is a task's like any other: a site's temporary works with no host (New Jersey
+        // barriers, signs, flaggers of one phase) are set up and taken away by tasks of their own (Fabio Emmolo's report).
+        if (tied.Contains(e.Id)) return false;
         return true;
     }
 

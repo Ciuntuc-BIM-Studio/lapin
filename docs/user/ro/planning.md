@@ -83,6 +83,8 @@ Deschide din nou generatorul și apasă **Aplică**: programul e refăcut peste 
 
 Un cofraj sau o schelă din **Organizare de șantier** nu are sarcina lui: trăiește după sarcinile a ceea ce servește. Cofrajul se montează când începe placa, grinda sau peretele lui și se scoate după ce au trecut zilele spuse de tipul lui de la terminarea lor (**Decofrat după**, în zile lucrătoare: 21 la plăci și grinzi, 7 la pereți, stâlpi și fundații, dacă tipul nu spune altfel). Schela stă de la prima sarcină pe pereții ei până la ultima, cu finisajele lor. Selectează unul și Proprietățile lui spun când e **Pe șantier** și după ce sarcini **Trăiește după**.
 
+Celelalte lucrări provizorii făcute și desfăcute în aceeași fază, care nu stau pe nimic (parapeții New Jersey, indicatoarele, semnalizatorii unei faze), se planifică la fel ca orice element: le ia regula unei sarcini (după clasă, după **Faze** sau **Demolat în**), **Generează programul…** le așază, iar **Elemente fără sarcină** le arată pe cele pe care nu le are încă nicio sarcină.
+
 ## Gantt-ul
 
 ![Gantt-ul sub vederea 3D, cu o sarcină selectată](shots/planning-gantt.webp)
