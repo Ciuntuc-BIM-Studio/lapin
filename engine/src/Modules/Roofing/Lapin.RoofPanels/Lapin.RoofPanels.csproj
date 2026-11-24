@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Roof panel layout (docs/plan-roof-panels.md, decision 847): metal tile and panel roofing laid out on Lapin's own roofs.
+    A profile is data (widths, module, laps, stock or order lengths, least pitch, accessory laps), the built-in ones in
+    profiles.json; a roof names the profile it is covered with, and the panels, their lengths, the offcuts reused in the
+    valleys and the edges' kinds are worked out from the roof's planes on every ask, never stored. It changes nothing of
+    the architecture module's roofs: without it a project draws as before.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>roofpanels</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="profiles.json" LogicalName="Lapin.RoofPanels.profiles.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="../../Architecture/Lapin.Architecture/Lapin.Architecture.csproj" Private="false" />
+  </ItemGroup>
+</Project>
